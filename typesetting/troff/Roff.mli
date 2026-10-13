@@ -60,7 +60,9 @@
  * phototypesetter. A name is two letters: two bytes, one word of the
  * PDP-11. *)
 
-(* who reads the page: a page says ".if n" and ".if t" *)
+(* who reads the page: a page says ".if n" and ".if t", and a length
+ * is not the same on the two (an inch is 10 ens of a terminal's
+ * letters, 14.4 of a text of 10 points) *)
 type device = Terminal | Typesetter
 
 type line =
@@ -99,6 +101,13 @@ val inlines_in : t -> Doc.font -> string -> Doc.inline list
 val font : t -> Doc.font
 val set_font : t -> Doc.font -> unit
 
+(* .ps's argument: +2, -2, 10, or nothing (the text's own size) *)
+val resize : t -> string -> unit
+
+(* a register's value, in troff's basic units if it is a length; none
+ * if it was never set *)
+val register : t -> string -> float option
+
 (* back to the text's own font and size *)
 val reset_style : t -> unit
 
@@ -115,11 +124,23 @@ val continues : string -> bool
  * number with none ('n', 'm', 'v'). [ens] and [lines] are the two
  * ways out of the basic units. *)
 val number : t -> char -> string -> float
-val ens : float -> float
-val lines : float -> float
+val ens : t -> float -> float
+val lines : t -> float -> float
 
-(* a text's width, in ens, as \w has it: on a terminal, its characters *)
-val width : Doc.inline list -> float
+(* how a file is read by its name, for .so and for a picture kept in
+ * a file of its own: nothing is read until a program that may open
+ * files says how ([load] gives none) *)
+val set_loader : t -> (string -> string option) -> unit
+val load : t -> string -> string option
+
+(* how wide a text is, in ens, for \w: every character one, until a
+ * writer that has fonts says otherwise *)
+val set_measure : t -> (Doc.inline list -> float) -> unit
+
+(* a text read a second time, as a macro's lines are: its \\ are \, and
+ * the strings and registers named after them are put in. A table's
+ * data is read so by troff, tbl having put it inside a macro. *)
+val again : t -> string -> string
 
 (* the registers and the strings: a package has its own (\n(PD) *)
 val set_register : t -> string -> float -> unit

@@ -1,9 +1,11 @@
 ; typesetting/troff: mini-troff, a document typeset (docs/plans/plan_typesetting.md)
+(ocamlyacc Pic_parser)
+
 (library
  (name ix_troff)
  (wrapped false)
- (modules Doc Roff Man Layout To_text CLI)
- (libraries ix_core fpath unix caps))
+ (modules Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Layout To_text To_pdf CLI)
+ (libraries ix_core ix_graphics_pdf ix_graphics_fonts fpath unix caps))
 
 (executable
  (name Main)

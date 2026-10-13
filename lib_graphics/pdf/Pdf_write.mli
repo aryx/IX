@@ -34,8 +34,12 @@
  * The same bytes whatever compiles it: a number is written by integer
  * arithmetic, in hundredths; the file has no date and no identifier.
  *
- * Not written: text in a font (letters are drawn by their strokes,
- * for now: docs/plans/done/plan_pdf.md, stage E), an outline, links.
+ * Text is written in a font the reader has: the file names it
+ * (Times-Roman, Helvetica-Bold, Courier: Standard_widths.mli) and
+ * carries no letter's shape, as a file could from the first PDF. Its
+ * characters are the 217 of Windows' encoding. (mini-office's letters
+ * are still drawn by their strokes: docs/plans/done/plan_pdf.md, stage
+ * E.) Not written: a font carried in the file, an outline, links.
  *
  * The table at the end is made to be read without being parsed: a
  * line an object, each of exactly 20 bytes,
@@ -121,6 +125,14 @@ val ellipse : content -> Affine.t -> rx:float -> ry:float -> unit
 (* "f" and "S": the path filled (nonzero), stroked by the pen *)
 val fill : content -> unit
 val stroke : content -> unit
+
+(* "BT ... Tf ... Td (...) Tj ET": [text file c ~font ~size (x, y) s],
+ * s (UTF-8) from (x, y), which is its first letter's left on the line
+ * the letters stand on, in the font of that name at that size, in
+ * the fill's colour. A character the encoding has not is written "?":
+ * [writes] says, of a character's number, whether it has it. *)
+val text : t -> content -> font:string -> size:float -> float * float -> string -> unit
+val writes : int -> bool
 
 (*****************************************************************************)
 (* What a content names: pictures and forms *)

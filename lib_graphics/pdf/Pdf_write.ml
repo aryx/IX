@@ -49,9 +49,12 @@ type t = {
    * forms by their object *)
   mutable opacities : int list;
   mutable named : int list;
+  (* the fonts named and each one's object, the last first: the first
+   * is /F1 *)
+  mutable fonts : (string * int) list;
 }
 
-let create ~(compress : bool) : t = { compress; objects = []; last = resources; pages = []; opacities = []; named = [] }
+let create ~(compress : bool) : t = { compress; objects = []; last = resources; pages = []; opacities = []; named = []; fonts = [] }
 
 let add (t : t) (text : string) : int =
   t.last <- t.last + 1;
@@ -72,10 +75,11 @@ let to_string (t : t) : string =
       (List.rev_map (fun (a : int) -> let v = fixed 2 (float a /. 100.) in Printf.sprintf "/A%d << /ca %s /CA %s >>" a v v) t.opacities)
   in
   let named = String.concat " " (List.rev_map (fun (n : int) -> Printf.sprintf "/X%d %s" n (reference n)) t.named) in
+  let fonts = String.concat " " (List.mapi (fun (k : int) ((_, n) : string * int) -> Printf.sprintf "/F%d %s" (k + 1) (reference n)) (List.rev t.fonts)) in
   let objects =
     (catalog, Printf.sprintf "<< /Type /Catalog /Pages %s >>" (reference tree))
     :: (tree, Printf.sprintf "<< /Type /Pages /Kids [%s] /Count %d >>" kids (List.length t.pages))
-    :: (resources, Printf.sprintf "<< /ExtGState << %s >> /XObject << %s >> >>" opacities named)
+    :: (resources, Printf.sprintf "<< /ExtGState << %s >> /XObject << %s >>%s >>" opacities named (if fonts = "" then "" else " /Font << " ^ fonts ^ " >>"))
     :: List.rev t.objects
   in
   let b = Buffer.create 65536 in
@@ -171,6 +175,50 @@ let ellipse (c : content) (m : Affine.t) ~(rx : float) ~(ry : float) : unit =
 
 let fill (c : content) : unit = Buffer.add_string c "f\n"
 let stroke (c : content) : unit = Buffer.add_string c "S\n"
+
+(*****************************************************************************)
+(* Text *)
+(*****************************************************************************)
+
+(* a character's code in Windows' encoding, by its number: the table
+ * the other way round, made once *)
+let codes : (int, int) Hashtbl.t = Hashtbl.create 256
+
+let code (rune : int) : int option =
+  if Hashtbl.length codes = 0 then Array.iteri (fun (c : int) (r : int) -> if r <> 0 && not (Hashtbl.mem codes r) then Hashtbl.add codes r c) Glyph_names.win_ansi;
+  Hashtbl.find_opt codes rune
+
+let writes (rune : int) : bool = code rune <> None
+
+(* which /F a font is, named now if it was not *)
+let font_number (t : t) (name : string) : int =
+  let rec find (k : int) (l : (string * int) list) = match l with [] -> 0 | (f, _) :: rest -> if f = name then k else find (k - 1) rest in
+  match find (List.length t.fonts) t.fonts with
+  | 0 ->
+      (* a font is a name: the reader has it, and its letters are the
+       * 256 of Windows' encoding *)
+      let n = add t (Printf.sprintf "<< /Type /Font /Subtype /Type1 /BaseFont /%s /Encoding /WinAnsiEncoding >>" name) in
+      t.fonts <- (name, n) :: t.fonts; List.length t.fonts
+  | k -> k
+
+let text (t : t) (c : content) ~(font : string) ~(size : float) ((x, y) : float * float) (s : string) : unit =
+  let b = Buffer.create (String.length s + 8) in
+  let rec go (i : int) =
+    if i < String.length s then begin
+      let d = String.get_utf_8_uchar s i in
+      let rune = Uchar.to_int (Uchar.utf_decode_uchar d) and n = Uchar.utf_decode_length d in
+      (match code rune with
+       | Some k ->
+           (* (a string is between parentheses: those of its own after a
+            * backslash, and a byte that is not ASCII by its number) *)
+           if k = 0x28 || k = 0x29 || k = 0x5c then begin Buffer.add_char b '\\'; Buffer.add_char b (Char.chr k) end
+           else if k < 0x20 || k > 0x7e then Buffer.add_string b (Printf.sprintf "\\%03o" k)
+           else Buffer.add_char b (Char.chr k)
+       | None -> Buffer.add_char b '?');
+      go (i + n)
+    end in
+  go 0;
+  Buffer.add_string c (Printf.sprintf "BT /F%d %s Tf %s %s Td (%s) Tj ET\n" (font_number t font) (num size) (num x) (num y) (Buffer.contents b))
 
 (*****************************************************************************)
 (* Pictures and forms *)

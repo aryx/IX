@@ -66,8 +66,14 @@ Its numbers are `scripts/stats/typesetting_survey.sh`'s (run
 
 **Status: stage 1 done on Linux** (2026-10-13): mini-troff and mini-man
 write a manual page for a terminal, and principia's 553 pages come out
-with troff's own lines, but 18 said by name (see Status at the end).
-Nothing of stages 2 to 8.
+with troff's own lines, but 18 said by name. **Stage 2 done on Linux**
+(2026-10-13): `-T pdf`, the 553 pages as 1,006 sheets, read back by
+poppler with the words written. **Stage 3 done on Linux** (2026-10-13):
+`-ms`, the papers without their tables, pictures and equations: 12 of
+the 17 that have none are troff's word for word, the 5 others being
+troff's accidents. **Stage 4 done on Linux** (2026-10-13): tables and
+pictures; the papers' 11 pictures are all read, the 33 papers are 373
+sheets (see Status at the end). Not done: stages 5 to 8.
 
 ## What there is
 
@@ -527,7 +533,7 @@ What changed from the plan:
 - **One directory for the library, `typesetting/troff/`**, not
   `doc/` and `roff/` beside it (decision 14): mkprog builds a program
   from one directory, and mini-man links mini-troff's units from
-  there. To be split when a second reader is there.
+  there. (Still so with the second reader, `Ms`: eleven modules.)
 - **A terminal's characters**: `Doc` says a no-break space, a minus,
   a hyphen that is not a place to cut, where a word may be cut and
   where a sentence does not end by Unicode's own characters for them
@@ -541,4 +547,212 @@ Not done in stage 1: fonts shown on a terminal (bold, underline);
 `mini-man` with ix's own pages (there are none: the open question
 above); mini-9pi.
 
-Next: stage 2, PDF.
+**Stage 2, PDF, done on Linux** (2026-10-13; the author: "let's commit
+and move forward"). `mini-troff -T pdf page > page.pdf`, `mini-man -T
+pdf`.
+
+- `lib_graphics/pdf/Pdf_write`: text in a font the reader has
+  (`Pdf_write.text`: "BT /F1 10 Tf x y Td (...) Tj ET", each font an
+  object naming Times-Roman, Courier..., Windows' encoding; its unit
+  test, read back by `Pdf_render.text`). 50 lines.
+- `typesetting/troff/To_pdf` (new): the rows cut into sheets (8.5 by
+  11 inches, 10 points on 12, lines of 6.5 inches: the manual's
+  numbers), a header and a number on each; Times, its italic and bold,
+  Courier, by `Standard_widths`; a minus a dash and the quotes
+  quotation marks in Times, as troff's.
+- `Layout`: a line's right edge made even (the room shared between
+  its spaces); rows, with a space that may be less than a line (0.4
+  between paragraphs on paper); **places in the writer's unit, whole
+  numbers of it** (a thousandth of a point for paper).
+- `Roff`, `Man`: a typesetter's units (a tenth of a point; `\w` by
+  the fonts' widths), tmac.an's numbers for paper (3.6 ems where 5
+  letters, 0.4 lines between paragraphs).
+
+What it is checked by:
+
+- `typesetting/tests/pdf.sh`: each of the 553 pages as a PDF file,
+  read by poppler's `pdftotext`, which is not ix's: no complaint, and
+  **551 have the words mini-troff says it wrote** (`-T words`), in
+  order (blanks, hyphens, quotes and what is not ASCII aside; each
+  sheet's header and number taken off). The 2 others have lines that
+  go past the paper's right edge (`complete(2)`, `httpd(2)`: 9 lines
+  not filled, longer than 6.5 inches), whose end no reader gives;
+  mini-troff says so on the standard error, where troff says nothing.
+  1,006 sheets.
+- **The same bytes by OCaml and by mini-ml**, for the 553 files. It
+  was not so at first: one place in one file was a hundredth of a
+  point off, OCaml on arm64 doing a multiplication and an addition in
+  one instruction, with one rounding, and mini-ml in two. Hence the
+  whole units: sums of whole numbers are the same whatever computes
+  them.
+- `sample.sh` (in `make test`, `tests/lite.sh`): the sample page's PDF
+  by its bytes' sum and its sheets, and its words.
+- Seen: `tr(1)`, `bio(2)` and the sample page, drawn by poppler; and
+  `tr(1)` by mini-page, ix's reader: the same lines, in its stroke
+  letters. Its dash is a "?" there: the reader's letters have no en
+  dash (not this plan's; a leftover for `Pdf_render`).
+
+The characters the fonts have not (the open question above, counted):
+**28 in 19 pages** of the manual, 22 different: Greek letters (π 3,
+Δ 3, α 2, others once), `⋯` 2, arrows up and down, `√`, a hand, and
+others once (`pdf.sh` prints them). Each is a "?" in the file and is said on the standard
+error. An arrow to the right or the left, `≤`, `≥` and `≠` are
+written by ASCII's way (`->`, `<=`). A font carried in the file, or
+Symbol named beside Times, is what they need: not done.
+
+Not done in stage 2: a line kept with the next (a heading can be a
+sheet's last line: troff's man does no better); hyphenation (the
+lines are made even without it, and some are loose); a tab in a line
+that is filled is taken from the start of the line it is on, not from
+where it was written as on a terminal; links; mini-9pi (built for it,
+not run).
+
+**Stage 3, the papers, done on Linux** (2026-10-13; the author away:
+"I'll be back in a few hours"). `mini-troff -ms paper.ms`, `-T pdf`;
+with neither `-man` nor `-ms`, a file with a `.TH` is a manual page
+and any other a paper.
+
+- `typesetting/troff/Fill` (new): what was the manual's reader's and
+  is troff's own under any package, taken out of `Man`: the paragraph
+  being filled, the requests a document writes between the macros
+  (`.br .sp .nf .fi .in .ti .ta .ll .ce .ft .ps .tl`), the tree made
+  from each paragraph's place. `Man` is on it, the same 535 pages
+  line for line after as before.
+- `typesetting/troff/Ms` (new): tmac.s's macros as cases. The title,
+  the authors, the institution (`.TL .AU .AI .MH`), the abstract set
+  in from both sides (`.AB .AE`), numbered headings and their numbers
+  (`.NH`, `.SH`), paragraphs (`.PP .LP .IP .QP .RS .RE`), displays
+  and programs (`.DS .DE .P1 .P2`), keeps (`.KS .KF .KE`), footnotes
+  (`.FS .FE`), the fonts for a word or from here on (`.I .B .CW .R
+  .SM .LG .NL`), tmac.s's registers that a paper sets (`\n(PI`,
+  `\n(PD`).
+- `Doc`: a paragraph's lines may be shorter than the others (an
+  abstract, a quotation); a footnote; what is kept on one sheet; and
+  the document says its own line's length and where its text is from
+  its headings (a manual page's is to their right, a paper's is not),
+  which the writers had as constants.
+- `To_pdf`: a footnote at the foot of the sheet its mark is on, under
+  a short rule, or of the next when there is no room; what is kept
+  together goes to the next sheet if it does not fit. `To_text`: the
+  footnotes at the document's end, under a rule, as troff's on one
+  long page.
+
+What it is checked by:
+
+- `typesetting/tests/ms.sh`: each of principia's 33 papers by
+  mini-troff and by goken's troff as nroff with Plan 9's tmac.s, on
+  one page as long as the paper. troff's lines are not compared here
+  (its right edge is even and its words hyphenated: ms asks for both
+  on a terminal, which the manual does not), the words are, in order.
+  16 papers have a table, a picture or an equation and are for
+  stages 4 and 6. Of the 17 others, **12 are the same word for word**,
+  and 5 are troff's accidents, mini-troff having what the paper says:
+  a double quote in an argument of `.CW` moved or doubled (`.CW
+  \&"." ,` written `.""`: `ape`, `lexnames`, `utf`, `8½`), and one
+  closing parenthesis that troff does not write in `acid.ms` (not
+  looked into).
+- The sample paper (`tests/sample.ms`, in `sample.sh`): as text it has
+  troff's own line breaks, seen side by side once; its PDF by its
+  bytes' sum.
+- The 33 papers as PDF: 357 sheets, the same bytes by OCaml and by
+  mini-ml, read by poppler without a complaint. Seen: `names.ms`'s
+  first two sheets and the sample paper, drawn by poppler.
+
+What mini-troff says it does not know in the 33 papers (468 times):
+the tables, pictures and equations (`.TS` 28, `.PS` 11, `.EQ` 7,
+`.BP` 12); what the papers' own macros call and no package defines,
+which troff passes over (`...` at a line's start 105, `.SP` 101,
+`.NE` 92, `.Ti` 29, `.TP` 16); fonts it has not (`Jp` 10, `6` 9, `BI`
+2); and `troff.ms`'s diversions and traps.
+
+The characters the fonts have not, in the papers: Japanese and Greek
+words (18 characters, 5 times each), and 8 others. 10 lines in 2 papers
+go past the paper's right edge.
+
+Not done in stage 3: two columns (`.2C`: one here); a figure that
+floats to the next sheet's top while the text goes on (`.KF` is a
+`.KS` here); a footnote's text a size smaller; a heading kept with
+the paragraph after it; a paper's own header and footer (`.tl` in
+its macros: written as a line); the cover sheets of Bell Labs'
+memoranda. The interfaces' header comments say what each module is;
+`Fill.mli` has troff's rules.
+
+**Stage 4, its first half: tables, done on Linux** (2026-10-13).
+
+- `typesetting/troff/Tbl` (new): what is between `.TS` and `.TE`. The
+  options `center`, `box` and `tab(c)`; a row's format, a letter a
+  column (`l r c n s`, `a` as `l`, `^` an empty cell), with `f` its
+  font, `w` its width, `p` its size; `.T&`; a rule (`_`, `=`); a cell
+  that is a text of several lines (`T{ ... T}`), read by the package
+  itself since it has the package's macros in it (`Fill.aside`: the
+  text being read put aside, another read, the first back).
+- `Doc.Table`; `Layout.table`: each column as wide as its widest cell
+  or as said, three ens between two, a number's point under the
+  others', a cell across several columns, a text filled in its
+  column, rules across (a row of the layout: `Rule`), the whole in
+  the middle of the line if it says so and kept on one sheet.
+  `To_text` draws a rule with hyphens, `To_pdf` with a line.
+- Not kept: the lines down a table (`|`), a box's sides, a cell
+  raised to the middle of two rows (`\^`: left empty, its text in
+  the first row).
+
+Checked: `ms.sh` gives the papers with a table to goken's `tbl`
+first. Of the 22 papers with no picture and no equation: **14 the
+same word for word, 1 the same letters in another order** (`ape.ms`:
+the quotes of the accident below), 7 troff's accidents (a double
+quote in an argument of `.CW`: `lexnames`, `utf`, `8½`, `rc`; `acid`'s
+parenthesis; in `bootpc` a letter lost beside a line drawn with a
+character that is not ASCII; in `lp` `\(en` written "en", Plan 9's
+table for a terminal having no such dash: `bugs/goken.md` 36). The
+manual's one page with a table (`tbl(1)`) has the same words as
+troff's now (539 pages by the words, 535 by the lines). The 33
+papers as PDF: 369 sheets, the same bytes by the two compilers, read
+by poppler without a complaint. Seen: `mkfiles.ms`'s first sheet (a
+table of texts) and `9.ms`'s table of numbers in its box.
+
+**Stage 4, its second half: pictures, done on Linux** (2026-10-13).
+
+- `typesetting/troff/Pic_lexer`, `Pic_parser.mly`, `Pic_ast`, `Pic`
+  (new, 770 lines): the part of pic that draws. Objects (box, circle,
+  ellipse, line, arrow, arc, spline, move, a text, a block between
+  brackets with its own names), their sizes and places (`at`, `with
+  .nw at`, `from`, `to`, `up 0.5`, `then`), arrowheads, `invis`, texts
+  and where each is; places by name and corner (`A.ne`,
+  `Block.Inner.s`, `last box`, `end of last line`), a point, a place
+  and a move from it, a part of the way between two (`0.3 <A, B>`), a
+  place's `x` and `y`; variables, `scale`, arithmetic; macros with
+  arguments (`define`, in the lexer: text put for text) and `copy
+  "file"`. The grammar by ocamlyacc and by mini-yacc, with no
+  conflict (its two ambiguities said by a precedence).
+- `Doc.Picture`: lines and words in inches; a circle, an arc and a
+  spline are the short lines that look like them. `To_pdf` draws
+  them; `To_text` writes the picture's words, a terminal having no
+  lines.
+- A document reads the files it names (`.PS <file`, `copy`, `.so`),
+  through the program's capability to open one.
+- Not drawn: dashes and dots (the line is solid), fills (the box is
+  empty), a line cut at a circle's edge (`chop`). Not run: pic's
+  programs (`for`, `if`, `sprintf`, `sh`), which no paper has.
+
+Checked: **the 11 pictures of the papers are all read**, 5 from files
+(`network.pic`, `transition.pic`, sam's three figures). Seen, drawn by
+poppler: the plumber's figure (ellipses, splines, arrowheads), IL's
+state machine (arcs between circles, their labels), Fossil's
+tree of blocks (a macro of three arguments called a dozen times),
+the security architecture, and the sample paper's. Not compared with
+pic's own drawing: goken's pic is not built, and a picture's check
+is the eye; a figure's texts that are equations (`$F sub T#`,
+`auth.ms`) are written as they are until stage 6. `net.ms`'s figure
+is not pic but what pic made of it (`.so tree.pout`): not read, and
+said. The 33 papers: 373 sheets, the same bytes by the two compilers
+(the picture's sines and square roots included), read by poppler
+without a complaint. The sample paper has a table and a picture;
+`sample.sh` on the two builds.
+
+All of typesetting/: 3,724 lines with the interfaces and their
+comments. Of the plan's stages, 1 to 4 are done on Linux; left: the
+new format (5), equations (6), LaTeX (7), m-ix (8: built for Plan 9 on
+arm, not run).
+
+Next: stage 5, the new format, which waits for the author's choice
+of its syntax (decision 4); or stage 6, equations, which does not.

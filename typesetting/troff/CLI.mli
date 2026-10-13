@@ -1,20 +1,23 @@
-(* mini-troff: a document typeset -- today a manual page, for a
- * terminal.
+(* mini-troff: a document typeset -- a manual page or a paper, for a
+ * terminal or as a PDF file.
  *
- *   mini-troff tr.1            the page as text, on the standard output
+ *   mini-troff tr.1                  the page as text, on the standard output
  *   mini-troff < tr.1
+ *   mini-troff -T pdf tr.1 > tr.pdf  its pages, to print or for mini-page
+ *   mini-troff -ms names.ms          a paper (ms(6)'s macros)
  *
  * It has troff's name and reads what was written for troff, but it is
- * not troff: the macros of a package (man's today, Man) are what it
+ * not troff: the macros of a package (Man, Ms) are what it
  * knows, not the requests they were made of, and what it does not
  * know it says, with the line, on the standard error; nothing is
  * left out in silence. The whole way of a page:
  *
- *   the file --Roff--> lines --Man--> Doc.t --Layout--> lines of
+ *   the file --Roff--> lines --Man, Ms (on Fill; Tbl, Pic)--> Doc.t --Layout--> lines of
  *   words, each at its place --To_text--> the terminal's page
+ *                            --To_pdf---> the file's pages
  *
- * To come (docs/plans/plan_typesetting.md): PDF; the papers (-ms),
- * with their tables, pictures and equations; a format of ix's own;
+ * To come (docs/plans/plan_typesetting.md): the papers'
+ * equations; a format of ix's own;
  * the books' LaTeX.
  *
  * cs-history:
@@ -37,8 +40,20 @@
 
 type caps = < Cap.open_in ; Cap.stdin ; Cap.stdout ; Cap.stderr >
 
-(* [text name source]: a page's text for a terminal, and what was not
- * understood in it, each "name:line: what" *)
-val text : string -> string -> string * string list
+(* Words: the page read as for the PDF file (a page may say one thing
+ * to a typesetter and another to a terminal, .if t and .if n) and
+ * written as text: what the file's words are, for a test to compare
+ * with what a reader of the file finds in it *)
+type way = Text | Pdf | Words
+
+(* [typeset way name source]: a page's text for a terminal, or a PDF
+ * file's bytes, and what was not understood in it, each "name:line:
+ * what" *)
+type package = Man | Ms
+
+(* (no package said: a manual page if the file has a .TH, else a paper) *)
+(* [typeset way package load name source]; [load] reads a file the
+ * document names (.so, a picture kept apart), none if it may not *)
+val typeset : way -> package option -> (string -> string option) -> string -> string -> string * string list
 
 val main : < caps ; .. > -> string array -> Exit.t

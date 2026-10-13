@@ -129,6 +129,31 @@ let test_crc_by_halves () =
   Bytes.blit_string "\001\002\003\255\004\005\006\255\007\008\009\255\010\011\012\255\013\014\015\255\016\017\018\255" 0 img.rgba 0 24;
   Alcotest.(check bool) "a PNG written, then read" true ((Png.decode (Png.encode ~alpha:true ~filter:None img)).rgba = img.rgba)
 
+(* text in a font the reader has: the operators by eye, a font said
+ * once however often it is used, and the words read back *)
+let test_text () =
+  let write ~(compress : bool) : string =
+    let file = Pdf_write.create ~compress in
+    let c = Pdf_write.content () in
+    Pdf_write.text file c ~font:"Times-Roman" ~size:10. (72., 700.) "Tr (1) \\ caf\xc3\xa9 \xe2\x80\x94 \xe2\x86\x92";
+    Pdf_write.text file c ~font:"Courier" ~size:9. (72., 688.) "typed";
+    Pdf_write.text file c ~font:"Times-Roman" ~size:10. (72.5, 676.25) "again";
+    Pdf_write.page file ~width:612. ~height:792. c;
+    Pdf_write.to_string file in
+  let s = write ~compress:false in
+  (* parentheses and the backslash after a backslash; a letter that is
+   * not ASCII by its number in Windows' encoding (e acute 0xE9, the
+   * long dash 0x97); an arrow, which the encoding has not, a "?" *)
+  Alcotest.(check bool) "a string" true (has s "BT /F1 10 Tf 72 700 Td (Tr \\(1\\) \\\\ caf\\351 \\227 ?) Tj ET\n");
+  Alcotest.(check bool) "a second font" true (has s "BT /F2 9 Tf 72 688 Td (typed) Tj ET\n");
+  Alcotest.(check bool) "the first again, not named twice" true (has s "BT /F1 10 Tf 72.5 676.25 Td (again) Tj ET\n");
+  Alcotest.(check bool) "each an object, named in the resources" true
+    (has s "<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>" && has s "/Font << /F1 4 0 R /F2 5 0 R >>");
+  Alcotest.(check bool) "what the encoding has" true (Pdf_write.writes 0xe9 && Pdf_write.writes 0x2014 && not (Pdf_write.writes 0x2192));
+  let doc = Pdf.of_string (write ~compress:true) in
+  Alcotest.(check string) "read back" "Tr (1) \\ caf\xc3\xa9 \xe2\x80\x94 ?\ntyped\nagain"
+    (Pdf_render.text doc (Pdf_render.cache ()) (List.hd (Pdf.pages doc)))
+
 let tests =
   [
     t "written, then read back: the screen's picture" test_read_back;
@@ -137,4 +162,5 @@ let tests =
     t "shapes as operators" test_operators;
     t "a stream deflated" test_deflated;
     t "a picture and its transparency" test_picture;
+    t "text in a named font" test_text;
   ]

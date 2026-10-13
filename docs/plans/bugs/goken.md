@@ -514,6 +514,9 @@ groff's nroff writes `a•b×cαd→e—f`. So the × of `dc(1)` and the bullets
 writes the character; `man.sh` takes every character that is not
 ASCII as a blank on both sides. Not fixed.
 
+And `\(en` comes out as the two letters `en` (`lp.ms`, twice):
+principia's `tab.utf` has `em` and no `en`.
+
 ### 37. tmac.an: a .SH alone on its line has no heading
 
 `man(6)` says that `.SH` with no argument takes the next line of text

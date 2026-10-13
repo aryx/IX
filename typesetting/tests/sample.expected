@@ -80,14 +80,167 @@
 
      SEE ALSO
           troff(1), man(6)
+== mini-troff -T pdf sample.1: its sheets, its bytes' sum (the same whatever compiled mini-troff), what it says
+status 0
+/Count 2
+4289059583 5359
+== mini-troff -T words sample.1: the file's words
+     SAMPLE(1)                                                                           SAMPLE(1)
+     NAME
+            sample, example – a page to try the macros of man(6) on
+     SYNOPSIS
+            sample [ -cds ] [ -o file ] [ name ... ]
+     DESCRIPTION
+            Sample does nothing: it is a page written to be typeset.  Its first paragraph is long
+            enough to be put on several lines, so that one sees where a line is ended when the
+            next word does not fit.  A sentence ends here.  Not after e.g. this one, nor after
+            a.out in the font of what is typed; it does after one.  A word with a hyphen may be
+            cut after it, as in a twenty-seven-letter right-to-left never-ending word; not an
+            option’s, as -long-option-name-that-is-not-to-be-cut-anywhere-in-its-letters, and not
+            a minus: -5.
+            The options are:
+            -c     Complement the set.  A tag shorter than its width has its text on its line.
+            -d     Delete.
+            -o file
+                   The tag is wider than five letters: its text starts below.
+            -s          Squeeze, with a width said.
+            -t          The width stays.
+            -u
+            -v          Two tags, one text, closed up.
+            A paragraph, then one further right:
+                   Indented, with no tag.
+            •  With a bullet.
+               Inside a relative indent, quoted and typed, the fonts in turn: troff(1), [-x] and
+               SMALL .
+            Back at the margin.
+        A subsection
+            A hanging paragraph has its first line at the margin and the others to its right,
+                   which shows only when it is long enough to have others.
+            Lines that are not filled:
+                   int    n;     /* a tab, then another */
+                   char   *name;
+                          for(i = 0; i < n; i++)
+                                 print("%d\n", i);
+            With stops of its own (.ta):
+            name      size  what
+            tr        12    translate
+            A line moved by hand,
+            a break,
+
+
+            and two lines’ space.
+                One line further right, and the rest of this paragraph back where it was, as long
+            as it takes to see it.
+               The margin moved,
+            and back.
+                                                   centered
+     EXAMPLES
+            A character by its name: —, •, ->, 2×3; a backslash: \; italic, typed and smaller.
+     SEE ALSO
+            troff(1), man(6)
+== mini-troff sample.ms: a paper
+                A Paper to Try the Macros of ms(6) On
+
+                             Claude Code
+
+                            The IX Project
+
+                               ABSTRACT
+
+               This is the abstract: set in from both sides,
+          under its word.  It says in two sentences what the
+          paper is for.
+
+     1.  Paragraphs
+
+          A paragraph starts with its first line indented, and is
+     long enough here to be put on several lines, so that one
+     sees where the others start.† The sentence after the
+     footnote's mark is in the same paragraph.
+
+     A paragraph with no indent, with a word in italic, one in
+     bold, one typed and a ((parenthesis) done by the third
+     argument.
+
+     (1)  An indented paragraph hangs from its tag.
+
+     (2)  The width stays for the next.
+
+          •    One level further right.
+
+          A quotation is set in from both sides, as the
+          abstract was, for as long as the paragraph lasts.
+
+     1.1.  A Subsection
+
+     Its number has two parts.
+
+     1.2.  Another
+
+     And the second part counts.
+
+     2.  Displays
+
+     A display keeps its lines:
+
+             one line
+                 and another, indented
+
+     A program is in its own font:
+
+       int     main(void)
+       {
+               return 0;
+       }
+
+     What is between a keep's two macros stays on one sheet.
+
+     3.  A Table
+
+     In the middle, in a box, numbers under one another:
+              ------------------------------------------
+                        Table 1: three columns
+              ------------------------------------------
+              context switch     39                 fast
+              fork             1300.5               slow
+              a text              0.25   A cell that is
+                                         a text of
+                                         several lines
+                                         is filled in
+                                         its column,
+                                         with a word
+                                         italic in it.
+              ------------------------------------------
+
+     4.  A Picture
+
+     Boxes, an arrow, a curve, a macro:
+                           readers
+                                        Doc.t
+                           words
+                                 layout
+
+     A Heading with No Number
+
+     Italic from here on, and roman again.  SMALL words and
+     larger ones and normal ones.
+
+     __________________________
+     † A footnote, said in the middle of a paragraph and written
+     at the sheet's foot.
+== mini-troff -T pdf sample.ms
+status 0
+/Count 2
+105001233 5559
 == the standard input, a request not known, a table
      X(1)                                                         X(1)
 
      NAME
-          x - y after
+          x - y
+          a   b
+          after
 status 0
 <stdin>:4: .XY: not known
-<stdin>:5: .TS: not known
 == mini-man in a tree
 61
 status 0
@@ -98,9 +251,9 @@ status 0
 status 0
 mini-man: no page for nothing in TMP/man
 status 1
-usage: mini-man [-v] [-m dir] [section] title ...
+usage: mini-man [-v] [-m dir] [-T pdf] [section] title ...
 status 1
-usage: mini-troff [-man] [-T text] [file ...]
+usage: mini-troff [-man|-ms] [-T text|pdf] [file ...]
 status 1
 mini-troff: /nonexistent: No such file or directory
 status 1

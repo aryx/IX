@@ -5,6 +5,11 @@
 # mini-troff and mini-man on a page of ix's own, sample.1, written to
 # have each macro of man(6) and each of troff's requests that the
 # manual's pages use; what they say compared with sample.expected.
+# The same page as a PDF file: its bytes by their sum, and its words
+# (pdf.sh reads such files back with another program's reader).
+# And a paper of ix's own, sample.ms, with each macro of ms(6) that
+# principia's papers use: as text (troff's own lines but for its even
+# right edge, by ms.sh's way, once) and as a PDF file.
 # Then what mini-troff says of a request it does not know, mini-man
 # finding a page in a tree, and one that is not there.
 #
@@ -27,6 +32,16 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $HERE
 { echo "== mini-troff sample.1"
   $TROFF sample.1 2>&1
+  echo "== mini-troff -T pdf sample.1: its sheets, its bytes' sum (the same whatever compiled mini-troff), what it says"
+  $TROFF -T pdf sample.1 > $W/sample.pdf 2> $W/err; echo "status $?"
+  grep -a -o '/Count [0-9]*' $W/sample.pdf | head -1; cksum < $W/sample.pdf; cat $W/err
+  echo "== mini-troff -T words sample.1: the file's words"
+  $TROFF -T words sample.1 2>&1
+  echo "== mini-troff sample.ms: a paper"
+  $TROFF sample.ms 2>&1
+  echo "== mini-troff -T pdf sample.ms"
+  $TROFF -T pdf sample.ms > $W/paper.pdf 2> $W/err; echo "status $?"
+  grep -a -o '/Count [0-9]*' $W/paper.pdf | head -1; cksum < $W/paper.pdf; cat $W/err
   echo "== the standard input, a request not known, a table"
   printf '.TH X 1\n.SH NAME\nx \\- y\n.XY z\n.TS\nl l.\na\tb\n.TE\nafter\n' | $TROFF 2> $W/err; echo "status $?"; cat $W/err
   echo "== mini-man in a tree"

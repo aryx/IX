@@ -61,11 +61,58 @@ type par = {
   (* how far right of the others the first line starts; less than 0:
    * to their left *)
   first : float;
+  (* how much shorter than the others its lines are: a quotation, an
+   * abstract, set in from both sides *)
+  short : float;
   (* where a tab goes, from the paragraph's left *)
   tabs : float list;
   center : bool;
   body : inline list;
 }
+
+(* A table: rows of cells in columns as wide as their widest cell.
+ *
+ *     Variable   Default   Meaning
+ *     CFLAGS      -FVw     C compiler flags
+ *     LDFLAGS              Loader flags
+ *
+ * A cell is at its column's left, right or middle, or is a number
+ * with its decimal point under the others'; it may go across several
+ * columns (a title over the table); and it may be a text that is
+ * filled in its column's width, on as many lines as it takes. *)
+type align = Left | Right | Center | Numeric
+
+type cell = {
+  align : align;
+  (* how many columns it goes across: 1 *)
+  span : int;
+  (* a text filled in the column's width *)
+  filled : bool;
+  body : inline list;
+}
+
+type table_row = Cells of cell list | Rule
+
+type table = {
+  centered : bool;
+  (* a rule over it and under it *)
+  boxed : bool;
+  (* each column's width when the table says it (0 when not: its
+   * widest cell's) *)
+  widths : float list;
+  rows : table_row list;
+}
+
+(* A picture: lines and words, placed in inches from its lower left
+ * corner, up being up. *)
+type mark =
+  (* a line through points *)
+  | Stroke of (float * float) list
+  (* words on one line, their middle at a point (0), or their left
+   * end (-1), or their right end (1) *)
+  | Label of float * float * int * inline list
+
+type picture = { wide : float; high : float; marks : mark list }
 
 type block =
   (* 1: a section's (NAME, SYNOPSIS), 2: a subsection's *)
@@ -76,12 +123,30 @@ type block =
   | Tagged of tagged
   | Indent of float * block list
   | Space of float
+  (* said where its mark is in the text; written at the foot of the
+   * sheet (at the document's end, on a terminal) *)
+  | Footnote of block list
+  (* what is not to be cut by the end of a sheet: a display, a figure *)
+  | Keep of block list
+  | Table of table
+  | Picture of picture
 
 and tagged = { tag : inline list; width : float; body : block list }
 
-(* [header]: what is at the top of each page, at its left, in its
- * middle and at its right ("WC(1)", "", "WC(1)") *)
-type t = { header : string * string * string; body : block list }
+type t = {
+  (* what is at the top of each page, at its left, in its middle and
+   * at its right ("WC(1)", "", "WC(1)"); nothing if all are empty *)
+  header : string * string * string;
+  (* the lines' length: 65 letters for the manual on a terminal, 60 for
+   * a paper; 6.5 inches and 6 on paper *)
+  width : float;
+  (* where the text is, from the left: a manual page's is to the right
+   * of its headings, a section's at 0, a subsection's at [sub]; a
+   * paper's is at 0 as its headings *)
+  margin : float;
+  sub : float;
+  body : block list;
+}
 
 (* the text's own: Roman, its size, on the line *)
 val plain : style
@@ -89,3 +154,6 @@ val plain : style
 (* a text without the three characters that are not seen (U+00AD,
  * U+200B, U+2060): what is measured, and written *)
 val letters : string -> string
+
+(* the same document, each text of it changed *)
+val map_text : (style -> string -> string) -> t -> t

@@ -21,29 +21,24 @@
  * closed where it comes back): a page may also move its margin by
  * hand (.in +2), and comes out right the same way.
  *
+ * For a typesetter the same, with tmac.an's other numbers: the text
+ * 3.6 ems from the margin where 5 letters, 0.4 lines between two
+ * paragraphs where one, .L and .B in the font of what is typed where
+ * a terminal has quotes.
+ *
  * Also read, being what the pages write between the macros: .br .sp
- * .nf .fi .in .ti .ta .ft .ce. Not read yet: a table, a picture, an
- * equation (.TS, .PS, .EQ: passed over, and said).
+ * .nf .fi .in .ti .ta .ft .ce (Fill's). A table is Tbl's, a picture
+ * Pic's. Not read yet: an equation (.EQ: passed over, and said).
  *
- * What a page looks like depends on rules of troff's that no page
- * says and every page counts on. Those found by setting principia's
- * 553 pages beside troff's own output (tests/man.sh), each a line or
- * two here:
+ * The rules of troff's own that a page's look depends on are Fill's
+ * (Fill.mli lists them). tmac.an's, found the same way, by setting
+ * principia's 553 pages beside troff's output (tests/man.sh):
  *
- *   - a line's end is a space; two after a sentence (a dot, ? or !,
- *     and a quote or a parenthesis closing after it); one when the
- *     line ended with a blank, which is why "e.g. " is written with
- *     one, and why .B and .I end no sentence (tmac.an writes six
- *     arguments, the blanks between the missing ones at the end);
+ *   - .B and .I end no sentence: tmac.an writes six arguments, and the
+ *     blanks between the missing ones are at the line's end;
  *   - a tag has its body on its line if it is shorter than the width
  *     by half a letter (tmac.an's 3 points);
- *   - .PD 0 closes a list up until the next .SH; .ns takes the space
- *     of the next request, unless a line was being filled;
- *   - a tab in a filled line is as wide as it would be from the start
- *     of the line as written, not from where its words end up, and
- *     the line before may end in front of it;
- *   - a terminal has whole columns: 0.75i is 7, and 2.5 columns to the
- *     left of 12.5 is 9.
+ *   - .PD 0 closes a list up until the next .SH.
  *
  * Where troff's output is an accident (a heading lost, a macro's own
  * request printed: docs/plans/bugs/goken.md, 37 and 38), this has

@@ -30,24 +30,44 @@ type t = {
   (* \% was before the word being read: its hyphens are not places to
    * cut it *)
   mutable whole : bool;
+  (* a text's width, in ens: \w's *)
+  mutable measure : Doc.inline list -> float;
+  (* a file's text, by its name: .so's, a picture's *)
+  mutable loader : string -> string option;
   mutable complaints : (int * string) list;
 }
+
+(* a terminal's: every character one wide *)
+let letters_width (text : Doc.inline list) : float =
+  List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (_, s) -> w +. float_of_int (Utf8.length (Doc.letters s)) | Doc.Break -> w) 0. text
 
 let create (device : device) (source : string) : t =
   let lines = String.split_on_char '\n' (String.concat "" (String.split_on_char '\r' source)) in
   (* (a file ends with a newline: no line after it) *)
   let lines = match List.rev lines with "" :: rest -> List.rev rest | _ -> lines in
   { device; input = List.mapi (fun i l -> (i + 1, l)) lines; at = 0; strings = Hashtbl.create 16; registers = Hashtbl.create 16;
-    macros = Hashtbl.create 16; font = Doc.Roman; before = Doc.Roman; size = 0; shift = 0; taken = false; escape = Some '\\'; translate = []; hyphen = None; whole = false; complaints = [] }
+    macros = Hashtbl.create 16; font = Doc.Roman; before = Doc.Roman; size = 0; shift = 0; taken = false; escape = Some '\\'; translate = []; hyphen = None; whole = false; measure = letters_width; loader = (fun _ -> None); complaints = [] }
 
 let device (t : t) = t.device
+let set_loader (t : t) (f : string -> string option) = t.loader <- f
+let load (t : t) (name : string) : string option = t.loader name
+let set_measure (t : t) (f : Doc.inline list -> float) = t.measure <- f
 let line_number (t : t) = t.at
 let unknown (t : t) (what : string) = t.complaints <- (t.at, what) :: t.complaints
 let complaints (t : t) = List.rev t.complaints
+let register (t : t) (name : string) : float option = Hashtbl.find_opt t.registers name
 let set_register (t : t) (name : string) (v : float) = Hashtbl.replace t.registers name v
 let set_string (t : t) (name : string) (v : string) = Hashtbl.replace t.strings name v
 let font (t : t) = t.font
 let set_font (t : t) (f : Doc.font) = t.before <- t.font; t.font <- f
+(* .ps: +2, -2, 10 (the text's own being 10), or nothing: as it was *)
+let resize (t : t) (s : string) =
+  if s = "" then t.size <- 0
+  else
+    match int_of_string_opt (if s.[0] = '+' then String.sub s 1 (String.length s - 1) else s) with
+    | None -> ()
+    | Some v -> if s.[0] = '+' || s.[0] = '-' then t.size <- t.size + v else t.size <- v - 10
+
 let reset_style (t : t) = t.font <- Doc.Roman; t.before <- Doc.Roman; t.size <- 0; t.shift <- 0
 
 let font_named (t : t) (name : string) : Doc.font =
@@ -91,14 +111,20 @@ let special (device : device) (name : string) : string option =
 (* Numbers *)
 (*****************************************************************************)
 
-(* A terminal's units, as nroff's: 240 to the inch, a letter 24 wide
- * (ten to the inch), a line 40 high (six to the inch). *)
-let ens (u : float) : float = u /. 24.
-let lines (u : float) : float = u /. 40.
+(* troff counts in a unit as small as its device needs. A terminal's,
+ * as nroff's: 240 to the inch, a letter 24 wide (ten to the inch), a
+ * line 40 high (six to the inch). A typesetter's here: a tenth of a
+ * point, the text 10 points on 12, so an en is 50 and a line 120. *)
+let ens (t : t) (u : float) : float = u /. (if t.device = Terminal then 24. else 50.)
+let lines (t : t) (u : float) : float = u /. (if t.device = Terminal then 40. else 120.)
 
-let scale (unit : char) : float =
-  match unit with
-  | 'i' -> 240. | 'n' | 'm' -> 24. | 'v' -> 40. | 'p' -> 240. /. 72. | 'c' -> 240. /. 2.54 | 'P' -> 40. | _ -> 1.
+let scale (t : t) (unit : char) : float =
+  if t.device = Terminal then
+    match unit with
+    | 'i' -> 240. | 'n' | 'm' -> 24. | 'v' | 'P' -> 40. | 'p' -> 240. /. 72. | 'c' -> 240. /. 2.54 | _ -> 1.
+  else
+    match unit with
+    | 'i' -> 720. | 'n' -> 50. | 'm' -> 100. | 'v' | 'P' -> 120. | 'p' -> 10. | 'c' -> 720. /. 2.54 | _ -> 1.
 
 (*****************************************************************************)
 (* What is in a line: words in fonts *)
@@ -123,9 +149,6 @@ let name_at (s : string) (i : int) : string * int =
   else (String.sub s i 1, i + 1)
 
 let continues (s : string) : bool = String.ends_with ~suffix:"\\c" s && not (String.ends_with ~suffix:"\\\\c" s)
-
-let width (text : Doc.inline list) : float =
-  List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (_, s) -> w +. float_of_int (Utf8.length (Doc.letters s)) | Doc.Break -> w) 0. text
 
 let rec inlines (t : t) (s : string) : Doc.inline list =
   let n = String.length s in
@@ -193,7 +216,8 @@ let rec inlines (t : t) (s : string) : Doc.inline list =
         (* a move to the right: on a terminal, that many columns *)
         | 'h' ->
             let by, k = quoted s j in
-            let cols = int_of_float (number t 'm' by /. 24.) in
+            (* (on paper: as many spaces, each half an en in Times) *)
+            let cols = if t.device = Terminal then int_of_float (ens t (number t 'm' by)) else int_of_float (Float.round (ens t (number t 'm' by) *. 2.)) in
             if cols > 0 then List.iter (fun _ -> Buffer.add_string run "\xc2\xa0") (List.init cols (fun x -> x));
             go k
         | 'v' | 'x' | 'l' | 'L' | 'w' | 'X' | 'b' | 'D' -> let _, k = quoted s j in go k
@@ -217,16 +241,16 @@ and number (t : t) (unit : char) (s : string) : float =
     else if s.[i] = '\\' && i + 1 < n && s.[i + 1] = 'w' then
       let text, j = quoted s (i + 2) in
       let font = t.font and before = t.before and size = t.size in
-      let w = width (inlines t text) in
+      let w = t.measure (inlines t text) in
       t.font <- font; t.before <- before; t.size <- size;
-      unit_at (w *. 24.) j 'u'
+      unit_at (w *. scale t 'n') j 'u'
     else
       let j = ref i in
       while !j < n && (is_digit s.[!j] || s.[!j] = '.') do incr j done;
       let v = match float_of_string_opt (String.sub s i (!j - i)) with Some v -> v | None -> 0. in
       unit_at v !j unit
   and unit_at (v : float) (j : int) (default : char) : float * int =
-    if j < n && String.contains "inmvpcPu" s.[j] then (v *. scale s.[j], j + 1) else (v *. scale default, j)
+    if j < n && String.contains "inmvpcPu" s.[j] then (v *. scale t s.[j], j + 1) else (v *. scale t default, j)
   and expr i : float * int =
     let v, j = term i in
     more v j
@@ -237,8 +261,8 @@ and number (t : t) (unit : char) (s : string) : float =
       | '+' -> let w, k = term (j + 1) in more (v +. w) k
       | '-' -> let w, k = term (j + 1) in more (v -. w) k
       (* (a factor has no unit of its own: 2*3n is 6n) *)
-      | '*' -> let w, k = term (j + 1) in more (v *. w /. scale unit) k
-      | '/' -> let w, k = term (j + 1) in more (if w = 0. then 0. else v /. (w /. scale unit)) k
+      | '*' -> let w, k = term (j + 1) in more (v *. w /. scale t unit) k
+      | '/' -> let w, k = term (j + 1) in more (if w = 0. then 0. else v /. (w /. scale t unit)) k
       | '>' -> let w, k = term (j + 1) in more (if v > w then 1. else 0.) k
       | '<' -> let w, k = term (j + 1) in more (if v < w then 1. else 0.) k
       | '=' -> let w, k = term (if j + 1 < n && s.[j + 1] = '=' then j + 2 else j + 1) in more (if v = w then 1. else 0.) k
@@ -355,6 +379,8 @@ let braces (s : string) : int =
     else go (i + 1) d in
   go 0 0
 
+let again (t : t) (s : string) : string = if String.contains s '\\' then interpolate t (once s) else s
+
 let is_control (s : string) : bool = String.length s > 0 && (s.[0] = '.' || s.[0] = '\'')
 
 (* the lines up to the one that is ".." (or .name), taken off the input *)
@@ -438,6 +464,8 @@ let rec next (t : t) : line option =
               let k = skip_blanks after !j in
               let k = if k < String.length after && after.[k] = '"' then k + 1 else k in
               let v = String.sub after k (String.length after - k) and x = String.sub after i (!j - i) in
+              (* (a string is read as a macro's lines are: \\ is \) *)
+              let v = once v in
               Hashtbl.replace t.strings x (if name = "as" then (match Hashtbl.find_opt t.strings x with Some old -> old ^ v | None -> v) else v);
               next t
           | "nr" ->
@@ -448,6 +476,15 @@ let rec next (t : t) : line option =
                    let v = number t 'u' v in
                    Hashtbl.replace t.registers x (if relative then old +. v else v)
                | _ -> ());
+              next t
+          | "so" ->
+              (* another file's lines, here *)
+              (match (match args () with name :: _ -> t.loader name | [] -> None) with
+               | Some text ->
+                   let lines = String.split_on_char '\n' (String.concat "" (String.split_on_char '\r' text)) in
+                   let lines = match List.rev lines with "" :: rest -> List.rev rest | _ -> lines in
+                   t.input <- List.map (fun l -> (at, l)) lines @ t.input
+               | None -> unknown t ".so");
               next t
           | "ec" -> t.escape <- Some (match args () with a :: _ when a <> "" -> a.[0] | _ -> '\\'); next t
           | "eo" -> t.escape <- None; next t

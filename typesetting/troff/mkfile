@@ -1,12 +1,38 @@
-# mini-troff, built by ix's tools
+# mini-troff, built by ix's tools: pic's grammar by mini-yacc; what a
+# PDF file is written with
+# (lib_graphics's Pdf_write, the fonts' widths and names under it, Zlib),
+# compiled here, each found by its name in its directory, then the
+# program's own units
 TOP=../..
-DIR=typesetting/troff
-PROG=mini-troff
-SRC=Doc Roff Man Layout To_text CLI Main
-LOCAL=`{ls *.ml *.mli}
-GEN=
-LIBI=
-LIBUNITS=
-LIBOBJS=
 <$TOP/mkfiles/mkconfig
-<$TOP/mkfiles/mkprog
+D=$B/typesetting/troff
+G=$TOP/lib_graphics
+DIRS=. $D $G/geometry $G/core $G/fonts $G/pdf $TOP/lib_compression
+INCLUDES=-I . -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $TOP/lib_compression $STDI
+# (each before the ones that name it)
+PDF=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write
+SRC=Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Layout To_text To_pdf CLI
+LIB=$PDF $SRC
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli *.mly $G/geometry/Affine.ml* $G/core/Rgba_image.ml* $G/fonts/Glyph_names.ml* $G/fonts/Standard_widths.ml* $G/pdf/Pdf_write.ml* $TOP/lib_compression/Zlib.ml*}
+LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-troff
+
+# pic's grammar, by mini-yacc: made beside the objects, and there
+# before the units that name it
+$D/Pic_parser.ml: Pic_parser.mly
+	mkdir -p $D
+	$YACC -b $D/Pic_parser Pic_parser.mly
+$D/Pic_parser.$O $D/Pic_lexer.$O $D/Pic.$O: $D/Pic_parser.ml
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/mini-troff: $D/Main.$O $LIBS
+	$ML -start $STD $COMMONS $LIB Main Std_exit -o $D/mini-troff.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBOBJS $D/Main.$O $STDEND
+
+clean:V:
+	rm -rf $D

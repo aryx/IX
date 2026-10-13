@@ -10,8 +10,9 @@
  * A page is a file, dir/section/name (/sys/man/1/tr): the manual is a
  * tree, and finding a page is looking in eight directories. -m dir:
  * the manual is there (principia's ROOT/docs/man, until ix has its
- * own pages). -v: what was not understood in the page is said, on the
- * standard error (mini-troff always says it).
+ * own pages). -T pdf: the page as a PDF file, on the standard output
+ * (one page then). -v: what was not understood in the page is said,
+ * on the standard error (mini-troff always says it).
  *
  * cs-history:
  * man was a shell script from the start: the pages were files, the
@@ -24,7 +25,7 @@
 
 type caps = < Cap.open_in ; Cap.stdout ; Cap.stderr >
 
-let usage = "usage: mini-man [-v] [-m dir] [section] title ...\n"
+let usage = "usage: mini-man [-v] [-m dir] [-T pdf] [section] title ...\n"
 
 exception Usage
 
@@ -32,11 +33,13 @@ let sections = [ "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8" ]
 
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   try
-    let dir = ref "/sys/man" and verbose = ref false in
+    let dir = ref "/sys/man" and verbose = ref false and way = ref CLI.Text in
     let rec options (l : string list) : string list =
       match l with
       | "-m" :: d :: rest -> dir := d; options rest
       | "-v" :: rest -> verbose := true; options rest
+      | "-T" :: "pdf" :: rest -> way := CLI.Pdf; options rest
+      | "-T" :: "text" :: rest -> way := CLI.Text; options rest
       | a :: _ when String.length a > 1 && a.[0] = '-' -> raise Usage
       | rest -> rest in
     let args = options (List.tl (Array.to_list argv)) in
@@ -51,7 +54,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
         | None -> ()
         | Some source ->
             found := true;
-            let page, complaints = CLI.text file source in
+            let page, complaints = CLI.typeset !way (Some CLI.Man) (fun _ -> None) file source in
             Console.print caps page;
             if !verbose then List.iter (fun c -> Console.eprint caps (c ^ "\n")) complaints) wanted;
       if not !found then begin Console.eprint caps (Printf.sprintf "mini-man: no page for %s in %s\n" title !dir); missing := true end) titles;

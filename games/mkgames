@@ -134,7 +134,9 @@ KITS=`{case "$WITH" in *office*|*undo*) echo Undo;; esac}
 COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac; case "$WITH" in *office*|*pdf*) echo Zlib;; esac; case "$WITH" in *office*|*pdf*) echo Huffman;; esac}
 READ=`{case "$WITH" in *pdf*) echo Curve;; esac; case "$WITH" in *office*|*pdf*) echo Dct Jpeg_progressive Jpeg Png Image_file;; esac}
 READOBJS=`{for u in $READ; do echo $GO/$u.$O; done}
-PDF=`{case "$WITH" in *office*) echo Pdf_write;; esac; case "$WITH" in *pdf*) echo Outline Glyph_names Standard_widths Truetype Cff Type1 Pdf_object Pdf_filter Pdf Pdf_color Pdf_canvas Pdf_font Pdf_shading Pdf_image Pdf_render;; esac}
+# (Glyph_names first: Pdf_write names it too, for a text's characters
+# in the fonts' encoding)
+PDF=`{case "$WITH" in *office*|*pdf*) echo Glyph_names;; esac; case "$WITH" in *office*) echo Pdf_write;; esac; case "$WITH" in *pdf*) echo Outline Standard_widths Truetype Cff Type1 Pdf_object Pdf_filter Pdf Pdf_color Pdf_canvas Pdf_font Pdf_shading Pdf_image Pdf_render;; esac}
 PDFOBJS=`{for u in $PDF; do echo $VO/$u.$O; done}
 RENDERPDF=`{case "$WITH" in *office*) echo Shape_render_pdf;; esac}
 COMPRESSIONOBJS=`{for u in $COMPRESSION; do echo $ZO/$u.$O; done}

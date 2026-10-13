@@ -1,13 +1,13 @@
-# mini-man, built by ix's tools: mini-troff's units (made there first)
-# and the program
+# mini-man, built by ix's tools: mini-troff's units and those it writes
+# a PDF file with (made there first), and the program
 TOP=../..
 DIR=typesetting/man
 PROG=mini-man
 SRC=Main
 LOCAL=`{ls *.ml ../troff/*.ml ../troff/*.mli}
 GEN=
-LIBI=-I ../troff
-LIBUNITS=Doc Roff Man Layout To_text CLI
+LIBI=-I ../troff -I $TOP/_mk/$O/typesetting/troff
+LIBUNITS=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Layout To_text To_pdf CLI
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/typesetting/troff/Doc.$O $B/typesetting/troff/Roff.$O $B/typesetting/troff/Man.$O $B/typesetting/troff/Layout.$O $B/typesetting/troff/To_text.$O $B/typesetting/troff/CLI.$O
+LIBOBJS=${LIBUNITS:%=$B/typesetting/troff/%.$O}
 <$TOP/mkfiles/mkprog

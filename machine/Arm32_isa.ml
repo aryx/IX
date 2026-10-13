@@ -163,6 +163,12 @@ type state = {
   mutable coproc : state -> t -> unit;
   mutable vectors : int;
   mutable exclusive : int;          (* the monitor's physical address, -1 open *)
+  mutable exclusive_value : int;    (* the word ldrex read there (Arm32.strex) *)
+  (* what an instruction leaves for its own next step, here and not in
+   * the interpreter's modules so that each core has its own: the
+   * shifter's carry out, the words of a block load *)
+  mutable carry_out : bool;
+  loaded : int array;
   mutable vfp_ok : bool;            (* VFP granted (CPACR) *)
   vfp : int array;                  (* d0-d31, two words each *)
   mutable fpscr : int;

@@ -6,10 +6,11 @@
 | `commons/`'s `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
 | `core/ base/ collections/ printing/ system/` | the OCaml stdlib, for mini-ml | ocaml-light, then ix |
 | `concurrency/` | threads for mini-ml (plan_rio.md): `Thread` (ix's: the scheduler), `Mutex`, `Condition`, `Event` (xix's `lib_core/concurrency/todo/`, ocaml-light's, as they are), `Source` (mini-ml's file; OCaml's is `commons/Source.ml`, the dune library `ix_threads`) | ix; xix |
+| `parallel/` | the host's cores for a program built by dune (plan_multicore.md): `Parallel`, domains under OCaml 5 and nothing under 4.14, the file chosen by the compiler's version; mini-qemu's cores | ix (after mini-chrome's `Worker_spawn`); the dune library `ix_parallel` |
 | `parsing/` | Lexing and Parsing, mini-lex's and mini-yacc's run time | ix (plan_lex_yacc.md) |
 | `libc/` | the C library under mini-ml's runtime | goken: [`libc/README.md`](libc/README.md) |
 
-dune builds only `commons/`: its programs have OCaml's stdlib. mini-ml
+dune builds only `commons/` and `parallel/`: its programs have OCaml's stdlib. mini-ml
 compiles the others (`units.txt`: the units in their link order;
 `mkfile`: the build, by mini-mk).
 

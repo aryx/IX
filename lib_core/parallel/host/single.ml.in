@@ -1,0 +1,21 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* See Parallel.mli: OCaml 4.14's, where one thread runs OCaml: no
+ * worker, and a lock that the one who is there always gets. The file
+ * is lib_core/parallel/host/single.ml.in, copied by dune. *)
+
+let available = false
+let spawn (_ : unit -> unit) : unit = invalid_arg "Parallel.spawn: this OCaml has no domains"
+
+type lock = unit
+let lock () : lock = ()
+let take (_ : lock) : unit = ()
+let give (_ : lock) : unit = ()
+
+type cond = unit
+let cond () : cond = ()
+(* (nobody else is there to tell) *)
+let wait (_ : cond) (_ : lock) : unit = invalid_arg "Parallel.wait: this OCaml has no domains"
+let signal (_ : cond) : unit = ()
+let broadcast (_ : cond) : unit = ()

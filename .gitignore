@@ -2,6 +2,7 @@
 .claude/hooks/.debug.log
 __pycache__/
 _build/
+_build5/
 .claude/hooks/.history.lock
 _mk/
 Makefile.config

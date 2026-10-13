@@ -57,8 +57,9 @@ let dp st op s rd rn b carry =
   | CMN -> compare st a b 0
 
 (* the words of a block load, before any register is written (an abort
- * at one of them leaves the registers as they were) *)
-let loaded = Array.make 16 0
+ * at one of them leaves the registers as they were): the state's
+ * [loaded]
+ * (old: let loaded = Array.make 16 0, the module's) *)
 
 let execute st ~addr ~svc i =
   match i with
@@ -104,7 +105,7 @@ let execute st ~addr ~svc i =
         for k = 0 to 15 do
           if (regs lsr k) land 1 = 1 then begin
             if load then begin
-              loaded.(!n) <- Memory.load32 st.mem (if st.mmu then st.translate !a 0 else !a);
+              st.loaded.(!n) <- Memory.load32 st.mem (if st.mmu then st.translate !a 0 else !a);
               incr n
             end
             else Memory.store32 st.mem (if st.mmu then st.translate !a 1 else !a) st.r.(k);
@@ -115,7 +116,7 @@ let execute st ~addr ~svc i =
         if load then begin
           n := 0;
           for k = 0 to 15 do
-            if (regs lsr k) land 1 = 1 then (set st k loaded.(!n); incr n)
+            if (regs lsr k) land 1 = 1 then (set st k st.loaded.(!n); incr n)
           done
         end
       end

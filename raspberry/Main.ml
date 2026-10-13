@@ -8,7 +8,7 @@
  * to 1, the fastest. *)
 
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-cores-parallel] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -21,7 +21,9 @@ The UART is this terminal, raw. Accepted as QEMU's: -cpu -serial -monitor -appen
 -netdev -no-reboot, -device usb-kbd, usb-mouse, usb-net (Usernet, QEMU's user net),
 -audiodev wav,path=F: what the Pi 1's jack plays (its PWM), a WAV file written at the end;
 in a window it is also played, by SDL.
-Its own: -ips N, instructions a simulated microsecond (30); -d, unassigned I/O and
+Its own: -ips N, instructions a simulated microsecond (30); -cores-parallel, the
+Pi 2's started cores each on a core of the host's (built by OCaml 5; else, and by
+default, they take turns: the same run each time); -d, unassigned I/O and
 undefined instructions logged; -trace N, the Pi4's first N instructions (-N: every
 N-th); -prof F, every 1024th PC counted into F; -status N, where the guest is,
 every N seconds (-symbols ELF: its PCs named), all on standard error.
@@ -43,8 +45,13 @@ window: a line a second on standard error).
  * 30 ms at most ([late]): the time lost beyond is lost, as a slower
  * machine's. Without a
  * window (the tests, session.py's timed keys), it runs as fast as it
- * can, its time the instructions' only. *)
-let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~meters ~where =
+ * can, its time the instructions' only.
+ *
+ * [locked]: what touches the board or [out] between two runs is done
+ * inside it, the board's cores going on meanwhile when each is on a
+ * domain (Board.locked; else it is the call). Not inside: the wait
+ * that paces, the window's picture. *)
+let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_poll ~status ~meters ~where ~(locked : (unit -> unit) -> unit) =
   let tty = Unix.isatty Unix.stdin in
   let saved = if tty then Some (Unix.tcgetattr Unix.stdin) else None in
   Option.iter (fun (a : Unix.terminal_io) ->
@@ -110,19 +117,19 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
          Option.iter (fun st -> Status.sample st cpus) status;
          Option.iter (fun m -> Monitor.sample m cpus) monitor
        end;
-       if Buffer.length out > 0 then begin
+       if Buffer.length out > 0 then locked (fun () ->
          at_bol := Buffer.nth out (Buffer.length out - 1) = '\n';
-         Console.print caps (Buffer.contents out); flush stdout; Buffer.clear out
-       end;
+         Console.print caps (Buffer.contents out); flush stdout; Buffer.clear out);
        incr n;
        if !n land 15 = 0 then begin
          if paced then pace ();
          (* claude: on its own line, not after a prompt *)
          Option.iter (fun st -> Option.iter (fun l -> Console.eprint caps ((if !at_bol then "" else "\n") ^ "mini-qemu: " ^ l ^ "\n"); at_bol := true)
            (Status.report st ~now:(now ()))) status;
-         poll ();
-         Usernet.poll_all ();
-         Option.iter (fun q -> qmp_poll q ~quit) qmp;
+         locked (fun () ->
+           poll ();
+           Usernet.poll_all ();
+           Option.iter (fun q -> qmp_poll q ~quit) qmp);
          let board = now () in
          let now = Unix.gettimeofday () in
          Option.iter (fun m ->
@@ -134,17 +141,20 @@ let loop caps ~out ~graphics ~qmp ~run ~now ~input ~frame ~key ~pointer ~qmp_pol
            end) monitor;
          if now -. !last_frame > 1. /. 30. then begin
            last_frame := now;
-           Option.iter (fun (g, data) -> display.Display.present g data) (frame ());
+           let shown = ref None in
+           locked (fun () -> shown := frame ());
+           Option.iter (fun (g, data) -> display.Display.present g data) !shown;
            (* the mouse's events of a poll synced as one, as QEMU syncs
             * a window's *)
            let evs = display.poll () in
-           List.iter (function Display.Key (u, down) -> key u down | Display.Quit -> quit () | _ -> ()) evs;
-           let inputs = List.concat_map (function
-             | Display.Motion (dx, dy) -> [ Usb.Rel_x dx; Usb.Rel_y dy ]
-             | Display.Button (b, down) -> [ Usb.Button (b, down) ]
-             | Display.Wheel v -> [ Usb.Wheel v ]
-             | _ -> []) evs in
-           if inputs <> [] then pointer inputs
+           locked (fun () ->
+             List.iter (function Display.Key (u, down) -> key u down | Display.Quit -> quit () | _ -> ()) evs;
+             let inputs = List.concat_map (function
+               | Display.Motion (dx, dy) -> [ Usb.Rel_x dx; Usb.Rel_y dy ]
+               | Display.Button (b, down) -> [ Usb.Button (b, down) ]
+               | Display.Wheel v -> [ Usb.Wheel v ]
+               | _ -> []) evs in
+             if inputs <> [] then pointer inputs)
          end
        end
      done
@@ -180,7 +190,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
   let serials = ref [] and drive = ref None and loader = ref None in
   let others = ref [] and pokes = ref [] in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
-  let status = ref 0. and symbols = ref None and meters = ref None in
+  let status = ref 0. and symbols = ref None and meters = ref None and cores_parallel = ref false in
   (* the board's random numbers: the host's, 4096 bytes read at a time *)
   let pool = ref "" and next = ref 0 in
   Devices.random := (fun () ->
@@ -207,6 +217,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
     | ("-M" | "-machine") :: m :: rest -> machine := List.hd (String.split_on_char ',' m); parse rest
     | "-kernel" :: k :: rest -> kernel := Some k; parse rest
     | "-ips" :: n :: rest -> ips := int_of_string n; parse rest
+    | "-cores-parallel" :: rest -> cores_parallel := true; parse rest
     | "-d" :: rest -> debug := true; parse rest
     | "-trace" :: n :: rest -> trace := int_of_string n; parse rest
     | "-prof" :: f :: rest -> prof := Some f; parse rest
@@ -312,12 +323,16 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
                         key = Pi4.key board; pointer = Pi4.pointer board } in
         loop caps ~out ~graphics:!graphics ~qmp:!qmp ~run:(fun () -> Pi4.run board ~batch:4096) ~now:(fun () -> Pi4.now board) ~input:(Pi4.input board)
           ~frame:(fun () -> Pi4.frame board) ~key:(Pi4.key board) ~pointer:(Pi4.pointer board)
-          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit) ~status ~meters:!meters ~where:(fun () -> Pi4.where board)
+          ~qmp_poll:(fun q ~quit -> Qmp.poll q machine ~quit) ~status ~meters:!meters ~where:(fun () -> Pi4.where board) ~locked:(fun f -> f ())
       end
       else begin
         let console = match List.nth_opt serials 1 with Some ("stdio" | "mon:stdio") -> 1 | _ -> 0 in
         let sd = Option.map (fun (f, snapshot) -> Storage.file f ~snapshot) !drive in
         let pi2 = !machine = "raspi2b" in
+        (* (asked where it cannot be: said, and the turns) *)
+        if !cores_parallel && not (pi2 && Parallel.available) then
+          Console.eprint caps ("mini-qemu: -cores-parallel: " ^ (if pi2 then "this mini-qemu was built by an OCaml without domains (OCaml 5 has them)" else "raspi2b only") ^ "; the cores take turns\n");
+        Board.cores_parallel := !cores_parallel;
         let board = Board.create { pi2; ram_size = (if pi2 then 1024 else 512) * 1024 * 1024; ips = !ips; log; usb_devices = !usb; sd;
                                    serial0 = target 0; serial1 = target 1; console } in
         (* the jack: to the WAV file asked for, and in a window to the host's
@@ -335,7 +350,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
           ~frame:(fun () -> Board.frame board) ~key:(Board.key board) ~pointer:(Board.pointer board) ~qmp_poll:(fun q ~quit ->
             Qmp.poll q { Qmp.screen = (fun () -> Board.screen board); send_keys = Board.send_keys board;
                          key = Board.key board; pointer = Board.pointer board } ~quit)
-          ~status ~meters:!meters ~where:(fun () -> Board.where board)
+          ~status ~meters:!meters ~where:(fun () -> Board.where board) ~locked:(Board.locked board)
       end
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

@@ -185,12 +185,20 @@ let imm_value ~imm8 ~rot = Bits.ror32 imm8 rot
 exception Unimplemented of int * int
 exception Abort of int * int
 
+(* strex's store of a word at a physical address, when the state's
+ * monitor has it: done or not. A hook: with one processor running at a
+ * time (here, and a board's cores in turns) the monitor's address
+ * says it all; a board whose cores run at the same time puts its own
+ * here (Board), the test and the store as one step. *)
+let strex : (state -> int -> int -> bool) ref =
+  ref (fun (st : state) p v -> if st.exclusive = p then (Memory.store32 st.mem p v; true) else false)
+
 let create mem =
   { r = Array.make 16 0; n = false; z = false; c = false; v = false; next = 0; mem;
     mode = 0x10; a_off = false; i_off = false; f_off = false;
     banked = Array.make 12 0; fiq_banked = Array.make 10 0; spsr = Array.make 6 0;
     mmu = false; translate = (fun a _ -> a); coproc = (fun st _ -> raise (Unimplemented (0, st.r.(15) - 8))); vectors = 0;
-    exclusive = -1; vfp_ok = false; vfp = Array.make 64 0; fpscr = 0; fpexc = 0; fpsid = 0x410120b5 }
+    exclusive = -1; exclusive_value = 0; carry_out = false; loaded = Array.make 16 0; vfp_ok = false; vfp = Array.make 64 0; fpscr = 0; fpexc = 0; fpsid = 0x410120b5 }
 
 (*****************************************************************************)
 (* The privileged state: modes, banks, the CPSR, exceptions *)
@@ -317,45 +325,47 @@ let[@inline] set st rd v =
   end
   else st.r.(rd) <- v
 
-(* the shifter's carry out, left here by [shift], [shifted_value] and
- * [operand] (returning a pair allocated one per instruction) *)
-let carry_out = ref false
+(* the shifter's carry out, left in the state's [carry_out] by [shift],
+ * [shifted_value] and [operand] (returning a pair allocated one per
+ * instruction)
+ * (old: let carry_out = ref false, the module's: two cores of a board
+ * on two domains would each read the other's, plan_multicore.md) *)
 
 (* the shifter: a value, its carry out in [carry_out] *)
 let shift st v sh n =
   let bitc k = (v lsr k) land 1 = 1 in
   match sh with
   | LSL ->
-      if n = 0 then (carry_out := st.c; v)
-      else if n < 32 then (carry_out := bitc (32 - n); Bits.lsl32 v n)
-      else (carry_out := (n = 32 && bitc 0); 0)
+      if n = 0 then (st.carry_out <- st.c; v)
+      else if n < 32 then (st.carry_out <- bitc (32 - n); Bits.lsl32 v n)
+      else (st.carry_out <- (n = 32 && bitc 0); 0)
   | LSR ->
-      if n = 0 then (carry_out := st.c; v)
-      else if n < 32 then (carry_out := bitc (n - 1); Bits.lsr32 v n)
-      else (carry_out := (n = 32 && bitc 31); 0)
+      if n = 0 then (st.carry_out <- st.c; v)
+      else if n < 32 then (st.carry_out <- bitc (n - 1); Bits.lsr32 v n)
+      else (st.carry_out <- (n = 32 && bitc 31); 0)
   | ASR ->
-      if n = 0 then (carry_out := st.c; v)
-      else if n < 32 then (carry_out := bitc (n - 1); Bits.asr32 v n)
-      else (carry_out := bitc 31; Bits.asr32 v 31)
+      if n = 0 then (st.carry_out <- st.c; v)
+      else if n < 32 then (st.carry_out <- bitc (n - 1); Bits.asr32 v n)
+      else (st.carry_out <- bitc 31; Bits.asr32 v 31)
   | ROR ->
-      if n = 0 then (carry_out := st.c; v)
+      if n = 0 then (st.carry_out <- st.c; v)
       else
         let k = n land 31 in
-        if k = 0 then (carry_out := bitc 31; v) else (carry_out := bitc (k - 1); Bits.ror32 v k)
+        if k = 0 then (st.carry_out <- bitc 31; v) else (st.carry_out <- bitc (k - 1); Bits.ror32 v k)
 
 let shifted_value st rm = function
-  | No_shift -> carry_out := st.c; st.r.(rm)
+  | No_shift -> st.carry_out <- st.c; st.r.(rm)
   | By_imm (sh, n) -> shift st st.r.(rm) sh n
   | By_reg (sh, rs) -> shift st st.r.(rm) sh (st.r.(rs) land 0xff)
   | Rrx ->
       let v = st.r.(rm) in
       let r = Bits.mask32 ((if st.c then 1 lsl 31 else 0) lor Bits.lsr32 v 1) in
-      carry_out := v land 1 = 1; r
+      st.carry_out <- v land 1 = 1; r
 
 let operand st = function
   | Imm { imm8; rot } ->
       let v = imm_value ~imm8 ~rot in
-      carry_out := (if rot = 0 then st.c else (v lsr 31) land 1 = 1); v
+      st.carry_out <- (if rot = 0 then st.c else (v lsr 31) land 1 = 1); v
   | Sreg (rm, sh) -> shifted_value st rm sh
 
 let set_nz st r = st.n <- (r lsr 31) land 1 = 1; st.z <- r = 0
@@ -380,7 +390,7 @@ let execute st ~addr ~svc i =
          * the flags not set *)
         let return = s && rd = 15 && (match op with TST | TEQ | CMP | CMN -> false | _ -> true) in
         let s = s && not return in
-        let logical r = if s then (set_nz st r; st.c <- !carry_out); set st rd r in
+        let logical r = if s then (set_nz st r; st.c <- st.carry_out); set st rd r in
         let arith a b cin = (if s then add_flags st a b cin); set st rd (Bits.add32 a b cin) in
         let cin = if st.c then 1 else 0 in
         (match op with
@@ -396,8 +406,8 @@ let execute st ~addr ~svc i =
         | SBC -> arith a (not32 b) cin
         | RSB -> arith b (not32 a) 1
         | RSC -> arith b (not32 a) cin
-        | TST -> set_nz st (a land b); st.c <- !carry_out
-        | TEQ -> set_nz st (a lxor b); st.c <- !carry_out
+        | TST -> set_nz st (a land b); st.c <- st.carry_out
+        | TEQ -> set_nz st (a lxor b); st.c <- st.carry_out
         | CMP -> add_flags st a (not32 b) 1
         | CMN -> add_flags st a b 0);
         if return then restore_spsr st
@@ -570,12 +580,13 @@ let execute st ~addr ~svc i =
       if cond_passed st cond then begin
         let p = phys st st.r.(rn) 0 in
         let v = Memory.load32 st.mem p in
-        st.exclusive <- p; set st rd v
+        st.exclusive <- p; st.exclusive_value <- v; set st rd v
       end
   | Strex { cond; rd; rm; rn } ->
       if cond_passed st cond then begin
         let p = phys st st.r.(rn) 1 in
-        if st.exclusive = p then (Memory.store32 st.mem p st.r.(rm); st.r.(rd) <- 0) else st.r.(rd) <- 1;
+        (* old: if st.exclusive = p then (Memory.store32 st.mem p st.r.(rm); st.r.(rd) <- 0) else st.r.(rd) <- 1 *)
+        st.r.(rd) <- (if !strex st p st.r.(rm) then 0 else 1);
         st.exclusive <- -1
       end
   | Clrex -> st.exclusive <- -1

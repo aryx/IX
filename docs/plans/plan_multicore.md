@@ -613,3 +613,83 @@ line changed after the screens were recorded on the 9th). Not
 checked: a window deleted or moved while a game draws (the wait);
 the arena full; the Pi 4's kernel and the one by ix's tools (the
 same C, not built); mini-qemu's four cores with it.
+
+2026-10-13: mini-qemu's cores on the host's cores: stage 4, decisions
+10 to 12 (the author: "what would it take to make mini-qemu use
+multiple domains when emulating a pi2? We could do like in
+~/github/mini-chrome/ maybe and have an intermediate lib that is
+working both for ocaml 4 (using threads) and ocaml 5 (leveraging
+domains for true parallelism)"; then "let's start"). Not committed.
+- **Measured first**: mini-qemu built by OCaml 5.5.1 is as fast as
+  4.14's with one core (the Pi 2's session-ix: 32.1 s against 31.2,
+  the same console byte for byte).
+- **A core's own, its own** (`raspberry/Board.ml`, no behaviour
+  changed): the running core's registers, MMU, CP15 and decode cache
+  were copied into the board when its turn came (`select`); each
+  function now takes its core. With them what was a module's and two
+  cores would have spoiled: the table of words decoded (a core's),
+  and in `machine/` the shifter's carry out (`Arm32.carry_out`) and
+  the words of a block load (`Arm32_fast.loaded`), now the state's.
+- **`lib_core/parallel/` (new), `Parallel`**: `available`, `spawn`, a lock,
+  something to wait for; `host/domains.ml.in` under OCaml 5 (Domain,
+  Mutex, Condition), `host/single.ml.in` under 4.14 (no worker, a lock
+  nobody waits for), chosen by dune on `%{ocaml_version}` as
+  mini-chrome's Worker_spawn. **Not mini-chrome's files, and no
+  threads under 4.14**, which is not what decision 10 said: 4.14's
+  Mutex is the threads library's, and a program by js_of_ocaml that
+  links it stops at its start (`caml_thread_initialize is not a
+  function`, tried), and the board is also a page's
+  (`raspberry/web/`). Threads would have given nothing here anyway
+  (the survey's "Which piece fits"). To decide: whether that is right,
+  or the page should get stubs and the library be mini-chrome's.
+- **`-cores-parallel`** (`Board.cores_parallel`, a switch read by
+  create; off by default; under 4.14 said and the turns): each started
+  core on a domain, the main domain keeping the terminal, the window
+  and QMP. The devices and the time behind one lock (each device
+  wrapped where it is mapped; the devices themselves reach the memory
+  by a view of it that is not, Dma copying from another device's
+  register); the memory behind none; `strex` behind its own, and only
+  if the word is still what `ldrex` read (`Arm32.strex`, a hook);
+  another core's caches emptied by asking it (a flag, and its batch
+  ended). A core in WFI waits on a condition. **The time** (decision
+  12, changed): the instructions of the lowest core that does not
+  wait, and not the first core's, which may wait while another
+  computes; every core waiting, the time to the next event is
+  skipped by the main domain, as in turns. Board.ml's section "Faster:
+  a core a domain" has it. `./mini-pi -P mini-9pi2` builds OCaml 5's
+  mini-qemu in `_build5` and asks for it; docs/manuals/mini-qemu.md.
+- **What it gives** (release builds, a kernel with SMP=1 of today,
+  the host's 64 threads; the boot and the two lines typed first are
+  11 to 12 s of each): one shell of `session-cores.cmds` that
+  computes, 31.3 s in turns and 30.7 with a core a domain; four at
+  once, 92.8 s in turns (96.2 by 4.14) and 32.3: four busy cores take
+  one's time and a tenth more, where they took four times. The whole
+  of `session-cores.cmds` (the dune's default build): 1217 s in
+  turns, 472 with a core a domain, each line `check-cores` counts
+  there (most of it the four shells that start 150 processes each:
+  the kernel's lock, three cores spinning for it; QEMU was not run
+  beside it today).
+Checked: in turns, by 4.14 and by 5.5.1, session-ix and session-ix-b
+on the Pi 2 and session-ix on the Pi 1 the same bytes as before any
+of this; with a core a domain, the same two sessions the same bytes
+too (the kernel of one core: the others wait); `session-cores.cmds`
+seven times (four with the SMP kernel of the 12th, three with
+today's), no fault, every line; rio and Tetris in a window by QMP
+(`tests/tetris-win.steps`, a USB keyboard and mouse, the card), the
+fourteen screens the same as in turns' without the cores' word, and
+with it all but the last (a piece elsewhere: the game's time);
+`machine/` compiled by mini-ml in a copy (not linked there). The 5.5.1
+switch had no menhir, which `machine/`'s preprocessing needs: installed
+(the Dockerfile's list).
+Not checked: a window on the screen (SDL, the sound from another
+domain), games in it by hand: the author's to try, `./mini-pi -P -g
+mini-9pi2`; the page (`raspberry/web/` does not build today, another
+session's Hostdraw); ThreadSanitizer; `make test`, tests/lite.sh.
+Found on the way: `session.py` with `-status` stops typing when a
+status line lands after a prompt (the text no longer ends with it):
+timings are taken without `-status`. The four shells' order in a
+session typed by `session.py` is not the same from run to run in
+turns either (when a line is typed is the host's).
+Not done: the Pi 4's cores (`Pi4.ml`, the same work); `make
+check-cores` under mini-qemu (eight minutes); `Per_domain` moved
+beside `Parallel` (it is the browser's, built by mini-ml).

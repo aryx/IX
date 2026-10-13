@@ -3,4 +3,6 @@
 ; library. The others are the stdlib, ocaml-light's (units.txt), which
 ; mini-ml compiles and links (plan_ml_bootstrap.md, decision 9); the
 ; programs built by dune have OCaml's, so dune doesn't look here.
+; parallel/ is dune's alone (Parallel: the host's cores, by OCaml's
+; Domain where there is one), not a unit of mini-ml's.
 (data_only_dirs core base collections printing parsing system concurrency libc)

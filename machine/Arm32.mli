@@ -148,6 +148,13 @@ val execute : state -> addr:int -> svc:(state -> int -> unit) -> t -> unit
 
 val cond_passed : state -> cond -> bool
 
+(* strex's store, when the monitor has the address: the state, the
+ * physical address, the word; whether it was stored. One processor at
+ * a time needs no more than the default; a board whose cores run at
+ * the same time sets its own (raspberry's Board: under a lock, and
+ * only if the word is still what ldrex read). *)
+val strex : (state -> int -> int -> bool) ref
+
 (* the privileged state *)
 val cpsr : state -> int
 val write_cpsr : state -> int -> int -> unit     (* the value, the fields f s x c *)

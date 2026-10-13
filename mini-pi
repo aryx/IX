@@ -60,6 +60,12 @@
 #        from the kernel's ELF; raspberry/Status.mli)
 #   -p P mini-9pi, mini-9pi4: the pixels (the draw device's memdraw), ocaml
 #        (the default) or c (principia's); the same as PIXEL=P before
+#   -P   mini-9pi2 under mini-qemu: the Pi2's four cores each on a core
+#        of the host's, not in turns (mini-qemu -cores-parallel): four
+#        busy cores then take one's time. mini-qemu is then the one
+#        built by OCaml 5, which has domains, in _build5 (the opam
+#        switch $OCAML5, 5.5.1 by default); a run is no longer the same
+#        each time (docs/plans/plan_multicore.md)
 #   -c N xv6-pi4: N cores (1 to 4, default 1; xv6's idle cores spin, so
 #        each one more slows it down)
 #
@@ -80,7 +86,7 @@ ROOT=${IX:-$ROOT}
 [ -d "$ROOT/raspberry" ] || { echo "mini-pi: $ROOT is not ix's checkout (set IX)" >&2; exit 2; }
 XV6=${XV6:-$HOME/xv6}
 PRINCIPIA=${PRINCIPIA:-$HOME/principia}
-graphics=0; write=0; qemu=0; debug=0; build=1; cores=1; verbose=0; elf=; COMPILER=${COMPILER:-}
+graphics=0; write=0; qemu=0; debug=0; build=1; cores=1; verbose=0; parallel=0; elf=; COMPILER=${COMPILER:-}
 
 say() { echo "mini-pi: $*" >&2; }
 # claude: a build step, named (a first build is long and silent:
@@ -102,9 +108,9 @@ usage() { sed -n '/^# mini-pi:/,/^# mini-9pi in ix/p' "$0" | sed 's/^# \{0,1\}//
 
 [ $# = 0 ] && kernels
 [ "$1" = --help ] && usage
-while getopts gwqdnvc:p:h o; do
+while getopts gwqdnvPc:p:h o; do
   case $o in
-    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; v) verbose=1;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;
+    g) graphics=1;; w) write=1;; q) qemu=1;; d) debug=1;; n) build=0;; v) verbose=1;; P) parallel=1;; c) cores=$OPTARG;; p) PIXEL=$OPTARG;; *) usage;;
   esac
 done
 shift $((OPTIND - 1))
@@ -265,6 +271,8 @@ esac
 
 # what is used, on standard error (the console's output stays clean)
 emulator=$ROOT/_build/default/raspberry/Main.exe
+# (-P: OCaml 5's, built beside)
+ocaml5=; [ $parallel = 1 ] && [ $qemu = 0 ] && { emulator=$ROOT/_build5/default/raspberry/Main.exe; ocaml5="opam exec --switch=${OCAML5:-5.5.1} -- "; args+=(-cores-parallel); }
 QEMU64=${QEMU64:-/media/pad/extradrive1/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
 [ -x $QEMU64 ] || QEMU64=$(command -v qemu-system-aarch64)
 qemu_exe=$(command -v qemu-system-arm); case $1 in xv6-pi4|mini-xv6-pi4|mini-9pi4|mini-9pi4-principia|mini-oberon4|mini-singularity4|mini-squeak) qemu_exe=$QEMU64;; esac
@@ -297,7 +305,7 @@ if [ $qemu = 1 ]; then
   cd $dir && exec $qemu_exe "${args[@]}"
 fi
 if [ $build = 1 ]; then
-  step mini-qemu sh -c "cd $ROOT && dune build --profile release ./raspberry/Main.exe" || exit 1
+  step mini-qemu sh -c "cd $ROOT && ${ocaml5}dune build $( [ -n "$ocaml5" ] && echo --build-dir _build5 ) --profile release ./raspberry/Main.exe" || exit 1
 fi
 [ $debug = 1 ] && args+=(-d)
 # claude: -v: where the guest is every 2s, its PCs named from the
@@ -307,4 +315,4 @@ if [ $verbose = 1 ]; then
   [ -z "$elf" ] && case $image in *.elf|*/kernel) elf=$dir/$image;; esac
   [ -n "$elf" ] && [ -f "$elf" ] && args+=(-symbols $elf)
 fi
-cd $dir && exec $ROOT/_build/default/raspberry/Main.exe "${args[@]}"
+cd $dir && exec $emulator "${args[@]}"

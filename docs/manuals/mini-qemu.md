@@ -39,6 +39,7 @@ Options:
 | `-n` | no build: the kernel as last built (and so `-p` is ignored) |
 | `-v` | verbose, to see where it blocks: each build step's output and time, then mini-qemu's `-status 2` with the kernel's symbols (section 4.6) |
 | `-c N` | xv6-pi4: N cores |
+| `-P` | mini-9pi2: the Pi 2's four cores each on a core of the host's (mini-qemu's `-cores-parallel`, by the mini-qemu OCaml 5 builds, in `_build5`) |
 
 `./mini-pi` alone lists the kernels; `./mini-pi --help` prints the
 full usage, the options too. Quit with Ctrl-A then x, or
@@ -87,6 +88,7 @@ Options only mini-qemu has:
 | option | meaning |
 |---|---|
 | `-ips N` | instructions per simulated microsecond (default 30): the system timer's rate |
+| `-cores-parallel` | the Pi 2: each started core on a core of the host's, not in turns (see "The cores" below); only in a mini-qemu built by OCaml 5 |
 | `-d` | the log of what the guest did wrong (section 4.1) |
 | `-trace N` | the Pi4: the first N instructions, disassembled (section 4.2) |
 | `-prof F` | a guest profile: every 1024th PC counted, written to F at exit (section 4.5) |
@@ -131,6 +133,21 @@ Options only mini-qemu has:
   kernel's WFI skips ahead to the host's time, but it is never let
   run ahead of it (a key's repeat depends on it). A busy kernel falls
   behind, as a slower machine would.
+- **The cores.** The Pi 2's four (and the Pi 4's with `-smp`) take
+  turns in one thread, a batch of instructions each: the same run each
+  time, and four busy cores four times slower than one. With
+  `-cores-parallel` a Pi 2's started cores are each on a domain of
+  OCaml 5, so on a core of the host's: four busy cores take about
+  one's time, and the run is no longer the same each time (which core
+  gets the kernel's lock first is the host's scheduler's). It needs a
+  mini-qemu built by OCaml 5:
+
+      opam exec --switch=5.5.1 -- dune build --build-dir _build5 --profile release ./raspberry/Main.exe
+
+  or `./mini-pi -P mini-9pi2`, which does it. Built by OCaml 4.14,
+  mini-qemu says it cannot and the cores take turns. The board's
+  clock is then the instructions of the first core that does not
+  wait; `-prof` counts the first core only.
 
 ## 4. Looking inside
 

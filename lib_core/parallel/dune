@@ -1,0 +1,20 @@
+; lib_core/parallel: what a program needs to run on several of the host's
+; cores where the compiler can (Parallel.mli): domains under OCaml 5,
+; and under OCaml 4.14 nothing, said so, the same program built by both
+; (docs/plans/plan_multicore.md, decision 10). After mini-chrome's
+; Worker_spawn. No library under it: a page by js_of_ocaml links it
+; (mini-qemu's board). Not built by mini-ml: what uses it is dune's
+; only.
+(library
+ (name ix_parallel)
+ (wrapped false))
+
+(rule
+ (targets Parallel.ml)
+ (enabled_if (< %{ocaml_version} 5.0))
+ (action (copy host/single.ml.in %{targets})))
+
+(rule
+ (targets Parallel.ml)
+ (enabled_if (>= %{ocaml_version} 5.0))
+ (action (copy host/domains.ml.in %{targets})))

@@ -41,7 +41,8 @@
  * four cores, when they are started (start_core, below): they take
  * turns in one thread, a batch of instructions each, so a run is the
  * same each time; a core that waits skips its turns, and four busy
- * cores take four times one's time on the host. With them the cores'
+ * cores take four times one's time on the host. (Or a core a domain of
+ * the host's, when asked and under OCaml 5: [cores_parallel], below.) With them the cores'
  * controller at 0x40000000 (each core's mailboxes, and which of its
  * timers and mailboxes interrupt it) and each core's virtual timer
  * (CNTV). Not there: the other three generic timers, the controller's
@@ -157,6 +158,19 @@ val load_raw : t -> addr:int -> string -> unit
  * cores' controller (the BCM2836's, at 0x40000000) routes those to
  * it. The devices' interrupts are the first core's. *)
 val start_core : t -> int -> addr:int -> unit
+(* The started cores each on a domain of the host's, and not in turns
+ * (Board.ml says what they share and how): set before [create], for a
+ * Pi 2, and only where the compiler has domains (OCaml 5:
+ * Parallel.available); else the turns. Four busy cores then take
+ * one's time; a run is no longer the same each time. [parallel]: what
+ * a board got. Then what touches the board from outside while its
+ * cores run (a key, a character typed, the output of [serial0] taken,
+ * a network's packets) is done inside [locked]; [run] and [where] are
+ * not. Without domains [locked t f] is [f ()]. *)
+val cores_parallel : bool ref
+val parallel : t -> bool
+val locked : t -> (unit -> 'a) -> 'a
+
 (* a word put in memory (-device loader,addr=,data=,data-len=4) *)
 val poke : t -> addr:int -> int -> unit
 

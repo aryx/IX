@@ -1,0 +1,20 @@
+1 10 2 20 3 30 
+10 12 14 
+0 1 4 9 
+
+2 none 6 none 
+[ax][by]
+map2: lengths
+3 
+2 none 3 none none 1 not found 
+true false true false true false true 
+97 98 99 
+[a, b, c][][a]
+[a][b][][c]
+[]
+[][a][]
+[abc]
+[one two]7 0 [x]
+[c]
+true false none false not found
+1 

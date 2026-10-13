@@ -43,7 +43,7 @@ let keywords =
     "exception"; "external"; "and"; "when"; "as"; "while"; "for"; "to"; "downto"; "do"; "done"; "mod"; "land"; "lor";
     "lxor"; "lsl"; "lsr"; "asr"; "or"; "open" ]
 
-let symbols = [ ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; "|>"; ".["; "~-" ]
+let symbols = [ "|||"; ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "=="; "!="; "&&"; "||"; "|>"; ".["; "~-" ]
 
 (* the tokens of a file, each with its line; String.length is one
  * name, true and false constructors *)
@@ -210,7 +210,7 @@ let abbreviations : (string * texpr) list ref = ref []
 (* the operators: precedence and right associativity; "," is 1 *)
 let binops =
   [ ":=", 0, true; "<-", 0, true; "||", 2, true; "or", 2, true; "&&", 3, true; "&", 3, true; "=", 4, false; "<>", 4, false; "<", 4, false;
-    ">", 4, false; "<=", 4, false; ">=", 4, false; "==", 4, false; "!=", 4, false; "|>", 4, false; "@", 5, true; "^", 5, true; "::", 6, true;
+    ">", 4, false; "<=", 4, false; ">=", 4, false; "==", 4, false; "!=", 4, false; "|>", 4, false; "|||", 4, false; "@", 5, true; "^", 5, true; "::", 6, true;
     "+", 7, false; "-", 7, false; "*", 8, false; "/", 8, false; "mod", 8, false; "land", 8, false; "lor", 8, false;
     "lxor", 8, false; "lsl", 9, true; "lsr", 9, true; "asr", 9, true ]
 

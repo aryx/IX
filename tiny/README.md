@@ -28,7 +28,10 @@ of the system:
   `TinyLibCore.ml`, tiny-ml's prelude, in front of every one of them
   (the operators, the option, the exceptions, the `List` functions; it
   is tiny-ml's ML and not OCaml's, and the build puts its text in the
-  compiler), then `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`.
+  compiler), then `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`,
+  and `TinyLibStd.ml` for a tool that runs there too (tiny-shell):
+  what it names of OCaml's standard library beyond the prelude
+  (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML.
   For the host's programs when ix builds them: `TinyLibHost/`, a
   standard library (m-IX's is `lib_core/`).
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two

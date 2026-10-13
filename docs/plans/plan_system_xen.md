@@ -62,7 +62,9 @@ What is kept, and what is free:
     side of Xen's own rule.
 
 **Status**: the survey done and this plan written (2026-10-07);
-nothing else is. The decisions are mine to propose, the author's to
+nothing else is. The Pi 2 looked at (2026-10-13, "The Pi 2" below):
+the author's is a 64-bit board, and which board is first is a decision
+to take (1b). The decisions are mine to propose, the author's to
 take.
 
 ## The survey (2026-10-07, checked by `kernels/xen/survey.sh`)
@@ -175,6 +177,15 @@ The layout I propose:
    there must be changed, or every instruction of its kernel looked
    at. The Pi 4's firmware starts `kernel8.img` at EL2, which is all
    that is asked of it.
+
+   **1b. Or the author's Pi 2 first** (the question of 2026-10-13; "The
+   Pi 2" below). The board is a V1.2, the Pi 3's processor: the same
+   64-bit hypervisor would run on it, with another board layer. My
+   proposal there: **one hypervisor, two boards; a domain is a virtual
+   Pi 4 on both**; the Pi 2 the board of stage 8, the Pi 4 after; the
+   Pi 2's own 32-bit kernels as domains a stage of their own. Not
+   taken yet: the rest of this plan is as it was written, for the
+   Pi 4.
 2. **Guests are the images as they are, started at EL1.** A domain's
    memory is a piece of the board's, seen by the guest from address 0
    through stage 2, so both are loaded at `0x80000` as they were
@@ -304,7 +315,8 @@ The layout I propose:
    moved out to a domain 0, as Xen has them; mini-oberon, mini-l4 and
    mini-singularity as domains (they should come free: the same
    machine layer); **a virtual Pi 1** (an arm32 guest at EL1, the
-   BCM2835's models at their addresses: the Pi 1's images on a Pi 4);
+   BCM2835's models at their addresses: the Pi 1's images on a Pi 4),
+   and a virtual Pi 2 the same way ("The Pi 2" below);
    riscv64 (below).
 
 ## The size
@@ -317,6 +329,106 @@ guest's registers and its kernel's system registers saved and given
 back). By links, not written: the models **1,043** and `Memory`,
 the drivers **329**. In mini-qemu **300 to 500**. The small guests and
 the tests **200 to 300**.
+
+## The Pi 2
+
+The author (2026-10-13): "would the Pi2 also be a good candidate? Does
+the Pi2 have virtualization support in hardware?"; then: "since we do
+lots of work around the Pi1 and Pi2, it may make more sense to make
+the Pi 2 the next target instead of Pi 4". Checked by
+`kernels/xen/pi2.sh`: images of a few instructions under QEMU's
+boards, and ix's own files. Nothing was run on a board.
+
+**It has, and there are two Pi 2s.**
+
+| | the chip | the processor | a hypervisor there |
+|---|---|---|---|
+| a Pi 2B V1.1 (QEMU's `raspi2b`, mini-qemu's Pi 2) | BCM2836 | four Cortex-A7, ARMv7, 32 bits | in HYP, ARMv7's mode for it: a 32-bit program |
+| **a Pi 2B V1.2, the author's** ([`plan_pi2.md`](plan_pi2.md): "Raspberry Pi 2 Model B V1.2" read on the board) | BCM2837, the Pi 3's | four Cortex-A53, ARMv8, 64 bits, run as 32-bit ones by mini-9pi2 | at EL2 in 64 bits, as on the Pi 4 |
+
+Both have the second level, stage 2, `hvc`, a guest's waits trapped
+and a virtual timer. What the script saw:
+
+| QEMU's board | a raw image starts | its processor says |
+|---|---|---|
+| `raspi3b` (the BCM2837) | at EL2, in 64 bits | 32-bit code may run at EL1 and at EL2 |
+| `raspi4b` | at EL2, in 64 bits | the same |
+| `raspi2b`, `-kernel` | in SVC, not secure: under the level wanted | the virtualization extensions are there |
+| `raspi2b`, `-bios` | in SVC, secure, on its four cores | HYP reached by the firmware's own way: a monitor call of five instructions |
+| `raspi1ap` | in SVC | none |
+
+(`kernels/lib_machine/pi1/start.s` says that QEMU's `-kernel` starts
+a Pi 2's kernel in HYP: not QEMU 8.2.2 with a raw image. The kernel
+goes on either way.)
+
+**So on the author's board the hypervisor is the one of this plan.**
+A 64-bit OCaml program at EL2; a guest does not see the board under
+it, only the one the models make, so **a domain may stay a virtual
+Pi 4**: mini-xv6's and mini-9pi's images for the Pi 4, not changed,
+on a Pi 2. What differs is the hypervisor's own side:
+
+- **its board layer**: the devices at `0x3F000000` where the Pi 4 has
+  them at `0xFE000000` (the same PL011, mailbox and DWC2), and no GIC:
+  the BCM2835's interrupt controller and the cores' (the BCM2836's
+  at `0x40000000`), to know which device asks while a guest runs. Of
+  `kernels/lib_machine/pi4`'s 1,115 lines, 6 name an address of the
+  board and 18 the GIC. A guess: 100 to 200 lines, by links and a
+  second `board.h`;
+- **the emulators**: QEMU's `raspi3b` is the judge (it is that chip).
+  mini-qemu has no such board: its Pi 2 is a V1.1 with `Arm32`, its
+  64-bit board the Pi 4. Either the hypervisor is checked under
+  mini-qemu as the Pi 4's build only, or mini-qemu gets a third board
+  (`Arm64` with `Board`'s devices): to decide. Decision 9, EL2 in
+  `Arm64`, is the same work for both;
+- **what is lost**: decision 4's later optimization (the GIC-400's
+  interface for a guest) is the Pi 4's alone. The simple way is the
+  same on both. Xen itself never ran on a Pi 2 or a Pi 3 for the want
+  of that GIC (from memory);
+- **the memory**: 1 GB, the VideoCore's part off, for the two guests
+  and their screens: not counted yet.
+
+**The Pi 1's and the Pi 2's own kernels as domains** are what the work
+around those boards asks for, and they do not need a 32-bit
+hypervisor: an ARMv8 processor runs a 32-bit kernel at EL1 under a
+64-bit hypervisor (the second table: 32-bit code at EL1), on the Pi 2 V1.2 and on
+the Pi 4 alike. A **virtual Pi 2** first: mini-9pi2's image as it is
+(`kernel-pi2-ix.img`; entered in SVC it goes on), the BCM2835's models
+(`Intc` 67, `Systimer` 66, `Miniuart` 48, beside those shared with the
+Pi 4), the cores' controller taken out of `Board.ml` as a module of
+its own. A **virtual Pi 1** after: the same with the devices at
+`0x20000000`, the processor's name answered as an ARM1176's, and that
+processor's own cache operations trapped; mini-xv6 has a Pi 1 image
+and none for the Pi 2. The costs, not small: a guest's 32-bit state to
+save at a change of domain (its modes' registers); `Systimer`'s model
+given the real time (the Pi 4's guests have only the virtual timer; a
+Pi 2's first core takes its tick from the system timer); and in
+mini-qemu a 32-bit kernel under `Arm64`'s EL2, which has 32 bits for
+programs only. Under QEMU it is there today.
+
+**A 32-bit hypervisor, for a V1.1: not proposed.** It would run on
+the author's board too (its processor has EL2 in 32 bits), and it is
+the Pi 2 mini-qemu has. Three costs, in their order:
+
+1. **The models do not link.** A device's word is an OCaml `int`
+   (`machine/Bits`: 63 bits, or 32 under js_of_ocaml); a kernel for
+   arm32 has 31, which is why mini-9pi's drivers read a register by
+   halves (`io_get16`). Decision 3, the plan's main economy, would be
+   the models written again.
+2. **mini-qemu's `Arm32` has nothing of HYP** (no line names it;
+   `Arm64` knows twelve registers of EL2 and starts there): the mode
+   and its registers, `hvc`, `eret`, the traps, stage 2. A guess: 400
+   to 700 lines.
+3. **Stage 2's tables are the long format**, the kernel's `Mmu` the
+   short one, the only one a Pi 1 has. Small: a table of its own.
+
+**My proposal** (decision 1b): the hypervisor in 64 bits for the two
+boards; the stages under the emulators as they are written, QEMU's
+`raspi3b` beside `raspi4b` from stage 0; **stage 8's board the Pi 2
+first**; the virtual Pi 2 and Pi 1 moved up from stage 9, after the
+picture. What the author's sentence changes and is the author's to say: whether
+the first guests should be the Pi 2's own kernels and not the Pi 4's.
+That order has the 32-bit guest's costs before anything is seen, and
+mini-xv6 without a Pi 2 image.
 
 ## riscv64, and the author's Orange Pi RV2
 
@@ -335,8 +447,14 @@ of it trapped and done for it. Not in this plan.
 - the papers and ARM's architecture for EL2: not read again (above);
   the three references looked at by their sizes. Nothing was built or
   run;
-- **that QEMU's `raspi4b` gives a raw image EL2 with stage 2** (it
-  starts one at EL2, by mini-qemu's own notes of it); stage 0 says;
+- **that QEMU's `raspi4b` gives a raw image EL2 with stage 2**: it
+  starts one at EL2, and so does `raspi3b` (`kernels/xen/pi2.sh`,
+  2026-10-13); stage 2 itself not tried, stage 0 says;
+- of "The Pi 2": that the firmware starts a `kernel8.img` on a V1.2
+  in 64 bits at EL2; that the author's board is a V1.2 by what it
+  prints; that 1 GB holds the two guests and their screens; the Pi 1's
+  images under a processor that is not an ARM1176; the lines guessed
+  there;
 - **stage 1's risk**: `raspberry/`'s modules and `machine/Memory`
   under mini-ml in a kernel (they name nothing of the host; what they
   ask of the standard library, and of `Int64`, not looked at);

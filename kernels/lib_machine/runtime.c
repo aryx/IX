@@ -403,13 +403,22 @@ void core_run(void)
 /* (asked under an emulator too: kernel.mk's SMP=1, for a test; the
  * recorded sessions are one core's, the order of two processes'
  * lines being no longer one with several) */
+/* (or by whoever starts the emulator, with the same kernel: a word
+ * put in memory below the image, CORES_WORD at CORES_AT, which
+ * QEMU's -device loader,addr=,data=,data-len=4 writes (./mini-pi -q
+ * mini-9pi2 does: the author, 2026-10-13, of stats there: "only show
+ * one"). Nothing of the kernel's is below its image; a board is not
+ * asked, its cores run anyway.
+ * old: Val_bool(0) without CORES_TEST) */
+#define CORES_AT 0x7000
+#define CORES_WORD 0x534d5021                   /* "SMP!" */
 value cores_test(value unit)
 {
   (void)unit;
 #ifdef CORES_TEST
   return Val_bool(1);
 #else
-  return Val_bool(0);
+  return Val_bool(*(volatile unsigned *)(KERNBASE + CORES_AT) == CORES_WORD);
 #endif
 }
 #else

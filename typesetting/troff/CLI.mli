@@ -1,5 +1,5 @@
-(* mini-troff: a document typeset -- a manual page or a paper, for a
- * terminal or as a PDF file.
+(* mini-troff: a document typeset -- a manual page, a paper or a book,
+ * for a terminal or as a PDF file.
  *
  *   mini-troff tr.1                  the page as text, on the standard output
  *   mini-troff < tr.1
@@ -7,6 +7,8 @@
  *   mini-troff -ms names.ms          a paper (ms(6)'s macros)
  *   mini-troff manual.md             a document in Markdown's lines
  *   mini-troff -T md tr.1 > tr.md    a manual page written in them
+ *   mini-troff -T pdf Make.nw > Make.pdf   a book: simple LaTeX and
+ *                                    noweb's chunks of code
  *
  * It has troff's name and reads what was written for troff, but it is
  * not troff: the macros of a package (Man, Ms) are what it
@@ -16,6 +18,7 @@
  *
  *   the file --Roff--> lines --Man, Ms (on Fill; Tbl, Pic)--+
  *   the file --Ixdoc (Markdown's lines)---------------------+--> Doc.t
+ *   the file --Latex (and Bib: its references)--------------+
  *
  *   Doc.t --Layout--> lines of words, each at its place
  *              --To_text--> the terminal's page
@@ -23,7 +26,7 @@
  *   Doc.t --Ixdoc--> the document in Markdown's lines
  *
  * To come (docs/plans/plan_typesetting.md): the papers'
- * equations; the books' LaTeX.
+ * equations.
  *
  * cs-history:
  * troff is Joe Ossanna's (Bell Labs, 1973), for the Graphic Systems
@@ -56,12 +59,14 @@ type way = Text | Pdf | Words | Source
 (* [typeset way name source]: a page's text for a terminal, or a PDF
  * file's bytes, and what was not understood in it, each "name:line:
  * what" *)
-type package = Man | Ms | Md
+type package = Man | Ms | Md | Tex
 
 (* (no package said: the new format if the file's name ends with .md
- * or .ixd; else a manual page if the file has a .TH, else a paper) *)
+ * or .ixd, LaTeX if with .tex or .nw; else a manual page if the file
+ * has a .TH, else a paper) *)
 (* [typeset way package load name source]; [load] reads a file the
- * document names (.so, a picture kept apart), none if it may not *)
+ * document names (.so, a picture kept apart, \input), none if it may
+ * not *)
 val typeset : way -> package option -> (string -> string option) -> string -> string -> string * string list
 
 val main : < caps ; .. > -> string array -> Exit.t

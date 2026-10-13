@@ -6,8 +6,8 @@ PROG=mini-man
 SRC=Main
 LOCAL=`{ls *.ml ../troff/*.ml ../troff/*.mli ../troff/*/*.ml ../troff/*/*.mli}
 GEN=
-LIBI=-I ../troff -I ../troff/doc -I ../troff/roff -I ../troff/pic -I ../troff/ixdoc -I $TOP/_mk/$O/typesetting/troff
-LIBUNITS=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc Layout To_text To_pdf CLI
+LIBI=-I ../troff -I ../troff/doc -I ../troff/roff -I ../troff/pic -I ../troff/ixdoc -I ../troff/latex -I $TOP/_mk/$O/typesetting/troff
+LIBUNITS=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc Bib Latex Layout To_text To_pdf CLI
 <$TOP/mkfiles/mkconfig
 LIBOBJS=${LIBUNITS:%=$B/typesetting/troff/%.$O}
 <$TOP/mkfiles/mkprog

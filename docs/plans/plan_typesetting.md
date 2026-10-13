@@ -796,19 +796,104 @@ text is written, so that the source looks like the page.
   `sample.sh`, on the two builds; built for Plan 9 on arm.
 
 Left of the format: cross-references to another file, a table's
-widths and rules, the bibliography (`\cite` writes its key until
-stage 7), equations (stage 6).
+widths and rules, the bibliography (in the new format `\cite` still writes its key:
+stage 7's is LaTeX's), equations (stage 6).
+
+### Stage 7: LaTeX, before stage 6 (the author: "Let's postpone equation. I'm not an heavy math user. Let's do stage 7 instead.")
+
+`Latex` and `Bib` (`typesetting/troff/latex/`; 1,290 lines of `.ml`,
+1,415 with the interfaces: the plan said 900 for `Latex`, `Noweb` and
+`Bib`; the chunks are in `Latex`, 80 lines of it, and the tables of
+commands are a third of the file). Decisions 11 and 12 as written: the
+`.nw` is read, not noweave's `.tex`; a table of commands over a small
+expander (`\newcommand`, `\def` without a pattern, `\newenvironment`,
+`\newif` and its conditionals, `\input`, groups), and a command not in
+the table is said once with its line. A file named `.tex` or `.nw` is
+LaTeX, `-latex` says it; a file a document names is looked for as
+named, then from where the document is (pdflatex runs there).
+
+What was decided on the way:
+
+- **A chunk has a number**, in the file's order, and its name is
+  written with the number of its first definition, here and where
+  another chunk names it; the first definition says where it is used
+  and where it goes on: `<function addrule 41>=   (used in 12; more in
+  44)`. noweb says it with a page and a letter (`12b`); a page is not
+  known to a reader, only to the layout. `\nowebindex` is the chunks
+  by name.
+- **Two readings**, the first for what is named before it is there:
+  `\ref`, the table of contents, a chunk used above its definition,
+  the citations' numbers. A book is read twice in a second.
+- **The bibliography** is one style: the entries cited, in the order
+  they are, numbered; authors, title in italic, where, year, note.
+  BibTeX's styles are programs (plain.bst: 1,100 lines); not read.
+- **syncweb's marks**: `#include "file.nw"` at a line's start is the
+  file; a line that starts with `\l`, `\t` or `\n` is the author's
+  note and is not written (Macros.tex's final book); `[<name>]` is a
+  name in the typed font.
+- **Mathematics as far as words go**, since stage 6 is postponed:
+  letters in italic, what is raised and lowered a size smaller, the
+  symbols WinAnsi has, a word for the others (`alpha`, `<=`). The
+  books have no fraction.
+- **A table whose cells are blocks** (the article's Table 2: a
+  minipage of verbatim text beside a minipage of chunks) is its cells
+  one after the other: a cell of `Doc.t` is a line of text.
+- **One column**; `\includegraphics` writes the file's name and is
+  said (34 in the books: `Pdf_write` has no picture from a file);
+  tikz is said (2); `\pageref` is said (1).
+
+What it is checked by, `typesetting/tests/latex.sh`: each of
+principia's 21 documents (the `.nw` files with a `\documentclass`: 20
+books and the article) as a PDF file, and its words against
+pdflatex's where principia's build left a PDF file beside it (20 of
+the 21), the words of three letters and more that poppler reads in
+each:
+
+- **All 21 are made: 8,364 sheets** (pdflatex's Make: 213; here 197),
+  in 88 seconds with the comparison, a book in one to four seconds
+  (the kernel: 49,062 lines, 1,050 sheets, 4.2 s).
+- **Of pdflatex's words, 91 to 99 in 100 are ours**, by book
+  (Compiler and Network 91, Utilities and Network_apps 99, the
+  article 98). What is not: pdflatex's files are of an earlier day's
+  source, noweb's "Uses" and the pages it cites, the references'
+  labels.
+- **What is said, all books: 103 lines.** 34 pictures from files, 23
+  characters the fonts have not (Greek, Czech letters in the browser's
+  tables of characters), 17 files with lines past the right edge
+  (code of more than 90 letters), 12 `\ref` to a label that is not
+  there and 9 `\cite` to a key that is not (the books' own: a
+  `chap:utulities`, a `Machine` book not in `Principia.bib`), 2 files
+  not found (the Scheme book names `../docs/latex` from two
+  directories down), 2 tikz pictures, 2 commands not known.
+
+Three mistakes of the reader that the books found, each in one
+character: a `%` inside `[[...]]` taken for a comment by what looks
+for an argument's end (mk's `%` rules); `\item [['%']]` read as
+`\item`'s optional argument; a `&` after `\end{minipage}` not seen as
+a cell's end. `sample.nw` and `sample.bib` (new) have each thing once,
+in `sample.sh`.
+
+Compiled by mini-ml (one change: `for _ = ...` is not its OCaml): the
+same bytes as OCaml's build, text and PDF, on the article and four
+books; mini-ml's program is seven times slower (Make: 7.4 s for 1.0).
+Built for Plan 9 on arm, not run there.
+
+Not done: two columns (the template's `twocolumn`: the books are set
+in one), pictures from files, an index of identifiers (syncweb's
+`defs_and_uses`), page numbers in the table of contents and in a
+chunk's name, hyphenation.
 
 ### The folders
 
 `typesetting/troff/` had 30 files: its parts are in folders, as
 `apps/office`'s (folders only, one library): `doc/` (Doc, Layout,
 To_text, To_pdf), `roff/` (Roff, Fill, Man, Ms, Tbl), `pic/`,
-`ixdoc/`; CLI and Main at the top. Decision 14's names, inside the
+`ixdoc/`, `latex/`; CLI and Main at the top. Decision 14's names, inside the
 program's directory and not beside it.
 
-All of typesetting/: 4,633 lines with the interfaces and their
-comments. Of the plan's stages, 1 to 5 are done on Linux; left:
-equations (6), LaTeX (7), m-ix (8: built for Plan 9 on arm, not run).
+All of typesetting/: 6,073 lines with the interfaces and their
+comments. Of the plan's stages, 1 to 5 and 7 are done on Linux; left:
+equations (6, postponed by the author), m-ix (8: built for Plan 9 on
+arm, not run).
 
-Next: stage 6, equations.
+Next: stage 8, m-ix; or stage 6.

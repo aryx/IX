@@ -12,6 +12,8 @@
 ;           (Pic_lexer), its tree (Pic_ast)
 ;   ixdoc/  Ixdoc: the new format, Markdown's lines and
 ;           \name[options]{text}, read and written back
+;   latex/  Latex: simple LaTeX and noweb's chunks of code, the books;
+;           Bib: a bibliography's file
 ; CLI and Main here are the program.
 (include_subdirs unqualified)
 

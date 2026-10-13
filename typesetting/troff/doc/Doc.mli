@@ -1,11 +1,11 @@
 (* A document, whatever it was written in: what every reader makes
- * (Man, Ms, Ixdoc) and every writer takes (To_text, To_pdf, and Ixdoc
- * again).
+ * (Man, Ms, Ixdoc, Latex) and every writer takes (To_text, To_pdf, and
+ * Ixdoc again).
  *
  *   man pages --Man----+                          +--To_text--> a terminal
  *   papers ----Ms------+--> Doc.t --Layout--> lines
  *   Markdown --Ixdoc---+      |                   +--To_pdf---> a PDF file
- *                             +--Ixdoc--> Markdown
+ *   books -----Latex---+      +--Ixdoc--> Markdown
  *
  * It is a tree. A paragraph is its text in fonts; what is to its right
  * of the paragraphs around it is inside an [Indent]; a paragraph that

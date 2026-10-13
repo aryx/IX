@@ -6,12 +6,14 @@
 type caps = < Cap.open_in ; Cap.stdin ; Cap.stdout ; Cap.stderr >
 
 let usage =
-  "usage: mini-troff [-man|-ms|-md] [-T text|pdf|md] [file ...]\n\
+  "usage: mini-troff [-man|-ms|-md|-latex] [-T text|pdf|md] [file ...]\n\
   \  -man     the files are manual pages, man(6)'s macros\n\
   \  -ms      papers, ms(6)'s\n\
   \  -md      documents in Markdown's lines and \\name[options]{text}\n\
-  \           (with none: a file named .md or .ixd is one, a file with\n\
-  \           a .TH a manual page, another a paper)\n\
+  \  -latex   simple LaTeX, and noweb's chunks of code in it\n\
+  \           (with none: a file named .md or .ixd is in Markdown's\n\
+  \           lines, one named .tex or .nw in LaTeX, a file with a .TH\n\
+  \           is a manual page, another a paper)\n\
   \  -T text  written for a terminal (what is done with no -T)\n\
   \  -T pdf   a PDF file, on the standard output: one file read\n\
   \  -T md    the document written again, in Markdown's lines\n\
@@ -24,13 +26,14 @@ exception Usage
 
 type way = Text | Pdf | Words | Source
 
-type package = Man | Ms | Md
+type package = Man | Ms | Md | Tex
 
 (* what a file is written in, when it is not said: a manual page has a
  * .TH *)
 let package_of (name : string) (source : string) : package =
   let ends (e : string) : bool = let n = String.length name and m = String.length e in n >= m && String.sub name (n - m) m = e in
   if ends ".md" || ends ".ixd" then Md else
+  if ends ".tex" || ends ".nw" then Tex else
   let rec go (lines : string list) = match lines with [] -> Ms | l :: rest -> if String.starts_with ~prefix:".TH" l then Man else go rest in
   go (String.split_on_char '\n' source)
 
@@ -43,7 +46,8 @@ let typeset (way : way) (package : package option) (load : string -> string opti
     match (match package with Some p -> p | None -> package_of name source) with
     | Man -> let d = Man.read roff in (d, Roff.complaints roff)
     | Ms -> let d = Ms.read roff in (d, Roff.complaints roff)
-    | Md -> Ixdoc.read paper load source in
+    | Md -> Ixdoc.read paper load source
+    | Tex -> Latex.read paper load source in
   let said = List.map (fun (line, what) -> Printf.sprintf "%s:%d: %s: not known" name line what) complaints in
   match way with
   | Text -> (To_text.page doc, said)
@@ -70,6 +74,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       | "-man" :: rest -> package := Some Man; options rest
       | "-ms" :: rest -> package := Some Ms; options rest
       | "-md" :: rest -> package := Some Md; options rest
+      | "-latex" :: rest -> package := Some Tex; options rest
       | "-T" :: "md" :: rest -> way := Source; options rest
       | "-T" :: "text" :: rest | "-Ttext" :: rest -> way := Text; options rest
       | "-T" :: "pdf" :: rest | "-Tpdf" :: rest -> way := Pdf; options rest
@@ -82,8 +87,13 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
     if !way = Pdf && List.length files > 1 then raise Usage;
     let failed = ref false in
     let one (name : string) (source : string) =
-      (* (a file that the document names: .so, a picture's) *)
-      let load (file : string) : string option = match FS.path file with Ok p -> FS.read_opt caps p | Error _ -> None in
+      (* (a file that the document names: .so, a picture's, \input's;
+       * as it is named, or from where the document is, as LaTeX's are) *)
+      let read (file : string) : string option = match FS.path file with Ok p -> FS.read_opt caps p | Error _ -> None in
+      let load (file : string) : string option =
+        match read file with
+        | Some s -> Some s
+        | None -> if Filename.is_relative file && Filename.dirname name <> "." then read (Filename.concat (Filename.dirname name) file) else None in
       let page, complaints = typeset !way !package load name source in
       Console.print caps page;
       List.iter (fun c -> Console.eprint caps (c ^ "\n")) complaints in

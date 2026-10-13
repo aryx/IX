@@ -2,16 +2,17 @@
 # PDF file is written with
 # (lib_graphics's Pdf_write, the fonts' widths and names under it, Zlib),
 # compiled here, each found by its name in its directory, then the
-# program's own units, which are in folders (doc, roff, pic, ixdoc)
+# program's own units, which are in folders (doc, roff, pic, ixdoc,
+# latex)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/typesetting/troff
 G=$TOP/lib_graphics
-DIRS=. doc roff pic ixdoc $D $G/geometry $G/core $G/fonts $G/pdf $TOP/lib_compression
-INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $TOP/lib_compression $STDI
+DIRS=. doc roff pic ixdoc latex $D $G/geometry $G/core $G/fonts $G/pdf $TOP/lib_compression
+INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $TOP/lib_compression $STDI
 # (each before the ones that name it)
 PDF=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write
-SRC=Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc Layout To_text To_pdf CLI
+SRC=Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc Bib Latex Layout To_text To_pdf CLI
 LIB=$PDF $SRC
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly $G/geometry/Affine.ml* $G/core/Rgba_image.ml* $G/fonts/Glyph_names.ml* $G/fonts/Standard_widths.ml* $G/pdf/Pdf_write.ml* $TOP/lib_compression/Zlib.ml*}

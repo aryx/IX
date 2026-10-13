@@ -7,7 +7,7 @@
  * TinyAssembler, with 7c's calling convention, so that the program
  * calls goken's libc (7c's code) and libc calls it back (main).
  *
- * Or, with -tm, for the other machine, TinyCPU (TinyLibCPU.ml): the
+ * Or, with -tm, for the other machine, TinyCPU (TinyMachineCPU.ml): the
  * same front end and stack machine, a second back end of 100 lines,
  * with a runtime of its own, in TinyC/libc/ (tiny-os's Makefile does
  * the above): the start and the system calls in start.tm, the unsigned
@@ -119,7 +119,7 @@
  *   register class on the same stack (started once, left).
  *
  * Where it stands: what it writes TinyAssembler reads (arm64) or
- * TinyLibCPU's assembler (-tm). It compiles TinyML's runtime (its
+ * TinyMachineCPU's assembler (-tm). It compiles TinyML's runtime (its
  * collector and primitives are C), tiny-os's kernels v6 and t6 and
  * their programs, and TinyKernel's programs; TinyML's code generator
  * is this file's stack machine and register stack again, for another

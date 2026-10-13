@@ -112,7 +112,7 @@ let io_of cfg = if cfg.pi2 then 0x3f000000 else 0x20000000
  *   table that nothing empties (a word means the same wherever it is
  *   and whoever runs it); after the cache is emptied an instruction
  *   is fetched again but not decoded again, and no new value is made
- *   for the collector. As tiny-machine's (TinyLibCPU). *)
+ *   for the collector. As tiny-machine's (TinyMachineCPU). *)
 let forget_used = ref true
 let keep_decoded = ref true
 

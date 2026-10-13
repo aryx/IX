@@ -16,7 +16,7 @@ not here.
 ## What "100%" means
 
 - **The machine has a speed of its own: 8 million instructions a
-  second** (`TinyLibMachine.rate`), so 8 MIPS, yes. A program's time
+  second** (`TinyMachineDevices.rate`), so 8 MIPS, yes. A program's time
   on it is the instructions counted (the timer counts them), and the
   host that shows it to a person, the SDL window or the page, lets it
   run that many each second and no more: tetris falls the same on a
@@ -82,7 +82,7 @@ The simple path kept, each change behind a switch and measured alone
 - **Or the pace lower in the page** (6 million?), said on the page:
   only if the above does not reach it, since the recorded sessions and
   the window's feel are tuned to 8.
-- wasm_of_ocaml: plan_web.md's "Later, perhaps"; `TinyLibCPU`'s words
+- wasm_of_ocaml: plan_web.md's "Later, perhaps"; `TinyMachineCPU`'s words
   do not fit its 31-bit ints.
 
 ### 2. More to run on tiny-kernel's image

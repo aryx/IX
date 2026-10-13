@@ -1,0 +1,5 @@
+; TinyKernelNetwork.ml's test on the host (TinyKernelNetwork_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_kernel_network tiny_machine_peer))

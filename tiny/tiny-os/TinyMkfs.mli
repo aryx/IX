@@ -49,7 +49,7 @@
  *   to use them.
  *
  * Where it stands: the image is what tiny-machine -d gives a kernel as
- * its disk (TinyLibMachine's four words: a block's number, an
+ * its disk (TinyMachineDevices's four words: a block's number, an
  * address, a command, a status), and the two formats are read by
  * tiny-os's kernels in C, v6 and t6. TinyKernel has no disk: its files
  * are values in its heap, carried by the boot image. In m-ix the real

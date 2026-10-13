@@ -15,9 +15,9 @@
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
 # - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
 #   jobs in parallel, NPROC, and the programs side by side; the tiny
-#   programs twice, on lib_core and on TinyLib): then, with what was
+#   programs twice, on lib_core and on TinyLibCore): then, with what was
 #   just built, mini-rc's and mini-ed's tests, the tiny programs' on
-#   TinyLib, the games' frames, the toolchain's
+#   TinyLibCore, the games' frames, the toolchain's
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
 # A line for each job, its seconds, the failures' first lines; the
@@ -141,7 +141,7 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }
 # the tiny programs on t-ix's own library, runtime and C library
-# (tiny/TinyLib/, mini-mk LIB=tiny: nothing of lib_core in them)
+# (tiny/TinyLibCore/, mini-mk LIB=tiny: nothing of lib_core in them)
 tinylib() { (cd tiny && NPROC=32 mini-mk B=$B LIB=tiny) > $W/mk.tinylib.log 2>&1 || { echo "mini-mk LIB=tiny failed in tiny:"; tail -3 $W/mk.tinylib.log | cut -c1-200; return 1; }; }
 tinylib_tests() {
   local t=$K/tinylib
@@ -188,7 +188,7 @@ ix() {
   (! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:") & pids+=($!)
   ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
   (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
-  (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLib fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
+  (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLibCore fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
@@ -199,7 +199,7 @@ ix() {
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs on TinyLib" "$no7"
+[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs on TinyLibCore" "$no7"
 job "ix built by ix, a kernel booted" ix
 
 wait

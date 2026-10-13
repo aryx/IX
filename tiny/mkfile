@@ -4,16 +4,16 @@
 # tiny-machine.
 #
 # Their library is m-ix's, lib_core/ (with mini-git's SHA-1 and zlib,
-# compiled there), or t-ix's own with mini-mk LIB=tiny: TinyLib/ocaml/,
+# compiled there), or t-ix's own with mini-mk LIB=tiny: TinyLibCore/ocaml/,
 # the modules the tiny programs name and the functions they call
-# (TinyLib/README.md), its objects and the programs under _mk/$O/tinylib.
-# With it mini-ml's runtime and the C library are TinyLib's too
-# (TinyLib/c/: for Linux on arm64 only), not lib_core's.
+# (TinyLibCore/README.md), its objects and the programs under _mk/$O/tinylib.
+# With it mini-ml's runtime and the C library are TinyLibCore's too
+# (TinyLibCore/c/: for Linux on arm64 only), not lib_core's.
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=core
 D=`{case $LIB in tiny) echo $B/tinylib;; *) echo $B/tiny;; esac}
-# TinyLib's units, in the order they are linked and initialized
+# TinyLibCore's units, in the order they are linked and initialized
 # (lib_core/units.txt's, then commons/'s)
 TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filename Obj Queue \
  Buffer Printf Option Int Float Fun \
@@ -21,11 +21,11 @@ TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filenam
  Common Console Logging Procs Fpath_ Chan FS
 TL=$D/lib
 TUNITS=${TSTD:%=$TL/%.$O}
-# (SHA-1 and zlib: mini-git's objects, or TinyLib's)
+# (SHA-1 and zlib: mini-git's objects, or TinyLibCore's)
 V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
-INCLUDES=`{case $LIB in tiny) echo -I . -I TinyLib/ocaml;; *) echo -I . -I ../lib_crypto -I ../lib_compression $STDI;; esac}
+INCLUDES=`{case $LIB in tiny) echo -I . -I TinyMachine -I TinyKernel -I TinyLibCore/ocaml;; *) echo -I . -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
 START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
-STDOBJS=`{case $LIB in tiny) echo $TL/TinyLib.a;; *) echo $STDOBJS;; esac}
+STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibCore.a;; *) echo $STDOBJS;; esac}
 STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -34,33 +34,42 @@ PROGS=tiny-build tiny-shell tiny-editor tiny-assembler tiny-c tiny-ml tiny-db ti
 all:V: ${PROGS:%=$D/%}
 
 # (each unit alone: none names another, but TinyCPU and TinyMachine their libraries,
-# and TinyMachine TinyLibNetwork, the other end of its wire)
+# and TinyMachine TinyKernelNetwork, the other end of its wire)
 $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-# (TinyLib's, with LIB=tiny)
-$TL/%.$O: TinyLib/ocaml/%.ml
+# (TinyLibCore's, with LIB=tiny)
+$TL/%.$O: TinyLibCore/ocaml/%.ml
 	mkdir -p $TL
-	$ML -I TinyLib/ocaml -o $target TinyLib/ocaml/$stem.ml
+	$ML -I TinyLibCore/ocaml -o $target TinyLibCore/ocaml/$stem.ml
 
 # (its runtime and C library: one object of C, one of assembly; arm64's)
-TRT=`{ls TinyLib/c/*.[chs]}
+TRT=`{ls TinyLibCore/c/*.[chs]}
 $TL/runtime.$O: $TRT
 	mkdir -p $TL
-	$CC -ITinyLib/c -o $target TinyLib/c/runtime.c
-$TL/start.$O: TinyLib/c/start.s
+	$CC -ITinyLib/c -o $target TinyLibCore/c/runtime.c
+$TL/start.$O: TinyLibCore/c/start.s
 	mkdir -p $TL
-	$AS -o $target TinyLib/c/start.s
-$TL/TinyLib.a: $TUNITS
+	$AS -o $target TinyLibCore/c/start.s
+$TL/TinyLibCore.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
-$D/TinyCPU.$O $D/TinyLibMachine.$O $D/TinyMachine.$O: TinyLibCPU.ml
-$D/TinyMachine.$O: TinyLibMachine.ml TinyLibNetwork.ml TinyLibPeer.ml
-$D/TinyLibPeer.$O: TinyLibNetwork.ml
+$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
+$D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
+$D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
 # (a blank line above: a # line right under a rule's head is its recipe,
-# and TinyLibPeer's object was never compiled)
+# and TinyMachinePeer's object was never compiled)
+# (tiny-machine's parts are in TinyMachine/, the kernel's stack, which
+# is the wire's other end, in TinyKernel/)
+$D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyMachine/TinyMachine$stem.ml
+$D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
+
 # (tiny-mkfs is tiny-os's: its file is there)
 $D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
 	mkdir -p $D
@@ -93,12 +102,12 @@ $D/tiny-vcs: $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $LIBS
 $D/tiny-arm: $D/TinyCPUArm.$O $LIBS
 	$START TinyCPUArm Std_exit -o $D/TinyCPUArm.start.$O
 	$LINK -o $target $D/TinyCPUArm.start.$O $STDOBJS $D/TinyCPUArm.$O $STDEND
-$D/tiny-cpu: $D/TinyLibCPU.$O $D/TinyCPU.$O $LIBS
-	$START TinyLibCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
-	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyLibNetwork.$O $D/TinyLibPeer.$O $D/TinyMachine.$O $LIBS
-	$START TinyLibCPU TinyLibMachine TinyLibNetwork TinyLibPeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyLibCPU.$O $D/TinyLibMachine.$O $D/TinyLibNetwork.$O $D/TinyLibPeer.$O $D/TinyMachine.$O $STDEND
+$D/tiny-cpu: $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
+	$START TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
+	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
+$D/tiny-machine: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
+	$START TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

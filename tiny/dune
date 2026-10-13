@@ -54,56 +54,19 @@
  (modules TinyCPUArm)
  (libraries ix_core fpath caps))
 
-(library
- (name tiny_lib_cpu)
- (wrapped false)
- (modules TinyLibCPU))
-
 (executable
  (name TinyCPU)
  (public_name tiny-cpu)
  (package ix)
  (modules TinyCPU)
- (libraries ix_core fpath caps tiny_lib_cpu))
-
-; tiny-machine's machine without a host: TinyMachine's and TinyMachineWeb's
-(library
- (name tiny_lib_machine)
- (wrapped false)
- (modules TinyLibMachine)
- (libraries tiny_lib_cpu))
+ (libraries ix_core fpath caps tiny_machine_cpu))
 
 (executable
  (name TinyMachine)
  (public_name tiny-machine)
  (package ix)
  (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine tiny_lib_network tiny_lib_peer))
-
-; TinyLibNetwork.ml, tiny-kernel's part that speaks to the network
-; (tiny-ml compiles it there), here for the host: its test, and the
-; other end of tiny-machine's wire
-(library
- (name tiny_lib_network)
- (wrapped false)
- (modules TinyLibNetwork))
-
-; the other end of tiny-machine's wire, TinyLibNetwork with a few lines on
-; top: TinyMachine's and TinyMachineWeb's
-(library
- (name tiny_lib_peer)
- (wrapped false)
- (modules TinyLibPeer)
- (libraries tiny_lib_network))
-
-; TinyKernelGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
-; there), here for the host: TinyMemory (TinyKernel/host/) is the machine's
-; memory, an array
-(library
- (name tiny_kernel_graphics)
- (wrapped false)
- (modules TinyKernelGraphics)
- (libraries tiny_host_memory))
+ (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer))
 
 ; TinyLibDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
 ; window system: tiny-ml compiles them for the machine (TinyKernel/'s
@@ -156,37 +119,9 @@
  (modules TinyWindows)
  (libraries tiny_lib_draw))
 
-; tiny-machine's window: the one tiny program linking a C library (SDL)
-; tiny-machine's way out to other programs: a connection of the host's
-; on its standard input and output (TinyMachine's -net-out and
-; -net-forward run it, as its -window runs TinyMachineWindow)
-(executable
- (name TinyMachineSocket)
- (public_name tiny-machine-socket)
- (package ix)
- (modules TinyMachineSocket)
- (libraries ix_core caps unix))
-
-(executable
- (name TinyMachineWindow)
- (public_name tiny-machine-window)
- (package ix)
- (modules TinyMachineWindow)
- (libraries ix_raspberry ix_sdl_display unix))
-
 (executable
  (name TinyML)
  (public_name tiny-ml)
  (package ix)
  (modules TinyML)
  (libraries ix_core fpath caps))
-
-; tiny-machine in a web page (plan_web.md): the machine by js_of_ocaml,
-; TinyMachineWeb.html its page (./tiny-machine -web dir tiny-kernel);
-; optional: built where the library js_of_ocaml is installed
-(executable
- (name TinyMachineWeb)
- (modules TinyMachineWeb)
- (modes js)
- (optional)
- (libraries tiny_lib_cpu tiny_lib_machine tiny_lib_network tiny_lib_peer js_of_ocaml))

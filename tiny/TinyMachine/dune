@@ -1,0 +1,51 @@
+; tiny-machine's parts (../TinyMachine.ml and ../TinyCPU.ml are the
+; programs): the CPU, the devices, the wire's other end, and the
+; programs beside it, its window, its socket and its page
+
+(library
+ (name tiny_machine_cpu)
+ (wrapped false)
+ (modules TinyMachineCPU))
+
+; tiny-machine's machine without a host: TinyMachine's and TinyMachineWeb's
+(library
+ (name tiny_machine_devices)
+ (wrapped false)
+ (modules TinyMachineDevices)
+ (libraries tiny_machine_cpu))
+
+; the other end of tiny-machine's wire, TinyKernelNetwork with a few lines on
+; top: TinyMachine's and TinyMachineWeb's
+(library
+ (name tiny_machine_peer)
+ (wrapped false)
+ (modules TinyMachinePeer)
+ (libraries tiny_kernel_network))
+
+; tiny-machine's window: the one tiny program linking a C library (SDL)
+; tiny-machine's way out to other programs: a connection of the host's
+; on its standard input and output (TinyMachine's -net-out and
+; -net-forward run it, as its -window runs TinyMachineWindow)
+(executable
+ (name TinyMachineSocket)
+ (public_name tiny-machine-socket)
+ (package ix)
+ (modules TinyMachineSocket)
+ (libraries ix_core caps unix))
+
+(executable
+ (name TinyMachineWindow)
+ (public_name tiny-machine-window)
+ (package ix)
+ (modules TinyMachineWindow)
+ (libraries ix_raspberry ix_sdl_display unix))
+
+; tiny-machine in a web page (plan_web.md): the machine by js_of_ocaml,
+; TinyMachineWeb.html its page (./tiny-machine -web dir tiny-kernel);
+; optional: built where the library js_of_ocaml is installed
+(executable
+ (name TinyMachineWeb)
+ (modules TinyMachineWeb)
+ (modes js)
+ (optional)
+ (libraries tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer js_of_ocaml))

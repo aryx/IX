@@ -40,5 +40,5 @@ write wrote and nothing has to be cut and put back together; a small
 fixed window; no connection half closed. Its price: nothing on the
 Internet speaks it, and Plan 9 itself went back to TCP.
 
-In tiny-kernel it is TinyLibNetwork.ml, some 300 lines with IP's header
+In tiny-kernel it is TinyKernelNetwork.ml, some 300 lines with IP's header
 and the ping, and the other end of the wire runs the same file.

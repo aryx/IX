@@ -9,7 +9,7 @@
 open TinyMemory
 open TinyKernelGraphics
 (* and what speaks to the network *)
-open TinyLibNetwork
+open TinyKernelNetwork
 
 (*****************************************************************************)
 (* The machine: entry.tm's and runtime.c's functions *)
@@ -96,7 +96,7 @@ and box = { mutable last : string; mutable fresh : bool; mutable posters : int }
  * which its questions carry and their answers bring back *)
 and link = { peer : string; lid : int; mutable asked : int; mutable heard : string list; mutable holders : int }
 
-(* a connection to a program of another machine (TinyLibNetwork.ml's IL):
+(* a connection to a program of another machine (TinyKernelNetwork.ml's IL):
  * a write is a message, which arrives once and in order or is sent
  * again; a read gives one whole, 0 when the other end is done; and its
  * descriptors, the last one's close saying the end *)
@@ -225,7 +225,7 @@ let share f =
 let links = ref []
 let next_link = ref 1
 
-(* the machine's connections: TinyLibNetwork.ml's, at its address *)
+(* the machine's connections: TinyKernelNetwork.ml's, at its address *)
 let net = net_stack net_machine 1000
 
 let drop f =
@@ -638,7 +638,7 @@ let syscall p =
  * counted, the console's bytes taken, ^C (3) killing the foreground,
  * every process but the shell (the first: no background here), the
  * mouse's word read, the network's packets taken, each given to
- * TinyLibNetwork.ml (what it says to send back sent, an echo's answer
+ * TinyKernelNetwork.ml (what it says to send back sent, an echo's answer
  * kept for the link that asked; a connection's messages are in it,
  * where its descriptor's read finds them); whether the timer's *)
 let net_news = ref false

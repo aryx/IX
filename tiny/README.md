@@ -2,8 +2,8 @@
 
 The tiny programs of ix (t-ix): the free variants of its mini
 programs (m-ix), one `.ml` file each (but TinyCPU, whose CPU
-is a library, `TinyLibCPU.ml`, for TinyMachine.ml; and TinyMachine, whose machine is a library too,
-`TinyLibMachine.ml`, for `TinyMachineWeb.ml`, the same machine in a web
+is a library, `TinyMachineCPU.ml`, for TinyMachine.ml; and TinyMachine, whose machine is a library too,
+`TinyMachineDevices.ml`, for `TinyMachineWeb.ml`, the same machine in a web
 page by js_of_ocaml: `./tiny-machine -web dir tiny-kernel`), installed as
 tiny-build, tiny-shell, ... (the second column): what is left of a
 program when compatibility is dropped and only its idea is kept,
@@ -15,22 +15,31 @@ A program's `.mli` is where to start: its header comment (the idea,
 a diagram, the history, the references: `docs/tags.md`), then `main`
 and one function at the program's heart, with their types. The `.ml`
 is the code alone. Every file has one, those tiny-ml compiles too
-(TinyKernelGraphics, TinyLibDraw, TinyLibNetwork, TinyWindows, TinyLibPlayground,
+(TinyKernelGraphics, TinyLibDraw, TinyKernelNetwork, TinyWindows, TinyLibPlayground,
 TinyAppTetris, TinyLibGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml has no modules and does not read it, OCaml, which
 builds the same files for their tests, checks it. `TinyKernel.mli` is
 the header alone: only tiny-ml compiles `TinyKernel.ml`.
 
-A file's name says what it is when it is not a program of the system:
+A file's name, or its place, says what it is when it is not a program
+of the system:
 
-- `TinyLibXxx.ml` is a library, compiled with the programs that use
-  it: on the host (`TinyLibCPU`, `TinyLibMachine`, `TinyLibPeer`), on
-  tiny-kernel (`TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`), or
-  both (`TinyLibNetwork`: the kernel's stack and the other end of
-  tiny-machine's wire). `TinyLib/`, the directory, is another thing:
-  the standard library under the host's programs.
-- `TinyKernelXxx.ml` is a part of the kernel (`TinyKernelGraphics`).
+- `TinyLibXxx` is a library that tiny programs are compiled with:
+  `TinyLibCore/`, the standard library under the host's programs when
+  mini-ml compiles them (m-IX's is `lib_core/`); `TinyLibDraw`,
+  `TinyLibPlayground` and `TinyLibGUI`, under the programs of
+  tiny-kernel, which tiny-ml compiles.
 - `TinyAppXxx.ml` is an application, a program a person uses on
   tiny-kernel (`calc`, `temp`, `tetris`).
+- Two things are more than a file, and have a directory of their name
+  beside their program:
+  - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
+    are files of their own (`TinyKernelGraphics`, `TinyKernelNetwork`),
+    its assembly and C, its programs in C (`user/`);
+  - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
+    (`TinyMachineCPU`), the devices (`TinyMachineDevices`), the other
+    end of the wire (`TinyMachinePeer`, which runs the kernel's own
+    `TinyKernelNetwork` on the host), and the three programs beside
+    it, its window, its socket and its page.
 
 The others are the system's programs, a file each (`TinyShell`,
 `TinyC`, `TinyWindows`...).
@@ -45,11 +54,11 @@ The others are the system's programs, a file each (`TinyShell`,
 | `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyML/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |
 | `TinyDatabase.ml` | tiny-db | `database/` (mini-chidb; chidb) | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
 | `TinyCPUArm.ml` | tiny-arm | `machine/` (mini-5i; 5i) | an arm64 CPU for the tiny toolchain's programs: an executable of tiny-assembler's loaded and run word by word, a word decoded and executed in one match, group by group as the manual tables them; Linux's four calls (read, write, exit, getpid); no assembler of its own, no instruction type; the subset is what tiny-c's and tiny-ml's programs execute, goken's libc included, and a word outside it stops the program; the same file runs on the real CPU and under mini-5i, and the three are compared |
-| `TinyCPU.ml`, `TinyLibCPU.ml` | tiny-cpu | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an assembler (a new machine has no other: nothing else writes its words) and an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
-| `TinyMachine.ml` | tiny-machine | `raspberry/` (mini-qemu), with Project Oberon and RISC-V's privileged specification | TinyCPU's CPU with what a kernel needs, designed: two modes, one trap (epc, cause, tval, tvec) and eret, a timer counting instructions, protection by a window (base, bound), a console and a halt at the top of memory; a raw image (`-o`, linking several `.tm`) loaded at 0; a page of kernel, `tiny-os/v0/kernel.tm`, running four programs (`v0/a.tm` to `d.tm`), killing the two that misbehave; and for a window system, each an option: a screen that is memory (640 by 480 bytes, a byte a colour), a mouse that is a word, a window of the host's that shows them (`-window`, by another program, `TinyMachineWindow.ml`), a session replayed from a file, a wire to a network (`-net`: `TinyLibNetwork.ml` below; its way to the host's own network by another program too, `TinyMachineSocket.ml`) |
+| `TinyCPU.ml`, `TinyMachineCPU.ml` | tiny-cpu | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an assembler (a new machine has no other: nothing else writes its words) and an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
+| `TinyMachine.ml` | tiny-machine | `raspberry/` (mini-qemu), with Project Oberon and RISC-V's privileged specification | TinyCPU's CPU with what a kernel needs, designed: two modes, one trap (epc, cause, tval, tvec) and eret, a timer counting instructions, protection by a window (base, bound), a console and a halt at the top of memory; a raw image (`-o`, linking several `.tm`) loaded at 0; a page of kernel, `tiny-os/v0/kernel.tm`, running four programs (`v0/a.tm` to `d.tm`), killing the two that misbehave; and for a window system, each an option: a screen that is memory (640 by 480 bytes, a byte a colour), a mouse that is a word, a window of the host's that shows them (`-window`, by another program, `TinyMachineWindow.ml`), a session replayed from a file, a wire to a network (`-net`: `TinyKernelNetwork.ml` below; its way to the host's own network by another program too, `TinyMachineSocket.ml`) |
 | `TinyKernel.ml` (and `TinyKernel/`) | tiny-kernel (`./tiny-machine tiny-kernel`) | `kernels/9pi/` (mini-9pi; 9pi) | a kernel in ML for tiny-machine, compiled by `tiny-ml -tm`: the concepts kept (modes and system calls, preemption, protection, fork and exec, pipes, files and directories), each by the road ML makes short: the kernel a loop that runs a process until its next trap (`k_run`), a waiting call a closure the scheduler retries (no kernel stack per process, no sleep and wakeup), the files a tree of ML values in the heap (no disk); a screen programs draw on by messages and a mouse, a program's descriptors 3 and 4; `docs/notes_tiny_kernel.md` |
 | `TinyKernelGraphics.ml` | in tiny-kernel | `lib_graphics/`, mini-9pi's `lib_memdraw` (libdraw, libmemdraw) | one operation, `draw dst r src mask p`, on images a byte a pixel; a colour is an image of one pixel that repeats; the kernel has the pixels and a program says what, by messages naming images by its own numbers |
-| `TinyLibNetwork.ml` | in tiny-kernel, and in tiny-machine | mini-9pi's `network/ip/`, `lib_networking/` (Plan 9's ip) | the stack is functions of strings, with no device and no clock: a packet that came gives the packets to send back and what a program hears; so the same file is the kernel's stack, its test on the host, and the other end of tiny-machine's wire (`-net`). IP's envelope, the echo (`ping`), and IL, Plan 9's protocol for messages that arrive once and in order (`get`, and `wiki`, a picture painted a row a message); `TinyLibPeer.ml` is the few lines on top of it that make the wire's other end; [`plan_tiny_network.md`](../docs/plans/done/plan_tiny_network.md) |
+| `TinyKernelNetwork.ml` | in tiny-kernel, and in tiny-machine | mini-9pi's `network/ip/`, `lib_networking/` (Plan 9's ip) | the stack is functions of strings, with no device and no clock: a packet that came gives the packets to send back and what a program hears; so the same file is the kernel's stack, its test on the host, and the other end of tiny-machine's wire (`-net`). IP's envelope, the echo (`ping`), and IL, Plan 9's protocol for messages that arrive once and in order (`get`, and `wiki`, a picture painted a row a message); `TinyMachinePeer.ml` is the few lines on top of it that make the wire's other end; [`plan_tiny_network.md`](../docs/plans/done/plan_tiny_network.md) |
 | `TinyWindows.ml` | windows, a program of tiny-kernel | `windows/` (mini-rio; rio) | a window looks like the machine: a program is given five descriptors (its text, where it draws, its mouse) by the kernel or by the window system, and does not know which; so the window system runs in one of its own windows. Windows are images composed back to front; forwarding a program's drawing is renumbering its images |
 | `TinyLibPlayground.ml` | with each game, a program of tiny-kernel | `lib_playground/` (the author's playground, Elm's) | a game is a model and three functions (its view as shapes, a key, a frame), with no loop and no drawing of its own: the library has them, and a game is tested with no screen |
 | `TinyAppTetris.ml` | tetris, a program of tiny-kernel | `games/puzzle/Tetris.ml` | the game, in integers: the well, the seven pieces, rows, levels; its ground (the well's cells, the panel) kept in the model as shapes, so a piece that moves is five shapes |
@@ -71,7 +80,7 @@ these two are externals (`TinyKernel/memory.ml`,
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
-[`TinyLib/`](TinyLib/README.md) is the library under the host's tiny
+[`TinyLibCore/`](TinyLibCore/README.md) is the library under the host's tiny
 programs when mini-ml compiles them with `mini-mk LIB=tiny`: lib_core's
 modules that they name, with the functions they call. Without it they
 are built on `lib_core/`, as m-ix's programs.

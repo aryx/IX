@@ -71,7 +71,7 @@ test: all
 	./tiny/tests/TinyCPU_test.sh
 	./tiny/tests/TinyMachine_test.sh
 	./tiny/tests/TinyKernelGraphics_test.sh
-	./tiny/tests/TinyLibNetwork_test.sh
+	./tiny/tests/TinyKernelNetwork_test.sh
 	./tiny/tests/TinyLibPlayground_test.sh
 	./tiny/tests/TinyAppTetris_test.sh
 	./tiny/tests/TinyLibGUI_test.sh

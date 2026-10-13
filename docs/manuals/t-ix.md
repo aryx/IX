@@ -5,7 +5,7 @@ its assembler, a C and an ML compiler for it, and kernels that run on
 it. This manual is the reference for someone writing a program or a
 kernel for that machine: its registers, its devices and their
 addresses, how a program is built and where it is loaded. It gathers what the
-programs' headers say (`TinyLibCPU.ml`'s, `TinyMachine.ml`'s,
+programs' headers say (`TinyMachineCPU.ml`'s, `TinyMachine.ml`'s,
 `TinyKernel.ml`'s): they are the first source, and where this manual
 and a header differ, the header is right. Each
 program's header says how it works and why
@@ -86,8 +86,8 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
 | tiny-machine-window | `raspberry/` (mini-qemu's `Sdl_display`), SDL by `tsdl` |
 
-Inside `tiny/`, two libraries are shared: `TinyLibCPU.ml` (tiny-cpu
-and tiny-machine) and `TinyLibMachine.ml` (tiny-machine's machine without a host: the
+Inside `tiny/`, two libraries are shared: `TinyMachineCPU.ml` (tiny-cpu
+and tiny-machine) and `TinyMachineDevices.ml` (tiny-machine's machine without a host: the
 terminal's program, `TinyMachine.ml`, and a web page's,
 `TinyMachineWeb.ml`, built by OCaml and js_of_ocaml only:
 `./tiny-machine -web dir tiny-kernel` makes the page's directory).
@@ -147,7 +147,7 @@ at its start.
            -> /sh in a partition, in user mode
                 -> the programs it runs, each a process
 
-## 3. The CPU (`TinyLibCPU.ml`)
+## 3. The CPU (`TinyMachineCPU.ml`)
 
 - **16 registers of 32 bits**, `r0` to `r15`. `r0` is always 0. By
   convention `sp` is `r14` and `lr` is `r15`.
@@ -347,8 +347,8 @@ What is at the other end is the host's choice:
     tiny-machine -net dir -net-forward 8080:80 kernel.img   # and the host's port 8080 is the machine's port 80
     tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
 
-With `-net` the other end is `TinyLibNetwork.ml`, the file tiny-kernel
-has for its own stack, run by the host (`TinyLibPeer.ml`). A packet
+With `-net` the other end is `TinyKernelNetwork.ml`, the file tiny-kernel
+has for its own stack, run by the host (`TinyMachinePeer.ml`). A packet
 of its lands 5 ms of the machine's time (40,000 instructions) after
 it was sent. It answers a ping; and on port 70, over IL, it reads a
 line, a name, and sends `dir`'s file of that name (no path), in
@@ -356,7 +356,7 @@ messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
 with `tiny/tests/www` as `dir`. A line that starts with `wiki` names
 a picture kept there with its text (`wiki mandelbrot`:
 `mandelbrot.wiki`, a line `320 240`, the pixels a byte each in the
-screen's colours, the text; `tiny/tests/TinyLibNetwork_tests/wiki_picture.py`
+screen's colours, the text; `tiny/tests/TinyKernelNetwork_tests/wiki_picture.py`
 makes it): the text is sent, then the picture a row a message, and
 `wiki` paints each row as it arrives, on the screen or in its window
 of tiny-windows; about 7 seconds of the machine's time for 240 rows on
@@ -393,7 +393,7 @@ packet, and a button loses the next one. `./tiny-machine tiny-kernel`
 in a terminal gives the machine its wire with `tiny/tests/www`.
 
 A trace's line has, of IL's, its kind, its number, the last number its sender
-received, its message's length (`TinyLibNetwork.mli` has a conversation
+received, its message's length (`TinyKernelNetwork.mli` has a conversation
 with a packet lost):
 
        1325.4 ms  < data id 5001 ack 1001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
@@ -487,7 +487,7 @@ loaded at 0, its stack starts at the top.
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
 without a network, or when nothing listens there or nothing answers
-(six tries, 6.3 seconds). The connection is IL's (`TinyLibNetwork.mli`):
+(six tries, 6.3 seconds). The connection is IL's (`TinyKernelNetwork.mli`):
 a write is a message, 1,024 bytes at most, which arrives once and in
 order, the write waiting when 20 are not yet read at the other end; a read
 gives one message, whole (what is over the buffer is lost), and 0
@@ -513,7 +513,7 @@ never waits. A process has 32 descriptors.
 
 ### 7.3 TinyKernel.ml's screen and mouse
 
-The kernel has the pixels (`tiny/TinyKernelGraphics.ml`, compiled with it);
+The kernel has the pixels (`tiny/TinyKernel/TinyKernelGraphics.ml`, compiled with it);
 a program says what to draw. **A program is given five descriptors**:
 0, 1 and 2 its text, 3 where it draws (messages, below), 4 its mouse (a
 box: a read gives x, y and the buttons, a word each, when they

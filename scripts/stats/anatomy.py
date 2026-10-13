@@ -21,7 +21,7 @@
 #   -v: each unit and each C file, not one row for a group
 #   -prog: the program's directory, for its sources' lines
 #   -libs: where the units' sources are, to name each unit's directory
-#     (default: lib_core's directories; tiny/TinyLib/ocaml for LIB=tiny)
+#     (default: lib_core's directories; tiny/TinyLibCore/ocaml for LIB=tiny)
 # docs/projects.md, "What is in an executable", has three of them.
 
 import os

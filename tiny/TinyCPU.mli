@@ -1,12 +1,12 @@
-(* tiny-cpu: TinyLibCPU.ml's CPU run alone, as a user program runs:
+(* tiny-cpu: TinyMachineCPU.ml's CPU run alone, as a user program runs:
  * its memory is memory, and a system call is the host's, three of
  * them; those, its usage and examples: [help], what tiny-cpu -h prints.
  *
  * The instruction set, the assembler, the interpreter and their laws
- * are TinyLibCPU.ml's; TinyMachine.ml runs the same CPU with devices
+ * are TinyMachineCPU.ml's; TinyMachine.ml runs the same CPU with devices
  * and a kernel, where a system call is a trap.
  *
- * The link is TinyLibCPU's: the .tm files one after the other, their
+ * The link is TinyMachineCPU's: the .tm files one after the other, their
  * labels one namespace, the first at 0 where the CPU starts. The
  * arguments are where a C program's main finds them (tiny-c -tm's
  * convention, TinyC/libc/start.tm): their strings at the top of

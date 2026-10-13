@@ -1,11 +1,11 @@
-(* A tiny machine of our own: TinyLibCPU.ml's CPU with what a kernel
+(* A tiny machine of our own: TinyMachineCPU.ml's CPU with what a kernel
  * needs around it, designed as its instructions were. TinyCPU.ml runs
  * the CPU as a user program runs, its system calls answered by the
  * host; here nothing answers them but a program the machine runs, a
  * kernel, in the same assembly; its usage and examples: [help], what
  * tiny-machine -h prints.
  *
- * The link is TinyLibCPU's: the files one after the other, their
+ * The link is TinyMachineCPU's: the files one after the other, their
  * labels one namespace, so a kernel's table names its programs; the
  * kernel first, at 0. An image is the memory's first bytes, as they are
  * at the start: no header, since the machine always starts at 0 in
@@ -91,9 +91,9 @@
  *   address, a length, a command, a status): a packet of memory sent,
  *   the packet that waits taken; its interrupt, the fifth source,
  *   while one waits. What is at the wire's other end is the host's
- *   (-net dir: this program, TinyLibNetwork.ml as tiny-kernel has it,
+ *   (-net dir: this program, TinyKernelNetwork.ml as tiny-kernel has it,
  *   at the other address, answering a ping and giving dir's files
- *   over IL, TinyLibPeer; -net-trace says each packet, -net-lose n
+ *   over IL, TinyMachinePeer; -net-trace says each packet, -net-lose n
  *   loses its n-th, -net-pcap f keeps them for tcpdump; -net-out: it
  *   is the way to other machines, a connection asked for to another
  *   address made by the host; -net-forward h:m: the host's port h is
@@ -123,7 +123,7 @@
  *     0xfffffc   the mouse                                 -4(r0)
  *
  * and the one word that says which mode, with what a trap and eret do
- * to it (TinyLibMachine's [trap], and its [extra] for eret):
+ * to it (TinyMachineDevices's [trap], and its [extra] for eret):
  *
  *     status      16 relocate | 8 pie | 4 ps | 2 ie | 1 supervisor
  *
@@ -138,7 +138,7 @@
  * (1) and tval (the call's number), does it, restores a process's
  * registers, and eret is the return, to the word after the sys.
  *
- * The CPU's hooks carry all of it (TinyLibCPU's [env]): the fetch, the
+ * The CPU's hooks carry all of it (TinyMachineCPU's [env]): the fetch, the
  * load and the store go through the pages or the window and find the
  * devices; sys raises a trap; a word the CPU does not know is csrr,
  * csrw or eret, in supervisor mode, or amoswap, or a trap. The loop
@@ -167,12 +167,12 @@
  * - pages' A and D bits, set by the load and the store, for a clock
  *   page replacement in a kernel.
  *
- * The machine itself is TinyLibMachine.ml (the registers of control,
+ * The machine itself is TinyMachineDevices.ml (the registers of control,
  * the traps, the pages, the devices' state, one instruction of its
  * time); here its terminal: the console, the files, the window, the
  * loop. TinyMachineWeb.ml is the same for a web page.
  *
- * Where it stands: below it TinyLibCPU, the instructions; above it
+ * Where it stands: below it TinyMachineCPU, the instructions; above it
  * its kernels, tiny-os's three (assembly, then C by tiny-c -tm) and
  * TinyKernel (ML by tiny-ml -tm). Its twins are the machines ix did
  * not design: mini-qemu's Board and Pi4, where the same five ideas

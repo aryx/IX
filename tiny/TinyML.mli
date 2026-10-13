@@ -10,7 +10,7 @@
  * tiny-c; goken's libc under both. A program prints what ocaml-light's
  * ocamlopt makes it print, on arm64: that is the test.
  *
- * Or, with -tm, for tiny-machine (TinyLibCPU.ml's CPU): the same front
+ * Or, with -tm, for tiny-machine (TinyMachineCPU.ml's CPU): the same front
  * end and stack machine, a second back end (machine_tm), words of 4
  * bytes and integers of 31 bits, the runtime's common part
  * (TinyML/core.c) compiled by tiny-c -tm, and the program's own main

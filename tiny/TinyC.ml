@@ -890,7 +890,7 @@ let machine name (params : (string * ty) list) locals (body : ir list) =
 (* -tm, the other machine: TinyCPU, the stack in r1..r12 *)
 (*****************************************************************************)
 
-(* TinyCPU (TinyLibCPU.ml) has 32-bit registers, r0 zero, no flags, and
+(* TinyCPU (TinyMachineCPU.ml) has 32-bit registers, r0 zero, no flags, and
  * no unsigned division; its calling convention is ours, simpler than
  * 7c's: every argument in memory, 4 bytes each, the result in r13. The
  * frame, sp at its bottom: the outgoing arguments from 0(sp), the saved

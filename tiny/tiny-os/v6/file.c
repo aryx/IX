@@ -281,7 +281,7 @@ execfail(struct inode *ip, pagetable_t pt, uint sz)
 	return -1;
 }
 
-// an a.out (TinyLibCPU's aout: a magic, the size, the entry, then the
+// an a.out (TinyMachineCPU's aout: a magic, the size, the entry, then the
 // image, linked at USERBASE) in place of the process's program; its
 // stack as tiny-cpu leaves one, where start.tm finds main's arguments:
 // argc at sp, argv at sp + 4, the pointers and the strings above

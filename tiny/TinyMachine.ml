@@ -65,7 +65,7 @@ let tty = Unix.isatty Unix.stdin
  * added to, and the ^C was lost: a key typed right after it did that) *)
 let interrupted = ref false
 
-let console_open (caps : < Cap.stdin; .. >) (k : TinyLibMachine.console) =
+let console_open (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
   if not k.opened then begin
     k.opened <- true;
     if not (tty) then (k.queue <- Procs.read_all (Console.stdin_fd caps); k.eof <- true)
@@ -73,8 +73,8 @@ let console_open (caps : < Cap.stdin; .. >) (k : TinyLibMachine.console) =
   end
 
 (* a terminal's bytes, when some are there *)
-let console_poll (k : TinyLibMachine.console) =
-  if !interrupted then (interrupted := false; TinyLibMachine.console_type k "\003");
+let console_poll (k : TinyMachineDevices.console) =
+  if !interrupted then (interrupted := false; TinyMachineDevices.console_type k "\003");
   if k.opened && not k.eof && k.next >= String.length k.queue && tty then
     match Unix.select [ Unix.stdin ] [] [] 0.0 with
     | [], _, _ -> ()
@@ -90,14 +90,14 @@ let console_poll (k : TinyLibMachine.console) =
 
 (* the screen as a PPM: a header, then red, green and blue bytes, row
  * after row *)
-let ppm (m : TinyLibCPU.machine) =
-  let width = TinyLibMachine.width and height = TinyLibMachine.height in
+let ppm (m : TinyMachineCPU.machine) =
+  let width = TinyMachineDevices.width and height = TinyMachineDevices.height in
   let header = Printf.sprintf "P6\n%d %d\n255\n" width height in
   let h = String.length header in
   let out = Bytes.create (h + (3 * width * height)) in
   Bytes.blit_string header 0 out 0 h;
   for i = 0 to (width * height) - 1 do
-    Bytes.blit_string TinyLibMachine.colours (3 * Char.code (Bytes.get m.mem (TinyLibMachine.screen + i))) out (h + (3 * i)) 3
+    Bytes.blit_string TinyMachineDevices.colours (3 * Char.code (Bytes.get m.mem (TinyMachineDevices.screen + i))) out (h + (3 * i)) 3
   done;
   Bytes.to_string out
 
@@ -125,7 +125,7 @@ type window = {
 let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   let screen_r, to_w = Unix.pipe ~cloexec:true () and from_w, events_w = Unix.pipe ~cloexec:true () in
   (* beside this program, by its installed name or by dune's *)
-  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachineWindow.exe" else "tiny-machine-window" in
+  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineWindow.exe" else "tiny-machine-window" in
   ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
@@ -133,25 +133,25 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
 
 (* every [polled] instructions *)
 let polled = 0x10000
-let window_poll w (m : TinyLibCPU.machine) ms k =
+let window_poll w (m : TinyMachineCPU.machine) ms k =
   let now = Unix.gettimeofday () in
-  w.due <- w.due +. (float_of_int polled /. TinyLibMachine.rate);
+  w.due <- w.due +. (float_of_int polled /. TinyMachineDevices.rate);
   if w.due > now then Unix.sleepf (w.due -. now) else if now -. w.due > 0.1 then w.due <- now;
   let now = Unix.gettimeofday () in
   if now -. w.frame > 1. /. 30. then begin
     w.frame <- now;
-    let pixels = Bytes.sub_string m.mem TinyLibMachine.screen (TinyLibMachine.width * TinyLibMachine.height) in
+    let pixels = Bytes.sub_string m.mem TinyMachineDevices.screen (TinyMachineDevices.width * TinyMachineDevices.height) in
     if pixels <> w.shown then (w.shown <- pixels; Procs.write_all w.to_w (ppm m));
     match Unix.select [ w.from_w ] [] [] 0.0 with
     | [], _, _ -> ()
     | _ ->
         let b = Bytes.create 4096 in
         let n = Unix.read w.from_w b 0 4096 in
-        if n = 0 then raise (TinyLibMachine.Halt 0);
+        if n = 0 then raise (TinyMachineDevices.Halt 0);
         (match String.split_on_char '\n' (w.partial ^ Bytes.sub_string b 0 n) with
          | [] -> ()
          | lines ->
-             let rec go = function [ last ] -> w.partial <- last | l :: rest -> TinyLibMachine.event ms k l; go rest | [] -> () in
+             let rec go = function [ last ] -> w.partial <- last | l :: rest -> TinyMachineDevices.event ms k l; go rest | [] -> () in
              go lines)
     | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()
   end
@@ -165,14 +165,14 @@ type options = { disk_file : string option; screen_file : string option; events_
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
  * pipes: no socket here. What it says first (+ or -) is whether there
- * is a connection; a relay is then the pipes, as TinyLibPeer wants
+ * is a connection; a relay is then the pipes, as TinyMachinePeer wants
  * them. The ones that ended are waited for when the next one starts. *)
 let helpers = ref []
 
 let helper (caps : < Cap.fork; Cap.exec; .. >) args =
   helpers := List.filter (fun pid -> match Unix.waitpid [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !helpers;
   let in_r, to_ = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
-  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachineSocket.exe" else "tiny-machine-socket" in
+  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineSocket.exe" else "tiny-machine-socket" in
   helpers := Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w :: !helpers;
   Unix.close in_r; Unix.close out_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
@@ -187,7 +187,7 @@ let helper_read from wait =
 
 (* [first]: the bytes that came with the helper's + (a client's
  * request is often there before the + is read) *)
-let helper_relay (to_, from) first : TinyLibPeer.relay =
+let helper_relay (to_, from) first : TinyMachinePeer.relay =
   let first = ref first in
   { take = (fun () ->
       if !first <> "" then (let bytes = !first in first := ""; Some bytes)
@@ -206,7 +206,7 @@ let helper_said pipes wait =
 (* -net-out: a connection to an address and a port, if there is one in
  * the five seconds the helper tries for (the machine waits meanwhile);
  * a name's address, as text *)
-let outside caps : TinyLibPeer.outside =
+let outside caps : TinyMachinePeer.outside =
   { connect = (fun address port ->
       let pipes = helper caps [ "dial"; address; string_of_int port ] in
       match helper_said pipes 10. with
@@ -225,7 +225,7 @@ let outside caps : TinyLibPeer.outside =
 let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
 let pcap_header = le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
 let pcap_packet instructions packet =
-  let us = int_of_float (float_of_int instructions *. 1e6 /. TinyLibMachine.rate) in
+  let us = int_of_float (float_of_int instructions *. 1e6 /. TinyMachineDevices.rate) in
   le32 (us / 1000000) ^ le32 (us mod 1000000) ^ le32 (String.length packet) ^ le32 (String.length packet) ^ packet
 
 let run caps o image =
@@ -235,19 +235,19 @@ let run caps o image =
    * read, and a session's last event is its end. A window's keys are
    * the console's too, with the host's: a kernel that writes on the
    * console and not yet on the screen is typed at where it answers *)
-  let events = Option.map (fun f -> TinyLibMachine.timed_events (FS.read caps (Fpath.v f))) o.events_file in
+  let events = Option.map (fun f -> TinyMachineDevices.timed_events (FS.read caps (Fpath.v f))) o.events_file in
   let stdin_keys = events = None in
   let put ch = Console.print caps (String.make 1 ch); flush (Console.stdout caps) in
   (* the wire's other end: with -net-loop, the wire itself, coming back.
    * [send] is called by the machine it gives packets to: by a reference *)
   let machine = ref None in
-  let give after packet = Option.iter (fun mc -> TinyLibMachine.net_give mc ~after packet) !machine in
+  let give after packet = Option.iter (fun mc -> TinyMachineDevices.net_give mc ~after packet) !machine in
   (* -net-trace: a packet's line, with the machine's time in its ms *)
   let said dir packet =
     if o.net_trace then
-      Option.iter (fun (mc : TinyLibMachine.machine) ->
-        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyLibMachine.time) *. 1000. /. TinyLibMachine.rate) dir (TinyLibNetwork.net_describe packet))) !machine in
-  (* -net dir: the peer (TinyLibPeer: TinyLibNetwork.ml as the kernel has
+      Option.iter (fun (mc : TinyMachineDevices.machine) ->
+        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000. /. TinyMachineDevices.rate) dir (TinyMachinePeer.net_describe packet))) !machine in
+  (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel has
    * it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
   let document dir line messages =
@@ -256,26 +256,26 @@ let run caps o image =
     if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
       let words = String.sub line 5 (String.length line - 5) in
       let name = String.map (fun c -> if c = ' ' then '_' else Char.lowercase_ascii c) words ^ ".wiki" in
-      messages (match Option.bind (file name) TinyLibPeer.kept with
+      messages (match Option.bind (file name) TinyMachinePeer.kept with
         | Some l -> l
-        | None -> TinyLibPeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
+        | None -> TinyMachinePeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
     end
-    else messages (match file line with Some text -> TinyLibPeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
+    else messages (match file line with Some text -> TinyMachinePeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
   (* -net-pcap: the packets that crossed, written at the halt *)
   let capture = Buffer.create 4096 in
   let said dir packet =
     said dir packet;
     if o.net_pcap <> None && dir <> "x" then
-      Option.iter (fun (mc : TinyLibMachine.machine) -> Buffer.add_string capture (pcap_packet mc.csr.(TinyLibMachine.time) packet)) !machine in
+      Option.iter (fun (mc : TinyMachineDevices.machine) -> Buffer.add_string capture (pcap_packet mc.csr.(TinyMachineDevices.time) packet)) !machine in
   let peer = match o.net_loop, o.net with
     | None, Some dir ->
-        let peer = TinyLibPeer.create ~give ~said ~document:(document dir) ~outside:(if o.net_out then Some (outside caps) else None) in
-        List.iter (TinyLibPeer.lose peer) o.net_lose;
+        let peer = TinyMachinePeer.create ~give ~said ~document:(document dir) ~outside:(if o.net_out then Some (outside caps) else None) in
+        List.iter (TinyMachinePeer.lose peer) o.net_lose;
         Some peer
     | _ -> None in
   let send = match o.net_loop, peer with
     | Some after, _ -> Some (give after)
-    | None, Some peer -> Some (TinyLibPeer.send peer)
+    | None, Some peer -> Some (TinyMachinePeer.send peer)
     | None, None -> None in
   (* -net-forward 8080:80: a helper waits for a connection to the
    * host's port 8080; when it says one is there, the peer dials the
@@ -286,14 +286,14 @@ let run caps o image =
     waiting := List.filter_map (fun (host, port, pipes) ->
       match helper_said pipes 0. with
       | None -> Some (host, port, pipes)
-      | Some (Some relay) -> TinyLibPeer.dial peer port relay; Some (host, port, helper caps [ "listen"; string_of_int host ])
+      | Some (Some relay) -> TinyMachinePeer.dial peer port relay; Some (host, port, helper caps [ "listen"; string_of_int host ])
       | Some None -> Console.eprint caps (Printf.sprintf "tiny-machine: -net-forward: the host's port %d cannot be listened on\n" host); None)
       !waiting in
-  let mc : TinyLibMachine.machine = TinyLibMachine.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
+  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
   machine := Some mc;
   let m = mc.cpu and c = mc.csr in
   let window = if o.window then Some (window_open caps) else None in
-  let env = TinyLibMachine.env mc in
+  let env = TinyMachineDevices.env mc in
   let halted n =
     (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
@@ -304,27 +304,27 @@ let run caps o image =
   try
     while true do
       (* the hosts' turns, by the time this instruction will be *)
-      let t = c.(TinyLibMachine.time) + 1 in
+      let t = c.(TinyMachineDevices.time) + 1 in
       if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
       if t land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
       if t land (polled - 1) = 0 && !waiting <> [] then Option.iter forwards peer;
-      (* old: TinyLibMachine.tick mc env, an instruction a turn of this
+      (* old: TinyMachineDevices.tick mc env, an instruction a turn of this
        * loop; now the instructions to the next turn that does something *)
-      TinyLibMachine.ticks mc env (1024 - (t land 1023))
+      TinyMachineDevices.ticks mc env (1024 - (t land 1023))
     done;
     0
-  with TinyLibMachine.Halt n -> halted n
+  with TinyMachineDevices.Halt n -> halted n
 
 let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
-  TinyLibCPU.memsize := TinyLibMachine.memsize;
+  TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =
     if files = [] || (List.hd files).[0] = '-' then raise Exit;
-    TinyLibCPU.image ~ext:TinyLibMachine.ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
+    TinyMachineCPU.image ~ext:TinyMachineDevices.ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: files -> Console.print caps (TinyLibCPU.listing ~ext:TinyLibMachine.ext ~origin:0 (image files)); 0
+    | "-l" :: files -> Console.print caps (TinyMachineCPU.listing ~ext:TinyMachineDevices.ext ~origin:0 (image files)); 0
     | "-o" :: out :: files -> FS.write caps (Fpath.v out) (image files); 0
     | args ->
         let rec options o = function
@@ -346,6 +346,6 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
         options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyLibCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
+  | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-machine"; CapStdlib.exit caps (main caps))

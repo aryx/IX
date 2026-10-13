@@ -33,7 +33,7 @@
 # (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
-# ../TinyKernelGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
+# TinyKernelGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
@@ -65,9 +65,9 @@ ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: memory.ml ../TinyKernelGraphics.ml ../TinyLibNetwork.ml ../TinyKernel.ml
+$(O)/kernel.tm: memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ memory.ml ../TinyKernelGraphics.ml ../TinyLibNetwork.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)

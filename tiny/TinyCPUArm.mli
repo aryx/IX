@@ -6,7 +6,7 @@
  * emit, two architectures, a decode cache. This is what is left when
  * the programs run are TinyC's and TinyML's, with goken's libc.
  *
- * Why this and TinyLibCPU, two small CPUs: TinyCPU is a machine
+ * Why this and TinyMachineCPU, two small CPUs: TinyCPU is a machine
  * designed, every choice ours, with an assembler because nothing else
  * writes its words. This one is a machine inherited, the one in a
  * Pi, a phone and a Mac, so its programs come from a real toolchain
@@ -113,7 +113,7 @@
  *
  * Where it stands: the words are TinyAssembler's, from TinyC's and
  * TinyML's assembly. mini-5i's Arm64 is the same instruction
- * set whole, with Arm32 beside it, and TinyLibCPU is the same file's
+ * set whole, with Arm32 beside it, and TinyMachineCPU is the same file's
  * plan for a machine that needed no manual: reading the two [step]s
  * side by side shows what forty years of compatibility cost in
  * cases.

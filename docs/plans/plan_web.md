@@ -55,7 +55,7 @@ js_of_ocaml, 146 KB): `tiny/TinyKernel`'s recorded sessions, natively
 (dune's default profile), `windows.events` 230.6 million instructions
 in 18.2 s and `tetris.events` 216 million in 17.3 s, 12.6 MIPS, the
 screens' sums the recorded ones. **By JavaScript the kernel stops at
-once** ("no memory for an image", its own message): `TinyLibCPU` keeps
+once** ("no memory for an image", its own message): `TinyMachineCPU` keeps
 a word as an int from 0 to 2^32-1 (`m32`, `signed`, `Sltu` and `Ltu`
 by a plain `<`), which is right where an int has 63 bits and wrong
 where it has 32. So no speed by JavaScript yet; if the ratio is
@@ -98,7 +98,7 @@ The smallest whole: tiny-kernel, its programs, its screen and
 tiny-windows, in an image of 1.2 MB (`tiny/TinyKernel/boot.img`; no
 disk, no card), on a machine of 598 lines and a CPU of 445.
 
-- `TinyLibCPU` right where an int has 32 bits: the unsigned
+- `TinyMachineCPU` right where an int has 32 bits: the unsigned
   comparisons, `signed`, the load of a word, the multiply (what
   `Bits` is to `machine/`, here a few lines of the one file; counted,
   the file being a tiny one). Checked by `tiny/tests` natively, and by
@@ -116,7 +116,7 @@ disk, no card), on a machine of 598 lines and a CPU of 445.
 - The speed: 8 million instructions a second is the machine's with a
   window, and a program's time is the instructions counted. If
   JavaScript gives less, tetris falls slower: then stage 2's kind of
-  work on `TinyLibCPU` (it decodes each word at each step), or a
+  work on `TinyMachineCPU` (it decodes each word at each step), or a
   slower machine in the page, said so.
 - The image: `boot.img` beside the page (in `~/github/assets/`), and
   v6's or t6's `kernel.img` with its `fs.img` the same way.
@@ -245,8 +245,8 @@ wasm last.
 - which card: the full one (documents, pictures, ix's sources: 12.9 MB
   by gzip), or a smaller one for the page;
 - `raspberry/web/` for stage 1's directory, `tiny/web/` or one more
-  `tiny/TinyMachineWeb.ml` for stage 0's;
-- `TinyLibCPU`'s few lines more for 32-bit ints, in a file whose
+  `tiny/TinyMachine/TinyMachineWeb.ml` for stage 0's;
+- `TinyMachineCPU`'s few lines more for 32-bit ints, in a file whose
   lines are counted;
 - stage 3's board built by OCaml 5 only, if effects are what carries
   `swtch`.
@@ -258,20 +258,20 @@ numbers above; tiny-machine looked at (stage 0), its CPU found
 wrong by JavaScript's 32-bit ints.
 
 2026-10-10, **stage 0 works** (the author: "it's fine adding a few
-lines to TinyLibCPU and we can have a tiny/TinyMachineWeb.ml I
+lines to TinyMachineCPU and we can have a tiny/TinyMachine/TinyMachineWeb.ml I
 think"): tiny-kernel, tiny-windows, and tiny-os v6 and t6 with their
 disks, in a page.
 
-- `TinyLibCPU.ult` (5 lines more: an unsigned comparison right for
+- `TinyMachineCPU.ult` (5 lines more: an unsigned comparison right for
   63 and 32 bits), used by `sltu`, `bltu`, `bgeu` and by the
   machine's timer, window, pages, disk and events. Nothing else was
   wrong: `m32` and `signed` change nothing where an int has 32 bits.
-- `tiny/TinyLibMachine.ml` (new, 342 lines): the machine without a
+- `tiny/TinyMachine/TinyMachineDevices.ml` (new, 342 lines): the machine without a
   host, out of TinyMachine.ml (598 lines, now 306: its terminal, its
   window, its loop). What a host gives: `put`, `on_open`; what it
   calls: `create`, `env`, `tick`, `console_type`, `mouse_set`.
   tiny/mkfile links it; mini-ml compiles it.
-- `tiny/TinyMachineWeb.ml` (new, 193 lines) and `TinyMachineWeb.html`:
+- `tiny/TinyMachine/TinyMachineWeb.ml` (new, 193 lines) and `TinyMachineWeb.html`:
   a canvas (the screen's byte one store of 32 bits through the 256
   colours), the page's text for the console, its keys and mouse, a
   frame's instructions by requestAnimationFrame, the image fetched
@@ -290,7 +290,7 @@ disks, in a page.
 - **The speed, in Chrome: 4.9 million instructions a second for
   tiny-kernel, 3.8 for t6, 2.2 for v6 (its pages), where the machine
   wants 8.** Under node 18, 4.2. So tetris falls at six tenths of its
-  speed: stage 2's work, on `TinyLibCPU.step` (each word decoded at
+  speed: stage 2's work, on `TinyMachineCPU.step` (each word decoded at
   each step into a fresh value, `load` a closure per access) and on
   `translate`.
 - Not done: Firefox, a phone (no keyboard there); tetris played by
@@ -307,11 +307,11 @@ a recorded session by both, node's profile with -prof). Three
 changes, each measured alone, the two that are not plain rewrites
 behind a switch:
 
-- `TinyLibCPU.load` and `set`: no closure made at each access and each
+- `TinyMachineCPU.load` and `set`: no closure made at each access and each
   step (4.5 to 5.2 under node);
-- `TinyLibCPU.keep_decoded`: decode's answers kept by the word, with
+- `TinyMachineCPU.keep_decoded`: decode's answers kept by the word, with
   nothing to forget (6.8 to 8.1 under node; natively nearly nothing);
-- `TinyLibMachine.ticks`, `batched`: after a tick that looked at the
+- `TinyMachineDevices.ticks`, `batched`: after a tick that looked at the
   events and the interrupts, bare steps to the nearest moment
   something can change (the next event's time, timecmp, a device or
   a control register touched: `touched`); 6.8 to 8.1 under node, 15.2

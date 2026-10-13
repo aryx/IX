@@ -29,7 +29,7 @@
 #        draws, on the screen or in a window, square a game of a page
 #        (the arrows), tetris the game (the arrows, the space drops)
 #   -web dir  tiny-kernel, v6, t6: nothing run; the machine as a web
-#        page in dir (tiny/TinyMachineWeb.ml, by js_of_ocaml), with the
+#        page in dir (tiny/TinyMachine/TinyMachineWeb.ml, by js_of_ocaml), with the
 #        kernel's image: index.html, to serve (it says how) and open
 #   -l   the listing of the kernel's image instead of running it
 #   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
@@ -69,16 +69,16 @@ short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/}
 if [ $build = 1 ]; then
   (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/tiny-os/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
-  [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachineWindow.exe 2>&1) || exit 1
+  [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineWindow.exe 2>&1) || exit 1
 fi
 
 # the page's directory: the machine, its page, the kernel's files; $1
 # is what the address says after index.html
 page() {
   local query=$1; shift
-  (cd $ROOT && dune build --profile release ./tiny/TinyMachineWeb.bc.js 2>/dev/null) || { say "TinyMachineWeb does not build (dune build ./tiny/TinyMachineWeb.bc.js says why; it needs the library js_of_ocaml)"; exit 1; }
+  (cd $ROOT && dune build --profile release ./tiny/TinyMachine/TinyMachineWeb.bc.js 2>/dev/null) || { say "TinyMachineWeb does not build (dune build ./tiny/TinyMachine/TinyMachineWeb.bc.js says why; it needs the library js_of_ocaml)"; exit 1; }
   mkdir -p "$web"
-  cp $B/TinyMachineWeb.bc.js "$web/TinyMachineWeb.js"; cp $ROOT/tiny/TinyMachineWeb.html "$web/index.html"; cp "$@" "$web/"
+  cp $B/TinyMachine/TinyMachineWeb.bc.js "$web/TinyMachineWeb.js"; cp $ROOT/tiny/TinyMachine/TinyMachineWeb.html "$web/index.html"; cp "$@" "$web/"
   # the documents of the wire's other end (get's files, a kept picture)
   mkdir -p "$web/www"; cp $ROOT/tiny/tests/www/* "$web/www/"
   chmod -R u+w "$web"
@@ -117,7 +117,7 @@ case $1 in
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
-    (cd $ROOT && dune build ./tiny/TinyMachineSocket.exe 2>&1) || exit 1
+    (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineSocket.exe 2>&1) || exit 1
     say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"
     say "         and it is the way out: get / gopher.floodgap.com, get / example.com 80"
     say "         and in: httpd, then http://localhost:8080/ in a browser"

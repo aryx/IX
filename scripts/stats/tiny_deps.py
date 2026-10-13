@@ -38,8 +38,8 @@ PROGRAMS = {
     "tiny-editor": ["TinyEditor"], "tiny-assembler": ["TinyAssembler"],
     "tiny-c": ["TinyC"], "tiny-ml": ["TinyML"], "tiny-db": ["TinyDatabase"],
     "tiny-vcs": ["TinyVCS"], "tiny-arm": ["TinyCPUArm"],
-    "tiny-cpu": ["TinyCPU", "TinyLibCPU"],
-    "tiny-machine": ["TinyMachine", "TinyLibMachine", "TinyLibCPU"], "tiny-mkfs": ["tiny-os/TinyMkfs"],
+    "tiny-cpu": ["TinyCPU", "TinyMachineCPU"],
+    "tiny-machine": ["TinyMachine", "TinyMachineDevices", "TinyMachineCPU"], "tiny-mkfs": ["tiny-os/TinyMkfs"],
 }
 ALWAYS = ["Pervasives", "std_exit"]
 

@@ -104,7 +104,7 @@ screen's 256 colours and sends it as rows of bytes. Names, TLS, HTTP
 and a picture's format are the browser's. The machine's part is the
 wire, the envelope, the connection that loses nothing, and a program
 that reads a row and draws it:
-<a href="codemap.html?focus=tiny/TinyLibNetwork.ml"><code>TinyLibNetwork.ml</code></a>,
+<a href="codemap.html?focus=tiny/TinyKernel/TinyKernelNetwork.ml"><code>TinyKernelNetwork.ml</code></a>,
 which the page runs too, as the wire's other end.
 </p>
 
@@ -126,9 +126,9 @@ trap, a timer that counts instructions, pages, a console, a disk, a
 screen of 640 by 480 bytes and a mouse. It is three files of OCaml:
 </p>
 <ul>
-<li><a href="codemap.html?focus=tiny/TinyLibCPU.ml"><code>TinyLibCPU.ml</code></a> &mdash; the CPU: its instructions, its assembler, its interpreter;</li>
-<li><a href="codemap.html?focus=tiny/TinyLibMachine.ml"><code>TinyLibMachine.ml</code></a> &mdash; what a kernel needs around it: the registers of control, the traps, the pages, the devices;</li>
-<li><a href="codemap.html?focus=tiny/TinyMachineWeb.ml"><code>TinyMachineWeb.ml</code></a> &mdash; this page's part: the screen on a canvas, the keys, the mouse, a slice of instructions at each frame. In a terminal the same machine is <a href="codemap.html?focus=tiny/TinyMachine.ml"><code>TinyMachine.ml</code></a>.</li>
+<li><a href="codemap.html?focus=tiny/TinyMachine/TinyMachineCPU.ml"><code>TinyMachineCPU.ml</code></a> &mdash; the CPU: its instructions, its assembler, its interpreter;</li>
+<li><a href="codemap.html?focus=tiny/TinyMachine/TinyMachineDevices.ml"><code>TinyMachineDevices.ml</code></a> &mdash; what a kernel needs around it: the registers of control, the traps, the pages, the devices;</li>
+<li><a href="codemap.html?focus=tiny/TinyMachine/TinyMachineWeb.ml"><code>TinyMachineWeb.ml</code></a> &mdash; this page's part: the screen on a canvas, the keys, the mouse, a slice of instructions at each frame. In a terminal the same machine is <a href="codemap.html?focus=tiny/TinyMachine.ml"><code>TinyMachine.ml</code></a>.</li>
 </ul>
 <p>
 <a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
@@ -167,7 +167,7 @@ shows them all.
 
 <script>
   // the machine's files are in the assets' repository, served beside
-  // this site; tiny/TinyMachineWeb.ml reads this variable
+  // this site; tiny/TinyMachine/TinyMachineWeb.ml reads this variable
   var assets = "https://aryx.github.io/assets/";
   var kernel = new URLSearchParams(location.search).get("kernel");
   var tiny_machine = kernel == "v6" || kernel == "t6"

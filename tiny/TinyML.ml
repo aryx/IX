@@ -868,7 +868,7 @@ let machine_arm64 name nparams nslots (code : ir list) =
 (* The other machine, -tm: tiny-machine, the stack in r1..r11, the value stack at r12 *)
 (*****************************************************************************)
 
-(* TinyLibCPU's CPU: 32-bit registers, r0 zero, no flags, sp r14, lr
+(* TinyMachineCPU's CPU: 32-bit registers, r0 zero, no flags, sp r14, lr
  * r15. The stack machine's registers are r1..r11 (an expression 11
  * deep at most), the value stack's top is r12, r13 the scratch and the
  * result. The same frames as arm64's, in words of 4 bytes: on the value

@@ -1,0 +1,19 @@
+; tiny-kernel's two parts in ML that are files of their own, here for
+; the host: their tests, and the other end of tiny-machine's wire
+
+; TinyKernelNetwork.ml, tiny-kernel's part that speaks to the network
+; (tiny-ml compiles it there), here for the host: its test, and the
+; other end of tiny-machine's wire
+(library
+ (name tiny_kernel_network)
+ (wrapped false)
+ (modules TinyKernelNetwork))
+
+; TinyKernelGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
+; there), here for the host: TinyMemory (TinyKernel/host/) is the machine's
+; memory, an array
+(library
+ (name tiny_kernel_graphics)
+ (wrapped false)
+ (modules TinyKernelGraphics)
+ (libraries tiny_host_memory))

@@ -197,7 +197,7 @@ local chain(name, steps) = {
       ],
       related: ['TinyAssembler.ml', 'TinyCPUArm_test.sh', 'TinyCPUArm_tests/', 'TinyC_test.sh', '../machine/'],
     },
-    'TinyLibCPU.ml': { digest: '1f049d8f6327',
+    'TinyMachineCPU.ml': { digest: '1f049d8f6327',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its assembler, since nothing else writes its words.",
       capitals: [
         { at: 'type:instr', say: 'the whole instruction set: nine forms, one format' },
@@ -216,7 +216,7 @@ local chain(name, steps) = {
       related: ['TinyCPU.ml', 'TinyMachine.ml', 'TinyCPU_tests/'],
     },
     'TinyCPU.ml': { digest: '38b4e35aae5f',
-      summary: "tiny-cpu: TinyLibCPU's CPU run as a user program: memory is memory, three system calls the host's, argv where C's main finds it.",
+      summary: "tiny-cpu: TinyMachineCPU's CPU run as a user program: memory is memory, three system calls the host's, argv where C's main finds it.",
       capitals: [
         { at: 'def:interpret', say: "argc and argv laid out as start.tm expects, then step" },
       ],
@@ -274,7 +274,7 @@ local chain(name, steps) = {
         { at: 'TinyML.ml', role: "ML to assembly, through TinyC's stack machine" },
         { at: 'TinyC.ml', role: 'C to assembly: arm64, or -tm' },
         { at: 'TinyAssembler.ml', role: 'arm64 assembly to an ELF, no objects' },
-        { at: 'TinyLibCPU.ml', role: 'our own CPU, its assembler the linker' },
+        { at: 'TinyMachineCPU.ml', role: 'our own CPU, its assembler the linker' },
         { at: 'TinyMachine.ml', role: 'the CPU with traps, a timer, a disk' },
         { at: 'tiny-os/', role: 'its OS: v0, v6, t6' },
         { at: 'TinyKernel.ml', role: 'its kernel in ML' },
@@ -282,9 +282,9 @@ local chain(name, steps) = {
       joints: [
         { from: 'TinyC.ml', to: 'TinyAssembler.ml', say: 'arm64 assembly' },
         { from: 'TinyML.ml', to: 'TinyAssembler.ml', say: 'arm64 assembly' },
-        { from: 'TinyC.ml', to: 'TinyLibCPU.ml', say: '.tm assembly (-tm)' },
-        { from: 'TinyML.ml', to: 'TinyLibCPU.ml', say: '.tm assembly (-tm)' },
-        { from: 'TinyLibCPU.ml', to: 'TinyMachine.ml', say: 'the CPU' },
+        { from: 'TinyC.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly (-tm)' },
+        { from: 'TinyML.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly (-tm)' },
+        { from: 'TinyMachineCPU.ml', to: 'TinyMachine.ml', say: 'the CPU' },
         { from: 'TinyMachine.ml', to: 'tiny-os/', say: 'boots' },
         { from: 'TinyMachine.ml', to: 'TinyKernel.ml', say: 'boots' },
       ],
@@ -293,13 +293,13 @@ local chain(name, steps) = {
       name: 'Two CPUs: one inherited, one designed',
       bones: [
         { at: 'TinyCPUArm.ml', role: 'a machine inherited: arm64, run as Linux runs a program' },
-        { at: 'TinyLibCPU.ml', role: 'a machine designed: ours' },
+        { at: 'TinyMachineCPU.ml', role: 'a machine designed: ours' },
         { at: 'TinyCPU.ml', role: 'run as a user program' },
         { at: 'TinyMachine.ml', role: 'run with what a kernel needs' },
       ],
       joints: [
-        { from: 'TinyCPU.ml', to: 'TinyLibCPU.ml', say: 'stands on' },
-        { from: 'TinyMachine.ml', to: 'TinyLibCPU.ml', say: 'stands on' },
+        { from: 'TinyCPU.ml', to: 'TinyMachineCPU.ml', say: 'stands on' },
+        { from: 'TinyMachine.ml', to: 'TinyMachineCPU.ml', say: 'stands on' },
       ],
     },
     // each program's own pipeline
@@ -429,31 +429,31 @@ local chain(name, steps) = {
         { from: 'TinyDatabase.ml:def:exec', to: 'TinyDatabase.ml:def:commit', say: 'new roots' },
       ],
     },
-    chain('TinyLibCPU: assemble, then step', [
-      ['TinyLibCPU.ml:def:image', '.tm files, or an image', ''],
-      ['TinyLibCPU.ml:def:assemble_files', 'labels, then words: two passes', 'the files'],
-      ['TinyLibCPU.ml:def:parse_line', 'a line: a label, a directive, an instruction', 'lines'],
-      ['TinyLibCPU.ml:def:instruction', 'an instruction and its pseudo-forms', 'a mnemonic'],
-      ['TinyLibCPU.ml:def:encode', 'the one format', 'an instr'],
+    chain('TinyMachineCPU: assemble, then step', [
+      ['TinyMachineCPU.ml:def:image', '.tm files, or an image', ''],
+      ['TinyMachineCPU.ml:def:assemble_files', 'labels, then words: two passes', 'the files'],
+      ['TinyMachineCPU.ml:def:parse_line', 'a line: a label, a directive, an instruction', 'lines'],
+      ['TinyMachineCPU.ml:def:instruction', 'an instruction and its pseudo-forms', 'a mnemonic'],
+      ['TinyMachineCPU.ml:def:encode', 'the one format', 'an instr'],
     ]) + {
       bones+: [
-        { at: 'TinyLibCPU.ml:def:step', role: 'a word fetched through env, decoded, run' },
-        { at: 'TinyLibCPU.ml:def:decode', role: 'a word to an instr' },
+        { at: 'TinyMachineCPU.ml:def:step', role: 'a word fetched through env, decoded, run' },
+        { at: 'TinyMachineCPU.ml:def:decode', role: 'a word to an instr' },
       ],
-      joints+: [{ from: 'TinyLibCPU.ml:def:step', to: 'TinyLibCPU.ml:def:decode', say: 'the word' }],
+      joints+: [{ from: 'TinyMachineCPU.ml:def:step', to: 'TinyMachineCPU.ml:def:decode', say: 'the word' }],
     },
     chain('tiny-cpu: the CPU alone', [
       ['TinyCPU.ml:def:main', 'the .tm files, then the arguments', ''],
-      ['TinyLibCPU.ml:def:image', 'assembled and linked', 'the files'],
+      ['TinyMachineCPU.ml:def:image', 'assembled and linked', 'the files'],
       ['TinyCPU.ml:def:interpret', 'argc and argv laid out, then the loop', 'the image'],
-      ['TinyLibCPU.ml:def:step', 'an instruction', 'the machine'],
+      ['TinyMachineCPU.ml:def:step', 'an instruction', 'the machine'],
       ['TinyCPU.ml:def:syscall', "the host's exit, write, read", 'sys'],
     ]),
     chain('tiny-machine: a step, or a trap', [
       ['TinyMachine.ml:def:main', 'the kernel and its programs, or an image', ''],
-      ['TinyLibCPU.ml:def:image', 'assembled with the new instructions', 'the files'],
+      ['TinyMachineCPU.ml:def:image', 'assembled with the new instructions', 'the files'],
       ['TinyMachine.ml:def:run', 'the time, an interrupt, a step', 'the image'],
-      ['TinyLibCPU.ml:def:step', "the CPU's step, through the machine's env", 'the machine'],
+      ['TinyMachineCPU.ml:def:step', "the CPU's step, through the machine's env", 'the machine'],
       ['TinyMachine.ml:def:translate', 'an address checked: window or pages', 'loads, stores'],
       ['TinyMachine.ml:def:check', 'the window: base and bound', 'no pages'],
     ]) + {
@@ -469,7 +469,7 @@ local chain(name, steps) = {
     ]),
   ],
   views: [
-    { name: 'TinyLibCPU and its machines', of: 'TinyLibCPU.ml', with: 'users' },
+    { name: 'TinyMachineCPU and its machines', of: 'TinyMachineCPU.ml', with: 'users' },
     { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyML/core.c', 'TinyML/runtime.c', 'TinyKernel/runtime.c'] },
   ],
 }

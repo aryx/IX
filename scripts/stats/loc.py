@@ -339,9 +339,10 @@ def files():
     # (not a link: a file that several directories use is counted where it is)
     # (not a tiny program's interface, tiny/TinyShell.mli: its header
     # comment, and main and one function's types, to read first; the
-    # program is its .ml. In no row and no number. TinyLib/'s are counted)
+    # program is its .ml. In no row and no number. TinyLibCore/'s are counted; TinyMachine/'s and TinyKernel/'s
+    # are such interfaces too)
     return [f for f in out.splitlines() if f and not os.path.islink(f)
-            and not re.fullmatch(r"tiny/[^/]+\.mli", f)]
+            and not re.fullmatch(r"tiny/((TinyMachine|TinyKernel)/)?[^/]+\.mli", f)]
 
 
 # What is not counted in m-ix, but said at the end, each with its
@@ -403,7 +404,7 @@ APART = [
     # under mini-9pi"; last, so a program that is apart keeps its own in
     # its row)
     ("sdl/, tty/", "a program's hosts on Linux, a window of SDL's or a terminal: what counts runs under mini-9pi",
-     lambda dirs, path: "sdl" in dirs or "tty" in dirs or path == "tiny/TinyMachineWindow.ml"),
+     lambda dirs, path: "sdl" in dirs or "tty" in dirs or path == "tiny/TinyMachine/TinyMachineWindow.ml"),
 ]
 
 # The kernel that counts in m-ix is mini-9pi, with what it stands on

@@ -9,7 +9,7 @@
 # node; for each the seconds, the millions of instructions a second
 # (the session's last event's time is its count, to a few thousand), and
 # whether the screen at the halt is the recorded one. The page
-# (TinyMachineWeb.ml) wants TinyLibMachine.rate, 8 million a second, of
+# (TinyMachineWeb.ml) wants TinyMachineDevices.rate, 8 million a second, of
 # what node gives less a frame's other work.
 #
 # Usage: TinyMachine_bench.sh [session, default paint] [-prof]

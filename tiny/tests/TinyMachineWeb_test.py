@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# tiny-machine's page (tiny/TinyMachineWeb.ml, plan_web.md stage 0) in
+# tiny-machine's page (tiny/TinyMachine/TinyMachineWeb.ml, plan_web.md stage 0) in
 # a browser without a screen: Chrome, driven by its debugging protocol.
 # The page's directory is built (./tiny-machine -web), served, opened;
 # then keys are typed and the mouse moved as a person would:
@@ -122,7 +122,7 @@ async def session(port, debug):
         if kernel != "tiny-kernel":
             print("   status:", await p.js(STATUS)); return
         assert await p.js(LIT) == 0, "the screen is not black before a program draws"
-        # the network: the page is the wire's other end (TinyLibPeer)
+        # the network: the page is the wire's other end (TinyMachinePeer)
         await p.type("ping\n")
         await p.wait("ping's answers", f"{CONSOLE}.split('answer from 10.0.0.1').length > 3")
         assert "echo" in await p.js(WIRE), f"the wire's lines have no echo: {await p.js(WIRE)!r}"

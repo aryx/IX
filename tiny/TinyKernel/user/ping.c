@@ -3,7 +3,7 @@
 // ping [address]: is the machine at that address there? (the wire's
 // other end without one, 10.0.0.1). Three questions, a quarter of a
 // second apart, each waited for a second: what answers and in how
-// long, by the kernel's clock (a tick is 2.5 ms). TinyLibNetwork.ml has
+// long, by the kernel's clock (a tick is 2.5 ms). TinyKernelNetwork.ml has
 // the question and the answer, TinyKernel.ml's dial the link.
 #include "user.h"
 

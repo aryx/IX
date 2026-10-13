@@ -67,10 +67,10 @@ needing the next:
 ## What is in an executable
 
 The same layers, measured in three files: a tiny program built on
-`tiny/TinyLib/` (`mini-mk LIB=tiny`), and mini-rc for Linux and for
+`tiny/TinyLibCore/` (`mini-mk LIB=tiny`), and mini-rc for Linux and for
 mini-9pi. Each byte of code is given to the source file it comes from:
 
-![What is in an executable of ix: tiny-shell for Linux on TinyLib, mini-rc for Linux, mini-rc for mini-9pi; in each the start, the program, the library, mini-ml's runtime, the C library and the data, with their sizes and where they come from](pics/anatomy.svg)
+![What is in an executable of ix: tiny-shell for Linux on TinyLibCore, mini-rc for Linux, mini-rc for mini-9pi; in each the start, the program, the library, mini-ml's runtime, the C library and the data, with their sizes and where they come from](pics/anatomy.svg)
 
 - **The library is more than half of each file**, and on Linux `Unix`
   alone is a quarter of it (96,000 and 111,000 bytes; Plan 9's is
@@ -78,7 +78,7 @@ mini-9pi. Each byte of code is given to the source file it comes from:
   structures packed and read as bytes.
   Of a library mini-ld takes the units that are named (`mini-ar`
   keeps them; `mini-ml -start` names them all weakly): 30 of
-  TinyLib's 44 for tiny-shell, 35 of lib_core's for mini-rc.
+  TinyLibCore's 44 for tiny-shell, 35 of lib_core's for mini-rc.
 - **The runtime is whole in every program**: `runtime.c` is one
   object. **The C library nearly so**: 47 of the 48 files of
   `lib_core/mkfile`'s list for Linux are in tiny-shell (all but
@@ -90,8 +90,8 @@ mini-9pi. Each byte of code is given to the source file it comes from:
   -H2`), the calls Plan 9's.
 - **The start** is 30,000 bytes on arm64 and 7,000 on arm.
 
-So what a tiny program needs from m-ix beside TinyLib's OCaml, were it
-to be in `tiny/TinyLib/c/`: the runtime (`languages/ml/runtime/`, 14
+So what a tiny program needs from m-ix beside TinyLibCore's OCaml, were it
+to be in `tiny/TinyLibCore/c/`: the runtime (`languages/ml/runtime/`, 14
 files, 2,683 lines) and the C library's 47 files (2,511 lines of C and
 assembly) with the 40 headers they reach (1,421 lines): about 6,600
 lines.
@@ -101,9 +101,9 @@ To measure a program, link it again with `-v` and give the listing to
 unit and each C file):
 
     cd tiny && mini-mk LIB=tiny && B=../_mk/7 && T=$B/tinylib
-    mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $T/lib/TinyLib.a \
+    mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $T/lib/TinyLibCore.a \
       $T/TinyShell.7 $T/lib/std_exit.7 $B/lib_core/runtime.7 $B/lib_core/libc.a |
-      ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny -libs tiny/TinyLib/ocaml
+      ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny -libs tiny/TinyLibCore/ocaml
 
 The file made is the one mini-mk made, byte for byte.
 `scripts/stats/anatomy_svg.py` draws the picture from three such
@@ -131,7 +131,7 @@ globals) is not told apart by piece.
 - **tiny-xxx** (t-ix): a free variant in one file under `tiny/`,
   named after what it does, keeping the idea and redesigning the rest.
   One of them keeps its core in a library for a second program
-  (`TinyLibCPU.ml`, tiny-cpu's, for tiny-machine).
+  (`TinyMachineCPU.ml`, tiny-cpu's, for tiny-machine).
 
 Both share `lib_core/` (files, processes, the console, logging),
 `lib_crypto/` and `lib_compression/`.
@@ -145,7 +145,7 @@ of our own, designed to teach, whose guest code ix writes itself:
 |----------------------|---------------------------------------|-------------------------------------|
 | real ARM, faithful   | mini-5i (`machine/`: arm32, arm64)    | mini-qemu (`raspberry/`: the Pi1, the Pi4; `./mini-pi`) |
 | real ARM, free       | tiny-arm (`TinyCPUArm.ml`: arm64)     | none: mini-qemu's is the one |
-| our own, free        | tiny-cpu (`TinyCPU.ml`, `TinyLibCPU.ml`) | tiny-machine (`TinyMachine.ml`; `./tiny-machine v0`, `v6`) |
+| our own, free        | tiny-cpu (`TinyCPU.ml`, `TinyMachineCPU.ml`) | tiny-machine (`TinyMachine.ml`; `./tiny-machine v0`, `v6`) |
 
 Each machine, with what makes its guest code and what runs on it:
 
@@ -154,7 +154,7 @@ Each machine, with what makes its guest code and what runs on it:
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
 | tiny-arm     | tiny-assembler; tiny-c and tiny-ml through it     | their arm64 Linux executables, goken's libc included (`tiny/tests/TinyCPUArm_tests/`, `tiny/tests/TinyC_tests/`) |
-| tiny-cpu     | TinyLibCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyC/libc/` |
+| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyC/libc/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-os's kernels and their programs |
 
 tiny-assembler, tiny-c and tiny-ml (without `-tm`) are free variants

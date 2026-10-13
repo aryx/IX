@@ -862,7 +862,7 @@ CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilitie
 CARD_utilities/text = grep=$(IX9)/utilities/text/mini-grep uniq=$(IX9)/utilities/text/mini-uniq tr=$(IX9)/utilities/text/mini-tr \
   sed=$(IX9)/utilities/text/mini-sed sort=$(IX9)/utilities/text/mini-sort awk=$(IX9)/utilities/text/awk/mini-awk
 CARD_utilities/pipe = tee=$(IX9)/utilities/pipe/mini-tee tail=$(IX9)/utilities/pipe/mini-tail xargs=$(IX9)/utilities/pipe/mini-xargs
-CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep time=$(IX9)/utilities/process/mini-time
+CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep spin=$(IX9)/utilities/process/mini-spin time=$(IX9)/utilities/process/mini-time
 CARD_utilities/calc = hoc=$(IX9)/utilities/calc/hoc/mini-hoc dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
 CARD_utilities/time = date=$(IX9)/utilities/time/mini-date cal=$(IX9)/utilities/time/mini-cal
 CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \

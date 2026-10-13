@@ -301,10 +301,18 @@ core_wake:
 klock_take:
 	ldr	r1, =klock
 	mov	r2, #1
+	@ (taken: a yield before looking again, ARM's hint to whoever runs
+	@ the core that it only waits. Nothing on a board; an emulator
+	@ that runs the cores in turns, mini-qemu, gives the turn to the
+	@ one that holds the lock: without it a waiting core spun through
+	@ its turn, a quarter of the host's time of a boot.
+	@ old: cmp r0, #0; bne 1b)
 1:	ldrex	r0, [r1]
 	cmp	r0, #0
-	bne	1b
-	strex	r0, r2, [r1]
+	beq	2f
+	.word	0xe320f001			@ yield
+	b	1b
+2:	strex	r0, r2, [r1]
 	cmp	r0, #0
 	bne	1b
 	mcr	p15, 0, r0, c7, c10, 5		@ (a barrier: what the last holder wrote is seen)

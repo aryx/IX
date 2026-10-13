@@ -14,21 +14,39 @@ let pgroundup a = (a + pgsize - 1) land lnot (pgsize - 1)
 (* Physical pages (kalloc.c) *)
 (*****************************************************************************)
 
-let free_pages = ref []
+(* The free pages are a list threaded through the pages themselves, as
+ * xv6's kalloc: a free page's first word is the next one's address, 0
+ * the last. Nothing of it is in OCaml's heap.
+ * old: an OCaml list of their addresses,
+ *   let free_pages = ref []
+ *   ... fill: free_pages := pa :: !free_pages
+ *   let kalloc () = match !free_pages with [] -> None | pa :: rest -> free_pages := rest; Phys.zero pa pgsize; Some pa
+ *   let kfree pa = free_pages := pa :: !free_pages
+ *   let nfree () = List.length !free_pages
+ * a cell a page: 221,000 cells for the Pi 2's 864 MB, 90,000 for the
+ * Pi 1's, alive for ever, which the collector marked again at each of
+ * its cycles. mark_slice and sweep_slice were the first lines of a
+ * boot's profile under mini-qemu, and two and a half times more on
+ * the Pi 2's kernel than on the Pi 1's (the author, 2026-10-13: "It
+ * feels slower to run mini-9pi2 than mini-9pi now"). *)
+let free_head = ref 0
+let free_count = ref 0
+
+let kfree pa = Phys.set32 pa !free_head; free_head := pa; incr free_count
+
 let () =
   let lo, hi = Arch.pages in
-  let rec fill pa = if pa >= lo then begin free_pages := pa :: !free_pages; fill (pa - pgsize) end in
+  (* (from the top down: the lowest is given first, as before) *)
+  let rec fill pa = if pa >= lo then begin kfree pa; fill (pa - pgsize) end in
   fill (hi - pgsize)
 
 (* a zeroed page, or None *)
 let kalloc () =
-  match !free_pages with
-  | [] -> None
-  | pa :: rest -> free_pages := rest; Phys.zero pa pgsize; Some pa
+  let pa = !free_head in
+  if pa = 0 then None
+  else begin free_head := Phys.get32 pa; decr free_count; Phys.zero pa pgsize; Some pa end
 
-let kfree pa = free_pages := pa :: !free_pages
-
-let nfree () = List.length !free_pages
+let nfree () = !free_count
 
 (*****************************************************************************)
 (* A space: a radix tree of tables (Arch.levels) *)

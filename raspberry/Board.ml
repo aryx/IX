@@ -478,6 +478,9 @@ let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
   (* (WFE, with several cores: a core that waits for another's word
    * gives its turn up, and looks again at its next) *)
   | Hint { hint = 2; _ } when Array.length t.cores > 1 -> t.wfi <- true; t.yielded <- true
+  (* (and YIELD: a core that spins for a lock another holds says so,
+   * mini-9pi's klock_take; nothing it waits for changes in its turn) *)
+  | Hint { hint = 1; _ } when Array.length t.cores > 1 -> t.wfi <- true; t.yielded <- true
   | Hint _ -> ()
   | _ -> raise (Arm32.Unimplemented (0, st.r.(15) - 8))
 

@@ -891,9 +891,31 @@ To_text, To_pdf), `roff/` (Roff, Fill, Man, Ms, Tbl), `pic/`,
 `ixdoc/`, `latex/`; CLI and Main at the top. Decision 14's names, inside the
 program's directory and not beside it.
 
-All of typesetting/: 6,073 lines with the interfaces and their
-comments. Of the plan's stages, 1 to 5 and 7 are done on Linux; left:
-equations (6, postponed by the author), m-ix (8: built for Plan 9 on
+Two modules had passed 700 lines, where the author reorganizes ("more
+than 700 LOC which is usually the limit at which we start to
+reorganize a module in multiple modules (judgment call each time)"),
+and were split, no line of them changed but for the names:
+
+- `Ixdoc.ml` (801) is `Ixdoc_syntax` (141: a text's marks and what
+  kind of line a line is, with no document: what the reader and the
+  writer both ask), `Ixdoc` (463: the reader) and `To_ixdoc` (213: the
+  writer, named as `To_text` and `To_pdf`).
+- `Latex.ml` (1,230) is `Latex_state` (92: the types, and nothing
+  else), `Latex_input` (214: the text, a character at a time; an
+  argument), `Latex_output` (107: the document, a piece at a time; a
+  text read apart), `Latex_names` (45: the tables), `Noweb` (78: a
+  chunk, the index), `Latex_math` (67), `Latex_table` (143) and
+  `Latex` (528: the reading and the commands, which name each other).
+  The parts that read a text apart call the reading through one field
+  of the state, `run`, which `Latex` sets: the only way up.
+
+`Doc.words` (a text's letters) replaced the three copies of it. The
+largest file is now `Latex.ml`, 528 lines, then `Roff.ml`, 517.
+
+All of typesetting/: 6,439 lines with the interfaces and their
+comments (366 more than before the split: its eight new interfaces
+and the new files' headers). Of the plan's stages, 1 to 5 and 7 are
+done on Linux; left: equations (6, postponed by the author), m-ix (8: built for Plan 9 on
 arm, not run).
 
 Next: stage 8, m-ix; or stage 6.

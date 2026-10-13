@@ -157,5 +157,8 @@ val plain : style
  * U+200B, U+2060): what is measured, and written *)
 val letters : string -> string
 
+(* a text's letters, without its looks: a line's end is a space *)
+val words : inline list -> string
+
 (* the same document, each text of it changed *)
 val map_text : (style -> string -> string) -> t -> t

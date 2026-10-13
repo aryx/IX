@@ -10,10 +10,13 @@
 ;           macros of the two packages, as cases; Tbl: a table
 ;   pic/    Pic: a picture; its grammar (Pic_parser), its words
 ;           (Pic_lexer), its tree (Pic_ast)
-;   ixdoc/  Ixdoc: the new format, Markdown's lines and
-;           \name[options]{text}, read and written back
+;   ixdoc/  the new format, Markdown's lines and \name[options]{text}:
+;           Ixdoc reads it, To_ixdoc writes any document in it,
+;           Ixdoc_syntax is its marks and its kinds of line
 ;   latex/  Latex: simple LaTeX and noweb's chunks of code, the books;
-;           Bib: a bibliography's file
+;           its parts: Latex_state, Latex_input, Latex_output,
+;           Latex_names, Noweb (a chunk), Latex_math, Latex_table; Bib:
+;           a bibliography's file
 ; CLI and Main here are the program.
 (include_subdirs unqualified)
 

@@ -37,6 +37,13 @@
  *                 \bibliography (Bib), \tableofcontents, \url,
  *                 \verb, the title
  *
+ * Its parts, each a module: Latex_state (what is being read and made),
+ * Latex_input (the text, a character at a time; an argument),
+ * Latex_output (the document, a piece at a time; a text read apart),
+ * Latex_names (the commands that are a table's line), Noweb (a
+ * chunk), Latex_math, Latex_table, Bib (the references' file); here,
+ * the reading and the commands.
+ *
  * No \catcode, no \def with a pattern, no .sty file read: a package
  * is the few commands of it that the table has. A command that is
  * not in the table is said, once, with its line, and what follows it

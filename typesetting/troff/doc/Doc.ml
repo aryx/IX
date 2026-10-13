@@ -37,6 +37,10 @@ let letters (s : string) : string =
   if not (String.contains s '\xc2' || String.contains s '\xe2') then s
   else String.concat "" (List.filter (fun c -> c <> "\xc2\xad" && c <> "\xe2\x81\xa0" && c <> "\xe2\x80\x8b") (fst (Utf8.chars s)))
 
+(* a text's letters, without its looks *)
+let words (l : inline list) : string =
+  String.concat "" (List.map (fun (i : inline) -> match i with Text (_, s) -> letters s | Break -> " ") l)
+
 let map_text (f : style -> string -> string) (d : t) : t =
   let inline (i : inline) : inline = match i with Text (style, s) -> Text (style, f style s) | Break -> Break in
   let rec block (b : block) : block =

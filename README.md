@@ -133,7 +133,7 @@ link opens it in the code map.
 | **lib_core** | what all the programs share: IX's own library, mini-ml's standard library, its threads, and the C library under its runtime | 19,400 | `libc`, ocaml-light's stdlib | [`lib_core/`](lib_core/) ([map](https://aryx.github.io/IX/codemap.html?focus=lib_core)) |
 | **mini-rc** | the shell | 2,300 | `rc` | [`shell/`](shell/) ([map](https://aryx.github.io/IX/codemap.html?focus=shell)) |
 | **the utilities** | the command-line programs, each a file or a few: mini-cat, mini-ls, mini-cp, mini-grep, mini-sed, mini-sort, mini-awk, mini-hoc, mini-dc, mini-bc, ... | 8,600 | `cat`, `ls`, `grep`, `sed`, `awk`, `hoc`, `dc`, `bc` | [`utilities/`](utilities/) ([map](https://aryx.github.io/IX/codemap.html?focus=utilities)) |
-| **mini-troff**, **mini-man** | the typesetter, of manual pages, of papers, of Markdown and of books, for a terminal (the pages of Plan 9's manual come out with troff's own lines) and as PDF, with their tables and pictures; it reads the macros of `man` and `ms`, `tbl` and `pic`, not troff's language under them; a format of IX's own, Markdown's lines and `\name{text}`, which it also writes: a manual page converted; and simple LaTeX with noweb's chunks of code, a table of commands and not TeX: principia's 21 books, 8,364 sheets ([the plan](docs/plans/plan_typesetting.md): equations) | 6,100 | `troff -man -ms`, `tbl`, `pic`, `man`, `latex`, `noweave`, `bibtex` | [`typesetting/`](typesetting/) ([map](https://aryx.github.io/IX/codemap.html?focus=typesetting)) |
+| **mini-troff**, **mini-man** | the typesetter, of manual pages, of papers, of Markdown and of books, for a terminal (the pages of Plan 9's manual come out with troff's own lines) and as PDF, with their tables and pictures; it reads the macros of `man` and `ms`, `tbl` and `pic`, not troff's language under them; a format of IX's own, Markdown's lines and `\name{text}`, which it also writes: a manual page converted; and simple LaTeX with noweb's chunks of code, a table of commands and not TeX: principia's 21 books, 8,364 sheets ([the plan](docs/plans/plan_typesetting.md): equations) | 6,400 | `troff -man -ms`, `tbl`, `pic`, `man`, `latex`, `noweave`, `bibtex` | [`typesetting/`](typesetting/) ([map](https://aryx.github.io/IX/codemap.html?focus=typesetting)) |
 | **mini-cc** | the C compiler for arm and arm64; the same instructions as Plan 9's `5c` and `7c` | 6,000 | `5c`, `7c` | [`languages/c/`](languages/c/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/c)) |
 | **mini-ml** | a native compiler for OCaml (the subset IX is written in), for arm and arm64; it compiles all of IX, the kernels included | 6,800 | ocaml-light's `ocamlopt` | [`languages/ml/`](languages/ml/) ([map](https://aryx.github.io/IX/codemap.html?focus=languages/ml)) |
 | **mini-asm** | the assembler for arm and arm64 | 1,100 | `5a`, `7a` | [`assembler/`](assembler/) ([map](https://aryx.github.io/IX/codemap.html?focus=assembler)) |
@@ -180,7 +180,7 @@ its original and what it redesigns.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-shell** | a shell in rc's spirit: lists as the only value | 630 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
+| **tiny-shell** | a shell in rc's spirit: lists as the only value; on the host, and on tiny-machine as `rc` | 610 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
 | **tiny-editor** | an editor with sam's command language | 750 | mini-ed | [`TinyEditor.ml`](tiny/TinyEditor.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditor.ml)) |
 | **tiny-build** | a build system: rules, `%`, digests, `-j` | 370 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
 | **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 610 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
@@ -211,18 +211,27 @@ system, and the programs in its windows.
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 150 | the playground's Tetris | [`TinyAppTetris.ml`](tiny/TinyAppTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppTetris.ml)) |
 | **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 70, 40 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](tiny/TinyAppCalculator.ml), [`TinyAppTemperature.ml`](tiny/TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
 
-The two sides do not meet yet. The tools are OCaml that needs a
-library tiny-ml does not have, so none of them runs inside the system:
-the shell one types at there is a C program of tiny-kernel's
-(`tiny/TinyKernel/user/sh.c`), not tiny-shell. What each side is
-compiled by, and with what under it:
+The two sides meet in one program so far, the shell: the same
+`TinyShell.ml` is built by OCaml for the host and by tiny-ml for
+tiny-machine, where it is the program `rc` (the shell one types at
+first there is still a C program of tiny-kernel's,
+`tiny/TinyKernel/user/sh.c`, kept for what it teaches). What made it
+possible: tiny-ml reads the capabilities and forgets them;
+[`TinyLibStd.ml`](tiny/TinyLibStd.ml) has what the shell names of
+OCaml's standard library; and what it asks of the system is one
+interface, `TinyLibSystem`, with a file for each side
+([`TinyLibHost/`](tiny/TinyLibHost/TinyLibSystem.mli)'s over Unix,
+[`TinyKernel/user/`](tiny/TinyKernel/user/TinyLibSystem.ml)'s over
+the kernel's calls). The other tools are still OCaml that needs a
+library tiny-ml does not have. What each side is compiled by, and
+with what under it:
 
 | | compiled by | its standard library | and beside it |
 |---|---|---|---|
 | the tools and the machine, while developing | OCaml and dune | OCaml's own | [`lib_core/commons/`](lib_core/commons/) (dune's `ix_core`), opam's `unix`, `fpath`, `logs` |
 | the same, built by IX (arm64) | mini-ml, by `mini-mk` | [`tiny/TinyLibHost/`](tiny/TinyLibHost/), its own runtime and C library with it | nothing of `lib_core/` |
 | the same, built by IX for arm, or with `mini-mk LIB=core` | mini-ml | IX's own, in `lib_core/` | `lib_core/commons/` |
-| the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore.ml`](tiny/TinyLibCore.ml), tiny-ml's prelude (read before every program: some forty functions), and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI` |
+| the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore.ml`](tiny/TinyLibCore.ml), tiny-ml's prelude (read before every program: some forty functions), and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`; for a tool, `TinyLibStd` and `TinyLibSystem` |
 
 One more CPU is beside the machine's, for the ARM that tiny-c, tiny-ml
 and tiny-assembler also make: **tiny-arm**
@@ -233,7 +242,7 @@ would.
 With it and without tiny-lib-host, that is about 10,200 lines of OCaml
 and ML; with tiny-lib-host and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 20,600 lines** in all (the header comments are in
+t-IX is **about 21,200 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -388,7 +397,7 @@ not, something is trimmed first.
 | | budget | today (2026-10-13) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 146,600 | 3,400 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 20,400 | 4,600 | tiny-debugger, tiny-profiler |
+| **t-IX** | 25,000 | 20,900 | 4,100 | tiny-debugger, tiny-profiler |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

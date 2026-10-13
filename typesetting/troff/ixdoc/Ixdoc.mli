@@ -1,6 +1,6 @@
 (* Ixdoc: the new format -- a document written in Markdown's lines,
- * with one form, \name[options]{text}, for all that Markdown has not;
- * read, and written back from any document.
+ * with one form, \name[options]{text}, for all that Markdown has not,
+ * read.
  *
  *   \title{tr}{1}                       a manual page: its header
  *
@@ -58,18 +58,9 @@
  * page. A paragraph's next line must not be set in less than its
  * item (no "lazy" line).
  *
- * [print] is the other way: any document, whatever read it, in these
- * words; so that
- *
- *   mini-troff -T md tr.1 > tr.md
- *
- * is a manual page converted. Each thing of Doc.t has one spelling
- * here, and what is written is read back as the same words in the
- * same order (the 553 pages of principia's manual; md.sh). Lost on
- * the way: a hanging paragraph's width when it is not a whole number
- * of columns, a paragraph's first line set in, tab stops, a table's
- * rules other than its heading's and its cells that go across
- * columns, and a picture is the lines and words it was drawn as.
+ * To_ixdoc is the other way: any document, whatever read it, written
+ * in these words. Ixdoc_syntax has what the two share: a text's marks
+ * and what kind of line a line is.
  *
  * others:
  * Markdown is John Gruber's (2004): the conventions of plain-text
@@ -89,7 +80,3 @@
  * columns; [load] reads a file the document names (\include, a
  * picture's copy), none if it may not *)
 val read : bool -> (string -> string option) -> string -> Doc.t * (int * string) list
-
-(* [print paper d]: d written in the format; [paper] says which
- * lengths d was read with *)
-val print : bool -> Doc.t -> string

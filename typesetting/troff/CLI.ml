@@ -51,7 +51,7 @@ let typeset (way : way) (package : package option) (load : string -> string opti
   let said = List.map (fun (line, what) -> Printf.sprintf "%s:%d: %s: not known" name line what) complaints in
   match way with
   | Text -> (To_text.page doc, said)
-  | Source -> (Ixdoc.print paper doc, said)
+  | Source -> (To_ixdoc.print paper doc, said)
   (* (with the characters the file has for others: a dash for a minus) *)
   | Words -> (To_text.page (Doc.map_text (fun (style : Doc.style) s -> To_pdf.shown style.font s) doc), said)
   | Pdf ->

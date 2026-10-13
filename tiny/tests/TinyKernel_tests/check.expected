@@ -17,6 +17,7 @@ paint 2 75138
 tiny-windows 2 157220
 square 2 127180
 tetris 2 141228
+calc 2 150020
 ping 2 70300
 get 2 72559
 wiki 2 76513
@@ -58,18 +59,16 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 < close id 5002 ack 1002, from 10.0.0.1 to 10.0.0.2
 > sync id 2000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-< sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-> ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > data id 2001 ack 6000, 8 bytes, from 10.0.0.2 to 10.0.0.1
-x data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-< data id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
+< data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
+x data id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 < query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
-> state id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
-< data? id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-> ack id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
+> state id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+< data? id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 > state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
-> ack id 2002 ack 6000, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 < close id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2

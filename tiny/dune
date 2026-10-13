@@ -129,6 +129,20 @@
  (modules TinyTetris)
  (libraries tiny_playground))
 
+; TinyGUI.ml, what a program with buttons is written on, and
+; TinyCalculator.ml, tiny-kernel's calc, on it
+(library
+ (name tiny_gui)
+ (wrapped false)
+ (modules TinyGUI)
+ (libraries tiny_playground))
+
+(library
+ (name tiny_calculator)
+ (wrapped false)
+ (modules TinyCalculator)
+ (libraries tiny_gui))
+
 (library
  (name tiny_windows)
  (wrapped false)

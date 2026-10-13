@@ -117,6 +117,12 @@ val run : 'm game -> 'a
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int
 
+(* a shape drawn in an image, its corner at (x, y): messages gathered,
+ * which [flush] writes (TinyGUI's, which draws a widget and not a
+ * picture) *)
+val draw : int -> int -> int -> shape -> unit
+val flush : unit -> unit
+
 (* a picture: the shapes before (its first, the ground, drawn again
  * only when another), the shapes now; and the two images it is made
  * in, by their numbers (a test's) *)

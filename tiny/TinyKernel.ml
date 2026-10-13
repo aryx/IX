@@ -39,7 +39,7 @@ external k_font : unit -> int = "k_font"
 let part = 0x100000
 let nslots = 8
 let base slot = 0x500000 + (slot * part)
-let frame slot = 0x1c0000 + (slot * 68)
+let frame slot = 0x2c0000 + (slot * 68)
 let cons_out = 0xfffff0
 let halt_dev = 0xfffff4
 let cons_in = 0xfffff8
@@ -47,7 +47,7 @@ let mouse_dev = 0xfffffc
 (* the network's four words (an address, a length, a command, whether
  * there is a wire), and a packet's place in memory, below the heap *)
 let net_dev = 0xffffd0
-let net_buf = 0x1f0000
+let net_buf = 0x2f0000
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1

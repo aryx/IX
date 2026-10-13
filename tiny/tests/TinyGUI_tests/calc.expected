@@ -1,0 +1,20 @@
+keys 12*3=            36
+keys 12*3=+6          36 + | 6
+keys 2+3*4=           20
+keys 7-9=             -2
+keys 9/2=             4
+keys 7/0=             error
+keys 7/0=5            error
+keys 7/0=c5           5
+keys 5+*3=            15
+keys 5=               5
+keys 999999999+1=     error
+keys 99999*99999=     error
+keys 31622*31622=     999950884
+keys 1234567890       123456789
+the widgets ask for 140 by 180
+clicks 4 2 - 2 =     40
+down in 7, up outside: 0, the mouse up: true
+down outside, up in 7: 0
+moved, the button up: the same mouse true
+18 shapes; a press draws 1 of them, 88 bytes of messages for 1248

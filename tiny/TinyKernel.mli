@@ -90,10 +90,10 @@
  *
  *     0x000000   the image: entry.tm, the runtime, this file; then the
  *                files it carries, a name, a size, the bytes
- *     0x180000   the value stack: the kernel's own roots (TinyML's)
- *     0x1c0000   the frames, 68 bytes a slot: r1 to r15 and the pc of
+ *     0x280000   the value stack: the kernel's own roots (TinyML's)
+ *     0x2c0000   the frames, 68 bytes a slot: r1 to r15 and the pc of
  *                a process that is not running
- *     0x200000   the heap, two halves of 1.5 MB: every file written,
+ *     0x300000   the heap, two halves of 1 MB: every file written,
  *                every pipe, descriptor table and closure
  *     0x500000   eight partitions of 1 MB, a slot each
  *     0xd00000   the images' pixels: the font, the windows not shown

@@ -457,13 +457,13 @@ What the numbers mean is up to who answers:
 | addresses | what |
 |---|---|
 | from 0 | the kernel's image, then the files it carries |
-| `0x180000` | the ML runtime's stack of values (the image and its files end below it) |
-| `0x1c0000` | the processes' frames: 17 words each, their registers and pc |
-| `0x200000` to `0x500000` | the ML heap, two halves |
+| `0x280000` | the ML runtime's stack of values (the image and its files end below it) |
+| `0x2c0000` | the processes' frames: 17 words each, their registers and pc |
+| `0x300000` to `0x500000` | the ML heap, two halves of 1 MB |
 | `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
-| `0x1f0000` | a packet's place, on its way to or from the network's device |
+| `0x2f0000` | a packet's place, on its way to or from the network's device |
 | the last 48 bytes | the devices |
 
 A process sees its partition as addresses 0 to 1 MB: its program is
@@ -607,6 +607,31 @@ shell or in a window; `q` quits. `tetris` is `tiny/TinyTetris.ml`:
 the arrows move the piece (up turns it, down is a row), the space
 drops it, `q` quits; after a game over, the space starts another.
 
+### 7.6 A program with buttons: TinyGUI.ml
+
+A program with widgets is a value of `tiny/TinyGUI.ml`'s type `gui`:
+its first model (`init`), the model as widgets (`view`), the model
+after a message (`update`), and the messages of a key (`key`). The
+library has the loop, the layout, the mouse and the drawing: a button
+the mouse goes down in and comes up in sends its message, and only
+the widgets that are others than those shown are drawn.
+
+| widget | what |
+|---|---|
+| `Label text` | a text |
+| `Field text` | a text in a white box, at its right; not typed in |
+| `Button (text, message)` | a button, and what it sends |
+| `Row widgets` | side by side, the same width each |
+| `Col widgets` | one under the other, the column's width each |
+
+It is given to tiny-ml after the playground, whose shapes it draws by
+(TinyKernel's Makefile: `user/calls.ml`, `TinyDraw.ml`,
+`TinyPlayground.ml`, `TinyGUI.ml`, the program, and a last file that
+says `let () = run calculator`). `calc` is `tiny/TinyCalculator.ml`:
+the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
+the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
+operation done when the next one is asked (`2+3*4=` is 20).
+
 With `-window` the machine runs at 8 million instructions a second,
 so that a game's time is the same on every host, and a key held is
 typed again.
@@ -621,7 +646,8 @@ typed again.
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
 | TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
 | TinyTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyTetris_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square and tetris in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a quarter) |
+| TinyGUI.ml and TinyCalculator.ml, the arithmetic by keys, the buttons by a mouse, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris and calc in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

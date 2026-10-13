@@ -18,7 +18,10 @@
 #                     tiny-windows, two windows in it), play.events (square,
 #                     a game on ../TinyPlayground.ml, in a window: the
 #                     arrows) and tetris.events (tetris in a window: six
-#                     pieces moved, turned and dropped); and two with the
+#                     pieces moved, turned and dropped) and calc.events
+#                     (calc, on ../TinyGUI.ml, in a window: 12 * 3 = by its
+#                     buttons, + 6 by the keys, a press taken back, a
+#                     button held); and two with the
 #                     network: wiki.events (wiki mandelbrot: a picture
 #                     from the wire's other end, ../tests/www's, painted
 #                     a row a message) and wikiwin.events (the same in a
@@ -55,7 +58,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris ping get wiki httpd cat echo ls wc mkdir rm
+PROGS = sh mltests paint tiny-windows square tetris calc ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -118,6 +121,14 @@ $(O)/user/tetris.tm: $(PLAY) ../TinyTetris.ml user/tetris.ml
 $(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
+# a program with widgets: on ../TinyGUI.ml, which draws by the
+# playground's shapes (calc: ../TinyCalculator.ml)
+$(O)/user/calc.tm: $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
+$(O)/bin/calc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/calc.tm
+	@$(MLLINK)
+
 # a program that draws: with draw.c, the messages (draw.h)
 $(O)/user/paint.tm: user/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
@@ -138,7 +149,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
-	@test $$(wc -c < $@) -lt 1572864 || { echo "$@: over 1.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
+	@test $$(wc -c < $@) -lt 2621440 || { echo "$@: over 2.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img
@@ -150,7 +161,7 @@ check: $(O)/boot.img
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris; do \
+	for s in paint windows nested play tetris calc; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

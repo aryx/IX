@@ -84,6 +84,7 @@ job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
 job "mini-lynx: a recorded session" browsers/lynx/tests/session.sh
+job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh
 job "browsers/javascript: unit tests, three ways" browsers/javascript/tests/modes.sh
 job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
@@ -165,6 +166,7 @@ ix() {
   mk lib_crypto/tests & pids+=($!)
   mk apps/music/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
+  (mk typesetting/troff && mk typesetting/man) & pids+=($!)
   mk browsers/javascript & pids+=($!)
   mk browsers/engine/tests & pids+=($!)
   mk browsers/netscape & pids+=($!)
@@ -190,6 +192,7 @@ ix() {
   (! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:") & pids+=($!)
   ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
   (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
+  (! typesetting/tests/sample.sh $K | grep '^FAIL') & pids+=($!)
   (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLibHost fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)

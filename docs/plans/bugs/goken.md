@@ -490,6 +490,53 @@ another base has as many digits as that says: `echo '16o 10k 1 3 / p'
 as for 32 bits; mini-bc's strings have its own expectation
 (`tests/corpus/strings.mini.out`). Not fixed.
 
+## troff
+
+Found 2026-10-13, comparing mini-troff with goken's troff as nroff on
+principia's manual (`typesetting/tests/man.sh`).
+
+### 36. troff -N -Tutf writes a blank for a named character that is not ASCII
+
+`\(bu`, `\(mu`, `\(*a`, `\(->`, `\(dg`, `\(14`, `\(sr`, `\(de`:
+each comes out as one blank, though `tab.utf` gives it a character
+(`bu 1 ∙`, `mu 1 ×`); those that the table gives an ASCII one for
+(`em 1 -`) are right, and a character typed as itself in the input
+(`×`) comes through.
+
+```
+$ printf 'a\\(bub\\(muc\\(*ad\\(->e\\(emf x×y\n' |
+  GOROOT=~/github/principia-softwarica/ROOT/lib \
+  ~/goken/ROOT/arch/boot-gcc/bin/troff -N -Tutf | grep .
+a b c d e-f x×y
+```
+
+groff's nroff writes `a•b×cαd→e—f`. So the × of `dc(1)` and the bullets of `0intro(1)`'s list are blanks. mini-troff
+writes the character; `man.sh` takes every character that is not
+ASCII as a blank on both sides. Not fixed.
+
+### 37. tmac.an: a .SH alone on its line has no heading
+
+`man(6)` says that `.SH` with no argument takes the next line of text
+as its heading. Plan 9's `tmac.an` ends the macro with a line of its
+own for the HTML manual (`\&\Xhtml <H4>\\$1 ...`), which is that
+next line: the heading is empty, and the page's words are in the
+paragraph. One page writes it so, `mouse(8)` (`.SH` then `.I
+Accupoint`). mini-troff sets the heading. Principia's file, as Plan
+9's.
+
+### 38. tmac.an: the two-font macros print their own request, or lose an argument
+
+`.}S`, which `.IR`, `.BR` and the others are made of, passes its
+arguments on to itself between double quotes. An argument with a
+space in it and a comma after (`.IR "The Spin Model Checker" ,`) comes
+out followed by `.}f`, the macro's next request, as text (`spin(1)`,
+`scuzz(8)`, `ms(6)`); a brace (`.IR K { m }`) is taken for a
+conditional's and `K{` is lost (`authsrv(6)`); a double quote inside
+an argument is lost (`namespace(6)`). And a line of text that starts
+with a font and then a dot (`\fI...application begins...\fP`) is a
+request for troff, and is dropped (`pushtls(2)`). mini-troff has what
+the page's author wrote in the five; `man.sh` lists them.
+
 ## How they were found
 
 The runners that compare ix with its reference, case by case or file
@@ -499,4 +546,4 @@ fuzzers, against 9base; `languages/c/tests/front.sh` (trees, while they were 5c'
 (executables, and running them) and `linker/tests/fuzz.py`, against
 goken; `tiny/tests/TinyC_fuzz.py`, against 7c; mini-hoc's `differential.sh` and `fuzz.py`, against goken's hoc; mini-awk's, against principia's awk built by goken; mini-dc's, against principia's dc built by goken's 7c, and mini-bc's against 9base's `bc -c`; `builder/tests/build_principia.sh`
 (principia built by goken's mk and by mini-mk, the trees compared); and
-reading the C while porting it.
+reading the C while porting it; `typesetting/tests/man.sh`, mini-troff against goken's troff on principia's manual.

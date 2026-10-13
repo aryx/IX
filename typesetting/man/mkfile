@@ -1,0 +1,13 @@
+# mini-man, built by ix's tools: mini-troff's units (made there first)
+# and the program
+TOP=../..
+DIR=typesetting/man
+PROG=mini-man
+SRC=Main
+LOCAL=`{ls *.ml ../troff/*.ml ../troff/*.mli}
+GEN=
+LIBI=-I ../troff
+LIBUNITS=Doc Roff Man Layout To_text CLI
+<$TOP/mkfiles/mkconfig
+LIBOBJS=$B/typesetting/troff/Doc.$O $B/typesetting/troff/Roff.$O $B/typesetting/troff/Man.$O $B/typesetting/troff/Layout.$O $B/typesetting/troff/To_text.$O $B/typesetting/troff/CLI.$O
+<$TOP/mkfiles/mkprog

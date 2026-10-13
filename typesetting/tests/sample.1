@@ -1,0 +1,114 @@
+.TH SAMPLE 1
+.SH NAME
+sample, example \- a page to try the macros of man(6) on
+.SH SYNOPSIS
+.B sample
+[
+.B -cds
+] [
+.B -o
+.I file
+] [
+.I name ...
+]
+.SH DESCRIPTION
+.I Sample
+does nothing: it is a page written to be typeset.
+Its first paragraph is long enough to be put on several lines, so that one sees where a line is ended when the next word does not fit.
+A sentence ends here.
+Not after e.g.\&
+this one, nor after
+.B a.out
+in the font of what is typed; it does after
+.BR one .
+A word with a hyphen may be cut after it, as in a twenty-seven-letter
+right-to-left never-ending word; not an option's, as
+.BR -long-option-name-that-is-not-to-be-cut-anywhere-in-its-letters ,
+and not a minus:
+.BR \-5 .
+.PP
+The options are:
+.TP
+.B -c
+Complement the set.
+A tag shorter than its width has its text on its line.
+.TP
+.B -d
+Delete.
+.TP
+.BI -o " file"
+The tag is wider than five letters: its text starts below.
+.TP 12
+.B -s
+Squeeze, with a width said.
+.TP
+.B -t
+The width stays.
+.PD 0
+.TP
+.B -u
+.TP
+.B -v
+Two tags, one text, closed up.
+.PD
+.PP
+A paragraph, then one further right:
+.IP
+Indented, with no tag.
+.IP \(bu 3
+With a bullet.
+.RS
+.PP
+Inside a relative indent,
+.L quoted
+and
+.LR typed ,
+the fonts in turn:
+.IR troff (1),
+.RB [ -x ]
+and
+.SM SMALL .
+.RE
+.PP
+Back at the margin.
+.SS A subsection
+.HP
+A hanging paragraph has its first line at the margin and the others to its right, which shows only when it is long enough to have others.
+.PP
+Lines that are not filled:
+.IP
+.EX
+int	n;	/* a tab, then another */
+char	*name;
+	for(i = 0; i < n; i++)
+		print("%d\en", i);
+.EE
+.PP
+With stops of its own
+.RI ( .ta ):
+.nf
+.ta 10n +6n
+name	size	what
+tr	12	translate
+.fi
+.DT
+.PP
+A line moved by hand,
+.br
+a break,
+.sp 2
+and two lines' space.
+.ti +4
+One line further right, and the rest of this paragraph back where it was, as long as it takes to see it.
+.in +3
+The margin moved,
+.in
+and back.
+.ce
+centered
+.SH EXAMPLES
+A character by its name: \(em, \(bu, \(->, 2\(mu3; a backslash: \e;
+\fIitalic\fP, \fLtyped\fR and \s-2smaller\s0.
+.SH SEE ALSO
+.IR troff (1),
+.IR man (6)

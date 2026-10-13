@@ -1,0 +1,12 @@
+# mini-troff, built by ix's tools
+TOP=../..
+DIR=typesetting/troff
+PROG=mini-troff
+SRC=Doc Roff Man Layout To_text CLI Main
+LOCAL=`{ls *.ml *.mli}
+GEN=
+LIBI=
+LIBUNITS=
+LIBOBJS=
+<$TOP/mkfiles/mkconfig
+<$TOP/mkfiles/mkprog

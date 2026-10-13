@@ -1,0 +1,6 @@
+; typesetting/man: mini-man, a page of the manual found and shown
+(executable
+ (name Main)
+ (public_name mini-man)
+ (package ix)
+ (libraries ix_troff ix_core fpath caps unix))

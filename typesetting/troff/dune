@@ -1,0 +1,13 @@
+; typesetting/troff: mini-troff, a document typeset (docs/plans/plan_typesetting.md)
+(library
+ (name ix_troff)
+ (wrapped false)
+ (modules Doc Roff Man Layout To_text CLI)
+ (libraries ix_core fpath unix caps))
+
+(executable
+ (name Main)
+ (public_name mini-troff)
+ (package ix)
+ (modules Main)
+ (libraries ix_troff caps))

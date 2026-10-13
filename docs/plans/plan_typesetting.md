@@ -64,7 +64,10 @@ no paper uses it.
 Its numbers are `scripts/stats/typesetting_survey.sh`'s (run
 2026-10-13, against principia at `6f2ea33f`, 2026-10-03).
 
-**Status: a plan; nothing written but the survey.**
+**Status: stage 1 done on Linux** (2026-10-13): mini-troff and mini-man
+write a manual page for a terminal, and principia's 553 pages come out
+with troff's own lines, but 18 said by name (see Status at the end).
+Nothing of stages 2 to 8.
 
 ## What there is
 
@@ -475,6 +478,67 @@ bonus. HTML is after, if wanted.
 ## Status
 
 2026-10-13: this document and `scripts/stats/typesetting_survey.sh`.
-Nothing else written. The estimates of "The parts" are guesses made
-from the survey's counts and from the sizes of ix's programs of the
-same kind; no part has been tried.
+
+**Stage 1, man to text, done on Linux** (2026-10-13; the author: "ok
+let's start!"). `typesetting/troff/` (mini-troff: `Doc`, `Roff`,
+`Man`, `Layout`, `To_text`, `CLI`) and `typesetting/man/` (mini-man):
+1,600 lines by `wc`, the interfaces and their comments included (1,179
+of `.ml`).
+
+What it is checked by:
+
+- `typesetting/tests/man.sh`: every page of principia's manual by
+  mini-troff and by troff itself (goken's, as nroff, with Plan 9's
+  `tmac.an`, not hyphenating, one page as long as the document; a
+  table or an equation through goken's `tbl` and `eqn` first). Of
+  553 pages, **535 are the same line for line** (runs of blank lines
+  taken as one, a character that is not ASCII as a blank: goken's
+  troff writes a blank for them, `bugs/goken.md` 36). The 18 others
+  are those the script names, each with its reason:
+  - 6 with a table, a picture or an equation (stages 4 and 6);
+  - 3 with two columns (`.2C`, made by troff of a terminal's reverse
+    line feeds; here the list stays in one);
+  - 1 whose right edge is made even (`.ad`, `lp(8)`): not done;
+  - 2 that set a text aside to measure it (`.di` with `\k`: `man(6)`,
+    `ms(6)`): their table of requests is wrong here;
+  - 7 where troff's output is an accident and mini-troff has what the
+    page says (`bugs/goken.md` 37 and 38); `ms(6)` is one of them
+    too.
+  That the lines would be the same was not the plan's promise (the
+  words in order was): it came from following each difference to
+  troff's rule, and the rules are in `Man.mli`.
+- `typesetting/tests/sample.sh`, in `make test` and `tests/lite.sh`:
+  a page of ix's own with each macro and request the manual uses,
+  its text recorded (the same as troff's, by hand once), a request
+  not known, mini-man in a tree. Nothing outside the repository.
+- Built by OCaml 4.14 (dune) and by mini-ml (mini-mk, arm64): the two
+  programs write the same bytes, on the standard output and on the
+  standard error, for the 553 pages. Built for Plan 9 on arm too
+  (`mini-mk O=5 OS=plan9`); **not run there**.
+
+What mini-troff says it does not know, in the 553 pages: 63 requests
+in 33 pages. `.EQ` 12, `.TS` 1, `.PS` 1 (later stages); `.2C`/`.1C`
+7 each; `.di` 4; and what no macro package defines, which troff
+passes over in silence: `...` at a line's start 9, `.CT` 7, `.F` 3,
+`.CW` 3, and seven others once or twice.
+
+What changed from the plan:
+
+- **One directory for the library, `typesetting/troff/`**, not
+  `doc/` and `roff/` beside it (decision 14): mkprog builds a program
+  from one directory, and mini-man links mini-troff's units from
+  there. To be split when a second reader is there.
+- **A terminal's characters**: `Doc` says a no-break space, a minus,
+  a hyphen that is not a place to cut, where a word may be cut and
+  where a sentence does not end by Unicode's own characters for them
+  (U+00A0, U+2212, U+2011, U+00AD, U+200B, U+2060), not by
+  constructors: a reader of another format has them for free.
+- **`Layout` is already the one for PDF** in its shape (a width asked
+  of the caller for each word, places in ens), but it has only met a
+  terminal: lines of one height, no page.
+
+Not done in stage 1: fonts shown on a terminal (bold, underline);
+`mini-man` with ix's own pages (there are none: the open question
+above); mini-9pi.
+
+Next: stage 2, PDF.

@@ -1,0 +1,44 @@
+(* mini-troff: a document typeset -- today a manual page, for a
+ * terminal.
+ *
+ *   mini-troff tr.1            the page as text, on the standard output
+ *   mini-troff < tr.1
+ *
+ * It has troff's name and reads what was written for troff, but it is
+ * not troff: the macros of a package (man's today, Man) are what it
+ * knows, not the requests they were made of, and what it does not
+ * know it says, with the line, on the standard error; nothing is
+ * left out in silence. The whole way of a page:
+ *
+ *   the file --Roff--> lines --Man--> Doc.t --Layout--> lines of
+ *   words, each at its place --To_text--> the terminal's page
+ *
+ * To come (docs/plans/plan_typesetting.md): PDF; the papers (-ms),
+ * with their tables, pictures and equations; a format of ix's own;
+ * the books' LaTeX.
+ *
+ * cs-history:
+ * troff is Joe Ossanna's (Bell Labs, 1973), for the Graphic Systems
+ * C/A/T, a phototypesetter that flashed letters through a spinning
+ * disc of film: four fonts mounted at a time, which is why \f takes a
+ * digit from 1 to 4. After his death in 1977 Brian Kernighan rewrote
+ * it not to know its typesetter (ditroff, 1979), and wrote with
+ * others the programs that go before it in a pipe: eqn (with Lorinda
+ * Cherry, 1974), tbl (Mike Lesk, 1975), pic (1981). Plan 9's troff
+ * is that program, with Unicode; it is the oldest code in the system,
+ * and reads like it.
+ *
+ * others:
+ * TeX (Donald Knuth, 1978 and 1982) breaks a paragraph as a whole and
+ * sets mathematics as no program had; LaTeX (Leslie Lamport, 1984)
+ * is to it what -ms is to troff. groff (James Clark, 1990) is troff
+ * again, in C++, and what a Linux has. Typst (2023) is a new language
+ * with the same aim. *)
+
+type caps = < Cap.open_in ; Cap.stdin ; Cap.stdout ; Cap.stderr >
+
+(* [text name source]: a page's text for a terminal, and what was not
+ * understood in it, each "name:line: what" *)
+val text : string -> string -> string * string list
+
+val main : < caps ; .. > -> string array -> Exit.t

@@ -5,6 +5,8 @@
  *   mini-troff < tr.1
  *   mini-troff -T pdf tr.1 > tr.pdf  its pages, to print or for mini-page
  *   mini-troff -ms names.ms          a paper (ms(6)'s macros)
+ *   mini-troff manual.md             a document in Markdown's lines
+ *   mini-troff -T md tr.1 > tr.md    a manual page written in them
  *
  * It has troff's name and reads what was written for troff, but it is
  * not troff: the macros of a package (Man, Ms) are what it
@@ -12,13 +14,16 @@
  * know it says, with the line, on the standard error; nothing is
  * left out in silence. The whole way of a page:
  *
- *   the file --Roff--> lines --Man, Ms (on Fill; Tbl, Pic)--> Doc.t --Layout--> lines of
- *   words, each at its place --To_text--> the terminal's page
- *                            --To_pdf---> the file's pages
+ *   the file --Roff--> lines --Man, Ms (on Fill; Tbl, Pic)--+
+ *   the file --Ixdoc (Markdown's lines)---------------------+--> Doc.t
+ *
+ *   Doc.t --Layout--> lines of words, each at its place
+ *              --To_text--> the terminal's page
+ *              --To_pdf---> the file's pages
+ *   Doc.t --Ixdoc--> the document in Markdown's lines
  *
  * To come (docs/plans/plan_typesetting.md): the papers'
- * equations; a format of ix's own;
- * the books' LaTeX.
+ * equations; the books' LaTeX.
  *
  * cs-history:
  * troff is Joe Ossanna's (Bell Labs, 1973), for the Graphic Systems
@@ -44,14 +49,17 @@ type caps = < Cap.open_in ; Cap.stdin ; Cap.stdout ; Cap.stderr >
  * to a typesetter and another to a terminal, .if t and .if n) and
  * written as text: what the file's words are, for a test to compare
  * with what a reader of the file finds in it *)
-type way = Text | Pdf | Words
+(* Source: the document written in the new format (Ixdoc), read as
+ * for the PDF file *)
+type way = Text | Pdf | Words | Source
 
 (* [typeset way name source]: a page's text for a terminal, or a PDF
  * file's bytes, and what was not understood in it, each "name:line:
  * what" *)
-type package = Man | Ms
+type package = Man | Ms | Md
 
-(* (no package said: a manual page if the file has a .TH, else a paper) *)
+(* (no package said: the new format if the file's name ends with .md
+ * or .ixd; else a manual page if the file has a .TH, else a paper) *)
 (* [typeset way package load name source]; [load] reads a file the
  * document names (.so, a picture kept apart), none if it may not *)
 val typeset : way -> package option -> (string -> string option) -> string -> string -> string * string list

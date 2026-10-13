@@ -1,0 +1,2 @@
+; pic's grammar (the library is ../dune's)
+(ocamlyacc Pic_parser)

@@ -10,6 +10,8 @@
 # And a paper of ix's own, sample.ms, with each macro of ms(6) that
 # principia's papers use: as text (troff's own lines but for its even
 # right edge, by ms.sh's way, once) and as a PDF file.
+# And a document in the new format, sample.md (Ixdoc), with each
+# thing of it once: as text, written back, as a PDF file.
 # Then what mini-troff says of a request it does not know, mini-man
 # finding a page in a tree, and one that is not there.
 #
@@ -42,6 +44,16 @@ cd $HERE
   echo "== mini-troff -T pdf sample.ms"
   $TROFF -T pdf sample.ms > $W/paper.pdf 2> $W/err; echo "status $?"
   grep -a -o '/Count [0-9]*' $W/paper.pdf | head -1; cksum < $W/paper.pdf; cat $W/err
+  echo "== mini-troff sample.md: the new format"
+  $TROFF sample.md 2>&1
+  echo "== mini-troff -T md sample.md: written back; and that read and written again, the same"
+  $TROFF -T md sample.md 2> /dev/null | tee $W/again.md
+  $TROFF -md -T md $W/again.md 2> /dev/null | cmp - $W/again.md; echo "status $?"
+  echo "== mini-troff -T pdf sample.md"
+  $TROFF -T pdf sample.md > $W/md.pdf 2> $W/err; echo "status $?"
+  grep -a -o '/Count [0-9]*' $W/md.pdf | head -1; cksum < $W/md.pdf; cat $W/err
+  echo "== mini-troff -T md sample.1: a manual page converted, its first lines"
+  $TROFF -T md sample.1 2> /dev/null | head -30
   echo "== the standard input, a request not known, a table"
   printf '.TH X 1\n.SH NAME\nx \\- y\n.XY z\n.TS\nl l.\na\tb\n.TE\nafter\n' | $TROFF 2> $W/err; echo "status $?"; cat $W/err
   echo "== mini-man in a tree"

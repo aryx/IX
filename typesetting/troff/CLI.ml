@@ -6,12 +6,15 @@
 type caps = < Cap.open_in ; Cap.stdin ; Cap.stdout ; Cap.stderr >
 
 let usage =
-  "usage: mini-troff [-man|-ms] [-T text|pdf] [file ...]\n\
+  "usage: mini-troff [-man|-ms|-md] [-T text|pdf|md] [file ...]\n\
   \  -man     the files are manual pages, man(6)'s macros\n\
-  \  -ms      papers, ms(6)'s (with neither: a file with a .TH is a\n\
-  \           manual page)\n\
+  \  -ms      papers, ms(6)'s\n\
+  \  -md      documents in Markdown's lines and \\name[options]{text}\n\
+  \           (with none: a file named .md or .ixd is one, a file with\n\
+  \           a .TH a manual page, another a paper)\n\
   \  -T text  written for a terminal (what is done with no -T)\n\
   \  -T pdf   a PDF file, on the standard output: one file read\n\
+  \  -T md    the document written again, in Markdown's lines\n\
   \  -T words the PDF file's words, as text (what a typesetter is given,\n\
   \           which is not always what a terminal is)\n\
    no file: the standard input. What is not understood is said on the\n\
@@ -19,24 +22,32 @@ let usage =
 
 exception Usage
 
-type way = Text | Pdf | Words
+type way = Text | Pdf | Words | Source
 
-type package = Man | Ms
+type package = Man | Ms | Md
 
 (* what a file is written in, when it is not said: a manual page has a
  * .TH *)
-let package_of (source : string) : package =
+let package_of (name : string) (source : string) : package =
+  let ends (e : string) : bool = let n = String.length name and m = String.length e in n >= m && String.sub name (n - m) m = e in
+  if ends ".md" || ends ".ixd" then Md else
   let rec go (lines : string list) = match lines with [] -> Ms | l :: rest -> if String.starts_with ~prefix:".TH" l then Man else go rest in
   go (String.split_on_char '\n' source)
 
 let typeset (way : way) (package : package option) (load : string -> string option) (name : string) (source : string) : string * string list =
-  let roff = Roff.create (match way with Text -> Roff.Terminal | Pdf | Words -> Roff.Typesetter) source in
-  if way <> Text then Roff.set_measure roff To_pdf.measure;
+  let paper = way <> Text in
+  let roff = Roff.create (if paper then Roff.Typesetter else Roff.Terminal) source in
+  if paper then Roff.set_measure roff To_pdf.measure;
   Roff.set_loader roff load;
-  let doc = match (match package with Some p -> p | None -> package_of source) with Man -> Man.read roff | Ms -> Ms.read roff in
-  let said = List.map (fun (line, what) -> Printf.sprintf "%s:%d: %s: not known" name line what) (Roff.complaints roff) in
+  let doc, complaints =
+    match (match package with Some p -> p | None -> package_of name source) with
+    | Man -> let d = Man.read roff in (d, Roff.complaints roff)
+    | Ms -> let d = Ms.read roff in (d, Roff.complaints roff)
+    | Md -> Ixdoc.read paper load source in
+  let said = List.map (fun (line, what) -> Printf.sprintf "%s:%d: %s: not known" name line what) complaints in
   match way with
   | Text -> (To_text.page doc, said)
+  | Source -> (Ixdoc.print paper doc, said)
   (* (with the characters the file has for others: a dash for a minus) *)
   | Words -> (To_text.page (Doc.map_text (fun (style : Doc.style) s -> To_pdf.shown style.font s) doc), said)
   | Pdf ->
@@ -58,6 +69,8 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       match l with
       | "-man" :: rest -> package := Some Man; options rest
       | "-ms" :: rest -> package := Some Ms; options rest
+      | "-md" :: rest -> package := Some Md; options rest
+      | "-T" :: "md" :: rest -> way := Source; options rest
       | "-T" :: "text" :: rest | "-Ttext" :: rest -> way := Text; options rest
       | "-T" :: "pdf" :: rest | "-Tpdf" :: rest -> way := Pdf; options rest
       | "-T" :: "words" :: rest -> way := Words; options rest

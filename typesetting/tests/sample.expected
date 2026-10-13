@@ -232,6 +232,178 @@ status 0
 status 0
 /Count 2
 105001233 5559
+== mini-troff sample.md: the new format
+sample.md:8: \nothing: not known
+sample.md:62: <div>HTML is said.</div> (HTML): not known
+sample.md:63: ![a picture] (a picture in a file): not known
+     sample(7)                                               sample(7)
+     NAME
+          sample – the new format, each thing of it once
+
+     DESCRIPTION
+          A paragraph is lines to a blank one, italic, italic again,
+          bold, typed, a link's words and n log n, by ix.1 A
+          snake_case name, a price of $5 and $10, 2 * 3, an escaped
+          *star*, a name not known: \n, and one with a text: kept. See
+          More, Figure 1 and rc(1).
+          A line ended by a backslash. Small, big, x2.
+
+          -c   A paragraph that hangs from its term, at column 5. Its
+               second line.
+
+               Its second paragraph.
+
+          file ...
+               Another.
+
+          • an item on two lines
+          • another, with a list in it
+            1. one
+            2. two
+
+               Set in, as a quotation.
+
+              set in by four columns: a program
+
+          let x = 1 in
+                  x + 1 (* a tab *)
+
+          lines as they are,
+              with their marks read
+
+          Test             Plan 9     IRIX
+          --------------------------------
+          Context switch    39 µs   150 µs
+          fork               2 ms     5 ms
+
+                          readers
+                                       Doc.t
+                                                   layout
+                        Figure 1. The way of a document.
+
+                                 In the middle.
+
+        More
+          a picture too.
+
+     __________________________
+          1. A footnote, said where it is.
+== mini-troff -T md sample.md: written back; and that read and written again, the same
+\title{sample}{7}
+
+# NAME
+sample – the new format, each thing of it once
+
+# DESCRIPTION
+A paragraph is lines to a blank one, *italic*, *italic again*,
+**bold**, `typed`, a link's words and *n log n*, by
+**ix**.\up{\small{\small{1}}} A snake_case name, a price of \$5 and
+\$10, 2 \* 3, an escaped \*star\*, a name not known: \\n, and one with
+a text: kept. See *More*, Figure 1 and *rc*(1).\
+A line ended by a backslash. \small{Small}, \big{big}, x\up{2}.
+\footnote{
+\1. A footnote, said where it is.
+}
+
+**-c**
+:    A paragraph that hangs from its term, at column 5. Its second line.
+
+     Its second paragraph.
+
+*file* ...
+:    Another.
+
+- an item on two lines
+- another, with a list in it
+  1. one
+  2. two
+
+> Set in, as a quotation.
+
+\indent[4]{
+```
+set in by four columns: a program
+```
+}
+
+```
+let x = 1 in
+	x + 1 (* a tab *)
+```
+
+```lines
+lines as they are,
+    with their **marks** read
+```
+
+| Test           | Plan 9 |   IRIX |
+|:---------------|-------:|-------:|
+| Context switch |  39 µs | 150 µs |
+| `fork`         |   2 ms |   5 ms |
+
+\keep{
+```pic
+line from 0.000,0.000 to 0.750,0.000 to 0.750,0.500 to 0.000,0.500 to 0.000,0.000
+"readers" at 0.375,0.250
+line from 0.750,0.250 to 1.250,0.250
+line from 1.150,0.275 to 1.250,0.250 to 1.150,0.225
+line from 1.250,0.000 to 2.000,0.000 to 2.000,0.500 to 1.250,0.500 to 1.250,0.000
+"Doc.t" at 1.625,0.250
+line from 2.000,0.250 to 2.500,0.250
+line from 2.400,0.275 to 2.500,0.250 to 2.400,0.225
+line from 2.500,0.000 to 3.250,0.000 to 3.250,0.500 to 2.500,0.500 to 2.500,0.000
+"layout" at 2.875,0.250
+```
+\center{
+**Figure 1.** The way of a document.
+}
+}
+
+\center{
+In the middle.
+}
+
+## More
+a picture too.
+status 0
+== mini-troff -T pdf sample.md
+status 0
+/Count 1
+2361388482 3520
+sample.md:8: \nothing: not known
+sample.md:62: <div>HTML is said.</div> (HTML): not known
+sample.md:63: ![a picture] (a picture in a file): not known
+== mini-troff -T md sample.1: a manual page converted, its first lines
+\title{SAMPLE}{1}
+
+# NAME
+sample, example − a page to try the macros of man(6) on
+
+# SYNOPSIS
+`sample` \[ `‑cds` ] \[ `‑o` *file* ] \[ *name ...* ]
+
+# DESCRIPTION
+*Sample* does nothing: it is a page written to be typeset.  Its first
+paragraph is long enough to be put on several lines, so that one sees
+where a line is ended when the next word does not fit.  A sentence ends
+here.  Not after e.g.⁠ this one, nor after `a.out` in the font of what
+is typed; it does after `one`.  A word with a hyphen may be cut after
+it, as in a twenty-seven-letter right-to-left never-ending word; not an
+option's, as
+`‑long‑option‑name‑that‑is‑not‑to‑be‑cut‑anywhere‑in‑its‑letters`, and
+not a minus: `−5`.
+
+The options are:
+
+`‑c`
+:    Complement the set.  A tag shorter than its width has its text on its
+     line.
+
+`‑d`
+:    Delete.
+
+`‑o` *file*
+:    The tag is wider than five letters: its text starts below.
 == the standard input, a request not known, a table
      X(1)                                                         X(1)
 
@@ -253,7 +425,7 @@ mini-man: no page for nothing in TMP/man
 status 1
 usage: mini-man [-v] [-m dir] [-T pdf] [section] title ...
 status 1
-usage: mini-troff [-man|-ms] [-T text|pdf] [file ...]
+usage: mini-troff [-man|-ms|-md] [-T text|pdf|md] [file ...]
 status 1
 mini-troff: /nonexistent: No such file or directory
 status 1

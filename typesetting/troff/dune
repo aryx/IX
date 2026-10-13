@@ -1,10 +1,24 @@
-; typesetting/troff: mini-troff, a document typeset (docs/plans/plan_typesetting.md)
-(ocamlyacc Pic_parser)
+; typesetting/troff: mini-troff, a document typeset
+; (docs/plans/plan_typesetting.md). Its parts in folders (folders
+; only: one library, ix_troff):
+;   doc/    Doc: a document, whatever it was written in; Layout: its
+;           blocks put on lines; To_text, To_pdf: the lines written
+;           for a terminal, and as the sheets of a PDF file
+;   roff/   what was written for troff. Roff: its input as lines,
+;           requests and texts; Fill: the requests that are troff's
+;           own and the tree made of the paragraphs; Man, Ms: the
+;           macros of the two packages, as cases; Tbl: a table
+;   pic/    Pic: a picture; its grammar (Pic_parser), its words
+;           (Pic_lexer), its tree (Pic_ast)
+;   ixdoc/  Ixdoc: the new format, Markdown's lines and
+;           \name[options]{text}, read and written back
+; CLI and Main here are the program.
+(include_subdirs unqualified)
 
 (library
  (name ix_troff)
  (wrapped false)
- (modules Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Layout To_text To_pdf CLI)
+ (modules :standard \ Main)
  (libraries ix_core ix_graphics_pdf ix_graphics_fonts fpath unix caps))
 
 (executable

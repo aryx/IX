@@ -555,7 +555,7 @@ pdf`.
   (`Pdf_write.text`: "BT /F1 10 Tf x y Td (...) Tj ET", each font an
   object naming Times-Roman, Courier..., Windows' encoding; its unit
   test, read back by `Pdf_render.text`). 50 lines.
-- `typesetting/troff/To_pdf` (new): the rows cut into sheets (8.5 by
+- `To_pdf` (new): the rows cut into sheets (8.5 by
   11 inches, 10 points on 12, lines of 6.5 inches: the manual's
   numbers), a header and a number on each; Times, its italic and bold,
   Courier, by `Standard_widths`; a minus a dash and the quotes
@@ -612,13 +612,13 @@ not run).
 with neither `-man` nor `-ms`, a file with a `.TH` is a manual page
 and any other a paper.
 
-- `typesetting/troff/Fill` (new): what was the manual's reader's and
+- `Fill` (new): what was the manual's reader's and
   is troff's own under any package, taken out of `Man`: the paragraph
   being filled, the requests a document writes between the macros
   (`.br .sp .nf .fi .in .ti .ta .ll .ce .ft .ps .tl`), the tree made
   from each paragraph's place. `Man` is on it, the same 535 pages
   line for line after as before.
-- `typesetting/troff/Ms` (new): tmac.s's macros as cases. The title,
+- `Ms` (new): tmac.s's macros as cases. The title,
   the authors, the institution (`.TL .AU .AI .MH`), the abstract set
   in from both sides (`.AB .AE`), numbered headings and their numbers
   (`.NH`, `.SH`), paragraphs (`.PP .LP .IP .QP .RS .RE`), displays
@@ -679,7 +679,7 @@ memoranda. The interfaces' header comments say what each module is;
 
 **Stage 4, its first half: tables, done on Linux** (2026-10-13).
 
-- `typesetting/troff/Tbl` (new): what is between `.TS` and `.TE`. The
+- `Tbl` (new): what is between `.TS` and `.TE`. The
   options `center`, `box` and `tab(c)`; a row's format, a letter a
   column (`l r c n s`, `a` as `l`, `^` an empty cell), with `f` its
   font, `w` its width, `p` its size; `.T&`; a rule (`_`, `=`); a cell
@@ -712,7 +712,7 @@ table of texts) and `9.ms`'s table of numbers in its box.
 
 **Stage 4, its second half: pictures, done on Linux** (2026-10-13).
 
-- `typesetting/troff/Pic_lexer`, `Pic_parser.mly`, `Pic_ast`, `Pic`
+- `Pic_lexer`, `Pic_parser.mly`, `Pic_ast`, `Pic`
   (new, 770 lines): the part of pic that draws. Objects (box, circle,
   ellipse, line, arrow, arc, spline, move, a text, a block between
   brackets with its own names), their sizes and places (`at`, `with
@@ -749,10 +749,66 @@ said. The 33 papers: 373 sheets, the same bytes by the two compilers
 without a complaint. The sample paper has a table and a picture;
 `sample.sh` on the two builds.
 
-All of typesetting/: 3,724 lines with the interfaces and their
-comments. Of the plan's stages, 1 to 4 are done on Linux; left: the
-new format (5), equations (6), LaTeX (7), m-ix (8: built for Plan 9 on
-arm, not run).
+### Stage 5: the new format (decision 4: Markdown's lines and `\name[options]{text}`, in plain `.md` and in `.ixd`)
 
-Next: stage 5, the new format, which waits for the author's choice
-of its syntax (decision 4); or stage 6, equations, which does not.
+The author chose it over an outline of named things (indentation as
+the only structure, references by a thing's own name, marks that say
+what and not how), which was the other contender: "ok let's do A and
+let's use plain .md (and also allow .ixd)". Two of the outline's
+ideas are kept where they cost nothing: `\man{rc}{1}` says what a
+word is, and a hanging paragraph's body is at the column where its
+text is written, so that the source looks like the page.
+
+- `Ixdoc` (new, 801 lines of `.ml`, twice the estimate: the writer
+  back is 250 of them): the reader, by hand (lines, then a line's
+  marks), and the writer of any `Doc.t` in the format.
+  `mini-troff file.md`, `-md`, and `-T md` for the way back:
+  `mini-troff -T md tr.1 > tr.md` converts a manual page. Its
+  interface says the whole format.
+- What differs from the proposal: a blank line is a space and no
+  blank line is none (a closed-up list is troff's `.PD 0`); a
+  hanging paragraph's width is its text's column (`:    ` is 5), a
+  list being the same thing with a bullet for term; three fences
+  (lines as they are, `pic`, and `lines` whose marks are read); a
+  command that starts a line and ends it with `{` has lines to a `}`
+  alone; `\ref` of a section writes its title (headings have no
+  numbers), of a figure its number; a name not known is said when it
+  has a text and written as it is when it has none (`\n` in a
+  sentence about C); `$...$` is italic until stage 6.
+- **Written and read again** (`typesetting/tests/md.sh`): each of
+  the 553 pages written in the format and read back has the same
+  words in the same order, 553 of 553; 264 the same lines (the
+  others: a hanging paragraph's width that is not a whole number of
+  columns, mostly); 551 are written again the same bytes. The 33
+  papers: 31 the same words, the 2 others the same words in another
+  order (a table wider than the line whose columns' widths tbl was
+  told: the format has no way to say them); none the same lines (a
+  paragraph's first line set in is not said either).
+- **ix's own Markdown**: of the 164 files (50,606 lines), 161 are
+  read with nothing said; the 3 others have a picture from a file
+  (8, said, their words kept). Each is made a PDF file. What they
+  use that Markdown has and this has not: nothing was found but
+  those pictures (no HTML, no link kept apart, no heading by
+  underline); 125 blocks set in by four columns are read as
+  programs. Their box-drawing characters are not in the PDF's fonts.
+- The two builds write the same bytes (text, the format, PDF) on the
+  164 files and on 140 of the converted pages; `sample.md` in
+  `sample.sh`, on the two builds; built for Plan 9 on arm.
+
+Left of the format: cross-references to another file, a table's
+widths and rules, the bibliography (`\cite` writes its key until
+stage 7), equations (stage 6).
+
+### The folders
+
+`typesetting/troff/` had 30 files: its parts are in folders, as
+`apps/office`'s (folders only, one library): `doc/` (Doc, Layout,
+To_text, To_pdf), `roff/` (Roff, Fill, Man, Ms, Tbl), `pic/`,
+`ixdoc/`; CLI and Main at the top. Decision 14's names, inside the
+program's directory and not beside it.
+
+All of typesetting/: 4,633 lines with the interfaces and their
+comments. Of the plan's stages, 1 to 5 are done on Linux; left:
+equations (6), LaTeX (7), m-ix (8: built for Plan 9 on arm, not run).
+
+Next: stage 6, equations.

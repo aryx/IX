@@ -6,7 +6,7 @@
  *                      TinyShell.ml
  *            ___________/        \___________
  *   on the host                        on tiny-machine
- *   TinyLibHost/TinyLibSystem.ml       TinyKernel/user/TinyLibSystem.ml
+ *   TinyLibHost/TinyLibSystem.ml       TinyKernel/libml/TinyLibSystem.ml
  *   (this one's), OCaml, built by      tiny-ml's ML, given to tiny-ml
  *   dune or mini-mk                    with TinyLibStd.ml
  *   over Unix, Cap, FS, Procs          over tiny-kernel's calls

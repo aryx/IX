@@ -110,7 +110,7 @@ kernels have, so they run unchanged.
 | `tiny/TinyKernel.ml` | the kernel, in tiny-ml's ML | 318 |
 | `tiny/TinyKernel/entry.tm` | `k_run`, the trap's entry, the timer, the window, copy and zero | 142 |
 | `tiny/TinyKernel/runtime.c` | the memory's layout, write and exit, peek and poke, strings to and from memory | 79 |
-| `tiny/TinyKernel/user/` | `sh.c` (fork, exec, dup), `mltests.c`, `user.h`, `sys.tm` | 435 |
+| `tiny/TinyKernel/user/`, `libc/` | `sh.c` (fork, exec, dup), `mltests.c`; `user.h`, `sys.tm` | 435 |
 | the kernel, then | | **539** |
 
 Lines are counted without comments or blank lines. For comparison, t6's

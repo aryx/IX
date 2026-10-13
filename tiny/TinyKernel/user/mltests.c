@@ -4,7 +4,7 @@
 // and wait's statuses, exec's arguments, pipes (a child writer, the
 // end seen when no writer is left, a big write in pieces), files,
 // directories and "..", a fault killed, the preemption.
-#include "user.h"
+#include "../libc/user.h"
 
 char buf[2048];
 int failed;

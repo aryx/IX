@@ -45,7 +45,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web)\.ml$|^tiny/TinyLib(Core|Std)\.ml$|^tiny/TinyKernel/user/TinyLibSystem\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web)\.ml$|^tiny/TinyLib(Core|Std)\.ml$|^tiny/TinyKernel/libml/TinyLibSystem\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -76,7 +76,7 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # against lib_core as tiny/mkfile's default, not against TinyLibHost's shorter interfaces)
   tiny/TinyLibHost/*) root=tiny/TinyLibHost; incs[$root]="-I tiny/TinyLibHost/ocaml";;
   # (tiny-ml's prelude is a unit the build makes, TinyMLPrelude.ml: dune's)
-  # (TinyLibHost first: tiny-shell's TinyLibSystem is the one there, TinyKernel/user/'s is tiny-ml's)
+  # (TinyLibHost first: tiny-shell's TinyLibSystem is the one there, TinyKernel/libml/'s is tiny-ml's)
   tiny/*) incs[$root]="-I tiny/TinyLibHost $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibHost/ocaml ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)

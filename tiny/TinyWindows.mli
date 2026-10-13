@@ -1,6 +1,6 @@
 (* A tiny window system, a program of TinyKernel.ml's, in ML: the
  * essential of Plan 9's rio (ix's twin is windows/, mini-rio). Compiled
- * by tiny-ml -tm after TinyLibDraw.ml, TinyKernel/user/mlsys.c its runtime
+ * by tiny-ml -tm after TinyLibDraw.ml, TinyKernel/libml/mlsys.c its runtime
  * and its system calls (plan_tiny_windows.md):
  *
  *     ./tiny-machine -window tiny-kernel

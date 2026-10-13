@@ -499,7 +499,9 @@ answer's bytes; `ready` waits for one with a limit, as `ping` does
 (three questions, each waited for a second).
 
 A call that fails answers -1. Its C programs are in
-`tiny/TinyKernel/user/`, with `user.h` and `sys.tm`.
+`tiny/TinyKernel/user/`; what they are linked with, `user.h` and
+`sys.tm`, is in `tiny/TinyKernel/libc/`, and an ML program's side of
+the kernel in `tiny/TinyKernel/libml/`.
 
 `ready` answers the first of `n` descriptors that a read would not
 wait on, or -1 when the clock reaches `until` (0: no limit; with no
@@ -543,7 +545,7 @@ signed:
 | `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (`wiki`) |
 
 A colour's byte is an index of Plan 9's table of 256 (0 black, 255
-white). For C, `user/draw.h` and `draw.c` gather the messages
+white). For C, `libc/draw.h` and `draw.c` gather the messages
 (`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
 `tiny/TinyLibDraw.ml` makes them.
@@ -554,7 +556,7 @@ page that waits for the mouse, the keys and the clock at once. For ML,
 ### 7.4 tiny-windows
 
 `tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
-tiny-ml -tm after `TinyLibDraw.ml`; `user/mlsys.c` is an ML program's
+tiny-ml -tm after `TinyLibDraw.ml`; `libml/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel
@@ -596,7 +598,7 @@ and then on it at once.
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `user/calls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
+Makefile: `libml/calls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
 game, and a last file that says `let () = run game`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
@@ -625,7 +627,7 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `user/calls.ml`, `TinyLibDraw.ml`,
+(TinyKernel's Makefile: `libml/calls.ml`, `TinyLibDraw.ml`,
 `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or

@@ -5,7 +5,7 @@
 
 open TinyLibDraw
 
-(* TinyKernel/user/mlsys.c's: the kernel's calls. A read's string is ""
+(* TinyKernel/libml/mlsys.c's: the kernel's calls. A read's string is ""
  * at the end; a pipe's or a box's two ends are one number (the reading
  * one, and 256 times the writing one) *)
 external u_read : int -> int -> string = "u_read"

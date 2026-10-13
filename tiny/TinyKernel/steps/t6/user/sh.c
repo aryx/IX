@@ -7,7 +7,7 @@
 // is given and nothing else, so no pipe's end is ever left open in a
 // child, the bug fork's inheritance makes easy (a pipe that never
 // ends).
-#include "user.h"
+#include "../libc/user.h"
 
 char line[256], spaced[512], paths[16][64];
 char *toks[64];

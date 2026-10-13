@@ -3,7 +3,7 @@
  * told apart (a window system reads another program's, changes their
  * images' numbers and sends them on: TinyWindows.ml). Plan 9's twin is
  * libdraw, the library of the programs, where TinyKernelGraphics.ml is the
- * kernel's draw device and libmemdraw; for C it is TinyKernel/user/
+ * kernel's draw device and libmemdraw; for C it is TinyKernel/libc/
  * draw.h. In tiny-ml's ML and OCaml's, a file given to tiny-ml before
  * the program's own:
  *

@@ -44,7 +44,10 @@ of the system:
   beside their program:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
     are files of their own (`TinyKernelGraphics`, `TinyKernelNetwork`),
-    its assembly and C, its programs in C (`user/`);
+    its assembly and C, its programs (`user/`: the ones in C, and
+    the last file of the ones in ML) and what they are linked with
+    to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`)
+    and `libml/` for ML (`mlsys.c`, `calls.ml`, `TinyLibSystem.ml`);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
     (`TinyMachineCPU`), the devices (`TinyMachineDevices`), the other
     end of the wire (`TinyMachinePeer`, which runs the kernel's own
@@ -52,7 +55,12 @@ of the system:
     it, its window, its socket and its page.
 
 The others are the system's programs, a file each (`TinyShell`,
-`TinyC`, `TinyWindows`...).
+`TinyC`, `TinyWindows`...). One of them is on both sides:
+`TinyShell.ml` is the host's tiny-shell and, built by tiny-ml with
+`TinyLibStd.ml`, tiny-kernel's `rc`; what it asks of the system is
+`TinyLibSystem`, a file for each side (`TinyLibHost/TinyLibSystem.ml`
+over Unix, `TinyKernel/libml/TinyLibSystem.ml` over the kernel's
+calls).
 
 [docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
 has the picture: for a tool on the host, for a program in ML or in C
@@ -91,7 +99,7 @@ messages), and what the machine gives, by OCaml on the host,
 `TinyMemory.ml` (its bytes: an array) and `TinyCalls.ml` (the kernel's
 calls: kept or absent), both in `TinyKernel/host/`; on tiny-machine
 these two are externals (`TinyKernel/memory.ml`,
-`TinyKernel/user/calls.ml`).
+`TinyKernel/libml/calls.ml`).
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 

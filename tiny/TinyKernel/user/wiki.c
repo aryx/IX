@@ -8,8 +8,8 @@
 // pixels, each row a message of IL's and a message of TinyKernelGraphics's
 // (draw.h's d_pixels), written at once: nothing here looks for where a
 // row ends. The picture's top left corner is the screen's (8, 8).
-#include "user.h"
-#include "draw.h"
+#include "../libc/user.h"
+#include "../libc/draw.h"
 
 char buf[1024];
 

@@ -2,7 +2,7 @@
 //
 // The first program: the console opened, the shell spawned with it as
 // its 0, 1 and 2; its end is init's, and the machine's.
-#include "user.h"
+#include "../libc/user.h"
 
 char *argv[] = { "sh", 0 };
 int map[] = { 0, 0, 0 };

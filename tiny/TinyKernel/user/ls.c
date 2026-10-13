@@ -2,7 +2,7 @@
 //
 // ls [dir]: each entry of a directory, as read from it: its name, its
 // type, its size (a file is its entry: nothing else to ask).
-#include "user.h"
+#include "../libc/user.h"
 
 void
 main(int argc, char *argv[])

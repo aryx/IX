@@ -60,27 +60,27 @@ COLUMNS = [
             "tiny/TinyLibCore.ml, a prelude: tiny-ml",
             "reads it before every program (the",
             "operators, option, the exceptions, List);",
-            "TinyKernel/user/calls.ml: the kernel's",
+            "TinyKernel/libml/calls.ml: the kernel's",
             "calls, as externals"]),
         ("TinyML's runtime", "C, by tiny-c -tm", [
             "tiny/TinyMLRuntime/core.c: the allocator,",
             "Cheney's collector, strings, compare;",
-            "included by TinyKernel/user/mlsys.c",
+            "included by TinyKernel/libml/mlsys.c",
             "(the heap in the program's megabyte,",
             "the calls as C functions)"]),
         ("The C runtime", "C, assembly", [
             "tiny/TinyCRuntime/: start.tm (the start),",
             "udivmod.tm (the division), libc.c;",
-            "TinyKernel/user/sys.tm: the system calls"]),
+            "TinyKernel/libc/sys.tm: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
     ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-c -tm)", [
         ("The program", "C", [
             "tiny/TinyKernel/user/sh.c, ls.c,",
-            "paint.c...: one file each, with user.h"]),
+            "paint.c...: one file each"]),
         ("What some of them add", "C", [
-            "TinyKernel/user/draw.c, draw.h: the",
+            "TinyKernel/libc/draw.c, draw.h: the",
             "drawing's messages (paint, wiki);",
             "net.c: a machine reached by its name",
             "(get)"]),
@@ -88,7 +88,7 @@ COLUMNS = [
             "tiny/TinyCRuntime/: libc.c and libc.h",
             "(print, the strings, malloc), start.tm,",
             "udivmod.tm;",
-            "TinyKernel/user/sys.tm: the system calls"]),
+            "TinyKernel/libc/sys.tm: the system calls"]),
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),

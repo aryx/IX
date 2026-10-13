@@ -9,7 +9,7 @@
 // checks); the value stack at 0x60000; the heap's two halves, 256 KB
 // each, from 0x70000; C's stack from the top.
 #include "../../TinyMLRuntime/core.c"
-#include "user.h"
+#include "../libc/user.h"
 
 #define VSTACK 0x60000
 #define HEAP0 0x70000

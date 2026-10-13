@@ -16,7 +16,7 @@
 // when the other end is the wire's (TinyKernelNetwork.ml), cut anywhere when
 // it comes from the world. Written all of it: a write to a pipe may
 // take less.
-#include "user.h"
+#include "../libc/user.h"
 
 char buf[1024];
 

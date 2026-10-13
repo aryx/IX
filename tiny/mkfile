@@ -97,7 +97,7 @@ $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyBuildSystem.$O $STDEND
 # (the shell's system, the host's: TinyLibHost/TinyLibSystem.ml;
-# TinyKernel/user/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
+# TinyKernel/libml/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
 # compile. Not beside TinyShell.ml: mini-ml looks for a module in the
 # directory of the file it compiles before any -I)
 $D/TinyLibSystem.$O: TinyLibHost/TinyLibSystem.ml

@@ -27,7 +27,7 @@ MKFS = tiny-mkfs
 O = _make
 KERNEL = entry.tm ../../../TinyCRuntime/udivmod.tm $(O)/main.tm $(O)/proc.tm $(O)/file.tm
 UPROGS = init sh cat echo ls mkdir rm wc t6tests
-ULIB = ../../../TinyCRuntime/start.tm ../../../TinyCRuntime/udivmod.tm $(O)/libc.tm user/sys.tm
+ULIB = ../../../TinyCRuntime/start.tm ../../../TinyCRuntime/udivmod.tm $(O)/libc.tm libc/sys.tm
 
 all: $(O)/kernel.img $(O)/fs.img
 
@@ -42,7 +42,7 @@ $(O)/libc.tm: ../../../TinyCRuntime/libc.c ../../../TinyCRuntime/libc.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-$(O)/user/%.tm: user/%.c user/user.h
+$(O)/user/%.tm: user/%.c libc/user.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 

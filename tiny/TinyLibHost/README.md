@@ -23,7 +23,7 @@ mini-ar and mini-ld, which build it, are m-ix's.)
 |---|---|
 | `ocaml/` | the stdlib's modules and ix's own (`commons/`), SHA-1 and zlib: a flat list |
 | `c/` | mini-ml's runtime and a C library for it, in C and 38 lines of assembly: for Linux on arm64 |
-| `TinyLibSystem.ml` | not this library's: what tiny-shell asks of the system, the host's version (over `Unix`, `Cap`, `FS`, `Procs`), built by dune too; `../TinyKernel/user/TinyLibSystem.ml` is tiny-machine's, the same names in tiny-ml's ML |
+| `TinyLibSystem.ml` | not this library's: what tiny-shell asks of the system, the host's version (over `Unix`, `Cap`, `FS`, `Procs`), built by dune too; `../TinyKernel/libml/TinyLibSystem.ml` is tiny-machine's, the same names in tiny-ml's ML |
 
 ## `ocaml/`
 

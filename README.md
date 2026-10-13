@@ -221,7 +221,7 @@ possible: tiny-ml reads the capabilities and forgets them;
 OCaml's standard library; and what it asks of the system is one
 interface, `TinyLibSystem`, with a file for each side
 ([`TinyLibHost/`](tiny/TinyLibHost/TinyLibSystem.mli)'s over Unix,
-[`TinyKernel/user/`](tiny/TinyKernel/user/TinyLibSystem.ml)'s over
+[`TinyKernel/libml/`](tiny/TinyKernel/libml/TinyLibSystem.ml)'s over
 the kernel's calls). The other tools are still OCaml that needs a
 library tiny-ml does not have. What each side is compiled by, and
 with what under it:

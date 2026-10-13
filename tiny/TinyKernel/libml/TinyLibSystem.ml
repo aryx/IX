@@ -3,10 +3,11 @@
 
 (* TinyLibSystem on tiny-machine: what a tool asks of the system
  * (tiny-shell; TinyLibHost/TinyLibSystem.mli says each function), over
- * tiny-kernel's calls (mlsys.c's, beside this file), in tiny-ml's ML.
- * Given to tiny-ml after TinyLibStd.ml and before the tool's file:
+ * tiny-kernel's calls (mlsys.c's, beside this file; calls.ml names
+ * them), in tiny-ml's ML. Given to tiny-ml after calls.ml and
+ * TinyLibStd.ml, and before the tool's file:
  *
- *   tiny-ml -tm -o rc.tm TinyLibStd.ml user/TinyLibSystem.ml TinyShell.ml
+ *   tiny-ml -tm -o rc.tm libml/calls.ml TinyLibStd.ml libml/TinyLibSystem.ml TinyShell.ml
  *
  * Not in tiny/ with the other TinyLibXxx.ml: the host's file has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml
@@ -30,22 +31,6 @@
  * - a file written at its end (>>), a signal, a terminal to ask about,
  *   a reason for a call that failed: refused, nothing, yes, "cannot"
  *)
-
-(* mlsys.c's: the kernel's calls, their values ML's; -1 when refused *)
-external u_write : int -> string -> int = "u_write"
-external u_read : int -> int -> string = "u_read"
-external u_open : string -> int -> int = "u_open"
-external u_close : int -> int = "u_close"
-external u_dup : int -> int = "u_dup"
-external u_pipe : unit -> int = "u_pipe"
-external u_chdir : string -> int = "u_chdir"
-external u_fork : unit -> int = "u_fork"
-external u_exec : string -> string list -> int = "u_exec"
-external u_waits : unit -> int = "u_waits"
-external u_getpid : unit -> int = "u_getpid"
-external u_argc : unit -> int = "u_argc"
-external u_arg : int -> string = "u_arg"
-external u_flush : unit -> unit = "u_flush"
 
 type Cap.all_caps = < >
 

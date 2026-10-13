@@ -66,7 +66,7 @@
 <text x="352" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore.ml, a prelude: tiny-ml</text>
 <text x="352" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">reads it before every program (the</text>
 <text x="352" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">operators, option, the exceptions, List);</text>
-<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/user/calls.ml: the kernel&#x27;s</text>
+<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libml/calls.ml: the kernel&#x27;s</text>
 <text x="352" y="501" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">calls, as externals</text>
 <line x1="486" y1="514" x2="486" y2="532" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="534" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
@@ -74,7 +74,7 @@
 <text x="622" y="557" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c -tm</text>
 <text x="352" y="578" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator,</text>
 <text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Cheney&#x27;s collector, strings, compare;</text>
-<text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/user/mlsys.c</text>
+<text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/libml/mlsys.c</text>
 <text x="352" y="629" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the heap in the program&#x27;s megabyte,</text>
 <text x="352" y="646" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">the calls as C functions)</text>
 <line x1="486" y1="659" x2="486" y2="677" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
@@ -83,7 +83,7 @@
 <text x="622" y="702" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, assembly</text>
 <text x="352" y="723" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/: start.tm (the start),</text>
 <text x="352" y="740" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm (the division), libc.c;</text>
-<text x="352" y="757" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/user/sys.tm: the system calls</text>
+<text x="352" y="757" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
 <line x1="486" y1="770" x2="486" y2="788" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="790" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="352" y="813" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
@@ -95,12 +95,12 @@
 <text x="660" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="930" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
 <text x="660" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/user/sh.c, ls.c,</text>
-<text x="660" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">paint.c...: one file each, with user.h</text>
+<text x="660" y="211" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">paint.c...: one file each</text>
 <line x1="794" y1="224" x2="794" y2="242" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="646" y="244" width="296" height="108" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="267" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">What some of them add</text>
 <text x="930" y="267" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
-<text x="660" y="288" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/user/draw.c, draw.h: the</text>
+<text x="660" y="288" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/draw.c, draw.h: the</text>
 <text x="660" y="305" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">drawing&#x27;s messages (paint, wiki);</text>
 <text x="660" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">net.c: a machine reached by its name</text>
 <text x="660" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(get)</text>
@@ -111,7 +111,7 @@
 <text x="660" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/: libc.c and libc.h</text>
 <text x="660" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(print, the strings, malloc), start.tm,</text>
 <text x="660" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm;</text>
-<text x="660" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/user/sys.tm: the system calls</text>
+<text x="660" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libc/sys.tm: the system calls</text>
 <line x1="794" y1="480" x2="794" y2="788" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="646" y="790" width="296" height="74" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="660" y="813" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>

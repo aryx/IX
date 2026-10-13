@@ -108,6 +108,13 @@
  * the last thing the child will do; one fork saved a stage, for a
  * test of what comes after in every case of [run]. Not done.
  *
+ * On two systems: this file is built by OCaml for the host and by
+ * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It names
+ * the pure functions of the standard library (tiny-ml's are
+ * TinyLibStd's) and, for anything of the system, TinyLibSystem, which
+ * has a file for each side. So no label, no module of its own, and an
+ * exception Exits where Exit would be the library's.
+ *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
  * language, and for the principle the lists are there to keep: input
  * "is never scanned more than once"; D. M. Ritchie and K. Thompson,

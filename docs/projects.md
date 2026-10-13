@@ -89,11 +89,12 @@ things: a tool runs on the host, the others on tiny-machine.
   them all tiny-ml reads `tiny/TinyLibCore.ml`, its prelude, which is
   the core library. Under the ML: `TinyMLRuntime/core.c` (the
   allocator, the collector), given the program's memory by
-  `TinyKernel/user/mlsys.c`, and `TinyCRuntime/` for the start and the
+  `TinyKernel/libml/mlsys.c`, and `TinyCRuntime/` for the start and the
   division.
 - **A program in C on tiny-machine** (`sh`, `ls`, `paint`...) is one
   file of `TinyKernel/user/`, with `TinyCRuntime/` (its library, its
-  start, the division) and `user/sys.tm`, the system calls.
+  start, the division) and `TinyKernel/libc/` (`sys.tm`, the system
+  calls; `user.h`).
 - **The kernel** is `tiny/TinyKernel.ml` and its two parts in
   `TinyKernel/`, on the same prelude and the same `core.c`, with its
   own assembly for the start, the traps and the pixels' rows.

@@ -1,5 +1,5 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
-#include "user.h"
+#include "../libc/user.h"
 
 void
 main(int argc, char *argv[])

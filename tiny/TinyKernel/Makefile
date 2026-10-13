@@ -41,6 +41,11 @@
 # libc (../TinyCRuntime/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
 # t6's too (TinyKernel/steps/t6/user/ has links to them).
 #
+# user/ has the programs, a file each (the ones in C; an ML one's
+# last file, which runs it); libc/ what a C program is linked with to
+# call this kernel (user.h, sys.tm, draw.c, net.c); libml/ the same
+# for an ML one (mlsys.c, calls.ml, TinyLibSystem.ml).
+#
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly,
 # kernel.img, user/*.tm the programs' assembly, bin/ the programs as
@@ -61,7 +66,7 @@ KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.t
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh rc mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyCRuntime
-ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
+ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
 all: $(O)/boot.img
 
@@ -87,7 +92,16 @@ $(O)/libc.tm: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-$(O)/user/%.tm: user/%.c user/user.h
+$(O)/user/%.tm: user/%.c libc/user.h
+	@mkdir -p $(@D)
+	$(TC) -tm -o $@ $<
+
+# what a program is linked with besides: libc/ for one in C (draw.c,
+# net.c), libml/ for one in ML (mlsys.c)
+$(O)/libc/%.tm: libc/%.c libc/user.h
+	@mkdir -p $(@D)
+	$(TC) -tm -o $@ $<
+$(O)/libml/%.tm: libml/%.c libc/user.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
@@ -102,25 +116,25 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 $(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ ../TinyLibDraw.ml ../TinyWindows.ml
-$(O)/user/mlsys.tm: ../TinyMLRuntime/core.c
-MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
+$(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
+MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/$(@F).tm && \
 	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
-$(O)/bin/windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/windows.tm
+$(O)/bin/windows: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/windows.tm
 	@$(MLLINK)
 
 # a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
 # file runs it (square: the playground's test's)
-PLAY = user/calls.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml
+PLAY = libml/calls.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml
 SQUARE = ../tests/TinyLibPlayground_tests/Square.ml ../tests/TinyLibPlayground_tests/machine.ml
 $(O)/user/square.tm: $(PLAY) $(SQUARE)
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
-$(O)/bin/square: $(ULIB) $(O)/user/mlsys.tm $(O)/user/square.tm
+$(O)/bin/square: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/square.tm
 	@$(MLLINK)
 $(O)/user/tetris.tm: $(PLAY) ../TinyAppTetris.ml user/tetris.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) ../TinyAppTetris.ml user/tetris.ml
-$(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
+$(O)/bin/tetris: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
 # a program with widgets: on ../TinyLibGUI.ml, which draws by the
@@ -129,38 +143,38 @@ $(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 $(O)/user/calc.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
-$(O)/bin/calc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/calc.tm
+$(O)/bin/calc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/calc.tm
 	@$(MLLINK)
 $(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
-$(O)/bin/temp: $(ULIB) $(O)/user/mlsys.tm $(O)/user/temp.tm
+$(O)/bin/temp: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/temp.tm
 	@$(MLLINK)
 
 # a tool of the host's that runs here too (rc: ../TinyShell.ml,
 # tiny-shell): on ../TinyLibStd.ml, what it names of OCaml's standard
-# library, and user/TinyLibSystem.ml, the system's calls it asks for
+# library, and libml/TinyLibSystem.ml, the system's calls it asks for
 # (the host's is ../TinyLibHost/TinyLibSystem.ml)
-TOOL = ../TinyLibStd.ml user/TinyLibSystem.ml
+TOOL = libml/calls.ml ../TinyLibStd.ml libml/TinyLibSystem.ml
 $(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(TOOL) ../TinyShell.ml
-$(O)/bin/rc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/rc.tm
+$(O)/bin/rc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/rc.tm
 	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
-$(O)/user/paint.tm: user/draw.h
-$(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
+$(O)/user/paint.tm: libc/draw.h
+$(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
+	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 # a program that reaches a machine by its name: with net.c
-$(O)/bin/get: $(O)/bin/%: $(ULIB) $(O)/user/net.tm $(O)/user/%.tm
+$(O)/bin/get: $(O)/bin/%: $(ULIB) $(O)/libc/net.tm $(O)/user/%.tm
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/user/net.tm $(O)/user/$*.tm
-$(O)/user/wiki.tm: user/draw.h
-$(O)/bin/wiki: $(ULIB) $(O)/user/draw.tm $(O)/user/wiki.tm
+	$(CPU) -o $@ $(ULIB) $(O)/libc/net.tm $(O)/user/$*.tm
+$(O)/user/wiki.tm: libc/draw.h
+$(O)/bin/wiki: $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/user/draw.tm $(O)/user/wiki.tm
+	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 

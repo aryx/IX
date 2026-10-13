@@ -1,5 +1,5 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
-#include "user.h"
+#include "../libc/user.h"
 
 char buf[512];
 

@@ -7,7 +7,7 @@
 // every descriptor, so it closes the pipe's end it does not use, or a
 // reader would wait for a writer that is itself (t6's sh, with spawn,
 // has no such end to forget).
-#include "user.h"
+#include "../libc/user.h"
 
 char line[256], spaced[512];
 char *toks[64];

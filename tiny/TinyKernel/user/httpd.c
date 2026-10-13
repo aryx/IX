@@ -8,7 +8,7 @@
 // anywhere: the world's side is TCP), its first line's path taken,
 // the answer written (HTTP/1.0: the end of the connection is the
 // file's), the connection closed. ^C ends it.
-#include "user.h"
+#include "../libc/user.h"
 
 char req[2048], buf[1024];
 int n;

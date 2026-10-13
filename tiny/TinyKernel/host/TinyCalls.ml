@@ -4,7 +4,7 @@
 (* TinyKernel.ml's calls, for a program built by OCaml: what
  * TinyLibPlayground.ml asks of its machine, so that a game is tested on
  * the host first (plan_tiny_windows.md). On tiny-machine these names
- * are externals (TinyKernel/user/calls.ml, which names mlsys.c's
+ * are externals (TinyKernel/libml/calls.ml, which names mlsys.c's
  * functions); tiny-ml reads `open TinyCalls` and leaves it. Here there
  * is no kernel: what a program writes to where it draws (its
  * descriptor 3) is kept in [drawn], for a test to give TinyKernelGraphics.ml;

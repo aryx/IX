@@ -3,7 +3,7 @@
 // t6's tests from the inside, each its name and ok, or FAIL and why.
 // It spawns itself for its children (t6tests <role> <arg>): there is no
 // fork to share its code with them.
-#include "user.h"
+#include "../libc/user.h"
 
 int failed;
 char *me = "/t6tests";

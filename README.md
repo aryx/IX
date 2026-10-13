@@ -243,7 +243,7 @@ mini-9pi under mini-qemu, running Plan 9's own `rio`
 ![mini-9pi under mini-qemu: a rio window, with echo, date, ls and ps typed in it](docs/pics/mini-9pi.png)
 
 tiny-kernel on tiny-machine, Tetris in a window of tiny-windows (the
-screen at the end of a recorded session, `tiny/TinyKernel/tetris.events`):
+screen at the end of a recorded session, `tiny/tests/TinyKernel_tests/tetris.events`):
 
 ![tiny-kernel on tiny-machine: a window of tiny-windows, Tetris played in it](docs/pics/tiny-tetris.png)
 

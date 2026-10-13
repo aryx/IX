@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # tiny-machine's speed (plan_web.md, stage 2): a recorded session of
-# tiny-kernel's (tiny/TinyKernel/*.events: the mouse and the keys by the
+# tiny-kernel's (tiny/tests/TinyKernel_tests/*.events: the mouse and the keys by the
 # machine's time, so the same instructions on every run) by the native
 # tiny-machine and by the same program compiled by js_of_ocaml, under
 # node; for each the seconds, the millions of instructions a second
@@ -23,6 +23,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 s=paint; prof=0
 for a in "$@"; do case $a in -prof) prof=1;; *) s=$a;; esac; done
 K=$ROOT/tiny/TinyKernel
+S=$ROOT/tiny/tests/TinyKernel_tests
 B=$ROOT/_build/default
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 [ -f $K/_make/boot.img ] || { echo "no $K/_make/boot.img: make -C tiny/TinyKernel"; exit 1; }
@@ -34,13 +35,13 @@ ocamlfind ocamlc -g -package caps,fpath,unix,logs,logs.fmt,fmt -linkpkg $B/lib_c
   $B/tiny/tiny_lib_cpu.cma $B/tiny/tiny_lib_machine.cma $B/tiny/.TinyMachine.eobjs/byte/dune__exe__TinyMachine.cmo -o $W/tm.bc
 js_of_ocaml --opt 3 $([ $prof = 1 ] && echo --pretty --debug-info) $ROOT/machine/tests/bench_js_stubs.js $W/tm.bc -o $W/tm.js 2>/dev/null
 
-n=$(tail -1 $K/$s.events | cut -d' ' -f1)
+n=$(tail -1 $S/$s.events | cut -d' ' -f1)
 run() { # name command...
   local name=$1; shift
   local t0=$(date +%s.%N)
-  "$@" -events $K/$s.events -screen $W/s.ppm $K/_make/boot.img > /dev/null
+  "$@" -events $S/$s.events -screen $W/s.ppm $K/_make/boot.img > /dev/null
   local t1=$(date +%s.%N)
-  local same=another; [ "$(cksum < $W/s.ppm)" = "$(cat $K/$s.cksum)" ] && same=recorded
+  local same=another; [ "$(cksum < $W/s.ppm)" = "$(cat $S/$s.cksum)" ] && same=recorded
   echo "$name $s.events: $(echo "$t1 $t0 $n" | awk '{ printf "%.1f s, %.1f million instructions a second", $1 - $2, $3 / ($1 - $2) / 1e6 }'), the screen the $same one"
 }
 run "native" $B/tiny/TinyMachine.exe

@@ -4,9 +4,9 @@
  * and its system calls (plan_tiny_windows.md):
  *
  *     ./tiny-machine -window tiny-kernel
- *     $ tiny-windows
+ *     $ windows
  *     the right button: New, then a rectangle swept with the left one;
- *     in the window, a shell: ls, paint, tiny-windows
+ *     in the window, a shell: ls, paint, windows
  *
  * The idea kept is rio's: {b a window looks like the machine}. A
  * program of TinyKernel.ml is given five descriptors: 0, 1 and 2 its
@@ -30,7 +30,7 @@
  *               v 0           | 1, 2      | 3           v 4
  *          +----------------- a window's shell ----------------+
  *          | sh, and what it runs: ls, paint, tetris,          |
- *          | tiny-windows                                      |
+ *          | windows                                           |
  *          +---------------------------------------------------+
  *
  * (one such column of four for each window). What goes up the third

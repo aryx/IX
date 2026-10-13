@@ -560,7 +560,7 @@ tiny-ml -tm after `TinyDraw.ml`; `user/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel
-    $ tiny-windows
+    $ windows
 
 | the mouse | what |
 |---|---|
@@ -576,7 +576,7 @@ as typed and the mouse in the window is its mouse, until something is
 printed again. A window's program is given three pipes and a box as
 its five descriptors; tiny-windows reads what it draws, changes its
 images' numbers and sends the messages on, the kernel keeping every
-pixel. `tiny-windows` typed in a window runs there, with windows of
+pixel. `windows` typed in a window runs there, with windows of
 its own.
 
 ### 7.5 A game: TinyPlayground.ml
@@ -611,15 +611,17 @@ drops it, `q` quits; after a game over, the space starts another.
 
 A program with widgets is a value of `tiny/TinyGUI.ml`'s type `gui`:
 its first model (`init`), the model as widgets (`view`), the model
-after a message (`update`), and the messages of a key (`key`). The
-library has the loop, the layout, the mouse and the drawing: a button
-the mouse goes down in and comes up in sends its message, and only
-the widgets that are others than those shown are drawn.
+after a message (`update`), and the messages of a key when no field
+has the keys (`key`). The library has the loop, the layout, the mouse,
+the keys and the drawing: a button the mouse goes down in and comes up
+in sends its message, the field last clicked in has the keys, and
+only the widgets that are others than those shown are drawn.
 
 | widget | what |
 |---|---|
 | `Label text` | a text |
 | `Field text` | a text in a white box, at its right; not typed in |
+| `Input (text, message of a text)` | a field typed in: a key sends the text with the character more, a backspace with one less; its caret is at the end |
 | `Button (text, message)` | a button, and what it sends |
 | `Row widgets` | side by side, the same width each |
 | `Col widgets` | one under the other, the column's width each |
@@ -630,7 +632,10 @@ It is given to tiny-ml after the playground, whose shapes it draws by
 says `let () = run calculator`). `calc` is `tiny/TinyCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
 the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
-operation done when the next one is asked (`2+3*4=` is 20).
+operation done when the next one is asked (`2+3*4=` is 20). `temp` is
+`tiny/TinyTemperature.ml`: click in a field and type a temperature,
+the other field has it in the other scale, to the nearest whole
+number; the Escape quits (or `q`, before a field is clicked).
 
 With `-window` the machine runs at 8 million instructions a second,
 so that a game's time is the same on every host, and a key held is
@@ -646,8 +651,8 @@ typed again.
 | TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
 | TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
 | TinyTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyTetris_test.sh` |
-| TinyGUI.ml and TinyCalculator.ml, the arithmetic by keys, the buttons by a mouse, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris and calc in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
+| TinyGUI.ml, TinyCalculator.ml and TinyTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

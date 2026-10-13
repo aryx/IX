@@ -4,7 +4,7 @@
  * integers, in tiny-ml's ML and OCaml's (plan_tiny_windows.md):
  *
  *     ./tiny-machine -window tiny-kernel
- *     $ tiny-windows             then a window, and in it:
+ *     $ windows                  then a window, and in it:
  *     $ tetris
  *     the arrows: left, right, up turns the piece, down a row;
  *     the space drops it; q quits

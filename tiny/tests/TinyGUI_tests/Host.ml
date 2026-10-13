@@ -4,28 +4,46 @@
 (* TinyGUI.ml and TinyCalculator.ml on the host, by OCaml, with no
  * machine and no loop: the calculator's arithmetic by keys given to
  * TinyGUI's key; its buttons by a mouse given to TinyGUI's mouse, at
- * the boxes TinyGUI's laid says; what is drawn after a press (how many
- * bytes of messages: one button's); then the picture, a button held,
- * by TinyGraphics.ml, written as tiny-machine -screen writes it.
+ * the boxes TinyGUI's laid says; TinyTemperature.ml's two fields by
+ * clicks and keys; what is drawn after a press (how many bytes of
+ * messages: four edges'); then the picture, a button held and a field
+ * with its caret, by TinyGraphics.ml, written as tiny-machine -screen
+ * writes it.
  * usage: Host.exe font1.bin out.ppm *)
 open TinyCalculator
 
 let g = calculator
 let text (m : model) = (if m.op = ' ' then "" else Printf.sprintf "%d %c | " m.kept m.op) ^ if m.wrong then "error" else string_of_int m.shown
-let typed s = String.fold_left (fun m c -> TinyGUI.key g m (Char.code c)) g.init s
+let boxes g m = snd (TinyGUI.laid g m)
+let typed s = String.fold_left (fun m c -> TinyGUI.key g (boxes g m) m TinyGUI.up (Char.code c)) g.init s
 
 (* the middle of the button that sends a message *)
 let middle m msg =
-  let ((x, y, w, h), _) = List.find (fun (_, sent) -> sent = msg) (snd (TinyGUI.laid g m TinyGUI.up)) in
+  let ((x, y, w, h), _) = List.find (fun (_, a) -> match a with TinyGUI.Send sent -> sent = msg | _ -> false) (boxes g m) in
   x + (w / 2), y + (h / 2)
 
 (* a click: the mouse there with its button down, then up *)
 let click (m, ms) msg =
   let x, y = middle m msg in
-  let m, ms = TinyGUI.mouse g m ms x y 1 in
-  TinyGUI.mouse g m ms x y 0
+  let m, ms = TinyGUI.mouse g (boxes g m) m ms x y 1 in
+  TinyGUI.mouse g (boxes g m) m ms x y 0
 
 let written () = Buffer.length TinyCalls.drawn
+
+(* the converter: a click in a field (0: Celsius, 2: Fahrenheit), keys
+ * (< a backspace), the two texts after *)
+let convert script =
+  let t = TinyTemperature.temperature in
+  let step (m, ms) c =
+    let b = boxes t m in
+    if c = 'C' || c = 'F' then begin
+      let ((x, y, _, _), _) = List.nth b (if c = 'C' then 0 else 1) in
+      let m, ms = TinyGUI.mouse t b m ms (x + 2) (y + 2) 1 in
+      TinyGUI.mouse t b m ms (x + 2) (y + 2) 0
+    end
+    else TinyGUI.key t b m ms (if c = '<' then 8 else Char.code c), ms in
+  let (m : TinyTemperature.model), ms = String.fold_left step (t.init, TinyGUI.up) script in
+  Printf.printf "temp %-18s [%s] Celsius = [%s] Fahrenheit, %d over\n" script m.c m.f (List.length (TinyGUI.over (boxes t m) ms))
 
 let () =
   List.iter (fun s -> Printf.printf "keys %-16s %s\n" s (text (typed s)))
@@ -35,29 +53,40 @@ let () =
   let state = List.fold_left click (g.init, TinyGUI.up) [ Digit 4; Digit 2; Op '-'; Digit 2; Equals ] in
   Printf.printf "clicks 4 2 - 2 =     %s\n" (text (fst state));
   (* a press taken back: down in a button, up outside it; down outside, up in it *)
+  let b = boxes g g.init in
   let x, y = middle g.init (Digit 7) in
-  let m, ms = TinyGUI.mouse g g.init TinyGUI.up x y 1 in
-  let m, ms = TinyGUI.mouse g m ms 0 0 1 in
-  let m, ms = TinyGUI.mouse g m ms 0 0 0 in
-  Printf.printf "down in 7, up outside: %s, the mouse up: %b\n" (text m) (ms == TinyGUI.up);
-  let m, ms = TinyGUI.mouse g m ms 0 0 1 in
-  let m, ms = TinyGUI.mouse g m ms x y 1 in
-  let m, ms = TinyGUI.mouse g m ms x y 0 in
+  let m, ms = TinyGUI.mouse g b g.init TinyGUI.up x y 1 in
+  Printf.printf "down in 7: %d over\n" (List.length (TinyGUI.over b ms));
+  let m, ms = TinyGUI.mouse g b m ms 0 0 1 in
+  Printf.printf "and out of it: %d over\n" (List.length (TinyGUI.over b ms));
+  let m, ms = TinyGUI.mouse g b m ms 0 0 0 in
+  Printf.printf "down in 7, up outside: %s\n" (text m);
+  let m, ms = TinyGUI.mouse g b m ms 0 0 1 in
+  let m, ms = TinyGUI.mouse g b m ms x y 1 in
+  let m, ms = TinyGUI.mouse g b m ms x y 0 in
   Printf.printf "down outside, up in 7: %s\n" (text m);
   (* a mouse that moves with its button up is the same mouse *)
-  Printf.printf "moved, the button up: the same mouse %b\n" (snd (TinyGUI.mouse g m ms 50 50 0) == ms);
+  Printf.printf "moved, the button up: the same mouse %b\n" (snd (TinyGUI.mouse g b m ms 50 50 0) == ms);
+  (* the converter: keys with no field clicked go nowhere; a field's text and the other's answer *)
+  List.iter convert [ "12"; "C1"; "C10"; "C10x"; "C10x<"; "C100"; "C-40"; "C-"; "F32"; "F212"; "F34"; "F0"; "C100F<<<-40"; "C1234567"; "Cq" ];
   (* the picture: 36 + 6 shown, then 7 held; what the press draws *)
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in
   Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
   let m = typed "12*3=+6" in
-  let shown = fst (TinyGUI.laid g m TinyGUI.up) in
-  TinyGUI.redraw [] shown;
+  let shown, b = TinyGUI.laid g m in
+  TinyGUI.redraw [] [] shown [];
   let all = written () in
-  let m, ms = TinyGUI.mouse g m TinyGUI.up x y 1 in
-  let held = fst (TinyGUI.laid g m ms) in
-  TinyGUI.redraw shown held;
-  Printf.printf "%d shapes; a press draws %d of them, %d bytes of messages for %d\n" (List.length shown)
-    (List.length (List.filter Fun.id (List.map2 ( <> ) shown held))) (written () - all) all;
+  let _, ms = TinyGUI.mouse g b m TinyGUI.up x y 1 in
+  TinyGUI.redraw shown [] shown (TinyGUI.over b ms);
+  Printf.printf "%d shapes; a press draws none of them: %d bytes of messages for %d\n" (List.length shown) (written () - all) all;
+  (* under it, the converter, the Fahrenheit field with the keys *)
+  let t = TinyTemperature.temperature in
+  let tm = { TinyTemperature.c = "100"; f = "212" } in
+  let shapes, tb = TinyGUI.laid t tm in
+  let down = List.map (fun s -> TinyPlayground.Move (0, 200, s)) in
+  let (fx, fy, _, _), _ = List.nth tb 1 in
+  let over = TinyGUI.over tb { TinyGUI.up with fx; fy } in
+  TinyGUI.redraw [] [] (down shapes) (List.map (fun (box, s) -> box, TinyPlayground.Move (0, 200, s)) over);
   TinyGraphics.arena 0xf4b000 0xb4000;
   let screen = { TinyGraphics.r = TinyGraphics.rect 0 0 640 480; at = 0xf00000; repl = false } in
   let c = TinyGraphics.connect screen (TinyGraphics.font_mask 0x1000 (TinyGraphics.alloc 16384)) in

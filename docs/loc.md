@@ -53,6 +53,12 @@ Since 2026-10-09 m-ix's budget is **125,000 lines** (the author:
 `lib_gui/` and `lib_playground/` came to be counted, which put m-ix
 at 101,052: about 23,900 left.
 
+Since 2026-10-13 t-ix's budget is **25,000 lines** (the author: "let's
+extend the t-ix budget to 25 000 (and I think m-ix is at 150 000)"),
+the day TinyGUI and its two programs came in, which put t-ix at
+20,418: about 4,600 left. m-ix's is 150,000 since 2026-10-10, and m-ix
+at 146,618: about 3,400 left.
+
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.

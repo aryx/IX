@@ -8,7 +8,7 @@
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
  *     $ mltests
  *     ./tiny-machine -window tiny-kernel      its screen in a window
- *     $ paint                                 or tiny-windows, and paint in a window
+ *     $ paint                                 or windows, and paint in a window
  *
  * Why free. ix's mini-xxx twin an original program; its tiny-xxx keep
  * what is fundamental and drop the rest by what it costs. A kernel

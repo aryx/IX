@@ -23,7 +23,7 @@
 # Options:
 #   -window  tiny-kernel: its screen in a window (640 by 480; the mouse
 #        and the keys in it are the machine's). The console stays this
-#        terminal, where the first shell is typed at: tiny-windows is
+#        terminal, where the first shell is typed at: windows is
 #        the window system (the right button: New, then a rectangle
 #        swept with the left one; a shell in it), paint a program that
 #        draws, on the screen or in a window, square a game of a page
@@ -115,7 +115,7 @@ case $1 in
     say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
     [ -z "$web" ] || page "" $image
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
-    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: tiny-windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
+    [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
     (cd $ROOT && dune build ./tiny/TinyMachineSocket.exe 2>&1) || exit 1
     say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"

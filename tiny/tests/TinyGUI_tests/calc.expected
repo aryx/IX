@@ -14,7 +14,24 @@ keys 31622*31622=     999950884
 keys 1234567890       123456789
 the widgets ask for 140 by 180
 clicks 4 2 - 2 =     40
-down in 7, up outside: 0, the mouse up: true
+down in 7: 1 over
+and out of it: 0 over
+down in 7, up outside: 0
 down outside, up in 7: 0
 moved, the button up: the same mouse true
-18 shapes; a press draws 1 of them, 88 bytes of messages for 1248
+temp 12                 [] Celsius = [] Fahrenheit, 0 over
+temp C1                 [1] Celsius = [34] Fahrenheit, 1 over
+temp C10                [10] Celsius = [50] Fahrenheit, 1 over
+temp C10x               [10x] Celsius = [50] Fahrenheit, 1 over
+temp C10x<              [10] Celsius = [50] Fahrenheit, 1 over
+temp C100               [100] Celsius = [212] Fahrenheit, 1 over
+temp C-40               [-40] Celsius = [-40] Fahrenheit, 1 over
+temp C-                 [-] Celsius = [] Fahrenheit, 1 over
+temp F32                [0] Celsius = [32] Fahrenheit, 1 over
+temp F212               [100] Celsius = [212] Fahrenheit, 1 over
+temp F34                [1] Celsius = [34] Fahrenheit, 1 over
+temp F0                 [-18] Celsius = [0] Fahrenheit, 1 over
+temp C100F<<<-40        [-40] Celsius = [-40] Fahrenheit, 1 over
+temp C1234567           [1234567] Celsius = [222253] Fahrenheit, 1 over
+temp Cq                 [q] Celsius = [] Fahrenheit, 1 over
+18 shapes; a press draws none of them: 76 bytes of messages for 1248

@@ -130,7 +130,8 @@
  (libraries tiny_playground))
 
 ; TinyGUI.ml, what a program with buttons is written on, and
-; TinyCalculator.ml, tiny-kernel's calc, on it
+; TinyCalculator.ml and TinyTemperature.ml, tiny-kernel's calc and temp,
+; on it
 (library
  (name tiny_gui)
  (wrapped false)
@@ -141,6 +142,12 @@
  (name tiny_calculator)
  (wrapped false)
  (modules TinyCalculator)
+ (libraries tiny_gui))
+
+(library
+ (name tiny_temperature)
+ (wrapped false)
+ (modules TinyTemperature)
  (libraries tiny_gui))
 
 (library

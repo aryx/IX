@@ -3,7 +3,7 @@
  * tiny-ml's ML and OCaml's:
  *
  *     ./tiny-machine -window tiny-kernel
- *     $ tiny-windows             then a window, and in it:
+ *     $ windows                  then a window, and in it:
  *     $ calc
  *     the mouse on the buttons, or the keys: the digits, + - * /,
  *     = or the Enter, c clears; q quits

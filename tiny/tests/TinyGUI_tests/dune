@@ -1,5 +1,5 @@
-; TinyGUI.ml's and TinyCalculator.ml's test on the host (TinyGUI_test.sh)
+; TinyGUI.ml's, TinyCalculator.ml's and TinyTemperature.ml's test on the host (TinyGUI_test.sh)
 (executable
  (name Host)
  (modules Host)
- (libraries tiny_graphics tiny_draw tiny_playground tiny_gui tiny_calculator))
+ (libraries tiny_graphics tiny_draw tiny_playground tiny_gui tiny_calculator tiny_temperature))

@@ -2,15 +2,16 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The test of TinyGUI.ml and TinyCalculator.ml on the host, built by
-# OCaml, with no machine: TinyGUI_tests/Host.ml gives the calculator
-# keys (its arithmetic: an operation done when the next is asked, a
-# division by 0, nine digits) and a mouse at its buttons' boxes (a
-# click, a press taken back), and says what a press draws; its lines
-# against calc.expected. Then its picture, a button held, by
-# TinyGraphics.ml: the screen against calc.cksum (a PPM's sum, as
-# tiny-machine -screen's). The program on the machine, in a window, is
-# TinyKernel's check (calc.events).
+# The test of TinyGUI.ml, TinyCalculator.ml and TinyTemperature.ml on
+# the host, built by OCaml, with no machine: TinyGUI_tests/Host.ml
+# gives the calculator keys (its arithmetic: an operation done when the
+# next is asked, a division by 0, nine digits) and a mouse at its
+# buttons' boxes (a click, a press taken back), the converter clicks
+# and keys in its two fields, and says what a press draws; its lines
+# against calc.expected. Then their picture, a button held and a field
+# with its caret, by TinyGraphics.ml: the screen against calc.cksum (a
+# PPM's sum, as tiny-machine -screen's). The programs on the machine,
+# in a window, are TinyKernel's check (calc.events, temp.events).
 # RECORD=1 records both (look at the picture first: KEEP=1 W=dir).
 # usage: TinyGUI_test.sh
 

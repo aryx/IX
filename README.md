@@ -188,8 +188,8 @@ its original and what it redesigns.
 | **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 420 | mini-rio | [`TinyWindows.ml`](tiny/TinyWindows.ml), [`TinyDraw.ml`](tiny/TinyDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
 | **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 110 | the playground | [`TinyPlayground.ml`](tiny/TinyPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyPlayground.ml)) |
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 150 | the playground's Tetris | [`TinyTetris.ml`](tiny/TinyTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTetris.ml)) |
-| **tiny-gui** | what a program with buttons is written on: widgets made from the model, each button carrying the message it sends; the layout, the mouse and the drawing are the library's | 150 | lib_gui | [`TinyGUI.ml`](tiny/TinyGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyGUI.ml)) |
-| **tiny-calculator** | a calculator of four operations, sixteen buttons, in a window of tiny-windows | 70 | lib_gui's 7GUIs | [`TinyCalculator.ml`](tiny/TinyCalculator.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCalculator.ml)) |
+| **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 220 | lib_gui | [`TinyGUI.ml`](tiny/TinyGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyGUI.ml)) |
+| **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 70, 40 | lib_gui's 7GUIs | [`TinyCalculator.ml`](tiny/TinyCalculator.ml), [`TinyTemperature.ml`](tiny/TinyTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCalculator.ml)) |
 | **tiny-build** | a build system: rules, `%`, digests, `-j` | 370 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
 | **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 610 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 620 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
@@ -202,12 +202,12 @@ and tiny-assembler also make: **tiny-arm**
 an arm64 CPU for user programs, which runs their executables as Linux
 would.
 
-With it and without tiny-lib, that is about 10,100 lines of OCaml
+With it and without tiny-lib, that is about 10,200 lines of OCaml
 and ML; with tiny-lib and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 20,400 lines** in all (the header comments are in
-the `.mli` files, which are not counted), of a budget of 20,000. tiny-kernel, tiny-graphics,
-tiny-windows, tiny-playground, tiny-tetris, tiny-gui and tiny-calculator are not programs of the
+t-IX is **about 20,600 lines** in all (the header comments are in
+the `.mli` files, which are not counted), of a budget of 25,000. tiny-kernel, tiny-graphics,
+tiny-windows, tiny-playground, tiny-tetris, tiny-gui, tiny-calculator and tiny-temperature are not programs of the
 host: they run on tiny-machine, in
 or on tiny-kernel, compiled by tiny-ml (and by OCaml too, for their
 tests). tiny-cpu and tiny-machine also
@@ -227,7 +227,7 @@ make test
 ./mini-pi mini-9pi          # boot mini-9pi on mini-qemu, with ix's own programs (mini-rc...)
 ./mini-pi mini-9pi-principia -g   # with principia's programs and SD card: type rio
 ./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
-./tiny-machine -window tiny-kernel   # tiny-kernel and its screen: type tiny-windows, then tetris in a window
+./tiny-machine -window tiny-kernel   # tiny-kernel and its screen: type windows, then tetris in a window
 ```
 
 `./configure` wants OCaml, opam and make; the rest it only warns about,
@@ -353,19 +353,19 @@ web browser of its size (tiny-browser) is not written.
 ### The budget
 
 A system a person can read needs a limit set before it is full:
-**150,000 lines for m-IX** and **20,000 for t-IX**, without the tests
+**150,000 lines for m-IX** and **25,000 for t-IX**, without the tests
 and without the header comments that tell each module's idea and
 history (m-IX's was 100,000 until 2026-10-09, when the office suite
 and the two libraries under it, the GUI toolkit and the playground,
 came to be counted, and 125,000 until 2026-10-10, the web browser
-in).
+in; t-IX's was 20,000 until 2026-10-13, its GUI toolkit in).
 What is still to come has to fit in what is left, and when it does
 not, something is trimmed first.
 
-| | budget | today (2026-10-10) | left | what is missing |
+| | budget | today (2026-10-13) | left | what is missing |
 |---|---:|---:|---:|---|
-| **m-IX** | 150,000 | 128,600 | 21,400 | the debuggers, the profiler |
-| **t-IX** | 20,000 | 18,800 | 1,200 | tiny-debugger, tiny-profiler |
+| **m-IX** | 150,000 | 146,600 | 3,400 | the debuggers, the profiler |
+| **t-IX** | 25,000 | 20,400 | 4,600 | tiny-debugger, tiny-profiler |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

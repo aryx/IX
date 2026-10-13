@@ -12,7 +12,7 @@
 #                     then three recorded sessions, the mouse and the keys
 #                     from a file, the screen at the halt against its sum:
 #                     paint.events (paint on the screen), windows.events
-#                     (tiny-windows: three windows, ls, paint in one, a
+#                     (windows, tiny-windows: three windows, ls, paint in one, a
 #                     move, a delete, one brought to the front) and
 #                     nested.events (tiny-windows in a window of
 #                     tiny-windows, two windows in it), play.events (square,
@@ -21,7 +21,8 @@
 #                     pieces moved, turned and dropped) and calc.events
 #                     (calc, on ../TinyGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
-#                     button held); and two with the
+#                     button held) and temp.events (temp, its two
+#                     fields typed in, in a window); and two with the
 #                     network: wiki.events (wiki mandelbrot: a picture
 #                     from the wire's other end, ../tests/www's, painted
 #                     a row a message) and wikiwin.events (the same in a
@@ -58,7 +59,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyC/libc/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint tiny-windows square tetris calc ping get wiki httpd cat echo ls wc mkdir rm
+PROGS = sh mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyC/libc
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -94,16 +95,17 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
 
-# a program in ML (tiny-windows: ../TinyWindows.ml, after ../TinyDraw.ml):
+# a program in ML (windows, tiny-windows: ../TinyWindows.ml, after
+# ../TinyDraw.ml):
 # compiled by tiny-ml -tm, with mlsys.c, TinyML's runtime and the
 # system calls as ML's externals, which has the heap from 384 KB
-$(O)/user/tiny-windows.tm: ../TinyDraw.ml ../TinyWindows.ml
+$(O)/user/windows.tm: ../TinyDraw.ml ../TinyWindows.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
 $(O)/user/mlsys.tm: ../TinyML/core.c
 MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
 	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
-$(O)/bin/tiny-windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tiny-windows.tm
+$(O)/bin/windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/windows.tm
 	@$(MLLINK)
 
 # a game: on ../TinyPlayground.ml, whose calls are calls.ml's; its last
@@ -122,11 +124,17 @@ $(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
 # a program with widgets: on ../TinyGUI.ml, which draws by the
-# playground's shapes (calc: ../TinyCalculator.ml)
+# playground's shapes (calc: ../TinyCalculator.ml; temp:
+# ../TinyTemperature.ml)
 $(O)/user/calc.tm: $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyCalculator.ml user/calc.ml
 $(O)/bin/calc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/calc.tm
+	@$(MLLINK)
+$(O)/user/temp.tm: $(PLAY) ../TinyGUI.ml ../TinyTemperature.ml user/temp.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyTemperature.ml user/temp.ml
+$(O)/bin/temp: $(ULIB) $(O)/user/mlsys.tm $(O)/user/temp.tm
 	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
@@ -161,7 +169,7 @@ check: $(O)/boot.img
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc; do \
+	for s in paint windows nested play tetris calc temp; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

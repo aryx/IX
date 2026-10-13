@@ -13,7 +13,7 @@
 #   kept picture if not), the page's button clicked while the picture
 #   loads: the answers on the console, a picture on the screen, a
 #   packet lost and the picture whole all the same;
-# - tiny-windows typed, then windows.events' first gestures (the right
+# - windows typed, then windows.events' first gestures (the right
 #   button's menu, New, a rectangle swept, ls typed in the window): the
 #   canvas is no longer black, and what it shows is saved (-o png);
 # - the status line's speed is printed.
@@ -148,7 +148,7 @@ async def session(port, debug):
         if png:
             data = await p.js("document.getElementById('screen').toDataURL('image/png')")
             open(png.replace(".png", "-wiki.png"), "wb").write(base64.b64decode(data.split(",")[1]))
-        await p.type("tiny-windows\n")
+        await p.type("windows\n")
         await p.wait("tiny-windows' screen", f"{LIT} > 100000")
         # windows.events' first gestures: the menu by the right button,
         # New, a rectangle swept by the left one, ls typed in its shell

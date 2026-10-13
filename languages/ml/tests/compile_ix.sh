@@ -93,6 +93,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"
   # (lib_audio: Sfx draws its numbers from Lehmer)
   [ $root = lib_audio ] && incs[$root]="$(dirs lib_audio) -I lib_playground/random"
+  # (lib_networking's netcode: Sim_net draws its numbers from Lehmer)
+  [ $root = lib_networking ] && incs[$root]="$(dirs lib_networking) -I lib_playground/random"
   [ $root = lib_terminal ] && incs[$root]="-I lib_terminal -I lib_terminal/unix -I lib_terminal/hosts -I lib_terminal/hosts/draw -I lib_playground/random $(dirs lib_graphics)"
   [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
   [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"

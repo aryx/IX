@@ -41,6 +41,11 @@ extern value ml_units[];
 
 value *ml_vsp;
 void *ml_handler;
+/* (mini-ml's ml_raise names them, for a trace of the stack at a raise:
+ * languages/ml/runtime's. No trace here: ml_tracing stays 0) */
+value ml_tracing;
+value ml_raise_words[16];
+value ml_raise_left;
 
 void failwith(char*);
 static void raise_with(value*, char*);

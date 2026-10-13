@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The tests of TinyMachine.ml, its laws, on tiny-os/v0/kernel.tm linked
+# The tests of TinyMachine.ml, its laws, on TinyKernel/steps/v0/kernel.tm linked
 # with its four user programs (v0/a.tm to d.tm: a and b print 20
 # letters each, c executes csrw, d stores into the kernel):
 #
@@ -18,7 +18,7 @@
 #    run: the same output as the sources run, and its listing the same;
 #    and the programs linked in another order, the same output;
 # 5. each program of TinyMachine_tests/ (the machine's features for
-#    tiny-os v6: amoswap, hartid, ip, the pages, the console's input,
+#    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, hartid, ip, the pages, the console's input,
 #    the disk) prints its .expected, given its .input if there is one;
 #    disk.tm a fresh image (block 1 "hello, disk"), whose block 2 it
 #    has written WRITTEN after the halt; screen.tm its events
@@ -30,8 +30,8 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyMachine.exe}
-K=$ROOT/tiny/tiny-os/v0/kernel.tm
-P=$(ls $ROOT/tiny/tiny-os/v0/[abcd].tm)
+K=$ROOT/tiny/TinyKernel/steps/v0/kernel.tm
+P=$(ls $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm)
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT
 failures=0

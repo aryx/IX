@@ -27,7 +27,8 @@
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
 # two programs in editors/ (drscheme, turbopascal) and
-# examples/, tiny/tiny-os/ (t-ix's own exception), and the sdl/ and
+# examples/, tiny/TinyKernel/steps/ (t-ix's own exception: tiny/tiny-os/
+# before 2026-10-13), and the sdl/ and
 # tty/ directories, a program's hosts on Linux. (apps/ is counted: mini-office and what it stands on.)
 #
 # The header comment of an .ml or an .mli (its first comment, after
@@ -397,8 +398,8 @@ APART = [
     # this C: "and let's not count tiny-os/ really", "as we now have a
     # better TinyKernel with graphics, and windowing system, and so on",
     # "just like we didn't count kernels/xv6/ and other kernels")
-    ("tiny/tiny-os/", "tiny-os, the other kernels of tiny-machine, in C (v0, v6, t6), with tiny-mkfs, their disks': t-ix's is tiny-kernel",
-     lambda dirs, path: path.startswith("tiny/tiny-os/")),
+    ("tiny/TinyKernel/steps/", "the steps before tiny-kernel on tiny-machine: v0 in assembly, t6 in C, with tiny-mkfs, its disk's (tiny-os, until v6 was removed)",
+     lambda dirs, path: path.startswith("tiny/TinyKernel/steps/")),
     # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
     # in make loc; they are optional as what matters is what is running
     # under mini-9pi"; last, so a program that is apart keeps its own in

@@ -33,8 +33,8 @@ it buys.
 
 | what | how it departs | the author's decision |
 |---|---|---|
-| `tiny/tiny-os/v6/` (2,814 lines of C) | its header: "xv6 redone again, its ideas and its names": fork and exec, a kernel stack per process, inodes in layers, spinlocks for cores it does not have. A faithful twin, a mini by ix's naming; `t6/` beside it is its free variant | stays: "we don't really count it anyway in the t-ix make loc so it's fine" (`scripts/stats/loc.py` leaves `tiny/tiny-os/` out of t-IX's number: "t-ix's own exception") |
-| `TinyMkfs.ml` | the disks of v6 (xv6's format less its log and link counts) and of t6; no other program calls it | moved into `tiny/tiny-os/` (commit c4c1920): "if TinyMkfs.ml is used only by tiny-os/, let's move it inside" |
+| `tiny/TinyKernel/steps/v6/` (2,814 lines of C) | its header: "xv6 redone again, its ideas and its names": fork and exec, a kernel stack per process, inodes in layers, spinlocks for cores it does not have. A faithful twin, a mini by ix's naming; `t6/` beside it is its free variant | stays: "we don't really count it anyway in the t-ix make loc so it's fine" (`scripts/stats/loc.py` leaves `tiny/TinyKernel/steps/` out of t-IX's number: "t-ix's own exception") |
+| `TinyMkfs.ml` | the disks of v6 (xv6's format less its log and link counts) and of t6; no other program calls it | moved into `tiny/TinyKernel/steps/` (commit c4c1920): "if TinyMkfs.ml is used only by tiny-os/, let's move it inside" |
 | `tiny/TinyLibHost/` (7,091 lines, the largest row of t-IX) | `lib_core` copied and trimmed by a script: OCaml's standard library's API, and mini-ml's runtime in C | stays: "we need to compile the TinyXxx programs and they use all the code in TinyLibHost/ (also it's nice that they can be compiled by current OCaml compilers and stdlib)" |
 
 TinyLibHost's case is the clearest example of a constraint that pays: the
@@ -109,7 +109,7 @@ None of these was discussed with the author.
 `TinyBuildSystem.ml`, `TinyShell.ml`, `TinyEditor.ml`,
 `TinyDatabase.ml`, `TinyCPU.ml` with `TinyMachineCPU.ml`, `TinyMachine.ml`,
 `TinyKernel.ml`, `TinyKernelGraphics.ml`, `TinyWindows.ml`,
-`TinyLibPlayground.ml`, `tiny-os/t6/` and `tiny-os/v0/`: each decides its
+`TinyLibPlayground.ml`, `TinyKernel/steps/t6/` and `TinyKernel/steps/v0/`: each decides its
 own language, format or machine, and its tests are its own.
 `TinyAppTetris.ml` is a port of the playground's game and is small either
 way.
@@ -121,6 +121,6 @@ way.
   ("the contract, quirks included"). A constraint that is named can be
   judged later.
 - What only one program or one system uses goes in its directory
-  (`tiny-os/TinyMkfs.ml`), not at `tiny/`'s top.
+  (`TinyKernel/steps/t6/TinyMkfs.ml`), not at `tiny/`'s top.
 - A faithful twin that is small is still a mini. It can live in
   `tiny/` as `tiny-os/v6/` does, outside t-IX's number.

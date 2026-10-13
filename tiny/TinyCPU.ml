@@ -17,7 +17,7 @@ In tiny/tests/TinyCPU_tests/, for example:
                                 the other, the first at 0), an image
   tiny-cpu hello                the image run: Hello, world
   tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...
-  tiny-cpu -a prog a.tm...      tiny-os v6's a.out: linked at 0x800000
+  tiny-cpu -a prog a.tm...      an a.out as v6's were: linked at 0x800000
 |}
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >

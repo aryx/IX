@@ -67,7 +67,7 @@ on.
 | `TinyDatabase.ml` | tiny-db | `database/` (mini-chidb; chidb) | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
 | `TinyCPUArm.ml` | tiny-arm | `machine/` (mini-5i; 5i) | an arm64 CPU for the tiny toolchain's programs: an executable of tiny-assembler's loaded and run word by word, a word decoded and executed in one match, group by group as the manual tables them; Linux's four calls (read, write, exit, getpid); no assembler of its own, no instruction type; the subset is what tiny-c's and tiny-ml's programs execute, goken's libc included, and a word outside it stops the program; the same file runs on the real CPU and under mini-5i, and the three are compared |
 | `TinyCPU.ml`, `TinyMachineCPU.ml` | tiny-cpu | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an assembler (a new machine has no other: nothing else writes its words) and an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
-| `TinyMachine.ml` | tiny-machine | `raspberry/` (mini-qemu), with Project Oberon and RISC-V's privileged specification | TinyCPU's CPU with what a kernel needs, designed: two modes, one trap (epc, cause, tval, tvec) and eret, a timer counting instructions, protection by a window (base, bound), a console and a halt at the top of memory; a raw image (`-o`, linking several `.tm`) loaded at 0; a page of kernel, `tiny-os/v0/kernel.tm`, running four programs (`v0/a.tm` to `d.tm`), killing the two that misbehave; and for a window system, each an option: a screen that is memory (640 by 480 bytes, a byte a colour), a mouse that is a word, a window of the host's that shows them (`-window`, by another program, `TinyMachineWindow.ml`), a session replayed from a file, a wire to a network (`-net`: `TinyKernelNetwork.ml` below; its way to the host's own network by another program too, `TinyMachineSocket.ml`) |
+| `TinyMachine.ml` | tiny-machine | `raspberry/` (mini-qemu), with Project Oberon and RISC-V's privileged specification | TinyCPU's CPU with what a kernel needs, designed: two modes, one trap (epc, cause, tval, tvec) and eret, a timer counting instructions, protection by a window (base, bound), a console and a halt at the top of memory; a raw image (`-o`, linking several `.tm`) loaded at 0; a page of kernel, `TinyKernel/steps/v0/kernel.tm`, running four programs (`v0/a.tm` to `d.tm`), killing the two that misbehave; and for a window system, each an option: a screen that is memory (640 by 480 bytes, a byte a colour), a mouse that is a word, a window of the host's that shows them (`-window`, by another program, `TinyMachineWindow.ml`), a session replayed from a file, a wire to a network (`-net`: `TinyKernelNetwork.ml` below; its way to the host's own network by another program too, `TinyMachineSocket.ml`) |
 | `TinyKernel.ml` (and `TinyKernel/`) | tiny-kernel (`./tiny-machine tiny-kernel`) | `kernels/9pi/` (mini-9pi; 9pi) | a kernel in ML for tiny-machine, compiled by `tiny-ml -tm`: the concepts kept (modes and system calls, preemption, protection, fork and exec, pipes, files and directories), each by the road ML makes short: the kernel a loop that runs a process until its next trap (`k_run`), a waiting call a closure the scheduler retries (no kernel stack per process, no sleep and wakeup), the files a tree of ML values in the heap (no disk); a screen programs draw on by messages and a mouse, a program's descriptors 3 and 4; `docs/notes_tiny_kernel.md` |
 | `TinyKernelGraphics.ml` | in tiny-kernel | `lib_graphics/`, mini-9pi's `lib_memdraw` (libdraw, libmemdraw) | one operation, `draw dst r src mask p`, on images a byte a pixel; a colour is an image of one pixel that repeats; the kernel has the pixels and a program says what, by messages naming images by its own numbers |
 | `TinyKernelNetwork.ml` | in tiny-kernel, and in tiny-machine | mini-9pi's `network/ip/`, `lib_networking/` (Plan 9's ip) | the stack is functions of strings, with no device and no clock: a packet that came gives the packets to send back and what a program hears; so the same file is the kernel's stack, its test on the host, and the other end of tiny-machine's wire (`-net`). IP's envelope, the echo (`ping`), and IL, Plan 9's protocol for messages that arrive once and in order (`get`, and `wiki`, a picture painted a row a message); `TinyMachinePeer.ml` is the few lines on top of it that make the wire's other end; [`plan_tiny_network.md`](../docs/plans/done/plan_tiny_network.md) |
@@ -101,20 +101,22 @@ on `lib_core/` whole, as m-ix's programs. The programs of tiny-kernel
 do not use it: they are tiny-ml's, whose library is its prelude and
 `TinyMLRuntime/`.
 
-`tiny-os/` is not OCaml, but for one file: it is an operating system
-for tiny-machine, in its assembly (`.tm`) and in C for tiny-c -tm, built
-by the tiny tools as a program is built by its toolchain; its disks are
-made on the host by tiny-mkfs (`tiny-os/TinyMkfs.ml`, which only its
-kernels use, so it is there and not among the tiny programs above). A kernel per version
-(`v0/`: a page of assembly and four programs linked with it; `v6/`,
-xv6's kind of kernel in C, with its disk made by `tiny-mkfs`, a shell
-and `usertests`; `t6/`, its free variant, with `spawn` and no `fork`, a
-FAT, one kernel stack), and the C runtime they
-share (`libc/`, a link to `TinyCRuntime/`: `start.tm`, `libc.c`, `libc.h`); `hello.c` runs on
-tiny-cpu. Its Makefiles take the tools from the PATH (after `dune
-install`) or from ix's `bin/`: `make -C tiny/tiny-os run`, `make -C
-tiny/tiny-os run-hello`. [`docs/projects.md`](../docs/projects.md)
-places it among ix's other projects.
+`TinyKernel/steps/` has what ran on tiny-cpu and tiny-machine before
+a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:
+`hello.c`, a C program on the bare CPU; `v0/`, a page of kernel in
+assembly and four programs linked with it; `t6/`, a kernel in C with
+`spawn` and no `fork`, a FAT on a disk, one kernel stack. They are
+built by the tiny tools as a program is built by its toolchain, on
+`TinyCRuntime/`; t6's disk is made on the host by tiny-mkfs
+(`TinyKernel/steps/t6/TinyMkfs.ml`, the one OCaml file there). Their
+Makefiles take the tools from the PATH (after `dune install`) or from
+ix's `bin/`: `make -C tiny/TinyKernel/steps run`, `make -C
+tiny/TinyKernel/steps run-hello`. None of it is counted in t-ix's
+lines. (Until 2026-10-13 this was `tiny/tiny-os/`, with a third
+kernel, `v6/`, xv6's structure and names in C: a faithful twin, which
+m-ix has as mini-xv6; it is in git's history.)
+[`docs/projects.md`](../docs/projects.md) places them among ix's
+other projects.
 
 [`docs/manuals/t-ix.md`](../docs/manuals/t-ix.md) is the manual of
 the tiny machine and what runs on it: how t-ix is put together (what

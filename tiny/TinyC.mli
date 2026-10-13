@@ -9,7 +9,7 @@
  *
  * Or, with -tm, for the other machine, TinyCPU (TinyMachineCPU.ml): the
  * same front end and stack machine, a second back end of 100 lines,
- * with a runtime of its own, in TinyCRuntime/ (tiny-os's Makefile does
+ * with a runtime of its own, in TinyCRuntime/ (TinyKernel/steps/Makefile does
  * the above): the start and the system calls in start.tm, the unsigned
  * division in udivmod.tm, the rest of libc in C, compiled by tiny-c -tm. There
  * pointers are 4 bytes and a long long is refused: the machine is 32
@@ -120,8 +120,8 @@
  *
  * Where it stands: what it writes TinyAssembler reads (arm64) or
  * TinyMachineCPU's assembler (-tm). It compiles TinyML's runtime (its
- * collector and primitives are C), tiny-os's kernels v6 and t6 and
- * their programs, and TinyKernel's programs; TinyML's code generator
+ * collector and primitives are C), TinyKernel's programs, and t6, a
+ * kernel in C, with its own; TinyML's code generator
  * is this file's stack machine and register stack again, for another
  * language. Its twin, mini-cc, has what this leaves out: 7c's trees
  * rewritten by Sethi and Ullman's numbers, addressing modes, a

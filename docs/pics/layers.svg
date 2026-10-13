@@ -150,7 +150,7 @@
 <rect x="954" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
 <text x="968" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux on arm64, tiny-arm, mini-5i;</text>
-<text x="968" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny-machine (tiny-os, TinyKernel)</text>
+<text x="968" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny-machine (TinyKernel, its steps)</text>
 <line x1="1102" y1="226" x2="1102" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <line x1="1102" y1="368" x2="1102" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <line x1="1102" y1="528" x2="1102" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>

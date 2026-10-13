@@ -1,7 +1,0 @@
-; tiny-os's one OCaml file: its disks, made on the host (v6's and t6's)
-(executable
- (name TinyMkfs)
- (public_name tiny-mkfs)
- (package ix)
- (modules TinyMkfs)
- (libraries ix_core fpath caps))

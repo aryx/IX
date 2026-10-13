@@ -2,7 +2,7 @@
  * essential of an operating system, with nothing borrowed from an
  * existing one but ideas. Compiled by tiny-ml -tm (TinyML.ml's second
  * back end), its runtime TinyML's (Cheney's collector, in C by
- * tiny-c -tm), its user programs C (tiny-c -tm, tiny-os's libc):
+ * tiny-c -tm), its user programs C (tiny-c -tm, on TinyCRuntime/):
  *
  *     ./tiny-machine tiny-kernel   (at the top of ix; or make run in TinyKernel/)
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
@@ -49,12 +49,12 @@
  * the simplest: kill(pid) ends a process as a fault does (its status
  * -1), and ^C at the console every process but the shell. The system
  * calls are this kernel's own (its programs are in TinyKernel/user/,
- * and tiny-os t6's cat, echo, ls, wc, mkdir and rm run unchanged, as
+ * and t6's cat, echo, ls, wc, mkdir and rm run unchanged, as
  * they use only calls in common).
  *
  * Where it sits: ix's Kernel row (README), its tiny program, as mini-9pi
- * is its mini one; not a version of tiny-os (v0, v6, t6, on the same
- * machine, in assembly and C). TinyKernel/ holds the rest: entry.tm,
+ * is its mini one; not a version of the kernels before it (steps/'s v0
+ * and t6, on the same machine, in assembly and C). TinyKernel/ holds the rest: entry.tm,
  * runtime.c, the user programs, the Makefile.
  *
  * The toolchain, all ix's, and its bridge between ML and the machine,

@@ -59,9 +59,8 @@ is the tiny system's own code, compiled by its own compilers.
 <p><small>
 Boot another kernel:
 <a href="t-ix.html">tiny-kernel</a> (in ML; the screen, the windows) &middot;
-<a href="t-ix.html?kernel=t6">tiny-os t6</a> (in C; a free kernel) &middot;
-<a href="t-ix.html?kernel=v6">tiny-os v6</a> (in C; xv6's kind of kernel, with pages and a disk).
-The last two have no screen: their console is the text.
+<a href="t-ix.html?kernel=t6">t6</a> (in C, with a disk: a step before tiny-kernel).
+It has no screen: its console is the text.
 </small></p>
 
 <h2 id="try">What to try</h2>
@@ -138,7 +137,7 @@ runs anything. On the machine,
 <a href="codemap.html?focus=tiny/TinyKernel.ml"><code>TinyKernel.ml</code></a>,
 <a href="codemap.html?focus=tiny/TinyWindows.ml"><code>TinyWindows.ml</code></a> and
 <a href="codemap.html?focus=tiny/TinyAppTetris.ml"><code>TinyAppTetris.ml</code></a>
-are ML compiled by <code>tiny-ml</code>, and tiny-os is C compiled by
+are ML compiled by <code>tiny-ml</code>, and its step t6 is C compiled by
 <code>tiny-c</code>, both for this CPU.
 </p>
 <p>
@@ -170,7 +169,7 @@ shows them all.
   // this site; tiny/TinyMachine/TinyMachineWeb.ml reads this variable
   var assets = "https://aryx.github.io/assets/";
   var kernel = new URLSearchParams(location.search).get("kernel");
-  var tiny_machine = kernel == "v6" || kernel == "t6"
+  var tiny_machine = kernel == "t6"
     ? { image: assets + "ix/" + kernel + "/kernel.img", disk: assets + "ix/" + kernel + "/fs.img" }
     : { image: assets + "ix/tiny-kernel/boot.img" };
 </script>

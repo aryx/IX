@@ -234,10 +234,9 @@ and ML; with tiny-lib-host and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
 t-IX is **about 20,600 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
-run [`tiny/tiny-os/`](tiny/tiny-os/) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/tiny-os)), an operating system written for
-them in their assembly and in C for `tiny-c`: a page-long kernel (v0),
-an xv6-like kernel with a disk and a shell (v6), and a free variant of
-it (t6). Its 5,200 lines are not counted in t-IX: t-IX's kernel is
+run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
+them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
+and a kernel in C with a disk and a shell (t6). Their 2,000 lines are not counted in t-IX: t-IX's kernel is
 tiny-kernel, which needs none of them.
 
 ## Build and run
@@ -249,7 +248,7 @@ make test
 ./bin/mini-mk -h            # every program has -h, with examples
 ./mini-pi mini-9pi          # boot mini-9pi on mini-qemu, with ix's own programs (mini-rc...)
 ./mini-pi mini-9pi-principia -g   # with principia's programs and SD card: type rio
-./tiny-machine v6           # boot tiny-os's xv6-like kernel on tiny-machine
+./tiny-machine t6           # boot t6, a kernel in C with a disk, a step before tiny-kernel
 ./tiny-machine -window tiny-kernel   # tiny-kernel and its screen: type windows, then tetris in a window
 ```
 

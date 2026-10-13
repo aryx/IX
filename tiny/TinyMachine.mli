@@ -11,10 +11,11 @@
  * at the start: no header, since the machine always starts at 0 in
  * supervisor mode (the Pi's kernel.img, loaded at 0x8000 by its
  * firmware, is the same idea). Files named .tm are assembly, another
- * an image. tiny-os/ is an OS for it, by versions, each with a Makefile
- * that builds and runs it: v0/ a page of assembly and its programs, v6/
- * xv6's kind of kernel in C, its disk made by tiny-mkfs; ./tiny-machine
- * v0 or v6, at the top of ix, builds and boots one.
+ * an image. TinyKernel.ml is its kernel, and TinyKernel/steps/ has the
+ * two before it, each with a Makefile that builds and runs it: v0/, a
+ * page of assembly and its programs; t6/, a kernel in C, its disk made
+ * by tiny-mkfs; ./tiny-machine tiny-kernel, t6 or v0, at the top of
+ * ix, builds and boots one.
  *
  * The machine, what the CPU lacked to run a kernel:
  *
@@ -45,7 +46,8 @@
  *   status. They are outside any window a kernel gives, so only it
  *   reaches them.
  *
- * What tiny-os v6 (xv6's kind of kernel) adds, each kept apart so that
+ * What v6 added (xv6's kind of kernel, in C; removed on 2026-10-13, in
+ * git's history; no kernel of ix has pages since), each kept apart so that
  * v0 runs as it did (plan_tiny_os.md, phase 2):
  *
  * - {b 16 MB}, the devices still at the top (-16(r0) the console).
@@ -61,7 +63,7 @@
  * - {b The console's input} at -8(r0), and its interrupt; {b a disk}
  *   (-d image), 1 KB blocks moved at once, and its interrupt.
  *
- * And t6 (tiny-os's free kernel) one more: status's bit 16, the window
+ * And t6 (a free kernel in C, TinyKernel/steps/t6/) one more: status's bit 16, the window
  * relocating (a user address plus base, below bound).
  *
  * And for a window system (plan_tiny_windows.md), each an option, so
@@ -144,14 +146,14 @@
  * csrw or eret, in supervisor mode, or amoswap, or a trap. The loop
  * around [step] adds the rest: the time, the interrupts.
  *
- * The tests: TinyMachine_test.sh runs tiny-os/v0/kernel.tm, a page of
+ * The tests: TinyMachine_test.sh runs TinyKernel/steps/v0/kernel.tm, a page of
  * kernel, with its four user programs (two printing, one executing
  * csrw, one storing into the kernel), on a long and a short timer
  * period: every letter printed, the two faults caught, the printing
  * interleaved by the short period and not by the long one; and the
  * programs of TinyMachine_tests/ (amoswap and csrrw, the pages, the
  * console's input, the disk, the relocating window) against their
- * .expected. tiny-os's v6 and t6 run on it too (their make check).
+ * .expected. t6 runs on it too (its make check), and tiny-kernel.
  *
  * Exercises, each cheap because the time is the instructions counted
  * and everything else is a hook of the CPU:
@@ -173,8 +175,8 @@
  * loop. TinyMachineWeb.ml is the same for a web page.
  *
  * Where it stands: below it TinyMachineCPU, the instructions; above it
- * its kernels, tiny-os's three (assembly, then C by tiny-c -tm) and
- * TinyKernel (ML by tiny-ml -tm). Its twins are the machines ix did
+ * its kernels, TinyKernel (ML by tiny-ml -tm) and the steps before it
+ * (v0 in assembly, t6 in C by tiny-c -tm). Its twins are the machines ix did
  * not design: mini-qemu's Board and Pi4, where the same five ideas
  * (modes, a trap's registers, a timer, devices at addresses, an image
  * loaded at a fixed place) have ARM's names and ARM's history.
@@ -232,7 +234,7 @@
  * Schocken's Hack, whose keyboard and screen are memory as here and
  * which has no interrupt; xv6's choice was a real machine (x86, then
  * RISC-V, under QEMU; the sixth edition it retells ran on a PDP-11),
- * and tiny-os v6 brings its kind of kernel to our own.
+ * and v6, while it was here, brought its kind of kernel to our own.
  *
  * References: the RISC-V privileged specification: the
  * trap registers, their names, mret; Wirth and Gutknecht, Project

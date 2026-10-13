@@ -39,7 +39,7 @@
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
 # kernel runs each at the start of its partition), start.tm first, with
 # libc (../TinyCRuntime/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
-# t6's too (tiny-os/t6/user/ has links to them).
+# t6's too (TinyKernel/steps/t6/user/ has links to them).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly,

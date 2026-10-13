@@ -11,12 +11,11 @@
 #                              closures, the files ML values in memory),
 #                              the shell on the console; with -window
 #                              its screen, a window system and games
-#   ./tiny-machine v6          tiny-os v6 (tiny/tiny-os/v6/): xv6's kind
-#                              of kernel in C, its disk
-#   ./tiny-machine t6          tiny-os t6 (tiny/tiny-os/t6/): v6's free
-#                              variant (spawn, a FAT, one kernel stack)
-#   ./tiny-machine v0          tiny-os v0 (tiny/tiny-os/v0/): a page of
-#                              assembly and its four programs
+#   ./tiny-machine t6          a step before it (tiny/TinyKernel/steps/t6/):
+#                              a kernel in C, its disk (spawn, a FAT, one
+#                              kernel stack)
+#   ./tiny-machine v0          the first step (tiny/TinyKernel/steps/v0/): a
+#                              page of assembly and its four programs
 #   ./tiny-machine kernel.tm prog.tm...
 #                              a kernel of yours (first) and its programs
 #
@@ -28,16 +27,16 @@
 #        swept with the left one; a shell in it), paint a program that
 #        draws, on the screen or in a window, square a game of a page
 #        (the arrows), tetris the game (the arrows, the space drops)
-#   -web dir  tiny-kernel, v6, t6: nothing run; the machine as a web
+#   -web dir  tiny-kernel, t6: nothing run; the machine as a web
 #        page in dir (tiny/TinyMachine/TinyMachineWeb.ml, by js_of_ocaml), with the
 #        kernel's image: index.html, to serve (it says how) and open
 #   -l   the listing of the kernel's image instead of running it
-#   -w   v6, t6: write to its disk, fs.img (by default a copy, its writes
+#   -w   t6: write to its disk, fs.img (by default a copy, its writes
 #        lost at exit, as mini-pi's snapshot)
 #   -n   no build (the tools and the kernel as last built)
 #
 # Ctrl-C is the kernel's (tiny-kernel: the program running killed),
-# Ctrl-\ quits tiny-machine. Quit v6 or t6 with Ctrl-D: the shell's
+# Ctrl-\ quits tiny-machine. Quit t6 with Ctrl-D: the shell's
 # input ends, then init, and the machine halts. This script is not
 # installed: bin/tiny-machine is the machine itself, which does each
 # step (-o to link, an image to run, -d a disk).
@@ -67,7 +66,7 @@ size() { echo $(( $(wc -c < "$1") )); }
 short() { local f; for f in "$@"; do f=$(readlink -f "$f"); echo -n "${f#$ROOT/} "; done; }
 
 if [ $build = 1 ]; then
-  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/tiny-os/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
+  (cd $ROOT && dune build ./tiny/TinyMachine.exe ./tiny/TinyC.exe ./tiny/TinyCPU.exe ./tiny/TinyKernel/steps/t6/TinyMkfs.exe ./tiny/TinyML.exe 2>&1) || exit 1
   # (the window is a program apart: the one that links SDL)
   [ -z "$window" ] || (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineWindow.exe 2>&1) || exit 1
 fi
@@ -88,10 +87,10 @@ page() {
 }
 
 case $1 in
-  v6|t6)
-    dir=$ROOT/tiny/tiny-os/$1
+  t6)
+    dir=$ROOT/tiny/TinyKernel/steps/$1
     if [ $build = 1 ]; then
-      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/tiny-os/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
+      make -s -C $dir TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine MKFS=$B/TinyKernel/steps/t6/TinyMkfs.exe _make/kernel.img _make/fs.img >&2 || exit 1
     fi
     image=$dir/_make/kernel.img
     disk=$dir/_make/fs.img
@@ -125,13 +124,13 @@ case $1 in
     exec $machine $window -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
-    set -- $ROOT/tiny/tiny-os/v0/kernel.tm $ROOT/tiny/tiny-os/v0/[abcd].tm
+    set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.tm $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm
     ;;
   -*|"") usage;;
 esac
 
 # .tm files: the kernel first, at 0, then its programs
-for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: tiny-kernel, v6, t6, v0)" >&2; exit 1; }; done
+for f in "$@"; do [ -f "$f" ] || { echo "tiny-machine: no $f (a kernel's name: tiny-kernel, t6, v0)" >&2; exit 1; }; done
 image=$B/kernel.img
 say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", then $(short "${@:2}")")"
 $machine -o $image "$@"

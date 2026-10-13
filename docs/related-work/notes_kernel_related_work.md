@@ -75,7 +75,7 @@ before they are quoted in a `.mli`.
   programs and `fs.img` format), and the others (notes_pi_related_work.md).
 - **xv6 in other languages** (from memory): rv6 and octox (Rust),
   ports to Go and others as course projects.
-- **tiny-os v6** (`tiny/tiny-os/v6/`, ix, 2026): xv6 simplified, in 2,600
+- **tiny-os v6** (`tiny/TinyKernel/steps/v6/`, ix, 2026): xv6 simplified, in 2,600
   lines of C compiled by tiny-c for TinyMachine: the C kernel mini-xv6
   is compared with in size and clarity (plan_kernel.md).
 

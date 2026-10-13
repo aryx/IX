@@ -23,14 +23,14 @@
 # not type at the same instruction (the recorded sessions, by
 # tiny-machine -events, do; under node too: plan_web.md).
 #
-# With -kernel v6 (or t6), tiny-os's kernel and its disk instead: the
+# With -kernel t6, that kernel (a step before tiny-kernel) and its disk instead: the
 # prompt, and ls typed; it has no screen.
 #
 # With -url, a page already served (the website's: docs/t-ix.html, or
 # https://aryx.github.io/IX/t-ix.html), nothing built; -kernel then
 # says which kernel that page boots.
 #
-# Usage: TinyMachineWeb_test.py [-kernel v6|t6] [-url page] [-o screen.png] [-wiki words] [-chrome program]
+# Usage: TinyMachineWeb_test.py [-kernel t6] [-url page] [-o screen.png] [-wiki words] [-chrome program]
 # Needs: google-chrome or chromium, python3's websockets; not in make
 # test (a browser, and half a minute).
 

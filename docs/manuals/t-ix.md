@@ -22,13 +22,12 @@ on the host or on a real architecture and are not covered here.
 
     ./tiny-machine tiny-kernel    # TinyKernel.ml, a kernel in ML: a shell on the console
     ./tiny-machine -window tiny-kernel    # and its screen in a window: paint draws there
-    ./tiny-machine v6             # tiny-os v6, xv6's kind of kernel in C, with its disk
-    ./tiny-machine t6             # tiny-os t6, v6's free variant
-    ./tiny-machine v0             # tiny-os v0, a page of assembly and four programs
+    ./tiny-machine t6             # t6, a step before it: a kernel in C, with its disk
+    ./tiny-machine v0             # v0, the first step: a page of assembly and four programs
     ./tiny-machine kernel.tm a.tm # a kernel of yours, and its programs
 
 `-l` prints the kernel's listing instead of running it, `-n` skips the
-build, `-w` keeps v6's and t6's writes to their disk. Ctrl-D ends the
+build, `-w` keeps t6's writes to its disk. Ctrl-D ends the
 shell and the machine, Ctrl-\ quits at once, Ctrl-C goes to the kernel.
 
 The script builds the tools with dune and calls them. By hand:
@@ -39,7 +38,7 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-machine k.tm p.tm...` | the same with the machine around the CPU: the first file is the kernel |
 | `tiny-c -tm -o f.tm f.c` | C to the machine's assembly |
 | `tiny-ml -tm -o f.tm f.ml` | ML to the machine's assembly |
-| `tiny-mkfs` | v6's and t6's disk images (`tiny/tiny-os/TinyMkfs.ml`) |
+| `tiny-mkfs` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfs.ml`) |
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
 
@@ -64,8 +63,8 @@ A tiny program is either the host's or the tiny machine's.
             v
     the tiny machine (assembly, C and ML, built by the programs above)
       TinyCRuntime/              the C runtime
-      tiny-os/v0, v6, t6       kernels in assembly and C, and their programs
       TinyKernel.ml            a kernel in ML, and its programs
+      TinyKernel/steps/v0, t6  the steps before it, in assembly and C
       TinyMLRuntime/core.c            the ML runtime, in C
 
 `TinyKernel.ml` is in `tiny/` beside the host's programs but is not
@@ -74,7 +73,7 @@ one of them: OCaml never compiles it, tiny-ml does.
 ### 2.2 What a host program needs outside `tiny/`
 
 Each is one file, but not all stand alone. From `tiny/dune` (and
-`tiny/tiny-os/dune`, tiny-mkfs's):
+`tiny/TinyKernel/steps/t6/dune`, tiny-mkfs's):
 
 | program | outside `tiny/` |
 |---|---|
@@ -119,8 +118,8 @@ from ix's `bin/`:
 
 | Makefile | what it builds |
 |---|---|
-| `tiny/tiny-os/Makefile` | `libc.tm` (from `libc/`, a link to `tiny/TinyCRuntime/`), `hello`, then each version |
-| `tiny/tiny-os/v6/`, `t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
+| `tiny/TinyKernel/steps/Makefile` | `libc.tm` (from `tiny/TinyCRuntime/`), `hello`, then each step |
+| `tiny/TinyKernel/steps/t6/` | `kernel.img`, the user programs, `fs.img` (tiny-mkfs) |
 | `tiny/TinyKernel/Makefile` | `kernel.img`, the user programs, `boot.img` |
 
 Each writes what it builds in a `_make/` of its own directory, and
@@ -245,7 +244,7 @@ In user mode, with pages off, an address must be inside the window.
   must be below `bound`, and `base` is added to it. Every program is
   assembled at 0.
 
-With `satp`'s top bit set (v6), addresses go through two-level page
+With `satp`'s top bit set (no kernel of ix does since v6 was removed; `tiny/tests/TinyMachine_tests/paging.tm` does), addresses go through two-level page
 tables instead, RISC-V's Sv32: 10 bits of index in the root table, 10
 in the next, 12 in a 4 KB page. An entry's flag bits are 1 valid, 2
 read, 4 write, 8 execute, 16 user. Supervisor mode reaches every
@@ -447,9 +446,8 @@ What the numbers mean is up to who answers:
 
 | kernel | language | protection | files |
 |---|---|---|---|
-| tiny-os v0 (`tiny/tiny-os/v0/`) | assembly | a plain window | none |
-| tiny-os v6 (`tiny/tiny-os/v6/`) | C | pages | on a disk, xv6's format |
-| tiny-os t6 (`tiny/tiny-os/t6/`) | C | a relocating window | on a disk, a FAT |
+| v0 (`tiny/TinyKernel/steps/v0/`) | assembly | a plain window | none |
+| t6 (`tiny/TinyKernel/steps/t6/`) | C | a relocating window | on a disk, a FAT |
 | TinyKernel.ml (`tiny/TinyKernel.ml`) | ML | a relocating window | ML values in memory |
 
 ### 7.1 TinyKernel.ml's memory
@@ -647,7 +645,7 @@ typed again.
 |---|---|
 | the CPU | `tiny/tests/TinyCPU_test.sh` |
 | the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
-| v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
+| t6 | `make -C tiny/TinyKernel/steps/t6 check` |
 | TinyKernelGraphics.ml, on the host and on the machine | `tiny/tests/TinyKernelGraphics_test.sh` (`-window`: its picture shown) |
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |

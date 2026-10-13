@@ -8,14 +8,14 @@ let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen pp
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 TinyCPU's CPU with a kernel's machine: two modes, traps, a timer, pages, a
-console and a disk. ./tiny-machine tiny-kernel, v6, t6 or v0 builds a kernel
-and runs it; the same by hand, in tiny/tiny-os/v0/, for example:
+console and a disk. ./tiny-machine tiny-kernel, t6 or v0 builds a kernel
+and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
   tiny-machine kernel.tm a.tm b.tm c.tm d.tm     assembled, linked (the kernel
                                                  first, at 0), run: aabbc<illegal>...
   tiny-machine -o kernel.img kernel.tm a.tm ...  the same, to an image
   tiny-machine kernel.img                        the image run
   tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
-  tiny-machine -d fs.img kernel.img              v6 (in tiny-os/v6/), fs.img its disk,
+  tiny-machine -d fs.img kernel.img              t6 (in TinyKernel/steps/t6/), fs.img its disk,
                                                  written back at the halt
   tiny-machine -window kernel.img                its screen (640 by 480, at 0xf00000) in
                                                  a window, whose keys and mouse are its

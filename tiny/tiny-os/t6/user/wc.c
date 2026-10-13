@@ -1,1 +1,0 @@
-../../../TinyKernel/user/wc.c

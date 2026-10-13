@@ -88,10 +88,10 @@ $D/TinyMLPrelude.$O: $D/TinyMLPrelude.ml
 	$ML $INCLUDES -o $target $D/TinyMLPrelude.ml
 $D/TinyML.$O: $D/TinyMLPrelude.$O
 
-# (tiny-mkfs is tiny-os's: its file is there)
-$D/TinyMkfs.$O: tiny-os/TinyMkfs.ml
+# (tiny-mkfs is t6's, a step before tiny-kernel: its file is there)
+$D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target tiny-os/TinyMkfs.ml
+	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfs.ml
 
 $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O

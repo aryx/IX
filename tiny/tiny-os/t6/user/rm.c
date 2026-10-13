@@ -1,1 +1,0 @@
-../../../TinyKernel/user/rm.c

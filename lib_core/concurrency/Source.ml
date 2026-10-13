@@ -57,9 +57,19 @@ let start () =
 
 (* a source's process (what [produce] gives, framed, until it gives
  * nothing: the last frame, empty) and its pump; [message] makes a
- * frame's bytes the channel's value *)
+ * frame's bytes the channel's value.
+ * The process produces again only when the program has received what
+ * it produced, told by a byte on a pipe of the source's own ([go]):
+ * as OCaml's thread, which reads again after its send. So who reads
+ * late is seen to by the file read: /dev/mouse gives the newest place
+ * of a mouse to a program that was busy, and not each place it had.
+ * old: the process read ahead and the pipe kept every read: a window
+ * swept under mini-rio followed the mouse seconds behind (60 moves in
+ * 2 s: redrawn until 7.7 s after the last, under mini-qemu). *)
 let source (_ : < Cap.fork; .. >) keep produce message =
   let r, w = start () in
+  let go, received = Unix.pipe ~cloexec:false () in
+  let keep = go :: keep in
   let id = Hashtbl.length sources in
   if id > 255 then failwith "Source: too many sources";
   let ch = Event.new_channel () and frames = Queue.create () in
@@ -79,13 +89,18 @@ let source (_ : < Cap.fork; .. >) keep produce message =
          Bytes.set_uint16_le frame 1 (Bytes.length data);
          Bytes.blit data 0 frame 3 (Bytes.length data);
          (match Unix.write w frame 0 (Bytes.length frame) with _ -> () | exception Unix.Unix_error _ -> Unix._exit 0);
-         if Bytes.length data > 0 then loop () in
+         let one = Bytes.create 1 in
+         let told = try Unix.read go one 0 1 with Unix.Unix_error _ -> 0 in
+         if Bytes.length data > 0 && told > 0 then loop () in
        loop ();
        Unix._exit 0
    | pid -> helpers := pid :: !helpers);
   let rec pump () =
     match Queue.take_opt frames with
-    | Some data -> Event.sync (Event.send ch (message data)); pump ()
+    | Some data ->
+        Event.sync (Event.send ch (message data));
+        (try ignore (Unix.write_substring received "." 0 1) with Unix.Unix_error _ -> ());
+        pump ()
     | None -> Thread.sleep (); pump () in
   Hashtbl.replace sources id { pump = Thread.create pump (); frames };
   ch

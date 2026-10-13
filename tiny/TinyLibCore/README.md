@@ -5,12 +5,16 @@ tiny-shell... tiny-mkfs) has under it when mini-ml compiles it, in
 place of m-ix's `lib_core/`: the modules those programs name, and
 the ones these name, each with only the functions that are called.
 
-    cd tiny && mini-mk LIB=tiny      # the programs, in _mk/7/tinylib/
-    cd tiny && mini-mk               # as before: lib_core/'s, in _mk/7/tiny/
+    cd tiny && mini-mk               # the programs, in _mk/7/tiny/
+    cd tiny && mini-mk LIB=core      # on lib_core/ instead, in _mk/7/tiny-core/
 
-It is an option. dune's build has OCaml's stdlib and `ix_core`, as
-before, and mini-mk's default is `lib_core/` with m-ix's runtime and C
-library. With `LIB=tiny` a tiny program is linked with nothing of
+It is what ix's own build of the tiny programs uses, for arm64, since
+2026-10-13 (before, it was an option, `LIB=tiny`, and used by none of
+them unless asked). dune's build has OCaml's stdlib and
+`lib_core/commons/` (`ix_core`); for arm (`mini-mk O=5`), where `c/`
+is not, and with `LIB=core`, a tiny program is on `lib_core/`: its
+standard library, its `commons/`, m-ix's runtime and C library. On
+TinyLibCore a tiny program is linked with nothing of
 `lib_core/`'s or of `languages/ml/runtime/`'s: its start, TinyLibCore's
 units, itself, and `c/`'s two objects. (mini-ml, mini-cc, mini-asm,
 mini-ar and mini-ld, which build it, are m-ix's.)

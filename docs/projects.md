@@ -67,7 +67,7 @@ needing the next:
 ## What is in an executable
 
 The same layers, measured in three files: a tiny program built on
-`tiny/TinyLibCore/` (`mini-mk LIB=tiny`), and mini-rc for Linux and for
+`tiny/TinyLibCore/` (`mini-mk` in `tiny/`), and mini-rc for Linux and for
 mini-9pi. Each byte of code is given to the source file it comes from:
 
 ![What is in an executable of ix: tiny-shell for Linux on TinyLibCore, mini-rc for Linux, mini-rc for mini-9pi; in each the start, the program, the library, mini-ml's runtime, the C library and the data, with their sizes and where they come from](pics/anatomy.svg)
@@ -100,7 +100,7 @@ To measure a program, link it again with `-v` and give the listing to
 [`scripts/stats/anatomy.py`](../scripts/stats/anatomy.py) (`-v`: each
 unit and each C file):
 
-    cd tiny && mini-mk LIB=tiny && B=../_mk/7 && T=$B/tinylib
+    cd tiny && mini-mk && B=../_mk/7 && T=$B/tiny
     mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $T/lib/TinyLibCore.a \
       $T/TinyShell.7 $T/lib/std_exit.7 $B/lib_core/runtime.7 $B/lib_core/libc.a |
       ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny -libs tiny/TinyLibCore/ocaml

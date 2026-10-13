@@ -3,16 +3,24 @@
 # and its link. TinyKernel.ml is not here: tiny-ml compiles it, for
 # tiny-machine.
 #
-# Their library is m-ix's, lib_core/ (with mini-git's SHA-1 and zlib,
-# compiled there), or t-ix's own with mini-mk LIB=tiny: TinyLibCore/ocaml/,
+# Their library is t-ix's own, TinyLibCore/ (LIB=tiny): TinyLibCore/ocaml/,
 # the modules the tiny programs name and the functions they call
-# (TinyLibCore/README.md), its objects and the programs under _mk/$O/tinylib.
-# With it mini-ml's runtime and the C library are TinyLibCore's too
-# (TinyLibCore/c/: for Linux on arm64 only), not lib_core's.
+# (TinyLibCore/README.md), with mini-ml's runtime and the C library
+# that are TinyLibCore's too (TinyLibCore/c/); nothing of lib_core/ is
+# in them. Or, with mini-mk LIB=core, m-ix's: lib_core/'s standard
+# library and its commons/ (with mini-git's SHA-1 and zlib, compiled
+# there). The default is TinyLibCore's where it is, for arm64 (O=7),
+# and lib_core's for arm (O=5), TinyLibCore/c/ being arm64's alone.
+# What is built is under _mk/$O/tiny for the default, _mk/$O/tiny-core
+# (or tiny-tiny) for the other.
+# (old: LIB=core the default, TinyLibCore's with LIB=tiny under
+# _mk/$O/tinylib: the library of the tiny programs was used by none of
+# them unless asked)
 TOP=..
 <$TOP/mkfiles/mkconfig
-LIB=core
-D=`{case $LIB in tiny) echo $B/tinylib;; *) echo $B/tiny;; esac}
+DEFLIB=`{case $O in 7) echo tiny;; *) echo core;; esac}
+LIB=$DEFLIB
+D=`{if [ $LIB = $DEFLIB ]; then echo $B/tiny; else echo $B/tiny-$LIB; fi}
 # TinyLibCore's units, in the order they are linked and initialized
 # (lib_core/units.txt's, then commons/'s)
 TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filename Obj Queue \
@@ -39,7 +47,7 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-# (TinyLibCore's, with LIB=tiny)
+# (TinyLibCore's, with LIB=tiny, arm64's default)
 $TL/%.$O: TinyLibCore/ocaml/%.ml
 	mkdir -p $TL
 	$ML -I TinyLibCore/ocaml -o $target TinyLibCore/ocaml/$stem.ml

@@ -25,7 +25,7 @@ of the system:
 
 - `TinyLibXxx` is a library that tiny programs are compiled with:
   `TinyLibCore/`, the standard library under the host's programs when
-  mini-ml compiles them (m-IX's is `lib_core/`); `TinyLibDraw`,
+  ix builds them (m-IX's is `lib_core/`); `TinyLibDraw`,
   `TinyLibPlayground` and `TinyLibGUI`, under the programs of
   tiny-kernel, which tiny-ml compiles.
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
@@ -85,9 +85,13 @@ these two are externals (`TinyKernel/memory.ml`,
 is their plan and what was found.
 
 [`TinyLibCore/`](TinyLibCore/README.md) is the library under the host's tiny
-programs when mini-ml compiles them with `mini-mk LIB=tiny`: lib_core's
-modules that they name, with the functions they call. Without it they
-are built on `lib_core/`, as m-ix's programs.
+programs when ix builds them (`mini-mk` here, for arm64): lib_core's
+modules that they name, with the functions they call, and a runtime
+and a C library of its own. dune builds them on OCaml's standard
+library and `lib_core/commons/`; `mini-mk LIB=core`, and arm's build,
+on `lib_core/` whole, as m-ix's programs. The programs of tiny-kernel
+do not use it: they are tiny-ml's, whose library is its prelude and
+`TinyMLRuntime/`.
 
 `tiny-os/` is not OCaml, but for one file: it is an operating system
 for tiny-machine, in its assembly (`.tm`) and in C for tiny-c -tm, built

@@ -140,11 +140,13 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }
-# the tiny programs on t-ix's own library, runtime and C library
-# (tiny/TinyLibCore/, mini-mk LIB=tiny: nothing of lib_core in them)
-tinylib() { (cd tiny && NPROC=32 mini-mk B=$B LIB=tiny) > $W/mk.tinylib.log 2>&1 || { echo "mini-mk LIB=tiny failed in tiny:"; tail -3 $W/mk.tinylib.log | cut -c1-200; return 1; }; }
+# the tiny programs are on t-ix's own library, runtime and C library
+# (tiny/TinyLibCore/, tiny/mkfile's default: nothing of lib_core in
+# them): `mk tiny` builds them, and their tests run on those. Built
+# too, and not tested: the same programs on lib_core (mini-mk LIB=core)
+tinycore() { (cd tiny && NPROC=32 mini-mk B=$B LIB=core) > $W/mk.tinycore.log 2>&1 || { echo "mini-mk LIB=core failed in tiny:"; tail -3 $W/mk.tinycore.log | cut -c1-200; return 1; }; }
 tinylib_tests() {
-  local t=$K/tinylib
+  local t=$K/tiny
   TS=$t/tiny-shell tiny/tests/TinyShell_test.sh && TE=$t/tiny-editor tiny/tests/TinyEditor_test.sh &&
   TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
   TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50 &&
@@ -159,7 +161,7 @@ ix() {
   for d in languages/c languages/ml languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
-  (mk version_control && mk tiny && tinylib) & pids+=($!)
+  (mk version_control && mk tiny && tinycore) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
   mk apps/music/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)

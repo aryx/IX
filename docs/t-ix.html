@@ -78,6 +78,7 @@ outside the screen to type on the console again.
 <li><code>ls</code> &mdash; the programs and the files; <code>echo hi | cat &gt; f</code>, <code>cat f</code>, <code>wc &lt; f</code>, <code>mkdir d</code>: the shell has pipes and redirections.</li>
 <li><code>tiny-windows</code> &mdash; the window system. In the screen, the right button gives a menu: <em>New</em>, then sweep a rectangle with the left button held, and a shell runs in it. Type <code>ls</code> there.</li>
 <li><code>tetris</code>, typed in a window &mdash; the arrows move and turn the piece, the space drops it.</li>
+<li><code>calc</code>, typed in a window &mdash; a calculator: the mouse on its buttons, or the keys (the digits, <code>+ - * /</code>, the Enter). Hold a button and leave it before letting go: the press is taken back.</li>
 <li><code>paint</code> &mdash; a program that draws, on the screen or in a window; <code>square</code>, a game of a page.</li>
 <li><code>tiny-windows</code> typed in a window &mdash; the window system in one of its own windows: a window looks to a program like the machine.</li>
 </ul>
@@ -132,7 +133,7 @@ screen of 640 by 480 bytes and a mouse. It is three files of OCaml:
 <p>
 <a href="https://ocsigen.org/js_of_ocaml/">js_of_ocaml</a> compiles
 them to about 90 KB of JavaScript. The page fetches that and the
-kernel's image, 1.2 MB for tiny-kernel with its programs: no server
+kernel's image, 1.7 MB for tiny-kernel with its programs: no server
 runs anything. On the machine,
 <a href="codemap.html?focus=tiny/TinyKernel.ml"><code>TinyKernel.ml</code></a>,
 <a href="codemap.html?focus=tiny/TinyWindows.ml"><code>TinyWindows.ml</code></a> and

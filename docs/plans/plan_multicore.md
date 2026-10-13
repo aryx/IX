@@ -514,3 +514,39 @@ mini-rio's. What it costs is not nothing: alone on QEMU's screen
 some 10 to 20% busy; not measured on the board. It is the tool for
 stage 5's measurement, and for the lock's cost: two games that draw
 show two cores busy where one mostly waits for the other.
+
+2026-10-13: mini-qemu's Pi 2 has its four cores, in turns: decision
+9 (the author: "what about trying to get multiple cores used also for
+mini-qemu? so mini-qemu could also emulate 4 cores of the Pi 2?").
+`raspberry/Board.ml`: a core's own state (registers, MMU, CP15,
+decode cache, whether it waits) in a record, the running core's put
+in the board's fields when its turn comes (`select`), so the
+interpreter's loop and the coprocessor's code are as they were; a
+batch each in turn in one thread, the time that passes the longest
+turn's; a WFI'd core skips its turns until its own interrupt is
+pending, a WFE gives the turn up; `ldrex`'s reservation ends with the
+turn (another core may have written the word: the `strex` is refused
+and tried again). The cores' controller at 0x40000000 (mailboxes,
+which timers and mailboxes interrupt a core, what is pending) and the
+virtual timer (CNTFRQ, CNTV_TVAL, CNTV_CTL: a count a microsecond).
+MPIDR says the core; ICIALLUIS and the TLB's c8 c3 are every core's.
+`Main.ml`: `-device loader,addr=,cpu-num=n` starts core n there (it
+was ignored), `-device loader,addr=,data=,data-len=4` writes a word.
+The kernel needed nothing. `./mini-pi mini-9pi2` asks for the four
+under mini-qemu too.
+Checked, the Pi 2's kernel under mini-qemu: "(4 cores)"; without the
+word the three others wait and `/dev/sysstat` has one line; with it
+four lines, and four shells that compute, four that start 9 processes
+each through pipes, the 200 threads, hello, no fault. `make check-ix`
+for both boards: mini-qemu's console the same as QEMU's byte for byte
+but QEMU's own warning (and both the recorded one but the line known
+before, 28 for 24). What it costs: nothing while the others wait;
+busy, the host's time is the cores' sum (the four shells of
+`session-cores.cmds` that compute: ten minutes, where QEMU's four
+host threads take seconds; its four that start 150 processes each
+were not finished in that time). Not checked: games in windows there
+(minutes a screen); the recorded graphical sessions for the Pi 2
+(they fail at the first screen since before: the Pi 1's banner). Not
+done: the domains (decisions 10 to 12, `-cores-parallel`), which is
+what would make four busy cores as fast as one; `make check-cores`
+still runs under QEMU alone.

@@ -37,10 +37,17 @@
  * The Pi 2 (config's [pi2], QEMU's raspi2b) is this board with what
  * differs: 1 GB of RAM, the same devices at 0x3F000000 (the BCM2836's
  * place for them, over the last 16 MB of that GB), and a Cortex-A7's
- * identification and cache registers for an ARMv7 kernel to read. One
- * of its four cores, as mini-9pi uses one; no local peripherals at
- * 0x40000000 (the cores' timers and mailboxes), which no kernel here
- * touches.
+ * identification and cache registers for an ARMv7 kernel to read. Its
+ * four cores, when they are started (start_core, below): they take
+ * turns in one thread, a batch of instructions each, so a run is the
+ * same each time; a core that waits skips its turns, and four busy
+ * cores take four times one's time on the host. With them the cores'
+ * controller at 0x40000000 (each core's mailboxes, and which of its
+ * timers and mailboxes interrupt it) and each core's virtual timer
+ * (CNTV). Not there: the other three generic timers, the controller's
+ * own timer, a core other than the first taking the devices'
+ * interrupts.
+ * (old: one of its four cores, and no local peripherals.)
  *
  * and one wire the other way, the interrupt:
  *
@@ -142,6 +149,16 @@ val load_kernel : t -> string -> unit
 (* a raw image at an address, the CPU starting there (-device loader,
  * -bios) *)
 val load_raw : t -> addr:int -> string -> unit
+(* The Pi 2's other cores (1 to 3): one started at an address, in its
+ * reset state, as QEMU's -device loader,addr=,cpu-num=n; none is
+ * unless asked. The cores take turns, a batch each, in one thread:
+ * the same run each time. Each has its registers, its MMU and its
+ * decode cache, its virtual timer (CNTV) and its mailboxes; the
+ * cores' controller (the BCM2836's, at 0x40000000) routes those to
+ * it. The devices' interrupts are the first core's. *)
+val start_core : t -> int -> addr:int -> unit
+(* a word put in memory (-device loader,addr=,data=,data-len=4) *)
+val poke : t -> addr:int -> int -> unit
 
 (* a character typed, for the console's UART *)
 val input : t -> char -> unit

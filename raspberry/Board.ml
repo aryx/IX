@@ -26,11 +26,45 @@ type cp15 = {
   mutable csselr : int;             (* the Pi 2's: the cache CCSIDR is about *)
 }
 
+(* A core of the Pi 2's four (plan_multicore.md, decision 9): what is
+ * its own. Its registers, its MMU, its CP15, its decode cache (by
+ * virtual address: each core has its own table of pages); whether it
+ * waits (a WFI, until an interrupt of its own is pending); its
+ * virtual timer (CNTV: the kernel's tick on a core other than the
+ * first), its four mailboxes, and which of them and of its timers
+ * interrupt it (the cores' controller, the BCM2836's at 0x40000000). *)
+type core = {
+  cst : Arm32_isa.state;
+  cmmu : Mmu32.t;
+  ccp : cp15;
+  ctags : int array;
+  ccode : Arm32_isa.t array;
+  cused : int array;
+  mutable cused_n : int;
+  mutable started : bool;           (* given somewhere to start (-device loader,cpu-num=) *)
+  mutable asleep : bool;
+  mutable cntv_ctl : int;
+  mutable cntv_cval : int;          (* in the board's microseconds *)
+  mail : int array;
+  mutable timer_ctl : int;
+  mutable mail_ctl : int;
+  mutable cran : int;
+}
+
+(* The board runs one core at a time, in turns (a batch each): [st],
+ * [mmu], [cp], [tags], [code], [used] are the running core's, [cur],
+ * put there when its turn comes (select). One thread, and the same
+ * run each time. A Pi 1 is one core, and none of this is seen. *)
 type t = {
-  st : Arm32_isa.state;
+  mutable st : Arm32_isa.state;
   mem : Memory.t;
-  mmu : Mmu32.t;
-  cp : cp15;
+  mutable mmu : Mmu32.t;
+  mutable cp : cp15;
+  mutable cores : core array;
+  mutable cur : int;
+  mutable local_irq : bool;         (* the running core's own interrupt (its timer, a mailbox) is pending *)
+  mutable used : int array;
+  mutable used_n : int;             (* more than used_max: not all are in [used] *)
   intc : Intc.t;
   timer : Systimer.t;
   pwm : Pwm.t;                     (* the jack's sound *)
@@ -45,8 +79,8 @@ type t = {
   mutable cfg : config;
   (* the decode cache: by virtual address, bit 0 set when fetched in
    * user mode; emptied with the TLB and by I-cache invalidations *)
-  tags : int array;
-  code : Arm32_isa.t array;
+  mutable tags : int array;
+  mutable code : Arm32_isa.t array;
   mutable instructions : int;
   mutable time_left : int;          (* instructions not yet a microsecond *)
   mutable undefined : int list;     (* the words already reported *)
@@ -82,9 +116,9 @@ let io_of cfg = if cfg.pi2 then 0x3f000000 else 0x20000000
 let forget_used = ref true
 let keep_decoded = ref true
 
+(* (old: used and used_n were the module's, the one core's; now the
+ * running core's, t.used and t.used_n) *)
 let used_max = 4096
-let used = Array.make used_max 0
-let used_n = ref 0          (* more than used_max: not all are in [used] *)
 
 let kept_bits = 14
 let kept_words = Array.make (1 lsl kept_bits) (-1)
@@ -104,8 +138,8 @@ let decode w =
 (* a slot of the cache filled *)
 let fill t slot key i =
   if !forget_used && t.tags.(slot) = -1 then begin
-    if !used_n < used_max then used.(!used_n) <- slot;
-    incr used_n
+    if t.used_n < used_max then t.used.(t.used_n) <- slot;
+    t.used_n <- t.used_n + 1
   end;
   t.tags.(slot) <- key; t.code.(slot) <- i
 
@@ -133,10 +167,27 @@ let blocks_written : (int -> int -> unit) ref = ref (fun _ _ -> ())
 
 (* the decode cache emptied (old: Array.fill t.tags 0 (1 lsl cache_bits) (-1)) *)
 let forget t =
-  if !forget_used && !used_n <= used_max then
-    for k = 0 to !used_n - 1 do t.tags.(used.(k)) <- -1 done
+  if !forget_used && t.used_n <= used_max then
+    for k = 0 to t.used_n - 1 do t.tags.(t.used.(k)) <- -1 done
   else Array.fill t.tags 0 (1 lsl cache_bits) (-1);
-  used_n := 0
+  t.used_n <- 0
+
+(* The cores' turns: the running core's parts put in the board's
+ * fields, the one before it keeping its count of used slots. *)
+let select t k =
+  if k <> t.cur then begin
+    t.cores.(t.cur).cused_n <- t.used_n;
+    let c = t.cores.(k) in
+    t.cur <- k; t.st <- c.cst; t.mmu <- c.cmmu; t.cp <- c.ccp; t.tags <- c.ctags; t.code <- c.ccode;
+    t.used <- c.cused; t.used_n <- c.cused_n
+  end
+
+(* every core's decode cache emptied (an instruction cache invalidated
+ * on all of them: ICIALLUIS, and a kernel's word that it wrote code) *)
+let forget_all t =
+  let was = t.cur in
+  Array.iteri (fun k (c : core) -> if c.started then begin select t k; forget t end) t.cores;
+  select t was
 
 (* (the TLB emptied. For the blocks: nothing, when the kernel says
  * which pages of instructions it writes ([code_told], the request 5: a
@@ -166,6 +217,15 @@ let midr_a7 = 0x410fc075 and ctr_a7 = 0x84448003 and mpidr_a7 = 0x80000f00
 let clidr_a7 = 0x0a200023
 let ccsidr_a7 k = match k with 0 -> 0x700fe01a | 1 -> 0x201fe00a | 2 -> 0x707fe03a | _ -> 0
 
+(* a core's own interrupt: its virtual timer's when its time has come,
+ * it is on and not masked, and the controller routes it (bit 3); a
+ * mailbox's that has a bit set and is routed *)
+let core_irq t (c : core) =
+  (c.cntv_ctl land 3 = 1 && c.timer_ctl land 8 <> 0 && Systimer.now t.timer >= c.cntv_cval)
+  || (c.mail_ctl land 15 <> 0
+      && ((c.mail.(0) <> 0 && c.mail_ctl land 1 <> 0) || (c.mail.(1) <> 0 && c.mail_ctl land 2 <> 0)
+          || (c.mail.(2) <> 0 && c.mail_ctl land 4 <> 0) || (c.mail.(3) <> 0 && c.mail_ctl land 8 <> 0)))
+
 let set_sctlr t v =
   t.mmu.sctlr <- v;
   t.st.mmu <- v land 1 <> 0;
@@ -177,7 +237,12 @@ let mrc t ~crn ~crm ~opc2 =
   match crn, crm, opc2 with
   | 0, 0, 0 -> if t.cfg.pi2 then midr_a7 else midr
   | 0, 0, 1 -> if t.cfg.pi2 then ctr_a7 else ctr
-  | 0, 0, 5 when t.cfg.pi2 -> mpidr_a7
+  | 0, 0, 5 when t.cfg.pi2 -> mpidr_a7 + t.cur
+  (* the generic timer: CNTFRQ (a count a microsecond here), CNTV_TVAL
+   * and CNTV_CTL (bit 2: its time has come) *)
+  | 14, 0, 0 when t.cfg.pi2 -> 1000000
+  | 14, 3, 0 when t.cfg.pi2 -> Bits.mask32 (t.cores.(t.cur).cntv_cval - Systimer.now t.timer)
+  | 14, 3, 1 when t.cfg.pi2 -> let k = t.cores.(t.cur) in k.cntv_ctl lor (if Systimer.now t.timer >= k.cntv_cval then 4 else 0)
   (* the feature registers, as QEMU's arm1176 (9pi reads ID_PFR1 and
    * ID_MMFR3) *)
   | 0, 1, k -> [| 0x111; 0x11; 0x33; 0; 0x01130003; 0x10030302; 0x01222100; 0 |].(k)
@@ -207,9 +272,18 @@ let mcr t ~crn ~crm ~opc2 v =
   | 6, 0, 0 -> c.dfar <- v | 6, 0, 2 -> c.ifar <- v
   (* the caches: only an instruction cache's invalidation matters, the
    * decode cache's; the TLB's *)
-  | 7, (1 | 5 | 7), 0 -> forget t; if !blocks_on then !blocks_forget ()
+  (* (old: | 7, (1 | 5 | 7), 0 -> forget t; ...: one core. ICIALLUIS,
+   * c7 c1 0, is every core's) *)
+  | 7, 1, 0 -> forget_all t; if !blocks_on then !blocks_forget ()
+  | 7, (5 | 7), 0 -> forget t; if !blocks_on then !blocks_forget ()
   | 7, 0, 4 -> t.wfi <- true                              (* wait for interrupt *)
+  (* (the TLB of every core: c8 c3) *)
+  | 8, 3, _ -> let was = t.cur in Array.iteri (fun k (c : core) -> if c.started then begin select t k; flush t end) t.cores; select t was
   | 8, _, _ -> flush t
+  | 14, 3, 0 when t.cfg.pi2 ->
+      let k = t.cores.(t.cur) in
+      k.cntv_cval <- Systimer.now t.timer + (if v land 0x80000000 <> 0 then 0 else v); t.local_irq <- core_irq t k
+  | 14, 3, 1 when t.cfg.pi2 -> let k = t.cores.(t.cur) in k.cntv_ctl <- v land 3; t.local_irq <- core_irq t k
   | 13, 0, 0 -> c.fcse <- v | 13, 0, 1 -> c.contextid <- v | 13, 0, k when k >= 2 && k <= 4 -> c.tpid.(k - 2) <- v
   | _ -> ()                                              (* cache and write-buffer operations, c15's *)
 
@@ -339,7 +413,7 @@ let host_call t (st : Arm32_isa.state) op =
       if !page < Bytes.length code_pages && Bytes.unsafe_get code_pages !page <> '\000' then fetched := true;
       incr page
     done;
-    if !fetched then begin forget t; if !blocks_on then !blocks_written d x end;
+    if !fetched then begin forget_all t; if !blocks_on then !blocks_written d x end;
     1
   end
   else if op = 4 then !host_draw t.mem (fun va n write -> one_piece t st va n (if write then 1 else 0)) d
@@ -401,6 +475,9 @@ let coproc t (st : Arm32_isa.state) (i : Arm32_isa.t) =
   | Coproc { cp = 15; opc1 = 2; crn = 0; crm = 0; opc2 = 0; load; rd; _ } when t.cfg.pi2 ->
       if load then st.r.(rd) <- t.cp.csselr else t.cp.csselr <- st.r.(rd) land 0xf
   | Hint { hint = 3; _ } -> t.wfi <- true
+  (* (WFE, with several cores: a core that waits for another's word
+   * gives its turn up, and looks again at its next) *)
+  | Hint { hint = 2; _ } when Array.length t.cores > 1 -> t.wfi <- true; t.yielded <- true
   | Hint _ -> ()
   | _ -> raise (Arm32.Unimplemented (0, st.r.(15) - 8))
 
@@ -429,6 +506,8 @@ let create cfg =
   let unassigned = Devices.unassigned ~log:(fun what off -> cfg.log (Printf.sprintf "unassigned %s at 0x%x" what (io + off))) in
   Memory.map_device mem ~base:io ~size:0x1000000 "io" unassigned;
   Memory.map_device mem ~base:0x40000000 ~size:0x40000000 "gpu" unassigned;
+  let local = ref unassigned in
+  if cfg.pi2 then Memory.map_device mem ~base:0x40000000 ~size:0x100 "local" { Memory.read = (fun off n -> !local.read off n); write = (fun off n v -> !local.write off n v) };
   let dev base size name d = Memory.map_device mem ~base:(io + base) ~size name d in
   dev 0x3000 0x1c "systimer" (Systimer.device timer);
   dev 0xb200 0x28 "intc" (Intc.device intc);
@@ -455,15 +534,72 @@ let create cfg =
   let keyboard = List.assoc_opt "usb-kbd" devices and mouse = List.assoc_opt "usb-mouse" devices in
   let root = if devices = [] then None else Some (Usb.hub ~path:"1" (List.map snd devices)) in
   dev 0x980000 0x10000 "usb" (Dwc2.device (Dwc2.create ~mem ~root ~line:(fun on -> Intc.set intc 9 on) ~now:(fun () -> Systimer.now timer)));
-  let cp = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0; csselr = 0 } in
-  let t = { st; mem; mmu; cp; intc; timer; pwm; uart; mini; yielded = false; wfi = false; ran = 0; waited = 0; cfg;
-            tags = Array.make (1 lsl cache_bits) (-1); code = Array.make (1 lsl cache_bits) (Arm32_isa.Undefined 0);
+  let new_cp () = { actlr = 0; cpacr = 0; dfsr = 0; ifsr = 0; dfar = 0; ifar = 0; fcse = 0; contextid = 0; tpid = Array.make 3 0; csselr = 0 } in
+  let new_core st mmu started =
+    { cst = st; cmmu = mmu; ccp = new_cp (); ctags = Array.make (1 lsl cache_bits) (-1); ccode = Array.make (1 lsl cache_bits) (Arm32_isa.Undefined 0);
+      cused = Array.make used_max 0; cused_n = 0; started; asleep = false; cntv_ctl = 0; cntv_cval = 0; mail = Array.make 4 0;
+      timer_ctl = 0; mail_ctl = 0; cran = 0 } in
+  let first = new_core st mmu true in
+  let cp = first.ccp in
+  let t = { st; mem; mmu; cp; cores = [| first |]; cur = 0; local_irq = false; used = first.cused; used_n = 0; intc; timer; pwm; uart; mini; yielded = false; wfi = false; ran = 0; waited = 0; cfg;
+            tags = first.ctags; code = first.ccode;
             instructions = 0; time_left = 0; undefined = []; inq = Queue.create (); fb; keyboard; mouse; key_events = [] } in
   yield := (fun () -> t.wfi <- true; t.yielded <- true);
   st.coproc <- coproc t;
   st.translate <- (fun va access -> Mmu32.translate mmu ~user:(st.mode = 0x10) va access);
   set_sctlr t 0x00050078;
+  (* The Pi 2's three other cores, not started (start_core), and the
+   * cores' controller: for core n, which timers interrupt it (0x40 +
+   * 4n: bit 3 the virtual one), which mailboxes (0x50 + 4n), what is
+   * pending (0x60 + 4n: bit 3, bits 4 to 7 the mailboxes, bit 8 the
+   * other devices', the first core's), and its four mailboxes: bits
+   * set at 0x80 + 16n + 4m, read and cleared at 0xC0 + 16n + 4m.
+   * (QEMU's bcm2836_control.) *)
+  if cfg.pi2 then begin
+    let others = Array.init 3 (fun _ ->
+      let st = Arm32.create mem and mmu = Mmu32.create mem in
+      st.coproc <- coproc t;
+      st.translate <- (fun va access -> Mmu32.translate mmu ~user:(st.mode = 0x10) va access);
+      new_core st mmu false) in
+    t.cores <- Array.append [| first |] others;
+    for k = 1 to 3 do select t k; set_sctlr t 0x00050078 done;
+    select t 0;
+    let again () = t.local_irq <- core_irq t t.cores.(t.cur) in
+    local := { Memory.read = (fun off _ ->
+                 let n = (off lsr 2) land 3 in
+                 let c = t.cores.(n) in
+                 if off >= 0x40 && off < 0x50 then c.timer_ctl
+                 else if off >= 0x50 && off < 0x60 then c.mail_ctl
+                 else if off >= 0x60 && off < 0x70 then
+                   (if c.cntv_ctl land 3 = 1 && Systimer.now t.timer >= c.cntv_cval then 8 else 0)
+                   lor (if c.mail.(0) <> 0 then 0x10 else 0) lor (if c.mail.(1) <> 0 then 0x20 else 0)
+                   lor (if c.mail.(2) <> 0 then 0x40 else 0) lor (if c.mail.(3) <> 0 then 0x80 else 0)
+                   lor (if n = 0 && Intc.irq t.intc then 0x100 else 0)
+                 else if off >= 0xc0 && off < 0x100 then t.cores.((off - 0xc0) lsr 4).mail.(n)
+                 else 0);
+               write = (fun off _ v ->
+                 let n = (off lsr 2) land 3 in
+                 if off >= 0x40 && off < 0x50 then t.cores.(n).timer_ctl <- v
+                 else if off >= 0x50 && off < 0x60 then t.cores.(n).mail_ctl <- v
+                 else if off >= 0x80 && off < 0xc0 then begin let c = t.cores.((off - 0x80) lsr 4) in c.mail.(n) <- c.mail.(n) lor v end
+                 else if off >= 0xc0 && off < 0x100 then begin let c = t.cores.((off - 0xc0) lsr 4) in c.mail.(n) <- c.mail.(n) land lnot v end;
+                 again ()) }
+  end;
   t
+
+(* another core of the Pi 2 started at [addr], in its reset state (QEMU's
+ * -device loader,addr=,cpu-num=n) *)
+let start_core t n ~addr =
+  if n > 0 && n < Array.length t.cores then begin
+    let c = t.cores.(n) in
+    c.started <- true;
+    Arm32.set_mode c.cst 0x13;
+    c.cst.a_off <- true; c.cst.i_off <- true; c.cst.f_off <- true;
+    c.cst.next <- addr
+  end
+
+(* a word put in memory (QEMU's -device loader,addr=,data=,data-len=4) *)
+let poke t ~addr v = Memory.store32 t.mem addr v
 
 (* as QEMU's arm boot loads a raw kernel: at 0x10000, with ATAGs at
  * 0x100 (the core, the memory), and the CPU in SVC with A, I and F
@@ -506,13 +642,18 @@ let now t = Systimer.now t.timer
  * Model B had them the other way *)
 let set_audio t (output : rate:int -> int -> int -> unit) = Pwm.set_output t.pwm (fun ~rate first second -> output ~rate second first)
 
+(* (each started core: the first with the board's counts, another with
+ * what it ran itself) *)
 let where t =
-  let st = t.st in
-  let mode = match st.Arm32_isa.mode with
-    | 0x10 -> "usr" | 0x11 -> "fiq" | 0x12 -> "irq" | 0x13 -> "svc" | 0x17 -> "abt" | 0x1b -> "und" | _ -> "sys" in
-  let cpu = { Status.pc = Int64.of_int st.next; user = st.mode = 0x10; label = mode; ran = t.ran; waited = t.waited } in
+  let one k (c : core) =
+    let st = c.cst in
+    let mode = match st.Arm32_isa.mode with
+      | 0x10 -> "usr" | 0x11 -> "fiq" | 0x12 -> "irq" | 0x13 -> "svc" | 0x17 -> "abt" | 0x1b -> "und" | _ -> "sys" in
+    let cpu = { Status.pc = Int64.of_int st.next; user = st.mode = 0x10; label = mode; ran = (if k = 0 then t.ran else c.cran); waited = (if k = 0 then t.waited else 0) } in
+    c.cran <- 0; cpu in
+  let cpus = List.filteri (fun k _ -> t.cores.(k).started) (Array.to_list (Array.mapi one t.cores)) in
   t.ran <- 0; t.waited <- 0;
-  [ cpu ]
+  cpus
 
 (* a key now (the window's) *)
 let key t usage down = Option.iter (fun k -> Usb.key k usage down) t.keyboard
@@ -561,8 +702,11 @@ let parts t = t.st, t.mmu, t.mem
 
 (* the instructions of a batch, then time: the system timer advances a
  * microsecond per [ips] instructions (plan_pi.md, decision 6) *)
-let run t ~batch =
+(* (old: run, for the one core; now a core's turn, and run below gives
+ * each core its own) *)
+let turn t ~batch =
   let st = t.st in
+  let first = t.cur = 0 in
   let svc st _ = Arm32.take st Arm32_isa.Supervisor_call ~ret:(st.Arm32_isa.r.(15) - 4) in
   let mask = (1 lsl cache_bits) - 1 in
   (* claude: a WFI ends the batch where it is (the core waits there):
@@ -575,8 +719,10 @@ let run t ~batch =
     incr executed;
     let pc = st.next in
     if !Prof.on then Prof.tick pc;
-    if (not st.f_off) && Intc.fiq t.intc then Arm32.take st Arm32_isa.Fiq ~ret:(pc + 4)
-    else if (not st.i_off) && Intc.irq t.intc then Arm32.take st Arm32_isa.Irq ~ret:(pc + 4)
+    (* (the devices' interrupts are the first core's; a core's own:
+     * local_irq) *)
+    if first && (not st.f_off) && Intc.fiq t.intc then Arm32.take st Arm32_isa.Fiq ~ret:(pc + 4)
+    else if (not st.i_off) && (t.local_irq || (first && Intc.irq t.intc)) then Arm32.take st Arm32_isa.Irq ~ret:(pc + 4)
     else begin
       let key = pc lor (if st.mode = 0x10 then 1 else 0) in
       (* (a block from here, when there is one: [blocks_on]) *)
@@ -612,20 +758,57 @@ let run t ~batch =
                Arm32.take st Arm32_isa.Undefined_instruction ~ret:(pc + 4))
     end
   done;
+  !executed
+
+(* The instructions of a batch, then time: the system timer advances a
+ * microsecond per [ips] instructions (plan_pi.md, decision 6). With
+ * several cores, a batch each in turn, in the same time: the time
+ * that passes is the longest turn's. A core that waits (WFI) skips
+ * its turns until an interrupt of its own is pending; when all wait,
+ * the time to the next event is skipped, as for one. A turn ends the
+ * core's exclusive access (ldrex): another core may have written the
+ * word since, and its strex is then refused and tried again. *)
+let run t ~batch =
+  let n = Array.length t.cores in
+  let longest = ref 0 and all_wait = ref true and yielded = ref false in
+  for k = 0 to n - 1 do
+    let c = t.cores.(k) in
+    if c.started then begin
+      let pending = core_irq t c || (k = 0 && (Intc.irq t.intc || Intc.fiq t.intc)) in
+      if c.asleep && pending then c.asleep <- false;
+      if not c.asleep then begin
+        select t k;
+        t.local_irq <- core_irq t c;
+        t.wfi <- false;
+        let ran = turn t ~batch in
+        if n > 1 then c.cst.exclusive <- -1;
+        c.cran <- c.cran + ran;
+        if ran > !longest then longest := ran;
+        if t.wfi then begin
+          t.wfi <- false;
+          if t.yielded then begin t.yielded <- false; yielded := true end
+          else if not (core_irq t c || (k = 0 && (Intc.irq t.intc || Intc.fiq t.intc))) then c.asleep <- true
+        end;
+        if not c.asleep then all_wait := false
+      end
+    end
+  done;
+  select t 0;
   (* a WFI with nothing pending: the time to the next compare skipped
    * (at most 10ms, the idle loop checking again) *)
-  if t.wfi then begin
-    t.wfi <- false;
-    if t.yielded then t.yielded <- false
-    else if not (Intc.irq t.intc || Intc.fiq t.intc) then begin
-      let us = min 10000 (max 1 (min (Systimer.until_next t.timer) (Pwm.until_next t.pwm))) in
-      Systimer.advance t.timer us;
-      Pwm.advance t.pwm us;
-      t.waited <- t.waited + (us * t.cfg.ips)
-    end
+  if !all_wait && not !yielded then begin
+    let us = ref (min 10000 (max 1 (min (Systimer.until_next t.timer) (Pwm.until_next t.pwm)))) in
+    (* (and to another core's timer) *)
+    Array.iter (fun (c : core) ->
+      if c.started && c.cntv_ctl land 3 = 1 && c.timer_ctl land 8 <> 0 then
+        us := max 1 (min !us (c.cntv_cval - Systimer.now t.timer))) t.cores;
+    Systimer.advance t.timer !us;
+    Pwm.advance t.pwm !us;
+    t.waited <- t.waited + (!us * t.cfg.ips)
   end;
-  let batch = !executed in
-  t.ran <- t.ran + batch;
+  let batch = !longest in
+  t.ran <- t.ran + t.cores.(0).cran;
+  t.cores.(0).cran <- 0;
   t.instructions <- t.instructions + batch;
   let ticks = t.time_left + batch in
   Systimer.advance t.timer (ticks / t.cfg.ips);

@@ -178,6 +178,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
   let kernel = ref None and machine = ref "" and ips = ref 30 and debug = ref false and usb = ref [] in
   let qmp = ref None and graphics = ref true and wav = ref None in
   let serials = ref [] and drive = ref None and loader = ref None in
+  let others = ref [] and pokes = ref [] in
   let ram = ref (2 * 1024 * 1024 * 1024) and smp = ref 1 and trace = ref 0 and prof = ref None in
   let status = ref 0. and symbols = ref None and meters = ref None in
   (* the board's random numbers: the host's, 4096 bytes read at a time *)
@@ -228,8 +229,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
     | "-device" :: d :: rest when List.hd (String.split_on_char ',' d) = "loader" ->
         let o = options d in
         (* (cpu-num other than 0: where another core starts, QEMU's
-         * raspi2b having four; the one core here is the first) *)
+         * raspi2b having four) *)
+        (* (old: | _, _, Some n when n <> "0" -> (), the one core; now
+         * the Pi 2's other cores start there, Board.start_core, and a
+         * word may be put in memory: data=, data-len=4) *)
         (match List.assoc_opt "file" o, List.assoc_opt "addr" o, List.assoc_opt "cpu-num" o with
+         | None, Some a, None when List.mem_assoc "data" o -> pokes := (int_of_string a, int_of_string (List.assoc "data" o)) :: !pokes
+         | _, Some a, Some n when n <> "0" -> others := (int_of_string n, int_of_string a) :: !others
          | _, _, Some n when n <> "0" -> ()
          | Some f, Some a, _ -> loader := Some (f, int_of_string a)
          | _ -> Console.eprint caps "mini-qemu: -device loader needs file= and addr=\n"; exit 2);
@@ -323,6 +329,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
          | _, Some (f, addr) -> Board.load_raw board ~addr (read f)
          | Some k, None -> Board.load_kernel board (read k)
          | None, None -> ());
+        if pi2 then List.iter (fun (n, addr) -> Board.start_core board n ~addr) !others;
+        List.iter (fun (addr, v) -> Board.poke board ~addr v) !pokes;
         loop caps ~out ~graphics:!graphics ~qmp:!qmp ~run:(fun () -> Board.run board ~batch:4096) ~now:(fun () -> Board.now board) ~input:(Board.input board)
           ~frame:(fun () -> Board.frame board) ~key:(Board.key board) ~pointer:(Board.pointer board) ~qmp_poll:(fun q ~quit ->
             Qmp.poll q { Qmp.screen = (fun () -> Board.screen board); send_keys = Board.send_keys board;

@@ -6,9 +6,8 @@
 #
 # ix's kernels, each built first, on the Pi1; a 4 after the name
 # (mini-9pi4, mini-oberon4...) is the same on the Pi4 (arm64, one core);
-# mini-9pi2 is mini-9pi on the Pi2 (docs/plans/plan_pi2.md: one core
-# under mini-qemu, the four under QEMU, -q, as on the board; the Pi1's
-# card):
+# mini-9pi2 is mini-9pi on the Pi2 (docs/plans/plan_pi2.md: its four
+# cores, as on the board; the Pi1's card):
 #
 #   ./mini-pi mini-9pi       mini-9pi (kernels/9pi/: 9pi in OCaml), alone
 #                       (nothing but ix is needed: without ~/ocaml-light
@@ -186,11 +185,13 @@ case $1 in
       # the kernel stops them: kernels/lib_machine/kernel.mk says why)
       machine=raspi1ap; others=()
       [ $board = pi2 ] && { machine=raspi2b; others=(-device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3); }
-      # (under QEMU the Pi2's four cores run processes: a word the
-      # kernel looks for below its image, runtime.c's cores_test; the
-      # recorded sessions, kernels/9pi's Makefile's, do not write it
-      # and stay one core's. mini-qemu has one core)
-      [ $board = pi2 ] && [ $qemu = 1 ] && others+=(-device loader,addr=0x7000,data=0x534d5021,data-len=4)
+      # (the Pi2's four cores run processes: a word the kernel looks
+      # for below its image, runtime.c's cores_test; the recorded
+      # sessions, kernels/9pi's Makefile's, do not write it and stay
+      # one core's. Under mini-qemu too, whose cores take turns: four
+      # busy cores there are four times slower than one.
+      # old: [ $qemu = 1 ] && ..., mini-qemu having one core)
+      [ $board = pi2 ] && others+=(-device loader,addr=0x7000,data=0x534d5021,data-len=4)
       args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${others[@]}" "${sd[@]}" "${display[@]}")
     else
       image=kernel-pi4-ix.elf; [ $graphics = 1 ] && image=kernel-pi4-ixu.elf

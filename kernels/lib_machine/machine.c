@@ -71,6 +71,35 @@ value phys_write_sub(value pa, value s, value off, value n)
   written(Long_val(pa), Long_val(n), 1);
   return Val_unit;
 }
+/* The images' memory (runtime.c): the arena, [n] bytes of physical
+ * memory at [pa]; and an image's rows written to the framebuffer
+ * (mini-9pi's flush), a = [| pa; pitch; off; bw; n; rows |]: n bytes
+ * of each row, the image's bw apart from off, the screen's pitch apart
+ * from pa. With the kernel's lock given back when the image is the
+ * arena's. (old: phys_write_sub, a call a row.) */
+void imag_set(void *base, uintptr n);
+int imag_in(value v);
+int imag_begin(value dst, long lo, long hi);
+void imag_end(void);
+extern int imag_unlock;
+value imag_init(value pa, value n) { imag_set((void *)P2V(Long_val(pa)), Long_val(n)); return Val_unit; }
+value imag_flush(value s, value a)
+{
+  unsigned long pa = Long_val(Field(a, 0));
+  long pitch = Long_val(Field(a, 1)), bw = Long_val(Field(a, 3)), n = Long_val(Field(a, 4)), rows = Long_val(Field(a, 5)), y;
+  const char *from = String_val(s) + Long_val(Field(a, 2));
+  int out = (imag_unlock & 4) && imag_in(s) && n * rows >= 16384;
+  if (out) out = imag_begin(s, 0, 0);
+  for (y = 0; y < rows; y++) {
+#ifdef WEB
+    if (host_move((void *)P2V(pa + y * pitch), from + y * bw, n)) { written(pa + y * pitch, n, 1); continue; }
+#endif
+    memmove((void *)P2V(pa + y * pitch), from + y * bw, n);
+    written(pa + y * pitch, n, 1);
+  }
+  if (out) imag_end();
+  return Val_unit;
+}
 value phys_read(value pa, value n)
 {
   value s = alloc_string(Long_val(n));

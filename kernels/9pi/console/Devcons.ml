@@ -236,11 +236,12 @@ let read (c : chan) n off =
   | "random" -> (match Rng.bytes n with Some r -> r | None -> raise (Error "no random number generator"))
   (* old: 9pi's numbers of one boot, as a string; now this kernel's: the
    * memory, the pages below the processes', theirs taken and in all,
-   * and no swap *)
+   * and no swap; the images' memory (Machine.Imag: 9pi's imagmem,
+   * its "kernel draw"; old: 0/0) *)
   | "swap" ->
       let lo, hi = Arch.pages in
       let all = (hi - lo) / 4096 in
-      readstr off n (Printf.sprintf "%d memory\n4096 pagesize\n%d kernel\n%d/%d user\n0/0 swap\n%d/%d kernel malloc\n0/0 kernel draw\n" hi (lo / 4096) (all - Mmu.nfree ()) all (Machine.heap_top ()) (Machine.heap_limit ()))
+      readstr off n (Printf.sprintf "%d memory\n4096 pagesize\n%d kernel\n%d/%d user\n0/0 swap\n%d/%d kernel malloc\n%d/%d kernel draw\n" hi (lo / 4096) (all - Mmu.nfree ()) all (Machine.heap_top ()) (Machine.heap_limit ()) (Machine.Imag.used ()) (Machine.Imag.size ()))
   (* the same three, 8 bytes each, the high one first *)
   | "bintime" ->
       let all = nanoseconds (!Dev.epoch + (!Proc.ticks / 100)) ((!Proc.ticks mod 100) * 10000000) ^ be64 !Proc.ticks ^ be64 100 in
@@ -258,6 +259,11 @@ let write (c : chan) s _ =
        else if s = "rawoff" then begin raw := false; if Buffer.length line > 0 then send () end
        else if s = "holdon" || s = "holdoff" then ()
        else raise (Error ebadctl)
+   (* (and "draw N": which of the pixels' copies give the kernel's lock
+    * back, Machine.Imag.switch: 0 none, 7 all, to compare on a board:
+    * echo draw 0 > /dev/swap) *)
+   | "swap" when String.length s > 5 && String.sub s 0 5 = "draw " ->
+       Machine.Imag.switch (try int_of_string (String.trim (String.sub s 5 (String.length s - 5))) with Failure _ -> raise (Error ebadarg))
    | "swap" -> if s = "start" && not !kpager then begin kpager := true; Proc.kproc "kpager" end
    (* the clock set: the seconds since 1970 now, in decimal *)
    | "time" ->

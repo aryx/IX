@@ -32,16 +32,39 @@ let nil = Memimage.alloc (0, 0, 1, 1) (chan 0 grey1)
 let screen_ = ref nil
 let font = ref None
 
+(* The images' memory (Machine.Imag: principia's imagmem), 48 MB of
+ * the machine's pages in one piece, taken at the boot: the screen's
+ * copy, each window and each image of a program's (1024 by 768 by 16
+ * bits is 1.5 MB, a window of it in 32 bits 3). No piece that size:
+ * no arena, and every image is the heap's, as before. *)
+let imag_bytes = 48 * 1024 * 1024
+let imag_ok = ref false
+
 let init pa w h =
-  let i = Memimage.alloc (0, 0, w, h) rgb16 in
-  let data = { Memimage.bytes = i.Memimage.data.Memimage.bytes; Memimage.onscreen = true } in
+  if not !imag_ok then begin
+    match Mmu.kalloc_run (imag_bytes / Mmu.pgsize) with
+    | Some base -> Machine.Imag.init base imag_bytes; imag_ok := true
+    | None -> ()
+  end;
+  (* (the screen's own copy of its pixels, in the images' memory: kept) *)
+  let i = Memimage.alloc_out (0, 0, w, h) rgb16 in
+  let data = { Memimage.bytes = i.Memimage.data.Memimage.bytes; Memimage.onscreen = true; Memimage.keep = true } in
   screen_ := Memimage.alloc_on data (0, 0, w, h) rgb16;
+  Machine.Imag.screen data.Memimage.bytes;
   Memimage.framebuffer := (pa, Machine.fb_pitch ());
   Memimage.to_screen := Machine.Phys.write_sub;
   font := Some (Memfont.default ());
   true
 
 let screen () = !screen_
+(* is a copy without the kernel's lock writing these pixels of the
+ * screen now (Machine.Imag.covers: the cursor's clock asks) *)
+let busy (x0, y0, x1, y1) =
+  let s = !screen_ in
+  let (_, sy0, _, sy1) = s.Memimage.r in
+  let y0 = max y0 sy0 and y1 = min y1 sy1 in
+  ignore x0; ignore x1;
+  y1 > y0 && Machine.Imag.covers ((y0 - sy0) * s.Memimage.bwidth) ((y1 - sy0) * s.Memimage.bwidth)
 let white () = white_
 let black () = black_
 let opaque () = white_
@@ -55,7 +78,8 @@ let color16 b0 b1 =
   Bytes.set i.Memimage.data.Memimage.bytes 1 (Char.chr b1);
   i
 
-let free _ = ()
+(* (old: let free _ = (), the collector's to free) *)
+let free i = Memimage.free i
 let soverd = 11
 
 let draw dst r src (sx, sy, mx, my) mask = Memlayer.draw dst r src (sx, sy) mask (mx, my) soverd
@@ -65,7 +89,7 @@ let string dst p src s = fst (Memfont.string Memlayer.draw dst p src (0, 0) (get
 let fontheight () = (getfont ()).Memfont.height
 let stringwidth s = Memfont.width (getfont ()) s
 
-let alloc r c = Memimage.alloc r (if c = 0 then (!screen_).Memimage.chan else chan 0 c)
+let alloc r c = Memimage.alloc_out r (if c = 0 then (!screen_).Memimage.chan else chan 0 c)
 let load i s = Memimage.load i i.Memimage.r s
 
 let isnil i = i == nil
@@ -80,7 +104,7 @@ let allocimage a =
   | None -> nil
   | Some c ->
       let r = rect a 0 in
-      let i = Memimage.alloc r c in
+      let i = Memimage.alloc_out r c in
       i.Memimage.repl <- a.(6) <> 0;
       i.Memimage.clipr <- rect a 7;
       (* rectclip: unchanged when they do not meet *)
@@ -128,7 +152,7 @@ let layerinfo w =
   match w.Memimage.layer with
   | Some l -> let (x0, y0, x1, y1) = l.Memimage.screenr in [| 0; x0; y0; x1; y1; 1 |]
   | None -> [| 0; 0; 0; 0; 0; 0 |]
-let lfree w delete = if delete then Memlayer.delete w else Memlayer.free w
+let lfree w delete = (if delete then Memlayer.delete w else Memlayer.free w); Memimage.free w
 let ltofront ws front =
   let l = Array.to_list ws in
   match l with

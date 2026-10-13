@@ -91,7 +91,7 @@ let load off clr set =
 let move (x, y) = let (ox, oy) = !offset in pt := (x + ox, y + oy)
 
 let cursoron () =
-  if !drawlock then true else begin hide (); draw (); false end
+  if !drawlock || Kdraw.busy !r || (let (x, y) = !pt in Kdraw.busy (x, y, x + 32, y + 32)) then true else begin hide (); draw (); false end
 
 let cursoroff () = hide ()
 
@@ -100,7 +100,11 @@ let ksetcursor off clr set = cursoroff (); load off clr set; ignore (cursoron ()
 let clock xy =
   if !enabled then begin
     move xy;
-    if not (!visible && !pt = !vispt && !vers = !visvers) && not !drawlock then begin
+    (* (nor while a copy without the kernel's lock writes the screen's
+     * rows it is in or goes to: Kdraw.busy; the next tick's) *)
+    let (x, y) = !pt in
+    if not (!visible && !pt = !vispt && !vers = !visvers) && not !drawlock
+       && not (Kdraw.busy !r) && not (Kdraw.busy (x, y, x + 32, y + 32)) then begin
       hide ();
       draw ()
     end

@@ -8,7 +8,7 @@
 
 type rect = int * int * int * int
 
-type data = { mutable bytes : Bytes.t; onscreen : bool }
+type data = { mutable bytes : Bytes.t; onscreen : bool; keep : bool }
 
 type t = {
   data : data;
@@ -40,6 +40,17 @@ val inside : rect -> rect -> bool
  * screen's memory) *)
 val alloc : rect -> Memchan.t -> t
 val alloc_on : data -> rect -> Memchan.t -> t
+(* an image whose bytes are in the images' memory, outside OCaml's heap
+ * (Machine.Imag: principia's imagmem; the heap's when there is no
+ * room): for the draw device's own, a program's image, a window, the
+ * screen's copy. The collector does not see them, a copy between two
+ * such is done with the kernel's lock given back, and they are freed
+ * by [free] (one of [alloc]'s: nothing; the screen's: nothing) *)
+val alloc_out : rect -> Memchan.t -> t
+val free : t -> unit
+(* a flush's rows written by one call of the machine's (true), or a
+ * call a row *)
+val flush_rows : bool ref
 
 (* the framebuffer (its physical address, its pitch) the screen's
  * data shadows *)

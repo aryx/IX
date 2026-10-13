@@ -158,7 +158,11 @@ let faster dst r src sr mask mr op =
         let a = a0 + (j * bw) in
         for i = 0 to len - 1 do Bytes.unsafe_set ds (a + i) (String.unsafe_get bytes i) done
       done
-    else for j = 0 to dy - 1 do Bytes.blit_string bytes 0 ds (a0 + (j * bw)) len done;
+    (* (the first row, then the others from it by the machine: one
+     * call, the kernel's lock given back when the image is the
+     * arena's: Machine.Imag.rows.
+     * old: for j = 0 to dy - 1 do Bytes.blit_string bytes 0 ds (a0 + (j * bw)) len done) *)
+    else begin Bytes.blit_string bytes 0 ds a0 len; if dy > 1 then Machine.Imag.rows ds a0 bw len dy end;
     true
   | None ->
   if not src.repl && opaque mask && src.chan.Memchan.hi = dst.chan.Memchan.hi && src.chan.Memchan.lo = dst.chan.Memchan.lo
@@ -169,6 +173,14 @@ let faster dst r src sr mask mr op =
     (* (the two rows' addresses by adding, as the fill's;
      * old: String.blit src.data.bytes (byteaddr src sx0 (sy0 + j)) dst.data.bytes (byteaddr dst x0 (y0 + j)) (dx * (d asr 3))) *)
     let sa = byteaddr src sx0 sy0 and da = byteaddr dst x0 y0 and n = dx * (d asr 3) in
+    (* (the rows by the machine, one call, the kernel's lock given
+     * back when both are the arena's: Machine.Imag.copy; when a row
+     * is not all inside its image, as before, where a blit refuses.
+     * old: the loop, for all) *)
+    if n > 0 && dy > 0 && sa >= 0 && da >= 0 && sa + ((dy - 1) * src.bwidth) + n <= Bytes.length src.data.bytes
+       && da + ((dy - 1) * dst.bwidth) + n <= Bytes.length dst.data.bytes then
+      Machine.Imag.copy dst.data.bytes src.data.bytes [| da; dst.bwidth; sa; src.bwidth; n; dy; (if up then 1 else 0) |]
+    else
     for j = 0 to dy - 1 do
       let j = if up then dy - 1 - j else j in
       Bytes.blit src.data.bytes (sa + (j * src.bwidth)) dst.data.bytes (da + (j * dst.bwidth)) n

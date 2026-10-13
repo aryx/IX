@@ -65,7 +65,8 @@ let repaint s r =
 let screen image fill = { simage = image; sfill = fill; wins = [] }
 
 let alloc s screenr clipr hi lo =
-  let w = Memimage.alloc screenr s.simage.chan in
+  Machine.Imag.quiet ();
+  let w = Memimage.alloc_out screenr s.simage.chan in
   (match Memimage.clip clipr screenr with Some c -> w.clipr <- c | None -> w.clipr <- clipr);
   if hi = 0xffff && lo = 0xff00 then begin
     (* DNofill: what the screen shows there *)
@@ -79,10 +80,13 @@ let alloc s screenr clipr hi lo =
 
 let remove w = let s = (layer w).lscr in s.wins <- List.filter (fun x -> x != w) s.wins
 
-let delete w = remove w; repaint (layer w).lscr (layer w).screenr
-let free w = remove w
+(* (a window made, moved, restacked or deleted: no copy of pixels under
+ * way, Machine.Imag.quiet, here and in alloc, tofront, torear, origin) *)
+let delete w = Machine.Imag.quiet (); remove w; repaint (layer w).lscr (layer w).screenr
+let free w = Machine.Imag.quiet (); remove w
 
 let tofront ws =
+  Machine.Imag.quiet ();
   match ws with
   | [] -> ()
   | w :: _ ->
@@ -91,6 +95,7 @@ let tofront ws =
       List.iter (fun x -> show x x.r) (List.rev ws)
 
 let torear ws =
+  Machine.Imag.quiet ();
   match ws with
   | [] -> ()
   | w :: _ ->
@@ -99,6 +104,7 @@ let torear ws =
       List.iter (fun x -> repaint s (layer x).screenr) ws
 
 let origin w (lx, ly) (sx, sy) =
+  Machine.Imag.quiet ();
   let l = layer w in
   let (x0, y0, x1, y1) = l.screenr and (a, b, _, _) = w.r in
   if (sx, sy) = (x0, y0) && (lx, ly) = (a, b) then 0

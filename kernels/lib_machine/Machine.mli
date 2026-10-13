@@ -97,6 +97,44 @@ end
  * a new process is given one made up. Each process (a slot) has its
  * own; these are the running one's, by word (Arch: its layout, the
  * board's). *)
+(* The images' memory, outside OCaml's heap (runtime.c says why:
+ * principia's imagmem, and pixels copied while another core is in the
+ * kernel). [init pa n]: its arena, n bytes of physical memory at pa.
+ * [alloc n]: n zeroed bytes there, which neither collector moves or
+ * looks at, and are a Bytes.t like any to read and write; of length 0
+ * when there is no room (n > 0: the caller then takes Bytes.make).
+ * [free b]: given back (one of the heap's: nothing). [used ()]: the
+ * bytes taken, of [size ()]. The copies, each with the kernel's lock given back
+ * when what it reads and writes is the arena's and it is large:
+ * - [copy dst src [| da; dbw; sa; sbw; n; dy; up |]]: dy rows of n
+ *   bytes, from sa in src every sbw to da in dst every dbw, the last
+ *   row first when up is not 0;
+ * - [rows b a0 bw len dy]: the len bytes at a0 repeated in the dy - 1
+ *   rows below, bw apart;
+ * - [flush b [| pa; pitch; off; bw; n; rows |]]: rows of n bytes from
+ *   off in b every bw, to physical memory at pa every pitch (the
+ *   framebuffer).
+ * And what such a copy must not meet (runtime.c): [screen b] says
+ * which image is the screen's, [covers lo hi] whether a copy is
+ * writing its bytes lo to hi now (the cursor's clock then leaves
+ * them), [quiet ()] waits until no copy is under way: before an image
+ * is freed, a window made, moved, restacked or deleted. [switch n]:
+ * which copies give the lock back, 1 a copy, 2 a fill, 4 a flush (7
+ * at the start; 0: none, every copy with the lock held). *)
+module Imag : sig
+  external init : int -> int -> unit = "imag_init"
+  external alloc : int -> Bytes.t = "imag_alloc"
+  external free : Bytes.t -> unit = "imag_free"
+  external used : unit -> int = "imag_stats"
+  external size : unit -> int = "imag_size"
+  external copy : Bytes.t -> Bytes.t -> int array -> unit = "imag_copy"
+  external rows : Bytes.t -> int -> int -> int -> int -> unit = "imag_rows"
+  external flush : Bytes.t -> int array -> unit = "imag_flush"
+  external screen : Bytes.t -> unit = "imag_screen"
+  external covers : int -> int -> bool = "imag_covers"
+  external quiet : unit -> unit = "imag_quiet"
+  external switch : int -> unit = "imag_switch"
+end
 external tf_get : int -> int = "tf_get"
 external tf_set : int -> int -> unit = "tf_set"
 (* a slot's trap frame: zeros, user mode, IRQs on *)

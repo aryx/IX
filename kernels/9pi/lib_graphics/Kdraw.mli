@@ -22,6 +22,9 @@ val on_refresh : (int * int * int * int * int -> unit) ref
 (* [init pa w h]: the screen, RGB16, on the framebuffer at physical
  * address pa; false when it cannot be made *)
 val init : int -> int -> int -> bool
+(* are these pixels of the screen being written now by a copy that
+ * gave the kernel's lock back (the OCaml pixels: Machine.Imag) *)
+val busy : int * int * int * int -> bool
 
 val screen : unit -> image
 val white : unit -> image

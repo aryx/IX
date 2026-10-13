@@ -5,7 +5,8 @@
 
 type rect = int * int * int * int
 
-type data = { mutable bytes : Bytes.t; onscreen : bool }
+(* (keep: never given back, the screen's, which others share) *)
+type data = { mutable bytes : Bytes.t; onscreen : bool; keep : bool }
 
 type t = {
   data : data; mutable r : rect; mutable clipr : rect; mutable repl : bool; chan : Memchan.t;
@@ -52,15 +53,41 @@ let bytex a = a asr 3
 (* unitsperline's: the units of 2^sh bits covering a row's pixels *)
 let units (x0, _, x1, _) depth sh = cshr (x1 * depth) sh - fshr (x0 * depth) sh
 
-let make data r chan =
+(* An image's bytes: OCaml's heap's, or the images' own memory
+ * (Machine.Imag: principia's imagmem), for those the draw device
+ * makes and frees itself: a program's, a window's, the screen's.
+ * There the collector neither marks nor moves them, and a copy
+ * between two of them is done with the kernel's lock given back
+ * (Imag.copy, Imag.rows, Imag.flush). No room there: the heap's. What
+ * the kernel makes for itself and lets go (a colour, a font, the
+ * cursor, a row to fill with) stays in the heap, which frees it.
+ * old: Bytes.make (bwidth * (y1 - y0)) '\000' for all *)
+let pixels out n =
+  if not out || n <= 0 then Bytes.make n '\000'
+  else let b = Machine.Imag.alloc n in if Bytes.length b = n then b else Bytes.make n '\000'
+
+let make_in out data r chan =
   let (x0, y0, _, y1) = r in
   let bwidth = 4 * units r chan.Memchan.depth 5 in
-  let data = match data with Some d -> d | None -> { bytes = Bytes.make (bwidth * (y1 - y0)) '\000'; onscreen = false } in
+  let data = match data with Some d -> d | None -> { bytes = pixels out (bwidth * (y1 - y0)); onscreen = false; keep = false } in
   { data = data; r = r; clipr = r; repl = false; chan = chan; bwidth = bwidth; org = (x0, y0);
     xbase = bytex (x0 * chan.Memchan.depth); layer = None }
 
-let alloc r chan = make None r chan
-let alloc_on data r chan = make (Some data) r chan
+let alloc r chan = make_in false None r chan
+let alloc_on data r chan = make_in false (Some data) r chan
+(* (in the images' memory: to be freed) *)
+let alloc_out r chan = make_in true None r chan
+
+(* an image of alloc_out's given back; its bytes are no longer its own
+ * (nor those of who shared them: none does but the screen's, kept) *)
+let free img =
+  if not img.data.keep && Bytes.length img.data.bytes > 0 then begin
+    (* (no copy of pixels under way: Machine.Imag.quiet) *)
+    Machine.Imag.quiet ();
+    let b = img.data.bytes in
+    img.data.bytes <- Bytes.create 0;
+    Machine.Imag.free b
+  end
 
 (* a point in the layout's coordinates (a window's r moved: memlorigin) *)
 let layout img x y = let (x0, y0, _, _) = img.r and (ox, oy) = img.org in (x - x0 + ox, y - y0 + oy)
@@ -74,10 +101,18 @@ let framebuffer = ref (0, 0)
 (* how the framebuffer's memory is written (the kernel's: Kdraw says) *)
 let to_screen = ref (fun (_ : int) (_ : string) (_ : int) (_ : int) -> ())
 
+let flush_rows = ref true
+
 let flush img (x0, y0, x1, y1) =
   if img.data.onscreen then begin
     let (pa, pitch) = !framebuffer in
     let a = byteaddr img x0 y0 and b = byteaddr img x1 y0 in
+    (* (all the rows in one call, the kernel's lock given back when the
+     * image is the arena's: Machine.Imag.flush. old: the loop below, a
+     * call of to_screen a row) *)
+    if !flush_rows && a >= 0 && b > a && a + ((y1 - y0 - 1) * img.bwidth) + (b - a) <= Bytes.length img.data.bytes then
+      Machine.Imag.flush img.data.bytes [| pa + (y0 * pitch) + bytex (x0 * img.chan.Memchan.depth); pitch; a; img.bwidth; b - a; y1 - y0 |]
+    else
     for y = y0 to y1 - 1 do
       let o = (y - y0) * img.bwidth in
       (* OPTIMIZATION: the row written from where it is in the image's

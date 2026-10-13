@@ -16,6 +16,7 @@ let () =
 (* [init pa w h]: the screen, RGB16, on the framebuffer at physical
  * address pa; false when it cannot be made *)
 external init : int -> int -> int -> bool = "draw_init"
+let busy (_ : int * int * int * int) = false
 
 external screen : unit -> image = "draw_screen"
 external white : unit -> image = "draw_white"

@@ -493,6 +493,220 @@ value io_set32(value off, value hi, value lo)
   return Val_unit;
 }
 
+/*****************************************************************************/
+/* The images' memory */
+/*****************************************************************************/
+
+/* Pixels outside OCaml's heap: principia's 9pi has a pool for them
+ * (imagmem, beside mainmem: allocmemimage's), and mini-9pi's images
+ * were strings of its heap. Two things asked for another place (the
+ * author, 2026-10-13, of two games at 31 frames a second each for one
+ * at 50: "I think having the images outside the ML heap makes sense, a
+ * bit like we just move the Pages also outside the heap no?"; "this is
+ * a bit similar to principia's kernel that have a special allocator
+ * for image (imagalloc) separate from the rest"):
+ * - the collector neither marks nor moves megabytes of pixels;
+ * - a copy of pixels may go on while another core is in the kernel
+ *   (imag_out, imag_back: the kernel's lock given back around it):
+ *   nothing of OCaml's is read or written by it, and what it reads
+ *   and writes does not move. Three quarters of a game's instructions
+ *   are such copies, and with one lock two games had each two thirds
+ *   of one's speed (plan_multicore.md).
+ * A block here is still a string for OCaml, which the kernel's code
+ * reads and writes as before (Bytes.get, Bytes.blit): a header before
+ * its bytes, as the heap's, and the collectors, ocaml-light's and
+ * mini-ml's, pass a pointer that is not in their heap. The arena is
+ * the kernel's to give (imag_set: pages of the machine); a block's
+ * word before its header is its size, and the free ones are a table of
+ * extents, first fit, neighbours joined: images are few and large.
+ * No room, or a block past what a header's size says (16 MB with 32
+ * bits): the empty string, and the caller takes one of the heap. */
+#define IMAG_EXTENTS 512
+static uintptr imag_lo, imag_hi, imag_inuse;
+static struct { uintptr at, n; } imag_ext[IMAG_EXTENTS];
+static int imag_n;
+/* (a string of no byte: a header, a word whose last byte says the
+ * padding) */
+static uintptr imag_none[2];
+
+void imag_set(void *base, uintptr n)
+{
+  imag_lo = (uintptr)base;
+  imag_hi = imag_lo + n;
+  imag_ext[0].at = imag_lo;
+  imag_ext[0].n = n;
+  imag_n = 1;
+  imag_none[0] = (1 << 10) | (3 << 8) | String_tag;
+  ((unsigned char *)&imag_none[1])[sizeof(uintptr) - 1] = sizeof(uintptr) - 1;
+}
+
+int imag_in(value v) { return (uintptr)v >= imag_lo && (uintptr)v < imag_hi; }
+
+value imag_alloc(value vn)
+{
+  uintptr n = Long_val(vn), words = n / sizeof(uintptr) + 1, total, *p;
+  int i;
+  total = (words + 2) * sizeof(uintptr);
+  total = (total + 15) & ~(uintptr)15;
+  if (sizeof(uintptr) == 4 && words >= (1 << 22)) return (value)&imag_none[1];
+  for (i = 0; i < imag_n; i++)
+    if (imag_ext[i].n >= total) break;
+  if (i == imag_n) return (value)&imag_none[1];
+  p = (uintptr *)imag_ext[i].at;
+  imag_ext[i].at += total;
+  imag_ext[i].n -= total;
+  if (imag_ext[i].n == 0) imag_ext[i] = imag_ext[--imag_n];
+  imag_inuse += total;
+  p[0] = total;
+  p[1] = (words << 10) | (3 << 8) | String_tag;
+  memset(p + 2, 0, words * sizeof(uintptr));
+  ((unsigned char *)(p + 2))[words * sizeof(uintptr) - 1] = words * sizeof(uintptr) - 1 - n;
+  return (value)(p + 2);
+}
+
+/* (one that is not the arena's: the heap's, the collector's to free) */
+value imag_free(value v)
+{
+  uintptr at, n;
+  int i, k;
+  if (!imag_in(v)) return Val_unit;
+  at = (uintptr)v - 2 * sizeof(uintptr);
+  n = ((uintptr *)at)[0];
+  imag_inuse -= n;
+  /* joined to the free extent before it and to the one after */
+  for (i = 0; i < imag_n; i++)
+    if (imag_ext[i].at + imag_ext[i].n == at) { at = imag_ext[i].at; n += imag_ext[i].n; imag_ext[i] = imag_ext[--imag_n]; break; }
+  for (i = 0; i < imag_n; i++)
+    if (at + n == imag_ext[i].at) { n += imag_ext[i].n; imag_ext[i] = imag_ext[--imag_n]; break; }
+  k = imag_n;
+  /* (the table full: the smallest extent is lost, or this one) */
+  if (k == IMAG_EXTENTS) {
+    for (k = 0, i = 1; i < imag_n; i++) if (imag_ext[i].n < imag_ext[k].n) k = i;
+    if (imag_ext[k].n >= n) return Val_unit;
+  } else imag_n++;
+  imag_ext[k].at = at;
+  imag_ext[k].n = n;
+  return Val_unit;
+}
+
+value imag_stats(value unit) { (void)unit; return Val_long(imag_inuse); }
+value imag_size(value unit) { (void)unit; return Val_long(imag_hi - imag_lo); }
+
+/* The kernel's lock given back around a copy of pixels, when the cores
+ * run processes, and taken again: the caller is an external of
+ * OCaml's that is not "noalloc" (the runtime's view of the stack is
+ * the caller's, and travels with the lock: kernel_leave), and touches
+ * nothing of the heap in between. */
+void imag_out(void)
+{
+#ifdef CORES
+  if (cores_running) kernel_leave();
+#endif
+}
+void imag_back(void)
+{
+#ifdef CORES
+  if (cores_running) kernel_enter();
+#endif
+}
+/* (worth the lock's two exchanges: some pages of pixels) */
+#define IMAG_WORTH 16384
+/* which copies give the lock back: 1 a copy, 2 a fill's rows, 4 a
+ * flush (a switch: 0 is every copy with the lock held, as before) */
+#ifndef IMAG_UNLOCK
+#define IMAG_UNLOCK 7
+#endif
+int imag_unlock = IMAG_UNLOCK;
+
+/* What a copy without the lock must not meet (principia's draw device
+ * has one lock for all of it, drawlock; here the copies go on side by
+ * side, and three things wait for them):
+ * - the cursor, drawn by the clock into the screen's pixels: a fill of
+ *   the screen was copying its first row down while the clock, on
+ *   another core, drew the cursor in that row, and the cursor's
+ *   pixels went down the screen with it (a black strip, the first
+ *   run of this). The rows of the screen being written are said
+ *   (imag_w, a core's own; imag_covers), and the clock leaves them;
+ * - an image freed, a window made, moved, restacked or deleted: the
+ *   pixels a copy is at are then another's. Such an operation first
+ *   waits until no copy is under way (imag_quiet), and none starts
+ *   meanwhile (imag_hold: a copy is then done with the lock held).
+ * Two programs that draw in the same image at once mix their pixels,
+ * as two that write one file. */
+static int imag_busy, imag_hold;
+static value imag_scr;
+static long imag_w[NCORE][2];
+
+value imag_screen(value b) { imag_scr = b; return Val_unit; }
+/* (the switch, set while the kernel runs: mini-9pi's "draw N" written to /dev/swap) */
+value imag_switch(value n) { imag_unlock = Long_val(n); return Val_unit; }
+
+/* a copy that writes [lo, hi) of dst (hi 0: writes no image) starts:
+ * is it to go on without the lock (then imag_end) */
+int imag_begin(value dst, long lo, long hi)
+{
+  if (imag_hold) return 0;
+  imag_busy++;
+  if (hi > lo && dst == imag_scr) { imag_w[core()][0] = lo; imag_w[core()][1] = hi; }
+  imag_out();
+  return 1;
+}
+void imag_end(void)
+{
+  imag_back();
+  imag_busy--;
+  imag_w[core()][0] = imag_w[core()][1] = 0;
+}
+
+value imag_quiet(value unit)
+{
+  (void)unit;
+  imag_hold++;
+  while (imag_busy > 0) { imag_out(); imag_back(); }
+  imag_hold--;
+  return Val_unit;
+}
+
+/* are bytes [lo, hi) of the screen's image being written by a copy */
+value imag_covers(value lo, value hi)
+{
+  int c;
+  for (c = 0; c < NCORE; c++)
+    if (imag_w[c][1] > Long_val(lo) && imag_w[c][0] < Long_val(hi)) return Val_bool(1);
+  return Val_bool(0);
+}
+
+/* Rows copied from an image to another (Memdraw's copy):
+ * a = [| da; dbw; sa; sbw; n; dy; up |], n bytes a row, dy rows, the
+ * last first when up (the two overlap). */
+value imag_copy(value dst, value src, value a)
+{
+  unsigned char *d = (unsigned char *)String_val(dst) + Long_val(Field(a, 0)), *s = (unsigned char *)String_val(src) + Long_val(Field(a, 2));
+  long dbw = Long_val(Field(a, 1)), sbw = Long_val(Field(a, 3)), n = Long_val(Field(a, 4)), dy = Long_val(Field(a, 5)), j;
+  int up = Long_val(Field(a, 6)) != 0;
+  int out = (imag_unlock & 1) && imag_in(dst) && imag_in(src) && n * dy >= IMAG_WORTH;
+  if (out) out = imag_begin(dst, Long_val(Field(a, 0)), Long_val(Field(a, 0)) + (dy - 1) * dbw + n);
+  for (j = 0; j < dy; j++) {
+    long k = up ? dy - 1 - j : j;
+    memmove(d + k * dbw, s + k * sbw, n);
+  }
+  if (out) imag_end();
+  return Val_unit;
+}
+
+/* An image's row repeated below it (Memdraw's fill, its first row
+ * written): [len] bytes at [a0], to the dy - 1 rows after, bw apart. */
+value imag_rows(value ds, value a0, value bw, value len, value dy)
+{
+  unsigned char *p = (unsigned char *)String_val(ds) + Long_val(a0);
+  long st = Long_val(bw), n = Long_val(len), rows = Long_val(dy), j;
+  int out = (imag_unlock & 2) && imag_in(ds) && n * rows >= IMAG_WORTH;
+  if (out) out = imag_begin(ds, Long_val(a0), Long_val(a0) + (rows - 1) * st + n);
+  for (j = 1; j < rows; j++) memcpy(p + j * st, p, n);
+  if (out) imag_end();
+  return Val_unit;
+}
+
 /* A string's rows written: [row]'s bytes at [a] in [s], then every
  * [stride] bytes, [n] times: memset's kin, for mini-9pi's Memdraw, whose
  * narrow fills (a game's wall is columns of two or three pixels, two

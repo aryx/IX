@@ -550,3 +550,66 @@ were not finished in that time). Not checked: games in windows there
 done: the domains (decisions 10 to 12, `-cores-parallel`), which is
 what would make four busy cores as fast as one; `make check-cores`
 still runs under QEMU alone.
+
+2026-10-13, on the board (the author, the Pi 2 with the card built
+at 11:44): "it works well, no more exn this time. cameltry alone is
+50fps and when running 2 around 31 fps, and stats clearly show the 4
+cores are used pretty well". The first numbers from the board: two
+games each at 62% of one's speed, where the plan's measurement under
+mini-qemu said about two thirds each with one lock and nothing more
+(three quarters of a game's instructions are the kernel's, nearly all
+the pixels' copies, and one core at a time is in the kernel). So the
+lock is what is left: the next step, the lock given back around the
+copies, is what would take two games towards 50 each. Not known from
+this: one game's frames a second with one core (the same kernel
+cannot be asked for one on a board yet), and what `stats` itself
+takes. The exception of the morning was not seen: not found, and not
+explained by anything changed since but the first mouse state.
+
+2026-10-13: the images outside OCaml's heap, and their copies without
+the kernel's lock (the author: "I think having the images outside the
+ML heap makes sense, a bit like we just move the Pages also outside
+the heap no?"; "this is a bit similar to principia's kernel that have
+a special allocator for image (imagalloc) separate from the rest";
+"it's also ok to have some part of the graphics stack in C if that
+helps", "(or even assembly)"). Not committed yet; the board has not
+run it.
+- **The arena** (`runtime.c`, `Machine.Imag`: principia's imagmem):
+  48 MB of the machine's pages in one piece, taken at the boot
+  (`Mmu.kalloc_run`), first fit, free extents joined. A block is
+  still a string for OCaml (a header before its bytes), so Memdraw
+  reads and writes it as before, and neither collector, ocaml-light's
+  nor mini-ml's, looks at a pointer outside its heap. In it: the
+  screen's copy, each window, each image a program asks for
+  (`Memimage.alloc_out`); freed where the draw device's counts say
+  (`Kdraw.free`, `lfree`: they did nothing before). What the kernel
+  makes for itself (a colour, a font, the cursor) stays in the heap.
+  `/dev/swap`'s "kernel draw" says it: 1575648/50331648 at the boot.
+- **Three copies by the machine's C, in one call each**, where OCaml
+  looped over rows: an image to another (`Imag.copy`), a fill's first
+  row to the others (`Imag.rows`), an image to the framebuffer
+  (`Imag.flush`). When what is read and written is the arena's and it
+  is 16 KB or more, with the kernel's lock given back.
+- **What such a copy must not meet**, found by the first run: a fill
+  of the screen copying its first row down while the clock, on another
+  core, drew the cursor into that row: a black strip down the screen.
+  principia's draw device has one lock for all of it; here a copy
+  says which rows of the screen it writes and the cursor's clock
+  leaves them (`imag_covers`, `Kdraw.busy`), and an image freed or a
+  window made, moved, restacked or deleted first waits until no copy
+  is under way (`Imag.quiet`).
+- **A switch**: `echo draw 0 > /dev/swap`, every copy with the lock
+  held; `draw 7`, the start's.
+Checked: `make check-draw` for both boards, hellodraw's screen the
+same pixels under both emulators; under QEMU's four cores stats,
+breakout and cameltry in three windows for 100 s, no fault, the strip
+gone. What it gives is not shown: under QEMU, cameltry beside the
+two others 22 to 24 frames a second with the lock held and 23 to 24
+without, two cameltry 26 to 34 with and 27 to 42 without, in one run
+each, and QEMU's four host threads are not the board's cores. To be
+measured on the board, with the switch. `make check-quick` stops at
+the boot's screen, as it must have since 2026-10-10 (the memory's
+line changed after the screens were recorded on the 9th). Not
+checked: a window deleted or moved while a game draws (the wait);
+the arena full; the Pi 4's kernel and the one by ix's tools (the
+same C, not built); mini-qemu's four cores with it.

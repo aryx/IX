@@ -80,6 +80,9 @@ val pgroundup : int -> int
 val kalloc : unit -> int option
 val kfree : int -> unit
 val nfree : unit -> int
+(* [n] pages that follow each other in memory, not zeroed, taken at
+ * once (at the boot: the free pages are still in order), or None *)
+val kalloc_run : int -> int option
 
 (* A space is its first-level table's physical address (a pgdir). *)
 

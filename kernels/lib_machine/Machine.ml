@@ -21,6 +21,20 @@ end
 
 (* the running process's trap frame, by word: r0-r12, sp 13, lr 14, the
  * pc 15, the CPSR 16 *)
+module Imag = struct
+  external init : int -> int -> unit = "imag_init"
+  external alloc : int -> Bytes.t = "imag_alloc"
+  external free : Bytes.t -> unit = "imag_free"
+  external used : unit -> int = "imag_stats"
+  external size : unit -> int = "imag_size"
+  external copy : Bytes.t -> Bytes.t -> int array -> unit = "imag_copy"
+  external rows : Bytes.t -> int -> int -> int -> int -> unit = "imag_rows"
+  external flush : Bytes.t -> int array -> unit = "imag_flush"
+  external screen : Bytes.t -> unit = "imag_screen"
+  external covers : int -> int -> bool = "imag_covers"
+  external quiet : unit -> unit = "imag_quiet"
+  external switch : int -> unit = "imag_switch"
+end
 external tf_get : int -> int = "tf_get"
 external tf_set : int -> int -> unit = "tf_set"
 external tf_init : int -> unit = "tf_init"

@@ -48,6 +48,17 @@ let kalloc () =
 
 let nfree () = !free_count
 
+(* [n] pages in a row, not zeroed, or None: the list's first ones when
+ * they follow each other in memory, as they do at the boot, before a
+ * page was ever given back (mini-9pi's memory for its images, one
+ * piece: Machine.Imag) *)
+let kalloc_run n =
+  let base = !free_head in
+  let rec last pa k = if pa = 0 then 0 else if k = 1 then pa else let next = Phys.get32 pa in if next = pa + pgsize then last next (k - 1) else 0 in
+  let l = if n > 0 then last base n else 0 in
+  if l = 0 then None
+  else begin free_head := Phys.get32 l; free_count := !free_count - n; Some base end
+
 (*****************************************************************************)
 (* A space: a radix tree of tables (Arch.levels) *)
 (*****************************************************************************)

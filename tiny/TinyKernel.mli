@@ -34,7 +34,7 @@
  *   files and directories      a tree of ML values in the heap       no disk format, no mkfs, no
  *                                                                    buffer cache, no log
  *   console, pipes             other kinds of open file              pipes make a shell a shell
- *   a screen, a mouse          a program's descriptors 3 and 4: it   TinyGraphics.ml draws; no
+ *   a screen, a mouse          a program's descriptors 3 and 4: it   TinyKernelGraphics.ml draws; no
  *                              writes messages (the kernel has the   memory is shared, so none
  *                              pixels) and reads the mouse's place   to map
  *   a window system            a program (TinyWindows.ml): pipes,    what a window's program is

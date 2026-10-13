@@ -246,8 +246,8 @@ let run caps o image =
   let said dir packet =
     if o.net_trace then
       Option.iter (fun (mc : TinyLibMachine.machine) ->
-        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyLibMachine.time) *. 1000. /. TinyLibMachine.rate) dir (TinyNetwork.net_describe packet))) !machine in
-  (* -net dir: the peer (TinyLibPeer: TinyNetwork.ml as the kernel has
+        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyLibMachine.time) *. 1000. /. TinyLibMachine.rate) dir (TinyLibNetwork.net_describe packet))) !machine in
+  (* -net dir: the peer (TinyLibPeer: TinyLibNetwork.ml as the kernel has
    * it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
   let document dir line messages =

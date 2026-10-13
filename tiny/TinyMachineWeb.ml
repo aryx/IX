@@ -324,7 +324,7 @@ let wire_changed = ref false
 let crossing = 500.
 
 let wire_said dir packet =
-  let line = TinyNetwork.net_describe packet in
+  let line = TinyLibNetwork.net_describe packet in
   (* (without ", from 10.0.0.2 to 10.0.0.1": the direction says it) *)
   let line = if String.length line > 27 && String.sub line (String.length line - 27) 7 = ", from " then String.sub line 0 (String.length line - 27) else line in
   let starts p = String.length line >= String.length p && String.sub line 0 (String.length p) = p in

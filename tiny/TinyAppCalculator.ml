@@ -3,7 +3,7 @@
 
 (* See TinyAppCalculator.mli *)
 
-open TinyGUI
+open TinyLibGUI
 
 (*****************************************************************************)
 (* The model *)

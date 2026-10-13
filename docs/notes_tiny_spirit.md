@@ -108,10 +108,10 @@ None of these was discussed with the author.
 
 `TinyBuildSystem.ml`, `TinyShell.ml`, `TinyEditor.ml`,
 `TinyDatabase.ml`, `TinyCPU.ml` with `TinyLibCPU.ml`, `TinyMachine.ml`,
-`TinyKernel.ml`, `TinyGraphics.ml`, `TinyWindows.ml`,
-`TinyPlayground.ml`, `tiny-os/t6/` and `tiny-os/v0/`: each decides its
+`TinyKernel.ml`, `TinyKernelGraphics.ml`, `TinyWindows.ml`,
+`TinyLibPlayground.ml`, `tiny-os/t6/` and `tiny-os/v0/`: each decides its
 own language, format or machine, and its tests are its own.
-`TinyTetris.ml` is a port of the playground's game and is small either
+`TinyAppTetris.ml` is a port of the playground's game and is small either
 way.
 
 ## 6. For a new tiny program

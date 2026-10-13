@@ -5,7 +5,7 @@
 // (or in its window) a row at a time, as its packets arrive. A
 // connection to port 70 as get's, the line "wiki words"; the first
 // message back is "t w h": t messages of text follow, then h rows of w
-// pixels, each row a message of IL's and a message of TinyGraphics's
+// pixels, each row a message of IL's and a message of TinyKernelGraphics's
 // (draw.h's d_pixels), written at once: nothing here looks for where a
 // row ends. The picture's top left corner is the screen's (8, 8).
 #include "user.h"

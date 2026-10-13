@@ -1,4 +1,4 @@
-; what tiny-machine gives TinyGraphics.ml and TinyPlayground.ml, by OCaml
+; what tiny-machine gives TinyKernelGraphics.ml and TinyLibPlayground.ml, by OCaml
 ; for the host, where they are tested first: TinyMemory is the machine's
 ; memory, an array; TinyCalls is the kernel's calls, kept or absent. On
 ; tiny-machine these names are externals (../memory.ml, ../user/calls.ml)

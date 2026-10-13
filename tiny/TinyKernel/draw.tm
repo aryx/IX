@@ -1,6 +1,6 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; TinyGraphics.ml's rows: the three loops of bytes its draw is made of,
+; TinyKernelGraphics.ml's rows: the three loops of bytes its draw is made of,
 ; in assembly (a screen is 307,200 of them), with entry.tm's convention
 ; (the arguments at 0(sp), 4(sp)..., ML's integers: n is 2n+1).
 

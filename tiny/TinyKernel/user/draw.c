@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// draw.h's functions: each a message of TinyGraphics.ml's (a letter,
+// draw.h's functions: each a message of TinyKernelGraphics.ml's (a letter,
 // then numbers of 16 bits, the low byte first) put in a buffer, which
 // d_flush writes whole, as the kernel wants its messages.
 #include "user.h"

@@ -46,7 +46,7 @@ no answer from 10.0.0.9
 $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ Hello,
 from the other end of the wire.
-$ 44 374 2007
+$ 44 374 2010
 $ get: no nothing
 $ get: nothing answers at 10.0.0.9
 $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
@@ -63,11 +63,11 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > data id 2001 ack 6000, 8 bytes, from 10.0.0.2 to 10.0.0.1
 < data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-x data id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
+x data id 6002 ack 2001, 986 bytes, from 10.0.0.1 to 10.0.0.2
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 < query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
 > state id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
-< data? id 6002 ack 2001, 983 bytes, from 10.0.0.1 to 10.0.0.2
+< data? id 6002 ack 2001, 986 bytes, from 10.0.0.1 to 10.0.0.2
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 > state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1

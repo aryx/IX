@@ -3,7 +3,7 @@
 
 (* See TinyAppTemperature.mli *)
 
-open TinyGUI
+open TinyLibGUI
 
 (* the two fields' texts, as typed *)
 type model = { c : string; f : string }

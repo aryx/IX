@@ -1,6 +1,6 @@
 (* A tiny window system, a program of TinyKernel.ml's, in ML: the
  * essential of Plan 9's rio (ix's twin is windows/, mini-rio). Compiled
- * by tiny-ml -tm after TinyDraw.ml, TinyKernel/user/mlsys.c its runtime
+ * by tiny-ml -tm after TinyLibDraw.ml, TinyKernel/user/mlsys.c its runtime
  * and its system calls (plan_tiny_windows.md):
  *
  *     ./tiny-machine -window tiny-kernel
@@ -10,7 +10,7 @@
  *
  * The idea kept is rio's: {b a window looks like the machine}. A
  * program of TinyKernel.ml is given five descriptors: 0, 1 and 2 its
- * text, 3 where it draws (TinyGraphics.ml's messages), 4 its mouse. The
+ * text, 3 where it draws (TinyKernelGraphics.ml's messages), 4 its mouse. The
  * kernel gives the first shell the console, the screen and the mouse;
  * tiny-windows gives each window's shell three pipes and a box, and is
  * itself a program that reads its 0 and its 4 and draws on its 3. So a
@@ -90,9 +90,9 @@
  * - a program started by New other than the shell (an argument).
  *
  * Where it stands: TinyKernel gives the five descriptors, the pipes,
- * the box and ready; TinyGraphics, in the kernel, has the images;
- * TinyDraw makes and reads the messages; the programs in a window
- * (TinyKernel/user's paint in C, TinyTetris on TinyPlayground) are the
+ * the box and ready; TinyKernelGraphics, in the kernel, has the images;
+ * TinyLibDraw makes and reads the messages; the programs in a window
+ * (TinyKernel/user's paint in C, TinyAppTetris on TinyLibPlayground) are the
  * ones that run without it. mini-rio is the whole of it: Wm and
  * Window, a window's text as a Terminal, and Fileserver, Virtual_cons
  * and Virtual_mouse for what a window's program opens.

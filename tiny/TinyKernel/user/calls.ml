@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyCalls's names on tiny-machine, for TinyPlayground.ml: mlsys.c's
+(* TinyCalls's names on tiny-machine, for TinyLibPlayground.ml: mlsys.c's
  * system calls. Given to tiny-ml before it (../host/TinyCalls.ml is the
  * host's). *)
 external u_write : int -> string -> int = "u_write"

@@ -90,7 +90,7 @@ The simple path kept, each change behind a switch and measured alone
 Today: the shell and its tools, tiny-windows, tetris, paint, square.
 Candidates, for the author to pick:
 
-- the TinyPlayground games that fit the screen and tiny-ml's subset;
+- the TinyLibPlayground games that fit the screen and tiny-ml's subset;
 - small C tools by tiny-c (as t6's and v6's user programs);
 - demos in ML that draw (a clock, life, a Mandelbrot in integers);
 - tiny-editor on a file of the image;

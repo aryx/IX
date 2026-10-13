@@ -3,7 +3,7 @@
 
 (* See TinyWindows.mli *)
 
-open TinyDraw
+open TinyLibDraw
 
 (* TinyKernel/user/mlsys.c's: the kernel's calls. A read's string is ""
  * at the end; a pipe's or a box's two ends are one number (the reading

@@ -1,0 +1,5 @@
+; TinyLibGUI.ml's, TinyAppCalculator.ml's and TinyAppTemperature.ml's test on the host (TinyLibGUI_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_kernel_graphics tiny_lib_draw tiny_lib_playground tiny_lib_gui tiny_app_calculator tiny_app_temperature))

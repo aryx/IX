@@ -1,4 +1,4 @@
-(* A tiny calculator, a program of TinyKernel.ml's on TinyGUI.ml: four
+(* A tiny calculator, a program of TinyKernel.ml's on TinyLibGUI.ml: four
  * operations on whole numbers, sixteen buttons. Written anew, in
  * tiny-ml's ML and OCaml's:
  *
@@ -8,10 +8,10 @@
  *     the mouse on the buttons, or the keys: the digits, + - * /,
  *     = or the Enter, c clears; q quits
  *
- * It is a value of TinyGUI's [gui]: a model, its view, an update and
+ * It is a value of TinyLibGUI's [gui]: a model, its view, an update and
  * the keys, with no loop, no drawing and no mouse here. So its
  * arithmetic is tested on the host by messages given to [update], and
- * its buttons by a mouse given to TinyGUI (tests/TinyGUI_test.sh).
+ * its buttons by a mouse given to TinyLibGUI (tests/TinyLibGUI_test.sh).
  *
  * The model is the calculator one holds, not an expression: the number
  * shown, the number kept, the operation that awaits its second number.
@@ -61,5 +61,5 @@ type model = { shown : int; kept : int; op : char; fresh : bool; wrong : bool }
 (* what a button or a key says *)
 type msg = Digit of int | Op of char | Equals | Clear
 
-(* The calculator, for TinyGUI's run *)
-val calculator : (model, msg) TinyGUI.gui
+(* The calculator, for TinyLibGUI's run *)
+val calculator : (model, msg) TinyLibGUI.gui

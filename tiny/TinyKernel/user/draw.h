@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// What a program that draws has (draw.c): TinyGraphics.ml's messages,
+// What a program that draws has (draw.c): TinyKernelGraphics.ml's messages,
 // gathered and written to its descriptor 3 (user.h's DRAW). The kernel
 // has the pixels; an image is a number of the program's, 0 the one it
 // was given (the screen, 640 by 480, or its window, which shows what

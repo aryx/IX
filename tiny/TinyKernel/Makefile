@@ -16,10 +16,10 @@
 #                     move, a delete, one brought to the front) and
 #                     nested.events (tiny-windows in a window of
 #                     tiny-windows, two windows in it), play.events (square,
-#                     a game on ../TinyPlayground.ml, in a window: the
+#                     a game on ../TinyLibPlayground.ml, in a window: the
 #                     arrows) and tetris.events (tetris in a window: six
 #                     pieces moved, turned and dropped) and calc.events
-#                     (calc, on ../TinyGUI.ml, in a window: 12 * 3 = by its
+#                     (calc, on ../TinyLibGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
 #                     button held) and temp.events (temp, its two
 #                     fields typed in, in a window); and two with the
@@ -30,10 +30,10 @@
 #                     each, the screen the same. A minute and a half
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
-# (TinyML's, by tiny-c -tm), the rows TinyGraphics.ml draws by (draw.tm),
+# (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
-# ../TinyGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
+# ../TinyKernelGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
@@ -65,9 +65,9 @@ ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: memory.ml ../TinyGraphics.ml ../TinyNetwork.ml ../TinyKernel.ml
+$(O)/kernel.tm: memory.ml ../TinyKernelGraphics.ml ../TinyLibNetwork.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ memory.ml ../TinyGraphics.ml ../TinyNetwork.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ memory.ml ../TinyKernelGraphics.ml ../TinyLibNetwork.ml ../TinyKernel.ml
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)
@@ -96,44 +96,44 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
 
 # a program in ML (windows, tiny-windows: ../TinyWindows.ml, after
-# ../TinyDraw.ml):
+# ../TinyLibDraw.ml):
 # compiled by tiny-ml -tm, with mlsys.c, TinyML's runtime and the
 # system calls as ML's externals, which has the heap from 384 KB
-$(O)/user/windows.tm: ../TinyDraw.ml ../TinyWindows.ml
+$(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ ../TinyDraw.ml ../TinyWindows.ml
+	$(TML) -tm -o $@ ../TinyLibDraw.ml ../TinyWindows.ml
 $(O)/user/mlsys.tm: ../TinyML/core.c
 MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/user/mlsys.tm $(O)/user/$(@F).tm && \
 	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 $(O)/bin/windows: $(ULIB) $(O)/user/mlsys.tm $(O)/user/windows.tm
 	@$(MLLINK)
 
-# a game: on ../TinyPlayground.ml, whose calls are calls.ml's; its last
+# a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
 # file runs it (square: the playground's test's)
-PLAY = user/calls.ml ../TinyDraw.ml ../TinyPlayground.ml
-SQUARE = ../tests/TinyPlayground_tests/Square.ml ../tests/TinyPlayground_tests/machine.ml
+PLAY = user/calls.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml
+SQUARE = ../tests/TinyLibPlayground_tests/Square.ml ../tests/TinyLibPlayground_tests/machine.ml
 $(O)/user/square.tm: $(PLAY) $(SQUARE)
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
 $(O)/bin/square: $(ULIB) $(O)/user/mlsys.tm $(O)/user/square.tm
 	@$(MLLINK)
-$(O)/user/tetris.tm: $(PLAY) ../TinyTetris.ml user/tetris.ml
+$(O)/user/tetris.tm: $(PLAY) ../TinyAppTetris.ml user/tetris.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyTetris.ml user/tetris.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyAppTetris.ml user/tetris.ml
 $(O)/bin/tetris: $(ULIB) $(O)/user/mlsys.tm $(O)/user/tetris.tm
 	@$(MLLINK)
 
-# a program with widgets: on ../TinyGUI.ml, which draws by the
+# a program with widgets: on ../TinyLibGUI.ml, which draws by the
 # playground's shapes (calc: ../TinyAppCalculator.ml; temp:
 # ../TinyAppTemperature.ml)
-$(O)/user/calc.tm: $(PLAY) ../TinyGUI.ml ../TinyAppCalculator.ml user/calc.ml
+$(O)/user/calc.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyAppCalculator.ml user/calc.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
 $(O)/bin/calc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/calc.tm
 	@$(MLLINK)
-$(O)/user/temp.tm: $(PLAY) ../TinyGUI.ml ../TinyAppTemperature.ml user/temp.ml
+$(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyGUI.ml ../TinyAppTemperature.ml user/temp.ml
+	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
 $(O)/bin/temp: $(ULIB) $(O)/user/mlsys.tm $(O)/user/temp.tm
 	@$(MLLINK)
 

@@ -1,18 +1,18 @@
 (* Tiny peer: the other end of tiny-machine's wire (plan_tiny_network.md),
  * what a host gives the machine to talk to. Not a second machine: the
- * host runs TinyNetwork.ml, the stack tiny-kernel has, at the other
+ * host runs TinyLibNetwork.ml, the stack tiny-kernel has, at the other
  * address (10.0.0.1), with no CPU under it, and a few lines on top:
  *
  *     the machine                              the host
  *
  *     tiny-kernel, 10.0.0.2                    the peer, 10.0.0.1
- *       TinyNetwork.ml (by tiny-ml)              TinyNetwork.ml (by OCaml)
+ *       TinyLibNetwork.ml (by tiny-ml)              TinyLibNetwork.ml (by OCaml)
  *            |                                        |      |
  *     the network's device  == send ==========>  [send]      [document]:
  *     (TinyLibMachine)      <= give, later ====  [give]      a line to its
  *                                                            messages
  *
- * - a ping is answered (TinyNetwork's own);
+ * - a ping is answered (TinyLibNetwork's own);
  * - on port 70, a connection's first message is a line, a document's
  *   name; the document is sent, a message at a time as the machine
  *   acknowledges, and the connection closed. One line out, a document
@@ -77,7 +77,7 @@ val dial : t -> int -> relay -> unit
 (* the n-th packet the peer sends from now (1: the next) is lost *)
 val lose : t -> int -> unit
 
-(* a text as messages, of TinyNetwork.il_max bytes at most *)
+(* a text as messages, of TinyLibNetwork.il_max bytes at most *)
 val messages : string -> string list
 
 (* What "wiki words" is answered: a first message "t w h", then t

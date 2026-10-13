@@ -1,0 +1,5 @@
+; TinyLibNetwork.ml's test on the host (TinyLibNetwork_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_lib_network))

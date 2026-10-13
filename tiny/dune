@@ -78,83 +78,83 @@
  (public_name tiny-machine)
  (package ix)
  (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine tiny_network tiny_lib_peer))
+ (libraries ix_core fpath unix caps tiny_lib_cpu tiny_lib_machine tiny_lib_network tiny_lib_peer))
 
-; TinyNetwork.ml, tiny-kernel's part that speaks to the network
+; TinyLibNetwork.ml, tiny-kernel's part that speaks to the network
 ; (tiny-ml compiles it there), here for the host: its test, and the
 ; other end of tiny-machine's wire
 (library
- (name tiny_network)
+ (name tiny_lib_network)
  (wrapped false)
- (modules TinyNetwork))
+ (modules TinyLibNetwork))
 
-; the other end of tiny-machine's wire, TinyNetwork with a few lines on
+; the other end of tiny-machine's wire, TinyLibNetwork with a few lines on
 ; top: TinyMachine's and TinyMachineWeb's
 (library
  (name tiny_lib_peer)
  (wrapped false)
  (modules TinyLibPeer)
- (libraries tiny_network))
+ (libraries tiny_lib_network))
 
-; TinyGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
+; TinyKernelGraphics.ml, tiny-kernel's part that draws (tiny-ml compiles it
 ; there), here for the host: TinyMemory (TinyKernel/host/) is the machine's
 ; memory, an array
 (library
- (name tiny_graphics)
+ (name tiny_kernel_graphics)
  (wrapped false)
- (modules TinyGraphics)
+ (modules TinyKernelGraphics)
  (libraries tiny_host_memory))
 
-; TinyDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
+; TinyLibDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
 ; window system: tiny-ml compiles them for the machine (TinyKernel/'s
 ; Makefile); OCaml too, which only checks the second (its externals are
 ; the machine's: no program is linked)
 (library
- (name tiny_draw)
+ (name tiny_lib_draw)
  (wrapped false)
- (modules TinyDraw))
+ (modules TinyLibDraw))
 
-; TinyPlayground.ml, what a game of tiny-kernel's is written on, here
+; TinyLibPlayground.ml, what a game of tiny-kernel's is written on, here
 ; for a game's test on the host: TinyCalls is the kernel's calls, kept
 (library
- (name tiny_playground)
+ (name tiny_lib_playground)
  (wrapped false)
- (modules TinyPlayground)
- (libraries tiny_draw tiny_host_calls))
+ (modules TinyLibPlayground)
+ (libraries tiny_lib_draw tiny_host_calls))
 
-; TinyTetris.ml, a game on it (tiny-kernel's tetris)
+; TinyAppTetris.ml, a game on it (tiny-kernel's tetris)
 (library
- (name tiny_tetris)
+ (name tiny_app_tetris)
  (wrapped false)
- (modules TinyTetris)
- (libraries tiny_playground))
+ (modules TinyAppTetris)
+ (libraries tiny_lib_playground))
 
-; TinyGUI.ml, what a program with buttons is written on, and
+; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
 ; on it
 (library
- (name tiny_gui)
+ (name tiny_lib_gui)
  (wrapped false)
- (modules TinyGUI)
- (libraries tiny_playground))
+ (modules TinyLibGUI)
+ (libraries tiny_lib_playground))
 
 (library
  (name tiny_app_calculator)
  (wrapped false)
  (modules TinyAppCalculator)
- (libraries tiny_gui))
+ (libraries tiny_lib_gui))
 
 (library
  (name tiny_app_temperature)
  (wrapped false)
  (modules TinyAppTemperature)
- (libraries tiny_gui))
+ (libraries tiny_lib_gui))
 
 (library
  (name tiny_windows)
  (wrapped false)
  (modules TinyWindows)
- (libraries tiny_draw))
+ (libraries tiny_lib_draw))
 
 ; tiny-machine's window: the one tiny program linking a C library (SDL)
 ; tiny-machine's way out to other programs: a connection of the host's
@@ -189,4 +189,4 @@
  (modules TinyMachineWeb)
  (modes js)
  (optional)
- (libraries tiny_lib_cpu tiny_lib_machine tiny_network tiny_lib_peer js_of_ocaml))
+ (libraries tiny_lib_cpu tiny_lib_machine tiny_lib_network tiny_lib_peer js_of_ocaml))

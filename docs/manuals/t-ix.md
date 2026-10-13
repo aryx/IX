@@ -347,7 +347,7 @@ What is at the other end is the host's choice:
     tiny-machine -net dir -net-forward 8080:80 kernel.img   # and the host's port 8080 is the machine's port 80
     tiny-machine -net-loop 100 kernel.img    # the wire itself: each packet sent comes back 100 instructions later
 
-With `-net` the other end is `TinyNetwork.ml`, the file tiny-kernel
+With `-net` the other end is `TinyLibNetwork.ml`, the file tiny-kernel
 has for its own stack, run by the host (`TinyLibPeer.ml`). A packet
 of its lands 5 ms of the machine's time (40,000 instructions) after
 it was sent. It answers a ping; and on port 70, over IL, it reads a
@@ -356,7 +356,7 @@ messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
 with `tiny/tests/www` as `dir`. A line that starts with `wiki` names
 a picture kept there with its text (`wiki mandelbrot`:
 `mandelbrot.wiki`, a line `320 240`, the pixels a byte each in the
-screen's colours, the text; `tiny/tests/TinyNetwork_tests/wiki_picture.py`
+screen's colours, the text; `tiny/tests/TinyLibNetwork_tests/wiki_picture.py`
 makes it): the text is sent, then the picture a row a message, and
 `wiki` paints each row as it arrives, on the screen or in its window
 of tiny-windows; about 7 seconds of the machine's time for 240 rows on
@@ -393,7 +393,7 @@ packet, and a button loses the next one. `./tiny-machine tiny-kernel`
 in a terminal gives the machine its wire with `tiny/tests/www`.
 
 A trace's line has, of IL's, its kind, its number, the last number its sender
-received, its message's length (`TinyNetwork.mli` has a conversation
+received, its message's length (`TinyLibNetwork.mli` has a conversation
 with a packet lost):
 
        1325.4 ms  < data id 5001 ack 1001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
@@ -461,7 +461,7 @@ What the numbers mean is up to who answers:
 | `0x2c0000` | the processes' frames: 17 words each, their registers and pc |
 | `0x300000` to `0x500000` | the ML heap, two halves of 1 MB |
 | `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
-| `0xd00000` to `0xf00000` | the images a program made (`TinyGraphics.ml`'s free blocks) |
+| `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
 | `0x2f0000` | a packet's place, on its way to or from the network's device |
 | the last 48 bytes | the devices |
@@ -487,7 +487,7 @@ loaded at 0, its stack starts at the top.
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
 without a network, or when nothing listens there or nothing answers
-(six tries, 6.3 seconds). The connection is IL's (`TinyNetwork.mli`):
+(six tries, 6.3 seconds). The connection is IL's (`TinyLibNetwork.mli`):
 a write is a message, 1,024 bytes at most, which arrives once and in
 order, the write waiting when 20 are not yet read at the other end; a read
 gives one message, whole (what is over the buffer is lost), and 0
@@ -513,7 +513,7 @@ never waits. A process has 32 descriptors.
 
 ### 7.3 TinyKernel.ml's screen and mouse
 
-The kernel has the pixels (`tiny/TinyGraphics.ml`, compiled with it);
+The kernel has the pixels (`tiny/TinyKernelGraphics.ml`, compiled with it);
 a program says what to draw. **A program is given five descriptors**:
 0, 1 and 2 its text, 3 where it draws (messages, below), 4 its mouse (a
 box: a read gives x, y and the buttons, a word each, when they
@@ -548,7 +548,7 @@ A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white). For C, `user/draw.h` and `draw.c` gather the messages
 (`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
-`tiny/TinyDraw.ml` makes them.
+`tiny/TinyLibDraw.ml` makes them.
 
     ./tiny-machine -window tiny-kernel
     $ paint
@@ -556,7 +556,7 @@ page that waits for the mouse, the keys and the clock at once. For ML,
 ### 7.4 tiny-windows
 
 `tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
-tiny-ml -tm after `TinyDraw.ml`; `user/mlsys.c` is an ML program's
+tiny-ml -tm after `TinyLibDraw.ml`; `user/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel
@@ -579,9 +579,9 @@ images' numbers and sends the messages on, the kernel keeping every
 pixel. `windows` typed in a window runs there, with windows of
 its own.
 
-### 7.5 A game: TinyPlayground.ml
+### 7.5 A game: TinyLibPlayground.ml
 
-A game is a value of `tiny/TinyPlayground.ml`'s type `game`: the size
+A game is a value of `tiny/TinyLibPlayground.ml`'s type `game`: the size
 of its picture, its first model from a seed (`init`), the model as
 shapes (`view`), the model after a key (`key`: its byte, the arrows
 128 to 131) and after a frame (`frame`: thirty a second of the
@@ -598,18 +598,18 @@ and then on it at once.
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `user/calls.ml`, `TinyDraw.ml`, `TinyPlayground.ml`, the
+Makefile: `user/calls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
 game, and a last file that says `let () = run game`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
-(`tiny/tests/TinyPlayground_tests/Square.ml`): type it at the screen's
-shell or in a window; `q` quits. `tetris` is `tiny/TinyTetris.ml`:
+(`tiny/tests/TinyLibPlayground_tests/Square.ml`): type it at the screen's
+shell or in a window; `q` quits. `tetris` is `tiny/TinyAppTetris.ml`:
 the arrows move the piece (up turns it, down is a row), the space
 drops it, `q` quits; after a game over, the space starts another.
 
-### 7.6 A program with buttons: TinyGUI.ml
+### 7.6 A program with buttons: TinyLibGUI.ml
 
-A program with widgets is a value of `tiny/TinyGUI.ml`'s type `gui`:
+A program with widgets is a value of `tiny/TinyLibGUI.ml`'s type `gui`:
 its first model (`init`), the model as widgets (`view`), the model
 after a message (`update`), and the messages of a key when no field
 has the keys (`key`). The library has the loop, the layout, the mouse,
@@ -627,8 +627,8 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `user/calls.ml`, `TinyDraw.ml`,
-`TinyPlayground.ml`, `TinyGUI.ml`, the program, and a last file that
+(TinyKernel's Makefile: `user/calls.ml`, `TinyLibDraw.ml`,
+`TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
 the Enter, `c` clears); `q` quits. Whole numbers of nine digits, an
@@ -648,10 +648,10 @@ typed again.
 | the CPU | `tiny/tests/TinyCPU_test.sh` |
 | the machine, v0, the devices, the screen | `tiny/tests/TinyMachine_test.sh` |
 | v6, t6 | `make -C tiny/tiny-os/v6 check`, `make -C tiny/tiny-os/t6 check` |
-| TinyGraphics.ml, on the host and on the machine | `tiny/tests/TinyGraphics_test.sh` (`-window`: its picture shown) |
-| TinyPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyPlayground_test.sh` |
-| TinyTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyTetris_test.sh` |
-| TinyGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyGUI_test.sh` |
+| TinyKernelGraphics.ml, on the host and on the machine | `tiny/tests/TinyKernelGraphics_test.sh` (`-window`: its picture shown) |
+| TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
+| TinyAppTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |
+| TinyLibGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyLibGUI_test.sh` |
 | TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,

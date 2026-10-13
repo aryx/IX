@@ -91,7 +91,7 @@
  *   address, a length, a command, a status): a packet of memory sent,
  *   the packet that waits taken; its interrupt, the fifth source,
  *   while one waits. What is at the wire's other end is the host's
- *   (-net dir: this program, TinyNetwork.ml as tiny-kernel has it,
+ *   (-net dir: this program, TinyLibNetwork.ml as tiny-kernel has it,
  *   at the other address, answering a ping and giving dir's files
  *   over IL, TinyLibPeer; -net-trace says each packet, -net-lose n
  *   loses its n-th, -net-pcap f keeps them for tcpdump; -net-out: it

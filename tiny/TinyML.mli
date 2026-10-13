@@ -142,8 +142,8 @@
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
  *   matching", 2007).
  *
- * Where it stands: TinyKernel, TinyGraphics, TinyWindows,
- * TinyPlayground and TinyTetris are its programs (with -tm), and OCaml
+ * Where it stands: TinyKernel, TinyKernelGraphics, TinyWindows,
+ * TinyLibPlayground and TinyAppTetris are its programs (with -tm), and OCaml
  * compiles the same files; its runtime is C for TinyC, and its
  * assembly TinyAssembler's. The stack machine and the stack kept in
  * registers are TinyC's, so the two compilers read as one design used

@@ -70,11 +70,11 @@ test: all
 	./tiny/tests/TinyCPUArm_test.sh
 	./tiny/tests/TinyCPU_test.sh
 	./tiny/tests/TinyMachine_test.sh
-	./tiny/tests/TinyGraphics_test.sh
-	./tiny/tests/TinyNetwork_test.sh
-	./tiny/tests/TinyPlayground_test.sh
-	./tiny/tests/TinyTetris_test.sh
-	./tiny/tests/TinyGUI_test.sh
+	./tiny/tests/TinyKernelGraphics_test.sh
+	./tiny/tests/TinyLibNetwork_test.sh
+	./tiny/tests/TinyLibPlayground_test.sh
+	./tiny/tests/TinyAppTetris_test.sh
+	./tiny/tests/TinyLibGUI_test.sh
 	$(MAKE) -C tiny/tiny-os clean all
 	$(MAKE) -C tiny/tiny-os/v6 check
 	$(MAKE) -C tiny/tiny-os/t6 check

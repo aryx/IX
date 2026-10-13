@@ -1,5 +1,5 @@
 (* A tiny temperature converter, a program of TinyKernel.ml's on
- * TinyGUI.ml: two fields, each the other's answer. The second of the
+ * TinyLibGUI.ml: two fields, each the other's answer. The second of the
  * 7GUIs (examples/Gui7Temperature.ml is m-ix's), in whole numbers, in
  * tiny-ml's ML and OCaml's:
  *
@@ -46,8 +46,8 @@
 type model = { c : string; f : string }
 type msg = Celsius of string | Fahrenheit of string
 
-(* The converter, for TinyGUI's run *)
-val temperature : (model, msg) TinyGUI.gui
+(* The converter, for TinyLibGUI's run *)
+val temperature : (model, msg) TinyLibGUI.gui
 
 (* a text's whole number, and whether it is one *)
 val number : string -> int * bool

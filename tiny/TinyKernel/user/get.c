@@ -13,7 +13,7 @@
 // "moved", to an address that asks for TLS, which is m-ix's
 // (mini-curl).
 // A read gives a message, 1,024 bytes at most: whole as it was written
-// when the other end is the wire's (TinyNetwork.ml), cut anywhere when
+// when the other end is the wire's (TinyLibNetwork.ml), cut anywhere when
 // it comes from the world. Written all of it: a write to a pipe may
 // take less.
 #include "user.h"

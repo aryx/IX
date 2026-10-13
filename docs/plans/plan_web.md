@@ -284,7 +284,7 @@ disks, in a page.
   a screen, by its debugging protocol): the prompt, ls, tiny-windows,
   a window swept, ls in it, the picture looked at; v6 and t6, the
   prompt and ls. Natively: TinyMachine_test, TinyCPU_test,
-  TinyGraphics_test, tiny-kernel's, v6's and t6's check; tiny-machine
+  TinyKernelGraphics_test, tiny-kernel's, v6's and t6's check; tiny-machine
   built by ix's tools (mini-mk LIB=tiny, a private directory):
   TinyMachine_test and windows.events' sum.
 - **The speed, in Chrome: 4.9 million instructions a second for
@@ -319,7 +319,7 @@ behind a switch:
 
 Checked: tiny-kernel's check (the five recorded screens, which depend
 on the instruction an interrupt is taken at; 46 s where it took 75),
-v6's and t6's, TinyMachine_test, TinyCPU_test, TinyGraphics_test; the
+v6's and t6's, TinyMachine_test, TinyCPU_test, TinyKernelGraphics_test; the
 page's test in Chrome for the three kernels. Left: the address
 translation at each fetch (the fetch's closure and `translate`, 30% of
 node's time now), which for tiny-kernel and t6 is a window that

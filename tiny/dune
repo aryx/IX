@@ -10,7 +10,7 @@
  (public_name tiny-shell)
  (package ix)
  (modules TinyShell)
- (libraries ix_core fpath unix caps))
+ (libraries ix_core fpath unix caps tiny_lib_system))
 
 (executable
  (name TinyEditor)

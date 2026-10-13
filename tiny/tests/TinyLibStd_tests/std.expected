@@ -6,6 +6,11 @@
 [ax][by]
 map2: lengths
 3 
+1 1 2 3 
+[a][ab][b]
+[y][w][x][z]
+42 -7 none none none 7 
+[/ls][/bin/ls][ls][a/b]
 2 none 3 none none 1 not found 
 true false true false true false true 
 97 98 99 

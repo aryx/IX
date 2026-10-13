@@ -1,7 +1,7 @@
 ; TinyLibSystem's host version, for dune's build of tiny-shell (the
 ; rest of this directory is the standard library mini-mk builds the
 ; tools on: no dune there). tiny-machine's version is
-; ../TinyLibSystem.ml, in tiny-ml's ML.
+; ../TinyKernel/user/TinyLibSystem.ml, in tiny-ml's ML.
 (library
  (name tiny_lib_system)
  (wrapped false)

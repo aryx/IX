@@ -24,6 +24,12 @@
 (* Option, List *)
 (*****************************************************************************)
 
+(* a decimal number, with its sign; OCaml's reads 0x1f and 1_000 too *)
+let int_of_string_opt s =
+  let n = String.length s in
+  let rec go i acc = if i >= n then Some acc else if s.[i] >= '0' && s.[i] <= '9' then go (i + 1) (acc * 10 + Char.code s.[i] - 48) else None in
+  if n > 1 && s.[0] = '-' then (match go 1 0 with Some v -> Some (- v) | None -> None) else if n = 0 then None else go 0 0
+
 let Option.get = function Some x -> x | None -> invalid_arg "option is None"
 
 (* Common's: the option's value, or a default *)
@@ -36,6 +42,10 @@ let List.filteri p l =
 let List.init n f = let rec go i = if i >= n then [] else let x = f i in x :: go (i + 1) in go 0
 let rec List.assoc_opt x = function [] -> None | (a, b) :: l -> if a = x then Some b else List.assoc_opt x l
 let rec List.nth_opt l n = match l with [] -> None | x :: l -> if n = 0 then Some x else List.nth_opt l (n - 1)
+(* by insertion: equal elements keep their order *)
+let List.sort cmp l =
+  let rec insert x = function [] -> [ x ] | y :: rest -> if cmp x y <= 0 then x :: y :: rest else y :: insert x rest in
+  List.fold_right insert l []
 let rec List.map2 f l1 l2 =
   match l1, l2 with
   | [], [] -> []
@@ -67,6 +77,10 @@ let String.split_on_char c s =
     else go j (i - 1) acc
   in
   go (String.length s) (String.length s - 1) []
+
+let Filename.concat dir file =
+  let n = String.length dir in
+  if n = 0 || dir.[n - 1] = '/' then dir ^ file else dir ^ "/" ^ file
 
 (*****************************************************************************)
 (* Buffer *)

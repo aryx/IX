@@ -61,7 +61,8 @@ and redir = Open of int * mode * word | Dup of int * int
 and mode = Read | Write | Append
 
 exception Error of string
-exception Exit of string
+(* (not Exit: that is the standard library's, and tiny-ml has one space of names) *)
+exception Exits of string
 
 type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stderr >
 
@@ -375,7 +376,7 @@ let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
   TinyLibSystem.flush ();
   match TinyLibSystem.fork caps with
   | 0 ->
-      let st = try f (); status () with Exit s -> s | Error m -> die caps m in
+      let st = try f (); status () with Exits s -> s | Error m -> die caps m in
       TinyLibSystem.flush ();
       TinyLibSystem.exit (code st)
   | pid -> pid
@@ -490,7 +491,7 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
       with_fds caps (redirs caps rs) (fun () -> command caps argv);
       check e
 
-and check e = if !eflag && e && not (truth (status ())) then raise (Exit (status ()))
+and check e = if !eflag && e && not (truth (status ())) then raise (Exits (status ()))
 
 and command caps (argv : string list) =
   match argv with
@@ -501,7 +502,7 @@ and command caps (argv : string list) =
       let dir = match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
       (try TinyLibSystem.chdir caps dir; set_status ""
        with Failure m -> TinyLibSystem.eprint caps ("Can't cd " ^ dir ^ ": " ^ m ^ "\n"); set_status "can't cd")
-  | "exit" :: args -> raise (Exit (match args with s :: _ -> s | [] -> status ()))
+  | "exit" :: args -> raise (Exits (match args with s :: _ -> s | [] -> status ()))
   | [ "shift" ] | [ "shift"; _ ] ->
       let n = match argv with [ _; n ] -> (int_of_string_opt n ||| 1) | _ -> 1 in
       set "*" (List.filteri (fun i _ -> i >= n) (get "*"));
@@ -599,7 +600,7 @@ let start (caps : Cap.all_caps) : int =
        | Some text -> source (caps :> caps) text
        | None -> interactive (caps :> caps));
       status ()
-    with Exit s -> s | Error m -> die caps m | Failure m -> die caps m
+    with Exits s -> s | Error m -> die caps m | Failure m -> die caps m
   in
   TinyLibSystem.flush ();
   code st

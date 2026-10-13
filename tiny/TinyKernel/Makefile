@@ -59,7 +59,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
+PROGS = sh rc mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm user/sys.tm
 
@@ -137,6 +137,17 @@ $(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.m
 $(O)/bin/temp: $(ULIB) $(O)/user/mlsys.tm $(O)/user/temp.tm
 	@$(MLLINK)
 
+# a tool of the host's that runs here too (rc: ../TinyShell.ml,
+# tiny-shell): on ../TinyLibStd.ml, what it names of OCaml's standard
+# library, and user/TinyLibSystem.ml, the system's calls it asks for
+# (the host's is ../TinyLibHost/TinyLibSystem.ml)
+TOOL = ../TinyLibStd.ml user/TinyLibSystem.ml
+$(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(TOOL) ../TinyShell.ml
+$(O)/bin/rc: $(ULIB) $(O)/user/mlsys.tm $(O)/user/rc.tm
+	@$(MLLINK)
+
 # a program that draws: with draw.c, the messages (draw.h)
 $(O)/user/paint.tm: user/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/user/draw.tm $(O)/user/paint.tm
@@ -165,6 +176,7 @@ run: $(O)/boot.img
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out

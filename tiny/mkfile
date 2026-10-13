@@ -96,13 +96,16 @@ $D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyBuildSystem.$O $STDEND
-# (the shell's system, the host's: TinyLibHost/TinyLibSystem.ml; the
-# one beside this mkfile is tiny-machine's, tiny-ml's to compile)
+# (the shell's system, the host's: TinyLibHost/TinyLibSystem.ml;
+# TinyKernel/user/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
+# compile. Not beside TinyShell.ml: mini-ml looks for a module in the
+# directory of the file it compiles before any -I)
 $D/TinyLibSystem.$O: TinyLibHost/TinyLibSystem.ml
 	mkdir -p $D
-	$ML $INCLUDES -I TinyLibHost -o $target TinyLibHost/TinyLibSystem.ml
+	$ML -I TinyLibHost $INCLUDES -o $target TinyLibHost/TinyLibSystem.ml
+# (TinyLibHost first: the shell's TinyLibSystem is the one there)
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
-	$ML $INCLUDES -I TinyLibHost -o $target TinyShell.ml
+	$ML -I TinyLibHost $INCLUDES -o $target TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
 	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND

@@ -338,7 +338,8 @@ and atom () =
         let rec fields () =
           if accept (KW "}") then []
           else match peek () with
-            | LID l -> advance (); expect (KW "="); let e = stmt () in ignore (accept (KW ";")); (l, e) :: fields ()
+            (* { text; pos = 0 }: a field alone is the variable of its name *)
+            | LID l -> advance (); let e = if accept (KW "=") then stmt () else var l in ignore (accept (KW ";")); (l, e) :: fields ()
             | _ -> fail () in
         Record (fields (), ref [])
     | KW ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for") -> stmt ()

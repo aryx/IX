@@ -21,7 +21,12 @@ let () =
   opt (List.nth_opt [ 5; 6 ] 1); opt (List.nth_opt [ 5; 6 ] 2); print_newline ();
   strs (List.map2 ( ^ ) [ "a"; "b" ] [ "x"; "y" ]);
   (try strs (List.map2 ( ^ ) [ "a" ] []) with Invalid_argument _ -> print_endline "map2: lengths");
-  int (Option.get (Some 3)); print_newline ()
+  int (Option.get (Some 3)); print_newline ();
+  ints (List.sort compare [ 3; 1; 2; 1 ]); strs (List.sort compare [ "b"; "a"; "ab" ]);
+  strs (List.map snd (List.sort (fun (a, _) (b, _) -> compare a b) [ 2, "x"; 1, "y"; 2, "z"; 1, "w" ]));
+  opt (int_of_string_opt "42"); opt (int_of_string_opt "-7"); opt (int_of_string_opt ""); opt (int_of_string_opt "4x");
+  opt (int_of_string_opt "-"); opt (int_of_string_opt "007"); print_newline ();
+  strs [ Filename.concat "/" "ls"; Filename.concat "/bin" "ls"; Filename.concat "" "ls"; Filename.concat "a/" "b" ]
 
 let () =
   opt (String.index_opt "hello" 'l'); opt (String.index_opt "hello" 'z');

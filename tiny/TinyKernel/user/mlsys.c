@@ -16,9 +16,15 @@
 #define HEAP1 0xb0000
 #define HALF 65536
 
+// the program's arguments, for u_argc and u_arg
+int u_nargs;
+char **u_args;
+
 void
-main(void)
+main(int argc, char **argv)
 {
+	u_nargs = argc;
+	u_args = argv;
 	ml_run((value*)VSTACK, (value*)HEAP0, (value*)HEAP1, HALF, HALF);
 	flush();
 	exit(0);
@@ -143,4 +149,93 @@ value
 u_wait(value unit)
 {
 	return wait(0) * 2 + 1;
+}
+
+// what a tool asks for (TinyLibSystem.ml, tiny-shell's): the
+// program's arguments, a string each
+value
+u_argc(value unit)
+{
+	return u_nargs * 2 + 1;
+}
+
+value
+u_arg(value i)
+{
+	char *a;
+	value s;
+	int n, k;
+
+	a = u_args[i >> 1];
+	n = strlen(a);
+	s = string_alloc(n);
+	for(k = 0; k < n; k++)
+		((uchar*)s)[k] = a[k];
+	return s;
+}
+
+value
+u_flush(value unit)
+{
+	flush();
+	return unit;
+}
+
+value
+u_open(value path, value flags)
+{
+	return open((char*)path, flags >> 1) * 2 + 1;
+}
+
+value
+u_dup(value fd)
+{
+	return dup(fd >> 1) * 2 + 1;
+}
+
+value
+u_chdir(value path)
+{
+	return chdir((char*)path) * 2 + 1;
+}
+
+value
+u_getpid(value unit)
+{
+	return getpid() * 2 + 1;
+}
+
+value
+u_fork(value unit)
+{
+	return fork() * 2 + 1;
+}
+
+// the program at path, its arguments an ML list of strings (a cell is
+// a block of two words, the end is not a block; a string ends by a 0;
+// 15 at most, the kernel's limit); it returns only when it failed: -1
+value
+u_exec(value path, value args)
+{
+	char *argv[16];
+	int n;
+
+	for(n = 0; n < 15 && (args & 1) == 0; n++){
+		argv[n] = (char*)((value*)args)[0];
+		args = ((value*)args)[1];
+	}
+	argv[n] = 0;
+	return exec((char*)path, argv) * 2 + 1;
+}
+
+// a child's end waited for: its pid and, 256 times it, its status's
+// low byte; -1 without children
+value
+u_waits(value unit)
+{
+	int pid, status;
+
+	if((pid = wait(&status)) < 0)
+		return -1;
+	return (pid * 256 + (status & 255)) * 2 + 1;
 }

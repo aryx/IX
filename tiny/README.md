@@ -51,6 +51,11 @@ of the system:
 The others are the system's programs, a file each (`TinyShell`,
 `TinyC`, `TinyWindows`...).
 
+[docs/projects.md](../docs/projects.md#what-a-tiny-program-stands-on)
+has the picture: for a tool on the host, for a program in ML or in C
+on tiny-machine, and for the kernel, which of these each one stands
+on.
+
 | file | executable | its twin | the idea kept |
 |---|---|---|---|
 | `TinyBuildSystem.ml` | tiny-build | `builder/` (mini-mk, mk) | rules, `%`, stamps as digests, one pass with `-j` |

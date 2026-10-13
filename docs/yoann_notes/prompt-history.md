@@ -33813,3 +33813,51 @@ Claude began reading raspberry/Board.ml and machine/ to say what the work requir
 **Yoann:**
 
 > let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:59
+
+**Yoann:**
+
+> I'll be back in a few hours
+
+**Claude (summary):**
+
+Claude added `lib_parallel/Parallel`, a new library offering spawn, a lock, and a condition.
+Claude gave it one implementation for OCaml 5 and one for 4.14, with dune choosing between them.
+Under 4.14, the threads library dies at start in js_of_ocaml, so Parallel is a no-op lock there.
+Claude recommended keeping Parallel over mini-chrome's `Worker_spawn` with real threads, since threads gain the emulator nothing.
+Claude also added `mini-qemu -cores-parallel`, so four busy Pi 2 cores run in about one core's time.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 13:00
+
+**Yoann:**
+
+> I'll be back in a few hours
+
+**Claude (summary):**
+
+Claude said it would keep working on stage 2, the PDF writer, and leave the work uncommitted for Yoann to review.
+Claude left the changes uncommitted so Yoann could review them when back, rather than committing on its own.
+Claude was building a private copy of the games and mini-office with ix's own tools to check the PDF dependency.
+Claude was also running the existing tests that use the PDF writer, and writing the shared `Fill` module for the man reader.
+Claude reported that the `ms` reader, pictures, and tables were in progress, with the full regression run still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:38
+
+**Yoann:**
+
+> could we put lib_parallel/ under lib_core/parallel/ instead? (next to concurrency/ ) ?
+
+**Claude (summary):**
+
+Claude moved parallel/ under lib_core/parallel/, beside concurrency/, and updated its internal comments and plan_multicore.md entry.
+Claude kept the library name ix_parallel, so raspberry/dune needed no changes.
+Claude left the move uncommitted, with lib_core/dune and lib_core/README.md updated alongside the directory.
+Claude confirmed mini-qemu builds on OCaml 4.14 and 5.5.1 from the new location.
+Claude noted mini-ml is unaffected, since lib_core/mkfile builds only what units.txt lists.

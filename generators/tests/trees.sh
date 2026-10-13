@@ -23,7 +23,7 @@ W=$(mktemp -d); trap 'rm -rf $W' EXIT
 failures=0
 cd $ROOT
 
-for g in database languages/c languages/ml; do
+for g in database/sql languages/c languages/ml; do
   n=$(echo $g | tr / _)
   ref=$g/Parser.mly
   if grep -q '^(menhir' $g/dune; then ref=$W/ref_$n.mly; menhir --only-preprocess-for-ocamlyacc --unused-tokens $g/Parser.mly > $ref 2> /dev/null < /dev/null; fi
@@ -78,7 +78,7 @@ for f in $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null); 
   grep -v '^\.' $f > $W/sql/$(basename $f)
   grep -v '^\.' $f | grep ';' | split -l 1 -a 4 - $W/sql/$(basename $f .sql)-
 done
-trees sql database "database/Ast.ml" '(Lexer.state := Lexer.Initial; Ast.line := 1; Parser.main Lexer.token lexbuf)' \
+trees sql database/sql "database/sql/Ast.ml" '(Lexer.state := Lexer.Initial; Ast.line := 1; Parser.main Lexer.token lexbuf)' \
   $W/sql/* $ROOT/generators/tests/tokens/*.sql $ROOT/generators/tests/trees/*.sql
 
 # what mini-yacc doesn't read, or a grammar that names what it has not, is refused with the line

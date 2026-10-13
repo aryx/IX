@@ -52,8 +52,8 @@ echo "  raspi2b -bios, the firmware's way up: '$(run qemu-system-arm -M raspi2b 
 echo "== ix: the author's board"
 grep -m1 -o 'by the author.s word a V1.2: a BCM2837' $T/docs/plans/plan_pi2.md | sed 's/^/  plan_pi2.md: /'
 echo "== ix: a 32-bit hypervisor's costs"
-echo "  lines of machine/Arm32.ml, Mmu32.ml and raspberry/boards/Board.ml that name the hypervisor's mode: $(cat $T/machine/Arm32.ml $T/machine/Mmu32.ml $T/raspberry/boards/Board.ml | grep -ciE 'hyp|hvc|eret')"
-echo "  a word in a model is an int: $(sed -n '1,2p' $T/machine/Bits.mli | tr -d '(*' | tr -s ' \n' ' ' | sed 's/^ //;s/ plan_arm.*//') (an arm32 kernel's int has 31)"
+echo "  lines of machine/arm32/Arm32.ml, Mmu32.ml and raspberry/boards/Board.ml that name the hypervisor's mode: $(cat $T/machine/arm32/Arm32.ml $T/machine/arm32/Mmu32.ml $T/raspberry/boards/Board.ml | grep -ciE 'hyp|hvc|eret')"
+echo "  a word in a model is an int: $(sed -n '1,2p' $T/machine/core/Bits.mli | tr -d '(*' | tr -s ' \n' ' ' | sed 's/^ //;s/ plan_arm.*//') (an arm32 kernel's int has 31)"
 echo "  the Pi 2's kernel leaves that mode at its start: $(grep -c 'elr_hyp\|eret' ../lib_machine/pi1/start.s) lines of kernels/lib_machine/pi1/start.s"
 echo "== ix: the Pi 2's devices as mini-qemu has them"
 (cd $T/raspberry && wc -l interrupts/Intc.ml timer/Systimer.ml serial/Miniuart.ml serial/Pl011.ml boards/Devices.ml video/Framebuffer.ml usb/Dwc2.ml usb/Usb.ml storage/Sdhost.ml storage/Dma.ml | sed 's/^/  /')

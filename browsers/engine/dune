@@ -1,6 +1,21 @@
 ; browsers/engine: a page's boxes, their shapes, and a page read (the
 ; author's mini-chrome's src/layout, src/display, src/www and src/url,
-; its first version; README.md)
+; its first version; README.md), in folders as there (one library,
+; ix_browser_engine):
+;   layout/   a page's tree as boxes with a place and a size:
+;             Html_layout (Mosaic's way, one pass), Box_layout (CSS's
+;             boxes), Flex_layout, Grid_layout, Table_layout,
+;             Linebreak (a paragraph's lines), Hit (what is under a
+;             point)
+;   display/  the boxes as the playground's shapes: Style (a letter's
+;             look), Stroke_text and Glyph_unicode (the letters, by
+;             Hershey's pen), Browser_text (a word's width),
+;             Browser_draw, Browser_boxes, Browser_picture
+;   page/     Browser_page (a page read, laid out and drawn),
+;             Browser_forms, Browser_url, Browser_history
+; tests/ has its own stanzas and is not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_browser_engine)
  (wrapped false)

@@ -65,7 +65,7 @@ cd $ROOT
 check ml languages/ml "" "()" $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml
 # the lexer's header names Ast for its line count only
 mkdir -p $W/stub; echo 'let line = ref 1' > $W/stub/Ast.ml
-check sql database "$W/stub/Ast.ml" "Lexer.state := Lexer.Initial; Ast.line := 1" $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null) $ROOT/generators/tests/tokens/*.sql
+check sql database/sql "$W/stub/Ast.ml" "Lexer.state := Lexer.Initial; Ast.line := 1" $(find database/tests ~/github/chidb/tests -name '*.sql' 2>/dev/null) $ROOT/generators/tests/tokens/*.sql
 
 # what mini-lex doesn't read is refused, with the line (the one read to, for what is missing)
 refused() {

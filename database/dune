@@ -1,16 +1,22 @@
+; database: mini-chidb, after chidb, in folders (one library, ix_db;
+; Shell, CLI and Main are here):
+;   storage/  the file: Pager (its pages), Btree (the tables and the
+;             indexes in them), Cursor (a place in one), Record (a row
+;             as bytes)
+;   dbm/      the database machine SQL is compiled to: Bytecode (its
+;             instructions), Dbm (it run), Dbmfile (the course's tests
+;             of it, a file each)
+;   sql/      SQL read and compiled: Lexer, Parser (their stanzas are
+;             in its dune), Ast, Show_ast, Sql, Schema (the tables a
+;             file declares), Codegen, Optimizer
+; tests/ has its own stanzas and is not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_db)
  (wrapped false)
  (modules Pager Record Btree Cursor Bytecode Dbm Dbmfile Ast Show_ast Lexer Parser Sql Schema Codegen Optimizer Shell CLI)
  (libraries ix_core fpath unix caps logs))
-
-(ocamllex Lexer)
-
-; the grammar is menhir's syntax (list(x), option(x)...), which mini-yacc
-; reads too: menhir here, mini-yacc in the mkfile
-(menhir
- (modules Parser)
- (flags --unused-tokens))
 
 (executable
  (name Main)

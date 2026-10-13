@@ -6,12 +6,12 @@ TOP=../../../..
 D=$B/languages/smalltalk/hosts/draw
 ST=$B/languages/smalltalk
 G=$TOP/lib_graphics
-INCLUDES=-I . -I $G -I ../.. -I $ST $STDI
+INCLUDES=-I . -I $G -I ../.. -I ../../compiler -I ../../vm -I ../../graphics -I $ST $STDI
 LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
 SMALLTALK=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel Squeak
 STOBJS=${SMALLTALK:%=$ST/%.$O}
-LOCAL=`{ls *.ml *.mli ../../*.ml ../../*.mli ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
+LOCAL=`{ls *.ml *.mli ../../*.ml ../../*.mli ../../compiler/*.ml* ../../vm/*.ml* ../../graphics/*.ml* ../../../../lib_graphics/*.ml ../../../../lib_graphics/*.mli}
 
 all:V: $D/squeak
 

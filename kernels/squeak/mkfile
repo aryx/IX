@@ -44,7 +44,7 @@ SMALLTALK=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bi
 LOCALUNITS=Machine Usbhost Which Host Main
 UNITS=Machine Usbhost $SMALLTALK Which Host Main
 LIBDIRS=system core base collections printing parsing concurrency
-MLI=-I . -I $D -I $M -I $TOP/languages/smalltalk -I $ST ${LIBDIRS:%=-I $TOP/lib_core/%}
+MLI=-I . -I $D -I $M -I $TOP/languages/smalltalk -I $TOP/languages/smalltalk/compiler -I $TOP/languages/smalltalk/vm -I $TOP/languages/smalltalk/graphics -I $ST ${LIBDIRS:%=-I $TOP/lib_core/%}
 STDOBJS=${STD:%=$L/%.$O}
 
 # the C: the board's and the kernels' (machine/), over mini-ml's runtime

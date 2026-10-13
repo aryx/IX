@@ -1,12 +1,13 @@
 # mini-smalltalk, built by ix's tools. The system's text (kernel/*.st)
 # is in the program as strings: St_kernel.ml, made here as dune makes it
-# (the same bytes), in the order the system is brought up in.
+# (the same bytes), in the order the system is brought up in. The units
+# are in folders (compiler, vm, graphics).
 TOP=../..
 DIR=languages/smalltalk
 PROG=mini-smalltalk
 SRC=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot St_kernel Squeak CLI Main
-LOCAL=`{ls *.ml *.mli}
-LIBI=
+LOCAL=`{ls *.ml *.mli compiler/*.ml* vm/*.ml* graphics/*.ml*}
+LIBI=-I compiler -I vm -I graphics
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
@@ -30,3 +31,10 @@ $D/St_kernel.ml: $ST mkfile
 	 echo 'let mini_morphic = squeak_base @ ['; files $MINI) > $target
 $D/St_kernel.$O: $D/St_kernel.ml $LOCAL
 	$ML $INCLUDES -o $target $D/St_kernel.ml
+
+# the folders' units: said whole (a second rule with % for every unit,
+# mk refuses), each found by its name
+FOLDED=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot
+${FOLDED:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done

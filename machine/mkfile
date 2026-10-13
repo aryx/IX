@@ -1,18 +1,20 @@
-# mini-5i, built by ix's tools
+# mini-5i, built by ix's tools; its units are in folders (core, arm32,
+# arm64, process)
 TOP=..
 DIR=machine
 PROG=mini-5i
 SRC=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Show_arm32 Show_arm64 Host_calls Linux Plan9 Host Cpu CLI Main
-LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
+LOCAL=`{ls *.ml *.mli core/*.ml* arm32/*.ml* arm64/*.ml* process/*.ml* compat/*.ml compat/*.mli}
 GEN=
-LIBI=-I compat
+LIBI=-I core -I arm32 -I arm64 -I process -I compat
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# compat/'s units: said whole (a second rule with % for every unit, mk refuses)
-COMPAT=Show_arm32 Show_arm64
-${COMPAT:%=$D/%.$O}: $LOCAL
+# the folders' units and compat/'s: said whole (a second rule with % for
+# every unit, mk refuses), each found by its name
+FOLDED=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Host_calls Linux Plan9 Host Show_arm32 Show_arm64
+${FOLDED:%=$D/%.$O}: $LOCAL
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t compat/`basename $t .$O`.ml || exit 1; done
+	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done

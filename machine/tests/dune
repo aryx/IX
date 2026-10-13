@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of machine's folders)
+(include_subdirs no)
+
 (executable
  (name Disasm)
  (modules Disasm)

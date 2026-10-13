@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of database's folders)
+(include_subdirs no)
+
 (executable
  (name Btree_check)
  (modules Btree_check)

@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of languages/smalltalk's folders)
+(include_subdirs no)
+
 ; mini-smalltalk's tests, the playground's: an expression and its answer, a
 ; method's bytes, the Display after a cycle
 (executable

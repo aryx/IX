@@ -1,3 +1,20 @@
+; version_control: mini-git, mini-diff and mini-merge3, after git9, in
+; folders (one library, ix_vcs; the three mains and CLI are here):
+;   objects/   what a repository is made of: Hash (SHA-1 names), Object
+;              (blobs, trees, commits, tags), Loose (an object a file),
+;              Delta, Pack and Packer (objects packed, and their
+;              deltas), Store (an object wherever it is)
+;   repo/      the repository around them: Repo, Refs, Conf (its
+;              configuration), Query (the revision language), Fs (its
+;              paths, as git9's git/fs), Index9 (the staging file),
+;              Walk (the work tree against the index and a commit)
+;   diff/      Diff, Merge3, and Difftool: the two other programs
+;   wire/      Proto (git's protocol), Get, Send, Serve
+;   commands/  git9's commands (Commands), Save (a commit made), Log,
+;              Flags (Plan 9's ARGBEGIN)
+; tests/ has its own stanzas and is not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_vcs)
  (wrapped false)

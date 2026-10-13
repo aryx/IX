@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of languages/smalltalk's folders)
+(include_subdirs no)
+
 ; mini-squeak in a window on Linux (SDL): Window, over Squeak. Dune's
 ; alone: SDL is outside what mini-ml compiles, as mini-qemu's window
 (executable

@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of machine's folders)
+(include_subdirs no)
+
 ; what mini-5i has only to be compared with binutils' objdump: an
 ; instruction printed (and -t's trace)
 (library

@@ -5,15 +5,15 @@
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/engine/tests
-DIRS=. .. ../../html ../../css
-INCLUDES=-I . -I .. -I ../../html -I ../../css $STDI
+DIRS=. ../layout ../../html ../../css
+INCLUDES=-I . -I ../layout -I ../../html -I ../../css $STDI
 # (each before the ones that name it)
 HTML=Dtd Dom Entities Charset Html_lexer Html_tree Forms Line_mode
 CSS=Css_syntax Css_values Looks Selectors Ua_sheet Cascade Css_grid Computed Css
 ENGINE=Flex_layout Grid_layout Table_layout Html_layout Hit Box_layout
 LIB=$HTML $CSS $ENGINE
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls Boxes.ml ../*.ml ../*.mli ../../html/*.ml ../../html/*.mli ../../css/*.ml ../../css/*.mli}
+LOCAL=`{ls Boxes.ml ../layout/*.ml ../layout/*.mli ../../html/*.ml ../../html/*.mli ../../css/*.ml ../../css/*.mli}
 
 all:V: $D/boxes
 

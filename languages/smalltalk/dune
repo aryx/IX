@@ -1,13 +1,24 @@
 ; mini-smalltalk (docs/plans/plan_system_squeak.md): Smalltalk-80 from the
-; Blue Book, after the author's playground's languages/smalltalk: St_lexer,
-; St_ast, St_parse (the text read), St_chunk (the file format), St_memory
-; (the object table), St_class (a class as the machine reads it),
-; St_bytecode (the instruction set, a CompiledMethod), St_compile (the
-; tree to bytecodes), St_interp (the interpreter: contexts, sends, returns,
-; processes), St_primitives, St_boot (the kernel/*.st files bootstrapped
-; into a running system), St_debug (what a debugger asks of a suspended
-; process), St_image (the whole memory saved and loaded), St_bitblt (Form
-; and BitBlt, the display), St_colorblt (the same in colour, Squeak's).
+; Blue Book, after the author's playground's languages/smalltalk, in
+; folders (one library, ix_smalltalk; Squeak, the kernel's text
+; St_kernel, CLI and Main are here):
+;   compiler/  the text read and compiled: St_lexer, St_ast, St_parse,
+;              St_chunk (the file format), St_bytecode (the instruction
+;              set, a CompiledMethod), St_compile (the tree to
+;              bytecodes)
+;   vm/        the virtual machine: St_memory (the object table),
+;              St_class (a class as the machine reads it), St_interp
+;              (the interpreter: contexts, sends, returns, processes),
+;              St_primitives, St_boot (the kernel/*.st files
+;              bootstrapped into a running system), St_debug (what a
+;              debugger asks of a suspended process), St_image (the
+;              whole memory saved and loaded)
+;   graphics/  St_bitblt (Form and BitBlt, the display), St_colorblt
+;              (the same in colour, Squeak's)
+; kernel/ is the system's own text; highlight/, hosts/ and tests/ have
+; their own stanzas and are not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_smalltalk)
  (wrapped false)

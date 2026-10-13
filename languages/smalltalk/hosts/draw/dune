@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of languages/smalltalk's folders)
+(include_subdirs no)
+
 ; mini-squeak in a window of mini-rio's, under mini-9pi (Plan 9's draw
 ; device, by lib_graphics): built for Plan 9 by the mkfile (mini-mk O=5
 ; OS=plan9); here dune only checks its types

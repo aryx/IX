@@ -446,7 +446,7 @@ find. Each change apart, behind a switch, `Arm32.execute` and
 `Board.run`'s path untouched ("keep the original working and simple
 code intact"):
 
-- `machine/Arm32_fast.ml` (new, `on`): the data-processing
+- `machine/arm32/Arm32_fast.ml` (new, `on`): the data-processing
   instructions, the branches and the block transfers with nothing
   allocated; everything else is `Arm32.execute`'s. Its two closures
   at each data-processing instruction and its list at each block load

@@ -13,7 +13,7 @@
  *
  * The widths must make 32. Every constant written stays below 2^30, so
  * the code means the same where an int has 32 bits (js_of_ocaml:
- * machine/Bits.mli).
+ * machine/core/Bits.mli).
  *
  * What is written for it, mini-ml -pp's output (the fields here are
  * an ARM data-processing instruction's, cut short):

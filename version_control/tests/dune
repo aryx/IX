@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of version_control's folders)
+(include_subdirs no)
+
 (executable
  (name Objects_check)
  (modules Objects_check)

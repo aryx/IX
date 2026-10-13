@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of browsers/engine's folders)
+(include_subdirs no)
+
 ; the unit tests of browsers/engine (Testo): dune's only.
 ; mini-chrome's tests/layout, its first version
 (executable

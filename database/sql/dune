@@ -1,0 +1,7 @@
+(ocamllex Lexer)
+
+; the grammar is menhir's syntax (list(x), option(x)...), which mini-yacc
+; reads too: menhir here, mini-yacc in the mkfile
+(menhir
+ (modules Parser)
+ (flags --unused-tokens))

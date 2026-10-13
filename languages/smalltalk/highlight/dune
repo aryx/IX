@@ -1,3 +1,6 @@
+; (its own stanzas, not a part of languages/smalltalk's folders)
+(include_subdirs no)
+
 ; languages/smalltalk/highlight: a Smalltalk file's colours (the
 ; author's playground's languages/smalltalk/Highlight_st,
 ; docs/plans/plan_emacs.md). For mini-emacs.

@@ -52,10 +52,10 @@ echo "  the pages a guest gives its processes: $(grep -h '^let pages' ../lib_mac
 echo "== ix: mini-qemu's Pi 4, a device a module (raspberry/)"
 (cd $T/raspberry && wc -l interrupts/Gic.ml serial/Pl011.ml boards/Devices.ml video/Framebuffer.ml usb/Dwc2.ml usb/Usb.ml storage/Sdhost.ml storage/Dma.ml boards/Pi4.ml | sed 's/^/  /')
 echo "  they name of the host: $(grep -lE 'Unix\.|Sdl|Tsdl' $T/raspberry/*/{Gic,Pl011,Devices,Framebuffer,Dwc2,Usb,Sdhost,Dma}.ml 2>/dev/null | tr '\n' ' ')(nothing, if empty)"
-echo "== ix: EL2 in mini-qemu's processor (machine/Arm64.ml)"
-echo "  registers of EL2 it knows: $(grep -o '"[a-z0-9_]*_el2"' $T/machine/Arm64.ml | sort -u | tr -d '"' | tr '\n' ' ')"
-echo "  an exception's target: $(grep -o 'let target = max[^i]*' $T/machine/Arm64.ml)"
-echo "  translation: $(grep -o 'if st.mmu && st.el < 2 then' $T/machine/Arm64.ml) (one stage, none at EL2)"
-echo "  stage 2's registers (vttbr, vtcr, hpfar): $(grep -c 'vttbr\|vtcr\|hpfar' $T/machine/Arm64.ml) lines"
+echo "== ix: EL2 in mini-qemu's processor (machine/arm64/Arm64.ml)"
+echo "  registers of EL2 it knows: $(grep -o '"[a-z0-9_]*_el2"' $T/machine/arm64/Arm64.ml | sort -u | tr -d '"' | tr '\n' ' ')"
+echo "  an exception's target: $(grep -o 'let target = max[^i]*' $T/machine/arm64/Arm64.ml)"
+echo "  translation: $(grep -o 'if st.mmu && st.el < 2 then' $T/machine/arm64/Arm64.ml) (one stage, none at EL2)"
+echo "  stage 2's registers (vttbr, vtcr, hpfar): $(grep -c 'vttbr\|vtcr\|hpfar' $T/machine/arm64/Arm64.ml) lines"
 echo "== ix: what the hypervisor's own drivers would be"
 wc -l ../lib_machine/Usbhost.ml ../lib_machine/usb.c ../lib_machine/Screen.ml | sed 's/^/  /'

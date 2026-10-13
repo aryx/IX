@@ -28,7 +28,7 @@ commit() {
 echo "A repository for mini-git's tests." > README.md
 commit "the README"
 mkdir src
-for f in "$ROOT"/version_control/*.ml; do
+for f in "$ROOT"/version_control/*.ml "$ROOT"/version_control/[!t]*/*.ml; do
   cp "$f" src/
   echo "$(basename "$f")" >> history.txt
   cat "$f" >> all.ml

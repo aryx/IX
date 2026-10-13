@@ -62,7 +62,7 @@ print, was right.
 
 **Workaround in ix**: read the byte once into a variable
 (`let c = Char.code (Bytes.get b i) in ...`), so that nothing is read
-again after the allocation (`database/Record.ml`, `types`, with a
+again after the allocation (`database/storage/Record.ml`, `types`, with a
 `claude:` comment). Other code may have the pattern; nothing in the
 compiler flags turns the sharing off (`ocamlopt -help` has no such
 option).

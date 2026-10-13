@@ -1,4 +1,20 @@
-; claude: mini-5i (plan_arm.md): the CPU cores, the process, the CLI
+; mini-5i (plan_arm.md): the CPU cores, the process, the CLI, in
+; folders (the library ix_machine; Cpu, CLI and Main are here):
+;   core/     what the two processors stand on: Bits (a word of 32 or
+;             64 bits in an int), Memory (the address space, its RAM
+;             and its devices)
+;   arm32/    Arm32_isa (the state), Arm32 (decode and execute),
+;             Arm32_fast (the instructions run often, decoded once),
+;             Mmu32 (the ARMv6 MMU: mini-qemu's)
+;   arm64/    Arm64_isa, Arm64, Mmu64
+;   process/  a program run as a process of the host's: Elf (it
+;             loaded), Host_calls (what a personality asks of the
+;             host), Linux and Plan9 (the two personalities: their
+;             system calls), Host (Host_calls by Unix)
+; compat/ (the printer of an instruction) and tests/ have their own
+; stanzas and are not of the folders.
+(include_subdirs unqualified)
+
 (library
  (name ix_machine)
  (wrapped false)

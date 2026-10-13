@@ -1,16 +1,32 @@
 # mini-chidb, built by ix's tools: its lexer by mini-lex, its grammar by
-# mini-yacc
+# mini-yacc; its units are in folders (storage, dbm, sql)
 TOP=..
 DIR=database
 PROG=mini-chidb
 SRC=Pager Record Btree Cursor Bytecode Dbm Dbmfile Ast Show_ast Parser Lexer Sql Schema Codegen Optimizer Shell CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll}
-LIBI=
+LOCAL=`{ls *.ml *.mli storage/*.ml* dbm/*.ml* sql/*.ml*}
+LIBI=-I storage -I dbm -I sql
 LIBUNITS=
 LIBOBJS=
 <$TOP/mkfiles/mkconfig
 GEN=$B/database/Parser.ml $B/database/Lexer.ml
 <$TOP/mkfiles/mkprog
+
+# the folders' units: said whole (a second rule with % for every unit,
+# mk refuses), each found by its name
+FOLDED=Pager Record Btree Cursor Bytecode Dbm Dbmfile Ast Show_ast Sql Schema Codegen Optimizer
+${FOLDED:%=$D/%.$O}: $LOCAL $GEN
+	mkdir -p $D
+	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done
+
+# the lexer and the grammar, which are in sql/ (mkprog's rules are for
+# this directory's)
+$D/Parser.ml: sql/Parser.mly
+	mkdir -p $D
+	$YACC -b $D/Parser sql/Parser.mly
+$D/Lexer.ml: sql/Lexer.mll
+	mkdir -p $D
+	$LEX -o $target sql/Lexer.mll
 
 # the units mini-yacc and mini-lex made, by their names
 $D/Parser.$O: $D/Parser.ml $LOCAL

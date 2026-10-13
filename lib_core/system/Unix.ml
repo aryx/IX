@@ -426,6 +426,19 @@ let accept fd =
   Bytes.set_int32_le len 0 112l;
   let c = check "accept" "" (sys (285, 202) (i fd) (by b) (by len) z z z) in
   c, unpack b (Int32.to_int (Bytes.get_int32_le len 0))
+(* a datagram and who sent it; one sent to an address (a socket that
+ * is not connected: a UDP server's) *)
+type msg_flag = MSG_OOB | MSG_DONTROUTE | MSG_PEEK
+let msg_flags l = List.fold_left (fun a f -> a lor (match f with MSG_OOB -> 1 | MSG_PEEK -> 2 | MSG_DONTROUTE -> 4)) 0 l
+let recvfrom fd buf ofs len flags =
+  let d = Bytes.create len and b = Bytes.make 112 '\000' and alen = Bytes.create 4 in
+  Bytes.set_int32_le alen 0 112l;
+  let n = check "recvfrom" "" (sys (292, 207) (i fd) (by d) (i len) (i (msg_flags flags)) (by b) (by alen)) in
+  Bytes.blit d 0 buf ofs n;
+  n, unpack b (Int32.to_int (Bytes.get_int32_le alen 0))
+let sendto_substring fd str ofs len flags addr =
+  let a = pack addr in
+  check "sendto" "" (sys (290, 206) (i fd) (s (String.sub str ofs len)) (i len) (i (msg_flags flags)) (s a) (i (String.length a)))
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL
 let shutdown fd how = unit "shutdown" "" (sys (293, 210) (i fd) (i (match how with SHUTDOWN_RECEIVE -> 0 | SHUTDOWN_SEND -> 1 | SHUTDOWN_ALL -> 2)) z z z z)
 

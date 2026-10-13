@@ -203,6 +203,11 @@ type socket_bool_option = SO_REUSEADDR
 val setsockopt : file_descr -> socket_bool_option -> bool -> unit
 val accept : file_descr -> file_descr * sockaddr
 val connect : file_descr -> sockaddr -> unit
+(* a datagram read with its sender's address, and one sent to an
+ * address: a socket that is not connected (a UDP server's) *)
+type msg_flag = MSG_OOB | MSG_DONTROUTE | MSG_PEEK
+val recvfrom : file_descr -> bytes -> int -> int -> msg_flag list -> int * sockaddr
+val sendto_substring : file_descr -> string -> int -> int -> msg_flag list -> sockaddr -> int
 type shutdown_command = SHUTDOWN_RECEIVE | SHUTDOWN_SEND | SHUTDOWN_ALL
 val shutdown : file_descr -> shutdown_command -> unit
 

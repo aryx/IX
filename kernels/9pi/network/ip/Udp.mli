@@ -21,9 +21,25 @@
  * its plan9/Udp), since a connection's three packets of handshake
  * would cost more than the question.
  *
- * Not done: an announced port's datagrams with their sender's address
- * before the data (Plan 9's "headers"), so no server; a datagram
- * larger than a frame (no fragments, as Ip).
+ * A server has no one to connect to: it announces a port ("announce
+ * *!7777") and asks for headers ("headers"), and then each read is a
+ * datagram of anyone's behind 52 bytes that say whose, and each write
+ * goes to the one its own 52 bytes name:
+ *
+ *     0   the remote address   16 bytes: IPv6's size, an IPv4 address
+ *                              its last 4 after ten 0 and two 0xff
+ *     16  the local address    16
+ *     32  the interface's      16
+ *     48  the remote port      2
+ *     50  the local port       2
+ *
+ * so one file answers many clients, where a socket has recvfrom and
+ * sendto, two more calls. A game's host is the user here
+ * (lib_networking's plan9/Udp, under the playground's Multiplayer).
+ *
+ * Not done: an announced port without headers (Plan 9 makes a new
+ * conversation for each sender, to be listened for); a datagram larger
+ * than a frame (no fragments, as Ip).
  *
  * cs-history:
  * UDP is what was left when TCP was cut out of IP in 1978: David

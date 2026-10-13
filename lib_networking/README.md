@@ -1,4 +1,4 @@
-# lib_networking: 9P, and the web's protocols
+# lib_networking: 9P, the web's protocols, and a game's netcode
 
 - `9p/`: 9P2000, Plan 9's file protocol; ix's own
   ([`plan_rio.md`](../docs/plans/done/plan_rio.md)).
@@ -8,6 +8,9 @@
   the author's playground's `libs/networking` (`~/playground`), what
   mini-chrome's first version stood on. `networking/` has the
   programs, mini-curl and mini-httpd.
+- `netcode/`: a game played on several computers, the playground's
+  `libs/networking/netcode`: under `lib_playground`'s `Multiplayer`,
+  for `games/arcade/TinyTronscroll` (below).
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
@@ -69,7 +72,42 @@ cookies`), a date's seconds in floats. `Http_client`'s `options`
 (`said`, `keep`, `jar`) and its `_with` functions are ix's. Not
 taken: Brotli, Zstandard, `Http_cache`, `Http_request`, WebSocket.
 
+## The netcode (2026-10-13)
+
+`netcode/`, against the playground at `514f259c`: 7 modules, 626 lines
+of `.ml` and 550 of `.mli` there, 617 and 551 here.
+
+| module | there | what |
+|---|---|---|
+| `Wire` | `libs/networking/protocols` | a message's bytes: varints, zigzag, garbage refused |
+| `Inputs` | `libs/networking/netcode` | the players' inputs exchanged, their acks and checksums |
+| `Lockstep` | the same | wait for every input; an input delay |
+| `Rollback` | the same | guess the missing ones, play again from a wrong guess |
+| `Checksum` | the same | FNV-1a of a model's bytes: do two games agree |
+| `Sim_net` | the same | a network in one program: latency, jitter, loss, from a seed |
+| `Transport` | `libs/networking/protocols` | where a peer's packets go |
+
+Changed: `Rollback.create`'s two optional arguments are said; two
+`Option.value ~default` in `Sim_net`. `Transport` is the playground's
+type, and under it the playground's `unix/Udp`'s host and join over
+ix's `Udp` (below): `connect` is called, where a platform of the
+playground's installs it; no relay (a WebSocket), no TLS. Not taken:
+`Snapshot`, `Prediction`, `Interpolation` (a server that owns the
+game: `netcode=server`, in one window only there too), the relay and
+its server, their tests (`Unit_lockstep`, `Unit_rollback`,
+`Unit_sim_net`, `Unit_wire`, `Unit_checksum`: here
+`games/tests/frames.sh` has the playground's golden frames of the game
+over them, and `games/tests/network.sh` two programs over UDP).
+
 ## ix's own
+
+- `tcp/Udp`'s `host`, `join`, `send`, `arrived`, `other`: a game's
+  socket, never waited on. Linux's asks select before each read; Plan
+  9's (`tcp/plan9/Udp`) is a conversation of `/net/udp`, announced
+  with headers for the host, read by a process of its own (lib_core's
+  `Source`). lib_core's `Unix` gained `recvfrom` and
+  `sendto_substring` for it, and mini-9pi's UDP `announce` and
+  `headers` (`kernels/9pi/network/ip/Udp`).
 
 - `tcp/Dns` (62 lines): a name's addresses asked of the name server of
   `/etc/resolv.conf`, one UDP packet. mini-ml's `Unix.getaddrinfo` has
@@ -92,9 +130,9 @@ taken: Brotli, Zstandard, `Http_cache`, `Http_request`, WebSocket.
 
 Of the files the first version stood on: `Http_request` (the same
 request without blocking, 217 lines) and `Worker` (a pool of threads,
-62): the plan's decision 6, "no threads at first"; `Transport` (32).
+62): the plan's decision 6, "no threads at first".
 And the rest of `libs/networking`: WebSocket, IRC, mail (SMTP, POP3,
-MIME), the games' netcode, the servers, `Tls_tunnel`, their tests
+MIME), the netcode's server (above), the servers, `Tls_tunnel`, their tests
 (`unix/tests`: here `networking/tests/tls.sh` does `Unit_tls_client`'s
 work with the program).
 

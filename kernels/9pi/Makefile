@@ -373,6 +373,32 @@ run-mini-ix-net:
 check-ix-net: ix-net run-qemu-ix-net run-mini-ix-net
 	$(call unwarned,$(B)/qemu-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl over the kernel's TCP, from the host's web server, under QEMU"
 	$(call unwarned,$(B)/mini-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl under mini-qemu"
+# a game for two computers (the playground's TinyTronscroll, over its
+# Multiplayer and lib_networking/netcode): ix-usb's image and the game
+# in its bootdir. check-tron: the game in the kernel plays with the
+# same game on this machine (mini-ml's for Linux, games/arcade's: the
+# two then sum the same bytes of their models), over UDP through
+# QEMU's user network, once as the one that joins (10.0.2.2 is this
+# machine: /net/udp's connect) and once as the host (the port
+# forwarded to the guest: announce, and headers); then two guests, one
+# that hosts and one that joins, joined by QEMU's socket network as
+# two boards by a cable (each asks the other's Ethernet address: ARP
+# between two mini-9pi's). Each says its ticks
+# and whether the two games agree (the flag ticks=on); the guest's on
+# its console, kept in $(B)/qemu-tron-*.txt. No recorded console: how
+# many ticks are played in the time is the machine's.
+IMAGE_IXT = $(basename $(IMAGE))-ixt$(suffix $(IMAGE))
+QEMU_BOOT_IXT = $(subst $(IMAGE),$(IMAGE_IXT),$(QEMU_BOOT))
+TRON = $(IX)/_mk/7/games/arcade/tinytronscroll
+ix-tron: ix
+	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=7 > /dev/null
+	$(MAKE) B=build/$(BOARD)$(PIX)-ixt IMAGE=$(IMAGE_IXT) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd tronscroll=$(IX9)/games/arcade/tinytronscroll" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXT)
+check-tron: ix-tron
+	mkdir -p $(B)
+	tests/tron.sh $(B) $(TRON) join -- $(QEMU) $(QEMU_BOOT_IXT) $(USB) -device usb-net,netdev=n0 -netdev user,id=n0
+	tests/tron.sh $(B) $(TRON) host -- $(QEMU) $(QEMU_BOOT_IXT) $(USB) -device usb-net,netdev=n0 -netdev user,id=n0,hostfwd=udp:127.0.0.1:7777-:7777
+	tests/tron.sh $(B) $(TRON) pair -- $(QEMU) $(QEMU_BOOT_IXT) $(USB)
 # the sound (plan_audio.md, stage 3): ix's image and tests/tone in its
 # bootdir. check-audio: under mini-qemu alone (QEMU's Pi has no PWM),
 # tests/session-audio.cmds: the tone written to /dev/audio, then again
@@ -781,7 +807,8 @@ endef
 #                           principia-softwarica.org: its Developer
 #                           tools): emacs, drscheme, turbopascal,
 #                           squeak, scheme, pascal, prolog
-#                games      tetris, wolfenstein, cameltry, breakout, and their
+#                games      tetris, wolfenstein, cameltry, breakout, tronscroll
+#                           (for two boards: its network), and their
 #                           -soft variants
 #                utilities  utilities/'s, in its directories (a
 #                           directory with more than ten programs is
@@ -828,7 +855,7 @@ CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/dr
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog
 CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand missile-soft=$(IX9)/games/shmup-soft/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
-  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout
+  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout tronscroll=$(IX9)/games/arcade/tinytronscroll
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
   mtime=$(IX9)/utilities/files/mini-mtime walk=$(IX9)/utilities/files/mini-walk

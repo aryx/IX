@@ -5,4 +5,4 @@
 (library
  (name ix_playground_ppm)
  (wrapped false)
- (libraries ix_playground ix_playground_render ix_graphics_software ix_core caps fpath))
+ (libraries ix_playground ix_playground_render ix_graphics_software ix_core caps fpath unix))

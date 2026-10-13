@@ -25,7 +25,7 @@ folders:
 | `core/` | `libs/core` | Elm's: `Basics`, `Color`, `Time`, `Cmd`, `Sub`, `Set` |
 | `random/` | `libs/random` | `Lehmer` |
 | `layers/` | `playground/layers` | what games are made of: `Camera2d`, `Scene2d`, `Sprite`, `Tilemap` |
-| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`), `Juice` (`lib_juice`) |
+| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`), `Juice` (`lib_juice`), `Multiplayer` (`lib_networking/netcode`) |
 | `ways/` | `playground/ways` | `Bigbang`, How to Design Programs' world |
 | `platforms/Shape_render_software` | `playground/platforms/software` | shapes to pixels, over `lib_graphics/software` |
 | `platforms/Input_script` | `playground/platforms/native_common` | the keys and the mouse of a script, for the tests |
@@ -67,6 +67,17 @@ PC:
   as it is played** (`lib_audio`'s `Synth.pieces`), not whole before
   its first sample; its optional arguments said, its constructors with
   their module. The same samples come out (`games/tests/audio.sh`).
+
+- `Multiplayer` (2026-10-13): its optional arguments said (`network`
+  an option, `split`); the network's capability is one that forks too
+  (Plan 9's packets are read by a process); the rollback's peer, which
+  its own callback names, is a reference set after, not a `lazy`
+  value; no `netcode=server` (its `Snapshot` and `Prediction`, and the
+  server's screen of `net=simulate`) nor `net=relay`; the flag
+  `ticks=on` (each second of a game over a network, its tick and
+  whether the two agree, on the standard error) is ix's, for
+  `games/tests/network.sh`. The ppm platform's `pace=n` (frames by the
+  clock) is for the same.
 
 ## What is ix's own
 

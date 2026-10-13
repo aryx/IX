@@ -372,6 +372,21 @@ value clock_rate(value id)
   return Val_long(ok ? (hz & 0x3fffffff) : 0);
 }
 
+/* A byte of the board's Ethernet address (the tag 0x00010003, get
+ * board MAC address: six bytes, the first of the answer's two words
+ * and half of the second), or -1 when the firmware does not say. The
+ * address is the firmware's to give: the boards' adapter (SMSC's
+ * LAN9512 and LAN9514) has no memory of its own for one, and 9pi asks
+ * the same (vcore.c's getethermac). */
+value board_mac(value which)
+{
+  int ok;
+  unsigned i = Long_val(which);
+  property(0x00010003, 0, 0, &ok);
+  if (!ok || i > 5) return Val_long(-1);
+  return Val_long((vcreq[5 + i / 4] >> (8 * (i % 4))) & 0xff);
+}
+
 /* The board's revision (the tag 0x00010002, get board revision: one
  * word), or 0 when the firmware does not say. */
 value board_rev(value unit)

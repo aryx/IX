@@ -293,6 +293,14 @@ external clock_rate : int -> int = "clock_rate"
  * of the jack's two pins is the left ear: mini-9pi's Devaudio). *)
 external board_rev : unit -> int = "board_rev"
 
+(* The board's Ethernet address, a byte at a time ([board_mac 0] the
+ * first of its six), -1 when the firmware does not say. A Pi's
+ * adapter has no memory for its address (a PC's card has an EEPROM):
+ * the firmware makes it from the board's serial number, behind the
+ * Raspberry Pi Foundation's three bytes (b8:27:eb), and the kernel
+ * asks for it and tells the adapter (mini-9pi's Etherusb). *)
+external board_mac : int -> int = "board_mac"
+
 (* The firmware's revision, the second its files were built at (since
  * 1970; 346337 under the emulators), in two halves, a word of 32 bits
  * not fitting an int of 31: [firmware_rev 0] its low 16 bits,

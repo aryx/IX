@@ -1,0 +1,16 @@
+; TinyTronscroll in a window on Linux (SDL): ../TinyTronscroll.ml, the
+; same text, linked with the platform that has a window
+; (lib_playground/platforms/sdl), for a game against another window,
+; another computer, or a board that runs mini-9pi. Dune's alone: SDL
+; is outside what mini-ml compiles.
+;   dune exec games/arcade/sdl/TinyTronscroll.exe                        (two on one keyboard)
+;   dune exec games/arcade/sdl/TinyTronscroll.exe -- net=host bind=0.0.0.0
+;   dune exec games/arcade/sdl/TinyTronscroll.exe -- net=join host=192.168.9.1
+; (against mini-ml's program on a board the game plays and says DESYNC:
+; a checksum is Marshal's bytes, the same by one compiler only.
+; Multiplayer.mli)
+(copy_files ../TinyTronscroll.ml)
+(executable
+ (name TinyTronscroll)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_playground ix_playground_sdl ix_core caps unix))

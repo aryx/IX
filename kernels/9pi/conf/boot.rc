@@ -101,14 +101,34 @@ if not echo kernel > '#u/usb/ctl'
 # device, as -device usb-net gives an emulator one): IP's files and the
 # interface's at /net, the interface given to IP. Its address: under an
 # emulator (no speed measured, above) the one QEMU's and mini-qemu's
-# network gives every guest, with its gateway and its name server; on a
-# board nothing yet (no DHCP: ipconfig is not ix's). Then the clock from
-# the network, when mini-timesync is there and a server answers: a
-# certificate's dates are checked against it.
+# network gives every guest, with its gateway and its name server.
+# Then the clock from the network, when mini-timesync is there and a
+# server answers: a certificate's dates are checked against it.
+# On a board there is no DHCP (ipconfig is not ix's), and the address
+# is one that needs nobody: the card's, when its FAT partition has an
+# ip.txt (a line, an address and a mask: written from any computer),
+# else the board's kind's, 192.168.9.1 a Pi 1 and 192.168.9.2 a Pi 2
+# (192.168.9.3 another). So two boards joined by one cable are a
+# network with nothing typed, and each knows where the other is:
+#	tronscroll 'net=host'                       on the Pi 1
+#	tronscroll 'net=join' 'host=192.168.9.1'    on the Pi 2
+# (two boards of one kind: an ip.txt on one's card). No gateway, no
+# name server: the cable's other end is all there is.
+# (a board's adapter is behind its hub, which usbd, started above, is
+# still going through: waited for, some seconds)
+if(! ~ $cpu(3) 0) for(i in 1 2 3 4 5) if(! ls '#l0/ether0' > /dev/null >[2] /dev/null) sleep 1
 if(ls '#l0/ether0' > /dev/null >[2] /dev/null){
 	bind -a '#I' /net
 	bind -a '#l0' /net
 	echo bind ether /net/ether0 > /net/ipifc/clone
+	if(! ~ $cpu(3) 0){
+		ip=(192.168.9.3 255.255.255.0)
+		if(~ $cpu(2) 1176JZF-S) ip=(192.168.9.1 255.255.255.0)
+		if(~ $cpu(2) Cortex-A7) ip=(192.168.9.2 255.255.255.0)
+		if(ls /mnt/fat/ip.txt > /dev/null >[2] /dev/null) ip=`{cat /mnt/fat/ip.txt}
+		echo add $ip > /net/ipifc/0/ctl
+		echo ip: $ip(1) ether: `{cat /net/ether0/addr}
+	}
 	if(~ $cpu(3) 0){
 		echo add 10.0.2.15 255.255.255.0 > /net/ipifc/0/ctl
 		echo add 0 0 10.0.2.2 > /net/iproute

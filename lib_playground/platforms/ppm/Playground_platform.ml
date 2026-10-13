@@ -18,7 +18,10 @@
  * usage: game -dump-frame n file.ppm [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]...
  *   -dump-audio   the sound of those frames, a sixtieth of a second each
  *   size=n        (a flag) the picture n pixels square, not 1000
- *   window=WxH    (a flag) the picture, and the program's screen, W by H *)
+ *   window=WxH    (a flag) the picture, and the program's screen, W by H
+ *   pace=n        (a flag) n frames a second by the clock, not as fast as
+ *                 they are computed: two programs that play together over
+ *                 a network (games/tests/network.sh) *)
 
 let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
 
@@ -57,7 +60,9 @@ let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork 
   let how = List.assoc_opt "redraw" flags in
   if how = Some "all" then Redraw.enabled := false;
   let each = how = Some "each" || how = Some "all" in
+  let pace = match Option.bind (List.assoc_opt "pace" flags) int_of_string_opt with Some p when p > 0 -> 1. /. float p | _ -> 0. in
   for n = 1 to cli.frames do
+    if pace > 0. then Unix.sleepf pace;
     Session.frame run cli.script n (Session.time_of_frame cli n);
     Session.hear cli;
     (* (the view is taken at each frame, as a window's platform takes

@@ -5,7 +5,7 @@
 ;   random/   Lehmer (its libs/random)
 ;   layers/   what games are made of: Camera2d, Sprite, Tilemap
 ;   apis/     its face of each library a program calls: Physics (lib_physics), Juice (lib_juice),
-;             Gui (lib_gui)
+;             Gui (lib_gui), Multiplayer (lib_networking/netcode)
 ;   ways/     other ways to write a program on it: Bigbang (How to Design
 ;             Programs' world)
 ;   platforms/  the platforms, each a library of its own (ppm, sdl; and
@@ -18,4 +18,4 @@
  (name ix_playground)
  (wrapped false)
  (modules :standard \ Playground_platform)
- (libraries ix_audio ix_gui ix_playground_core ix_random ix_graphics_software ix_physics ix_juice ix_core))
+ (libraries ix_audio ix_gui ix_playground_core ix_random ix_graphics_software ix_physics ix_juice ix_netcode ix_core caps))

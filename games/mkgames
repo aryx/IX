@@ -59,6 +59,11 @@ AUDIRS=signal synthesis instruments effects formats/abc formats/wav formats/midi
 AUI=-I $AU ${AUDIRS:%=-I $AU/%}
 AUALL=$AU ${AUDIRS:%=$AU/%}
 K=$TOP/games/shmup/kit
+# (a game for several computers: lib_networking's netcode, and under it
+# Udp alone of tcp/, Plan 9's /net/udp where Linux's is a socket)
+T=$TOP/lib_networking
+TO=$B/lib_playground/netcode
+TDIRS=`{case $OS in plan9) echo $T/netcode $T/tcp $T/tcp/plan9;; *) echo $T/netcode $T/tcp;; esac}
 J=$TOP/lib_juice
 JO=$B/lib_juice
 R=$TOP/apps/music/rebirth
@@ -71,7 +76,7 @@ VO=$B/lib_playground/pdf
 OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $J $GI -I $V -I $VF -I $C $STDI
+INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $T/netcode -I $T/tcp -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $J $GI -I $V -I $VF -I $C $STDI
 SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey
 # (lib_playground's folders: core/, random/, itself, layers/)
 CORE=Color Basics Time Cmd Sub Set
@@ -101,7 +106,12 @@ LAYERS=Camera2d Sprite Tilemap Scene2d
 # shooters' kit, games/shmup/kit)
 # (and juice: a game's feel, lib_juice's units, each before the ones
 # that name it, and the playground's Juice over them: TinyBreakout)
-APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac; case "$WITH" in *audio*) echo Audio;; esac; case "$WITH" in *juice*) echo Juice;; esac}
+APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac; case "$WITH" in *audio*) echo Audio;; esac; case "$WITH" in *juice*) echo Juice;; esac; case "$WITH" in *multiplayer*) echo Multiplayer;; esac}
+# (and multiplayer: the players' inputs exchanged, lib_networking/netcode's
+# units and Udp, each before the ones that name it, and the playground's
+# Multiplayer over them: TinyTronscroll)
+NETCODE=`{case "$WITH" in *multiplayer*) echo Udp Wire Checksum Inputs Lockstep Rollback Sim_net Transport;; esac}
+NETCODEOBJS=`{for u in $NETCODE; do echo $TO/$u.$O; done}
 JUICE=`{case "$WITH" in *juice*) echo Hash Ease Tween Squash Trauma Emitter Follow;; esac}
 JUICEOBJS=`{for u in $JUICE; do echo $JO/$u.$O; done}
 # (and studio: what is played live, lib_audio's instruments/ and effects/
@@ -151,9 +161,9 @@ PLAT=Playground_platform
 # is the name X)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard;; esac}
 CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $JUICE $CORE $RANDOM $AUDIO $REBIRTH $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $KIT $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS $JUICEOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $AUDIOOBJS $REBIRTHOBJS $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $KITOBJS $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $J/*.ml $J/*.mli $AU/*.ml $AU/*.mli $AU/*/*.ml $AU/*/*.mli $AU/formats/*/*.ml $AU/formats/*/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
+LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $JUICE $CORE $RANDOM $NETCODE $AUDIO $REBIRTH $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $KIT $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
+LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS $JUICEOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $NETCODEOBJS $AUDIOOBJS $REBIRTHOBJS $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $KITOBJS $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
+LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $J/*.ml $J/*.mli $AU/*.ml $AU/*.mli $AU/*/*.ml $AU/*/*.mli $AU/formats/*/*.ml $AU/formats/*/*.mli $K/*.ml $K/*.mli $T/netcode/*.ml $T/netcode/*.mli $T/tcp/Udp.ml $T/tcp/Udp.mli $T/tcp/plan9/Udp.ml $R/*.ml $R/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBOBJS
@@ -184,6 +194,10 @@ $AUO/%.$O: $LOCAL
 $RBO/%.$O: $R/%.ml $LOCAL
 	mkdir -p $RBO
 	$ML $INCLUDES -o $target $R/$stem.ml
+$TO/%.$O: $LOCAL
+	mkdir -p $TO
+	for d in $TDIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
 $KO/%.$O: $K/%.ml $LOCAL
 	mkdir -p $KO
 	$ML $INCLUDES -o $target $K/$stem.ml

@@ -36,7 +36,7 @@ lib_graphics/software libs/graphics/2d libs/graphics/font
 lib_graphics/svg libs/graphics/images/svg
 lib_compression libs/compression
 lib_crypto libs/crypto
-lib_networking libs/networking/protocols libs/networking/tls libs/networking/unix libs/networking/tests libs/core
+lib_networking libs/networking/protocols libs/networking/netcode libs/networking/tls libs/networking/unix libs/networking/tests libs/core
 lib_gui libs/gui
 lib_audio libs/audio
 apps/music apps/music

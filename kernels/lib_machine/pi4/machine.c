@@ -123,6 +123,8 @@ void board_init(void)
 value clock_rate(value id) { return Val_long(Long_val(id) == 1 ? 50000000 : 0); }
 /* (not asked: QEMU's raspi4b, a Pi 4 B of 2 GB) */
 value board_rev(value unit) { (void)unit; return Val_long(0xb03115); }
+/* (the Pi 4's Ethernet is not a USB device: no address asked here) */
+value board_mac(value which) { (void)which; return Val_long(-1); }
 /* (not asked: QEMU's) */
 value firmware_rev(value half) { return Val_long(Long_val(half) == 0 ? 346337 & 0xffff : 346337 >> 16); }
 /* (no probe on this machine yet: a device is taken to be there) */

@@ -67,7 +67,15 @@ let basic_sync genev =
     (* Suspend on all events *)
     for i = 0 to Array.length bev - 1 do bev.(i).suspend() done;
     (* Wait until the condition is signalled *)
-    Condition.wait condition masterlock
+    (* (until one of the events is performed, as OCaml's Event does
+     * today: a thread may be woken by another than the one that
+     * performs its event (Thread.wakeup: Source's wait wakes a
+     * source's thread when a frame came for it, and that thread may be
+     * here, sending the frame before), and what follows would then
+     * read bev.(-1): the thread ended by Invalid_argument, and with it
+     * a game's packets from the network (docs/plans/bugs/ix.md).
+     * old: Condition.wait condition masterlock) *)
+    while !performed < 0 do Condition.wait condition masterlock done
   end;
   Mutex.unlock masterlock;
   (* Extract the result *)

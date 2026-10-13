@@ -8,8 +8,13 @@ WITH=physics
 # variables being stronger than a mkfile's. Not WITH=physics audio
 # juice for both: a program linked with Audio has a sound, and
 # TinyCameltry would mix its silence at each frame)
-all:V: games sounding
+# (and TinyTronscroll for the netcode and the network: a program is its
+# units whole)
+all:V: games sounding networked
 sounding:V: games
 	b=; case $B in /*) b="B=$B";; esac
 	mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b GAMES=TinyBreakout 'WITH=audio juice' games
+networked:V: sounding
+	b=; case $B in /*) b="B=$B";; esac
+	mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b GAMES=TinyTronscroll WITH=multiplayer games
 <../mkgames

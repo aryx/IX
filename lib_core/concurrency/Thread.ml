@@ -79,8 +79,12 @@ let join t =
 let create fn arg =
   let t = thread_new (fun () ->
     (try ignore (fn arg) with e ->
+       (* (where it was raised, asked before anything else is called:
+        * Printexc.get_backtrace) *)
+       let trace = Printexc.get_backtrace () in
        flush stdout;
-       prerr_string ("Thread " ^ string_of_int !current ^ " killed on uncaught exception " ^ Printexc.to_string e ^ "\n"));
+       prerr_string ("Thread " ^ string_of_int !current ^ " killed on uncaught exception " ^ Printexc.to_string e ^ "\n"
+                     ^ (if trace = "" then "" else "raised at:" ^ trace ^ "\n")));
     exit ()) in
   Hashtbl.replace alive t ();
   Queue.add t ready;

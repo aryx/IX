@@ -9,7 +9,7 @@ ML=mini-ml -m $O
 CC=mini-cc -m $O
 AS=mini-asm -m $O
 AR=mini-ar
-LD=mini-ld -m $O
+LD=mini-ld -m $O -map
 LEX=mini-lex
 YACC=mini-yacc
 

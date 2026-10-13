@@ -678,3 +678,94 @@ when a program closes, and silence that is not heard was not read.
 well now".) The same question finds the same class of fault for
 any device with DMA: a framebuffer that shows an old picture, a USB
 transfer that sends an old packet.
+
+## 19. Several windows, several cores, "it stopped answering": a script that plays the user, a trace that says where, and the dull cause first
+
+The report (the Pi 2's four cores, 2026-10-13, cameltry, stats and
+breakout in three windows of mini-rio's): "some windows stopped to
+respond, including stats", and after rio was left, on the console,
+`Thread 5 killed on uncaught exception Invalid_argument("index out
+of bounds")`. New code under it everywhere: the cores, a lock, a new
+program. The pull is to read the lock again. What was done, in the
+order that paid:
+
+**A script that plays the user, kept.** No recorded session has three
+programs at once and a hand on the mouse. Twenty lines over QEMU's
+monitor (`kernels/9pi/tests/busy.py`: the same calls as
+`graphics.py` and `live.py` beside it, without their wait for
+a still screen, which a game never gives): rio typed, three windows
+swept with the right button, a command typed in each, then for
+minutes a place picked at random, a click, keys, a screen written
+every so often. Under QEMU's `raspi2b` with the kernel built
+`SMP=1`: the four cores really run at once there (one host thread a
+core), which mini-qemu's one core cannot show. The screens are the
+log: a row of the same window cut out of each (`convert -crop`,
+`+append`) shows at a glance when it stopped moving, where reading
+one screen shows only that it has.
+
+**The first thing found was not the thing reported, and was the
+cause of half of it.** `stats` stood still from its first seconds,
+with its menu's `exit` drawn in its corner: it was waiting in its
+menu, for a button to come up that had never gone down in it. rio
+gives a program, at its first read of the mouse, the last state rio's
+own loop saw; the menu and the sweep that make a window read the
+mouse themselves, so that state still said the right button of "New".
+On the board a hand moves the mouse before the program starts, and it
+is rare; a script that does not move it gets it every time. Not the
+cores at all: one window on one core does it. *A script's stillness
+is a test a person never runs.* (Fixed in `Window`: the first state
+has no button.) With it fixed, the same thirteen minutes on four
+cores: the three programs to the end, nothing on the console.
+
+**What a picture says, read twice.** A white band grew across the
+first strip of `stats`: looked like its scrolling gone wrong. It was
+the keys the script typed into that window: rio echoes what is typed
+in a window whose program does not read the keyboard, over its
+picture, and `stats` scrolls its strips by the screen's own pixels,
+the echo with them. Two programs each right. Before a drawing bug is
+hunted: who else draws there.
+
+**An exception with no place is half a report: the trace.** `index
+out of bounds` in "thread 5" of some program was all there was, and
+reading every `.(` and `.[` of rio found nothing. mini-ml's programs
+now say where (`languages/ml/runtime`'s `exceptions.c`): at a raise,
+the top of the machine's stack is kept, and an uncaught exception,
+the program's or a thread's, prints the addresses of the calls found
+in it,
+
+    Thread 5 killed on uncaught exception Invalid_argument("index out of bounds")
+    raised at: 9c30 9cf0 9df4 16628
+
+and `scripts/where.sh program 9c30 9cf0 ...` names the functions, by
+the map mini-ld writes beside each program (`-map`). Two things about
+making it, which are about any such tool:
+
+- *Where the evidence is when you look.* The first version kept only
+  the stack pointer at the raise and read the stack when the trace
+  was printed. The test (three functions deep, an index too far) said
+  nothing: the handler's own calls had already written over frames
+  that shallow. The words are now copied at the raise itself. A trace
+  taken late is a trace of the code that takes it.
+- *What it costs who does not ask.* It is on mini-9pi and off
+  elsewhere unless `ML_TRACE` is set: the tests compare what a dying
+  program prints, and addresses change at each build.
+
+It is a guess by the look of the words (an address in the text, just
+after a call): a line too many now and then, a raise again after a
+catch says the second raise. Enough to go from "some thread" to a
+function.
+
+**What is still open, said as such.** The exception itself was not
+seen again in half an hour of the script: not found. The next time it
+shows on the board it comes with its addresses; write them down
+before leaving the screen.
+
+**The order, for next time:**
+1. Script the user's session; let it run while reading.
+2. Believe the first oddity, even if it is not the one reported.
+3. One window, one core: is it the new thing (the cores) at all?
+4. For "frozen": is the program waiting (a menu, a read), dead (the
+   console), or starved (`stats`: every core busy)? Three different
+   bugs with one look.
+5. No place in the message: make the message say the place, once,
+   for every program.

@@ -129,7 +129,13 @@ let run (w : t) desk =
     | Held m -> if !reads_held then begin Queue.add m held; serve_held () end; loop ()
     | Held_read reply -> Queue.add reply held_readers; serve_held (); loop ()
     | Held_file on -> reads_held := on; Queue.clear held; loop ()
-    | Mouse_file true -> w.wants_mouse <- true; moved := Some !pointer; loop ()
+    (* (the first state a program reads has no button down: [pointer] is
+     * the last the windows' own loop saw, and the menu and the sweep
+     * that made this window read the mouse themselves, so it could
+     * still say the right button of "New": mini-stats then opened its
+     * menu by itself and waited in it, drawing nothing, until a click.
+     * old: moved := Some !pointer) *)
+    | Mouse_file true -> w.wants_mouse <- true; moved := Some { !pointer with buttons = 0 }; loop ()
     | Mouse_file false ->
         (* the program that drew here is done: the inside of the border as the text has it *)
         w.wants_mouse <- false;

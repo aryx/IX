@@ -25,12 +25,13 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-v] [-E entry] [-o out] files...
+let help = {|usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-v] [-map] [-E entry] [-o out] files...
 5l and 7l's twin (-m 5: arm; 7: arm64): mini-asm's and mini-cc's objects, and
 libraries, linked into an executable, a.out by default (-o: another), goken's
 bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6), or no
 header (-H0, a kernel's image: its text at -T's address, 0x80000 on the Pi 4). The
 entry is _main (-E: another); -v lists each instruction, its address and word;
+-map writes out.map, each function's address and name (scripts/where.sh);
 -nofollow lays the code in the objects' order, not along its flow as 5l: the
 same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
   mini-asm -m 5 hello_linux_arm.s
@@ -56,6 +57,11 @@ let round = ref 4
 (* -v: the listing (a flag here, not link's eighth parameter: mini-ml on
  * arm has 7) *)
 let verbose = ref false
+(* -map: the functions' addresses, in a file beside the program: what
+ * an address of a trace is (mini-ml's runtime prints them at an
+ * uncaught exception: its exceptions.c); not 5l's, which writes a
+ * symbol table in the program *)
+let map = ref false
 
 let link (m : _ machine) caps arch format entry out files =
   let t = Link.create arch ~text_start:0 in
@@ -85,6 +91,17 @@ let link (m : _ machine) caps arch format entry out files =
     List.iter (fun (p : _ Program.prog) ->
       let w = if p.pc >= t.text_start && p.pc + 4 <= t.text_start + t.text_size then Bytes.get_int32_le text (p.pc - t.text_start) else 0l in
       print caps @@ Printf.sprintf "%08x: %08lx\t%s\n" p.pc w (Link.show m.show p)) t.progs;
+  if !map then begin
+    let b = Buffer.create 65536 in
+    List.iter (fun (p : _ Program.prog) ->
+      let line = Link.show m.show p in
+      if String.length line > 5 && String.sub line 0 5 = "TEXT " then begin
+        let name = String.sub line 5 (String.length line - 5) in
+        let name = match String.index_opt name '+' with Some i -> String.sub name 0 i | None -> name in
+        Buffer.add_string b (Printf.sprintf "%08x %s\n" p.pc name)
+      end) t.progs;
+    FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)
+  end;
   let data = Link.data_bytes t in
   Exe.write caps format arch out
     { text; data; bss = t.bss_size; text_start = t.text_start; data_start = t.data_start; entry = Link.entry t entry;
@@ -107,6 +124,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-o" :: o :: rest -> out := o; args rest
     | "-s" :: rest -> args rest
     | "-v" :: rest -> verbose := true; args rest
+    | "-map" :: rest -> map := true; args rest
     | "-nofollow" :: rest -> follow := false; args rest
     | f :: rest -> files := f :: !files; args rest
     | [] -> ()
@@ -115,7 +133,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-E entry] [-o out] files...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld -m 5|7 [-H2|-H6|-H7|-H0 -T address] [-nofollow] [-map] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in

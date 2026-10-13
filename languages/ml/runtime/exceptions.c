@@ -84,6 +84,87 @@ failwith(char *msg)
 	raise_with(caml_exn_Failure, msg);
 }
 
+/* Where an exception came from (the author, 2026-10-13, of a window
+ * that stopped answering on the Pi 2 and "Thread 5 killed on uncaught
+ * exception Invalid_argument("index out of bounds")" on the console:
+ * "would be good to add stack traces"). No table says which function
+ * called which: the machine's stack does. It has little else in
+ * mini-ml's code, whose values are on a stack of their own: a
+ * function's frame there is the address its call returns to. ml_raise
+ * (the generated start: Gen) keeps the stack's 16 top words, or what
+ * there is up to the handler's own, before it goes to the handler;
+ * here, a word of them that is an address in the program's text, just
+ * after a call's instruction, is taken for one: the innermost first,
+ * the call's own address said (it is in the function that called).
+ * A raise in C (an index out of bounds, a failwith) has C's frames
+ * first, their other words among them: one that looks like a return
+ * is a line too many. An exception caught and raised again says the
+ * second raise. A help to find a bug, no more.
+ * scripts/where.sh says the functions, by the map mini-ld writes
+ * beside a program (-map).
+ * On mini-9pi always; elsewhere when ML_TRACE is in the environment
+ * (the tests compare what a program that dies says). Some forty
+ * instructions more a raise when it is on, 3 when not. Not with
+ * gcc's C: the text is not known to start at ml_start there.
+ * old, tried first: only the stack pointer kept at the raise, and the
+ * stack read when the trace was asked; the handler's own calls had
+ * written over all of a shallow one by then. */
+#define NTRACE 16
+static char tbuf[NTRACE * 18 + 2];
+
+#ifndef __GNUC__
+extern char etext[];
+
+static int
+returns(uvalue w)
+{
+	unsigned int ins;
+
+	if((w & 3) != 0 || w < (uvalue)ml_start + 8 || w > (uvalue)etext)
+		return 0;
+	ins = *(unsigned int*)(w - 4);
+	if(sizeof(value) == 8)          /* arm64: BL, BLR */
+		return (ins & 0xFC000000) == 0x94000000 || (ins & 0xFFFFFC1F) == 0xD63F0000;
+	/* arm: BL; what writes the PC (5l's BL (R): ADD to R14, then to the PC); BLX */
+	return (ins & 0x0F000000) == 0x0B000000 || (ins & 0x0C00F000) == 0x0000F000 || (ins & 0x0FFFFFF0) == 0x012FFF30;
+}
+#endif
+
+/* the trace in tbuf, as text: the addresses in hexadecimal; its length */
+static int
+trace(void)
+{
+	int len;
+#ifndef __GNUC__
+	char d[20];
+	int i, n, s;
+
+	len = 0;
+	n = ml_tracing ? NTRACE - ml_raise_left : 0;
+	for(i = 0; i < n; i++)
+		if(returns((uvalue)ml_raise_words[i])){
+			s = digits((uvalue)ml_raise_words[i] - 4, 16, 0, d, 20);
+			tbuf[len++] = ' ';
+			memmove(tbuf + len, d + s, 20 - s);
+			len += 20 - s;
+		}
+#else
+	len = 0;
+#endif
+	tbuf[len] = 0;
+	return len;
+}
+
+/* Printexc.get_backtrace's: "" when there is none */
+value
+ml_raise_trace(value unit)
+{
+	USED(unit);
+	if(trace() == 0)
+		return ml_string("");
+	return ml_string(tbuf);
+}
+
 static char ebuf[256];
 static int elen;
 
@@ -104,8 +185,9 @@ ml_uncaught(value exn)
 {
 	char buf[64];
 	value b, v, i, start, name;
-	int s;
+	int s, tlen;
 
+	tlen = trace();
 	name = Field(Field(exn, 0), 0);
 	eadd((char*)Bytes(name), length(name));
 	if(Wosize(exn) >= 2){
@@ -140,6 +222,11 @@ ml_uncaught(value exn)
 	write(2, "Fatal error: uncaught exception ", 32);
 	write(2, ebuf, elen);
 	write(2, "\n", 1);
+	if(tlen > 0){
+		write(2, "raised at:", 10);
+		write(2, tbuf, tlen);
+		write(2, "\n", 1);
+	}
 	exit(2);
 	return Val_unit;
 }

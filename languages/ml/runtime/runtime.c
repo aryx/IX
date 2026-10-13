@@ -53,6 +53,12 @@ extern value ml_units[];
 
 value *ml_vsp;
 void *ml_handler;
+/* for a trace (exceptions.c): whether ml_raise is to keep the top of
+ * the machine's stack, its words at the last raise, and how many of
+ * the 16 it did not have */
+value ml_tracing;
+value ml_raise_words[16];
+value ml_raise_left;
 
 void failwith(char*);
 static void raise_with(value*, char*);
@@ -141,6 +147,7 @@ sys_time(value unit)
 	return copy_double(t[0] + t[1] / 1e9);
 }
 
+/* (old: Printexc.get_backtrace called this; now ml_raise_trace, exceptions.c) */
 value caml_get_exception_backtrace(void) { unsupported("caml_get_exception_backtrace"); return 0; }
 
 /*****************************************************************************/
@@ -157,6 +164,11 @@ main(int ac, char *av[])
 	init_exceptions();
 	caml_atom0[0] = 0;
 	size = HEAPSTART;
+#ifdef plan9
+	ml_tracing = 1;
+#else
+	ml_tracing = getenv("ML_TRACE") != nil;
+#endif
 	s = getenv("ML_HEAP");
 	if(s != nil)
 		size = atoi(s);

@@ -459,7 +459,17 @@ let startup m units =
   pr "\t%s\tR%d, %d(R0)\n\t%s\t%s, %d(R0)\n\t%s\tml_handler(SB), R%d\n\t%s\tR%d, %d(R0)\n" mov m.vsp w mov m.link (2 * w) mov t mov t (3 * w);
   pr "\t%s\tR0, ml_handler(SB)\n\t%s\t$0, R0\n\t%s\n" mov mov (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)");
   (* the exception in R0: back to the latest record *)
+  (* (first, for a trace, when the runtime asks (ml_tracing): the 16
+   * top words of the machine's stack kept in ml_raise_words, or those
+   * up to the handler's own stack pointer, and how many of the 16
+   * were not there in ml_raise_left; the runtime's exceptions.c reads
+   * the return addresses in them. No register is anyone's at a raise
+   * but R0's exception.) *)
   pr "\tTEXT\tml_raise(SB), %s\n\t%s\tml_handler(SB), R%d\n" m.frame mov t;
+  pr "\t%s\tml_tracing(SB), R1\n\tCMP\t$0, R1\n\tBEQ\t15(PC)\n" mov;
+  pr "\t%s\t0(R%d), R1\n\t%s\t%s, R2\n\t%s\t$ml_raise_words(SB), R3\n\t%s\t$16, R4\n" mov t mov (match m.arch with Arm -> "R13" | Arm64 -> "RSP") mov mov;
+  pr "\tCMP\tR1, R2\n\tBHS\t8(PC)\n\t%s\t0(R2), R5\n\t%s\tR5, 0(R3)\n\tADD\t$%d, R2\n\tADD\t$%d, R3\n\tSUB\t$1, R4\n\tCMP\t$0, R4\n\tBNE\t-8(PC)\n" mov mov w w;
+  pr "\t%s\tR4, ml_raise_left(SB)\n" mov;
   (match m.arch with
    | Arm64 -> pr "\tMOV\t0(R%d), R18\n\tMOV\tR18, RSP\n\tMOV\t8(R%d), R26\n\tMOV\t24(R%d), R18\n\tMOV\tR18, ml_handler(SB)\n\tMOV\t16(R%d), R18\n\tB\t(R18)\n" t t t t
    | Arm -> pr "\tMOVW\t0(R9), R13\n\tMOVW\t4(R9), R10\n\tMOVW\t12(R9), R14\n\tMOVW\tR14, ml_handler(SB)\n\tMOVW\t8(R9), R9\n\tB\t(R9)\n");

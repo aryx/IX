@@ -99,7 +99,15 @@ let format_loc_info pos li =
       sprintf "%s unknown location"
               info
 
-let get_backtrace () =
+(* ix: mini-ml's runtime says where the last exception was raised: the
+ * addresses its stack had of calls, the innermost first (the runtime's
+ * exceptions.c says how, and scripts/where.sh which functions they
+ * are); "" when it does not (ML_TRACE, off mini-9pi). To be called
+ * first in a handler. old: get_backtrace_locations below, OCaml's *)
+external raise_trace : unit -> string = "ml_raise_trace"
+let get_backtrace () = raise_trace ()
+
+let get_backtrace_locations () =
   match get_exception_backtrace() with
   | None ->
      "(Program not linked with -g, cannot print stack backtrace)\n"

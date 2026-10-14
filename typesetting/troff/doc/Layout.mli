@@ -65,6 +65,8 @@ type row =
   | Rule of float * float
   (* a picture, its left edge at a place *)
   | Drawing of float * Doc.picture
+  (* where an anchor is (Doc.Anchor): the sheet of the next line *)
+  | Mark of string * bool
 
 (* how a page looks, which is not the document's to say; its lengths
  * in the writer's units *)
@@ -84,6 +86,8 @@ type look = {
 (* a text's width in a style, in the writer's units: a whole number *)
 type metrics = Doc.style -> string -> float
 
+(* (a [Doc.Page] is its own text: the writer that has sheets puts
+ * their numbers in first, Doc.pages) *)
 val rows : look -> metrics -> Doc.t -> row list
 
 (* a text on one line, from a place: its pieces, and where it ends *)

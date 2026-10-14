@@ -8,6 +8,17 @@ open Latex_input
 open Latex_output
 open Latex_names
 
+(* the lines' length, in ens: a page's of 6 inches, a terminal's 60
+ * columns *)
+let line_length (paper : bool) : float = if paper then 86.4 else 60.
+
+(* an entry of the table of contents begins here: its anchor *)
+let entry (t : t) =
+  if t.body then begin
+    t.entries <- t.entries + 1;
+    anchor t ("toc:" ^ string_of_int t.entries) false
+  end
+
 (* ---------------------------------------------------------------- *)
 (* The reading *)
 (* ---------------------------------------------------------------- *)
@@ -144,6 +155,7 @@ and heading (t : t) (level : int) =
   let label = if number = "" then [] else [ Doc.Text (style, (if level = 0 then (if t.appendix then "Appendix " else "Chapter ") ^ number ^ "\xc2\xa0\xc2\xa0" else number ^ "\xc2\xa0\xc2\xa0")) ] in
   if t.body then begin
     emit t (Doc.Space (if level <= 0 then 2. else if level = 1 then 1. else 0.6));
+    if not starred then entry t;
     emit t (Doc.Heading (1, label @ title));
     emit t (Doc.Space (if level <= 0 then 0.8 else 0.3))
   end
@@ -374,7 +386,8 @@ and builtin (t : t) (w : string) =
       let kind = String.trim (arg t) in
       let raw = arg t in
       let level = match kind with "part" -> -1 | "chapter" -> 0 | "section" -> 1 | "subsection" -> 2 | _ -> 3 in
-      if not t.final && t.body then t.known.toc <- ((if t.report then level else max 1 level), "", raw) :: t.known.toc
+      if not t.final && t.body then t.known.toc <- ((if t.report then level else max 1 level), "", raw) :: t.known.toc;
+      entry t
   | "par" -> par t
   | "bigskip" | "medskip" | "vskip" -> par t; emit t (Doc.Space (gap t))
   | "hrule" -> par t; block t (Doc.Picture { wide = 6.; high = 0.05; marks = [ Doc.Stroke [ (0., 0.02); (6., 0.02) ] ] })
@@ -414,13 +427,14 @@ and builtin (t : t) (w : string) =
       if t.body then t.out.feet <- Doc.Footnote [ Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = false; body = Doc.Text (Doc.plain, number ^ ". ") :: inner } ] :: t.out.feet;
       put t (Doc.Text ({ style with size = style.size - 2; shift = style.shift + 1 }, number))
   (* what names another place *)
-  | "label" -> let k = arg t in if not t.final then Hashtbl.replace t.known.labels k t.here
+  | "label" -> let k = arg t in if not t.final then Hashtbl.replace t.known.labels k t.here; anchor t ("label:" ^ k) false
   | "ref" | "autoref" | "cref" | "Cref" | "eqref" ->
       let k = arg t in
       (match Hashtbl.find_opt t.known.labels k with
        | Some v -> text t v
        | None -> say t ("\\ref{" ^ k ^ "} (no such label)"); text t "??")
-  | "pageref" -> ignore (arg t); say_once t "\\pageref (a page's number is not known here)"; text t "?"
+  (* (on a terminal, which has no sheets, a ?) *)
+  | "pageref" -> let k = arg t in put t (Doc.Page (style, "label:" ^ k, "?"))
   | "cite" | "citep" | "citet" | "nocite" ->
       let note = opt t in
       let keys = List.map String.trim (String.split_on_char ',' (arg t)) in
@@ -442,13 +456,23 @@ and builtin (t : t) (w : string) =
       par t;
       push t (if t.report then "\\chapter*{Contents}" else "\\section*{Contents}");
       run_pushed t;
-      List.iter (fun ((level, number, raw) : int * string * string) ->
+      List.iteri (fun (k : int) ((level, number, raw) : int * string * string) ->
         if level <= 2 then begin
           let st : Doc.style = { font = (if level <= 0 then Doc.Bold else Doc.Roman); size = 0; shift = 0 } in
           let body = (if number = "" then [] else [ Doc.Text (st, number ^ "\xc2\xa0\xc2\xa0") ]) @ with_look t { style = st; caps = false; center = false } raw in
-          let p = Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = false; body } in
+          let by = cols t (float_of_int (3 * max 0 level)) in
+          (* on paper, the sheet's number at the line's end: a table of a
+           * row, the title filled in what is left (a terminal's has no
+           * sheets, and its lines are as they were) *)
+          let p =
+            if not t.paper then Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = false; body }
+            else begin
+              let cell (align : Doc.align) (filled : bool) (body : Doc.inline list) : Doc.cell = { align; span = 1; filled; body } in
+              let entry = [ cell Doc.Left true body; cell Doc.Right false [ Doc.Page (st, "toc:" ^ string_of_int (k + 1), "") ] ] in
+              Doc.Table { centered = false; boxed = false; widths = [ line_length true -. by -. 8.; 5. ]; rows = [ Doc.Cells entry ] }
+            end in
           if level <= 0 then emit t (Doc.Space (gap t));
-          emit t (if level <= 0 then p else Doc.Indent (cols t (float_of_int (3 * level)), [ p ]))
+          emit t (if level <= 0 then p else Doc.Indent (by, [ p ]))
         end) (List.rev t.known.toc);
       emit t (Doc.Space 1.)
   | "nowebindex" -> Noweb.index t
@@ -531,7 +555,7 @@ let once (paper : bool) (load : string -> string option) (known : known) (final 
     run = (fun _ -> ()); paper; load; known; final; input = [ { s = source; i = 0; stop = false; file = ""; line = 1; counts = true } ]; out = fresh ();
     look = { style = Doc.plain; caps = false; center = false }; groups = []; envs = []; macros = Hashtbl.create 64; flags = Hashtbl.create 16; environments = Hashtbl.create 8;
     verbatims = Hashtbl.create 8; body = not (contains source "\\begin{document}"); said = []; unknown = Hashtbl.create 16; report = contains source "{report}" || contains source "{book}";
-    appendix = false; chapter = 0; section = 0; subsection = 0; subsubsection = 0; figure = 0; table = 0; notes = 0; chunk = 0; here = ""; title = ""; author = ""; date = "";
+    appendix = false; chapter = 0; section = 0; subsection = 0; subsubsection = 0; figure = 0; table = 0; notes = 0; chunk = 0; entries = 0; here = ""; title = ""; author = ""; date = "";
     span = 1; cell_align = None } in
   List.iter (fun (n : string) -> Hashtbl.replace t.verbatims n false) [ "verbatim"; "verbatim*"; "Verbatim"; "lstlisting"; "alltt" ];
   Hashtbl.replace t.verbatims "vdiagram" true;
@@ -546,4 +570,4 @@ let read (paper : bool) (load : string -> string option) (source : string) : Doc
   let known = { labels = Hashtbl.create 64; toc = []; defs = Hashtbl.create 64; uses = Hashtbl.create 64; cites = []; bibitems = Hashtbl.create 16 } in
   ignore (once paper load known false source);
   let body, said = once paper load known true source in
-  ({ header = ("", "", ""); width = (if paper then 86.4 else 60.); margin = 0.; sub = 0.; body }, said)
+  ({ header = ("", "", ""); width = line_length paper; margin = 0.; sub = 0.; body }, said)

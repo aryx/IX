@@ -11,7 +11,11 @@ let add_to (table : (string, int list) Hashtbl.t) (key : string) (n : int) =
   let l = match Hashtbl.find_opt table key with Some l -> l | None -> [] in
   if not (List.mem n l) then Hashtbl.replace table key (l @ [ n ])
 
-let numbers (l : int list) : string = String.concat ", " (List.map string_of_int l)
+(* a chunk's number, or on paper its sheet's (noweb's 12b) *)
+let number (style : Doc.style) (n : int) : Doc.inline = Doc.Page (style, "chunk:" ^ string_of_int n, string_of_int n)
+
+let numbers (style : Doc.style) (l : int list) : Doc.inline list =
+  List.concat (List.mapi (fun k n -> (if k > 0 then [ Doc.Text (style, ", ") ] else []) @ [ number style n ]) l)
 
 (* A chunk: its name, in which chunk the name was first defined, and
  * its lines, the chunks it names in them said the same way; then
@@ -38,9 +42,9 @@ let chunk (t : t) (chunk_name : string) =
   let small : Doc.style = { font = Doc.Mono; size = -2; shift = 0 } in
   let italic : Doc.style = { font = Doc.Italic; size = -2; shift = 0 } in
   let roman : Doc.style = { font = Doc.Roman; size = -2; shift = 0 } in
-  let first (n : string) : string = match Hashtbl.find_opt t.known.defs n with Some (d :: _) -> " " ^ string_of_int d | _ -> "" in
+  let first (n : string) : Doc.inline list = match Hashtbl.find_opt t.known.defs n with Some (d :: _) -> [ Doc.Text (italic, " "); number italic d ] | _ -> [] in
   let named (n : string) : Doc.inline list =
-    [ Doc.Text (italic, "\xe2\x80\xb9") ] @ with_look t { style = italic; caps = false; center = false } n @ [ Doc.Text (italic, first n ^ "\xe2\x80\xba") ] in
+    [ Doc.Text (italic, "\xe2\x80\xb9") ] @ with_look t { style = italic; caps = false; center = false } n @ first n @ [ Doc.Text (italic, "\xe2\x80\xba") ] in
   let line (l : string) : Doc.inline list =
     let n = String.length l in
     let rec go (i : int) (from : int) (acc : Doc.inline list) : Doc.inline list =
@@ -62,9 +66,10 @@ let chunk (t : t) (chunk_name : string) =
   let head = named chunk_name @ [ Doc.Text (roman, if is_first then "=" else "+=") ] in
   let uses = match Hashtbl.find_opt t.known.uses chunk_name with Some l -> l | None -> [] in
   let notes =
-    (if is_first && uses <> [] then [ "used in " ^ numbers uses ] else [])
-    @ (if is_first && List.length defs > 1 then [ "more in " ^ numbers (List.tl defs) ] else []) in
-  let head = if notes = [] then head else head @ [ Doc.Text (roman, "   (" ^ String.concat "; " notes ^ ")") ] in
+    (if is_first && uses <> [] then [ Doc.Text (roman, "used in ") :: numbers roman uses ] else [])
+    @ (if is_first && List.length defs > 1 then [ Doc.Text (roman, "more in ") :: numbers roman (List.tl defs) ] else []) in
+  let head = if notes = [] then head else head @ [ Doc.Text (roman, "   (") ] @ List.concat (List.mapi (fun k l -> if k > 0 then Doc.Text (roman, "; ") :: l else l) notes) @ [ Doc.Text (roman, ")") ] in
+  anchor t ("chunk:" ^ string_of_int me) true;
   block t (lines_as_they_are t (-2) (head :: List.map line lines))
 
 (* \nowebindex: the chunks by name, each with the chunks that define it *)
@@ -74,5 +79,5 @@ let index (t : t) =
   let italic : Doc.style = { font = Doc.Italic; size = -1; shift = 0 } in
   List.iter (fun (n : string) ->
     let defs = match Hashtbl.find_opt t.known.defs n with Some l -> l | None -> [] in
-    let body = [ Doc.Text (italic, "\xe2\x80\xb9") ] @ with_look t { style = italic; caps = false; center = false } n @ [ Doc.Text (italic, "\xe2\x80\xba"); Doc.Text ({ italic with font = Doc.Roman }, "  " ^ numbers defs) ] in
+    let body = [ Doc.Text (italic, "\xe2\x80\xb9") ] @ with_look t { style = italic; caps = false; center = false } n @ [ Doc.Text (italic, "\xe2\x80\xba"); Doc.Text ({ italic with font = Doc.Roman }, "  ") ] @ numbers { italic with font = Doc.Roman } defs in
     emit t (Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = false; body })) names

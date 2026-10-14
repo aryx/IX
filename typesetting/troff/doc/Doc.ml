@@ -5,7 +5,7 @@
 
 type font = Roman | Italic | Bold | Mono
 type style = { font : font; size : int; shift : int }
-type inline = Text of style * string | Break
+type inline = Text of style * string | Break | Page of style * string * string
 type par = { fill : bool; first : float; short : float; tabs : float list; center : bool; body : inline list }
 
 type align = Left | Right | Center | Numeric
@@ -26,6 +26,7 @@ type block =
   | Keep of block list
   | Table of table
   | Picture of picture
+  | Anchor of string * bool
 
 and tagged = { tag : inline list; width : float; body : block list }
 
@@ -39,20 +40,26 @@ let letters (s : string) : string =
 
 (* a text's letters, without its looks *)
 let words (l : inline list) : string =
-  String.concat "" (List.map (fun (i : inline) -> match i with Text (_, s) -> letters s | Break -> " ") l)
+  String.concat "" (List.map (fun (i : inline) -> match i with Text (_, s) | Page (_, _, s) -> letters s | Break -> " ") l)
 
-let map_text (f : style -> string -> string) (d : t) : t =
-  let inline (i : inline) : inline = match i with Text (style, s) -> Text (style, f style s) | Break -> Break in
+let map_inline (f : inline -> inline) (d : t) : t =
+  let inline = f in
   let rec block (b : block) : block =
     match b with
     | Heading (level, text) -> Heading (level, List.map inline text)
     | Para p -> Para { p with body = List.map inline p.body }
     | Tagged { tag; width; body } -> Tagged { tag = List.map inline tag; width; body = List.map block body }
     | Indent (by, inner) -> Indent (by, List.map block inner)
-    | Space n -> Space n
+    | Space _ | Anchor _ -> b
     | Footnote inner -> Footnote (List.map block inner)
     | Keep inner -> Keep (List.map block inner)
     | Table t ->
         Table { t with rows = List.map (fun (r : table_row) -> match r with Rule -> Rule | Cells cs -> Cells (List.map (fun (c : cell) -> { c with body = List.map inline c.body }) cs)) t.rows }
     | Picture p -> Picture { p with marks = List.map (fun (m : mark) -> match m with Stroke _ | Image _ -> m | Label (x, y, side, text) -> Label (x, y, side, List.map inline text)) p.marks } in
   { d with body = List.map block d.body }
+
+let map_text (f : style -> string -> string) (d : t) : t =
+  map_inline (fun (i : inline) -> match i with Text (style, s) -> Text (style, f style s) | Page (style, name, s) -> Page (style, name, f style s) | Break -> Break) d
+
+let pages (page : string -> string option) (d : t) : t =
+  map_inline (fun (i : inline) -> match i with Page (style, name, s) -> Text (style, (match page name with Some p -> p | None -> s)) | _ -> i) d

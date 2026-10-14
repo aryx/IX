@@ -4,7 +4,7 @@
 (* See Layout.mli *)
 
 type piece = { x : float; style : Doc.style; text : string }
-type row = Line of piece list | Skip of float | Foot of row list | Together of row list | Rule of float * float | Drawing of float * Doc.picture
+type row = Line of piece list | Skip of float | Foot of row list | Together of row list | Rule of float * float | Drawing of float * Doc.picture | Mark of string * bool
 type look = { en : float; inch : float; width : float; tag_room : float; justify : bool }
 
 (* a length of the document, in ens, as a whole number of the writer's
@@ -35,7 +35,7 @@ let atoms (metrics : metrics) (body : Doc.inline list) : atom list =
   List.iter (fun (i : Doc.inline) ->
     match i with
     | Doc.Break -> add Newline
-    | Doc.Text (style, s) ->
+    | Doc.Text (style, s) | Doc.Page (style, _, s) ->
         let n = String.length s in
         let rec go from i =
           let letters () = if i > from then word := (style, String.sub s from (i - from)) :: !word in
@@ -128,13 +128,13 @@ let one_line (metrics : metrics) (x : float) (text : Doc.inline list) : piece li
   List.iter (fun (i : Doc.inline) ->
     match i with
     (* (a tab in a tag has no stops to go to: a space) *)
-    | Doc.Text (style, s) -> let s = String.map (fun c -> if c = '\t' then ' ' else c) (Doc.letters s) in out := { x = !at; style; text = s } :: !out; at := !at +. metrics style s
+    | Doc.Text (style, s) | Doc.Page (style, _, s) -> let s = String.map (fun c -> if c = '\t' then ' ' else c) (Doc.letters s) in out := { x = !at; style; text = s } :: !out; at := !at +. metrics style s
     | Doc.Break -> ()) text;
   (List.rev !out, !at)
 
 (* a cell's text as one string, and its two parts if it is a number:
  * to its decimal point, and from it *)
-let cell_text (c : Doc.cell) : string = String.concat "" (List.map (fun (i : Doc.inline) -> match i with Doc.Text (_, s) -> Doc.letters s | Doc.Break -> "") c.body)
+let cell_text (c : Doc.cell) : string = String.concat "" (List.map (fun (i : Doc.inline) -> match i with Doc.Text (_, s) | Doc.Page (_, _, s) -> Doc.letters s | Doc.Break -> "") c.body)
 
 let split_number (metrics : metrics) (c : Doc.cell) : float * float =
   let s = cell_text c in
@@ -228,6 +228,7 @@ let rec blocks (look : look) (metrics : metrics) (sub : float) (left : float) (b
     | Doc.Para p -> lines (paragraph look metrics left (left +. units look p.first) [] p)
     | Doc.Indent (by, inner) -> blocks look metrics sub (left +. units look by) inner
     | Doc.Space n -> [ Skip n ]
+    | Doc.Anchor (name, lettered) -> [ Mark (name, lettered) ]
     | Doc.Tagged { tag; width; body } ->
         let width = units look width in
         let pieces, stop = one_line metrics left tag in

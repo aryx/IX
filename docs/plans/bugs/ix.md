@@ -11,6 +11,13 @@ not essential. The last three need a decision first.
 | mini-ld | a program calling an undefined function | `hello.c:0: undefined: print` | the line is 0: the reference's line is not kept to the link |
 | mini-merge3 | its usage and its .mli | the usage says `theirs base ours`, Difftool.mli `ours base theirs` | one of the two is wrong; the help says `mine base theirs` meanwhile |
 | languages/ml/tests/run.sh | `OCL=... run.sh 7 w fact.ml` | the stdlib still read from /tmp/ix-ocaml-light-arm64 | its `S=` hardcodes the path its `OCL=` line honors |
+| mini-netscape, mini-rebirth | `mini-netscape -help` (found writing ix's manual pages, 2026-10-14, as the next rows) | `Fatal error: exception Failure("usage: game ...")` and a backtrace | lib_playground's Session.parse makes Arg.Help a failwith, which these mains do not catch; the usage is the playground's, `game`, in office and drscheme too |
+| mini-xargs | `echo a \| mini-xargs false` | status 0 | the commands' statuses are not looked at |
+| mini-node | `import {y} from "./y.js"` with y.js exporting y | `ReferenceError: y is not defined` | an import binds nothing |
+| mini-qemu | `mini-qemu -help` | `unknown option -help` | only -h and --help; -qmp and -display none work and are not in the usage |
+| mini-chidb | `DELETE FROM t` | `SQL syntax error.` | parsed, then Codegen raises Invalid; UPDATE is not in the grammar |
+| mini-lynx | a link followed in a page read from a file | `Tcp.connect: can't resolve "file"` | the link is made a file:// address and given to the network |
+| mini-dossrv, mini-ld, mini-asm | their options | dossrv's -v and -s, ld's -s, taken and nothing done; ld's -R in no usage; asm's usage has -m as if needed (arm is its default) | the usage strings behind the code |
 
 To decide first:
 

@@ -64,7 +64,9 @@ let page (d : Doc.t) : string =
     | Layout.Rule (x0, x1) ->
         let from = offset + int_of_float (Float.floor (x0 +. 0.01)) and upto = offset + int_of_float (Float.floor (x1 +. 0.01)) in
         Buffer.add_string b (String.make from ' ' ^ String.make (max 0 (upto - from)) '-' ^ "\n")
-    | Layout.Foot rows -> feet := rows :: !feet in
+    | Layout.Foot rows -> feet := rows :: !feet
+    (* (no sheets: a page's number is not written) *)
+    | Layout.Mark _ -> () in
   List.iter write (Layout.rows look metrics d);
   if !feet <> [] then begin
     Buffer.add_string b ("\n" ^ String.make offset ' ' ^ String.make 26 '_' ^ "\n");

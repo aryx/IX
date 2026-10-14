@@ -130,7 +130,7 @@ let rec request (m : state) (name : string) (args : string list) =
       if args = [] then m.fill.one_line <- true
       else
         List.iter (fun a ->
-          let small = List.map (fun (x : Doc.inline) -> match x with Doc.Text (s, w) -> Doc.Text ({ s with size = s.size - 1 }, w) | Doc.Break -> x) (Roff.inlines roff a) in
+          let small = List.map (fun (x : Doc.inline) -> match x with Doc.Text (s, w) -> Doc.Text ({ s with size = s.size - 1 }, w) | Doc.Break | Doc.Page _ -> x) (Roff.inlines roff a) in
           text m small (ends_sentence small) (Roff.continues a)) args
   | "RI" | "IR" | "IB" | "RB" | "BR" | "BI" ->
       (* the arguments in the two fonts in turn, nothing between *)

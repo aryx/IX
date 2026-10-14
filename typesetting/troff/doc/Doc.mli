@@ -55,6 +55,10 @@ type inline =
   (* the line ends here: between the lines of a paragraph that is not
    * filled *)
   | Break
+  (* the number of the sheet an [Anchor] of this name is on, written
+   * when the sheets are made (To_pdf); where there are none, a
+   * terminal's, or the name is on none, the text *)
+  | Page of style * string * string
 
 type par = {
   (* filled: the words put on lines as they fit. Not filled: the lines
@@ -135,6 +139,10 @@ type block =
   | Keep of block list
   | Table of table
   | Picture of picture
+  (* a place that a [Page] names: the sheet of the next line. Lettered:
+   * a chunk of noweb's, whose number is the sheet's with a letter when
+   * the sheet has several (12a, 12b) *)
+  | Anchor of string * bool
 
 and tagged = { tag : inline list; width : float; body : block list }
 
@@ -165,3 +173,7 @@ val words : inline list -> string
 
 (* the same document, each text of it changed *)
 val map_text : (style -> string -> string) -> t -> t
+val map_inline : (inline -> inline) -> t -> t
+
+(* each [Page] a text: the sheet its name is on, or its own text *)
+val pages : (string -> string option) -> t -> t

@@ -56,8 +56,13 @@
  *
  *   <function addrule 41>=   (used in 12; more in 44)
  *
- * (noweb says these with the page's number and a letter, 12b: a page
- * is not known when a document is read, only when it is laid out.)
+ * On paper the number is noweb's, the sheet's and a letter when the
+ * sheet has several chunks (<function addrule 12b>=): a sheet is not
+ * known when a document is read, so the chunk is an anchor and its
+ * number a Doc.Page, which To_pdf writes when the sheets are cut; the
+ * table of contents' numbers and \pageref the same way. On a
+ * terminal, which has no sheets, the chunk's number, no number in the
+ * table of contents, and a ? for \pageref.
  * \nowebindex is the chunks by name. The document is read twice, the
  * first time for what is named before it is there: a \ref, the table
  * of contents, a chunk used above its definition, the citations.
@@ -67,7 +72,7 @@
  * name's end that LaTeX leaves out; as wide as width= or scale= say,
  * or a pixel a point. What is not done, and said when met: a picture
  * that is a PDF file (the books' lineage diagrams: its name is
- * written), tikz, a page's number (\pageref). Mathematics is as far as words go: letters in italic,
+ * written), tikz. Mathematics is as far as words go: letters in italic,
  * what is raised and lowered, the symbols the PDF's fonts have, a
  * word for the others (alpha, <=): the books have 352 lines with a $
  * and no fraction. One column; a table whose cells are blocks (a

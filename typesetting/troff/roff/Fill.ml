@@ -74,7 +74,7 @@ let untab (tabs : float list) (words : Doc.inline list) : Doc.inline list =
   let col = ref 0 in
   List.map (fun (w : Doc.inline) ->
     match w with
-    | Doc.Break -> w
+    | Doc.Break | Doc.Page _ -> w
     | Doc.Text (_, s) when not (String.contains s '\t') -> col := !col + Utf8.length (Doc.letters s); w
     | Doc.Text (style, s) ->
         let out = Buffer.create (String.length s) in
@@ -125,7 +125,7 @@ let text (m : t) (words : Doc.inline list) (sentence : bool) (glued : bool) =
  * exclamation mark, and what may close after it. (Not "e.g.\&": the
  * nothing that \& is, U+2060, is after the dot.) *)
 let ends_sentence (words : Doc.inline list) : bool =
-  let s = String.concat "" (List.map (fun (w : Doc.inline) -> match w with Doc.Text (_, t) -> t | Doc.Break -> "") words) in
+  let s = String.concat "" (List.map (fun (w : Doc.inline) -> match w with Doc.Text (_, t) | Doc.Page (_, _, t) -> t | Doc.Break -> "") words) in
   let rec go i = i >= 0 && (if String.contains "\"')]*" s.[i] then go (i - 1) else String.contains ".?!" s.[i]) in
   go (String.length s - 1)
 

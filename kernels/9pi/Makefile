@@ -888,9 +888,13 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
+# the manual's pages, ix's own (docs/man/1), named without their .md
+# as Plan 9's are; not turbopascal-tty's, a name longer than the card's
+# file system takes (14 letters), of a program not on the card
+CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/man/1/*.md)),lib/man/1/$(basename $(notdir $(f)))=$(f))
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
-  lib/man/1/troff=../../docs/man/1/troff.md lib/man/1/man=../../docs/man/1/man.md lib/pdf/troff.pdf=$(TROFF_PDF) \
+  $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
   lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \

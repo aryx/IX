@@ -90,7 +90,7 @@ let read (roff : Roff.t) (block : unit -> Doc.inline list * string) : Doc.table 
           let align = match col.key with 'r' -> Doc.Right | 'c' -> Doc.Center | 'n' -> Doc.Numeric | _ -> Doc.Left in
           let styled (words : Doc.inline list) : Doc.inline list =
             if col.size = 0 then words
-            else List.map (fun (w : Doc.inline) -> match w with Doc.Text (st, t) -> Doc.Text ({ st with size = st.size + col.size }, t) | Doc.Break -> w) words in
+            else List.map (fun (w : Doc.inline) -> match w with Doc.Text (st, t) -> Doc.Text ({ st with size = st.size + col.size }, t) | Doc.Break | Doc.Page _ -> w) words in
           let words (t : string) = styled (if col.font = "" then Roff.inlines roff t else Roff.inlines_in roff (Roff.font_named roff col.font) t) in
           if String.length text >= 2 && String.sub text (String.length text - 2) 2 = "T{" then begin
             (* a text of several lines; what is after its T} are the

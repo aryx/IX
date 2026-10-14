@@ -72,7 +72,7 @@ let metrics (style : Doc.style) (s : string) : float =
   float_of_int (total * point_size style)
 
 let measure (text : Doc.inline list) : float =
-  let total = List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (style, s) -> w +. metrics style (Doc.letters s) | Doc.Break -> w) 0. text in
+  let total = List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (style, s) | Doc.Page (style, _, s) -> w +. metrics style (Doc.letters s) | Doc.Break -> w) 0. text in
   total /. en
 
 (* a text at a place, both in thousandths of a point *)
@@ -92,12 +92,15 @@ let rec height (rows : Layout.row list) : float =
     | Layout.Together inner -> h +. height inner
     | Layout.Rule _ -> h +. rule_room
     | Layout.Drawing (_, p) -> h +. Float.round (p.high *. 72. *. point) +. leading
-    | Layout.Foot _ -> h) 0. rows
+    | Layout.Foot _ | Layout.Mark _ -> h) 0. rows
 
 let rec flat (rows : Layout.row list) : Layout.row list =
   List.concat_map (fun (r : Layout.row) -> match r with Layout.Together inner | Layout.Foot inner -> flat inner | _ -> [ r ]) rows
 
-let file (d : Doc.t) : string * string list * int =
+(* The sheets, and where each anchor is: its name, lettered, the
+ * sheet's number. [draw]: what is on them is written (else they are
+ * only counted, for the anchors: a quarter of the time) *)
+let sheets (draw : bool) (d : Doc.t) : Pdf_write.t * int * (string * bool * int) list =
   missing := [];
   (* the lines that go past the paper's right edge *)
   let over = ref 0 in
@@ -108,30 +111,38 @@ let file (d : Doc.t) : string * string list * int =
   let width = Float.round (d.width *. en) in
   let left = Float.round ((paper_width -. width) /. 2.) in
   let page = ref (Pdf_write.content ()) and number = ref 1 and y = ref first_y and used = ref false in
+  (* the anchors, the last first, and those whose line is not yet
+   * placed *)
+  let anchors = ref [] and waiting_anchors = ref [] in
+  let placed () = List.iter (fun (name, lettered) -> anchors := (name, lettered, !number) :: !anchors) (List.rev !waiting_anchors); waiting_anchors := [] in
   (* the sheet's footnotes, the last first, and those that found no
    * room on it; the lowest line the text may have, above them *)
   let feet = ref [] and waiting = ref [] and limit = ref last_y in
   let line (at : float) (pieces : Layout.piece list) =
-    List.iter (fun (p : Layout.piece) ->
-      let s = shown p.style.font p.text in
-      (* (an exponent, an index: a third of the size up or down) *)
-      let up = float_of_int (p.style.shift * size * 1000 / 3) in
-      if String.trim s <> "" then put pdf !page p.style (left +. p.x) (at +. up) s) pieces;
-    match List.rev pieces with
-    | (last : Layout.piece) :: _ when left +. last.x +. metrics last.style last.text > paper_width -> incr over
-    | _ -> () in
+    if draw then begin
+      List.iter (fun (p : Layout.piece) ->
+        let s = shown p.style.font p.text in
+        (* (an exponent, an index: a third of the size up or down) *)
+        let up = float_of_int (p.style.shift * size * 1000 / 3) in
+        if String.trim s <> "" then put pdf !page p.style (left +. p.x) (at +. up) s) pieces;
+      match List.rev pieces with
+      | (last : Layout.piece) :: _ when left +. last.x +. metrics last.style last.text > paper_width -> incr over
+      | _ -> ()
+    end in
   (* a rule above where the next line will stand, at [at] *)
   let across (at : float) (x0 : float) (x1 : float) =
     let y = (at +. leading -. rule_room) /. point in
-    Pdf_write.pen !page 0.5;
-    Pdf_write.polyline !page [ ((left +. x0) /. point, y); ((left +. x1) /. point, y) ];
-    Pdf_write.stroke !page in
+    if draw then begin
+      Pdf_write.pen !page 0.5;
+      Pdf_write.polyline !page [ ((left +. x0) /. point, y); ((left +. x1) /. point, y) ];
+      Pdf_write.stroke !page
+    end in
   (* a footnote's room: its lines, and one for the rule over the first *)
   let room (rows : Layout.row list) : float = height rows +. leading in
   let finish () =
     let c = !page in
     (* the footnotes, the last line of the last on the sheet's last line *)
-    if !feet <> [] then begin
+    if draw && !feet <> [] then begin
       (* a short rule under the text, a line's room for it and between
        * two footnotes *)
       let rule = (!limit -. Float.round (leading /. 4.)) /. point in
@@ -148,14 +159,16 @@ let file (d : Doc.t) : string * string list * int =
           | Layout.Rule (x0, x1) -> across !at x0 x1; at := !at -. rule_room
           | _ -> ()) (flat rows)) (List.rev !feet)
     end;
-    if head_left <> "" || head_right <> "" then begin
+    if draw && (head_left <> "" || head_right <> "") then begin
       put pdf c Doc.plain left header_y head_left;
       put pdf c Doc.plain (left +. Float.floor ((width -. width_of head_middle) /. 2.)) header_y head_middle;
       put pdf c Doc.plain (left +. width -. width_of head_right) header_y head_right
     end;
     let n = string_of_int !number in
-    put pdf c Doc.plain (left +. Float.floor ((width -. width_of n) /. 2.)) number_y n;
-    Pdf_write.page pdf ~width:(paper_width /. point) ~height:(paper_height /. point) c;
+    if draw then begin
+      put pdf c Doc.plain (left +. Float.floor ((width -. width_of n) /. 2.)) number_y n;
+      Pdf_write.page pdf ~width:(paper_width /. point) ~height:(paper_height /. point) c
+    end;
     page := Pdf_write.content (); incr number; y := first_y; used := false;
     feet := !waiting; waiting := [];
     limit := List.fold_left (fun l rows -> l +. room rows) last_y !feet in
@@ -165,6 +178,7 @@ let file (d : Doc.t) : string * string list * int =
     | Layout.Skip n -> if !used then begin let down = Float.round (n *. leading) in y := !y -. down end
     | Layout.Line pieces ->
         if !y < !limit then finish ();
+        placed ();
         line !y pieces;
         used := true; y := !y -. leading
     | Layout.Rule (x0, x1) -> across !y x0 x1; y := !y -. rule_room
@@ -173,10 +187,11 @@ let file (d : Doc.t) : string * string list * int =
          * line of room under it *)
         let high = Float.round (p.high *. 72. *. point) in
         if !used && !y -. high < !limit && high <= first_y -. !limit then finish ();
+        placed ();
         let top = !y +. Float.round (leading *. 0.7) in
         let at (px : float) (py : float) : float * float = (left +. x +. Float.round (px *. 72. *. point), top -. high +. Float.round (py *. 72. *. point)) in
         Pdf_write.pen !page 0.5;
-        List.iter (fun (m : Doc.mark) ->
+        if draw then List.iter (fun (m : Doc.mark) ->
           match m with
           | Doc.Stroke points ->
               Pdf_write.polyline !page (List.map (fun (px, py) -> let ax, ay = at px py in (ax /. point, ay /. point)) points);
@@ -205,8 +220,51 @@ let file (d : Doc.t) : string * string list * int =
         (* (on this sheet if there is room under the line its mark is
          * on; else on the next) *)
         if !y -. room rows >= !limit then begin feet := rows :: !feet; limit := !limit +. room rows end
-        else waiting := rows :: !waiting in
+        else waiting := rows :: !waiting
+    | Layout.Mark (name, lettered) -> waiting_anchors := (name, lettered) :: !waiting_anchors in
   List.iter write (Layout.rows look metrics d);
+  placed ();
   finish ();
   while !feet <> [] do finish () done;
-  (Pdf_write.to_string pdf, List.rev !missing, !over)
+  (pdf, !over, List.rev !anchors)
+
+(* each anchor's page as it is written: the sheet's number, and a
+ * letter after it for those lettered when the sheet has several *)
+let numbers (anchors : (string * bool * int) list) : (string, string) Hashtbl.t =
+  let table = Hashtbl.create 64 in
+  let on (n : int) = List.length (List.filter (fun ((_, lettered, k) : string * bool * int) -> lettered && k = n) anchors) in
+  let seen = Hashtbl.create 64 in
+  List.iter (fun ((name, lettered, n) : string * bool * int) ->
+    let p = string_of_int n in
+    if not lettered || on n < 2 then Hashtbl.replace table name p
+    else begin
+      let k = match Hashtbl.find_opt seen n with Some k -> k | None -> 0 in
+      Hashtbl.replace seen n (k + 1);
+      Hashtbl.replace table name (p ^ String.make 1 (Char.chr (97 + (k mod 26))))
+    end) anchors;
+  table
+
+(* A page's number is known once the sheets are made, and what is
+ * written with it may move what comes after to another sheet: the
+ * sheets are made again with the numbers of the time before, until
+ * they no longer change (LaTeX's "rerun to get cross-references
+ * right", done here; twice for most documents, at most four times). *)
+let file (d : Doc.t) : string * string list * int =
+  let has_pages = ref false in
+  ignore (Doc.map_inline (fun (i : Doc.inline) -> (match i with Doc.Page _ -> has_pages := true | _ -> ()); i) d);
+  let make (draw : bool) (table : (string, string) Hashtbl.t) = sheets draw (Doc.pages (Hashtbl.find_opt table) d) in
+  let same (a : (string, string) Hashtbl.t) (b : (string, string) Hashtbl.t) : bool = Hashtbl.fold (fun k v same -> same && Hashtbl.find_opt b k = Some v) a (Hashtbl.length a = Hashtbl.length b) in
+  let third ((_, _, anchors) : Pdf_write.t * int * (string * bool * int) list) = numbers anchors in
+  (* the sheets counted until the numbers stay the same *)
+  let rec settle (table : (string, string) Hashtbl.t) (times : int) : (string, string) Hashtbl.t =
+    let now = third (make false table) in
+    if same now table || times >= 4 then now else settle now (times + 1) in
+  let result ((pdf, over, _) : Pdf_write.t * int * (string * bool * int) list) = (Pdf_write.to_string pdf, List.rev !missing, over) in
+  if not !has_pages then result (make true (Hashtbl.create 1))
+  else begin
+    (* (counted once, then written: for most documents what is written
+     * puts nothing on another sheet, and it is the last time) *)
+    let first = third (make false (Hashtbl.create 1)) in
+    let written = make true first in
+    if same (third written) first then result written else result (make true (settle (third written) 2))
+  end

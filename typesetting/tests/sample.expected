@@ -407,10 +407,10 @@ The options are:
 `‑o` *file*
 :    The tag is wider than five letters: its text starts below.
 == mini-troff sample.nw: simple LaTeX and noweb's chunks
-sample.nw:35: \ref{nothing} (no such label): not known
-sample.nw:35: \what: not known
-sample.nw:100: a picture from a file (nothing): no such file: not known
-sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
+sample.nw:36: \ref{nothing} (no such label): not known
+sample.nw:36: \what: not known
+sample.nw:101: a picture from a file (nothing): no such file: not known
+sample.nw:109: \ifallcode (a condition not declared: taken as false): not known
                            The Sample Book
                              version 0.1
 
@@ -435,8 +435,8 @@ sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
      as noweb does [2]1. IX. counts with wc and with count();
      again, again. It costs 100% of $5 — no more — in pages 1–2,
      “quoted”, café, bold, typed, SMALL CAPITALS, a%b{c, and
-     n2×xi<=10. Its parts are in Section 1.1 and in Table 1.1; ??
-     is nowhere, and is not a command.
+     n2×xi<=10. Its parts are in Section 1.1 and in Table 1.1, on
+     page ?; ?? is nowhere, and is not a command.
 
      1.1  The loop
      ‹function count 1›=   (more in 3)
@@ -509,11 +509,11 @@ sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
 == mini-troff -T pdf sample.nw
 status 0
 /Count 2
-1976024349 27935
-sample.nw:35: \ref{nothing} (no such label): not known
-sample.nw:35: \what: not known
-sample.nw:100: a picture from a file (nothing): no such file: not known
-sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
+1933345046 28100
+sample.nw:36: \ref{nothing} (no such label): not known
+sample.nw:36: \what: not known
+sample.nw:101: a picture from a file (nothing): no such file: not known
+sample.nw:109: \ifallcode (a condition not declared: taken as false): not known
 == the standard input, a request not known, a table
      X(1)                                                         X(1)
 

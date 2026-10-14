@@ -43,7 +43,7 @@ let text_of (base : Doc.style) (l : Doc.inline list) : string =
   List.iter (fun (i : Doc.inline) ->
     match i with
     | Doc.Break -> Buffer.add_string b "\\\n"; starred := false
-    | Doc.Text (style, s) ->
+    | Doc.Text (style, s) | Doc.Page (style, _, s) ->
         let n = String.length s in
         let lead = indent_of s in
         let tail = ref n in
@@ -121,6 +121,9 @@ let print (paper : bool) (d : Doc.t) : string =
     List.iter (fun (b : Doc.block) ->
       match b with
       | Doc.Space _ -> space := true
+      (* (the format has no sheets: a page's number is the text it has
+       * without them) *)
+      | Doc.Anchor _ -> ()
       | Doc.Heading (level, text) ->
           let s = String.concat " " (String.split_on_char '\n' (text_of bold (List.filter (fun (i : Doc.inline) -> i <> Doc.Break) text))) in
           put b [ String.make (max 1 (min 6 level)) '#' ^ (if s = "" then "" else " " ^ s) ]
@@ -142,8 +145,8 @@ let print (paper : bool) (d : Doc.t) : string =
             | Doc.Break :: rest -> List.rev acc :: split [] rest
             | x :: rest -> split (x :: acc) rest in
           let ls = split [] p.body in
-          let plain = List.for_all (fun (i : Doc.inline) -> match i with Doc.Text (s, _) -> s = mono | Doc.Break -> true) p.body in
-          let ls = List.map (fun l -> if plain then String.concat "" (List.map (fun (i : Doc.inline) -> match i with Doc.Text (_, s) -> s | Doc.Break -> "") l) else text_of Doc.plain l) ls in
+          let plain = List.for_all (fun (i : Doc.inline) -> match i with Doc.Text (s, _) | Doc.Page (s, _, _) -> s = mono | Doc.Break -> true) p.body in
+          let ls = List.map (fun l -> if plain then String.concat "" (List.map (fun (i : Doc.inline) -> match i with Doc.Text (_, s) | Doc.Page (_, _, s) -> s | Doc.Break -> "") l) else text_of Doc.plain l) ls in
           let ticks = if List.exists (fun l -> String.length (String.trim l) >= 3 && String.sub (String.trim l) 0 3 = "```") ls then "``````" else "```" in
           put b (((ticks ^ if plain then "" else "lines") :: ls) @ [ ticks ])
       | Doc.Tagged { tag; width; body } ->

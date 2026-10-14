@@ -31,7 +31,8 @@ of lines, as noweb does~\cite{ramsey-noweb}\furl{https://example.org/noweb}.
 \verb|a%b{c|, and $n^2 \times x_i \leq 10$.
 \l a note to the author, which a book does not show
 
-Its parts are in Section~\ref{sec:loop} and in Table~\ref{tab:files};
+Its parts are in Section~\ref{sec:loop} and in Table~\ref{tab:files},
+on page~\pageref{tab:files};
 \ref{nothing} is nowhere, and \what is not a command.
 
 \section{The loop}

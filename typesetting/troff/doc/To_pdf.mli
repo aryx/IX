@@ -26,8 +26,18 @@
  * no line is kept with the next yet (a heading may be a page's last
  * line), and a space that would start a page is dropped.
  *
+ * A sheet's number written in the text (Doc.Page: a table of
+ * contents, a \pageref, a chunk's 12b) is known only once the sheets
+ * are cut, and writing it may push a line onto the next sheet. They
+ * are cut twice, then: counted, the numbers put in, written; and if
+ * the numbers have moved, counted again until they stay, then
+ * written. The rerun LaTeX asks of its user, done here.
+ *
+ *   counted (empty)  --numbers-->  written  --same numbers?-->  done
+ *
  * Not written: a font carried in the file (for the characters these
- * have not), links, a table of contents, anything but black. *)
+ * have not), links, the outline a viewer shows beside the pages,
+ * anything but black. *)
 
 (* the file's bytes, each character that could not be written, and
  * how many lines go past the paper's right edge (a line that is not

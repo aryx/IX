@@ -73,7 +73,7 @@ let in_size (m : state) (by : int) (args : string list) =
   let arg k = match List.nth_opt args k with Some a -> a | None -> "" in
   if args = [] then Roff.resize m.roff (if by > 0 then "+2" else "-2")
   else begin
-    let small = List.map (fun (x : Doc.inline) -> match x with Doc.Text (s, w) -> Doc.Text ({ s with size = s.size + by }, w) | Doc.Break -> x) (Roff.inlines m.roff (arg 0)) in
+    let small = List.map (fun (x : Doc.inline) -> match x with Doc.Text (s, w) -> Doc.Text ({ s with size = s.size + by }, w) | Doc.Break | Doc.Page _ -> x) (Roff.inlines m.roff (arg 0)) in
     text m (Roff.inlines m.roff (arg 2) @ small @ Roff.inlines m.roff (arg 1))
   end
 

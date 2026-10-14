@@ -5,7 +5,7 @@
 
 open Latex_state
 
-let fresh () : out = { blocks = []; line = []; feet = [] }
+let fresh () : out = { blocks = []; line = []; feet = []; marks = [] }
 
 let mono_of (style : Doc.style) : Doc.style = { style with font = Doc.Mono }
 
@@ -45,20 +45,32 @@ let space (t : t) =
 
 let emit (t : t) (b : Doc.block) = if t.body then t.out.blocks <- b :: t.out.blocks
 
-(* a block after a blank, when it is not the first *)
+(* a block after a blank, when it is not the first (an anchor is not
+ * one) *)
 let block (t : t) (b : Doc.block) =
   if t.body then begin
-    (match t.out.blocks with [] | Doc.Space _ :: _ | Doc.Heading _ :: _ -> () | _ -> emit t (Doc.Space (gap t)));
+    let rec before (l : Doc.block list) = match l with Doc.Anchor _ :: rest -> before rest | l -> l in
+    (match before t.out.blocks with [] | Doc.Space _ :: _ | Doc.Heading _ :: _ -> () | _ -> emit t (Doc.Space (gap t)));
     emit t b
   end
 
+(* a place a page's number is asked of: here, or before the paragraph
+ * being filled (its first line's sheet) *)
+let anchor (t : t) (name : string) (lettered : bool) =
+  if t.body then begin
+    if t.out.line = [] then emit t (Doc.Anchor (name, lettered))
+    else t.out.marks <- Doc.Anchor (name, lettered) :: t.out.marks
+  end
+
 let blank_line (l : Doc.inline list) : bool =
-  List.for_all (fun (i : Doc.inline) -> match i with Doc.Text (_, s) -> String.trim s = "" | Doc.Break -> true) l
+  List.for_all (fun (i : Doc.inline) -> match i with Doc.Text (_, s) -> String.trim s = "" | Doc.Break -> true | Doc.Page _ -> false) l
 
 (* the paragraph being filled is ended *)
 let par (t : t) =
   let l = match t.out.line with Doc.Text (st, p) :: rest when p <> "" && p.[String.length p - 1] = ' ' -> Doc.Text (st, String.sub p 0 (String.length p - 1)) :: rest | l -> l in
   t.out.line <- [];
+  t.out.blocks <- t.out.marks @ t.out.blocks;
+  t.out.marks <- [];
   if not (blank_line l) then begin
     let p : Doc.par = { fill = true; first = 0.; short = 0.; tabs = []; center = t.look.center; body = List.rev l } in
     block t (Doc.Para p)
@@ -95,6 +107,8 @@ let inlines_of (t : t) (raw : string) : Doc.inline list =
   (* (a text of several paragraphs, where one is wanted: its words) *)
   let before = List.concat_map (fun (b : Doc.block) -> match b with Doc.Para p -> p.body @ [ Doc.Text (look.style, " ") ] | _ -> []) (List.rev t.out.blocks) in
   saved.feet <- t.out.feet @ List.filter (fun (b : Doc.block) -> match b with Doc.Footnote _ -> true | _ -> false) t.out.blocks @ saved.feet;
+  (* (a \label in a caption: before the paragraph it is put in) *)
+  saved.marks <- t.out.marks @ List.filter (fun (b : Doc.block) -> match b with Doc.Anchor _ -> true | _ -> false) t.out.blocks @ saved.marks;
   t.out <- saved;
   t.look <- look;
   before @ l

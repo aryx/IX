@@ -17,8 +17,9 @@ type macro = { args : int; default : string option; body : string }
 type look = { style : Doc.style; caps : bool; center : bool }
 
 (* what is being made: the blocks, the last first, and the paragraph
- * being filled, its last piece first, with its footnotes *)
-type out = { mutable blocks : Doc.block list; mutable line : Doc.inline list; mutable feet : Doc.block list }
+ * being filled, its last piece first, with its footnotes and the
+ * anchors met in it (a \label: put before it) *)
+type out = { mutable blocks : Doc.block list; mutable line : Doc.inline list; mutable feet : Doc.block list; mutable marks : Doc.block list }
 
 type env = {
   name : string;
@@ -81,6 +82,8 @@ type t = {
   mutable table : int;
   mutable notes : int;
   mutable chunk : int;
+  (* the entries of the table of contents so far: an anchor's name *)
+  mutable entries : int;
   (* what a \label here names *)
   mutable here : string;
   mutable title : string;

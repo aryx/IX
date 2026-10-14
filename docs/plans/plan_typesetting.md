@@ -461,8 +461,8 @@ bonus. HTML is after, if wanted.
   `ed`, `sed`, `awk`, ...); 39 have not (`ml`, `cc`, `asm`, `ld`,
   `qemu`, `office`, `netscape`, ...; some are there under another
   name, `8c` for `cc`). Copy the 51, each said to be Plan 9's? Write
-  the 39 in the new format? A page for mini-rc that describes rc is
-  wrong wherever the twin is not exact.
+  the 39 in the new format (done: Status)? A page for mini-rc that
+  describes rc is wrong wherever the twin is not exact.
 - **A book's lineage diagrams** (17 pictures made by Perl and
   Graphviz at build time): left as boxes, read as a PDF made
   elsewhere (a PDF inside a PDF is not in `Pdf_write`), or laid out
@@ -881,7 +881,8 @@ Built for Plan 9 on arm, not run there.
 Not done: two columns (the template's `twocolumn`: the books are set
 in one), pictures from files, an index of identifiers (syncweb's
 `defs_and_uses`), page numbers in the table of contents and in a
-chunk's name, hyphenation.
+chunk's name, hyphenation. (Pictures from files and the pages'
+numbers were done after stage 8: below.)
 
 ### Stage 8: m-ix (the author: "let's try stage 8")
 
@@ -968,6 +969,70 @@ with their pictures included. The card's session recorded again
 (troff's page says pictures now): the same under mini-qemu and QEMU,
 the PDF file written on the board the host's.
 
+### Pages' numbers (the author: "ok let's do 1 and 2", the manual's pages and this)
+
+A sheet's number is written where a book asks for it: in the table of
+contents, after each entry at the line's end; for `\pageref`; and as
+noweb's chunk numbers, the sheet's and a letter when the sheet has
+several chunks (`‹function count 1a›=   (more in 1c)`), wherever a
+chunk is named, in the index too.
+
+- **`Doc`**: `Anchor (name, lettered)`, a block that is a place, and
+  `Page (style, name, text)`, an inline that is the number of the
+  sheet the anchor of that name is on; `text` is what is written
+  where there are no sheets (a terminal: the chunk's own number,
+  nothing in the table of contents, a `?` for `\pageref`) or before
+  they are known. `Doc.pages` makes each `Page` a text.
+- **`Layout`**: an anchor is a row of nothing, `Mark`.
+- **`To_pdf`**: an anchor is on the sheet of the next line put. The
+  sheets are cut, the numbers put in, the sheets cut again; if a
+  number moved (what is written with it pushed a line onto the next
+  sheet), cut again until they stay, at most four times: LaTeX's
+  "rerun", done inside. The times before the last count the sheets
+  and draw nothing: the kernel's book (1,050 sheets) in 5.8 s, 4.2 s
+  before, 9.1 s when each time drew.
+- **`Latex`**: an anchor at each heading that is in the table of
+  contents, at each `\label` (before the paragraph it is in: its first
+  line's sheet), at each chunk. On paper an entry of the table of
+  contents is a table of a row, the title filled in what is left and
+  the number at the right.
+
+The terminal's text is as it was (`sample.expected`'s text lines the
+same); `sample.nw` has a `\pageref` (page 2, where its table went).
+Checked: `sample.sh` by the two compilers, the PDF files the same
+bytes, and a book (`Make.nw`) the same bytes by both; `latex.sh`: 21
+books, 8,369 sheets as before, the `\pageref` no longer said; the
+card's typeset session under QEMU the same.
+
+### ix's manual pages
+
+The 39 programs of ix that have no page in principia's manual (its
+sections 1 and 8) each have one in `docs/man/1`, in the new format,
+written from the program's own usage and its code: `5i asm cc ld ml
+singml forth pascal turbopascal turbopascal-tty prolog datalog scheme
+drscheme smalltalk squeak node lynx netscape office emacs-tty play
+rebirth qemu pi chidb curl dossrv fdisk free merge3 mkbootdir mkcard
+mount mv unmount usbd walk xargs`; 41 pages with troff's and man's,
+2,302 lines. Each is typeset with nothing said, as text and as PDF.
+On mini-9pi's card all are in `/lib/man/1` (`kernels/9pi/Makefile`'s
+`CARD_MAN`, the directory's files), but `turbopascal-tty`, a name
+longer than the card's file system takes (14 letters), of a program
+not on the card. The 51 programs that have a page of Plan 9's are
+still the open question's.
+
+What writing them found in the programs, not fixed (said in the
+pages' BUGS where it is the program's): `merge3`'s usage says its
+files in the wrong order; `dossrv`'s `-v` and `-s` and `mount`'s `-n`
+and `-k` are taken and do nothing; `xargs`'s status is always
+success; `netscape` and `rebirth` end on `-help` with an exception,
+and the playground's programs (`office`, `drscheme`, `netscape`,
+`rebirth`) say `usage: game`; `lynx` sends a link of a page read from
+a file to the network; `node`'s `import` gives nothing; `chidb`'s
+`DELETE` is a syntax error; `asm`'s usage has `-m` as if it were
+needed; `ld`'s `-R` is in no usage. And of the format: the writer
+(`-T md`) gives `\man{x}{1}` back as `*x*(1)`, so a page written in
+the format by hand is not the writer's fixed point.
+
 ### The folders
 
 `typesetting/troff/` had 30 files: its parts are in folders, as
@@ -997,9 +1062,9 @@ and were split, no line of them changed but for the names:
 `Doc.words` (a text's letters) replaced the three copies of it. The
 largest file is now `Latex.ml`, 528 lines, then `Roff.ml`, 517.
 
-All of typesetting/: 6,554 lines with the interfaces and their
+All of typesetting/: 6,707 lines with the interfaces and their
 comments. Of the plan's stages, 1 to 5, 7 and 8 are
 done; left: equations (6, postponed by the author).
 
-Next, the author's to choose: hyphenation, fonts for what WinAnsi has not, the
-pages of the 39 programs that have none, stage 6.
+Next, the author's to choose: hyphenation, fonts for what WinAnsi has
+not, the pages of the 51 programs that Plan 9's manual has, stage 6.

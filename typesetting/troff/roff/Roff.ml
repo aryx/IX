@@ -39,7 +39,7 @@ type t = {
 
 (* a terminal's: every character one wide *)
 let letters_width (text : Doc.inline list) : float =
-  List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (_, s) -> w +. float_of_int (Utf8.length (Doc.letters s)) | Doc.Break -> w) 0. text
+  List.fold_left (fun w (i : Doc.inline) -> match i with Doc.Text (_, s) | Doc.Page (_, _, s) -> w +. float_of_int (Utf8.length (Doc.letters s)) | Doc.Break -> w) 0. text
 
 let create (device : device) (source : string) : t =
   let lines = String.split_on_char '\n' (String.concat "" (String.split_on_char '\r' source)) in
@@ -221,7 +221,7 @@ let rec inlines (t : t) (s : string) : Doc.inline list =
             if cols > 0 then List.iter (fun _ -> Buffer.add_string run "\xc2\xa0") (List.init cols (fun x -> x));
             go k
         | 'v' | 'x' | 'l' | 'L' | 'w' | 'X' | 'b' | 'D' -> let _, k = quoted s j in go k
-        | 'o' -> let both, k = quoted s j in List.iter (fun (x : Doc.inline) -> match x with Doc.Text (_, a) -> Buffer.add_string run a | Doc.Break -> ()) (inlines t both); go k
+        | 'o' -> let both, k = quoted s j in List.iter (fun (x : Doc.inline) -> match x with Doc.Text (_, a) | Doc.Page (_, _, a) -> Buffer.add_string run a | Doc.Break -> ()) (inlines t both); go k
         | 'k' -> go (j + 1)
         | '*' | 'n' -> let _, k = name_at s j in go k
         | '"' -> ()

@@ -32,6 +32,11 @@ val space : Latex_state.t -> unit
 val emit : Latex_state.t -> Doc.block -> unit
 (* a block after a blank, when it is not the first *)
 val block : Latex_state.t -> Doc.block -> unit
+
+(* [anchor t name lettered]: a place a page's number is asked of
+ * (Doc.Anchor), here or, inside a paragraph, before it *)
+val anchor : Latex_state.t -> string -> bool -> unit
+
 val blank_line : Doc.inline list -> bool
 (* the paragraph being filled is ended, its footnotes after it *)
 val par : Latex_state.t -> unit

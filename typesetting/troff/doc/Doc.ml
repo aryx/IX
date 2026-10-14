@@ -13,7 +13,7 @@ type cell = { align : align; span : int; filled : bool; body : inline list }
 type table_row = Cells of cell list | Rule
 type table = { centered : bool; boxed : bool; widths : float list; rows : table_row list }
 
-type mark = Stroke of (float * float) list | Label of float * float * int * inline list
+type mark = Stroke of (float * float) list | Label of float * float * int * inline list | Image of float * float * float * float * string * Rgba_image.t
 type picture = { wide : float; high : float; marks : mark list }
 
 type block =
@@ -54,5 +54,5 @@ let map_text (f : style -> string -> string) (d : t) : t =
     | Keep inner -> Keep (List.map block inner)
     | Table t ->
         Table { t with rows = List.map (fun (r : table_row) -> match r with Rule -> Rule | Cells cs -> Cells (List.map (fun (c : cell) -> { c with body = List.map inline c.body }) cs)) t.rows }
-    | Picture p -> Picture { p with marks = List.map (fun (m : mark) -> match m with Stroke _ -> m | Label (x, y, side, text) -> Label (x, y, side, List.map inline text)) p.marks } in
+    | Picture p -> Picture { p with marks = List.map (fun (m : mark) -> match m with Stroke _ | Image _ -> m | Label (x, y, side, text) -> Label (x, y, side, List.map inline text)) p.marks } in
   { d with body = List.map block d.body }

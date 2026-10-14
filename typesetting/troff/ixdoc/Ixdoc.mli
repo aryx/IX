@@ -54,9 +54,14 @@
  * Not Markdown's whole: what ix's own 164 files use of it, counted by
  * typesetting/tests/md.sh. Not read: a line under a heading in place
  * of its # marks, links kept apart ([name]: where), HTML (said), a
- * picture from a file (said, its words kept), a rule across the
- * page. A paragraph's next line must not be set in less than its
- * item (no "lazy" line).
+ * rule across the page. A paragraph's next line must not be set in
+ * less than its item (no "lazy" line).
+ *
+ * A picture from a file, ![words](file), is a PNG, a JPEG or a GIF
+ * (Doc_image); it is put after the paragraph that names it, in the
+ * line's middle, 96 of its pixels to the inch and no wider than the
+ * line. A file that is not there or not a picture is said, and its
+ * words are written in its place.
  *
  * To_ixdoc is the other way: any document, whatever read it, written
  * in these words. Ixdoc_syntax has what the two share: a text's marks

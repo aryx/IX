@@ -105,14 +105,17 @@ type table = {
   rows : table_row list;
 }
 
-(* A picture: lines and words, placed in inches from its lower left
- * corner, up being up. *)
+(* A picture: lines, words and pictures from files, placed in inches
+ * from its lower left corner, up being up. *)
 type mark =
   (* a line through points *)
   | Stroke of (float * float) list
   (* words on one line, their middle at a point (0), or their left
    * end (-1), or their right end (1) *)
   | Label of float * float * int * inline list
+  (* a picture from a file: its lower left corner, how wide and how
+   * high it is shown, the file's name, its pixels *)
+  | Image of float * float * float * float * string * Rgba_image.t
 
 type picture = { wide : float; high : float; marks : mark list }
 

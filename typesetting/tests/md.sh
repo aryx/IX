@@ -59,7 +59,7 @@ for f in $(git ls-files '*.md' | grep -v prompt-history); do
   n=$((n + 1))
   $MINI $f > /dev/null 2> $W/err || status=1
   [ -s $W/err ] || quiet=$((quiet + 1))
-  sed 's/^[^:]*:[0-9]*: //; s/: not known$//; s/^!\[.*(a picture in a file)/a picture in a file/; s/^<.*(HTML)/HTML/' $W/err >> $W/said
+  sed 's/^[^:]*:[0-9]*: //; s/: not known$//; s/^!\[.*(a picture in a file: \([^)]*\))$/a picture in a file: \1/; s/^<.*(HTML)/HTML/' $W/err >> $W/said
   $MINI -T pdf $f > $W/x.pdf 2> /dev/null && pdf=$((pdf + 1))
 done
 echo "ix's Markdown: $n files; with nothing not known: $quiet; made a PDF file: $pdf"

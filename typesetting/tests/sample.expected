@@ -235,7 +235,7 @@ status 0
 == mini-troff sample.md: the new format
 sample.md:8: \nothing: not known
 sample.md:62: <div>HTML is said.</div> (HTML): not known
-sample.md:63: ![a picture] (a picture in a file): not known
+sample.md:63: ![a picture](x.png) (a picture in a file: no such file): not known
      sample(7)                                               sample(7)
      NAME
           sample – the new format, each thing of it once
@@ -284,7 +284,8 @@ sample.md:63: ![a picture] (a picture in a file): not known
                                  In the middle.
 
         More
-          a picture too.
+          a picture too, when its file is not there. One that is:
+                   [picture: ../../lib_graphics/pdf/tests/data/shapes-1.png]
 
      __________________________
           1. A footnote, said where it is.
@@ -364,15 +365,16 @@ In the middle.
 }
 
 ## More
-a picture too.
+a picture too, when its file is not there. One that is:
+![../../lib_graphics/pdf/tests/data/shapes-1.png](../../lib_graphics/pdf/tests/data/shapes-1.png)
 status 0
 == mini-troff -T pdf sample.md
 status 0
-/Count 1
-2361388482 3520
+/Count 2
+78975216 26963
 sample.md:8: \nothing: not known
 sample.md:62: <div>HTML is said.</div> (HTML): not known
-sample.md:63: ![a picture] (a picture in a file): not known
+sample.md:63: ![a picture](x.png) (a picture in a file: no such file): not known
 == mini-troff -T md sample.1: a manual page converted, its first lines
 \title{SAMPLE}{1}
 
@@ -407,7 +409,8 @@ The options are:
 == mini-troff sample.nw: simple LaTeX and noweb's chunks
 sample.nw:35: \ref{nothing} (no such label): not known
 sample.nw:35: \what: not known
-sample.nw:102: \ifallcode (a condition not declared: taken as false): not known
+sample.nw:100: a picture from a file (nothing): no such file: not known
+sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
                            The Sample Book
                              version 0.1
 
@@ -479,6 +482,11 @@ sample.nw:102: \ifallcode (a condition not declared: taken as false): not known
 
                         Figure 1.1: The flow.
 
+                         [picture: shapes-1]
+
+       Figure 1.2: A picture from a file; [picture: nothing] is
+                                none.
+
          A quotation, set in.
 
 
@@ -501,10 +509,11 @@ sample.nw:102: \ifallcode (a condition not declared: taken as false): not known
 == mini-troff -T pdf sample.nw
 status 0
 /Count 2
-2522625236 4781
+1976024349 27935
 sample.nw:35: \ref{nothing} (no such label): not known
 sample.nw:35: \what: not known
-sample.nw:102: \ifallcode (a condition not declared: taken as false): not known
+sample.nw:100: a picture from a file (nothing): no such file: not known
+sample.nw:108: \ifallcode (a condition not declared: taken as false): not known
 == the standard input, a request not known, a table
      X(1)                                                         X(1)
 

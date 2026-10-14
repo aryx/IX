@@ -14,8 +14,8 @@
  * Lost on the way: a hanging paragraph's width when it is not a
  * whole number of columns, a paragraph's first line set in, tab
  * stops, a table's rules other than its heading's and its cells that
- * go across columns, and a picture is the lines and words it was
- * drawn as. *)
+ * go across columns, a picture is the lines and words it was drawn
+ * as, and a picture from a file has its file's name for words. *)
 
 (* [print paper d]: d written in the format; [paper] says which
  * lengths d was read with *)

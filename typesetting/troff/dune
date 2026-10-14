@@ -1,7 +1,8 @@
 ; typesetting/troff: mini-troff, a document typeset
 ; (docs/plans/plan_typesetting.md). Its parts in folders (folders
 ; only: one library, ix_troff):
-;   doc/    Doc: a document, whatever it was written in; Layout: its
+;   doc/    Doc: a document, whatever it was written in (Doc_image: a
+;           picture from a file, as a block of one); Layout: its
 ;           blocks put on lines; To_text, To_pdf: the lines written
 ;           for a terminal, and as the sheets of a PDF file
 ;   roff/   what was written for troff. Roff: its input as lines,
@@ -24,7 +25,7 @@
  (name ix_troff)
  (wrapped false)
  (modules :standard \ Main)
- (libraries ix_core ix_graphics_pdf ix_graphics_fonts fpath unix caps))
+ (libraries ix_core ix_graphics_pdf ix_graphics_fonts ix_graphics_images ix_graphics_core ix_compression fpath unix caps))
 
 (executable
  (name Main)

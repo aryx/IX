@@ -207,7 +207,8 @@ let rec statement (e : env) (s : statement) =
            e.marks <- List.map (fun (m : Doc.mark) ->
                match m with
                | Doc.Stroke ps -> Doc.Stroke (List.map (fun (x, y) -> (x +. mx, y +. my)) ps)
-               | Doc.Label (x, y, side, t) -> Doc.Label (x +. mx, y +. my, side, t)) sub.marks @ e.marks;
+               | Doc.Label (x, y, side, t) -> Doc.Label (x +. mx, y +. my, side, t)
+               | Doc.Image (x, y, w, h, name, img) -> Doc.Image (x +. mx, y +. my, w, h, name, img)) sub.marks @ e.marks;
            add e label { o with names = List.map (fun (n, x) -> (n, moved mx my x)) sub.names }
        | Line | Arrow | Spline | Move ->
            let start = match find attrs (fun a -> match a with From p -> Some p | _ -> None) with Some p -> position e p | None -> e.here in
@@ -285,7 +286,7 @@ let rec statement (e : env) (s : statement) =
 
 (* the box that everything drawn is in *)
 and bounds (e : env) : float * float * float * float =
-  let points = List.concat_map (fun (m : Doc.mark) -> match m with Doc.Stroke ps -> ps | Doc.Label (x, y, _, _) -> [ (x, y) ]) e.marks
+  let points = List.concat_map (fun (m : Doc.mark) -> match m with Doc.Stroke ps -> ps | Doc.Label (x, y, _, _) -> [ (x, y) ] | Doc.Image (x, y, w, h, _, _) -> [ (x, y); (x +. w, y +. h) ]) e.marks
                @ List.concat_map (fun (o : obj) -> [ (o.x0, o.y0); (o.x1, o.y1) ]) e.objs in
   match points with
   | [] -> (0., 0., 0., 0.)
@@ -328,5 +329,6 @@ let read (load : string -> string option) (width : float) (words : string -> Doc
              marks = List.rev_map (fun (m : Doc.mark) ->
                match m with
                | Doc.Stroke ps -> Doc.Stroke (List.map at ps)
-               | Doc.Label (x, y, side, t) -> let x, y = at (x, y) in Doc.Label (x, y, side, t)) e.marks } in
+               | Doc.Label (x, y, side, t) -> let x, y = at (x, y) in Doc.Label (x, y, side, t)
+               | Doc.Image (x, y, w, h, name, img) -> let x, y = at (x, y) in Doc.Image (x, y, w, h, name, img)) e.marks } in
       Ok p

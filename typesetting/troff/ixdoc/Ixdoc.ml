@@ -93,12 +93,28 @@ let rec inlines (t : t) (style : Doc.style) (s : string) : Doc.inline list =
         | None -> Buffer.add_string b (String.make k c); go (i + k)
       end
       else if c = '!' && i + 1 < n && s.[i + 1] = '[' then begin
-        (* a picture in a file: its words in its place, and said *)
+        (* a picture in a file: after the paragraph; its words in its
+         * place, and said, when the file is not one *)
         match closing s (i + 1) '[' ']' with
         | Some j when j + 1 < n && s.[j + 1] = '(' ->
             let e = match String.index_from_opt s (j + 1) ')' with Some e -> e | None -> n - 1 in
-            say t ("![" ^ String.sub s (i + 2) (j - i - 2) ^ "] (a picture in a file)");
-            add (inlines t style (String.sub s (i + 2) (j - i - 2))); go (e + 1)
+            let file = String.trim (String.sub s (j + 2) (max 0 (e - j - 2))) in
+            (* (its name without a title after it: ![words](file "title")) *)
+            let file = match String.index_opt file ' ' with Some k -> String.sub file 0 k | None -> file in
+            (match (match t.load file with Some bytes -> Doc_image.picture file bytes 0. 96. 6. | None -> Error "no such file") with
+             (* after the paragraph it is in, as a footnote is *)
+             | Ok picture ->
+                 t.feet <- picture :: t.feet;
+                 (* (the last thing of its text: no space is left for it) *)
+                 if e + 1 >= n then begin
+                   let k = ref (Buffer.length b) in
+                   while !k > 0 && (Buffer.nth b (!k - 1) = ' ' || Buffer.nth b (!k - 1) = '\n') do decr k done;
+                   Buffer.truncate b !k
+                 end
+             | Error why ->
+                 say t ("![" ^ String.sub s (i + 2) (j - i - 2) ^ "](" ^ file ^ ") (a picture in a file: " ^ why ^ ")");
+                 add (inlines t style (String.sub s (i + 2) (j - i - 2))));
+            go (e + 1)
         | _ -> Buffer.add_char b c; go (i + 1)
       end
       else if c = '[' then begin

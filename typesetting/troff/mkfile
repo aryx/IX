@@ -8,14 +8,16 @@ TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/typesetting/troff
 G=$TOP/lib_graphics
-DIRS=. doc roff pic ixdoc latex $D $G/geometry $G/core $G/fonts $G/pdf $TOP/lib_compression
-INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $TOP/lib_compression $STDI
+DIRS=. doc roff pic ixdoc latex $D $G/geometry $G/core $G/fonts $G/pdf $G/images $TOP/lib_compression
+INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $G/images -I $TOP/lib_compression $STDI
 # (each before the ones that name it)
 PDF=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write
-SRC=Doc Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
-LIB=$PDF $SRC
+# (and what a picture's file is read with: PNG, JPEG, GIF)
+IMAGES=Huffman Lzw Dct Jpeg_progressive Jpeg Png Gif Image_file
+SRC=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
+LIB=$PDF $IMAGES $SRC
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly $G/geometry/Affine.ml* $G/core/Rgba_image.ml* $G/fonts/Glyph_names.ml* $G/fonts/Standard_widths.ml* $G/pdf/Pdf_write.ml* $TOP/lib_compression/Zlib.ml*}
+LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly $G/geometry/Affine.ml* $G/core/Rgba_image.ml* $G/fonts/Glyph_names.ml* $G/fonts/Standard_widths.ml* $G/pdf/Pdf_write.ml* $G/images/*.ml* $TOP/lib_compression/Zlib.ml* $TOP/lib_compression/Huffman.ml* $TOP/lib_compression/Lzw.ml*}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-troff

@@ -280,6 +280,28 @@ and bibliography (t : t) (files : string) =
         let body = part roman "author" ". " @ part italic "title" ". " @ where @ part roman "year" ". " @ part roman "note" "" in
         block t (Doc.Tagged { tag = [ Doc.Text (roman, "[" ^ string_of_int (k + 1) ^ "]") ]; width = cols t 5.; body = [ Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = false; body } ] })) (List.rev t.known.cites)
 
+(* A picture from a file: the file as it is named, or with the name's
+ * end that LaTeX leaves out; as wide as its options say (width=, a
+ * length; scale=), or a pixel a point. *)
+and includegraphics (t : t) (options : string) (f : string) =
+  let line = if t.paper then 86.4 else 60. in
+  let inch = if t.paper then 14.4 else 10. in
+  let option (name : string) : string option =
+    List.find_map (fun (o : string) ->
+      match String.index_opt o '=' with
+      | Some i when String.trim (String.sub o 0 i) = name -> Some (String.trim (String.sub o (i + 1) (String.length o - i - 1)))
+      | _ -> None) (String.split_on_char ',' options) in
+  let found = List.find_map (fun (e : string) -> match t.load (f ^ e) with Some bytes -> Some bytes | None -> None) [ ""; ".png"; ".jpg"; ".jpeg"; ".gif" ] in
+  let fails (why : string) = say t ("a picture from a file (" ^ f ^ "): " ^ why); put t (Doc.Text (t.look.style, "[picture: " ^ Filename.basename f ^ "]")) in
+  match found with
+  | None -> fails (if t.load (f ^ ".pdf") <> None || Filename.check_suffix f ".pdf" then "a PDF file, not read as a picture" else "no such file")
+  | Some bytes ->
+      let scale = match option "scale" with Some s -> (match float_of_string_opt s with Some v -> v | None -> 1.) | None -> 1. in
+      let wide = match option "width" with Some w -> Latex_table.length t line w /. inch | None -> 0. in
+      (match Doc_image.picture (Filename.basename f) bytes wide (72. /. scale) (line /. inch) with
+       | Ok picture -> par t; block t picture
+       | Error why -> fails why)
+
 and cite_label (t : t) (key : string) : string =
   match Hashtbl.find_opt t.known.bibitems key with
   | Some l -> l
@@ -431,10 +453,9 @@ and builtin (t : t) (w : string) =
       emit t (Doc.Space 1.)
   | "nowebindex" -> Noweb.index t
   | "includegraphics" ->
-      ignore (opt t);
-      let f = arg t in
-      say t ("a picture from a file (" ^ f ^ ")");
-      put t (Doc.Text (style, "[picture: " ^ Filename.basename f ^ "]"))
+      let options = opt t in
+      let f = String.trim (arg t) in
+      includegraphics t (match options with Some o -> o | None -> "") f
   | "VerbatimInput" | "verbatiminput" | "lstinputlisting" ->
       ignore (opt t);
       let f = arg t in

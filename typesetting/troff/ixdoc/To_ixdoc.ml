@@ -194,13 +194,14 @@ let print (paper : bool) (d : Doc.t) : string =
             let dashes = String.make widths.(k) '-' in
             match side k with Doc.Left -> ":" ^ dashes ^ "-" | Doc.Center -> ":" ^ dashes ^ ":" | Doc.Right | Doc.Numeric -> "-" ^ dashes ^ ":")) ^ "|" in
           put b (match rows with h :: rest -> line h :: rule :: List.map line rest | [] -> [])
+      | Doc.Picture { marks = [ Doc.Image (_, _, _, _, name, _) ]; _ } -> put b [ "![" ^ escape name ^ "](" ^ name ^ ")" ]
       | Doc.Picture p ->
           (* pic's own words for what is left of it: lines and texts *)
           let point ((x, y) : float * float) : string = Printf.sprintf "%.3f,%.3f" x y in
           put b (("```pic" :: List.filter_map (fun (m : Doc.mark) ->
             match m with
             | Doc.Stroke (first :: rest) when rest <> [] -> Some ("line from " ^ point first ^ String.concat "" (List.map (fun pt -> " to " ^ point pt) rest))
-            | Doc.Stroke _ -> None
+            | Doc.Stroke _ | Doc.Image _ -> None
             | Doc.Label (x, y, side, text) ->
                 let s = String.map (fun c -> if c = '"' then '\'' else c) (text_of Doc.plain (List.filter (fun (i : Doc.inline) -> i <> Doc.Break) text)) in
                 Some ("\"" ^ s ^ "\" at " ^ point (x, y) ^ (if side < 0 then " ljust" else if side > 0 then " rjust" else ""))) p.marks) @ [ "```" ])) bs;

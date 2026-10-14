@@ -929,6 +929,45 @@ Not run: `make check-card` whole (its other sessions), `page
 screen: minutes under mini-qemu), a real board. pageview was built for
 Plan 9 on arm again after the fix, not run there.
 
+### Pictures from files (the author, of what to do next: "maybe pictures from files")
+
+A picture from a file is in the document, and in its PDF file:
+
+- **`Doc`**: one more mark of a picture, beside its lines and its
+  words: `Image`, a place, a size, the file's name and its pixels. So
+  the layout, the place in the line's middle and what is kept on one
+  sheet are a picture's, with nothing new; `Pic` moves it as it moves
+  the others.
+- **`Doc_image`** (new, 26 lines): a file's bytes to that block. A
+  PNG, a JPEG or a GIF, by its first bytes (lib_graphics's `Png`,
+  `Jpeg`, `Gif`, compiled into the program as `Pdf_write` is); its
+  width is asked or its own, never wider than the line, in whole
+  hundredths of an inch.
+- **The readers**: Markdown's `![words](file)`, put after the
+  paragraph that names it, 96 pixels to the inch; LaTeX's
+  `\includegraphics[width=...,scale=...]{file}`, the file as named or
+  with `.png`, `.jpg`, `.jpeg`, `.gif` added, a pixel a point with no
+  option.
+- **The writers**: `To_pdf` draws it with `Pdf_write.picture`, which
+  was there (mini-office's); a terminal has `[picture: name]`;
+  `To_ixdoc` writes `![name](name)`, the words of the first being
+  lost.
+
+Not read, and said: a picture that is a PDF file (the books' 17
+lineage diagrams, which their build makes with Graphviz) and an SVG
+file (5 in ix's own Markdown). SVG was tried: lib_graphics's `Svg`
+draws no text, ix's drawings are boxes with words in them, and its
+`Fill` has the name of troff's `Fill` in one program.
+
+Checked: `latex.sh`, the books' pictures from files said went from 34
+to 17, the 17 PNG and GIF files shown (8,369 sheets); `md.sh`, ix's
+Markdown: 5 PNG files shown, 5 SVG said, 164 of 167 files with
+nothing said; `sample.md` and `sample.nw` each have one, and one
+that is not there; the same bytes by the two compilers, PDF files
+with their pictures included. The card's session recorded again
+(troff's page says pictures now): the same under mini-qemu and QEMU,
+the PDF file written on the board the host's.
+
 ### The folders
 
 `typesetting/troff/` had 30 files: its parts are in folders, as
@@ -958,11 +997,9 @@ and were split, no line of them changed but for the names:
 `Doc.words` (a text's letters) replaced the three copies of it. The
 largest file is now `Latex.ml`, 528 lines, then `Roff.ml`, 517.
 
-All of typesetting/: 6,439 lines with the interfaces and their
-comments (366 more than before the split: its eight new interfaces
-and the new files' headers). Of the plan's stages, 1 to 5, 7 and 8 are
+All of typesetting/: 6,554 lines with the interfaces and their
+comments. Of the plan's stages, 1 to 5, 7 and 8 are
 done; left: equations (6, postponed by the author).
 
-Next, the author's to choose: pictures from files (34 in the books, 9
-in ix's Markdown), hyphenation, fonts for what WinAnsi has not, the
+Next, the author's to choose: hyphenation, fonts for what WinAnsi has not, the
 pages of the 39 programs that have none, stage 6.

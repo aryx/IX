@@ -35,7 +35,8 @@ What a file is written in is said by an option, or found:
 **-md**
 :    A document in Markdown's lines, with `\name[options]{text}` for
      what Markdown has not. A file named `.md` or `.ixd` is one, and
-     a file whose first line is a `\title`: this page.
+     a file whose first line is a `\title`: this page. A picture
+     from a file, `![words](file)`, is a PNG, a JPEG or a GIF.
 
 **-latex**
 :    Simple LaTeX, with noweb's chunks of code: a book. A file named
@@ -78,4 +79,3 @@ troff -T md tr.1 > tr.md
 # BUGS
 No equation is set: an `.EQ` is passed over, and said.
 Words are not cut at a line's end, so some lines are loose.
-A picture from a file is its name.

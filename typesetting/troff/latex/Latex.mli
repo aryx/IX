@@ -62,9 +62,12 @@
  * first time for what is named before it is there: a \ref, the table
  * of contents, a chunk used above its definition, the citations.
  *
- * What is not done, and said when met: a picture from a file
- * (\includegraphics: its name is written), tikz, a page's number
- * (\pageref). Mathematics is as far as words go: letters in italic,
+ * A picture from a file (\includegraphics[width=...]{file}) is a
+ * PNG, a JPEG or a GIF (Doc_image), found as it is named or with the
+ * name's end that LaTeX leaves out; as wide as width= or scale= say,
+ * or a pixel a point. What is not done, and said when met: a picture
+ * that is a PDF file (the books' lineage diagrams: its name is
+ * written), tikz, a page's number (\pageref). Mathematics is as far as words go: letters in italic,
  * what is raised and lowered, the symbols the PDF's fonts have, a
  * word for the others (alpha, <=): the books have 352 lines with a $
  * and no fraction. One column; a table whose cells are blocks (a

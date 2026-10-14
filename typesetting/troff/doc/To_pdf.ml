@@ -181,6 +181,13 @@ let file (d : Doc.t) : string * string list * int =
           | Doc.Stroke points ->
               Pdf_write.polyline !page (List.map (fun (px, py) -> let ax, ay = at px py in (ax /. point, ay /. point)) points);
               Pdf_write.stroke !page
+          | Doc.Image (px, py, w, h, _, img) ->
+              let ax, ay = at px py in
+              let scale : Affine.t = { a = Float.round (w *. 72. *. point) /. point; b = 0.; c = 0.; d = Float.round (h *. 72. *. point) /. point; tx = ax /. point; ty = ay /. point } in
+              Pdf_write.save !page;
+              Pdf_write.transform !page scale;
+              Pdf_write.draw !page (Pdf_write.picture pdf img);
+              Pdf_write.restore !page
           | Doc.Label (px, py, side, text) ->
               let ax, ay = at px py in
               let wide = measure text *. en in

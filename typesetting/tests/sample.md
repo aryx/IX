@@ -60,4 +60,5 @@ In the middle.
 
 ## More \label{sec:more}
 <div>HTML is said.</div>
-![a picture](x.png) too.
+![a picture](x.png) too, when its file is not there. One that is:
+![the shapes](../../lib_graphics/pdf/tests/data/shapes-1.png)

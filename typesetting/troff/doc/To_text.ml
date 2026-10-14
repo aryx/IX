@@ -53,7 +53,11 @@ let page (d : Doc.t) : string =
     | Layout.Drawing (x, p) ->
         (* a terminal has no lines to draw with: the picture's words, from
          * its top to its bottom, each at its place across *)
-        let labels = List.filter_map (fun (m : Doc.mark) -> match m with Doc.Label (lx, ly, _, text) -> Some (ly, lx, text) | Doc.Stroke _ -> None) p.marks in
+        let labels = List.filter_map (fun (m : Doc.mark) -> match m with
+          | Doc.Label (lx, ly, _, text) -> Some (ly, lx, text)
+          (* (a picture from a file: its name) *)
+          | Doc.Image (ix, iy, _, _, name, _) -> Some (iy, ix, [ Doc.Text (Doc.plain, "[picture: " ^ name ^ "]") ])
+          | Doc.Stroke _ -> None) p.marks in
         List.iter (fun (_, lx, text) ->
           let pieces, _ = Layout.one_line metrics (x +. Float.floor (lx *. look.inch)) text in
           Buffer.add_string b (row pieces); Buffer.add_char b '\n') (List.sort (fun (y1, x1, _) (y2, x2, _) -> if y1 = y2 then compare x1 x2 else compare y2 y1) labels)

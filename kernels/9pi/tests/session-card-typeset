@@ -73,7 +73,7 @@ dossrv: serving #s/dos
      DIAGNOSTICS
           A title with no page is said, and the status is no page.
 % man 1 troff | wc
-     72     394    2625
+     72     400    2661
 % man nothing
 mini-man: no page for nothing in /sys/man or /lib/man
 % troff /lib/man/1/man | wc
@@ -83,7 +83,7 @@ mini-man: no page for nothing in /sys/man or /lib/man
 % troff -T pdf /lib/man/1/troff > /tmp/troff.pdf
 % cmp /tmp/troff.pdf /lib/pdf/troff.pdf
 % wc -c /tmp/troff.pdf
-   5507 /tmp/troff.pdf
+   5574 /tmp/troff.pdf
 % echo .XY z | troff
 <stdin>:1: .XY: not known
 % rm /tmp/troff.pdf

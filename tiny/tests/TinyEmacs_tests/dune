@@ -1,0 +1,5 @@
+; TinyEmacs.ml's test on the host (TinyEmacs_test.sh): keys typed at the editor
+(executable
+ (name Keys)
+ (modules Keys)
+ (libraries tiny_emacs))

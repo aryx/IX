@@ -13,9 +13,10 @@ $ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
 $ hi
 sh 2 75271
 rc 2 208856
+emacs 2 165020
 mltests 2 77585
 paint 2 75138
-windows 2 158548
+windows 2 159448
 square 2 128508
 tetris 2 142556
 calc 2 161364

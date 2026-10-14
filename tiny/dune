@@ -92,6 +92,13 @@
  (modules TinyAppTetris)
  (libraries tiny_lib_playground))
 
+; TinyEmacs.ml, the screen editor: the editor itself, with no system
+; under it (tests/TinyEmacs_tests/'s test types keys at it)
+(library
+ (name tiny_emacs)
+ (wrapped false)
+ (modules TinyEmacs))
+
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
 ; on it

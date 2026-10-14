@@ -77,6 +77,7 @@ test: all
 	./tiny/tests/TinyAppTetris_test.sh
 	./tiny/tests/TinyLibGUI_test.sh
 	./tiny/tests/TinyLibStd_test.sh
+	./tiny/tests/TinyEmacs_test.sh
 	$(MAKE) -C tiny/TinyKernel/steps clean all
 	$(MAKE) -C tiny/TinyKernel/steps/t6 check
 	$(MAKE) -C tiny/TinyKernel check

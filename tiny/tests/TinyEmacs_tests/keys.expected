@@ -1,0 +1,227 @@
+== an empty text
+||
+||
+||
+||
+||
+|-- notes -- L1 C0 ------|
+||
+cursor 0 0
+== three lines typed
+|hello world|
+|second line|
+|third|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 5 2
+== C-a, two lines up, five characters forward
+|hello world|
+|second line|
+|third|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 5 0
+== C-k: the rest of the line
+|hello|
+|second line|
+|third|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 5 0
+== C-k twice more: the newline, the next line
+|hello|
+|third|
+||
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 5 0
+== a line down, C-y: the three kills, one text
+|hello|
+|third world|
+|second line|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 11 2
+== three Backspace, one C-d
+|hello|
+|third world|
+|second l|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 8 2
+== Escape <, C-e, a space, the arrows
+|hello |
+|third world|
+|second l|
+||
+||
+|-- notes (modified) -- L|
+||
+cursor 5 1
+== C-x C-q, not saved: refused
+|hello |
+|third world|
+|second l|
+||
+||
+|-- notes (modified) -- L|
+|Not saved: C-x C-s saves|
+cursor 5 1
+asks: save
+== C-x C-s, and the program says it wrote
+|hello |
+|third world|
+|second l|
+||
+||
+|-- notes -- L2 C5 ------|
+|Wrote notes|
+cursor 5 1
+asks: quit
+== a text of twelve lines
+|line 1|
+|line 2|
+|line 3|
+|line 4 needle|
+|line 5|
+|-- twelve -- L1 C0 -----|
+||
+cursor 0 0
+== C-v: a screen down
+|line 5|
+|line 6|
+|line 7|
+|line 8 needle|
+|line 9|
+|-- twelve -- L5 C0 -----|
+||
+cursor 0 0
+== Escape >: the end
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 needle|
+|-- twelve -- L12 C0 ----|
+||
+cursor 0 4
+== Escape v: a screen up; C-l: the cursor's line in the middle
+|line 6|
+|line 7|
+|line 8 needle|
+|line 9|
+|line 10|
+|-- twelve -- L8 C0 -----|
+||
+cursor 0 2
+== from the start, C-s nee
+|line 4 needle|
+|line 5|
+|line 6|
+|line 7|
+|line 8 needle|
+|-- twelve -- L4 C10 ----|
+|I-search: nee|
+cursor 10 0
+== C-s again: the next one
+|line 4 needle|
+|line 5|
+|line 6|
+|line 7|
+|line 8 needle|
+|-- twelve -- L8 C10 ----|
+|I-search: nee|
+cursor 10 4
+== twice more: the last one, then none
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 needle|
+|-- twelve -- L12 C11 ---|
+|Failing I-search: nee|
+cursor 11 4
+== Backspace: a character less to look for
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 needle|
+|-- twelve -- L12 C11 ---|
+|I-search: ne|
+cursor 11 4
+== Enter ends the search; a ! typed
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 nee!dle|
+|-- twelve (modified) -- |
+||
+cursor 12 4
+== C-s zz, none; C-g
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 nee!dle|
+|-- twelve (modified) -- |
+||
+cursor 12 4
+== what is not a command
+|line 8 needle|
+|line 9|
+|line 10|
+|line 11|
+|line 12 nee!dle|
+|-- twelve (modified) -- |
+|Not a command|
+cursor 12 4
+== tabs, and a line wider than the screen
+|        if(x)|
+|                return a|
+|abcdefghijklmnopqrstuvwx|
+||
+||
+|-- wide -- L1 C0 -------|
+||
+cursor 0 0
+== after the first tab, a line down: the same character's column
+|        if(x)|
+|                return a|
+|abcdefghijklmnopqrstuvwx|
+||
+||
+|-- wide -- L2 C1 -------|
+||
+cursor 8 1
+== the wide line's end: the screen follows the cursor
+||
+|   return a        b;|
+|nopqrstuvwxyz0123456789|
+||
+||
+|-- wide -- L3 C36 ------|
+||
+cursor 23 2
+== back up: the screen as it was
+|        if(x)|
+|                return a|
+|abcdefghijklmnopqrstuvwx|
+||
+||
+|-- wide -- L1 C0 -------|
+||
+cursor 0 0

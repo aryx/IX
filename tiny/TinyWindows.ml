@@ -130,7 +130,8 @@ let newline w =
 
 (* what a program printed: the characters that fit the line are one
  * text, on cells made white (old: a message a character, three seconds
- * for an ls) *)
+ * for an ls). An ENQ (5) is a question: the window's size, posted in
+ * its mouse box as a mouse at (width, height) with the buttons -1 *)
 let print w s =
   let n = String.length s in
   let cells k = fill w.image white (w.page.col * 8, w.page.row * 16, (w.page.col + k) * 8, (w.page.row * 16) + 16) in
@@ -138,6 +139,7 @@ let print w s =
     if i < n then begin
       if s.[i] = '\n' then (newline w; from (i + 1))
       else if s.[i] = '\b' then (if w.page.col > 0 then (w.page.col <- w.page.col - 1; cells 1); from (i + 1))
+      else if s.[i] = '\005' then (ignore (u_write w.ends.mouse (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1))); from (i + 1))
       else begin
         if (w.page.col + 1) * 8 > w.w then newline w;
         let room = (w.w / 8) - w.page.col in
@@ -346,14 +348,17 @@ let mouse x y b =
 (*****************************************************************************)
 
 (* whatever can be read first: the mouse (a word each: x, y, the
- * buttons), the keys, what a window's programs print or draw. The end
+ * buttons), the keys, what a window's programs draw or print (the
+ * kernel gives the first ready of those asked about: what a program
+ * drew before it ended is drawn before the shell's prompt after it,
+ * which would be drawn over and the window left a picture). The end
  * of the keys is ours; the end of a window's pipes (its shell and its
  * programs gone) is the window's *)
 let rec loop () =
   flush ();
   let fds = Array.make 32 0 and n = ref 2 in
   fds.(0) <- 4;
-  List.iter (fun w -> if !n < 31 then (fds.(!n) <- w.ends.prints; fds.(!n + 1) <- w.ends.draws; n := !n + 2)) !windows;
+  List.iter (fun w -> if !n < 31 then (fds.(!n) <- w.ends.draws; fds.(!n + 1) <- w.ends.prints; n := !n + 2)) !windows;
   let fd = u_ready fds !n 0 in
   if fd = 4 then begin
     let s = u_read 4 12 in

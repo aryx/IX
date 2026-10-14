@@ -22,7 +22,10 @@
 #                     (calc, on ../TinyLibGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
 #                     button held) and temp.events (temp, its two
-#                     fields typed in, in a window); and two with the
+#                     fields typed in, in a window) and emacs.events
+#                     (emacs f in a window: two lines typed, a word
+#                     killed and another typed, saved, quit, cat f);
+#                     and two with the
 #                     network: wiki.events (wiki mandelbrot: a picture
 #                     from the wire's other end, ../tests/www's, painted
 #                     a row a message) and wikiwin.events (the same in a
@@ -64,7 +67,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
@@ -162,6 +165,15 @@ $(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
 $(O)/bin/rc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/rc.tm
 	@$(MLLINK)
 
+# the screen editor (emacs: ../TinyEmacs.ml, tiny-emacs's editor, and
+# user/emacs.ml, its screen, keys and file on this kernel's calls)
+EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEmacs.ml user/emacs.ml
+$(O)/user/emacs.tm: $(EMACS)
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(EMACS)
+$(O)/bin/emacs: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/emacs.tm
+	@$(MLLINK)
+
 # a program that draws: with draw.c, the messages (draw.h)
 $(O)/user/paint.tm: libc/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
@@ -195,7 +207,7 @@ check: $(O)/boot.img
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc temp; do \
+	for s in paint windows nested play tetris calc temp emacs; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

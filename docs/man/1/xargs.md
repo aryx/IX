@@ -1,4 +1,4 @@
-\title{xargs}{1}
+\title{xargs}{1}{shell}
 
 # NAME
 xargs – a command run with the input's lines as its arguments

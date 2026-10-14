@@ -6,6 +6,8 @@
  *
  *   mini-man tr         every page named tr, of any section
  *   mini-man 2 open     the one of section 2
+ *   mini-man 1          section 1 listed, its pages by groups
+ *   mini-man            every section listed so
  *
  * A page is a file, dir/section/name (/sys/man/1/tr): the manual is a
  * tree, and finding a page is looking in eight directories. The tree
@@ -23,15 +25,103 @@
  * the commands, 2 the system calls, 3 the library, 4 the devices, 5
  * the file formats, 6 the games, 7 the rest, 8 for who maintains the
  * system. Plan 9 kept the order and changed what is in some (3 the
- * devices, 4 the file servers, 5 the protocol, 6 the formats). *)
+ * devices, 4 the file servers, 5 the protocol, 6 the formats).
+ *
+ * A section is listed by groups, a page in the new format saying its
+ * own as the third part of its first line, \title{grep}{1}{text}:
+ *
+ *   files
+ *     cat     one file after another, on the standard output
+ *     ...
+ *   text
+ *     grep    the lines that match a pattern
+ *
+ * Section 1 is the /bin of the manual, a hundred commands in one
+ * directory; the groups are what /progs's directories are on ix's
+ * card, for the eye. A page that says none (Plan 9's, by man(6)'s
+ * macros) is in "other", at the end.
+ *
+ * others:
+ * Unix's man -k (apropos, 3BSD) looks for a word in a database of the
+ * NAME lines (whatis, made by makewhatis); Plan 9's lookman, in an
+ * index of the words. BSD's pages say a section's title in the
+ * header's middle ("General Commands Manual"), as ix's say their
+ * group. *)
 
-type caps = < Cap.open_in ; Cap.stdout ; Cap.stderr >
+type caps = < Cap.open_in ; Cap.readdir ; Cap.stdout ; Cap.stderr >
 
-let usage = "usage: mini-man [-v] [-m dir] [-T pdf] [section] title ...\n"
+let usage = "usage: mini-man [-v] [-m dir] [-T pdf] [section] [title ...]\n"
 
 exception Usage
 
 let sections = [ "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8" ]
+
+(* the groups, in the order listed; then those not here, by name; then
+ * "other" *)
+let groups = [ "shell"; "files"; "text"; "calc"; "time"; "processes"; "system"; "devtools"; "languages"; "typesetting"; "apps"; "browsers"; "network"; "emulators"; "games" ]
+
+(* A page's group and what its NAME says it is: \title's third part,
+ * and the words after the dash of the line under NAME (# NAME in the
+ * new format, .SH NAME by man(6)'s macros) *)
+let summary (source : string) : string * string =
+  let lines = String.split_on_char '\n' source in
+  let group =
+    match lines with
+    | first :: _ when String.length first > 7 && String.sub first 0 7 = "\\title{" ->
+        (match String.split_on_char '{' first with
+         | [ _; _; _; g ] -> (match String.index_opt g '}' with Some i when i > 0 -> String.sub g 0 i | _ -> "other")
+         | _ -> "other")
+    | _ -> "other" in
+  let rec after_name (l : string list) : string =
+    match l with
+    | ("# NAME" | ".SH NAME") :: rest ->
+        (* (its paragraph: to a blank line, a heading or a request) *)
+        let rec skip (l : string list) = match l with x :: more when String.trim x = "" -> skip more | l -> l in
+        let rec para (l : string list) : string list =
+          match l with
+          | x :: more when String.trim x <> "" && x.[0] <> '#' && x.[0] <> '.' -> String.trim x :: para more
+          | _ -> [] in
+        String.concat " " (para (skip rest))
+    | _ :: rest -> after_name rest
+    | [] -> "" in
+  let line = after_name lines in
+  (* (after the dash: the new format's, or man(6)'s \-) *)
+  let what =
+    let cut (sep : string) (s : string) : string option =
+      let n = String.length sep and m = String.length s in
+      let rec go (i : int) : string option = if i + n > m then None else if String.sub s i n = sep then Some (String.trim (String.sub s (i + n) (m - i - n))) else go (i + 1) in
+      go 0 in
+    match cut "\xe2\x80\x93" line with Some w -> w | None -> (match cut "\\-" line with Some w -> w | None -> String.trim line) in
+  (group, what)
+
+(* [index caps dirs section]: the section's pages by groups, as text;
+ * "" if it has none *)
+let index (caps : < Cap.open_in ; Cap.readdir ; .. >) (dirs : string list) (section : string) : string =
+  (* each name once, from the first tree that has it *)
+  let pages = ref [] in
+  List.iter (fun dir ->
+    let entries = try Sys_plan9.dirread caps (dir ^ "/" ^ section) with Unix.Unix_error _ -> [] in
+    List.iter (fun (e : Sys_plan9.dir) ->
+      let name = if Filename.check_suffix e.name ".md" then Filename.chop_suffix e.name ".md" else e.name in
+      (* (not a page: Plan 9's INDEX, lookman's) *)
+      if not (List.mem_assoc name !pages) && name <> "INDEX" && name <> "" && name.[0] <> '.' then
+        match FS.read_opt caps (Fpath.v (dir ^ "/" ^ section ^ "/" ^ e.name)) with
+        | Some source -> pages := (name, summary source) :: !pages
+        | None -> ()) entries) dirs;
+  if !pages = [] then ""
+  else begin
+    let pages = List.sort compare !pages in
+    let width = List.fold_left (fun w ((name, _) : string * (string * string)) -> max w (String.length name)) 0 pages in
+    let named = List.sort_uniq compare (List.map (fun ((_, (g, _)) : string * (string * string)) -> g) pages) in
+    let order = List.filter (fun g -> List.mem g named) groups @ List.filter (fun g -> not (List.mem g groups) && g <> "other") named @ (if List.mem "other" named then [ "other" ] else []) in
+    let b = Buffer.create 4096 in
+    Buffer.add_string b ("Section " ^ section ^ "\n");
+    List.iter (fun g ->
+      Buffer.add_string b ("\n  " ^ g ^ "\n");
+      List.iter (fun ((name, (pg, what)) : string * (string * string)) ->
+        if pg = g then Buffer.add_string b (Printf.sprintf "    %-*s  %s\n" width name what)) pages) order;
+    Buffer.contents b
+  end
 
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   try
@@ -46,8 +136,16 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       | rest -> rest in
     let args = options (List.tl (Array.to_list argv)) in
     let wanted, titles = match args with s :: rest when List.mem s sections -> ([ s ], rest) | _ -> (sections, args) in
-    if titles = [] then raise Usage;
     let missing = ref false in
+    (* no title: the sections listed *)
+    if titles = [] then begin
+      let lists = List.filter (fun s -> s <> "") (List.map (index caps !dirs) wanted) in
+      if lists = [] then begin
+        Console.eprint caps (Printf.sprintf "mini-man: no pages%s in %s\n" (match wanted with [ s ] -> " of section " ^ s | _ -> "") (String.concat " or " !dirs));
+        missing := true
+      end
+      else Console.print caps (String.concat "\n" lists)
+    end;
     List.iter (fun title ->
       let found = ref false in
       List.iter (fun section ->

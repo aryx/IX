@@ -1,4 +1,4 @@
-\title{node}{1}
+\title{node}{1}{languages}
 
 # NAME
 node – JavaScript, outside a page

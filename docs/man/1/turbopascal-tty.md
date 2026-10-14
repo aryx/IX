@@ -1,4 +1,4 @@
-\title{turbopascal-tty}{1}
+\title{turbopascal-tty}{1}{languages}
 
 # NAME
 turbopascal-tty – Turbo Pascal's IDE, in a terminal

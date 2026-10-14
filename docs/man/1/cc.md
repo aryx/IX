@@ -1,4 +1,4 @@
-\title{cc}{1}
+\title{cc}{1}{devtools}
 
 # NAME
 cc – the C compiler, for arm and arm64

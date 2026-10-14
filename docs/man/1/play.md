@@ -1,4 +1,4 @@
-\title{play}{1}
+\title{play}{1}{apps}
 
 # NAME
 play – a file of music played

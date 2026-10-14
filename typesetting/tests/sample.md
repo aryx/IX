@@ -1,4 +1,4 @@
-\title{sample}{7}
+\title{sample}{7}{typesetting}
 \newcommand{\ix}{**ix**}
 
 # NAME

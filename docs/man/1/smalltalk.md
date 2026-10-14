@@ -1,4 +1,4 @@
-\title{smalltalk}{1}
+\title{smalltalk}{1}{languages}
 
 # NAME
 smalltalk – Smalltalk-80, on a terminal

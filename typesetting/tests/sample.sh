@@ -15,7 +15,8 @@
 # And a book of ix's own, sample.nw (Latex), simple LaTeX with noweb's
 # chunks and its references in sample.bib: as text, as a PDF file.
 # Then what mini-troff says of a request it does not know, mini-man
-# finding a page in a tree, and one that is not there.
+# finding a page in a tree, and one that is not there; and listing the
+# tree's sections by groups.
 #
 # sample.expected is what troff itself writes of sample.1 (goken's, as
 # nroff, with Plan 9's tmac.an), but for the characters that are not
@@ -69,7 +70,11 @@ cd $HERE
   $MAN -m $W/man sample 2>&1 | grep -c . ; echo "status $?"
   $MAN -m $W/man 6 sample 2>&1; echo "status $?"
   $MAN -m $W/man 1 nothing 2>&1 | sed "s|$W|TMP|"; echo "status ${PIPESTATUS[0]}"
-  $MAN 2>&1; echo "status $?"
+  echo "== mini-man's list: the sections by groups (sample.md says its own, typesetting; man(6)'s pages none: other)"
+  mkdir -p $W/man/7; cp sample.md $W/man/7/sample.md
+  $MAN -m $W/man 2>&1; echo "status $?"
+  $MAN -m $W/man 3 2>&1 | sed "s|$W|TMP|"; echo "status ${PIPESTATUS[0]}"
+  $MAN -z 2>&1; echo "status $?"
   $TROFF -x 2>&1 | head -1; echo "status ${PIPESTATUS[0]}"
   $TROFF /nonexistent 2>&1; echo "status $?"
 } > $W/out

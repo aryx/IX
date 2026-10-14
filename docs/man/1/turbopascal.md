@@ -1,4 +1,4 @@
-\title{turbopascal}{1}
+\title{turbopascal}{1}{languages}
 
 # NAME
 turbopascal – Turbo Pascal's IDE, in a window

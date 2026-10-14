@@ -1,4 +1,4 @@
-\title{singml}{1}
+\title{singml}{1}{devtools}
 
 # NAME
 singml – mini-singularity's contracts, and a program checked as safe

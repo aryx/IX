@@ -23,7 +23,8 @@ To decide first:
 ## What writing ix's manual pages found (2026-10-14)
 
 Each page of `docs/man/1` was written from its program's usage and
-code; what did not hold, and what became of it:
+code (the 39 that Plan 9 has none of, then the 52 it has); what did
+not hold, and what became of it:
 
 | program | input | what it did | now |
 |---|---|---|---|
@@ -35,6 +36,13 @@ code; what did not hold, and what became of it:
 | mini-xargs | `echo a \| mini-xargs false` | status 0 | Plan 9's (xargs.c ends by exits(nil)): the page says so |
 | mini-chidb | `DELETE FROM t` | `SQL syntax error.` | chidb's: its machine and its B-tree have no delete, and its shell says that of all it does not compile (CHIDB_EINVALIDSQL); the page says so |
 | mini-dossrv | -v, -s | taken, nothing done | on purpose, Plan 9's command lines taken; the page says so |
+| mini-touch | `mini-touch -t 0 z; mini-mtime z` (the pages of Plan 9's 52, the same day) | now, not 1970 | OCaml's Unix.utimes takes 0.0 for now; not fixed, in its BUGS |
+| mini-seq | `mini-seq -f%03g 3` | its usage, status 1: -f is in the usage (Plan 9's seq.c's line) and not done | not fixed, in its DIFFERENCES |
+| mini-du | `mini-du -z` | the usage lists Plan 9's options (`[-aefhnqstu] [-p si-pfx]`), which it refuses | not fixed, in its BUGS |
+| mini-awk | `mini-awk -mf 10 'BEGIN{}'` | `unknown option -mf ignored`, though its usage has it | not fixed, in its DIFFERENCES |
+| mini-cmp | an offset written with a 0 first | read in decimal, Plan 9's in octal (int_of_string "010" is 10) | not fixed, in its DIFFERENCES |
+| mini-ps | `mini-ps` on Linux | lines that mean nothing: Linux's /proc read as Plan 9's | not fixed, in its BUGS (on mini-9pi it is right) |
+| mini-rc | `rfork n`; -v, -p | taken and nothing done, on mini-9pi too (no new name space); -v does not write the input | not checked on the board; in its DIFFERENCES |
 
 ## mini-ml (2026-10-01, goal 2 of plan_ml_bootstrap.md)
 

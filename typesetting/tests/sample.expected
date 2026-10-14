@@ -236,7 +236,7 @@ status 0
 sample.md:8: \nothing: not known
 sample.md:62: <div>HTML is said.</div> (HTML): not known
 sample.md:63: ![a picture](x.png) (a picture in a file: no such file): not known
-     sample(7)                                               sample(7)
+     sample(7)                  typesetting                  sample(7)
      NAME
           sample – the new format, each thing of it once
 
@@ -290,7 +290,7 @@ sample.md:63: ![a picture](x.png) (a picture in a file: no such file): not known
      __________________________
           1. A footnote, said where it is.
 == mini-troff -T md sample.md: written back; and that read and written again, the same
-\title{sample}{7}
+\title{sample}{7}{typesetting}
 
 # NAME
 sample – the new format, each thing of it once
@@ -371,7 +371,7 @@ status 0
 == mini-troff -T pdf sample.md
 status 0
 /Count 2
-78975216 26963
+4103236792 26992
 sample.md:8: \nothing: not known
 sample.md:62: <div>HTML is said.</div> (HTML): not known
 sample.md:63: ![a picture](x.png) (a picture in a file: no such file): not known
@@ -533,7 +533,25 @@ status 0
 status 0
 mini-man: no page for nothing in TMP/man
 status 1
-usage: mini-man [-v] [-m dir] [-T pdf] [section] title ...
+== mini-man's list: the sections by groups (sample.md says its own, typesetting; man(6)'s pages none: other)
+Section 1
+
+  other
+    sample  a page to try the macros of man(6) on
+
+Section 6
+
+  other
+    sample  the format of nothing
+
+Section 7
+
+  typesetting
+    sample  the new format, each thing of it once
+status 0
+mini-man: no pages of section 3 in TMP/man
+status 1
+usage: mini-man [-v] [-m dir] [-T pdf] [section] [title ...]
 status 1
 usage: mini-troff [-man|-ms|-md|-latex] [-T text|pdf|md] [file ...]
 status 1

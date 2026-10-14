@@ -1,4 +1,4 @@
-\title{merge3}{1}
+\title{merge3}{1}{devtools}
 
 # NAME
 merge3 – two files changed from a common base, merged

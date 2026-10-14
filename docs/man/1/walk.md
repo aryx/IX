@@ -1,4 +1,4 @@
-\title{walk}{1}
+\title{walk}{1}{files}
 
 # NAME
 walk – what is under a directory, a path a line

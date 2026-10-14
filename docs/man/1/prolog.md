@@ -1,4 +1,4 @@
-\title{prolog}{1}
+\title{prolog}{1}{languages}
 
 # NAME
 prolog – the Prolog language

@@ -1,4 +1,4 @@
-\title{lynx}{1}
+\title{lynx}{1}{browsers}
 
 # NAME
 lynx – the web, in a terminal

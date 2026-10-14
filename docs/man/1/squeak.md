@@ -1,4 +1,4 @@
-\title{squeak}{1}
+\title{squeak}{1}{languages}
 
 # NAME
 squeak – Smalltalk, in a window

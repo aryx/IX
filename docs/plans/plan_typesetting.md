@@ -456,7 +456,8 @@ bonus. HTML is after, if wanted.
 ## Open questions
 
 - **The name of the new format**, and its extension.
-- **Which man pages are ix's.** 51 of ix's 90 `mini-` programs have a
+- **Which man pages are ix's** (answered: ix's own for all, with
+  their DIFFERENCES; Status). 51 of ix's 90 `mini-` programs have a
   page under their name in principia's sections 1 and 8 (`rc`, `mk`,
   `ed`, `sed`, `awk`, ...); 39 have not (`ml`, `cc`, `asm`, `ld`,
   `qemu`, `office`, `netscape`, ...; some are there under another
@@ -1017,8 +1018,21 @@ mount mv unmount usbd walk xargs`; 41 pages with troff's and man's,
 On mini-9pi's card all are in `/lib/man/1` (`kernels/9pi/Makefile`'s
 `CARD_MAN`, the directory's files), but `turbopascal-tty`, a name
 longer than the card's file system takes (14 letters), of a program
-not on the card. The 51 programs that have a page of Plan 9's are
-still the open question's.
+not on the card. Then the 52 that Plan 9's manual has too (the author: "regarding
+the 54 programs, let's document the ix version, and explain the
+differences with the original when there are (in a compact way
+possibly; not too long; not sure if we want a special LIMITATIONS
+section or something)"; troff and man had theirs): ix's own pages,
+from the programs' code, each with a section DIFFERENCES, before SEE
+ALSO, a few lines of what Plan 9's program has that ix's has not or
+does otherwise, none when nothing is worth saying; BUGS stays for
+what is wrong in ix's program itself. Where ix's program is another
+under the same name (page reads PDF itself, lex and yacc are
+ocamllex's and ocamlyacc's twins, spin is no model checker, mkfs makes
+an xv6 image, emacs, httpd), DIFFERENCES says so in a line or two. For
+a language (rc, awk, sed, ed, hoc, dc, bc, mk), what is there in a few
+lines, Plan 9's page named for the language whole. All 93 programs of
+ix have a page now, 4,500 lines, each in a group (below).
 
 What writing them found in the programs is in `docs/plans/bugs/ix.md`
 ("What writing ix's manual pages found"), each with what became of
@@ -1030,6 +1044,24 @@ said in the pages, as Plan 9's or chidb's: `xargs`'s status, `chidb`'s
 `DELETE`, `dossrv`'s `-v` and `-s`, `merge3`'s usage. And of the
 format: the writer (`-T md`) gives `\man{x}{1}` back as `*x*(1)`, so a
 page written in the format by hand is not the writer's fixed point.
+
+### The manual by groups (the author: "maybe we should introduce this in our modern man page system, so things are easier to browse, all in section (1) is a bit like all in /bin and the /progs/ split helps a bit for browsing. Maybe we could have a way to see this table also with man?")
+
+A page in the new format says its group, the third part of its first
+line, `\title{grep}{1}{text}`; it is in the header's middle on the
+page (`TROFF(1)  typesetting  TROFF(1)`, where BSD's pages say
+"General Commands Manual"), and written back by `-T md`. `man 1`, a
+section and no title, lists the section by groups, each page with
+what its NAME says it is; `man` alone, every section. The groups, in
+that order: shell, files, text, calc, time, processes, system,
+devtools, languages, typesetting, apps, browsers, network, emulators,
+games; a page that says none (Plan 9's, by man(6)) is in "other", at
+the end. mini-man reads each directory through the capability
+(`Sys_plan9.dirread`), each page's first line and its NAME
+paragraph (the new format's `# NAME` or man(6)'s `.SH NAME`), and skips
+Plan 9's INDEX files. Checked: `sample.sh` (a tree of three sections,
+a section with none), the same list of principia's whole manual by the
+two compilers.
 
 ### The folders
 

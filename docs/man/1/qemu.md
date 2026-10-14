@@ -1,4 +1,4 @@
-\title{qemu}{1}
+\title{qemu}{1}{emulators}
 
 # NAME
 qemu – a Raspberry Pi, emulated

@@ -1,4 +1,4 @@
-\title{chidb}{1}
+\title{chidb}{1}{apps}
 
 # NAME
 chidb – a small SQL database

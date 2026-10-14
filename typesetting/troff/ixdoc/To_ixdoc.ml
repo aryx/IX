@@ -209,9 +209,9 @@ let print (paper : bool) (d : Doc.t) : string =
                 let s = String.map (fun c -> if c = '"' then '\'' else c) (text_of Doc.plain (List.filter (fun (i : Doc.inline) -> i <> Doc.Break) text)) in
                 Some ("\"" ^ s ^ "\" at " ^ point (x, y) ^ (if side < 0 then " ljust" else if side > 0 then " rjust" else ""))) p.marks) @ [ "```" ])) bs;
     List.rev !out in
-  let (left, _, _) = d.header in
+  let (left, middle, _) = d.header in
   let title =
     match (String.index_opt left '(', ends_with left ')') with
-    | Some i, true -> [ "\\title{" ^ escape (String.sub left 0 i) ^ "}{" ^ String.sub left (i + 1) (String.length left - i - 2) ^ "}"; "" ]
+    | Some i, true -> [ "\\title{" ^ escape (String.sub left 0 i) ^ "}{" ^ String.sub left (i + 1) (String.length left - i - 2) ^ "}" ^ (if middle = "" then "" else "{" ^ escape middle ^ "}"); "" ]
     | _ -> [] in
   String.concat "\n" (title @ blocks d.body) ^ "\n"

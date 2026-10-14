@@ -1,4 +1,4 @@
-\title{emacs-tty}{1}
+\title{emacs-tty}{1}{devtools}
 
 # NAME
 emacs-tty – Emacs, in a terminal

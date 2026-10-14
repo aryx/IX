@@ -1,4 +1,4 @@
-\title{mkbootdir}{1}
+\title{mkbootdir}{1}{system}
 
 # NAME
 mkbootdir – the files of a kernel's own image, its /boot

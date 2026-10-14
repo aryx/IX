@@ -2,7 +2,9 @@
  * with one form, \name[options]{text}, for all that Markdown has not,
  * read.
  *
- *   \title{tr}{1}                       a manual page: its header
+ *   \title{tr}{1}{text}                 a manual page: its header, and
+ *                                       its group (man 1 lists the
+ *                                       section by groups)
  *
  *   # SYNOPSIS                          a heading
  *   **tr** [ **-cds** ] *string1*       bold, italic; `typed` is the

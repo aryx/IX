@@ -888,6 +888,9 @@ MKFS = ../../_build/default/kernels/tools/Mkfs.exe
 CARD_MB = 128
 CARD_FS_MB = 95
 CARD_FS = build/card-fs.img
+# its files and directories, at most: xv6's 200 were full at the
+# manual's 93 pages (2026-10-14)
+CARD_FS_INODES = 1024
 # the manual's pages, ix's own (docs/man/1), named without their .md
 # as Plan 9's are; not turbopascal-tty's, a name longer than the card's
 # file system takes (14 letters), of a program not on the card
@@ -919,7 +922,7 @@ $(CARD_NS): Makefile
 	@mkdir -p build
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
 $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
 # version.txt: which card this is, a line that boot.rc says last on a
 # board (not under an emulator: the recorded screens): mini-9pi's
 # version (changes.txt's first), the commit (a + when the tree differs

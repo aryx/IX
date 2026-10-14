@@ -1,4 +1,4 @@
-\title{troff}{1}
+\title{troff}{1}{typesetting}
 
 # NAME
 troff – a document typeset, for a terminal or as a PDF file
@@ -35,8 +35,9 @@ What a file is written in is said by an option, or found:
 **-md**
 :    A document in Markdown's lines, with `\name[options]{text}` for
      what Markdown has not. A file named `.md` or `.ixd` is one, and
-     a file whose first line is a `\title`: this page. A picture
-     from a file, `![words](file)`, is a PNG, a JPEG or a GIF.
+     a file whose first line is a `\title` (a manual page's: its name, its
+     section and its group, which \man{man}{1} lists it by): this page.
+     A picture from a file, `![words](file)`, is a PNG, a JPEG or a GIF.
 
 **-latex**
 :    Simple LaTeX, with noweb's chunks of code: a book. A file named

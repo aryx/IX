@@ -1,4 +1,5 @@
 man man
+man 1 | sed 12q
 man 1 troff | wc
 man nothing
 troff /lib/man/1/man | wc

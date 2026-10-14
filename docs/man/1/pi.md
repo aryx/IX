@@ -1,4 +1,4 @@
-\title{pi}{1}
+\title{pi}{1}{emulators}
 
 # NAME
 pi – a Raspberry Pi kernel built and booted

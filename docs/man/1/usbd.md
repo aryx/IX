@@ -1,4 +1,4 @@
-\title{usbd}{1}
+\title{usbd}{1}{system}
 
 # NAME
 usbd – the USB keyboards and mice found and started
@@ -11,8 +11,8 @@ usbd – the USB keyboards and mice found and started
 for each keyboard and each mouse starts a process that reads its
 reports and writes what they mean to the kernel: a keyboard's keys,
 as a PC's scancodes, to the keyboard device's `kbin`; a mouse's
-moves and buttons to `#m/mousein`. The kernel has the controller and gives each endpoint
-as files, `#u`; it knows no device.
+moves and buttons to `#m/mousein`. The kernel has the controller and
+gives each endpoint as files, `#u`; it knows no device.
 
 *Usbd* returns when it has looked at every port once, the devices
 found working. A process stays and looks again four times a second:

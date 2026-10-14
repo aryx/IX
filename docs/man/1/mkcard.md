@@ -1,4 +1,4 @@
-\title{mkcard}{1}
+\title{mkcard}{1}{system}
 
 # NAME
 mkcard – an SD card's image for a Raspberry Pi

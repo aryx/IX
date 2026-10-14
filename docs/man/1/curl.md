@@ -1,4 +1,4 @@
-\title{curl}{1}
+\title{curl}{1}{network}
 
 # NAME
 curl – a URL's bytes on the standard output

@@ -21,7 +21,7 @@
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let help = {|usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file|directory/...
+let help = {|usage: mini-mkfs [-m megabytes] [-b blocksize] [-i inodes] out name=file|directory/...
 An image of xv6's file system (with ix's larger files: lib_xv6fs), its files
 the ones named; a name with / makes the directories on its way, and a name
 that ends with / is a directory, empty.
@@ -30,16 +30,20 @@ that ends with / is a directory, empty.
                               and two empty directories, /usr/pad and /tmp
   mini-mkfs -m 8 -b 512 fs.img ...
                               8 MB, blocks of 512 bytes
+  mini-mkfs -i 1024 fs.img ...
+                              room for 1024 files and directories (200, xv6's,
+                              by default)
   mini-mkcard -fs fs.img card.img ...
                               the image as a card's second partition
 A name is 14 characters at most (xv6's).
 |}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let megabytes = ref 32 and bsize = ref 1024 in
+  let megabytes = ref 32 and bsize = ref 1024 and inodes = ref 200 in
   let rec options = function
     | "-m" :: n :: rest when int_of_string_opt n <> None -> megabytes := int_of_string n; options rest
     | "-b" :: n :: rest when int_of_string_opt n <> None -> bsize := int_of_string n; options rest
+    | "-i" :: n :: rest when int_of_string_opt n <> None -> inodes := int_of_string n; options rest
     | rest -> rest in
   match options (List.tl (Array.to_list argv)) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; 0
@@ -50,7 +54,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       let read at n = if at >= size then "" else Bytes.sub_string disk at (min n (size - at)) in
       let write at s = Bytes.blit_string s 0 disk at (String.length s) in
       try
-        let t = Xv6fs.format read write (size / !bsize) !bsize 200 in
+        let t = Xv6fs.format read write (size / !bsize) !bsize !inodes in
         (* a directory of a directory: found, or made *)
         let down dir name = match Xv6fs.lookup t dir name with Some i -> i | None -> Xv6fs.create t dir name Xv6fs.Dir in
         let names s = List.filter (fun n -> n <> "") (String.split_on_char '/' s) in
@@ -69,6 +73,6 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         FS.write caps (Fpath.v out) (Bytes.to_string disk);
         0
       with Sys_error m | Failure m -> Console.eprint caps ("mini-mkfs: " ^ m ^ "\n"); 1)
-  | _ -> Console.eprint caps "usage: mini-mkfs [-m megabytes] [-b blocksize] out name=file|directory/...   (-h: how)\n"; 1
+  | _ -> Console.eprint caps "usage: mini-mkfs [-m megabytes] [-b blocksize] [-i inodes] out name=file|directory/...   (-h: how)\n"; 1
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"mini-mkfs"; CapStdlib.exit caps (main caps (CapSys.argv caps)))

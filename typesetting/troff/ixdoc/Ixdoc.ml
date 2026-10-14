@@ -401,8 +401,9 @@ let rec blocks (t : t) (nested : bool) (lines : line list) : Doc.block list =
     t.filled <- true;
     (match name with
      | "title" when List.length args >= 2 ->
+         (* (a third: the page's group, in the header's middle) *)
          let title = arg 0 ^ "(" ^ arg 1 ^ ")" in
-         t.manual <- true; t.header <- (title, "", title)
+         t.manual <- true; t.header <- (title, arg 2, title)
      | "title" -> emit (Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = true; body = inlines t { bold with size = 2 } (arg 0) })
      | "author" -> emit (Doc.Para { fill = true; first = 0.; short = 0.; tabs = []; center = true; body = inlines t { Doc.plain with font = Doc.Italic } (arg 0) })
      | "newcommand" -> t.commands <- ((let a = arg 0 in if a <> "" && a.[0] = '\\' then drop a 1 else a), arg 1) :: t.commands

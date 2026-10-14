@@ -1,4 +1,4 @@
-\title{drscheme}{1}
+\title{drscheme}{1}{languages}
 
 # NAME
 drscheme – an environment for learning to program, in Scheme

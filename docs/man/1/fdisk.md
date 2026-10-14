@@ -1,4 +1,4 @@
-\title{fdisk}{1}
+\title{fdisk}{1}{system}
 
 # NAME
 fdisk – a disk's partitions, as the lines its driver takes

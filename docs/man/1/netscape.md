@@ -1,4 +1,4 @@
-\title{netscape}{1}
+\title{netscape}{1}{browsers}
 
 # NAME
 netscape – a web browser, in a window

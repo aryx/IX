@@ -1,4 +1,4 @@
-\title{office}{1}
+\title{office}{1}{apps}
 
 # NAME
 office – an office suite, in a window

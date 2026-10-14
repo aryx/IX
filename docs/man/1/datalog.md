@@ -1,4 +1,4 @@
-\title{datalog}{1}
+\title{datalog}{1}{languages}
 
 # NAME
 datalog – facts, and rules run until nothing new is found

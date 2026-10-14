@@ -1,4 +1,4 @@
-\title{pascal}{1}
+\title{pascal}{1}{languages}
 
 # NAME
 pascal – the Pascal language, compiled to P-code and run

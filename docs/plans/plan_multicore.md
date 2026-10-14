@@ -693,3 +693,61 @@ turns either (when a line is typed is the host's).
 Not done: the Pi 4's cores (`Pi4.ml`, the same work); `make
 check-cores` under mini-qemu (eight minutes); `Per_domain` moved
 beside `Parallel` (it is the browser's, built by mini-ml).
+
+2026-10-14: where it stands, to resume after a few days away (the
+author: "I need to leave for a few days, can you save all the context
+you need and the TODO from my part in the plan document, so when I
+come back we can resume?"). Committed: the image arena (571a997e),
+`spin` (37f036b7), the free pages threaded through themselves
+(5f5c99ef), mini-qemu's four cores in turns (612a1102). Nothing of
+this plan's is left uncommitted.
+
+**On the board with the arena** (the card of 2026-10-13 14:47,
+`kernels/9pi/build/card.img`, built by `make build/card.img`: `make
+card` stopped then at another session's link error in
+`lib_graphics/pdf`): one cameltry in rio 59 frames a second (50
+before the arena); two, 31, then 33; once "we were at 44fps and after
+some calm it went down to 33 fps". So one game gained, two did not:
+the copies without the lock were not what limited two games, or not
+alone. The 44 then 33 is not explained (the arena filling and first
+fit slower? the collector of each game, its heap grown? the screen's
+copy shared by both windows?).
+
+**`spin`** (`utilities/process/Spin.ml`, `spin [n [ints|mem|alloc|sys]]`:
+n processes each doing the same work, its time printed) says what is
+shared: `ints` nothing, `mem` the memory's bus and caches, `alloc`
+that and the collector's pages, `sys` the kernel's lock. Under QEMU's
+four cores (seconds, 1, 2 and 4 processes): ints 7.7, 7.8, 7.8; mem
+1.5, 1.7, 2.0; alloc 0.58, 0.62, 0.67; sys 9.9, 14.1, 32.4: only the
+lock is shared there, and QEMU has no real caches or bus.
+
+**The author's to do, on the Pi 2, at the console (not under rio):**
+1. `spin 1; spin 2; spin 4`
+2. `spin 1 mem; spin 2 mem; spin 4 mem`
+3. `spin 1 alloc; spin 2 alloc; spin 4 alloc`
+4. `spin 1 sys; spin 2 sys; spin 4 sys`
+5. two cameltry in rio with `echo draw 0 > /dev/swap` (every copy
+   with the lock held) and with `echo draw 7 > /dev/swap` (the
+   default), the frames a second of each, and `stats` beside them.
+6. Tetris's music: which of the three (unboxed floats in mini-ml;
+   the voices in whole numbers, recommended now: the same samples on
+   every compiler, see the FMA memory; or the theme rendered before
+   the game starts).
+
+**What the numbers decide:** if `mem` or `alloc` grow with the
+processes on the board, two games are limited by the memory (the
+bus, the caches, each game's collector copying), and no work on the
+lock helps: what would is fewer bytes copied (a game drawing into its
+window's image directly, not into its own then copied; smaller
+heaps). If only `sys` grows, the lock is still the limit: the next
+step is "After the big lock"'s step C or finer locks around Memdraw
+(principia's draw device has one lock of its own, not the kernel's).
+
+**Still open, mine:** the `index out of bounds` that killed a thread
+(Thread 5) once on the board: not seen since; the next one prints
+`raised at:` addresses, `scripts/where.sh` names them. Breakout's
+wall missing a line after a shake (bugs/ix.md). Not checked of the
+arena: a window moved or deleted while a game draws, the arena full,
+the Pi 4's kernel and the kernel by ix's tools. plan_debugger.md's
+stages 5a and 5b (names in the binary, `/src` with `/src/VERSION` on
+the card): decided, not begun. `ldrex` in ix's assembler.

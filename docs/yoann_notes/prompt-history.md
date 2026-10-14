@@ -33980,3 +33980,639 @@ Claude reported it was still working on step 2 of the tiny-ml work.
 Claude found that abbreviations already worked when declared above their point of use.
 Claude's test caught a case where an abbreviation was used before its `and` line.
 Claude started making abbreviations order-independent, so use before the `and` line also works.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 16:43
+
+**Yoann:**
+
+> no need for backward compatibility here
+
+**Claude (summary):**
+
+Claude listed what current formats get wrong, starting with marks that name fonts rather than meaning.
+Claude said naming is done twice, with titles plus labels and captions plus ids.
+Claude pointed to closers and escapes, where fences, braces, and .DE can end by accident.
+Claude also noted many spellings per thing and sentence ends guessed from dots.
+Claude then proposed a document as an outline of named things, indented, with [name] references.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:14
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude recommended starting with step 1: the language changes in tiny-ml and the shell, with the host's test still passing.
+Claude proposed adding `|>` to tiny-ml as a symbol plus one line in TinyLibCore.ml.
+Claude proposed dropping labels from TinyShell.ml, so the shell's own `~e` becomes an ordinary argument.
+Claude proposed `try` in place of `match ... with exception`, and two separate `Error`/`Sys_error` cases.
+Claude also outlined the library functions, the two system-file versions, and a proposed order, changing nothing yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:13
+
+**Yoann:**
+
+> it's actually hard to test -P because mini-qemu is quite slow ... already defining windows under rio takes time because of all the intermediate window size generating some redraw and lag
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:23
+
+**Yoann:**
+
+> remember that we don't want to add hacks and optimizations to cover something that is wrong under; we should fix the core things, not add hacks
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:20
+
+**Yoann:**
+
+> ok I start to appreciate your argument for markdown. Can you show me the 2 biggest contender, so markdown and possibly your last outside the box proposal with pro and cons and a simple example of document in each format
+
+**Claude (summary):**
+
+Claude recommended format A, the Markdown-plus-\name{} syntax, over the outline format B.
+Claude suggested borrowing role commands such as \man{rc}{1}, \lit{}, and \arg{} from B.
+Claude suggested making a tagged paragraph's tag a name too, so mini-man rc -T works.
+Claude left open the name, proposing the working name ixdoc with .ixd, and whether plain .md files are read.
+Claude's comparison weighed existing documents, familiarity, parser size, and risk, favoring A's low risk.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:24
+
+**Yoann:**
+
+> unless the optimization is really worth it; judgment call here.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:26
+
+**Yoann:**
+
+> let me review before commit
+
+**Claude (summary):**
+
+Claude said it was checking that typing still works in the new window after the change.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:26
+
+**Yoann:**
+
+> ok let's do A and let's use plain .md (and also allow .ixd)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:36
+
+**Yoann:**
+
+> roff/ starts to have many files; I wonder if we could group things in subfolders, like we do sometimes for the other programs in inx
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:35
+
+**Yoann:**
+
+> ok let's commit this progress
+
+**Claude (summary):**
+
+Claude committed the fix to `main` as a local commit, not pushed, touching `lib_core/concurrency/Source.ml`.
+Claude added `kernels/9pi/tests/perf/sweep.py`, moved from the scratchpad, which times the sweep so the 7.7 s to 1.2 s speedup can be reproduced.
+Claude had compiled the sweep script in its new place but did not rerun it there.
+Claude's commit message lists what was not checked: timers and alarms (cursor, games, sound), recorded rio sessions, a board, `make test`, and `tests/lite.sh`.
+Claude said `./mini-pi -P -g mini-9pi2` should now be usable enough to try the two cameltry under rio, and added a row to `docs/plans/bugs/ix.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:37
+
+**Yoann:**
+
+> actualyl I wonder if raspberry/ could also be subdivided in subfolders; it contains many files now
+
+**Claude (summary):**
+
+Claude held off on moving raspberry/ because another session had uncommitted edits in Board, Main and dune.
+Claude proposed grouping raspberry/ into boards, interrupts, serial, storage, usb, video and observe subfolders.
+Claude would leave Main, Systimer, Pwm, tests/ and web/ at the top level of raspberry/.
+Claude asked to be told once that session's work was committed, or to adjust the grouping first.
+Claude had regrouped typesetting/troff/ into doc, roff, pic and ixdoc folders, uncommitted, with the earlier checks passing.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:01
+
+**Yoann:**
+
+> ok let's commit and let's do the move for raspberry too now that other sessions are paused
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude moved 22 raspberry/ modules into nine subfolders: boards, interrupts, timer, serial, storage, usb, video, sound, observe.
+Claude kept Main.ml at the top, so the Main.exe path and Makefile needed no change.
+Claude made timer and sound one-file folders instead of leaving two modules loose, offering to merge them.
+Claude updated paths in six survey scripts, mini-pi's comment, the mini-qemu manual and unfinished plans.
+Claude committed stage 5 and typesetting/troff separately, then checked builds and a step1 boot.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:07
+
+**Yoann:**
+
+> any other programs that should be subdivided in subfolders?
+
+**Claude (summary):**
+
+Claude recommended splitting version_control into objects, repo, diff, wire, and commands subfolders.
+Claude proposed splitting languages/smalltalk into compiler, vm, and graphics, and browsers/engine into layout, text, and page.
+Claude suggested grouping machine into arm32, arm64, and host, with Cpu, Memory, and Bits moved into core.
+Claude grouped database into storage (Pager, Btree, Cursor) and sql (Sql, Optimizer, Codegen).
+Claude left tiny/, the libraries, and test directories flat, and put version_control first.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 17:22
+
+**Yoann:**
+
+> ok let's start with 1 and I'll review
+
+**Claude (summary):**
+
+Claude recommended that the `ix` kernel `ls` expected output be updated for the slightly larger program sizes.
+Claude also found that the new `pipe` test did not record, and was checking it after the `|>` change.
+Yoann's reply, "let's commit and move forward," shows he accepts those two test fixes as the current step.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:34
+
+**Yoann:**
+
+> I like the 5 directories/ candidate; Let's regroup them all
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:44
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed the five regrouped directories as `10c0add3`, 205 files, leaving out prompt-history.md and the other session's files.
+Layout: `version_control/`, `database/`, `languages/smalltalk/`, `browsers/engine/`, and `machine/` each got their folders, with `machine/process/` and `browsers/engine/` following mini-chrome's layout.
+Claude also fixed two stale leftovers from the `raspberry/` commit: `.codemapconfig` paths and the `compile_ix.sh` exclusion of `Sdl_display.ml`.
+Checks passed: dune builds, mini-mk links for host and Plan 9 arm (with `machine/` failing only on a source issue), and mini-ml compiles 186 of 187 files.
+For next time, Claude noted mkfiles must list each folder's units in one explicit rule, since mini-mk rejects per-folder `%` rules as ambiguous.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 19:37
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude reported that the new library file and its accompanying test work were finished.
+Claude found that the OCaml results matched tiny-cpu's results on the same tests.
+Claude took that agreement as evidence the library behaves the same in both implementations.
+Claude then began wiring the library into the builds and tests to see how far the shell got.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 20:09
+
+**Yoann:**
+
+> excellent! What's next?
+
+**Claude (summary):**
+
+Claude had recommended stage 6 equations first, but Yoann postponed it in favor of stage 7.
+Claude described stage 7 as enough LaTeX to typeset the literate `.nw` books in the series.
+Claude also scoped a bibliography for `\cite` as part of stage 7.
+Claude noted that stage 8 (m-ix under mini-9pi) and leftovers like hyphenation remain after that.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 20:11
+
+**Yoann:**
+
+> name is fine; let's commit and move forward
+
+**Claude (summary):**
+
+Claude recommended that the shell run on the host through the new system file, and its test passed.
+Claude was next checking the other build of the shell, using mini-ml and mini-mk on `TinyLibHost`.
+Claude had not yet committed the work or started the next step when the answer ended.
+Yoann wants `TinyLibSystem.ml` at the top to be the host version, since the other `TinyLibXxx` files are not.
+Yoann also asked to commit and move forward, so the host-version change is the part he reacted to.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 20:21
+
+**Yoann:**
+
+> Let's postpone equation. I'm not an heavy math user. Let's do stage 7 instead.
+
+**Claude (summary):**
+
+Claude reported stage 7 done: mini-troff typesets simple LaTeX and all 21 principia documents as PDF.
+Claude noted that nothing is committed yet and offered to commit the stage 7 work on request.
+Claude named stage 8, running mini-troff under mini-9pi for Plan 9 arm, as the next step on the plan.
+Claude listed the postponed equations (stage 6) as the other open item, left for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:03
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed stage 7 as cd38eba2 and listed six remaining gaps, leaving unrelated session files out.
+Claude recommended stage 8 next: getting mini-troff and mini-man running under mini-9pi on the image.
+Claude argued stage 8 finishes the plan's main line and proves the typesetter works where ix lives.
+Claude flagged that mini-ml builds about seven times slower, 7 seconds per book on the host, so board speed matters.
+Claude offered pictures from files as the alternative if improving the books came first.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 20:44
+
+**Yoann:**
+
+> let's commit and move forward. Note a huge fan of having TinyLibSystem.ml at the top be the host version since the other TinyLibXxx are not
+
+**Claude (summary):**
+
+Claude pointed mini-ml's include path at TinyLibHost first, so its TinyLibSystem.ml wins over the tiny-machine copy.
+Claude kept TinyLibSystem.ml as the host version at the top, the layout Yoann wants.
+Before that change, mini-ml had been picking up tiny-machine's TinyLibSystem.ml beside the shell, not the host's.
+Claude then rechecked both the host and tiny-machine builds after the include-path change.
+Earlier, Claude got the ML shell running as rc on tiny-machine, fixing an Exit name clash with the prelude.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:06
+
+**Yoann:**
+
+> before stage 8, it would be good to split Ixdoc.ml and Latex.ml which seem to be more than 700 LOC which is usually the limit at which we start to reorganize a module in multiple modules (judgment call each time)
+
+**Claude (summary):**
+
+Claude split Ixdoc.ml (801 lines) into Ixdoc_syntax, the Ixdoc reader at 463 lines, and the To_ixdoc writer.
+Claude split Latex.ml (1,230 lines) into eight modules, with the Latex command loop left at 528 lines.
+Claude used a function field, `run`, in the Latex state so argument readers can call back into Latex.
+Claude ran sample.sh, latex.sh and md.sh, all matching earlier numbers, while man, ms and pdf were not re-run.
+Claude left the split uncommitted and saved the 700-line threshold as a standing note for future sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:08
+
+**Yoann:**
+
+> ok let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the shell's `rc` support as `e8e3237b` and tested it in a `windows` window.
+Claude left the README and `tiny/README.md` doc updates uncommitted, pending Yoann's go-ahead.
+Claude found porting the `.tm` assembler harder than the shell, blocked by `sprintf`, `Bytes`, and 31-bit integers.
+Claude recommended splitting the assembler out of `TinyMachineCPU.ml` and keeping the interpreter on the host.
+Claude asked whether to commit the docs, which assembler route to take, or update the website first.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:15
+
+**Yoann:**
+
+> first, again why TinyLibSystem.ml is at tiny/ level given it's really a host file, as opposed to the other TinyLibxxx.ml ?
+
+**Claude (summary):**
+
+Claude confirmed that tiny-machine's `TinyLibSystem.ml` sits in `tiny/TinyKernel/user/` beside `mlsys.c`, committed as `e8e3237b`.
+Claude said the top-level `tiny/TinyLibSystem.ml` no longer exists, and the host copy moved to `tiny/TinyLibHost/` in commit `17d65f8b`.
+Claude did not move tiny-machine's version to the top, because mini-ml searches the source file's directory before `-I` and broke the host shell build.
+Claude offered a top-level rename such as `tiny/TinyLibKernelCalls.ml`, which costs nothing but leaves file and internal names mismatched.
+Claude left the README and `TinyShell.mli` header doc changes uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:18
+
+**Yoann:**
+
+> maybe related, I feel tiny/TinyKernel/user/ contains many files of different nature (C files, tiny-ML runtime file? (mlsys), .ml file, maybe we should reorganize things a bit. What do you think?
+
+**Claude (summary):**
+
+Claude recommended splitting `tiny/TinyKernel/user/` because it mixes C programs with two language libraries.
+Claude proposed moving `user.h`, `sys.tm`, `draw.c`, `draw.h` and `net.c` into `libc/`, and `mlsys.c`, `calls.ml` and `TinyLibSystem.ml` into `libml/`.
+Claude said `calls.ml` could go, since it declares four kernel calls that `TinyLibSystem.ml` already declares.
+Claude flagged the Makefile paths, the `#include` changes, and six t6 links to check, and said the boot image should stay byte-identical.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:13
+
+**Yoann:**
+
+> great, let's commit and let's try stage 8
+
+**Claude (summary):**
+
+Claude committed the stage 7 work as `60a5d80d`, then started stage 8 with troff and man on mini-9pi's card.
+Stage 8 is working, with `troff` and `man` in `/progs/typesetting` and the manual in `/lib/man/1`.
+mini-man now reads the new format, checks `/lib/man` after `/sys/man`, and accepts `name.md` files.
+A new `session-card-typeset` test passes with identical console output and a byte-identical PDF on the board and host.
+Stage 8 is not committed yet; Claude will commit only its hunk of `README.md`, which holds another session's edit.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:20
+
+**Yoann:**
+
+> I like libc and libml, let's do it, and let's remove calls.ml if it's not needed anymore
+
+**Claude (summary):**
+
+Claude reorganised TinyKernel into user, libc and libml folders, keeping calls.ml as the single list.
+Claude pointed out that nothing is committed yet, leaving the reorganisation and the rc docs change uncommitted.
+Claude offered to commit those two changes together, or as two separate commits.
+Claude described the rc change as the READMEs' text and counts, plus TinyShell.mli's header comment.
+Claude left the two .codemapconfig files and docs/plans/done unchanged, since they describe past states.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:24
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage 8 of the typesetting plan as `192f9309`, 12 files staged by pathspec.
+Claude left the other session's `TinyKernel/libml` edit and `prompt-history.md` out of the commit.
+Claude reported that stages 1 to 5, 7 and 8 are done, leaving only the postponed equations.
+Claude listed the remaining gaps: pictures from files, hyphenation, non-WinAnsi fonts, and manual pages.
+Yoann picked pictures from files: 34 in the books and 9 in ix's Markdown still need handling.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `libc/` and `libml/` reorganisation as 42fb081c, unpushed, with the pending `rc` docs in `tiny/README.md` and `TinyShell.mli`.
+Claude found its `rc` README edits had already landed in another session's commit 192f9309, so only the `libml/` link went in here.
+Claude listed the open items in the agreed order, starting with the website's "what to try" section, which still omits `rc`, and the stale boot image.
+Third, Claude repeated its recommendation to split the `.tm` assembler out of TinyMachineCPU.ml and port only that, which needs answers for sprintf and integers over 31 bits.
+Last, Claude noted that border-resizing waits on your cursor choice, and that tiny-profiler remains open at the end of the list.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:29
+
+**Yoann:**
+
+> ok but before, how much work would it be to make a proper screen editor instead of the line editor in TinyEditor.ml? Ideally a kind of tiny-emacs (tiny version of mini-emac in m-ix), or maybe a really free variant version; but this time a screen editor that is convenient for regular developers to use (line editors are pretty hardcore for actual programming)
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:29
+
+**Yoann:**
+
+> that also would run under the tiny-machine
+
+**Claude (summary):**
+
+Claude proposed naming the editor TinyEmacs.ml, run as emacs on tiny-machine and tiny-emacs on the host.
+Claude suggested building it before the assembler and asked for the go-ahead and the ordering.
+Claude planned reviewable steps: a pure editor core with host tests first, then its screen on tiny-machine.
+Claude said it would run from tiny-kernel's sh or rc, drawing and reading keys through the window.
+Claude had also checked that control keys reach programs, except C-c, which tiny-kernel treats as an interrupt.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 21:27
+
+**Yoann:**
+
+> maybe pictures from files
+
+**Claude (summary):**
+
+Claude held the picture-from-files change uncommitted and asked whether Yoann wanted it committed.
+The uncommitted edits cover typesetting code, interface comments, the plan's Status, and the README row.
+They also update the samples and troff's manual page, and the card session was re-recorded.
+Claude ran sample.sh, latex.sh and md.sh, but not make test, man.sh, ms.sh or pdf.sh.
+Claude dropped the SVG reader attempt, since it draws no text and its Fill module clashes with troff's.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 04:59
+
+**Yoann:**
+
+> great, let's commit.
+
+**Claude (summary):**
+
+Claude committed the 24 typesetting picture files as f5… under typesetting/.
+Claude also committed the troff manual page, the typesetting plan and the re-recorded session-card-typeset in the same commit.
+Claude committed README.md whole, because the other session's line had already landed in 42fb081c.
+Claude left the Makefile, tests/lite.sh, .codemapignore and tiny/ uncommitted, since other sessions own them.
+Claude listed the remaining plan work: hyphenation, fonts beyond WinAnsi, page numbers, manual pages and equations.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 05:01
+
+**Yoann:**
+
+> the build seems broken though
+
+------------------------------------------------------------------------
+
+## 2026-10-14 05:01
+
+**Yoann:**
+
+> stop
+
+------------------------------------------------------------------------
+
+## 2026-10-13 18:59
+
+**Yoann:**
+
+> it's a bit better, but mini-qemu is still very slow. Anyway. What's next?
+
+**Claude (summary):**
+
+Claude recommended measuring mini-qemu against QEMU and the board first, then picking rio or interpreter work.
+Claude named the web page build as a leftover, noting it belongs to another session's Hostdraw work.
+Claude listed make test and tests/lite.sh from today as leftovers, saying none of them blocks the work.
+Claude also listed timers and alarms after the Source change, plus a check-cores target for mini-qemu.
+
+------------------------------------------------------------------------
+
+## 2026-10-13 12:45
+
+**Yoann:**
+
+> let's commit this spin program in a place that is easy to find; looks like an important program.
+
+**Claude (summary):**
+
+Claude committed `spin` as `utilities/process/Spin.ml`, built as `mini-spin`, in commit `37f036b7`.
+Claude listed twelve board measurements for Yoann: `spin` at 1, 2 and 4 cores, each in plain, `mem`, `alloc` and `sys` modes.
+Claude asked Yoann to run those twelve commands at the console and send back the numbers, since they had not been measured on the board yet.
+Claude flagged a garbled sentence in the commit's `sys` parenthesis, left unamended because Yoann asked that commits never be rewritten.
+Claude built the card with `make build/card.img` because `make card` fails on another session's link error in `lib_graphics/pdf`.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 08:38
+
+**Yoann:**
+
+> I need to leave for a few days, can you save all the context you need and the TODO from my part in the plan document, so when I come back we can resume?
+
+------------------------------------------------------------------------
+
+## 2026-10-14 08:38
+
+**Yoann:**
+
+> anything pending to commit or fix?
+
+**Claude (summary):**
+
+Claude reported that its only uncommitted change is one new dated entry in `docs/plans/plan_multicore.md`.
+Claude wrote the 2026-10-14 entry, 58 lines, at the end of that file's Status section.
+Nothing else of Claude's was waiting to be committed, so the commit would cover just that file.
+The entry also records the board numbers, the card image to burn, and Yoann's Pi 2 console to-do list.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 08:40
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the resume notes as `fa86e6fb`, touching only `docs/plans/plan_multicore.md`.
+Claude confirmed that no work remains uncommitted after the commit.
+The open to-do list sits at the end of that file's Status section.
+It starts with twelve `spin` runs at the Pi 2 console.
+Next is the two-cameltry comparison using `draw 0` and `draw 7`.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 05:01
+
+**Yoann:**
+
+> it's another session
+
+**Claude (summary):**
+
+Claude stopped and changed nothing, leaving the fix for the next session.
+Claude traced the build break to `raspberry/web/draw` only.
+Its copy of `Memimage.ml` uses `Machine.Imag` and a new `keep` field from commit 571a997e.
+`Hostdraw.ml` builds a `Memimage` without `keep`, and the `ix_machine` library has no `Machine.Imag`.
+The pictures commit touches none of those files, so Claude ruled it out as the cause.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 05:01
+
+**Yoann:**
+
+> hmm the build seems broken though
+
+**Claude (summary):**
+
+Claude confirmed the whole tree builds again with `dune build`, and nothing was committed.
+Claude traced the break to another session's commit `571a997e`, which made the kernel's `Memimage` call `Machine.Imag` with a new `keep` field.
+Claude added a host-side `Machine.ml` and `Machine.mli` under `raspberry/web/draw/`, and set `keep = true` on guest images in `Hostdraw.ml`.
+Claude updated the `dune` file for the new module, then checked rio's menu under `Boot_bench` with and without host drawing.
+Claude did not rebuild the web kernel `kernel-pi1-web.img` or test in a browser, and asked whether to commit the three files.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 09:31
+
+**Yoann:**
+
+> which plan document are we using in this session?
+
+**Claude (summary):**
+
+Claude identified `docs/plans/plan_multicore.md` as the plan, with domains work at stage 4 and a dated status entry in `ebea098e`.
+Claude found the sweep lag, where `Source` reads ahead, is recorded only as a row in `docs/plans/bugs/ix.md`, outside the plan.
+Claude found today's build fix for the web page's host drawing is not written up in any document yet.
+Claude pointed to `docs/plans/plan_web.md`, where Hostdraw comes from, as the closest place for that fix.
+Claude offered to add a line to `plan_web.md` when committing, if Yoann wants the fix recorded.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 09:32
+
+**Yoann:**
+
+> ok so I can close this session, all the needed context is in the plan_multicore.md?
+
+**Claude (summary):**
+
+Claude said `plan_multicore.md` and `docs/plans/bugs/ix.md` hold most of the context, but the slowness next step and the build fix are missing.
+Claude proposed a Next paragraph in `plan_multicore.md`'s Status section, starting with `kernels/9pi/tests/perf/sweep.py`.
+Claude said that paragraph should also cover rio re-creating a full window per band step and the default `-ips 30`.
+Claude proposed committing the uncommitted `raspberry/web/draw` build fix with a matching line in `plan_web.md`.
+Claude offered to make these edits and commit, so the documents hold everything before Yoann closes the session.

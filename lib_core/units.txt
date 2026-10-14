@@ -37,7 +37,6 @@ base/Int
 base/Bool
 base/Float
 base/Fun
-base/Atomic
 system/In_channel
 system/Out_channel
 system/Fpath
@@ -48,6 +47,7 @@ system/Logs
 system/Logs_fmt
 system/Unix
 system/CapUnix
+concurrency/Atomic
 concurrency/Thread
 concurrency/Mutex
 concurrency/Condition

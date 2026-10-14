@@ -751,3 +751,25 @@ arena: a window moved or deleted while a game draws, the arena full,
 the Pi 4's kernel and the kernel by ix's tools. plan_debugger.md's
 stages 5a and 5b (names in the binary, `/src` with `/src/VERSION` on
 the card): decided, not begun. `ldrex` in ix's assembler.
+
+2026-10-14, after "mini-qemu's cores on the host's cores" (the
+author, trying `./mini-pi -P -g mini-9pi2`: "it's actually hard to
+test -P because mini-qemu is quite slow ... already defining windows
+under rio takes time"; after the fix below: "it's a bit better, but
+mini-qemu is still very slow"):
+- **Fixed:** a window swept under rio followed the mouse seconds
+  behind: mini-ml's `Source` read `/dev/mouse` ahead of the program
+  (bugs/ix.md's row). `kernels/9pi/tests/perf/sweep.py` times it: 60
+  moves in 2 s, the band redrawn until 7.7 s after the last move,
+  1.2 s now (in turns or on domains alike).
+- **Next, proposed, not begun:** say where the slowness that is left
+  goes, the emulator or the guest. The same actions (a sweep, a
+  window moved, a program started in one) under mini-qemu, QEMU and
+  the board, by sweep.py extended, with mini-qemu's `-prof` for the
+  guest and the host's `perf` for the emulator. Known already: what
+  is left of a sweep is the band itself (rio frees and makes a whole
+  grey window at each step, `Mouse_action.band`; Plan 9's rio has a
+  window with no backing store for it, which would help the boards
+  too); mini-qemu's default clock, `-ips 30`, is a machine slower than
+  a Pi 2 (`-ips 200` is a board's pace: the memory on `-ips`); one busy
+  rio is one core, which `-cores-parallel` does not make faster.

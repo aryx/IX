@@ -37,7 +37,7 @@ let draw mem (piece : int -> int -> bool -> int) desc =
       let data =
         match List.assoc_opt off !datas with
         | Some d -> d
-        | None -> let d = { Memimage.bytes; onscreen = false } in datas := (off, d) :: !datas; d in
+        | None -> let d = { Memimage.bytes; onscreen = false; keep = true } in datas := (off, d) :: !datas; d in
       let r = rect (at + 4) in
       ({ Memimage.data; r; clipr = r; repl = false; chan = c; bwidth = w.(at + 10); org = (w.(at + 8), w.(at + 9));
          xbase = w.(at + 11) - off; layer = None }, off, len) in

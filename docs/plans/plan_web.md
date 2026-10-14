@@ -759,3 +759,14 @@ numbers above were made.
 `jit_check.sh` (the translator against the interpreter: the console,
 JIT_CHECK, cameltry in a window) and `jit_profile.sh` (node's profile
 by function) are the night's, kept there too.
+
+2026-10-14: the page did not build since 571a997e (mini-9pi's images
+outside OCaml's heap): Memimage, the kernel's file that Hostdraw
+compiles for the host, asks the kernel's `Machine.Imag` and has a
+data's `keep`. `raspberry/web/draw/Machine` (new) is that module for
+the host: what the host makes is in OCaml's heap and never given
+back, as it draws only on the guest's images. Checked by Boot_bench
+with the web kernel of 2026-10-12: rio's menu opened and chosen, the
+screens the same bytes with the host's drawing and with `-nodraw`
+(4 draws by the host, none declined); not in a browser, and the web
+kernel not built again.

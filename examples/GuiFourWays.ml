@@ -119,4 +119,5 @@ let view computer task =
   @ Gui.draw ()
 
 let app = game view update 0
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> Playground_platform.run_app caps (Playground_platform.flags caps) app; Exit.OK)))

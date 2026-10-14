@@ -43,7 +43,7 @@ type 'w window = {
   free : 'w -> unit;
 }
 
-let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
+let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse caps).args
 
 (* the ticks given at once, at most: a program stopped a while (its
  * window hidden, the machine busy) does not run them all when it is back.
@@ -70,9 +70,9 @@ let late_frame : Playground.shape list =
     Playground.rectangle Playground.red t h |> Playground.move ((w -. t) /. 2.) 0.;
     Playground.rectangle Playground.red t h |> Playground.move (-.(w -. t) /. 2.) 0. ]
 
-let run_app (w : 'w window) (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
+let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
-  let cli = Session.parse (CapSys.argv caps) in
+  let cli = Session.parse caps in
   (* A game makes much at each frame and keeps little (a float is a
    * block for mini-ml): the heap is let to be eight times what is
    * alive, where twice is mini-ml's runtime's rule, and its collector,

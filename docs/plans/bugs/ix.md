@@ -9,15 +9,8 @@ not essential. The last three need a decision first.
 | mini-5i | `mini-5i /bin/echo hi` (an x86-64 ELF) | `unimplemented instruction 464c457f at 0`: the ELF header's first word run | machine/CLI.ml: Elf.parse rejects the file (PIE?), and Plan9.parse then accepts it as an a.out; meant to be the host's to run, as a script is |
 | mini-git | `mini-git clone repo copy` (a relative path) | `could not clone repository` | an absolute path works; git9 takes a path as ssh's, and the relative one reaches it without its directory |
 | mini-ld | a program calling an undefined function | `hello.c:0: undefined: print` | the line is 0: the reference's line is not kept to the link |
-| mini-merge3 | its usage and its .mli | the usage says `theirs base ours`, Difftool.mli `ours base theirs` | one of the two is wrong; the help says `mine base theirs` meanwhile |
+| mini-merge3 | its usage and its .mli | the usage says `theirs base ours`, Difftool.mli `ours base theirs` (2026-10-14: Plan 9's merge3.c says the same usage, of files it reads as mine base theirs: the twin copies its mistake) | one of the two is wrong; the help says `mine base theirs` meanwhile |
 | languages/ml/tests/run.sh | `OCL=... run.sh 7 w fact.ml` | the stdlib still read from /tmp/ix-ocaml-light-arm64 | its `S=` hardcodes the path its `OCL=` line honors |
-| mini-netscape, mini-rebirth | `mini-netscape -help` (found writing ix's manual pages, 2026-10-14, as the next rows) | `Fatal error: exception Failure("usage: game ...")` and a backtrace | lib_playground's Session.parse makes Arg.Help a failwith, which these mains do not catch; the usage is the playground's, `game`, in office and drscheme too |
-| mini-xargs | `echo a \| mini-xargs false` | status 0 | the commands' statuses are not looked at |
-| mini-node | `import {y} from "./y.js"` with y.js exporting y | `ReferenceError: y is not defined` | an import binds nothing |
-| mini-qemu | `mini-qemu -help` | `unknown option -help` | only -h and --help; -qmp and -display none work and are not in the usage |
-| mini-chidb | `DELETE FROM t` | `SQL syntax error.` | parsed, then Codegen raises Invalid; UPDATE is not in the grammar |
-| mini-lynx | a link followed in a page read from a file | `Tcp.connect: can't resolve "file"` | the link is made a file:// address and given to the network |
-| mini-dossrv, mini-ld, mini-asm | their options | dossrv's -v and -s, ld's -s, taken and nothing done; ld's -R in no usage; asm's usage has -m as if needed (arm is its default) | the usage strings behind the code |
 
 To decide first:
 
@@ -26,6 +19,22 @@ To decide first:
 | mini-asm | `FOO R1`, or `MOVW $2` (no destination) | accepted, an object written; only mini-ld then says `unknown opcode FOO` (the missing operand: not seen) | 5a refuses a name that is no instruction: should mini-asm, or is the linker's check enough, the encoding being its (toolchain-design)? |
 | tiny-c | `#include <u.h>` | ignored, silently: only "file" includes are read | refuse it (an error at its line), or keep ignoring, as a program of goken's includes both? |
 | mini-rc | `mini-rc -z` (an unknown flag) | set as a flag variable, silently; its usage never printed | what does rc do: compare with 9base's rc first |
+
+## What writing ix's manual pages found (2026-10-14)
+
+Each page of `docs/man/1` was written from its program's usage and
+code; what did not hold, and what became of it:
+
+| program | input | what it did | now |
+|---|---|---|---|
+| the playground's programs (mini-netscape, mini-rebirth, mini-office, mini-drscheme, mini-page, the games, the examples) | `mini-netscape -help`, or an option not known | `Fatal error: exception Failure("usage: game ...")`: Session.parse made Arg.Help and Arg.Bad a failwith | fixed: Session.parse is Arg_.parse_argv (xix's, imported): the usage, named by the program, on the standard output for -help (status 0), with the mistake on the standard error (status 2), by Exit.ExitCode; the mains run under Exit.catch |
+| mini-node | `import {y} from "./y.js"` | `ReferenceError: y is not defined`: a file was run as a script, where an import does nothing | fixed: a file that imports (or .mjs) is run by Js_module, its files found from its directory |
+| mini-qemu | `mini-qemu -help` | `unknown option -help`; -qmp and -display none not in the usage | fixed: -help is -h; the usage has both |
+| mini-lynx | a link to a file that is not there, in a page read from a file | `Tcp.connect: can't resolve "file"`: the file:// address given to the network | fixed: `no such file` (a link to a file that is there was followed: the page's report was of this case) |
+| mini-asm, mini-ld | their usage | -m written as if needed (arm is the default); ld's -R and -s in no usage | fixed: the usages and helps |
+| mini-xargs | `echo a \| mini-xargs false` | status 0 | Plan 9's (xargs.c ends by exits(nil)): the page says so |
+| mini-chidb | `DELETE FROM t` | `SQL syntax error.` | chidb's: its machine and its B-tree have no delete, and its shell says that of all it does not compile (CHIDB_EINVALIDSQL); the page says so |
+| mini-dossrv | -v, -s | taken, nothing done | on purpose, Plan 9's command lines taken; the page says so |
 
 ## mini-ml (2026-10-01, goal 2 of plan_ml_bootstrap.md)
 

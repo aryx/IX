@@ -89,6 +89,3 @@ qemu -M raspi4b -cpu cortex-a72 -m 2G -smp 1 -kernel kernel -nographic
 
 # SEE ALSO
 \man{pi}{1}, \man{5i}{1}
-
-# BUGS
-**-help** is an option not known; **-h** says how.

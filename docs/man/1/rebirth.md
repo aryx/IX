@@ -46,4 +46,3 @@ What it is given:
 
 # BUGS
 A song is not saved, and an accent or a slide is not edited here.
-`-help` stops it with an OCaml exception and the usage of a game.

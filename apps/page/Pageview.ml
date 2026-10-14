@@ -263,7 +263,9 @@ let pages_of (bytes : string) : Pdf.t * Pdf_render.cache * Pdf.page array =
 let () =
   Cap.main (fun caps ->
       let read (file : string) : string = FS.read caps (Fpath.v file) in
-      try
+      (* (-help: the usage, and the end, Exit.ExitCode) *)
+      Exit.exit caps @@ Exit.catch @@ fun () ->
+      (try
         match Array.to_list (CapSys.argv caps) with
         | [ _; "-t"; file ] ->
             let pdf, cache, pages = pages_of (read file) in
@@ -287,4 +289,5 @@ let () =
                 Playground_platform.run_app caps (("heap", "modest") :: flags) (Playground.game view update model))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
-        CapStdlib.exit caps 1)
+        CapStdlib.exit caps 1);
+      Exit.OK)

@@ -58,7 +58,3 @@ netscape url=index.html scripts=off profile=off
 
 # SEE ALSO
 \man{lynx}{1}, \man{node}{1}, \man{curl}{1}
-
-# BUGS
-`-help` stops it with an OCaml exception and the usage of a game, not
-this list.

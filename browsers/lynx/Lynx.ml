@@ -95,6 +95,9 @@ let open_ (caps : < Cap.network; Cap.open_in; Cap.readdir; .. >) (width : int) (
       (* (its whole path: a link of the page is resolved against it) *)
       let whole = if Filename.is_relative file then Filename.concat (FS.getcwd caps ()) file else file in
       Ok ("file://" ^ whole, None, FS.read caps (Fpath.v file))
+    (* (a file's address is never the network's: a link to a file that
+     * is not there) *)
+    else if String.starts_with ~prefix:"file://" address then Error (file ^ ": no such file")
     else
       let address = if is_web address then address else "http://" ^ address in
       let* url, (r : Http.response) = Http_client.fetch caps ~post:None address in

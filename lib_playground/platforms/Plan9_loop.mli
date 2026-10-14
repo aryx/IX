@@ -57,7 +57,7 @@ type 'w window = {
 }
 
 (* Playground_platform's two, the second with the platform's window *)
-val flags : < Cap.argv ; .. > -> Playground.flags
+val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
 val run_app :
-  'w window -> < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
+  'w window -> < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit

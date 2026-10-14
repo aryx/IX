@@ -32,4 +32,5 @@ walk -f | grep '\.c$' | xargs wc -l
 \man{walk}{1}, \man{rc}{1}
 
 # BUGS
-The status is always success: a run that failed is not counted.
+The status is always success, as Plan 9's: a run that failed is not
+counted (Unix's xargs says 123).

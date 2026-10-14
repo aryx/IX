@@ -2,7 +2,8 @@
  * command line's words, a program stepped (its model, its commands'
  * answers, an event given to its subscriptions), a frame of a script
  * played, and two things the playground's platforms draw and write.
- * Nothing here reaches the system. *)
+ * What reaches the system is said by a capability: the command line,
+ * its usage written, a WAV file. *)
 
 (* The command line's words, the playground's platforms':
  *   -dump-frame n file   frame n (the first is 1) written to file, and the end
@@ -22,9 +23,14 @@ type cli = {
   mutable args : string list;
 }
 
-val usage : string
-(* (Failure, its message the usage, for a word it does not know) *)
-val parse : string array -> cli
+(* the usage of the program of that name *)
+val usage : string -> string
+
+(* the command line's words; -help: the usage and the options on the
+ * standard output, a word it does not know: said with the usage on
+ * the standard error; then Exit.ExitCode, 0 or 2 (Arg_.parse_argv),
+ * for the program's main to end with (Exit.catch) *)
+val parse : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> cli
 
 (* -dump-audio, for a run without a clock: [hear cli] after each frame
  * pulls its sixtieth of a second of sound (Audio_source: nothing when

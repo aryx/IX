@@ -12,7 +12,9 @@ node – JavaScript, outside a page
 `console.log` writes on the standard output.
 
 *file.js*
-:    Its statements run.
+:    Its statements run. A file that imports (`import ... from
+     "./m.js"`), or named `.mjs`, is a module: the files it names are
+     found from its directory, and each is run once.
 
 **-e** *text*
 :    The text's statements run.
@@ -24,8 +26,8 @@ definitions of a line are there for the lines after it.
 The language is today's, most of it: `let` and `const`, classes, arrow
 functions, destructuring, the spread, generators, `async` and `await`,
 promises, `Map`, `Set`, `Proxy`, regular expressions, JSON. What the
-host gives is the standard output and the clock, no more: a file is not
-read by a script and nothing is fetched.
+host gives is the standard output, the clock and a module's files, no
+more: a script reads no file and nothing is fetched.
 
 # EXAMPLES
 ```
@@ -40,7 +42,3 @@ node fib.js
 # DIAGNOSTICS
 A script that ends by an error says it on the standard error, with its
 line, and the status is 1.
-
-# BUGS
-An `import` finds no module and says nothing: the names it would have
-given are not defined.

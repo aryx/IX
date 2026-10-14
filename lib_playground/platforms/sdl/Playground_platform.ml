@@ -55,7 +55,7 @@ let key_name (k : int) : string option =
   else if k > 32 && k < 127 then Some (String.make 1 (Char.chr k))
   else None
 
-let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
+let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse caps).args
 
 (* the ticks given at once, at most (Plan9_loop's) *)
 let most = 30
@@ -150,9 +150,9 @@ let play_audio (device : Sdl.audio_device_id) (slow : float) : unit =
         ignore (Sdl.queue_audio device ba)
       end
 
-let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
-  let cli = Session.parse (CapSys.argv caps) in
+  let cli = Session.parse caps in
   let own = Playground.flags_of_strings cli.args in
   if List.assoc_opt "redraw" own = Some "all" then Redraw.enabled := false;
   (* (the window's name: the program's) *)

@@ -97,7 +97,11 @@
  *     > foo
  *     ReferenceError: foo is not defined
  *
- * Not Node's: require, process, modules, files, the network, timers
+ * A file that imports (or is named .mjs) is run as a module
+ * (Js_module): the files it names found from its directory, read
+ * through this file's capability, each run once.
+ *
+ * Not Node's: require, process, files, the network, timers
  * (the language alone: Js_eval's built-ins). mini-chrome's has them
  * (its Node_host: require by CommonJS's wrapper function, "fs", and a
  * loop that sleeps until the earliest timer is due); here a script

@@ -494,6 +494,8 @@ on two computers (each its arrows and space), by its flags
 (* the network granted, for net=host and net=join only (plan_caps.md) *)
 let app (network : < Cap.network ; Cap.fork ; .. >) = Multiplayer.game ~network:(Some network) ~split:true ~players:2 view update initial_model
 
-let () = Cap.main (fun caps ->
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
   print_string help;
-  Playground_platform.run_app caps (Playground_platform.flags caps) (app caps))
+  Playground_platform.run_app caps (Playground_platform.flags caps) (app caps);
+  Exit.OK)

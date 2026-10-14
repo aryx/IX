@@ -6,7 +6,7 @@
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-node [file.js | -e text]
-  file.js  its statements run
+  file.js  its statements run; a module if it imports (or is .mjs)
   -e       the text's
   nothing: each line of the input run, its value shown"
 
@@ -19,11 +19,27 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | Ok _ -> 0
     | Error e -> Console.eprint caps (Printf.sprintf "line %d: %s\n" e.line e.message); 1
   in
+  (* a module (a file that imports, or named .mjs): the files it names
+   * are found from its directory, read when it is run, each once *)
+  let run_module (file : string) : int =
+    let resolve ~(base : string) (spec : string) : string =
+      let path = if spec <> "" && spec.[0] = '/' then spec else Filename.concat (Filename.dirname base) spec in
+      (* (a/./b and a/c/../b are one module: a/b) *)
+      let segs = List.fold_left (fun acc seg -> match seg, acc with
+        | ("" | "."), _ -> acc
+        | "..", s :: rest when s <> ".." -> rest
+        | _ -> seg :: acc) [] (String.split_on_char '/' path) in
+      (if path.[0] = '/' then "/" else "") ^ String.concat "/" (List.rev segs) in
+    let m = Js_module.create engine ~resolve ~source:(fun (url : string) -> FS.read_opt caps (Fpath.v url)) in
+    match Js_module.run m (resolve ~base:"./" file) with
+    | Ok _ -> 0
+    | Error e -> Console.eprint caps (Printf.sprintf "line %d: %s\n" e.line e.message); 1
+  in
   match List.tl (Array.to_list argv) with
   | [ "-e"; text ] -> run text
   | [ file ] when file.[0] <> '-' -> (
       match FS.read caps (Fpath.v file) with
-      | text -> run text
+      | text -> if Filename.check_suffix file ".mjs" || Js_module.specifiers text <> [] then run_module file else run text
       | exception Sys_error why -> Console.eprint caps ("mini-node: " ^ why ^ "\n"); 1)
   | [] ->
       let prompt = Unix.isatty (Console.stdin_fd caps) in

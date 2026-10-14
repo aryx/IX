@@ -517,11 +517,13 @@ let update (computer : computer) (m : model) : model =
   m
 
 let app = game view update initial_model
-let () = Cap.main (fun caps ->
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
   let flags = Playground_platform.flags caps in
   (match List.assoc_opt "skin" flags with
    | Some name ->
        List.iteri (fun i (n : string) -> if n = name then skin := i) skin_names
    | None -> ());
   if List.assoc_opt "meters" flags = Some "off" then meters := false;
-  Playground_platform.run_app caps flags app)
+  Playground_platform.run_app caps flags app;
+  Exit.OK)

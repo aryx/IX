@@ -3,7 +3,7 @@
 | directory | what | from |
 |---|---|---|
 | `commons/` | ix's own library (Common, Console, Logging, Regex...) | ix; the dune library `ix_core` |
-| `commons/`'s `Exception`, `Exit`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
+| `commons/`'s `Exception`, `Exit`, `Arg_`, `Fpath_`, `Chan`, `Cmd`, `FS` | the author's own from xix: a traced exception, a program's end (`OK`, `Err` of its words, a code), the command line's -help and mistakes ended by it, a channel with its origin, a command, files given a capability | xix (`~/xix/lib_core/commons/`, at `e9cfccc3`), below |
 | `core/ base/ collections/ printing/ system/` | the OCaml stdlib, for mini-ml | ocaml-light, then ix |
 | `concurrency/` | threads for mini-ml (plan_rio.md): `Atomic` (OCaml 4.14's sequential one), `Thread` (ix's: the scheduler), `Mutex`, `Condition`, `Event` (xix's `lib_core/concurrency/todo/`, ocaml-light's, as they are), `Source` (mini-ml's file; OCaml's is `commons/Source.ml`, the dune library `ix_threads`) | ix; xix |
 | `parallel/` | the host's cores for a program built by dune (plan_multicore.md): `Parallel`, domains under OCaml 5 and nothing under 4.14, the file chosen by the compiler's version; mini-qemu's cores | ix (after mini-chrome's `Worker_spawn`); the dune library `ix_parallel` |
@@ -56,6 +56,10 @@ the header comments of `Fpath_.mli` and `Chan.mli`, which are ix's
 (`docs/tags.md`). Two are
 changed, each change under a comment that starts with `ix:`:
 
+- `Arg_` (imported 2026-10-14, the author pointing at xix's way of
+  ending at `-help`): xix's bytes; `parse_argv` writes the usage and
+  raises `Exit.ExitCode`, 0 for `-help`, 2 for a mistake, for the
+  program's main, under `Exit.catch`, to end with.
 - `Exit`: `exit` takes its capability by its type (mini-ml has no
   objects: xix's `caps#exit`); on Plan 9 an `Err`'s string is the
   process's last words (`Sys_plan9.exits`: rc's `$status`).
@@ -71,6 +75,6 @@ changed, each change under a comment that starts with `ix:`:
 mini-ml reads them as they are: `[@@deriving show]` is an attribute it
 skips (`Exit.show` is xix's own stand-in), `Printexc`'s backtraces are
 ocaml-light's partial ones. Not imported yet, of xix's commons: `Proc`,
-`IO`, `Date`, `Logs_`, `Tmp`, `Arg_`, `OS`... ix's own `Procs` does
+`IO`, `Date`, `Logs_`, `Tmp`, `OS`... ix's own `Procs` does
 part of what `Proc` does: to merge. (ix's `Files` was merged into
 `FS`, 2026-10-07.)

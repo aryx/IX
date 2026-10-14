@@ -1020,18 +1020,16 @@ longer than the card's file system takes (14 letters), of a program
 not on the card. The 51 programs that have a page of Plan 9's are
 still the open question's.
 
-What writing them found in the programs, not fixed (said in the
-pages' BUGS where it is the program's): `merge3`'s usage says its
-files in the wrong order; `dossrv`'s `-v` and `-s` and `mount`'s `-n`
-and `-k` are taken and do nothing; `xargs`'s status is always
-success; `netscape` and `rebirth` end on `-help` with an exception,
-and the playground's programs (`office`, `drscheme`, `netscape`,
-`rebirth`) say `usage: game`; `lynx` sends a link of a page read from
-a file to the network; `node`'s `import` gives nothing; `chidb`'s
-`DELETE` is a syntax error; `asm`'s usage has `-m` as if it were
-needed; `ld`'s `-R` is in no usage. And of the format: the writer
-(`-T md`) gives `\man{x}{1}` back as `*x*(1)`, so a page written in
-the format by hand is not the writer's fixed point.
+What writing them found in the programs is in `docs/plans/bugs/ix.md`
+("What writing ix's manual pages found"), each with what became of
+it (the author: "let's do 1", the next step): fixed, the playground's
+programs ending at `-help` by an exception (now xix's `Arg_`: the
+usage, and `Exit.ExitCode`), `node`'s `import`, `qemu`'s `-help`,
+`lynx`'s link to a file not there, `asm`'s and `ld`'s usages; kept and
+said in the pages, as Plan 9's or chidb's: `xargs`'s status, `chidb`'s
+`DELETE`, `dossrv`'s `-v` and `-s`, `merge3`'s usage. And of the
+format: the writer (`-T md`) gives `\man{x}{1}` back as `*x*(1)`, so a
+page written in the format by hand is not the writer's fixed point.
 
 ### The folders
 

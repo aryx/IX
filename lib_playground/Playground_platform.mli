@@ -46,8 +46,11 @@
  *   let main = Program.main __MODULE__ (fun () ->
  *     Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)
  * is here
- *   let () = Cap.main (fun caps ->
- *     Playground_platform.run_app caps (Playground_platform.flags caps) app)
+ *   let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () ->
+ *     Playground_platform.run_app caps (Playground_platform.flags caps) app;
+ *     Exit.OK)))
+ * (flags ends a program asked for -help, or given an option it does
+ * not know, by Exit.ExitCode: Session.parse)
  *
  * design:
  * One interface and several modules of the same name, one of them
@@ -68,7 +71,7 @@
 
 (* The parameters the program was started with (see Playground.flags):
  * the command line's arguments without a dash, name=value or name. *)
-val flags : < Cap.argv ; .. > -> Playground.flags
+val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags
 
 (* The program run: its init given the flags, then each frame the events
  * since the last one given to its update (through its subscriptions),
@@ -76,7 +79,7 @@ val flags : < Cap.argv ; .. > -> Playground.flags
  * and its events (Plan 9's: the draw device, the mouse, the keyboard,
  * the threads that read them), a file written (ppm/). *)
 val run_app :
-  < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
+  < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. > ->
   Playground.flags -> ('model, 'msg) Playground.app -> unit
 
 (* The mouse's cursor over the window from now on (Playground.cursor):

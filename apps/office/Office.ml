@@ -235,7 +235,10 @@ let () =
   Cap.main (fun caps ->
       (* heap=modest: a document is kept, with its history (Plan9_loop
        * says what it changes) *)
-      try Playground_platform.run_app caps (("heap", "modest") :: Playground_platform.flags caps) (app (caps :> File_menu.caps))
+      (* (-help: the usage, and the end, Exit.ExitCode) *)
+      Exit.exit caps @@ Exit.catch @@ fun () ->
+      (try Playground_platform.run_app caps (("heap", "modest") :: Playground_platform.flags caps) (app (caps :> File_menu.caps))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
-        CapStdlib.exit caps 1)
+        CapStdlib.exit caps 1);
+      Exit.OK)

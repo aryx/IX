@@ -102,4 +102,5 @@ let view computer _model =
   @ [ words black "7GUIs 1: Counter" |> move_y 200. ]
 
 let app = game view update initial
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> Playground_platform.run_app caps (Playground_platform.flags caps) app; Exit.OK)))

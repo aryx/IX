@@ -112,8 +112,9 @@
 
    mini-node's require (tools/node's Node_host) is the other
    convention, CommonJS, in sixty lines: compare. (That is
-   mini-chrome's mini-node; ix's has no require, nor this module: a
-   file given to it is a script.)
+   mini-chrome's mini-node; ix's has no require: a file given to it
+   that imports is run by this module, its files found from its
+   directory.)
 
    Where it stands: the host is Script_modules, for a page's <script
    type=module>: it resolves a specifier against the importer's URL,

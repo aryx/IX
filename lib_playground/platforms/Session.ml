@@ -12,9 +12,11 @@ type cli = {
   mutable args : string list;
 }
 
-let usage = "usage: game [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]..."
+let usage (name : string) : string = "usage: " ^ name ^ " [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]..."
 
-let parse (argv : string array) : cli =
+let parse (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : cli =
+  let argv = CapSys.argv caps in
+  let name = Filename.remove_extension (Filename.basename argv.(0)) in
   let cli = { frames = 0; file = ""; fixed_time = None; script = None; audio = ""; args = [] } in
   let file_next = ref false in
   let anonymous (s : string) : unit = if !file_next then (cli.file <- s; file_next := false) else cli.args <- s :: cli.args in
@@ -32,8 +34,7 @@ let parse (argv : string array) : cli =
   ] in
   (* (from the first word each time: flags reads the command line, then run_app) *)
   Arg.current := 0;
-  (try Arg.parse_argv argv options anonymous usage with
-   | Arg.Bad msg | Arg.Help msg -> failwith msg);
+  Arg_.parse_argv caps argv options anonymous (usage name);
   cli.args <- List.rev cli.args;
   cli
 

@@ -854,8 +854,10 @@ size=n: a window of n pixels (on Linux 1000, and the window may be given another
 size; on mini-9pi the window's, or the screen's).
 |}
 
-let () = Cap.main (fun caps ->
-  if Array.mem "-h" (CapSys.argv caps) then Console.print caps help
-  else
-    try Playground_platform.run_app caps (Playground_platform.flags caps) app
-    with Failure msg -> Console.eprint caps (msg ^ "\n"); CapStdlib.exit caps 1)
+(* (-help: the platform's usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
+  (if Array.mem "-h" (CapSys.argv caps) then Console.print caps help
+   else
+     try Playground_platform.run_app caps (Playground_platform.flags caps) app
+     with Failure msg -> Console.eprint caps (msg ^ "\n"); CapStdlib.exit caps 1);
+  Exit.OK)

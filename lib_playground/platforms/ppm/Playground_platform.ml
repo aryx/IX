@@ -23,18 +23,18 @@
  *                 they are computed: two programs that play together over
  *                 a network (games/tests/network.sh) *)
 
-let flags (caps : < Cap.argv ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse (CapSys.argv caps)).args
+let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse caps).args
 
 (* no window, no cursor *)
 let set_cursor (_ : Playground.cursor) : unit = ()
 
-let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
-  let cli = Session.parse (CapSys.argv caps) in
+  let cli = Session.parse caps in
   (* (heap=game: the collector as Plan9_loop sets it for a game on
    * mini-9pi, for a count of instructions to be the board's) *)
   if List.assoc_opt "heap" flags = Some "game" then Gc.set { (Gc.get ()) with Gc.space_overhead = 700 };
-  if cli.frames <= 0 || cli.file = "" then failwith ("this program has no window here: -dump-frame n file. " ^ Session.usage);
+  if cli.frames <= 0 || cli.file = "" then failwith ("this program has no window here: -dump-frame n file. " ^ Session.usage (Filename.basename (CapSys.argv caps).(0)));
   let run = Session.start app flags in
   let size = match List.assoc_opt "size" flags with Some s -> int_of_string s | None -> int_of_float Playground.default_width in
   (* window=WxH: the picture is that large, a unit a pixel, and so is the

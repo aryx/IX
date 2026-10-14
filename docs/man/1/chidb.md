@@ -65,6 +65,6 @@ A statement that is not read, or that the compiler does not do, is
 `SQL syntax error.` on the standard output, as chidb says it.
 
 # BUGS
-`DELETE` is read but not compiled, and `UPDATE` not read: both are
-`SQL syntax error.` A `WHERE` with an `OR`, or comparing two columns,
-is too.
+As chidb's: `DELETE` is read but not compiled (its machine and its
+B-tree have no deletion), and `UPDATE` not read: both are `SQL syntax
+error.` A `WHERE` with an `OR`, or comparing two columns, is too.

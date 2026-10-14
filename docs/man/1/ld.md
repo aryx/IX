@@ -5,8 +5,8 @@ ld – the linker, for arm and arm64
 
 # SYNOPSIS
 **ld**
-**-m** *arch*
-[ **-H2** | **-H6** | **-H7** | **-H0** **-T** *address* ]
+[ **-m** *arch* ]
+[ **-H2** | **-H6** | **-H7** | **-H0** **-T** *address* [ **-R** *n* ] ]
 [ **-nofollow** ]
 [ **-v** ]
 [ **-map** ]
@@ -27,7 +27,7 @@ call to it is no call. So a program in ML links only the units of
 the library that it uses.
 
 **-m 5**, **-m 7**
-:    For arm, or for arm64.
+:    For arm, what is done with no **-m**, or for arm64.
 
 **-H7**
 :    An ELF file. What is done with no **-H**.
@@ -39,7 +39,11 @@ the library that it uses.
 :    Mach-O.
 
 **-H0**
-:    No header: a kernel's image, its text at the address of **-T**.
+:    No header: a kernel's image, its text at the address of **-T**,
+     its data's rounded to **-R**'s *n* bytes (4).
+
+**-s**
+:    Taken, as *5l*'s: no table of symbols is written anyway.
 
 **-E** *entry*
 :    The program starts at *entry*, and not at `_main`.

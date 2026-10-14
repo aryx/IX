@@ -50,7 +50,3 @@ lynx -w 60 index.html
 
 # SEE ALSO
 \man{netscape}{1}, \man{curl}{1}
-
-# BUGS
-A link of a page read from a file is made a `file://` address, and that
-is not fetched: it is said to be a host that cannot be found.

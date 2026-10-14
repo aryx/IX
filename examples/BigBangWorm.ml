@@ -67,4 +67,5 @@ let epitaph (w : world) : image =
 let app =
   big_bang init ~to_draw:draw
     { handlers with on_tick = Some tick; tick_rate = 1. /. 8.; on_key = Some key; stop_when = Some dead; last_picture = Some epitaph }
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> Playground_platform.run_app caps (Playground_platform.flags caps) app; Exit.OK)))

@@ -31,4 +31,5 @@ let app =
     ~to_draw:draw
     { handlers with on_tick = Some (fun y -> Float.min landed (y +. 3.)); on_key = Some (fun y key -> if key = " " then 0. else y) }
 
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> Playground_platform.run_app caps (Playground_platform.flags caps) app; Exit.OK)))

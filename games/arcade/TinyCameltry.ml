@@ -255,6 +255,8 @@ let help =
 
 let app = game view update initial_model
 
-let () = Cap.main (fun caps ->
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
   print_string help;
-  Playground_platform.run_app caps (Playground_platform.flags caps) app)
+  Playground_platform.run_app caps (Playground_platform.flags caps) app;
+  Exit.OK)

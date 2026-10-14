@@ -199,4 +199,5 @@ let view computer model =
     ]
 
 let app = game view update initial
-let () = Cap.main (fun caps -> Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> Playground_platform.run_app caps (Playground_platform.flags caps) app; Exit.OK)))

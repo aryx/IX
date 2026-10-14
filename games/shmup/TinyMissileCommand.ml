@@ -256,5 +256,7 @@ let view (computer : computer) (s : model) : shape list =
       @ if s.elapsed > 2. then Scene2d.blink 1. s [ text yellow 3. "PRESS SPACE" |> move_y (-180.) ] else [])
 
 let app = game view update initial_model
-let () = Cap.main (fun caps ->
-  Playground_platform.run_app caps (Playground_platform.flags caps) app)
+(* (-help: the usage, and the end, Exit.ExitCode) *)
+let () = Cap.main (fun caps -> Exit.exit caps @@ Exit.catch @@ fun () ->
+  Playground_platform.run_app caps (Playground_platform.flags caps) app;
+  Exit.OK)

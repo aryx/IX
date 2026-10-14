@@ -8,7 +8,7 @@
  * to 1, the fastest. *)
 
 
-let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-cores-parallel] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]]"
+let usage = "usage: mini-qemu -M raspi1ap|raspi2b|raspi4b [-m size] [-smp n] [-nographic | -display none] (-kernel image | -device loader,file=F,addr=A | -bios F) [-drive file=F,if=sd] [-serial S]... [-audiodev wav,path=F] [-ips N] [-cores-parallel] [-d] [-trace N] [-prof F] [-status N] [-symbols ELF] [-meters [on|off]] [-qmp unix:path,server,nowait]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -184,7 +184,7 @@ let wav_file (caps : < Cap.open_out; .. >) (file : string) : rate:int -> int -> 
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
-  if List.mem "-h" args || List.mem "--help" args then (Console.print caps help; exit 0);
+  if List.mem "-h" args || List.mem "-help" args || List.mem "--help" args then (Console.print caps help; exit 0);
   let kernel = ref None and machine = ref "" and ips = ref 30 and debug = ref false and usb = ref [] in
   let qmp = ref None and graphics = ref true and wav = ref None in
   let serials = ref [] and drive = ref None and loader = ref None in

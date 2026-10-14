@@ -87,7 +87,7 @@ let flags = Plan9_loop.flags
 (* Plan 9's cursor is a picture written to /dev/cursor: not yet *)
 let set_cursor (_ : Playground.cursor) : unit = ()
 
-let run_app (caps : < Cap.argv ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
+let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   (* (the flag redraw=all: each frame the whole picture, the simple way) *)
   if List.assoc_opt "redraw" (Plan9_loop.flags caps) = Some "all" then Redraw.enabled := false;

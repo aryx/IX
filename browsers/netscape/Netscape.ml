@@ -474,13 +474,16 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
 
 let () =
   Cap.main (fun caps ->
+      (* (-help: the usage, and the end, Exit.ExitCode) *)
+      Exit.exit caps @@ Exit.catch @@ fun () ->
       let flags = Playground_platform.flags caps in
       let profile = profile_dir caps flags in
       let (kept : Browser_profile.t), cookies = match profile with Some dir -> Browser_profile.load caps ~dir | None -> (Browser_profile.empty, []) in
       (* the screen as large as the window (Session's flag window): the
        * size it had last, if the profile says and the user does not *)
       let asked = if List.mem_assoc "window" flags then [] else [ ("window", match kept.window with Some (w, h) -> Printf.sprintf "%dx%d" w h | None -> "") ] in
-      try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies))
+      (try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
-        CapStdlib.exit caps 1)
+        CapStdlib.exit caps 1);
+      Exit.OK)

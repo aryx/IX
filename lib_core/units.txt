@@ -37,6 +37,7 @@ base/Int
 base/Bool
 base/Float
 base/Fun
+base/Atomic
 system/In_channel
 system/Out_channel
 system/Fpath

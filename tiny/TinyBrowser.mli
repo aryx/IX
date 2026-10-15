@@ -93,9 +93,23 @@ val lines : page -> line list
 val title : page -> string
 val base : page -> string
 
+(* how many lines there are so far; the lines from the a-th to before
+ * the b-th, from the top (what the screen shows) *)
+val count : page -> int
+val lines_between : page -> int -> int -> line list
+
 (* Converts a text to ASCII: entities and UTF-8 characters become what
  * the font can show. *)
 val ascii : string -> string
 
 (* The lines as plain text, one per line (a rule becomes dashes). *)
 val dump : page -> string
+
+(* The program www: the page at [address] asked of the wire's other end
+ * (the line "www address" on port 70: TinyMachinePeer.www_address says
+ * what an address can be), and drawn as it arrives on the screen, or in
+ * the window, the program's descriptor 3. Space and - show the next and
+ * the previous screenful, the arrows a line; q quits and clears. When
+ * the keys end (a recorded session's) and the page is all there, the
+ * program ends and leaves the page on the screen. *)
+val browse : string -> unit

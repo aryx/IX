@@ -8,10 +8,13 @@
  * functions); tiny-ml reads `open TinyCalls` and leaves it. Here there
  * is no kernel: what a program writes to where it draws (its
  * descriptor 3) is kept in [drawn], for a test to give TinyKernelGraphics.ml;
- * no key is ever typed and the clock does not move. *)
+ * no key is ever typed, the clock does not move, and there is no
+ * network (u_dial answers -1). *)
 
 let drawn = Buffer.create 4096
 let u_write fd s = if fd = 3 then Buffer.add_string drawn s; 1
 let u_read (_ : int) (_ : int) = ""
 let u_ready (_ : int array) (_ : int) (_ : int) = 0
 let u_ticks () = 0
+let u_dial (_ : string) (_ : int) = -1
+let u_close (_ : int) = 0

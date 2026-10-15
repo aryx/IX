@@ -198,6 +198,14 @@ u_open(value path, value flags)
 	return open((char*)path, flags >> 1) * 2 + 1;
 }
 
+// a connection to a port of the machine at an address ("10.0.0.1"):
+// user.h's dial, -1 without a network or when nothing answers there
+value
+u_dial(value address, value port)
+{
+	return dial((char*)address, port >> 1) * 2 + 1;
+}
+
 value
 u_dup(value fd)
 {

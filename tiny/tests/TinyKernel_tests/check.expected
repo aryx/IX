@@ -14,15 +14,15 @@ $ bigmem: 3000000 bytes kept
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ hi
 sh 2 75271
-rc 2 208988
-emacs 2 165152
+rc 2 210344
+emacs 2 165752
 mltests 2 77585
 paint 2 75138
-windows 2 159580
-square 2 128640
-tetris 2 143084
-calc 2 161592
-temp 2 157200
+windows 2 159660
+square 2 128868
+tetris 2 143164
+calc 2 161672
+temp 2 157520
 ping 2 70300
 get 2 72559
 wiki 2 76513
@@ -33,7 +33,8 @@ ls 2 70142
 wc 2 70930
 mkdir 2 69730
 rm 2 69727
-bigmem 2 104428
+bigmem 2 104508
+www 2 243348
 console 3 0
 draw 3 0
 mouse 3 0
@@ -59,7 +60,7 @@ Can't cd /nowhere: cannot
 % no
 % $ $ from a
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ answer from 10.0.0.1 in 12.5 ms
+$ answer from 10.0.0.1 in 15.0 ms
 answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 12.5 ms
 $ no answer from 10.0.0.9

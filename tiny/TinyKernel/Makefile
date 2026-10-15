@@ -67,7 +67,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm bigmem
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm bigmem www
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
@@ -134,6 +134,19 @@ $(O)/user/bigmem.tm: user/bigmem.ml
 $(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 	@mkdir -p $(@D)
 	$(CPU) -a 8 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
+
+# the web browser (www: ../TinyBrowser.ml, and user/www.ml, which runs
+# it), linked as an a.out that asks for 10 MB: a page's lines live in
+# its heap. Its code must stay under 384 KB, where mlsys.c's stack of
+# values starts.
+WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyBrowser.ml user/www.ml
+$(O)/user/www.tm: $(WWW)
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(WWW)
+$(O)/bin/www: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
+	@mkdir -p $(@D)
+	$(CPU) -a 10 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
+	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its stack of values"; rm $@; exit 1; }
 
 # a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
 # file runs it (square: the playground's test's)
@@ -227,6 +240,8 @@ check: $(O)/boot.img
 	  timeout 300 $(MACHINE) -net ../tests/www -net-lose 100 -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
+	timeout 300 $(MACHINE) -net ../tests/www -events $(T)/www.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1
+	cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/www.cksum $(O)/check.sum || { echo "tiny-kernel: www.events: another screen ($(O)/check.ppm)"; exit 1; }
 	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:

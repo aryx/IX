@@ -129,7 +129,7 @@ case $1 in
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
     (cd $ROOT && dune build ./tiny/TinyMachine/TinyMachineSocket.exe ./tiny/TinyMachine/TinyMachineFetch.exe 2>&1) || exit 1
-    say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"
+    say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot, www OCaml$([ -n "$window" ] || echo " (-window to see them)")"
     say "         and it is the way out: get / gopher.floodgap.com, get / example.com 80"
     say "         and in: httpd, then http://localhost:8080/ in a browser"
     speed=${rate#-rate }; [ -n "$speed" ] || speed=$([ -n "$window" ] && echo 20 || echo 8)

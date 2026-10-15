@@ -131,7 +131,8 @@
 (library
  (name tiny_browser)
  (wrapped false)
- (modules TinyBrowser))
+ (modules TinyBrowser)
+ (libraries tiny_lib_draw tiny_host_calls))
 
 (executable
  (name TinyML)

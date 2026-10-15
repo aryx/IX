@@ -587,3 +587,40 @@ unchanged, then the end of the connection.
   one line with its REST address; the kernel's check runs these. Live,
   with `-net-out`: Plan 9 from Bell Labs (496,931 bytes, as curl),
   example.com (577), and a host that does not exist (one `www:` line).
+
+### Step 4, on tiny-kernel's screen (2026-10-15)
+
+`www OCaml` in tiny-kernel asks the wire's other end for the page and
+draws it as it arrives: a bar with the title at the top, the page's
+lines, and a status line ("reading, 48 KB", then "252 KB, 732 lines").
+Space and `-` show the next and the previous screenful, the arrows a
+line, `q` quits. In a window of tiny-windows it asks the window's size
+as emacs does.
+
+- **The program**: `TinyBrowser.browse` (the screen part of
+  TinyBrowser.ml, 896 lines in all, 678 of code), and
+  `tiny/TinyKernel/user/www.ml`, which calls it. It is linked as an
+  a.out asking for 10 MB (`tiny-cpu -a 10`); its code is 243 KB.
+- **`u_dial`** for ML: an external in `calls.ml`, a few lines of C in
+  `mlsys.c` over the C library's `dial`, and -1 in the host's
+  `TinyCalls.ml`.
+- **The looks are colours**: the font has one face 8 pixels wide.
+  Drawing bold twice, a pixel apart, filled the gaps of an `m`, so the
+  text is a dark grey (68) and bold is black; emphasis is red, links
+  blue and underlined, code on light grey.
+- **The pace**: OCaml's 257 KB take 54 s of machine time at 8 million
+  instructions a second, from the first packet to the last (about
+  430 million instructions: the reading's 233, the network and the
+  kernel's copies, the drawing). That is about 22 s at a window's 20
+  million, 9 s at 50. The first screenful is drawn within the first
+  few seconds.
+- **The test**: `www.events` in the kernel's check types `www OCaml`,
+  presses space when the page is in, and compares the screen. The
+  windows and nested sessions show `ls`'s listing, which now has
+  `www`; tetris's pieces come from the tick at which it starts, which
+  moved with the image's size. Each was looked at and recorded again.
+- **Not done yet**: following links (step 5), pictures (step 6), a
+  page in tiny-windows checked by a recorded session. And the kernel's
+  image is at 2,601,916 bytes of its 2,621,440 (runtime.c's stack of
+  values starts above it): the next program, or pictures, will need
+  that limit moved.

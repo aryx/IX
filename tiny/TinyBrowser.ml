@@ -2,6 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyBrowser.mli *)
+open TinyCalls
+open TinyLibDraw
 
 (*****************************************************************************)
 (* Strings *)
@@ -275,17 +277,19 @@ type flow = {
   mutable made : run list;  (* the line being built, last run first *)
   mutable at : int;         (* the column where the next word goes *)
   mutable out : line list;  (* the finished lines, last line first *)
+  mutable nlines : int;     (* how many lines are in out *)
   mutable blank : bool;     (* whether the next line wants a blank line before it *)
 }
 
-let flow width = { width = width; left = 0; made = []; at = 0; out = []; blank = false }
+let flow width = { width = width; left = 0; made = []; at = 0; out = []; nlines = 0; blank = false }
 
 let push (f : flow) (l : line) =
   if f.blank then begin
-    (match f.out with x :: _ when x.runs <> [] || x.rule -> f.out <- { runs = []; rule = false } :: f.out | _ -> ());
+    (match f.out with x :: _ when x.runs <> [] || x.rule -> f.out <- { runs = []; rule = false } :: f.out; f.nlines <- f.nlines + 1 | _ -> ());
     f.blank <- false
   end;
-  f.out <- l :: f.out
+  f.out <- l :: f.out;
+  f.nlines <- f.nlines + 1
 
 let end_line (f : flow) = if f.made <> [] then begin push f { runs = List.rev f.made; rule = false }; f.made <- [] end
 
@@ -682,6 +686,16 @@ let finish p =
 let lines p = List.rev p.page_flow.out
 let title p = p.page_title
 let base p = p.page_base
+let count p = p.page_flow.nlines
+
+(* The lines from the a-th to before the b-th, from the top. The lines
+ * are kept last first, so the ones near the end are the cheapest. *)
+let lines_between p a b =
+  let n = p.page_flow.nlines in
+  let b = min b n and a = max a 0 in
+  let rec skip k l = if k <= 0 then l else match l with [] -> [] | _ :: rest -> skip (k - 1) rest in
+  let rec take k l acc = if k <= 0 then acc else match l with [] -> acc | x :: rest -> take (k - 1) rest (x :: acc) in
+  if a >= b then [] else take (b - a) (skip (n - b) p.page_flow.out) []
 
 (*****************************************************************************)
 (* The lines as text *)
@@ -698,3 +712,185 @@ let show_line width (l : line) =
   end
 
 let dump p = join (List.map (fun l -> show_line p.page_flow.width l ^ "\n") (lines p))
+
+(*****************************************************************************)
+(* The screen *)
+(*****************************************************************************)
+
+(* The colours, each an image of one pixel on our connection to the
+ * screen (image 0 is where we draw: the screen, or our window). The
+ * numbers in d_colour are bytes of the machine's palette. *)
+let c_white = 1
+let c_black = 2
+let c_link = 3
+let c_code = 4
+let c_rule = 5
+let c_emph = 6
+let c_bar = 7
+let c_text = 8
+let colours =
+  d_colour c_white 255 ^ d_colour c_black 0 ^ d_colour c_link 23 ^ d_colour c_code 221
+  ^ d_colour c_rule 136 ^ d_colour c_emph 205 ^ d_colour c_bar 3 ^ d_colour c_text 68
+
+(* What the screen shows. Row 0 is a bar with the page's title, the last
+ * row says how the reading goes, and the rows between show the page's
+ * lines from [sc_top]. The lines from [sc_top] to before [sc_drawn] are
+ * on the screen; a line that arrives below them is drawn if it fits. *)
+type screen = {
+  sc_page : page;
+  sc_address : string;
+  sc_cols : int;
+  sc_rows : int;
+  mutable sc_top : int;
+  mutable sc_drawn : int;
+  mutable sc_got : int;           (* the bytes of the page read so far *)
+  mutable sc_state : string;      (* "reading", "done", or why there is no page *)
+  mutable sc_msgs : string list;  (* drawing messages not yet written, last first *)
+}
+
+let rows_of_page sc = sc.sc_rows - 2
+let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
+let flush sc = if sc.sc_msgs <> [] then begin ignore (u_write 3 (join (List.rev sc.sc_msgs))); sc.sc_msgs <- [] end
+
+let clip sc s = if String.length s > sc.sc_cols - 2 then String.sub s 0 (max 0 (sc.sc_cols - 2)) else s
+
+(* a row, filled with a colour *)
+let fill_row sc row colour = put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 8) ((row * 16) + 16))
+
+(* A line of the page at a row of the screen. The font has one face, 8
+ * pixels wide, so the looks are colours: the text is a dark grey and
+ * bold is black (drawing it twice, a pixel apart, filled the gaps of an
+ * m); emphasis is red, as there is no italic; a link is blue and
+ * underlined; code is on light grey. *)
+let draw_line sc row (l : line) =
+  let y = row * 16 in
+  fill_row sc row c_white;
+  if l.rule then put sc (d_fill 0 c_rule 0 (y + 7) (sc.sc_cols * 8) (y + 9))
+  else
+    List.iter (fun (r : run) ->
+      if r.col < sc.sc_cols && r.text <> "" then begin
+        let n = min (String.length r.text) (sc.sc_cols - r.col) in
+        let t = String.sub r.text 0 n and x = r.col * 8 in
+        if r.look land code <> 0 then put sc (d_fill 0 c_code x y (x + (n * 8)) (y + 16));
+        let ink =
+          if r.link <> "" then c_link else if r.look land emph <> 0 then c_emph else if r.look land bold <> 0 then c_black else c_text in
+        put sc (d_text 0 ink x y t);
+        if r.link <> "" then put sc (d_line 0 c_link x (y + 15) (x + (n * 8) - 1) (y + 15))
+      end) l.runs
+
+let draw_bar sc =
+  fill_row sc 0 c_bar;
+  let t = if title sc.sc_page <> "" then title sc.sc_page else sc.sc_address in
+  put sc (d_text 0 c_white 8 0 (clip sc t))
+
+let draw_status sc =
+  let row = sc.sc_rows - 1 in
+  fill_row sc row c_code;
+  let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
+  let what = if sc.sc_state = "reading" then "reading, " ^ kb else if sc.sc_state = "done" then kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines" else sc.sc_state in
+  put sc (d_text 0 c_black 8 (row * 16) (clip sc (what ^ "   space -: a page, arrows: a line, q: quits")))
+
+(* the lines that arrived and fit below the ones on the screen *)
+let show_new sc =
+  let last = min (count sc.sc_page) (sc.sc_top + rows_of_page sc) in
+  if sc.sc_drawn < last then begin
+    List.iteri (fun i l -> draw_line sc (1 + sc.sc_drawn - sc.sc_top + i) l) (lines_between sc.sc_page sc.sc_drawn last);
+    sc.sc_drawn <- last
+  end
+
+(* every row of the page drawn again, from sc_top *)
+let redraw sc =
+  let ls = lines_between sc.sc_page sc.sc_top (sc.sc_top + rows_of_page sc) in
+  List.iteri (fun i l -> draw_line sc (1 + i) l) ls;
+  for row = 1 + List.length ls to rows_of_page sc do fill_row sc row c_white done;
+  sc.sc_drawn <- sc.sc_top + List.length ls
+
+let scroll sc by =
+  let top = max 0 (min (sc.sc_top + by) (count sc.sc_page - rows_of_page sc)) in
+  if top <> sc.sc_top then begin sc.sc_top <- top; redraw sc end
+
+(* The window's size in pixels, asked as emacs asks it: an ENQ (ASCII's
+ * 5) printed, which tiny-windows answers in the window's mouse box, the
+ * descriptor 4, as a mouse at (width, height) with the buttons -1. On
+ * the console no one answers, and the screen is 640 by 480. *)
+let size () =
+  ignore (u_write 1 "\005");
+  let fds = Array.make 1 4 and until = u_ticks () + 200 in
+  let rec answer () =
+    if u_ready fds 1 until <> 4 then 640, 480
+    else (let s = u_read 4 12 in if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4 else answer ()) in
+  answer ()
+
+(* What a key does; false for q, which quits. The arrows are 128 to 131
+ * (up, down, left, right). *)
+let key sc k =
+  let page = rows_of_page sc - 1 in
+  if k = Char.code 'q' then false
+  else begin
+    (if k = Char.code ' ' || k = 131 then scroll sc page
+     else if k = Char.code '-' || k = 130 then scroll sc (- page)
+     else if k = 129 then scroll sc 1
+     else if k = 128 then scroll sc (-1));
+    true
+  end
+
+let browse address =
+  let w, h = size () in
+  let sc = { sc_page = create (w / 8); sc_address = address; sc_cols = w / 8; sc_rows = h / 16; sc_top = 0; sc_drawn = 0;
+             sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
+  put sc colours;
+  draw_bar sc;
+  redraw sc;
+  (* the page asked of the wire's other end, on its port 70 *)
+  let wire = u_dial "10.0.0.1" 70 in
+  if wire < 0 then sc.sc_state <- "www: no network (tiny-machine -net dir gives one)"
+  else ignore (u_write wire ("www " ^ address ^ "\r\n"));
+  draw_status sc;
+  flush sc;
+  let fds = Array.make 2 0 in
+  (* [wire]: the connection, -1 once the page is all there; [keys]:
+   * whether keys may still come. When both are over, the program ends
+   * and leaves the page on the screen. *)
+  let rec loop wire keys =
+    if wire >= 0 || keys then begin
+      let n = if keys then 1 else 0 in
+      if wire >= 0 then fds.(n) <- wire;
+      let ready = u_ready fds (if wire >= 0 then n + 1 else n) 0 in
+      if wire >= 0 && ready = wire then begin
+        let s = u_read wire 1024 in
+        if s = "" then begin
+          finish sc.sc_page;
+          ignore (u_close wire);
+          sc.sc_state <- "done";
+          show_new sc; draw_bar sc; draw_status sc; flush sc;
+          loop (-1) keys
+        end
+        else begin
+          let before = sc.sc_got / 16384 in
+          sc.sc_got <- sc.sc_got + String.length s;
+          feed sc.sc_page s;
+          show_new sc;
+          if sc.sc_got / 16384 <> before then draw_status sc;
+          flush sc;
+          loop wire keys
+        end
+      end
+      else if keys && ready = 0 then begin
+        let typed = u_read 0 16 in
+        if typed = "" then loop wire false
+        else begin
+          let rec each i = i >= String.length typed || (key sc (Char.code typed.[i]) && each (i + 1)) in
+          let go_on = each 0 in
+          flush sc;
+          if go_on then loop wire keys
+          else begin
+            if wire >= 0 then ignore (u_close wire);
+            for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
+            flush sc
+          end
+        end
+      end
+      else loop wire keys
+    end in
+  loop wire true
+

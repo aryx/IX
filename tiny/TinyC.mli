@@ -1,6 +1,8 @@
 (* A tiny C compiler for arm64, in one file, through an intermediate
- * language of its own. mini-cc (languages/c/) is 5c's and 7c's twin,
- * byte for byte: their front end, their trees, their code generator,
+ * language of its own. 
+ *
+ * mini-cc (languages/c/) is 5c's and 7c's twin, byte for byte:
+ * their front end, their trees, their code generator,
  * and a record per machine. This is what is left when the code need
  * only be correct (its usage, by examples: [help] below, what tiny-c -h
  * prints): one C file in, its arm64 assembly out, in Plan 9's syntax, for

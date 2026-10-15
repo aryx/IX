@@ -34979,3 +34979,19 @@ Claude recommended trying the editor by hand first: build TinyKernel, run tiny-m
 Claude then proposed a short follow-up for tiny-emacs: replace the ENQ size question, add undo, and speed up the view function.
 Next came the website and READMEs, adding rc and emacs to docs/t-ix.html, and splitting the .tm assembler out of TinyMachineCPU.ml.
 Claude left window border resizing waiting on a cursor choice, and put tiny-profiler last, starting with the kernel's text drawing.
+
+------------------------------------------------------------------------
+
+## 2026-10-14 14:18
+
+**Yoann:**
+
+> I just run tiny-machine -window tiny-kernel and ran windows and under windows ran emacs, but when I quit emacs I think it also terminated windows
+
+------------------------------------------------------------------------
+
+## 2026-10-14 14:18
+
+**Yoann:**
+
+> C-x C-c, maybe the C-c got intercepted

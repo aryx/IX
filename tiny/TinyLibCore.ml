@@ -2,11 +2,14 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* TinyLibCore, the core library of tiny-ml's programs (the kernel,
- * tiny-windows, the applications), in tiny-ml's ML. It is a prelude:
- * the compiler reads it before the program's own files, so a program
- * names nothing to have it; TinyLibDraw, TinyLibPlayground and
- * TinyLibGUI are the libraries a program asks for, files given to
- * tiny-ml before its own. The operators and the few functions that are
+ * tiny-windows, the applications), in tiny-ml's ML.
+ *
+ * It is a prelude: the compiler reads it before the
+ * program's own files, so a program names nothing to have it;
+ * TinyLibDraw, TinyLibPlayground and TinyLibGUI are the libraries
+ * a program asks for, files given to tiny-ml before its own.
+ *
+ * The operators and the few functions that are
  * the machine's or the runtime's (core.c), as externals; the option
  * and the exceptions the runtime raises, in the order it numbers them;
  * then the Pervasives and List functions, as a program would find
@@ -17,7 +20,8 @@
  * build puts this file's text in the compiler (tiny/dune's rule and
  * tiny/mkfile's make TinyMLPrelude.ml of it; no .mli beside it, which
  * OCaml would have to check), which reads it before
- * the program's files and adds max_int and min_int, the target's. *)
+ * the program's files and adds max_int and min_int, the target's.
+ *)
 external raise : exn -> 'a = "%raise"
 external ( = ) : 'a -> 'a -> bool = "%eq"
 external ( <> ) : 'a -> 'a -> bool = "%neq"

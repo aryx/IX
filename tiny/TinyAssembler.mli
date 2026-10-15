@@ -1,11 +1,13 @@
 (* A tiny assembler for arm64 that writes the executable, in one file.
+ *
  * mini-asm and mini-ld (assembler/, linker/) are Plan 9's split,
  * faithfully: an assembler that only parses into objects, and a linker
  * that loads them and their libraries, lays out and encodes, choosing
  * for each instruction the form 7l would, byte for byte. This is what
  * is left without separate compilation (its usage, by examples: [help]
- * below, what tiny-assembler -h prints): all the assembly of a program, its own and its libc's (7c -S output,
- * and libc's .s), read at once, and the ELF executable written.
+ * below, what tiny-assembler -h prints): all the assembly of a program,
+ * its own and its libc's (7c -S output, and libc's .s), read at once,
+ * and the ELF executable written.
  *
  *     file.s ...                the passes, one after the other
  *        | lex, parse    lines to items: a TEXT, an instruction and its
@@ -29,8 +31,9 @@
  *     edata      the bss: counted in the memory's size, not in the file
  *     end
  *
- * An example of a size known from the operands alone: MOV $0x12345678,
- * R1 is two words whatever is around it, a MOVZ of 0x5678 and a MOVK
+ * An example of a size known from the operands alone: 
+ *   MOV $0x12345678, R1
+ * is two words whatever is around it, a MOVZ of 0x5678 and a MOVK
  * of 0x1234 at bit 16 (movconst: a word for each 16 bits that are
  * not zero, or not all ones when most are, after a MOVN); where
  * 7l has a pool of constants after the function and a load from it,

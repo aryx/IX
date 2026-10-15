@@ -2,19 +2,23 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* See TinyAssembler.mli *)
-
-(* -h: how, by examples, each one as it runs *)
 open Common
 
+(* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-assembler [-e entry] [-o out] file.s...
+
 A tiny assembler for arm64 that writes the executable: all the assembly of a
 program, its own and its libc's, in Plan 9's syntax (7c -S's), read at once,
-and an ELF written, a.out by default (-o: another); its entry _main (-e: another).
+and an ELF written, called 'a.out' by default (-o: another); its entry
+_main (-e: another).
+
 For example, goken's hello, and tiny-c's output with goken's libc:
-  tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
-  ./hello (or mini-5i hello)          Hello, world
-  tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
-libc/*.s: goken's libc, by 7c -S and its 7a files (tiny/tests/TinyC_test.sh).
+  $ tiny-assembler -e _start -o hello ~/goken/tests/s/hello_arch/hello_linux_arm64.s
+  $ ./hello (or mini-5i hello)
+  Hello, world
+  $ tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
+with libc/*.s goken's libc, by 7c -S and its 7a files (tiny/tests/TinyC_test.sh).
+
 An error names the function and its file: FOO: not in the subset (in _main,
 from hello.s:1)
 |}
@@ -105,9 +109,6 @@ type logic = And | Orr | Eor | Ands | Bic | Orn | Eon | Bics
 type shift = Lsl | Lsr | Asr
 
 (* an instruction's mnemonic, decoded once by the parser *)
-(* old: the mnemonic's string, taken apart in compile at each use (a W
- * stripped, op.[3], String.sub op 0 4...) and matched with catch-alls:
- * FMOVD R1, R2 fell into the one for MOVBU and assembled as UXTB *)
 type op =
   | Move of mov | Nop
   | Ext of bool * int                                     (* SXTW ... UXTB: signed, bits *)

@@ -6,9 +6,11 @@
 (* -h: the usage, and a Buildfile's five kinds of lines, by example, as
  * it runs *)
 let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [target ...]
+
 The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
 .tiny-build). -n: the recipes printed, not run; -g: the graph, for dot.
+
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment
   OBJS = hello.o world.o          a variable: a list of words
@@ -18,6 +20,7 @@ A Buildfile's five kinds of lines, and that is all the syntax:
   %.o: %.c                        a pattern: % is the stem
       cc -c $stem.c
   <.depend                        an include, if the file exists
+
 tiny-build then makes hello (the first rule's target); a comment added to
 world.c recompiles it, and relinks nothing: world.o came out the same.
 |}

@@ -8,6 +8,7 @@ let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
+
 A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
 calls, for goken's libc), for tiny-assembler; or with -tm to TinyCPU's, for
 tiny-cpu, with its own libc; -ir prints its stack machine's code instead.

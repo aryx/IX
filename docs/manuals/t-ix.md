@@ -478,13 +478,13 @@ What the numbers mean is up to who answers:
 | addresses | what |
 |---|---|
 | from 0 | the kernel's image, then the files it carries |
-| `0x280000` | the ML runtime's stack of values (the image and its files end below it) |
-| `0x2c0000` | the processes' frames: 17 words each, their registers and pc |
-| `0x300000` to `0x500000` | the ML heap, two halves of 1 MB |
-| `0x500000` to `0xd00000` | unused (the processes' partitions until 2026-10-15) |
+| `0x480000` | the ML runtime's stack of values (the image and its files, 4.5 MB at most, end below it) |
+| `0x4c0000` | the processes' frames: 17 words each, their registers and pc |
+| `0x500000` to `0x700000` | the ML heap, two halves of 1 MB |
+| `0x700000` to `0xd00000` | unused |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
-| `0x2f0000` | a packet's place, on its way to or from the network's device |
+| `0x4f0000` | a packet's place, on its way to or from the network's device |
 | `0x1000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
 | the last 48 bytes | the devices, which the kernel reaches by negative addresses (-16 is the console) |
 

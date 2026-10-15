@@ -98,6 +98,9 @@ val base : page -> string
 val count : page -> int
 val lines_between : page -> int -> int -> line list
 
+(* the line where the element with that id starts, if it came *)
+val anchor : page -> string -> int option
+
 (* Converts a text to ASCII: entities and UTF-8 characters become what
  * the font can show. *)
 val ascii : string -> string

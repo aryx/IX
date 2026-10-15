@@ -104,12 +104,12 @@
  *
  *     0x000000   the image: entry.tm, the runtime, this file; then the
  *                files it carries, each a name, a size, the bytes
- *     0x280000   the value stack: the kernel's own roots (TinyML's)
- *     0x2c0000   the frames, 68 bytes per slot: r1 to r15 and the pc
+ *     0x480000   the value stack: the kernel's own roots (TinyML's)
+ *     0x4c0000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
- *     0x300000   the heap, two halves of 1 MB: every file written,
+ *     0x500000   the heap, two halves of 1 MB: every file written,
  *                every pipe, descriptor table and closure
- *     0x500000   unused (the partitions were there until 2026-10-15)
+ *     0x700000   unused
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
  *    0x1000000   the processes' partitions: 1 MB each, or what an

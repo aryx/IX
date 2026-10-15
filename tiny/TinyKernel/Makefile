@@ -217,7 +217,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	printf '\n' >> $@
-	@test $$(wc -c < $@) -lt 2621440 || { echo "$@: over 2.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
+	@test $$(wc -c < $@) -lt 4718592 || { echo "$@: over 4.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img
@@ -240,8 +240,10 @@ check: $(O)/boot.img
 	  timeout 300 $(MACHINE) -net ../tests/www -net-lose 100 -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
-	timeout 300 $(MACHINE) -net ../tests/www -events $(T)/www.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1
-	cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/www.cksum $(O)/check.sum || { echo "tiny-kernel: www.events: another screen ($(O)/check.ppm)"; exit 1; }
+	for s in www wwwlink wwwback wwwgo; do \
+	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
+	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
+	done
 	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:

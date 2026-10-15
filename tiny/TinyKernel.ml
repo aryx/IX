@@ -45,7 +45,7 @@ let part = 0x100000
 let nslots = 8
 let mem_low = 0x1000000
 let mem_high = 0x7ff0000
-let frame slot = 0x2c0000 + (slot * 68)
+let frame slot = 0x4c0000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
  * negative numbers, which the machine takes modulo its memory size, so
  * the kernel works whatever that size is (-16 is the last 16 bytes). *)
@@ -56,7 +56,7 @@ let mouse_dev = -4
 (* the network's four words (an address, a length, a command, whether
  * there is a wire), and a packet's place in memory, below the heap *)
 let net_dev = -48
-let net_buf = 0x2f0000
+let net_buf = 0x4f0000
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1

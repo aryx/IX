@@ -624,3 +624,36 @@ as emacs does.
   image is at 2,601,916 bytes of its 2,621,440 (runtime.c's stack of
   values starts above it): the next program, or pictures, will need
   that limit moved.
+
+### Step 5, links (2026-10-15)
+
+- **A click on a link follows it.** Its address is resolved against the
+  page's `<base>` (Wikipedia's is `//en.wikipedia.org/wiki/`, its links
+  `./ML_(programming_language)`), or against the page's own address.
+  A link to a place of the same page (`#cite_note-2`, a reference's
+  `[2]`) only scrolls there. The wheel (Plan 9's buttons 8 and 16)
+  scrolls.
+- **Places in a page**: the reader keeps the line where each element
+  with an `id` starts, except Parsoid's own ids (`mw...`), which no
+  link names.
+- **`b`** (or Backspace) goes back to where the page before was shown:
+  only a scroll for the same page, the page asked again otherwise, and
+  shown from that line once it has come. **`g`** asks for an address in
+  the status line (Enter goes, Escape gives up).
+- **`<cite>` is plain text**, no longer emphasis: Wikipedia puts each
+  whole citation in one, and the references were all red.
+- **tiny-ml's 11 registers**: a record literal of 15 fields could not be
+  built (its fields are evaluated on the stack machine's registers), so
+  where the browsing is (the connection, the address, the history, the
+  place to go, the mouse) is a record of its own, `nav`.
+- **The kernel's image** reached 2,618,016 bytes of its 2,621,440: the
+  kernel's stack of values, the frames, the packet's place and the heap
+  moved up 2 MB (into the space the partitions left), so the image may
+  now be 4.5 MB.
+- **Tests**, in the kernel's check: `wwwlink` clicks `[2]` and shows
+  the references; `wwwback` clicks it, goes back and pages down, and
+  must show `www`'s screen exactly; `wwwgo` types `g` then
+  `OCaml#History` and shows the History section. By hand, with
+  `-net-out`: a click on ML in the infobox loads Wikipedia's "ML
+  (programming language)" (125 KB, 279 lines).
+- `tiny/TinyBrowser.ml` is 1,075 lines, 807 of code.

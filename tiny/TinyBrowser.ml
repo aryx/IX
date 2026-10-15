@@ -165,7 +165,7 @@ type token = Text of string | Open of string * (string * string) list | Close of
 
 (* The attributes the browser uses. The others (like Parsoid's large
  * data-mw, or ids) are skipped without being copied. *)
-let wanted = [ "href"; "class"; "style"; "src"; "alt"; "width"; "height"; "colspan"; "start" ]
+let wanted = [ "href"; "class"; "style"; "src"; "alt"; "width"; "height"; "colspan"; "start"; "id" ]
 
 (* Parses the inside of a tag, the text between its < and its >. *)
 let tag s =
@@ -443,12 +443,13 @@ type page = {
   mutable space : bool;         (* whether a space was read since the last word *)
   mutable page_title : string;
   mutable page_base : string;
+  mutable anchors : (string * int) list;  (* an element's id, and the line it starts at *)
 }
 
 let root = { tag = ""; face = 0; href = ""; hide = false; pre = false; margin = 0; count = 0 }
 
 let create width =
-  { reader = { tail = ""; raw = "" }; page_flow = flow width; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = "" }
+  { reader = { tail = ""; raw = "" }; page_flow = flow width; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = ""; anchors = [] }
 
 let top p = match p.stack with e :: _ -> e | [] -> root
 
@@ -468,7 +469,7 @@ let deeper = 16
 let kinds = [
   "a", 0; "address", block; "area", void; "article", block; "aside", block;
   "b", bold * 32; "base", void; "blockquote", block + spaced + deeper; "body", block; "br", void; "button", hidden;
-  "caption", block; "center", block; "cite", emph * 32; "code", code * 32; "col", void;
+  "caption", block; "center", block; "code", code * 32; "col", void;
   "dd", block + deeper; "dfn", emph * 32; "div", block; "dl", block + spaced; "dt", block + bold * 32;
   "em", emph * 32; "embed", void;
   "figcaption", block; "figure", block + spaced; "footer", block;
@@ -590,6 +591,13 @@ let open_tag p tag k attrs =
   implied p tag k;
   let e = top p in
   let hide = e.hide || hides k attrs in
+  (* An element with an id is a place a link can go to (#History,
+   * #cite_note-2): the line it starts at is kept. Parsoid gives nearly
+   * every element an id of its own, which starts with mw, and no link
+   * names those. *)
+  let id = attr attrs "id" in
+  if id <> "" && not hide && not (String.length id > 1 && id.[0] = 'm' && id.[1] = 'w') then
+    p.anchors <- (id, p.page_flow.nlines + (if p.page_flow.made <> [] || p.page_flow.blank then 1 else 0)) :: p.anchors;
   (* Inside a table, a <tr> starts a new row and a <td> or <th> a new
    * cell, whose words are kept until the end of the table. *)
   if is k block then
@@ -686,6 +694,7 @@ let finish p =
 let lines p = List.rev p.page_flow.out
 let title p = p.page_title
 let base p = p.page_base
+let anchor p id = List.assoc_opt id p.anchors
 let count p = p.page_flow.nlines
 
 (* The lines from the a-th to before the b-th, from the top. The lines
@@ -732,20 +741,91 @@ let colours =
   d_colour c_white 255 ^ d_colour c_black 0 ^ d_colour c_link 23 ^ d_colour c_code 221
   ^ d_colour c_rule 136 ^ d_colour c_emph 205 ^ d_colour c_bar 3 ^ d_colour c_text 68
 
+(*****************************************************************************)
+(* Addresses *)
+(*****************************************************************************)
+
+let starts pre s = String.length s >= String.length pre && String.sub s 0 (String.length pre) = pre
+
+(* an address and its #fragment, apart ("" when there is none) *)
+let fragment url =
+  match String.index_opt url '#' with
+  | Some i -> String.sub url 0 i, String.sub url (i + 1) (String.length url - i - 1)
+  | None -> url, ""
+
+(* What was typed, as a full address, by the rules of the wire's other
+ * end (TinyMachinePeer.www_address), which this side needs to know too to
+ * find where a relative link goes: a title is an English Wikipedia
+ * article, a name with a dot is https://. *)
+let absolute typed =
+  let s = let n = String.length typed in let rec a i = if i < n && is_space typed.[i] then a (i + 1) else i in
+    let rec b j = if j > 0 && is_space typed.[j - 1] then b (j - 1) else j in let i = a 0 in String.sub typed i (max 0 (b n - i)) in
+  if starts "http://" s || starts "https://" s then s
+  else begin
+    let first = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
+    if String.contains first '.' && not (String.contains first ' ') then "https://" ^ s
+    else "https://en.wikipedia.org/wiki/" ^ join (List.init (String.length s) (fun i -> if s.[i] = ' ' then "_" else String.make 1 s.[i]))
+  end
+
+(* "https://host" of an address *)
+let site url =
+  match find url "://" 0 with
+  | -1 -> ""
+  | i -> (match String.index_from_opt url (i + 3) '/' with Some j -> String.sub url 0 j | None -> url)
+
+(* Where a link goes, from the page at [url] whose <base> is [base]
+ * (Wikipedia's is //en.wikipedia.org/wiki/, and its links ./OCaml). *)
+let resolve url base href =
+  if href = "" then url
+  else if starts "http://" href || starts "https://" href then href
+  else if starts "//" href then "https:" ^ href
+  else if href.[0] = '#' then fst (fragment url) ^ href
+  else if href.[0] = '/' then site url ^ href
+  else begin
+    let dir =
+      if base <> "" then (if starts "//" base then "https:" ^ base else base)
+      else begin
+        let u = fst (fragment url) in
+        let rec slash i = if i < 0 then -1 else if u.[i] = '/' then i else slash (i - 1) in
+        let i = slash (String.length u - 1) in
+        if i > String.length (site url) then String.sub u 0 (i + 1) else site url ^ "/"
+      end in
+    dir ^ (if starts "./" href then String.sub href 2 (String.length href - 2) else href)
+  end
+
+(*****************************************************************************)
+(* The browser *)
+(*****************************************************************************)
+
 (* What the screen shows. Row 0 is a bar with the page's title, the last
  * row says how the reading goes, and the rows between show the page's
  * lines from [sc_top]. The lines from [sc_top] to before [sc_drawn] are
- * on the screen; a line that arrives below them is drawn if it fits. *)
+ * on the screen; a line that arrives below them is drawn if it fits.
+ * A page is read from [nv_wire], the connection to the wire's other end,
+ * -1 when the page is all there; [nv_history] holds the pages seen
+ * before, each with the first line that was shown. Where the browsing
+ * is (the nav) is a record of its own, as tiny-ml builds a record's
+ * fields on its 11 registers. *)
+type nav = {
+  mutable nv_address : string;       (* the page's full address, without its #fragment *)
+  mutable nv_wire : int;
+  mutable nv_history : (string * int) list;
+  mutable nv_goal : int;             (* a line to show first once it has come (back), or -1 *)
+  mutable nv_goal_id : string;       (* an anchor to show once it has come (#fragment), or "" *)
+  mutable nv_pressed : bool;         (* the mouse's button is down *)
+}
+
 type screen = {
-  sc_page : page;
-  sc_address : string;
+  mutable sc_page : page;
+  sc_nav : nav;
+  mutable sc_typing : string option;  (* g: the address being typed *)
   sc_cols : int;
   sc_rows : int;
   mutable sc_top : int;
   mutable sc_drawn : int;
-  mutable sc_got : int;           (* the bytes of the page read so far *)
-  mutable sc_state : string;      (* "reading", "done", or why there is no page *)
-  mutable sc_msgs : string list;  (* drawing messages not yet written, last first *)
+  mutable sc_got : int;             (* the bytes of the page read so far *)
+  mutable sc_state : string;        (* "reading", "done", or why there is no page *)
+  mutable sc_msgs : string list;    (* drawing messages not yet written, last first *)
 }
 
 let rows_of_page sc = sc.sc_rows - 2
@@ -780,23 +860,20 @@ let draw_line sc row (l : line) =
 
 let draw_bar sc =
   fill_row sc 0 c_bar;
-  let t = if title sc.sc_page <> "" then title sc.sc_page else sc.sc_address in
+  let t = if title sc.sc_page <> "" then title sc.sc_page else sc.sc_nav.nv_address in
   put sc (d_text 0 c_white 8 0 (clip sc t))
 
 let draw_status sc =
   let row = sc.sc_rows - 1 in
   fill_row sc row c_code;
-  let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
-  let what = if sc.sc_state = "reading" then "reading, " ^ kb else if sc.sc_state = "done" then kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines" else sc.sc_state in
-  put sc (d_text 0 c_black 8 (row * 16) (clip sc (what ^ "   space -: a page, arrows: a line, q: quits")))
-
-(* the lines that arrived and fit below the ones on the screen *)
-let show_new sc =
-  let last = min (count sc.sc_page) (sc.sc_top + rows_of_page sc) in
-  if sc.sc_drawn < last then begin
-    List.iteri (fun i l -> draw_line sc (1 + sc.sc_drawn - sc.sc_top + i) l) (lines_between sc.sc_page sc.sc_drawn last);
-    sc.sc_drawn <- last
-  end
+  let text =
+    match sc.sc_typing with
+    | Some typed -> "go to: " ^ typed ^ "_"
+    | None ->
+        let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
+        (if sc.sc_state = "reading" then "reading, " ^ kb else if sc.sc_state = "done" then kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines" else sc.sc_state)
+        ^ "   space -: page, b: back, g: go to, q: quit" in
+  put sc (d_text 0 c_black 8 (row * 16) (clip sc text))
 
 (* every row of the page drawn again, from sc_top *)
 let redraw sc =
@@ -805,9 +882,97 @@ let redraw sc =
   for row = 1 + List.length ls to rows_of_page sc do fill_row sc row c_white done;
   sc.sc_drawn <- sc.sc_top + List.length ls
 
-let scroll sc by =
-  let top = max 0 (min (sc.sc_top + by) (count sc.sc_page - rows_of_page sc)) in
+(* the screen from line [top] (as far as the page allows) *)
+let show_from sc top =
+  let top = max 0 (min top (count sc.sc_page - rows_of_page sc)) in
   if top <> sc.sc_top then begin sc.sc_top <- top; redraw sc end
+
+let scroll sc by = show_from sc (sc.sc_top + by)
+
+(* The lines that arrived and fit below the ones on the screen; and the
+ * place a page was asked to show (back, or a #fragment), once it has
+ * come. *)
+let show_new sc =
+  if sc.sc_nav.nv_goal_id <> "" then
+    (match anchor sc.sc_page sc.sc_nav.nv_goal_id with
+     | Some line when line + rows_of_page sc <= count sc.sc_page || sc.sc_nav.nv_wire < 0 -> sc.sc_nav.nv_goal_id <- ""; show_from sc line
+     | _ -> ());
+  if sc.sc_nav.nv_goal >= 0 && (sc.sc_nav.nv_goal + rows_of_page sc <= count sc.sc_page || sc.sc_nav.nv_wire < 0) then begin
+    let goal = sc.sc_nav.nv_goal in
+    sc.sc_nav.nv_goal <- -1;
+    show_from sc goal
+  end;
+  let last = min (count sc.sc_page) (sc.sc_top + rows_of_page sc) in
+  if sc.sc_drawn < last then begin
+    List.iteri (fun i l -> draw_line sc (1 + sc.sc_drawn - sc.sc_top + i) l) (lines_between sc.sc_page sc.sc_drawn last);
+    sc.sc_drawn <- last
+  end
+
+(* Asks for the page at [url] (a full address), which replaces the one
+ * shown; its #fragment, if any, is shown when it comes. *)
+let load sc url =
+  if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+  let address, id = fragment url in
+  sc.sc_page <- create sc.sc_cols;
+  sc.sc_nav.nv_address <- address;
+  sc.sc_nav.nv_goal_id <- id;
+  sc.sc_top <- 0;
+  sc.sc_got <- 0;
+  sc.sc_state <- "reading";
+  draw_bar sc;
+  redraw sc;
+  (* the page asked of the wire's other end, on its port 70 *)
+  sc.sc_nav.nv_wire <- u_dial "10.0.0.1" 70;
+  if sc.sc_nav.nv_wire < 0 then begin
+    sc.sc_state <- "www: no network (tiny-machine -net dir gives one)";
+    finish sc.sc_page
+  end
+  else ignore (u_write sc.sc_nav.nv_wire ("www " ^ url ^ "\r\n"));
+  draw_status sc
+
+(* Goes to an address, remembering where we were. A link to a place of
+ * the page shown (#cite_note-2) only moves to it. *)
+let go sc url =
+  let address, id = fragment url in
+  sc.sc_nav.nv_history <- (sc.sc_nav.nv_address, sc.sc_top) :: sc.sc_nav.nv_history;
+  if address = sc.sc_nav.nv_address && id <> "" then begin
+    (match anchor sc.sc_page id with Some line -> show_from sc line | None -> ());
+    draw_status sc
+  end
+  else load sc url
+
+(* Back to the page before, at the line it showed: moved to if it is the
+ * same page, asked for again if not. *)
+let back sc =
+  match sc.sc_nav.nv_history with
+  | [] -> ()
+  | (address, top) :: rest ->
+      sc.sc_nav.nv_history <- rest;
+      if address = sc.sc_nav.nv_address then show_from sc top
+      else begin load sc address; sc.sc_nav.nv_goal <- top end
+
+(* the link under the mouse, if any *)
+let link_at sc x y =
+  let row = y / 16 and col = x / 8 in
+  if row < 1 || row > rows_of_page sc then None
+  else
+    match lines_between sc.sc_page (sc.sc_top + row - 1) (sc.sc_top + row) with
+    | [ l ] ->
+        (match List.filter (fun (r : run) -> r.link <> "" && col >= r.col && col < r.col + String.length r.text) l.runs with
+         | r :: _ -> Some r.link
+         | [] -> None)
+    | _ -> None
+
+(* The mouse: the left button pressed on a link follows it; the wheel
+ * (the buttons 8 and 16, Plan 9's) scrolls. *)
+let mouse sc x y buttons =
+  if buttons >= 0 then begin
+    if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
+      (match link_at sc x y with Some href -> go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href) | None -> ());
+    sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
+    if buttons land 8 <> 0 then scroll sc (-3);
+    if buttons land 16 <> 0 then scroll sc 3
+  end
 
 (* The window's size in pixels, asked as emacs asks it: an ENQ (ASCII's
  * 5) printed, which tiny-windows answers in the window's mouse box, the
@@ -821,76 +986,90 @@ let size () =
     else (let s = u_read 4 12 in if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4 else answer ()) in
   answer ()
 
-(* What a key does; false for q, which quits. The arrows are 128 to 131
- * (up, down, left, right). *)
+(* What a key does; false for q, which quits. While an address is typed
+ * (after g), the keys are its characters, Enter goes, Escape gives up.
+ * The arrows are 128 to 131 (up, down, left, right); Backspace is 8 or
+ * 127. *)
 let key sc k =
-  let page = rows_of_page sc - 1 in
-  if k = Char.code 'q' then false
-  else begin
-    (if k = Char.code ' ' || k = 131 then scroll sc page
-     else if k = Char.code '-' || k = 130 then scroll sc (- page)
-     else if k = 129 then scroll sc 1
-     else if k = 128 then scroll sc (-1));
-    true
-  end
+  match sc.sc_typing with
+  | Some typed ->
+      if k = 10 || k = 13 then begin sc.sc_typing <- None; if typed <> "" then go sc (absolute typed) end
+      else if k = 27 then sc.sc_typing <- None
+      else if k = 8 || k = 127 then sc.sc_typing <- Some (if typed = "" then "" else String.sub typed 0 (String.length typed - 1))
+      else if k >= 32 && k < 127 then sc.sc_typing <- Some (typed ^ String.make 1 (Char.chr k));
+      draw_status sc;
+      true
+  | None ->
+      let page = rows_of_page sc - 1 in
+      if k = Char.code 'q' then false
+      else begin
+        (if k = Char.code ' ' || k = 131 then scroll sc page
+         else if k = Char.code '-' || k = 130 then scroll sc (- page)
+         else if k = 129 then scroll sc 1
+         else if k = 128 then scroll sc (-1)
+         else if k = Char.code 'b' || k = 8 || k = 127 then back sc
+         else if k = Char.code 'g' then begin sc.sc_typing <- Some ""; draw_status sc end);
+        true
+      end
 
-let browse address =
+let browse typed =
   let w, h = size () in
-  let sc = { sc_page = create (w / 8); sc_address = address; sc_cols = w / 8; sc_rows = h / 16; sc_top = 0; sc_drawn = 0;
+  let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false } in
+  let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_top = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
-  draw_bar sc;
-  redraw sc;
-  (* the page asked of the wire's other end, on its port 70 *)
-  let wire = u_dial "10.0.0.1" 70 in
-  if wire < 0 then sc.sc_state <- "www: no network (tiny-machine -net dir gives one)"
-  else ignore (u_write wire ("www " ^ address ^ "\r\n"));
-  draw_status sc;
+  load sc (absolute typed);
   flush sc;
-  let fds = Array.make 2 0 in
-  (* [wire]: the connection, -1 once the page is all there; [keys]:
-   * whether keys may still come. When both are over, the program ends
-   * and leaves the page on the screen. *)
-  let rec loop wire keys =
-    if wire >= 0 || keys then begin
-      let n = if keys then 1 else 0 in
-      if wire >= 0 then fds.(n) <- wire;
-      let ready = u_ready fds (if wire >= 0 then n + 1 else n) 0 in
-      if wire >= 0 && ready = wire then begin
-        let s = u_read wire 1024 in
+  let fds = Array.make 3 0 in
+  (* [keys]: whether keys may still come. When they have ended and the
+   * page is all there, the program ends and leaves the page on the
+   * screen. *)
+  let rec loop keys =
+    if sc.sc_nav.nv_wire >= 0 || keys then begin
+      let n = ref 0 in
+      if keys then begin fds.(0) <- 0; fds.(1) <- 4; n := 2 end;
+      if sc.sc_nav.nv_wire >= 0 then begin fds.(!n) <- sc.sc_nav.nv_wire; n := !n + 1 end;
+      let ready = u_ready fds !n 0 in
+      if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
+        let s = u_read sc.sc_nav.nv_wire 1024 in
         if s = "" then begin
           finish sc.sc_page;
-          ignore (u_close wire);
+          ignore (u_close sc.sc_nav.nv_wire);
+          sc.sc_nav.nv_wire <- -1;
           sc.sc_state <- "done";
-          show_new sc; draw_bar sc; draw_status sc; flush sc;
-          loop (-1) keys
+          show_new sc; draw_bar sc; draw_status sc
         end
         else begin
           let before = sc.sc_got / 16384 in
           sc.sc_got <- sc.sc_got + String.length s;
           feed sc.sc_page s;
           show_new sc;
-          if sc.sc_got / 16384 <> before then draw_status sc;
-          flush sc;
-          loop wire keys
-        end
+          if sc.sc_got / 16384 <> before then draw_status sc
+        end;
+        flush sc;
+        loop keys
+      end
+      else if keys && ready = 4 then begin
+        let s = u_read 4 12 in
+        if String.length s = 12 then mouse sc (int16 s 0) (int16 s 4) (int16 s 8);
+        flush sc;
+        loop keys
       end
       else if keys && ready = 0 then begin
         let typed = u_read 0 16 in
-        if typed = "" then loop wire false
+        if typed = "" then loop false
         else begin
           let rec each i = i >= String.length typed || (key sc (Char.code typed.[i]) && each (i + 1)) in
           let go_on = each 0 in
           flush sc;
-          if go_on then loop wire keys
+          if go_on then loop keys
           else begin
-            if wire >= 0 then ignore (u_close wire);
+            if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
             for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
             flush sc
           end
         end
       end
-      else loop wire keys
+      else loop keys
     end in
-  loop wire true
-
+  loop true

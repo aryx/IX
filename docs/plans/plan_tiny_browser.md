@@ -688,3 +688,12 @@ as emacs does.
   new place.
 - `tiny/TinyBrowser.ml` is now 1,229 lines, 928 of code: the reading,
   the screen, links and pictures, under the 2,000 this plan set.
+
+### Step 7, in a window (2026-10-16)
+
+`wwwwin`, in tiny-kernel's check, starts tiny-windows, sweeps a window
+of 560 by 400, and types `www OCaml` in it: the browser asks the window
+its size (70 columns, 25 rows) and the page wraps there (791 lines),
+with the logo in the infobox. Everything is in at 92.9 s of machine
+time, where it is 65 on the bare screen: every drawing goes through
+tiny-windows.

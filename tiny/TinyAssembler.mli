@@ -9,6 +9,22 @@
  * its own and its libc's (7c -S output, and libc's .s), read at once,
  * and the ELF executable written.
  *
+ * Note that, despite its name, this is not the assembler for
+ * tiny-machine. The .tm files that tiny-cpu and tiny-machine run are
+ * assembled by TinyMachine/TinyMachineCPU.ml (see its [assemble]),
+ * next to the definition of that machine's instruction set.
+ *
+ * There are two assemblers because there are two unrelated machines.
+ * This one targets arm64, a real CPU: its input comes from real
+ * compilers (7c -S, and the arm64 back ends of tiny-c and tiny-ml),
+ * and its output runs on Linux, mini-5i, and tiny-arm (TinyCPUArm).
+ * It is the tiny version of mini-asm and mini-ld. tiny-cpu, on the
+ * other hand, is a machine we designed ourselves, so its assembler
+ * lives with its definition; it is also much simpler (one instruction
+ * format, no executable header), so it needs only two passes. The
+ * "Tiny" in TinyAssembler means a tiny version of a real toolchain,
+ * not a toolchain for the tiny machine.
+ *
  *     file.s ...                the passes, one after the other
  *        | lex, parse    lines to items: a TEXT, an instruction and its
  *        |               operands, a DATA, a GLOBL

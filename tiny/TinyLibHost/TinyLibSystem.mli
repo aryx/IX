@@ -79,6 +79,23 @@ val is_directory : string -> bool
 (* Failure with the reason *)
 val chdir : < Cap.chdir; .. > -> string -> unit
 
+(* [read fd max]: what fd gives next, up to max bytes, without waiting
+ * for more; "" at the end. For a program that must work on its input
+ * as it comes (cat at the console) *)
+val read : int -> int -> string
+
+(* all of the string, written to the descriptor *)
+val write : int -> string -> unit
+
+(* whether a file is a directory, and its size in bytes; Failure with
+ * the reason when it is not there *)
+val stat : string -> bool * int
+
+(* a new directory; a file, or a directory that is empty, removed.
+ * Failure with the reason *)
+val mkdir : < Cap.open_out; .. > -> string -> unit
+val remove : < Cap.open_out; .. > -> string -> unit
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)

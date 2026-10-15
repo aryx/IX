@@ -44,6 +44,19 @@ let readdir dir = try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
 let is_directory file = try Sys.is_directory file with Sys_error _ -> false
 let chdir (caps : < Cap.chdir; .. >) dir = reason (fun () -> CapUnix.chdir caps dir)
 
+let read n max =
+  let buf = Bytes.create max in
+  let k = reason (fun () -> Unix.read (fd n) buf 0 max) in
+  Bytes.sub_string buf 0 k
+
+let write n s =
+  let rec go at = if at < String.length s then go (at + reason (fun () -> Unix.write_substring (fd n) s at (String.length s - at))) in
+  go 0
+
+let stat file = reason (fun () -> let st = Unix.stat file in st.st_kind = Unix.S_DIR, st.st_size)
+let mkdir (caps : < Cap.open_out; .. >) dir = reason (fun () -> FS.mkdir caps dir 0o777)
+let remove (caps : < Cap.open_out; .. >) file = reason (fun () -> FS.remove_any caps file)
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)

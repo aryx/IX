@@ -153,3 +153,10 @@
     (echo "let prelude = {|\n")
     (cat %{deps})
     (echo "|}\n")))))
+
+(executable
+ (name TinyUtilities)
+ (public_name tiny-utils)
+ (package ix)
+ (modules TinyUtilities)
+ (libraries ix_core fpath unix caps tiny_lib_system))

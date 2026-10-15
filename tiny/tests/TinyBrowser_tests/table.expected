@@ -1,0 +1,30 @@
+A table of two columns, its cells
+wrapped:
+
+The caption
+A header across both
+Paradigms  Multi-paradigm: functional,
+           imperative, modular,
+           object-oriented
+Designed   * Xavier Leroy
+by         * Damien Doligez
+Website    ocaml.org
+
+Three columns, narrow, and a cell left
+out:
+
+a  b   c
+1  22  333
+4  55
+
+A table inside a cell:
+
+outer  inner 1
+       inner 2
+
+Wider than the screen: a word longer
+than its column.
+
+Supercalifragilisticexpialidocious  Pneumonoultramicroscopicsilicovolcanoconiosis
+
+After the tables.

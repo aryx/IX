@@ -13,7 +13,8 @@ TinyBrowser.ml, not TinyAppBrowser.ml, because a Browser is really an
 essential part of an OS nowadays"; "and principia-softwarica level
 worth a book".
 
-**Not started.** A plan from reading (`tiny/`, `browsers/`,
+**Step 2 done (2026-10-15)**: the reading, on the host and on
+tiny-cpu; section 12 says what was found. As first written, a plan from reading (`tiny/`, `browsers/`,
 plan_tiny_network.md, plan_browser.md) and from measuring Wikipedia
 (2026-10-15, below). The line counts of what exists are `wc -l`; those
 of what is planned are guesses; the times are reckoned from
@@ -443,3 +444,67 @@ CSS; JavaScript; forms (Wikipedia's search: `g` and a title is the
 search); cookies; pictures floated to the right with text beside them
 (Netscape's `align`); animated GIFs; more than one font size; the
 book itself.
+
+## 12. Status
+
+### Step 2, the reading (2026-10-15)
+
+`tiny/TinyBrowser.ml` is 671 lines, 529 of them code. It covers the
+characters, the tokens, the table of tags, the lines and the tables;
+section 5 had guessed 1,090 lines for these parts.
+
+The test is `tiny/tests/TinyBrowser_test.sh`, in `make test`. It reads
+`tags.html` and `table.html` at 40 columns and `www/OCaml.html` at 80,
+and compares their lines with the expected ones. It reads each page
+again in messages of 1, 7 and 1,000 bytes and checks that the lines are
+the same. Finally it builds the browser with tiny-ml -tm, runs the
+three pages on tiny-cpu, and checks that the lines are the same as
+OCaml's.
+
+What we found:
+
+- **Reading as the page arrives.** When a message ends in the middle of
+  a tag, an entity or a UTF-8 character, the reader keeps that end for
+  the next message. A text is also cut only after a space: the first
+  version cut texts anywhere, so a word could become two words and its
+  line wrapped differently (the messages of 1,024 bytes showed it).
+- **The OCaml article reads well**: 732 lines with the hatnote, the
+  infobox in two columns, the lead, the sections with a rule under
+  their headings, the code as it is, and the 37 numbered references.
+  Its pictures show as `[picture]` until step 6.
+- **Memory: the OCaml article fits in heap halves of 360 KB**, inside
+  tiny-cpu's 1 MB (`TinyBrowser_tests/heap.c`). So the text of a page
+  fits even in today's 1 MB partition. Pictures will be kept as the
+  kernel's images, not in the heap.
+- **Time: reading the OCaml article (257 KB) takes 447 million
+  instructions on tiny-cpu**, about 1,700 per byte, where section 6
+  guessed 100 to 200. At tiny-machine's 8 million instructions a second
+  that is 56 s, while the wire needs 23 s. We measured it with a
+  throwaway profiler (tiny-cpu counting instructions by address, the
+  addresses mapped to functions from the `.tm` files). The first version
+  took 1.1 billion: tiny-ml's `String.concat` (in TinyLibStd) appends
+  each string to everything before it, and `dump` joined the 732 lines
+  that way, as `ascii` joined its pieces. The browser now uses `join`,
+  which concatenates two by two. Looking a tag up only among the tags
+  with the same first letter, rather than comparing it with list after
+  list of names (each comparison a call to the runtime), took the host
+  time from 15.9 s to 12.8 s.
+- **Where the rest goes**: about 40% in the garbage collector (`copy`,
+  `collect`, `wosize`), because halves of 360 KB fill up while the
+  page's lines stay alive and each collection copies all of them; about
+  25% in `s.[i]` (`ml_string_get`, which calls `length` for its bounds
+  check, which calls `wosize`); and about a quarter in the browser's own
+  code.
+- **What would make it faster**, not done yet: bigger heap halves (the
+  10 MB for `www` of step 1), so that the collector rarely runs; and
+  having tiny-ml -tm read a string's byte inline, which
+  plan_tiny_network.md also left undone and which helps every program.
+  Our guess for the two together: about 20 s at 8 million instructions
+  a second, as long as the wire.
+- **Limits of tiny-ml and tiny-cpu we worked around**: tiny-ml does not
+  understand the `\x` escape in a string (`"\xe2"` reads as `xe2`), so
+  the test pages are files. And a jump reaches only 32K words (`jal` has
+  16 bits), so a 25,000-instruction program linked between the start
+  and `main` puts `main` out of the start's reach. The test links the
+  runtime and `main` first, then the program, then the heap's arrays
+  (`heap.c`).

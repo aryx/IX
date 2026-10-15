@@ -126,6 +126,13 @@
  (modules TinyWindows)
  (libraries tiny_lib_draw))
 
+; TinyBrowser.ml, www, tiny-kernel's browser: built here as a library for
+; its test on the host (TinyBrowser_test.sh); on the machine by tiny-ml
+(library
+ (name tiny_browser)
+ (wrapped false)
+ (modules TinyBrowser))
+
 (executable
  (name TinyML)
  (public_name tiny-ml)

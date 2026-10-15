@@ -1,0 +1,50 @@
+A heading
+
+A paragraph with bold, emphasis, code
+and a link; it is long enough to wrap at
+forty columns, twice at least.
+
+Upper case tags, and a line
+broken, and
+
+a blank one.
+
+Characters
+----------------------------------------
+
+Entities: <tag> "q" AB nbsp, -dash, ...
+&unknown; AT&T. UTF-8: cafe cafe naive -
+"quoted" 'single' -> lambda ?? ? and a
+lone byte ?, a character cut ?? short.
+
+Lists
+----------------------------------------
+
+ * one
+ * two
+    * two.a
+    * two.b
+ * three
+9. nine
+10. ten, whose number is wider
+11. eleven
+
+term
+   its definition, indented
+
+   A quotation, indented as a list is.
+
+let rec f x =
+  if x = 0 then 1   (* kept as it is *)
+  else x * f (x - 1)
+
+----------------------------------------
+
+Hidden: shown.
+
+A picture [Glenda], an icon , and math
+x^{2}.
+
+Unclosed paragraph
+
+Another, which closes it.

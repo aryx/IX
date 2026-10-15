@@ -1,0 +1,732 @@
+Not to be confused with occam (programming language).
+
+OCaml
+[picture]
+Paradigms              Multi-paradigm: functional, imperative, modular,[1]
+                       object-oriented
+Family                 ML: Caml
+Designed by            * Xavier Leroy
+                       * Damien Doligez
+                       * Jerome Vouillon
+                       * Didier Remy
+                       * Ascander Suarez
+Developer              French Institute for Research in Computer Science and
+                       Automation
+First appeared         1996[2]
+Stable release         5.5.0[3] / 19 June 2026
+Typing discipline      * Inferred
+                       * static
+                       * strong
+                       * structural
+Implementation         * OCaml
+language               * C
+Platform               * IA-32
+                       * x86-64
+                       * Power
+                       * SPARC
+                       * ARM 32-64
+                       * RISC-V
+OS                     Cross-platform: Linux, Unix, macOS, Windows
+License                LGPLv2.1
+Filename extensions    .ml, .mli
+Website                ocaml.org
+Influenced by
+* C
+* Caml
+* Modula-3
+* Pascal
+* Standard ML
+Influenced
+* ATS
+* Elm
+* F#
+* F*
+* Gleam
+* Haxe
+* Opa
+* Rocq
+* Rust[4]
+* Scala
+* OCaml at Wikibooks
+
+OCaml (/o??kam?l/ oh-KAM-?l, formerly Objective Caml) is a general-purpose,
+high-level, multi-paradigm programming language which extends the Caml dialect
+of ML with object-oriented features. OCaml was created in 1996 by Xavier Leroy,
+Jerome Vouillon,[5] Damien Doligez, Didier Remy,[6] Ascander Suarez, and others.
+
+The OCaml toolchain includes an interactive top-level interpreter, a bytecode
+compiler, an optimizing machine code compiler, a reversible debugger, and a
+package manager (OPAM) together with a composable build system for OCaml (Dune).
+OCaml was developed first in the context of automated theorem proving, and is
+used in static analysis and formal methods software. Beyond these areas, it has
+found use in systems programming, web development, and specific financial
+utilities, among other application domains.
+
+The acronym CAML originally stood for Categorical Abstract Machine Language, but
+OCaml omits this abstract machine.[7] OCaml is a free and open-source software
+project managed and principally maintained by the French Institute for Research
+in Computer Science and Automation (Inria). In the early 2000s, elements from
+OCaml were adopted by many languages, notably F# and Scala.
+
+Philosophy
+--------------------------------------------------------------------------------
+
+ML-derived languages are best known for their static type systems and
+type-inferring compilers. OCaml unifies functional, imperative, and
+Object-oriented programming under an ML-like type system. Thus, programmers need
+not be highly familiar with the pure functional programming paradigm to use
+OCaml.
+
+By requiring a programmer to work within the constraints of its static type
+system, OCaml eliminates many of the type-related runtime problems associated
+with dynamically typed languages. Also, OCaml's type-inferring compiler greatly
+reduces the need for the manual type annotations that are required in most
+statically typed languages. For example, the data types of variables and the
+signatures of functions usually need not be declared explicitly, as they do in
+languages like Java and C#, because they can be inferred from the operators and
+other functions that are applied to the variables and other values in the code.
+Effective use of OCaml's type system can require some sophistication on the part
+of a programmer, but this discipline is rewarded with reliable, high-performance
+software.
+
+OCaml is perhaps most distinguished from other languages with origins in
+academia by its emphasis on performance. Its static type system prevents runtime
+type mismatches and thus obviates runtime type and safety checks that burden the
+performance of dynamically typed languages, while still guaranteeing runtime
+safety, except when array bounds checking is turned off or when some type-unsafe
+features like serialization are used. These are rare enough that avoiding them
+is quite possible in practice.
+
+Aside from type-checking overhead, functional programming languages are, in
+general, challenging to compile to efficient machine language code, due to
+issues such as the funarg problem. Along with standard loop, register, and
+instruction optimizations, OCaml's optimizing compiler employs static program
+analysis methods to optimize value boxing and closure allocation, helping to
+maximize the performance of the resulting code even if it makes extensive use of
+functional programming constructs.
+
+Xavier Leroy has stated that "OCaml delivers at least 50% of the performance of
+a decent C compiler",[8] although a direct comparison is impossible. Some
+functions in the OCaml standard library are implemented with faster algorithms
+than equivalent functions in the standard libraries of other languages. For
+example, the implementation of set union in the OCaml standard library in theory
+is asymptotically faster than the equivalent function in the standard libraries
+of imperative languages (e.g., C++, Java) because the OCaml implementation can
+exploit the immutability of sets to reuse parts of input sets in the output (see
+persistent data structure).
+
+History
+--------------------------------------------------------------------------------
+
+[picture]
+The OCaml development team receiving an award at Symposium on Principles of
+Programming Languages (POPL) 2024
+
+Development of ML (Meta Language)
+
+Between the 1970s and 1980s, Robin Milner, a British computer scientist and
+Turing Award winner, worked at the University of Edinburgh's Laboratory for
+Foundations of Computer Science.[9][10] Milner and others were working on
+theorem provers, which were historically developed in languages such as Lisp.
+Milner repeatedly ran into the issue that the theorem provers would attempt to
+claim a proof was valid by putting non-proofs together.[10] As a result, he went
+on to develop the meta language for his Logic for Computable Functions, a
+language that would only allow the writer to construct valid proofs with its
+polymorphic type system.[11] ML was turned into a compiler to simplify using LCF
+on different machines, and, by the 1980s, was turned into a complete system of
+its own.[11] ML would eventually serve as a basis for the creation of OCaml.
+
+In the early 1980s, there were some developments that prompted INRIA's Formel
+team to become interested in the ML language. Luca Cardelli, a research
+professor at University of Oxford, used his functional abstract machine to
+develop a faster implementation of ML, and Robin Milner proposed a new
+definition of ML to avoid divergence between various implementations.
+Simultaneously, Pierre-Louis Curien, a senior researcher at Paris Diderot
+University, developed a calculus of categorical combinators and linked it to
+lambda calculus, which led to the definition of the categorical abstract machine
+(CAM). Guy Cousineau, a researcher at Paris Diderot University, recognized that
+this could be applied as a compiling method for ML.[12]
+
+First implementation
+
+Caml was designed and developed first by INRIA's Formel team headed by Gerard
+Huet. The first implementation of Caml was created in 1987 and was further
+developed until 1992. Though it was spearheaded by Ascander Suarez, Pierre Weis
+and Michel Mauny carried on with development after he left in 1988.[12]
+
+Guy Cousineau is quoted recalling that his experience with programming language
+implementation was initially very limited, and that there were multiple
+inadequacies for which he is responsible. Despite this, he believes that
+"Ascander, Pierre and Michel did quite a nice piece of work."[12]
+
+Caml Light
+
+Between 1990 and 1991, Xavier Leroy designed a new implementation of Caml based
+on a bytecode interpreter written in C. In addition to this, Damien Doligez
+wrote a memory management system, also known as a sequential garbage collector,
+for this implementation.[11] This new implementation, known as Caml Light,
+replaced the old Caml implementation and ran on small desktop machines.[12] In
+the following years, libraries such as Michel Mauny's syntax manipulation tools
+appeared and helped promote the use of Caml in educational and research teams.[11]
+
+Caml Special Light
+
+In 1995, Xavier Leroy released Caml Special Light, which was an improved version
+of Caml.[12] An optimizing machine code compiler was added to the bytecode
+compiler, which greatly increased performance to comparable levels with
+mainstream languages such as C++.[11][12] Also, Leroy designed a high-level
+module system inspired by the module system of Standard ML which provided
+powerful facilities for abstraction and parameterization and made larger-scale
+programs easier to build.[11]
+
+Objective Caml
+
+Didier Remy and Jerome Vouillon designed an expressive type system for objects
+and classes, which was integrated within Caml Special Light. This led to the
+emergence of the Objective Caml language, first released in 1996 and
+subsequently renamed to OCaml in 2011. This object system notably supported many
+prevalent object-oriented idioms in a statically type-safe way, while those same
+idioms caused unsoundness or required runtime checks in languages such as C++ or
+Java. In 2000, Jacques Garrigue extended Objective Caml with multiple new
+features such as polymorphic methods, variants, and labeled and optional
+arguments.[11][12]
+
+Ongoing development
+
+Language improvements have been incrementally added for the last two decades to
+support the growing commercial and academic codebases in OCaml.[11] The OCaml
+4.0 release in 2012 added Generalized Algebraic Data Types (GADTs) and
+first-class modules to increase the flexibility of the language.[11] The OCaml
+5.0.0 release in 2022[13] is a complete rewrite of the language runtime,
+removing the global GC lock and adding effect handlers via delimited
+continuations. These changes enable support for shared-memory parallelism and
+color-blind concurrency, respectively.
+
+OCaml's development continued within the Cristal team at INRIA until 2005, when
+it was succeeded by the Gallium team.[14] Subsequently, Gallium was succeeded by
+the Cambium team in 2019.[15][16] As of 2023, there are 23 core developers of
+the compiler distribution from a variety of organizations[17] and 41 developers
+for the broader OCaml tooling and packaging ecosystem.[18] In 2023, the OCaml
+compiler was recognised with ACM SIGPLAN's Programming Languages Software Award.
+
+Features
+--------------------------------------------------------------------------------
+
+OCaml features a static type system, type inference, parametric polymorphism,
+tail call (recursion), pattern matching, first class lexical closures, functors
+(parametric modules), exception handling, effect handling, and incremental
+generational automatic garbage collection.
+
+OCaml is notable for extending ML-style type inference to an object system in a
+general-purpose language. This permits structural subtyping, where object types
+are compatible if their method signatures are compatible, regardless of their
+declared inheritance (an unusual feature in statically typed languages).
+
+A foreign function interface for linking to C primitives is provided, including
+language support for efficient numerical arrays in formats compatible with both
+C and Fortran. OCaml also supports creating libraries of OCaml functions that
+can be linked to a main program in C, so that an OCaml library can be
+distributed to C programmers who have no knowledge or installation of OCaml.
+
+Although OCaml does not have a macro system as an indivisible part of the
+language (metaprogramming), i.e. built-in support for preprocessing, the OCaml
+platform does officially support a library for writing such preprocessors. These
+can be of two types: one that works at the source code level (as in C), and one
+that works on the Abstract Syntax Tree level. The latter, which is called PPX,
+acronym for Pre-Processor eXtension, is the recommended one.
+
+The OCaml distribution contains:
+
+ * Lexical analysis and parsing tools called ocamllex and ocamlyacc
+ * Debugger that supports stepping backwards to investigate errors
+ * Documentation generator
+ * Profiler - to measure performance
+ * Many general-purpose libraries
+
+The machine code compiler is available for many platforms, including Unix,
+Microsoft Windows, and Apple macOS. Portability is achieved through native code
+generation support for major architectures:
+
+ * X86-64 (AMD64), RISC-V, and ARM64 (in OCaml 5.0.0 and higher)[19]
+ * IBM Z (before OCaml 5.0.0, and back in OCaml 5.1.0)
+ * Power (before OCaml 5.0.0, and due to reappear in OCaml 5.2.0)
+ * IA-32 and ARM (before OCaml 5.0.0)
+ * SPARC (before OCaml 4.06.0)
+ * DEC Alpha, HPPA, IA64 and MIPS (before OCaml 4.00.0)
+
+The bytecode compiler supports operation on any 32- or 64-bit architecture when
+machine code generation is not available, requiring only a C compiler.
+
+OCaml bytecode and machine code programs can be written in a multithreaded
+style, with preemptive context switching. OCaml threads in the same domain[20]
+execute by time sharing only. However, an OCaml program can contain several
+domains.
+
+Code examples
+--------------------------------------------------------------------------------
+
+Snippets of OCaml code are most easily studied by entering them into the
+top-level REPL. This is an interactive OCaml session that prints the inferred
+types of resulting or defined expressions.[21] The OCaml top-level is started by
+simply executing the OCaml program:
+
+$ ocaml
+OCaml version 5.4.0
+Enter #help;; for help.
+
+#
+
+Code can then be entered at the "#" prompt. For example, to calculate 1+2*3:
+
+# 1 + 2 * 3;;
+- : int = 7
+
+OCaml infers the type of the expression to be "int" (a machine-precision integer)
+and gives the result "7".
+
+Hello World
+
+The following program "hello.ml":
+
+print_endline "Hello World!"
+
+can be run directly:
+
+$ ocaml hello.ml
+
+compiled into a bytecode executable:
+
+$ ocamlc hello.ml -o hello
+
+or compiled into an optimized machine-code executable:
+
+$ ocamlopt hello.ml -o hello
+
+and executed:
+
+$ ./hello
+Hello World!
+$
+
+The first argument to ocamlc, "hello.ml", specifies the source file to compile
+and the "-o hello" flag specifies the output file.[22]
+
+Option
+
+The option type constructor in OCaml, similar to the Maybe type in Haskell,
+augments a given data type to either return Some value of the given data type,
+or to return None.[23] This is used to express that a value might or might not
+be present.
+
+# Some 42;;
+- : int option = Some 42
+# None;;
+- : 'a option = None
+
+This is an example of a function that either extracts an int from an option, if
+there is one inside, and converts it into a string, or if not, returns an empty
+string:
+
+let extract o =
+  match o with
+  | Some i -> string_of_int i
+  | None -> "";;
+
+# extract (Some 42);;
+- : string = "42"
+# extract None;;
+- : string = ""
+
+Summing a list of integers
+
+Lists are one of the fundamental datatypes in OCaml. The following code example
+defines a recursive function sum that accepts one argument, integers, which is
+supposed to be a list of integers. Note the keyword rec which denotes that the
+function is recursive. The function recursively iterates over the given list of
+integers and provides a sum of the elements. The match statement has
+similarities to C's switch element, though it is far more general.
+
+let rec sum integers =                   (* Keyword rec means 'recursive'. *)
+  match integers with
+  | [] -> 0                              (* Yield 0 if integers is the empty 
+                                            list []. *)
+  | first :: rest -> first + sum rest;;  (* Recursive call if integers is a non-
+                                            empty list; first is the first 
+                                            element of the list, and rest is a 
+                                            list of the rest of the elements, 
+                                            possibly []. *)
+
+  # sum [1;2;3;4;5];;
+  - : int = 15
+
+Another way is to use standard fold function that works with lists.
+
+let sum integers =
+  List.fold_left (fun accumulator x -> accumulator + x) 0 integers;;
+
+  # sum [1;2;3;4;5];;
+  - : int = 15
+
+Since the anonymous function is simply the application of the + operator, this
+can be shortened to:
+
+let sum integers =
+  List.fold_left (+) 0 integers
+
+Furthermore, one can omit the list argument by making use of a partial
+application:
+
+let sum =
+  List.fold_left (+) 0
+
+Quicksort
+
+OCaml lends itself to concisely expressing recursive algorithms. The following
+code example implements an algorithm similar to quicksort that sorts a list in
+increasing order.
+
+ let rec qsort = function
+   | [] -> []
+   | pivot :: rest ->
+     let is_less x = x < pivot in
+     let left, right = List.partition is_less rest in
+     qsort left @ [pivot] @ qsort right
+
+Or using partial application of the >= operator.
+
+ let rec qsort = function
+   | [] -> []
+   | pivot :: rest ->
+     let is_less = (>=) pivot in
+     let left, right = List.partition is_less rest in
+     qsort left @ [pivot] @ qsort right
+
+Birthday problem
+
+The following program calculates the smallest number of people in a room for
+whom the probability of completely unique birthdays is less than 50% (the
+birthday problem, where for 1 person the probability is 365/365 (or 100%), for 2
+it is 364/365, for 3 it is 364/365 x 363/365, etc.) (answer = 23).
+
+let year_size = 365.
+
+let rec birthday_paradox prob people =
+  let prob = (year_size -. float people) /. year_size *. prob  in
+  if prob < 0.5 then
+    Printf.printf "answer = %d\n" (people+1)
+  else
+    birthday_paradox prob (people+1)
+;;
+
+birthday_paradox 1.0 1
+
+Church numerals
+
+The following code defines a Church encoding of natural numbers, with successor
+(succ) and addition (add). A Church numeral n is a higher-order function that
+accepts a function f and a value x and applies f to x exactly n times. To
+convert a Church numeral from a functional value to a string, we pass it a
+function that prepends the string "S" to its input and the constant string "0".
+The given example outputs the Church numeral for five as "SSSSS0".
+
+let zero f x = x
+let succ n f x = f (n f x)
+let one = succ zero
+let two = succ (succ zero)
+let add n1 n2 f x = n1 f (n2 f x)
+let to_string n = n (fun k -> "S" ^ k) "0"
+let church_5 = to_string (add (succ two) two)
+;;
+print_endline church_5;
+
+Arbitrary-precision factorial function (libraries)
+
+A variety of libraries are directly accessible from OCaml. For example, OCaml
+has a built-in library for arbitrary-precision arithmetic. As the factorial
+function grows very rapidly, it quickly overflows machine-precision numbers
+(typically 32- or 64-bits). Thus, factorial is a suitable candidate for
+arbitrary-precision arithmetic.
+
+In OCaml, the Num module (now superseded by the ZArith module) provides
+arbitrary-precision arithmetic and can be loaded into a running top-level using:
+
+# #use "topfind";;
+# #require "num";;
+# open Num;;
+
+The factorial function may then be written using the arbitrary-precision numeric
+operators =/, */ and -/ :
+
+# let rec fact n =
+    if n =/ Int 0 then Int 1 else n */ fact(n -/ Int 1);;
+val fact : Num.num -> Num.num = <fun>
+
+This function can compute much larger factorials, such as 120!:
+
+# string_of_num (fact (Int 120));;
+- : string =
+"6689502913449127057588118054090372586752746333138029810295671352301633
+55724496298936687416527198498130815763789321409055253440858940812185989
+8481114389650005964960521256960000000000000000000000000000"
+
+Triangle (graphics)
+
+The following program renders a rotating triangle in 2D using OpenGL:
+
+let () =
+  ignore (Glut.init Sys.argv);
+  Glut.initDisplayMode ~double_buffer:true ();
+  ignore (Glut.createWindow ~title:"OpenGL Demo");
+  let angle t = 10. *. t *. t in
+  let render () =
+    GlClear.clear [ `color ];
+    GlMat.load_identity ();
+    GlMat.rotate ~angle: (angle (Sys.time ())) ~z:1. ();
+    GlDraw.begins `triangles;
+    List.iter GlDraw.vertex2 [-1., -1.; 0., 1.; 1., -1.];
+    GlDraw.ends ();
+    Glut.swapBuffers () in
+  GlMat.mode `modelview;
+  Glut.displayFunc ~cb:render;
+  Glut.idleFunc ~cb:(Some Glut.postRedisplay);
+  Glut.mainLoop ()
+
+The LablGL bindings to OpenGL are required. The program may then be compiled to
+bytecode with:
+
+$ ocamlc -I +lablGL lablglut.cma lablgl.cma simple.ml -o simple
+
+or to nativecode with:
+
+$ ocamlopt -I +lablGL lablglut.cmxa lablgl.cmxa simple.ml -o simple
+
+or, more simply, using the ocamlfind build command
+
+$ ocamlfind opt simple.ml -package lablgl.glut -linkpkg -o simple
+
+and run:
+
+$ ./simple
+
+Far more sophisticated, high-performance 2D and 3D graphical programs can be
+developed in OCaml. Thanks to the use of OpenGL and OCaml, the resulting
+programs can be cross-platform, compiling without any changes on many major
+platforms.
+
+Fibonacci sequence
+
+The following code calculates the Fibonacci sequence of a number n inputted. It
+uses tail recursion and pattern matching.
+
+let fib n =
+  let rec fib_aux m a b =
+    match m with
+    | 0 -> a
+    | _ -> fib_aux (m - 1) b (a + b)
+  in fib_aux n 0 1
+
+Higher-order functions
+
+Functions may take functions as input and return functions as result. For
+example, applying twice to a function f yields a function that applies f two
+times to its argument.
+
+let twice (f : 'a -> 'a) = fun (x : 'a) -> f (f x);;
+let inc (x : int) : int = x + 1;;
+let add2 = twice inc;;
+let inc_str (x : string) : string = x ^ " " ^ x;;
+let add_str = twice(inc_str);;
+
+  # add2 98;;
+  - : int = 100
+  # add_str "Test";;
+  - : string = "Test Test Test Test"
+
+The function twice uses a type variable 'a to indicate that it can be applied to
+any function f mapping from a type 'a to itself, rather than only to int->int
+functions. In particular, twice can even be applied to itself.
+
+  # let fourtimes f = (twice twice) f;;
+  val fourtimes : ('a -> 'a) -> 'a -> 'a = <fun>
+  # let add4 = fourtimes inc;;
+  val add4 : int -> int = <fun>
+  # add4 98;;
+  - : int = 102
+
+Derived languages
+--------------------------------------------------------------------------------
+
+MetaOCaml
+
+MetaOCaml[24] is a multi-stage programming extension of OCaml enabling
+incremental compiling of new machine code during runtime. Under some
+circumstances, significant speedups are possible using multistage programming,
+because more detailed information about the data to process is available at
+runtime than at the regular compile time, so the incremental compiler can
+optimize away many cases of condition checking, etc.
+
+As an example: if at compile time it is known that some power function x -> x^n
+is needed often, but the value of n is known only at runtime, a two-stage power
+function can be used in MetaOCaml:
+
+let rec power n x =
+  if n = 0
+  then .<1>.
+  else
+    if even n
+    then sqr (power (n/2) x)
+    else .<.~x *. .~(power (n - 1) x)>.
+
+As soon as n is known at runtime, a specialized and very fast power function can
+be created:
+
+.<fun x -> .~(power 5 .<x>.)>.
+
+The result is:
+
+fun x_1 -> (x_1 *
+    let y_3 = 
+        let y_2 = (x_1 * 1)
+        in (y_2 * y_2)
+    in (y_3 * y_3))
+
+The new function is automatically compiled.
+
+Other derived languages
+
+ * F# is a .NET framework language based on OCaml.
+ * JoCaml integrates constructions for developing concurrent and distributed
+   programs.
+ * Reason is an alternative OCaml syntax and toolchain for OCaml created at
+   Facebook, which can compile to both machine code and JavaScript.
+
+Software written in OCaml
+--------------------------------------------------------------------------------
+
+ * Alt-Ergo, a SMT solver.
+ * Astree, a static analyzer
+ * Coccinelle, a utility for transforming the source code of C programs.
+ * Rocq (former name: Coq), a formal proof management system.
+ * F*, a high-level, multi-paradigm, functional and object-oriented programming
+   language intended for program verification.
+ * FFTW, a library for computing discrete Fourier transforms. Several C routines
+   have been generated by an OCaml program named genfft.
+ * The web version of Facebook Messenger.[25]
+ * Frama-C, a framework for analyzing C programs.
+ * GeneWeb, free and open-source multi-platform genealogy software.
+ * The Hack programming language compiler, created at Facebook, extending PHP
+   with static types.
+ * The Haxe programming language compiler.
+ * HOL Light, a formal proof assistant.
+ * Liquidsoap, a scripting language for generating multimedia streams.
+ * MirageOS, a unikernel programming framework written in pure OCaml.
+ * MLdonkey, a peer-to-peer file sharing application based on the EDonkey
+   network.
+ * Opa, a free and open-source programming language for web development.
+ * Owl Scientific Computing, a dedicated system for scientific and engineering
+   computing.
+ * Reason, an alternate syntax for OCaml that is more similar to C or
+   JavaScript.
+ * ReScript, a statically typed programming language that transpiles to
+   JavaScript.
+ * The Rust compiler was initially implemented in OCaml before becoming
+   self-hosting.
+ * Tezos, a self-amending smart contract platform using XTZ as a native
+   currency.
+ * Unison, a file synchronization program to synchronize files between two
+   directories.
+ * The reference interpreter for WebAssembly, a low-level bytecode intended for
+   execution inside web browsers.[26]
+ * Xen Cloud Platform (XCP), a turnkey virtualization solution for the Xen
+   hypervisor.
+
+Users
+--------------------------------------------------------------------------------
+
+At least several dozen companies use OCaml to some degree.[27] Notable examples
+include:
+
+ * Bloomberg L.P., which created BuckleScript, an OCaml compiler backend
+   targeting JavaScript (that later evolved into ReScript).[28]
+ * Citrix Systems, which uses OCaml in XenServer (rebranded as Citrix Hypervisor
+   during 2018).[29]
+ * Facebook, which developed Flow,[30] Hack, Infer, Pfff, and ReasonML in OCaml.
+ * Jane Street Capital, a proprietary trading firm, which adopted OCaml as its
+   preferred language in its early days[31] and continues to use it as of 2023.[32][33]
+   In June 2025 it announced a fork, OxCaml.[34]
+ * Docker, which uses OCaml in the desktop editions on macOS and Windows.[35][36][37]
+
+OCaml is used in the classroom at many computer science universities and
+colleges; a list of courses using OCaml (and their associated educational
+resources) is maintained by the OCaml website at ocaml.org.
+
+References
+--------------------------------------------------------------------------------
+
+1. ^ "Modules". Retrieved 22 February 2020.
+2. ^ Leroy, Xavier (1996). "Objective Caml 1.00". caml-list mailing list.
+3. ^ "OCaml 5.5.0 Release Notes".
+4. ^ "Influences". The Rust Reference. Retrieved 31 December 2023.
+5. ^ "Jerome Vouillon". www.irif.fr. Retrieved 14 June 2024.
+6. ^ "Didier Remy". pauillac.inria.fr. Retrieved 14 June 2024.
+7. ^ "A History of OCaml". Retrieved 24 December 2016.
+8. ^ Linux Weekly News.
+9. ^ "A J Milner - A.M. Turing Award Laureate". amturing.acm.org. Retrieved 6
+   October 2022.
+10. 1 2 Clarkson, Michael; et al. "1.2. OCaml: Functional Programming in OCaml".
+   courses.cs.cornell.edu. Retrieved 6 October 2022.
+11. 1 2 3 4 5 6 7 8 9 "Prologue - Real World OCaml". dev.realworldocaml.org.
+   Retrieved 6 October 2022.
+12. 1 2 3 4 5 6 7 "A History of OCaml - OCaml". v2.ocaml.org. Retrieved 7
+   October 2022.
+13. ^ "Release of OCaml 5.0.0 OCaml Package". OCaml. Archived from the original
+   on 26 March 2023. Retrieved 16 December 2022.
+14. ^ "Projet Cristal". cristal.inria.fr. Retrieved 7 October 2022.
+15. ^ "Gallium team - Home". gallium.inria.fr. Retrieved 7 October 2022.
+16. ^ "Home". cambium.inria.fr. Retrieved 7 October 2022.
+17. ^ "OCaml compiler governance and membership". 2023.
+18. ^ "OCaml governance and projects". 2023.
+19. ^ "ocaml/asmcomp at trunk . ocaml/ocaml . GitHub". GitHub. Retrieved 2 May
+   2015.
+20. ^ A domain is a unit of parallelism in OCaml, a domain usually corresponds
+   to a CPU core
+21. ^ "OCaml - The toplevel system or REPL (ocaml)". ocaml.org. Retrieved 17 May
+   2021.
+22. ^ "OCaml - Batch compilation (Ocamlc)".
+23. ^ "3.7. Options - OCaml Programming: Correct + Efficient + Beautiful".
+   cs3110.github.io. Retrieved 7 October 2022.
+24. ^ oleg-at-okmij.org. "BER MetaOCaml". okmij.org.
+25. ^ "Messenger.com Now 50% Converted to Reason . Reason". reasonml.github.io.
+   Retrieved 27 February 2018.
+26. ^ "WebAssembly/spec: WebAssembly specification, reference interpreter, and
+   test suite". World Wide Web Consortium. 5 December 2019. Retrieved 14 May
+   2021 - via GitHub.
+27. ^ "Companies using OCaml". OCaml.org. Retrieved 14 May 2021.
+28. ^ "BuckleScript: The 1.0 release has arrived! | Tech at Bloomberg". Tech at
+   Bloomberg. 8 September 2016. Retrieved 21 May 2017.
+29. ^ Scott, David; Sharp, Richard; Gazagnaire, Thomas; Madhavapeddy, Anil
+   (2010). Using functional programming within an industrial product group:
+   perspectives and perceptions. International Conference on Functional
+   Programming. Association for Computing Machinery. doi:10.1145/1863543.1863557.
+30. ^ "Flow on GitHub". GitHub. 2023.
+31. ^ Yaron Minsky (1 November 2011). "OCaml for the Masses". Retrieved 2 May
+   2015.
+32. ^ Yaron Minsky (2016). "Keynote - Observations of a Functional Programmer".
+   ACM Commercial Uses of Functional Programming.
+33. ^ Yaron Minsky (2023). "Signals & Threads" (Podcast). Jane Street Capital.
+34. ^ Jane Street's sneaky retention tactic, The Economist, Jun 26, 2025.
+35. ^ Anil Madhavapeddy (2016). "Improving Docker with Unikernels: Introducing
+   HyperKit, VPNKit and DataKit". Docker, Inc.
+36. ^ "VPNKit on GitHub". GitHub. 2023.
+37. ^ Madhavapeddy, Anil; Scott, David J.; Ferris, Patrick; Gibb, Ryan T.;
+   Gazagnaire, Thomas (5 August 2025). "Functional Networking for Millions of
+   Docker Desktops (Experience Report)". Proceedings of the ACM on Programming
+   Languages. 9 (ICFP): 597-615. doi:10.1145/3747525. ISSN 2475-1421.
+
+External links
+--------------------------------------------------------------------------------
+
+ * Official website
+ * OCaml manual
+ * OCaml Package Manager
+ * Real World OCaml

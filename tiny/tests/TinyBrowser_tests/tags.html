@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<HTML><head><title>Tags &amp; characters</title><base href="//en.wikipedia.org/wiki/">
+<style>p > a { color: red } /* a < in a sheet */</style>
+<script>if (a < b && c > d) document.write("<p>not shown</p>")</script>
+<link rel="stylesheet" href="x.css"><meta charset="utf-8"></head>
+<body>
+<!-- a comment, with <p>a tag</p> in it -->
+<h1>A heading</h1>
+<p>A paragraph with <b>bold</b>, <i>emphasis</i>, <code>code</code> and
+<a href="./Link_(target)" title="a > in a quoted attribute">a link</a>; it is long enough to wrap
+at forty columns, twice at least.</p>
+<P>Upper case tags, and a line<br>broken, and<br><br>a blank one.</P>
+<h2>Characters</h2>
+<p>Entities: &lt;tag&gt; &quot;q&quot; &#65;&#x42; &nbsp;nbsp, &mdash;dash, &hellip; &unknown; AT&T.
+UTF-8: caf&eacute; café naïve – “quoted” ‘single’ → λ 日本 😀 and a lone byte �, a character cut � short.</p>
+<h2>Lists</h2>
+<ul><li>one</li><li>two<ul><li>two.a</li><li>two.b</li></ul></li><li>three</ul>
+<ol start="9"><li>nine</li><li>ten, whose number is wider</li><li>eleven</li></ol>
+<dl><dt>term</dt><dd>its definition, indented</dd></dl>
+<blockquote>A quotation, indented as a list is.</blockquote>
+<pre>let rec f x =
+  if x = 0 then 1   (* kept as it is *)
+  else x * f (x - 1)</pre>
+<hr>
+<p>Hidden: <span class="mw-editsection">[edit]</span><span style="display:none">none</span><span class="noprint navbox">nav</span>shown.</p>
+<div class="navbox"><p>a whole navigation box</p></div>
+<p>A picture <img src="a.png" width="200" height="100" alt="Glenda">, an icon <img src="i.png" width="16" height="16" alt="icon">, and math <img class="mwe-math-fallback-image-inline" alt="{\displaystyle x^{2}}">.</p>
+<p>Unclosed paragraph
+<p>Another, which closes it.
+</body></html>

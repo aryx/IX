@@ -3,7 +3,7 @@
 
 (* See TinyUtilities.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
 
 (* raised by a utility given arguments it does not take: the driver
  * then prints the utility's usage *)
@@ -271,9 +271,114 @@ let mkdir caps args =
     end
     else TinyLibSystem.mkdir caps dir)
 
+(* [into_last caps tool paths f]: f from dest for each path but the last,
+ * dest being the last path, or the source's name in it when the last
+ * is a directory; several sources need a directory *)
+let into_last caps tool paths f =
+  match List.rev paths with
+  | dest :: sources when sources <> [] ->
+      let into = TinyLibSystem.is_directory dest in
+      if List.length sources > 1 && not into then begin complain caps tool (dest ^ ": not a directory"); 1 end
+      else each_path caps tool (List.rev sources) (fun from -> f from (if into then join dest (last_part from) else dest))
+  | _ -> raise Usage
+
+(* the whole file is read before the copy is opened, so a file copied
+ * onto itself is not lost, with no question of which file is which *)
+let cp caps args =
+  let _, paths = options "" args in
+  into_last caps "cp" paths (fun from dest ->
+    if fst (TinyLibSystem.stat from) then failwith "is a directory";
+    let text = TinyLibSystem.read_file caps from in
+    let fd = TinyLibSystem.open_out caps dest in
+    TinyLibSystem.write fd text;
+    TinyLibSystem.close fd)
+
+let mv caps args =
+  let _, paths = options "" args in
+  into_last caps "mv" paths (fun from dest -> TinyLibSystem.rename caps from dest)
+
+let touch caps args =
+  let _, files = options "" args in
+  if files = [] then raise Usage;
+  each_path caps "touch" files (fun file -> TinyLibSystem.touch caps file)
+
 (*****************************************************************************)
 (* The rest *)
 (*****************************************************************************)
+
+let pwd caps args =
+  if args <> [] then raise Usage;
+  print caps (TinyLibSystem.getcwd caps ^ "\n");
+  0
+
+(* seconds, and thousandths after a point: sleep .5 *)
+let sleep _caps args =
+  match args with
+  | [ a ] ->
+      let point = match String.index_opt a '.' with Some i -> i | None -> String.length a in
+      let thousandths = String.sub (String.sub a (min (point + 1) (String.length a)) (String.length a - min (point + 1) (String.length a)) ^ "000") 0 3 in
+      (match int_of_string_opt ("0" ^ String.sub a 0 point), int_of_string_opt thousandths with
+       | Some s, Some ms when ms >= 0 -> TinyLibSystem.sleep ((s * 1000) + ms); 0
+       | _ -> raise Usage)
+  | _ -> raise Usage
+
+(* test: a question about files, strings or numbers, answered by the
+ * status alone. Its arguments are an expression, read by recursive
+ * descent, -o binding less than -a, which binds less than !:
+ *
+ *     either   := both [-o either]
+ *     both     := negation [-a both]
+ *     negation := ! negation | primary
+ *     primary  := ( either ) | -e f | -f f | -d f | -s f | -n s | -z s
+ *               | s = s | s != s | n -eq n (-ne -gt -lt -ge -le) | s
+ *
+ * The questions kept are those tiny-kernel can answer: it has no
+ * permissions and no times *)
+let test _caps args =
+  let rest = ref args in
+  let peek () = match !rest with a :: _ -> Some a | [] -> None in
+  let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
+  let file f = try Some (TinyLibSystem.stat f) with Failure _ -> None in
+  let number s = match int_of_string_opt s with Some n -> n | None -> raise Usage in
+  let rec either () =
+    let p = both () in
+    if peek () = Some "-o" then begin ignore (next ()); let q = either () in p || q end else p
+  and both () =
+    let p = negation () in
+    if peek () = Some "-a" then begin ignore (next ()); let q = both () in p && q end else p
+  and negation () = if peek () = Some "!" then begin ignore (next ()); not (negation ()) end else primary ()
+  and primary () =
+    match next () with
+    | "(" -> let p = either () in if next () <> ")" then raise Usage; p
+    | "-e" -> file (next ()) <> None
+    | "-f" -> (match file (next ()) with Some (is_dir, _) -> not is_dir | None -> false)
+    | "-d" -> (match file (next ()) with Some (is_dir, _) -> is_dir | None -> false)
+    | "-s" -> (match file (next ()) with Some (_, size) -> size > 0 | None -> false)
+    | "-n" -> next () <> ""
+    | "-z" -> next () = ""
+    | a -> begin
+        match peek () with
+        | Some "=" -> ignore (next ()); a = next ()
+        | Some "!=" -> ignore (next ()); a <> next ()
+        | Some op when List.mem op [ "-eq"; "-ne"; "-gt"; "-lt"; "-ge"; "-le" ] ->
+            ignore (next ());
+            let m = number a and n = number (next ()) in
+            if op = "-eq" then m = n else if op = "-ne" then m <> n else if op = "-gt" then m > n
+            else if op = "-lt" then m < n else if op = "-ge" then m >= n else m <= n
+        | _ -> a <> ""
+      end in
+  if args = [] then 1
+  else begin
+    let p = either () in
+    if !rest <> [] then raise Usage;
+    if p then 0 else 1
+  end
+
+(* test, run as [ expression ] *)
+let bracket caps args =
+  match List.rev args with
+  | "]" :: l -> test caps (List.rev l)
+  | _ -> raise Usage
 
 let echo caps args =
   let newline, words = match args with "-n" :: rest -> false, rest | _ -> true, args in
@@ -329,15 +434,22 @@ let cmp caps args =
 let utilities =
   [ "basename", "[-d] name [suffix]", "the last part of a path", basename;
     "cat", "[file ...]", "the files, one after the other", cat;
+    "[", "expression ]", "test", bracket;
     "cmp", "[-s] file1 file2", "where two files differ", cmp;
+    "cp", "from to | from ... dir", "files copied", cp;
     "du", "[-a] [path ...]", "the kilobytes under each directory", du;
     "echo", "[-n] [word ...]", "the words", echo;
     "ls", "[path ...]", "a directory's entries, sorted", ls;
     "mkdir", "[-p] dir ...", "new directories", mkdir;
+    "mv", "from to | from ... dir", "files renamed", mv;
+    "pwd", "", "the directory the process is in", pwd;
     "rm", "[-r] path ...", "files removed", rm;
     "seq", "[first [step]] last", "the numbers from first to last", seq;
+    "sleep", "seconds[.thousandths]", "nothing, for that long", sleep;
     "tail", "[-n N | -N | +N] [file]", "the last lines, or from line N", tail;
     "tee", "[file ...]", "the input, to the files too", tee;
+    "test", "expression", "whether it is true, by the status", test;
+    "touch", "file ...", "files written now, or made", touch;
     "walk", "[path ...]", "every path under a directory", walk;
     "wc", "[-lwc] [file ...]", "the lines, words and bytes", wc;
     "xd", "[-b | -c] [file ...]", "the bytes, in hexadecimal", xd ]

@@ -96,6 +96,20 @@ val stat : string -> bool * int
 val mkdir : < Cap.open_out; .. > -> string -> unit
 val remove : < Cap.open_out; .. > -> string -> unit
 
+(* [rename caps from to]: the file, or the directory, under another
+ * name. Failure with the reason *)
+val rename : < Cap.open_out; .. > -> string -> string -> unit
+
+(* a file that is there written now, as far as its time says; one that
+ * is not there made, empty. Failure with the reason *)
+val touch : < Cap.open_out; .. > -> string -> unit
+
+(* the directory the process is in *)
+val getcwd : < Cap.readdir; .. > -> string
+
+(* nothing done for so many milliseconds *)
+val sleep : int -> unit
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)

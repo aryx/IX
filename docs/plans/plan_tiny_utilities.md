@@ -10,6 +10,10 @@ plan and start".
 the 64 cases of `tiny/tests/TinyUtilities_test.sh`. Section 7 says what
 was found.
 
+**Step 2 done (2026-10-15)**: cp, mv, touch, test (and `[`), pwd and
+sleep; 20 utilities in 485 lines (353 of code), the same as the twins
+in 109 cases.
+
 ## 1. What it is
 
 m-ix's `utilities/` has about 40 programs in 10 directories (3,600
@@ -125,6 +129,13 @@ against the host's.
    the differential test.
 2. **More utilities**: cp, mv, touch, test (rc scripts on tiny-kernel
    need it), pwd (which needs a getcwd in `TinyLibSystem`), sleep.
+   `TinyLibSystem` gains four more functions for them: `rename`,
+   `touch`, `getcwd` and `sleep` (in milliseconds: tiny-ml has no
+   floats). On tiny-kernel (step 3), `rename` is a copy and a remove
+   that refuses a directory, as 9P's mv does; `touch` makes a file and
+   does nothing else, since the kernel keeps no times; `getcwd` needs a
+   call the kernel does not have yet (each process has its directory,
+   as a list of names); `sleep` is `u_ready` on no descriptors.
 3. **On tiny-kernel**: the kernel's `TinyLibSystem.ml` gets the five
    functions, `mlsys.c` and `calls.ml` get `u_mkdir` and `u_unlink`,
    `load` learns links, and the Makefile builds `utils` and its names.
@@ -162,3 +173,21 @@ Step 1 (2026-10-15):
   The output is 360 KB of tiny-cpu assembly, about what rc's is.
 - **tail reads all its input first**, the one filter that does: it
   cannot know which lines are the last until the end.
+
+Step 2 (2026-10-15):
+
+- **cp reads the whole file before it opens the copy.** Then `cp f f`
+  rewrites the same bytes instead of emptying the file, and cp needs no
+  idea of a file's identity (the twin compares 9P's qids). The cost is
+  memory for a large file, which tiny-kernel holds in memory anyway.
+- **cp and mv share their argument rule** ("into the directory named
+  last, when it is one"): `into_last`, 9 lines.
+- **test is a recursive descent over its arguments**, 50 lines with its
+  grammar in a comment. It keeps the questions tiny-kernel can answer:
+  file kinds and sizes, strings, numbers, `! -a -o ( )`. Permissions
+  and times are dropped. `[` is a row of the table that removes the
+  `]` and calls test.
+- **Three more deliberate differences from the twins**, each left out
+  of the test and said in its header: `cp f f` succeeds; the host's mv
+  moves a directory into another directory, which 9P's refuses; and
+  `sleep x` is a usage error, where the twin reads it as 0.

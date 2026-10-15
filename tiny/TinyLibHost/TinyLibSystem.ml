@@ -56,6 +56,14 @@ let write n s =
 let stat file = reason (fun () -> let st = Unix.stat file in st.st_kind = Unix.S_DIR, st.st_size)
 let mkdir (caps : < Cap.open_out; .. >) dir = reason (fun () -> FS.mkdir caps dir 0o777)
 let remove (caps : < Cap.open_out; .. >) file = reason (fun () -> FS.remove_any caps file)
+let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)
+
+(* (utimes with two zeros: now) *)
+let touch (caps : < Cap.open_out; .. >) file =
+  reason (fun () -> if Sys.file_exists file then Unix.utimes file 0.0 0.0 else Unix.close (FS.create_fd caps file 0o666))
+
+let getcwd (caps : < Cap.readdir; .. >) = FS.getcwd caps ()
+let sleep ms = Unix.sleepf (float_of_int ms /. 1000.0)
 
 (*****************************************************************************)
 (* Descriptors *)

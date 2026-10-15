@@ -10,7 +10,12 @@
 # A case marked "sorted" compares the outputs sorted: du -a lists in
 # name order, where the twin keeps the directory's order. Not tested:
 # cat with a file it cannot open before others, as Plan 9's cat stops
-# there and tiny-utils's goes on to the next file, as all its filters do.
+# there and tiny-utils's goes on to the next file, as all its filters do;
+# cp f f, which the twin refuses and tiny-utils's cp does harmlessly (it
+# reads the file whole before it writes the copy); mv of a directory
+# into another directory, which the twin refuses (a move between two
+# directories is a copy and a remove in 9P) and the host's rename does;
+# sleep x, which the twin reads as 0 and tiny-utils refuses.
 # Then tiny-utils run by a link named after a utility.
 # usage: TinyUtilities_test.sh
 
@@ -25,7 +30,7 @@ failures=0 n=0
 setup() {
   rm -rf $W/t; mkdir $W/t; cd $W/t
   printf 'hello world\nsecond line\n\nlast' > f
-  printf 'hello' > p
+  printf 'hello' > p; : > empty
   printf 'a\nb\n' > l1; printf 'a\nc\n' > l2
   seq 1 40 > nums
   printf '\001\t\r\n\177 ok' > bin
@@ -114,11 +119,59 @@ same "" - cmp p f
 same "" - cmp l1 l2
 same "" - cmp -s l1 l2
 same "" - cmp f nosuch
+same "" - cp f g
+same "" - cp f d
+same "" - cp f p d/e
+same "" - cp f p l1
+same "" - cp nosuch g
+same "" - cp d g
+same "" - cp
+same "" - mv f g
+same "" - mv f d
+same "" - mv f p d/e
+same "" - mv d dd
+same "" - mv d/e d/ee
+same "" - mv nosuch g
+same "" - mv f p l1
+same "" - touch f new
+same "" - touch d/e/new2
+same "" - touch nosuch/x
+same "" - pwd
+same "" - sleep 0
+same "" - sleep .1
+same "" - test
+same "" - test -f f
+same "" - test -f d
+same "" - test -d d
+same "" - test -e nosuch
+same "" - test -s f
+same "" - test -s empty
+same "" - test -n ""
+same "" - test -z ""
+same "" - test abc
+same "" - test ""
+same "" - test a = a
+same "" - test a != a
+same "" - test 3 -lt 10
+same "" - test 10 -le 3
+same "" - test 4 -eq 4 -a 5 -gt 6
+same "" - test ! -f f
+same "" - test -f nosuch -o -d d
+same "" - test ! -f f -o -d d
+same "" - test "(" -f f -a -d nosuch ")" -o a = a
+same "" - test -f f -a "(" -d nosuch -o -e p ")"
+same "" - test "(" -f f
+same "" - test -f
+same "" - test a b
 
 # by a link named after the utility
 setup
 ln -s $TU wc
 n=$((n + 1))
 [ "$(./wc -l nums)" = "     40 nums" ] || { failures=$((failures + 1)); echo "FAIL wc by a link: $(./wc -l nums)"; }
+# and [, which is test with a ] at the end
+ln -s $TU [
+n=$((n + 1))
+[ "$(./[ -f f ]; echo $?; ./[ -d f ]; echo $?; ./[ -f f 2>/dev/null; echo $?)" = "$(printf '0\n1\n1')" ] || { failures=$((failures + 1)); echo "FAIL [ by a link"; }
 
 if [ $failures = 0 ]; then echo "ok $n cases, the same as the twins"; else echo "FAIL $failures of $n cases"; exit 1; fi

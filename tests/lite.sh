@@ -33,7 +33,9 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d)
-now() { date +%s%3N; }
+# milliseconds: GNU's date has %N, BSD's (macOS) prints it as is, so perl there
+if [ "$(date +%3N)" = 3N ]; then now() { perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'; }
+else now() { date +%s%3N; }; fi
 begun=$(now)
 dune build 2> $W/dune.log || { echo "FAIL dune build"; head -20 $W/dune.log; exit 1; }
 
@@ -212,7 +214,8 @@ failures=0
 n=0
 for name in "${names[@]}"; do
   n=$((n + 1)); k=$W/job$n
-  read -r s ms < $k.status
+  # no status: the job's shell itself died, a failure too
+  read -r s ms < $k.status 2> /dev/null || { s=FAIL; ms=0; echo "(no status: the job's shell died)" >> $k.log; }
   printf "%-4s %5.1f s  %s\n" $s $(echo "$ms / 1000" | bc -l) "$name"
   if [ $s = FAIL ]; then
     failures=$((failures + 1))

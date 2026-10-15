@@ -33,6 +33,15 @@
  (modules TinyMachineSocket)
  (libraries ix_core caps unix))
 
+; tiny-machine's way to the web, for tiny-kernel's browser: a page's
+; bytes fetched by ix's own TLS and HTTP (TinyMachine's -net-out runs it)
+(executable
+ (name TinyMachineFetch)
+ (public_name tiny-machine-fetch)
+ (package ix)
+ (modules TinyMachineFetch)
+ (libraries ix_http ix_tls ix_tcp ix_core caps unix))
+
 (executable
  (name TinyMachineWindow)
  (public_name tiny-machine-window)

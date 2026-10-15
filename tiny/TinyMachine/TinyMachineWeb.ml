@@ -286,10 +286,24 @@ let wikipedia words k =
 
 (* a line's document: the messages given to [messages], when they are
  * there. [www] is where the page's own documents are; a wiki that
- * Wikipedia does not answer is a picture kept there, if there is one *)
+ * Wikipedia does not answer is a picture kept there, if there is one.
+ * "www address" is a web page for tiny-kernel's browser, fetched by this
+ * page (Wikipedia's REST HTML allows it; a site that does not allow
+ * other pages to fetch it, by CORS, cannot be reached from here); if
+ * the fetch fails, a kept copy beside the page answers *)
 let peer_document www line messages =
   let name ok = if line = "" || line.[0] = '.' || String.contains line '/' then None else Some ok in
-  if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
+  if String.length line > 4 && String.sub line 0 4 = "www " then begin
+    let url = TinyMachinePeer.www_address (String.sub line 4 (String.length line - 4)) in
+    let failed () = messages [ "www: " ^ url ^ ": not reached (no network, or the site does not allow a web page to fetch it)\n" ] in
+    fetch url (function
+      | Some page -> messages (TinyMachinePeer.messages page)
+      | None ->
+          match TinyMachinePeer.www_kept url with
+          | Some kept -> fetch (www ^ kept) (function Some page -> messages (TinyMachinePeer.messages page) | None -> failed ())
+          | None -> failed ())
+  end
+  else if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
     let words = String.sub line 5 (String.length line - 5) in
     wikipedia words (function
       | Some l -> messages l

@@ -561,3 +561,29 @@ So the reading now takes about 233 million instructions, half of the
 window, 5 s at 50. What remains is spread out: `ml_concat` and
 `ml_alloc` 11% each, the polymorphic `compare` 9% (string comparisons),
 `String.sub` 6%, then the browser's own loops.
+
+### Step 3, the peer's www (2026-10-15)
+
+The line `www address` on port 70 is answered with the page's bytes,
+unchanged, then the end of the connection.
+
+- **Where to fetch** is decided in `TinyMachinePeer.www_address`, the
+  same in a terminal and in the page: a bare title is an English
+  Wikipedia article, a name with a dot is https://, a Wikipedia
+  article's /wiki/X becomes its REST HTML, a #fragment is dropped.
+- **In a terminal**, with `-net-out`, tiny-machine runs
+  `tiny-machine-fetch` (`TinyMachine/TinyMachineFetch.ml`, 15 lines on
+  `Http_client`) and waits for it; its output for OCaml is the same
+  257,035 bytes as curl's, through ix's own TLS 1.3, in 0.8 s.
+  Without `-net-out`, or when the fetch fails, the kept copy
+  (`tiny/tests/www/OCaml.html`) answers. Section 3 had planned that
+  helper to decode pictures too; that comes with step 6.
+- **In the page**, `fetch()`, then the kept copy beside the page.
+  Built, not run in a browser (the page's test needs Python's
+  websockets, not installed here).
+- **Checked** in tiny-kernel with `get` (rc quotes the two words into
+  one line): `get 'www OCaml' | wc` gives the 257,035 bytes, the same
+  for the full address with a fragment, and an article not kept gives
+  one line with its REST address; the kernel's check runs these. Live,
+  with `-net-out`: Plan 9 from Bell Labs (496,931 bytes, as curl),
+  example.com (577), and a host that does not exist (one `www:` line).

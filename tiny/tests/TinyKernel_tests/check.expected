@@ -20,8 +20,8 @@ mltests 2 77585
 paint 2 75138
 windows 2 159580
 square 2 128640
-tetris 2 142816
-calc 2 161564
+tetris 2 143084
+calc 2 161592
 temp 2 157200
 ping 2 70300
 get 2 72559
@@ -113,3 +113,8 @@ x data id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
 > sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
 > sync id 4000 ack 0, from 10.0.0.2 to 10.0.0.9
 > close id 4001 ack 0, from 10.0.0.2 to 10.0.0.9
+tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % 589 14363 257035
+% 589 14363 257035
+% www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs: no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
+% $ 

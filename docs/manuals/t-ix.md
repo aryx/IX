@@ -353,7 +353,8 @@ What is at the other end is the host's choice:
 
 With `-net` the other end is `TinyKernelNetwork.ml`, the file tiny-kernel
 has for its own stack, run by the host (`TinyMachinePeer.ml`). A packet
-of its lands 5 ms of the machine's time (40,000 instructions) after
+of its lands 5 ms of the machine's time (40,000 instructions at 8
+million a second) after
 it was sent. It answers a ping; and on port 70, over IL, it reads a
 line, a name, and sends `dir`'s file of that name (no path), in
 messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
@@ -370,6 +371,21 @@ and the packet:
 
         856.2 ms  > echo? 1, 4 bytes, from 10.0.0.2 to 10.0.0.1
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
+
+A line that starts with `www` asks for a web page, for tiny-kernel's
+browser (`docs/plans/plan_tiny_browser.md`). The other end sends the
+page's bytes as the site sent them, then closes. The rest of the line
+is an address: a bare title such as `OCaml` or `Plan 9 from Bell Labs`
+is an English Wikipedia article, and an article's address is changed
+to its REST HTML (the article without the site's menus;
+`TinyMachinePeer.www_address`). With `-net-out` the page is fetched by
+`tiny-machine-fetch` (`TinyMachineFetch.ml`), a program apart that links
+ix's own TLS and HTTP, as `tiny-machine-socket` links the sockets.
+Without `-net-out`, or when the fetch fails, a kept copy of a Wikipedia
+article in `dir` answers (`tiny/tests/www/OCaml.html`); otherwise the
+answer is one line that starts with `www:` and says why. In
+tiny-kernel, `rc`, then `get 'www OCaml' | wc`, shows the page's 257,035
+bytes.
 
 **On Linux**, the machine meets programs that are not ours, with no
 root. With `-net-out` the other end is a gateway: a connection
@@ -392,7 +408,9 @@ In the page (`TinyMachineWeb.ml`) the other end is the same, its
 documents the page's: a name is a file of `www/` beside the image, and
 `wiki words` asks Wikipedia (a search, the first article's sentences
 and its picture, which the browser reads and the page reduces to the
-screen's colours); the wire is drawn under the console, a dot a
+screen's colours); `www` fetches the page itself (Wikipedia allows it;
+a site that does not allow other pages to fetch it cannot be reached
+from the page), or a kept copy beside the page; the wire is drawn under the console, a dot a
 packet, and a button loses the next one. `./tiny-machine tiny-kernel`
 in a terminal gives the machine its wire with `tiny/tests/www`.
 

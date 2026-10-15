@@ -48,7 +48,11 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  connection the kernel asks for to another
                                                  address is made by the host (TCP), and a
                                                  name has an address (tiny-kernel: get /
-                                                 gopher.floodgap.com, web example.com)
+                                                 gopher.floodgap.com, web example.com);
+                                                 a line "www address" asks the host for a
+                                                 web page, fetched by tiny-machine-fetch
+                                                 (tiny-kernel: rc, then get 'www OCaml'),
+                                                 or kept in dir without -net-out
   tiny-machine -net dir -net-forward 8080:80 kernel.img
                                                  a connection to the host's port 8080 is
                                                  one to the machine's port 80 (tiny-kernel:
@@ -214,6 +218,24 @@ let helper_said pipes wait =
   | Some bytes when bytes <> "" && bytes.[0] = '+' -> Some (Some (helper_relay pipes (String.sub bytes 1 (String.length bytes - 1))))
   | Some _ -> (helper_relay pipes "").shut (); Some None
 
+(* -net-out, for "www address": a web page fetched by tiny-machine-fetch,
+ * a program beside this one (it links ix's TLS and HTTP), whose output
+ * is the page. The machine waits meanwhile, which changes nothing of
+ * its time. None when the helper could not fetch it (no network, no
+ * such host): then its output is a line that says why. *)
+let fetch (caps : < Cap.fork; Cap.exec; .. >) url =
+  let in_r, in_w = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
+  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineFetch.exe" else "tiny-machine-fetch" in
+  let pid = Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [ url ] ~stdin:in_r ~stdout:out_w in
+  Unix.close in_r; Unix.close in_w; Unix.close out_w;
+  let b = Buffer.create 65536 and chunk = Bytes.create 65536 in
+  let rec read () = match Unix.read from chunk 0 65536 with 0 -> () | n -> Buffer.add_subbytes b chunk 0 n; read () | exception Unix.Unix_error (Unix.EINTR, _, _) -> read () in
+  read ();
+  Unix.close from;
+  match Unix.waitpid [] pid with
+  | _, Unix.WEXITED 0 -> Ok (Buffer.contents b)
+  | _ -> Error (Buffer.contents b)
+
 (* -net-out: a connection to an address and a port, if there is one in
  * the five seconds the helper tries for (the machine waits meanwhile);
  * a name's address, as text *)
@@ -270,6 +292,24 @@ let run caps o image =
    * their names, no path; -net-lose: which of its packets are lost *)
   let document dir line messages =
     let file name = if name = "" || name.[0] = '.' || String.contains name '/' then None else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
+    (* "www address": a web page for tiny-kernel's browser. With
+     * -net-out it is fetched; without, or when the fetch fails, a kept
+     * copy of a Wikipedia article in dir (OCaml.html) answers. *)
+    if String.length line > 4 && String.sub line 0 4 = "www " then begin
+      let url = TinyMachinePeer.www_address (String.sub line 4 (String.length line - 4)) in
+      let kept () = Option.bind (TinyMachinePeer.www_kept url) file in
+      let page =
+        if o.net_out then
+          match fetch caps url with
+          | Ok body -> body
+          | Error why -> (match kept () with Some body -> body | None -> why)
+        else
+          match kept () with
+          | Some body -> body
+          | None -> "www: " ^ url ^ ": no copy kept in " ^ dir ^ " (with -net-out, tiny-machine fetches it)\n" in
+      messages (TinyMachinePeer.messages page)
+    end
+    else
     (* "wiki plan 9": dir's plan_9.wiki, a picture kept with its text *)
     if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
       let words = String.sub line 5 (String.length line - 5) in

@@ -1,57 +1,67 @@
-(* A tiny build system: the idea of make (Stuart Feldman, 1976) and mk
- * (Andrew Hume, 1987) -- describe the dependencies between files
- * concisely, and maintain them efficiently -- without their language.
+(* A tiny build system. It keeps the idea of make (Stuart Feldman,
+ * 1976) and mk (Andrew Hume, 1987) -- describe the dependencies between
+ * files concisely, and maintain them efficiently -- but not their
+ * language.
  *
- * mini-mk (builder/) is mk, faithfully; this is what is left when
- * compatibility is dropped and only the idea is kept.
+ * The full-size version in ix, mini-mk (builder/), is a faithful copy
+ * of mk; this one is what remains when compatibility is dropped and
+ * only the idea is kept.
  *
  * A Buildfile has five kinds of lines, shown by example in [help]
- * below, what tiny-build -h prints with the usage; and that is all the
- * syntax. Variables are expanded in rule lines as
- * they are read; a recipe gets them, and $target, $prereq and $stem,
- * in its environment, so the shell expands them and there is no second
- * expansion language. There are no attributes: a target whose recipe
- * makes no file (clean, all) is simply never up to date.
+ * below (which is what tiny-build -h prints along with the usage), and
+ * that is the whole syntax. Variables in rule lines are expanded as
+ * the lines are read. A recipe receives the variables, plus $target,
+ * $prereq and $stem, in its environment, so the shell does the
+ * expansion and there is no second expansion language. There are no
+ * attributes: a target whose recipe creates no file (clean, all) is
+ * simply never up to date.
  *
- * {b Up to date by content, not by time.} Each target's stamp is a
- * digest of its recipe and of its prerequisites' contents:
+ * {b Up to date by content, not by time.} The stamp of each target is
+ * a digest of its recipe and of the contents of its prerequisites:
  *
  *     stamp(hello) = sha1(recipe, "hello.o", sha1(hello.o), "world.o", ...)
  *
- * (SHA-1, lib_crypto's Sha1, which tiny-vcs has in t-ix already; it
- * was MD5.) For [help]'s Buildfile the graph under hello is
+ * (The digest is SHA-1, from lib_crypto's Sha1, which tiny-vcs already
+ * brings into t-ix; it used to be MD5.) For the Buildfile in [help],
+ * the graph under hello is:
  *
- *     hello                 a recipe: cc -o $target $prereq
- *      |-- hello.o          the pattern's, its stem hello: cc -c $stem.c
- *      |    '-- hello.c     a source: a file no rule makes
- *      '-- world.o          the pattern's, its stem world
+ *     hello                 has its own recipe: cc -o $target $prereq
+ *      |-- hello.o          made by the pattern rule, with stem hello:
+ *      |    |                 cc -c $stem.c
+ *      |    '-- hello.c     a source: a file that no rule makes
+ *      '-- world.o          made by the pattern rule, with stem world
  *           '-- world.c     a source
  *
- * and a comment added to world.c goes this far and no further: its
- * digest is another, so world.o's stamp is another and cc -c runs; the
- * world.o that comes out has the bytes it had, so its digest, which is
- * its file's and not its stamp, is the same; hello's stamp, made of
- * that digest, is the one kept in .tiny-build, and hello is up to
- * date. A program's way through this file is as short: the Buildfile's
- * lines to rules ([parse]), the rules to the graph under the target
- * ([graph], which also chooses the pattern), the graph to a list with
- * prerequisites first ([order]), and the list to recipes ([build]).
+ * Adding a comment to world.c propagates exactly this far and no
+ * further. The digest of world.c changes, so the stamp of world.o
+ * changes and cc -c runs. But the new world.o has the same bytes as
+ * before, so its digest (the digest of the file, not its stamp) is
+ * unchanged. The stamp of hello, computed from that digest, is then
+ * the same as the one stored in .tiny-build, and hello is up to date.
  *
- * The stamps of the last build are kept in .tiny-build; a target is
- * rebuilt when it is missing or its stamp changed. That is the
+ * The path through this file is just as short: the lines of the
+ * Buildfile become rules ([parse]), the rules become the graph under
+ * the target ([graph], which also chooses the pattern rule), the graph
+ * becomes a list with prerequisites first ([order]), and the list is
+ * turned into recipes run ([build]).
+ *
+ * The stamps of the last build are stored in .tiny-build; a target is
+ * rebuilt when it is missing or when its stamp has changed. This is the
  * "verifying traces" rebuilder of Mokhov, Mitchell and Peyton Jones,
- * "Build Systems a la Carte" (2018), and it removes three of mk's
- * problems at once: two files made in the same second are not "equal",
- * a git checkout's new times rebuild nothing, and a recipe that
- * regenerates an identical file stops the rebuild there (early cutoff)
- * without mk's cmp -s trick.
+ * "Build Systems a la Carte" (2018), and it fixes three problems of mk
+ * at once: two files written in the same second are no longer
+ * considered "equal", the new timestamps from a git checkout do not
+ * trigger any rebuild, and a recipe that regenerates an identical file
+ * stops the rebuild there (early cutoff), without mk's cmp -s trick.
  *
  * {b One pass, no re-walk.} mk walks its whole graph again after every
- * job, because a recipe's effect is known only by looking at the file
- * again. Here a node is decided when it becomes ready -- when all its
- * prerequisites are done and their digests known -- so one topological
- * pass does, with -j N jobs at a time (Kahn, 1962, as a scan of the
- * nodes left: the simple version, quadratic, fine for hundreds):
+ * job, because the only way to know what a recipe did is to look at
+ * the file again. Here a node is decided when it becomes ready, that is
+ * when all its prerequisites are done and their digests are known. So a
+ * single topological pass is enough, running up to N jobs at a time
+ * with -j N. It is Kahn's algorithm (1962), implemented as a scan of
+ * the remaining nodes: the simple, quadratic version, which is fine for
+ * hundreds of nodes:
  *
  *     todo  = the nodes under the target, prerequisites first
  *     loop: start every todo node whose prerequisites are done,
@@ -59,83 +69,92 @@
  *           a node that is up to date, or has no recipe, is done now
  *           otherwise wait for a job to end; its node is done
  *
- * {b What it checks}, before running anything: a cycle (reported with
- * its path, a -> b -> a), two pattern rules that could both make a
- * target (ambiguous), a target nothing knows how to make, and infinite
- * patterns (%: %.gz is used at most once on a path).
+ * {b What it checks} before running anything: cycles (reported with
+ * their path, a -> b -> a), two pattern rules that could both make the
+ * same target (ambiguity), a target that nothing knows how to make,
+ * and infinite patterns (a rule like %: %.gz is used at most once on a
+ * path).
  *
- * <file includes a file, if it exists (a generated .depend may not, the
- * first time), and a backslash-newline continues a line, as ocamldep
- * writes them: that is enough for a Buildfile of 13 lines to build
- * mini-mk's ten modules from ocamldep's output, with -j 4 in about a
- * second. There, a comment added to Recipe.ml recompiles Recipe.ml
- * only: its object comes out identical, so nothing is relinked.
+ * The line <file includes a file if it exists (a generated .depend may
+ * not exist the first time), and a backslash-newline continues a line,
+ * which is how ocamldep writes its output. That is enough for a
+ * 13-line Buildfile to build the ten modules of mini-mk from the output
+ * of ocamldep, with -j 4, in about a second. In that build, adding a
+ * comment to Recipe.ml recompiles only Recipe.ml: its object file comes
+ * out identical, so nothing is relinked.
  *
  * What it deliberately does not do, to stay tiny: quoting (names cannot
- * contain blanks), ${X:%.c=%.o} substitutions, one recipe
- * making several targets at once (a b: c runs the recipe once per
- * target), archives, and mk's -t, -w, -k, -e. The digests are
- * recomputed at each run, reading every input: the price of not
- * trusting times. A file named like a virtual target (a file "clean")
- * makes it look like a real one.
+ * contain blanks), ${X:%.c=%.o} substitutions, a single recipe making
+ * several targets at once (a b: c runs the recipe once per target),
+ * archives, and mk's -t, -w, -k and -e options. The digests are
+ * recomputed at each run by reading every input: that is the price of
+ * not trusting timestamps. A file that has the name of a virtual target
+ * (a file called "clean") makes that target look like a real one.
  *
- * Exercises: add ${X:%.c=%.o}; make the stamp of a source file its
- * (mtime, size) when unchanged since the last run, to avoid reading
- * it again; replace the scan by pending counts per node and measure
- * the difference; let a recipe declare the dependencies it discovered
- * (redo's redo-ifchange), which the one-pass scheduler can take if a
- * node is decided again after its new prerequisites are done.
+ * Exercises: add ${X:%.c=%.o}; when a source file is unchanged since
+ * the last run, use its (mtime, size) as its stamp, to avoid reading
+ * it again; replace the scan with a count of pending prerequisites per
+ * node, and measure the difference; let a recipe declare the
+ * dependencies it discovered while running (like redo's redo-ifchange),
+ * which the one-pass scheduler can support if a node is decided again
+ * once its new prerequisites are done.
  *
- * Where it stands: ix itself is built by mini-mk (Builder's mkfiles,
- * and dune beside it), whose recipes mini-rc or tiny-shell run; this
- * one hands a recipe to sh -e. The digest is Sha1's, which names
- * TinyVCS's objects too: a file's content as its name is the same
- * idea in both, and in TinyDatabase's nodes that never change. The
- * children are Procs's (wait_any), the loop mini-mk and the shells
- * have around wait.
+ * Where it stands: ix itself is built by mini-mk (with Builder's
+ * mkfiles, and dune alongside), whose recipes are run by mini-rc or
+ * tiny-shell; this one hands each recipe to sh -e. The digest comes
+ * from Sha1, which also names the objects of TinyVCS: using the
+ * content of a file as its name is the same idea in both, and in the
+ * nodes of TinyDatabase, which never change either. The child
+ * processes are managed by Procs (wait_any), the same loop around wait
+ * that mini-mk and the shells use.
  *
  * cs-history:
  * Stuart Feldman wrote make at Bell Labs in 1976 after a colleague
  * lost a morning debugging a program that was already fixed: the fix
- * had not been recompiled (the story is his, told in Eric Raymond's
- * The Art of Unix Programming). The tab that must start
- * a recipe's line was an accident of its first lex input, and he kept
- * it because make already had a dozen users (the same source): the
- * first compatibility kept, in a tool of a weekend.
- * Here a recipe's line starts with any blank.
+ * had simply not been recompiled (the story is his, told in Eric
+ * Raymond's The Art of Unix Programming). The tab that must start each
+ * line of a recipe was an accident of the first lex input he wrote, and
+ * he kept it because make already had a dozen users (same source): the
+ * first backward compatibility, in a tool written over a weekend. Here
+ * a recipe line can start with any blank.
  *
  * wib:
- * make compares two times, the target's and a prerequisite's: one
- * stat each, nothing kept between runs, nothing read. It is wrong
- * when a clock is, when a file is restored with an old date, when two
- * files are written in the same second, and it rebuilds all that is
- * above a file touched and not changed. It won for thirty years on
- * that one stat. A digest reads every file at every run and needs a
- * file of its own (.tiny-build) that can be lost or stale; it is
+ * make compares two times, the time of the target and the time of a
+ * prerequisite: one stat call each, nothing stored between runs,
+ * nothing read. It gets things wrong when a clock is wrong, when a file
+ * is restored with an old date, or when two files are written in the
+ * same second, and it rebuilds everything above a file that was touched
+ * but not changed. It won for thirty years on the strength of that one
+ * stat. A digest has to read every file at every run, and needs a file
+ * of its own (.tiny-build) that can be lost or become stale; but it is
  * right in those four cases.
  *
  * others:
- * The build systems since make chose among the same few parts (the
- * paper's point): redo (D. J. Bernstein's design, undated; Avery
- * Pennarun's program, 2010) has no file of rules, a target's recipe
- * is a script that says what it read as it runs; ninja (Evan Martin,
- * for Chrome, 2012) keeps make's times and the recipes' text and is
- * written by another program, not by hand; Bazel (Google's Blaze,
- * open in 2015) and Nix name what is built by a digest of all that
- * went in, and so share it between machines; Shake (Neil Mitchell,
- * 2012) is a Haskell library with the verifying traces this file has.
+ * The build systems that came after make all chose among the same few
+ * parts (which is the point of the paper). redo (designed by D. J.
+ * Bernstein, undated; implemented by Avery Pennarun, 2010) has no rules
+ * file: the recipe for a target is a script that declares what it read
+ * as it runs. ninja (Evan Martin, for Chrome, 2012) keeps make's
+ * timestamps plus the text of the recipes, and its files are generated
+ * by another program, not written by hand. Bazel (Google's Blaze, open
+ * sourced in 2015) and Nix name each build output by a digest of
+ * everything that went into it, so outputs can be shared between
+ * machines. Shake (Neil Mitchell, 2012) is a Haskell library that uses
+ * verifying traces, as this file does.
  *
- * References: Stuart Feldman, "Make -- A Program for Maintaining
- * Computer Programs" (Software: Practice and Experience, 1979), the
- * idea: "The description file really defines the graph of
- * dependencies"; Andrew Hume, "Mk: a Successor to Make" (USENIX,
- * 1987), for % rules and recipes run in parallel; A. B. Kahn,
- * "Topological sorting of large networks" (CACM, 1962): take a node
- * whose predecessors are all done, repeat, and what is left at the end
- * is a cycle -- the scheduler's loop, with the cycles reported
- * earlier, by the walk that builds the graph; Andrey Mokhov, Neil
- * Mitchell and Simon Peyton Jones, "Build Systems a la Carte" (ICFP
- * 2018), for the verifying traces. *)
+ * References:
+ *  - Stuart Feldman, "Make -- A Program for Maintaining Computer
+ *    Programs" (Software: Practice and Experience, 1979): the idea,
+ *    "The description file really defines the graph of dependencies"
+ *  - Andrew Hume, "Mk: a Successor to Make" (USENIX, 1987): % rules
+ *    and recipes run in parallel
+ *  - A. B. Kahn, "Topological sorting of large networks" (CACM, 1962):
+ *    take a node whose predecessors are all done, repeat, and whatever
+ *    is left at the end is a cycle. This is the scheduler's loop; here
+ *    cycles are reported earlier, by the walk that builds the graph
+ *  - Andrey Mokhov, Neil Mitchell and Simon Peyton Jones, "Build
+ *    Systems a la Carte" (ICFP 2018): verifying traces
+ *)
 
 (* a rule of the file; a target with what it is made from and how *)
 type rule

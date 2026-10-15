@@ -1,35 +1,39 @@
 (* A tiny screen editor, in one file: the text on the screen, a cursor
- * in it, and Emacs's keys. mini-emacs (editors/emacs/) is its twin in
- * m-ix, with buffers, windows, modes and a Lisp; tiny-editor
- * (TinyEditor.ml) is the line editor, sam's command language with no
- * screen. This one is what one wants to change a program with: one
- * text, one window, what is typed goes where the cursor is.
+ * in it, and the keys of Emacs. Its full-size counterpart in m-ix is
+ * mini-emacs (editors/emacs/), with buffers, windows, modes and a
+ * Lisp. tiny-editor (TinyEditor.ml) is the line editor, with sam's
+ * command language and no screen. This one is what you want for
+ * changing a program: one text, one window, and what you type goes
+ * where the cursor is.
  *
- * The text is its lines, cut at the cursor's line:
+ * The text is stored as its lines, split at the line of the cursor:
  *
- *     above    the lines before the cursor's, the nearest first
- *     line     the cursor's line, and col, the cursor in it
+ *     above    the lines before the cursor's line, nearest first
+ *     line     the cursor's line, with col, the cursor's position in it
  *     below    the lines after it
  *
- * so a character typed makes one new string, the line's, whatever the
- * text's size, and going a line down moves one string from a list to
- * the other. (Emacs keeps a gap in one array of characters at the
- * place of the last change, for the same reason; a list of lines cut
- * at the cursor is that idea with what tiny-ml has: lists and strings
- * that do not change.)
+ * So typing a character creates only one new string, for the current
+ * line, whatever the size of the text, and moving down a line moves
+ * one string from one list to the other. (Emacs keeps a gap in a
+ * single array of characters, at the place of the last change, for
+ * the same reason. A list of lines split at the cursor is the same
+ * idea, built from what tiny-ml has: lists, and strings that cannot
+ * be modified.)
  *
- * The editor is a state and the keys that change it: [key] takes a
- * byte and says what it asks of the program around (nothing, the file
- * saved, the end); [view] is the screen's lines for the state, made
- * again after each key, of which the screen draws those that changed.
- * It names no system: the program around it reads the keys, shows the
- * lines and writes the file. That program is tiny-kernel's emacs
- * (TinyKernel/user/emacs.ml), in a window of tiny-machine or on its
- * whole screen; on the host the editor is OCaml's to test, as
- * tiny-kernel's games are (no terminal's escapes: a screen is
- * tiny-machine's, where a program draws characters where it wants).
+ * The editor is a state plus the keys that change it. [key] takes a
+ * byte and says what it asks of the surrounding program (nothing, to
+ * save the file, or to quit). [view] computes the lines of the screen
+ * for a state; it is recomputed after each key, and the screen redraws
+ * only the lines that changed. The editor uses no system calls: the
+ * surrounding program reads the keys, displays the lines and writes
+ * the file. That program is tiny-kernel's emacs
+ * (TinyKernel/user/emacs.ml), running in a window of tiny-machine or
+ * on its whole screen. On the host, OCaml compiles the editor only to
+ * test it, as for tiny-kernel's games (there are no terminal escape
+ * sequences: the screen is tiny-machine's, where a program draws
+ * characters wherever it wants).
  *
- * The keys, Emacs's:
+ * The keys, as in Emacs:
  *
  *     C-f C-b C-n C-p, the arrows    a character, a line
  *     C-a C-e                        the line's start, its end
@@ -42,10 +46,10 @@
  *     C-x C-s, C-x C-q               save, quit (C-x C-c too, where it comes)
  *     C-g                            never mind
  *
- * Left out: several buffers and windows, undo, the mark and the
- * region, a search backward, replacing, the line that wraps (a long
- * line is cut at the screen's edge, and the screen follows the
- * cursor), characters beyond ASCII.
+ * What is left out: multiple buffers and windows, undo, the mark and
+ * the region, searching backward, replacing, wrapping long lines (a
+ * long line is cut at the edge of the screen, and the screen scrolls
+ * to follow the cursor), and characters beyond ASCII.
  *)
 
 type editor

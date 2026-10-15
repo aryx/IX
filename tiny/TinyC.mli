@@ -1,38 +1,41 @@
-(* A tiny C compiler for arm64, in one file, through an intermediate
- * language of its own. 
+(* A tiny C compiler for arm64, in one file, that goes through an
+ * intermediate language of its own.
  *
- * mini-cc (languages/c/) is 5c's and 7c's twin, byte for byte:
- * their front end, their trees, their code generator,
- * and a record per machine. This is what is left when the code need
- * only be correct (its usage, by examples: [help] below, what tiny-c -h
- * prints): one C file in, its arm64 assembly out, in Plan 9's syntax, for
- * TinyAssembler, with 7c's calling convention, so that the program
- * calls goken's libc (7c's code) and libc calls it back (main).
+ * The full-size compiler in ix, mini-cc (languages/c/), is a faithful
+ * byte-for-byte twin of Plan 9's 5c and 7c: it has their front end,
+ * their trees, their code generator, and a record per machine. This
+ * file is what is left when the code only needs to be correct. (Its
+ * usage, with examples, is in [help] below, which is what tiny-c -h
+ * prints.) It reads one C file and writes its arm64 assembly, in
+ * Plan 9 syntax, for TinyAssembler. It follows 7c's calling
+ * convention, so the program can call goken's libc (compiled by 7c)
+ * and libc can call the program back (main).
  *
- * Or, with -tm, for the other machine, TinyCPU (TinyMachineCPU.ml): the
- * same front end and stack machine, a second back end of 100 lines,
- * with a runtime of its own, in TinyCRuntime/ (TinyKernel/steps/Makefile does
- * the above): the start and the system calls in start.tm, the unsigned
- * division in udivmod.tm, the rest of libc in C, compiled by tiny-c -tm. There
- * pointers are 4 bytes and a long long is refused: the machine is 32
- * bits. That the two back ends print the
- * same, on TinyC_tests/ and on random programs without long long
- * (TinyC_fuzz.py --32), is what the stack machine was for.
+ * With -tm, it targets the other machine instead, TinyCPU
+ * (TinyMachineCPU.ml). It uses the same front end and stack machine,
+ * plus a second back end of 100 lines and a runtime of its own in
+ * TinyCRuntime/ (built by TinyKernel/steps/Makefile): start.tm holds
+ * the program start and the system calls, udivmod.tm the unsigned
+ * division, and the rest of libc is C compiled by tiny-c -tm. On that
+ * machine pointers are 4 bytes and long long is refused, because the
+ * machine is 32 bits. The stack machine was designed so that both
+ * back ends print the same output, on TinyC_tests/ and on random
+ * programs without long long (TinyC_fuzz.py --32).
  *
- * A file's way, each step a type of its own:
+ * A file goes through these steps, each with its own type:
  *
  *     file.c
- *        | tokens     the #includes in their place, the #defines expanded
- *        | the parser by recursive descent: typed trees, [expr] and
- *        |            [stmt], the conversions made explicit as it goes
- *        | lower      a function's tree to the stack machine's code,
- *        |            an [ir] list: what -ir prints
- *        | machine    (or machine_tm) that list to assembly, the
- *        |            stack's depth d kept in register Rd
+ *        | tokens     with #includes inlined and #defines expanded
+ *        | the parser recursive descent producing typed trees, [expr]
+ *        |            and [stmt], with conversions made explicit
+ *        | lower      turns a function's tree into stack machine
+ *        |            code, an [ir] list (what -ir prints)
+ *        | machine    (or machine_tm) turns that list into assembly,
+ *        |            keeping the stack depth d in register Rd
  *     file.s (or file.tm), for tiny-assembler (or tiny-cpu)
  *
- * and one function through it, int f(int a, int b) { return a + b *
- * 2; }, as -ir and the default back end print it:
+ * Here is one function, int f(int a, int b) { return a + b * 2; }, as
+ * printed by -ir and by the default back end:
  *
  *     the stack machine   its stack, after   arm64
  *                                            TEXT  f(SB), $0
@@ -46,139 +49,153 @@
  *     op + 4              a+b*2              ADD   R2, R1;  SXTW R1, R1
  *     ret value                              MOV   R1, R0;  RETURN
  *
- * The first argument comes in R0 and is put in its slot, where the
- * second already is (7c's convention); a variable is an address
- * pushed and a load; an operation on ints is followed by its
- * extension. With -tm the same list is addi and ldw for the first
- * four lines, li r3, 2, mul r2, r2, r3 and add r1, r1, r2 with no
- * extension (a register is an int there), the result in r13. The
- * cost shows too: nine instructions, where a compiler that optimizes
- * and has both arguments in registers needs one, an add whose second
- * operand is shifted.
+ * The first argument arrives in R0 and is stored into its stack slot,
+ * next to the second argument which is already there (7c's
+ * convention). A variable is accessed by pushing its address and then
+ * loading it, and every operation on ints is followed by a sign
+ * extension. With -tm, the first four lines become addi and ldw, then
+ * li r3, 2, mul r2, r2, r3 and add r1, r1, r2, with no extension
+ * (a register is already an int there), and the result goes in r13.
+ * The cost is visible too: nine instructions, where an optimizing
+ * compiler with both arguments in registers would need only one, an
+ * add with a shifted second operand.
  *
- * What makes it small, and still a C compiler:
+ * What makes it small while still being a C compiler:
  *
  * - {b A stack machine in between} (IR, below): expressions become
- *   pushes and operations on a stack, statements labels and jumps;
- *   [-ir] prints it. The question the compiler's plan left open, what
- *   an intermediate language buys against writing the machine's
- *   instructions directly, has this answer here: the front end knows
- *   no register and no instruction, the back end no C (its 120 lines
- *   are the whole machine), and each can be read, and tested, alone;
- *   and a second machine is a second back end (-tm).
- *   What it costs is the code's quality: no Sethi-Ullman order, no
- *   addressing modes, a load or a store per variable reference.
- * - {b The stack is in registers.} The back end keeps the machine's
- *   stack in R1..R15 (depth d in Rd), so a push is a MOV and an
- *   operation one instruction on two registers, as in Wirth's
- *   compilers; only a call saves what is live below its arguments, to
- *   the frame. An expression deeper than 15 is refused.
+ *   pushes and operations on a stack, and statements become labels
+ *   and jumps; [-ir] prints it. The compiler plan left open the
+ *   question of what an intermediate language buys compared to
+ *   emitting machine instructions directly. Here is the answer: the
+ *   front end knows nothing about registers or instructions, the back
+ *   end knows nothing about C (its 120 lines are the whole machine),
+ *   each can be read and tested on its own, and a second machine is
+ *   just a second back end (-tm). The price is code quality: no
+ *   Sethi-Ullman ordering, no addressing modes, and a load or store
+ *   for every variable reference.
+ * - {b The stack is in registers.} The back end keeps the stack
+ *   machine's stack in R1..R15 (depth d in Rd), so a push is a MOV and
+ *   an operation is one instruction on two registers, as in Wirth's
+ *   compilers. Only a call needs to save the live values below its
+ *   arguments, into the frame. An expression deeper than 15 is
+ *   refused.
  * - {b Types at parse time, trees as variants.} Each expression is
- *   built typed, with its conversions made explicit (a Conv node, a
- *   pointer's arithmetic scaled); statements are a tree too ([stmt]),
- *   which [lower] turns into the stack machine's code, so parsing,
- *   lowering and the machine are three walks, each of its own type.
- *   The operators are variants, split so that every match is
- *   exhaustive; [&&], [||] and [!] are made of [?:], [while] of
- *   [for].
- * - {b Values in 64 bits.} Registers hold a value extended from its
- *   type, and an operation on an int is followed by its extension
- *   (SXTW, MOVWU): the machine's 64-bit instructions do for every
+ *   built already typed, with its conversions made explicit (a Conv
+ *   node, scaled pointer arithmetic). Statements are a tree too
+ *   ([stmt]), which [lower] turns into stack machine code, so parsing,
+ *   lowering and code generation are three separate walks, each over
+ *   its own type. The operators are variants, split so that every
+ *   match is exhaustive; [&&], [||] and [!] are expressed with [?:],
+ *   and [while] with [for].
+ * - {b Values in 64 bits.} A register holds a value extended from its
+ *   type, and each operation on an int is followed by an extension
+ *   (SXTW, MOVWU), so the machine's 64-bit instructions work for every
  *   width.
- * - {b 7c's frames and arguments}: the first argument in R0, the
- *   others in 8-byte slots at 8(R31) up (the callee's n(FP)), the
- *   result in R0, locals below SP, and the frame 7l's (TinyAssembler's
- *   TEXT): so libc's functions, variadic ones included (print), are
- *   called as 7c calls them.
+ * - {b 7c's frames and arguments}: the first argument is in R0, the
+ *   others in 8-byte slots from 8(R31) upward (n(FP) for the callee),
+ *   the result in R0, locals below SP, and the frame is laid out as
+ *   7l does it (TinyAssembler's TEXT). So libc's functions, including
+ *   variadic ones like print, are called exactly as 7c calls them.
  *
- * The language: char short int long (4 bytes, as Plan 9's) and long
- * long, unsigned and signed; pointers, arrays, structs (members, . and
- * ->; not passed by value); enums; void; globals with initializers
- * (numbers, strings, addresses, arrays of them); static, extern,
- * typedef; functions and prototypes, calls to variadic ones; function
- * pointers (C's declarators inside out, a call through any expression:
- * tiny-os's system call table and devices); every operator, with op=,
- * ++, --, ?:, casts, sizeof and the comma, constant expressions folded
- * (an array's size, a case); if, while, do, for, switch,
- * break, continue, return, blocks; #include "file", #define of a name.
- * Left out, by what each would cost here: floats, unions, bitfields,
- * structures by value, goto, the preprocessor's macros with arguments
- * and its #if.
+ * The language supported: char, short, int, long (4 bytes, as in
+ * Plan 9) and long long, signed and unsigned; pointers, arrays,
+ * structs (members, . and ->, but not passed by value); enums; void;
+ * globals with initializers (numbers, strings, addresses, and arrays
+ * of them); static, extern, typedef; functions and prototypes, and
+ * calls to variadic functions; function pointers (C's inside-out
+ * declarators, and calls through any expression, as needed by tiny-os's
+ * system call table and devices); every operator, including op=, ++,
+ * --, ?:, casts, sizeof and the comma, with constant expressions
+ * folded (for an array size or a case); if, while, do, for, switch,
+ * break, continue, return and blocks; #include "file" and #define of a
+ * name. Left out, because of what each would cost here: floats,
+ * unions, bitfields, structs by value, goto, macros with arguments,
+ * and #if.
  *
- * Exercises, each cheap because the stack machine stands between the
+ * Exercises, each cheap because the stack machine sits between the
  * front end and the machines:
- * - a third back end: arm32 (5c's calls, for mini-5i and the Pi1), or
- *   x86-64; -tm's was 100 lines;
- * - the stack machine run: an interpreter of its code, 60 lines, a
- *   third semantics for the test to compare the two back ends with (and
- *   the programs' outputs without goken);
- * - peephole passes on the stack machine's code, each a match on a list
- *   (McKeeman's): an operation on two constants folded, a jump to a
- *   jump followed, a store then a load of the same place;
- * - Sethi and Ullman's order: an operation's deeper operand evaluated
- *   first, so the stack stays shallower (the 12 registers of -tm);
- * - long long on -tm, a value in a pair of registers; floats, a second
- *   register class on the same stack (started once, left).
+ * - a third back end: arm32 (with 5c's calling convention, for mini-5i
+ *   and the Pi1), or x86-64; the -tm back end took 100 lines;
+ * - running the stack machine: a 60-line interpreter of its code would
+ *   give a third semantics against which to compare the two back ends
+ *   (and would run the programs without goken);
+ * - peephole passes on the stack machine code, each a match on a list
+ *   (McKeeman's idea): folding an operation on two constants,
+ *   following a jump to a jump, removing a load right after a store
+ *   to the same place;
+ * - Sethi and Ullman's ordering: evaluating the deeper operand of an
+ *   operation first keeps the stack shallower (useful with the 12
+ *   registers of -tm);
+ * - long long on -tm, as a value in a pair of registers; floats, as a
+ *   second register class on the same stack (started once, then
+ *   abandoned).
  *
- * Where it stands: what it writes TinyAssembler reads (arm64) or
- * TinyMachineCPU's assembler (-tm). It compiles TinyML's runtime (its
- * collector and primitives are C), TinyKernel's programs, and t6, a
- * kernel in C, with its own; TinyML's code generator
- * is this file's stack machine and register stack again, for another
- * language. Its twin, mini-cc, has what this leaves out: 7c's trees
- * rewritten by Sethi and Ullman's numbers, addressing modes, a
- * register allocator, a peephole pass, and an object file.
+ * Status: TinyAssembler reads what it writes for arm64, and
+ * TinyMachineCPU's assembler reads what it writes with -tm. It
+ * compiles TinyML's runtime (whose collector and primitives are in
+ * C), TinyKernel's programs, and t6, a kernel in C, together with its
+ * own programs. TinyML's code generator reuses this file's stack
+ * machine and register stack for another language. Its twin, mini-cc,
+ * has what this one leaves out: 7c's trees rewritten using Sethi and
+ * Ullman's numbers, addressing modes, a register allocator, a peephole
+ * pass, and an object file format.
  *
  * cs-history:
- * C is Dennis Ritchie's (Bell Labs, 1972), out of Ken Thompson's B
- * (1969), itself Martin Richards's BCPL (1967) cut to fit a small
- * machine: B and BCPL had one type, the machine's word, and C's types
- * came when the PDP-11 had bytes and words of different sizes. BCPL's
- * compiler already stopped at a code for an abstract stack machine,
- * O-code, with a small back end per computer: that is how BCPL moved
- * from machine to machine, and this file's plan. Steve Johnson's
- * portable C compiler (late 1970s) did the same for C with trees, and
- * took C and Unix off the PDP-11.
+ * C was created by Dennis Ritchie (Bell Labs, 1972), out of Ken
+ * Thompson's B (1969), which was itself Martin Richards's BCPL (1967)
+ * cut down to fit a small machine. B and BCPL had a single type, the
+ * machine word; C got its types when the PDP-11 brought bytes and
+ * words of different sizes. BCPL's compiler already stopped at code
+ * for an abstract stack machine, O-code, with a small back end for
+ * each computer. That is how BCPL moved from machine to machine, and
+ * it is the plan of this file. Steve Johnson's portable C compiler
+ * (late 1970s) did the same for C using trees, and it took C and Unix
+ * beyond the PDP-11.
  *
  * comeback:
- * A stack machine's code between a language and the machines is
- * Pascal's P-code too (Zurich, 1970s; UCSD's system ran it
- * interpreted). Compilers that optimize left it for code with named
- * values, three addresses an operation, then SSA (LLVM's), where a
- * value's uses are easy to find and change. The stack code came back
- * as what is shipped: the Java virtual machine's (1995), then
- * WebAssembly's (2017), compact, and checked in one pass over it.
+ * Pascal's P-code (Zurich, 1970s; interpreted by the UCSD system) was
+ * also stack machine code placed between a language and the machines.
+ * Optimizing compilers abandoned it in favor of code with named
+ * values, three addresses per operation, and then SSA (as in LLVM),
+ * where the uses of a value are easy to find and change. Stack code
+ * came back as the format that gets shipped: the Java virtual machine
+ * (1995), then WebAssembly (2017), because it is compact and can be
+ * checked in one pass.
  *
  * others:
- * The small C compilers written to be read: Small-C (Ron Cain, Dr.
- * Dobb's Journal, 1980), a subset, the first many people typed in;
- * lcc (Fraser and Hanson's book), with trees matched against a
- * machine's description; Fabrice Bellard's tcc (out of his OTCC of
- * 2001), one pass from the text to machine code in memory, no
- * intermediate at all; Rui
- * Ueyama's chibicc (2019), a tree then code that pushes and pops the
- * real stack, written as a history of small commits. The last is the
- * nearest: its stack is the machine's, where ours is in registers.
+ * Several small C compilers were written to be read. Small-C (Ron
+ * Cain, Dr. Dobb's Journal, 1980) compiled a subset of C and was the
+ * first one many people typed in. lcc (from Fraser and Hanson's book)
+ * matches trees against a description of the machine. Fabrice
+ * Bellard's tcc (grown out of his OTCC of 2001) goes in one pass from
+ * text to machine code in memory, with no intermediate language at
+ * all. Rui Ueyama's chibicc (2019) builds a tree and then emits code
+ * that pushes and pops the real stack, and it is written as a history
+ * of small commits. chibicc is the closest to this file: its stack is
+ * the machine's, while ours is in registers.
  *
  * modern:
- * A production compiler does not keep an expression's values in a
- * fixed stack of registers. It gives every value a name, finds for
- * each where it is live, and puts in one register the values never
- * live together (graph colouring: Gregory Chaitin, 1982; or a linear
- * scan); a variable then lives in a register for a whole loop, where
- * here it is loaded and stored at each use.
+ * A production compiler does not keep the values of an expression in
+ * a fixed stack of registers. It gives every value a name, computes
+ * where each one is live, and puts values that are never live at the
+ * same time in the same register (graph coloring: Gregory Chaitin,
+ * 1982; or linear scan). A variable then stays in a register for a
+ * whole loop, whereas here it is loaded and stored at each use.
  *
- * References: Niklaus Wirth, Compiler Construction (1996), for the
- * registers as a stack of the expression's values, and the one-pass
- * recursive descent; Ken Thompson, "Plan 9 C Compilers" (1990), for
- * the calling convention this code shares with 7c's; Kernighan and
- * Ritchie, The C Programming Language (1988), appendix A, the grammar
- * followed; R. Sethi and J. D. Ullman, "The Generation of Optimal Code
- * for Arithmetic Expressions" (JACM, 1970); W. M.
- * McKeeman, "Peephole Optimization" (CACM, 1965); C.
- * Fraser and D. Hanson, A Retargetable C Compiler: Design and
- * Implementation (1995), lcc, a C compiler whose machines
- * are its back ends. *)
+ * References:
+ *  - Niklaus Wirth, Compiler Construction (1996): registers used as a
+ *    stack of the expression's values, and one-pass recursive descent
+ *  - Ken Thompson, "Plan 9 C Compilers" (1990): the calling
+ *    convention this code shares with 7c
+ *  - Kernighan and Ritchie, The C Programming Language (1988),
+ *    appendix A: the grammar followed here
+ *  - R. Sethi and J. D. Ullman, "The Generation of Optimal Code for
+ *    Arithmetic Expressions" (JACM, 1970)
+ *  - W. M. McKeeman, "Peephole Optimization" (CACM, 1965)
+ *  - C. Fraser and D. Hanson, A Retargetable C Compiler: Design and
+ *    Implementation (1995): lcc, a C compiler whose machines are its
+ *    back ends
+ *)
 
 (* one declaration or function, from the tokens: parsed, typed, its
  * code for the stack machine, then the assembly added to the output *)

@@ -1,45 +1,49 @@
-(* A program's side of TinyKernelGraphics.ml: its messages, made (a string
- * each, to join and write to the descriptor the program draws on) and
- * told apart (a window system reads another program's, changes their
- * images' numbers and sends them on: TinyWindows.ml). Plan 9's twin is
- * libdraw, the library of the programs, where TinyKernelGraphics.ml is the
- * kernel's draw device and libmemdraw; for C it is TinyKernel/libc/
- * draw.h. In tiny-ml's ML and OCaml's, a file given to tiny-ml before
- * the program's own:
+(* The program side of TinyKernelGraphics.ml. This file builds the
+ * drawing messages (each one a string, to be concatenated and written
+ * to the file descriptor the program draws on), and it also parses
+ * them (a window system reads the messages of another program,
+ * renumbers their images, and passes them on: see TinyWindows.ml).
+ * The Plan 9 equivalent is libdraw, the library used by programs,
+ * while TinyKernelGraphics.ml plays the role of the kernel's draw
+ * device and of libmemdraw. For C programs, the equivalent is
+ * TinyKernel/libc/draw.h. It is written in the subset of ML that both
+ * tiny-ml and OCaml accept, and is given to tiny-ml before the
+ * program's own files:
  *
  *     tiny-ml -tm -o windows.tm TinyLibDraw.ml TinyWindows.ml
  *
- * TinyKernelGraphics.mli's header has the messages: a letter, then numbers
- * of 16 bits, the low byte first, signed.
+ * The messages are described in the header of TinyKernelGraphics.mli:
+ * a letter, followed by signed 16-bit numbers, low byte first.
  *
- * The way of a rectangle from a program to the screen, on the two
- * machines the same ML files run on:
+ * Here is the path of a rectangle from a program to the screen, on the
+ * two machines where the same ML files run:
  *
  *     a program            TinyAppTetris on TinyLibPlayground, TinyWindows
- *        | d_fill ...      this file: a string of 19 bytes
- *        | written on 3    tiny-machine: a system call (TinyKernel/
- *        |                 user's calls.ml); the host: TinyCalls, which
- *        |                 keeps it for a test
- *        | (a pipe, and TinyWindows renumbering, when in a window)
- *        | [messages]      TinyKernelGraphics: in TinyKernel; on the host,
- *        |                 called by the test
- *        | pokeb, rows     tiny-machine: C and assembly (TinyKernel's
- *        |                 memory.ml); the host: TinyMemory, an array
- *     the screen's bytes   at 0xf00000 in both
+ *        | d_fill ...      this file: makes a string of 19 bytes
+ *        | written on 3    on tiny-machine: a system call (TinyKernel/
+ *        |                 user's calls.ml); on the host: TinyCalls,
+ *        |                 which keeps it for the test to check
+ *        | (through a pipe, renumbered by TinyWindows, when in a window)
+ *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the
+ *        |                 host, called directly by the test
+ *        | pokeb, rows     on tiny-machine: C and assembly (TinyKernel's
+ *        |                 memory.ml); on the host: TinyMemory, an array
+ *     the screen's bytes   at 0xf00000 on both
  *
  * So the three files between a program and its machine (this one,
- * TinyCalls, TinyMemory) are where the host is put in the machine's
- * place, and all that is above them is tested by dune before
- * tiny-machine runs it.
+ * TinyCalls and TinyMemory) are where the host takes the machine's
+ * place, and everything above them is tested by dune before
+ * tiny-machine ever runs it.
  *
  * plan9-is-cleaner:
- * Drawing by writing bytes on a file is Plan 9's: its draw device is
- * a directory in /dev, and libdraw turns each call into a message, a
- * letter then numbers, written on a file of it; there d draws, f
- * frees an image, s is a string. Because
- * it is a file, it goes through a pipe or a network as any file
- * does, and a window system or a remote terminal needs no protocol
- * of its own. *)
+ * Drawing by writing bytes to a file comes from Plan 9: its draw
+ * device is a directory in /dev, and libdraw turns each call into a
+ * message, a letter followed by numbers, written to one of the files
+ * in that directory (there d draws, f frees an image, s draws a
+ * string). Because it is a file, it can go through a pipe or over the
+ * network like any other file, and a window system or a remote
+ * terminal needs no protocol of its own.
+ *)
 
 (* a number's two bytes, the low one first, and the number at i of a
  * string; a message, its letter then its numbers *)

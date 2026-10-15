@@ -1,15 +1,17 @@
-(* A tiny temperature converter, a program of TinyKernel.ml's on
- * TinyLibGUI.ml: two fields, each the other's answer. The second of the
- * 7GUIs (examples/Gui7Temperature.ml is m-ix's), in whole numbers, in
- * tiny-ml's ML and OCaml's:
+(* A tiny temperature converter. It is a program for TinyKernel.ml,
+ * built on TinyLibGUI.ml, with two fields where each one shows the
+ * conversion of the other. It is the second of the 7GUIs tasks (m-ix's
+ * version is examples/Gui7Temperature.ml), here with whole numbers
+ * only, written in the subset of ML that both tiny-ml and OCaml accept:
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ temp
  *     a click in a field, then the keys: digits, a sign, the backspace;
  *     the Escape quits (or q, before a field is clicked)
  *
- * What the task asks, and why it is the second: a change goes both
- * ways, and half of what is typed is not a number.
+ * What the task asks for, and why it comes second: a change must
+ * propagate in both directions, and half of what the user types is not
+ * yet a number.
  *
  *     typed in Celsius     Celsius    Fahrenheit
  *     1                    1          34
@@ -20,24 +22,28 @@
  *     -40 (after three     -40        -40
  *     backspaces)
  *
- * - {b The model is the two texts}, not a temperature: a field must
- *   show "10x" or "-" while they are typed, which no number is. The
- *   field typed in keeps its text whatever it is; the other one is
- *   computed when that text is a number.
- * - {b No loop between the fields}: the message says which field was
- *   typed in, so the other is set without being "changed". With
- *   widgets that keep their text and tell of each change, setting one
- *   from the other calls back, and the program must stop the echo.
+ * - {b The model is the two texts}, not a temperature. A field must be
+ *   able to show "10x" or "-" while they are being typed, and no number
+ *   can represent those. The field being typed in keeps its text,
+ *   whatever it is; the other field is recomputed only when that text
+ *   is a number.
+ * - {b There is no loop between the fields}. The message says which
+ *   field was typed in, so the program can set the other one without
+ *   it counting as a "change". With widgets that store their own text
+ *   and report every change, setting one field from the other would
+ *   trigger a callback, and the program would have to stop that echo
+ *   itself.
  *
- * Dropped: fractions (tiny-ml has no floats: the nearest whole
- * number, so 34 Fahrenheit is 1 Celsius and 1 Celsius 34), a field
- * shown red when its text is no number, numbers past six digits.
+ * What is left out: fractions (tiny-ml has no floats, so we round to
+ * the nearest whole number: 34 Fahrenheit gives 1 Celsius, and 1
+ * Celsius gives 34), showing a field in red when its text is not a
+ * number, and numbers longer than six digits.
  *
  * Exercises:
- * - the field that is no number shown another colour (a widget more,
- *   or a colour in Input);
- * - tenths: a number kept as ten times itself;
- * - Kelvin: a third field, each the two others' answer.
+ * - show a field whose text is not a number in another colour (with
+ *   one more widget, or a colour in Input);
+ * - tenths: store each number as ten times its value;
+ * - Kelvin: add a third field, computed from either of the two others.
  *
  * References: E. Kiss, "7GUIs: A GUI Programming Benchmark" (2014),
  * task 2. *)

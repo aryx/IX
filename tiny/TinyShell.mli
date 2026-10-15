@@ -1,7 +1,8 @@
-(* A tiny shell, in one file: pipes, redirections, variables and basic
- * control flow. mini-rc (shell/) is rc, faithfully; this is what is left
- * when compatibility is dropped, written after it, from what it taught.
- * The language is rc's, cut down:
+(* A tiny shell, in one file, with pipes, redirections, variables and
+ * basic control flow. mini-rc (shell/) is a faithful copy of rc; this
+ * shell is what remains when compatibility is dropped. It was written
+ * after mini-rc, using what mini-rc taught. The language is a cut-down
+ * version of rc's:
  *
  *     ls -l *.c | wc -l >count         words, globs, a pipe, redirections
  *     x=(a b c); echo $x $#x $x.o      lists, the only value; a.o b.o c.o
@@ -12,115 +13,125 @@
  *     cc -c x.c >[2]errs >[2=1]        other fds
  *     ~ $x *.c && echo matched         matching: ~ subject pattern ...
  *
- * A line's way: its characters to tokens, the tokens to a tree ([cmd],
- * by recursive descent), and the tree walked ([run]), a word becoming
- * a list of strings on the way ([word], then [glob]). With x=(a b),
- * the line echo $x.o | wc >n is the tree
+ * How a line is processed: its characters are split into tokens, the
+ * tokens are parsed into a tree ([cmd], by recursive descent), and the
+ * tree is walked ([run]). Along the way each word is turned into a
+ * list of strings ([word], then [glob]). For example, with x=(a b),
+ * the line echo $x.o | wc >n becomes the tree
  *
  *     Pipe (Simple [echo; $x then .o], Simple [wc] with 1 opened on n)
  *
- * and walking it makes three processes, the shell doing in itself all
- * that is not a program:
+ * and walking it creates three processes, while the shell itself does
+ * everything that is not running a program:
  *
- *     the shell          a pipe made, then a fork
+ *     the shell          makes a pipe, then forks
  *      |-- a child       its 1 is the pipe; it walks the first Simple:
- *      |    |            $x joined to .o is a.o b.o, nothing to glob
- *      |    '-- echo     forked and exec'ed; the child waits, and exits
- *      |                 with echo's status
- *      |                 its own 0 is now the pipe, the old one copied
- *      |                 away; it walks the second Simple: 1 is n, the
- *      |                 old one copied away
- *      '-- wc            forked and exec'ed; the shell waits; 1 is put
- *                        back, then 0; the child is waited for, and
- *                        $status is its status, a bar, wc's
+ *      |    |            $x joined to .o gives a.o b.o, nothing to glob
+ *      |    '-- echo     forked and exec'ed; the child waits for it and
+ *      |                 exits with echo's status
+ *      |                 the shell's own 0 is now the pipe (the old 0
+ *      |                 is saved); it walks the second Simple: 1 is
+ *      |                 now n (the old 1 is saved)
+ *      '-- wc            forked and exec'ed; the shell waits for it,
+ *                        restores 1, then 0, waits for the child, and
+ *                        sets $status to the statuses joined by a bar
  *
  * What is kept from rc, and why it is the core:
  *
  * - {b Every value is a list of strings.} $x is never split again, so
- *   there is no quoting of $x, no "$@", and $* is the arguments as they
- *   were. The only quote is '...' ('' inside is a quote).
- * - {b Words next to each other are joined, distributing over lists}:
- *   $x.o is a.o b.o c.o, and two lists of the same length join
- *   pairwise. rc does this with a "free caret" that its lexer inserts;
- *   here a word simply is the pieces with nothing between them, and ^
- *   is only a way to write two pieces with nothing between.
- * - {b Only the literal text globs}: a * from a variable or a quote is
- *   a *. The trick: such characters are escaped (a \000 before them)
- *   as the word is built, so the matcher sees which is which; the
- *   escapes go once the files are found.
- * - {b Redirections are done in the shell, around the command, and
- *   undone after} (the fds are copied away, then put back), so a
- *   function or a brace sees them as a program does.
- * - {b The syntax tree is walked}: a child forked for a pipe's stage
- *   or a subshell walks its subtree, and exits; the last stage of a
- *   pipe runs in the shell itself.
- * - {b $status is a string}: "" for success, the exit code, or the
- *   signal; a pipe's is its stages' joined by |.
+ *   there is no need to quote $x, no "$@", and $* is exactly the
+ *   arguments as they were given. The only quote is '...' (with ''
+ *   inside standing for a quote).
+ * - {b Adjacent words are joined, distributing over lists}: $x.o is
+ *   a.o b.o c.o, and two lists of the same length are joined pair by
+ *   pair. rc does this with a "free caret" that its lexer inserts.
+ *   Here a word is simply its pieces with nothing between them, and ^
+ *   is only a way to write two pieces with nothing between them.
+ * - {b Only literal text is globbed}: a * coming from a variable or a
+ *   quote stays a *. The trick is that such characters are escaped (a
+ *   \000 is put before them) while the word is built, so the matcher
+ *   can tell them apart; the escapes are removed once the files are
+ *   found.
+ * - {b Redirections are done by the shell, around the command, and
+ *   undone afterwards} (the fds are saved, then restored), so a
+ *   function or a brace block sees them just as a program does.
+ * - {b The syntax tree is walked directly}: a child forked for a stage
+ *   of a pipe or for a subshell walks its subtree and then exits; the
+ *   last stage of a pipe runs in the shell itself.
+ * - {b $status is a string}: "" for success, otherwise the exit code
+ *   or the signal; for a pipe it is the statuses of its stages joined
+ *   by |.
  *
- * What is dropped, each a few lines of mini-rc, and none needed by the
- * recipes of xix's mkfiles (this shell's test, below): switch and if
- * not, here documents, a list joined into one word and subscripts,
- * `sep{} and <{}, `{} inside a word, eval and ., the builtins but cd
- * exit shift wait and ~, functions in the environment, a $path apart
- * from $PATH, -x, rcmain, signals but an interrupt at the prompt, and
- * $prompt. Exercises, roughly in that order.
+ * What is dropped, each of which is a few lines in mini-rc, and none of
+ * which is needed by the recipes in xix's mkfiles (the test for this
+ * shell, see below): switch and if not, here documents, joining a list
+ * into one word, subscripts, `sep{} and <{}, `{} inside a word, eval
+ * and ., all builtins except cd, exit, shift, wait and ~, functions in
+ * the environment, a $path separate from $PATH, -x, rcmain, signals
+ * other than an interrupt at the prompt, and $prompt. These make good
+ * exercises, roughly in that order.
  *
- * The tests: test.sh runs scripts of this subset through it and
- * through 9base's rc, which must print the same; and mini-mk builds
- * all of xix with it as its shell (MKSHELL, through a link named rc,
- * so that mini-mk exports lists the way rc wants them, joined by \001).
+ * The tests: test.sh runs scripts written in this subset both through
+ * this shell and through 9base's rc, which must print the same thing.
+ * Also, mini-mk builds all of xix using this shell (as MKSHELL, through
+ * a link named rc, so that mini-mk exports lists the way rc expects
+ * them, joined by \001).
  *
- * Usage: [help] below, with the language by example, what tiny-shell -h
- * prints.
+ * Usage: see [help] below, which shows the language by example; it is
+ * what tiny-shell -h prints.
  *
- * Where it stands: under it are five calls of the kernel, fork, exec,
- * wait, pipe and dup (CapUnix and Unix here; Procs for the loops
- * around them, shared with mini-mk and TinyBuildSystem); TinyKernel
- * has the same five and a shell in C over them (its user/sh.c), and
- * mini-9pi's are what mini-rc's Process calls. Above it is mini-mk,
- * which hands it each recipe. The shell's history, from Pouzin's
- * RUNCOM to rc, is told once, in mini-rc's CLI.mli.
+ * Where it stands: the shell relies on five kernel calls, fork, exec,
+ * wait, pipe and dup (from CapUnix and Unix here; the loops around
+ * them are in Procs, which is shared with mini-mk and
+ * TinyBuildSystem). TinyKernel has the same five calls and a shell in
+ * C built on them (its user/sh.c), and mini-9pi's calls are what
+ * mini-rc's Process uses. Above this shell is mini-mk, which hands it
+ * each recipe. The history of shells, from Pouzin's RUNCOM to rc, is
+ * told once, in mini-rc's CLI.mli.
  *
  * design:
- * A value that is a list is what removes the quoting. In Bourne's
- * shell a variable is one string, and $x is cut again at blanks and
- * globbed each time it is used: so a file named with a space is two
- * arguments unless every use is written with double quotes around
- * it, and the arguments need a form of their own to stay themselves
- * (the dollar and at sign, quoted). Most of the rules a shell
- * programmer learns are ways around that second scan. Duff's rc cuts
- * once, when the text is read, and keeps the pieces: there is nothing
- * to protect later.
+ * Making every value a list is what removes the need for quoting. In
+ * the Bourne shell a variable is a single string, and $x is split
+ * again at blanks and globbed every time it is used. So a file name
+ * containing a space becomes two arguments unless every use is
+ * surrounded by double quotes, and the arguments need a special form
+ * to stay intact ("$@", the dollar and at sign, quoted). Most of the
+ * rules a shell programmer learns are workarounds for that second
+ * scan. Duff's rc splits the text once, when it is read, and keeps the
+ * pieces, so there is nothing to protect later.
  *
  * others:
  * xv6's sh.c is the other shell written to be read: about 500 lines of
- * C, also a tree (a struct per kind of command: exec, redirection,
- * pipe, list, background) walked by one function, runcmd, which never
- * returns: every node is run in a child. It has no variable, no
- * control flow, no glob. Here the shell walks the tree itself and
- * forks only for a program, a pipe's first stages, & and @, which is
- * why a cd or an assignment inside braces is seen after them.
+ * C. It also builds a tree (one struct per kind of command: exec,
+ * redirection, pipe, list, background), walked by a single function,
+ * runcmd, which never returns: every node runs in a child. It has no
+ * variables, no control flow and no globbing. This shell instead walks
+ * the tree itself and forks only for a program, the first stages of a
+ * pipe, & and @. That is why a cd or an assignment inside braces is
+ * still visible after them.
  *
  * wib:
- * A pipe's stage that is one program costs two processes, the child
- * that walks its subtree and the program that child forks and waits
- * for. A shell that cares execs the program in the child when it is
- * the last thing the child will do; one fork saved a stage, for a
- * test of what comes after in every case of [run]. Not done.
+ * A pipe stage that is a single program costs two processes: the child
+ * that walks its subtree, and the program that this child forks and
+ * waits for. A more careful shell would exec the program directly in
+ * the child when it is the last thing the child does. That saves one
+ * fork per stage, at the cost of checking what comes next in every
+ * case of [run]. This is not done.
  *
- * On two systems: this file is built by OCaml for the host and by
- * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It names
- * the pure functions of the standard library (tiny-ml's are
- * TinyLibStd's) and, for anything of the system, TinyLibSystem, which
- * has a file for each side. So no label, no module of its own, and an
- * exception Exits where Exit would be the library's.
+ * On two systems: this file is compiled by OCaml for the host and by
+ * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It uses only
+ * the pure functions of the standard library (tiny-ml provides them in
+ * TinyLibStd) and, for everything related to the system,
+ * TinyLibSystem, which has one implementation file per side. That is
+ * why there are no labels, no modules of its own, and an exception
+ * Exits where Exit from the library would otherwise be used.
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
- * language, and for the principle the lists are there to keep: input
- * "is never scanned more than once"; D. M. Ritchie and K. Thompson,
- * "The UNIX Time-Sharing System" (CACM, 1974), for fork and exec as
- * two calls, between which a child sets up its own file descriptors,
- * and the shell as an ordinary program. *)
+ * language and for the principle that the lists protect: input "is
+ * never scanned more than once"; D. M. Ritchie and K. Thompson, "The
+ * UNIX Time-Sharing System" (CACM, 1974), for fork and exec as two
+ * separate calls, between which the child sets up its own file
+ * descriptors, and for the shell as an ordinary program. *)
 
 (* the commands of a text, each run once it is read: the lexer, the
  * parser and [run] at work, without the command line around them *)

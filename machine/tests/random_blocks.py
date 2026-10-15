@@ -134,7 +134,11 @@ class Gen:
         r = self.r
         if r.random() < 0.5:
             rd = self.dest()
-            return self.cond() | r.randrange(4) << 20 | rd << 16 | self.reg() << 12 | self.reg() << 8 | 0x90 | self.reg()
+            # mul's bits 15:12 should be zero (only mla has an
+            # addend there); a real CPU ignores them, qemu-arm traps
+            op = r.randrange(4)
+            ra = self.reg() if op & 2 else 0
+            return self.cond() | op << 20 | rd << 16 | ra << 12 | self.reg() << 8 | 0x90 | self.reg()
         lo = self.dest(); hi = self.dest((lo,))
         return self.cond() | 1 << 23 | r.randrange(8) << 20 | hi << 16 | lo << 12 | self.reg() << 8 | 0x90 | self.reg()
 

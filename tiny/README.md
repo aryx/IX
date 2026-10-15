@@ -40,6 +40,10 @@ of the system:
   allocator, collector and strings).
 - `TinyAppXxx.ml` is an application, a program a person uses on
   tiny-kernel (`calc`, `temp`, `tetris`).
+- `TinyLinker.ml` is a comment and no code: there is no tiny-linker,
+  and it says where the two toolchains link (`TinyAssembler.ml`'s
+  `link` for arm64, `TinyMachineCPU.ml`'s `assemble_files` for
+  tiny-cpu) and why neither needs a linker of its own.
 - Two things are more than a file, and have a directory of their name
   beside their program:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that

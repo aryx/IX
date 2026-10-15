@@ -56,8 +56,8 @@
  * since). Each addition is kept separate so that v0 still runs as it
  * did (plan_tiny_os.md, phase 2):
  *
- * - {b 16 MB} of memory, with the devices still at the top (-16(r0) is
- *   the console).
+ * - {b 128 MB} of memory (16 MB until 2026-10-15), with the devices
+ *   still at the top (-16(r0) is the console).
  * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
  *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
  *   and the window off; a page fault puts the address in tval.
@@ -117,9 +117,9 @@
  *   instructions later. Packets arrive at times counted in
  *   instructions, so a run is still the same every time.
  *
- * Here is all of it as a kernel sees it. Memory is 16 MB, with the
+ * Here is all of it as a kernel sees it. Memory is 128 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
- * 16 is 0xfffff0: reaching a device costs no register.
+ * 16 is 0x7fffff0: reaching a device costs no register.
  *
  *     0x000000   the image: the kernel's first word, where the machine
  *                starts in supervisor mode; the programs linked after
@@ -127,14 +127,14 @@
  *                (base, bound) or by pages
  *     0xf00000   the screen: 480 rows of 640 bytes, up to 0xf4b000
  *        ...
- *     0xffffd0   the network: an address, a length,       -48(r0) up
+ *     0x7ffffd0  the network: an address, a length,       -48(r0) up
  *                a command, whether there is a wire
- *     0xffffe0   the disk: a block number, an address,    -32(r0) up
+ *     0x7ffffe0  the disk: a block number, an address,    -32(r0) up
  *                a command, a status
- *     0xfffff0   console output                           -16(r0)
- *     0xfffff4   halt                                     -12(r0)
- *     0xfffff8   console input                             -8(r0)
- *     0xfffffc   the mouse                                 -4(r0)
+ *     0x7fffff0  console output                           -16(r0)
+ *     0x7fffff4  halt                                     -12(r0)
+ *     0x7fffff8  console input                             -8(r0)
+ *     0x7fffffc  the mouse                                 -4(r0)
  *
  * And here is the word that holds the mode, with what a trap and eret
  * do to it (see [trap] in TinyMachineDevices, and its [extra] for eret):

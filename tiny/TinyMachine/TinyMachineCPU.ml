@@ -388,14 +388,17 @@ let listing ~ext ~origin image =
        | None, None -> Printf.sprintf ".word\t0x%x" w))
   |> String.concat ""
 
-(* tiny-os v6's executables (plan_tiny_os.md): a.out's three words, a
- * magic, the image's size, its entry, then the image, assembled at
- * 0x800000, where v6 puts a process's program *)
-let aout_origin = 0x800000
+(* An executable for tiny-kernel: a header of three words, then the
+ * image, linked at 0. The words are a magic number, the image's size,
+ * and how much memory the program asks for, in bytes; tiny-kernel gives
+ * it a partition of that size. This plays the role of Unix's a.out
+ * header, whose bss size said how much memory a program needed beyond
+ * its file. (old: the header of tiny-os v6's executables, whose third
+ * word was the address where the image was linked, 0x800000.) *)
 let aout_magic = 0x7a0ce5
 
-let aout image =
+let aout ~memory image =
   let b = Buffer.create (String.length image + 12) in
-  List.iter (fun v -> Buffer.add_int32_le b (Int32.of_int v)) [ aout_magic; String.length image; aout_origin ];
+  List.iter (fun v -> Buffer.add_int32_le b (Int32.of_int v)) [ aout_magic; String.length image; memory ];
   Buffer.add_string b image;
   Buffer.contents b

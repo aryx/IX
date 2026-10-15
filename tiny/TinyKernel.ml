@@ -35,19 +35,27 @@ external k_blit : string -> int -> int -> int -> unit = "k_blit"
 external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
 
-(* the memory (runtime.c's): the frames below the heap, then the
- * partitions, the images, the screen; the devices at the top *)
+(* The memory. The first 16 MB are the kernel's (runtime.c says how they
+ * are used): its image, the processes' frames, its heap, the images it
+ * draws, the screen. The processes' memory is above, up to 64 KB below
+ * the top of the machine's 128 MB. A process has a partition of the size
+ * its program asks for (1 MB if it does not say), found when it starts.
+ * There are at most [nslots] processes; a slot is a process's frame. *)
 let part = 0x100000
 let nslots = 8
-let base slot = 0x500000 + (slot * part)
+let mem_low = 0x1000000
+let mem_high = 0x7ff0000
 let frame slot = 0x2c0000 + (slot * 68)
-let cons_out = 0xfffff0
-let halt_dev = 0xfffff4
-let cons_in = 0xfffff8
-let mouse_dev = 0xfffffc
+(* The devices are at the top of memory. Their addresses are written as
+ * negative numbers, which the machine takes modulo its memory size, so
+ * the kernel works whatever that size is (-16 is the last 16 bytes). *)
+let cons_out = -16
+let halt_dev = -12
+let cons_in = -8
+let mouse_dev = -4
 (* the network's four words (an address, a length, a command, whether
  * there is a wire), and a packet's place in memory, below the heap *)
-let net_dev = 0xffffd0
+let net_dev = -48
 let net_buf = 0x2f0000
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
@@ -173,13 +181,14 @@ let rec load a =
  * could finish); ended, its status kept for its parent's wait *)
 type state = Ready | Waiting of (unit -> bool) | Zombie of int
 
-(* its slot (its partition and its frame), its pid, its state, its
- * parent's pid (0: none), its descriptors, its current directory; and,
- * waiting for a child's end, how many processes had ended when it last
- * looked (-1: it waits for something else) *)
+(* A process: its slot (where its frame is), where its partition starts
+ * and how big it is, its pid, its state, its parent's pid (0: none), its
+ * descriptors, its current directory; and, while it waits for a child's
+ * end, how many processes had ended when it last looked (-1: it waits
+ * for something else). *)
 type proc = {
-  slot : int; pid : int; mutable state : state; mutable parent : int; mutable fds : (int * file) list; mutable cwd : string list;
-  mutable since : int;
+  slot : int; mutable base : int; mutable size : int; pid : int; mutable state : state; mutable parent : int;
+  mutable fds : (int * file) list; mutable cwd : string list; mutable since : int;
 }
 
 (* the processes, in the order the scheduler goes through them; how
@@ -195,7 +204,7 @@ let set_reg p k v = poke (frame p.slot + (4 * k)) v
 (* a user's address, n bytes long, as the kernel reaches it; Bad if it
  * leaves the partition *)
 exception Bad
-let user p va n = if va < 0 || n < 0 || va + n > part then raise Bad else base p.slot + va
+let user p va n = if va < 0 || n < 0 || va + n > p.size then raise Bad else p.base + va
 
 (* a string of the user's, 64 bytes at most *)
 let ustr p va =
@@ -205,6 +214,19 @@ let ustr p va =
 let free_slot () =
   let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> p.slot = s) !procs then go (s + 1) else s in
   go 0
+
+(* Finds room for a partition of [size] bytes: the first gap that is big
+ * enough between the partitions of the other processes, ordered by
+ * address. [except] is a process whose partition does not count (exec
+ * replaces it). Bad if there is no room. *)
+let room size except =
+  let used = List.filter (fun q -> q.pid <> except && q.size > 0) !procs in
+  let rec insert q = function [] -> [ q ] | r :: rest -> if q.base <= r.base then q :: r :: rest else r :: insert q rest in
+  let sorted = List.fold_left (fun l q -> insert q l) [] used in
+  let rec go at = function
+    | [] -> if at + size <= mem_high then at else raise Bad
+    | q :: rest -> if at + size <= q.base then at else go (max at (q.base + q.size)) rest in
+  go mem_low sorted
 
 (* a descriptor's file; the lowest free descriptor (32 a process: a
  * window system has four a window), given f *)
@@ -247,9 +269,12 @@ let drop f =
 (* The screen and the mouse (TinyKernelGraphics.ml draws) *)
 (*****************************************************************************)
 
-(* The screen is tiny-machine's 640 by 480 bytes; the images' memory is
- * the two megabytes below it, which were two partitions, and what the
- * screen leaves of its own megabyte. The font is the machine's
+(* The screen is tiny-machine's 640 by 480 bytes. The images live in the
+ * two megabytes below it, and in what the screen leaves of its own
+ * megabyte. (The 8 MB below those, from 5 MB, held the processes'
+ * partitions before they moved above 16 MB, and are unused for now:
+ * giving them to the images changed the recorded paint session's
+ * screen, which is still to be understood.) The font is the machine's
  * (font.tm, in the image), made a mask at the boot. A program opens
  * /draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)
@@ -412,30 +437,48 @@ let rec exit_proc p status =
 
 and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
-(* fork: a new slot, the partition and the frame copied (the child's r1
- * 0), the descriptors shared *)
+(* fork: a new slot and a partition of the parent's size, the partition
+ * and the frame copied (the child's r1 0), the descriptors shared *)
 let sys_fork p =
   let s = free_slot () in
-  let q = { slot = s; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1 } in
+  let b = room p.size (-1) in
+  let q = { slot = s; base = b; size = p.size; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1 } in
   incr next_pid;
-  k_copy (base s) (base p.slot) part;
+  k_copy b p.base p.size;
   k_copy (frame s) (frame p.slot) 68;
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
   set_reg q 1 0;
   result p q.pid
 
-(* a file's program in p's partition, from 0; its arguments as tiny-cpu
- * leaves them (the strings at the top, then argc, argv and argv's
- * pointers: start.tm's); every register 0 but sp. Bad if it is no
- * program, or one that leaves no room for a stack *)
+(* A program's file is either a raw image, run in 1 MB, or an a.out: a
+ * header of three words (a magic number, the image's size, the memory
+ * the program asks for), then the image (tiny-cpu -a). This returns
+ * where the image starts in the file, its size, and the memory. *)
+let aout_magic = 0x7a0ce5
+let header bytes =
+  let word i = Char.code bytes.[i] + (Char.code bytes.[i + 1] lsl 8) + (Char.code bytes.[i + 2] lsl 16) + (Char.code bytes.[i + 3] lsl 24) in
+  if String.length bytes >= 12 && word 0 = aout_magic then Some (word 4, word 8) else None
+
+(* Loads a file's program into p, in a partition of the size it asks for
+ * (rounded up to whole megabytes), from address 0. Its arguments are put
+ * as tiny-cpu leaves them (the strings at the top, then argc, argv and
+ * argv's pointers: start.tm's); every register is 0 but sp. Bad if it is
+ * no program, or one that leaves no room for a stack, or if there is no
+ * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =
-  let b = base p.slot in
-  let size = match node with Some (Data d) -> String.length !d | Some (Rom (_, n)) -> n | _ -> raise Bad in
-  if size > part - 0x10000 then raise Bad;
-  k_zero b part;
-  (match node with Some (Data d) -> k_blit !d 0 b size | Some (Rom (at, _)) -> row_copy b at size | _ -> ());
-  let top = ref part and ptrs = ref [] in
+  let n = match node with Some (Data d) -> String.length !d | Some (Rom (_, n)) -> n | _ -> raise Bad in
+  let first = match node with Some (Data d) -> String.sub !d 0 (min n 12) | Some (Rom (at, _)) -> k_string at (min n 12) | _ -> "" in
+  let skip, size, memory = match header first with
+    | Some (size, memory) when size = n - 12 -> 12, size, (memory + part - 1) / part * part
+    | _ -> 0, n, part in
+  if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
+  let b = if memory = p.size then p.base else room memory p.pid in
+  p.base <- b;
+  p.size <- memory;
+  k_zero b memory;
+  (match node with Some (Data d) -> k_blit (String.sub !d skip size) 0 b size | Some (Rom (at, _)) -> row_copy b (at + skip) size | _ -> ());
+  let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
     k_blit s 0 (b + !top) (String.length s);
@@ -759,7 +802,7 @@ and idle () =
   if sources land 26 <> 0 || !net_news || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; net_news := false; schedule ()) else idle ()
 
 and run p =
-  k_window (base p.slot) part;
+  k_window p.base p.size;
   let cause = k_run (frame p.slot) in
   let timer =
     if cause = c_sys then (syscall p; false)
@@ -788,14 +831,14 @@ let () =
   k_timer tick;
   load (k_end ());
   (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer ] | _ -> ());
-  puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int nslots ^ " partitions of " ^ string_of_int (part / 1024) ^ " KB\n");
+  puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for " ^ string_of_int nslots ^ " processes\n");
   (* the first process: /sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a
    * connection) and the mouse its 4: a window system gives a window's
    * programs the same five, so a program draws in what it was given
    * and does not ask where *)
   let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
-  let p = { slot = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = []; since = -1 } in
+  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = []; since = -1 } in
   incr next_pid;
   procs := [ p ];
   (try load_prog p (walk root [ "sh" ]) [ "sh" ] with Bad -> puts "no /sh\n"; halt 1);

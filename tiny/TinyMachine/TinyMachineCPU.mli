@@ -224,6 +224,7 @@ val assemble : ext:extension -> string list -> string
 val image : ext:extension -> origin:int -> (string * string) list -> string
 val listing : ext:extension -> origin:int -> string -> string
 
-(* an executable: a header before the image, and where it is loaded *)
-val aout_origin : int
-val aout : string -> string
+(* An executable for tiny-kernel: a header of three words (a magic
+ * number, the image's size, the memory the program asks for in bytes),
+ * then the image, linked at 0. *)
+val aout : memory:int -> string -> string

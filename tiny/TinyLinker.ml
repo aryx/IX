@@ -57,9 +57,10 @@
  * TinyKernel.ml) copies the image and sets the window.
  *
  * The loaders, for the record: tiny-kernel's sys_exec (above);
- * TinyCPUArm.ml loads an ELF's one segment; tiny-cpu -a still writes
- * an a.out (TinyMachineCPU.aout, a header of three words), made for
- * tiny-os's v6 kernel, which is gone (2026-10-13).
+ * TinyCPUArm.ml loads an ELF's one segment; tiny-cpu -a writes an
+ * a.out for tiny-kernel (TinyMachineCPU.aout), a header of three words
+ * whose last one says how much memory the program needs, which
+ * sys_exec gives it.
  *
  * References: principia softwarica's linkers/Linker.nw (Plan 9's 5l,
  * explained); linker/CLI.mli (mini-ld, its passes); TinyAssembler.mli

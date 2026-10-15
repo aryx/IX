@@ -5,21 +5,24 @@
 // the machine's devices; and the few functions of bytes the ML code
 // calls as externals (its values: an integer n is 2n+1).
 //
-// The memory (16 MB): the image at 0, the files it carries after it
-// (2.5 MB at most: the Makefile checks); the value stack at 2.5 MB;
-// the processes' frames; the heap's two halves
-// from 3 MB to 5 MB (old: the files' end and the stack at 1.5 MB, the
-// heap's halves of 1.5 MB from 2 MB: seventeen programs filled it); then eight partitions of 1 MB, a process each
-// (TinyKernel.ml), two megabytes of images, the screen's (its 640 by
-// 480 bytes, then images again); the devices in the last 32 bytes.
+// The memory (128 MB). The kernel uses the first 16 MB: the image at 0
+// and the files it carries after it (2.5 MB at most: the Makefile
+// checks); the value stack at 2.5 MB; the processes' frames; the heap's
+// two halves from 3 MB to 5 MB (old: the files' end and the stack at
+// 1.5 MB, the heap's halves of 1.5 MB from 2 MB: seventeen programs
+// filled it); 8 MB unused (the processes' partitions, before they
+// moved); 2 MB of images, and the screen's megabyte (its 640 by 480
+// bytes, then images again). The processes' partitions are above
+// 16 MB (TinyKernel.ml). The devices are in the last 48 bytes, reached by
+// negative addresses, which the machine takes modulo its memory size.
 #include "../TinyMLRuntime/core.c"
 
 #define VSTACK 0x280000
 #define HEAP0 0x300000
 #define HEAP1 0x400000
 #define HALF 262144
-#define CONS_OUT 0xfffff0
-#define HALT 0xfffff4
+#define CONS_OUT 0xfffffff0
+#define HALT 0xfffffff4
 
 long
 write(int fd, void *buf, long n)

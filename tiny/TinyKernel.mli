@@ -98,8 +98,8 @@
  * on a condition, as with Brinch Hansen's await and Plan 9's
  * sleep(r, cond), at the price of one retry per scheduling round.
  *
- * Here is how the kernel divides the machine's 16 MB (runtime.c has
- * the numbers; a process sees only its own megabyte, starting at 0,
+ * Here is how the kernel divides the machine's 128 MB (runtime.c has
+ * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
  *     0x000000   the image: entry.tm, the runtime, this file; then the
@@ -109,13 +109,16 @@
  *                of each process that is not running
  *     0x300000   the heap, two halves of 1 MB: every file written,
  *                every pipe, descriptor table and closure
- *     0x500000   eight partitions of 1 MB, one per slot
+ *     0x500000   unused (the partitions were there until 2026-10-15)
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
- *     0xffffe0   the devices
+ *    0x1000000   the processes' partitions: 1 MB each, or what an
+ *                a.out's header asks for (tiny-cpu -a), found
+ *                first-fit when a program starts
+ *    0x7ffffd0   the devices, reached as -48 to -4
  *
  * A process consists of two very different things. One is its
- * megabyte and its frame, plain memory that the collector never sees
+ * partition and its frame, plain memory that the collector never sees
  * and that is accessed with peek and poke. The other is its record, an
  * ML value, where the descriptors are a list of (number, file) pairs
  * and a file is a variant. Here is the whole mechanism for a read that

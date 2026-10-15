@@ -3,7 +3,7 @@
 
 (* See TinyCPU.mli *)
 
-let usage = "usage: tiny-cpu [-l | -o image | -a a.out] file.tm... | image [args...]"
+let usage = "usage: tiny-cpu [-l | -o image | -a megabytes a.out] file.tm... | image [args...]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -17,7 +17,10 @@ In tiny/tests/TinyCPU_tests/, for example:
                                 the other, the first at 0), an image
   tiny-cpu hello                the image run: Hello, world
   tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...
-  tiny-cpu -a prog a.tm...      an a.out as v6's were: linked at 0x800000
+  tiny-cpu -a 10 prog a.tm...   an executable for tiny-kernel that asks for
+                                10 MB of memory: a header (a magic number,
+                                the image's size, the memory), then the
+                                image, linked at 0
 |}
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
@@ -74,10 +77,9 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | "-l" :: l -> let files, _, _ = split l in Console.print caps (TinyMachineCPU.listing ~ext:TinyMachineCPU.no_extension ~origin:0 (image files)); 0
     | "-o" :: out :: l -> let files, _, _ = split l in FS.write caps (Fpath.v out) (image files); 0
-    | "-a" :: out :: l ->
+    | "-a" :: mb :: out :: l when (match int_of_string_opt mb with Some n -> n > 0 && n <= 100 | None -> false) ->
         let files, _, _ = split l in
-        let image = TinyMachineCPU.image ~ext:TinyMachineCPU.no_extension ~origin:TinyMachineCPU.aout_origin (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
-        FS.write caps (Fpath.v out) (TinyMachineCPU.aout image); 0
+        FS.write caps (Fpath.v out) (TinyMachineCPU.aout ~memory:(int_of_string mb * 0x100000) (image files)); 0
     | l -> let files, name, rest = split l in interpret caps (image files) (name :: rest)
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2

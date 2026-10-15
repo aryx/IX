@@ -508,3 +508,33 @@ What we found:
   and `main` puts `main` out of the start's reach. The test links the
   runtime and `main` first, then the program, then the heap's arrays
   (`heap.c`).
+
+### Step 1, more memory for a process (2026-10-15)
+
+The machine now has 128 MB, and a process's partition is the size its
+program asks for. What was built differs from section 6 in a few ways:
+
+- **How a program says its size**: an a.out header, made by
+  `tiny-cpu -a n`, of three words: a magic number, the image's size,
+  and the memory wanted (n MB). It reuses the header of tiny-os's v6,
+  which nothing used any more. A program without a header (all the
+  others) gets 1 MB, as before. `fork` gives the child its parent's
+  size.
+- **Where the partitions are**: above 16 MB, found first-fit when a
+  program starts. The kernel's first 16 MB keep their layout. The 8 MB
+  where the partitions used to be (from 5 MB) are unused for now: giving
+  them to the kernel's images changed the screen of the recorded paint
+  session, which we have not looked into yet.
+- **The devices** are written in the kernel as negative addresses (-16
+  is the console), as t6 already did, since the machine takes addresses
+  modulo its memory size; the kernel does not depend on that size.
+- **An ML program's heap** is sized from its partition by `mlsys.c`: the
+  arguments sit at the top of the partition, so the partition ends at
+  the first megabyte boundary above `argv`. In 1 MB the halves are
+  256 KB as before; in 10 MB they are about 4.9 MB each.
+- **The test**: `bigmem`, a program of tiny-kernel linked with
+  `tiny-cpu -a 8`, keeps 3 MB of strings alive and prints so; linked
+  without the header it stops with "out of memory". The kernel's check
+  runs it. Two recorded sessions (windows, nested) show `ls`'s listing,
+  which now has `bigmem` in it: their screens' sums were recorded again
+  after a look.

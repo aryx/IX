@@ -1,4 +1,4 @@
-tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ forks ok
 execs ok
 pipes ok
@@ -9,18 +9,20 @@ fault ok
 kill ok
 preemption ok
 mltests: ALL OK
-$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ bigmem: 3000000 bytes kept
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ hi
 sh 2 75271
-rc 2 208856
-emacs 2 165020
+rc 2 209052
+emacs 2 165216
 mltests 2 77585
 paint 2 75138
-windows 2 159448
-square 2 128508
-tetris 2 142684
-calc 2 161432
-temp 2 157068
+windows 2 159644
+square 2 128704
+tetris 2 142880
+calc 2 161628
+temp 2 157264
 ping 2 70300
 get 2 72559
 wiki 2 76513
@@ -31,6 +33,7 @@ ls 2 70142
 wc 2 70930
 mkdir 2 69730
 rm 2 69727
+bigmem 2 104492
 console 3 0
 draw 3 0
 mouse 3 0
@@ -38,7 +41,7 @@ f 2 3
 1 1 3
 cat: cannot open f
 x
-$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % a b c 3 a.c b.c c.c
 % a
 b
@@ -55,14 +58,14 @@ Can't cd /nowhere: cannot
 % tiny-shell: f: tiny-kernel has no >>
 % no
 % $ $ from a
-$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 12.5 ms
 $ no answer from 10.0.0.9
 no answer from 10.0.0.9
 no answer from 10.0.0.9
-$ tiny-kernel: TinyKernel.ml, 8 partitions of 1024 KB
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ Hello,
 from the other end of the wire.
 $ 44 374 2013

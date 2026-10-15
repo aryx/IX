@@ -36,7 +36,7 @@ let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8 and i_net = 16
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
  * 16 below those *)
-let memsize = 1 lsl 24
+let memsize = 1 lsl 27
 (* old: devices = memsize - 32, before the network's four words *)
 let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 48
 let console_in = memsize - 8

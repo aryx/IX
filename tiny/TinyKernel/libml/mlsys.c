@@ -5,16 +5,23 @@
 // system calls as the externals an ML program declares (their values
 // ML's: an integer n is 2n+1, a string its bytes and its length).
 //
-// The partition (1 MB): the program from 0, under 384 KB (the Makefile
-// checks); the value stack at 0x60000; the heap's two halves, 256 KB
-// each, from 0x70000; C's stack from the top.
+// The partition: the program from 0, under 384 KB (the Makefile
+// checks); the value stack at 0x60000; the heap's two halves from
+// 0x70000, as large as the partition allows; the last 64 KB for C's
+// stack and the arguments. In the usual 1 MB, the halves are 256 KB
+// each. A program linked as an a.out that asks for more memory
+// (tiny-cpu -a) gets bigger halves. The heap starts at 256 KB and
+// grows when it is full, up to the size of a half (TinyMLRuntime/core.c).
+//
+// The partition's size is found from the arguments: exec puts them at
+// its top, so the partition ends at the first megabyte boundary above
+// argv (partitions are whole megabytes).
 #include "../../TinyMLRuntime/core.c"
 #include "../libc/user.h"
 
 #define VSTACK 0x60000
 #define HEAP0 0x70000
-#define HEAP1 0xb0000
-#define HALF 65536
+#define START 65536
 
 // the program's arguments, for u_argc and u_arg
 int u_nargs;
@@ -23,9 +30,16 @@ char **u_args;
 void
 main(int argc, char **argv)
 {
+	long top, half, start;
+
 	u_nargs = argc;
 	u_args = argv;
-	ml_run((value*)VSTACK, (value*)HEAP0, (value*)HEAP1, HALF, HALF);
+	top = ((long)argv + 0xfffff) & ~0xfffff;
+	half = (top - HEAP0 - 0x10000) / 2 / 4;		// in words
+	start = START;
+	if(half < start)
+		start = half;
+	ml_run((value*)VSTACK, (value*)HEAP0, (value*)(HEAP0 + half * 4), half, start);
 	flush();
 	exit(0);
 }

@@ -181,7 +181,8 @@ one without setting up a register: `stb r3, -16(r0)` prints a byte.
 
 ## 4. The machine (`TinyMachine.ml`)
 
-The CPU with what a kernel needs. 16 MB of memory. It starts at
+The CPU with what a kernel needs. 128 MB of memory (16 MB until
+2026-10-15). It starts at
 address 0 in supervisor mode, with `sp` just below the devices.
 
 ### 4.1 Modes and traps
@@ -261,18 +262,18 @@ kernel reaches them.
 
 | address | | device |
 |---|---|---|
-| `-48(r0)` | `0xffffd0` | the network (5.5): a memory address |
-| `-44(r0)` | `0xffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
-| `-40(r0)` | `0xffffd8` | the network: the command, 1 send, 2 receive |
-| `-36(r0)` | `0xffffdc` | the network: reads 1 when there is a wire |
-| `-32(r0)` | `0xffffe0` | the disk: a block's number |
-| `-28(r0)` | `0xffffe4` | the disk: a memory address |
-| `-24(r0)` | `0xffffe8` | the disk: the command, 1 read the block into memory, 2 write it from memory |
-| `-20(r0)` | `0xffffec` | the disk: reads 1 when a transfer is done; a write ends its interrupt |
-| `-16(r0)` | `0xfffff0` | the console's output: a byte stored is printed |
-| `-12(r0)` | `0xfffff4` | the halt: the value stored is the machine's exit status |
-| `-8(r0)` | `0xfffff8` | the console's input: the next byte; `0xffffffff` none yet, `0xfffffffe` the input's end |
-| `-4(r0)` | `0xfffffc` | the mouse (5.2) |
+| `-48(r0)` | `0x7ffffd0` | the network (5.5): a memory address |
+| `-44(r0)` | `0x7ffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
+| `-40(r0)` | `0x7ffffd8` | the network: the command, 1 send, 2 receive |
+| `-36(r0)` | `0x7ffffdc` | the network: reads 1 when there is a wire |
+| `-32(r0)` | `0x7ffffe0` | the disk: a block's number |
+| `-28(r0)` | `0x7ffffe4` | the disk: a memory address |
+| `-24(r0)` | `0x7ffffe8` | the disk: the command, 1 read the block into memory, 2 write it from memory |
+| `-20(r0)` | `0x7ffffec` | the disk: reads 1 when a transfer is done; a write ends its interrupt |
+| `-16(r0)` | `0x7fffff0` | the console's output: a byte stored is printed |
+| `-12(r0)` | `0x7fffff4` | the halt: the value stored is the machine's exit status |
+| `-8(r0)` | `0x7fffff8` | the console's input: the next byte; `0xffffffff` none yet, `0xfffffffe` the input's end |
+| `-4(r0)` | `0x7fffffc` | the mouse (5.2) |
 
 The disk is a file given by `-d`, in blocks of 1 KB. A transfer is
 done at once, and the file is written back when the machine halts.
@@ -462,14 +463,20 @@ What the numbers mean is up to who answers:
 | `0x280000` | the ML runtime's stack of values (the image and its files end below it) |
 | `0x2c0000` | the processes' frames: 17 words each, their registers and pc |
 | `0x300000` to `0x500000` | the ML heap, two halves of 1 MB |
-| `0x500000` to `0xd00000` | eight partitions of 1 MB, a process each |
+| `0x500000` to `0xd00000` | unused (the processes' partitions until 2026-10-15) |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
 | `0x2f0000` | a packet's place, on its way to or from the network's device |
-| the last 48 bytes | the devices |
+| `0x1000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
+| the last 48 bytes | the devices, which the kernel reaches by negative addresses (-16 is the console) |
 
-A process sees its partition as addresses 0 to 1 MB: its program is
-loaded at 0, its stack starts at the top.
+A process sees its partition as addresses from 0 to its size: its
+program is loaded at 0, its stack starts at the top. The size is 1 MB,
+unless the program is an a.out (`tiny-cpu -a n`) whose header asks for
+n MB: its three words are a magic number (`0x7a0ce5`), the image's size
+and the memory wanted. A child of `fork` gets its parent's size. An ML
+program's heap grows up to what its partition leaves (`libml/mlsys.c`);
+`bigmem`, a test, keeps 3 MB alive in 8 MB.
 
 ### 7.2 TinyKernel.ml's system calls
 

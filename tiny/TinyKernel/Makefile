@@ -67,7 +67,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm bigmem
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
@@ -124,6 +124,16 @@ MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/$(
 	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
 $(O)/bin/windows: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/windows.tm
 	@$(MLLINK)
+
+# a program that asks for more memory than 1 MB: linked as an a.out
+# whose header asks for 8 MB (tiny-cpu -a 8), so tiny-kernel gives it an
+# 8 MB partition and mlsys.c a heap of that size (bigmem: the test)
+$(O)/user/bigmem.tm: user/bigmem.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ user/bigmem.ml
+$(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
+	@mkdir -p $(@D)
+	$(CPU) -a 8 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 
 # a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
 # file runs it (square: the playground's test's)
@@ -201,6 +211,7 @@ run: $(O)/boot.img
 
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
+	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out

@@ -971,6 +971,15 @@ let machine_tm name nparams nslots (code : ir list) =
   in
   let bin f = let a = !sp in decr sp; f a !sp in
   let tagged d = ins "shli\tr%d, r%d, 1" d d; ins "ori\tr%d, r%d, 1" d d in
+  (* the length of the string in register s, untagged, into r13; lr used *)
+  let length_of s =
+    ins "ldw\tr13, -4(r%d)" s;
+    ins "shri\tr13, r13, 10";
+    ins "shli\tr13, r13, 2";
+    ins "add\tlr, r%d, r13" s;
+    ins "ldb\tlr, -1(lr)";
+    ins "sub\tr13, r13, lr";
+    ins "addi\tr13, r13, -1" in
   let op o =
     let a = !sp in
     match o with
@@ -1053,6 +1062,38 @@ let machine_tm name nparams nslots (code : ir list) =
           reload ();
           result ()
         end
+    (* A string's length and its bytes are read inline rather than by a
+     * call of the runtime: a call for each byte was a quarter of the time
+     * a browser took to read a page (plan_tiny_browser.md, section 12).
+     * The length comes from the block's header and its last byte, as in
+     * TinyMLRuntime/core.c's length. Only r13 and lr are free here (lr
+     * is saved by the prologue). *)
+    | CallC ("ml_string_length", 1) ->
+        length_of !sp;
+        ins "mov\tr%d, r13" !sp;
+        tagged !sp
+    (* s.[i]: s is on top of the stack, i below it, and the byte takes
+     * i's register. The index is checked against the length; only an
+     * index out of bounds calls ml_string_get, which reports the error. *)
+    | CallC ("ml_string_get", 2) ->
+        let s = !sp and i = !sp - 1 in
+        let slow = label () and done_ = label () in
+        length_of s;
+        ins "sari\tlr, r%d, 1" i;
+        ins "bgeu\tlr, r13, %s" (lab slow);
+        ins "add\tlr, r%d, lr" s;
+        ins "ldb\tr%d, 0(lr)" i;
+        tagged i;
+        ins "j\t%s" (lab done_);
+        line (fun _ _ _ -> lab slow ^ ":\n");
+        spill ();
+        cargs := max !cargs 2;
+        for k = 0 to 1 do get (spill_slot (!sp - k)) 13; ins "stw\tr13, %d(sp)" (4 * k) done;
+        sp := !sp - 2;
+        c_call "ml_string_get";
+        reload ();
+        result ();
+        line (fun _ _ _ -> lab done_ ^ ":\n")
     | CallC (f, n) ->
         spill ();
         cargs := max !cargs n;

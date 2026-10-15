@@ -538,3 +538,26 @@ program asks for. What was built differs from section 6 in a few ways:
   runs it. Two recorded sessions (windows, nested) show `ls`'s listing,
   which now has `bigmem` in it: their screens' sums were recorded again
   after a look.
+
+### The reading's speed, after steps 1 and 2 (2026-10-15)
+
+Two changes after step 1, measured on OCaml's page by the throwaway
+profiler of section 12:
+
+- **tiny-ml -tm reads a string's length and its bytes inline**, rather
+  than calling the runtime's `ml_string_length` and `ml_string_get`. An
+  index out of bounds still calls `ml_string_get`, which reports the
+  error as before. In tiny-cpu's 1 MB: 447 to 356 million instructions.
+- **An ML program's heap uses its whole half from the start**
+  (`mlsys.c`). Started at 256 KB, it grew only when a collection left
+  it more than half full, so it stayed two or three times the size of
+  what was alive and collected often. With halves of 4 MB: 320 million
+  instructions when starting small, 243 million at full size (the
+  collector from 26% to about 2%), 233 million with the length inline
+  too.
+
+So the reading now takes about 233 million instructions, half of the
+447 we started with: about 12 s at the 20 million a second of a
+window, 5 s at 50. What remains is spread out: `ml_concat` and
+`ml_alloc` 11% each, the polymorphic `compare` 9% (string comparisons),
+`String.sub` 6%, then the browser's own loops.

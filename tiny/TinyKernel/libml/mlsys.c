@@ -10,8 +10,9 @@
 // 0x70000, as large as the partition allows; the last 64 KB for C's
 // stack and the arguments. In the usual 1 MB, the halves are 256 KB
 // each. A program linked as an a.out that asks for more memory
-// (tiny-cpu -a) gets bigger halves. The heap starts at 256 KB and
-// grows when it is full, up to the size of a half (TinyMLRuntime/core.c).
+// (tiny-cpu -a) gets bigger halves. The heap uses the whole half from
+// the start: starting small and growing made it collect often while it
+// grew, a quarter of the browser's time (plan_tiny_browser.md).
 //
 // The partition's size is found from the arguments: exec puts them at
 // its top, so the partition ends at the first megabyte boundary above
@@ -21,7 +22,6 @@
 
 #define VSTACK 0x60000
 #define HEAP0 0x70000
-#define START 65536
 
 // the program's arguments, for u_argc and u_arg
 int u_nargs;
@@ -30,16 +30,13 @@ char **u_args;
 void
 main(int argc, char **argv)
 {
-	long top, half, start;
+	long top, half;
 
 	u_nargs = argc;
 	u_args = argv;
 	top = ((long)argv + 0xfffff) & ~0xfffff;
 	half = (top - HEAP0 - 0x10000) / 2 / 4;		// in words
-	start = START;
-	if(half < start)
-		start = half;
-	ml_run((value*)VSTACK, (value*)HEAP0, (value*)(HEAP0 + half * 4), half, start);
+	ml_run((value*)VSTACK, (value*)HEAP0, (value*)(HEAP0 + half * 4), half, half);
 	flush();
 	exit(0);
 }

@@ -1,0 +1,445 @@
+# Plan: tiny-browser: `www`, tiny-kernel's browser, that reads Wikipedia with its pictures, under 2,000 lines
+
+The author (2026-10-15): "is it doable to have a tiny-browser?",
+"running on the tiny-machine"; then: "The ideal target would be to be
+able to read some wikipedia pages, and to render them in a not too bad
+way, while still having a browser in less than 2000 LOC, and the https
+and TLS part handle by TinyMachinePeer or something". Of this plan's
+first version: "we can extend slot to be bigger, why not 10MB?
+machines nowadays have plenty of memory. www is fine. pictures are
+definitely worth it! That's what made mosaic and the web popular
+compared to text-only protocols (e.g., gopher)"; "but let's call it
+TinyBrowser.ml, not TinyAppBrowser.ml, because a Browser is really an
+essential part of an OS nowadays"; "and principia-softwarica level
+worth a book".
+
+**Not started.** A plan from reading (`tiny/`, `browsers/`,
+plan_tiny_network.md, plan_browser.md) and from measuring Wikipedia
+(2026-10-15, below). The line counts of what exists are `wc -l`; those
+of what is planned are guesses; the times are reckoned from
+plan_tiny_network.md's measures, not run.
+
+## 1. The demo
+
+In tiny-kernel, in a window of `windows` or on the whole screen:
+
+    $ www OCaml
+
+- **The article's lead is on the screen in a few seconds**, its title,
+  its first paragraphs, the infobox's lines, and the rest of the
+  article comes in under it while one reads, as a page did over a
+  modem: the machine shows what it has as soon as it has laid it out.
+- **Then its pictures fill their places**: the OCaml logo in the
+  infobox, the photograph of the POPL 2024 award, the small icons,
+  each painted a row at a time into the box kept for it, as `wiki`'s
+  Glenda is. The text does not move when they come.
+- **A link is blue and underlined; a click on it follows it**: OCaml,
+  then ML, then Robin Milner. `b` (or Backspace) goes back; `g` asks
+  for an address. Space and `-` page down and up, the wheel and the
+  arrows scroll.
+- **It is the article, not a summary**: the sections, the lists, the
+  code in its boxes, the tables, the references at the end; Wikipedia's
+  page as Wikipedia sends it, read by the machine.
+- **With the other two**: in a window of tiny-windows, the browser
+  beside a shell, the graphics, the windows and the network at once
+  (as `wiki` is).
+
+The pictures are the point, not a finish: Gopher (1991) had links and
+documents and a menu a screen; what Mosaic (1993) added was `<img>`,
+the picture in the page among its words, and it was Mosaic that
+people took up. A browser that shows text only is Gopher with tags.
+
+The name: `www` was the first browser's command after Tim
+Berners-Lee's own, CERN's line-mode browser (Nicola Pellow, 1991).
+The file is `tiny/TinyBrowser.ml`, not a `TinyAppXxx`: a browser is
+today a part of the system as the shell and the window system are,
+and it sits with them (`TinyShell`, `TinyWindows`), not with `calc`
+and `tetris`.
+
+**A book's worth**: as the kernel and the window system, the browser
+is one of the programs that a book of the system (principia
+softwarica's kind) would give a volume. So its code is written to be
+read in order, its parts the chapters of section 5, each a stage of
+the page's way (section 4), and its comments say why; a literate book
+(`.nw`) made from it is later work, not this plan's.
+
+**What is honest to say on the page** (as `wiki`'s): the machine does
+not speak TLS and does not decode JPEG or PNG. The other end of its
+wire is a gateway that does the Internet's encrypted half (names,
+TLS, HTTP/1.1's chunks, gzip, redirections), hands the page's bytes
+over unchanged, and gives a picture as its pixels in the machine's
+256 colours at the size the page asks; everything from the first `<`
+on is the machine's: reading the HTML, the layout, where the pictures
+go, the drawing, the links.
+
+## 2. What Wikipedia sends
+
+`OCaml`, 2026-10-15, by curl:
+
+| what | bytes | CORS (a page may fetch it) |
+|---|---:|---|
+| `https://en.wikipedia.org/wiki/OCaml` (the page with its skin) | 354,260 | no |
+| `.../w/index.php?title=OCaml&action=render` (the article alone) | 271,277 | no |
+| `.../api/rest_v1/page/html/OCaml` (Parsoid's HTML, the article alone) | 257,035 | **yes** (`*`) |
+| `Plan_9_from_Bell_Labs`, with its skin | 592,918 | no |
+| the award's photograph, `thumb.wikimedia.org/...250px-Award_for_OCaml_at_POPL_2024.jpg` | 15,513 (JPEG) | **yes** (`*`) |
+
+In the REST HTML of OCaml:
+
+- **34 KB of it is text** (outside tags, scripts and styles). The
+  tags' attributes are 188 KB; Parsoid's `data-mw` alone 34 KB.
+  Keeping only `href`, `class` and the spans would leave 135 KB; only
+  `href` and the spans, 105 KB. Stripping on the peer would halve the
+  bytes, not divide them by seven.
+- **2,962 tags**: `span` 1,377 (most of them the code's colours),
+  `a` 626, `li` 236, `link` 88, `div` 79, `p` 65, `i` 57, `sup` 52 (the
+  references' `[1]`), `tr` 43, `td` 40, `pre` 35, `section` 28, `h3`
+  18, `img` 14, `table` 9, `h2` 9. No `<script>`; 13 `<style>` (small,
+  the templates').
+- **14 pictures, 61,023 pixels as shown** (each `<img>` has its
+  `width` and `height`): the photograph 250 by 188, the logo 121 by
+  33 and 110 by 30, a 50 by 39, two 40 by 40, the rest icons of 10 to
+  16. Their files are thumbnails already at about that size (the
+  `250px-` in the address), PNG for the drawings (Wikipedia renders
+  its SVGs), JPEG for the photographs.
+- **160 characters outside ASCII** (dashes, quotes, accents): the
+  machine's font has 128.
+- **Its links are relative to `<base href="//en.wikipedia.org/wiki/">`**:
+  `./ML_(programming_language)`; its pictures' addresses start with
+  `//`.
+
+So the REST HTML is the one to read: the article without the skin's
+navigation (the sidebars, the menus, which without CSS would come
+first and fill two screens), the one a page may fetch, and smaller.
+Wikipedia is written to be read without its style sheets
+(plan_browser.md: "None of the 🟢 ones needs them to be read"), so a
+browser with no CSS shows it near what it means.
+
+## 3. Who does what: the machine and the peer
+
+      in the machine (tiny-ml, in tiny-kernel)          the host
+
+      www, a program (TinyBrowser.ml)
+          | dial 10.0.0.1 70, the line "www <address>"
+          |   or "img <width> <height> <address>"
+          | messages: the page's bytes, or a picture's rows
+      tiny-kernel, IL ===================== wire ===== TinyMachinePeer.ml
+                                                        | [document] the line
+                                                        |
+                                    in a terminal:  tiny-machine-fetch, a program beside
+                                                    (as -net-out runs tiny-machine-socket)
+                                    in the page:    the browser's fetch() and a canvas
+                                    in the tests:   a file of tiny/tests/www/
+
+The peer already answers port 70 by a line and a document
+(`get`, `wiki`); two more kinds of lines are all the wire needs. On
+the host, what the peer does with them:
+
+- **`www <address>`**: the page's bytes, unchanged, a message at a
+  time (`TinyMachinePeer.messages`), then the connection closed; an
+  error is one line of text, shown as the page.
+  - `https://en.wikipedia.org/wiki/X` is asked as
+    `https://en.wikipedia.org/api/rest_v1/page/html/X`: the one
+    rewriting of an address, said in the peer's comment. The page
+    needs it (CORS); the terminal does it too so the two show the same.
+  - Any other `https://` or `http://` address is fetched as it is,
+    redirections followed, gzip and chunks undone.
+- **`img <width> <height> <address>`**: the picture decoded, scaled to
+  width by height, reduced to the machine's 256 colours (the palette
+  `wiki`'s pictures are in), and sent as `wiki`'s are
+  (`TinyMachinePeer.picture`): a row a message.
+- **In a terminal, by `tiny-machine-fetch`** (`TinyMachine/TinyMachineFetch.ml`,
+  new, about 120 lines): a program beside tiny-machine, as `-net-out`
+  runs `tiny-machine-socket`, which links what tiny-machine does not:
+  lib_networking (DNS, ix's own TLS 1.3, HTTP) and lib_graphics (PNG,
+  JPEG, GIF). `-net dir` alone (no `-net-out`): the address's kept
+  file in `dir`, as `wiki`'s pictures are; so the tests and the CI,
+  which have no Internet, read `tiny/tests/www/OCaml.html` and its
+  pictures, kept as rows already.
+- **In the page** (`TinyMachineWeb.ml`), by `fetch`, as `wiki` asks
+  Wikipedia's API already; a picture drawn on a canvas at its size,
+  its pixels read back and reduced as `wiki`'s are.
+
+About 60 lines in `TinyMachine.ml`, 50 in `TinyMachineWeb.ml`, 20 in
+`TinyMachinePeer.ml`, and `TinyMachineFetch.ml`. Not counted in the
+browser's 2,000: they are the Internet's side of the wire.
+
+**Not done, and why**:
+
+- **TLS on the machine**: X25519, AES-GCM or ChaCha20, SHA-256,
+  certificates' ECDSA and RSA, in tiny-ml at 8 million instructions a
+  second: thousands of lines (lib_crypto and lib_networking's TLS are
+  m-ix's) and, guessed, seconds of a handshake. The author's choice
+  (above) is the peer's.
+- **JPEG and PNG decoded on the machine**: PNG is inflate (Huffman,
+  LZ77) and filters, JPEG a DCT; each hundreds of lines, as much as
+  the browser's layout, and the machine's time. The pixels cost more
+  on the wire than the files (the photograph: 47 KB of pixels, 15 KB
+  of JPEG), about 4 s more for OCaml's pictures; worth the lines kept.
+  The book can say what the gateway does there, as it says what TLS
+  is.
+- **The peer reducing the page** (attributes removed, the HTML made
+  simpler): a half of the bytes (section 2), and the reading of HTML
+  moved out of the browser, which is the browser. The page's bytes
+  are the site's.
+- **Plain `http://` straight through `-net-out`** (`get`'s way, port
+  80): most of the web answers it by "moved" to `https://`; one path,
+  the peer's, for all.
+
+## 4. The idea kept
+
+mini-netscape reads a page into a tree (`browsers/html/`, 1,192
+lines), styles it by its sheets (`css/`, 2,283), lays the tree out
+into boxes (`engine/`, 4,044), and runs its scripts (`javascript/`,
+`webapi/`, 11,416). The tiny one keeps what Mosaic had (1993), and
+what makes a page a page:
+
+- **A page is read once, as it arrives, into lines**: the bytes into
+  tokens (a tag, its attributes, a text), the tokens straight into the
+  lines laid out on the screen. No tree is kept, no style sheet read:
+  **a tag's meaning is a row of a table** (block or inline, its
+  margins, bold, monospace, a list's bullet, hidden), and the few
+  classes of Wikipedia's that change it (`mw-editsection` hidden,
+  `infobox`, `reflist`, `navbox`) are rows too.
+- **What is kept is what is drawn**: the lines, each a list of runs
+  (a text, its column, its look, its link; or a picture's box). The
+  HTML is not kept, so a page of 257 KB keeps about its 34 KB of text
+  and the runs' records.
+- **A picture is a box of the size the page says**, laid out as a
+  word is (a 16 by 16 icon in its line of text, the photograph a
+  block of its own with its caption under it), and filled when its
+  pixels come. A line is as tall as its tallest run. Since `<img>`
+  says its `width` and `height`, the box is known before the picture
+  is: Netscape's trick (1994) over Mosaic, which waited for each
+  picture to know where the words after it went.
+- **The text first, the pictures after**: the page's connection read
+  to its end, then a connection a picture, in the page's order, the
+  ones on the screen first. The wire is the slow part (section 6),
+  and the words are what one reads first.
+- **A link is a rectangle on the screen with its address**: a click is
+  a search of the visible lines. A picture in an `<a>` is a link.
+- **The page is drawn as it is laid out**: a line drawn when it is
+  complete, if it is on the screen; so the top of a page is shown
+  while its bottom is still on the wire.
+
+Tables are the one place where a line cannot be laid out before what
+follows it is read: a table's columns are as wide as their widest
+cell. A table is kept whole (its cells' runs), laid out at its `</table>`,
+then given its lines.
+
+        bytes ──► tokens ──► the tag's row ──► runs in a line ──► lines ──► the screen
+        (IL's      (tag,       (block?           (words wrapped      (the        (the visible
+        messages)  attrs,      bold? link?        at 80 columns,      page)       ones, drawn)
+                   text)       hidden?)           pictures' boxes)                    ▲
+                                                      │                               │
+                                                    tables: cells kept,     pictures' rows, by
+                                                    laid out at </table>    "img w h address",
+                                                                            after the page
+
+## 5. The browser's parts, and their lines
+
+One file, `tiny/TinyBrowser.ml` (tiny-ml has no modules; the largest
+tiny file is TinyML.ml, 1,607 lines), compiled by `tiny-ml -tm` with
+`TinyLibDraw` and `TinyLibStd`, and by dune as a library for the
+host's tests (as `TinyWindows`). Its parts in the order of a page's
+way, which is the order of the file and of a book's chapters. Guessed:
+
+| part | what | lines |
+|---|---|---:|
+| the connection | dial, the line, messages read as they come (`u_ready` with the mouse and the keys); a connection for the page, then one a picture | 80 |
+| characters | UTF-8 to the font's 128 (a table of the common ones: `é` as `e`, `–` as `-`, `“` as `"`, the rest `?`); the entities (`&amp;`, `&#8211;`, the named ones Wikipedia uses) | 120 |
+| tokens | a tokenizer that takes a message at a time and keeps its unfinished tail: tags, attributes, comments, `<style>` and `<script>` skipped whole | 250 |
+| the tags' table | each tag's look; Wikipedia's classes; `p`, `li`, `td` closed when the next one opens; the `<head>` and `<link>` dropped | 150 |
+| lines | inline runs wrapped into lines of 80 columns (fewer in a window), lines as tall as their tallest run, indentation for lists and blockquotes, `pre` kept as it is, headings, `hr`, margins between blocks | 320 |
+| tables | the cells kept, columns' widths from their contents, a cell's text wrapped in its column, `colspan`; the infobox as a table of two columns at its place | 250 |
+| pictures | `<img>`'s box (its size, at most the screen's width, scaled down then), a figure and its caption; the queue of pictures to ask for, the visible ones first; a picture's rows into an image of the kernel's (`d_image`, `d_pixels`), drawn from there when it scrolls back into view | 160 |
+| drawing | the visible lines, a run its colour (links blue and underlined, headings bold by drawing twice a pixel apart, code on grey), the boxes of pictures not there yet, scrolling as copying the screen and drawing what is new | 160 |
+| the user | the mouse on a link, the keys, the address asked, the status line ("reading 120 KB", "picture 3 of 14", the address under the mouse) | 150 |
+| addresses | relative to the base or to the page, `//` and `#`, the history (back) | 80 |
+| main | arguments, the loop: the wire, the keys, the mouse | 70 |
+| **all** | | **1,790** |
+
+So 200 lines are spare under the 2,000, for what the first Wikipedia
+pages show is missing (step 7). If they are not enough, the first to
+give up its place is the tables' (an infobox as lines of `key: value`).
+
+## 6. What the machine allows, and what it must be given
+
+- **Memory: a process has 1 MB today, its ML heap 256 KB a half.**
+  tiny-kernel has 8 partitions of 1 MB (`TinyKernel.ml`: `part`,
+  `nslots`, from `0x500000`); an ML program in one has its code below
+  `0x60000`, its value stack there, and its heap's two halves of 256
+  KB from `0x70000` (`libml/mlsys.c`: `HALF`). OCaml's page kept as
+  lines (34 KB of text, some 6,000 runs of about 24 bytes, 150 KB),
+  with what is made while it is read, does not fit in 256 KB. The
+  author: "why not 10MB?". Ten MB for the browser, then, and the
+  machine made bigger to hold it. What that costs, read in the code:
+  - **Not 10 MB for every process.** fork copies the whole partition
+    (`k_copy`, `entry.tm`: 6 instructions a word, the kernel's hottest
+    loop) and exec zeroes it (`k_zero`, 5 a word): today 0.2 s and
+    0.16 s of the machine's time for 1 MB; 10 MB slots would make
+    every command the shell runs wait some 3.5 s. So **a process's
+    size is its program's**: most ask 1 MB as now, `www` asks 10.
+    A partition is the room a program asks for, found first-fit
+    among the free memory at exec, kept by fork (the child the
+    parent's size), given back at exit: OS/360's MVT (1967) and the
+    PDP-11 Unix's before paging, which base and bound make easy (a
+    window is anywhere). About 30 lines of `TinyKernel.ml` in place
+    of `free_slot`, `base` and the size checks.
+  - **How a program says its size**: a word at a known place of its
+    image (where, in tiny-machine's raw image or in `.tm`'s link, to
+    be found at step 0), which `mlsys.c` also reads for its `HALF`
+    (the heap's halves as large as the partition allows), so the ML
+    runtime is one for all programs. The same for C's programs (their
+    stack's top).
+  - **The machine from 16 MB to 128 MB** (`TinyMachineDevices.memsize`,
+    `1 lsl 27`): the devices are at its top, so their addresses move
+    (`0xfffff0` becomes `0x7fffff0`); `TinyMachineDevices` reckons
+    them from `memsize` already, but tiny-kernel (`TinyKernel.ml`,
+    `runtime.c`), the steps (`TinyKernel/steps/`), TinyLibDraw's and
+    TinyKernel's headers and `docs/manuals/t-ix.md` name them as
+    numbers (24 files mention such an address; most of them not for
+    this). The screen at `0xf00000` can stay where it is. In the
+    page, 128 MB of the browser's memory for the machine's (an
+    `Uint8Array`): to be looked at on a phone. The images' arena
+    (the kernel's, 2 MB from `0xd00000`, the font and the windows'
+    images) grows too, for a page's pictures (OCaml's: 61 KB; a page
+    of photographs, a few hundred).
+  - **Recorded sessions and screens' sums** (`-events`, the tests'
+    pictures) do not depend on the memory's size, but a kernel
+    that says its partitions at boot (`tiny-kernel: ... 8 partitions of
+    1024 KB`) changes its first line: the tests' expected outputs
+    updated in the same commit.
+- **The wire: about 11 KB a second** (plan_tiny_network.md: 240
+  rows of 320 bytes in 6.9 s, the checksum 170 instructions a byte
+  the most of it), half of that in a window. So OCaml's 257 KB take
+  about 23 s on the screen, 45 s in a window; its lead (the first
+  20 KB) 2 s and 4 s; its pictures, 61 KB, 6 s more. Hence the drawing
+  as it comes, and the text before the pictures. What would make
+  it faster is plan_tiny_network.md's "not done" (a string's byte read
+  inline by tiny-ml, an acknowledgement every few messages), which is
+  every program's gain; with pictures it is worth doing in this
+  plan's time (step 8), measured before and after.
+- **The reading**: the tokenizer touches each byte once, at, guessed,
+  100 to 200 instructions a byte, about as the checksum: it doubles
+  the wire's time rather than adding to it a wait at the end.
+- **The screen**: 640 by 480, a byte a pixel; the font 8 by 16, 128
+  characters (`TinyKernelGraphics.text`). So 80 columns and 30 lines,
+  less the address's line and the status line: 28 lines of a page.
+  One size of letters: a heading is bold, with a line under an `h2`
+  as Wikipedia draws it. The photograph, 250 by 188, is 31 columns
+  and 12 lines of it.
+- **Waiting on several things**: `u_ready` (the keys, the mouse, the
+  wire's descriptor) is there; **an ML `dial` is not**: C's `dial` is
+  `libc/net.c`; ML needs an external in `calls.ml` and `mlsys.c`
+  (about 10 lines).
+
+## 7. How a Wikipedia article is shown
+
+From the REST HTML's tags and classes (section 2), what each becomes:
+
+- `<title>`: the address line. `<h1>`, `<h2>`, `<h3>`: bold, a blank
+  line before, a rule under `h2`.
+- `<p>`, `<div>`, `<section>`: blocks; `<br>`: a line ends.
+- `<a href>`: blue, underlined, a link; `<a>` without `href`: text.
+- `<b>`, `<strong>`, `<i>`, `<em>`, `<cite>`: bold (italic is not in
+  one bitmap font: drawn in another colour).
+- `<sup class="mw-ref reference">`: `[1]` kept inline, a link to
+  `#cite_note-1` (followed: the page scrolled to the reference).
+- `<ul>`, `<ol>`, `<li>`: indented, `*` or the number.
+- `<pre>`, `<code>`: monospace is all there is: `pre` keeps its
+  spaces and lines, on grey; its many `<span>`s of colours are
+  ignored (or, spare lines permitting, `class="k"` as keywords' colour).
+- `<img>`: a box of its `width` and `height`, filled when its rows
+  come; wider than the column, scaled down (the peer is asked for that
+  size). `<figure>` (Parsoid's thumbnails, `typeof="mw:File/Thumb"`):
+  a block, the picture then its `<figcaption>`. An icon (both sides
+  under 24) in its line of text.
+- `<table class="infobox">`: at its place (before the lead), two
+  columns, as wide as 80 allows, its logo at its top; other tables the
+  same way, a table too wide cut at the screen's right edge.
+- Hidden: `<style>`, `<script>`, `<link>`, `<meta>`, `<head>`'s rest,
+  `class="mw-editsection"`, `navbox`, `noprint`, `style="display:none"`.
+- `<span typeof="mw:...">`, Parsoid's other markers: their text only.
+
+"Not too bad" here means: read top to bottom, the article reads as
+it does in lynx (`bin/mini-lynx`, the twin to compare with) for its
+words, with bold, colours, links that work, the infobox and tables in
+columns, and its pictures where Wikipedia puts them in its column
+(not floated to the right, a line of text beside: section 11).
+
+## 8. Steps
+
+Each stands alone, with its tests, and is a commit.
+
+0. **Measure, and find where a program says its size.** An ML program
+   of tiny-kernel that keeps 6,000 records of a run's shape and 34 KB
+   of strings: what heap it needs, and what a collection costs. A
+   tokenizer's loop over 257 KB on tiny-cpu: instructions a byte.
+   Where in an image a word for its size can go. The numbers in
+   section 6 replaced.
+1. **The machine of 128 MB, and partitions of a program's size.**
+   `memsize`, the devices' addresses in the kernel and the steps, the
+   manual; tiny-kernel's partitions first-fit, fork and exit with
+   them, `mlsys.c`'s heap from the size. All of `make test`'s
+   tiny-machine tests the same (but the boot's line), tetris and
+   tiny-windows included; the page checked by hand.
+2. **The reading, on the host.** `TinyBrowser.ml`'s tokens, the
+   tags' table, the lines and the tables, built by dune, tested on
+   `tiny/tests/www/OCaml.html` (the REST HTML, kept) and on small
+   pages of our own (each tag; a table; UTF-8; a tag cut between two
+   messages, every place it can be cut). Output: the lines as text,
+   compared with an expected file (`tests/TinyBrowser_tests/`), and
+   by eye with `mini-lynx`.
+3. **The peer's `www`.** The line, the kept files (`-net dir`),
+   `tiny-machine-fetch` with `-net-out`, the page's fetch; tested by
+   `get`'s way (`tests/TinyMachine_test.sh`): `www OCaml` read by a
+   program that prints the bytes.
+4. **On tiny-kernel, on the screen.** The ML `dial`; the program
+   compiled by tiny-ml, reading from the wire and drawing as it comes,
+   scrolling; `-screen`'s picture compared in the tests, as tetris's.
+   The pace measured: when the lead is shown, when the page is all
+   there.
+5. **Links and back.** The mouse, the history, `g` and an address;
+   `#` in the page. Tested by a session replayed (`-events`).
+6. **Pictures.** The peer's `img` (tiny-machine-fetch decoding,
+   the page's canvas, the kept pictures of the tests); the boxes in
+   the layout, the queue, the kernel's images, scrolling over them.
+   Tested by `-screen` on OCaml's kept page and its 14 pictures.
+7. **In a window, and in the page; what Wikipedia shows is missing.**
+   In tiny-windows (its descriptors as tetris has them); in
+   `t-ix.html`, `www OCaml` in "What to try", checked by hand in
+   Firefox and by `TinyMachineWeb_test.py`. Ten articles read (OCaml,
+   Plan 9 from Bell Labs, Unix, Alan Turing, Paris, ...), what looks
+   wrong listed, the spare lines spent on the worst.
+8. **The wire faster.** plan_tiny_network.md's "not done", measured
+   by `www OCaml`'s time to its last picture before and after.
+
+## 9. Tests
+
+- `tiny/tests/TinyBrowser_test.sh`, in `make test`: the host's
+  library on kept pages (step 2); tiny-machine with `-net
+  tiny/tests/www` and `-screen` (steps 4 to 6). No Internet.
+- `tiny/tests/www/OCaml.html` and its pictures kept, with their
+  date; the other kept pages small. A script to fetch them again, not
+  run by the tests.
+- By hand: `tiny-machine -window -net tiny/tests/www -net-out tiny-kernel`,
+  then `www Plan_9_from_Bell_Labs`.
+
+## 10. Open questions for the author
+
+- **The address rewriting for Wikipedia** (`/wiki/X` to the REST
+  API): on the peer (one place, said in its comment) as planned, or
+  in the browser (the machine says what it asks for)? The page needs
+  CORS either way.
+- **128 MB for the machine**, or 64? 10 MB for `www`, a few windows
+  of 1 MB, the kernel and the screen fit in 64; 128 leaves room for
+  a second browser or a bigger page. The page's memory is the one
+  cost (section 6).
+
+## 11. Not in this plan
+
+CSS; JavaScript; forms (Wikipedia's search: `g` and a title is the
+search); cookies; pictures floated to the right with text beside them
+(Netscape's `align`); animated GIFs; more than one font size; the
+book itself.

@@ -408,7 +408,7 @@ let run image disk www =
   let rec frame _ =
     let start = now () in
     (* a quarter of a second at most: a page left and come back to *)
-    let due = truncate (TinyMachineDevices.rate *. Float.min 0.25 ((start -. !last) /. 1000.)) in
+    let due = truncate (float_of_int !TinyMachineDevices.rate *. Float.min 0.25 ((start -. !last) /. 1000.)) in
     last := start;
     (try
        let n = ref 0 in
@@ -424,7 +424,7 @@ let run image disk www =
     if !running then begin
       if start -. !since > 1000. then begin
         (* of the speed the machine is meant to have *)
-        let percent = truncate (100. *. float_of_int !done_ /. ((start -. !since) /. 1000. *. TinyMachineDevices.rate)) in
+        let percent = truncate (100. *. float_of_int !done_ /. ((start -. !since) /. 1000. *. float_of_int !TinyMachineDevices.rate)) in
         status (if percent >= 97 then "Running at full speed."
                 else Printf.sprintf "Running at %d%% of full speed in this browser: everything is that much slower." percent);
         done_ := 0; since := start

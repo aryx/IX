@@ -82,8 +82,9 @@ let same shown shapes =
 (* The loop *)
 (*****************************************************************************)
 
-(* a frame, in the kernel's ticks: a thirtieth of a second of a machine
- * of 8 million instructions a second, a tick 20,000 *)
+(* A frame, in the kernel's ticks: a tick is 2.5 ms of the machine's
+ * time whatever its speed, so 13 ticks are about a thirtieth of a
+ * second. *)
 let period = 13
 
 (* The game, until a q or the keys' end: the model's shapes when it is

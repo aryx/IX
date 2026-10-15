@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -19,6 +19,13 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  written back at the halt
   tiny-machine -window kernel.img                its screen (640 by 480, at 0xf00000) in
                                                  a window, whose keys and mouse are its
+  tiny-machine -window -rate 40 kernel.img       the machine at 40 million instructions a
+                                                 second (with a window, 20 by default; without
+                                                 one, 8, the speed the recorded sessions and
+                                                 the web page use). tiny-kernel reads the
+                                                 rate, so its programs keep their pace: a
+                                                 faster machine has more instructions in
+                                                 each of its ticks of 2.5 ms
   tiny-machine -events f -screen s.ppm kernel.img
                                                  the keys and the mouse from f, a line
                                                  each (1000 m 320 240 1: at time 1000 the
@@ -109,14 +116,18 @@ let ppm (m : TinyMachineCPU.machine) =
  * machine's. Thirty times a second, by the host's clock: what it shows
  * is not the machine's time's, only what it types and points is.
  *
- * And with a window the machine has a speed, [rate] instructions a
- * second, below what a host gives (some 10 million of a kernel's and
- * its programs', 50 of a loop that waits): its time is its
- * instructions, so without one a game's pieces would fall by how fast
- * the host is, and faster when nothing else runs. It sleeps when it is
- * ahead ([due], the host's time the instructions so far should take),
- * and does not run to catch up. A recorded session has no window and
- * does not wait. *)
+ * With a window, the machine also has a speed: it runs
+ * TinyMachineDevices.rate instructions a second, which must be below
+ * what the host can do. The machine's time is counted in instructions,
+ * so without a fixed speed a game's pieces would fall as fast as the
+ * host happens to be, faster when nothing else runs. The machine sleeps
+ * when it is ahead ([due] is the host's time at which the instructions
+ * run so far should be done), and it does not hurry to catch up when
+ * it is behind. A recorded session has no window and never waits. The
+ * kernel reads the rate from the machine and makes its tick 2.5 ms long
+ * whatever the speed. So on a faster machine, a program paced by ticks
+ * (a game) keeps its pace, and a program that computes (the browser)
+ * finishes sooner. *)
 type window = {
   to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string;
   mutable due : float;
@@ -135,7 +146,7 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
 let polled = 0x10000
 let window_poll w (m : TinyMachineCPU.machine) ms k =
   let now = Unix.gettimeofday () in
-  w.due <- w.due +. (float_of_int polled /. TinyMachineDevices.rate);
+  w.due <- w.due +. (float_of_int polled /. float_of_int !TinyMachineDevices.rate);
   if w.due > now then Unix.sleepf (w.due -. now) else if now -. w.due > 0.1 then w.due <- now;
   let now = Unix.gettimeofday () in
   if now -. w.frame > 1. /. 30. then begin
@@ -160,7 +171,7 @@ let window_poll w (m : TinyMachineCPU.machine) ms k =
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option }
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; rate : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -225,10 +236,17 @@ let outside caps : TinyMachinePeer.outside =
 let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
 let pcap_header = le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
 let pcap_packet instructions packet =
-  let us = int_of_float (float_of_int instructions *. 1e6 /. TinyMachineDevices.rate) in
+  let us = int_of_float (float_of_int instructions *. 1e6 /. float_of_int !TinyMachineDevices.rate) in
   le32 (us / 1000000) ^ le32 (us mod 1000000) ^ le32 (String.length packet) ^ le32 (String.length packet) ^ packet
 
+(* The speed with a window, in instructions per second, when -rate does
+ * not say. A host that cannot keep up just runs as fast as it can: a
+ * 2.2 GHz Neoverse ran the native machine at 22 million a second, an
+ * M3 Pro at 50 to 66 (plan_tiny_web.md, tests/TinyMachine_bench.sh). *)
+let window_rate = 20_000_000
+
 let run caps o image =
+  TinyMachineDevices.rate := (match o.rate with Some r -> r | None -> if o.window then window_rate else TinyMachineDevices.default_rate);
   let disk_file = o.disk_file in
   let disk = match disk_file with Some f -> Bytes.of_string (FS.read caps (Fpath.v f)) | None -> Bytes.empty in
   (* a session's keys are the console's input: the host's is then not
@@ -246,7 +264,7 @@ let run caps o image =
   let said dir packet =
     if o.net_trace then
       Option.iter (fun (mc : TinyMachineDevices.machine) ->
-        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000. /. TinyMachineDevices.rate) dir (TinyMachinePeer.net_describe packet))) !machine in
+        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000. /. float_of_int !TinyMachineDevices.rate) dir (TinyMachinePeer.net_describe packet))) !machine in
   (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel has
    * it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
@@ -332,6 +350,8 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-screen" :: f :: rest -> options { o with screen_file = Some f } rest
           | "-events" :: f :: rest -> options { o with events_file = Some f } rest
           | "-window" :: rest -> options { o with window = true } rest
+          | "-rate" :: n :: rest when (match int_of_string_opt n with Some n -> n > 0 && n <= 1000 | None -> false) ->
+              options { o with rate = Some (int_of_string n * 1_000_000) } rest
           | "-net" :: dir :: rest -> options { o with net = Some dir } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
@@ -343,7 +363,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
               options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None } args
+        options { disk_file = None; screen_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

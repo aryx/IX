@@ -20,7 +20,7 @@
  (name tiny_machine_peer)
  (wrapped false)
  (modules TinyMachinePeer)
- (libraries tiny_kernel_network))
+ (libraries tiny_kernel_network tiny_machine_devices))
 
 ; tiny-machine's window: the one tiny program linking a C library (SDL)
 ; tiny-machine's way out to other programs: a connection of the host's

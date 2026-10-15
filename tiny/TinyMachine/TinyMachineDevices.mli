@@ -41,16 +41,23 @@
  * mini-qemu's (Pl011, Sdhost, Dwc2). *)
 
 (* the memory's size; the screen's address and its size in pixels, its
- * 256 colours (three bytes each: red, green, blue); the machine's
- * speed when a person watches, in instructions a second; the index of
- * the time among the registers of control *)
+ * 256 colours (three bytes each: red, green, blue); the index of the
+ * time among the registers of control *)
 val memsize : int
 val screen : int
 val width : int
 val height : int
 val colours : string
-val rate : float
 val time : int
+
+(* The machine's speed, in instructions per second. A host sets [rate]
+ * before [create], which puts it in the machine's read-only register
+ * "rate"; tiny-kernel reads it to make its tick 2.5 ms long. A host
+ * with a window or a page also holds the machine to that speed. The
+ * default, 8 million, is what the web page keeps up with and what the
+ * recorded sessions were made at. *)
+val default_rate : int
+val rate : int ref
 
 (* a trap (its cause, what goes with it), inside the machine; the halt
  * and its status, which ends [ticks] *)

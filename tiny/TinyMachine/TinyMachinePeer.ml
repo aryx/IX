@@ -43,8 +43,10 @@ let net_describe p =
 (* The peer *)
 (*****************************************************************************)
 
-let latency = 40000
-let tick = 20000
+(* Both are in the machine's instructions, so they follow its speed:
+ * 5 ms and 2.5 ms of its time. *)
+let latency () = !TinyMachineDevices.rate / 200
+let tick () = !TinyMachineDevices.rate / 400
 
 (* a connection to one of the peer's own ports: its line not read yet,
  * what answers it asked, or the messages left to send *)
@@ -102,7 +104,7 @@ let kept file =
 let out p packets =
   List.iter (fun packet ->
     p.sent <- p.sent + 1;
-    if List.mem p.sent p.lost then p.said "x" packet else (p.said "<" packet; p.give latency packet)) packets
+    if List.mem p.sent p.lost then p.said "x" packet else (p.said "<" packet; p.give (latency ()) packet)) packets
 
 (* A connection the machine asks for to another address than the
  * peer's: the outside is asked first, and if it has a way there the
@@ -176,7 +178,7 @@ let serve p =
 (* what there is to do, and a clock only while there is a connection *)
 let poll p =
   serve p;
-  if (not p.awake) && p.stack.ns_conns <> [] then (p.awake <- true; p.give tick "")
+  if (not p.awake) && p.stack.ns_conns <> [] then (p.awake <- true; p.give (tick ()) "")
 
 let send p packet =
   if packet = "" then begin

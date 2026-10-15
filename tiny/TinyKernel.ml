@@ -21,6 +21,7 @@ external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
 external k_ie : int -> unit = "k_ie"
 external k_clock : unit -> int = "k_clock"
+external k_rate : unit -> int = "k_rate"
 external k_window : int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
@@ -52,7 +53,11 @@ let net_buf = 0x2f0000
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
 let c_intr = 4
-let tick = 20000
+(* The timer's period is 2.5 ms of the machine's time, whatever its
+ * speed: 20,000 instructions at 8 million a second. The programs count
+ * time in these ticks (a game's frames, IL's waits, ping), so they run
+ * at the same pace on a faster machine. *)
+let tick = let r = k_rate () in if r < 400 then 20000 else r / 400
 
 let puts s = for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
 let halt status = poke halt_dev status

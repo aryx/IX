@@ -27,6 +27,11 @@
 #        swept with the left one; a shell in it), paint a program that
 #        draws, on the screen or in a window, square a game of a page
 #        (the arrows), tetris the game (the arrows, the space drops)
+#   -rate n  the machine's speed, in millions of instructions per
+#        second (by default 20 with -window, 8 without). tiny-kernel's
+#        programs keep their pace at any speed (its tick is 2.5 ms);
+#        what computes finishes sooner. This Mac (an M3 Pro) runs it at
+#        50 to 66 at most
 #   -web dir  tiny-kernel, t6: nothing run; the machine as a web
 #        page in dir (tiny/TinyMachine/TinyMachineWeb.ml, by js_of_ocaml), with the
 #        kernel's image: index.html, to serve (it says how) and open
@@ -50,12 +55,19 @@ kernels() { sed -n '/^# tiny-machine:/,/^# Options:/p' "$0" | sed '$d' | sed 's/
 usage() { sed -n '/^# tiny-machine:/,/^# step (-o to link/p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 [ "$1" = --help ] && usage
-window=; [ "$1" = -window ] && { window=-window; shift; }
-web=; [ "$1" = -web ] && { [ $# -ge 2 ] || usage; web=$2; shift 2; }
-while getopts lwnh o; do
-  case $o in l) listing=1;; w) write=1;; n) build=0;; *) usage;; esac
+window=; rate=; web=
+while :; do
+  case $1 in
+    -window) window=-window; shift;;
+    -rate) [ $# -ge 2 ] || usage; rate="-rate $2"; shift 2;;
+    -web) [ $# -ge 2 ] || usage; web=$2; shift 2;;
+    -l) listing=1; shift;;
+    -w) write=1; shift;;
+    -n) build=0; shift;;
+    -h) usage;;
+    *) break;;
+  esac
 done
-shift $((OPTIND - 1))
 [ $# = 0 ] && kernels
 
 B=$ROOT/_build/default/tiny
@@ -100,8 +112,8 @@ case $1 in
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$web" ] || page "?image=kernel.img&disk=fs.img" $image $dir/_make/fs.img
     if [ $listing = 1 ]; then exec $machine -l $image; fi
-    say "command: $(short $machine)-d $(short $disk)$(short $image)"
-    exec $machine -d $disk $image
+    say "command: $(short $machine)${rate:+$rate }-d $(short $disk)$(short $image)"
+    exec $machine $rate -d $disk $image
     ;;
   tiny-kernel)
     # no disk: the programs come in the image, after the kernel, and
@@ -120,8 +132,10 @@ case $1 in
     say "network: the wire's other end is this program, with tiny/tests/www's documents; try: ping, get il.txt, wiki mandelbrot$([ -n "$window" ] || echo " (-window to see it)")"
     say "         and it is the way out: get / gopher.floodgap.com, get / example.com 80"
     say "         and in: httpd, then http://localhost:8080/ in a browser"
-    say "command: $(short $machine)$window -net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
-    exec $machine $window -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
+    speed=${rate#-rate }; [ -n "$speed" ] || speed=$([ -n "$window" ] && echo 20 || echo 8)
+    say "speed:   $speed million instructions a second (-rate n to change it)"
+    say "command: $(short $machine)${window:+$window }${rate:+$rate }-net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
+    exec $machine $window $rate -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
     set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.tm $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm
@@ -136,5 +150,5 @@ say "assemble and link: $(short $1)(the kernel, at 0)$( [ $# -gt 1 ] && echo ", 
 $machine -o $image "$@"
 say "image: $(short $image)($(size $image) bytes)"
 if [ $listing = 1 ]; then exec $machine -l $image; fi
-say "run:   $(short $machine $image)"
-exec $machine $image
+say "run:   $(short $machine)${rate:+$rate }$(short $image)"
+exec $machine $rate $image

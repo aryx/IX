@@ -213,9 +213,13 @@ Read by `csrr d, name`, written by `csrw name, a`, both at once by
 | `ip`, `ie` | the interrupts pending (read only) and enabled, a bit a source |
 | `hartid` | the core's number, 0 (read only) |
 | `scratch` | a word for the kernel |
+| `rate` | the machine's speed, in instructions per second (read only) |
 
 The time is the count of instructions, not the host's clock, so the
-same image with the same input runs the same every time.
+same image with the same input runs the same every time. The `rate`
+register says how many of those instructions make a second: 8 million
+by default, or what `tiny-machine -rate n` asks for. A kernel reads it
+to turn instructions into seconds.
 
 One more instruction, legal in both modes: `amoswap d, a, (b)`, the
 word at the address in `b` swapped with `a` in one step, for a lock.
@@ -506,7 +510,9 @@ the kernel in `tiny/TinyKernel/libml/`.
 `ready` answers the first of `n` descriptors that a read would not
 wait on, or -1 when the clock reaches `until` (0: no limit; with no
 descriptor it is a sleep). `ticks` is the clock: the timer's
-interrupts since the boot, one every 20,000 instructions. `box` makes
+interrupts since the boot, one every 2.5 ms of the machine's time
+(the `rate` register divided by 400: 20,000 instructions at 8 million
+a second). `box` makes
 a box, a pipe that keeps only what was last written: `fds[0]` reads it
 (a read waits for a write since the last read), `fds[1]` writes it and
 never waits. A process has 32 descriptors.
@@ -637,9 +643,14 @@ operation done when the next one is asked (`2+3*4=` is 20). `temp` is
 the other field has it in the other scale, to the nearest whole
 number; the Escape quits (or `q`, before a field is clicked).
 
-With `-window` the machine runs at 8 million instructions a second,
-so that a game's time is the same on every host, and a key held is
-typed again.
+With `-window` the machine runs at a fixed speed, 20 million
+instructions a second unless `-rate n` says otherwise (n in millions),
+so that a game's time is the same on every host that can keep up, and
+a key held is typed again. Without a window the machine does not wait,
+and its speed (8 million by default) only says how long its second is.
+The kernel reads the speed, so the programs that count ticks (the games,
+`ping`, IL's timers) keep their pace at any speed, while those that
+compute finish sooner. The web page runs at 8 million.
 
 ## 8. Tests
 

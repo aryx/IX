@@ -141,6 +141,13 @@ k_clock:
 	ori	r13, r13, 1
 	ret
 
+; the machine's speed, in instructions per second (an ML integer)
+k_rate:
+	csrr	r13, rate
+	shli	r13, r13, 1
+	ori	r13, r13, 1
+	ret
+
 ; the window of the next process: from base, size bytes
 k_window:
 	ldw	r1, 0(sp)

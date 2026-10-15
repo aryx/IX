@@ -24,7 +24,9 @@
 #    has written WRITTEN after the halt; screen.tm its events
 #    (screen.events: the mouse, then keys), whose screen at the halt
 #    has screen.cksum's sum; net.tm a wire that comes back (-net-loop
-#    100), and, run again without one, a machine that says it has none.
+#    100), and, run again without one, a machine that says it has none;
+#    rate.tm the speed that -rate 16 gives the machine, read from its
+#    rate register.
 #
 # Usage: TinyMachine_test.sh
 
@@ -81,6 +83,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
     opts="-d $W/disk.img"
   fi
   [ $b = net ] && opts="-net-loop 100"
+  [ $b = rate ] && opts="-rate 16"
   [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
   timeout 10 $T $opts $t < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"

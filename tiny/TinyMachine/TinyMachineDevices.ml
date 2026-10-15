@@ -13,8 +13,11 @@ let status = 0 and epc = 1 and cause = 2 and tval = 3 and tvec = 4 and time = 5 
  * kernel (the trap frame's address while in user mode, 0 in the
  * kernel: RISC-V's sscratch) *)
 and hartid = 9 and ip = 10 and ie_csr = 11 and satp = 12   (* scratch, 13, only read and written *)
-let csr_names = [| "status"; "epc"; "cause"; "tval"; "tvec"; "time"; "timecmp"; "base"; "bound"; "hartid"; "ip"; "ie"; "satp"; "scratch" |]
-let read_only k = k = time || k = hartid || k = ip
+(* The machine's speed in instructions per second, so that a kernel can
+ * turn its time, which counts instructions, into seconds. *)
+and rate_csr = 14
+let csr_names = [| "status"; "epc"; "cause"; "tval"; "tvec"; "time"; "timecmp"; "base"; "bound"; "hartid"; "ip"; "ie"; "satp"; "scratch"; "rate" |]
+let read_only k = k = time || k = hartid || k = ip || k = rate_csr
 
 (* status: the mode, the interrupts' bit, and the two as they were
  * before the trap *)
@@ -153,9 +156,15 @@ let colours = String.init 768 (fun k -> let r, g, b = colour (k / 3) in Char.chr
 (* the mouse: its word, and whether it changed since it was read *)
 type mouse = { mutable at : int; mutable moved : bool }
 
-(* the machine's speed when a person looks at it (TinyMachine.ml's
- * window says why it has one): instructions a second *)
-let rate = 8_000_000.
+(* The machine's speed, in instructions per second. A host sets it before
+ * [create]; the machine gives it to the kernel in its rate register.
+ * When a person watches (a window, the web page), the host holds the
+ * machine to this speed (TinyMachine.ml's window says why). Without a
+ * window nothing waits, and the rate only says how long a second is in
+ * instructions. The default, 8 million, is the speed the web page can
+ * keep up with, and the one the recorded sessions were made at. *)
+let default_rate = 8_000_000
+let rate = ref default_rate
 
 let mouse_set ms x y buttons =
   let at = max 0 (min (width - 1) x) lor (max 0 (min (height - 1) y) lsl 12) lor (buttons lsl 24) in
@@ -372,6 +381,7 @@ let create ~put ~on_open ~send ~disk ~events image =
   c.(status) <- supervisor_bit;
   c.(timecmp) <- 0xffffffff;
   c.(ie_csr) <- i_timer;
+  c.(rate_csr) <- !rate;
   { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = events <> None; eof_read = false };
     disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
     mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open;

@@ -89,10 +89,12 @@ val messages : string -> string list
 val picture : string -> int -> int -> string -> string list
 val kept : string -> string list option
 
-(* the instructions a packet takes (5 ms of the machine's time), and
- * between two of the peer's looks at its clock (a tick of tiny-kernel) *)
-val latency : int
-val tick : int
+(* How many instructions a packet takes to cross the wire (5 ms of the
+ * machine's time), and how many pass between two of the peer's looks at
+ * its clock (2.5 ms, a tick of tiny-kernel). Both depend on the
+ * machine's speed, TinyMachineDevices.rate. *)
+val latency : unit -> int
+val tick : unit -> int
 
 (* an address said ("10.0.0.2"); a packet in a few words, for who
  * watches the wire (-net-trace, the page's wire): the host's, which

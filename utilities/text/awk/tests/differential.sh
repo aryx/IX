@@ -32,6 +32,11 @@ if [ $mode != check ] && [ ! -x $AWK ]; then
   $ROOT/utilities/text/awk/tests/reference.sh $(dirname $AWK) > /dev/null || { echo "skipped: no awk at $AWK"; exit 0; }
 fi
 
+# a case whose commands (system, |, getline from a command) run in
+# /bin/rc wants 9base's: without it (macOS), skipped
+needs_rc="getline output"
+RC9=/usr/lib/plan9/bin/rc
+
 run_case() {
   prog=$1 file=$(basename "$2")
   (
@@ -53,6 +58,7 @@ for case in $cases; do
   case $mode in
     record) run_case "$AWK" "$case" > "$out"; echo "recorded $name";;
     check)
+      case " $needs_rc " in *" $name "*) [ -x $RC9 ] || { echo "skip $name (no 9base rc: $RC9)"; continue; };; esac
       [ -f "${case%.awk}.mini.out" ] && out=${case%.awk}.mini.out
       if run_case "$MINIAWK" "$case" | diff -u "$out" - > /tmp/$$.diff; then echo "ok   $name"
       else echo "FAIL $name"; cat /tmp/$$.diff; status=1; fi;;

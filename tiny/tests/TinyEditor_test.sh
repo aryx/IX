@@ -11,6 +11,8 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TE=${TE:-$ROOT/_build/default/tiny/TinyEditor.exe}
 SAM=${SAM:-/usr/lib/plan9/bin/sam}
+# the reference is 9base's sam: without it (macOS: no 9base), nothing to compare
+[ -x "$SAM" ] || { echo "skip TinyEditor_test.sh (no 9base sam: $SAM)"; exit 0; }
 failures=0
 
 TEXT='one

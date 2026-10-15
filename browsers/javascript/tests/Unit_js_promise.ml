@@ -110,9 +110,11 @@ let tests =
             "Uncaught (in promise) TypeError: Cannot read properties of null (reading 'x')";
           check "async and await are names elsewhere" {|var async = 1, await = 2; function g(async) { return async + await } log(g(5), async)|} "7 1";
           check "await outside an async function is a name" {|function f() { return await 1 }|} "line 1: SyntaxError: expected ';' or a new line, not 1";
-          check "deep calls in one" {|
-            function depth(n) { return n === 0 ? 0 : 1 + depth(n - 1) }
-            (async () => { log(depth(1500)); try { depth(5000) } catch (e) { log(e.name) } })()|} "1500 | RangeError")
+          (* not where a thread's stack is too small for it (modes.sh) *)
+          if Sys.getenv_opt "JS_SMALL_THREAD_STACK" = None then
+            check "deep calls in one" {|
+              function depth(n) { return n === 0 ? 0 : 1 + depth(n - 1) }
+              (async () => { log(depth(1500)); try { depth(5000) } catch (e) { log(e.name) } })()|} "1500 | RangeError")
       ;
       Testo.create "for await" (fun () ->
           check "each item awaited, in order; the caller goes on meanwhile" {|

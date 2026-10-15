@@ -27,10 +27,24 @@ mode=${1:-check}
 [ $# -gt 0 ] && shift
 cases=${*:-$CORPUS/*.ed}
 
+# the records were made with GNU's tools (wc, echo, cat -v, touch -d):
+# on macOS, coreutils' (Homebrew's gnubin) first, where it is
+for d in /opt/homebrew /usr/local; do
+  [ "$(uname)" = Darwin ] && [ -d $d/opt/coreutils/libexec/gnubin ] && { GNUBIN=$d/opt/coreutils/libexec/gnubin; break; }
+done
+[ -n "$GNUBIN" ] && export PATH=$GNUBIN:$PATH
+# a case whose ! runs rc wants 9base's: without it, skipped
+needs_rc="shell"
+RC9=/usr/lib/plan9/bin/rc
+
+# coreutils' timeout, by its path (the environment is emptied): gtimeout on macOS
+TIMEOUT=$(command -v timeout || command -v gtimeout)
+
 run_case() {
   prog=$1 case=$(cd "$(dirname "$2")" && pwd)/$(basename "$2")
   base=${case%.ed}
-  dir=$(mktemp -d)
+  # resolved: macOS's /var is /private/var, the path the program prints
+  dir=$(cd "$(mktemp -d)" && pwd -P)
   cp "$case" "$dir/case.ed"
   [ -f "$base.txt" ] && cp "$base.txt" "$dir/case.txt"
   if [ -f "$base.args" ]; then args=$(cat "$base.args")
@@ -39,9 +53,9 @@ run_case() {
   (
     cd "$dir" || exit 1
     if [ -f "$base.pipe" ]; then
-      cat case.ed | env -i PATH="/usr/bin:/bin" HOME=/nonexistent timeout -s KILL 10 $prog $args 2>&1
+      cat case.ed | env -i PATH="${GNUBIN:+$GNUBIN:}/usr/bin:/bin" HOME=/nonexistent "$TIMEOUT" -s KILL 10 $prog $args 2>&1
     else
-      env -i PATH="/usr/bin:/bin" HOME=/nonexistent timeout -s KILL 10 $prog $args < case.ed 2>&1
+      env -i PATH="${GNUBIN:+$GNUBIN:}/usr/bin:/bin" HOME=/nonexistent "$TIMEOUT" -s KILL 10 $prog $args < case.ed 2>&1
     fi
     echo "[exit $?]"
     for f in $(ls -A | sort); do
@@ -59,6 +73,7 @@ for case in $cases; do
   case $mode in
     record) run_case "$ED" "$case" > "$out"; echo "recorded $name";;
     check)
+      case " $needs_rc " in *" $name "*) [ -x $RC9 ] || { echo "skip $name (no 9base rc: $RC9)"; continue; };; esac
       [ -f "${case%.ed}.mini.out" ] && out=${case%.ed}.mini.out
       if run_case "$MINIED" "$case" | diff -u "$out" - > /tmp/$$.diff; then echo "ok   $name"
       else echo "FAIL $name"; cat /tmp/$$.diff; status=1; fi;;

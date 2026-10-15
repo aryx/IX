@@ -9,6 +9,8 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TS=${TS:-$ROOT/_build/default/tiny/TinyShell.exe}
 RC=${RC:-/usr/lib/plan9/bin/rc}
+# the reference is 9base's rc: without it (macOS: no 9base), nothing to compare
+[ -x "$RC" ] || { echo "skip TinyShell_test.sh (no 9base rc: $RC)"; exit 0; }
 failures=0
 
 run() {

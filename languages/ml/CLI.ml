@@ -3,7 +3,7 @@
 
 (* See CLI.mli *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
+type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdout; Cap.stderr >
 
 let print = Console.print and eprint = Console.eprint
 
@@ -104,13 +104,30 @@ let parse (caps : < caps; .. >) file =
           | Ok text' when text' == text -> Ok (text, t)
           | Ok text' -> (match parse_text f text' with Ok t -> Ok (text', t) | Error m -> Error m)))
 
+(* a file of that name exactly, by its directory's names (read once):
+ * on a file system that ignores case (macOS's), opening FS.ml opens
+ * Fs.ml when that is the one there, another unit *)
+let listed : (string, string list) Hashtbl.t = Hashtbl.create 16
+let exists (caps : < caps; .. >) f =
+  let f = Fpath.to_string f in
+  let d = Filename.dirname f in
+  let names =
+    match Hashtbl.find_opt listed d with
+    | Some names -> names
+    | None ->
+        let names = try List.map (fun (e : Sys_plan9.dir) -> e.name) (Sys_plan9.dirread caps d) with Unix.Unix_error _ -> [] in
+        Hashtbl.replace listed d names;
+        names
+  in
+  List.mem (Filename.basename f) names
+
 (* another unit's source, by module name: its .mli, else its .ml, in
  * the directories in order, its file's name lowercase or not *)
 let loader (caps : < caps; .. >) dirs : Scope.loader =
  fun name ->
   let names = List.concat_map (fun ext -> [ String.uncapitalize_ascii name ^ ext; name ^ ext ]) [ ".mli"; ".ml" ] in
   let candidates = List.concat_map (fun d -> List.map (fun n -> Fpath.(d / n)) names) dirs in
-  match List.find_opt (fun f -> FS.read_opt caps f <> None) candidates with
+  match List.find_opt (fun f -> exists caps f && FS.read_opt caps f <> None) candidates with
   | None -> None
   | Some f -> (
       match parse caps f with

@@ -51,7 +51,8 @@ bad=0
 for p in $(seq 30 13 400); do
   out=$(with_period $p); s=${out##*$'\n'}; text=${out%$'\n'*}; text=${text%$'\n'}
   letters=$(echo -n "$text" | sed 's/<illegal>//; s/<fault>//')
-  na=$(echo -n "$letters" | tr -cd a | wc -c); nb=$(echo -n "$letters" | tr -cd b | wc -c)
+  # (wc's count without its padding: BSD's, macOS's, has some)
+  na=$(echo -n "$letters" | tr -cd a | wc -c | tr -d ' '); nb=$(echo -n "$letters" | tr -cd b | wc -c | tr -d ' ')
   why=""
   [ "$s" = 0 ] || why="status $s"
   [ "$na" = 20 ] && [ "$nb" = 20 ] || why="$why; $na a, $nb b"

@@ -17,7 +17,8 @@ HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd $HERE/../../.. && pwd)
 update=; [ "${1:-}" = -u ] && { update=1; shift; }
 if [ $# -ge 1 ]; then set -- $(realpath $1); LYNX=$1/browsers/lynx/mini-lynx; HTTPD=$1/networking/mini-httpd
 else LYNX=$ROOT/_build/default/browsers/lynx/Lynx.exe; HTTPD=$ROOT/_build/default/networking/Httpd.exe; fi
-W=$(mktemp -d); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
+# resolved: macOS's /var is /private/var, the path the links print
+W=$(cd "$(mktemp -d)" && pwd -P); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
 mkdir $W/site
 cat > $W/site/menu.html <<'END'
 <!doctype html><title>Menu</title>

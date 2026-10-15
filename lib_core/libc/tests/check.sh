@@ -14,6 +14,11 @@
 # usage: check.sh [count]      (20000: a minute)
 set -u
 D=$(cd "$(dirname "$0")" && pwd)
+# the references are glibc and GNU's gcc (-fplan9-extensions): elsewhere
+# (macOS: its libc prints nan's sign otherwise, its gcc is clang) a skip
+if ! getconf GNU_LIBC_VERSION > /dev/null 2>&1 || ! gcc --version 2>/dev/null | grep -q "Free Software Foundation"; then
+  echo "skip libc check.sh (no glibc and GNU gcc)"; exit 0
+fi
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 gcc -O2 -w -I$D/host -o $W/fmt_check $D/fmt_check.c || exit 1
 gcc -O2 -w -fplan9-extensions -o $W/vlrt_check $D/vlrt_check.c || exit 1

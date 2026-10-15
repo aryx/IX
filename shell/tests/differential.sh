@@ -27,15 +27,29 @@ mode=${1:-check}
 [ $# -gt 0 ] && shift
 cases=${*:-$CORPUS/*.rc}
 
+# the records were made with GNU's tools (wc, echo, cat -v, touch -d):
+# on macOS, coreutils' (Homebrew's gnubin) first, where it is
+for d in /opt/homebrew /usr/local; do
+  [ "$(uname)" = Darwin ] && [ -d $d/opt/coreutils/libexec/gnubin ] && { GNUBIN=$d/opt/coreutils/libexec/gnubin; break; }
+done
+[ -n "$GNUBIN" ] && export PATH=$GNUBIN:$PATH
+# a case that runs rc by name wants 9base's (as /usr/bin/rc is on Debian):
+# without it (macOS: Homebrew's rc is Byron Rakitzis's), skipped
+needs_rc="eflag functions"
+
+# coreutils' timeout, by its path (the environment is emptied): gtimeout on macOS
+TIMEOUT=$(command -v timeout || command -v gtimeout)
+
 run_case() {
   prog=$1 case=$2
-  dir=$(mktemp -d)
+  # resolved: macOS's /var is /private/var, the path the program prints
+  dir=$(cd "$(mktemp -d)" && pwd -P)
   cp "$case" "$dir/case.rc"
   (
     cd "$dir" || exit 1
     touch a.c b.c .hidden; mkdir d1 d2; touch d1/x.c d2/y.c
-    env -i PATH="/usr/local/bin:/usr/bin:/bin" HOME=/nonexistent \
-      timeout 20 $prog ./case.rc a1 a2 2>&1 </dev/null
+    env -i PATH="${GNUBIN:+$GNUBIN:}/usr/local/bin:/usr/bin:/bin" HOME=/nonexistent \
+      "$TIMEOUT" 20 $prog ./case.rc a1 a2 2>&1 </dev/null
     echo "[exit $?]"
   ) | sed -e "s|$dir|DIR|g" -e 's/^[0-9][0-9]*: signal/PID: signal/' \
           -e 's|rc ([^)]*)|rc (ARGV0)|g' -e 's|/dev/fd/[0-9][0-9]*|/dev/fd/N|g'
@@ -49,6 +63,7 @@ for case in $cases; do
   case $mode in
     record) run_case "$RC" "$case" > "$out"; echo "recorded $name";;
     check)
+      case " $needs_rc " in *" $name "*) [ -x "$RC" ] || { echo "skip $name (no 9base rc: $RC)"; continue; };; esac
       [ -f "${case%.rc}.mini.out" ] && out=${case%.rc}.mini.out
       if run_case "$MINIRC" "$case" | diff -u "$out" - > /tmp/$$.diff; then echo "ok   $name"
       else echo "FAIL $name"; cat /tmp/$$.diff; status=1; fi;;

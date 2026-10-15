@@ -52,11 +52,19 @@ let process_laws = [
 
 (* milestone 3: an interactive session, through a pipe, prompts and all,
  * against what 9base's rc printed for it *)
+(* the session runs ls, recorded with GNU's: on macOS, coreutils'
+ * (Homebrew's gnubin) first, where it is, as differential.sh does *)
+let gnubin =
+  [ "/opt/homebrew"; "/usr/local" ]
+  |> List.map (fun d -> d ^ "/opt/coreutils/libexec/gnubin")
+  |> List.find_opt Sys.file_exists
+  |> Option.fold ~none:"" ~some:(fun d -> d ^ ":")
+
 let session =
   Testo.create "session: the prompt, errors, exit" (fun () ->
     let cmd =
-      Printf.sprintf "cd /tmp && env -i PATH=/usr/bin:/bin HOME=/nonexistent %s -i < %s/session.in 2>&1; echo \"[exit $?]\""
-        (Sys.getcwd () ^ "/" ^ mini_rc) (Sys.getcwd () ^ "/" ^ corpus_dir)
+      Printf.sprintf "cd /tmp && env -i PATH=%s/usr/bin:/bin HOME=/nonexistent %s -i < %s/session.in 2>&1; echo \"[exit $?]\""
+        gnubin (Sys.getcwd () ^ "/" ^ mini_rc) (Sys.getcwd () ^ "/" ^ corpus_dir)
     in
     let tmp = Filename.temp_file "session" ".out" in
     ignore (Sys.command (Printf.sprintf "(%s) | sed 's|rc ([^)]*)|rc (ARGV0)|' > %s" cmd tmp));

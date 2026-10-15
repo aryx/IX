@@ -54,12 +54,13 @@ open(sys.argv[2], "w").write(str(s.server_port))
 s.serve_forever()
 PY
 python3 $T/server.py $T/log $T/port & SERVER=$!
-for i in 1 2 3 4 5 6 7 8 9 10; do [ -s $T/port ] && break; sleep 0.2; done
+# up to 10 s: python starts slowly on a loaded machine
+for i in $(seq 50); do [ -s $T/port ] && break; sleep 0.2; done
 A=http://127.0.0.1:$(cat $T/port)
 $N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=$T/p url=$A/ > /dev/null
 check "the cookies with a date are written, the script's too" "$(grep -v '^#' $T/p/cookies.txt | cut -f1,2,3,4,6,7 | sort | tr '\t\n' ' ;')" "127.0.0.1 FALSE / FALSE js 3;"
 check "the HttpOnly one marked" "$(grep '^#HttpOnly_' $T/p/cookies.txt | cut -f1,6,7 | tr '\t' ' ')" "#HttpOnly_127.0.0.1 sid 42"
-check "its owner's alone" "$(stat -c %a $T/p/cookies.txt)" "600"
+check "its owner's alone" "$(stat -c %a $T/p/cookies.txt 2> /dev/null || stat -f %Lp $T/p/cookies.txt)" "600"
 $N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=$T/p url=$A/again > /dev/null
 check "the first request says none, the second run's says them back" "$(tr '\n' ';' < $T/log)" "/ Cookie: none;/again Cookie: sid=42; js=3;"
 $N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=off url=$A/off > /dev/null

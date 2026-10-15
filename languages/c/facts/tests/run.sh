@@ -32,9 +32,9 @@ $CC -m 7 -flow $T/flow.c > $W/flow.facts 2>&1
 $CC -m 7 -dflow $T/flow.c > $W/own.dl 2>&1
 A=languages/datalog/analyses
 { $DATALOG -q 'across_call(V, P)' $A/liveness.dl $W/flow.facts
-  echo "differences: $($DATALOG -q 'differs(Who, V, P)' $A/liveness.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)"
+  echo "differences: $(($($DATALOG -q 'differs(Who, V, P)' $A/liveness.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)))"
   sed 's/, \\+ def(V, P)//' $A/liveness.dl > $W/broken.dl
-  echo "without the writes: $($DATALOG -q 'differs(Who, V, P)' $W/broken.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)"
+  echo "without the writes: $(($($DATALOG -q 'differs(Who, V, P)' $W/broken.dl $T/flow_check.dl $W/flow.facts $W/own.dl | wc -l)))"
 } 2>&1 | grep -v '^warning' > $W/flow.out
 for n in pointers.facts pointers.out flow.facts flow.out; do
   if [ "${1:-}" = -record ]; then cp $W/$n $T/$n; echo "recorded $n"

@@ -10,6 +10,7 @@ not essential. The last three need a decision first.
 | mini-git | `mini-git clone repo copy` (a relative path) | `could not clone repository` | an absolute path works; git9 takes a path as ssh's, and the relative one reaches it without its directory |
 | mini-ld | a program calling an undefined function | `hello.c:0: undefined: print` | the line is 0: the reference's line is not kept to the link |
 | mini-merge3 | its usage and its .mli | the usage says `theirs base ours`, Difftool.mli `ours base theirs` (2026-10-14: Plan 9's merge3.c says the same usage, of files it reads as mine base theirs: the twin copies its mistake) | one of the two is wrong; the help says `mine base theirs` meanwhile |
+| mini-chrome's engine (browsers/javascript), macOS | in an async function, deep recursion (5000 calls; MINI_OPTI=off or walk) | the process dies by SIGBUS, where Linux says RangeError | eval/Js_coroutine.ml runs an async body on a Thread, whose stack is the system's default: 512 KB on macOS, 8 MB on Linux, and OCaml 4.14 cannot ask for more; Js_eval's max_depth (2000) is too deep for 512 KB by the simple paths. A smaller limit inside a coroutine, or the bodies run otherwise. Unit_js_promise's "deep calls in one" left out there (modes.sh) |
 | languages/ml/tests/run.sh | `OCL=... run.sh 7 w fact.ml` | the stdlib still read from /tmp/ix-ocaml-light-arm64 | its `S=` hardcodes the path its `OCL=` line honors |
 
 To decide first:

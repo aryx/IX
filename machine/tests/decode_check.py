@@ -88,6 +88,12 @@ open(binf, "wb").write(b"".join(int(w, 16).to_bytes(4, "little") for w in words)
 # the objdump for arm: a cross one, named by its target (the native one
 # too, on an arm host), as a plain objdump knows only its host's
 objdump = shutil.which("aarch64-linux-gnu-objdump" if a64 else "arm-linux-gnueabihf-objdump") or "objdump"
+# the texts compared are GNU's: another objdump (macOS's is LLVM's)
+# prints its own syntax, nothing to compare
+try: version = subprocess.run([objdump, "--version"], capture_output=True, text=True).stdout
+except OSError: version = ""
+if "GNU objdump" not in version:
+    print("skip decode_check%s (no GNU objdump for %s)" % (" -64" if a64 else "", "aarch64" if a64 else "arm")); sys.exit(0)
 dis = subprocess.run([objdump, "-D", "-b", "binary", "-m", "aarch64" if a64 else "arm", binf], capture_output=True, text=True).stdout
 want = {}
 for line in dis.splitlines():

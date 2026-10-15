@@ -29,9 +29,9 @@ $ML -m 7 -dflow $I $T/flow.ml > $W/own.dl 2>&1
 rules="$A/liveness_ssa.dl $A/dominators.dl $T/check.dl"
 { $DATALOG -q 'back_edge(M, N)' -q 'idom(D, B)' $rules $W/flow.facts $W/own.dl
   $DATALOG -q "live_in(V, 'f1_triangle<>:b1')" -q "live_out(V, 'f1_triangle<>:b2')" $rules $W/flow.facts $W/own.dl
-  echo "differences: $($DATALOG -q 'differs(What, Who, V, B)' $rules $W/flow.facts $W/own.dl | wc -l)"
+  echo "differences: $(($($DATALOG -q 'differs(What, Who, V, B)' $rules $W/flow.facts $W/own.dl | wc -l)))"
   grep -v 'phi_arg' $A/liveness_ssa.dl > $W/broken.dl
-  echo "without the phis' operands: $($DATALOG -q 'differs(What, Who, V, B)' $W/broken.dl $A/dominators.dl $T/check.dl $W/flow.facts $W/own.dl | wc -l)"
+  echo "without the phis' operands: $(($($DATALOG -q 'differs(What, Who, V, B)' $W/broken.dl $A/dominators.dl $T/check.dl $W/flow.facts $W/own.dl | wc -l)))"
 } 2>&1 | grep -v '^warning' > $W/flow.out
 for u in Kit Use; do $ML -m 7 -facts $I -I $T/closures $T/closures/$u.ml; done > $W/closures.facts 2>&1
 grep -v '^point_to(A,B)?' $A/pointer.dl > $W/pointer.dl

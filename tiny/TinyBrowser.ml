@@ -266,7 +266,7 @@ let bold = 1
 let emph = 2
 let code = 4
 
-type run = { col : int; text : string; look : int; link : string }
+type run = { col : int; text : string; look : int; link : string; pic : int }
 type line = { runs : run list; rule : bool }
 
 (* A flow wraps words into lines of a given width, starting at a left
@@ -304,18 +304,28 @@ let word (f : flow) text look link space =
   let col = if space then f.at + 1 else f.at in
   (match f.made with
    | r :: rest when r.look = look && r.link = link && r.col + String.length r.text = f.at ->
-       f.made <- { col = r.col; text = r.text ^ (if space then " " else "") ^ text; look = look; link = link } :: rest
+       f.made <- { col = r.col; text = r.text ^ (if space then " " else "") ^ text; look = look; link = link; pic = -1 } :: rest
    | _ ->
        (* The space between two different runs belongs to neither, so a
         * link's underline stops where its text stops. *)
-       f.made <- { col = col; text = text; look = look; link = link } :: f.made);
+       f.made <- { col = col; text = text; look = look; link = link; pic = -1 } :: f.made);
   f.at <- col + len
+
+(* A picture of [rows] rows of the screen: a line for
+ * each row, whose one run is the picture's slice there (its number
+ * times 256, plus the row), at the left margin. The text goes on under
+ * it. *)
+let picture_block (f : flow) id rows link =
+  end_line f;
+  for s = 0 to rows - 1 do
+    push f { runs = [ { col = f.left; text = ""; look = 0; link = link; pic = (id * 256) + s } ]; rule = false }
+  done
 
 (* Adds a text exactly as it is, with no wrapping (for <pre>). *)
 let verbatim (f : flow) text look link =
   if f.made = [] then f.at <- f.left;
   if text <> "" then begin
-    f.made <- { col = f.at; text = text; look = look; link = link } :: f.made;
+    f.made <- { col = f.at; text = text; look = look; link = link; pic = -1 } :: f.made;
     f.at <- f.at + String.length text
   end
 
@@ -325,7 +335,7 @@ let verbatim (f : flow) text look link =
 
 (* The words of a cell are kept until the end of the table, when the
  * widths of its columns are known. *)
-type item = Word of string * int * string * bool | Break
+type item = Word of string * int * string * bool | Break | Pic of int * int * int * string
 
 type cell = { mutable items : item list; span : int; head : bool }
 type table = {
@@ -349,6 +359,7 @@ let measure (c : cell) =
         narrow := max !narrow len;
         line := !line + len + (if sp && !line > 0 then 1 else 0);
         wide := max !wide !line
+    | Pic (_, cols, _, _) -> narrow := max !narrow cols; wide := max !wide cols; line := 0
     | Break -> line := 0) (cell_words c);
   !narrow, !wide
 
@@ -402,6 +413,7 @@ let lay_table (f : flow) (t : table) =
         let g = flow cw in
         List.iter (function
           | Word (text, look, link, sp) -> word g text (if c.head then look lor bold else look) link sp
+          | Pic (id, _, rows, link) -> picture_block g id rows link
           | Break -> end_line g) (cell_words c);
         end_line g;
         let at = if !k < n then x.(!k) else x.(n) in
@@ -411,7 +423,7 @@ let lay_table (f : flow) (t : table) =
       for i = 0 to height - 1 do
         let runs = List.concat (List.map (fun (at, ls) ->
           match List.nth_opt ls i with
-          | Some (l : line) -> List.map (fun (r : run) -> { col = r.col + at; text = r.text; look = r.look; link = r.link }) l.runs
+          | Some (l : line) -> List.map (fun (r : run) -> { col = r.col + at; text = r.text; look = r.look; link = r.link; pic = r.pic }) l.runs
           | None -> []) laid) in
         push f { runs = runs; rule = false }
       done) rows;
@@ -421,6 +433,11 @@ let lay_table (f : flow) (t : table) =
 (*****************************************************************************)
 (* The tags *)
 (*****************************************************************************)
+
+(* A picture of the page: where it is, the size it is shown at in
+ * pixels, its alternative text, and how far it has come: -1 not asked
+ * yet, -3 asked, -2 not to be had, or the rows of it received. *)
+type picture = { pc_src : string; pc_w : int; pc_h : int; pc_alt : string; mutable pc_got : int }
 
 (* An open element. Besides its tag, it records how its text should be
  * shown, combining what it says with what its parents say, so the top
@@ -444,12 +461,14 @@ type page = {
   mutable page_title : string;
   mutable page_base : string;
   mutable anchors : (string * int) list;  (* an element's id, and the line it starts at *)
+  mutable pictures : picture list;        (* the page's pictures, the last first *)
+  mutable npictures : int;
 }
 
 let root = { tag = ""; face = 0; href = ""; hide = false; pre = false; margin = 0; count = 0 }
 
 let create width =
-  { reader = { tail = ""; raw = "" }; page_flow = flow width; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = ""; anchors = [] }
+  { reader = { tail = ""; raw = "" }; page_flow = flow width; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = ""; anchors = []; pictures = []; npictures = 0 }
 
 let top p = match p.stack with e :: _ -> e | [] -> root
 
@@ -552,18 +571,40 @@ let text p s =
 
 let rule p = if p.tables = [] then begin end_line p.page_flow; push p.page_flow { runs = []; rule = true } end
 
-(* Until pictures are drawn, a picture is shown as its alternative text.
- * Wikipedia shows math as a picture whose alternative text is the TeX
- * source, so for those we show the TeX. Small icons are skipped. *)
+(* The pixels the pictures of a page may have in all: they are images of
+ * the kernel's, which has 2 MB for them, the windows' included. *)
+let picture_room = 1048576
+
+(* A picture: a box of the size the page says (its width and height
+ * attributes), smaller if it is wider than the room it has, kept in the
+ * page's pictures and drawn when its pixels come. The text never moves
+ * when they do: its place is known before the picture is. Small icons
+ * (under 24 pixels) are left out. Wikipedia shows math as a picture
+ * whose alternative text is the TeX source, which we show instead. *)
 let picture p attrs =
-  let alt = attr attrs "alt" and cl = attr attrs "class" in
+  let alt = attr attrs "alt" and cl = attr attrs "class" and src = attr attrs "src" in
+  let w = number (attr attrs "width") and h = number (attr attrs "height") in
   if has_class cl "mwe-math-fallback-image-inline" || has_class cl "mwe-math-fallback-image-display" then begin
     let pre = "{\\displaystyle " in
     let n = String.length alt and m = String.length pre in
     emit p (if n > m + 1 && String.sub alt 0 m = pre then String.sub alt m (n - m - 1) else alt)
   end
-  else if number (attr attrs "width") >= 24 || number (attr attrs "height") >= 24 then
-    emit p ("[" ^ (if alt = "" then "picture" else alt) ^ "]")
+  else if (w >= 24 || h >= 24) && w > 0 && h > 0 && src <> "" then begin
+    let f = p.page_flow in
+    let room = 8 * (if p.tables = [] then f.width - f.left else f.width / 2) in
+    let w, h = if w > room then room, max 1 (h * room / w) else w, h in
+    let used = List.fold_left (fun n (pc : picture) -> n + (pc.pc_w * pc.pc_h)) 0 p.pictures in
+    if used + (w * h) > picture_room then emit p ("[" ^ (if alt = "" then "picture" else alt) ^ "]")
+    else begin
+      let id = p.npictures in
+      p.pictures <- { pc_src = src; pc_w = w; pc_h = h; pc_alt = alt; pc_got = -1 } :: p.pictures;
+      p.npictures <- id + 1;
+      let cols = (w + 7) / 8 and rows = (h + 15) / 16 and link = (top p).href in
+      match p.tables with
+      | t :: _ -> (match t.cell with Some c -> c.items <- Pic (id, cols, rows, link) :: Break :: c.items | None -> ())
+      | [] -> picture_block f id rows link
+    end
+  end
 
 (* Some elements close implicitly when another one opens: a paragraph
  * when any block starts, a list item when the next one starts, a cell
@@ -644,7 +685,7 @@ let open_tag p tag k attrs =
         | [] ->
             let f = p.page_flow in
             f.at <- max 0 (margin - String.length mark - 1);
-            f.made <- [ { col = f.at; text = mark; look = 0; link = "" } ];
+            f.made <- [ { col = f.at; text = mark; look = 0; link = ""; pic = -1 } ];
             (* If the number is wider than the margin, the item's text
              * starts after it. *)
             f.at <- max margin (f.at + String.length mark + 1)
@@ -695,6 +736,8 @@ let lines p = List.rev p.page_flow.out
 let title p = p.page_title
 let base p = p.page_base
 let anchor p id = List.assoc_opt id p.anchors
+let pictures p = p.npictures
+let picture_of p id = List.nth p.pictures (p.npictures - 1 - id)
 let count p = p.page_flow.nlines
 
 (* The lines from the a-th to before the b-th, from the top. The lines
@@ -710,17 +753,24 @@ let lines_between p a b =
 (* The lines as text *)
 (*****************************************************************************)
 
-let show_line width (l : line) =
+(* A picture's first row shows as [its alternative text, w x h]; its
+ * other rows as nothing. *)
+let show_line p width (l : line) =
   if l.rule then String.make width '-'
   else begin
     let at = ref 0 in
     join (List.map (fun (r : run) ->
       let pad = if r.col > !at then String.make (r.col - !at) ' ' else "" in
-      at := max !at r.col + String.length r.text;
-      pad ^ r.text) l.runs)
+      let text =
+        if r.pic >= 0 && r.pic mod 256 = 0 then
+          let pc = picture_of p (r.pic / 256) in
+          "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", " ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
+        else r.text in
+      at := max !at r.col + String.length text;
+      pad ^ text) l.runs)
   end
 
-let dump p = join (List.map (fun l -> show_line p.page_flow.width l ^ "\n") (lines p))
+let dump p = join (List.map (fun l -> show_line p p.page_flow.width l ^ "\n") (lines p))
 
 (*****************************************************************************)
 (* The screen *)
@@ -813,6 +863,7 @@ type nav = {
   mutable nv_goal : int;             (* a line to show first once it has come (back), or -1 *)
   mutable nv_goal_id : string;       (* an anchor to show once it has come (#fragment), or "" *)
   mutable nv_pressed : bool;         (* the mouse's button is down *)
+  mutable nv_fetch : int;            (* the picture [nv_wire] brings, or -1 for the page *)
 }
 
 type screen = {
@@ -842,13 +893,39 @@ let fill_row sc row colour = put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 
  * bold is black (drawing it twice, a pixel apart, filled the gaps of an
  * m); emphasis is red, as there is no italic; a link is blue and
  * underlined; code is on light grey. *)
+(* A picture's image on our connection is its number plus 16 (the
+ * colours are below). *)
+let image_of id = 16 + id
+
+(* A slice of a picture (16 rows of it) at a row of the screen: the rows
+ * that have come, from the picture's image, and a grey box for the
+ * rest; until its first rows come, its alternative text on the grey. *)
+let draw_slice sc row (r : run) =
+  let id = r.pic / 256 and s = r.pic mod 256 in
+  let pc = picture_of sc.sc_page id in
+  let x = r.col * 8 and y = row * 16 and from = s * 16 in
+  let high = min 16 (pc.pc_h - from) in
+  if high > 0 then begin
+    let have = if pc.pc_got > from then min high (pc.pc_got - from) else 0 in
+    if have > 0 then put sc (d_draw 0 (image_of id) (-1) x y (x + pc.pc_w) (y + have) 0 from);
+    if have < high then begin
+      put sc (d_fill 0 c_code x (y + have) (x + pc.pc_w) (y + high));
+      if s = 0 && pc.pc_got <= 0 && pc.pc_w >= 24 && high = 16 then begin
+        let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
+        let fits = (pc.pc_w / 8) - 1 in
+        put sc (d_text 0 c_text (x + 4) y (if String.length alt > fits then String.sub alt 0 (max 0 fits) else alt))
+      end
+    end
+  end
+
 let draw_line sc row (l : line) =
   let y = row * 16 in
   fill_row sc row c_white;
   if l.rule then put sc (d_fill 0 c_rule 0 (y + 7) (sc.sc_cols * 8) (y + 9))
   else
     List.iter (fun (r : run) ->
-      if r.col < sc.sc_cols && r.text <> "" then begin
+      if r.pic >= 0 then draw_slice sc row r
+      else if r.col < sc.sc_cols && r.text <> "" then begin
         let n = min (String.length r.text) (sc.sc_cols - r.col) in
         let t = String.sub r.text 0 n and x = r.col * 8 in
         if r.look land code <> 0 then put sc (d_fill 0 c_code x y (x + (n * 8)) (y + 16));
@@ -871,7 +948,11 @@ let draw_status sc =
     | Some typed -> "go to: " ^ typed ^ "_"
     | None ->
         let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
-        (if sc.sc_state = "reading" then "reading, " ^ kb else if sc.sc_state = "done" then kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines" else sc.sc_state)
+        (if sc.sc_state = "reading" then "reading, " ^ kb
+         else if sc.sc_state = "done" then
+           kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
+           ^ (if sc.sc_nav.nv_fetch >= 0 then ", picture " ^ string_of_int (sc.sc_nav.nv_fetch + 1) ^ " of " ^ string_of_int (pictures sc.sc_page) else "")
+         else sc.sc_state)
         ^ "   space -: page, b: back, g: go to, q: quit" in
   put sc (d_text 0 c_black 8 (row * 16) (clip sc text))
 
@@ -912,6 +993,8 @@ let show_new sc =
  * shown; its #fragment, if any, is shown when it comes. *)
 let load sc url =
   if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+  for i = 0 to pictures sc.sc_page - 1 do if (picture_of sc.sc_page i).pc_got >= 0 then put sc (d_free (image_of i)) done;
+  sc.sc_nav.nv_fetch <- -1;
   let address, id = fragment url in
   sc.sc_page <- create sc.sc_cols;
   sc.sc_nav.nv_address <- address;
@@ -929,6 +1012,62 @@ let load sc url =
   end
   else ignore (u_write sc.sc_nav.nv_wire ("www " ^ url ^ "\r\n"));
   draw_status sc
+
+(* The pictures, once the page is all there: the next one asked of the
+ * wire's other end, as "img w h address", the ones on the screen first,
+ * then in the page's order. Its answer is a line "0 w h", then a row of
+ * pixels a message, which go into the picture's image as they come. *)
+let rec next_picture sc =
+  let p = sc.sc_page in
+  let pending id = (picture_of p id).pc_got = -1 in
+  let rec on_screen = function
+    | [] -> -1
+    | (l : line) :: rest ->
+        (match List.filter (fun (r : run) -> r.pic >= 0 && pending (r.pic / 256)) l.runs with
+         | r :: _ -> r.pic / 256
+         | [] -> on_screen rest) in
+  let rec first id = if id >= pictures p then -1 else if pending id then id else first (id + 1) in
+  let id = match on_screen (lines_between p sc.sc_top (sc.sc_top + rows_of_page sc)) with -1 -> first 0 | id -> id in
+  if id >= 0 then begin
+    let pc = picture_of p id in
+    let fd = u_dial "10.0.0.1" 70 in
+    if fd < 0 then begin pc.pc_got <- -2; next_picture sc end
+    else begin
+      pc.pc_got <- -3;
+      let url = resolve sc.sc_nav.nv_address (base p) pc.pc_src in
+      ignore (u_write fd ("img " ^ string_of_int pc.pc_w ^ " " ^ string_of_int pc.pc_h ^ " " ^ url ^ "\r\n"));
+      sc.sc_nav.nv_wire <- fd;
+      sc.sc_nav.nv_fetch <- id
+    end
+  end;
+  draw_status sc
+
+(* A message of the picture being fetched: its first line, then its
+ * rows. A row that comes is drawn at once if its slice is on the
+ * screen, so a picture is painted as it arrives. *)
+let picture_message sc s =
+  let id = sc.sc_nav.nv_fetch in
+  let pc = picture_of sc.sc_page id in
+  if pc.pc_got = -3 then begin
+    match String.split_on_char ' ' s with
+    | [ _; w; h ] when number w = pc.pc_w && number h = pc.pc_h ->
+        put sc (d_image (image_of id) 0 0 pc.pc_w pc.pc_h 255);
+        pc.pc_got <- 0
+    | _ -> pc.pc_got <- -2
+  end
+  else if pc.pc_got >= 0 && pc.pc_got < pc.pc_h then begin
+    let y = pc.pc_got in
+    put sc (d_pixels (image_of id) 0 y s);
+    pc.pc_got <- y + 1;
+    let slice = (id * 256) + (y / 16) in
+    List.iteri (fun i (l : line) ->
+      List.iter (fun (r : run) ->
+        if r.pic = slice then begin
+          let x = r.col * 8 and sy = ((1 + i) * 16) + (y mod 16) in
+          put sc (d_draw 0 (image_of id) (-1) x sy (x + pc.pc_w) (sy + 1) 0 y)
+        end) l.runs)
+      (lines_between sc.sc_page sc.sc_top (sc.sc_top + rows_of_page sc))
+  end
 
 (* Goes to an address, remembering where we were. A link to a place of
  * the page shown (#cite_note-2) only moves to it. *)
@@ -1014,7 +1153,7 @@ let key sc k =
 
 let browse typed =
   let w, h = size () in
-  let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false } in
+  let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1 } in
   let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_top = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
@@ -1030,14 +1169,29 @@ let browse typed =
       if keys then begin fds.(0) <- 0; fds.(1) <- 4; n := 2 end;
       if sc.sc_nav.nv_wire >= 0 then begin fds.(!n) <- sc.sc_nav.nv_wire; n := !n + 1 end;
       let ready = u_ready fds !n 0 in
-      if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
+      if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire && sc.sc_nav.nv_fetch >= 0 then begin
+        let s = u_read sc.sc_nav.nv_wire 1024 in
+        if s = "" then begin
+          ignore (u_close sc.sc_nav.nv_wire);
+          sc.sc_nav.nv_wire <- -1;
+          let pc = picture_of sc.sc_page sc.sc_nav.nv_fetch in
+          if pc.pc_got < 0 then pc.pc_got <- -2;
+          sc.sc_nav.nv_fetch <- -1;
+          next_picture sc
+        end
+        else picture_message sc s;
+        flush sc;
+        loop keys
+      end
+      else if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
         let s = u_read sc.sc_nav.nv_wire 1024 in
         if s = "" then begin
           finish sc.sc_page;
           ignore (u_close sc.sc_nav.nv_wire);
           sc.sc_nav.nv_wire <- -1;
           sc.sc_state <- "done";
-          show_new sc; draw_bar sc; draw_status sc
+          show_new sc; draw_bar sc; draw_status sc;
+          next_picture sc
         end
         else begin
           let before = sc.sc_got / 16384 in

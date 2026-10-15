@@ -139,6 +139,11 @@ let www_address typed =
   | Some (host, title) -> "https://" ^ host ^ rest_prefix ^ title
   | None -> url
 
+let www_picture_kept url =
+  let path = match String.index_opt url '?' with Some i -> String.sub url 0 i | None -> url in
+  let name = Filename.basename path in
+  if name = "" || name.[0] = '.' || String.contains name '/' then None else Some name
+
 let www_kept url =
   match wikipedia url with
   | Some (_, title) when title <> "" && not (String.contains title '/') && title.[0] <> '.' -> Some (title ^ ".html")

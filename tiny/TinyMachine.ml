@@ -223,10 +223,10 @@ let helper_said pipes wait =
  * is the page. The machine waits meanwhile, which changes nothing of
  * its time. None when the helper could not fetch it (no network, no
  * such host): then its output is a line that says why. *)
-let fetch (caps : < Cap.fork; Cap.exec; .. >) url =
+let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
   let in_r, in_w = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
   let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineFetch.exe" else "tiny-machine-fetch" in
-  let pid = Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [ url ] ~stdin:in_r ~stdout:out_w in
+  let pid = Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w in
   Unix.close in_r; Unix.close in_w; Unix.close out_w;
   let b = Buffer.create 65536 and chunk = Bytes.create 65536 in
   let rec read () = match Unix.read from chunk 0 65536 with 0 -> () | n -> Buffer.add_subbytes b chunk 0 n; read () | exception Unix.Unix_error (Unix.EINTR, _, _) -> read () in
@@ -300,7 +300,7 @@ let run caps o image =
       let kept () = Option.bind (TinyMachinePeer.www_kept url) file in
       let page =
         if o.net_out then
-          match fetch caps url with
+          match fetch caps [ url ] with
           | Ok body -> body
           | Error why -> (match kept () with Some body -> body | None -> why)
         else
@@ -308,6 +308,24 @@ let run caps o image =
           | Some body -> body
           | None -> "www: " ^ url ^ ": no copy kept in " ^ dir ^ " (with -net-out, tiny-machine fetches it)\n" in
       messages (TinyMachinePeer.messages page)
+    end
+    (* "img w h address": a picture of a page, w by h, in the machine's
+     * colours: the helper decodes it, the address's (with -net-out) or
+     * a kept copy in dir *)
+    else if String.length line > 4 && String.sub line 0 4 = "img " then begin
+      let none = TinyMachinePeer.picture "" 0 0 "" in
+      messages (match String.split_on_char ' ' (String.sub line 4 (String.length line - 4)) with
+        | w :: h :: address when int_of_string_opt w <> None && int_of_string_opt h <> None ->
+            let w = int_of_string w and h = int_of_string h and url = String.concat " " address in
+            let decode source = match fetch caps [ "-picture"; string_of_int w; string_of_int h; source ] with
+              | Ok pixels when String.length pixels = w * h -> Some (TinyMachinePeer.picture "" w h pixels)
+              | _ -> None in
+            let kept () = match TinyMachinePeer.www_picture_kept url with
+              | Some name when Sys.file_exists (Filename.concat dir name) -> decode (Filename.concat dir name)
+              | _ -> None in
+            if w <= 0 || h <= 0 || w > TinyKernelNetwork.il_max then none
+            else (match (if o.net_out then decode url else None) with Some l -> l | None -> (match kept () with Some l -> l | None -> none))
+        | _ -> none)
     end
     else
     (* "wiki plan 9": dir's plan_9.wiki, a picture kept with its text *)

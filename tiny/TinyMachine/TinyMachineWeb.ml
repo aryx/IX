@@ -223,7 +223,10 @@ let nearest =
  * it smaller, on a canvas that is not shown; each pixel is then the
  * nearest of the screen's 256 colours, no dithering). k with its
  * width, its height, its rows; None if it cannot be had *)
-let picture url k =
+(* a picture loaded by the browser, at the size [size] gives from its
+ * own (w and h), drawn on a canvas and read back in the screen's
+ * colours *)
+let picture_sized url size k =
   let img = U.new_obj (get U.global "Image") [||] in
   U.set img (Js.string "crossOrigin") (Js.string "anonymous");
   listen img "error" (fun _ -> k None);
@@ -231,8 +234,7 @@ let picture url k =
     let iw : int = get img "naturalWidth" and ih : int = get img "naturalHeight" in
     if iw <= 0 || ih <= 0 then k None
     else begin
-      let w, h = if iw * 240 > ih * 320 then 320, max 1 (ih * 320 / iw) else max 1 (iw * 240 / ih), 240 in
-      let w, h = if iw <= w then iw, ih else w, h in
+      let w, h = size iw ih in
       let canvas = call document "createElement" [| str "canvas" |] in
       U.set canvas (Js.string "width") w; U.set canvas (Js.string "height") h;
       let context = call canvas "getContext" [| str "2d" |] in
@@ -247,6 +249,12 @@ let picture url k =
           k (Some (w, h, String.init (w * h) (fun i -> Char.chr (nearest (at (4 * i)) (at ((4 * i) + 1)) (at ((4 * i) + 2))))))
     end);
   U.set img (Js.string "src") (Js.string url)
+
+(* at most 320 by 240, for wiki *)
+let picture url k =
+  picture_sized url (fun iw ih ->
+    let w, h = if iw * 240 > ih * 320 then 320, max 1 (ih * 320 / iw) else max 1 (iw * 240 / ih), 240 in
+    if iw <= w then iw, ih else w, h) k
 
 (* Wikipedia on some words: one request, a search whose five best
  * articles come with their first sentences and a picture's address;
@@ -293,7 +301,23 @@ let wikipedia words k =
  * the fetch fails, a kept copy beside the page answers *)
 let peer_document www line messages =
   let name ok = if line = "" || line.[0] = '.' || String.contains line '/' then None else Some ok in
-  if String.length line > 4 && String.sub line 0 4 = "www " then begin
+  if String.length line > 4 && String.sub line 0 4 = "img " then begin
+    (* a page's picture at the size asked; a kept copy beside the page
+     * when the site does not allow this page to read its pictures *)
+    let none = TinyMachinePeer.picture "" 0 0 "" in
+    match String.split_on_char ' ' (String.sub line 4 (String.length line - 4)) with
+    | w :: h :: address when int_of_string_opt w <> None && int_of_string_opt h <> None ->
+        let w = int_of_string w and h = int_of_string h and url = String.concat " " address in
+        let answer = function Some (w, h, pixels) -> messages (TinyMachinePeer.picture "" w h pixels) | None -> messages none in
+        picture_sized url (fun _ _ -> w, h) (function
+          | Some p -> answer (Some p)
+          | None ->
+              match TinyMachinePeer.www_picture_kept url with
+              | Some name -> picture_sized (www ^ name) (fun _ _ -> w, h) answer
+              | None -> answer None)
+    | _ -> messages none
+  end
+  else if String.length line > 4 && String.sub line 0 4 = "www " then begin
     let url = TinyMachinePeer.www_address (String.sub line 4 (String.length line - 4)) in
     let failed () = messages [ "www: " ^ url ^ ": not reached (no network, or the site does not allow a web page to fetch it)\n" ] in
     fetch url (function

@@ -385,7 +385,11 @@ Without `-net-out`, or when the fetch fails, a kept copy of a Wikipedia
 article in `dir` answers (`tiny/tests/www/OCaml.html`); otherwise the
 answer is one line that starts with `www:` and says why. In
 tiny-kernel, `rc`, then `get 'www OCaml' | wc`, shows the page's 257,035
-bytes.
+bytes. A line `img w h address` asks for a picture of a page: the
+answer is `wiki`'s (a line `0 w h`, then a row of pixels a message),
+the picture decoded and made w by h in the screen's colours by
+`tiny-machine-fetch -picture`, from the address with `-net-out`, or
+from a kept copy in `dir` named by the address's last part.
 
 **On Linux**, the machine meets programs that are not ours, with no
 root. With `-net-out` the other end is a gateway: a connection

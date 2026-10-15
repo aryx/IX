@@ -657,3 +657,34 @@ as emacs does.
   `-net-out`: a click on ML in the infobox loads Wikipedia's "ML
   (programming language)" (125 KB, 279 lines).
 - `tiny/TinyBrowser.ml` is 1,075 lines, 807 of code.
+
+### Step 6, pictures (2026-10-15)
+
+- **A picture is a box the size the page says** (`<img>`'s width and
+  height, smaller if it is wider than its room): lines whose one run
+  is a slice of the picture, 16 pixels high. The text below never
+  moves when the pixels come. Icons under 24 pixels are left out, and
+  a page's pictures may have 1 MB of pixels in all (the kernel has
+  2 MB for its images). A picture in a table cell (the infobox's logo)
+  is the same lines inside the cell.
+- **After the page**, the pictures are asked for one at a time, those
+  on the screen first: the line `img w h address`. Each row that comes
+  goes into the picture's image (the kernel's) and is drawn at once
+  if its slice is on the screen, so a picture is painted as it
+  arrives. Until then its box is grey with its alternative text.
+  Scrolling draws a slice from the image.
+- **The host decodes**: `tiny-machine-fetch -picture w h source`
+  (PNG, JPEG, GIF by lib_graphics), each pixel the average of the
+  source's, on white where they are transparent, then the nearest of
+  the 256 colours by a table of 32,768. In the page, a canvas does it.
+  Kept copies for the tests: OCaml's six pictures, 36 KB, in
+  `tiny/tests/www/`.
+- **Checked**: OCaml's logo in the infobox, and the photograph of the
+  POPL award in the History section (`wwwpicture`, in the kernel's
+  check). OCaml's two pictures take 8 s of machine time after the
+  page's 57. Live, with `-net-out`: Plan 9 from Bell Labs shows Glenda
+  and a screenshot of rio (486 KB, 934 lines). The logo's box moved the
+  infobox two rows down, so `wwwlink` and `wwwback` click `[2]` at its
+  new place.
+- `tiny/TinyBrowser.ml` is now 1,229 lines, 928 of code: the reading,
+  the screen, links and pictures, under the 2,000 this plan set.

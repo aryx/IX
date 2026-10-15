@@ -12,6 +12,15 @@
  * is a page), and exits 0; if there is no answer at all, it prints why
  * on standard output, as one line starting with "www: ", and exits 1.
  *
+ *     tiny-machine-fetch -picture 250 188 https://.../250px-Award.jpg
+ *
+ * fetches a picture (or reads it, when the source is a file: a kept
+ * copy), decodes it (PNG, JPEG, GIF: lib_graphics), and prints it as 250
+ * times 188 bytes, a byte a pixel in the machine's 256 colours: each
+ * pixel is the average of the source's pixels that fall in it, put on
+ * white where they are transparent, then the nearest colour of the
+ * palette. That is the line "img w h address" of tiny-kernel's browser.
+ *
  * This is the part of the web that the tiny machine does not do itself:
  * the encrypted half (plan_tiny_browser.md, section 3). Everything from
  * the first < of the page on is the machine's. *)

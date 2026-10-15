@@ -96,6 +96,14 @@ val messages : string -> string list
 val www_address : string -> string
 val www_kept : string -> string option
 
+(* The line "img w h address" asks for a picture of the page, w by h
+ * pixels: the answer is [picture "" w h pixels] (below), with w and h 0
+ * when there is none. The host decodes it and makes it that size, in
+ * the machine's colours. [www_picture_kept] is the name of the file that
+ * holds a kept copy: the address's last part, without its ?query
+ * (250px-OCaml_Logo.svg.png). *)
+val www_picture_kept : string -> string option
+
 (* What "wiki words" is answered: a first message "t w h", then t
  * messages of text, then h messages of w bytes, a row of the picture
  * each, a byte a pixel in the screen's 256 colours (w no more than a

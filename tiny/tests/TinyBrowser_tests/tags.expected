@@ -42,8 +42,15 @@ let rec f x =
 
 Hidden: shown.
 
-A picture [Glenda], an icon , and math
-x^{2}.
+A picture
+[Glenda, 200x100]
+
+
+
+
+
+
+, an icon , and math x^{2}.
 
 Unclosed paragraph
 

@@ -72,10 +72,11 @@ val emph : int
 val code : int
 
 (* A run is a piece of text at a column, with a look and the address it
- * links to ("" if it is not a link). A line is a list of runs, from left
- * to right. A rule is a line drawn across the screen, under a heading
- * or for an <hr>. *)
-type run = { col : int; text : string; look : int; link : string }
+ * links to ("" if it is not a link); or, when [pic] is not -1, a slice
+ * of a picture 16 pixels high: the picture's number times 256, plus
+ * which slice. A line is a list of runs, from left to right. A rule is
+ * a line drawn across the screen, under a heading or for an <hr>. *)
+type run = { col : int; text : string; look : int; link : string; pic : int }
 type line = { runs : run list; rule : bool }
 
 (* A page being read and turned into lines of [width] columns. *)
@@ -100,6 +101,13 @@ val lines_between : page -> int -> int -> line list
 
 (* the line where the element with that id starts, if it came *)
 val anchor : page -> string -> int option
+
+(* The page's pictures: how many, and one by its number. A picture's
+ * pc_got is -1 before it is asked for, -3 once asked, -2 when there is
+ * none to be had, and the rows received so far after that. *)
+type picture = { pc_src : string; pc_w : int; pc_h : int; pc_alt : string; mutable pc_got : int }
+val pictures : page -> int
+val picture_of : page -> int -> picture
 
 (* Converts a text to ASCII: entities and UTF-8 characters become what
  * the font can show. *)

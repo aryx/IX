@@ -27,11 +27,11 @@ let digit c = if c >= 'A' then Char.code c - 55 else Char.code c - 48
 let filled kind turn row col = (digit turns.[(((kind * 4) + turn) * 4) + row] lsr (3 - col)) land 1 = 1
 
 (* a piece's four cells in the well: a column and a row each *)
-let cells (p : piece) =
+let cells { kind; turn; x; y } =
   let rec from row col acc =
     if row = 4 then acc
     else if col = 4 then from (row + 1) 0 acc
-    else from row (col + 1) (if filled p.kind p.turn row col then (p.x + col, p.y + row) :: acc else acc)
+    else from row (col + 1) (if filled kind turn row col then (x + col, y + row) :: acc else acc)
   in
   from 0 0 []
 
@@ -90,8 +90,8 @@ let view m = if m.over then [ m.board.ground; shown m.piece; banner ] else [ m.b
 let enter (well : int array) next seed score rows =
   let piece = { kind = next; turn = 0; x = 3; y = 0 } in
   let seed = random seed in
-  let b = { well = well; ground = ground_of well (seed mod 7) score rows; next = seed mod 7; seed = seed; score = score; rows = rows } in
-  { board = b; piece = piece; wait = delay rows; over = not (fits well piece) }
+  let board = { well; ground = ground_of well (seed mod 7) score rows; next = seed mod 7; seed; score; rows } in
+  { board; piece; wait = delay rows; over = not (fits well piece) }
 
 let start seed =
   let seed = random (1 + (seed land 0xffff)) in
@@ -100,11 +100,10 @@ let start seed =
 (* the piece lands: its cells are the well's, in another well; the full
  * rows are removed (the others copied from the bottom, a full one
  * passed over); the score, by how many at once *)
-let land_ m =
-  let b = m.board in
+let land_ { board = b; piece; _ } =
   let well = Array.make 200 0 in
   for i = 0 to 199 do well.(i) <- b.well.(i) done;
-  List.iter (fun (c, r) -> if r >= 0 then well.((r * 10) + c) <- m.piece.kind + 1) (cells m.piece);
+  List.iter (fun (c, r) -> if r >= 0 then well.((r * 10) + c) <- piece.kind + 1) (cells piece);
   let left = Array.make 200 0 in
   let full r = let rec from c = c = 10 || (well.((r * 10) + c) <> 0 && from (c + 1)) in from 0 in
   let rec down r into n =
@@ -148,4 +147,4 @@ let key k m =
   end
   else m
 
-let game = { width = 288; height = 336; init = start; view = view; key = key; frame = frame }
+let game = { width = 288; height = 336; init = start; view; key; frame }

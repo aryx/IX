@@ -121,9 +121,11 @@ type const = CInt of int | CChar of int | CStr of string
 type texpr = TE of string * texpr list | TEVar of string
 
 (* (p : t): an annotation, which makes a record's type known where its
- * labels are used *)
+ * labels are used. A record pattern names some of the fields; once
+ * typed, it also knows their indexes and how many fields the record has *)
 type pat = PAny | PVar of string | PConst of const | PCon of string * pat list | PTuple of pat list | PAlias of pat * string | POr of pat * pat
   | PAnnot of pat * texpr
+  | PRecord of (string * pat) list * int list ref * int ref
 
 type expr =
   | Const of const
@@ -226,7 +228,7 @@ let con_args c args untuple =
   | _ -> error "line %d: %s expects %d arguments" (line ()) c ci.arity
 
 let starts_atom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("(" | "[" | "{" | "begin" | "!") -> true | _ -> false
-let starts_patom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[") -> true | _ -> false
+let starts_patom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[" | "{") -> true | _ -> false
 
 (* expressions: a sequence, then let/match/fun/if, then the operators
  * by precedence climbing, then application *)
@@ -401,6 +403,17 @@ and patom () =
       advance ();
       let rec elems () = if accept (KW "]") then PCon ("[]", []) else (let p = pattern () in ignore (accept (KW ";")); PCon ("::", [ p; elems () ])) in
       elems ()
+  | KW "{" ->
+      advance ();
+      (* { view; update = u; _ }: a field alone binds the variable of its
+       * name, and _ allows the fields not named *)
+      let rec fields () =
+        if accept (KW "}") then []
+        else match peek () with
+          | LID l -> advance (); let p = if accept (KW "=") then pattern () else PVar l in ignore (accept (KW ";")); (l, p) :: fields ()
+          | KW "_" -> advance (); ignore (accept (KW ";")); expect (KW "}"); []
+          | _ -> fail () in
+      (match fields () with [] -> fail () | fs -> PRecord (fs, ref [], ref 0))
   | _ -> fail ()
 
 and params () = if starts_patom (peek ()) then let p = patom () in p :: params () else []
@@ -617,7 +630,10 @@ let label_for l t =
 let label_type li = match instantiate li.lscheme with TCon (_, [ r; f ]) -> r, f | _ -> assert false
 let const_type = function CInt _ -> int_t | CChar _ -> tcon "char" | CStr _ -> string_t
 
-let rec pat_type p : ty * (string * ty) list =
+(* known: the type the value matched is already known to have (the
+ * scrutinee's, an annotation's), so that a record pattern finds its
+ * record when two records share a label *)
+let rec pat_type ?(known = newvar ()) p : ty * (string * ty) list =
   match p with
   | PAny -> newvar (), []
   | PVar x -> let t = newvar () in t, [ x, t ]
@@ -626,8 +642,23 @@ let rec pat_type p : ty * (string * ty) list =
       let res, args = con_type c in
       res, List.concat (List.map2 (fun p t -> let pt, b = pat_type p in unify pt t; b) ps args)
   | PTuple ps -> let l = List.map pat_type ps in TCon ("*", List.map fst l), List.concat_map snd l
-  | PAlias (p, x) -> let t, b = pat_type p in t, (x, t) :: b
-  | PAnnot (p, te) -> let t, b = pat_type p in unify t (instantiate (of_texpr (ref []) te)); t, b
+  | PAlias (p, x) -> let t, b = pat_type ~known p in t, (x, t) :: b
+  | PAnnot (p, te) ->
+      let ta = instantiate (of_texpr (ref []) te) in
+      unify ta known;
+      let t, b = pat_type ~known:ta p in unify t ta; t, b
+  | PRecord (fs, idxs, n) ->
+      let li0 = label_for (fst (List.hd fs)) known in
+      let r = newvar () in
+      let bs = List.map (fun (l, p) ->
+        let li = match List.find_opt (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) with
+          | Some li -> li | None -> error "no field %s in %s" l li0.lrec in
+        let r', f = label_type li in
+        unify r r';
+        let pt, b = pat_type ~known:f p in
+        unify pt f; li.idx, b) fs in
+      idxs := List.map fst bs; n := List.length li0.lnames;
+      r, List.concat_map snd bs
   | POr (a, b) ->
       let t, ba = pat_type a and u, bb = pat_type b in
       unify t u;
@@ -678,7 +709,7 @@ let rec infer env e : ty =
 and cases_type env t cases =
   let r = newvar () in
   List.iter (fun (p, g, e) ->
-    let pt, bs = pat_type p in
+    let pt, bs = pat_type ~known:t p in
     unify pt t;
     let env = bs @ env in
     Option.iter (fun g -> unify (infer env g) bool_t) g;
@@ -692,7 +723,7 @@ and let_types env bs =
     decr level;
     match p with
     | PVar x -> if nonexpansive e then generalize t else unify (newvar ()) t; [ x, t ]
-    | p -> let pt, b = pat_type p in unify pt t; b) bs
+    | p -> let pt, b = pat_type ~known:t p in unify pt t; b) bs
   @ env
 
 and rec_types env bs =
@@ -1159,6 +1190,7 @@ let rec pat_vars = function
   | PAny | PConst _ -> []
   | PVar x -> [ x ]
   | PCon (_, ps) | PTuple ps -> List.concat_map pat_vars ps
+  | PRecord (fs, _, _) -> List.concat_map (fun (_, p) -> pat_vars p) fs
   | PAlias (p, x) -> x :: pat_vars p
   | PAnnot (p, _) -> pat_vars p
   | POr (p, _) -> pat_vars p
@@ -1199,6 +1231,7 @@ let rec refutable = function
   | PAny | PVar _ -> false
   | PAlias (p, _) | PAnnot (p, _) -> refutable p
   | PTuple ps -> List.exists refutable ps
+  | PRecord (fs, _, _) -> List.exists (fun (_, p) -> refutable p) fs
   | PCon (c, ps) -> let ci = find_con c in ci.nconst + ci.nblock > 1 || ci.kind = KExn || List.exists refutable ps
   | PConst _ | POr _ -> true
 
@@ -1220,6 +1253,10 @@ let rec test acc s p fail =
   | PConst (CInt n | CChar n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
   | PConst (CStr str) -> check [ Addr (static_string str, 8); CallC ("ml_equal", 2) ]; acc
   | PTuple ps -> fields 0 ps acc
+  (* a record is a tuple: the fields not named are _ *)
+  | PRecord (fs, idxs, n) ->
+      let at = List.combine !idxs (List.map snd fs) in
+      fields 0 (List.init !n (fun k -> List.assoc_opt k at ||| PAny)) acc
   | PCon (c, ps) ->
       let ci = find_con c in
       (match ci.kind with

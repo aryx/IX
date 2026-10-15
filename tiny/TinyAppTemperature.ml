@@ -32,6 +32,6 @@ let update msg m =
   | Celsius s -> let (v, ok) = number s in { c = s; f = (if ok then string_of_int (nearest ((9 * v) + 160) 5) else m.f) }
   | Fahrenheit s -> let (v, ok) = number s in { c = (if ok then string_of_int (nearest (5 * (v - 32)) 9) else m.c); f = s }
 
-let view m = Row [ Input (m.c, (fun s -> Celsius s)); Label "Celsius ="; Input (m.f, (fun s -> Fahrenheit s)); Label "Fahrenheit" ]
+let view { c; f } = Row [ Input (c, (fun s -> Celsius s)); Label "Celsius ="; Input (f, (fun s -> Fahrenheit s)); Label "Fahrenheit" ]
 
-let temperature = { init = { c = ""; f = "" }; view = view; update = update; key = (fun _ -> []) }
+let temperature = { init = { c = ""; f = "" }; view; update; key = (fun _ -> []) }

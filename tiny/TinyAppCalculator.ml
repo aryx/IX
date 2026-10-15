@@ -24,16 +24,15 @@ let limit = 999999999
 
 (* kept op shown: the number, and whether there is one (none by 0, none
  * past the limit: a product is asked by a division, before it is made) *)
-let result m =
-  let a = m.kept and b = m.shown in
-  if m.op = '/' then (if b = 0 then 0, false else a / b, true)
-  else if m.op = '*' then (if a <> 0 && abs b > limit / abs a then 0, false else a * b, true)
-  else (let v = if m.op = '+' then a + b else if m.op = '-' then a - b else b in v, abs v <= limit)
+let result { kept = a; shown = b; op; _ } =
+  if op = '/' then (if b = 0 then 0, false else a / b, true)
+  else if op = '*' then (if a <> 0 && abs b > limit / abs a then 0, false else a * b, true)
+  else (let v = if op = '+' then a + b else if op = '-' then a - b else b in v, abs v <= limit)
 
 (* an operation asked (' ': the equals): the one that awaited is done,
  * this one awaits; asked right after another, it takes its place *)
 let operate m op =
-  if m.fresh && m.op <> ' ' && op <> ' ' then { shown = m.shown; kept = m.kept; op = op; fresh = true; wrong = false }
+  if m.fresh && m.op <> ' ' && op <> ' ' then { shown = m.shown; kept = m.kept; op; fresh = true; wrong = false }
   else (let (v, ok) = result m in { shown = v; kept = v; op = op; fresh = true; wrong = not ok })
 
 let update msg m =
@@ -52,11 +51,11 @@ let update msg m =
 (*****************************************************************************)
 
 (* what awaits over the number, then four rows of four buttons *)
-let view m =
+let view { shown; kept; op; wrong; _ } =
   let d n = Button (string_of_int n, Digit n) in
   let o c = Button (String.make 1 c, Op c) in
-  Col [ Label (if m.op = ' ' then "" else string_of_int m.kept ^ " " ^ String.make 1 m.op);
-        Field (if m.wrong then "error" else string_of_int m.shown);
+  Col [ Label (if op = ' ' then "" else string_of_int kept ^ " " ^ String.make 1 op);
+        Field (if wrong then "error" else string_of_int shown);
         Row [ d 7; d 8; d 9; o '/' ]; Row [ d 4; d 5; d 6; o '*' ]; Row [ d 1; d 2; d 3; o '-' ];
         Row [ d 0; Button ("C", Clear); Button ("=", Equals); o '+' ] ]
 
@@ -70,4 +69,4 @@ let key k =
   else if c = 'c' then [ Clear ]
   else []
 
-let calculator = { init = start; view = view; update = update; key = key }
+let calculator = { init = start; view; update; key }

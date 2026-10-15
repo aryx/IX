@@ -32,7 +32,7 @@ let result { kept = a; shown = b; op; _ } =
 (* an operation asked (' ': the equals): the one that awaited is done,
  * this one awaits; asked right after another, it takes its place *)
 let operate m op =
-  if m.fresh && m.op <> ' ' && op <> ' ' then { shown = m.shown; kept = m.kept; op; fresh = true; wrong = false }
+  if m.fresh && m.op <> ' ' && op <> ' ' then { m with op; fresh = true; wrong = false }
   else (let (v, ok) = result m in { shown = v; kept = v; op = op; fresh = true; wrong = not ok })
 
 let update msg m =
@@ -40,9 +40,9 @@ let update msg m =
   | Clear -> start
   | _ when m.wrong -> m
   | Digit d ->
-      if m.fresh then { shown = d; kept = m.kept; op = m.op; fresh = false; wrong = false }
+      if m.fresh then { m with shown = d; fresh = false; wrong = false }
       else if m.shown > limit / 10 then m
-      else { shown = (10 * m.shown) + d; kept = m.kept; op = m.op; fresh = false; wrong = false }
+      else { m with shown = (10 * m.shown) + d; fresh = false; wrong = false }
   | Op c -> operate m c
   | Equals -> operate m ' '
 

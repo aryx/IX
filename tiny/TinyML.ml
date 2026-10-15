@@ -143,6 +143,9 @@ type expr =
   | For of string * expr * expr * bool * expr
   (* the fields' indexes, known once typed *)
   | Record of (string * expr) list * int list ref
+  (* { e with l = e'; ... }: the fields' indexes and how many the record
+   * has, known once typed *)
+  | With of expr * (string * expr) list * int list ref * int ref
   | Dot of expr * string * int ref    (* e.l *)
   | SetDot of expr * string * int ref * expr
 
@@ -343,7 +346,14 @@ and atom () =
             (* { text; pos = 0 }: a field alone is the variable of its name *)
             | LID l -> advance (); let e = if accept (KW "=") then stmt () else var l in ignore (accept (KW ";")); (l, e) :: fields ()
             | _ -> fail () in
-        Record (fields (), ref [])
+        (* a label followed by =, ; or } begins the fields; anything else
+         * is the record that { e with ... } copies *)
+        (match peek (), peek_at 1 with
+         | LID _, KW ("=" | ";" | "}") -> Record (fields (), ref [])
+         | _ ->
+             let e = atom () in
+             expect (KW "with");
+             (match fields () with [] -> fail () | fs -> With (e, fs, ref [], ref 0)))
     | KW ("let" | "match" | "try" | "fun" | "function" | "if" | "while" | "for") -> stmt ()
     | _ -> fail ()
   in
@@ -705,6 +715,17 @@ let rec infer env e : ty =
         let r', f = label_type li in
         unify r r'; unify (infer env e) f; li.idx) fs;
       r
+  | With (e, fs, idxs, n) ->
+      (* the copy has e's type: a field cannot change a type parameter *)
+      let t = infer env e in
+      let li0 = label_for (fst (List.hd fs)) t in
+      idxs := List.map (fun (l, v) ->
+        let li = match List.find_opt (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) with
+          | Some li -> li | None -> error "no field %s in %s" l li0.lrec in
+        let r, f = label_type li in
+        unify t r; unify (infer env v) f; li.idx) fs;
+      n := List.length li0.lnames;
+      t
 
 and cases_type env t cases =
   let r = newvar () in
@@ -1257,6 +1278,7 @@ let rec free bound e acc =
   | Seq (a, b) | While (a, b) -> fr b (fr a acc)
   | For (x, a, b, _, body) -> free (x :: bound) body (fr b (fr a acc))
   | Record (fs, _) -> List.fold_left (fun acc (_, e) -> fr e acc) acc fs
+  | With (e, fs, _, _) -> List.fold_left (fun acc (_, e) -> fr e acc) (fr e acc) fs
   | Dot (e, _, _) -> fr e acc
   | SetDot (e, _, _, v) -> fr v (fr e acc)
 
@@ -1371,6 +1393,20 @@ let rec value env e =
   (* a record is a tuple of its fields in their declaration's order,
    * evaluated as ocamlopt does, right to left *)
   | Record (fs, order) -> value env (Tuple (List.map snd (List.sort (fun (a, _) (b, _) -> compare a b) (List.combine !order (List.map snd fs)))))
+  (* the record copied first, kept in a slot (unless it is a variable,
+   * read again for each field); then the fields, the new ones and the
+   * copied ones, right to left as in a record *)
+  | With (e, fs, idxs, n) ->
+      let base = match e with
+        | Var _ -> (fun () -> value env e)
+        | _ -> value env e; let s = slot () in emit (Set s); (fun () -> emit (Get s)) in
+      let given = List.combine !idxs (List.map snd fs) in
+      for k = !n - 1 downto 0 do
+        match List.assoc_opt k given with
+        | Some v -> value env v
+        | None -> base (); emit (Field k)
+      done;
+      emit (Alloc (0, !n))
   | Dot (e, _, i) -> value env e; emit (Field !i)
   | SetDot (e, _, i, v) -> value env v; value env e; emit (SetField !i); emit (Imm 1L)
   | App (f, args) -> ignore (app env f args false)

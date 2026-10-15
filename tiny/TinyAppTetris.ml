@@ -116,19 +116,18 @@ let land_ { board = b; piece; _ } =
   enter left b.next b.seed (b.score + 4 + (gain * (1 + (b.rows / 10)))) (b.rows + n)
 
 (* the piece somewhere else, if it may be there: else the same model *)
-let moved m p = if fits m.board.well p then { board = m.board; piece = p; wait = m.wait; over = false } else m
+let moved m p = if fits m.board.well p then { m with piece = p; over = false } else m
 
 (* a row down, or landed *)
 let fall m =
-  let p = m.piece in
-  let lower = { kind = p.kind; turn = p.turn; x = p.x; y = p.y + 1 } in
-  if fits m.board.well lower then { board = m.board; piece = lower; wait = delay m.board.rows; over = false } else land_ m
+  let lower = { m.piece with y = m.piece.y + 1 } in
+  if fits m.board.well lower then { m with piece = lower; wait = delay m.board.rows; over = false } else land_ m
 
-let rec drop m = let p = m.piece in if fits m.board.well { kind = p.kind; turn = p.turn; x = p.x; y = p.y + 1 } then drop (fall m) else land_ m
+let rec drop m = if fits m.board.well { m.piece with y = m.piece.y + 1 } then drop (fall m) else land_ m
 
 let frame m =
   if m.over then m
-  else if m.wait > 1 then { board = m.board; piece = m.piece; wait = m.wait - 1; over = false }
+  else if m.wait > 1 then { m with wait = m.wait - 1; over = false }
   else fall m
 
 (* the arrows (128 up: a quarter turn, where it is, or a cell to the
@@ -136,12 +135,12 @@ let frame m =
 let key k m =
   let p = m.piece in
   if m.over then (if k = 32 then start m.board.seed else m)
-  else if k = 130 then moved m { kind = p.kind; turn = p.turn; x = p.x - 1; y = p.y }
-  else if k = 131 then moved m { kind = p.kind; turn = p.turn; x = p.x + 1; y = p.y }
+  else if k = 130 then moved m { p with x = p.x - 1 }
+  else if k = 131 then moved m { p with x = p.x + 1 }
   else if k = 129 then fall m
   else if k = 32 then drop m
   else if k = 128 then begin
-    let turned dx = { kind = p.kind; turn = (p.turn + 1) mod 4; x = p.x + dx; y = p.y } in
+    let turned dx = { p with turn = (p.turn + 1) mod 4; x = p.x + dx } in
     let a = moved m (turned 0) in
     if a != m then a else (let b = moved m (turned (-1)) in if b != m then b else moved m (turned 1))
   end

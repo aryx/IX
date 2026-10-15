@@ -74,7 +74,8 @@
  * unit, tuples, lists, variants (type declarations, polymorphic and
  * recursive), records (mutable fields; e.l, e.l <- v, { l = e; ... },
  * and { l; ... } for { l = l; ... }; in patterns too, where _ stands
- * for the fields not named, as in { view; update = u; _ }),
+ * for the fields not named, as in { view; update = u; _ }; and
+ * { e with l = e'; ... }, a copy of the same type),
  * arrays (Array.make, length, get and set, a.(i), a.(i) <- v),
  * references, and exceptions (declared, raised, caught). The constructs
  * are let, let rec, and, fun, function, match with guards, as and
@@ -87,8 +88,8 @@
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
  * when it builds the same file. A type can have a second name, as in
  * type word = piece list, without parameters. Left out: modules
- * (String.length is just one name), { r with ... }, floats, labels,
- * objects and functors.
+ * (String.length is just one name), floats, labels, objects and
+ * functors.
  *
  * What keeps it small while still being an ML compiler:
  *

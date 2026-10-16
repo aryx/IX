@@ -472,9 +472,6 @@ in section 12 where it was found):
 - **Not checked**:
   - the page (`t-ix.html`), in Firefox or by `TinyMachineWeb_test.py`,
     which needs Python's `websockets`;
-  - tiny-machine's own window (`TinyMachineSDL.ml`) seen running: the
-    wheel, the trackpad and the hand over links were checked by a
-    temporary trace only;
   - mini-mk's build in `tiny/`: tiny-prof is in no mkfile.
 - **What pages show wrong**: tables wider than the screen are cut at
   its edge (Paris's climate); Cyrillic, IPA and Thai are `?`; a
@@ -857,3 +854,6 @@ tiny-machine (`-net` a directory with the page alone, no pictures)
 fits in its 10 MB and says the same "862 KB, 1440 lines"; its logo is
 an empty box, its Russian name `??????`. The plan moved to `done/`,
 with "Left".
+
+The author then ran `www OCaml` in tiny-machine's own window
+(`TinyMachineSDL.ml`): "I did try www OCaml and it worked great".

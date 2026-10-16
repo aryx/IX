@@ -2,7 +2,7 @@
  * written in the subset of ML that both tiny-ml and OCaml accept. The
  * full-size browser in ix lives in browsers/ (mini-netscape and
  * mini-lynx, built on the mini-chrome engine); this one keeps only the
- * essentials. The design is in docs/plans/plan_tiny_browser.md.
+ * essentials. The design is in docs/plans/done/plan_tiny_browser.md.
  *
  * So far this file only does the reading part: it turns the bytes of a
  * page, as they arrive, into the lines shown on the screen. Fetching
@@ -57,7 +57,7 @@
  * as this one does on an 80-column screen of 8x16 characters.
  *
  * References:
- *  - docs/plans/plan_tiny_browser.md: the reasons for each choice, and
+ *  - docs/plans/done/plan_tiny_browser.md: the reasons for each choice, and
  *    what Wikipedia actually sends
  *  - browsers/README.md: the full-size browser this one is a tiny
  *    version of

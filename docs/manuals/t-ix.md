@@ -383,7 +383,7 @@ and the packet:
         856.2 ms  < echo! 1, 4 bytes, from 10.0.0.1 to 10.0.0.2
 
 A line that starts with `www` asks for a web page, for tiny-kernel's
-browser (`docs/plans/plan_tiny_browser.md`). The other end sends the
+browser (`docs/plans/done/plan_tiny_browser.md`). The other end sends the
 page's bytes as the site sent them, then closes. The rest of the line
 is an address: a bare title such as `OCaml` or `Plan 9 from Bell Labs`
 is an English Wikipedia article, and an article's address is changed

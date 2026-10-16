@@ -13,8 +13,19 @@ TinyBrowser.ml, not TinyAppBrowser.ml, because a Browser is really an
 essential part of an OS nowadays"; "and principia-softwarica level
 worth a book".
 
-**Step 2 done (2026-10-15)**: the reading, on the host and on
-tiny-cpu; section 12 says what was found. As first written, a plan from reading (`tiny/`, `browsers/`,
+**Done (2026-10-16)**: steps 0 to 7, in eleven commits (382c451e,
+fb689e46, cbc0b9cc, c381724b, 650a4ce0, 3b5644d2, c979f7be, e077d5f2,
+122907e7, df446928, 539519f2), and tiny-prof (bfe2320c), made to find
+where the scrolling's time went. `www OCaml` on tiny-kernel, on the
+screen or in a window of tiny-windows, shows Wikipedia's article with
+its links and pictures, and scrolls by the wheel. The browser is 1,495
+lines (`TinyBrowser.ml` and its `.mli`) and `user/www.ml` 17, under the
+2,000 wanted. Step 8, the wire faster, was not done: the author found
+the speed "fast enough for me right now". What differs from the
+sections below is said in section 12, step by step; what was not done
+is in "Left".
+
+As first written, a plan from reading (`tiny/`, `browsers/`,
 plan_tiny_network.md, plan_browser.md) and from measuring Wikipedia
 (2026-10-15, below). The line counts of what exists are `wc -l`; those
 of what is planned are guesses; the times are reckoned from
@@ -445,6 +456,35 @@ search); cookies; pictures floated to the right with text beside them
 (Netscape's `align`); animated GIFs; more than one font size; the
 book itself.
 
+## Left
+
+What the steps wanted and did not reach, or met on their way (each is
+in section 12 where it was found):
+
+- **Step 8, the wire faster**: not done. OCaml's page takes 54 to 57 s
+  of the machine's time on the screen and about 93 s in a window, most
+  of it the wire's checksum and the reading, each over a hundred
+  instructions a byte. plan_tiny_network.md's "Left" has the
+  candidates (an acknowledgement every few messages; tiny-ml's code for
+  a loop over a string's bytes, measured again since cbc0b9cc). If it
+  is done, tiny-prof first, and a general cause rather than one
+  function moved to C or assembly.
+- **Not checked**:
+  - the page (`t-ix.html`), in Firefox or by `TinyMachineWeb_test.py`,
+    which needs Python's `websockets`;
+  - tiny-machine's own window (`TinyMachineSDL.ml`) seen running: the
+    wheel, the trackpad and the hand over links were checked by a
+    temporary trace only;
+  - mini-mk's build in `tiny/`: tiny-prof is in no mkfile.
+- **What pages show wrong**: tables wider than the screen are cut at
+  its edge (Paris's climate); Cyrillic, IPA and Thai are `?`; a
+  picture the peer could not get stays an empty box with its text.
+- **The kept pages**: no script fetches `tiny/tests/www` again
+  (section 9 wanted one); they are 2026-10-15's.
+- **Memory**: the kernel's unused megabytes below 16 MB could be its
+  images' (the paint session's change that seemed to say otherwise
+  was its ball's timing).
+
 ## 12. Status
 
 ### Step 2, the reading (2026-10-15)
@@ -807,3 +847,13 @@ A page down is now about 5.4 million instructions (0.27 s at a window's
   the end depends on how fast the kernel works. (Step 1 took it for a
   palette that did not appear.) Its screen was recorded again; the
   unused megabytes could be the images' after all.
+
+### Tetris, and the plan done (2026-10-16)
+
+Tetris's article, whose fetch had failed among the ten, was fetched
+again: 862 KB, three times OCaml's. The host's build reads it into
+1,440 lines at 80 columns, none past the margin, and `www Tetris` on
+tiny-machine (`-net` a directory with the page alone, no pictures)
+fits in its 10 MB and says the same "862 KB, 1440 lines"; its logo is
+an empty box, its Russian name `??????`. The plan moved to `done/`,
+with "Left".

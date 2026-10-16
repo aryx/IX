@@ -66,6 +66,9 @@ same "background" 'sleep 0.1 && echo later & echo now; wait; echo done'
 same "cd" 'mkdir sub; cd sub; pwd | sed s,.*/,,; cd; pwd | grep -c /tmp; cd /nonexistent; echo $status'
 same "exit" 'echo a; exit 3; echo b'
 same "exit status of a pipe" "sh -c 'exit 3' | sh -c 'exit 4'; echo \$status; sh -c 'exit 3' | sh -c 'exit 4'"
+same "a long pipe, and its status" "seq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l
+sh -c 'exit 3' | cat | sh -c 'exit 4' | true; echo \$status
+{ echo b; echo a } | sort | @{ cat; echo c } | sed s/a/x/ | cat -n"
 same "continued lines and comments" 'echo a \
   b # a comment
 # alone

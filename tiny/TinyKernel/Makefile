@@ -6,7 +6,7 @@
 #
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
-#                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; ed and sam), then the network (ping
+#                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam), then the network (ping
 #                     and get against tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
 #                     without its time), against check.expected;
@@ -257,6 +257,7 @@ check: $(O)/boot.img
 	printf 'rc\nmkdir b; ln /wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nls | grep \x27^t\x27 | sort -r\nls | grep -c \x27^(ls|wc|cat)$$\x27\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \x27[2-4]\x27\ngrep \x27(\x27 sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nls -l /cat /utils /emacs /editor /ping\nls -l / > f; wc f; ls -l / | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /ed /sam /emacs /editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace

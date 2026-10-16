@@ -375,6 +375,9 @@ let die (caps : < Cap.stderr; .. >) m = TinyLibSystem.eprint caps ("tiny-shell: 
 let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
   TinyLibSystem.flush ();
   match TinyLibSystem.fork caps with
+  (* tiny-kernel's fork fails when its eight processes are taken (the
+   * host's raises); "try again" is rc's word for it *)
+  | -1 -> raise (Error "try again")
   | 0 ->
       let st = try f (); status () with Exits s -> s | Error m -> die caps m in
       TinyLibSystem.flush ();
@@ -450,7 +453,7 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
   | Empty -> ()
   | Seq (a, b) -> run a; run b
   | Async c ->
-      let pid = fork caps (fun () -> run c) in
+      let pid = fork caps (fun () -> child caps e c) in
       background := pid :: !background;
       set "apid" [ string_of_int pid ]
   | And (a, b) -> cond a; if truth (status ()) then run b
@@ -466,17 +469,36 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
   | Assign (x, v, None) -> set x (words v)
   | Assign (x, v, Some c) -> local x (words v) (fun () -> run c)
   | Brace (c, rs) -> with_fds caps (redirs caps rs) (fun () -> run c)
-  | Subshell c -> set_status (wait caps (fork caps (fun () -> run c))); check e
-  | Pipe (a, b) ->
-      let r, w = TinyLibSystem.pipe () in
-      let pid = into caps w r (fun () -> run a) in
-      TinyLibSystem.close w;
+  | Subshell c -> set_status (wait caps (fork caps (fun () -> child caps e c))); check e
+  | Pipe _ ->
+      (* The shell forks each stage but the last, which it runs itself,
+       * and each child execs its command in place (child). So a|b|c|d
+       * costs four processes, not seven: tiny-kernel has eight.
+       * old: a|b|c, the tree Pipe (Pipe (a, b), c), ran a|b in a child
+       * shell, which forked for a and for b, and so on to the left *)
+      let rec stages c acc = match c with Pipe (a, b) -> stages a (b :: acc) | c -> c :: acc in
       let saved = Option.get (TinyLibSystem.save 0) in
-      TinyLibSystem.dup2 r 0;
-      TinyLibSystem.close r;
-      protect (fun () -> run b) (fun () -> TinyLibSystem.flush (); TinyLibSystem.dup2 saved 0; TinyLibSystem.close saved);
+      let pids = ref [] in
+      let rec go = function
+        | [ last ] -> run last
+        | c :: rest ->
+            let r, w = TinyLibSystem.pipe () in
+            pids := into caps w r (fun () -> child caps e c) :: !pids;
+            TinyLibSystem.close w;
+            TinyLibSystem.dup2 r 0;
+            TinyLibSystem.close r;
+            go rest
+        | [] -> ()
+      in
+      (* a stage that cannot be forked: the ones that were are waited for *)
+      (try protect (fun () -> go (stages c [])) (fun () -> TinyLibSystem.flush (); TinyLibSystem.dup2 saved 0; TinyLibSystem.close saved)
+       with ex -> List.iter (fun pid -> ignore (wait caps pid)) !pids; raise ex);
       let last = status () in
-      set_status (wait caps pid ^ "|" ^ last);
+      (* rc's status: a|b|c is (a|b)|c, where a|b's is what a child that
+       * ran it would exit with, its first number. So 1|2|3 is 1|3 *)
+      let exited s = let n = code s in if n = 0 then "" else string_of_int n in
+      let join acc s = match acc with None -> Some s | Some a -> Some (exited a ^ "|" ^ s) in
+      set_status (Option.get (List.fold_left join None (List.map (wait caps) (List.rev !pids) @ [ last ])));
       check e
   (* old: Simple with a first word "~", matched as a pattern in the
    * tree, though ~ is a keyword as ! and @ are *)
@@ -488,12 +510,24 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
         | [] -> set_status "no match")
   | Simple (ws, rs) ->
       let argv = words ws in
-      with_fds caps (redirs caps rs) (fun () -> command caps argv);
+      with_fds caps (redirs caps rs) (fun () -> command caps false argv);
       check e
+
+(* [child caps e c]: c run in a forked shell, as the last thing it does.
+ * A program is then exec'd in place, as rc does, instead of in yet
+ * another child that this one would only wait for *)
+and child caps e c =
+  match c with
+  | Simple (ws, rs) ->
+      let argv = words caps ws in
+      with_fds caps (redirs caps rs) (fun () -> command caps true argv)
+  | c -> run caps e c
 
 and check e = if !eflag && e && not (truth (status ())) then raise (Exits (status ()))
 
-and command caps (argv : string list) =
+(* inplace: in a child with nothing left to do, a program is exec'd
+ * without a fork *)
+and command caps (inplace : bool) (argv : string list) =
   match argv with
   | [] -> ()
   (* a function's body is no condition, even called from one *)
@@ -510,6 +544,7 @@ and command caps (argv : string list) =
   | [ "wait" ] ->
       List.iter (fun pid -> set_status (wait caps pid)) (List.rev !background);
       background := []
+  | _ when inplace -> exec caps argv
   | _ -> set_status (wait caps (fork caps (fun () -> exec caps argv)))
 
 and redirs caps rs =
@@ -528,7 +563,7 @@ and word caps (w : word) : string list =
     | Count x -> [ string_of_int (List.length (get x)) ]
     | Back c ->
         let r, w = TinyLibSystem.pipe () in
-        let pid = into caps w r (fun () -> run caps true c) in
+        let pid = into caps w r (fun () -> child caps true c) in
         TinyLibSystem.close w;
         let out = TinyLibSystem.read_all r in
         TinyLibSystem.close r;

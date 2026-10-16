@@ -133,6 +133,10 @@ $ % -  25   238740 /cat
      48     192    1001
      48     192    1001
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ %       3
+% 1|1
+% tiny-shell: try again
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % %  -. f
 hell0 w0rld
 added

@@ -276,11 +276,17 @@ a hard link?"; then "let's do all 3".
   write, and a pipe of tiny-kernel's takes 512 bytes at a time: `ls -l
   / | wc` counted 512 of 962. It writes until all is taken now; the
   check has a pipe of 962 bytes.
-- **Left, a limit of tiny-shell's on tiny-kernel**: a pipe of four
-  stages gives nothing, and says nothing. Each stage but the last is a
-  child of rc that forks the program, so four stages and rc and sh are
-  9 processes, and tiny-kernel has 8 slots. The C shell sh, which forks
-  once a stage, runs seven. Not changed here.
+- **A limit of tiny-shell's on tiny-kernel**: a pipe of four stages
+  gave nothing, and said nothing. Each stage but the last was a child
+  of rc that forked the program, so four stages and rc and sh were 9
+  processes, and tiny-kernel has 8 slots. The C shell sh, which forks
+  once a stage, runs seven. Fixed afterwards (the author: "let's fix
+  rc pipe limit indeed, seems important"): rc forks each stage itself,
+  and a child whose command is a program execs it in place, so a stage
+  is one process and rc runs six stages; a seventh fails with rc's
+  "try again", where it failed silently. The status keeps 9base rc's
+  rule, the first stage's and the last's (1|2|3 is 1|3), found when
+  the test against rc first failed (3||4| where rc says 3|).
 - **Left too**: tiny-ml's test fails on its 20 arm64 cases on this Mac
   (assembling goken's `libc/fmt_dofmt.s`), with or without this work's
   change to the runtime: its tiny-cpu cases pass.

@@ -56,11 +56,13 @@
  *   undone afterwards} (the fds are saved, then restored), so a
  *   function or a brace block sees them just as a program does.
  * - {b The syntax tree is walked directly}: a child forked for a stage
- *   of a pipe or for a subshell walks its subtree and then exits; the
- *   last stage of a pipe runs in the shell itself.
+ *   of a pipe or for a subshell walks its subtree and then exits, or,
+ *   when the subtree is a program, execs it in place; the last stage
+ *   of a pipe runs in the shell itself.
  * - {b $status is a string}: "" for success, otherwise the exit code
- *   or the signal; for a pipe it is the statuses of its stages joined
- *   by |.
+ *   or the signal; for a pipe it is rc's: a|b|c is (a|b)|c, and a|b
+ *   counts as the exit code a child running it would have, its first
+ *   number, so the statuses 1, 2 and 3 give 1|3.
  *
  * What is dropped, each of which is a few lines in mini-rc, and none of
  * which is needed by the recipes in xix's mkfiles (the test for this
@@ -110,13 +112,14 @@
  * pipe, & and @. That is why a cd or an assignment inside braces is
  * still visible after them.
  *
- * wib:
- * A pipe stage that is a single program costs two processes: the child
- * that walks its subtree, and the program that this child forks and
- * waits for. A more careful shell would exec the program directly in
- * the child when it is the last thing the child does. That saves one
- * fork per stage, at the cost of checking what comes next in every
- * case of [run]. This is not done.
+ * A pipe stage that is a single program costs one process: the child
+ * forked for it execs the program in place, as it has nothing left to
+ * do, instead of forking it and waiting for it. The shell forks every
+ * stage itself, from the list of stages, rather than a child for the
+ * pipe on the left of the last |. So a|b|c|d is four processes, where
+ * it was seven, and tiny-kernel, which has eight, runs six stages
+ * under sh and rc. Past that, fork fails and the shell says "try
+ * again", as rc does.
  *
  * On two systems: this file is compiled by OCaml for the host and by
  * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It uses only

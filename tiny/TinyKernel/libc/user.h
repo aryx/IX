@@ -37,6 +37,9 @@ int dup(int fd);
 int mkdir(char*);
 int unlink(char*);
 int chdir(char*);
+// the current directory's path in the n bytes at buf, ended by a 0:
+// its length; -1 when it does not fit
+int getcwd(char *buf, int n);
 // the process ended, as a fault ends one (its status -1); ^C at the
 // console kills every process but the shell
 int kill(int pid);

@@ -5,7 +5,8 @@
 # tiny-machine (docs/notes_tiny_kernel.md):
 #
 #   make run          the kernel on tiny-machine: sh on the console
-#   make check        mltests, a script through sh, then the network (ping
+#   make check        mltests, a script through sh, the utilities through
+#                     rc (utils: walk, du, cp, mv, xd, test...), then the network (ping
 #                     and get against tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
 #                     without its time), against check.expected;
@@ -41,8 +42,11 @@
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
 # kernel runs each at the start of its partition), start.tm first, with
-# libc (../TinyCRuntime/) and sys.tm; cat, echo, ls, wc, mkdir and rm are
-# t6's too (TinyKernel/steps/t6/user/ has links to them).
+# libc (../TinyCRuntime/) and sys.tm. A link is a name and a line
+# "=utils": utils (../TinyUtilities.ml, tiny-utils) is in the image once,
+# under the name of each of its utilities (cat, ls, wc...). user/'s
+# cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
+# but t6's (TinyKernel/steps/t6/user/ has links to them).
 #
 # user/ has the programs, a file each (the ones in C; an ML one's
 # last file, which runs it); libc/ what a C program is linked with to
@@ -67,7 +71,9 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd cat echo ls wc mkdir rm bigmem www
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd utils bigmem www
+# utils's names (TinyUtilities.ml's table)
+UTILS = [ basename cat cmp cp du echo ls mkdir mv pwd rm seq sleep tail tee test touch walk wc xd
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
@@ -188,6 +194,14 @@ $(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
 $(O)/bin/rc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/rc.tm
 	@$(MLLINK)
 
+# the utilities (utils: ../TinyUtilities.ml, tiny-utils), on the same
+# library as rc
+$(O)/user/utils.tm: $(TOOL) ../TinyUtilities.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(TOOL) ../TinyUtilities.ml
+$(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
+	@$(MLLINK)
+
 # the screen editor (emacs: ../TinyEmacs.ml, tiny-emacs's editor, and
 # user/emacs.ml, its screen, keys and file on this kernel's calls)
 EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEmacs.ml user/emacs.ml
@@ -216,6 +230,7 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 $(O)/boot.img: $(O)/kernel.img $(BINS)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
+	for u in $(UTILS); do printf '%s\n=utils\n' "$$u" >> $@; done
 	printf '\n' >> $@
 	@test $$(wc -c < $@) -lt 4718592 || { echo "$@: over 4.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
@@ -227,6 +242,7 @@ check: $(O)/boot.img
 	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out

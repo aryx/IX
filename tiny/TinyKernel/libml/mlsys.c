@@ -218,6 +218,35 @@ u_chdir(value path)
 	return chdir((char*)path) * 2 + 1;
 }
 
+// a new directory, a name removed (a directory only if empty): 0, or -1
+value
+u_mkdir(value path)
+{
+	return mkdir((char*)path) * 2 + 1;
+}
+
+value
+u_unlink(value path)
+{
+	return unlink((char*)path) * 2 + 1;
+}
+
+// the current directory's path, as a string
+value
+u_getcwd(value unit)
+{
+	value s;
+	int n, k;
+
+	n = getcwd(u_buf, sizeof u_buf);
+	if(n < 0)
+		n = 0;
+	s = string_alloc(n);
+	for(k = 0; k < n; k++)
+		((uchar*)s)[k] = u_buf[k];
+	return s;
+}
+
 value
 u_getpid(value unit)
 {

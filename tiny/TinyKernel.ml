@@ -161,16 +161,25 @@ let contents node =
         acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word 0 ^ word size) "" !d
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
- * name, a line; its size, a line; its bytes; an empty name at the end *)
+ * name, a line; its size, a line; its bytes; an empty name at the end.
+ * A size that is "=" and another file's name makes a link: the same
+ * node under a second name, no bytes (utils, under the name of each of
+ * its utilities: cat, ls...) *)
 let rec load a =
   let rec line a acc = let c = peekb a in if c = 10 then acc, a + 1 else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
   let name, a = line a "" in
   if name <> "" then begin
     let size, a = line a "" in
-    let n = ref 0 in
-    for i = 0 to String.length size - 1 do n := (!n * 10) + Char.code size.[i] - 48 done;
-    (match root with Dir d -> d := !d @ [ name, Rom (a, !n) ] | _ -> ());
-    load (a + !n)
+    match root with
+    | Dir d when String.length size > 0 && size.[0] = '=' ->
+        (match assoc_opt (String.sub size 1 (String.length size - 1)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
+        load a
+    | Dir d ->
+        let n = ref 0 in
+        for i = 0 to String.length size - 1 do n := (!n * 10) + Char.code size.[i] - 48 done;
+        d := !d @ [ name, Rom (a, !n) ];
+        load (a + !n)
+    | _ -> ()
   end
 
 (*****************************************************************************)
@@ -624,6 +633,17 @@ let sys_unlink p =
        | None -> raise Bad)
   | None -> raise Bad
 
+(* getcwd(buf, n): the current directory's path, ended by a 0, in the n
+ * bytes at buf; its length, -1 when it does not fit *)
+let sys_getcwd p =
+  let path = if p.cwd = [] then "/" else List.fold_left (fun acc n -> acc ^ "/" ^ n) "" p.cwd in
+  let n = String.length path in
+  let a = user p (reg p 1) (reg p 2) in
+  if n + 1 > reg p 2 then raise Bad;
+  for i = 0 to n - 1 do pokeb (a + i) (Char.code path.[i]) done;
+  pokeb (a + n) 0;
+  result p n
+
 (* kill(pid): its process ended as a fault ends one, its status -1 *)
 let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
 let sys_kill p =
@@ -675,6 +695,7 @@ let syscall p =
     | 17 -> sys_box p
     | 18 -> sys_dial p
     | 19 -> sys_listen p
+    | 20 -> sys_getcwd p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 

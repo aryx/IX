@@ -14,6 +14,11 @@ was found.
 sleep; 20 utilities in 485 lines (353 of code), the same as the twins
 in 109 cases.
 
+**Step 3 done (2026-10-16)**: the same file is tiny-kernel's utilities.
+`utils` is in the boot image once, with its 20 names as links, and
+replaces the six programs in C; the image is 200 KB smaller. Each
+utility runs from sh and from rc, and `make check` runs them.
+
 ## 1. What it is
 
 m-ix's `utilities/` has about 40 programs in 10 directories (3,600
@@ -191,3 +196,39 @@ Step 2 (2026-10-15):
   of the test and said in its header: `cp f f` succeeds; the host's mv
   moves a directory into another directory, which 9P's refuses; and
   `sleep x` is a usage error, where the twin reads it as 0.
+
+Step 3 (2026-10-16):
+
+- **Links cost the kernel 6 lines.** In the image, a name whose size
+  line is `=utils` gets the same `Rom` node as `utils`, with no bytes.
+  The image went from 2.63 MB to 2.43 MB: `utils` is 204 KB, and the
+  six programs in C it replaces were 70 KB each.
+- **pwd needed a system call**, `getcwd` (number 20). The kernel already
+  keeps each process's directory as a list of names; the call writes
+  them joined by slashes. `stat` uses it too: a path is cleaned against
+  the current directory, as the kernel cleans it, and the file's kind
+  and size are read from its entry in the directory above. So `.`,
+  `..` and `/` work, which the old `is_directory` did not handle (it
+  is now `stat`'s first half).
+- **mkdir and remove** are two externals over calls the C programs
+  already had (`u_mkdir`, `u_unlink`). **rename** is a copy and a remove
+  in the kernel's `TinyLibSystem.ml`, and refuses a directory; **touch**
+  only makes a missing file; **sleep** is `u_ready` on no descriptor
+  until a tick (2.5 ms each).
+- **make check** has a new line through rc: pwd, walk, du, cp, mv, cmp,
+  xd -c, seq, tail, test and `[`, rm -r, and mv refusing a directory.
+  The rest of its expected output changed where ls and wc print
+  differently from the C programs (names only; columns of 7), in
+  mltests' trap address (`mlsys.c` grew, and is linked before the
+  program), and in ping's time, one tick less (another image, another
+  phase of the clock). Two screens were re-recorded after looking at
+  them: windows and nested both run ls in a window.
+- **TinyKernelNetwork's Linux test fetched `/cat` from httpd** to check
+  a program's bytes. `/cat` is now the 204 KB `utils`, which takes
+  longer than the test's 60 s, so it fetches `/ping` (70 KB, in C)
+  instead. The test failed once in four runs afterwards, on a busy
+  machine.
+- **The Makefile's PATH**: macOS's make 3.81 does not use the PATH the
+  Makefile exports for a command it runs without a shell, so
+  `make` needs `PATH=.../ix/bin:$PATH` from outside (as before this
+  step).

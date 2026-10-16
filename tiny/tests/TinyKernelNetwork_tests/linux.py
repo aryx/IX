@@ -89,7 +89,7 @@ try:
     check("in: / is a page that lists the files", status == 200 and kind == "text/html" and b'<a href="/hi.txt">' in body and b'<a href="/tetris">' in body, (status, kind, body[:200]))
     status, kind, body = page("/hi.txt")
     check("in: a file written by echo", status == 200 and kind == "text/plain" and body == b"hello from tiny-kernel\n", (status, kind, body))
-    status, kind, body = page("/cat")
+    status, kind, body = page("/ping")
     check(f"in: a program's bytes, {len(body)} of them, the image's", status == 200 and len(body) > 60000 and body in open(image, "rb").read(), (status, kind, len(body)))
     status, kind, body = page("/nothing")
     check("in: a file that is not there: 404", status == 404, (status, body))

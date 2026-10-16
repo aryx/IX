@@ -30,6 +30,13 @@
  * - more than 15 arguments for a program, its name one of them: said
  * - a file written at its end (>>), a signal, a terminal to ask about,
  *   a reason for a call that failed: refused, nothing, yes, "cannot"
+ * - a stat: a file's kind and size are read from its entry in the
+ *   directory it is in, found by its path cleaned as the kernel cleans
+ *   it (the current directory first, "." and ".." taken away)
+ * - a rename: a copy and a remove, as 9P's mv does, and so not for a
+ *   directory
+ * - a file's time: touch makes a file that is not there, and does
+ *   nothing to one that is
  *)
 
 type Cap.all_caps = < >
@@ -87,8 +94,8 @@ let TinyLibSystem.read_file caps file =
   s
 
 (* a directory is read as a file of entries of 32 bytes (user.h's
- * dirent): a name of 20 bytes ended by a 0, then its type, 1 for a
- * directory *)
+ * dirent): a name of 20 bytes ended by a 0, its type (1 for a
+ * directory), a word, and its size *)
 let entries dir =
   let fd = u_open (if dir = "" then "." else dir) 0 in
   if fd < 0 then []
@@ -96,17 +103,51 @@ let entries dir =
     let s = TinyLibSystem.read_all fd in
     ignore (u_close fd);
     let name i = String.sub s i ((String.index_from_opt s i '\000' ||| (i + 20)) - i) in
-    List.init (String.length s / 32) (fun k -> name (k * 32), Char.code s.[k * 32 + 20])
+    let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
+    List.init (String.length s / 32) (fun k -> name (k * 32), (Char.code s.[k * 32 + 20] = 1, word (k * 32 + 28)))
   end
 
 let TinyLibSystem.readdir dir = List.map fst (entries dir)
 
-(* by its entry in the directory it is in *)
-let TinyLibSystem.is_directory file =
-  let rec slash i = if i < 0 || file.[i] = '/' then i else slash (i - 1) in
-  let i = slash (String.length file - 1) in
-  let dir = if i = 0 then "/" else if i < 0 then "." else String.sub file 0 i in
-  List.assoc_opt (String.sub file (i + 1) (String.length file - i - 1)) (entries dir) = Some 1
+(* a path's names from the root, as the kernel finds them *)
+let path_names file =
+  let start = if String.length file > 0 && file.[0] = '/' then "" else u_getcwd () in
+  let clean acc n = if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc in
+  List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
+
+let TinyLibSystem.stat file =
+  match List.rev (path_names file) with
+  | [] -> true, 0
+  | last :: up ->
+      let dir = List.fold_left (fun acc n -> "/" ^ n ^ acc) "" up in
+      (match List.assoc_opt last (entries (if dir = "" then "/" else dir)) with
+       | Some e -> e
+       | None -> failwith "not there")
+
+let TinyLibSystem.is_directory file = try fst (TinyLibSystem.stat file) with Failure _ -> false
+
+let TinyLibSystem.read fd max = u_read fd max
+let TinyLibSystem.write fd s = if u_write fd s < 0 then failwith "cannot write"
+let TinyLibSystem.mkdir caps dir = if u_mkdir dir < 0 then failwith "cannot"
+let TinyLibSystem.remove caps file = if u_unlink file < 0 then failwith "cannot"
+
+let TinyLibSystem.rename caps a b =
+  if path_names a <> path_names b then begin
+    if fst (TinyLibSystem.stat a) then failwith "a directory, which tiny-kernel cannot move";
+    let text = TinyLibSystem.read_file caps a in
+    let fd = TinyLibSystem.open_out caps b in
+    TinyLibSystem.write fd text;
+    TinyLibSystem.close fd;
+    TinyLibSystem.remove caps a
+  end
+
+let TinyLibSystem.touch caps file =
+  if not (try ignore (TinyLibSystem.stat file); true with Failure _ -> false) then TinyLibSystem.close (TinyLibSystem.open_out caps file)
+
+let TinyLibSystem.getcwd caps = u_getcwd ()
+
+(* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
+let TinyLibSystem.sleep ms = if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
 
 let TinyLibSystem.chdir caps dir = if u_chdir dir < 0 then failwith "cannot"
 

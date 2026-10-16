@@ -742,3 +742,21 @@ to support the mousewheel/trackpad and to have smooth scrolling".
   equals `www`, `wwwgo` equals `wwwpicture`).
 - **What is slow now** is drawing text: a screenful is 27 million
   instructions, about 13,000 a character, in the kernel's text drawing.
+
+### A hand over links; the window's own SDL (2026-10-16)
+
+The author: "would be great also to have the cursor change when
+hovering a link in www". The mouse's look goes through every layer: a
+program writes it with the drawing message `c` (`TinyLibDraw.d_cursor`:
+0 the arrow, 1 a hand); the kernel writes it to the machine's mouse
+word (a store there was ignored until now); tiny-windows shows the front
+window's look while the mouse is in it, the arrow elsewhere; tiny-machine
+sends its window a line `C n`, and the page sets the canvas's CSS
+cursor. `www` sends the hand when the mouse goes over a link.
+
+The window had linked mini-qemu's SDL display, which needed changes for
+the wheel and the cursor. The author preferred tiny-machine to have its
+own: `TinyMachine/TinyMachineSDL.ml` (78 lines), and mini-qemu's display
+is as it was. Not run: the window itself (SDL needs a screen) and the
+page in a browser; a temporary trace showed the hand and the arrow
+changing as the mouse moved, on the screen and in a tiny-windows window.

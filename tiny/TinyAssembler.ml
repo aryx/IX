@@ -231,12 +231,21 @@ let parse caps files =
              | (P '(', _) :: _ -> Mem (base (), "", v)
              | _ -> Imm (Int64.of_int v))
       in
-      let rec operands () = let o = operand () in if peek () = P ',' then (ignore (next ()); o :: operands ()) else [ o ] in
+      (* an empty operand is skipped, as Plan 9's assemblers do: 7c -S
+       * prints one before a branch's target (B ,3(PC)), after a
+       * compare's (CMPW $0,R2,) and after END (END ,), until goken's 7c
+       * of 2026-09-23 *)
+      let rec operands () =
+        match peek () with
+        | P ',' -> ignore (next ()); operands ()
+        | Eol -> []
+        | _ -> let o = operand () in if peek () = P ',' then (ignore (next ()); o :: operands ()) else [ o ]
+      in
       let emit it = items := (it, file, line, !count) :: !items; (match it with Text _ | Ins _ -> incr count | _ -> ()) in
       let rec statement () =
         match next () with
         | Id l when peek () = P ':' -> ignore (next ()); Hashtbl.replace labels l !count; if !toks <> [] then statement ()
-        | Id "END" -> ()
+        | Id "END" -> toks := []
         | Id "DATA" -> (
             match operand () with
             | Mem (SB, n, off) ->

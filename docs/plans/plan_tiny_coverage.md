@@ -11,6 +11,12 @@ like a spreadsheet and word document; ideally we could do a
 tiny-office but it seems difficult"). uniq, tr and sed are left of
 3.1. Section 5 says what was found.
 
+**Dropped (2026-10-16)**: tr and sed (the author: "I'm not sure it's
+worth adding tr and sed for now"), and tiny-yacc and tiny-lex (3.2;
+the author: "none of the tiny programs use lex and yacc (partly
+because they are single file implem), so maybe let's skip tiny-lex and
+tiny-yacc"). Next in the order: tiny-troff.
+
 This plan asks a different question from plan_tiny_gaps.md. That one
 took each tiny program and asked what it lets a person do. This one
 takes each part of m-ix and asks whether t-ix has a twin of it: a tiny
@@ -107,7 +113,7 @@ Five parts of m-ix have no twin, and one has half of one:
   mini-sort...; and lines through rc in `make check`.
 - **Size**: about 200 lines for grep, sort, uniq, tr and sed.
 
-### 3.2 Parser generators: tiny-yacc and tiny-lex
+### 3.2 Parser generators: tiny-yacc and tiny-lex (dropped)
 
 - **m-ix**: `generators/yacc/` (945 lines) and `generators/lex/` (648).
 - **The idea to keep**: a grammar is turned into tables, and a small
@@ -193,8 +199,8 @@ Five parts of m-ix have no twin, and one has half of one:
 1. **The text utilities** (3.1, without the kernel's part): the
    cheapest, on an existing frame, and they make tiny-kernel's rc a
    shell one can answer questions with.
-2. **tiny-yacc and tiny-lex** (3.2): small, with a clear idea, and they
-   complete t-ix's toolchain.
+2. ~~**tiny-yacc and tiny-lex** (3.2): small, with a clear idea, and they
+   complete t-ix's toolchain.~~ Dropped: no tiny program would use them.
 3. **tiny-troff** (3.3).
 4. **A spreadsheet** (3.4).
 5. **Sound** (3.5), as a plan of its own.
@@ -287,6 +293,28 @@ a hard link?"; then "let's do all 3".
   "try again", where it failed silently. The status keeps 9base rc's
   rule, the first stage's and the last's (1|2|3 is 1|3), found when
   the test against rc first failed (3||4| where rc says 3|).
-- **Left too**: tiny-ml's test fails on its 20 arm64 cases on this Mac
+- **tiny-ml's test failed on its 20 arm64 cases on this Mac**
   (assembling goken's `libc/fmt_dofmt.s`), with or without this work's
-  change to the runtime: its tiny-cpu cases pass.
+  change to the runtime. Fixed afterwards, with tiny-c's 11 failures
+  and tiny-assembler's 19, which had the same three causes, none of
+  them in what is tested:
+  - goken's 7c in `ROOT/arch/boot-gcc/bin` is of 2026-09-03, before
+    goken's fix of 09-23, and `-S` prints empty operands: `B ,3(PC)`,
+    `CMPW $0,R2,`, `END ,`. tiny-assembler skips them now, as Plan 9's
+    assemblers do.
+  - goken's mk runs its mkfile's `` `{...} `` with `MKSHELL`, otherwise
+    `/bin/rc`, which macOS does not have, so the libc's files for the
+    OS (exits, getenv) were left out and the link failed. goken's
+    `env.sh` sets it; the three tests now set it too.
+  - The tests ran the arm64 Linux executables directly, which macOS
+    cannot do. Off Linux they run under tiny-arm now. What tiny-arm
+    cannot run is said and skipped, not failed: 13 of goken's
+    hello_libc programs (fork, pipe, stat... and env, as tiny-arm
+    gives no environment) and tiny-ml's gc (700 million instructions).
+- **mini-mk did not build all of tiny/**: mini-ml has no optional
+  arguments (`TinyML.ml`'s `pat_type ?(known = ...)`), no `Stdlib`
+  (`TinyMachineCPU.ml`, two sorts, where the file has its own
+  `compare`), no `Int.compare`, no polymorphic variants, and its
+  `Option.value` has no `~default` (`TinyProfiler.ml`). Each is written
+  without them now, and the mkfile builds tiny-prof too, which it did
+  not have.

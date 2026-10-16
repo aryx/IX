@@ -21,6 +21,13 @@ TCPU=${TCPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 TARM=${TARM:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
 GOKEN=${GOKEN:-$HOME/goken}
 export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH
+# (goken's mk runs its mkfile's `{...} by MKSHELL, /bin/rc otherwise:
+# none on macOS, and the libc's files for the OS, exits and getenv among
+# them, are then left out. goken's env.sh sets it)
+export MKSHELL=${MKSHELL:-$GOKEN/bin/rc}
+# (an arm64 Linux executable runs as it is on Linux, and under tiny-arm
+# elsewhere: macOS cannot run one)
+ARM64=; [ "$(uname -s)" = Linux ] || ARM64=$TARM
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
@@ -56,8 +63,8 @@ for c in "${progs[@]}"; do
   $TA -o $W/$b.exe $W/$b.s "${libc[@]}" || { echo "FAIL $b: assembling"; failures=$((failures + 1)); continue; }
   # the same name in two directories, for argv[0]
   mkdir -p $W/ref $W/tiny-c; cp $W/$b.ref $W/ref/$b; cp $W/$b.exe $W/tiny-c/$b
-  want=$(cd $W/ref && timeout 10 ./$b one two 2>&1; echo "exit $?")
-  got=$(cd $W/tiny-c && timeout 10 ./$b one two 2>&1; echo "exit $?")
+  want=$(cd $W/ref && timeout 10 $ARM64 ./$b one two 2>&1; echo "exit $?")
+  got=$(cd $W/tiny-c && timeout 10 $ARM64 ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
   got=$(cd $W/tiny-c && timeout 60 $TARM ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b tiny-arm"; else echo "FAIL $b tiny-arm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi

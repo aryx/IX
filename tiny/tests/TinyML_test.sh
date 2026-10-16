@@ -27,6 +27,13 @@ TARM=${TARM:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
 GOKEN=${GOKEN:-$HOME/goken}
 OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
 export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH
+# (goken's mk runs its mkfile's `{...} by MKSHELL, /bin/rc otherwise:
+# none on macOS, and the libc's files for the OS, exits and getenv among
+# them, are then left out. goken's env.sh sets it)
+export MKSHELL=${MKSHELL:-$GOKEN/bin/rc}
+# (an arm64 Linux executable runs as it is on Linux, and under tiny-arm
+# elsewhere: macOS cannot run one)
+ARM64=; [ "$(uname -s)" = Linux ] || ARM64=$TARM
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
@@ -71,9 +78,10 @@ one() {
   # out of bounds is a fatal error for it, an exception for mini-ml)
   [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
   want=$(cat $out)
-  got=$(cd $W && timeout 10 ./$b 2>&1; echo "exit $?")
+  [ -n "$ARM64" ] && [ $b = gc ] && { echo "skip $b: not on Linux, and too long for tiny-arm (700 million instructions)"; return; }
+  got=$(cd $W && timeout 10 $ARM64 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); return; fi
-  got=$(cd $W && ML_HEAP=64 timeout 20 ./$b 2>&1; echo "exit $?")
+  got=$(cd $W && ML_HEAP=64 timeout 20 $ARM64 ./$b 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b ML_HEAP=64"; else echo "FAIL $b ML_HEAP=64"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
   [ $b = gc ] && return
   got=$(cd $W && timeout ${SLOW:-60} $TARM ./$b 2>&1; echo "exit $?")

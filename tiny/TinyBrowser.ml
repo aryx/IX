@@ -905,6 +905,7 @@ type nav = {
   mutable nv_goal_id : string;       (* an anchor to show once it has come (#fragment), or "" *)
   mutable nv_pressed : bool;         (* the mouse's button is down *)
   mutable nv_fetch : int;            (* the picture [nv_wire] brings, or -1 for the page *)
+  mutable nv_hover : bool;           (* the mouse is over a link: its look is a hand *)
 }
 
 type screen = {
@@ -1092,12 +1093,21 @@ let show_new sc =
     sc.sc_drawn <- last
   end
 
+(* The mouse's look: a hand over a link, the arrow elsewhere (d_cursor:
+ * the machine's window or page shows it). Sent when it changes. *)
+let hover sc over =
+  if over <> sc.sc_nav.nv_hover then begin
+    sc.sc_nav.nv_hover <- over;
+    put sc (d_cursor (if over then 1 else 0))
+  end
+
 (* Asks for the page at [url] (a full address), which replaces the one
  * shown; its #fragment, if any, is shown when it comes. *)
 let load sc url =
   if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
   for i = 0 to pictures sc.sc_page - 1 do if (picture_of sc.sc_page i).pc_got >= 0 then put sc (d_free (image_of i)) done;
   sc.sc_nav.nv_fetch <- -1;
+  hover sc false;
   let address, id = fragment url in
   sc.sc_page <- create sc.sc_cols;
   sc.sc_nav.nv_address <- address;
@@ -1208,10 +1218,11 @@ let link_at sc x y =
          | [] -> None)
     | _ -> None
 
-(* The mouse: the left button pressed on a link follows it; the wheel
- * (the buttons 8 and 16, Plan 9's) scrolls. *)
+(* The mouse: over a link it is a hand; the left button pressed on a link
+ * follows it; the wheel (the buttons 8 and 16, Plan 9's) scrolls. *)
 let mouse sc x y buttons =
   if buttons >= 0 then begin
+    hover sc (link_at sc x y <> None);
     if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
       (match link_at sc x y with Some href -> go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href) | None -> ());
     sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
@@ -1261,7 +1272,7 @@ let key sc k =
 
 let browse typed =
   let w, h = size () in
-  let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1 } in
+  let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1; nv_hover = false } in
   let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
@@ -1328,6 +1339,7 @@ let browse typed =
           if go_on then loop keys
           else begin
             if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+            hover sc false;
             for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
             flush sc
           end

@@ -33,6 +33,9 @@ let d_text dst src x y s = msg 's' [ dst; src; x; y; String.length s ] ^ s
 (* a row of pixels, a byte each, its left end at (x, y) *)
 let d_pixels dst x y s = msg 'p' [ dst; x; y; String.length s ] ^ s
 
+(* the mouse's look: 0 the arrow, 1 a hand (over a link) *)
+let d_cursor kind = msg 'c' [ kind ]
+
 (* The message at i of s: its length, and how many of its first numbers
  * are images. The length is beyond s's end when the message is not all
  * there yet (a pipe gives what it has), and -1 when this is no message. *)
@@ -44,4 +47,5 @@ let d_shape s i =
   | 'l' -> 13, 2
   | 's' -> if i + 11 > String.length s then 11, 2 else if int16 s (i + 9) < 0 then -1, 0 else 11 + int16 s (i + 9), 2
   | 'p' -> if i + 9 > String.length s then 9, 1 else if int16 s (i + 7) < 0 then -1, 0 else 9 + int16 s (i + 7), 1
+  | 'c' -> 3, 0
   | _ -> -1, 0

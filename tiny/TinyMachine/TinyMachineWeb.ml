@@ -457,6 +457,8 @@ let run image disk www =
   let last = ref (now ()) and running = ref true in
   (* the speed shown: the instructions and the time since it was said *)
   let done_ = ref 0 and since = ref (now ()) in
+  (* the mouse's look a program asked for (www over a link): the canvas's *)
+  let cursor = ref 0 in
   let rec frame _ =
     let start = now () in
     (* a quarter of a second at most: a page left and come back to *)
@@ -473,6 +475,10 @@ let run image disk www =
      | TinyMachineDevices.Halt code -> running := false; status (Printf.sprintf "the machine halted (%d); reload the page to boot it again" code)
      | TinyMachineCPU.Error e -> running := false; status ("tiny-machine: " ^ e));
     screen_show screen mc.cpu; show_text (); wire_show ();
+    if mc.mouse.cursor <> !cursor then begin
+      cursor := mc.mouse.cursor;
+      U.set (get canvas "style") (Js.string "cursor") (Js.string (if !cursor = 1 then "pointer" else "default"))
+    end;
     if !running then begin
       if start -. !since > 1000. then begin
         (* of the speed the machine is meant to have *)

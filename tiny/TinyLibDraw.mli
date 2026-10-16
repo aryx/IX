@@ -67,6 +67,12 @@ val d_text : int -> int -> int -> int -> string -> string
 (* [d_pixels dst x y bytes]: a row of pixels, its left end at (x, y) *)
 val d_pixels : int -> int -> int -> string -> string
 
+(* [d_cursor kind]: the mouse's look, 0 the arrow, 1 a hand (a browser's
+ * over a link). The kernel sets the machine's (by writing the mouse's
+ * word), which the host shows; tiny-windows keeps each window's, and
+ * shows the front window's while the mouse is in it. *)
+val d_cursor : int -> string
+
 (* the message at i of a string: its length (beyond the string's end
  * when it is not all there, -1 when it is no message) and how many of
  * its first numbers are images: what a window system renumbers *)

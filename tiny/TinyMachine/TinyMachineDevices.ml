@@ -154,7 +154,7 @@ let colour i =
 let colours = String.init 768 (fun k -> let r, g, b = colour (k / 3) in Char.chr (match k mod 3 with 0 -> r | 1 -> g | _ -> b))
 
 (* the mouse: its word, and whether it changed since it was read *)
-type mouse = { mutable at : int; mutable moved : bool }
+type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 
 (* The machine's speed, in instructions per second. A host sets it before
  * [create]; the machine gives it to the kernel in its rate register.
@@ -291,6 +291,8 @@ let store mc m s a v =
   | w when w = net_addr -> mc.net.naddr <- v
   | w when w = net_len -> mc.net.nlen <- v
   | w when w = net_cmd -> net_command mc.net m mc.send v
+  (* written, the mouse's word is its look: 0 the arrow, 1 a hand *)
+  | w when w = mouse_dev -> mc.mouse.cursor <- v
   | w when w >= devices -> ()
   | _ -> TinyMachineCPU.store m s a v
 
@@ -384,7 +386,7 @@ let create ~put ~on_open ~send ~disk ~events image =
   c.(rate_csr) <- !rate;
   { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = events <> None; eof_read = false };
     disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
-    mouse = { at = 0; moved = false }; events = (match events with Some l -> l | None -> []); put; on_open;
+    mouse = { at = 0; moved = false; cursor = 0 }; events = (match events with Some l -> l | None -> []); put; on_open;
     net = { wired = send <> None; naddr = 0; nlen = 0; waiting = []; flying = [] };
     send = (match send with Some f -> f | None -> ignore); touched = false }
 

@@ -22,7 +22,6 @@
  (modules TinyMachinePeer)
  (libraries tiny_kernel_network tiny_machine_devices))
 
-; tiny-machine's window: the one tiny program linking a C library (SDL)
 ; tiny-machine's way out to other programs: a connection of the host's
 ; on its standard input and output (TinyMachine's -net-out and
 ; -net-forward run it, as its -window runs TinyMachineWindow)
@@ -42,12 +41,14 @@
  (modules TinyMachineFetch)
  (libraries tiny_machine_devices ix_graphics_images ix_http ix_tls ix_tcp ix_core caps unix))
 
+; tiny-machine's window: the one tiny program linking a C library (SDL,
+; by TinyMachineSDL)
 (executable
  (name TinyMachineWindow)
  (public_name tiny-machine-window)
  (package ix)
- (modules TinyMachineWindow)
- (libraries ix_raspberry ix_sdl_display unix))
+ (modules TinyMachineWindow TinyMachineSDL)
+ (libraries tsdl unix))
 
 ; tiny-machine in a web page (plan_web.md): the machine by js_of_ocaml,
 ; TinyMachineWeb.html its page (./tiny-machine -web dir tiny-kernel);

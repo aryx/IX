@@ -1,6 +1,6 @@
 (* tiny-machine's window (tiny-machine -window runs it; TinyMachine.ml
- * says why it is a program apart: this one links SDL, by mini-qemu's
- * Sdl_display, and that one nothing of C's). It knows nothing of the
+ * says why it is a program apart: this one links SDL, by
+ * TinyMachineSDL, and that one nothing of C's). It knows nothing of the
  * machine: it shows the pictures it reads on its standard input, each
  * a PPM (P6: a header's three lines, then red, green and blue bytes),
  * and writes what is done in the window on its standard output, an
@@ -8,7 +8,12 @@
  *
  *     m x y buttons    the mouse's place, and its buttons (1 left, 2
  *                      middle, 4 right, as Plan 9's)
- *     k \ddd           a key typed, its byte
+ *     k \ddd           a key typed, its byte (a step of the wheel is
+ *                      an arrow key, up or down)
+ *
+ * Between two pictures, a line "C n" sets the mouse's look: 0 the
+ * arrow, 1 a hand (a program of the machine wrote it to the mouse's
+ * word: www over a link).
  *
  * Its input's end, or its window closed, is its end. The window starts
  * at the largest whole number of times the picture that three quarters

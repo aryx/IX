@@ -288,6 +288,9 @@ let drop f =
  * /draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)
 let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
+(* the mouse's look a program asks for (www, over a link) is written to
+ * the machine's mouse word, which the host shows *)
+let () = cursor_hook := (fun kind -> poke mouse_dev kind)
 let font = arena 0xd00000 0x200000; free 0xf4b000 0xb4000; font_mask (k_font ()) (alloc 16384)
 
 (* the mouse: a box the kernel writes (x, y, the buttons, a word each)

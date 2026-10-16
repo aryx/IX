@@ -68,7 +68,10 @@ exception Halt of int
  * input, the disk, the mouse, the network *)
 type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool; mutable eof_read : bool }
 type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable dirty : bool }
-type mouse = { mutable at : int; mutable moved : bool }
+(* the mouse: its word, whether it changed since it was read, and the
+ * look a program asked for by writing that word (0 the arrow, 1 a hand
+ * over a link), which the host shows *)
+type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 type net
 
 type machine = {

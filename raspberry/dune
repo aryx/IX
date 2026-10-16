@@ -28,7 +28,7 @@
  (modules Intc Systimer Pl011 Miniuart Framebuffer Display Devices Usb Usernet Dwc2 Sdhost Dma Pwm Board Gic Pi4 Prof Status Monitor)
  (libraries ix_machine ix_machine_compat ix_parallel unix)) ; ix_parallel: Board's cores each on a domain under OCaml 5
 
-; the host's window, mini-qemu's and tiny-machine's (tiny/TinyMachine/TinyMachineWindow.ml)
+; the host's window, mini-qemu's (tiny-machine has its own, tiny/TinyMachine/TinyMachineSDL.ml)
 (library
  (name ix_sdl_display)
  (wrapped false)

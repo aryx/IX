@@ -134,6 +134,7 @@ let ppm (m : TinyMachineCPU.machine) =
  * finishes sooner. *)
 type window = {
   to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string;
+  mutable cursor : int;
   mutable due : float;
 }
 
@@ -144,11 +145,11 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
-  { to_w; from_w; shown = ""; frame = 0.; partial = ""; due = Unix.gettimeofday () }
+  { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0; due = Unix.gettimeofday () }
 
 (* every [polled] instructions *)
 let polled = 0x10000
-let window_poll w (m : TinyMachineCPU.machine) ms k =
+let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k =
   let now = Unix.gettimeofday () in
   w.due <- w.due +. (float_of_int polled /. float_of_int !TinyMachineDevices.rate);
   if w.due > now then Unix.sleepf (w.due -. now) else if now -. w.due > 0.1 then w.due <- now;
@@ -157,6 +158,11 @@ let window_poll w (m : TinyMachineCPU.machine) ms k =
     w.frame <- now;
     let pixels = Bytes.sub_string m.mem TinyMachineDevices.screen (TinyMachineDevices.width * TinyMachineDevices.height) in
     if pixels <> w.shown then (w.shown <- pixels; Procs.write_all w.to_w (ppm m));
+    (* the mouse's look, when a program changed it *)
+    if ms.cursor <> w.cursor then begin
+      w.cursor <- ms.cursor;
+      Procs.write_all w.to_w (Printf.sprintf "C %d\n" ms.cursor)
+    end;
     match Unix.select [ w.from_w ] [] [] 0.0 with
     | [], _, _ -> ()
     | _ ->

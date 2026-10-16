@@ -83,7 +83,8 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 | tiny-cpu, tiny-arm, tiny-assembler, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
 | tiny-machine, tiny-build, tiny-shell, tiny-utils | `lib_core/`, `fpath`, `caps`, `unix` |
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
-| tiny-machine-window | `raspberry/` (mini-qemu's `Sdl_display`), SDL by `tsdl` |
+| tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
+| tiny-machine-fetch | `lib_networking/` (DNS, TLS 1.3, HTTP), `lib_graphics/images/` (PNG, JPEG, GIF), `lib_compression/`, `lib_crypto/` |
 
 Inside `tiny/`, two libraries are shared: `TinyMachineCPU.ml` (tiny-cpu
 and tiny-machine) and `TinyMachineDevices.ml` (tiny-machine's machine without a host: the
@@ -327,9 +328,13 @@ run: this is how a program with a mouse is tested
 `tiny-machine -window` runs `tiny-machine-window`
 (`TinyMachineWindow.ml`) as a child. It sends it the screen, a PPM
 each time it changed, about thirty times a second, and reads back
-event lines, section 5.3's without their times. tiny-machine itself
-links no C library, so ix's own tools build it; the window is the one
-tiny program that needs SDL.
+event lines, section 5.3's without their times; a step of the mouse's
+wheel (or of two fingers on a trackpad) comes as an arrow key, up or
+down. When a program changes the mouse's look (it writes the mouse's
+word: 0 the arrow, 1 a hand, as `www` does over a link), it sends the
+line `C n` between two pictures. tiny-machine itself links no C
+library, so ix's own tools build it; the window is the one tiny
+program that needs SDL, by `TinyMachineSDL.ml`.
 
 ### 5.5 The network
 

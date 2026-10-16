@@ -1,0 +1,78 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* See TinyMachineSDL.mli *)
+open Tsdl
+
+type event = Quit | At of int * int | Button of int * bool | Key of int * bool | Wheel of int
+type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit }
+
+let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
+
+let create ~title =
+  ok (Sdl.init Sdl.Init.video);
+  (* the window, its renderer and the frame's texture, made at the first
+   * frame (and again if the frame's size changes) *)
+  let window = ref None and texture = ref None and size = ref (0, 0) and last = ref "" in
+  let pixels = ref (Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout 0) in
+  let draw () =
+    match !window, !texture with
+    | Some (_, r), Some tex -> ok (Sdl.render_clear r); ok (Sdl.render_copy r tex); Sdl.render_present r
+    | _ -> () in
+  let present w h data =
+    if !size <> (w, h) then begin
+      (match !window with
+       | None ->
+           let times = match Sdl.get_current_display_mode 0 with Ok mode -> max 1 (mode.Sdl.dm_h * 3 / 4 / h) | Error _ -> 1 in
+           let win = ok (Sdl.create_window title ~w:(times * w) ~h:(times * h) Sdl.Window.(windowed + resizable)) in
+           window := Some (win, ok (Sdl.create_renderer win))
+       | Some (win, _) -> Sdl.set_window_size win ~w ~h);
+      let _, r = Option.get !window in
+      (* the frame drawn as large as fits, its proportions kept; and the
+       * mouse's place given in the frame's pixels *)
+      ok (Sdl.render_set_logical_size r w h);
+      texture := Some (ok (Sdl.create_texture r Sdl.Pixel.format_rgb24 Sdl.Texture.access_streaming ~w ~h));
+      pixels := Bigarray.Array1.create Bigarray.int8_unsigned Bigarray.c_layout (3 * w * h);
+      size := (w, h); last := ""
+    end;
+    if data <> !last then begin
+      last := data;
+      let px = !pixels in
+      String.iteri (fun i c -> Bigarray.Array1.unsafe_set px i (Char.code c)) data;
+      ok (Sdl.update_texture (Option.get !texture) None px (3 * w));
+      draw ()
+    end in
+  let e = Sdl.Event.create () in
+  (* SDL's buttons as Plan 9's: left 1, middle 2, right 4 *)
+  let button b = if b = Sdl.Button.left then 1 else if b = Sdl.Button.middle then 2 else if b = Sdl.Button.right then 4 else 0 in
+  let poll () =
+    let evs = ref [] in
+    let add ev = evs := ev :: !evs in
+    while Sdl.poll_event (Some e) do
+      let k = Sdl.Event.(get e typ) in
+      let is t = k = t in
+      if is Sdl.Event.quit then add Quit
+      else if is Sdl.Event.window_event then
+        (* a window uncovered or resized has lost its frame *)
+        (match Sdl.Event.(window_event_enum (get e window_event_id)) with `Exposed | `Size_changed -> draw () | _ -> ())
+      else if (is Sdl.Event.key_down || is Sdl.Event.key_up) && Sdl.Event.(get e keyboard_repeat) = 0 then
+        add (Key (Sdl.Event.(get e keyboard_scancode), is Sdl.Event.key_down))
+      else if is Sdl.Event.mouse_button_down || is Sdl.Event.mouse_button_up then begin
+        let b = button Sdl.Event.(get e mouse_button_button) in
+        if b <> 0 then add (Button (b, is Sdl.Event.mouse_button_down))
+      end
+      else if is Sdl.Event.mouse_motion then add (At (Sdl.Event.(get e mouse_motion_x), Sdl.Event.(get e mouse_motion_y)))
+      else if is Sdl.Event.mouse_wheel then add (Wheel (- Sdl.Event.(get e mouse_wheel_y)))
+    done;
+    List.rev !evs in
+  (* the arrow, or a hand over what can be clicked, as the system draws
+   * them; each made once, when first asked for *)
+  let cursors = Hashtbl.create 2 in
+  let cursor n =
+    match Hashtbl.find_opt cursors n with
+    | Some c -> Sdl.set_cursor (Some c)
+    | None ->
+        (match Sdl.create_system_cursor (if n = 1 then Sdl.System_cursor.hand else Sdl.System_cursor.arrow) with
+         | Ok c -> Hashtbl.replace cursors n c; Sdl.set_cursor (Some c)
+         | Error _ -> ()) in
+  { present; poll; cursor }

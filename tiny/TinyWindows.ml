@@ -67,6 +67,7 @@ type ends = { keys : int; mutable keys_open : bool; prints : int; draws : int; m
 type page = {
   mutable pending : string; mutable ids : (int * int) list; mutable picture : bool;
   mutable col : int; mutable row : int; mutable line : string;
+  mutable cursor : int;  (* the mouse's look its program asked for (d_cursor) *)
 }
 
 (* its image (w by h pixels) and where its border's corner is on the
@@ -77,6 +78,12 @@ type window = { image : int; w : int; h : int; mutable x : int; mutable y : int;
 (* the front one first: it has the keys *)
 let windows = ref []
 let current w = match !windows with v :: _ -> v == w | [] -> false
+
+(* The mouse's look on the screen: the front window's, as its program
+ * asked for it (d_cursor), while the mouse is in that window; the arrow
+ * anywhere else. Sent only when it changes. *)
+let shown_cursor = ref 0
+let show_cursor kind = if kind <> !shown_cursor then begin shown_cursor := kind; send (d_cursor kind) end
 
 let border = 3
 let outer w = w.x, w.y, w.x + w.w + (2 * border), w.y + w.h + (2 * border)
@@ -205,7 +212,8 @@ let forward w s =
       else begin
         let letter = p.[i] and first = int16 p (i + 1) in
         if letter = 'a' && first > 0 && ours w first = 32767 then w.page.ids <- (first, fresh ()) :: w.page.ids;
-        if first <> 0 || (letter <> 'a' && letter <> 'f') then begin
+        if letter = 'c' then begin w.page.cursor <- first; if current w then show_cursor first end
+        else if first <> 0 || (letter <> 'a' && letter <> 'f') then begin
           send (String.make 1 letter);
           for k = 0 to images - 1 do send (i16 (ours w (int16 p (i + 1 + (2 * k))))) done;
           send (String.sub p (i + 1 + (2 * images)) (len - 1 - (2 * images)))
@@ -248,7 +256,7 @@ let create (x0, y0, x1, y1) =
   if pid < 0 then List.iter (fun fd -> if fd >= 0 then ignore (u_close fd)) [ k / 256; p land 255; d land 255; m / 256 ]
   else begin
     let ends = { keys = k / 256; keys_open = true; prints = p land 255; draws = d land 255; mouse = m / 256 } in
-    let page = { pending = ""; ids = []; picture = false; col = 0; row = 0; line = "" } in
+    let page = { pending = ""; ids = []; picture = false; col = 0; row = 0; line = ""; cursor = 0 } in
     let wide = (x1 - x0 - (2 * border)) / 8 * 8 and high = (y1 - y0 - (2 * border)) / 16 * 16 in
     let w = { image = fresh (); w = wide; h = high; x = snap x0; y = y0; pid = pid; ends = ends; page = page } in
     send (d_image w.image 0 0 w.w w.h 255);
@@ -302,6 +310,9 @@ let finish () = List.iter delete !windows; flush (); exit 0
 
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
 let mouse x y b =
+  (match !doing, over x y !windows with
+   | Idle, Some w when current w && inside (inner w) x y -> show_cursor w.page.cursor
+   | _ -> show_cursor 0);
   let left = b land 1 <> 0 && !buttons land 1 = 0 and right = b land 4 <> 0 && !buttons land 4 = 0 in
   buttons := b;
   match !doing with

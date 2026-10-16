@@ -182,6 +182,10 @@ let release (c : conn) id =
 (* the connection's end: what the program left *)
 let disconnect (c : conn) = List.iter (fun (id, _) -> if id <> 0 then release c id) c.images
 
+(* What the 'c' message (the mouse's look) does: set by the kernel, which
+ * writes it to the machine's mouse word; nothing on the host. *)
+let cursor_hook = ref (fun (_ : int) -> ())
+
 (* a write's bytes: whole messages (the header says which), each done
  * in turn; a bad one raises Graphics, the ones before it done *)
 let messages (c : conn) s =
@@ -204,6 +208,7 @@ let messages (c : conn) s =
           c.images <- (arg 0, made) :: c.images;
           next (i + 15)
       | 'f' -> release c (arg 0); next (i + 3)
+      | 'c' -> !cursor_hook (arg 0); next (i + 3)
       | 'd' ->
           let mask = if arg 2 < 0 then None else Some (find c (arg 2)) in
           draw (find c (arg 0)) (rect (arg 3) (arg 4) (arg 5) (arg 6)) (find c (arg 1)) mask (arg 7) (arg 8);

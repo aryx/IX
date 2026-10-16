@@ -469,10 +469,9 @@ in section 12 where it was found):
   a loop over a string's bytes, measured again since cbc0b9cc). If it
   is done, tiny-prof first, and a general cause rather than one
   function moved to C or assembly.
-- **Not checked**:
-  - the page (`t-ix.html`), in Firefox or by `TinyMachineWeb_test.py`,
-    which needs Python's `websockets`;
-  - mini-mk's build in `tiny/`: tiny-prof is in no mkfile.
+- **Not checked**: the page (`t-ix.html`), in Firefox or by
+  `TinyMachineWeb_test.py`, which needs Python's `websockets`. (tiny-prof
+  went in `tiny/mkfile` with e36dd7f1, mini-mk building all of `tiny/`.)
 - **What pages show wrong**: tables wider than the screen are cut at
   its edge (Paris's climate); Cyrillic, IPA and Thai are `?`; a
   picture the peer could not get stays an empty box with its text.

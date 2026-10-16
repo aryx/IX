@@ -1,5 +1,7 @@
 (* The small programs of a system, cat, ls, wc and the others, in one
- * file and one executable. m-ix's utilities/ has a program per file,
+ * file and one executable.
+ *
+ * m-ix's utilities/ has a program per file,
  * each a faithful copy of Plan 9's, with its options and its quirks.
  * This file is what remains when compatibility is dropped: once most
  * options are gone, what the programs have in common is most of each

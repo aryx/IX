@@ -106,7 +106,7 @@ None of these was discussed with the author.
 
 ## 5. In the spirit
 
-`TinyBuildSystem.ml`, `TinyShell.ml`, `TinyLineEditor.ml`,
+`TinyBuildSystem.ml`, `TinyShell.ml`, `TinyEditorLine.ml`,
 `TinyDatabase.ml`, `TinyCPU.ml` with `TinyMachineCPU.ml`, `TinyMachine.ml`,
 `TinyKernel.ml`, `TinyKernelGraphics.ml`, `TinyWindows.ml`,
 `TinyLibPlayground.ml`, `TinyKernel/steps/t6/` and `TinyKernel/steps/v0/`: each decides its

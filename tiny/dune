@@ -13,10 +13,10 @@
  (libraries ix_core fpath unix caps tiny_lib_system))
 
 (executable
- (name TinyLineEditor)
+ (name TinyEditorLine)
  (public_name tiny-editor)
  (package ix)
- (modules TinyLineEditor)
+ (modules TinyEditorLine)
  (libraries ix_core fpath unix caps))
 
 (executable
@@ -92,12 +92,12 @@
  (modules TinyAppTetris)
  (libraries tiny_lib_playground))
 
-; TinyEmacs.ml, the screen editor: the editor itself, with no system
-; under it (tests/TinyEmacs_tests/'s test types keys at it)
+; TinyEditorScreen.ml, the screen editor: the editor itself, with no system
+; under it (tests/TinyEditorScreen_tests/'s test types keys at it)
 (library
- (name tiny_emacs)
+ (name tiny_editor_screen)
  (wrapped false)
- (modules TinyEmacs))
+ (modules TinyEditorScreen))
 
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,

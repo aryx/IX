@@ -138,7 +138,7 @@ nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
 if [ -d $G ]; then job tiny tiny-assembler env TA=$T/tiny-assembler tiny/tests/TinyAssembler_test.sh; else job nogoken tiny-assembler; fi
 job tiny tiny-build env TB=$T/tiny-build tiny/tests/TinyBuildSystem_test.sh
 job tiny tiny-shell env TS=$T/tiny-shell tiny/tests/TinyShell_test.sh
-job tiny tiny-editor env TE=$T/tiny-editor tiny/tests/TinyLineEditor_test.sh
+job tiny tiny-editor env TE=$T/tiny-editor tiny/tests/TinyEditorLine_test.sh
 job tiny tiny-db env TD=$T/tiny-db tiny/tests/TinyDatabase_test.sh
 job tiny tiny-vcs env V=$T/tiny-vcs tiny/tests/TinyVCS_test.sh
 if [ -d $G ]; then job tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/tests/TinyC_test.sh; else job nogoken tiny-c; fi

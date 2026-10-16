@@ -19,7 +19,7 @@ test: all
 	./_build/default/shell/tests/Test.exe
 	./tiny/tests/TinyShell_test.sh
 	./_build/default/editors/ed/tests/Test.exe
-	./tiny/tests/TinyLineEditor_test.sh
+	./tiny/tests/TinyEditorLine_test.sh
 	./linker/tests/golden.sh
 	./generators/tests/tokens.sh
 	./generators/tests/trees.sh
@@ -77,7 +77,7 @@ test: all
 	./tiny/tests/TinyAppTetris_test.sh
 	./tiny/tests/TinyLibGUI_test.sh
 	./tiny/tests/TinyLibStd_test.sh
-	./tiny/tests/TinyEmacs_test.sh
+	./tiny/tests/TinyEditorScreen_test.sh
 	./tiny/tests/TinyBrowser_test.sh
 	$(MAKE) -C tiny/TinyKernel/steps clean all
 	$(MAKE) -C tiny/TinyKernel/steps/t6 check

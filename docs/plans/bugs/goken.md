@@ -216,7 +216,7 @@ mini-ed reproduces the lists, sizes and all.
 ### 19. 9base's sam: character classes, and a stray `d`
 
 `[a-c]` matches only `a` and `c`, `[^ab]` a newline; and it prints a
-`d` after its numbers (plan9port's `%lud`). TinyLineEditor's tests use no
+`d` after its numbers (plan9port's `%lud`). TinyEditorLine's tests use no
 class, and take the `d` out.
 
 ### 20. 9base's rc ignores SIGTERM

@@ -202,9 +202,9 @@ $(O)/user/utils.tm: $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
 $(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
 	@$(MLLINK)
 
-# the screen editor (emacs: ../TinyEmacs.ml, tiny-emacs's editor, and
+# the screen editor (emacs: ../TinyEditorScreen.ml, the editor, and
 # user/emacs.ml, its screen, keys and file on this kernel's calls)
-EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEmacs.ml user/emacs.ml
+EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEditorScreen.ml user/emacs.ml
 $(O)/user/emacs.tm: $(EMACS)
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(EMACS)

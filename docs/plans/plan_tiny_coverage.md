@@ -30,7 +30,7 @@ which, in its "its twin" column.
 |---|---:|---|
 | `builder/` | 2,525 | `TinyBuildSystem.ml` (tiny-build) |
 | `shell/` | 2,359 | `TinyShell.ml` (tiny-shell, and tiny-kernel's rc) |
-| `editors/ed/`, `editors/emacs/` | 4,921 | `TinyLineEditor.ml`, `TinyEmacs.ml` |
+| `editors/ed/`, `editors/emacs/` | 4,921 | `TinyEditorLine.ml`, `TinyEditorScreen.ml` |
 | `assembler/`, `linker/` | 4,174 | `TinyAssembler.ml` (and `TinyLinker.ml`, which says why there is no linker) |
 | `languages/c/`, `languages/ml/` | 15,432 | `TinyC.ml`, `TinyML.ml` |
 | `database/` | 3,084 | `TinyDatabase.ml` |
@@ -158,7 +158,7 @@ Five parts of m-ix have no twin, and one has half of one:
 - **How**: `TinyAppSheet.ml` on `TinyLibGUI.ml`, as calc and temp are:
   a grid of cells, a formula language of `+ - * /`, cell references
   and `sum(a1:a5)`, recomputation in dependency order. A document
-  editor and drawing come after, if wanted; TinyEmacs is already the
+  editor and drawing come after, if wanted; TinyEditorScreen is already the
   text editor.
 - **What to drop**: files in office formats, charts, styles.
 - **Size**: about 300 lines for the sheet.
@@ -211,9 +211,9 @@ grep and sort (2026-10-16):
   instead of inside TinyUtilities.ml ? (it could potentially be used
   by TinyEmacs?)"). It is Thompson's automaton with no captures, since
   grep asks only whether a line matches: about 120 lines with its
-  parser. TinyLineEditor.ml keeps its own matcher, a backtracking one with
+  parser. TinyEditorLine.ml keeps its own matcher, a backtracking one with
   captures, which sam's commands need (the author: "let's consider
-  TinyLineEditor.ml separately"). For TinyEmacs, the library would need a
+  TinyEditor.ml separately"). For TinyEditorScreen, the library would need a
   search that says where the match is: Thompson's simulation can give
   the leftmost-longest match if each state in the set carries where
   its match started, about 15 lines more.

@@ -1,14 +1,14 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyEmacs's test (TinyEmacs_test.sh): keys typed at the editor, with
+(* TinyEditorScreen's test (TinyEditorScreen_test.sh): keys typed at the editor, with
  * no screen and no file, and after each scene its screen printed, a
  * line each between bars, then the cursor's place. A screen of 24
  * columns and 7 lines, 5 of them the text's. The same file is built by
  * OCaml and by tiny-ml for tiny-cpu: the same lines. A control key is
  * its byte in a string: C-a is \001, C-x \024, Escape \027; the arrows
  * are \128 to \131. *)
-open TinyEmacs
+open TinyEditorScreen
 
 let show what e =
   print_string ("== " ^ what); print_newline ();

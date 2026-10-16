@@ -2,17 +2,17 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The tests of TinyLineEditor.ml: each script of sam's command language
+# The tests of TinyEditorLine.ml: each script of sam's command language
 # runs on the same file through tiny-editor and through 9base's sam -d,
 # in a fresh directory; what they print (stdout and stderr, the exit
 # status, and the file after) must be the same. 9base's sam prints its
 # numbers with a stray "d" (#4d for #4: plan9port's %lud), taken out.
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
-TE=${TE:-$ROOT/_build/default/tiny/TinyLineEditor.exe}
+TE=${TE:-$ROOT/_build/default/tiny/TinyEditorLine.exe}
 SAM=${SAM:-/usr/lib/plan9/bin/sam}
 # the reference is 9base's sam: without it (macOS: no 9base), nothing to compare
-[ -x "$SAM" ] || { echo "skip TinyLineEditor_test.sh (no 9base sam: $SAM)"; exit 0; }
+[ -x "$SAM" ] || { echo "skip TinyEditorLine_test.sh (no 9base sam: $SAM)"; exit 0; }
 failures=0
 
 TEXT='one

@@ -1,0 +1,5 @@
+; TinyEditorScreen.ml's test on the host (TinyEditorScreen_test.sh): keys typed at the editor
+(executable
+ (name Keys)
+ (modules Keys)
+ (libraries tiny_editor_screen))

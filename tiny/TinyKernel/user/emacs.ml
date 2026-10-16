@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* emacs, a program of TinyKernel.ml's: ../../TinyEmacs.ml, the editor,
+(* emacs, a program of TinyKernel.ml's: ../../TinyEditorScreen.ml, the editor,
  * on a screen and a file of tiny-kernel's (given to tiny-ml after
  * ../libml/calls.ml, ../../TinyLibStd.ml, ../../TinyLibDraw.ml and
- * TinyEmacs.ml, as one program: the Makefile).
+ * TinyEditorScreen.ml, as one program: the Makefile).
  *
  *     emacs file
  *
@@ -18,7 +18,7 @@
  * are 128 to 131. The file is the kernel's, in its memory: what is
  * saved is there until the machine stops. Not OCaml's to compile: it
  * names the kernel's calls, calls.ml's externals. *)
-open TinyEmacs
+open TinyEditorScreen
 open TinyLibDraw
 
 (* our images: 0 is the window, 1 white, 2 black *)

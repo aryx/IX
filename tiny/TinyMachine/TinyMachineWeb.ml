@@ -97,6 +97,15 @@ let terminal_key (mc : TinyMachineDevices.machine) b =
 
 let listen_keys (mc : TinyMachineDevices.machine) =
   listen document "keydown" (fun e ->
+    (* Alt with a letter is Escape then the letter: Emacs's Meta, M-x.
+     * The letter is the key's place (code: KeyX), as macOS's Option
+     * makes another character of it (Option-x is ≈) *)
+    let code = Js.to_string (get e "code") in
+    let meta = Js.to_bool (get e "altKey") && String.length code = 4 && String.sub code 0 3 = "Key" && screen_keys () in
+    if meta then begin
+      TinyMachineDevices.console_type mc.cons ("\027" ^ String.lowercase_ascii (String.sub code 3 1));
+      ignore (call e "preventDefault" [||])
+    end else
     match key_byte e with
     | Some b ->
         if screen_keys () then TinyMachineDevices.console_type mc.cons (String.make 1 (Char.chr b)) else terminal_key mc b;

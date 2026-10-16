@@ -15,7 +15,8 @@
  * mouse box, the 4, as a mouse at (width, height) with the buttons -1.
  * On the console no one answers: the screen is 640 by 480. A window
  * gives the keys as they are typed once one draws in it; the arrows
- * are 128 to 131. The file is the kernel's, in its memory: what is
+ * are 128 to 131. The console is raw while emacs runs (rawcons): its
+ * ^C is C-x C-c's, not the kill of every process. The file is the kernel's, in its memory: what is
  * saved is there until the machine stops. Not OCaml's to compile: it
  * names the kernel's calls, calls.ml's externals. *)
 open TinyEditorScreen
@@ -101,8 +102,8 @@ let edit file =
   ignore (u_write 3 (d_colour white 255 ^ d_colour black 0));
   let e = create cols rows file (read file) in
   let rec loop () =
-    show (view e) (cursor e);
-    let k = next () in
+    (* the keys the editor gives itself first; the screen once they are done *)
+    let k = match pending e with Some k -> k | None -> show (view e) (cursor e); next () in
     if k >= 0 then begin
       match key e k with
       | Continue -> loop ()
@@ -112,7 +113,11 @@ let edit file =
   loop ();
   ignore (u_write 3 (d_fill 0 white 0 0 w h ^ d_free white ^ d_free black))
 
+(* the console raw while editing: its ^C is a key, C-x C-c's, not the
+ * kill of every process *)
 let () =
   if u_argc () <> 2 then (ignore (u_write 2 "usage: emacs file\n"); exit 1);
+  ignore (u_rawcons 1);
   edit (u_arg 1);
+  ignore (u_rawcons 0);
   exit 0

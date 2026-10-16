@@ -16,10 +16,12 @@ let show what e =
   let x, y = cursor e in
   print_string ("cursor " ^ string_of_int x ^ " " ^ string_of_int y); print_newline ()
 
-(* the keys of a string, and what the last one asked *)
+(* the keys of a string, each followed by those the editor gives itself
+ * (a macro's, M-x's), and what the last one asked *)
 let keys e s =
   let last = ref Continue in
-  String.iter (fun c -> last := key e (Char.code c)) s;
+  let rec given () = match pending e with Some k -> last := key e k; given () | None -> () in
+  String.iter (fun c -> last := key e (Char.code c); given ()) s;
   match !last with Continue -> () | Save -> print_string "asks: save"; print_newline () | Quit -> print_string "asks: quit"; print_newline ()
 
 let () =
@@ -68,7 +70,7 @@ let () =
   show "Enter ends the search; a ! typed" e;
   keys e "\019zz\007";
   show "C-s zz, none; C-g" e;
-  keys e "\024x\027x\000";
+  keys e "\024x\027z\000";
   show "what is not a command" e
 
 let () =
@@ -80,3 +82,37 @@ let () =
   show "the wide line's end: the screen follows the cursor" e;
   keys e "\016\016\001";
   show "back up: the screen as it was" e
+
+let () =
+  let e = create 24 7 "mx" "one fish\ntwo fish\nred fish\nblue fish" in
+  keys e "\027x";
+  show "Escape x: M-x asks for a command" e;
+  keys e "end-of-b\t";
+  show "end-of-b, then Tab: the name completed" e;
+  keys e "\n";
+  show "Enter: end-of-buffer done" e;
+  keys e "\027xgoto-line\n3\n";
+  show "M-x goto-line, 3" e;
+  keys e "\027xkill-l\n";
+  show "M-x kill-l, one command it starts: kill-line" e;
+  keys e "\027<\027xreplace-string\nfish\ncat\n";
+  show "M-x replace-string fish with cat, from the start" e;
+  keys e "\027xnothing\n";
+  show "a name that is no command" e;
+  keys e "\027xyank\007";
+  show "C-g: never mind" e
+
+let () =
+  let e = create 24 7 "macro" "a\nb\nc\nd" in
+  keys e "\024(";
+  show "C-x (: a macro, Def on the line below the text" e;
+  keys e "\001- \014\024)";
+  show "C-a, a dash and a space, a line down, C-x ): defined" e;
+  keys e "\024e\024e";
+  show "C-x e twice" e;
+  keys e "\024(\005!\016\024e";
+  show "a second macro, ended by C-x e: done once at once" e;
+  keys e "\024)";
+  show "C-x ) when none is being defined" e;
+  keys e "\024(\024\019\024)\024e";
+  show "a macro that saves: C-x e asks to save" e

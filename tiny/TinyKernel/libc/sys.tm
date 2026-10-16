@@ -169,3 +169,9 @@ link:
 	sys	21
 	mov	r13, r1
 	ret
+
+rawcons:
+	ldw	r1, 0(sp)
+	sys	22
+	mov	r13, r1
+	ret

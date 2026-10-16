@@ -20,7 +20,20 @@ type text = {
   mutable modified : bool;
 }
 
-(* (two records: tiny-ml makes one of 11 fields at most on tiny-machine) *)
+(* what is typed on the last line, after a prompt: M-x's command, and
+ * the answers some commands ask for *)
+type answer = Command | Goto | Replace_from | Replace_to of string
+
+(* the last line's other uses, and the keys the editor gives itself *)
+type extra = {
+  mutable search : string option;           (* C-s typed: the text looked for *)
+  mutable reading : (answer * string) option;   (* a prompt, and what is typed after it *)
+  mutable recording : int list option;      (* C-x ( typed: the keys since, the last first *)
+  mutable macro : int list;                 (* the last macro, for C-x e *)
+  mutable queue : int list;                 (* keys to give back: a macro's, a command's *)
+}
+
+(* (three records: tiny-ml makes one of 11 fields at most on tiny-machine) *)
 type editor = {
   t : text;
   mutable top : int;             (* the first line shown *)
@@ -30,7 +43,7 @@ type editor = {
   mutable quitting : bool;       (* a quit was refused: the next is done *)
   mutable message : string;      (* the last line of the screen *)
   mutable prefix : int;          (* C-x or Escape typed, waiting for its key; or 0 *)
-  mutable search : string option;   (* C-s typed: the text looked for *)
+  x : extra;
   cols : int;
   rows : int;                    (* the screen: the last two lines are not the text's *)
 }
@@ -41,7 +54,8 @@ type request = Continue | Save | Quit
 let create (cols : int) (rows : int) (file : string) (text : string) : editor =
   let first, rest = match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t = { above = []; line = first; below = rest; col = 0; row = 0; goal = 0; modified = false } in
-  { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0; search = None; cols; rows }
+  { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0;
+    x = { search = None; reading = None; recording = None; macro = []; queue = [] }; cols; rows }
 
 (* (a text that ends by a newline has an empty last line, which is
  * where one types after it: the lines joined by newlines are the text) *)
@@ -148,10 +162,110 @@ let look (e : editor) (sub : string) (from : int) =
  * other key ends the search, and Enter and C-g do nothing more *)
 let searching (e : editor) (sub : string) (k : int) : bool =
   let m = String.length sub in
-  if k >= 32 && k < 127 then (let sub = sub ^ String.make 1 (Char.chr k) in e.search <- Some sub; look e sub (e.t.col - m); true)
+  if k >= 32 && k < 127 then (let sub = sub ^ String.make 1 (Char.chr k) in e.x.search <- Some sub; look e sub (e.t.col - m); true)
   else if k = 19 then (look e sub e.t.col; true)
-  else if k = 8 || k = 127 then (e.search <- Some (String.sub sub 0 (max 0 (m - 1))); true)
-  else (e.search <- None; k = 10 || k = 13 || k = 7)
+  else if k = 8 || k = 127 then (e.x.search <- Some (String.sub sub 0 (max 0 (m - 1))); true)
+  else (e.x.search <- None; k = 10 || k = 13 || k = 7)
+
+(*****************************************************************************)
+(* M-x *)
+(*****************************************************************************)
+
+(* the commands by their names in Emacs, each the keys it is: M-x
+ * types them. goto-line and replace-string have no key: they are
+ * M-x's own (answered) *)
+let commands = [
+  "forward-char", "\006"; "backward-char", "\002"; "next-line", "\014"; "previous-line", "\016";
+  "move-beginning-of-line", "\001"; "move-end-of-line", "\005";
+  "scroll-up-command", "\022"; "scroll-down-command", "\027v";
+  "beginning-of-buffer", "\027<"; "end-of-buffer", "\027>";
+  "delete-char", "\004"; "delete-backward-char", "\127"; "newline", "\n";
+  "kill-line", "\011"; "yank", "\025"; "recenter-top-bottom", "\012";
+  "isearch-forward", "\019"; "keyboard-quit", "\007";
+  "save-buffer", "\024\019"; "save-buffers-kill-terminal", "\024\003";
+  "start-kbd-macro", "\024("; "end-kbd-macro", "\024)"; "call-last-kbd-macro", "\024e";
+  "execute-extended-command", "\027x";
+  "goto-line", ""; "replace-string", "";
+]
+
+let prompt = function
+  | Command -> "M-x "
+  | Goto -> "Goto line: "
+  | Replace_from -> "Replace string: "
+  | Replace_to from -> "Replace string " ^ from ^ " with: "
+
+let starts (p : string) (s : string) = String.length p <= String.length s && String.sub s 0 (String.length p) = p
+
+(* Tab: what is typed made as long as all the names it starts agree *)
+let complete (typed : string) : string =
+  match List.filter (starts typed) (List.map fst commands) with
+  | [] -> typed
+  | first :: rest ->
+      let rec common a b i = if i < String.length a && i < String.length b && a.[i] = b.[i] then common a b (i + 1) else i in
+      String.sub first 0 (List.fold_left (fun n c -> min n (common first c 0)) (String.length first) rest)
+
+(* s with each from replaced by to_, and how many were *)
+let rec replace (from : string) (to_ : string) (s : string) : string * int =
+  let i = find from s 0 and m = String.length from in
+  if i < 0 then s, 0
+  else (let rest, n = replace from to_ (String.sub s (i + m) (String.length s - i - m)) in String.sub s 0 i ^ to_ ^ rest, n + 1)
+
+(* Enter after a prompt: what is typed done *)
+let rec answered (e : editor) (what : answer) (typed : string) =
+  let t = e.t in
+  match what with
+  | Command -> (
+      match List.assoc_opt typed commands, List.filter (starts typed) (List.map fst commands) with
+      | _ when typed = "goto-line" -> e.x.reading <- Some (Goto, "")
+      | _ when typed = "replace-string" -> e.x.reading <- Some (Replace_from, "")
+      | Some keys, _ -> e.x.queue <- List.init (String.length keys) (fun i -> Char.code keys.[i]) @ e.x.queue
+      | None, [ name ] when typed <> "" -> answered e Command name
+      | _ -> e.message <- "No command: " ^ typed)
+  | Goto -> (
+      match int_of_string_opt typed with
+      | Some n -> t.goal <- 0; move t (n - 1 - t.row)
+      | None -> e.message <- "Not a line: " ^ typed)
+  | Replace_from -> if typed = "" then e.message <- "Nothing to replace" else e.x.reading <- Some (Replace_to typed, "")
+  | Replace_to from ->
+      (* from the cursor to the end: the line's rest, the lines below *)
+      let rest, n = replace from typed (after t) in
+      let below = List.map (fun l -> replace from typed l) t.below in
+      let n = List.fold_left (fun n (_, k) -> n + k) n below in
+      if n > 0 then (t.line <- before t ^ rest; t.below <- List.map fst below; t.modified <- true);
+      e.message <- "Replaced " ^ string_of_int n ^ " occurrences"
+
+(* a key after a prompt: a character more, Backspace one less, Tab a
+ * command's name completed, Enter done, C-g never mind *)
+let reading (e : editor) (what : answer) (typed : string) (k : int) =
+  let m = String.length typed in
+  if k >= 32 && k < 127 then e.x.reading <- Some (what, typed ^ String.make 1 (Char.chr k))
+  else if k = 8 || k = 127 then e.x.reading <- Some (what, String.sub typed 0 (max 0 (m - 1)))
+  else if k = 9 && what = Command then e.x.reading <- Some (what, complete typed)
+  else if k = 7 then (e.x.reading <- None; e.message <- "Quit")
+  else if k = 10 || k = 13 then (e.x.reading <- None; answered e what typed)
+
+(*****************************************************************************)
+(* Macros *)
+(*****************************************************************************)
+
+(* C-x ( C-x ) C-x e. The keys are recorded as they come, C-x ( and
+ * the C-x ) that ends them left out, and C-x e gives them back through
+ * the queue, read before what is typed: a macro does what its keys
+ * did, a save included. C-x e while recording ends the macro first, as
+ * in Emacs *)
+let macro (e : editor) (k : int) =
+  match k, e.x.recording with
+  | 40, None -> e.x.recording <- Some []; e.message <- "Defining kbd macro..."
+  | 40, Some _ -> e.message <- "Already defining kbd macro"
+  | (41 | 101), Some (_ :: _ :: l) ->
+      e.x.macro <- List.rev l; e.x.recording <- None;
+      if k = 41 then e.message <- "Keyboard macro defined" else e.x.queue <- e.x.macro @ e.x.queue
+  | 41, _ -> e.message <- "Not defining kbd macro"
+  | _ -> if e.x.macro = [] then e.message <- "No kbd macro has been defined" else e.x.queue <- e.x.macro @ e.x.queue
+
+(* the next key the editor gives itself, before one typed *)
+let pending (e : editor) : int option =
+  match e.x.queue with k :: rest -> e.x.queue <- rest; Some k | [] -> None
 
 (*****************************************************************************)
 (* The keys *)
@@ -166,21 +280,25 @@ let key (e : editor) (k : int) : request =
   e.message <- "";
   let request = ref Continue and vertical = ref false in
   let lines n = vertical := true; move t n in
-  (match e.search with
-   | Some sub when searching e sub k -> ()
+  (match e.x.recording with Some l -> e.x.recording <- Some (k :: l) | None -> ());
+  (match e.x.reading, e.x.search with
+   | Some (what, typed), _ -> reading e what typed k
+   | _, Some sub when searching e sub k -> ()
    | _ ->
        let prefix = e.prefix in
        e.prefix <- 0;
        if prefix = 24 then begin
-         (* C-x C-s; C-x C-q, and C-x C-c where the system lets it come *)
+         (* C-x C-s; C-x C-q and C-x C-c; C-x ( ) e, the macros *)
          if k = 19 then request := Save
+         else if k = 40 || k = 41 || k = 101 then macro e k
          else if k = 17 || k = 3 then begin
            if t.modified && not quitting then (e.quitting <- true; e.message <- "Not saved: C-x C-s saves, C-x C-q again quits")
            else request := Quit
          end else e.message <- "C-x: not a command"
        end else if prefix = 27 then begin
-         (* Escape, then < > v *)
+         (* Escape, then < > v x: Meta *)
          if k = 60 then lines (- t.row)
+         else if k = 120 then e.x.reading <- Some (Command, "")
          else if k = 62 then lines (List.length t.below)
          else if k = 118 then (lines (1 - h); e.top <- max 0 (e.top - (h - 1)))
          else e.message <- "Escape: not a command"
@@ -198,7 +316,7 @@ let key (e : editor) (k : int) : request =
        else if k = 11 then kill e again
        else if k = 25 then yank e
        else if k = 12 then e.top <- max 0 (t.row - h / 2)
-       else if k = 19 then e.search <- Some ""
+       else if k = 19 then e.x.search <- Some ""
        else if k = 7 then e.message <- "Quit"
        else if k = 24 || k = 27 then e.prefix <- k
        else if k = 9 || (k >= 32 && k < 127) then insert t (String.make 1 (Char.chr k))
@@ -240,13 +358,19 @@ let view (e : editor) : string list =
   let text = List.map cut (List.rev (take y t.above) @ (t.line :: take (h - 1 - y) t.below)) in
   let text = text @ List.init (h - List.length text) (fun _ -> "") in
   let mode =
-    "-- " ^ e.file ^ (if t.modified then " (modified)" else "") ^ " -- L" ^ string_of_int (t.row + 1) ^ " C" ^ string_of_int t.col ^ " " in
+    "-- " ^ e.file ^ (if t.modified then " (modified)" else "") ^ " -- L" ^ string_of_int (t.row + 1) ^ " C" ^ string_of_int t.col
+    ^ (if e.x.recording <> None then " Def " else " ") in
   let mode = if String.length mode < e.cols then mode ^ String.make (e.cols - String.length mode) '-' else String.sub mode 0 e.cols in
   let last =
-    match e.search with
-    | Some sub -> (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
-    | None -> if e.prefix = 24 then "C-x-" else if e.prefix = 27 then "ESC-" else e.message in
+    match e.x.reading, e.x.search with
+    | Some (what, typed), _ -> prompt what ^ typed
+    | None, Some sub -> (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
+    | None, None -> if e.prefix = 24 then "C-x-" else if e.prefix = 27 then "ESC-" else e.message in
   text @ [ mode; String.sub last 0 (min e.cols (String.length last)) ]
 
-(* where the cursor is on the screen: its column, its line *)
-let cursor (e : editor) : int * int = column e.t.line e.t.col - left e, e.t.row - e.top
+(* where the cursor is on the screen: its column, its line; after a
+ * prompt, on the last line *)
+let cursor (e : editor) : int * int =
+  match e.x.reading with
+  | Some (what, typed) -> min (e.cols - 1) (String.length (prompt what ^ typed)), e.rows - 1
+  | None -> column e.t.line e.t.col - left e, e.t.row - e.top

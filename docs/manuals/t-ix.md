@@ -525,6 +525,11 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 17 | `box(fds)` | 16 | `ticks()` |
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
 | 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
+| 22 | `rawcons(on)` | | |
+
+`rawcons(1)` gives the console's ^C to the calling process as a byte
+it reads, while it lives, instead of killing every process but the
+first: emacs's C-x C-c (Plan 9's `rawon`). `rawcons(0)` gives it back.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

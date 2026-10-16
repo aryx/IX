@@ -45,13 +45,28 @@
  *     C-k, C-y                       the line's rest taken, put back
  *     C-s                            search, as it is typed; C-s the next
  *     C-l                            the cursor's line in the middle
- *     C-x C-s, C-x C-q               save, quit (C-x C-c too, where it comes)
+ *     C-x C-s, C-x C-c (or C-x C-q)  save, quit
  *     C-g                            never mind
+ *     M-x (Escape x, or Alt-x)       a command by its name, Tab completing
+ *     C-x (, C-x ), C-x e            a macro started, ended, done again
+ *
+ * M-x knows each of these keys by its name in Emacs (kill-line,
+ * save-buffer...), and two commands that have no key and ask on the
+ * last line what they need: goto-line, and replace-string, from the
+ * cursor to the end. A command is the keys it is: M-x kill-line gives
+ * the editor a C-k.
+ *
+ * A macro is the keys typed between C-x ( and C-x ). C-x e gives them
+ * again to the editor, which reads them before the keys typed
+ * ([pending]): a macro does all its keys did, a search, a save, an
+ * M-x. That is what a macro is in Emacs, a keyboard macro: no language,
+ * the keys only.
  *
  * What is left out: multiple buffers and windows, undo, the mark and
- * the region, searching backward, replacing, wrapping long lines (a
- * long line is cut at the edge of the screen, and the screen scrolls
- * to follow the cursor), and characters beyond ASCII.
+ * the region, searching backward, replacing with a question at each,
+ * a macro's count (C-u), wrapping long lines (a long line is cut at
+ * the edge of the screen, and the screen scrolls to follow the
+ * cursor), and characters beyond ASCII.
  *)
 
 type editor
@@ -66,6 +81,10 @@ type request = Continue | Save | Quit
 (* a key, a byte: a character, a control character (C-a is 1), and
  * tiny-machine's arrows, 128 to 131 (up, down, left, right) *)
 val key : editor -> int -> request
+
+(* a key the editor gives itself, a macro's or an M-x command's: the
+ * program around gives it to [key] before the next one typed *)
+val pending : editor -> int option
 
 (* the screen: rows lines of at most cols characters, the last two a
  * line on the file and the cursor's place, and a message *)

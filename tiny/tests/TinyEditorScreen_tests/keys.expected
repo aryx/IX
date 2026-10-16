@@ -225,3 +225,130 @@ cursor 23 2
 |-- wide -- L1 C0 -------|
 ||
 cursor 0 0
+== Escape x: M-x asks for a command
+|one fish|
+|two fish|
+|red fish|
+|blue fish|
+||
+|-- mx -- L1 C0 ---------|
+|M-x |
+cursor 4 6
+== end-of-b, then Tab: the name completed
+|one fish|
+|two fish|
+|red fish|
+|blue fish|
+||
+|-- mx -- L1 C0 ---------|
+|M-x end-of-buffer|
+cursor 17 6
+== Enter: end-of-buffer done
+|one fish|
+|two fish|
+|red fish|
+|blue fish|
+||
+|-- mx -- L4 C0 ---------|
+||
+cursor 0 3
+== M-x goto-line, 3
+|one fish|
+|two fish|
+|red fish|
+|blue fish|
+||
+|-- mx -- L3 C0 ---------|
+||
+cursor 0 2
+== M-x kill-l, one command it starts: kill-line
+|one fish|
+|two fish|
+||
+|blue fish|
+||
+|-- mx (modified) -- L3 C|
+||
+cursor 0 2
+== M-x replace-string fish with cat, from the start
+|one cat|
+|two cat|
+||
+|blue cat|
+||
+|-- mx (modified) -- L1 C|
+|Replaced 3 occurrences|
+cursor 0 0
+== a name that is no command
+|one cat|
+|two cat|
+||
+|blue cat|
+||
+|-- mx (modified) -- L1 C|
+|No command: nothing|
+cursor 0 0
+== C-g: never mind
+|one cat|
+|two cat|
+||
+|blue cat|
+||
+|-- mx (modified) -- L1 C|
+|Quit|
+cursor 0 0
+== C-x (: a macro, Def on the line below the text
+|a|
+|b|
+|c|
+|d|
+||
+|-- macro -- L1 C0 Def --|
+|Defining kbd macro...|
+cursor 0 0
+== C-a, a dash and a space, a line down, C-x ): defined
+|- a|
+|b|
+|c|
+|d|
+||
+|-- macro (modified) -- L|
+|Keyboard macro defined|
+cursor 1 1
+== C-x e twice
+|- a|
+|- b|
+|- c|
+|d|
+||
+|-- macro (modified) -- L|
+||
+cursor 1 3
+== a second macro, ended by C-x e: done once at once
+|- a|
+|- b|
+|- c!|
+|d!|
+||
+|-- macro (modified) -- L|
+||
+cursor 3 1
+== C-x ) when none is being defined
+|- a|
+|- b|
+|- c!|
+|d!|
+||
+|-- macro (modified) -- L|
+|Not defining kbd macro|
+cursor 3 1
+asks: save
+== a macro that saves: C-x e asks to save
+|- a|
+|- b|
+|- c!|
+|d!|
+||
+|-- macro (modified) -- L|
+||
+cursor 3 1

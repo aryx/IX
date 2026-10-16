@@ -254,6 +254,12 @@ u_getcwd(value unit)
 }
 
 value
+u_rawcons(value on)
+{
+	return rawcons(on >> 1) * 2 + 1;
+}
+
+value
 u_getpid(value unit)
 {
 	return getpid() * 2 + 1;

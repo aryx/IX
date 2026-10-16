@@ -30,7 +30,7 @@ let read_ppm ic =
 
 let () =
   let display = TinyMachineSDL.create ~title:"tiny-machine" in
-  let x = ref 0 and y = ref 0 and buttons = ref 0 and shift = ref false and ctrl = ref false in
+  let x = ref 0 and y = ref 0 and buttons = ref 0 and shift = ref false and ctrl = ref false and alt = ref false in
   (* the key held (its usage, its byte), and when it is typed again: a
    * keyboard's repeat, done here (the display says a key's press once,
    * what a kernel's USB driver wants; a game wants its arrows held) *)
@@ -55,8 +55,11 @@ let () =
         | TinyMachineSDL.Button (b, down) -> buttons := if down then !buttons lor b else !buttons land lnot b
         | TinyMachineSDL.Key ((225 | 229), down) -> shift := down
         | TinyMachineSDL.Key ((224 | 228), down) -> ctrl := down
+        | TinyMachineSDL.Key ((226 | 230), down) -> alt := down
         | TinyMachineSDL.Key (usage, true) ->
             Option.iter (fun byte ->
+              (* Alt with a key is Escape then the key: Emacs's Meta, M-x *)
+              if !alt then Printf.printf "k \\%03d\n" 27;
               Printf.printf "k \\%03d\n" byte;
               held := Some (usage, byte);
               again := Unix.gettimeofday () +. 0.3) (key_byte usage ~shift:!shift ~ctrl:!ctrl)

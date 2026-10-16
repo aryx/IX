@@ -322,6 +322,10 @@ let counted = ref 0
 let typed = ref ""
 let typed_end = ref false
 
+(* the process that has the console raw (rawcons), or 0: its ^C is a
+ * byte typed, not the kill of every process *)
+let raw = ref 0
+
 let read f a n =
   match f with
   | Link l ->
@@ -668,6 +672,12 @@ let sys_getcwd p =
   pokeb (a + n) 0;
   result p n
 
+(* rawcons(on): the console raw for this process, while it lives (on
+ * 1), or not (on 0). An editor's C-x C-c: ^C a key like the others.
+ * Plan 9's rawon, written to /dev/consctl (which also stops the echo
+ * and the line editing: tiny-kernel's console has neither) *)
+let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
+
 (* kill(pid): its process ended as a fault ends one, its status -1 *)
 let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
 let sys_kill p =
@@ -721,6 +731,7 @@ let syscall p =
     | 19 -> sys_listen p
     | 20 -> sys_getcwd p
     | 21 -> sys_link p
+    | 22 -> sys_rawcons p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 
@@ -782,7 +793,8 @@ let interrupts sources =
     let rec take () =
       let c = peek cons_in in
       if c = -2 then typed_end := true
-      else if c = 3 then (typed := ""; List.iter (fun q -> if q.pid <> 1 then kill q) !procs; puts "\n"; take ())
+      else if c = 3 && not (List.exists (fun q -> q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs) then
+        (typed := ""; List.iter (fun q -> if q.pid <> 1 then kill q) !procs; puts "\n"; take ())
       else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()
   end;

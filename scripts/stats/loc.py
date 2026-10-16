@@ -43,7 +43,8 @@
 #
 # Usage: scripts/stats/loc.py [-v | -l]
 #   -v: every subdirectory (kernels/xv6/, lib_core/libc/, ...) and every
-#       tests/ directory rather than one line per program
+#       tests/ directory rather than one line per program (without -v,
+#       the tests are their total alone, with no line per program)
 #   -l: only today's line for docs/loc.md, the log of those last numbers
 #
 # The lines come first, next to the name they count; then the files,
@@ -570,6 +571,9 @@ def main():
             print()
         first = False
         row(group, total(subs.values()))
+        # the tests: their total alone, unless -v
+        if group == "tests" and not verbose:
+            continue
         # in the order of GROUPS (the toolchain, the machines, the
         # kernel, the programs), not alphabetical
         tops = dict(GROUPS).get(group, [])

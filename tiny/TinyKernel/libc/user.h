@@ -8,7 +8,8 @@
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
-// a directory's entry, as read from it (t6's: a first block, always 0 here)
+// a directory's entry, as read from it (t6's: a first block, which here
+// is the file's links instead, how many names it has)
 struct dirent { char name[20]; int type; uint first; uint size; };
 
 #define T_DIR 1

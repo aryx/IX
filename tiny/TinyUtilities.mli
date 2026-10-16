@@ -51,8 +51,9 @@
  * and compares what they print and their exit status.
  *
  * What is dropped: most options (each utility keeps the one or two that
- * carry its idea), UTF-8 (wc counts bytes), floating point in seq, the
- * long format of ls (tiny-kernel has no owners, modes or times), and
+ * carry its idea), UTF-8 (wc counts bytes), floating point in seq, most
+ * of ls -l (tiny-kernel has no owners, modes or times: it is a file's
+ * kind, links and size), and
  * the wording of each program's errors: here they are all "tool: file:
  * reason". The plan, and what was found on the way:
  * docs/plans/done/plan_tiny_utilities.md.

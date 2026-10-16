@@ -95,7 +95,7 @@ let TinyLibSystem.read_file caps file =
 
 (* a directory is read as a file of entries of 32 bytes (user.h's
  * dirent): a name of 20 bytes ended by a 0, its type (1 for a
- * directory), a word, and its size *)
+ * directory), its links, and its size *)
 let entries dir =
   let fd = u_open (if dir = "" then "." else dir) 0 in
   if fd < 0 then []
@@ -104,7 +104,7 @@ let entries dir =
     ignore (u_close fd);
     let name i = String.sub s i ((String.index_from_opt s i '\000' ||| (i + 20)) - i) in
     let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
-    List.init (String.length s / 32) (fun k -> name (k * 32), (Char.code s.[k * 32 + 20] = 1, word (k * 32 + 28)))
+    List.init (String.length s / 32) (fun k -> name (k * 32), (Char.code s.[k * 32 + 20] = 1, word (k * 32 + 28), word (k * 32 + 24)))
   end
 
 let TinyLibSystem.readdir dir = List.map fst (entries dir)
@@ -115,14 +115,19 @@ let path_names file =
   let clean acc n = if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc in
   List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
 
-let TinyLibSystem.stat file =
+(* the file's entry in its directory: whether it is one, its size, its
+ * links (the root has no entry: a directory with one name) *)
+let entry file =
   match List.rev (path_names file) with
-  | [] -> true, 0
+  | [] -> true, 0, 1
   | last :: up ->
       let dir = List.fold_left (fun acc n -> "/" ^ n ^ acc) "" up in
       (match List.assoc_opt last (entries (if dir = "" then "/" else dir)) with
        | Some e -> e
        | None -> failwith "not there")
+
+let TinyLibSystem.stat file = let is_dir, size, _ = entry file in is_dir, size
+let TinyLibSystem.links file = let _, _, n = entry file in n
 
 let TinyLibSystem.is_directory file = try fst (TinyLibSystem.stat file) with Failure _ -> false
 

@@ -6,21 +6,22 @@
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
-(* -h: the commands by example, each one as it runs *)
-let help = {|usage: tiny-editor [file]: sam's command language, without the screen,
+(* -h: the commands by example, each one as it runs (a string between
+ * quotes, not {| |}: tiny-ml builds this file too) *)
+let help = "usage: tiny-editor [file]: sam's command language, without the screen,
 the commands on standard input, one a line, each on dot, a range of the text:
   ,p  3p  3,5p  $p  #10,#20p  all, line 3, lines 3 to 5, the last, chars 10 to 20
   /main/p  /main/;/^}/d      the next match; from it to a } starting a line
   =  =#                      where dot is, in lines, in characters
   a/text/ i/text/ c/text/    after dot, before it, instead (a alone: lines to .)
-  d  s/old/new/g             dot deleted; each old in it new (& \1: match, group)
+  d  s/old/new/g             dot deleted; each old in it new (& \\1: match, group)
   m 5  t 5                   dot moved, copied, after line 5
   ,x/o/c/0/                  every o made 0 (x: a loop on matches; y: between)
-  ,x/.*\n/g/TODO/p           the lines with a TODO (g: if dot matches; v: not)
+  ,x/.*\\n/g/TODO/p           the lines with a TODO (g: if dot matches; v: not)
   { ... }                    several commands, a line each, on the same dot
   u  u-1  w  q               undo, redo, write, quit (r e f: read, edit, name)
   newline                    the next line printed
-|}
+"
 
 (*****************************************************************************)
 (* Regular expressions *)
@@ -44,6 +45,8 @@ exception Error of string
 
 (* a pattern's character, as typed or after a backslash *)
 type pchar = Plain of char | Quoted of char
+
+let byte_of pc = match pc with Plain c -> c | Quoted c -> c
 
 (* Plan 9's notation, as ed and sam have it; \n is a newline *)
 let parse_re (p : string) : re * int =
@@ -73,7 +76,7 @@ let parse_re (p : string) : re * int =
     go (atom ())
   (* sam's messages: the operator an operand is missing for *)
   and atom () =
-    let missing c = raise (Error (Printf.sprintf "no operand for `%c'" c)) in
+    let missing c = raise (Error ("no operand for `" ^ String.make 1 c ^ "'")) in
     if !pos >= String.length p then missing !after;
     match next () with
     | Quoted c -> mk (Chr c)
@@ -95,10 +98,11 @@ let parse_re (p : string) : re * int =
           if !pos >= String.length p then raise (Error "malformed `[]'");
           match next () with
           | Plain ']' when acc <> [] -> List.rev acc
-          | Plain c | Quoted c ->
+          | pc ->
+              let c = byte_of pc in
               if peek () = Some '-' && !pos + 1 < String.length p && p.[!pos + 1] <> ']' then begin
                 incr pos;
-                match next () with Plain d | Quoted d -> ranges ((c, d) :: acc)
+                ranges ((c, byte_of (next ())) :: acc)
               end
               else ranges ((c, c) :: acc)
         in
@@ -122,12 +126,14 @@ let parse_re (p : string) : re * int =
  * text from s, ending by lim, in priority order; a (node, position)
  * pair is tried once (a second visit could only find the same ends) *)
 let ends (re, size) (text : string) (s : int) (lim : int) (k : int -> int array -> unit) =
-  let seen = Bytes.make (size * (lim - s + 1)) '\000' in
+  (* a bit per pair, 30 in an int: tiny-ml has no Bytes, and a word per
+   * pair would be four times the memory *)
+  let seen = Array.make (((size * (lim - s + 1)) / 30) + 1) 0 in
   let caps = Array.make 20 (-1) in
   let rec m n i k =
     let key = (n.id * (lim - s + 1)) + (i - s) in
-    if Bytes.get seen key = '\000' then begin
-      Bytes.set seen key '\001';
+    if (seen.(key / 30) lsr (key mod 30)) land 1 = 0 then begin
+      seen.(key / 30) <- seen.(key / 30) lor (1 lsl (key mod 30));
       match n.kind with
       | Chr c -> if i < lim && text.[i] = c then k (i + 1)
       | Any -> if i < lim && text.[i] <> '\n' then k (i + 1)
@@ -148,11 +154,14 @@ let ends (re, size) (text : string) (s : int) (lim : int) (k : int -> int array 
   in
   m re s (fun j -> caps.(0) <- s; caps.(1) <- j; k j caps)
 
+(* a copy of the captures (tiny-ml has no Array.copy) *)
+let copy a = let b = Array.make (Array.length a) 0 in for i = 0 to Array.length a - 1 do b.(i) <- a.(i) done; b
+
 (* the longest match starting at s *)
 let longest re text s lim =
   let best = ref None in
-  ends re text s lim (fun j caps -> match !best with Some (e, _) when e >= j -> () | _ -> best := Some (j, Array.copy caps));
-  Option.map snd !best
+  ends re text s lim (fun j caps -> match !best with Some (e, _) when e >= j -> () | _ -> best := Some (j, copy caps));
+  match !best with Some (_, c) -> Some c | None -> None
 
 (* the leftmost-longest match starting in [p, lim] *)
 let rec search re text p lim = if p > lim then None else match longest re text p lim with Some c -> Some c | None -> search re text (p + 1) lim
@@ -165,7 +174,7 @@ let search_back re text p =
     ends re text s p (fun j caps ->
       match !best with
       | Some b when b.(1) > j || (b.(1) = j && b.(0) <= s) -> ()
-      | _ -> best := Some (Array.copy caps))
+      | _ -> best := Some (copy caps))
   done;
   !best
 
@@ -232,11 +241,20 @@ let refill () =
     match !next_line () with
     | Some l -> input := l ^ "\n"; ip := 0
     | None -> ()
-let peekc () = refill (); if !ip < String.length !input then !input.[!ip] else '\000'
+let peekc () = refill (); if !ip < String.length !input then (!input).[!ip] else '\000'
 let getc () = let c = peekc () in incr ip; c
+(* s without the blanks at its ends *)
+let trim s =
+  let blank c = c = ' ' || c = '\t' || c = '\n' || c = '\r' in
+  let n = String.length s and i = ref 0 in
+  while !i < n && blank s.[!i] do incr i done;
+  let j = ref n in
+  while !j > !i && blank s.[!j - 1] do decr j done;
+  String.sub s !i (!j - !i)
+
 let skipbl () = while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
 let atnl () = if skipbl () <> '\n' && peekc () <> '\000' then raise (Error "newline expected") else incr ip
-let num () = let s = !ip in while peekc () >= '0' && peekc () <= '9' do incr ip done; if !ip = s then 1 else int_of_string (String.sub !input s (!ip - s))
+let num () = let s = !ip in while peekc () >= '0' && peekc () <= '9' do incr ip done; if !ip = s then 1 else Option.get (int_of_string_opt (String.sub !input s (!ip - s)))
 
 let lastpat = ref ""
 
@@ -258,7 +276,7 @@ let regexp delim =
 
 (* a replacement or a text: \n is a newline, \ then the delimiter the
  * delimiter; s keeps its other \s, for \1 *)
-let rhs delim ~s =
+let rhs delim s =
   let b = Buffer.create 16 in
   let rec go () =
     match getc () with
@@ -277,7 +295,7 @@ let rhs delim ~s =
 let simple () : simple option =
   match skipbl () with
   | '#' -> incr ip; Some (Chars (num ()))
-  | '0' .. '9' -> Some (Line (num ()))
+  | c when c >= '0' && c <= '9' -> Some (Line (num ()))
   | ('/' | '?') as c -> incr ip; Some (Search ((if c = '/' then Fwd else Back), regexp c))
   | '.' -> incr ip; Some Dot
   | '$' -> incr ip; Some Dollar
@@ -303,7 +321,7 @@ let rec compound () : addr option =
   match skipbl () with
   | ',' -> incr ip; Some (Range (Comma, left, compound ()))
   | ';' -> incr ip; Some (Range (Semi, left, compound ()))
-  | _ -> Option.map (fun c -> Chain c) left
+  | _ -> (match left with Some c -> Some (Chain c) | None -> None)
 
 let rec parse () : cmd option =
   let addr = compound () in
@@ -313,7 +331,7 @@ let rec parse () : cmd option =
     let delim () =
       match skipbl () with
       | '\n' | '\000' -> raise (Error "no pattern")
-      | ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9') as c -> raise (Error (Printf.sprintf "bad delimiter `%c'" c))
+      | c when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') -> raise (Error ("bad delimiter `" ^ String.make 1 c ^ "'"))
       | _ -> getc ()
     in
     let text () =
@@ -331,9 +349,9 @@ let rec parse () : cmd option =
         lines ();
         Buffer.contents b
       end
-      else (let d = getc () in let t = rhs d ~s:false in if peekc () = d then incr ip; atnl (); t)
+      else (let d = getc () in let t = rhs d false in if peekc () = d then incr ip; atnl (); t)
     in
-    let word () = ignore (skipbl ()); let s = !ip in while peekc () <> '\n' && peekc () <> '\000' do incr ip done; let w = String.sub !input s (!ip - s) in atnl (); String.trim w in
+    let word () = ignore (skipbl ()); let s = !ip in while peekc () <> '\n' && peekc () <> '\000' do incr ip done; let w = String.sub !input s (!ip - s) in atnl (); trim w in
     let sub () = match skipbl () with '\n' -> incr ip; { addr = None; op = Print } | _ -> Option.get (parse ()) in
     let op =
       match c with
@@ -345,7 +363,7 @@ let rec parse () : cmd option =
           let n = num () in
           let d = delim () in
           let re = regexp d in
-          let t = rhs d ~s:true in
+          let t = rhs d true in
           let g = if peekc () = d then (incr ip; if peekc () = 'g' then (incr ip; true) else false) else false in
           atnl ();
           Subst (n, re, t, g)
@@ -376,7 +394,7 @@ let rec parse () : cmd option =
           atnl ();
           Undo (if redo then -n else n)
       | '\n' -> Newline
-      | c -> raise (Error (Printf.sprintf "unknown command `%c'" c))
+      | c -> raise (Error ("unknown command `" ^ String.make 1 c ^ "'"))
     in
     Some { addr; op }
 
@@ -550,7 +568,7 @@ let rec address (ad : addr) (a : int * int) : int * int =
 (*****************************************************************************)
 
 let out = Buffer.create 4096
-let flush (caps : < Cap.stdout; .. >) = Console.print caps (Buffer.contents out); Buffer.clear out; flush (Console.stdout caps)
+let flush (caps : < Cap.stdout; .. >) = TinyLibSystem.print caps (Buffer.contents out); Buffer.clear out; TinyLibSystem.flush ()
 
 let print_posn (q0, q1) chars =
   let t = !text in
@@ -558,17 +576,17 @@ let print_posn (q0, q1) chars =
   if not chars then begin
     let l1 = 1 + count 0 q0 in
     let l2 = l1 + count q0 q1 - (if q1 > q0 && t.[q1 - 1] = '\n' then 1 else 0) in
-    Buffer.add_string out (if l2 <> l1 then Printf.sprintf "%d,%d; " l1 l2 else Printf.sprintf "%d; " l1)
+    Buffer.add_string out (if l2 <> l1 then string_of_int l1 ^ "," ^ string_of_int l2 ^ "; " else string_of_int l1 ^ "; ")
   end;
-  Buffer.add_string out (if q1 <> q0 then Printf.sprintf "#%d,#%d\n" q0 q1 else Printf.sprintf "#%d\n" q0)
+  Buffer.add_string out (if q1 <> q0 then "#" ^ string_of_int q0 ^ ",#" ^ string_of_int q1 ^ "\n" else "#" ^ string_of_int q0 ^ "\n")
 
 (* the file's line in sam's menu: ' when modified *)
-let menu name = Printf.sprintf "%c-. %s\n" (if !modified then '\'' else ' ') name
+let menu name = (if !modified then "'" else " ") ^ "-. " ^ name ^ "\n"
 
 let read_file (caps : < Cap.open_in; .. >) name =
-  if name = "" then None else try Some (FS.read caps (Fpath.v name)) with Sys_error _ -> None
+  if name = "" then None else try Some (TinyLibSystem.read_file caps name) with Failure _ -> None
 
-let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) (c : cmd) : unit =
+let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) (c : cmd) : unit =
   let a = match c.addr, c.op with None, File (Write, _) -> (0, len ()) | None, _ -> !dot | Some ad, _ -> address ad !dot in
   let q0, q1 = a in
   match c.op with
@@ -600,7 +618,7 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
                       | '\\' when !i + 1 < String.length rep ->
                           incr i;
                           (match rep.[!i] with
-                           | '1' .. '9' as d ->
+                           | d when d >= '1' && d <= '9' ->
                                let g = Char.code d - 48 in
                                if m.(2 * g) >= 0 && m.((2 * g) + 1) >= 0 then Buffer.add_string b (String.sub !text m.(2 * g) (m.((2 * g) + 1) - m.(2 * g)))
                            | c -> Buffer.add_char b c)
@@ -644,9 +662,11 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
         exec caps sub;
         p := e
       done
-  | Loop ((Matches pat | Between pat) as k, sub) ->
-      (* looper(): x on each match, y on the text between *)
-      let x = match k with Matches _ -> true | _ -> false in
+  | Loop (k, sub) ->
+      (* looper(): x on each match, y on the text between (the two
+       * other loops are the cases above; tiny-ml has no or-pattern
+       * that binds a name, (Matches pat | Between pat)) *)
+      let x, pat = match k with Matches p -> true, p | Between p -> false, p | _ -> raise (Error "loop") in
       let re = compile pat in
       let p = ref q0 and op = ref (if x then -1 else q0) in
       (try
@@ -671,12 +691,14 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
   | Block cmds -> List.iter (fun c -> dot := a; exec caps c) cmds
   | File (Read, name) -> (
       match read_file caps name with
-      | Some s -> change q0 q1 s; dot := (q0, q0 + String.length s); Buffer.add_string out (Printf.sprintf "#%d\n" (String.length s))
+      | Some s -> change q0 q1 s; dot := (q0, q0 + String.length s); Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
       | None -> raise (Error ("can't open " ^ name)))
   | File (Write, name) ->
       let name = if name = "" then !file else name in
       if name = "" then raise (Error "no file name");
-      FS.write caps (Fpath.v name) (String.sub !text q0 (q1 - q0));
+      let fd = TinyLibSystem.open_out caps name in
+      TinyLibSystem.write fd (String.sub !text q0 (q1 - q0));
+      TinyLibSystem.close fd;
       if name = !file && q0 = 0 && q1 = len () then begin
         modified := false;
         let differ r = { r with rmodified = true } in
@@ -684,8 +706,8 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
       end;
       if !file = "" then file := name;
       Buffer.add_string out (name ^ ": ");
-      if q1 > q0 && !text.[q1 - 1] <> '\n' then (flush caps; Console.eprint caps "?warning: last char not newline\n");
-      Buffer.add_string out (Printf.sprintf "#%d\n" (q1 - q0))
+      if q1 > q0 && (!text).[q1 - 1] <> '\n' then (flush caps; TinyLibSystem.eprint caps "?warning: last char not newline\n");
+      Buffer.add_string out ("#" ^ string_of_int (q1 - q0) ^ "\n")
   | File (Edit, name) ->
       let name = if name = "" then !file else name in
       (match read_file caps name with
@@ -696,7 +718,7 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
   | Quit ->
       if !modified && not !warned then (warned := true; raise (Error "changed files"));
       flush caps;
-      CapStdlib.exit caps 0
+      TinyLibSystem.exit 0
   | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)
@@ -708,40 +730,45 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.ex
           Buffer.add_string out (String.sub !text (fst r) (snd r - fst r));
           dot := r)
 
-let main (caps : < Cap.argv; Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.exit; .. >) =
-  (let ic = Console.stdin caps in
-   next_line := fun () -> try Some (input_line ic) with End_of_file -> None);
-  (match Array.to_list (CapSys.argv caps) with
-   | [ _; ("-h" | "--help") ] -> Console.print caps help; CapStdlib.exit caps 0
-   | [ _; name ] ->
-       file := name;
-       text := read_file caps name ||| "";
-       Buffer.add_string out (menu name)
-   | _ -> ());
-  let rec loop () =
-    match parse () with
-    | None -> ()
-    | Some c ->
-        (* an error while it runs: its changes are dropped *)
-        before := now [];
-        (try exec caps c; apply ()
-         with Error m ->
-           changes := [];
-           hi := 0;
-           flush caps;
-           Console.eprint caps ("?" ^ m ^ "\n"));
-        flush caps;
-        loop ()
-    | exception Error m ->
-        (* an error while it is read: the rest of the line thrown away *)
-        flush caps;
-        Console.eprint caps ("?" ^ m ^ "\n");
-        while peekc () <> '\n' && peekc () <> '\000' do incr ip done;
-        if peekc () = '\n' then incr ip;
-        loop ()
-  in
-  loop ();
-  if !modified && not !warned then (flush caps; Console.eprint caps "?changed files\n");
-  flush caps
+let main (caps : Cap.all_caps) : int =
+  next_line := (fun () -> TinyLibSystem.read_line caps);
+  match TinyLibSystem.argv caps with
+  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; TinyLibSystem.flush (); 0
+  | argv ->
+      (match argv with
+       | [ _; name ] ->
+           file := name;
+           text := read_file caps name ||| "";
+           Buffer.add_string out (menu name)
+       | _ -> ());
+      let rec loop () =
+        (* a command, None at the end; or an error while it is read
+         * (its message said, the rest of the line thrown away): None *)
+        let read =
+          try Some (parse ())
+          with Error m ->
+            flush caps;
+            TinyLibSystem.eprint caps ("?" ^ m ^ "\n");
+            while peekc () <> '\n' && peekc () <> '\000' do incr ip done;
+            if peekc () = '\n' then incr ip;
+            None in
+        match read with
+        | Some None -> ()
+        | Some (Some c) ->
+            (* an error while it runs: its changes are dropped *)
+            before := now [];
+            (try exec caps c; apply ()
+             with Error m ->
+               changes := [];
+               hi := 0;
+               flush caps;
+               TinyLibSystem.eprint caps ("?" ^ m ^ "\n"));
+            flush caps;
+            loop ()
+        | None -> loop () in
+      loop ();
+      if !modified && not !warned then (flush caps; TinyLibSystem.eprint caps "?changed files\n");
+      flush caps;
+      0
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-editor"; main caps)
+let () = TinyLibSystem.main "tiny-editor" main

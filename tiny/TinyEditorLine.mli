@@ -6,6 +6,10 @@
  * without the screen. The commands, with examples, and the usage are
  * in [help] below, which is what tiny-editor -h prints.
  *
+ * It is tiny-kernel's ed too (and sam, the same program by another
+ * name): as TinyShell.ml, it asks the system only through
+ * TinyLibSystem, and tiny-ml compiles it as well as OCaml.
+ *
  * Three ideas make it sam rather than ed, and they are the core of
  * this file:
  *
@@ -138,7 +142,7 @@ type cmd
 
 (* one command, done: its address found from dot, then the changes it
  * makes, all of them applied together at its end *)
-val exec : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> cmd -> unit
+val exec : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> cmd -> unit
 
 (* the program: the files named, then the commands of its input *)
-val main : < Cap.argv; Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.exit; .. > -> unit
+val main : Cap.all_caps -> int

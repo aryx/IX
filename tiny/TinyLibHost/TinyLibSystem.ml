@@ -54,6 +54,7 @@ let write n s =
   go 0
 
 let stat file = reason (fun () -> let st = Unix.stat file in st.st_kind = Unix.S_DIR, st.st_size)
+let links file = reason (fun () -> (Unix.stat file).st_nlink)
 let mkdir (caps : < Cap.open_out; .. >) dir = reason (fun () -> FS.mkdir caps dir 0o777)
 let remove (caps : < Cap.open_out; .. >) file = reason (fun () -> FS.remove_any caps file)
 let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)

@@ -239,3 +239,48 @@ grep and sort (2026-10-16):
   mini-sort (160 cases in all); mini-mk's build on Linux prints the
   same as dune's; tiny-kernel's check has a line of grep and sort in
   pipes through rc. `utils` grew from 204 KB to 237 KB.
+
+After grep and sort (2026-10-16), the author: "and maybe we can have ed
+be the program name for TinyEditorLine and emacs and editor (hard
+link) for TinyEditorScreen ? (ed and sam hard link?) also ls -l could
+list info such as where they links to ? or a way to know something is
+a hard link?"; then "let's do all 3".
+
+- **`ls -l`**: a file's kind, its links and its size. A hard link has
+  no "to": its names are equal, so what shows a link is the count of
+  names, as on Unix. tiny-kernel reports it in a directory entry's
+  `first` word, which it had no use for (t6's first block): the
+  entries in the whole tree that hold the very same node (`==`). There
+  is no identity like Unix's inode number to tell which names go
+  together: a file written since the boot has no fixed address, the
+  collector moves it. `TinyLibSystem.links` is `Unix.stat`'s count on
+  the host. `utils` shows 25 links, `emacs` and `editor` 2.
+- **`editor`, another name for `emacs`**, by the Makefile's `LINKS`
+  (name:program pairs, made in the image as `utils`'s names are).
+- **TinyEditorLine.ml is tiny-kernel's `ed`, and `sam`**: ported to
+  tiny-ml's subset and to `TinyLibSystem`, as TinyShell.ml was. What
+  changed: `Printf` by concatenation, a `{| |}` string by a quoted one,
+  `Option.map`, `Array.copy`, `String.trim` and `int_of_string` by a
+  few lines each, a labelled argument, character ranges in patterns
+  (guards), an or-pattern that binds a name (tiny-ml has none), a
+  `match ... with exception` (a `try` giving an option), and
+  `!input.[i]`, which tiny-ml reads as `!(input.[i])`. The matcher's
+  memo, a byte per (node, position) in `Bytes`, is a bit per pair in
+  an int array, 30 to a word. Checked: 9base's `sam -d` and mini-mk's
+  build, in Docker (ix:latest), the same in the test's 34 scripts,
+  before the port and after; dune's build; tiny-kernel's check runs ed
+  and sam.
+- **A bug found on the way: an ML program lost what it wrote to a pipe
+  past 512 bytes.** The ML runtime's stdout buffer
+  (`TinyMLRuntime/core.c`) wrote once and took no count of a short
+  write, and a pipe of tiny-kernel's takes 512 bytes at a time: `ls -l
+  / | wc` counted 512 of 962. It writes until all is taken now; the
+  check has a pipe of 962 bytes.
+- **Left, a limit of tiny-shell's on tiny-kernel**: a pipe of four
+  stages gives nothing, and says nothing. Each stage but the last is a
+  child of rc that forks the program, so four stages and rc and sh are
+  9 processes, and tiny-kernel has 8 slots. The C shell sh, which forks
+  once a stage, runs seven. Not changed here.
+- **Left too**: tiny-ml's test fails on its 20 arm64 cases on this Mac
+  (assembling goken's `libc/fmt_dofmt.s`), with or without this work's
+  change to the runtime: its tiny-cpu cases pass.

@@ -221,7 +221,8 @@ same "" - test "(" -f f
 same "" - test -f
 same "" - test a b
 
-# ln, which has no twin (Plan 9 has no hard links): checked by itself.
+# ln, which has no twin (Plan 9 has no hard links), and ls -l: checked by
+# themselves.
 # [check NAME COMMANDS]: COMMANDS succeed, in a fresh directory
 check() {
   n=$((n + 1)); setup
@@ -234,6 +235,11 @@ check "into a directory, under its own name" '$TU ln f p d && cmp -s f d/f && cm
 check "a directory refused" '! $TU ln d dd 2>/dev/null && [ ! -e dd ]'
 check "a file that is not there refused" '! $TU ln nosuch g 2>/dev/null'
 check "a name already there refused" '! $TU ln f p 2>/dev/null && [ "$(cat p)" = hello ]'
+# ls -l, which has no twin either (the twin's has owners, modes, times)
+check "ls -l: a file's kind, links and size" '[ "$($TU ls -l p)" = "-   1        5 p" ]'
+check "ls -l: two names, two links each" '$TU ln f g && $TU ls -l f g | grep -c "^-   2 " | grep -q 2'
+check "ls -l: one link again when a name goes" '$TU ln f g && rm g && $TU ls -l f | grep -q "^-   1 "'
+check "ls -l: a directory" '$TU ls -l . | grep -q "^d.* ./d$"'
 
 # by a link named after the utility
 setup

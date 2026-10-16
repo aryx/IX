@@ -145,10 +145,18 @@ let dir_of ns =
   | last :: r -> (match walk root (List.rev r) with Some (Dir d) -> Some (d, last) | _ -> None)
 
 (* a directory read as a file: an entry of 32 bytes per name, t6's (its
- * name in 20, its type, a first block of 0, its size), which ls reads *)
+ * name in 20, its type, a first block, its size), which ls reads. The
+ * first block, which this kernel has no use for, says the file's links
+ * instead: how many names it has *)
 let word n =
   String.make 1 (Char.chr (n land 255)) ^ String.make 1 (Char.chr ((n lsr 8) land 255))
   ^ String.make 1 (Char.chr ((n lsr 16) land 255)) ^ String.make 1 (Char.chr ((n lsr 24) land 255))
+
+(* a node's names: the entries in the whole tree that hold the same
+ * value (==), the file itself and not a copy of it *)
+let links node =
+  let rec count d = List.fold_left (fun acc (_, n) -> acc + (if n == node then 1 else 0) + (match n with Dir e -> count e | _ -> 0)) 0 !d in
+  match root with Dir d -> count d | _ -> 0
 
 let contents node =
   match node with
@@ -158,7 +166,7 @@ let contents node =
   | Dir d ->
       List.fold_left (fun acc (name, n) ->
         let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Rom (_, n) -> 2, n | _ -> 3, 0 in
-        acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word 0 ^ word size) "" !d
+        acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word (links n) ^ word size) "" !d
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
  * name, a line; its size, a line; its bytes; an empty name at the end.

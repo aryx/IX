@@ -412,13 +412,25 @@ ml_equal(value a, value b)
 static uchar obuf[4096];
 static long olen;
 
+/* all of the buffer, in as many writes as it takes: a pipe of
+ * tiny-kernel's takes 512 bytes at a time, and a write says how many
+ * it took (old: one write, and in a pipe what was over 512 lost) */
+static void
+writeall(void)
+{
+	long done, k;
+
+	for(done = 0; done < olen; done += k)
+		if((k = write(1, obuf + done, olen - done)) <= 0)
+			break;
+	olen = 0;
+}
+
 static void
 outc(value c)
 {
-	if(olen == 4096){
-		write(1, obuf, 4096);
-		olen = 0;
-	}
+	if(olen == 4096)
+		writeall();
 	obuf[olen] = c;
 	olen++;
 }
@@ -426,9 +438,7 @@ outc(value c)
 static void
 flush(void)
 {
-	if(olen > 0)
-		write(1, obuf, olen);
-	olen = 0;
+	writeall();
 }
 
 value

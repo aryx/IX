@@ -92,6 +92,10 @@ val write : int -> string -> unit
  * the reason when it is not there *)
 val stat : string -> bool * int
 
+(* how many names a file has (its hard links); Failure with the reason
+ * when it is not there *)
+val links : string -> int
+
 (* a new directory; a file, or a directory that is empty, removed.
  * Failure with the reason *)
 val mkdir : < Cap.open_out; .. > -> string -> unit

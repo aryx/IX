@@ -6,7 +6,7 @@
 #
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
-#                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort...), then the network (ping
+#                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; ed and sam), then the network (ping
 #                     and get against tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
 #                     without its time), against check.expected;
@@ -71,7 +71,9 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd utils bigmem www
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd utils ed bigmem www
+# other names (hard links), a name:program each
+LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
 UTILS = [ basename cat cmp cp du echo grep ln ls mkdir mv pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
@@ -202,6 +204,14 @@ $(O)/user/utils.tm: $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
 $(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
 	@$(MLLINK)
 
+# the line editor (ed, and sam: ../TinyEditorLine.ml, tiny-editor), on
+# the same library as rc
+$(O)/user/ed.tm: $(TOOL) ../TinyEditorLine.ml
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(TOOL) ../TinyEditorLine.ml
+$(O)/bin/ed: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/ed.tm
+	@$(MLLINK)
+
 # the screen editor (emacs: ../TinyEditorScreen.ml, the editor, and
 # user/emacs.ml, its screen, keys and file on this kernel's calls)
 EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEditorScreen.ml user/emacs.ml
@@ -231,6 +241,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for u in $(UTILS); do printf '%s\nlink utils\n' "$$u" >> $@; done
+	for l in $(LINKS); do printf '%s\nlink %s\n' $${l%%:*} $${l#*:} >> $@; done
 	printf '\n' >> $@
 	@test $$(wc -c < $@) -lt 4718592 || { echo "$@: over 4.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
@@ -245,6 +256,8 @@ check: $(O)/boot.img
 	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nmkdir b; ln /wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nls | grep \x27^t\x27 | sort -r\nls | grep -c \x27^(ls|wc|cat)$$\x27\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \x27[2-4]\x27\ngrep \x27(\x27 sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nls -l /cat /utils /emacs /editor /ping\nls -l / > f; wc f; ls -l / | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /ed /sam /emacs /editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out

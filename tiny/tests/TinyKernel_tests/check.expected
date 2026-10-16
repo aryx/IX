@@ -24,6 +24,8 @@ cp
 draw
 du
 echo
+ed
+editor
 emacs
 f
 get
@@ -40,6 +42,7 @@ ping
 pwd
 rc
 rm
+sam
 seq
 sh
 sleep
@@ -120,6 +123,30 @@ tail
 1
 % grep: missing operand for (
 1
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % -  25   238740 /cat
+-   2   169016 /editor
+-   2   169016 /emacs
+-   1    70348 /ping
+-  25   238740 /utils
+%      48     192    1001 f
+     48     192    1001
+     48     192    1001
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % %  -. f
+hell0 w0rld
+added
+f: #18
+% hell0 w0rld
+added
+%  -. f
+heL0 w0rLd
+added
+?changed files
+% -   2   229268 /ed
+-   2   169016 /editor
+-   2   169016 /emacs
+-   2   229268 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms

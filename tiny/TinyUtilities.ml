@@ -310,9 +310,11 @@ let each_path caps tool paths f =
   List.fold_left (fun status p -> try f p; status with Failure m -> complain caps tool (p ^ ": " ^ m); 1) 0 paths
 
 (* a directory's entries, or a file's name; all of them sorted together,
- * and quoted for rc *)
+ * and quoted for rc. -l: each with its kind (d for a directory), its
+ * links (how many names it has: more than one, and the others are the
+ * same file) and its size *)
 let ls caps args =
-  let _, paths = options "" args in
+  let flags, paths = options "l" args in
   let names = ref [] in
   let status =
     if paths = [] then begin names := entries "."; 0 end
@@ -320,7 +322,13 @@ let ls caps args =
       each_path caps "ls" paths (fun p ->
         let is_dir, _ = TinyLibSystem.stat p in
         names := (if is_dir then List.map (join p) (entries p) else [ p ]) @ !names) in
-  List.iter (fun name -> print caps (quote name ^ "\n")) (List.sort compare !names);
+  let long name =
+    if not (List.mem 'l' flags) then ""
+    else begin
+      let is_dir, size = TinyLibSystem.stat name in
+      (if is_dir then "d" else "-") ^ pad 4 (string_of_int (TinyLibSystem.links name)) ^ pad 9 (string_of_int size) ^ " "
+    end in
+  List.iter (fun name -> print caps (long name ^ quote name ^ "\n")) (List.sort compare !names);
   status
 
 (* every path under a directory (under the current one, without "./",
@@ -549,7 +557,7 @@ let utilities =
     "echo", "[-n] [word ...]", "the words", echo;
     "grep", "[-vincl] pattern [file ...]", "the lines that match", grep;
     "ln", "old new | old ... dir", "second names for files", ln;
-    "ls", "[path ...]", "a directory's entries, sorted", ls;
+    "ls", "[-l] [path ...]", "a directory's entries, sorted", ls;
     "mkdir", "[-p] dir ...", "new directories", mkdir;
     "mv", "from to | from ... dir", "files renamed", mv;
     "pwd", "", "the directory the process is in", pwd;

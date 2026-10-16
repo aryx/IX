@@ -63,11 +63,12 @@ of the system:
     it, its window, its socket and its page.
 
 The others are the system's programs, a file each (`TinyShell`,
-`TinyC`, `TinyWindows`...). Two of them are on both sides:
+`TinyC`, `TinyWindows`...). Three of them are on both sides:
 `TinyShell.ml` is the host's tiny-shell and, built by tiny-ml with
 `TinyLibStd.ml`, tiny-kernel's `rc`; `TinyUtilities.ml` is the host's
 tiny-utils and tiny-kernel's `utils`, which the boot image has under
-the name of each utility (`cat`, `ls`...). What they ask of the system is
+the name of each utility (`cat`, `ls`...); `TinyEditorLine.ml` is the
+host's tiny-editor and tiny-kernel's `ed`, also named `sam`. What they ask of the system is
 `TinyLibSystem`, a file for each side (`TinyLibHost/TinyLibSystem.ml`
 over Unix, `TinyKernel/libml/TinyLibSystem.ml` over the kernel's
 calls).
@@ -82,8 +83,8 @@ on.
 | `TinyBuildSystem.ml` | tiny-build | `builder/` (mini-mk, mk) | rules, `%`, stamps as digests, one pass with `-j` |
 | `TinyShell.ml` | tiny-shell | `shell/` (mini-rc, rc) | lists as the only value, words joined by adjacency, redirections around the command |
 | `TinyUtilities.ml` | tiny-utils (and on tiny-kernel `utils`, as `cat`, `ls`, `wc`...) | `utilities/` (mini-cat, mini-ls...; Plan 9's) | one executable with a name per utility, BusyBox's way; a filter is a function over its input's pieces, opened and reported once for all of them; a walker is one fold over a tree, its order where it folds the entries (walk before, du and rm -r after); the same file on the host and on tiny-kernel; [`plan_tiny_utilities.md`](../docs/plans/done/plan_tiny_utilities.md) |
-| `TinyEditorLine.ml` | tiny-editor | `editors/ed/` (mini-ed, ed) | sam's command language: dot a range, loops over matches, changes in parallel |
-| `TinyEditorScreen.ml` | emacs, a program of tiny-kernel | `editors/emacs/` (mini-emacs) | Emacs's keys on one text in one window; the text as its lines split at the cursor (Emacs's gap, made of lists and strings that cannot change); the editor a state and the keys that change it, with no system under it |
+| `TinyEditorLine.ml` | tiny-editor (and on tiny-kernel `ed`, also named `sam`) | `editors/ed/` (mini-ed, ed) | sam's command language: dot a range, loops over matches, changes in parallel |
+| `TinyEditorScreen.ml` | emacs, a program of tiny-kernel (also named `editor`) | `editors/emacs/` (mini-emacs) | Emacs's keys on one text in one window; the text as its lines split at the cursor (Emacs's gap, made of lists and strings that cannot change); the editor a state and the keys that change it, with no system under it |
 | `TinyAssembler.ml` | tiny-assembler | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l, 7a/7l) | no separate compilation: all of a program's assembly into an arm64 executable, sizes known before addresses, a word per closure |
 | `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C), the two printing the same |
 | `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyMLRuntime/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |

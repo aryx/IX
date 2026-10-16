@@ -253,3 +253,35 @@ Step 4 (2026-10-16):
   ubuntu:24.04) and prints the same as dune's tiny-utils on macOS, in
   28 commands that include errors from the system (116 lines). The
   tiny-shell rebuilt there runs too.
+
+## 8. After the plan: hard links, and ln
+
+The author (2026-10-16), of the image's `=utils`: "I don't fully
+understand this =utils thing hack in the kernel. What is it? Can't we
+introduce instead symbolic link or something", then "hard link are
+also fine, but is there a command to create on (ln)", then "yes, let's
+do it".
+
+`=utils` was a hard link already, two directory entries holding the
+same node, but only the image could make one, and it said so in the
+place of a size. Now:
+
+- **`link(old, new)`**, tiny-kernel's call 21, 5 lines: `old`'s node
+  under `new`'s name, a directory refused (with two parents the tree
+  would be a graph). A write by one name is seen by the other, but for
+  a file of the image (`Rom`), which is copied under the name it is
+  first written by.
+- **The image says `link utils`** where it said `=utils`, and the loader
+  does what the call does.
+- **`ln old new` and `ln old ... dir`** in tiny-utils, 3 lines with
+  `into_last`. `TinyLibSystem.link` is `u_link` on tiny-kernel and
+  `Unix.link` on the host; `Unix.link` was added to `lib_core/` and to
+  TinyLibHost (`linkat`, 37 on arm64, 330 on arm) for mini-ml's builds.
+- **Symbolic links were not made**: `walk` would follow them in the
+  middle of a path, and they would break the kernel's lexical `..`
+  (Pike's "Getting Dot-Dot Right"); Plan 9 has none, for that reason.
+  Plan 9 has no hard links either, so `ln` has no twin: the host's test
+  checks it by itself (7 cases: the same bytes, a write seen by the
+  other name, the file kept when its first name goes, a directory and a
+  missing file refused). `make check` makes a link at rc's prompt and
+  runs wc through it.

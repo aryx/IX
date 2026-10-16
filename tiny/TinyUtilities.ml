@@ -297,6 +297,12 @@ let mv caps args =
   let _, paths = options "" args in
   into_last caps "mv" paths (fun from dest -> TinyLibSystem.rename caps from dest)
 
+(* a second name for a file: its bytes are not copied, and a change by
+ * one name is seen by the other *)
+let ln caps args =
+  let _, paths = options "" args in
+  into_last caps "ln" paths (fun from dest -> TinyLibSystem.link caps from dest)
+
 let touch caps args =
   let _, files = options "" args in
   if files = [] then raise Usage;
@@ -439,6 +445,7 @@ let utilities =
     "cp", "from to | from ... dir", "files copied", cp;
     "du", "[-a] [path ...]", "the kilobytes under each directory", du;
     "echo", "[-n] [word ...]", "the words", echo;
+    "ln", "old new | old ... dir", "second names for files", ln;
     "ls", "[path ...]", "a directory's entries, sorted", ls;
     "mkdir", "[-p] dir ...", "new directories", mkdir;
     "mv", "from to | from ... dir", "files renamed", mv;

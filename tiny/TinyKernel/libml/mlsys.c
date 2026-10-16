@@ -231,6 +231,12 @@ u_unlink(value path)
 	return unlink((char*)path) * 2 + 1;
 }
 
+value
+u_link(value old, value new)
+{
+	return link((char*)old, (char*)new) * 2 + 1;
+}
+
 // the current directory's path, as a string
 value
 u_getcwd(value unit)

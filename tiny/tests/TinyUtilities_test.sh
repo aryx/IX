@@ -16,7 +16,8 @@
 # into another directory, which the twin refuses (a move between two
 # directories is a copy and a remove in 9P) and the host's rename does;
 # sleep x, which the twin reads as 0 and tiny-utils refuses.
-# Then tiny-utils run by a link named after a utility.
+# Then ln, checked by itself, and tiny-utils run by a link named after
+# a utility.
 # usage: TinyUtilities_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -164,6 +165,20 @@ same "" - test "(" -f f
 same "" - test -f
 same "" - test a b
 
+# ln, which has no twin (Plan 9 has no hard links): checked by itself.
+# [check NAME COMMANDS]: COMMANDS succeed, in a fresh directory
+check() {
+  n=$((n + 1)); setup
+  if ! (eval "$2") > $W/check.out 2>&1; then failures=$((failures + 1)); echo "FAIL ln: $1"; cat $W/check.out | head -5; fi
+}
+check "the same bytes by a second name" '$TU ln f g && cmp -s f g'
+check "a write by one name seen by the other" '$TU ln f g && echo more >> g && tail -1 f | grep -q more'
+check "the file kept when its first name goes" '$TU ln f g && rm f && [ "$(head -1 g)" = "hello world" ]'
+check "into a directory, under its own name" '$TU ln f p d && cmp -s f d/f && cmp -s p d/p'
+check "a directory refused" '! $TU ln d dd 2>/dev/null && [ ! -e dd ]'
+check "a file that is not there refused" '! $TU ln nosuch g 2>/dev/null'
+check "a name already there refused" '! $TU ln f p 2>/dev/null && [ "$(cat p)" = hello ]'
+
 # by a link named after the utility
 setup
 ln -s $TU wc
@@ -174,4 +189,4 @@ ln -s $TU [
 n=$((n + 1))
 [ "$(./[ -f f ]; echo $?; ./[ -d f ]; echo $?; ./[ -f f 2>/dev/null; echo $?)" = "$(printf '0\n1\n1')" ] || { failures=$((failures + 1)); echo "FAIL [ by a link"; }
 
-if [ $failures = 0 ]; then echo "ok $n cases, the same as the twins"; else echo "FAIL $failures of $n cases"; exit 1; fi
+if [ $failures = 0 ]; then echo "ok $n cases: the same as the twins, and ln as it should"; else echo "FAIL $failures of $n cases"; exit 1; fi

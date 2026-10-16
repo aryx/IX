@@ -162,17 +162,17 @@ let contents node =
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
  * name, a line; its size, a line; its bytes; an empty name at the end.
- * A size that is "=" and another file's name makes a link: the same
- * node under a second name, no bytes (utils, under the name of each of
- * its utilities: cat, ls...) *)
+ * A line "link" and another file's name, in place of the size, makes a
+ * hard link, as link() does: the same node under a second name, with
+ * no bytes (utils, under the name of each of its utilities: cat, ls...) *)
 let rec load a =
   let rec line a acc = let c = peekb a in if c = 10 then acc, a + 1 else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
   let name, a = line a "" in
   if name <> "" then begin
     let size, a = line a "" in
     match root with
-    | Dir d when String.length size > 0 && size.[0] = '=' ->
-        (match assoc_opt (String.sub size 1 (String.length size - 1)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
+    | Dir d when String.length size > 5 && String.sub size 0 5 = "link " ->
+        (match assoc_opt (String.sub size 5 (String.length size - 5)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
         load a
     | Dir d ->
         let n = ref 0 in
@@ -633,6 +633,18 @@ let sys_unlink p =
        | None -> raise Bad)
   | None -> raise Bad
 
+(* link(old, new): a second name for a file, in the directory new is in:
+ * the same node, so a write by either name is seen by the other (a file
+ * of the image, Rom, is copied when it is first written, under the name
+ * it is written by: then the names part). Not for a directory, as on
+ * Unix: a directory with two parents would make the tree a graph *)
+let sys_link p =
+  let old = walk root (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
+  match old, walk root ns, dir_of ns with
+  | Some (Dir _), _, _ -> raise Bad
+  | Some node, None, Some (d, last) when String.length last < 20 -> d := !d @ [ last, node ]; result p 0
+  | _ -> raise Bad
+
 (* getcwd(buf, n): the current directory's path, ended by a 0, in the n
  * bytes at buf; its length, -1 when it does not fit *)
 let sys_getcwd p =
@@ -696,6 +708,7 @@ let syscall p =
     | 18 -> sys_dial p
     | 19 -> sys_listen p
     | 20 -> sys_getcwd p
+    | 21 -> sys_link p
     | _ -> result p (-1)
   with Bad -> result p (-1)
 

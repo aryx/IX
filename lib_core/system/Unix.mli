@@ -117,6 +117,7 @@ module LargeFile : sig
 end
 
 val unlink : string -> unit
+val link : string -> string -> unit
 val rename : string -> string -> unit
 val chmod : string -> file_perm -> unit
 val fchmod : file_descr -> file_perm -> unit

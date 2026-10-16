@@ -36,6 +36,8 @@ int pipe(int*);
 int dup(int fd);
 int mkdir(char*);
 int unlink(char*);
+// a second name, new, for the file old (not a directory): 0, or -1
+int link(char *old, char *new);
 int chdir(char*);
 // the current directory's path in the n bytes at buf, ended by a 0:
 // its length; -1 when it does not fit

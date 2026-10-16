@@ -134,10 +134,11 @@ The steps are always the same three:
 
 TinyKernel.ml has no disk: `boot.img` is `kernel.img` followed by
 its files, each a name, a size and its bytes, which the kernel reads
-at its start. A size written `=utils` makes a link instead: the name
-is given the same file as `utils`, with no bytes of its own. That is
-how one program, `utils` (`tiny/TinyUtilities.ml`, by tiny-ml), is
-`cat`, `ls`, `wc` and the 17 other utilities.
+at its start. A line `link utils` in place of the size makes a hard
+link instead, as the `link` call does: the name is given the same file
+as `utils`, with no bytes of its own. That is how one program, `utils`
+(`tiny/TinyUtilities.ml`, by tiny-ml), is `cat`, `ls`, `wc` and the 18
+other utilities. At the prompt, `ln` makes one the same way.
 
 ### 2.5 What runs what
 
@@ -517,7 +518,7 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
 | 17 | `box(fds)` | 16 | `ticks()` |
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
-| 20 | `getcwd(buf, n)` | | |
+| 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

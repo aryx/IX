@@ -97,6 +97,10 @@ val stat : string -> bool * int
 val mkdir : < Cap.open_out; .. > -> string -> unit
 val remove : < Cap.open_out; .. > -> string -> unit
 
+(* [link caps old new]: a second name for a file (not a directory).
+ * Failure with the reason *)
+val link : < Cap.open_out; .. > -> string -> string -> unit
+
 (* [rename caps from to]: the file, or the directory, under another
  * name. Failure with the reason *)
 val rename : < Cap.open_out; .. > -> string -> string -> unit

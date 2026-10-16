@@ -259,6 +259,7 @@ let mkdir path perm = unit "mkdir" path (sys (323, 34) cwd (s path) (i perm) z z
 let rmdir path = unit "rmdir" path (sys (328, 35) cwd (s path) (i 0x200) z z z)
 let getcwd () = let b = Bytes.create 4096 in unit "getcwd" "" (sys (183, 17) (by b) (i 4096) z z z z); cstring b 0
 let unlink path = unit "unlink" path (sys (328, 35) cwd (s path) z z z z)
+let link a b = unit "link" a (sys (330, 37) cwd (s a) cwd (s b) z z)
 let rename a b = unit "rename" a (sys (382, 276) cwd (s a) cwd (s b) z z)
 let chdir path = unit "chdir" path (sys (12, 49) (s path) z z z z z)
 

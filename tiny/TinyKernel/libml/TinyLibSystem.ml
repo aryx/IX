@@ -130,6 +130,7 @@ let TinyLibSystem.read fd max = u_read fd max
 let TinyLibSystem.write fd s = if u_write fd s < 0 then failwith "cannot write"
 let TinyLibSystem.mkdir caps dir = if u_mkdir dir < 0 then failwith "cannot"
 let TinyLibSystem.remove caps file = if u_unlink file < 0 then failwith "cannot"
+let TinyLibSystem.link caps a b = if u_link a b < 0 then failwith "cannot"
 
 let TinyLibSystem.rename caps a b =
   if path_names a <> path_names b then begin

@@ -219,6 +219,7 @@ module LargeFile = struct
 end
 
 let unlink path = unit "unlink" path (sys (328, 35) cwd (s path) z z z z)
+let link a b = unit "link" a (sys (330, 37) cwd (s a) cwd (s b) z z)
 let rename a b = unit "rename" a (sys (382, 276) cwd (s a) cwd (s b) z z)
 let chmod path perm = unit "chmod" path (sys (333, 53) cwd (s path) (i perm) z z z)
 let fchmod fd perm = unit "fchmod" "" (sys (94, 52) (i fd) (i perm) z z z z)

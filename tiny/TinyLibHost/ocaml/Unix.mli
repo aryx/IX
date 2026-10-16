@@ -86,6 +86,7 @@ val mkdir : string -> file_perm -> unit
 val rmdir : string -> unit
 val getcwd : unit -> string
 val unlink : string -> unit
+val link : string -> string -> unit
 val rename : string -> string -> unit
 val chdir : string -> unit
 type dir_handle

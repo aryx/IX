@@ -27,6 +27,7 @@ echo
 emacs
 f
 get
+grep
 httpd
 ln
 ls
@@ -42,6 +43,7 @@ rm
 seq
 sh
 sleep
+sort
 square
 tail
 tee
@@ -103,7 +105,23 @@ bye
 ln: nosuch: cannot
 ls: c: not there
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ answer from 10.0.0.1 in 12.5 ms
+$ % touch
+tetris
+test
+temp
+tee
+tail
+% 3
+% 3
+6
+9
+12
+5
+1
+% grep: missing operand for (
+1
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 $ no answer from 10.0.0.9

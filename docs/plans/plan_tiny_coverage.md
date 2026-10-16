@@ -5,6 +5,12 @@ m-ix ?"; of plan_tiny_gaps.md, which looks inside each tiny program for
 what a person misses: "I don't think this plan document address my
 question"; then "yes, write plan_tiny_coverage.md".
 
+**Step 1 started (2026-10-16)**: grep and sort are in tiny-utils (the
+author: "let's start with the filter: grep, sort, and later on an app
+like a spreadsheet and word document; ideally we could do a
+tiny-office but it seems difficult"). uniq, tr and sed are left of
+3.1. Section 5 says what was found.
+
 This plan asks a different question from plan_tiny_gaps.md. That one
 took each tiny program and asked what it lets a person do. This one
 takes each part of m-ix and asks whether t-ix has a twin of it: a tiny
@@ -195,3 +201,41 @@ Five parts of m-ix have no twin, and one has half of one:
 
 With all of them, t-ix would grow by about 2,000 lines, to about
 26,000: still about a seventh of m-ix.
+
+## 5. What was found
+
+grep and sort (2026-10-16):
+
+- **grep's regular expressions are a library, `tiny/TinyLibRegex.ml`**
+  (the author: "could we move the regexp in a separate lib file?
+  instead of inside TinyUtilities.ml ? (it could potentially be used
+  by TinyEmacs?)"). It is Thompson's automaton with no captures, since
+  grep asks only whether a line matches: about 120 lines with its
+  parser. TinyEditor.ml keeps its own matcher, a backtracking one with
+  captures, which sam's commands need (the author: "let's consider
+  TinyEditor.ml separately"). For TinyEmacs, the library would need a
+  search that says where the match is: Thompson's simulation can give
+  the leftmost-longest match if each state in the set carries where
+  its match started, about 15 lines more.
+- **The pattern syntax is Plan 9's, strictly**: an alternative or a
+  group with nothing in it, a class with no byte or a `-` with nothing
+  on a side are errors, as in the twin. My first version accepted
+  them (`x|` matched everything); the twin's rules are the simpler
+  ones, with no special case for a `]` first in a class.
+- **tiny-ml's `List.sort` was an insertion sort**, n * n comparisons:
+  fine for a directory, not for sort on a file of thousands of lines.
+  `TinyLibStd.ml` now has a merge sort, stable (contiguous halves, the
+  first half's element first on a tie) and made of loops, so a long
+  list does not fill tiny-ml's stack of values. Every program tiny-ml
+  builds uses it; `TinyLibStd_test.sh` (stable pairs included) and
+  tiny-kernel's check pass.
+- **sort's key is a tuple**: the number or the text from the field, then
+  the line itself, so `compare` orders by the key and then by the
+  line's bytes. The twin leaves lines with equal keys in their input
+  order under a global `-n`; tiny-utils orders them by their bytes, so
+  its output does not depend on the input's order. The test's cases
+  have no such ties; the difference is said in its header.
+- **Checked**: 44 cases of grep and sort against mini-grep and
+  mini-sort (160 cases in all); mini-mk's build on Linux prints the
+  same as dune's; tiny-kernel's check has a line of grep and sort in
+  pipes through rc. `utils` grew from 204 KB to 237 KB.

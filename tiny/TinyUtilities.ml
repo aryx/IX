@@ -3,6 +3,9 @@
 
 (* See TinyUtilities.mli *)
 
+(* (grep's patterns: compile, matches) *)
+open TinyLibRegex
+
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
 
 (* raised by a utility given arguments it does not take: the driver
@@ -66,6 +69,20 @@ let options letters args =
 let rec pieces fd f =
   let s = TinyLibSystem.read fd 8192 in
   if s <> "" then begin f s; pieces fd f end
+
+(* [lines fd f]: f on each line of fd, without its newline, as soon as
+ * it is whole, and whether a newline ended it: the last one may have
+ * none *)
+let lines fd f =
+  let rest = ref "" in
+  pieces fd (fun s ->
+    let s = !rest ^ s in
+    let rec go i =
+      match String.index_from_opt s i '\n' with
+      | Some j -> f (String.sub s i (j - i)) true; go (j + 1)
+      | None -> rest := String.sub s i (String.length s - i) in
+    go 0);
+  if !rest <> "" then f !rest false
 
 let each_input caps tool files f =
   let one status name fd =
@@ -190,6 +207,91 @@ let xd caps args =
      * whole lines, then the address alone *)
     line !pending;
     print caps (address (!addr + String.length !pending) ^ "\n"))
+
+(* the bytes of s, the capitals made small *)
+let lowercase s =
+  String.concat "" (List.init (String.length s) (fun i ->
+    let c = s.[i] in String.make 1 (if c >= 'A' && c <= 'Z' then Char.chr (Char.code c + 32) else c)))
+
+(* the lines that match; -v: that do not; -i: whatever the letters'
+ * case; -n: with their numbers; -c: how many; -l: the files' names.
+ * The status is 0 when a line was found *)
+let grep caps args =
+  let flags, rest = options "vincl" args in
+  match rest with
+  | [] -> raise Usage
+  | pattern :: files ->
+      let fold s = if List.mem 'i' flags then lowercase s else s in
+      let re = compile (fold pattern) in
+      let named name = if List.length files > 1 then name ^ ":" else "" in
+      let found = ref false in
+      let status =
+        each_input caps "grep" files (fun name fd ->
+          let count = ref 0 and number = ref 0 in
+          lines fd (fun line ended ->
+            incr number;
+            if matches re (fold line) <> List.mem 'v' flags then begin
+              incr count;
+              found := true;
+              if not (List.mem 'c' flags || List.mem 'l' flags) then
+                print caps (named name ^ (if List.mem 'n' flags then string_of_int !number ^ ": " else "") ^ line ^ (if ended then "\n" else ""))
+            end);
+          if List.mem 'c' flags then print caps (named name ^ string_of_int !count ^ "\n");
+          if List.mem 'l' flags && !count > 0 then print caps (name ^ "\n")) in
+      if status <> 0 then status else if !found then 0 else 1
+
+(* the number a text starts with, after blanks: a sign and digits; 0
+ * when there is none *)
+let number_of text =
+  let n = String.length text in
+  let rec blanks i = if i < n && (text.[i] = ' ' || text.[i] = '\t') then blanks (i + 1) else i in
+  let i = blanks 0 in
+  let negative = i < n && text.[i] = '-' in
+  let rec digits i acc = if i < n && text.[i] >= '0' && text.[i] <= '9' then digits (i + 1) ((acc * 10) + Char.code text.[i] - 48) else acc in
+  let v = digits (if negative then i + 1 else i) 0 in
+  if negative then - v else v
+
+(* a line from its field k on: k times, blanks then what is not *)
+let from_field k line =
+  let n = String.length line in
+  let rec skip i k =
+    if k = 0 then i
+    else begin
+      let rec over p i = if i < n && p line.[i] then over p (i + 1) else i in
+      let blank c = c = ' ' || c = '\t' in
+      skip (over (fun c -> not (blank c)) (over blank i)) (k - 1)
+    end in
+  let i = skip 0 k in
+  String.sub line i (n - i)
+
+(* the lines of all the inputs, in order: by their bytes, or -n by the
+ * number they start with; +k: from their field k (the first is 0); -r:
+ * reversed; -u: one of the lines the order says equal. A line's key is
+ * made once, as a pair the sort compares (the line itself after, so
+ * that lines the key says equal are in the order of their bytes) *)
+let sort caps args =
+  let flags, rest = options "nru" args in
+  let field, files =
+    match rest with
+    | a :: l when String.length a > 1 && a.[0] = '+' -> begin
+        match int_of_string_opt (String.sub a 1 (String.length a - 1)) with Some k when k >= 0 -> k, l | _ -> raise Usage
+      end
+    | _ -> 0, rest in
+  let all = ref [] in
+  let status = each_input caps "sort" files (fun _ fd -> lines fd (fun line _ -> all := line :: !all)) in
+  let key line =
+    let text = from_field field line in
+    if List.mem 'n' flags then (number_of text, "") else (0, text) in
+  let keyed = List.map (fun line -> key line, line) !all in
+  let order a b = if List.mem 'r' flags then compare b a else compare a b in
+  let sorted = List.sort order keyed in
+  (* -u: a line whose key is the one before's is left out *)
+  let rec unique = function
+    | (k1, l1) :: (k2, _) :: rest when k1 = k2 -> unique ((k1, l1) :: rest)
+    | x :: rest -> x :: unique rest
+    | [] -> [] in
+  List.iter (fun (_, line) -> print caps (line ^ "\n")) (if List.mem 'u' flags then unique sorted else sorted);
+  status
 
 (*****************************************************************************)
 (* Walkers *)
@@ -445,6 +547,7 @@ let utilities =
     "cp", "from to | from ... dir", "files copied", cp;
     "du", "[-a] [path ...]", "the kilobytes under each directory", du;
     "echo", "[-n] [word ...]", "the words", echo;
+    "grep", "[-vincl] pattern [file ...]", "the lines that match", grep;
     "ln", "old new | old ... dir", "second names for files", ln;
     "ls", "[path ...]", "a directory's entries, sorted", ls;
     "mkdir", "[-p] dir ...", "new directories", mkdir;
@@ -453,6 +556,7 @@ let utilities =
     "rm", "[-r] path ...", "files removed", rm;
     "seq", "[first [step]] last", "the numbers from first to last", seq;
     "sleep", "seconds[.thousandths]", "nothing, for that long", sleep;
+    "sort", "[-nru] [+field] [file ...]", "the lines in order", sort;
     "tail", "[-n N | -N | +N] [file]", "the last lines, or from line N", tail;
     "tee", "[file ...]", "the input, to the files too", tee;
     "test", "expression", "whether it is true, by the status", test;

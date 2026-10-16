@@ -32,7 +32,10 @@ of the system:
   and `TinyLibStd.ml` for a tool that runs there too (tiny-shell,
   tiny-utils):
   what it names of OCaml's standard library beyond the prelude
-  (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML.
+  (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML;
+  and `TinyLibRegex.ml`, regular expressions in Plan 9's notation,
+  for grep (a line matches or not: Thompson's automaton, run once
+  over the line).
   For the host's programs when ix builds them: `TinyLibHost/`, a
   standard library (m-IX's is `lib_core/`).
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two

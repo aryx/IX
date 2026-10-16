@@ -109,12 +109,13 @@ $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
 	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
-# (the utilities, on the same TinyLibSystem as the shell)
-$D/TinyUtilities.$O: $D/TinyLibSystem.$O TinyUtilities.ml
+# (the utilities, on the same TinyLibSystem as the shell, and
+# TinyLibRegex for grep)
+$D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
 	$ML -I TinyLibHost $INCLUDES -o $target TinyUtilities.ml
-$D/tiny-utils: $D/TinyLibSystem.$O $D/TinyUtilities.$O $LIBS
-	$START TinyLibSystem TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
-	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyUtilities.$O $STDEND
+$D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
+	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
+	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
 $D/tiny-editor: $D/TinyEditor.$O $LIBS
 	$START TinyEditor Std_exit -o $D/TinyEditor.start.$O
 	$LINK -o $target $D/TinyEditor.start.$O $STDOBJS $D/TinyEditor.$O $STDEND

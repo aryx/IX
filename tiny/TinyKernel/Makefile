@@ -6,7 +6,7 @@
 #
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
-#                     rc (utils: walk, du, cp, mv, xd, test, ln...), then the network (ping
+#                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort...), then the network (ping
 #                     and get against tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
 #                     without its time), against check.expected;
@@ -73,7 +73,7 @@ KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.t
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd utils bigmem www
 # utils's names (TinyUtilities.ml's table)
-UTILS = [ basename cat cmp cp du echo ln ls mkdir mv pwd rm seq sleep tail tee test touch walk wc xd
+UTILS = [ basename cat cmp cp du echo grep ln ls mkdir mv pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
 ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
@@ -195,10 +195,10 @@ $(O)/bin/rc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/rc.tm
 	@$(MLLINK)
 
 # the utilities (utils: ../TinyUtilities.ml, tiny-utils), on the same
-# library as rc
-$(O)/user/utils.tm: $(TOOL) ../TinyUtilities.ml
+# library as rc, and ../TinyLibRegex.ml for grep
+$(O)/user/utils.tm: $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TOOL) ../TinyUtilities.ml
+	$(TML) -tm -o $@ $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
 $(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
 	@$(MLLINK)
 
@@ -244,6 +244,7 @@ check: $(O)/boot.img
 	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nmkdir b; ln /wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nls | grep \x27^t\x27 | sort -r\nls | grep -c \x27^(ls|wc|cat)$$\x27\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \x27[2-4]\x27\ngrep \x27(\x27 sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out

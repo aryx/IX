@@ -159,4 +159,11 @@
  (public_name tiny-utils)
  (package ix)
  (modules TinyUtilities)
- (libraries ix_core fpath unix caps tiny_lib_system))
+ (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
+
+; TinyLibRegex.ml, grep's regular expressions (tiny-utils's; tiny-ml
+; compiles it too, before TinyUtilities.ml)
+(library
+ (name tiny_lib_regex)
+ (wrapped false)
+ (modules TinyLibRegex))

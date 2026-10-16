@@ -15,7 +15,10 @@
 # reads the file whole before it writes the copy); mv of a directory
 # into another directory, which the twin refuses (a move between two
 # directories is a copy and a remove in 9P) and the host's rename does;
-# sleep x, which the twin reads as 0 and tiny-utils refuses.
+# sleep x, which the twin reads as 0 and tiny-utils refuses; sort -n of
+# lines with the same number, which the twin leaves in their order and
+# tiny-utils orders by their bytes (so its output does not depend on the
+# input's order): sort's cases have no such ties.
 # Then ln, checked by itself, and tiny-utils run by a link named after
 # a utility.
 # usage: TinyUtilities_test.sh
@@ -35,6 +38,9 @@ setup() {
   printf 'a\nb\n' > l1; printf 'a\nc\n' > l2
   seq 1 40 > nums
   printf '\001\t\r\n\177 ok' > bin
+  printf 'apple 10\nbanana 9\nCherry 100\napple 10\nkiwi -3\n\nlast' > fruits
+  printf '10 b\n-2 a\n7 c\n100 d\n0 e\n' > ranked
+  printf 'one\ntwo apple\n' > other
   mkdir -p d/e "a dir"; echo x > d/e/g; echo yy > d/h
   head -c 3000 nums > d/big
 }
@@ -120,6 +126,56 @@ same "" - cmp p f
 same "" - cmp l1 l2
 same "" - cmp -s l1 l2
 same "" - cmp f nosuch
+same "" - grep apple fruits
+same "" - grep apple fruits other
+same "" - grep -n 'an+a' fruits
+same "" - grep -n apple fruits other
+same "" - grep -c a fruits other
+same "" - grep -l apple fruits other f
+same "" - grep -v a fruits
+same "" - grep -i cherry fruits
+same "" - grep zzz fruits
+same "" - grep apple nosuch
+same "" - grep '(' fruits
+same "" - grep 'a)' fruits
+same "" - grep '*a' fruits
+same "" - grep 'st$' fruits
+same "" - grep '^$' fruits
+same "" - grep '^(apple|kiwi) ' fruits
+same "" - grep '[0-9][0-9]+$' fruits
+same "" - grep '[^a-z ]' fruits
+same "" - grep 'b?an(an)*a' fruits
+same "" - grep '\.' f
+same "" - grep 'x|' fruits
+same "" - grep '' fruits
+same "" - grep '[]a]' fruits
+same "" - grep '|x' fruits
+same "" - grep '()' fruits
+same "" - grep 'a||b' fruits
+same "" - grep '[a-]' fruits
+same "" - grep '[a-z' fruits
+same "" - grep '[-a]' ranked
+same "" - grep 'e[ln]' f fruits
+same "" - grep 3 nums
+same "" - grep -c '' nums
+same "a b
+c d
+a
+" - grep a
+same "" - sort fruits
+same "" - sort -r fruits
+same "" - sort -u fruits
+same "" - sort fruits other
+same "" - sort -n ranked
+same "" - sort -rn ranked
+same "" - sort +1 ranked
+same "" - sort -n nums
+same "" - sort -nr nums
+same "" - sort nosuch
+same "c
+a
+b
+" - sort
 same "" - cp f g
 same "" - cp f d
 same "" - cp f p d/e

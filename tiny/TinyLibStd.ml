@@ -42,10 +42,26 @@ let List.filteri p l =
 let List.init n f = let rec go i = if i >= n then [] else let x = f i in x :: go (i + 1) in go 0
 let rec List.assoc_opt x = function [] -> None | (a, b) :: l -> if a = x then Some b else List.assoc_opt x l
 let rec List.nth_opt l n = match l with [] -> None | x :: l -> if n = 0 then Some x else List.nth_opt l (n - 1)
-(* by insertion: equal elements keep their order *)
-let List.sort cmp l =
-  let rec insert x = function [] -> [ x ] | y :: rest -> if cmp x y <= 0 then x :: y :: rest else y :: insert x rest in
-  List.fold_right insert l []
+(* by merging: the list cut in its first and second halves, each
+ * sorted, then merged, the first half's element first when two are
+ * equal, so that equal elements keep their order; n log n comparisons.
+ * Its helpers are loops (tail calls), so a long list does not fill
+ * tiny-ml's stack of values. old: by insertion, n * n comparisons,
+ * which made sort slow on a file of some thousands of lines *)
+let rec List.sort cmp l =
+  let rec onto acc l = match acc with [] -> l | x :: r -> onto r (x :: l) in
+  let rec take n l acc = if n = 0 then onto acc [], l else match l with [] -> onto acc [], [] | x :: r -> take (n - 1) r (x :: acc) in
+  let rec merge a b acc =
+    match a, b with
+    | [], l -> onto acc l
+    | l, [] -> onto acc l
+    | x :: ra, y :: rb -> if cmp x y <= 0 then merge ra b (x :: acc) else merge a rb (y :: acc) in
+  match l with
+  | [] -> l
+  | [ _ ] -> l
+  | _ ->
+      let a, b = take (List.length l / 2) l [] in
+      merge (List.sort cmp a) (List.sort cmp b) []
 let rec List.map2 f l1 l2 =
   match l1, l2 with
   | [], [] -> []

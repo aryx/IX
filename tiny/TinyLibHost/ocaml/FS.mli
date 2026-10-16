@@ -22,6 +22,11 @@ val open_in_fd : <Cap.open_in; ..> -> string -> Unix.file_descr
 val open_rw_fd : <Cap.open_in; Cap.open_out; ..> -> string -> Unix.file_descr
 val open_out_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
 val open_append_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
+(* (a new file, empty, which must not be there) *)
+val create_fd : <Cap.open_out; ..> -> string -> Unix.file_perm -> Unix.file_descr
+val mkdir : <Cap.open_out; ..> -> string -> Unix.file_perm -> unit
+val remove_any : <Cap.open_out; ..> -> string -> unit
+val getcwd : <Cap.readdir; ..> -> unit -> string
 
 (* ix: whole files in and out, through the capabilities to open them
  * (ix's Files, merged here): shared by the assembler, linker,

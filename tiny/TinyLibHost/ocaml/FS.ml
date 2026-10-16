@@ -24,6 +24,12 @@ let open_out_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file
   Unix.openfile file [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC ] perm
 let open_append_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
   Unix.openfile file [ Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND ] perm
+let create_fd (_caps : < Cap.open_out; .. >) (file : string) (perm : Unix.file_perm) : Unix.file_descr =
+  Unix.openfile file [ Unix.O_RDONLY; Unix.O_CREAT; Unix.O_EXCL ] perm
+let mkdir (_caps : < Cap.open_out; .. >) (dir : string) (perm : Unix.file_perm) : unit = Unix.mkdir dir perm
+let remove_any (_caps : < Cap.open_out; .. >) (file : string) : unit =
+  try Unix.unlink file with Unix.Unix_error ((Unix.EISDIR | Unix.EPERM), _, _) -> Unix.rmdir file
+let getcwd (_caps : < Cap.readdir; .. >) () : string = Unix.getcwd ()
 
 (* ix: whole files in and out (ix's Files, merged here): what the
  * assembler, the linker, the compilers, the builder and the shell do

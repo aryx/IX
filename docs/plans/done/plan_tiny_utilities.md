@@ -19,6 +19,10 @@ in 109 cases.
 replaces the six programs in C; the image is 200 KB smaller. Each
 utility runs from sh and from rc, and `make check` runs them.
 
+**Step 4 done (2026-10-16)**: tiny-utils in tiny/mkfile, built by
+mini-mk on TinyLibHost; tiny/README.md's row, TinyLibHost's README,
+docs/manuals/t-ix.md. The plan is done.
+
 ## 1. What it is
 
 m-ix's `utilities/` has about 40 programs in 10 directories (3,600
@@ -232,3 +236,20 @@ Step 3 (2026-10-16):
   Makefile exports for a command it runs without a shell, so
   `make` needs `PATH=.../ix/bin:$PATH` from outside (as before this
   step).
+
+Step 4 (2026-10-16):
+
+- **Steps 1 and 2 had broken mini-mk's build of tiny-shell**, and dune's
+  build could not show it. The host's `TinyLibSystem.ml` is compiled
+  by mini-ml on TinyLibHost, the standard library trimmed to what the
+  tiny programs call, and the new functions called what had been
+  trimmed: `FS.mkdir`, `FS.remove_any`, `FS.create_fd`, `FS.getcwd`,
+  and under them `Unix.unlink`, `Unix.rmdir`, `Unix.getcwd`,
+  `Unix.rename`. Each is one line copied back from `lib_core/`.
+  (`mini-mk` in tiny/ then stops at tiny-ml, on an optional argument in
+  `TinyML.ml` that mini-ml does not parse, from another commit:
+  279792eb.)
+- **tiny-utils built by mini-mk runs on Linux** (arm64, in Docker's
+  ubuntu:24.04) and prints the same as dune's tiny-utils on macOS, in
+  28 commands that include errors from the system (116 lines). The
+  tiny-shell rebuilt there runs too.

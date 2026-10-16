@@ -29,7 +29,8 @@ of the system:
   (the operators, the option, the exceptions, the `List` functions; it
   is tiny-ml's ML and not OCaml's, and the build puts its text in the
   compiler), then `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`,
-  and `TinyLibStd.ml` for a tool that runs there too (tiny-shell):
+  and `TinyLibStd.ml` for a tool that runs there too (tiny-shell,
+  tiny-utils):
   what it names of OCaml's standard library beyond the prelude
   (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML.
   For the host's programs when ix builds them: `TinyLibHost/`, a
@@ -59,9 +60,11 @@ of the system:
     it, its window, its socket and its page.
 
 The others are the system's programs, a file each (`TinyShell`,
-`TinyC`, `TinyWindows`...). One of them is on both sides:
+`TinyC`, `TinyWindows`...). Two of them are on both sides:
 `TinyShell.ml` is the host's tiny-shell and, built by tiny-ml with
-`TinyLibStd.ml`, tiny-kernel's `rc`; what it asks of the system is
+`TinyLibStd.ml`, tiny-kernel's `rc`; `TinyUtilities.ml` is the host's
+tiny-utils and tiny-kernel's `utils`, which the boot image has under
+the name of each utility (`cat`, `ls`...). What they ask of the system is
 `TinyLibSystem`, a file for each side (`TinyLibHost/TinyLibSystem.ml`
 over Unix, `TinyKernel/libml/TinyLibSystem.ml` over the kernel's
 calls).
@@ -75,6 +78,7 @@ on.
 |---|---|---|---|
 | `TinyBuildSystem.ml` | tiny-build | `builder/` (mini-mk, mk) | rules, `%`, stamps as digests, one pass with `-j` |
 | `TinyShell.ml` | tiny-shell | `shell/` (mini-rc, rc) | lists as the only value, words joined by adjacency, redirections around the command |
+| `TinyUtilities.ml` | tiny-utils (and on tiny-kernel `utils`, as `cat`, `ls`, `wc`...) | `utilities/` (mini-cat, mini-ls...; Plan 9's) | one executable with a name per utility, BusyBox's way; a filter is a function over its input's pieces, opened and reported once for all of them; a walker is one fold over a tree, its order where it folds the entries (walk before, du and rm -r after); the same file on the host and on tiny-kernel; [`plan_tiny_utilities.md`](../docs/plans/done/plan_tiny_utilities.md) |
 | `TinyEditor.ml` | tiny-editor | `editors/ed/` (mini-ed, ed) | sam's command language: dot a range, loops over matches, changes in parallel |
 | `TinyAssembler.ml` | tiny-assembler | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l, 7a/7l) | no separate compilation: all of a program's assembly into an arm64 executable, sizes known before addresses, a word per closure |
 | `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C), the two printing the same |

@@ -1,9 +1,10 @@
 (* What a tool asks of the system it runs on, for a tool that runs on
- * two: tiny-shell, on the host and on tiny-machine. One file of the
- * tool, TinyShell.ml, names only this and the pure functions of the
- * standard library; there are two files of this:
+ * two: tiny-shell and tiny-utils, on the host and on tiny-machine.
+ * The tool's one file, TinyShell.ml or TinyUtilities.ml, names only
+ * this and the pure functions of the standard library; there are two
+ * files of this:
  *
- *                      TinyShell.ml
+ *               TinyShell.ml, TinyUtilities.ml
  *            ___________/        \___________
  *   on the host                        on tiny-machine
  *   TinyLibHost/TinyLibSystem.ml       TinyKernel/libml/TinyLibSystem.ml

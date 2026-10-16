@@ -83,6 +83,10 @@ val pipe : cloexec:bool -> unit -> file_descr * file_descr
 (* directories *)
 
 val mkdir : string -> file_perm -> unit
+val rmdir : string -> unit
+val getcwd : unit -> string
+val unlink : string -> unit
+val rename : string -> string -> unit
 val chdir : string -> unit
 type dir_handle
 val readdir : dir_handle -> string

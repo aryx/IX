@@ -52,8 +52,8 @@
  * carry its idea), UTF-8 (wc counts bytes), floating point in seq, the
  * long format of ls (tiny-kernel has no owners, modes or times), and
  * the wording of each program's errors: here they are all "tool: file:
- * reason". The plan, and what is still to come (tiny-kernel):
- * docs/plans/plan_tiny_utilities.md.
+ * reason". The plan, and what was found on the way:
+ * docs/plans/done/plan_tiny_utilities.md.
  *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >

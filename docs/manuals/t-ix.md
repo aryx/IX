@@ -81,7 +81,7 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 | tiny-editor | `unix` |
 | tiny-db | `unix`, `caps` |
 | tiny-cpu, tiny-arm, tiny-assembler, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
-| tiny-machine, tiny-build, tiny-shell | `lib_core/`, `fpath`, `caps`, `unix` |
+| tiny-machine, tiny-build, tiny-shell, tiny-utils | `lib_core/`, `fpath`, `caps`, `unix` |
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
 | tiny-machine-window | `raspberry/` (mini-qemu's `Sdl_display`), SDL by `tsdl` |
 
@@ -134,7 +134,10 @@ The steps are always the same three:
 
 TinyKernel.ml has no disk: `boot.img` is `kernel.img` followed by
 its files, each a name, a size and its bytes, which the kernel reads
-at its start.
+at its start. A size written `=utils` makes a link instead: the name
+is given the same file as `utils`, with no bytes of its own. That is
+how one program, `utils` (`tiny/TinyUtilities.ml`, by tiny-ml), is
+`cat`, `ls`, `wc` and the 17 other utilities.
 
 ### 2.5 What runs what
 
@@ -514,6 +517,7 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 7 | `open(path, mode)` | 15 | `ready(fds, n, until)` |
 | 17 | `box(fds)` | 16 | `ticks()` |
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
+| 20 | `getcwd(buf, n)` | | |
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

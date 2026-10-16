@@ -34995,3 +34995,1141 @@ Claude left window border resizing waiting on a cursor choice, and put tiny-prof
 **Yoann:**
 
 > C-x C-c, maybe the C-c got intercepted
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:11
+
+**Yoann:**
+
+> in TinyAssembler.mli maybe we should mention early that this is actually not the assembler for tiny machine, and where is it, and why
+
+**Claude (summary):**
+
+Claude announced it would add a note near the top of `TinyAssembler.mli`.
+Claude said it would first check how the repo handles `claude:` comment tags before writing the note.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:12
+
+**Yoann:**
+
+> why this style "Not machine ..." why not "Note that it's not" or something more readable?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:14
+
+**Yoann:**
+
+> what does "clipped style" mean?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude decided to commit only `TinyAssembler.mli` and leave `prompt-history.md` out.
+Claude based that choice on recent commits, which also leave `prompt-history.md` out.
+Claude then noticed the status line for `prompt-history.md` had changed and started checking what went into the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:29
+
+**Yoann:**
+
+> make build-docker seems to fail locally on this macos machine, but GHA CI seems to pass. not sure what differs
+
+**Claude (summary):**
+
+Claude found that the local Docker build ran a test which CI's amd64 runner skipped.
+Claude traced the gap to binfmt_misc emulation in Docker's Linux VM on this arm64 Mac.
+Claude confirmed the emulator was active by probing from a privileged container.
+Claude then read the generator's build of the mul test to prepare a precise fix.
+Claude had also listed copied files like Makefile.config and _cross/ as secondary suspects.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:33
+
+**Yoann:**
+
+> yes, fix it and rerun make build-docker
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:34
+
+**Yoann:**
+
+> no need to add claude: all of ix is written by claude
+
+**Claude (summary):**
+
+Claude removed the `claude:` tag from one comment and saved a memory to stop adding it in ix.
+Claude left the existing tags elsewhere in the repo unchanged.
+Claude noted that the rebuild may have copied the source before the tag was removed.
+Claude said this only affects a comment, so the test result is the same either way.
+Claude left `make build-docker` running and said it would report when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:49
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-15 07:53
+
+**Yoann:**
+
+> make build-docker is working, this is great, but running make test-like locally fails, even though it's working inside docker
+
+**Claude (summary):**
+
+Claude traced the `make test-lite` error stream to macOS `date` lacking `%N` in `tests/lite.sh`, leaving the 9base failures unexplained.
+Claude proposed two fixes in `tests/lite.sh`: a BSD-compatible `now()` timer and counting missing status files as failures.
+Yoann picked the missing-status-file fix, so Claude will make an absent status file count as a failure.
+Yoann also asked for that `lite.sh` change to be committed on its own before any other work.
+Claude has not committed anything yet, since the 9base differences still need one test run directly.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:21
+
+**Yoann:**
+
+> is it doable to have a tiny-browser?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:22
+
+**Yoann:**
+
+> running on the tiny-machine
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:14
+
+**Yoann:**
+
+> go with 2, and commit the lite.sh fix first
+
+**Claude (summary):**
+
+Claude fixed the commit message's false Docker claim and committed the lite.sh fix as cefb7851, with prompt-history.md left staged.
+For option 2, Claude edited the rc, ed and mk differential.sh scripts for macOS temp paths and gtimeout.
+Four agents then worked the remaining 16 failing jobs, fixing portable issues and skipping Linux-only ones with printed reasons.
+Recorded cases now show 279 passing and 8 skipped on the Mac, with all 287 still passing on Linux.
+Claude found a macOS case-insensitive lookup bug in mini-ml that loaded Fs.ml for FS.ml, and is reviewing that compiler fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:29
+
+**Yoann:**
+
+> let's write a plan; The ideal target would be to be able to read some wikipedia pages, and to render them in a not too bad way, while still having a browser in less than 2000 LOC, and the https and TLS part handle by TinyMachinePeer or something
+
+**Claude (summary):**
+
+Claude measured Wikipedia article bodies: about 257 KB per page, of which only 34 KB is text.
+Claude found that roughly 188 KB of each page is tag attributes, which the browser must still parse.
+Claude then checked tiny-kernel's per-process memory and tiny-ml's heap before settling the design.
+Claude wrote a plan for an under-2000-LOC browser that renders Wikipedia, with TLS delegated to TinyMachinePeer.
+Yoann's follow-up focuses on the memory budget: he wants the slot raised to about 10 MB, since pictures are worth it.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:43
+
+**Yoann:**
+
+> we can extend slot to be bigger, why not 10MB? machines nowadays have plenty of memory. www is fine. pictures are definitely worth it! That's what made mosaic and the web popular compared to text-only protocols (e.g., gopher).
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:44
+
+**Yoann:**
+
+> but let's call it TinyBrowser.ml, not TinyAppBrowser.ml, because a Browser is really an essential part of an OS nowadays
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:44
+
+**Yoann:**
+
+> and principia-softwarica level worth a book
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:39
+
+**Yoann:**
+
+> let's do 1 and commit
+
+**Claude (summary):**
+
+Claude added a skip for the flaky `nproc` case and planned to log the bug in `docs/plans/bugs/ix.md`.
+Claude noted the `nproc` test passes three times in a row when run alone.
+Claude suspected the failure is load-sensitive and tied to the parallel test run.
+Claude was in the middle of reviewing what the `nproc` check actually asserts.
+Claude also said it would build and run the JavaScript tests before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 08:46
+
+**Yoann:**
+
+> independently I wonder if we could have a TinyLinker.ml that just redirect to the relevant file (TinyAssembler.ml and the one for the TinyCpu.ml), so at least one can see a file for it, as we have a principia softwaria book for the linker
+
+**Claude (summary):**
+
+Claude reported that the plan had been updated, then turned to Yoann's TinyLinker.ml question.
+Claude proposed checking how tiny/dune picks up modules, so a comment-only TinyLinker.ml would not break the build.
+Claude was still checking tiny/dune when the answer ended, so no TinyLinker.ml had been written yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 13:17
+
+**Yoann:**
+
+> yes, write TinyLinker.ml
+
+**Claude (summary):**
+
+Claude said it would write TinyLinker.ml, linking the arm64 `link` in `TinyAssembler.ml` with `TinyMachineCPU.assemble_files`, which joins `.tm` files at address 0.
+Claude corrected two points: no kernel step uses `tiny-cpu -a` since v6 was removed, and base and bound live in `docs/notes_tiny_kernel.md`.
+Claude planned to add a line to `tiny/README.md`'s list of special files so TinyLinker.ml is discoverable there.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 13:14
+
+**Yoann:**
+
+> I've emptied the trash
+
+**Claude (summary):**
+
+Claude suggested that a full Mac disk could explain the Docker I/O errors, so emptying the trash might have fixed them.
+Claude then said it was rerunning `make build-docker` to check whether the build now succeeds.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 13:22
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed docs/plans/plan_tiny_browser.md as commit 0af5b211, containing only the browser plan document.
+Claude noted that the TinyBrowser plan is design only, with nothing built or run yet.
+Claude pointed out that concurrent commit d207fa80 from another session landed without the browser plan included.
+Claude kept the browser plan in its own commit so it could be reviewed separately from code changes.
+Claude also committed tiny/TinyLinker.ml as 54757e57 after dune build passed, leaving prompt-history.md staged.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 15:44
+
+**Yoann:**
+
+> ok let's start TinyBrowser!
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:02
+
+**Yoann:**
+
+> I find the "clipped" style of the comments in tiny/ and especially the .mli and its first paragraphs very hard to read.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:03
+
+**Yoann:**
+
+> I like the ASCII diagrams
+
+**Claude (summary):**
+
+Claude planned to restore the annotated ASCII diagram, using plainer labels than the previous version.
+Claude also planned to remove the bullet list that had replaced the diagram.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 15:44
+
+**Yoann:**
+
+> we can also extend tiny-ml if really needed
+
+**Claude (summary):**
+
+Claude measured the tiny-ml browser on tiny-cpu at about 1.1 billion instructions for a 257 KB page.
+That is roughly 4,300 instructions per byte, over two minutes at tiny-machine's 8 million per second.
+Claude split the cost into three drivers (read, tokenize, full) and grouped the hits by C runtime function.
+Claude also found the compiled browser is larger than a 16-bit jump offset can cross.
+Claude then fixed a UTF-8 decoder bug found by new tests, and registered 15 passing checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:03
+
+**Yoann:**
+
+> yes, do the other .mli headers
+
+**Claude (summary):**
+
+Claude split the remaining 20 .mli header rewrites across six parallel agents, each handling a group.
+Each agent rewrote only the header comments and did not build or commit anything.
+Claude planned to diff the files for changes outside the headers and run dune build tiny afterward.
+Claude reported that five agents had finished, leaving only the Kernel, C and CPU agent running.
+Claude said it would report the uncertain phrasings the agents flagged once everything finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:09
+
+**Yoann:**
+
+> ok let me read a few .mli to check if they "parse" better for me
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:05
+
+**Yoann:**
+
+> let's commit; How can I test locally this new program? Also why 8 MIPS for tiny machine? Can't we bump it higher? My pi2 runs at 900 MHz and is actually quite old, so why a 8 MIPS tiny machine?
+
+**Claude (summary):**
+
+Claude confirmed the test suite still passed after rewriting the test script header in plain style.
+Claude also rewrote the plan's new status section in the same style before committing the changes.
+Claude committed the work as 382c451e, leaving out docs/yoann_notes/prompt-history.md.
+Claude left the other modified .mli files alone, since they belong to a parallel header rewrite.
+Claude began reading the existing reasoning behind the 8 MIPS figure but did not yet answer the speed question.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:14
+
+**Yoann:**
+
+> looks better, let's commit
+
+**Claude (summary):**
+
+Claude reported that the commit contains 21 files, one more than the 20 it had added.
+Claude noted that the working tree now looks clean after the commit.
+Claude started checking which extra file had gone into the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:27
+
+**Yoann:**
+
+> I think we can adjust a few of the Tiny programs (e.g., TinyAppXxx.ml) to use the new feature
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:31
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude said it would rerun the command without `rm -rf`, since that may be what Yoann rejected.
+Claude noted the badly named symlinks from the zsh attempt could stay in the scratchpad.
+Claude reported that `make check` passes, including the tetris, calc and temp window tests against recorded screens.
+Claude said it was last checking whether TinyML.mli's description of the dialect mentions records.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:16
+
+**Yoann:**
+
+> ok let's do what you suggest
+
+**Claude (summary):**
+
+Claude made the machine's speed a `rate` setting, defaulting to 8 million instructions per second, exposed as a read-only `rate` register (14). Claude added `k_rate` beside `k_clock` so the kernel's tick is 2.5 ms of the machine's rate. Claude also changed the wrapper to accept `-rate` in any option order, and documented the register and speed in the manual. Claude verified the kernel, console, network, and replay output are unchanged at the default rate, and that `-rate 16` reports `16`. The page only builds; its headless-Chrome test needs the missing Python `websockets` module, which Claude left uninstalled pending approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the record-pattern change as "tiny-ml: record patterns" across eight files, leaving the prompt-history file staged and unpushed.
+Claude pointed out that the Makefile:198 run of tests/tiny/ through mini-ml's run.sh has not happened yet.
+That run would cover the new record_patterns.ml, which checks that mini-ml's grammar accepts both record pattern forms.
+Claude could not run it here because it needs Linux and the goken environment.
+So the commit is in, but this test is still open and needs a Linux run.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:02
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 16:36
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude started plan step 1, raising per-process memory, since it avoided `TinyML.ml`, which another session was editing.
+Claude moved the kernel and machine memory maps to 128 MB, freeing the old partitions for the image arena.
+Claude confirmed `bigmem` runs out of memory in a 1 MB scratch image and passes in its 8 MB partition.
+Claude re-recorded the `bigmem` and `ls` expected outputs, then updated the TinyMachine, TinyKernel and manual docs.
+Claude later added the inline `s.[i]` read in TinyML after the other session committed, passing all 17 checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:03
+
+**Yoann:**
+
+> yes, let's also add with
+
+**Claude (summary):**
+
+Claude added a `With` construct to tiny-ml across the AST, parser, typing, free variables, and code generation.
+Claude checked that every function matching on expressions handles `With` the same way it handles `SetDot`.
+Claude wrote a `With` test checked against OCaml, rewriting `show` with `print_int` because tiny-ml has no `Printf`.
+Claude used `with` in the Tetris and Calculator apps, and both pass on the host.
+Claude reported the new tests and `records` passing under `-tm`, with three arm64 failures from the goken libc issue.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:05
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended a `www <address>` request on port 70, where the host fetches a page and returns its bytes unchanged.
+Claude added Wikipedia title and URL rules, a `tiny-machine-fetch` helper with a kept-copy fallback, and a `www:` error line.
+Claude checked that the OCaml page bytes match curl, and all 257,035 bytes arrive through tiny-kernel, including the fragment case.
+Claude also ran live fetches of Plan 9, example.com, and Unix, and documented the `www` request in the manual's network section.
+Claude committed the work as `c381724b`, with the browser page only built, not run, and step 4 next.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:09
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:16
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude checked whether step 3 was already committed, and found it sits in `c381724b`, so nothing was pending. Claude then started step 4, a browser in tiny-kernel, using tiny-kernel's `emacs` program as the model. Claude chose the browser's colours from the palette: link blue, light grey for code, and dark grey. It fixed a possible record-field clash by renaming `flow.count`, since `elem` also has a `count` field. Claude set body text to grey 68 (#444) and bold headings in black, adding a rule under `h2`, then ran the kernel session check and the other tests that share the changed files.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 20:58
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude implemented link following in the browser: clicks load pages, same-page anchors scroll, `b`/Backspace goes back, and `g` asks for an address.
+Claude kept only the reader's `mw`-prefixed element ids as anchors, since Parsoid gives those ids to almost every element.
+Claude fixed references rendering red by no longer treating `<cite>` as emphasis, so only italic titles stay red.
+Claude moved the kernel's stack, frames and heap up 2 MB so the image can grow to 4.5 MB, then recorded and checked the changed sessions.
+Claude committed the work as `3b5644d2` after correcting the browser's line counts in the plan to 1,075 lines, 807 of code.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:20
+
+**Yoann:**
+
+> What could be a TinyUtilities.ml ? the equivalent of m-ix utilities/, but tiny
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:15
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude ran a live check through `-net-out`, fetching Glenda and a rio screenshot from Plan 9's Wikipedia infobox.
+Claude decoded both pictures on the host, and tiny-kernel's browser painted them on screen.
+Claude wrote the results up in the plan, the README, and the manual.
+Claude reported the browser at 1,229 lines, 928 of them code, under the plan's 2,000-line limit.
+Claude had added step 6 picture support: `img` requests, boxes sized from width and height, and helper-side decoding.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:33
+
+**Yoann:**
+
+> exvellent! let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:27
+
+**Yoann:**
+
+> write the plan and start
+
+**Claude (summary):**
+
+Claude wrote the ix plan file, then planned to record step 1 as done.
+Claude added five functions to the host's TinyLibSystem for the tiny program's system access.
+Claude wrote the program's .mli and .ml, then cleaned up a leftover help line and the called computation.
+Claude built it, smoke-tested the output against the twins, and wrote a differential test script.
+Claude confirmed tiny-ml compiles the file unchanged and reported its final size.
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:34
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:38
+
+**Yoann:**
+
+> let's commit and move foward
+
+**Claude (summary):**
+
+(summary generation failed - raw answer follows)
+The file had no final newline, so my stanza got glued on. Fixing that, then committing only my files:
+Now the six utilities in `TinyUtilities.ml`:
+Builds. Adding the step-2 cases to the differential test:
+109 cases match, and `cp k k` keeps the file. Re-checking that tiny-ml still accepts the file, with stubs for the four new functions too:
+Updating the plan with step 2's results, then committing (only my files this time, checking the index first):
+
+------------------------------------------------------------------------
+
+## 2026-10-16 08:31
+
+**Yoann:**
+
+> let's resume
+
+------------------------------------------------------------------------
+
+## 2026-10-16 08:32
+
+**Yoann:**
+
+> /login
+
+**Claude (summary):**
+
+Claude recorded step 3's expected output and ran the full tiny-kernel check, which passed.
+Claude committed step 3 with explicit paths, covering the getcwd syscall, mlsys.c, calls.ml and the Makefile changes.
+Claude left another session's commit 279792eb alone, since its optional argument breaks TinyML.ml:646.
+Claude added tiny-utils to the mkfile and confirmed both utilities run as Linux arm64 executables.
+Claude left step 4 open, with README and manual updates still to do before moving the plan to docs/plans/done/.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:00
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that all four steps were already committed, and that `tiny/TinyUtilities.mli` had changed since.
+Claude attributed that change to Yoann, a split of the header's first sentence into its own paragraph.
+Claude proposed committing just that one file, leaving the rest of the tree as it was.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:01
+
+**Yoann:**
+
+> I don't fully understand this =utils thing hack in the kernel. What is it? Can't we introduce instead symbolic link or something to allow the same argv0 dispatch trick in tinyutilities?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:02
+
+**Yoann:**
+
+> hard link are also fine, but is there a command to create on (ln)
+
+**Claude (summary):**
+
+Claude said it would first check how the kernel treats a written file.
+Claude said that check decides whether "hard link" is the accurate name for what it had built.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:05
+
+**Yoann:**
+
+> yes, let's do it
+
+**Claude (summary):**
+
+Claude checked whether lib_core's Unix module already had `link` before copying it into TinyLibHost.
+Claude added the `Unix.link` binding to `TinyLibSystem` and both Unix copies, plus an `ln` command in tiny-utils.
+Claude updated the Makefile, and `tiny-kernel: check ok` with no visible screen change, since `ln` isn't reached.
+Claude rebuilt mini-mk on Linux with the new `Unix.link`, and `lib_core` compiles with the new line.
+Claude updated the manual and added a section to the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the hard links work as one commit with 18 files.
+The commit covers the `link` system call, the `ln` utility in tiny-utils, and the `link utils` lines in the boot image.
+Claude left `docs/yoann_notes/prompt-history.md` out of the commit, still staged and uncommitted as Yoann had it.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:18
+
+**Yoann:**
+
+> in make loc, no need to print the line statistics for the tests (show it only if do -v or another flag)
+
+**Claude (summary):**
+
+Claude left the `loc.py` change uncommitted and asked Yoann whether to commit it.
+Claude's edit touches only `scripts/stats/loc.py`: three lines in the printing loop plus the usage comment.
+Claude checked that `make loc-v` still lists all 41 tests directories row by row.
+Claude noted that the other totals, including "total without tests" and the `docs/loc.md` line, were unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:19
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:21
+
+**Yoann:**
+
+> what do we need to add to t-ix so it matches m-ix ?
+
+------------------------------------------------------------------------
+
+## 2026-10-15 21:39
+
+**Yoann:**
+
+> let's do them in order
+
+**Claude (summary):**
+
+Claude said it would go in order, starting with item 1, a browser in a window.
+Claude planned to reuse the mouse gestures already recorded in the `windows` session.
+Its only concrete step was to copy those gestures, so no files were written or committed.
+Yoann's reply "let's resume" suggests he wants that first item started now.
+Claude had not yet opened a window or touched any code when the answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:26
+
+**Yoann:**
+
+> let's resume
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:21
+
+**Yoann:**
+
+> (I don't think this plan document address my question)
+
+**Claude (summary):**
+
+Claude proposed writing `docs/plans/plan_tiny_coverage.md` to record which m-ix parts lack a tiny twin.
+The document would hold the covered and missing tables, plus the suggested build order.
+Each missing piece would get its kept idea, what it drops, its m-ix twin, and a rough size.
+Claude explained that `plan_tiny_gaps.md` covers features missing inside existing tiny programs, not coverage.
+Claude then asked whether to proceed, since no document in `docs/` covers coverage yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:28
+
+**Yoann:**
+
+> scrolling is currently very slow; it would be great to support the mousewheel/trackpad and to have smooth scrolling when on a wikipedia page
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:29
+
+**Yoann:**
+
+> yes, write plan_tiny_coverage.md
+
+**Claude (summary):**
+
+Claude gathered exact per-subdirectory line counts with `loc.py -v` rather than relying on estimates.
+Claude wrote plan_tiny_coverage.md using those measured line counts as its numeric basis.
+Claude began verifying three plan claims, including that TinyBrowser has no JavaScript or style sheets.
+Claude was also verifying Pike's matcher features and the troff history line before showing the plan.
+Claude's answer ended mid-verification, so the plan was not yet shown.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:33
+
+**Yoann:**
+
+> let's commit the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:32
+
+**Yoann:**
+
+> would be great also to have the cursor change when hovering a link in www
+
+**Claude (summary):**
+
+Claude found that shell quoting had turned the `\129` byte escape into a newline.
+Claude decided to write the www event files with Python instead of the shell.
+The Python approach was meant to write each event's bytes directly, so `\129` reaches the file intact.
+Claude then saw the wrapping fix change the screens, and confirmed `wwwback` still equals `www`.
+Claude also checked that `wwwgo` equals `wwwpicture`, and that ten steps down then up returns to the first screen.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:36
+
+**Yoann:**
+
+> let's start with the filter: grep, sort, and later on an app like a spreadsheet and word document; ideally we could do a tiny-office but it seems difficult
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:40
+
+**Yoann:**
+
+> could we move the regexp in a separete lib file?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:40
+
+**Yoann:**
+
+> instead of inside TinyUtilities.ml ?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:40
+
+**Yoann:**
+
+> (it could potentially be used by TinyEmacs?)
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:39
+
+**Yoann:**
+
+> sounds like a good plan
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:44
+
+**Yoann:**
+
+> why are we modifying code under raspberry/? we are extending the tiny-machine here right?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:46
+
+**Yoann:**
+
+> how much duplication would it be?
+
+**Claude (summary):**
+
+Claude said it would measure the duplication directly from Sdl_display.ml.
+Claude also planned to check which parts of that module tiny-machine-window actually uses.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:47
+
+**Yoann:**
+
+> yes, do a separate TinyMachineSDL.ml
+
+**Claude (summary):**
+
+Claude wrote a standalone `TinyMachineSDL.ml` and reverted the `raspberry/` changes, after reading `Sdl_display.ml`. It fixed a stale comment in `raspberry/dune` and confirmed the build passes. Claude left five files from another session out of the commit. It committed the cursor and the window's own SDL module.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:41
+
+**Yoann:**
+
+> let's consider TinyEditor.ml separately; also let's rename it to TinyLineEditor.ml
+
+**Claude (summary):**
+
+Claude confirmed all 160 test cases pass, including `[-a]`, and recorded the results.
+Claude added TinyLibRegex.ml ahead of TinyUtilities.ml in tiny-kernel's Makefile, then built it with mini-mk.
+Claude built the tiny-kernel image and checked grep and sort output through rc, including the `-v` and `-c` cases.
+Claude removed the read-only dune binary before copying over it, then confirmed identical output on Linux and macOS.
+Claude added a progress note to the coverage plan and listed TinyLibRegex.ml in the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:52
+
+**Yoann:**
+
+> let's commit and do the rename in a separete commit
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:53
+
+**Yoann:**
+
+> and maybe we can rename TinyEmacs.ml to TinyEditor.ml then? (or TinyScreenEditor.ml and have TinyEditor.ml point to the 2 editors?)
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:53
+
+**Yoann:**
+
+> or TinyEditorLine.ml and TinyEditorScreen.ml or something
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:54
+
+**Yoann:**
+
+> so they are close to one another with ls
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:55
+
+**Yoann:**
+
+> and maybe we can have ed be the program name for TinyEditorLine and emacs and editor (hard link) for TinyEditorScreen ?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:55
+
+**Yoann:**
+
+> (ed and sam hard link?)
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:51
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude reported that the cursor and TinyMachineSDL work is already committed in df446928.
+Claude noticed the plan's status section doesn't yet record that last step.
+Claude decided to add a short status entry to the plan for it.
+Claude then planned to commit that plan update on its own.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:56
+
+**Yoann:**
+
+> also ls -l could list info such as where they links to ? or a way to know something is a hard link?
+
+**Claude (summary):**
+
+Claude found that `git add -A` had already staged the old path's removal, so the extra `git rm` failed.
+The failure stopped the script at its first error, so nothing was committed.
+Claude then re-ran the script without the redundant `git rm` step.
+The reply ends at the re-run announcement, so its outcome isn't shown here.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 09:57
+
+**Yoann:**
+
+> let's improve the speed of scrolling!
+
+**Claude (summary):**
+
+Claude added a temporary profile hook to the kernel, switched on by setting TINY_PROF to a file path.
+Every fetched instruction was counted by mode and address, and the counts were written at halt.
+Claude used the profile to measure where drawing text spends its time before optimizing anything.
+Claude labelled the hook temporary, so it was meant to come out once the measurements were taken.
+Claude also wrote glyphs in assembly, unrolled the copy and fill loops, and committed the speedups.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 10:18
+
+**Yoann:**
+
+> excellent! Actually we can restore this mini profiler and start a TinyProfiler.ml maybe!
+
+------------------------------------------------------------------------
+
+## 2026-10-16 10:21
+
+**Yoann:**
+
+> Ideally this new profiler would have been able to answer the same questions the throwaway profiler you used for optimizing the graphics display of wwww
+
+------------------------------------------------------------------------
+
+## 2026-10-16 10:22
+
+**Yoann:**
+
+> and maybe you could have some documentation explaining how to use this new profiler precisely to find the bottlenecjs we had in www for scrolling graphics
+
+------------------------------------------------------------------------
+
+## 2026-10-16 10:11
+
+**Yoann:**
+
+> let's do all 3.
+
+**Claude (summary):**
+
+Claude added `ls -l` link counts, an `editor` name for `emacs`, and an `ed` program with a `sam` name on tiny-kernel.
+Claude noted that the other session's files were all committed, so only its own edits remained.
+Claude then began checking that `TinyKernel.ml`'s diff held only its change, before committing.
+The commit itself had not been made when Claude's answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 10:22
+
+**Yoann:**
+
+> (in its TinyProfiler.mli maybe?)
+
+**Claude (summary):**
+
+Claude compiled the tiny-cpu, tiny-machine, and profiler OCaml sources and ran the documented commands from a scratch directory.
+Claude split tiny-cpu and tiny-machine's assembler pass in two, and checked that `tiny/dune` only gained its own stanza.
+Claude confirmed all tests pass and that the shared README, Makefile, and `lite.sh` hold only its own profiler changes.
+Claude then committed the profiler work after filtering out edits from the other session.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 11:52
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed all three parts as 9b9598fb, with text utilities, tiny-yacc/lex and tiny-troff still open.
+Claude found that rc pipelines of four or more stages fail silently on tiny-kernel.
+Claude offered to fix that rc pipe limit on its own, separately from the committed change.
+Claude kept the rc pipe limit listed as open work in the coverage plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 11:54
+
+**Yoann:**
+
+> excellent! Let's commit
+
+**Claude (summary):**
+
+Claude found `tiny-prof` already committed as `bfe2320c` and left two other uncommitted changes alone.
+Claude listed the tiny-ml `String.concat` speedup, a single runtime call, as the next remaining item.
+That speedup needs coordinating with the other session's `TinyLibStd` edits, which Claude flagged as a blocker.
+Claude proposed stopping the windows and nested sessions from showing `ls` sizes, since their recorded screens shift with program size.
+Claude also proposed giving the unused 6 MB to the pictures arena as part of that cleanup.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 11:56
+
+**Yoann:**
+
+> I'd rather not do too many optimisation hacks that distract us from optimizing the core issue; also in theory we can rewtite evty ocaml functions in C or assembly but that's not what we want. Regarding the tiny-browser, what remains?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 11:55
+
+**Yoann:**
+
+> let's fix rc pipe limit indeed, seems important
+
+**Claude (summary):**
+
+Claude fixed the pipe limit in tiny-kernel's shell so pipes of up to six stages now run.
+Claude cut the process count per stage by having rc fork each stage itself and exec programs in place.
+A seventh stage now prints `tiny-shell: try again` and waits for the started stages, instead of silently failing.
+Claude matched 9base rc's pipe status rule (first and last stage only), after the test caught `3||4|`.
+Claude did not commit; it asked whether to commit, leaving out `prompt-history.md` and the `TinyEditorScreen.mli` edit.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 11:58
+
+**Yoann:**
+
+> it looks fast enough for me right now
+
+**Claude (summary):**
+
+Claude proposed closing plan_tiny_browser.md by moving it to docs/plans/done/ with a remaining-checks list.
+Claude listed the checks that need a screen: the SDL window and the web page via TinyMachineWeb_test.py.
+Claude listed the limits it would keep: wide tables cut at the edge, and Cyrillic, IPA and Thai showing as question marks.
+Claude offered to commit the moved plan, matching how the network plan was closed earlier.
+Claude had confirmed Tetris now fetches and reads into 1,440 lines, matching the host.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 12:25
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed the pipe fix as 113646bb, touching six files, with no other changes included.
+Claude kept prompt-history.md staged and left your TinyEditorScreen.mli edit uncommitted, outside the commit.
+Claude named the coverage plan's next item as the text utilities uniq, tr and sed.
+Claude grouped tr and sed with uniq as one item, giving no reasoning for including them.
+Claude offered no alternative next step to that item.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 12:27
+
+**Yoann:**
+
+> what else? I'm not sure it's worth adding tr and sed for now
+
+------------------------------------------------------------------------
+
+## 2026-10-16 12:26
+
+**Yoann:**
+
+> yes, move the plan to done/ and commit
+
+**Claude (summary):**
+
+Claude committed the browser plan to docs/plans/done/plan_tiny_browser.md as 741f29d8 and updated three links to the new path.
+Claude listed the cleanup as stopping the windows and nested sessions from showing ls sizes.
+Claude put this cleanup first among the remaining items, ahead of the two larger ones.
+Claude described the two larger items as the browser .nw book and tiny-ml register limits.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 12:29
+
+**Yoann:**
+
+> none of the tiny programs use lex and yacc (partly because they are single file implem), so maybe let's skip tiny-lex and tiny-yacc
+
+**Claude (summary):**
+
+Claude recommended skipping tiny-lex and tiny-yacc, since tiny's single-file programs use hand-written parsers.
+Claude made the optional `known` argument in TinyML.ml a plain argument and left mini-ml unchanged.
+Claude got mini-mk building all 13 programs by swapping Stdlib.compare for Int.compare and adding tiny-prof.
+Claude made tiny-assembler accept END with an empty operand and routed native test runs through tiny-arm off Linux.
+Claude confirmed tiny-ml's test passes and skipped tiny-assembler's env check off Linux, since tiny-arm gives an empty environment.

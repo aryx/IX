@@ -1,5 +1,7 @@
 (* A tiny screen editor, in one file: the text on the screen, a cursor
- * in it, and the keys of Emacs. Its full-size counterpart in m-ix is
+ * in it, and the keys of Emacs.
+ *
+ * Its full-size counterpart in m-ix is
  * mini-emacs (editors/emacs/), with buffers, windows, modes and a
  * Lisp. tiny-editor (TinyEditorLine.ml) is the line editor, with sam's
  * command language and no screen. This one is what you want for

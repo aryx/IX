@@ -58,6 +58,12 @@ let () =
               held := Some (usage, byte);
               again := Unix.gettimeofday () +. 0.3) (key_byte usage ~shift:!shift ~ctrl:!ctrl)
         | Display.Key (usage, false) -> (match !held with Some (u, _) when u = usage -> held := None | _ -> ())
+        (* A step of the wheel (or of two fingers on a trackpad) is an
+         * arrow key, up or down, a step each: a key is queued, where a
+         * button pressed and let go between two reads of the mouse could
+         * be missed. A program scrolls by its arrows (www, emacs). *)
+        | Display.Wheel v when v <> 0 ->
+            for _i = 1 to min 8 (abs v) do Printf.printf "k \\%03d\n" (if v < 0 then 128 else 129) done
         | _ -> ()) (display.poll ());
       (match !held with
        | Some (_, byte) when Unix.gettimeofday () >= !again -> Printf.printf "k \\%03d\n" byte; again := Unix.gettimeofday () +. 0.05

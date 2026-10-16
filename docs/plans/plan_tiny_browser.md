@@ -697,3 +697,48 @@ its size (70 columns, 25 rows) and the page wraps there (791 lines),
 with the logo in the infobox. Everything is in at 92.9 s of machine
 time, where it is 65 on the bare screen: every drawing goes through
 tiny-windows.
+
+### Step 7, ten articles, and scrolling (2026-10-16)
+
+Read at 80 columns by the host's build: Plan 9 from Bell Labs, Unix,
+Alan Turing, Paris, Linux, C, Python, the Mandelbrot set and the World
+Wide Web (Tetris's fetch failed), with OCaml. What was wrong, and done:
+
+- **Lines past the margin**, 20 to 90 an article: a word made of pieces
+  with no space between them (a full stop and a reference's `[15]`, a
+  link and its comma) only knew it was too long when its last piece
+  came, and a line was only cut at a space. The flow now remembers
+  where the word being made started, and carries the whole word to the
+  next line (`carry`). Left: tables too wide for the screen (Paris's
+  climate, 14 columns of numbers), cut at its edge, and code as it is.
+- **A displayed formula** was one word; its TeX now wraps at its spaces.
+- **Characters**: Latin Extended-A (the names of Central Europe) as
+  their letters, from Unicode's decompositions; `oe`, `EUR`, some Greek
+  letters spelled out, a few symbols. Left as `?`: IPA, Thai.
+- **Not wrong**: Paris's infobox labels wrap inside their narrow
+  column ("Mayor (2026-32)" on two lines).
+
+Then the author: "scrolling is currently very slow; it would be great
+to support the mousewheel/trackpad and to have smooth scrolling".
+
+- **The page scrolls by pixels.** A scroll moves what stays on the
+  screen by one copy of the screen onto itself, and draws only the
+  strip that comes in. Each line is drawn into a one-line image first,
+  then copied to the screen cut to the page's area, so a half-shown
+  line never spills on the bar or the status line. An arrow scrolls 16
+  pixels for about 1.3 million instructions (65 ms at a window's 20
+  million a second), where it redrew the screen for about 27 million.
+  Space and `-` glide a screenful in steps of 64 pixels: the same
+  drawing as a jump, about 27 million instructions, seen moving.
+- **The wheel and the trackpad**: the SDL display reports the wheel in
+  tiny-machine's mode too (it did only when grabbed, mini-qemu's), and
+  tiny-machine's window sends each step as an arrow key; the web page
+  does the same with the browser's wheel events, a step every 40
+  pixels. A key is queued, where a button pressed and let go between
+  two reads of the mouse could be missed.
+- **Tests**: `wwwscroll` (ten arrows down) in the kernel's check; ten
+  down then ten up gives back exactly the first screen. The other
+  sessions were recorded again after the wrapping fix (`wwwback` still
+  equals `www`, `wwwgo` equals `wwwpicture`).
+- **What is slow now** is drawing text: a screenful is 27 million
+  instructions, about 13,000 a character, in the kernel's text drawing.

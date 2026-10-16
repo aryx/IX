@@ -53,14 +53,21 @@ let number s =
 (* Characters *)
 (*****************************************************************************)
 
-(* The Latin-1 letters from 0xc0 on, each without its accent. *)
+(* The Latin-1 letters from 0xc0 on, each without its accent; and
+ * Latin Extended-A's, from 0x100 to 0x17f (the names of Central Europe:
+ * c with a caron, l with a stroke, o with a double acute), the same way
+ * (made from Unicode's decompositions). *)
 let latin1 = "AAAAAAACEEEEIIIIDNOOOOOxOUUUUYPsaaaaaaaceeeeiiiidnooooo/ouuuuypy"
+let latin_a = "AaAaAaCcCcCcCcDdDdEeEeEeEeEeGgGgGgGgHhHhIiIiIiIiIiIiJjKkkLlLlLlLlLlNnNnNnnNnOoOoOoOoRrRrRrSsSsSsSsTtTtTtUuUuUuUuUuUuWwYyYZzZzZzs"
 
 (* Converts a Unicode code point to what the 128-character font can show. *)
 let of_code u =
   if u < 128 then (if u = 9 || u = 10 then " " else if u < 32 then "" else String.make 1 (Char.chr u))
   else if u >= 0xc0 && u <= 0xff then String.make 1 latin1.[u - 0xc0]
+  else if u = 0x152 then "OE" else if u = 0x153 then "oe"
+  else if u >= 0x100 && u < 0x180 then String.make 1 latin_a.[u - 0x100]
   else match u with
+  | 0x20ac -> "EUR" | 0xa3 -> "GBP" | 0xa5 -> "JPY" | 0xa7 -> "S." | 0xb2 -> "2" | 0xb3 -> "3" | 0xb9 -> "1" | 0xbc -> "1/4" | 0xbe -> "3/4"
   | 0xa0 | 0x2002 | 0x2003 | 0x2009 | 0x202f -> " "
   | 0xad | 0x200b | 0x200c | 0x200d | 0x200e | 0x200f | 0x2060 | 0xfeff -> ""
   | 0xa9 -> "(c)" | 0xae -> "(R)" | 0xb0 -> "o" | 0xb1 -> "+-" | 0xb7 | 0x2219 | 0x22c5 -> "."
@@ -70,7 +77,10 @@ let of_code u =
   | 0x201c | 0x201d | 0x201e | 0x2033 -> "\""
   | 0x2022 | 0x25cf -> "*" | 0x2026 -> "..." | 0x2192 -> "->" | 0x2190 -> "<-" | 0x2191 -> "^" | 0x21d2 -> "=>"
   | 0x2264 -> "<=" | 0x2265 -> ">=" | 0x2260 -> "/=" | 0x2248 -> "~" | 0x221e -> "inf"
-  | 0x3bb -> "lambda" | 0x3b1 -> "alpha" | 0x3b2 -> "beta"
+  | 0x3bb -> "lambda" | 0x3b1 -> "alpha" | 0x3b2 -> "beta" | 0x3b3 -> "gamma" | 0x3b4 -> "delta" | 0x3b5 -> "epsilon"
+  | 0x3b8 -> "theta" | 0x3bc -> "mu" | 0x3c0 -> "pi" | 0x3c3 -> "sigma" | 0x3c6 | 0x3d5 -> "phi" | 0x3c9 -> "omega"
+  | 0x394 -> "Delta" | 0x3a3 -> "Sigma" | 0x3a9 -> "Omega"
+  | 0x21a6 -> "|->" | 0x2208 -> "in" | 0x2295 -> "(+)" | 0x2021 -> "++" | 0x200a | 0x2061 -> "" 
   | _ -> "?"
 
 let entity name =
@@ -279,9 +289,10 @@ type flow = {
   mutable out : line list;  (* the finished lines, last line first *)
   mutable nlines : int;     (* how many lines are in out *)
   mutable blank : bool;     (* whether the next line wants a blank line before it *)
+  mutable glue : int;       (* the column where the word being made started *)
 }
 
-let flow width = { width = width; left = 0; made = []; at = 0; out = []; nlines = 0; blank = false }
+let flow width = { width = width; left = 0; made = []; at = 0; out = []; nlines = 0; blank = false; glue = 0 }
 
 let push (f : flow) (l : line) =
   if f.blank then begin
@@ -296,12 +307,41 @@ let end_line (f : flow) = if f.made <> [] then begin push f { runs = List.rev f.
 (* Adds a word to the flow, after a space if [space] is true. When the
  * word has the same look and link as the previous run, it extends that
  * run instead of starting a new one. *)
+(* Moves the word being made, from the column where it started, to a
+ * new line, and ends the line before it. A word can be made of several
+ * pieces with no space between them (a full stop and a reference's
+ * [15], a link and the comma after it), so it is only known to be too
+ * long for its line when its last piece comes. *)
+let carry (f : flow) =
+  let g = f.glue in
+  let keep = ref [] and move = ref [] in
+  List.iter (fun (r : run) ->
+    let n = String.length r.text in
+    if r.col + n <= g then keep := r :: !keep
+    else if r.col >= g then move := r :: !move
+    else begin
+      keep := { col = r.col; text = String.sub r.text 0 (g - r.col); look = r.look; link = r.link; pic = r.pic } :: !keep;
+      move := { col = g; text = String.sub r.text (g - r.col) (n - g + r.col); look = r.look; link = r.link; pic = r.pic } :: !move
+    end) (List.rev f.made);
+  (* the line kept without the spaces at its end *)
+  let rec strip s = let n = String.length s in if n > 0 && s.[n - 1] = ' ' then strip (String.sub s 0 (n - 1)) else s in
+  f.made <- (match !keep with
+    | r :: rest -> let t = strip r.text in if t = "" then rest else { col = r.col; text = t; look = r.look; link = r.link; pic = r.pic } :: rest
+    | [] -> []);
+  end_line f;
+  let shift = g - f.left in
+  f.made <- List.map (fun (r : run) -> { col = r.col - shift; text = r.text; look = r.look; link = r.link; pic = r.pic }) !move;
+  f.at <- f.at - shift;
+  f.glue <- f.left
+
 let word (f : flow) text look link space =
   let len = String.length text in
   if f.made = [] then f.at <- f.left;
   let space = space && f.made <> [] in
   let space = if space && f.at + 1 + len > f.width then (end_line f; f.at <- f.left; false) else space in
+  if (not space) && f.made <> [] && f.at + len > f.width && f.glue > f.left then carry f;
   let col = if space then f.at + 1 else f.at in
+  if space || f.made = [] then f.glue <- col;
   (match f.made with
    | r :: rest when r.look = look && r.link = link && r.col + String.length r.text = f.at ->
        f.made <- { col = r.col; text = r.text ^ (if space then " " else "") ^ text; look = look; link = link; pic = -1 } :: rest
@@ -587,7 +627,8 @@ let picture p attrs =
   if has_class cl "mwe-math-fallback-image-inline" || has_class cl "mwe-math-fallback-image-display" then begin
     let pre = "{\\displaystyle " in
     let n = String.length alt and m = String.length pre in
-    emit p (if n > m + 1 && String.sub alt 0 m = pre then String.sub alt m (n - m - 1) else alt)
+    (* (as text, so that a long formula wraps at its spaces) *)
+    text p (if n > m + 1 && String.sub alt 0 m = pre then String.sub alt m (n - m - 1) else alt)
   end
   else if (w >= 24 || h >= 24) && w > 0 && h > 0 && src <> "" then begin
     let f = p.page_flow in
@@ -849,8 +890,8 @@ let resolve url base href =
 
 (* What the screen shows. Row 0 is a bar with the page's title, the last
  * row says how the reading goes, and the rows between show the page's
- * lines from [sc_top]. The lines from [sc_top] to before [sc_drawn] are
- * on the screen; a line that arrives below them is drawn if it fits.
+ * lines, scrolled by pixels (sc_y). A line that arrives is drawn if it
+ * falls in the page's area.
  * A page is read from [nv_wire], the connection to the wire's other end,
  * -1 when the page is all there; [nv_history] holds the pages seen
  * before, each with the first line that was shown. Where the browsing
@@ -872,8 +913,8 @@ type screen = {
   mutable sc_typing : string option;  (* g: the address being typed *)
   sc_cols : int;
   sc_rows : int;
-  mutable sc_top : int;
-  mutable sc_drawn : int;
+  mutable sc_y : int;               (* the page's pixel at the top of its area *)
+  mutable sc_drawn : int;           (* the lines before this one that are in the area are drawn *)
   mutable sc_got : int;             (* the bytes of the page read so far *)
   mutable sc_state : string;        (* "reading", "done", or why there is no page *)
   mutable sc_msgs : string list;    (* drawing messages not yet written, last first *)
@@ -888,52 +929,67 @@ let clip sc s = if String.length s > sc.sc_cols - 2 then String.sub s 0 (max 0 (
 (* a row, filled with a colour *)
 let fill_row sc row colour = put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 8) ((row * 16) + 16))
 
-(* A line of the page at a row of the screen. The font has one face, 8
- * pixels wide, so the looks are colours: the text is a dark grey and
- * bold is black (drawing it twice, a pixel apart, filled the gaps of an
- * m); emphasis is red, as there is no italic; a link is blue and
- * underlined; code is on light grey. *)
+(* The page's area on the screen: from the row under the bar, [area sc]
+ * pixels high. The page scrolls by pixels: its line i is at
+ * area_top + 16 i - sc_y. *)
+let area_top = 16
+let area sc = rows_of_page sc * 16
+
+(* A line is drawn first into [c_strip], an image of one line kept for
+ * that, then copied to its place on the screen, cut to the page's area:
+ * so a line half scrolled out never draws over the bar or the status
+ * line. *)
+let c_strip = 9
+
 (* A picture's image on our connection is its number plus 16 (the
- * colours are below). *)
+ * colours and the strip are below). *)
 let image_of id = 16 + id
 
-(* A slice of a picture (16 rows of it) at a row of the screen: the rows
- * that have come, from the picture's image, and a grey box for the
- * rest; until its first rows come, its alternative text on the grey. *)
-let draw_slice sc row (r : run) =
+(* A slice of a picture (16 rows of it) into the strip: the rows that
+ * have come, from the picture's image, and a grey box for the rest;
+ * until its first rows come, its alternative text on the grey. *)
+let draw_slice sc (r : run) =
   let id = r.pic / 256 and s = r.pic mod 256 in
   let pc = picture_of sc.sc_page id in
-  let x = r.col * 8 and y = row * 16 and from = s * 16 in
+  let x = r.col * 8 and from = s * 16 in
   let high = min 16 (pc.pc_h - from) in
   if high > 0 then begin
     let have = if pc.pc_got > from then min high (pc.pc_got - from) else 0 in
-    if have > 0 then put sc (d_draw 0 (image_of id) (-1) x y (x + pc.pc_w) (y + have) 0 from);
+    if have > 0 then put sc (d_draw c_strip (image_of id) (-1) x 0 (x + pc.pc_w) have 0 from);
     if have < high then begin
-      put sc (d_fill 0 c_code x (y + have) (x + pc.pc_w) (y + high));
+      put sc (d_fill c_strip c_code x have (x + pc.pc_w) high);
       if s = 0 && pc.pc_got <= 0 && pc.pc_w >= 24 && high = 16 then begin
         let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
         let fits = (pc.pc_w / 8) - 1 in
-        put sc (d_text 0 c_text (x + 4) y (if String.length alt > fits then String.sub alt 0 (max 0 fits) else alt))
+        put sc (d_text c_strip c_text (x + 4) 0 (if String.length alt > fits then String.sub alt 0 (max 0 fits) else alt))
       end
     end
   end
 
-let draw_line sc row (l : line) =
-  let y = row * 16 in
-  fill_row sc row c_white;
-  if l.rule then put sc (d_fill 0 c_rule 0 (y + 7) (sc.sc_cols * 8) (y + 9))
+(* The page's line i, drawn into the strip and put on the screen. The
+ * font has one face, 8 pixels wide, so the looks are colours: the text
+ * is a dark grey and bold is black (drawing it twice, a pixel apart,
+ * filled the gaps of an m); emphasis is red, as there is no italic; a
+ * link is blue and underlined; code is on light grey. *)
+let draw_line sc i (l : line) =
+  let w = sc.sc_cols * 8 in
+  put sc (d_fill c_strip c_white 0 0 w 16);
+  if l.rule then put sc (d_fill c_strip c_rule 0 7 w 9)
   else
     List.iter (fun (r : run) ->
-      if r.pic >= 0 then draw_slice sc row r
+      if r.pic >= 0 then draw_slice sc r
       else if r.col < sc.sc_cols && r.text <> "" then begin
         let n = min (String.length r.text) (sc.sc_cols - r.col) in
         let t = String.sub r.text 0 n and x = r.col * 8 in
-        if r.look land code <> 0 then put sc (d_fill 0 c_code x y (x + (n * 8)) (y + 16));
+        if r.look land code <> 0 then put sc (d_fill c_strip c_code x 0 (x + (n * 8)) 16);
         let ink =
           if r.link <> "" then c_link else if r.look land emph <> 0 then c_emph else if r.look land bold <> 0 then c_black else c_text in
-        put sc (d_text 0 ink x y t);
-        if r.link <> "" then put sc (d_line 0 c_link x (y + 15) (x + (n * 8) - 1) (y + 15))
-      end) l.runs
+        put sc (d_text c_strip ink x 0 t);
+        if r.link <> "" then put sc (d_line c_strip c_link x 15 (x + (n * 8) - 1) 15)
+      end) l.runs;
+  let y = area_top + (i * 16) - sc.sc_y in
+  let y0 = max y area_top and y1 = min (y + 16) (area_top + area sc) in
+  if y0 < y1 then put sc (d_draw 0 c_strip (-1) 0 y0 w y1 0 (y0 - y))
 
 let draw_bar sc =
   fill_row sc 0 c_bar;
@@ -956,19 +1012,65 @@ let draw_status sc =
         ^ "   space -: page, b: back, g: go to, q: quit" in
   put sc (d_text 0 c_black 8 (row * 16) (clip sc text))
 
-(* every row of the page drawn again, from sc_top *)
-let redraw sc =
-  let ls = lines_between sc.sc_page sc.sc_top (sc.sc_top + rows_of_page sc) in
-  List.iteri (fun i l -> draw_line sc (1 + i) l) ls;
-  for row = 1 + List.length ls to rows_of_page sc do fill_row sc row c_white done;
-  sc.sc_drawn <- sc.sc_top + List.length ls
+(* The page's lines that fall in its area, from pixel [a] to pixel [b]
+ * of the page, drawn; white where the page has ended. *)
+let draw_between sc a b =
+  let first = a / 16 and last = (b + 15) / 16 in
+  let ls = lines_between sc.sc_page first last in
+  List.iteri (fun k l -> draw_line sc (first + k) l) ls;
+  let bottom = area_top + ((first + List.length ls) * 16) - sc.sc_y in
+  let y0 = max bottom (area_top + a - sc.sc_y) and y1 = area_top + b - sc.sc_y in
+  if y0 < y1 then put sc (d_fill 0 c_white 0 y0 (sc.sc_cols * 8) y1);
+  first + List.length ls
 
-(* the screen from line [top] (as far as the page allows) *)
-let show_from sc top =
-  let top = max 0 (min top (count sc.sc_page - rows_of_page sc)) in
-  if top <> sc.sc_top then begin sc.sc_top <- top; redraw sc end
+(* the whole area drawn again *)
+let redraw sc = sc.sc_drawn <- draw_between sc sc.sc_y (sc.sc_y + area sc)
 
-let scroll sc by = show_from sc (sc.sc_top + by)
+let max_y sc = max 0 ((count sc.sc_page * 16) - area sc)
+
+(* Scrolls by [d] pixels (up when negative). What stays on the screen is
+ * moved there by one copy of the screen onto itself, and only the strip
+ * that comes in is drawn: a scroll of a line draws one line, not the
+ * screen's thirty. *)
+let scroll_by sc d =
+  let y = max 0 (min (sc.sc_y + d) (max_y sc)) in
+  let delta = y - sc.sc_y and h = area sc and w = sc.sc_cols * 8 in
+  if delta <> 0 then begin
+    if abs delta >= h then begin sc.sc_y <- y; redraw sc end
+    else if delta > 0 then begin
+      put sc (d_draw 0 0 (-1) 0 area_top w (area_top + h - delta) 0 (area_top + delta));
+      sc.sc_y <- y;
+      let first = (y + h - delta) / 16 in
+      let drawn = draw_between sc (y + h - delta) (y + h) in
+      if sc.sc_drawn >= first then sc.sc_drawn <- max sc.sc_drawn drawn
+    end
+    else begin
+      put sc (d_draw 0 0 (-1) 0 (area_top - delta) w (area_top + h) 0 area_top);
+      sc.sc_y <- y;
+      ignore (draw_between sc y (y - delta));
+      sc.sc_drawn <- min sc.sc_drawn ((y + h + 15) / 16)
+    end
+  end
+
+(* A screenful at a time, in steps of a few lines, so that the page is
+ * seen moving rather than jumping: the same lines are drawn as by a
+ * jump, as each step only draws what comes in. *)
+let glide sc d =
+  let step = 64 in
+  let rec go left =
+    if left <> 0 then begin
+      let s = if left > 0 then min step left else max (- step) left in
+      let before = sc.sc_y in
+      scroll_by sc s;
+      flush sc;
+      if sc.sc_y <> before then go (left - s)
+    end in
+  go d
+
+(* the page from line [line] on, as far as the page allows *)
+let show_from sc line =
+  let y = max 0 (min (line * 16) (max_y sc)) in
+  if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
 
 (* The lines that arrived and fit below the ones on the screen; and the
  * place a page was asked to show (back, or a #fragment), once it has
@@ -978,14 +1080,15 @@ let show_new sc =
     (match anchor sc.sc_page sc.sc_nav.nv_goal_id with
      | Some line when line + rows_of_page sc <= count sc.sc_page || sc.sc_nav.nv_wire < 0 -> sc.sc_nav.nv_goal_id <- ""; show_from sc line
      | _ -> ());
-  if sc.sc_nav.nv_goal >= 0 && (sc.sc_nav.nv_goal + rows_of_page sc <= count sc.sc_page || sc.sc_nav.nv_wire < 0) then begin
+  if sc.sc_nav.nv_goal >= 0 && ((sc.sc_nav.nv_goal / 16) + rows_of_page sc <= count sc.sc_page || sc.sc_nav.nv_wire < 0) then begin
     let goal = sc.sc_nav.nv_goal in
     sc.sc_nav.nv_goal <- -1;
-    show_from sc goal
+    let y = max 0 (min goal (max_y sc)) in
+    if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
   end;
-  let last = min (count sc.sc_page) (sc.sc_top + rows_of_page sc) in
+  let last = min (count sc.sc_page) ((sc.sc_y + area sc + 15) / 16) in
   if sc.sc_drawn < last then begin
-    List.iteri (fun i l -> draw_line sc (1 + sc.sc_drawn - sc.sc_top + i) l) (lines_between sc.sc_page sc.sc_drawn last);
+    List.iteri (fun k l -> draw_line sc (sc.sc_drawn + k) l) (lines_between sc.sc_page sc.sc_drawn last);
     sc.sc_drawn <- last
   end
 
@@ -999,7 +1102,7 @@ let load sc url =
   sc.sc_page <- create sc.sc_cols;
   sc.sc_nav.nv_address <- address;
   sc.sc_nav.nv_goal_id <- id;
-  sc.sc_top <- 0;
+  sc.sc_y <- 0;
   sc.sc_got <- 0;
   sc.sc_state <- "reading";
   draw_bar sc;
@@ -1027,7 +1130,7 @@ let rec next_picture sc =
          | r :: _ -> r.pic / 256
          | [] -> on_screen rest) in
   let rec first id = if id >= pictures p then -1 else if pending id then id else first (id + 1) in
-  let id = match on_screen (lines_between p sc.sc_top (sc.sc_top + rows_of_page sc)) with -1 -> first 0 | id -> id in
+  let id = match on_screen (lines_between p (sc.sc_y / 16) ((sc.sc_y + area sc + 15) / 16)) with -1 -> first 0 | id -> id in
   if id >= 0 then begin
     let pc = picture_of p id in
     let fd = u_dial "10.0.0.1" 70 in
@@ -1059,43 +1162,46 @@ let picture_message sc s =
     let y = pc.pc_got in
     put sc (d_pixels (image_of id) 0 y s);
     pc.pc_got <- y + 1;
-    let slice = (id * 256) + (y / 16) in
-    List.iteri (fun i (l : line) ->
+    let slice = (id * 256) + (y / 16) and first = sc.sc_y / 16 in
+    List.iteri (fun k (l : line) ->
       List.iter (fun (r : run) ->
         if r.pic = slice then begin
-          let x = r.col * 8 and sy = ((1 + i) * 16) + (y mod 16) in
-          put sc (d_draw 0 (image_of id) (-1) x sy (x + pc.pc_w) (sy + 1) 0 y)
+          let x = r.col * 8 and sy = area_top + ((first + k) * 16) - sc.sc_y + (y mod 16) in
+          if sy >= area_top && sy < area_top + area sc then put sc (d_draw 0 (image_of id) (-1) x sy (x + pc.pc_w) (sy + 1) 0 y)
         end) l.runs)
-      (lines_between sc.sc_page sc.sc_top (sc.sc_top + rows_of_page sc))
+      (lines_between sc.sc_page first ((sc.sc_y + area sc + 15) / 16))
   end
 
 (* Goes to an address, remembering where we were. A link to a place of
  * the page shown (#cite_note-2) only moves to it. *)
 let go sc url =
   let address, id = fragment url in
-  sc.sc_nav.nv_history <- (sc.sc_nav.nv_address, sc.sc_top) :: sc.sc_nav.nv_history;
+  sc.sc_nav.nv_history <- (sc.sc_nav.nv_address, sc.sc_y) :: sc.sc_nav.nv_history;
   if address = sc.sc_nav.nv_address && id <> "" then begin
     (match anchor sc.sc_page id with Some line -> show_from sc line | None -> ());
     draw_status sc
   end
   else load sc url
 
-(* Back to the page before, at the line it showed: moved to if it is the
+(* Back to the page before, scrolled where it was: moved to if it is the
  * same page, asked for again if not. *)
 let back sc =
   match sc.sc_nav.nv_history with
   | [] -> ()
-  | (address, top) :: rest ->
+  | (address, y) :: rest ->
       sc.sc_nav.nv_history <- rest;
-      if address = sc.sc_nav.nv_address then show_from sc top
-      else begin load sc address; sc.sc_nav.nv_goal <- top end
+      if address = sc.sc_nav.nv_address then begin
+        let y = max 0 (min y (max_y sc)) in
+        if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
+      end
+      else begin load sc address; sc.sc_nav.nv_goal <- y end
 
 (* the link under the mouse, if any *)
 let link_at sc x y =
-  let row = y / 16 and col = x / 8 in
-  if row < 1 || row > rows_of_page sc then None
+  let col = x / 8 and line = (sc.sc_y + y - area_top) / 16 in
+  if y < area_top || y >= area_top + area sc then None
   else
-    match lines_between sc.sc_page (sc.sc_top + row - 1) (sc.sc_top + row) with
+    match lines_between sc.sc_page line (line + 1) with
     | [ l ] ->
         (match List.filter (fun (r : run) -> r.link <> "" && col >= r.col && col < r.col + String.length r.text) l.runs with
          | r :: _ -> Some r.link
@@ -1109,8 +1215,8 @@ let mouse sc x y buttons =
     if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
       (match link_at sc x y with Some href -> go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href) | None -> ());
     sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
-    if buttons land 8 <> 0 then scroll sc (-3);
-    if buttons land 16 <> 0 then scroll sc 3
+    if buttons land 8 <> 0 then scroll_by sc (-48);
+    if buttons land 16 <> 0 then scroll_by sc 48
   end
 
 (* The window's size in pixels, asked as emacs asks it: an ENQ (ASCII's
@@ -1127,8 +1233,10 @@ let size () =
 
 (* What a key does; false for q, which quits. While an address is typed
  * (after g), the keys are its characters, Enter goes, Escape gives up.
- * The arrows are 128 to 131 (up, down, left, right); Backspace is 8 or
- * 127. *)
+ * The arrows are 128 to 131 (up, down, left, right): up and down scroll
+ * a line (the wheel and the trackpad come as these: tiny-machine's
+ * window and page send a step of the wheel as an arrow), left and right
+ * a screenful, as - and space do. Backspace is 8 or 127. *)
 let key sc k =
   match sc.sc_typing with
   | Some typed ->
@@ -1139,13 +1247,13 @@ let key sc k =
       draw_status sc;
       true
   | None ->
-      let page = rows_of_page sc - 1 in
+      let page = area sc - 16 in
       if k = Char.code 'q' then false
       else begin
-        (if k = Char.code ' ' || k = 131 then scroll sc page
-         else if k = Char.code '-' || k = 130 then scroll sc (- page)
-         else if k = 129 then scroll sc 1
-         else if k = 128 then scroll sc (-1)
+        (if k = Char.code ' ' || k = 131 then glide sc page
+         else if k = Char.code '-' || k = 130 then glide sc (- page)
+         else if k = 129 then scroll_by sc 16
+         else if k = 128 then scroll_by sc (-16)
          else if k = Char.code 'b' || k = 8 || k = 127 then back sc
          else if k = Char.code 'g' then begin sc.sc_typing <- Some ""; draw_status sc end);
         true
@@ -1154,9 +1262,10 @@ let key sc k =
 let browse typed =
   let w, h = size () in
   let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1 } in
-  let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_top = 0; sc_drawn = 0;
+  let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
+  put sc (d_image c_strip 0 0 (sc.sc_cols * 8) 16 255);
   load sc (absolute typed);
   flush sc;
   let fds = Array.make 3 0 in

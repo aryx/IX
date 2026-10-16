@@ -180,7 +180,8 @@ wrote a memory management system, also known as a sequential garbage collector,
 for this implementation.[11] This new implementation, known as Caml Light,
 replaced the old Caml implementation and ran on small desktop machines.[12] In
 the following years, libraries such as Michel Mauny's syntax manipulation tools
-appeared and helped promote the use of Caml in educational and research teams.[11]
+appeared and helped promote the use of Caml in educational and research
+teams.[11]
 
 Caml Special Light
 
@@ -294,8 +295,8 @@ Code can then be entered at the "#" prompt. For example, to calculate 1+2*3:
 # 1 + 2 * 3;;
 - : int = 7
 
-OCaml infers the type of the expression to be "int" (a machine-precision integer)
-and gives the result "7".
+OCaml infers the type of the expression to be "int" (a machine-precision
+integer) and gives the result "7".
 
 Hello World
 
@@ -665,9 +666,10 @@ include:
    during 2018).[29]
  * Facebook, which developed Flow,[30] Hack, Infer, Pfff, and ReasonML in OCaml.
  * Jane Street Capital, a proprietary trading firm, which adopted OCaml as its
-   preferred language in its early days[31] and continues to use it as of 2023.[32][33]
-   In June 2025 it announced a fork, OxCaml.[34]
- * Docker, which uses OCaml in the desktop editions on macOS and Windows.[35][36][37]
+   preferred language in its early days[31] and continues to use it as of
+   2023.[32][33] In June 2025 it announced a fork, OxCaml.[34]
+ * Docker, which uses OCaml in the desktop editions on macOS and
+   Windows.[35][36][37]
 
 OCaml is used in the classroom at many computer science universities and
 colleges; a list of courses using OCaml (and their associated educational
@@ -720,7 +722,8 @@ References
 29. ^ Scott, David; Sharp, Richard; Gazagnaire, Thomas; Madhavapeddy, Anil
    (2010). Using functional programming within an industrial product group:
    perspectives and perceptions. International Conference on Functional
-   Programming. Association for Computing Machinery. doi:10.1145/1863543.1863557.
+   Programming. Association for Computing Machinery.
+   doi:10.1145/1863543.1863557.
 30. ^ "Flow on GitHub". GitHub. 2023.
 31. ^ Yaron Minsky (1 November 2011). "OCaml for the Masses". Retrieved 2 May
    2015.

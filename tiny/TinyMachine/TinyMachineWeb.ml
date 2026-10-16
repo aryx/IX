@@ -116,6 +116,20 @@ let listen_mouse (mc : TinyMachineDevices.machine) canvas =
     TinyMachineDevices.mouse_set mc.mouse x y ((b land 1) lor (if b land 2 <> 0 then 4 else 0) lor (if b land 4 <> 0 then 2 else 0));
     ignore (call e "preventDefault" [||]) in
   List.iter (fun name -> listen canvas name moved) [ "mousemove"; "mousedown"; "mouseup" ];
+  (* The wheel, and two fingers on a trackpad: an arrow key a step, up or
+   * down, as tiny-machine's window sends them (TinyMachineWindow.ml). A
+   * trackpad gives many small moves: they are added up, a step each 40
+   * pixels (or each line, when the browser counts in lines). *)
+  let wheel = ref 0. in
+  listen canvas "wheel" (fun e ->
+    let dy = Js.float_of_number (get e "deltaY") in
+    wheel := !wheel +. (if int_of e "deltaMode" = 0 then dy /. 40. else dy);
+    let steps = truncate !wheel in
+    wheel := !wheel -. float_of_int steps;
+    for _i = 1 to min 8 (abs steps) do
+      TinyMachineDevices.console_type mc.cons (String.make 1 (Char.chr (if steps < 0 then 128 else 129)))
+    done;
+    ignore (call e "preventDefault" [||]));
   (* (the focus by hand: the default, prevented above, would give it) *)
   listen canvas "mousedown" (fun _ -> ignore (call canvas "focus" [||]));
   listen canvas "contextmenu" (fun e -> ignore (call e "preventDefault" [||]))

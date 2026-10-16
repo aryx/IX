@@ -171,7 +171,8 @@ let create ?(absolute = false) ?(fit = false) ?meter ~title () =
         add (Display.At (Sdl.Event.(get e mouse_motion_x), Sdl.Event.(get e mouse_motion_y)))
       else if is Sdl.Event.mouse_motion && !grabbed then
         add (Display.Motion (Sdl.Event.(get e mouse_motion_xrel), Sdl.Event.(get e mouse_motion_yrel)))
-      else if is Sdl.Event.mouse_wheel && !grabbed then add (Display.Wheel (- Sdl.Event.(get e mouse_wheel_y)))
+      (* (in absolute mode, tiny-machine's, the wheel is the window's own) *)
+      else if is Sdl.Event.mouse_wheel && (!grabbed || absolute) then add (Display.Wheel (- Sdl.Event.(get e mouse_wheel_y)))
     done;
     List.rev !evs in
   { Display.present; poll }

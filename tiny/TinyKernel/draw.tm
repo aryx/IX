@@ -30,13 +30,27 @@ row_copy1:
 	addi	r2, r2, 1
 	j	row_copy1
 row_copy2:
+	addi	r5, r1, 16		; four words at a time while there are
+	bltu	r3, r5, row_copy5
+	ldw	r4, 0(r2)
+	stw	r4, 0(r1)
+	ldw	r4, 4(r2)
+	stw	r4, 4(r1)
+	ldw	r4, 8(r2)
+	stw	r4, 8(r1)
+	ldw	r4, 12(r2)
+	stw	r4, 12(r1)
+	addi	r1, r1, 16
+	addi	r2, r2, 16
+	j	row_copy2
+row_copy5:				; then a word at a time
 	addi	r5, r1, 4
 	bltu	r3, r5, row_copy3
 	ldw	r4, 0(r2)
 	stw	r4, 0(r1)
 	addi	r1, r1, 4
 	addi	r2, r2, 4
-	j	row_copy2
+	j	row_copy5
 row_copy3:
 	bgeu	r1, r3, row_copy4
 	ldb	r4, 0(r2)
@@ -71,11 +85,20 @@ row_fill1:
 	addi	r1, r1, 1
 	j	row_fill1
 row_fill2:
+	addi	r5, r1, 16		; four words at a time while there are
+	bltu	r3, r5, row_fill5
+	stw	r4, 0(r1)
+	stw	r4, 4(r1)
+	stw	r4, 8(r1)
+	stw	r4, 12(r1)
+	addi	r1, r1, 16
+	j	row_fill2
+row_fill5:				; then a word at a time
 	addi	r5, r1, 4
 	bltu	r3, r5, row_fill3
 	stw	r4, 0(r1)
 	addi	r1, r1, 4
-	j	row_fill2
+	j	row_fill5
 row_fill3:
 	bgeu	r1, r3, row_fill4
 	stb	r2, 0(r1)
@@ -107,5 +130,76 @@ row_mask2:
 	addi	r3, r3, 1
 	j	row_mask1
 row_mask3:
+	li	r13, 1
+	ret
+
+; glyphs(dst, width, colour, font, s, n): the n characters of the string
+; s (an ML string: its bytes from the address given), side by side from
+; dst, the first one's top left pixel, in an image [width] pixels wide:
+; each character 8 by 16, the colour where the font's mask is set (the
+; mask is an image 1024 wide, character c at column 8c, a set pixel 255:
+; font_mask in TinyKernelGraphics.ml); a byte beyond 127 is a ?. A
+; character's row is 8 bytes, two words: each is merged with the colour
+; where the mask's word is set (d ^ ((d ^ colour) & mask)), and a row
+; with nothing set is skipped. So dst and width must be multiples of 4
+; (TinyKernelGraphics.ml's text checks). One call for a whole text, where
+; a draw a character (a rectangle clipped, then 16 rows of row_mask) was
+; some 13,000 instructions a character.
+glyphs:
+	ldw	r1, 0(sp)
+	sari	r1, r1, 1
+	ldw	r2, 4(sp)
+	sari	r2, r2, 1
+	ldw	r3, 8(sp)
+	sari	r3, r3, 1
+	andi	r3, r3, 255		; the colour, four times in a word
+	shli	r4, r3, 8
+	or	r3, r3, r4
+	shli	r4, r3, 16
+	or	r3, r3, r4
+	ldw	r4, 12(sp)
+	sari	r4, r4, 1
+	ldw	r5, 16(sp)
+	ldw	r6, 20(sp)
+	sari	r6, r6, 1
+	add	r6, r5, r6		; the string's end
+glyphs1:				; a character
+	bgeu	r5, r6, glyphs7
+	ldb	r7, 0(r5)
+	sltiu	r8, r7, 128
+	bne	r8, zero, glyphs2
+	li	r7, 63
+glyphs2:
+	shli	r7, r7, 3
+	add	r7, r4, r7		; its first row in the mask
+	mov	r8, r1			; its first row on the image
+	li	r9, 16			; rows left
+glyphs3:				; a row: its two words
+	ldw	r10, 0(r7)
+	ldw	r11, 4(r7)
+	or	r12, r10, r11
+	beq	r12, zero, glyphs6
+	beq	r10, zero, glyphs4
+	ldw	r12, 0(r8)
+	xor	r13, r12, r3
+	and	r13, r13, r10
+	xor	r12, r12, r13
+	stw	r12, 0(r8)
+glyphs4:
+	beq	r11, zero, glyphs6
+	ldw	r12, 4(r8)
+	xor	r13, r12, r3
+	and	r13, r13, r11
+	xor	r12, r12, r13
+	stw	r12, 4(r8)
+glyphs6:
+	add	r8, r8, r2
+	addi	r7, r7, 1024
+	addi	r9, r9, -1
+	bne	r9, zero, glyphs3
+	addi	r1, r1, 8
+	addi	r5, r5, 1
+	j	glyphs1
+glyphs7:
 	li	r13, 1
 	ret

@@ -280,10 +280,11 @@ let drop f =
 
 (* The screen is tiny-machine's 640 by 480 bytes. The images live in the
  * two megabytes below it, and in what the screen leaves of its own
- * megabyte. (The 8 MB below those, from 5 MB, held the processes'
- * partitions before they moved above 16 MB, and are unused for now:
- * giving them to the images changed the recorded paint session's
- * screen, which is still to be understood.) The font is the machine's
+ * megabyte. (The 6 MB below those, from 7 MB, are unused; they could be
+ * the images' too. Trying it once changed the recorded paint session's
+ * screen, which was taken for a bug: it was paint's ball, which moves
+ * with the clock, ending elsewhere because the kernel's work took
+ * another time.) The font is the machine's
  * (font.tm, in the image), made a mask at the boot. A program opens
  * /draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)

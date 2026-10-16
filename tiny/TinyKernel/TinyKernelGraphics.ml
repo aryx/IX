@@ -78,6 +78,10 @@ let draw (dst : image) (r : rect) (src : image) (mask : image option) px py =
 (* a line from (xa, ya) to (xb, yb), both drawn, a pixel thick:
  * Bresenham's, each of its points a draw (clipped there) *)
 let line (dst : image) xa ya xb yb (src : image) =
+  (* (a level or an upright line is a rectangle, one draw: a link's
+   * underline was a draw a pixel) *)
+  if ya = yb || xa = xb then draw dst (rect (min xa xb) (min ya yb) (max xa xb + 1) (max ya yb + 1)) src None (min xa xb) (min ya yb)
+  else
   let dx = abs (xb - xa) and dy = abs (yb - ya) in
   let sx = if xa < xb then 1 else -1 and sy = if ya < yb then 1 else -1 in
   let rec from x y err =
@@ -95,12 +99,14 @@ let line (dst : image) xa ya xb yb (src : image) =
 
 (* The machine's font: 128 characters of 8 by 16, a row a byte, its
  * left pixel the low bit (xv6's font1.bin, which mini-9pi's console
- * has too). Made a mask once: a byte a pixel, the characters side by
- * side in an image of 1024 by 16, so that a character is a draw. *)
+ * has too). Made a mask once: a byte a pixel (255 where it is set, so
+ * that a character's row is two words of mask for draw.tm's glyphs), the
+ * characters side by side in an image of 1024 by 16, so that a
+ * character is a draw. *)
 let font_mask bits at =
   for c = 0 to 127 do
     for row = 0 to 15 do
-      for col = 0 to 7 do pokeb (at + (row * 1024) + (c * 8) + col) ((peekb (bits + (c * 16) + row) lsr col) land 1) done
+      for col = 0 to 7 do pokeb (at + (row * 1024) + (c * 8) + col) (255 * ((peekb (bits + (c * 16) + row) lsr col) land 1)) done
     done
   done;
   { r = rect 0 0 1024 16; at = at; repl = false }
@@ -108,10 +114,19 @@ let font_mask bits at =
 (* a text, its top left corner at (x, y): each character the ink src
  * through the font's mask (a byte beyond the font's 128 is a ?) *)
 let text (dst : image) x y (src : image) (font : image) s =
-  for i = 0 to String.length s - 1 do
-    let c = Char.code s.[i] in
-    draw dst (rect (x + (8 * i)) y (x + (8 * i) + 8) (y + 16)) src (Some font) (8 * if c > 127 then 63 else c) 0
-  done
+  let n = String.length s in
+  (* A text all inside dst, in a colour, at a whole word (what a program
+   * draws nearly always): all its characters by one call of draw.tm's
+   * glyphs, which works a word at a time. *)
+  if n > 0 && not dst.repl && src.repl && width src = 1 && height src = 1
+     && x >= dst.r.x0 && y >= dst.r.y0 && x + (8 * n) <= dst.r.x1 && y + 16 <= dst.r.y1
+     && (pixel dst x y) land 3 = 0 && (width dst) land 3 = 0
+  then glyphs (pixel dst x y) (width dst) (peekb src.at) font.at s n
+  else
+    for i = 0 to n - 1 do
+      let c = Char.code s.[i] in
+      draw dst (rect (x + (8 * i)) y (x + (8 * i) + 8) (y + 16)) src (Some font) (8 * if c > 127 then 63 else c) 0
+    done
 
 (* a row of pixels given as they are, its left end at (x, y): the n
  * bytes of s from off, those that fall in dst. What a picture that

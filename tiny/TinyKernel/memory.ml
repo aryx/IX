@@ -9,5 +9,6 @@ external pokeb : int -> int -> unit = "pokeb"
 external row_copy : int -> int -> int -> unit = "row_copy"
 external row_fill : int -> int -> int -> unit = "row_fill"
 external row_mask : int -> int -> int -> int -> unit = "row_mask"
+external glyphs : int -> int -> int -> int -> string -> int -> unit = "glyphs"
 (* a string's n bytes from off, to memory at dst (runtime.c's k_blit) *)
 external row_bytes : string -> int -> int -> int -> unit = "k_blit"

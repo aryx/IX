@@ -760,3 +760,50 @@ own: `TinyMachine/TinyMachineSDL.ml` (78 lines), and mini-qemu's display
 is as it was. Not run: the window itself (SDL needs a screen) and the
 page in a browser; a temporary trace showed the hand and the arrow
 changing as the mouse moved, on the screen and in a tiny-windows window.
+
+### Faster scrolling: the kernel's text and copies (2026-10-16)
+
+The author: "let's improve the speed of scrolling!". Measured with a
+temporary profile of tiny-machine (a count of instructions by mode and
+address, mapped to the kernel's and www's functions), on OCaml's page:
+eight page downs, and ten arrows.
+
+| what | a page down | ten arrows |
+|---|---:|---:|
+| before (the host's seconds for 8 / 10) | 3.56 s | 0.21 s |
+| a whole text by one call, lines as rectangles | 1.42 s | 0.19 s |
+| glyphs a word at a time, copies unrolled, numbers' bytes made once, whole lines on the screen | 0.91 s | 0.13 s |
+| the lines in an array for a scroll | 0.93 s | 0.08 s |
+
+A page down is now about 5.4 million instructions (0.27 s at a window's
+20 million a second; 1.3 s before), an arrow about 0.4 million.
+
+- **Text** (`TinyKernelGraphics.text`): a draw a character, some 13,000
+  instructions, became one call of `glyphs` (draw.tm) for a whole text:
+  a character's row is two words, merged with the colour where the
+  font's mask is set (the mask's set bytes are now 255, so its words
+  are the masks), a row with nothing set skipped. Used when the text is
+  all inside its image, in a colour, at a whole word; the old path is
+  kept for the rest.
+- **Lines** (an underline): a level or upright line is one rectangle,
+  where Bresenham's was a draw a pixel.
+- **Copies and fills** (`row_copy`, `row_fill`): four words a turn.
+- **Messages** (`TinyLibDraw`): the two bytes of each number from 0 to
+  1023 made once; a number was two concatenations.
+- **www**: a line all inside the page's area is drawn on the screen,
+  only one cut by its edge through the strip; the lines are kept in an
+  array too, made again when lines came since, so a scroll finds them
+  at once.
+- **What is left** of a page down: the glide's copies of the page's area
+  (a step 64 pixels, about 1.2 million instructions a page: the price
+  of seeing it move), and building messages in www (concatenations and
+  the collector after them). Making tiny-ml's `String.concat` one call
+  of the runtime would halve the second; not done, as TinyLibStd.ml was
+  being changed by another session.
+- **Found**: the recorded paint session's screen changed with this
+  faster kernel, as it did in step 1 when the images were given the
+  partitions' old megabytes. It is not a bug: paint's yellow square is
+  a ball moved one step at each of the kernel's ticks, so where it is at
+  the end depends on how fast the kernel works. (Step 1 took it for a
+  palette that did not appear.) Its screen was recorded again; the
+  unused megabytes could be the images' after all.

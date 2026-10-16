@@ -290,9 +290,11 @@ type flow = {
   mutable nlines : int;     (* how many lines are in out *)
   mutable blank : bool;     (* whether the next line wants a blank line before it *)
   mutable glue : int;       (* the column where the word being made started *)
+  mutable cache : line array;  (* the lines from the top, when there were [cached] *)
+  mutable cached : int;
 }
 
-let flow width = { width = width; left = 0; made = []; at = 0; out = []; nlines = 0; blank = false; glue = 0 }
+let flow width = { width = width; left = 0; made = []; at = 0; out = []; nlines = 0; blank = false; glue = 0; cache = Array.make 0 { runs = []; rule = false }; cached = 0 }
 
 let push (f : flow) (l : line) =
   if f.blank then begin
@@ -782,13 +784,25 @@ let picture_of p id = List.nth p.pictures (p.npictures - 1 - id)
 let count p = p.page_flow.nlines
 
 (* The lines from the a-th to before the b-th, from the top. The lines
- * are kept last first, so the ones near the end are the cheapest. *)
+ * are kept last first, as they are made; an array of them from the top
+ * is made again when lines have come since it was made, so that the
+ * lines a scroll asks for are found at once (walking the list from its
+ * end each time was a tenth of a page down). *)
 let lines_between p a b =
-  let n = p.page_flow.nlines in
+  let f = p.page_flow in
+  let n = f.nlines in
   let b = min b n and a = max a 0 in
-  let rec skip k l = if k <= 0 then l else match l with [] -> [] | _ :: rest -> skip (k - 1) rest in
-  let rec take k l acc = if k <= 0 then acc else match l with [] -> acc | x :: rest -> take (k - 1) rest (x :: acc) in
-  if a >= b then [] else take (b - a) (skip (n - b) p.page_flow.out) []
+  if a >= b then []
+  else begin
+    if f.cached <> n then begin
+      let arr = Array.make n { runs = []; rule = false } in
+      List.iteri (fun k l -> arr.(n - 1 - k) <- l) f.out;
+      f.cache <- arr;
+      f.cached <- n
+    end;
+    let rec take k acc = if k < a then acc else take (k - 1) (f.cache.(k) :: acc) in
+    take (b - 1) []
+  end
 
 (*****************************************************************************)
 (* The lines as text *)
@@ -936,61 +950,66 @@ let fill_row sc row colour = put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 
 let area_top = 16
 let area sc = rows_of_page sc * 16
 
-(* A line is drawn first into [c_strip], an image of one line kept for
- * that, then copied to its place on the screen, cut to the page's area:
- * so a line half scrolled out never draws over the bar or the status
- * line. *)
+(* A line cut by the page area's edge (half scrolled out) is drawn first
+ * into [c_strip], an image of one line kept for that, then copied to
+ * its place on the screen, cut to the area: so it never draws over the
+ * bar or the status line. A line all inside the area is drawn on the
+ * screen itself. *)
 let c_strip = 9
 
 (* A picture's image on our connection is its number plus 16 (the
  * colours and the strip are below). *)
 let image_of id = 16 + id
 
-(* A slice of a picture (16 rows of it) into the strip: the rows that
+(* A slice of a picture (16 rows of it) into dst at row y: the rows that
  * have come, from the picture's image, and a grey box for the rest;
  * until its first rows come, its alternative text on the grey. *)
-let draw_slice sc (r : run) =
+let draw_slice sc dst y (r : run) =
   let id = r.pic / 256 and s = r.pic mod 256 in
   let pc = picture_of sc.sc_page id in
   let x = r.col * 8 and from = s * 16 in
   let high = min 16 (pc.pc_h - from) in
   if high > 0 then begin
     let have = if pc.pc_got > from then min high (pc.pc_got - from) else 0 in
-    if have > 0 then put sc (d_draw c_strip (image_of id) (-1) x 0 (x + pc.pc_w) have 0 from);
+    if have > 0 then put sc (d_draw dst (image_of id) (-1) x y (x + pc.pc_w) (y + have) 0 from);
     if have < high then begin
-      put sc (d_fill c_strip c_code x have (x + pc.pc_w) high);
+      put sc (d_fill dst c_code x (y + have) (x + pc.pc_w) (y + high));
       if s = 0 && pc.pc_got <= 0 && pc.pc_w >= 24 && high = 16 then begin
         let alt = if pc.pc_alt = "" then "picture" else pc.pc_alt in
         let fits = (pc.pc_w / 8) - 1 in
-        put sc (d_text c_strip c_text (x + 4) 0 (if String.length alt > fits then String.sub alt 0 (max 0 fits) else alt))
+        put sc (d_text dst c_text (x + 4) y (if String.length alt > fits then String.sub alt 0 (max 0 fits) else alt))
       end
     end
   end
 
-(* The page's line i, drawn into the strip and put on the screen. The
- * font has one face, 8 pixels wide, so the looks are colours: the text
- * is a dark grey and bold is black (drawing it twice, a pixel apart,
- * filled the gaps of an m); emphasis is red, as there is no italic; a
- * link is blue and underlined; code is on light grey. *)
+(* The page's line i, put on the screen (by the strip when it is cut by
+ * the area's edge). The font has one face, 8 pixels wide, so the looks
+ * are colours: the text is a dark grey and bold is black (drawing it
+ * twice, a pixel apart, filled the gaps of an m); emphasis is red, as
+ * there is no italic; a link is blue and underlined; code is on light
+ * grey. *)
 let draw_line sc i (l : line) =
-  let w = sc.sc_cols * 8 in
-  put sc (d_fill c_strip c_white 0 0 w 16);
-  if l.rule then put sc (d_fill c_strip c_rule 0 7 w 9)
+  let w = sc.sc_cols * 8 and at = area_top + (i * 16) - sc.sc_y in
+  let whole = at >= area_top && at + 16 <= area_top + area sc in
+  let dst = if whole then 0 else c_strip and y = if whole then at else 0 in
+  put sc (d_fill dst c_white 0 y w (y + 16));
+  if l.rule then put sc (d_fill dst c_rule 0 (y + 7) w (y + 9))
   else
     List.iter (fun (r : run) ->
-      if r.pic >= 0 then draw_slice sc r
+      if r.pic >= 0 then draw_slice sc dst y r
       else if r.col < sc.sc_cols && r.text <> "" then begin
         let n = min (String.length r.text) (sc.sc_cols - r.col) in
         let t = String.sub r.text 0 n and x = r.col * 8 in
-        if r.look land code <> 0 then put sc (d_fill c_strip c_code x 0 (x + (n * 8)) 16);
+        if r.look land code <> 0 then put sc (d_fill dst c_code x y (x + (n * 8)) (y + 16));
         let ink =
           if r.link <> "" then c_link else if r.look land emph <> 0 then c_emph else if r.look land bold <> 0 then c_black else c_text in
-        put sc (d_text c_strip ink x 0 t);
-        if r.link <> "" then put sc (d_line c_strip c_link x 15 (x + (n * 8) - 1) 15)
+        put sc (d_text dst ink x y t);
+        if r.link <> "" then put sc (d_line dst c_link x (y + 15) (x + (n * 8) - 1) (y + 15))
       end) l.runs;
-  let y = area_top + (i * 16) - sc.sc_y in
-  let y0 = max y area_top and y1 = min (y + 16) (area_top + area sc) in
-  if y0 < y1 then put sc (d_draw 0 c_strip (-1) 0 y0 w y1 0 (y0 - y))
+  if not whole then begin
+    let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
+    if y0 < y1 then put sc (d_draw 0 c_strip (-1) 0 y0 w y1 0 (y0 - at))
+  end
 
 let draw_bar sc =
   fill_row sc 0 c_bar;

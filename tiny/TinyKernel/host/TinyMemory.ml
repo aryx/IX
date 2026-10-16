@@ -22,6 +22,17 @@ let row_copy dst src n = for i = 0 to n - 1 do pokeb (dst + i) (peekb (src + i))
 let row_fill dst colour n = Bytes.fill mem dst n (Char.chr (colour land 255))
 let row_mask dst colour mask n = for i = 0 to n - 1 do if peekb (mask + i) <> 0 then pokeb (dst + i) colour done
 
+(* a text's n characters from dst, in an image [width] wide, through the
+ * font's mask (1024 wide, character c at column 8c), as draw.tm's *)
+let glyphs dst width colour font s n =
+  for i = 0 to n - 1 do
+    let c = Char.code s.[i] in
+    let c = if c > 127 then 63 else c in
+    for row = 0 to 15 do
+      row_mask (dst + (8 * i) + (row * width)) colour (font + (row * 1024) + (8 * c)) 8
+    done
+  done
+
 (* a string's n bytes from off, to memory at dst *)
 let row_bytes s off dst n = Bytes.blit_string s off mem dst n
 

@@ -24,13 +24,19 @@ type text = {
  * the answers some commands ask for *)
 type answer = Command | Goto | Replace_from | Replace_to of string
 
+(* the language of the file, by its name: its colors *)
+type language = Plain | OCaml | C
+
 (* the last line's other uses, and the keys the editor gives itself *)
 type extra = {
+  language : language;
   mutable search : string option;           (* C-s typed: the text looked for *)
   mutable reading : (answer * string) option;   (* a prompt, and what is typed after it *)
   mutable recording : int list option;      (* C-x ( typed: the keys since, the last first *)
   mutable macro : int list;                 (* the last macro, for C-x e *)
   mutable queue : int list;                 (* keys to give back: a macro's, a command's *)
+  mutable lexed : (string * int) list;      (* the lines above the screen, each with the comments open at its end *)
+  mutable faced : (string * int * string * int) list;   (* the screen's: a line, the comments open before and after, its faces *)
 }
 
 (* (three records: tiny-ml makes one of 11 fields at most on tiny-machine) *)
@@ -51,11 +57,16 @@ type editor = {
 (* what a key asks of the program around the editor *)
 type request = Continue | Save | Quit
 
+let language_of (file : string) : language =
+  let n = String.length file in
+  let ends suffix = let m = String.length suffix in n >= m && String.sub file (n - m) m = suffix in
+  if ends ".ml" || ends ".mli" then OCaml else if ends ".c" || ends ".h" then C else Plain
+
 let create (cols : int) (rows : int) (file : string) (text : string) : editor =
   let first, rest = match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t = { above = []; line = first; below = rest; col = 0; row = 0; goal = 0; modified = false } in
   { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0;
-    x = { search = None; reading = None; recording = None; macro = []; queue = [] }; cols; rows }
+    x = { language = language_of file; search = None; reading = None; recording = None; macro = []; queue = []; lexed = []; faced = [] }; cols; rows }
 
 (* (a text that ends by a newline has an empty last line, which is
  * where one types after it: the lines joined by newlines are the text) *)
@@ -342,6 +353,90 @@ let column (s : string) (col : int) : int =
   let rec go i c = if i >= col then c else go (i + 1) (if s.[i] = '\t' then (c / 8 + 1) * 8 else c + 1) in
   go 0 0
 
+(*****************************************************************************)
+(* Colors *)
+(*****************************************************************************)
+
+let keywords = function
+  | OCaml -> [ "and"; "as"; "assert"; "begin"; "class"; "do"; "done"; "downto"; "else"; "end"; "exception";
+               "external"; "false"; "for"; "fun"; "function"; "functor"; "if"; "in"; "include"; "lazy"; "let";
+               "match"; "method"; "module"; "mutable"; "new"; "object"; "of"; "open"; "or"; "private"; "rec";
+               "sig"; "struct"; "then"; "to"; "true"; "try"; "type"; "val"; "virtual"; "when"; "while"; "with" ]
+  | C -> [ "auto"; "break"; "case"; "char"; "const"; "continue"; "default"; "do"; "double"; "else"; "enum";
+           "extern"; "float"; "for"; "goto"; "if"; "int"; "long"; "register"; "return"; "short"; "signed";
+           "sizeof"; "static"; "struct"; "switch"; "typedef"; "union"; "unsigned"; "void"; "volatile"; "while";
+           "uchar"; "ushort"; "ulong"; "vlong"; "uvlong"; "nil" ]
+  | Plain -> []
+
+(* whether p is in s at i (a character at a time: no string made) *)
+let at (s : string) (i : int) (p : string) =
+  let m = String.length p in
+  let rec same k = k >= m || (s.[i + k] = p.[k] && same (k + 1)) in
+  i + m <= String.length s && same 0
+
+(* strings joined two by two, then the results, and so on: each byte
+ * copied a few times. (String.concat of TinyLibStd joins each to all
+ * before it, and a line's colors are dozens of pieces) *)
+let rec join = function
+  | [] -> ""
+  | [ s ] -> s
+  | l ->
+      let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
+      join (pairs l)
+
+(* the end of a string or a character of s, from i after its opening quote q *)
+let rec closing (s : string) (q : char) (i : int) : int =
+  if i >= String.length s then String.length s
+  else if s.[i] = '\\' then closing s q (i + 2) else if s.[i] = q then i + 1 else closing s q (i + 1)
+
+(* a character of a name; OCaml's names have quotes too, x' *)
+let alnum (ocaml : bool) (c : char) =
+  (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' || (ocaml && c = '\'')
+
+(* [lex language keep s depth]: the face of each of s's characters, a string
+ * as long as s: k a keyword (and C's #include...), c a comment, s a
+ * string or a character, . the rest; depth is how many comments are
+ * open at the line's start, and the result's second part at its end
+ * (OCaml's nest, C's do not: 0 or 1). A string or a character ends
+ * with its line: one of OCaml's that goes on below is colored wrong.
+ * Without keep, only the comments open at the end are counted, and the
+ * faces are "": the lines above the screen.
+ * (The helpers are outside: tiny-ml loads each value a closure takes,
+ * in tiny-machine's 11 registers) *)
+let lex (language : language) (keep : bool) (s : string) (depth : int) : string * int =
+  let n = String.length s and ocaml = language = OCaml in
+  let opens = if ocaml then "(*" else "/*" and closes = if ocaml then "*)" else "*/" in
+  (* the faces in runs, the last first: a face and how many characters *)
+  let runs = ref [] in
+  let put face k =
+    if keep then
+      match !runs with
+      | (f, m) :: rest when f = face -> runs := (f, m + k) :: rest
+      | l -> runs := (face, k) :: l in
+  let rec go i depth =
+    if i >= n then depth
+    else if depth > 0 then begin
+      if ocaml && at s i opens then (put 'c' 2; go (i + 2) (depth + 1))
+      else if at s i closes then (put 'c' 2; go (i + 2) (depth - 1))
+      else (put 'c' 1; go (i + 1) depth)
+    end
+    else if at s i opens then (put 'c' 2; go (i + 2) 1)
+    else if (not ocaml) && at s i "//" then (put 'c' (n - i); 0)
+    else if s.[i] = '"' then (let j = min n (closing s '"' (i + 1)) in put 's' (j - i); go j 0)
+    (* a character, 'a' or '\n'; in OCaml a quote is also 'a, a type's
+     * variable, and the end of x' *)
+    else if s.[i] = '\'' && (at s (i + 2) "'" || at s (i + 1) "\\") then (let j = min n (closing s '\'' (i + 1)) in put 's' (j - i); go j 0)
+    else if alnum ocaml s.[i] || ((not ocaml) && s.[i] = '#') then begin
+      let rec stop j = if j < n && alnum ocaml s.[j] then stop (j + 1) else j in
+      let j = stop (i + 1) in
+      put (if keep && (s.[i] = '#' || List.mem (String.sub s i (j - i)) (keywords language)) then 'k' else '.') (j - i);
+      go j 0
+    end
+    else (put '.' 1; go (i + 1) 0)
+  in
+  let depth = go 0 depth in
+  join (List.fold_left (fun acc (f, k) -> String.make k f :: acc) [] !runs), depth
+
 (* the lines' first column shown: 0, unless the cursor would be out *)
 let left (e : editor) = let c = column e.t.line e.t.col in if c < e.cols then 0 else c - e.cols + 1
 
@@ -367,6 +462,48 @@ let view (e : editor) : string list =
     | None, Some sub -> (if e.message = "" then "" else "Failing ") ^ "I-search: " ^ sub
     | None, None -> if e.prefix = 24 then "C-x-" else if e.prefix = 27 then "ESC-" else e.message in
   text @ [ mode; String.sub last 0 (min e.cols (String.length last)) ]
+
+(* the faces of view's text lines (its first rows - 2), each a string
+ * as long as the line shown (lex's letters); none for a file of no
+ * language. After view, which sets the first line shown.
+ *
+ * The comments open at that line are counted from the text's start.
+ * So that a key does not read again the hundreds of lines above, each
+ * line read is kept with the comments open at its end (lexed): a line
+ * that is the very same string as the one kept at its place, all those
+ * before it the same too, is not read again. A line changed is a new
+ * string (a key makes one), and from it on the lines are read again.
+ * The lines on the screen are kept too, with their faces (faced): a
+ * line down scrolls the screen, and 21 of 22 lines are the same.
+ * (old: all the lines above read at each key; goto-line 382 in
+ * TinyEditorScreen.ml took more than 150 million instructions, 20
+ * seconds of tiny-machine) *)
+let faces (e : editor) : string list =
+  if e.x.language = Plain then []
+  else begin
+    let h = e.rows - 2 and l = left e and language = e.x.language in
+    let cut f = let n = String.length f in if l >= n then "" else String.sub f l (min e.cols (n - l)) in
+    let rec skip i depth lines kept acc =
+      match lines with
+      | line :: rest when i < e.top ->
+          let d, kept = match kept with
+            | (l, d) :: more when l == line -> d, more
+            | _ -> snd (lex language false (shown line) depth), [] in
+          skip (i + 1) d rest kept ((line, d) :: acc)
+      | rest -> e.x.lexed <- List.rev acc; depth, rest in
+    let depth, rest = skip 0 0 (lines e) e.x.lexed [] in
+    let old = e.x.faced in
+    let rec go k depth = function
+      | line :: rest when k < h ->
+          let f, after =
+            match List.filter (fun (l, d, _, _) -> l == line && d = depth) old with
+            | (_, _, f, after) :: _ -> f, after
+            | [] -> lex language true (shown line) depth in
+          (line, depth, f, after) :: go (k + 1) after rest
+      | _ -> [] in
+    e.x.faced <- go 0 depth rest;
+    List.map (fun (_, _, f, _) -> cut f) e.x.faced
+  end
 
 (* where the cursor is on the screen: its column, its line; after a
  * prompt, on the last line *)

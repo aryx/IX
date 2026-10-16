@@ -116,3 +116,25 @@ let () =
   show "C-x ) when none is being defined" e;
   keys e "\024(\024\019\024)\024e";
   show "a macro that saves: C-x e asks to save" e
+
+(* the text's lines shown, each with its faces below (k a keyword, c a
+ * comment, s a string or a character) *)
+let show_faces what e =
+  print_string ("== " ^ what); print_newline ();
+  let v = view e in
+  List.iteri (fun i f -> print_string ("|" ^ List.nth v i ^ "|"); print_newline (); print_string ("|" ^ f ^ "|"); print_newline ()) (faces e)
+
+let () =
+  let ml = "let x = 'a' (* a (* nested *)\n  comment *) in\nif s = \"say \\\"hi\\\"\" then 'b'\nlet f x' = x' :: []" in
+  let e = create 32 7 "a.ml" ml in
+  show_faces "OCaml: a comment over two lines, nested; strings, characters, x'" e;
+  let e = create 32 7 "a.c" "#include <u.h>\nint f(char *s) /* a\n comment */ {\n\treturn s[0] == '\\n'; // end\n}" in
+  show_faces "C: #include, a comment over two lines, a tab, // to the end" e;
+  let e = create 32 7 "notes" "let x = 1" in
+  print_string ("a file of no language: " ^ string_of_int (List.length (faces e)) ^ " lines of faces"); print_newline ()
+
+let () =
+  let text = String.concat "\n" (List.init 9 (fun i -> if i = 2 then "(* open" else if i = 6 then "closed *) let" else "let " ^ string_of_int i)) in
+  let e = create 24 5 "b.ml" text in
+  keys e "\022\022";
+  show_faces "two screens down: the comment opened above the first line shown" e

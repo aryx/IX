@@ -62,6 +62,13 @@
  * M-x. That is what a macro is in Emacs, a keyboard macro: no language,
  * the keys only.
  *
+ * A file of OCaml or of C is in colors: its keywords, its comments
+ * and its strings ([faces]). Each line is read on its own, but for the
+ * comments, which may go on for several lines (OCaml's nest): how many
+ * are open at the first line shown is counted from the text's start.
+ * A string over several lines, or a C macro continued by a backslash,
+ * is colored wrong; Emacs's modes get them right, with much more.
+ *
  * What is left out: multiple buffers and windows, undo, the mark and
  * the region, searching backward, replacing with a question at each,
  * a macro's count (C-u), wrapping long lines (a long line is cut at
@@ -89,6 +96,12 @@ val pending : editor -> int option
 (* the screen: rows lines of at most cols characters, the last two a
  * line on the file and the cursor's place, and a message *)
 val view : editor -> string list
+
+(* the colors of view's text lines (its first rows - 2), for a file
+ * whose name ends in .ml, .mli, .c or .h: each a string as long as its
+ * line, a letter a character, k a keyword, c a comment, s a string or
+ * a character, . the rest; [] for another file. After view *)
+val faces : editor -> string list
 
 (* where the cursor is on that screen: its column, its line *)
 val cursor : editor -> int * int

@@ -27,6 +27,7 @@ echo
 ed
 editor
 emacs
+examples
 f
 get
 grep
@@ -125,13 +126,13 @@ tail
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % -  25   238824 /cat
--   2   188460 /editor
--   2   188460 /emacs
+-   2   215548 /editor
+-   2   215548 /emacs
 -   1    70364 /ping
 -  25   238824 /utils
-%      48     192    1001 f
-     48     192    1001
-     48     192    1001
+%      49     196    1026 f
+     49     196    1026
+     49     196    1026
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -148,15 +149,15 @@ heL0 w0rLd
 added
 ?changed files
 % -   2   229352 /ed
--   2   188460 /editor
--   2   188460 /emacs
+-   2   215548 /editor
+-   2   215548 /emacs
 -   2   229352 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
 > three
 f0ur$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ answer from 10.0.0.1 in 10.0 ms
+$ answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 $ no answer from 10.0.0.9

@@ -238,9 +238,15 @@ $(O)/bin/wiki: $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
-$(O)/boot.img: $(O)/kernel.img $(BINS)
+# files to edit, in /examples: sources of the image's own programs, two
+# in C and two in OCaml, which emacs shows in colors (emacs
+# /examples/emacs.ml: the editor around the editor)
+EXAMPLES = user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml
+
+$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf '%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
+	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for u in $(UTILS); do printf '%s\nlink utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf '%s\nlink %s\n' $${l%%:*} $${l#*:} >> $@; done
 	printf '\n' >> $@
@@ -266,7 +272,7 @@ check: $(O)/boot.img
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc temp emacs emacsmx; do \
+	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

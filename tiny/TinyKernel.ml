@@ -168,6 +168,19 @@ let contents node =
         let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Rom (_, n) -> 2, n | _ -> 3, 0 in
         acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word (links n) ^ word size) "" !d
 
+(* [place d name node]: node under name in d; a name with a slash,
+ * examples/wc.c, in its directory, which is made the first time *)
+let rec place d name node =
+  let rec slash i = if i >= String.length name then -1 else if name.[i] = '/' then i else slash (i + 1) in
+  let i = slash 0 in
+  if i < 0 then d := !d @ [ name, node ]
+  else begin
+    let dir = String.sub name 0 i and rest = String.sub name (i + 1) (String.length name - i - 1) in
+    match assoc_opt dir !d with
+    | Some (Dir sub) -> place sub rest node
+    | _ -> let sub = ref [] in d := !d @ [ dir, Dir sub ]; place sub rest node
+  end
+
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
  * name, a line; its size, a line; its bytes; an empty name at the end.
  * A line "link" and another file's name, in place of the size, makes a
@@ -185,7 +198,7 @@ let rec load a =
     | Dir d ->
         let n = ref 0 in
         for i = 0 to String.length size - 1 do n := (!n * 10) + Char.code size.[i] - 48 done;
-        d := !d @ [ name, Rom (a, !n) ];
+        place d name (Rom (a, !n));
         load (a + !n)
     | _ -> ()
   end

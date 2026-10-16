@@ -352,3 +352,31 @@ asks: save
 |-- macro (modified) -- L|
 ||
 cursor 3 1
+== OCaml: a comment over two lines, nested; strings, characters, x'
+|let x = 'a' (* a (* nested *)|
+|kkk.....sss.ccccccccccccccccc|
+|  comment *) in|
+|cccccccccccc.kk|
+|if s = "say \"hi\"" then 'b'|
+|kk.....ssssssssssss.kkkk.sss|
+|let f x' = x' :: []|
+|kkk................|
+== C: #include, a comment over two lines, a tab, // to the end
+|#include <u.h>|
+|kkkkkkkk......|
+|int f(char *s) /* a|
+|kkk...kkkk.....cccc|
+| comment */ {|
+|ccccccccccc..|
+|        return s[0] == '\n'; // |
+|........kkkkkk.........ssss..ccc|
+|}|
+|.|
+a file of no language: 0 lines of faces
+== two screens down: the comment opened above the first line shown
+|let 4|
+|ccccc|
+|let 5|
+|ccccc|
+|closed *) let|
+|ccccccccc.kkk|

@@ -306,10 +306,13 @@ let matches (pat : string) (s : string) : bool =
   go 0 0
 
 (* the files a pattern names, sorted, a component at a time; the
- * pattern itself when there are none *)
+ * pattern itself when there are none. A component without a wildcard
+ * after one, the g of */g, names a file only where it is there.
+ * (old: every directory's g kept, there or not: */g was d/g and
+ * examples/g on tiny-kernel, where 9base's rc says d/g) *)
 let glob (w : string) : string list =
   let rec expand dir = function
-    | [] -> [ dir ]
+    | [] -> if (try ignore (TinyLibSystem.stat dir); true with Failure _ -> false) then [ dir ] else []
     | comp :: rest when not (has_meta comp 0) -> expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
     | comp :: rest ->
         List.sort compare (TinyLibSystem.readdir (if dir = "" then "." else dir))

@@ -472,9 +472,6 @@ in section 12 where it was found):
 - **Not checked**: the page in Firefox or Safari (Chrome was, by
   `TinyMachineWeb_test.py`). (tiny-prof went in `tiny/mkfile` with
   e36dd7f1, mini-mk building all of `tiny/`.)
-- **The website** (`make website`, then its assets pushed) was not made
-  again by this plan: whether aryx.github.io's page has `www` is not
-  checked.
 - **What pages show wrong**: tables wider than the screen are cut at
   its edge (Paris's climate); Cyrillic, IPA and Thai are `?`; a
   picture the peer could not get stays an empty box with its text.
@@ -867,3 +864,8 @@ it has 112 KB of it on the screen, the infobox's links blue and
 underlined, the logo's box still waiting; the space scrolls, `q` gives
 the shell back. The whole test passes in about a minute. `t-ix.html`'s
 "What to try" has `www OCaml`.
+
+The website has `www` (assets 4d2edbd, ix bf1e41ec, the page's `?v=`
+10): built from a clean worktree, and `TinyMachineWeb_test.py -url
+https://aryx.github.io/IX/t-ix.html` passes on the live page, `www
+OCaml` included.

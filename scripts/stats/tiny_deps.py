@@ -35,7 +35,7 @@ DIRS = ["lib_core/core", "lib_core/base", "lib_core/collections",
 # a program's files: its own, then its library's (tiny/mkfile)
 PROGRAMS = {
     "tiny-build": ["TinyBuildSystem"], "tiny-shell": ["TinyShell"],
-    "tiny-editor": ["TinyEditor"], "tiny-assembler": ["TinyAssembler"],
+    "tiny-editor": ["TinyLineEditor"], "tiny-assembler": ["TinyAssembler"],
     "tiny-c": ["TinyC"], "tiny-ml": ["TinyML"], "tiny-db": ["TinyDatabase"],
     "tiny-vcs": ["TinyVCS"], "tiny-arm": ["TinyCPUArm"],
     "tiny-cpu": ["TinyCPU", "TinyMachineCPU"],

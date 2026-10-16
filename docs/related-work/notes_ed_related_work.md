@@ -23,7 +23,7 @@ them for teaching.
 | sam (1987), acme (1992) | Structure, not lines; the mouse for the rest | `,x/re/c/new/`, and clicks |
 | vis (2014), kakoune (2011) | sam's structural regexps with vi's keys; selections first | `x/re/`, multiple selections |
 | `editors/ed/` (mini-ed) | Seeing what an editor does, as ed, checked against Plan 9's | ed, run by 1,264 lines of OCaml |
-| `tiny/TinyEditor.ml` | What an editor is, in sam's terms | sam's language, in one file of 666 lines |
+| `tiny/TinyLineEditor.ml` | What an editor is, in sam's terms | sam's language, in one file of 666 lines |
 
 ## Part 1: the line editors
 
@@ -96,7 +96,7 @@ engine is the first thing an ix of text tools needs.
   2011): sam's structural regular expressions and multiple
   selections, with vi's modal keys.
 
-`tiny/TinyEditor.ml` is on this branch: sam's command language,
+`tiny/TinyLineEditor.ml` is on this branch: sam's command language,
 without the screen, as `sam -d` has it.
 
 ## Part 5: the regular expression engines
@@ -114,7 +114,7 @@ without the screen, as `sam -d` has it.
 - **POSIX** (1992) specified leftmost-longest with rules for captures
   that many implementations got wrong (Glenn Fowler's testregex found
   that).
-- **Memoized backtracking** (TinyEditor.ml's matcher; the plan wanted
+- **Memoized backtracking** (TinyLineEditor.ml's matcher; the plan wanted
   it for mini-ed too, its decision 2): backtracking over the tree with
   a table of (node, position) pairs visited. With the table,
   backtracking in priority order finds what a priority-ordered Pike
@@ -130,7 +130,7 @@ without the screen, as `sam -d` has it.
 - **The 30-line matcher**: Rob Pike's `match`, `matchhere` and
   `matchstar` (`c`, `.`, `^`, `$`, `*`), in Kernighan and Pike's *The
   Practice of Programming* (1999) and Kernighan's chapter of
-  *Beautiful Code* (2007): the teaching version, which TinyEditor's
+  *Beautiful Code* (2007): the teaching version, which TinyLineEditor's
   matcher grows from with classes, groups, alternation and a memo.
 
 ## Part 6: the teaching editors
@@ -156,7 +156,7 @@ As for mini-mk and mini-rc, two levels:
 - **The implementation, at the legible end**: lines in memory with an
   identity, a command loop that reads as it goes, and libregexp's
   matcher in OCaml, because its corner cases are the specification;
-  the backtracker with a memo is TinyEditor's.
+  the backtracker with a memo is TinyLineEditor's.
 
 **The ceiling, stated now**: no screen, no multiple buffers (QED's
 and sam's), no undo but `u`'s, no POSIX notation.
@@ -166,7 +166,7 @@ and sam's), no undo but `u`'s, no POSIX notation.
 - **Lines.** mini-ed has 1,264 lines of `.ml`, 1,007 of them code,
   against the 1,000 planned. That is 37% of ed.c's 2,121 with the
   1,316 lines of libregexp it uses, and 70% of oed's 1,794, which is
-  partial. TinyEditor.ml, sam's language with its own matcher, has 666
+  partial. TinyLineEditor.ml, sam's language with its own matcher, has 666
   lines, 531 of them code; sam's command language in plan9port is
   about 2,000 lines of C (`address.c`, `xec.c`, `cmd.c`, `regexp.c`).
 - **The corpus.** 44 cases, 41 the same as 9base's ed, and 3
@@ -179,6 +179,6 @@ and sam's), no undo but `u`'s, no POSIX notation.
 - **xix's history.** 5,716 of 5,720 `diff -e` scripts of xix's last
   3,000 commits replay to the new file under both eds, with the same
   counts; the other 4 are the Latin-1 case.
-- **sam -d.** 28 scripts the same as TinyEditor's, once 9base's stray
+- **sam -d.** 28 scripts the same as TinyLineEditor's, once 9base's stray
   `d` after its numbers is taken out, and with no character classes,
   which 9base's sam gets wrong.

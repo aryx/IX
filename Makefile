@@ -19,7 +19,7 @@ test: all
 	./_build/default/shell/tests/Test.exe
 	./tiny/tests/TinyShell_test.sh
 	./_build/default/editors/ed/tests/Test.exe
-	./tiny/tests/TinyEditor_test.sh
+	./tiny/tests/TinyLineEditor_test.sh
 	./linker/tests/golden.sh
 	./generators/tests/tokens.sh
 	./generators/tests/trees.sh

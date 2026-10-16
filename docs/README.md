@@ -14,7 +14,7 @@ own machines, the kernels, the code that is not OCaml):
 |---|---|---|---|---|
 | mini-mk, the build system | [plan_mk.md](plans/done/plan_mk.md) | [notes_mk.md](tutorials/notes_mk.md) | [notes_mk_related_work.md](related-work/notes_mk_related_work.md) | `builder/`, `tiny/TinyBuildSystem.ml` |
 | mini-rc, the shell | [plan_rc.md](plans/done/plan_rc.md) | [notes_rc.md](tutorials/notes_rc.md) | [notes_rc_related_work.md](related-work/notes_rc_related_work.md) | `shell/`, `tiny/TinyShell.ml` |
-| mini-ed, the editor | [plan_ed.md](plans/done/plan_ed.md) | [notes_ed.md](tutorials/notes_ed.md) | [notes_ed_related_work.md](related-work/notes_ed_related_work.md) | `editors/ed/`, `tiny/TinyEditor.ml` |
+| mini-ed, the editor | [plan_ed.md](plans/done/plan_ed.md) | [notes_ed.md](tutorials/notes_ed.md) | [notes_ed_related_work.md](related-work/notes_ed_related_work.md) | `editors/ed/`, `tiny/TinyLineEditor.ml` |
 | mini-asm and mini-ld, the assembler and the linker | [plan_asm.md](plans/done/plan_asm.md) | [notes_asm.md](tutorials/notes_asm.md) | [notes_asm_related_work.md](related-work/notes_asm_related_work.md) | `assembler/`, `linker/`, `tiny/TinyAssembler.ml` |
 | mini-cc, the C compiler | [plan_cc.md](plans/done/plan_cc.md) | [notes_cc.md](tutorials/notes_cc.md) | [notes_cc_related_work.md](related-work/notes_cc_related_work.md) | `languages/c/`, `tiny/TinyC.ml` |
 | mini-ml, the ML compiler (ocaml-light's ML, native, for arm and arm64; the target: mini-9pi) | [plan_ml.md](plans/done/plan_ml.md) | [notes_ml.md](tutorials/notes_ml.md) | [notes_ml_related_work.md](related-work/notes_ml_related_work.md) | `languages/ml/`, `tiny/TinyML.ml` |

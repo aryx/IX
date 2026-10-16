@@ -126,7 +126,7 @@ local chain(name, steps) = {
       ],
       related: ['TinyShell_test.sh', '../shell/'],
     },
-    'TinyEditor.ml': { digest: '1f0da26afd03',
+    'TinyLineEditor.ml': { digest: '1f0da26afd03',
       summary: "tiny-editor: ed's commands replaced by sam's language: dot a range of characters, loops over matches, changes made in parallel.",
       capitals: [
         { at: 'def:commit', say: "a command's changes applied together; their inverse is undo" },
@@ -141,7 +141,7 @@ local chain(name, steps) = {
         { at: 'def:undo', say: 'a redo is an undo undone', weight: 1 },
         { at: 'def:longest', say: "leftmost-longest, as sam's matcher", weight: 1 },
       ],
-      related: ['TinyEditor_test.sh', '../editors/ed/'],
+      related: ['TinyLineEditor_test.sh', '../editors/ed/'],
     },
     'TinyVCS.ml': { digest: 'd0519f92c0af',
       summary: "tiny-vcs: git's objects, trees and DAG, and the roads after git: the repository one hash (an operation log, undo), no index, conflicts committed.",
@@ -373,18 +373,18 @@ local chain(name, steps) = {
       joints+: [{ from: 'TinyShell.ml:def:run', to: 'TinyShell.ml:def:command', say: 'argv' }],
     },
     chain('tiny-editor: parse, address, change, commit', [
-      ['TinyEditor.ml:comment:"an error while it runs: its changes are dropped"', 'the loop: a command read and run', ''],
-      ['TinyEditor.ml:def:parse', 'a command, its addresses and loops', 'the input'],
-      ['TinyEditor.ml:def:exec', 'a command run', 'a command'],
-      ['TinyEditor.ml:def:address', 'an address to a range', 'addresses'],
+      ['TinyLineEditor.ml:comment:"an error while it runs: its changes are dropped"', 'the loop: a command read and run', ''],
+      ['TinyLineEditor.ml:def:parse', 'a command, its addresses and loops', 'the input'],
+      ['TinyLineEditor.ml:def:exec', 'a command run', 'a command'],
+      ['TinyLineEditor.ml:def:address', 'an address to a range', 'addresses'],
     ]) + {
       bones+: [
-        { at: 'TinyEditor.ml:def:change', role: 'a change recorded, not made' },
-        { at: 'TinyEditor.ml:def:commit', role: 'the changes applied together; their inverse' },
+        { at: 'TinyLineEditor.ml:def:change', role: 'a change recorded, not made' },
+        { at: 'TinyLineEditor.ml:def:commit', role: 'the changes applied together; their inverse' },
       ],
       joints+: [
-        { from: 'TinyEditor.ml:def:exec', to: 'TinyEditor.ml:def:change', say: 'edits' },
-        { from: 'TinyEditor.ml:def:exec', to: 'TinyEditor.ml:def:commit', say: 'at the end' },
+        { from: 'TinyLineEditor.ml:def:exec', to: 'TinyLineEditor.ml:def:change', say: 'edits' },
+        { from: 'TinyLineEditor.ml:def:exec', to: 'TinyLineEditor.ml:def:commit', say: 'at the end' },
       ],
     },
     {

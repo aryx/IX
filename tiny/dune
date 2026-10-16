@@ -13,10 +13,10 @@
  (libraries ix_core fpath unix caps tiny_lib_system))
 
 (executable
- (name TinyEditor)
+ (name TinyLineEditor)
  (public_name tiny-editor)
  (package ix)
- (modules TinyEditor)
+ (modules TinyLineEditor)
  (libraries ix_core fpath unix caps))
 
 (executable

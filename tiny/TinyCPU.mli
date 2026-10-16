@@ -42,8 +42,9 @@
  * sys traps to that kernel instead of to OCaml. *)
 
 (* an image's bytes, loaded and run with its arguments, its system
- * calls done here: to its exit status *)
-val interpret : < Cap.stdin; Cap.stdout; Cap.stderr; .. > -> string -> string list -> int
+ * calls done here: to its exit status. With a profile, each instruction
+ * run is counted into it (-prof). *)
+val interpret : < Cap.stdin; Cap.stdout; Cap.stderr; .. > -> TinyMachineCPU.profile option -> string -> string list -> int
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; .. > -> int

@@ -1,0 +1,6 @@
+2,504 instructions: the kernel 0.0%, programs 100.0%
+       count      %     function
+       2,100   83.9  u  spin1
+         302   12.1  u  loop
+         100    4.0  u  spin
+           2    0.1  u  main

@@ -3,7 +3,7 @@
 
 (* See TinyCPU.mli *)
 
-let usage = "usage: tiny-cpu [-l | -o image | -a megabytes a.out] file.tm... | image [args...]"
+let usage = "usage: tiny-cpu [-l | -o image | -a megabytes a.out | -prof file] file.tm... | image [args...]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -17,6 +17,8 @@ In tiny/tests/TinyCPU_tests/, for example:
                                 the other, the first at 0), an image
   tiny-cpu hello                the image run: Hello, world
   tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...
+  tiny-cpu -prof p hello.tm     run, and each instruction counted by its
+                                address into p, for tiny-prof
   tiny-cpu -a 10 prog a.tm...   an executable for tiny-kernel that asks for
                                 10 MB of memory: a header (a magic number,
                                 the image's size, the memory), then the
@@ -44,8 +46,10 @@ let syscall (caps : < caps; .. >) (m : TinyMachineCPU.machine) n =
       r.(1) <- k
   | n -> TinyMachineCPU.error "unknown system call %d" n
 
-let interpret caps image args =
+(* [prof]: a profile counted meanwhile (-prof), the program's alone *)
+let interpret caps prof image args =
   let env = TinyMachineCPU.plain ~sys:(syscall caps) in
+  let env = match prof with Some p -> TinyMachineCPU.profiled env p (fun _ -> 0, 0) | None -> env in
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
   (* the strings from the top down, then argv's array and nil, argv,
    * and argc at sp *)
@@ -80,7 +84,13 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
     | "-a" :: mb :: out :: l when (match int_of_string_opt mb with Some n -> n > 0 && n <= 100 | None -> false) ->
         let files, _, _ = split l in
         FS.write caps (Fpath.v out) (TinyMachineCPU.aout ~memory:(int_of_string mb * 0x100000) (image files)); 0
-    | l -> let files, name, rest = split l in interpret caps (image files) (name :: rest)
+    | "-prof" :: out :: l ->
+        let files, name, rest = split l in
+        let p = TinyMachineCPU.profile () in
+        let status = interpret caps (Some p) (image files) (name :: rest) in
+        FS.write caps (Fpath.v out) (TinyMachineCPU.profile_lines p);
+        status
+    | l -> let files, name, rest = split l in interpret caps None (image files) (name :: rest)
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1

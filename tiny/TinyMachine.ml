@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -prof file | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -26,6 +26,9 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  rate, so its programs keep their pace: a
                                                  faster machine has more instructions in
                                                  each of its ticks of 2.5 ms
+  tiny-machine -prof p kernel.img               each instruction counted by where it was
+                                                 (the kernel's or a program's, its address)
+                                                 into p at the end, for tiny-prof
   tiny-machine -events f -screen s.ppm kernel.img
                                                  the keys and the mouse from f, a line
                                                  each (1000 m 320 240 1: at time 1000 the
@@ -181,7 +184,7 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; rate : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option }
+type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; rate : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -376,6 +379,16 @@ let run caps o image =
   let m = mc.cpu and c = mc.csr in
   let window = if o.window then Some (window_open caps) else None in
   let env = TinyMachineDevices.env mc in
+  (* -prof f: each instruction counted by where it was (the kernel's or
+   * a program's, and which program: its window's base), into f at the
+   * end, for tiny-prof *)
+  let profile = TinyMachineCPU.profile () in
+  let env = match o.prof with
+    | None -> env
+    | Some f ->
+        at_exit (fun () -> FS.write caps (Fpath.v f) (TinyMachineCPU.profile_lines profile));
+        TinyMachineCPU.profiled env profile (fun _ ->
+          if TinyMachineDevices.supervisor mc then 1, 0 else 0, TinyMachineDevices.window_base mc) in
   let halted n =
     (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
@@ -421,13 +434,14 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
           | "-net-out" :: rest -> options { o with net_out = true } rest
           | "-net-pcap" :: f :: rest -> options { o with net_pcap = Some f } rest
+          | "-prof" :: f :: rest -> options { o with prof = Some f } rest
           | "-net-forward" :: ports :: rest
             when (match List.map int_of_string_opt (String.split_on_char ':' ports) with [ Some _; Some _ ] -> true | _ -> false) ->
               let ports = List.map int_of_string (String.split_on_char ':' ports) in
               options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None } args
+        options { disk_file = None; screen_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

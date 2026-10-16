@@ -91,6 +91,11 @@ val create :
 (* the CPU's five hooks for it, and so many instructions of its time
  * (Halt when the kernel halts it) *)
 val env : machine -> TinyMachineCPU.env
+
+(* whether the CPU is in supervisor mode (the kernel's); the base of the
+ * user's window (which program's partition): a profile's (-prof) *)
+val supervisor : machine -> bool
+val window_base : machine -> int
 val ticks : machine -> TinyMachineCPU.env -> int -> unit
 
 (* what a host does to it between two calls of ticks: bytes typed, the

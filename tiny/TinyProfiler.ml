@@ -1,0 +1,108 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* See TinyProfiler.mli *)
+
+let usage = "usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.tm...] [-u file.tm...]"
+
+(* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines):
+ * the counts by (the kernel's?, base, pc). *)
+let read_profile caps file =
+  let counts = Hashtbl.create 4096 in
+  List.iter (fun line ->
+    match String.split_on_char ' ' line with
+    | [ m; b; pc; n ] ->
+        let k = m = "k", int_of_string ("0x" ^ b), int_of_string ("0x" ^ pc) in
+        Hashtbl.replace counts k (int_of_string n + Option.value ~default:0 (Hashtbl.find_opt counts k))
+    | _ -> ()) (String.split_on_char '\n' (FS.read caps (Fpath.v file)));
+  counts
+
+(* A label a compiler makes inside a function: a dot, an L, digits *)
+let local name =
+  match String.rindex_opt name '.' with
+  | Some i when i + 2 < String.length name && name.[i + 1] = 'L' ->
+      String.for_all (fun c -> c >= '0' && c <= '9') (String.sub name (i + 2) (String.length name - i - 2))
+  | _ -> false
+
+(* tiny-ml's functions are f<number>_<name><>: their name alone, but for
+ * an anonymous one (f155_fun), whose number is all that tells it from
+ * the others (in the program's .tm file) *)
+let clean name =
+  let n = String.length name in
+  match String.index_opt name '_' with
+  | Some i when name.[0] = 'f' && i > 1 && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub name 1 (i - 1))
+                && n > i + 3 && String.sub name (n - 2) 2 = "<>" ->
+      let short = String.sub name (i + 1) (n - i - 3) in
+      if short = "fun" then String.sub name 0 (n - 2) else short
+  | _ -> name
+
+(* the functions of .tm files, by address *)
+let functions caps ext files =
+  let labels = TinyMachineCPU.labels ~ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
+  Array.of_list (List.filter (fun (l, _) -> not (local l)) labels)
+
+(* the function an address is in: the last one at or before it *)
+let find funcs pc =
+  let rec go lo hi = if hi - lo <= 1 then lo else let mid = (lo + hi) / 2 in if snd funcs.(mid) <= pc then go mid hi else go lo mid in
+  if Array.length funcs = 0 || pc < snd funcs.(0) then "?" else clean (fst funcs.(go 0 (Array.length funcs)))
+
+(* 1234567 as 1,234,567 *)
+let commas n =
+  let s = string_of_int n in
+  let k = String.length s in
+  String.concat "" (List.init k (fun i -> (if i > 0 && (k - i) mod 3 = 0 then "," else "") ^ String.make 1 s.[i]))
+
+let percent n total = if total = 0 then 0. else 100. *. float_of_int n /. float_of_int total
+
+let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
+  let rec options top diff base = function
+    | "-n" :: n :: rest -> options (int_of_string n) diff base rest
+    | "-diff" :: f :: rest -> options top (Some f) base rest
+    | "-base" :: b :: rest -> options top diff (Some (int_of_string ("0x" ^ b))) rest
+    | file :: rest when file.[0] <> '-' ->
+        (* the files after -k are the kernel's, after -u the program's *)
+        let rec files k u which = function
+          | "-k" :: rest -> files k u `K rest
+          | "-u" :: rest -> files k u `U rest
+          | f :: rest -> if which = `K then files (f :: k) u which rest else files k (f :: u) which rest
+          | [] -> List.rev k, List.rev u in
+        Some (top, diff, base, file, files [] [] `U rest)
+    | _ -> None in
+  match options 20 None None (List.tl (Array.to_list (CapSys.argv caps))) with
+  | None -> Console.eprint caps (usage ^ "\n"); 2
+  | Some (top, diff, base, file, (kfiles, ufiles)) ->
+      let counts = read_profile caps file in
+      Option.iter (fun f ->
+        Hashtbl.iter (fun k n -> match Hashtbl.find_opt counts k with Some m -> Hashtbl.replace counts k (max 0 (m - n)) | None -> ())
+          (read_profile caps f)) diff;
+      (* the totals: the kernel's, and each program's by its window's base *)
+      let kernel = ref 0 and programs = Hashtbl.create 8 in
+      Hashtbl.iter (fun (k, b, _) n ->
+        if k then kernel := !kernel + n else Hashtbl.replace programs b (n + Option.value ~default:0 (Hashtbl.find_opt programs b))) counts;
+      let user = Hashtbl.fold (fun _ n acc -> acc + n) programs 0 in
+      let total = !kernel + user in
+      let named = match base with
+        | Some b -> b
+        | None -> fst (Hashtbl.fold (fun b n (bb, bn) -> if n > bn then (b, n) else (bb, bn)) programs (0, -1)) in
+      let kfuncs = functions caps TinyMachineDevices.ext kfiles and ufuncs = functions caps TinyMachineCPU.no_extension ufiles in
+      (* each count to its function *)
+      let by = Hashtbl.create 256 in
+      Hashtbl.iter (fun (k, b, pc) n ->
+        let where =
+          if k then "k", (if kfiles = [] then "(the kernel)" else find kfuncs pc)
+          else if b <> named then "u", "(another program)"
+          else "u", (if ufiles = [] then "(the program)" else find ufuncs pc) in
+        Hashtbl.replace by where (n + Option.value ~default:0 (Hashtbl.find_opt by where))) counts;
+      let rows = List.sort (fun (_, a) (_, b) -> compare b a) (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
+      Console.print caps (Printf.sprintf "%s instructions: the kernel %.1f%%, programs %.1f%%\n" (commas total) (percent !kernel total) (percent user total));
+      if Hashtbl.fold (fun _ n k -> if n > 0 then k + 1 else k) programs 0 > 1 then
+        Console.print caps (Printf.sprintf "programs, by their window's base: %s (-u is the one at %x)\n"
+          (String.concat ", " (List.map (fun (b, n) -> Printf.sprintf "%x %s" b (commas n))
+             (List.sort (fun (_, a) (_, b) -> compare b a) (Hashtbl.fold (fun b n acc -> if n > 0 then (b, n) :: acc else acc) programs []))))
+          named);
+      Console.print caps (Printf.sprintf "%12s %6s     %s\n" "count" "%" "function");
+      List.iteri (fun i ((mode, name), n) ->
+        if i < top && n > 0 then Console.print caps (Printf.sprintf "%12s %6.1f  %s  %s\n" (commas n) (percent n total) mode name)) rows;
+      0
+
+let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

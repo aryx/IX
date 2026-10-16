@@ -54,6 +54,15 @@
  (modules TinyCPUArm)
  (libraries ix_core fpath caps))
 
+; tiny-prof: where the instructions went, by function, from a profile of
+; tiny-cpu -prof or tiny-machine -prof and the .tm files that ran
+(executable
+ (name TinyProfiler)
+ (public_name tiny-prof)
+ (package ix)
+ (modules TinyProfiler)
+ (libraries tiny_machine_devices ix_core fpath caps))
+
 (executable
  (name TinyCPU)
  (public_name tiny-cpu)

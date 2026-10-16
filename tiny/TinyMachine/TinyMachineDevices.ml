@@ -217,6 +217,7 @@ let pending mc =
   lor (if mc.net.waiting <> [] then i_net else 0)
 
 let supervisor mc = mc.csr.(status) land supervisor_bit <> 0
+let window_base mc = mc.csr.(base)
 
 let trap mc cause_v tval_v epc_v =
   let c = mc.csr and st = mc.csr.(status) in

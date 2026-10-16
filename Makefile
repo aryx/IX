@@ -79,6 +79,7 @@ test: all
 	./tiny/tests/TinyLibStd_test.sh
 	./tiny/tests/TinyEditorScreen_test.sh
 	./tiny/tests/TinyBrowser_test.sh
+	./tiny/tests/TinyProfiler_test.sh
 	$(MAKE) -C tiny/TinyKernel/steps clean all
 	$(MAKE) -C tiny/TinyKernel/steps/t6 check
 	$(MAKE) -C tiny/TinyKernel check

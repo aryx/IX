@@ -1,0 +1,17 @@
+8,021 instructions: the kernel 65.9%, programs 34.1%
+programs, by their window's base: 20000 1,362, 10000 1,362, 40000 6, 30000 6 (-u is the one at 10000)
+       count      %     function
+       1,850   23.1  k  resume
+       1,775   22.1  k  trap
+       1,374   17.1  u  (another program)
+       1,362   17.0  u  (the program)
+         634    7.9  k  syscall
+         392    4.9  k  puts
+         256    3.2  k  next
+         145    1.8  k  alive_p
+         128    1.6  k  switch
+          44    0.5  k  puts_done
+          31    0.4  k  schedule
+          21    0.3  k  kill
+           7    0.1  k  boot
+           2    0.0  k  killmsg

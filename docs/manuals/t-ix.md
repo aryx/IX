@@ -39,6 +39,7 @@ The script builds the tools with dune and calls them. By hand:
 | `tiny-c -tm -o f.tm f.c` | C to the machine's assembly |
 | `tiny-ml -tm -o f.tm f.ml` | ML to the machine's assembly |
 | `tiny-mkfs` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfs.ml`) |
+| `tiny-prof p -k k.tm... -u p.tm...` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
 

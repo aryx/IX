@@ -222,9 +222,26 @@ val reg : string -> int
  * assembled, another an image) linked from an origin; an image listed *)
 val assemble : ext:extension -> string list -> string
 val image : ext:extension -> origin:int -> (string * string) list -> string
+
+(* the labels of .tm files (a name, its text) linked from an origin, as
+ * image links them: each label and its address, by address (tiny-prof's) *)
+val labels : ext:extension -> origin:int -> (string * string) list -> (string * int) list
 val listing : ext:extension -> origin:int -> string -> string
 
 (* An executable for tiny-kernel: a header of three words (a magic
  * number, the image's size, the memory the program asks for in bytes),
  * then the image, linked at 0. *)
 val aout : memory:int -> string -> string
+
+(* A profile: every instruction run, counted by where it was (the
+ * kernel's or a program's, the base of the user's window, the address).
+ * [profiled env p where] is env counting into p, [where m] the mode (1
+ * the kernel's, 0 a program's) and the window's base; [profile_lines p]
+ * the counts as lines "k|u base pc count" (hexadecimal addresses), the
+ * most counted first, which tiny-prof reads (TinyProfiler.mli).
+ * tiny-cpu's -prof and tiny-machine's write them. *)
+type profile
+val profile : unit -> profile
+val profiled : env -> profile -> (machine -> int * int) -> env
+val profile_lines : profile -> string
+

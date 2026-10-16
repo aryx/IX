@@ -343,7 +343,8 @@ let parse_line ~ext line : item list =
 
 (* the image, from address 0, of files assembled one after the other,
  * their labels one namespace: the link is no more than that *)
-let assemble_files ~ext ~origin (files : (string * string list) list) =
+(* the first pass: each item its address, each label its own *)
+let layout ~ext ~origin (files : (string * string list) list) =
   let parse (name, lines) =
     (* each file on a word's boundary: one may end with bytes, the next begin with code *)
     Align 4 :: List.concat (List.mapi (fun n l -> try parse_line ~ext l with Error e -> error "%s:%d: %s" name (n + 1) e) lines) in
@@ -356,13 +357,21 @@ let assemble_files ~ext ~origin (files : (string * string list) list) =
     | Align n -> let a = (!pc + n - 1) / n * n in placed := (!pc, Bytes_ (String.make (a - !pc) '\000')) :: !placed; pc := a
     | Words (n, _) -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Bytes_ s -> placed := (!pc, it) :: !placed; pc := !pc + String.length s) items;
+  labels, List.rev !placed
+
+let labels ~ext ~origin files =
+  let labels, _ = layout ~ext ~origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files) in
+  List.sort (fun (_, a) (_, b) -> Stdlib.compare a b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
+
+let assemble_files ~ext ~origin (files : (string * string list) list) =
+  let labels, placed = layout ~ext ~origin files in
   let resolve = function Num n -> n | Sym s -> (match Hashtbl.find_opt labels s with Some a -> a | None -> error "undefined label %s" s) in
   let b = Buffer.create 4096 in
   List.iter (fun (a, it) ->
     match it with
     | Words (_, f) -> List.iter (fun w -> Buffer.add_int32_le b (Int32.of_int w)) (f a resolve)
     | Bytes_ s -> Buffer.add_string b s
-    | Label _ | Align _ -> ()) (List.rev !placed);
+    | Label _ | Align _ -> ()) placed;
   if Buffer.length b > !memsize then error "the program does not fit in memory";
   Buffer.contents b
 
@@ -402,3 +411,34 @@ let aout ~memory image =
   List.iter (fun v -> Buffer.add_int32_le b (Int32.of_int v)) [ aout_magic; String.length image; memory ];
   Buffer.add_string b image;
   Buffer.contents b
+
+(*****************************************************************************)
+(* A profile *)
+(*****************************************************************************)
+
+(* Each instruction run, counted by where it was: the program's or the
+ * kernel's (a mode), the base of the user's window (which program),
+ * its address. Every instruction, not a sample: the machine is slow
+ * enough for that to cost little more than running it, and two runs
+ * give the same profile. *)
+type profile = (int, int ref) Hashtbl.t
+
+let profile () : profile = Hashtbl.create 4096
+
+(* an env that counts each instruction it fetches; [where m] is its mode
+ * (1 the kernel's, 0 a program's) and the window's base *)
+let profiled (env : env) (p : profile) (where : machine -> int * int) =
+  { env with fetch = (fun m pc ->
+      let mode, base = where m in
+      let k = (((base lsl 1) lor mode) lsl 32) lor (pc land 0xffffffff) in
+      (match Hashtbl.find_opt p k with Some n -> incr n | None -> Hashtbl.add p k (ref 1));
+      env.fetch m pc) }
+
+(* the profile as lines "k|u base pc count", the addresses in hexadecimal,
+ * the most counted first *)
+let profile_lines (p : profile) =
+  let l = Hashtbl.fold (fun k n acc -> (k, !n) :: acc) p [] in
+  let l = List.sort (fun (_, a) (_, b) -> Stdlib.compare b a) l in
+  String.concat "" (List.map (fun (k, n) ->
+    Printf.sprintf "%c %x %x %d\n" (if (k lsr 32) land 1 = 1 then 'k' else 'u') (k lsr 33) (k land 0xffffffff) n) l)
+

@@ -13,6 +13,9 @@
 #   kept picture if not), the page's button clicked while the picture
 #   loads: the answers on the console, a picture on the screen, a
 #   packet lost and the picture whole all the same;
+# - www OCaml typed (Wikipedia's article, asked by the page): the
+#   screen white with the page, the space scrolling it, q back to the
+#   shell;
 # - windows typed, then windows.events' first gestures (the right
 #   button's menu, New, a rectangle swept, ls typed in the window): the
 #   canvas is no longer black, and what it shows is saved (-o png);
@@ -32,7 +35,10 @@
 #
 # Usage: TinyMachineWeb_test.py [-kernel t6] [-url page] [-o screen.png] [-wiki words] [-chrome program]
 # Needs: google-chrome or chromium, python3's websockets; not in make
-# test (a browser, and half a minute).
+# test (a browser, and a minute). On macOS, Homebrew's python3 takes
+# websockets in a virtual environment only (python3 -m venv v;
+# v/bin/pip install websockets; v/bin/python this file), and Chrome is
+# -chrome "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome".
 
 import asyncio, base64, functools, http.server, json, os, shutil, socket, subprocess, sys, tempfile, threading, time, urllib.request
 import websockets
@@ -148,6 +154,23 @@ async def session(port, debug):
         if png:
             data = await p.js("document.getElementById('screen').toDataURL('image/png')")
             open(png.replace(".png", "-wiki.png"), "wb").write(base64.b64decode(data.split(",")[1]))
+        # the browser: the page asks Wikipedia for the article, and www
+        # draws it on a white screen; the space scrolls it, q quits
+        prompts = (await p.js(CONSOLE)).count("$ ")
+        start = time.time()
+        await p.type("www OCaml\n")
+        await p.wait("www's page", f"{LIT} > 250000", 60)
+        await asyncio.sleep(30)
+        if png:
+            data = await p.js("document.getElementById('screen').toDataURL('image/png')")
+            open(png.replace(".png", "-www.png"), "wb").write(base64.b64decode(data.split(",")[1]))
+        top = await p.js("document.getElementById('screen').toDataURL('image/png')")
+        await p.type(" ")
+        await asyncio.sleep(3)
+        assert await p.js("document.getElementById('screen').toDataURL('image/png')") != top, "the space does not scroll www's page"
+        await p.type("q")
+        await p.wait("the prompt after www", f"{CONSOLE}.split('$ ').length > {prompts + 1}")
+        print(f"ok www OCaml: the article drawn, scrolled by the space, q back to the shell ({time.time() - start:.0f} s)")
         await p.type("windows\n")
         await p.wait("tiny-windows' screen", f"{LIT} > 100000")
         # windows.events' first gestures: the menu by the right button,

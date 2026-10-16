@@ -469,9 +469,12 @@ in section 12 where it was found):
   a loop over a string's bytes, measured again since cbc0b9cc). If it
   is done, tiny-prof first, and a general cause rather than one
   function moved to C or assembly.
-- **Not checked**: the page (`t-ix.html`), in Firefox or by
-  `TinyMachineWeb_test.py`, which needs Python's `websockets`. (tiny-prof
-  went in `tiny/mkfile` with e36dd7f1, mini-mk building all of `tiny/`.)
+- **Not checked**: the page in Firefox or Safari (Chrome was, by
+  `TinyMachineWeb_test.py`). (tiny-prof went in `tiny/mkfile` with
+  e36dd7f1, mini-mk building all of `tiny/`.)
+- **The website** (`make website`, then its assets pushed) was not made
+  again by this plan: whether aryx.github.io's page has `www` is not
+  checked.
 - **What pages show wrong**: tables wider than the screen are cut at
   its edge (Paris's climate); Cyrillic, IPA and Thai are `?`; a
   picture the peer could not get stays an empty box with its text.
@@ -856,3 +859,11 @@ with "Left".
 
 The author then ran `www OCaml` in tiny-machine's own window
 (`TinyMachineSDL.ml`): "I did try www OCaml and it worked great".
+
+`TinyMachineWeb_test.py` (headless Chrome, `websockets` 15.0.1 in a
+virtual environment) types `www OCaml` now, between `wiki` and
+`windows`: the page asks Wikipedia for the live article, and after 30 s
+it has 112 KB of it on the screen, the infobox's links blue and
+underlined, the logo's box still waiting; the space scrolls, `q` gives
+the shell back. The whole test passes in about a minute. `t-ix.html`'s
+"What to try" has `www OCaml`.

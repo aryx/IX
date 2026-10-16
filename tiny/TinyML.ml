@@ -642,21 +642,23 @@ let const_type = function CInt _ -> int_t | CChar _ -> tcon "char" | CStr _ -> s
 
 (* known: the type the value matched is already known to have (the
  * scrutinee's, an annotation's), so that a record pattern finds its
- * record when two records share a label *)
-let rec pat_type ?(known = newvar ()) p : ty * (string * ty) list =
+ * record when two records share a label; a fresh variable when none is
+ * known. (A plain argument, not an optional one, which mini-ml, the
+ * compiler mini-mk builds this file with, does not have) *)
+let rec pat_type known p : ty * (string * ty) list =
   match p with
   | PAny -> newvar (), []
   | PVar x -> let t = newvar () in t, [ x, t ]
   | PConst c -> const_type c, []
   | PCon (c, ps) ->
       let res, args = con_type c in
-      res, List.concat (List.map2 (fun p t -> let pt, b = pat_type p in unify pt t; b) ps args)
-  | PTuple ps -> let l = List.map pat_type ps in TCon ("*", List.map fst l), List.concat_map snd l
-  | PAlias (p, x) -> let t, b = pat_type ~known p in t, (x, t) :: b
+      res, List.concat (List.map2 (fun p t -> let pt, b = pat_type (newvar ()) p in unify pt t; b) ps args)
+  | PTuple ps -> let l = List.map (fun p -> pat_type (newvar ()) p) ps in TCon ("*", List.map fst l), List.concat_map snd l
+  | PAlias (p, x) -> let t, b = pat_type known p in t, (x, t) :: b
   | PAnnot (p, te) ->
       let ta = instantiate (of_texpr (ref []) te) in
       unify ta known;
-      let t, b = pat_type ~known:ta p in unify t ta; t, b
+      let t, b = pat_type ta p in unify t ta; t, b
   | PRecord (fs, idxs, n) ->
       let li0 = label_for (fst (List.hd fs)) known in
       let r = newvar () in
@@ -665,12 +667,12 @@ let rec pat_type ?(known = newvar ()) p : ty * (string * ty) list =
           | Some li -> li | None -> error "no field %s in %s" l li0.lrec in
         let r', f = label_type li in
         unify r r';
-        let pt, b = pat_type ~known:f p in
+        let pt, b = pat_type f p in
         unify pt f; li.idx, b) fs in
       idxs := List.map fst bs; n := List.length li0.lnames;
       r, List.concat_map snd bs
   | POr (a, b) ->
-      let t, ba = pat_type a and u, bb = pat_type b in
+      let t, ba = pat_type (newvar ()) a and u, bb = pat_type (newvar ()) b in
       unify t u;
       if ba <> [] || bb <> [] then error "an or-pattern with variables";
       t, []
@@ -730,7 +732,7 @@ let rec infer env e : ty =
 and cases_type env t cases =
   let r = newvar () in
   List.iter (fun (p, g, e) ->
-    let pt, bs = pat_type ~known:t p in
+    let pt, bs = pat_type t p in
     unify pt t;
     let env = bs @ env in
     Option.iter (fun g -> unify (infer env g) bool_t) g;
@@ -744,7 +746,7 @@ and let_types env bs =
     decr level;
     match p with
     | PVar x -> if nonexpansive e then generalize t else unify (newvar ()) t; [ x, t ]
-    | p -> let pt, b = pat_type ~known:t p in unify pt t; b) bs
+    | p -> let pt, b = pat_type t p in unify pt t; b) bs
   @ env
 
 and rec_types env bs =

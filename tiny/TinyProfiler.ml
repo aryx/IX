@@ -5,6 +5,10 @@
 
 let usage = "usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.tm...] [-u file.tm...]"
 
+(* [add tbl k n]: n added to k's count, 0 when k has none (by hand:
+ * OCaml's Option.value takes ~default, ix's does not) *)
+let add tbl k n = Hashtbl.replace tbl k (n + (match Hashtbl.find_opt tbl k with Some m -> m | None -> 0))
+
 (* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines):
  * the counts by (the kernel's?, base, pc). *)
 let read_profile caps file =
@@ -13,7 +17,7 @@ let read_profile caps file =
     match String.split_on_char ' ' line with
     | [ m; b; pc; n ] ->
         let k = m = "k", int_of_string ("0x" ^ b), int_of_string ("0x" ^ pc) in
-        Hashtbl.replace counts k (int_of_string n + Option.value ~default:0 (Hashtbl.find_opt counts k))
+        add counts k (int_of_string n)
     | _ -> ()) (String.split_on_char '\n' (FS.read caps (Fpath.v file)));
   counts
 
@@ -61,12 +65,12 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
     | "-base" :: b :: rest -> options top diff (Some (int_of_string ("0x" ^ b))) rest
     | file :: rest when file.[0] <> '-' ->
         (* the files after -k are the kernel's, after -u the program's *)
-        let rec files k u which = function
-          | "-k" :: rest -> files k u `K rest
-          | "-u" :: rest -> files k u `U rest
-          | f :: rest -> if which = `K then files (f :: k) u which rest else files k (f :: u) which rest
+        let rec files k u kernel = function
+          | "-k" :: rest -> files k u true rest
+          | "-u" :: rest -> files k u false rest
+          | f :: rest -> if kernel then files (f :: k) u kernel rest else files k (f :: u) kernel rest
           | [] -> List.rev k, List.rev u in
-        Some (top, diff, base, file, files [] [] `U rest)
+        Some (top, diff, base, file, files [] [] false rest)
     | _ -> None in
   match options 20 None None (List.tl (Array.to_list (CapSys.argv caps))) with
   | None -> Console.eprint caps (usage ^ "\n"); 2
@@ -78,7 +82,7 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
       (* the totals: the kernel's, and each program's by its window's base *)
       let kernel = ref 0 and programs = Hashtbl.create 8 in
       Hashtbl.iter (fun (k, b, _) n ->
-        if k then kernel := !kernel + n else Hashtbl.replace programs b (n + Option.value ~default:0 (Hashtbl.find_opt programs b))) counts;
+        if k then kernel := !kernel + n else add programs b n) counts;
       let user = Hashtbl.fold (fun _ n acc -> acc + n) programs 0 in
       let total = !kernel + user in
       let named = match base with
@@ -92,7 +96,7 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
           if k then "k", (if kfiles = [] then "(the kernel)" else find kfuncs pc)
           else if b <> named then "u", "(another program)"
           else "u", (if ufiles = [] then "(the program)" else find ufuncs pc) in
-        Hashtbl.replace by where (n + Option.value ~default:0 (Hashtbl.find_opt by where))) counts;
+        add by where n) counts;
       let rows = List.sort (fun (_, a) (_, b) -> compare b a) (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
       Console.print caps (Printf.sprintf "%s instructions: the kernel %.1f%%, programs %.1f%%\n" (commas total) (percent !kernel total) (percent user total));
       if Hashtbl.fold (fun _ n k -> if n > 0 then k + 1 else k) programs 0 > 1 then

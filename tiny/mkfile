@@ -37,7 +37,7 @@ STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibHost.a;; *) echo $STDOBJS;; esac}
 STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
-PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-cpu tiny-machine tiny-mkfs
+PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-assembler tiny-c tiny-ml tiny-db tiny-vcs tiny-arm tiny-cpu tiny-machine tiny-prof tiny-mkfs
 
 all:V: ${PROGS:%=$D/%}
 
@@ -63,7 +63,8 @@ $TL/start.$O: TinyLibHost/c/start.s
 $TL/TinyLibHost.a: $TUNITS
 	rm -f $target
 	$AR u $target $TUNITS
-$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
+$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O $D/TinyProfiler.$O: TinyMachine/TinyMachineCPU.ml
+$D/TinyProfiler.$O: TinyMachine/TinyMachineDevices.ml
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
 $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
@@ -147,6 +148,9 @@ $D/tiny-cpu: $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 $D/tiny-machine: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
 	$START TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
+$D/tiny-prof: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyProfiler.$O $LIBS
+	$START TinyMachineCPU TinyMachineDevices TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
+	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

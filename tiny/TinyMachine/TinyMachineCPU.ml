@@ -361,7 +361,7 @@ let layout ~ext ~origin (files : (string * string list) list) =
 
 let labels ~ext ~origin files =
   let labels, _ = layout ~ext ~origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files) in
-  List.sort (fun (_, a) (_, b) -> Stdlib.compare a b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
+  List.sort (fun (_, a) (_, b) -> a - b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
 
 let assemble_files ~ext ~origin (files : (string * string list) list) =
   let labels, placed = layout ~ext ~origin files in
@@ -438,7 +438,7 @@ let profiled (env : env) (p : profile) (where : machine -> int * int) =
  * the most counted first *)
 let profile_lines (p : profile) =
   let l = Hashtbl.fold (fun k n acc -> (k, !n) :: acc) p [] in
-  let l = List.sort (fun (_, a) (_, b) -> Stdlib.compare b a) l in
+  let l = List.sort (fun (_, a) (_, b) -> b - a) l in
   String.concat "" (List.map (fun (k, n) ->
     Printf.sprintf "%c %x %x %d\n" (if (k lsr 32) land 1 = 1 then 'k' else 'u') (k lsr 33) (k land 0xffffffff) n) l)
 

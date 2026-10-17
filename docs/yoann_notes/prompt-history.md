@@ -37085,3 +37085,19 @@ Claude asked whether to commit today's changes first, and whether to keep or mov
 **Yoann:**
 
 > also why we have TinyTroff.ml and TinyTroffCommand.ml? why this special case that we don't have for the other programs
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:42
+
+**Yoann:**
+
+> let's commit and let's remove TinyTroffCommand.ml
+
+**Claude (summary):**
+
+Claude committed the wiki removal as `0f0d86b8` and deleted `TinyTroffCommand.ml`.
+Claude rebuilt `tiny-troff` from `TinyKernel/user/troff.ml` in `tiny/sdl/`, matching how `tiny-office` and the other programs are built.
+Claude added `open TinyCalls` to `troff.ml`, fixed its misplaced header sentence, and removed the `TinyTroffCommand` stanza from `tiny/dune`.
+Claude checked that `bin/tiny-troff` prints usage, the `report.ixd` text, and the same 2,431-byte PDF.
+Claude confirmed tiny-kernel's `make check` and the dune build pass, noting `tiny-troff` now links SDL without opening a window.

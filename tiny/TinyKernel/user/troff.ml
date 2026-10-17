@@ -15,11 +15,12 @@
  *
  *     troff -h page > page.html; put page.html
  *
- * (tiny-troff, TinyTroffCommand.ml, is the same on the host.)
- * put keeping it at the wire's other end. Not OCaml's to compile: it
- * names the kernel's calls. *)
-open TinyTroff
+ * put keeping it at the wire's other end. OCaml compiles it too, for
+ * the host (tiny-troff, ../../sdl/): its calls TinyCalls's, the host's
+ * files and standard output (no window: troff draws nothing). *)
+open TinyCalls
 open TinyLibGUI
+open TinyTroff
 
 let () =
   let n = u_argc () in

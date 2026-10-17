@@ -356,9 +356,13 @@ tiny-windows like emacs, and a screen session in `make check`:
      laid out by the office's own lay_out (now in TinyOffice.mli); a
      sheet's values in a grid, a drawing's lines and arrowheads, a
      paint's and a chart's rectangles; not compressed. `troff -p` on
-     tiny-kernel, and `tiny-troff [-h | -p] file` on the host
-     (TinyTroffCommand.ml: the author, "why can't we tiny-office on the
-     host? (and same for tiny-troff)"). Checked: TinyTroff_test.sh
+     tiny-kernel, and `tiny-troff [-h | -p] file` on the host (the
+     author, "why can't we tiny-office on the host? (and same for
+     tiny-troff)"): at first TinyTroffCommand.ml, a program of its own;
+     then ("why we have TinyTroff.ml and TinyTroffCommand.ml? why this
+     special case that we don't have for the other programs") the
+     kernel's TinyKernel/user/troff.ml, compiled in tiny/sdl/ as the
+     other programs are. Checked: TinyTroff_test.sh
      prints the PDF (the same bytes from tiny-cpu), Ghostscript renders
      it without a complaint and pdftotext reads its text; make check's
      troff -p of /examples/report.ixd, the same 2,431 bytes as the

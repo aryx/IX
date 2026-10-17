@@ -125,15 +125,6 @@
  (modules TinyTroff)
  (libraries tiny_office))
 
-; TinyTroffCommand.ml, tiny-troff: TinyTroff.ml on the host, a file
-; printed as text, HTML or PDF
-(executable
- (name TinyTroffCommand)
- (public_name tiny-troff)
- (package ix)
- (modules TinyTroffCommand)
- (libraries tiny_troff ix_core fpath caps))
-
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
 ; on it

@@ -128,6 +128,12 @@
  *   function with all its arguments calls its n-ary code directly, and
  *   a function without free variables is a static block. Calls in tail
  *   position are jumps, so a let rec loop runs in constant space.
+ * - {b What nothing uses is not compiled.} Before the code is made, a
+ *   top-level let whose names nothing after it uses, and whose value is
+ *   a function or a constant, is dropped ([prune]). So the prelude and
+ *   the libraries given before a program (TinyLibStd, TinyLibGUI...)
+ *   cost it only what it calls: tiny-kernel's calc went from 206 KB to
+ *   152 KB, and its emacs from 287 KB to 225 KB.
  * - {b Exceptions with no assembly in the runtime.} try pushes a record
  *   on the machine stack (the stack pointer, R26, the handler's address,
  *   and the previous record); raise restores both stack pointers from

@@ -1625,6 +1625,30 @@ let curry_fun n k =
 
 (* ml_init: the toplevel, in a handler that prints an uncaught
  * exception; its names globals, the collector's roots *)
+(* The program without the top-level values that nothing uses, so that
+ * a library (TinyLibStd, TinyLibGUI...) costs a program only what it
+ * calls. The items are read from the last one back, with the names
+ * used by the items kept so far. A let is dropped when none of its
+ * names is used later and computing it does nothing: its values are
+ * functions or constants, and its patterns cannot fail. A let that is
+ * kept binds its names, so a use before it is of an earlier binding of
+ * the same name. *)
+let prune (items : (item * int) list) =
+  let used = Hashtbl.create 256 in
+  List.fold_left (fun kept (it, l) ->
+    match it with
+    | ILet (r, bs) ->
+        let names = List.concat_map (fun (p, _) -> pat_vars p) bs in
+        let pure = List.for_all (fun (p, e) -> nonexpansive e && not (refutable p)) bs in
+        if pure && not (List.exists (Hashtbl.mem used) names) then kept
+        else begin
+          List.iter (Hashtbl.remove used) names;
+          List.iter (fun (_, e) -> List.iter (fun x -> Hashtbl.replace used x ()) (free (if r then names else []) e [])) bs;
+          (it, l) :: kept
+        end
+    | IExt (x, _, _) -> Hashtbl.remove used x; (it, l) :: kept
+    | IExn _ -> (it, l) :: kept) [] (List.rev items)
+
 let compile (items : (item * int) list) =
   cur := { code = []; nslots = 1; ntries = 1 };
   let handler = label () and nglobals = ref 0 in
@@ -1713,7 +1737,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let items = parse (FS.read caps (Fpath.v f)) in
       env := List.fold_left type_item !env items;
       items) (List.rev !files) in
-    compile program;
+    compile (prune program);
     let asm = (if !tm then start_tm else start_arm64) ^ Buffer.contents text ^ Buffer.contents data in
     if !output = "" then Console.print caps asm else FS.write caps (Fpath.v !output) asm
   with

@@ -10,10 +10,11 @@
  *
  *   tiny-ml -tm -o sh.tm TinyLibStd.ml ... TinyShell.ml
  *
- * A file a program asks for, as TinyLibGUI, and not in the prelude,
- * which is compiled whole in every program: the calculator has no use
- * for a Hashtbl. Not OCaml's to compile (List.init is one name here),
- * so no .mli beside it.
+ * A file a program asks for, as TinyLibGUI, and not in the prelude:
+ * tiny-ml compiles only the functions a program uses (TinyML.mli), so
+ * a program can be given this file at no cost, but the prelude is what
+ * every program has without asking. Not OCaml's to compile (List.init
+ * is one name here), so no .mli beside it.
  *
  * Simple before fast: a Buffer is a string that grows by ^ (the
  * runtime has no string to write in), a Hashtbl a list of pairs. A

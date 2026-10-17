@@ -36976,3 +36976,19 @@ Yoann's follow-up was to put the shared library in an `sdl/` directory.
 **Yoann:**
 
 > yes, and maybe we can put this in a sdl/ directory that we usually skip already I think as part of make loc
+
+------------------------------------------------------------------------
+
+## 2026-10-17 15:28
+
+**Yoann:**
+
+> or host/
+
+**Claude (summary):**
+
+Claude committed the progress as `2821cdf1` before starting on the host code.
+Claude placed the host side in `tiny/sdl/`, with the real `TinyCalls`, a font rule, and four SDL programs.
+Claude made `TinyMachineSDL` a library both programs link, moving the key translation out of tiny-machine's window.
+Claude added a virtual-library `TinyCalls` interface, with the stub as one implementation that the tests use by default.
+Claude confirmed mini-mk and `make loc` both skip `tiny/sdl/`, and noted that exclusion in the plan.

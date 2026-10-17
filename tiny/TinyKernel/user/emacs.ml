@@ -12,11 +12,13 @@
  * is here: the editor of the file on a screen of the window's size,
  * its picture (a white ground, its lines), and a key given to it with
  * those it gives itself (a macro's, M-x's), a save done when it asks.
- * The file is the kernel's, in its memory: put keeps it. Not OCaml's to
- * compile: it names the kernel's calls. *)
-open TinyEditorScreen
+ * The file is the kernel's, in its memory: put keeps it. OCaml compiles
+ * it too, for the host (tiny-emacs, ../../sdl/): its calls TinyCalls's,
+ * a window's (the editor opened last, its key and view over the GUI's). *)
+open TinyCalls
 open TinyLibPlayground
 open TinyLibGUI
+open TinyEditorScreen
 
 let () =
   if u_argc () <> 2 then (ignore (u_write 2 "usage: emacs file\n"); exit 1);

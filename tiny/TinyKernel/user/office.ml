@@ -11,10 +11,12 @@
  * the raw console (C-x C-c), the page drawn where it changed. What is
  * here: the page of the file at the window's size, a key and the mouse
  * given to it, a save done when either asks. The file is the kernel's, in
- * its memory: put keeps it. Not OCaml's to compile: it names the
- * kernel's calls. *)
-open TinyOffice
+ * its memory: put keeps it. OCaml compiles it too, for the host
+ * (tiny-office, ../../sdl/): its calls TinyCalls's, a window's (the
+ * office opened last, its key and mouse over the GUI's). *)
+open TinyCalls
 open TinyLibGUI
+open TinyOffice
 
 let () =
   if u_argc () <> 2 then (ignore (u_write 2 "usage: office file\n"); exit 1);

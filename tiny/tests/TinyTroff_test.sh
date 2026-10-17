@@ -9,7 +9,7 @@
 # (RECORD=1 records them: read them first); then built by tiny-ml -tm
 # with TinyLibStd.ml, TinyLibDraw.ml, TinyLibPlayground.ml, TinyLibGUI.ml
 # (which TinyOffice.ml is on; the kernel's calls under them the host's
-# stand-in, TinyKernel/host/TinyCalls.ml) and TinyOffice.ml, and run by
+# stand-in, TinyKernel/host/stub/TinyCalls.ml) and TinyOffice.ml, and run by
 # tiny-cpu: the same lines.
 # usage: TinyTroff_test.sh
 
@@ -41,7 +41,7 @@ END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 if $TC -tm -o $W/main.tm $W/main.c && $TC -tm -o $W/data.tm $W/data.c \
-   && $TML -tm -o $W/print.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyOffice.ml $ROOT/tiny/TinyTroff.ml $T/Print.ml \
+   && $TML -tm -o $W/print.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/stub/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyOffice.ml $ROOT/tiny/TinyTroff.ml $T/Print.ml \
    && $CPU -o $W/print.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/print.tm $W/data.tm \
    && timeout 120 $CPU $W/print.img > $W/tm.out 2>&1 && diff $T/print.expected $W/tm.out > $W/tm.diff
 then echo "ok print: by tiny-ml, on tiny-cpu"; else echo "FAIL print: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi

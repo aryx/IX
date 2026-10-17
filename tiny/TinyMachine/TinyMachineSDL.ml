@@ -7,6 +7,14 @@ open Tsdl
 type event = Quit | At of int * int | Button of int * bool | Key of int * bool | Wheel of int
 type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit }
 
+let key_byte usage ~shift ~ctrl =
+  let plain = "abcdefghijklmnopqrstuvwxyz1234567890\n\027\b\t -=[]\\\000;'`,./"
+  and shifted = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()\n\027\b\t _+{}|\000:\"~<>?" in
+  if usage >= 4 && usage <= 56 then
+    if ctrl && usage <= 29 then Some (usage - 3)
+    else (match Char.code (if shift then shifted else plain).[usage - 4] with 0 -> None | c -> Some c)
+  else match usage with 82 -> Some 128 | 81 -> Some 129 | 80 -> Some 130 | 79 -> Some 131 | 76 -> Some 127 | _ -> None
+
 let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
 
 let create ~title =

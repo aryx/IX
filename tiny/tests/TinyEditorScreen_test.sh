@@ -9,7 +9,7 @@
 # OCaml (dune), its lines against keys.expected (RECORD=1 records them:
 # read them first); then built by tiny-ml -tm with TinyLibStd.ml and
 # TinyLibPlayground.ml (its shapes; the kernel's calls under it are the
-# host's stand-in, TinyKernel/host/TinyCalls.ml) and run by tiny-cpu,
+# host's stand-in, TinyKernel/host/stub/TinyCalls.ml) and run by tiny-cpu,
 # linked as TinyML_test.sh's programs: the same lines.
 # usage: TinyEditorScreen_test.sh
 
@@ -40,7 +40,7 @@ void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
-if $TC -tm -o $W/main.tm $W/main.c && $TC -tm -o $W/data.tm $W/data.c && $TML -tm -o $W/keys.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyEditorScreen.ml $T/Keys.ml \
+if $TC -tm -o $W/main.tm $W/main.c && $TC -tm -o $W/data.tm $W/data.c && $TML -tm -o $W/keys.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/stub/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyEditorScreen.ml $T/Keys.ml \
    && $CPU -o $W/keys.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/keys.tm $W/data.tm \
    && timeout 120 $CPU $W/keys.img > $W/tm.out 2>&1 && diff $T/keys.expected $W/tm.out > $W/tm.diff
 then echo "ok keys: by tiny-ml, on tiny-cpu"; else echo "FAIL keys: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi

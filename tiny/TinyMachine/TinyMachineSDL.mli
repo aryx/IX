@@ -26,3 +26,8 @@ type event = Quit | At of int * int | Button of int * bool | Key of int * bool |
 type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit }
 
 val create : title:string -> t
+
+(* a key's byte, by its USB usage (a US keyboard's, SDL's scancode),
+ * with shift and control; the arrows 128 to 131 (up, down, left,
+ * right), tiny-machine's choice; None for a key that is no byte *)
+val key_byte : int -> shift:bool -> ctrl:bool -> int option

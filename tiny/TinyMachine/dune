@@ -41,14 +41,21 @@
  (modules TinyMachineFetch)
  (libraries tiny_machine_devices ix_graphics_images ix_http ix_tls ix_tcp ix_core caps unix))
 
-; tiny-machine's window: the one tiny program linking a C library (SDL,
-; by TinyMachineSDL)
+; an SDL window (tsdl), the C library tiny programs link: tiny-machine's
+; window, and the tiny programs on the host (../sdl/)
+(library
+ (name tiny_machine_sdl)
+ (wrapped false)
+ (modules TinyMachineSDL)
+ (libraries tsdl))
+
+; tiny-machine's window
 (executable
  (name TinyMachineWindow)
  (public_name tiny-machine-window)
  (package ix)
- (modules TinyMachineWindow TinyMachineSDL)
- (libraries tsdl unix))
+ (modules TinyMachineWindow)
+ (libraries tiny_machine_sdl unix))
 
 ; tiny-machine in a web page (plan_web.md): the machine by js_of_ocaml,
 ; TinyMachineWeb.html its page (./tiny-machine -web dir tiny-kernel);

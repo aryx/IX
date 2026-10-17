@@ -20,3 +20,7 @@ let u_dial (_ : string) (_ : int) = -1
 let u_close (_ : int) = 0
 let u_rawcons (_ : int) = 0
 let u_open (_ : string) (_ : int) = -1
+(* a program with no arguments (tiny-ml compiles this file too, for the
+ * tests on tiny-cpu, and has no Sys.argv) *)
+let u_argc () = 1
+let u_arg (_ : int) = "test"

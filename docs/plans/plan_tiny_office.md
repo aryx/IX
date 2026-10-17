@@ -363,6 +363,30 @@ tiny-windows like emacs, and a screen session in `make check`:
      it without a complaint and pdftotext reads its text; make check's
      troff -p of /examples/report.ixd, the same 2,431 bytes as the
      host's.
+   - **On the host (2026-10-17).** The author: "tiny-office should not
+     talk directly to the kernel; it should use intermediate library
+     abstraction that then could also work on the host no?", and "maybe
+     we can put this in a sdl/ directory that we usually skip already I
+     think as part of make loc". It did: TinyOffice.ml makes no call,
+     TinyLibGUI, the playground and TinyLibDraw make theirs through
+     TinyCalls, which was the kernel's (calls.ml) or the tests' stub.
+     TinyCalls is now a virtual library of dune's
+     (TinyKernel/host/TinyCalls.mli), with two implementations: the
+     stub (TinyKernel/host/stub/, the tests', the default) and a
+     window's (tiny/sdl/TinyCalls.ml): the drawing messages done by
+     tiny-kernel's own TinyKernelGraphics.ml in TinyMemory's screen,
+     shown by TinyMachineSDL (now a library, with the key's bytes that
+     were tiny-machine-window's), the mouse the box of descriptor 4,
+     the keys descriptor 0, an ENQ answered with the window's size, the
+     host's files and clock. The few lines of each program
+     (TinyKernel/user/office.ml, emacs.ml, calc.ml, tetris.ml) are
+     compiled by OCaml there as they are (an `open TinyCalls`, which
+     tiny-ml leaves): tiny-office, tiny-emacs, tiny-calc, tiny-tetris.
+     tiny/sdl/ is not counted by make loc (a program's host).
+     TINY_SCREEN=file writes the screen when the program ends: the four
+     looked at under SDL_VIDEODRIVER=dummy (the office on
+     /examples/report.ixd, emacs on wc.c in colours, the calculator,
+     tetris's first piece falling).
    - The step as planned: each part's `html` as it comes is fine too; this
    step is the page around them, and a session that publishes a
    document and reads it with www.

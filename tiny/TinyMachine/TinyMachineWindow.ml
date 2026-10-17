@@ -3,17 +3,6 @@
 
 (* See TinyMachineWindow.mli *)
 
-(* a key's byte, by its USB usage (a US keyboard's), with shift and
- * control; the arrows 128 to 131 (up, down, left, right), tiny-machine's
- * choice *)
-let key_byte usage ~shift ~ctrl =
-  let plain = "abcdefghijklmnopqrstuvwxyz1234567890\n\027\b\t -=[]\\\000;'`,./"
-  and shifted = "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()\n\027\b\t _+{}|\000:\"~<>?" in
-  if usage >= 4 && usage <= 56 then
-    if ctrl && usage <= 29 then Some (usage - 3)
-    else (match Char.code (if shift then shifted else plain).[usage - 4] with 0 -> None | c -> Some c)
-  else match usage with 82 -> Some 128 | 81 -> Some 129 | 80 -> Some 130 | 79 -> Some 131 | 76 -> Some 127 | _ -> None
-
 (* what tiny-machine writes: a screen as a PPM, or a line "C n", the
  * mouse's look (0 the arrow, 1 a hand), which a program of the machine
  * chose by writing the mouse's word *)
@@ -62,7 +51,7 @@ let () =
               if !alt then Printf.printf "k \\%03d\n" 27;
               Printf.printf "k \\%03d\n" byte;
               held := Some (usage, byte);
-              again := Unix.gettimeofday () +. 0.3) (key_byte usage ~shift:!shift ~ctrl:!ctrl)
+              again := Unix.gettimeofday () +. 0.3) (TinyMachineSDL.key_byte usage ~shift:!shift ~ctrl:!ctrl)
         | TinyMachineSDL.Key (usage, false) -> (match !held with Some (u, _) when u = usage -> held := None | _ -> ())
         (* A step of the wheel (or of two fingers on a trackpad) is an
          * arrow key, up or down, a step each: a key is queued, where a

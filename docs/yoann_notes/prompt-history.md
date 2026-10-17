@@ -37211,3 +37211,27 @@ Claude then proposed B7, a dead-code pass worth about 15 lines, and asked Yoann 
 For B7, Claude proposed removing `d_image`, `d_free` and `GREEN` from `TinyKernel/libc/draw.c` and `draw.h`, since no C program calls them.
 Claude also proposed deleting the unused `TinyMachineCPU.assemble` and the duplicate `peekb`/`pokeb` declarations in `TinyKernel.ml`.
 Claude further proposed dropping the redundant `has_imm` guard and the `let trim = String.trim` alias in `TinyMachineCPU.ml`.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 21:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude finished the B7 cleanup and committed it, removing `d_image`, `d_free`, `GREEN`, `assemble`, and the duplicate `peekb`/`pokeb` declarations.
+Claude proposed A4 for `TinyKernel/Makefile`, turning the 11 ML programs' identical link rules into one pattern rule.
+Claude also planned one shared `$(O)/%.tm: %.c` rule for the three C programs, and one pattern for paint and wiki.
+Claude estimated the A4 change at about 37 fewer lines, and would run the `check` tests in a single loop.
+Claude noted that per-program rules are the readable repetition Yoann prefers, and that it would commit only its own Makefile edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 21:38
+
+**Yoann:**
+
+> now let's add audio to t-ix

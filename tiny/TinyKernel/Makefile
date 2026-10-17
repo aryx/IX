@@ -88,7 +88,7 @@ all: $(O)/boot.img
 
 $(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ $^
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)
@@ -97,9 +97,7 @@ $(O)/font.tm: $(FONT)
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
 	printf '\t.align\t4\n' >> $@
 
-$(O)/runtime.tm: runtime.c ../TinyMLRuntime/core.c
-	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+$(O)/runtime.tm: ../TinyMLRuntime/core.c
 
 $(O)/kernel.img: $(KERNEL)
 	$(MACHINE) -o $@ $(KERNEL)
@@ -108,16 +106,10 @@ $(O)/libc.tm: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
-$(O)/user/%.tm: user/%.c libc/user.h
-	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
-
-# what a program is linked with besides: libc/ for one in C (draw.c,
-# net.c), libml/ for one in ML (mlsys.c)
-$(O)/libc/%.tm: libc/%.c libc/user.h
-	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
-$(O)/libml/%.tm: libml/%.c libc/user.h
+# a file in C: the kernel's runtime.c, a program of user/, or what a
+# program is linked with besides: libc/ for one in C (draw.c, net.c),
+# libml/ for one in ML (mlsys.c)
+$(O)/%.tm: %.c libc/user.h
 	@mkdir -p $(@D)
 	$(TC) -tm -o $@ $<
 
@@ -125,25 +117,26 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
 
-# a program in ML (windows, tiny-windows: ../TinyWindows.ml, after
-# ../TinyLibDraw.ml):
-# compiled by tiny-ml -tm, with mlsys.c, TinyML's runtime and the
-# system calls as ML's externals, which has the heap from 384 KB
-$(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
+# a program in ML: its files, below, compiled by tiny-ml -tm, with
+# mlsys.c, TinyML's runtime and the system calls as ML's externals,
+# which has the heap from 384 KB (windows, tiny-windows:
+# ../TinyWindows.ml, after ../TinyLibDraw.ml)
+ML = windows bigmem www square tetris calc temp rc utils ed emacs office troff
+MLBINS = windows square tetris calc temp rc utils ed emacs office troff
+$(patsubst %,$(O)/user/%.tm,$(ML)):
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ ../TinyLibDraw.ml ../TinyWindows.ml
+	$(TML) -tm -o $@ $^
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
-MLLINK = mkdir -p $(@D) && $(CPU) -o $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/$(@F).tm && \
-	{ test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }; }
-$(O)/bin/windows: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/windows.tm
-	@$(MLLINK)
+$(patsubst %,$(O)/bin/%,$(MLBINS)): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/%.tm
+	@mkdir -p $(@D)
+	$(CPU) -o $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/$*.tm
+	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }
+$(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
 
 # a program that asks for more memory than 1 MB: linked as an a.out
 # whose header asks for 8 MB (tiny-cpu -a 8), so tiny-kernel gives it an
 # 8 MB partition and mlsys.c a heap of that size (bigmem: the test)
 $(O)/user/bigmem.tm: user/bigmem.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ user/bigmem.ml
 $(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 	@mkdir -p $(@D)
 	$(CPU) -a 8 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
@@ -154,8 +147,6 @@ $(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 # values starts.
 WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyBrowser.ml user/www.ml
 $(O)/user/www.tm: $(WWW)
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(WWW)
 $(O)/bin/www: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
 	@mkdir -p $(@D)
 	$(CPU) -a 10 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
@@ -166,29 +157,13 @@ $(O)/bin/www: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
 PLAY = libml/calls.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml
 SQUARE = ../tests/TinyLibPlayground_tests/Square.ml ../tests/TinyLibPlayground_tests/machine.ml
 $(O)/user/square.tm: $(PLAY) $(SQUARE)
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) $(SQUARE)
-$(O)/bin/square: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/square.tm
-	@$(MLLINK)
 $(O)/user/tetris.tm: $(PLAY) ../TinyAppTetris.ml user/tetris.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyAppTetris.ml user/tetris.ml
-$(O)/bin/tetris: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/tetris.tm
-	@$(MLLINK)
 
 # a program with widgets: on ../TinyLibGUI.ml, which draws by the
 # playground's shapes (calc: ../TinyAppCalculator.ml; temp:
 # ../TinyAppTemperature.ml)
 $(O)/user/calc.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
-$(O)/bin/calc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/calc.tm
-	@$(MLLINK)
 $(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
-$(O)/bin/temp: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/temp.tm
-	@$(MLLINK)
 
 # a tool of the host's that runs here too (rc: ../TinyShell.ml,
 # tiny-shell): on ../TinyLibStd.ml, what it names of OCaml's standard
@@ -196,54 +171,30 @@ $(O)/bin/temp: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/temp.tm
 # (the host's is ../TinyLibHost/TinyLibSystem.ml)
 TOOL = libml/calls.ml ../TinyLibStd.ml libml/TinyLibSystem.ml
 $(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TOOL) ../TinyShell.ml
-$(O)/bin/rc: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/rc.tm
-	@$(MLLINK)
 
 # the utilities (utils: ../TinyUtilities.ml, tiny-utils), on the same
 # library as rc, and ../TinyLibRegex.ml for grep
 $(O)/user/utils.tm: $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
-$(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
-	@$(MLLINK)
 
 # the line editor (ed, and sam: ../TinyEditorLine.ml, tiny-editor), on
 # the same library as rc, and grep's ../TinyLibRegex.ml
 $(O)/user/ed.tm: $(TOOL) ../TinyLibRegex.ml ../TinyEditorLine.ml
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TOOL) ../TinyLibRegex.ml ../TinyEditorLine.ml
-$(O)/bin/ed: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/ed.tm
-	@$(MLLINK)
 
 # the screen editor (emacs: ../TinyEditorScreen.ml, the editor, run by
 # ../TinyLibGUI.ml's run_canvas; user/emacs.ml, the few lines between)
 EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyEditorScreen.ml user/emacs.ml
 $(O)/user/emacs.tm: $(EMACS)
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(EMACS)
-$(O)/bin/emacs: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/emacs.tm
-	@$(MLLINK)
 
 # the office (../TinyOffice.ml, the page and its parts, run by
 # ../TinyLibGUI.ml's run_canvas;
 # user/office.ml, the few lines between)
 OFFICE = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml user/office.ml
 $(O)/user/office.tm: $(OFFICE)
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(OFFICE)
-$(O)/bin/office: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/office.tm
-	@$(MLLINK)
 
 # troff (../TinyTroff.ml, a page as text or HTML, on the office's
 # reading of it; user/troff.ml, the few lines between)
 TROFF = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml ../TinyTroff.ml user/troff.ml
 $(O)/user/troff.tm: $(TROFF)
-	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TROFF)
-$(O)/bin/troff: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/troff.tm
-	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
@@ -279,6 +230,10 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img
 
+# the recorded sessions, each against its screen's sum; the browser's
+# read ../tests/www's pages
+SCREENS = paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint \
+	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
@@ -302,11 +257,7 @@ check: $(O)/boot.img
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint; do \
-	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
-	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
-	done
-	for s in www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll; do \
+	for s in $(SCREENS); do \
 	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

@@ -15,7 +15,7 @@
  * The file is the kernel's, in its memory: put keeps it. Not OCaml's to
  * compile: it names the kernel's calls. *)
 open TinyEditorScreen
-open TinyLibDraw
+open TinyLibPlayground
 open TinyLibGUI
 
 let () =

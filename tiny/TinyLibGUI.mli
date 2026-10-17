@@ -190,7 +190,7 @@ val redraw :
  * of the whole window); a key and the next model, or None to end; the
  * mouse at (x, y) and its buttons (1 left, 2 middle, 4 right), and the
  * next model *)
-type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibDraw.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
+type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
 
 (* [run_canvas c]: the program until its typed says None or the keys
  * end; then its window white. After each key (or each read of the

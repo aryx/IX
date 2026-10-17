@@ -107,7 +107,7 @@
  (name tiny_editor_screen)
  (wrapped false)
  (modules TinyEditorScreen)
- (libraries tiny_lib_draw))
+ (libraries tiny_lib_playground))
 
 ; TinyOffice.ml, tiny-office's page and its parts, with no system under it
 ; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)

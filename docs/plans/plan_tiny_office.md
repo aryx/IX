@@ -107,8 +107,12 @@ tiny-windows like emacs, and a screen session in `make check`:
      window size (an ENQ), file, loop, raw console and drawing, each
      its own: now TinyLibGUI's run_canvas (a program that draws its
      whole window, below the widgets), its read_file and write_file;
-     the shapes are TinyLibDraw's (moved from TinyLibPlayground, which
-     re-exports them: tiny-ml now reads OCaml's type t = M.t = A | B);
+     the shapes are TinyLibPlayground's, as mini-office stands on the
+     playground's in m-ix (they were moved to TinyLibDraw for a day; the
+     author: "not a huge fan of moving the shape to LibDraw as it
+     creates a mismatch with where it is in m-ix"; the tests that run
+     on tiny-cpu, with no kernel, link the host's stand-in for its
+     calls, TinyKernel/host/TinyCalls.ml, instead);
      TinyEditorScreen gives its screen as shapes (shapes), used by
      emacs and by the office's text boxes. emacs.ml went from 89 lines
      of code to 18, office.ml from about 100 to 15; TinyLibGUI gained
@@ -134,9 +138,35 @@ tiny-windows like emacs, and a screen session in `make check`:
      saved, C-x C-c, cat) and office.events (two boxes in a window, one
      moved, one being edited: the screen).
 2. **The sheet**: a grid in a box, a cell typed at the last line as in
-   emacs's prompt, formulas, recomputation.
+   emacs's prompt, formulas, recomputation. **Done (2026-10-17)**, while
+   the author was away ("go forward on the office plan; I'll check
+   when I'm back"): about 150 lines of code in TinyOffice.ml. C-x t
+   makes a sheet; its data a line a cell, "b3 =b1+b2"; a formula is
+   read and computed at once by recursive descent (+ - * /,
+   parentheses, cells, sum(a1:b3)), each cell once a view, those it
+   needs first, a cell being computed counting as #CYCLE; errors in
+   the cell (#SYNTAX, #REF, #TEXT, #DIV0, #CYCLE). Edited as a
+   spreadsheet: a click or the arrows choose a cell, typing replaces
+   it, shown in the status line as a formula bar, Enter puts it and
+   goes down, Enter on a cell brings back what is in it, C-g forgets
+   it. Integers only: tiny-ml has no floating point on tiny-machine.
+   The office's editing is now a variant (nothing, a text box's
+   editor, a sheet's cell). Tests: TinyOffice_test.sh's sheet scenes;
+   make check's officesheet.events (a budget in a window, its shares)
+   and officekeys.events (a sheet saved in the page, cat).
 3. **The drawing**: boxes, ovals, lines, arrows and labels, made by
-   dragging.
+   dragging. **Done (2026-10-17)**, also while the author was away:
+   about 100 lines of code. C-x d makes a drawing; its data a line a
+   shape, at its place in the box ("box 20 20 80 30 cpu", "arrow 100
+   35 180 90", "text 30 150 a note"). The left button drags a box or an
+   arrow, or places a text, kept in the box; Tab changes the tool;
+   what is typed is the last shape's label, Backspace shortens it and
+   removes a shape whose label is empty. Not done: ovals and slanted
+   lines (the playground's shapes are rectangles and words; an arrow
+   goes across then up or down, a block diagram's connector, its head
+   rectangles narrowing to its end), moving a shape once drawn. Tests:
+   TinyOffice_test.sh's drawing scenes; make check's officedraw.events
+   (a diagram of three boxes and two arrows, in a window).
 4. **Paint**: a box of pixels, drawn on with the mouse (paint.c's idea,
    in a part).
 5. **The chart**: bars from a sheet's range, redrawn when its cells

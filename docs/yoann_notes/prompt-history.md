@@ -36477,3 +36477,59 @@ Claude rewrote TinyOffice, the editor, and the office test to use shapes, and th
 Claude measured eight-key emacs runs: 16.1 and 11.7 million instructions, against the 12.7 and 7.2 million baseline.
 Claude ran `make check` and the related tests, all passing, then committed step 1 and the cleanup together.
 Yoann says prompt-history.md can go into the commit too, so it needs adding before the commit is redone.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 08:11
+
+**Yoann:**
+
+> prompt-history.md can be part of the commit
+
+**Claude (summary):**
+
+Claude amended the last commit to include prompt-history.md and removed the line saying it was left out.
+Claude found the working-tree copy was 16 lines ahead of the staged one and used that version.
+Claude kept the amended commit at 9ef2af4f with all 29 files, and the working tree is clean.
+Claude updated its memory so prompt-history.md goes into every future commit.
+Claude still lists paths explicitly so other sessions' files do not get swept into commits.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 08:13
+
+**Yoann:**
+
+> not a huge fan of moving the shape to LibDraw as it creates a mismatch with where it is in m-ix. It's ok from one sense because t-ix is supposed to be a free variant, and redesigning things differently is encouraged if it simplifies things, but I'm not sure it's the case here. Is it worth it to move/copy shape to LibDraw?
+
+------------------------------------------------------------------------
+
+## 2026-10-17 08:28
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-17 08:29
+
+**Yoann:**
+
+> I have to go for one hour; go forward on the office plan; I'll check when I'm back
+
+**Claude (summary):**
+
+Claude built the sheet's cell editing on keys and mouse, with the status line acting as the formula bar.
+Claude hooked the drawing's tool and in-progress stroke into the same keys, mouse, and view as the sheet.
+Claude's officedraw session tested two labeled boxes, a labeled arrow, a shortened label, and a too-small click.
+Claude then started the office's interface docs, covering the keys and what the sheet does, for step 3.
+Claude also confirmed `make check` passes, marked plan step 2 done, and recorded the tiny-kernel window session.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:57
+
+**Yoann:**
+
+> let's commit the progress but it's currently hard to use; I think we should use menus (and TinyLibGUI) to make things less keyboard oriented

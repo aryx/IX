@@ -16,13 +16,6 @@ let () = for v = 0 to 1023 do small.(v) <- bytes.(v land 255) ^ bytes.((v asr 8)
 let i16 v = if v >= 0 && v < 1024 then small.(v) else bytes.(v land 255) ^ bytes.((v asr 8) land 255)
 let int16 s i = let v = Char.code s.[i] + (256 * Char.code s.[i + 1]) in if v >= 32768 then v - 65536 else v
 
-(* What a picture is made of, before it is messages: a rectangle of a
- * colour (a byte of the machine's palette), its width, its height;
- * words of a colour (8 by 16 pixels a character); shapes together; a
- * shape moved (to the right, down). TinyLibPlayground draws them, and
- * TinyLibGUI draws only those that changed. *)
-type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
-
 (* a message: its letter, its numbers *)
 let msg letter args = List.fold_left (fun s v -> s ^ i16 v) bytes.(Char.code letter) args
 

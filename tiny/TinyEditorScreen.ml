@@ -3,7 +3,7 @@
 
 (* See TinyEditorScreen.mli *)
 
-open TinyLibDraw
+open TinyLibPlayground
 
 (*****************************************************************************)
 (* The editor *)
@@ -545,7 +545,7 @@ let cursor (e : editor) : int * int =
   | Some (what, typed) -> min (e.cols - 1) (String.length (prompt what ^ typed)), e.rows - 1
   | None -> column e.t.line e.t.col - left e, e.t.row - e.top
 
-(* The screen as shapes (TinyLibDraw's), for a program that draws it:
+(* The screen as shapes (TinyLibPlayground's), for a program that draws it:
  * its first n lines, each a group of pieces of one colour, cut at the
  * cursor too, so that a key changes a piece or two (TinyLibGUI draws
  * again only what changed, and of words at the same place only their

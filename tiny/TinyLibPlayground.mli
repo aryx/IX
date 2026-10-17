@@ -116,7 +116,7 @@
 
 (* what a view is made of: a rectangle (its width, its height, its
  * colour), a text in a colour, shapes together, a shape moved *)
-type shape = TinyLibDraw.shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
+type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
 
 (* a game: its window's size, its first model from a seed, the model as
  * shapes, the model after a key and after a frame *)

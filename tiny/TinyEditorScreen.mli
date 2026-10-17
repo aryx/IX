@@ -112,7 +112,7 @@ val faces : editor -> string list
  * that draws it (emacs, the office's text boxes): each line a group of
  * its pieces of one colour, cut at the cursor too, so that a key
  * changes a piece or two; then the cursor's cell, white on black *)
-val shapes : editor -> int -> TinyLibDraw.shape list
+val shapes : editor -> int -> TinyLibPlayground.shape list
 
 (* where the cursor is on that screen: its column, its line *)
 val cursor : editor -> int * int

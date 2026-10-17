@@ -11,7 +11,7 @@
 open TinyEditorScreen
 open TinyOffice
 
-open TinyLibDraw
+open TinyLibPlayground
 
 (* a shape's leaves at their places: "rect colour x y w h", "words
  * colour x y |text|" *)
@@ -87,3 +87,50 @@ let () =
   keys o "\031\031";
   show "C-_ twice: back to the edit of the !" o;
   file "now" o
+
+let () =
+  let o = create 400 220 "budget" "" in
+  click o 1 10 10;
+  keys o "\024t";
+  show "C-x t: a sheet, where the last click was, its first cell chosen" o;
+  keys o "Rent\nFood\nTotal\n";
+  show "Rent, Food, Total typed, each with Enter: down a cell each" o;
+  keys o "\128\128\128\128\131500\n300\n=b1+b2\n=sum(b1:b2)*2";
+  show "up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)" o;
+  keys o "\n\131\128\128\128\128=c1+1\n=a1+1\n=1/0\n=2+\n";
+  show "Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error" o;
+  keys o "\130\128\128\128\128\128\n\127\127\1278\n";
+  show "to b1, Enter brings back 500, three Backspace, 8: b3 and b4 again" o;
+  file "the page" o;
+  click o 1 175 48;
+  show "a click in c2: chosen, its formula in the bar" o;
+  keys o "\127";
+  show "Backspace: c2 emptied" o;
+  keys o "\007";
+  show "C-g: no cell chosen" o
+
+let () =
+  let o = create 400 220 "diagram" "" in
+  click o 1 10 10;
+  keys o "\024d";
+  show "C-x d: a drawing, where the last click was; the tool a box" o;
+  click o 1 12 12;
+  drag o 1 30 30 110 60;
+  keys o "cpu";
+  show "a box dragged from 30 30 to 110 60, cpu typed: its label" o;
+  keys o "\t";
+  drag o 1 110 45 190 100;
+  keys o "\t\t";
+  drag o 1 150 100 230 130;
+  keys o "mem";
+  show "Tab: an arrow, across then down; Tab twice: a box again, mem" o;
+  keys o "\t\t";
+  click o 1 40 160;
+  keys o "a notes\127";
+  show "Tab twice: text; a click, a notes typed, Backspace" o;
+  keys o "\t";
+  click o 1 250 50;
+  show "Tab: a box; a click is no box (too small)" o;
+  file "the page" o;
+  keys o "\007";
+  show "C-g: the drawing left" o

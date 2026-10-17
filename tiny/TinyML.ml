@@ -494,10 +494,6 @@ let rec type_decl () =
   in
   let name = match peek () with LID x -> advance (); x | _ -> fail () in
   expect (KW "=");
-  (* type t = M.t = A | B, OCaml's way to give another file's type and
-   * its constructors again: the second name read and forgotten (one
-   * name space: the constructors are the same ones) *)
-  (match peek (), peek_at 1 with LID _, KW "=" -> advance (); advance () | _ -> ());
   ignore (accept (KW "|"));
   let vars = ref (List.map (fun v -> v, genvar ()) params) in
   let res = TCon (name, List.map snd !vars) in

@@ -164,6 +164,12 @@ $ $ text 100 100 200 84 36
 
 Kept by *put*, read by
 cat.
+sheet 300 300 282 114 31
+a1 Rent
+a2 500
+a3 =b0
+a4 =a2*2
+
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first

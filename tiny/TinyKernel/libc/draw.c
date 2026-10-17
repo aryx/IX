@@ -41,24 +41,10 @@ d_put(int v)
 }
 
 void
-d_image(int id, int x0, int y0, int x1, int y1, int colour)
-{
-	d_start('a', 15);
-	d_put(id); d_put(x0); d_put(y0); d_put(x1); d_put(y1); d_put(0); d_put(colour);
-}
-
-void
 d_colour(int id, int colour)
 {
 	d_start('a', 15);
 	d_put(id); d_put(0); d_put(0); d_put(1); d_put(1); d_put(1); d_put(colour);
-}
-
-void
-d_free(int id)
-{
-	d_start('f', 3);
-	d_put(id);
 }
 
 void

@@ -218,9 +218,8 @@ type extension = { parse : string -> string list -> item option; show : int -> s
 val no_extension : extension
 val reg : string -> int
 
-(* The assembler: lines to their bytes; files (a name, its text; .tm
- * assembled, another an image) linked from an origin; an image listed *)
-val assemble : ext:extension -> string list -> string
+(* The assembler: files (a name, its text; .tm assembled, another an
+ * image) linked from an origin; an image listed *)
 val image : ext:extension -> origin:int -> (string * string) list -> string
 
 (* the labels of .tm files (a name, its text) linked from an origin, as

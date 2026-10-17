@@ -229,26 +229,24 @@ type expr = Num of int | Sym of string
  * its bytes made once the labels are *)
 type item = Label of string | Words of int * (int -> (expr -> int) -> int list) | Bytes_ of string | Align of int
 
-let trim = String.trim
-
 let reg s =
-  match trim s with
+  match String.trim s with
   | "zero" -> 0 | "sp" -> sp | "lr" -> lr
   | s when String.length s >= 2 && s.[0] = 'r' ->
       (match int_of_string_opt (String.sub s 1 (String.length s - 1)) with Some n when n >= 0 && n < 16 -> n | _ -> error "not a register: %s" s)
   | s -> error "not a register: %s" s
 
 let expr s =
-  let s = trim s in
+  let s = String.trim s in
   if String.length s = 3 && s.[0] = '\'' && s.[2] = '\'' then Num (Char.code s.[1])
   else match int_of_string_opt s with Some n -> Num n | None -> Sym s
 
 (* "off(ra)" or "(ra)" *)
 let mem_operand s =
-  let s = trim s in
+  let s = String.trim s in
   match String.index_opt s '(' with
   | Some i when s.[String.length s - 1] = ')' ->
-      let off = trim (String.sub s 0 i) in
+      let off = String.trim (String.sub s 0 i) in
       reg (String.sub s (i + 1) (String.length s - i - 2)), (if off = "" then Num 0 else expr off)
   | _ -> error "not a memory operand: %s" s
 
@@ -264,12 +262,12 @@ type extension = { parse : string -> string list -> item option; show : int -> s
 let no_extension = { parse = (fun _ _ -> None); show = (fun _ -> None) }
 
 let instruction ~ext name args : item =
-  let args = List.map trim (if trim args = "" then [] else String.split_on_char ',' args) in
+  let args = List.map String.trim (if String.trim args = "" then [] else String.split_on_char ',' args) in
   let alu_of n = match index alu_names n with i -> Some alus.(i) | exception _ -> None in
   let imm_op n = Array.find_opt (fun op -> has_imm op && imm_name op = n) alus in
   match name, args with
   | _, [ d; a; b ] when alu_of name <> None -> one (fun _ _ -> Alu (Option.get (alu_of name), reg d, reg a, reg b))
-  | _, [ d; a; v ] when imm_op name <> None && has_imm (Option.get (imm_op name)) ->
+  | _, [ d; a; v ] when imm_op name <> None ->
       one (fun _ res -> Alui (Option.get (imm_op name), reg d, reg a, res (expr v)))
   | "lui", [ d; v ] -> one (fun _ res -> Lui (reg d, res (expr v) land 0xffff))
   | ("ldw" | "ldb" | "stw" | "stb"), [ d; m ] ->
@@ -316,11 +314,11 @@ let directive d args : item =
       Words (4 * List.length es, fun _ res -> List.map (fun e -> m32 (res e)) es)
   | ".byte" -> Bytes_ (String.concat "" (List.map (fun e -> match expr e with Num n -> String.make 1 (Char.chr (n land 0xff)) | Sym _ -> error ".byte takes numbers") (String.split_on_char ',' args)))
   | ".ascii" | ".asciz" ->
-      let a = trim args in
+      let a = String.trim args in
       if String.length a < 2 || a.[0] <> '"' || a.[String.length a - 1] <> '"' then error "not a string: %s" a;
       Bytes_ (unescape (String.sub a 1 (String.length a - 2)) ^ if d = ".asciz" then "\000" else "")
-  | ".space" -> Bytes_ (String.make (int_of_string (trim args)) '\000')
-  | ".align" -> Align (int_of_string (trim args))
+  | ".space" -> Bytes_ (String.make (int_of_string (String.trim args)) '\000')
+  | ".align" -> Align (int_of_string (String.trim args))
   | _ -> error "unknown directive %s" d
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
@@ -329,7 +327,7 @@ let parse_line ~ext line : item list =
     | Some i when not (String.contains (String.sub line 0 i) '"') -> String.sub line 0 i
     | _ -> line in
   let rec go s acc =
-    let s = trim s in
+    let s = String.trim s in
     match String.index_opt s ':' with
     | Some i when not (String.contains (String.sub s 0 i) ' ') && not (String.contains (String.sub s 0 i) '"') ->
         go (String.sub s (i + 1) (String.length s - i - 1)) (Label (String.sub s 0 i) :: acc)
@@ -374,8 +372,6 @@ let assemble_files ~ext ~origin (files : (string * string list) list) =
     | Label _ | Align _ -> ()) placed;
   if Buffer.length b > !memsize then error "the program does not fit in memory";
   Buffer.contents b
-
-let assemble ~ext lines = assemble_files ~ext ~origin:0 [ "-", lines ]
 
 (* files, named and read: .tm files assembled and linked, or one image
  * (the memory's first bytes, no header: the CPU starts at 0) *)

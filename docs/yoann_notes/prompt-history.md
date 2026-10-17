@@ -37179,3 +37179,35 @@ Claude's full test script against that build failed 94 of 164 cases.
 Claude suspected tiny-arm was missing system calls, so it proposed a baseline run from the build without the A2 change.
 That baseline would separate A2's effect from tiny-arm gaps before anyone blamed the mini-ml build.
 Claude did not treat the 94 failures as a regression until that comparison was run.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 17:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `6b0e488c` with 19 files: office and troff pages, four new manual sections, and updated READMEs.
+Claude confirmed the working tree is clean after the commit.
+Claude noted that `HEAD` had moved to the other session's `2818d611`, which touches only `TinyLibHost/c/`.
+Claude overwrote none of that session's files, so the commit contains only Claude's own changes.
+Three items remain open: the web page test, the unreproduced `ls -l` report, and the `make loc` follow-ups.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 17:15
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed A3, removing 15 unused values from `TinyLibHost/ocaml/` and saving 74 lines.
+Claude then proposed B7, a dead-code pass worth about 15 lines, and asked Yoann to confirm before starting.
+For B7, Claude proposed removing `d_image`, `d_free` and `GREEN` from `TinyKernel/libc/draw.c` and `draw.h`, since no C program calls them.
+Claude also proposed deleting the unused `TinyMachineCPU.assemble` and the duplicate `peekb`/`pokeb` declarations in `TinyKernel.ml`.
+Claude further proposed dropping the redundant `has_imm` guard and the `let trim = String.trim` alias in `TinyMachineCPU.ml`.

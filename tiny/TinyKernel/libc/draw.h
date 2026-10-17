@@ -13,16 +13,13 @@
 #define WHITE 255
 #define GREY 0xaa
 #define RED 0xf0
-#define GREEN 0x3f
 #define BLUE 0x36
 #define YELLOW 0xfc
 
 // the messages gathered, written; -1 if they were refused
 int d_flush(void);
-// an image of that rectangle, filled with a colour's byte; a colour
-void d_image(int id, int x0, int y0, int x1, int y1, int colour);
+// a colour: an image of one pixel, filled with a colour's byte
 void d_colour(int id, int colour);
-void d_free(int id);
 // dst's rectangle: src's pixels from (px, py), where mask's are set
 void d_draw(int dst, int src, int mask, int x0, int y0, int x1, int y1, int px, int py);
 // a rectangle of a colour

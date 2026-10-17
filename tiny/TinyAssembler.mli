@@ -14,7 +14,7 @@
  *
  * Note that, despite its name, this is not the assembler for
  * tiny-machine. The .tm files that tiny-cpu and tiny-machine run are
- * assembled by TinyMachine/TinyMachineCPU.ml (see its [assemble]),
+ * assembled by TinyMachine/TinyMachineCPU.ml (see its [image]),
  * next to the definition of that machine's instruction set.
  *
  * There are two assemblers because there are two unrelated machines.

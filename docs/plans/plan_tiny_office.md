@@ -208,8 +208,9 @@ tiny-windows like emacs, and a screen session in `make check`:
        style (bold 1, italic 2, underlined 4, large 8). Its fonts are
        made from the machine's 8 by 16 when first asked for: italic,
        its rows slanted 3 pixels (cells 11 wide, so a slant stays in
-       its cell), large, each pixel 2 by 2, and large italic; bold is
-       drawn twice, a pixel apart. TinyLibDraw's d_styled sends it,
+       its cell), large, each pixel 2 by 2, bold, each stroke a pixel
+       wider but for a gap of one pixel, and those together.
+       TinyLibDraw's d_styled sends it,
        tiny-windows forwards it (its rectangle twice as large).
      - A word's style is in its colour's high bits (TinyLibPlayground's
        bold, italic, underlined, large: 256 to 2048), so the shape type
@@ -235,6 +236,24 @@ tiny-windows like emacs, and a screen session in `make check`:
        office.events's screen shows a large title, bold, italic, bold
        italic and underlined words; officekeys.events cats a page with
        its marks.
+     - **www has them too (2026-10-17).** The author: "Should we modify
+       www to also display web pages using large font, bold, italic,
+       underline, etc. ?", then "let's do both steps". TinyBrowser draws
+       <em> and <i> in italic (red before), <u> and <ins> underlined,
+       bold and headings in bold, and <h1> and <h2> large: a large
+       heading's words are laid out at half the width, and each of its
+       lines is two of the page's (its top half, then its bottom half,
+       a run's pic -2), so the page stays rows of 16 pixels, each drawn
+       on its own through the strip image. Bold drawn twice, a pixel
+       apart, made an m a block (TinyBrowser's comment had said so, and
+       the office's screens had no m in bold): the kernel's bold is now
+       a font of its own, each stroke a pixel wider but for a gap of
+       one pixel. Tests: TinyBrowser_test.sh's lines (a large heading
+       has an empty line under it, its bottom half), its tiny-cpu run
+       with heap halves of 352 KB (360 left too little stack, the
+       browser's code a little larger); make check's seven www screens
+       looked at before recording (the History heading large, the
+       references' italic, the infobox's bold).
 4. **Paint**: a box of pixels, drawn on with the mouse (paint.c's idea,
    in a part).
 5. **The chart**: bars from a sheet's range, redrawn when its cells

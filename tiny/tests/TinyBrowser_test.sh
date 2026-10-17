@@ -13,7 +13,7 @@
 #   1, 7 and 1000 bytes, and must give the same lines however it is cut.
 # - On tiny-cpu, built by tiny-ml -tm (TinyBrowser_tests/Tm.ml, with
 #   tm.c, heap.c and read.tm): the lines must be the same as OCaml's.
-#   This runs in tiny-cpu's 1 MB of memory, with heap halves of 360 KB,
+#   This runs in tiny-cpu's 1 MB of memory, with heap halves of 352 KB,
 #   which the OCaml article fits in.
 # RECORD=1 records the expected lines again (check them first).
 # usage: TinyBrowser_test.sh

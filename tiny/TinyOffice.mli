@@ -23,7 +23,8 @@
  * {b A text box is edited as it is shown} (WYSIWYG, the Alto's Bravo,
  * then MacWrite and Word): its text filled to the box's width, a word
  * that does not fit on the next line, each character in its style (the
- * kernel's fonts: italic slanted, large 16 by 32, bold drawn twice); a
+ * kernel's fonts: italic slanted, large 16 by 32, bold its strokes
+ * wider); a
  * line as tall as its largest character. A click puts the cursor, a
  * drag selects; the Format menu (or C-b, Tab, C-u, C-l) sets or takes
  * off a style, of the selection, or of what is typed next; Edit's Cut,

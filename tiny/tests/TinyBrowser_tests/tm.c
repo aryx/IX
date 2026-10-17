@@ -54,7 +54,7 @@ main(int argc, char **argv)
 {
 	if(argc > 1)
 		width = atoi(argv[1]);
-	ml_run(vstack, space0, space1, 90000, 65536);
+	ml_run(vstack, space0, space1, 88000, 65536);
 	flush();
 	exit(0);
 }

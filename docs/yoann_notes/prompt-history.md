@@ -36668,3 +36668,31 @@ Claude confirmed those kernel screens matched the expected changes and recorded 
 Claude noted the kernel's new fonts draw every one of those styles, the basis for Yoann's www question.
 Claude removed the editor's auto-fill, which only the office used, then reran `make check` until it passed.
 Claude cleaned stray blank lines in TinyOffice.ml, leaving it at 594 lines, up from 497.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:12
+
+**Yoann:**
+
+> great, let's commit. Should we modify www to also display web pages using large font, bold, italic, underline, etc. ?
+
+**Claude (summary):**
+
+Claude committed the ix work as `1df098e6`, with all 25 files and a clean tree. Claude proposed improving the www browser's TinyBrowser in two steps, starting with italic, underline, and real bold. Step 1 touches about 10 lines in `draw_line`, but styled text loses the fast whole-word path. Step 2 adds large `<h1>`/`<h2>` headings, roughly 40 lines, needing 16×32 cells and wrapping at half width.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:14
+
+**Yoann:**
+
+> let's do both steps
+
+**Claude (summary):**
+
+Claude recommended a bold font separate from the 8×16 one, since drawing bold twice blurred "m" glyphs.
+Claude built large `<h1>`/`<h2>` headings at half width across two 16-pixel rows, keeping scrolling and link clicks working row by row.
+Claude gave `<em>`/`<i>` italic styling, underlined `<u>`/`<ins>`, and removed the now-unused `c_emph` constant.
+Claude checked the browser test, the tiny-cpu run, `make check` with seven www screens, and the office and GUI tests.
+Claude added a note to `plan_tiny_office.md` instead of the browser's plan, which sits in `done/`.

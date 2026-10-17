@@ -71,6 +71,7 @@ in Computer Science and Automation (Inria). In the early 2000s, elements from
 OCaml were adopted by many languages, notably F# and Scala.
 
 Philosophy
+
 --------------------------------------------------------------------------------
 
 ML-derived languages are best known for their static type systems and
@@ -118,6 +119,7 @@ exploit the immutability of sets to reuse parts of input sets in the output (see
 persistent data structure).
 
 History
+
 --------------------------------------------------------------------------------
 
 [picture, 250x188]
@@ -224,6 +226,7 @@ for the broader OCaml tooling and packaging ecosystem.[18] In 2023, the OCaml
 compiler was recognised with ACM SIGPLAN's Programming Languages Software Award.
 
 Features
+
 --------------------------------------------------------------------------------
 
 OCaml features a static type system, type inference, parametric polymorphism,
@@ -277,6 +280,7 @@ execute by time sharing only. However, an OCaml program can contain several
 domains.
 
 Code examples
+
 --------------------------------------------------------------------------------
 
 Snippets of OCaml code are most easily studied by entering them into the
@@ -568,6 +572,7 @@ functions. In particular, twice can even be applied to itself.
   - : int = 102
 
 Derived languages
+
 --------------------------------------------------------------------------------
 
 MetaOCaml
@@ -615,6 +620,7 @@ Other derived languages
    Facebook, which can compile to both machine code and JavaScript.
 
 Software written in OCaml
+
 --------------------------------------------------------------------------------
 
  * Alt-Ergo, a SMT solver.
@@ -655,6 +661,7 @@ Software written in OCaml
    hypervisor.
 
 Users
+
 --------------------------------------------------------------------------------
 
 At least several dozen companies use OCaml to some degree.[27] Notable examples
@@ -676,6 +683,7 @@ colleges; a list of courses using OCaml (and their associated educational
 resources) is maintained by the OCaml website at ocaml.org.
 
 References
+
 --------------------------------------------------------------------------------
 
 1. ^ "Modules". Retrieved 22 February 2020.
@@ -740,6 +748,7 @@ References
    Languages. 9 (ICFP): 597-615. doi:10.1145/3747525. ISSN 2475-1421.
 
 External links
+
 --------------------------------------------------------------------------------
 
  * Official website

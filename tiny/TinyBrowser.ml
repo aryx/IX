@@ -275,6 +275,8 @@ let tokens (r : reader) chunk last =
 let bold = 1
 let emph = 2
 let code = 4
+let big = 8
+let under = 16
 
 type run = { col : int; text : string; look : int; link : string; pic : int }
 type line = { runs : run list; rule : bool }
@@ -505,12 +507,16 @@ type page = {
   mutable anchors : (string * int) list;  (* an element's id, and the line it starts at *)
   mutable pictures : picture list;        (* the page's pictures, the last first *)
   mutable npictures : int;
+  mutable heading : (string * int * string * bool) list;  (* a large heading's words, the last first *)
 }
 
 let root = { tag = ""; face = 0; href = ""; hide = false; pre = false; margin = 0; count = 0 }
 
+(* (the reader and the flow made first: tiny-ml computes a record's
+ * fields in tiny-machine's 11 registers) *)
 let create width =
-  { reader = { tail = ""; raw = "" }; page_flow = flow width; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = ""; anchors = []; pictures = []; npictures = 0 }
+  let reader = { tail = ""; raw = "" } and page_flow = flow width in
+  { reader = reader; page_flow = page_flow; stack = [ root ]; tables = []; space = false; page_title = ""; page_base = ""; anchors = []; pictures = []; npictures = 0; heading = [] }
 
 let top p = match p.stack with e :: _ -> e | [] -> root
 
@@ -520,8 +526,8 @@ let top p = match p.stack with e :: _ -> e | [] -> root
  *  - spaced: it also wants a blank line before and after it;
  *  - hidden: its text is not shown;
  *  - deeper: it indents its lines.
- * The look of its text (bold, emph, code) is in the bits above those,
- * multiplied by 32. *)
+ * The look of its text (bold, emph, code, big, under) is in the bits
+ * above those, multiplied by 32. *)
 let void = 1
 let block = 2
 let spaced = 4
@@ -534,16 +540,16 @@ let kinds = [
   "dd", block + deeper; "dfn", emph * 32; "div", block; "dl", block + spaced; "dt", block + bold * 32;
   "em", emph * 32; "embed", void;
   "figcaption", block; "figure", block + spaced; "footer", block;
-  "h1", block + spaced + bold * 32; "h2", block + spaced + bold * 32; "h3", block + spaced + bold * 32;
+  "h1", block + spaced + (bold + big) * 32; "h2", block + spaced + (bold + big) * 32; "h3", block + spaced + bold * 32;
   "h4", block + spaced + bold * 32; "h5", block + spaced + bold * 32; "h6", block + spaced + bold * 32;
   "head", hidden; "header", block; "hr", void; "html", block;
-  "i", emph * 32; "img", void; "input", void + hidden;
+  "i", emph * 32; "img", void; "input", void + hidden; "ins", under * 32;
   "kbd", code * 32; "li", block; "link", void; "main", block; "math", hidden; "meta", void; "nav", block; "noscript", hidden;
   "ol", block + deeper; "p", block + spaced; "param", void; "pre", block + spaced + code * 32;
   "samp", code * 32; "script", hidden; "section", block; "select", hidden; "source", void; "strong", bold * 32;
   "style", hidden; "svg", hidden;
   "table", block; "td", block; "template", hidden; "textarea", hidden; "th", block + bold * 32; "title", hidden;
-  "tr", block; "tt", code * 32; "ul", block + deeper; "var", emph * 32; "wbr", void ]
+  "tr", block; "tt", code * 32; "u", under * 32; "ul", block + deeper; "var", emph * 32; "wbr", void ]
 
 (* A tag is looked up only among the tags with the same first letter,
  * because in tiny-ml comparing two strings is a call to the runtime. *)
@@ -566,14 +572,14 @@ let hides k attrs =
   || (let cl = attr attrs "class" in cl <> "" && List.exists (has_class cl) hidden_classes)
   || (let st = attr attrs "style" in find st "display:none" 0 >= 0 || find st "display: none" 0 >= 0)
 
-(* Sends a word to the current cell if a table is open, and to the
- * page's flow otherwise. *)
+(* Sends a word to the current cell if a table is open (large text is
+ * not, there), to the large heading being made, or to the page's flow. *)
 let emit p text =
   let e = top p in
   if not e.hide then begin
     (match p.tables with
-     | t :: _ -> (match t.cell with Some c -> c.items <- Word (text, e.face, e.href, p.space) :: c.items | None -> ())
-     | [] -> word p.page_flow text e.face e.href p.space);
+     | t :: _ -> (match t.cell with Some c -> c.items <- Word (text, e.face land lnot big, e.href, p.space) :: c.items | None -> ())
+     | [] -> if e.face land big <> 0 then p.heading <- (text, e.face, e.href, p.space) :: p.heading else word p.page_flow text e.face e.href p.space);
     p.space <- false
   end
 
@@ -612,6 +618,23 @@ let text p s =
   end
 
 let rule p = if p.tables = [] then begin end_line p.page_flow; push p.page_flow { runs = []; rule = true } end
+
+(* A large heading (<h1>, <h2>): its words laid out at half the width,
+ * each of its lines two of the page's, its top half and its bottom half
+ * (the same runs, their pic -2), so that the page is still rows of 16
+ * pixels, each drawn on its own. *)
+let lay_heading p =
+  let f = p.page_flow in
+  let g = flow (max 1 ((f.width - f.left) / 2)) in
+  List.iter (fun (text, look, link, sp) -> word g text look link sp) (List.rev p.heading);
+  end_line g;
+  p.heading <- [];
+  end_line f;
+  List.iter (fun (l : line) ->
+    let runs = List.map (fun (r : run) -> { col = f.left + (2 * r.col); text = r.text; look = r.look; link = r.link; pic = -1 }) l.runs in
+    push f { runs = runs; rule = false };
+    push f { runs = List.map (fun (r : run) -> { col = r.col; text = r.text; look = r.look; link = r.link; pic = -2 }) runs; rule = false })
+    (List.rev g.out)
 
 (* The pixels the pictures of a page may have in all: they are images of
  * the kernel's, which has 2 MB for them, the windows' included. *)
@@ -758,6 +781,7 @@ let close_tag p tag k =
                end
            | t :: _, ("td" | "th" | "caption") when t.depth = 0 -> t.cell <- None
            | _ -> ());
+        if p.heading <> [] then lay_heading p;
         if is k spaced && tag = "h2" && p.tables = [] then rule p;
         if is k spaced then paragraph p
         else if is k block then break p
@@ -773,6 +797,7 @@ let feed p chunk = List.iter (token p) (tokens p.reader chunk false)
 let finish p =
   List.iter (token p) (tokens p.reader "" true);
   (match p.tables with t :: _ -> (if t.row <> [] then t.rows <- t.row :: t.rows); p.tables <- []; lay_table p.page_flow t | [] -> ());
+  if p.heading <> [] then lay_heading p;
   end_line p.page_flow
 
 let lines p = List.rev p.page_flow.out
@@ -815,13 +840,14 @@ let show_line p width (l : line) =
   else begin
     let at = ref 0 in
     join (List.map (fun (r : run) ->
-      let pad = if r.col > !at then String.make (r.col - !at) ' ' else "" in
+      let pad = if r.pic = -2 then "" else if r.col > !at then String.make (r.col - !at) ' ' else "" in
       let text =
         if r.pic >= 0 && r.pic mod 256 = 0 then
           let pc = picture_of p (r.pic / 256) in
           "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", " ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
+        else if r.pic = -2 then ""
         else r.text in
-      at := max !at r.col + String.length text;
+      if r.pic <> -2 then at := max !at r.col + String.length text;
       pad ^ text) l.runs)
   end
 
@@ -839,12 +865,11 @@ let c_black = 2
 let c_link = 3
 let c_code = 4
 let c_rule = 5
-let c_emph = 6
 let c_bar = 7
 let c_text = 8
 let colours =
   d_colour c_white 255 ^ d_colour c_black 0 ^ d_colour c_link 23 ^ d_colour c_code 221
-  ^ d_colour c_rule 136 ^ d_colour c_emph 205 ^ d_colour c_bar 3 ^ d_colour c_text 68
+  ^ d_colour c_rule 136 ^ d_colour c_bar 3 ^ d_colour c_text 68
 
 (*****************************************************************************)
 (* Addresses *)
@@ -983,14 +1008,16 @@ let draw_slice sc dst y (r : run) =
   end
 
 (* The page's line i, put on the screen (by the strip when it is cut by
- * the area's edge). The font has one face, 8 pixels wide, so the looks
- * are colours: the text is a dark grey and bold is black (drawing it
- * twice, a pixel apart, filled the gaps of an m); emphasis is red, as
- * there is no italic; a link is blue and underlined; code is on light
- * grey. *)
+ * the area's edge, or is half of a large heading's line). The text is a
+ * dark grey, bold black in the kernel's bold font (its strokes wider,
+ * an m's gaps kept: drawn twice, a pixel apart, an m was a block);
+ * emphasis is italic; a link is blue and underlined; code is on light grey; a large
+ * heading's characters are 16 by 32, the kernel's large font, its top
+ * half on one line, its bottom half (pic -2) on the next. *)
 let draw_line sc i (l : line) =
   let w = sc.sc_cols * 8 and at = area_top + (i * 16) - sc.sc_y in
-  let whole = at >= area_top && at + 16 <= area_top + area sc in
+  let tall = List.exists (fun (r : run) -> r.look land big <> 0) l.runs in
+  let whole = not tall && at >= area_top && at + 16 <= area_top + area sc in
   let dst = if whole then 0 else c_strip and y = if whole then at else 0 in
   put sc (d_fill dst c_white 0 y w (y + 16));
   if l.rule then put sc (d_fill dst c_rule 0 (y + 7) w (y + 9))
@@ -998,13 +1025,15 @@ let draw_line sc i (l : line) =
     List.iter (fun (r : run) ->
       if r.pic >= 0 then draw_slice sc dst y r
       else if r.col < sc.sc_cols && r.text <> "" then begin
-        let n = min (String.length r.text) (sc.sc_cols - r.col) in
-        let t = String.sub r.text 0 n and x = r.col * 8 in
+        let k = if r.look land big <> 0 then 2 else 1 in
+        let n = min (String.length r.text) ((sc.sc_cols - r.col) / k) in
+        let t = String.sub r.text 0 n and x = r.col * 8 and ry = if r.pic = -2 then y - 16 else y in
         if r.look land code <> 0 then put sc (d_fill dst c_code x y (x + (n * 8)) (y + 16));
-        let ink =
-          if r.link <> "" then c_link else if r.look land emph <> 0 then c_emph else if r.look land bold <> 0 then c_black else c_text in
-        put sc (d_text dst ink x y t);
-        if r.link <> "" then put sc (d_line dst c_link x (y + 15) (x + (n * 8) - 1) (y + 15))
+        let ink = if r.link <> "" then c_link else if r.look land bold <> 0 then c_black else c_text in
+        (* (a look's bold and emph are the kernel's style's bits) *)
+        let style = (r.look land (bold + emph)) lor (if r.look land under <> 0 then 4 else 0) lor (if k = 2 then 8 else 0) in
+        put sc (if style = 0 then d_text dst ink x ry t else d_styled dst ink x ry style t);
+        if r.link <> "" then put sc (d_line dst c_link x (ry + (16 * k) - 1) (x + (n * 8 * k) - 1) (ry + (16 * k) - 1))
       end) l.runs;
   if not whole then begin
     let y0 = max at area_top and y1 = min (at + 16) (area_top + area sc) in
@@ -1232,7 +1261,7 @@ let link_at sc x y =
   else
     match lines_between sc.sc_page line (line + 1) with
     | [ l ] ->
-        (match List.filter (fun (r : run) -> r.link <> "" && col >= r.col && col < r.col + String.length r.text) l.runs with
+        (match List.filter (fun (r : run) -> r.link <> "" && col >= r.col && col < r.col + (String.length r.text * if r.look land big <> 0 then 2 else 1)) l.runs with
          | r :: _ -> Some r.link
          | [] -> None)
     | _ -> None

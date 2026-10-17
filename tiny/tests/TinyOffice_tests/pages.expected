@@ -54,10 +54,11 @@
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-text 20 40 200 102 78
-\{l}A title\{}
+\box[20 40 200 102]{
+# A title
 
-Some \{b}bold words\{} and plain ones, more than a line holds.
+Some **bold words** and plain ones, more than a line holds.
+}
 --
 == the right button drags the box 100 right, 20 down
   shape 0
@@ -268,10 +269,13 @@ asks: save
     words 0 104 1 |Insert|
   shape 5
 == now: the file
-text 10 40 150 52 11
+\box[10 40 150 52]{
 hello there
-text 100 50 120 52 3
+}
+
+\box[100 50 120 52]{
 top
+}
 --
 == C-x t: a sheet, where the last click was, its first cell chosen
   shape 0
@@ -455,19 +459,14 @@ top
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-sheet 10 40 282 114 97
-a1 Rent
-a2 Food
-a3 Total
-b2 300
-b3 =b1+b2
-b4 =sum(b1:b2)*2
-c1 =c1+1
-c2 =a1+1
-c3 =1/0
-c4 =2+
-b1 8
-
+\box[10 40 282 114]{
+| a     | b             | c     |
+|-------|---------------|-------|
+| Rent  | 8             | =c1+1 |
+| Food  | 300           | =a1+1 |
+| Total | =b1+b2        | =1/0  |
+|       | =sum(b1:b2)*2 | =2+   |
+}
 --
 == a click in c2: chosen, its formula in the bar
   shape 0
@@ -681,12 +680,14 @@ b1 8
     words 0 168 1 |Draw|
   shape 4
 == the page: the file
-drawing 10 40 300 160 80
+\box[10 40 300 160]{
+```drawing
 box 20 20 80 30 cpu
 arrow 100 35 180 90
 box 140 90 80 30 mem
 text 30 150 a note
-
+```
+}
 --
 == C-g: the drawing left
   shape 0
@@ -905,8 +906,9 @@ asks: save
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-text 140 80 150 52 5
+\box[140 80 150 52]{
 hello
+}
 --
 == C-o, a text in four styles (C-b, Tab, C-u: each on, then off)
   shape 0
@@ -1031,8 +1033,9 @@ hello
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-text 20 40 200 84 54
-Plain, , \{i}slanted\{} and \{bi}bold\{} \{u}under\{}.
+\box[20 40 200 84]{
+Plain, , *slanted* and ***bold*** \u{under}.
+}
 --
 == a click at 10 40, C-x p: a paint there, its colour black
   shape 0
@@ -1101,7 +1104,8 @@ Plain, , \{i}slanted\{} and \{bi}bold\{} \{u}under\{}.
     words 0 168 1 |Paint|
   shape 4
 == the page: the file
-paint 10 40 200 124 278
+\box[10 40 200 124]{
+```paint
 
 
 
@@ -1123,7 +1127,8 @@ paint 10 40 200 124 278
 ..................rrrrrr
 ....................rrrr
 .....................rrr
-
+```
+}
 --
 == the Paint menu's Clear
   shape 0
@@ -1170,7 +1175,8 @@ paint 10 40 200 124 278
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-paint 10 40 200 124 278
+\box[10 40 200 124]{
+```paint
 
 
 
@@ -1192,5 +1198,96 @@ paint 10 40 200 124 278
 ..................rrrrrr
 ....................rrrr
 .....................rrr
+```
+}
+--
+== a page of the four kinds read from its file
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 2048 14 42 |A |
+    words 2304 46 42 |title|
+    words 0 14 90 |Some |
+    words 512 54 90 |slanted|
+    words 0 110 90 |, |
+    words 768 126 90 |both|
+    words 0 158 90 |, |
+  shape 2
+    words 153 273 41 |a|
+    words 153 337 41 |b|
+    words 153 230 57 |1|
+    words 153 230 73 |2|
+    words 153 230 89 |3|
+    words 0 247 57 |Rent|
+    words 0 247 73 |Food|
+    words 0 345 57 |500|
+    words 0 345 73 |300|
+    words 0 345 89 |800|
+  shape 3
+    words 0 28 142 |cpu|
+  shape 4
+    words 4096 142 132 |..kk|
+    words 4096 142 136 |.rrrr|
+  shape 5
+    rect 204 0 202 400 18
+    words 0 4 203 |doc    the menus above; a click edits a box; its |
+  shape 6
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 7
+== written again: the file
+\box[10 40 200 84]{
+# A **title**
 
+Some *slanted*, ***both***, \u{under} and \large{big} words; a star \* and \} kept.
+}
+
+\box[220 40 170 70]{
+| a    | b      |
+|------|--------|
+| Rent | 500    |
+| Food | 300    |
+|      | =b1+b2 |
+}
+
+\box[10 130 120 60]{
+```drawing
+box 10 10 40 20 cpu
+```
+}
+
+\box[140 130 60 40]{
+```paint
+..kk
+.rrrr
+```
+}
+--
+== a Markdown file: one text box
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 2048 20 42 |Notes|
+    words 0 20 90 |A |
+    words 512 36 90 |Markdown|
+    words 0 100 90 | file, with no box.|
+    words 0 20 106 |Its second line.|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |notes.md    the menus above; a click edits a box;|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== written: the file
+\box[16 40 368 140]{
+# Notes
+
+A *Markdown* file, with no box.
+Its second line.
+}
 --

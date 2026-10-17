@@ -74,7 +74,7 @@ let () =
   keys o "\024\003"
 
 let () =
-  let page = "text 10 40 150 52 11\nhello there\ntext 100 50 120 52 3\ntop\n" in
+  let page = "\\box[10 40 150 52]{\nhello there\n}\n\n\\box[100 50 120 52]{\ntop\n}\n" in
   let o = create 320 200 "two" page in
   show "a page of two boxes, from its file" o;
   click o 1 110 54;
@@ -163,7 +163,7 @@ let () =
   show "File's Save" o
 
 let () =
-  let o = create 320 200 "moves" "text 40 60 150 52 5\nhello\n" in
+  let o = create 320 200 "moves" "\\box[40 60 150 52]{\nhello\n}\n" in
   click o 1 60 80;
   show "a click in the box: edited, its tab above it, its corner" o;
   jump o 1 50 50 150 70;
@@ -209,3 +209,42 @@ let () =
   keys o "\031";
   show "C-_: the picture back" o;
   file "the page" o
+
+let page = String.concat "\n" [
+  "\\box[10 40 200 84]{";
+  "# A **title**";
+  "";
+  "Some *slanted*, ***both***, \\u{under} and \\large{big} words; a star \\* and \\} kept.";
+  "}";
+  "";
+  "\\box[220 40 170 70]{";
+  "| a    | b      |";
+  "|------|--------|";
+  "| Rent | 500    |";
+  "| Food | 300    |";
+  "|      | =b1+b2 |";
+  "}";
+  "";
+  "\\box[10 130 120 60]{";
+  "```drawing";
+  "box 10 10 40 20 cpu";
+  "```";
+  "}";
+  "";
+  "\\box[140 130 60 40]{";
+  "```paint";
+  "..kk";
+  ".rrrr";
+  "```";
+  "}";
+  "" ]
+
+let () =
+  let o = create 400 220 "doc" page in
+  show "a page of the four kinds read from its file" o;
+  file "written again" o
+
+let () =
+  let o = create 400 220 "notes.md" "# Notes\n\nA *Markdown* file, with no box.\nIts second line.\n" in
+  show "a Markdown file: one text box" o;
+  file "written" o

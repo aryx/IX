@@ -13,12 +13,20 @@
  *         |              drawing)
  *     its data           a string, whatever the kind
  *
- * {b Every object's data is text.} A text box's is its text, with a
- * mark where the style changes: "a \{b}bold\{} word" (b bold, i
- * italic, u underlined, l large; \{} plain). So the file of a page is the objects one after the other, each a line (its
- * kind and its box) and its data; undo is the earlier pages, kept in
- * a list (an edit makes a new page, the old one is not changed); and a
- * page can be read, or mended, in emacs.
+ * {b Every object's data is text}, and undo is the earlier pages, kept
+ * in a list (an edit makes a new page, the old one is not changed).
+ *
+ * {b The file of a page is a document in mini-troff's format}
+ * (plan_typesetting.md: Markdown's lines, \name[options]{text} for what
+ * Markdown has not): each object a \box[x y w h]{...} around its
+ * content, a text box's Markdown (**bold**, *italic*, a line "# "
+ * large, \u{} underlined, \large{} large in a line), a sheet a table
+ * (the columns' letters, then what was typed, a row a line), a drawing
+ * or a paint a fence (```drawing, ```paint) of its lines. So a page is
+ * read, or written, in emacs; and a Markdown file is opened as one text
+ * box. (Being edited, a text box's data is its text with a mark where
+ * the style changes, "a \{b}bold\{} word"; it is the file's Markdown
+ * only in the file.)
  *
  * {b A text box is edited as it is shown} (WYSIWYG, the Alto's Bravo,
  * then MacWrite and Word): its text filled to the box's width, a word

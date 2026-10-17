@@ -36727,3 +36727,27 @@ Claude listed the chart as step 5 and publishing as step 6, both still open.
 **Yoann:**
 
 > could we do a tiny-troff that actually reuse the same format than tiny-office?
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:34
+
+**Yoann:**
+
+> so we could either edit the document in wysywyg way with the office program, or in textual form with TinyScreenEditor, and use the tiny-troff to generate the html (or pdf)
+
+**Claude (summary):**
+
+Claude finished the paint office program, with the green ground now covering the house's bottom wall.
+Claude wrote paint at about 65 lines, plus its .mli and plan file.
+Claude ran make check and the host tests, and reported all of them passing.
+Claude then planned to read docs/plans/plan_typesetting.md before answering the tiny-troff question.
+Claude had not yet weighed the WYSIWYG editor against TinyScreenEditor with tiny-troff.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:45
+
+**Yoann:**
+
+> let's commit paint first, but maybe let's try to make the document format closer to what we used for mini-troff markdown/latex mix

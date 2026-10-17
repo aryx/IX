@@ -159,16 +159,20 @@ $ $ > 0ne
 > tw0
 > three
 f0ur$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ $ text 100 100 200 86 46
-\{l}Notes\{}
+$ $ \box[100 100 200 86]{
+# Notes
 
-Kept by \{b}put\{}, read by cat.
-sheet 300 300 282 114 31
-a1 Rent
-a2 500
-a3 =b0
-a4 =a2*2
+Kept by **put**, read by cat.
+}
 
+\box[300 300 282 114]{
+| a     |
+|-------|
+| Rent  |
+| 500   |
+| =b0   |
+| =a2*2 |
+}
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first

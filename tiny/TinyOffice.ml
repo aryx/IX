@@ -77,39 +77,6 @@ type office = {
 let say (o : office) (m : string) = o.message <- m
 
 (*****************************************************************************)
-(* The file *)
-(*****************************************************************************)
-
-(* a page's file: each object a line "kind x y w h n", then its n bytes
- * of data, then a newline (so that the file reads well in emacs) *)
-let rec parse (s : string) (i : int) : obj list =
-  match String.index_from_opt s i '\n' with
-  | None -> []
-  | Some e -> (
-      let n = String.length s in
-      let num v = match int_of_string_opt v with Some k -> k | None -> -1 in
-      match String.split_on_char ' ' (String.sub s i (e - i)) with
-      | [ kind; x; y; w; h; size ] when num size >= 0 && e + 1 + num size <= n ->
-          let size = num size in
-          { kind; x = num x; y = num y; w = num w; h = num h; data = String.sub s (e + 1) size } :: parse s (e + 2 + size)
-      | _ -> [])
-
-let text (o : office) : string =
-  join (List.map (fun (b : obj) ->
-    join [ b.kind; " "; string_of_int b.x; " "; string_of_int b.y; " "; string_of_int b.w; " ";
-                            string_of_int b.h; " "; string_of_int (String.length b.data); "\n"; b.data; "\n" ]) o.page)
-
-let create (width : int) (height : int) (file : string) (s : string) : office =
-  let page = parse s 0 in
-  { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None; at = (16, 40); menu = menu_closed ();
-    message = ""; prefix = false; where = (file, width, height) }
-
-let saved (o : office) =
-  o.clean <- o.page;
-  let file, _, _ = o.where in
-  o.message <- "Wrote " ^ file
-
-(*****************************************************************************)
 (* The page's objects *)
 (*****************************************************************************)
 
@@ -569,7 +536,7 @@ let paint_rows (b : obj) = max 1 ((b.h - 4) / 4)
 let pixel_at (b : obj) (x : int) (y : int) = (max 0 (min (paint_cols b - 1) ((x - b.x - 2) / 4)), max 0 (min (paint_rows b - 1) ((y - b.y - 2) / 4)))
 
 (* a row without the white at its end *)
-let rec trim (row : string) = let n = String.length row in if n > 0 && row.[n - 1] = '.' then trim (String.sub row 0 (n - 1)) else row
+let rec trim_white (row : string) = let n = String.length row in if n > 0 && row.[n - 1] = '.' then trim_white (String.sub row 0 (n - 1)) else row
 
 (* The pixels a stroke of a brush covers, from (c0, r0) to (c1, r1), in
  * a letter, put in the picture: a thick brush 3 pixels wide. *)
@@ -581,7 +548,7 @@ let painted (b : obj) (letter : char) (brush : int) (c0 : int) (r0 : int) (c1 : 
     if c >= 0 && c < ncols && r >= 0 && r < nrows then begin
       let row = rows.(r) in
       let row = if String.length row > c then row else row ^ String.make (c + 1 - String.length row) '.' in
-      rows.(r) <- trim (String.sub row 0 c ^ String.make 1 letter ^ String.sub row (c + 1) (String.length row - c - 1))
+      rows.(r) <- trim_white (String.sub row 0 c ^ String.make 1 letter ^ String.sub row (c + 1) (String.length row - c - 1))
     end in
   let n = max 1 (max (abs (c1 - c0)) (abs (r1 - r0))) in
   for k = 0 to n do
@@ -616,6 +583,185 @@ let paint_view (b : obj) : shape list =
         (if n > 0 then [ Move (b.x + 2, b.y + 2 + (4 * r), Words (fat_pixels, if n = String.length row then row else String.sub row 0 n)) ] else []) @ rows rest (r + 1)
     | _ -> [] in
   rows (String.split_on_char '\n' b.data) 0
+
+(*****************************************************************************)
+(* The file *)
+(*****************************************************************************)
+
+(* A page's file is a document in mini-troff's format
+ * (plan_typesetting.md): Markdown's lines, and \name[options]{text}
+ * for what Markdown has not. Each object is a \box at its place (x, y,
+ * width, height), its content the lines up to one that is a } alone:
+ *
+ *     \box[20 40 200 84]{
+ *     # Tiny office
+ *
+ *     A page of **boxes**, *styled*, \u{underlined}.
+ *     }
+ *
+ *     \box[300 40 282 114]{
+ *     | a     | b      |
+ *     |-------|--------|
+ *     | Rent  | 500    |
+ *     | Total | =b1+b2 |
+ *     }
+ *
+ * The kind is in the content: a table is a sheet (its header the
+ * columns' letters, then a row a line, what was typed in each cell), a
+ * fence ```drawing or ```paint is that (its lines as they are), the
+ * rest text. A text's styles are Markdown's, **bold**, *italic*, a line
+ * "# " large, and \u{} underlined, \large{} large in a line; \ before a
+ * character that would be read otherwise. So emacs edits a page as any
+ * text (no count of bytes to keep right), and a Markdown file, with no
+ * \box, is opened as one text box. *)
+
+(* a list's elements with their places, from 0 *)
+let numbered (l : 'a list) : (int * 'a) list =
+  let rec go k l = match l with x :: rest -> (k, x) :: go (k + 1) rest | [] -> [] in
+  go 0 l
+
+(* a string without the spaces at its two ends *)
+let trim (s : string) : string =
+  let n = String.length s in
+  let rec first i = if i < n && s.[i] = ' ' then first (i + 1) else i in
+  let rec last j = if j > 0 && s.[j - 1] = ' ' then last (j - 1) else j in
+  let i = first 0 in
+  let j = last n in
+  if j > i then String.sub s i (j - i) else ""
+
+(* a text's line as Markdown, from its characters and their styles *)
+let md_of_line (t : string) (st : string) : string =
+  let n = String.length t in
+  let all_large = n > 0 && String.for_all (fun c -> Char.code c land 8 <> 0) st in
+  let base = if all_large then 8 else 0 in
+  let stars k = if k = 1 then "**" else if k = 2 then "*" else if k = 3 then "***" else "" in
+  let opens k = (if k land 8 <> 0 then "\\large{" else "") ^ (if k land 4 <> 0 then "\\u{" else "") ^ stars (k land 3) in
+  let closes k = stars (k land 3) ^ (if k land 4 <> 0 then "}" else "") ^ (if k land 8 <> 0 then "}" else "") in
+  let one i c =
+    if c = '\\' || c = '*' || c = '{' || c = '}' || (i = 0 && (c = '#' || c = '|' || c = '`')) then "\\" ^ String.make 1 c else String.make 1 c in
+  let rec go i was acc =
+    if i >= n then join (List.rev (closes was :: acc))
+    else begin
+      let k = Char.code st.[i] land lnot base in
+      go (i + 1) k (one i t.[i] :: (if k <> was then opens k :: closes was :: acc else acc))
+    end in
+  (if all_large then "# " else "") ^ go 0 0 []
+
+(* a Markdown line as characters and their styles: stars toggle italic
+ * (one), bold (two), both (three); \u{ and \large{ open a style that
+ * the next } closes; \ takes the next character as it is *)
+let line_of_md (l : string) : string * string =
+  let n = String.length l in
+  let base, start = if n >= 2 && String.sub l 0 2 = "# " then 8, 2 else 0, 0 in
+  let starts i w = i + String.length w <= n && String.sub l i (String.length w) = w in
+  let rec any l = match l with k :: rest -> k lor any rest | [] -> 0 in
+  let rec go i opened stars chars styles =
+    let add c = go (i + 1) opened stars (String.make 1 c :: chars) (String.make 1 (Char.chr (base lor stars lor any opened)) :: styles) in
+    if i >= n then (join (List.rev chars), join (List.rev styles))
+    else if starts i "\\u{" then go (i + 3) (4 :: opened) stars chars styles
+    else if starts i "\\large{" then go (i + 7) (8 :: opened) stars chars styles
+    else if l.[i] = '\\' && i + 1 < n then
+      go (i + 2) opened stars (String.make 1 l.[i + 1] :: chars) (String.make 1 (Char.chr (base lor stars lor any opened)) :: styles)
+    else if l.[i] = '}' && opened <> [] then go (i + 1) (match opened with _ :: rest -> rest | [] -> []) stars chars styles
+    else if l.[i] = '*' then begin
+      let k = if starts i "***" then 3 else if starts i "**" then 2 else 1 in
+      go (i + k) opened (stars lxor (if k = 1 then 2 else if k = 2 then 1 else 3)) chars styles
+    end
+    else add l.[i] in
+  go start [] 0 [] []
+
+(* a text box's data as Markdown's lines, and back *)
+let md_of_text (data : string) : string list =
+  let (t, st) = decode data in
+  let rec lines i =
+    match String.index_from_opt t i '\n' with
+    | Some e -> md_of_line (String.sub t i (e - i)) (String.sub st i (e - i)) :: lines (e + 1)
+    | None -> [ md_of_line (String.sub t i (String.length t - i)) (String.sub st i (String.length t - i)) ] in
+  if t = "" then [] else lines 0
+
+let text_of_md (ls : string list) : string =
+  let read = List.map line_of_md ls in
+  encode (join (List.map (fun (k, (t, _)) -> if k = 0 then t else "\n" ^ t) (numbered read)))
+    (join (List.map (fun (k, (_, st)) -> if k = 0 then st else "\000" ^ st) (numbered read)))
+
+(* A sheet as a table, its columns as wide as their widest cell, and
+ * back (a | in a cell is \|) *)
+let md_of_sheet (data : string) : string list =
+  let cs = cells data in
+  let col n = Char.code n.[0] - 97 and row n = (match int_of_string_opt (String.sub n 1 (String.length n - 1)) with Some r -> r | None -> 1) - 1 in
+  let ncols = List.fold_left (fun m (n, _) -> max m (col n + 1)) 1 cs and nrows = List.fold_left (fun m (n, _) -> max m (row n + 1)) 0 cs in
+  let esc s = join (List.map (fun c -> if c = '|' then "\\|" else String.make 1 c) (List.init (String.length s) (fun i -> s.[i]))) in
+  let cell c r = esc (typed_in data (name c r)) in
+  let wide = List.init ncols (fun c -> List.fold_left (fun m r -> max m (String.length (cell c r))) 1 (List.init nrows (fun r -> r))) in
+  let pad s w = s ^ String.make (w - String.length s) ' ' in
+  let line f = "|" ^ join (List.map (fun (c, w) -> " " ^ pad (f c) w ^ " |") (numbered wide)) in
+  line (fun c -> String.make 1 (Char.chr (97 + c)))
+  :: ("|" ^ join (List.map (fun w -> String.make (w + 2) '-' ^ "|") wide))
+  :: List.init nrows (fun r -> line (fun c -> cell c r))
+
+(* a table's line, its cells: between the |, trimmed, \| a | *)
+let table_cells (l : string) : string list =
+  let n = String.length l in
+  let rec go i cur acc =
+    if i >= n then List.rev acc
+    else if l.[i] = '\\' && i + 1 < n && l.[i + 1] = '|' then go (i + 2) (cur ^ "|") acc
+    else if l.[i] = '|' then go (i + 1) "" (trim cur :: acc)
+    else go (i + 1) (cur ^ String.make 1 l.[i]) acc in
+  match go 0 "" [] with _ :: cells -> cells | [] -> []
+
+let sheet_of_md (ls : string list) : string =
+  match ls with
+  | _ :: _ :: rows ->
+      join (List.concat (List.map (fun (r, l) -> List.concat (List.map (fun (c, t) -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (numbered (table_cells l)))) (numbered rows)))
+  | _ -> ""
+
+(* the file of a page, and its page *)
+let text (o : office) : string =
+  join (List.map (fun (k, (b : obj)) ->
+    let content =
+      if b.kind = "sheet" then md_of_sheet b.data
+      else if b.kind = "drawing" || b.kind = "paint" then
+        (* (its lines as they are, a paint's empty rows too; not the empty one after the last newline) *)
+        [ "```" ^ b.kind ] @ (match List.rev (String.split_on_char '\n' b.data) with "" :: r -> List.rev r | l -> List.rev l) @ [ "```" ]
+      else md_of_text b.data in
+    join ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ "]{\n")
+          :: List.map (fun l -> l ^ "\n") content @ [ "}\n" ])) (numbered o.page))
+
+let obj_of (x : int) (y : int) (w : int) (h : int) (ls : string list) : obj =
+  let lines_data l = join (List.map (fun s -> s ^ "\n") l) in
+  match ls with
+  | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls }
+  | first :: rest when first = "```drawing" || first = "```paint" ->
+      { kind = String.sub first 3 (String.length first - 3); x; y; w; h; data = lines_data (List.filter (fun l -> l <> "```") rest) }
+  | _ -> { kind = "text"; x; y; w; h; data = text_of_md ls }
+
+let parse (width : int) (height : int) (s : string) : obj list =
+  let is_box l = String.length l > 6 && String.sub l 0 5 = "\\box[" && String.sub l (String.length l - 2) 2 = "]{" in
+  let rec go ls =
+    match ls with
+    | l :: rest when is_box l ->
+        let nums = List.map (fun v -> match int_of_string_opt v with Some k -> k | None -> 0) (String.split_on_char ' ' (String.sub l 5 (String.length l - 7))) in
+        let rec content acc ls = match ls with "}" :: rest -> List.rev acc, rest | x :: rest -> content (x :: acc) rest | [] -> List.rev acc, [] in
+        let (inside, rest) = content [] rest in
+        (match nums with
+         | [ x; y; w; h ] -> obj_of x y w h inside :: go rest
+         | _ -> go rest)
+    | _ :: rest -> go rest
+    | [] -> [] in
+  let ls = String.split_on_char '\n' s in
+  if s = "" then []
+  else if List.exists is_box ls then go ls
+  else [ obj_of 16 40 (width - 32) (height - 80) (match List.rev ls with "" :: r -> List.rev r | _ -> ls) ]
+
+let create (width : int) (height : int) (file : string) (s : string) : office =
+  let page = parse width height s in
+  { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None; at = (16, 40); menu = menu_closed ();
+    message = ""; prefix = false; where = (file, width, height) }
+
+let saved (o : office) =
+  o.clean <- o.page;
+  let file, _, _ = o.where in
+  o.message <- "Wrote " ^ file
 
 (*****************************************************************************)
 (* The keys and the mouse *)

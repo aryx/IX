@@ -279,6 +279,26 @@ tiny-windows like emacs, and a screen session in `make check`:
      million instructions of the office for the session). tetris's
      screen recorded again: its pieces fall by the clock, and the
      playground's code is a little larger.
+   - **The file, in mini-troff's format (2026-10-17).** The author,
+     on a tiny-troff: "could we do a tiny-troff that actually reuse the
+     same format than tiny-office?", "so we could either edit the
+     document in wysywyg way with the office program, or in textual
+     form with TinyScreenEditor, and use the tiny-troff to generate the
+     html (or pdf)", then "maybe let's try to make the document format
+     closer to what we used for mini-troff markdown/latex mix", and "I
+     like it. Let's do it". A page's file is now plan_typesetting.md's
+     format: each object a `\box[x y w h]{` line, its content, a line
+     `}`; a text's Markdown (`**bold**`, `*italic*`, `# ` a large line,
+     `\u{}`, `\large{}`, `\` before a character read otherwise); a
+     sheet a Markdown table, its header the columns' letters; a drawing
+     or a paint a fence of its lines. The kind is in the content, no
+     count of bytes: emacs can edit a page, and a Markdown file with
+     no `\box` opens as one text box. About 100 lines of code (the
+     Markdown's inlines both ways, the table both ways), in place of
+     the 15 of the old format. Tests: TinyOffice_test.sh's files in
+     the new format, a page of the four kinds read and written again
+     the same, a Markdown file opened; officekeys.events's `cat`.
+     Next: tiny-troff, the page to text and HTML (step 6's publishing).
 5. **The chart**: bars from a sheet's range, redrawn when its cells
    change.
 6. **Publishing**: each part's `html` as it comes is fine too; this

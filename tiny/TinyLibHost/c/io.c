@@ -103,17 +103,6 @@ getc_chan(Chan *c)
 	return c->buf[c->pos++];
 }
 
-value
-caml_input_char(value ch)
-{
-	int b;
-
-	b = getc_chan((Chan*)ch);
-	if(b < 0)
-		raise_const(caml_exn_End_of_file);
-	return Val_int(b);
-}
-
 /* The three a program waits in (Pervasives' input_char, input and
  * input_line): interrupted by a signal, they say so (-2, -1, and
  * Scan_interrupted), for Pervasives to run the signal's handler, which

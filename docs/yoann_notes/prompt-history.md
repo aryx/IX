@@ -37101,3 +37101,49 @@ Claude rebuilt `tiny-troff` from `TinyKernel/user/troff.ml` in `tiny/sdl/`, matc
 Claude added `open TinyCalls` to `troff.ml`, fixed its misplaced header sentence, and removed the `TinyTroffCommand` stanza from `tiny/dune`.
 Claude checked that `bin/tiny-troff` prints usage, the `report.ixd` text, and the same 2,431-byte PDF.
 Claude confirmed tiny-kernel's `make check` and the dune build pass, noting `tiny-troff` now links SDL without opening a window.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:52
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that TinyMachineWeb_test.py has not run since its lost-packet check moved into the www OCaml step.
+Claude noted the test needs Chrome, which was present, and Python's websockets package, which was not installed.
+Claude offered to set up websockets in a virtual environment in the scratchpad, as the test's header describes.
+Claude did not run the test and asked whether Yoann wanted that setup done.
+Claude also committed the tiny-troff change as 323d6a24, six files, now built from TinyKernel/user/troff.ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:55
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude listed four remaining tasks, with documentation first and a web page test second.
+Claude proposed publishing the office, troff and host program docs into `docs/manuals/t-ix.md`, plus a row each in `README.md`.
+Claude also noted a `ls -l` report it could not reproduce and was waiting on the user's details for.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:31
+
+**Yoann:**
+
+> or let's reanalyze from scratch t-ix and propose a new set of changes to reduce the LOC or to improve readability/simplicity, but mainly reduce the LOC
+
+**Claude (summary):**
+
+Claude launched five parallel read-only surveys over the roughly 41k-line `tiny/` tree, using the settled criteria.
+Claude's survey A covered the GUI-side ML programs and user programs, ranking each finding by lines saved.
+Claude checked the biggest claims from survey A and the others itself before building a ranked list.
+Claude held survey A's proposals to the rules: standard OCaml functions, existing libraries, dead code, and no new dependencies.
+Claude reported surveys B, C and D at about 35, 40 and 90 lines respectively.

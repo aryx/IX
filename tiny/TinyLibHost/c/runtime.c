@@ -35,7 +35,6 @@
 
 extern void ml_start(value*);
 extern void ml_raise(value);
-extern value ml_callback(value, value);
 extern double ml_fsqrt(double);
 extern value ml_units[];
 
@@ -65,7 +64,7 @@ fatal(char *msg)
 #include "strings.c"     /* strings and bytes */
 #include "exceptions.c"  /* the predefined exceptions, raising from C, the uncaught one */
 #include "compare.c"     /* compare and hash */
-#include "arrays.c"      /* arrays, Obj, Callback */
+#include "arrays.c"      /* arrays, Obj */
 #include "io.c"          /* the channels */
 #include "sys.c"         /* Sys: files, the arguments, commands, signals */
 #include "floats.c"      /* floats */

@@ -59,12 +59,6 @@ static value collections;       /* how many there were */
  * as ocaml-light's ocamlopt on arm64 */
 static value bound_exn;
 
-/* the named values of Callback.register, roots too */
-#define NAMED 64
-static value named_names[NAMED];
-static value named_values[NAMED];
-static int nnamed;
-
 /* The value stacks. A program has one, vstack. A kernel's processes
  * each have theirs (plan_kernel_mini_ml.md: "a process is two
  * pointers"): the kernel gives each a number and its memory
@@ -164,10 +158,6 @@ collect(void)
 		}
 	}
 	bound_exn = copy(bound_exn);
-	for(i = 0; i < nnamed; i++){
-		named_names[i] = copy(named_names[i]);
-		named_values[i] = copy(named_values[i]);
-	}
 	for(scan = other; scan < next; scan = scan + n + 1){
 		h = *scan;
 		n = ((uvalue)h) >> 10;

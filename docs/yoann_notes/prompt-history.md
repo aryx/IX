@@ -36782,3 +36782,35 @@ The slices were tiny-ml programs, host tools, compilers and machine, and C runti
 Claude reported that the compilers/machine and host tools surveys had finished, with the tiny-ml survey still pending.
 Claude planned to verify the four sets of findings and send a ranked list of factorization opportunities.
 Claude had scoped the work at about 26k lines across tiny/ before launching the agents.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:14
+
+**Yoann:**
+
+> ok let's do then in order.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:33
+
+**Yoann:**
+
+> where is the code in tiny-ml that drop unused functions?
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:34
+
+**Yoann:**
+
+> oh I see it was already committed
+
+**Claude (summary):**
+
+Claude pointed out the work was already committed as b572b25e, touching three files.
+Claude described the `prune` function in tiny/TinyML.ml and its call as `compile (prune program)` in `main`.
+Claude noted that tiny/TinyML.mli gained a new bullet, "What nothing uses is not compiled".
+Claude changed the tiny/TinyLibStd.ml header so it no longer says the library is compiled whole.
+Claude is still waiting on which of the three convention changes to do next.

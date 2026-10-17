@@ -402,6 +402,15 @@ APART = [
     # "just like we didn't count kernels/xv6/ and other kernels")
     ("tiny/TinyKernel/steps/", "the steps before tiny-kernel on tiny-machine: v0 in assembly, t6 in C, with tiny-mkfs, its disk's (tiny-os, until v6 was removed)",
      lambda dirs, path: path.startswith("tiny/TinyKernel/steps/")),
+    # (the author, 2026-10-17: "the paint demo should not be counted, maybe
+    # it should be put in examples/ or something and we could skip this
+    # dir too")
+    ("tiny/TinyKernel/examples/", "tiny-kernel's demos and example files: paint (the mouse paints), a page of the office's",
+     lambda dirs, path: path.startswith("tiny/TinyKernel/examples/")),
+    # (the author, 2026-10-17: "for make loc we should not count sh.c and
+    # mltests.c under TinyKernel/"; rc is t-ix's shell, TinyShell.ml)
+    ("tiny-kernel's sh.c, mltests.c", "its first shell, in C, before rc (TinyShell.ml), still the console's; and the test of its ML programs' calls",
+     lambda dirs, path: path in ("tiny/TinyKernel/user/sh.c", "tiny/TinyKernel/user/mltests.c")),
     # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
     # in make loc; they are optional as what matters is what is running
     # under mini-9pi"; last, so a program that is apart keeps its own in

@@ -243,8 +243,11 @@ $(O)/user/troff.tm: $(TROFF)
 $(O)/bin/troff: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/troff.tm
 	@$(MLLINK)
 
-# a program that draws: with draw.c, the messages (draw.h)
-$(O)/user/paint.tm: libc/draw.h
+# a program that draws: with draw.c, the messages (draw.h); a demo, in
+# examples/ (not counted by make loc)
+$(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
+	@mkdir -p $(@D)
+	$(TC) -tm -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
@@ -259,12 +262,12 @@ $(O)/bin/wiki: $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
-# files to edit, in /examples: sources of the image's own programs, two
-# in C and two in OCaml, which emacs shows in colors (emacs
+# files to edit, in /examples: sources of programs, two in C (wc.c, the
+# t6 step kernel's: steps/t6/user/) and two in OCaml, which emacs shows in colors (emacs
 # /examples/emacs.ml: the editor around the editor); a page of the
 # office's, which troff prints (office /examples/report.ixd, troff -h
 # /examples/report.ixd)
-EXAMPLES = user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd
+EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd
 
 $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	cp $(O)/kernel.img $@

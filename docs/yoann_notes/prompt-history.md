@@ -36992,3 +36992,72 @@ Claude placed the host side in `tiny/sdl/`, with the real `TinyCalls`, a font ru
 Claude made `TinyMachineSDL` a library both programs link, moving the key translation out of tiny-machine's window.
 Claude added a virtual-library `TinyCalls` interface, with the stub as one implementation that the tests use by default.
 Claude confirmed mini-mk and `make loc` both skip `tiny/sdl/`, and noted that exclusion in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 15:43
+
+**Yoann:**
+
+> let's commit the progress; could we also make tiny-browser run on the host?
+
+**Claude (summary):**
+
+Claude committed the host programs as 53558093 and made the browser run natively as tiny-www, left uncommitted.
+Claude had tiny-www's network calls answer on the host through port 70, mirroring how tiny-machine answers.
+Page and picture fetches go through tiny-machine-fetch, with a TINY_WWW directory copy used as fallback when fetching fails.
+Claude checked it headless under SDL's dummy driver, rendering the live OCaml Wikipedia article with infobox and logo.
+Claude noted that a real window with typing and clicking was untested, and asked before committing the browser work.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:05
+
+**Yoann:**
+
+> it works, tiny-www ocaml works in a window on the host. Let's commit. Also for make loc we should not count sh.c and mltests.c under TinyKernel/. In fact it says 2964LOC for TinyKernel/ but why ?
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:07
+
+**Yoann:**
+
+> so what are those 2433 remaining LOC for TinyKernel/? and what is skipped in the end now?
+
+**Claude (summary):**
+
+Claude reported that both checks passed: the t6 step kernel, rebuilt from nothing, and tiny-kernel.
+Claude then said it would show the end of make loc's report, which lists what gets skipped.
+The answer stopped there, so the 2433 remaining LOC for TinyKernel/ and the skipped list went unexplained.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:10
+
+**Yoann:**
+
+> ls -l does not seem to work anymore from the tiny-machine
+
+**Claude (summary):**
+
+Claude said it would reproduce the ls -l failure from both sh and rc on the freshly built image.
+Claude found that ls -l /examples works from rc, and ls -l / works from sh.
+Claude also confirmed that sh running ls -l /examples works, so that case is fine.
+Claude was still checking ls -l with no argument, and ls -l after a cd from rc.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:19
+
+**Yoann:**
+
+> now that we have tiny-browser, do we need the www and httpd? also yes the paint demo should not be counted, maybe it should be put in examples/ or something and we could skip this dir too
+
+**Claude (summary):**
+
+Claude recommended moving `paint.c` to `tiny/TinyKernel/examples/` and setting that directory apart in `make loc`.
+Claude built paint from `examples/`, fixed the t-IX manual's `user/paint.c` path and missing `t` message, and confirmed `make check` passes.
+Claude reported `tiny/TinyKernel/` down from 2,964 to 2,366 lines, with 1,433 of code.
+Claude proposed removing `wiki`, along with its `wiki.c`, the tiny-machine host service, and `tests/www/` files.
+Claude asked whether to commit today's changes first, and whether to keep or move `httpd`.

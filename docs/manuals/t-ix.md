@@ -599,11 +599,12 @@ signed:
 | `d dst src mask x0 y0 x1 y1 px py` | draw: `dst`'s rectangle is `src`'s pixels from (px, py) on, where `mask`'s are not 0 (-1: no mask) |
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
 | `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
+| `t dst src x y n style`, then `n` bytes | a text in a style: bold 1, italic 2, underlined 4, large 8 (16 by 32); or 16, fat pixels, a byte a colour, a square of 4 by 4 (tiny-office's words and paints, www's) |
 | `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (`wiki`) |
 
 A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white). For C, `libc/draw.h` and `draw.c` gather the messages
-(`d_fill`, `d_text`, `d_flush`...); `user/paint.c` is a program of a
+(`d_fill`, `d_text`, `d_flush`...); `examples/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
 `tiny/TinyLibDraw.ml` makes them.
 

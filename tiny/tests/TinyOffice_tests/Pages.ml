@@ -267,3 +267,29 @@ let () =
   keys o "900\n";
   show "b2 now 900: the chart follows" o;
   file "the page" o
+
+let () =
+  let o = create 400 220 "book" "" in
+  click o 1 10 40;
+  keys o "\015First page";
+  click o 1 300 150;
+  click o 1 170 5;
+  click o 1 170 54;
+  show "a text on the first page; the Page menu's New page: the second, empty" o;
+  click o 1 10 40;
+  keys o "\024t1\n2\n";
+  show "a sheet on the second page" o;
+  keys o "\024[";
+  show "C-x [: the first page again, its text" o;
+  file "the document" o;
+  keys o "\024]";
+  click o 1 170 5;
+  click o 1 170 72;
+  show "C-x ], the Page menu's Delete page: one page left" o;
+  keys o "\031";
+  show "C-_: the page back, and its sheet (C-x ] to see it)" o;
+  keys o "\024]";
+  show "C-x ]" o;
+  let o = create 400 220 "again" (text o) in
+  keys o "\024]";
+  show "the file read again, its second page shown" o

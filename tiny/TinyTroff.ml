@@ -13,13 +13,19 @@ let rec zip (a : 'a list) (b : 'b list) : ('a * 'b) list = match a, b with x :: 
 (* a string's characters, each as a string *)
 let chars (s : string) : string list = List.init (String.length s) (fun i -> String.make 1 s.[i])
 
-(* the objects in reading order: by their top, then their left *)
+(* the objects in reading order: by their page, their top, their left *)
 let rec in_order (l : obj list) : obj list =
   let rec insert (b : obj) l =
     match l with
-    | (c : obj) :: rest when c.y < b.y || (c.y = b.y && c.x <= b.x) -> c :: insert b rest
+    | (c : obj) :: rest when c.page_no < b.page_no || (c.page_no = b.page_no && (c.y < b.y || (c.y = b.y && c.x <= b.x))) -> c :: insert b rest
     | _ -> b :: l in
   match l with b :: rest -> insert b (in_order rest) | [] -> []
+
+(* the parts in reading order, a list a page (to the last page that has
+ * a part) *)
+let pages_of (parts : obj list) : obj list list =
+  let n = List.fold_left (fun m (b : obj) -> max m (b.page_no + 1)) 1 parts in
+  List.init n (fun p -> List.filter (fun (b : obj) -> b.page_no = p) parts)
 
 (* a text's lines, each its characters and their styles *)
 let styled_lines (data : string) : (string * string) list =
@@ -149,7 +155,10 @@ let to_text (width : int) (doc : string) : string =
     else if b.kind = "paint" then paint_lines b.data
     else if b.kind = "chart" then chart_lines parts b
     else text_lines width b.data in
-  glue (List.map (fun l -> l ^ "\n") (List.concat (List.map (fun (k, b) -> (if k = 0 then [] else [ "" ]) @ one b) (zip (List.init (List.length parts) (fun k -> k)) parts))))
+  let page bs = List.concat (List.map (fun (k, b) -> (if k = 0 then [] else [ "" ]) @ one b) (zip (List.init (List.length bs) (fun k -> k)) bs)) in
+  (* (a page after a form feed, as nroff's) *)
+  let pages = List.map page (pages_of parts) in
+  glue (List.map (fun l -> l ^ "\n") (List.concat (List.map (fun (k, ls) -> (if k = 0 then [] else [ "\012" ]) @ ls) (zip (List.init (List.length pages) (fun k -> k)) pages))))
 
 (*****************************************************************************)
 (* HTML *)
@@ -256,36 +265,41 @@ let chart_html (page : obj list) (b : obj) : string =
          ^ "<line x1=\"4\" y1=\"" ^ num base ^ "\" x2=\"" ^ num (b.w - 4) ^ "\" y2=\"" ^ num base ^ "\" stroke=\"#999\"/>\n")
   ^ "</svg>\n"
 
-let style = "body{margin:16px;font:13px/16px monospace}.page{position:relative}.box{position:absolute;overflow:hidden}"
+let style = "body{margin:16px;font:13px/16px monospace}.page{position:relative;margin-bottom:16px}.page+.page{border-top:1px dashed #ccc}.box{position:absolute;overflow:hidden}"
   ^ "p{margin:0;min-height:16px}h1,.l{font-size:26px;line-height:32px}h1{margin:0}"
   ^ "table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}"
 
 let to_html (title : string) (doc : string) : string =
   let parts = in_order (parse 640 480 doc) in
   let num k = string_of_int k in
-  let width = List.fold_left (fun m (b : obj) -> max m (b.x + b.w)) 0 parts and height = List.fold_left (fun m (b : obj) -> max m (b.y + b.h)) 0 parts in
-  glue ([ "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>"; esc title; "</title>\n<style>"; style; "</style></head>\n<body>\n";
-          "<div class=page style=\"width:"; num width; "px;height:"; num height; "px\">\n" ]
-        @ List.map (fun (b : obj) ->
-            "<div class=box style=\"left:" ^ num b.x ^ "px;top:" ^ num b.y ^ "px;width:" ^ num b.w ^ "px;height:" ^ num b.h ^ "px\">\n"
-            ^ (if b.kind = "sheet" then sheet_html b.data
-               else if b.kind = "drawing" then drawing_html b
-               else if b.kind = "paint" then paint_html b
-               else if b.kind = "chart" then chart_html parts b
-               else text_html b.data)
-            ^ "</div>\n") parts
-        @ [ "</div>\n</body></html>\n" ])
+  (* a page: a block the size of its parts, each part at its place *)
+  let page bs =
+    let width = List.fold_left (fun m (b : obj) -> max m (b.x + b.w)) 0 bs and height = List.fold_left (fun m (b : obj) -> max m (b.y + b.h)) 0 bs in
+    "<div class=page style=\"width:" ^ num width ^ "px;height:" ^ num height ^ "px\">\n"
+    ^ glue (List.map (fun (b : obj) ->
+        "<div class=box style=\"left:" ^ num b.x ^ "px;top:" ^ num b.y ^ "px;width:" ^ num b.w ^ "px;height:" ^ num b.h ^ "px\">\n"
+        ^ (if b.kind = "sheet" then sheet_html b.data
+           else if b.kind = "drawing" then drawing_html b
+           else if b.kind = "paint" then paint_html b
+           else if b.kind = "chart" then chart_html parts b
+           else text_html b.data)
+        ^ "</div>\n") bs)
+    ^ "</div>\n" in
+  glue ([ "<!doctype html>\n<html><head><meta charset=\"utf-8\"><title>"; esc title; "</title>\n<style>"; style; "</style></head>\n<body>\n" ]
+        @ List.map page (pages_of parts)
+        @ [ "</body></html>\n" ])
 
 (*****************************************************************************)
 (* PDF *)
 (*****************************************************************************)
 
-(* A page of PDF, the size of the parts, a pixel a point: its text in
- * Courier, one of the fonts every reader has (no font carried), which
- * at 13.33 points is 8 points a character, the office's 8 by 16 (its
- * bold, oblique and both for the styles, twice the size for large); its
- * lines and rectangles as PDF draws them. Not compressed: the page is
- * a text of drawing operators, which a test reads. *)
+(* A page of PDF for each page of the document, all the size of the
+ * largest, a pixel a point: its text in Courier, one of the fonts every
+ * reader has (no font carried), which at 13.33 points is 8 points a
+ * character, the office's 8 by 16 (its bold, oblique and both for the
+ * styles, twice the size for large); its lines and rectangles as PDF
+ * draws them. Not compressed: a page is a text of drawing operators,
+ * which a test reads. *)
 
 (* a text in a PDF string: \ ( ) after a \ *)
 let pdf_esc (s : string) : string =
@@ -381,24 +395,34 @@ let ten (k : int) = let s = string_of_int k in String.make (10 - String.length s
 
 let to_pdf (doc : string) : string =
   let parts = in_order (parse 640 480 doc) in
+  let pages = pages_of parts in
+  let n = List.length pages in
+  (* every page the size of the largest one's parts *)
   let width = List.fold_left (fun m (b : obj) -> max m (b.x + b.w)) 1 parts and height = List.fold_left (fun m (b : obj) -> max m (b.y + b.h)) 1 parts in
-  let page = glue (List.map (fun (b : obj) ->
+  let drawn bs = glue (List.map (fun (b : obj) ->
     if b.kind = "sheet" then sheet_pdf height b
     else if b.kind = "drawing" then drawing_pdf height b
     else if b.kind = "paint" then paint_pdf height b
     else if b.kind = "chart" then chart_pdf height parts b
-    else text_pdf_box height b) parts) in
-  let font k name = string_of_int (4 + k) ^ " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /" ^ name ^ " /Encoding /WinAnsiEncoding >> endobj\n" in
+    else text_pdf_box height b) bs) in
+  let num k = string_of_int k in
+  let font k name = num (3 + k) ^ " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /" ^ name ^ " /Encoding /WinAnsiEncoding >> endobj\n" in
+  (* the objects: 1 the catalog, 2 the pages, 3 to 6 the fonts, then a
+   * page's and its contents' for each page, 7 and 8 the first's *)
+  let page_objects (k, bs) =
+    let content = drawn bs in
+    [ num (7 + (2 * k)) ^ " 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 " ^ num width ^ " " ^ num height
+      ^ "] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents " ^ num (8 + (2 * k)) ^ " 0 R >> endobj\n";
+      num (8 + (2 * k)) ^ " 0 obj << /Length " ^ num (String.length content) ^ " >>\nstream\n" ^ content ^ "endstream endobj\n" ] in
+  let kids = glue (List.init n (fun k -> (if k = 0 then "" else " ") ^ num (7 + (2 * k)) ^ " 0 R")) in
   let objects = [
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n";
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n";
-    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 " ^ string_of_int width ^ " " ^ string_of_int height
-    ^ "] /Resources << /Font << /F0 4 0 R /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 8 0 R >> endobj\n";
-    font 0 "Courier"; font 1 "Courier-Bold"; font 2 "Courier-Oblique"; font 3 "Courier-BoldOblique";
-    "8 0 obj << /Length " ^ string_of_int (String.length page) ^ " >>\nstream\n" ^ page ^ "endstream endobj\n" ] in
+    "2 0 obj << /Type /Pages /Kids [" ^ kids ^ "] /Count " ^ num n ^ " >> endobj\n";
+    font 0 "Courier"; font 1 "Courier-Bold"; font 2 "Courier-Oblique"; font 3 "Courier-BoldOblique" ]
+    @ List.concat (List.map page_objects (zip (List.init n (fun k -> k)) pages)) in
   let head = "%PDF-1.4\n" in
   (* each object's place in the file, for the cross-reference table *)
   let rec places at l = match l with o :: rest -> at :: places (at + String.length o) rest | [] -> [] in
-  let body = glue objects in
-  head ^ body ^ "xref\n0 9\n0000000000 65535 f \n" ^ glue (List.map (fun at -> ten at ^ " 00000 n \n") (places (String.length head) objects))
-  ^ "trailer << /Size 9 /Root 1 0 R >>\nstartxref\n" ^ string_of_int (String.length head + String.length body) ^ "\n%%EOF\n"
+  let body = glue objects and count = List.length objects + 1 in
+  head ^ body ^ "xref\n0 " ^ num count ^ "\n0000000000 65535 f \n" ^ glue (List.map (fun at -> ten at ^ " 00000 n \n") (places (String.length head) objects))
+  ^ "trailer << /Size " ^ num count ^ " /Root 1 0 R >>\nstartxref\n" ^ num (String.length head + String.length body) ^ "\n%%EOF\n"

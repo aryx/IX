@@ -9,6 +9,7 @@
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 3
 == a click at 20 40, C-o, a large title (C-l), a paragraph with bold words (C-b) typed: being edited
   shape 0
@@ -33,6 +34,7 @@
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == a click elsewhere: the box shows its text filled
   shape 0
@@ -52,6 +54,7 @@
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == the page: the file
 \box[20 40 200 102]{
@@ -81,6 +84,7 @@ Some **bold words** and plain ones, more than a line holds.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == from its corner: 80 narrower, 10 taller
   shape 0
@@ -103,6 +107,7 @@ Some **bold words** and plain ones, more than a line holds.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == C-_: the resize undone
   shape 0
@@ -122,6 +127,7 @@ Some **bold words** and plain ones, more than a line holds.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == C-x C-c, not saved: refused
   shape 0
@@ -141,6 +147,7 @@ Some **bold words** and plain ones, more than a line holds.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 asks: save
 == C-x C-s, and the program says it wrote
@@ -161,6 +168,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 asks: quit
 == a page of two boxes, from its file
@@ -178,6 +186,7 @@ asks: quit
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 5
 == a click where they overlap: the top one is edited, its cursor where the click was
   shape 0
@@ -199,6 +208,7 @@ asks: quit
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 5
 == C-e, a ! typed, a click outside
   shape 0
@@ -215,6 +225,7 @@ asks: quit
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 5
 asks: save
 == the other edited: C-x C-s while editing asks to save
@@ -237,6 +248,7 @@ asks: save
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 5
 == the right button selects a box, Backspace removes it
   shape 0
@@ -251,6 +263,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == C-_ twice: back to the edit of the !
   shape 0
@@ -267,6 +280,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 5
 == now: the file
 \box[10 40 150 52]{
@@ -307,6 +321,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == Rent, Food, Total typed, each with Enter: down a cell each
   shape 0
@@ -341,6 +356,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)
   shape 0
@@ -378,6 +394,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error
   shape 0
@@ -420,6 +437,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == to b1, Enter brings back 500, three Backspace, 8: b3 and b4 again
   shape 0
@@ -462,6 +480,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == the page: the file
 \box[10 40 282 114 sheet1]{
@@ -514,6 +533,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == Backspace: c2 emptied
   shape 0
@@ -555,6 +575,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == C-g: no cell chosen
   shape 0
@@ -591,6 +612,7 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == C-x d: a drawing, where the last click was; the tool a box
   shape 0
@@ -608,6 +630,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == a box dragged from 30 60 to 110 90, cpu typed: its label
   shape 0
@@ -626,6 +649,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == Tab: an arrow, across then down; Tab twice: a box again, mem
   shape 0
@@ -645,6 +669,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == Tab twice: text; a click, a notes typed, Backspace
   shape 0
@@ -665,6 +690,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == Tab: a box; a click is no box (too small)
   shape 0
@@ -685,6 +711,7 @@ top
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == the page: the file
 \box[10 40 300 160]{
@@ -714,6 +741,7 @@ text 30 150 a note
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == a click on Insert: its menu open
   shape 0
@@ -727,6 +755,7 @@ text 30 150 a note
     words 0 56 1 |Edit|
     rect 3 96 0 64 17
     words 255 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 3
     rect 0 96 18 128 68
     rect 255 97 19 126 66
@@ -764,6 +793,7 @@ text 30 150 a note
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == Edit pressed, the mouse down to Undo, let go: the sheet undone
   shape 0
@@ -776,6 +806,7 @@ text 30 150 a note
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 3
 == Insert pressed, let go on Drawing (nothing seen between): a drawing, and its Draw menu
   shape 0
@@ -793,6 +824,7 @@ text 30 150 a note
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == Draw's Arrow: the tool an arrow, marked in the menu
   shape 0
@@ -810,6 +842,7 @@ text 30 150 a note
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == Draw opened, a click outside: closed, and the page not clicked
   shape 0
@@ -827,6 +860,7 @@ text 30 150 a note
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 asks: save
 == File's Save
@@ -845,6 +879,7 @@ asks: save
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Draw|
+    words 0 216 1 |Page|
   shape 4
 == a click in the box: edited, its tab above it, its corner
   shape 0
@@ -864,6 +899,7 @@ asks: save
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == its tab pressed, let go 100 right, 20 down (nothing seen between): the box there
   shape 0
@@ -881,6 +917,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller
   shape 0
@@ -898,6 +935,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == C-_: the resize undone
   shape 0
@@ -912,6 +950,7 @@ asks: save
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == the page: the file
 \box[140 80 150 52]{
@@ -942,6 +981,7 @@ hello
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == a drag over bold: selected
   shape 0
@@ -968,6 +1008,7 @@ hello
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == Format's Italic: the selection bold and italic
   shape 0
@@ -994,6 +1035,7 @@ hello
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == C-w cut, C-e, a space, C-y pasted at the end
   shape 0
@@ -1019,6 +1061,7 @@ hello
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Format|
+    words 0 232 1 |Page|
   shape 4
 == a click outside: the text shown, not edited
   shape 0
@@ -1039,6 +1082,7 @@ hello
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == the page: the file
 \box[20 40 200 84]{
@@ -1061,6 +1105,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Paint|
+    words 0 224 1 |Page|
   shape 4
 == a line dragged, black: one row
   shape 0
@@ -1079,6 +1124,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Paint|
+    words 0 224 1 |Page|
   shape 4
 == 2, red; the Paint menu's thick brush; a stroke seen only at its two ends: a thick line between them
   shape 0
@@ -1110,6 +1156,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Paint|
+    words 0 224 1 |Page|
   shape 4
 == the page: the file
 \box[10 40 200 124]{
@@ -1154,6 +1201,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Paint|
+    words 0 224 1 |Page|
   shape 4
 == C-_: the picture back
   shape 0
@@ -1181,6 +1229,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == the page: the file
 \box[10 40 200 124]{
@@ -1244,6 +1293,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 7
 == written again: the file
 \box[10 40 200 84]{
@@ -1290,6 +1340,7 @@ box 10 10 40 20 cpu
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == written: the file
 \box[16 40 368 140]{
@@ -1333,6 +1384,7 @@ Its second line.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 4
 == the Sheet menu's Name, budget typed, Enter: its tab says budget
   shape 0
@@ -1363,6 +1415,7 @@ Its second line.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 4
 == b1 chosen, the Sheet menu's Chart of this column: a chart beside the sheet
   shape 0
@@ -1400,6 +1453,7 @@ Its second line.
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Page|
   shape 5
 == b2 now 900: the chart follows
   shape 0
@@ -1442,6 +1496,7 @@ Its second line.
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
     words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
   shape 5
 == the page: the file
 \box[10 40 282 114 budget]{
@@ -1457,3 +1512,161 @@ bars budget b1:b2 a1:a2
 ```
 }
 --
+== a text on the first page; the Page menu's New page: the second, empty
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 204 0 202 400 18
+    words 0 4 203 |book (page 2 of 2) (modified)    the menus above;|
+  shape 2
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 3
+== a sheet on the second page
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 87 57 |1|
+    words 0 87 73 |2|
+    rect 3 34 88 65 2
+    rect 3 34 103 65 2
+    rect 3 34 88 2 17
+    rect 3 97 88 2 17
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |a3: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
+    words 0 224 1 |Page|
+  shape 4
+== C-x [: the first page again, its text
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 0 14 42 |First page|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |book (page 1 of 2) (modified)    the menus above;|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 4
+== the document: the file
+\box[10 40 200 84]{
+First page
+}
+
+\newpage
+
+\box[10 40 282 114 sheet1]{
+| a |
+|---|
+| 1 |
+| 2 |
+}
+--
+== C-x ], the Page menu's Delete page: one page left
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 0 14 42 |First page|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |book (modified)    the menus above; a click edits|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 4
+== C-_: the page back, and its sheet (C-x ] to see it)
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 0 14 42 |First page|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |book (page 1 of 2) (modified)    the menus above;|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 4
+== C-x ]
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 87 57 |1|
+    words 0 87 73 |2|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |book (page 2 of 2) (modified)    the menus above;|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 4
+== the file read again, its second page shown
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 87 57 |1|
+    words 0 87 73 |2|
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |again (page 2 of 2)    the menus above; a click e|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Page|
+  shape 4

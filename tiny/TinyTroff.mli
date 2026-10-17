@@ -31,8 +31,10 @@
  *               value
  *
  * As text, the parts come one after the other, an empty line between
- * two. As HTML, each is at its place on the page (a box positioned in a
- * page of the parts' size), as the office shows it.
+ * two, a form feed between two pages (nroff's). As HTML, each is at
+ * its place on its page (a box positioned in a block of the page's
+ * parts' size), the pages one under the other, as the office shows
+ * them. As PDF, a page each, all the size of the largest.
  *
  * cs-history:
  * troff (Joe Ossanna, 1973) made the documents of Unix from a text
@@ -42,10 +44,9 @@
  * drawings, and the page they are on is both what the office shows and
  * the text troff reads: Bravo's and troff's ways to one document.
  *
- * Left out: pages (a long
- * document is one page), the paint as a picture (a BMP: SVG's
- * rectangles instead), and the office's own colours and fonts in the
- * HTML (the browser's monospace). *)
+ * Left out: a text that flows onto the next page, the paint as a
+ * picture (a BMP: SVG's rectangles instead), and the office's own
+ * colours and fonts in the HTML (the browser's monospace). *)
 
 (* [to_text width doc]: the document as text, its lines filled to width *)
 val to_text : int -> string -> string

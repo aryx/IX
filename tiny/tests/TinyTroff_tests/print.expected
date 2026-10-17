@@ -36,7 +36,7 @@ Food  ########### 300
 == the page as HTML
 <!doctype html>
 <html><head><meta charset="utf-8"><title>report &lt;1&gt;</title>
-<style>body{margin:16px;font:13px/16px monospace}.page{position:relative}.box{position:absolute;overflow:hidden}p{margin:0;min-height:16px}h1,.l{font-size:26px;line-height:32px}h1{margin:0}table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}</style></head>
+<style>body{margin:16px;font:13px/16px monospace}.page{position:relative;margin-bottom:16px}.page+.page{border-top:1px dashed #ccc}.box{position:absolute;overflow:hidden}p{margin:0;min-height:16px}h1,.l{font-size:26px;line-height:32px}h1{margin:0}table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}</style></head>
 <body>
 <div class=page style="width:400px;height:370px">
 <div class=box style="left:10px;top:40px;width:300px;height:100px">
@@ -86,12 +86,12 @@ Food  ########### 300
 == the page as PDF
 %PDF-1.4
 1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
-2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
-3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 400 370] /Resources << /Font << /F0 4 0 R /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 8 0 R >> endobj
-4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >> endobj
-5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >> endobj
-6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
-7 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
+2 0 obj << /Type /Pages /Kids [7 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >> endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
+6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
+7 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 400 370] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 8 0 R >> endobj
 8 0 obj << /Length 2048 >>
 stream
 0 0 0 rg BT /F0 26.67 Tf 14 304 Td (A ) Tj ET
@@ -151,14 +151,56 @@ xref
 0000000009 00000 n 
 0000000058 00000 n 
 0000000115 00000 n 
-0000000271 00000 n 
-0000000366 00000 n 
-0000000466 00000 n 
-0000000569 00000 n 
+0000000210 00000 n 
+0000000310 00000 n 
+0000000413 00000 n 
+0000000520 00000 n 
 0000000676 00000 n 
 trailer << /Size 9 /Root 1 0 R >>
 startxref
 2775
+%%EOF
+== a document of two pages as text
+One
+===
+
+Two, the second page.
+== as PDF
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [7 0 R 9 0 R] /Count 2 >> endobj
+3 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >> endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
+6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
+7 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 210 80] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 8 0 R >> endobj
+8 0 obj << /Length 46 >>
+stream
+0 0 0 rg BT /F0 26.67 Tf 14 14 Td (One) Tj ET
+endstream endobj
+9 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 210 80] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents 10 0 R >> endobj
+10 0 obj << /Length 151 >>
+stream
+0 0 0 rg BT /F0 13.33 Tf 14 26 Td (Two, ) Tj ET
+0 0 0 rg BT /F2 13.33 Tf 54 26 Td (the second) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 134 26 Td ( page.) Tj ET
+endstream endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000216 00000 n 
+0000000316 00000 n 
+0000000419 00000 n 
+0000000526 00000 n 
+0000000681 00000 n 
+0000000776 00000 n 
+0000000932 00000 n 
+trailer << /Size 11 /Root 1 0 R >>
+startxref
+1134
 %%EOF
 == a Markdown file as text
 Notes

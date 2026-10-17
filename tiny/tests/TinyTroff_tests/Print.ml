@@ -61,5 +61,10 @@ let () =
   print_string (to_html "report <1>" page);
   print_string "== the page as PDF\n";
   print_string (to_pdf page);
+  let two = "\\box[10 40 200 40]{\n# One\n}\n\n\\newpage\n\n\\box[10 40 200 40]{\nTwo, *the second* page.\n}\n" in
+  print_string "== a document of two pages as text\n";
+  print_string (to_text 40 two);
+  print_string "== as PDF\n";
+  print_string (to_pdf two);
   print_string "== a Markdown file as text\n";
   print_string (to_text 40 "# Notes\n\nA *Markdown* file, with no box.\n")

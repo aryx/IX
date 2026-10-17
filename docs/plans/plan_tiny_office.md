@@ -399,6 +399,25 @@ tiny-windows like emacs, and a screen session in `make check`:
      in TINY_WWW's directory when the fetch fails; the answer's
      messages read one at a time, as a link's (a picture's rows are
      messages). Looked at: the live OCaml article, 251 KB, its logo.
+   - **Pages (2026-10-17).** The author: "let's also handle documents
+     on more than one page", then separate pages. An object has its
+     page (page_no); the office's window record (where: the file, the
+     size, the page shown, how many) says which is shown; one page at a
+     time, the Page menu last in the bar (Next, Previous, New page,
+     Delete page; C-x ], C-x [, Emacs's), the status line "page 2 of
+     3"; undo of a page deleted counts the pages again. The file: a
+     line `\newpage` between two pages (LaTeX's). tiny-troff: a form
+     feed between two pages of text (nroff's), the pages of HTML one
+     under the other, a PDF page each (all the size of the largest; the
+     fonts shared). Tests: TinyOffice_test.sh's pages scene (a page
+     made, a sheet on it, back, the file, a page deleted and undone, the
+     file read again); TinyTroff_test.sh's two pages, as text and PDF
+     (Ghostscript counts two); make check's office screens with Page in
+     the bar (officepaint's sun given more time).
+   - **Documented (2026-10-17)**: docs/manuals/t-ix.md §7.7 to §7.10
+     (run_canvas and the menus, tiny-office, tiny-troff, the host's
+     tiny/sdl/), its tests' table; README.md's rows for tiny-office,
+     tiny-troff and tiny-browser; tiny/README.md's.
    - The step as planned: each part's `html` as it comes is fine too; this
    step is the page around them, and a session that publishes a
    document and reads it with www.

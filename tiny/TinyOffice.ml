@@ -20,10 +20,14 @@ let blue = 3
 let light_grey = 204
 let pale_blue = 188
 
-(* an object of the page: its kind ("text", "sheet", "drawing", "paint",
- * "chart"), its box in pixels, its data, its name (a sheet's, which a
- * chart names; "" for the others) *)
-type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string }
+(* an object of the document: its kind ("text", "sheet", "drawing",
+ * "paint", "chart"), its box in pixels, its data, its name (a sheet's,
+ * which a chart names; "" for the others), the page it is on (from 0) *)
+type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string; page_no : int }
+
+(* the window on the document: its file, its size in pixels, the page
+ * shown, how many pages there are (a page with nothing on it counts) *)
+type window = { file : string; width : int; height : int; mutable shown : int; mutable pages : int }
 
 (* a text box being edited: its characters and their styles (a byte
  * each: bold 1, italic 2, underlined 4, large 8), the cursor, the
@@ -46,9 +50,10 @@ type edit = Nothing | Writing of doc | Cell of int * int * string option | Sketc
  * selected box, a new box of a kind, a drawing's tool; in a text, to
  * cut, copy, paste, a style (0: plain); in a paint, a colour, a brush,
  * the picture cleared; in a sheet, a name typed, a chart of the chosen
- * cell's column *)
+ * cell's column; the next page shown (1) or the one before (-1), a new
+ * page after it, the page deleted *)
 type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int | Do_cut | Do_copy | Do_paste | Do_style of int
-  | Do_ink of int | Do_brush of int | Do_clear | Do_name | Do_chart
+  | Do_ink of int | Do_brush of int | Do_clear | Do_name | Do_chart | Do_page of int | Do_new_page | Do_delete_page
 
 type office = {
   mutable page : obj list;                (* the objects, the bottom one first *)
@@ -62,7 +67,7 @@ type office = {
   menu : menu_state;                      (* the menus', and the mouse's buttons as last seen *)
   mutable message : string;               (* the status line's *)
   mutable prefix : bool;                  (* C-x typed *)
-  where : string * int * int;             (* the file, the page's width and height *)
+  where : window;                         (* the file, the window's size, the page shown *)
 }
 
 (* (eleven fields: tiny-ml's most on tiny-machine) *)
@@ -86,10 +91,10 @@ let rec replace (l : obj list) (i : int) (b : obj option) : obj list =
   | x :: rest -> if i > 0 then x :: replace rest (i - 1) b else (match b with Some b -> b :: rest | None -> rest)
   | [] -> []
 
-(* the topmost object under (x, y): its place, -1 *)
+(* the topmost object under (x, y) on the page shown: its place, -1 *)
 let hit (o : office) (x : int) (y : int) : int =
   let rec go i found = function
-    | (b : obj) :: rest -> go (i + 1) (if x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h then i else found) rest
+    | (b : obj) :: rest -> go (i + 1) (if b.page_no = o.where.shown && x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h then i else found) rest
     | [] -> found in
   go 0 (-1) o.page
 
@@ -685,10 +690,9 @@ let make_chart (o : office) (c : int) =
       let r1 = List.fold_left max r0 rows in
       let range c = name c r0 ^ ":" ^ name c r1 in
       let data = "bars " ^ s.called ^ " " ^ range c ^ (if c > 0 then " " ^ range (c - 1) else "") ^ "\n" in
-      let _, width, _ = o.where in
-      let x, y = if s.x + s.w + 216 <= width then s.x + s.w + 16, s.y else s.x, s.y + s.h + 24 in
+      let x, y = if s.x + s.w + 216 <= o.where.width then s.x + s.w + 16, s.y else s.x, s.y + s.h + 24 in
       keep o;
-      o.page <- o.page @ [ { kind = "chart"; x; y; w = 200; h = 120; data; called = "" } ];
+      o.page <- o.page @ [ { kind = "chart"; x; y; w = 200; h = 120; data; called = ""; page_no = s.page_no } ];
       o.sel <- List.length o.page - 1;
       o.editing <- Nothing
 
@@ -809,55 +813,68 @@ let sheet_of_md (ls : string list) : string =
       String.concat "" (List.concat (List.map (fun (r, l) -> List.concat (List.map (fun (c, t) -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (numbered (table_cells l)))) (numbered rows)))
   | _ -> ""
 
-(* the file of a page, and its page *)
-let text (o : office) : string =
-  String.concat "" (List.map (fun (k, (b : obj)) ->
-    let content =
-      if b.kind = "sheet" then md_of_sheet b.data
-      else if b.kind = "drawing" || b.kind = "paint" || b.kind = "chart" then
-        (* (its lines as they are, a paint's empty rows too; not the empty one after the last newline) *)
-        [ "```" ^ b.kind ] @ (match List.rev (String.split_on_char '\n' b.data) with "" :: r -> List.rev r | l -> List.rev l) @ [ "```" ]
-      else md_of_text b.data in
-    String.concat "" ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ (if b.called = "" then "" else " " ^ b.called) ^ "]{\n")
-          :: List.map (fun l -> l ^ "\n") content @ [ "}\n" ])) (numbered o.page))
+(* a box's lines in the file *)
+let box_lines (b : obj) : string list =
+  let content =
+    if b.kind = "sheet" then md_of_sheet b.data
+    else if b.kind = "drawing" || b.kind = "paint" || b.kind = "chart" then
+      (* (its lines as they are, a paint's empty rows too; not the empty one after the last newline) *)
+      [ "```" ^ b.kind ] @ (match List.rev (String.split_on_char '\n' b.data) with "" :: r -> List.rev r | l -> List.rev l) @ [ "```" ]
+    else md_of_text b.data in
+  ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ (if b.called = "" then "" else " " ^ b.called) ^ "]{")
+  :: content @ [ "}" ]
 
-let obj_of (x : int) (y : int) (w : int) (h : int) (called : string) (ls : string list) : obj =
+(* the file of a document: each page's boxes, a line \newpage between
+ * two pages (LaTeX's), an empty line between two boxes *)
+let text (o : office) : string =
+  let page p = List.map box_lines (List.filter (fun (b : obj) -> b.page_no = p) o.page) in
+  let blocks = List.concat (List.init o.where.pages (fun p -> (if p = 0 then [] else [ [ "\\newpage" ] ]) @ page p)) in
+  String.concat "" (List.map (fun (k, ls) -> (if k = 0 then "" else "\n") ^ String.concat "" (List.map (fun l -> l ^ "\n") ls)) (numbered blocks))
+
+let obj_of (page_no : int) (x : int) (y : int) (w : int) (h : int) (called : string) (ls : string list) : obj =
   let lines_data l = String.concat "" (List.map (fun s -> s ^ "\n") l) in
   match ls with
-  | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls; called }
+  | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls; called; page_no }
   | first :: rest when first = "```drawing" || first = "```paint" || first = "```chart" ->
-      { kind = String.sub first 3 (String.length first - 3); x; y; w; h; data = lines_data (List.filter (fun l -> l <> "```") rest); called = "" }
-  | _ -> { kind = "text"; x; y; w; h; data = text_of_md ls; called = "" }
+      { kind = String.sub first 3 (String.length first - 3); x; y; w; h; data = lines_data (List.filter (fun l -> l <> "```") rest); called = ""; page_no }
+  | _ -> { kind = "text"; x; y; w; h; data = text_of_md ls; called = ""; page_no }
 
 let parse (width : int) (height : int) (s : string) : obj list =
   let is_box l = String.length l > 6 && String.sub l 0 5 = "\\box[" && String.sub l (String.length l - 2) 2 = "]{" in
-  let rec go ls =
+  let rec go p ls =
     match ls with
+    | "\\newpage" :: rest -> go (p + 1) rest
     | l :: rest when is_box l ->
         let words = String.split_on_char ' ' (String.sub l 5 (String.length l - 7)) in
         let num v = match int_of_string_opt v with Some k -> k | None -> 0 in
         let rec content acc ls = match ls with "}" :: rest -> List.rev acc, rest | x :: rest -> content (x :: acc) rest | [] -> List.rev acc, [] in
         let (inside, rest) = content [] rest in
         (match words with
-         | [ x; y; w; h ] -> obj_of (num x) (num y) (num w) (num h) "" inside :: go rest
-         | [ x; y; w; h; called ] -> obj_of (num x) (num y) (num w) (num h) called inside :: go rest
-         | _ -> go rest)
-    | _ :: rest -> go rest
+         | [ x; y; w; h ] -> obj_of p (num x) (num y) (num w) (num h) "" inside :: go p rest
+         | [ x; y; w; h; called ] -> obj_of p (num x) (num y) (num w) (num h) called inside :: go p rest
+         | _ -> go p rest)
+    | _ :: rest -> go p rest
     | [] -> [] in
   let ls = String.split_on_char '\n' s in
   if s = "" then []
-  else if List.exists is_box ls then go ls
-  else [ obj_of 16 40 (width - 32) (height - 80) "" (match List.rev ls with "" :: r -> List.rev r | _ -> ls) ]
+  else if List.exists is_box ls then go 0 ls
+  else [ obj_of 0 16 40 (width - 32) (height - 80) "" (match List.rev ls with "" :: r -> List.rev r | _ -> ls) ]
+
+(* how many pages a document's file has: one, and one more a \newpage *)
+let pages_in (s : string) = 1 + List.length (List.filter (fun l -> l = "\\newpage") (String.split_on_char '\n' s))
+
+(* the pages counted again, after a change: as many as its objects are on, at least *)
+let fit_pages (o : office) = o.where.pages <- List.fold_left (fun m (b : obj) -> max m (b.page_no + 1)) o.where.pages o.page
 
 let create (width : int) (height : int) (file : string) (s : string) : office =
   let page = parse width height s in
+  let where = { file; width; height; shown = 0; pages = pages_in s } in
   { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None; at = (16, 40); menu = menu_closed ();
-    message = ""; prefix = false; where = (file, width, height) }
+    message = ""; prefix = false; where }
 
 let saved (o : office) =
   o.clean <- o.page;
-  let file, _, _ = o.where in
-  o.message <- "Wrote " ^ file
+  o.message <- "Wrote " ^ o.where.file
 
 (*****************************************************************************)
 (* The keys and the mouse *)
@@ -909,7 +926,7 @@ let add (o : office) (kind : string) (w : int) (h : int) =
   let x, y = o.at in
   keep o;
   let rec fresh k = let n = "sheet" ^ string_of_int k in if List.exists (fun (b : obj) -> b.called = n) o.page then fresh (k + 1) else n in
-  o.page <- o.page @ [ { kind; x; y; w; h; data = ""; called = (if kind = "sheet" then fresh 1 else "") } ];
+  o.page <- o.page @ [ { kind; x; y; w; h; data = ""; called = (if kind = "sheet" then fresh 1 else ""); page_no = o.where.shown } ];
   let i = List.length o.page - 1 in
   o.sel <- i;
   if kind = "text" then edit o i x y false else if kind = "sheet" then o.editing <- Cell (0, 0, None)
@@ -923,7 +940,7 @@ let command (o : office) (c : command) : request =
   | Do_undo ->
       finish o;
       (match o.undo with
-       | p :: rest -> o.page <- p; o.undo <- rest; o.sel <- -1
+       | p :: rest -> o.page <- p; o.undo <- rest; o.sel <- -1; fit_pages o
        | [] -> o.message <- "No more undo");
       Continue
   | Do_delete -> finish o; (if o.sel >= 0 then (keep o; o.page <- replace o.page o.sel None; o.sel <- -1)); Continue
@@ -943,9 +960,40 @@ let command (o : office) (c : command) : request =
   | Do_style bit -> (match o.editing with Writing d -> restyle d bit | _ -> ()); Continue
   | Do_name -> (match o.editing with Cell (_, _, _) -> commit o; o.editing <- Naming "" | _ -> ()); Continue
   | Do_chart -> (match o.editing with Cell (c, _, _) -> commit o; make_chart o c | _ -> ()); Continue
+  | Do_page d ->
+      finish o;
+      o.sel <- -1;
+      let p = o.where.shown + d in
+      if p >= 0 && p < o.where.pages then o.where.shown <- p else o.message <- (if d > 0 then "No next page" else "No page before");
+      Continue
+  | Do_new_page ->
+      (* a page after the one shown, the pages after moved one on *)
+      finish o;
+      keep o;
+      let p = o.where.shown in
+      o.page <- List.map (fun (b : obj) -> if b.page_no > p then { b with page_no = b.page_no + 1 } else b) o.page;
+      o.where.pages <- o.where.pages + 1;
+      o.where.shown <- p + 1;
+      o.sel <- -1;
+      Continue
+  | Do_delete_page ->
+      (* the page shown and what is on it gone, the pages after moved back *)
+      finish o;
+      if o.where.pages > 1 then begin
+        keep o;
+        let p = o.where.shown in
+        o.page <- List.map (fun (b : obj) -> if b.page_no > p then { b with page_no = b.page_no - 1 } else b) (List.filter (fun (b : obj) -> b.page_no <> p) o.page);
+        o.where.pages <- o.where.pages - 1;
+        o.where.shown <- min p (o.where.pages - 1);
+        o.sel <- -1
+      end
+      else o.message <- "The one page is not deleted";
+      Continue
 
-(* the menus, a drawing's tools when one is edited (the one in use
- * marked); the keys at the right *)
+(* the menus: File, Edit, Insert, the box's being edited (a text's
+ * Format, a sheet's, a drawing's tools, a paint's colours: the one in
+ * use marked), Page last (where it stays, as a Window menu); the keys
+ * at the right *)
 let office_menus (o : office) : (string * (string * command) list) list =
   [ ("File", [ ("Save     C-x C-s", Do_save); ("Quit     C-x C-c", Do_quit) ]);
     ("Edit", [ ("Undo       C-_", Do_undo); ("Cut        C-w", Do_cut); ("Copy", Do_copy); ("Paste      C-y", Do_paste); ("Delete box", Do_delete) ]);
@@ -964,6 +1012,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
          let mark k s = (if k = tool then "* " else "  ") ^ s in
          [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1); (mark 2 "Text", Do_tool 2) ]) ]
      | _ -> [])
+  @ [ ("Page", [ ("Next      C-x ]", Do_page 1); ("Previous  C-x [", Do_page (-1)); ("New page", Do_new_page); ("Delete page", Do_delete_page) ]) ]
 
 let key (o : office) (k : int) : request =
   match o.editing with
@@ -982,6 +1031,8 @@ let key (o : office) (k : int) : request =
         else if k = 116 then command o (Do_add "sheet")
         else if k = 100 then command o (Do_add "drawing")
         else if k = 112 then command o (Do_add "paint")
+        else if k = 93 then command o (Do_page 1)
+        else if k = 91 then command o (Do_page (-1))
         else (o.message <- "C-x: not a command"; Continue)
       end
       else begin
@@ -1181,7 +1232,8 @@ let frame (b : obj) (selected : bool) : shape list =
 (* the status line: what the box being edited says (a search, M-x), or
  * the page's message, or the file's name *)
 let status (o : office) : shape list =
-  let file, width, height = o.where in
+  let file = o.where.file and width = o.where.width and height = o.where.height in
+  let file = if o.where.pages > 1 then file ^ " (page " ^ string_of_int (o.where.shown + 1) ^ " of " ^ string_of_int o.where.pages ^ ")" else file in
   let said = match o.editing with
     | Writing d when o.message = "" ->
         let names = List.filter (fun t -> t <> "") (List.init 4 (fun k -> if d.typing land (1 lsl k) <> 0 then List.nth [ "bold"; "italic"; "underlined"; "large" ] k else "")) in
@@ -1199,11 +1251,12 @@ let status (o : office) : shape list =
   [ Move (0, height - 18, Rect (light_grey, width, 18)); Move (4, height - 17, Words (black, m)) ]
 
 let view (o : office) : shape list =
-  let _, width, height = o.where in
+  let width = o.where.width and height = o.where.height in
   let i = ref (-1) in
   Rect (white, width, height)
-  :: List.map (fun (b : obj) ->
+  :: List.concat (List.map (fun (b : obj) ->
        incr i;
+       if b.page_no <> o.where.shown then [] else
        let content = match o.editing with
          | Writing d when !i = o.sel -> text_view b d.txt d.sty (Some d)
          | Cell (c, r, _) when !i = o.sel -> sheet_view b (Some (c, r))
@@ -1215,5 +1268,5 @@ let view (o : office) : shape list =
              else if b.kind = "paint" then paint_view b
              else if b.kind = "chart" then chart_view o.page b
              else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in
-       Group (frame b (!i = o.sel) @ content)) o.page
+       [ Group (frame b (!i = o.sel) @ content) ]) o.page)
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu

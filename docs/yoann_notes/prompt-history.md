@@ -37147,3 +37147,19 @@ Claude's survey A covered the GUI-side ML programs and user programs, ranking ea
 Claude checked the biggest claims from survey A and the others itself before building a ranked list.
 Claude held survey A's proposals to the rules: standard OCaml functions, existing libraries, dead code, and no new dependencies.
 Claude reported surveys B, C and D at about 35, 40 and 90 lines respectively.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:59
+
+**Yoann:**
+
+> let's do 1. I did 3 and everything worked fine. let's also handle documents on more than one page
+
+**Claude (summary):**
+
+Claude added multi-page support to the office, with a Page status line, view, Page menu, and keys.
+Claude re-recorded the four office screens to confirm the new Page title was the only visible change.
+Claude gave tiny-troff a two-page test document, and Ghostscript and pdftotext both confirmed two pages.
+Claude lengthened the sun stroke's timing after a stall, since the taller menu bar left too little slack.
+Claude also updated the manual, README table, and tiny/README.md, and fixed a cyclic example in the manual.

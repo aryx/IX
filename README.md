@@ -210,8 +210,11 @@ system, and the programs in its windows.
 | **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 220 | lib_gui | [`TinyLibGUI.ml`](tiny/TinyLibGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibGUI.ml)) |
 | **tiny-tetris** | Tetris, in a window of tiny-windows | 150 | the playground's Tetris | [`TinyAppTetris.ml`](tiny/TinyAppTetris.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppTetris.ml)) |
 | **tiny-calculator**, **tiny-temperature** | two programs on it, in a window of tiny-windows: a calculator of four operations, sixteen buttons; two fields typed in, Celsius and Fahrenheit, each the other's answer | 70, 40 | lib_gui's 7GUIs | [`TinyAppCalculator.ml`](tiny/TinyAppCalculator.ml), [`TinyAppTemperature.ml`](tiny/TinyAppTemperature.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAppCalculator.ml)) |
+| **tiny-office** | an office suite in one program: a document of pages of boxes, each a text edited as it is shown (bold, italic, large), a sheet with its formulas, a drawing, a paint or a chart that follows its sheet; pull-down menus; its file Markdown with a few LaTeX commands | 860 | mini-office | [`TinyOffice.ml`](tiny/TinyOffice.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyOffice.ml)) |
+| **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 310 | mini-troff | [`TinyTroff.ml`](tiny/TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
+| **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 1,040 | mini-netscape | [`TinyBrowser.ml`](tiny/TinyBrowser.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
 
-The two sides meet in one program so far, the shell: the same
+The two sides first met in one program, the shell: the same
 `TinyShell.ml` is built by OCaml for the host and by tiny-ml for
 tiny-machine, where it is the program `rc` (the shell one types at
 first there is still a C program of tiny-kernel's,
@@ -222,7 +225,11 @@ OCaml's standard library; and what it asks of the system is one
 interface, `TinyLibSystem`, with a file for each side
 ([`TinyLibHost/`](tiny/TinyLibHost/TinyLibSystem.mli)'s over Unix,
 [`TinyKernel/libml/`](tiny/TinyKernel/libml/TinyLibSystem.ml)'s over
-the kernel's calls). The other tools are still OCaml that needs a
+the kernel's calls). The graphical programs meet the same way: what
+they ask of the kernel is `TinyCalls`, a virtual library of dune's,
+whose host side is a window of SDL's, so the office, emacs, the
+calculator, tetris, troff and the browser are built for the host from
+the kernel's own few lines of each ([`tiny/sdl/`](tiny/sdl/)). The other tools are still OCaml that needs a
 library tiny-ml does not have. What each side is compiled by, and
 with what under it:
 
@@ -379,8 +386,8 @@ names are not final):
 | Profilers | mini-prof | tiny-profiler | `prof`, `tprof` |
 
 What else was on this list is in [m-IX's table](#m-ix-the-mini-programs)
-now. t-IX has its graphics, its windows, its network and a GUI toolkit; a
-web browser of its size (tiny-browser) is not written.
+now. t-IX has its graphics, its windows, its network, a GUI toolkit,
+an office suite and a web browser.
 
 ### The budget
 

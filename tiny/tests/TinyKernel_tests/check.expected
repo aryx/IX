@@ -201,9 +201,9 @@ sheet, a drawing, a paint.
 Rent   500
 Food   300
 Total  800
-%      38     146    2054 r.html
+%      38     148    2112 r.html
      63     639    2431 r.pdf
-    101     785    4485 total
+    101     787    4543 total
 usage: troff [-h | -p] file
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open

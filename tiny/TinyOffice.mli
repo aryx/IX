@@ -16,14 +16,15 @@
  * {b Every object's data is text}, and undo is the earlier pages, kept
  * in a list (an edit makes a new page, the old one is not changed).
  *
- * {b The file of a page is a document in mini-troff's format}
+ * {b The file of a document is in mini-troff's format}
  * (plan_typesetting.md: Markdown's lines, \name[options]{text} for what
- * Markdown has not): each object a \box[x y w h]{...} around its
+ * Markdown has not): its pages one after the other, a line \newpage
+ * between two (LaTeX's); each object a \box[x y w h]{...} around its
  * content, a text box's Markdown: **bold**, *italic*, a line "# "
  * large, \u{} underlined, \large{} large in a line; a sheet a table
  * (the columns' letters, then what was typed, a row a line), a drawing
- * or a paint a fence (```drawing, ```paint) of its lines. So a page is
- * read, or written, in emacs; and a Markdown file is opened as one text
+ * or a paint a fence (```drawing, ```paint) of its lines. So a document
+ * is read, or written, in emacs; and a Markdown file is opened as one text
  * box. (Being edited, a text box's data is its text with a mark where
  * the style changes, "a \{b}bold\{} word"; it is the file's Markdown
  * only in the file.)
@@ -61,9 +62,11 @@
  *
  * {b The menus} are pull-down menus across the top, TinyLibGUI's, as
  * in every office program since the Lisa's and the Macintosh's: File
- * (Save, Quit), Edit (Undo, Delete box), Insert (Text, Sheet,
- * Drawing), and Draw while a drawing is edited (its tools). Each item
- * shows its key.
+ * (Save, Quit), Edit (Undo, Cut, Copy, Paste, Delete box), Insert
+ * (Text, Sheet, Drawing, Paint), the box's being edited (a text's
+ * Format, a sheet's Sheet, a drawing's Draw, a paint's Paint), and Page
+ * last (Next, Previous, New page, Delete page: one page shown at a
+ * time, the status line saying which). Each item shows its key.
  *
  * {b A paint's data is a line a row of pixels}, a letter a pixel, its
  * colour: ". white, k black, r red..." (TinyLibPlayground's
@@ -100,6 +103,7 @@
  *                          character the last label's; C-g leaves it
  *     Backspace, Delete    the selected box removed
  *     C-_ (C-/)            undo: the page as it was before the last change
+ *     C-x ], C-x [         the next page, the one before (Emacs's)
  *     C-x C-s, C-x C-c     save, quit (while editing too)
  *
  * {b Only what changed is drawn.} [view] is the page as shapes
@@ -114,14 +118,13 @@
  * it for the tests (tests/TinyOffice_test.sh), tiny-ml for tiny-kernel.
  *
  * What is left out, for now: charts other than bars (a pie, lines),
- * PDF (step 6's tiny-troff prints text and HTML), moving a drawing's shapes once drawn, a sheet's
- * floating point, its other functions than sum, and formulas that
- * follow a cell moved, a paint's fill and its colours other than ten,
- * other fonts and sizes (one font, 8 by 16, its italic and its double),
- * colours of text, paragraphs centred or justified, several pages, and
- * undo of the
- * typing inside a box (undo takes the page back to before the box was
- * edited).
+ * moving a drawing's shapes once drawn, a sheet's floating point, its
+ * other functions than sum, and formulas that follow a cell moved, a
+ * paint's fill and its colours other than ten, other fonts and sizes
+ * (one font, 8 by 16, its italic and its double), colours of text,
+ * paragraphs centred or justified, a text that flows from a box to the
+ * next or onto the next page, and undo of the typing inside a box (undo
+ * takes the document back to before the box was edited).
  *)
 
 type office
@@ -162,8 +165,8 @@ val say : office -> string -> unit
  * (each its kind, box, arrow or text, its numbers, its label); a
  * chart's bars, each its label and value, from its sheet on the page,
  * or none and why. An object's called is a sheet's name ("" for the
- * other kinds). *)
-type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string }
+ * other kinds), its page_no the page it is on (from 0). *)
+type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string; page_no : int }
 val parse : int -> int -> string -> obj list
 val decode : string -> string * string
 type value = Num of int | Str of string | Err of string

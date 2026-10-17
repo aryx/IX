@@ -43,6 +43,11 @@ The script builds the tools with dune and calls them. By hand:
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
 
+tiny-kernel's graphical programs also run on the host, in a window of
+their own, with no machine: `tiny-office file`, `tiny-www OCaml`,
+`tiny-emacs file`, `tiny-calc`, `tiny-tetris`; and `tiny-troff [-h |
+-p] file` prints a document (§7.10).
+
 ## 2. How t-ix is put together
 
 ![Who builds what in ix](../pics/toolchains.svg)
@@ -643,7 +648,7 @@ and then on it at once.
 | shape | what |
 |---|---|
 | `Rect (colour, width, height)` | a rectangle; a colour is a byte of the table |
-| `Words (colour, text)` | a text, in the one font, 8 by 16 |
+| `Words (colour, text)` | a text, in the one font, 8 by 16; its colour's high bits a style (§7.7) |
 | `Group shapes` | shapes together, the first under the next |
 | `Move (right, down, shape)` | a shape moved; y goes down from the top left corner |
 
@@ -697,6 +702,128 @@ The kernel reads the speed, so the programs that count ticks (the games,
 `ping`, IL's timers) keep their pace at any speed, while those that
 compute finish sooner. The web page runs at 8 million.
 
+### 7.7 A program that draws its whole window: `run_canvas`, the menus
+
+A program that draws its window itself (emacs, the office) is a value
+of `TinyLibGUI.ml`'s type `canvas`: its first model given the window's
+size (`first`), its picture as shapes (`picture`, the first one the
+ground under all), the model after a key (`typed`) and after the mouse
+(`moved`), each `None` to end. `run_canvas` has the loop: the window's
+size (an ENQ to the console, which tiny-windows answers in the mouse's
+box), the raw console (`rawcons`: ^C a key), and the picture drawn
+where it changed, each shape's leaves compared with the old ones at
+their place. A program's own file in `TinyKernel/user/` is then a few
+lines (`office.ml`, `emacs.ml`).
+
+`TinyLibGUI.ml` has pull-down menus for such a program: a bar of
+titles, each a menu of items and their messages (`menu_view`, drawn
+over the picture), and `menu_mouse`, which says whether the mouse was
+the menus' and the item chosen. A press on a title and a release on
+an item chooses it, and so does a click on the title then one on the
+item. The menus' state is below the model, as the widgets' mouse is.
+
+A word's colour may carry a style in its high bits (`TinyLibPlayground`'s
+`bold`, `italic`, `underlined`, `large`), drawn by the kernel's `t`
+message (§7.3), and `fat_pixels`, a row of a paint: each character a
+colour's letter, a square of 4 by 4.
+
+### 7.8 tiny-office: `office`
+
+`tiny/TinyOffice.ml` (`TinyKernel/user/office.ml` around it) is an
+office suite of one program: a document of pages, each page boxes
+(the "parts"), each box a kind of document whose data is text.
+
+| part | made by | edited |
+|---|---|---|
+| text | Insert's Text, C-o | as it is shown: a click puts the cursor, a drag selects; Format's Bold, Italic, Underline, Large, Plain (C-b, Tab, C-u, C-l) on the selection or what is typed next; Edit's Cut, Copy, Paste (C-w, C-y) |
+| sheet | Insert's Sheet, C-x t | a cell chosen by a click or the arrows, what is typed shown in the status line, Enter puts it; numbers, text, formulas after `=` (`+ - * /`, parentheses, cells, `sum(b1:b3)`); errors in the cell (`#SYNTAX`, `#REF`, `#TEXT`, `#DIV0`, `#CYCLE`); the Sheet menu names it, or makes a chart of a column |
+| drawing | Insert's Drawing, C-x d | the left button drags a box or an arrow, or places a text (Draw's tools, Tab); what is typed is the last shape's label |
+| paint | Insert's Paint, C-x p | the left button paints, thin or thick; Paint's ten colours, or a digit; Clear |
+| chart | a sheet's Chart of this column | bars of the sheet's cells, its values at each view: it follows its sheet |
+
+A box's tab, above it, moves it; the square at its corner resizes it
+(the left button; the right button too). Edit's Undo (C-_) takes the
+document back a change; File's Save and Quit are C-x C-s and C-x C-c.
+The Page menu, last in the bar, shows the next page or the one before
+(C-x ], C-x [), makes a page after the one shown, or deletes it; the
+status line says which page is shown.
+
+The file is in mini-troff's format (`docs/plans/plan_typesetting.md`):
+Markdown's lines, and `\name[options]{text}` for the rest. Each box is
+a `\box[x y w h]{` line, its content and a line `}`; a sheet's name
+follows its numbers. A text is Markdown (`**bold**`, `*italic*`, a
+line `# ` large, `\u{}` underlined, `\large{}` large inside a line); a
+sheet is a Markdown table, its header the columns' letters; a drawing,
+a paint and a chart are fences of their lines (```` ```drawing ````,
+```` ```paint ````, ```` ```chart ````); `\newpage` separates two pages.
+So emacs edits a document as text, and a Markdown file with no `\box`
+opens as one text box. A document of two pages, a text and a sheet on
+the first, a chart of the sheet on the second (`/examples/report.ixd`
+is one of a page, with a drawing and a paint):
+
+    \box[16 40 300 120]{
+    # A **report**
+
+    What tiny-office makes, and tiny-troff prints: *text* in its styles.
+    }
+
+    \box[16 170 170 86 budget]{
+    | a     | b      |
+    |-------|--------|
+    | Rent  | 500    |
+    | Food  | 300    |
+    | Total | =b1+b2 |
+    }
+
+    \newpage
+
+    \box[16 40 200 120]{
+    ```chart
+    bars budget b1:b2 a1:a2
+    ```
+    }
+
+### 7.9 tiny-troff: `troff`
+
+`tiny/TinyTroff.ml` (`TinyKernel/user/troff.ml` around it) prints a
+document of the office's, or a Markdown file, reading it with the
+office's own functions:
+
+    troff file        its text, 72 columns: each line filled, a large line underlined by =,
+                      a sheet's values in columns, a drawing in characters, a form feed between pages
+    troff -h file     a web page: each part at its place, <b> <i> <u> <h1>, a sheet a <table>,
+                      a drawing, a paint and a chart in SVG; the pages one under the other
+    troff -p file     PDF: a page each, the text in Courier (a font every reader has: at 13.33
+                      points 8 a character, the office's 8 by 16), laid out as the office lays it out
+
+`troff -p page > page.pdf; put page.pdf` publishes a document: `put`
+keeps it at the wire's other end (§5.5).
+
+### 7.10 On the host: `tiny/sdl/`
+
+A program on these libraries asks the kernel nothing but through
+`TinyCalls` (`u_write`, `u_read`, `u_ready`, `u_open`, `u_close`,
+`u_ticks`, `u_rawcons`, `u_dial`, `u_argc`, `u_arg`). On tiny-machine
+they are the system calls (`TinyKernel/libml/calls.ml`); built by
+OCaml, `TinyCalls` is a virtual library of dune's
+(`TinyKernel/host/TinyCalls.mli`) with two implementations: the
+tests' stub (`TinyKernel/host/stub/`), and a window's
+(`tiny/sdl/TinyCalls.ml`). In the window's, what a program draws is
+done by the kernel's own `TinyKernelGraphics.ml` in a screen of host
+memory and shown by SDL; the mouse and the keys are the window's; files
+and the clock are the host's; a dial to the wire's other end (port 70)
+is answered as tiny-machine answers it, a web page fetched by
+`tiny-machine-fetch`. The programs' own few lines in
+`TinyKernel/user/` are compiled there as they are:
+
+    tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris
+    tiny-www OCaml        tiny-troff [-h | -p] file
+
+`TINY_SCREEN=f` writes the window's screen to `f` (a PPM) when the
+program ends, and `SDL_VIDEODRIVER=dummy` runs one with no window;
+`TINY_WWW=dir` gives `tiny-www` pages kept in `dir` when it cannot
+fetch them. `make loc` does not count `tiny/sdl/`.
+
 ## 8. Tests
 
 | what | how |
@@ -708,7 +835,10 @@ compute finish sooner. The web page runs at 8 million.
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules by scripts of keys and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |
 | TinyLibGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyLibGUI_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, each with a recorded mouse and keys | `make -C tiny/TinyKernel check` (a minute and a half) |
+| TinyOffice.ml, a document worked at by keys and the mouse (each part, the menus, the styles, the pages, the file), on the host and on tiny-cpu | `tiny/tests/TinyOffice_test.sh` |
+| TinyTroff.ml, a document as text, HTML and PDF, on the host and on tiny-cpu | `tiny/tests/TinyTroff_test.sh` |
+| TinyBrowser.ml, pages read into lines, however they are cut, on the host and on tiny-cpu | `tiny/tests/TinyBrowser_test.sh` |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

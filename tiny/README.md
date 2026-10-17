@@ -86,7 +86,8 @@ on.
 | `TinyUtilities.ml` | tiny-utils (and on tiny-kernel `utils`, as `cat`, `ls`, `wc`...) | `utilities/` (mini-cat, mini-ls...; Plan 9's) | one executable with a name per utility, BusyBox's way; a filter is a function over its input's pieces, opened and reported once for all of them; a walker is one fold over a tree, its order where it folds the entries (walk before, du and rm -r after); the same file on the host and on tiny-kernel; [`plan_tiny_utilities.md`](../docs/plans/done/plan_tiny_utilities.md) |
 | `TinyEditorLine.ml` | tiny-editor (and on tiny-kernel `ed`, also named `sam`) | `editors/ed/` (mini-ed, ed) | sam's command language: dot a range, loops over matches, changes in parallel |
 | `TinyEditorScreen.ml` | emacs, a program of tiny-kernel (also named `editor`) | `editors/emacs/` (mini-emacs) | Emacs's keys on one text in one window; the text as its lines split at the cursor (Emacs's gap, made of lists and strings that cannot change); the editor a state and the keys that change it, with no system under it; M-x, keyboard macros, and OCaml and C in colors |
-| `TinyOffice.ml` | office, a program of tiny-kernel | `apps/office/` (mini-office) | a page of boxes, each a kind of document whose data is text (step 1 of plan_tiny_office.md: text boxes, edited by TinyEditorScreen, shown filled with headings and bold); the shell: selecting, moving, resizing, undo, the file; its view shapes, run by TinyLibGUI's run_canvas, which draws what changed |
+| `TinyOffice.ml` | office, a program of tiny-kernel (and tiny-office on the host) | `apps/office/` (mini-office) | a document of pages of boxes, each a kind of document whose data is text: a text edited as it is shown (WYSIWYG, its styles the kernel's fonts), a sheet, a drawing, a paint, a chart of a named sheet; pull-down menus (TinyLibGUI's); its file Markdown and a few LaTeX commands (`\box`, `\newpage`); its view shapes, run by TinyLibGUI's run_canvas, which draws what changed ([`plan_tiny_office.md`](../docs/plans/plan_tiny_office.md)) |
+| `TinyTroff.ml` | troff, a program of tiny-kernel (and tiny-troff on the host) | `typesetting/` (mini-troff) | the office's documents, or Markdown, as text, HTML or PDF, read by the office's own functions; PDF in Courier, a standard font, 8 points a character at 13.33 points |
 | `TinyAssembler.ml` | tiny-assembler | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l, 7a/7l) | no separate compilation: all of a program's assembly into an arm64 executable, sizes known before addresses, a word per closure |
 | `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C), the two printing the same |
 | `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyMLRuntime/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |
@@ -113,10 +114,17 @@ and OCaml too: the same files are built by dune, as libraries, and
 tested on the host first. Three small files stand between them and
 their machine: `TinyLibDraw.ml` (a program's side of the drawing
 messages), and what the machine gives, by OCaml on the host,
-`TinyMemory.ml` (its bytes: an array) and `TinyCalls.ml` (the kernel's
-calls: kept or absent), both in `TinyKernel/host/`; on tiny-machine
-these two are externals (`TinyKernel/memory.ml`,
-`TinyKernel/libml/calls.ml`).
+`TinyMemory.ml` (its bytes: an array) and `TinyCalls` (the kernel's
+calls), both in `TinyKernel/host/`; on tiny-machine these two are
+externals (`TinyKernel/memory.ml`, `TinyKernel/libml/calls.ml`).
+`TinyCalls` is a virtual library of dune's (`TinyCalls.mli`) with two
+implementations: the tests' stub (`TinyKernel/host/stub/`: what is
+drawn kept, no keys) and a window's ([`sdl/`](sdl/TinyCalls.ml): what
+is drawn drawn by `TinyKernelGraphics.ml` and shown by SDL, the
+window's mouse and keys, the host's files, clock and web), on which
+the programs' own few lines in `TinyKernel/user/` are built for the
+host as they are: tiny-office, tiny-emacs, tiny-calc, tiny-tetris,
+tiny-www, tiny-troff.
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 

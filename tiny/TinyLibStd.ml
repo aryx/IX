@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* TinyLibStd: what a tool names of OCaml's standard library beyond
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * TinyLibStd: what a tool names of OCaml's standard library beyond
  * TinyLibCore, in tiny-ml's ML, for a tool built for tiny-machine
  * (tiny-shell): List's and String's other functions, Buffer, Hashtbl.
  * The same names and the same results as OCaml's, so that one file of

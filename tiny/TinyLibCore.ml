@@ -1,7 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
-(* TinyLibCore, the core library of tiny-ml's programs (the kernel,
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * TinyLibCore, the core library of tiny-ml's programs (the kernel,
  * tiny-windows, the applications), in tiny-ml's ML.
  *
  * It is a prelude: the compiler reads it before the

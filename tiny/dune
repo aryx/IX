@@ -5,32 +5,21 @@
  (modules TinyBuildSystem)
  (libraries ix_core fpath unix caps ix_crypto))
 
-(executable
- (name TinyShell)
- (public_name tiny-shell)
+; the host's tools on TinyLibSystem (TinyLibHost/'s; tiny-kernel has its
+; own): the shell, the line editor and the utilities (with grep's and the
+; editor's regular expressions)
+(executables
+ (names TinyShell TinyEditorLine TinyUtilities)
+ (public_names tiny-shell tiny-editor tiny-utils)
  (package ix)
- (modules TinyShell)
- (libraries ix_core fpath unix caps tiny_lib_system))
-
-(executable
- (name TinyEditorLine)
- (public_name tiny-editor)
- (package ix)
- (modules TinyEditorLine)
+ (modules TinyShell TinyEditorLine TinyUtilities)
  (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
 
-(executable
- (name TinyAssembler)
- (public_name tiny-assembler)
+(executables
+ (names TinyAssembler TinyC TinyCPUArm)
+ (public_names tiny-assembler tiny-c tiny-arm)
  (package ix)
- (modules TinyAssembler)
- (libraries ix_core fpath caps))
-
-(executable
- (name TinyC)
- (public_name tiny-c)
- (package ix)
- (modules TinyC)
+ (modules TinyAssembler TinyC TinyCPUArm)
  (libraries ix_core fpath caps))
 
 (executable
@@ -47,28 +36,14 @@
  (modules TinyVCS)
  (libraries ix_core unix caps ix_crypto ix_compression))
 
-(executable
- (name TinyCPUArm)
- (public_name tiny-arm)
+; tiny-cpu, and tiny-prof: where the instructions went, by function, from
+; a profile of tiny-cpu -prof or tiny-machine -prof and the .tm files that ran
+(executables
+ (names TinyCPU TinyProfiler)
+ (public_names tiny-cpu tiny-prof)
  (package ix)
- (modules TinyCPUArm)
- (libraries ix_core fpath caps))
-
-; tiny-prof: where the instructions went, by function, from a profile of
-; tiny-cpu -prof or tiny-machine -prof and the .tm files that ran
-(executable
- (name TinyProfiler)
- (public_name tiny-prof)
- (package ix)
- (modules TinyProfiler)
- (libraries tiny_machine_devices ix_core fpath caps))
-
-(executable
- (name TinyCPU)
- (public_name tiny-cpu)
- (package ix)
- (modules TinyCPU)
- (libraries ix_core fpath caps tiny_machine_cpu))
+ (modules TinyCPU TinyProfiler)
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_machine_devices))
 
 (executable
  (name TinyMachine)
@@ -179,13 +154,6 @@
     (echo "let prelude = {|\n")
     (cat %{deps})
     (echo "|}\n")))))
-
-(executable
- (name TinyUtilities)
- (public_name tiny-utils)
- (package ix)
- (modules TinyUtilities)
- (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
 
 ; TinyLibRegex.ml, the regular expressions of grep and of tiny-editor
 ; (tiny-ml compiles it too, before TinyUtilities.ml and TinyEditorLine.ml)

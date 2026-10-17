@@ -37235,3 +37235,19 @@ Claude noted that per-program rules are the readable repetition Yoann prefers, a
 **Yoann:**
 
 > now let's add audio to t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-17 21:27
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude cut the TinyKernel Makefile by 49 lines and committed it as A4.
+Claude proposed A5, merging several tiny/ dune executable stanzas into one executables stanza each.
+Claude estimated about 19 fewer lines, but warned each program's libraries would no longer sit beside its name.
+Claude planned to commit only its own dune changes, since other sessions also edit that file.
+Claude asked Yoann for a yes or no before touching the shared dune file.

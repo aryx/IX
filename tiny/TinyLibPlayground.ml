@@ -9,6 +9,14 @@ open TinyCalls
 (* a rectangle of a colour (its width, its height), words of a colour,
  * shapes together, a shape moved (to the right, down) *)
 type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
+let bold = 256
+let italic = 512
+let underlined = 1024
+let large = 2048
+
+let char_width c = if c land large <> 0 then 16 else 8
+let char_height c = if c land large <> 0 then 32 else 16
+let overhang c = if c land italic <> 0 then char_width c / 2 else 0
 
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the
@@ -50,7 +58,7 @@ let ink c =
 let rec draw dst x y shape =
   match shape with
   | Rect (c, w, h) -> put (d_fill dst (ink c) x y (x + w) (y + h))
-  | Words (c, s) -> put (d_text dst (ink c) x y s)
+  | Words (c, s) -> put (if c < 256 then d_text dst (ink c) x y s else d_styled dst (ink c) x y (c lsr 8) s)
   | Group l -> List.iter (draw dst x y) l
   | Move (dx, dy, s) -> draw dst (x + dx) (y + dy) s
 

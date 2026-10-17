@@ -39,7 +39,6 @@ type extra = {
   mutable queue : int list;                 (* keys to give back: a macro's, a command's *)
   mutable lexed : (string * int) list;      (* the lines above the screen, each with the comments open at its end *)
   mutable faced : (string * int * string * int) list;   (* the screen's: a line, the comments open before and after, its faces *)
-  mutable fill : int;                       (* auto-fill's column, 0 none *)
   mutable pieced : (string * string * int * shape) list;   (* the screen's lines as shapes: a line,
                                                             * its faces, the cursor's column in it, its shape *)
 }
@@ -71,8 +70,8 @@ let create (cols : int) (rows : int) (file : string) (text : string) : editor =
   let first, rest = match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t = { above = []; line = first; below = rest; col = 0; row = 0; goal = 0; modified = false } in
   (* (the inner record made first: tiny-ml computes a record's fields
-   * in tiny-machine's 11 registers, and both are 20) *)
-  let x = { language = language_of file; search = None; reading = None; recording = None; macro = []; queue = []; lexed = []; faced = []; fill = 0;
+   * in tiny-machine's 11 registers, and both are 19) *)
+  let x = { language = language_of file; search = None; reading = None; recording = None; macro = []; queue = []; lexed = []; faced = [];
             pieced = [] } in
   { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0; x; cols; rows }
 
@@ -287,25 +286,6 @@ let pending (e : editor) : int option =
   match e.x.queue with k :: rest -> e.x.queue <- rest; Some k | [] -> None
 
 (*****************************************************************************)
-(* Auto-fill *)
-(*****************************************************************************)
-
-(* Emacs's auto-fill-mode: a character typed at the end of a line past
- * the fill column breaks the line at its last space before it. What
- * tiny-office's text boxes ask: their text is shown filled anyway, and
- * its lines as written must fit the box *)
-let auto_fill (e : editor) (column : int) = e.x.fill <- column
-
-let filling (e : editor) =
-  let t = e.t in
-  let n = String.length t.line in
-  if e.x.fill > 0 && n > e.x.fill && t.col = n then begin
-    let rec space i = if i <= 0 then 0 else if t.line.[i] = ' ' then i else space (i - 1) in
-    let i = space (min e.x.fill (n - 1)) in
-    if i > 0 then (t.col <- i; delete t; newline t; t.col <- String.length t.line)
-  end
-
-(*****************************************************************************)
 (* The keys *)
 (*****************************************************************************)
 
@@ -357,7 +337,7 @@ let key (e : editor) (k : int) : request =
        else if k = 19 then e.x.search <- Some ""
        else if k = 7 then e.message <- "Quit"
        else if k = 24 || k = 27 then e.prefix <- k
-       else if k = 9 || (k >= 32 && k < 127) then (insert t (String.make 1 (Char.chr k)); filling e)
+       else if k = 9 || (k >= 32 && k < 127) then insert t (String.make 1 (Char.chr k))
        else e.message <- "Not a command");
   if not !vertical then t.goal <- t.col;
   !request

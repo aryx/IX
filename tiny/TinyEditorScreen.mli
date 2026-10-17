@@ -89,11 +89,6 @@ type request = Continue | Save | Quit
  * tiny-machine's arrows, 128 to 131 (up, down, left, right) *)
 val key : editor -> int -> request
 
-(* [auto_fill e column]: Emacs's auto-fill-mode, a line broken at its
- * last space when a character typed at its end goes past column (0:
- * none, the default). tiny-office's text boxes have it *)
-val auto_fill : editor -> int -> unit
-
 (* a key the editor gives itself, a macro's or an M-x command's: the
  * program around gives it to [key] before the next one typed *)
 val pending : editor -> int option
@@ -109,9 +104,9 @@ val view : editor -> string list
 val faces : editor -> string list
 
 (* [shapes e n]: the screen's first n lines as shapes, for a program
- * that draws it (emacs, the office's text boxes): each line a group of
- * its pieces of one colour, cut at the cursor too, so that a key
- * changes a piece or two; then the cursor's cell, white on black *)
+ * that draws it (emacs): each line a group of its pieces of one colour,
+ * cut at the cursor too, so that a key changes a piece or two; then the
+ * cursor's cell, white on black *)
 val shapes : editor -> int -> TinyLibPlayground.shape list
 
 (* where the cursor is on that screen: its column, its line *)

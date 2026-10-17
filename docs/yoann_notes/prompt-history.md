@@ -36605,3 +36605,66 @@ Claude gave the office a tab above the selected box to drag it, and a corner to 
 Claude set the final position on mouse release, and checked moves with a press and release.
 Claude re-recorded the office screen after confirming the menu bar, moved box, and selected tab.
 Claude verified the shifted old scenes and left two follow-ups: the test header and the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:18
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the menus and mouse fixes as `5cba6ea3`, 19 files, including `prompt-history.md`.
+Claude saved a memory note: new interface pieces belong in TinyLibGUI as widgets, and tiny programs should support the mouse too.
+Claude said the remaining plan is paint (step 4), chart (step 5), and publishing (step 6).
+Claude suggested trying the menus on the full screen, since the tests only replay recorded mouse events.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:22
+
+**Yoann:**
+
+> before step 4, how do add bold or italic in this tiny-word ? or text with different size? pretty fundamental for a tiny-office no?
+
+**Claude (summary):**
+
+Claude noted that the office has only starred bold, `# ` headings, and a single 8×16 font today.
+Claude recommended option B, a WYSIWYG text box that stores styled runs instead of markup.
+Claude outlined B's editor: a cursor in filled text, drag selection, and styled runs, about 150–200 lines.
+Claude proposed a Format menu (Bold, Italic, Heading, Large) that changes the selection or the next typed text.
+Claude said the file format must store styles, and italic and large fonts would be built at startup in TinyLibDraw.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:25
+
+**Yoann:**
+
+> let's do the menu, the selection, and wysiwyg; pretty important for a tiny-office
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:31
+
+**Yoann:**
+
+> (you can then remove the autofill feature or TinyEditorScreen then too)
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:31
+
+**Yoann:**
+
+> (which was added for TinyOffice I think)
+
+**Claude (summary):**
+
+Claude verified tiny-kernel's new text scenes, showing a large title, bold, italic, bold italic and underlined text.
+Claude confirmed those kernel screens matched the expected changes and recorded them once `make check` passed.
+Claude noted the kernel's new fonts draw every one of those styles, the basis for Yoann's www question.
+Claude removed the editor's auto-fill, which only the office used, then reran `make check` until it passed.
+Claude cleaned stray blank lines in TinyOffice.ml, leaving it at 594 lines, up from 497.

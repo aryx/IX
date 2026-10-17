@@ -199,6 +199,42 @@ tiny-windows like emacs, and a screen session in `make check`:
      tab and the corner, a press and a let go alone); the old scenes'
      points 30 pixels lower, under the bar. make check's
      officesheet.events makes its sheet from the Insert menu.
+   - **Styles, a selection, WYSIWYG (2026-10-17).** The author: "how do
+     add bold or italic in this tiny-word ? or text with different
+     size? pretty fundamental for a tiny-office no?", then "let's do the
+     menu, the selection, and wysiwyg; pretty important for a
+     tiny-office", and "you can then remove the autofill feature".
+     - The kernel draws styled text: a new message, 't', a text with a
+       style (bold 1, italic 2, underlined 4, large 8). Its fonts are
+       made from the machine's 8 by 16 when first asked for: italic,
+       its rows slanted 3 pixels (cells 11 wide, so a slant stays in
+       its cell), large, each pixel 2 by 2, and large italic; bold is
+       drawn twice, a pixel apart. TinyLibDraw's d_styled sends it,
+       tiny-windows forwards it (its rectangle twice as large).
+     - A word's style is in its colour's high bits (TinyLibPlayground's
+       bold, italic, underlined, large: 256 to 2048), so the shape type
+       is the same as m-ix's. run_canvas redraws a styled word whole
+       where it changed or was uncovered (its characters are not 8
+       pixels wide, and a slant goes over the next).
+     - The office's text boxes are no longer TinyEditorScreen's: about
+       150 lines of their own. The data is the text with a mark where
+       the style changes, "a \{b}bold\{} word" (b, i, u, l; \{}
+       plain), readable in emacs. Being edited it is two strings, the
+       characters and a style byte each; laid out in the box's width at
+       each view (a word that does not fit to the next line, a line as
+       tall as its largest character); a click puts the cursor, a drag
+       selects (pale blue under the words); the Format menu (Bold,
+       Italic, Underline, Large, Plain; C-b, Tab, C-u, C-l) sets or
+       takes off a style of the selection, or of what is typed next;
+       Edit has Cut, Copy, Paste (C-w, C-y). The box grows to show its
+       text. The office no longer links TinyEditorScreen, whose
+       auto-fill, added for the office, is gone.
+     - Tests: TinyOffice_test.sh's first scene types a large title and
+       bold words; a styles scene (four styles typed, a drag selecting,
+       Format's Italic, cut and pasted, the file's marks).
+       office.events's screen shows a large title, bold, italic, bold
+       italic and underlined words; officekeys.events cats a page with
+       its marks.
 4. **Paint**: a box of pixels, drawn on with the mouse (paint.c's idea,
    in a part).
 5. **The chart**: bars from a sheet's range, redrawn when its cells

@@ -12,7 +12,7 @@
 100000000 m 100 100 0
 101000000 m 100 100 1
 102000000 m 100 100 0
-104000000 k \015# Tiny office\n\nA page of *boxes*, each a kind of document: this one is text.
+104000000 k \015\012Tiny office\012\n\nA page of \002boxes\002, each a kind of document: this one is \009styled\009 text.
 170000000 m 400 300 0
 171000000 m 400 300 1
 172000000 m 400 300 0
@@ -32,5 +32,5 @@
 230000000 m 120 260 0
 231000000 m 120 260 1
 232000000 m 120 260 0
-234000000 k \015Click a box to *edit* it; the right button moves it.
+234000000 k \015Click a box to \002\009edit\009\002 it; drag its \021tab\021 to move it.
 270000000 m 41 40 0

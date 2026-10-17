@@ -34,6 +34,7 @@ let d_fill dst src x0 y0 x1 y1 = d_draw dst src (-1) x0 y0 x1 y1 0 0
  * left corner at (x, y) *)
 let d_line dst src xa ya xb yb = msg 'l' [ dst; src; xa; ya; xb; yb ]
 let d_text dst src x y s = msg 's' [ dst; src; x; y; String.length s ] ^ s
+let d_styled dst src x y style s = msg 't' [ dst; src; x; y; String.length s; style ] ^ s
 
 (* a row of pixels, a byte each, its left end at (x, y) *)
 let d_pixels dst x y s = msg 'p' [ dst; x; y; String.length s ] ^ s
@@ -51,6 +52,7 @@ let d_shape s i =
   | 'd' -> 19, 3
   | 'l' -> 13, 2
   | 's' -> if i + 11 > String.length s then 11, 2 else if int16 s (i + 9) < 0 then -1, 0 else 11 + int16 s (i + 9), 2
+  | 't' -> if i + 13 > String.length s then 13, 2 else if int16 s (i + 9) < 0 then -1, 0 else 13 + int16 s (i + 9), 2
   | 'p' -> if i + 9 > String.length s then 9, 1 else if int16 s (i + 7) < 0 then -1, 0 else 9 + int16 s (i + 7), 1
   | 'c' -> 3, 0
   | _ -> -1, 0

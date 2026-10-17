@@ -178,6 +178,58 @@ let free at n =
   blocks := join (put !blocks)
 
 (*****************************************************************************)
+(* Styled text *)
+(*****************************************************************************)
+
+(* The fonts made from the machine's when first asked for (a word
+ * processor's italic and large text): italic, its rows slanted, the
+ * top ones 3 pixels right (its cells 11 wide, so that a character's
+ * slant is in its own cell); large, each pixel 2 by 2; large italic.
+ * Made once, at the first text that needs one: the large ones are some
+ * 65,000 pixels looked at. *)
+let derived = Array.make 4 None
+
+let derive (font : image) kind =
+  match derived.(kind) with
+  | Some f -> f
+  | None ->
+      let scale = if kind land 2 <> 0 then 2 else 1 in
+      let slant = if kind land 1 <> 0 then 3 * scale else 0 in
+      let cw = (8 * scale) + slant and ch = 16 * scale in
+      let w = 128 * cw in
+      let at = alloc (w * ch) in
+      row_fill at 0 (w * ch);
+      for c = 0 to 127 do
+        for row = 0 to ch - 1 do
+          let shift = slant * (ch - 1 - row) / ch in
+          for col = 0 to (8 * scale) - 1 do
+            if peekb (font.at + (row / scale * 1024) + (c * 8) + (col / scale)) <> 0 then
+              pokeb (at + (row * w) + (c * cw) + col + shift) 255
+          done
+        done
+      done;
+      let f = { r = rect 0 0 w ch; at = at; repl = false } in
+      derived.(kind) <- Some f;
+      f
+
+(* a text in a style, its top left corner at (x, y): bold 1 (drawn
+ * twice, a pixel apart, two when large), italic 2, underlined 4, large
+ * 8 (16 by 32 a character) *)
+let styled (dst : image) x y (src : image) (font : image) style s =
+  let kind = (if style land 2 <> 0 then 1 else 0) lor (if style land 8 <> 0 then 2 else 0) in
+  let f = if kind = 0 then font else derive font kind in
+  let scale = if style land 8 <> 0 then 2 else 1 in
+  let cw = 8 * scale and fw = width f / 128 and n = String.length s in
+  for t = 0 to (if style land 1 <> 0 then 1 else 0) do
+    for i = 0 to n - 1 do
+      let c = Char.code s.[i] in
+      let x0 = x + (cw * i) + (t * scale) in
+      draw dst (rect x0 y (x0 + fw) (y + height f)) src (Some f) (fw * if c > 127 then 63 else c) 0
+    done
+  done;
+  if style land 4 <> 0 then draw dst (rect x (y + height f - (2 * scale)) (x + (cw * n)) (y + height f - scale)) src None 0 0
+
+(*****************************************************************************)
 (* The messages *)
 (*****************************************************************************)
 
@@ -234,6 +286,11 @@ let messages (c : conn) s =
           if len < 0 || i + 11 + len > n then raise (Graphics "a message cut short");
           text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font (String.sub s (i + 11) len);
           next (i + 11 + len)
+      | 't' ->
+          let len = arg 4 in
+          if len < 0 || i + 13 + len > n then raise (Graphics "a message cut short");
+          styled (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font (arg 5) (String.sub s (i + 13) len);
+          next (i + 13 + len)
       | 'p' ->
           let len = arg 3 in
           if len < 0 || i + 9 + len > n then raise (Graphics "a message cut short");

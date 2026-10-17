@@ -3,8 +3,7 @@
 
 (* office, a program of TinyKernel.ml's: ../../TinyOffice.ml, the page,
  * run by ../../TinyLibGUI.ml's run_canvas (given to tiny-ml before this
- * file, with ../../TinyEditorScreen.ml for its text boxes, as one
- * program: the Makefile).
+ * file, as one program: the Makefile).
  *
  *     office file
  *

@@ -66,7 +66,8 @@
  * index), alpha and Porter and Duff's operators (a mask is set or not),
  * a clipping rectangle apart from an image's own, a mask's own point
  * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
- * thick lines, fonts (one, the machine's 8 by 16) and their cache,
+ * thick lines, fonts (one, the machine's 8 by 16, and what is made of
+ * it: italic, slanted, and large, its pixels doubled) and their cache,
  * layers and windows (TinyWindows.ml composes whole images), the
  * screen's refresh.
  *
@@ -80,6 +81,8 @@
  *     d dst src mask x0 y0 x1 y1 px py      draw (mask -1: none)
  *     l dst src x0 y0 x1 y1           a line, both ends drawn
  *     s dst src x y n, n bytes        a text, its top left corner at (x, y)
+ *     t dst src x y n style, n bytes  a text in a style: bold 1, italic 2,
+ *                                     underlined 4, large 8 (16 by 32)
  *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
  * Exercises:

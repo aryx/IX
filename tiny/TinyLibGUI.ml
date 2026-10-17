@@ -334,7 +334,7 @@ let rec leaves x y s acc =
 let box (x, y, leaf) =
   match leaf with
   | Rect (_, w, h) -> x, y, x + w, y + h
-  | Words (_, s) -> x, y, x + (8 * String.length s), y + 16
+  | Words (c, s) -> x, y, x + (char_width c * String.length s) + overhang c, y + char_height c
   | _ -> x, y, x, y
 
 let meets (x0, y0, x1, y1) (a0, b0, a1, b1) = x0 < a1 && a0 < x1 && y0 < b1 && b0 < y1
@@ -364,7 +364,7 @@ let rec compare_leaves olds news erased marked =
         if o = n then erased, (0, 0)
         else
           match o, n with
-          | (x, y, Words (c, s)), (x', y', Words (c', s')) when x = x' && y = y' && c = c' ->
+          | (x, y, Words (c, s)), (x', y', Words (c', s')) when x = x' && y = y' && c = c' && c < 256 ->
               let p = common s s' 0 and m = String.length s and m' = String.length s' in
               let q = if m = m' then common_end s s' m else max m m' in
               (if min q m > p then once (x + (8 * p), y, x + (8 * min q m), y + 16) erased else erased),
@@ -396,6 +396,10 @@ let paint erased (l, mark) =
         List.iter (fun r ->
           let (a0, b0, a1, b1) = r in
           if meets (x0, y0, x1, y1) r then draw 0 (max x0 a0) (max y0 b0) (Rect (c, min x1 a1 - max x0 a0, min y1 b1 - max y0 b0))) erased
+    | Words (c, _) when c >= 256 ->
+        (* a styled text (a character of another size, a slant over the
+         * next): all of it, where it changed or was uncovered *)
+        if q > p || List.exists (meets (box l)) erased then draw 0 x y leaf
     | Words (c, s) ->
         (* its characters that changed, and those an erasing uncovered
          * (the columns it met: a cursor that moved, one character),

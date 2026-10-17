@@ -128,8 +128,8 @@ tail
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % -  25   238824 /cat
--   2   282932 /editor
--   2   282932 /emacs
+-   2   284544 /editor
+-   2   284544 /emacs
 -   1    70364 /ping
 -  25   238824 /utils
 %      51     204    1069 f
@@ -151,19 +151,18 @@ heL0 w0rLd
 added
 ?changed files
 % -   2   229352 /ed
--   2   282932 /editor
--   2   282932 /emacs
+-   2   284544 /editor
+-   2   284544 /emacs
 -   2   229352 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
 > three
 f0ur$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ $ text 100 100 200 84 36
-# Notes
+$ $ text 100 100 200 86 46
+\{l}Notes\{}
 
-Kept by *put*, read by
-cat.
+Kept by \{b}put\{}, read by cat.
 sheet 300 300 282 114 31
 a1 Rent
 a2 500

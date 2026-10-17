@@ -3,47 +3,53 @@
 
 (* See TinyOffice.mli *)
 
-(* The editor's functions this file uses, by names of their own: the
- * office has a create, a key and a view too, and tiny-ml has no
- * modules, one name space for all its files (so: open, and these; the
- * editor opened last, its key and view over TinyLibGUI's) *)
 open TinyLibPlayground
 open TinyLibGUI
-open TinyEditorScreen
-let editor_create = create
-let editor_key = key
-let editor_view = view
-let editor_lines = lines
-let editor_saved = saved
-let editor_pending = pending
-let editor_auto_fill = auto_fill
-let editor_shapes = shapes
-let editor_text = text
+
+(* what a key or the mouse asks of the program around: nothing, to save
+ * the file, to quit *)
+type request = Continue | Save | Quit
+
+(* strings joined two by two (one after the other, the first ones would
+ * be copied again at each) *)
+let rec join = function
+  | [] -> ""
+  | [ s ] -> s
+  | l ->
+      let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
+      join (pairs l)
 
 (* the page's colours, bytes of the machine's palette: white, black, a
- * frame's grey, the selection's blue, a heading's dark blue, the status
- * line's light grey *)
+ * frame's grey, the selected box's blue, the status line's light grey,
+ * selected text's pale blue *)
 let white = 255
 let black = 0
 let grey = 153
 let blue = 3
-let dark_blue = 2
 let light_grey = 204
+let pale_blue = 188
 
 (* an object of the page: its kind ("text", "sheet"), its box in
  * pixels, its data *)
 type obj = { kind : string; x : int; y : int; w : int; h : int; data : string }
 
-(* what the selected box is edited by: nothing; the screen editor, a
- * text box's; a sheet's cell, its column and row, and what is being
+(* a text box being edited: its characters and their styles (a byte
+ * each: bold 1, italic 2, underlined 4, large 8), the cursor, the
+ * selection's other end (the cursor's place: none), the style of what
+ * is typed next, whether the left button is selecting *)
+type doc = { mutable txt : string; mutable sty : string; mutable cur : int; mutable anchor : int; mutable typing : int; mutable selecting : bool }
+
+(* what the selected box is edited by: nothing; a text box's text; a
+ * sheet's cell, its column and row, and what is being
  * typed in it (None: the cell chosen, nothing typed yet); a drawing's
  * tool (0 a box, 1 an arrow, 2 a text), and the stroke the left button
  * is making, from where it went down to where it is, in the box *)
-type edit = Nothing | Writing of editor | Cell of int * int * string option | Sketch of int * (int * int * int * int) option
+type edit = Nothing | Writing of doc | Cell of int * int * string option | Sketch of int * (int * int * int * int) option
 
 (* what the menus ask for: to save, to quit, to undo, to delete the
- * selected box, a new box of a kind, a drawing's tool *)
-type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int
+ * selected box, a new box of a kind, a drawing's tool; in a text, to
+ * cut, copy, paste, a style (0: plain) *)
+type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int | Do_cut | Do_copy | Do_paste | Do_style of int
 
 type office = {
   mutable page : obj list;                (* the objects, the bottom one first *)
@@ -94,7 +100,6 @@ let create (width : int) (height : int) (file : string) (s : string) : office =
 
 let saved (o : office) =
   o.clean <- o.page;
-  (match o.editing with Writing e -> editor_saved e | _ -> ());
   let file, _, _ = o.where in
   o.message <- "Wrote " ^ file
 
@@ -119,10 +124,6 @@ let hit (o : office) (x : int) (y : int) : int =
 
 (* a change about to be made: the page as it is, kept for undo *)
 let keep (o : office) = o.undo <- o.page :: o.undo
-
-(* a text box's size in characters: its columns, its lines *)
-let cols (b : obj) = max 1 ((b.w - 8) / 8)
-let rows (b : obj) = max 1 ((b.h - 4) / 16)
 
 (*****************************************************************************)
 (* The sheet *)
@@ -258,8 +259,131 @@ let values (data : string) : string -> value =
 (* Editing a text box *)
 (*****************************************************************************)
 
-(* the edited text put back into its box (a change, for undo, when it is
- * another text) *)
+(*****************************************************************************)
+(* Text *)
+(*****************************************************************************)
+
+(* A text box's data is its text, with a mark where the style changes:
+ *
+ *     A \{b}bold\{} word, and \{il}large italic\{}.
+ *
+ * the style's letters between \{ and } (b bold, i italic, u
+ * underlined, l large), \{} plain, \\ a backslash. Being edited, it is
+ * two strings of the same length: the characters, and their styles. *)
+let letters = "biul"
+
+let decode (data : string) : string * string =
+  let n = String.length data in
+  let rec go i style chars styles =
+    if i >= n then (join (List.rev chars), join (List.rev styles))
+    else if data.[i] = '\\' && i + 1 < n && data.[i + 1] = '{' then begin
+      match String.index_from_opt data i '}' with
+      | Some e ->
+          let s = ref 0 in
+          String.iter (fun c -> match String.index_from_opt letters 0 c with Some k -> s := !s lor (1 lsl k) | None -> ()) (String.sub data (i + 2) (e - i - 2));
+          go (e + 1) !s chars styles
+      | None -> go n style chars styles
+    end
+    else begin
+      let skip = if data.[i] = '\\' && i + 1 < n then 1 else 0 in
+      go (i + 1 + skip) style (String.make 1 data.[i + skip] :: chars) (String.make 1 (Char.chr style) :: styles)
+    end in
+  go 0 0 [] []
+
+let mark (s : int) = "\\{" ^ join (List.init 4 (fun k -> if s land (1 lsl k) <> 0 then String.make 1 letters.[k] else "")) ^ "}"
+
+let encode (txt : string) (sty : string) : string =
+  let rec go i was acc =
+    if i >= String.length txt then join (List.rev (if was <> 0 then mark 0 :: acc else acc))
+    else begin
+      let s = Char.code sty.[i] in
+      let c = if txt.[i] = '\\' then "\\\\" else String.make 1 txt.[i] in
+      go (i + 1) s (c :: (if s <> was then mark s :: acc else acc))
+    end in
+  go 0 0 []
+
+(* A text laid out in a width: each character's place, its x and its
+ * line, and the end's (where a cursor after the last character is);
+ * each line's top and height, its largest character's. A word goes to
+ * the next line when it does not fit (one wider than the line is cut);
+ * a newline ends a line. *)
+type laid = { px : int array; ln : int array; top : int array; tall : int array }
+
+let cw (sty : string) (i : int) = char_width (Char.code sty.[i] lsl 8)
+
+let lay_out (width : int) (txt : string) (sty : string) : laid =
+  let n = String.length txt in
+  let px = Array.make (n + 1) 0 and ln = Array.make (n + 1) 0 in
+  let x = ref 0 and l = ref 0 and i = ref 0 in
+  while !i < n do
+    if txt.[!i] = '\n' then (px.(!i) <- !x; ln.(!i) <- !l; x := 0; incr l; incr i)
+    else begin
+      let j = ref !i and ww = ref 0 in
+      while !j < n && txt.[!j] <> ' ' && txt.[!j] <> '\n' do ww := !ww + cw sty !j; incr j done;
+      if !j = !i then j := !i + 1 else if !x > 0 && !x + !ww > width then (x := 0; incr l);
+      for k = !i to !j - 1 do
+        if txt.[k] <> ' ' && !x > 0 && !x + cw sty k > width then (x := 0; incr l);
+        px.(k) <- !x; ln.(k) <- !l; x := !x + cw sty k
+      done;
+      i := !j
+    end
+  done;
+  px.(n) <- !x; ln.(n) <- !l;
+  let tall = Array.make (!l + 1) 16 and top = Array.make (!l + 1) 0 in
+  for k = 0 to n - 1 do if txt.[k] <> '\n' then tall.(ln.(k)) <- max tall.(ln.(k)) (char_height (Char.code sty.[k] lsl 8)) done;
+  for k = 1 to !l do top.(k) <- top.(k - 1) + tall.(k - 1) done;
+  { px; ln; top; tall }
+
+(* the place in the text nearest (x, y): on the line there, the first
+ * character whose middle is right of x, or the line's last place *)
+let index_at (lay : laid) (txt : string) (sty : string) (x : int) (y : int) : int =
+  let n = String.length txt and lines = Array.length lay.top in
+  let line = ref (lines - 1) and found = ref (-1) and last = ref 0 in
+  for k = 0 to lines - 1 do if !line = lines - 1 && y < lay.top.(k) + lay.tall.(k) then line := k done;
+  for i = 0 to n do
+    if lay.ln.(i) = !line then begin
+      last := i;
+      if !found < 0 && (i = n || txt.[i] = '\n' || lay.px.(i) + (cw sty i / 2) > x) then found := i
+    end
+  done;
+  if !found >= 0 then !found else !last
+
+(* the selection, from its first character to after its last *)
+let selection (d : doc) = (min d.cur d.anchor, max d.cur d.anchor)
+
+(* the cursor put at i, no selection, what is typed next in the style
+ * of the character before *)
+let go_to (d : doc) (i : int) =
+  let i = max 0 (min (String.length d.txt) i) in
+  d.cur <- i;
+  d.anchor <- i;
+  if i > 0 && d.txt.[i - 1] <> '\n' then d.typing <- Char.code d.sty.[i - 1]
+
+(* the selection replaced by a text and its styles *)
+let put_text (d : doc) (t : string) (styles : string) =
+  let (a, z) = selection d and n = String.length d.txt in
+  d.txt <- String.sub d.txt 0 a ^ t ^ String.sub d.txt z (n - z);
+  d.sty <- String.sub d.sty 0 a ^ styles ^ String.sub d.sty z (n - z);
+  d.cur <- a + String.length t;
+  d.anchor <- d.cur
+
+(* A style: the selection's (set, or taken off when all of it has it
+ * already), or, nothing selected, what is typed next's; 0 plain. *)
+let restyle (d : doc) (bit : int) =
+  let (a, z) = selection d in
+  if a = z then d.typing <- (if bit = 0 then 0 else d.typing lxor bit)
+  else begin
+    let all = ref true in
+    for i = a to z - 1 do if Char.code d.sty.[i] land bit = 0 then all := false done;
+    let one i = let s = Char.code d.sty.[a + i] in String.make 1 (Char.chr (if bit = 0 then 0 else if !all then s land lnot bit else s lor bit)) in
+    let n = String.length d.txt in
+    d.sty <- String.sub d.sty 0 a ^ join (List.init (z - a) one) ^ String.sub d.sty z (n - z)
+  end
+
+(* what was cut or copied, its characters and their styles *)
+let clipboard = ref ("", "")
+let copy (d : doc) = let (a, z) = selection d in clipboard := (String.sub d.txt a (z - a), String.sub d.sty a (z - a))
+
 (* the selected box's data changed (a change, for undo, when it is
  * other data) *)
 let change (o : office) (data : string) =
@@ -271,25 +395,21 @@ let change (o : office) (data : string) =
 let commit (o : office) =
   if o.sel >= 0 then
     match o.editing with
-    | Writing e -> change o (editor_text e)
+    | Writing d -> change o (encode d.txt d.sty)
     | Cell (c, r, Some t) -> change o (set_cell (nth_obj o.page o.sel).data (name c r) t); o.editing <- Cell (c, r, None)
     | _ -> ()
 
 let finish (o : office) = commit o; o.editing <- Nothing
 
-(* the editor on box i's text, its cursor where (x, y) is *)
-let edit (o : office) (i : int) (x : int) (y : int) =
+(* box i's text edited, its cursor where (x, y) is, the left button
+ * selecting from there if it is down *)
+let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
   let b = nth_obj o.page i in
-  let file, _, _ = o.where in
-  let e = editor_create (cols b) (rows b + 2) file b.data in
-  editor_auto_fill e (cols b);
-  let lines = editor_lines e in
-  let row = min (List.length lines - 1) (max 0 ((y - b.y - 2) / 16)) in
-  for _i = 1 to row do ignore (editor_key e 14) done;
-  let col = min (String.length (List.nth lines row)) (max 0 ((x - b.x - 4) / 8)) in
-  for _i = 1 to col do ignore (editor_key e 6) done;
+  let (txt, sty) = decode b.data in
+  let d = { txt; sty; cur = 0; anchor = 0; typing = 0; selecting } in
+  go_to d (index_at (lay_out (b.w - 8) txt sty) txt sty (x - b.x - 4) (y - b.y - 2));
   o.sel <- i;
-  o.editing <- Writing e
+  o.editing <- Writing d
 
 (*****************************************************************************)
 (* Editing a sheet *)
@@ -427,17 +547,39 @@ let quit (o : office) : request =
   let refused = "Not saved: C-x C-s saves, C-x C-c again quits" in
   if o.page == o.clean || o.message = refused then Quit else (o.message <- refused; Continue)
 
-(* a key given to the box being edited, then the keys it gives itself
- * (a macro's, M-x's); C-x C-s and C-x C-c are the page's *)
-let editing_key (o : office) (e : editor) (k : int) : request =
-  let rec given (r : request) =
-    match editor_pending e with
-    | Some k -> given (match editor_key e k with Continue -> r | r' -> r')
-    | None -> r in
-  match given (editor_key e k) with
-  | Save -> commit o; Save
-  | Quit -> commit o; quit o
-  | Continue -> Continue
+(* A key in a text: a character typed, in the style of what is typed
+ * next; Backspace, C-d the selection or a character deleted; the
+ * arrows (C-f, C-p, C-n), C-a, C-e the cursor moved; C-b bold, Tab
+ * italic, C-u underlined, C-l large; C-w cut, C-y pasted; C-g no
+ * selection. The box grows to show it all. *)
+let write_key (o : office) (d : doc) (k : int) =
+  let b = nth_obj o.page o.sel in
+  let lay = lay_out (b.w - 8) d.txt d.sty and n = String.length d.txt in
+  let (a, z) = selection d and line = lay.ln.(d.cur) in
+  let vertical l = if l >= 0 && l < Array.length lay.top then go_to d (index_at lay d.txt d.sty lay.px.(d.cur) lay.top.(l)) in
+  let rec back i = if i > 0 && lay.ln.(i - 1) = line && d.txt.[i - 1] <> '\n' then back (i - 1) else i in
+  let rec forth i = if i < n && d.txt.[i] <> '\n' && lay.ln.(i + 1) = line then forth (i + 1) else i in
+  if (k >= 32 && k < 127) || k = 10 || k = 13 then put_text d (String.make 1 (if k = 13 then '\n' else Char.chr k)) (String.make 1 (Char.chr d.typing))
+  else if k = 8 || k = 127 then ((if a = z && a > 0 then d.anchor <- a - 1); put_text d "" "")
+  else if k = 4 then ((if a = z && z < n then d.anchor <- z + 1); put_text d "" "")
+  else if k = 130 then go_to d (if a < z then a else d.cur - 1)
+  else if k = 131 || k = 6 then go_to d (if a < z then z else d.cur + 1)
+  else if k = 128 || k = 16 then vertical (line - 1)
+  else if k = 129 || k = 14 then vertical (line + 1)
+  else if k = 1 then go_to d (back d.cur)
+  else if k = 5 then go_to d (forth d.cur)
+  else if k = 2 then restyle d 1
+  else if k = 9 then restyle d 2
+  else if k = 21 then restyle d 4
+  else if k = 12 then restyle d 8
+  else if k = 23 then (copy d; put_text d "" "")
+  else if k = 25 then (let (t, st) = !clipboard in put_text d t st)
+  else if k = 7 then d.anchor <- d.cur
+  else o.message <- "a text: C-b bold, Tab italic, C-u underlined, C-l large; C-w cut, C-y paste";
+  let lay = lay_out (b.w - 8) d.txt d.sty in
+  let last = Array.length lay.top - 1 in
+  let need = lay.top.(last) + lay.tall.(last) + 6 in
+  if need > b.h then o.page <- replace o.page o.sel (Some { b with h = need })
 
 (* a new box where the last click was, of a kind, edited at once (the
  * menus' Insert) *)
@@ -447,7 +589,7 @@ let add (o : office) (kind : string) (w : int) (h : int) =
   o.page <- o.page @ [ { kind; x; y; w; h; data = "" } ];
   let i = List.length o.page - 1 in
   o.sel <- i;
-  if kind = "text" then edit o i x y else if kind = "sheet" then o.editing <- Cell (0, 0, None) else o.editing <- Sketch (0, None)
+  if kind = "text" then edit o i x y false else if kind = "sheet" then o.editing <- Cell (0, 0, None) else o.editing <- Sketch (0, None)
 
 (* what a menu's item asks for (the keys ask for the same) *)
 let command (o : office) (c : command) : request =
@@ -467,14 +609,22 @@ let command (o : office) (c : command) : request =
        else if kind = "drawing" then add o "drawing" 300 160 else add o "text" 200 84);
       Continue
   | Do_tool t -> (match o.editing with Sketch (_, _) -> o.editing <- Sketch (t, None) | _ -> ()); Continue
+  | Do_cut -> (match o.editing with Writing d -> copy d; put_text d "" "" | _ -> ()); Continue
+  | Do_copy -> (match o.editing with Writing d -> copy d | _ -> ()); Continue
+  | Do_paste -> (match o.editing with Writing d -> let (t, st) = !clipboard in put_text d t st | _ -> ()); Continue
+  | Do_style bit -> (match o.editing with Writing d -> restyle d bit | _ -> ()); Continue
 
 (* the menus, a drawing's tools when one is edited (the one in use
  * marked); the keys at the right *)
 let office_menus (o : office) : (string * (string * command) list) list =
   [ ("File", [ ("Save     C-x C-s", Do_save); ("Quit     C-x C-c", Do_quit) ]);
-    ("Edit", [ ("Undo         C-_", Do_undo); ("Delete box", Do_delete) ]);
+    ("Edit", [ ("Undo       C-_", Do_undo); ("Cut        C-w", Do_cut); ("Copy", Do_copy); ("Paste      C-y", Do_paste); ("Delete box", Do_delete) ]);
     ("Insert", [ ("Text       C-o", Do_add "text"); ("Sheet    C-x t", Do_add "sheet"); ("Drawing  C-x d", Do_add "drawing") ]) ]
   @ (match o.editing with
+     | Writing d ->
+         let mark k s = (if d.typing land k <> 0 then "* " else "  ") ^ s in
+         [ ("Format", [ (mark 1 "Bold       C-b", Do_style 1); (mark 2 "Italic     Tab", Do_style 2); (mark 4 "Underline  C-u", Do_style 4);
+                        (mark 8 "Large      C-l", Do_style 8); ("  Plain", Do_style 0) ]) ]
      | Sketch (tool, _) ->
          let mark k s = (if k = tool then "* " else "  ") ^ s in
          [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1); (mark 2 "Text", Do_tool 2) ]) ]
@@ -482,7 +632,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
 
 let key (o : office) (k : int) : request =
   match o.editing with
-  | Writing e -> editing_key o e k
+  | Writing d when not o.prefix && k <> 24 && k <> 31 -> o.message <- ""; write_key o d k; Continue
   | Cell (c, r, typed) when not o.prefix && k <> 24 -> o.message <- ""; cell_key o c r typed k; Continue
   | Sketch (tool, _) when not o.prefix && k <> 24 -> o.message <- ""; sketch_key o tool k; Continue
   | _ ->
@@ -544,6 +694,16 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
       let resizing = inside x y (corner (nth_obj o.page o.sel)) in
       finish o;
       grab o o.sel x y resizing
+  | Writing d when pressed 1 && i >= 0 && i = o.sel ->
+      (* in the text being edited: the cursor there, a selection from it *)
+      let ob = nth_obj o.page i in
+      go_to d (index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4) (y - ob.y - 2));
+      d.selecting <- true
+  | Writing d when d.selecting ->
+      (* the selection follows the mouse, to where it is let go *)
+      let ob = nth_obj o.page o.sel in
+      d.cur <- index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4) (y - ob.y - 2);
+      if b land 1 = 0 then d.selecting <- false
   | Sketch (tool, _) when pressed 1 && i >= 0 && i = o.sel ->
       (* in the drawing being edited: a stroke begins *)
       let (sx, sy) = in_drawing (nth_obj o.page i) x y in
@@ -559,7 +719,7 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
     finish o;
     o.at <- (x, y);
     o.sel <- i;
-    if i >= 0 && (nth_obj o.page i).kind = "text" then edit o i x y
+    if i >= 0 && (nth_obj o.page i).kind = "text" then edit o i x y true
     else if i >= 0 && (nth_obj o.page i).kind = "sheet" then choose o i x y
     else if i >= 0 && (nth_obj o.page i).kind = "drawing" then o.editing <- Sketch (0, None)
   end
@@ -589,71 +749,39 @@ let mouse (o : office) (x : int) (y : int) (b : int) : request =
 (* The view *)
 (*****************************************************************************)
 
-(* how many characters of a word are shown: the stars are marks *)
-let shown (w : string) = let n = ref 0 in String.iter (fun c -> if c <> '*' then incr n) w; !n
-
-(* A text's lines, filled to cols characters: each a heading or not,
- * whether it starts in bold (a mark may open on a line and close on
- * the next), and its words with their marks. A paragraph is the lines
- * between two empty ones; a line "# words" is a heading of its own. *)
-let filled (cols : int) (text : string) : (bool * bool * string) list =
-  (* a paragraph's words as lines, the last first, on acc *)
-  let rec fill heading words line n acc =
-    match words with
-    | [] -> if line = "" then acc else (heading, line) :: acc
-    | w :: rest ->
-        let k = shown w in
-        if line = "" then fill heading rest w k acc
-        else if n + 1 + k <= cols then fill heading rest (line ^ " " ^ w) (n + 1 + k) acc
-        else fill heading rest w k ((heading, line) :: acc) in
-  let words l = List.filter (fun w -> w <> "") (String.split_on_char ' ' l) in
-  (* the lines, the paragraph's words so far, the result the last first *)
-  let rec go lines para acc =
-    let flush acc = if para = [] then acc else fill false para "" 0 acc in
-    match lines with
-    | [] -> flush acc
-    | l :: rest when String.length l >= 2 && String.sub l 0 2 = "# " ->
-        go rest [] (fill true (words (String.sub l 2 (String.length l - 2))) "" 0 (flush acc))
-    | l :: rest when words l = [] -> go rest [] ((false, "") :: flush acc)
-    | l :: rest -> go rest (para @ words l) acc in
-  let lines = List.rev (go (String.split_on_char '\n' text) [] []) in
-  (* whether each line starts in bold: the stars before it, in its paragraph *)
-  let rec bolds bold = function
-    | (heading, l) :: rest ->
-        let stars = String.length l - shown l in
-        (heading, bold, l) :: bolds (if l = "" then false else (if stars mod 2 = 1 then not bold else bold)) rest
-    | [] -> [] in
-  bolds false lines
-
-(* a filled line drawn from (x, y), at most cols characters: its pieces
- * between the stars, plain or bold *)
-let draw_line (colour : int) (x : int) (y : int) (cols : int) (bold : bool) (l : string) : shape list =
-  let n = String.length l in
-  let rec go i start col bold acc =
-    if i >= n || l.[i] = '*' then begin
-      let piece = String.sub l start (i - start) in
-      let piece = if col + String.length piece > cols then String.sub piece 0 (max 0 (cols - col)) else piece in
-      (* bold: the words twice, a pixel apart *)
-      let at = x + (8 * col) in
-      let acc = if piece = "" then acc
-        else (if bold then Group [ Move (at, y, Words (colour, piece)); Move (at + 1, y, Words (colour, piece)) ] else Move (at, y, Words (colour, piece))) :: acc in
-      if i >= n then List.rev acc else go (i + 1) (i + 1) (col + String.length piece) (not bold) acc
-    end
-    else go (i + 1) start col bold acc in
-  go 0 0 0 bold []
-
-(* a text box, shown: its text filled, the lines that fit *)
-let text_view (b : obj) : shape list =
-  let rec take k = function
-    | (heading, bold, l) :: rest when k < rows b ->
-        let colour = if heading then dark_blue else black in
-        draw_line colour (b.x + 4) (b.y + 2 + (16 * k)) (cols b) (bold || heading) l @ take (k + 1) rest
-    | _ -> [] in
-  take 0 (filled (cols b) b.data)
-
-(* a text box being edited: the editor's lines in it, its text as it
- * is written, and its cursor *)
-let edit_view (b : obj) (e : editor) : shape list = [ Move (b.x + 4, b.y + 2, Group (editor_shapes e (rows b))) ]
+(* A text box: a word for each run of characters of a style on a line,
+ * at the line's bottom (a line with a large character is taller); the
+ * lines that fit. Being edited, the selection under the words in pale
+ * blue, a rectangle a line, and the cursor. *)
+let text_view (b : obj) (txt : string) (sty : string) (editing : doc option) : shape list =
+  let lay = lay_out (b.w - 8) txt sty and n = String.length txt in
+  let fits l = lay.top.(l) + lay.tall.(l) <= b.h - 4 in
+  let x0 = b.x + 4 and y0 = b.y + 2 in
+  let rec runs i acc =
+    if i >= n then acc
+    else if txt.[i] = '\n' || not (fits lay.ln.(i)) then runs (i + 1) acc
+    else begin
+      let j = ref (i + 1) and l = lay.ln.(i) and c = Char.code sty.[i] lsl 8 in
+      while !j < n && txt.[!j] <> '\n' && lay.ln.(!j) = l && sty.[!j] = sty.[i] do incr j done;
+      runs !j (Move (x0 + lay.px.(i), y0 + lay.top.(l) + lay.tall.(l) - char_height c, Words (black lor c, String.sub txt i (!j - i))) :: acc)
+    end in
+  let marks = match editing with
+    | None -> []
+    | Some d ->
+        let (a, z) = selection d in
+        (* the selection's pieces, a line each: its line, its two ends *)
+        let rec pieces i acc =
+          if i >= z then acc
+          else begin
+            let l = lay.ln.(i) and w = if txt.[i] = '\n' then 4 else cw sty i in
+            match acc with
+            | (l', p, q) :: rest when l' = l && q = lay.px.(i) -> pieces (i + 1) ((l, p, q + w) :: rest)
+            | _ -> pieces (i + 1) ((l, lay.px.(i), lay.px.(i) + w) :: acc)
+          end in
+        let l = lay.ln.(d.cur) in
+        List.concat (List.map (fun (l, p, q) -> if fits l then [ Move (x0 + p, y0 + lay.top.(l), Rect (pale_blue, q - p, lay.tall.(l))) ] else []) (pieces a []))
+        @ (if fits l then [ Move (x0 + lay.px.(d.cur), y0 + lay.top.(l), Rect (black, 2, lay.tall.(l))) ] else []) in
+  marks @ List.rev (runs 0 [])
 
 (* A sheet: the columns' letters and the rows' numbers in grey, the
  * grid's lines, each cell's value, a number at the cell's right, text
@@ -704,7 +832,9 @@ let frame (b : obj) (selected : bool) : shape list =
 let status (o : office) : shape list =
   let file, width, height = o.where in
   let said = match o.editing with
-    | Writing e -> (match List.rev (editor_view e) with last :: _ -> last | [] -> "")
+    | Writing d when o.message = "" ->
+        let names = List.filter (fun t -> t <> "") (List.init 4 (fun k -> if d.typing land (1 lsl k) <> 0 then List.nth [ "bold"; "italic"; "underlined"; "large" ] k else "")) in
+        "text, typing " ^ (if names = [] then "plain" else String.concat " " names) ^ "; the Format menu, or C-b, Tab, C-u, C-l"
     | Cell (c, r, typed) when o.sel >= 0 ->
         (* the formula bar: the cell, what is being typed in it, or what was *)
         name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (nth_obj o.page o.sel).data (name c r))
@@ -722,11 +852,11 @@ let view (o : office) : shape list =
   :: List.map (fun (b : obj) ->
        incr i;
        let content = match o.editing with
-         | Writing e when !i = o.sel -> edit_view b e
+         | Writing d when !i = o.sel -> text_view b d.txt d.sty (Some d)
          | Cell (c, r, _) when !i = o.sel -> sheet_view b (Some (c, r))
          | Sketch (tool, stroke) when !i = o.sel -> drawing_view b tool stroke
          | _ ->
-             if b.kind = "text" then text_view b
+             if b.kind = "text" then (let (t, st) = decode b.data in text_view b t st None)
              else if b.kind = "sheet" then sheet_view b None
              else if b.kind = "drawing" then drawing_view b 0 None
              else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in

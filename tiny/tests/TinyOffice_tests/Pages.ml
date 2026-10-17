@@ -8,7 +8,6 @@
  * A page of 320 by 200 pixels. The same file is built by OCaml and by
  * tiny-ml for tiny-cpu: the same lines. A control key is its byte in a
  * string, as in TinyEditorScreen's test. *)
-open TinyEditorScreen
 open TinyOffice
 
 open TinyLibPlayground
@@ -56,8 +55,8 @@ let () =
   let o = create 320 200 "notes" "" in
   show "an empty page" o;
   click o 1 20 40;
-  keys o "\015# A title\n\nSome *bold words* and plain ones, more than a line holds.";
-  show "a click at 20 40, C-o, a heading and a paragraph typed: being edited" o;
+  keys o "\015\012A title\012\n\nSome \002bold words\002 and plain ones, more than a line holds.";
+  show "a click at 20 40, C-o, a large title (C-l), a paragraph with bold words (C-b) typed: being edited" o;
   click o 1 300 150;
   show "a click elsewhere: the box shows its text filled" o;
   file "the page" o;
@@ -173,4 +172,20 @@ let () =
   show "its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller" o;
   keys o "\031";
   show "C-_: the resize undone" o;
+  file "the page" o
+
+let () =
+  let o = create 320 220 "styles" "" in
+  click o 1 20 40;
+  keys o "\015Plain, \002bold\002, \tslanted\t and \021under\021.";
+  show "C-o, a text in four styles (C-b, Tab, C-u: each on, then off)" o;
+  drag o 1 81 50 113 50;
+  show "a drag over bold: selected" o;
+  click o 1 170 5;
+  click o 1 170 38;
+  show "Format's Italic: the selection bold and italic" o;
+  keys o "\023\005 \025";
+  show "C-w cut, C-e, a space, C-y pasted at the end" o;
+  click o 1 200 150;
+  show "a click outside: the text shown, not edited" o;
   file "the page" o

@@ -226,6 +226,7 @@ let forward w s =
           else if letter = 'd' then at 3, at 4, at 5, at 6
           else if letter = 'l' then min (at 2) (at 4), min (at 3) (at 5), max (at 2) (at 4) + 1, max (at 3) (at 5) + 1
           else if letter = 's' then at 2, at 3, at 2 + (8 * at 4), at 3 + 16
+          else if letter = 't' then (let k = if at 5 land 8 <> 0 then 2 else 1 in at 2, at 3, at 2 + (8 * k * at 4) + (4 * k), at 3 + (16 * k))
           else if letter = 'p' then at 1, at 2, at 1 + at 3, at 2 + 1
           else nothing in
         next (i + len) (both drew changed)

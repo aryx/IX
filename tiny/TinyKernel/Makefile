@@ -223,10 +223,10 @@ $(O)/user/emacs.tm: $(EMACS)
 $(O)/bin/emacs: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/emacs.tm
 	@$(MLLINK)
 
-# the office (../TinyOffice.ml, the page and its parts, on the screen
-# editor for its text boxes, run by ../TinyLibGUI.ml's run_canvas;
+# the office (../TinyOffice.ml, the page and its parts, run by
+# ../TinyLibGUI.ml's run_canvas;
 # user/office.ml, the few lines between)
-OFFICE = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyEditorScreen.ml ../TinyOffice.ml user/office.ml
+OFFICE = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml user/office.ml
 $(O)/user/office.tm: $(OFFICE)
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(OFFICE)

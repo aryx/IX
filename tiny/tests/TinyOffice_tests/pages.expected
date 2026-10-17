@@ -10,40 +10,40 @@
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
   shape 3
-== a click at 20 40, C-o, a heading and a paragraph typed: being edited
+== a click at 20 40, C-o, a large title (C-l), a paragraph with bold words (C-b) typed: being edited
   shape 0
     rect 255 0 0 320 200
   shape 1
     rect 3 20 24 40 16
     words 255 24 24 |text|
-    rect 3 212 116 8 8
-    words 0 24 42 |# A title|
-    words 0 24 74 |Some *bold words* and|
-    words 0 24 90 |plain ones, more than a|
-    words 0 24 106 |line holds.|
-    rect 0 112 106 8 16
-    words 255 112 106 | |
+    rect 3 212 134 8 8
+    rect 0 112 122 2 16
+    words 2048 24 42 |A title|
+    words 0 24 90 |Some |
+    words 256 64 90 |bold words|
+    words 0 144 90 | and |
+    words 0 24 106 |plain ones, more than a |
+    words 0 24 122 |line holds.|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    the menus above; a |
+    words 0 4 183 |text, typing plain; the Format menu, or|
   shape 3
     rect 204 0 0 320 17
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Format|
   shape 4
 == a click elsewhere: the box shows its text filled
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 24 42 |A title|
-    words 2 25 42 |A title|
-    words 0 24 74 |Some |
-    words 0 64 74 |bold words|
-    words 0 65 74 |bold words|
-    words 0 144 74 | and|
-    words 0 24 90 |plain ones, more than a|
-    words 0 24 106 |line holds.|
+    words 2048 24 42 |A title|
+    words 0 24 90 |Some |
+    words 256 64 90 |bold words|
+    words 0 144 90 | and |
+    words 0 24 106 |plain ones, more than a |
+    words 0 24 122 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |notes (modified)    the menus above; a |
@@ -54,12 +54,10 @@
     words 0 104 1 |Insert|
   shape 4
 == the page: the file
-text 20 40 200 84 68
-# A title
+text 20 40 200 102 78
+\{l}A title\{}
 
-Some *bold words* and
-plain ones, more than a
-line holds.
+Some \{b}bold words\{} and plain ones, more than a line holds.
 --
 == the right button drags the box 100 right, 20 down
   shape 0
@@ -67,15 +65,13 @@ line holds.
   shape 1
     rect 3 120 44 40 16
     words 255 124 44 |text|
-    rect 3 312 136 8 8
-    words 2 124 62 |A title|
-    words 2 125 62 |A title|
-    words 0 124 94 |Some |
-    words 0 164 94 |bold words|
-    words 0 165 94 |bold words|
-    words 0 244 94 | and|
-    words 0 124 110 |plain ones, more than a|
-    words 0 124 126 |line holds.|
+    rect 3 312 154 8 8
+    words 2048 124 62 |A title|
+    words 0 124 110 |Some |
+    words 256 164 110 |bold words|
+    words 0 244 110 | and |
+    words 0 124 126 |plain ones, more than a |
+    words 0 124 142 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |notes (modified)    the menus above; a |
@@ -89,18 +85,15 @@ line holds.
   shape 0
     rect 255 0 0 320 200
   shape 1
-    rect 3 120 44 40 16
-    words 255 124 44 |text|
-    rect 3 232 146 8 8
-    words 2 124 62 |A title|
-    words 2 125 62 |A title|
-    words 0 124 94 |Some |
-    words 0 164 94 |bold|
-    words 0 165 94 |bold|
-    words 0 124 110 |words|
-    words 0 125 110 |words|
-    words 0 164 110 | and|
-    words 0 124 126 |plain ones,|
+    rect 3 40 54 40 16
+    words 255 44 54 |text|
+    rect 3 232 164 8 8
+    words 2048 44 72 |A title|
+    words 0 44 120 |Some |
+    words 256 84 120 |bold words|
+    words 0 164 120 | and |
+    words 0 44 136 |plain ones, more than a |
+    words 0 44 152 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |notes (modified)    the menus above; a |
@@ -114,14 +107,12 @@ line holds.
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 62 |A title|
-    words 2 125 62 |A title|
-    words 0 124 94 |Some |
-    words 0 164 94 |bold words|
-    words 0 165 94 |bold words|
-    words 0 244 94 | and|
-    words 0 124 110 |plain ones, more than a|
-    words 0 124 126 |line holds.|
+    words 2048 124 62 |A title|
+    words 0 124 110 |Some |
+    words 256 164 110 |bold words|
+    words 0 244 110 | and |
+    words 0 124 126 |plain ones, more than a |
+    words 0 124 142 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |notes (modified)    the menus above; a |
@@ -135,14 +126,12 @@ line holds.
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 62 |A title|
-    words 2 125 62 |A title|
-    words 0 124 94 |Some |
-    words 0 164 94 |bold words|
-    words 0 165 94 |bold words|
-    words 0 244 94 | and|
-    words 0 124 110 |plain ones, more than a|
-    words 0 124 126 |line holds.|
+    words 2048 124 62 |A title|
+    words 0 124 110 |Some |
+    words 256 164 110 |bold words|
+    words 0 244 110 | and |
+    words 0 124 126 |plain ones, more than a |
+    words 0 124 142 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |Not saved: C-x C-s saves, C-x C-c again|
@@ -157,14 +146,12 @@ asks: save
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 62 |A title|
-    words 2 125 62 |A title|
-    words 0 124 94 |Some |
-    words 0 164 94 |bold words|
-    words 0 165 94 |bold words|
-    words 0 244 94 | and|
-    words 0 124 110 |plain ones, more than a|
-    words 0 124 126 |line holds.|
+    words 2048 124 62 |A title|
+    words 0 124 110 |Some |
+    words 256 164 110 |bold words|
+    words 0 244 110 | and |
+    words 0 124 126 |plain ones, more than a |
+    words 0 124 142 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |Wrote notes|
@@ -200,17 +187,17 @@ asks: quit
     rect 3 100 34 40 16
     words 255 104 34 |text|
     rect 3 212 94 8 8
+    rect 0 112 52 2 16
     words 0 104 52 |top|
-    rect 0 104 52 8 16
-    words 255 104 52 |t|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two    the menus above; a click edits a|
+    words 0 4 183 |text, typing plain; the Format menu, or|
   shape 4
     rect 204 0 0 320 17
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Format|
   shape 5
 == C-e, a ! typed, a click outside
   shape 0
@@ -236,19 +223,19 @@ asks: save
     rect 3 10 24 40 16
     words 255 14 24 |text|
     rect 3 152 84 8 8
+    rect 0 102 42 2 16
     words 0 14 42 |hello there|
-    rect 0 102 42 8 16
-    words 255 102 42 | |
   shape 2
     words 0 104 52 |top!|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two (modified)    the menus above; a cl|
+    words 0 4 183 |text, typing plain; the Format menu, or|
   shape 4
     rect 204 0 0 320 17
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Format|
   shape 5
 == the right button selects a box, Backspace removes it
   shape 0
@@ -856,18 +843,17 @@ asks: save
     rect 3 40 44 40 16
     words 255 44 44 |text|
     rect 3 182 104 8 8
-    words 0 44 62 |he|
-    words 0 60 62 |llo|
-    rect 0 60 62 8 16
-    words 255 60 62 |l|
+    rect 0 60 62 2 16
+    words 0 44 62 |hello|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |moves    the menus above; a click edits|
+    words 0 4 183 |text, typing plain; the Format menu, or|
   shape 3
     rect 204 0 0 320 17
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Format|
   shape 4
 == its tab pressed, let go 100 right, 20 down (nothing seen between): the box there
   shape 0
@@ -920,4 +906,130 @@ asks: save
 == the page: the file
 text 140 80 150 52 5
 hello
+--
+== C-o, a text in four styles (C-b, Tab, C-u: each on, then off)
+  shape 0
+    rect 255 0 0 320 220
+  shape 1
+    rect 3 20 24 40 16
+    words 255 24 24 |text|
+    rect 3 212 116 8 8
+    rect 0 72 58 2 16
+    words 0 24 42 |Plain, |
+    words 256 80 42 |bold|
+    words 0 112 42 |, |
+    words 512 128 42 |slanted|
+    words 0 184 42 | and |
+    words 1024 24 58 |under|
+    words 0 64 58 |.|
+  shape 2
+    rect 204 0 202 320 18
+    words 0 4 203 |text, typing plain; the Format menu, or|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Format|
+  shape 4
+== a drag over bold: selected
+  shape 0
+    rect 255 0 0 320 220
+  shape 1
+    rect 3 20 24 40 16
+    words 255 24 24 |text|
+    rect 3 212 116 8 8
+    rect 188 80 42 32 16
+    rect 0 112 42 2 16
+    words 0 24 42 |Plain, |
+    words 256 80 42 |bold|
+    words 0 112 42 |, |
+    words 512 128 42 |slanted|
+    words 0 184 42 | and |
+    words 1024 24 58 |under|
+    words 0 64 58 |.|
+  shape 2
+    rect 204 0 202 320 18
+    words 0 4 203 |text, typing plain; the Format menu, or|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Format|
+  shape 4
+== Format's Italic: the selection bold and italic
+  shape 0
+    rect 255 0 0 320 220
+  shape 1
+    rect 3 20 24 40 16
+    words 255 24 24 |text|
+    rect 3 212 116 8 8
+    rect 188 80 42 32 16
+    rect 0 112 42 2 16
+    words 0 24 42 |Plain, |
+    words 768 80 42 |bold|
+    words 0 112 42 |, |
+    words 512 128 42 |slanted|
+    words 0 184 42 | and |
+    words 1024 24 58 |under|
+    words 0 64 58 |.|
+  shape 2
+    rect 204 0 202 320 18
+    words 0 4 203 |text, typing plain; the Format menu, or|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Format|
+  shape 4
+== C-w cut, C-e, a space, C-y pasted at the end
+  shape 0
+    rect 255 0 0 320 220
+  shape 1
+    rect 3 20 24 40 16
+    words 255 24 24 |text|
+    rect 3 212 116 8 8
+    rect 0 56 58 2 16
+    words 0 24 42 |Plain, , |
+    words 512 96 42 |slanted|
+    words 0 152 42 | and |
+    words 768 24 58 |bold|
+    words 0 56 58 | |
+    words 1024 64 58 |under|
+    words 0 104 58 |.|
+  shape 2
+    rect 204 0 202 320 18
+    words 0 4 203 |text, typing plain; the Format menu, or|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Format|
+  shape 4
+== a click outside: the text shown, not edited
+  shape 0
+    rect 255 0 0 320 220
+  shape 1
+    words 0 24 42 |Plain, , |
+    words 512 96 42 |slanted|
+    words 0 152 42 | and |
+    words 768 24 58 |bold|
+    words 0 56 58 | |
+    words 1024 64 58 |under|
+    words 0 104 58 |.|
+  shape 2
+    rect 204 0 202 320 18
+    words 0 4 203 |styles (modified)    the menus above; a|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== the page: the file
+text 20 40 200 84 54
+Plain, , \{i}slanted\{} and \{bi}bold\{} \{u}under\{}.
 --

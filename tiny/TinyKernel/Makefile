@@ -7,8 +7,9 @@
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
-#                     ^C, M-x and a macro), then the network (ping
-#                     and get against tiny-machine's end of the wire, a
+#                     ^C, M-x and a macro), then the network (ping,
+#                     get, and put kept across two boots, against
+#                     tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
 #                     without its time), against check.expected;
 #                     then three recorded sessions, the mouse and the keys
@@ -72,7 +73,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get wiki httpd utils ed bigmem www
+PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -228,7 +229,7 @@ $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 # a program that reaches a machine by its name: with net.c
-$(O)/bin/get: $(O)/bin/%: $(ULIB) $(O)/libc/net.tm $(O)/user/%.tm
+$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.tm $(O)/user/%.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/libc/net.tm $(O)/user/$*.tm
 $(O)/user/wiki.tm: libc/draw.h
@@ -267,6 +268,10 @@ check: $(O)/boot.img
 	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /ed /sam /emacs /editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
+	rm -rf $(O)/kept; mkdir $(O)/kept
+	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
+	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out
+	printf 'rc\nfor(f in `{get \x27\x27}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out

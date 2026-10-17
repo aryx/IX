@@ -345,7 +345,16 @@ let run caps o image =
         | Some l -> l
         | None -> TinyMachinePeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
     end
+    (* the empty line, Gopher's menu: dir's files, a name a line *)
+    else if line = "" then
+      messages (TinyMachinePeer.messages (String.concat "" (List.map (fun n -> n ^ "\n")
+        (List.filter (fun n -> n.[0] <> '.' && not (Sys.is_directory (Filename.concat dir n))) (List.sort compare (Array.to_list (Sys.readdir dir)))))))
     else messages (match file line with Some text -> TinyMachinePeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
+  (* put: a file the machine keeps in dir, so that it outlives it; a
+   * name only, as get's *)
+  let store dir name bytes =
+    if name = "" || name.[0] = '.' || String.contains name '/' then "a name has no / and no . first"
+    else try FS.write caps (Fpath.v (Filename.concat dir name)) bytes; "" with Sys_error why | Failure why -> why in
   (* -net-pcap: the packets that crossed, written at the halt *)
   let capture = Buffer.create 4096 in
   let said dir packet =
@@ -354,7 +363,7 @@ let run caps o image =
       Option.iter (fun (mc : TinyMachineDevices.machine) -> Buffer.add_string capture (pcap_packet mc.csr.(TinyMachineDevices.time) packet)) !machine in
   let peer = match o.net_loop, o.net with
     | None, Some dir ->
-        let peer = TinyMachinePeer.create ~give ~said ~document:(document dir) ~outside:(if o.net_out then Some (outside caps) else None) in
+        let peer = TinyMachinePeer.create ~give ~said ~document:(document dir) ~store:(store dir) ~outside:(if o.net_out then Some (outside caps) else None) in
         List.iter (TinyMachinePeer.lose peer) o.net_lose;
         Some peer
     | _ -> None in

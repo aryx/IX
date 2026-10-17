@@ -315,6 +315,34 @@ let wikipedia words k =
                   | Some (w, h, pixels) -> k (Some (TinyMachinePeer.picture said w h pixels))
                   | None -> k (Some (TinyMachinePeer.picture said 0 0 ""))))
 
+(* The files the machine put (put): in the browser's storage, under
+ * tiny-machine/ and their name, so that they are there when the page
+ * is loaded again, which is a stop of the machine. Bytes as they are:
+ * a byte a character of the stored string (Js.bytestring). *)
+let storage () = get U.global "localStorage"
+let stored_key name = "tiny-machine/" ^ name
+
+let store name bytes =
+  if name = "" || name.[0] = '.' || String.contains name '/' then "a name has no / and no . first"
+  else
+    try ignore (call (storage ()) "setItem" [| str (stored_key name); U.inject (Js.bytestring bytes) |]); ""
+    with _ -> "this page's browser keeps no more"
+
+let stored name : string option =
+  let v : Js.js_string Js.t Js.opt = call (storage ()) "getItem" [| str (stored_key name) |] in
+  Option.map Js.to_bytestring (Js.Opt.to_option v)
+
+(* the names put, sorted *)
+let stored_names () =
+  let st = storage () in
+  let n : int = get st "length" in
+  let prefix = stored_key "" in
+  let p = String.length prefix in
+  List.init n (fun i -> Js.to_string (call st "key" [| U.inject i |]))
+  |> List.filter (fun k -> String.length k > p && String.sub k 0 p = prefix)
+  |> List.map (fun k -> String.sub k p (String.length k - p))
+  |> List.sort compare
+
 (* a line's document: the messages given to [messages], when they are
  * there. [www] is where the page's own documents are; a wiki that
  * Wikipedia does not answer is a picture kept there, if there is one.
@@ -360,10 +388,13 @@ let peer_document www line messages =
           if String.contains kept '/' then nothing ()
           else fetch (www ^ kept) (fun file -> match Option.bind file TinyMachinePeer.kept with Some l -> messages l | None -> nothing ()))
   end
+  (* the empty line, Gopher's menu: what was put *)
+  else if line = "" then messages (TinyMachinePeer.messages (String.concat "" (List.map (fun n -> n ^ "\n") (stored_names ()))))
   else
-    match name line with
-    | None -> messages [ "get: no " ^ line ^ "\n" ]
-    | Some name -> fetch (www ^ name) (function Some text -> messages (TinyMachinePeer.messages text) | None -> messages [ "get: no " ^ name ^ "\n" ])
+    match name line, stored line with
+    | _, Some text -> messages (TinyMachinePeer.messages text)
+    | None, None -> messages [ "get: no " ^ line ^ "\n" ]
+    | Some name, None -> fetch (www ^ name) (function Some text -> messages (TinyMachinePeer.messages text) | None -> messages [ "get: no " ^ name ^ "\n" ])
 
 (*****************************************************************************)
 (* The wire, drawn *)
@@ -452,7 +483,7 @@ let run image disk www =
    * called by: by a reference *)
   let machine = ref None in
   let give after packet = Option.iter (fun mc -> TinyMachineDevices.net_give mc ~after packet) !machine in
-  let peer = TinyMachinePeer.create ~give ~said:wire_said ~document:(peer_document www) ~outside:None in
+  let peer = TinyMachinePeer.create ~give ~said:wire_said ~document:(peer_document www) ~store ~outside:None in
   let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open ~send:(Some (TinyMachinePeer.send peer)) ~disk ~events:None image in
   machine := Some mc;
   (* the page's button: the peer's next packet is lost *)

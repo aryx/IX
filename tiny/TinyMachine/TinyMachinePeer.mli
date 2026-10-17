@@ -19,7 +19,10 @@
  *   back, the end: Gopher's shape (1991), and its port. Two kinds of
  *   lines by the programs that write them: a name (get: a text), and
  *   "wiki" then words (wiki: a text and a picture, its rows a message
- *   each, so that the program paints it as it arrives).
+ *   each, so that the program paints it as it arrives);
+ * - and the other way, "put name size" then the file's bytes (put):
+ *   the host keeps the file, so that it outlives the machine, and the
+ *   answer is a line, ok or why not.
  *
  * Where a document comes from is the host's, the one thing a terminal
  * and a page do differently: [document] is given the line and a
@@ -57,10 +60,14 @@ type outside = { name : string -> string; connect : string -> int -> relay optio
  * land so many instructions from now. [said dir packet]: each packet
  * that crosses, for who watches (">" from the machine, "<" to it, "x"
  * to it and lost). [document line messages]: what the line names,
- * given to [messages] once, now or later. *)
+ * given to [messages] once, now or later. [store name bytes]: a file
+ * the machine put (tiny-kernel's put: a first line "put name size",
+ * then its bytes), to keep where [document] finds it again; "" when it
+ * is kept, why not otherwise, which put says. The empty line, Gopher's
+ * menu, is [document]'s too: what was put, a name a line. *)
 val create :
   give:(int -> string -> unit) -> said:(string -> string -> unit) -> document:(string -> (string list -> unit) -> unit) ->
-  outside:outside option -> t
+  store:(string -> string -> string) -> outside:outside option -> t
 
 (* the machine's [send]: a packet of its kernel's ("": the peer's own
  * clock) *)

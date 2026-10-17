@@ -74,7 +74,15 @@ Each leaves something usable on tiny-kernel, in a window of
 tiny-windows like emacs, and a screen session in `make check`:
 
 0. **put, and files kept across a stop** (section 4), before the
-   office is used for real.
+   office is used for real. **Done (2026-10-17)**: `put file [name]`
+   (TinyKernel/user/put.c) sends a line `put name size` and the
+   bytes to port 70; the peer (TinyMachinePeer) gives them to the host,
+   which writes them into tiny-machine's `-net` directory, or the web
+   page's localStorage, and answers ok or why not. `get ''` (Gopher's
+   empty line, its menu) lists what was put, so a new boot brings it
+   all back: ``for(f in `{get ''}) get $f > $f``. `make check` puts two
+   files, reads them on the host, and gets them back on a second boot.
+   Not run: the web page's side (its test needs Python's websockets).
 1. **The shell and the text part**: a page with text boxes, typed
    into, moved, saved, opened again; undo.
 2. **The sheet**: a grid in a box, a cell typed at the last line as in

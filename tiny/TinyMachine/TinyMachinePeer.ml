@@ -50,9 +50,11 @@ let latency () = !TinyMachineDevices.rate / 200
 let tick () = !TinyMachineDevices.rate / 400
 
 (* a connection to one of the peer's own ports: its line not read yet,
- * what answers it asked, or the messages left to send *)
+ * what answers it asked, or the messages left to send; after a line
+ * "put name size", the file's name, its size, and its bytes so far *)
 type serving = {
   conn : TinyKernelNetwork.il; ask : string -> (string list -> unit) -> unit; mutable todo : string list option; mutable asked : bool;
+  mutable taking : (string * int * Buffer.t) option;
 }
 
 type relay = { take : unit -> string option; put : string -> unit; shut : unit -> unit }
@@ -65,16 +67,16 @@ type outside = { name : string -> string; connect : string -> int -> relay optio
 
 type t = {
   stack : TinyKernelNetwork.net_stack; give : int -> string -> unit; said : string -> string -> unit;
-  document : string -> (string list -> unit) -> unit; outside : outside option;
+  document : string -> (string list -> unit) -> unit; store : string -> string -> string; outside : outside option;
   mutable now : int; mutable awake : bool; mutable serving : serving list; mutable sent : int; mutable lost : int list;
   mutable relays : relaying list; mutable agreed : ((string * int * int) * relay) list;
 }
 
-let create ~give ~said ~document ~outside =
+let create ~give ~said ~document ~store ~outside =
   let stack = TinyKernelNetwork.net_stack TinyKernelNetwork.net_peer 5000 in
   stack.ns_ports <- [ 70; 53 ];
   stack.ns_gate <- outside <> None;
-  { stack = stack; give = give; said = said; document = document; outside = outside; now = 0; awake = false; serving = []; sent = 0;
+  { stack = stack; give = give; said = said; document = document; store = store; outside = outside; now = 0; awake = false; serving = []; sent = 0;
     lost = []; relays = []; agreed = [] }
 
 let lose p n = p.lost <- (p.sent + n) :: p.lost
@@ -205,7 +207,7 @@ let serve p =
         let name line answer = match p.outside with
           | Some o -> (match o.name line with "" -> answer [] | a -> answer [ a ])
           | None -> answer [] in
-        p.serving <- { conn = conn; ask = (if conn.il_lport = 53 then name else p.document); todo = None; asked = false } :: p.serving)
+        p.serving <- { conn = conn; ask = (if conn.il_lport = 53 then name else p.document); todo = None; asked = false; taking = None } :: p.serving)
     p.stack.ns_fresh;
   p.stack.ns_fresh <- [];
   List.iter (relay_turn p) p.relays;
@@ -213,8 +215,25 @@ let serve p =
   List.iter (fun (s : serving) ->
     if not s.asked then (
       match TinyKernelNetwork.il_hear s.conn with
-      | Some line -> s.asked <- true; s.ask (String.trim line) (fun l -> s.todo <- Some l)
+      | Some line -> (
+          s.asked <- true;
+          match String.split_on_char ' ' (String.trim line) with
+          | [ "put"; name; size ] when s.conn.il_lport = 70 && int_of_string_opt size <> None ->
+              s.taking <- Some (name, int_of_string size, Buffer.create 1024)
+          | _ -> s.ask (String.trim line) (fun l -> s.todo <- Some l))
       | None -> ());
+    (* a file being put: its messages taken until its size, then kept
+     * by the host, and the answer a line, ok or why not *)
+    (match s.taking with
+     | Some (name, size, b) ->
+         let rec take () = if Buffer.length b < size then match TinyKernelNetwork.il_hear s.conn with Some m -> Buffer.add_string b m; take () | None -> () in
+         take ();
+         if Buffer.length b >= size then begin
+           s.taking <- None;
+           let why = p.store name (Buffer.contents b) in
+           s.todo <- Some [ (if why = "" then "ok" else why) ^ "\n" ]
+         end
+     | None -> ());
     let rec push () =
       match s.todo with
       | Some (m :: rest) when TinyKernelNetwork.il_room s.conn -> s.todo <- Some rest; out p [ TinyKernelNetwork.il_write s.conn m p.now ]; push ()

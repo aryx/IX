@@ -368,7 +368,13 @@ million a second) after
 it was sent. It answers a ping; and on port 70, over IL, it reads a
 line, a name, and sends `dir`'s file of that name (no path), in
 messages of 1,024 bytes, then closes: `get hello.txt` in tiny-kernel,
-with `tiny/tests/www` as `dir`. A line that starts with `wiki` names
+with `tiny/tests/www` as `dir`. The other way, `put file [name]` sends
+a line `put name size` then the file's bytes, and the peer writes them
+into `dir` and answers `ok`: tiny-kernel's files are in its memory and
+go with the machine, what is put stays. An empty line (`get ''`,
+Gopher's menu) lists `dir`, so a new boot brings it all back with
+``for(f in `{get ''}) get $f > $f``. The web page keeps what is put in
+the browser's `localStorage`. A line that starts with `wiki` names
 a picture kept there with its text (`wiki mandelbrot`:
 `mandelbrot.wiki`, a line `320 240`, the pixels a byte each in the
 screen's colours, the text; `tiny/tests/TinyKernelNetwork_tests/wiki_picture.py`

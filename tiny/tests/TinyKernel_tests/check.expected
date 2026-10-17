@@ -40,6 +40,7 @@ mouse
 mv
 paint
 ping
+put
 pwd
 rc
 rm
@@ -130,9 +131,9 @@ $ % -  25   238824 /cat
 -   2   215548 /emacs
 -   1    70364 /ping
 -  25   238824 /utils
-%      49     196    1026 f
-     49     196    1026
-     49     196    1026
+%      50     200    1046 f
+     50     200    1046
+     50     200    1046
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -157,6 +158,16 @@ $ $ > 0ne
 > tw0
 > three
 f0ur$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % % % put: nosuch: cannot open
+% put: ../x: a name has no / and no . first
+% notes
+numbers
+% $ hello world
+    8893
+tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % % hello world
+   2000    2000    8893 numbers
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms

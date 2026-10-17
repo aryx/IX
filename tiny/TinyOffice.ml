@@ -20,9 +20,10 @@ let blue = 3
 let light_grey = 204
 let pale_blue = 188
 
-(* an object of the page: its kind ("text", "sheet"), its box in
- * pixels, its data *)
-type obj = { kind : string; x : int; y : int; w : int; h : int; data : string }
+(* an object of the page: its kind ("text", "sheet", "drawing", "paint",
+ * "chart"), its box in pixels, its data, its name (a sheet's, which a
+ * chart names; "" for the others) *)
+type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string }
 
 (* a text box being edited: its characters and their styles (a byte
  * each: bold 1, italic 2, underlined 4, large 8), the cursor, the
@@ -37,16 +38,17 @@ type doc = { mutable txt : string; mutable sty : string; mutable cur : int; muta
  * is making, from where it went down to where it is, in the box; a
  * paint's colour (its place in pixel_letters), its brush (0 thin, 1
  * thick), and the pixel where the left button last was, when it is
- * down *)
+ * down; the selected sheet's new name, being typed *)
 type edit = Nothing | Writing of doc | Cell of int * int * string option | Sketch of int * (int * int * int * int) option
-  | Painting of int * int * (int * int) option
+  | Painting of int * int * (int * int) option | Naming of string
 
 (* what the menus ask for: to save, to quit, to undo, to delete the
  * selected box, a new box of a kind, a drawing's tool; in a text, to
  * cut, copy, paste, a style (0: plain); in a paint, a colour, a brush,
- * the picture cleared *)
+ * the picture cleared; in a sheet, a name typed, a chart of the chosen
+ * cell's column *)
 type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int | Do_cut | Do_copy | Do_paste | Do_style of int
-  | Do_ink of int | Do_brush of int | Do_clear
+  | Do_ink of int | Do_brush of int | Do_clear | Do_name | Do_chart
 
 type office = {
   mutable page : obj list;                (* the objects, the bottom one first *)
@@ -70,6 +72,11 @@ let say (o : office) (m : string) = o.message <- m
 (*****************************************************************************)
 (* The page's objects *)
 (*****************************************************************************)
+
+(* a list's elements with their places, from 0 *)
+let numbered (l : 'a list) : (int * 'a) list =
+  let rec go k l = match l with x :: rest -> (k, x) :: go (k + 1) rest | [] -> [] in
+  go 0 l
 
 let rec nth_obj (l : obj list) (i : int) : obj = match l with b :: rest -> if i = 0 then b else nth_obj rest (i - 1) | [] -> failwith "nth_obj"
 
@@ -576,6 +583,116 @@ let paint_view (b : obj) : shape list =
   rows (String.split_on_char '\n' b.data) 0
 
 (*****************************************************************************)
+(* The chart *)
+(*****************************************************************************)
+
+(* A chart's data is a line: bars, the sheet it draws by its name, the
+ * cells of its values, and of its labels if it has some:
+ *
+ *     bars budget b1:b3 a1:a3
+ *
+ * a range being cells of a column or of a row. The values are the
+ * sheet's at each view, so a chart follows its sheet; a sheet renamed,
+ * its charts are too. *)
+
+(* the cells of a range, "b1:b3" or "a1:c1" ([] if it is none) *)
+let range_cells (r : string) : string list =
+  let at n = if String.length n >= 2 && n.[0] >= 'a' && n.[0] <= 'z' then
+      (match int_of_string_opt (String.sub n 1 (String.length n - 1)) with Some k when k >= 1 -> Some (Char.code n.[0] - 97, k - 1) | _ -> None)
+    else None in
+  match String.split_on_char ':' r with
+  | [ a; b ] -> (
+      match at a, at b with
+      | Some (c0, r0), Some (c1, r1) when c0 = c1 && r1 >= r0 -> List.init (r1 - r0 + 1) (fun k -> name c0 (r0 + k))
+      | Some (c0, r0), Some (c1, r1) when r0 = r1 && c1 >= c0 -> List.init (c1 - c0 + 1) (fun k -> name (c0 + k) r0)
+      | _ -> [])
+  | _ -> []
+
+(* A chart's bars, each its label and its value (a cell that is not a
+ * number, 0), from its sheet on the page; or, none, why *)
+let chart_bars (page : obj list) (b : obj) : (string * int) list * string =
+  let first = match String.split_on_char '\n' b.data with l :: _ -> l | [] -> "" in
+  match String.split_on_char ' ' first with
+  | "bars" :: sheet :: range :: rest -> (
+      match List.filter (fun (s : obj) -> s.kind = "sheet" && s.called = sheet) page with
+      | s :: _ ->
+          let value = values s.data in
+          let labels = match rest with l :: _ -> range_cells l | [] -> [] in
+          let label k = match labels with [] -> "" | _ -> (
+            match (if k < List.length labels then value (List.nth labels k) else Str "") with Num v -> string_of_int v | Str t -> t | Err e -> "#" ^ e) in
+          let bars = List.map (fun (k, n) -> (label k, match value n with Num v -> v | _ -> 0)) (numbered (range_cells range)) in
+          if bars = [] then ([], "no cells in " ^ range) else (bars, "")
+      | [] -> ([], "no sheet " ^ sheet))
+  | _ -> ([], "a chart: bars SHEET b1:b3 a1:a3")
+
+(* the bars' colours, in turn: the paint's blue, red, green, yellow,
+ * orange, purple *)
+let bar_colours = [ 54; 240; 42; 252; 231; 129 ]
+
+(* A chart: a bar a value, as tall as its share of the largest (none
+ * below 0), its value above it, its label under it (cut to its width);
+ * the axis a grey line *)
+let chart_view (page : obj list) (b : obj) : shape list =
+  match chart_bars page b with
+  | [], why -> [ Move (b.x + 4, b.y + 2, Words (160, why)) ]
+  | bars, _ ->
+      let n = List.length bars in
+      let top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
+      let bw = max 6 ((b.w - 16) / n) and base = b.y + b.h - 20 and room = b.h - 42 in
+      let cut t = let k = max 0 ((bw - 2) / 8) in if String.length t > k then String.sub t 0 k else t in
+      List.concat (List.map (fun (k, (label, v)) ->
+        let x = b.x + 8 + (k * bw) and tall = max 0 (v * room / top) in
+        (if tall > 0 then [ Move (x + 2, base - tall, Rect (List.nth bar_colours (k mod 6), bw - 4, tall)) ] else [])
+        @ [ Move (x + 2, base - tall - 16, Words (black, cut (string_of_int v))); Move (x + 2, base + 2, Words (black, cut label)) ]) (numbered bars))
+      @ [ Move (b.x + 4, base, Rect (grey, b.w - 8, 1)) ]
+
+(* a name a sheet can have: a letter, then letters, digits, _ *)
+let good_name (n : string) =
+  n <> "" && ((n.[0] >= 'a' && n.[0] <= 'z') || (n.[0] >= 'A' && n.[0] <= 'Z'))
+  && String.for_all (fun c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_') n
+
+(* A key while the selected sheet's name is typed: a character, Backspace,
+ * Enter (the name given, to the charts of the sheet too), C-g *)
+let name_key (o : office) (typed : string) (k : int) =
+  if k >= 32 && k < 127 then o.editing <- Naming (typed ^ String.make 1 (Char.chr k))
+  else if (k = 8 || k = 127) && typed <> "" then o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
+  else if k = 13 || k = 10 then begin
+    let s = nth_obj o.page o.sel in
+    if not (good_name typed) then o.message <- "a name: a letter, then letters, digits, _"
+    else if List.exists (fun (b : obj) -> b.called = typed && b != s) o.page then o.message <- "another sheet is " ^ typed
+    else begin
+      let renamed l = match String.split_on_char ' ' l with "bars" :: was :: rest when was = s.called -> String.concat " " ("bars" :: typed :: rest) | _ -> l in
+      keep o;
+      o.page <- List.map (fun (b : obj) ->
+        if b == s then { b with called = typed }
+        else if b.kind = "chart" then { b with data = String.concat "\n" (List.map renamed (String.split_on_char '\n' b.data)) }
+        else b) o.page;
+      o.editing <- Nothing
+    end
+  end
+  else if k = 7 then o.editing <- Nothing
+
+(* a chart of the chosen cell's column, beside its sheet (under it, if
+ * the page is too narrow): its cells from the first number to the last,
+ * the column at its left their labels *)
+let make_chart (o : office) (c : int) =
+  let s = nth_obj o.page o.sel in
+  let value = values s.data in
+  let rows = List.filter (fun r -> match value (name c r) with Num _ -> true | _ -> false) (List.init 99 (fun r -> r)) in
+  match rows with
+  | [] -> o.message <- "no numbers in column " ^ String.make 1 (Char.chr (97 + c))
+  | r0 :: _ ->
+      let r1 = List.fold_left max r0 rows in
+      let range c = name c r0 ^ ":" ^ name c r1 in
+      let data = "bars " ^ s.called ^ " " ^ range c ^ (if c > 0 then " " ^ range (c - 1) else "") ^ "\n" in
+      let _, width, _ = o.where in
+      let x, y = if s.x + s.w + 216 <= width then s.x + s.w + 16, s.y else s.x, s.y + s.h + 24 in
+      keep o;
+      o.page <- o.page @ [ { kind = "chart"; x; y; w = 200; h = 120; data; called = "" } ];
+      o.sel <- List.length o.page - 1;
+      o.editing <- Nothing
+
+(*****************************************************************************)
 (* The file *)
 (*****************************************************************************)
 
@@ -598,27 +715,13 @@ let paint_view (b : obj) : shape list =
  *     }
  *
  * The kind is in the content: a table is a sheet (its header the
- * columns' letters, then a row a line, what was typed in each cell), a
- * fence ```drawing or ```paint is that (its lines as they are), the
- * rest text. A text's styles are Markdown's, **bold**, *italic*, a line
+ * columns' letters, then a row a line, what was typed in each cell;
+ * its name after its box's numbers), a fence ```drawing, ```paint or
+ * ```chart is that (its lines as they are), the rest text. A text's styles are Markdown's, **bold**, *italic*, a line
  * "# " large, and \u{} underlined, \large{} large in a line; \ before a
  * character that would be read otherwise. So emacs edits a page as any
  * text (no count of bytes to keep right), and a Markdown file, with no
  * \box, is opened as one text box. *)
-
-(* a list's elements with their places, from 0 *)
-let numbered (l : 'a list) : (int * 'a) list =
-  let rec go k l = match l with x :: rest -> (k, x) :: go (k + 1) rest | [] -> [] in
-  go 0 l
-
-(* a string without the spaces at its two ends *)
-let trim (s : string) : string =
-  let n = String.length s in
-  let rec first i = if i < n && s.[i] = ' ' then first (i + 1) else i in
-  let rec last j = if j > 0 && s.[j - 1] = ' ' then last (j - 1) else j in
-  let i = first 0 in
-  let j = last n in
-  if j > i then String.sub s i (j - i) else ""
 
 (* a text's line as Markdown, from its characters and their styles *)
 let md_of_line (t : string) (st : string) : string =
@@ -696,7 +799,7 @@ let table_cells (l : string) : string list =
   let rec go i cur acc =
     if i >= n then List.rev acc
     else if l.[i] = '\\' && i + 1 < n && l.[i + 1] = '|' then go (i + 2) (cur ^ "|") acc
-    else if l.[i] = '|' then go (i + 1) "" (trim cur :: acc)
+    else if l.[i] = '|' then go (i + 1) "" (String.trim cur :: acc)
     else go (i + 1) (cur ^ String.make 1 l.[i]) acc in
   match go 0 "" [] with _ :: cells -> cells | [] -> []
 
@@ -711,38 +814,40 @@ let text (o : office) : string =
   String.concat "" (List.map (fun (k, (b : obj)) ->
     let content =
       if b.kind = "sheet" then md_of_sheet b.data
-      else if b.kind = "drawing" || b.kind = "paint" then
+      else if b.kind = "drawing" || b.kind = "paint" || b.kind = "chart" then
         (* (its lines as they are, a paint's empty rows too; not the empty one after the last newline) *)
         [ "```" ^ b.kind ] @ (match List.rev (String.split_on_char '\n' b.data) with "" :: r -> List.rev r | l -> List.rev l) @ [ "```" ]
       else md_of_text b.data in
-    String.concat "" ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ "]{\n")
+    String.concat "" ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ (if b.called = "" then "" else " " ^ b.called) ^ "]{\n")
           :: List.map (fun l -> l ^ "\n") content @ [ "}\n" ])) (numbered o.page))
 
-let obj_of (x : int) (y : int) (w : int) (h : int) (ls : string list) : obj =
+let obj_of (x : int) (y : int) (w : int) (h : int) (called : string) (ls : string list) : obj =
   let lines_data l = String.concat "" (List.map (fun s -> s ^ "\n") l) in
   match ls with
-  | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls }
-  | first :: rest when first = "```drawing" || first = "```paint" ->
-      { kind = String.sub first 3 (String.length first - 3); x; y; w; h; data = lines_data (List.filter (fun l -> l <> "```") rest) }
-  | _ -> { kind = "text"; x; y; w; h; data = text_of_md ls }
+  | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls; called }
+  | first :: rest when first = "```drawing" || first = "```paint" || first = "```chart" ->
+      { kind = String.sub first 3 (String.length first - 3); x; y; w; h; data = lines_data (List.filter (fun l -> l <> "```") rest); called = "" }
+  | _ -> { kind = "text"; x; y; w; h; data = text_of_md ls; called = "" }
 
 let parse (width : int) (height : int) (s : string) : obj list =
   let is_box l = String.length l > 6 && String.sub l 0 5 = "\\box[" && String.sub l (String.length l - 2) 2 = "]{" in
   let rec go ls =
     match ls with
     | l :: rest when is_box l ->
-        let nums = List.map (fun v -> match int_of_string_opt v with Some k -> k | None -> 0) (String.split_on_char ' ' (String.sub l 5 (String.length l - 7))) in
+        let words = String.split_on_char ' ' (String.sub l 5 (String.length l - 7)) in
+        let num v = match int_of_string_opt v with Some k -> k | None -> 0 in
         let rec content acc ls = match ls with "}" :: rest -> List.rev acc, rest | x :: rest -> content (x :: acc) rest | [] -> List.rev acc, [] in
         let (inside, rest) = content [] rest in
-        (match nums with
-         | [ x; y; w; h ] -> obj_of x y w h inside :: go rest
+        (match words with
+         | [ x; y; w; h ] -> obj_of (num x) (num y) (num w) (num h) "" inside :: go rest
+         | [ x; y; w; h; called ] -> obj_of (num x) (num y) (num w) (num h) called inside :: go rest
          | _ -> go rest)
     | _ :: rest -> go rest
     | [] -> [] in
   let ls = String.split_on_char '\n' s in
   if s = "" then []
   else if List.exists is_box ls then go ls
-  else [ obj_of 16 40 (width - 32) (height - 80) (match List.rev ls with "" :: r -> List.rev r | _ -> ls) ]
+  else [ obj_of 16 40 (width - 32) (height - 80) "" (match List.rev ls with "" :: r -> List.rev r | _ -> ls) ]
 
 let create (width : int) (height : int) (file : string) (s : string) : office =
   let page = parse width height s in
@@ -803,7 +908,8 @@ let write_key (o : office) (d : doc) (k : int) =
 let add (o : office) (kind : string) (w : int) (h : int) =
   let x, y = o.at in
   keep o;
-  o.page <- o.page @ [ { kind; x; y; w; h; data = "" } ];
+  let rec fresh k = let n = "sheet" ^ string_of_int k in if List.exists (fun (b : obj) -> b.called = n) o.page then fresh (k + 1) else n in
+  o.page <- o.page @ [ { kind; x; y; w; h; data = ""; called = (if kind = "sheet" then fresh 1 else "") } ];
   let i = List.length o.page - 1 in
   o.sel <- i;
   if kind = "text" then edit o i x y false else if kind = "sheet" then o.editing <- Cell (0, 0, None)
@@ -835,6 +941,8 @@ let command (o : office) (c : command) : request =
   | Do_copy -> (match o.editing with Writing d -> copy d | _ -> ()); Continue
   | Do_paste -> (match o.editing with Writing d -> let (t, st) = !clipboard in put_text d t st | _ -> ()); Continue
   | Do_style bit -> (match o.editing with Writing d -> restyle d bit | _ -> ()); Continue
+  | Do_name -> (match o.editing with Cell (_, _, _) -> commit o; o.editing <- Naming "" | _ -> ()); Continue
+  | Do_chart -> (match o.editing with Cell (c, _, _) -> commit o; make_chart o c | _ -> ()); Continue
 
 (* the menus, a drawing's tools when one is edited (the one in use
  * marked); the keys at the right *)
@@ -847,6 +955,7 @@ let office_menus (o : office) : (string * (string * command) list) list =
          let mark k s = (if d.typing land k <> 0 then "* " else "  ") ^ s in
          [ ("Format", [ (mark 1 "Bold       C-b", Do_style 1); (mark 2 "Italic     Tab", Do_style 2); (mark 4 "Underline  C-u", Do_style 4);
                         (mark 8 "Large      C-l", Do_style 8); ("  Plain", Do_style 0) ]) ]
+     | Cell (_, _, _) -> [ ("Sheet", [ ("Name...", Do_name); ("Chart of this column", Do_chart) ]) ]
      | Painting (ink, brush, _) ->
          let colour k = ((if k = ink then "* " else "  ") ^ List.nth paint_names k ^ "      " ^ string_of_int k, Do_ink k) in
          [ ("Paint", List.init 10 colour @ [ ((if brush = 0 then "* " else "  ") ^ "Thin brush", Do_brush 0);
@@ -862,6 +971,7 @@ let key (o : office) (k : int) : request =
   | Cell (c, r, typed) when not o.prefix && k <> 24 -> o.message <- ""; cell_key o c r typed k; Continue
   | Sketch (tool, _) when not o.prefix && k <> 24 -> o.message <- ""; sketch_key o tool k; Continue
   | Painting (_, brush, _) when not o.prefix && k <> 24 && k <> 31 -> o.message <- ""; paint_key o brush k; Continue
+  | Naming typed when not o.prefix && k <> 24 -> o.message <- ""; name_key o typed k; Continue
   | _ ->
       let was = o.message in
       o.message <- "";
@@ -885,8 +995,9 @@ let key (o : office) (k : int) : request =
       end
 
 (* where the selected box is moved by the left button, its tab above
- * it (its kind written in it); where it is resized, its corner *)
-let tab (b : obj) = (b.x, b.y - 16, (8 * String.length b.kind) + 8, 16)
+ * it (its kind written in it, or a sheet's name); where it is resized, its corner *)
+let tab_text (b : obj) = if b.called <> "" then b.called else b.kind
+let tab (b : obj) = (b.x, b.y - 16, (8 * String.length (tab_text b)) + 8, 16)
 let corner (b : obj) = (b.x + b.w - 8, b.y + b.h - 8, 8, 8)
 
 let on_handle (o : office) (x : int) (y : int) : bool =
@@ -1065,7 +1176,7 @@ let frame (b : obj) (selected : bool) : shape list =
   let c = if selected then blue else grey and x1 = b.x + b.w - 1 and y1 = b.y + b.h - 1 in
   let (tx, ty, tw, th) = tab b in
   [ Move (b.x, b.y, Rect (c, b.w, 1)); Move (b.x, y1, Rect (c, b.w, 1)); Move (b.x, b.y, Rect (c, 1, b.h)); Move (x1, b.y, Rect (c, 1, b.h)) ]
-  @ (if selected then [ Move (tx, ty, Rect (c, tw, th)); Move (tx + 4, ty, Words (white, b.kind)); Move (x1 - 7, y1 - 7, Rect (c, 8, 8)) ] else [])
+  @ (if selected then [ Move (tx, ty, Rect (c, tw, th)); Move (tx + 4, ty, Words (white, tab_text b)); Move (x1 - 7, y1 - 7, Rect (c, 8, 8)) ] else [])
 
 (* the status line: what the box being edited says (a search, M-x), or
  * the page's message, or the file's name *)
@@ -1078,6 +1189,7 @@ let status (o : office) : shape list =
     | Cell (c, r, typed) when o.sel >= 0 ->
         (* the formula bar: the cell, what is being typed in it, or what was *)
         name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (nth_obj o.page o.sel).data (name c r))
+    | Naming typed when o.message = "" -> "the sheet's name: " ^ typed ^ "_ (Enter gives it, C-g not)"
     | Painting (ink, brush, _) -> "paint: " ^ List.nth paint_names ink ^ (if brush = 0 then ", thin" else ", thick") ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) -> "drawing: " ^ List.nth tools tool ^ " (Tab: another); the left button draws; type a label"
     | _ -> "" in
@@ -1101,6 +1213,7 @@ let view (o : office) : shape list =
              else if b.kind = "sheet" then sheet_view b None
              else if b.kind = "drawing" then drawing_view b 0 None
              else if b.kind = "paint" then paint_view b
+             else if b.kind = "chart" then chart_view o.page b
              else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in
        Group (frame b (!i = o.sel) @ content)) o.page
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu

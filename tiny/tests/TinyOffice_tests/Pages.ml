@@ -248,3 +248,22 @@ let () =
   let o = create 400 220 "notes.md" "# Notes\n\nA *Markdown* file, with no box.\nIts second line.\n" in
   show "a Markdown file: one text box" o;
   file "written" o
+
+let () =
+  let o = create 420 220 "chart" "" in
+  click o 1 10 40;
+  keys o "\024tRent\nFood\n\128\128\131500\n300\n";
+  show "a sheet (sheet1): Rent, Food, 500, 300" o;
+  click o 1 170 5;
+  click o 1 170 25;
+  keys o "budget\n";
+  show "the Sheet menu's Name, budget typed, Enter: its tab says budget" o;
+  click o 1 120 60;
+  click o 1 170 5;
+  click o 1 170 40;
+  show "b1 chosen, the Sheet menu's Chart of this column: a chart beside the sheet" o;
+  click o 1 120 60;
+  click o 1 120 76;
+  keys o "900\n";
+  show "b2 now 900: the chart follows" o;
+  file "the page" o

@@ -300,7 +300,28 @@ tiny-windows like emacs, and a screen session in `make check`:
      the same, a Markdown file opened; officekeys.events's `cat`.
      Next: tiny-troff, the page to text and HTML (step 6's publishing).
 5. **The chart**: bars from a sheet's range, redrawn when its cells
-   change.
+   change. **Done (2026-10-17)**, the author: "let's commit and move
+   forward", then, of how a chart names its sheet, named sheets. About
+   90 lines of code in TinyOffice.ml.
+   - A sheet has a name, sheet1, sheet2... when made, written after its
+     box's numbers (`\box[10 40 282 114 budget]{`) and on its tab. The
+     Sheet menu, a cell chosen, names it (typed in the status line;
+     its charts renamed with it), or makes a chart of the cell's
+     column: its cells from the first number to the last, the column
+     at its left their labels, beside the sheet (under it, the page too
+     narrow).
+   - A chart's data is a line, `bars budget b1:b3 a1:a3`, in a fence
+     ```chart. Its bars are the sheet's values at each view (a bar a
+     value, as tall as its share of the largest, its value above, its
+     label under), so it follows the sheet. One function,
+     chart_bars, gives the bars to the office and to tiny-troff (text:
+     a line of #s a bar; HTML: SVG).
+   - Tests: TinyOffice_test.sh's chart scene (a sheet named from the
+     menu, a chart of a column, a value changed and the chart with it,
+     the file); TinyTroff_test.sh's charts (and one of a sheet that is
+     not there); make check's officesheet.events makes a chart of its
+     budget (Rent, Food, Total), its screen looked at, and
+     officekeys.events's sheet has its name in the file.
 6. **Publishing**: **tiny-troff done (2026-10-17)**, the author: "yes
    commit, then let's do tiny-troff". `tiny/TinyTroff.ml` (about 185
    lines of code) prints a page, or a Markdown file, as text (each

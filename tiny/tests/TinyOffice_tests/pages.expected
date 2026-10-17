@@ -281,8 +281,8 @@ top
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -306,13 +306,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == Rent, Food, Total typed, each with Enter: down a cell each
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -339,13 +340,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -375,13 +377,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -416,13 +419,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == to b1, Enter brings back 500, three Backspace, 8: b3 and b4 again
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -457,9 +461,10 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == the page: the file
-\box[10 40 282 114]{
+\box[10 40 282 114 sheet1]{
 | a     | b             | c     |
 |-------|---------------|-------|
 | Rent  | 8             | =c1+1 |
@@ -472,8 +477,8 @@ top
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -508,13 +513,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == Backspace: c2 emptied
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -548,13 +554,14 @@ top
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == C-g: no cell chosen
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 10 24 48 16
-    words 255 14 24 |sheet|
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
     rect 3 284 146 8 8
     words 153 63 41 |a|
     words 153 127 41 |b|
@@ -731,8 +738,8 @@ text 30 150 a note
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 16 24 48 16
-    words 255 20 24 |sheet|
+    rect 3 16 24 56 16
+    words 255 20 24 |sheet1|
     rect 3 290 146 8 8
     words 153 69 41 |a|
     words 153 133 41 |b|
@@ -756,6 +763,7 @@ text 30 150 a note
     words 0 8 1 |File|
     words 0 56 1 |Edit|
     words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
   shape 4
 == Edit pressed, the mouse down to Undo, let go: the sheet undone
   shape 0
@@ -1289,5 +1297,163 @@ box 10 10 40 20 cpu
 
 A *Markdown* file, with no box.
 Its second line.
+}
+--
+== a sheet (sheet1): Rent, Food, 500, 300
+  shape 0
+    rect 255 0 0 420 220
+  shape 1
+    rect 3 10 24 56 16
+    words 255 14 24 |sheet1|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 135 57 |500|
+    words 0 135 73 |300|
+    rect 3 98 88 65 2
+    rect 3 98 103 65 2
+    rect 3 98 88 2 17
+    rect 3 161 88 2 17
+  shape 2
+    rect 204 0 202 420 18
+    words 0 4 203 |b3: |
+  shape 3
+    rect 204 0 0 420 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
+  shape 4
+== the Sheet menu's Name, budget typed, Enter: its tab says budget
+  shape 0
+    rect 255 0 0 420 220
+  shape 1
+    rect 3 10 24 56 16
+    words 255 14 24 |budget|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 135 57 |500|
+    words 0 135 73 |300|
+  shape 2
+    rect 204 0 202 420 18
+    words 0 4 203 |chart (modified)    the menus above; a click edits |
+  shape 3
+    rect 204 0 0 420 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== b1 chosen, the Sheet menu's Chart of this column: a chart beside the sheet
+  shape 0
+    rect 255 0 0 420 220
+  shape 1
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 135 57 |500|
+    words 0 135 73 |300|
+  shape 2
+    rect 3 10 162 48 16
+    words 255 14 162 |chart|
+    rect 3 202 290 8 8
+    rect 54 20 200 88 78
+    words 0 20 184 |500|
+    words 0 20 280 |Rent|
+    rect 240 112 232 88 46
+    words 0 112 216 |300|
+    words 0 112 280 |Food|
+  shape 3
+    rect 204 0 202 420 18
+    words 0 4 203 |chart (modified)    the menus above; a click edits |
+  shape 4
+    rect 204 0 0 420 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
+== b2 now 900: the chart follows
+  shape 0
+    rect 255 0 0 420 220
+  shape 1
+    rect 3 10 24 56 16
+    words 255 14 24 |budget|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 135 57 |500|
+    words 0 135 73 |900|
+    rect 3 98 88 65 2
+    rect 3 98 103 65 2
+    rect 3 98 88 2 17
+    rect 3 161 88 2 17
+  shape 2
+    rect 54 20 235 88 43
+    words 0 20 219 |500|
+    words 0 20 280 |Rent|
+    rect 240 112 200 88 78
+    words 0 112 184 |900|
+    words 0 112 280 |Food|
+  shape 3
+    rect 204 0 202 420 18
+    words 0 4 203 |b3: |
+  shape 4
+    rect 204 0 0 420 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Sheet|
+  shape 5
+== the page: the file
+\box[10 40 282 114 budget]{
+| a    | b   |
+|------|-----|
+| Rent | 500 |
+| Food | 900 |
+}
+
+\box[10 178 200 120]{
+```chart
+bars budget b1:b2 a1:a2
+```
 }
 --

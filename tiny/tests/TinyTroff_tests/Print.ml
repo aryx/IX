@@ -14,7 +14,7 @@ let page = String.concat "\n" [
   "Some *slanted*, ***both***, \\u{under} and plain words, more than a line holds, <and> & \"quoted\".";
   "}";
   "";
-  "\\box[10 150 170 86]{";
+  "\\box[10 150 170 86 budget]{";
   "| a    | b      |";
   "|------|--------|";
   "| Rent | 500    |";
@@ -29,6 +29,18 @@ let page = String.concat "\n" [
   "arrow 72 20 136 56";
   "box 104 56 64 24 mem";
   "text 8 64 a note";
+  "```";
+  "}";
+  "";
+  "\\box[10 250 200 120]{";
+  "```chart";
+  "bars budget b1:b3 a1:a3";
+  "```";
+  "}";
+  "";
+  "\\box[220 250 120 60]{";
+  "```chart";
+  "bars nosuch b1:b2";
   "```";
   "}";
   "";

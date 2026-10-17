@@ -73,6 +73,14 @@
  * word of the kernel's fat pixels, so a stroke draws its rows again,
  * not the picture.
  *
+ * {b A chart draws a sheet's cells as bars}, its data a line, "bars
+ * budget b1:b3 a1:a3": the sheet by its name, the cells of the values,
+ * of the labels. The values are the sheet's at each view, so a chart
+ * follows its sheet. A sheet is named when made (sheet1, sheet2...), its
+ * name on its tab and in its \box line; the Sheet menu, a cell chosen,
+ * names it (its charts renamed too) or makes a chart of the cell's
+ * column, its numbers, the column at its left their labels.
+ *
  * The mouse and the keys:
  *
  *     left button          a click in a text box edits it, in a sheet
@@ -105,8 +113,8 @@
  * This file uses no system calls: OCaml compiles
  * it for the tests (tests/TinyOffice_test.sh), tiny-ml for tiny-kernel.
  *
- * What is left out, for now: the chart (step 5 of the plan),
- * publishing (step 6), moving a drawing's shapes once drawn, a sheet's
+ * What is left out, for now: charts other than bars (a pie, lines),
+ * PDF (step 6's tiny-troff prints text and HTML), moving a drawing's shapes once drawn, a sheet's
  * floating point, its other functions than sum, and formulas that
  * follow a cell moved, a paint's fill and its colours other than ten,
  * other fonts and sizes (one font, 8 by 16, its italic and its double),
@@ -151,8 +159,11 @@ val say : office -> string -> unit
  * their styles (a byte each: bold 1, italic 2, underlined 4, large 8);
  * a sheet's cells (each its name and what was typed), each cell's
  * value, a cell's name (its column and row, from 0); a drawing's shapes
- * (each its kind, box, arrow or text, its numbers, its label) *)
-type obj = { kind : string; x : int; y : int; w : int; h : int; data : string }
+ * (each its kind, box, arrow or text, its numbers, its label); a
+ * chart's bars, each its label and value, from its sheet on the page,
+ * or none and why. An object's called is a sheet's name ("" for the
+ * other kinds). *)
+type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string }
 val parse : int -> int -> string -> obj list
 val decode : string -> string * string
 type value = Num of int | Str of string | Err of string
@@ -160,3 +171,4 @@ val cells : string -> (string * string) list
 val values : string -> string -> value
 val name : int -> int -> string
 val figures : string -> (string * int list * string) list
+val chart_bars : obj list -> obj -> (string * int) list * string

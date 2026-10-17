@@ -132,12 +132,22 @@ let paint_lines (data : string) : string list =
   let rec trim l = match l with "" :: rest -> trim rest | l -> l in
   List.rev (trim (List.rev rows))
 
+(* a chart: a line a bar, its label, #s for its share of the largest
+ * (30 for it), its value; or why it has none *)
+let chart_lines (page : obj list) (b : obj) : string list =
+  match chart_bars page b with
+  | [], why -> [ "[" ^ why ^ "]" ]
+  | bars, _ ->
+      let top = List.fold_left (fun m (_, v) -> max m v) 1 bars and wide = List.fold_left (fun m (l, _) -> max m (String.length l)) 0 bars in
+      List.map (fun (l, v) -> l ^ String.make (wide - String.length l) ' ' ^ "  " ^ String.make (max 0 (v * 30 / top)) '#' ^ " " ^ string_of_int v) bars
+
 let to_text (width : int) (doc : string) : string =
   let parts = in_order (parse 640 480 doc) in
   let one (b : obj) =
     if b.kind = "sheet" then sheet_lines b.data
     else if b.kind = "drawing" then drawing_lines b
     else if b.kind = "paint" then paint_lines b.data
+    else if b.kind = "chart" then chart_lines parts b
     else text_lines width b.data in
   glue (List.map (fun l -> l ^ "\n") (List.concat (List.map (fun (k, b) -> (if k = 0 then [] else [ "" ]) @ one b) (zip (List.init (List.length parts) (fun k -> k)) parts))))
 
@@ -226,6 +236,26 @@ let paint_html (b : obj) : string =
   ^ glue (List.map (fun s -> s ^ "\n") (List.concat (List.map (fun (r, line) -> List.rev (row r line)) (zip (List.init (List.length lines) (fun r -> r)) lines))))
   ^ "</svg>\n"
 
+(* a chart: SVG, as the office draws it: a bar a value, its value above
+ * it, its label under it, the axis a grey line *)
+let bar_colours = [ "#00f"; "#f00"; "#0a0"; "#ff0"; "#e90"; "#80c" ]
+
+let chart_html (page : obj list) (b : obj) : string =
+  let num k = string_of_int k in
+  let txt x y s = "<text x=\"" ^ num x ^ "\" y=\"" ^ num y ^ "\">" ^ esc s ^ "</text>" in
+  "<svg width=\"" ^ num b.w ^ "\" height=\"" ^ num b.h ^ "\">\n"
+  ^ (match chart_bars page b with
+     | [], why -> txt 4 14 why ^ "\n"
+     | bars, _ ->
+         let n = List.length bars and top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
+         let bw = max 6 ((b.w - 16) / n) and base = b.h - 20 and room = b.h - 42 in
+         glue (List.map (fun (k, (label, v)) ->
+           let x = 8 + (k * bw) and tall = max 0 (v * room / top) in
+           "<rect x=\"" ^ num (x + 2) ^ "\" y=\"" ^ num (base - tall) ^ "\" width=\"" ^ num (bw - 4) ^ "\" height=\"" ^ num tall ^ "\" fill=\"" ^ List.nth bar_colours (k mod 6) ^ "\"/>"
+           ^ txt (x + 2) (base - tall - 4) (string_of_int v) ^ txt (x + 2) (base + 14) label ^ "\n") (zip (List.init n (fun k -> k)) bars))
+         ^ "<line x1=\"4\" y1=\"" ^ num base ^ "\" x2=\"" ^ num (b.w - 4) ^ "\" y2=\"" ^ num base ^ "\" stroke=\"#999\"/>\n")
+  ^ "</svg>\n"
+
 let style = "body{margin:16px;font:13px/16px monospace}.page{position:relative}.box{position:absolute;overflow:hidden}"
   ^ "p{margin:0;min-height:16px}h1,.l{font-size:26px;line-height:32px}h1{margin:0}"
   ^ "table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}"
@@ -241,6 +271,7 @@ let to_html (title : string) (doc : string) : string =
             ^ (if b.kind = "sheet" then sheet_html b.data
                else if b.kind = "drawing" then drawing_html b
                else if b.kind = "paint" then paint_html b
+               else if b.kind = "chart" then chart_html parts b
                else text_html b.data)
             ^ "</div>\n") parts
         @ [ "</div>\n</body></html>\n" ])

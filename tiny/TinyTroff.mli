@@ -26,6 +26,9 @@
  *     paint     its rows, white a space          SVG: a rectangle a run
  *                                                of a colour, 4 by 4 a
  *                                                pixel
+ *     chart     a line a bar: its label, #s for  SVG: the bars as the
+ *               its share of the largest, its    office draws them
+ *               value
  *
  * As text, the parts come one after the other, an empty line between
  * two. As HTML, each is at its place on the page (a box positioned in a

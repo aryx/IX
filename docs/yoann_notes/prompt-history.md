@@ -36751,3 +36751,18 @@ Claude had not yet weighed the WYSIWYG editor against TinyScreenEditor with tiny
 **Yoann:**
 
 > let's commit paint first, but maybe let's try to make the document format closer to what we used for mini-troff markdown/latex mix
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:49
+
+**Yoann:**
+
+> I like it. Let's do it
+
+**Claude (summary):**
+
+Claude rewrote the office's file reader and writer to save pages in mini-troff's Markdown-and-LaTeX format.
+Claude re-recorded the tests and kernel sessions, and `make check` passes with no screen changed.
+Claude asked whether to commit the uncommitted office format change before starting tiny-troff.
+Claude proposed tiny-troff as the next project, with text and HTML output first.

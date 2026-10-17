@@ -19,8 +19,8 @@
  * {b The file of a page is a document in mini-troff's format}
  * (plan_typesetting.md: Markdown's lines, \name[options]{text} for what
  * Markdown has not): each object a \box[x y w h]{...} around its
- * content, a text box's Markdown (**bold**, *italic*, a line "# "
- * large, \u{} underlined, \large{} large in a line), a sheet a table
+ * content, a text box's Markdown: **bold**, *italic*, a line "# "
+ * large, \u{} underlined, \large{} large in a line; a sheet a table
  * (the columns' letters, then what was typed, a row a line), a drawing
  * or a paint a fence (```drawing, ```paint) of its lines. So a page is
  * read, or written, in emacs; and a Markdown file is opened as one text

@@ -5,9 +5,11 @@
 
 (* The editor's functions this file uses, by names of their own: the
  * office has a create, a key and a view too, and tiny-ml has no
- * modules, one name space for all its files (so: open, and these) *)
-open TinyEditorScreen
+ * modules, one name space for all its files (so: open, and these; the
+ * editor opened last, its key and view over TinyLibGUI's) *)
 open TinyLibPlayground
+open TinyLibGUI
+open TinyEditorScreen
 let editor_create = create
 let editor_key = key
 let editor_view = view
@@ -39,16 +41,20 @@ type obj = { kind : string; x : int; y : int; w : int; h : int; data : string }
  * is making, from where it went down to where it is, in the box *)
 type edit = Nothing | Writing of editor | Cell of int * int * string option | Sketch of int * (int * int * int * int) option
 
+(* what the menus ask for: to save, to quit, to undo, to delete the
+ * selected box, a new box of a kind, a drawing's tool *)
+type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int
+
 type office = {
   mutable page : obj list;                (* the objects, the bottom one first *)
   mutable undo : obj list list;           (* the pages before, the last first *)
   mutable clean : obj list;               (* the page as it was last saved *)
   mutable sel : int;                      (* the selected object, its place in page; -1 none *)
   mutable editing : edit;                 (* what the selected box is edited by *)
-  mutable drag : (int * int * int * obj * bool) option;   (* the right button held: the object, where
-                                                           * the mouse was, the object then, resizing *)
+  mutable drag : (int * int * int * obj * bool) option;   (* a box grabbed: the object, where the
+                                                           * mouse was, the object then, resizing *)
   mutable at : int * int;                 (* the last click *)
-  mutable buttons : int;                  (* the mouse's buttons, as last seen *)
+  menu : menu_state;                      (* the menus', and the mouse's buttons as last seen *)
   mutable message : string;               (* the status line's *)
   mutable prefix : bool;                  (* C-x typed *)
   where : string * int * int;             (* the file, the page's width and height *)
@@ -83,7 +89,7 @@ let text (o : office) : string =
 
 let create (width : int) (height : int) (file : string) (s : string) : office =
   let page = parse s 0 in
-  { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None; at = (16, 16); buttons = 0;
+  { page; undo = []; clean = page; sel = -1; editing = Nothing; drag = None; at = (16, 40); menu = menu_closed ();
     message = ""; prefix = false; where = (file, width, height) }
 
 let saved (o : office) =
@@ -415,7 +421,7 @@ let sketch_key (o : office) (tool : int) (k : int) =
 (* The keys and the mouse *)
 (*****************************************************************************)
 
-let help = "C-o text; C-x t sheet, d drawing; click edits; right button moves; C-_ undo"
+let help = "the menus above; a click edits a box; its tab moves it, its corner resizes it"
 
 let quit (o : office) : request =
   let refused = "Not saved: C-x C-s saves, C-x C-c again quits" in
@@ -433,7 +439,8 @@ let editing_key (o : office) (e : editor) (k : int) : request =
   | Quit -> commit o; quit o
   | Continue -> Continue
 
-(* a new box where the last click was, of a kind, edited at once *)
+(* a new box where the last click was, of a kind, edited at once (the
+ * menus' Insert) *)
 let add (o : office) (kind : string) (w : int) (h : int) =
   let x, y = o.at in
   keep o;
@@ -441,6 +448,37 @@ let add (o : office) (kind : string) (w : int) (h : int) =
   let i = List.length o.page - 1 in
   o.sel <- i;
   if kind = "text" then edit o i x y else if kind = "sheet" then o.editing <- Cell (0, 0, None) else o.editing <- Sketch (0, None)
+
+(* what a menu's item asks for (the keys ask for the same) *)
+let command (o : office) (c : command) : request =
+  match c with
+  | Do_save -> commit o; Save
+  | Do_quit -> commit o; quit o
+  | Do_undo ->
+      finish o;
+      (match o.undo with
+       | p :: rest -> o.page <- p; o.undo <- rest; o.sel <- -1
+       | [] -> o.message <- "No more undo");
+      Continue
+  | Do_delete -> finish o; (if o.sel >= 0 then (keep o; o.page <- replace o.page o.sel None; o.sel <- -1)); Continue
+  | Do_add kind ->
+      finish o;
+      (if kind = "sheet" then add o "sheet" (26 + (4 * cell_w)) (18 + (6 * 16))
+       else if kind = "drawing" then add o "drawing" 300 160 else add o "text" 200 84);
+      Continue
+  | Do_tool t -> (match o.editing with Sketch (_, _) -> o.editing <- Sketch (t, None) | _ -> ()); Continue
+
+(* the menus, a drawing's tools when one is edited (the one in use
+ * marked); the keys at the right *)
+let office_menus (o : office) : (string * (string * command) list) list =
+  [ ("File", [ ("Save     C-x C-s", Do_save); ("Quit     C-x C-c", Do_quit) ]);
+    ("Edit", [ ("Undo         C-_", Do_undo); ("Delete box", Do_delete) ]);
+    ("Insert", [ ("Text       C-o", Do_add "text"); ("Sheet    C-x t", Do_add "sheet"); ("Drawing  C-x d", Do_add "drawing") ]) ]
+  @ (match o.editing with
+     | Sketch (tool, _) ->
+         let mark k s = (if k = tool then "* " else "  ") ^ s in
+         [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1); (mark 2 "Text", Do_tool 2) ]) ]
+     | _ -> [])
 
 let key (o : office) (k : int) : request =
   match o.editing with
@@ -452,44 +490,69 @@ let key (o : office) (k : int) : request =
       o.message <- "";
       if o.prefix then begin
         o.prefix <- false;
-        if k = 19 then (commit o; Save)
-        else if k = 3 || k = 17 then (commit o; o.message <- was; quit o)
-        else if k = 116 then (finish o; add o "sheet" (26 + (4 * cell_w)) (18 + (6 * 16)); Continue)
-        else if k = 100 then (finish o; add o "drawing" 300 160; Continue)
+        if k = 19 then command o Do_save
+        else if k = 3 || k = 17 then (o.message <- was; command o Do_quit)
+        else if k = 116 then command o (Do_add "sheet")
+        else if k = 100 then command o (Do_add "drawing")
         else (o.message <- "C-x: not a command"; Continue)
       end
       else begin
         if k = 24 then o.prefix <- true
-        else if k = 15 then add o "text" 200 84
-        else if (k = 8 || k = 127) && o.sel >= 0 then (keep o; o.page <- replace o.page o.sel None; o.sel <- -1)
-        else if k = 31 then begin
-          match o.undo with
-          | p :: rest -> o.page <- p; o.undo <- rest; o.sel <- -1
-          | [] -> o.message <- "No more undo"
-        end
+        else if k = 15 then ignore (command o (Do_add "text"))
+        else if (k = 8 || k = 127) && o.sel >= 0 then ignore (command o Do_delete)
+        else if k = 31 then ignore (command o Do_undo)
         else if k = 7 then (o.sel <- -1; o.message <- "Quit")
         else o.message <- help;
         Continue
       end
 
-let mouse (o : office) (x : int) (y : int) (b : int) =
-  let pressed k = b land k <> 0 && o.buttons land k = 0 in
+(* where the selected box is moved by the left button, its tab above
+ * it (its kind written in it); where it is resized, its corner *)
+let tab (b : obj) = (b.x, b.y - 16, (8 * String.length b.kind) + 8, 16)
+let corner (b : obj) = (b.x + b.w - 8, b.y + b.h - 8, 8, 8)
+
+let on_handle (o : office) (x : int) (y : int) : bool =
+  o.sel >= 0 && (let b = nth_obj o.page o.sel in inside x y (tab b) || inside x y (corner b))
+
+(* box i grabbed by the mouse at (x, y), to move or to resize *)
+let grab (o : office) (i : int) (x : int) (y : int) (resizing : bool) =
+  keep o;
+  o.drag <- Some (i, x, y, nth_obj o.page i, resizing)
+
+(* the grabbed box, the mouse now at (x, y): moved (its tab kept below
+ * the menus), or resized *)
+let dragged (o : office) (x : int) (y : int) =
+  match o.drag with
+  | Some (i, mx, my, was, resizing) when x <> mx || y <> my ->
+      let moved = if resizing then { was with w = max 32 (was.w + x - mx); h = max 24 (was.h + y - my) }
+        else { was with x = max 0 (was.x + x - mx); y = max (bar_height + 16) (was.y + y - my) } in
+      o.page <- replace o.page i (Some moved)
+  | _ -> ()
+
+(* (x, y) in drawing b, kept inside it *)
+let in_drawing (b : obj) (x : int) (y : int) = (max 0 (min (b.w - 2) (x - b.x)), max 0 (min (b.h - 2) (y - b.y)))
+
+(* The mouse on the page, its buttons b, was before. The mouse is a
+ * place, not its history: a drag may be seen as a press and a let go
+ * far apart, so the let go counts where it is. *)
+let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
+  let pressed k = b land k <> 0 && was land k = 0 in
   let i = hit o x y in
   match o.editing with
+  | _ when pressed 1 && on_handle o x y ->
+      (* the selected box's tab or corner: it is moved or resized *)
+      let resizing = inside x y (corner (nth_obj o.page o.sel)) in
+      finish o;
+      grab o o.sel x y resizing
   | Sketch (tool, _) when pressed 1 && i >= 0 && i = o.sel ->
       (* in the drawing being edited: a stroke begins *)
-      let ob = nth_obj o.page i in
-      o.editing <- Sketch (tool, Some (x - ob.x, y - ob.y, x - ob.x, y - ob.y));
-      o.buttons <- b
-  | Sketch (tool, Some (x0, y0, _, _)) when b land 1 <> 0 ->
-      (* the stroke follows the mouse, kept in the drawing's box *)
-      let ob = nth_obj o.page o.sel in
-      o.editing <- Sketch (tool, Some (x0, y0, max 0 (min (ob.w - 2) (x - ob.x)), max 0 (min (ob.h - 2) (y - ob.y))));
-      o.buttons <- b
-  | Sketch (tool, Some stroke) when b land 1 = 0 ->
-      o.editing <- Sketch (tool, None);
-      draw_stroke o tool stroke;
-      o.buttons <- b
+      let (sx, sy) = in_drawing (nth_obj o.page i) x y in
+      o.editing <- Sketch (tool, Some (sx, sy, sx, sy))
+  | Sketch (tool, Some (x0, y0, _, _)) ->
+      (* the stroke follows the mouse; let go, it is a shape *)
+      let (ex, ey) = in_drawing (nth_obj o.page o.sel) x y in
+      if b land 1 <> 0 then o.editing <- Sketch (tool, Some (x0, y0, ex, ey))
+      else (o.editing <- Sketch (tool, None); draw_stroke o tool (x0, y0, ex, ey))
   | _ ->
   if pressed 1 then begin
     (* a click: the editing ends; in a text box, another begins *)
@@ -503,28 +566,24 @@ let mouse (o : office) (x : int) (y : int) (b : int) =
   else if pressed 4 || pressed 2 then begin
     (* the right button: the box under it grabbed, by its corner to resize *)
     finish o;
-    let i = hit o x y in
     o.sel <- i;
-    if i >= 0 then begin
-      let was = nth_obj o.page i in
-      keep o;
-      o.drag <- Some (i, x, y, was, x >= was.x + was.w - 12 && y >= was.y + was.h - 12)
-    end
+    if i >= 0 then (let b = nth_obj o.page i in grab o i x y (x >= b.x + b.w - 12 && y >= b.y + b.h - 12))
   end
-  else if b land 6 <> 0 then begin
-    match o.drag with
-    | Some (i, mx, my, was, resizing) ->
-        let moved = if resizing then { was with w = max 32 (was.w + x - mx); h = max 24 (was.h + y - my) }
-          else { was with x = was.x + x - mx; y = was.y + y - my } in
-        o.page <- replace o.page i (Some moved)
-    | None -> ()
-  end
+  else if b <> 0 then dragged o x y
   else begin
     (* let go: a box grabbed and not moved is no change to undo *)
+    dragged o x y;
     (match o.drag, o.undo with Some _, p :: rest when p == o.page -> o.undo <- rest | _ -> ());
     o.drag <- None
-  end;
-  o.buttons <- b
+  end
+
+(* the mouse: the menus' first, then the page's *)
+let mouse (o : office) (x : int) (y : int) (b : int) : request =
+  let was = o.menu.held in
+  match menu_mouse (office_menus o) o.menu x y b with
+  | Picked c -> o.message <- ""; command o c
+  | Taken -> Continue
+  | Ignored -> page_mouse o was x y b; Continue
 
 (*****************************************************************************)
 (* The view *)
@@ -632,12 +691,13 @@ let drawing_view (b : obj) (tool : int) (stroke : (int * int * int * int) option
   List.concat_map (figure_shapes b.x b.y black) (figures b.data)
   @ (match stroke with Some (x0, y0, x1, y1) -> figure_shapes b.x b.y blue (stroked tool x0 y0 x1 y1) | None -> [])
 
-(* a box's frame: blue when it is selected; a small square at its
- * corner, where the right button resizes it *)
+(* a box's frame: blue when it is selected, with its tab above it and a
+ * small square at its corner, where the mouse moves it and resizes it *)
 let frame (b : obj) (selected : bool) : shape list =
   let c = if selected then blue else grey and x1 = b.x + b.w - 1 and y1 = b.y + b.h - 1 in
+  let (tx, ty, tw, th) = tab b in
   [ Move (b.x, b.y, Rect (c, b.w, 1)); Move (b.x, y1, Rect (c, b.w, 1)); Move (b.x, b.y, Rect (c, 1, b.h)); Move (x1, b.y, Rect (c, 1, b.h)) ]
-  @ (if selected then [ Move (x1 - 5, y1 - 5, Rect (c, 6, 6)) ] else [])
+  @ (if selected then [ Move (tx, ty, Rect (c, tw, th)); Move (tx + 4, ty, Words (white, b.kind)); Move (x1 - 7, y1 - 7, Rect (c, 8, 8)) ] else [])
 
 (* the status line: what the box being edited says (a search, M-x), or
  * the page's message, or the file's name *)
@@ -671,4 +731,4 @@ let view (o : office) : shape list =
              else if b.kind = "drawing" then drawing_view b 0 None
              else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in
        Group (frame b (!i = o.sel) @ content)) o.page
-  @ [ Group (status o) ]
+  @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu

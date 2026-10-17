@@ -43,14 +43,22 @@
  * (pic's idea). An arrow goes across then up or down, a block
  * diagram's connector: the shapes are rectangles and words, and a
  * slanted line would need another kind. The left button drags a box or
- * an arrow, or places a text (Tab changes the tool); what is typed is
- * the last shape's label.
+ * an arrow, or places a text (the Draw menu, or Tab, changes the tool);
+ * what is typed is the last shape's label.
+ *
+ * {b The menus} are pull-down menus across the top, TinyLibGUI's, as
+ * in every office program since the Lisa's and the Macintosh's: File
+ * (Save, Quit), Edit (Undo, Delete box), Insert (Text, Sheet,
+ * Drawing), and Draw while a drawing is edited (its tools). Each item
+ * shows its key.
  *
  * The mouse and the keys:
  *
  *     left button          a click in a text box edits it, in a sheet
  *                          chooses a cell; elsewhere, the editing ends,
- *                          and the place is kept
+ *                          and the place is kept; on the menus, they
+ *     the selected box     its tab above it (its kind) moves it; the
+ *                          square at its corner resizes it
  *     right button, held   the box under it moves with the mouse; from
  *                          its bottom right corner, the box is resized
  *     C-o, C-x t, C-x d    a new text box, sheet, drawing, where the
@@ -93,12 +101,13 @@ val create : int -> int -> string -> string -> office
  * program around: nothing, to save the file, to quit *)
 val key : office -> int -> TinyEditorScreen.request
 
-(* the mouse: where it is, its buttons (1 left, 2 middle, 4 right) *)
-val mouse : office -> int -> int -> int -> unit
+(* the mouse: where it is, its buttons (1 left, 2 middle, 4 right); and
+ * what it asks of the program around (the File menu's) *)
+val mouse : office -> int -> int -> int -> TinyEditorScreen.request
 
 (* the page as shapes: the ground (white), each object's group (its
  * frame, its content: bold is words twice, a pixel apart), the status
- * line's *)
+ * line's, the menus' bar and the open menu *)
 val view : office -> TinyLibPlayground.shape list
 
 (* the page as its file's text; and the program around saying it wrote it *)

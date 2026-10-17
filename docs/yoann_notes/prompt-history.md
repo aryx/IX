@@ -36533,3 +36533,75 @@ Claude also confirmed `make check` passes, marked plan step 2 done, and recorded
 **Yoann:**
 
 > let's commit the progress but it's currently hard to use; I think we should use menus (and TinyLibGUI) to make things less keyboard oriented
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:57
+
+**Yoann:**
+
+> also I was not able to resize or move boxes
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:57
+
+**Yoann:**
+
+> parts
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:57
+
+**Yoann:**
+
+> I'm also not sure we want to reuse TinyEditorScreen
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:58
+
+**Yoann:**
+
+> but maybe it helps saving LOC so why not
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:58
+
+**Yoann:**
+
+> we can add new widgets to TinyLibGUI
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:59
+
+**Yoann:**
+
+> pull down menu is one of the classic UI for office like programs, so let's follow that
+
+------------------------------------------------------------------------
+
+## 2026-10-17 09:59
+
+**Yoann:**
+
+> the right button is working on the windowing systems (windows), so not sure why it didn't seem to work for office itself
+
+------------------------------------------------------------------------
+
+## 2026-10-17 10:00
+
+**Yoann:**
+
+> (I was running office outside of a window though, so it was taking the whole tiny screen)
+
+**Claude (summary):**
+
+Claude added a menu bar to TinyLibGUI, using the top 18 pixels, with pure menu functions.
+Claude gave the office a tab above the selected box to drag it, and a corner to resize it.
+Claude set the final position on mouse release, and checked moves with a press and release.
+Claude re-recorded the office screen after confirming the menu bar, moved box, and selected tab.
+Claude verified the shifted old scenes and left two follow-ups: the test header and the plan.

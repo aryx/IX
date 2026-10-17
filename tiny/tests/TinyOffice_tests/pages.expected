@@ -3,38 +3,58 @@
     rect 255 0 0 320 200
   shape 1
     rect 204 0 182 320 18
-    words 0 4 183 |notes    C-o text; C-x t sheet, d drawi|
-== a click at 20 30, C-o, a heading and a paragraph typed: being edited
+    words 0 4 183 |notes    the menus above; a click edits|
+  shape 2
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 3
+== a click at 20 40, C-o, a heading and a paragraph typed: being edited
   shape 0
     rect 255 0 0 320 200
   shape 1
-    rect 3 214 108 6 6
-    words 0 24 32 |# A title|
-    words 0 24 64 |Some *bold words* and|
-    words 0 24 80 |plain ones, more than a|
-    words 0 24 96 |line holds.|
-    rect 0 112 96 8 16
-    words 255 112 96 | |
+    rect 3 20 24 40 16
+    words 255 24 24 |text|
+    rect 3 212 116 8 8
+    words 0 24 42 |# A title|
+    words 0 24 74 |Some *bold words* and|
+    words 0 24 90 |plain ones, more than a|
+    words 0 24 106 |line holds.|
+    rect 0 112 106 8 16
+    words 255 112 106 | |
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    C-o text; C-x t she|
+    words 0 4 183 |notes (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == a click elsewhere: the box shows its text filled
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 24 32 |A title|
-    words 2 25 32 |A title|
-    words 0 24 64 |Some |
-    words 0 64 64 |bold words|
-    words 0 65 64 |bold words|
-    words 0 144 64 | and|
-    words 0 24 80 |plain ones, more than a|
-    words 0 24 96 |line holds.|
+    words 2 24 42 |A title|
+    words 2 25 42 |A title|
+    words 0 24 74 |Some |
+    words 0 64 74 |bold words|
+    words 0 65 74 |bold words|
+    words 0 144 74 | and|
+    words 0 24 90 |plain ones, more than a|
+    words 0 24 106 |line holds.|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    C-o text; C-x t she|
+    words 0 4 183 |notes (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == the page: the file
-text 20 30 200 84 68
+text 20 40 200 84 68
 # A title
 
 Some *bold words* and
@@ -45,296 +65,410 @@ line holds.
   shape 0
     rect 255 0 0 320 200
   shape 1
-    rect 3 314 128 6 6
-    words 2 124 52 |A title|
-    words 2 125 52 |A title|
-    words 0 124 84 |Some |
-    words 0 164 84 |bold words|
-    words 0 165 84 |bold words|
-    words 0 244 84 | and|
-    words 0 124 100 |plain ones, more than a|
-    words 0 124 116 |line holds.|
+    rect 3 120 44 40 16
+    words 255 124 44 |text|
+    rect 3 312 136 8 8
+    words 2 124 62 |A title|
+    words 2 125 62 |A title|
+    words 0 124 94 |Some |
+    words 0 164 94 |bold words|
+    words 0 165 94 |bold words|
+    words 0 244 94 | and|
+    words 0 124 110 |plain ones, more than a|
+    words 0 124 126 |line holds.|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    C-o text; C-x t she|
+    words 0 4 183 |notes (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == from its corner: 80 narrower, 10 taller
   shape 0
     rect 255 0 0 320 200
   shape 1
-    rect 3 234 138 6 6
-    words 2 124 52 |A title|
-    words 2 125 52 |A title|
-    words 0 124 84 |Some |
-    words 0 164 84 |bold|
-    words 0 165 84 |bold|
-    words 0 124 100 |words|
-    words 0 125 100 |words|
-    words 0 164 100 | and|
-    words 0 124 116 |plain ones,|
+    rect 3 120 44 40 16
+    words 255 124 44 |text|
+    rect 3 232 146 8 8
+    words 2 124 62 |A title|
+    words 2 125 62 |A title|
+    words 0 124 94 |Some |
+    words 0 164 94 |bold|
+    words 0 165 94 |bold|
+    words 0 124 110 |words|
+    words 0 125 110 |words|
+    words 0 164 110 | and|
+    words 0 124 126 |plain ones,|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    C-o text; C-x t she|
+    words 0 4 183 |notes (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == C-_: the resize undone
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 52 |A title|
-    words 2 125 52 |A title|
-    words 0 124 84 |Some |
-    words 0 164 84 |bold words|
-    words 0 165 84 |bold words|
-    words 0 244 84 | and|
-    words 0 124 100 |plain ones, more than a|
-    words 0 124 116 |line holds.|
+    words 2 124 62 |A title|
+    words 2 125 62 |A title|
+    words 0 124 94 |Some |
+    words 0 164 94 |bold words|
+    words 0 165 94 |bold words|
+    words 0 244 94 | and|
+    words 0 124 110 |plain ones, more than a|
+    words 0 124 126 |line holds.|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |notes (modified)    C-o text; C-x t she|
+    words 0 4 183 |notes (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == C-x C-c, not saved: refused
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 52 |A title|
-    words 2 125 52 |A title|
-    words 0 124 84 |Some |
-    words 0 164 84 |bold words|
-    words 0 165 84 |bold words|
-    words 0 244 84 | and|
-    words 0 124 100 |plain ones, more than a|
-    words 0 124 116 |line holds.|
+    words 2 124 62 |A title|
+    words 2 125 62 |A title|
+    words 0 124 94 |Some |
+    words 0 164 94 |bold words|
+    words 0 165 94 |bold words|
+    words 0 244 94 | and|
+    words 0 124 110 |plain ones, more than a|
+    words 0 124 126 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |Not saved: C-x C-s saves, C-x C-c again|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 asks: save
 == C-x C-s, and the program says it wrote
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 2 124 52 |A title|
-    words 2 125 52 |A title|
-    words 0 124 84 |Some |
-    words 0 164 84 |bold words|
-    words 0 165 84 |bold words|
-    words 0 244 84 | and|
-    words 0 124 100 |plain ones, more than a|
-    words 0 124 116 |line holds.|
+    words 2 124 62 |A title|
+    words 2 125 62 |A title|
+    words 0 124 94 |Some |
+    words 0 164 94 |bold words|
+    words 0 165 94 |bold words|
+    words 0 244 94 | and|
+    words 0 124 110 |plain ones, more than a|
+    words 0 124 126 |line holds.|
   shape 2
     rect 204 0 182 320 18
     words 0 4 183 |Wrote notes|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 asks: quit
 == a page of two boxes, from its file
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 0 14 12 |hello there|
+    words 0 14 42 |hello there|
   shape 2
-    words 0 104 22 |top|
+    words 0 104 52 |top|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two    C-o text; C-x t sheet, d drawing|
+    words 0 4 183 |two    the menus above; a click edits a|
+  shape 4
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
 == a click where they overlap: the top one is edited, its cursor where the click was
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 0 14 12 |hello there|
+    words 0 14 42 |hello there|
   shape 2
-    rect 3 214 66 6 6
-    words 0 104 22 |top|
-    rect 0 104 22 8 16
-    words 255 104 22 |t|
+    rect 3 100 34 40 16
+    words 255 104 34 |text|
+    rect 3 212 94 8 8
+    words 0 104 52 |top|
+    rect 0 104 52 8 16
+    words 255 104 52 |t|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two    C-o text; C-x t sheet, d drawing|
+    words 0 4 183 |two    the menus above; a click edits a|
+  shape 4
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
 == C-e, a ! typed, a click outside
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 0 14 12 |hello there|
+    words 0 14 42 |hello there|
   shape 2
-    words 0 104 22 |top!|
+    words 0 104 52 |top!|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two (modified)    C-o text; C-x t sheet|
+    words 0 4 183 |two (modified)    the menus above; a cl|
+  shape 4
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
 asks: save
 == the other edited: C-x C-s while editing asks to save
   shape 0
     rect 255 0 0 320 200
   shape 1
-    rect 3 154 56 6 6
-    words 0 14 12 |hello there|
-    rect 0 102 12 8 16
-    words 255 102 12 | |
+    rect 3 10 24 40 16
+    words 255 14 24 |text|
+    rect 3 152 84 8 8
+    words 0 14 42 |hello there|
+    rect 0 102 42 8 16
+    words 255 102 42 | |
   shape 2
-    words 0 104 22 |top!|
+    words 0 104 52 |top!|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two (modified)    C-o text; C-x t sheet|
+    words 0 4 183 |two (modified)    the menus above; a cl|
+  shape 4
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
 == the right button selects a box, Backspace removes it
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 0 104 22 |top!|
+    words 0 104 52 |top!|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |two (modified)    C-o text; C-x t sheet|
+    words 0 4 183 |two (modified)    the menus above; a cl|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == C-_ twice: back to the edit of the !
   shape 0
     rect 255 0 0 320 200
   shape 1
-    words 0 14 12 |hello there|
+    words 0 14 42 |hello there|
   shape 2
-    words 0 104 22 |top|
+    words 0 104 52 |top|
   shape 3
     rect 204 0 182 320 18
-    words 0 4 183 |two    C-o text; C-x t sheet, d drawing|
+    words 0 4 183 |two    the menus above; a click edits a|
+  shape 4
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 5
 == now: the file
-text 10 10 150 52 11
+text 10 40 150 52 11
 hello there
-text 100 20 120 52 3
+text 100 50 120 52 3
 top
 --
 == C-x t: a sheet, where the last click was, its first cell chosen
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    rect 3 34 26 65 2
-    rect 3 34 41 65 2
-    rect 3 34 26 2 17
-    rect 3 97 26 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    rect 3 34 56 65 2
+    rect 3 34 71 65 2
+    rect 3 34 56 2 17
+    rect 3 97 56 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |a1: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == Rent, Food, Total typed, each with Enter: down a cell each
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    rect 3 34 74 65 2
-    rect 3 34 89 65 2
-    rect 3 34 74 2 17
-    rect 3 97 74 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    rect 3 34 104 65 2
+    rect 3 34 119 65 2
+    rect 3 34 104 2 17
+    rect 3 97 104 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |a4: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 135 27 |500|
-    words 0 135 43 |300|
-    words 0 135 59 |800|
-    rect 3 98 74 65 2
-    rect 3 98 89 65 2
-    rect 3 98 74 2 17
-    rect 3 161 74 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 135 57 |500|
+    words 0 135 73 |300|
+    words 0 135 89 |800|
+    rect 3 98 104 65 2
+    rect 3 98 119 65 2
+    rect 3 98 104 2 17
+    rect 3 161 104 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |b4: =sum(b1:b2)*2_|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 135 27 |500|
-    words 0 135 43 |300|
-    words 0 135 59 |800|
-    words 0 127 75 |1600|
-    words 160 165 27 |#CYCLE|
-    words 160 165 43 |#TEXT|
-    words 160 165 59 |#DIV0|
-    words 160 165 75 |#SYNTAX|
-    rect 3 162 90 65 2
-    rect 3 162 105 65 2
-    rect 3 162 90 2 17
-    rect 3 225 90 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 135 57 |500|
+    words 0 135 73 |300|
+    words 0 135 89 |800|
+    words 0 127 105 |1600|
+    words 160 165 57 |#CYCLE|
+    words 160 165 73 |#TEXT|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
+    rect 3 162 120 65 2
+    rect 3 162 135 65 2
+    rect 3 162 120 2 17
+    rect 3 225 120 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |c5: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == to b1, Enter brings back 500, three Backspace, 8: b3 and b4 again
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 151 27 |8|
-    words 0 135 43 |300|
-    words 0 135 59 |308|
-    words 0 135 75 |616|
-    words 160 165 27 |#CYCLE|
-    words 160 165 43 |#TEXT|
-    words 160 165 59 |#DIV0|
-    words 160 165 75 |#SYNTAX|
-    rect 3 98 42 65 2
-    rect 3 98 57 65 2
-    rect 3 98 42 2 17
-    rect 3 161 42 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 151 57 |8|
+    words 0 135 73 |300|
+    words 0 135 89 |308|
+    words 0 135 105 |616|
+    words 160 165 57 |#CYCLE|
+    words 160 165 73 |#TEXT|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
+    rect 3 98 72 65 2
+    rect 3 98 87 65 2
+    rect 3 98 72 2 17
+    rect 3 161 72 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |b2: 300|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == the page: the file
-sheet 10 10 282 114 97
+sheet 10 40 282 114 97
 a1 Rent
 a2 Food
 a3 Total
@@ -352,146 +486,215 @@ b1 8
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 151 27 |8|
-    words 0 135 43 |300|
-    words 0 135 59 |308|
-    words 0 135 75 |616|
-    words 160 165 27 |#CYCLE|
-    words 160 165 43 |#TEXT|
-    words 160 165 59 |#DIV0|
-    words 160 165 75 |#SYNTAX|
-    rect 3 162 42 65 2
-    rect 3 162 57 65 2
-    rect 3 162 42 2 17
-    rect 3 225 42 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 151 57 |8|
+    words 0 135 73 |300|
+    words 0 135 89 |308|
+    words 0 135 105 |616|
+    words 160 165 57 |#CYCLE|
+    words 160 165 73 |#TEXT|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
+    rect 3 162 72 65 2
+    rect 3 162 87 65 2
+    rect 3 162 72 2 17
+    rect 3 225 72 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |c2: =a1+1|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == Backspace: c2 emptied
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 151 27 |8|
-    words 0 135 43 |300|
-    words 0 135 59 |308|
-    words 0 135 75 |616|
-    words 160 165 27 |#CYCLE|
-    words 160 165 59 |#DIV0|
-    words 160 165 75 |#SYNTAX|
-    rect 3 162 42 65 2
-    rect 3 162 57 65 2
-    rect 3 162 42 2 17
-    rect 3 225 42 2 17
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 151 57 |8|
+    words 0 135 73 |300|
+    words 0 135 89 |308|
+    words 0 135 105 |616|
+    words 160 165 57 |#CYCLE|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
+    rect 3 162 72 65 2
+    rect 3 162 87 65 2
+    rect 3 162 72 2 17
+    rect 3 225 72 2 17
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |c2: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == C-g: no cell chosen
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 286 118 6 6
-    words 153 63 11 |a|
-    words 153 127 11 |b|
-    words 153 191 11 |c|
-    words 153 255 11 |d|
-    words 153 20 27 |1|
-    words 153 20 43 |2|
-    words 153 20 59 |3|
-    words 153 20 75 |4|
-    words 153 20 91 |5|
-    words 153 20 107 |6|
-    words 0 37 27 |Rent|
-    words 0 37 43 |Food|
-    words 0 37 59 |Total|
-    words 0 151 27 |8|
-    words 0 135 43 |300|
-    words 0 135 59 |308|
-    words 0 135 75 |616|
-    words 160 165 27 |#CYCLE|
-    words 160 165 59 |#DIV0|
-    words 160 165 75 |#SYNTAX|
+    rect 3 10 24 48 16
+    words 255 14 24 |sheet|
+    rect 3 284 146 8 8
+    words 153 63 41 |a|
+    words 153 127 41 |b|
+    words 153 191 41 |c|
+    words 153 255 41 |d|
+    words 153 20 57 |1|
+    words 153 20 73 |2|
+    words 153 20 89 |3|
+    words 153 20 105 |4|
+    words 153 20 121 |5|
+    words 153 20 137 |6|
+    words 0 37 57 |Rent|
+    words 0 37 73 |Food|
+    words 0 37 89 |Total|
+    words 0 151 57 |8|
+    words 0 135 73 |300|
+    words 0 135 89 |308|
+    words 0 135 105 |616|
+    words 160 165 57 |#CYCLE|
+    words 160 165 89 |#DIV0|
+    words 160 165 105 |#SYNTAX|
   shape 2
     rect 204 0 202 400 18
-    words 0 4 203 |budget (modified)    C-o text; C-x t sheet, d dra|
+    words 0 4 203 |budget (modified)    the menus above; a click edi|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
 == C-x d: a drawing, where the last click was; the tool a box
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: box (Tab: another); the left button draw|
-== a box dragged from 30 30 to 110 60, cpu typed: its label
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
+== a box dragged from 30 60 to 110 90, cpu typed: its label
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
-    words 0 58 37 |cpu|
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: box (Tab: another); the left button draw|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
 == Tab: an arrow, across then down; Tab twice: a box again, mem
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
-    words 0 58 37 |cpu|
-    words 0 178 107 |mem|
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
+    words 0 178 137 |mem|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: box (Tab: another); the left button draw|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
 == Tab twice: text; a click, a notes typed, Backspace
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
-    words 0 58 37 |cpu|
-    words 0 178 107 |mem|
-    words 0 40 160 |a note|
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
+    words 0 178 137 |mem|
+    words 0 40 190 |a note|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: text (Tab: another); the left button dra|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
 == Tab: a box; a click is no box (too small)
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
-    words 0 58 37 |cpu|
-    words 0 178 107 |mem|
-    words 0 40 160 |a note|
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
+    words 0 178 137 |mem|
+    words 0 40 190 |a note|
   shape 2
     rect 204 0 202 400 18
     words 0 4 203 |drawing: box (Tab: another); the left button draw|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
 == the page: the file
-drawing 10 10 300 160 80
+drawing 10 40 300 160 80
 box 20 20 80 30 cpu
 arrow 100 35 180 90
 box 140 90 80 30 mem
@@ -502,10 +705,219 @@ text 30 150 a note
   shape 0
     rect 255 0 0 400 220
   shape 1
-    rect 3 304 164 6 6
-    words 0 58 37 |cpu|
-    words 0 178 107 |mem|
-    words 0 40 160 |a note|
+    rect 3 10 24 64 16
+    words 255 14 24 |drawing|
+    rect 3 302 192 8 8
+    words 0 58 67 |cpu|
+    words 0 178 137 |mem|
+    words 0 40 190 |a note|
   shape 2
     rect 204 0 202 400 18
-    words 0 4 203 |diagram (modified)    C-o text; C-x t sheet, d dr|
+    words 0 4 203 |diagram (modified)    the menus above; a click ed|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== a click on Insert: its menu open
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 204 0 202 400 18
+    words 0 4 203 |menus    the menus above; a click edits a box; it|
+  shape 2
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    rect 3 96 0 64 17
+    words 255 104 1 |Insert|
+  shape 3
+    rect 0 96 18 128 52
+    rect 255 97 19 126 50
+    words 0 104 20 |Text       C-o|
+    words 0 104 36 |Sheet    C-x t|
+    words 0 104 52 |Drawing  C-x d|
+== a click on its Sheet: a sheet, where the last click was (none yet: 16 40)
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 48 16
+    words 255 20 24 |sheet|
+    rect 3 290 146 8 8
+    words 153 69 41 |a|
+    words 153 133 41 |b|
+    words 153 197 41 |c|
+    words 153 261 41 |d|
+    words 153 26 57 |1|
+    words 153 26 73 |2|
+    words 153 26 89 |3|
+    words 153 26 105 |4|
+    words 153 26 121 |5|
+    words 153 26 137 |6|
+    rect 3 40 56 65 2
+    rect 3 40 71 65 2
+    rect 3 40 56 2 17
+    rect 3 103 56 2 17
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |a1: |
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== Edit pressed, the mouse down to Undo, let go: the sheet undone
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 204 0 202 400 18
+    words 0 4 203 |menus    the menus above; a click edits a box; it|
+  shape 2
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 3
+== Insert pressed, let go on Drawing (nothing seen between): a drawing, and its Draw menu
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 64 16
+    words 255 20 24 |drawing|
+    rect 3 308 192 8 8
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: box (Tab: another); the left button draw|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
+== Draw's Arrow: the tool an arrow, marked in the menu
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 64 16
+    words 255 20 24 |drawing|
+    rect 3 308 192 8 8
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: arrow (Tab: another); the left button dr|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
+== Draw opened, a click outside: closed, and the page not clicked
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 64 16
+    words 255 20 24 |drawing|
+    rect 3 308 192 8 8
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: arrow (Tab: another); the left button dr|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
+asks: save
+== File's Save
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 64 16
+    words 255 20 24 |drawing|
+    rect 3 308 192 8 8
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |drawing: arrow (Tab: another); the left button dr|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+  shape 4
+== a click in the box: edited, its tab above it, its corner
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 40 44 40 16
+    words 255 44 44 |text|
+    rect 3 182 104 8 8
+    words 0 44 62 |he|
+    words 0 60 62 |llo|
+    rect 0 60 62 8 16
+    words 255 60 62 |l|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |moves    the menus above; a click edits|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== its tab pressed, let go 100 right, 20 down (nothing seen between): the box there
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 140 64 40 16
+    words 255 144 64 |text|
+    rect 3 282 124 8 8
+    words 0 144 82 |hello|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |moves (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 140 64 40 16
+    words 255 144 64 |text|
+    rect 3 252 144 8 8
+    words 0 144 82 |hello|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |moves (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== C-_: the resize undone
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    words 0 144 82 |hello|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |moves (modified)    the menus above; a |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== the page: the file
+text 140 80 150 52 5
+hello
+--

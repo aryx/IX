@@ -32,30 +32,38 @@ let show what o =
 
 let file what o = print_string ("== " ^ what ^ ": the file"); print_newline (); print_string (text o); print_string "--"; print_newline ()
 
-let keys o s =
-  let last = ref Continue in
-  String.iter (fun c -> last := key o (Char.code c)) s;
-  match !last with
+let asked r =
+  match r with
   | Continue -> ()
   | Save -> print_string "asks: save"; print_newline ()
   | Quit -> print_string "asks: quit"; print_newline ()
 
-(* a click of a button at (x, y): pressed, then let go *)
-let click o b x y = mouse o x y b; mouse o x y 0
-let drag o b x y x' y' = mouse o x y b; mouse o x' y' b; mouse o x' y' 0
+let keys o s =
+  let last = ref Continue in
+  String.iter (fun c -> last := key o (Char.code c)) s;
+  asked !last
+
+(* the mouse at (x, y), its buttons b; a click of a button at (x, y),
+ * pressed, then let go; a drag, the mouse seen at its two ends and
+ * between, or only at its two ends (a program busy drawing sees no
+ * more) *)
+let at o b x y = asked (mouse o x y b)
+let click o b x y = at o b x y; at o 0 x y
+let drag o b x y x' y' = at o b x y; at o b x' y'; at o 0 x' y'
+let jump o b x y x' y' = at o b x y; at o 0 x' y'
 
 let () =
   let o = create 320 200 "notes" "" in
   show "an empty page" o;
-  click o 1 20 30;
+  click o 1 20 40;
   keys o "\015# A title\n\nSome *bold words* and plain ones, more than a line holds.";
-  show "a click at 20 30, C-o, a heading and a paragraph typed: being edited" o;
+  show "a click at 20 40, C-o, a heading and a paragraph typed: being edited" o;
   click o 1 300 150;
   show "a click elsewhere: the box shows its text filled" o;
   file "the page" o;
-  drag o 4 30 40 130 60;
+  drag o 4 30 50 130 70;
   show "the right button drags the box 100 right, 20 down" o;
-  drag o 4 317 131 237 141;
+  drag o 4 317 141 237 151;
   show "from its corner: 80 narrower, 10 taller" o;
   keys o "\031";
   show "C-_: the resize undone" o;
@@ -67,21 +75,21 @@ let () =
   keys o "\024\003"
 
 let () =
-  let page = "text 10 10 150 52 11\nhello there\ntext 100 20 120 52 3\ntop\n" in
+  let page = "text 10 40 150 52 11\nhello there\ntext 100 50 120 52 3\ntop\n" in
   let o = create 320 200 "two" page in
   show "a page of two boxes, from its file" o;
-  click o 1 110 24;
+  click o 1 110 54;
   show "a click where they overlap: the top one is edited, its cursor where the click was" o;
   keys o "\005!";
   click o 1 5 190;
   show "C-e, a ! typed, a click outside" o;
-  click o 1 12 12;
+  click o 1 12 42;
   keys o "\005\024\019";
   show "the other edited: C-x C-s while editing asks to save" o;
   click o 1 5 190;
-  click o 1 12 12;
+  click o 1 12 42;
   click o 1 5 190;
-  mouse o 20 20 4; mouse o 20 20 0;
+  at o 4 20 50; at o 0 20 50;
   keys o "\127";
   show "the right button selects a box, Backspace removes it" o;
   keys o "\031\031";
@@ -90,7 +98,7 @@ let () =
 
 let () =
   let o = create 400 220 "budget" "" in
-  click o 1 10 10;
+  click o 1 10 40;
   keys o "\024t";
   show "C-x t: a sheet, where the last click was, its first cell chosen" o;
   keys o "Rent\nFood\nTotal\n";
@@ -102,7 +110,7 @@ let () =
   keys o "\130\128\128\128\128\128\n\127\127\1278\n";
   show "to b1, Enter brings back 500, three Backspace, 8: b3 and b4 again" o;
   file "the page" o;
-  click o 1 175 48;
+  click o 1 175 78;
   show "a click in c2: chosen, its formula in the bar" o;
   keys o "\127";
   show "Backspace: c2 emptied" o;
@@ -111,26 +119,58 @@ let () =
 
 let () =
   let o = create 400 220 "diagram" "" in
-  click o 1 10 10;
+  click o 1 10 40;
   keys o "\024d";
   show "C-x d: a drawing, where the last click was; the tool a box" o;
-  click o 1 12 12;
-  drag o 1 30 30 110 60;
+  click o 1 12 42;
+  drag o 1 30 60 110 90;
   keys o "cpu";
-  show "a box dragged from 30 30 to 110 60, cpu typed: its label" o;
+  show "a box dragged from 30 60 to 110 90, cpu typed: its label" o;
   keys o "\t";
-  drag o 1 110 45 190 100;
+  drag o 1 110 75 190 130;
   keys o "\t\t";
-  drag o 1 150 100 230 130;
+  drag o 1 150 130 230 160;
   keys o "mem";
   show "Tab: an arrow, across then down; Tab twice: a box again, mem" o;
   keys o "\t\t";
-  click o 1 40 160;
+  click o 1 40 190;
   keys o "a notes\127";
   show "Tab twice: text; a click, a notes typed, Backspace" o;
   keys o "\t";
-  click o 1 250 50;
+  click o 1 250 80;
   show "Tab: a box; a click is no box (too small)" o;
   file "the page" o;
   keys o "\007";
   show "C-g: the drawing left" o
+
+let () =
+  let o = create 400 220 "menus" "" in
+  click o 1 100 5;
+  show "a click on Insert: its menu open" o;
+  click o 1 110 40;
+  show "a click on its Sheet: a sheet, where the last click was (none yet: 16 40)" o;
+  drag o 1 60 5 60 22;
+  show "Edit pressed, the mouse down to Undo, let go: the sheet undone" o;
+  jump o 1 100 5 110 56;
+  show "Insert pressed, let go on Drawing (nothing seen between): a drawing, and its Draw menu" o;
+  click o 1 170 5;
+  click o 1 170 38;
+  show "Draw's Arrow: the tool an arrow, marked in the menu" o;
+  click o 1 170 5;
+  click o 1 300 150;
+  show "Draw opened, a click outside: closed, and the page not clicked" o;
+  click o 1 10 5;
+  click o 1 10 22;
+  show "File's Save" o
+
+let () =
+  let o = create 320 200 "moves" "text 40 60 150 52 5\nhello\n" in
+  click o 1 60 80;
+  show "a click in the box: edited, its tab above it, its corner" o;
+  jump o 1 50 50 150 70;
+  show "its tab pressed, let go 100 right, 20 down (nothing seen between): the box there" o;
+  jump o 1 285 128 255 148;
+  show "its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller" o;
+  keys o "\031";
+  show "C-_: the resize undone" o;
+  file "the page" o

@@ -115,7 +115,7 @@
  (name tiny_office)
  (wrapped false)
  (modules TinyOffice)
- (libraries tiny_editor_screen))
+ (libraries tiny_editor_screen tiny_lib_gui))
 
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,

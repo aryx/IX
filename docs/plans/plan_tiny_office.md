@@ -167,6 +167,38 @@ tiny-windows like emacs, and a screen session in `make check`:
    rectangles narrowing to its end), moving a shape once drawn. Tests:
    TinyOffice_test.sh's drawing scenes; make check's officedraw.events
    (a diagram of three boxes and two arrows, in a window).
+   - **Pull-down menus, and the mouse for moving (2026-10-17).** The
+     author: "it's currently hard to use; I think we should use menus
+     (and TinyLibGUI) to make things less keyboard oriented", "also I
+     was not able to resize or move boxes", "pull down menu is one of
+     the classic UI for office like programs, so let's follow that",
+     "we can add new widgets to TinyLibGUI". TinyLibGUI has pull-down
+     menus now (about 60 lines of code): a bar of titles, each a menu
+     of items and their messages, its state below the model as the
+     widgets' mouse is; a press on a title and a let go on an item chooses it,
+     and so does a click on the title then one on the item. The office
+     has File (Save, Quit), Edit (Undo, Delete box), Insert (Text,
+     Sheet, Drawing), and Draw (the tools) while a drawing is edited;
+     each item shows its key. The selected box has a tab above it (its
+     kind), which the left button drags to move it, and a square at its
+     corner, to resize it; the right button still does both.
+   - Why the boxes did not move: the right button reached the office
+     (the screen's mouse and tiny-windows' send it as 4), but a box
+     moved only on a motion seen with the button held. The mouse is a
+     place, not its history, and the office, redrawing the whole screen
+     after the press, may next see the button up, far away: no move.
+     The let go now counts where it is, for a box moved or resized and
+     for a drawing's stroke. The menus are the same: a press on a title
+     and a let go on an item, with nothing seen between, is a choice.
+   - run_canvas's mouse may end the program now (File's Quit): its
+     moved gives an option, as typed does. emacs's binary grew by 10
+     KB, TinyLibGUI being linked whole.
+   - Tests: TinyOffice_test.sh's menus scene (a menu opened, an item
+     clicked, an item reached by a drag, by a press and a let go
+     alone, the Draw menu, a click outside, Save) and moves scene (the
+     tab and the corner, a press and a let go alone); the old scenes'
+     points 30 pixels lower, under the bar. make check's
+     officesheet.events makes its sheet from the Insert menu.
 4. **Paint**: a box of pixels, drawn on with the mouse (paint.c's idea,
    in a part).
 5. **The chart**: bars from a sheet's range, redrawn when its cells

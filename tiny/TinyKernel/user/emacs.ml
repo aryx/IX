@@ -31,5 +31,5 @@ let () =
     first = (fun w h -> (create (w / 8) (h / 16) file (read_file file), w, h));
     picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
     typed = (fun k m -> let (e, _, _) = m in if given e (key e k) then Some m else None);
-    moved = (fun _ _ _ m -> m) };
+    moved = (fun _ _ _ m -> Some m) };
   exit 0

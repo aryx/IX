@@ -75,8 +75,8 @@
  * What is dropped from lib_gui: a caret that moves inside the text (it
  * stays at the end, where a key adds and a backspace removes), a
  * selection, Tab to go from one field to the next; sliders, check
- * boxes, menus, lists, a canvas; themes and looks (there is only one:
- * grey, with two edges lit); a grid, weights and spans (the widgets of
+ * boxes, lists; themes and looks (there is only one: grey, with two
+ * edges lit); a grid, weights and spans (the widgets of
  * a row all have the same width, which gives a grid when rows are put
  * in a column); a window that changes size (TinyWindows does not tell
  * programs their size); time (a program here only changes when the
@@ -184,13 +184,48 @@ val redraw :
   TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list ->
   TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list -> unit
 
+(* Pull-down menus, for a program that draws its whole window (the
+ * office): a bar of titles across its top, each a menu of items, each
+ * item a text and the message it sends (a list: [(title, [(text,
+ * message); ...]); ...]). As the widgets' mouse, what
+ * the menus keep is below the model: which menu is open, the item
+ * under the mouse, the buttons as last seen (a value to keep in the
+ * model, changed by [menu_mouse]; [menu_closed ()] at first).
+ *
+ * A press on a title opens its menu; the button held, the mouse goes
+ * along the titles and down the items; let go on an item, it is
+ * chosen. Let go on the title, the menu stays open, for a click on an
+ * item; a click elsewhere closes it. The mouse being a place, not its
+ * history, what counts is where it is when the button goes up: a press
+ * on a title and a let go on an item, with nothing seen between, is a
+ * choice. *)
+type menu_state = { mutable opened : int; mutable item : int; mutable held : int }
+val menu_closed : unit -> menu_state
+
+(* the menus' height in pixels, at the top of the window *)
+val bar_height : int
+
+(* what the menus did with the mouse: nothing (it is the program's), it
+ * was theirs, an item chosen and its message *)
+type 'msg menu_answer = Ignored | Taken | Picked of 'msg
+
+(* [menu_mouse menus state x y buttons] *)
+val menu_mouse : (string * (string * 'msg) list) list -> menu_state -> int -> int -> int -> 'msg menu_answer
+
+(* [menu_view width menus state]: the bar, the open menu: two shapes,
+ * drawn last, over the program's *)
+val menu_view : int -> (string * (string * 'msg) list) list -> menu_state -> TinyLibPlayground.shape list
+
+(* a point in a box (x, y, width, height) *)
+val inside : int -> int -> int * int * int * int -> bool
+
 (* A program that draws its whole window, below the widgets (emacs,
  * the office): its first model, given its window's size in pixels; its
  * picture as shapes, the first one the ground under all (a rectangle
  * of the whole window); a key and the next model, or None to end; the
  * mouse at (x, y) and its buttons (1 left, 2 middle, 4 right), and the
- * next model *)
-type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
+ * next model, or None *)
+type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm option }
 
 (* [run_canvas c]: the program until its typed says None or the keys
  * end; then its window white. After each key (or each read of the

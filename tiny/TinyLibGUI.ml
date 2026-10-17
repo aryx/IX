@@ -44,6 +44,7 @@ let face = 0xcc
 let light = 0xff
 let dark = 0x66
 let black = 0
+let selected = 3          (* the palette's blue: an open menu, its item *)
 
 (* The size a widget asks for, from its leaves up: a text's (8 by 16 a
  * character) and its margins, a field typed in ten characters at
@@ -218,14 +219,97 @@ let run (g : ('m, 'msg) gui) =
   loop g.init up (laid g g.init) [] []
 
 (*****************************************************************************)
+(* Pull-down menus *)
+(*****************************************************************************)
+
+(* A bar of menus is a list, each menu a title and its items, each item
+ * a text and the message it sends. What is kept under the model, as
+ * for the mouse of the widgets: the menu open (-1 none), the item under
+ * the mouse in it (-1 none), the buttons as last seen. *)
+type menu_state = { mutable opened : int; mutable item : int; mutable held : int }
+type 'msg menu_answer = Ignored | Taken | Picked of 'msg
+
+let menu_closed () = { opened = -1; item = -1; held = 0 }
+let bar_height = 18
+
+let title_width t = (8 * String.length t) + 16
+let rec nth_menu menus i = match menus with m :: rest -> if i = 0 then m else nth_menu rest (i - 1) | [] -> ("", [])
+let rec title_x menus i = match menus with (t, _) :: rest -> if i = 0 then 0 else title_width t + title_x rest (i - 1) | [] -> 0
+let rec title_at menus x i at =
+  match menus with
+  | (t, _) :: rest -> if x >= at && x < at + title_width t then i else title_at rest x (i + 1) (at + title_width t)
+  | [] -> -1
+let list_width items = 16 + (8 * List.fold_left (fun m (s, _) -> max m (String.length s)) 0 items)
+
+(* the item of the open menu under (x, y), or -1 *)
+let item_at menus st x y =
+  if st.opened < 0 then -1
+  else begin
+    let (_, items) = nth_menu menus st.opened and x0 = title_x menus st.opened in
+    let n = List.length items in
+    if x >= x0 && x < x0 + list_width items && y >= bar_height && y < bar_height + (16 * n) + 4 then min (n - 1) ((y - bar_height - 2) / 16) else -1
+  end
+
+(* The mouse at (x, y), its buttons b: whether the menus take it, and
+ * the message of an item chosen. A press on a title opens its menu;
+ * the button held, the mouse goes along the titles and down the
+ * items; let go on an item, it is chosen. Let go on the title, the
+ * menu stays open, for a click on an item (a click elsewhere closes
+ * it). The mouse is a place, not its history (a press and a let go far
+ * apart may be all that is seen), so what counts is where the mouse
+ * is when the button goes up. *)
+let menu_mouse menus st x y b =
+  let pressed = b land 1 <> 0 && st.held land 1 = 0 and released = b land 1 = 0 && st.held land 1 <> 0 in
+  st.held <- b;
+  let title = if y < bar_height then title_at menus x 0 0 else -1 and item = item_at menus st x y in
+  if st.opened < 0 then (if pressed && y < bar_height then (st.opened <- title; st.item <- -1; Taken) else Ignored)
+  else if title >= 0 && b land 1 <> 0 then begin
+    (if pressed && title = st.opened then st.opened <- -1 else if title <> st.opened then (st.opened <- title; st.item <- -1));
+    Taken
+  end
+  else if released && item >= 0 then begin
+    let rec nth l i = match l with (_, msg) :: rest -> if i = 0 then msg else nth rest (i - 1) | [] -> failwith "menu" in
+    let (_, items) = nth_menu menus st.opened in
+    st.opened <- -1; st.item <- -1;
+    Picked (nth items item)
+  end
+  else if (released && y >= bar_height) || (pressed && item < 0) then (st.opened <- -1; st.item <- -1; Taken)
+  else (st.item <- item; Taken)
+
+(* The bar, the width of the window, and the open menu under its title,
+ * the item under the mouse in white on blue; two groups, so that a
+ * menu opening does not redraw the bar *)
+let menu_view width menus st =
+  let rec titles l i x =
+    match l with
+    | (t, _) :: rest ->
+        (if i = st.opened then [ Move (x, 0, Rect (selected, title_width t, bar_height - 1)); Move (x + 8, 1, Words (light, t)) ]
+         else [ Move (x + 8, 1, Words (black, t)) ]) @ titles rest (i + 1) (x + title_width t)
+    | [] -> [] in
+  let rec rows l k w =
+    match l with
+    | (s, _) :: rest ->
+        (if k = st.item then [ Move (1, 2 + (16 * k), Rect (selected, w - 2, 16)); Move (8, 2 + (16 * k), Words (light, s)) ]
+         else [ Move (8, 2 + (16 * k), Words (black, s)) ]) @ rows rest (k + 1) w
+    | [] -> [] in
+  let opened =
+    if st.opened < 0 then []
+    else begin
+      let (_, items) = nth_menu menus st.opened in
+      let w = list_width items and h = (16 * List.length items) + 4 in
+      [ Move (title_x menus st.opened, bar_height, Group (Rect (black, w, h) :: Move (1, 1, Rect (light, w - 2, h - 2)) :: rows items 0 w)) ]
+    end in
+  [ Group (Rect (face, width, bar_height - 1) :: Move (0, bar_height - 1, Rect (dark, width, 1)) :: titles menus 0 0); Group opened ]
+
+(*****************************************************************************)
 (* A program that draws its whole window *)
 (*****************************************************************************)
 
 (* Below the widgets: a program that makes its picture itself (emacs,
  * the office). Its first model, given its window's size; its picture,
  * as shapes; a key, and the next model, or None to end; the mouse at
- * (x, y) with its buttons *)
-type 'm canvas = { first : int -> int -> 'm; picture : 'm -> shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
+ * (x, y) with its buttons, and the next model, or None *)
+type 'm canvas = { first : int -> int -> 'm; picture : 'm -> shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm option }
 
 (* The window's size in pixels: an ENQ printed (ASCII's enquiry, 5),
  * which tiny-windows answers in the window's mouse box as a mouse at
@@ -386,7 +470,7 @@ let run_canvas (c : 'm canvas) =
     end
     else begin
       let s = u_read 4 12 in
-      if String.length s = 12 && int16 s 8 >= 0 then loop (c.moved (int16 s 0) (int16 s 4) (int16 s 8) model) now
+      if String.length s = 12 && int16 s 8 >= 0 then (match c.moved (int16 s 0) (int16 s 4) (int16 s 8) model with Some m -> loop m now | None -> ())
       else if String.length s = 12 then loop model now
     end in
   loop (c.first w h) [];

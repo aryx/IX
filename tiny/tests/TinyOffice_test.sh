@@ -6,12 +6,13 @@
 # it: TinyOffice_tests/Pages.ml works at a page with the keys and the
 # mouse, and prints its view after each scene (a new box typed into,
 # the text filled, moved, resized, undone, saved; two boxes from a file,
-# overlapping, edited, removed). Built by OCaml (dune), its lines
+# overlapping, edited, removed; a sheet, a drawing; the menus; a box
+# moved and resized by its tab and its corner). Built by OCaml (dune), its lines
 # against pages.expected (RECORD=1 records them: read them first); then
 # built by tiny-ml -tm with TinyLibStd.ml, TinyLibPlayground.ml (its
 # shapes; the kernel's calls under it are the host's stand-in,
-# TinyKernel/host/TinyCalls.ml) and TinyEditorScreen.ml and run by
-# tiny-cpu: the same lines.
+# TinyKernel/host/TinyCalls.ml), TinyLibGUI.ml (its menus) and
+# TinyEditorScreen.ml and run by tiny-cpu: the same lines.
 # usage: TinyOffice_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -42,7 +43,7 @@ END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 if $TC -tm -o $W/main.tm $W/main.c && $TC -tm -o $W/data.tm $W/data.c \
-   && $TML -tm -o $W/pages.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyEditorScreen.ml $ROOT/tiny/TinyOffice.ml $T/Pages.ml \
+   && $TML -tm -o $W/pages.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyEditorScreen.ml $ROOT/tiny/TinyOffice.ml $T/Pages.ml \
    && $CPU -o $W/pages.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/pages.tm $W/data.tm \
    && timeout 120 $CPU $W/pages.img > $W/tm.out 2>&1 && diff $T/pages.expected $W/tm.out > $W/tm.diff
 then echo "ok pages: by tiny-ml, on tiny-cpu"; else echo "FAIL pages: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi

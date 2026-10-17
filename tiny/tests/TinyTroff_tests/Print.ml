@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* TinyTroff's test (TinyTroff_test.sh): a page of the four kinds and a
- * Markdown file, each printed as text, 40 columns, and as HTML. The
+ * Markdown file, each printed as text, 40 columns, as HTML and as PDF. The
  * same file is built by OCaml and by tiny-ml for tiny-cpu: the same
  * lines. *)
 open TinyTroff
@@ -59,5 +59,7 @@ let () =
   print_string (to_text 40 page);
   print_string "== the page as HTML\n";
   print_string (to_html "report <1>" page);
+  print_string "== the page as PDF\n";
+  print_string (to_pdf page);
   print_string "== a Markdown file as text\n";
   print_string (to_text 40 "# Notes\n\nA *Markdown* file, with no box.\n")

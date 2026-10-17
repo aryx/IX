@@ -347,6 +347,22 @@ tiny-windows like emacs, and a screen session in `make check`:
      the size of its web page. paint's, tetris's, windows's and
      nested's screens recorded again (paint's ball and tetris's pieces
      where the clock has them, the boot image larger; ls with troff).
+   - **PDF (2026-10-17)**, the author: "ok let's try the PDF output;
+     hopefully it does not need too many lines". About 110 lines of
+     TinyTroff.ml: one page the size of the parts, a pixel a point, the
+     text in Courier (a font every reader has, nothing carried; at
+     13.33 points 8 a character, the office's 8 by 16; Courier-Bold,
+     -Oblique, -BoldOblique for the styles, twice the size for large),
+     laid out by the office's own lay_out (now in TinyOffice.mli); a
+     sheet's values in a grid, a drawing's lines and arrowheads, a
+     paint's and a chart's rectangles; not compressed. `troff -p` on
+     tiny-kernel, and `tiny-troff [-h | -p] file` on the host
+     (TinyTroffCommand.ml: the author, "why can't we tiny-office on the
+     host? (and same for tiny-troff)"). Checked: TinyTroff_test.sh
+     prints the PDF (the same bytes from tiny-cpu), Ghostscript renders
+     it without a complaint and pdftotext reads its text; make check's
+     troff -p of /examples/report.ixd, the same 2,431 bytes as the
+     host's.
    - The step as planned: each part's `html` as it comes is fine too; this
    step is the page around them, and a session that publishes a
    document and reads it with www.

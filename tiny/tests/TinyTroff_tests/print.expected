@@ -83,6 +83,83 @@ Food  ########### 300
 </div>
 </div>
 </body></html>
+== the page as PDF
+%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 400 370] /Resources << /Font << /F0 4 0 R /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 8 0 R >> endobj
+4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >> endobj
+5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold /Encoding /WinAnsiEncoding >> endobj
+6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-Oblique /Encoding /WinAnsiEncoding >> endobj
+7 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Courier-BoldOblique /Encoding /WinAnsiEncoding >> endobj
+8 0 obj << /Length 2048 >>
+stream
+0 0 0 rg BT /F0 26.67 Tf 14 304 Td (A ) Tj ET
+0 0 0 rg BT /F1 26.67 Tf 46 304 Td (report) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 14 268 Td (Some ) Tj ET
+0 0 0 rg BT /F2 13.33 Tf 54 268 Td (slanted) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 110 268 Td (, ) Tj ET
+0 0 0 rg BT /F3 13.33 Tf 126 268 Td (both) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 158 268 Td (, ) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 174 268 Td (under) Tj ET
+0 0 0 RG 174 265 m 214 265 l S
+0 0 0 rg BT /F0 13.33 Tf 214 268 Td ( and plain ) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 14 252 Td (words, more than a line holds, <and> ) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 14 236 Td (& "quoted".) Tj ET
+0 0 0 rg 330 324 8 4 re f
+1 0 0 rg 326 320 16 4 re f
+0 0 1 rg 322 312 8 4 re f
+0 .67 0 rg 330 312 4 4 re f
+.8 .8 .8 RG 10 204 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 14 208 Td (Rent) Tj ET
+.8 .8 .8 RG 74 204 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 110 208 Td (500) Tj ET
+.8 .8 .8 RG 10 188 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 14 192 Td (Food) Tj ET
+.8 .8 .8 RG 74 188 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 110 192 Td (300) Tj ET
+.8 .8 .8 RG 10 172 64 16 re S
+.8 .8 .8 RG 74 172 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 110 176 Td (800) Tj ET
+.8 .8 .8 RG 10 156 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 14 160 Td (Odd) Tj ET
+.8 .8 .8 RG 74 156 64 16 re S
+0 0 0 rg BT /F0 13.33 Tf 78 160 Td (#DIV0) Tj ET
+0 0 0 RG 208 188 64 24 re S
+0 0 0 rg BT /F0 13.33 Tf 228 196 Td (cpu) Tj ET
+0 0 0 RG 272 200 m 336 200 l S
+0 0 0 RG 336 200 m 336 164 l S
+0 0 0 rg 336 164 m 340 170 l 332 170 l f
+0 0 0 RG 304 140 64 24 re S
+0 0 0 rg BT /F0 13.33 Tf 324 148 Td (mem) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 208 144 Td (a note) Tj ET
+0 0 1 rg 20 20 57 48 re f
+0 0 0 rg BT /F0 13.33 Tf 20 72 Td (500) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 20 6 Td (Rent) Tj ET
+1 0 0 rg 81 20 57 29 re f
+0 0 0 rg BT /F0 13.33 Tf 81 53 Td (300) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 81 6 Td (Food) Tj ET
+0 .67 0 rg 142 20 57 78 re f
+0 0 0 rg BT /F0 13.33 Tf 142 102 Td (800) Tj ET
+0 0 0 rg BT /F0 13.33 Tf 142 6 Td () Tj ET
+.6 .6 .6 RG 14 20 m 206 20 l S
+0 0 0 rg BT /F0 13.33 Tf 224 106 Td (no sheet nosuch) Tj ET
+endstream endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000271 00000 n 
+0000000366 00000 n 
+0000000466 00000 n 
+0000000569 00000 n 
+0000000676 00000 n 
+trailer << /Size 9 /Root 1 0 R >>
+startxref
+2775
+%%EOF
 == a Markdown file as text
 Notes
 =====

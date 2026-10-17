@@ -36891,3 +36891,88 @@ Claude pointed out a reader would then have to learn that mechanism, despite the
 Claude reported that tiny-ml's output matches real OCaml's on the new library test cases.
 Claude said the next steps were running mini-mk and a full tiny-kernel check.
 Yoann's follow-up asked to commit, which points at the passing tiny-ml library test.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:20
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:31
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed moving the duplicated peer request parsing and nearest-colour table out of both TinyMachine front ends.
+Claude estimated that change at about 30 lines and preferred it because the duplication spans two programs.
+Claude's alternative was cleaning up repeated expressions in TinyVCS and TinyDatabase, about 25 lines, as the safest choice.
+Claude also listed a `sysfatal` helper for TinyCRuntime's libc, about 20 lines, which hides the exit inside a function call.
+Claude noted that removing the browser's `size()` copy would add a GUI dependency, and mouse decoding saves almost nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:05
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude noted that PDF output for tiny-troff was the next open item after the six plan steps.
+Claude pointed out that tiny-troff currently prints bar charts as lines of `#` characters.
+Claude also noted that SVG charts already come out as HTML, so PDF would be a new output path.
+Claude called charts other than bars the other remaining gap, outside the plan it had finished.
+The chart feature had been committed as d895f9f5, containing only Claude's twelve files.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:33
+
+**Yoann:**
+
+> ok let's try the PDF output; hopefully it does not need too many lines
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:34
+
+**Yoann:**
+
+> also why can't we tiny-office on the host? (and same for tiny-troff)
+
+**Claude (summary):**
+
+Claude confirmed Ghostscript renders the PDF cleanly, so the cross-reference offsets and text order are correct.
+Claude wrote the host `tiny-troff -p` command with capabilities, following the tiny-prof pattern, and added a `-p` flag to the kernel's `troff`.
+Claude found the host `tiny-troff` works in all three forms, and the kernel's `troff -p` produced a 2,431-byte PDF matching the host's.
+Claude ran `make check` in place on the kernel checkout, which passed.
+Claude added a note to step 6 of the plan recording these results.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 14:04
+
+**Yoann:**
+
+> tiny-office should not talk directly to the kernel; it should use intermediate library abstraction that then could also work on the host no?
+
+**Claude (summary):**
+
+Claude said the layering mostly exists already and began checking where tiny-office touches the kernel.
+Yoann's follow-up was to put the shared library in an `sdl/` directory.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 15:28
+
+**Yoann:**
+
+> yes, and maybe we can put this in a sdl/ directory that we usually skip already I think as part of make loc

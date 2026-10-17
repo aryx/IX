@@ -172,3 +172,9 @@ val values : string -> string -> value
 val name : int -> int -> string
 val figures : string -> (string * int list * string) list
 val chart_bars : obj list -> obj -> (string * int) list * string
+
+(* A text laid out as the office shows it, in a width in pixels, from its
+ * characters and their styles: each character's place (and the end's),
+ * its x and its line; each line's top and height *)
+type laid = { px : int array; ln : int array; top : int array; tall : int array }
+val lay_out : int -> string -> string -> laid

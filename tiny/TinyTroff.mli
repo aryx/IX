@@ -42,7 +42,7 @@
  * drawings, and the page they are on is both what the office shows and
  * the text troff reads: Bravo's and troff's ways to one document.
  *
- * Left out: PDF (a writer of its own, some 100 lines), pages (a long
+ * Left out: pages (a long
  * document is one page), the paint as a picture (a BMP: SVG's
  * rectangles instead), and the office's own colours and fonts in the
  * HTML (the browser's monospace). *)
@@ -52,3 +52,11 @@ val to_text : int -> string -> string
 
 (* [to_html title doc]: the document as a web page *)
 val to_html : string -> string -> string
+
+(* [to_pdf doc]: the document as a page of PDF, the size of its parts,
+ * a pixel a point: text in Courier (13.33 points, 8 a character, as the
+ * office's 8 by 16; bold, oblique, twice the size for large), laid out
+ * as the office lays it out; a sheet's values in a grid, a drawing's
+ * lines, a paint's and a chart's rectangles. The standard fonts, no
+ * compression: about 120 lines. *)
+val to_pdf : string -> string

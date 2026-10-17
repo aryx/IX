@@ -275,3 +275,130 @@ let to_html (title : string) (doc : string) : string =
                else text_html b.data)
             ^ "</div>\n") parts
         @ [ "</div>\n</body></html>\n" ])
+
+(*****************************************************************************)
+(* PDF *)
+(*****************************************************************************)
+
+(* A page of PDF, the size of the parts, a pixel a point: its text in
+ * Courier, one of the fonts every reader has (no font carried), which
+ * at 13.33 points is 8 points a character, the office's 8 by 16 (its
+ * bold, oblique and both for the styles, twice the size for large); its
+ * lines and rectangles as PDF draws them. Not compressed: the page is
+ * a text of drawing operators, which a test reads. *)
+
+(* a text in a PDF string: \ ( ) after a \ *)
+let pdf_esc (s : string) : string =
+  glue (List.map (fun ch -> if ch = "\\" || ch = "(" || ch = ")" then "\\" ^ ch else ch) (chars s))
+
+(* colours, as PDF's three numbers: the paint's and the bars' *)
+let pdf_colours = [ ('k', "0 0 0"); ('r', "1 0 0"); ('g', "0 .67 0"); ('b', "0 0 1"); ('y', "1 1 0"); ('o', "1 .6 0"); ('p', ".53 0 .8"); ('n', ".53 .27 0"); ('a', ".53 .53 .53") ]
+let pdf_bars = [ "0 0 1"; "1 0 0"; "0 .67 0"; "1 1 0"; "1 .6 0"; ".53 0 .8" ]
+
+(* The operators of a page of height h, its y going down as the
+ * office's: a rectangle filled, one stroked, a line, a text whose top
+ * is at y (its baseline 12 points lower, 24 when large), in a style *)
+let fill h colour x y w hh = colour ^ " rg " ^ string_of_int x ^ " " ^ string_of_int (h - y - hh) ^ " " ^ string_of_int w ^ " " ^ string_of_int hh ^ " re f\n"
+let frame_pdf h colour x y w hh = colour ^ " RG " ^ string_of_int x ^ " " ^ string_of_int (h - y - hh) ^ " " ^ string_of_int w ^ " " ^ string_of_int hh ^ " re S\n"
+let line_pdf h colour x0 y0 x1 y1 = colour ^ " RG " ^ string_of_int x0 ^ " " ^ string_of_int (h - y0) ^ " m " ^ string_of_int x1 ^ " " ^ string_of_int (h - y1) ^ " l S\n"
+let text_pdf h style x y s =
+  let big = style land 8 <> 0 in
+  "0 0 0 rg BT /F" ^ string_of_int (style land 3) ^ " " ^ (if big then "26.67" else "13.33") ^ " Tf " ^ string_of_int x ^ " " ^ string_of_int (h - y - (if big then 24 else 12)) ^ " Td (" ^ pdf_esc s ^ ") Tj ET\n"
+  ^ (if style land 4 <> 0 then line_pdf h "0 0 0" x (y + (if big then 30 else 15)) (x + (String.length s * if big then 16 else 8)) (y + (if big then 30 else 15)) else "")
+
+(* a text box, as the office lays it out: each run of a style on a line
+ * at the line's bottom, the lines that fit *)
+let text_pdf_box h (b : obj) : string =
+  let (t, st) = decode b.data in
+  let lay = lay_out (b.w - 8) t st and n = String.length t in
+  let fits l = lay.top.(l) + lay.tall.(l) <= b.h - 4 in
+  let rec runs i acc =
+    if i >= n then acc
+    else if t.[i] = '\n' || not (fits lay.ln.(i)) then runs (i + 1) acc
+    else begin
+      let j = ref (i + 1) and l = lay.ln.(i) and k = Char.code st.[i] in
+      while !j < n && t.[!j] <> '\n' && lay.ln.(!j) = l && st.[!j] = st.[i] do incr j done;
+      let y = b.y + 2 + lay.top.(l) + lay.tall.(l) - (if k land 8 <> 0 then 32 else 16) in
+      runs !j (text_pdf h k (b.x + 4 + lay.px.(i)) y (String.sub t i (!j - i)) :: acc)
+    end in
+  glue (List.rev (runs 0 []))
+
+(* a sheet: its values in cells of 64 by 16, a number at the right, the
+ * grid's lines grey *)
+let sheet_pdf h (b : obj) : string =
+  let value = values b.data and (nc, nr) = sheet_size b.data in
+  glue (List.concat (List.init nr (fun r -> List.init nc (fun c ->
+    let (s, num, _) = shown value b.data c r in
+    let x = b.x + (64 * c) and y = b.y + (16 * r) in
+    frame_pdf h ".8 .8 .8" x y 64 16 ^ (if s = "" then "" else text_pdf h 0 (if num then x + 60 - (8 * String.length s) else x + 4) y s)))))
+
+(* a drawing: its boxes stroked, its arrows a line across then up or
+ * down and a head filled, its texts *)
+let drawing_pdf h (b : obj) : string =
+  glue (List.map (fun (kind, nums, label) ->
+    match kind, nums with
+    | "box", [ x; y; w; hh ] ->
+        frame_pdf h "0 0 0" (b.x + x) (b.y + y) w hh ^ (if label = "" then "" else text_pdf h 0 (b.x + x + (w / 2) - (4 * String.length label)) (b.y + y + (hh / 2) - 8) label)
+    | "arrow", [ x0; y0; x1; y1 ] ->
+        let dx, dy = if y1 > y0 then 0, -1 else if y1 < y0 then 0, 1 else if x1 >= x0 then -1, 0 else 1, 0 in
+        let p x y = string_of_int (b.x + x) ^ " " ^ string_of_int (h - b.y - y) in
+        line_pdf h "0 0 0" (b.x + x0) (b.y + y0) (b.x + x1) (b.y + y0) ^ line_pdf h "0 0 0" (b.x + x1) (b.y + y0) (b.x + x1) (b.y + y1)
+        ^ "0 0 0 rg " ^ p x1 y1 ^ " m " ^ p (x1 + (6 * dx) - (4 * dy)) (y1 + (6 * dy) - (4 * dx)) ^ " l " ^ p (x1 + (6 * dx) + (4 * dy)) (y1 + (6 * dy) + (4 * dx)) ^ " l f\n"
+    | "text", [ x; y ] -> text_pdf h 0 (b.x + x) (b.y + y) label
+    | _ -> "") (figures b.data))
+
+(* a paint: a rectangle a run of a colour on a row, 4 by 4 a pixel *)
+let paint_pdf h (b : obj) : string =
+  let lines = String.split_on_char '\n' b.data in
+  glue (List.map (fun (r, line) ->
+    let n = String.length line in
+    let rec go i acc =
+      if i >= n then acc
+      else begin
+        let j = ref (i + 1) in
+        while !j < n && line.[!j] = line.[i] do incr j done;
+        go !j (match List.assoc_opt line.[i] pdf_colours with
+               | Some c -> fill h c (b.x + 2 + (4 * i)) (b.y + 2 + (4 * r)) (4 * (!j - i)) 4 :: acc
+               | None -> acc)
+      end in
+    glue (List.rev (go 0 []))) (zip (List.init (List.length lines) (fun r -> r)) lines))
+
+(* a chart: its bars as the office draws them *)
+let chart_pdf h (page : obj list) (b : obj) : string =
+  match chart_bars page b with
+  | [], why -> text_pdf h 0 (b.x + 4) (b.y + 2) why
+  | bars, _ ->
+      let n = List.length bars and top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
+      let bw = max 6 ((b.w - 16) / n) and base = b.y + b.h - 20 and room = b.h - 42 in
+      glue (List.map (fun (k, (label, v)) ->
+        let x = b.x + 8 + (k * bw) and tall = max 0 (v * room / top) in
+        fill h (List.nth pdf_bars (k mod 6)) (x + 2) (base - tall) (bw - 4) tall
+        ^ text_pdf h 0 (x + 2) (base - tall - 16) (string_of_int v) ^ text_pdf h 0 (x + 2) (base + 2) label) (zip (List.init n (fun k -> k)) bars))
+      ^ line_pdf h ".6 .6 .6" (b.x + 4) base (b.x + b.w - 4) base
+
+(* a number of 10 digits, as the cross-reference table has them *)
+let ten (k : int) = let s = string_of_int k in String.make (10 - String.length s) '0' ^ s
+
+let to_pdf (doc : string) : string =
+  let parts = in_order (parse 640 480 doc) in
+  let width = List.fold_left (fun m (b : obj) -> max m (b.x + b.w)) 1 parts and height = List.fold_left (fun m (b : obj) -> max m (b.y + b.h)) 1 parts in
+  let page = glue (List.map (fun (b : obj) ->
+    if b.kind = "sheet" then sheet_pdf height b
+    else if b.kind = "drawing" then drawing_pdf height b
+    else if b.kind = "paint" then paint_pdf height b
+    else if b.kind = "chart" then chart_pdf height parts b
+    else text_pdf_box height b) parts) in
+  let font k name = string_of_int (4 + k) ^ " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /" ^ name ^ " /Encoding /WinAnsiEncoding >> endobj\n" in
+  let objects = [
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n";
+    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n";
+    "3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 " ^ string_of_int width ^ " " ^ string_of_int height
+    ^ "] /Resources << /Font << /F0 4 0 R /F1 5 0 R /F2 6 0 R /F3 7 0 R >> >> /Contents 8 0 R >> endobj\n";
+    font 0 "Courier"; font 1 "Courier-Bold"; font 2 "Courier-Oblique"; font 3 "Courier-BoldOblique";
+    "8 0 obj << /Length " ^ string_of_int (String.length page) ^ " >>\nstream\n" ^ page ^ "endstream endobj\n" ] in
+  let head = "%PDF-1.4\n" in
+  (* each object's place in the file, for the cross-reference table *)
+  let rec places at l = match l with o :: rest -> at :: places (at + String.length o) rest | [] -> [] in
+  let body = glue objects in
+  head ^ body ^ "xref\n0 9\n0000000000 65535 f \n" ^ glue (List.map (fun at -> ten at ^ " 00000 n \n") (places (String.length head) objects))
+  ^ "trailer << /Size 9 /Root 1 0 R >>\nstartxref\n" ^ string_of_int (String.length head + String.length body) ^ "\n%%EOF\n"

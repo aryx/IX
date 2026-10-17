@@ -203,7 +203,9 @@ Rent   500
 Food   300
 Total  800
 %      38     146    2054 r.html
-usage: troff [-h] file
+     63     639    2431 r.pdf
+    101     785    4485 total
+usage: troff [-h | -p] file
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first

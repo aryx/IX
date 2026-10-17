@@ -288,7 +288,7 @@ check: $(O)/boot.img
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw; do \
+	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

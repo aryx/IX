@@ -720,11 +720,12 @@ text 30 150 a note
     rect 3 96 0 64 17
     words 255 104 1 |Insert|
   shape 3
-    rect 0 96 18 128 52
-    rect 255 97 19 126 50
+    rect 0 96 18 128 68
+    rect 255 97 19 126 66
     words 0 104 20 |Text       C-o|
     words 0 104 36 |Sheet    C-x t|
     words 0 104 52 |Drawing  C-x d|
+    words 0 104 68 |Paint    C-x p|
 == a click on its Sheet: a sheet, where the last click was (none yet: 16 40)
   shape 0
     rect 255 0 0 400 220
@@ -1032,4 +1033,164 @@ hello
 == the page: the file
 text 20 40 200 84 54
 Plain, , \{i}slanted\{} and \{bi}bold\{} \{u}under\{}.
+--
+== a click at 10 40, C-x p: a paint there, its colour black
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 10 24 48 16
+    words 255 14 24 |paint|
+    rect 3 202 156 8 8
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |paint: black, thin; the left button pai|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Paint|
+  shape 4
+== a line dragged, black: one row
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 10 24 48 16
+    words 255 14 24 |paint|
+    rect 3 202 156 8 8
+    words 4096 12 58 |....kkkkkkkkkkkkkkkk|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |paint: black, thin; the left button pai|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Paint|
+  shape 4
+== 2, red; the Paint menu's thick brush; a stroke seen only at its two ends: a thick line between them
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 10 24 48 16
+    words 255 14 24 |paint|
+    rect 3 202 156 8 8
+    words 4096 12 58 |....kkkkkkkkkkkkkkkk|
+    words 4096 12 74 |......rrrr|
+    words 4096 12 78 |......rrrrr|
+    words 4096 12 82 |......rrrrrrr|
+    words 4096 12 86 |........rrrrrr|
+    words 4096 12 90 |.........rrrrrrr|
+    words 4096 12 94 |...........rrrrrr|
+    words 4096 12 98 |............rrrrrrr|
+    words 4096 12 102 |..............rrrrrr|
+    words 4096 12 106 |...............rrrrrrr|
+    words 4096 12 110 |.................rrrrrr|
+    words 4096 12 114 |..................rrrrrr|
+    words 4096 12 118 |....................rrrr|
+    words 4096 12 122 |.....................rrr|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |paint: red, thick; the left button pain|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Paint|
+  shape 4
+== the page: the file
+paint 10 40 200 124 278
+
+
+
+
+....kkkkkkkkkkkkkkkk
+
+
+
+......rrrr
+......rrrrr
+......rrrrrrr
+........rrrrrr
+.........rrrrrrr
+...........rrrrrr
+............rrrrrrr
+..............rrrrrr
+...............rrrrrrr
+.................rrrrrr
+..................rrrrrr
+....................rrrr
+.....................rrr
+
+--
+== the Paint menu's Clear
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    rect 3 10 24 48 16
+    words 255 14 24 |paint|
+    rect 3 202 156 8 8
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |paint: red, thick; the left button pain|
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Paint|
+  shape 4
+== C-_: the picture back
+  shape 0
+    rect 255 0 0 320 200
+  shape 1
+    words 4096 12 58 |....kkkkkkkkkkkkkkkk|
+    words 4096 12 74 |......rrrr|
+    words 4096 12 78 |......rrrrr|
+    words 4096 12 82 |......rrrrrrr|
+    words 4096 12 86 |........rrrrrr|
+    words 4096 12 90 |.........rrrrrrr|
+    words 4096 12 94 |...........rrrrrr|
+    words 4096 12 98 |............rrrrrrr|
+    words 4096 12 102 |..............rrrrrr|
+    words 4096 12 106 |...............rrrrrrr|
+    words 4096 12 110 |.................rrrrrr|
+    words 4096 12 114 |..................rrrrrr|
+    words 4096 12 118 |....................rrrr|
+    words 4096 12 122 |.....................rrr|
+  shape 2
+    rect 204 0 182 320 18
+    words 0 4 183 |picture (modified)    the menus above; |
+  shape 3
+    rect 204 0 0 320 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+  shape 4
+== the page: the file
+paint 10 40 200 124 278
+
+
+
+
+....kkkkkkkkkkkkkkkk
+
+
+
+......rrrr
+......rrrrr
+......rrrrrrr
+........rrrrrr
+.........rrrrrrr
+...........rrrrrr
+............rrrrrrr
+..............rrrrrr
+...............rrrrrrr
+.................rrrrrr
+..................rrrrrr
+....................rrrr
+.....................rrr
+
 --

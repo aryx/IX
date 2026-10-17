@@ -43,13 +43,19 @@ type doc = { mutable txt : string; mutable sty : string; mutable cur : int; muta
  * sheet's cell, its column and row, and what is being
  * typed in it (None: the cell chosen, nothing typed yet); a drawing's
  * tool (0 a box, 1 an arrow, 2 a text), and the stroke the left button
- * is making, from where it went down to where it is, in the box *)
+ * is making, from where it went down to where it is, in the box; a
+ * paint's colour (its place in pixel_letters), its brush (0 thin, 1
+ * thick), and the pixel where the left button last was, when it is
+ * down *)
 type edit = Nothing | Writing of doc | Cell of int * int * string option | Sketch of int * (int * int * int * int) option
+  | Painting of int * int * (int * int) option
 
 (* what the menus ask for: to save, to quit, to undo, to delete the
  * selected box, a new box of a kind, a drawing's tool; in a text, to
- * cut, copy, paste, a style (0: plain) *)
+ * cut, copy, paste, a style (0: plain); in a paint, a colour, a brush,
+ * the picture cleared *)
 type command = Do_save | Do_quit | Do_undo | Do_delete | Do_add of string | Do_tool of int | Do_cut | Do_copy | Do_paste | Do_style of int
+  | Do_ink of int | Do_brush of int | Do_clear
 
 type office = {
   mutable page : obj list;                (* the objects, the bottom one first *)
@@ -538,6 +544,80 @@ let sketch_key (o : office) (tool : int) (k : int) =
   else o.message <- "a drawing: Tab, the mouse, a label typed; C-g"
 
 (*****************************************************************************)
+(* Paint *)
+(*****************************************************************************)
+
+(* A paint's data is its picture, a line a row of pixels, a letter a
+ * pixel, its colour:
+ *
+ *     ..kkk..
+ *     .krrrk.
+ *
+ * . white, k black, r red, g green, b blue, y yellow, o orange, p
+ * purple, n brown, a grey (TinyLibPlayground's pixel_letters; a row
+ * ends at its last colour that is not white). A pixel is a square of 4
+ * by 4 on the page; a row is one word of fat pixels, its letters (made
+ * the kernel's bytes when it is drawn), so a stroke draws again the
+ * rows it went through, and nothing else. *)
+let paint_names = [ "white"; "black"; "red"; "green"; "blue"; "yellow"; "orange"; "purple"; "brown"; "grey" ]
+
+(* the picture's size in pixels, in box b *)
+let paint_cols (b : obj) = max 1 ((b.w - 4) / 4)
+let paint_rows (b : obj) = max 1 ((b.h - 4) / 4)
+
+(* the pixel under (x, y), in the picture *)
+let pixel_at (b : obj) (x : int) (y : int) = (max 0 (min (paint_cols b - 1) ((x - b.x - 2) / 4)), max 0 (min (paint_rows b - 1) ((y - b.y - 2) / 4)))
+
+(* a row without the white at its end *)
+let rec trim (row : string) = let n = String.length row in if n > 0 && row.[n - 1] = '.' then trim (String.sub row 0 (n - 1)) else row
+
+(* The pixels a stroke of a brush covers, from (c0, r0) to (c1, r1), in
+ * a letter, put in the picture: a thick brush 3 pixels wide. *)
+let painted (b : obj) (letter : char) (brush : int) (c0 : int) (r0 : int) (c1 : int) (r1 : int) : string =
+  let nrows = paint_rows b and ncols = paint_cols b in
+  let rows = Array.make nrows "" in
+  List.iteri (fun r row -> if r < nrows then rows.(r) <- row) (String.split_on_char '\n' b.data);
+  let set c r =
+    if c >= 0 && c < ncols && r >= 0 && r < nrows then begin
+      let row = rows.(r) in
+      let row = if String.length row > c then row else row ^ String.make (c + 1 - String.length row) '.' in
+      rows.(r) <- trim (String.sub row 0 c ^ String.make 1 letter ^ String.sub row (c + 1) (String.length row - c - 1))
+    end in
+  let n = max 1 (max (abs (c1 - c0)) (abs (r1 - r0))) in
+  for k = 0 to n do
+    let c = c0 + ((c1 - c0) * k / n) and r = r0 + ((r1 - r0) * k / n) in
+    if brush = 0 then set c r else for dr = -1 to 1 do for dc = -1 to 1 do set (c + dc) (r + dr) done done
+  done;
+  (* (the rows up to the last one that is not white) *)
+  let last = ref (-1) in
+  for r = 0 to nrows - 1 do if rows.(r) <> "" then last := r done;
+  join (List.init (!last + 1) (fun r -> rows.(r) ^ "\n"))
+
+(* a stroke painted in the selected paint (the page changed, its undo
+ * kept when the stroke began) *)
+let paint (o : office) (ink : int) (brush : int) (c0 : int) (r0 : int) (c1 : int) (r1 : int) =
+  let b = nth_obj o.page o.sel in
+  o.page <- replace o.page o.sel (Some { b with data = painted b pixel_letters.[ink] brush c0 r0 c1 r1 })
+
+(* a key in a paint: a digit a colour (0 white, 1 black...); C-g leaves it *)
+let paint_key (o : office) (brush : int) (k : int) =
+  if k >= 48 && k < 58 then o.editing <- Painting (k - 48, brush, None)
+  else if k = 7 then o.editing <- Nothing
+  else o.message <- "a paint: the left button paints; the Paint menu, or a digit a colour; C-g"
+
+(* A paint: each row a word of fat pixels, the rows that fit, as much
+ * of each as fits *)
+let paint_view (b : obj) : shape list =
+  let ncols = paint_cols b and nrows = paint_rows b in
+  let rec rows l r =
+    match l with
+    | row :: rest when r < nrows ->
+        let n = min ncols (String.length row) in
+        (if n > 0 then [ Move (b.x + 2, b.y + 2 + (4 * r), Words (fat_pixels, if n = String.length row then row else String.sub row 0 n)) ] else []) @ rows rest (r + 1)
+    | _ -> [] in
+  rows (String.split_on_char '\n' b.data) 0
+
+(*****************************************************************************)
 (* The keys and the mouse *)
 (*****************************************************************************)
 
@@ -589,7 +669,8 @@ let add (o : office) (kind : string) (w : int) (h : int) =
   o.page <- o.page @ [ { kind; x; y; w; h; data = "" } ];
   let i = List.length o.page - 1 in
   o.sel <- i;
-  if kind = "text" then edit o i x y false else if kind = "sheet" then o.editing <- Cell (0, 0, None) else o.editing <- Sketch (0, None)
+  if kind = "text" then edit o i x y false else if kind = "sheet" then o.editing <- Cell (0, 0, None)
+  else if kind = "paint" then o.editing <- Painting (1, 0, None) else o.editing <- Sketch (0, None)
 
 (* what a menu's item asks for (the keys ask for the same) *)
 let command (o : office) (c : command) : request =
@@ -606,9 +687,13 @@ let command (o : office) (c : command) : request =
   | Do_add kind ->
       finish o;
       (if kind = "sheet" then add o "sheet" (26 + (4 * cell_w)) (18 + (6 * 16))
-       else if kind = "drawing" then add o "drawing" 300 160 else add o "text" 200 84);
+       else if kind = "drawing" then add o "drawing" 300 160
+       else if kind = "paint" then add o "paint" 200 124 else add o "text" 200 84);
       Continue
   | Do_tool t -> (match o.editing with Sketch (_, _) -> o.editing <- Sketch (t, None) | _ -> ()); Continue
+  | Do_ink k -> (match o.editing with Painting (_, brush, _) -> o.editing <- Painting (k, brush, None) | _ -> ()); Continue
+  | Do_brush k -> (match o.editing with Painting (ink, _, _) -> o.editing <- Painting (ink, k, None) | _ -> ()); Continue
+  | Do_clear -> (match o.editing with Painting (_, _, _) -> change o "" | _ -> ()); Continue
   | Do_cut -> (match o.editing with Writing d -> copy d; put_text d "" "" | _ -> ()); Continue
   | Do_copy -> (match o.editing with Writing d -> copy d | _ -> ()); Continue
   | Do_paste -> (match o.editing with Writing d -> let (t, st) = !clipboard in put_text d t st | _ -> ()); Continue
@@ -619,12 +704,16 @@ let command (o : office) (c : command) : request =
 let office_menus (o : office) : (string * (string * command) list) list =
   [ ("File", [ ("Save     C-x C-s", Do_save); ("Quit     C-x C-c", Do_quit) ]);
     ("Edit", [ ("Undo       C-_", Do_undo); ("Cut        C-w", Do_cut); ("Copy", Do_copy); ("Paste      C-y", Do_paste); ("Delete box", Do_delete) ]);
-    ("Insert", [ ("Text       C-o", Do_add "text"); ("Sheet    C-x t", Do_add "sheet"); ("Drawing  C-x d", Do_add "drawing") ]) ]
+    ("Insert", [ ("Text       C-o", Do_add "text"); ("Sheet    C-x t", Do_add "sheet"); ("Drawing  C-x d", Do_add "drawing"); ("Paint    C-x p", Do_add "paint") ]) ]
   @ (match o.editing with
      | Writing d ->
          let mark k s = (if d.typing land k <> 0 then "* " else "  ") ^ s in
          [ ("Format", [ (mark 1 "Bold       C-b", Do_style 1); (mark 2 "Italic     Tab", Do_style 2); (mark 4 "Underline  C-u", Do_style 4);
                         (mark 8 "Large      C-l", Do_style 8); ("  Plain", Do_style 0) ]) ]
+     | Painting (ink, brush, _) ->
+         let colour k = ((if k = ink then "* " else "  ") ^ List.nth paint_names k ^ "      " ^ string_of_int k, Do_ink k) in
+         [ ("Paint", List.init 10 colour @ [ ((if brush = 0 then "* " else "  ") ^ "Thin brush", Do_brush 0);
+                                              ((if brush = 1 then "* " else "  ") ^ "Thick brush", Do_brush 1); ("  Clear", Do_clear) ]) ]
      | Sketch (tool, _) ->
          let mark k s = (if k = tool then "* " else "  ") ^ s in
          [ ("Draw", [ (mark 0 "Box", Do_tool 0); (mark 1 "Arrow", Do_tool 1); (mark 2 "Text", Do_tool 2) ]) ]
@@ -635,6 +724,7 @@ let key (o : office) (k : int) : request =
   | Writing d when not o.prefix && k <> 24 && k <> 31 -> o.message <- ""; write_key o d k; Continue
   | Cell (c, r, typed) when not o.prefix && k <> 24 -> o.message <- ""; cell_key o c r typed k; Continue
   | Sketch (tool, _) when not o.prefix && k <> 24 -> o.message <- ""; sketch_key o tool k; Continue
+  | Painting (_, brush, _) when not o.prefix && k <> 24 && k <> 31 -> o.message <- ""; paint_key o brush k; Continue
   | _ ->
       let was = o.message in
       o.message <- "";
@@ -644,6 +734,7 @@ let key (o : office) (k : int) : request =
         else if k = 3 || k = 17 then (o.message <- was; command o Do_quit)
         else if k = 116 then command o (Do_add "sheet")
         else if k = 100 then command o (Do_add "drawing")
+        else if k = 112 then command o (Do_add "paint")
         else (o.message <- "C-x: not a command"; Continue)
       end
       else begin
@@ -694,6 +785,17 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
       let resizing = inside x y (corner (nth_obj o.page o.sel)) in
       finish o;
       grab o o.sel x y resizing
+  | Painting (ink, brush, _) when pressed 1 && i >= 0 && i = o.sel ->
+      (* in the paint being edited: a stroke begins, kept for undo *)
+      let (c, r) = pixel_at (nth_obj o.page i) x y in
+      keep o;
+      paint o ink brush c r c r;
+      o.editing <- Painting (ink, brush, Some (c, r))
+  | Painting (ink, brush, Some (c0, r0)) ->
+      (* the stroke goes on to where the mouse is, and ends where it is let go *)
+      let (c, r) = pixel_at (nth_obj o.page o.sel) x y in
+      paint o ink brush c0 r0 c r;
+      o.editing <- Painting (ink, brush, if b land 1 <> 0 then Some (c, r) else None)
   | Writing d when pressed 1 && i >= 0 && i = o.sel ->
       (* in the text being edited: the cursor there, a selection from it *)
       let ob = nth_obj o.page i in
@@ -722,6 +824,7 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
     if i >= 0 && (nth_obj o.page i).kind = "text" then edit o i x y true
     else if i >= 0 && (nth_obj o.page i).kind = "sheet" then choose o i x y
     else if i >= 0 && (nth_obj o.page i).kind = "drawing" then o.editing <- Sketch (0, None)
+    else if i >= 0 && (nth_obj o.page i).kind = "paint" then o.editing <- Painting (1, 0, None)
   end
   else if pressed 4 || pressed 2 then begin
     (* the right button: the box under it grabbed, by its corner to resize *)
@@ -838,6 +941,7 @@ let status (o : office) : shape list =
     | Cell (c, r, typed) when o.sel >= 0 ->
         (* the formula bar: the cell, what is being typed in it, or what was *)
         name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (nth_obj o.page o.sel).data (name c r))
+    | Painting (ink, brush, _) -> "paint: " ^ List.nth paint_names ink ^ (if brush = 0 then ", thin" else ", thick") ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) -> "drawing: " ^ List.nth tools tool ^ " (Tab: another); the left button draws; type a label"
     | _ -> "" in
   let m = if said <> "" then said else if o.message <> "" then o.message
@@ -859,6 +963,7 @@ let view (o : office) : shape list =
              if b.kind = "text" then (let (t, st) = decode b.data in text_view b t st None)
              else if b.kind = "sheet" then sheet_view b None
              else if b.kind = "drawing" then drawing_view b 0 None
+             else if b.kind = "paint" then paint_view b
              else [ Move (b.x + 4, b.y + 2, Words (black, b.kind ^ "?")) ] in
        Group (frame b (!i = o.sel) @ content)) o.page
   @ [ Group (status o) ] @ menu_view width (office_menus o) o.menu

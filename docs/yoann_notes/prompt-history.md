@@ -36696,3 +36696,34 @@ Claude built large `<h1>`/`<h2>` headings at half width across two 16-pixel rows
 Claude gave `<em>`/`<i>` italic styling, underlined `<u>`/`<ins>`, and removed the now-unused `c_emph` constant.
 Claude checked the browser test, the tiny-cpu run, `make check` with seven www screens, and the office and GUI tests.
 Claude added a note to `plan_tiny_office.md` instead of the browser's plan, which sits in `done/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:29
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the browser styles and new kernel bold font as 5345e101.
+Claude noted the 18-file commit included prompt-history.md, leaving the working tree clean.
+Claude named paint as step 4, the next unfinished item in the office plan.
+Claude listed the chart as step 5 and publishing as step 6, both still open.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:29
+
+**Yoann:**
+
+> let's move on to step 4, paint
+
+------------------------------------------------------------------------
+
+## 2026-10-17 11:33
+
+**Yoann:**
+
+> could we do a tiny-troff that actually reuse the same format than tiny-office?

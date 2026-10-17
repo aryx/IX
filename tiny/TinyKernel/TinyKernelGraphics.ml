@@ -215,9 +215,25 @@ let derive (font : image) kind =
       derived.(kind) <- Some f;
       f
 
+(* a row of fat pixels, each byte of s a colour, a square of 4 by 4: a
+ * run of one colour filled at once, row by row, what is outside dst
+ * left (a paint's picture, a row a message) *)
+let fat (dst : image) x y s =
+  let n = String.length s and i = ref 0 in
+  while !i < n do
+    let j = ref (!i + 1) in
+    while !j < n && s.[!j] = s.[!i] do incr j done;
+    let x0 = max dst.r.x0 (x + (4 * !i)) and x1 = min dst.r.x1 (x + (4 * !j)) in
+    if x1 > x0 then
+      for row = max dst.r.y0 y to min dst.r.y1 (y + 4) - 1 do row_fill (pixel dst x0 row) (Char.code s.[!i]) (x1 - x0) done;
+    i := !j
+  done
+
 (* a text in a style, its top left corner at (x, y): bold 1, italic 2,
- * underlined 4, large 8 (16 by 32 a character) *)
+ * underlined 4, large 8 (16 by 32 a character); or 16, fat pixels *)
 let styled (dst : image) x y (src : image) (font : image) style s =
+  if style land 16 <> 0 then fat dst x y s
+  else
   let kind = (if style land 2 <> 0 then 1 else 0) lor (if style land 8 <> 0 then 2 else 0) lor (if style land 1 <> 0 then 4 else 0) in
   let f = if kind = 0 then font else derive font kind in
   let scale = if style land 8 <> 0 then 2 else 1 in

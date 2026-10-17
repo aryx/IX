@@ -255,7 +255,30 @@ tiny-windows like emacs, and a screen session in `make check`:
        looked at before recording (the History heading large, the
        references' italic, the infobox's bold).
 4. **Paint**: a box of pixels, drawn on with the mouse (paint.c's idea,
-   in a part).
+   in a part). **Done (2026-10-17)**, the author: "let's move on to step
+   4, paint". About 65 lines of code in TinyOffice.ml. C-x p, or
+   Insert's Paint, makes a paint; its data a line a row of pixels, a
+   letter a pixel (. white, k black, r red, g green, b blue, y yellow,
+   o orange, p purple, n brown, a grey), a row ending at its last
+   colour that is not white. A pixel is 4 by 4 on the page. The left
+   button paints a line between the places the mouse was seen at (the
+   mouse is a place: a fast stroke is seen at a few points), thin or
+   thick (3 pixels); the Paint menu (ten colours, the brushes, Clear),
+   or a digit, a colour; a stroke is one undo.
+   - Drawn fast: a row is one word, its letters, in a style of the
+     playground's, fat_pixels; the playground makes the letters the
+     palette's bytes when it draws the row, and the kernel's 't'
+     message has a style 16, a byte a square of 4 by 4, a run of one
+     colour filled at once. So a picture is one leaf a row, a stroke
+     draws again the rows it went through, and the view does no work
+     a pixel (it did at first: the session lost its events).
+   - Tests: TinyOffice_test.sh's paint scene (a line, a thick stroke
+     seen at its two ends only, the Paint menu, Clear, undo, the
+     file); make check's officepaint.events (a house, its roof, a
+     door, a thick sun, the ground, in a window; tiny-prof: some 34
+     million instructions of the office for the session). tetris's
+     screen recorded again: its pieces fall by the clock, and the
+     playground's code is a little larger.
 5. **The chart**: bars from a sheet's range, redrawn when its cells
    change.
 6. **Publishing**: each part's `html` as it comes is fine too; this

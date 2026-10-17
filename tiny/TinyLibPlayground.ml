@@ -13,10 +13,24 @@ let bold = 256
 let italic = 512
 let underlined = 1024
 let large = 2048
+let fat_pixels = 4096
 
-let char_width c = if c land large <> 0 then 16 else 8
-let char_height c = if c land large <> 0 then 32 else 16
+let char_width c = if c land fat_pixels <> 0 then 4 else if c land large <> 0 then 16 else 8
+let char_height c = if c land fat_pixels <> 0 then 4 else if c land large <> 0 then 32 else 16
 let overhang c = if c land italic <> 0 then char_width c / 2 else 0
+
+(* a fat pixel's colour by its letter, and its byte in the palette *)
+let pixel_letters = ".krgbyopna"
+let pixel_bytes = "\255\000\240\042\054\252\231\129\130\136"
+
+(* a row of fat pixels' letters as the kernel's bytes, joined two by
+ * two (an unknown letter white) *)
+let fat_bytes s =
+  let rec byte c k = if k >= String.length pixel_letters then '\255' else if pixel_letters.[k] = c then pixel_bytes.[k] else byte c (k + 1) in
+  let rec pieces i = if i >= String.length s then [] else String.make 1 (byte s.[i] 0) :: pieces (i + 1) in
+  let rec pairs l = match l with a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
+  let rec join l = match l with [] -> "" | [ x ] -> x | l -> join (pairs l) in
+  join (pieces 0)
 
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the
@@ -58,7 +72,10 @@ let ink c =
 let rec draw dst x y shape =
   match shape with
   | Rect (c, w, h) -> put (d_fill dst (ink c) x y (x + w) (y + h))
-  | Words (c, s) -> put (if c < 256 then d_text dst (ink c) x y s else d_styled dst (ink c) x y (c lsr 8) s)
+  | Words (c, s) ->
+      put (if c < 256 then d_text dst (ink c) x y s
+           else if c land fat_pixels <> 0 then d_styled dst (ink c) x y 16 (fat_bytes s)
+           else d_styled dst (ink c) x y (c lsr 8) s)
   | Group l -> List.iter (draw dst x y) l
   | Move (dx, dy, s) -> draw dst (x + dx) (y + dy) s
 

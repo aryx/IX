@@ -57,6 +57,14 @@
  * Drawing), and Draw while a drawing is edited (its tools). Each item
  * shows its key.
  *
+ * {b A paint's data is a line a row of pixels}, a letter a pixel, its
+ * colour: ". white, k black, r red..." (TinyLibPlayground's
+ * pixel_letters). A pixel is 4 by 4 on the page; the left button
+ * paints, a line between the places the mouse was seen at, thin or
+ * thick (3 pixels); the Paint menu, or a digit, a colour. A row is one
+ * word of the kernel's fat pixels, so a stroke draws its rows again,
+ * not the picture.
+ *
  * The mouse and the keys:
  *
  *     left button          a click in a text box edits it, in a sheet
@@ -66,8 +74,8 @@
  *                          square at its corner resizes it
  *     right button, held   the box under it moves with the mouse; from
  *                          its bottom right corner, the box is resized
- *     C-o, C-x t, C-x d    a new text box, sheet, drawing, where the
- *                          last click was
+ *     C-o, C-x t, d, p     a new text box, sheet, drawing, paint,
+ *                          where the last click was
  *     in a text            a character typed; Backspace, C-d; the
  *                          arrows, C-a, C-e; C-g no selection
  *     in a sheet           a character starts what is typed in the cell;
@@ -89,9 +97,10 @@
  * This file uses no system calls: OCaml compiles
  * it for the tests (tests/TinyOffice_test.sh), tiny-ml for tiny-kernel.
  *
- * What is left out, for now: the other parts (paint, the chart: steps
- * 4 and 5 of the plan), moving a drawing's shapes once drawn, a sheet's floating point, its
- * other functions than sum, and formulas that follow a cell moved, publishing (step 6),
+ * What is left out, for now: the chart (step 5 of the plan),
+ * publishing (step 6), moving a drawing's shapes once drawn, a sheet's
+ * floating point, its other functions than sum, and formulas that
+ * follow a cell moved, a paint's fill and its colours other than ten,
  * other fonts and sizes (one font, 8 by 16, its italic and its double),
  * colours of text, paragraphs centred or justified, several pages, and
  * undo of the

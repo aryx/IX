@@ -82,7 +82,9 @@
  *     l dst src x0 y0 x1 y1           a line, both ends drawn
  *     s dst src x y n, n bytes        a text, its top left corner at (x, y)
  *     t dst src x y n style, n bytes  a text in a style: bold 1, italic 2,
- *                                     underlined 4, large 8 (16 by 32)
+ *                                     underlined 4, large 8 (16 by 32);
+ *                                     or 16, fat pixels: a byte a colour,
+ *                                     a square of 4 by 4
  *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
  * Exercises:

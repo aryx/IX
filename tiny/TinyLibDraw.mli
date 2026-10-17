@@ -65,7 +65,8 @@ val d_line : int -> int -> int -> int -> int -> int -> string
 val d_text : int -> int -> int -> int -> string -> string
 
 (* [d_styled dst src x y style s]: a text in a style, bold 1, italic 2,
- * underlined 4, large 8 (16 by 32 a character) *)
+ * underlined 4, large 8 (16 by 32 a character); or 16, fat pixels, each
+ * byte a colour, a square of 4 by 4 (src unused) *)
 val d_styled : int -> int -> int -> int -> int -> string -> string
 
 (* [d_pixels dst x y bytes]: a row of pixels, its left end at (x, y) *)

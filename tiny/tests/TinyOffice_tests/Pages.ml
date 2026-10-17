@@ -189,3 +189,23 @@ let () =
   click o 1 200 150;
   show "a click outside: the text shown, not edited" o;
   file "the page" o
+
+let () =
+  let o = create 320 200 "picture" "" in
+  click o 1 10 40;
+  keys o "\024p";
+  show "a click at 10 40, C-x p: a paint there, its colour black" o;
+  drag o 1 30 60 90 60;
+  show "a line dragged, black: one row" o;
+  keys o "2";
+  click o 1 170 5;
+  click o 1 170 198;
+  jump o 1 40 80 100 120;
+  show "2, red; the Paint menu's thick brush; a stroke seen only at its two ends: a thick line between them" o;
+  file "the page" o;
+  click o 1 170 5;
+  click o 1 170 214;
+  show "the Paint menu's Clear" o;
+  keys o "\031";
+  show "C-_: the picture back" o;
+  file "the page" o

@@ -118,12 +118,18 @@
  * colour), a text in a colour, shapes together, a shape moved. A text's
  * colour is a byte, and above it the text's style, for the office's
  * words: its colour plus bold, italic, underlined, large (a character
- * 16 by 32), as many as it has *)
+ * 16 by 32), as many as it has; or fat_pixels, a paint's row: each
+ * character a colour's letter (pixel_letters), a square of 4 by 4 *)
 type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
 val bold : int
 val italic : int
 val underlined : int
 val large : int
+val fat_pixels : int
+
+(* the fat pixels' colours, by letter: . white, k black, r red, g green,
+ * b blue, y yellow, o orange, p purple, n brown, a grey *)
+val pixel_letters : string
 
 (* a text's character in its colour and style: its width, its height;
  * what of it is right of its cells (an italic's slant) *)

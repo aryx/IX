@@ -62,10 +62,10 @@
  * range in the new text and the text it replaced) is also a list, and
  * is applied the same way ([commit]). Undoing pushes the inverse of
  * the inverse, so a redo is just an undo that is undone. The regexp
- * matcher is a small backtracker that returns the leftmost-longest
- * match like sam's, with a memo of (node, position) pairs. libregexp
- * gives different answers in some corner cases (see mini-ed's
- * Regex.mli).
+ * matcher is TinyLibRegex's, which grep uses too: a small backtracker
+ * that returns the leftmost-longest match like sam's, with a memo of
+ * (node, position) pairs. libregexp gives different answers in some
+ * corner cases (see mini-ed's Regex.mli).
  *
  * Exercises. Each is cheap because a command's changes are a list,
  * made against the old text and applied together:
@@ -87,7 +87,7 @@
  *
  * Where it stands: ix has three editors, mini-ed (lines, an editor for
  * a teletype), this one (ranges, but still no screen) and mini-emacs
- * (with a screen). The regexp matcher is this file's own; mini-ed's
+ * (with a screen). The regexp matcher is TinyLibRegex's; mini-ed's
  * Regex.mli is a twin of libregexp and documents where the two differ.
  * Recording changes and then applying them in one step is the same
  * idea as a statement in TinyDatabase and a command in TinyVCS:

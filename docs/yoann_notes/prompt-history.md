@@ -36766,3 +36766,19 @@ Claude rewrote the office's file reader and writer to save pages in mini-troff's
 Claude re-recorded the tests and kernel sessions, and `make check` passes with no screen changed.
 Claude asked whether to commit the uncommitted office format change before starting tiny-troff.
 Claude proposed tiny-troff as the next project, with text and HTML output first.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:16
+
+**Yoann:**
+
+> anything to help reduce the size of t-ix? New C or tiny-ml features helping to reduce and factorize code? new helper function that can be reused across tiny programs? anything to help factorize or simplify the code
+
+**Claude (summary):**
+
+Claude launched four parallel agents, each surveying one slice of the t-ix tree for duplication.
+The slices were tiny-ml programs, host tools, compilers and machine, and C runtimes.
+Claude reported that the compilers/machine and host tools surveys had finished, with the tiny-ml survey still pending.
+Claude planned to verify the four sets of findings and send a ranked list of factorization opportunities.
+Claude had scoped the work at about 26k lines across tiny/ before launching the agents.

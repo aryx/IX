@@ -207,10 +207,10 @@ $(O)/bin/utils: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/utils.tm
 	@$(MLLINK)
 
 # the line editor (ed, and sam: ../TinyEditorLine.ml, tiny-editor), on
-# the same library as rc
-$(O)/user/ed.tm: $(TOOL) ../TinyEditorLine.ml
+# the same library as rc, and grep's ../TinyLibRegex.ml
+$(O)/user/ed.tm: $(TOOL) ../TinyLibRegex.ml ../TinyEditorLine.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $(TOOL) ../TinyEditorLine.ml
+	$(TML) -tm -o $@ $(TOOL) ../TinyLibRegex.ml ../TinyEditorLine.ml
 $(O)/bin/ed: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/ed.tm
 	@$(MLLINK)
 

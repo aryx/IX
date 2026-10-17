@@ -34,8 +34,9 @@ of the system:
   what it names of OCaml's standard library beyond the prelude
   (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML;
   and `TinyLibRegex.ml`, regular expressions in Plan 9's notation,
-  for grep (a line matches or not: Thompson's automaton, run once
-  over the line).
+  for grep (whether a line matches) and for the line editor (where
+  the match is, and its groups): a backtracker with a memo, so a
+  line costs its length times the pattern's at most.
   For the host's programs when ix builds them: `TinyLibHost/`, a
   standard library (m-IX's is `lib_core/`).
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two

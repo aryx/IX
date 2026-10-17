@@ -117,13 +117,13 @@ $D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
 $D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
 	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
-# (the line editor, on the same TinyLibSystem as the shell: it is
-# tiny-kernel's ed and sam too)
-$D/TinyEditorLine.$O: $D/TinyLibSystem.$O TinyEditorLine.ml
+# (the line editor, on the same TinyLibSystem as the shell and the
+# same TinyLibRegex as grep: it is tiny-kernel's ed and sam too)
+$D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 	$ML -I TinyLibHost $INCLUDES -o $target TinyEditorLine.ml
-$D/tiny-editor: $D/TinyLibSystem.$O $D/TinyEditorLine.$O $LIBS
-	$START TinyLibSystem TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
-	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyEditorLine.$O $STDEND
+$D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
+	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
+	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
 $D/tiny-assembler: $D/TinyAssembler.$O $LIBS
 	$START TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
 	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyAssembler.$O $STDEND

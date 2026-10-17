@@ -18,3 +18,5 @@ let u_ready (_ : int array) (_ : int) (_ : int) = 0
 let u_ticks () = 0
 let u_dial (_ : string) (_ : int) = -1
 let u_close (_ : int) = 0
+let u_rawcons (_ : int) = 0
+let u_open (_ : string) (_ : int) = -1

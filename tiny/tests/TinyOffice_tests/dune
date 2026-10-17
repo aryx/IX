@@ -1,0 +1,5 @@
+; TinyOffice.ml's test on the host (TinyOffice_test.sh): a page worked at
+(executable
+ (name Pages)
+ (modules Pages)
+ (libraries tiny_office tiny_editor_screen))

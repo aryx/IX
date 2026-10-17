@@ -38,6 +38,7 @@ mkdir
 mltests
 mouse
 mv
+office
 paint
 ping
 put
@@ -127,13 +128,13 @@ tail
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % -  25   238824 /cat
--   2   215548 /editor
--   2   215548 /emacs
+-   2   272476 /editor
+-   2   272476 /emacs
 -   1    70364 /ping
 -  25   238824 /utils
-%      50     200    1046 f
-     50     200    1046
-     50     200    1046
+%      51     204    1069 f
+     51     204    1069
+     51     204    1069
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -150,14 +151,20 @@ heL0 w0rLd
 added
 ?changed files
 % -   2   229352 /ed
--   2   215548 /editor
--   2   215548 /emacs
+-   2   272476 /editor
+-   2   272476 /emacs
 -   2   229352 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
 > three
 f0ur$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ $ text 100 100 200 84 36
+# Notes
+
+Kept by *put*, read by
+cat.
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first
 % notes

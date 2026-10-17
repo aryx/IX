@@ -7,7 +7,7 @@
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
-#                     ^C, M-x and a macro), then the network (ping,
+#                     ^C, M-x and a macro; office's page saved), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
@@ -73,7 +73,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
+PROGS = sh rc emacs office mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -214,13 +214,23 @@ $(O)/user/ed.tm: $(TOOL) ../TinyEditorLine.ml
 $(O)/bin/ed: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/ed.tm
 	@$(MLLINK)
 
-# the screen editor (emacs: ../TinyEditorScreen.ml, the editor, and
-# user/emacs.ml, its screen, keys and file on this kernel's calls)
-EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyEditorScreen.ml user/emacs.ml
+# the screen editor (emacs: ../TinyEditorScreen.ml, the editor, run by
+# ../TinyLibGUI.ml's run_canvas; user/emacs.ml, the few lines between)
+EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyEditorScreen.ml user/emacs.ml
 $(O)/user/emacs.tm: $(EMACS)
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $(EMACS)
 $(O)/bin/emacs: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/emacs.tm
+	@$(MLLINK)
+
+# the office (../TinyOffice.ml, the page and its parts, on the screen
+# editor for its text boxes, run by ../TinyLibGUI.ml's run_canvas;
+# user/office.ml, the few lines between)
+OFFICE = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyEditorScreen.ml ../TinyOffice.ml user/office.ml
+$(O)/user/office.tm: $(OFFICE)
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(OFFICE)
+$(O)/bin/office: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/office.tm
 	@$(MLLINK)
 
 # a program that draws: with draw.c, the messages (draw.h)
@@ -268,6 +278,7 @@ check: $(O)/boot.img
 	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /ed /sam /emacs /editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
+	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out
@@ -277,7 +288,7 @@ check: $(O)/boot.img
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
-	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors; do \
+	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors office; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done

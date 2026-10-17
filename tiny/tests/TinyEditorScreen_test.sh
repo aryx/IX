@@ -26,16 +26,20 @@ $HOST > $W/host.out 2>&1 || { echo "FAIL keys: the run by OCaml"; failures=$((fa
 [ -n "${RECORD:-}" ] && cp $W/host.out $T/keys.expected
 if diff $T/keys.expected $W/host.out > $W/host.diff; then echo "ok keys: by OCaml"; else echo "FAIL keys: by OCaml"; head -10 $W/host.diff; failures=$((failures + 1)); fi
 
+# (the runtime's memory, 640 KB, in a file of its own, linked last: a
+# call reaches 128 KB, and the code on either side of it would be too
+# far apart, _start from main or main from the ML code)
 cat > $W/main.c <<END
 #include "$ROOT/tiny/TinyMLRuntime/core.c"
-static value vstack[32768];
-static value space0[65536];
-static value space1[65536];
+extern value vstack[];
+extern value space0[];
+extern value space1[];
 void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
+printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
-if $TC -tm -o $W/main.tm $W/main.c && $TML -tm -o $W/keys.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyEditorScreen.ml $T/Keys.ml \
-   && $CPU -o $W/keys.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/keys.tm $W/main.tm \
+if $TC -tm -o $W/main.tm $W/main.c && $TC -tm -o $W/data.tm $W/data.c && $TML -tm -o $W/keys.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyEditorScreen.ml $T/Keys.ml \
+   && $CPU -o $W/keys.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/keys.tm $W/data.tm \
    && timeout 120 $CPU $W/keys.img > $W/tm.out 2>&1 && diff $T/keys.expected $W/tm.out > $W/tm.diff
 then echo "ok keys: by tiny-ml, on tiny-cpu"; else echo "FAIL keys: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi
 

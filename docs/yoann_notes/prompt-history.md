@@ -36133,3 +36133,347 @@ Claude made the optional `known` argument in TinyML.ml a plain argument and left
 Claude got mini-mk building all 13 programs by swapping Stdlib.compare for Int.compare and adding tiny-prof.
 Claude made tiny-assembler accept END with an empty operand and routed native test runs through tiny-arm off Linux.
 Claude confirmed tiny-ml's test passes and skipped tiny-assembler's env check off Linux, since tiny-arm gives an empty environment.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 12:36
+
+**Yoann:**
+
+> let's do the cleanup
+
+**Claude (summary):**
+
+Claude found the cleanup already done by another session's commit d9320c86, and skipped the kernel memory change.
+Claude named the two larger remaining items: the browser's `.nw` book and tiny-ml's register limit.
+Claude explained that tiny-ml fails whenever an expression needs more than 11 registers at once, like an 11-field record.
+Claude framed the register limit as a compiler fix to make, not a workaround to add.
+Claude listed the browser book and the register fix together, without ranking one above the other.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 16:42
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude left your TinyEditorScreen.mli edit uncommitted, since neither commit included it.
+Claude flagged the screen editor (emacs) search on tiny-kernel as the small side task still open.
+Claude listed tiny-troff, a spreadsheet, and sound as what remains in the coverage plan.
+Claude committed e36dd7f1 and 94150d12, covering mini-mk's tiny/ builds and the arm64 tests.
+Claude saved a memory to run mini-mk after changing tiny/ programs, since dune alone misses breakage.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 16:43
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude said the SDL window needed Yoann at a screen, since it could not open that window itself.
+Claude gave the launch command, `./tiny-machine -window tiny-kernel`, to start the SDL window.
+Claude suggested typing `www OCaml` in that window to try the trackpad and follow links by hand.
+Claude also noted the web page needs `pip3 install --user websockets` before `TinyMachineWeb_test.py` could run.
+Claude otherwise proposed tiny-ml register spilling in `TinyML.ml` and a browser `.nw` book, awaiting Yoann's go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 16:54
+
+**Yoann:**
+
+> I did try www OCaml and it worked great.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:20
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:20
+
+**Yoann:**
+
+> no
+
+**Claude (summary):**
+
+Claude had only read the code generator, so it stopped with nothing changed to undo.
+Claude listed the open items, smallest first: the `tiny/mkfile` entry for `tiny-prof`, which can't be tested while the `bin/` links are broken.
+Claude also listed the web page check, which needs `websockets` installed before running `TinyMachineWeb_test.py` against `www OCaml`.
+The `.nw` book for the browser was the last open item Claude named.
+Claude then asked what Yoann wanted next, since nothing was committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:21
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-16 16:51
+
+**Yoann:**
+
+> for tiny-emacs, C-x C-c to quit does not seem to work, or C-c is intercepted by the OS and just quit. Also for a tiny-emacs it would be good to have M-x and basic macros! you can't call an editor emacs without those 2 features
+
+**Claude (summary):**
+
+Claude fixed tiny-emacs's quit path so C-c no longer kills the session, and tested the change end to end on tiny-kernel.
+Claude added M-x and basic keyboard macros to the editor, plus a `rawcons` kernel call (number 22) so emacs reads the console raw.
+Claude wired queued keys through the test driver and `emacs.ml`, and added `List.assoc_opt` and `List.init` to TinyLibStd where missing.
+Claude re-recorded the affected screen and output checks; `make check` passes, and the docs for tiny-kernel's calls were updated.
+Claude found that emacs draws only white on the bare console, which predates this change, and left that unresolved.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:25
+
+**Yoann:**
+
+> let's do the tiny-prof mkfile entry
+
+**Claude (summary):**
+
+Claude committed the tiny-prof mkfile entry as `1e70fa29`, touching only the plan, with nothing run. Claude also committed the `www OCaml` support in the web page as `6c1f3bb3`, verified in headless Chrome. The page test `TinyMachineWeb_test.py` now types `www OCaml` and passes in about a minute, using a scratchpad virtualenv with websockets 15.0.1 and Yoann's installed Chrome. The "What to try" list in `docs/t-ix.html` and the browser plan's "Left" section were updated, leaving Firefox/Safari and the public website unchecked.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:55
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:41
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the emacs work as `238b988c`, covering 19 files including three new `make check` session files.
+Claude left `prompt-history.md` out of the commit, as usual.
+Alt-x remains untested in the browser and SDL window, since it needs real typing; Escape x works in both.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 19:47
+
+**Yoann:**
+
+> how many lines would it be to support color for ocaml and C files in tiny-emacs?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 17:57
+
+**Yoann:**
+
+> ok let's publish
+
+**Claude (summary):**
+
+Claude built the page from a clean worktree, skipped m-ix, and left browser-plan commit ef401a6a unpushed.
+Claude committed tiny-kernel's 2.75 MB image, the page program, and OCaml's article as 4d2edbd.
+Claude committed t-ix.html with a ?v=10 cache-buster and the new www OCaml entry as bf1e41ec.
+Claude pushed both repositories, and GitHub Pages took about 100 s to serve the new files.
+Claude tested the public page, every step passed including www OCaml, leaving one Firefox or Safari check.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 19:49
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 19:49
+
+**Yoann:**
+
+> let's do it; it would also be good to add a few example files in the memory/disk image
+
+**Claude (summary):**
+
+Claude built the color-syntax editor and emacs changes, with the examples under `/examples` in the image. Claude also fixed a shell bug where `echo */g` printed a nonexistent `examples/g`. Speed work cut `goto-line 382` cost and per-key recoloring: emacs went from 224 million to 71 million instructions. The editor test, the rc shell test, and `make check` all pass. Claude asked whether to commit, leaving out `prompt-history.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the colors work as `5c6ae40e`, including the `/examples` directory and the tiny-shell glob fix.
+Claude left `prompt-history.md` out of the commit, so the working tree is otherwise clean.
+Claude gave two ways to try it: `emacs /examples/wc.c` for C, and `emacs /examples/emacs.ml` for emacs on its own source.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:17
+
+**Yoann:**
+
+> done
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:17
+
+**Yoann:**
+
+> what's nexT?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:19
+
+**Yoann:**
+
+> any change we can get a more complete tiny-office? Find a way to get a spreadsheet, word, paint, diagram, etc with very few LOC?
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:19
+
+**Yoann:**
+
+> chance
+
+**Claude (summary):**
+
+Claude said it would first inspect the existing tiny tools: the browser, paint, the drawing library, and m-ix's office.
+Claude's answer was only a stated intention to check those components before responding, with no findings yet.
+Yoann's follow-up, "let's commit the plan," points to a plan Claude had not yet produced.
+
+------------------------------------------------------------------------
+
+## 2026-10-16 20:27
+
+**Yoann:**
+
+> let's commit the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-17 05:58
+
+**Yoann:**
+
+> yes but a big issue is what do you do with the produced document?
+
+**Claude (summary):**
+
+Claude said the document's durability is the real question, not a side issue.
+Claude planned to check whether tiny-kernel can persist a file after the machine stops.
+Claude also planned to check which formats the tiny browser can display.
+Yoann's reply, "add it to the plan and commit," picks up the document-persistence concern from that answer.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 06:01
+
+**Yoann:**
+
+> yes add it to the plan and commit
+
+**Claude (summary):**
+
+Claude committed the plan as dc360de3, leaving prompt-history.md out of the commit.
+Claude added step 0, put, as the reverse of get in the new section 4.
+Claude explained that tiny-kernel keeps nothing when it stops, so put sends files to the host.
+Claude said the boot then brings those files back onto the machine each time.
+Claude also corrected the estimate to about 900 lines, a sixth of mini-office's 5,200.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 06:12
+
+**Yoann:**
+
+> let's start with step 0, put
+
+**Claude (summary):**
+
+Claude traced get on tiny-kernel, tiny-machine, and the web page before writing put.c.
+Claude built both hosts and added put to the Makefile, linking net.c for reach.
+Claude ran a full round trip, putting two files, listing them, rebooting, and getting them back.
+Claude ran make check, which passed with every screen unchanged from before.
+Claude started the other peers' tests and mini-mk's build, with the Chrome test only if Chrome is installed.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 06:27
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the office and editor work as `42e59538`, then began step 1, the office's text shell.
+Claude reached a far-jump problem in the ML code, traced it through `main.tm` and the C runtime, and worked around it.
+Claude added `extern` arrays in `data.c`, wrote `List.mapi` and `List.memq` by hand, and fixed the test session files.
+Claude added both console sessions to `make check`, and `make check` passes with every other screen unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 06:51
+
+**Yoann:**
+
+> why so much code in user/emacs.ml ? and user/office.ml? I thought those files were supposed to be very small, just some little glue to the main TinyXxx file
+
+------------------------------------------------------------------------
+
+## 2026-10-17 07:25
+
+**Yoann:**
+
+> why another TinyLibXxx ? can't we use TinyLibDraw.ml and TinyLibGUI.ml?
+
+**Claude (summary):**
+
+Claude recommended reusing TinyLibGUI instead of adding another TinyLibXxx library, as Yoann suggested.
+Claude checked TinyLibGUI's calc.ml and temp.ml, about ten lines each, the size Yoann had in mind.
+Claude found TinyLibGUI already covers most of what the duplicated office code had written.
+Claude then began reading TinyLibGUI's redraw code, since the office's overlapping boxes depend on it.
+Claude had not edited any files yet when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 07:31
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude read TinyLibGUI and TinyLibPlayground, then moved the shape type into TinyLibDraw with a re-export from TinyLibPlayground.
+Claude rewrote TinyOffice, the editor, and the office test to use shapes, and the editor now keeps each line's shape.
+Claude measured eight-key emacs runs: 16.1 and 11.7 million instructions, against the 12.7 and 7.2 million baseline.
+Claude ran `make check` and the related tests, all passing, then committed step 1 and the cleanup together.
+Yoann says prompt-history.md can go into the commit too, so it needs adding before the commit is redone.

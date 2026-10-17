@@ -3,6 +3,8 @@
 
 (* See TinyEditorScreen.mli *)
 
+open TinyLibDraw
+
 (*****************************************************************************)
 (* The editor *)
 (*****************************************************************************)
@@ -37,6 +39,9 @@ type extra = {
   mutable queue : int list;                 (* keys to give back: a macro's, a command's *)
   mutable lexed : (string * int) list;      (* the lines above the screen, each with the comments open at its end *)
   mutable faced : (string * int * string * int) list;   (* the screen's: a line, the comments open before and after, its faces *)
+  mutable fill : int;                       (* auto-fill's column, 0 none *)
+  mutable pieced : (string * string * int * shape) list;   (* the screen's lines as shapes: a line,
+                                                            * its faces, the cursor's column in it, its shape *)
 }
 
 (* (three records: tiny-ml makes one of 11 fields at most on tiny-machine) *)
@@ -65,8 +70,11 @@ let language_of (file : string) : language =
 let create (cols : int) (rows : int) (file : string) (text : string) : editor =
   let first, rest = match String.split_on_char '\n' text with l :: r -> l, r | [] -> "", [] in
   let t = { above = []; line = first; below = rest; col = 0; row = 0; goal = 0; modified = false } in
-  { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0;
-    x = { language = language_of file; search = None; reading = None; recording = None; macro = []; queue = []; lexed = []; faced = [] }; cols; rows }
+  (* (the inner record made first: tiny-ml computes a record's fields
+   * in tiny-machine's 11 registers, and both are 20) *)
+  let x = { language = language_of file; search = None; reading = None; recording = None; macro = []; queue = []; lexed = []; faced = []; fill = 0;
+            pieced = [] } in
+  { t; top = 0; killed = ""; killing = false; file; quitting = false; message = ""; prefix = 0; x; cols; rows }
 
 (* (a text that ends by a newline has an empty last line, which is
  * where one types after it: the lines joined by newlines are the text) *)
@@ -279,6 +287,25 @@ let pending (e : editor) : int option =
   match e.x.queue with k :: rest -> e.x.queue <- rest; Some k | [] -> None
 
 (*****************************************************************************)
+(* Auto-fill *)
+(*****************************************************************************)
+
+(* Emacs's auto-fill-mode: a character typed at the end of a line past
+ * the fill column breaks the line at its last space before it. What
+ * tiny-office's text boxes ask: their text is shown filled anyway, and
+ * its lines as written must fit the box *)
+let auto_fill (e : editor) (column : int) = e.x.fill <- column
+
+let filling (e : editor) =
+  let t = e.t in
+  let n = String.length t.line in
+  if e.x.fill > 0 && n > e.x.fill && t.col = n then begin
+    let rec space i = if i <= 0 then 0 else if t.line.[i] = ' ' then i else space (i - 1) in
+    let i = space (min e.x.fill (n - 1)) in
+    if i > 0 then (t.col <- i; delete t; newline t; t.col <- String.length t.line)
+  end
+
+(*****************************************************************************)
 (* The keys *)
 (*****************************************************************************)
 
@@ -330,7 +357,7 @@ let key (e : editor) (k : int) : request =
        else if k = 19 then e.x.search <- Some ""
        else if k = 7 then e.message <- "Quit"
        else if k = 24 || k = 27 then e.prefix <- k
-       else if k = 9 || (k >= 32 && k < 127) then insert t (String.make 1 (Char.chr k))
+       else if k = 9 || (k >= 32 && k < 127) then (insert t (String.make 1 (Char.chr k)); filling e)
        else e.message <- "Not a command");
   if not !vertical then t.goal <- t.col;
   !request
@@ -383,6 +410,12 @@ let rec join = function
   | l ->
       let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
       join (pairs l)
+
+(* the text: its lines with a newline between two (joined two by two:
+ * see join) *)
+let text (e : editor) : string =
+  let rec go = function l :: rest -> l :: (match rest with [] -> [] | _ -> "\n" :: go rest) | [] -> [] in
+  join (go (lines e))
 
 (* the end of a string or a character of s, from i after its opening quote q *)
 let rec closing (s : string) (q : char) (i : int) : int =
@@ -511,3 +544,48 @@ let cursor (e : editor) : int * int =
   match e.x.reading with
   | Some (what, typed) -> min (e.cols - 1) (String.length (prompt what ^ typed)), e.rows - 1
   | None -> column e.t.line e.t.col - left e, e.t.row - e.top
+
+(* The screen as shapes (TinyLibDraw's), for a program that draws it:
+ * its first n lines, each a group of pieces of one colour, cut at the
+ * cursor too, so that a key changes a piece or two (TinyLibGUI draws
+ * again only what changed, and of words at the same place only their
+ * end); then the cursor's cell, white on black. Colours of the
+ * machine's palette: Emacs's purple keywords (128), dark red comments
+ * (160), green strings (8). After view and faces' screen. *)
+let colour_of (face : char) = if face = 'k' then 128 else if face = 'c' then 160 else if face = 's' then 8 else 0
+
+let face_at (f : string) (k : int) = if k < String.length f then f.[k] else '.'
+
+(* line i's pieces from column k on, the last first on acc *)
+let rec pieces (i : int) (l : string) (f : string) (cut : int) (k : int) acc =
+  let n = String.length l in
+  if k >= n then acc
+  else begin
+    let c = face_at f k in
+    let rec stop j = if j < n && j <> cut && face_at f j = c then stop (j + 1) else j in
+    let j = stop (k + 1) in
+    pieces i l f cut j (Move (8 * k, 16 * i, Words (colour_of c, String.sub l k (j - k))) :: acc)
+  end
+
+(* (a line's shape is kept, and given again, the very same, while its
+ * text, its faces and the cursor's column in it are the same: what
+ * draws it does not look into it again, TinyLibGUI's repaint) *)
+let shapes (e : editor) (n : int) : shape list =
+  let lines = view e in
+  let fs = faces e and (cx, cy) = cursor e in
+  let rec go i lines fs olds =
+    match lines with
+    | l :: rest when i < n ->
+        let f, fs = match fs with f :: more -> f, more | [] -> "", [] in
+        let cut = if i = cy then cx else -1 in
+        let old, olds = match olds with o :: more -> Some o, more | [] -> None, [] in
+        let g = match old with
+          | Some (l', f', cut', g) when cut' = cut && l' = l && f' = f -> g
+          | _ -> Group (List.rev (pieces i l f cut 0 [])) in
+        (l, f, cut, g) :: go (i + 1) rest fs olds
+    | _ -> [] in
+  e.x.pieced <- go 0 lines fs e.x.pieced;
+  let shown = List.map (fun (_, _, _, g) -> g) e.x.pieced in
+  let line = if cy < List.length lines then List.nth lines cy else "" in
+  let c = if cx < String.length line then String.sub line cx 1 else " " in
+  shown @ (if cy < n then [ Move (8 * cx, 16 * cy, Group [ Rect (0, 8, 16); Words (255, c) ]) ] else [])

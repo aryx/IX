@@ -106,7 +106,16 @@
 (library
  (name tiny_editor_screen)
  (wrapped false)
- (modules TinyEditorScreen))
+ (modules TinyEditorScreen)
+ (libraries tiny_lib_draw))
+
+; TinyOffice.ml, tiny-office's page and its parts, with no system under it
+; (tests/TinyOffice_tests/'s test types keys and moves the mouse at it)
+(library
+ (name tiny_office)
+ (wrapped false)
+ (modules TinyOffice)
+ (libraries tiny_editor_screen))
 
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,

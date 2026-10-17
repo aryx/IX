@@ -216,3 +216,192 @@ let run (g : ('m, 'msg) gui) =
   in
   draw 0 0 0 (Rect (face, 640, 480));
   loop g.init up (laid g g.init) [] []
+
+(*****************************************************************************)
+(* A program that draws its whole window *)
+(*****************************************************************************)
+
+(* Below the widgets: a program that makes its picture itself (emacs,
+ * the office). Its first model, given its window's size; its picture,
+ * as shapes; a key, and the next model, or None to end; the mouse at
+ * (x, y) with its buttons *)
+type 'm canvas = { first : int -> int -> 'm; picture : 'm -> shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
+
+(* The window's size in pixels: an ENQ printed (ASCII's enquiry, 5),
+ * which tiny-windows answers in the window's mouse box as a mouse at
+ * (width, height) with the buttons -1; on the console no one answers in
+ * half a second, and the screen is 640 by 480 *)
+let window_size () =
+  ignore (u_write 1 "\005");
+  let fds = Array.make 1 4 and until = u_ticks () + 200 in
+  let rec answer () =
+    if u_ready fds 1 until <> 4 then 640, 480
+    else (let s = u_read 4 12 in if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4 else answer ()) in
+  answer ()
+
+(* a shape's leaves, each a rectangle or words at its place in the
+ * window, in their order, on acc *)
+let rec leaves x y s acc =
+  match s with
+  | Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
+  | Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
+  | leaf -> (x, y, leaf) :: acc
+
+let box (x, y, leaf) =
+  match leaf with
+  | Rect (_, w, h) -> x, y, x + w, y + h
+  | Words (_, s) -> x, y, x + (8 * String.length s), y + 16
+  | _ -> x, y, x, y
+
+let meets (x0, y0, x1, y1) (a0, b0, a1, b1) = x0 < a1 && a0 < x1 && y0 < b1 && b0 < y1
+
+(* the characters two texts begin with *)
+let rec common a b i = if i < String.length a && i < String.length b && a.[i] = b.[i] then common a b (i + 1) else i
+
+(* a rectangle to erase, once (a cursor's cell and its character are
+ * two leaves at one place) *)
+let once r erased = if List.mem r erased then erased else r :: erased
+
+(* the characters two texts of the same length end with, from i down *)
+let rec common_end a b i = if i > 0 && a.[i - 1] = b.[i - 1] then common_end a b (i - 1) else i
+
+(* Two shapes' leaves compared at each place: the rectangles where an
+ * old leaf is to be erased, on erased; each new leaf with what of it
+ * is to be drawn, on marked: (-1, 0) all of it, (0, 0) nothing (unless
+ * an erasing uncovers it), (p, q) its words from the p-th character up
+ * to the q-th. Of words of the same colour at the same place, only the
+ * characters between what they begin with and, of the same length,
+ * what they end with: typing at a line's end draws a character, and a
+ * mode line's column number one or two (emacs.ml's comparison, before) *)
+let rec compare_leaves olds news erased marked =
+  match olds, news with
+  | o :: os, n :: ns ->
+      let erased, mark =
+        if o = n then erased, (0, 0)
+        else
+          match o, n with
+          | (x, y, Words (c, s)), (x', y', Words (c', s')) when x = x' && y = y' && c = c' ->
+              let p = common s s' 0 and m = String.length s and m' = String.length s' in
+              let q = if m = m' then common_end s s' m else max m m' in
+              (if min q m > p then once (x + (8 * p), y, x + (8 * min q m), y + 16) erased else erased),
+              (if min q m' > p then (p, min q m') else (0, 0))
+          | _ -> once (box o) erased, (-1, 0) in
+      compare_leaves os ns erased ((n, mark) :: marked)
+  | o :: os, [] -> compare_leaves os [] (once (box o) erased) marked
+  | [], n :: ns -> compare_leaves [] ns erased ((n, (-1, 0)) :: marked)
+  | [], [] -> erased, marked
+
+(* spans of characters, (from, up to), as few: those that meet made one *)
+let spans (l : (int * int) list) : (int * int) list =
+  let add acc (i, j) =
+    let meet = List.filter (fun (a, b) -> a <= j && i <= b) acc and apart = List.filter (fun (a, b) -> not (a <= j && i <= b)) acc in
+    List.fold_left (fun (i, j) (a, b) -> min i a, max j b) (i, j) meet :: apart in
+  List.filter (fun (i, j) -> j > i) (List.fold_left add [] l)
+
+(* a leaf drawn: all of it, or its words from the p-th character up to
+ * the q-th; and where an erasing uncovered it, there only: a rectangle
+ * (the ground meets every erasing, and drawn whole it would wipe what
+ * is on it), the characters in the columns it met *)
+let paint erased (l, mark) =
+  let (x, y, leaf) = l and (p, q) = mark in
+  if p = -1 then draw 0 x y leaf
+  else
+    match leaf with
+    | Rect (c, _, _) ->
+        let (x0, y0, x1, y1) = box l in
+        List.iter (fun r ->
+          let (a0, b0, a1, b1) = r in
+          if meets (x0, y0, x1, y1) r then draw 0 (max x0 a0) (max y0 b0) (Rect (c, min x1 a1 - max x0 a0, min y1 b1 - max y0 b0))) erased
+    | Words (c, s) ->
+        (* its characters that changed, and those an erasing uncovered
+         * (the columns it met: a cursor that moved, one character),
+         * each span drawn once *)
+        let (x0, y0, x1, y1) = box l in
+        let uncovered = List.concat (List.map (fun r ->
+          let (a0, _, a1, _) = r in
+          if meets (x0, y0, x1, y1) r then [ (max x0 a0 - x) / 8, min (String.length s) ((min x1 a1 - x + 7) / 8) ] else []) erased) in
+        List.iter (fun (i, j) -> draw 0 (x + (8 * i)) y (Words (c, String.sub s i (j - i)))) (spans ((if q > p then [ p, q ] else []) @ uncovered))
+    | _ -> ()
+
+(* What changed between two pictures, drawn: each shape's leaves
+ * compared with the old shape's at its place (a key in a box of the
+ * office changes a line of it, not the page), the old ones erased by
+ * what is under them, the new ones drawn, in the picture's order. The
+ * first shape is the ground, under all. A picture is kept with its
+ * leaves: a shape that is the very same as the old one at its place (a
+ * program that kept it: the editor keeps a line's) is not looked into
+ * again *)
+(* a picture's shape as it is compared: changed, its leaves each with
+ * what of it is to be drawn; the same, its leaves and their box (looked
+ * into only when an erasing meets the box) *)
+type part = Changed of ((int * int * shape) * (int * int)) list | Same of (int * int * shape) list * (int * int * int * int)
+
+let repaint shown now =
+  let rec pairs olds news erased parts =
+    match olds, news with
+    | (o, _, _) :: os, (n, nl, b) :: ns when o == n -> pairs os ns erased (Same (nl, b) :: parts)
+    | (_, ol, _) :: os, (_, nl, _) :: ns -> let e, m = compare_leaves ol nl erased [] in pairs os ns e (Changed (List.rev m) :: parts)
+    | (_, ol, _) :: os, [] -> let e, _ = compare_leaves ol [] erased [] in pairs os [] e parts
+    | [], (_, nl, _) :: ns -> let e, m = compare_leaves [] nl erased [] in pairs [] ns e (Changed (List.rev m) :: parts)
+    | [], [] -> erased, parts in
+  let erased, parts = pairs shown now [] [] in
+  let drawn (_, (p, q)) = p = -1 || q > p in
+  if erased <> [] || List.exists (fun part -> match part with Changed m -> List.exists drawn m | Same _ -> false) parts then begin
+    List.iter (fun part ->
+      match part with
+      | Changed m -> List.iter (paint erased) m
+      | Same (l, b) -> if List.exists (meets b) erased then List.iter (fun leaf -> paint erased (leaf, (0, 0))) l) (List.rev parts);
+    flush ()
+  end
+
+(* The program, until its typed says None or the keys end: its picture
+ * drawn where it changed, then the keys or the mouse waited for. The
+ * console is raw meanwhile (rawcons): its ^C is a key, not the kill of
+ * every process (emacs's C-x C-c). At the end the window is white. *)
+let run_canvas (c : 'm canvas) =
+  let w, h = window_size () in
+  ignore (u_rawcons 1);
+  let fds = Array.make 2 0 in
+  fds.(1) <- 4;
+  (* a shape with its leaves and their box: the old ones when it is the
+   * very same *)
+  let fresh n =
+    let l = leaves 0 0 n [] in
+    let b = List.fold_left (fun (x0, y0, x1, y1) leaf -> let (a0, b0, a1, b1) = box leaf in min x0 a0, min y0 b0, max x1 a1, max y1 b1) (max_int, max_int, min_int, min_int) l in
+    (n, l, b) in
+  let rec with_leaves olds news =
+    match olds, news with
+    | (o, ol, ob) :: os, n :: ns -> (if o == n then (n, ol, ob) else fresh n) :: with_leaves os ns
+    | [], n :: ns -> fresh n :: with_leaves [] ns
+    | _, [] -> [] in
+  let rec loop model shown =
+    let now = with_leaves shown (c.picture model) in
+    repaint shown now;
+    if u_ready fds 2 0 = 0 then begin
+      let s = u_read 0 16 in
+      let rec typed i model =
+        if i >= String.length s then loop model now
+        else match c.typed (Char.code s.[i]) model with Some m -> typed (i + 1) m | None -> () in
+      if s <> "" then typed 0 model
+    end
+    else begin
+      let s = u_read 4 12 in
+      if String.length s = 12 && int16 s 8 >= 0 then loop (c.moved (int16 s 0) (int16 s 4) (int16 s 8) model) now
+      else if String.length s = 12 then loop model now
+    end in
+  loop (c.first w h) [];
+  draw 0 0 0 (Rect (255, w, h));
+  flush ();
+  ignore (u_rawcons 0)
+
+(* the file such a program edits: its text, "" when it is not there;
+ * the text written, and whether all of it was (user.h's O_WRONLY |
+ * O_CREATE | O_TRUNC; u_write is 0 when all was written) *)
+let read_file file =
+  let fd = u_open file 0 in
+  if fd < 0 then ""
+  else (let rec go acc = let s = u_read fd 4096 in if s = "" then acc else go (acc ^ s) in let s = go "" in ignore (u_close fd); s)
+
+let write_file file text =
+  let fd = u_open file 0x601 in
+  fd >= 0 && (let r = u_write fd text in ignore (u_close fd); r = 0)

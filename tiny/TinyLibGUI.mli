@@ -183,3 +183,30 @@ val key : ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm -
 val redraw :
   TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list ->
   TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list -> unit
+
+(* A program that draws its whole window, below the widgets (emacs,
+ * the office): its first model, given its window's size in pixels; its
+ * picture as shapes, the first one the ground under all (a rectangle
+ * of the whole window); a key and the next model, or None to end; the
+ * mouse at (x, y) and its buttons (1 left, 2 middle, 4 right), and the
+ * next model *)
+type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibDraw.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm }
+
+(* [run_canvas c]: the program until its typed says None or the keys
+ * end; then its window white. After each key (or each read of the
+ * keys) and each move of the mouse, its picture is drawn where it
+ * changed: each shape's leaves (its rectangles and words at their
+ * places) compared with the old shape's at their place; what changed
+ * erased by the ground and what is on it there, the new drawn; words
+ * at the same place drawn from their first other character. The
+ * console is raw meanwhile, its ^C a key. *)
+val run_canvas : 'm canvas -> unit
+
+(* the window's size in pixels: tiny-windows' answer to an ENQ, or
+ * the console's 640 by 480 *)
+val window_size : unit -> int * int
+
+(* the file such a program edits: its text ("" when it is not there);
+ * the text written, and whether all of it was *)
+val read_file : string -> string
+val write_file : string -> string -> bool

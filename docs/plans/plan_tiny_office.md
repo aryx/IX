@@ -84,7 +84,55 @@ tiny-windows like emacs, and a screen session in `make check`:
    files, reads them on the host, and gets them back on a second boot.
    Not run: the web page's side (its test needs Python's websockets).
 1. **The shell and the text part**: a page with text boxes, typed
-   into, moved, saved, opened again; undo.
+   into, moved, saved, opened again; undo. **Done (2026-10-17)**:
+   `tiny/TinyOffice.ml` (the page, the shell, the text part; about 235
+   lines of code) and `TinyKernel/user/office.ml` (tiny-kernel's
+   `office file`, 15 lines: the page given to TinyLibGUI's
+   run_canvas). Found on the way:
+   - A text box is edited by TinyEditorScreen, which got Emacs's
+     auto-fill-mode (`auto_fill`): a line written wider than its box
+     scrolled sideways, and showed one piece of the paragraph.
+   - Only what changed is drawn: each shape of the view (the ground, a
+     box, the status line) compared with the one drawn before, a leaf
+     (a rectangle, words) with the one at its place; what changed
+     erased, then drawn in the page's order with what was under it. A
+     rectangle drawn again is drawn only where it was erased: the
+     page's background meets everything, and drawn whole it wiped the
+     boxes.
+   - The author: "why so much code in user/emacs.ml ? and
+     user/office.ml? I thought those files were supposed to be very
+     small, just some little glue to the main TinyXxx file"; then "why
+     another TinyLibXxx ? can't we use TinyLibDraw.ml and
+     TinyLibGUI.ml?"; "let's do it". The two programs had the same
+     window size (an ENQ), file, loop, raw console and drawing, each
+     its own: now TinyLibGUI's run_canvas (a program that draws its
+     whole window, below the widgets), its read_file and write_file;
+     the shapes are TinyLibDraw's (moved from TinyLibPlayground, which
+     re-exports them: tiny-ml now reads OCaml's type t = M.t = A | B);
+     TinyEditorScreen gives its screen as shapes (shapes), used by
+     emacs and by the office's text boxes. emacs.ml went from 89 lines
+     of code to 18, office.ml from about 100 to 15; TinyLibGUI gained
+     about 120. Measured with tiny-prof, eight keys typed one at a time
+     in emacs: 13.5 million instructions in /examples/wc.c (13.4
+     before), 9.6 in a file without colours (7.9 before): the words of
+     a line compared from both ends (a mode line's column, one or two
+     characters), a line's shape kept by the editor and not looked into
+     again, a rectangle erased once, what an erasing uncovers drawn
+     only in its columns.
+   - tiny-ml has no modules: the editor's functions are given names of
+     their own (editor_key...), the office having a key, a view, a
+     create; a field shared by two records (x) is annotated; the
+     editor's record of 20 fields is made in two steps (11 registers).
+   - The tests' tiny-cpu link put 640 KB of the runtime's memory
+     between code that calls across it (a call reaches 128 KB): the
+     memory is a file of its own now, linked last
+     (tests/TinyOffice_test.sh).
+   - tiny-windows' mouse box keeps only the last state: a drag is seen
+     as its steps, and a press and a move read at once are one press.
+   - Tests: tests/TinyOffice_test.sh (a page worked at, by OCaml and by
+     tiny-ml on tiny-cpu); make check's officekeys.events (a page typed,
+     saved, C-x C-c, cat) and office.events (two boxes in a window, one
+     moved, one being edited: the screen).
 2. **The sheet**: a grid in a box, a cell typed at the last line as in
    emacs's prompt, formulas, recomputation.
 3. **The drawing**: boxes, ovals, lines, arrows and labels, made by

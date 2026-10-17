@@ -6,9 +6,9 @@
 open TinyLibDraw
 open TinyCalls
 
-(* a rectangle of a colour (its width, its height), words of a colour,
- * shapes together, a shape moved (to the right, down) *)
-type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
+(* what a view is made of: TinyLibDraw's shapes (the office and the
+ * editor make them too, with no kernel under them) *)
+type shape = TinyLibDraw.shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
 
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the

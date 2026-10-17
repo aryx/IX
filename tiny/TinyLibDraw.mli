@@ -45,6 +45,14 @@
  * terminal needs no protocol of its own.
  *)
 
+(* What a picture is made of, before it is messages: a rectangle of a
+ * colour (a byte of the machine's palette), its width, its height;
+ * words of a colour (8 by 16 pixels a character); shapes together; a
+ * shape moved (to the right, down). TinyLibPlayground draws them (its
+ * draw), TinyLibGUI draws only those that changed (its run_canvas);
+ * TinyEditorScreen and TinyOffice make them, with no kernel under them. *)
+type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
+
 (* a number's two bytes, the low one first, and the number at i of a
  * string; a message, its letter then its numbers *)
 val i16 : int -> string

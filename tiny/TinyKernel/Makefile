@@ -83,9 +83,9 @@ ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
+$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
+	$(TML) -tm -o $@ ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)

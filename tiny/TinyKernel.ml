@@ -117,25 +117,19 @@ and call = { il : il; mutable callers : int }
 
 let root = Dir (ref [])
 
-let rec assoc_opt x l = match l with [] -> None | (k, v) :: r -> if k = x then Some v else assoc_opt x r
-
 (* a path's names from the root: the current directory's first unless
  * it starts with /, "." dropped, ".." the name before it removed (by
  * the text, as Plan 9's cleanname: no ".." in a directory) *)
 let names cwd path =
-  let rec split i j acc =
-    if j = String.length path then List.rev (String.sub path i (j - i) :: acc)
-    else if path.[j] = '/' then split (j + 1) (j + 1) (String.sub path i (j - i) :: acc)
-    else split i (j + 1) acc in
   let start = if String.length path > 0 && path.[0] = '/' then [] else List.rev cwd in
   List.rev (List.fold_left (fun acc n ->
     if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc)
-    start (split 0 0 []))
+    start (String.split_on_char '/' path))
 
 let rec walk node ns =
   match ns, node with
   | [], _ -> Some node
-  | n :: rest, Dir d -> (match assoc_opt n !d with Some c -> walk c rest | None -> None)
+  | n :: rest, Dir d -> (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
   | _ -> None
 
 (* the directory a path's last name is in, and that name *)
@@ -171,15 +165,13 @@ let contents node =
 (* [place d name node]: node under name in d; a name with a slash,
  * examples/wc.c, in its directory, which is made the first time *)
 let rec place d name node =
-  let rec slash i = if i >= String.length name then -1 else if name.[i] = '/' then i else slash (i + 1) in
-  let i = slash 0 in
-  if i < 0 then d := !d @ [ name, node ]
-  else begin
-    let dir = String.sub name 0 i and rest = String.sub name (i + 1) (String.length name - i - 1) in
-    match assoc_opt dir !d with
-    | Some (Dir sub) -> place sub rest node
-    | _ -> let sub = ref [] in d := !d @ [ dir, Dir sub ]; place sub rest node
-  end
+  match String.index_opt name '/' with
+  | None -> d := !d @ [ name, node ]
+  | Some i ->
+      let dir = String.sub name 0 i and rest = String.sub name (i + 1) (String.length name - i - 1) in
+      (match List.assoc_opt dir !d with
+       | Some (Dir sub) -> place sub rest node
+       | _ -> let sub = ref [] in d := !d @ [ dir, Dir sub ]; place sub rest node)
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
  * name, a line; its size, a line; its bytes; an empty name at the end.
@@ -193,13 +185,12 @@ let rec load a =
     let size, a = line a "" in
     match root with
     | Dir d when String.length size > 5 && String.sub size 0 5 = "link " ->
-        (match assoc_opt (String.sub size 5 (String.length size - 5)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
+        (match List.assoc_opt (String.sub size 5 (String.length size - 5)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
         load a
     | Dir d ->
-        let n = ref 0 in
-        for i = 0 to String.length size - 1 do n := (!n * 10) + Char.code size.[i] - 48 done;
-        place d name (Rom (a, !n));
-        load (a + !n)
+        let n = Option.get (int_of_string_opt size) in
+        place d name (Rom (a, n));
+        load (a + n)
     | _ -> ()
   end
 
@@ -260,7 +251,7 @@ let room size except =
 
 (* a descriptor's file; the lowest free descriptor (32 a process: a
  * window system has four a window), given f *)
-let fd p k = match assoc_opt k p.fds with Some f -> f | None -> raise Bad
+let fd p k = match List.assoc_opt k p.fds with Some f -> f | None -> raise Bad
 let fdalloc p f =
   let rec go k = if k >= 32 then raise Bad else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1) else k in
   let k = go 0 in
@@ -656,7 +647,7 @@ let sys_mkdir p =
 let sys_unlink p =
   match dir_of (names p.cwd (ustr p (reg p 1))) with
   | Some (d, last) ->
-      (match assoc_opt last !d with
+      (match List.assoc_opt last !d with
        | Some (Dir e) when !e <> [] -> raise Bad
        | Some _ -> d := List.filter (fun (n, _) -> n <> last) !d; result p 0
        | None -> raise Bad)

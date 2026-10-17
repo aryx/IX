@@ -36877,3 +36877,17 @@ Claude pointed out a reader would then have to learn that mechanism, despite the
 **Yoann:**
 
 > ok let's do the first one
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:10
+
+**Yoann:**
+
+> especially if they correspond to standard OCaml function for the standard OCaml library
+
+**Claude (summary):**
+
+Claude reported that tiny-ml's output matches real OCaml's on the new library test cases.
+Claude said the next steps were running mini-mk and a full tiny-kernel check.
+Yoann's follow-up asked to commit, which points at the passing tiny-ml library test.

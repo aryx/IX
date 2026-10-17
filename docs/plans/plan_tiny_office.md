@@ -387,6 +387,14 @@ tiny-windows like emacs, and a screen session in `make check`:
      looked at under SDL_VIDEODRIVER=dummy (the office on
      /examples/report.ixd, emacs on wc.c in colours, the calculator,
      tetris's first piece falling).
+     Then the browser (the author: "could we also make tiny-browser run
+     on the host?"): tiny-www, TinyKernel/user/www.ml as it is. The
+     window's TinyCalls answers a dial to the wire's other end, port
+     70, as tiny-machine does: "www address" and "img w h address"
+     fetched by tiny-machine-fetch (ix's own HTTP and TLS), a copy kept
+     in TINY_WWW's directory when the fetch fails; the answer's
+     messages read one at a time, as a link's (a picture's rows are
+     messages). Looked at: the live OCaml article, 251 KB, its logo.
    - The step as planned: each part's `html` as it comes is fine too; this
    step is the page around them, and a session that publishes a
    document and reads it with www.

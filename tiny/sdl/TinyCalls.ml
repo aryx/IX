@@ -14,7 +14,15 @@
  * window makes them: Alt a key's Escape, a key held typed again, the
  * wheel the arrows). An ENQ written to the console is answered in the
  * box, as tiny-windows answers it: the window's size. A file is the
- * host's, read whole when opened, written when closed. *)
+ * host's, read whole when opened, written when closed.
+ *
+ * A dial to the wire's other end, its port 70 (10.0.0.1, tiny-machine's
+ * peer, TinyMachinePeer.ml), is answered here as tiny-machine answers
+ * it: a line "www address" a web page, "img w h address" a picture in
+ * the machine's colours, both fetched by tiny-machine-fetch (ix's own
+ * HTTP and TLS), or, with TINY_WWW=dir, a copy kept in dir when the
+ * fetch fails (as tiny-machine -net dir); the answer's messages read
+ * one at a time, as a link's are. *)
 
 let width = 640
 let height = 480
@@ -92,11 +100,45 @@ let pump () =
 
 (* the files open: their descriptor, what is left to read of one, what
  * is written to one *)
-type file = Reading of string ref | Writing of string * Buffer.t
+type file = Reading of string ref | Writing of string * Buffer.t | Asking of Buffer.t | Answer of string list ref
 let files = Hashtbl.create 8
 let next = ref 5
 
-let ready fd = (fd = 0 && !typed <> "") || (fd = 4 && (!fresh || !enq)) || Hashtbl.mem files fd
+let ready fd =
+  (fd = 0 && !typed <> "") || (fd = 4 && (!fresh || !enq))
+  || (match Hashtbl.find_opt files fd with Some (Asking _) | None -> false | Some _ -> true)
+
+(* tiny-machine-fetch's output for its arguments, or why not; beside
+ * this program, as tiny-machine finds it *)
+let fetch args =
+  let dir = Filename.dirname Sys.executable_name in
+  let helper = if Filename.check_suffix Sys.executable_name ".exe" then Filename.concat dir "../TinyMachine/TinyMachineFetch.exe" else Filename.concat dir "tiny-machine-fetch" in
+  let ic = Unix.open_process_args_in helper (Array.of_list (helper :: args)) in
+  let out = In_channel.input_all ic in
+  match Unix.close_process_in ic with Unix.WEXITED 0 -> Ok out | _ -> Error out
+
+(* a copy kept in TINY_WWW's directory, by its name *)
+let kept name = match Sys.getenv_opt "TINY_WWW", name with
+  | Some dir, Some n when Sys.file_exists (Filename.concat dir n) -> Some (Filename.concat dir n)
+  | _ -> None
+
+(* the answer to a line asked of port 70, its messages *)
+let answer line =
+  match String.split_on_char ' ' (String.trim line) with
+  | "www" :: words ->
+      let url = TinyMachinePeer.www_address (String.concat " " words) in
+      TinyMachinePeer.messages (match fetch [ url ] with
+        | Ok page -> page
+        | Error why -> (match kept (TinyMachinePeer.www_kept url) with Some f -> In_channel.with_open_bin f In_channel.input_all | None -> why))
+  | "img" :: w :: h :: address when int_of_string_opt w <> None && int_of_string_opt h <> None ->
+      let w = int_of_string w and h = int_of_string h and url = String.concat " " address in
+      let decode source = match fetch [ "-picture"; string_of_int w; string_of_int h; source ] with
+        | Ok pixels when String.length pixels = w * h -> Some (TinyMachinePeer.picture "" w h pixels)
+        | _ -> None in
+      (match decode url with
+       | Some l -> l
+       | None -> (match Option.bind (kept (TinyMachinePeer.www_picture_kept url)) decode with Some l -> l | None -> TinyMachinePeer.picture "" 0 0 ""))
+  | _ -> []
 
 let rec u_ready (fds : int array) (n : int) (until : int) : int =
   show ();
@@ -125,6 +167,8 @@ let u_read (fd : int) (n : int) : string =
   else
     match Hashtbl.find_opt files fd with
     | Some (Reading left) -> let k = min n (String.length !left) in let s = String.sub !left 0 k in left := String.sub !left k (String.length !left - k); s
+    | Some (Answer ({ contents = m :: rest } as left)) ->
+        if String.length m <= n then (left := rest; m) else (left := String.sub m n (String.length m - n) :: rest; String.sub m 0 n)
     | _ -> ""
 
 let u_write (fd : int) (s : string) : int =
@@ -132,7 +176,13 @@ let u_write (fd : int) (s : string) : int =
   else if fd = 1 && s = "\005" then enq := true
   else if fd = 1 then (print_string s; flush stdout)
   else if fd = 2 then (prerr_string s; flush stderr)
-  else (match Hashtbl.find_opt files fd with Some (Writing (_, b)) -> Buffer.add_string b s | _ -> ());
+  else (match Hashtbl.find_opt files fd with
+        | Some (Writing (_, b)) -> Buffer.add_string b s
+        | Some (Asking b) ->
+            Buffer.add_string b s;
+            let asked = Buffer.contents b in
+            (match String.index_opt asked '\n' with Some i -> Hashtbl.replace files fd (Answer (ref (answer (String.sub asked 0 i)))) | None -> ())
+        | _ -> ());
   0
 
 let u_open (name : string) (flags : int) : int =
@@ -149,6 +199,7 @@ let u_close (fd : int) : int =
   0
 
 let u_rawcons (_ : int) = 0
-let u_dial (_ : string) (_ : int) = -1
+let u_dial (address : string) (port : int) =
+  if address = "10.0.0.1" && port = 70 then (let fd = !next in Hashtbl.replace files fd (Asking (Buffer.create 64)); incr next; fd) else -1
 let u_argc () = Array.length Sys.argv
 let u_arg (i : int) = Sys.argv.(i)

@@ -8,7 +8,7 @@
  (name tiny_host_calls_sdl)
  (implements tiny_host_calls)
  (modules TinyCalls TinyFont)
- (libraries tiny_kernel_graphics tiny_host_memory tiny_machine_sdl tiny_machine_devices unix))
+ (libraries tiny_kernel_graphics tiny_host_memory tiny_machine_sdl tiny_machine_devices tiny_machine_peer unix))
 
 ; the machine's font, 128 characters of 8 by 16, in the program
 (rule
@@ -25,6 +25,7 @@
 (copy_files# ../TinyKernel/user/emacs.ml)
 (copy_files# ../TinyKernel/user/calc.ml)
 (copy_files# ../TinyKernel/user/tetris.ml)
+(copy_files# ../TinyKernel/user/www.ml)
 
 (executable
  (name office)
@@ -46,6 +47,13 @@
  (package ix)
  (modules calc)
  (libraries tiny_app_calculator tiny_lib_gui tiny_host_calls_sdl))
+
+(executable
+ (name www)
+ (public_name tiny-www)
+ (package ix)
+ (modules www)
+ (libraries tiny_browser tiny_host_calls_sdl))
 
 (executable
  (name tetris)

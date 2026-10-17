@@ -82,7 +82,16 @@ let String.contains s c = match String.index_opt s c with Some _ -> true | None 
 let String.exists p s = let n = String.length s in let rec go i = i < n && (p s.[i] || go (i + 1)) in go 0
 let String.for_all p s = let n = String.length s in let rec go i = i >= n || (p s.[i] && go (i + 1)) in go 0
 let String.iter f s = for i = 0 to String.length s - 1 do f s.[i] done
-let String.concat sep = function [] -> "" | x :: l -> List.fold_left (fun acc y -> acc ^ sep ^ y) x l
+(* two by two, then the pairs two by two, and so on, so that each byte
+ * is copied about log n times. old: each string appended to all the
+ * ones before it, so that joining a page's pieces copied its text once
+ * per piece, and TinyBrowser, TinyEditorScreen and TinyOffice each had
+ * their own join *)
+let String.concat sep l =
+  let two a b = if sep = "" then a ^ b else a ^ sep ^ b in
+  let rec pairs = function a :: b :: rest -> two a b :: pairs rest | l -> l in
+  let rec join = function [] -> "" | [ s ] -> s | l -> join (pairs l) in
+  join l
 
 (* from the end, so that the list is in order: j is where the piece
  * being read ends *)

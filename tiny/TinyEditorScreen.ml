@@ -381,21 +381,8 @@ let at (s : string) (i : int) (p : string) =
   let rec same k = k >= m || (s.[i + k] = p.[k] && same (k + 1)) in
   i + m <= String.length s && same 0
 
-(* strings joined two by two, then the results, and so on: each byte
- * copied a few times. (String.concat of TinyLibStd joins each to all
- * before it, and a line's colors are dozens of pieces) *)
-let rec join = function
-  | [] -> ""
-  | [ s ] -> s
-  | l ->
-      let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
-      join (pairs l)
-
-(* the text: its lines with a newline between two (joined two by two:
- * see join) *)
-let text (e : editor) : string =
-  let rec go = function l :: rest -> l :: (match rest with [] -> [] | _ -> "\n" :: go rest) | [] -> [] in
-  join (go (lines e))
+(* the text: its lines with a newline between two *)
+let text (e : editor) : string = String.concat "\n" (lines e)
 
 (* the end of a string or a character of s, from i after its opening quote q *)
 let rec closing (s : string) (q : char) (i : int) : int =
@@ -448,7 +435,7 @@ let lex (language : language) (keep : bool) (s : string) (depth : int) : string 
     else (put '.' 1; go (i + 1) 0)
   in
   let depth = go 0 depth in
-  join (List.fold_left (fun acc (f, k) -> String.make k f :: acc) [] !runs), depth
+  String.concat "" (List.fold_left (fun acc (f, k) -> String.make k f :: acc) [] !runs), depth
 
 (* the lines' first column shown: 0, unless the cursor would be out *)
 let left (e : editor) = let c = column e.t.line e.t.col in if c < e.cols then 0 else c - e.cols + 1

@@ -9,20 +9,9 @@ open TinyLibDraw
 (* Strings *)
 (*****************************************************************************)
 
-(* Joins a list of strings by concatenating them two by two, then the
- * pairs two by two, and so on. tiny-ml's String.concat appends each
- * string to everything before it, so joining a whole page that way
- * would copy its text once per piece. *)
-let rec join = function
-  | [] -> ""
-  | [ s ] -> s
-  | l ->
-      let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
-      join (pairs l)
-
 let lower s =
   if String.exists (fun c -> c >= 'A' && c <= 'Z') s
-  then join (List.init (String.length s) (fun i -> let c = s.[i] in String.make 1 (if c >= 'A' && c <= 'Z' then Char.chr (Char.code c + 32) else c)))
+  then String.concat "" (List.init (String.length s) (fun i -> let c = s.[i] in String.make 1 (if c >= 'A' && c <= 'Z' then Char.chr (Char.code c + 32) else c)))
   else s
 
 (* Returns the position of pat in s, searching from i, or -1. *)
@@ -150,7 +139,7 @@ let ascii s =
       else incr i
     done;
     cut n;
-    join (List.rev !pieces)
+    String.concat "" (List.rev !pieces)
   end
 
 (* When a text runs to the end of a message, the next message may
@@ -839,7 +828,7 @@ let show_line p width (l : line) =
   if l.rule then String.make width '-'
   else begin
     let at = ref 0 in
-    join (List.map (fun (r : run) ->
+    String.concat "" (List.map (fun (r : run) ->
       let pad = if r.pic = -2 then "" else if r.col > !at then String.make (r.col - !at) ' ' else "" in
       let text =
         if r.pic >= 0 && r.pic mod 256 = 0 then
@@ -851,7 +840,7 @@ let show_line p width (l : line) =
       pad ^ text) l.runs)
   end
 
-let dump p = join (List.map (fun l -> show_line p p.page_flow.width l ^ "\n") (lines p))
+let dump p = String.concat "" (List.map (fun l -> show_line p p.page_flow.width l ^ "\n") (lines p))
 
 (*****************************************************************************)
 (* The screen *)
@@ -894,7 +883,7 @@ let absolute typed =
   else begin
     let first = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
     if String.contains first '.' && not (String.contains first ' ') then "https://" ^ s
-    else "https://en.wikipedia.org/wiki/" ^ join (List.init (String.length s) (fun i -> if s.[i] = ' ' then "_" else String.make 1 s.[i]))
+    else "https://en.wikipedia.org/wiki/" ^ String.concat "" (List.init (String.length s) (fun i -> if s.[i] = ' ' then "_" else String.make 1 s.[i]))
   end
 
 (* "https://host" of an address *)
@@ -962,7 +951,7 @@ type screen = {
 
 let rows_of_page sc = sc.sc_rows - 2
 let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
-let flush sc = if sc.sc_msgs <> [] then begin ignore (u_write 3 (join (List.rev sc.sc_msgs))); sc.sc_msgs <- [] end
+let flush sc = if sc.sc_msgs <> [] then begin ignore (u_write 3 (String.concat "" (List.rev sc.sc_msgs))); sc.sc_msgs <- [] end
 
 let clip sc s = if String.length s > sc.sc_cols - 2 then String.sub s 0 (max 0 (sc.sc_cols - 2)) else s
 

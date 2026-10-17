@@ -10,15 +10,6 @@ open TinyLibGUI
  * the file, to quit *)
 type request = Continue | Save | Quit
 
-(* strings joined two by two (one after the other, the first ones would
- * be copied again at each) *)
-let rec join = function
-  | [] -> ""
-  | [ s ] -> s
-  | l ->
-      let rec pairs = function a :: b :: rest -> (a ^ b) :: pairs rest | l -> l in
-      join (pairs l)
-
 (* the page's colours, bytes of the machine's palette: white, black, a
  * frame's grey, the selected box's blue, the status line's light grey,
  * selected text's pale blue *)
@@ -127,7 +118,7 @@ let typed_in (data : string) (n : string) = match List.assoc_opt n (cells data) 
 (* the data with what is typed in cell n changed ("": the cell emptied) *)
 let set_cell (data : string) (n : string) (input : string) : string =
   let others = List.filter (fun (m, _) -> m <> n) (cells data) in
-  join (List.map (fun (m, s) -> m ^ " " ^ s ^ "\n") (if input = "" then others else others @ [ n, input ]))
+  String.concat "" (List.map (fun (m, s) -> m ^ " " ^ s ^ "\n") (if input = "" then others else others @ [ n, input ]))
 
 (* a cell's value: a number, text (an empty cell is "", 0 in a sum), or
  * an error, said in the cell: #SYNTAX, #REF, #TEXT (text in a sum),
@@ -248,7 +239,7 @@ let letters = "biul"
 let decode (data : string) : string * string =
   let n = String.length data in
   let rec go i style chars styles =
-    if i >= n then (join (List.rev chars), join (List.rev styles))
+    if i >= n then (String.concat "" (List.rev chars), String.concat "" (List.rev styles))
     else if data.[i] = '\\' && i + 1 < n && data.[i + 1] = '{' then begin
       match String.index_from_opt data i '}' with
       | Some e ->
@@ -263,11 +254,11 @@ let decode (data : string) : string * string =
     end in
   go 0 0 [] []
 
-let mark (s : int) = "\\{" ^ join (List.init 4 (fun k -> if s land (1 lsl k) <> 0 then String.make 1 letters.[k] else "")) ^ "}"
+let mark (s : int) = "\\{" ^ String.concat "" (List.init 4 (fun k -> if s land (1 lsl k) <> 0 then String.make 1 letters.[k] else "")) ^ "}"
 
 let encode (txt : string) (sty : string) : string =
   let rec go i was acc =
-    if i >= String.length txt then join (List.rev (if was <> 0 then mark 0 :: acc else acc))
+    if i >= String.length txt then String.concat "" (List.rev (if was <> 0 then mark 0 :: acc else acc))
     else begin
       let s = Char.code sty.[i] in
       let c = if txt.[i] = '\\' then "\\\\" else String.make 1 txt.[i] in
@@ -350,7 +341,7 @@ let restyle (d : doc) (bit : int) =
     for i = a to z - 1 do if Char.code d.sty.[i] land bit = 0 then all := false done;
     let one i = let s = Char.code d.sty.[a + i] in String.make 1 (Char.chr (if bit = 0 then 0 else if !all then s land lnot bit else s lor bit)) in
     let n = String.length d.txt in
-    d.sty <- String.sub d.sty 0 a ^ join (List.init (z - a) one) ^ String.sub d.sty z (n - z)
+    d.sty <- String.sub d.sty 0 a ^ String.concat "" (List.init (z - a) one) ^ String.sub d.sty z (n - z)
   end
 
 (* what was cut or copied, its characters and their styles *)
@@ -459,7 +450,7 @@ let figures (data : string) : (string * int list * string) list =
     | _ -> []) (String.split_on_char '\n' data)
 
 let figure_line ((kind, nums, label) : string * int list * string) : string =
-  join (kind :: List.map (fun n -> " " ^ string_of_int n) nums @ (if label = "" then [ "\n" ] else [ " "; label; "\n" ]))
+  String.concat "" (kind :: List.map (fun n -> " " ^ string_of_int n) nums @ (if label = "" then [ "\n" ] else [ " "; label; "\n" ]))
 
 (* a shape drawn, the box's corner at (ox, oy); an arrow's head is
  * rectangles narrowing to its end, along its last stretch *)
@@ -501,7 +492,7 @@ let sketch_key (o : office) (tool : int) (k : int) =
   let b = nth_obj o.page o.sel in
   let figs = figures b.data in
   let relabel f = match List.rev figs with
-    | (kind, nums, label) :: rest -> change o (join (List.map figure_line (List.rev rest @ f kind nums label)))
+    | (kind, nums, label) :: rest -> change o (String.concat "" (List.map figure_line (List.rev rest @ f kind nums label)))
     | [] -> () in
   if k = 9 then o.editing <- Sketch ((tool + 1) mod 3, None)
   else if k >= 32 && k < 127 then relabel (fun kind nums label -> [ kind, nums, label ^ String.make 1 (Char.chr k) ])
@@ -558,7 +549,7 @@ let painted (b : obj) (letter : char) (brush : int) (c0 : int) (r0 : int) (c1 : 
   (* (the rows up to the last one that is not white) *)
   let last = ref (-1) in
   for r = 0 to nrows - 1 do if rows.(r) <> "" then last := r done;
-  join (List.init (!last + 1) (fun r -> rows.(r) ^ "\n"))
+  String.concat "" (List.init (!last + 1) (fun r -> rows.(r) ^ "\n"))
 
 (* a stroke painted in the selected paint (the page changed, its undo
  * kept when the stroke began) *)
@@ -640,7 +631,7 @@ let md_of_line (t : string) (st : string) : string =
   let one i c =
     if c = '\\' || c = '*' || c = '{' || c = '}' || (i = 0 && (c = '#' || c = '|' || c = '`')) then "\\" ^ String.make 1 c else String.make 1 c in
   let rec go i was acc =
-    if i >= n then join (List.rev (closes was :: acc))
+    if i >= n then String.concat "" (List.rev (closes was :: acc))
     else begin
       let k = Char.code st.[i] land lnot base in
       go (i + 1) k (one i t.[i] :: (if k <> was then opens k :: closes was :: acc else acc))
@@ -657,7 +648,7 @@ let line_of_md (l : string) : string * string =
   let rec any l = match l with k :: rest -> k lor any rest | [] -> 0 in
   let rec go i opened stars chars styles =
     let add c = go (i + 1) opened stars (String.make 1 c :: chars) (String.make 1 (Char.chr (base lor stars lor any opened)) :: styles) in
-    if i >= n then (join (List.rev chars), join (List.rev styles))
+    if i >= n then (String.concat "" (List.rev chars), String.concat "" (List.rev styles))
     else if starts i "\\u{" then go (i + 3) (4 :: opened) stars chars styles
     else if starts i "\\large{" then go (i + 7) (8 :: opened) stars chars styles
     else if l.[i] = '\\' && i + 1 < n then
@@ -681,8 +672,8 @@ let md_of_text (data : string) : string list =
 
 let text_of_md (ls : string list) : string =
   let read = List.map line_of_md ls in
-  encode (join (List.map (fun (k, (t, _)) -> if k = 0 then t else "\n" ^ t) (numbered read)))
-    (join (List.map (fun (k, (_, st)) -> if k = 0 then st else "\000" ^ st) (numbered read)))
+  encode (String.concat "" (List.map (fun (k, (t, _)) -> if k = 0 then t else "\n" ^ t) (numbered read)))
+    (String.concat "" (List.map (fun (k, (_, st)) -> if k = 0 then st else "\000" ^ st) (numbered read)))
 
 (* A sheet as a table, its columns as wide as their widest cell, and
  * back (a | in a cell is \|) *)
@@ -690,13 +681,13 @@ let md_of_sheet (data : string) : string list =
   let cs = cells data in
   let col n = Char.code n.[0] - 97 and row n = (match int_of_string_opt (String.sub n 1 (String.length n - 1)) with Some r -> r | None -> 1) - 1 in
   let ncols = List.fold_left (fun m (n, _) -> max m (col n + 1)) 1 cs and nrows = List.fold_left (fun m (n, _) -> max m (row n + 1)) 0 cs in
-  let esc s = join (List.map (fun c -> if c = '|' then "\\|" else String.make 1 c) (List.init (String.length s) (fun i -> s.[i]))) in
+  let esc s = String.concat "" (List.map (fun c -> if c = '|' then "\\|" else String.make 1 c) (List.init (String.length s) (fun i -> s.[i]))) in
   let cell c r = esc (typed_in data (name c r)) in
   let wide = List.init ncols (fun c -> List.fold_left (fun m r -> max m (String.length (cell c r))) 1 (List.init nrows (fun r -> r))) in
   let pad s w = s ^ String.make (w - String.length s) ' ' in
-  let line f = "|" ^ join (List.map (fun (c, w) -> " " ^ pad (f c) w ^ " |") (numbered wide)) in
+  let line f = "|" ^ String.concat "" (List.map (fun (c, w) -> " " ^ pad (f c) w ^ " |") (numbered wide)) in
   line (fun c -> String.make 1 (Char.chr (97 + c)))
-  :: ("|" ^ join (List.map (fun w -> String.make (w + 2) '-' ^ "|") wide))
+  :: ("|" ^ String.concat "" (List.map (fun w -> String.make (w + 2) '-' ^ "|") wide))
   :: List.init nrows (fun r -> line (fun c -> cell c r))
 
 (* a table's line, its cells: between the |, trimmed, \| a | *)
@@ -712,23 +703,23 @@ let table_cells (l : string) : string list =
 let sheet_of_md (ls : string list) : string =
   match ls with
   | _ :: _ :: rows ->
-      join (List.concat (List.map (fun (r, l) -> List.concat (List.map (fun (c, t) -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (numbered (table_cells l)))) (numbered rows)))
+      String.concat "" (List.concat (List.map (fun (r, l) -> List.concat (List.map (fun (c, t) -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (numbered (table_cells l)))) (numbered rows)))
   | _ -> ""
 
 (* the file of a page, and its page *)
 let text (o : office) : string =
-  join (List.map (fun (k, (b : obj)) ->
+  String.concat "" (List.map (fun (k, (b : obj)) ->
     let content =
       if b.kind = "sheet" then md_of_sheet b.data
       else if b.kind = "drawing" || b.kind = "paint" then
         (* (its lines as they are, a paint's empty rows too; not the empty one after the last newline) *)
         [ "```" ^ b.kind ] @ (match List.rev (String.split_on_char '\n' b.data) with "" :: r -> List.rev r | l -> List.rev l) @ [ "```" ]
       else md_of_text b.data in
-    join ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ "]{\n")
+    String.concat "" ((if k = 0 then "" else "\n") :: ("\\box[" ^ string_of_int b.x ^ " " ^ string_of_int b.y ^ " " ^ string_of_int b.w ^ " " ^ string_of_int b.h ^ "]{\n")
           :: List.map (fun l -> l ^ "\n") content @ [ "}\n" ])) (numbered o.page))
 
 let obj_of (x : int) (y : int) (w : int) (h : int) (ls : string list) : obj =
-  let lines_data l = join (List.map (fun s -> s ^ "\n") l) in
+  let lines_data l = String.concat "" (List.map (fun s -> s ^ "\n") l) in
   match ls with
   | first :: _ when String.length first > 0 && first.[0] = '|' -> { kind = "sheet"; x; y; w; h; data = sheet_of_md ls }
   | first :: rest when first = "```drawing" || first = "```paint" ->

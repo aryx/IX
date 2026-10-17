@@ -112,11 +112,6 @@ val shapes : editor -> int -> TinyLibPlayground.shape list
 (* where the cursor is on that screen: its column, its line *)
 val cursor : editor -> int * int
 
-(* strings joined two by two, then the results, and so on: each byte
- * copied a few times (TinyLibStd's String.concat copies all that came
- * before at each string) *)
-val join : string list -> string
-
 (* the text, its lines with a newline between two: what is saved *)
 val text : editor -> string
 

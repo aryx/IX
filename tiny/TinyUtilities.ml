@@ -43,10 +43,6 @@ let quote name =
   if name <> "" && not (String.exists (fun c -> c <= ' ' || c = '\'') name) then name
   else "'" ^ String.concat "''" (String.split_on_char '\'' name) ^ "'"
 
-let ends_with s suffix =
-  let n = String.length s and m = String.length suffix in
-  n >= m && String.sub s (n - m) m = suffix
-
 (* [options letters args]: the letters of the options in front of args,
  * each of which must be one of letters, and the arguments after them.
  * "--" ends the options, and "-" alone is an argument *)
@@ -208,11 +204,6 @@ let xd caps args =
     line !pending;
     print caps (address (!addr + String.length !pending) ^ "\n"))
 
-(* the bytes of s, the capitals made small *)
-let lowercase s =
-  String.concat "" (List.init (String.length s) (fun i ->
-    let c = s.[i] in String.make 1 (if c >= 'A' && c <= 'Z' then Char.chr (Char.code c + 32) else c)))
-
 (* the lines that match; -v: that do not; -i: whatever the letters'
  * case; -n: with their numbers; -c: how many; -l: the files' names.
  * The status is 0 when a line was found *)
@@ -221,7 +212,7 @@ let grep caps args =
   match rest with
   | [] -> raise Usage
   | pattern :: files ->
-      let fold s = if List.mem 'i' flags then lowercase s else s in
+      let fold s = if List.mem 'i' flags then String.lowercase_ascii s else s in
       let re = compile (fold pattern) in
       let named name = if List.length files > 1 then name ^ ":" else "" in
       let found = ref false in
@@ -516,7 +507,7 @@ let basename caps args =
   let slash = rindex name '/' (String.length name - 1) and last = last_part name in
   print caps
     ((if dir then (if slash < 0 then "." else String.sub name 0 slash)
-      else if suffix <> "" && ends_with last suffix then String.sub last 0 (String.length last - String.length suffix)
+      else if suffix <> "" && Filename.check_suffix last suffix then String.sub last 0 (String.length last - String.length suffix)
       else last) ^ "\n");
   0
 

@@ -36830,3 +36830,50 @@ Claude is still waiting on which of the three convention changes to do next.
 **Yoann:**
 
 > yes commit, then let's do tiny-troff
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:39
+
+**Yoann:**
+
+> what they gonna help reduce? Can you give more context on those 3 choices
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:41
+
+**Yoann:**
+
+> let's commit the progress?
+
+**Claude (summary):**
+
+Claude said the chart (plan step 5) was still unfinished and needed to be done next.
+Claude said PDF output for troff was also left in the plan as remaining work.
+Claude planned to review the four re-recorded screens, including tetris, before recording the plan.
+Claude noted that HEAD had not moved, so the commit waited on the plan naming tetris.
+Claude reported tiny-troff committed as 50571f05 with 19 files, and a compile fix in 45dff8df.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:52
+
+**Yoann:**
+
+> I'm on the fence; on one side it can help reduce the LOC, on the other side it also complicates sligtly things; even for #1 generating the file then hide the generated file sys.tm which is also nice to read; it maybe be repetitive but it's also nice to see repetitive simple code for that.
+
+**Claude (summary):**
+
+Claude agreed the first three cleanups removed real duplication, leaving less code to understand.
+Claude recommended leaving sys.tm as it is, since its 7-line C-to-trap mapping is easy to follow.
+Claude warned that generating sys.tm would move that visible mapping into a Makefile rule or a new ABI.
+Claude pointed out a reader would then have to learn that mechanism, despite the fewer lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 13:08
+
+**Yoann:**
+
+> ok let's do the first one

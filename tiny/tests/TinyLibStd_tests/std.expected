@@ -19,6 +19,13 @@ true false true false true false true
 []
 [][a][]
 [abc]
+
+[abcde][a-b-c-d-e]
+3 none none 
+[Plan_9_os][]
+[ocaml 4.14!][small][]
+[a b][][][x]
+true false true 
 [one two]7 0 [x]
 [c]
 true false none false not found

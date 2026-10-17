@@ -83,6 +83,9 @@ let String.contains s c = match String.index_opt s c with Some _ -> true | None 
 let String.exists p s = let n = String.length s in let rec go i = i < n && (p s.[i] || go (i + 1)) in go 0
 let String.for_all p s = let n = String.length s in let rec go i = i >= n || (p s.[i] && go (i + 1)) in go 0
 let String.iter f s = for i = 0 to String.length s - 1 do f s.[i] done
+let String.rindex_opt s c =
+  let rec go i = if i < 0 then None else if s.[i] = c then Some i else go (i - 1) in
+  go (String.length s - 1)
 (* two by two, then the pairs two by two, and so on, so that each byte
  * is copied about log n times. old: each string appended to all the
  * ones before it, so that joining a page's pieces copied its text once
@@ -93,6 +96,18 @@ let String.concat sep l =
   let rec pairs = function a :: b :: rest -> two a b :: pairs rest | l -> l in
   let rec join = function [] -> "" | [ s ] -> s | l -> join (pairs l) in
   join l
+let String.map f s = String.concat "" (List.init (String.length s) (fun i -> String.make 1 (f s.[i])))
+(* s itself when it has no capital, as most words read do *)
+let String.lowercase_ascii s =
+  let upper c = c >= 'A' && c <= 'Z' in
+  if String.exists upper s then String.map (fun c -> if upper c then Char.chr (Char.code c + 32) else c) s else s
+let String.trim s =
+  let blank c = c = ' ' || c = '\t' || c = '\n' || c = '\r' || c = '\012' in
+  let n = String.length s in
+  let rec first i = if i < n && blank s.[i] then first (i + 1) else i in
+  let rec last j = if j > 0 && blank s.[j - 1] then last (j - 1) else j in
+  let i = first 0 in
+  String.sub s i (max 0 (last n - i))
 
 (* from the end, so that the list is in order: j is where the piece
  * being read ends *)
@@ -103,6 +118,10 @@ let String.split_on_char c s =
     else go j (i - 1) acc
   in
   go (String.length s) (String.length s - 1) []
+
+let Filename.check_suffix name suffix =
+  let n = String.length name and m = String.length suffix in
+  n >= m && String.sub name (n - m) m = suffix
 
 let Filename.concat dir file =
   let n = String.length dir in

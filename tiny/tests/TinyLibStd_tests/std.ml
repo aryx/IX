@@ -40,7 +40,13 @@ let () =
   String.iter (fun c -> int (Char.code c)) "abc"; print_newline ();
   str (String.concat ", " [ "a"; "b"; "c" ]); str (String.concat "," []); str (String.concat "," [ "a" ]); print_newline ();
   strs (String.split_on_char ' ' "a b  c"); strs (String.split_on_char ':' ""); strs (String.split_on_char ':' ":a:");
-  strs (String.split_on_char ':' "abc")
+  strs (String.split_on_char ':' "abc"); print_newline ();
+  str (String.concat "" [ "a"; "b"; "c"; "d"; "e" ]); str (String.concat "-" [ "a"; "b"; "c"; "d"; "e" ]); print_newline ();
+  opt (String.rindex_opt "a/b/c" '/'); opt (String.rindex_opt "abc" '/'); opt (String.rindex_opt "" '/'); print_newline ();
+  str (String.map (fun c -> if c = ' ' then '_' else c) "Plan 9 os"); str (String.map (fun c -> c) ""); print_newline ();
+  str (String.lowercase_ascii "OCaml 4.14!"); str (String.lowercase_ascii "small"); str (String.lowercase_ascii ""); print_newline ();
+  str (String.trim "  a b \t\n"); str (String.trim "   "); str (String.trim ""); str (String.trim "x"); print_newline ();
+  bool (Filename.check_suffix "a.ml" ".ml"); bool (Filename.check_suffix "ml" ".ml"); bool (Filename.check_suffix "a.ml" ""); print_newline ()
 
 let () =
   let b = Buffer.create 16 in

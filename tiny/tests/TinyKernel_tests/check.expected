@@ -129,11 +129,11 @@ tail
 % grep: no operand for `('
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ % -  25   229160 /cat
+$ % -  25   229612 /cat
 -   2   225000 /editor
 -   2   225000 /emacs
 -   1    70364 /ping
--  25   229160 /utils
+-  25   229612 /utils
 %      52     208    1091 f
      52     208    1091
      52     208    1091
@@ -152,10 +152,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   199768 /ed
+% -   2   200424 /ed
 -   2   225000 /editor
 -   2   225000 /emacs
--   2   199768 /sam
+-   2   200424 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0

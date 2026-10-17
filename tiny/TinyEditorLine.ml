@@ -97,14 +97,6 @@ let refill () =
     | None -> ()
 let peekc () = refill (); if !ip < String.length !input then (!input).[!ip] else '\000'
 let getc () = let c = peekc () in incr ip; c
-(* s without the blanks at its ends *)
-let trim s =
-  let blank c = c = ' ' || c = '\t' || c = '\n' || c = '\r' in
-  let n = String.length s and i = ref 0 in
-  while !i < n && blank s.[!i] do incr i done;
-  let j = ref n in
-  while !j > !i && blank s.[!j - 1] do decr j done;
-  String.sub s !i (!j - !i)
 
 let skipbl () = while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
 let atnl () = if skipbl () <> '\n' && peekc () <> '\000' then raise (Error "newline expected") else incr ip
@@ -205,7 +197,7 @@ let rec parse () : cmd option =
       end
       else (let d = getc () in let t = rhs d false in if peekc () = d then incr ip; atnl (); t)
     in
-    let word () = ignore (skipbl ()); let s = !ip in while peekc () <> '\n' && peekc () <> '\000' do incr ip done; let w = String.sub !input s (!ip - s) in atnl (); trim w in
+    let word () = ignore (skipbl ()); let s = !ip in while peekc () <> '\n' && peekc () <> '\000' do incr ip done; let w = String.sub !input s (!ip - s) in atnl (); String.trim w in
     let sub () = match skipbl () with '\n' -> incr ip; { addr = None; op = Print } | _ -> Option.get (parse ()) in
     let op =
       match c with

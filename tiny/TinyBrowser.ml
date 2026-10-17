@@ -9,11 +9,6 @@ open TinyLibDraw
 (* Strings *)
 (*****************************************************************************)
 
-let lower s =
-  if String.exists (fun c -> c >= 'A' && c <= 'Z') s
-  then String.concat "" (List.init (String.length s) (fun i -> let c = s.[i] in String.make 1 (if c >= 'A' && c <= 'Z' then Char.chr (Char.code c + 32) else c)))
-  else s
-
 (* Returns the position of pat in s, searching from i, or -1. *)
 let find s pat i =
   let n = String.length s and m = String.length pat in
@@ -171,16 +166,16 @@ let tag s =
   let n = String.length s in
   let rec word i = if i < n && not (is_space s.[i]) && s.[i] <> '/' && s.[i] <> '=' && s.[i] <> '>' then word (i + 1) else i in
   let rec skip i = if i < n && (is_space s.[i] || s.[i] = '/') then skip (i + 1) else i in
-  if n > 0 && s.[0] = '/' then let e = word 1 in Close (lower (String.sub s 1 (e - 1)))
+  if n > 0 && s.[0] = '/' then let e = word 1 in Close (String.lowercase_ascii (String.sub s 1 (e - 1)))
   else begin
     let e = word 0 in
-    let name = lower (String.sub s 0 e) in
+    let name = String.lowercase_ascii (String.sub s 0 e) in
     let rec attrs i acc =
       let i = skip i in
       if i >= n then List.rev acc
       else begin
         let e = word i in
-        let a = lower (String.sub s i (e - i)) in
+        let a = String.lowercase_ascii (String.sub s i (e - i)) in
         let rec sp j = if j < n && is_space s.[j] then sp (j + 1) else j in
         let j = sp e in
         if j < n && s.[j] = '=' then begin
@@ -877,13 +872,12 @@ let fragment url =
  * find where a relative link goes: a title is an English Wikipedia
  * article, a name with a dot is https://. *)
 let absolute typed =
-  let s = let n = String.length typed in let rec a i = if i < n && is_space typed.[i] then a (i + 1) else i in
-    let rec b j = if j > 0 && is_space typed.[j - 1] then b (j - 1) else j in let i = a 0 in String.sub typed i (max 0 (b n - i)) in
+  let s = String.trim typed in
   if starts "http://" s || starts "https://" s then s
   else begin
     let first = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
     if String.contains first '.' && not (String.contains first ' ') then "https://" ^ s
-    else "https://en.wikipedia.org/wiki/" ^ String.concat "" (List.init (String.length s) (fun i -> if s.[i] = ' ' then "_" else String.make 1 s.[i]))
+    else "https://en.wikipedia.org/wiki/" ^ String.map (fun c -> if c = ' ' then '_' else c) s
   end
 
 (* "https://host" of an address *)
@@ -905,9 +899,9 @@ let resolve url base href =
       if base <> "" then (if starts "//" base then "https:" ^ base else base)
       else begin
         let u = fst (fragment url) in
-        let rec slash i = if i < 0 then -1 else if u.[i] = '/' then i else slash (i - 1) in
-        let i = slash (String.length u - 1) in
-        if i > String.length (site url) then String.sub u 0 (i + 1) else site url ^ "/"
+        match String.rindex_opt u '/' with
+        | Some i when i > String.length (site url) -> String.sub u 0 (i + 1)
+        | _ -> site url ^ "/"
       end in
     dir ^ (if starts "./" href then String.sub href 2 (String.length href - 2) else href)
   end

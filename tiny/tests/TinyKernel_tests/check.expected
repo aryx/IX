@@ -57,6 +57,7 @@ temp
 test
 tetris
 touch
+troff
 utils
 walk
 wc
@@ -111,7 +112,8 @@ bye
 ln: nosuch: cannot
 ls: c: not there
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ % touch
+$ % troff
+touch
 tetris
 test
 temp
@@ -132,9 +134,9 @@ $ % -  25   229160 /cat
 -   2   225000 /emacs
 -   1    70364 /ping
 -  25   229160 /utils
-%      51     204    1069 f
-     51     204    1069
-     51     204    1069
+%      52     208    1091 f
+     52     208    1091
+     52     208    1091
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -174,6 +176,35 @@ Kept by **put**, read by cat.
 | =a2*2 |
 }
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % A report
+========
+
+What tiny-office makes, and tiny-troff prints: text in its styles, a
+sheet, a drawing, a paint.
+
+
+ +-------+
+ |editor |-------+
+ |       |       |
+ +-------+       |
+                 |
+                 v
+             +-------+
+             | troff |
+             |       |
+             +-------+
+
+  kkkk
+ krrrrk
+ krrrrk
+  kkkk
+
+Rent   500
+Food   300
+Total  800
+%      38     146    2054 r.html
+usage: troff [-h] file
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first
 % notes

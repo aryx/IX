@@ -7,7 +7,8 @@
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
-#                     ^C, M-x and a macro; office's page, a text and a sheet, saved), then the network (ping,
+#                     ^C, M-x and a macro; office's page, a text and a sheet, saved; troff's text and web page of
+#                     /examples/report.ixd), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost, each packet as -net-trace says it,
@@ -73,7 +74,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
+PROGS = sh rc emacs office troff mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -233,6 +234,15 @@ $(O)/user/office.tm: $(OFFICE)
 $(O)/bin/office: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/office.tm
 	@$(MLLINK)
 
+# troff (../TinyTroff.ml, a page as text or HTML, on the office's
+# reading of it; user/troff.ml, the few lines between)
+TROFF = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml ../TinyTroff.ml user/troff.ml
+$(O)/user/troff.tm: $(TROFF)
+	@mkdir -p $(@D)
+	$(TML) -tm -o $@ $(TROFF)
+$(O)/bin/troff: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/troff.tm
+	@$(MLLINK)
+
 # a program that draws: with draw.c, the messages (draw.h)
 $(O)/user/paint.tm: libc/draw.h
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
@@ -251,8 +261,10 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 
 # files to edit, in /examples: sources of the image's own programs, two
 # in C and two in OCaml, which emacs shows in colors (emacs
-# /examples/emacs.ml: the editor around the editor)
-EXAMPLES = user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml
+# /examples/emacs.ml: the editor around the editor); a page of the
+# office's, which troff prints (office /examples/report.ixd, troff -h
+# /examples/report.ixd)
+EXAMPLES = user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd
 
 $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	cp $(O)/kernel.img $@
@@ -279,6 +291,7 @@ check: $(O)/boot.img
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /ed /sam /emacs /editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img >> $(O)/check.out
+	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; wc r.html; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out

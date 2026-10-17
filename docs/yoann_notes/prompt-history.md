@@ -36814,3 +36814,19 @@ Claude described the `prune` function in tiny/TinyML.ml and its call as `compile
 Claude noted that tiny/TinyML.mli gained a new bullet, "What nothing uses is not compiled".
 Claude changed the tiny/TinyLibStd.ml header so it no longer says the library is compiled whole.
 Claude is still waiting on which of the three convention changes to do next.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:37
+
+**Yoann:**
+
+> let's commit the progress
+
+------------------------------------------------------------------------
+
+## 2026-10-17 12:09
+
+**Yoann:**
+
+> yes commit, then let's do tiny-troff

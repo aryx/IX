@@ -1,0 +1,30 @@
+\box[16 40 300 120]{
+# A **report**
+
+What tiny-office makes, and tiny-troff prints: *text* in its styles, \u{a sheet}, a drawing, a paint.
+}
+
+\box[16 170 170 86]{
+| a     | b      |
+|-------|--------|
+| Rent  | 500    |
+| Food  | 300    |
+| Total | =b1+b2 |
+}
+
+\box[330 40 200 90]{
+```drawing
+box 8 8 64 24 editor
+arrow 72 20 136 56
+box 104 56 64 24 troff
+```
+}
+
+\box[330 140 80 48]{
+```paint
+..kkkk
+.krrrrk
+.krrrrk
+..kkkk
+```
+}

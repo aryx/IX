@@ -136,11 +136,27 @@ val key : office -> int -> request
 val mouse : office -> int -> int -> int -> request
 
 (* the page as shapes: the ground (white), each object's group (its
- * frame, its content: bold is words twice, a pixel apart), the status
- * line's, the menus' bar and the open menu *)
+ * frame, its content), the status line's, the menus' bar and the open
+ * menu *)
 val view : office -> TinyLibPlayground.shape list
 
 (* the page as its file's text; and the program around saying it wrote it *)
 val text : office -> string
 val saved : office -> unit
 val say : office -> string -> unit
+
+(* What tiny-troff (TinyTroff.ml) reads of a page, to print it as text
+ * or HTML: its objects, from its file's text (a page of that width and
+ * height, for a Markdown file's one box); a text box's characters and
+ * their styles (a byte each: bold 1, italic 2, underlined 4, large 8);
+ * a sheet's cells (each its name and what was typed), each cell's
+ * value, a cell's name (its column and row, from 0); a drawing's shapes
+ * (each its kind, box, arrow or text, its numbers, its label) *)
+type obj = { kind : string; x : int; y : int; w : int; h : int; data : string }
+val parse : int -> int -> string -> obj list
+val decode : string -> string * string
+type value = Num of int | Str of string | Err of string
+val cells : string -> (string * string) list
+val values : string -> string -> value
+val name : int -> int -> string
+val figures : string -> (string * int list * string) list

@@ -475,7 +475,14 @@ bonus. HTML is after, if wanted.
   examples in several scripts) needs a font carried. Counted at
   stage 3.
 - **t-IX**: no tiny-troff proposed; t-IX is over its budget, and its
-  manual is Markdown, which stage 5 would print.
+  manual is Markdown, which stage 5 would print. (2026-10-17: there is
+  one now, from tiny-office's side: the author, "could we do a
+  tiny-troff that actually reuse the same format than tiny-office?",
+  then "maybe let's try to make the document format closer to what we
+  used for mini-troff markdown/latex mix". tiny-office's page is this
+  plan's format, each part a `\box[x y w h]{...}`, and
+  `tiny/TinyTroff.ml` prints it, or a Markdown file, as text and as
+  HTML: plan_tiny_office.md, step 6.)
 - **troff.ms**: 14 tables, 11 macros, 7 PostScript pictures, the
   diversions and the trap. As far as it goes, or left out by name?
 - **The screen without a file**: mini-page shows a PDF; a document's

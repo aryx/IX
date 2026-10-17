@@ -1,0 +1,71 @@
+== the page as text
+A report
+========
+
+Some slanted, both, under and plain
+words, more than a line holds, <and> &
+"quoted".
+
+  kk
+ rrrr
+
+bbg
+
+Rent    500
+Food    300
+        800
+Odd   #DIV0
+
+
+ +-------+
+ |  cpu  |-------+
+ |       |       |
+ +-------+       |
+                 |
+                 v
+             +-------+
+             |  mem  |
+ a note      |       |
+             +-------+
+== the page as HTML
+<!doctype html>
+<html><head><meta charset="utf-8"><title>report &lt;1&gt;</title>
+<style>body{margin:16px;font:13px/16px monospace}.page{position:relative}.box{position:absolute;overflow:hidden}p{margin:0;min-height:16px}h1,.l{font-size:26px;line-height:32px}h1{margin:0}table{border-collapse:collapse}td{border:1px solid #ccc;padding:0 4px;height:15px;min-width:56px}td.n{text-align:right}td.e{color:#c00}</style></head>
+<body>
+<div class=page style="width:400px;height:240px">
+<div class=box style="left:10px;top:40px;width:300px;height:100px">
+<h1>A <b>report</b></h1>
+<p>&nbsp;</p>
+<p>Some <i>slanted</i>, <i><b>both</b></i>, <u>under</u> and plain words, more than a line holds, &lt;and&gt; &amp; &quot;quoted&quot;.</p>
+</div>
+<div class=box style="left:320px;top:40px;width:60px;height:40px">
+<svg width="56" height="36" shape-rendering="crispEdges">
+<rect x="8" y="0" width="8" height="4" fill="#000"/>
+<rect x="4" y="4" width="16" height="4" fill="#f00"/>
+<rect x="0" y="12" width="8" height="4" fill="#00f"/>
+<rect x="8" y="12" width="4" height="4" fill="#0a0"/>
+</svg>
+</div>
+<div class=box style="left:10px;top:150px;width:170px;height:86px">
+<table>
+<tr><td>Rent</td><td class=n>500</td></tr>
+<tr><td>Food</td><td class=n>300</td></tr>
+<tr><td></td><td class=n>800</td></tr>
+<tr><td>Odd</td><td class=e>#DIV0</td></tr>
+</table>
+</div>
+<div class=box style="left:200px;top:150px;width:200px;height:90px">
+<svg width="200" height="90">
+<rect x="8" y="8" width="64" height="24" fill="none" stroke="black"/><text x="40" y="20" text-anchor="middle" dominant-baseline="middle">cpu</text>
+<polyline points="72,20 136,20 136,56" fill="none" stroke="black"/><polygon points="136,56 140,50 132,50"/>
+<rect x="104" y="56" width="64" height="24" fill="none" stroke="black"/><text x="136" y="68" text-anchor="middle" dominant-baseline="middle">mem</text>
+<text x="8" y="72" text-anchor="start" dominant-baseline="middle">a note</text>
+</svg>
+</div>
+</div>
+</body></html>
+== a Markdown file as text
+Notes
+=====
+
+A Markdown file, with no box.

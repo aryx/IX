@@ -1,0 +1,5 @@
+; TinyTroff.ml's test on the host (TinyTroff_test.sh): a page printed
+(executable
+ (name Print)
+ (modules Print)
+ (libraries tiny_troff tiny_office))

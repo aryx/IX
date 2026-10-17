@@ -301,7 +301,32 @@ tiny-windows like emacs, and a screen session in `make check`:
      Next: tiny-troff, the page to text and HTML (step 6's publishing).
 5. **The chart**: bars from a sheet's range, redrawn when its cells
    change.
-6. **Publishing**: each part's `html` as it comes is fine too; this
+6. **Publishing**: **tiny-troff done (2026-10-17)**, the author: "yes
+   commit, then let's do tiny-troff". `tiny/TinyTroff.ml` (about 185
+   lines of code) prints a page, or a Markdown file, as text (each
+   line filled, a large line underlined by =, a sheet's values in
+   columns, a drawing in characters, + - | a box, > < v ^ an arrow's
+   head, a paint's letters) or as HTML (each part at its place: <p>,
+   <h1>, <b> <i> <u>; a sheet a <table> of its values; a drawing and a
+   paint SVG). It reads the page with TinyOffice's functions
+   (TinyOffice.mli's last part), the format written once. tiny-kernel's
+   `troff [-h] file` (user/troff.ml, a few lines), and
+   /examples/report.ixd to try it: `troff -h /examples/report.ixd >
+   r.html; put r.html` publishes a page.
+   - troff links the office (its reading of a page) and what the office
+     is on: 200 KB, since tiny-ml drops what a program does not call
+     (b572b25e, the other session's, while troff was being written;
+     before it, troff was over the 384 KB an ML program of tiny-kernel's
+     has, and the office itself at 377 KB). If the office outgrows it:
+     mlsys.c could put the value stack and the heap after the program
+     (tiny-cpu's linker would define a label end), tried and set aside.
+   - Tests: tests/TinyTroff_test.sh (a page of the four kinds as text
+     and HTML, a Markdown file as text; OCaml, and tiny-ml on
+     tiny-cpu); make check's troff of /examples/report.ixd, as text and
+     the size of its web page. paint's, tetris's, windows's and
+     nested's screens recorded again (paint's ball and tetris's pieces
+     where the clock has them, the boot image larger; ls with troff).
+   - The step as planned: each part's `html` as it comes is fine too; this
    step is the page around them, and a session that publishes a
    document and reads it with www.
 

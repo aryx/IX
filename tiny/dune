@@ -117,6 +117,14 @@
  (modules TinyOffice)
  (libraries tiny_lib_gui))
 
+; TinyTroff.ml, tiny-troff: a page of the office (or a Markdown file) as
+; text or HTML (tests/TinyTroff_tests/'s test prints a page both ways)
+(library
+ (name tiny_troff)
+ (wrapped false)
+ (modules TinyTroff)
+ (libraries tiny_office))
+
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
 ; on it

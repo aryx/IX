@@ -67,44 +67,44 @@ Fpath.to_string"): the script leaves them.
 
 | module | from | lines there | lines here |
 |---|---|---|---|
-| `Array` | `lib_core/collections/` | 292 | 184 |
+| `Array` | `lib_core/collections/` | 292 | 182 |
 | `Buffer` | `lib_core/base/` | 252 | 129 |
-| `Bytes` | `lib_core/base/` | 562 | 214 |
-| `Cap` | `lib_core/system/` | 21 | 22 |
-| `CapStdlib` | `lib_core/system/` | 10 | 11 |
-| `CapSys` | `lib_core/system/` | 10 | 11 |
-| `CapUnix` | `lib_core/system/` | 22 | 21 |
-| `Chan` | `lib_core/commons/` | 87 | 76 |
-| `Char` | `lib_core/base/` | 117 | 73 |
-| `Common` | `lib_core/commons/` | 20 | 21 |
-| `Console` | `lib_core/commons/` | 30 | 28 |
-| `FS` | `lib_core/commons/` | 177 | 93 |
-| `Filename` | `lib_core/system/` | 151 | 98 |
-| `Float` | `lib_core/base/` | 271 | 31 |
-| `Fpath` | `lib_core/system/` | 87 | 62 |
-| `Fpath_` | `lib_core/commons/` | 51 | 34 |
+| `Bytes` | `lib_core/base/` | 562 | 211 |
+| `Cap` | `lib_core/system/` | 102 | 23 |
+| `CapStdlib` | `lib_core/system/` | 11 | 12 |
+| `CapSys` | `lib_core/system/` | 11 | 12 |
+| `CapUnix` | `lib_core/system/` | 23 | 22 |
+| `Chan` | `lib_core/commons/` | 93 | 83 |
+| `Char` | `lib_core/base/` | 117 | 74 |
+| `Common` | `lib_core/commons/` | 21 | 22 |
+| `Console` | `lib_core/commons/` | 31 | 29 |
+| `FS` | `lib_core/commons/` | 198 | 106 |
+| `Filename` | `lib_core/system/` | 151 | 94 |
+| `Float` | `lib_core/base/` | 274 | 31 |
+| `Fpath` | `lib_core/system/` | 88 | 63 |
+| `Fpath_` | `lib_core/commons/` | 60 | 43 |
 | `Fun` | `lib_core/base/` | 99 | 21 |
-| `Hashtbl` | `lib_core/collections/` | 282 | 209 |
+| `Hashtbl` | `lib_core/collections/` | 284 | 209 |
 | `Int` | `lib_core/base/` | 141 | 27 |
 | `Int32` | `lib_core/base/` | 154 | 47 |
 | `Int64` | `lib_core/base/` | 191 | 120 |
 | `List` | `lib_core/collections/` | 552 | 457 |
-| `Logging` | `lib_core/commons/` | 20 | 21 |
-| `Logs` | `lib_core/system/` | 72 | 70 |
-| `Logs_fmt` | `lib_core/system/` | 10 | 11 |
+| `Logging` | `lib_core/commons/` | 21 | 22 |
+| `Logs` | `lib_core/system/` | 73 | 71 |
+| `Logs_fmt` | `lib_core/system/` | 11 | 12 |
 | `Obj` | `lib_core/core/` | 71 | 30 |
-| `Option` | `lib_core/base/` | 136 | 53 |
-| `Pervasives` | `lib_core/core/` | 939 | 587 |
+| `Option` | `lib_core/base/` | 136 | 42 |
+| `Pervasives` | `lib_core/core/` | 939 | 585 |
 | `Printf` | `lib_core/printing/` | 272 | 223 |
-| `Procs` | `lib_core/commons/` | 86 | 87 |
+| `Procs` | `lib_core/commons/` | 87 | 88 |
 | `Queue` | `lib_core/collections/` | 127 | 75 |
-| `Seq` | `lib_core/collections/` | 153 | 142 |
-| `Sha1` | `lib_crypto/` | 86 | 73 |
-| `String` | `lib_core/base/` | 488 | 357 |
-| `Sys` | `lib_core/system/` | 228 | 132 |
-| `Unix` | `lib_core/system/` | 712 | 629 |
-| `Zlib` | `lib_compression/` | 287 | 272 |
-| all | | 7266 | 4751 |
+| `Seq` | `lib_core/collections/` | 164 | 139 |
+| `Sha1` | `lib_crypto/` | 148 | 74 |
+| `String` | `lib_core/base/` | 488 | 338 |
+| `Sys` | `lib_core/system/` | 228 | 129 |
+| `Unix` | `lib_core/system/` | 798 | 639 |
+| `Zlib` | `lib_compression/` | 410 | 273 |
+| all | | 7680 | 4757 |
 
 Taken out after, with what called them (the author: "let's remove what
 you propose, Format, Arg, Digest, fmt.c, Marshal; we can always restore
@@ -115,6 +115,13 @@ more), `Arg` (tiny-build reads its four options itself), `Digest`
 (tiny-db writes its nodes and its catalog by hand), and a float's text
 out (`string_of_float`, `%f`, `%h`). The script then makes of two blank
 lines one.
+
+Taken out on 2026-10-17, by hand: values that only comments named,
+which the script keeps since it looks for a name in the comments too:
+`FS.cleanname`, `String.equal` and `starts_with`, `Option.none`,
+`some` and `value`, `Array.sort`, `Bytes.copy`,
+`Char.lowercase_ascii`, `Filename.quote`, `print_char`, `Seq.return`,
+`Sys.int_size` and `Unix.stderr`.
 
 ## `c/`
 

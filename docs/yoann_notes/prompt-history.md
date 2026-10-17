@@ -37163,3 +37163,19 @@ Claude re-recorded the four office screens to confirm the new Page title was the
 Claude gave tiny-troff a two-page test document, and Ghostscript and pdftotext both confirmed two pages.
 Claude lengthened the sun stroke's timing after a stall, since the taller menu bar left too little slack.
 Claude also updated the manual, README table, and tiny/README.md, and fixed a cyclic example in the manual.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 17:11
+
+**Yoann:**
+
+> let's not do A1. I don't want t-ix to depend on m-ix too much, especially for the runtime. we can start with A2. After than you can ask me again a category (e.g., A3), remind me what it was, and I can say yes or no
+
+**Claude (summary):**
+
+Claude applied change A2 and rebuilt the runtime, then ran the mini-ml-built `tiny-utils` under tiny-arm.
+Claude's full test script against that build failed 94 of 164 cases.
+Claude suspected tiny-arm was missing system calls, so it proposed a baseline run from the build without the A2 change.
+That baseline would separate A2's effect from tiny-arm gaps before anyone blamed the mini-ml build.
+Claude did not treat the 94 failures as a regression until that comparison was run.

@@ -28,7 +28,6 @@ val error_message : error -> string
 type file_descr
 val stdin : file_descr
 val stdout : file_descr
-val stderr : file_descr
 
 type open_flag =
   | O_RDONLY | O_WRONLY | O_RDWR | O_NONBLOCK | O_APPEND | O_CREAT | O_TRUNC | O_EXCL | O_NOCTTY | O_DSYNC | O_SYNC

@@ -111,7 +111,7 @@ let unit fn arg r = ignore (check fn arg r)
 (*****************************************************************************)
 
 type file_descr = int
-let stdin = 0 and stdout = 1 and stderr = 2
+let stdin = 0 and stdout = 1
 
 type open_flag =
   | O_RDONLY | O_WRONLY | O_RDWR | O_NONBLOCK | O_APPEND | O_CREAT | O_TRUNC | O_EXCL | O_NOCTTY | O_DSYNC | O_SYNC

@@ -279,7 +279,6 @@ external close_in : in_channel -> unit = "caml_close_channel"
 
 (* Output functions on standard output *)
 
-let print_char c = output_char stdout c
 let print_string s = output_string stdout s
 let print_int i = output_string stdout (string_of_int i)
 (* ix: flushed, as OCaml's (ocaml-light's is not) *)

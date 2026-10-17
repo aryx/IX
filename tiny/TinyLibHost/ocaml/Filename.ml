@@ -69,5 +69,3 @@ external close_desc: int -> unit = "sys_close"
 
 let remove_extension name = try chop_extension name with Invalid_argument _ -> name
 
-(* between quotes for the shell, a quote in it as '\'' *)
-let quote s = "'" ^ String.concat "'\\''" (String.split_on_char '\'' s) ^ "'"

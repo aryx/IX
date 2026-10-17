@@ -6,14 +6,6 @@
 
 type 'a t = 'a option = None | Some of 'a
 
-val none : 'a option
-
-val some : 'a -> 'a option
-
-val value : 'a option -> (*default:*)'a -> 'a
-(** [value o default] is [v] if [o] is [Some v], [default] otherwise
-    (no label here). *)
-
 val get : 'a option -> 'a
 (** @raise Invalid_argument if [None]. *)
 

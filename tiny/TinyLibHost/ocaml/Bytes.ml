@@ -62,7 +62,6 @@ let make n c = unsafe_of_string (String.make n c)
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-let copy b = of_string (uts b)
 let cat a b = unsafe_of_string (uts a ^ uts b)
 let iteri f b = String.iteri f (uts b)
 let index_from_opt b i c = String.index_from_opt (uts b) i c

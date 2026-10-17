@@ -30,8 +30,6 @@ val make : int -> char -> bytes
 
 val empty : bytes
 
-val copy : bytes -> bytes
-
 val of_string : string -> bytes
 (** A copy. *)
 

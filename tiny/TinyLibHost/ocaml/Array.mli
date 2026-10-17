@@ -45,6 +45,5 @@ val exists : ('a -> bool) -> 'a array -> bool
 val mem : 'a -> 'a array -> bool
 val find_opt : ('a -> bool) -> 'a array -> 'a option
 
-(* the array sorted in place; both keep equal elements in their order *)
-val sort : ('a -> 'a -> int) -> 'a array -> unit
+(* the array sorted in place, equal elements kept in their order *)
 val stable_sort : ('a -> 'a -> int) -> 'a array -> unit

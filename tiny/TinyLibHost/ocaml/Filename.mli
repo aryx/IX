@@ -21,5 +21,3 @@ val dirname : string -> string
 (* the name without its extension, or as it is *)
 val remove_extension : string -> string
 
-(* the name as one word of a shell's command *)
-val quote : string -> string

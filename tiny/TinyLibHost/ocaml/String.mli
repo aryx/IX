@@ -56,13 +56,9 @@ val map : (char -> char) -> string -> string
 
 type t = string
 
-val equal : t -> t -> bool
-
 val compare : t -> t -> int
 (** Lexicographical order. *)
 
-val starts_with :
-  prefix:string -> string -> bool
 
 val ends_with :
   suffix:string -> string -> bool

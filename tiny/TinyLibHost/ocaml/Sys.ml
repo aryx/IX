@@ -63,7 +63,6 @@ exception Break
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-let int_size = word_size - 1
 
 external readdir : string -> string array = "sys_read_directory"
 let rmdir = remove

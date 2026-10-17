@@ -43,8 +43,6 @@ exception Break
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-(* an int's bits: 31 or 63 *)
-val int_size : int
 
 (* a directory's names, in no order, without . and ..; an empty
  * directory removed *)

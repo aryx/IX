@@ -144,7 +144,6 @@ val stderr : out_channel
 
 (** Output functions on standard output *)
 
-val print_char : char -> unit
 val print_string : string -> unit
 val print_int : int -> unit
 val print_endline : string -> unit

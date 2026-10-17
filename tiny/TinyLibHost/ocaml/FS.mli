@@ -39,8 +39,3 @@ val read_opt : < Cap.open_in; .. > -> Fpath.t -> string option
 val write : < Cap.open_out; .. > -> Fpath.t -> string -> unit
 (* the same, created with a mode: 0o755 for an executable *)
 val write_perm : < Cap.open_out; .. > -> int -> Fpath.t -> string -> unit
-
-(* ix: libc's cleanname (Plan 9's): a name without its empty and "."
- * parts, and without the ".." a name before them answers; no file is
- * looked at *)
-val cleanname : string -> string

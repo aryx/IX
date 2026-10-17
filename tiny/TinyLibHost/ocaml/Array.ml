@@ -131,4 +131,3 @@ let find_opt p a =
 (* in place, by List's sort: a merge sort, which keeps equal elements in
  * their order *)
 let stable_sort cmp a = List.iteri (fun i x -> unsafe_set a i x) (List.stable_sort cmp (to_list a))
-let sort = stable_sort

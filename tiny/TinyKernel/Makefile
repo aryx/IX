@@ -29,12 +29,14 @@
 #                     fields typed in, in a window) and emacs.events
 #                     (emacs f in a window: two lines typed, a word
 #                     killed and another typed, saved, quit, cat f);
-#                     and two with the
-#                     network: wiki.events (wiki mandelbrot: a picture
-#                     from the wire's other end, ../tests/www's, painted
-#                     a row a message) and wikiwin.events (the same in a
-#                     window of tiny-windows), a row's packet lost in
-#                     each, the screen the same. A minute and a half
+#                     the office's (office, officesheet, officedraw,
+#                     officepaint: a page, a sheet and its chart, a
+#                     drawing, a paint, in a window); and with the
+#                     network, ../tests/www's pages, the browser's (www,
+#                     wwwlink, wwwback, wwwgo, wwwpicture, wwwwin,
+#                     wwwscroll: the OCaml article, a link followed and
+#                     back, a section gone to, its pictures, in a window,
+#                     scrolled). A few minutes
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
@@ -74,7 +76,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office troff mltests paint windows square tetris calc temp ping get put wiki httpd utils ed bigmem www
+PROGS = sh rc emacs office troff mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -255,10 +257,6 @@ $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 $(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.tm $(O)/user/%.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/libc/net.tm $(O)/user/$*.tm
-$(O)/user/wiki.tm: libc/draw.h
-$(O)/bin/wiki: $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
-	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/wiki.tm
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
@@ -306,10 +304,6 @@ check: $(O)/boot.img
 	diff $(T)/check.expected $(O)/check.out
 	for s in paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint; do \
 	  timeout 300 $(MACHINE) -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
-	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
-	done
-	for s in wiki wikiwin; do \
-	  timeout 300 $(MACHINE) -net ../tests/www -net-lose 100 -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
 	for s in www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll; do \

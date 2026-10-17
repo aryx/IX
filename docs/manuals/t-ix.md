@@ -374,14 +374,7 @@ into `dir` and answers `ok`: tiny-kernel's files are in its memory and
 go with the machine, what is put stays. An empty line (`get ''`,
 Gopher's menu) lists `dir`, so a new boot brings it all back with
 ``for(f in `{get ''}) get $f > $f``. The web page keeps what is put in
-the browser's `localStorage`. A line that starts with `wiki` names
-a picture kept there with its text (`wiki mandelbrot`:
-`mandelbrot.wiki`, a line `320 240`, the pixels a byte each in the
-screen's colours, the text; `tiny/tests/TinyKernelNetwork_tests/wiki_picture.py`
-makes it): the text is sent, then the picture a row a message, and
-`wiki` paints each row as it arrives, on the screen or in its window
-of tiny-windows; about 7 seconds of the machine's time for 240 rows on
-the screen, 16 in a window. A trace's line is the machine's time,
+the browser's `localStorage`. A trace's line is the machine's time,
 the direction (`>` from the machine, `<` to it, `x` to it and lost)
 and the packet:
 
@@ -402,8 +395,8 @@ article in `dir` answers (`tiny/tests/www/OCaml.html`); otherwise the
 answer is one line that starts with `www:` and says why. In
 tiny-kernel, `rc`, then `get 'www OCaml' | wc`, shows the page's 257,035
 bytes. A line `img w h address` asks for a picture of a page: the
-answer is `wiki`'s (a line `0 w h`, then a row of pixels a message),
-the picture decoded and made w by h in the screen's colours by
+answer is a line `0 w h`, then a row of pixels a message, which www
+paints as it arrives, the picture decoded and made w by h in the screen's colours by
 `tiny-machine-fetch -picture`, from the address with `-net-out`, or
 from a kept copy in `dir` named by the address's last part.
 
@@ -600,7 +593,7 @@ signed:
 | `l dst src x0 y0 x1 y1` | a line, both ends drawn |
 | `s dst src x y n`, then `n` bytes | a text, its top left corner at (x, y); a character is 8 by 16 |
 | `t dst src x y n style`, then `n` bytes | a text in a style: bold 1, italic 2, underlined 4, large 8 (16 by 32); or 16, fat pixels, a byte a colour, a square of 4 by 4 (tiny-office's words and paints, www's) |
-| `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (`wiki`) |
+| `p dst x y n`, then `n` bytes | a row of pixels, a byte each, its left end at (x, y): how a picture that comes from elsewhere is drawn (www's) |
 
 A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white). For C, `libc/draw.h` and `draw.c` gather the messages

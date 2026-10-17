@@ -61,7 +61,6 @@ troff
 utils
 walk
 wc
-wiki
 windows
 www
 xd
@@ -134,9 +133,9 @@ $ % -  25   229612 /cat
 -   2   225000 /emacs
 -   1    70364 /ping
 -  25   229612 /utils
-%      52     208    1091 f
-     52     208    1091
-     52     208    1091
+%      51     204    1070 f
+     51     204    1070
+     51     204    1070
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1

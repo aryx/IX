@@ -37,19 +37,20 @@
  * other end is TinyMachinePeer, tiny-kernel's own stack run here, and the
  * page gives it its documents, which is where the Internet comes in:
  *
- *     tiny-kernel: wiki plan 9                 this page
+ *     tiny-kernel: www OCaml                   this page
  *        | IL, over the wire's packets  ===>   TinyMachinePeer, port 70: the line
- *        |                                        | [wikipedia]: one fetch, a search;
- *        |                                        |   the first article's sentences
- *        |                                        | [picture]: its picture's address,
+ *        |                                        | "www address": the page fetched
+ *        |                                        |   (Wikipedia's REST HTML)
+ *        |                                        | "img w h address": its picture,
  *        |                                        |   read and made small by the
  *        |                                        |   browser, each pixel then the
  *        |                                        |   nearest of the screen's colours
- *     the text, then a row      <===  IL  ===  a message of text, a message a row
- *     painted at each message
+ *     the page drawn, then      <===  IL  ===  its messages; a picture's, a
+ *     its pictures a row at                     message a row
+ *     each message
  *
  * A name alone (get) is a file fetched from www/ beside the image; a
- * wiki that Wikipedia does not answer is a picture kept there. A page
+ * page that cannot be fetched is a copy kept there, if there is one. A page
  * may fetch only from sites that allow it, and Wikipedia does: the
  * machine has no way out but this end of its wire. Three more
  * elements, which a page may leave out: wire (a canvas: a dot for

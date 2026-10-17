@@ -336,15 +336,6 @@ let run caps o image =
             else (match (if o.net_out then decode url else None) with Some l -> l | None -> (match kept () with Some l -> l | None -> none))
         | _ -> none)
     end
-    else
-    (* "wiki plan 9": dir's plan_9.wiki, a picture kept with its text *)
-    if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
-      let words = String.sub line 5 (String.length line - 5) in
-      let name = String.map (fun c -> if c = ' ' then '_' else Char.lowercase_ascii c) words ^ ".wiki" in
-      messages (match Option.bind (file name) TinyMachinePeer.kept with
-        | Some l -> l
-        | None -> TinyMachinePeer.picture ("wiki: nothing on " ^ words ^ " (in a terminal, the pictures are " ^ dir ^ "'s)\n") 0 0 "")
-    end
     (* the empty line, Gopher's menu: dir's files, a name a line *)
     else if line = "" then
       messages (TinyMachinePeer.messages (String.concat "" (List.map (fun n -> n ^ "\n")

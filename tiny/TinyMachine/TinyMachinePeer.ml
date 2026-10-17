@@ -87,22 +87,11 @@ let rec messages text =
   else String.sub text 0 TinyKernelNetwork.il_max :: messages (String.sub text TinyKernelNetwork.il_max (n - TinyKernelNetwork.il_max))
 
 (* a picture with its text: a first message "t w h" (how many messages
- * of text follow, then h rows of w pixels, a row a message); a kept
- * one read ("w h", a line; the pixels; the text) *)
+ * of text follow, then h rows of w pixels, a row a message) *)
 let picture text w h pixels =
   let texts = messages text in
   (string_of_int (List.length texts) ^ " " ^ string_of_int w ^ " " ^ string_of_int h) :: texts
   @ List.init h (fun y -> String.sub pixels (y * w) w)
-
-let kept file =
-  match String.index_opt file '\n' with
-  | None -> None
-  | Some i -> (
-      match List.map int_of_string_opt (String.split_on_char ' ' (String.sub file 0 i)) with
-      | [ Some w; Some h ] when w > 0 && w <= TinyKernelNetwork.il_max && h > 0 && i + 1 + (w * h) <= String.length file ->
-          let after = i + 1 + (w * h) in
-          Some (picture (String.sub file after (String.length file - after)) w h (String.sub file (i + 1) (w * h)))
-      | _ -> None)
 
 (*****************************************************************************)
 (* www *)

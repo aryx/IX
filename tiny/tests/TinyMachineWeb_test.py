@@ -8,14 +8,12 @@
 # then keys are typed and the mouse moved as a person would:
 #
 # - ls typed: the console's text has the programs' names;
-# - ping, get hello.txt and wiki mandelbrot typed (the page is the
-#   other end of the machine's wire: Wikipedia if it answers, www/'s
-#   kept picture if not), the page's button clicked while the picture
-#   loads: the answers on the console, a picture on the screen, a
-#   packet lost and the picture whole all the same;
-# - www OCaml typed (Wikipedia's article, asked by the page): the
-#   screen white with the page, the space scrolling it, q back to the
-#   shell;
+# - ping and get hello.txt typed (the page is the other end of the
+#   machine's wire): the answers on the console;
+# - www OCaml typed (Wikipedia's article, asked by the page; www/'s
+#   kept copy if not), the page's button clicked while it loads: the
+#   screen white with the page, a packet lost and the page whole all
+#   the same, the space scrolling it, q back to the shell;
 # - windows typed, then windows.events' first gestures (the right
 #   button's menu, New, a rectangle swept, ls typed in the window): the
 #   canvas is no longer black, and what it shows is saved (-o png);
@@ -33,7 +31,7 @@
 # https://aryx.github.io/IX/t-ix.html), nothing built; -kernel then
 # says which kernel that page boots.
 #
-# Usage: TinyMachineWeb_test.py [-kernel t6] [-url page] [-o screen.png] [-wiki words] [-chrome program]
+# Usage: TinyMachineWeb_test.py [-kernel t6] [-url page] [-o screen.png] [-chrome program]
 # Needs: google-chrome or chromium, python3's websockets; not in make
 # test (a browser, and a minute). On macOS, Homebrew's python3 takes
 # websockets in a virtual environment only (python3 -m venv v;
@@ -47,7 +45,6 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 args = sys.argv[1:]
 png = args[args.index("-o") + 1] if "-o" in args else None
 kernel = args[args.index("-kernel") + 1] if "-kernel" in args else "tiny-kernel"
-words = args[args.index("-wiki") + 1] if "-wiki" in args else "mandelbrot"
 url = args[args.index("-url") + 1] if "-url" in args else None
 chrome = args[args.index("-chrome") + 1] if "-chrome" in args else shutil.which("google-chrome") or shutil.which("chromium")
 if not chrome:
@@ -138,27 +135,18 @@ async def session(port, debug):
         await p.type("get nothing\n")
         await p.wait("get's refusal", f"{CONSOLE}.includes('get: no nothing')")
         print("ok get: a file of www/ over IL, and one that is not there")
-        await p.type(f"wiki {words}\n")
-        await p.wait("wiki's picture starting", f"{LIT} > 2000", 60)
-        await p.js("document.getElementById('lose').click()")
-        await p.wait("the packet lost", "document.getElementById('lose').textContent.includes('1 lost')", 20)
-        if png:
-            # the whole page while the picture loads: the wire, its dots, its lines
-            shot = await p.send("Page.captureScreenshot", format="png", captureBeyondViewport=True)
-            open(png.replace(".png", "-page.png"), "wb").write(base64.b64decode(shot["data"]))
-        await p.wait("wiki's end", f"{CONSOLE}.split('$ ').length > 6 && !{CONSOLE}.trimEnd().endsWith('{words}')", 120)
-        await asyncio.sleep(1)
-        text = await p.js(CONSOLE)
-        said = text[text.rindex(f"wiki {words}") + 6 + len(words):].split("$ ")[0]
-        print(f"ok wiki: a picture painted ({await p.js(LIT)} pixels not black) with a packet lost and sent again; its text:\n{said}")
-        if png:
-            data = await p.js("document.getElementById('screen').toDataURL('image/png')")
-            open(png.replace(".png", "-wiki.png"), "wb").write(base64.b64decode(data.split(",")[1]))
         # the browser: the page asks Wikipedia for the article, and www
-        # draws it on a white screen; the space scrolls it, q quits
+        # draws it on a white screen, a packet of it lost on the way (the
+        # page's button); the space scrolls it, q quits
         prompts = (await p.js(CONSOLE)).count("$ ")
         start = time.time()
         await p.type("www OCaml\n")
+        await p.js("document.getElementById('lose').click()")
+        await p.wait("the packet lost", "document.getElementById('lose').textContent.includes('1 lost')", 60)
+        if png:
+            # the whole page while the article comes: the wire, its dots, its lines
+            shot = await p.send("Page.captureScreenshot", format="png", captureBeyondViewport=True)
+            open(png.replace(".png", "-page.png"), "wb").write(base64.b64decode(shot["data"]))
         await p.wait("www's page", f"{LIT} > 250000", 60)
         await asyncio.sleep(30)
         if png:
@@ -170,7 +158,7 @@ async def session(port, debug):
         assert await p.js("document.getElementById('screen').toDataURL('image/png')") != top, "the space does not scroll www's page"
         await p.type("q")
         await p.wait("the prompt after www", f"{CONSOLE}.split('$ ').length > {prompts + 1}")
-        print(f"ok www OCaml: the article drawn, scrolled by the space, q back to the shell ({time.time() - start:.0f} s)")
+        print(f"ok www OCaml: the article drawn, a packet lost and sent again, scrolled by the space, q back to the shell ({time.time() - start:.0f} s)")
         await p.type("windows\n")
         await p.wait("tiny-windows' screen", f"{LIT} > 100000")
         # windows.events' first gestures: the menu by the right button,

@@ -37061,3 +37061,27 @@ Claude built paint from `examples/`, fixed the t-IX manual's `user/paint.c` path
 Claude reported `tiny/TinyKernel/` down from 2,964 to 2,366 lines, with 1,433 of code.
 Claude proposed removing `wiki`, along with its `wiki.c`, the tiny-machine host service, and `tests/www/` files.
 Claude asked whether to commit today's changes first, and whether to keep or move `httpd`.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:26
+
+**Yoann:**
+
+> let's commit and let's remove wiki I think and related files. tiny-browser is a better demo than wiki I think
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:27
+
+**Yoann:**
+
+> what do you think? I think we did wiki because we didn't think we could have a small tiny-browser no?
+
+------------------------------------------------------------------------
+
+## 2026-10-17 16:39
+
+**Yoann:**
+
+> also why we have TinyTroff.ml and TinyTroffCommand.ml? why this special case that we don't have for the other programs

@@ -191,38 +191,11 @@ let fetch name k =
 (* What the machine's wire leads to (TinyMachinePeer: tiny-kernel's own
  * stack, by OCaml, with its answers to a ping and to port 70). The
  * page gives it its documents, which is where the Internet comes in:
- * a name is a file beside the page (get); "wiki words" is Wikipedia's
- * article for the words, its first sentences and its picture. The
+ * a name is a file beside the page (get); "www address" a web page for
+ * tiny-kernel's browser, and "img w h address" a picture of it. The
  * machine speaks IL to this end of its wire, and this end asks the
  * Internet as a page may: by fetch, from the sites that allow it.
  * Names, TLS, HTTP, JSON and a picture's format are the browser's. *)
-
-(* a text for the console: its bytes over 127 (UTF-8's) a ?, each
- * character once, and lines of 72 at most. Wikipedia's text has its
- * formulas twice, as a column of indented symbols and as TeX in
- * braces: the indented and the empty lines are left out, and the
- * braces with what is in them *)
-let plain s =
-  let lines = List.filter (fun l -> l <> "" && l.[0] <> ' ') (String.split_on_char '\n' s) in
-  let s = match lines with title :: rest -> title ^ "\n" ^ String.concat " " rest | [] -> "" in
-  let depth = ref 0 in
-  let s = String.concat "" (List.map (fun c ->
-    if c = '{' then (incr depth; "") else if c = '}' then (depth := max 0 (!depth - 1); "") else if !depth > 0 then "" else String.make 1 c)
-    (List.of_seq (String.to_seq s))) in
-  let b = Buffer.create (String.length s) and col = ref 0 and space = ref false in
-  String.iter (fun c ->
-    let c = if Char.code c >= 0xc0 then Some '?' else if Char.code c >= 0x80 then None else Some c in
-    match c with
-    | None -> ()
-    | Some '\n' -> Buffer.add_char b '\n'; col := 0; space := false
-    (* (a space is written when a word follows: where a formula was,
-     * two spaces, or one before a comma, are none) *)
-    | Some ' ' -> space := true
-    | Some c ->
-        if !space && c <> ',' && c <> '.' && c <> ')' then (if !col >= 64 then (Buffer.add_char b '\n'; col := 0) else (Buffer.add_char b ' '; incr col));
-        space := false;
-        Buffer.add_char b c; incr col) s;
-  Buffer.contents b ^ "\n"
 
 (* the screen's colour nearest to one of 15 bits (5 of red, of green,
  * of blue), found once each *)
@@ -241,14 +214,11 @@ let nearest =
     end;
     known.(key)
 
-(* a picture at an address, reduced: no larger than 320 by 240, in its
- * proportions, a byte a pixel (the browser reads its format and makes
- * it smaller, on a canvas that is not shown; each pixel is then the
- * nearest of the screen's 256 colours, no dithering). k with its
- * width, its height, its rows; None if it cannot be had *)
 (* a picture loaded by the browser, at the size [size] gives from its
- * own (w and h), drawn on a canvas and read back in the screen's
- * colours *)
+ * own (w and h), drawn on a canvas that is not shown and read back, a
+ * byte a pixel, each the nearest of the screen's 256 colours (no
+ * dithering). k with its width, its height, its rows; None if it
+ * cannot be had *)
 let picture_sized url size k =
   let img = U.new_obj (get U.global "Image") [||] in
   U.set img (Js.string "crossOrigin") (Js.string "anonymous");
@@ -272,48 +242,6 @@ let picture_sized url size k =
           k (Some (w, h, String.init (w * h) (fun i -> Char.chr (nearest (at (4 * i)) (at ((4 * i) + 1)) (at ((4 * i) + 2))))))
     end);
   U.set img (Js.string "src") (Js.string url)
-
-(* at most 320 by 240, for wiki *)
-let picture url k =
-  picture_sized url (fun iw ih ->
-    let w, h = if iw * 240 > ih * 320 then 320, max 1 (ih * 320 / iw) else max 1 (iw * 240 / ih), 240 in
-    if iw <= w then iw, ih else w, h) k
-
-(* Wikipedia on some words: one request, a search whose five best
- * articles come with their first sentences and a picture's address;
- * the first that is not a list of meanings ("... may refer to:") is
- * taken. k with its messages for wiki (TinyMachinePeer.picture: the title
- * and the text, then the picture if it has one), None when Wikipedia
- * is not reached or has nothing *)
-let wikipedia words k =
-  let encoded : string = Js.to_string (U.fun_call (get U.global "encodeURIComponent") [| str words |]) in
-  let url =
-    "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrlimit=5&prop=extracts%7Cpageimages&exintro=1&explaintext=1"
-    ^ "&exsentences=3&exlimit=5&pilimit=5&pithumbsize=320&format=json&origin=*&gsrsearch=" ^ encoded in
-  fetch url (function
-    | None -> k None
-    | Some json ->
-        let field o name = Js.Optdef.to_option (get o name) in
-        let pages =
-          try
-            let answer = call (get U.global "JSON") "parse" [| str json |] in
-            match Option.bind (field answer "query") (fun q -> field q "pages") with
-            | Some pages -> Array.to_list (Js.to_array (call (get U.global "Object") "values" [| U.inject pages |]))
-            | None -> []
-          with _ -> [] in
-        let text p name = match field p name with Some v -> Js.to_string v | None -> "" in
-        let rank p : int = match field p "index" with Some i -> i | None -> 99 in
-        let meanings p = let e = String.trim (text p "extract") in String.length e > 9 && String.sub e (String.length e - 9) 9 = "refer to:" in
-        match List.sort (fun a b -> compare (rank a) (rank b)) (List.filter (fun p -> text p "extract" <> "" && not (meanings p)) pages) with
-        | [] -> k None
-        | p :: _ ->
-            let said = plain (text p "title" ^ "\n" ^ text p "extract") in
-            match Option.bind (field p "thumbnail") (fun t -> field t "source") with
-            | None -> k (Some (TinyMachinePeer.picture said 0 0 ""))
-            | Some source ->
-                picture (Js.to_string source) (function
-                  | Some (w, h, pixels) -> k (Some (TinyMachinePeer.picture said w h pixels))
-                  | None -> k (Some (TinyMachinePeer.picture said 0 0 ""))))
 
 (* The files the machine put (put): in the browser's storage, under
  * tiny-machine/ and their name, so that they are there when the page
@@ -344,8 +272,7 @@ let stored_names () =
   |> List.sort compare
 
 (* a line's document: the messages given to [messages], when they are
- * there. [www] is where the page's own documents are; a wiki that
- * Wikipedia does not answer is a picture kept there, if there is one.
+ * there. [www] is where the page's own documents are.
  * "www address" is a web page for tiny-kernel's browser, fetched by this
  * page (Wikipedia's REST HTML allows it; a site that does not allow
  * other pages to fetch it, by CORS, cannot be reached from here); if
@@ -377,16 +304,6 @@ let peer_document www line messages =
           match TinyMachinePeer.www_kept url with
           | Some kept -> fetch (www ^ kept) (function Some page -> messages (TinyMachinePeer.messages page) | None -> failed ())
           | None -> failed ())
-  end
-  else if String.length line > 5 && String.sub line 0 5 = "wiki " then begin
-    let words = String.sub line 5 (String.length line - 5) in
-    wikipedia words (function
-      | Some l -> messages l
-      | None ->
-          let kept = String.map (fun c -> if c = ' ' then '_' else Char.lowercase_ascii c) words ^ ".wiki" in
-          let nothing () = messages (TinyMachinePeer.picture ("wiki: Wikipedia does not answer, and nothing is kept on " ^ words ^ "\n") 0 0 "") in
-          if String.contains kept '/' then nothing ()
-          else fetch (www ^ kept) (fun file -> match Option.bind file TinyMachinePeer.kept with Some l -> messages l | None -> nothing ()))
   end
   (* the empty line, Gopher's menu: what was put *)
   else if line = "" then messages (TinyMachinePeer.messages (String.concat "" (List.map (fun n -> n ^ "\n") (stored_names ()))))

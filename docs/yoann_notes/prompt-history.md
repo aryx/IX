@@ -37758,3 +37758,34 @@ Claude committed all of this pass, touching only its own hunks in files other se
 Claude unified argument parsing in `call_args`, so `f(a b)` through a pointer is now an error.
 Claude had `type_name` read its own parentheses, dropping the `expect` calls in the cast and `sizeof` cases.
 Claude checked that TinyC_test, mini-mk, and the kernel C programs still build with the new tiny-c.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 15:21
+
+**Yoann:**
+
+> so this is done? one thing we might want to do is skip TinyEditorLine.ml in make loc since we really need just one editor, and TinyEditorScreen.ml is arguably more what people expect from an editor
+
+**Claude (summary):**
+
+Claude confirmed the ix work was finished and turned to the `make loc` counting in t-ix.
+Claude planned to add an entry to the APART list in `loc.py`, which already sets aside the step kernels, demos and `sh.c`.
+Claude noted that the `-l` row slices `APART[2:5]` by position, so it was checking those indices before editing.
+Claude had not yet made any edit or confirmed how excluding TinyEditorLine.ml would shift those indices.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 15:23
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-18 15:26
+
+**Yoann:**
+
+> what could be a tiny-debugger?

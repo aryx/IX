@@ -8,9 +8,12 @@
 #
 #   ./tiny-machine tiny-kernel tiny/TinyKernel.ml: a kernel in ML (fork
 #                              and exec, round robin, blocking by
-#                              closures, the files ML values in memory),
-#                              the shell on the console; with -window
-#                              its screen, a window system and games
+#                              closures), its disk the root (a file
+#                              system of inodes, copied on write: what
+#                              you write is kept, the earlier boots'
+#                              files in /dump), the shell on the
+#                              console, in /usr/pad; with -window its
+#                              screen, a window system and games
 #   ./tiny-machine t6          a step before it (tiny/TinyKernel/steps/t6/):
 #                              a kernel in C, its disk (spawn, a FAT, one
 #                              kernel stack)
@@ -116,8 +119,8 @@ case $1 in
     exec $machine $rate -d $disk $image
     ;;
   tiny-kernel)
-    # no disk: the programs come in the image, after the kernel, and
-    # what they write lives in memory until the halt
+    # the programs come in the image, after the kernel (/boot); the disk
+    # is the root, made blank at the first run (make clean removes it)
     dir=$ROOT/tiny/TinyKernel
     if [ $build = 1 ]; then
       make -s -C $dir TML=$B/TinyML.exe TC=$B/TinyC.exe CPU=$B/TinyCPU.exe MACHINE=$machine _make/boot.img >&2 || exit 1
@@ -125,6 +128,8 @@ case $1 in
     image=$dir/_make/boot.img
     say "kernel:  $(short $dir/_make/kernel.img)($(size $dir/_make/kernel.img) bytes; built from $(short $dir)), its programs after it"
     [ -z "$web" ] || page "" $image
+    disk=$dir/_make/disk.img
+    say "disk:    ${disk#$ROOT/}, the root: what is written there is kept ($([ -f $disk ] && echo "$(( $(size $disk) / 1024 )) KB" || echo "made blank now, 8 MB"); the boots before in /dump)"
     say "console: this terminal; Ctrl-D ends the shell, and the machine"
     [ -z "$window" ] || say "screen:  a window (its end is the machine's); try: windows, the right button in the window (New, a rectangle swept), then tetris typed in it"
     if [ $listing = 1 ]; then exec $machine -l $dir/_make/kernel.img; fi
@@ -134,8 +139,8 @@ case $1 in
     say "         and in: httpd, then http://localhost:8080/ in a browser"
     speed=${rate#-rate }; [ -n "$speed" ] || speed=$([ -n "$window" ] && echo 20 || echo 8)
     say "speed:   $speed million instructions a second (-rate n to change it)"
-    say "command: $(short $machine)${window:+$window }${rate:+$rate }-net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
-    exec $machine $window $rate -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
+    say "command: $(short $machine)${window:+$window }${rate:+$rate }-d ${disk#$ROOT/} -net $(short $ROOT/tiny/tests/www)-net-out -net-forward 8080:80 $(short $image)"
+    exec $machine $window $rate -d $disk -net $ROOT/tiny/tests/www -net-out -net-forward 8080:80 $image
     ;;
   v0)
     set -- $ROOT/tiny/TinyKernel/steps/v0/kernel.tm $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm

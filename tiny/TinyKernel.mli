@@ -8,6 +8,7 @@
  *
  *     ./tiny-machine tiny-kernel   (at the top of ix; or make run in TinyKernel/)
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
+ *     $ ls /; ls /dump                          the next boot: f is still there
  *     $ mltests
  *     ./tiny-machine -window tiny-kernel      its screen in a window
  *     $ paint                                 or windows, and paint in a window
@@ -37,8 +38,10 @@
  *   blocking                   each waiting process has a closure,   no kernel stack per process,
  *                              the rest of its call, retried by the  no swtch, no sleep, no locks
  *                              scheduler
- *   files and directories      a tree of ML values in the heap       no disk format, no mkfs, no
- *                                                                    buffer cache, no log
+ *   files and directories      the disk's (TinyKernelFS.ml):         no log, no fsck, no map of
+ *                              inodes, copied on write, the root;    free blocks: a commit is one
+ *                              the boot image's, a tree of ML        block written; a collector
+ *                              values, in a union with it            finds the free ones
  *   console, pipes             other kinds of open files             pipes make a shell a shell
  *   a screen, a mouse          descriptors 3 and 4 of a program: it  TinyKernelGraphics.ml draws;
  *                              writes drawing messages (the kernel   no memory is shared, so
@@ -51,9 +54,17 @@
  *   waiting for several        ready(fds, n, until): one more        again a closure: a list is
  *   things, or for a time      closure, using the clock's ticks      scanned, no select queues
  *
- * What is dropped: the disk (files come in the boot image, after the
- * kernel, and live in memory, so what a program writes is lost at
- * halt), paging, multiple cores, users and permissions, and signals
+ * The files. The programs come in the boot image, after the kernel,
+ * and are read from memory. With a disk (-d), the disk is the root,
+ * Plan 9's way: / is a union of the disk's root, of /boot (the image's
+ * files alone) and /dump (the snapshots of the boots before), and of
+ * the image's files, so /bin is the disk's /bin and /boot/bin together.
+ * What is written goes to the disk, and is kept; a file of the image
+ * written by its /bin name is copied to the disk first. The first shell
+ * starts in /usr/pad. With no disk, the tree is the image's alone and
+ * lives in memory until the halt.
+ *
+ * What is dropped: paging, multiple cores, users and permissions, and signals
  * except the simplest: kill(pid) ends a process as a fault does (with
  * status -1), and ^C at the console kills every process except the
  * shell. The system calls are specific to this kernel (its programs
@@ -109,7 +120,9 @@
  *                of each process that is not running
  *     0x500000   the heap, two halves of 1 MB: every file written,
  *                every pipe, descriptor table and closure
- *     0x700000   unused
+ *     0x700000   the file system's buffers and its map of the
+ *                disk's blocks (TinyKernelFS.ml)
+ *     0x714000   unused (but the speaker's ring, at 0xc00000)
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
  *    0x1000000   the processes' partitions: 1 MB each, or what an
@@ -154,9 +167,8 @@
  * tiny-windows running inside one of its own windows.
  *
  * Exercises, each cheap in this design:
- * - saving the files: write the tree to a disk at halt (-d), and read
- *   it back at boot instead of the image's files (Marshal's idea, done
- *   by hand);
+ * - a cache of the disk's blocks, and the count of the instructions it
+ *   saves (each access reads its blocks again: the disk is instant);
  * - keep each waiting process's closure together with what it waits
  *   for, and retry it only when that changes (a wakeup again, but a
  *   typed one);

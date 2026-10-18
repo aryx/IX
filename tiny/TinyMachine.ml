@@ -295,7 +295,13 @@ let window_rate = 20_000_000
 let run caps o image =
   TinyMachineDevices.rate := (match o.rate with Some r -> r | None -> if o.window then window_rate else TinyMachineDevices.default_rate);
   let disk_file = o.disk_file in
-  let disk = match disk_file with Some f -> Bytes.of_string (FS.read caps (Fpath.v f)) | None -> Bytes.empty in
+  (* the disk: the file's, or a blank one of 8 MB when there is no such
+   * file; each block the kernel writes, written to it at once *)
+  let disk = match disk_file with
+    | Some f when Sys.file_exists f -> Bytes.of_string (FS.read caps (Fpath.v f))
+    | Some f -> let blank = Bytes.make (8 * 1024 * 1024) '\000' in FS.write caps (Fpath.v f) (Bytes.to_string blank); blank
+    | None -> Bytes.empty in
+  let disk_fd = Option.map (fun f -> Unix.openfile f [ Unix.O_WRONLY ] 0) disk_file in
   (* a session's keys are the console's input: the host's is then not
    * read, and a session's last event is its end. A window's keys are
    * the console's too, with the host's: a kernel that writes on the
@@ -399,6 +405,9 @@ let run caps o image =
     if o.audio_file <> None then Buffer.add_string recorded samples in
   let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear ~disk ~events image in
   machine := Some mc;
+  Option.iter (fun fd -> mc.disk.wrote <- (fun b ->
+    ignore (Unix.lseek fd (b * TinyMachineDevices.bsize) Unix.SEEK_SET);
+    ignore (Unix.write fd disk (b * TinyMachineDevices.bsize) TinyMachineDevices.bsize))) disk_fd;
   let m = mc.cpu and c = mc.csr in
   let env = TinyMachineDevices.env mc in
   (* -prof f: each instruction counted by where it was (the kernel's or
@@ -412,7 +421,6 @@ let run caps o image =
         TinyMachineCPU.profiled env profile (fun _ ->
           if TinyMachineDevices.supervisor mc then 1, 0 else 0, TinyMachineDevices.window_base mc) in
   let halted n =
-    (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
     Option.iter (fun f -> TinyMachineDevices.speaker_hear mc; FS.write caps (Fpath.v f) (wav (Buffer.contents recorded))) o.audio_file;
     Option.iter (fun f -> FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture)) o.net_pcap;

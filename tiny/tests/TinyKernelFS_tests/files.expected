@@ -1,0 +1,20 @@
+blank disk: 1022 blocks free, snapshots 0
+root: notes(5,1) d/(32,1)
+d: f(4,1)
+notes: hello; d/f: in d
+notes: "hELLo\000\000\000!"
+linked: notes "JELLo\000\000\000!", d/g "JELLo\000\000\000!", links 2
+unlinked notes: root d/(64,1); d f(4,1) g(9,1)
+big: 307200 bytes, the same: true; at 11 KB "0001408\n", at 267 KB "0034176\n"
+free: 715
+after the crash: root d/(64,1) big(307200,1); d/f "in d"
+snapshots: 1:boot4 2:boot2 3:boot1
+boot 4: root d/(64,1); d/f "boot 2"
+boot 2: root d/(64,1) big(307200,1); d/f "boot 2"
+boot 1: root d/(64,1) big(307200,1); d/f "in d"
+live: root d/(64,1)
+free: 711
+small disk: full after 45 KB
+rewritten 20 times: "rewrite 20"
+removed: 62 free
+again: 20480 bytes

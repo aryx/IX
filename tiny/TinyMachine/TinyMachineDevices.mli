@@ -70,7 +70,10 @@ exception Halt of int
 (* the devices' state, a host's to look at and to feed: the console's
  * input, the disk, the mouse, the network *)
 type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool; mutable eof_read : bool }
-type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable dirty : bool }
+(* the disk's block, 1 KB; [wrote], told of each block written (its
+ * number), the host's to keep it *)
+val bsize : int
+type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable wrote : int -> unit }
 (* the mouse: its word, whether it changed since it was read, and the
  * look a program asked for by writing that word (0 the arrow, 1 a hand
  * over a link), which the host shows *)

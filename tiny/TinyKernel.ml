@@ -8,8 +8,9 @@
  * one program *)
 open TinyMemory
 open TinyKernelGraphics
-(* and what speaks to the network *)
+(* and what speaks to the network, and what keeps files on the disk *)
 open TinyKernelNetwork
+open TinyKernelFS
 
 (*****************************************************************************)
 (* The machine: entry.tm's and runtime.c's functions *)
@@ -59,6 +60,9 @@ let net_buf = 0x4f0000
  * read), and its ring, in the megabytes nothing else uses *)
 let speaker_dev = -52
 let ring_at = 0xc00000
+(* the disk's four words: a block, an address, a command, a status; the
+ * first, read, is the disk's size in blocks (0: no disk) *)
+let disk_dev = -32
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -70,7 +74,8 @@ let c_intr = 4
 let tick = let r = k_rate () in if r < 400 then 20000 else r / 400
 
 let puts s = for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
-let halt status = poke halt_dev status
+(* (what the disk has not been told yet is told first) *)
+let halt status = fs_commit (); poke halt_dev status
 
 (*****************************************************************************)
 (* The files: a tree of ML values *)
@@ -82,8 +87,13 @@ let halt status = poke halt_dev status
  * in /bin, examples to look at in /examples). A file of the image is read where the image has it (its
  * address, its size) until it is written: the programs, a megabyte of
  * them, are then not the collector's to copy at each collection (old:
- * each a string, Data; a collection was 3 million instructions) *)
-type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer | Speaker
+ * each a string, Data; a collection was 3 million instructions).
+ * A file or a directory on the disk (TinyKernelFS.ml) is a tree and an
+ * inode's number: tree 0 is the live one, the others are the snapshots.
+ * A union is several directories seen as one, as Plan 9's bind -a makes:
+ * a name is looked up in each in turn, and what is made goes in the
+ * first *)
+type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer | Speaker | Disk of int * int | Union of node list
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
@@ -122,7 +132,13 @@ and call = { il : il; mutable callers : int }
  * next one goes *)
 and voice = { mutable ahead : int }
 
+(* The image's files (and /dev), and the tree a path starts from. They
+ * are the same when there is no disk. With a disk, the boot makes the
+ * top a union, Plan 9's way: the disk's root first, then /boot (the
+ * image's files alone) and /dump, then the image's files again, so
+ * that /bin is the disk's /bin and /boot/bin together *)
 let root = Dir (ref [])
+let top = ref root
 
 (* a path's names from the root: the current directory's first unless
  * it starts with /, "." dropped, ".." the name before it removed (by
@@ -133,17 +149,41 @@ let names cwd path =
     if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc)
     start (String.split_on_char '/' path))
 
+let is_dir node = match node with Dir _ | Union _ -> true | Disk (r, i) -> fs_is_dir r i | _ -> false
+
+(* In a union, the name is looked up in each directory. The first one
+ * found is the answer, unless it is a directory found in several: then
+ * the answer is their union (/bin, in the disk and in the image) *)
 let rec walk node ns =
   match ns, node with
   | [], _ -> Some node
   | n :: rest, Dir d -> (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
+  | n :: rest, Disk (r, i) when fs_is_dir r i -> (match fs_lookup r i n with 0 -> None | j -> walk (Disk (r, j)) rest)
+  | n :: rest, Union l ->
+      (match List.fold_left (fun acc m -> match walk m [ n ] with Some c -> acc @ [ c ] | None -> acc) [] l with
+       | [] -> None
+       | [ c ] -> walk c rest
+       | c :: more -> walk (if is_dir c then Union (List.filter is_dir (c :: more)) else c) rest)
   | _ -> None
 
-(* the directory a path's last name is in, and that name *)
+(* a directory's names and what they are (in a union, a name once: the
+ * first) *)
+let rec children node =
+  match node with
+  | Dir d -> !d
+  | Disk (r, i) -> List.map (fun (name, j) -> name, Disk (r, j)) (fs_entries r i)
+  | Union l -> List.fold_left (fun acc m -> acc @ List.filter (fun (name, _) -> not (List.exists (fun (k, _) -> k = name) acc)) (children m)) [] l
+  | _ -> []
+
+(* where a directory's new names go: a union's first *)
+let rec home node = match node with Union (m :: _) -> home m | _ -> node
+
+(* the directory a path's last name is in (where it would be made: a
+ * Dir, or a directory on the disk), and that name *)
 let dir_of ns =
   match List.rev ns with
   | [] -> None
-  | last :: r -> (match walk root (List.rev r) with Some (Dir d) -> Some (d, last) | _ -> None)
+  | last :: r -> (match walk !top (List.rev r) with Some n when is_dir n -> Some (home n, last) | _ -> None)
 
 (* a directory read as a file: an entry of 32 bytes per name, t6's (its
  * name in 20, its type, a first block, its size), which ls reads. The
@@ -159,15 +199,21 @@ let links node =
   let rec count d = List.fold_left (fun acc (_, n) -> acc + (if n == node then 1 else 0) + (match n with Dir e -> count e | _ -> 0)) 0 !d in
   match root with Dir d -> count d | _ -> 0
 
+(* an entry: a name, a type, the links, a size; a disk's file says its
+ * own (its type is 1 or 2 as here) *)
+let entry name n =
+  let t, size, l = match n with
+    | Dir _ -> 1, 0, links n | Data d -> 2, String.length !d, links n | Rom (_, k) -> 2, k, links n
+    | Disk (r, i) -> fs_kind r i | Union _ -> 1, 0, 1 | _ -> 3, 0, links n in
+  name ^ String.make (20 - String.length name) '\000' ^ word t ^ word l ^ word size
+
 let contents node =
   match node with
   | Data d -> !d
   | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
-  | Dir d ->
-      List.fold_left (fun acc (name, n) ->
-        let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Rom (_, n) -> 2, n | _ -> 3, 0 in
-        acc ^ name ^ String.make (20 - String.length name) '\000' ^ word t ^ word (links n) ^ word size) "" !d
+  | Disk (r, i) when not (fs_is_dir r i) -> fs_contents r i
+  | _ -> List.fold_left (fun acc (name, n) -> acc ^ entry name n) "" (children node)
 
 (* [place d name node]: node under name in d; a name with a slash,
  * examples/wc.c, in its directory, which is made the first time *)
@@ -300,7 +346,7 @@ let drop f =
 
 (* The screen is tiny-machine's 640 by 480 bytes. The images live in the
  * two megabytes below it, and in what the screen leaves of its own
- * megabyte. (The 6 MB below those, from 7 MB, are unused; they could be
+ * megabyte. (Most of the 6 MB below those, from 7 MB, is unused; it could be
  * the images' too. Trying it once changed the recorded paint session's
  * screen, which was taken for a bug: it was paint's ball, which moves
  * with the clock, ending elsewhere because the kernel's work took
@@ -404,6 +450,11 @@ let read f a n =
           row_copy a (at + o.off) k;
           o.off <- o.off + k;
           Some k
+      (* a disk's file, from its blocks to the program's memory *)
+      | Disk (r, i) when not (fs_is_dir r i) ->
+          let k = fs_read_at r i o.off a n in
+          o.off <- o.off + k;
+          Some k
       | _ ->
           let s = contents o.node in
           let k = max 0 (min n (String.length s - o.off)) in
@@ -450,6 +501,7 @@ let write f a n =
           d := String.sub old 0 at ^ k_string a n ^ rest;
           o.off <- at + n;
           Some n
+      | Disk (0, i) when o.writes -> (try fs_write_at i o.off a n; o.off <- o.off + n; Some n with Disk_full -> Some (-1))
       | _ -> Some (-1))
   (* messages, whole; a bad one is said on the console, the write -1 *)
   | Draw d -> (try messages d.conn (k_string a n); Some n with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
@@ -535,6 +587,7 @@ let header bytes =
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =
+  let node = match node with Some (Disk (r, i)) -> Some (Data (ref (fs_contents r i))) | _ -> node in
   let n = match node with Some (Data d) -> String.length !d | Some (Rom (_, n)) -> n | _ -> raise Bad in
   let first = match node with Some (Data d) -> String.sub !d 0 (min n 12) | Some (Rom (at, _)) -> k_string at (min n 12) | _ -> "" in
   let skip, size, memory = match header first with
@@ -561,7 +614,7 @@ let load_prog p node argv =
 (* exec(path, argv): its program's text, its arguments (16 at most),
  * all read before the partition is changed, so a failed exec returns *)
 let sys_exec p =
-  let node = walk root (names p.cwd (ustr p (reg p 1))) in
+  let node = walk !top (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 16 then raise Bad
     else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
@@ -591,20 +644,32 @@ let sys_open p =
   let ns = names p.cwd (ustr p (reg p 1)) and mode = reg p 2 in
   let writes = mode land 3 <> 0 in
   let node =
-    match walk root ns, dir_of ns with
+    match walk !top ns, dir_of ns with
     | Some n, _ -> n
-    | None, Some (d, last) when mode land o_create <> 0 && String.length last < 20 ->
+    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last < 20 ->
         let n = Data (ref "") in d := !d @ [ last, n ]; n
+    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last < 20 -> Disk (0, fs_create i last 2)
     | _ -> raise Bad in
-  (* (a file of the image opened to be written is a string from now on) *)
+  (* (a file of the image opened to be written is a string from now on;
+   * or a file of the disk, when its directory is there too: /bin's) *)
   let node =
     match node, dir_of ns with
-    | Rom (at, n), Some (d, last) when writes ->
+    | Rom (at, n), Some (Disk (0, i), last) when writes ->
+        let j = fs_create i last 2 in
+        if mode land o_trunc = 0 then fs_write_at j 0 at n;
+        Disk (0, j)
+    | Rom (at, n), Some (Dir d, last) when writes ->
         let made = Data (ref (if mode land o_trunc <> 0 then "" else k_string at n)) in
         d := List.map (fun (name, old) -> if name = last then name, made else name, old) !d;
         made
     | _ -> node in
-  (match node with Dir _ when writes -> raise Bad | Data d when mode land o_trunc <> 0 -> d := "" | _ -> ());
+  (* (a snapshot is read only) *)
+  (match node with
+   | Dir _ when writes -> raise Bad
+   | Disk (r, i) when writes && (r <> 0 || fs_is_dir r i) -> raise Bad
+   | Data d when mode land o_trunc <> 0 -> d := ""
+   | Disk (_, i) when writes && mode land o_trunc <> 0 -> fs_truncate i
+   | _ -> ());
   result p (fdalloc p (match node with
     | Tty -> Console
     | Screen -> Draw { conn = connect screen font; refs = 1 }
@@ -674,19 +739,26 @@ let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 
 let sys_mkdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk root ns, dir_of ns with
-  | None, Some (d, last) when String.length last < 20 -> d := !d @ [ last, Dir (ref []) ]; result p 0
+  match walk !top ns, dir_of ns with
+  | None, Some (Dir d, last) when String.length last < 20 -> d := !d @ [ last, Dir (ref []) ]; result p 0
+  | None, Some (Disk (0, i), last) when String.length last < 20 -> ignore (fs_create i last 1); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
 let sys_unlink p =
   match dir_of (names p.cwd (ustr p (reg p 1))) with
-  | Some (d, last) ->
+  | Some (Dir d, last) ->
       (match List.assoc_opt last !d with
        | Some (Dir e) when !e <> [] -> raise Bad
+       | Some (Disk _) -> raise Bad
        | Some _ -> d := List.filter (fun (n, _) -> n <> last) !d; result p 0
        | None -> raise Bad)
-  | None -> raise Bad
+  | Some (Disk (0, i), last) ->
+      (match fs_lookup 0 i last with
+       | 0 -> raise Bad
+       | j when fs_is_dir 0 j && fs_entries 0 j <> [] -> raise Bad
+       | _ -> fs_unlink i last; result p 0)
+  | _ -> raise Bad
 
 (* link(old, new): a second name for a file, in the directory new is in:
  * the same node, so a write by either name is seen by the other (a file
@@ -694,10 +766,12 @@ let sys_unlink p =
  * it is written by: then the names part). Not for a directory, as on
  * Unix: a directory with two parents would make the tree a graph *)
 let sys_link p =
-  let old = walk root (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
-  match old, walk root ns, dir_of ns with
-  | Some (Dir _), _, _ -> raise Bad
-  | Some node, None, Some (d, last) when String.length last < 20 -> d := !d @ [ last, node ]; result p 0
+  let old = walk !top (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
+  match old, walk !top ns, dir_of ns with
+  | Some n, _, _ when is_dir n -> raise Bad
+  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last < 20 -> fs_link i last j; result p 0
+  | Some (Disk _), _, _ -> raise Bad
+  | Some node, None, Some (Dir d, last) when String.length last < 20 -> d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 
 (* getcwd(buf, n): the current directory's path, ended by a 0, in the n
@@ -724,7 +798,7 @@ let sys_kill p =
 
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk root ns with Some (Dir _) -> p.cwd <- ns; result p 0 | _ -> raise Bad
+  match walk !top ns with Some n when is_dir n -> p.cwd <- ns; result p 0 | _ -> raise Bad
 
 (* ready(fds, n, until): the first of n descriptors (32 at most) that a
  * read would not wait on; -1 when the clock reaches until (0: no
@@ -744,10 +818,13 @@ let sys_ready p =
         else (if until > 0 && (!alarm = 0 || until < !alarm) then alarm := until; false))
 
 (* by their numbers, the machine's sys n: exit, write and read first,
- * tiny-cpu's own (libc's) *)
+ * tiny-cpu's own (libc's). A call that changed the disk is committed
+ * when it ends, but a write: a file's writes are committed by the next
+ * call that is not one, its close at the latest (TinyKernelFS.mli) *)
 let syscall p =
-  try
-    match k_tval () with
+  let n = k_tval () in
+  (try
+    match n with
     | 0 -> exit_proc p (reg p 1)
     | 1 -> sys_rw p write
     | 2 -> sys_rw p read
@@ -772,7 +849,8 @@ let syscall p =
     | 21 -> sys_link p
     | 22 -> sys_rawcons p
     | _ -> result p (-1)
-  with Bad -> result p (-1)
+  with Bad -> result p (-1) | Disk_full -> result p (-1));
+  if n <> 1 then fs_commit ()
 
 (*****************************************************************************)
 (* The scheduler: round robin, preemptive *)
@@ -929,14 +1007,32 @@ let () =
   k_zero ring_at ring;
   poke speaker_dev ring_at;
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for " ^ string_of_int nslots ^ " processes\n");
+  (* The disk, when there is one, is the root: the top becomes a union
+   * of the disk's root, of /boot and /dump, and of the image's files.
+   * Its snapshots are in /dump, each under the number of the boot that
+   * left it. Its /bin and /usr/pad are made at its first boot, and the
+   * first shell starts in /usr/pad. *)
+  let blocks = peek disk_dev in
+  if blocks > 0 then begin
+    fs_io := (fun b a cmd -> poke disk_dev b; poke (disk_dev + 4) a; poke (disk_dev + 8) cmd; poke (disk_dev + 12) 0);
+    fs_mount blocks;
+    let made d name = match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
+    ignore (made 1 "bin");
+    ignore (made (made 1 "usr") "pad");
+    fs_commit ();
+    let dumps = List.map (fun (r, boot) -> string_of_int boot, Disk (r, 1)) (fs_snapshots ()) in
+    top := Union [ Disk (0, 1); Dir (ref [ "boot", root; "dump", Dir (ref dumps) ]); root ];
+    puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks ^ " KB, " ^ string_of_int (fs_free ()) ^ " KB free; "
+          ^ string_of_int (List.length dumps) ^ " snapshots in /dump\n")
+  end;
   (* the first process: /bin/sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a
    * connection) and the mouse its 4: a window system gives a window's
    * programs the same five, so a program draws in what it was given
    * and does not ask where *)
   let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
-  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = []; since = -1 } in
+  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "pad" ] else []); since = -1 } in
   incr next_pid;
   procs := [ p ];
-  (try load_prog p (walk root [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);
+  (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);
   schedule ()

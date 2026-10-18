@@ -916,6 +916,7 @@ fetch them. `make loc` does not count `tiny/sdl/`.
 | t6 | `make -C tiny/TinyKernel/steps/t6 check` |
 | TinyKernelGraphics.ml, on the host and on the machine | `tiny/tests/TinyKernelGraphics_test.sh` (`-window`: its picture shown) |
 | TinyKernelAudio.ml, sounds made into a ring (their crossings of zero, two at one place, the ring going round) and messages read, on the host | `tiny/tests/TinyKernelAudio_test.sh` |
+| TinyKernelFS.ml, files and directories on a disk of bytes, a file with a double indirect block, a crash before a commit, snapshots, a full disk emptied, on the host | `tiny/tests/TinyKernelFS_test.sh` |
 | TinyPlay.ml, WAV files made into the speaker's samples (the example, 8 bits in two channels, a chunk skipped, rates above and below, in blocks and at once), and files it does not play | `tiny/tests/TinyPlay_test.sh` |
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules and its sounds by scripts of keys, and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |

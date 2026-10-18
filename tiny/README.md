@@ -15,7 +15,7 @@ A program's `.mli` is where to start: its header comment (the idea,
 a diagram, the history, the references: `docs/tags.md`), then `main`
 and one function at the program's heart, with their types. The `.ml`
 is the code alone. Every file has one, those tiny-ml compiles too
-(TinyKernelGraphics, TinyLibDraw, TinyKernelNetwork, TinyKernelAudio, TinyWindows, TinyLibPlayground,
+(TinyKernelGraphics, TinyLibDraw, TinyKernelNetwork, TinyKernelAudio, TinyKernelFS, TinyWindows, TinyLibPlayground,
 TinyAppTetris, TinyLibGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml has no modules and does not read it, OCaml, which
 builds the same files for their tests, checks it. `TinyKernel.mli` is
 the header alone: only tiny-ml compiles `TinyKernel.ml`.

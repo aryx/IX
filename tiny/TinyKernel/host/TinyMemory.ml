@@ -33,8 +33,10 @@ let glyphs dst width colour font s n =
     done
   done
 
-(* a string's n bytes from off, to memory at dst *)
+(* a string's n bytes from off, to memory at dst; and memory's n bytes
+ * at a, as a string *)
 let row_bytes s off dst n = Bytes.blit_string s off mem dst n
+let row_string a n = Bytes.sub_string mem a n
 
 (* a byte's colour: Plan 9's table, TinyMachine.ml's formula (which says
  * what it is) *)

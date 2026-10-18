@@ -70,7 +70,10 @@
  *   as v0 expects. An interrupt's cause is 4, and tval says which
  *   sources are pending.
  * - {b Console input} at -8(r0), with its interrupt; {b a disk}
- *   (-d image), which moves 1 KB blocks at once, with its interrupt.
+ *   (-d image, made blank, 8 MB, when there is no such file), which
+ *   moves 1 KB blocks at once, with its interrupt; a block written is
+ *   written to the image file then, so a machine killed leaves the
+ *   disk as a crash would.
  *
  * t6 (a kernel of our own in C, in TinyKernel/steps/t6/) added one
  * more thing: bit 16 of status makes the window relocate (a user address
@@ -143,7 +146,8 @@
  *     0x7ffffd0  the network: an address, a length,       -48(r0) up
  *                a command, whether there is a wire
  *     0x7ffffe0  the disk: a block number, an address,    -32(r0) up
- *                a command, a status
+ *                a command, a status (the first read:
+ *                the disk's size, in blocks)
  *     0x7fffff0  console output                           -16(r0)
  *     0x7fffff4  halt                                     -12(r0)
  *     0x7fffff8  console input                             -8(r0)

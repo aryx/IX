@@ -8,8 +8,9 @@
 // The memory (128 MB). The kernel uses the first 16 MB: the image at 0
 // and the files it carries after it (4.5 MB at most: the Makefile
 // checks); the value stack at 4.5 MB; the processes' frames, and a
-// packet's place; the heap's two halves of 1 MB from 5 MB to 7 MB; 6 MB
-// unused; 2 MB of images, and the screen's megabyte (its 640 by 480
+// packet's place; the heap's two halves of 1 MB from 5 MB to 7 MB; the
+// file system's buffers and map (TinyKernelFS.ml), 80 KB at 7 MB; the
+// rest unused but the speaker's ring; 2 MB of images, and the screen's megabyte (its 640 by 480
 // bytes, then images again). (old: the image's limit was 2.5 MB, with
 // the stack, the frames and the heap 2 MB lower, and the processes'
 // partitions from 5 MB: the browser filled the image.) The processes'

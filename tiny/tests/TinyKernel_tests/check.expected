@@ -238,4 +238,42 @@ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %     589   14363  257035
 %     589   14363  257035
 % www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs: no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump
+$ % -   1     8893 ./big
+d   1       32 ./d
+-   2        6 ./g
+-   1    72426 /bin/g2
+-   1        4 /bin/ping
+-   1    70364 /boot/bin/ping
+-   2        6 d/f
+/bin
+/boot
+/dev
+/dump
+/examples
+/usr
+usage: get name [host [port]]
+new
+ln: d/f: cannot
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+tiny-kernel: / on a disk of 8192 KB, 8102 KB free; 1 snapshots in /dump
+$ % /usr/pad
+hello
+hello
+   2000    2000    8893 big
+/dump/1
+hello
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+tiny-kernel: / on a disk of 8192 KB, 8099 KB free; 2 snapshots in /dump
+$ % /dump/1
+/dump/2
+/dump/2/usr/pad/d
+bye
+bye
+hello
+-   1    70364 /bin/ping
+rm: d: cannot
+rm: /dump/1/usr/pad/d/f: cannot
+tiny-shell: /dump/1/x: cannot create
 % $ 

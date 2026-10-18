@@ -40,14 +40,20 @@
 #                     wwwscroll, wwwmenu, wwwhistory: the OCaml article,
 #                     a link followed and back, a section gone to, its
 #                     pictures, in a window, scrolled, the History menu
-#                     open, the page before chosen in it). A few minutes
+#                     open, the page before chosen in it); and the disk
+#                     (../TinyKernelFS.ml), the root, three boots on a blank one:
+#                     files and a directory made in /usr/pad, a link, a program
+#                     copied to /bin and run from there, a file of /boot/bin
+#                     written over in /bin (copied to the disk) then removed
+#                     (/boot/bin's again), and the snapshots in /dump, read only.
+#                     A few minutes
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
-# TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml and
-# ../TinyKernel.ml, one program), end.tm last. Its
+# TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
+# TinyKernelFS.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
@@ -91,7 +97,7 @@ ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml ../TinyKernel.ml
+$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $^
 
@@ -274,6 +280,10 @@ check: $(O)/boot.img
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
+	rm -f $(O)/check.img
+	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
+	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/pad/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nls /dump /dump/2/usr/pad; cat d/f /dump/2/usr/pad/d/f /dump/1/usr/pad/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/pad/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
 	for s in $(SCREENS); do \
 	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
@@ -283,7 +293,7 @@ check: $(O)/boot.img
 	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/tetris.wav.cksum $(O)/check.sum || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check.wav)"; exit 1; }
 	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check.wav $(O)/boot.img > /dev/null
 	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/korobeiniki.wav.cksum $(O)/check.sum || { echo "tiny-kernel: play: other sounds ($(O)/check.wav)"; exit 1; }
-	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.wav $(O)/check.sum && echo "tiny-kernel: check ok"
+	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.wav $(O)/check.sum $(O)/check.img && echo "tiny-kernel: check ok"
 
 clean:
 	rm -rf $(O)

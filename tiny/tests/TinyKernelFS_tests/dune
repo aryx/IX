@@ -1,0 +1,5 @@
+; TinyKernelFS.ml's test on the host (TinyKernelFS_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_kernel_fs tiny_host_memory))

@@ -26,3 +26,11 @@
  (wrapped false)
  (modules TinyKernelAudio)
  (libraries tiny_host_memory))
+
+; TinyKernelFS.ml, tiny-kernel's file system on the disk (tiny-ml
+; compiles it there), here for the host: its test
+(library
+ (name tiny_kernel_fs)
+ (wrapped false)
+ (modules TinyKernelFS)
+ (libraries tiny_host_memory))

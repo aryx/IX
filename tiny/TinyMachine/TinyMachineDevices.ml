@@ -81,17 +81,20 @@ let console_waiting k = k.next < String.length k.queue || (k.eof && not k.eof_re
  * command at -24(r0), 1 to read the block into memory, 2 to write it
  * from memory; the transfer is done at once, and the disk's interrupt
  * waits until the kernel writes -20(r0) (which reads 1 while it does).
- * The image is written back when the machine halts. *)
+ * -32(r0) read is the disk's size, in blocks (0: no disk). [wrote] is
+ * told of each block written (tiny-machine writes it to the file then:
+ * a machine that ends without its halt leaves the disk as the kernel
+ * last wrote it, as a crash does). *)
 let bsize = 1024
 
-type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable dirty : bool }
+type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable wrote : int -> unit }
 
 let disk_command d (m : TinyMachineCPU.machine) cmd =
   let off = d.block * bsize in
   if d.block < 0 || d.block >= Bytes.length d.image / bsize || d.addr < 0 || d.addr > memsize - bsize then TinyMachineCPU.error "disk: block %d, address 0x%x: out of the image or the memory" d.block d.addr;
   (match cmd with
    | 1 -> Bytes.blit d.image off m.mem d.addr bsize
-   | 2 -> Bytes.blit m.mem d.addr d.image off bsize; d.dirty <- true
+   | 2 -> Bytes.blit m.mem d.addr d.image off bsize; d.wrote d.block
    | _ -> TinyMachineCPU.error "disk: command %d" cmd);
   d.done_ <- true
 
@@ -333,6 +336,7 @@ let load mc m s a =
   | w when w < devices -> TinyMachineCPU.load m s a
   | w when (mc.touched <- true; w = console_in) -> mc.on_open mc.cons; console_read mc.cons
   | w when w = disk_status -> if mc.disk.done_ then 1 else 0
+  | w when w = disk_block -> Bytes.length mc.disk.image / bsize
   | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
   | w when w = net_len -> (match mc.net.waiting with p :: _ -> String.length p | [] -> 0)
   | w when w = net_status -> if mc.net.wired then 1 else 0
@@ -452,7 +456,7 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
   c.(ie_csr) <- i_timer;
   c.(rate_csr) <- !rate;
   { cpu = m; csr = c; cons = { queue = ""; next = 0; eof = events = Some []; opened = events <> None; eof_read = false };
-    disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
+    disk = { image = disk; block = 0; addr = 0; done_ = false; wrote = ignore };
     mouse = { at = 0; moved = false; cursor = 0 }; events = (match events with Some l -> l | None -> []); put; on_open;
     net = { wired = send <> None; naddr = 0; nlen = 0; waiting = []; flying = [] };
     speaker = { ring_at = 0; played = 0; since = 0 }; hear;

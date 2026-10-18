@@ -1,12 +1,14 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
 // What a program of TinyKernel.ml has: its system calls (sys.tm, and
-// start.tm's write) and libc (../../TinyCRuntime/). cat, echo, ls, wc,
-// mkdir and rm are t6's too (TinyKernel/steps/t6/user/ has links to them): they
-// use only calls in common, and t6's user.h (its libc/) agrees on the values below.
+// start.tm's write) and libc (../../TinyCRuntime/, its libc.h included
+// here). cat, echo, ls, wc, mkdir and rm are t6's too
+// (TinyKernel/steps/t6/user/ has links to them): they use only calls in
+// common, and t6's user.h (its libc/) agrees on the values below.
+
+#include "../../TinyCRuntime/libc.h"
 
 typedef unsigned int uint;
-typedef unsigned long ulong;
 
 // a directory's entry, as read from it (t6's: a first block, which here
 // is the file's links instead, how many names it has)
@@ -22,7 +24,6 @@ struct dirent { char name[20]; int type; uint first; uint size; };
 #define O_TRUNC 0x400
 
 void exit(int);
-int write(int, char*, int);
 int read(int, char*, int);
 // a copy of the caller: 0 in the copy, its pid in the caller
 int fork(void);
@@ -75,8 +76,3 @@ int reach(char *host, int port);
 // a change: x, y, the buttons, a word each)
 #define DRAW 3
 #define MOUSE 4
-
-int print(char*, ...);
-int sprint(char*, char*, ...);
-int strcmp(char*, char*);
-char *strcpy(char*, char*);

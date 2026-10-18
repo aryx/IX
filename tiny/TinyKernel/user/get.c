@@ -20,21 +20,13 @@
 
 char buf[1024];
 
-int
-put(int n, char *s)
-{
-	while(*s && n < 1000)
-		buf[n++] = *s++;
-	return n;
-}
-
 void
 main(int argc, char *argv[])
 {
 	char *to, *p;
 	int fd, n, w, port;
 
-	if(argc < 2){
+	if(argc < 2 || strlen(argv[1]) > 900 || (argc > 2 && strlen(argv[2]) > 64)){
 		print("usage: get name [host [port]]\n");
 		exit(1);
 	}
@@ -46,16 +38,10 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 	// (a line ends with a return and a newline, Gopher's and HTTP's)
-	n = 0;
-	if(port != 70)
-		n = put(n, "GET ");
-	n = put(n, argv[1]);
-	if(port != 70){
-		n = put(n, " HTTP/1.0\r\nHost: ");
-		n = put(n, to);
-		n = put(n, "\r\n");
-	}
-	n = put(n, "\r\n");
+	if(port == 70)
+		n = sprint(buf, "%s\r\n", argv[1]);
+	else
+		n = sprint(buf, "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n", argv[1], to);
 	write(fd, buf, n);
 	while((n = read(fd, buf, 1024)) > 0)
 		for(p = buf; n > 0; p += w, n -= w)

@@ -1010,15 +1010,15 @@ let () =
   (* The disk, when there is one, is the root: the top becomes a union
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that
-   * left it. Its /bin and /usr/pad are made at its first boot, and the
-   * first shell starts in /usr/pad. *)
+   * left it. Its /bin and /usr/glenda are made at its first boot, and the
+   * first shell starts in /usr/glenda. *)
   let blocks = peek disk_dev in
   if blocks > 0 then begin
     fs_io := (fun b a cmd -> poke disk_dev b; poke (disk_dev + 4) a; poke (disk_dev + 8) cmd; poke (disk_dev + 12) 0);
     fs_mount blocks;
     let made d name = match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
     ignore (made 1 "bin");
-    ignore (made (made 1 "usr") "pad");
+    ignore (made (made 1 "usr") "glenda");
     fs_commit ();
     let dumps = List.map (fun (r, boot) -> string_of_int boot, Disk (r, 1)) (fs_snapshots ()) in
     top := Union [ Disk (0, 1); Dir (ref [ "boot", root; "dump", Dir (ref dumps) ]); root ];
@@ -1031,7 +1031,7 @@ let () =
    * programs the same five, so a program draws in what it was given
    * and does not ask where *)
   let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
-  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "pad" ] else []); since = -1 } in
+  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []); since = -1 } in
   incr next_pid;
   procs := [ p ];
   (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);

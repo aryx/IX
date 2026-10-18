@@ -42,7 +42,7 @@
 #                     pictures, in a window, scrolled, the History menu
 #                     open, the page before chosen in it); and the disk
 #                     (../TinyKernelFS.ml), the root, three boots on a blank one:
-#                     files and a directory made in /usr/pad, a link, a program
+#                     files and a directory made in /usr/glenda, a link, a program
 #                     copied to /bin and run from there, a file of /boot/bin
 #                     written over in /bin (copied to the disk) then removed
 #                     (/boot/bin's again), and the snapshots in /dump, read only.
@@ -282,8 +282,8 @@ check: $(O)/boot.img
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	rm -f $(O)/check.img
 	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
-	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/pad/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nls /dump /dump/2/usr/pad; cat d/f /dump/2/usr/pad/d/f /dump/1/usr/pad/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/pad/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
+	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
 	for s in $(SCREENS); do \
 	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \

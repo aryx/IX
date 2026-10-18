@@ -61,8 +61,9 @@
  * the image's files, so /bin is the disk's /bin and /boot/bin together.
  * What is written goes to the disk, and is kept; a file of the image
  * written by its /bin name is copied to the disk first. The first shell
- * starts in /usr/pad. With no disk, the tree is the image's alone and
- * lives in memory until the halt.
+ * starts in /usr/glenda: glenda is the user of a Plan 9 installed from
+ * its CD (and the name of its bunny). With no disk, the tree is the
+ * image's alone and lives in memory until the halt.
  *
  * What is dropped: paging, multiple cores, users and permissions, and signals
  * except the simplest: kill(pid) ends a process as a fault does (with

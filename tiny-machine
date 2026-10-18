@@ -12,7 +12,7 @@
 #                              system of inodes, copied on write: what
 #                              you write is kept, the earlier boots'
 #                              files in /dump), the shell on the
-#                              console, in /usr/pad; with -window its
+#                              console, in /usr/glenda; with -window its
 #                              screen, a window system and games
 #   ./tiny-machine t6          a step before it (tiny/TinyKernel/steps/t6/):
 #                              a kernel in C, its disk (spawn, a FAT, one

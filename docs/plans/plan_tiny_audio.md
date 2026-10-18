@@ -154,6 +154,8 @@ stations kept, and the rest dropped.
      melody's, by a Fourier sum, in tiny-machine's WAV of the session
      and in tiny-tetris's (SDL's disk driver): Korobeiniki's eight bars
      as written.
+   - Heard (2026-10-18), the author: "I could hear the music when
+     playing tetris!"
 4. **Samples from a program, and play**. **Done (2026-10-18)**: `/dev/audio`
    takes a message `p n` and n samples (as `/dev/draw`'s row of pixels),
    added to the ring as a tone is (TinyKernelAudio's `Samples`);

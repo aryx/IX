@@ -37709,3 +37709,20 @@ Claude did not write any code or make any commits in this exchange.
 **Claude (summary):**
 
 Claude proposed splitting the "ix" category across seven TinyKernel and TinyVCS-style files, starting with a read-only search agent. The agent would list concrete candidate edits with exact line numbers. Claude then planned to check each candidate and apply only those that make a file shorter and clearer. Each file would get its own commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 12:21
+
+**Yoann:**
+
+> I need to go, let's commit
+
+**Claude (summary):**
+
+(summary generation failed - raw answer follows)
+The `linux` subtest is flaky, not broken by me: HEAD passed 1 of 4 runs and my version 3 of 4. Committing the kernel changes, together with the ed/sam size update in `check.expected`.
+Everything from category C so far is committed, 34 lines of code shorter in total:
+- **TinyDatabase (−8):** one `col_pos` helper replaces six copies of the same column-lookup loop, and `int_bytes` replaces three places that wrote an 8-byte number by hand. Its 40 test sessions pass. One behaviour change: a missing column now always raises "no column", though every caller already checks that the column exists.
+- **TinyEditorLine (−2):** `+`/`-` and `,`/`;` are each one or-pattern, like `/` and `?`. I checked `2;+1`, `$-1,$`, `1+2` and `4-2` by hand, because its own test needs Plan 9's sam, which isn't installed. This made ed 572 bytes smaller, and `check.expected` is updated to match.
+- **TinyKernel (−6):** `sys_pipe` and `sys_box` now share an `ends` helper, and `net_command` names the three writes that

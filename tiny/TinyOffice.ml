@@ -78,11 +78,6 @@ let say (o : office) (m : string) = o.message <- m
 (* The page's objects *)
 (*****************************************************************************)
 
-(* a list's elements with their places, from 0 *)
-let numbered (l : 'a list) : (int * 'a) list =
-  let rec go k l = match l with x :: rest -> (k, x) :: go (k + 1) rest | [] -> [] in
-  go 0 l
-
 let rec nth_obj (l : obj list) (i : int) : obj = match l with b :: rest -> if i = 0 then b else nth_obj rest (i - 1) | [] -> failwith "nth_obj"
 
 (* the page with its i-th object replaced, or removed (None) *)
@@ -625,7 +620,7 @@ let chart_bars (page : obj list) (b : obj) : (string * int) list * string =
           let labels = match rest with l :: _ -> range_cells l | [] -> [] in
           let label k = match labels with [] -> "" | _ -> (
             match (if k < List.length labels then value (List.nth labels k) else Str "") with Num v -> string_of_int v | Str t -> t | Err e -> "#" ^ e) in
-          let bars = List.map (fun (k, n) -> (label k, match value n with Num v -> v | _ -> 0)) (numbered (range_cells range)) in
+          let bars = List.mapi (fun k n -> (label k, match value n with Num v -> v | _ -> 0)) (range_cells range) in
           if bars = [] then ([], "no cells in " ^ range) else (bars, "")
       | [] -> ([], "no sheet " ^ sheet))
   | _ -> ([], "a chart: bars SHEET b1:b3 a1:a3")
@@ -645,10 +640,10 @@ let chart_view (page : obj list) (b : obj) : shape list =
       let top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
       let bw = max 6 ((b.w - 16) / n) and base = b.y + b.h - 20 and room = b.h - 42 in
       let cut t = let k = max 0 ((bw - 2) / 8) in if String.length t > k then String.sub t 0 k else t in
-      List.concat (List.map (fun (k, (label, v)) ->
+      List.concat (List.mapi (fun k (label, v) ->
         let x = b.x + 8 + (k * bw) and tall = max 0 (v * room / top) in
         (if tall > 0 then [ Move (x + 2, base - tall, Rect (List.nth bar_colours (k mod 6), bw - 4, tall)) ] else [])
-        @ [ Move (x + 2, base - tall - 16, Words (black, cut (string_of_int v))); Move (x + 2, base + 2, Words (black, cut label)) ]) (numbered bars))
+        @ [ Move (x + 2, base - tall - 16, Words (black, cut (string_of_int v))); Move (x + 2, base + 2, Words (black, cut label)) ]) bars)
       @ [ Move (b.x + 4, base, Rect (grey, b.w - 8, 1)) ]
 
 (* a name a sheet can have: a letter, then letters, digits, _ *)
@@ -779,8 +774,8 @@ let md_of_text (data : string) : string list =
 
 let text_of_md (ls : string list) : string =
   let read = List.map line_of_md ls in
-  encode (String.concat "" (List.map (fun (k, (t, _)) -> if k = 0 then t else "\n" ^ t) (numbered read)))
-    (String.concat "" (List.map (fun (k, (_, st)) -> if k = 0 then st else "\000" ^ st) (numbered read)))
+  encode (String.concat "" (List.mapi (fun k (t, _) -> if k = 0 then t else "\n" ^ t) read))
+    (String.concat "" (List.mapi (fun k (_, st) -> if k = 0 then st else "\000" ^ st) read))
 
 (* A sheet as a table, its columns as wide as their widest cell, and
  * back (a | in a cell is \|) *)
@@ -792,7 +787,7 @@ let md_of_sheet (data : string) : string list =
   let cell c r = esc (typed_in data (name c r)) in
   let wide = List.init ncols (fun c -> List.fold_left (fun m r -> max m (String.length (cell c r))) 1 (List.init nrows (fun r -> r))) in
   let pad s w = s ^ String.make (w - String.length s) ' ' in
-  let line f = "|" ^ String.concat "" (List.map (fun (c, w) -> " " ^ pad (f c) w ^ " |") (numbered wide)) in
+  let line f = "|" ^ String.concat "" (List.mapi (fun c w -> " " ^ pad (f c) w ^ " |") wide) in
   line (fun c -> String.make 1 (Char.chr (97 + c)))
   :: ("|" ^ String.concat "" (List.map (fun w -> String.make (w + 2) '-' ^ "|") wide))
   :: List.init nrows (fun r -> line (fun c -> cell c r))
@@ -810,7 +805,7 @@ let table_cells (l : string) : string list =
 let sheet_of_md (ls : string list) : string =
   match ls with
   | _ :: _ :: rows ->
-      String.concat "" (List.concat (List.map (fun (r, l) -> List.concat (List.map (fun (c, t) -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (numbered (table_cells l)))) (numbered rows)))
+      String.concat "" (List.concat (List.mapi (fun r l -> List.concat (List.mapi (fun c t -> if t = "" then [] else [ name c r ^ " " ^ t ^ "\n" ]) (table_cells l))) rows))
   | _ -> ""
 
 (* a box's lines in the file *)
@@ -829,7 +824,7 @@ let box_lines (b : obj) : string list =
 let text (o : office) : string =
   let page p = List.map box_lines (List.filter (fun (b : obj) -> b.page_no = p) o.page) in
   let blocks = List.concat (List.init o.where.pages (fun p -> (if p = 0 then [] else [ [ "\\newpage" ] ]) @ page p)) in
-  String.concat "" (List.map (fun (k, ls) -> (if k = 0 then "" else "\n") ^ String.concat "" (List.map (fun l -> l ^ "\n") ls)) (numbered blocks))
+  String.concat "" (List.mapi (fun k ls -> (if k = 0 then "" else "\n") ^ String.concat "" (List.map (fun l -> l ^ "\n") ls)) blocks)
 
 let obj_of (page_no : int) (x : int) (y : int) (w : int) (h : int) (called : string) (ls : string list) : obj =
   let lines_data l = String.concat "" (List.map (fun s -> s ^ "\n") l) in

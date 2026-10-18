@@ -41,6 +41,7 @@ let List.filteri p l =
   let rec go i = function [] -> [] | x :: l -> if p i x then x :: go (i + 1) l else go (i + 1) l in
   go 0 l
 let List.init n f = let rec go i = if i >= n then [] else let x = f i in x :: go (i + 1) in go 0
+let List.mapi f l = let rec go i = function [] -> [] | x :: l -> let y = f i x in y :: go (i + 1) l in go 0 l
 let rec List.assoc_opt x = function [] -> None | (a, b) :: l -> if a = x then Some b else List.assoc_opt x l
 let rec List.nth_opt l n = match l with [] -> None | x :: l -> if n = 0 then Some x else List.nth_opt l (n - 1)
 (* by merging: the list cut in its first and second halves, each

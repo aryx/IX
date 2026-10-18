@@ -17,6 +17,8 @@ let () =
   ints (List.filteri (fun i _ -> i mod 2 = 0) [ 10; 11; 12; 13; 14 ]);
   ints (List.init 4 (fun i -> i * i));
   ints (List.init 0 (fun i -> i));
+  ints (List.mapi (fun i x -> (10 * i) + x) [ 7; 8; 9 ]);
+  ints (List.mapi (fun i x -> i + x) []);
   opt (List.assoc_opt "b" [ "a", 1; "b", 2 ]); opt (List.assoc_opt "c" [ "a", 1 ]);
   opt (List.nth_opt [ 5; 6 ] 1); opt (List.nth_opt [ 5; 6 ] 2); print_newline ();
   strs (List.map2 ( ^ ) [ "a"; "b" ] [ "x"; "y" ]);

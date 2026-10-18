@@ -7,8 +7,6 @@ open TinyOffice
 (* strings joined (TinyLibStd's String.concat, two by two) *)
 let glue (l : string list) : string = String.concat "" l
 
-(* two lists' elements side by side *)
-let rec zip (a : 'a list) (b : 'b list) : ('a * 'b) list = match a, b with x :: r, y :: s -> (x, y) :: zip r s | _ -> []
 
 (* a string's characters, each as a string *)
 let chars (s : string) : string list = List.init (String.length s) (fun i -> String.make 1 s.[i])
@@ -79,10 +77,10 @@ let sheet_lines (data : string) : string list =
   let cols = List.init nc (fun c -> c) in
   let wide = List.map (fun c -> List.fold_left (fun m r -> let (s, _, _) = shown value data c r in max m (String.length s)) 1 (List.init nr (fun r -> r))) cols in
   List.init nr (fun r ->
-    glue (List.map (fun (c, w) ->
+    glue (List.map2 (fun c w ->
       let (s, num, _) = shown value data c r in
       let pad = String.make (w - String.length s) ' ' in
-      (if c = 0 then "" else "  ") ^ (if num then pad ^ s else s ^ pad)) (zip cols wide)))
+      (if c = 0 then "" else "  ") ^ (if num then pad ^ s else s ^ pad)) cols wide))
 
 (* the rows of a grid of characters, without the spaces at their ends,
  * nor the empty rows at its end *)
@@ -155,10 +153,10 @@ let to_text (width : int) (doc : string) : string =
     else if b.kind = "paint" then paint_lines b.data
     else if b.kind = "chart" then chart_lines parts b
     else text_lines width b.data in
-  let page bs = List.concat (List.map (fun (k, b) -> (if k = 0 then [] else [ "" ]) @ one b) (zip (List.init (List.length bs) (fun k -> k)) bs)) in
+  let page bs = List.concat (List.mapi (fun k b -> (if k = 0 then [] else [ "" ]) @ one b) bs) in
   (* (a page after a form feed, as nroff's) *)
   let pages = List.map page (pages_of parts) in
-  glue (List.map (fun l -> l ^ "\n") (List.concat (List.map (fun (k, ls) -> (if k = 0 then [] else [ "\012" ]) @ ls) (zip (List.init (List.length pages) (fun k -> k)) pages))))
+  glue (List.map (fun l -> l ^ "\n") (List.concat (List.mapi (fun k ls -> (if k = 0 then [] else [ "\012" ]) @ ls) pages)))
 
 (*****************************************************************************)
 (* HTML *)
@@ -242,7 +240,7 @@ let paint_html (b : obj) : string =
     go 0 [] in
   let lines = String.split_on_char '\n' b.data in
   "<svg width=\"" ^ num (b.w - 4) ^ "\" height=\"" ^ num (b.h - 4) ^ "\" shape-rendering=\"crispEdges\">\n"
-  ^ glue (List.map (fun s -> s ^ "\n") (List.concat (List.map (fun (r, line) -> List.rev (row r line)) (zip (List.init (List.length lines) (fun r -> r)) lines))))
+  ^ glue (List.map (fun s -> s ^ "\n") (List.concat (List.mapi (fun r line -> List.rev (row r line)) lines)))
   ^ "</svg>\n"
 
 (* a chart: SVG, as the office draws it: a bar a value, its value above
@@ -258,10 +256,10 @@ let chart_html (page : obj list) (b : obj) : string =
      | bars, _ ->
          let n = List.length bars and top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
          let bw = max 6 ((b.w - 16) / n) and base = b.h - 20 and room = b.h - 42 in
-         glue (List.map (fun (k, (label, v)) ->
+         glue (List.mapi (fun k (label, v) ->
            let x = 8 + (k * bw) and tall = max 0 (v * room / top) in
            "<rect x=\"" ^ num (x + 2) ^ "\" y=\"" ^ num (base - tall) ^ "\" width=\"" ^ num (bw - 4) ^ "\" height=\"" ^ num tall ^ "\" fill=\"" ^ List.nth bar_colours (k mod 6) ^ "\"/>"
-           ^ txt (x + 2) (base - tall - 4) (string_of_int v) ^ txt (x + 2) (base + 14) label ^ "\n") (zip (List.init n (fun k -> k)) bars))
+           ^ txt (x + 2) (base - tall - 4) (string_of_int v) ^ txt (x + 2) (base + 14) label ^ "\n") bars)
          ^ "<line x1=\"4\" y1=\"" ^ num base ^ "\" x2=\"" ^ num (b.w - 4) ^ "\" y2=\"" ^ num base ^ "\" stroke=\"#999\"/>\n")
   ^ "</svg>\n"
 
@@ -364,7 +362,7 @@ let drawing_pdf h (b : obj) : string =
 (* a paint: a rectangle a run of a colour on a row, 4 by 4 a pixel *)
 let paint_pdf h (b : obj) : string =
   let lines = String.split_on_char '\n' b.data in
-  glue (List.map (fun (r, line) ->
+  glue (List.mapi (fun r line ->
     let n = String.length line in
     let rec go i acc =
       if i >= n then acc
@@ -375,7 +373,7 @@ let paint_pdf h (b : obj) : string =
                | Some c -> fill h c (b.x + 2 + (4 * i)) (b.y + 2 + (4 * r)) (4 * (!j - i)) 4 :: acc
                | None -> acc)
       end in
-    glue (List.rev (go 0 []))) (zip (List.init (List.length lines) (fun r -> r)) lines))
+    glue (List.rev (go 0 []))) lines)
 
 (* a chart: its bars as the office draws them *)
 let chart_pdf h (page : obj list) (b : obj) : string =
@@ -384,10 +382,10 @@ let chart_pdf h (page : obj list) (b : obj) : string =
   | bars, _ ->
       let n = List.length bars and top = List.fold_left (fun m (_, v) -> max m v) 1 bars in
       let bw = max 6 ((b.w - 16) / n) and base = b.y + b.h - 20 and room = b.h - 42 in
-      glue (List.map (fun (k, (label, v)) ->
+      glue (List.mapi (fun k (label, v) ->
         let x = b.x + 8 + (k * bw) and tall = max 0 (v * room / top) in
         fill h (List.nth pdf_bars (k mod 6)) (x + 2) (base - tall) (bw - 4) tall
-        ^ text_pdf h 0 (x + 2) (base - tall - 16) (string_of_int v) ^ text_pdf h 0 (x + 2) (base + 2) label) (zip (List.init n (fun k -> k)) bars))
+        ^ text_pdf h 0 (x + 2) (base - tall - 16) (string_of_int v) ^ text_pdf h 0 (x + 2) (base + 2) label) bars)
       ^ line_pdf h ".6 .6 .6" (b.x + 4) base (b.x + b.w - 4) base
 
 (* a number of 10 digits, as the cross-reference table has them *)
@@ -409,7 +407,7 @@ let to_pdf (doc : string) : string =
   let font k name = num (3 + k) ^ " 0 obj << /Type /Font /Subtype /Type1 /BaseFont /" ^ name ^ " /Encoding /WinAnsiEncoding >> endobj\n" in
   (* the objects: 1 the catalog, 2 the pages, 3 to 6 the fonts, then a
    * page's and its contents' for each page, 7 and 8 the first's *)
-  let page_objects (k, bs) =
+  let page_objects k bs =
     let content = drawn bs in
     [ num (7 + (2 * k)) ^ " 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 " ^ num width ^ " " ^ num height
       ^ "] /Resources << /Font << /F0 3 0 R /F1 4 0 R /F2 5 0 R /F3 6 0 R >> >> /Contents " ^ num (8 + (2 * k)) ^ " 0 R >> endobj\n";
@@ -419,7 +417,7 @@ let to_pdf (doc : string) : string =
     "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n";
     "2 0 obj << /Type /Pages /Kids [" ^ kids ^ "] /Count " ^ num n ^ " >> endobj\n";
     font 0 "Courier"; font 1 "Courier-Bold"; font 2 "Courier-Oblique"; font 3 "Courier-BoldOblique" ]
-    @ List.concat (List.map page_objects (zip (List.init n (fun k -> k)) pages)) in
+    @ List.concat (List.mapi page_objects pages) in
   let head = "%PDF-1.4\n" in
   (* each object's place in the file, for the cross-reference table *)
   let rec places at l = match l with o :: rest -> at :: places (at + String.length o) rest | [] -> [] in

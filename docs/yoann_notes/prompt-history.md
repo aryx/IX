@@ -37319,3 +37319,35 @@ Claude confirmed its working-tree changes were its own, separate from the other 
 Claude checked that its read_file change in TinyLibGUI.ml survived, so it could be staged alone.
 Claude re-verified that tiny-play matched tiny-kernel sample for sample and the tetris WAV kept its six landings.
 Claude left the full make check running in the background, waiting on its result before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 07:57
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the work as 3e5c8a7f and left the working tree clean.
+Claude left out the other session's browser edits in TinyLibGUI.mli and TinyBrowser.ml, which were already in 653413b1.
+The commit holds the p n samples message, TinyPlay.ml with play and tiny-play, and /examples/korobeiniki.wav.
+It also includes the Bytes change in tiny-ml, the read_file fix, and the tests and docs.
+The full make check was still running at commit time, and Claude said it would report the result.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 07:21
+
+**Yoann:**
+
+> yes. I also think we might want the tiny-browser to uuse the TinyLibGUI library, maybe with an input box where one can enter other query, some menu
+
+**Claude (summary):**
+
+Claude first committed B1, a small tiny-ml `window_size` change, with the browser test and `make check` passing.
+Claude built the GUI tiny-browser on TinyLibGUI's exported `place`, adding a toolbar input box, menus, and new image numbers.
+Claude moved the toolbar's three fields into their own record, since a 13-field record exceeded tiny-ml's 11 registers.
+Claude spaced out the clicks and added a harmless final key so the mouse release reached www.
+Claude confirmed stable checksums across nine screens, and Page › Quit exits www, clears the screen, and returns to the shell.

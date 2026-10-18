@@ -37742,3 +37742,19 @@ Everything from category C so far is committed, 34 lines of code shorter in tota
 **Yoann:**
 
 > do the TinyC ones
+
+------------------------------------------------------------------------
+
+## 2026-10-18 15:15
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude confirmed category C is finished, six commits making it 40 lines shorter.
+Claude committed all of this pass, touching only its own hunks in files other sessions share.
+Claude unified argument parsing in `call_args`, so `f(a b)` through a pointer is now an error.
+Claude had `type_name` read its own parentheses, dropping the `expect` calls in the cast and `sizeof` cases.
+Claude checked that TinyC_test, mini-mk, and the kernel C programs still build with the new tiny-c.

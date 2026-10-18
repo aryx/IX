@@ -411,6 +411,11 @@ APART = [
     # mltests.c under TinyKernel/"; rc is t-ix's shell, TinyShell.ml)
     ("tiny-kernel's sh.c, mltests.c", "its first shell, in C, before rc (TinyShell.ml), still the console's; and the test of its ML programs' calls",
      lambda dirs, path: path in ("tiny/TinyKernel/user/sh.c", "tiny/TinyKernel/user/mltests.c")),
+    # (the author, 2026-10-18: "skip TinyEditorLine.ml in make loc since
+    # we really need just one editor, and TinyEditorScreen.ml is arguably
+    # more what people expect from an editor")
+    ("tiny/TinyEditorLine.ml", "tiny-editor, the line editor (tiny-kernel's ed and sam): the screen editor, emacs, is t-ix's editor",
+     lambda dirs, path: path == "tiny/TinyEditorLine.ml"),
     # (the author, 2026-10-09: "let's not could the sdl/ and tty/ folders
     # in make loc; they are optional as what matters is what is running
     # under mini-9pi"; last, so a program that is apart keeps its own in

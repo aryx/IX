@@ -1,9 +1,8 @@
-(* A tiny calculator, a program for TinyKernel.ml built on
- * TinyLibGUI.ml: the four operations on whole numbers, with sixteen
+(* A tiny calculator: the four operations on whole numbers, with sixteen
  * buttons.
  *
- * It was written from scratch, in the subset of ML that both
- * tiny-ml and OCaml accept. Usage:
+ * It is written in the subset of ML that both tiny-ml and OCaml accept.
+ * Usage:
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ windows                  then a window, and in it:

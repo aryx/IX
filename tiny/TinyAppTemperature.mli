@@ -1,5 +1,4 @@
-(* A tiny temperature converter. It is a program for TinyKernel.ml,
- * built on TinyLibGUI.ml, with two fields where each one shows the
+(* A tiny temperature converter with two fields where each one shows the
  * conversion of the other.
  *
  * It is the second of the 7GUIs tasks (m-ix's

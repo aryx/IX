@@ -1,9 +1,10 @@
 (* A tiny Tetris, a game for TinyKernel.ml built on
  * TinyLibPlayground.ml. It keeps the essentials of the game (the
  * author's playground has a Tetris too, and the full-size one in ix is
- * games/puzzle/Tetris.ml, modeled after elm-flatris). It was written
- * from scratch, using only integers, in the subset of ML that both
- * tiny-ml and OCaml accept (see plan_tiny_windows.md):
+ * games/puzzle/Tetris.ml, modeled after elm-flatris).
+ *
+ * It was written from scratch, using only integers, in the subset
+ * of ML that both tiny-ml and OCaml accept (see plan_tiny_windows.md):
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ windows                  then a window, and in it:

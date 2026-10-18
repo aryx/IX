@@ -48,11 +48,12 @@ let read_at f off len =
 let write_at f off s = ignore (Unix.lseek f.fd off Unix.SEEK_SET); ignore (Unix.write_substring f.fd s 0 (String.length s))
 
 (* a value at the end of the file: its length, then its bytes *)
+(* an int as 8 bytes, the most significant first *)
+let int_bytes n = let s = Bytes.create 8 in Bytes.set_int64_be s 0 (Int64.of_int n); Bytes.to_string s
+
 let append f (s : string) =
   let off = Unix.lseek f.fd 0 Unix.SEEK_END in
-  let len = Bytes.create 8 in
-  Bytes.set_int64_be len 0 (Int64.of_int (String.length s));
-  write_at f off (Bytes.to_string len ^ s);
+  write_at f off (int_bytes (String.length s) ^ s);
   off
 
 let load f off = read_at f (off + 8) (Int64.to_int (Bytes.get_int64_be (read_at f off 8) 0))
@@ -63,7 +64,7 @@ let load f off = read_at f (off + 8) (Int64.to_int (Bytes.get_int64_be (read_at 
  * bytes and where it is in them. *)
 (* old: Marshal.to_string v [] and Marshal.from_bytes: two calls for
  * these forty lines, and 376 lines of library under them *)
-let put_int b n = let s = Bytes.create 8 in Bytes.set_int64_be s 0 (Int64.of_int n); Buffer.add_bytes b s
+let put_int b n = Buffer.add_string b (int_bytes n)
 let put_str b s = put_int b (String.length s); Buffer.add_string b s
 let put_list put b l = put_int b (List.length l); List.iter (put b) l
 let put_value b = function Int n -> put_int b 0; put_int b n | Text s -> put_int b 1; put_str b s
@@ -203,27 +204,26 @@ let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
 (* the statement's changes made durable: the new catalog, then the
  * header pointing at it *)
 let commit db tables =
-  let off = append db.file (tables_bytes tables) in
-  let h = Bytes.create 8 in
-  Bytes.set_int64_be h 0 (Int64.of_int off);
-  write_at db.file 8 (Bytes.to_string h);
+  write_at db.file 8 (int_bytes (append db.file (tables_bytes tables)));
   db.tables <- tables
 
 let table db name = match List.find_opt (fun t -> t.name = name) db.tables with Some t -> t | None -> error "no table %s" name
 
 let replace db (t : table) = List.map (fun t' -> if t'.name = t.name then t else t') db.tables
 
+(* a table's columns; a column's place among columns *)
+let names (t : table) = List.map fst t.cols
+let col_pos cols c = let rec go i = function x :: rest -> if x = c then i else go (i + 1) rest | [] -> error "no column %s" c in go 0 cols
+
 (* a row in, its key in its table and in each index *)
 let add f (t : table) (r : row) =
   let k = r.(t.key) in
-  let pos c = let rec go i = function (n, _) :: rest -> if n = c then i else go (i + 1) rest | [] -> 0 in go 0 t.cols in
   { t with root = insert f t.root [ k ] r;
-           indexes = List.map (fun (c, root) -> c, insert f root [ r.(pos c); k ] [||]) t.indexes }
+           indexes = List.map (fun (c, root) -> c, insert f root [ r.(col_pos (names t) c); k ] [||]) t.indexes }
 
 let remove f (t : table) (r : row) =
   let k = r.(t.key) in
-  let pos c = let rec go i = function (n, _) :: rest -> if n = c then i else go (i + 1) rest | [] -> 0 in go 0 t.cols in
-  { t with root = delete f t.root [ k ]; indexes = List.map (fun (c, root) -> c, delete f root [ r.(pos c); k ]) t.indexes }
+  { t with root = delete f t.root [ k ]; indexes = List.map (fun (c, root) -> c, delete f root [ r.(col_pos (names t) c); k ]) t.indexes }
 
 (*****************************************************************************)
 (* The language *)
@@ -375,10 +375,7 @@ let parse (ts : token list) : stmt =
 let rec compile (cols : string list) (e : expr) : row -> value =
   match e with
   | Lit v -> fun _ -> v
-  | Col c ->
-      let rec pos i = function x :: rest -> if x = c then i else pos (i + 1) rest | [] -> error "no column %s" c in
-      let i = pos 0 cols in
-      fun r -> r.(i)
+  | Col c -> let i = col_pos cols c in fun r -> r.(i)
   | Not e -> let f = compile cols e in fun r -> of_bool (not (truth (f r)))
   | Neg e -> let f = compile cols e in fun r -> (match f r with Int n -> Int (- n) | Text _ -> error "- of a text")
   | Bin (op, a, b) ->
@@ -400,8 +397,6 @@ let rec compile (cols : string list) (e : expr) : row -> value =
         | Div, Int _, Int 0 -> error "division by zero"
         | Div, Int m, Int n -> Int (m / n)
         | (Add | Sub | Mul | Div), _, _ -> error "arithmetic on a text"
-
-let names (t : table) = List.map fst t.cols
 
 (* the access path for a table and its first where: a range on the key
  * or on an index, from a conjunct column op literal; or a scan. The
@@ -456,14 +451,13 @@ let stage db (cols, (rs : row Seq.t)) = function
       (* a hash join: the right table in a table by the shared columns *)
       let t = table db name in
       let shared = List.filter (fun c -> List.mem c cols) (names t) in
-      let pos cs c = let rec go i = function x :: rest -> if x = c then i else go (i + 1) rest | [] -> -1 in go 0 cs in
       let h = Hashtbl.create 64 in
-      Seq.iter (fun r -> Hashtbl.add h (List.map (fun c -> r.(pos (names t) c)) shared) r) (rows db t Scan);
+      Seq.iter (fun r -> Hashtbl.add h (List.map (fun c -> r.(col_pos (names t) c)) shared) r) (rows db t Scan);
       let rest = List.filter (fun c -> not (List.mem c shared)) (names t) in
       cols @ rest,
       Seq.concat_map (fun l ->
-        let k = List.map (fun c -> l.(pos cols c)) shared in
-        List.to_seq (List.rev_map (fun r -> Array.append l (Array.of_list (List.map (fun c -> r.(pos (names t) c)) rest))) (Hashtbl.find_all h k))) rs
+        let k = List.map (fun c -> l.(col_pos cols c)) shared in
+        List.to_seq (List.rev_map (fun r -> Array.append l (Array.of_list (List.map (fun c -> r.(col_pos (names t) c)) rest))) (Hashtbl.find_all h k))) rs
   | Group (keys, aggs) ->
       let key = List.map (fun k -> compile cols (Col k)) keys in
       let groups = Hashtbl.create 64 and order = ref [] in
@@ -538,7 +532,7 @@ let exec caps db (s : stmt) =
       let t = table db name in
       if not (List.mem_assoc c t.cols) then error "no column %s" c;
       if List.mem_assoc c t.indexes then error "index on %s exists" c;
-      let pos = let rec go i = function (n, _) :: rest -> if n = c then i else go (i + 1) rest | [] -> 0 in go 0 t.cols in
+      let pos = col_pos (names t) c in
       let root = Seq.fold_left (fun root r -> insert f root [ r.(pos); r.(t.key) ] [||]) (empty_tree f) (rows db t Scan) in
       commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
   | Query (explain, name, stages) ->
@@ -564,9 +558,7 @@ let exec caps db (s : stmt) =
       let t = List.fold_left (remove f) t rs in
       let t = match s with
         | Update (_, _, items) ->
-            let fs = List.map (fun (c, e) ->
-              let rec go i = function (n, _) :: rest -> if n = c then i else go (i + 1) rest | [] -> error "no column %s" c in
-              go 0 t.cols, compile (names t) e) items in
+            let fs = List.map (fun (c, e) -> col_pos (names t) c, compile (names t) e) items in
             List.fold_left (fun t r ->
               let r' = Array.copy r in
               List.iter (fun (i, e) -> r'.(i) <- e r) fs;

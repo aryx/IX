@@ -141,7 +141,7 @@ Some **bold words** and plain ones, more than a line holds.
     words 0 124 142 |line holds.|
   shape 2
     rect 204 0 182 320 18
-    words 0 4 183 |Not saved: C-x C-s saves, C-x C-c again|
+    words 0 4 183 |Not saved: Save it, or Quit again|
   shape 3
     rect 204 0 0 320 17
     words 0 8 1 |File|
@@ -881,6 +881,25 @@ asks: save
     words 0 168 1 |Draw|
     words 0 216 1 |Page|
   shape 4
+== File's Quit, the page not saved (the program has not said it wrote): refused
+  shape 0
+    rect 255 0 0 400 220
+  shape 1
+    rect 3 16 24 64 16
+    words 255 20 24 |drawing|
+    rect 3 308 192 8 8
+  shape 2
+    rect 204 0 202 400 18
+    words 0 4 203 |Not saved: Save it, or Quit again|
+  shape 3
+    rect 204 0 0 400 17
+    words 0 8 1 |File|
+    words 0 56 1 |Edit|
+    words 0 104 1 |Insert|
+    words 0 168 1 |Draw|
+    words 0 216 1 |Page|
+  shape 4
+asks: quit
 == a click in the box: edited, its tab above it, its corner
   shape 0
     rect 255 0 0 320 200

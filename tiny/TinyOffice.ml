@@ -876,7 +876,7 @@ let saved (o : office) =
 let help = "the menus above; a click edits a box; its tab moves it, its corner resizes it"
 
 let quit (o : office) : request =
-  let refused = "Not saved: C-x C-s saves, C-x C-c again quits" in
+  let refused = "Not saved: Save it, or Quit again" in
   if o.page == o.clean || o.message = refused then Quit else (o.message <- refused; Continue)
 
 (* A key in a text: a character typed, in the style of what is typed
@@ -1136,7 +1136,9 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
 let mouse (o : office) (x : int) (y : int) (b : int) : request =
   let was = o.menu.held in
   match menu_mouse (office_menus o) o.menu x y b with
-  | Picked c -> o.message <- ""; command o c
+  (* (Quit's refusal kept, as C-x C-c keeps it: Quit again quits; old:
+   * cleared, and a page not saved was never left by the menu) *)
+  | Picked c -> (if c <> Do_quit then o.message <- ""); command o c
   | Taken -> Continue
   | Ignored -> page_mouse o was x y b; Continue
 
@@ -1222,23 +1224,25 @@ let frame (b : obj) (selected : bool) : shape list =
   [ Move (b.x, b.y, Rect (c, b.w, 1)); Move (b.x, y1, Rect (c, b.w, 1)); Move (b.x, b.y, Rect (c, 1, b.h)); Move (x1, b.y, Rect (c, 1, b.h)) ]
   @ (if selected then [ Move (tx, ty, Rect (c, tw, th)); Move (tx + 4, ty, Words (white, tab_text b)); Move (x1 - 7, y1 - 7, Rect (c, 8, 8)) ] else [])
 
-(* the status line: what the box being edited says (a search, M-x), or
- * the page's message, or the file's name *)
+(* the status line: the page's message (what was just done, or why
+ * not: it goes at the next key or click), or what the box being edited
+ * says, or the file's name (old: a sheet's, a paint's or a drawing's
+ * words over the message, and Quit's refusal not seen) *)
 let status (o : office) : shape list =
   let file = o.where.file and width = o.where.width and height = o.where.height in
   let file = if o.where.pages > 1 then file ^ " (page " ^ string_of_int (o.where.shown + 1) ^ " of " ^ string_of_int o.where.pages ^ ")" else file in
-  let said = match o.editing with
-    | Writing d when o.message = "" ->
+  let said = if o.message <> "" then o.message else match o.editing with
+    | Writing d ->
         let names = List.filter (fun t -> t <> "") (List.init 4 (fun k -> if d.typing land (1 lsl k) <> 0 then List.nth [ "bold"; "italic"; "underlined"; "large" ] k else "")) in
         "text, typing " ^ (if names = [] then "plain" else String.concat " " names) ^ "; the Format menu, or C-b, Tab, C-u, C-l"
     | Cell (c, r, typed) when o.sel >= 0 ->
         (* the formula bar: the cell, what is being typed in it, or what was *)
         name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (List.nth o.page o.sel).data (name c r))
-    | Naming typed when o.message = "" -> "the sheet's name: " ^ typed ^ "_ (Enter gives it, C-g not)"
+    | Naming typed -> "the sheet's name: " ^ typed ^ "_ (Enter gives it, C-g not)"
     | Painting (ink, brush, _) -> "paint: " ^ List.nth paint_names ink ^ (if brush = 0 then ", thin" else ", thick") ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) -> "drawing: " ^ List.nth tools tool ^ " (Tab: another); the left button draws; type a label"
     | _ -> "" in
-  let m = if said <> "" then said else if o.message <> "" then o.message
+  let m = if said <> "" then said
     else if o.prefix then "C-x-" else file ^ (if o.page == o.clean then "" else " (modified)") ^ "    " ^ help in
   let m = if String.length m * 8 > width - 8 then String.sub m 0 ((width - 8) / 8) else m in
   [ Move (0, height - 18, Rect (light_grey, width, 18)); Move (4, height - 17, Words (black, m)) ]

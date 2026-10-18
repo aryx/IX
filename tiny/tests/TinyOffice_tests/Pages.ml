@@ -160,7 +160,12 @@ let () =
   show "Draw opened, a click outside: closed, and the page not clicked" o;
   click o 1 10 5;
   click o 1 10 22;
-  show "File's Save" o
+  show "File's Save" o;
+  click o 1 10 5;
+  click o 1 10 38;
+  show "File's Quit, the page not saved (the program has not said it wrote): refused" o;
+  click o 1 10 5;
+  click o 1 10 38
 
 let () =
   let o = create 320 200 "moves" "\\box[40 60 150 52]{\nhello\n}\n" in

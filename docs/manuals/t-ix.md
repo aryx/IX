@@ -815,6 +815,8 @@ office suite of one program: a document of pages, each page boxes
 A box's tab, above it, moves it; the square at its corner resizes it
 (the left button; the right button too). Edit's Undo (C-_) takes the
 document back a change; File's Save and Quit are C-x C-s and C-x C-c.
+A page not saved is not left at the first Quit: the status line says
+so, and a second Quit (or C-x C-c) leaves it.
 The Page menu, last in the bar, shows the next page or the one before
 (C-x ], C-x [), makes a page after the one shown, or deletes it; the
 status line says which page is shown.

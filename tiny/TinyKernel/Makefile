@@ -7,7 +7,8 @@
 #   make run          the kernel on tiny-machine: sh on the console
 #   make check        mltests, a script through sh, the utilities through
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
-#                     ^C, M-x and a macro; office's page, a text and a sheet, saved; troff's text and web page of
+#                     ^C, M-x and a macro; office's page, a text and a sheet, saved,
+#                     and a page not saved left by File's Quit twice; troff's text and web page of
 #                     /examples/report.ixd), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
@@ -262,6 +263,7 @@ check: $(O)/boot.img
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /bin/ed /bin/sam /bin/emacs /bin/editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img >> $(O)/check.out
+	timeout 300 $(MACHINE) -events $(T)/officequit.events $(O)/boot.img >> $(O)/check.out
 	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; troff -p /examples/report.ixd > r.pdf; wc r.html r.pdf; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept

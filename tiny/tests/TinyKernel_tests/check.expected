@@ -133,6 +133,8 @@ Kept by **put**, read by cat.
 | =a2*2 |
 }
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ $ office ended
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % A report
 ========
 

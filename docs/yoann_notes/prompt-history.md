@@ -37399,3 +37399,19 @@ Claude proposed B4, about 20 fewer lines spread across several files, adding `Li
 For B4, Claude also proposed replacing copied `List.nth` and `Filename.concat` helpers, and hand-written read and write loops with `Procs.read_all` and `write_all`.
 Claude planned B4's `open Common` change, replacing per-file `|||` definitions, and noted it touches the most scattered set of files.
 Claude then asked Yoann whether to proceed, since some of those files may be under edit by other sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 08:34
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude checked the other session's `check.expected` against its own recording, and the utils sizes agreed at 231,020 bytes.
+Claude committed only its own files as `5d29cdb7`, leaving the working tree clean.
+The commit covers `/dev` and `/bin`, `sh` and rc lookup in `/bin`, and httpd directory listing.
+It also includes the docs and the re-recorded tests.
+The other session had already committed its own work, including a utils size 436 bytes larger.

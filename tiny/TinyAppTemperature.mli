@@ -1,8 +1,11 @@
 (* A tiny temperature converter. It is a program for TinyKernel.ml,
  * built on TinyLibGUI.ml, with two fields where each one shows the
- * conversion of the other. It is the second of the 7GUIs tasks (m-ix's
+ * conversion of the other.
+ *
+ * It is the second of the 7GUIs tasks (m-ix's
  * version is examples/Gui7Temperature.ml), here with whole numbers
- * only, written in the subset of ML that both tiny-ml and OCaml accept:
+ * only, written in the subset of ML that both tiny-ml and OCaml accept.
+ * Usage:
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ temp

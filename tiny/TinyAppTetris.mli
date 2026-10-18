@@ -1,10 +1,8 @@
 (* A tiny Tetris, a game for TinyKernel.ml built on
- * TinyLibPlayground.ml. It keeps the essentials of the game (the
- * author's playground has a Tetris too, and the full-size one in ix is
- * games/puzzle/Tetris.ml, modeled after elm-flatris).
+ * TinyLibPlayground.ml keeping the essentials of the game.
  *
- * It was written from scratch, using only integers, in the subset
- * of ML that both tiny-ml and OCaml accept (see plan_tiny_windows.md):
+ * It was written using only integers, in the subset of ML that both
+ * tiny-ml and OCaml accept. Usage:
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ windows                  then a window, and in it:
@@ -99,7 +97,14 @@
  * well's rows, the cells fallen as shapes, what comes next, the
  * score), and the game's model *)
 type piece = { kind : int; turn : int; x : int; y : int }
-type board = { well : int array; ground : TinyLibPlayground.shape; next : int; seed : int; score : int; rows : int }
+type board = { 
+  well : int array;
+  ground : TinyLibPlayground.shape;
+  next : int;
+  seed : int;
+  score : int;
+  rows : int 
+}
 type model = { board : board; piece : piece; wait : int; over : bool; quiet : bool }
 
 (* The game, for TinyLibPlayground's run *)

@@ -1,8 +1,7 @@
 (* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
-
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *)
 (* See TinyAppTetris.mli *)
-
 open TinyLibPlayground
 
 (*****************************************************************************)
@@ -43,12 +42,25 @@ let cells { kind; turn; x; y } =
  * the other from the top; 0 an empty one, else a kind and 1), as
  * shapes with the panel beside it; the next piece's kind; the random
  * numbers' state; the score, the rows removed *)
-type board = { well : int array; ground : shape; next : int; seed : int; score : int; rows : int }
+type board = { 
+  well : int array;
+  ground : shape;
+  next : int;
+  seed : int;
+  score : int;
+  rows : int;
+}
 
 (* and what changes as it falls: the piece, the frames before it goes
  * down a row, whether the game is over; and whether the music is off
  * (m) *)
-type model = { board : board; piece : piece; wait : int; over : bool; quiet : bool }
+type model = {
+  board : board;
+  piece : piece;
+  wait : int;
+  over : bool;
+  quiet : bool;
+}
 
 (* a piece is where it may be: in the well's sides and floor (its top
  * may be over the well), on no cell taken *)
@@ -73,12 +85,19 @@ let ground_of (well : int array) next score rows =
   let rec taken i acc = if i = 200 then acc else taken (i + 1) (if well.(i) = 0 then acc else cell (well.(i) - 1) (i mod 10) (i / 10) :: acc) in
   let line y name n = Group [ Move (184, y, Words (grey, name)); Move (184, y + 16, Words (white, string_of_int n)) ] in
   let panel =
-    Group [ Move (184, 8, Words (white, "TETRIS")); line 48 "score" score; line 96 "rows" rows; line 144 "level" (rows / 10) ] in
-  let coming = Group [ Move (184, 192, Words (grey, "next")); shown { kind = next; turn = 0; x = 11; y = 13 } ] in
+    Group [ Move (184, 8, Words (white, "TETRIS"));
+            line 48 "score" score;
+            line 96 "rows" rows;
+            line 144 "level" (rows / 10) ] in
+  let coming = Group [ Move (184, 192, Words (grey, "next")); 
+                       shown { kind = next; turn = 0; x = 11; y = 13 } ] in
   Group (Rect (0, 288, 336) :: Move (8, 8, Rect (0x11, 160, 320)) :: panel :: coming :: taken 0 [])
 
 let banner =
-  Move (16, 136, Group [ Rect (white, 144, 48); Move (2, 2, Rect (0, 140, 44)); Move (36, 6, Words (white, "GAME OVER")); Move (20, 24, Words (grey, "space: again")) ])
+  Move (16, 136, Group [ Rect (white, 144, 48); 
+                         Move (2, 2, Rect (0, 140, 44)); 
+                         Move (36, 6, Words (white, "GAME OVER"));
+                         Move (20, 24, Words (grey, "space: again")) ])
 
 let view m = if m.over then [ m.board.ground; shown m.piece; banner ] else [ m.board.ground; shown m.piece ]
 
@@ -201,4 +220,9 @@ let bass = List.concat (List.map bar [ 82; 110; 82; 110; 73; 65; 82; 110 ])
 let theme = [ { timbre = Square; level = 28; notes = melody }; { timbre = Triangle; level = 48; notes = bass } ]
 let music m = if m.over || m.quiet then None else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
 
-let game = { width = 288; height = 336; init = (fun seed -> start seed false); view; key; frame; sound; music }
+let game = { 
+    width = 288; height = 336;
+    init = (fun seed -> start seed false);
+    view; key; frame;
+    sound; music 
+}

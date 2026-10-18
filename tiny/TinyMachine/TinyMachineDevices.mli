@@ -48,6 +48,9 @@ val screen : int
 val width : int
 val height : int
 val colours : string
+
+(* the colour nearest to a red, green and blue (bytes) *)
+val nearest : int -> int -> int -> int
 val time : int
 
 (* The machine's speed, in instructions per second. A host sets [rate]

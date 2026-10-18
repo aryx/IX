@@ -37415,3 +37415,35 @@ Claude committed only its own files as `5d29cdb7`, leaving the working tree clea
 The commit covers `/dev` and `/bin`, `sh` and rc lookup in `/bin`, and httpd directory listing.
 It also includes the docs and the re-recorded tests.
 The other session had already committed its own work, including a utils size 436 bytes larger.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 09:12
+
+**Yoann:**
+
+> the quit menu entry does not seem to work in tiny-office.
+
+**Claude (summary):**
+
+Claude traced the bug to menu Quit clearing the refusal message, so a second Quit failed.
+Claude fixed tiny/TinyOffice.ml so menu Quit keeps the refusal message, as the keys already did.
+It also puts the refusal first in the status line, with shorter text: "Not saved: Save it, or Quit again".
+Claude extended the office menus test and added the officequit.events tiny-kernel session into make check.
+Claude updated the manual, re-recorded korobeiniki.wav.cksum, passed the full check, and committed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 08:35
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended a B5 pass on duplicated logic in the machine and GUI programs, about thirty lines.
+Its candidates were one nearest-palette-colour function in TinyMachineDevices, replacing two copies.
+It also proposed one request-line parser for TinyMachinePeer and a shared spawn helper for starting processes.
+Claude said it would check each B5 item first, since B4 saved eight lines, not twenty.
+Claude flagged that the audio and kernel sessions own several of these files, so only its changes get committed.

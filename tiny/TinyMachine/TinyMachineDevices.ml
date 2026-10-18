@@ -155,6 +155,23 @@ let colour i =
 
 let colours = String.init 768 (fun k -> let r, g, b = colour (k / 3) in Char.chr (match k mod 3 with 0 -> r | 1 -> g | _ -> b))
 
+(* The colour nearest to (r, g, b), by the squares of their differences,
+ * for the colour of 15 bits it falls in (5 of red, of green, of blue),
+ * found once each: a picture's pixels, by tiny-machine-fetch and the
+ * page (old: each its own, the page's by the first pixel that fell in
+ * the 15 bits) *)
+let nearest =
+  let known = Array.make 32768 (-1) in
+  fun r g b ->
+    let key = ((r lsr 3) lsl 10) lor ((g lsr 3) lsl 5) lor (b lsr 3) in
+    if known.(key) < 0 then begin
+      let v shift = ((key lsr shift) land 31) * 255 / 31 in
+      let d k = let c i = Char.code colours.[(3 * k) + i] - v (10 - (5 * i)) in (c 0 * c 0) + (c 1 * c 1) + (c 2 * c 2) in
+      let rec go k bk bd = if k = 256 then bk else let dk = d k in if dk < bd then go (k + 1) k dk else go (k + 1) bk bd in
+      known.(key) <- go 1 0 (d 0)
+    end;
+    known.(key)
+
 (* the mouse: its word, and whether it changed since it was read *)
 type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 

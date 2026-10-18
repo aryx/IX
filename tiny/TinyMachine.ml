@@ -255,13 +255,11 @@ let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
   let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineFetch.exe" else "tiny-machine-fetch" in
   let pid = Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w in
   Unix.close in_r; Unix.close in_w; Unix.close out_w;
-  let b = Buffer.create 65536 and chunk = Bytes.create 65536 in
-  let rec read () = match Unix.read from chunk 0 65536 with 0 -> () | n -> Buffer.add_subbytes b chunk 0 n; read () | exception Unix.Unix_error (Unix.EINTR, _, _) -> read () in
-  read ();
+  let out = Procs.read_all from in
   Unix.close from;
   match Unix.waitpid [] pid with
-  | _, Unix.WEXITED 0 -> Ok (Buffer.contents b)
-  | _ -> Error (Buffer.contents b)
+  | _, Unix.WEXITED 0 -> Ok out
+  | _ -> Error out
 
 (* -net-out: a connection to an address and a port, if there is one in
  * the five seconds the helper tries for (the machine waits meanwhile);

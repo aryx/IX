@@ -3,21 +3,10 @@
 
 (* See TinyMachineFetch.mli *)
 
-(* The nearest of the machine's 256 colours, for each colour with 5 bits
- * of red, green and blue: a table made once, then a lookup per pixel. *)
-let nearest =
-  let pal = TinyMachineDevices.colours in
-  let best r g b =
-    let d k = let dr = r - Char.code pal.[3 * k] and dg = g - Char.code pal.[(3 * k) + 1] and db = b - Char.code pal.[(3 * k) + 2] in (dr * dr) + (dg * dg) + (db * db) in
-    let rec go k bk bd = if k = 256 then bk else let dk = d k in if dk < bd then go (k + 1) k dk else go (k + 1) bk bd in
-    go 1 0 (d 0) in
-  lazy (Array.init 32768 (fun i -> best (((i lsr 10) land 31) * 255 / 31) (((i lsr 5) land 31) * 255 / 31) ((i land 31) * 255 / 31)))
-
 (* A picture as w by h bytes of the machine's colours: each pixel the
  * average of the source's pixels that fall in it, on white where they
  * are transparent. *)
 let reduce (img : Rgba_image.t) w h =
-  let table = Lazy.force nearest in
   let out = Bytes.create (w * h) in
   for y = 0 to h - 1 do
     let y0 = y * img.height / h and y1 = max ((y + 1) * img.height / h) ((y * img.height / h) + 1) in
@@ -33,8 +22,7 @@ let reduce (img : Rgba_image.t) w h =
         done
       done;
       let n = max !n 1 in
-      let i = (((!r / n) lsr 3) lsl 10) lor (((!g / n) lsr 3) lsl 5) lor ((!b / n) lsr 3) in
-      Bytes.set out ((y * w) + x) (Char.chr table.(i))
+      Bytes.set out ((y * w) + x) (Char.chr (TinyMachineDevices.nearest (!r / n) (!g / n) (!b / n)))
     done
   done;
   Bytes.to_string out

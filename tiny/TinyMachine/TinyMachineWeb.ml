@@ -197,23 +197,6 @@ let fetch name k =
  * Internet as a page may: by fetch, from the sites that allow it.
  * Names, TLS, HTTP, JSON and a picture's format are the browser's. *)
 
-(* the screen's colour nearest to one of 15 bits (5 of red, of green,
- * of blue), found once each *)
-let nearest =
-  let known = Array.make 32768 (-1) in
-  fun r g b ->
-    let key = ((r lsr 3) lsl 10) lor ((g lsr 3) lsl 5) lor (b lsr 3) in
-    if known.(key) < 0 then begin
-      let best = ref 0 and least = ref max_int in
-      for i = 0 to 255 do
-        let c k = Char.code TinyMachineDevices.colours.[(3 * i) + k] in
-        let d = ((c 0 - r) * (c 0 - r)) + ((c 1 - g) * (c 1 - g)) + ((c 2 - b) * (c 2 - b)) in
-        if d < !least then (least := d; best := i)
-      done;
-      known.(key) <- !best
-    end;
-    known.(key)
-
 (* a picture loaded by the browser, at the size [size] gives from its
  * own (w and h), drawn on a canvas that is not shown and read back, a
  * byte a pixel, each the nearest of the screen's 256 colours (no
@@ -239,7 +222,7 @@ let picture_sized url size k =
       | None -> k None
       | Some data ->
           let at i : int = U.get data i in
-          k (Some (w, h, String.init (w * h) (fun i -> Char.chr (nearest (at (4 * i)) (at ((4 * i) + 1)) (at ((4 * i) + 2))))))
+          k (Some (w, h, String.init (w * h) (fun i -> Char.chr (TinyMachineDevices.nearest (at (4 * i)) (at ((4 * i) + 1)) (at ((4 * i) + 2))))))
     end);
   U.set img (Js.string "src") (Js.string url)
 

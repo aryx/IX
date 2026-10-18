@@ -1,7 +1,9 @@
 (* A tiny calculator, a program for TinyKernel.ml built on
  * TinyLibGUI.ml: the four operations on whole numbers, with sixteen
- * buttons. It was written from scratch, in the subset of ML that both
- * tiny-ml and OCaml accept:
+ * buttons.
+ *
+ * It was written from scratch, in the subset of ML that both
+ * tiny-ml and OCaml accept. Usage:
  *
  *     ./tiny-machine -window tiny-kernel
  *     $ windows                  then a window, and in it:
@@ -21,9 +23,9 @@
  * column:
  *
  *     button pressed    1    2    *    3    =    +    6
- *     number shown      1   12   12    3   36   36    6
- *     number kept       0    0   12   12   36   36   36
- *     pending op                  *    *         +    +
+ *  => number shown      1   12   12    3   36   36    6
+ *   - number kept       0    0   12   12   36   36   36
+ *   - pending op                  *    *         +    +
  *     what that means            12 * 12 *      36 + 36 +
  *
  * An operation is performed when the next one is requested, so

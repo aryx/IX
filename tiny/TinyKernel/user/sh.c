@@ -104,11 +104,11 @@ command(char **t, int n, int in, int out, int other)
 	argv[argc] = 0;
 	move(in, 0);
 	move(out, 1);
-	// a name without a '/' is a program of the root
+	// a name without a '/' is a program of /bin
 	if(argv[0][0] == '/' || argv[0][0] == '.')
 		strcpy(path, argv[0]);
 	else
-		sprint(path, "/%s", argv[0]);
+		sprint(path, "/bin/%s", argv[0]);
 	exec(path, argv);
 	print("sh: %s: not found\n", argv[0]);
 	exit(1);

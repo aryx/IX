@@ -77,8 +77,9 @@ let halt status = poke halt_dev status
 (*****************************************************************************)
 
 (* a directory is a list of names in the order they were made; the
- * console is a node too, /console, and the screen and the mouse, /draw
- * and /mouse. A file of the image is read where the image has it (its
+ * console is a node too, /dev/console, and the screen, the mouse and
+ * the speaker, /dev/draw, /dev/mouse and /dev/audio (the programs are
+ * in /bin, examples to look at in /examples). A file of the image is read where the image has it (its
  * address, its size) until it is written: the programs, a megabyte of
  * them, are then not the collector's to copy at each collection (old:
  * each a string, Data; a collection was 3 million instructions) *)
@@ -117,7 +118,7 @@ and link = { peer : string; lid : int; mutable asked : int; mutable heard : stri
  * descriptors, the last one's close saying the end *)
 and call = { il : il; mutable callers : int }
 
-(* a voice of the speaker (an open of /audio): where in the samples its
+(* a voice of the speaker (an open of /dev/audio): where in the samples its
  * next one goes *)
 and voice = { mutable ahead : int }
 
@@ -180,10 +181,11 @@ let rec place d name node =
        | _ -> let sub = ref [] in d := !d @ [ dir, Dir sub ]; place sub rest node)
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
- * name, a line; its size, a line; its bytes; an empty name at the end.
- * A line "link" and another file's name, in place of the size, makes a
+ * path, a line; its size, a line; its bytes; an empty path at the end.
+ * A line "link" and another file's path, in place of the size, makes a
  * hard link, as link() does: the same node under a second name, with
- * no bytes (utils, under the name of each of its utilities: cat, ls...) *)
+ * no bytes (bin/utils, under the name of each of its utilities:
+ * bin/cat, bin/ls...) *)
 let rec load a =
   let rec line a acc = let c = peekb a in if c = 10 then acc, a + 1 else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
   let name, a = line a "" in
@@ -191,7 +193,7 @@ let rec load a =
     let size, a = line a "" in
     match root with
     | Dir d when String.length size > 5 && String.sub size 0 5 = "link " ->
-        (match List.assoc_opt (String.sub size 5 (String.length size - 5)) !d with Some node -> d := !d @ [ name, node ] | None -> ());
+        (match walk root (names [] (String.sub size 5 (String.length size - 5))) with Some node -> place d name node | None -> ());
         load a
     | Dir d ->
         let n = Option.get (int_of_string_opt size) in
@@ -304,7 +306,7 @@ let drop f =
  * with the clock, ending elsewhere because the kernel's work took
  * another time.) The font is the machine's
  * (font.tm, in the image), made a mask at the boot. A program opens
- * /draw for a connection, whose image 0 is the screen, and writes
+ * /dev/draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)
 let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
 (* the mouse's look a program asks for (www, over a link) is written to
@@ -326,7 +328,7 @@ let counted = ref 0
 
 (* The speaker (plan_tiny_audio.md): tiny-machine plays the ring, 8,192
  * samples, 8,000 a second, and silences what it played. Each open of
- * /audio is a voice: a program writes messages, each a sound or
+ * /dev/audio is a voice: a program writes messages, each a sound or
  * samples (TinyKernelAudio.mli), which the kernel makes into the ring, added to
  * what is there already, so two programs are heard at once and neither
  * waits for the other. A voice's sounds follow one another: the next
@@ -929,11 +931,11 @@ let () =
   counted := k_clock ();
   k_timer tick;
   load (k_end ());
-  (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer; "audio", Speaker ] | _ -> ());
+  (match root with Dir d -> d := !d @ [ "dev", Dir (ref [ "console", Tty; "draw", Screen; "mouse", Pointer; "audio", Speaker ]) ] | _ -> ());
   k_zero ring_at ring;
   poke speaker_dev ring_at;
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for " ^ string_of_int nslots ^ " processes\n");
-  (* the first process: /sh, the console its 0, 1 and 2; and for the
+  (* the first process: /bin/sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a
    * connection) and the mouse its 4: a window system gives a window's
    * programs the same five, so a program draws in what it was given
@@ -942,5 +944,5 @@ let () =
   let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = []; since = -1 } in
   incr next_pid;
   procs := [ p ];
-  (try load_prog p (walk root [ "sh" ]) [ "sh" ] with Bad -> puts "no /sh\n"; halt 1);
+  (try load_prog p (walk root [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);
   schedule ()

@@ -50,7 +50,7 @@ execs(void)
 		dup(p[1]);
 		close(p[0]);
 		close(p[1]);
-		exec("/echo", argv);
+		exec("/bin/echo", argv);
 		exit(1);
 	}
 	close(p[1]);

@@ -62,7 +62,7 @@
  *   says what is heard (Tetris: rows that went, a piece that landed).
  *   So a game keeps nothing of what it played, and its sounds are
  *   tested as its rules are, with two models and no speaker. A sound
- *   is written to tiny-kernel's /audio as a message of 11 bytes, and
+ *   is written to tiny-kernel's /dev/audio as a message of 11 bytes, and
  *   the kernel makes its samples, mixed with the other programs'.
  * - {b The colours}: a shape's colour is a byte, an index in Plan 9's
  *   colour table; the image the kernel needs for that colour is
@@ -170,12 +170,12 @@ val run : 'm game -> 'a
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int
 
-(* a sound as tiny-kernel's /audio takes it: a message (s, then the
+(* a sound as tiny-kernel's /dev/audio takes it: a message (s, then the
  * five numbers, TinyKernelAudio.mli), which the kernel makes into
  * samples *)
 val sound_message : sound -> string
 
-(* samples as /audio takes them (a byte each, signed, 8,000 a second;
+(* samples as /dev/audio takes them (a byte each, signed, 8,000 a second;
  * no more than 8,192): a message too (p, how many, then them) *)
 val samples_message : string -> string
 

@@ -37367,3 +37367,19 @@ Claude added `List.mapi` to the TinyLibStd test, which compares tiny-ml against 
 Claude ran dune, the office and troff tests, and the kernel output, and real OCaml matched.
 Claude ran the troff part of `make check` on the report, and only the other session's size lines differed.
 Claude committed the changes after confirming the office screens matched.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 08:00
+
+**Yoann:**
+
+> let's group the devices under /dev/ and the programs under /bin/ so the tiny images is clearer and easier to explore
+
+**Claude (summary):**
+
+Claude moved the devices under /dev and the programs under /bin, updating the kernel, shells, tests, and docs.
+Claude rebuilt the image with the new httpd, then rechecked tetris's screen, both WAV sounds, and play's samples.
+Claude reran the flaky httpd network test, which then passed three times in a row.
+Claude ran the final make check, which passed for text, all 23 screens, and both sounds.
+Claude confirmed the recorded ls -l sizes still matched the tree despite the other session's refactorings.

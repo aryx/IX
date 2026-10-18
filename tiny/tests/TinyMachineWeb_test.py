@@ -7,7 +7,7 @@
 # The page's directory is built (./tiny-machine -web), served, opened;
 # then keys are typed and the mouse moved as a person would:
 #
-# - ls typed: the console's text has the programs' names;
+# - ls typed: the console's text has the root's names (bin, dev, examples);
 # - ping and get hello.txt typed (the page is the other end of the
 #   machine's wire): the answers on the console;
 # - www OCaml typed (Wikipedia's article, asked by the page; www/'s
@@ -119,7 +119,7 @@ async def session(port, debug):
         assert shown.rstrip("\xa0").endswith("$ ls"), f"the keys typed are not shown before Enter: {shown[-20:]!r}"
         assert await p.js("document.getElementById('cursor') !== null"), "no cursor on the console"
         await p.type("\n")
-        await p.wait("ls's answer", f"{CONSOLE}.includes('{'tetris' if kernel == 'tiny-kernel' else 'cat'}')")
+        await p.wait("ls's answer", f"{CONSOLE}.includes('{'examples' if kernel == 'tiny-kernel' else 'cat'}')")
         assert "$ ls\n" in await p.js(CONSOLE), "the line typed is not echoed on the console"
         print("ok ls typed: the line echoed, the programs' names")
         if kernel != "tiny-kernel":

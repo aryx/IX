@@ -16,12 +16,13 @@
  *                             |  2,048 samples at a time ([block])
  *                             v
  *         the frame at each sample's time, its channels' mean, its top
- *         8 bits ([piece]) --> /audio, a message `p n` and the n bytes
+ *         8 bits ([piece]) --> /dev/audio, a message `p n` and the n bytes
  *
  * The speaker's samples are 8,000 a second, a byte each, signed: what a
  * WAV has (8 or 16 bits, one channel or two, 44,100 or 11,025 a
  * second) is made that by taking, at each of the speaker's samples, the
- * file's frame at that time (in fixed point: no division a sample), the
+ * file's frame at that time (exactly, by Bresenham's stepping: no
+ * division a sample), the
  * mean of its channels, and its top byte. No filter: a file of 44,100
  * a second loses what is above 4,000 Hz, and what is above folds down
  * (aliasing), which a filter before the taking would prevent.
@@ -53,6 +54,6 @@ val piece : wav -> string -> int -> int -> string
 (* the samples a block *)
 val block : int
 
-(* [play out data]: the file's sound written to out (/audio), a block
+(* [play out data]: the file's sound written to out (/dev/audio), a block
  * at a time; Failure why when it is no WAV this plays *)
 val play : int -> string -> unit

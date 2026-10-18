@@ -13,59 +13,10 @@ $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ bigmem: 3000000 bytes kept
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ hi
-[
-audio
-basename
-bigmem
-calc
-cat
-cmp
-console
-cp
-draw
-du
-echo
-ed
-editor
-emacs
+bin
+dev
 examples
 f
-get
-grep
-httpd
-ln
-ls
-mkdir
-mltests
-mouse
-mv
-office
-paint
-ping
-play
-put
-pwd
-rc
-rm
-sam
-seq
-sh
-sleep
-sort
-square
-tail
-tee
-temp
-test
-tetris
-touch
-troff
-utils
-walk
-wc
-windows
-www
-xd
       1       1       3
 cat: f: cannot open
 x
@@ -130,14 +81,19 @@ tail
 % grep: no operand for `('
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ % -  25   231020 /cat
--   2   226948 /editor
--   2   226948 /emacs
--   1    70364 /ping
--  25   231020 /utils
-%      53     212    1113 f
-     53     212    1113
-     53     212    1113
+$ % /dev/audio
+/dev/console
+/dev/draw
+/dev/mouse
+ls: /cat: not there
+-  25   231020 /bin/cat
+-   2   226948 /bin/editor
+-   2   226948 /bin/emacs
+-   1    70364 /bin/ping
+-  25   231020 /bin/utils
+%      47     188    1169 f
+     47     188    1169
+     47     188    1169
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -153,10 +109,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   201396 /ed
--   2   226948 /editor
--   2   226948 /emacs
--   2   201396 /sam
+% -   2   201396 /bin/ed
+-   2   226948 /bin/editor
+-   2   226948 /bin/emacs
+-   2   201396 /bin/sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
@@ -222,7 +178,7 @@ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % hello world
    2000    2000    8893 numbers
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ answer from 10.0.0.1 in 12.5 ms
+$ answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 $ no answer from 10.0.0.9

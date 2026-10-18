@@ -14,7 +14,7 @@
  * window makes them: Alt a key's Escape, a key held typed again, the
  * wheel the arrows). An ENQ written to the console is answered in the
  * box, as tiny-windows answers it: the window's size. A file is the
- * host's, read whole when opened, written when closed; /audio is the
+ * host's, read whole when opened, written when closed; /dev/audio is the
  * window's sound, its sounds made by TinyKernelAudio.ml as tiny-kernel
  * makes them, and played one after the other (TinyMachineSDL's play),
  * not mixed as tiny-kernel mixes them.
@@ -206,7 +206,7 @@ let u_write (fd : int) (s : string) : int =
 
 let u_open (name : string) (flags : int) : int =
   let fd = !next in
-  if name = "/audio" then begin
+  if name = "/dev/audio" then begin
     (* what was written is heard to its end, as tiny-kernel's speaker
      * plays on after a program ends *)
     if not (Hashtbl.fold (fun _ f seen -> seen || f = Speaker) files false) then

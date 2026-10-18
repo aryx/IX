@@ -22,7 +22,7 @@ stations kept, and the rest dropped.
     (TinyLibPlayground's game.sound; TinyAppTetris: a piece landed, rows)
         |  a message of 11 bytes: s wave hz to_hz ms volume
         v
-    /audio, a voice (each open): TinyKernel.ml
+    /dev/audio, a voice (each open): TinyKernel.ml
         |  TinyKernelAudio.mix: the samples made where they are played,
         |  added to what the other voices put there
         v
@@ -50,13 +50,13 @@ stations kept, and the rest dropped.
   a run is the same every time: `make check` compares a session's WAV
   by its sum, as it does a screen.
 - **The kernel has the samples, a program says what**, as for the
-  pixels. A program writes sounds to `/audio`, each sfxr's recipe cut
+  pixels. A program writes sounds to `/dev/audio`, each sfxr's recipe cut
   to five numbers (a wave, a pitch that slides from one frequency to
   another, a length, a volume that falls to nothing); the kernel makes
   them into the ring (`TinyKernelAudio.ml`). A sound chip's bargain,
   the SID's and the NES's: their CPUs could not afford samples, and
   neither can tiny-ml's (section 3).
-- **The kernel mixes.** Each open of `/audio` is a voice: its sounds
+- **The kernel mixes.** Each open of `/dev/audio` is a voice: its sounds
   follow one another, and what it makes is added (kept from -128 to
   127) to what is there. Two programs are heard at once and neither
   waits for the other, as two windows are drawn on one screen.
@@ -72,7 +72,7 @@ stations kept, and the rest dropped.
    (2026-10-18)**: the speaker (TinyMachineDevices, about 30 lines; its
    word below the network's, the devices from `-64(r0)` now),
    `-audio file.wav`, the window's `A n` lines and SDL's queue
-   (TinyMachineSDL's `play`); `/audio` in TinyKernel.ml (about 25
+   (TinyMachineSDL's `play`); `/dev/audio` in TinyKernel.ml (about 25
    lines); `TinyKernel/TinyKernelAudio.ml` (about 45 lines: the five
    numbers made into samples, in fixed point, and the messages read);
    TinyLibPlayground's `sound` (a type, a field, the message, about 10
@@ -89,7 +89,7 @@ stations kept, and the rest dropped.
    tetris.events with `-audio`, its WAV against a sum. Found on the
    way:
    - **Samples made by the program were too dear.** The first version
-     had the playground make samples (a string a sound) and `/audio`
+     had the playground make samples (a string a sound) and `/dev/audio`
      take them, as Plan 9's `/dev/audio` and m-ix's do. Counted on
      tiny-cpu: 2,750 instructions a sample, nearly all allocation
      (tiny-ml has no `Bytes`: a string of one character and a cons
@@ -101,7 +101,7 @@ stations kept, and the rest dropped.
      session (0.9 million for its 3,840 samples), and the program's
      instructions back to what they were without sound.
    - The recorded tetris session has other pieces now: the open of
-     `/audio` moved the clock at which the game takes its seed. The old
+     `/dev/audio` moved the clock at which the game takes its seed. The old
      kernel on the new machine gives the old screen's sum exactly (the
      device changes nothing for who does not use it); every other
      screen of `make check` is the same.
@@ -120,8 +120,8 @@ stations kept, and the rest dropped.
    keeps a voice's tune and makes it a tick at a time (a sequencer in
    the kernel: the chip's other half). To choose; a voice of two notes
    at once (the theme's bass) is a second voice.
-4. **Samples from a program, and play**. **Done (2026-10-18)**: `/audio`
-   takes a message `p n` and n samples (as `/draw`'s row of pixels),
+4. **Samples from a program, and play**. **Done (2026-10-18)**: `/dev/audio`
+   takes a message `p n` and n samples (as `/dev/draw`'s row of pixels),
    added to the ring as a tone is (TinyKernelAudio's `Samples`);
    `tiny/TinyPlay.ml` (about 50 lines of code) plays a WAV, `play` on
    tiny-kernel (`TinyKernel/user/play.ml`, its few lines) and
@@ -165,7 +165,7 @@ stations kept, and the rest dropped.
      emacs and the editor 1.8 KB (read_file too).
 5. **Sound elsewhere**: a click for calc's buttons, a bell for the
    console's ^G, tiny-windows' windows each heard (nothing to do: every
-   program opens `/audio` itself, the kernel mixes).
+   program opens `/dev/audio` itself, the kernel mixes).
 
 ## 3. What is dropped, and why
 

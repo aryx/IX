@@ -43,7 +43,7 @@ type Cap.all_caps = < >
 
 let TinyLibSystem.main name f = exit (f ())
 let TinyLibSystem.argv caps = List.init (u_argc ()) u_arg
-let TinyLibSystem.environment caps = [ "PATH", "/" ]
+let TinyLibSystem.environment caps = [ "PATH", "/bin" ]
 let TinyLibSystem.getpid () = u_getpid ()
 
 (*****************************************************************************)

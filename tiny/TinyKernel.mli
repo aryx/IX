@@ -84,7 +84,7 @@
  * externals, which are functions written in C or in assembly.
  *
  * How it runs. The toplevel reads the files carried by the image,
- * creates the first process (/sh, with the console as its 0, 1 and 2),
+ * creates the first process (/bin/sh, with the console as its 0, 1 and 2),
  * and enters [schedule], a loop that never returns: run a process
  * until it traps, handle the trap, and choose again. A process has a
  * slot (a partition, and a frame of 17 words where entry.tm saves its

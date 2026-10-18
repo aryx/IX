@@ -3,7 +3,8 @@
 // httpd [port]: tiny-kernel's files, served to a web browser (port 80
 // without one). With tiny-machine -net-forward 8080:80, the address
 // http://localhost:8080/ in Firefox is this program: / is a page that
-// lists the files, /name is the file. A connection at a time: listen,
+// lists the files, a directory a link to its own (/bin/, /dev/,
+// /examples/), /dir/name is the file. A connection at a time: listen,
 // the request read to its empty line (it comes in messages cut
 // anywhere: the world's side is TCP), its first line's path taken,
 // the answer written (HTTP/1.0: the end of the connection is the
@@ -31,24 +32,27 @@ put(int fd, char *s)
 	}
 }
 
-// the files, a link each
+// a directory's files (its path ends with /), a link each, a
+// directory's with a / after it
 void
-list(int fd)
+list(int fd, char *path)
 {
 	struct dirent d;
 	char name[21];
 	int dir, i;
 
 	put(fd, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
-	put(fd, "<html><body><h1>tiny-kernel</h1><p>Served by httpd, a program of tiny-kernel's, on tiny-machine.</p><ul>\n");
-	if((dir = open("/", O_RDONLY)) >= 0){
+	put(fd, "<html><body><h1>tiny-kernel: "); put(fd, path);
+	put(fd, "</h1><p>Served by httpd, a program of tiny-kernel's, on tiny-machine.</p><ul>\n");
+	if((dir = open(path, O_RDONLY)) >= 0){
 		while(read(dir, (char*)&d, sizeof d) == sizeof d){
 			if(d.type == 0)
 				continue;
 			for(i = 0; i < 20 && d.name[i]; i++)
 				name[i] = d.name[i];
 			name[i] = 0;
-			put(fd, "<li><a href=\"/"); put(fd, name); put(fd, "\">"); put(fd, name); put(fd, "</a></li>\n");
+			put(fd, "<li><a href=\""); put(fd, path); put(fd, name); put(fd, d.type == T_DIR ? "/\">" : "\">");
+			put(fd, name); put(fd, d.type == T_DIR ? "/" : ""); put(fd, "</a></li>\n");
 		}
 		close(dir);
 	}
@@ -83,8 +87,9 @@ serve(int fd)
 		;
 	*p = 0;
 	print("httpd: %s\n", path);
-	if(path[0] == '/' && path[1] == 0){
-		list(fd);
+	len = strlen(path);
+	if(path[0] == '/' && path[len - 1] == '/'){
+		list(fd, path);
 		return;
 	}
 	if((file = open(path, O_RDONLY)) < 0){
@@ -93,7 +98,6 @@ serve(int fd)
 		return;
 	}
 	put(fd, "HTTP/1.0 200 OK\r\nContent-Type: ");
-	len = strlen(path);
 	put(fd, len > 5 && strcmp(path + len - 5, ".html") == 0 ? "text/html" : len > 4 && strcmp(path + len - 4, ".txt") == 0 ? "text/plain" : "application/octet-stream");
 	put(fd, "\r\n\r\n");
 	flush(fd);

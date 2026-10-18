@@ -115,13 +115,13 @@ let same shown shapes =
 (* The sound *)
 (*****************************************************************************)
 
-(* a sound as tiny-kernel's /audio takes it, a message
+(* a sound as tiny-kernel's /dev/audio takes it, a message
  * (TinyKernelAudio.mli): s, the wave, the pitch from and to, the
  * milliseconds, the volume *)
 let sound_message snd =
   msg 's' [ (match snd.wave with Square -> 0 | Triangle -> 1 | Sawtooth -> 2 | Noise -> 3); snd.hz; snd.to_hz; snd.ms; snd.volume ]
 
-(* samples, a byte each, signed, 8,000 a second, as /audio takes them:
+(* samples, a byte each, signed, 8,000 a second, as /dev/audio takes them:
  * p, how many, then them *)
 let samples_message s = msg 'p' [ String.length s ] ^ s
 
@@ -161,7 +161,7 @@ let run g =
     else loop (g.frame model) model shapes (if u_ticks () > next + period then u_ticks () + period else next + period)
   in
   put (d_image picture 0 0 g.width g.height 0 ^ d_image ground 0 0 g.width g.height 0);
-  speaker := u_open "/audio" 1;
+  speaker := u_open "/dev/audio" 1;
   let first = g.init (u_ticks ()) in
   let shapes = g.view first in
   show g [] shapes;

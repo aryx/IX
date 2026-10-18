@@ -10,7 +10,7 @@
  * pokeb.
  *
  * {b The kernel has the samples, a program says what}, as for the
- * screen: a program writes a message to /audio, `s wave hz to_hz ms
+ * screen: a program writes a message to /dev/audio, `s wave hz to_hz ms
  * volume` (a letter, then numbers of 16 bits, TinyLibDraw's), and the
  * kernel adds the sound to tiny-machine's ring, where the other
  * programs' sounds are already. A sound is sfxr's recipe (lib_audio's
@@ -57,7 +57,7 @@ val mix : int -> int -> int -> int -> int -> int -> int -> int -> unit
 
 (* A message's sound: a tone (wave, hz, to_hz, samples, volume, as
  * [mix]'s), or samples, a byte each, signed, 8,000 a second (`p n`
- * then the n bytes, as /draw's row of pixels: what is no recipe, a
+ * then the n bytes, as /dev/draw's row of pixels: what is no recipe, a
  * file's sound); its length in samples; added to a ring as [mix] adds *)
 type sound = Tone of int * int * int * int * int | Samples of string
 val sound_length : sound -> int

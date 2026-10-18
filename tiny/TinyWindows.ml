@@ -252,7 +252,7 @@ let snap x = x - ((x + border) land 3)
  * 3 and its 4. Its inside is whole characters, 8 by 16 *)
 let create (x0, y0, x1, y1) =
   let k = u_pipe () and p = u_pipe () and d = u_pipe () and m = u_box () in
-  let pid = if k < 0 || p < 0 || d < 0 || m < 0 then -1 else u_spawn (k land 255) (p / 256) (d / 256) (m land 255) "/sh" in
+  let pid = if k < 0 || p < 0 || d < 0 || m < 0 then -1 else u_spawn (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh" in
   (* the shell's ends are not ours; ours neither when there is no shell *)
   List.iter (fun fd -> if fd >= 0 then ignore (u_close fd)) [ k land 255; p / 256; d / 256; m land 255 ];
   if pid < 0 then List.iter (fun fd -> if fd >= 0 then ignore (u_close fd)) [ k / 256; p land 255; d land 255; m / 256 ]

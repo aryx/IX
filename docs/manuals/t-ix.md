@@ -154,7 +154,7 @@ other utilities. At the prompt, `ln` makes one the same way.
       -> make -C tiny/TinyKernel                (tiny-ml, tiny-c, tiny-cpu, tiny-machine -o)
       -> tiny-machine tiny/TinyKernel/_make/boot.img
            the kernel at 0, in supervisor mode
-           -> /sh in a partition, in user mode
+           -> /bin/sh in a partition, in user mode
                 -> the programs it runs, each a process
 
 ## 3. The CPU (`TinyMachineCPU.ml`)
@@ -417,7 +417,8 @@ host may be a name: `get / gopher.floodgap.com` is Gopher, and
 `-net-forward 8080:80` a connection to the host's port 8080 is one to
 the machine's port 80: `httpd` in tiny-kernel, then
 `http://localhost:8080/` in a browser, is a page that lists
-tiny-kernel's files, each a link. The host's sockets are in a program
+tiny-kernel's files, each a link, a directory's to its own page
+(`/bin/`, `/dev/`, `/examples/`). The host's sockets are in a program
 apart, `tiny-machine-socket` (`TinyMachineSocket.ml`), run once for
 each connection with two pipes, as the window is:
 tiny-machine itself has none. `./tiny-machine tiny-kernel` gives all
@@ -594,6 +595,17 @@ a box, a pipe that keeps only what was last written: `fds[0]` reads it
 (a read waits for a write since the last read), `fds[1]` writes it and
 never waits. A process has 32 descriptors.
 
+The files are a tree of ML values in the kernel's heap, made at the
+boot from what the image carries after the kernel:
+
+    /bin        the programs (sh, rc, the utilities by their names, emacs, office, play...)
+    /dev        the devices: console, draw, mouse, audio (7.3)
+    /examples   files to look at: sources, a page of the office's, a WAV
+
+A command without a `/` is a program of `/bin`, for `sh` and for `rc`
+(its `PATH`); the shell starts at `/`, where what is made goes until a
+`cd`. Nothing is kept across a stop but what `put` sent away (5.5).
+
 ### 7.3 TinyKernel.ml's screen, mouse and speaker
 
 The kernel has the pixels (`tiny/TinyKernel/TinyKernelGraphics.ml`, compiled with it);
@@ -603,17 +615,17 @@ box: a read gives x, y and the buttons, a word each, when they
 changed). The first shell's are the console, the screen and the
 machine's mouse, and its programs inherit them; a window system gives
 a window's shell pipes and a box instead (7.4), so a program does not
-know which it has. The same three as files of the root, for a program
-that wants the screen itself:
+know which it has. The same three as files of `/dev`, for a program
+that wants the screen itself, and the speaker:
 
 | file | a read | a write |
 |---|---|---|
-| `/console` | the keys typed, as they come | the terminal |
-| `/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
-| `/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
-| `/audio` | | sounds and samples, messages (below), whole; waits until they fit a second ahead; a bad one answers -1 |
+| `/dev/console` | the keys typed, as they come | the terminal |
+| `/dev/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
+| `/dev/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
+| `/dev/audio` | | sounds and samples, messages (below), whole; waits until they fit a second ahead; a bad one answers -1 |
 
-A connection (descriptor 3, or an open of `/draw`) has its images by
+A connection (descriptor 3, or an open of `/dev/draw`) has its images by
 numbers of the program's, 0 the one it was given, freed when its last
 descriptor is closed. A
 message is a letter, then numbers of 16 bits, the low byte first,
@@ -633,7 +645,7 @@ A colour's byte is an index of Plan 9's table of 256 (0 black, 255
 white).
 
 **The kernel has the samples too.** A program does not write samples
-to `/audio`: it writes sounds, each a message `s wave hz to_hz ms
+to `/dev/audio`: it writes sounds, each a message `s wave hz to_hz ms
 volume` (the letter, then five numbers of 16 bits), and the kernel
 makes them into the speaker's ring
 (`tiny/TinyKernel/TinyKernelAudio.ml`): a wave (0 a square, 1 a
@@ -641,7 +653,7 @@ triangle, 2 a sawtooth, 3 noise), a pitch sliding from `hz` to `to_hz`
 (4,000 at most), `ms` milliseconds (1,000 at most), a volume from 0 to
 127 that falls to nothing at the end. What is no recipe is samples:
 a message `p n` and the `n` bytes (8,000 a second, signed, 8,192 at
-most), as `/draw`'s row of pixels. Each open of `/audio` is a voice:
+most), as `/dev/draw`'s row of pixels. Each open of `/dev/audio` is a voice:
 its sounds follow one another, and what it makes is added to what the
 other voices made, so two programs are heard at once. The speaker
 plays on after a program ends, up to the second it was ahead.
@@ -653,7 +665,9 @@ way, no division a sample), the mean of two channels, its top byte; a
 block of 2,048 samples written when the last was taken, so the first
 is heard after a block.
 
-    play /examples/korobeiniki.wav      # tetris's tune, four bars, made by m-ix's mini-play For C, `libc/draw.h` and `draw.c` gather the messages
+    play /examples/korobeiniki.wav      # tetris's tune, four bars, made by m-ix's mini-play
+
+For C, `libc/draw.h` and `draw.c` gather the messages
 (`d_fill`, `d_text`, `d_flush`...); `examples/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
 `tiny/TinyLibDraw.ml` makes them.
@@ -698,7 +712,7 @@ before and the model after, a list of sounds, each `{ wave; hz; to_hz;
 ms; volume }`, 7.3's message). The library has the loop, the drawing
 and the speaker: a picture is drawn when its shapes are others than
 those shown, off the window and then on it at once; a change's sounds
-are written to `/audio`.
+are written to `/dev/audio`.
 
 | shape | what |
 |---|---|
@@ -870,7 +884,7 @@ done by the kernel's own `TinyKernelGraphics.ml` in a screen of host
 memory and shown by SDL; the mouse and the keys are the window's; files
 and the clock are the host's; a dial to the wire's other end (port 70)
 is answered as tiny-machine answers it, a web page fetched by
-`tiny-machine-fetch`; a sound written to `/audio` is made by the
+`tiny-machine-fetch`; a sound written to `/dev/audio` is made by the
 kernel's own `TinyKernelAudio.ml` and played by SDL (one after the
 other, not mixed; a write waits while a quarter of a second is queued,
 and the program's end until all is heard). The programs' own few lines in

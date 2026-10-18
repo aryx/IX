@@ -78,8 +78,6 @@ let say (o : office) (m : string) = o.message <- m
 (* The page's objects *)
 (*****************************************************************************)
 
-let rec nth_obj (l : obj list) (i : int) : obj = match l with b :: rest -> if i = 0 then b else nth_obj rest (i - 1) | [] -> failwith "nth_obj"
-
 (* the page with its i-th object replaced, or removed (None) *)
 let rec replace (l : obj list) (i : int) (b : obj option) : obj list =
   match l with
@@ -358,7 +356,7 @@ let copy (d : doc) = let (a, z) = selection d in clipboard := (String.sub d.txt 
 (* the selected box's data changed (a change, for undo, when it is
  * other data) *)
 let change (o : office) (data : string) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   if data <> b.data then (keep o; o.page <- replace o.page o.sel (Some { b with data }))
 
 (* what is being edited put back into its box: a text box's text, what
@@ -367,7 +365,7 @@ let commit (o : office) =
   if o.sel >= 0 then
     match o.editing with
     | Writing d -> change o (encode d.txt d.sty)
-    | Cell (c, r, Some t) -> change o (set_cell (nth_obj o.page o.sel).data (name c r) t); o.editing <- Cell (c, r, None)
+    | Cell (c, r, Some t) -> change o (set_cell (List.nth o.page o.sel).data (name c r) t); o.editing <- Cell (c, r, None)
     | _ -> ()
 
 let finish (o : office) = commit o; o.editing <- Nothing
@@ -375,7 +373,7 @@ let finish (o : office) = commit o; o.editing <- Nothing
 (* box i's text edited, its cursor where (x, y) is, the left button
  * selecting from there if it is down *)
 let edit (o : office) (i : int) (x : int) (y : int) (selecting : bool) =
-  let b = nth_obj o.page i in
+  let b = List.nth o.page i in
   let (txt, sty) = decode b.data in
   let d = { txt; sty; cur = 0; anchor = 0; typing = 0; selecting } in
   go_to d (index_at (lay_out (b.w - 8) txt sty) txt sty (x - b.x - 4) (y - b.y - 2));
@@ -396,7 +394,7 @@ let sheet_rows (b : obj) = max 1 ((b.h - 18) / 16)
 
 (* the cell of box i under (x, y): chosen, nothing typed yet *)
 let choose (o : office) (i : int) (x : int) (y : int) =
-  let b = nth_obj o.page i in
+  let b = List.nth o.page i in
   let c = (x - sheet_left b) / cell_w and r = (y - sheet_top b) / 16 in
   o.sel <- i;
   o.editing <- (if x >= sheet_left b && y >= sheet_top b && c < sheet_cols b && r < sheet_rows b then Cell (c, r, None) else Nothing)
@@ -407,7 +405,7 @@ let choose (o : office) (i : int) (x : int) (y : int) =
  * Enter on a cell where nothing is typed brings back what was typed
  * there, to change it; Backspace there empties the cell. *)
 let cell_key (o : office) (c : int) (r : int) (typed : string option) (k : int) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   let move dc dr = o.editing <- Cell (max 0 (min 25 (c + dc)), max 0 (min 98 (r + dr)), None) in
   let arrow () = if k = 128 then move 0 (-1) else if k = 129 then move 0 1 else if k = 130 then move (-1) 0 else move 1 0 in
   match typed with
@@ -488,7 +486,7 @@ let stroked (tool : int) (x0 : int) (y0 : int) (x1 : int) (y1 : int) : string * 
 (* the shape a stroke made, added; a box or an arrow too small is a
  * click, not a shape *)
 let draw_stroke (o : office) (tool : int) ((x0, y0, x1, y1) : int * int * int * int) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   if tool = 2 || (tool = 0 && abs (x1 - x0) >= 8 && abs (y1 - y0) >= 8) || (tool = 1 && abs (x1 - x0) + abs (y1 - y0) >= 8) then
     change o (b.data ^ figure_line (stroked tool x0 y0 x1 y1))
 
@@ -496,7 +494,7 @@ let draw_stroke (o : office) (tool : int) ((x0, y0, x1, y1) : int * int * int * 
  * label longer; Backspace shorter, and an empty label's shape removed;
  * C-g the drawing left *)
 let sketch_key (o : office) (tool : int) (k : int) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   let figs = figures b.data in
   let relabel f = match List.rev figs with
     | (kind, nums, label) :: rest -> change o (String.concat "" (List.map figure_line (List.rev rest @ f kind nums label)))
@@ -561,7 +559,7 @@ let painted (b : obj) (letter : char) (brush : int) (c0 : int) (r0 : int) (c1 : 
 (* a stroke painted in the selected paint (the page changed, its undo
  * kept when the stroke began) *)
 let paint (o : office) (ink : int) (brush : int) (c0 : int) (r0 : int) (c1 : int) (r1 : int) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   o.page <- replace o.page o.sel (Some { b with data = painted b pixel_letters.[ink] brush c0 r0 c1 r1 })
 
 (* a key in a paint: a digit a colour (0 white, 1 black...); C-g leaves it *)
@@ -657,7 +655,7 @@ let name_key (o : office) (typed : string) (k : int) =
   if k >= 32 && k < 127 then o.editing <- Naming (typed ^ String.make 1 (Char.chr k))
   else if (k = 8 || k = 127) && typed <> "" then o.editing <- Naming (String.sub typed 0 (String.length typed - 1))
   else if k = 13 || k = 10 then begin
-    let s = nth_obj o.page o.sel in
+    let s = List.nth o.page o.sel in
     if not (good_name typed) then o.message <- "a name: a letter, then letters, digits, _"
     else if List.exists (fun (b : obj) -> b.called = typed && b != s) o.page then o.message <- "another sheet is " ^ typed
     else begin
@@ -676,7 +674,7 @@ let name_key (o : office) (typed : string) (k : int) =
  * the page is too narrow): its cells from the first number to the last,
  * the column at its left their labels *)
 let make_chart (o : office) (c : int) =
-  let s = nth_obj o.page o.sel in
+  let s = List.nth o.page o.sel in
   let value = values s.data in
   let rows = List.filter (fun r -> match value (name c r) with Num _ -> true | _ -> false) (List.init 99 (fun r -> r)) in
   match rows with
@@ -887,7 +885,7 @@ let quit (o : office) : request =
  * italic, C-u underlined, C-l large; C-w cut, C-y pasted; C-g no
  * selection. The box grows to show it all. *)
 let write_key (o : office) (d : doc) (k : int) =
-  let b = nth_obj o.page o.sel in
+  let b = List.nth o.page o.sel in
   let lay = lay_out (b.w - 8) d.txt d.sty and n = String.length d.txt in
   let (a, z) = selection d and line = lay.ln.(d.cur) in
   let vertical l = if l >= 0 && l < Array.length lay.top then go_to d (index_at lay d.txt d.sty lay.px.(d.cur) lay.top.(l)) in
@@ -1047,12 +1045,12 @@ let tab (b : obj) = (b.x, b.y - 16, (8 * String.length (tab_text b)) + 8, 16)
 let corner (b : obj) = (b.x + b.w - 8, b.y + b.h - 8, 8, 8)
 
 let on_handle (o : office) (x : int) (y : int) : bool =
-  o.sel >= 0 && (let b = nth_obj o.page o.sel in inside x y (tab b) || inside x y (corner b))
+  o.sel >= 0 && (let b = List.nth o.page o.sel in inside x y (tab b) || inside x y (corner b))
 
 (* box i grabbed by the mouse at (x, y), to move or to resize *)
 let grab (o : office) (i : int) (x : int) (y : int) (resizing : bool) =
   keep o;
-  o.drag <- Some (i, x, y, nth_obj o.page i, resizing)
+  o.drag <- Some (i, x, y, List.nth o.page i, resizing)
 
 (* the grabbed box, the mouse now at (x, y): moved (its tab kept below
  * the menus), or resized *)
@@ -1076,37 +1074,37 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
   match o.editing with
   | _ when pressed 1 && on_handle o x y ->
       (* the selected box's tab or corner: it is moved or resized *)
-      let resizing = inside x y (corner (nth_obj o.page o.sel)) in
+      let resizing = inside x y (corner (List.nth o.page o.sel)) in
       finish o;
       grab o o.sel x y resizing
   | Painting (ink, brush, _) when pressed 1 && i >= 0 && i = o.sel ->
       (* in the paint being edited: a stroke begins, kept for undo *)
-      let (c, r) = pixel_at (nth_obj o.page i) x y in
+      let (c, r) = pixel_at (List.nth o.page i) x y in
       keep o;
       paint o ink brush c r c r;
       o.editing <- Painting (ink, brush, Some (c, r))
   | Painting (ink, brush, Some (c0, r0)) ->
       (* the stroke goes on to where the mouse is, and ends where it is let go *)
-      let (c, r) = pixel_at (nth_obj o.page o.sel) x y in
+      let (c, r) = pixel_at (List.nth o.page o.sel) x y in
       paint o ink brush c0 r0 c r;
       o.editing <- Painting (ink, brush, if b land 1 <> 0 then Some (c, r) else None)
   | Writing d when pressed 1 && i >= 0 && i = o.sel ->
       (* in the text being edited: the cursor there, a selection from it *)
-      let ob = nth_obj o.page i in
+      let ob = List.nth o.page i in
       go_to d (index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4) (y - ob.y - 2));
       d.selecting <- true
   | Writing d when d.selecting ->
       (* the selection follows the mouse, to where it is let go *)
-      let ob = nth_obj o.page o.sel in
+      let ob = List.nth o.page o.sel in
       d.cur <- index_at (lay_out (ob.w - 8) d.txt d.sty) d.txt d.sty (x - ob.x - 4) (y - ob.y - 2);
       if b land 1 = 0 then d.selecting <- false
   | Sketch (tool, _) when pressed 1 && i >= 0 && i = o.sel ->
       (* in the drawing being edited: a stroke begins *)
-      let (sx, sy) = in_drawing (nth_obj o.page i) x y in
+      let (sx, sy) = in_drawing (List.nth o.page i) x y in
       o.editing <- Sketch (tool, Some (sx, sy, sx, sy))
   | Sketch (tool, Some (x0, y0, _, _)) ->
       (* the stroke follows the mouse; let go, it is a shape *)
-      let (ex, ey) = in_drawing (nth_obj o.page o.sel) x y in
+      let (ex, ey) = in_drawing (List.nth o.page o.sel) x y in
       if b land 1 <> 0 then o.editing <- Sketch (tool, Some (x0, y0, ex, ey))
       else (o.editing <- Sketch (tool, None); draw_stroke o tool (x0, y0, ex, ey))
   | _ ->
@@ -1115,16 +1113,16 @@ let page_mouse (o : office) (was : int) (x : int) (y : int) (b : int) =
     finish o;
     o.at <- (x, y);
     o.sel <- i;
-    if i >= 0 && (nth_obj o.page i).kind = "text" then edit o i x y true
-    else if i >= 0 && (nth_obj o.page i).kind = "sheet" then choose o i x y
-    else if i >= 0 && (nth_obj o.page i).kind = "drawing" then o.editing <- Sketch (0, None)
-    else if i >= 0 && (nth_obj o.page i).kind = "paint" then o.editing <- Painting (1, 0, None)
+    if i >= 0 && (List.nth o.page i).kind = "text" then edit o i x y true
+    else if i >= 0 && (List.nth o.page i).kind = "sheet" then choose o i x y
+    else if i >= 0 && (List.nth o.page i).kind = "drawing" then o.editing <- Sketch (0, None)
+    else if i >= 0 && (List.nth o.page i).kind = "paint" then o.editing <- Painting (1, 0, None)
   end
   else if pressed 4 || pressed 2 then begin
     (* the right button: the box under it grabbed, by its corner to resize *)
     finish o;
     o.sel <- i;
-    if i >= 0 then (let b = nth_obj o.page i in grab o i x y (x >= b.x + b.w - 12 && y >= b.y + b.h - 12))
+    if i >= 0 then (let b = List.nth o.page i in grab o i x y (x >= b.x + b.w - 12 && y >= b.y + b.h - 12))
   end
   else if b <> 0 then dragged o x y
   else begin
@@ -1235,7 +1233,7 @@ let status (o : office) : shape list =
         "text, typing " ^ (if names = [] then "plain" else String.concat " " names) ^ "; the Format menu, or C-b, Tab, C-u, C-l"
     | Cell (c, r, typed) when o.sel >= 0 ->
         (* the formula bar: the cell, what is being typed in it, or what was *)
-        name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (nth_obj o.page o.sel).data (name c r))
+        name c r ^ ": " ^ (match typed with Some t -> t ^ "_" | None -> typed_in (List.nth o.page o.sel).data (name c r))
     | Naming typed when o.message = "" -> "the sheet's name: " ^ typed ^ "_ (Enter gives it, C-g not)"
     | Painting (ink, brush, _) -> "paint: " ^ List.nth paint_names ink ^ (if brush = 0 then ", thin" else ", thick") ^ "; the left button paints; the Paint menu, or a digit"
     | Sketch (tool, _) -> "drawing: " ^ List.nth tools tool ^ " (Tab: another); the left button draws; type a label"

@@ -284,12 +284,11 @@ let sort caps args =
 (* Walkers *)
 (*****************************************************************************)
 
-let join dir name = if dir <> "" && dir.[String.length dir - 1] = '/' then dir ^ name else dir ^ "/" ^ name
 let entries dir = List.sort compare (TinyLibSystem.readdir dir)
 
 let rec fold path f =
   let is_dir, size = TinyLibSystem.stat path in
-  f path is_dir size (fun () -> if is_dir then List.map (fun e -> fold (join path e) f) (entries path) else [])
+  f path is_dir size (fun () -> if is_dir then List.map (fun e -> fold (Filename.concat path e) f) (entries path) else [])
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
  * reported, and the status is then 1 *)
@@ -308,7 +307,7 @@ let ls caps args =
     else
       each_path caps "ls" paths (fun p ->
         let is_dir, _ = TinyLibSystem.stat p in
-        names := (if is_dir then List.map (join p) (entries p) else [ p ]) @ !names) in
+        names := (if is_dir then List.map (Filename.concat p) (entries p) else [ p ]) @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
@@ -327,7 +326,7 @@ let walk caps args =
   else
     each_path caps "walk" paths (fun p ->
       let is_dir, _ = TinyLibSystem.stat p in
-      if is_dir then List.iter (fun e -> fold (join p e) pre) (entries p) else print caps (p ^ "\n"))
+      if is_dir then List.iter (fun e -> fold (Filename.concat p e) pre) (entries p) else print caps (p ^ "\n"))
 
 (* the kilobytes under each directory, after what it has; -a: each file
  * too *)
@@ -376,7 +375,7 @@ let into_last caps tool paths f =
   | dest :: sources when sources <> [] ->
       let into = TinyLibSystem.is_directory dest in
       if List.length sources > 1 && not into then begin complain caps tool (dest ^ ": not a directory"); 1 end
-      else each_path caps tool (List.rev sources) (fun from -> f from (if into then join dest (last_part from) else dest))
+      else each_path caps tool (List.rev sources) (fun from -> f from (if into then Filename.concat dest (last_part from) else dest))
   | _ -> raise Usage
 
 (* the whole file is read before the copy is opened, so a file copied

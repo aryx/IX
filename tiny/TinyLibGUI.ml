@@ -233,7 +233,6 @@ let menu_closed () = { opened = -1; item = -1; held = 0 }
 let bar_height = 18
 
 let title_width t = (8 * String.length t) + 16
-let rec nth_menu menus i = match menus with m :: rest -> if i = 0 then m else nth_menu rest (i - 1) | [] -> ("", [])
 let rec title_x menus i = match menus with (t, _) :: rest -> if i = 0 then 0 else title_width t + title_x rest (i - 1) | [] -> 0
 let rec title_at menus x i at =
   match menus with
@@ -245,7 +244,7 @@ let list_width items = 16 + (8 * List.fold_left (fun m (s, _) -> max m (String.l
 let item_at menus st x y =
   if st.opened < 0 then -1
   else begin
-    let (_, items) = nth_menu menus st.opened and x0 = title_x menus st.opened in
+    let (_, items) = List.nth menus st.opened and x0 = title_x menus st.opened in
     let n = List.length items in
     if x >= x0 && x < x0 + list_width items && y >= bar_height && y < bar_height + (16 * n) + 4 then min (n - 1) ((y - bar_height - 2) / 16) else -1
   end
@@ -268,10 +267,9 @@ let menu_mouse menus st x y b =
     Taken
   end
   else if released && item >= 0 then begin
-    let rec nth l i = match l with (_, msg) :: rest -> if i = 0 then msg else nth rest (i - 1) | [] -> failwith "menu" in
-    let (_, items) = nth_menu menus st.opened in
+    let (_, items) = List.nth menus st.opened in
     st.opened <- -1; st.item <- -1;
-    Picked (nth items item)
+    Picked (snd (List.nth items item))
   end
   else if (released && y >= bar_height) || (pressed && item < 0) then (st.opened <- -1; st.item <- -1; Taken)
   else (st.item <- item; Taken)
@@ -295,7 +293,7 @@ let menu_view width menus st =
   let opened =
     if st.opened < 0 then []
     else begin
-      let (_, items) = nth_menu menus st.opened in
+      let (_, items) = List.nth menus st.opened in
       let w = list_width items and h = (16 * List.length items) + 4 in
       [ Move (title_x menus st.opened, bar_height, Group (Rect (black, w, h) :: Move (1, 1, Rect (light, w - 2, h - 2)) :: rows items 0 w)) ]
     end in

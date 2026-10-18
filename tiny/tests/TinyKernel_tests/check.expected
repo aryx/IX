@@ -86,11 +86,11 @@ $ % /dev/audio
 /dev/draw
 /dev/mouse
 ls: /cat: not there
--  25   231020 /bin/cat
+-  25   230976 /bin/cat
 -   2   226948 /bin/editor
 -   2   226948 /bin/emacs
 -   1    70364 /bin/ping
--  25   231020 /bin/utils
+-  25   230976 /bin/utils
 %      47     188    1169 f
      47     188    1169
      47     188    1169

@@ -29,13 +29,9 @@ let hex w n =
   let rec go w n acc = if w = 0 then acc else go (w - 1) (n / 16) (String.make 1 digits.[n mod 16] ^ acc) in
   go w n ""
 
-(* the index of the last c in s at or before i, or -1 *)
-let rec rindex s c i = if i < 0 || s.[i] = c then i else rindex s c (i - 1)
-
 (* what follows the last slash of a path *)
 let last_part path =
-  let slash = rindex path '/' (String.length path - 1) in
-  String.sub path (slash + 1) (String.length path - slash - 1)
+  match String.rindex_opt path '/' with Some i -> String.sub path (i + 1) (String.length path - i - 1) | None -> path
 
 (* a name as rc reads it back: between quotes, a quote doubled, when it
  * is empty or has a space, a control character or a quote *)
@@ -504,9 +500,9 @@ let seq caps args =
 let basename caps args =
   let dir, args = match args with "-d" :: rest -> true, rest | _ -> false, args in
   let name, suffix = match args with [ n ] -> n, "" | [ n; s ] -> n, s | _ -> raise Usage in
-  let slash = rindex name '/' (String.length name - 1) and last = last_part name in
+  let last = last_part name in
   print caps
-    ((if dir then (if slash < 0 then "." else String.sub name 0 slash)
+    ((if dir then (match String.rindex_opt name '/' with Some i -> String.sub name 0 i | None -> ".")
       else if suffix <> "" && Filename.check_suffix last suffix then String.sub last 0 (String.length last - String.length suffix)
       else last) ^ "\n");
   0

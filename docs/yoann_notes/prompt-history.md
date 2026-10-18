@@ -37351,3 +37351,19 @@ Claude built the GUI tiny-browser on TinyLibGUI's exported `place`, adding a too
 Claude moved the toolbar's three fields into their own record, since a 13-field record exceeded tiny-ml's 11 registers.
 Claude spaced out the clicks and added a harmless final key so the mouse release reached www.
 Claude confirmed stable checksums across nine screens, and Page › Quit exits www, clears the screen, and returns to the shell.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 08:06
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude added `List.mapi` to TinyLibStd and rewrote the `numbered` and `zip (List.init ...)` uses.
+Claude added `List.mapi` to the TinyLibStd test, which compares tiny-ml against real OCaml.
+Claude ran dune, the office and troff tests, and the kernel output, and real OCaml matched.
+Claude ran the troff part of `make check` on the report, and only the other session's size lines differed.
+Claude committed the changes after confirming the office screens matched.

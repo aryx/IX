@@ -12,12 +12,7 @@ let glue (l : string list) : string = String.concat "" l
 let chars (s : string) : string list = List.init (String.length s) (fun i -> String.make 1 s.[i])
 
 (* the objects in reading order: by their page, their top, their left *)
-let rec in_order (l : obj list) : obj list =
-  let rec insert (b : obj) l =
-    match l with
-    | (c : obj) :: rest when c.page_no < b.page_no || (c.page_no = b.page_no && (c.y < b.y || (c.y = b.y && c.x <= b.x))) -> c :: insert b rest
-    | _ -> b :: l in
-  match l with b :: rest -> insert b (in_order rest) | [] -> []
+let in_order (l : obj list) : obj list = List.sort (fun (a : obj) (b : obj) -> compare (a.page_no, a.y, a.x) (b.page_no, b.y, b.x)) l
 
 (* the parts in reading order, a list a page (to the last page that has
  * a part) *)

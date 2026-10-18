@@ -21,14 +21,7 @@ let find s pat i =
 let is_space c = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 
 (* Is w one of the space-separated words of a class attribute? *)
-let has_class classes w =
-  let n = String.length classes and m = String.length w in
-  let rec go i =
-    let j = find classes w i in
-    if j < 0 then false
-    else if (j = 0 || classes.[j - 1] = ' ') && (j + m = n || classes.[j + m] = ' ') then true
-    else go (j + 1) in
-  m > 0 && go 0
+let has_class classes w = w <> "" && List.mem w (String.split_on_char ' ' classes)
 
 let number s =
   let n = String.length s in

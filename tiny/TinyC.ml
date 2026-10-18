@@ -642,19 +642,23 @@ and unary () =
   | P ("++" | "--" as op) -> ignore (next ()); asg_op (if op = "++" then Add else Sub) (unary ()) (num 1L int_t)
   | Id "sizeof" ->
       ignore (next ());
-      let t = if paren_type () then (expect "("; let t = type_name () in expect ")"; t) else (unary ()).t in
+      let t = if paren_type () then type_name () else (unary ()).t in
       num (Int64.of_int (size t)) (Int (4, false))
-  | P "(" when paren_type () ->
-      expect "(";
-      let t = type_name () in
-      expect ")";
-      conv (rv (unary ())) t
+  | P "(" when paren_type () -> let t = type_name () in conv (rv (unary ())) t
   | _ -> postfix (primary ())
 
 (* ( type ...: a cast, or sizeof's type *)
 and paren_type () = peek () = P "(" && (incr pos; let ty = is_type () in decr pos; ty)
 
-and type_name () = let _, bt = base_type () in snd (declarator bt)
+(* a type in parentheses: a cast's, sizeof's *)
+and type_name () = expect "("; let _, bt = base_type () in let t = snd (declarator bt) in expect ")"; t
+
+(* a call's arguments, after its (: each to its declared parameter's
+ * type, else promoted *)
+and call_args ps =
+  let rec go () = let a = rv (assign_expr ()) in if accept "," then a :: go () else (expect ")"; [ a ]) in
+  let args = if accept ")" then [] else go () in
+  List.mapi (fun i (a : expr) -> match List.nth_opt ps i with Some t -> conv a t | None -> conv a (promote a.t)) args
 
 and postfix e =
   match peek () with
@@ -663,9 +667,7 @@ and postfix e =
       ignore (next ());
       let f = rv e in
       let rt, ps = match f.t with Ptr (Func (r, p, _)) -> r, p | _ -> error "not a function" in
-      let rec go () = if accept ")" then [] else (let a = rv (assign_expr ()) in ignore (accept ","); a :: go ()) in
-      let args = List.mapi (fun i (a : expr) -> match List.nth_opt ps i with Some t -> conv a t | None -> conv a (promote a.t)) (go ()) in
-      postfix (mk (CallPtr (f, args)) rt)
+      postfix (mk (CallPtr (f, call_args ps)) rt)
   | P "[" -> ignore (next ()); let i = expr () in expect "]"; postfix (deref (binary (A Add) e i))
   | P "." -> ignore (next ()); postfix (member e (ident ()))
   | P "->" -> ignore (next ()); postfix (member (deref e) (ident ()))
@@ -691,16 +693,8 @@ and primary () =
   | P "(" -> let e = expr () in expect ")"; e
   | Id f when peek () = P "(" && (match (try Some (lookup f) with Failure _ -> None) with Some { vty = Func _; _ } | None -> true | _ -> false) ->
       ignore (next ());
-      let args = ref [] in
-      if not (accept ")") then begin
-        let rec go () = args := rv (assign_expr ()) :: !args; if accept "," then go () else expect ")" in
-        go ()
-      end;
-      let args = List.rev !args in
       let rt, ps, sym = match (try Some (lookup f) with Failure _ -> None) with Some { vty = Func (r, p, _); where = Global s } -> r, p, s | _ -> int_t, [], f in
-      (* a declared parameter's type, else the promotions *)
-      let args = List.mapi (fun i (a : expr) -> match List.nth_opt ps i with Some t -> conv a t | None -> conv a (promote a.t)) args in
-      mk (Call (sym, args)) rt
+      mk (Call (sym, call_args ps)) rt
   | Id x when Hashtbl.mem enums x && not (List.exists (fun s -> Hashtbl.mem s x) !scopes || Hashtbl.mem globals x) -> num (Hashtbl.find enums x) int_t
   | Id x -> let v = lookup x in var v.where v.vty
   | _ -> error "expected an expression"

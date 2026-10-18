@@ -37726,3 +37726,19 @@ Everything from category C so far is committed, 34 lines of code shorter in tota
 - **TinyDatabase (−8):** one `col_pos` helper replaces six copies of the same column-lookup loop, and `int_bytes` replaces three places that wrote an 8-byte number by hand. Its 40 test sessions pass. One behaviour change: a missing column now always raises "no column", though every caller already checks that the column exists.
 - **TinyEditorLine (−2):** `+`/`-` and `,`/`;` are each one or-pattern, like `/` and `?`. I checked `2;+1`, `$-1,$`, `1+2` and `4-2` by hand, because its own test needs Plan 9's sam, which isn't installed. This made ed 572 bytes smaller, and `check.expected` is updated to match.
 - **TinyKernel (−6):** `sys_pipe` and `sys_box` now share an `ends` helper, and `net_command` names the three writes that
+
+------------------------------------------------------------------------
+
+## 2026-10-18 12:21
+
+**Yoann:**
+
+> I need to go, let's pause
+
+------------------------------------------------------------------------
+
+## 2026-10-18 13:21
+
+**Yoann:**
+
+> do the TinyC ones

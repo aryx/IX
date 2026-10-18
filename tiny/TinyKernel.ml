@@ -411,13 +411,14 @@ let read f a n =
           o.off <- o.off + k;
           Some k)
 
+(* the network device's command (1 send, 2 take) on n bytes at the buffer *)
+let net_command n cmd = poke net_dev net_buf; poke (net_dev + 4) n; poke (net_dev + 8) cmd
+
 (* a packet to the wire: at the buffer, then the device's send *)
 let net_send packet =
   let n = String.length packet in
   k_blit packet 0 net_buf n;
-  poke net_dev net_buf;
-  poke (net_dev + 4) n;
-  poke (net_dev + 8) 1
+  net_command n 1
 
 let write f a n =
   match f with
@@ -617,24 +618,19 @@ let sys_close p =
   p.fds <- List.filter (fun (j, _) -> j <> k) p.fds;
   result p 0
 
-let sys_pipe p =
+(* pipe(fds) and box(fds): the two ends, a descriptor each, put in fds *)
+let ends p r w =
   let a = user p (reg p 1) 8 in
-  let pi = { buf = ""; readers = 1; writers = 1 } in
-  let r = fdalloc p (Reader pi) in
-  let w = fdalloc p (Writer pi) in
+  let r = fdalloc p r in
+  let w = fdalloc p w in
   poke a r;
   poke (a + 4) w;
   result p 0
 
-(* box(fds): a box, its reading end and its writing end *)
-let sys_box p =
-  let a = user p (reg p 1) 8 in
-  let b = { last = ""; fresh = false; posters = 1 } in
-  let r = fdalloc p (Peek b) in
-  let w = fdalloc p (Post b) in
-  poke a r;
-  poke (a + 4) w;
-  result p 0
+let sys_pipe p = let pi = { buf = ""; readers = 1; writers = 1 } in ends p (Reader pi) (Writer pi)
+
+(* a box, its reading end and its writing end *)
+let sys_box p = let b = { last = ""; fresh = false; posters = 1 } in ends p (Peek b) (Post b)
 
 (* dial(address, port): a descriptor on a connection to the program
  * that listens on that port of the machine at that address
@@ -802,9 +798,7 @@ let net_next = ref 0
 let net_take () =
   let n = peek (net_dev + 4) in
   if n > 0 then begin
-    poke net_dev net_buf;
-    poke (net_dev + 4) n;
-    poke (net_dev + 8) 2;
+    net_command n 2;
     (match net_input net !ticks (k_string net_buf n) with
      | back, answer ->
          List.iter net_send back;

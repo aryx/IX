@@ -211,11 +211,8 @@ let il_taken c = c.il_r.il_recvd - List.length c.il_r.il_heard
  * send again what only waits to be read; after a close nothing more
  * will be *)
 let il_out c kind id data =
-  if kind = il_close || kind = il_state then ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_recvd data)
-  else begin
-    c.il_r.il_told <- il_taken c;
-    ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id c.il_r.il_told data)
-  end
+  let ack = if kind = il_close || kind = il_state then c.il_r.il_recvd else (c.il_r.il_told <- il_taken c; c.il_r.il_told) in
+  ip_packet ip_il c.il_me c.il_peer (il_message kind c.il_lport c.il_rport id ack data)
 
 let il_arm c now = c.il_s.il_timeout <- now + (il_wait lsl c.il_s.il_tries)
 let il_fresh c now = c.il_s.il_tries <- 0; il_arm c now
@@ -372,16 +369,11 @@ let il_tick c now =
   | Il_closed -> []
   | Il_syncer | Il_syncee -> if late then il_again c il_sync c.il_start now else []
   | Il_closing -> if late then il_again c il_close c.il_s.il_next now else []
-  | Il_established -> (
-      match c.il_s.il_unacked with
-      | [] ->
-          if c.il_s.il_leaving then (c.il_at <- Il_closing; il_fresh c now; [ il_out c il_close c.il_s.il_next "" ])
-          else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
-          else []
-      | _ ->
-          if late then (c.il_s.il_asked <- c.il_s.il_next; il_again c il_query c.il_s.il_next now)
-          else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
-          else [])
+  | Il_established ->
+      if c.il_s.il_unacked = [] && c.il_s.il_leaving then (c.il_at <- Il_closing; il_fresh c now; [ il_out c il_close c.il_s.il_next "" ])
+      else if c.il_s.il_unacked <> [] && late then (c.il_s.il_asked <- c.il_s.il_next; il_again c il_query c.il_s.il_next now)
+      else if c.il_r.il_told <> il_taken c then [ il_out c il_ack c.il_s.il_next "" ]
+      else []
 
 (*****************************************************************************)
 (* A machine's connections *)

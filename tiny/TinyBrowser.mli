@@ -119,8 +119,12 @@ val dump : page -> string
 (* The program www: the page at [address] asked of the wire's other end
  * (the line "www address" on port 70: TinyMachinePeer.www_address says
  * what an address can be), and drawn as it arrives on the screen, or in
- * the window, the program's descriptor 3. Space and - show the next and
- * the previous screenful, the arrows a line; q quits and clears. When
+ * the window, the program's descriptor 3. At the top, TinyLibGUI's
+ * menus (the page: back, top, reload, quit; a few articles to go to;
+ * the pages seen before) and a toolbar: Back, the address in a field
+ * (a click in it, or g, gives it the keys; Enter goes there), Go.
+ * Space and - show the next and the previous screenful, the arrows a
+ * line; q quits and clears. When
  * the keys end (a recorded session's) and the page is all there, the
  * program ends and leaves the page on the screen. *)
 val browse : string -> unit

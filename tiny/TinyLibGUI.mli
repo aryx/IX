@@ -168,6 +168,11 @@ type 'msg action = Send of 'msg | Edit of string * (string -> 'msg)
 val size : 'msg widget -> int * int
 val laid : ('m, 'msg) gui -> 'm -> TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
 
+(* [place x y w h widget]: a widget given that box, as [laid] places a
+ * model's (a program that draws its own window and has a few widgets
+ * on it: the browser's toolbar) *)
+val place : int -> int -> int -> int -> 'msg widget -> TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
+
 (* what is drawn over the widgets, by the mouse: a held button's edges,
  * the caret of the field that has the keys; each with its box *)
 val over : ((int * int * int * int) * 'msg action) list -> mouse -> ((int * int * int * int) * TinyLibPlayground.shape) list

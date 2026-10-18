@@ -35,9 +35,10 @@
 #                     drawing, a paint, in a window); and with the
 #                     network, ../tests/www's pages, the browser's (www,
 #                     wwwlink, wwwback, wwwgo, wwwpicture, wwwwin,
-#                     wwwscroll: the OCaml article, a link followed and
-#                     back, a section gone to, its pictures, in a window,
-#                     scrolled). A few minutes
+#                     wwwscroll, wwwmenu, wwwhistory: the OCaml article,
+#                     a link followed and back, a section gone to, its
+#                     pictures, in a window, scrolled, the History menu
+#                     open, the page before chosen in it). A few minutes
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
@@ -235,7 +236,7 @@ run: $(O)/boot.img
 # the recorded sessions, each against its screen's sum; the browser's
 # read ../tests/www's pages
 SCREENS = paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint \
-	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll
+	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out

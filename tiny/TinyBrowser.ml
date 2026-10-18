@@ -4,6 +4,7 @@
 (* See TinyBrowser.mli *)
 open TinyCalls
 open TinyLibDraw
+open TinyLibPlayground
 open TinyLibGUI
 
 (*****************************************************************************)
@@ -844,17 +845,18 @@ let dump p = String.concat "" (List.map (fun l -> show_line p p.page_flow.width 
 
 (* The colours, each an image of one pixel on our connection to the
  * screen (image 0 is where we draw: the screen, or our window). The
- * numbers in d_colour are bytes of the machine's palette. *)
-let c_white = 1
-let c_black = 2
-let c_link = 3
-let c_code = 4
-let c_rule = 5
-let c_bar = 7
-let c_text = 8
+ * numbers in d_colour are bytes of the machine's palette. Our images
+ * are above the playground's (3 plus a colour's byte, up to 258), which
+ * the menus and the toolbar are drawn with. *)
+let c_white = 261
+let c_black = 262
+let c_link = 263
+let c_code = 264
+let c_rule = 265
+let c_text = 268
 let colours =
   d_colour c_white 255 ^ d_colour c_black 0 ^ d_colour c_link 23 ^ d_colour c_code 221
-  ^ d_colour c_rule 136 ^ d_colour c_bar 3 ^ d_colour c_text 68
+  ^ d_colour c_rule 136 ^ d_colour c_text 68
 
 (*****************************************************************************)
 (* Addresses *)
@@ -911,8 +913,9 @@ let resolve url base href =
 (* The browser *)
 (*****************************************************************************)
 
-(* What the screen shows. Row 0 is a bar with the page's title, the last
- * row says how the reading goes, and the rows between show the page's
+(* What the screen shows. At the top, TinyLibGUI's bar of menus, with the
+ * page's title, and a toolbar: Back, the address, Go. The last row
+ * says how the reading goes, and the rows between show the page's
  * lines, scrolled by pixels (sc_y). A line that arrives is drawn if it
  * falls in the page's area.
  * A page is read from [nv_wire], the connection to the wire's other end,
@@ -931,10 +934,17 @@ type nav = {
   mutable nv_hover : bool;           (* the mouse is over a link: its look is a hand *)
 }
 
+(* the menus and the toolbar's, below the model as TinyLibGUI has them *)
+type tools = {
+  mutable tb_field : string;          (* the address, as shown or being typed *)
+  mutable tb_mouse : mouse;           (* TinyLibGUI's: the field has the keys when pressed in last *)
+  tb_menu : menu_state;
+}
+
 type screen = {
   mutable sc_page : page;
   sc_nav : nav;
-  mutable sc_typing : string option;  (* g: the address being typed *)
+  sc_tools : tools;
   sc_cols : int;
   sc_rows : int;
   mutable sc_y : int;               (* the page's pixel at the top of its area *)
@@ -944,31 +954,53 @@ type screen = {
   mutable sc_msgs : string list;    (* drawing messages not yet written, last first *)
 }
 
-let rows_of_page sc = sc.sc_rows - 2
 let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
-let flush sc = if sc.sc_msgs <> [] then begin ignore (u_write 3 (String.concat "" (List.rev sc.sc_msgs))); sc.sc_msgs <- [] end
+
+(* What a menu's item or a button of the toolbar does ([act] below):
+ * Typed is the toolbar's field, its text after a key *)
+type act = Back | Top | Reload | Quit | Address | Go_to of string | Go_typed | Typed of string
+
+(* The menus (TinyLibGUI's): the page, a few articles to go to, and the
+ * pages seen before (the last ten, the latest first) *)
+let bookmarks = [ "OCaml"; "Plan 9 from Bell Labs"; "Unix"; "Niklaus Wirth" ]
+let menus sc =
+  let rec first n l = match l with x :: rest when n > 0 -> x :: first (n - 1) rest | _ -> [] in
+  let short a = if String.length a > 56 then String.sub a 0 56 else a in
+  [ "Page", [ "Back       b", Back; "Top", Top; "Reload", Reload; "Quit       q", Quit ];
+    "Go", ("Address... g", Address) :: List.map (fun t -> t, Go_to t) bookmarks;
+    "History", List.map (fun (a, _) -> short a, Go_to a) (first 10 sc.sc_nav.nv_history) ]
+
+(* The drawing messages written. A menu that is open is over the page:
+ * it is drawn again, over what the messages drew. *)
+let send sc =
+  if sc.sc_msgs <> [] then begin
+    ignore (u_write 3 (String.concat "" (List.rev sc.sc_msgs)));
+    sc.sc_msgs <- [];
+    if sc.sc_tools.tb_menu.opened >= 0 then begin List.iter (draw 0 0 0) (List.tl (menu_view (sc.sc_cols * 8) (menus sc) sc.sc_tools.tb_menu)); flush () end
+  end
 
 let clip sc s = if String.length s > sc.sc_cols - 2 then String.sub s 0 (max 0 (sc.sc_cols - 2)) else s
 
 (* a row, filled with a colour *)
 let fill_row sc row colour = put sc (d_fill 0 colour 0 (row * 16) (sc.sc_cols * 8) ((row * 16) + 16))
 
-(* The page's area on the screen: from the row under the bar, [area sc]
- * pixels high. The page scrolls by pixels: its line i is at
- * area_top + 16 i - sc_y. *)
-let area_top = 16
-let area sc = rows_of_page sc * 16
+(* The page's area on the screen: from under the toolbar to the status
+ * row, [area sc] pixels high. The page scrolls by pixels: its line i is
+ * at area_top + 16 i - sc_y. *)
+let area_top = bar_height + 32
+let area sc = ((sc.sc_rows - 1) * 16) - area_top
+let rows_of_page sc = area sc / 16
 
 (* A line cut by the page area's edge (half scrolled out) is drawn first
  * into [c_strip], an image of one line kept for that, then copied to
  * its place on the screen, cut to the area: so it never draws over the
  * bar or the status line. A line all inside the area is drawn on the
  * screen itself. *)
-let c_strip = 9
+let c_strip = 269
 
-(* A picture's image on our connection is its number plus 16 (the
+(* A picture's image on our connection is its number plus 272 (the
  * colours and the strip are below). *)
-let image_of id = 16 + id
+let image_of id = 272 + id
 
 (* A slice of a picture (16 rows of it) into dst at row y: the rows that
  * have come, from the picture's image, and a grey box for the rest;
@@ -1024,25 +1056,58 @@ let draw_line sc i (l : line) =
     if y0 < y1 then put sc (d_draw 0 c_strip (-1) 0 y0 w y1 0 (y0 - at))
   end
 
+(* The bar of menus, the page's title at the right of their titles, and
+ * the menu open, by TinyLibPlayground's shapes (after our messages) *)
 let draw_bar sc =
-  fill_row sc 0 c_bar;
+  send sc;
+  let w = sc.sc_cols * 8 and ms = menus sc in
+  let x = List.fold_left (fun x (t, _) -> x + (8 * String.length t) + 16) 16 ms in
   let t = if title sc.sc_page <> "" then title sc.sc_page else sc.sc_nav.nv_address in
-  put sc (d_text 0 c_white 8 0 (clip sc t))
+  let n = max 0 (((w - x) / 8) - 1) in
+  (match menu_view w ms sc.sc_tools.tb_menu with
+   | bar :: opened -> draw 0 0 0 bar; draw 0 x 1 (Words (0, if String.length t > n then String.sub t 0 n else t)); List.iter (draw 0 0 0) opened
+   | [] -> ());
+  flush ()
+
+(* The toolbar: Back, the address in a field (its end, when it is longer
+ * than the field: what is typed goes after the part not shown), Go; by
+ * TinyLibGUI's widgets, at their places *)
+let input_box sc = 72, bar_height + 4, (sc.sc_cols * 8) - 144, 24
+let laid_tools sc =
+  let (x, y, w, h) = input_box sc in
+  let f = sc.sc_tools.tb_field in
+  let cut = max 0 (String.length f - ((w - 16) / 8)) in
+  let input = Input (String.sub f cut (String.length f - cut), fun t -> Typed (String.sub f 0 cut ^ t)) in
+  let (s1, b1) = place 8 y 56 h (Button ("Back", Back)) in
+  let (s2, b2) = place x y w h input in
+  let (s3, b3) = place (x + w + 8) y 56 h (Button ("Go", Go_typed)) in
+  s1 @ s2 @ s3, b1 @ b2 @ b3
+
+(* the toolbar on its ground (TinyLibGUI's grey), and what the mouse
+ * puts over it: a button held, the field's caret *)
+let draw_tools sc =
+  let (shapes, boxes) = laid_tools sc in
+  send sc;
+  draw 0 0 bar_height (Rect (0xcc, sc.sc_cols * 8, area_top - bar_height));
+  List.iter (draw 0 0 0) shapes;
+  List.iter (fun (_, s) -> draw 0 0 0 s) (over boxes sc.sc_tools.tb_mouse);
+  flush ()
+
+(* the field has the keys: the mouse's button went down in it last *)
+let focused sc = inside sc.sc_tools.tb_mouse.fx sc.sc_tools.tb_mouse.fy (input_box sc)
+let focus sc on = sc.sc_tools.tb_mouse <- { sc.sc_tools.tb_mouse with fx = (if on then 80 else -1); fy = (if on then bar_height + 8 else -1) }
 
 let draw_status sc =
   let row = sc.sc_rows - 1 in
   fill_row sc row c_code;
+  let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
   let text =
-    match sc.sc_typing with
-    | Some typed -> "go to: " ^ typed ^ "_"
-    | None ->
-        let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
-        (if sc.sc_state = "reading" then "reading, " ^ kb
-         else if sc.sc_state = "done" then
-           kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
-           ^ (if sc.sc_nav.nv_fetch >= 0 then ", picture " ^ string_of_int (sc.sc_nav.nv_fetch + 1) ^ " of " ^ string_of_int (pictures sc.sc_page) else "")
-         else sc.sc_state)
-        ^ "   space -: page, b: back, g: go to, q: quit" in
+    (if sc.sc_state = "reading" then "reading, " ^ kb
+     else if sc.sc_state = "done" then
+       kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
+       ^ (if sc.sc_nav.nv_fetch >= 0 then ", picture " ^ string_of_int (sc.sc_nav.nv_fetch + 1) ^ " of " ^ string_of_int (pictures sc.sc_page) else "")
+     else sc.sc_state)
+    ^ "   space -: page, b: back, g: address, q: quit" in
   put sc (d_text 0 c_black 8 (row * 16) (clip sc text))
 
 (* The page's lines that fall in its area, from pixel [a] to pixel [b]
@@ -1095,7 +1160,7 @@ let glide sc d =
       let s = if left > 0 then min step left else max (- step) left in
       let before = sc.sc_y in
       scroll_by sc s;
-      flush sc;
+      send sc;
       if sc.sc_y <> before then go (left - s)
     end in
   go d
@@ -1147,7 +1212,9 @@ let load sc url =
   sc.sc_y <- 0;
   sc.sc_got <- 0;
   sc.sc_state <- "reading";
+  sc.sc_tools.tb_field <- url;
   draw_bar sc;
+  draw_tools sc;
   redraw sc;
   (* the page asked of the wire's other end, on its port 70 *)
   sc.sc_nav.nv_wire <- u_dial "10.0.0.1" 70;
@@ -1221,6 +1288,8 @@ let go sc url =
   sc.sc_nav.nv_history <- (sc.sc_nav.nv_address, sc.sc_y) :: sc.sc_nav.nv_history;
   if address = sc.sc_nav.nv_address && id <> "" then begin
     (match anchor sc.sc_page id with Some line -> show_from sc line | None -> ());
+    sc.sc_tools.tb_field <- url;
+    draw_tools sc;
     draw_status sc
   end
   else load sc url
@@ -1234,7 +1303,9 @@ let back sc =
       sc.sc_nav.nv_history <- rest;
       if address = sc.sc_nav.nv_address then begin
         let y = max 0 (min y (max_y sc)) in
-        if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end
+        if y <> sc.sc_y then begin sc.sc_y <- y; redraw sc end;
+        sc.sc_tools.tb_field <- address;
+        draw_tools sc
       end
       else begin load sc address; sc.sc_nav.nv_goal <- y end
 
@@ -1250,55 +1321,93 @@ let link_at sc x y =
          | [] -> None)
     | _ -> None
 
-(* The mouse: over a link it is a hand; the left button pressed on a link
- * follows it; the wheel (the buttons 8 and 16, Plan 9's) scrolls. *)
-let mouse sc x y buttons =
-  if buttons >= 0 then begin
-    hover sc (link_at sc x y <> None);
-    if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
-      (match link_at sc x y with Some href -> go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href) | None -> ());
-    sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
-    if buttons land 8 <> 0 then scroll_by sc (-48);
-    if buttons land 16 <> 0 then scroll_by sc 48
+(* What a menu's item or a button does; false for Quit *)
+let act sc a =
+  (match a with
+   | Back -> back sc
+   | Top -> show_from sc 0
+   | Reload -> load sc sc.sc_nav.nv_address
+   | Quit -> ()
+   | Address -> sc.sc_tools.tb_field <- ""; focus sc true; draw_tools sc
+   | Go_to t -> go sc (absolute t)
+   | Go_typed -> if sc.sc_tools.tb_field = "" then sc.sc_tools.tb_field <- sc.sc_nav.nv_address else go sc (absolute sc.sc_tools.tb_field)
+   | Typed t -> sc.sc_tools.tb_field <- t);
+  a <> Quit
+
+(* the toolbar as a TinyLibGUI program: its model the field's text, its
+ * messages our actions (only its mouse and its keys are TinyLibGUI's) *)
+let toolbar sc = { init = ""; view = (fun _ -> Label ""); update = (fun a _ -> ignore (act sc a); sc.sc_tools.tb_field); key = (fun _ -> []) }
+
+(* The mouse: the menus' first, then the toolbar's; over a link it is a
+ * hand; the left button pressed on a link follows it; the wheel (the
+ * buttons 8 and 16, Plan 9's) scrolls. A menu that closes uncovers
+ * the toolbar and the page, drawn again. False for Quit. *)
+let on_mouse sc x y buttons =
+  let st = sc.sc_tools.tb_menu in
+  let was = st.opened and item = st.item in
+  let answer = menu_mouse (menus sc) st x y buttons in
+  if was >= 0 && st.opened <> was then begin draw_tools sc; redraw sc end;
+  if st.opened <> was || st.item <> item then draw_bar sc;
+  match answer with
+  | Picked a -> act sc a
+  | Taken -> true
+  | Ignored ->
+      let (_, boxes) = laid_tools sc in
+      let (field, m) = mouse (toolbar sc) boxes sc.sc_tools.tb_field sc.sc_tools.tb_mouse x y buttons in
+      let changed = field <> sc.sc_tools.tb_field || over boxes m <> over boxes sc.sc_tools.tb_mouse in
+      sc.sc_tools.tb_field <- field;
+      sc.sc_tools.tb_mouse <- m;
+      if changed then draw_tools sc;
+      hover sc (link_at sc x y <> None);
+      if buttons land 1 <> 0 && not sc.sc_nav.nv_pressed then
+        (match link_at sc x y with Some href -> go sc (resolve sc.sc_nav.nv_address (base sc.sc_page) href) | None -> ());
+      sc.sc_nav.nv_pressed <- buttons land 1 <> 0;
+      if buttons land 8 <> 0 then scroll_by sc (-48);
+      if buttons land 16 <> 0 then scroll_by sc 48;
+      true
+
+(* What a key does; false for q, which quits. While the field has the
+ * keys (a click in it, or g), they are TinyLibGUI's: its characters,
+ * Backspace; Enter goes, Escape gives up. Otherwise the arrows are 128
+ * to 131 (up, down, left, right): up and down scroll a line (the wheel
+ * and the trackpad come as these: tiny-machine's window and page send
+ * a step of the wheel as an arrow), left and right a screenful, as -
+ * and space do. Backspace is 8 or 127. *)
+let on_key sc k =
+  if focused sc then begin
+    (if k = 10 || k = 13 then begin focus sc false; ignore (act sc Go_typed) end
+     else if k = 27 then begin focus sc false; sc.sc_tools.tb_field <- sc.sc_nav.nv_address end
+     else sc.sc_tools.tb_field <- key (toolbar sc) (snd (laid_tools sc)) sc.sc_tools.tb_field sc.sc_tools.tb_mouse k);
+    draw_tools sc;
+    true
+  end
+  else begin
+    let page = area sc - 16 in
+    (if k = Char.code ' ' || k = 131 then glide sc page
+     else if k = Char.code '-' || k = 130 then glide sc (- page)
+     else if k = 129 then scroll_by sc 16
+     else if k = 128 then scroll_by sc (-16)
+     else if k = Char.code 'b' || k = 8 || k = 127 then back sc
+     else if k = Char.code 'g' then ignore (act sc Address));
+    k <> Char.code 'q'
   end
 
-(* What a key does; false for q, which quits. While an address is typed
- * (after g), the keys are its characters, Enter goes, Escape gives up.
- * The arrows are 128 to 131 (up, down, left, right): up and down scroll
- * a line (the wheel and the trackpad come as these: tiny-machine's
- * window and page send a step of the wheel as an arrow), left and right
- * a screenful, as - and space do. Backspace is 8 or 127. *)
-let key sc k =
-  match sc.sc_typing with
-  | Some typed ->
-      if k = 10 || k = 13 then begin sc.sc_typing <- None; if typed <> "" then go sc (absolute typed) end
-      else if k = 27 then sc.sc_typing <- None
-      else if k = 8 || k = 127 then sc.sc_typing <- Some (if typed = "" then "" else String.sub typed 0 (String.length typed - 1))
-      else if k >= 32 && k < 127 then sc.sc_typing <- Some (typed ^ String.make 1 (Char.chr k));
-      draw_status sc;
-      true
-  | None ->
-      let page = area sc - 16 in
-      if k = Char.code 'q' then false
-      else begin
-        (if k = Char.code ' ' || k = 131 then glide sc page
-         else if k = Char.code '-' || k = 130 then glide sc (- page)
-         else if k = 129 then scroll_by sc 16
-         else if k = 128 then scroll_by sc (-16)
-         else if k = Char.code 'b' || k = 8 || k = 127 then back sc
-         else if k = Char.code 'g' then begin sc.sc_typing <- Some ""; draw_status sc end);
-        true
-      end
+(* the end: the page's connection closed, the screen white *)
+let quit sc =
+  if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
+  hover sc false;
+  for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
+  send sc
 
 let browse typed =
   let w, h = window_size () in
   let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1; nv_hover = false } in
-  let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
+  let sc = { sc_page = create (w / 8); sc_nav = nav; sc_tools = { tb_field = ""; tb_mouse = up; tb_menu = menu_closed () }; sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
   put sc (d_image c_strip 0 0 (sc.sc_cols * 8) 16 255);
   load sc (absolute typed);
-  flush sc;
+  send sc;
   let fds = Array.make 3 0 in
   (* [keys]: whether keys may still come. When they have ended and the
    * page is all there, the program ends and leaves the page on the
@@ -1320,7 +1429,7 @@ let browse typed =
           next_picture sc
         end
         else picture_message sc s;
-        flush sc;
+        send sc;
         loop keys
       end
       else if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
@@ -1340,29 +1449,20 @@ let browse typed =
           show_new sc;
           if sc.sc_got / 16384 <> before then draw_status sc
         end;
-        flush sc;
+        send sc;
         loop keys
       end
       else if keys && ready = 4 then begin
         let s = u_read 4 12 in
-        if String.length s = 12 then mouse sc (int16 s 0) (int16 s 4) (int16 s 8);
-        flush sc;
-        loop keys
+        if String.length s = 12 && int16 s 8 >= 0 && not (on_mouse sc (int16 s 0) (int16 s 4) (int16 s 8)) then quit sc
+        else begin send sc; loop keys end
       end
       else if keys && ready = 0 then begin
         let typed = u_read 0 16 in
         if typed = "" then loop false
         else begin
-          let rec each i = i >= String.length typed || (key sc (Char.code typed.[i]) && each (i + 1)) in
-          let go_on = each 0 in
-          flush sc;
-          if go_on then loop keys
-          else begin
-            if sc.sc_nav.nv_wire >= 0 then ignore (u_close sc.sc_nav.nv_wire);
-            hover sc false;
-            for row = 0 to sc.sc_rows - 1 do fill_row sc row c_white done;
-            flush sc
-          end
+          let rec each i = i >= String.length typed || (on_key sc (Char.code typed.[i]) && each (i + 1)) in
+          if each 0 then begin send sc; loop keys end else quit sc
         end
       end
       else loop keys

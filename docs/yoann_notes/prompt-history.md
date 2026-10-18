@@ -37251,3 +37251,23 @@ Claude proposed A5, merging several tiny/ dune executable stanzas into one execu
 Claude estimated about 19 fewer lines, but warned each program's libraries would no longer sit beside its name.
 Claude planned to commit only its own dune changes, since other sessions also edit that file.
 Claude asked Yoann for a yes or no before touching the shared dune file.
+
+------------------------------------------------------------------------
+
+## 2026-10-17 21:38
+
+**Yoann:**
+
+> one of the first milestone could be TinyAppTetris playing sounds
+
+------------------------------------------------------------------------
+
+## 2026-10-17 21:41
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude said the dune file had no changes from other sessions, so it merged executables sharing libraries into shared stanzas. Claude noticed another session was editing `TinyMachineDevices`, so it committed only `dune` and the prompt history. Yoann's reply "yes" most likely points to the commit step, so the commit of just `dune` and the prompt history is the focus.

@@ -31,7 +31,8 @@ TL=$D/lib
 TUNITS=${TSTD:%=$TL/%.$O}
 # (SHA-1 and zlib: mini-git's objects, or TinyLibHost's)
 V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
-INCLUDES=`{case $LIB in tiny) echo -I . -I $D -I TinyMachine -I TinyKernel -I TinyLibHost/ocaml;; *) echo -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
+# (TinyLibHost first: the shell's TinyLibSystem is the one there)
+INCLUDES=`{case $LIB in tiny) echo -I TinyLibHost -I . -I $D -I TinyMachine -I TinyKernel -I TinyLibHost/ocaml;; *) echo -I TinyLibHost -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
 START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
 STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibHost.a;; *) echo $STDOBJS;; esac}
 STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
@@ -103,24 +104,20 @@ $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 # directory of the file it compiles before any -I)
 $D/TinyLibSystem.$O: TinyLibHost/TinyLibSystem.ml
 	mkdir -p $D
-	$ML -I TinyLibHost $INCLUDES -o $target TinyLibHost/TinyLibSystem.ml
-# (TinyLibHost first: the shell's TinyLibSystem is the one there)
+	$ML $INCLUDES -o $target TinyLibHost/TinyLibSystem.ml
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
-	$ML -I TinyLibHost $INCLUDES -o $target TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O
 	$LINK -o $target $D/TinyShell.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyShell.$O $STDEND
 # (the utilities, on the same TinyLibSystem as the shell, and
 # TinyLibRegex for grep)
 $D/TinyUtilities.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyUtilities.ml
-	$ML -I TinyLibHost $INCLUDES -o $target TinyUtilities.ml
 $D/tiny-utils: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyUtilities Std_exit -o $D/TinyUtilities.start.$O
 	$LINK -o $target $D/TinyUtilities.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyUtilities.$O $STDEND
 # (the line editor, on the same TinyLibSystem as the shell and the
 # same TinyLibRegex as grep: it is tiny-kernel's ed and sam too)
 $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
-	$ML -I TinyLibHost $INCLUDES -o $target TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND

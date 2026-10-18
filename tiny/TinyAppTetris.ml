@@ -46,8 +46,9 @@ let cells { kind; turn; x; y } =
 type board = { well : int array; ground : shape; next : int; seed : int; score : int; rows : int }
 
 (* and what changes as it falls: the piece, the frames before it goes
- * down a row, whether the game is over *)
-type model = { board : board; piece : piece; wait : int; over : bool }
+ * down a row, whether the game is over; and whether the music is off
+ * (m) *)
+type model = { board : board; piece : piece; wait : int; over : bool; quiet : bool }
 
 (* a piece is where it may be: in the well's sides and floor (its top
  * may be over the well), on no cell taken *)
@@ -87,20 +88,20 @@ let view m = if m.over then [ m.board.ground; shown m.piece; banner ] else [ m.b
 
 (* the next piece enters at the top, another one is next: the game is
  * over if it has no room *)
-let enter (well : int array) next seed score rows =
+let enter (well : int array) next seed score rows quiet =
   let piece = { kind = next; turn = 0; x = 3; y = 0 } in
   let seed = random seed in
   let board = { well; ground = ground_of well (seed mod 7) score rows; next = seed mod 7; seed; score; rows } in
-  { board; piece; wait = delay rows; over = not (fits well piece) }
+  { board; piece; wait = delay rows; over = not (fits well piece); quiet }
 
-let start seed =
+let start seed quiet =
   let seed = random (1 + (seed land 0xffff)) in
-  enter (Array.make 200 0) (seed mod 7) seed 0 0
+  enter (Array.make 200 0) (seed mod 7) seed 0 0 quiet
 
 (* the piece lands: its cells are the well's, in another well; the full
  * rows are removed (the others copied from the bottom, a full one
  * passed over); the score, by how many at once *)
-let land_ { board = b; piece; _ } =
+let land_ { board = b; piece; quiet; _ } =
   let well = Array.make 200 0 in
   for i = 0 to 199 do well.(i) <- b.well.(i) done;
   List.iter (fun (c, r) -> if r >= 0 then well.((r * 10) + c) <- piece.kind + 1) (cells piece);
@@ -113,7 +114,7 @@ let land_ { board = b; piece; _ } =
   in
   let n = down 19 19 0 in
   let gain = if n = 0 then 0 else if n = 1 then 100 else if n = 2 then 300 else if n = 3 then 500 else 800 in
-  enter left b.next b.seed (b.score + 4 + (gain * (1 + (b.rows / 10)))) (b.rows + n)
+  enter left b.next b.seed (b.score + 4 + (gain * (1 + (b.rows / 10)))) (b.rows + n) quiet
 
 (* the piece somewhere else, if it may be there: else the same model *)
 let moved m p = if fits m.board.well p then { m with piece = p; over = false } else m
@@ -131,10 +132,12 @@ let frame m =
   else fall m
 
 (* the arrows (128 up: a quarter turn, where it is, or a cell to the
- * left, or to the right; 129 down; 130 left; 131 right), the space *)
+ * left, or to the right; 129 down; 130 left; 131 right), the space; m
+ * the music off or on *)
 let key k m =
   let p = m.piece in
-  if m.over then (if k = 32 then start m.board.seed else m)
+  if k = 109 then { m with quiet = not m.quiet }
+  else if m.over then (if k = 32 then start m.board.seed m.quiet else m)
   else if k = 130 then moved m { p with x = p.x - 1 }
   else if k = 131 then moved m { p with x = p.x + 1 }
   else if k = 129 then fall m
@@ -172,4 +175,30 @@ let sound was m =
     else if rows > 0 then cleared
     else landed
 
-let game = { width = 288; height = 336; init = start; view; key; frame; sound }
+(*****************************************************************************)
+(* The music *)
+(*****************************************************************************)
+
+(* Korobeiniki, m-ix's (games/puzzle/Tetris.ml, in ABC: L:1/8,
+ * Q:1/4=150, K:Am), its eight bars of eighths: the melody on a square,
+ * an octave bass on a triangle (the NES's band). A note is its pitch in
+ * Hz (e is E5, 659; B is B4, 494; z a rest) and its eighths. *)
+let melody =
+  let e = 659 and b = 494 and c = 523 and d = 587 and a4 = 440 and f = 698 and a = 880 and g = 784 in
+  [
+  (e, 2); (b, 1); (c, 1); (d, 2); (c, 1); (b, 1);   (a4, 2); (a4, 1); (c, 1); (e, 2); (d, 1); (c, 1);
+  (b, 3); (c, 1); (d, 2); (e, 2);                   (c, 2); (a4, 2); (a4, 4);
+  (0, 1); (d, 2); (f, 1); (a, 2); (g, 1); (f, 1);   (e, 3); (c, 1); (e, 2); (d, 1); (c, 1);
+  (b, 2); (b, 1); (c, 1); (d, 2); (e, 2);           (c, 2); (a4, 2); (a4, 4) ]
+
+(* a bar of the bass: a note and its octave above, four times (E,,E,
+ * is E2 then E3) *)
+let bar low = [ (low, 1); (2 * low, 1); (low, 1); (2 * low, 1); (low, 1); (2 * low, 1); (low, 1); (2 * low, 1) ]
+let bass = List.concat (List.map bar [ 82; 110; 82; 110; 73; 65; 82; 110 ])
+
+(* 200 ms an eighth, a tenth faster each level (m-ix's faster); none
+ * when the game is over or the music is off *)
+let theme = [ { timbre = Square; level = 28; notes = melody }; { timbre = Triangle; level = 48; notes = bass } ]
+let music m = if m.over || m.quiet then None else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
+
+let game = { width = 288; height = 336; init = (fun seed -> start seed false); view; key; frame; sound; music }

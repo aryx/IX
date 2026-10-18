@@ -35,4 +35,4 @@ let key k m =
  * blinks, and the playground draws then) *)
 let frame m = { x = m.x; y = m.y; frames = m.frames + 1 }
 
-let game = { width = 320; height = 240; init = (fun _ -> { x = 152; y = 112; frames = 0 }); view = view; key = key; frame = frame; sound = (fun _ _ -> []) }
+let game = { width = 320; height = 240; init = (fun _ -> { x = 152; y = 112; frames = 0 }); view = view; key = key; frame = frame; sound = (fun _ _ -> []); music = (fun _ -> None) }

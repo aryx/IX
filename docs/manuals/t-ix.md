@@ -707,12 +707,18 @@ A game is a value of `tiny/TinyLibPlayground.ml`'s type `game`: the size
 of its picture, its first model from a seed (`init`), the model as
 shapes (`view`), the model after a key (`key`: its byte, the arrows
 128 to 131) and after a frame (`frame`: thirty a second of the
-machine's time), and the sounds of a change (`sound`: given the model
+machine's time), the sounds of a change (`sound`: given the model
 before and the model after, a list of sounds, each `{ wave; hz; to_hz;
-ms; volume }`, 7.3's message). The library has the loop, the drawing
-and the speaker: a picture is drawn when its shapes are others than
-those shown, off the window and then on it at once; a change's sounds
-are written to `/dev/audio`.
+ms; volume }`, 7.3's message), and the tune the model wants playing
+(`music`: `Some { pace; parts }` or `None`; a part is a wave, a volume
+and notes, each a pitch in Hz, 0 a rest, and a length in units of
+`pace` milliseconds). The library has the loop, the drawing and the
+speaker: a picture is drawn when its shapes are others than those
+shown, off the window and then on it at once; a change's sounds are
+written to `/dev/audio`; a tune's parts, a voice of `/dev/audio` each,
+are given their next notes half a second ahead at each turn of the
+loop (another tune, a faster pace, goes on from the same notes;
+`None` stops it, and the next starts at its beginning).
 
 | shape | what |
 |---|---|
@@ -730,9 +736,10 @@ machine. `square` is one of a page
 (`tiny/tests/TinyLibPlayground_tests/Square.ml`): type it at the screen's
 shell or in a window; `q` quits. `tetris` is `tiny/TinyAppTetris.ml`:
 the arrows move the piece (up turns it, down is a row), the space
-drops it, `q` quits; after a game over, the space starts another. It
-is heard: a piece that lands, rows that go (four at once, a level),
-the game over.
+drops it, `m` turns the music off and on, `q` quits; after a game
+over, the space starts another. It is heard: a piece that lands, rows
+that go (four at once, a level), the game over, and Korobeiniki, m-ix's
+theme, a tenth faster each level.
 
 ### 7.6 A program with buttons: TinyLibGUI.ml
 

@@ -37517,3 +37517,19 @@ Claude also updated docs/plans/plan_tiny_audio.md to record that someone had now
 Claude said it would first check how m-ix's tetris game plays its theme music.
 Claude named the playground's Audio module and lib_audio's mixer as the two places to inspect.
 Claude had not yet read any files or reported how the theme is actually played.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 09:51
+
+**Yoann:**
+
+> let's do the tetris theme in the playground
+
+**Claude (summary):**
+
+Claude added a music function to TinyLibPlayground, so each game supplies its own tune beside view.
+Claude made TinyAppTetris play Korobeiniki from m-ix's ABC, melody on a square, bass on a triangle.
+Claude quickened the tune a tenth per level, silenced it at game over, and bound m to mute.
+Claude rewrote the mixer's clamp plainly, and tetris then kept up with its music without a gap.
+Claude also updated the audio docs and README, then left the final check running.

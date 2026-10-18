@@ -31,7 +31,8 @@ let mix ring size at wave hz to_hz n volume =
       else ((((!noise lsr 16) land 255) * 2 * v) lsr 8) - v in
     let r = ring + ((at + i) land (size - 1)) in
     let b = peekb r in
-    pokeb r (max (-128) (min 127 ((if b > 127 then b - 256 else b) + x)) land 255);
+    let y = (if b > 127 then b - 256 else b) + x in
+    pokeb r ((if y > 127 then 127 else if y < -128 then -128 else y) land 255);
     let next = (!phase + (!step lsr 8)) land 0xffffff in
     if next lsr 16 <> !phase lsr 16 then noise := ((!noise * 69069) + 1) land 0xffffff;
     phase := next;
@@ -48,8 +49,10 @@ let sound_length snd = match snd with Tone (_, _, _, n, _) -> n | Samples s -> S
 (* samples added to the ring as a tone's are *)
 let add_samples ring size at s =
   for i = 0 to String.length s - 1 do
-    let r = ring + ((at + i) land (size - 1)) and b = peekb (ring + ((at + i) land (size - 1))) and x = Char.code s.[i] in
-    pokeb r (max (-128) (min 127 ((if b > 127 then b - 256 else b) + (if x > 127 then x - 256 else x))) land 255)
+    let r = ring + ((at + i) land (size - 1)) in
+    let b = peekb r and x = Char.code s.[i] in
+    let y = (if b > 127 then b - 256 else b) + (if x > 127 then x - 256 else x) in
+    pokeb r ((if y > 127 then 127 else if y < -128 then -128 else y) land 255)
   done
 
 let mix_sound ring size at snd =

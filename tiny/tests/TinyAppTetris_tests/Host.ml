@@ -25,7 +25,14 @@ let print (m : model) =
   done;
   Printf.printf "  score %d, rows %d, next %c%s\n" m.board.score m.board.rows names.[m.board.next] (if m.over then ", over" else "")
 
-(* a script: l r u d the arrows, s the space, a number so many frames, p prints *)
+(* the music a model wants: its pace, or none *)
+let music (m : model) =
+  match game.music m with
+  | Some t -> Printf.printf "  music: %d ms an eighth\n" t.pace
+  | None -> print_string "  music: none\n"
+
+(* a script: l r u d the arrows, s the space, m the music off and on, a
+ * number so many frames, p prints the well and the music *)
 let play seed script =
   Printf.printf "seed %d: %s\n" seed script;
   let m = ref (game.init seed) in
@@ -46,15 +53,18 @@ let play seed script =
     | "u" -> step (game.key 128)
     | "d" -> step (game.key 129)
     | "s" -> step (game.key 32)
-    | "p" -> print !m
+    | "m" -> step (game.key 109)
+    | "p" -> print !m; music !m
     | n -> for _ = 1 to int_of_string n do step game.frame done) (String.split_on_char ' ' script);
   !m
 
 let () =
+  (* the theme: each part's eighths (the parts go round together when they are as long) *)
+  List.iter (fun (p : TinyLibPlayground.part) -> Printf.printf "theme: a part of %d notes, %d eighths\n" (List.length p.notes) (List.fold_left (fun n (_, k) -> n + k) 0 p.notes)) TinyAppTetris.theme;
   (* the first piece: falls by the clock, moves, stops at the sides, turns, is dropped *)
   ignore (play 1 "p 30 p l l l l l l l p u p r r r r r r r r r p u u u p s p");
   (* pieces dropped where they are until one cannot enter: the game over, where keys do nothing; the space, another game *)
-  ignore (play 2 "s s s s s s s s s s s s p s p l 60 p s p");
+  ignore (play 2 "s s s s s s s s s s s s p s p l 60 p s p m p m p");
   (* a row filled and removed: two I laid end to end and an O (seed 28's first pieces), whose top half comes down *)
   let m = play 28 "l l l s r s r r r r p s p s 45 p" in
   let font = In_channel.with_open_bin Sys.argv.(1) In_channel.input_all in

@@ -37,14 +37,21 @@ let fat_bytes s =
 type wave = Square | Triangle | Sawtooth | Noise
 type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
 
+(* a tune: its pace (the milliseconds of a unit), its parts, each a
+ * wave, a volume and notes (a pitch in Hz, 0 a rest; a length in
+ * units) *)
+type part = { timbre : wave; level : int; notes : (int * int) list }
+type tune = { pace : int; parts : part list }
+
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the
  * ground, below); the model after a key
  * (its byte: the arrows are 128 to 131, up, down, left, right), and
- * after a frame; the sounds of a change, from a model to the next *)
+ * after a frame; the sounds of a change, from a model to the next; the
+ * tune the model wants playing, if any *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm;
-  sound : 'm -> 'm -> sound list;
+  sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
 (* Random numbers for a game's model, which keeps the state: the state
@@ -129,6 +136,45 @@ let samples_message s = msg 'p' [ String.length s ] ^ s
 let speaker = ref (-1)
 let play sounds = if !speaker >= 0 && sounds <> [] then ignore (u_write !speaker (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
 
+(* The music: a voice of /dev/audio a part (the kernel mixes them, and
+ * the sounds), its next note, and the time its notes so far end at, in
+ * ms of the kernel's clock. At each turn of the loop each part is given
+ * its notes up to half a second ahead, a sound each (a rest a sound at
+ * volume 0), and its voice plays them one after the other: so a tune is
+ * a few messages a second, made into samples by the kernel. A part that
+ * fell behind (the program busy) goes on from now. Another tune (a
+ * level's faster pace) goes on from the same notes, as m-ix's
+ * change_loop; none closes the voices, and the next tune starts at its
+ * beginning. *)
+type voice = { vfd : int; mutable vnext : int; mutable vuntil : int }
+let voices = ref []
+let ahead = 500
+
+let feed pace p v now =
+  let n = List.length p.notes in
+  if v.vuntil < now then v.vuntil <- now;
+  let rec gather acc =
+    if n = 0 || v.vuntil >= now + ahead then acc
+    else begin
+      let (hz, len) = List.nth p.notes (v.vnext mod n) in
+      let ms = len * pace in
+      v.vnext <- (v.vnext + 1) mod n;
+      v.vuntil <- v.vuntil + ms;
+      gather (acc ^ sound_message { wave = p.timbre; hz; to_hz = hz; ms; volume = if hz = 0 then 0 else p.level })
+    end in
+  let m = gather "" in
+  if m <> "" && v.vfd >= 0 then ignore (u_write v.vfd m)
+
+let play_music tune =
+  match tune, !voices with
+  | None, [] -> ()
+  | None, vs -> List.iter (fun v -> if v.vfd >= 0 then ignore (u_close v.vfd)) vs; voices := []
+  | Some t, vs ->
+      let now = u_ticks () * 5 / 2 in
+      (match vs with [] -> voices := List.map (fun _ -> { vfd = u_open "/dev/audio" 1; vnext = 0; vuntil = now }) t.parts | _ -> ());
+      let rec each parts vs = match parts, vs with p :: ps, v :: rest -> feed t.pace p v now; each ps rest | _ -> () in
+      each t.parts !voices
+
 (*****************************************************************************)
 (* The loop *)
 (*****************************************************************************)
@@ -150,6 +196,7 @@ let run g =
   let keys = Array.make 1 0 in
   let rec loop model seen shown next =
     if model != seen then play (g.sound seen model);
+    play_music (g.music model);
     let shapes = if model != seen then g.view model else shown in
     if not (same shown shapes) then show g shown shapes;
     if u_ready keys 1 next = 0 then begin

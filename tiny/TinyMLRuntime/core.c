@@ -428,15 +428,22 @@ ml_array_set(value a, value i, value v)
 	return 1;
 }
 
+// two integers compared here, before compare's frame of eight locals
+// (old: 100 instructions for min 3 4, the prelude's min being
+// polymorphic; a sound's sample clamped by min and max was 175 of them)
 value
 ml_compare(value a, value b)
 {
+	if(a & b & 1)
+		return a < b ? -1 : a == b ? 1 : 3;
 	return compare(a, b) * 2 + 1;
 }
 
 value
 ml_equal(value a, value b)
 {
+	if(a & b & 1)
+		return a == b ? 3 : 1;
 	return compare(a, b) == 0 ? 3 : 1;
 }
 

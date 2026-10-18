@@ -110,16 +110,50 @@ stations kept, and the rest dropped.
    - The window path, checked with SDL's disk driver
      (`SDL_AUDIODRIVER=disk`): 26 s of the session at 8 MHz, its
      3,762 sounding samples those of the WAV. Not heard by a person
-     yet: notes_audio.md's E, *a sum is not an ear*.
+     yet then: notes_audio.md's E, *a sum is not an ear*. Heard since
+     (2026-10-18), after step 4; the author: "I did use play and it
+     worked and played sound".
 2. **The web page's sound**: not done; the author: "no need for sound
    in the web page" (TinyMachineWeb's `hear` is `ignore`).
-3. **Music**: tetris's theme, Korobeiniki. A tune is notes with their
-   times; written as sounds to a voice of its own it is a stream that
-   waits when a second ahead, so the playground needs to write it a
-   little at a time (a voice's place, as its frames), or the kernel
-   keeps a voice's tune and makes it a tick at a time (a sequencer in
-   the kernel: the chip's other half). To choose; a voice of two notes
-   at once (the theme's bass) is a second voice.
+3. **Music: tetris's theme**. **Done (2026-10-18)**. Asked how m-ix
+   does it (the playground's `Audio.loop "music"` and `change_loop`, a
+   mixer in the game's process, the kernel a ring of samples), the
+   author: "let's do the tetris theme in the playground". So the tune
+   is the program's, as in m-ix, and its samples the kernel's, as for
+   every sound here: TinyLibPlayground's game has a `music` function
+   (the tune a model wants playing, as `view` is the picture it wants
+   shown), a tune a pace and parts, each a wave, a volume and notes
+   (Hz and units); each turn of the loop gives each part, a voice of
+   `/dev/audio`, its notes up to half a second ahead (about 30 lines).
+   Another tune goes on from the same notes (a faster pace: m-ix's
+   `change_loop`); `None` stops it. TinyAppTetris: Korobeiniki from
+   m-ix's ABC, the melody on a square and the octave bass on a
+   triangle, 64 eighths each, a tenth faster each level, none at game
+   over, `m` to mute it (m-ix's `music=off`). tiny-tetris on the host
+   plays it too: its `/dev/audio` is now the kernel's scheme, a ring
+   in TinyMemory, each open a voice mixing ahead of what SDL was given,
+   SDL fed by the clock (the sounds one after the other before, which
+   two parts cannot share). Tests: TinyAppTetris_test.sh (each part's
+   eighths; the music each script ends with: playing, none at game
+   over, muted and back); make check's tetris WAV, its sum. Found on
+   the way:
+   - **The theme took the whole machine.** With the music, the recorded
+     session landed four pieces of six: tetris handled its keys late. A
+     sample cost `mix` 535 instructions, two parts 8.8 million a second
+     of an 8 MHz machine. Of it, 175 were the clamp,
+     `max (-128) (min 127 y)`: the prelude's min and max are polymorphic,
+     each a call of the runtime's compare, which made a frame of eight
+     locals before it saw two integers. The runtime's `ml_compare` and
+     `ml_equal` now look for two integers first (every program's
+     polymorphic comparisons of integers gain), and the clamp is two
+     comparisons of integers, inlined: 227 a square's sample, 258 a
+     triangle's, 3.9 million a second for the two parts, half of an 8
+     MHz machine and a fifth of the window's 20. The session lands its
+     six pieces again.
+   - Checked by ear's stand-in: each eighth's strongest pitch among the
+     melody's, by a Fourier sum, in tiny-machine's WAV of the session
+     and in tiny-tetris's (SDL's disk driver): Korobeiniki's eight bars
+     as written.
 4. **Samples from a program, and play**. **Done (2026-10-18)**: `/dev/audio`
    takes a message `p n` and n samples (as `/dev/draw`'s row of pixels),
    added to the ring as a tone is (TinyKernelAudio's `Samples`);

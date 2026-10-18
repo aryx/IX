@@ -9,7 +9,7 @@
  *     $ windows                  then a window, and in it:
  *     $ tetris
  *     the arrows: left, right, up turns the piece, down a row;
- *     the space drops it; q quits
+ *     the space drops it; m the music off and on; q quits
  *
  * The rules: the well is 10 by 20 cells. There are seven pieces of four
  * cells, each with its own colour; one piece is falling, and the next
@@ -53,9 +53,13 @@
  *
  * What is dropped: the shadow showing where the piece would land,
  * holding a piece aside, wall kicks further than one cell to either
- * side, dealing the seven pieces as a bag, a pause, high scores, and
- * the music (its sounds are m-ix's: a piece landed, rows gone, four at
- * once, a level, the game over; [sound] says which from two models).
+ * side, dealing the seven pieces as a bag, a pause, and high scores.
+ * Its sounds are m-ix's (a piece landed, rows gone, four at once, a
+ * level, the game over; [sound] says which from two models), and so is
+ * its music, Korobeiniki, the melody on a square and an octave bass on
+ * a triangle, a tenth faster each level ([music]: the tune a model
+ * wants, as [view] is the picture it wants; none when the game is
+ * over).
  *
  * Exercises:
  * - the shadow; a pause; the bag of seven;
@@ -95,13 +99,20 @@
  * score), and the game's model *)
 type piece = { kind : int; turn : int; x : int; y : int }
 type board = { well : int array; ground : TinyLibPlayground.shape; next : int; seed : int; score : int; rows : int }
-type model = { board : board; piece : piece; wait : int; over : bool }
+type model = { board : board; piece : piece; wait : int; over : bool; quiet : bool }
 
 (* The game, for TinyLibPlayground's run *)
 val game : model TinyLibPlayground.game
 
 (* the sounds of a change, from a model to the next *)
 val sound : model -> model -> TinyLibPlayground.sound list
+
+(* Korobeiniki's two parts, the melody and the bass *)
+val theme : TinyLibPlayground.part list
+
+(* the tune a model wants playing: the theme at its level's pace, None
+ * when the game is over or the music is off *)
+val music : model -> TinyLibPlayground.tune option
 
 (* a piece's four cells in the well: a column and a row each *)
 val cells : piece -> (int * int) list

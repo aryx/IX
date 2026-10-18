@@ -15,9 +15,10 @@
  * wheel the arrows). An ENQ written to the console is answered in the
  * box, as tiny-windows answers it: the window's size. A file is the
  * host's, read whole when opened, written when closed; /dev/audio is the
- * window's sound, its sounds made by TinyKernelAudio.ml as tiny-kernel
- * makes them, and played one after the other (TinyMachineSDL's play),
- * not mixed as tiny-kernel mixes them.
+ * window's sound, as tiny-kernel and tiny-machine make it: each open a
+ * voice whose sounds TinyKernelAudio.ml makes into a ring, mixed, and
+ * the ring played by the clock (to SDL's queue, TinyMachineSDL's
+ * play) as tiny-machine's speaker plays its ring.
  *
  * A dial to the wire's other end, its port 70 (10.0.0.1, tiny-machine's
  * peer, TinyMachinePeer.ml), is answered here as tiny-machine answers
@@ -30,9 +31,6 @@
 let width = 640
 let height = 480
 let screen_at = 0xf00000
-(* where a sound is made, as tiny-kernel's ring *)
-let ring_at = 0xc00000
-
 (* the connection to the drawing, as tiny-kernel makes it: the font at
  * 0x1000, the images' memory after the screen *)
 let conn = lazy (
@@ -42,6 +40,48 @@ let conn = lazy (
   TinyKernelGraphics.connect screen (TinyKernelGraphics.font_mask 0x1000 (TinyKernelGraphics.alloc 16384)))
 
 let display = lazy (TinyMachineSDL.create ~title:(Filename.basename Sys.argv.(0)))
+
+(* The speaker, as tiny-kernel's (TinyKernel.ml's voices) and
+ * tiny-machine's (its ring played, then silenced): a ring of 8,192
+ * samples of TinyMemory's where the voices' sounds are added, each from
+ * where it stopped or, when the speaker passed it, from where the
+ * speaker is; played by the host's clock, 8,000 a second, a fifth of a
+ * second ahead of it ([fed]: the samples given to SDL so far). A write
+ * waits while its sounds would be more than a ring ahead. *)
+let ring_at = 0xc00000
+let ring = 8192
+let fed = ref 0
+let since = ref 0.
+
+let feed () =
+  if !since > 0. then begin
+    let due = int_of_float ((Unix.gettimeofday () -. !since) *. 8000.) + 1600 in
+    if due > !fed then begin
+      let n = min (due - !fed) ring in
+      let b = Bytes.create n in
+      for i = 0 to n - 1 do
+        let a = ring_at + ((!fed + i) land (ring - 1)) in
+        Bytes.set b i (Bytes.get TinyMemory.mem a);
+        Bytes.set TinyMemory.mem a '\000'
+      done;
+      fed := due;
+      (Lazy.force display).play (Bytes.unsafe_to_string b)
+    end
+  end
+
+let speak (ahead : int ref) s =
+  match TinyKernelAudio.sounds s with
+  | sounds ->
+      let total = List.fold_left (fun n snd -> n + TinyKernelAudio.sound_length snd) 0 sounds in
+      let rec room () =
+        feed ();
+        if !ahead < !fed then ahead := !fed;
+        if total > ring - (!ahead - !fed) then (Unix.sleepf 0.01; room ()) in
+      if total <= ring then begin
+        room ();
+        List.iter (fun snd -> TinyKernelAudio.mix_sound ring_at ring !ahead snd; ahead := !ahead + TinyKernelAudio.sound_length snd) sounds
+      end
+  | exception TinyKernelAudio.Bad_sound -> ()
 
 (* TINY_SCREEN=file: the screen written there as a PPM when the program
  * ends, a TERM signal ending it (for a look without a window:
@@ -105,7 +145,7 @@ let pump () =
 
 (* the files open: their descriptor, what is left to read of one, what
  * is written to one *)
-type file = Reading of string ref | Writing of string * Buffer.t | Asking of Buffer.t | Answer of string list ref | Speaker
+type file = Reading of string ref | Writing of string * Buffer.t | Asking of Buffer.t | Answer of string list ref | Speaker of int ref
 let files = Hashtbl.create 8
 let next = ref 5
 
@@ -148,6 +188,7 @@ let answer line =
 let rec u_ready (fds : int array) (n : int) (until : int) : int =
   show ();
   pump ();
+  feed ();
   let rec first i = if i >= n then -1 else if ready fds.(i) then fds.(i) else first (i + 1) in
   match first 0 with
   | -1 when until > 0 && u_ticks () >= until -> -1
@@ -183,20 +224,7 @@ let u_write (fd : int) (s : string) : int =
   else if fd = 2 then (prerr_string s; flush stderr)
   else (match Hashtbl.find_opt files fd with
         | Some (Writing (_, b)) -> Buffer.add_string b s
-        | Some Speaker ->
-            (* each sound made by the kernel's TinyKernelAudio, in a ring of
-             * TinyMemory's of its own, then played when a quarter of a
-             * second waits at most (TinyMachineSDL's play drops what comes
-             * past half a second): tiny-play, a file's samples, is paced so,
-             * as tiny-kernel paces a voice a second ahead *)
-            (try
-               List.iter (fun snd ->
-                 let n = TinyKernelAudio.sound_length snd and d = Lazy.force display in
-                 Bytes.fill TinyMemory.mem ring_at 8192 '\000';
-                 TinyKernelAudio.mix_sound ring_at 8192 0 snd;
-                 while d.queued () > 2000 do Unix.sleepf 0.02 done;
-                 d.play (Bytes.sub_string TinyMemory.mem ring_at n)) (TinyKernelAudio.sounds s)
-             with TinyKernelAudio.Bad_sound -> ())
+        | Some (Speaker ahead) -> speak ahead s
         | Some (Asking b) ->
             Buffer.add_string b s;
             let asked = Buffer.contents b in
@@ -207,11 +235,17 @@ let u_write (fd : int) (s : string) : int =
 let u_open (name : string) (flags : int) : int =
   let fd = !next in
   if name = "/dev/audio" then begin
-    (* what was written is heard to its end, as tiny-kernel's speaker
-     * plays on after a program ends *)
-    if not (Hashtbl.fold (fun _ f seen -> seen || f = Speaker) files false) then
-      at_exit (fun () -> while (Lazy.force display).queued () > 0 do Unix.sleepf 0.05 done);
-    Hashtbl.replace files fd Speaker; incr next; fd
+    (* the speaker started at the first open; what was written is heard
+     * to its end, as tiny-kernel's speaker plays on after a program
+     * ends *)
+    if !since = 0. then begin
+      since := Unix.gettimeofday ();
+      at_exit (fun () ->
+        let last = Hashtbl.fold (fun _ f m -> match f with Speaker a -> max m !a | _ -> m) files 0 in
+        while !fed < last + 1600 do feed (); Unix.sleepf 0.02 done;
+        while (Lazy.force display).queued () > 0 do Unix.sleepf 0.02 done)
+    end;
+    Hashtbl.replace files fd (Speaker (ref 0)); incr next; fd
   end
   else if flags land 1 <> 0 then (Hashtbl.replace files fd (Writing (name, Buffer.create 4096)); incr next; fd)
   else if Sys.file_exists name && not (Sys.is_directory name) then (Hashtbl.replace files fd (Reading (ref (In_channel.with_open_bin name In_channel.input_all))); incr next; fd)

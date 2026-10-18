@@ -30,8 +30,11 @@
  * code it was 2,750 instructions a sample (before tiny-ml had Bytes: a
  * string and a cons for each), the 0.7 s of Tetris's game over two
  * seconds of an 8 MHz machine. Here a sample is made where it is
- * played, a few instructions and no allocation, and a sound crosses a
- * pipe as 11 bytes, not 5,600. Samples are a message too (`p`), for
+ * played, with no allocation (about 230 instructions, a square's, 260 a
+ * triangle's; 535 while its clamp was the prelude's min and max, each
+ * a call of the runtime's compare), and a sound crosses a pipe as 11
+ * bytes, not 5,600. A tune of two parts is 3.9 million instructions a
+ * second: half of an 8 MHz machine, a fifth of a window's 20. Samples are a message too (`p`), for
  * what is no recipe: a WAV played (TinyPlay.ml).
  *
  * cs-history:

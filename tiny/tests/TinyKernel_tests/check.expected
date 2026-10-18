@@ -86,11 +86,11 @@ $ % /dev/audio
 /dev/draw
 /dev/mouse
 ls: /cat: not there
--  25   230976 /bin/cat
--   2   226948 /bin/editor
--   2   226948 /bin/emacs
+-  25   231184 /bin/cat
+-   2   227256 /bin/editor
+-   2   227256 /bin/emacs
 -   1    70364 /bin/ping
--  25   230976 /bin/utils
+-  25   231184 /bin/utils
 %      47     188    1169 f
      47     188    1169
      47     188    1169
@@ -109,10 +109,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   201396 /bin/ed
--   2   226948 /bin/editor
--   2   226948 /bin/emacs
--   2   201396 /bin/sam
+% -   2   201604 /bin/ed
+-   2   227256 /bin/editor
+-   2   227256 /bin/emacs
+-   2   201604 /bin/sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
@@ -180,7 +180,7 @@ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % hello world
    2000    2000    8893 numbers
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ answer from 10.0.0.1 in 10.0 ms
+$ answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 $ no answer from 10.0.0.9

@@ -8,8 +8,8 @@
  *     tiny-ml -tm -o tetris.tm calls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyAppTetris.ml tetris.ml
  *     (the last one line: let () = run game)
  *
- * The main idea: {b a game is a value and three functions} (and a
- * fourth for its sounds, below). The value
+ * The main idea: {b a game is a value and three functions} (and two
+ * more for its sounds and its music, below). The value
  * is the model, everything the game knows. [view] turns the model into
  * shapes; [key] and [frame] return the new model after a key press and
  * after a thirtieth of a second. A game has no loop, does no drawing,
@@ -37,7 +37,8 @@
  *                          Move (8, 8, Words (0, string_of_int n)) ]);
  *       key = (fun k n -> n + 1);
  *       frame = (fun n -> n);
- *       sound = (fun was n -> []) }
+ *       sound = (fun was n -> []);
+ *       music = (fun n -> None) }
  *     let () = run game
  *
  * Its frame function returns its argument unchanged, so between two
@@ -64,6 +65,15 @@
  *   tested as its rules are, with two models and no speaker. A sound
  *   is written to tiny-kernel's /dev/audio as a message of 11 bytes, and
  *   the kernel makes its samples, mixed with the other programs'.
+ * - {b The music}: the tune a model wants playing, as the picture is
+ *   the one it wants shown ([music]: Tetris's theme, faster at each
+ *   level; none when the game is over). The library gives each of its
+ *   parts, a voice of /dev/audio each, its next notes up to half a
+ *   second ahead at each turn of its loop; another tune goes on from
+ *   the same notes (a faster pace: m-ix's change_loop), and no tune
+ *   stops it. A note is a sound, so a tune is a few messages a second
+ *   and the kernel makes the samples (m-ix's playground renders them,
+ *   which cost a Pi 1 seconds: notes_audio.md's 8 and 14).
  * - {b The colours}: a shape's colour is a byte, an index in Plan 9's
  *   colour table; the image the kernel needs for that colour is
  *   created the first time it is used.
@@ -72,8 +82,9 @@
  * coordinates under a transformation (move, scale, rotate, fade; here
  * a shape is in pixels, at integer positions, with y going down from
  * the top left corner of the window); circles, polygons and images;
- * text in several sizes (the machine has a single 8x16 font); music
- * (a sound is a beep: no tune, no instrument); the mouse; subscriptions and commands (here a game receives every
+ * text in several sizes (the machine has a single 8x16 font); ABC's
+ * notation and instruments (a tune is notes in Hz on the kernel's
+ * waves); the mouse; subscriptions and commands (here a game receives every
  * key and every frame); time taken from the host (here a frame is 13
  * kernel ticks, which count machine instructions); and multiple
  * platforms (there is only one: the file descriptor the program draws
@@ -153,13 +164,19 @@ val overhang : int -> int
 type wave = Square | Triangle | Sawtooth | Noise
 type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
 
+(* A tune: its pace, the milliseconds of its unit (an eighth, say), and
+ * its parts, played together, each a wave, a volume and notes: a pitch
+ * in Hz (0 a rest) and a length in units (a note at most 1,000 ms) *)
+type part = { timbre : wave; level : int; notes : (int * int) list }
+type tune = { pace : int; parts : part list }
+
 (* a game: its window's size, its first model from a seed, the model as
- * shapes, the model after a key and after a frame; and the sounds of a
+ * shapes, the model after a key and after a frame; the sounds of a
  * change, from the model before to the model after (played one after
- * the other) *)
+ * the other); and the tune the model wants playing, None for silence *)
 type 'm game = {
   width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm;
-  sound : 'm -> 'm -> sound list;
+  sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 
 (* The program of a game: its loop, with no end (a key or the next

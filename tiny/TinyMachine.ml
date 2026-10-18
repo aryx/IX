@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -prof file | -screen ppm | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -36,6 +36,10 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  2000 k ls\n: these keys), the input's
                                                  end after the last; the screen at the
                                                  halt in s.ppm
+  tiny-machine -audio a.wav kernel.img           the speaker's samples (8,000 a second, a
+                                                 byte each) written in a.wav at the halt
+                                                 (tiny-kernel: tetris's sounds); with
+                                                 -window the window plays them
   tiny-machine -net dir -net-trace kernel.img    a network: the wire's other end is this
                                                  program, at 10.0.0.1 (the machine is
                                                  10.0.0.2), answering a ping (tiny-kernel:
@@ -115,6 +119,14 @@ let ppm (m : TinyMachineCPU.machine) =
   done;
   Bytes.to_string out
 
+(* the speaker's samples as a WAV: RIFF's header, then 8 bits a sample,
+ * which a WAV has unsigned (128 the silence) *)
+let wav samples =
+  let le32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) and le16 n = String.init 2 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
+  let n = String.length samples and hz = TinyMachineDevices.hz in
+  "RIFF" ^ le32 (36 + n) ^ "WAVEfmt " ^ le32 16 ^ le16 1 ^ le16 1 ^ le32 hz ^ le32 hz ^ le16 1 ^ le16 8
+  ^ "data" ^ le32 n ^ String.map (fun ch -> Char.chr (Char.code ch lxor 128)) samples
+
 (* The host's window (-window) is another program's, tiny-machine-window
  * (TinyMachineWindow.ml), so that this one links no library of C's and
  * is built by ix's tools as by OCaml's: a child, given the screen on
@@ -137,7 +149,7 @@ let ppm (m : TinyMachineCPU.machine) =
  * finishes sooner. *)
 type window = {
   to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string;
-  mutable cursor : int;
+  mutable cursor : int; heard : Buffer.t;
   mutable due : float;
 }
 
@@ -148,7 +160,7 @@ let window_open (caps : < Cap.fork; Cap.exec; .. >) =
   ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
-  { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0; due = Unix.gettimeofday () }
+  { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0; heard = Buffer.create 4096; due = Unix.gettimeofday () }
 
 (* every [polled] instructions *)
 let polled = 0x10000
@@ -165,6 +177,12 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
     if ms.cursor <> w.cursor then begin
       w.cursor <- ms.cursor;
       Procs.write_all w.to_w (Printf.sprintf "C %d\n" ms.cursor)
+    end;
+    (* the speaker's samples since the last picture: a line "A n", then
+     * the n bytes *)
+    if Buffer.length w.heard > 0 then begin
+      Procs.write_all w.to_w (Printf.sprintf "A %d\n%s" (Buffer.length w.heard) (Buffer.contents w.heard));
+      Buffer.clear w.heard
     end;
     match Unix.select [ w.from_w ] [] [] 0.0 with
     | [], _, _ -> ()
@@ -184,7 +202,7 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; events_file : string option; window : bool; rate : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
+type options = { disk_file : string option; screen_file : string option; audio_file : string option; events_file : string option; window : bool; rate : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -374,10 +392,16 @@ let run caps o image =
       | Some (Some relay) -> TinyMachinePeer.dial peer port relay; Some (host, port, helper caps [ "listen"; string_of_int host ])
       | Some None -> Console.eprint caps (Printf.sprintf "tiny-machine: -net-forward: the host's port %d cannot be listened on\n" host); None)
       !waiting in
-  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~disk ~events image in
+  (* the speaker's samples: to the window, and kept for -audio *)
+  let window = if o.window then Some (window_open caps) else None in
+  let recorded = Buffer.create 0 in
+  let listening = window <> None || o.audio_file <> None in
+  let hear samples =
+    Option.iter (fun w -> Buffer.add_string w.heard samples) window;
+    if o.audio_file <> None then Buffer.add_string recorded samples in
+  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear ~disk ~events image in
   machine := Some mc;
   let m = mc.cpu and c = mc.csr in
-  let window = if o.window then Some (window_open caps) else None in
   let env = TinyMachineDevices.env mc in
   (* -prof f: each instruction counted by where it was (the kernel's or
    * a program's, and which program: its window's base), into f at the
@@ -392,6 +416,7 @@ let run caps o image =
   let halted n =
     (match disk_file with Some f when mc.disk.dirty -> FS.write caps (Fpath.v f) (Bytes.to_string mc.disk.image) | _ -> ());
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
+    Option.iter (fun f -> TinyMachineDevices.speaker_hear mc; FS.write caps (Fpath.v f) (wav (Buffer.contents recorded))) o.audio_file;
     Option.iter (fun f -> FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture)) o.net_pcap;
     (* (the helpers that wait for a connection: their input's end is theirs) *)
     List.iter (fun (_, _, pipes) -> (helper_relay pipes "").shut ()) !waiting;
@@ -401,6 +426,7 @@ let run caps o image =
       (* the hosts' turns, by the time this instruction will be *)
       let t = c.(TinyMachineDevices.time) + 1 in
       if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
+      if t land (polled - 1) = 0 && listening then TinyMachineDevices.speaker_hear mc;
       if t land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
       if t land (polled - 1) = 0 && !waiting <> [] then Option.iter forwards peer;
       (* old: TinyMachineDevices.tick mc env, an instruction a turn of this
@@ -425,6 +451,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
         let rec options o = function
           | "-d" :: f :: rest -> options { o with disk_file = Some f } rest
           | "-screen" :: f :: rest -> options { o with screen_file = Some f } rest
+          | "-audio" :: f :: rest -> options { o with audio_file = Some f } rest
           | "-events" :: f :: rest -> options { o with events_file = Some f } rest
           | "-window" :: rest -> options { o with window = true } rest
           | "-rate" :: n :: rest when (match int_of_string_opt n with Some n -> n > 0 && n <= 1000 | None -> false) ->
@@ -441,7 +468,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
               options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
+        options { disk_file = None; screen_file = None; audio_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

@@ -35,14 +35,16 @@ let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8 and i_net = 16
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
- * 16 below those *)
+ * 16 below those, the speaker's word below them (and three free) *)
 let memsize = 1 lsl 27
 (* old: devices = memsize - 32, before the network's four words *)
-let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 48
+(* old: devices = memsize - 48, before the speaker's word *)
+let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 64
 let console_in = memsize - 8
 let disk_block = memsize - 32 and disk_addr = memsize - 28 and disk_cmd = memsize - 24 and disk_status = memsize - 20
 let mouse_dev = memsize - 4
 let net_addr = memsize - 48 and net_len = memsize - 44 and net_cmd = memsize - 40 and net_status = memsize - 36
+let speaker_dev = memsize - 52
 (* the screen, below the devices: a megabyte no kernel's image reaches *)
 let screen = 0xf00000 and width = 640 and height = 480
 
@@ -201,9 +203,50 @@ let timed_events text =
     | None -> TinyMachineCPU.error "not an event: %s" l)
     (String.split_on_char '\n' text)
 
+(*****************************************************************************)
+(* The speaker (plan_tiny_audio.md) *)
+(*****************************************************************************)
+
+(* The speaker is memory, as the screen is: a ring of [ring] bytes, a
+ * sample each (signed, 0 silence), that it plays at [hz] samples a
+ * second of the machine's time, one every rate / hz instructions. The
+ * kernel says where the ring is by writing its address at -52(r0) (0:
+ * off, the start), and reads there the samples played since, modulo
+ * 2^30: where the speaker is in the ring, which the kernel writes ahead
+ * of. A sample played is made 0 again, so a ring nobody writes is
+ * silence and not the last second again and again (notes_audio.md's D:
+ * the kernel needs no clock to clean behind the speaker).
+ *
+ * Nothing happens at each sample: the samples due are played when
+ * somebody looks, the kernel by reading the word, the host by [hear]
+ * (its window, a WAV), so the speaker costs no instruction of its own and
+ * a run is the same every time. *)
+let ring = 8192 and hz = 8000
+
+type speaker = { mutable ring_at : int; mutable played : int; mutable since : int }
+
+(* the samples due since the last look, given to [hear] and made 0 *)
+let speaker_play (sp : speaker) (m : TinyMachineCPU.machine) time hear =
+  if sp.ring_at <> 0 then begin
+    let period = max 1 (!rate / hz) in
+    let d = TinyMachineCPU.m32 (time - sp.since) in
+    let n = if d > 0x40000000 then 0 else d / period in
+    if n > 0 then begin
+      let b = Bytes.make n '\000' in
+      for i = 0 to min n ring - 1 do
+        let a = sp.ring_at + ((sp.played + i) land (ring - 1)) in
+        Bytes.set b i (Bytes.get m.mem a);
+        Bytes.set m.mem a '\000'
+      done;
+      hear (Bytes.unsafe_to_string b);
+      sp.played <- (sp.played + n) land 0x3fffffff;
+      sp.since <- TinyMachineCPU.m32 (sp.since + (n * period))
+    end
+  end
+
 type machine = {
-  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; mutable events : (int * string) list;
-  put : char -> unit; on_open : console -> unit; send : string -> unit;   (* the host's *)
+  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; speaker : speaker; mutable events : (int * string) list;
+  put : char -> unit; on_open : console -> unit; send : string -> unit; hear : string -> unit;   (* the host's *)
   (* a device or a register of control was touched: see [ticks] *)
   mutable touched : bool;
 }
@@ -276,6 +319,7 @@ let load mc m s a =
   | w when w = mouse_dev -> mc.mouse.moved <- false; mc.mouse.at
   | w when w = net_len -> (match mc.net.waiting with p :: _ -> String.length p | [] -> 0)
   | w when w = net_status -> if mc.net.wired then 1 else 0
+  | w when w = speaker_dev -> speaker_play mc.speaker m mc.csr.(time) mc.hear; mc.speaker.played
   | w when w >= devices -> 0
   | _ -> TinyMachineCPU.load m s a
 
@@ -292,6 +336,10 @@ let store mc m s a v =
   | w when w = net_addr -> mc.net.naddr <- v
   | w when w = net_len -> mc.net.nlen <- v
   | w when w = net_cmd -> net_command mc.net m mc.send v
+  | w when w = speaker_dev ->
+      let v = TinyMachineCPU.addr v in
+      if v <> 0 && v > memsize - ring then TinyMachineCPU.error "speaker: a ring at 0x%x: out of the memory" v;
+      mc.speaker.ring_at <- v; mc.speaker.played <- 0; mc.speaker.since <- mc.csr.(time)
   (* written, the mouse's word is its look: 0 the arrow, 1 a hand *)
   | w when w = mouse_dev -> mc.mouse.cursor <- v
   | w when w >= devices -> ()
@@ -375,8 +423,9 @@ let ext : TinyMachineCPU.extension =
  * when a kernel first asks for the console's input; [disk] is the
  * disk's image, [events] a session's (then its keys are the console's
  * only input, and its last event the input's end); [send], when there
- * is a wire, is given each packet the machine sends *)
-let create ~put ~on_open ~send ~disk ~events image =
+ * is a wire, is given each packet the machine sends; [hear] the
+ * speaker's samples *)
+let create ~put ~on_open ~send ~hear ~disk ~events image =
   TinyMachineCPU.memsize := memsize;
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
   m.r.(TinyMachineCPU.sp) <- devices;
@@ -389,7 +438,11 @@ let create ~put ~on_open ~send ~disk ~events image =
     disk = { image = disk; block = 0; addr = 0; done_ = false; dirty = false };
     mouse = { at = 0; moved = false; cursor = 0 }; events = (match events with Some l -> l | None -> []); put; on_open;
     net = { wired = send <> None; naddr = 0; nlen = 0; waiting = []; flying = [] };
+    speaker = { ring_at = 0; played = 0; since = 0 }; hear;
     send = (match send with Some f -> f | None -> ignore); touched = false }
+
+(* the speaker's samples due, to [hear]: the host's, between two ticks *)
+let speaker_hear mc = speaker_play mc.speaker mc.cpu mc.csr.(time) mc.hear
 
 (* a time's distance from now, in instructions: 0 when it is now or
  * passed (the differences are of 32 bits, an int's or not; more than

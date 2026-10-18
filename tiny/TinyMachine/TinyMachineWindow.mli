@@ -13,7 +13,9 @@
  *
  * Between two pictures, a line "C n" sets the mouse's look: 0 the
  * arrow, 1 a hand (a program of the machine wrote it to the mouse's
- * word: www over a link).
+ * word: www over a link); a line "A n" then n bytes are the speaker's
+ * samples since the last, which the window plays (TinyMachineSDL's
+ * play).
  *
  * Its input's end, or its window closed, is its end. The window starts
  * at the largest whole number of times the picture that three quarters

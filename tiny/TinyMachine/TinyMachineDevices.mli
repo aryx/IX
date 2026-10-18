@@ -73,20 +73,31 @@ type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable 
  * over a link), which the host shows *)
 type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 type net
+(* the speaker: its ring's address (0: off), the samples played, the
+ * time of the last *)
+type speaker = { mutable ring_at : int; mutable played : int; mutable since : int }
 
 type machine = {
-  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; mutable events : (int * string) list;
-  put : char -> unit; on_open : console -> unit; send : string -> unit;
+  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; speaker : speaker; mutable events : (int * string) list;
+  put : char -> unit; on_open : console -> unit; send : string -> unit; hear : string -> unit;
   mutable touched : bool;
 }
 
 (* A machine with an image at 0. [put] has each byte of the console's
  * output, [on_open] is called when a kernel first asks for its input,
- * [send], when there is a network, has each packet sent; a disk's
- * image, a session's events *)
+ * [send], when there is a network, has each packet sent, [hear] the
+ * speaker's samples, played; a disk's image, a session's events *)
 val create :
-  put:(char -> unit) -> on_open:(console -> unit) -> send:(string -> unit) option -> disk:Bytes.t -> events:(int * string) list option ->
-  string -> machine
+  put:(char -> unit) -> on_open:(console -> unit) -> send:(string -> unit) option -> hear:(string -> unit) ->
+  disk:Bytes.t -> events:(int * string) list option -> string -> machine
+
+(* The speaker: a ring of [ring] samples in memory (a byte each, signed),
+ * played at [hz] a second; [speaker_hear] gives [hear] the samples due
+ * since the last look (the kernel's, or the host's: a host listening
+ * looks often, at least once a ring) *)
+val ring : int
+val hz : int
+val speaker_hear : machine -> unit
 
 (* the CPU's five hooks for it, and so many instructions of its time
  * (Halt when the kernel halts it) *)

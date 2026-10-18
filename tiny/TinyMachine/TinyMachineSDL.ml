@@ -5,7 +5,7 @@
 open Tsdl
 
 type event = Quit | At of int * int | Button of int * bool | Key of int * bool | Wheel of int
-type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit }
+type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit }
 
 let key_byte usage ~shift ~ctrl =
   let plain = "abcdefghijklmnopqrstuvwxyz1234567890\n\027\b\t -=[]\\\000;'`,./"
@@ -83,4 +83,24 @@ let create ~title =
         (match Sdl.create_system_cursor (if n = 1 then Sdl.System_cursor.hand else Sdl.System_cursor.arrow) with
          | Ok c -> Hashtbl.replace cursors n c; Sdl.set_cursor (Some c)
          | Error _ -> ()) in
-  { present; poll; cursor }
+  (* the sound, opened at the first samples (None: no sound here) *)
+  let device = lazy (
+    match Sdl.init_sub_system Sdl.Init.audio with
+    | Error _ -> None
+    | Ok () ->
+        let spec = { Sdl.as_freq = 8000; as_format = Sdl.Audio.s8; as_channels = 1; as_silence = 0; as_samples = 256; as_size = 0l; as_callback = None } in
+        (match Sdl.open_audio_device None false spec 0 with
+         | Ok (d, _) -> Sdl.pause_audio_device d false; Some d
+         | Error _ -> None)) in
+  let play samples =
+    match Lazy.force device with
+    | None -> ()
+    | Some d ->
+        let queued = Sdl.get_queued_audio_size d in
+        if queued <= 4000 then begin
+          let samples = if queued = 0 then String.make 800 '\000' ^ samples else samples in
+          let ba = Bigarray.Array1.create Bigarray.int8_signed Bigarray.c_layout (String.length samples) in
+          String.iteri (fun i c -> Bigarray.Array1.unsafe_set ba i (let v = Char.code c in if v > 127 then v - 256 else v)) samples;
+          ignore (Sdl.queue_audio d ba)
+        end in
+  { present; poll; cursor; play }

@@ -5,13 +5,15 @@
 
 (* what tiny-machine writes: a screen as a PPM, or a line "C n", the
  * mouse's look (0 the arrow, 1 a hand), which a program of the machine
- * chose by writing the mouse's word *)
-type input = Screen of int * int * string | Cursor of int
+ * chose by writing the mouse's word, or a line "A n" and n bytes, the
+ * speaker's samples *)
+type input = Screen of int * int * string | Cursor of int | Samples of string
 
 let read_ppm ic =
   match input_line ic with
   | exception End_of_file -> None
   | line when String.length line > 2 && line.[0] = 'C' -> Some (Cursor (int_of_string (String.sub line 2 (String.length line - 2))))
+  | line when String.length line > 2 && line.[0] = 'A' -> Some (Samples (really_input_string ic (int_of_string (String.sub line 2 (String.length line - 2)))))
   | _p6 ->
       let width, height = Scanf.sscanf (input_line ic) "%d %d" (fun w h -> w, h) in
       ignore (input_line ic);
@@ -34,6 +36,7 @@ let () =
            match read_ppm stdin with
            | None -> exit 0
            | Some (Cursor n) -> display.cursor n
+           | Some (Samples s) -> display.play s
            | Some (Screen (width, height, pixels)) ->
                display.present width height pixels)
        | exception Unix.Unix_error (Unix.EINTR, _, _) -> ());

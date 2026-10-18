@@ -117,6 +117,17 @@
  *   instructions later. Packets arrive at times counted in
  *   instructions, so a run is still the same every time.
  *
+ * For sound (plan_tiny_audio.md):
+ *
+ * - {b A speaker} that is memory, as the screen is: a ring of 8,192
+ *   samples (a byte each, signed) where the kernel says, by writing its
+ *   address at -52(r0); the speaker plays it, 8,000 samples a second of
+ *   the machine's time, and makes each sample it played 0, so a ring
+ *   nobody writes is silence. Read, the word is the samples played,
+ *   where the kernel writes ahead of. The samples due are played when
+ *   somebody looks (the kernel, the host), so it costs no instruction
+ *   of its own. -window plays them, -audio f writes them as a WAV.
+ *
  * Here is all of it as a kernel sees it. Memory is 128 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
  * 16 is 0x7fffff0: reaching a device costs no register.
@@ -127,6 +138,8 @@
  *                (base, bound) or by pages
  *     0xf00000   the screen: 480 rows of 640 bytes, up to 0xf4b000
  *        ...
+ *     0x7ffffcc  the speaker: its ring's address, the     -52(r0)
+ *                samples played
  *     0x7ffffd0  the network: an address, a length,       -48(r0) up
  *                a command, whether there is a wire
  *     0x7ffffe0  the disk: a block number, an address,    -32(r0) up
@@ -267,8 +280,8 @@
  *    devices as memory
  *)
 
-(* the command line's: a disk's file, a window, a screen's file,
- * events, a network's wire *)
+(* the command line's: a disk's file, a window, a screen's file, a
+ * sound's, events, a network's wire *)
 type options
 
 (* an image, run to the machine's halt: the hosts' turns (the console,

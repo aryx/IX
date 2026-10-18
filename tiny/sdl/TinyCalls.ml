@@ -14,7 +14,10 @@
  * window makes them: Alt a key's Escape, a key held typed again, the
  * wheel the arrows). An ENQ written to the console is answered in the
  * box, as tiny-windows answers it: the window's size. A file is the
- * host's, read whole when opened, written when closed.
+ * host's, read whole when opened, written when closed; /audio is the
+ * window's sound, its sounds made by TinyKernelAudio.ml as tiny-kernel
+ * makes them, and played one after the other (TinyMachineSDL's play),
+ * not mixed as tiny-kernel mixes them.
  *
  * A dial to the wire's other end, its port 70 (10.0.0.1, tiny-machine's
  * peer, TinyMachinePeer.ml), is answered here as tiny-machine answers
@@ -27,6 +30,8 @@
 let width = 640
 let height = 480
 let screen_at = 0xf00000
+(* where a sound is made, as tiny-kernel's ring *)
+let ring_at = 0xc00000
 
 (* the connection to the drawing, as tiny-kernel makes it: the font at
  * 0x1000, the images' memory after the screen *)
@@ -100,7 +105,7 @@ let pump () =
 
 (* the files open: their descriptor, what is left to read of one, what
  * is written to one *)
-type file = Reading of string ref | Writing of string * Buffer.t | Asking of Buffer.t | Answer of string list ref
+type file = Reading of string ref | Writing of string * Buffer.t | Asking of Buffer.t | Answer of string list ref | Speaker
 let files = Hashtbl.create 8
 let next = ref 5
 
@@ -178,6 +183,15 @@ let u_write (fd : int) (s : string) : int =
   else if fd = 2 then (prerr_string s; flush stderr)
   else (match Hashtbl.find_opt files fd with
         | Some (Writing (_, b)) -> Buffer.add_string b s
+        | Some Speaker ->
+            (* each sound made by the kernel's TinyKernelAudio, in a ring of
+             * TinyMemory's of its own, then played *)
+            (try
+               List.iter (fun (wave, hz, to_hz, n, volume) ->
+                 Bytes.fill TinyMemory.mem ring_at 8192 '\000';
+                 TinyKernelAudio.mix ring_at 8192 0 wave hz to_hz n volume;
+                 (Lazy.force display).play (Bytes.sub_string TinyMemory.mem ring_at n)) (TinyKernelAudio.sounds s)
+             with TinyKernelAudio.Bad_sound -> ())
         | Some (Asking b) ->
             Buffer.add_string b s;
             let asked = Buffer.contents b in
@@ -187,7 +201,8 @@ let u_write (fd : int) (s : string) : int =
 
 let u_open (name : string) (flags : int) : int =
   let fd = !next in
-  if flags land 1 <> 0 then (Hashtbl.replace files fd (Writing (name, Buffer.create 4096)); incr next; fd)
+  if name = "/audio" then (Hashtbl.replace files fd Speaker; incr next; fd)
+  else if flags land 1 <> 0 then (Hashtbl.replace files fd (Writing (name, Buffer.create 4096)); incr next; fd)
   else if Sys.file_exists name && not (Sys.is_directory name) then (Hashtbl.replace files fd (Reading (ref (In_channel.with_open_bin name In_channel.input_all))); incr next; fd)
   else -1
 

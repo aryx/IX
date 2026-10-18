@@ -1,4 +1,4 @@
-; tiny-kernel's two parts in ML that are files of their own, here for
+; tiny-kernel's three parts in ML that are files of their own, here for
 ; the host: their tests, and the other end of tiny-machine's wire
 
 ; TinyKernelNetwork.ml, tiny-kernel's part that speaks to the network
@@ -16,4 +16,13 @@
  (name tiny_kernel_graphics)
  (wrapped false)
  (modules TinyKernelGraphics)
+ (libraries tiny_host_memory))
+
+; TinyKernelAudio.ml, tiny-kernel's part that makes the sounds (tiny-ml
+; compiles it there), here for the host: its test, and the window's
+; tiny programs (../sdl/)
+(library
+ (name tiny_kernel_audio)
+ (wrapped false)
+ (modules TinyKernelAudio)
  (libraries tiny_host_memory))

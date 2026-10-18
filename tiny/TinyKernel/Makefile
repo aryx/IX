@@ -22,7 +22,8 @@
 #                     tiny-windows, two windows in it), play.events (square,
 #                     a game on ../TinyLibPlayground.ml, in a window: the
 #                     arrows) and tetris.events (tetris in a window: six
-#                     pieces moved, turned and dropped) and calc.events
+#                     pieces moved, turned and dropped; and its sounds,
+#                     the speaker's samples as a WAV, against their sum) and calc.events
 #                     (calc, on ../TinyLibGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
 #                     button held) and temp.events (temp, its two
@@ -42,7 +43,8 @@
 # (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
-# TinyKernelGraphics.ml and ../TinyKernel.ml, one program), end.tm last. Its
+# TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml and
+# ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
@@ -86,7 +88,7 @@ ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
 
 all: $(O)/boot.img
 
-$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml ../TinyKernel.ml
+$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
 	$(TML) -tm -o $@ $^
 
@@ -261,7 +263,9 @@ check: $(O)/boot.img
 	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
 	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
 	done
-	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.sum && echo "tiny-kernel: check ok"
+	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check.wav $(O)/boot.img > /dev/null
+	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/tetris.wav.cksum $(O)/check.sum || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check.wav)"; exit 1; }
+	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.wav $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:
 	rm -rf $(O)

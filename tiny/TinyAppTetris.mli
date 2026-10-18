@@ -54,7 +54,8 @@
  * What is dropped: the shadow showing where the piece would land,
  * holding a piece aside, wall kicks further than one cell to either
  * side, dealing the seven pieces as a bag, a pause, high scores, and
- * sounds.
+ * the music (its sounds are m-ix's: a piece landed, rows gone, four at
+ * once, a level, the game over; [sound] says which from two models).
  *
  * Exercises:
  * - the shadow; a pause; the bag of seven;
@@ -98,6 +99,9 @@ type model = { board : board; piece : piece; wait : int; over : bool }
 
 (* The game, for TinyLibPlayground's run *)
 val game : model TinyLibPlayground.game
+
+(* the sounds of a change, from a model to the next *)
+val sound : model -> model -> TinyLibPlayground.sound list
 
 (* a piece's four cells in the well: a column and a row each *)
 val cells : piece -> (int * int) list

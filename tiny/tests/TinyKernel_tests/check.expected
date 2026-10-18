@@ -14,6 +14,7 @@ $ bigmem: 3000000 bytes kept
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ hi
 [
+audio
 basename
 bigmem
 calc
@@ -129,13 +130,13 @@ tail
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % -  25   229612 /cat
--   2   225000 /editor
--   2   225000 /emacs
+-   2   225100 /editor
+-   2   225100 /emacs
 -   1    70364 /ping
 -  25   229612 /utils
-%      51     204    1070 f
-     51     204    1070
-     51     204    1070
+%      52     208    1092 f
+     52     208    1092
+     52     208    1092
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -152,8 +153,8 @@ heL0 w0rLd
 added
 ?changed files
 % -   2   200424 /ed
--   2   225000 /editor
--   2   225000 /emacs
+-   2   225100 /editor
+-   2   225100 /emacs
 -   2   200424 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne

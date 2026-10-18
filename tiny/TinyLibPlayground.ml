@@ -32,12 +32,20 @@ let fat_bytes s =
   let rec join l = match l with [] -> "" | [ x ] -> x | l -> join (pairs l) in
   join (pieces 0)
 
+(* a sound: a wave, a pitch from hz to to_hz, so many milliseconds, a
+ * volume falling to nothing (TinyKernelAudio.mli) *)
+type wave = Square | Triangle | Sawtooth | Noise
+type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
+
 (* a game: its picture's size; its first model, from a seed; the model
  * as shapes (the first ones under the next; the first of all is the
  * ground, below); the model after a key
  * (its byte: the arrows are 128 to 131, up, down, left, right), and
- * after a frame *)
-type 'm game = { width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm }
+ * after a frame; the sounds of a change, from a model to the next *)
+type 'm game = {
+  width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm;
+  sound : 'm -> 'm -> sound list;
+}
 
 (* Random numbers for a game's model, which keeps the state: the state
  * after s, a number from 1 to m - 1 (use it modulo what is wanted).
@@ -104,6 +112,20 @@ let same shown shapes =
   | _ -> shown = shapes
 
 (*****************************************************************************)
+(* The sound *)
+(*****************************************************************************)
+
+(* a sound as tiny-kernel's /audio takes it, a message
+ * (TinyKernelAudio.mli): s, the wave, the pitch from and to, the
+ * milliseconds, the volume *)
+let sound_message snd =
+  msg 's' [ (match snd.wave with Square -> 0 | Triangle -> 1 | Sawtooth -> 2 | Noise -> 3); snd.hz; snd.to_hz; snd.ms; snd.volume ]
+
+(* where they are played: tiny-kernel's speaker, -1 when there is none *)
+let speaker = ref (-1)
+let play sounds = if !speaker >= 0 && sounds <> [] then ignore (u_write !speaker (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))
+
+(*****************************************************************************)
 (* The loop *)
 (*****************************************************************************)
 
@@ -123,6 +145,7 @@ let period = 13
 let run g =
   let keys = Array.make 1 0 in
   let rec loop model seen shown next =
+    if model != seen then play (g.sound seen model);
     let shapes = if model != seen then g.view model else shown in
     if not (same shown shapes) then show g shown shapes;
     if u_ready keys 1 next = 0 then begin
@@ -134,6 +157,7 @@ let run g =
     else loop (g.frame model) model shapes (if u_ticks () > next + period then u_ticks () + period else next + period)
   in
   put (d_image picture 0 0 g.width g.height 0 ^ d_image ground 0 0 g.width g.height 0);
+  speaker := u_open "/audio" 1;
   let first = g.init (u_ticks ()) in
   let shapes = g.view first in
   show g [] shapes;

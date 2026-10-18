@@ -146,4 +146,30 @@ let key k m =
   end
   else m
 
-let game = { width = 288; height = 336; init = start; view; key; frame }
+(*****************************************************************************)
+(* The sounds *)
+(*****************************************************************************)
+
+(* m-ix's Tetris's (games/puzzle/Tetris.ml, its sfxr numbers), as few
+ * numbers: a piece landed, a thud; rows gone, a coin's two notes (G and
+ * the C above); four at once, C E G C; a level, a slide up; the game
+ * over, a slide down *)
+let note hz ms = { wave = Square; hz; to_hz = hz; ms; volume = 40 }
+let landed = [ { wave = Square; hz = 120; to_hz = 60; ms = 80; volume = 50 } ]
+let cleared = [ note 784 60; note 1047 200 ]
+let four = [ note 523 50; note 659 50; note 784 50; note 1047 400 ]
+let level_up = [ { wave = Square; hz = 300; to_hz = 1200; ms = 300; volume = 40 } ]
+let game_over = [ { wave = Triangle; hz = 440; to_hz = 80; ms = 700; volume = 90 } ]
+
+(* what changed: the board, when a piece landed (or a game began) *)
+let sound was m =
+  if m.board == was.board || was.over then []
+  else if m.over then game_over
+  else
+    let rows = m.board.rows - was.board.rows in
+    if rows = 4 then four
+    else if rows > 0 && m.board.rows / 10 > was.board.rows / 10 then level_up
+    else if rows > 0 then cleared
+    else landed
+
+let game = { width = 288; height = 336; init = start; view; key; frame; sound }

@@ -55,6 +55,10 @@ let mouse_dev = -4
  * there is a wire), and a packet's place in memory, below the heap *)
 let net_dev = -48
 let net_buf = 0x4f0000
+(* the speaker's word (its ring's address written, the samples played
+ * read), and its ring, in the megabytes nothing else uses *)
+let speaker_dev = -52
+let ring_at = 0xc00000
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -78,7 +82,7 @@ let halt status = poke halt_dev status
  * address, its size) until it is written: the programs, a megabyte of
  * them, are then not the collector's to copy at each collection (old:
  * each a string, Data; a collection was 3 million instructions) *)
-type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer
+type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer | Speaker
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
@@ -90,7 +94,7 @@ type pipe = { mutable buf : string; mutable readers : int; mutable writers : int
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call | Voice of voice
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
 
@@ -112,6 +116,10 @@ and link = { peer : string; lid : int; mutable asked : int; mutable heard : stri
  * again; a read gives one whole, 0 when the other end is done; and its
  * descriptors, the last one's close saying the end *)
 and call = { il : il; mutable callers : int }
+
+(* a voice of the speaker (an open of /audio): where in the samples its
+ * next one goes *)
+and voice = { mutable ahead : int }
 
 let root = Dir (ref [])
 
@@ -154,7 +162,7 @@ let contents node =
   match node with
   | Data d -> !d
   | Rom (at, n) -> k_string at n
-  | Tty | Screen | Pointer -> ""
+  | Tty | Screen | Pointer | Speaker -> ""
   | Dir d ->
       List.fold_left (fun acc (name, n) ->
         let t, size = match n with Dir _ -> 1, 0 | Data d -> 2, String.length !d | Rom (_, n) -> 2, n | _ -> 3, 0 in
@@ -316,6 +324,31 @@ let alarm = ref 0
 (* the machine's time (k_clock's 30 bits) at the last tick counted *)
 let counted = ref 0
 
+(* The speaker (plan_tiny_audio.md): tiny-machine plays the ring, 8,192
+ * samples, 8,000 a second, and silences what it played. Each open of
+ * /audio is a voice: a program writes messages, each a sound
+ * (TinyKernelAudio.mli), which the kernel makes into the ring, added to
+ * what is there already, so two programs are heard at once and neither
+ * waits for the other. A voice's sounds follow one another: the next
+ * one goes where the last ended, or, when the speaker passed it, a
+ * little ahead of the speaker ([lead], 5 ms, more than a write takes to
+ * start); a write waits until all its sounds fit, a ring (a second)
+ * ahead of the speaker at most. *)
+let ring = 8192
+let lead = 40
+let played () = peek speaker_dev
+let speak v sounds =
+  let now = played () in
+  if (v.ahead - now) land 0x3fffffff > ring then v.ahead <- (now + lead) land 0x3fffffff;
+  let total = List.fold_left (fun acc (_, _, _, n, _) -> acc + n) 0 sounds in
+  if total > ring - ((v.ahead - now) land 0x3fffffff) then false
+  else begin
+    List.iter (fun (wave, hz, to_hz, n, volume) ->
+      mix ring_at ring v.ahead wave hz to_hz n volume;
+      v.ahead <- (v.ahead + n) land 0x3fffffff) sounds;
+    true
+  end
+
 (*****************************************************************************)
 (* Reads and writes: Some n done, None must wait *)
 (*****************************************************************************)
@@ -358,7 +391,7 @@ let read f a n =
         pi.buf <- String.sub pi.buf k (String.length pi.buf - k);
         Some k
       end
-  | Writer _ | Draw _ | Post _ -> Some (-1)
+  | Writer _ | Draw _ | Post _ | Voice _ -> Some (-1)
   (* what was last written, once; its end when no writer is left *)
   | Peek b ->
       if b.fresh then (let k = min n (String.length b.last) in b.fresh <- false; k_blit b.last 0 a k; Some k)
@@ -420,6 +453,13 @@ let write f a n =
   (* messages, whole; a bad one is said on the console, the write -1 *)
   | Draw d -> (try messages d.conn (k_string a n); Some n with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
   | Post b -> b.last <- k_string a n; b.fresh <- true; Some n
+  (* sounds, whole, when they fit in the ring (else a look again in 10
+   * ms); a bad one, or more than a ring, -1 *)
+  | Voice v ->
+      (match (try Some (sounds (k_string a n)) with Bad_sound -> None) with
+       | Some l when List.fold_left (fun acc (_, _, _, k, _) -> acc + k) 0 l <= ring ->
+           if speak v l then Some n else (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4; None)
+       | _ -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)
 
 (* whether a read would not wait *)
@@ -568,6 +608,7 @@ let sys_open p =
     | Tty -> Console
     | Screen -> Draw { conn = connect screen font; refs = 1 }
     | Pointer -> Peek mouse
+    | Speaker -> Voice { ahead = (played () + lead) land 0x3fffffff }
     | _ -> Open { node = node; off = 0; writes = writes }))
 
 let sys_close p =
@@ -890,7 +931,9 @@ let () =
   counted := k_clock ();
   k_timer tick;
   load (k_end ());
-  (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer ] | _ -> ());
+  (match root with Dir d -> d := !d @ [ "console", Tty; "draw", Screen; "mouse", Pointer; "audio", Speaker ] | _ -> ());
+  k_zero ring_at ring;
+  poke speaker_dev ring_at;
   puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for " ^ string_of_int nslots ^ " processes\n");
   (* the first process: /sh, the console its 0, 1 and 2; and for the
    * programs it runs, which inherit them, the screen its 3 (a

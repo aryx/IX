@@ -401,7 +401,7 @@ let run image disk www =
   let machine = ref None in
   let give after packet = Option.iter (fun mc -> TinyMachineDevices.net_give mc ~after packet) !machine in
   let peer = TinyMachinePeer.create ~give ~said:wire_said ~document:(peer_document www) ~store ~outside:None in
-  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open ~send:(Some (TinyMachinePeer.send peer)) ~disk ~events:None image in
+  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open ~send:(Some (TinyMachinePeer.send peer)) ~hear:ignore ~disk ~events:None image in
   machine := Some mc;
   (* the page's button: the peer's next packet is lost *)
   let button = element "lose" in

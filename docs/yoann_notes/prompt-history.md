@@ -37271,3 +37271,19 @@ Claude asked Yoann for a yes or no before touching the shared dune file.
 **Claude (summary):**
 
 Claude said the dune file had no changes from other sessions, so it merged executables sharing libraries into shared stanzas. Claude noticed another session was editing `TinyMachineDevices`, so it committed only `dune` and the prompt history. Yoann's reply "yes" most likely points to the commit step, so the commit of just `dune` and the prompt history is the focus.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 06:52
+
+**Yoann:**
+
+> resume
+
+**Claude (summary):**
+
+Claude added a kernel `/audio` device, with each open becoming a voice mixed into the ring.
+Claude wrote TinyKernelAudio.ml as the kernel's synthesizer, tested on the host like TinyKernelGraphics.
+Claude switched the playground to send short messages instead of raw samples, dropping the top-level join.
+Claude made host tiny-tetris on SDL build its samples with the kernel's own TinyKernelAudio synthesizer.
+Claude checked tetris's sounds by WAV sum in `make check`, then updated the docs and removed the comparison worktree.

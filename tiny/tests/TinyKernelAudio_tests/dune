@@ -1,0 +1,5 @@
+; TinyKernelAudio.ml's test on the host (TinyKernelAudio_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_kernel_audio tiny_host_memory tiny_lib_draw))

@@ -1,0 +1,15 @@
+square 1000 Hz: 80 samples, 19 crossings, largest 80, last -1, after 0
+slide, first half: 400 samples, 74 crossings, largest 98, last 50, after 50
+slide, second half: 400 samples, 122 crossings, largest 49, last 0, after 0
+triangle 440 Hz: 800 samples, 88 crossings, largest 93, last 0, after 0
+sawtooth 440 Hz: 800 samples, 88 crossings, largest 95, last 0, after 0
+noise: 800 samples, 96 crossings, largest 87, last 0, after 0
+twice the square: 80 samples, 19 crossings, largest 128, last -2, after 0
+round the ring: 0 0 5 9 11 -5 0
+message: wave 0, 784 to 784 Hz, 480 samples, volume 40
+message: wave 1, 440 to 80 Hz, 5600 samples, volume 90
+cut short: bad
+another letter: bad
+5,000 Hz: bad
+two seconds: bad
+nothing: read

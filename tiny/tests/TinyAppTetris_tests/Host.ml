@@ -3,7 +3,8 @@
 
 (* TinyAppTetris.ml on the host, by OCaml, with no machine: games played
  * by the game's own functions, from a seed and a script of keys and
- * frames, the well printed as text after each step (its rules); then
+ * frames, the well printed as text after each step (its rules), and
+ * the sounds a step makes; then
  * the last model's picture, by TinyLibPlayground.ml and TinyKernelGraphics.ml,
  * written as tiny-machine -screen writes it.
  * usage: Host.exe font1.bin out.ppm *)
@@ -28,15 +29,25 @@ let print (m : model) =
 let play seed script =
   Printf.printf "seed %d: %s\n" seed script;
   let m = ref (game.init seed) in
+  (* a step's sounds, said after it: each one's pitches and length *)
+  let step f =
+    let was = !m in
+    m := f was;
+    match game.sound was !m with
+    | [] -> ()
+    | sounds ->
+        print_string "  heard:";
+        List.iter (fun (snd : TinyLibPlayground.sound) -> Printf.printf " %d-%d Hz %d ms" snd.hz snd.to_hz snd.ms) sounds;
+        print_newline () in
   List.iter (fun w ->
     match w with
-    | "l" -> m := game.key 130 !m
-    | "r" -> m := game.key 131 !m
-    | "u" -> m := game.key 128 !m
-    | "d" -> m := game.key 129 !m
-    | "s" -> m := game.key 32 !m
+    | "l" -> step (game.key 130)
+    | "r" -> step (game.key 131)
+    | "u" -> step (game.key 128)
+    | "d" -> step (game.key 129)
+    | "s" -> step (game.key 32)
     | "p" -> print !m
-    | n -> for _ = 1 to int_of_string n do m := game.frame !m done) (String.split_on_char ' ' script);
+    | n -> for _ = 1 to int_of_string n do step game.frame done) (String.split_on_char ' ' script);
   !m
 
 let () =

@@ -8,7 +8,8 @@
  *     tiny-ml -tm -o tetris.tm calls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyAppTetris.ml tetris.ml
  *     (the last one line: let () = run game)
  *
- * The main idea: {b a game is a value and three functions}. The value
+ * The main idea: {b a game is a value and three functions} (and a
+ * fourth for its sounds, below). The value
  * is the model, everything the game knows. [view] turns the model into
  * shapes; [key] and [frame] return the new model after a key press and
  * after a thirtieth of a second. A game has no loop, does no drawing,
@@ -35,7 +36,8 @@
  *       view = (fun n -> [ Rect (255, 64, 32);
  *                          Move (8, 8, Words (0, string_of_int n)) ]);
  *       key = (fun k n -> n + 1);
- *       frame = (fun n -> n) }
+ *       frame = (fun n -> n);
+ *       sound = (fun was n -> []) }
  *     let () = run game
  *
  * Its frame function returns its argument unchanged, so between two
@@ -55,6 +57,13 @@
  *   single message: nothing flickers, and a window system only has to
  *   show one rectangle. The first shape, the background, is kept
  *   already drawn in an image of its own.
+ * - {b The sounds}: a sound is what changed, as the picture is what
+ *   is: [sound] is given the model before and the model after, and
+ *   says what is heard (Tetris: rows that went, a piece that landed).
+ *   So a game keeps nothing of what it played, and its sounds are
+ *   tested as its rules are, with two models and no speaker. A sound
+ *   is written to tiny-kernel's /audio as a message of 11 bytes, and
+ *   the kernel makes its samples, mixed with the other programs'.
  * - {b The colours}: a shape's colour is a byte, an index in Plan 9's
  *   colour table; the image the kernel needs for that colour is
  *   created the first time it is used.
@@ -63,8 +72,8 @@
  * coordinates under a transformation (move, scale, rotate, fade; here
  * a shape is in pixels, at integer positions, with y going down from
  * the top left corner of the window); circles, polygons and images;
- * text in several sizes (the machine has a single 8x16 font); sounds;
- * the mouse; subscriptions and commands (here a game receives every
+ * text in several sizes (the machine has a single 8x16 font); music
+ * (a sound is a beep: no tune, no instrument); the mouse; subscriptions and commands (here a game receives every
  * key and every frame); time taken from the host (here a frame is 13
  * kernel ticks, which count machine instructions); and multiple
  * platforms (there is only one: the file descriptor the program draws
@@ -137,9 +146,21 @@ val char_width : int -> int
 val char_height : int -> int
 val overhang : int -> int
 
+(* A sound: sfxr's recipe (lib_audio's Sfx.mli) cut to five numbers, a
+ * wave, a pitch going from hz to to_hz (at most 4,000), a length in
+ * milliseconds (at most 1,000), a volume (0 to 127), down to nothing at
+ * its end *)
+type wave = Square | Triangle | Sawtooth | Noise
+type sound = { wave : wave; hz : int; to_hz : int; ms : int; volume : int }
+
 (* a game: its window's size, its first model from a seed, the model as
- * shapes, the model after a key and after a frame *)
-type 'm game = { width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm }
+ * shapes, the model after a key and after a frame; and the sounds of a
+ * change, from the model before to the model after (played one after
+ * the other) *)
+type 'm game = {
+  width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm;
+  sound : 'm -> 'm -> sound list;
+}
 
 (* The program of a game: its loop, with no end (a key or the next
  * frame's time waited for, the picture drawn when the shapes are
@@ -148,6 +169,11 @@ val run : 'm game -> 'a
 
 (* the number after a seed, 1 to 2^30 - 36 (Lehmer's generator) *)
 val random : int -> int
+
+(* a sound as tiny-kernel's /audio takes it: a message (s, then the
+ * five numbers, TinyKernelAudio.mli), which the kernel makes into
+ * samples *)
+val sound_message : sound -> string
 
 (* a shape drawn in an image, its corner at (x, y): messages gathered,
  * which [flush] writes (TinyLibGUI's, which draws a widget and not a

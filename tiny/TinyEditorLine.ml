@@ -153,8 +153,7 @@ let chain () : chain option =
   let first = simple () in
   let rec steps () =
     match skipbl () with
-    | '+' -> incr ip; let s = later (simple ()) in (Fwd, s) :: steps ()
-    | '-' -> incr ip; let s = later (simple ()) in (Back, s) :: steps ()
+    | ('+' | '-') as c -> incr ip; let s = later (simple ()) in ((if c = '+' then Fwd else Back), s) :: steps ()
     (* 3/re/ is 3+/re/: the + is implied *)
     | _ -> (match later (simple ()) with Some s -> (Fwd, Some s) :: steps () | None -> [])
   in
@@ -165,8 +164,7 @@ let chain () : chain option =
 let rec compound () : addr option =
   let left = chain () in
   match skipbl () with
-  | ',' -> incr ip; Some (Range (Comma, left, compound ()))
-  | ';' -> incr ip; Some (Range (Semi, left, compound ()))
+  | (',' | ';') as c -> incr ip; Some (Range ((if c = ',' then Comma else Semi), left, compound ()))
   | _ -> (match left with Some c -> Some (Chain c) | None -> None)
 
 let rec parse () : cmd option =

@@ -175,6 +175,10 @@ val random : int -> int
  * samples *)
 val sound_message : sound -> string
 
+(* samples as /audio takes them (a byte each, signed, 8,000 a second;
+ * no more than 8,192): a message too (p, how many, then them) *)
+val samples_message : string -> string
+
 (* a shape drawn in an image, its corner at (x, y): messages gathered,
  * which [flush] writes (TinyLibGUI's, which draws a widget and not a
  * picture) *)

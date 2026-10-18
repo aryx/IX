@@ -26,11 +26,13 @@
  *         0    ms
  *
  * Why not samples written by the program, as Plan 9's /dev/audio and
- * m-ix's take them: tiny-ml has no Bytes, and a string of samples was
- * a string and a cons for each, 2,750 instructions a sample, the 0.7 s
- * of Tetris's game over two seconds of an 8 MHz machine. Here a sample
- * is made where it is played, a few instructions and no allocation,
- * and a sound crosses a pipe as 11 bytes, not 5,600.
+ * m-ix's take them: a game's sound is a recipe, and made by tiny-ml's
+ * code it was 2,750 instructions a sample (before tiny-ml had Bytes: a
+ * string and a cons for each), the 0.7 s of Tetris's game over two
+ * seconds of an 8 MHz machine. Here a sample is made where it is
+ * played, a few instructions and no allocation, and a sound crosses a
+ * pipe as 11 bytes, not 5,600. Samples are a message too (`p`), for
+ * what is no recipe: a WAV played (TinyPlay.ml).
  *
  * cs-history:
  * This is a sound chip's bargain: the Atari 2600's TIA (1977), General
@@ -53,8 +55,16 @@ val per_ms : int
  * sawtooth, 3 noise; the pitch from hz to to_hz, a volume 0 to 127. *)
 val mix : int -> int -> int -> int -> int -> int -> int -> int -> unit
 
-(* The sounds of messages, each `s wave hz to_hz ms volume`: (wave, hz,
- * to_hz, samples, volume) each; Bad_sound when one is not a whole
- * message or says something out of range *)
+(* A message's sound: a tone (wave, hz, to_hz, samples, volume, as
+ * [mix]'s), or samples, a byte each, signed, 8,000 a second (`p n`
+ * then the n bytes, as /draw's row of pixels: what is no recipe, a
+ * file's sound); its length in samples; added to a ring as [mix] adds *)
+type sound = Tone of int * int * int * int * int | Samples of string
+val sound_length : sound -> int
+val mix_sound : int -> int -> int -> sound -> unit
+
+(* The sounds of messages, each `s wave hz to_hz ms volume` or `p n`
+ * and n samples; Bad_sound when one is not a whole message or says
+ * something out of range *)
 exception Bad_sound
-val sounds : string -> (int * int * int * int * int) list
+val sounds : string -> sound list

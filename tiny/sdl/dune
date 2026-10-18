@@ -27,6 +27,7 @@
 (copy_files# ../TinyKernel/user/tetris.ml)
 (copy_files# ../TinyKernel/user/www.ml)
 (copy_files# ../TinyKernel/user/troff.ml)
+(copy_files# ../TinyKernel/user/play.ml)
 
 (executable
  (name office)
@@ -62,6 +63,13 @@
  (package ix)
  (modules troff)
  (libraries tiny_troff tiny_lib_gui tiny_host_calls_sdl))
+
+(executable
+ (name play)
+ (public_name tiny-play)
+ (package ix)
+ (modules play)
+ (libraries tiny_play tiny_lib_gui tiny_host_calls_sdl))
 
 (executable
  (name tetris)

@@ -5,7 +5,7 @@
 open Tsdl
 
 type event = Quit | At of int * int | Button of int * bool | Key of int * bool | Wheel of int
-type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit }
+type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit; queued : unit -> int }
 
 let key_byte usage ~shift ~ctrl =
   let plain = "abcdefghijklmnopqrstuvwxyz1234567890\n\027\b\t -=[]\\\000;'`,./"
@@ -103,4 +103,5 @@ let create ~title =
           String.iteri (fun i c -> Bigarray.Array1.unsafe_set ba i (let v = Char.code c in if v > 127 then v - 256 else v)) samples;
           ignore (Sdl.queue_audio d ba)
         end in
-  { present; poll; cursor; play }
+  let queued () = match Lazy.force device with Some d -> Sdl.get_queued_audio_size d | None -> 0 in
+  { present; poll; cursor; play; queued }

@@ -23,7 +23,8 @@
 #                     a game on ../TinyLibPlayground.ml, in a window: the
 #                     arrows) and tetris.events (tetris in a window: six
 #                     pieces moved, turned and dropped; and its sounds,
-#                     the speaker's samples as a WAV, against their sum) and calc.events
+#                     the speaker's samples as a WAV, against their sum;
+#                     and play's, /examples/korobeiniki.wav played) and calc.events
 #                     (calc, on ../TinyLibGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
 #                     button held) and temp.events (temp, its two
@@ -79,7 +80,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office troff mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www
+PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -124,7 +125,7 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 # mlsys.c, TinyML's runtime and the system calls as ML's externals,
 # which has the heap from 384 KB (windows, tiny-windows:
 # ../TinyWindows.ml, after ../TinyLibDraw.ml)
-ML = windows bigmem www square tetris calc temp rc utils ed emacs office troff
+ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff
 MLBINS = windows square tetris calc temp rc utils ed emacs office troff
 $(patsubst %,$(O)/user/%.tm,$(ML)):
 	@mkdir -p $(@D)
@@ -199,6 +200,15 @@ $(O)/user/office.tm: $(OFFICE)
 TROFF = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml ../TinyTroff.ml user/troff.ml
 $(O)/user/troff.tm: $(TROFF)
 
+# play (../TinyPlay.ml, a WAV file to /audio; user/play.ml, the few
+# lines between), linked as an a.out that asks for 4 MB: the file is
+# read whole into its heap
+PLAY_WAV = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyPlay.ml user/play.ml
+$(O)/user/play.tm: $(PLAY_WAV)
+$(O)/bin/play: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/play.tm
+	@mkdir -p $(@D)
+	$(CPU) -a 4 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/play.tm
+
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
 $(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
@@ -218,8 +228,10 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # t6 step kernel's: steps/t6/user/) and two in OCaml, which emacs shows in colors (emacs
 # /examples/emacs.ml: the editor around the editor); a page of the
 # office's, which troff prints (office /examples/report.ixd, troff -h
-# /examples/report.ixd)
-EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd
+# /examples/report.ixd); a sound, which play plays (play
+# /examples/korobeiniki.wav: tetris's tune, its first four bars, made by
+# m-ix's mini-play, at 11,025 samples a second in 16 bits)
+EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav
 
 $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	cp $(O)/kernel.img $@
@@ -251,6 +263,7 @@ check: $(O)/boot.img
 	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
 	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img >> $(O)/check.out
 	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; troff -p /examples/report.ixd > r.pdf; wc r.html r.pdf; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out
@@ -266,6 +279,8 @@ check: $(O)/boot.img
 	done
 	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check.wav $(O)/boot.img > /dev/null
 	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/tetris.wav.cksum $(O)/check.sum || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check.wav)"; exit 1; }
+	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check.wav $(O)/boot.img > /dev/null
+	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/korobeiniki.wav.cksum $(O)/check.sum || { echo "tiny-kernel: play: other sounds ($(O)/check.wav)"; exit 1; }
 	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.wav $(O)/check.sum && echo "tiny-kernel: check ok"
 
 clean:

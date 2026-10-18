@@ -185,12 +185,17 @@ let u_write (fd : int) (s : string) : int =
         | Some (Writing (_, b)) -> Buffer.add_string b s
         | Some Speaker ->
             (* each sound made by the kernel's TinyKernelAudio, in a ring of
-             * TinyMemory's of its own, then played *)
+             * TinyMemory's of its own, then played when a quarter of a
+             * second waits at most (TinyMachineSDL's play drops what comes
+             * past half a second): tiny-play, a file's samples, is paced so,
+             * as tiny-kernel paces a voice a second ahead *)
             (try
-               List.iter (fun (wave, hz, to_hz, n, volume) ->
+               List.iter (fun snd ->
+                 let n = TinyKernelAudio.sound_length snd and d = Lazy.force display in
                  Bytes.fill TinyMemory.mem ring_at 8192 '\000';
-                 TinyKernelAudio.mix ring_at 8192 0 wave hz to_hz n volume;
-                 (Lazy.force display).play (Bytes.sub_string TinyMemory.mem ring_at n)) (TinyKernelAudio.sounds s)
+                 TinyKernelAudio.mix_sound ring_at 8192 0 snd;
+                 while d.queued () > 2000 do Unix.sleepf 0.02 done;
+                 d.play (Bytes.sub_string TinyMemory.mem ring_at n)) (TinyKernelAudio.sounds s)
              with TinyKernelAudio.Bad_sound -> ())
         | Some (Asking b) ->
             Buffer.add_string b s;
@@ -201,7 +206,13 @@ let u_write (fd : int) (s : string) : int =
 
 let u_open (name : string) (flags : int) : int =
   let fd = !next in
-  if name = "/audio" then (Hashtbl.replace files fd Speaker; incr next; fd)
+  if name = "/audio" then begin
+    (* what was written is heard to its end, as tiny-kernel's speaker
+     * plays on after a program ends *)
+    if not (Hashtbl.fold (fun _ f seen -> seen || f = Speaker) files false) then
+      at_exit (fun () -> while (Lazy.force display).queued () > 0 do Unix.sleepf 0.05 done);
+    Hashtbl.replace files fd Speaker; incr next; fd
+  end
   else if flags land 1 <> 0 then (Hashtbl.replace files fd (Writing (name, Buffer.create 4096)); incr next; fd)
   else if Sys.file_exists name && not (Sys.is_directory name) then (Hashtbl.replace files fd (Reading (ref (In_channel.with_open_bin name In_channel.input_all))); incr next; fd)
   else -1

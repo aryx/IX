@@ -1,0 +1,5 @@
+; TinyPlay.ml's test on the host (TinyPlay_test.sh)
+(executable
+ (name Host)
+ (modules Host)
+ (libraries tiny_play))

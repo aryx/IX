@@ -8,7 +8,10 @@ twice the square: 80 samples, 19 crossings, largest 128, last -2, after 0
 round the ring: 0 0 5 9 11 -5 0
 message: wave 0, 784 to 784 Hz, 480 samples, volume 40
 message: wave 1, 440 to 80 Hz, 5600 samples, volume 90
+message: 3 samples, 1 127 255
+samples added: 127 0
 cut short: bad
+samples cut short: bad
 another letter: bad
 5,000 Hz: bad
 two seconds: bad

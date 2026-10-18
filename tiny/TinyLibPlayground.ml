@@ -121,6 +121,10 @@ let same shown shapes =
 let sound_message snd =
   msg 's' [ (match snd.wave with Square -> 0 | Triangle -> 1 | Sawtooth -> 2 | Noise -> 3); snd.hz; snd.to_hz; snd.ms; snd.volume ]
 
+(* samples, a byte each, signed, 8,000 a second, as /audio takes them:
+ * p, how many, then them *)
+let samples_message s = msg 'p' [ String.length s ] ^ s
+
 (* where they are played: tiny-kernel's speaker, -1 when there is none *)
 let speaker = ref (-1)
 let play sounds = if !speaker >= 0 && sounds <> [] then ignore (u_write !speaker (List.fold_left (fun acc snd -> acc ^ sound_message snd) "" sounds))

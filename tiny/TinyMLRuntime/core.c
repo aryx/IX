@@ -233,6 +233,39 @@ ml_string_sub(value s, value ofs, value len)
 	return r;
 }
 
+// bytes are strings that are changed: Bytes.set, the copy of
+// Bytes.to_string, Bytes.blit_string's
+value
+ml_bytes_set(value s, value i, value c)
+{
+	i = i >> 1;
+	if(i < 0 || i >= length(s))
+		fatal("Fatal error: out-of-bound access in array or string\n");
+	((uchar*)s)[i] = c >> 1;
+	return 1;
+}
+
+value
+ml_bytes_to_string(value s)
+{
+	return ml_string_sub(s, 1, ml_string_length(s));
+}
+
+value
+ml_bytes_blit_string(value src, value so, value dst, value d, value n)
+{
+	value i;
+
+	so = so >> 1;
+	d = d >> 1;
+	n = n >> 1;
+	if(n < 0 || so < 0 || so + n > length(src) || d < 0 || d + n > length(dst))
+		fatal("Fatal error: out-of-bound access in array or string\n");
+	for(i = 0; i < n; i++)
+		((uchar*)dst)[d + i] = ((uchar*)src)[so + i];
+	return 1;
+}
+
 value
 ml_concat(value a, value b)
 {

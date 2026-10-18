@@ -42,6 +42,7 @@ mv
 office
 paint
 ping
+play
 put
 pwd
 rc
@@ -129,14 +130,14 @@ tail
 % grep: no operand for `('
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ % -  25   229612 /cat
--   2   225100 /editor
--   2   225100 /emacs
+$ % -  25   230584 /cat
+-   2   226948 /editor
+-   2   226948 /emacs
 -   1    70364 /ping
--  25   229612 /utils
-%      52     208    1092 f
-     52     208    1092
-     52     208    1092
+-  25   230584 /utils
+%      53     212    1113 f
+     53     212    1113
+     53     212    1113
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -152,10 +153,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   200424 /ed
--   2   225100 /editor
--   2   225100 /emacs
--   2   200424 /sam
+% -   2   201396 /ed
+-   2   226948 /editor
+-   2   226948 /emacs
+-   2   201396 /sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
@@ -207,6 +208,10 @@ Total  800
     101     787    4543 total
 usage: troff [-h | -p] file
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ play: /nosuch: no such file, or empty
+$ play: /examples/report.ixd: not a WAV file
+$ usage: play file.wav
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first
 % notes

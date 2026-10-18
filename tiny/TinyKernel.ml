@@ -326,8 +326,8 @@ let counted = ref 0
 
 (* The speaker (plan_tiny_audio.md): tiny-machine plays the ring, 8,192
  * samples, 8,000 a second, and silences what it played. Each open of
- * /audio is a voice: a program writes messages, each a sound
- * (TinyKernelAudio.mli), which the kernel makes into the ring, added to
+ * /audio is a voice: a program writes messages, each a sound or
+ * samples (TinyKernelAudio.mli), which the kernel makes into the ring, added to
  * what is there already, so two programs are heard at once and neither
  * waits for the other. A voice's sounds follow one another: the next
  * one goes where the last ended, or, when the speaker passed it, a
@@ -340,12 +340,10 @@ let played () = peek speaker_dev
 let speak v sounds =
   let now = played () in
   if (v.ahead - now) land 0x3fffffff > ring then v.ahead <- (now + lead) land 0x3fffffff;
-  let total = List.fold_left (fun acc (_, _, _, n, _) -> acc + n) 0 sounds in
+  let total = List.fold_left (fun acc snd -> acc + sound_length snd) 0 sounds in
   if total > ring - ((v.ahead - now) land 0x3fffffff) then false
   else begin
-    List.iter (fun (wave, hz, to_hz, n, volume) ->
-      mix ring_at ring v.ahead wave hz to_hz n volume;
-      v.ahead <- (v.ahead + n) land 0x3fffffff) sounds;
+    List.iter (fun snd -> mix_sound ring_at ring v.ahead snd; v.ahead <- (v.ahead + sound_length snd) land 0x3fffffff) sounds;
     true
   end
 
@@ -457,7 +455,7 @@ let write f a n =
    * ms); a bad one, or more than a ring, -1 *)
   | Voice v ->
       (match (try Some (sounds (k_string a n)) with Bad_sound -> None) with
-       | Some l when List.fold_left (fun acc (_, _, _, k, _) -> acc + k) 0 l <= ring ->
+       | Some l when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring ->
            if speak v l then Some n else (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4; None)
        | _ -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)

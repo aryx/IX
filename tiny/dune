@@ -100,6 +100,14 @@
  (modules TinyTroff)
  (libraries tiny_office))
 
+; TinyPlay.ml, a WAV file played on tiny-kernel's speaker (play there,
+; tiny-play on the host: sdl/); its test decodes a file
+(library
+ (name tiny_play)
+ (wrapped false)
+ (modules TinyPlay)
+ (libraries tiny_lib_playground))
+
 ; TinyLibGUI.ml, what a program with buttons is written on, and
 ; TinyAppCalculator.ml and TinyAppTemperature.ml, tiny-kernel's calc and temp,
 ; on it

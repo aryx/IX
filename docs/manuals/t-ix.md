@@ -611,7 +611,7 @@ that wants the screen itself:
 | `/console` | the keys typed, as they come | the terminal |
 | `/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
 | `/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
-| `/audio` | | sounds, messages of 11 bytes (below), whole; waits until they fit a second ahead; a bad one answers -1 |
+| `/audio` | | sounds and samples, messages (below), whole; waits until they fit a second ahead; a bad one answers -1 |
 
 A connection (descriptor 3, or an open of `/draw`) has its images by
 numbers of the program's, 0 the one it was given, freed when its last
@@ -639,9 +639,21 @@ makes them into the speaker's ring
 (`tiny/TinyKernel/TinyKernelAudio.ml`): a wave (0 a square, 1 a
 triangle, 2 a sawtooth, 3 noise), a pitch sliding from `hz` to `to_hz`
 (4,000 at most), `ms` milliseconds (1,000 at most), a volume from 0 to
-127 that falls to nothing at the end. Each open of `/audio` is a
-voice: its sounds follow one another, and what it makes is added to
-what the other voices made, so two programs are heard at once. For C, `libc/draw.h` and `draw.c` gather the messages
+127 that falls to nothing at the end. What is no recipe is samples:
+a message `p n` and the `n` bytes (8,000 a second, signed, 8,192 at
+most), as `/draw`'s row of pixels. Each open of `/audio` is a voice:
+its sounds follow one another, and what it makes is added to what the
+other voices made, so two programs are heard at once. The speaker
+plays on after a program ends, up to the second it was ahead.
+
+`play file.wav` (`tiny/TinyPlay.ml`) plays a WAV file: 8 or 16 bits,
+one channel or more, any rate up to 96,000, made the speaker's by
+taking the file's frame at each sample's time (exactly, Bresenham's
+way, no division a sample), the mean of two channels, its top byte; a
+block of 2,048 samples written when the last was taken, so the first
+is heard after a block.
+
+    play /examples/korobeiniki.wav      # tetris's tune, four bars, made by m-ix's mini-play For C, `libc/draw.h` and `draw.c` gather the messages
 (`d_fill`, `d_text`, `d_flush`...); `examples/paint.c` is a program of a
 page that waits for the mouse, the keys and the clock at once. For ML,
 `tiny/TinyLibDraw.ml` makes them.
@@ -860,11 +872,12 @@ and the clock are the host's; a dial to the wire's other end (port 70)
 is answered as tiny-machine answers it, a web page fetched by
 `tiny-machine-fetch`; a sound written to `/audio` is made by the
 kernel's own `TinyKernelAudio.ml` and played by SDL (one after the
-other, not mixed). The programs' own few lines in
+other, not mixed; a write waits while a quarter of a second is queued,
+and the program's end until all is heard). The programs' own few lines in
 `TinyKernel/user/` are compiled there as they are:
 
     tiny-office file      tiny-emacs file      tiny-calc      tiny-tetris
-    tiny-www OCaml        tiny-troff [-h | -p] file
+    tiny-www OCaml        tiny-troff [-h | -p] file          tiny-play file.wav
 
 `TINY_SCREEN=f` writes the window's screen to `f` (a PPM) when the
 program ends, and `SDL_VIDEODRIVER=dummy` runs one with no window;
@@ -880,13 +893,14 @@ fetch them. `make loc` does not count `tiny/sdl/`.
 | t6 | `make -C tiny/TinyKernel/steps/t6 check` |
 | TinyKernelGraphics.ml, on the host and on the machine | `tiny/tests/TinyKernelGraphics_test.sh` (`-window`: its picture shown) |
 | TinyKernelAudio.ml, sounds made into a ring (their crossings of zero, two at one place, the ring going round) and messages read, on the host | `tiny/tests/TinyKernelAudio_test.sh` |
+| TinyPlay.ml, WAV files made into the speaker's samples (the example, 8 bits in two channels, a chunk skipped, rates above and below, in blocks and at once), and files it does not play | `tiny/tests/TinyPlay_test.sh` |
 | TinyLibPlayground.ml, a game's model and picture on the host | `tiny/tests/TinyLibPlayground_test.sh` |
 | TinyAppTetris.ml, its rules and its sounds by scripts of keys, and its picture, on the host | `tiny/tests/TinyAppTetris_test.sh` |
 | TinyLibGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyLibGUI_test.sh` |
 | TinyOffice.ml, a document worked at by keys and the mouse (each part, the menus, the styles, the pages, the file), on the host and on tiny-cpu | `tiny/tests/TinyOffice_test.sh` |
 | TinyTroff.ml, a document as text, HTML and PDF, on the host and on tiny-cpu | `tiny/tests/TinyTroff_test.sh` |
 | TinyBrowser.ml, pages read into lines, however they are cut, on the host and on tiny-cpu | `tiny/tests/TinyBrowser_test.sh` |
-| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; tetris's sounds, a WAV's sum; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
+| TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; tetris's sounds and play's, a WAV's sum each; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,
 `wc`).

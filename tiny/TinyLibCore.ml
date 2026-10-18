@@ -70,6 +70,17 @@ external Array.length : 'a array -> int = "ml_array_length"
 external Array.get : 'a array -> int -> 'a = "ml_array_get"
 external Array.set : 'a array -> int -> 'a -> unit = "ml_array_set"
 external ml_string_sub : string -> int -> int -> string = "ml_string_sub"
+(* bytes: a string that can be changed, OCaml's; a string's own get
+ * and length, a string made, set, copied to a string, a string copied
+ * into it (old: none, and a
+ * string of samples was a string and a cons a byte: 2,750 instructions
+ * a byte, plan_tiny_audio.md) *)
+external Bytes.make : int -> char -> bytes = "ml_string_make"
+external Bytes.length : bytes -> int = "ml_string_length"
+external Bytes.get : bytes -> int -> char = "ml_string_get"
+external Bytes.set : bytes -> int -> char -> unit = "ml_bytes_set"
+external Bytes.to_string : bytes -> string = "ml_bytes_to_string"
+external Bytes.blit_string : string -> int -> bytes -> int -> int -> unit = "ml_bytes_blit_string"
 type 'a option = None | Some of 'a
 exception Match_failure
 exception Not_found

@@ -38,8 +38,14 @@ let () =
   Printf.printf "round the ring: %s\n" (String.concat " " (List.map (fun i -> string_of_int (sample i)) [ size - 3; size - 2; size - 1; 0; 1; 5; 6 ]));
   (* messages: two sounds, then bad ones *)
   let two = TinyLibDraw.msg 's' [ 0; 784; 784; 60; 40 ] ^ TinyLibDraw.msg 's' [ 1; 440; 80; 700; 90 ] in
-  List.iter (fun (w, a, b, n, v) -> Printf.printf "message: wave %d, %d to %d Hz, %d samples, volume %d\n" w a b n v) (TinyKernelAudio.sounds two);
+  List.iter (function
+    | TinyKernelAudio.Tone (w, a, b, n, v) -> Printf.printf "message: wave %d, %d to %d Hz, %d samples, volume %d\n" w a b n v
+    | TinyKernelAudio.Samples s -> Printf.printf "message: %d samples, %s\n" (String.length s) (String.concat " " (List.map (fun c -> string_of_int (Char.code c)) (List.of_seq (String.to_seq s))))) (TinyKernelAudio.sounds (two ^ TinyLibDraw.msg 'p' [ 3 ] ^ "\001\127\255"));
+  (* samples added to what is there: 100 + 100 kept at 127, -1 + 1 *)
+  clear (); TinyMemory.pokeb ring 100; TinyMemory.pokeb (ring + 1) 255;
+  TinyKernelAudio.mix_sound ring size 0 (TinyKernelAudio.Samples "\100\001");
+  Printf.printf "samples added: %d %d\n" (sample 0) (sample 1);
   List.iter (fun (name, m) ->
     Printf.printf "%s: %s\n" name (match TinyKernelAudio.sounds m with _ -> "read" | exception TinyKernelAudio.Bad_sound -> "bad"))
-    [ "cut short", String.sub two 0 15; "another letter", "x" ^ String.sub two 1 10; "5,000 Hz", TinyLibDraw.msg 's' [ 0; 5000; 440; 10; 40 ];
+    [ "cut short", String.sub two 0 15; "samples cut short", TinyLibDraw.msg 'p' [ 3 ] ^ "\001\002"; "another letter", "x" ^ String.sub two 1 10; "5,000 Hz", TinyLibDraw.msg 's' [ 0; 5000; 440; 10; 40 ];
       "two seconds", TinyLibDraw.msg 's' [ 0; 440; 440; 2000; 40 ]; "nothing", "" ]

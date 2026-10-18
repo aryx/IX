@@ -39,18 +39,39 @@ let mix ring size at wave hz to_hz n volume =
     amp := !amp - damp
   done
 
+(* a sound of a message: a tone (a wave, a pitch from and to, its
+ * samples, a volume), or samples *)
+type sound = Tone of int * int * int * int * int | Samples of string
+
+let sound_length snd = match snd with Tone (_, _, _, n, _) -> n | Samples s -> String.length s
+
+(* samples added to the ring as a tone's are *)
+let add_samples ring size at s =
+  for i = 0 to String.length s - 1 do
+    let r = ring + ((at + i) land (size - 1)) and b = peekb (ring + ((at + i) land (size - 1))) and x = Char.code s.[i] in
+    pokeb r (max (-128) (min 127 ((if b > 127 then b - 256 else b) + (if x > 127 then x - 256 else x))) land 255)
+  done
+
+let mix_sound ring size at snd =
+  match snd with
+  | Tone (wave, hz, to_hz, n, volume) -> mix ring size at wave hz to_hz n volume
+  | Samples s -> add_samples ring size at s
+
 exception Bad_sound
 
-(* a message is 11 bytes: s, then five numbers of 16 bits, the low byte
- * first (TinyLibDraw's) *)
+(* a tone's message is 11 bytes: s, then five numbers of 16 bits, the
+ * low byte first (TinyLibDraw's); samples' is p, their number, then
+ * them *)
 let sounds s =
   let num i = Char.code s.[i] + (256 * Char.code s.[i + 1]) in
   let rec from i =
     if i = String.length s then []
+    else if i + 3 <= String.length s && s.[i] = 'p' && i + 3 + num (i + 1) <= String.length s then
+      Samples (String.sub s (i + 3) (num (i + 1))) :: from (i + 3 + num (i + 1))
     else if i + 11 > String.length s || s.[i] <> 's' then raise Bad_sound
     else begin
       let wave = num (i + 1) and hz = num (i + 3) and to_hz = num (i + 5) and ms = num (i + 7) and volume = num (i + 9) in
       if wave > 3 || hz > 4000 || to_hz > 4000 || ms > 1000 || volume > 127 then raise Bad_sound;
-      (wave, hz, to_hz, ms * per_ms, volume) :: from (i + 11)
+      Tone (wave, hz, to_hz, ms * per_ms, volume) :: from (i + 11)
     end in
   from 0

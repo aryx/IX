@@ -30,8 +30,9 @@ type event = Quit | At of int * int | Button of int * bool | Key of int * bool |
  * green, blue). [poll ()]: the events since the last poll. [cursor n]:
  * the mouse's look, 0 the arrow, 1 a hand (over a link). [play
  * samples]: the machine's speaker's, a byte each (signed), 8,000 a
- * second, played after those before; the sound opened at the first. *)
-type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit }
+ * second, played after those before; the sound opened at the first.
+ * [queued ()]: the samples waiting to be played. *)
+type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit; queued : unit -> int }
 
 val create : title:string -> t
 

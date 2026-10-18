@@ -37303,3 +37303,19 @@ Claude explained that www would then link TinyLibPlayground and TinyLibGUI, adde
 Claude warned that www sits near its 384 KB code limit, so the size needed checking before committing.
 Claude then asked for a yes or no before changing the browser code.
 Earlier, Claude finished the A-category mkfile cleanup, committing A6 and noting a mini-mk comment-echo bug.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 07:19
+
+**Yoann:**
+
+> let's commit; no need for sound in the web page. let's support raw samples and have a tiny-play command that can play a wav file (that we can also add on the virtual disk as an example to test)
+
+**Claude (summary):**
+
+Claude committed df37e315 earlier, then added raw-sample support and the tiny-play WAV command.
+Claude confirmed its working-tree changes were its own, separate from the other session's commit 653413b1.
+Claude checked that its read_file change in TinyLibGUI.ml survived, so it could be staged alone.
+Claude re-verified that tiny-play matched tiny-kernel sample for sample and the tetris WAV kept its six landings.
+Claude left the full make check running in the background, waiting on its result before committing.

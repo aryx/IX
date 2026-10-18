@@ -1,7 +1,11 @@
 # Plan: sound in t-ix, a speaker and a sound chip in about 200 lines
 
 The author (2026-10-17): "now let's add audio to t-ix"; then "one of
-the first milestone could be TinyAppTetris playing sounds".
+the first milestone could be TinyAppTetris playing sounds"; then
+(2026-10-18) "let's commit; no need for sound in the web page. let's
+support raw samples and have a tiny-play command that can play a wav
+file (that we can also add on the virtual disk as an example to
+test)".
 
 m-ix has sound from one end to the other
 ([plan_audio.md](done/plan_audio.md), [notes_audio.md](../notes_audio.md)):
@@ -107,9 +111,8 @@ stations kept, and the rest dropped.
      (`SDL_AUDIODRIVER=disk`): 26 s of the session at 8 MHz, its
      3,762 sounding samples those of the WAV. Not heard by a person
      yet: notes_audio.md's E, *a sum is not an ear*.
-2. **The web page's sound**: TinyMachineWeb's `hear`, the samples to
-   Web Audio (an AudioBuffer a turn, scheduled one after the other,
-   with the window's margin). About 20 lines.
+2. **The web page's sound**: not done; the author: "no need for sound
+   in the web page" (TinyMachineWeb's `hear` is `ignore`).
 3. **Music**: tetris's theme, Korobeiniki. A tune is notes with their
    times; written as sounds to a voice of its own it is a stream that
    waits when a second ahead, so the playground needs to write it a
@@ -117,11 +120,49 @@ stations kept, and the rest dropped.
    keeps a voice's tune and makes it a tick at a time (a sequencer in
    the kernel: the chip's other half). To choose; a voice of two notes
    at once (the theme's bass) is a second voice.
-4. **Samples from a program**: a message `p n` and n bytes (as `/draw`'s
-   row of pixels), for what is not a recipe: a WAV played (`play
-   file`), a voice recorded. Needs the samples cheap on the program's
-   side, which is tiny-ml's Bytes (the general fix, in the runtime),
-   or a program in C.
+4. **Samples from a program, and play**. **Done (2026-10-18)**: `/audio`
+   takes a message `p n` and n samples (as `/draw`'s row of pixels),
+   added to the ring as a tone is (TinyKernelAudio's `Samples`);
+   `tiny/TinyPlay.ml` (about 50 lines of code) plays a WAV, `play` on
+   tiny-kernel (`TinyKernel/user/play.ml`, its few lines) and
+   `tiny-play` on the host; `/examples/korobeiniki.wav` on the boot
+   image, tetris's tune, its first four bars (6.4 s), made by m-ix:
+   `mini-play -c -s 6.4` of the ABC in games/puzzle/Tetris.ml, then
+   four frames of 44,100 a second averaged and the two channels mixed,
+   11,025 a second in 16 bits (141 KB), so play has a rate to convert.
+   Tests: TinyPlay_test.sh (the example, WAVs of other shapes, blocks
+   against the file at once, the files it refuses); make check plays the
+   example, its WAV against a sum, and play's three errors. Found on
+   the way:
+   - **tiny-ml has Bytes now** (TinyLibCore: `Bytes.make`, `get`, `set`,
+     `length`, `to_string`, `blit_string`; three functions in the
+     runtime's core.c), the general fix the step asked for: a block's
+     samples are 420 instructions each to make, the WAV's 51,200 about
+     21 million.
+   - **TinyLibGUI's read_file was 600 instructions a byte**: each piece
+     read was added to the text so far, a copy of all of it each time;
+     the WAV of 141 KB was 85 million instructions, 13 seconds of
+     silence before the first note. Now the pieces, then each copied
+     once into Bytes of their size: the program went from 108 million
+     instructions to 43, its first note after the shell's prompt. The
+     office, emacs and troff read their files by it too.
+   - The frame at each sample's time was first a step of rate / 8,000
+     in 4,096ths: truncated, it drifted half a frame within a block,
+     and half the samples were the frame beside. Bresenham's stepping
+     (a quotient and a remainder carried) is exact: the speaker's
+     51,200 samples are the file's frame at k * 11,025 / 8,000 each,
+     checked on the WAV tiny-machine wrote; tiny-play's, by SDL's disk
+     driver, are the same samples.
+   - The machine halts when the first shell reaches its input's end,
+     and the speaker with it: the second play was ahead was not heard.
+     make check says `sleep 2` after play.
+   - On the host, SDL's queue is the ring: a write waits while a
+     quarter of a second is queued (TinyMachineSDL's play drops past
+     half a second, the window's rule against falling behind, which
+     first dropped tiny-play's blocks), and the program's end waits
+     until all is heard (it ended after a second's writing first).
+   - ML programs are a kilobyte larger (core.c's three functions);
+     emacs and the editor 1.8 KB (read_file too).
 5. **Sound elsewhere**: a click for calc's buttons, a bell for the
    console's ^G, tiny-windows' windows each heard (nothing to do: every
    program opens `/audio` itself, the kernel mixes).

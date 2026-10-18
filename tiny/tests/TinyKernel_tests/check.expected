@@ -130,11 +130,11 @@ tail
 % grep: no operand for `('
 1
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
-$ % -  25   230584 /cat
+$ % -  25   231020 /cat
 -   2   226948 /editor
 -   2   226948 /emacs
 -   1    70364 /ping
--  25   230584 /utils
+-  25   231020 /utils
 %      53     212    1113 f
      53     212    1113
      53     212    1113

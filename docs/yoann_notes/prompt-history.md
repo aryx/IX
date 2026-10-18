@@ -37834,3 +37834,17 @@ Claude had also rebased onto main, recorded checksums, and fixed the empty "comm
 Claude said it was reading how the kernel handles traps so the debugger design fits what exists.
 Claude also planned to check whether m-ix already has a debugger twin before proposing anything new.
 Yoann's follow-up focuses on the tiny-machine context, so Claude's answer here was only a status line.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 15:47
+
+**Yoann:**
+
+> let's write the plan document
+
+**Claude (summary):**
+
+Claude said it would check how tiny-ml's `-tm` epilogue lays out the frame to settle the backtrace design.
+Claude then planned to write the document at `docs/plans/plan_tiny_debugger.md`.
+That plan was the only concrete step in the answer; nothing was written yet.

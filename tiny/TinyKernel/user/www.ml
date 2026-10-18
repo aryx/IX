@@ -4,9 +4,10 @@
 (* www, tiny-kernel's web browser: ../../TinyBrowser.ml's browse, on the
  * address given (its words joined, so that www Plan 9 from Bell Labs
  * needs no quotes). The Makefile gives tiny-ml ../libml/calls.ml,
- * ../../TinyLibStd.ml, ../../TinyLibDraw.ml and ../../TinyBrowser.ml
- * before this file, as one program, and links it as an a.out that asks
- * for 10 MB (tiny-cpu -a 10): a page's lines live in the heap. OCaml
+ * ../../TinyLibStd.ml, ../../TinyLibDraw.ml, ../../TinyLibPlayground.ml,
+ * ../../TinyLibGUI.ml and ../../TinyBrowser.ml before this file, as one
+ * program, and links it as an a.out that asks for 10 MB (tiny-cpu -a
+ * 10): a page's lines live in the heap. OCaml
  * compiles it too, for the host (tiny-www, ../../sdl/): its calls
  * TinyCalls's, a window's and the host's network.
  *

@@ -37287,3 +37287,19 @@ Claude wrote TinyKernelAudio.ml as the kernel's synthesizer, tested on the host 
 Claude switched the playground to send short messages instead of raw samples, dropping the top-level join.
 Claude made host tiny-tetris on SDL build its samples with the kernel's own TinyKernelAudio synthesizer.
 Claude checked tetris's sounds by WAV sum in `make check`, then updated the docs and removed the comparison worktree.
+
+------------------------------------------------------------------------
+
+## 2026-10-18 06:53
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude proposed replacing TinyBrowser's own `size` function with `TinyLibGUI.window_size`, saving about thirteen lines.
+Claude explained that www would then link TinyLibPlayground and TinyLibGUI, added to the kernel Makefile's WWW list and dune libraries.
+Claude warned that www sits near its 384 KB code limit, so the size needed checking before committing.
+Claude then asked for a yes or no before changing the browser code.
+Earlier, Claude finished the A-category mkfile cleanup, committing A6 and noting a mini-mk comment-echo bug.

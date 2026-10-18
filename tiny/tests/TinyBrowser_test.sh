@@ -47,7 +47,7 @@ done
 # On tiny-cpu. The runtime and main are linked first, then the program,
 # then the heap's arrays. In the other order, main would be too far
 # for the start's call to reach it (a jump reaches 32K words).
-if $TML -tm -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyBrowser.ml $T/Tm.ml \
+if $TML -tm -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyBrowser.ml $T/Tm.ml \
    && $TC -tm -o $W/tm.tm $T/tm.c && $TC -tm -o $W/heap.tm $T/heap.c && $TC -tm -o $W/libc.tm $L/libc.c \
    && $CPU -o $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm; then
   for p in $PAGES; do

@@ -147,7 +147,7 @@ $(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 # it), linked as an a.out that asks for 10 MB: a page's lines live in
 # its heap. Its code must stay under 384 KB, where mlsys.c's stack of
 # values starts.
-WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyBrowser.ml user/www.ml
+WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyBrowser.ml user/www.ml
 $(O)/user/www.tm: $(WWW)
 $(O)/bin/www: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
 	@mkdir -p $(@D)

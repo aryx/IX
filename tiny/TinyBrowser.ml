@@ -4,6 +4,7 @@
 (* See TinyBrowser.mli *)
 open TinyCalls
 open TinyLibDraw
+open TinyLibGUI
 
 (*****************************************************************************)
 (* Strings *)
@@ -1261,18 +1262,6 @@ let mouse sc x y buttons =
     if buttons land 16 <> 0 then scroll_by sc 48
   end
 
-(* The window's size in pixels, asked as emacs asks it: an ENQ (ASCII's
- * 5) printed, which tiny-windows answers in the window's mouse box, the
- * descriptor 4, as a mouse at (width, height) with the buttons -1. On
- * the console no one answers, and the screen is 640 by 480. *)
-let size () =
-  ignore (u_write 1 "\005");
-  let fds = Array.make 1 4 and until = u_ticks () + 200 in
-  let rec answer () =
-    if u_ready fds 1 until <> 4 then 640, 480
-    else (let s = u_read 4 12 in if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4 else answer ()) in
-  answer ()
-
 (* What a key does; false for q, which quits. While an address is typed
  * (after g), the keys are its characters, Enter goes, Escape gives up.
  * The arrows are 128 to 131 (up, down, left, right): up and down scroll
@@ -1302,7 +1291,7 @@ let key sc k =
       end
 
 let browse typed =
-  let w, h = size () in
+  let w, h = window_size () in
   let nav = { nv_address = ""; nv_wire = -1; nv_history = []; nv_goal = -1; nv_goal_id = ""; nv_pressed = false; nv_fetch = -1; nv_hover = false } in
   let sc = { sc_page = create (w / 8); sc_nav = nav; sc_typing = None; sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
              sc_got = 0; sc_state = "reading"; sc_msgs = [] } in

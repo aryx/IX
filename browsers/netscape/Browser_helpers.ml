@@ -78,5 +78,7 @@ let running : int list ref = ref []
 let run (caps : < Cap.fork; Cap.exec; Cap.wait; .. >) (command : string list) : unit =
   running := List.filter (fun pid -> match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !running;
   match command with
-  | prog :: args -> running := Procs.spawn caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
+  | prog :: args ->
+      Logs.info (fun m -> m "running %s" (String.concat " " command));
+      running := Procs.spawn caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
   | [] -> ()

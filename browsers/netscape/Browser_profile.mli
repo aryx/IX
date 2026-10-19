@@ -66,8 +66,9 @@ val load : < Cap.open_in; .. > -> dir:string -> t * Cookie.jar
 (* each file written, [dir] made if it is not there; cookies.txt for
  * its owner alone, being what signs in. Error says why not *)
 val save : < Cap.open_out; .. > -> dir:string -> t -> (unit, string) result
-(* the history and the bookmarks (Places); the history its owner's
- * alone, being where one went *)
+(* the history and the bookmarks (Places), each file written if it
+ * changed since [was]; the history its owner's alone, being where one
+ * went *)
 val load_places : < Cap.open_in; .. > -> dir:string -> Places.t
-val save_places : < Cap.open_out; .. > -> dir:string -> Places.t -> (unit, string) result
+val save_places : < Cap.open_out; .. > -> dir:string -> was:Places.t -> Places.t -> (unit, string) result
 val save_cookies : < Cap.open_out; .. > -> dir:string -> Cookie.jar -> (unit, string) result

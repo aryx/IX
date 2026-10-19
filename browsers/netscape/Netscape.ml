@@ -144,7 +144,7 @@
  * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
  * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
+ * usage: mini-netscape [-v] [url=address] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts
  *   print, and their errors, on the standard error; strict=on: a
  *   script that does not parse refused whole, a DOM method missing a
@@ -153,7 +153,9 @@
  *   connection a request; profile: where the cookies and the zooms are
  *   kept, the history and the bookmarks too, ~/.config/mini-netscape if
  *   not said, off for nowhere; window:
- *   the window's size at first, the one it had last if not said) *)
+ *   the window's size at first, the one it had last if not said; -v:
+ *   the files read and written, the addresses fetched and what came,
+ *   the programs run, on the standard error) *)
 
 module P = Playground
 
@@ -323,7 +325,7 @@ let saved (caps : < caps; .. >) (m : model) : model =
       let wrote =
         if now <> preferences then Some (Browser_profile.save caps ~dir now, (now, cookies, places))
         else if changes <> cookies && not (Tab.busy m.tab) then Some (Browser_profile.save_cookies caps ~dir (Cookie_jar.cookies m.jar), (preferences, changes, places))
-        else if m.places != places then Some (Browser_profile.save_places caps ~dir m.places, (preferences, cookies, m.places))
+        else if m.places != places then Some (Browser_profile.save_places caps ~dir ~was:places m.places, (preferences, cookies, m.places))
         else None
       in
       match wrote with
@@ -581,6 +583,7 @@ let helped (caps : < caps; .. >) (m : model) : model =
           (fun bytes ->
             let dir = try CapSys.getenv caps "TMPDIR" with Not_found -> "/tmp" in
             let path = Filename.concat dir (Printf.sprintf "mini-netscape-%d-%s" (Hashtbl.hash url) (Filename.basename (fst (Browser_url.split_query (fst (Browser_url.split_fragment url)))))) in
+            Logs.info (fun m -> m "writing %s, for %s" path (Browser_helpers.name rule));
             FS.write caps (Fpath.v path) bytes;
             path)
           body
@@ -608,7 +611,11 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
     if List.assoc_opt "helpers" flags = Some "off" then []
     else
       let home = try Some (CapSys.getenv caps "HOME") with Not_found -> None in
-      let mailcap = match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with Some text -> Browser_helpers.of_mailcap text | None -> [] in
+      let mailcap =
+        match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with
+        | Some text -> Logs.info (fun m -> m "reading ~/.mailcap"); Browser_helpers.of_mailcap text
+        | None -> []
+      in
       Browser_helpers.available caps (kept.helpers @ mailcap @ Browser_helpers.defaults)
   in
   let blank = Tab.with_helpers helpers (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about))) in
@@ -632,6 +639,8 @@ let () =
   Cap.main (fun caps ->
       (* (-help: the usage, and the end, Exit.ExitCode) *)
       Exit.exit caps @@ Exit.catch @@ fun () ->
+      (* the traces' reporter, before the flags: -v, -debug (Session) *)
+      Logging.setup caps ~name:"mini-netscape";
       let flags = Playground_platform.flags caps in
       let profile = profile_dir caps flags in
       let (kept : Browser_profile.t), cookies = match profile with Some dir -> Browser_profile.load caps ~dir | None -> (Browser_profile.empty, []) in

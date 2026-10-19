@@ -110,7 +110,7 @@ let resized (width : float) (t : t) : t =
  * (Keep_alive.mli, with the numbers); keep=off, a connection each *)
 let keeps : bool ref = ref true
 
-let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * string) option) (address : string) :
+let fetch_any (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * string) option) (address : string) :
     (string * int * string option * string, string) result =
   let starts p = Browser_url.starts_with p address in
   if starts "about:" then
@@ -139,6 +139,16 @@ let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * s
       | bytes -> Ok ((if starts "file://" then address else "file://" ^ address), 200, content_type, bytes)
       | exception Sys_error why -> Error why
     else Error (file ^ ": no such file")
+
+(* and said, with -v: the address asked, what came *)
+let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * string) option) (address : string) :
+    (string * int * string option * string, string) result =
+  Logs.info (fun m -> m "%s %s" (if post = None then "GET" else "POST") address);
+  let r = fetch_any caps t ~post address in
+  (match r with
+   | Ok (url, status, kind, body) -> Logs.info (fun m -> m "%d %s, %s, %d bytes" status url (match kind with Some k -> k | None -> "no type") (String.length body))
+   | Error why -> Logs.info (fun m -> m "%s: %s" address why));
+  r
 
 (* the page's sheets not had yet fetched, and theirs, the page laid out
  * again with them: eight rounds at most (an @import four deep, and a

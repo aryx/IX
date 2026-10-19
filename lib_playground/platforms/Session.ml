@@ -12,7 +12,7 @@ type cli = {
   mutable args : string list;
 }
 
-let usage (name : string) : string = "usage: " ^ name ^ " [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [-dump-audio file.wav] [name=value]..."
+let usage (name : string) : string = "usage: " ^ name ^ " [-dump-frame n file.ppm | -frames n] [-fixed-time seconds] [-script script] [-dump-audio file.wav] [-v | -debug] [name=value]..."
 
 let parse (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : cli =
   let argv = CapSys.argv caps in
@@ -29,6 +29,11 @@ let parse (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : cli =
         match Input_script.parse s with Ok sc -> cli.script <- Some sc | Error msg -> raise (Arg.Bad msg)),
     " script: what is pressed, frame by frame";
     "-dump-audio", Arg.String (fun (s : string) -> cli.audio <- s), " file: the sound of the frames played, a WAV";
+    (* the program's traces (Logs), more than its warnings: what it reads
+     * and writes, what it fetches; a reporter is the program's to set
+     * (Logging.setup) *)
+    "-v", Arg.Unit (fun () -> Logs.set_level (Some Logs.Info)), " : what the program reads, writes and fetches, on the standard error";
+    "-debug", Arg.Unit (fun () -> Logs.set_level (Some Logs.Debug)), " : and more";
     (* (the playground's tests give it: its debug keys, which are not here) *)
     "-keys", Arg.String (fun (_ : string) -> ()), " keys: nothing";
   ] in

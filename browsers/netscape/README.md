@@ -81,6 +81,12 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   `Omnibox`, `Bookmarks` and `Window_tabs` are not copied (their text
   field and tab bar are libs/gui's).
 
+- **-v** (2026-10-19, as mini-chrome's): on the standard error, the
+  profile's files read and written, each address fetched and what came
+  (its status, type and size), `~/.mailcap`, the helper programs run
+  and the files given to them (`Logs.info`; `-v` and `-debug` are the
+  playground's `Session`'s, the reporter `Logging.setup`).
+
 ## Speed (2026-10-11)
 
 Where a load's time went was measured before anything was changed,

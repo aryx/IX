@@ -73,9 +73,15 @@ let default_dir (caps : < Cap.env; .. >) : string option =
   | None, Some home -> Some (Filename.concat (Filename.concat home ".config") "mini-netscape")
   | None, None -> None
 
+(* a file of the profile, "" if it is not there; said with -v *)
+let read (caps : < Cap.open_in; .. >) ~(dir : string) (name : string) : string =
+  let path = Filename.concat dir name in
+  match FS.read_opt caps (Fpath.v path) with
+  | Some s -> Logs.info (fun m -> m "profile: reading %s" path); s
+  | None -> Logs.info (fun m -> m "profile: no %s yet" path); ""
+
 let load (caps : < Cap.open_in; .. >) ~(dir : string) : t * Cookie.jar =
-  let read (name : string) : string = match FS.read_opt caps (Fpath.v (Filename.concat dir name)) with Some s -> s | None -> "" in
-  (of_string (read "preferences"), cookies_of_string ~now:(Unix.gettimeofday ()) (read "cookies.txt"))
+  (of_string (read caps ~dir "preferences"), cookies_of_string ~now:(Unix.gettimeofday ()) (read caps ~dir "cookies.txt"))
 
 let write (caps : < Cap.open_out; .. >) ~(dir : string) (name : string) (perm : int) (text : string) : (unit, string) result =
   let rec make (dir : string) : unit =
@@ -84,6 +90,7 @@ let write (caps : < Cap.open_out; .. >) ~(dir : string) (name : string) (perm : 
       FS.mkdir caps dir 0o700
     end
   in
+  Logs.info (fun m -> m "profile: writing %s" (Filename.concat dir name));
   try
     make dir;
     FS.write_perm caps perm (Fpath.v (Filename.concat dir name)) text;
@@ -92,12 +99,11 @@ let write (caps : < Cap.open_out; .. >) ~(dir : string) (name : string) (perm : 
 
 let save (caps : < Cap.open_out; .. >) ~(dir : string) (p : t) : (unit, string) result = write caps ~dir "preferences" 0o644 (to_string p)
 let load_places (caps : < Cap.open_in; .. >) ~(dir : string) : Places.t =
-  let read (name : string) : string = match FS.read_opt caps (Fpath.v (Filename.concat dir name)) with Some s -> s | None -> "" in
-  { history = Places.history_of_string (read "history"); bookmarks = Places.bookmarks_of_html (read "bookmarks.html") }
+  { history = Places.history_of_string (read caps ~dir "history"); bookmarks = Places.bookmarks_of_html (read caps ~dir "bookmarks.html") }
 
-let save_places (caps : < Cap.open_out; .. >) ~(dir : string) (p : Places.t) : (unit, string) result =
-  match write caps ~dir "history" 0o600 (Places.history_to_string p) with
-  | Ok () -> write caps ~dir "bookmarks.html" 0o644 (Places.bookmarks_to_html p)
-  | Error why -> Error why
+let save_places (caps : < Cap.open_out; .. >) ~(dir : string) ~(was : Places.t) (p : Places.t) : (unit, string) result =
+  match if p.history != was.history then write caps ~dir "history" 0o600 (Places.history_to_string p) else Ok () with
+  | Ok () when p.bookmarks != was.bookmarks -> write caps ~dir "bookmarks.html" 0o644 (Places.bookmarks_to_html p)
+  | r -> r
 
 let save_cookies (caps : < Cap.open_out; .. >) ~(dir : string) (jar : Cookie.jar) : (unit, string) result = write caps ~dir "cookies.txt" 0o600 (cookies_to_string jar)

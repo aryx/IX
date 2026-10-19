@@ -256,6 +256,13 @@ let eval (t : t) (text : string) : (value, Js_eval.error) result =
   (match r with Error e -> report t e | Ok _ -> ());
   r
 
+(* what a page's script has that this browser cannot read: passed over,
+ * the rest of the script run (Js_parse.parse_page) *)
+let skipped (t : t) (e : Js_parse.error) : unit = say t (Printf.sprintf "passed over, line %d: %s" e.line e.message)
+
+let eval_script (t : t) (text : string) : unit =
+  match Js_eval.eval_page t.engine ~skipped:(skipped t) text with Error e -> report t e | Ok _ -> ()
+
 (* a script the page's: JavaScript by its type= (not JSON-LD, not a
  * template, not a module: this browser has none, and runs what a page
  * gives the browsers without them, <script nomodule>) *)
@@ -275,7 +282,7 @@ let inserted (t : t) (n : node) : unit =
   let run (s : node) (text : string) : unit =
     let before = t.current_script in
     t.current_script <- Some s;
-    (try ignore (Js_eval.eval_in_run t.engine text) with Throw v -> report t (Js_eval.error_of t.engine v));
+    (try ignore (Js_eval.eval_page_in_run t.engine ~skipped:(skipped t) text) with Throw v -> report t (Js_eval.error_of t.engine v));
     t.current_script <- before
   in
   if connected n then
@@ -308,9 +315,9 @@ let run_scripts_with (source : string -> string option) (t : t) : unit =
       (match attribute s "src" with
       | Some src -> (
           match source (Browser_url.resolve t.base src) with
-          | Some text -> ignore (eval t text)
+          | Some text -> eval_script t text
           | None -> say t (Printf.sprintf "<script src=\"%s\"> could not be had" src))
-      | None -> ignore (eval t (text_content s)));
+      | None -> eval_script t (text_content s));
       t.current_script <- None)
     (List.filter (fun e -> e.name = "script" && runnable e) (elements t.root));
   (* then the document is loaded: its listeners told *)

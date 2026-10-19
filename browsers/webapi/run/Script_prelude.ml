@@ -692,6 +692,18 @@ let text = {prelude|
     return this.__content;
   });
 
+  // new Option(text, value) (Netscape 2's, 1996): an <option> made, to
+  // put in a <select> -- with add, below
+  global("Option", function Option(text, value, chosen, selected) {
+    var o = document.createElement("option");
+    o.textContent = text === undefined ? "" : String(text);
+    if (value !== undefined) o.setAttribute("value", String(value));
+    if (chosen || selected) o.setAttribute("selected", "");
+    return o;
+  });
+  // a <select>'s option put in (DOM Level 1): at the end, or before
+  // the one given
+  method(E, "add", function (option, before) { if (this.tagName === "SELECT") this.insertBefore(option, typeof before === "number" ? this.querySelectorAll("option")[before] || null : before || null); });
   // A table as its rows and cells (DOM Level 1's HTMLTableElement):
   // table.rows, a section's rows, a row's cells, and where each is.
   // Gmail's list is a table, and a click is read as "which cell of

@@ -49,6 +49,13 @@ let tests =
           Alcotest.(check bool) "changed after" true (Browser_script.changed t);
           check_body "the text" t [ "p id=\"x\""; "  \"b\"" ];
           Alcotest.(check bool) "frozen: not changed any more" false (Browser_script.changed t));
+      Testo.create "a script read as far as it can be: what does not parse passed over, the rest run" (fun () ->
+          let t = page "<script>var a = 1; function g() { var = 3 } var b = 2;\nvar = = 4;\nvar c = [a, b, typeof g]; var d; try { g() } catch (e) { d = e.name }</script>" in
+          Alcotest.(check string) "a, b and c run; g there, throwing when called" "[[1, 2, \"function\"], \"SyntaxError\"]" (value t "[c, d]");
+          Alcotest.(check bool) "said in the console" true (List.exists (fun l -> String.length l > 11 && String.sub l 0 11 = "passed over") (Browser_script.console t)));
+      Testo.create "a DOM method this browser lacks: nothing done, the script goes on; a script's own object still throws" (fun () ->
+          let t = page "<p id=p>x</p><script>var p = document.getElementById('p'); var r = p.showPopover(); var after = true; var own; try { ({}).m() } catch (e) { own = e.name }</script>" in
+          Alcotest.(check string) "undefined, on, a TypeError" "[undefined, true, \"TypeError\", false]" (value t "[r, after, own, typeof p.showPopover === 'function']"));
       Testo.create "no modules: a module's script not run, the one for the browsers without them (nomodule) run" (fun () ->
           let t = page "<script>var ran = []</script><script type=module>ran.push('module')</script><script nomodule>ran.push('nomodule')</script>" in
           Alcotest.(check string) "nomodule's only" "[\"nomodule\"]" (value t "ran"));

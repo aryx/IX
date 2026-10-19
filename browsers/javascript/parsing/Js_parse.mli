@@ -230,5 +230,14 @@ val syntax_context : bool ref
 (* the program, or its first mistake (Js_lexer's included) *)
 val parse : string -> (Js_ast.program, error) result
 
+(* a page's script, read as far as it can be: a function whose text
+ * this parser cannot read (a construct it does not have) is kept, its
+ * body one that throws "not supported here"; a statement of the top
+ * that does not parse is skipped. The program, and the mistakes
+ * passed over, in order (a mistake of the lexer's is still the whole
+ * text's). Browser_script's; eval, mini-node and the tests have
+ * [parse] *)
+val parse_page : string -> (Js_ast.program * error list, error) result
+
 (* one expression alone (the tests', and a console's) *)
 val parse_expression : string -> (Js_ast.expr, error) result

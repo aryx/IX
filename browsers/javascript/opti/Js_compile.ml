@@ -233,8 +233,10 @@ let rec expr (t : E.t) (e : A.expr) : code =
       let args = List.map (expr t) args in
       let call (fn : value) (self : value) (s : scope) (this : value) : value =
         let args = values args s this in
-        if not (callable fn) then throw "TypeError" (E.describe f ^ " is not a function");
-        E.call_in_run t fn ~this:self args
+        if E.host_missing fn self f then Undefined
+        else (
+          if not (callable fn) then throw "TypeError" (E.describe f ^ " is not a function");
+          E.call_in_run t fn ~this:self args)
       in
       match f with
       | Member (o, k) ->

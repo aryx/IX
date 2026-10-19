@@ -22,6 +22,10 @@ type t = {
   mutable in_async : bool;
   (* in a generator's body: "yield" is the operator *)
   mutable in_generator : bool;
+  (* a page's script: what does not parse is skipped, not the whole
+   * text refused ([recovering]), and said here, the last first *)
+  recover : bool;
+  mutable skipped : error list;
 }
 
 (*****************************************************************************)
@@ -243,7 +247,7 @@ and body_in (p : t) ~(async : bool) ~(generator : bool) (f : unit -> stmt list) 
 and template_values (p : t) (t : Js_lexer.token) (expressions : Js_lexer.token list list) : expr list =
   List.map
     (fun (tokens : Js_lexer.token list) ->
-      let inner = { text = "" (* a ${ }'s tokens are of a text of their own: a function there has no text kept *); tokens = Array.of_list (tokens @ [ { t with kind = Eof } ]); pos = 0; no_in = false; in_async = p.in_async; in_generator = p.in_generator } in
+      let inner = { text = "" (* a ${ }'s tokens are of a text of their own: a function there has no text kept *); tokens = Array.of_list (tokens @ [ { t with kind = Eof } ]); pos = 0; no_in = false; in_async = p.in_async; in_generator = p.in_generator; recover = false; skipped = [] } in
       let e = expression inner 0 in
       if (peek inner).kind <> Eof then unexpected inner "'}'";
       e)
@@ -514,6 +518,44 @@ and first_of (p : t) (i : int) : int =
   p.tokens.(min i (Array.length p.tokens - 1)).at
 
 and func (p : t) ~(arrow : bool) ~(async : bool) : func =
+  if not p.recover then func_read p ~arrow ~async
+  else
+    let start = p.pos in
+    try func_read p ~arrow ~async with Parse_error e -> unsupported p start e
+
+(* a function this parser cannot read (a construct it does not have):
+ * its name, if the tokens say one, and a body that throws when called;
+ * the parser goes on after the body's closing brace *)
+and unsupported (p : t) (start : int) (e : error) : func =
+  p.skipped <- e :: p.skipped;
+  p.pos <- start;
+  let name = ref None and depth = ref 0 in
+  (* to the body's "{": the first one outside the parameters' parentheses *)
+  while not (!depth = 0 && is_punct p "{") && (peek p).kind <> Eof do
+    (match (advance p).kind with
+    | Name x when !name = None && !depth = 0 -> name := Some x
+    | Punct ("(" | "[") -> incr depth
+    | Punct (")" | "]") -> decr depth
+    | _ -> ());
+  done;
+  skip_braces p;
+  let message = Printf.sprintf "not supported here (line %d: %s)" e.line e.message in
+  let body = [ { line = e.line; stmt = Throw (New (Name "SyntaxError", [ String message ])) } ] in
+  { name = !name; params = []; rest = None; body; arrow = false; generator = false; async = false; frame = None; own_name = false; text = None }
+
+(* from a "{" to after its "}" *)
+and skip_braces (p : t) : unit =
+  let depth = ref 0 in
+  let continue = ref true in
+  while !continue && (peek p).kind <> Eof do
+    (match (advance p).kind with
+    | Punct "{" -> incr depth
+    | Punct "}" -> decr depth
+    | _ -> ());
+    if !depth <= 0 then continue := false
+  done
+
+and func_read (p : t) ~(arrow : bool) ~(async : bool) : func =
   (* its text: from the keyword just read, to its body's last brace *)
   let first = first_of p (max 0 (p.pos - 1)) in
   (* function* f: a generator *)
@@ -776,13 +818,42 @@ let with_tokens (text : string) (f : t -> 'a) : ('a, error) result =
   match Js_lexer.tokenize text with
   | exception Js_lexer.Error (line, message) -> Error { line; message }
   | tokens -> (
-      let p = { text; tokens = Array.of_list tokens; pos = 0; no_in = false; in_async = false; in_generator = false } in
+      let p = { text; tokens = Array.of_list tokens; pos = 0; no_in = false; in_async = false; in_generator = false; recover = false; skipped = [] } in
       match f p with x -> Ok x | exception Parse_error e -> Error e)
 
 let parse (text : string) : (program, error) result =
   with_tokens text (fun p ->
       let rec go acc = if (peek p).kind = Eof then List.rev acc else go (statement p :: acc) in
       go [])
+
+(* a page's script: a function that does not parse is kept as one that
+ * throws (above, [unsupported]); a statement of the top that does not
+ * parse is skipped, to the ";" or the "}" that ends it. The program,
+ * and what was skipped, in order *)
+let parse_page (text : string) : (program * error list, error) result =
+  with_tokens text (fun p ->
+      let p = { p with recover = true } in
+      let skip (e : error) (start : int) =
+        p.skipped <- e :: p.skipped;
+        p.pos <- start;
+        let depth = ref 0 and continue = ref true in
+        while !continue && (peek p).kind <> Eof do
+          (match (advance p).kind with
+          | Punct ("{" | "(" | "[") -> incr depth
+          | Punct ("}" | ")" | "]") -> decr depth; if !depth = 0 && is_punct p ";" then ignore (advance p)
+          | Punct ";" when !depth = 0 -> continue := false
+          | _ -> ());
+          if !depth = 0 && (match p.tokens.(p.pos - 1).kind with Punct "}" -> true | _ -> false) then continue := false
+        done
+      in
+      let rec go acc =
+        if (peek p).kind = Eof then List.rev acc
+        else
+          let start = p.pos in
+          match statement p with st -> go (st :: acc) | exception Parse_error e -> skip e start; go acc
+      in
+      let program = go [] in
+      (program, List.rev p.skipped))
 
 let parse_expression (text : string) : (expr, error) result =
   with_tokens text (fun p ->

@@ -166,6 +166,12 @@ val run : t -> Js_ast.program -> (Js_value.value, error) result
 (* parse, then run *)
 val eval : t -> string -> (Js_value.value, error) result
 
+(* the same for a page's script, read as far as it can be
+ * (Js_parse.parse_page): each mistake passed over given to [skipped],
+ * the rest run; and in the run going on (below, [eval_in_run]) *)
+val eval_page : t -> skipped:(Js_parse.error -> unit) -> string -> (Js_value.value, error) result
+val eval_page_in_run : t -> skipped:(Js_parse.error -> unit) -> string -> Js_value.value
+
 (* [call t f this args]: the host calling a script's function (an event
  * handler, a timer's) *)
 val call : t -> Js_value.value -> this:Js_value.value -> Js_value.value list -> (Js_value.value, error) result
@@ -232,6 +238,12 @@ val put_item : t -> Js_value.value -> Js_value.value -> Js_value.value -> unit
 val assign : t -> Js_value.scope -> Js_value.value -> Js_ast.expr -> Js_value.value -> unit
 val closure : Js_value.scope -> Js_value.value -> Js_ast.func -> Js_value.value
 val describe : Js_ast.expr -> string
+
+(* [host_missing fn self f]: whether the call f(...) is of a method a
+ * host object does not have ([fn] undefined, [self] a host's): then
+ * it is told to Js_value.missing and does nothing, giving undefined,
+ * where a script's own object throws (Js_compile's calls too) *)
+val host_missing : Js_value.value -> Js_value.value -> Js_ast.expr -> bool
 
 (* the built-in prototypes (an array's methods are Array.prototype's);
  * a instanceof f *)

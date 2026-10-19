@@ -110,6 +110,19 @@ let rec describe (e : A.expr) : string =
   (* anything else as it was written, cut short: to be looked for in the script *)
   | e -> let text = A.expr_to_string e in if String.length text > 70 then String.sub text 0 67 ^ "..." else text
 
+(* a method a host object does not have, called -- a DOM's newer one, a
+ * browser's API this one lacks: nothing done, undefined given, the
+ * name told (Js_value.missing, -v's "missing:"), where a script's own
+ * object would throw. So a page's script goes on past what this
+ * browser cannot do (plan_browser.md, C); a feature test,
+ * typeof el.m === "function", still says no *)
+let host_missing (fn : value) (self : value) (f : A.expr) : bool =
+  match (fn, self, f) with
+  | Undefined, Object { kind = Host_object h; _ }, Member (_, k) ->
+      (match !Js_value.missing with Some tell -> tell h.class_name (k ^ "()") | None -> ());
+      true
+  | _ -> false
+
 (*****************************************************************************)
 (* Expressions *)
 (*****************************************************************************)
@@ -360,8 +373,10 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
         | _ -> (eval_expr t s this f, Undefined)
       in
       let args = eval_list t s this args in
-      (match fn with Object { kind = Closure _ | Host_function _ | Proxy _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a function"));
-      call_value t fn ~this:self args
+      if host_missing fn self f then Undefined
+      else (
+        (match fn with Object { kind = Closure _ | Host_function _ | Proxy _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a function"));
+        call_value t fn ~this:self args)
 
 (* class A extends B { ... }: a constructor function whose prototype
  * has the methods, and B's prototype behind it; the class's static
@@ -1243,6 +1258,20 @@ let eval (t : t) (text : string) : (value, error) result =
   match Js_parse.parse text with
   | Ok program -> run t program
   | Error e -> Error { line = e.line; message = "SyntaxError: " ^ e.message }
+
+(* a page's script, read as far as it can be (Js_parse.parse_page) *)
+let page_program (skipped : Js_parse.error -> unit) (text : string) : (A.program, Js_parse.error) result =
+  Result.map (fun (program, passed) -> List.iter skipped passed; program) (Js_parse.parse_page text)
+
+let eval_page (t : t) ~(skipped : Js_parse.error -> unit) (text : string) : (value, error) result =
+  match page_program skipped text with
+  | Ok program -> run t program
+  | Error e -> Error { line = e.line; message = "SyntaxError: " ^ e.message }
+
+let eval_page_in_run (t : t) ~(skipped : Js_parse.error -> unit) (text : string) : value =
+  match page_program skipped text with
+  | Ok program -> run_in_run t program
+  | Error e -> t.line <- e.line; throw "SyntaxError" e.message
 
 let call (t : t) (f : value) ~(this : value) (args : value list) : (value, error) result =
   guarded t (fun () -> call_value t f ~this args)

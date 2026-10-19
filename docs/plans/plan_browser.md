@@ -1356,6 +1356,13 @@ decide; this plan says mini-netscape until then.
 | `bbb83fcf` | the preludes without YouTube's, Gmail's and the frameworks' (`MessageChannel`, `el.animate`, custom elements, Shady DOM's accessors, an iframe's window, adopted sheets, `DataView`); frames' worlds; `netscape/tests/sites.sh` | 22,104 |
 | `074cbc26` | Mosaic's layout (`Html_layout`'s pass, `Looks`' table, `Linebreak`, `Browser_draw.draw`, `Css.cascade`) | 20,769 |
 | `4c31368c` | ES modules (`<script nomodule>` run instead), shadow trees, the custom elements' hooks | 19,889 |
+| `da71627b` | `Script_prelude`'s unused modern one-liners, `Request`, `structuredClone` | 19,841 |
+| `83bbef98` | C: parse recovery for a page's scripts, lenient host calls (+120 lines); `select.add`, `new Option` | |
+| `29285461` | C: generators read, not run (MediaWiki's startup compiles one to decide whether to load its scripts) | 19,911 |
+| `55a81ccc` | C: no `Proxy` (ocaml.org reads the same, Alpine's menus do not react) | 19,808 |
+| `6db6efac` | `sites.sh -c`: the pixels that differ, the pictures side by side | |
+| `39c2b842` | `TextEncoder`, `AbortController`, `Intl`, `TreeWalker`, `XMLSerializer`; warnings in the console; `strict=on` | 19,662 |
+| `babebb9a` | `ArrayBuffer` and buffers, ES2023's copies, the collation table | 19,608 |
 
 Each checked by the tests (the engine's three ways), `frames.sh` on
 both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the
@@ -1366,6 +1373,15 @@ cut: generators (Wikipedia's scripts declare two `function*`), the
 Left of A and B: `Js_ast`'s printers, `Cors`, more of the preludes
 (what the five sites never call), then B's smaller language, sized
 by the coverage run again on these files (`coverage_ix.sh`).
+
+What C taught: a feature a page tests for at its start is needed as
+syntax even when nothing calls it (MediaWiki's `async function*`); a
+cut is checked by `sites.sh -c`, and LWN's frame varies by itself (an
+ad's script fetched or not: the status bar's bytes). The coverage
+(2026-10-19, second run) says the rest of the language runs on the
+five sites: what is left to cut is a feature a page uses, weighed by
+what the page loses (`Js_utf16`: a script cutting a word with an
+accent cuts the letter).
 
 ### C: degrade, don't fail (2026-10-19)
 

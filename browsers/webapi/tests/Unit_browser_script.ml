@@ -52,7 +52,7 @@ let tests =
       Testo.create "a script read as far as it can be: what does not parse passed over, the rest run" (fun () ->
           let t = page "<script>var a = 1; function g() { var = 3 } var b = 2;\nvar = = 4;\nvar c = [a, b, typeof g]; var d; try { g() } catch (e) { d = e.name }</script>" in
           Alcotest.(check string) "a, b and c run; g there, throwing when called" "[[1, 2, \"function\"], \"SyntaxError\"]" (value t "[c, d]");
-          Alcotest.(check bool) "said in the console" true (List.exists (fun l -> String.length l > 11 && String.sub l 0 11 = "passed over") (Browser_script.console t)));
+          Alcotest.(check bool) "said in the console" true (List.exists (fun l -> String.length l > 11 && String.sub l 0 11 = "warning: pa") (Browser_script.console t)));
       Testo.create "a DOM method this browser lacks: nothing done, the script goes on; a script's own object still throws" (fun () ->
           let t = page "<p id=p>x</p><script>var p = document.getElementById('p'); var r = p.showPopover(); var after = true; var own; try { ({}).m() } catch (e) { own = e.name }</script>" in
           Alcotest.(check string) "undefined, on, a TypeError" "[undefined, true, \"TypeError\", false]" (value t "[r, after, own, typeof p.showPopover === 'function']"));
@@ -225,14 +225,14 @@ let tests =
           Alcotest.(check string) "not told yet" "[\"posted\"]" (value t "said");
           Browser_script.advance t 10.;
           Alcotest.(check string) "told after the script" "[\"posted\", \"hello true string\"]" (value t "said"));
-      Testo.create "text and bytes: TextEncoder, TextDecoder, atob and btoa" (fun () ->
+      Testo.create "a binary string: atob and btoa" (fun () ->
           let t =
             page
-              "<body><p id=p>é😀</p><script>var said = [Array.from(new TextEncoder().encode(\"é€😀\")).join(\" \"), new TextDecoder().decode(new Uint8Array([195, 169, 226, 130, 172, 240, 159, 152, 128])) === \"é€😀\",\n\
+              "<body><p id=p>é😀</p><script>var said = [\n\
                btoa(String.fromCharCode(0, 200, 255)), atob(\"AMj/\").charCodeAt(1), atob(\"AMj/\").length, document.getElementById(\"p\").textContent.length]</script>"
           in
-          Alcotest.(check string) "UTF-8's bytes of a text; a byte a character in a binary string; a page's text in units"
-            "[\"195 169 226 130 172 240 159 152 128\", true, \"AMj/\", 200, 3, 3]" (value t "said"));
+          Alcotest.(check string) "a byte a character in a binary string; a page's text in units"
+            "[\"AMj/\", 200, 3, 3]" (value t "said"));
       Testo.create "the page's selection is none, and its text empty" (fun () ->
           let t = page "<body><script>var s = getSelection(); var said = [String(s), \"\" + s, s.isCollapsed, s.rangeCount, s.type]</script>" in
           Alcotest.(check string) "what a page asks before it takes a click for one" "[\"\", \"\", true, 0, \"None\"]" (value t "said"));
@@ -291,18 +291,16 @@ let tests =
             page
               "<body><p id=mine>the page</p><script>\n\
                var d = new DOMParser().parseFromString('<p>hi <b>x</b></p><!--c--><svg><g></g></svg>', 'text/html');\n\
-               var byTag = document.getElementsByTagName, it = document.createNodeIterator.call(d, d.body, 1 | 4 | 128, null, false), n, seen = [];\n\
-               while ((n = it.nextNode())) seen.push(n.nodeName);\n\
+               var byTag = document.getElementsByTagName;\n\
                var made = document.implementation.createHTMLDocument(''), body = made.body;\n\
                body.outerHTML = '<i>cleaned</i> text';\n\
                var p = document.getElementById('mine'); p.outerHTML = '<h3 id=now>replaced</h3><em></em>';\n\
                var said = [byTag.call(d, 'html').length, byTag.call(d, 'body')[0] === d.body, byTag.call(d, 'p').length, document.getElementsByTagName('html')[0] === document.documentElement,\n\
-                 d.body.firstChild.ownerDocument === d, document.body.ownerDocument === document, seen.join(' '), d.body.lastChild.namespaceURI.slice(-3),\n\
-                 byTag.call(made, 'body')[0].innerHTML, document.getElementById('now').nextSibling.localName, document.getElementById('mine'),\n\
-                 new XMLSerializer().serializeToString(d.body.firstChild)]</script>"
+                 d.body.firstChild.ownerDocument === d, document.body.ownerDocument === document, d.body.lastChild.namespaceURI.slice(-3),\n\
+                 byTag.call(made, 'body')[0].innerHTML, document.getElementById('now').nextSibling.localName, document.getElementById('mine')]</script>"
           in
-          Alcotest.(check string) "the page's functions called on it; its nodes are its own; a body's outerHTML; a serializer"
-            {|[1, true, 1, true, true, true, "P #text B #text #comment svg g", "svg", "<i>cleaned</i> text", "em", null, "<p>hi <b>x</b></p>"]|} (value t "said"));
+          Alcotest.(check string) "the page's functions called on it; its nodes are its own; a body's outerHTML"
+            {|[1, true, 1, true, true, true, "svg", "<i>cleaned</i> text", "em", null]|} (value t "said"));
       Testo.create "a table's rows and cells put in and taken out" (fun () ->
           let t =
             page

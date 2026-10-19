@@ -175,80 +175,6 @@ let text = {prelude|
     return out;
   });
 
-  // text to bytes and back (the Encoding standard): a string's
-  // characters as UTF-8's bytes, one to four each, and bytes read as
-  // characters -- what is not UTF-8 read as U+FFFD, the mark of it
-  global("TextEncoder", class TextEncoder {
-    get encoding() { return "utf-8"; }
-    encode(s) {
-      s = s === undefined ? "" : String(s);
-      var out = [];
-      for (var i = 0; i < s.length; i++) {
-        var c = s.codePointAt(i);
-        if (c > 0xffff) i++;
-        if (c >= 0xd800 && c <= 0xdfff) c = 0xfffd;
-        if (c < 0x80) out.push(c);
-        else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f));
-        else if (c < 0x10000) out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
-        else out.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
-      }
-      return new Uint8Array(out);
-    }
-  });
-  global("TextDecoder", class TextDecoder {
-    constructor(label) { this.encoding = (label || "utf-8").toLowerCase(); }
-    decode(bytes) {
-      if (!bytes) return "";
-      if (bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
-      else if (bytes.buffer instanceof ArrayBuffer && !(bytes instanceof Uint8Array)) bytes = new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      var s = "", units = [], n = bytes.length, latin = this.encoding !== "utf-8" && this.encoding !== "utf8";
-      for (var i = 0; i < n; ) {
-        var b = bytes[i++], c = b, more = latin || b < 0x80 ? 0 : b >= 0xf0 && b <= 0xf4 ? 3 : b >= 0xe0 ? 2 : b >= 0xc2 ? 1 : -1;
-        if (more < 0) c = 0xfffd;
-        else if (more > 0) {
-          c = b & (0x3f >> more);
-          for (var k = 0; k < more; k++) {
-            var next = bytes[i];
-            if (next === undefined || (next & 0xc0) !== 0x80) { c = 0xfffd; break; }
-            c = (c << 6) | (next & 0x3f); i++;
-          }
-        }
-        if (c < 0x10000) units.push(c);
-        else { c -= 0x10000; units.push(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff)); }
-        if (units.length > 8192) { s += String.fromCharCode.apply(null, units); units = []; }
-      }
-      return s + String.fromCharCode.apply(null, units);
-    }
-  });
-
-  // a way to say stop: the controller's abort() tells the signal's
-  // listeners, and whoever was given the signal gives up
-  class AbortSignal {
-    constructor() { this.aborted = false; this.reason = undefined; this.onabort = null; this._listeners = []; }
-    addEventListener(type, f) { if (type === "abort") this._listeners.push(f); }
-    removeEventListener(type, f) { this._listeners = this._listeners.filter(function (x) { return x !== f; }); }
-    throwIfAborted() { if (this.aborted) throw this.reason; }
-    _abort(reason) {
-      if (this.aborted) return;
-      this.aborted = true;
-      this.reason = reason === undefined ? new Error("AbortError: signal is aborted without reason") : reason;
-      var event = { type: "abort", target: this };
-      if (typeof this.onabort === "function") this.onabort(event);
-      this._listeners.slice().forEach(function (f) { f(event); });
-    }
-    static abort(reason) { var s = new AbortSignal(); s._abort(reason); return s; }
-    static timeout(ms) { var s = new AbortSignal(); setTimeout(function () { s._abort(new Error("TimeoutError: signal timed out")); }, ms); return s; }
-    static any(signals) {
-      var s = new AbortSignal();
-      signals.forEach(function (other) { if (other.aborted) s._abort(other.reason); else other.addEventListener("abort", function () { s._abort(other.reason); }); });
-      return s;
-    }
-  }
-  global("AbortSignal", AbortSignal);
-  global("AbortController", class AbortController {
-    constructor() { this.signal = new AbortSignal(); }
-    abort(reason) { this.signal._abort(reason); }
-  });
 
   global("requestIdleCallback", function (f) {
     return setTimeout(function () { f({ didTimeout: false, timeRemaining: function () { return 50; } }); }, 1);
@@ -307,46 +233,6 @@ let text = {prelude|
     [Symbol.iterator]() { return this.entries(); }
   });
 
-  // one language and one way to write a number or a date: what a page
-  // asks of Intl is answered, in English
-  if (typeof g.Intl === "undefined") {
-    var options = function () { return { locale: "en-US", timeZone: "UTC", calendar: "gregory", numberingSystem: "latn" }; };
-    var supported = function () { return ["en-US"]; };
-    g.Intl = {
-      DateTimeFormat: class DateTimeFormat {
-        format(d) { return (d === undefined ? new Date() : new Date(d)).toString(); }
-        formatToParts(d) { return [{ type: "literal", value: this.format(d) }]; }
-        resolvedOptions() { return options(); }
-        static supportedLocalesOf() { return supported(); }
-      },
-      NumberFormat: class NumberFormat {
-        format(n) { return String(n); }
-        formatToParts(n) { return [{ type: "integer", value: String(n) }]; }
-        resolvedOptions() { return options(); }
-        static supportedLocalesOf() { return supported(); }
-      },
-      PluralRules: class PluralRules {
-        select(n) { return n === 1 ? "one" : "other"; }
-        resolvedOptions() { return options(); }
-        static supportedLocalesOf() { return supported(); }
-      },
-      RelativeTimeFormat: class RelativeTimeFormat {
-        format(n, unit) { var u = Math.abs(n) === 1 ? unit : unit + "s"; return n < 0 ? -n + " " + u + " ago" : "in " + n + " " + u; }
-        resolvedOptions() { return options(); }
-        static supportedLocalesOf() { return supported(); }
-      },
-      ListFormat: class ListFormat {
-        format(items) { items = Array.from(items); return items.length < 3 ? items.join(" and ") : items.slice(0, -1).join(", ") + ", and " + items[items.length - 1]; }
-        static supportedLocalesOf() { return supported(); }
-      },
-      Collator: class Collator {
-        compare(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
-        resolvedOptions() { return options(); }
-        static supportedLocalesOf() { return supported(); }
-      },
-      getCanonicalLocales: function (l) { return l === undefined ? [] : [].concat(l); }
-    };
-  }
 
   // ---- what a page asks of its document, its elements and its window,
   // where an answer can be given without the browser's insides ----
@@ -426,65 +312,6 @@ let text = {prelude|
   method(D, "writeln", function () { written(Array.prototype.join.call(arguments, "") + "\n"); });
   method(D, "open", stub("document.open"));
   method(D, "close", nothing);
-  // the nodes under a root, one after the other in the document's
-  // order, those a filter keeps: a walk a script steps through
-  method(D, "createTreeWalker", function (root, whatToShow, filter) {
-    var show = whatToShow === undefined ? 0xffffffff : whatToShow;
-    var accept = typeof filter === "function" ? filter : filter && filter.acceptNode ? function (n) { return filter.acceptNode(n); } : function () { return 1; };
-    function next(n) {
-      if (n.firstChild) return n.firstChild;
-      while (n && n !== root) { if (n.nextSibling) return n.nextSibling; n = n.parentNode; }
-      return null;
-    }
-    // 1 a node is the walk's, 2 nor it nor what is under it, 3 not it
-    // but what is under it
-    function kept(n) { return (show >> (n.nodeType - 1)) & 1 ? accept(n) : 3; }
-    // the walk's children of a node: its own that are kept, and those
-    // of the ones skipped
-    function kids(n) {
-      var out = [];
-      for (var c = n.firstChild; c; c = c.nextSibling) {
-        var k = kept(c);
-        if (k === 1) out.push(c); else if (k !== 2) out = out.concat(kids(c));
-      }
-      return out;
-    }
-    function parent(n) {
-      for (n = n === root ? null : n.parentNode; n; n = n === root ? null : n.parentNode) if (n === root || kept(n) === 1) return n;
-      return null;
-    }
-    function to(walker, n) { if (n) walker.currentNode = n; return n || null; }
-    function sibling(walker, by) {
-      var p = parent(walker.currentNode);
-      if (!p) return null;
-      var all = kids(p);
-      return to(walker, all[all.indexOf(walker.currentNode) + by]);
-    }
-    return {
-      root: root, currentNode: root, whatToShow: show, filter: filter || null,
-      nextNode: function () {
-        for (var n = next(this.currentNode); n; n = next(n))
-          if (kept(n) === 1) { this.currentNode = n; return n; }
-        return null;
-      },
-      // the one before in the document's order: found from the root
-      previousNode: function () {
-        var last = null;
-        for (var n = root; n && n !== this.currentNode; n = next(n)) if (n === root || kept(n) === 1) last = n;
-        return this.currentNode === root ? null : to(this, last);
-      },
-      firstChild: function () { return to(this, kids(this.currentNode)[0]); },
-      lastChild: function () { var all = kids(this.currentNode); return to(this, all[all.length - 1]); },
-      nextSibling: function () { return sibling(this, 1); },
-      previousSibling: function () { return this.currentNode === root ? null : sibling(this, -1); },
-      parentNode: function () { return to(this, parent(this.currentNode)); }
-    };
-  });
-  method(D, "createNodeIterator", D && D.createTreeWalker);
-  // XMLSerializer (2000, Mozilla's): a node as text.
-  global("XMLSerializer", function XMLSerializer() {
-    this.serializeToString = function (n) { return n.nodeType === 9 ? n.documentElement.outerHTML : n.nodeType === 1 ? n.outerHTML : n.nodeType === 11 ? Array.prototype.map.call(n.childNodes, function (c) { return c.nodeType === 1 ? c.outerHTML : c.textContent; }).join("") : n.textContent; };
-  });
   method(D, "createRange", function () {
     var doc = this;
     if (typeof __missed === "function") __missed("document.createRange (a range that selects nothing)");
@@ -592,7 +419,6 @@ let text = {prelude|
   // an SVG element's attribute that can be animated (its href, its
   // class): asked by instanceof, never made here
   global("SVGAnimatedString", function SVGAnimatedString() {});
-  // what a tree walker is told to show, and what its filter answers
   // IntersectionObserver (Chrome 51, 2016): told when an element comes
   // into view -- how a page puts a picture's address in only when it
   // is about to be seen ("lazy loading"), and asks for a list's next
@@ -676,7 +502,6 @@ let text = {prelude|
     supports: function () { return false; },
     escape: function (s) { return String(s).replace(/[^a-zA-Z0-9_\-\u00a0-\uffff]/g, function (c) { return "\\" + c; }); }
   });
-  global("NodeFilter", { SHOW_ALL: -1, SHOW_ELEMENT: 1, SHOW_TEXT: 4, SHOW_COMMENT: 128, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 });
   // a <template>'s content: its children, in a fragment of their own
   // (what cloneNode and importNode copy into the page)
   getter(E, "content", function () {

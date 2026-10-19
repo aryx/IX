@@ -215,6 +215,13 @@ val run_scripts : t -> unit
  * or its error; errors also in the console *)
 val eval : t -> string -> (Js_value.value, Js_eval.error) result
 
+(* false (the default): a page's script is read as far as it can be,
+ * what cannot be read passed over with a warning in the console
+ * (Js_parse.parse_page); true (mini-netscape's strict=on, with
+ * Js_eval.lenient false): a script that does not parse is refused
+ * whole, its SyntaxError said, as a browser does *)
+val strict : bool ref
+
 (* the tree as the scripts left it, frozen; its elements are the ones
  * [click] and [input] take (the layout of this tree gives them) *)
 val tree : t -> Dom.element

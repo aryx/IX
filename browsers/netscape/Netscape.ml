@@ -135,9 +135,11 @@
  * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
  * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [url=address] [scripts=off] [console=on] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
+ * usage: mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts
- *   print, and their errors, on the standard error; keep=off: a
+ *   print, and their errors, on the standard error; strict=on: a
+ *   script that does not parse refused whole, a DOM method missing a
+ *   TypeError, where they are passed over with a warning; keep=off: a
  *   connection a request; profile: where the cookies and the zooms are
  *   kept, ~/.config/mini-netscape if not said, off for nowhere; window:
  *   the window's size at first, the one it had last if not said) *)
@@ -470,6 +472,10 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
   if List.assoc_opt "draw" flags = Some "all" then Browser_draw.lazily := false;
   if List.assoc_opt "view" flags = Some "each" then memo := false;
   if List.assoc_opt "console" flags = Some "on" then Js_value.say := (fun line -> Console.eprint caps (line ^ "\n"));
+  (* strict=on: a page's script refused whole if it does not parse, a
+   * DOM method this browser lacks a TypeError, as a browser has them;
+   * by default both are passed over with a warning (plan_browser.md, C) *)
+  if List.assoc_opt "strict" flags = Some "on" then (Browser_script.strict := true; Js_eval.lenient := false);
   P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0) }
 
 let () =

@@ -51,11 +51,14 @@ argument, no `Lazy.t`, no mutex).
 
 ## mini-netscape
 
-    mini-netscape [url=address] [scripts=off] [console=on] [profile=dir|off] [window=WxH]
+    mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [profile=dir|off] [window=WxH]
                   [keep=off] [settle=off] [draw=all] [view=each]
 
 An address is `http://`, `https://`, `file://`, a path, `data:` or
-`about:home`. The second line's flags turn an optimization off, each
+`about:home`. `strict=on`: a page's script that does not parse is
+refused whole and a DOM method this browser lacks throws, as before
+`plan_browser.md`'s C; by default both are passed over, with a
+warning in the console. The second line's flags turn an optimization off, each
 giving the simple way back and the same picture
 ([`netscape/README.md`](netscape/README.md), "Speed").
 

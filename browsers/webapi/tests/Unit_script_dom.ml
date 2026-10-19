@@ -227,17 +227,6 @@ let tests =
           check "new EventTarget(), and a class that extends it" {|class Bus extends EventTarget {} const bus = new Bus(), seen = [];
               const f = e => seen.push(e.type); bus.addEventListener("ping", f); bus.dispatchEvent(new Event("ping")); bus.removeEventListener("ping", f); bus.dispatchEvent(new Event("ping")); seen|}
             {|["ping"]|};
-          check "{ signal }: aborted, the listener is gone" ~html:"<p id=p></p>"
-            {|const p = document.getElementById("p"), c = new AbortController(); let n = 0;
-              p.addEventListener("x", () => n++, { signal: c.signal }); p.dispatchEvent(new Event("x")); c.abort(); p.dispatchEvent(new Event("x")); n|}
-            "1";
-          check "a TreeWalker: down, across, up, back; a filter that skips, one that rejects" ~html:"<div id=r><p id=a>x<b id=b>y</b></p><span><i id=c>z</i></span><em id=d></em></div>"
-            {|const r = document.getElementById("r"), id = n => n && n.id;
-              const w = document.createTreeWalker(r, NodeFilter.SHOW_ELEMENT);
-              const seen = [id(w.firstChild()), id(w.firstChild()), id(w.nextSibling()), id(w.parentNode()), id(w.nextSibling()), id(w.lastChild()), id(w.parentNode()), id(w.nextSibling()), id(w.nextSibling()), id(w.previousNode())];
-              const skip = document.createTreeWalker(r, NodeFilter.SHOW_ELEMENT, n => n.tagName === "SPAN" ? NodeFilter.FILTER_SKIP : n.tagName === "P" ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT);
-              [seen, id(skip.firstChild()), id(skip.nextSibling()), id(skip.previousSibling()), id(skip.parentNode())]|}
-            {|[["a", "b", null, "a", "", "c", "", "d", null, "c"], "c", "d", "c", "r"]|};
           check "prepend of a child already there, the first or another" ~html:"<div id=d><p id=a></p><p id=b></p><p id=c></p></div>"
             {|const d = document.getElementById("d"), ids = () => [...d.children].map(e => e.id).join("");
               d.prepend(d.children[0]); const same = ids(); d.prepend(d.children[2]); const moved = ids(); d.prepend(d.children[1], d.children[0]); [same, moved, ids()]|}

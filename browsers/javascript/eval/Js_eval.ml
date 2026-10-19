@@ -106,10 +106,18 @@ let rec describe (e : A.expr) : string =
  * object would throw. So a page's script goes on past what this
  * browser cannot do (plan_browser.md, C); a feature test,
  * typeof el.m === "function", still says no *)
+let lenient : bool ref = ref true
+let warned : (string, unit) Hashtbl.t = Hashtbl.create 16
+
 let host_missing (fn : value) (self : value) (f : A.expr) : bool =
   match (fn, self, f) with
-  | Undefined, Object { kind = Host_object h; _ }, Member (_, k) ->
+  | Undefined, Object { kind = Host_object h; _ }, Member (_, k) when !lenient ->
       (match !Js_value.missing with Some tell -> tell h.class_name (k ^ "()") | None -> ());
+      (* a warning in the console, once a name *)
+      let name = h.class_name ^ "." ^ k ^ "()" in
+      if not (Hashtbl.mem warned name) then (
+        Hashtbl.replace warned name ();
+        !Js_value.say ("warning: " ^ name ^ " is not here, the call passed over"));
       true
   | _ -> false
 

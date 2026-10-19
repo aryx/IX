@@ -244,6 +244,11 @@ val describe : Js_ast.expr -> string
  * where a script's own object throws (Js_compile's calls too) *)
 val host_missing : Js_value.value -> Js_value.value -> Js_ast.expr -> bool
 
+(* true (the default): [host_missing] as said, and a warning in the
+ * console (Js_value.say) once a name; false (mini-netscape's
+ * strict=on): such a call throws its TypeError, as before *)
+val lenient : bool ref
+
 (* the built-in prototypes (an array's methods are Array.prototype's);
  * a instanceof f *)
 val protos : t -> Js_builtins.protos

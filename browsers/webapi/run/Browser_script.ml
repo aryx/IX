@@ -257,11 +257,16 @@ let eval (t : t) (text : string) : (value, Js_eval.error) result =
   r
 
 (* what a page's script has that this browser cannot read: passed over,
- * the rest of the script run (Js_parse.parse_page) *)
-let skipped (t : t) (e : Js_parse.error) : unit = say t (Printf.sprintf "passed over, line %d: %s" e.line e.message)
+ * the rest of the script run (Js_parse.parse_page) -- unless [strict]
+ * (mini-netscape's strict=on): then the whole script is refused, its
+ * SyntaxError said, as before *)
+let strict : bool ref = ref false
+let skipped (t : t) (e : Js_parse.error) : unit = say t (Printf.sprintf "warning: passed over, line %d: %s" e.line e.message)
 
 let eval_script (t : t) (text : string) : unit =
-  match Js_eval.eval_page t.engine ~skipped:(skipped t) text with Error e -> report t e | Ok _ -> ()
+  match (if !strict then Js_eval.eval t.engine text else Js_eval.eval_page t.engine ~skipped:(skipped t) text) with
+  | Error e -> report t e
+  | Ok _ -> ()
 
 (* a script the page's: JavaScript by its type= (not JSON-LD, not a
  * template, not a module: this browser has none, and runs what a page
@@ -282,7 +287,7 @@ let inserted (t : t) (n : node) : unit =
   let run (s : node) (text : string) : unit =
     let before = t.current_script in
     t.current_script <- Some s;
-    (try ignore (Js_eval.eval_page_in_run t.engine ~skipped:(skipped t) text) with Throw v -> report t (Js_eval.error_of t.engine v));
+    (try ignore (if !strict then Js_eval.eval_in_run t.engine text else Js_eval.eval_page_in_run t.engine ~skipped:(skipped t) text) with Throw v -> report t (Js_eval.error_of t.engine v));
     t.current_script <- before
   in
   if connected n then

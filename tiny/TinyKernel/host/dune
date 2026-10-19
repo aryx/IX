@@ -2,7 +2,7 @@
 ; for the host, where they are tested first: TinyMemory is the machine's
 ; memory, an array; TinyCalls is the kernel's calls (TinyCalls.mli: a
 ; virtual library, its stub here, the tests', its window in ../../sdl/).
-; On tiny-machine these names are externals (../memory.ml, ../libml/calls.ml)
+; On tiny-machine these names are externals (../TinyMemory.ml, ../libml/TinyCalls.ml)
 (library
  (name tiny_host_memory)
  (wrapped false)

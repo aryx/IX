@@ -16,8 +16,8 @@ a diagram, the history, the references: `docs/tags.md`), then `main`
 and one function at the program's heart, with their types. The `.ml`
 is the code alone. Every file has one, those tiny-ml compiles too
 (TinyKernelGraphics, TinyLibDraw, TinyKernelNetwork, TinyKernelAudio, TinyKernelFS, TinyWindows, TinyLibPlayground,
-TinyAppTetris, TinyLibGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml has no modules and does not read it, OCaml, which
-builds the same files for their tests, checks it. `TinyKernel.mli` is
+TinyAppTetris, TinyLibGUI, TinyAppCalculator, TinyAppTemperature): tiny-ml reads its vals for the
+interface it writes (tiny-ml -c), OCaml, which builds the same files for their tests, checks it. `TinyKernel.mli` is
 the header alone: only tiny-ml compiles `TinyKernel.ml`.
 
 A file's name, or its place, says what it is when it is not a program
@@ -59,7 +59,7 @@ of the system:
     its assembly and C, its programs (`user/`: the ones in C, and
     the last file of the ones in ML) and what they are linked with
     to call it, `libc/` for C (`user.h`, `sys.tm`, `draw.c`, `net.c`)
-    and `libml/` for ML (`mlsys.c`, `calls.ml`, `TinyLibSystem.ml`);
+    and `libml/` for ML (`mlsys.c`, `TinyCalls.ml`, `TinyLibSystem.ml`);
   - `TinyMachine.ml` (and `TinyCPU.ml`) and `TinyMachine/`: the CPU
     (`TinyMachineCPU`), the devices (`TinyMachineDevices`), the other
     end of the wire (`TinyMachinePeer`, which runs the kernel's own
@@ -120,7 +120,7 @@ their machine: `TinyLibDraw.ml` (a program's side of the drawing
 messages), and what the machine gives, by OCaml on the host,
 `TinyMemory.ml` (its bytes: an array) and `TinyCalls` (the kernel's
 calls), both in `TinyKernel/host/`; on tiny-machine these two are
-externals (`TinyKernel/memory.ml`, `TinyKernel/libml/calls.ml`).
+externals (`TinyKernel/TinyMemory.ml`, `TinyKernel/libml/TinyCalls.ml`).
 `TinyCalls` is a virtual library of dune's (`TinyCalls.mli`) with two
 implementations: the tests' stub (`TinyKernel/host/stub/`: what is
 drawn kept, no keys) and a window's ([`sdl/`](sdl/TinyCalls.ml): what

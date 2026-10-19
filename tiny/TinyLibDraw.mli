@@ -21,13 +21,13 @@
  *     a program            TinyAppTetris on TinyLibPlayground, TinyWindows
  *        | d_fill ...      this file: makes a string of 19 bytes
  *        | written on 3    on tiny-machine: a system call (TinyKernel/
- *        |                 user's calls.ml); on the host: TinyCalls,
+ *        |                 user's TinyCalls.ml); on the host: TinyCalls,
  *        |                 which keeps it for the test to check
  *        | (through a pipe, renumbered by TinyWindows, when in a window)
  *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the
  *        |                 host, called directly by the test
  *        | pokeb, rows     on tiny-machine: C and assembly (TinyKernel's
- *        |                 memory.ml); on the host: TinyMemory, an array
+ *        |                 TinyMemory.ml); on the host: TinyMemory, an array
  *     the screen's bytes   at 0xf00000 on both
  *
  * So the three files between a program and its machine (this one,

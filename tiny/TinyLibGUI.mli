@@ -7,7 +7,7 @@
  * given to tiny-ml before the program and after the playground, whose
  * shapes it uses for drawing:
  *
- *     tiny-ml -o calc.tm calls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyLibGUI.ml TinyAppCalculator.ml calc.ml
+ *     tiny-ml -o calc.tm TinyCalls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyLibGUI.ml TinyAppCalculator.ml calc.ml
  *     (the last one line: let () = run calculator)
  *
  * The main idea: {b an interface is a value computed from the model,

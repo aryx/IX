@@ -96,6 +96,10 @@ if $TML -c -o $W/units/Shapes.tm $UT/Shapes.ml && $TML -c -o $W/units/Main.tm $W
    && $TML -o $W/units/whole.tm $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/whole.tm $W/main4096.tm \
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
 then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
+# a unit's names are M.x in the units after it, x after open M only
+printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let () = print_int (area Dot)\n' > $W/units/U.ml
+if $TML -c -o $W/units/Q.tm $W/units/Shapes.tmi $W/units/Q.ml && [ "$($TML -c -o $W/units/U.tm $W/units/Shapes.tmi $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 1: unbound area" ]
+then echo "ok units: Shapes.area, and area unbound without open Shapes"; else echo "FAIL units: the scopes"; failures=$((failures + 1)); fi
 TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi

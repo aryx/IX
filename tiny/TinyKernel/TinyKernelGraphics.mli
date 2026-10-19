@@ -5,7 +5,7 @@
  * that draws (plan_tiny_windows.md), in tiny-ml's ML, which is OCaml's
  * too, so that it is tested on the host first:
  *
- *     tiny-ml -o kernel.tm memory.ml TinyKernelGraphics.ml TinyKernel.ml   (TinyKernel/Makefile)
+ *     tiny-ml -o kernel.tm TinyMemory.ml TinyKernelGraphics.ml TinyKernel.ml   (TinyKernel/Makefile)
  *     dune build ./tiny/tests/TinyKernelGraphics_tests/Host.exe     (TinyKernelGraphics_test.sh)
  *
  * It asks five functions of bytes of its machine, TinyMemory's: peekb

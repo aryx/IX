@@ -50,7 +50,7 @@ $TC -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
 # (-window: without the exit, the program ends in start.tm's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
-$TML -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
+$TML -o $W/picture.tm $T/TinyKernel/TinyMemory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
 link_tm $W/picture.img $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm || fail "machine: the link"
 [ "${1:-}" = -window ] && { $MACHINE -window $W/picture.img; exit; }
 timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/picture.img > $W/machine.out 2>&1 || fail "machine: the run"

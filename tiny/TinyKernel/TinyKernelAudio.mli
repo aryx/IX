@@ -3,7 +3,7 @@
  * makes the pixels. Not a program: tiny-ml's ML, which is OCaml's too,
  * so that it is tested on the host first:
  *
- *     tiny-ml -o kernel.tm memory.ml ... TinyKernelAudio.ml TinyKernel.ml   (TinyKernel/Makefile)
+ *     tiny-ml -o kernel.tm TinyMemory.ml ... TinyKernelAudio.ml TinyKernel.ml   (TinyKernel/Makefile)
  *     dune build ./tiny/tests/TinyKernelAudio_tests/Host.exe                    (TinyKernelAudio_test.sh)
  *
  * It asks two functions of its machine's bytes, TinyMemory's peekb and

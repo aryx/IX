@@ -6,7 +6,7 @@
  * too, so that it is tested on the host first; and, by OCaml, the
  * other end of the wire in TinyMachine.ml:
  *
- *     tiny-ml -o kernel.tm memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernel.ml   (TinyKernel/Makefile)
+ *     tiny-ml -o kernel.tm TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernel.ml   (TinyKernel/Makefile)
  *     dune build ./tiny/tests/TinyKernelNetwork_tests/Host.exe      (TinyKernelNetwork_test.sh)
  *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel     then: ping, get il.txt
  *

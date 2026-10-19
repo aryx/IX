@@ -15,7 +15,7 @@ static char buf[4096];
 static int width = 80;
 
 // tiny-kernel's calls, which the browser's screen part names
-// (TinyBrowser.browse, calls.ml's externals). The test does not draw, so
+// (TinyBrowser.browse, TinyCalls.ml's externals). The test does not draw, so
 // here they do nothing: no screen, no keys, no network.
 value u_write(value fd, value s) { return 1; }
 value u_read(value fd, value n) { return string_alloc(0); }

@@ -3,7 +3,7 @@
 
 (* See TinyKernel.mli *)
 
-(* what draws, and the rows of bytes it draws by (TinyKernel/memory.ml
+(* what draws, and the rows of bytes it draws by (TinyKernel/TinyMemory.ml
  * here): the Makefile gives tiny-ml their files before this one, as
  * one program *)
 open TinyMemory

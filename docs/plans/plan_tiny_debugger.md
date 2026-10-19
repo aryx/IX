@@ -118,7 +118,7 @@ steps. The details that need care:
   reason to run debug: to see where a program dies, and from where.
 
 The call is added where the others are: the dispatch in TinyKernel.ml,
-`TinyKernel/libc/sys.tm` for C, and `TinyKernel/libml/calls.ml` with
+`TinyKernel/libc/sys.tm` for C, and `TinyKernel/libml/TinyCalls.ml` with
 `TinyLibSystem.ml` for ML.
 
 ## 3. The debugger side, debug, about 300 lines

@@ -3,11 +3,11 @@
 
 (* TinyLibSystem on tiny-machine: what a tool asks of the system
  * (tiny-shell; ../host/TinyLibSystem.mli says each function), over
- * tiny-kernel's calls (mlsys.c's, beside this file; calls.ml names
- * them), in tiny-ml's ML. Given to tiny-ml after calls.ml and
+ * tiny-kernel's calls (mlsys.c's, beside this file; TinyCalls.ml names
+ * them), in tiny-ml's ML. Given to tiny-ml after TinyCalls.ml and
  * TinyLibStd.ml, and before the tool's file:
  *
- *   tiny-ml -o rc.tm libml/calls.ml TinyLibStd.ml libml/TinyLibSystem.ml TinyShell.ml
+ *   tiny-ml -o rc.tm libml/TinyCalls.ml TinyLibStd.ml libml/TinyLibSystem.ml TinyShell.ml
  *
  * Not in tiny/ with the other TinyLibXxx.ml: the host's file has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml
@@ -38,6 +38,8 @@
  * - a file's time: touch makes a file that is not there, and does
  *   nothing to one that is
  *)
+
+open TinyCalls
 
 type Cap.all_caps = < >
 

@@ -8,8 +8,8 @@ let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
 let help = {|usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...
-A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
-arrays) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
+A tiny ML compiler: an ML file (its own small dialect: a file a module, no
+functors nor labels) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
 fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
@@ -21,8 +21,8 @@ fact.ml, for example:
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
 is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are a
-unit each, one after the other, then their main; their names one name space
-(an open M is read and left). Or a unit at a time, then the main:
+module each, one after the other, then their main: a's x is A.x in b, or x
+after open A. Or a module at a time, then the main:
   tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
   tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
   tiny-ml -o main.tm a.tmi b.tmi           the prelude, a's and b's init, ml_start
@@ -156,7 +156,7 @@ type expr =
 
 and case = pat * expr option * expr
 
-type item = ILet of bool * (pat * expr) list | IExt of string * texpr * string | IExn of string
+type item = ILet of bool * (pat * expr) list | IExt of string * texpr * string | IExn of string | IOpen of string
 
 (* a constructor: its number among its type's constant ones or among
  * the others (a block's tag), or an exception; its type as
@@ -557,9 +557,7 @@ let rec items () : (item * int) list =
       if accept (KW "in") then (let e = Let (r, bs, expr ()) in (ILet (false, [ PAny, e ]), l) :: items ())
       else (ILet (r, bs), l) :: items ()
   | KW "type" -> advance (); type_decl (); items ()
-  (* open M: read and left (several files are one program, their names
-   * as they are; said for OCaml, which builds the same files as modules) *)
-  | KW "open" -> advance (); (match peek () with UID _ -> advance () | _ -> fail ()); items ()
+  | KW "open" -> advance (); (match peek () with UID m -> advance (); (IOpen m, l) :: items () | _ -> fail ())
   | KW "exception" ->
       advance ();
       let c = match peek () with UID c -> advance (); c | _ -> fail () in
@@ -781,8 +779,34 @@ let type_item env (it, l) =
     | ILet (false, bs) -> let_types env bs
     | ILet (true, bs) -> rec_types env bs
     | IExt (x, t, _) -> (x, of_texpr (ref []) t) :: env
-    | IExn _ -> env
+    | IExn _ | IOpen _ -> env
   with Failure m -> error "line %d: %s" l m
+
+(* Scopes. A unit's names are M.x for the units after it (but a name
+ * with a dot already, TinyLibStd's String.trim, libml's
+ * TinyLibSystem.fork, which is as it is written); open M gives a unit
+ * M's names as x, for itself alone. Stdlib is open in every unit, and
+ * TinyLibStd, the rest of OCaml's standard library for tiny-ml, too.
+ * A name's env and a type's env are scoped alike; the types, the
+ * constructors and the labels are the program's, one name space
+ * (old: every name the program's, open M read and left) *)
+let implicit u = u = "Stdlib" || u = "TinyLibStd"
+let qualify u x = if String.contains x '.' then x else u ^ "." ^ x
+let opened u env =
+  let p = u ^ "." in
+  let n = String.length p in
+  List.filter_map (fun (x, b) ->
+    if String.length x > n && String.sub x 0 n = p && not (String.contains (String.sub x n (String.length x - n)) '.')
+    then Some (String.sub x n (String.length x - n), b) else None) env
+  @ env
+let export u defs before = List.map (fun (x, b) -> qualify u x, b) defs @ (if implicit u then defs else []) @ before
+
+(* a unit's items typed: the env then, and the names it defined *)
+let type_unit env items =
+  List.fold_left (fun (env, defs) (it, l) ->
+    match it with
+    | IOpen u -> opened u env, defs
+    | _ -> let env' = type_item env (it, l) in env', List.filteri (fun i _ -> i < List.length env' - List.length env) env' @ defs) (env, []) items
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -1502,27 +1526,28 @@ let compile_unit env (items : (item * int) list) =
   arities := [];
   let table = !unit_name ^ ".globals" and nglobals = ref 0 in
   let rec arity = function TE ("->", [ _; r ]) -> 1 + arity r | _ -> 0 in
-  let env = List.fold_left (fun env (it, l) ->
+  let env, defs = List.fold_left (fun (env, defs) (it, l) ->
     try
       match it with
-      | IExt (x, t, p) -> (x, Ext (p, arity t)) :: env
+      | IOpen u -> opened u env, defs
+      | IExt (x, t, p) -> let b = x, Ext (p, arity t) in b :: env, b :: defs
       | IExn c ->
           block (exn_id c) (header 1 0) [ DVal (static_string c) ];
           if (find_con c).arity = 0 then block (exn_const c) (header 1 0) [ DVal (exn_id c) ];
-          env
+          env, defs
       | ILet (r, bs) ->
           let env' = bind env r bs in
           let added = List.filteri (fun i _ -> i < List.length env' - List.length env) env' in
-          List.map (function
+          let added = List.map (function
             | x, Loc (Slot s, k) -> emit (Get s); emit (SetG (table, !nglobals)); incr nglobals; x, Loc (Glob (table, !nglobals - 1), k)
-            | b -> b) added
-          @ env
-    with Failure m -> error "line %d: %s" l m) env items in
+            | b -> b) added in
+          added @ env, added @ defs
+    with Failure m -> error "line %d: %s" l m) (env, []) items in
   emit (Imm 1L);
   emit Ret;
   machine (!unit_name ^ ".init") 0 !cur.nslots (List.rev !cur.code);
   while not (Queue.is_empty queue) do (Queue.pop queue) () done;
-  env, !nglobals
+  env, defs, !nglobals
 
 (* The program's main: ml_init, each unit's init in their order, in a
  * handler that prints an uncaught exception; the curry functions the
@@ -1606,9 +1631,9 @@ let write_interface (exports : (string * binding) list) types nglobals =
     | None -> ()
     | Some t ->
         match bd with
-        | Loc (Static sym, k) -> line "val %s static %s %s %s" x sym (known k) (print_ty t)
-        | Loc (Glob (tb, i), k) -> line "val %s global %s %d %s %s" x tb i (known k) (print_ty t)
-        | Ext (p, n) -> line "val %s ext %s %d %s" x p n (print_ty t)
+        | Loc (Static sym, k) -> line "val %s static %s %s %s" (qualify !unit_name x) sym (known k) (print_ty t)
+        | Loc (Glob (tb, i), k) -> line "val %s global %s %d %s %s" (qualify !unit_name x) tb i (known k) (print_ty t)
+        | Ext (p, n) -> line "val %s ext %s %d %s" (qualify !unit_name x) p n (print_ty t)
         | Loc _ -> ()) exports;
   Buffer.contents b
 
@@ -1641,6 +1666,7 @@ let read_interface text env tenv =
     | [ "" ] -> ()
     | _ -> error "not an interface's line: %s" l) (String.split_on_char '\n' text);
   if !name = "" then error "not an interface of tiny-ml's";
+  if implicit !name then (env := opened !name !env; tenv := opened !name !tenv);
   !env, !tenv, (!name, !nglobals), !needed
 
 (* M.mli's vals, their types in place of what M.ml's inferred: its
@@ -1691,9 +1717,10 @@ let prelude_unit () =
   unit_name := "Stdlib";
   (* an integer's range: 31 bits *)
   let items = parse (prelude ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n") in
-  let tenv = List.fold_left type_item [] items in
-  let env, n = compile_unit [] items in
-  env, tenv, ("Stdlib", n), !arities
+  let tenv, tdefs = type_unit [] items in
+  let _, defs, n = compile_unit [] items in
+  ignore tenv;
+  export "Stdlib" defs [], export "Stdlib" tdefs [], ("Stdlib", n), !arities
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
   let output = ref "" and file = ref "" and files = ref [] and separate = ref false in
@@ -1725,11 +1752,10 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       unit_name := unit_of f;
       known_units := !unit_name :: !known_units;
       let items = parse (read f) in
-      let tenv' = List.fold_left type_item tenv items in
-      let env', n = compile_unit env items in
-      let exports = List.filteri (fun i _ -> i < List.length env' - List.length env) env' in
+      let _, tdefs = type_unit tenv items in
+      let _, exports, n = compile_unit env items in
       let mli = Filename.remove_extension f ^ ".mli" in
-      let types = (if Sys.file_exists mli then mli_types (read mli) else []) @ tenv' in
+      let types = (if Sys.file_exists mli then mli_types (read mli) else []) @ tdefs in
       let out = if !output = "" then Filename.remove_extension (Filename.basename f) ^ ".tm" else !output in
       write out (Buffer.contents text ^ Buffer.contents data);
       write (Filename.remove_extension out ^ ".tmi") (write_interface exports types n)
@@ -1739,9 +1765,9 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
         unit_name := unit_of f;
         known_units := !unit_name :: !known_units;
         let items = parse (read f) in
-        let tenv = List.fold_left type_item tenv items in
-        let env, n = compile_unit env items in
-        env, tenv, units @ [ (!unit_name, n) ], needed @ !arities) (env, tenv, units, needed) mls in
+        let _, tdefs = type_unit tenv items in
+        let _, defs, n = compile_unit env items in
+        export !unit_name defs env, export !unit_name tdefs tenv, units @ [ (!unit_name, n) ], needed @ !arities) (env, tenv, units, needed) mls in
       compile_main units needed;
       let asm = start ^ Buffer.contents text ^ Buffer.contents data in
       if !output = "" then Console.print caps asm else write !output asm

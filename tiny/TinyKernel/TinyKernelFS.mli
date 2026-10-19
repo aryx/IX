@@ -4,7 +4,7 @@
  * halt. Like the other parts, it is written in tiny-ml's ML, which is
  * also OCaml, so it is tested on the host first:
  *
- *     tiny-ml -o kernel.tm memory.ml ... TinyKernelFS.ml TinyKernel.ml   (TinyKernel/Makefile)
+ *     tiny-ml -o kernel.tm TinyMemory.ml ... TinyKernelFS.ml TinyKernel.ml   (TinyKernel/Makefile)
  *     dune build ./tiny/tests/TinyKernelFS_tests/Host.exe                    (TinyKernelFS_test.sh)
  *
  * It needs two things from the machine: TinyMemory's bytes, and a way

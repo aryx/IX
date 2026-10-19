@@ -5,7 +5,7 @@
  * both tiny-ml and OCaml accept, and it is given to tiny-ml before the
  * game itself (see plan_tiny_windows.md):
  *
- *     tiny-ml -o tetris.tm calls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyAppTetris.ml tetris.ml
+ *     tiny-ml -o tetris.tm TinyCalls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyAppTetris.ml tetris.ml
  *     (the last one line: let () = run game)
  *
  * The main idea: {b a game is a value and three functions} (and two

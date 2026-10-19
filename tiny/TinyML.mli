@@ -135,11 +135,12 @@
  *   and its type, M.mli's when there is one), which the units after it
  *   read; a program's main (ml_start, the prelude, each unit's init in
  *   their order, the curry functions, the tables) is made of the
- *   interfaces. Names stay one name space, as when a program was its
- *   files compiled whole: M.x is a name like another (TinyLibStd's
- *   String.trim), open M is read and left, a record's label is the
- *   latest record's unless the type says which; OCaml checks the
- *   scopes of the files it builds too. Each function and static block
+ *   interfaces. A unit is a module: its names are M.x in the units
+ *   after it, or x after open M; a name with a dot is as it is written
+ *   (TinyLibStd's String.trim); Stdlib, the prelude, is open in all,
+ *   and TinyLibStd too. The types, the constructors and the labels
+ *   are the program's, one name space: a record's label is the latest
+ *   record's unless the type says which. Each function and static block
  *   is a piece (.piece), which tiny-linker leaves out when nothing
  *   reaches it: a function of the toplevel has no free variable, so
  *   its closure is static and the init does not name it, and a library
@@ -260,9 +261,9 @@ type binding
 
 (* a unit's phrases (each with its line), with the names of the units
  * before it, to assembly added to the output: every function's code,
- * and <unit>.init, its toplevel; the names then, and its globals'
- * count *)
-val compile_unit : (string * binding) list -> (item * int) list -> (string * binding) list * int
+ * and <unit>.init, its toplevel; the names then, those it defined, and
+ * its globals' count *)
+val compile_unit : (string * binding) list -> (item * int) list -> (string * binding) list * (string * binding) list * int
 
 (* the program: files of ML to a file of assembly (-h: how) *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> unit

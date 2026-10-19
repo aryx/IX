@@ -373,7 +373,7 @@ tiny-windows like emacs, and a screen session in `make check`:
      we can put this in a sdl/ directory that we usually skip already I
      think as part of make loc". It did: TinyOffice.ml makes no call,
      TinyLibGUI, the playground and TinyLibDraw make theirs through
-     TinyCalls, which was the kernel's (calls.ml) or the tests' stub.
+     TinyCalls, which was the kernel's (TinyCalls.ml) or the tests' stub.
      TinyCalls is now a virtual library of dune's
      (TinyKernel/host/TinyCalls.mli), with two implementations: the
      stub (TinyKernel/host/stub/, the tests', the default) and a

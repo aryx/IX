@@ -61,7 +61,7 @@
 <text x="352" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore.ml, a prelude: tiny-ml</text>
 <text x="352" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">reads it before every program (the</text>
 <text x="352" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">operators, option, the exceptions, List);</text>
-<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libml/calls.ml: the kernel&#x27;s</text>
+<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libml/TinyCalls.ml: the kernel&#x27;s</text>
 <text x="352" y="501" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">calls, as externals</text>
 <line x1="486" y1="514" x2="486" y2="532" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="534" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
@@ -125,7 +125,7 @@
 <text x="1238" y="267" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
 <text x="968" y="288" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyKernel/TinyKernelGraphics.ml</text>
 <text x="968" y="305" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(the pixels), TinyKernelNetwork.ml (IP,</text>
-<text x="968" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">IL), memory.ml (the machine&#x27;s bytes,</text>
+<text x="968" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">IL), TinyMemory.ml (the machine&#x27;s bytes,</text>
 <text x="968" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">as externals)</text>
 <line x1="1102" y1="352" x2="1102" y2="370" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="372" width="296" height="57" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>

@@ -445,3 +445,21 @@ and its library is TinyLibCore/.
     where a sound effect meets the tune a little later.
   - **Lines**: TinyML.ml 1,753 (+177), TinyLinker.ml 166 (+31); t-IX
     18,880 without the header comments (README's budget: 6,100 left).
+- 2026-10-19: step 5, its first half: a unit is a module (the author:
+  "let's do it", on scoping first, as a commit of its own). A unit's
+  names are M.x in the units after it, x after open M (for that unit
+  alone: what it opens it does not export); a name with a dot already
+  is as written (TinyLibStd's String.trim, libml's TinyLibSystem.fork:
+  they go with step 5's modules); Stdlib is open in every unit, and
+  TinyLibStd until it is TinyLibCore/'s modules. The types, the
+  constructors and the labels stay the program's, one name space. The
+  interfaces carry M.x. Two files renamed to the modules the others
+  open, as the host's are named: TinyKernel/memory.ml is
+  TinyMemory.ml, libml/calls.ml is TinyCalls.ml; libml/TinyLibSystem.ml
+  opens TinyCalls; the browser's test says TinyBrowser.create (it
+  could not before); tiny/TinyKernel's Makefile names each unit as a
+  static pattern's target (make uses an implicit rule once in a chain,
+  and a unit's interface is another's prerequisite). Every other file
+  already had the opens OCaml asks for. tiny-kernel's kernel and 12
+  of its programs the same bytes as at step 4; TinyML_test.sh checks
+  Shapes.area, and area unbound without open Shapes.

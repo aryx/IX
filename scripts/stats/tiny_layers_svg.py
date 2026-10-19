@@ -55,7 +55,7 @@ COLUMNS = [
             "tiny/TinyLibCore.ml, a prelude: tiny-ml",
             "reads it before every program (the",
             "operators, option, the exceptions, List);",
-            "TinyKernel/libml/calls.ml: the kernel's",
+            "TinyKernel/libml/TinyCalls.ml: the kernel's",
             "calls, as externals"]),
         ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c: the allocator,",
@@ -94,7 +94,7 @@ COLUMNS = [
         ("Its parts that are files", "ML", [
             "tiny/TinyKernel/TinyKernelGraphics.ml",
             "(the pixels), TinyKernelNetwork.ml (IP,",
-            "IL), memory.ml (the machine's bytes,",
+            "IL), TinyMemory.ml (the machine's bytes,",
             "as externals)"]),
         ("The core library", "ML", [
             "tiny/TinyLibCore.ml: the same prelude"]),

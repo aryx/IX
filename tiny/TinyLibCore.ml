@@ -14,7 +14,8 @@
  * and the exceptions the runtime raises, in the order it numbers them;
  * then the Pervasives and List functions, as a program would find
  * them in ocaml-light's stdlib, written in ML. A name with a dot
- * (List.map) is one name: tiny-ml has no modules.
+ * (List.map) is one name, the module's that OCaml has, until they are
+ * tiny-ml's modules (plan_tiny_self_hosting.md, step 5).
  *
  * Not OCaml's to compile, and not looked for when tiny-ml runs: the
  * build puts this file's text in the compiler (tiny/dune's rule and

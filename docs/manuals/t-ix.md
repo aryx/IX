@@ -505,9 +505,9 @@ A program is linked after its runtime (`tiny/TinyCRuntime/`):
 
 ### 6.3 ML: `tiny-ml`
 
-A file is a unit, compiled alone or with the others; its names, its
-types and its constructors are the program's, one name space (`open M`
-is read and left). Integers are 31 bits (a value is `2n+1` or a
+A file is a module, compiled alone or with the others: its names are
+`M.x` in the modules after it, or `x` after `open M`; its types and
+constructors are the program's, one name space. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
 `TinyMLRuntime/core.c`, compiled by `tiny-c`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
@@ -759,7 +759,7 @@ loop (another tune, a faster pace, goes on from the same notes;
 
 `random s` is the next state of a generator of the model's. A game is
 several files given to tiny-ml as one program (TinyKernel's
-Makefile: `libml/calls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
+Makefile: `libml/TinyCalls.ml`, `TinyLibDraw.ml`, `TinyLibPlayground.ml`, the
 game, and a last file that says `let () = run game`); the same files
 are OCaml's, where a game's model and picture are tested with no
 machine. `square` is one of a page
@@ -791,7 +791,7 @@ only the widgets that are others than those shown are drawn.
 | `Col widgets` | one under the other, the column's width each |
 
 It is given to tiny-ml after the playground, whose shapes it draws by
-(TinyKernel's Makefile: `libml/calls.ml`, `TinyLibDraw.ml`,
+(TinyKernel's Makefile: `libml/TinyCalls.ml`, `TinyLibDraw.ml`,
 `TinyLibPlayground.ml`, `TinyLibGUI.ml`, the program, and a last file that
 says `let () = run calculator`). `calc` is `tiny/TinyAppCalculator.ml`:
 the mouse on its buttons, or the keys (the digits, `+ - * /`, `=` or
@@ -914,7 +914,7 @@ keeps it at the wire's other end (§5.5).
 A program on these libraries asks the kernel nothing but through
 `TinyCalls` (`u_write`, `u_read`, `u_ready`, `u_open`, `u_close`,
 `u_ticks`, `u_rawcons`, `u_dial`, `u_argc`, `u_arg`). On tiny-machine
-they are the system calls (`TinyKernel/libml/calls.ml`); built by
+they are the system calls (`TinyKernel/libml/TinyCalls.ml`); built by
 OCaml, `TinyCalls` is a virtual library of dune's
 (`TinyKernel/host/TinyCalls.mli`) with two implementations: the
 tests' stub (`TinyKernel/host/stub/`), and a window's

@@ -51,7 +51,7 @@
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
-# characters of 8 by 16 bits), the kernel (tiny-ml: memory.ml,
+# characters of 8 by 16 bits), the kernel (tiny-ml: TinyMemory.ml,
 # TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
 # TinyKernelFS.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
@@ -68,7 +68,7 @@
 # user/ has the programs, a file each (the ones in C; an ML one's
 # last file, which runs it); libc/ what a C program is linked with to
 # call this kernel (user.h, sys.tm, draw.c, net.c); libml/ the same
-# for an ML one (mlsys.c, calls.ml, TinyLibSystem.ml).
+# for an ML one (mlsys.c, TinyCalls.ml, TinyLibSystem.ml).
 #
 # What is built goes to _make/ and nowhere else, so that this
 # directory shows the sources: _make/*.tm the kernel's assembly, *.o
@@ -114,7 +114,7 @@ $(O)/%.o: $(L)/%.tm
 	$(AS) -o $@ $<
 .SECONDARY:
 
-$(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
+$(O)/kernel.tm: ../TinyLibStd.ml TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
 	$(TML) -o $@ $^
 
@@ -158,16 +158,16 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o
 # program, the library's unused toplevel left out by tiny-ml:
 # plan_tiny_self_hosting.md, step 4)
 U = $(O)/ml
-I_TinyLibStd = Calls
-I_TinyLibSystem = Calls TinyLibStd
-I_TinyLibRegex = Calls TinyLibStd TinyLibSystem
-I_TinyLibPlayground = Calls TinyLibDraw
-I_TinyLibGUI = Calls TinyLibDraw TinyLibPlayground
+I_TinyLibStd = TinyCalls
+I_TinyLibSystem = TinyCalls TinyLibStd
+I_TinyLibRegex = TinyCalls TinyLibStd TinyLibSystem
+I_TinyLibPlayground = TinyCalls TinyLibDraw
+I_TinyLibGUI = TinyCalls TinyLibDraw TinyLibPlayground
 I_TinyWindows = TinyLibDraw
 I_TinyAppTetris = $(I_TinyLibGUI)
 I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
-GUI = Calls TinyLibStd TinyLibDraw TinyLibPlayground TinyLibGUI
+GUI = TinyCalls TinyLibStd TinyLibDraw TinyLibPlayground TinyLibGUI
 I_TinyEditorScreen = $(GUI)
 I_TinyOffice = $(GUI)
 I_TinyTroff = $(GUI) TinyOffice
@@ -187,7 +187,7 @@ I_Troff = $(GUI) TinyOffice TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(GUI) TinyBrowser
 # each unit's file
-F_Calls = libml/calls.ml
+F_TinyCalls = libml/TinyCalls.ml
 F_TinyLibSystem = libml/TinyLibSystem.ml
 F_Square = ../tests/TinyLibPlayground_tests/Square.ml
 F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
@@ -200,11 +200,16 @@ F_Troff = user/troff.ml
 F_Play = user/play.ml
 F_Www = user/www.ml
 F_Bigmem = user/bigmem.ml
+# (a static pattern's targets: make uses an implicit rule once in a
+# chain, and a unit's interface is another unit's prerequisite)
+UNITS = TinyCalls TinyLibStd TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI \
+  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
+  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem
 .SECONDEXPANSION:
-$(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml)
+$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml)
 	@mkdir -p $(@D)
 	$(TML) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
-$(U)/%.tmi: $(U)/%.tm ;
+$(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 
 # each program's units, in their order (windows: tiny-windows, after
 # ../TinyLibDraw.ml; rc: tiny-shell, on ../TinyLibStd.ml, what it names

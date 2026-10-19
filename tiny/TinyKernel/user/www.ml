@@ -3,7 +3,7 @@
 
 (* www, tiny-kernel's web browser: ../../TinyBrowser.ml's browse, on the
  * address given (its words joined, so that www Plan 9 from Bell Labs
- * needs no quotes). The Makefile gives tiny-ml ../libml/calls.ml,
+ * needs no quotes). The Makefile gives tiny-ml ../libml/TinyCalls.ml,
  * ../../TinyLibStd.ml, ../../TinyLibDraw.ml, ../../TinyLibPlayground.ml,
  * ../../TinyLibGUI.ml and ../../TinyBrowser.ml before this file, as one
  * program, and links it as an a.out that asks for 10 MB (tiny-linker -a

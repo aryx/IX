@@ -84,6 +84,7 @@ TML = tiny-ml
 TC = tiny-c
 AS = tiny-assembler
 LD = tiny-linker
+CPU = tiny-cpu
 MACHINE = tiny-machine
 
 O = _make
@@ -91,7 +92,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/font.o $(O)/kernel.o $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www
+PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -114,9 +115,14 @@ $(O)/%.o: $(L)/%.tm
 	$(AS) -o $@ $<
 .SECONDARY:
 
-$(O)/kernel.tm: TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
+# (what tiny-ml compiles depends on tiny-ml too, when TML is a path, as
+# ../../tiny-machine gives it: its binary carries TinyLibCore/, the
+# first units of every program; old: a change there left the objects
+# made before, some units of a program on the old library)
+TMLBIN = $(wildcard $(TML))
+$(O)/kernel.tm: TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml $(TMLBIN)
 	@mkdir -p $(@D)
-	$(TML) -o $@ $^
+	$(TML) -o $@ $(filter %.ml,$^)
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)
@@ -175,6 +181,10 @@ I_TinyBrowser = $(GUI)
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
+I_TinyProfiler = TinyCalls TinyLibSystem
+I_TinyDatabase = TinyCalls TinyLibSystem
+I_TinyVCS = TinyCalls TinyLibSystem
+I_TinyBuildSystem = TinyCalls TinyLibSystem
 I_Square = $(I_TinyLibGUI)
 I_Machine = $(I_TinyLibGUI) Square
 I_Tetris = $(I_TinyAppTetris) TinyAppTetris
@@ -201,11 +211,11 @@ F_Www = user/www.ml
 F_Bigmem = user/bigmem.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI \
+UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem
 .SECONDEXPANSION:
-$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml)
+$(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
@@ -221,7 +231,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 # www: a page's lines live in its heap; play: the WAV file is read
 # whole into it). Its code must stay under 384 KB, where mlsys.c's
 # heap, or its stack of values, starts.
-ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff
+ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build
 UNITS_windows = TinyLibDraw TinyWindows
 UNITS_square = $(I_Machine) Machine
 UNITS_tetris = $(I_Tetris) Tetris
@@ -236,11 +246,15 @@ UNITS_rc = $(I_TinyShell) TinyShell
 UNITS_utils = $(I_TinyUtilities) TinyUtilities
 UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
 UNITS_bigmem = Bigmem
+UNITS_prof = $(I_TinyProfiler) TinyProfiler
+UNITS_db = $(I_TinyDatabase) TinyDatabase
+UNITS_vcs = $(I_TinyVCS) TinyVCS
+UNITS_build = $(I_TinyBuildSystem) TinyBuildSystem
 MEM_bigmem = -a 8
 MEM_www = -a 10
 MEM_play = -a 4
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
-$(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*)))
+$(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML) -o $@ $(filter %.tmi,$^)
 # (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
@@ -270,8 +284,18 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # office's, which troff prints (office /examples/report.ixd, troff -h
 # /examples/report.ixd); a sound, which play plays (play
 # /examples/korobeiniki.wav: tetris's tune, its first four bars, made by
-# m-ix's mini-play, at 11,025 samples a second in 16 bits)
-EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav
+# m-ix's mini-play, at 11,025 samples a second in 16 bits); a profile and
+# its map, which prof reads (prof /examples/spin.prof -u
+# /examples/spin.map: ../tests/TinyProfiler_tests/spin.tm, linked with
+# -map and run by tiny-cpu -prof)
+EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map
+
+$(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
+	@mkdir -p $(@D)
+	$(AS) -o $(O)/spin.o $<
+	$(LD) -map -o $(O)/spin $(O)/spin.o
+	$(CPU) -prof $@ $(O)/spin > /dev/null
+$(O)/spin.map: $(O)/spin.prof
 
 $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	cp $(O)/kernel.img $@
@@ -280,7 +304,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
 	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
 	printf '\n' >> $@
-	@test $$(wc -c < $@) -lt 4718592 || { echo "$@: over 4.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
+	@test $$(wc -c < $@) -lt 7864320 || { echo "$@: over 7.5 MB, where runtime.c has the kernel's stack of values"; rm $@; exit 1; }
 
 run: $(O)/boot.img
 	$(MACHINE) $(O)/boot.img
@@ -305,6 +329,10 @@ check: $(O)/boot.img
 	timeout 300 $(MACHINE) -events $(T)/officequit.events $(O)/boot.img >> $(O)/check.out
 	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; troff -p /examples/report.ixd > r.pdf; wc r.html r.pdf; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'prof /examples/spin.prof -u /examples/spin.map\nprof -n 2 /examples/spin.prof\nprof\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/db.keys >> $(O)/check.out
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/vcs.keys >> $(O)/check.out
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out

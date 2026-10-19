@@ -27,7 +27,8 @@
  *)
 
 (* [main name f]: the program: f with every capability, its result the
- * exit's code; name is for the host's logs *)
+ * exit's code; a Failure that f lets out said after name, the code 1.
+ * name is for the host's logs too *)
 val main : string -> (Cap.all_caps -> int) -> unit
 
 (* the program's name, then its arguments *)
@@ -66,6 +67,15 @@ val open_in : < Cap.open_in; .. > -> string -> int
 val open_out : < Cap.open_out; .. > -> string -> int
 val open_append : < Cap.open_out; .. > -> string -> int
 val close : int -> unit
+
+(* a file's descriptor to read and write it, at any place (a database's
+ * file); made empty when it is not there. Failure with the reason *)
+val open_rw : < Cap.open_in; Cap.open_out; .. > -> string -> int
+
+(* [seek fd off]: the next read or write at off from the file's start;
+ * [seek_end fd]: at its end, which is the offset given *)
+val seek : int -> int -> unit
+val seek_end : int -> int
 
 (* a file's text; Failure with the reason *)
 val read_file : < Cap.open_in; .. > -> string -> string
@@ -109,12 +119,22 @@ val link : < Cap.open_out; .. > -> string -> string -> unit
  * name. Failure with the reason *)
 val rename : < Cap.open_out; .. > -> string -> string -> unit
 
+(* whether a file is a program to run, its x bit for its owner; [set_executable
+ * caps file x]: its bit set, or cleared (tiny-kernel has no modes: no
+ * file is one there, and the call does nothing) *)
+val is_executable : string -> bool
+val set_executable : < Cap.open_out; .. > -> string -> bool -> unit
+
 (* a file that is there written now, as far as its time says; one that
  * is not there made, empty. Failure with the reason *)
 val touch : < Cap.open_out; .. > -> string -> unit
 
 (* the directory the process is in *)
 val getcwd : < Cap.readdir; .. > -> string
+
+(* the seconds since 1970 (0 on tiny-kernel, which has no clock of the
+ * day) *)
+val time : unit -> int
 
 (* nothing done for so many milliseconds *)
 val sleep : int -> unit
@@ -147,6 +167,19 @@ val exec : < Cap.exec; .. > -> string -> string list -> string list -> string
 (* a child's end, as rc's status: "" when all went well, its code, or
  * "signal: " and the signal's name *)
 val wait : < Cap.wait; .. > -> int -> string
+
+(* the next child to end, and its status as wait's; None when there is
+ * no child *)
+val wait_any : < Cap.wait; .. > -> (int * string) option
+
+(* [shell caps vars script]: a child that runs script by the system's
+ * shell, vars among its variables (each a list of words), what was
+ * printed flushed first; its pid. The
+ * script is in that shell's language: the host's sh -e, tiny-kernel's
+ * rc -e (there in a file, an argument having 64 bytes at most, which
+ * rc reads whole and removes first; no environment: vars are rc's
+ * assignments before it) *)
+val shell : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. > -> (string * string list) list -> string -> int
 
 (* the end of this process, at once: nothing flushed *)
 val exit : int -> 'a

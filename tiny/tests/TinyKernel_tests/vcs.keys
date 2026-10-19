@@ -1,0 +1,14 @@
+rc
+mkdir r; cd r; vcs init
+echo hello > a.txt; echo one > b.txt
+vcs status
+vcs commit -m first
+vcs branch feature; vcs switch feature
+echo more >> a.txt; echo two > b.txt; vcs diff
+vcs commit -m second
+vcs switch master; echo three > b.txt; vcs commit -m third
+vcs merge feature; cat a.txt b.txt; vcs status
+vcs log
+vcs undo; cat a.txt b.txt
+cd /; vcs clone r c; cat c/a.txt; vcs
+exit

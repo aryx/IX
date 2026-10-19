@@ -14,10 +14,13 @@ how each was decided ([plan_tiny_os.md](../plans/plan_tiny_os.md),
 [plan_tiny_windows.md](../plans/done/plan_tiny_windows.md),
 [notes_tiny_kernel.md](../notes_tiny_kernel.md)).
 
-The other tiny programs (tiny-build, tiny-shell, tiny-editor, tiny-db,
-tiny-vcs) run on the host and are not covered here
+The other tiny programs (tiny-shell, tiny-utils, tiny-editor,
+tiny-prof, tiny-db, tiny-vcs, tiny-build) run on the host and on
+tiny-kernel, the same file built by OCaml and by tiny-ml (`rc`, the
+utilities, `ed`, `prof`, `db`, `vcs`, `build` in its `/bin`), and are
+not covered here beyond that; the toolchain runs on the host
 ([plan_tiny_self_hosting.md](../plans/plan_tiny_self_hosting.md)
-brings them to the machine).
+brings it to the machine).
 
 ## 1. The quick way
 
@@ -86,12 +89,9 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 
 | program | outside `tiny/` |
 |---|---|
-| tiny-c, tiny-ml | nothing: OCaml's standard library only |
-| tiny-editor | `unix` |
-| tiny-db | `unix`, `caps` |
-| tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
-| tiny-machine, tiny-build, tiny-shell, tiny-utils | `lib_core/`, `fpath`, `caps`, `unix` |
-| tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
+| tiny-c, tiny-ml, tiny-assembler, tiny-linker, tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
+| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyKernel/host/`) |
+| tiny-vcs, tiny-build | the same, and `lib_crypto/` (SHA-1; TinyLibCore's `Sha1` under tiny-ml) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
 | tiny-machine-fetch | `lib_networking/` (DNS, TLS 1.3, HTTP), `lib_graphics/images/` (PNG, JPEG, GIF), `lib_compression/`, `lib_crypto/` |
 
@@ -578,10 +578,18 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
 | 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
 | 22 | `rawcons(on)` | 23 | `trace(pid)` |
+| 24 | `seek(fd, n, whence)` | | |
+
+`seek` sets a file's offset at `n` from its start (`whence` 0), from
+where it is (1) or from its end (2), as Plan 9's, and gives the new
+one: `db`'s file is read and written at any place, and `>>` is an
+open, then a seek to the end.
 
 `rawcons(1)` gives the console's ^C to the calling process as a byte
 it reads, while it lives, instead of killing every process but the
-first: emacs's C-x C-c (Plan 9's `rawon`). `rawcons(0)` gives it back.
+first: emacs's C-x C-c (Plan 9's `rawon`); and its ^D, which otherwise
+ends a read of the console with nothing read, the end of the input
+for `cat` or `db`. `rawcons(0)` gives them back.
 
 `trace(pid)` gives a descriptor on another process, for a debugger
 ([plan_tiny_debugger.md](../plans/plan_tiny_debugger.md)). A write is a
@@ -628,7 +636,7 @@ never waits. A process has 32 descriptors.
 The files are a tree of ML values in the kernel's heap, made at the
 boot from what the image carries after the kernel:
 
-    /bin        the programs (sh, rc, the utilities by their names, emacs, office, play...)
+    /bin        the programs (sh, rc, the utilities by their names, emacs, office, play, prof, db, vcs, build...)
     /dev        the devices: console, draw, mouse, audio (7.3)
     /examples   files to look at: sources, a page of the office's, a WAV
 

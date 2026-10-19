@@ -18,13 +18,13 @@ let fs_write b a = !fs_io b a 2
 
 let fs_bsize = 1024
 
-(* The memory, from 7 MB up, is the kernel's area that nothing else uses.
+(* The memory, from 10 MB up, is the kernel's area that nothing else uses.
  * It holds buffers of a block each: 0 to 2 for the levels of a write, 3
  * for a read, 4 for a block of inodes, 5 for following pointers, 6 for
  * a text to write, 7 for the disk's own block 0, 8 to 13 for marking;
  * then the inode being worked on (14), the superblock (15), and the
  * map of the blocks, a byte each, for 64 K blocks at most. *)
-let fs_mem = 0x700000
+let fs_mem = 0xa00000
 let fs_buf k = fs_mem + (k * fs_bsize)
 let fs_ino = fs_buf 14
 let fs_sb = fs_buf 15

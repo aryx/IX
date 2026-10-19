@@ -46,7 +46,7 @@ let part = 0x100000
 let nslots = 8
 let mem_low = 0x1000000
 let mem_high = 0x7ff0000
-let frame slot = 0x4c0000 + (slot * 68)
+let frame slot = 0x7c0000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
  * negative numbers, which the machine takes modulo its memory size, so
  * the kernel works whatever that size is (-16 is the last 16 bytes). *)
@@ -57,7 +57,7 @@ let mouse_dev = -4
 (* the network's four words (an address, a length, a command, whether
  * there is a wire), and a packet's place in memory, below the heap *)
 let net_dev = -48
-let net_buf = 0x4f0000
+let net_buf = 0x7f0000
 (* the speaker's word (its ring's address written, the samples played
  * read), and its ring, in the megabytes nothing else uses *)
 let speaker_dev = -52
@@ -96,8 +96,15 @@ let halt status = fs_commit (); poke halt_dev status
  * inode's number: tree 0 is the live one, the others are the snapshots.
  * A union is several directories seen as one, as Plan 9's bind -a makes:
  * a name is looked up in each in turn, and what is made goes in the
- * first *)
-type node = Dir of (string * node) list ref | Data of string ref | Rom of int * int | Tty | Screen | Pointer | Speaker | Disk of int * int | Union of node list
+ * first. A file written in memory is its bytes and its size, the bytes
+ * doubled when a write goes past them (old: a string, made again at
+ * each write: a database that grows by appends took a second for each
+ * statement, tiny-db's) *)
+type node = Dir of (string * node) list ref | Data of data | Rom of int * int | Tty | Screen | Pointer | Speaker | Disk of int * int | Union of node list
+and data = { mutable dbytes : bytes; mutable dsize : int }
+
+let data s = let b = Bytes.make (String.length s) ' ' in Bytes.blit_string s 0 b 0 (String.length s); { dbytes = b; dsize = String.length s }
+let text d = Bytes.sub_string d.dbytes 0 d.dsize
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
@@ -213,13 +220,13 @@ let links node =
  * own (its type is 1 or 2 as here) *)
 let entry name n =
   let t, size, l = match n with
-    | Dir _ -> 1, 0, links n | Data d -> 2, String.length !d, links n | Rom (_, k) -> 2, k, links n
+    | Dir _ -> 1, 0, links n | Data d -> 2, d.dsize, links n | Rom (_, k) -> 2, k, links n
     | Disk (r, i) -> fs_kind r i | Union _ -> 1, 0, 1 | _ -> 3, 0, links n in
   name ^ String.make (20 - String.length name) '\000' ^ word t ^ word l ^ word size
 
 let contents node =
   match node with
-  | Data d -> !d
+  | Data d -> text d
   | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
   | Disk (r, i) when not (fs_is_dir r i) -> fs_contents r i
@@ -377,7 +384,7 @@ let drop f =
 
 (* The screen is tiny-machine's 640 by 480 bytes. The images live in the
  * two megabytes below it, and in what the screen leaves of its own
- * megabyte. (Most of the 6 MB below those, from 7 MB, is unused; it could be
+ * megabyte. (Most of the 3 MB below those, from 10 MB, is unused; it could be
  * the images' too. Trying it once changed the recorded paint session's
  * screen, which was taken for a bug: it was paint's ball, which moves
  * with the clock, ending elsewhere because the kernel's work took
@@ -437,6 +444,7 @@ let typed_end = ref false
 (* the process that has the console raw (rawcons), or 0: its ^C is a
  * byte typed, not the kill of every process *)
 let raw = ref 0
+let raw_on () = List.exists (fun q -> q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs
 
 let read f a n =
   match f with
@@ -451,10 +459,14 @@ let read f a n =
        | None -> if il_over c.il then Some 0 else None)
   | Console ->
       let t = !typed in
+      let eot = not (raw_on ()) in
       if t = "" then (if !typed_end then Some 0 else None)
+      (* ^D, but at a raw console: the read's end, nothing read, as
+       * Plan 9's (old: a byte, and only the input's end ended a read) *)
+      else if eot && t.[0] = '\004' then (typed := String.sub t 1 (String.length t - 1); Some 0)
       else begin
-        (* up to a line's end *)
-        let rec upto i = if i >= String.length t || i >= n then i else if t.[i] = '\n' then i + 1 else upto (i + 1) in
+        (* up to a line's end, or a ^D *)
+        let rec upto i = if i >= String.length t || i >= n then i else if t.[i] = '\n' then i + 1 else if eot && t.[i] = '\004' then i else upto (i + 1) in
         let k = upto 0 in
         k_blit t 0 a k;
         typed := String.sub t k (String.length t - k);
@@ -489,6 +501,11 @@ let read f a n =
       (* a disk's file, from its blocks to the program's memory *)
       | Disk (r, i) when not (fs_is_dir r i) ->
           let k = fs_read_at r i o.off a n in
+          o.off <- o.off + k;
+          Some k
+      | Data d ->
+          let k = max 0 (min n (d.dsize - o.off)) in
+          k_blit (Bytes.sub_string d.dbytes o.off k) 0 a k;
           o.off <- o.off + k;
           Some k
       | _ ->
@@ -563,10 +580,14 @@ let write f a n =
   | Open o -> (
       match o.node with
       | Data d when o.writes ->
-          let old = !d in
-          let at = min o.off (String.length old) in
-          let rest = if at + n < String.length old then String.sub old (at + n) (String.length old - at - n) else "" in
-          d := String.sub old 0 at ^ k_string a n ^ rest;
+          let at = min o.off d.dsize in
+          if at + n > Bytes.length d.dbytes then begin
+            let b = Bytes.make (max (at + n) (2 * Bytes.length d.dbytes)) ' ' in
+            Bytes.blit d.dbytes 0 b 0 d.dsize;
+            d.dbytes <- b
+          end;
+          Bytes.blit_string (k_string a n) 0 d.dbytes at n;
+          d.dsize <- max d.dsize (at + n);
           o.off <- at + n;
           Some n
       | Disk (0, i) when o.writes -> (try fs_write_at i o.off a n; o.off <- o.off + n; Some n with Disk_full -> Some (-1))
@@ -665,9 +686,9 @@ let header bytes =
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =
-  let node = match node with Some (Disk (r, i)) -> Some (Data (ref (fs_contents r i))) | _ -> node in
-  let n = match node with Some (Data d) -> String.length !d | Some (Rom (_, n)) -> n | _ -> raise Bad in
-  let first = match node with Some (Data d) -> String.sub !d 0 (min n 12) | Some (Rom (at, _)) -> k_string at (min n 12) | _ -> "" in
+  let node = match node with Some (Disk (r, i)) -> Some (Data (data (fs_contents r i))) | _ -> node in
+  let n = match node with Some (Data d) -> d.dsize | Some (Rom (_, n)) -> n | _ -> raise Bad in
+  let first = match node with Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 12) | Some (Rom (at, _)) -> k_string at (min n 12) | _ -> "" in
   let skip, size, memory = match header first with
     | Some (size, memory) when size = n - 12 -> 12, size, (memory + part - 1) / part * part
     | _ -> 0, n, part in
@@ -676,7 +697,7 @@ let load_prog p node argv =
   p.base <- b;
   p.size <- memory;
   k_zero b memory;
-  (match node with Some (Data d) -> k_blit (String.sub !d skip size) 0 b size | Some (Rom (at, _)) -> row_copy b (at + skip) size | _ -> ());
+  (match node with Some (Data d) -> k_blit (Bytes.sub_string d.dbytes skip size) 0 b size | Some (Rom (at, _)) -> row_copy b (at + skip) size | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
@@ -728,10 +749,10 @@ let sys_open p =
     match walk !top ns, dir_of ns with
     | Some n, _ -> n
     | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last < 20 ->
-        let n = Data (ref "") in d := !d @ [ last, n ]; n
+        let n = Data (data "") in d := !d @ [ last, n ]; n
     | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last < 20 -> Disk (0, fs_create i last 2)
     | _ -> raise Bad in
-  (* (a file of the image opened to be written is a string from now on;
+  (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
   let node =
     match node, dir_of ns with
@@ -740,7 +761,7 @@ let sys_open p =
         if mode land o_trunc = 0 then fs_write_at j 0 at n;
         Disk (0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
-        let made = Data (ref (if mode land o_trunc <> 0 then "" else k_string at n)) in
+        let made = Data (data (if mode land o_trunc <> 0 then "" else k_string at n)) in
         d := List.map (fun (name, old) -> if name = last then name, made else name, old) !d;
         made
     | _ -> node in
@@ -748,7 +769,7 @@ let sys_open p =
   (match node with
    | Dir _ when writes -> raise Bad
    | Disk (r, i) when writes && (r <> 0 || fs_is_dir r i) -> raise Bad
-   | Data d when mode land o_trunc <> 0 -> d := ""
+   | Data d when mode land o_trunc <> 0 -> d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0
    | Disk (_, i) when writes && mode land o_trunc <> 0 -> fs_truncate i
    | _ -> ());
   result p (fdalloc p (match node with
@@ -902,6 +923,18 @@ let sys_trace p =
         result p k
     | _ -> raise Bad
 
+(* seek(fd, n, whence): a file's offset at n from its start (0), from
+ * where it is (1) or from its end (2), as Plan 9's; the new offset *)
+let sys_seek p =
+  match fd p (reg p 1) with
+  | Open o ->
+      let size = match o.node with Rom (_, n) -> n | Data d -> d.dsize | Disk (r, i) -> let _, n, _ = fs_kind r i in n | n -> String.length (contents n) in
+      let off = reg p 2 + (match reg p 3 with 0 -> 0 | 1 -> o.off | 2 -> size | _ -> raise Bad) in
+      if off < 0 then raise Bad;
+      o.off <- off;
+      result p off
+  | _ -> raise Bad
+
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns with Some n when is_dir n -> p.cwd <- ns; result p 0 | _ -> raise Bad
@@ -955,6 +988,7 @@ let syscall p =
     | 21 -> sys_link p
     | 22 -> sys_rawcons p
     | 23 -> sys_trace p
+    | 24 -> sys_seek p
     | _ -> result p (-1)
   with Bad -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()
@@ -1015,7 +1049,7 @@ let interrupts sources =
     let rec take () =
       let c = peek cons_in in
       if c = -2 then typed_end := true
-      else if c = 3 && not (List.exists (fun q -> q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs) then
+      else if c = 3 && not (raw_on ()) then
         (typed := ""; List.iter (fun q -> if q.pid <> 1 then kill q) !procs; puts "\n"; take ())
       else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()

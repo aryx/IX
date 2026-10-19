@@ -207,6 +207,12 @@ u_dial(value address, value port)
 }
 
 value
+u_seek(value fd, value n, value whence)
+{
+	return seek(fd >> 1, n >> 1, whence >> 1) * 2 + 1;
+}
+
+value
 u_dup(value fd)
 {
 	return dup(fd >> 1) * 2 + 1;

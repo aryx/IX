@@ -4,7 +4,7 @@ execs ok
 pipes ok
 files ok
 dirs ok
-ml: 8: trap 3 at 73496, 2097152: killed
+ml: 8: trap 3 at 73520, 2097152: killed
 fault ok
 kill ok
 preemption ok
@@ -35,8 +35,7 @@ b
 failed: 1
 % d/g
 Can't cd /nowhere: cannot
-% tiny-shell: f: tiny-kernel has no >>
-% no
+% % no
 % $ $ from a
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % /d
@@ -87,14 +86,14 @@ $ % /dev/audio
 /dev/draw
 /dev/mouse
 ls: /cat: not there
--  25   236104 /bin/cat
--   2   230040 /bin/editor
--   2   230040 /bin/emacs
--   1    70380 /bin/ping
--  25   236104 /bin/utils
-%      47     188    1169 f
-     47     188    1169
-     47     188    1169
+-  25   237440 /bin/cat
+-   2   230872 /bin/editor
+-   2   230872 /bin/emacs
+-   1    70404 /bin/ping
+-  25   237440 /bin/utils
+%      51     204    1267 f
+     51     204    1267
+     51     204    1267
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ %       3
 % 1|1
@@ -110,10 +109,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   204660 /bin/ed
--   2   230040 /bin/editor
--   2   230040 /bin/emacs
--   2   204660 /bin/sam
+% -   2   206020 /bin/ed
+-   2   230872 /bin/editor
+-   2   230872 /bin/emacs
+-   2   206020 /bin/sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0
@@ -171,6 +170,84 @@ $ play: /nosuch: no such file, or empty
 $ play: /examples/report.ixd: not a WAV file
 $ usage: play file.wav
 $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ 2,504 instructions: the kernel 0.0%, programs 100.0%
+       count      %     function
+       2,100   83.9  u  spin1
+         302   12.1  u  loop
+         100    4.0  u  spin
+           2    0.1  u  main
+$ 2,504 instructions: the kernel 0.0%, programs 100.0%
+       count      %     function
+       2,504  100.0  u  (the program)
+$ usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.map...] [-u file.map...]
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ tiny-db: t.db; help for how, ^D to end
+tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> range books.year >= 1985 (index) | where | sort
+tiny-db> SICP|41
+Plan 9|31
+tiny-db> 38|1444
+39|1521
+40|1600
+tiny-db> 40|22140|40
+tiny-db> tiny-db: line 10: no table nosuch
+tiny-db> 
+$ tiny-db: t.db; help for how, ^D to end
+tiny-db> tiny-db> tiny-db> 2|TAOCP|1969
+3|Plan 9|1995
+tiny-db> range n.i = 20 (key) | where
+tiny-db> 20|400
+tiny-db> 
+$ usage: tiny-db file.db   (-h: how)
+$ -   1    36352 t.db
+$ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % % % A a.txt
+A b.txt
+% master: cb3bfd75c2c36aa31bc74a5393786b6754ea263c
+% % --- a/a.txt
++++ b/a.txt
+@@ -1,1 +1,2 @@
+ hello
++more
+--- a/b.txt
++++ b/b.txt
+@@ -1,1 +1,1 @@
+-one
++two
+% feature: 5ad9c061d4be576cef78cb31d4ca5f84b9b4ff7d
+% master: 33c0041412fbc5b6ee9f3a76f00976d925496ce4
+% conflict: b.txt
+master: f178b4e202194dacbe460bc04842713997eb443e
+hello
+more
+<<<<<<< ours
+three
+||||||| base
+one
+=======
+two
+>>>>>>> theirs
+C b.txt
+% f178b4e202 nobody merge feature
+33c0041412 nobody third
+5ad9c061d4 nobody second
+cb3bfd75c2 nobody first
+% undid: merge feature
+hello
+three
+% hello
+tiny-vcs: usage: tiny-vcs CMD   (-h: how)
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
+$ % % % % % % % % % % sort words.txt > sorted.txt
+wc -l < sorted.txt > count.txt
+% a
+b
+      2
+% tiny-build: all is up to date
+% % sort words.txt > sorted.txt
+% cp count.txt count.copy
+      2
+% tiny-build: don't know how to make nosuch
+% $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first
 % notes
@@ -204,13 +281,16 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 < close id 5002 ack 1002, from 10.0.0.1 to 10.0.0.2
 > sync id 2000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-< sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-x sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-> ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > data id 2001 ack 6000, 8 bytes, from 10.0.0.2 to 10.0.0.1
 < data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-< data id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+x data id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+< query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
+> state id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+< data? id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+> state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 < close id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
@@ -241,9 +321,9 @@ tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump
 $ % -   1     8893 ./big
 d   1       32 ./d
 -   2        6 ./g
--   1    72442 /bin/g2
+-   1    72466 /bin/g2
 -   1        4 /bin/ping
--   1    70380 /boot/bin/ping
+-   1    70404 /boot/bin/ping
 -   2        6 d/f
 /bin
 /boot
@@ -270,7 +350,7 @@ $ % /dump/1
 bye
 bye
 hello
--   1    70380 /bin/ping
+-   1    70404 /bin/ping
 rm: d: cannot
 rm: /dump/1/usr/glenda/d/f: cannot
 tiny-shell: /dump/1/x: cannot create

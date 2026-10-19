@@ -29,7 +29,7 @@ W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
 
-for m in Stdlib Char List String Bytes Array Option Filename Buffer Hashtbl; do
+for m in Stdlib Char Seq List String Bytes Array Option Filename Buffer Hashtbl; do
   fix=; [ $m = Hashtbl ] && fix="let create n = create n"
   printf 'module _ : sig\n%s\nend = struct include %s %s end\n' "$(cat $C/$m.mli)" $m "$fix" > $W/sig_$m.ml
   if out=$(ocaml $W/sig_$m.ml 2>&1) && [ -z "$out" ]; then echo "ok $m.mli: OCaml's $m has it"

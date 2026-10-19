@@ -84,9 +84,13 @@
  * an object type in an annotation, or declared under a name, means any
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
  * when it builds the same file. A type can have a second name, as in
- * type word = piece list, without parameters. Left out: modules
- * (String.length is just one name), floats, labels, objects and
- * functors.
+ * type word = piece list, or with parameters, type 'a t = unit -> 'a
+ * node (Seq's). A module is a file, a unit (M.x, open M); its types,
+ * constructors and labels are the program's, one name space, so M.C
+ * is C. Left out: modules inside a file and functors, floats, labels,
+ * objects, or-patterns with names in their alternatives, character
+ * ranges, inline records, and {|quoted strings|}: tiny-db, tiny-vcs
+ * and tiny-build were written again without them.
  *
  * What keeps it small while still being an ML compiler:
  *

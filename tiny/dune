@@ -3,7 +3,7 @@
  (public_name tiny-build)
  (package ix)
  (modules TinyBuildSystem)
- (libraries ix_core fpath unix caps ix_crypto))
+ (libraries ix_core fpath unix caps ix_crypto tiny_lib_system))
 
 ; the host's tools on TinyLibSystem (TinyKernel/host/'s; tiny-kernel has its
 ; own): the shell, the line editor and the utilities (with grep's and the
@@ -27,14 +27,14 @@
  (public_name tiny-db)
  (package ix)
  (modules TinyDatabase)
- (libraries ix_core fpath unix caps))
+ (libraries ix_core fpath unix caps tiny_lib_system))
 
 (executable
  (name TinyVCS)
  (public_name tiny-vcs)
  (package ix)
  (modules TinyVCS)
- (libraries ix_core unix caps ix_crypto ix_compression))
+ (libraries ix_core unix caps ix_crypto tiny_lib_system))
 
 ; tiny-machine's assembler and linker: a .tm file to an object, objects to
 ; an image (TinyMachineCPU's instructions; TinyMachineDevices's names its
@@ -48,12 +48,20 @@
 
 ; tiny-cpu, and tiny-prof: where the instructions went, by function, from
 ; a profile of tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
-(executables
- (names TinyCPU TinyProfiler)
- (public_names tiny-cpu tiny-prof)
+(executable
+ (name TinyCPU)
+ (public_name tiny-cpu)
  (package ix)
- (modules TinyCPU TinyProfiler)
+ (modules TinyCPU)
  (libraries ix_core fpath caps tiny_machine_cpu))
+
+; (tiny-prof on TinyLibSystem: a tool of tiny-kernel's too, /bin/prof)
+(executable
+ (name TinyProfiler)
+ (public_name tiny-prof)
+ (package ix)
+ (modules TinyProfiler)
+ (libraries ix_core fpath unix caps tiny_lib_system))
 
 (executable
  (name TinyMachine)
@@ -164,7 +172,7 @@
 ; strings in a module of the compiler's (TinyLibCore/Stdlib.mli says why)
 (rule
  (targets TinyMLPrelude.ml)
- (deps TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml TinyLibCore/Hashtbl.ml TinyLibCore/Common.ml TinyLibCore/Sha1.ml)
+ (deps TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/Seq.ml TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml TinyLibCore/Hashtbl.ml TinyLibCore/Common.ml TinyLibCore/Sha1.ml)
  (action
   (with-stdout-to
    %{targets}
@@ -175,6 +183,9 @@
     (echo "|};\n")
     (echo "\"Char\", {|")
     (cat TinyLibCore/Char.ml)
+    (echo "|};\n")
+    (echo "\"Seq\", {|")
+    (cat TinyLibCore/Seq.ml)
     (echo "|};\n")
     (echo "\"List\", {|")
     (cat TinyLibCore/List.ml)

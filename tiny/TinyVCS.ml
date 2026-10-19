@@ -6,24 +6,28 @@
 (* -h: how, by examples, each one as it runs *)
 open Common
 
-let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
-git's ideas, the roads after git: no staging (every file tracked but dotfiles
-and .tvcsignore's), every command undoable, a merge's conflicts committed.
-  tiny-vcs init; echo hello > a.txt
-  tiny-vcs status                    A a.txt
-  tiny-vcs commit -m first           master: d1c4126e...
-  tiny-vcs branch feature; tiny-vcs switch feature
-  echo more >> a.txt; tiny-vcs diff  +more, unified
-  tiny-vcs commit -m second; tiny-vcs log
-  tiny-vcs switch master; tiny-vcs merge feature
-  tiny-vcs ops; tiny-vcs undo        the operations; the last one undone
-  tiny-vcs show a.txt                a file as committed
-  tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo
-|}
+(* (old: a {|quoted string|}, which tiny-ml does not read) *)
+let help =
+  String.concat "\n" [
+    "usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it";
+    "git's ideas, the roads after git: no staging (every file tracked but dotfiles";
+    "and .tvcsignore's), every command undoable, a merge's conflicts committed.";
+    "  tiny-vcs init; echo hello > a.txt";
+    "  tiny-vcs status                    A a.txt";
+    "  tiny-vcs commit -m first           master: d1c4126e...";
+    "  tiny-vcs branch feature; tiny-vcs switch feature";
+    "  echo more >> a.txt; tiny-vcs diff  +more, unified";
+    "  tiny-vcs commit -m second; tiny-vcs log";
+    "  tiny-vcs switch master; tiny-vcs merge feature";
+    "  tiny-vcs ops; tiny-vcs undo        the operations; the last one undone";
+    "  tiny-vcs show a.txt                a file as committed";
+    "  tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo";
+    "" ]
 
 exception Error of string
 
-let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
+(* (old: a format, Printf.ksprintf's: tiny-ml has no Printf) *)
+let error s = raise (Error s)
 
 (*****************************************************************************)
 (* Objects *)
@@ -31,12 +35,15 @@ let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
 
 type hash = string   (* 40 hex digits *)
 
+(* the text with markers, and the three versions, None for absent
+ * (old: an inline record, Conflict's own, which tiny-ml does not read) *)
+type conflict = { text : hash; base : hash option; ours : hash option; theirs : hash option }
+
 type entry =
   | File of hash
   | Exec of hash
   | Dir of hash
-  (* the text with markers, and the three versions, None for absent *)
-  | Conflict of { text : hash; base : hash option; ours : hash option; theirs : hash option }
+  | Conflict of conflict
 
 type commit = { tree : hash; parents : hash list; date : int; author : string; msg : string }
 
@@ -51,14 +58,14 @@ let encode = function
       "tree\n" ^ String.concat "" (List.map (fun (name, e) ->
         (match e with
          | File h -> "f " ^ h | Exec h -> "x " ^ h | Dir h -> "d " ^ h
-         | Conflict c -> Printf.sprintf "c %s %s %s %s" c.text (opt c.base) (opt c.ours) (opt c.theirs)) ^ " " ^ name ^ "\n") es)
+         | Conflict c -> "c " ^ c.text ^ " " ^ opt c.base ^ " " ^ opt c.ours ^ " " ^ opt c.theirs) ^ " " ^ name ^ "\n") es)
   | Commit c ->
-      Printf.sprintf "commit\ntree %s\n%sdate %d\nauthor %s\n\n%s" c.tree
-        (String.concat "" (List.map (fun p -> "parent " ^ p ^ "\n") c.parents)) c.date c.author c.msg
+      "commit\ntree " ^ c.tree ^ "\n" ^ String.concat "" (List.map (fun p -> "parent " ^ p ^ "\n") c.parents)
+      ^ "date " ^ string_of_int c.date ^ "\nauthor " ^ c.author ^ "\n\n" ^ c.msg
   | Op o ->
-      Printf.sprintf "op\n%sdate %d\nwhat %s\ncurrent %s\n%s"
-        (match o.prev with Some p -> "prev " ^ p ^ "\n" | None -> "") o.odate o.what o.current
-        (String.concat "" (List.map (fun (b, h) -> Printf.sprintf "branch %s %s\n" h b) o.branches))
+      "op\n" ^ (match o.prev with Some p -> "prev " ^ p ^ "\n" | None -> "") ^ "date " ^ string_of_int o.odate
+      ^ "\nwhat " ^ o.what ^ "\ncurrent " ^ o.current ^ "\n"
+      ^ String.concat "" (List.map (fun (b, h) -> "branch " ^ h ^ " " ^ b ^ "\n") o.branches)
 
 (* "key value" lines, until a blank line; the rest *)
 let headers s =
@@ -76,7 +83,7 @@ let decode s =
   let nl = match String.index_opt s '\n' with Some i -> i | None -> error "bad object" in
   let body = String.sub s (nl + 1) (String.length s - nl - 1) in
   let all k hs = List.filter_map (fun (k', v) -> if k = k' then Some v else None) hs in
-  let one k hs = match all k hs with v :: _ -> v | [] -> error "bad object: no %s" k in
+  let one k hs = match all k hs with v :: _ -> v | [] -> error ("bad object: no " ^ k) in
   match String.sub s 0 nl with
   | "blob" -> Blob body
   | "tree" ->
@@ -99,79 +106,85 @@ let decode s =
            branches = List.map (fun v -> match String.index_opt v ' ' with
              | Some i -> String.sub v (i + 1) (String.length v - i - 1), String.sub v 0 i
              | None -> error "bad op") (all "branch" hs) }
-  | k -> error "bad object kind %s" k
+  | k -> error ("bad object kind " ^ k)
 
 (*****************************************************************************)
 (* The store: one append-only file, and head *)
 (*****************************************************************************)
 
-(* .tvcs/objects: "HASH LENGTH\n" and that many deflated bytes, each
- * object once; read whole at open, the index in memory *)
+(* .tvcs/objects: "HASH LENGTH\n" and that many bytes, the object's
+ * text, each object once; read whole at open, the index in memory
+ * (old: deflated, by lib_compression's Zlib: 300 lines more for
+ * tiny-ml to compile and tiny-kernel to load) *)
 (* the capabilities a command needs: a repository is opened with them
  * and keeps them, for its files; output is printed with them *)
-type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env >
+type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.env; Cap.readdir >
 
 type repo = { caps : caps; root : string; index : (hash, string) Hashtbl.t; mutable fresh : (hash * string) list }
 
 let dir r = Filename.concat r.root ".tvcs"
 let path r f = Filename.concat (dir r) f
 
-let read_file (caps : < Cap.open_in; .. >) p = FS.read caps (Fpath.v p)
+let read_file (caps : < Cap.open_in; .. >) p = TinyLibSystem.read_file caps p
+
+let write_file (caps : < Cap.open_out; .. >) p s =
+  let fd = TinyLibSystem.open_out caps p in
+  TinyLibSystem.write fd s;
+  TinyLibSystem.close fd
+
+let exists p = try ignore (TinyLibSystem.stat p); true with Failure _ -> false
 
 let load (caps : caps) root =
   let r = { caps; root; index = Hashtbl.create 1024; fresh = [] } in
-  (match read_file caps (path r "objects") with
-   | s ->
-       let rec go pos =
-         if pos < String.length s then
-           let nl = String.index_from s pos '\n' in
-           match String.split_on_char ' ' (String.sub s pos (nl - pos)) with
-           | [ h; n ] -> let n = int_of_string n in Hashtbl.replace r.index h (String.sub s (nl + 1) n); go (nl + 1 + n)
-           | _ -> error "corrupt store" in
-       go 0
-   | exception Sys_error _ -> ());
+  let s = try read_file caps (path r "objects") with Failure _ -> "" in
+  let rec go pos =
+    if pos < String.length s then
+      let nl = String.index_from s pos '\n' in
+      match String.split_on_char ' ' (String.sub s pos (nl - pos)) with
+      | [ h; n ] -> let n = int_of_string n in Hashtbl.replace r.index h (String.sub s (nl + 1) n); go (nl + 1 + n)
+      | _ -> error "corrupt store" in
+  go 0;
   r
 
 let hash_of s = Sha1.to_hex (Sha1.string s)
 
 let get r h =
   match Hashtbl.find_opt r.index h with
-  | Some z -> decode (fst (Zlib.inflate z))
-  | None -> error "missing object %s" h
+  | Some s -> decode s
+  | None -> error ("missing object " ^ h)
 
 let put r o =
   let s = encode o in
   let h = hash_of s in
   if not (Hashtbl.mem r.index h) then begin
-    let z = Zlib.deflate s in
-    Hashtbl.replace r.index h z;
-    r.fresh <- (h, z) :: r.fresh
+    Hashtbl.replace r.index h s;
+    r.fresh <- (h, s) :: r.fresh
   end;
   h
 
-let blob r h = match get r h with Blob s -> s | _ -> error "%s: not a blob" h
-let tree r h = match get r h with Tree es -> es | _ -> error "%s: not a tree" h
-let commit r h = match get r h with Commit c -> c | _ -> error "%s: not a commit" h
+let blob r h = match get r h with Blob s -> s | _ -> error (h ^ ": not a blob")
+let tree r h = match get r h with Tree es -> es | _ -> error (h ^ ": not a tree")
+let commit r h = match get r h with Commit c -> c | _ -> error (h ^ ": not a commit")
 
 (* the new objects appended, then head replaced: a crash between
  * leaves head naming the old state, whole *)
 let save r (o : op) =
   let h = put r (Op o) in
-  let fd = FS.open_append_fd r.caps (path r "objects") 0o644 in
-  Procs.write_all fd (String.concat "" (List.map (fun (h, z) -> Printf.sprintf "%s %d\n%s" h (String.length z) z) (List.rev r.fresh)));
-  Unix.close fd;
+  let fd = TinyLibSystem.open_append r.caps (path r "objects") in
+  TinyLibSystem.write fd (String.concat "" (List.map (fun (h, z) -> h ^ " " ^ string_of_int (String.length z) ^ "\n" ^ z) (List.rev r.fresh)));
+  TinyLibSystem.close fd;
   r.fresh <- [];
   let tmp = path r "head.tmp" in
-  FS.write r.caps (Fpath.v tmp) (h ^ "\n");
-  Sys.rename tmp (path r "head")
+  write_file r.caps tmp (h ^ "\n");
+  TinyLibSystem.rename r.caps tmp (path r "head")
 
 let head r = String.trim (read_file r.caps (path r "head"))
 let state r = match get r (head r) with Op o -> o | _ -> error "head is not an operation"
 
-let getenv_opt (caps : < Cap.env; .. >) v = try Some (CapSys.getenv caps v) with Not_found -> None
+let getenv_opt (caps : < Cap.env; .. >) v = List.assoc_opt v (TinyLibSystem.environment caps)
 
 let now caps =
-  match getenv_opt caps "TINYVCS_DATE" with Some d -> int_of_string d | None -> int_of_float (Unix.time ())
+  match getenv_opt caps "TINYVCS_DATE" with Some d -> int_of_string d | None -> TinyLibSystem.time ()
 
 (* a new state: the branches changed, the current branch too for
  * record_at, the rest kept *)
@@ -187,7 +200,7 @@ let tip r = let s = state r in List.assoc_opt s.current s.branches
 (*****************************************************************************)
 
 let ignored caps root =
-  let pats = try List.filter (( <> ) "") (String.split_on_char '\n' (read_file caps (Filename.concat root ".tvcsignore"))) with Sys_error _ -> [] in
+  let pats = try List.filter (( <> ) "") (String.split_on_char '\n' (read_file caps (Filename.concat root ".tvcsignore"))) with Failure _ -> [] in
   fun name ->
     name.[0] = '.'
     || List.exists (fun p ->
@@ -199,44 +212,48 @@ let snapshot r =
   let ign = ignored r.caps r.root in
   let old = match tip r with Some c -> Some (commit r c).tree | None -> None in
   let rec go dir (prev : (string * entry) list) =
-    let names = List.sort compare (Array.to_list (Sys.readdir dir)) in
+    let names = List.sort compare (TinyLibSystem.readdir dir) in
     let es = List.filter_map (fun name ->
       if ign name then None
       else
         let p = Filename.concat dir name in
-        match Unix.stat p with
-        | { st_kind = S_DIR; _ } ->
+        match (try Some (fst (TinyLibSystem.stat p)) with Failure _ -> None) with
+        | Some true ->
             let sub = match List.assoc_opt name prev with Some (Dir h) -> tree r h | _ -> [] in
             (match go p sub with [] -> None | es -> Some (name, Dir (put r (Tree es))))
-        | { st_kind = S_REG; st_perm; _ } ->
+        | Some false ->
             let h = put r (Blob (read_file r.caps p)) in
             Some (name, match List.assoc_opt name prev with
               | Some (Conflict c) when c.text = h -> Conflict c
-              | _ -> if st_perm land 0o100 <> 0 then Exec h else File h)
-        | _ -> None
-        | exception Unix.Unix_error _ -> None) names in
+              | _ -> if TinyLibSystem.is_executable p then Exec h else File h)
+        | None -> None) names in
     es in
   put r (Tree (go r.root (match old with Some t -> tree r t | None -> [])))
 
 (* the work tree made a tree's: what the old one had and the new lacks
  * removed, what differs written *)
 let checkout r (old : hash option) (nw : hash) =
-  let rec rm_rf p = if Sys.is_directory p then (Array.iter (fun f -> rm_rf (Filename.concat p f)) (Sys.readdir p); Sys.rmdir p) else Sys.remove p in
+  let rec rm_rf p = if TinyLibSystem.is_directory p then List.iter (fun f -> rm_rf (Filename.concat p f)) (TinyLibSystem.readdir p); TinyLibSystem.remove r.caps p in
+  (* (old: File h | Exec h | Conflict { text = h; _ }, an or-pattern
+   * with variables, which tiny-ml does not read) *)
+  let write p h x =
+    if exists p && TinyLibSystem.is_directory p then rm_rf p;
+    write_file r.caps p (blob r h);
+    TinyLibSystem.set_executable r.caps p x in
   let rec go dir (old : (string * entry) list) (nw : (string * entry) list) =
-    List.iter (fun (name, _) -> if not (List.mem_assoc name nw) then (try rm_rf (Filename.concat dir name) with Sys_error _ -> ())) old;
+    List.iter (fun (name, _) -> if not (List.mem_assoc name nw) then (try rm_rf (Filename.concat dir name) with Failure _ -> ())) old;
     List.iter (fun (name, e) ->
       let p = Filename.concat dir name in
       if List.assoc_opt name old <> Some e then
         match e with
         | Dir h ->
             let sub = match List.assoc_opt name old with Some (Dir o) -> tree r o | _ -> [] in
-            if Sys.file_exists p && not (Sys.is_directory p) then Sys.remove p;
-            if not (Sys.file_exists p) then Unix.mkdir p 0o755;
+            if exists p && not (TinyLibSystem.is_directory p) then TinyLibSystem.remove r.caps p;
+            if not (exists p) then TinyLibSystem.mkdir r.caps p;
             go p sub (tree r h)
-        | File h | Exec h | Conflict { text = h; _ } ->
-            if Sys.file_exists p && Sys.is_directory p then rm_rf p;
-            FS.write r.caps (Fpath.v p) (blob r h);
-            Unix.chmod p (match e with Exec _ -> 0o755 | _ -> 0o644)) nw in
+        | File h -> write p h false
+        | Exec h -> write p h true
+        | Conflict c -> write p c.text false) nw in
   go r.root (match old with Some t -> tree r t | None -> []) (tree r nw)
 
 (* the files of two trees that differ: path, before, after *)
@@ -319,7 +336,7 @@ let unified name_a name_b a b =
   if edits = [] then ""
   else begin
     let buf = Buffer.create 256 in
-    Printf.bprintf buf "--- %s\n+++ %s\n" name_a name_b;
+    Buffer.add_string buf ("--- " ^ name_a ^ "\n+++ " ^ name_b ^ "\n");
     (* edits whose contexts touch go in one hunk *)
     let rec groups = function
       | [] -> []
@@ -333,7 +350,8 @@ let unified name_a name_b a b =
       let (a0, _, b0, _) = List.hd g and (_, a1, _, b1) = List.nth g (List.length g - 1) in
       let s = max 0 (a0 - 3) and e = min (Array.length a) (a1 + 3) in
       let sb = b0 - (a0 - s) and eb = b1 + (e - a1) in
-      Printf.bprintf buf "@@ -%d,%d +%d,%d @@\n" (if e = s then s else s + 1) (e - s) (if eb = sb then sb else sb + 1) (eb - sb);
+      Buffer.add_string buf ("@@ -" ^ string_of_int (if e = s then s else s + 1) ^ "," ^ string_of_int (e - s)
+        ^ " +" ^ string_of_int (if eb = sb then sb else sb + 1) ^ "," ^ string_of_int (eb - sb) ^ " @@\n");
       let at = ref s in
       List.iter (fun (a0, a1, b0, b1) ->
         for i = !at to a0 - 1 do Buffer.add_string buf (line " " a.(i)) done;
@@ -347,7 +365,8 @@ let unified name_a name_b a b =
 (* diff3: the base's lines both sides kept split the three files into
  * stable and unstable chunks; an unstable chunk only one side changed
  * is taken, one both changed alike too, else it is a conflict *)
-let merge3 ~base ~ours ~theirs =
+(* (old: ~base ~ours ~theirs, labels, which tiny-ml does not read) *)
+let merge3 base ours theirs =
   let o = lines base and a = lines ours and b = lines theirs in
   let ma = Hashtbl.create 64 and mb = Hashtbl.create 64 in
   List.iter (fun (i, j) -> Hashtbl.replace ma i j) (matches o a);
@@ -407,7 +426,7 @@ let rec merge_trees r base ours theirs prefix =
   let es = List.filter_map (fun name ->
     let b = List.assoc_opt name base and o = List.assoc_opt name ours and t = List.assoc_opt name theirs in
     let p = if prefix = "" then name else prefix ^ "/" ^ name in
-    let content = function Some (File h | Exec h) -> Some h | Some (Conflict c) -> Some c.text | _ -> None in
+    let content = function Some (File h) -> Some h | Some (Exec h) -> Some h | Some (Conflict c) -> Some c.text | _ -> None in
     let text h = match h with Some h -> blob r h | None -> "" in
     if o = t then Option.map (fun e -> name, e) o
     else if o = b then Option.map (fun e -> name, e) t
@@ -423,7 +442,7 @@ let rec merge_trees r base ours theirs prefix =
           conflicts := !conflicts @ [ p ];
           Option.map (fun e -> name, e) o
       | _ ->
-          let merged, conflict = merge3 ~base:(text (content b)) ~ours:(text (content o)) ~theirs:(text (content t)) in
+          let merged, conflict = merge3 (text (content b)) (text (content o)) (text (content t)) in
           let exec = (match o with Some (Exec _) -> true | _ -> false) || (match t with Some (Exec _) -> true | _ -> false) in
           let h = put r (Blob merged) in
           if conflict || o = None || t = None then begin
@@ -446,7 +465,9 @@ let rec copy src dst h =
     match get src h with
     | Commit c -> copy src dst c.tree; List.iter (copy src dst) c.parents
     | Tree es -> List.iter (fun (_, e) -> match e with
-        | File h | Exec h | Dir h -> copy src dst h
+        | File h -> copy src dst h
+        | Exec h -> copy src dst h
+        | Dir h -> copy src dst h
         | Conflict c -> List.iter (Option.iter (copy src dst)) [ Some c.text; c.base; c.ours; c.theirs ]) es
     | Blob _ | Op _ -> ()
   end
@@ -458,15 +479,15 @@ let rec copy src dst h =
 let short h = String.sub h 0 10
 let first_line s = match String.index_opt s '\n' with Some i -> String.sub s 0 i | None -> s
 
-let find_root () =
-  let rec up d = if Sys.file_exists (Filename.concat d ".tvcs/head") then d else if Filename.dirname d = d then error "not a tiny-vcs repository" else up (Filename.dirname d) in
-  up (Sys.getcwd ())
+let find_root caps =
+  let rec up d = if exists (Filename.concat d ".tvcs/head") then d else if Filename.dirname d = d then error "not a tiny-vcs repository" else up (Filename.dirname d) in
+  up (TinyLibSystem.getcwd caps)
 
 let author caps = getenv_opt caps "TINYVCS_AUTHOR" ||| (getenv_opt caps "USER" ||| "nobody")
 
 let init (caps : caps) dir =
-  if Sys.file_exists (Filename.concat dir ".tvcs") then error "%s/.tvcs exists" dir;
-  Unix.mkdir (Filename.concat dir ".tvcs") 0o755;
+  if exists (Filename.concat dir ".tvcs") then error (dir ^ "/.tvcs exists");
+  TinyLibSystem.mkdir caps (Filename.concat dir ".tvcs");
   let r = load caps dir in
   save r { prev = None; odate = now caps; what = "init"; current = "master"; branches = [] }
 
@@ -477,28 +498,28 @@ let clean r =
   if snap <> tipt then error "uncommitted changes: commit first"
 
 let run (caps : caps) (args : string list) =
-  let print s = Console.print caps s in
+  let print s = TinyLibSystem.print caps s in
   match args with
   | [ ("-h" | "--help") ] -> print help
   | [ "init" ] | [ "init"; _ ] -> init caps (match args with [ _; d ] -> d | _ -> ".")
   | "clone" :: [ src; dst ] ->
       let s = load caps src in
       let st = match get s (String.trim (read_file caps (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
-      Unix.mkdir dst 0o755;
+      TinyLibSystem.mkdir caps dst;
       init caps dst;
       let r = load caps dst in
       List.iter (fun (_, h) -> copy s r h) st.branches;
       record_at r st.current ("clone " ^ src) st.branches;
       Option.iter (fun c -> checkout r None (commit r c).tree) (tip r)
   | cmd :: rest -> (
-      let r = load caps (find_root ()) in
+      let r = load caps (find_root caps) in
       let s = state r in
       match cmd, rest with
       | "status", [] ->
           let snap = snapshot r in
           List.iter (fun (p, a, b) ->
-            print (Printf.sprintf "%s %s\n" (match a, b, b with
-              | _, _, Some (Conflict _) -> "C" | None, _, _ -> "A" | _, None, _ -> "R" | _ -> "M") p))
+            print ((match a, b, b with
+              | _, _, Some (Conflict _) -> "C" | None, _, _ -> "A" | _, None, _ -> "R" | _ -> "M") ^ " " ^ p ^ "\n"))
             (changes r "" (tree_of_commit r (tip r)) (tree r snap));
           (* conflicts committed and not yet resolved *)
           let rec conflicts prefix es = List.concat_map (fun (n, e) ->
@@ -511,7 +532,7 @@ let run (caps : caps) (args : string list) =
             | [] -> tree_of_commit r (tip r), tree r (snapshot r)
             | [ c ] -> tree_at c, tree r (snapshot r)
             | c1 :: c2 :: _ -> tree_at c1, tree_at c2 in
-          let text = function Some (File h | Exec h) -> blob r h | Some (Conflict c) -> blob r c.text | _ -> "" in
+          let text = function Some (File h) -> blob r h | Some (Exec h) -> blob r h | Some (Conflict c) -> blob r c.text | _ -> "" in
           List.iter (fun (p, x, y) ->
             print (unified (if x = None then "/dev/null" else "a/" ^ p) (if y = None then "/dev/null" else "b/" ^ p) (text x) (text y)))
             (changes r "" a b)
@@ -521,9 +542,12 @@ let run (caps : caps) (args : string list) =
           (match tip r with Some c when (commit r c).tree = snap -> error "nothing to commit" | _ -> ());
           let c = put r (Commit { tree = snap; parents; date = now caps; author = author caps; msg = msg ^ "\n" }) in
           record r ("commit " ^ short c) ((s.current, c) :: List.remove_assoc s.current s.branches);
-          print (Printf.sprintf "%s: %s\n" s.current c)
+          print (s.current ^ ": " ^ c ^ "\n")
       | "log", [] ->
-          (* newest first, each commit once *)
+          (* newest first, each commit once; the same dates (tiny-kernel's
+           * are all 0: no clock) in the order reached, breadth first
+           * (old: a commit's parents before the commits waiting, so a
+           * branch's first commit came before its second) *)
           let seen = Hashtbl.create 64 in
           let rec go = function
             | [] -> ()
@@ -532,28 +556,28 @@ let run (caps : caps) (args : string list) =
                 let h = List.hd hs in
                 let c = commit r h in
                 Hashtbl.add seen h ();
-                print (Printf.sprintf "%s %s %s\n" (short h) c.author (first_line c.msg));
-                go (List.filter (fun p -> not (Hashtbl.mem seen p) && not (List.mem p (List.tl hs))) c.parents @ List.tl hs) in
+                print (short h ^ " " ^ c.author ^ " " ^ first_line c.msg ^ "\n");
+                go (List.tl hs @ List.filter (fun p -> not (Hashtbl.mem seen p) && not (List.mem p (List.tl hs))) c.parents) in
           go (Option.to_list (tip r))
-      | "branch", [] -> List.iter (fun (b, h) -> print (Printf.sprintf "%s %s %s\n" (if b = s.current then "*" else " ") b (short h))) s.branches
+      | "branch", [] -> List.iter (fun (b, h) -> print ((if b = s.current then "*" else " ") ^ " " ^ b ^ " " ^ short h ^ "\n")) s.branches
       | "branch", [ b ] ->
-          if List.mem_assoc b s.branches then error "branch %s exists" b;
+          if List.mem_assoc b s.branches then error ("branch " ^ b ^ " exists");
           (match tip r with Some h -> record r ("branch " ^ b) ((b, h) :: s.branches) | None -> error "no commit yet")
       | "switch", [ b ] ->
           clean r;
-          let h = match List.assoc_opt b s.branches with Some h -> h | None -> error "no branch %s" b in
+          let h = match List.assoc_opt b s.branches with Some h -> h | None -> error ("no branch " ^ b) in
           checkout r (Option.map (fun c -> (commit r c).tree) (tip r)) (commit r h).tree;
           record_at r b ("switch " ^ b) s.branches
       | "merge", [ b ] -> (
           clean r;
-          let theirs = match List.assoc_opt b s.branches with Some h -> h | None -> error "no branch %s" b in
+          let theirs = match List.assoc_opt b s.branches with Some h -> h | None -> error ("no branch " ^ b) in
           let ours = match tip r with Some h -> h | None -> error "no commit yet" in
           match lca r ours theirs with
           | Some base when base = theirs -> print "already merged\n"
           | Some base when base = ours ->
               checkout r (Some (commit r ours).tree) (commit r theirs).tree;
               record r ("merge " ^ b ^ " (fast-forward)") ((s.current, theirs) :: List.remove_assoc s.current s.branches);
-              print (Printf.sprintf "fast-forward to %s\n" (short theirs))
+              print ("fast-forward to " ^ short theirs ^ "\n")
           | base ->
               let es, conflicts = merge_trees r (tree_of_commit r base) (tree_of_commit r (Some ours)) (tree_of_commit r (Some theirs)) "" in
               let t = put r (Tree es) in
@@ -561,10 +585,10 @@ let run (caps : caps) (args : string list) =
               checkout r (Some (commit r ours).tree) t;
               record r ("merge " ^ b) ((s.current, c) :: List.remove_assoc s.current s.branches);
               List.iter (fun p -> print ("conflict: " ^ p ^ "\n")) conflicts;
-              print (Printf.sprintf "%s: %s\n" s.current c))
+              print (s.current ^ ": " ^ c ^ "\n"))
       | "ops", [] ->
           let rec go h = let o = match get r h with Op o -> o | _ -> error "bad op" in
-            print (Printf.sprintf "%s %s\n" (short h) o.what);
+            print (short h ^ " " ^ o.what ^ "\n");
             Option.iter go o.prev in
           go (head r)
       | "undo", [] ->
@@ -576,12 +600,12 @@ let run (caps : caps) (args : string list) =
           if Some (snapshot r) = old_tree || old_tree = None then
             (match back with Some t -> checkout r old_tree t | None -> ());
           record_at r before.current ("undo " ^ s.what) before.branches;
-          print (Printf.sprintf "undid: %s\n" s.what)
+          print ("undid: " ^ s.what ^ "\n")
       | "pull", [ src ] -> (
           clean r;
           let sr = load caps src in
           let st = match get sr (String.trim (read_file caps (Filename.concat src ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
-          let theirs = match List.assoc_opt s.current st.branches with Some h -> h | None -> error "%s has no branch %s" src s.current in
+          let theirs = match List.assoc_opt s.current st.branches with Some h -> h | None -> error (src ^ " has no branch " ^ s.current) in
           copy sr r theirs;
           let with_ours c = (s.current, c) :: List.remove_assoc s.current s.branches in
           match tip r with
@@ -592,9 +616,9 @@ let run (caps : caps) (args : string list) =
                | Some b when b = ours ->
                    checkout r (Some (commit r ours).tree) (commit r theirs).tree;
                    record r ("pull " ^ src) (with_ours theirs);
-                   print (Printf.sprintf "fast-forward to %s\n" (short theirs))
+                   print ("fast-forward to " ^ short theirs ^ "\n")
                | _ -> record r ("pull " ^ src) (("pulled/" ^ s.current, theirs) :: s.branches);
-                   print (Printf.sprintf "diverged: merge pulled/%s\n" s.current)))
+                   print ("diverged: merge pulled/" ^ s.current ^ "\n")))
       | "push", [ dst ] ->
           let dr = load caps dst in
           let dst_state = match get dr (String.trim (read_file caps (Filename.concat dst ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
@@ -605,20 +629,18 @@ let run (caps : caps) (args : string list) =
           copy r dr ours;
           save dr { prev = Some (String.trim (read_file caps (Filename.concat dst ".tvcs/head"))); odate = now caps; what = "push from " ^ r.root;
                     current = dst_state.current; branches = (s.current, ours) :: List.remove_assoc s.current dst_state.branches };
-          print (Printf.sprintf "%s: %s\n" s.current (short ours))
+          print (s.current ^ ": " ^ short ours ^ "\n")
       | "show", [ path ] ->
           (* a file of the tip *)
           let rec find es = function
-            | [ n ] -> (match List.assoc_opt n es with Some (File h | Exec h) -> blob r h | Some (Conflict c) -> blob r c.text | _ -> error "no file %s" path)
-            | n :: rest -> (match List.assoc_opt n es with Some (Dir h) -> find (tree r h) rest | _ -> error "no file %s" path)
+            | [ n ] -> (match List.assoc_opt n es with Some (File h) -> blob r h | Some (Exec h) -> blob r h | Some (Conflict c) -> blob r c.text | _ -> error ("no file " ^ path))
+            | n :: rest -> (match List.assoc_opt n es with Some (Dir h) -> find (tree r h) rest | _ -> error ("no file " ^ path))
             | [] -> error "no file" in
           print (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
       | _ -> error "usage: tiny-vcs init|status|diff|commit -m msg|log|branch [b]|switch b|merge b|ops|undo|clone src dst|pull src|push dst|show path")
   | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
 let () =
-  Cap.main (fun caps ->
-    let code =
-      try run (caps :> caps) (List.tl (Array.to_list (CapSys.argv caps))); 0
-      with Error m -> Console.eprint caps ("tiny-vcs: " ^ m ^ "\n"); 1 in
-    CapStdlib.exit caps code)
+  TinyLibSystem.main "tiny-vcs" (fun caps ->
+    try run (caps :> caps) (List.tl (TinyLibSystem.argv caps)); 0
+    with Error m -> TinyLibSystem.eprint caps ("tiny-vcs: " ^ m ^ "\n"); 1)

@@ -37,8 +37,8 @@
  *     .tvcs/head       the hash of an operation, on one line;
  *                      replaced by a rename
  *     .tvcs/objects    a hash, a length, a newline, then that many
- *                      deflated bytes; then the next object; the file
- *                      is only ever appended to
+ *                      bytes, the object's text; then the next object;
+ *                      the file is only ever appended to
  *
  *     head --> op (a merge) --prev--> op (a commit) --prev--> ...
  *               | current master       (after undo, head names this)
@@ -66,10 +66,12 @@
  *
  * The text of the objects uses a format specific to this file, which
  * is canonical and readable ("tree\nf HASH name\n..."); it is hashed
- * with SHA-1 (lib_crypto) and compressed with deflate
- * (lib_compression). What is dropped: git's formats, packs and deltas,
- * the wire protocol, the index, submodules and symbolic links, rename
- * detection, tags, and rebase.
+ * with SHA-1 (lib_crypto, TinyLibCore's Sha1 for tiny-ml) and stored
+ * as it is. What is dropped: git's formats, compression (old: deflate,
+ * lib_compression's Zlib; gone when tiny-vcs went to tiny-kernel, as
+ * plan_tiny_self_hosting.md says), packs and deltas, the wire protocol,
+ * the index, submodules and symbolic links, rename detection, tags,
+ * and rebase.
  *
  * The tests, in TinyVCS_test.sh, check the laws: switching to a commit
  * restores its tree exactly; merging disjoint changes is symmetric and
@@ -103,9 +105,10 @@
  *   from the source only when it is read; its hash names it wherever
  *   it is.
  *
- * Where it stands: Sha1 and Zlib are ix libraries (lib_crypto and
- * lib_compression), also used by mini-git, and Zlib.mli explains what
- * a deflated object is. mini-git's Object, Loose, Pack and Index9
+ * Where it stands: Sha1 is an ix library (lib_crypto), also used by
+ * mini-git, which deflates its objects with Zlib (lib_compression;
+ * Zlib.mli explains what a deflated object is). mini-git's Object,
+ * Loose, Pack and Index9
  * implement git's own formats for what is, here, one text format and
  * one file. A file that is only appended to, plus one small write to
  * commit, is also how TinyDatabase works; and the stamps of
@@ -159,4 +162,4 @@
 
 (* a command and its arguments, done in the repository found from the
  * current directory: init, commit, log, diff, switch, merge, undo... *)
-val run : < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout > -> string list -> unit
+val run : < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir > -> string list -> unit

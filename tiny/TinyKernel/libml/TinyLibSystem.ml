@@ -27,8 +27,9 @@
  * - a wait for one child: the kernel says the next that ended, so the
  *   others' ends are kept until asked for
  * - more than 15 arguments for a program, its name one of them: said
- * - a file written at its end (>>), a signal, a terminal to ask about,
- *   a reason for a call that failed: refused, nothing, yes, "cannot"
+ * - a signal, a terminal to ask about, a reason for a call that
+ *   failed: nothing, yes, "cannot" (old: a file written at its end,
+ *   >>, refused, before the kernel's seek)
  * - a stat: a file's kind and size are read from its entry in the
  *   directory it is in, found by its path cleaned as the kernel cleans
  *   it (the current directory first, "." and ".." taken away)
@@ -36,6 +37,8 @@
  *   directory
  * - a file's time: touch makes a file that is not there, and does
  *   nothing to one that is
+ * - a clock of the day, a file's modes: time is 0, no file is a
+ *   program to run (x)
  *)
 
 open Common
@@ -43,7 +46,7 @@ open TinyCalls
 
 type Cap.all_caps = < >
 
-let main name f = exit (f ())
+let main name f = exit (try f () with Failure m -> u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1)
 let argv caps = List.init (u_argc ()) u_arg
 let environment caps = [ "PATH", "/bin" ]
 let getpid () = u_getpid ()
@@ -82,10 +85,17 @@ let ignore_interrupt () = ()
 let private_fds = ref []
 let keep fd = private_fds := fd :: !private_fds; fd
 
-(* user.h's O_RDONLY, and O_WRONLY | O_CREATE | O_TRUNC *)
+(* user.h's O_RDONLY, O_WRONLY | O_CREATE | O_TRUNC, and O_WRONLY |
+ * O_CREATE then a seek to the end *)
 let open_in caps file = let fd = u_open file 0 in if fd < 0 then failwith "cannot open" else fd
 let open_out caps file = let fd = u_open file 0x601 in if fd < 0 then failwith "cannot create" else fd
-let open_append caps file = failwith "tiny-kernel has no >>"
+let open_append caps file =
+  let fd = u_open file 0x201 in
+  if fd < 0 then failwith "cannot create" else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek") else fd
+(* user.h's O_RDWR | O_CREATE; seek's whence 0 the start, 2 the end *)
+let open_rw caps file = let fd = u_open file 0x202 in if fd < 0 then failwith "cannot open" else fd
+let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
+let seek_end fd = let off = u_seek fd 0 2 in if off < 0 then failwith "cannot seek" else off
 let close fd = ignore (u_close fd); private_fds := List.filter (fun d -> d <> fd) !private_fds
 
 let read_all fd = let rec go acc = let s = u_read fd 4096 in if s = "" then acc else go (acc ^ s) in go ""
@@ -152,10 +162,15 @@ let rename caps a b =
     remove caps a
   end
 
+let is_executable file = false
+let set_executable caps file x = ()
+
 let touch caps file =
   if not (try ignore (stat file); true with Failure _ -> false) then close (open_out caps file)
 
 let getcwd caps = u_getcwd ()
+
+let time () = 0
 
 (* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
 let sleep ms = if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
@@ -197,15 +212,38 @@ let exec caps file argv env =
 (* the children that ended while another was waited for: pid, status *)
 let ended = ref []
 
+(* a status's low byte as rc's; a process the kernel ended (a fault, a
+ * kill) has -1 *)
+let status st = if st = 0 then "" else if st = 255 then "signal: kill" else string_of_int st
+
 (* u_waits's number: the child's pid, and 256 times it, its status's
- * low byte; a process the kernel ended (a fault, a kill) has -1 *)
+ * low byte *)
 let rec wait caps pid =
   match List.assoc_opt pid !ended with
-  | Some status ->
-      ended := List.filter (fun (p, _) -> p <> pid) !ended;
-      if status = 0 then "" else if status = 255 then "signal: kill" else string_of_int status
+  | Some st -> ended := List.filter (fun (p, _) -> p <> pid) !ended; status st
   | None ->
       let r = u_waits () in
       if r < 0 then "" else (ended := (r / 256, r mod 256) :: !ended; wait caps pid)
+
+let wait_any caps =
+  match !ended with
+  | (p, st) :: rest -> ended := rest; Some (p, status st)
+  | [] -> let r = u_waits () in if r < 0 then None else Some (r / 256, status (r mod 256))
+
+(* rc's words quoted, '' a quote inside *)
+let quote w = "'" ^ String.concat "''" (String.split_on_char '\'' w) ^ "'"
+
+let shell caps vars script =
+  u_flush ();
+  let pid = u_fork () in
+  if pid <> 0 then pid
+  else begin
+    let file = ".shell" ^ string_of_int (u_getpid ()) in
+    let fd = open_out caps file in
+    write fd ("rm " ^ file ^ "\n" ^ String.concat "" (List.map (fun (k, v) -> k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n") vars) ^ script ^ "\n");
+    close fd;
+    ignore (exec caps "/bin/rc" [ "rc"; "-e"; file ] []);
+    exit 127
+  end
 
 let exit n = exit n

@@ -11,7 +11,9 @@ let number (f : Unix.file_descr) : int = Obj.magic f
 let reason f = try f () with Unix.Unix_error (e, _, _) -> failwith (Unix.error_message e) | Sys_error m -> failwith m
 
 let main (name : string) (f : Cap.all_caps -> int) : unit =
-  Cap.main (fun caps -> Logging.setup caps ~name; CapStdlib.exit caps (f caps))
+  Cap.main (fun caps ->
+    Logging.setup caps ~name;
+    CapStdlib.exit caps (try f caps with Failure m -> flush_all (); Console.eprint caps (name ^ ": " ^ m ^ "\n"); 1))
 
 let argv (caps : < Cap.argv; .. >) = Array.to_list (CapSys.argv caps)
 let environment (caps : < Cap.env; .. >) = Procs.split_env (CapUnix.environment caps ())
@@ -38,6 +40,11 @@ let open_in (caps : < Cap.open_in; .. >) file = reason (fun () -> number (FS.ope
 let open_out (caps : < Cap.open_out; .. >) file = reason (fun () -> number (FS.open_out_fd caps file 0o666))
 let open_append (caps : < Cap.open_out; .. >) file = reason (fun () -> number (FS.open_append_fd caps file 0o666))
 let close n = Unix.close (fd n)
+
+let open_rw (caps : < Cap.open_in; Cap.open_out; .. >) file =
+  reason (fun () -> if not (Sys.file_exists file) then Unix.close (FS.create_fd caps file 0o666); number (FS.open_rw_fd caps file))
+let seek n off = ignore (reason (fun () -> Unix.lseek (fd n) off Unix.SEEK_SET))
+let seek_end n = reason (fun () -> Unix.lseek (fd n) 0 Unix.SEEK_END)
 let read_file (caps : < Cap.open_in; .. >) file = reason (fun () -> FS.read caps (Fpath.v file))
 let read_all n = Procs.read_all (fd n)
 let readdir dir = try Array.to_list (Sys.readdir dir) with Sys_error _ -> []
@@ -60,11 +67,15 @@ let remove (caps : < Cap.open_out; .. >) file = reason (fun () -> FS.remove_any 
 let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)
 let link (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.link a b)
 
+let is_executable file = try (Unix.stat file).st_perm land 0o100 <> 0 with Unix.Unix_error _ -> false
+let set_executable (_caps : < Cap.open_out; .. >) file x = reason (fun () -> Unix.chmod file (if x then 0o755 else 0o644))
+
 (* (utimes with two zeros: now) *)
 let touch (caps : < Cap.open_out; .. >) file =
   reason (fun () -> if Sys.file_exists file then Unix.utimes file 0.0 0.0 else Unix.close (FS.create_fd caps file 0o666))
 
 let getcwd (caps : < Cap.readdir; .. >) = FS.getcwd caps ()
+let time () = int_of_float (Unix.time ())
 let sleep ms = Unix.sleepf (float_of_int ms /. 1000.0)
 
 (*****************************************************************************)
@@ -92,10 +103,19 @@ let signals =
   [| "sys: abort"; "alarm"; "sys: fp: trap"; "hangup"; "sys: illegal instruction"; "interrupt"; "sys: kill";
      "sys: write on closed pipe"; "quit"; "sys: segmentation violation"; "kill" |]
 
-let wait (caps : < Cap.wait; .. >) pid =
-  match Procs.waitpid caps pid with
+let status = function
   | Unix.WEXITED 0 -> ""
   | Unix.WEXITED n -> string_of_int n
   | Unix.WSIGNALED n | Unix.WSTOPPED n -> "signal: " ^ if n < 0 && -n <= Array.length signals then signals.(-n - 1) else string_of_int n
+
+let wait (caps : < Cap.wait; .. >) pid = status (Procs.waitpid caps pid)
+let wait_any (caps : < Cap.wait; .. >) = Option.map (fun (pid, st) -> pid, status st) (Procs.wait_any caps)
+
+let shell (caps : < Cap.fork; Cap.exec; Cap.env; .. >) vars script =
+  let env = List.map (fun (k, v) -> k ^ "=" ^ String.concat " " v) vars @ Array.to_list (CapUnix.environment caps ()) in
+  flush_all ();
+  match CapUnix.fork caps () with
+  | 0 -> (try CapUnix.execve caps "/bin/sh" [| "sh"; "-e"; "-c"; script |] (Array.of_list env) with _ -> ()); Unix._exit 127
+  | pid -> pid
 
 let exit n = Unix._exit n

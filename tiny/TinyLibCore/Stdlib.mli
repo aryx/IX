@@ -64,6 +64,7 @@ val char_of_int : int -> char
 val ( ^ ) : string -> string -> string
 val string_of_int : int -> string
 val int_of_string_opt : string -> int option
+val int_of_string : string -> int
 val print_string : string -> unit
 val print_char : char -> unit
 val print_newline : unit -> unit

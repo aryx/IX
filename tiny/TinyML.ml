@@ -85,7 +85,8 @@ let lex (s : string) : (token * int) array =
           let j = span i in
           let j = if j + 1 < n && s.[j] = '.' && (match s.[j + 1] with 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false) then span (j + 1) else j in
           let w = String.sub s i (j - i) in
-          add (match String.rindex_opt w '.' with Some k when w.[k + 1] >= 'a' -> LID w | _ -> UID w);
+          (* (M.C is the constructor C: constructors are one namespace) *)
+          add (match String.rindex_opt w '.' with Some k when w.[k + 1] >= 'a' -> LID w | Some k -> UID (String.sub w (k + 1) (String.length w - k - 1)) | None -> UID w);
           go j
       | '\'' when i + 2 < n && (s.[i + 2] = '\'' || s.[i + 1] = '\\') ->
           let c, j = if s.[i + 1] = '\\' then escape (i + 2) else Char.code s.[i + 1], i + 2 in
@@ -221,10 +222,19 @@ let fresh = ref 0
 (* the names of types declared as an object's: read and forgotten (ty) *)
 let forgotten : string list ref = ref []
 
-(* type word = piece list: a second name for a type, with no
- * parameter; unify puts the type in the name's place when the two
- * differ, so a name may be used above its declaration *)
-let abbreviations : (string * texpr) list ref = ref []
+(* type word = piece list, type 'a t = unit -> 'a node: a second name
+ * for a type, its parameters' names; unify puts the type in the name's
+ * place when the two differ, so a name may be used above its
+ * declaration. A name and its number of parameters say which: Sha1's
+ * t and Seq's 'a t are two
+ * (old: no parameter, a name only) *)
+let abbreviations : (string * (string list * texpr)) list ref = ref []
+
+(* the abbreviation that a name with these arguments is *)
+let abbreviation c ts =
+  match List.find_opt (fun (c', (ps, _)) -> c' = c && List.length ps = List.length ts) !abbreviations with
+  | Some (_, (ps, te)) -> Some (of_texpr (ref (List.combine ps ts)) te)
+  | None -> None
 
 (* the operators: precedence and right associativity; "," is 1 *)
 let binops =
@@ -527,8 +537,7 @@ let rec type_decl () =
     let lnames = List.map (fun (l, _, _) -> l) fs in
     List.iteri (fun idx (l, mut, t) -> Hashtbl.add record_labels l { lrec = name; idx; mut; lnames; lscheme = TCon ("%l", [ res; t ]) }) fs
   end else if (match peek () with UID _ -> false | _ -> true) then begin
-    if params <> [] then error "line %d: a type abbreviation with a parameter" (line ());
-    abbreviations := (name, ty ()) :: !abbreviations
+    abbreviations := (name, (params, ty ())) :: !abbreviations
   end else begin
     let rec ctors () =
       let c = match peek () with UID c -> advance (); c | _ -> error "line %d: a constructor or a record expected" (line ()) in
@@ -610,10 +619,10 @@ let rec unify a b =
   | TCon (c, ts), TCon (d, us) when c = d && List.length ts = List.length us -> List.iter2 unify ts us
   | a, b ->
       (* a type's second name (abbreviations): the type in its place *)
-      let named = function TCon (c, []) -> List.assoc_opt c !abbreviations | _ -> None in
+      let named = function TCon (c, ts) -> abbreviation c ts | _ -> None in
       match named a, named b with
-      | Some te, _ -> unify (of_texpr (ref []) te) b
-      | _, Some te -> unify a (of_texpr (ref []) te)
+      | Some t, _ -> unify t b
+      | _, Some t -> unify a t
       | None, None -> error "this has type %s but is used with type %s" (show a) (show b)
 
 (* the variables deeper than the current let become parameters *)
@@ -822,6 +831,7 @@ type ir =
   | Field of int                      (* a block by its field *)
   | SetField of int                   (* the value below the block stored in its field *)
   | Alloc of int * int                (* a tag, n values by the block of them, the top its field 0 *)
+  | Blank of int * int                (* a tag, a block of n fields, each () *)
   | Op of op
   | Call of target * int * bool       (* the closure then n arguments by the result; a tail call *)
   | CallC of string * int             (* a runtime's function of n arguments *)
@@ -929,6 +939,13 @@ let machine name nparams nslots (code : ir list) =
     | IsInt -> ins "andi\tr%d, r%d, 1" a a; tagged a
     | Tag -> ins "ldb\tr%d, -4(r%d)" a a; tagged a
   in
+  (* a block of n fields from the runtime, in r13 *)
+  let alloc tag n =
+    spill ();
+    cargs := max !cargs 2;
+    ins "li\tr13, %d" n; ins "stw\tr13, 0(sp)";
+    ins "li\tr13, %d" tag; ins "stw\tr13, 4(sp)";
+    c_call "ml_alloc" in
   List.iter (fun i ->
     match i with
     | Label l ->
@@ -950,13 +967,15 @@ let machine name nparams nslots (code : ir list) =
     | Field k -> ins "ldw\tr%d, %d(r%d)" !sp (4 * k) !sp
     | SetField k -> ins "stw\tr%d, %d(r%d)" (!sp - 1) (4 * k) !sp; sp := !sp - 2
     | Alloc (tag, n) ->
-        spill ();
-        cargs := max !cargs 2;
-        ins "li\tr13, %d" n; ins "stw\tr13, 0(sp)";
-        ins "li\tr13, %d" tag; ins "stw\tr13, 4(sp)";
-        c_call "ml_alloc";
+        alloc tag n;
         for k = 0 to n - 1 do get (spill_slot (!sp - k)) 15; ins "stw\tr15, %d(r13)" (4 * k) done;
         sp := !sp - n;
+        reload ();
+        result ()
+    | Blank (tag, n) ->
+        alloc tag n;
+        ins "li\tr15, 1";
+        for k = 0 to n - 1 do ins "stw\tr15, %d(r13)" (4 * k) done;
         reload ();
         result ()
     | Op o -> op o
@@ -1448,11 +1467,27 @@ and closure env name xs b =
     Closure_pushed (lab, n)
   end
 
+(* (more than eight names: the block made blank, then each field set
+ * through a slot of the frame, so that the names are not all in
+ * registers at once; old: always on the stack, and a closure of ten
+ * names too deep, tiny-db's parse) *)
 and alloc_closure env lab n fvs =
-  List.iter (var env) (List.rev fvs);
-  emit (Addr (lab, 0));
-  emit (Addr (entry n lab, 0));
-  emit (Alloc (closure_tag, 2 + List.length fvs))
+  if List.length fvs <= 8 then begin
+    List.iter (var env) (List.rev fvs);
+    emit (Addr (lab, 0));
+    emit (Addr (entry n lab, 0));
+    emit (Alloc (closure_tag, 2 + List.length fvs))
+  end
+  else begin
+    let s = slot () in
+    let field k push = push (); emit (Get s); emit (SetField k) in
+    emit (Blank (closure_tag, 2 + List.length fvs));
+    emit (Set s);
+    field 0 (fun () -> emit (Addr (entry n lab, 0)));
+    field 1 (fun () -> emit (Addr (lab, 0)));
+    List.iteri (fun j y -> field (2 + j) (fun () -> var env y)) fvs;
+    emit (Get s)
+  end
 
 (* let rec: static if the functions need nothing but each other; else
  * their closures allocated, then those that name a later one patched *)
@@ -1583,7 +1618,7 @@ let compile_main (units : (string * int) list) needed =
  *     tiny-interface M  globals N  curry N
  *     con C K ARITY NCONST NBLOCK (res, args...) pc_    K: c b e
  *     label L REC IDX MUT NAMES (rec, field) pl_
- *     abbrev T TYPE   forgotten T
+ *     abbrev T PARAMS TYPE (a,b or -)   forgotten T
  *     val X static SYM LAB N TYPE | val X global TABLE IDX LAB N TYPE
  *     val X ext PRIM N TYPE         (LAB N - - when unknown)
  *
@@ -1619,7 +1654,7 @@ let write_interface (exports : (string * binding) list) types nglobals =
     line "con %s %s %d %d %d %s" c (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
       ci.arity ci.nconst ci.nblock (print_ty ci.scheme)) cons;
   Hashtbl.iter (fun l li -> line "label %s %s %d %b %s %s" l li.lrec li.idx li.mut (String.concat "," li.lnames) (print_ty li.lscheme)) record_labels;
-  List.iter (fun (t, te) -> line "abbrev %s %s" t (print_texpr te)) !abbreviations;
+  List.iter (fun (t, (ps, te)) -> line "abbrev %s %s %s" t (if ps = [] then "-" else String.concat "," ps) (print_texpr te)) (List.rev !abbreviations);
   List.iter (fun t -> line "forgotten %s" t) !forgotten;
   let known = function Some (lab, n) -> sprintf "%s %d" lab n | None -> "- -" in
   List.iter (fun (x, bd) ->
@@ -1653,7 +1688,10 @@ let read_interface text env tenv =
         while Hashtbl.mem record_labels l do Hashtbl.remove record_labels l done;
         List.iter (Hashtbl.add record_labels l) (List.rev others);
         Hashtbl.add record_labels l { lrec = r; idx = int_of_string i; mut = m = "true"; lnames = String.split_on_char ',' names; lscheme = read_ty (rest ws 6) }
-    | "abbrev" :: t :: _ -> toks := lex (rest ws 2); pos := 0; abbreviations := (t, ty ()) :: List.remove_assoc t !abbreviations
+    | "abbrev" :: t :: ps :: _ ->
+        let ps = if ps = "-" then [] else String.split_on_char ',' ps in
+        toks := lex (rest ws 3); pos := 0;
+        abbreviations := (t, (ps, ty ())) :: List.filter (fun (t', (ps', _)) -> t' <> t || List.length ps' <> List.length ps) !abbreviations
     | [ "forgotten"; t ] -> if not (List.mem t !forgotten) then forgotten := t :: !forgotten
     | "val" :: x :: "static" :: sym :: lab :: n :: _ -> env := (x, Loc (Static sym, known lab n)) :: !env; tenv := (x, read_ty (rest ws 6)) :: !tenv
     | "val" :: x :: "global" :: tb :: i :: lab :: n :: _ ->

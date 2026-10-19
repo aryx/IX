@@ -20,8 +20,11 @@ let resize h =
     List.iter (fun (k, v) -> let j = index h k in data.(j) <- (k, v) :: data.(j)) (List.rev old.(i))
   done
 
+(* (the buckets copied: their lists are not changed in place) *)
+let copy h = { hashtbl_size = h.hashtbl_size; hashtbl_data = Array.copy h.hashtbl_data }
 let find_opt h k = List.assoc_opt k h.hashtbl_data.(index h k)
 let find h k = List.assoc k h.hashtbl_data.(index h k)
+let find_all h k = List.filter_map (fun (a, v) -> if a = k then Some v else None) h.hashtbl_data.(index h k)
 let mem h k = List.exists (fun (a, _) -> a = k) h.hashtbl_data.(index h k)
 let remove h k =
   let i = index h k in

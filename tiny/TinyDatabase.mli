@@ -110,7 +110,8 @@
  * (its objects file and its head). Pulling the rows of a statement
  * through stages is what Seq does; it is the shell's pipe, inside a
  * single process. Underneath, the database uses only four kernel
- * calls: open, lseek, read, and write (through FS and Unix). It never
+ * calls: open, seek, read, and write (through TinyLibSystem: Unix on
+ * the host, tiny-kernel's own calls there, its seek for this). It never
  * asks for the data to actually reach the disk (no fsync), so
  * "atomic" here means safe if the program dies, not if the machine
  * does.

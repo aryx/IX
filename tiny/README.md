@@ -64,12 +64,16 @@ of the system:
     it, its window, its socket and its page.
 
 The others are the system's programs, a file each (`TinyShell`,
-`TinyC`, `TinyWindows`...). Three of them are on both sides:
+`TinyC`, `TinyWindows`...). Seven of them are on both sides:
 `TinyShell.ml` is the host's tiny-shell and, built by tiny-ml,
 tiny-kernel's `rc`; `TinyUtilities.ml` is the host's
 tiny-utils and tiny-kernel's `utils`, which the boot image has under
 the name of each utility (`cat`, `ls`...); `TinyEditorLine.ml` is the
-host's tiny-editor and tiny-kernel's `ed`, also named `sam`. What they ask of the system is
+host's tiny-editor and tiny-kernel's `ed`, also named `sam`;
+`TinyProfiler.ml`, `TinyDatabase.ml`, `TinyVCS.ml` and
+`TinyBuildSystem.ml` are tiny-prof, tiny-db, tiny-vcs and tiny-build,
+and `prof`, `db`, `vcs` and `build` there (whose recipes are then
+rc's: a recipe is in its system's shell). What they ask of the system is
 `TinyLibSystem`, a file for each side (`TinyKernel/host/TinyLibSystem.ml`
 over Unix, `TinyKernel/libml/TinyLibSystem.ml` over the kernel's
 calls).
@@ -135,7 +139,7 @@ m-ix's programs (`TinyLibHost/`, a trimmed copy of `lib_core/` for
 them, left with
 [`plan_tiny_self_hosting.md`](../docs/plans/plan_tiny_self_hosting.md)'s
 step 2). The programs of tiny-kernel are tiny-ml's, whose library is
-its prelude and `TinyMLRuntime/`.
+`TinyLibCore/` and `TinyMLRuntime/`.
 
 `TinyKernel/steps/` has what ran on tiny-cpu and tiny-machine before
 a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:

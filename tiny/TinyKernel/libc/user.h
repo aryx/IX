@@ -55,6 +55,9 @@ int rawcons(int on);
 // the process stopped (TinyKernel.ml's command and stop); trace(0): the
 // caller traced by its parent, and stopped at its next exec
 int trace(int pid);
+// a file's offset, at n from its start (whence 0), from where it is
+// (1) or from its end (2): the new offset, or -1
+int seek(int fd, int n, int whence);
 // the first of fds' n descriptors that a read would not wait on; -1
 // when the clock reaches until (0: no limit; n 0: a sleep)
 int ready(int *fds, int n, int until);

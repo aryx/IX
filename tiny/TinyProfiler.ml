@@ -12,13 +12,14 @@ let add tbl k n = Hashtbl.replace tbl k (n + (match Hashtbl.find_opt tbl k with 
 (* A profile's lines "k|u base pc count" (TinyMachineCPU.profile_lines):
  * the counts by (the kernel's?, base, pc). *)
 let read_profile caps file =
+  let int_of_hex h = int_of_string ("0x" ^ h) in
   let counts = Hashtbl.create 4096 in
   List.iter (fun line ->
     match String.split_on_char ' ' line with
     | [ m; b; pc; n ] ->
-        let k = m = "k", int_of_string ("0x" ^ b), int_of_string ("0x" ^ pc) in
+        let k = m = "k", int_of_hex b, int_of_hex pc in
         add counts k (int_of_string n)
-    | _ -> ()) (String.split_on_char '\n' (FS.read caps (Fpath.v file)));
+    | _ -> ()) (String.split_on_char '\n' (TinyLibSystem.read_file caps file));
   counts
 
 (* A label a compiler makes inside a function: a dot, an L, digits *)
@@ -50,7 +51,7 @@ let functions caps files =
     List.filter_map (fun line ->
       match String.split_on_char ' ' line with
       | [ a; l ] when not (local l) -> Some (l, int_of_string ("0x" ^ a))
-      | _ -> None) (String.split_on_char '\n' (FS.read caps (Fpath.v f)))) files in
+      | _ -> None) (String.split_on_char '\n' (TinyLibSystem.read_file caps f))) files in
   Array.of_list (List.sort (fun (_, a) (_, b) -> compare a b) labels)
 
 (* the function an address is in: the last one at or before it *)
@@ -64,9 +65,22 @@ let commas n =
   let k = String.length s in
   String.concat "" (List.init k (fun i -> (if i > 0 && (k - i) mod 3 = 0 then "," else "") ^ String.make 1 s.[i]))
 
-let percent n total = if total = 0 then 0. else 100. *. float_of_int n /. float_of_int total
+(* n of total in percent, a tenth's digit, rounded: integers, which
+ * tiny-ml has (its 31 bits: both scaled down first when total is
+ * large, so that n * 2000 fits) (old: floats, %.1f) *)
+let percent n total =
+  if total = 0 then "0.0"
+  else
+    let g = max 1 (total / 100000) in
+    let t = ((n / g * 2000 / (total / g)) + 1) / 2 in
+    string_of_int (t / 10) ^ "." ^ string_of_int (t mod 10)
+
+(* s right-aligned in width w; n in hexadecimal (Printf's %12s, %x) *)
+let pad w s = String.make (max 0 (w - String.length s)) ' ' ^ s
+let rec hex n = (if n >= 16 then hex (n / 16) else "") ^ String.make 1 (String.get "0123456789abcdef" (n mod 16))
 
 let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
+  let print = TinyLibSystem.print caps in
   let rec options top diff base = function
     | "-n" :: n :: rest -> options (int_of_string n) diff base rest
     | "-diff" :: f :: rest -> options top (Some f) base rest
@@ -80,8 +94,8 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
           | [] -> List.rev k, List.rev u in
         Some (top, diff, base, file, files [] [] false rest)
     | _ -> None in
-  match options 20 None None (List.tl (Array.to_list (CapSys.argv caps))) with
-  | None -> Console.eprint caps (usage ^ "\n"); 2
+  match options 20 None None (List.tl (TinyLibSystem.argv caps)) with
+  | None -> TinyLibSystem.eprint caps (usage ^ "\n"); 2
   | Some (top, diff, base, file, (kfiles, ufiles)) ->
       let counts = read_profile caps file in
       Option.iter (fun f ->
@@ -95,7 +109,7 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
       let total = !kernel + user in
       let named = match base with
         | Some b -> b
-        | None -> fst (Hashtbl.fold (fun b n (bb, bn) -> if n > bn then (b, n) else (bb, bn)) programs (0, -1)) in
+        | None -> fst (Hashtbl.fold (fun b n (bb, bn) -> if n > bn || (n = bn && b < bb) then (b, n) else (bb, bn)) programs (0, -1)) in
       let kfuncs = functions caps kfiles and ufuncs = functions caps ufiles in
       (* each count to its function *)
       let by = Hashtbl.create 256 in
@@ -105,16 +119,19 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
           else if b <> named then "u", "(another program)"
           else "u", (if ufiles = [] then "(the program)" else find ufuncs pc) in
         add by where n) counts;
-      let rows = List.sort (fun (_, a) (_, b) -> compare b a) (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
-      Console.print caps (Printf.sprintf "%s instructions: the kernel %.1f%%, programs %.1f%%\n" (commas total) (percent !kernel total) (percent user total));
+      (* the most first; the same counts in their names' order (a table's
+       * order is its library's: OCaml's and tiny-ml's are others) *)
+      let most (a, n) (b, m) = if n <> m then compare m n else compare a b in
+      let rows = List.sort most (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
+      print (commas total ^ " instructions: the kernel " ^ percent !kernel total ^ "%, programs " ^ percent user total ^ "%\n");
       if Hashtbl.fold (fun _ n k -> if n > 0 then k + 1 else k) programs 0 > 1 then
-        Console.print caps (Printf.sprintf "programs, by their window's base: %s (-u is the one at %x)\n"
-          (String.concat ", " (List.map (fun (b, n) -> Printf.sprintf "%x %s" b (commas n))
-             (List.sort (fun (_, a) (_, b) -> compare b a) (Hashtbl.fold (fun b n acc -> if n > 0 then (b, n) :: acc else acc) programs []))))
-          named);
-      Console.print caps (Printf.sprintf "%12s %6s     %s\n" "count" "%" "function");
+        print ("programs, by their window's base: "
+          ^ String.concat ", " (List.map (fun (b, n) -> hex b ^ " " ^ commas n)
+              (List.sort most (Hashtbl.fold (fun b n acc -> if n > 0 then (b, n) :: acc else acc) programs [])))
+          ^ " (-u is the one at " ^ hex named ^ ")\n");
+      print (pad 12 "count" ^ " " ^ pad 6 "%" ^ "     function\n");
       List.iteri (fun i ((mode, name), n) ->
-        if i < top && n > 0 then Console.print caps (Printf.sprintf "%12s %6.1f  %s  %s\n" (commas n) (percent n total) mode name)) rows;
+        if i < top && n > 0 then print (pad 12 (commas n) ^ " " ^ pad 6 (percent n total) ^ "  " ^ mode ^ "  " ^ name ^ "\n")) rows;
       0
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-prof" main

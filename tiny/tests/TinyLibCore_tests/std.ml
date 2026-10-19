@@ -79,3 +79,70 @@ let () =
   let t = Hashtbl.create 8 in
   Hashtbl.add t (1, "a") "first"; Hashtbl.add t (1, "a") "second"; str (Hashtbl.find t (1, "a"));
   Hashtbl.remove t (1, "a"); str (Hashtbl.find t (1, "a")); int (Hashtbl.length t); print_newline ()
+
+(* int_of_string (decimal, -, 0x), filter_map, of_list and to_list,
+ * Option.iter *)
+let () =
+  int (int_of_string "42"); int (int_of_string "-7"); int (int_of_string "0x1f"); int (int_of_string "0xFF");
+  (try int (int_of_string "4x") with Failure m -> str m);
+  opt (int_of_string_opt "x"); print_newline ();
+  List.iter int (List.filter_map (fun x -> if x mod 2 = 0 then Some (x * 10) else None) [ 1; 2; 3; 4 ]);
+  int (Array.length (Array.of_list [])); List.iter int (Array.to_list (Array.of_list [ 5; 6; 7 ]));
+  Option.iter int (Some 8); Option.iter int None; print_newline ()
+
+(* Seq: each element made when pulled (pulled counts them: a take
+ * stops the pulling), List's and Array's to_seq and of_seq *)
+let () =
+  let pulled = ref 0 in
+  let nat = Seq.init 1000 (fun i -> incr pulled; i) in
+  List.iter int (List.of_seq (Seq.take 3 (Seq.filter (fun x -> x mod 2 = 1) nat))); int !pulled;
+  List.iter int (List.of_seq (Seq.take_while (fun x -> x < 4) (Seq.drop_while (fun x -> x < 2) (List.to_seq [ 0; 1; 2; 3; 4; 1 ]))));
+  List.iter int (List.of_seq (Seq.concat_map (fun x -> List.to_seq [ x; x * 10 ]) (Array.to_seq (Array.of_list [ 1; 2 ]))));
+  List.iter int (List.of_seq (Seq.filter_map (fun x -> if x > 1 then Some (x + 100) else None) (Seq.map (fun x -> x * 2) (List.to_seq [ 0; 1; 2 ]))));
+  int (Seq.fold_left ( + ) 0 (Seq.init 10 (fun i -> i))); Seq.iter int (Seq.take 2 nat);
+  (match Seq.empty () with Seq.Nil -> str "empty" | Seq.Cons _ -> str "not"); print_newline ()
+
+(* for tiny-db: List's find_opt, mem_assoc, iter2, rev_map, stable_sort
+ * (its ties kept in order); Array's init, sub, copy (another array),
+ * map, append, concat; Hashtbl.find_all, the latest first *)
+let () =
+  opt (List.find_opt (fun x -> x > 2) [ 1; 3; 5 ]); opt (List.find_opt (fun x -> x > 9) [ 1 ]);
+  bool (List.mem_assoc 2 [ 1, "a"; 2, "b" ]); bool (List.mem_assoc 3 [ 1, "a" ]);
+  List.iter2 (fun a b -> int (a * b)) [ 1; 2 ] [ 3; 4 ]; List.iter int (List.rev_map (fun x -> x + 1) [ 1; 2; 3 ]);
+  List.iter (fun (k, v) -> int k; str v) (List.stable_sort (fun (a, _) (b, _) -> compare a b) [ 2, "x"; 1, "y"; 2, "z"; 1, "w" ]);
+  print_newline ();
+  let a = Array.init 5 (fun i -> i * i) in
+  let c = Array.copy a in c.(0) <- 99;
+  List.iter int (Array.to_list (Array.sub a 1 3)); int a.(0); int c.(0); int (Array.length (Array.init 0 (fun i -> i)));
+  List.iter int (Array.to_list (Array.map (fun x -> x + 1) (Array.append (Array.sub a 0 2) (Array.sub a 3 2))));
+  List.iter int (Array.to_list (Array.concat [ Array.sub a 0 1; Array.of_list []; Array.sub a 4 1 ]));
+  (try ignore (Array.sub a 3 3) with Invalid_argument m -> str m);
+  let h = Hashtbl.create 4 in
+  Hashtbl.add h "k" 1; Hashtbl.add h "j" 0; Hashtbl.add h "k" 2; List.iter int (Hashtbl.find_all h "k"); int (List.length (Hashtbl.find_all h "z"));
+  print_newline ()
+
+(* for tiny-vcs: Filename.dirname (OCaml's, its slashes), Option.map
+ * and to_list, Array.iter, List.remove_assoc (the first only) and
+ * sort_uniq *)
+let () =
+  List.iter (fun s -> str (Filename.dirname s)) [ "a/b"; "a"; ""; "/"; "/a"; "a/b/"; "a//b"; "//"; "/a/b//c//" ];
+  print_newline ();
+  opt (Option.map (fun x -> x + 1) (Some 1)); opt (Option.map (fun x -> x + 1) None);
+  List.iter int (Option.to_list (Some 3)); int (List.length (Option.to_list None));
+  Array.iter int (Array.of_list [ 4; 5 ]);
+  List.iter (fun (k, v) -> int k; str v) (List.remove_assoc 1 [ 2, "a"; 1, "b"; 1, "c" ]);
+  List.iter int (List.sort_uniq compare [ 3; 1; 3; 2; 1 ]); print_newline ()
+
+(* for tiny-build: List.memq (the same block, not an equal one),
+ * partition, String.iteri, Hashtbl.copy (the two apart after it) *)
+let () =
+  let a = [ 1 ] and b = [ 1 ] in
+  bool (List.memq a [ b; a ]); bool (List.memq a [ b ]); bool (List.mem a [ b ]);
+  let even, odd = List.partition (fun x -> x mod 2 = 0) [ 1; 2; 3; 4; 5 ] in
+  List.iter int even; List.iter int odd;
+  String.iteri (fun i c -> int i; str (String.make 1 c)) "ab";
+  let h = Hashtbl.create 4 in
+  Hashtbl.replace h "k" 1;
+  let h2 = Hashtbl.copy h in
+  Hashtbl.replace h2 "k" 2; Hashtbl.replace h2 "j" 3;
+  int (Hashtbl.find h "k"); int (Hashtbl.length h); int (Hashtbl.find h2 "k"); int (Hashtbl.length h2); print_newline ()

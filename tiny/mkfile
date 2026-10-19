@@ -13,7 +13,7 @@ TOP=..
 D=$B/tiny
 V=$B/version_control
 # (the host's TinyLibSystem first: TinyKernel/libml/'s is tiny-ml's)
-INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI
+INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -46,7 +46,7 @@ $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 # (tiny-ml's standard library, TinyLibCore/'s modules in their order:
 # their text as strings in a unit of the compiler's, made here, as
 # tiny/dune's rule makes it)
-CORE=Stdlib Char List String Bytes Array Option Filename Buffer Hashtbl Common Sha1
+CORE=Stdlib Char Seq List String Bytes Array Option Filename Buffer Hashtbl Common Sha1
 $D/TinyMLPrelude.ml: ${CORE:%=TinyLibCore/%.ml}
 	mkdir -p $D
 	(echo 'let modules = ['; for m in $CORE; do echo "\"$m\", {|"; cat TinyLibCore/$m.ml; echo '|};'; done; echo ']') > $target
@@ -59,9 +59,10 @@ $D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfs.ml
 
-$D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
-	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
-	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyBuildSystem.$O $STDEND
+$D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
+$D/tiny-build: $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
+	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
+	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
 # (the shell's system, the host's: TinyKernel/host/TinyLibSystem.ml;
 # TinyKernel/libml/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
 # compile. Not beside TinyShell.ml: mini-ml looks for a module in the
@@ -97,21 +98,24 @@ $D/tiny-assembler: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyAssemble
 $D/tiny-linker: $D/TinyMachineCPU.$O $D/TinyLinker.$O $LIBS
 	$START TinyMachineCPU TinyLinker Std_exit -o $D/TinyLinker.start.$O
 	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyLinker.$O $STDEND
-$D/tiny-db: $D/TinyDatabase.$O $LIBS
-	$START TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
-	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyDatabase.$O $STDEND
-$D/tiny-vcs: $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $LIBS
-	$START Sha1 Zlib TinyVCS Std_exit -o $D/TinyVCS.start.$O
-	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $V/Zlib.$O $D/TinyVCS.$O $STDEND
+$D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
+$D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
+	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
+	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyDatabase.$O $STDEND
+$D/TinyVCS.$O: $D/TinyLibSystem.$O TinyVCS.ml
+$D/tiny-vcs: $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
+	$START Sha1 TinyLibSystem TinyVCS Std_exit -o $D/TinyVCS.start.$O
+	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
 $D/tiny-cpu: $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
 $D/tiny-machine: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
 	$START TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
-$D/tiny-prof: $D/TinyProfiler.$O $LIBS
-	$START TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
-	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyProfiler.$O $STDEND
+$D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
+$D/tiny-prof: $D/TinyLibSystem.$O $D/TinyProfiler.$O $LIBS
+	$START TinyLibSystem TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
+	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

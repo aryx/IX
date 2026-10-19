@@ -24,6 +24,7 @@ let contains s c = match index_opt s c with Some _ -> true | None -> false
 let exists p s = let n = length s in let rec go i = i < n && (p (get s i) || go (i + 1)) in go 0
 let for_all p s = let n = length s in let rec go i = i >= n || (p (get s i) && go (i + 1)) in go 0
 let iter f s = for i = 0 to length s - 1 do f (get s i) done
+let iteri f s = for i = 0 to length s - 1 do f i (get s i) done
 
 (* the strings joined by pairs, so that a long list is copied log n
  * times, not n *)

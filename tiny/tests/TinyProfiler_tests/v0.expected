@@ -1,5 +1,5 @@
 8,021 instructions: the kernel 65.9%, programs 34.1%
-programs, by their window's base: 20000 1,362, 10000 1,362, 40000 6, 30000 6 (-u is the one at 10000)
+programs, by their window's base: 10000 1,362, 20000 1,362, 30000 6, 40000 6 (-u is the one at 10000)
        count      %     function
        1,850   23.1  k  resume
        1,775   22.1  k  trap

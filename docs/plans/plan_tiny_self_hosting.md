@@ -505,3 +505,86 @@ and its library is TinyLibCore/.
     5,800 left).
   - **Not done**: archives in tiny-linker (with the library in every
     main, nothing needs one yet).
+- 2026-10-19: step 6 done, the small ports. tiny-prof, tiny-db,
+  tiny-vcs and tiny-build are each one file that OCaml and tiny-ml
+  both build, on TinyLibSystem's two sides, and tiny-kernel's `/bin`
+  has them as `prof`, `db`, `vcs` and `build`. Each has a line of
+  `make check`: prof on `spin.prof`, a profile tiny-cpu writes when
+  the image is made; the other three a session typed at the console
+  (`TinyKernel_tests/db.keys`, `vcs.keys`, `build.keys`).
+  - **What the dialect asked of the four files**: no Printf (a format
+    is a concatenation), no `{|...|}`, no character ranges in a
+    pattern, no or-pattern with names in its alternatives, no inline
+    record, no labels (each written again plainly, `(* old: *)` saying
+    what it was); tiny-db's 8-byte integers by hand (Int64's before:
+    a number past 31 bits that OCaml wrote is read as its low bits on
+    tiny-ml); **no Zlib in tiny-vcs**, whose store is the objects'
+    text (a repository of the old tiny-vcs is not read).
+  - **tiny-ml**: a type abbreviation with parameters (Seq's `'a t`;
+    one is known by its name and its number of parameters, so Sha1's
+    `t` and Seq's `'a t` are two), `M.C` read as `C` (constructors are
+    one name space), and a closure of more than eight names made
+    blank, then filled a field at a time (tiny-db's `parse`: ten
+    names, more than the registers; bugs/ix.md). TinyML_test.sh's
+    units have all three.
+  - **TinyLibCore/**: `Seq` (lazy: a `take` stops tiny-db's walk of
+    its tree), and what the four call, each line in std.ml, OCaml's
+    output and tiny-cpu's the same: List's find_opt, mem_assoc, iter2,
+    rev_map, stable_sort, remove_assoc, sort_uniq, memq, partition,
+    filter_map, to_seq, of_seq; Array's init, sub, copy, map, append,
+    concat, iter, of_list, to_list, to_seq; Hashtbl's find_all, copy;
+    Bytes's blit, sub_string; String.iteri; Option's iter, map,
+    to_list; Filename.dirname (OCaml's, its slashes); int_of_string.
+    `stable_sort` is a function, not `= sort`: a value computed at
+    the init kept `sort` in every program (2.8 KB).
+  - **TinyLibSystem**: open_rw, seek, seek_end, time, is_executable,
+    set_executable, wait_any, shell; `main` says a Failure after the
+    program's name and exits 1 (tiny-prof ended on an uncaught
+    exception for a missing file). On tiny-kernel: `>>` works (an
+    open, then a seek to the end; rc said "tiny-kernel has no >>"),
+    `time` is 0 (no clock of the day: commits are dated 0), no file
+    is executable, and `shell` runs a recipe by rc -e, from a file
+    that rc reads whole and removes first (an argument has 64 bytes
+    at most, and there is no environment: the variables are rc's
+    assignments before it). A recipe is in its system's shell.
+  - **tiny-kernel**: a call 24, `seek`; ^D ends a read of the console
+    with nothing read, unless the console is raw (emacs's C-d); a file
+    in memory is bytes that double, not a string made again at each
+    write: tiny-db took a second of the machine's time a statement,
+    found with tiny-prof (40 inserts: 302 million instructions, 67% of
+    them the kernel's copies; 65 million after, with `seek` reading a
+    file's size, not its contents); the kernel's map 3 MB higher, the
+    image's limit 7.5 MB (it is 4.7 MB with the four programs).
+  - **What they print differently**: tiny-vcs's log takes commits of
+    the same date breadth first (a branch's first commit came before
+    its second; on tiny-kernel all the dates are 0); tiny-db refuses
+    a short file that is not a database (it wrote its header over a
+    file under 16 bytes; bugs/ix.md); tiny-build gives a recipe the
+    Buildfile's variables before the environment's.
+  - **Checked**: the host's tests of the four (tiny-db's 40 sessions
+    against SQLite, tiny-vcs's, tiny-build's, tiny-prof's), built by
+    dune and by mini-mk (mini-ml); TinyML_test.sh, TinyLibCore_test.sh
+    and every tiny/tests/*_test.sh (but TinyUtilities' `du`, the
+    host's order, as before); the network's Linux checks on the new
+    image; db's rows on tiny-kernel and its file (36,352 bytes) the
+    host's, vcs's hashes the host's (date 0, author nobody). make
+    check's text recorded again: the four's lines, `>>`, /bin's
+    programs and sizes, a trap's address, the lossy wire's trace (its
+    other variant: which packet is the 7th moves with the programs'
+    sizes). The 23 screens the same but tetris's (its seed is u_ticks
+    at its start: other pieces, a sane game); its sum and the two
+    sounds' recorded again, from a fresh build (they move with the
+    timing: two builds 3 KB apart gave two others).
+  - **TinyKernel/Makefile**: what tiny-ml compiles (the kernel, each
+    unit, each main) depends on tiny-ml itself when TML is a path, as
+    ../../tiny-machine gives it: its binary carries TinyLibCore/, and
+    a change there left a program's units made before on the old
+    library (found when emacs came out 2.9 KB larger in a build made
+    over an older one than in a fresh one).
+  - **Open**: `build -j 3` on tiny-kernel hangs when the 8 process
+    slots run out under recipes that are pipelines (bugs/ix.md); `-j
+    3` with recipes of one command builds.
+  - **Lines**: TinyLibCore/ 703 (+145); TinyML.ml 1,812; the four
+    files 1,803 (+93: Printf, the help strings and Int64 written out); t-IX
+    19,863 without the header comments (README's budget: 5,100 left).
+  - **Not run**: tests/lite.sh and mkfiles/check.sh whole.

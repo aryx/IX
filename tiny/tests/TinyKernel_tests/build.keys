@@ -1,0 +1,18 @@
+rc
+mkdir w; cd w
+echo 'all: sorted.txt count.txt' > Buildfile
+echo 'sorted.txt: words.txt' >> Buildfile
+echo '	sort $prereq > $target' >> Buildfile
+echo 'count.txt: sorted.txt' >> Buildfile
+echo '	wc -l < $prereq > $target' >> Buildfile
+echo '%.copy: %.txt' >> Buildfile
+echo '	cp $stem.txt $target' >> Buildfile
+echo b > words.txt; echo a >> words.txt
+build
+cat sorted.txt count.txt
+build
+echo a > words.txt; echo b >> words.txt
+build
+build count.copy; cat count.copy
+build -n nosuch
+exit

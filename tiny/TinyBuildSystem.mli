@@ -11,8 +11,10 @@
  * below (which is what tiny-build -h prints along with the usage), and
  * that is the whole syntax. Variables in rule lines are expanded as
  * the lines are read. A recipe receives the variables, plus $target,
- * $prereq and $stem, in its environment, so the shell does the
- * expansion and there is no second expansion language. There are no
+ * $prereq and $stem, in its environment (on tiny-kernel, which has
+ * none, as the shell's assignments before the recipe), so the shell
+ * does the expansion and there is no second expansion language. There
+ * are no
  * attributes: a target whose recipe creates no file (clean, all) is
  * simply never up to date.
  *
@@ -101,12 +103,14 @@
  *
  * Where it stands: ix itself is built by mini-mk (with Builder's
  * mkfiles, and dune alongside), whose recipes are run by mini-rc or
- * tiny-shell; this one hands each recipe to sh -e. The digest comes
+ * tiny-shell; this one hands each recipe to the system's shell
+ * (TinyLibSystem.shell: sh -e on the host, tiny-shell's rc -e on
+ * tiny-kernel, so a recipe is in that shell's language). The digest comes
  * from Sha1, which also names the objects of TinyVCS: using the
  * content of a file as its name is the same idea in both, and in the
  * nodes of TinyDatabase, which never change either. The child
- * processes are managed by Procs (wait_any), the same loop around wait
- * that mini-mk and the shells use.
+ * processes are waited for by TinyLibSystem.wait_any (Procs's on the
+ * host), the same loop around wait that mini-mk and the shells use.
  *
  * cs-history:
  * Stuart Feldman wrote make at Bell Labs in 1976 after a colleague
@@ -160,9 +164,10 @@
 type rule
 type node
 
-(* from a target to its node, and its prerequisites' under it: the rules
- * naming it, or the one pattern rule whose prerequisites can be made *)
-val graph : rule list -> exists:(string -> bool) -> string -> node
+(* [graph rules exists target]: from a target to its node, and its
+ * prerequisites' under it: the rules naming it, or the one pattern rule
+ * whose prerequisites can be made; exists says whether a file is there *)
+val graph : rule list -> (string -> bool) -> string -> node
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : Cap.all_caps -> int

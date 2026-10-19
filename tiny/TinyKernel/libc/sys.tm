@@ -181,3 +181,11 @@ trace:
 	sys	23
 	mov	r13, r1
 	ret
+
+seek:
+	ldw	r1, 0(sp)
+	ldw	r2, 4(sp)
+	ldw	r3, 8(sp)
+	sys	24
+	mov	r13, r1
+	ret

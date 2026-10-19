@@ -12,6 +12,7 @@ val rindex_opt : string -> char -> int option
 val contains : string -> char -> bool
 val exists : (char -> bool) -> string -> bool
 val for_all : (char -> bool) -> string -> bool
+val iteri : (int -> char -> unit) -> string -> unit
 val iter : (char -> unit) -> string -> unit
 val concat : string -> string list -> string
 val map : (char -> char) -> string -> string

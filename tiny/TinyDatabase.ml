@@ -3,12 +3,13 @@
 
 (* See TinyDatabase.mli *)
 
-(* Common's, here too: this file links nothing of lib_core *)
+(* Common's, here too: the file is OCaml's and tiny-ml's *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 exception Error of string
 
-let error fmt = Printf.ksprintf (fun s -> raise (Error s)) fmt
+(* (old: a format, Printf.ksprintf's: tiny-ml has no Printf) *)
+let error s = raise (Error s)
 
 (*****************************************************************************)
 (* Values *)
@@ -36,27 +37,35 @@ type key = value list
  * seps.(i - 1)); the last child the rest *)
 type node = Leaf of (key * row) array | Inner of key array * int array
 
-type file = { fd : Unix.file_descr; cache : (int, node) Hashtbl.t }
+(* (a descriptor, TinyLibSystem's: a number on the host and on
+ * tiny-kernel) *)
+type file = { fd : int; cache : (int, node) Hashtbl.t }
 
 let read_at f off len =
-  let b = Bytes.create len in
-  ignore (Unix.lseek f.fd off Unix.SEEK_SET);
-  let rec go n = if n < len then match Unix.read f.fd b n (len - n) with 0 -> error "truncated file" | k -> go (n + k) in
-  go 0;
-  b
+  TinyLibSystem.seek f.fd off;
+  let rec go acc n = if n >= len then String.concat "" (List.rev acc) else match TinyLibSystem.read f.fd (len - n) with "" -> error "truncated file" | s -> go (s :: acc) (n + String.length s) in
+  go [] 0
 
-let write_at f off s = ignore (Unix.lseek f.fd off Unix.SEEK_SET); ignore (Unix.write_substring f.fd s 0 (String.length s))
+let write_at f off s = TinyLibSystem.seek f.fd off; TinyLibSystem.write f.fd s
+
+(* an int as 8 bytes, the most significant first; the bytes above the
+ * int's own are its sign's (tiny-ml's int has 31 bits: a larger
+ * number in a file OCaml wrote is read as its low bits there) *)
+(* old: Bytes.set_int64_be and get_int64_be, Int64's, which tiny-ml has not *)
+let int_bytes n =
+  let b = Bytes.make 8 '\000' in
+  let rec go i n = if i >= 0 then (Bytes.set b i (Char.chr (n land 255)); go (i - 1) (n asr 8)) in
+  go 7 n;
+  Bytes.to_string b
+let int_at s p = let rec go n i = if i = 8 then n else go ((n lsl 8) lor Char.code s.[p + i]) (i + 1) in go 0 0
 
 (* a value at the end of the file: its length, then its bytes *)
-(* an int as 8 bytes, the most significant first *)
-let int_bytes n = let s = Bytes.create 8 in Bytes.set_int64_be s 0 (Int64.of_int n); Bytes.to_string s
-
 let append f (s : string) =
-  let off = Unix.lseek f.fd 0 Unix.SEEK_END in
-  write_at f off (int_bytes (String.length s) ^ s);
+  let off = TinyLibSystem.seek_end f.fd in
+  TinyLibSystem.write f.fd (int_bytes (String.length s) ^ s);
   off
 
-let load f off = read_at f (off + 8) (Int64.to_int (Bytes.get_int64_be (read_at f off 8) 0))
+let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
 
 (* A value's bytes, written by hand: an int is 8 bytes, the most
  * significant first; a string, a list and an array their length then
@@ -70,8 +79,8 @@ let put_list put b l = put_int b (List.length l); List.iter (put b) l
 let put_value b = function Int n -> put_int b 0; put_int b n | Text s -> put_int b 1; put_str b s
 let put_values b l = put_list put_value b l
 
-let get_int (s, p) = let n = Int64.to_int (Bytes.get_int64_be s !p) in p := !p + 8; n
-let get_str (s, p) = let n = get_int (s, p) in let v = Bytes.sub_string s !p n in p := !p + n; v
+let get_int (s, p) = let n = int_at s !p in p := !p + 8; n
+let get_str (s, p) = let n = get_int (s, p) in let v = String.sub s !p n in p := !p + n; v
 let get_list get r = let rec go n = if n = 0 then [] else let x = get r in x :: go (n - 1) in go (get_int r)
 let get_value r = match get_int r with 0 -> Int (get_int r) | _ -> Text (get_str r)
 let get_values r = get_list get_value r
@@ -102,7 +111,7 @@ let write f (n : node) = let off = append f (node_bytes n) in Hashtbl.replace f.
 
 let max_entries = 16
 
-let empty_tree f = write f (Leaf [||])
+let empty_tree f = write f (Leaf (Array.of_list []))
 
 (* the child for a key: the number of separators at or below it *)
 let child seps k = let rec go i = if i < Array.length seps && seps.(i) <= k then go (i + 1) else i in go 0
@@ -117,7 +126,7 @@ let rec scan f off (from : key option) : (key * row) Seq.t =
 
 let find f off k = match scan f off (Some k) () with Seq.Cons ((k', r), _) when k' = k -> Some r | _ -> None
 
-let insert_at a i x = Array.concat [ Array.sub a 0 i; [| x |]; Array.sub a i (Array.length a - i) ]
+let insert_at a i x = Array.concat [ Array.sub a 0 i; Array.make 1 x; Array.sub a i (Array.length a - i) ]
 
 (* the new subtree: one node, or two and the separator between *)
 type split = One of int | Two of int * key * int
@@ -127,7 +136,7 @@ let rec ins f off k r =
   match node f off with
   | Leaf es ->
       let i = let rec go i = if i < Array.length es && fst es.(i) < k then go (i + 1) else i in go 0 in
-      if i < Array.length es && fst es.(i) = k then error "duplicate key %s" (String.concat ", " (List.map show k));
+      if i < Array.length es && fst es.(i) = k then error ("duplicate key " ^ String.concat ", " (List.map show k));
       let es = insert_at es i (k, r) in
       if Array.length es <= max_entries then One (write f (Leaf es))
       else
@@ -148,7 +157,7 @@ let rec ins f off k r =
                   write f (Inner (Array.sub seps (m + 1) (Array.length seps - m - 1), Array.sub kids (m + 1) (Array.length kids - m - 1)))))
 
 let insert f root k r =
-  match ins f root k r with One root -> root | Two (a, sep, b) -> write f (Inner ([| sep |], [| a; b |]))
+  match ins f root k r with One root -> root | Two (a, sep, b) -> write f (Inner (Array.make 1 sep, Array.of_list [ a; b ]))
 
 (* no rebalancing: an underfull node, even an empty leaf, is still right *)
 let rec delete f off k =
@@ -188,17 +197,19 @@ let tables_of_bytes s : table list =
     { name; cols; key; root; indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r }) (s, ref 0)
 
 let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
-  (* (made when it is not there, then opened to read and write) *)
-  if not (Sys.file_exists path) then Unix.close (FS.open_out_fd caps path 0o644);
-  let fd = FS.open_rw_fd caps path in
+  (* (made when it is not there) *)
+  let fd = try TinyLibSystem.open_rw caps path with Failure m -> failwith (path ^ ": " ^ m) in
   let file = { fd; cache = Hashtbl.create 256 } in
-  if (Unix.fstat fd).st_size < 16 then begin
+  (* (an empty file is a new database; old: one under 16 bytes, so a
+   * short file that was not one was written over) *)
+  let size = TinyLibSystem.seek_end fd in
+  if size = 0 then begin
     write_at file 0 (magic ^ String.make 8 '\000');
     { file; tables = [] }
   end
-  else if Bytes.to_string (read_at file 0 8) <> magic then error "%s: not a mini-chidb file" path
+  else if size < 16 || read_at file 0 8 <> magic then failwith (path ^ ": not a tiny-db file")
   else
-    let off = Int64.to_int (Bytes.get_int64_be (read_at file 8 8) 0) in
+    let off = int_at (read_at file 8 8) 0 in
     { file; tables = (if off = 0 then [] else tables_of_bytes (load file off)) }
 
 (* the statement's changes made durable: the new catalog, then the
@@ -207,19 +218,22 @@ let commit db tables =
   write_at db.file 8 (int_bytes (append db.file (tables_bytes tables)));
   db.tables <- tables
 
-let table db name = match List.find_opt (fun t -> t.name = name) db.tables with Some t -> t | None -> error "no table %s" name
+let table db name = match List.find_opt (fun t -> t.name = name) db.tables with Some t -> t | None -> error ("no table " ^ name)
 
 let replace db (t : table) = List.map (fun t' -> if t'.name = t.name then t else t') db.tables
 
 (* a table's columns; a column's place among columns *)
 let names (t : table) = List.map fst t.cols
-let col_pos cols c = let rec go i = function x :: rest -> if x = c then i else go (i + 1) rest | [] -> error "no column %s" c in go 0 cols
+let col_pos cols c = let rec go i = function x :: rest -> if x = c then i else go (i + 1) rest | [] -> error ("no column " ^ c) in go 0 cols
+
+(* an index's entry has no row *)
+let no_row : row = Array.of_list []
 
 (* a row in, its key in its table and in each index *)
 let add f (t : table) (r : row) =
   let k = r.(t.key) in
   { t with root = insert f t.root [ k ] r;
-           indexes = List.map (fun (c, root) -> c, insert f root [ r.(col_pos (names t) c); k ] [||]) t.indexes }
+           indexes = List.map (fun (c, root) -> c, insert f root [ r.(col_pos (names t) c); k ] no_row) t.indexes }
 
 let remove f (t : table) (r : row) =
   let k = r.(t.key) in
@@ -231,19 +245,23 @@ let remove f (t : table) (r : row) =
 
 type token = Name of string | Num of int | Str of string | Sym of string
 
+(* (old: 'a' .. 'z' in the patterns, which tiny-ml does not read) *)
+let is_digit c = c >= '0' && c <= '9'
+let is_letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_'
+
 let tokens (s : string) : token list =
   let n = String.length s in
   let rec go i acc =
     if i >= n || s.[i] = '#' then List.rev acc
     else match s.[i] with
       | ' ' | '\t' | '\r' -> go (i + 1) acc
-      | 'a' .. 'z' | 'A' .. 'Z' | '_' ->
+      | c when is_letter c ->
           let j = ref i in
-          while !j < n && (match s.[!j] with 'a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9' -> true | _ -> false) do incr j done;
+          while !j < n && (is_letter s.[!j] || is_digit s.[!j]) do incr j done;
           go !j (Name (String.sub s i (!j - i)) :: acc)
-      | '0' .. '9' ->
+      | c when is_digit c ->
           let j = ref i in
-          while !j < n && s.[!j] >= '0' && s.[!j] <= '9' do incr j done;
+          while !j < n && is_digit s.[!j] do incr j done;
           go !j (Num (int_of_string (String.sub s i (!j - i))) :: acc)
       | ('"' | '\'') as q ->
           let j = match String.index_from_opt s (i + 1) q with Some j -> j | None -> error "unclosed string" in
@@ -278,6 +296,11 @@ type stmt =
   | Update of string * stage list * (string * expr) list
   | Help
 
+(* the operators, by precedence (old: written where they are used, an
+ * expression too deep for tiny-machine's registers) *)
+let additive = [ [ Sym "+", Add; Sym "-", Sub ]; [ Sym "*", Mul; Sym "/", Div ] ]
+let comparisons = [ "=", Eq; "!=", Ne; "<", Lt; "<=", Le; ">", Gt; ">=", Ge ]
+
 (* a parser over a token list, by recursive descent: the grammar is an
  * expression's precedence and a stage's few forms *)
 let parse (ts : token list) : stmt =
@@ -302,11 +325,11 @@ let parse (ts : token list) : stmt =
         loop (binary rest last)
   and not_ () = if accept (Name "not") then Not (not_ ()) else comparison ()
   and comparison () =
-    let l = binary [ [ Sym "+", Add; Sym "-", Sub ]; [ Sym "*", Mul; Sym "/", Div ] ] atom in
+    let l = binary additive atom in
     match peek () with
     | Some (Sym ("=" | "!=" | "<" | "<=" | ">" | ">=" as op)) ->
         ignore (next ());
-        Bin (List.assoc op [ "=", Eq; "!=", Ne; "<", Lt; "<=", Le; ">", Gt; ">=", Ge ], l, binary [ [ Sym "+", Add; Sym "-", Sub ]; [ Sym "*", Mul; Sym "/", Div ] ] atom)
+        Bin (List.assoc op comparisons, l, binary additive atom)
     | _ -> l
   and atom () = match next () with
     | Num n -> Lit (Int n)
@@ -319,7 +342,7 @@ let parse (ts : token list) : stmt =
   let aggregate () =
     let n = name () in
     expect (Sym "=");
-    n, (match name () with "count" -> Count | "sum" -> Sum (name ()) | "min" -> Min (name ()) | "max" -> Max (name ()) | a -> error "no aggregate %s" a) in
+    n, (match name () with "count" -> Count | "sum" -> Sum (name ()) | "min" -> Min (name ()) | "max" -> Max (name ()) | a -> error ("no aggregate " ^ a)) in
   let rec stages () =
     if not (accept (Sym "|")) then []
     else match name () with
@@ -337,12 +360,12 @@ let parse (ts : token list) : stmt =
       | "take" -> (match next () with Num n -> Take n :: stages () | _ -> error "take: a number expected")
       | "delete" -> [ Take (-1) ]     (* a marker, taken apart below *)
       | "set" -> let items = list item in [ Select ((" set", Lit (Int 0)) :: items) ]
-      | s -> error "no stage %s" s in
+      | s -> error ("no stage " ^ s) in
   let query explain =
     let t = name () in
     let ss = stages () in
     match List.rev ss with
-    | Take -1 :: rest -> Delete (t, List.rev rest)
+    | Take (-1) :: rest -> Delete (t, List.rev rest)
     | Select ((" set", _) :: items) :: rest -> Update (t, List.rev rest, items)
     | _ -> Query (explain, t, ss) in
   let stmt = match !ts with
@@ -352,7 +375,7 @@ let parse (ts : token list) : stmt =
         expect (Sym "(");
         let cols = list (fun () ->
           let c = name () in
-          let typ = match name () with "int" -> TInt | "text" -> TText | ty -> error "no type %s" ty in
+          let typ = match name () with "int" -> TInt | "text" -> TText | ty -> error ("no type " ^ ty) in
           c, typ, accept (Name "key")) in
         expect (Sym ")");
         Create (t, cols)
@@ -408,9 +431,10 @@ let rec conjuncts = function Bin (And, a, b) -> conjuncts a @ conjuncts b | e ->
 
 let plan (t : table) (stages : stage list) =
   let key = fst (List.nth t.cols t.key) in
+  let ranges op = List.mem op [ Eq; Lt; Le; Gt; Ge ] in
   let usable = function
-    | Bin ((Eq | Lt | Le | Gt | Ge) as op, Col c, Lit v) -> Some (c, v, op)
-    | Bin ((Eq | Lt | Le | Gt | Ge) as op, Lit v, Col c) ->
+    | Bin (op, Col c, Lit v) when ranges op -> Some (c, v, op)
+    | Bin (op, Lit v, Col c) when ranges op ->
         Some (c, v, match op with Lt -> Gt | Le -> Ge | Gt -> Lt | Ge -> Le | o -> o)
     | _ -> None in
   match stages with
@@ -425,10 +449,10 @@ let plan (t : table) (stages : stage list) =
   | _ -> Scan
 
 let show_access (t : table) = function
-  | Scan -> Printf.sprintf "scan %s" t.name
+  | Scan -> "scan " ^ t.name
   | Range (c, v, op) ->
-      Printf.sprintf "range %s.%s %s %s%s" t.name (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
-        (List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ]) (show v) (if c = None then " (key)" else " (index)")
+      "range " ^ t.name ^ "." ^ (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
+      ^ " " ^ List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ] ^ " " ^ show v ^ (if c = None then " (key)" else " (index)")
 
 let rows db (t : table) (a : access) : row Seq.t =
   let f = db.file in
@@ -489,34 +513,58 @@ let run_query db t stages =
 (* The statements *)
 (*****************************************************************************)
 
-let print (caps : < Cap.stdout; .. >) s = Console.print caps s
+let print (caps : < Cap.stdout; .. >) s = TinyLibSystem.print caps s
 
 (* help: a database made and queried first, then the rest; the tables
  * after it *)
-let help = {|A statement a line. A table, its rows, then queries:
-  table books (id int key, title text, author text, year int)
-  insert books (1, "SICP", "Abelson", 1985), (2, "TAOCP", "Knuth", 1968)
-  books
-  books | where year > 1980 | select title, year
-A query is a table, then stages, each after a |:
-  where year > 1980 and not author = "Knuth"   (= != < <= > >= + - * / or)
-  select title, age = 2026 - year              the columns, computed ones too
-  join authors                                 on the columns of the same name
-  group author (n = count, last = max year)    (count, sum c, min c, max c)
-  sort year desc, title
-  take 10
-  delete, or set year = year + 1               last, on the rows the wheres kept
-Also:
-  index books year        an index on a column, which where uses
-  explain QUERY           how a query reads its table
-  help                    this, and the tables
-|}
+(* (old: a {|quoted string|}, which tiny-ml does not read) *)
+let help =
+  String.concat "\n" [
+    "A statement a line. A table, its rows, then queries:";
+    "  table books (id int key, title text, author text, year int)";
+    "  insert books (1, \"SICP\", \"Abelson\", 1985), (2, \"TAOCP\", \"Knuth\", 1968)";
+    "  books";
+    "  books | where year > 1980 | select title, year";
+    "A query is a table, then stages, each after a |:";
+    "  where year > 1980 and not author = \"Knuth\"   (= != < <= > >= + - * / or)";
+    "  select title, age = 2026 - year              the columns, computed ones too";
+    "  join authors                                 on the columns of the same name";
+    "  group author (n = count, last = max year)    (count, sum c, min c, max c)";
+    "  sort year desc, title";
+    "  take 10";
+    "  delete, or set year = year + 1               last, on the rows the wheres kept";
+    "Also:";
+    "  index books year        an index on a column, which where uses";
+    "  explain QUERY           how a query reads its table";
+    "  help                    this, and the tables";
+    "" ]
+
+(* delete, or set its items (old: a case of exec, Delete (name, stages)
+ * | Update (name, stages, _), an or-pattern with variables, which
+ * tiny-ml does not read) *)
+let change db name stages (items : (string * expr) list option) =
+  let f = db.file in
+  let t = table db name in
+  if List.exists (function Where _ -> false | _ -> true) stages then error "only where before delete or set";
+  (* the rows first, then the changes: the iterators read the old tree *)
+  let _, (_, rs) = run_query db t stages in
+  let rs = List.of_seq rs in
+  let t = List.fold_left (remove f) t rs in
+  let t = match items with
+    | Some items ->
+        let fs = List.map (fun (c, e) -> col_pos (names t) c, compile (names t) e) items in
+        List.fold_left (fun t r ->
+          let r' = Array.copy r in
+          List.iter (fun (i, e) -> r'.(i) <- e r) fs;
+          add f t r') t rs
+    | None -> t in
+  commit db (replace db t)
 
 let exec caps db (s : stmt) =
   let f = db.file in
   match s with
   | Create (name, cols) ->
-      if List.exists (fun t -> t.name = name) db.tables then error "table %s exists" name;
+      if List.exists (fun t -> t.name = name) db.tables then error ("table " ^ name ^ " exists");
       let key = match List.filteri (fun _ (_, _, k) -> k) cols with
         | [ _ ] -> let rec go i = function (_, _, true) :: _ -> i | _ :: rest -> go (i + 1) rest | [] -> 0 in go 0 cols
         | [] -> 0 | _ -> error "one key" in
@@ -524,16 +572,16 @@ let exec caps db (s : stmt) =
   | Insert (name, tuples) ->
       let t = table db name in
       let t = List.fold_left (fun t vs ->
-        if List.length vs <> List.length t.cols then error "%s has %d columns" name (List.length t.cols);
-        List.iter2 (fun v (c, ty) -> if type_of v <> ty then error "%s: a %s" c (if ty = TInt then "int" else "text")) vs t.cols;
+        if List.length vs <> List.length t.cols then error (name ^ " has " ^ string_of_int (List.length t.cols) ^ " columns");
+        List.iter2 (fun v (c, ty) -> if type_of v <> ty then error (c ^ ": a " ^ (if ty = TInt then "int" else "text"))) vs t.cols;
         add f t (Array.of_list vs)) t tuples in
       commit db (replace db t)
   | Index (name, c) ->
       let t = table db name in
-      if not (List.mem_assoc c t.cols) then error "no column %s" c;
-      if List.mem_assoc c t.indexes then error "index on %s exists" c;
+      if not (List.mem_assoc c t.cols) then error ("no column " ^ c);
+      if List.mem_assoc c t.indexes then error ("index on " ^ c ^ " exists");
       let pos = col_pos (names t) c in
-      let root = Seq.fold_left (fun root r -> insert f root [ r.(pos); r.(t.key) ] [||]) (empty_tree f) (rows db t Scan) in
+      let root = Seq.fold_left (fun root r -> insert f root [ r.(pos); r.(t.key) ] no_row) (empty_tree f) (rows db t Scan) in
       commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
   | Query (explain, name, stages) ->
       let t = table db name in
@@ -549,25 +597,11 @@ let exec caps db (s : stmt) =
         "  " ^ t.name ^ " (" ^ String.concat ", " (List.mapi (fun i c -> col c ^ if i = t.key then " key" else "") t.cols) ^ ")"
         ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes) ^ "\n") db.tables in
       print caps (help ^ (if tables = [] then "No tables yet.\n" else "The tables:\n" ^ String.concat "" tables))
-  | Delete (name, stages) | Update (name, stages, _) ->
-      let t = table db name in
-      if List.exists (function Where _ -> false | _ -> true) stages then error "only where before delete or set";
-      (* the rows first, then the changes: the iterators read the old tree *)
-      let _, (_, rs) = run_query db t stages in
-      let rs = List.of_seq rs in
-      let t = List.fold_left (remove f) t rs in
-      let t = match s with
-        | Update (_, _, items) ->
-            let fs = List.map (fun (c, e) -> col_pos (names t) c, compile (names t) e) items in
-            List.fold_left (fun t r ->
-              let r' = Array.copy r in
-              List.iter (fun (i, e) -> r'.(i) <- e r) fs;
-              add f t r') t rs
-        | _ -> t in
-      commit db (replace db t)
+  | Delete (name, stages) -> change db name stages None
+  | Update (name, stages, items) -> change db name stages (Some items)
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
-  match Array.to_list (CapSys.argv caps) with
+  match TinyLibSystem.argv caps with
   | [ _; ("-h" | "--help") ] ->
       (* help's first lines, a table made and queried *)
       let session = List.filteri (fun i _ -> i < 5) (String.split_on_char '\n' help) in
@@ -578,21 +612,20 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
   | [ _; path ] ->
       let db = open_db caps path in
       (* at a terminal, a prompt, as sqlite's *)
-      let tty = Unix.isatty Unix.stdin in
-      if tty then print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
-      let ic = Console.stdin caps and oc = Console.stdout caps in
+      let tty = TinyLibSystem.isatty 0 in
+      if tty then print caps ("tiny-db: " ^ path ^ "; help for how, ^D to end\n");
       let rec loop n =
-        if tty then (print caps "tiny-db> "; flush oc);
-        match (try Some (input_line ic) with End_of_file -> None) with
+        if tty then (print caps "tiny-db> "; TinyLibSystem.flush ());
+        match TinyLibSystem.read_line caps with
         | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
-             with Error m -> flush oc; Console.eprint caps (Printf.sprintf "tiny-db: line %d: %s\n" n m));
+             with Error m -> TinyLibSystem.flush (); TinyLibSystem.eprint caps ("tiny-db: line " ^ string_of_int n ^ ": " ^ m ^ "\n"));
             loop (n + 1)
       in
       let code = loop 1 in
-      flush oc;
+      TinyLibSystem.flush ();
       code
-  | _ -> Console.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
+  | _ -> TinyLibSystem.eprint caps "usage: tiny-db file.db   (-h: how)\n"; 1
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-db"; CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-db" main

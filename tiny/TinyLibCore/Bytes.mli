@@ -7,3 +7,5 @@ val get : bytes -> int -> char
 val set : bytes -> int -> char -> unit
 val to_string : bytes -> string
 val blit_string : string -> int -> bytes -> int -> int -> unit
+val blit : bytes -> int -> bytes -> int -> int -> unit
+val sub_string : bytes -> int -> int -> string

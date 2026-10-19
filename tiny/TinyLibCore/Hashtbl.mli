@@ -6,8 +6,10 @@
 type ('a, 'b) t
 val create : int -> ('a, 'b) t
 val length : ('a, 'b) t -> int
+val copy : ('a, 'b) t -> ('a, 'b) t
 val find_opt : ('a, 'b) t -> 'a -> 'b option
 val find : ('a, 'b) t -> 'a -> 'b
+val find_all : ('a, 'b) t -> 'a -> 'b list
 val mem : ('a, 'b) t -> 'a -> bool
 val remove : ('a, 'b) t -> 'a -> unit
 val add : ('a, 'b) t -> 'a -> 'b -> unit

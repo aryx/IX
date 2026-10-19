@@ -68,9 +68,20 @@ let max a b = if a >= b then a else b
 let ( |> ) x f = f x
 let rec ( @ ) l1 l2 = match l1 with [] -> l2 | x :: l -> x :: (l @ l2)
 
-(* a decimal number, with its sign; OCaml's reads 0x1f and 1_000 too *)
+(* a number, with its sign: decimal, or hexadecimal after 0x
+ * (OCaml's reads 0o, 0b and 1_000 too) *)
 let int_of_string_opt s =
   let n = stdlib_length s in
-  let digit i = let c = stdlib_get s i in c >= '0' && c <= '9' in
-  let rec go i acc = if i >= n then Some acc else if digit i then go (i + 1) (acc * 10 + int_of_char (stdlib_get s i) - 48) else None in
-  if n > 1 && stdlib_get s 0 = '-' then (match go 1 0 with Some v -> Some (- v) | None -> None) else if n = 0 then None else go 0 0
+  let neg = n > 1 && stdlib_get s 0 = '-' in
+  let i = if neg then 1 else 0 in
+  let hex = n > i + 2 && stdlib_get s i = '0' && stdlib_get s (i + 1) = 'x' in
+  let base = if hex then 16 else 10 in
+  let digit c =
+    if c >= '0' && c <= '9' then int_of_char c - 48
+    else if hex && c >= 'a' && c <= 'f' then int_of_char c - 87
+    else if hex && c >= 'A' && c <= 'F' then int_of_char c - 55
+    else -1 in
+  let rec go i acc = if i >= n then Some acc else let d = digit (stdlib_get s i) in if d < 0 then None else go (i + 1) ((acc * base) + d) in
+  if n = i then None
+  else match go (if hex then i + 2 else i) 0 with Some v -> Some (if neg then - v else v) | None -> None
+let int_of_string s = match int_of_string_opt s with Some n -> n | None -> failwith "int_of_string"

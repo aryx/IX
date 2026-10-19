@@ -255,10 +255,15 @@ let fitted ~(keep_end : bool) (s : string) (room : float) : string =
 (* Update *)
 (*****************************************************************************)
 
-(* the zoom of the page shown, or asked for: its site's *)
+(* the address of the page shown, or, before one came, of the one asked
+ * for: while a link's page is on its way, Tab.url is already its *)
+let shown_url (m : model) : string = match Tab.page m.tab with Some p -> p.url | None -> Tab.url m.tab
+
 (* the site the page is of, for its zoom; "file" for what is not from
- * the network (a file's first directory would be read as a host) *)
-let host (m : model) : string = match Url.parse (Tab.url m.tab) with Ok { scheme = Some ("http" | "https"); authority = Some a; _ } -> a.host | _ -> "file"
+ * the network (a file's first directory would be read as a host). The
+ * page shown's: the one asked for's, the page zoomed in was drawn at
+ * the other site's zoom (100%) between a click and the next page *)
+let host (m : model) : string = match Url.parse (shown_url m) with Ok { scheme = Some ("http" | "https"); authority = Some a; _ } -> a.host | _ -> "file"
 let zoom (m : model) : float = Browser_zoom.of_host m.zooms (host m)
 
 (* the page laid out at the window's width divided by its zoom *)
@@ -356,7 +361,8 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     if Tab.busy m.tab && !seen then begin
       seen := false;
       let tab = Tab.step caps m.tab in
-      remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) }
+      (* (a page come of another site laid out at its zoom before it is drawn) *)
+      fitted_tab screen.width (remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) })
     end
     else m
   in
@@ -420,7 +426,7 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     | Some "Tab" -> select ((List.length m.left + 1) mod List.length (tabs m)) m
     | _ -> (
         match Tab.page m.tab with
-        | Some p when not (Browser_url.starts_with "about:" (Tab.url m.tab)) -> { m with places = Places.bookmarked m.places { url = Tab.url m.tab; title = p.title } }
+        | Some p when not (Browser_url.starts_with "about:" p.url) -> { m with places = Places.bookmarked m.places { url = p.url; title = p.title } }
         | _ -> m)
   else if m.editing then
     let m = if keys.typed <> "" && not control then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false; choice = -1 } else m in

@@ -14,9 +14,8 @@
 #    halted with status 0; and a and b interleaved, a b before a's
 #    last a;
 # 3. the same period, the same output: the time is the program's;
-# 4. the kernel and its programs linked to an image (-o), the image
-#    run: the same output as the sources run, and its listing the same;
-#    and the programs linked in another order, the same output;
+# 4. the programs linked in another order (tiny-linker; every .tm here
+#    is assembled and linked by link.sh's link_tm), the same output;
 # 5. each program of TinyMachine_tests/ (the machine's features for
 #    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, hartid, ip, the pages, the console's input,
 #    the disk) prints its .expected, given its .input if there is one;
@@ -32,6 +31,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyMachine.exe}
+. $ROOT/tiny/tests/link.sh
 K=$ROOT/tiny/TinyKernel/steps/v0/kernel.tm
 P=$(ls $ROOT/tiny/TinyKernel/steps/v0/[abcd].tm)
 W=$(mktemp -d)
@@ -41,7 +41,7 @@ fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 
 with_period() { # period -> the output, then the status on its own line
   sed "s/^period:\t.word\t[0-9]*/period:\t.word\t$1/" $K > $W/k.tm
-  timeout 10 $T $W/k.tm $P; echo; echo $?
+  link_tm $W/k.img $W/k.tm $P && timeout 10 $T $W/k.img; echo; echo $?
 }
 
 out=$(with_period 1000000)
@@ -67,11 +67,8 @@ for p in $(seq 30 13 400); do
 done
 if [ $bad = 0 ]; then echo "ok 29 periods, 30-400: every letter, both faults caught, halted with 0, interleaved, the same twice"; else fail "periods: $bad of 29"; fi
 
-$T -o $W/kernel.img $K $P
-if [ "$($T $W/kernel.img; echo $?)" = "$($T $K $P; echo $?)" ] && [ "$($T -l $W/kernel.img)" = "$($T -l $K $P)" ]; then
-  echo "ok image: run and listed as the sources"
-else fail "image: not as the sources"; fi
-if [ "$($T $K $(echo $P | tr ' ' '\n' | tac); echo $?)" = "$($T $K $P; echo $?)" ]; then
+link_tm $W/kernel.img $K $P && link_tm $W/other.img $K $(echo $P | tr ' ' '\n' | tac)
+if [ "$($T $W/other.img; echo $?)" = "$($T $W/kernel.img; echo $?)" ]; then
   echo "ok link: the programs in another order, the same run"
 else fail "link: the order of the programs matters"; fi
 
@@ -85,7 +82,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   [ $b = net ] && opts="-net-loop 100"
   [ $b = rate ] && opts="-rate 16"
   [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
-  timeout 10 $T $opts $t < $in > $W/$b.out 2>&1
+  link_tm $W/$b.image $t && timeout 10 $T $opts $W/$b.image < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"
   else fail "$b: $(diff ${t%.tm}.expected $W/$b.out | head -3)"; fi
   if [ $b = disk ]; then
@@ -98,7 +95,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   fi
 done
 
-out=$(timeout 10 $T $ROOT/tiny/tests/TinyMachine_tests/net.tm 2>&1)
+out=$(timeout 10 $T $W/net.image 2>&1)
 if [ "$out" = "no wire" ]; then echo "ok net: without a wire, said so"; else fail "net without a wire: $out"; fi
 
 echo "TinyMachine_test: $failures failures"

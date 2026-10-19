@@ -114,7 +114,7 @@
  *   second register class on the same stack (started once, then
  *   abandoned).
  *
- * Status: TinyMachineCPU's assembler reads what it writes. It
+ * Status: tiny-assembler reads what it writes. It
  * compiles TinyML's runtime (whose collector and primitives are in
  * C), TinyKernel's programs, and t6, a kernel in C, together with its
  * own programs. TinyML's code generator reuses this file's stack

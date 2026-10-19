@@ -1,4 +1,4 @@
-(* A tiny CPU of our own: its instruction set, an assembler, and an
+(* A tiny CPU of our own: its instruction set, its encoding, and an
  * interpreter; a CPU and its memory, no devices. The library of two
  * programs: TinyCPU.ml, the CPU run alone, its system calls answered
  * by the host; and TinyMachine.ml, the CPU with what a kernel needs
@@ -7,17 +7,13 @@
  * emulates the machine history left us, this one the machine fifty
  * years of hindsight would draw.
  *
- * Why an assembler, in a file about a machine: the machine is new, so
- * nothing else writes its words. mini-5i has none: its words are
- * mini-asm's and mini-ld's, a real toolchain's; this one has no
- * toolchain to borrow, and a machine no one can program teaches
- * nothing. Programs by hand-encoded hex words would be the other way,
- * and MIX's lesson is that a machine for teaching comes with its
- * assembly language (MIXAL), the notation the book's programs are
- * written in. The assembler is kept small by the machine's design: one
- * format, every instruction 4 bytes, so two passes (the labels, then
- * the words) and no relaxation; its pseudo-instructions (li, la, call,
- * ret) are the only sequences it chooses.
+ * The machine is new, so nothing else writes its words: it comes with
+ * its assembler, tiny-assembler (TinyAssembler.ml), and its linker,
+ * tiny-linker (TinyLinker.ml), as MIX came with MIXAL, the notation
+ * the book's programs are written in; mini-5i borrows a real
+ * toolchain's, mini-asm's and mini-ld's. Both are kept small by the
+ * machine's design: one format, every instruction 4 bytes, every
+ * immediate its low 16 bits.
  *
  * The machine: 16 registers of 32 bits, r0 always 0 (a zero at hand
  * and a place to throw a result away, RISC-V's and MIPS's choice); a
@@ -72,10 +68,9 @@
  * Who is around it:
  *
  *     .tm files: by hand (tiny-os v0), by tiny-c, by tiny-ml
- *                  |
- *     this file:   the assembler ([image]: the files one after the
- *                  other, their labels one name space) and the CPU
- *                  ([step], given an [env])
+ *                  |  tiny-assembler, tiny-linker: an image
+ *     this file:   the CPU ([step], given an [env]), the encoding
+ *                  they use, the listing
  *                 /                          \
  *     TinyCPU: the env is memory and       TinyMachineDevices: the env is
  *     three calls of the host's            pages, devices and a trap;
@@ -91,8 +86,7 @@
  *   a load, a store, a system call, and a word [decode] does not know.
  *   TinyCPU gives memory, the host's calls, and an error; a machine
  *   gives its pages, its devices behind addresses, a trap, and its own
- *   instructions (which
- *   the assembler and the listing learn by an [extension]). What
+ *   instructions (which the listing learns by a [show]). What
  *   happens between two instructions (an interrupt) is the loop's
  *   that calls [step], not [step]'s.
  * - {b The laws}: each program of TinyCPU_tests/ prints what is
@@ -173,6 +167,34 @@
 val m32 : int -> int
 val ult : int -> int -> bool
 
+(* The instructions, and their words: what tiny-assembler makes and
+ * tiny-linker fills (an immediate is a word's low 16 bits, encode says
+ * what does not fit); the ALU's operations and the branches' tests in
+ * their opcodes' order, with their names; an immediate form's name *)
+type reg = int
+type alu = Add | Sub | Mul | Div | Rem | And | Or | Xor | Shl | Shr | Sar | Slt | Sltu
+type cmp = Eq | Ne | Lt | Ge | Ltu | Geu
+type size = W | B
+type instr =
+  | Alu of alu * reg * reg * reg          (* d, a, b *)
+  | Alui of alu * reg * reg * int         (* d, a, imm: add and or xor shl shr sar slt sltu *)
+  | Lui of reg * int
+  | Load of size * reg * reg * int        (* d, a, offset *)
+  | Store of size * reg * reg * int       (* the value's register, a, offset *)
+  | Branch of cmp * reg * reg * int       (* d, a, offset in words, from pc + 4 *)
+  | Jal of reg * int
+  | Jalr of reg * reg * int
+  | Sys of int
+val alus : alu array
+val alu_names : string array
+val cmps : cmp array
+val cmp_names : string array
+val index : 'a array -> 'a -> int
+val imm_name : alu -> string
+val has_imm : alu -> bool
+val encode : instr -> int
+val decode : int -> instr option
+
 (* what is wrong in a program's text or in a run, said to the person *)
 exception Error of string
 val error : ('a, unit, string, 'b) format4 -> 'a
@@ -182,12 +204,12 @@ val error : ('a, unit, string, 'b) format4 -> 'a
  * word's *)
 val memsize : int ref
 val sp : int
+val lr : int
 val addr : int -> int
 val word : int -> int
 
 (* the CPU: sixteen registers, a pc, the memory's bytes *)
 type machine = { r : int array; mutable pc : int; mem : Bytes.t }
-type size = W | B
 
 (* what is around it, the host's or a machine's: how a word is
  * fetched, loaded and stored (plain memory, or pages and devices),
@@ -209,28 +231,11 @@ val plain : sys:(machine -> int -> unit) -> env
 val step : env -> machine -> unit
 val boot : string -> machine
 
-(* the assembler's items, for an extension: instructions of another's
- * (TinyMachineDevices's csrr, eret...), how a line is parsed and how a
- * word is listed *)
-type expr = Num of int | Sym of string
-type item = Label of string | Words of int * (int -> (expr -> int) -> int list) | Bytes_ of string | Align of int
-type extension = { parse : string -> string list -> item option; show : int -> string option }
-val no_extension : extension
-val reg : string -> int
-
-(* The assembler: files (a name, its text; .tm assembled, another an
- * image) linked from an origin; an image listed *)
-val image : ext:extension -> origin:int -> (string * string) list -> string
-
-(* the labels of .tm files (a name, its text) linked from an origin, as
- * image links them: each label and its address, by address (tiny-prof's) *)
-val labels : ext:extension -> origin:int -> (string * string) list -> (string * int) list
-val listing : ext:extension -> origin:int -> string -> string
-
-(* An executable for tiny-kernel: a header of three words (a magic
- * number, the image's size, the memory the program asks for in bytes),
- * then the image, linked at 0. *)
-val aout : memory:int -> string -> string
+(* An image: a file's bytes, checked to fit in the memory (its name,
+ * for the error); its listing, the words a machine adds by [show]
+ * (TinyMachineDevices.show) *)
+val image : string -> string -> string
+val listing : show:(int -> string option) -> origin:int -> string -> string
 
 (* A profile: every instruction run, counted by where it was (the
  * kernel's or a program's, the base of the user's window, the address).

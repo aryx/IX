@@ -6,7 +6,8 @@
 ; compiled by tiny-c), then the program (the Makefile):
 ;
 ;     tiny-c -o prog.tm prog.c
-;     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm && tiny-cpu ./prog one two
+;     for f in start udivmod libc prog; do tiny-assembler $f.tm; done
+;     tiny-linker -o prog start.o udivmod.o libc.o prog.o && tiny-cpu ./prog one two
 ;
 ; The convention is tiny-c's: the arguments at 0(sp), 4(sp)...,
 ; the result in r13, any register but sp free to the callee.

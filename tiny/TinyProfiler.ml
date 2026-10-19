@@ -3,7 +3,7 @@
 
 (* See TinyProfiler.mli *)
 
-let usage = "usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.tm...] [-u file.tm...]"
+let usage = "usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.map...] [-u file.map...]"
 
 (* [add tbl k n]: n added to k's count, 0 when k has none (by hand:
  * OCaml's Option.value takes ~default, ix's does not) *)
@@ -40,10 +40,15 @@ let clean name =
       if short = "fun" then String.sub name 0 (n - 2) else short
   | _ -> name
 
-(* the functions of .tm files, by address *)
-let functions caps ext files =
-  let labels = TinyMachineCPU.labels ~ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
-  Array.of_list (List.filter (fun (l, _) -> not (local l)) labels)
+(* the functions of tiny-linker's maps (-map: "address label" lines,
+ * by address), in their order *)
+let functions caps files =
+  let labels = List.concat_map (fun f ->
+    List.filter_map (fun line ->
+      match String.split_on_char ' ' line with
+      | [ a; l ] when not (local l) -> Some (l, int_of_string ("0x" ^ a))
+      | _ -> None) (String.split_on_char '\n' (FS.read caps (Fpath.v f)))) files in
+  Array.of_list (List.sort (fun (_, a) (_, b) -> compare a b) labels)
 
 (* the function an address is in: the last one at or before it *)
 let find funcs pc =
@@ -88,7 +93,7 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
       let named = match base with
         | Some b -> b
         | None -> fst (Hashtbl.fold (fun b n (bb, bn) -> if n > bn then (b, n) else (bb, bn)) programs (0, -1)) in
-      let kfuncs = functions caps TinyMachineDevices.ext kfiles and ufuncs = functions caps TinyMachineCPU.no_extension ufiles in
+      let kfuncs = functions caps kfiles and ufuncs = functions caps ufiles in
       (* each count to its function *)
       let by = Hashtbl.create 256 in
       Hashtbl.iter (fun (k, b, pc) n ->

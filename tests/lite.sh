@@ -150,7 +150,7 @@ tiny_tests() {
   local t=$K/tiny
   TS=$t/tiny-shell tiny/tests/TinyShell_test.sh && TE=$t/tiny-editor tiny/tests/TinyEditorLine_test.sh &&
   TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
-  TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50
+  TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && TA=$t/tiny-assembler TL=$t/tiny-linker T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50
 }
 ix() {
   rm -rf $B

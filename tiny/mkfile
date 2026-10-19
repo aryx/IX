@@ -17,7 +17,7 @@ INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_cr
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
-PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
+PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-assembler tiny-linker tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
 
 all:V: ${PROGS:%=$D/%}
 
@@ -27,8 +27,8 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O $D/TinyProfiler.$O: TinyMachine/TinyMachineCPU.ml
-$D/TinyProfiler.$O: TinyMachine/TinyMachineDevices.ml
+$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O $D/TinyAssembler.$O $D/TinyLinker.$O: TinyMachine/TinyMachineCPU.ml
+$D/TinyAssembler.$O: TinyMachine/TinyMachineDevices.ml
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
 $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
@@ -90,6 +90,12 @@ $D/tiny-c: $D/TinyC.$O $LIBS
 $D/tiny-ml: $D/TinyMLPrelude.$O $D/TinyML.$O $LIBS
 	$START TinyMLPrelude TinyML Std_exit -o $D/TinyML.start.$O
 	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyMLPrelude.$O $D/TinyML.$O $STDEND
+$D/tiny-assembler: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyAssembler.$O $LIBS
+	$START TinyMachineCPU TinyMachineDevices TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
+	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyAssembler.$O $STDEND
+$D/tiny-linker: $D/TinyMachineCPU.$O $D/TinyLinker.$O $LIBS
+	$START TinyMachineCPU TinyLinker Std_exit -o $D/TinyLinker.start.$O
+	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyLinker.$O $STDEND
 $D/tiny-db: $D/TinyDatabase.$O $LIBS
 	$START TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
 	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyDatabase.$O $STDEND
@@ -102,9 +108,9 @@ $D/tiny-cpu: $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 $D/tiny-machine: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
 	$START TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
-$D/tiny-prof: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyProfiler.$O $LIBS
-	$START TinyMachineCPU TinyMachineDevices TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
-	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyProfiler.$O $STDEND
+$D/tiny-prof: $D/TinyProfiler.$O $LIBS
+	$START TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
+	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

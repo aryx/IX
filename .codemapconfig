@@ -54,7 +54,7 @@ local env_color = '#e173eb';
     { name: 'ed: mini-ed and tiny-editor', files: ['editors/ed/', 'tiny/TinyEditorLine.ml'] },
     { name: 'cc: mini-cc and tiny-c', files: ['languages/c/', 'tiny/TinyC.ml'] },
     { name: 'ml: mini-ml and tiny-ml', files: ['languages/ml/', 'tiny/TinyML.ml'] },
-    { name: "asm and ld: mini-asm, mini-ld and tiny-machine's assembler", files: ['assembler/', 'linker/', 'tiny/TinyMachine/TinyMachineCPU.ml'] },
+    { name: 'asm and ld: mini-asm, mini-ld, tiny-assembler and tiny-linker', files: ['assembler/', 'linker/', 'tiny/TinyAssembler.ml', 'tiny/TinyLinker.ml'] },
     { name: '5i: mini-5i and tiny-cpu', files: ['machine/', 'tiny/TinyCPU.ml', 'tiny/TinyMachine/TinyMachineCPU.ml'] },
     { name: 'the kernel: mini-9pi and tiny-kernel', files: ['kernels/9pi/', 'tiny/TinyKernel.ml'] },
     { name: 'git: mini-git and tiny-vcs', files: ['version_control/', 'tiny/TinyVCS.ml'] },

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* bigmem: a test of a partition bigger than 1 MB. The Makefile links it
- * as an a.out that asks for 8 MB (tiny-cpu -a 8), and mlsys.c sizes the
+ * as an a.out that asks for 8 MB (tiny-linker -a 8), and mlsys.c sizes the
  * heap from the partition. It keeps 3 MB of strings alive at once, which
  * the heap of a 1 MB partition (two halves of 256 KB) cannot hold, then
  * prints how many bytes it kept. *)

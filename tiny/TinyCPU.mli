@@ -4,19 +4,18 @@
  * examples are in [help], which is what tiny-cpu -h prints.
  *
  * The CPU itself is not in this file; this file is only its command
- * line. The instruction set, the assembler, the interpreter and their
- * invariants are in TinyMachine/TinyMachineCPU.ml, the file to read
+ * line. The instruction set, the interpreter and their invariants are
+ * in TinyMachine/TinyMachineCPU.ml, the file to read
  * first (its .mli describes the design). They live there because
  * TinyMachine.ml runs the same CPU with devices and a kernel, where a
  * system call is a trap.
  *
- * Linking is done by TinyMachineCPU: the .tm files are concatenated,
- * their labels share one namespace, and the first file is placed at
- * address 0, where the CPU starts. The arguments are put where the
- * main of a C program expects them (the convention of tiny-c, in
- * TinyCRuntime/start.tm): the strings go at the top of memory, and sp
- * points to argc, followed by argv. argv[0] is the name of the image,
- * or the name of the last .tm file without its .tm extension.
+ * The image is tiny-linker's: the objects one after the other, their
+ * labels one namespace, the first at address 0, where the CPU starts.
+ * The arguments are put where the main of a C program expects them
+ * (the convention of tiny-c, in TinyCRuntime/start.tm): the strings go
+ * at the top of memory, and sp points to argc, followed by argv.
+ * argv[0] is the name of the image.
  *
  *     2^20, the top       the argument strings, each followed by a 0
  *     sp + 8              argv[0] ... argv[n-1], their addresses, a 0
@@ -24,8 +23,8 @@
  *     sp, 8-aligned       argc: n
  *       ...               the stack, growing down
  *       ...               whatever the program does with the rest
- *     0                   the image: the first word of the first .tm,
- *                         where the pc starts
+ *     0                   the image: the first word of the first
+ *                         object, where the pc starts
  *
  * There is no header, no segments and no loader: the image is simply
  * the first bytes of memory. The questions that an executable header

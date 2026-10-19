@@ -6,13 +6,13 @@
  * assembly. The usage and examples are in [help], which is what
  * tiny-machine -h prints.
  *
- * Linking is done as in TinyMachineCPU: the files are put one after
- * the other and their labels share one namespace, so a kernel's table
- * can name its programs. The kernel comes first, at address 0. An image
+ * The image is tiny-linker's: the objects one after the other, their
+ * labels one namespace, so a kernel's table can name its programs. The
+ * kernel comes first, at address 0. An image
  * is simply the first bytes of memory as they are at the start. It has
  * no header, since the machine always starts at 0 in supervisor mode
  * (the Pi's kernel.img, loaded at 0x8000 by its firmware, follows the
- * same idea). Files named .tm are assembly; any other file is an image.
+ * same idea).
  * The kernel is TinyKernel.ml, and TinyKernel/steps/ holds the two
  * steps that came before it, each with a Makefile that builds and runs
  * it: v0/ is a page of assembly with its programs, and t6/ is a kernel
@@ -41,8 +41,8 @@
  *   illegal in user mode.
  * - {b Protection by a window.} In user mode every address, including
  *   instruction fetches, must be in [base, bound), otherwise it is a
- *   fault. There is no relocation: a user program is assembled at the
- *   address where it runs. What the window gives is that a program can
+ *   fault. There is no relocation at run time: a user program is
+ *   linked at the address where it runs. What the window gives is that a program can
  *   only harm itself (like RISC-V's PMP or the 360's storage keys,
  *   without pages).
  * - {b Two devices at the top of memory}, reachable from anywhere with
@@ -178,7 +178,7 @@
  * the interrupts.
  *
  * The tests: TinyMachine_test.sh runs TinyKernel/steps/v0/kernel.tm, a
- * one-page kernel, with its four user programs (two that print, one
+ * one-page kernel, linked with its four user programs (two that print, one
  * that executes csrw, one that stores into the kernel), with a long and
  * a short timer period. It checks that every letter is printed, that
  * both faults are caught, and that the output is interleaved with the

@@ -3,26 +3,21 @@
 
 (* See TinyCPU.mli *)
 
-let usage = "usage: tiny-cpu [-l | -o image | -a megabytes a.out | -prof file] file.tm... | image [args...]"
+let usage = "usage: tiny-cpu [-l | -prof file] image [args...]"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
-A CPU of our own (TinyMachineCPU), its assembly run as a program, three system
+A CPU of our own (TinyMachineCPU), an image run as a program, three system
 calls the host's (r1-r3 the arguments, r1 the answer): sys 0, exit r1; sys 1,
-write r3 bytes at r2 to r1 (1, 2); sys 2, read up to r3 bytes to r2.
-In tiny/tests/TinyCPU_tests/, for example:
-  tiny-cpu hello.tm             assembled and run: Hello, world
-  echo hello | tiny-cpu upper.tm                   HELLO
-  tiny-cpu -o hello hello.tm    assembled and linked (several .tm: one after
-                                the other, the first at 0), an image
+write r3 bytes at r2 to r1 (1, 2); sys 2, read up to r3 bytes to r2. The image
+is tiny-linker's (the memory's first bytes: the CPU starts at 0). In
+tiny/tests/TinyCPU_tests/, for example:
+  tiny-assembler hello.tm && tiny-linker -o hello hello.o
   tiny-cpu hello                the image run: Hello, world
+  echo hello | tiny-cpu upper                      HELLO
   tiny-cpu -l hello             the listing: 0:  11100001  addi r1, r0, 1 ...
-  tiny-cpu -prof p hello.tm     run, and each instruction counted by its
+  tiny-cpu -prof p hello        run, and each instruction counted by its
                                 address into p, for tiny-prof
-  tiny-cpu -a 10 prog a.tm...   an executable for tiny-kernel that asks for
-                                10 MB of memory: a header (a magic number,
-                                the image's size, the memory), then the
-                                image, linked at 0
 |}
 
 type caps = < Cap.stdin; Cap.stdout; Cap.stderr >
@@ -68,29 +63,18 @@ let interpret caps prof image args =
 
 let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
-  (* the .tm files, or the image, then the program's arguments *)
-  let split l =
-    let rec tms acc = function f :: r when Filename.check_suffix f ".tm" -> tms (f :: acc) r | r -> List.rev acc, r in
-    match tms [] l with
-    | [], f :: r when f.[0] <> '-' -> [ f ], f, r
-    | [], _ -> raise Usage
-    | fs, r -> fs, Filename.chop_suffix (List.nth fs (List.length fs - 1)) ".tm", r in
-  let image files = TinyMachineCPU.image ~ext:TinyMachineCPU.no_extension ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
+  let image f = TinyMachineCPU.image f (FS.read caps (Fpath.v f)) in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: l -> let files, _, _ = split l in Console.print caps (TinyMachineCPU.listing ~ext:TinyMachineCPU.no_extension ~origin:0 (image files)); 0
-    | "-o" :: out :: l -> let files, _, _ = split l in FS.write caps (Fpath.v out) (image files); 0
-    | "-a" :: mb :: out :: l when (match int_of_string_opt mb with Some n -> n > 0 && n <= 100 | None -> false) ->
-        let files, _, _ = split l in
-        FS.write caps (Fpath.v out) (TinyMachineCPU.aout ~memory:(int_of_string mb * 0x100000) (image files)); 0
-    | "-prof" :: out :: l ->
-        let files, name, rest = split l in
+    | [ "-l"; f ] -> Console.print caps (TinyMachineCPU.listing ~show:(fun _ -> None) ~origin:0 (image f)); 0
+    | "-prof" :: out :: f :: rest ->
         let p = TinyMachineCPU.profile () in
-        let status = interpret caps (Some p) (image files) (name :: rest) in
+        let status = interpret caps (Some p) (image f) (f :: rest) in
         FS.write caps (Fpath.v out) (TinyMachineCPU.profile_lines p);
         status
-    | l -> let files, name, rest = split l in interpret caps None (image files) (name :: rest)
+    | f :: rest when f.[0] <> '-' -> interpret caps None (image f) (f :: rest)
+    | _ -> raise Usage
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1

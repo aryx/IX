@@ -21,6 +21,7 @@ B=$ROOT/_build/default/tiny
 TML=${TML:-$B/TinyML.exe}
 TC=${TC:-$B/TinyC.exe}
 MACHINE=${MACHINE:-$B/TinyMachine.exe}
+. $ROOT/tiny/tests/link.sh
 HOST=${HOST:-$B/tests/TinyKernelGraphics_tests/Host.exe}
 T=$ROOT/tiny
 E=$T/tests/TinyKernelGraphics_tests/picture
@@ -50,8 +51,9 @@ $TC -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
 $TML -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
-[ "${1:-}" = -window ] && { $MACHINE -window $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm; exit; }
-timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm > $W/machine.out 2>&1 || fail "machine: the run"
+link_tm $W/picture.img $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm || fail "machine: the link"
+[ "${1:-}" = -window ] && { $MACHINE -window $W/picture.img; exit; }
+timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/picture.img > $W/machine.out 2>&1 || fail "machine: the run"
 check machine
 
 echo "$failures failure(s)"

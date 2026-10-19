@@ -4,8 +4,9 @@
 #
 # The tests of TinyCPU.ml, its laws:
 #
-# 1. each program of TinyCPU_tests/, interpreted, prints its
-#    .expected (computed otherwise: Python's factorials, primes, sort);
+# 1. each program of TinyCPU_tests/, assembled and linked (tiny-assembler,
+#    tiny-linker), interpreted, prints its .expected (computed
+#    otherwise: Python's factorials, primes, sort);
 # 2. random programs (N, default 200), each a straight line of every
 #    kind of instruction with branches and jal over one: the listing,
 #    reassembled, lists the same words.
@@ -14,6 +15,7 @@
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 N=${1:-200}
 W=$(mktemp -d)
 trap 'rm -rf $W' EXIT
@@ -23,15 +25,15 @@ INPUT="hello tiny machine"
 
 # a program's listing, reassembled and listed again: "same" or the diff
 relist() { # source
-  $T -l "$1" > $W/l1 || { echo "not assembled"; return; }
+  link_tm $W/i1 "$1" && $T -l $W/i1 > $W/l1 || { echo "not assembled"; return; }
   cut -f3- $W/l1 | sed 's/^/\t/' > $W/r.tm
-  $T -l $W/r.tm > $W/l2 2>&1
+  { link_tm $W/i2 $W/r.tm && $T -l $W/i2; } > $W/l2 2>&1
   if cmp -s $W/l1 $W/l2; then echo same; else diff $W/l1 $W/l2 | head -3; fi
 }
 
 for s in $ROOT/tiny/tests/TinyCPU_tests/*.tm; do
   p=$(basename $s .tm)
-  echo "$INPUT" | $T $s > $W/$p.out 2>&1
+  link_tm $W/$p $s && echo "$INPUT" | $T $W/$p > $W/$p.out 2>&1
   if cmp -s $W/$p.out ${s%.tm}.expected; then echo "ok $p: its expected output"; else fail "$p: $(diff $W/$p.out ${s%.tm}.expected | head -3)"; fi
 done
 

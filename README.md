@@ -187,12 +187,13 @@ its original and what it redesigns.
 | **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 620 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
 | **tiny-c** | a C subset compiler, to tiny-cpu | 990 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
 | **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 1,580 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-assembler**, **tiny-linker** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 340 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
 
 **The machine**, programs of the host too: what the system below runs on.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
-| **tiny-cpu** | a CPU of our own design, for teaching, with its assembler | 490 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyMachineCPU.ml`](tiny/TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
+| **tiny-cpu** | a CPU of our own design, for teaching | 350 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyMachineCPU.ml`](tiny/TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
 | **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 710 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml), [`TinyMachineDevices.ml`](tiny/TinyMachine/TinyMachineDevices.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
 
 **The system**, which runs on tiny-machine: a kernel, its window
@@ -247,7 +248,7 @@ built by IX, once it had shown what of `lib_core/` they use.
 That is about 17,000 lines of OCaml and ML; with their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
 t-IX is **about 18,800 lines** in all (the header comments are in
-the `.mli` files, which are not counted), of a budget of 30,000. tiny-cpu and tiny-machine also
+the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
 and a kernel in C with a disk and a shell (t6). Their 2,000 lines are not counted in t-IX: t-IX's kernel is
@@ -389,20 +390,21 @@ an office suite and a web browser.
 ### The budget
 
 A system a person can read needs a limit set before it is full:
-**150,000 lines for m-IX** and **30,000 for t-IX**, without the tests
+**150,000 lines for m-IX** and **25,000 for t-IX**, without the tests
 and without the header comments that tell each module's idea and
 history (m-IX's was 100,000 until 2026-10-09, when the office suite
 and the two libraries under it, the GUI toolkit and the playground,
 came to be counted, and 125,000 until 2026-10-10, the web browser
-in; t-IX's was 20,000 until 2026-10-13, its GUI toolkit in, and
-25,000 until 2026-10-19, its file system in).
+in; t-IX's was 20,000 until 2026-10-13, its GUI toolkit in, 25,000
+until 2026-10-19, its file system in, then 30,000, and 25,000 again
+the same day, its arm64 side and TinyLibHost out).
 What is still to come has to fit in what is left, and when it does
 not, something is trimmed first.
 
 | | budget | today (2026-10-19) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 30,000 | 18,500 | 11,500 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
+| **t-IX** | 25,000 | 18,500 | 6,500 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

@@ -36,14 +36,24 @@
  (modules TinyVCS)
  (libraries ix_core unix caps ix_crypto ix_compression))
 
+; tiny-machine's assembler and linker: a .tm file to an object, objects to
+; an image (TinyMachineCPU's instructions; TinyMachineDevices's names its
+; registers of control)
+(executables
+ (names TinyAssembler TinyLinker)
+ (public_names tiny-assembler tiny-linker)
+ (package ix)
+ (modules TinyAssembler TinyLinker)
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_machine_devices))
+
 ; tiny-cpu, and tiny-prof: where the instructions went, by function, from
-; a profile of tiny-cpu -prof or tiny-machine -prof and the .tm files that ran
+; a profile of tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
 (executables
  (names TinyCPU TinyProfiler)
  (public_names tiny-cpu tiny-prof)
  (package ix)
  (modules TinyCPU TinyProfiler)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_machine_devices))
+ (libraries ix_core fpath caps tiny_machine_cpu))
 
 (executable
  (name TinyMachine)

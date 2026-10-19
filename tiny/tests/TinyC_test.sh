@@ -16,6 +16,7 @@
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 TCPU=${TCPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 CC=${CC:-cc}
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
@@ -41,7 +42,7 @@ for c in "${progs[@]}"; do
     if grep -q "long long" $W/$b.err; then refused+=($b); else echo "FAIL $b: $(cat $W/$b.err)"; failures=$((failures + 1)); fi
     continue
   fi
-  $TCPU -o $W/tm/$b $RT/start.tm $RT/udivmod.tm $W/libc.tm $W/$b.tm || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
+  link_tm $W/tm/$b $RT/start.tm $RT/udivmod.tm $W/libc.tm $W/$b.tm || { echo "FAIL $b: linking"; failures=$((failures + 1)); continue; }
   want=$(cat $out)
   got=$(cd $W/tm && timeout 10 $TCPU ./$b one two 2>&1; echo "exit $?")
   if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi

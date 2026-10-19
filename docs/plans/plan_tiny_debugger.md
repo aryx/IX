@@ -173,8 +173,9 @@ number, the image's size, the memory it asks for) and no symbols, so
 debug has nothing to name addresses with. Two ways to fix this:
 
 1. **The symbols after the image** (Plan 9's a.out: text, data, then
-   the symbol table). `tiny-cpu -a` writes, after the image, its labels
-   as text lines (`name address`). The header's size stays the image's,
+   the symbol table). `tiny-linker -a` writes, after the image, its labels
+   as text lines (`name address`; its `-map` writes them beside the
+   image today, for tiny-prof). The header's size stays the image's,
    and `load_prog`'s check `size = n - 12` becomes `size <= n - 12`,
    so that a loader that knows nothing of symbols still works. debug reads
    them from the file it was given, or from `/bin/` plus the process's

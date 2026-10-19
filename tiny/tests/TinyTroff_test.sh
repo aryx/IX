@@ -18,6 +18,7 @@ HOST=${HOST:-$ROOT/_build/default/tiny/tests/TinyTroff_tests/Print.exe}
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 L=$ROOT/tiny/TinyCRuntime
 T=$ROOT/tiny/tests/TinyTroff_tests
 W=${W:-$(mktemp -d)}
@@ -42,7 +43,7 @@ printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue sp
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 if $TC -o $W/main.tm $W/main.c && $TC -o $W/data.tm $W/data.c \
    && $TML -o $W/print.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/stub/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyOffice.ml $ROOT/tiny/TinyTroff.ml $T/Print.ml \
-   && $CPU -o $W/print.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/print.tm $W/data.tm \
+   && link_tm $W/print.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/print.tm $W/data.tm \
    && timeout 120 $CPU $W/print.img > $W/tm.out 2>&1 && diff $T/print.expected $W/tm.out > $W/tm.diff
 then echo "ok print: by tiny-ml, on tiny-cpu"; else echo "FAIL print: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi
 

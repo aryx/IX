@@ -197,7 +197,7 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c`, `tiny-ml`   | `.tm` programs; C programs with `TinyCRuntime/`, ML ones with `TinyMLRuntime/` |
+| tiny-cpu     | `tiny-c`, `tiny-ml`, tiny-assembler, tiny-linker  | images: `.tm` programs; C programs with `TinyCRuntime/`, ML ones with `TinyMLRuntime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-kernel, its steps (v0, t6) and their programs |
 
 The tiny side has no real architecture: tiny-c and tiny-ml had an

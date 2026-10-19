@@ -14,6 +14,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 L=$ROOT/tiny/TinyCRuntime
 T=$ROOT/tiny/tests/TinyLibStd_tests
 W=${W:-$(mktemp -d)}
@@ -30,6 +31,6 @@ END
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 $TC -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
 $TML -o $W/std.tm $ROOT/tiny/TinyLibStd.ml $T/std.ml || { echo "FAIL std: tiny-ml"; exit 1; }
-$CPU -o $W/std.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/std.tm $W/main.tm || { echo "FAIL std: linking"; exit 1; }
+link_tm $W/std.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/std.tm $W/main.tm || { echo "FAIL std: linking"; exit 1; }
 timeout 60 $CPU $W/std.img > $W/std.out 2>&1
 if diff $T/std.expected $W/std.out; then echo "ok std: OCaml's lines"; else echo "FAIL std"; exit 1; fi

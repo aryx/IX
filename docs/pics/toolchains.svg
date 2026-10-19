@@ -23,7 +23,7 @@
 <text x="700" y="278" font-size="17" font-weight="600" fill="#1f2328" text-anchor="start">t-ix toolchain</text>
 <text x="700" y="304" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">run by: make, reading the Makefiles of TinyKernel/ and its steps/</text>
 <text x="700" y="323" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">compile:  tiny-c (C), tiny-ml (ML)</text>
-<text x="700" y="342" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">assemble and link:  tiny-cpu, tiny-machine (.tm)</text>
+<text x="700" y="342" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">assemble and link:  tiny-assembler, tiny-linker (.tm, .o)</text>
 <text x="700" y="361" font-size="13" font-weight="normal" fill="#1f2328" text-anchor="start">disks:  tiny-mkfs</text>
 <line x1="450" y1="176" x2="320" y2="248" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <text x="378" y="228" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" font-style="italic">make: the first build</text>

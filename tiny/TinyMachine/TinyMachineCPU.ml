@@ -220,193 +220,23 @@ let boot image =
   m
 
 (*****************************************************************************)
-(* The assembler *)
+(* An image *)
 (*****************************************************************************)
 
-type expr = Num of int | Sym of string
-
-(* an item of the program: its size in bytes known when it is parsed,
- * its bytes made once the labels are *)
-type item = Label of string | Words of int * (int -> (expr -> int) -> int list) | Bytes_ of string | Align of int
-
-let reg s =
-  match String.trim s with
-  | "zero" -> 0 | "sp" -> sp | "lr" -> lr
-  | s when String.length s >= 2 && s.[0] = 'r' ->
-      (match int_of_string_opt (String.sub s 1 (String.length s - 1)) with Some n when n >= 0 && n < 16 -> n | _ -> error "not a register: %s" s)
-  | s -> error "not a register: %s" s
-
-let expr s =
-  let s = String.trim s in
-  if String.length s = 3 && s.[0] = '\'' && s.[2] = '\'' then Num (Char.code s.[1])
-  else match int_of_string_opt s with Some n -> Num n | None -> Sym s
-
-(* "off(ra)" or "(ra)" *)
-let mem_operand s =
-  let s = String.trim s in
-  match String.index_opt s '(' with
-  | Some i when s.[String.length s - 1] = ')' ->
-      let off = String.trim (String.sub s 0 i) in
-      reg (String.sub s (i + 1) (String.length s - i - 2)), (if off = "" then Num 0 else expr off)
-  | _ -> error "not a memory operand: %s" s
-
-let one f = Words (4, fun pc res -> [ encode (f pc res) ])
-
-(* a branch's offset, in words from the next instruction *)
-let offset pc res e = let t = res e in if t land 3 <> 0 then error "unaligned target 0x%x" t; (t - (pc + 4)) / 4
-
-(* what a machine adds to the language: its own instructions, a name
- * and the operands split to an item (None: not one of them), and
- * their words printed for the listing (None: not one of them) *)
-type extension = { parse : string -> string list -> item option; show : int -> string option }
-let no_extension = { parse = (fun _ _ -> None); show = (fun _ -> None) }
-
-let instruction ~ext name args : item =
-  let args = List.map String.trim (if String.trim args = "" then [] else String.split_on_char ',' args) in
-  let alu_of n = match index alu_names n with i -> Some alus.(i) | exception _ -> None in
-  let imm_op n = Array.find_opt (fun op -> has_imm op && imm_name op = n) alus in
-  match name, args with
-  | _, [ d; a; b ] when alu_of name <> None -> one (fun _ _ -> Alu (Option.get (alu_of name), reg d, reg a, reg b))
-  | _, [ d; a; v ] when imm_op name <> None ->
-      one (fun _ res -> Alui (Option.get (imm_op name), reg d, reg a, res (expr v)))
-  | "lui", [ d; v ] -> one (fun _ res -> Lui (reg d, res (expr v) land 0xffff))
-  | ("ldw" | "ldb" | "stw" | "stb"), [ d; m ] ->
-      one (fun _ res ->
-        let a, off = mem_operand m in
-        let s = if name.[2] = 'w' then W else B in
-        if name.[0] = 'l' then Load (s, reg d, a, res off) else Store (s, reg d, a, res off))
-  | _, [ d; a; t ] when Array.mem name cmp_names ->
-      one (fun pc res -> Branch (cmps.(index cmp_names name), reg d, reg a, offset pc res (expr t)))
-  | "jal", [ d; t ] -> one (fun pc res -> Jal (reg d, offset pc res (expr t)))
-  | "jalr", [ d; m ] -> one (fun _ res -> let a, off = mem_operand m in Jalr (reg d, a, res off))
-  | "sys", [ n ] -> one (fun _ res -> Sys (res (expr n)))
-  (* the pseudo-instructions *)
-  | "li", [ d; v ] when (match expr v with Num n -> n >= -0x8000 && n < 0x8000 | Sym _ -> false) ->
-      one (fun _ res -> Alui (Add, reg d, 0, res (expr v)))
-  | ("li" | "la"), [ d; v ] ->
-      Words (8, fun _ res ->
-        let x = m32 (res (expr v)) in
-        [ encode (Lui (reg d, x lsr 16)); encode (Alui (Or, reg d, reg d, x land 0xffff)) ])
-  | "mov", [ d; a ] -> one (fun _ _ -> Alui (Add, reg d, reg a, 0))
-  | "call", [ t ] -> one (fun pc res -> Jal (lr, offset pc res (expr t)))
-  | "j", [ t ] -> one (fun pc res -> Jal (0, offset pc res (expr t)))
-  | "ret", [] -> one (fun _ _ -> Jalr (0, lr, 0))
-  | "nop", [] -> one (fun _ _ -> Alui (Add, 0, 0, 0))
-  | _ ->
-      (match ext.parse name args with
-       | Some it -> it
-       | None -> error "bad instruction: %s %s" name (String.concat ", " args))
-
-(* a string's escapes: backslash and n, t or 0, or the character *)
-let unescape s =
-  let b = Buffer.create (String.length s) in
-  let rec go i =
-    if i < String.length s then
-      if s.[i] = '\\' && i + 1 < String.length s then
-        (Buffer.add_char b (match s.[i + 1] with 'n' -> '\n' | 't' -> '\t' | '0' -> '\000' | c -> c); go (i + 2))
-      else (Buffer.add_char b s.[i]; go (i + 1)) in
-  go 0; Buffer.contents b
-
-let directive d args : item =
-  match d with
-  | ".word" ->
-      let es = List.map expr (String.split_on_char ',' args) in
-      Words (4 * List.length es, fun _ res -> List.map (fun e -> m32 (res e)) es)
-  | ".byte" -> Bytes_ (String.concat "" (List.map (fun e -> match expr e with Num n -> String.make 1 (Char.chr (n land 0xff)) | Sym _ -> error ".byte takes numbers") (String.split_on_char ',' args)))
-  | ".ascii" | ".asciz" ->
-      let a = String.trim args in
-      if String.length a < 2 || a.[0] <> '"' || a.[String.length a - 1] <> '"' then error "not a string: %s" a;
-      Bytes_ (unescape (String.sub a 1 (String.length a - 2)) ^ if d = ".asciz" then "\000" else "")
-  | ".space" -> Bytes_ (String.make (int_of_string (String.trim args)) '\000')
-  | ".align" -> Align (int_of_string (String.trim args))
-  | _ -> error "unknown directive %s" d
-
-(* a line: labels, then an instruction or a directive; ; starts a comment *)
-let parse_line ~ext line : item list =
-  let line = match String.index_opt line ';' with
-    | Some i when not (String.contains (String.sub line 0 i) '"') -> String.sub line 0 i
-    | _ -> line in
-  let rec go s acc =
-    let s = String.trim s in
-    match String.index_opt s ':' with
-    | Some i when not (String.contains (String.sub s 0 i) ' ') && not (String.contains (String.sub s 0 i) '"') ->
-        go (String.sub s (i + 1) (String.length s - i - 1)) (Label (String.sub s 0 i) :: acc)
-    | _ when s = "" -> List.rev acc
-    | _ ->
-        let i = try String.index_from s 0 ' ' with Not_found -> String.length s in
-        let i = min i (try String.index s '\t' with Not_found -> String.length s) in
-        let name = String.sub s 0 i and rest = String.sub s i (String.length s - i) in
-        List.rev acc @ [ (if name.[0] = '.' then directive name rest else instruction ~ext name rest) ] in
-  go line []
-
-(* the image, from address 0, of files assembled one after the other,
- * their labels one namespace: the link is no more than that *)
-(* the first pass: each item its address, each label its own *)
-let layout ~ext ~origin (files : (string * string list) list) =
-  let parse (name, lines) =
-    (* each file on a word's boundary: one may end with bytes, the next begin with code *)
-    Align 4 :: List.concat (List.mapi (fun n l -> try parse_line ~ext l with Error e -> error "%s:%d: %s" name (n + 1) e) lines) in
-  let items = List.concat_map parse files in
-  let labels = Hashtbl.create 64 in
-  let pc = ref origin and placed = ref [] in
-  List.iter (fun it ->
-    match it with
-    | Label l -> if Hashtbl.mem labels l then error "label %s defined twice" l; Hashtbl.replace labels l !pc
-    | Align n -> let a = (!pc + n - 1) / n * n in placed := (!pc, Bytes_ (String.make (a - !pc) '\000')) :: !placed; pc := a
-    | Words (n, _) -> placed := (!pc, it) :: !placed; pc := !pc + n
-    | Bytes_ s -> placed := (!pc, it) :: !placed; pc := !pc + String.length s) items;
-  labels, List.rev !placed
-
-let labels ~ext ~origin files =
-  let labels, _ = layout ~ext ~origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files) in
-  List.sort (fun (_, a) (_, b) -> a - b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
-
-let assemble_files ~ext ~origin (files : (string * string list) list) =
-  let labels, placed = layout ~ext ~origin files in
-  let resolve = function Num n -> n | Sym s -> (match Hashtbl.find_opt labels s with Some a -> a | None -> error "undefined label %s" s) in
-  let b = Buffer.create 4096 in
-  List.iter (fun (a, it) ->
-    match it with
-    | Words (_, f) -> List.iter (fun w -> Buffer.add_int32_le b (Int32.of_int w)) (f a resolve)
-    | Bytes_ s -> Buffer.add_string b s
-    | Label _ | Align _ -> ()) placed;
-  if Buffer.length b > !memsize then error "the program does not fit in memory";
-  Buffer.contents b
-
-(* files, named and read: .tm files assembled and linked, or one image
- * (the memory's first bytes, no header: the CPU starts at 0) *)
-let image ~ext ~origin (files : (string * string) list) =
-  match files with
-  | _ :: _ when List.for_all (fun (f, _) -> Filename.check_suffix f ".tm") files ->
-      assemble_files ~ext ~origin (List.map (fun (f, text) -> f, String.split_on_char '\n' text) files)
-  | [ (f, text) ] -> if String.length text > !memsize then error "%s: larger than the memory" f; text
-  | _ -> error "either .tm files or one image"
+(* the memory's first bytes, no header: the CPU starts at 0 (tiny-linker
+ * made it) *)
+let image name text = if String.length text > !memsize then error "%s: larger than the memory" name; text
 
 (* the listing: address, word, instruction, as assembly again *)
-let listing ~ext ~origin image =
+let listing ~show ~origin image =
   List.init (String.length image / 4) (fun k ->
     let w = Int32.to_int (String.get_int32_le image (4 * k)) land 0xffffffff in
     Printf.sprintf "%x:\t%08x\t%s\n" (origin + (4 * k)) w
-      (match decode w, ext.show w with
+      (match decode w, show w with
        | Some i, _ -> print ~pc:(origin + (4 * k)) i
        | None, Some s -> s
        | None, None -> Printf.sprintf ".word\t0x%x" w))
   |> String.concat ""
-
-(* An executable for tiny-kernel: a header of three words, then the
- * image, linked at 0. The words are a magic number, the image's size,
- * and how much memory the program asks for, in bytes; tiny-kernel gives
- * it a partition of that size. This plays the role of Unix's a.out
- * header, whose bss size said how much memory a program needed beyond
- * its file. (old: the header of tiny-os v6's executables, whose third
- * word was the address where the image was linked, 0x800000.) *)
-let aout_magic = 0x7a0ce5
-
-let aout ~memory image =
-  let b = Buffer.create (String.length image + 12) in
-  List.iter (fun v -> Buffer.add_int32_le b (Int32.of_int v)) [ aout_magic; String.length image; memory ];
-  Buffer.add_string b image;
-  Buffer.contents b
 
 (*****************************************************************************)
 (* A profile *)

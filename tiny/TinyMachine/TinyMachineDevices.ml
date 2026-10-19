@@ -407,34 +407,16 @@ let env mc : TinyMachineCPU.env = {
   illegal = extra mc;
 }
 
-(* the assembler's and the listing's new instructions *)
-let ext : TinyMachineCPU.extension =
-  let csr s =
-    match List.assoc_opt (String.trim s) (List.mapi (fun k n -> n, k) (Array.to_list csr_names)) with
-    | Some k -> k | None -> TinyMachineCPU.error "not a register of control: %s" s in
-  let w op d a k = TinyMachineCPU.Words (4, fun _ _ -> [ (op lsl 24) lor (d lsl 20) lor (a lsl 16) lor k ]) in
-  {
-    parse = (fun name args ->
-      match name, args with
-      | "csrr", [ d; c ] -> Some (w 0x3a (TinyMachineCPU.reg d) 0 (csr c))
-      | "csrw", [ c; a ] -> Some (w 0x3b 0 (TinyMachineCPU.reg a) (csr c))
-      | "eret", [] -> Some (w 0x3c 0 0 0)
-      | "csrrw", [ d; c; a ] -> Some (w 0x3e (TinyMachineCPU.reg d) (TinyMachineCPU.reg a) (csr c))
-      | "amoswap", [ d; a; b ] ->
-          let b = String.trim b in
-          if String.length b < 2 || b.[0] <> '(' || b.[String.length b - 1] <> ')' then TinyMachineCPU.error "amoswap's address: (rN)";
-          Some (w 0x3d (TinyMachineCPU.reg d) (TinyMachineCPU.reg a) (TinyMachineCPU.reg (String.sub b 1 (String.length b - 2))))
-      | _ -> None);
-    show = (fun w ->
-      let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15 and a = (w lsr 16) land 15 and k = w land 0xffff in
-      match op with
-      | 0x3a when k < Array.length csr_names -> Some (Printf.sprintf "csrr\tr%d, %s" d csr_names.(k))
-      | 0x3b when k < Array.length csr_names -> Some (Printf.sprintf "csrw\t%s, r%d" csr_names.(k) a)
-      | 0x3c -> Some "eret"
-      | 0x3e when k < Array.length csr_names -> Some (Printf.sprintf "csrrw\tr%d, %s, r%d" d csr_names.(k) a)
-      | 0x3d -> Some (Printf.sprintf "amoswap\tr%d, r%d, (r%d)" d a (k land 15))
-      | _ -> None);
-  }
+(* the listing's new instructions (tiny-assembler makes them) *)
+let show w =
+  let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15 and a = (w lsr 16) land 15 and k = w land 0xffff in
+  match op with
+  | 0x3a when k < Array.length csr_names -> Some (Printf.sprintf "csrr\tr%d, %s" d csr_names.(k))
+  | 0x3b when k < Array.length csr_names -> Some (Printf.sprintf "csrw\t%s, r%d" csr_names.(k) a)
+  | 0x3c -> Some "eret"
+  | 0x3e when k < Array.length csr_names -> Some (Printf.sprintf "csrrw\tr%d, %s, r%d" d csr_names.(k) a)
+  | 0x3d -> Some (Printf.sprintf "amoswap\tr%d, r%d, (r%d)" d a (k land 15))
+  | _ -> None
 
 (*****************************************************************************)
 (* The machine at its start, and one instruction of its time *)

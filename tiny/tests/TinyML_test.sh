@@ -23,6 +23,7 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 W=${W:-$(mktemp -d)}; mkdir -p $W
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 progs=("$@")
@@ -65,7 +66,7 @@ one() {
   want=$(cat $out)
   for h in 4096 64; do
     # the program before main.tm, whose arrays a jal would not jump over
-    $CPU -o $W/$b.$h $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main$h.tm || { echo "FAIL $b: linking"; return; }
+    link_tm $W/$b.$h $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main$h.tm || { echo "FAIL $b: linking"; return; }
     got=$(timeout ${SLOW:-60} $CPU $W/$b.$h 2>&1; echo "exit $?")
     local tag=; [ $h = 64 ] && tag=" heap 64"
     if [ "$want" = "$got" ]; then echo "ok $b$tag"; else echo "FAIL $b$tag"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; fi

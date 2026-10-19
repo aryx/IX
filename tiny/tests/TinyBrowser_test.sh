@@ -23,6 +23,7 @@ HOST=${HOST:-$ROOT/_build/default/tiny/tests/TinyBrowser_tests/Host.exe}
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+. $ROOT/tiny/tests/link.sh
 T=$ROOT/tiny/tests/TinyBrowser_tests
 L=$ROOT/tiny/TinyCRuntime
 W=${W:-$(mktemp -d)}
@@ -49,7 +50,7 @@ done
 # for the start's call to reach it (a jump reaches 32K words).
 if $TML -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyBrowser.ml $T/Tm.ml \
    && $TC -o $W/tm.tm $T/tm.c && $TC -o $W/heap.tm $T/heap.c && $TC -o $W/libc.tm $L/libc.c \
-   && $CPU -o $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm; then
+   && link_tm $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm; then
   for p in $PAGES; do
     IFS=: read -r page width name <<< "$p"
     timeout ${SLOW:-120} $CPU $W/b.img $width < $page > $W/$name.tm.out 2>&1

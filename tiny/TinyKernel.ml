@@ -651,7 +651,7 @@ let sys_fork p =
 
 (* A program's file is either a raw image, run in 1 MB, or an a.out: a
  * header of three words (a magic number, the image's size, the memory
- * the program asks for), then the image (tiny-cpu -a). This returns
+ * the program asks for), then the image (tiny-linker -a). This returns
  * where the image starts in the file, its size, and the memory. *)
 let aout_magic = 0x7a0ce5
 let header bytes =

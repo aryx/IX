@@ -12,6 +12,8 @@
 
 export PATH := $(abspath ../../../../bin):$(PATH)
 
+AS = tiny-assembler
+LD = tiny-linker
 MACHINE = tiny-machine
 
 O = _make
@@ -20,9 +22,12 @@ all: $(O)/kernel.img
 
 # the kernel first, at 0, then its programs, found by their labels
 # (what is built goes to _make/)
-$(O)/kernel.img: kernel.tm a.tm b.tm c.tm d.tm
+$(O)/%.o: %.tm
 	@mkdir -p $(@D)
-	$(MACHINE) -o $@ $^
+	$(AS) -o $@ $<
+
+$(O)/kernel.img: $(O)/kernel.o $(O)/a.o $(O)/b.o $(O)/c.o $(O)/d.o
+	$(LD) -o $@ $^
 
 run: $(O)/kernel.img
 	$(MACHINE) $(O)/kernel.img

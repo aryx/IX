@@ -6,7 +6,7 @@
  * needs no quotes). The Makefile gives tiny-ml ../libml/calls.ml,
  * ../../TinyLibStd.ml, ../../TinyLibDraw.ml, ../../TinyLibPlayground.ml,
  * ../../TinyLibGUI.ml and ../../TinyBrowser.ml before this file, as one
- * program, and links it as an a.out that asks for 10 MB (tiny-cpu -a
+ * program, and links it as an a.out that asks for 10 MB (tiny-linker -a
  * 10): a page's lines live in the heap. OCaml
  * compiles it too, for the host (tiny-www, ../../sdl/): its calls
  * TinyCalls's, a window's and the host's network.

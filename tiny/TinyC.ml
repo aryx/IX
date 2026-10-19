@@ -14,7 +14,8 @@ libc; -ir prints its stack machine's code instead. A fact.c that includes
 tiny/TinyCRuntime/libc.h and prints fact(10):
   L=tiny/TinyCRuntime; (cd $L && tiny-c -o libc.tm libc.c)
   tiny-c -o fact.tm fact.c
-  tiny-cpu -o fact $L/start.tm $L/udivmod.tm $L/libc.tm fact.tm
+  for f in $L/start $L/udivmod $L/libc fact; do tiny-assembler -o $f.o $f.tm; done
+  tiny-linker -o fact $L/start.o $L/udivmod.o $L/libc.o fact.o
   tiny-cpu fact                            fact 10 = 3628800
   tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...
 An error names the file and the line: fact.c: line 3: expected ;

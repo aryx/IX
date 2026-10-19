@@ -35,12 +35,14 @@ The script builds the tools with dune and calls them. By hand:
 
 | tool | what it does |
 |---|---|
-| `tiny-cpu f.tm...` | assembles, links and runs a program alone, the host answering its three system calls |
-| `tiny-machine k.tm p.tm...` | the same with the machine around the CPU: the first file is the kernel |
 | `tiny-c -o f.tm f.c` | C to the machine's assembly |
 | `tiny-ml -o f.tm f.ml` | ML to the machine's assembly |
+| `tiny-assembler f.tm` | the assembly to an object, `f.o` (`tiny/TinyAssembler.ml`; its `.mli` has the object's format) |
+| `tiny-linker [-a n] [-map] -o out f.o...` | objects to an image, the first at 0 (`-a n`: an a.out for tiny-kernel that asks for n MB; `-map`: `out.map`, each label's address) |
+| `tiny-cpu image` | runs a program alone, the host answering its three system calls |
+| `tiny-machine image` | the same with the machine around the CPU: the image is a kernel's |
 | `tiny-mkfs` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfs.ml`) |
-| `tiny-prof p -k k.tm... -u p.tm...` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
+| `tiny-prof p -k k.map -u p.map` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` and the maps of the links (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
 
 `tiny-cpu -h` and `tiny-machine -h` show each option on an example.
 
@@ -137,8 +139,9 @@ directories show the sources, `make clean` removes `_make/`.
 The steps are always the same three:
 
     tiny-c -o x.tm x.c          # or tiny-ml, for ML
-    tiny-machine -o kernel.img entry.tm ... x.tm     # a kernel: linked at 0
-    tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm   # a program
+    tiny-assembler -o x.o x.tm  # each .tm, the runtime's too
+    tiny-linker -o kernel.img entry.o ... x.o              # a kernel: linked at 0
+    tiny-linker -o prog start.o udivmod.o libc.o prog.o    # a program
 
 TinyKernel.ml has no disk: `boot.img` is `kernel.img` followed by
 its files, each a name, a size and its bytes, which the kernel reads
@@ -152,7 +155,7 @@ other utilities. At the prompt, `ln` makes one the same way.
 
     ./tiny-machine tiny-kernel
       -> dune builds the host's tools
-      -> make -C tiny/TinyKernel                (tiny-ml, tiny-c, tiny-cpu, tiny-machine -o)
+      -> make -C tiny/TinyKernel                (tiny-ml, tiny-c, tiny-assembler, tiny-linker)
       -> tiny-machine tiny/TinyKernel/_make/boot.img
            the kernel at 0, in supervisor mode
            -> /bin/sh in a partition, in user mode
@@ -477,10 +480,12 @@ has no sound yet.
 
 ### 6.1 The link, and an image
 
-There is no object file. The `.tm` files given are assembled one
-after the other, their labels in one namespace, the first at address
-0, where the machine starts. `-o` writes the result, an image: the
-memory's first bytes, with no header.
+Each `.tm` file is assembled alone, to an object: its words, its
+labels, and the places where a label's address goes (`reloc` lines,
+`tiny/TinyAssembler.mli`). tiny-linker puts the objects one after the
+other, their labels in one namespace, the first at address 0, where
+the machine starts, and fills the places: the image is the memory's
+first bytes, with no header.
 
 ### 6.2 C: `tiny-c`
 
@@ -490,7 +495,8 @@ result is in `r13`; the callee may change any register but `sp`.
 A program is linked after its runtime (`tiny/TinyCRuntime/`):
 
     tiny-c -o prog.tm prog.c
-    tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm
+    for f in start udivmod libc prog; do tiny-assembler $f.tm; done
+    tiny-linker -o prog start.o udivmod.o libc.o prog.o
     tiny-cpu ./prog one two
 
 `start.tm` calls `main` and exits with its result. `libc.h` declares
@@ -538,7 +544,7 @@ What the numbers mean is up to who answers:
 
 A process sees its partition as addresses from 0 to its size: its
 program is loaded at 0, its stack starts at the top. The size is 1 MB,
-unless the program is an a.out (`tiny-cpu -a n`) whose header asks for
+unless the program is an a.out (`tiny-linker -a n`) whose header asks for
 n MB: its three words are a magic number (`0x7a0ce5`), the image's size
 and the memory wanted. A child of `fork` gets its parent's size. An ML
 program's heap grows up to what its partition leaves (`libml/mlsys.c`);

@@ -128,5 +128,8 @@ val net_give : machine -> after:int -> string -> unit
 val timed_events : string -> (int * string) list
 val event : mouse -> console -> string -> unit
 
-(* the assembler's extension: csrr, csrw, eret, csrrw, amoswap *)
-val ext : TinyMachineCPU.extension
+(* the registers of control, by their numbers (tiny-assembler names
+ * them); the listing of the machine's own instructions, csrr, csrw,
+ * eret, csrrw, amoswap (tiny-assembler makes them) *)
+val csr_names : string array
+val show : int -> string option

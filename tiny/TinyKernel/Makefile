@@ -56,9 +56,10 @@
 # TinyKernelFS.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
-# programs are tiny-cpu's own images (tiny-cpu -o, linked at 0: the
-# kernel runs each at the start of its partition), start.tm first, with
-# libc (../TinyCRuntime/) and sys.tm. A hard link is a name and a line
+# programs are tiny-linker's images (linked at 0: the kernel runs each
+# at the start of its partition), start.tm first, with libc
+# (../TinyCRuntime/) and sys.tm. Each .tm is an object of
+# tiny-assembler's first (_make/x.o, from x.tm here or in _make/). A hard link is a name and a line
 # "link utils" (what link() does, at the boot): utils (../TinyUtilities.ml, tiny-utils) is in the image once,
 # under the name of each of its utilities (cat, ls, wc...). user/'s
 # cat, echo, ls, wc, mkdir and rm in C are not in the image any more,
@@ -70,22 +71,25 @@
 # for an ML one (mlsys.c, calls.ml, TinyLibSystem.ml).
 #
 # What is built goes to _make/ and nowhere else, so that this
-# directory shows the sources: _make/*.tm the kernel's assembly,
-# kernel.img, user/*.tm the programs' assembly, bin/ the programs as
-# they are in the image, boot.img the image; make clean removes it.
+# directory shows the sources: _make/*.tm the kernel's assembly, *.o
+# its objects, kernel.img, user/*.tm the programs' assembly, bin/ the
+# programs as they are in the image (each image with its .map, its
+# labels' addresses, for tiny-prof), boot.img the image; make clean
+# removes it.
 # The tools from the PATH (after `dune install`), or from ix's bin/.
 
 export PATH := $(abspath ../../bin):$(PATH)
 
 TML = tiny-ml
 TC = tiny-c
-CPU = tiny-cpu
+AS = tiny-assembler
+LD = tiny-linker
 MACHINE = tiny-machine
 
 O = _make
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
-KERNEL = entry.tm ../TinyCRuntime/udivmod.tm $(O)/runtime.tm draw.tm $(O)/font.tm $(O)/kernel.tm end.tm
+KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/font.o $(O)/kernel.o $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www
 # other names (hard links), a name:program each
@@ -93,9 +97,22 @@ LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
 UTILS = [ basename cat cmp cp du echo grep ln ls mkdir mv pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
-ULIB = $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm libc/sys.tm
+ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
 all: $(O)/boot.img
+
+# an object: of a .tm made in _make/, or of one here, or of the C
+# runtime's; the .tm made are kept (make deletes what it made on the
+# way to another target)
+$(O)/%.o: $(O)/%.tm
+	$(AS) -o $@ $<
+$(O)/%.o: %.tm
+	@mkdir -p $(@D)
+	$(AS) -o $@ $<
+$(O)/%.o: $(L)/%.tm
+	@mkdir -p $(@D)
+	$(AS) -o $@ $<
+.SECONDARY:
 
 $(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
@@ -111,7 +128,7 @@ $(O)/font.tm: $(FONT)
 $(O)/runtime.tm: ../TinyMLRuntime/core.c
 
 $(O)/kernel.img: $(KERNEL)
-	$(MACHINE) -o $@ $(KERNEL)
+	$(LD) -map -o $@ $(KERNEL)
 
 $(O)/libc.tm: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
@@ -124,9 +141,9 @@ $(O)/%.tm: %.c libc/user.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
 
-$(O)/bin/%: $(ULIB) $(O)/user/%.tm
+$(O)/bin/%: $(ULIB) $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
+	$(LD) -map -o $@ $(ULIB) $(O)/user/$*.o
 
 # a program in ML: its files, below, compiled by tiny-ml, with
 # mlsys.c, TinyML's runtime and the system calls as ML's externals,
@@ -138,19 +155,19 @@ $(patsubst %,$(O)/user/%.tm,$(ML)):
 	@mkdir -p $(@D)
 	$(TML) -o $@ $^
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
-$(patsubst %,$(O)/bin/%,$(MLBINS)): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/%.tm
+$(patsubst %,$(O)/bin/%,$(MLBINS)): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/$*.tm
+	$(LD) -map -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/$*.o
 	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }
 $(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
 
 # a program that asks for more memory than 1 MB: linked as an a.out
-# whose header asks for 8 MB (tiny-cpu -a 8), so tiny-kernel gives it an
+# whose header asks for 8 MB (tiny-linker -a 8), so tiny-kernel gives it an
 # 8 MB partition and mlsys.c a heap of that size (bigmem: the test)
 $(O)/user/bigmem.tm: user/bigmem.ml
-$(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
+$(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.o $(O)/user/bigmem.o
 	@mkdir -p $(@D)
-	$(CPU) -a 8 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
+	$(LD) -map -a 8 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/bigmem.o
 
 # the web browser (www: ../TinyBrowser.ml, and user/www.ml, which runs
 # it), linked as an a.out that asks for 10 MB: a page's lines live in
@@ -158,9 +175,9 @@ $(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/bigmem.tm
 # values starts.
 WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyBrowser.ml user/www.ml
 $(O)/user/www.tm: $(WWW)
-$(O)/bin/www: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
+$(O)/bin/www: $(ULIB) $(O)/libml/mlsys.o $(O)/user/www.o
 	@mkdir -p $(@D)
-	$(CPU) -a 10 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/www.tm
+	$(LD) -map -a 10 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/www.o
 	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its stack of values"; rm $@; exit 1; }
 
 # a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
@@ -212,22 +229,22 @@ $(O)/user/troff.tm: $(TROFF)
 # read whole into its heap
 PLAY_WAV = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyPlay.ml user/play.ml
 $(O)/user/play.tm: $(PLAY_WAV)
-$(O)/bin/play: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/play.tm
+$(O)/bin/play: $(ULIB) $(O)/libml/mlsys.o $(O)/user/play.o
 	@mkdir -p $(@D)
-	$(CPU) -a 4 $@ $(ULIB) $(O)/libml/mlsys.tm $(O)/user/play.tm
+	$(LD) -map -a 4 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/play.o
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
 $(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ $<
-$(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
+$(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
+	$(LD) -map -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 # a program that reaches a machine by its name: with net.c
-$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.tm $(O)/user/%.tm
+$(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(CPU) -o $@ $(ULIB) $(O)/libc/net.tm $(O)/user/$*.tm
+	$(LD) -map -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 

@@ -22,13 +22,15 @@
 #   make run-hello    hello.c, compiled by tiny-c, on tiny-cpu
 #
 # The tools from the PATH (after `dune install`), or from ix's bin/. A
-# C program is compiled to .tm by tiny-c, then linked by tiny-cpu
-# after the runtime: start.tm first (the machine starts at 0), udivmod.tm,
-# libc.
+# C program is compiled to .tm by tiny-c, assembled by tiny-assembler,
+# then linked by tiny-linker after the runtime: start.tm first (the
+# machine starts at 0), udivmod.tm, libc.
 
 export PATH := $(abspath ../../../bin):$(PATH)
 
 TC = tiny-c
+AS = tiny-assembler
+LD = tiny-linker
 CPU = tiny-cpu
 VERSIONS = v0 t6
 L = ../../TinyCRuntime
@@ -47,8 +49,15 @@ $(O)/hello.tm: hello.c $(L)/libc.h
 	@mkdir -p $(@D)
 	$(TC) -o $@ hello.c
 
-$(O)/hello: $(L)/start.tm $(L)/udivmod.tm $(O)/libc.tm $(O)/hello.tm
-	$(CPU) -o $@ $^
+$(O)/%.o: $(O)/%.tm
+	$(AS) -o $@ $<
+$(O)/%.o: $(L)/%.tm
+	@mkdir -p $(@D)
+	$(AS) -o $@ $<
+.SECONDARY:
+
+$(O)/hello: $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/hello.o
+	$(LD) -o $@ $^
 
 run:
 	$(MAKE) -C t6 run

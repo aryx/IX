@@ -1,10 +1,11 @@
 (* tiny-prof: where a program's instructions went, by function. It reads
  * a profile written by tiny-cpu -prof or tiny-machine -prof (every
- * instruction run, counted by its address) and the .tm files of what
- * ran, and prints the functions that ran most, with their share.
+ * instruction run, counted by its address) and tiny-linker's maps of
+ * what ran (-map: each label's address), and prints the functions that
+ * ran most, with their share.
  *
- *     tiny-machine -prof p kernel.img        a session, counted
- *     tiny-prof p -k entry.tm ... kernel.tm -u start.tm ... www.tm
+ *     tiny-machine -prof p boot.img          a session, counted
+ *     tiny-prof p -k kernel.img.map -u bin/www.map
  *
  *     12,345,678 instructions: the kernel 58.6%, programs 41.4%
  *         count      %     function
@@ -12,9 +13,9 @@
  *       862,816   7.0  u  browse
  *       ...
  *
- * The addresses of the labels come from tiny-machine's own assembler
- * (TinyMachineCPU.labels), the same pass that placed them when the
- * program was linked, so the names cannot disagree with what ran. A
+ * The addresses of the labels come from the link itself (tiny-linker
+ * writes the map as it writes the image), so the names cannot disagree
+ * with what ran. A
  * count goes to the last label at or before its address. A label that
  * a compiler makes inside a function (tiny-ml's ml.L12, tiny-c's
  * tm.L51) is not a function, so its counts go to the function before
@@ -22,8 +23,8 @@
  * loop. tiny-ml's functions are named f151_browse<>: shown as browse.
  *
  * A profile of tiny-machine separates the kernel's instructions (-k
- * names its files) from the programs', and the programs by the base of
- * their window, their partition: -u names the files of one program,
+ * names its map) from the programs', and the programs by the base of
+ * their window, their partition: -u names the map of one program,
  * the one with the most instructions unless -base says which. The
  * others are counted as "another program".
  *
@@ -44,14 +45,14 @@
  *     tiny-machine -prof base.prof -net tiny/tests/www -events base.events tiny/TinyKernel/_make/boot.img
  *     tiny-machine -prof pages.prof -net tiny/tests/www -events pages.events tiny/TinyKernel/_make/boot.img
  *
- * Then the files that ran, in the order they were linked: the kernel's
- * (tiny/TinyKernel/Makefile's KERNEL), and www's (its rule, $(O)/bin/www:
- * the C runtime and libc, mlsys.c, then www's own assembly):
+ * Then the maps of what ran, the kernel's and www's (tiny/TinyKernel's
+ * Makefile links each with -map):
  *
- *     K=tiny/TinyKernel
- *     KERNEL="$K/entry.tm tiny/TinyCRuntime/udivmod.tm $K/_make/runtime.tm $K/draw.tm $K/_make/font.tm $K/_make/kernel.tm $K/end.tm"
- *     WWW="tiny/TinyCRuntime/start.tm tiny/TinyCRuntime/udivmod.tm $K/_make/libc.tm $K/libc/sys.tm $K/_make/libml/mlsys.tm $K/_make/user/www.tm"
- *     tiny-prof -diff base.prof pages.prof -k $KERNEL -u $WWW
+ *     M=tiny/TinyKernel/_make
+ *     tiny-prof -diff base.prof pages.prof -k $M/kernel.img.map -u $M/bin/www.map
+ *
+ * (old: the .tm files given, in their link's order, and assembled
+ * again by tiny-prof, before tiny-linker)
  *
  * The first line said how the eight page downs divided between the
  * kernel (drawing what www asks for) and www (making the messages). The

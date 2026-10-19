@@ -127,7 +127,7 @@
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
  *    0x1000000   the processes' partitions: 1 MB each, or what an
- *                a.out's header asks for (tiny-cpu -a), found
+ *                a.out's header asks for (tiny-linker -a), found
  *                first-fit when a program starts
  *    0x7ffffd0   the devices, reached as -48 to -4
  *

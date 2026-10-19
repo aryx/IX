@@ -16,7 +16,8 @@ fact.ml, for example:
   tiny-ml -o fact.tm fact.ml               ml_start: ldw r12, 0(sp) ...
   tiny-c -o main.tm main.c
   L=tiny/TinyCRuntime
-  tiny-cpu -o fact $L/start.tm $L/udivmod.tm exit.tm fact.tm main.tm
+  for f in $L/start $L/udivmod exit fact main; do tiny-assembler -o $f.o $f.tm; done
+  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
 is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are one

@@ -3,17 +3,17 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -o image | -d disk | -window | -rate n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] kernel.tm [program.tm...] | image"
+let usage = "usage: tiny-machine [-l | -d disk | -window | -rate n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 TinyCPU's CPU with a kernel's machine: two modes, traps, a timer, pages, a
 console and a disk. ./tiny-machine tiny-kernel, t6 or v0 builds a kernel
 and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
-  tiny-machine kernel.tm a.tm b.tm c.tm d.tm     assembled, linked (the kernel
-                                                 first, at 0), run: aabbc<illegal>...
-  tiny-machine -o kernel.img kernel.tm a.tm ...  the same, to an image
-  tiny-machine kernel.img                        the image run
+  for f in kernel a b c d; do tiny-assembler $f.tm; done
+  tiny-linker -o kernel.img kernel.o a.o b.o c.o d.o
+                                                 an image (the kernel first, at 0)
+  tiny-machine kernel.img                        the image run: aabbc<illegal>...
   tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
   tiny-machine -d fs.img kernel.img              t6 (in TinyKernel/steps/t6/), fs.img its disk,
                                                  written back at the halt
@@ -446,13 +446,13 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =
-    if files = [] || (List.hd files).[0] = '-' then raise Exit;
-    TinyMachineCPU.image ~ext:TinyMachineDevices.ext ~origin:0 (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
+    match files with
+    | [ f ] when f.[0] <> '-' -> TinyMachineCPU.image f (FS.read caps (Fpath.v f))
+    | _ -> raise Exit in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: files -> Console.print caps (TinyMachineCPU.listing ~ext:TinyMachineDevices.ext ~origin:0 (image files)); 0
-    | "-o" :: out :: files -> FS.write caps (Fpath.v out) (image files); 0
+    | "-l" :: files -> Console.print caps (TinyMachineCPU.listing ~show:TinyMachineDevices.show ~origin:0 (image files)); 0
     | args ->
         let rec options o = function
           | "-d" :: f :: rest -> options { o with disk_file = Some f } rest

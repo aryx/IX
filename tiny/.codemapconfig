@@ -158,9 +158,30 @@ local chain(name, steps) = {
       ],
       related: ['TinyDatabase_test.sh', '../database/'],
     },
+    // tiny-machine's assembler and linker
+    'TinyAssembler.ml': {
+      summary: "tiny-assembler: a .tm file to an object, its words made at once, a label's place left 0 with a reloc line saying what goes there.",
+      important: [
+        { at: 'type:kind', say: 'where an address goes: a word, an immediate, a half, a branch', weight: 3 },
+        { at: 'def:instruction', say: 'each word a function of what its operands resolve to, by kind', weight: 3 },
+        { at: 'def:assemble', say: 'items to lines: code, reloc, label, align, space', weight: 2 },
+        { at: 'def:machine', say: "the machine's own instructions: csrr, eret, amoswap", weight: 1 },
+      ],
+      related: ['TinyLinker.ml', 'TinyMachine/TinyMachineCPU.ml', 'TinyCPU_test.sh', 'link.sh'],
+    },
+    'TinyLinker.ml': {
+      summary: "tiny-linker: objects to an image or an a.out, laid out from 0, each place filled by decoding, setting the immediate, encoding again.",
+      important: [
+        { at: 'def:layout', say: 'every item its address, every label its own: one name space', weight: 3 },
+        { at: 'def:fill', say: "a place filled by encoding again: encode's checks for free", weight: 3 },
+        { at: 'def:link', weight: 2 },
+        { at: 'def:aout', say: "tiny-kernel's executables: three words and the image", weight: 1 },
+      ],
+      related: ['TinyAssembler.ml', 'TinyProfiler.ml', 'TinyKernel/Makefile'],
+    },
     // the CPUs and machines
     'TinyMachineCPU.ml': { digest: '1f049d8f6327',
-      summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its assembler, since nothing else writes its words.",
+      summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its encoding, which tiny-assembler and tiny-linker use.",
       capitals: [
         { at: 'type:instr', say: 'the whole instruction set: nine forms, one format' },
         { at: 'def:step', say: 'the definition of the machine: fetch, decode, run' },
@@ -171,9 +192,7 @@ local chain(name, steps) = {
         { at: 'def:decode', weight: 2 },
         { at: 'type:env', say: 'the machine around the CPU: fetch, load, store, sys, illegal', weight: 2 },
         { at: 'def:step', weight: 3 },
-        { at: 'def:assemble_files', say: 'the link: files one after another, labels one namespace', weight: 2 },
         { at: 'def:listing', say: 'the listing reassembles to the same words', weight: 1 },
-        { at: 'def:aout', say: "v6's executables: three words and the image", weight: 1 },
       ],
       related: ['TinyCPU.ml', 'TinyMachine.ml', 'TinyCPU_tests/'],
     },
@@ -363,12 +382,11 @@ local chain(name, steps) = {
         { from: 'TinyDatabase.ml:def:exec', to: 'TinyDatabase.ml:def:commit', say: 'new roots' },
       ],
     },
-    chain('TinyMachineCPU: assemble, then step', [
-      ['TinyMachineCPU.ml:def:image', '.tm files, or an image', ''],
-      ['TinyMachineCPU.ml:def:assemble_files', 'labels, then words: two passes', 'the files'],
-      ['TinyMachineCPU.ml:def:parse_line', 'a line: a label, a directive, an instruction', 'lines'],
-      ['TinyMachineCPU.ml:def:instruction', 'an instruction and its pseudo-forms', 'a mnemonic'],
+    chain('tiny-assembler and tiny-linker, then the CPU', [
+      ['TinyAssembler.ml:def:parse_line', 'a line: a label, a directive, an instruction', ''],
+      ['TinyAssembler.ml:def:instruction', 'an instruction and its pseudo-forms', 'a mnemonic'],
       ['TinyMachineCPU.ml:def:encode', 'the one format', 'an instr'],
+      ['TinyLinker.ml:def:fill', 'a place filled: decode, the immediate, encode', 'an object'],
     ]) + {
       bones+: [
         { at: 'TinyMachineCPU.ml:def:step', role: 'a word fetched through env, decoded, run' },
@@ -377,8 +395,8 @@ local chain(name, steps) = {
       joints+: [{ from: 'TinyMachineCPU.ml:def:step', to: 'TinyMachineCPU.ml:def:decode', say: 'the word' }],
     },
     chain('tiny-cpu: the CPU alone', [
-      ['TinyCPU.ml:def:main', 'the .tm files, then the arguments', ''],
-      ['TinyMachineCPU.ml:def:image', 'assembled and linked', 'the files'],
+      ['TinyCPU.ml:def:main', 'the image, then the arguments', ''],
+      ['TinyMachineCPU.ml:def:image', "tiny-linker's, the memory's first bytes", 'the file'],
       ['TinyCPU.ml:def:interpret', 'argc and argv laid out, then the loop', 'the image'],
       ['TinyMachineCPU.ml:def:step', 'an instruction', 'the machine'],
       ['TinyCPU.ml:def:syscall', "the host's exit, write, read", 'sys'],

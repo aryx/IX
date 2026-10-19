@@ -10,7 +10,7 @@
 // 0x70000, as large as the partition allows; the last 64 KB for C's
 // stack and the arguments. In the usual 1 MB, the halves are 256 KB
 // each. A program linked as an a.out that asks for more memory
-// (tiny-cpu -a) gets bigger halves. The heap uses the whole half from
+// (tiny-linker -a) gets bigger halves. The heap uses the whole half from
 // the start: starting small and growing made it collect often while it
 // grew, a quarter of the browser's time (plan_tiny_browser.md).
 //

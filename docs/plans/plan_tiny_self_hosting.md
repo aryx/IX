@@ -147,7 +147,7 @@ the other road; it would change the runtime's value representation for
 two programs, so halves first.
 
 **Memory and time.** A process has 1 MB unless its a.out asks for more
-(`tiny-cpu -a n`); the compilers will be built with a larger `-a`, and
+(`tiny-linker -a n`); the compilers will be built with a larger `-a`, and
 the partitions (112 MB, 8 slots) have room. How long tiny-ml takes to
 compile `TinyML.ml` under the interpreter is not known; it is measured
 first on the host under tiny-cpu, without the kernel, then
@@ -341,3 +341,47 @@ and its library is TinyLibCore/.
     picture, `anatomy.svg`, stays the measure of 2026-10, TinyLibHost's
     column with it: redrawing it needs mini-rc's two builds too).
   - **Not run**: tests/lite.sh's and mkfiles/check.sh's whole builds.
+- 2026-10-19: t-IX's budget back to 25,000 (the author: "I think we
+  can restore the budget to 25000 LOC with those simplifications");
+  README's table: 18,500 of it, 6,500 left.
+- 2026-10-19: step 3 done, tiny-assembler and tiny-linker.
+  `TinyAssembler.ml` (205 lines) is the assembler that was in
+  `TinyMachineCPU.ml`, its items now saying the kind of each place an
+  operand goes (a word, an immediate, a half, a branch's offset), and
+  the machine's own instructions (csrr...) from
+  `TinyMachineDevices.ml`'s extension; `TinyLinker.ml` (135) lays the
+  objects out as `assemble_files` did and fills each place by
+  decoding the word, setting its immediate, encoding again (encode's
+  range checks hold, no table of fields). `TinyMachineCPU.ml` is the
+  CPU, the encoding (its instructions now in its .mli) and the
+  listing, 270 lines where 440; tiny-cpu and tiny-machine run images
+  only (no `-o`, no `-a`, no `.tm`).
+  - **The object is text**, a line an item: `label`, `align` (kept:
+    v0 aligns on 64 KB, an address's matter), `code HEX` (bytes in the
+    memory's order), `reloc OFF KIND TARGET`, `space N`
+    (TinyAssembler.mli). Text, for the dialect tiny-ml shares (no
+    Marshal) and for reading one.
+  - **The symbols are beside the image**, `-map` writing `out.map`
+    ("address label" lines), not after it as §6 proposed: after it,
+    every image and a.out would have changed, and `boot.img` with them
+    (its files' sizes are in `check.expected`). tiny-prof reads the
+    maps (`-k kernel.img.map -u bin/www.map`); tiny/TinyKernel's
+    Makefile links all with -map. plan_tiny_debugger.md's §4 can put
+    them after the image later.
+  - **No archive yet**: step 5 needs one (TinyLibCore/), not this one.
+  - **Checked, byte for byte** against images made by the old
+    assembler (HEAD's tools, in a worktree): tiny-kernel's
+    `kernel.img`, its 21 programs and `boot.img`; the steps' hello,
+    v0's kernel.img, t6's kernel.img, its nine programs and `fs.img`.
+    With tiny-assembler and tiny-linker built by mini-mk too: the same
+    `boot.img`. Every tiny/tests/*_test.sh that ran a `.tm` links it
+    now by `tiny/tests/link.sh`'s `link_tm`, and passes, with dune's
+    tools and (tiny-cpu, -machine, -c, -ml, -prof) with mini-mk's;
+    tiny-prof's expected outputs unchanged.
+  - **mini-ml's `&&` and `||` are no tail calls** (bugs/ix.md): the
+    mini-mk build of tiny-assembler overflowed its stack in
+    `String.for_all` on a `.space 262144`; `.space` is now an item of
+    its own, and the bug is recorded, not fixed (it changes every
+    program mini-ml compiles).
+  - **Not run**: make check's sessions (the images are the same
+    bytes), tests/lite.sh and mkfiles/check.sh whole.

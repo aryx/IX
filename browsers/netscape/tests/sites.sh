@@ -12,11 +12,26 @@
 # close together.
 #
 # usage: browsers/netscape/tests/sites.sh DIR [program] [site...]
+#        browsers/netscape/tests/sites.sh -c BEFORE AFTER
 #   program: default dune's _build/default/browsers/netscape/Netscape.exe
+#   -c: the two runs compared, a site a line: the pixels that differ
+#       (of 1,000,000), and, where some do, the two pictures side by
+#       side in AFTER/compare-<site>.png: "mostly the same" is looked at
+#       (plan_browser.md, C), not an equality
 # needs: the network, ImageMagick's convert (the PNGs)
 
 set -u
-[ $# -ge 1 ] || { sed -n '5,17p' "$0"; exit 2; }
+[ $# -ge 1 ] || { sed -n '5,22p' "$0"; exit 2; }
+if [ "$1" = -c ]; then
+  for a in $2/*.png; do
+    n=$(basename $a .png); b=$3/$n.png
+    [ -f $b ] || { echo "$n: not in $3"; continue; }
+    d=$(compare -metric AE $a $b /dev/null 2>&1)
+    echo "$n: $d pixels differ"
+    [ "$d" != 0 ] && convert $a $b +append -resize 50% $3/compare-$n.png
+  done
+  exit 0
+fi
 D=$(realpath -m $1); shift
 cd "$(dirname "$0")/../../.."
 P=$(realpath ${1:-_build/default/browsers/netscape/Netscape.exe}); [ $# -ge 1 ] && shift

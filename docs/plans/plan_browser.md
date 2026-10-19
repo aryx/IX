@@ -1371,6 +1371,8 @@ decide; this plan says mini-netscape until then.
 | `39c2b842` | `TextEncoder`, `AbortController`, `Intl`, `TreeWalker`, `XMLSerializer`; warnings in the console; `strict=on` | 19,662 |
 | `babebb9a` | `ArrayBuffer` and buffers, ES2023's copies, the collation table | 19,608 |
 | `94ffc370` | helper programs (`Browser_helpers`: mpv for YouTube's films, mini-page for a PDF file, `~/.mailcap`'s, the profile's) in the place of the PDF viewer | 19,677 |
+| `2132a983` | `type t = [%mli]` in `browsers/` (243 lines of types said once) | 19,434 |
+| `6df4d35b` | a string is its UTF-8 bytes (`Js_string` in the place of `Js_utf16`): five Wikipedias with accents and Japanese the same | 19,277 |
 
 Each checked by the tests (the engine's three ways), `frames.sh` on
 both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the

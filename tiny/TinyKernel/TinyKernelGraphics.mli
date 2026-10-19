@@ -174,3 +174,6 @@ type conn
 val connect : image -> image -> conn
 val disconnect : conn -> unit
 val messages : conn -> string -> unit
+(* what the 'c' message (the mouse's look) does: set by the kernel,
+ * which writes it to the machine's mouse word; nothing on the host *)
+val cursor_hook : (int -> unit) ref

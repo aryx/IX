@@ -8,8 +8,10 @@
  * one program *)
 open TinyMemory
 open TinyKernelGraphics
-(* and what speaks to the network, and what keeps files on the disk *)
+(* and what speaks to the network, what makes the sounds, and what
+ * keeps files on the disk *)
 open TinyKernelNetwork
+open TinyKernelAudio
 open TinyKernelFS
 
 (*****************************************************************************)

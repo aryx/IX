@@ -26,7 +26,8 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_cry
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things"; tiny-machine's
-# window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build;
+# window the same, the one tiny program over Sdl_display, which tiny/mkfile does not build,
+# its SDL module (TinyMachineSDL) and tiny/sdl/, the tiny programs in a window of it;
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
@@ -45,7 +46,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web)\.ml$|^tiny/TinyLib(Core|Std)\.ml$|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/sdl/|^tiny/TinyLib(Core|Std)\.ml$|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)

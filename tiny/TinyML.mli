@@ -1,5 +1,5 @@
-(* A tiny ML compiler for arm64, in one file. Its full-size twin is
- * mini-ml (languages/ml/, planned in docs/plans/plan_ml.md), which
+(* A tiny ML compiler for tiny-machine, in one file. Its full-size twin
+ * is mini-ml (languages/ml/, planned in docs/plans/plan_ml.md), which
  * behaves like ocaml-light's native compiler: same dialect, modules,
  * and the kernel as a target. This file is what is left of an ML
  * compiler when the language is small and the code only needs to be
@@ -8,20 +8,17 @@
  *
  * It reads one ML file (or several, compiled one after the other as a
  * single program, where an open M is accepted and ignored) and writes
- * its arm64 assembly, in Plan 9's syntax, for TinyAssembler. The
- * runtime (the allocator, Cheney's collector, the primitives, and the
- * printing of an uncaught exception) is in C, compiled by tiny-c, and
- * goken's libc sits under both. The test is that a program prints
- * exactly what ocaml-light's ocamlopt makes it print on arm64.
- *
- * With -tm, it compiles instead for tiny-machine (the CPU of
- * TinyMachineCPU.ml). It uses the same front end and stack machine
- * with a second back end (machine_tm), 4-byte words and 31-bit
- * integers. The common part of the runtime (TinyMLRuntime/core.c) is
- * compiled by tiny-c -tm, and the program's own main gives it memory.
- * TinyKernel.ml is the program it was made for: a kernel in ML, which
- * reaches the machine through externals (functions in C or assembly),
- * so the compiler needs no special primitive for it.
+ * its assembly for tiny-machine (the CPU of TinyMachineCPU.ml): words
+ * of 4 bytes, integers of 31 bits. The runtime (the allocator, Cheney's
+ * collector, the primitives, and the printing of an uncaught
+ * exception) is in C, TinyMLRuntime/core.c, compiled by tiny-c; the
+ * program's own main gives it memory. The test is that a program
+ * prints exactly what OCaml's ocamlopt makes it print (for the
+ * recorded ones, ocaml-light's on arm64, whose back end this compiler
+ * also had until plan_tiny_self_hosting.md). TinyKernel.ml is the
+ * program it was made for: a kernel in ML, which reaches the machine
+ * through externals (functions in C or assembly), so the compiler
+ * needs no special primitive for it.
  *
  * How a file is compiled:
  *
@@ -32,9 +29,9 @@
  *        | tree to stack     finds each function's free variables,
  *        | machine           turns patterns into tests, marks tail
  *        |                   calls: one [ir] list per function
- *        | machine_arm64     (or machine_tm) turns the list into
- *        |                   assembly, and static blocks into DATA
- *     file.s (or file.tm), for tiny-assembler (or tiny-machine)
+ *        | machine           turns the list into assembly, and
+ *        |                   static blocks into .word
+ *     file.tm, for tiny-cpu (or tiny-machine)
  *
  * What a value looks like at run time (TinyMLRuntime/core.c has the
  * same picture, from the other side):
@@ -54,7 +51,7 @@
  *
  * And where values live, which is what the collector needs to know:
  *
- *     the value stack, top in R26       the machine stack, top in R31
+ *     the value stack, top in r12       the machine stack, top in sp
  *       a function's frame:               return addresses
  *         its closure                     C frames (the runtime's)
  *         its parameters                  a try's record: both stack
@@ -65,12 +62,12 @@
  *       are the roots, along with the   collector never looks at it
  *       program's globals
  *
- * Between two calls a value may sit in R1..R15. At a call or an
+ * Between two calls a value may sit in r1..r11. At a call or an
  * allocation, the only two moments when a collection can happen, all
  * of them are stored in their slots and read back afterwards, because
  * the collector moves blocks.
  *
- * The language: integers (63 bits), characters, strings, booleans,
+ * The language: integers (31 bits), characters, strings, booleans,
  * unit, tuples, lists, variants (type declarations, polymorphic and
  * recursive), records (mutable fields; e.l, e.l <- v, { l = e; ... },
  * and { l; ... } for { l = l; ... }; in patterns too, where _ stands
@@ -108,13 +105,14 @@
  *   disambiguation, done cheaply (ocaml-light just takes the last
  *   declared label).
  * - {b A stack machine in between}, the same as TinyC's (IR, below):
- *   each expression pushes its value, the stack is kept in R1..R15, and
+ *   each expression pushes its value, the stack is kept in r1..r11, and
  *   a pattern becomes a sequence of tests, each jumping to the next
  *   clause on failure.
  * - {b A value stack for the roots} (plan_ml.md, decision 5;
  *   Henderson's shadow stack): each function's variables, and the
  *   registers spilled at a call or an allocation, are words on a stack
- *   of values whose top is R26, a register that 7c never allocates.
+ *   of values whose top is r12 (after a call of C, which keeps no
+ *   register, it comes back from ml_vsp).
  *   The machine stack holds return addresses, C frames and exception
  *   handlers, but never a value. So the collector finds every root
  *   without a frame table, and can move them: it is Cheney's copying
@@ -135,32 +133,33 @@
  *   cost it only what it calls: tiny-kernel's calc went from 206 KB to
  *   152 KB, and its emacs from 287 KB to 225 KB.
  * - {b Exceptions with no assembly in the runtime.} try pushes a record
- *   on the machine stack (the stack pointer, R26, the handler's address,
- *   and the previous record); raise restores both stack pointers from
- *   the latest record and jumps. The handler's address is what a BL
- *   jumping over the handler leaves in R30, as with setjmp.
- * - {b Its own frames.} Every function is declared TEXT $-8, a frame
- *   that TinyAssembler leaves alone: the compiler writes the prologue
+ *   on the machine stack (the stack pointer, r12, the handler's
+ *   address, and the previous record); raise restores both stack
+ *   pointers from the latest record and jumps. The handler's address is
+ *   what a call jumping over the handler leaves in lr, as with setjmp.
+ * - {b Its own frames.} The compiler writes each function's prologue
  *   and epilogue itself, so a tail call can pop the frame and jump.
  * - {b The prelude is in ML.} raise, the operators, ref, ! and := are
  *   externals whose names give the instruction ("%add"); print_string
  *   and ^ name C functions of the runtime; List.map and the others are
  *   ML compiled with the program, and only what the program uses is
- *   linked (TinyAssembler keeps only what the entry point reaches).
+ *   compiled ([prune], above).
  *
- * Its behavior follows ocaml-light's arm64 ocamlopt, which is the
- * contract, quirks included: arguments, tuples and record fields are
+ * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
+ * contract, quirks included (plan_tiny_self_hosting.md takes the quirks
+ * out, OCaml being the reference now): arguments, tuples and record fields are
  * evaluated right to left, except a.(i) <- v, which evaluates i, then
  * a, then v; stdout is buffered by 4096 bytes and the buffer is lost on
  * an uncaught exception; that exception is printed the way
  * ocaml-light's printexc.c prints it, with exit status 2; division by
- * zero gives 0 (what SDIV does) instead of raising an exception; an
+ * zero gives what the machine's div does instead of raising an
+ * exception; an
  * out-of-bounds index into a string or an array is a fatal error; and
  * the empty array is a static block (OCaml's atom).
  *
  * Exercises, each cheap thanks to the stack machine or the value stack:
- * - arm32: a third back end for the stack machine (the -tm one took
- *   150 lines);
+ * - arm32: a second back end for the stack machine (tiny-machine's
+ *   took 150 lines);
  * - inline allocation: keep the heap pointer and limit in two
  *   registers, and call the collector only when a block does not fit;
  * - fewer spills: at a call, spill only the registers below the
@@ -171,9 +170,9 @@
  *   matching", 2007).
  *
  * Where it stands: TinyKernel, TinyKernelGraphics, TinyWindows,
- * TinyLibPlayground and TinyAppTetris are its programs (compiled with
- * -tm), and OCaml compiles the same files. Its runtime is C compiled by
- * TinyC, and its assembly is TinyAssembler's. The stack machine, with
+ * TinyLibPlayground and TinyAppTetris are its programs, and OCaml
+ * compiles the same files. Its runtime is C compiled by TinyC, and its
+ * assembly is TinyMachineCPU's. The stack machine, with
  * its stack kept in registers, comes from TinyC, so the two compilers
  * read as one design used twice: what differs is everything C does not
  * have (type inference, closures, patterns, a collector). The ML
@@ -190,8 +189,8 @@
  * have to write types. The language outlived the prover's needs:
  * Standard ML (1980s), Caml at INRIA (1985), Xavier Leroy's and Damien
  * Doligez's Caml Light (1990), small enough for a PC, and OCaml
- * (1996). ocaml-light, whose outputs this compiler must match, is OCaml
- * 1.07 without objects and functors (plan_ml.md).
+ * (1996). ocaml-light, whose outputs this compiler first matched, is
+ * OCaml 1.07 without objects and functors (plan_ml.md).
  *
  * design:
  * Using one representation for every value, a word, is what makes

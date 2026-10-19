@@ -5,7 +5,7 @@
  * and Cheney's copying collector, the primitives the prelude names,
  * stdout's buffer, the uncaught exception. Its includer gives the
  * memory (ml_run) and write and exit. A word is intptr's: 8 bytes on
- * arm64, 4 on tiny-machine (tiny-ml -tm).
+ * arm64, 4 on tiny-machine (tiny-ml).
  *
  * A value is a word: an integer n as 2n+1, or the address of a block's
  * first field, the block's header the word before it (its size in

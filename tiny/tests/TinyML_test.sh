@@ -2,140 +2,85 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The tests of TinyML.ml, which need goken (~/goken, built, with its
-# arm64 libc): each program of languages/ml/tests/tiny/ compiled by
-# tiny-ml, linked with the runtime (TinyMLRuntime/runtime.c, by tiny-c) and
-# all of goken's libc (7c -S) by TinyAssembler, run, and its output and
-# exit status compared with the recorded ones (prog.out), which are
-# ocaml-light's arm64 ocamlopt's: RECORD=1 records them again, from
-# $OCL (default /tmp/ix-ocaml-light-arm64, built by
-# kernels/ocaml-light.sh arm64). Then the collector's law: each program
-# again with a heap of 64 words, where it collects all the time, the
-# same output; and again under tiny-arm (not gc: 700 million
-# instructions). Then the programs on tiny-cpu, by tiny-ml -tm (below);
-# a program with an integer beyond 31 bits is refused there (TinyCPU is
-# 32 bits), and said so. Last, what tiny-ml reads and forgets
-# (TinyML_tests/forgotten.ml: a capability's type, a coercion to one):
-# the same code as a program without it.
+# The tests of TinyML.ml: each program of languages/ml/tests/tiny/
+# compiled by tiny-ml, linked by tiny-cpu with the runtime (core.c and
+# a main giving it tiny-cpu's memory, by tiny-c), run by tiny-cpu, and
+# its output and exit status compared with the recorded ones (prog.out,
+# or prog.tiny-ml.out where tiny-ml's own behavior is another: an index
+# out of bounds a fatal error, the order of a.(i) <- v's operands,
+# max_int of 31 bits). They were ocaml-light's ocamlopt's; RECORD=1
+# records them again, from the ocamlfind ocamlopt in the PATH (OCaml's:
+# what TinyML_fuzz.py's programs need, make test-ocaml). Then the
+# collector's law: each program again with a heap of 64 words, where it
+# collects all the time, the same output. Not gc (its lists are deeper
+# than tiny-cpu's 1 MB holds). A program with an integer beyond 31 bits
+# is refused (TinyCPU is 32 bits), and said so. Last, what tiny-ml reads
+# and forgets (TinyML_tests/forgotten.ml: a capability's type, a
+# coercion to one): the same code as a program without it.
 # usage: TinyML_test.sh [prog.ml...]
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 TML=${TML:-$ROOT/_build/default/tiny/TinyML.exe}
 TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
-TA=${TA:-$ROOT/_build/default/tiny/TinyAssembler.exe}
-TARM=${TARM:-$ROOT/_build/default/tiny/TinyCPUArm.exe}
-GOKEN=${GOKEN:-$HOME/goken}
-OCL=${OCL:-/tmp/ix-ocaml-light-arm64}
-export PATH=$GOKEN/bin:$GOKEN/ROOT/arch/boot-gcc/bin:$PATH
-# (goken's mk runs its mkfile's `{...} by MKSHELL, /bin/rc otherwise:
-# none on macOS, and the libc's files for the OS, exits and getenv among
-# them, are then left out. goken's env.sh sets it)
-export MKSHELL=${MKSHELL:-$GOKEN/bin/rc}
-# (an arm64 Linux executable runs as it is on Linux, and under tiny-arm
-# elsewhere: macOS cannot run one)
-ARM64=; [ "$(uname -s)" = Linux ] || ARM64=$TARM
-W=${W:-$(mktemp -d)}
+CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+W=${W:-$(mktemp -d)}; mkdir -p $W
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
-failures=0
 progs=("$@")
 
-# the libc's assembly, in its mkfile's order, 7c's listing being the
-# lines with a tab (TinyC_test.sh's)
-mkdir -p $W/libc
-libc=()
-pushd $GOKEN/lib_core/libc > /dev/null
-while read -r line; do
-  set -- $line
-  src=${@: -1}; b=$(echo ${src%.*} | tr / _)
-  case $1 in
-  7c) flags=$(echo "$line" | sed -e 's/^7c //' -e 's/ -o [^ ]* [^ ]*$//' -e 's/\$CFLAGS_EXTRA//')
-      7c $flags -S -o $W/libc/$b.7 $src 2>/dev/null | grep '^	' > $W/libc/$b.s; libc+=($W/libc/$b.s) ;;
-  7a) libc+=($GOKEN/lib_core/libc/$src) ;;
-  esac
-done < <(mk -a -n objtype=arm64 cputype=arm64 2>/dev/null)
-popd > /dev/null
-
-$TC -o $W/runtime.s $ROOT/tiny/TinyMLRuntime/runtime.c || { echo "FAIL the runtime: tiny-c TinyMLRuntime/runtime.c"; exit 1; }
-
-# (SLOW: the emulators' seconds for a program, 60; more for tiny-arm and
-# tiny-cpu built by mini-ml, whose code is slower: SLOW=300)
-T=$ROOT/languages/ml/tests/tiny
-[ ${#progs[@]} = 0 ] && progs=($T/*.ml)
-# a program a job, all at once (a core each: one after the other they
-# took 4 minutes with tiny-arm built by mini-ml); its lines in
-# $W/$b.log, printed after, in the programs' order
-one() {
-  local ml=$1 b out want got
-  ml=$(realpath $ml); b=$(basename $ml .ml)
-  out=${ml%.ml}.out
-  if [ -n "${RECORD:-}" ]; then
-    (cd $W && cp $ml $b.ml && $OCL/bin/ocamlopt -o $b.ref $b.ml 2>/dev/null) || { echo "FAIL $b: ocamlopt"; failures=$((failures + 1)); return; }
-    (cd $W && timeout 10 ./$b.ref 2>&1; echo "exit $?") > $out
-  fi
-  $TML -o $W/$b.s $ml || { echo "FAIL $b: tiny-ml"; failures=$((failures + 1)); return; }
-  $TA -o $W/$b $W/$b.s $W/runtime.s "${libc[@]}" || { echo "FAIL $b: assembling"; failures=$((failures + 1)); return; }
-  # (a .tiny-ml.out where tiny-ml's own behavior is another: an index
-  # out of bounds is a fatal error for it, an exception for mini-ml)
-  [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
-  want=$(cat $out)
-  [ -n "$ARM64" ] && [ $b = gc ] && { echo "skip $b: not on Linux, and too long for tiny-arm (700 million instructions)"; return; }
-  got=$(cd $W && timeout 10 $ARM64 ./$b 2>&1; echo "exit $?")
-  if [ "$want" = "$got" ]; then echo "ok $b"; else echo "FAIL $b"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); return; fi
-  got=$(cd $W && ML_HEAP=64 timeout 20 $ARM64 ./$b 2>&1; echo "exit $?")
-  if [ "$want" = "$got" ]; then echo "ok $b ML_HEAP=64"; else echo "FAIL $b ML_HEAP=64"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
-  [ $b = gc ] && return
-  got=$(cd $W && timeout ${SLOW:-60} $TARM ./$b 2>&1; echo "exit $?")
-  if [ "$want" = "$got" ]; then echo "ok $b tiny-arm"; else echo "FAIL $b tiny-arm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
-}
-for ml in "${progs[@]}"; do one $ml > $W/$(basename $ml .ml).log 2>&1 & done
-wait
-for ml in "${progs[@]}"; do cat $W/$(basename $ml .ml).log; done
-
-# -tm: each program again on tiny-cpu (tiny-ml -tm, the runtime by
-# tiny-c -tm, a main giving it tiny-cpu's memory), the same output, with
-# the heap from 64 words so that it collects all the time. Not arith
-# and strings (they print max_int: 31 bits there) nor gc (its lists are
-# deeper than tiny-cpu's 1 MB holds)
-CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
+# the runtime: core.c, its memory a main's (the heap from 4096 words,
+# or from 64), exit tiny-cpu's call
 L=$ROOT/tiny/TinyCRuntime
-cat > $W/main.c <<EOF
+for h in 4096 64; do
+  cat > $W/main$h.c <<EOC
 #include "$ROOT/tiny/TinyMLRuntime/core.c"
 static value vstack[32768];
 static value space0[65536];
 static value space1[65536];
-void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
-EOF
+void main(void) { ml_run(vstack, space0, space1, 65536, $h); flush(); exit(0); }
+EOC
+  $TC -o $W/main$h.tm $W/main$h.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
+done
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
-$TC -tm -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c -tm"; exit 1; }
-one_tm() {
-  local ml=$1 b out want got
+
+# (SLOW: tiny-cpu's seconds for a program, 60; more for tiny-cpu built
+# by mini-ml, whose code is slower: SLOW=300)
+T=$ROOT/languages/ml/tests/tiny
+[ ${#progs[@]} = 0 ] && progs=($T/*.ml)
+# a program a job, all at once; its lines in $W/$b.log, printed after,
+# in the programs' order
+one() {
+  local ml=$1 b out want got h
   ml=$(realpath $ml); b=$(basename $ml .ml)
-  case $b in arith|strings|gc) return;; esac
-  if ! $TML -tm -o $W/$b.tm $ml 2> $W/$b.tm.err; then
-    if grep -q "beyond 31 bits" $W/$b.tm.err; then echo $b >> $W/refused; else echo "FAIL $b -tm: $(cat $W/$b.tm.err)"; failures=$((failures + 1)); fi
+  [ $b = gc ] && return
+  out=${ml%.ml}.out
+  if [ -n "${RECORD:-}" ]; then
+    (cd $W && mkdir -p $b.ref && cp $ml $b.ref/$b.ml && cd $b.ref && ocamlfind ocamlopt -o $b $b.ml 2>/dev/null) || { echo "FAIL $b: ocamlopt"; return; }
+    (cd $W/$b.ref && timeout 10 ./$b 2>&1; echo "exit $?") > $out
+  fi
+  if ! $TML -o $W/$b.tm $ml 2> $W/$b.err; then
+    if grep -q "beyond 31 bits" $W/$b.err; then echo "refused $b"; else echo "FAIL $b: $(cat $W/$b.err)"; fi
     return
   fi
-  # the program before main.tm, whose arrays a jal would not jump over
-  $CPU -o $W/$b.tmimg $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main.tm \
-    || { echo "FAIL $b -tm: linking"; failures=$((failures + 1)); return; }
-  out=${ml%.ml}.out; [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
+  [ -f ${ml%.ml}.tiny-ml.out ] && out=${ml%.ml}.tiny-ml.out
   want=$(cat $out)
-  got=$(timeout ${SLOW:-60} $CPU $W/$b.tmimg 2>&1; echo "exit $?")
-  if [ "$want" = "$got" ]; then echo "ok $b -tm"; else echo "FAIL $b -tm"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; failures=$((failures + 1)); fi
+  for h in 4096 64; do
+    # the program before main.tm, whose arrays a jal would not jump over
+    $CPU -o $W/$b.$h $L/start.tm $L/udivmod.tm $W/exit.tm $W/$b.tm $W/main$h.tm || { echo "FAIL $b: linking"; return; }
+    got=$(timeout ${SLOW:-60} $CPU $W/$b.$h 2>&1; echo "exit $?")
+    local tag=; [ $h = 64 ] && tag=" heap 64"
+    if [ "$want" = "$got" ]; then echo "ok $b$tag"; else echo "FAIL $b$tag"; /usr/bin/diff <(echo "$want") <(echo "$got") | /usr/bin/head -10; fi
+  done
 }
-: > $W/refused
-for ml in "${progs[@]}"; do one_tm $ml > $W/$(basename $ml .ml).tm.log 2>&1 & done
+for ml in "${progs[@]}"; do one $ml > $W/$(basename $ml .ml).log 2>&1 & done
 wait
-for ml in "${progs[@]}"; do cat $W/$(basename $ml .ml).tm.log; done
-refused=($(sort $W/refused))
+for ml in "${progs[@]}"; do cat $W/$(basename $ml .ml).log; done
 failures=$(cat $W/*.log | grep -c '^FAIL')
+refused=($(cat $W/*.log | sed -n 's/^refused //p' | sort))
 # what is read and forgotten (ix's capabilities; TinyML_tests/forgotten.ml
-# says what): the same code as without it, for both machines
+# says what): the same code as without it
 F=$ROOT/tiny/tests/TinyML_tests
-for flag in "" -tm; do
-  if $TML $flag -o $W/forgotten.out $F/forgotten.ml && $TML $flag -o $W/plain.out $F/plain.ml && cmp -s $W/forgotten.out $W/plain.out
-  then echo "ok forgotten${flag:+ $flag}: the code of plain.ml"; else echo "FAIL forgotten${flag:+ $flag}"; failures=$((failures + 1)); fi
-done
-[ ${#refused[@]} = 0 ] || echo "refused by -tm (an integer beyond 31 bits): ${refused[*]}"
+if $TML -o $W/forgotten.out $F/forgotten.ml && $TML -o $W/plain.out $F/plain.ml && cmp -s $W/forgotten.out $W/plain.out
+then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; failures=$((failures + 1)); fi
+[ ${#refused[@]} = 0 ] || echo "refused (an integer beyond 31 bits): ${refused[*]}"
 echo "$failures failure(s)"
 [ $failures = 0 ]

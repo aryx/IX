@@ -7,28 +7,24 @@
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c
+let help = {|usage: tiny-c [-ir] [-o out.tm] file.c
 
-A tiny C compiler: a C file to its arm64 assembly in Plan 9's syntax (7c's
-calls, for goken's libc), for tiny-assembler; or with -tm to TinyCPU's, for
-tiny-cpu, with its own libc; -ir prints its stack machine's code instead.
-A fact.c that includes tiny/TinyCRuntime/libc.h and prints fact(10), for -tm:
-  L=tiny/TinyCRuntime; (cd $L && tiny-c -tm -o libc.tm libc.c)
-  tiny-c -tm -o fact.tm fact.c
+A tiny C compiler: a C file to TinyCPU's assembly, for tiny-cpu, with its own
+libc; -ir prints its stack machine's code instead. A fact.c that includes
+tiny/TinyCRuntime/libc.h and prints fact(10):
+  L=tiny/TinyCRuntime; (cd $L && tiny-c -o libc.tm libc.c)
+  tiny-c -o fact.tm fact.c
   tiny-cpu -o fact $L/start.tm $L/udivmod.tm $L/libc.tm fact.tm
   tiny-cpu fact                            fact 10 = 3628800
   tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...
-For arm64, libc/*.s: goken's libc, by 7c -S and its 7a files (TinyC_test.sh):
-  tiny-c -o prog.s prog.c && tiny-assembler -o prog prog.s libc/*.s
 An error names the file and the line: fact.c: line 3: expected ;
 |}
 
 let error fmt = Printf.ksprintf failwith fmt
 
-(* the machine: arm64, 7c's (the default), or TinyCPU (-tm), whose
- * words are 4 bytes: pointers too, and no long long *)
-let tm = ref false
-let unit_name = ref ""                    (* -tm: the file's name, its local names' prefix *)
+(* the machine, TinyCPU, has words of 4 bytes: pointers too, and no
+ * long long *)
+let unit_name = ref ""                    (* the file's name, its local names' prefix *)
 
 (*****************************************************************************)
 (* Types *)
@@ -45,19 +41,18 @@ type ty =
 and sdef = { mutable fields : (string * ty * int) list; mutable ssize : int; mutable salign : int }
 
 let int_t = Int (4, true) and long_t = Int (8, true) and char_t = Int (1, true)
-let ptr_size () = if !tm then 4 else 8
-let rec size = function Void -> 1 | Int (n, _) -> n | Ptr _ | Func _ -> ptr_size () | Arr (t, n) -> n * size t | Struct s -> s.ssize
-let rec align = function Int (n, _) -> n | Arr (t, _) -> align t | Struct s -> s.salign | _ -> ptr_size ()
+let rec size = function Void -> 1 | Int (n, _) -> n | Ptr _ | Func _ -> 4 | Arr (t, n) -> n * size t | Struct s -> s.ssize
+let rec align = function Int (n, _) -> n | Arr (t, _) -> align t | Struct s -> s.salign | _ -> 4
 let round n a = (n + a - 1) / a * a
 let is_int = function Int _ -> true | _ -> false
 let is_ptr = function Ptr _ -> true | _ -> false
 let unsigned = function Int (_, s) -> not s | Ptr _ -> true | _ -> false
 
-(* -tm: a declared long long refused (its values live in 32-bit
- * registers); the compiler's own long temporaries are 32 bits there *)
+(* a declared long long refused (its values live in 32-bit registers);
+ * the compiler's own long temporaries are 32 bits there *)
 let rec no_vlong t =
   match t with
-  | Int (8, _) when !tm -> error "long long: not on -tm (TinyCPU is a 32-bit machine)"
+  | Int (8, _) -> error "long long: not on TinyCPU (a 32-bit machine)"
   | Arr (t, _) | Ptr t -> no_vlong t
   | Func (r, ps, _) -> no_vlong r; List.iter no_vlong ps
   | _ -> ()
@@ -227,12 +222,14 @@ let conv (e : expr) t =
   | (Ptr _ | Arr _), Ptr _, _ | Ptr _, Int (8, _), _ | Int (8, _), Ptr _, _ -> { e with t }
   | _ -> mk (Conv e) t
 
-(* Plan 9's C keeps the sign as it widens: uchar and ushort become
- * uint, not int (the table of cck's sub.c, as pre-ANSI compilers) *)
-let promote = function Int (n, s) when n < 4 -> Int (4, s) | t -> t
+(* ANSI's promotion, which keeps the value: uchar and ushort become int,
+ * as the host's cc, the tests' reference, does
+ * (old: Int (4, s), Plan 9's, which keeps the sign: uint, as 7c, the
+ * reference while tiny-c had an arm64 back end; TinyC_fuzz.py's
+ * x2 <= -128, x2 a uchar 0, was then 1) *)
+let promote = function Int (n, _) when n < 4 -> Int (4, true) | t -> t
 
-(* the usual arithmetic conversions, Plan 9's: the wider, unsigned if
- * either is *)
+(* the usual arithmetic conversions: the wider, unsigned if either is *)
 let common a b =
   match promote a, promote b with
   | Int (n, s), Int (m, u) -> Int (max n m, s && u)
@@ -423,47 +420,35 @@ let frame = ref 0                         (* the current function's locals *)
 let result = ref Void
 let data = Buffer.create 4096             (* the DATA and GLOBL *)
 
-(* a global's name in the assembly: Plan 9's name<> for a static; for
- * -tm, whose link is one namespace, the file's name and the name *)
+(* a global's name in the assembly: Plan 9's name<> for a static is,
+ * the link being one namespace, the file's name and the name *)
 let sym s =
-  if !tm && Filename.check_suffix s "<>" then !unit_name ^ "." ^ Filename.chop_suffix s "<>" else s
+  if Filename.check_suffix s "<>" then !unit_name ^ "." ^ Filename.chop_suffix s "<>" else s
 
 type datum = Bytes of string | Value of int * int64 | Address of string
 
-(* -tm: each global's data, at their offsets, until its label is
- * written (a string in an initializer is written before its array) *)
+(* each global's data, at their offsets, until its label is written
+ * (a string in an initializer is written before its array) *)
 let pending : (string, (int * datum) list) Hashtbl.t = Hashtbl.create 16
 
-let datum name off d =
-  if !tm then Hashtbl.replace pending name ((off, d) :: (Hashtbl.find_opt pending name ||| []))
-  else
-    let esc c = match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | ' ' -> String.make 1 c | c -> Printf.sprintf "\\%03o" (Char.code c) in
-    Buffer.add_string data
-      (match d with
-       | Bytes b -> Printf.sprintf "\tDATA\t%s+%d(SB)/%d, $\"%s\"\n" name off (String.length b) (String.concat "" (List.map esc (List.init (String.length b) (String.get b))))
-       | Value (n, v) -> Printf.sprintf "\tDATA\t%s+%d(SB)/%d, $%Ld\n" name off n v
-       | Address s -> Printf.sprintf "\tDATA\t%s+%d(SB)/8, $%s(SB)\n" name off s)
+let datum name off d = Hashtbl.replace pending name ((off, d) :: (Hashtbl.find_opt pending name ||| []))
 
-(* a global of n bytes: arm64's GLOBL; -tm's label and its data, the
- * gaps zeros *)
+(* a global of n bytes: its label and its data, the gaps zeros *)
 let globl name n =
-  if not !tm then Buffer.add_string data (Printf.sprintf "\tGLOBL\t%s(SB), $%d\n" name n)
-  else begin
-    let line fmt = Printf.ksprintf (fun s -> Buffer.add_string data ("\t" ^ s ^ "\n")) fmt in
-    Buffer.add_string data (Printf.sprintf "\t.align\t4\n%s:\n" (sym name));
-    let bytes l = line ".byte\t%s" (String.concat ", " (List.map string_of_int l)) in
-    let at = List.fold_left (fun at (off, d) ->
-      if off > at then line ".space\t%d" (off - at);
-      match d with
-      | Bytes b -> bytes (List.map Char.code (List.init (String.length b) (String.get b))); off + String.length b
-      | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
-      | Value (2, v) -> bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ]; off + 2
-      | Value (k, v) -> line ".word\t%ld" (Int64.to_int32 v); if k = 8 then line ".word\t%ld" (Int64.to_int32 (Int64.shift_right v 32)); off + k
-      | Address s -> line ".word\t%s" (sym s); off + 4)
-      0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Hashtbl.find_opt pending name ||| []))) in
-    if n > at then line ".space\t%d" (n - at);
-    Hashtbl.remove pending name
-  end
+  let line fmt = Printf.ksprintf (fun s -> Buffer.add_string data ("\t" ^ s ^ "\n")) fmt in
+  Buffer.add_string data (Printf.sprintf "\t.align\t4\n%s:\n" (sym name));
+  let bytes l = line ".byte\t%s" (String.concat ", " (List.map string_of_int l)) in
+  let at = List.fold_left (fun at (off, d) ->
+    if off > at then line ".space\t%d" (off - at);
+    match d with
+    | Bytes b -> bytes (List.map Char.code (List.init (String.length b) (String.get b))); off + String.length b
+    | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
+    | Value (2, v) -> bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ]; off + 2
+    | Value (k, v) -> line ".word\t%ld" (Int64.to_int32 v); if k = 8 then line ".word\t%ld" (Int64.to_int32 (Int64.shift_right v 32)); off + k
+    | Address s -> line ".word\t%s" (sym s); off + 4)
+    0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Hashtbl.find_opt pending name ||| []))) in
+  if n > at then line ".space\t%d" (n - at);
+  Hashtbl.remove pending name
 let strings = ref 0
 let tags = ref 0                          (* the anonymous structures' *)
 
@@ -785,105 +770,10 @@ and locals () =
   l
 
 (*****************************************************************************)
-(* The machine: the stack in R1..R15 (Wirth's register stack) *)
+(* The machine: TinyCPU, the stack in r1..r12 *)
 (*****************************************************************************)
 
 let out = Buffer.create 65536
-let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string out ("\t" ^ s ^ "\n")) fmt
-
-let load_op t = match t with Int (1, s) -> if s then "MOVB" else "MOVBU" | Int (2, s) -> if s then "MOVH" else "MOVHU" | Int (4, s) -> if s then "MOVW" else "MOVWU" | _ -> "MOV"
-let store_op t = match size t with 1 -> "MOVB" | 2 -> "MOVH" | 4 -> "MOVW" | _ -> "MOV"
-
-(* a value extended from its type: an int's by SXTW or MOVWU, a smaller
- * one's by shifts or a mask *)
-let extend t r =
-  match t with
-  | Int (4, true) -> ins "SXTW\tR%d, R%d" r r
-  | Int (4, false) -> ins "MOVWU\tR%d, R%d" r r
-  | Int (n, true) when n < 4 -> ins "LSL\t$%d, R%d" (64 - (8 * n)) r; ins "ASR\t$%d, R%d" (64 - (8 * n)) r
-  | Int (n, false) when n < 4 -> ins "AND\t$%d, R%d" ((1 lsl (8 * n)) - 1) r
-  | _ -> ()
-
-(* a relation's branch, signed or unsigned *)
-let branch o u =
-  match o with
-  | Lt -> if u then "BLO" else "BLT" | Gt -> if u then "BHI" else "BGT"
-  | Le -> if u then "BLS" else "BLE" | Ge -> if u then "BHS" else "BGE"
-  | Eq -> "BEQ" | Ne -> "BNE"
-
-(* one function's code: sp is the depth of the stack, Rsp its top.
- * The frame, as 7c's: the locals below SP, then the saves of what is
- * live across a call, then (from 8(R31) up) the outgoing arguments *)
-let machine name (params : (string * ty) list) locals (body : ir list) =
-  let sp = ref 0 and saves = ref 0 and outgoing = ref 0 and dead = ref false in
-  let depth_at = Hashtbl.create 16 in
-  let top () = !sp in
-  let push () = incr sp; if !sp > 15 then error "%s: an expression too deep" name; !sp in
-  let jump l = Hashtbl.replace depth_at l !sp in
-  let saved = Buffer.contents out in
-  Buffer.clear out;
-  let slot i = locals + (8 * i) in
-  List.iter (fun i ->
-    match i with
-    | Label l ->
-        (* after a jump, the depth the label was jumped to with *)
-        (match Hashtbl.find_opt depth_at l with Some d when !dead -> sp := d | _ -> ());
-        dead := false;
-        Buffer.add_string out (Printf.sprintf "L%d:\n" l)
-    | _ when !dead -> ()
-    | Imm v -> ins "MOV\t$%Ld, R%d" v (push ())
-    | Place (Global s) -> ins "MOV\t$%s(SB), R%d" s (push ())
-    | Place (Local o) -> ins "MOV\t$l-%d(SP), R%d" o (push ())
-    | Place (Param o) -> ins "MOV\t$p+%d(FP), R%d" o (push ())
-    | Load t -> ins "%s\t0(R%d), R%d" (load_op t) (top ()) (top ())
-    | Store t -> let v = top () in decr sp; ins "%s\tR%d, 0(R%d)" (store_op t) v (top ()); ins "MOV\tR%d, R%d" v (top ())
-    | Op (o, t) -> (
-        let b = top () in
-        decr sp;
-        let a = top () and u = unsigned t in
-        match o with
-        | R r -> ins "CMP\tR%d, R%d" b a; ins "MOV\t$1, R%d" a; ins "%s\t2(PC)" (branch r u); ins "MOV\t$0, R%d" a
-        | A o ->
-            ins "%s\tR%d, R%d"
-              (match o with
-               | Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL" | Div -> if u then "UDIV" else "SDIV" | Mod -> if u then "UREM" else "REM"
-               | And -> "AND" | Or -> "ORR" | Xor -> "EOR" | Shl -> "LSL" | Shr -> if u then "LSR" else "ASR")
-              b a;
-            extend t a)
-    | Unop (o, t) -> ins "%s\tR%d, R%d" (if o = Neg then "NEG" else "MVN") (top ()) (top ()); extend t (top ())
-    | Ext t -> extend t (top ())
-    | Dup -> let a = top () in ins "MOV\tR%d, R%d" a (push ())
-    | Drop -> decr sp
-    | Call (f, n, r) ->
-        (* what is live below the arguments, saved: the callee may use any
-         * register; through a pointer, the address above the arguments *)
-        let base = !sp - n - (if f = None then 1 else 0) in
-        saves := max !saves base;
-        for i = 1 to base do ins "MOV\tR%d, l-%d(SP)" i (slot i) done;
-        for i = n - 1 downto 1 do ins "MOV\tR%d, %d(R31)" (base + 1 + i) (8 + (8 * i)) done;
-        if n > 0 then ins "MOV\tR%d, R0" (base + 1);
-        outgoing := max !outgoing (8 * n);
-        (match f with Some f -> ins "BL\t%s(SB)" f | None -> ins "BL\t(R%d)" (base + n + 1));
-        for i = 1 to base do ins "MOV\tl-%d(SP), R%d" (slot i) i done;
-        sp := base;
-        if r then ins "MOV\tR0, R%d" (push ())
-    | Jmp l -> jump l; ins "B\tL%d" l; dead := true
-    | Jz l -> let a = top () in decr sp; jump l; ins "CBZ\tR%d, L%d" a l
-    | Jnz l -> let a = top () in decr sp; jump l; ins "CBNZ\tR%d, L%d" a l
-    | Ret v -> if v then (ins "MOV\tR%d, R0" (top ()); decr sp); ins "RETURN"; dead := true)
-    body;
-  if not !dead then ins "RETURN";
-  let code = Buffer.contents out in
-  Buffer.clear out;
-  Buffer.add_string out saved;
-  Buffer.add_string out (Printf.sprintf "\tTEXT\t%s(SB), $%d\n" name (slot !saves + !outgoing));
-  (* the first parameter arrives in R0 *)
-  (match params with (_, t) :: _ -> ins "%s\tR0, p+0(FP)" (store_op t) | [] -> ());
-  Buffer.add_string out code
-
-(*****************************************************************************)
-(* -tm, the other machine: TinyCPU, the stack in r1..r12 *)
-(*****************************************************************************)
 
 (* TinyCPU (TinyMachineCPU.ml) has 32-bit registers, r0 zero, no flags, and
  * no unsigned division; its calling convention is ours, simpler than
@@ -894,7 +784,7 @@ let machine name (params : (string * ty) list) locals (body : ir list) =
  * variadic function (print) walks its arguments from its last named
  * one's address. *)
 
-let machine_tm name locals (body : ir list) =
+let machine name locals (body : ir list) =
   let sp = ref 0 and saves = ref 0 and outgoing = ref 0 and dead = ref false in
   let depth_at = Hashtbl.create 16 in
   let top () = !sp in
@@ -1045,8 +935,7 @@ let external_decl () =
         code := [];
         lower { brk = None; cont = None; cases = ref [] } body;
         if !ir_only then (Buffer.add_string out (name ^ ":\n"); List.iter (fun i -> Buffer.add_string out ("\t" ^ show i ^ "\n")) (List.rev !code))
-        else if !tm then machine_tm (asm_name storage name) (round !frame 8) (List.rev !code)
-        else machine (asm_name storage name) params (round !frame 8) (List.rev !code);
+        else machine (asm_name storage name) (round !frame 8) (List.rev !code);
         scopes := []
     | _ ->
         let sym = asm_name storage name in
@@ -1066,7 +955,6 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   let exit n = CapStdlib.exit caps n in
   let rec args = function
     | "-ir" :: r -> ir_only := true; args r
-    | "-tm" :: r -> tm := true; args r
     | "-o" :: o :: r -> output := o; args r
     | f :: r -> file := f; args r
     | [] -> ()
@@ -1074,12 +962,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   let argl = List.tl (Array.to_list (CapSys.argv caps)) in
   if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
   args argl;
-  if !file = "" then (Console.eprint caps "usage: tiny-c [-ir | -tm] [-o out.s | out.tm] file.c   (-h: how)\n"; exit 2);
+  if !file = "" then (Console.eprint caps "usage: tiny-c [-ir] [-o out.tm] file.c   (-h: how)\n"; exit 2);
   unit_name := Filename.remove_extension (Filename.basename !file);
   (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
-   * pointer, so that a runtime of both machines (TinyMLRuntime/runtime.c's
-   * values, a word each) is written once *)
-  Hashtbl.replace typedefs "intptr" (if !tm then int_t else long_t);
+   * pointer (TinyMLRuntime/'s values, a word each) *)
+  Hashtbl.replace typedefs "intptr" int_t;
   let read f = FS.read caps (Fpath.v f) in
   try
     let ts = tokens (Hashtbl.create 16) read !file in

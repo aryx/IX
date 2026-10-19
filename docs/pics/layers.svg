@@ -122,7 +122,7 @@
 <line x1="794" y1="860" x2="794" y2="878" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program of t-ix</text>
-<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">by tiny-ml (or tiny-c): arm64, or -tm</text>
+<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">by tiny-ml (or tiny-c), for tiny-machine</text>
 <rect x="954" y="150" width="296" height="76" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="968" y="194" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-ml&#x27;s small ML: no modules, records</text>
@@ -136,21 +136,21 @@
 <text x="1238" y="411" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
 <text x="968" y="432" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator, Cheney&#x27;s</text>
 <text x="968" y="449" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">collector, the primitives; included by</text>
-<text x="968" y="466" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyMLRuntime/runtime.c (arm64: main, the</text>
-<text x="968" y="483" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">memory) or TinyKernel/runtime.c (the</text>
-<text x="968" y="500" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel in ML, on tiny-machine)</text>
+<text x="968" y="466" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/runtime.c (the kernel in ML) or</text>
+<text x="968" y="483" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">a program&#x27;s main (its memory)</text>
+<text x="968" y="500" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
 <rect x="954" y="676" width="296" height="184" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="699" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A C library</text>
-<text x="968" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">arm64: goken&#x27;s whole libc, from ~/goken</text>
-<text x="968" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">(outside ix; the tests only). Not</text>
-<text x="968" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">lib_core/libc/</text>
+<text x="968" y="720" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyCRuntime/ (libc.c, start.tm,</text>
+<text x="968" y="737" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm). Not lib_core/libc/</text>
+<text x="968" y="754" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
 <text x="968" y="771" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
-<text x="968" y="788" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny/TinyCRuntime/ (libc.c, start.tm,</text>
-<text x="968" y="805" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">udivmod.tm)</text>
+<text x="968" y="788" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
+<text x="968" y="805" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve"></text>
 <rect x="954" y="880" width="296" height="72" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
 <text x="968" y="903" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The system</text>
-<text x="968" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Linux on arm64, tiny-arm, mini-5i;</text>
-<text x="968" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">-tm: tiny-machine (TinyKernel, its steps)</text>
+<text x="968" y="924" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-machine (TinyKernel, its steps),</text>
+<text x="968" y="941" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">or tiny-cpu</text>
 <line x1="1102" y1="226" x2="1102" y2="244" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <line x1="1102" y1="368" x2="1102" y2="386" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <line x1="1102" y1="528" x2="1102" y2="674" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>

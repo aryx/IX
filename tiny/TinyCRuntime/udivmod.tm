@@ -1,7 +1,7 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 ;
-; The unsigned division TinyCPU lacks, which tiny-c -tm calls for / and %
-; on unsigned values: linked with any program of tiny-c -tm's, the
+; The unsigned division TinyCPU lacks, which tiny-c calls for / and %
+; on unsigned values: linked with any program of tiny-c's, the
 ; kernel's (v6) and the users' (after start.tm).
 
 ; the unsigned division, called in the middle of an expression: the

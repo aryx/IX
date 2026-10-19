@@ -7,7 +7,7 @@
  * them), in tiny-ml's ML. Given to tiny-ml after calls.ml and
  * TinyLibStd.ml, and before the tool's file:
  *
- *   tiny-ml -tm -o rc.tm libml/calls.ml TinyLibStd.ml libml/TinyLibSystem.ml TinyShell.ml
+ *   tiny-ml -o rc.tm libml/calls.ml TinyLibStd.ml libml/TinyLibSystem.ml TinyShell.ml
  *
  * Not in tiny/ with the other TinyLibXxx.ml: the host's file has the
  * same name, as it must (TinyShell.ml names one module), and mini-ml

@@ -7,29 +7,28 @@
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...
+let help = {|usage: tiny-ml [-o out.tm] file.ml...
 A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
-arrays) to its arm64 assembly in Plan 9's syntax, for tiny-assembler, on stdout
-without -o; or with -tm TinyCPU's, for tiny-cpu. A fact.ml, for example:
+arrays) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
+fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
-  tiny-ml -o fact.s fact.ml                 TEXT ml_start(SB), $-8 ...
-  tiny-c -o runtime.s tiny/TinyMLRuntime/runtime.c
-  tiny-assembler -o fact fact.s runtime.s libc/*.s
-  ./fact (or mini-5i fact)                  fact 10 = 3628800
-libc/*.s: goken's libc, by 7c -S and its 7a files, as tiny/tests/TinyML_test.sh makes
-it; for -tm, the runtime TinyMLRuntime/core.c and a main giving it memory (the same).
-Several files are one program, one after the other; an open M is read and left.
+  tiny-ml -o fact.tm fact.ml               ml_start: ldw r12, 0(sp) ...
+  tiny-c -o main.tm main.c
+  L=tiny/TinyCRuntime
+  tiny-cpu -o fact $L/start.tm $L/udivmod.tm exit.tm fact.tm main.tm
+  tiny-cpu fact                            fact 10 = 3628800
+main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
+is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are one
+program, one after the other; an open M is read and left.
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
 let error fmt = Printf.ksprintf failwith fmt
 let sprintf = Printf.sprintf
 
-(* the machine: arm64 (the default), or tiny-machine (-tm), whose words
- * are 4 bytes: an integer 31 bits (a constant beyond them is refused),
- * a block's fields 4 bytes each *)
-let tm = ref false
+(* the machine, tiny-machine, has words of 4 bytes: an integer 31 bits
+ * (a constant beyond them is refused), a block's fields 4 bytes each *)
 
 (*****************************************************************************)
 (* Tokens *)
@@ -801,163 +800,18 @@ let label () = incr labels; !labels
 let text = Buffer.create 65536 and data = Buffer.create 16384
 
 (*****************************************************************************)
-(* The machine: arm64, the stack in R1..R15, the value stack at R26 *)
-(*****************************************************************************)
-
-(* A function's frames. On the value stack, f words below R26 (its top,
- * which the function raises by f at its entry): slot 0 its closure,
- * then its parameters, its variables, and a slot per register of the
- * stack machine, where a call or an allocation spills it. On the
- * machine stack, m bytes: the link at 0, then C's outgoing arguments
- * (7c's: the first in R0, the others at 16(R31) up), then 32 bytes per
- * handler, from c. All are known at the end, so each line is a
- * function of them. *)
-let machine_arm64 name nparams nslots (code : ir list) =
-  let lines = ref [] in
-  let line f = lines := f :: !lines in
-  let ins fmt = Printf.ksprintf (fun s -> line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
-  let sp = ref 0 and maxsp = ref 0 and tries = ref 0 and cargs = ref 0 and dead = ref false in
-  let depth_at = Hashtbl.create 16 and catch_at = Hashtbl.create 4 in
-  let get i r = line (fun f _ _ -> sprintf "\tMOV\t%d(R26), R%d\n" (8 * (i - f)) r) in
-  let put r i = line (fun f _ _ -> sprintf "\tMOV\tR%d, %d(R26)\n" r (8 * (i - f))) in
-  let spill_slot r = nslots + r - 1 in
-  let push () = incr sp; if !sp > 15 then error "%s: an expression too deep" name; maxsp := max !maxsp !sp; !sp in
-  let spill () = for r = 1 to !sp do put r (spill_slot r) done in
-  let reload () = for r = 1 to !sp do get (spill_slot r) r done in
-  let result () = ins "MOV\tR0, R%d" (push ()) in
-  let jump l = Hashtbl.replace depth_at l !sp in
-  let epilogue () =
-    line (fun f _ _ -> sprintf "\tSUB\t$%d, R26\n" (8 * f));
-    ins "MOV\t0(R31), R30";
-    line (fun _ m _ -> sprintf "\tADD\t$%d, R31\n" m)
-  in
-  let record c k = c + (32 * k) in
-  (* a line with the offset d in the k-th handler's record *)
-  let at k d f = line (fun _ _ c -> "\t" ^ f (record c k + d) ^ "\n") in
-  (* a b by a op b in b's register *)
-  let bin f = let a = !sp in decr sp; f a !sp in
-  let tagged3 o = bin (fun a b -> ins "%s\tR%d, R%d, R%d" o b a b) in
-  let op o =
-    let a = !sp in
-    match o with
-    | Add -> bin (fun a b -> ins "ADD\tR%d, R%d, R%d" b a b; ins "SUB\t$1, R%d" b)
-    | Sub -> bin (fun a b -> ins "SUB\tR%d, R%d, R%d" b a b; ins "ADD\t$1, R%d" b)
-    | Mul -> bin (fun a b -> ins "SUB\t$1, R%d" a; ins "ASR\t$1, R%d" b; ins "MUL\tR%d, R%d, R%d" b a b; ins "ADD\t$1, R%d" b)
-    | Div | Mod ->
-        bin (fun a b ->
-          ins "ASR\t$1, R%d" a; ins "ASR\t$1, R%d" b;
-          ins "%s\tR%d, R%d, R%d" (if o = Div then "SDIV" else "REM") b a b;
-          ins "LSL\t$1, R%d" b; ins "ADD\t$1, R%d" b)
-    | And -> tagged3 "AND"
-    | Or -> tagged3 "ORR"
-    | Xor -> tagged3 "EOR"; ins "ORR\t$1, R%d" !sp
-    | Lsl -> bin (fun a b -> ins "SUB\t$1, R%d" a; ins "ASR\t$1, R%d" b; ins "LSL\tR%d, R%d, R%d" b a b; ins "ORR\t$1, R%d" b)
-    | Lsr | Asr -> bin (fun a b -> ins "ASR\t$1, R%d" b; ins "%s\tR%d, R%d, R%d" (if o = Lsr then "LSR" else "ASR") b a b; ins "ORR\t$1, R%d" b)
-    | Cmp r ->
-        bin (fun a b ->
-          ins "CMP\tR%d, R%d" b a;
-          ins "MOV\t$3, R%d" b;
-          ins "B%s\t2(PC)" (match r with Eq -> "EQ" | Ne -> "NE" | Lt -> "LT" | Le -> "LE" | Gt -> "GT" | Ge -> "GE");
-          ins "MOV\t$1, R%d" b)
-    | Neg -> ins "NEG\tR%d, R%d" a a; ins "ADD\t$2, R%d" a
-    | Lnot -> ins "MVN\tR%d, R%d" a a; ins "ORR\t$1, R%d" a
-    | Not -> ins "EOR\t$2, R%d" a
-    | IsInt -> ins "AND\t$1, R%d" a; ins "LSL\t$1, R%d" a; ins "ORR\t$1, R%d" a
-    | Tag -> ins "MOVBU\t-8(R%d), R%d" a a; ins "LSL\t$1, R%d" a; ins "ORR\t$1, R%d" a
-  in
-  List.iter (fun i ->
-    match i with
-    | Label l ->
-        (* after a jump, the depth the label was jumped to with *)
-        (match Hashtbl.find_opt depth_at l with Some d when !dead -> sp := d | _ -> ());
-        dead := false;
-        line (fun _ _ _ -> sprintf "L%d:\n" l)
-    | Catch k -> dead := false; sp := Hashtbl.find catch_at k; reload (); result ()
-    | _ when !dead -> ()
-    | Imm v -> ins "MOV\t$%Ld, R%d" v (push ())
-    | Addr (s, o) -> ins "MOV\t$%s+%d(SB), R%d" s o (push ())
-    | Get i -> get i (push ())
-    | Set i -> put !sp i; decr sp
-    | GetG g -> ins "MOV\tml_globals+%d(SB), R%d" (8 * g) (push ())
-    | SetG g -> ins "MOV\tR%d, ml_globals+%d(SB)" !sp (8 * g); decr sp
-    | Field k -> ins "MOV\t%d(R%d), R%d" (8 * k) !sp !sp
-    | SetField k -> ins "MOV\tR%d, %d(R%d)" (!sp - 1) (8 * k) !sp; sp := !sp - 2
-    | Alloc (tag, n) ->
-        (* the collector may run: every value in a slot, the fields read back from them *)
-        spill ();
-        cargs := max !cargs 2;
-        ins "MOV\t$%d, R0" n;
-        ins "MOV\t$%d, R16" tag;
-        ins "MOV\tR16, 16(R31)";
-        ins "MOV\tR26, ml_vsp(SB)";
-        ins "BL\tml_alloc(SB)";
-        for k = 0 to n - 1 do get (spill_slot (!sp - k)) 16; ins "MOV\tR16, %d(R0)" (8 * k) done;
-        sp := !sp - n;
-        reload ();
-        result ()
-    | Op o -> op o
-    | Call (t, n, tail) ->
-        spill ();
-        get (spill_slot !sp) 0;
-        for k = 1 to n do get (spill_slot (!sp - k)) k done;
-        sp := !sp - n - 1;
-        let target = match t with Direct f -> f ^ "(SB)" | Code k -> ins "MOV\t%d(R0), R16" (8 * k); "(R16)" in
-        if tail then (epilogue (); ins "B\t%s" target; dead := true) else (ins "BL\t%s" target; reload (); result ())
-    | CallC (f, n) ->
-        spill ();
-        cargs := max !cargs n;
-        get (spill_slot !sp) 0;
-        for k = 1 to n - 1 do get (spill_slot (!sp - k)) 16; ins "MOV\tR16, %d(R31)" (8 + (8 * k)) done;
-        sp := !sp - n;
-        ins "MOV\tR26, ml_vsp(SB)";
-        ins "BL\t%s(SB)" f;
-        reload ();
-        result ()
-    | Jmp l -> jump l; ins "B\tL%d" l; dead := true
-    | Jz l -> let r = !sp in decr sp; jump l; ins "CMP\t$1, R%d" r; ins "BEQ\tL%d" l
-    | Jnz l -> let r = !sp in decr sp; jump l; ins "CMP\t$1, R%d" r; ins "BNE\tL%d" l
-    | Drop -> decr sp
-    | Ret -> ins "MOV\tR%d, R0" !sp; decr sp; epilogue (); ins "RET"; dead := true
-    | Raise -> ins "MOV\tR%d, R0" !sp; ins "B\tml_raise(SB)"; dead := true
-    | TryEnter (k, handler) ->
-        (* the record: SP, R26, the handler's address (BL's link: the
-         * B after it), the previous record *)
-        spill ();
-        Hashtbl.replace catch_at k !sp;
-        tries := max !tries (k + 1);
-        let set = label () in
-        ins "BL\tL%d" set;
-        ins "B\tL%d" handler;
-        line (fun _ _ _ -> sprintf "L%d:\n" set);
-        ins "MOV\tR31, R18";
-        at k 0 (sprintf "MOV\tR18, %d(R31)");
-        at k 8 (sprintf "MOV\tR26, %d(R31)");
-        at k 16 (sprintf "MOV\tR30, %d(R31)");
-        ins "MOV\tml_handler(SB), R18";
-        at k 24 (sprintf "MOV\tR18, %d(R31)");
-        at k 0 (sprintf "MOV\t$%d(R31), R18");
-        ins "MOV\tR18, ml_handler(SB)"
-    | TryExit k -> at k 24 (sprintf "MOV\t%d(R31), R18"); ins "MOV\tR18, ml_handler(SB)")
-    code;
-  let f = nslots + !maxsp and c = (8 + (8 * !cargs) + 15) land lnot 15 in
-  let m = record c !tries in
-  let out fmt = Printf.bprintf text fmt in
-  out "\tTEXT\t%s(SB), $-8\n\tSUB\t$%d, R31\n\tMOV\tR30, 0(R31)\n\tADD\t$%d, R26\n" name m (8 * f);
-  for i = 0 to nparams do out "\tMOV\tR%d, %d(R26)\n" i (8 * (i - f)) done;
-  (* the other slots zeroed: the collector scans them *)
-  for i = nparams + 1 to f - 1 do out "\tMOV\tZR, %d(R26)\n" (8 * (i - f)) done;
-  List.iter (fun l -> Buffer.add_string text (l f m c)) (List.rev !lines)
-
-(*****************************************************************************)
-(* The other machine, -tm: tiny-machine, the stack in r1..r11, the value stack at r12 *)
+(* The machine: tiny-machine, the stack in r1..r11, the value stack at r12 *)
 (*****************************************************************************)
 
 (* TinyMachineCPU's CPU: 32-bit registers, r0 zero, no flags, sp r14, lr
  * r15. The stack machine's registers are r1..r11 (an expression 11
  * deep at most), the value stack's top is r12, r13 the scratch and the
- * result. The same frames as arm64's, in words of 4 bytes: on the value
- * stack f words below r12, slot 0 the closure; on the machine stack, m
- * bytes, C's outgoing arguments from 0(sp) (tiny-c -tm's convention:
+ * result. A function's frames, in words of 4 bytes. On the value
+ * stack, f words below r12 (its top, which the function raises by f at
+ * its entry): slot 0 its closure, then its parameters, its variables,
+ * and a slot per register of the stack machine, where a call or an
+ * allocation spills it. On the machine stack, m bytes: C's outgoing
+ * arguments from 0(sp) (tiny-c's convention:
  * every argument in memory, the result in r13, every register but sp
  * the callee's), the link at c, then 16 bytes per handler. A call of
  * ML passes the closure in r13 and the arguments in r1..rn (r0 is the
@@ -965,7 +819,7 @@ let machine_arm64 name nparams nslots (code : ir list) =
  * r13. Every call is la then jalr: a jal reaches only 128 KB, and a
  * kernel with its runtime and its programs is bigger. After a call of
  * C, r12 comes back from ml_vsp (C keeps no register). *)
-let machine_tm name nparams nslots (code : ir list) =
+let machine name nparams nslots (code : ir list) =
   let lines = ref [] in
   let line f = lines := f :: !lines in
   let ins fmt = Printf.ksprintf (fun s -> line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
@@ -1045,9 +899,9 @@ let machine_tm name nparams nslots (code : ir list) =
     | Catch k -> dead := false; sp := Hashtbl.find catch_at k; reload (); result ()
     | _ when !dead -> ()
     (* old: Int64.to_int32 v alone: 4611686018427387903 became -1, and
-     * the program printed something else than on arm64 *)
+     * the program printed something else than OCaml *)
     | Imm v ->
-        if Int64.of_int32 (Int64.to_int32 v) <> v then error "an integer beyond 31 bits: not on -tm (TinyCPU is a 32-bit machine)";
+        if Int64.of_int32 (Int64.to_int32 v) <> v then error "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
         ins "li\tr%d, %ld" (push ()) (Int64.to_int32 v)
     | Addr (s, _) -> ins "la\tr%d, %s" (push ()) s
     | Get i -> get i (push ())
@@ -1162,9 +1016,6 @@ let machine_tm name nparams nslots (code : ir list) =
   for i = nparams + 1 to f - 1 do out "\tstw\tzero, %d(r12)\n" (4 * (i - f)) done;
   List.iter (fun l -> Buffer.add_string text (l f m c)) (List.rev !lines)
 
-let machine name nparams nslots code =
-  if !tm then machine_tm name nparams nslots code else machine_arm64 name nparams nslots code
-
 (*****************************************************************************)
 (* Data: static blocks *)
 (*****************************************************************************)
@@ -1174,23 +1025,13 @@ let machine name nparams nslots code =
 type dword = DNum of string | DCode of string | DVal of string
 
 let words sym ws =
-  if !tm then begin
-    Printf.bprintf data "%s:\n" sym;
-    List.iter (fun w -> Printf.bprintf data "\t.word\t%s\n" (match w with DNum x | DCode x | DVal x -> x)) ws
-  end
-  else begin
-    List.iteri (fun i w ->
-      Printf.bprintf data "\tDATA\t%s+%d(SB)/8, $%s\n" sym (8 * i)
-        (match w with DNum n -> n | DCode f -> f ^ "(SB)" | DVal b -> b ^ "+8(SB)")) ws;
-    Printf.bprintf data "\tGLOBL\t%s(SB), $%d\n" sym (8 * List.length ws)
-  end
+  Printf.bprintf data "%s:\n" sym;
+  List.iter (fun w -> Printf.bprintf data "\t.word\t%s\n" (match w with DNum x | DCode x | DVal x -> x)) ws
 
-(* a static block, its header then its fields. Its symbol is the
- * header's on arm64, and a value its +8; on tiny-machine the first
+(* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr fields =
-  if !tm then (Printf.bprintf data "\t.word\t%s\n" hdr; words sym fields) else words sym (DNum hdr :: fields)
+let block sym hdr fields = Printf.bprintf data "\t.word\t%s\n" hdr; words sym fields
 
 let header n tag = string_of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252
@@ -1203,14 +1044,13 @@ let static_string s =
   | Some sym -> sym
   | None ->
       let sym = sprintf "s%d<>" (Hashtbl.length strings) in
-      let w = if !tm then 4 else 8 in
-      let n = (String.length s / w) + 1 in
-      let b = Bytes.make (w * n) '\000' in
+      let n = (String.length s / 4) + 1 in
+      let b = Bytes.make (4 * n) '\000' in
       Bytes.blit_string s 0 b 0 (String.length s);
-      Bytes.set b ((w * n) - 1) (Char.chr ((w * n) - 1 - String.length s));
+      Bytes.set b ((4 * n) - 1) (Char.chr ((4 * n) - 1 - String.length s));
       block sym (header n string_tag)
         (List.init n (fun i ->
-           DNum (if !tm then Int32.to_string (Bytes.get_int32_le b (4 * i)) else Int64.to_string (Bytes.get_int64_le b (8 * i)))));
+           DNum (Int32.to_string (Bytes.get_int32_le b (4 * i)))));
       Hashtbl.replace strings s sym;
       sym
 
@@ -1681,22 +1521,12 @@ let compile (items : (item * int) list) =
   while not (Queue.is_empty queue) do (Queue.pop queue) () done;
   List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities;
   words "ml_nglobals" [ DNum (string_of_int !nglobals) ];
-  if !tm then Printf.bprintf data "ml_globals:\n\t.space\t%d\n" (4 * max 1 !nglobals)
-  else Printf.bprintf data "\tGLOBL\tml_globals(SB), $%d\n" (8 * max 1 !nglobals)
+  Printf.bprintf data "ml_globals:\n\t.space\t%d\n" (4 * max 1 !nglobals)
 
-(* ml_start, from C: the value stack's base; ml_raise: to the latest
- * handler *)
-let start_arm64 =
-  String.concat "\n\t"
-    [ "\tTEXT\tml_start(SB), $-8"; "MOV\tR0, R26"; "B\tml_init(SB)";
-      "TEXT\tml_raise(SB), $-8"; "MOV\tml_handler(SB), R18"; "MOV\t0(R18), R19"; "MOV\tR19, R31"; "MOV\t8(R18), R26";
-      "MOV\t24(R18), R19"; "MOV\tR19, ml_handler(SB)"; "MOV\t16(R18), R19"; "B\t(R19)" ]
-  ^ "\n"
-
-(* -tm's: ml_start called by C (the base at 0(sp)), ml_init's closure
- * slot 1, a unit (not what r13 held, which the collector would scan);
- * ml_raise: the exception in r13 *)
-let start_tm =
+(* ml_start called by C (the value stack's base at 0(sp)), ml_init's
+ * closure slot 1, a unit (not what r13 held, which the collector would
+ * scan); ml_raise: to the latest handler, the exception in r13 *)
+let start =
   String.concat "\n\t"
     [ "ml_start:"; "ldw\tr12, 0(sp)"; "li\tr13, 1"; "la\tr11, ml_init"; "jalr\tzero, 0(r11)";
       "ml_raise:\n\tla\tr1, ml_handler"; "ldw\tr1, 0(r1)"; "ldw\tsp, 0(r1)"; "ldw\tr12, 4(r1)";
@@ -1716,7 +1546,6 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   let output = ref "" and file = ref "" and files = ref [] in
   let exit n = CapStdlib.exit caps n in
   let rec args = function
-    | "-tm" :: r -> tm := true; args r
     | "-o" :: o :: r -> output := o; args r
     | f :: r -> files := f :: !files; args r
     | [] -> ()
@@ -1724,11 +1553,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
   let argl = List.tl (Array.to_list (CapSys.argv caps)) in
   if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
   args argl;
-  if !files = [] then (Console.eprint caps "usage: tiny-ml [-tm] [-o out.s | out.tm] file.ml...   (-h: how)\n"; exit 2);
+  if !files = [] then (Console.eprint caps "usage: tiny-ml [-o out.tm] file.ml...   (-h: how)\n"; exit 2);
   let parse s = toks := lex s; pos := 0; items () in
   try
-    (* an integer's range: 63 bits, or -tm's 31 *)
-    let prelude = parse (prelude ^ sprintf "let max_int = %s\nlet min_int = - max_int - 1\n" (if !tm then "1073741823" else "4611686018427387903")) in
+    (* an integer's range: 31 bits *)
+    let prelude = parse (prelude ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n") in
     (* the files one after the other, one program: each read and typed
      * under its own name, an error's *)
     let env = ref (List.fold_left type_item [] prelude) in
@@ -1738,7 +1567,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       env := List.fold_left type_item !env items;
       items) (List.rev !files) in
     compile (prune program);
-    let asm = (if !tm then start_tm else start_arm64) ^ Buffer.contents text ^ Buffer.contents data in
+    let asm = start ^ Buffer.contents text ^ Buffer.contents data in
     if !output = "" then Console.print caps asm else FS.write caps (Fpath.v !output) asm
   with
   | Failure m -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m); exit 1

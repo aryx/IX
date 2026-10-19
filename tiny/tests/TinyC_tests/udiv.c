@@ -2,7 +2,7 @@
 //
 // Unsigned division and remainder at their edges: divisors past 2^31,
 // dividends with the top bit set, powers of two. TinyCPU has only a
-// signed division, so tiny-c -tm calls the runtime's __udivmod; the
+// signed division, so tiny-c calls the runtime's __udivmod; the
 // random programs rarely reach its corners.
 #include "libc.h"
 

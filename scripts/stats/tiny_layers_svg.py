@@ -46,7 +46,7 @@ COLUMNS = [
             "Linux on arm64 (or mini-5i, which",
             "answers its calls)"]),
     ]),
-    ("A program in ML, on tiny-machine", "windows, calc, temp, tetris  (tiny-ml -tm)", [
+    ("A program in ML, on tiny-machine", "windows, calc, temp, tetris  (tiny-ml)", [
         ("The program", "tiny-ml's ML", [
             "tiny/TinyAppCalculator.ml (or",
             "TinyWindows.ml...), and a last file that",
@@ -62,7 +62,7 @@ COLUMNS = [
             "operators, option, the exceptions, List);",
             "TinyKernel/libml/calls.ml: the kernel's",
             "calls, as externals"]),
-        ("TinyML's runtime", "C, by tiny-c -tm", [
+        ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c: the allocator,",
             "Cheney's collector, strings, compare;",
             "included by TinyKernel/libml/mlsys.c",
@@ -75,7 +75,7 @@ COLUMNS = [
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
-    ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-c -tm)", [
+    ("A program in C, on tiny-machine", "sh, ls, cat, paint, ping, get...  (tiny-c)", [
         ("The program", "C", [
             "tiny/TinyKernel/user/sh.c, ls.c,",
             "paint.c...: one file each"]),
@@ -92,7 +92,7 @@ COLUMNS = [
         ("The system", "", [
             "tiny-kernel, on tiny-machine"]),
     ]),
-    ("The kernel", "tiny-kernel  (tiny-ml -tm, tiny-c -tm)", [
+    ("The kernel", "tiny-kernel  (tiny-ml, tiny-c)", [
         ("The kernel", "tiny-ml's ML", [
             "tiny/TinyKernel.ml: the processes, the",
             "files, the pipes, the system calls"]),
@@ -103,7 +103,7 @@ COLUMNS = [
             "as externals)"]),
         ("The core library", "ML", [
             "tiny/TinyLibCore.ml: the same prelude"]),
-        ("TinyML's runtime", "C, by tiny-c -tm", [
+        ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c, the same;",
             "included by TinyKernel/runtime.c (the",
             "kernel's memory, the console)"]),

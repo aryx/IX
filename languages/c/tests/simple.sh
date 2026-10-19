@@ -7,10 +7,13 @@
 # MINICC_FLAGS=-simple), each program too, linked by mini-ld, run; its
 # output and exit status compared with the reference's. The reference
 # on arm is 5c -O0 and 5l with goken's 5c -O0 libc; on arm64 it is
-# TinyC_test.sh's, 7c -O0 -S and libc by 7c -S, assembled by
-# TinyAssembler, since goken's 7l writes the section table inside the
+# 7c -O0 -S, and libc by 7c -S (libc.sh 7's, in workdir/ref), assembled
+# by mini-asm and linked by mini-ld (which libc.sh checks against 7l
+# byte for byte), since goken's 7l writes the section table inside the
 # data, which misprints (%d% for a number: bugs/goken.md 1,
-# notes_fuzzing_techniques.md 7). A fuzzer's program can also differ
+# notes_fuzzing_techniques.md 7)
+# (old: assembled and linked by tiny/TinyAssembler.ml, gone with t-ix's
+# arm64, plan_tiny_self_hosting.md). A fuzzer's program can also differ
 # by 7c's bug 5d (a narrowing cast in a condition), where -simple is
 # right. Programs: goken's
 # hello_libc, tiny/tests/TinyC_tests, and TinyC_fuzz.py's (--32 on arm).
@@ -26,27 +29,15 @@ progs=("$@")
 case $O in 5) OBJ=arm;; 7) OBJ=arm64;; esac
 incs="-I$HOME/goken/include -I$HOME/goken/include/ALL -I$HOME/goken/include/arch/$OBJ"
 [ -f $W/t/libc.a ] || MINICC=1 MINICC_FLAGS="-simple ${SIMPLE_FLAGS:-}" $ROOT/linker/tests/libc.sh $O $W > /dev/null
-if [ $O = 7 ] && [ ! -f $W/ref/list ]; then
-  mkdir -p $W/ref; : > $W/ref/list
-  pushd $HOME/goken/lib_core/libc > /dev/null
-  while read -r line; do
-    set -- $line
-    src=${@: -1}; b=$(echo ${src%.*} | tr / _)
-    case $1 in
-    7c) flags=$(echo "$line" | sed -e 's/^7c //' -e 's/ -o [^ ]* [^ ]*$//' -e 's/\$CFLAGS_EXTRA//')
-        7c $flags -S -o $W/ref/$b.7 $src 2>/dev/null | grep '^	' > $W/ref/$b.s; echo $W/ref/$b.s >> $W/ref/list ;;
-    7a) echo $HOME/goken/lib_core/libc/$src >> $W/ref/list ;;
-    esac
-  done < <(mk -a -n objtype=arm64 cputype=arm64 2>/dev/null)
-  popd > /dev/null
-fi
+[ $O = 7 ] && [ ! -f $W/ref/t/libc.a ] && $ROOT/linker/tests/libc.sh 7 $W/ref > /dev/null
 mkdir -p $W/p $W/g1 $W/t1
 ok=0; failures=0
 for c in "${progs[@]}"; do
   b=$(basename $c .c)
   if [ $O = 7 ]; then
     (cd $(dirname $c) && 7c -O0 $incs -S -o $W/p/$b.g.7 $b.c 2>/dev/null | grep '^	' > $W/p/$b.ref.s) || { echo "7c-FAIL $b"; continue; }
-    $IX/tiny/TinyAssembler.exe -o $W/g1/$b $W/p/$b.ref.s $(cat $W/ref/list) || { echo "TA-FAIL $b"; continue; }
+    $IX/assembler/Main.exe -m 7 -o $W/p/$b.ref.7 $W/p/$b.ref.s || { echo "MINIASM-FAIL $b"; continue; }
+    $IX/linker/Main.exe -m 7 -H7 -o $W/g1/$b $W/p/$b.ref.7 $W/ref/t/libc.a || { echo "MINILD-FAIL $b"; continue; }
   else
     (cd $(dirname $c) && 5c -O0 $incs -o $W/p/$b.g.5 $b.c > /dev/null 2>&1) || { echo "5c-FAIL $b"; continue; }
     (cd $HOME/goken/lib_core/libc && 5l -f -H7 -s -o $W/g1/$b $W/p/$b.g.5 $W/g/libc.a) > /dev/null 2>&1 || { echo "5l-FAIL $b"; continue; }

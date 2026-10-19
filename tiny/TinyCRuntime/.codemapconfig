@@ -6,10 +6,10 @@
 // the map.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "The C runtime of tiny-c -tm's programs: Plan 9's names, on tiny-cpu and every tiny-os kernel alike.",
+  summary: "The C runtime of tiny-c's programs: Plan 9's names, on tiny-cpu and every tiny-os kernel alike.",
   files: {
     'libc.h': { digest: '4a84ac4d4f69',
-      summary: "What a tiny-c -tm program is given: start.tm's write and exits, libc.c's print and strings; a long is 4 bytes.",
+      summary: "What a tiny-c program is given: start.tm's write and exits, libc.c's print and strings; a long is 4 bytes.",
       capitals: [
         { at: 'def:print', say: "Plan 9's print, on every tiny-os kernel" },
       ],

@@ -16,15 +16,14 @@ local chain(name, steps) = {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "The tiny programs (t-ix): each mini program's idea kept, compatibility dropped, one file each; and a machine and an OS of our own.",
   dirs: {
-    TinyC_tests: { summary: "C programs both of tiny-c's back ends must print the same on (TinyC_test.sh, TinyC_fuzz.py's random ones)." },
+    TinyC_tests: { summary: "C programs tiny-c must print on what the host's cc prints (TinyC_test.sh, TinyC_fuzz.py's random ones)." },
     TinyCPU_tests: { summary: "tiny-cpu's programs in its assembly, each with the output expected." },
-    TinyCPUArm_tests: { summary: "arm64 programs for tiny-arm, assembled by tiny-assembler: the same output on the real CPU, under mini-5i and under tiny-arm." },
     TinyMachine_tests: { summary: "tiny-machine's traps, window, pages, disk and atomic swap, each a page of kernel and its output." },
   },
   files: {
-    // the toolchain for arm64
+    // the toolchain for tiny-machine
     'TinyC.ml': { digest: '764fbf7fbc6a',
-      summary: "tiny-c: 5c/7c's job with only correctness asked: C typed as parsed, lowered to a stack machine of its own, two back ends (arm64, -tm).",
+      summary: "tiny-c: 5c/7c's job with only correctness asked: C typed as parsed, lowered to a stack machine of its own, one back end, TinyCPU's.",
       capitals: [
         { at: 'type:ir', say: 'the stack machine: the front end knows no register, the back end no C' },
         { at: 'def:lower', say: 'statements to the stack machine: labels and jumps' },
@@ -35,38 +34,18 @@ local chain(name, steps) = {
         { at: 'type:stmt', weight: 1 },
         { at: 'type:ir', weight: 3 },
         { at: 'def:lower', weight: 3 },
-        { at: 'def:machine', say: "arm64: the stack in R1..R15, 7c's frames", weight: 2 },
-        { at: 'def:machine_tm', say: 'the second back end, for TinyCPU: 100 lines', weight: 2 },
+        { at: 'def:machine', say: 'the back end, for TinyCPU: the stack in r1..r12, 100 lines', weight: 2 },
         { at: 'def:tokens', say: 'the preprocessor: #include and #define of a name', weight: 1 },
         { at: 'def:external_decl', weight: 1 },
       ],
       links: [
         { from: 'def:external_decl', to: 'def:lower' },
         { from: 'def:external_decl', to: 'def:machine' },
-        { from: 'def:external_decl', to: 'def:machine_tm' },
       ],
       related: ['TinyC_test.sh', 'TinyC_fuzz.py', 'TinyC_tests/', '../languages/c/'],
     },
-    'TinyAssembler.ml': { digest: 'b5390783697d',
-      summary: "tiny-assembler: 7a and 7l made one, no objects: a program's arm64 assembly read at once, every size known before any address.",
-      capitals: [
-        { at: 'def:k', say: 'an instruction as closures of its pc, run once addresses are known' },
-        { at: 'def:reach', say: 'a library is its functions reachable from the entry' },
-      ],
-      important: [
-        { at: 'comment:"Every size is known before any address."', say: 'no pools, no relaxation: one pass each', weight: 3 },
-        { at: 'def:expand', say: "an instruction's words chosen from its operands alone", weight: 3 },
-        { at: 'def:k', weight: 3 },
-        { at: 'def:movconst', say: 'a constant by MOVZ, MOVK, MOVN: no literal pool', weight: 2 },
-        { at: 'def:reach', weight: 2 },
-        { at: "comment:\"the text: the reached functions, in their files' order\"", say: 'the layout, then the ELF: one segment', weight: 2 },
-        { at: 'def:parse', weight: 1 },
-        { at: 'def:compile', weight: 1 },
-      ],
-      related: ['TinyAssembler_test.sh', '../assembler/', '../linker/'],
-    },
     'TinyML.ml': { digest: '263062f3ecaf',
-      summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to arm64 or tiny-machine; roots on a value stack, so its GC needs no frame table.",
+      summary: "tiny-ml: an ML, Hindley-Milner typed, through TinyC's stack machine to tiny-machine; roots on a value stack, so its GC needs no frame table.",
       capitals: [
         { at: 'def:infer', say: "Hindley-Milner, with Rémy's levels" },
         { at: 'def:value', say: 'an expression to the stack machine: closures, matches, tail calls' },
@@ -79,15 +58,14 @@ local chain(name, steps) = {
         { at: 'type:ir', say: "TinyC's stack machine, with blocks and handlers", weight: 2 },
         { at: 'def:value', weight: 3 },
         { at: 'def:tail', say: 'a call in tail position is a jump', weight: 2 },
-        { at: 'def:machine_arm64', say: 'the value stack at R26: every root where the GC sees it', weight: 2 },
+        { at: 'def:machine', say: 'the value stack at r12: every root where the GC sees it', weight: 2 },
         { at: 'def:prelude', say: 'the prelude is ML: only what is used is linked', weight: 1 },
       ],
       links: [
         { from: 'def:compile', to: 'def:value' },
         { from: 'def:value', to: 'def:tail' },
-        { from: 'def:machine', to: 'def:machine_tm' },
       ],
-      related: ['TinyMLRuntime/core.c', 'TinyMLRuntime/runtime.c', 'TinyML_test.sh', 'TinyML_fuzz.py', 'TinyKernel.ml', '../languages/ml/'],
+      related: ['TinyMLRuntime/core.c', 'TinyML_test.sh', 'TinyML_fuzz.py', 'TinyKernel.ml', '../languages/ml/'],
     },
     // the tools of making
     'TinyBuildSystem.ml': { digest: '8ac4c3f424fd',
@@ -181,22 +159,6 @@ local chain(name, steps) = {
       related: ['TinyDatabase_test.sh', '../database/'],
     },
     // the CPUs and machines
-    'TinyCPUArm.ml': { digest: '9155046d6dc7',
-      summary: "tiny-arm: an arm64 subset, interpreted, run as Linux runs a program: a machine inherited, its words a real toolchain's; an executable of tiny-assembler's loaded, four system calls answered.",
-      capitals: [
-        { at: 'def:step', say: "a word decoded and run in one match, by the manual's groups" },
-      ],
-      important: [
-        { at: 'type:machine', say: 'x0 to x30 and sp, the pc, four flags, memory', weight: 2 },
-        { at: 'def:add', say: 'a sum and its flags, 64 bits or 32', weight: 2 },
-        { at: 'def:bitmask', say: "the logical immediate: arm64's own puzzle", weight: 2 },
-        { at: 'def:step', weight: 3 },
-        { at: 'def:syscall', say: "read, write, exit, getpid: Linux's numbers in x8", weight: 2 },
-        { at: 'def:load', say: "the ELF's segments at their addresses, the stack above", weight: 2 },
-        { at: 'def:run', say: "the stack as Linux's execve leaves it, then the loop", weight: 2 },
-      ],
-      related: ['TinyAssembler.ml', 'TinyCPUArm_test.sh', 'TinyCPUArm_tests/', 'TinyC_test.sh', '../machine/'],
-    },
     'TinyMachineCPU.ml': { digest: '1f049d8f6327',
       summary: "A CPU of our own, designed to teach (Knuth's road): 16 registers, r0 zero, one format; its assembler, since nothing else writes its words.",
       capitals: [
@@ -269,58 +231,31 @@ local chain(name, steps) = {
   skeletons: [
     // the directory's own: what makes what, and what runs it
     {
-      name: 'Two machines, one toolchain',
+      name: 'One machine, one toolchain',
       bones: [
         { at: 'TinyML.ml', role: "ML to assembly, through TinyC's stack machine" },
-        { at: 'TinyC.ml', role: 'C to assembly: arm64, or -tm' },
-        { at: 'TinyAssembler.ml', role: 'arm64 assembly to an ELF, no objects' },
+        { at: 'TinyC.ml', role: "C to assembly: TinyCPU's" },
         { at: 'TinyMachineCPU.ml', role: 'our own CPU, its assembler the linker' },
         { at: 'TinyMachine.ml', role: 'the CPU with traps, a timer, a disk' },
         { at: 'tiny-os/', role: 'its OS: v0, v6, t6' },
         { at: 'TinyKernel.ml', role: 'its kernel in ML' },
       ],
       joints: [
-        { from: 'TinyC.ml', to: 'TinyAssembler.ml', say: 'arm64 assembly' },
-        { from: 'TinyML.ml', to: 'TinyAssembler.ml', say: 'arm64 assembly' },
-        { from: 'TinyC.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly (-tm)' },
-        { from: 'TinyML.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly (-tm)' },
+        { from: 'TinyC.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly' },
+        { from: 'TinyML.ml', to: 'TinyMachineCPU.ml', say: '.tm assembly' },
         { from: 'TinyMachineCPU.ml', to: 'TinyMachine.ml', say: 'the CPU' },
         { from: 'TinyMachine.ml', to: 'tiny-os/', say: 'boots' },
         { from: 'TinyMachine.ml', to: 'TinyKernel.ml', say: 'boots' },
       ],
     },
-    {
-      name: 'Two CPUs: one inherited, one designed',
-      bones: [
-        { at: 'TinyCPUArm.ml', role: 'a machine inherited: arm64, run as Linux runs a program' },
-        { at: 'TinyMachineCPU.ml', role: 'a machine designed: ours' },
-        { at: 'TinyCPU.ml', role: 'run as a user program' },
-        { at: 'TinyMachine.ml', role: 'run with what a kernel needs' },
-      ],
-      joints: [
-        { from: 'TinyCPU.ml', to: 'TinyMachineCPU.ml', say: 'stands on' },
-        { from: 'TinyMachine.ml', to: 'TinyMachineCPU.ml', say: 'stands on' },
-      ],
-    },
     // each program's own pipeline
     chain('tiny-c: parse, lower, emit', [
-      ['TinyC.ml:def:main', 'the command line: -ir, -tm', ''],
+      ['TinyC.ml:def:main', 'the command line: -ir, -o', ''],
       ['TinyC.ml:def:tokens', 'the tokens, #include and #define done', 'the file'],
       ['TinyC.ml:def:external_decl', 'a declaration, a function typed as parsed', 'tokens'],
       ['TinyC.ml:def:block', "a function's body: the tree of statements", 'a body'],
       ['TinyC.ml:def:lower', 'the tree to the stack machine', 'statements'],
-      ['TinyC.ml:def:machine', 'the stack machine to arm64', 'IR'],
-    ]) + {
-      bones+: [{ at: 'TinyC.ml:def:machine_tm', role: 'the stack machine to TinyCPU (-tm)' }],
-      joints+: [{ from: 'TinyC.ml:def:external_decl', to: 'TinyC.ml:def:machine_tm', say: 'IR, with -tm' }],
-    },
-    chain('tiny-assembler: parse, reach, expand, encode', [
-      ['TinyAssembler.ml:def:main', 'the command line: the entry, the output', ''],
-      ["TinyAssembler.ml:comment:\"the text: the reached functions, in their files' order\"", 'the link: layout, bytes, the ELF header', 'the files'],
-      ['TinyAssembler.ml:def:parse', "every file's assembly, lexed and parsed", 'the text'],
-      ['TinyAssembler.ml:def:reach', 'what the entry reaches: a library by its functions', 'functions'],
-      ['TinyAssembler.ml:def:expand', "a function's instructions to words, sizes first", 'the live ones'],
-      ['TinyAssembler.ml:def:k', 'a word as a closure of its pc', 'operands'],
+      ['TinyC.ml:def:machine', 'the stack machine to TinyCPU', 'IR'],
     ]),
     chain('tiny-ml: parse, infer, compile', [
       ['TinyML.ml:def:main', 'the prelude and the program, parsed and typed, then compiled', ''],
@@ -332,7 +267,7 @@ local chain(name, steps) = {
       bones+: [
         { at: 'TinyML.ml:def:compile', role: 'the toplevel, its globals the roots' },
         { at: 'TinyML.ml:def:value', role: 'an expression to the stack machine' },
-        { at: 'TinyML.ml:def:machine', role: 'the stack machine to arm64 or tiny-machine' },
+        { at: 'TinyML.ml:def:machine', role: 'the stack machine to tiny-machine' },
         { at: 'TinyMLRuntime/core.c:def:ml_alloc', role: 'at run time: a block, or a collection' },
       ],
       joints+: [
@@ -342,9 +277,8 @@ local chain(name, steps) = {
         { from: 'TinyML.ml:def:value', to: 'TinyMLRuntime/core.c:def:ml_alloc', say: 'blocks, at run time' },
       ],
     },
-    chain('TinyML on the host: memory given, then collected', [
-      ['TinyMLRuntime/runtime.c:def:main', 'a value stack and two heaps, in the bss', ''],
-      ['TinyMLRuntime/core.c:def:ml_run', 'the program run on them', 'the memory'],
+    chain('TinyML at run time: memory given, then collected', [
+      ['TinyMLRuntime/core.c:def:ml_run', "a value stack and two heaps, its includer's (TinyKernel/runtime.c), the program run on them", ''],
       ['TinyMLRuntime/core.c:def:ml_alloc', 'a block from the current half', 'allocations'],
       ['TinyMLRuntime/core.c:def:gc', 'the half full: collect, grow', 'no room'],
       ['TinyMLRuntime/core.c:def:collect', "Cheney's copy from the roots", 'the roots'],
@@ -460,16 +394,9 @@ local chain(name, steps) = {
       bones+: [{ at: 'TinyMachine.ml:def:trap', role: 'epc, cause, tval; supervisor mode' }],
       joints+: [{ from: 'TinyMachine.ml:def:run', to: 'TinyMachine.ml:def:trap', say: 'an interrupt, a fault, a sys' }],
     },
-    chain('tiny-arm: an executable loaded, then stepped', [
-      ['TinyCPUArm.ml:def:main', 'an executable and its arguments', ''],
-      ['TinyCPUArm.ml:def:load', 'its segments in memory, the entry', 'the file'],
-      ['TinyCPUArm.ml:def:run', "the stack Linux's execve leaves", 'the machine'],
-      ['TinyCPUArm.ml:def:step', 'a word decoded and run', 'the machine'],
-      ['TinyCPUArm.ml:def:syscall', 'read, write, exit, getpid, by x8', 'svc'],
-    ]),
   ],
   views: [
     { name: 'TinyMachineCPU and its machines', of: 'TinyMachineCPU.ml', with: 'users' },
-    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyMLRuntime/core.c', 'TinyMLRuntime/runtime.c', 'TinyKernel/runtime.c'] },
+    { name: 'tiny-ml and its runtime', files: ['TinyML.ml', 'TinyMLRuntime/core.c', 'TinyKernel/runtime.c'] },
   ],
 }

@@ -8,7 +8,7 @@
   summary: "What TinyKernel.ml stands on and runs: the ML runtime given the machine's memory, entry.tm's bridge, its user programs.",
   files: {
     'runtime.c': { digest: '99506e60c240',
-      summary: "The kernel's runtime (tiny-c -tm): TinyML's core given the memory map, write and exit on the devices, the externals of bytes ML calls.",
+      summary: "The kernel's runtime (tiny-c): TinyML's core given the memory map, write and exit on the devices, the externals of bytes ML calls.",
       capitals: [
         { at: 'def:kmain', say: 'the heap given, then the kernel in ML, never back' },
       ],

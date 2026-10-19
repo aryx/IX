@@ -46,10 +46,10 @@ of the system:
   allocator, collector and strings).
 - `TinyAppXxx.ml` is an application, a program a person uses on
   tiny-kernel (`calc`, `temp`, `tetris`).
-- `TinyLinker.ml` is a comment and no code: there is no tiny-linker,
-  and it says where the two toolchains link (`TinyAssembler.ml`'s
-  `link` for arm64, `TinyMachineCPU.ml`'s `assemble_files` for
-  tiny-cpu) and why neither needs a linker of its own.
+- There is no tiny-linker yet: `TinyMachineCPU.ml`'s `assemble_files`
+  assembles and links all of a program's `.tm` files at once (a
+  linker of its own, with tiny-assembler, is step 3 of
+  [`plan_tiny_self_hosting.md`](../docs/plans/plan_tiny_self_hosting.md)).
 - Two things are more than a file, and have a directory of their name
   beside their program:
   - `TinyKernel.ml` and `TinyKernel/`: the kernel's parts in ML that
@@ -91,15 +91,13 @@ on.
 | `TinyOffice.ml` | office, a program of tiny-kernel (and tiny-office on the host) | `apps/office/` (mini-office) | a document of pages of boxes, each a kind of document whose data is text: a text edited as it is shown (WYSIWYG, its styles the kernel's fonts), a sheet, a drawing, a paint, a chart of a named sheet; pull-down menus (TinyLibGUI's); its file Markdown and a few LaTeX commands (`\box`, `\newpage`); its view shapes, run by TinyLibGUI's run_canvas, which draws what changed ([`plan_tiny_office.md`](../docs/plans/plan_tiny_office.md)) |
 | `TinyPlay.ml` | play, a program of tiny-kernel (and tiny-play on the host) | `apps/music/play/` (mini-play), `lib_audio/formats/wav/` | a WAV file to the speaker, a block at a time, the kernel pacing it: RIFF's chunks read, the file's frame at each of the speaker's samples (8,000 a second) taken exactly by Bresenham's stepping, its channels' mean, its top byte; WAV only, no filter |
 | `TinyTroff.ml` | troff, a program of tiny-kernel (and tiny-troff on the host) | `typesetting/` (mini-troff) | the office's documents, or Markdown, as text, HTML or PDF, read by the office's own functions; PDF in Courier, a standard font, 8 points a character at 13.33 points |
-| `TinyAssembler.ml` | tiny-assembler | `assembler/`, `linker/` (mini-asm, mini-ld; 5a/5l, 7a/7l) | no separate compilation: all of a program's assembly into an arm64 executable, sizes known before addresses, a word per closure |
-| `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, 7c's calling convention so it links with goken's libc; and with `-tm` a second back end, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C), the two printing the same |
-| `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to arm64; the roots on a stack of values of its own (R26), so its collector, Cheney's, in C (`TinyMLRuntime/runtime.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output ocaml-light's, uncaught exceptions and stdout's buffer included |
+| `TinyC.ml` | tiny-c | `languages/c/` (mini-cc; 5c, 7c) | a C subset through a stack machine of its own, the stack in registers, for TinyCPU, with its runtime (`TinyCRuntime/`: `start.tm`, and a libc in C); Plan 9's names, ANSI's rules, the host's cc its tests' reference |
+| `TinyML.ml` | tiny-ml | `languages/ml/` (mini-ml; ocaml-light's ocamlopt) | an ML (variants, lists, closures, exceptions, Hindley-Milner) through TinyC's stack machine to tiny-machine; the roots on a stack of values of its own (r12), so its collector, Cheney's, in C (`TinyMLRuntime/core.c`, by tiny-c), needs no frame table and no assembly; the prelude in ML; the output OCaml's (ocaml-light's for the recorded tests, uncaught exceptions and stdout's buffer included) |
 | `TinyDatabase.ml` | tiny-db | `database/` (mini-chidb; chidb) | the relational algebra as the query language, a pipeline (`t \| where ... \| group ... \| sort ...`); a copy-on-write B-tree, so every statement is atomic by one header write |
-| `TinyCPUArm.ml` | tiny-arm | `machine/` (mini-5i; 5i) | an arm64 CPU for the tiny toolchain's programs: an executable of tiny-assembler's loaded and run word by word, a word decoded and executed in one match, group by group as the manual tables them; Linux's four calls (read, write, exit, getpid); no assembler of its own, no instruction type; the subset is what tiny-c's and tiny-ml's programs execute, goken's libc included, and a word outside it stops the program; the same file runs on the real CPU and under mini-5i, and the three are compared |
 | `TinyCPU.ml`, `TinyMachineCPU.ml` | tiny-cpu | `machine/` (mini-5i; 5i), with Knuth's MIX and MMIX | a machine of our own design, for teaching: 16 registers, r0 zero, no flags, one instruction format, every case defined; an assembler (a new machine has no other: nothing else writes its words) and an interpreter (the definition); the listing reassembles to the same words; the CPU a library, TinyMachine.ml's |
 | `TinyProfiler.ml` | tiny-prof | mini-qemu's `-prof` (`raspberry/observe/Prof.ml`) and `kernels/9pi/tests/perf/pcprof.py` | every instruction counted by its address (`tiny-cpu -prof`, `tiny-machine -prof`), not sampled, so two runs give the same profile; the kernel's and each program's apart; the names from tiny-machine's own assembler; a baseline run taken off (`-diff`) to measure one action, as a page down of `www` |
 | `TinyMachine.ml` | tiny-machine | `raspberry/` (mini-qemu), with Project Oberon and RISC-V's privileged specification | TinyCPU's CPU with what a kernel needs, designed: two modes, one trap (epc, cause, tval, tvec) and eret, a timer counting instructions, protection by a window (base, bound), a console and a halt at the top of memory; a raw image (`-o`, linking several `.tm`) loaded at 0; a page of kernel, `TinyKernel/steps/v0/kernel.tm`, running four programs (`v0/a.tm` to `d.tm`), killing the two that misbehave; and for a window system, each an option: a screen that is memory (640 by 480 bytes, a byte a colour), a mouse that is a word, a window of the host's that shows them (`-window`, by another program, `TinyMachineWindow.ml`), a session replayed from a file, a wire to a network (`-net`: `TinyKernelNetwork.ml` below; its way to the host's own network by another program too, `TinyMachineSocket.ml`), a speaker that is memory too (a ring of samples the kernel places, played at 8,000 a second and silenced behind; `-audio` a WAV, `-window` heard) |
-| `TinyKernel.ml` (and `TinyKernel/`) | tiny-kernel (`./tiny-machine tiny-kernel`) | `kernels/9pi/` (mini-9pi; 9pi) | a kernel in ML for tiny-machine, compiled by `tiny-ml -tm`: the concepts kept (modes and system calls, preemption, protection, fork and exec, pipes, files and directories), each by the road ML makes short: the kernel a loop that runs a process until its next trap (`k_run`), a waiting call a closure the scheduler retries (no kernel stack per process, no sleep and wakeup), the files a tree of ML values in the heap (no disk); a screen programs draw on by messages and a mouse, a program's descriptors 3 and 4; a speaker programs play on by messages too (`/dev/audio`), each open a voice mixed with the others; `docs/notes_tiny_kernel.md` |
+| `TinyKernel.ml` (and `TinyKernel/`) | tiny-kernel (`./tiny-machine tiny-kernel`) | `kernels/9pi/` (mini-9pi; 9pi) | a kernel in ML for tiny-machine, compiled by `tiny-ml`: the concepts kept (modes and system calls, preemption, protection, fork and exec, pipes, files and directories), each by the road ML makes short: the kernel a loop that runs a process until its next trap (`k_run`), a waiting call a closure the scheduler retries (no kernel stack per process, no sleep and wakeup), the files a tree of ML values in the heap (no disk); a screen programs draw on by messages and a mouse, a program's descriptors 3 and 4; a speaker programs play on by messages too (`/dev/audio`), each open a voice mixed with the others; `docs/notes_tiny_kernel.md` |
 | `TinyKernelGraphics.ml` | in tiny-kernel | `lib_graphics/`, mini-9pi's `lib_memdraw` (libdraw, libmemdraw) | one operation, `draw dst r src mask p`, on images a byte a pixel; a colour is an image of one pixel that repeats; the kernel has the pixels and a program says what, by messages naming images by its own numbers |
 | `TinyKernelAudio.ml` | in tiny-kernel (and the host's tiny-tetris) | `lib_audio/` (Sfx.ml, sfxr's recipe), the sound chips (SID, the NES's APU) | the kernel has the samples, a program says what: a sound is a message of five numbers (a wave, a pitch that slides, a length, a volume that falls), made where it is played, added to the ring; no samples cross a pipe, no allocation (tiny-ml's strings of samples were 2,750 instructions a sample); [`plan_tiny_audio.md`](../docs/plans/plan_tiny_audio.md) |
 | `TinyKernelNetwork.ml` | in tiny-kernel, and in tiny-machine | mini-9pi's `network/ip/`, `lib_networking/` (Plan 9's ip) | the stack is functions of strings, with no device and no clock: a packet that came gives the packets to send back and what a program hears; so the same file is the kernel's stack, its test on the host, and the other end of tiny-machine's wire (`-net`). IP's envelope, the echo (`ping`), and IL, Plan 9's protocol for messages that arrive once and in order (`get`, and `www`, a web page, its pictures painted a row a message); `TinyMachinePeer.ml` is the few lines on top of it that make the wire's other end; [`plan_tiny_network.md`](../docs/plans/done/plan_tiny_network.md) |
@@ -112,7 +110,7 @@ on.
 | `TinyBrowser.ml` | www, a program of tiny-kernel (`www OCaml`, with its links and pictures, its menus and its address field on `TinyLibGUI.ml`: [`plan_tiny_browser.md`](../docs/plans/done/plan_tiny_browser.md)) | `browsers/` (mini-netscape, mini-lynx) | a page is read once, as it arrives, and turned directly into lines; there is no document tree and no style sheet, and the meaning of a tag is a row in a table; a table's cells are kept until the widths of its columns are known |
 | `TinyVCS.ml` | tiny-vcs | `version_control/` (mini-git; git9) | git's objects, trees and DAG; the repository as one hash (an operation log, so every command is atomic and undoable); no staging area; merges that always succeed, conflicts committed as data |
 
-The last four are ML for tiny-ml -tm, run on tiny-machine (`./tiny-machine
+The last four are ML for tiny-ml, run on tiny-machine (`./tiny-machine
 -window tiny-kernel`, then `windows`, and `tetris` in a window),
 and OCaml too: the same files are built by dune, as libraries, and
 tested on the host first. Three small files stand between them and
@@ -167,10 +165,10 @@ or an ML program is built, the kernels, tiny-kernel's drawing
 messages, tiny-windows and how a game is written.
 
 Each has its tests in `tests/`, `tests/TinyXxx_test.sh`, run by `make test`
-(TinyAssembler's, TinyC's and TinyML's, which need goken, by `make
-test-goken`; TinyC's programs are `tests/TinyC_tests/`, and `tests/TinyC_fuzz.py`
-writes random ones; TinyML's are `languages/ml/tests/tiny/`, with
-ocaml-light's outputs);
+(TinyC's programs are `tests/TinyC_tests/`, with the host's cc's
+outputs, and `tests/TinyC_fuzz.py` writes random ones; TinyML's are
+`languages/ml/tests/tiny/`, with ocaml-light's outputs, and
+`tests/TinyML_fuzz.py`'s are compared with OCaml's);
 the plans' Status logs (`docs/plans/`) tell how each was chosen and
 checked.
 

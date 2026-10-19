@@ -30,7 +30,6 @@ goken's 5a/5l and 7a/7l, and xix's `assembler/` and `linker/`.
 | `linker/Arm64` | arm64: the same | §7, §8 |
 | `linker/Exe` | the file the kernel runs: ELF, a.out, Mach-O | §9 |
 | `linker/CLI` | `mini-ld`: the passes in order, per machine | §5 |
-| `tiny/TinyAssembler` | the one-file variant, without separate compilation | §13 |
 
 Read §1 for the whole trip, §2 for the language, §3 for the design,
 §4-§5 for the linker, §6-§8 for the machines, §9 for the file, and
@@ -419,8 +418,10 @@ the kernel insists; it makes its system calls itself (number in R16,
 mini-asm and mini-ld are the first half of ix's toolchain; the C compiler
 comes next, and writes their objects directly.
 
-The one-file variant, `tiny/TinyAssembler.ml`, asks what is left
-without separate compilation: an assembler for arm64 that reads all of
+The one-file variant, `tiny/TinyAssembler.ml` (until 2026-10-19,
+when t-ix's arm64 left: plan_tiny_self_hosting.md; it is in git's
+history), asked what is left
+without separate compilation: an assembler for arm64 that read all of
 a program's assembly, its own and libc's, and writes the executable.
 Dropping the byte identity with 7l lets it choose forms whose sizes
 never depend on an address: a constant built by `MOVZ` and `MOVK`, an
@@ -429,7 +430,7 @@ there is no literal pool and no bitmask encoder, and it takes three
 plain passes: expand, lay out, encode. The expansion makes each
 instruction a list of closures from their own pc to a word, run once
 the addresses are known. A library becomes the functions reachable from
-the entry. It is 410 lines of code, against about 1,580 for the same
+the entry. It was 410 lines of code, against about 1,580 for the same
 arm64 path through mini-asm and mini-ld, and it runs goken's 17
 `hello_libc` programs with all of libc, including the two that goken's
 own executables get wrong.

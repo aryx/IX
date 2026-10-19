@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// An ML program of TinyKernel.ml (tiny-ml -tm; tiny-windows is the
+// An ML program of TinyKernel.ml (tiny-ml; tiny-windows is the
 // first): TinyML's runtime, given the partition's memory, and the
 // system calls as the externals an ML program declares (their values
 // ML's: an integer n is 2n+1, a string its bytes and its length).

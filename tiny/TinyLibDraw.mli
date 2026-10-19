@@ -10,7 +10,7 @@
  * tiny-ml and OCaml accept, and is given to tiny-ml before the
  * program's own files:
  *
- *     tiny-ml -tm -o windows.tm TinyLibDraw.ml TinyWindows.ml
+ *     tiny-ml -o windows.tm TinyLibDraw.ml TinyWindows.ml
  *
  * The messages are described in the header of TinyKernelGraphics.mli:
  * a letter, followed by signed 16-bit numbers, low byte first.

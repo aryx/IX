@@ -34,8 +34,8 @@ import trim_stdlib as trim  # noqa: E402
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../..")
 LIB = os.path.join(ROOT, "tiny/TinyLibHost/ocaml")
 # the tiny programs of the host (tiny/mkfile's), and their libraries
-PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyUtilities", "TinyEditorLine", "TinyAssembler", "TinyC", "TinyML",
-            "TinyDatabase", "TinyVCS", "TinyCPUArm", "TinyCPU", "TinyProfiler", "TinyLibRegex", "TinyLibHost/TinyLibSystem",
+PROGRAMS = ["TinyBuildSystem", "TinyShell", "TinyUtilities", "TinyEditorLine", "TinyC", "TinyML",
+            "TinyDatabase", "TinyVCS", "TinyCPU", "TinyProfiler", "TinyLibRegex", "TinyLibHost/TinyLibSystem",
             "TinyMachine/TinyMachineCPU", "TinyMachine/TinyMachineDevices", "TinyKernel/TinyKernelNetwork",
             "TinyMachine/TinyMachinePeer", "TinyMachine", "TinyKernel/steps/t6/TinyMkfs"]
 # kept whole though no tiny program names them yet (the author,

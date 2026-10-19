@@ -13,7 +13,7 @@
  * Linking is done by TinyMachineCPU: the .tm files are concatenated,
  * their labels share one namespace, and the first file is placed at
  * address 0, where the CPU starts. The arguments are put where the
- * main of a C program expects them (the convention of tiny-c -tm, in
+ * main of a C program expects them (the convention of tiny-c, in
  * TinyCRuntime/start.tm): the strings go at the top of memory, and sp
  * points to argc, followed by argv. argv[0] is the name of the image,
  * or the name of the last .tm file without its .tm extension.
@@ -31,12 +31,12 @@
  * the first bytes of memory. The questions that an executable header
  * answers (where to load it, where to start, how much to zero) are
  * answered here by three constants: at 0, from 0, and everything.
- * TinyCPUArm, the same program built around the other CPU, has to read
- * an ELF header to get the same three answers, because that is what
- * the Linux kernel does.
+ * mini-5i (machine/), the same program built around an ARM, has to
+ * read an ELF header to get the same three answers, because that is
+ * what the Linux kernel does.
  *
  * Status: this is the first step for running a program on this
- * machine. Programs compiled by tiny-c -tm run here with its libc (the
+ * machine. Programs compiled by tiny-c run here with its libc (the
  * three calls made by start.tm are the three calls provided here).
  * The same assembly, linked after a kernel, runs on TinyMachine, where
  * sys traps to that kernel instead of to OCaml. *)

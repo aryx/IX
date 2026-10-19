@@ -127,24 +127,20 @@ job theirs mini-dc '^ok ' env MINIDC=$ROOT/$M/utilities/calc/dc/mini-dc utilitie
 job theirs mini-bc '^ok ' env MINIBC=$ROOT/$M/utilities/calc/bc/mini-bc utilities/calc/bc/tests/differential.sh
 
 # the tiny programs: each one's own test, with the program ix's tools made
-# (SLOW: tiny-arm and tiny-cpu by mini-ml run tiny-ml's programs slower)
+# (SLOW: tiny-cpu by mini-ml runs tiny-ml's programs slower)
 T=$ROOT/$M/tiny
 tiny() {   # the name, then the test's command
   local name=$1; shift
   if "$@" > $W/tiny.txt 2>&1; then ok "$name: its test passes ($(tail -1 $W/tiny.txt))"; else fail "$name: $(grep -m2 'FAIL\|rror' $W/tiny.txt | tr '\n' ' ')"; fi
 }
-# (tiny-assembler's, tiny-c's and tiny-ml's tests take goken's C library and its 7c)
-nogoken() { echo "skip $1: its test needs goken (~/goken)"; }
-if [ -d $G ]; then job tiny tiny-assembler env TA=$T/tiny-assembler tiny/tests/TinyAssembler_test.sh; else job nogoken tiny-assembler; fi
 job tiny tiny-build env TB=$T/tiny-build tiny/tests/TinyBuildSystem_test.sh
 job tiny tiny-shell env TS=$T/tiny-shell tiny/tests/TinyShell_test.sh
 job tiny tiny-editor env TE=$T/tiny-editor tiny/tests/TinyEditorLine_test.sh
 job tiny tiny-db env TD=$T/tiny-db tiny/tests/TinyDatabase_test.sh
 job tiny tiny-vcs env V=$T/tiny-vcs tiny/tests/TinyVCS_test.sh
-if [ -d $G ]; then job tiny tiny-c env TC=$T/tiny-c TA=$T/tiny-assembler TCPU=$T/tiny-cpu TARM=$T/tiny-arm tiny/tests/TinyC_test.sh; else job nogoken tiny-c; fi
-if [ -d $G ]; then job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c TA=$T/tiny-assembler TARM=$T/tiny-arm CPU=$T/tiny-cpu tiny/tests/TinyML_test.sh; else job nogoken tiny-ml; fi
+job tiny tiny-c env TC=$T/tiny-c TCPU=$T/tiny-cpu tiny/tests/TinyC_test.sh
+job tiny tiny-ml env SLOW=300 TML=$T/tiny-ml TC=$T/tiny-c CPU=$T/tiny-cpu tiny/tests/TinyML_test.sh
 job tiny tiny-cpu env T=$T/tiny-cpu tiny/tests/TinyCPU_test.sh
-job tiny tiny-arm env T=$T/tiny-arm A=$T/tiny-assembler tiny/tests/TinyCPUArm_test.sh
 job tiny tiny-machine env T=$T/tiny-machine tiny/tests/TinyMachine_test.sh
 
 # the kernels' steps on the Pi 4 (plan_kernel_mini_ml.md): each image

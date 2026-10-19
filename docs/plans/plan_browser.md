@@ -1135,7 +1135,7 @@ Ember), where its first commit's 2,238 lines and webapi's 724 are
 |---|---:|---|
 | the optimizations to `opti/` (not counted, `docs/loc.md`): `Js_compile`, `Js_quicken`, `Mini_opti`, `Per_domain`; `Cascade`'s styles kept; `Tab.settle`, `Browser_draw.later`, `Netscape.view` | about 800 | each has its simple way already, behind a switch: `MINI_OPTI=walk`, `settle=off`, `draw=all`, `view=each` |
 | the two preludes in strings, `Script_prelude` (1,084) and `Js_prelude` (549), down to what Wikipedia, HN and ocaml.org call | about 800 | Shady DOM's accessors (YouTube), `IntersectionObserver`, `AbortSignal`, `postMessage`... |
-| Stage 1's cuts inside `browsers/`, none taken yet: the printers (`Js_ast`'s 141, `Selectors`, `Cascade.explain`, `Dom.to_lines`), ES modules and import maps, generators, `with`, a direct `eval`, `Js_utf16`, frames and `@import`, named grid lines and `@layer`, `Response`, `Cors`, shadow trees | about 1,300 | never run by the article (Stage 1's coverage) |
+| Stage 1's cuts inside `browsers/`, none taken yet: the printers (`Js_ast`'s 141, `Selectors`, `Dom.to_lines`; not `Cascade.explain` and `Browser_page.explain`, the developer tools', below), ES modules and import maps, generators, `with`, a direct `eval`, `Js_utf16`, frames and `@import`, named grid lines and `@layer`, `Response`, `Cors`, shadow trees | about 1,300 | never run by the article (Stage 1's coverage) |
 | a type written in both the .ml and the .mli (`Js_ast`, `Computed`, `Selectors`, `Html_layout`) | about 250 | only with `[%mli]` here, the author's to allow |
 
 About 3,100 lines: `browsers/` at about 20,000. Each cut is tried
@@ -1208,3 +1208,135 @@ For mini-netscape, smaller, and Netscape's own way:
 About 60 to 80 lines in `netscape/` (`Browser_helpers`: the rules
 read, matched, run), and a test of the matching (an address, a
 type, `%u` and `%f`), not of the run: lines added, after A.
+
+### Developer tools: Netscape's, then Mozilla's
+
+The author: "maybe with the freed space we can actually get closer to
+a mini-firefox and add the firefox devtools (like the one in
+mini-chrome) to help debug web pages". A page that reads wrong is
+then looked into in mini-netscape itself, not by loading it in
+mini-chrome or Firefox and guessing which of ix's files differs.
+
+mini-chrome has them: `src/chrome/Browser_devtools.ml` (105 lines and
+a 50-line .mli, lines of text the window draws in a panel), opened by
+F12 or the wrench, with Inspect: **the element** (its place in the
+tree, `html > body > div.card > p`, its box outlined on the page, its
+children), **its styles** (each declaration that won, with the rule
+and the sheet it came from: `Browser_page.explain` over
+`Cascade.explain`) and **the network** (each request, its status,
+kind, size and time, by the tab's log).
+
+mini-netscape's, by the lineage it is named for (`%cs-history`):
+
+| view | whose | here |
+|---|---|---|
+| View Source | every browser since the first; Netscape's View, Page Source | the page's text as it came (kept by the tab), in the panel |
+| the JavaScript Console | Netscape Communicator 4 (`javascript:` typed in the Location field) | what `console=on` prints on the standard error, in the panel; an expression typed, evaluated in the page |
+| the element and its styles | Mozilla's DOM Inspector (2001), Firebug's (2006) | mini-chrome's two views |
+| the network | Firebug's Net panel | mini-chrome's, over `Tab`'s requests |
+
+Opened by Ctrl+Shift+I (Firefox's) or F12, a panel under the page as
+Firebug's was; Inspect, then a click on the page. The developer tools
+of the window only; no debugger (Venkman's), no style edited live.
+
+About 250 lines: `Browser_devtools` copied (105) and adapted to
+`Tab`, the panel and its keys in `Netscape` (about 100), View Source
+and the console (about 50). It comes after A and B, from what they
+free; the two `explain` stay for it. A test: an element's and its
+styles' lines for a page of `netscape/tests/pages/`, as
+mini-chrome's `Unit_browser_devtools`.
+
+### The coverage of 2026-10-19: ix's own files, eight sites
+
+`browsers/coverage_ix.sh` (new: `coverage.sh` measured mini-chrome's
+tree, before the copy): `browsers/` and the libraries under it copied
+to a directory, `browsers/`'s libraries instrumented (bisect_ppx),
+each site loaded by mini-netscape without a window, 1400 by 900,
+scripts off and on, its first screen and scrolled to the end, and by
+mini-lynx; `coverage.py`'s table, and `coverage_sites.py`, what each
+site's scripts reach beyond a page of one line of script. About ten
+minutes, the network's.
+
+The frames looked at: Wikipedia's two articles, ocaml.org, LWN, the
+Python tutorial and HN read well. old.reddit.com is blank: it sends
+to its login, whose scripts are modules that fail ("Failed to fetch
+the module", and `(new RegExp(r))[n] is not a function`). craigslist
+does not load: "the connection closed during the handshake"; it
+speaks TLS 1.2 only, with `ECDHE-ECDSA-AES256-GCM-SHA384` (openssl),
+a cipher ix's TLS has not. ocaml.org's Alpine says 12 errors and the
+page is right; the tutorial's one (`select.add`) changes nothing seen.
+
+**The engine** (html, css, engine, netscape, lynx, scripts on): of its
+8,829 lines of .ml, 1,617 in definitions never run (18%), about 1,000
+more in branches. `Looks` (196, Mosaic's colours and sizes) whole;
+`Cascade.explain` (39, kept for the developer tools).
+
+**The scripts**, in lines of whole definitions reached (an upper
+bound), of `javascript/`'s 7,627 lines of .ml and `webapi/`'s 3,740:
+
+| run | javascript/ | webapi/ |
+|---|---:|---:|
+| a page of one line of script: the preludes alone | 4,177 | 781 |
+| Wikipedia (either article), beyond it | 955 | 1,051 |
+| ocaml.org, beyond it | 735 | 891 |
+| the Python tutorial, beyond it | 503 | 731 |
+| HN, beyond it | 65 | 192 |
+| LWN, craigslist | 0 | 1 |
+| old.reddit.com (blank), beyond it | 1,149 | 892 |
+| Wikipedia, HN and LWN together | 5,132 | 1,832 |
+| all but reddit | 5,216 | 1,892 |
+
+What it says:
+
+- **The preludes are the language's first user.** A page with no
+  script of its own reaches 4,177 lines of the language: the two
+  preludes (1,633 lines of JavaScript) are classes, closures,
+  getters, `Object.defineProperty`... Trimming them (A) is also what
+  lets the language shrink: the coverage of the language is to be
+  measured again after.
+- **Wikipedia's scripts kept running** (the author's choice) need
+  about 5,100 lines of the language and 1,800 of webapi by whole
+  definitions; fewer inside them. Not reached by any site but
+  reddit: about 2,400 and 1,850, **about 4,250 lines of .ml**, and
+  the estimate's branches beyond.
+- So **B, Wikipedia's scripts kept**, is not the 3,500 to 4,500 lines
+  of language first guessed, rather 8,000 to 9,000 for `javascript/`
+  and `webapi/` together: `browsers/` about **16,000 to 17,000**
+  counted, with A. Under mini-9pi's 14,000 only without Wikipedia's
+  scripts (the article reads the same without them). The author's
+  choice of 2026-10-19 keeps them: about 16,500 is the aim.
+
+### The name: Netscape, Mozilla, Firefox
+
+The author: "maybe we should rename to mini-mozilla? When was added
+the classic devtools with the JS console, html browser, web load
+diagram, etc.?"
+
+- 1996, **Netscape Navigator 2**: JavaScript; its errors in a dialog.
+  Communicator 4 (1997): the **JavaScript Console**, opened by typing
+  `javascript:` in the Location field.
+- 2000-2002, **Netscape 6 and 7, the Mozilla suite** (Netscape's code,
+  opened in 1998): the JavaScript Console in the Tools menu; the
+  **DOM Inspector** (Joe Hewitt, 2001), the tree and an element's
+  styles; **Venkman**, the JavaScript debugger (2001).
+- 2004, **Firefox 1.0**: the console, and the DOM Inspector as an
+  option of the installer.
+- January 2006, **Firebug** (Joe Hewitt again), an extension of
+  Firefox: the console, the HTML tree, the CSS, and the **Net panel**,
+  each request a bar on a time line (the load's diagram), in one
+  panel under the page. Safari's Web Inspector (2006), Chrome's tools
+  (2008) and IE 8's (2009) followed it.
+- 2011-2013, **Firefox's own**: the Web Console (Firefox 4), the
+  Inspector (10), the Network Monitor (23); Firebug ended in 2017.
+- 2007-2008, **Netscape Navigator 9**, the last Netscape, was Firefox
+  2 under Netscape's name, and Firebug ran in it.
+
+So the classic tools, the console, the tree, the load's diagram,
+are Firebug's (2006), on Firefox; the console and the inspector
+alone are the Mozilla suite's, which was Netscape 6 and 7. The name
+can stay: Netscape lasted to Navigator 9, which had all of them.
+`mini-mozilla` would say the suite (the browser, mail, Composer, the
+DOM Inspector and Venkman); `mini-firefox` the browser alone with
+Firebug. A rename touches the binary, the profile's directory
+(`~/.config/mini-netscape`), the docs and the tests: the author's to
+decide; this plan says mini-netscape until then.

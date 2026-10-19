@@ -241,16 +241,14 @@ with what under it:
 | the same, built by IX for arm, or with `mini-mk LIB=core` | mini-ml | IX's own, in `lib_core/` | `lib_core/commons/` |
 | the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore.ml`](tiny/TinyLibCore.ml), tiny-ml's prelude (read before every program: some forty functions), and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`; for a tool, `TinyLibStd` and `TinyLibSystem` |
 
-One more CPU is beside the machine's, for the ARM that tiny-c, tiny-ml
-and tiny-assembler also make: **tiny-arm**
-([`TinyCPUArm.ml`](tiny/TinyCPUArm.ml), 350 lines),
-an arm64 CPU for user programs, which runs their executables as Linux
-would.
+tiny-c and tiny-ml have one target, tiny-machine: their arm64 back
+ends, tiny-assembler and tiny-arm left with
+[plan_tiny_self_hosting.md](docs/plans/plan_tiny_self_hosting.md).
 
-With it and without tiny-lib-host, that is about 18,000 lines of OCaml
+Without tiny-lib-host, that is about 18,500 lines of OCaml
 and ML; with tiny-lib-host and their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 26,500 lines** in all (the header comments are in
+t-IX is **about 25,700 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 30,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -373,7 +371,7 @@ and tiny-machine are a made-up machine, as Knuth's MIX and
 ([*MMIXware: A RISC Computer for the Third Millennium*](https://www-cs-faculty.stanford.edu/~knuth/mmixware.html))
 and Nand2Tetris's Hack are, because what they teach is the design of an
 instruction set: the choices a real one made for history's reasons,
-made again with hindsight. tiny-cpu stands next to tiny-arm, the
+made again with hindsight. tiny-cpu stands next to mini-5i, the
 same program for real ARM, so that the two roads can be compared.
 
 ## Still to come

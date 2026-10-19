@@ -20,7 +20,7 @@
       related: ['v6/fs.c', 't6/file.c'],
     },
     'hello.c': { digest: 'db109e7d2087',
-      summary: "A C program for tiny-cpu (tiny-c -tm): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
+      summary: "A C program for tiny-cpu (tiny-c): its arguments, fib, sprint, the heap; what the C runtime is checked with.",
       important: [
         { at: 'def:main', weight: 2 },
       ],

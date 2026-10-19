@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// What libc.c and start.tm give a C program compiled by tiny-c -tm:
+// What libc.c and start.tm give a C program compiled by tiny-c:
 // Plan 9's names, a 32-bit machine (a long is 4 bytes, no long long).
 
 typedef unsigned char uchar;

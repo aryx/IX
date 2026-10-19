@@ -5,19 +5,20 @@
 # Random ML programs for TinyML_test.sh: well typed by construction
 # (each expression generated for a type, from the variables of that
 # type in scope, as Palka et al.'s generator for GHC, 2011), in the
-# subset tiny-ml and ocaml-light share: integers, booleans, lists,
+# subset tiny-ml, OCaml and ocaml-light share: integers, booleans, lists,
 # pairs, a variant, closures and partial applications, let rec loops
 # (bounded), exceptions, references, and prints inside expressions, so
 # that the order of evaluation shows. Every loop is bounded and no
 # recursion is unbounded, so each program ends; its toplevel values are
-# printed. RECORD=1 TinyML_test.sh dir/*.ml then compares tiny-ml with
-# ocamlopt on them. One constant in ten is max_int, 62 bits of ones,
-# for the arithmetic that wraps; with --31 there is none, so that the
-# programs also compile for tiny-cpu, whose integers are 31 bits (tiny-ml
-# -tm refuses a larger constant), and print the same there: no lsr and
-# no division by zero either, which differ with the machine, and only
-# small numbers multiplied, shifted left or added in a loop, so that
-# the arithmetic stays within 31 bits.
+# printed. With --31, tiny-ml's: RECORD=1 TinyML_test.sh dir/*.ml then
+# compares it, on tiny-cpu, with OCaml's ocamlopt. Its integers are 31
+# bits (tiny-ml refuses a larger constant), so there is no max_int, no
+# lsr and no division by zero, which differ with the machine, and only
+# small numbers multiplied, shifted left or added in a loop, so that the
+# arithmetic stays within 31 bits. Without it, mini-ml's (make
+# test-ocaml, languages/ml/tests/run.sh, against ocaml-light's
+# ocamlopt): one constant in ten is max_int, 62 bits of ones, for the
+# arithmetic that wraps.
 #
 # usage: TinyML_fuzz.py [--31] dir count [seed]
 

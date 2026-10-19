@@ -270,3 +270,54 @@ and its library is TinyLibCore/.
 ## Status
 
 - 2026-10-19: written, from a survey of the files; nothing tried yet.
+- 2026-10-19: step 1 done, arm64 out. Gone: `TinyAssembler.ml`,
+  `TinyCPUArm.ml`, `TinyLinker.ml`, `TinyMLRuntime/runtime.c` (arm64's
+  main), the two back ends and `start_arm64`, the `-tm` flag (tiny-c
+  988 lines, 113 fewer; tiny-ml 1,576, 171 fewer); t-IX 25,700 lines,
+  18,500 without TinyLibHost. What was found and decided on the way:
+  - **tiny-c's reference is the host's cc**, through
+    `TinyC_tests/host.h` (Plan 9's C on a 64-bit host: long an int,
+    print printf, -fsigned-char -fwrapv); the tests' outputs recorded
+    (`TinyC_tests/*.out`), RECORD=1 records them again. No `-m32` on
+    the author's aarch64 Linux, so a test prints no pointer's size.
+  - **long long out of the tests**: arith.c, calls.c and struct.c lost
+    their vlong lines (they were refused on tiny-cpu, so tested only
+    on arm64); all eleven run on tiny-cpu now. `libc.h` keeps vlong's
+    typedef, for mini-cc's `simple.sh` and TinyC_fuzz.py without
+    --32.
+  - **tiny-c's promotion is ANSI's**: a uchar or ushort widens to int,
+    not uint (Plan 9's, 7c's). TinyC_fuzz.py's programs, 300 of them,
+    then agree with gcc; before, 23 did not. tiny-kernel's programs
+    are the same size (check.expected's `ls -l` lines unchanged).
+  - **TinyC_fuzz.py read a variable never set** (`x0 = x0`), which 7c
+    and tiny-c agreed on and gcc did not: bugs/ix.md.
+  - **tiny-ml's tests run on tiny-cpu** only, at two heaps (4096
+    words, and 64 for the collector's law); gc.ml left out, as before
+    (its lists are deeper than tiny-cpu's 1 MB). arith.ml and
+    strings.ml print max_int: `.tiny-ml.out` for them, the 31-bit
+    lines alone differing; the `.out` files, shared with mini-ml's
+    run.sh, unchanged. TinyML_fuzz.py --31 against OCaml's ocamlopt:
+    150 programs the same. Without --31 it stays mini-ml's (make
+    test-ocaml).
+  - **Both tests and both fuzzers are in `make test`** (30 random
+    programs each, in /tmp/ix-tiny), no goken needed; test-goken and
+    test-ocaml lost their tiny lines; tests/lite.sh runs TinyC_test.sh
+    and TinyML_test.sh.
+  - **`languages/c/tests/simple.sh 7`**, mini-cc's, assembled 7c's
+    code with TinyAssembler (7l's section-table bug): mini-asm and
+    mini-ld now, with libc.sh 7's libc. 28 of 28 the same (goken's
+    hello_libc and TinyC_tests).
+  - **Not done in step 1**: tiny-ml's ocaml-light quirks (stdout's
+    buffer lost on an uncaught exception, division by zero, the
+    uncaught exception's message: §2 lists them); the recorded
+    `.out` files are still ocaml-light's, and mini-ml's run.sh reads
+    them too, so they go with a decision about both.
+  - **Run**: TinyC_test.sh, TinyML_test.sh, both fuzzers, every
+    tiny/tests/*_test.sh, simple.sh 7, `make check`'s text part and
+    its two sounds (tiny-kernel built into the scratchpad: the same
+    but a line of the host's `wc -c`, padded on the author's other
+    machine). Not run: make check's 23 recorded screens, mkfiles/check.sh
+    (m-ix building tiny/), make test-goken. Two failures that are not
+    this step's: TinyUtilities_test.sh's `du` (the host's order) and
+    TinyKernelNetwork_test.sh's linux case on the shared, older
+    `_make/boot.img` (it passes on a fresh image).

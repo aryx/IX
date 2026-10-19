@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// t6, a free kernel for tiny-machine, in C (tiny-c -tm) and a page of
+// t6, a free kernel for tiny-machine, in C (tiny-c) and a page of
 // assembly: a step before TinyKernel.ml (../Makefile). v6, which was
 // beside it until 2026-10-13 (git's history has it), was xv6's kind of
 // kernel: fork and exec,

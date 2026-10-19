@@ -1,9 +1,9 @@
 (* A tiny kernel, written in ML, for tiny-machine (TinyMachine.ml). It
  * contains the essentials of an operating system and borrows nothing
- * from an existing kernel except ideas. It is compiled by tiny-ml -tm
+ * from an existing kernel except ideas. It is compiled by tiny-ml
  * (the second back end of TinyML.ml), it uses TinyML's runtime
- * (Cheney's collector, written in C and compiled by tiny-c -tm), and
- * its user programs are in C (compiled by tiny-c -tm, on top of
+ * (Cheney's collector, written in C and compiled by tiny-c), and
+ * its user programs are in C (compiled by tiny-c, on top of
  * TinyCRuntime/):
  *
  *     ./tiny-machine tiny-kernel   (at the top of ix; or make run in TinyKernel/)
@@ -83,7 +83,7 @@
  * and the machine. It is small, where the bridge of mini-9pi and
  * mini-xv6 (kernels/lib_machine/: ocaml-light's C runtime, gcc, boot
  * code, C glue) cannot be:
- * - tiny-ml -tm: the second back end of the stack machine (TinyML.ml);
+ * - tiny-ml: the second back end of the stack machine (TinyML.ml);
  * - the runtime: TinyMLRuntime/core.c, shared with every tiny-ml
  *   program, and runtime.c, which holds the kernel's memory layout and
  *   ten functions on bytes (peek, poke, copying a string from memory

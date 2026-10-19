@@ -37,11 +37,11 @@ which, in its "its twin" column.
 | `builder/` | 2,525 | `TinyBuildSystem.ml` (tiny-build) |
 | `shell/` | 2,359 | `TinyShell.ml` (tiny-shell, and tiny-kernel's rc) |
 | `editors/ed/`, `editors/emacs/` | 4,921 | `TinyEditorLine.ml`, `TinyEditorScreen.ml` |
-| `assembler/`, `linker/` | 4,174 | `TinyAssembler.ml` (and `TinyLinker.ml`, which says why there is no linker) |
+| `assembler/`, `linker/` | 4,174 | `TinyMachineCPU.ml`'s assembler, tiny-machine's (`TinyAssembler.ml`, arm64's, left with plan_tiny_self_hosting.md; a tiny-assembler and tiny-linker of tiny-machine's are its step 3) |
 | `languages/c/`, `languages/ml/` | 15,432 | `TinyC.ml`, `TinyML.ml` |
 | `database/` | 3,084 | `TinyDatabase.ml` |
 | `version_control/` | 4,961 | `TinyVCS.ml` |
-| `machine/` | 5,029 | `TinyCPUArm.ml`, and `TinyCPU.ml` for a machine of our own |
+| `machine/` | 5,029 | `TinyCPU.ml`, a machine of our own (`TinyCPUArm.ml`, arm64's, left with plan_tiny_self_hosting.md) |
 | `raspberry/` | 5,609 | `TinyMachine.ml` and `TinyMachine/` |
 | `kernels/9pi/`, `kernels/lib_machine/` | 20,803 | `TinyKernel.ml` and `TinyKernel/` |
 | `windows/` | 1,554 | `TinyWindows.ml` |

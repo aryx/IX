@@ -15,11 +15,11 @@
  (modules TinyShell TinyEditorLine TinyUtilities)
  (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_regex))
 
-(executables
- (names TinyAssembler TinyC TinyCPUArm)
- (public_names tiny-assembler tiny-c tiny-arm)
+(executable
+ (name TinyC)
+ (public_name tiny-c)
  (package ix)
- (modules TinyAssembler TinyC TinyCPUArm)
+ (modules TinyC)
  (libraries ix_core fpath caps))
 
 (executable

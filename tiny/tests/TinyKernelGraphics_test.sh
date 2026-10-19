@@ -8,7 +8,7 @@
 # answers to bad ones. The same two files run twice, for the same lines
 # (picture.expected) and the same screen (picture.cksum, a PPM's sum):
 # - on the host, built by OCaml: TinyMemory.ml's array the memory;
-# - on tiny-machine, built by tiny-ml -tm: the rows TinyKernel/draw.tm's
+# - on tiny-machine, built by tiny-ml: the rows TinyKernel/draw.tm's
 #   loops, the runtime TinyKernel's, the screen what -screen writes.
 # RECORD=1 records the lines and the sum, from the host's (look at the
 # picture first: KEEP=1 W=dir leaves host.ppm and machine.ppm there).
@@ -45,11 +45,11 @@ check host
 # the machine's: start.tm first (the machine starts at 0), the font's
 # bytes at its label, the runtime, the rows, the program
 (cat $T/tests/TinyKernelGraphics_tests/start.tm; echo 'font:'; od -An -v -tu1 $FONT | awk 'NF { printf "\t.byte\t%s", $1; for (i = 2; i <= NF; i++) printf ", %s", $i; print "" }'; printf '\t.align\t4\n') > $W/start.tm
-$TC -tm -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c -tm runtime.c"
+$TC -o $W/runtime.tm $T/TinyKernel/runtime.c || fail "machine: tiny-c runtime.c"
 # (-window: without the exit, the program ends in start.tm's loop)
 sed -e 's/; exit 0$//' $T/tests/TinyKernelGraphics_tests/machine.ml > $W/machine.ml
 [ "${1:-}" = -window ] || cp $T/tests/TinyKernelGraphics_tests/machine.ml $W/machine.ml
-$TML -tm -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml -tm"
+$TML -o $W/picture.tm $T/TinyKernel/memory.ml $T/TinyKernel/TinyKernelGraphics.ml $T/TinyLibDraw.ml $T/tests/TinyKernelGraphics_tests/Picture.ml $W/machine.ml || fail "machine: tiny-ml"
 [ "${1:-}" = -window ] && { $MACHINE -window $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm; exit; }
 timeout ${SLOW:-60} $MACHINE -screen $W/machine.ppm $W/start.tm $T/TinyCRuntime/udivmod.tm $W/runtime.tm $T/TinyKernel/draw.tm $W/picture.tm > $W/machine.out 2>&1 || fail "machine: the run"
 check machine

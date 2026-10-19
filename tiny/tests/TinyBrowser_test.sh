@@ -11,7 +11,7 @@
 #   columns (www/OCaml.html, its REST HTML fetched on 2026-10-15; see
 #   plan_tiny_browser.md). Then each page is read again in messages of
 #   1, 7 and 1000 bytes, and must give the same lines however it is cut.
-# - On tiny-cpu, built by tiny-ml -tm (TinyBrowser_tests/Tm.ml, with
+# - On tiny-cpu, built by tiny-ml (TinyBrowser_tests/Tm.ml, with
 #   tm.c, heap.c and read.tm): the lines must be the same as OCaml's.
 #   This runs in tiny-cpu's 1 MB of memory, with heap halves of 352 KB,
 #   which the OCaml article fits in.
@@ -47,8 +47,8 @@ done
 # On tiny-cpu. The runtime and main are linked first, then the program,
 # then the heap's arrays. In the other order, main would be too far
 # for the start's call to reach it (a jump reaches 32K words).
-if $TML -tm -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyBrowser.ml $T/Tm.ml \
-   && $TC -tm -o $W/tm.tm $T/tm.c && $TC -tm -o $W/heap.tm $T/heap.c && $TC -tm -o $W/libc.tm $L/libc.c \
+if $TML -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyBrowser.ml $T/Tm.ml \
+   && $TC -o $W/tm.tm $T/tm.c && $TC -o $W/heap.tm $T/heap.c && $TC -o $W/libc.tm $L/libc.c \
    && $CPU -o $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm; then
   for p in $PAGES; do
     IFS=: read -r page width name <<< "$p"
@@ -56,7 +56,7 @@ if $TML -tm -o $W/b.tm $ROOT/tiny/TinyKernel/libml/calls.ml $ROOT/tiny/TinyLibSt
     if cmp -s $W/$name.out $W/$name.tm.out; then echo "ok $name: on tiny-cpu"; else fail "$name: on tiny-cpu"; diff $W/$name.out $W/$name.tm.out | head -6; fi
   done
 else
-  fail "tiny-ml -tm: the build"
+  fail "tiny-ml: the build"
 fi
 
 echo "$failures failure(s)"

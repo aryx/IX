@@ -1,7 +1,7 @@
 (* A tiny window system, written in ML as a program that runs on
  * TinyKernel.ml. It keeps the essentials of Plan 9's rio; the
  * full-size version in ix is windows/ (mini-rio). It is compiled by
- * tiny-ml -tm after TinyLibDraw.ml, with TinyKernel/libml/mlsys.c
+ * tiny-ml after TinyLibDraw.ml, with TinyKernel/libml/mlsys.c
  * providing its runtime and its system calls. The design is in
  * plan_tiny_windows.md.
  *

@@ -9,7 +9,7 @@ struct Node {
 
 struct Point {
 	short x;
-	long long y;
+	long y;
 	char name[5];
 };
 
@@ -44,14 +44,14 @@ main(int argc, char *argv[])
 	}
 	print(" %d\n", s);
 	p.x = -3;
-	p.y = 1LL << 35;
+	p.y = 1 << 25;
 	strcpy(p.name, "abcd");
 	q = &p;
-	print("%d %lld %s %d\n", q->x, q->y, q->name, sizeof(struct Point));
+	print("%d %ld %s %d\n", q->x, q->y, q->name, sizeof(struct Point));
 	for(i = 0; i < 3; i++){
 		pts[i].x = i;
 		pts[i].y = i * 1000;
 	}
-	print("%d %lld %d\n", pts[2].x, pts[1].y, sizeof(Node));
+	print("%d %ld\n", pts[2].x, pts[1].y);
 	exits(0);
 }

@@ -163,7 +163,7 @@ prints a float.
   and `arch/arm/`, and its own start).
 - `strtod.c` is a ninth of `c/` (256 lines), for one program's
   constants.
-- tiny-c -tm's own library, `tiny/TinyCRuntime/`, could be this
+- tiny-c's own library, `tiny/TinyCRuntime/`, could be this
   directory's too.
 
 ## Checked

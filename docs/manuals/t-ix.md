@@ -15,8 +15,9 @@ how each was decided ([plan_tiny_os.md](../plans/plan_tiny_os.md),
 [notes_tiny_kernel.md](../notes_tiny_kernel.md)).
 
 The other tiny programs (tiny-build, tiny-shell, tiny-editor, tiny-db,
-tiny-vcs) and the arm64 side (tiny-assembler, tiny-arm) run
-on the host or on a real architecture and are not covered here.
+tiny-vcs) run on the host and are not covered here
+([plan_tiny_self_hosting.md](../plans/plan_tiny_self_hosting.md)
+brings them to the machine).
 
 ## 1. The quick way
 
@@ -36,8 +37,8 @@ The script builds the tools with dune and calls them. By hand:
 |---|---|
 | `tiny-cpu f.tm...` | assembles, links and runs a program alone, the host answering its three system calls |
 | `tiny-machine k.tm p.tm...` | the same with the machine around the CPU: the first file is the kernel |
-| `tiny-c -tm -o f.tm f.c` | C to the machine's assembly |
-| `tiny-ml -tm -o f.tm f.ml` | ML to the machine's assembly |
+| `tiny-c -o f.tm f.c` | C to the machine's assembly |
+| `tiny-ml -o f.tm f.ml` | ML to the machine's assembly |
 | `tiny-mkfs` | t6's disk image (`tiny/TinyKernel/steps/t6/TinyMkfs.ml`) |
 | `tiny-prof p -k k.tm... -u p.tm...` | where the instructions went, by function, from a profile written by `tiny-cpu -prof p` or `tiny-machine -prof p` (`tiny/TinyProfiler.ml`; its `.mli` shows how it found what made `www`'s scrolling slow) |
 
@@ -86,7 +87,7 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 | tiny-c, tiny-ml | nothing: OCaml's standard library only |
 | tiny-editor | `unix` |
 | tiny-db | `unix`, `caps` |
-| tiny-cpu, tiny-arm, tiny-assembler, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
+| tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
 | tiny-machine, tiny-build, tiny-shell, tiny-utils | `lib_core/`, `fpath`, `caps`, `unix` |
 | tiny-vcs | the same, and `lib_crypto/` (SHA-1), `lib_compression/` (zlib) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
@@ -135,7 +136,7 @@ directories show the sources, `make clean` removes `_make/`.
 
 The steps are always the same three:
 
-    tiny-c -tm -o x.tm x.c          # or tiny-ml -tm, for ML
+    tiny-c -o x.tm x.c          # or tiny-ml, for ML
     tiny-machine -o kernel.img entry.tm ... x.tm     # a kernel: linked at 0
     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm   # a program
 
@@ -481,14 +482,14 @@ after the other, their labels in one namespace, the first at address
 0, where the machine starts. `-o` writes the result, an image: the
 memory's first bytes, with no header.
 
-### 6.2 C: `tiny-c -tm`
+### 6.2 C: `tiny-c`
 
 The arguments are on the stack, at `0(sp)`, `4(sp)` and so on; the
 result is in `r13`; the callee may change any register but `sp`.
 
 A program is linked after its runtime (`tiny/TinyCRuntime/`):
 
-    tiny-c -tm -o prog.tm prog.c
+    tiny-c -o prog.tm prog.c
     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm
     tiny-cpu ./prog one two
 
@@ -496,11 +497,11 @@ A program is linked after its runtime (`tiny/TinyCRuntime/`):
 `write`, `exits`, `print`, `sprint`, `malloc`, `free`, `strlen`,
 `strcpy`, `strcmp`, `memset` and `atoi`.
 
-### 6.3 ML: `tiny-ml -tm`
+### 6.3 ML: `tiny-ml`
 
 One file, no modules. Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
-`TinyMLRuntime/core.c`, compiled by `tiny-c -tm`, with a `main` that gives
+`TinyMLRuntime/core.c`, compiled by `tiny-c`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values.
 
@@ -689,7 +690,7 @@ page that waits for the mouse, the keys and the clock at once. For ML,
 ### 7.4 tiny-windows
 
 `tiny/TinyWindows.ml`, a program of TinyKernel.ml's in ML (compiled by
-tiny-ml -tm after `TinyLibDraw.ml`; `libml/mlsys.c` is an ML program's
+tiny-ml after `TinyLibDraw.ml`; `libml/mlsys.c` is an ML program's
 runtime and system calls), is the window system:
 
     ./tiny-machine -window tiny-kernel

@@ -1,7 +1,7 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
 ; TinyKernel.ml's assembly: what ML cannot say. Linked first (the
-; machine starts at 0). The functions follow tiny-c -tm's convention
+; machine starts at 0). The functions follow tiny-c's convention
 ; (the arguments at 0(sp), 4(sp)..., the result in r13, every register
 ; but sp the callee's), so the ML code calls them as externals, and
 ; the values they take and give are ML's: an integer n is 2n+1.

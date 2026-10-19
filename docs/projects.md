@@ -23,8 +23,8 @@ Three toolchains build ix, and each has its scope:
 - **The t-ix toolchain** (tiny-c, tiny-ml, tiny-cpu, tiny-machine)
   builds only what runs on the tiny machine: TinyKernel.ml, the steps
   before it (`tiny/TinyKernel/steps/`)
-  and their programs (tiny-windows and tetris among them, in ML). It does not build its own tools. Its arm64 side
-  (tiny-assembler) builds test programs only.
+  and their programs (tiny-windows and tetris among them, in ML). It does not build its own tools yet
+  ([plans/plan_tiny_self_hosting.md](plans/plan_tiny_self_hosting.md)).
 
 [manuals/t-ix.md](manuals/t-ix.md), section 2, has the details of the
 tiny side.
@@ -63,9 +63,9 @@ needing the next:
   compared with, and `make loc` counts them apart.
 - **tiny-ml** has none of this: its core library is
   `tiny/TinyLibCore.ml`, a prelude, its runtime
-  `tiny/TinyMLRuntime/core.c`, and the C library under its arm64
-  programs is goken's own, taken from `~/goken` by the tests, not
-  `lib_core/libc/`. The next picture is t-ix's side.
+  `tiny/TinyMLRuntime/core.c`, and the C library under it is
+  tiny-c's own, `tiny/TinyCRuntime/`, not `lib_core/libc/`. The next
+  picture is t-ix's side.
 
 ## What a tiny program stands on
 
@@ -158,8 +158,8 @@ globals) is not told apart by piece.
   emulators themselves. They run on Linux.
 - **Guest code, not OCaml.** What an emulated machine runs: ARM
   executables for mini-5i and mini-qemu (from mini-cc and mini-ld, or
-  from goken's compilers, or kernels like xv6 and 9pi); arm64
-  executables from tiny-assembler for tiny-arm; `.tm` assembly and C compiled by `tiny-c -tm` for
+  from goken's compilers, or kernels like xv6 and 9pi); `.tm`
+  assembly, and C and ML compiled by `tiny-c` and `tiny-ml`, for
   tiny-cpu and tiny-machine. Only the last kind lives mostly in ix, in
   `tiny/TinyKernel/steps/` and the tests.
 
@@ -186,7 +186,6 @@ of our own, designed to teach, whose guest code ix writes itself:
 |                      | CPU, user mode                        | machine, with devices, for a kernel |
 |----------------------|---------------------------------------|-------------------------------------|
 | real ARM, faithful   | mini-5i (`machine/`: arm32, arm64)    | mini-qemu (`raspberry/`: the Pi1, the Pi4; `./mini-pi`) |
-| real ARM, free       | tiny-arm (`TinyCPUArm.ml`: arm64)     | none: mini-qemu's is the one |
 | our own, free        | tiny-cpu (`TinyCPU.ml`, `TinyMachineCPU.ml`) | tiny-machine (`TinyMachine.ml`; `./tiny-machine tiny-kernel`, `t6`, `v0`) |
 
 Each machine, with what makes its guest code and what runs on it:
@@ -195,15 +194,14 @@ Each machine, with what makes its guest code and what runs on it:
 |--------------|---------------------------------------------------|-----------------|
 | mini-5i      | mini-cc, mini-asm, mini-ld (goken's 5c/5l, 7c/7l the reference) | Linux and Plan 9 user programs, arm and arm64 |
 | mini-qemu    | outside ix: the kernels' own builds               | xv6 (`~/xv6`), 9pi (`~/principia`), as QEMU runs them |
-| tiny-arm     | tiny-assembler; tiny-c and tiny-ml through it     | their arm64 Linux executables, goken's libc included (`tiny/tests/TinyCPUArm_tests/`, `tiny/tests/TinyC_tests/`) |
-| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c -tm` for C        | `.tm` programs; C programs with `TinyCRuntime/` |
+| tiny-cpu     | TinyMachineCPU's assembler; `tiny-c`, `tiny-ml`   | `.tm` programs; C programs with `TinyCRuntime/`, ML ones with `TinyMLRuntime/` |
 | tiny-machine | the same, plus csrr, csrw, eret                   | tiny-kernel, its steps (v0, t6) and their programs |
 
-tiny-assembler, tiny-c and tiny-ml (without `-tm`) are free variants
-of the real toolchain: they make arm64 Linux executables with goken's
-libc, for arm64 Linux, mini-5i and tiny-arm. The tiny side has one
-real architecture, arm64 (plans/plan_tiny_arm64.md); the mini side has
-arm32 too.
+The tiny side has no real architecture: tiny-c and tiny-ml had an
+arm64 back end, with tiny-assembler and tiny-arm
+(plans/done/plan_tiny_arm64.md), until
+plans/plan_tiny_self_hosting.md left tiny-machine their one target.
+The mini side has arm32 and arm64.
 
 ## The kernels
 
@@ -214,8 +212,8 @@ before tiny-kernel, kept; how they relate to the others:
 | kernel | what | in | runs on |
 |---|---|---|---|
 | v0 (`tiny/TinyKernel/steps/v0/`) | a page of kernel: traps, a timer, round robin, protection by a window; its four programs linked with it | TinyCPU assembly | tiny-machine |
-| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c -tm`, and a page of `.tm` | tiny-machine, its window relocating |
-| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml`) | the Kernel row's free variant (README's series): fork and exec, round robin, a partition a process, a waiting call a closure the scheduler retries, the files ML values in memory (no disk); a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML) and a Tetris in a window ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes_tiny_kernel.md) | ML, by `tiny-ml -tm`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
+| t6 (`tiny/TinyKernel/steps/t6/`) | a free kernel in C: spawn and no fork (descriptors given, none inherited), one kernel stack and calls that rerun, a partition a process, a FAT, a lottery | C, by `tiny-c`, and a page of `.tm` | tiny-machine, its window relocating |
+| TinyKernel.ml (tiny-kernel, `tiny/TinyKernel.ml`) | the Kernel row's free variant (README's series): fork and exec, round robin, a partition a process, a waiting call a closure the scheduler retries, the files ML values in memory (no disk); a screen its programs draw on by messages, a window system (`tiny/TinyWindows.ml`, in ML) and a Tetris in a window ([plans/done/plan_tiny_windows.md](plans/done/plan_tiny_windows.md)); [notes_tiny_kernel.md](notes_tiny_kernel.md) | ML, by `tiny-ml`, a page of `.tm`, 80 lines of C | tiny-machine, its window relocating |
 | *mini-9pi* | 9pi's twin, the Kernel row's mini program (README) | OCaml, with a thin C/asm shim | the Pi (mini-qemu, real boards) |
 | *mini-xv6* | mentioned by the author; not planned yet | | |
 
@@ -230,8 +228,7 @@ tested with.
 ## What comes from outside
 
 - **goken** (`~/goken`): principia's Plan 9 toolchain built for Linux,
-  the reference for mini-asm, mini-ld, mini-cc and the tests of
-  tiny-assembler and tiny-c.
+  the reference for mini-asm, mini-ld and mini-cc.
 - **principia** (`~/principia`): the books' C, and 9pi with its SD
   card image.
 - **xv6** (`~/xv6`): its Pi ports, booted by mini-qemu.

@@ -3,14 +3,14 @@
  * programs: TinyCPU.ml, the CPU run alone, its system calls answered
  * by the host; and TinyMachine.ml, the CPU with what a kernel needs
  * around it, its system calls traps. Knuth's road with MIX and MMIX:
- * when the machine is for teaching, design it; mini-5i (machine/) and
- * TinyCPUArm.ml emulate the machine history left us, this one the machine
- * fifty years of hindsight would draw.
+ * when the machine is for teaching, design it; mini-5i (machine/)
+ * emulates the machine history left us, this one the machine fifty
+ * years of hindsight would draw.
  *
  * Why an assembler, in a file about a machine: the machine is new, so
- * nothing else writes its words. TinyCPUArm.ml has none: its words are
- * TinyAssembler's, a real toolchain's; this one
- * has no toolchain to borrow, and a machine no one can program teaches
+ * nothing else writes its words. mini-5i has none: its words are
+ * mini-asm's and mini-ld's, a real toolchain's; this one has no
+ * toolchain to borrow, and a machine no one can program teaches
  * nothing. Programs by hand-encoded hex words would be the other way,
  * and MIX's lesson is that a machine for teaching comes with its
  * assembly language (MIXAL), the notation the book's programs are
@@ -71,7 +71,7 @@
  *
  * Who is around it:
  *
- *     .tm files: by hand (tiny-os v0), by tiny-c -tm, by tiny-ml -tm
+ *     .tm files: by hand (tiny-os v0), by tiny-c, by tiny-ml
  *                  |
  *     this file:   the assembler ([image]: the files one after the
  *                  other, their labels one name space) and the CPU
@@ -136,7 +136,7 @@
  * and the branch that uses it are two instructions joined by hidden
  * state, which an interrupt must save and which a processor that
  * runs instructions out of order must rename like any register;
- * TinyCPUArm's [add] computes four of them at each s-instruction.
+ * mini-5i's arm64 computes four of them at each s-instruction.
  * Without them (MIPS, Alpha, RISC-V, here) a branch reads two
  * registers, and a comparison kept for later is a value in a
  * register (slt). The price is on arithmetic wider than a register:

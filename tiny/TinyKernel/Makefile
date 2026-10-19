@@ -49,9 +49,9 @@
 #                     A few minutes
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
-# (TinyML's, by tiny-c -tm), the rows TinyKernelGraphics.ml draws by (draw.tm),
+# (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
-# characters of 8 by 16 bits), the kernel (tiny-ml -tm: memory.ml,
+# characters of 8 by 16 bits), the kernel (tiny-ml: memory.ml,
 # TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
 # TinyKernelFS.ml and ../TinyKernel.ml, one program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
@@ -99,7 +99,7 @@ all: $(O)/boot.img
 
 $(O)/kernel.tm: ../TinyLibStd.ml memory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $^
+	$(TML) -o $@ $^
 
 # the font's bytes, and k_font(), where they are (an ML integer)
 $(O)/font.tm: $(FONT)
@@ -115,20 +115,20 @@ $(O)/kernel.img: $(KERNEL)
 
 $(O)/libc.tm: $(L)/libc.c $(L)/libc.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 
 # a file in C: the kernel's runtime.c, a program of user/, or what a
 # program is linked with besides: libc/ for one in C (draw.c, net.c),
 # libml/ for one in ML (mlsys.c)
 $(O)/%.tm: %.c libc/user.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 
 $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/user/$*.tm
 
-# a program in ML: its files, below, compiled by tiny-ml -tm, with
+# a program in ML: its files, below, compiled by tiny-ml, with
 # mlsys.c, TinyML's runtime and the system calls as ML's externals,
 # which has the heap from 384 KB (windows, tiny-windows:
 # ../TinyWindows.ml, after ../TinyLibDraw.ml)
@@ -136,7 +136,7 @@ ML = windows bigmem www play square tetris calc temp rc utils ed emacs office tr
 MLBINS = windows square tetris calc temp rc utils ed emacs office troff
 $(patsubst %,$(O)/user/%.tm,$(ML)):
 	@mkdir -p $(@D)
-	$(TML) -tm -o $@ $^
+	$(TML) -o $@ $^
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
 $(patsubst %,$(O)/bin/%,$(MLBINS)): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/%.tm
 	@mkdir -p $(@D)
@@ -220,7 +220,7 @@ $(O)/bin/play: $(ULIB) $(O)/libml/mlsys.tm $(O)/user/play.tm
 # examples/ (not counted by make loc)
 $(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm
 	@mkdir -p $(@D)
 	$(CPU) -o $@ $(ULIB) $(O)/libc/draw.tm $(O)/user/paint.tm

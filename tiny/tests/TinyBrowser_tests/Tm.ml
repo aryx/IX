@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* Runs TinyBrowser.ml on tiny-cpu, built by tiny-ml -tm; it does what
+(* Runs TinyBrowser.ml on tiny-cpu, built by tiny-ml; it does what
  * Host.ml does on the host. It reads the page from the standard input
  * in messages of at most 1,000 bytes (what tiny-kernel's wire gives),
  * and prints the lines. This file is only for tiny-ml: tiny-ml has no

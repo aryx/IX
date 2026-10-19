@@ -8,7 +8,7 @@
  * a tool is built by OCaml on its own library for the host, and by
  * tiny-ml with this file given before it:
  *
- *   tiny-ml -tm -o sh.tm TinyLibStd.ml ... TinyShell.ml
+ *   tiny-ml -o sh.tm TinyLibStd.ml ... TinyShell.ml
  *
  * A file a program asks for, as TinyLibGUI, and not in the prelude:
  * tiny-ml compiles only the functions a program uses (TinyML.mli), so

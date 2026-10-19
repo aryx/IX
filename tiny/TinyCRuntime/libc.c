@@ -1,11 +1,11 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// The libc of tiny-c -tm's programs, compiled by tiny-c -tm: the part
+// The libc of tiny-c's programs, compiled by tiny-c: the part
 // of Plan 9's that libc.h declares, in the C TinyC takes.
 // print's verbs: %d %u %x %s %c %%, with l (ignored: a long is an int
 // here); no widths, no long long (TinyCPU is 32 bits). %u is a verb,
-// as in goken's libc (built without PLAN9PORT, its fmt.c), the
-// reference the tests compare with: %ud is the number, then a d. A
+// as in goken's libc (built without PLAN9PORT, its fmt.c) and the
+// host's printf, the tests' reference: %ud is the number, then a d. A
 // variadic function walks its arguments from its last named one: they
 // are in memory, 4 bytes each (start.tm).
 

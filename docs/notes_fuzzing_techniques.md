@@ -127,7 +127,9 @@ Before debugging the twin, check the reference. Real cases:
   (1): 5l and 7l write the ELF section table inside the data, whose end
   it overwrites when the data is large. The fix was a reference linked
   otherwise: `TinyC_test.sh`'s own, the program by `7c -O0 -S` and libc
-  by 7c, assembled by TinyAssembler. On `hello_libc`, goken's
+  by 7c, assembled by TinyAssembler (since 2026-10-19, with
+  TinyAssembler gone, by mini-asm and linked by mini-ld, which
+  `libc.sh` checks against 7l). On `hello_libc`, goken's
   executables print garbage for `args` and `pipe` for the same reason.
   Lesson inside the lesson: read the reference's known bugs before
   explaining a difference.

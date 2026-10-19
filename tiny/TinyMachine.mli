@@ -210,8 +210,8 @@
  * TinyMachineWeb.ml is the same front end for a web page.
  *
  * Where it stands: below it is TinyMachineCPU, the instructions; above
- * it are its kernels, TinyKernel (in ML, compiled by tiny-ml -tm) and
- * the steps before it (v0 in assembly, t6 in C compiled by tiny-c -tm).
+ * it are its kernels, TinyKernel (in ML, compiled by tiny-ml) and
+ * the steps before it (v0 in assembly, t6 in C compiled by tiny-c).
  * Its twins are machines that ix did not design: mini-qemu's Board and
  * Pi4. There, the same five ideas (modes, trap registers, a timer,
  * devices at addresses, an image loaded at a fixed place) have ARM's

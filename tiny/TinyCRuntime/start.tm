@@ -1,14 +1,14 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 ;
-; The runtime of tiny-c -tm's programs, what C cannot say: the start and
+; The runtime of tiny-c's programs, what C cannot say: the start and
 ; the system calls (the unsigned division is udivmod.tm). Linked first
 ; (the machine starts at 0), then udivmod.tm, then libc (libc.c,
-; compiled by tiny-c -tm), then the program (the Makefile):
+; compiled by tiny-c), then the program (the Makefile):
 ;
-;     tiny-c -tm -o prog.tm prog.c
+;     tiny-c -o prog.tm prog.c
 ;     tiny-cpu -o prog start.tm udivmod.tm libc.tm prog.tm && tiny-cpu ./prog one two
 ;
-; The convention is tiny-c -tm's: the arguments at 0(sp), 4(sp)...,
+; The convention is tiny-c's: the arguments at 0(sp), 4(sp)...,
 ; the result in r13, any register but sp free to the callee.
 
 ; tiny-cpu leaves argc at 0(sp) and argv at 4(sp): main's arguments

@@ -11,8 +11,6 @@ main(int argc, char *argv[])
 	short s;
 	unsigned short us;
 	long l;
-	vlong v;
-	uvlong uv;
 
 	i = 2147483647;
 	i = i + 1;
@@ -37,20 +35,12 @@ main(int argc, char *argv[])
 	for(j = 0; j < 31; j++)
 		l = l * 2;
 	print("%ld\n", l);
-	v = 1;
-	v = v << 40;
-	print("%lld\n", v + 3);
-	uv = 0;
-	uv = uv - 1;
-	print("%llud %llud\n", uv, uv / 10);
-	v = -123456789012LL;
-	print("%lld %lld\n", v / 1000, v % 1000);
 	i = 5;
 	i += 3; i -= 1; i *= 6; i /= 4; i %= 7; i <<= 3; i >>= 1; i &= 13; i |= 32; i ^= 5;
 	print("%d\n", i);
 	print("%d %d %d\n", ~5, !5, !0);
 	print("%d %d\n", (char)300, (uchar)(-1));
 	print("%d %d %d\n", 3 < 5, -1 < 1, (unsigned)-1 < 1);
-	print("%d\n", sizeof(int) + sizeof(long) + sizeof(vlong) + sizeof(char*));
+	print("%d\n", sizeof(int) + sizeof(long) + sizeof(short));
 	exits(0);
 }

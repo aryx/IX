@@ -71,7 +71,7 @@ type page = {
 }
 
 (* its image (w by h pixels) and where its border's corner is on the
- * screen; its shell's pid. (Three records: tiny-ml -tm makes one of
+ * screen; its shell's pid. (Three records: tiny-ml makes one of
  * nine fields at most, an expression being 11 registers deep.) *)
 type window = { image : int; w : int; h : int; mutable x : int; mutable y : int; pid : int; ends : ends; page : page }
 

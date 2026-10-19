@@ -44,7 +44,7 @@
 <text x="44" y="851" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">answers its calls)</text>
 <rect x="338" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program in ML, on tiny-machine</text>
-<text x="352" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">windows, calc, temp, tetris  (tiny-ml -tm)</text>
+<text x="352" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">windows, calc, temp, tetris  (tiny-ml)</text>
 <rect x="338" y="150" width="296" height="91" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="622" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-ml&#x27;s ML</text>
@@ -71,7 +71,7 @@
 <line x1="486" y1="514" x2="486" y2="532" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="534" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="557" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
-<text x="622" y="557" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c -tm</text>
+<text x="622" y="557" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
 <text x="352" y="578" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c: the allocator,</text>
 <text x="352" y="595" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">Cheney&#x27;s collector, strings, compare;</text>
 <text x="352" y="612" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/libml/mlsys.c</text>
@@ -90,7 +90,7 @@
 <text x="352" y="834" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-kernel, on tiny-machine</text>
 <rect x="646" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">A program in C, on tiny-machine</text>
-<text x="660" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">sh, ls, cat, paint, ping, get...  (tiny-c -tm)</text>
+<text x="660" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">sh, ls, cat, paint, ping, get...  (tiny-c)</text>
 <rect x="646" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="660" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The program</text>
 <text x="930" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C</text>
@@ -118,7 +118,7 @@
 <text x="660" y="834" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny-kernel, on tiny-machine</text>
 <rect x="954" y="86" width="296" height="50" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="108" font-size="16" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
-<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-kernel  (tiny-ml -tm, tiny-c -tm)</text>
+<text x="968" y="126" font-size="12" font-weight="normal" fill="#57606a" text-anchor="start" xml:space="preserve">tiny-kernel  (tiny-ml, tiny-c)</text>
 <rect x="954" y="150" width="296" height="74" rx="8" fill="#ffffff" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="173" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The kernel</text>
 <text x="1238" y="173" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">tiny-ml&#x27;s ML</text>
@@ -140,7 +140,7 @@
 <line x1="1102" y1="429" x2="1102" y2="447" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="449" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="472" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
-<text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c -tm</text>
+<text x="1238" y="472" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">C, by tiny-c</text>
 <text x="968" y="493" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyMLRuntime/core.c, the same;</text>
 <text x="968" y="510" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">included by TinyKernel/runtime.c (the</text>
 <text x="968" y="527" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">kernel&#x27;s memory, the console)</text>

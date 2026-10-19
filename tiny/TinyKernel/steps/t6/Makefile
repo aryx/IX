@@ -33,18 +33,18 @@ all: $(O)/kernel.img $(O)/fs.img
 
 $(O)/%.tm: %.c t6.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 
 $(O)/kernel.img: $(KERNEL)
 	$(MACHINE) -o $@ $(KERNEL)
 
 $(O)/libc.tm: ../../../TinyCRuntime/libc.c ../../../TinyCRuntime/libc.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 
 $(O)/user/%.tm: user/%.c libc/user.h
 	@mkdir -p $(@D)
-	$(TC) -tm -o $@ $<
+	$(TC) -o $@ $<
 
 $(O)/bin/%: $(ULIB) $(O)/user/%.tm
 	@mkdir -p $(@D)

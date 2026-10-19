@@ -7,8 +7,9 @@
 # calls, each value printed. No undefined behaviour the two compilers
 # could take differently: a divisor is never 0, a shift is by less than
 # the width, and the arithmetic wraps as the machine does. With --32,
-# no long long: programs for tiny-c -tm too (TinyCPU is 32 bits), whose
-# output must be arm64's.
+# no long long: programs for tiny-c (TinyCPU is 32 bits), whose output
+# must be the host's cc's (RECORD=1 TinyC_test.sh dir/*.c). Without it,
+# programs for mini-cc against 7c (languages/c/tests/simple.sh 7).
 # usage: TinyC_fuzz.py [--32] dir count [seed]
 import os, random, sys
 
@@ -56,8 +57,10 @@ def program(r):
     for v, t in zip(vs, tys):
         out.append("\t%s %s;" % (t, v))
     out.append("\tfor(i = 0; i < 8; i++) a[i] = i * 1000003 - 17;")
-    for v in vs:
-        out.append("\t%s = %s;" % (v, expr(r, vs[:1] + ["i"], 1)))
+    # (each from those before it: old: vs[:1], and x0 = x0 read a
+    # variable never set, which 7c and tiny-c happened to agree on)
+    for k, v in enumerate(vs):
+        out.append("\t%s = %s;" % (v, expr(r, vs[:k] + ["i"], 1)))
     for _ in range(r.randint(3, 8)):
         k = r.random()
         v = r.choice(vs)

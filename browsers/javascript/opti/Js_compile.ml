@@ -173,7 +173,7 @@ let rec expr (t : E.t) (e : A.expr) : code =
       fun s this ->
         match o s this with
         | Object { kind = Array a; _ } -> Number (Float.of_int a.length)
-        | String x -> Number (Float.of_int (Js_utf16.length x))
+        | String x -> Number (Float.of_int (Js_string.length x))
         | v -> E.get t v "length")
   | Member (o, k) -> let o = expr t o in fun s this -> E.get t (o s this) k
   (* o[k]: an array's item by a number at once, else the evaluator's *)

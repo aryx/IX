@@ -75,8 +75,8 @@
    them all in an array before it starts, which is what lets it look
    ahead for an arrow's "=>" at no cost. A string's escapes are made
    UTF-8 here (the escape of U+00E9, six characters in the text, is
-   two bytes in the token; half of a pair alone is kept as Js_utf16
-   says), so the rest of the engine sees no escape.
+   two bytes in the token: Js_string), so the rest of the engine sees
+   no escape.
 
    Reference: ECMAScript, section 12 (lexical grammar): 12.7 names and
    keywords, 12.8 punctuators, 12.9.3 numbers, 12.9.4 strings. *)

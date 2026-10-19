@@ -23,7 +23,7 @@
    replace with them. What is read:
 
      x  \.  \/  \n  \t  \uXXXX     a character (the strings are UTF-8,
-                                   read a character at a time: Js_utf16)
+                                   read a character at a time: Js_string)
      .                             any but a newline
      [abc] [a-z] [^0-9]            a set, ranges, its complement
      \d \w \s  \D \W \S            digits, word characters, spaces, and not
@@ -63,7 +63,7 @@
 
    Not read: classes of Unicode (\p{L}). The spans [exec] gives are
    bytes' offsets in the UTF-8 text; Js_builtins makes them the units
-   a script counts (Js_utf16).
+   a script counts (Js_string).
 
    Where it stands: [compile] is called for a /.../ literal (Js_eval,
    Js_compile) and for new RegExp (Js_builtins), [exec] by Js_builtins

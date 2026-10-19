@@ -25,7 +25,7 @@
    which has domains, so here [make init] is always one value and
    [parallel] is false. The interface is kept whole so that the
    engine's files are mini-chrome's line for line (Js_coroutine's
-   bodies running, the caches of Js_utf16), and so that the day a tab
+   bodies running, the caches of its scripts' texts), and so that the day a tab
    runs beside the window the globals are already marked.
 
    cs-history:

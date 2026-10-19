@@ -225,14 +225,9 @@ let tests =
           Alcotest.(check string) "not told yet" "[\"posted\"]" (value t "said");
           Browser_script.advance t 10.;
           Alcotest.(check string) "told after the script" "[\"posted\", \"hello true string\"]" (value t "said"));
-      Testo.create "a binary string: atob and btoa" (fun () ->
-          let t =
-            page
-              "<body><p id=p>é😀</p><script>var said = [\n\
-               btoa(String.fromCharCode(0, 200, 255)), atob(\"AMj/\").charCodeAt(1), atob(\"AMj/\").length, document.getElementById(\"p\").textContent.length]</script>"
-          in
-          Alcotest.(check string) "a byte a character in a binary string; a page's text in units"
-            "[\"AMj/\", 200, 3, 3]" (value t "said"));
+      Testo.create "base64: atob and btoa, of ASCII (a string is its UTF-8 bytes: Js_string)" (fun () ->
+          let t = page "<body><p id=p>é😀</p><script>var said = [btoa(\"hi!\"), atob(\"aGkh\"), document.getElementById(\"p\").textContent.length]</script>" in
+          Alcotest.(check string) "both ways; a page's text in bytes" "[\"aGkh\", \"hi!\", 6]" (value t "said"));
       Testo.create "the page's selection is none, and its text empty" (fun () ->
           let t = page "<body><script>var s = getSelection(); var said = [String(s), \"\" + s, s.isCollapsed, s.rangeCount, s.type]</script>" in
           Alcotest.(check string) "what a page asks before it takes a click for one" "[\"\", \"\", true, 0, \"None\"]" (value t "said"));

@@ -59,7 +59,7 @@ let parse (p : string) : node list list * int * (string * int) list =
   in
   (* \x: a class, or the character it stands for *)
   (* the code point of a character's UTF-8 bytes (its first one or two; beyond: large) *)
-  let code_point (s : string) : int = snd (Js_utf16.decode s 0) in
+  let code_point (s : string) : int = snd (Js_string.decode s 0) in
   let escape () : escape =
     if !pos >= n then raise (Bad "\\ at the end of the pattern");
     match next () with
@@ -183,7 +183,7 @@ let parse (p : string) : node list list * int * (string * int) list =
         | E_node nd -> [ nd ])
     (* a character beyond ASCII: all its bytes, one thing (é+ is é, é, é: not é's last byte again) *)
     | c when c >= '\x80' ->
-        let bytes, _ = Js_utf16.decode p (!pos - 1) in
+        let bytes, _ = Js_string.decode p (!pos - 1) in
         pos := !pos + bytes - 1;
         chars (String.sub p (!pos - bytes) bytes)
     | c -> [ Char c ]
@@ -211,13 +211,13 @@ let parse (p : string) : node list list * int * (string * int) list =
                 | E_node _ -> S_char 'k')
             (* a character beyond ASCII written as itself: its code point, all its bytes read *)
             | c when c >= '\x80' ->
-                let bytes, cp = Js_utf16.decode p (!pos - 1) in
+                let bytes, cp = Js_string.decode p (!pos - 1) in
                 pos := !pos + bytes - 1;
                 S_code cp
             | c -> S_char c
           in
           (* a bound is a code point: a set is of characters (a text is
-           * UTF-8, read a character at a time: Js_utf16) *)
+           * UTF-8, read a character at a time: Js_string) *)
           let code (part : set_part) : int = match part with S_char c -> Char.code c | S_code cp -> cp | S_item _ -> 0 in
           let range lo hi = [ Range (code lo, code hi) ] in
           (match lo with
@@ -230,7 +230,7 @@ let parse (p : string) : node list list * int * (string * int) list =
                   match next () with
                   | '\\' -> ( match escape () with E_char c -> S_char c | E_chars s -> S_code (code_point s) | _ -> S_char '-')
                   | c when c >= '\x80' ->
-                      let bytes, cp = Js_utf16.decode p (!pos - 1) in
+                      let bytes, cp = Js_string.decode p (!pos - 1) in
                       pos := !pos + bytes - 1;
                       S_code cp
                   | c -> S_char c
@@ -322,11 +322,11 @@ let exec (re : t) (s : string) (from : int) : (int * int) option array option =
       (* a whole character, all its bytes: a set is of characters, and
        * a dot takes one (a pair of halves as one, where the standard
        * without u has two: nobody means half an emoji) *)
-      | Any -> i < len && (re.dot_all || s.[i] <> '\n') && k (i + fst (Js_utf16.decode s i))
+      | Any -> i < len && (re.dot_all || s.[i] <> '\n') && k (i + fst (Js_string.decode s i))
       | Set (negated, items) ->
           i < len
           &&
-          let bytes, cp = Js_utf16.decode s i in
+          let bytes, cp = Js_string.decode s i in
           in_set items cp <> negated && k (i + bytes)
       | Start -> (i = 0 || (re.multiline && s.[i - 1] = '\n')) && k i
       | End -> (i = len || (re.multiline && s.[i] = '\n')) && k i

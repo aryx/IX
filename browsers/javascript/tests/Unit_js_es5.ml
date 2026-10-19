@@ -17,7 +17,7 @@ let tests =
       Testo.create "a search from a position: the second argument" (fun () ->
           (* Closure's "starts with": s.lastIndexOf(prefix, 0) == 0 -- the argument was ignored, and Gmail never knew which row was clicked *)
           check "lastIndexOf from a position, backwards" {|["r#thread-f".lastIndexOf("r", 0), "lssc#x".lastIndexOf("r", 0), "abcabc".lastIndexOf("c", 4), "abcabc".lastIndexOf("abc", 2), "abcabc".lastIndexOf("c")]|} "[0, -1, 2, 0, 5]";
-          check "a string's includes, startsWith, endsWith" {|["abc".includes("a", 1), "abc".startsWith("b", 1), "abc".endsWith("b", 2), "abc".startsWith(""), "aéb".endsWith("é", 2)]|} "[false, true, true, true, true]";
+          check "a string's includes, startsWith, endsWith" {|["abc".includes("a", 1), "abc".startsWith("b", 1), "abc".endsWith("b", 2), "abc".startsWith(""), "aéb".endsWith("é", 3)]|} "[false, true, true, true, true]";
           check "an array's indexOf, lastIndexOf, includes" {|[[1, 2, 1, 2].lastIndexOf(2, 2), [1, 2, 1, 2].lastIndexOf(1, -2), [1, 2].indexOf(1, 1), [1, 2, 1].indexOf(1, -1), [1, 2, 3].includes(1, 1), [NaN].includes(NaN), [NaN].indexOf(NaN)]|}
             "[1, 2, -1, 2, false, true, -1]");
       Testo.create "prototypes, new, instanceof" (fun () ->

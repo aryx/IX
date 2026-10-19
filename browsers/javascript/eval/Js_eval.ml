@@ -457,7 +457,7 @@ and iterate (t : t) (v : value) (f : value -> bool) : unit =
   match v with
   | Object ({ kind = Array _; _ } as o) -> each (array_items o)
   (* a string's characters, a pair of halves as one (for-of, a spread, Array.from) *)
-  | String str -> each (List.map (fun cp -> String (Js_utf16.of_code_point cp)) (Js_utf16.code_points str))
+  | String str -> each (List.map (fun cp -> String (Js_string.of_code_point cp)) (Js_string.code_points str))
   | Rope r -> iterate t (String (flatten r)) f
   | Object _ -> (
       match get t v "@@iterator" with

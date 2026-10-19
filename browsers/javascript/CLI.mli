@@ -26,7 +26,7 @@
  *        |                           closures at its first call
  *        |-- Js_value, Js_props      a value; an object's properties and
  *        |                           its chain of prototypes
- *        |-- Js_operators, Js_utf16  + and ==, the conversions; a string
+ *        |-- Js_operators, Js_string  + and ==, the conversions; a string
  *        |                           counted in UTF-16's units
  *        |-- Js_builtins, Js_globals String, Array, Math, Map, Reflect...
  *        |-- Js_prelude              the library's part written in

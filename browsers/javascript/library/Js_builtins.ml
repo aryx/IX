@@ -109,7 +109,7 @@ let match_array (re : Js_regexp.t option) (s : string) (spans : (int * int) opti
       List.iter (fun (name, i) -> set_own groups name (List.nth texts i)) names;
       set_own a "groups" (Object groups)
   | _ -> set_own a "groups" Undefined);
-  set_own a "index" (Number (float_of_int (match spans.(0) with Some (i, _) -> Js_utf16.unit_of s i | None -> 0)));
+  set_own a "index" (Number (float_of_int (match spans.(0) with Some (i, _) -> Js_string.unit_of s i | None -> 0)));
   set_own a "input" (String s);
   Object a
 
@@ -170,13 +170,12 @@ let string_methods ~(call : value -> this:value -> value list -> value) ~(regexp
         compile (Buffer.contents b) ""
   in
   let def name f = set_own o name (fn name (fun ~this args -> f (this_string this) args)) in
-  (* a string is counted in UTF-16's units, and kept in UTF-8's bytes
-   * (Js_utf16): an index a script gives is made a byte's ([byte]), one
-   * it is given a unit's ([units]); for ASCII both are the same *)
-  let len = Js_utf16.length and cut = Js_utf16.sub and byte = Js_utf16.byte_of in
-  let units s i = if i < 0 then i else Js_utf16.unit_of s i in
-  def "toUpperCase" (fun s _ -> String (Js_utf16.recased ~upper:true s));
-  def "toLowerCase" (fun s _ -> String (Js_utf16.recased ~upper:false s));
+  (* a string is counted in its UTF-8 bytes (Js_string): [byte] and
+   * [units] are the same index, kept within the string *)
+  let len = Js_string.length and cut = Js_string.sub and byte = Js_string.byte_of in
+  let units s i = if i < 0 then i else Js_string.unit_of s i in
+  def "toUpperCase" (fun s _ -> String (Js_string.recased ~upper:true s));
+  def "toLowerCase" (fun s _ -> String (Js_string.recased ~upper:false s));
   def "slice" (fun s args ->
       let n = len s in
       let a = relative (int_arg args 0 ~default:0) n and b = relative (int_arg args 1 ~default:n) n in
@@ -233,7 +232,7 @@ let string_methods ~(call : value -> this:value -> value list -> value) ~(regexp
       Number (float_of_int (units s (go (min from (String.length s - String.length needle))))));
   def "charCodeAt" (fun s args ->
       let i = int_arg args 0 ~default:0 in
-      Number (match Js_utf16.unit s i with -1 -> nan | u -> float_of_int u));
+      Number (match Js_string.unit s i with -1 -> nan | u -> float_of_int u));
   def "substr" (fun s args ->
       let n = len s in
       let a = relative (int_arg args 0 ~default:0) n in
@@ -306,7 +305,7 @@ let string_methods ~(call : value -> this:value -> value list -> value) ~(regexp
  * indices (a jQuery object, a proxy of an array, a string's letters) *)
 let like_array ~(get : value -> string -> value) (v : value) : value list =
   match v with
-  | Object { kind = Array _; _ } | String _ | Undefined | Null -> ( match v with Object a -> array_items a | String s -> List.init (Js_utf16.length s) (fun i -> String (Js_utf16.sub s i (i + 1))) | _ -> [])
+  | Object { kind = Array _; _ } | String _ | Undefined | Null -> ( match v with Object a -> array_items a | String s -> List.init (Js_string.length s) (fun i -> String (Js_string.sub s i (i + 1))) | _ -> [])
   | v ->
       let n = match get v "length" with Number n when n > 0. && n < 1e7 -> int_of_float n | _ -> 0 in
       List.init n (fun i -> get v (string_of_int i))
@@ -646,11 +645,11 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
     let re = regexp_of this in
     let o = match this with Object o -> o | _ -> assert false in
     let moves = Js_regexp.global re || Js_regexp.sticky re in
-    (* lastIndex is a script's: in units (Js_utf16), the engine's in bytes *)
+    (* lastIndex is a script's, the engine's in bytes: the same here (Js_string) *)
     let from = if moves then int_of_float (to_number ((match (get_own o "lastIndex") with Some v_ -> v_ | None -> (Number 0.)))) else 0 in
-    match if from > Js_utf16.length s then None else Js_regexp.exec re s (Js_utf16.byte_of s from) with
+    match if from > Js_string.length s then None else Js_regexp.exec re s (Js_string.byte_of s from) with
     | Some spans ->
-        (if moves then match spans.(0) with Some (_, e) -> set_own o "lastIndex" (Number (float_of_int (Js_utf16.unit_of s e))) | None -> ());
+        (if moves then match spans.(0) with Some (_, e) -> set_own o "lastIndex" (Number (float_of_int (Js_string.unit_of s e))) | None -> ());
         Some spans
     | None ->
         if moves then set_own o "lastIndex" (Number 0.);
@@ -678,7 +677,8 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
    * it back: data/prelude/library.js). Number(5) alone is the value *)
   let boxed (this : value) (v : value) : value = (match this with Object ({ kind = Plain; _ } as o) -> set_own o "@@primitive" v | _ -> ()); v in
   constructor "String" (fun ~this args -> boxed this (String (match args with [] -> "" | v :: _ -> to_string v))) strings
-    [ ("fromCharCode", fn "fromCharCode" (fun ~this:_ args -> String (Js_utf16.of_units (List.map (fun v -> (match to_number v with n when Float.is_finite n -> int_of_float n | _ -> 0) land 0xFFFF) args)))) ];
+    (* a number a code point, whole: no unit of 16 bits here (Js_string) *)
+    [ ("fromCharCode", fn "fromCharCode" (fun ~this:_ args -> String (Js_string.of_units (List.map (fun v -> (match to_number v with n when Float.is_finite n -> int_of_float n | _ -> 0) land 0x1FFFFF) args)))) ];
   constructor "Number" (fun ~this args -> boxed this (Number (match args with [] -> 0. | v :: _ -> to_number v))) numbers [];
   (* new Function("a", "b", "return a + b"): its last argument
    * the body, those before its parameters; a function of the global

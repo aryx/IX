@@ -16,7 +16,7 @@ author's mini-chrome's <path> (its 8af888e)`).
 | directory | modules | lines | what |
 |---|---|---:|---|
 | `parsing/` | `Js_lexer`, `Js_ast`, `Js_parse` | 1,589 | the tokens (a newline remembered, for the semicolons not written); the tree; statements by recursive descent, expressions by Pratt's binding powers |
-| `values/` | `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Mini_opti`, `Per_domain` | 963 | a value, an object and its prototype, the conversions; a string in UTF-16's units; the switch of the optimized paths |
+| `values/` | `Js_value`, `Js_props`, `Js_operators`, `Js_string`; `Mini_opti`, `Per_domain` | 817 | a value, an object and its prototype, the conversions; a string as its UTF-8 bytes; the switch of the optimized paths |
 | `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_coroutine` | 1,615 | the tree walked: scopes, closures, classes, exceptions, a budget of steps; an async function stopped at an await (a thread) |
 | `opti/` | `Js_quicken`, `Js_compile` | 547 | optimizations, not in m-ix's count (`docs/loc.md`): a copy of the tree with each name's place; a function's body compiled to closures. Each tells `Js_eval` of itself when the program starts (`Js_eval.quickener`, `compiler`): the engine runs the same without them, slower |
 | `library/` | `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `Js_prelude` | 2,507 | String, Array, Math, Date, Map, Set, Symbol, Proxy, JSON, promises, regular expressions by backtracking; `Js_prelude`: mini-chrome's `data/prelude/library.js` in a string (541 lines; 472 since `DataView` was cut) |
@@ -109,5 +109,15 @@ cooperative.
   loads none of Wikipedia's scripts -- but calling a generator throws
   "not supported here" (`Js_eval`'s generator, its coroutine and its
   iterator gone). No site of the coverage calls one.
-- Kept, by the coverage: a direct `eval` (4 lines), `Js_utf16`.
+- **A string is its UTF-8 bytes** (2026-10-19, `plan_browser.md`, C;
+  the author: "let's remove JS_utf16 if in practice mini-netscape still
+  display correctly most pages using accents"): `Js_string` in the
+  place of `Js_utf16` (UTF-16's units over UTF-8's bytes, for Gmail's
+  startup), 200 lines to 60. "é".length is 2, charCodeAt a byte;
+  for-of, Array.from and a pattern's dot still take characters;
+  case changes ASCII's letters only; atob and btoa are right for ASCII
+  alone. The French, German, Spanish, Polish and Japanese Wikipedias,
+  and the five sites, the same pictures both ways. Its tests:
+  `Unit_js_string`, the UTF-16 ones gone.
+- Kept, by the coverage: a direct `eval` (4 lines).
 - 32-bit arm (ints of 31 bits): not tried.

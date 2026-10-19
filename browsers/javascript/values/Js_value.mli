@@ -32,12 +32,10 @@
    properties are OCaml functions reading and changing the page (Js_eval
    calls [get] and [set] where it would look in the table).
 
-   A string is OCaml's, UTF-8, as the rest of the browser's text. Its
-   [length] and indexes were once its bytes' ("é".length was 2 where
-   JavaScript, counting UTF-16 units, says 1), right while the pages
-   were ASCII where it mattered; they are now counted as the language
-   says, over the same bytes: Js_utf16, and its interface tells what
-   page it took.
+   A string is OCaml's, UTF-8, as the rest of the browser's text, and
+   its [length] and indexes are its bytes' ("é".length is 2 where
+   JavaScript, counting UTF-16 units, says 1): Js_string, whose
+   interface tells why.
 
    How the types hold one another ([value], [obj], [kind] below):
 
@@ -123,7 +121,7 @@ type value =
   | Symbol of string
   | Object of obj
 
-and rope = { mutable pieces : pieces; size : int; (* its bytes *) units : int (* its length, as a script counts it: Js_utf16 *) }
+and rope = { mutable pieces : pieces; size : int; (* its bytes *) units : int (* its length, as a script counts it: Js_string *) }
 and pieces = Flat of string | Cat of rope * rope
 
 and obj = {

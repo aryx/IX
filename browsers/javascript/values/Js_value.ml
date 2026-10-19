@@ -96,10 +96,9 @@ let rope_from = 1024
 let join (a : value) (b : value) : value =
   let size = function String s -> String.length s | Rope r -> r.size | _ -> 0 in
   let n = size a + size b in
-  let piece = function String s -> { pieces = Flat s; size = String.length s; units = Js_utf16.length s } | Rope r -> r | _ -> { pieces = Flat ""; size = 0; units = 0 } in
+  let piece = function String s -> { pieces = Flat s; size = String.length s; units = Js_string.length s } | Rope r -> r | _ -> { pieces = Flat ""; size = 0; units = 0 } in
   if n < rope_from || not !Mini_opti.enabled then
-    (* (two halves of a pair that meet are their character: Js_utf16) *)
-    String (Js_utf16.seam (match flat a with String s -> s | _ -> "") (match flat b with String s -> s | _ -> ""))
+    String (Js_string.seam (match flat a with String s -> s | _ -> "") (match flat b with String s -> s | _ -> ""))
   else if size a = 0 then b
   else if size b = 0 then a
   else

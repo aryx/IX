@@ -8,7 +8,7 @@ DIRS=. values parsing eval opti library $TOP/lib_playground/random
 INCLUDES=-I . -I values -I parsing -I eval -I opti -I library -I $TOP/lib_playground/random $STDI
 # (each before the ones that name it; Js_quicken and Js_compile, opti/'s,
 # after Js_eval, which they tell of themselves when the program starts)
-JS=Lehmer Mini_opti Per_domain Js_ast Js_lexer Js_parse Js_utf16 Js_value Js_props Js_operators Js_scope Js_frame \
+JS=Lehmer Mini_opti Per_domain Js_ast Js_lexer Js_parse Js_string Js_value Js_props Js_operators Js_scope Js_frame \
  Js_regexp Js_json Js_coroutine Js_promise Js_builtins Js_globals Js_prelude Js_eval Js_quicken Js_compile
 LIB=$JS CLI
 LIBOBJS=${LIB:%=$D/%.$O}

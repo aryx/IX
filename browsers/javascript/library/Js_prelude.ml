@@ -66,8 +66,8 @@
    Latin letters and no other alphabet's order, normalize changes
    nothing, fround does not round, a BigInt is a float and loses what
    is past 2^53, and Date has no zone but UTC. (A string's at and
-   codePointAt do count UTF-16's units, as the language says: they
-   are over charAt and charCodeAt, which are Js_utf16's.)
+   codePointAt count its UTF-8 bytes, as charAt and charCodeAt do
+   here: Js_string's.)
 
    Reference: ECMAScript 2016 to 2024, the sections of each method;
    github.com/zloirock/core-js for how carefully it can be done. *)
@@ -149,16 +149,8 @@ let text = {prelude|
   });
   def(S, "trimEnd", function () { return this.replace(/\s+$/, ""); });
   def(S, "trimRight", S.trimEnd);
-  // a string is UTF-16's units (Js_utf16): a character beyond the
-  // first 65,536 is two of them, a high half then a low one
-  def(S, "codePointAt", function (i) {
-    i = i || 0;
-    var hi = this.charCodeAt(i);
-    if (hi !== hi) return undefined;
-    if (hi < 0xd800 || hi > 0xdbff) return hi;
-    var lo = this.charCodeAt(i + 1);
-    return lo >= 0xdc00 && lo <= 0xdfff ? 0x10000 + ((hi - 0xd800) << 10) + (lo - 0xdc00) : hi;
-  });
+  // a string is its UTF-8 bytes here (Js_string): a byte's number
+  def(S, "codePointAt", function (i) { var c = this.charCodeAt(i || 0); return c === c ? c : undefined; });
   def(S, "normalize", function () { return String(this); });
   // case counts only between two words otherwise the same (not a
   // dictionary's: an accented letter sorts by its number)
@@ -174,15 +166,13 @@ let text = {prelude|
     while ((m = r.exec(this)) !== null) { all.push(m); if (m[0] === "") r.lastIndex++; }
     return all[Symbol.iterator]();
   });
+  // (fromCharCode takes a code point whole here: Js_string)
   def(String, "fromCodePoint", function () {
-    var units = [];
     for (var i = 0; i < arguments.length; i++) {
       var c = Number(arguments[i]);
       if (!(c >= 0 && c <= 0x10ffff) || c !== Math.floor(c)) throw new RangeError("Invalid code point " + arguments[i]);
-      if (c < 0x10000) units.push(c);
-      else { c -= 0x10000; units.push(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff)); }
     }
-    return String.fromCharCode.apply(null, units);
+    return String.fromCharCode.apply(null, arguments);
   });
 
   def(String, "raw", function (strings) {

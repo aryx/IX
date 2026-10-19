@@ -1366,3 +1366,37 @@ cut: generators (Wikipedia's scripts declare two `function*`), the
 Left of A and B: `Js_ast`'s printers, `Cors`, more of the preludes
 (what the five sites never call), then B's smaller language, sized
 by the coverage run again on these files (`coverage_ix.sh`).
+
+### C: degrade, don't fail (2026-10-19)
+
+The author: "is there a way where we could reduce the langage and API
+while still being able to get some of the scripts running so at least
+the site looks mostly the same (does not have to be equal) ... maybe
+there is a way to continue running a script even if some API are not
+provided to at least get some of the result from the script?"; then
+"let's do it".
+
+What stops a cut today is all or nothing: one construct the parser
+does not know and the whole script is lost (generators stay because
+Wikipedia's scripts declare two `function*`, never called); one DOM
+method missing and the handler or the script ends. So, in order:
+
+1. **Parse recovery**, for a page's scripts only (not `eval`, not
+   mini-node, not the tests): a function whose body does not parse is
+   kept as one that throws "not supported here" when called, the
+   parser going on after its closing brace; a top-level statement
+   that does not parse is skipped to its end. Each said in the console.
+2. **Lenient host calls**: a method a host object (an element,
+   `document`, `window`) does not have, called, does nothing and gives
+   undefined, said once (-v's "missing:"). The language's own
+   objects keep their TypeError, and `typeof el.x === "function"`
+   stays false, so a library's feature test takes its fallback.
+3. **Cuts by what they cost the page**: generators first (Wikipedia
+   must still run its scripts), then `Proxy` and `Reflect`, typed
+   arrays and the rest of the table above, the preludes in ES5.
+4. **"Mostly the same"**: `sites.sh` gives the share of pixels that
+   differ from the reference and the two pictures side by side, where
+   it gave an equality.
+
+Estimate: `javascript/` and `webapi/` from about 9,800 lines of .ml to
+6,000-7,000, `browsers/` about 16,000-17,000.

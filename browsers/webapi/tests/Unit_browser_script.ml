@@ -276,9 +276,9 @@ let tests =
                var get = function (id) { return document.getElementById(id) }, i = get(\"i\"), p = get(\"p\");\n\
                var before = [i.oninput, \"onclick\" in p, p.onclick];\n\
                p.onclick = function () {};\n\
-               var said = [i.form === get(\"f\"), get(\"b\").form.id, get(\"o\").form.id, typeof p.form, before, typeof p.onclick, document.prerendering]</script>"
+               var said = [i.form === get(\"f\"), get(\"b\").form.id, get(\"o\").form.id, typeof p.form, before, typeof p.onclick]</script>"
           in
-          Alcotest.(check string) "the form around, or the one named; null until set" "[true, \"f\", \"g\", \"undefined\", [null, true, null], \"function\", false]" (value t "said"));
+          Alcotest.(check string) "the form around, or the one named; null until set" "[true, \"f\", \"g\", \"undefined\", [null, true, null], \"function\"]" (value t "said"));
       Testo.create "another document, as a sanitizer makes and goes through one (DOMPurify's ways)" (fun () ->
           let t =
             page

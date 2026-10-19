@@ -250,27 +250,6 @@ let text = {prelude|
     abort(reason) { this.signal._abort(reason); }
   });
 
-  // a copy all the way down: arrays, plain objects, dates, maps and
-  // sets; a function cannot be copied, as the standard has it
-  global("structuredClone", function (value) {
-    var seen = new Map();
-    function copy(v) {
-      if (typeof v === "function") throw new Error("DataCloneError: a function could not be cloned");
-      if (v === null || typeof v !== "object") return v;
-      if (seen.has(v)) return seen.get(v);
-      var out;
-      if (Array.isArray(v)) { out = []; seen.set(v, out); v.forEach(function (x, i) { out[i] = copy(x); }); return out; }
-      if (v instanceof Date) return new Date(v.getTime());
-      if (v instanceof Map) { out = new Map(); seen.set(v, out); v.forEach(function (x, k) { out.set(copy(k), copy(x)); }); return out; }
-      if (v instanceof Set) { out = new Set(); seen.set(v, out); v.forEach(function (x) { out.add(copy(x)); }); return out; }
-      out = {}; seen.set(v, out);
-      Object.keys(v).forEach(function (k) { out[k] = copy(v[k]); });
-      return out;
-    }
-    return copy(value);
-  });
-
-  global("reportError", function (e) { console.error("Uncaught " + (e && e.stack ? e.name + ": " + e.message : e)); });
   global("requestIdleCallback", function (f) {
     return setTimeout(function () { f({ didTimeout: false, timeRemaining: function () { return 50; } }); }, 1);
   });
@@ -288,23 +267,6 @@ let text = {prelude|
     }
   });
 
-  // Request (the Fetch Standard): what fetch is asked, as a value --
-  // an address, a method, headers, a body -- that can be made from
-  // another with something changed
-  global("Request", class Request {
-    constructor(input, init) {
-      var from = input instanceof Request ? input : null;
-      init = init || {};
-      this.url = from ? from.url : new URL(String(input), location.href).href;
-      this.method = String(init.method || (from ? from.method : "GET")).toUpperCase();
-      this.headers = new Headers(init.headers || (from ? from.headers : undefined));
-      this.body = init.body !== undefined ? init.body : from ? from.body : null;
-      this.credentials = init.credentials || (from ? from.credentials : "same-origin");
-      this.mode = init.mode || (from ? from.mode : "cors");
-      this.signal = init.signal || (from ? from.signal : new AbortController().signal);
-    }
-    clone() { return new Request(this); }
-  });
   // what a page asks before it measures itself: none of it is measured here
   if (typeof PerformanceObserver === "function" && !PerformanceObserver.supportedEntryTypes) PerformanceObserver.supportedEntryTypes = [];
 
@@ -408,7 +370,6 @@ let text = {prelude|
   // still compared with -- "x === document.all" must not be true of
   // an x that is undefined, which it is if there is no such thing
   getter(D, "all", function () { return this.querySelectorAll("*"); });
-  getter(D, "fullscreenEnabled", function () { return false; });
   // CSSStyleSheet: a <style>'s sheet (below, el.sheet), its rules
   // added one at a time. (Not here: one made by a script and put on the
   // page by document.adoptedStyleSheets, a component library's way.)
@@ -429,7 +390,6 @@ let text = {prelude|
     P.deleteRule = function (index) { this._rules.splice(index, 1); this._sync(); };
     g.CSSStyleSheet = CSSStyleSheet;
   })();
-  getter(D, "fonts", function () { return { ready: Promise.resolve(), status: "loaded", addEventListener: nothing, removeEventListener: nothing, load: function () { return Promise.resolve([]); }, check: function () { return true; } }; });
   method(D, "importNode", function (node, deep) { return node.cloneNode(deep); });
   method(D, "adoptNode", function (node) { return node; });
   method(D, "getSelection", function () { return getSelection(); });
@@ -560,16 +520,8 @@ let text = {prelude|
    "transitionend", "beforeinput", "paste", "copy", "cut", "dragstart", "drop"].forEach(function (name) {
     getter(E, "on" + name, function () { return null; });
   });
-  getter(E, "popoverTargetElement", function () { return null; });
-  getter(D, "prerendering", function () { return false; });
   method(E, "isSameNode", function (other) { return this === other; });
   method(E, "isEqualNode", function (other) { return !!other && this.outerHTML === other.outerHTML; });
-  method(E, "checkVisibility", function () { return true; });
-  method(E, "getAnimations", function () { return []; });
-  method(E, "requestFullscreen", function () { return Promise.reject(new TypeError("fullscreen is not supported")); });
-  method(E, "setPointerCapture", nothing);
-  method(E, "releasePointerCapture", nothing);
-  method(E, "hasPointerCapture", function () { return false; });
   // an <svg>'s point and matrix: how a program turns the pointer's
   // place in the window into its drawing's units,
   // pt.matrixTransform(svg.getScreenCTM().inverse()) -- for an svg

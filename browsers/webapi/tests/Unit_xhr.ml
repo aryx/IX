@@ -91,12 +91,12 @@ let tests =
           let t =
             page
               {|fetch("a.json", { headers: { Accept: "application/json", Cookie: "stolen=1" } });
-                fetch(new Request("b.json", { headers: new Headers({ "X-Requested-With": "XMLHttpRequest" }) }));
+                fetch("b.json", { headers: new Headers({ "X-Requested-With": "XMLHttpRequest" }) });
                 const x = new XMLHttpRequest(); x.open("GET", "c.json"); x.setRequestHeader("Accept", "text/plain"); x.send();
                 fetch("http://other.test/d.json", { headers: { Accept: "*/*" } });|}
           in
           Alcotest.(check (list (list (pair string string))))
-            "an object's, a Request's Headers, setRequestHeader's; Origin first to another site"
+            "an object's, a Headers, setRequestHeader's; Origin first to another site"
             [ [ ("Accept", "application/json") ]; [ ("x-requested-with", "XMLHttpRequest") ]; [ ("Accept", "text/plain") ]; [ ("Origin", "http://site.test"); ("Accept", "*/*") ] ]
             (List.map (fun (r : Script_types.request) -> r.said) (Browser_script.take_requests t)));
       Testo.create "a body of bytes is sent as bytes" (fun () ->

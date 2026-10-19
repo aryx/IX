@@ -392,8 +392,7 @@ let install ~(call : value -> this:value -> value list -> value) ~(lookup : stri
   set_own typed "prototype" (Object (new_object ()));
   List.iter
     (fun name ->
-      (* its own prototype, an array's behind it: x instanceof Uint8Array,
-       * and where the prelude puts buffer and byteLength *)
+      (* its own prototype, an array's behind it: x instanceof Uint8Array *)
       let proto = new_object () in
       (match lookup "Array" with Some (Object a) -> ( match get_own a "prototype" with Some (Object p) -> proto.proto <- Some p | _ -> ()) | _ -> ());
       let of_kind (v : value) = (match v with Object a -> a.proto <- Some proto | _ -> ()); v in
@@ -402,18 +401,6 @@ let install ~(call : value -> this:value -> value list -> value) ~(lookup : stri
             match arg args 0 with
             | Number n -> of_kind (array (List.init (max 0 (int_of_float n)) (fun _ -> Number 0.)))
             | Object ({ kind = Array _; _ } as a) -> of_kind (array (array_items a))
-            (* over a buffer (the prelude's ArrayBuffer: its bytes an
-             * array): the bytes themselves if all are asked for, a
-             * view as it should be; else a copy of the part *)
-            | Object b when get_own b "_bytes" <> None -> (
-                match (get_own b "_bytes", arg args 1, arg args 2) with
-                | Some (Object _ as bytes), (Undefined | Number 0.), Undefined -> of_kind bytes
-                | Some (Object bytes), from, len ->
-                    let all = Array.of_list (array_items bytes) in
-                    let from = match from with Number f -> int_of_float f | _ -> 0 in
-                    let len = match len with Number l -> int_of_float l | _ -> Array.length all - from in
-                    of_kind (array (Array.to_list (Array.sub all (max 0 from) (max 0 (min len (Array.length all - from))))))
-                | _ -> of_kind (array []))
             | _ -> of_kind (array []))
       in
       (match c with

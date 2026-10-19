@@ -42,7 +42,7 @@ let make (t : t) (o : obj) : unit =
       headers := (str (arg args 0), str (arg args 1)) :: !headers;
       Undefined));
   set "send" (fn "send" (fun args ->
-      let post = match arg args 0 with Undefined | Null -> None | body -> Some (!content_type, Script_fetch.body_bytes t body) in
+      let post = match arg args 0 with Undefined | Null -> None | body -> Some (!content_type, Script_fetch.body_bytes body) in
       let done_ (result : (answer, string) result) : unit =
         (match result with
         | Ok a ->

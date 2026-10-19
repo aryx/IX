@@ -13,7 +13,7 @@
    run in every engine before any script (Js_eval.create_with):
 
      at, fill, flat, flatMap, findLast, findLastIndex, reduceRight,
-       copyWithin, toSorted, toReversed, toSpliced, with       (arrays)
+       copyWithin                                              (arrays)
      at, replaceAll, padEnd, trimEnd, codePointAt, matchAll,
        localeCompare, normalize; String.fromCodePoint, String.raw
      Object.groupBy, Number.parseFloat and parseInt; a number's
@@ -21,8 +21,7 @@
      Math's cbrt, hypot, log2, log10, log1p, expm1, sinh, cosh, tanh,
        clz32, imul, fround
      Promise.withResolvers; WeakRef, FinalizationRegistry,
-       AggregateError; BigInt as a number (10n is 10: the lexer's);
-       ArrayBuffer
+       AggregateError; BigInt as a number (10n is 10: the lexer's)
      JSON.stringify's toJSON, replacer and indentation
      Date, whole: the calendar's arithmetic over the engine's clock
        (the days of a date and back, a text parsed, the setters, the
@@ -133,12 +132,6 @@ let text = {prelude|
     for (var i = 0; i < part.length && t + i < n; i++) this[t + i] = part[i];
     return this;
   });
-  // ES2023: the changes that give a new array and leave this one
-  def(A, "toSorted", function (compare) { return this.slice().sort(compare); });
-  def(A, "toReversed", function () { return this.slice().reverse(); });
-  def(A, "toSpliced", function () { var a = this.slice(); a.splice.apply(a, arguments); return a; });
-  def(A, "with", function (i, v) { var a = this.slice(); a[i < 0 ? a.length + i : i] = v; return a; });
-
   var S = String.prototype;
   def(S, "at", function (i) { i = Math.trunc(i) || 0; return this.charAt(i < 0 ? this.length + i : i) || undefined; });
   def(S, "replaceAll", function (what, by) {
@@ -167,15 +160,11 @@ let text = {prelude|
     return lo >= 0xdc00 && lo <= 0xdfff ? 0x10000 + ((hi - 0xd800) << 10) + (lo - 0xdc00) : hi;
   });
   def(S, "normalize", function () { return String(this); });
-  // as a dictionary has them, nearly: a letter's accent and its case
-  // count only between two words otherwise the same (é before f, not
-  // after z as its number would put it)
-  var plain = { "à": "a", "á": "a", "â": "a", "ã": "a", "ä": "a", "å": "a", "ç": "c", "è": "e", "é": "e", "ê": "e", "ë": "e", "ì": "i", "í": "i", "î": "i", "ï": "i", "ñ": "n",
-    "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ö": "o", "ø": "o", "ù": "u", "ú": "u", "û": "u", "ü": "u", "ý": "y", "ÿ": "y", "ß": "ss", "æ": "ae", "œ": "oe" };
-  function folded(s) { return s.toLowerCase().replace(/[\u00c0-\u017f]/g, function (c) { c = c.toLowerCase(); return plain[c] || c; }); }
+  // case counts only between two words otherwise the same (not a
+  // dictionary's: an accented letter sorts by its number)
   def(S, "localeCompare", function (other) {
     var s = String(this); other = String(other);
-    var a = folded(s), b = folded(other);
+    var a = s.toLowerCase(), b = other.toLowerCase();
     return a < b ? -1 : a > b ? 1 : s < other ? -1 : s > other ? 1 : 0;
   });
   def(S, "toLocaleLowerCase", S.toLowerCase);
@@ -311,28 +300,10 @@ let text = {prelude|
     return r;
   });
 
-  // a typed array's buffer: an ArrayBuffer whose bytes are the array
-  // itself (right for the arrays of bytes, the ones buffers are asked
-  // of; a Float64Array's would be its numbers), kept on it
+  // a typed array is an array of its kind (no buffer here, no
+  // ArrayBuffer: bytes read as numbers are a page that decodes a file's)
   ["Uint8Array", "Int8Array", "Uint8ClampedArray", "Uint16Array", "Int16Array", "Uint32Array", "Int32Array", "Float32Array", "Float64Array"].forEach(function (name) {
-    var C = globalThis[name], size = /8/.test(name) ? 1 : /16/.test(name) ? 2 : /64/.test(name) ? 8 : 4;
-    C.BYTES_PER_ELEMENT = size;
-    Object.defineProperty(C.prototype, "BYTES_PER_ELEMENT", { value: size, configurable: true });
-    Object.defineProperty(C.prototype, "byteLength", { get: function () { return this.length * size; }, configurable: true });
-    Object.defineProperty(C.prototype, "byteOffset", { get: function () { return 0; }, configurable: true });
-    Object.defineProperty(C.prototype, "buffer", { get: function () {
-      // an array of 16 or 32 bit integers: its bytes as they are now,
-      // the low one first -- a copy, not the array's own memory (what
-      // a hash reads at its end: new Uint8Array(hashes.buffer))
-      if (size > 1 && !/Float/.test(name)) {
-        var wide = new ArrayBuffer(0), bytes = [];
-        for (var i = 0; i < this.length; i++) for (var k = 0, v = this[i] >>> 0; k < size; k++) bytes.push((v >>> (8 * k)) & 255);
-        wide._bytes = bytes; wide.byteLength = bytes.length;
-        return wide;
-      }
-      if (!this._buffer) { var b = new ArrayBuffer(0); b._bytes = this; b.byteLength = this.length * size; Object.defineProperty(this, "_buffer", { value: b, enumerable: false, configurable: true }); }
-      return this._buffer;
-    }, configurable: true });
+    var C = globalThis[name];
     // a part of one, or what map and filter make of it, is of its kind
     // too (a plain array would have no buffer)
     ["slice", "subarray", "map", "filter"].forEach(function (m) {
@@ -342,18 +313,6 @@ let text = {prelude|
     C.from = function (items, f) { return new C(Array.from(items, f)); };
     C.of = function () { return new C(Array.prototype.slice.call(arguments)); };
   });
-
-  // bytes as a thing of their own: the buffer here is an array of
-  // bytes (a typed array made from a buffer copies it: not a view).
-  // Not here: DataView, a view that reads numbers of any size in them,
-  // floats by IEEE 754's bits -- what a page that decodes a file asks
-  if (typeof ArrayBuffer === "undefined") {
-    globalThis.ArrayBuffer = class ArrayBuffer {
-      constructor(n) { this.byteLength = n || 0; this._bytes = new Array(this.byteLength).fill(0); }
-      slice(a, b) { var out = new ArrayBuffer(0); out._bytes = this._bytes.slice(a, b); out.byteLength = out._bytes.length; return out; }
-      static isView(v) { return Array.isArray(v) && "BYTES_PER_ELEMENT" in v; }
-    };
-  }
 
   // integers of any size are not here: BigInt(x) is x's whole part, a
   // number (and 10n is read as 10), right up to 2^53

@@ -65,14 +65,13 @@ let call (t : t) (f : value) ~(this : value) (args : value list) : unit =
 (*****************************************************************************)
 
 (* a request's body as the bytes to send: a text as it is; bytes (a
- * Uint8Array, an ArrayBuffer: a payload the page compressed itself)
+ * Uint8Array: a payload the page compressed itself)
  * each a character -- not the list of their numbers, "31,139,8,0",
  * which is what a server was sent and said so *)
-let body_bytes (t : t) (v : value) : string =
+let body_bytes (v : value) : string =
   let of_items (o : obj) = String.concat "" (List.map (fun b -> String.make 1 (Char.chr (int_of_float (to_number b) land 255))) (array_items o)) in
   match v with
   | Object ({ kind = Array _; _ } as o) -> of_items o
-  | Object _ -> ( match Js_eval.get t.engine v "_bytes" with Object ({ kind = Array _; _ } as o) -> of_items o | _ -> to_string v)
   | v -> to_string v
 
 let fn (name : string) (f : value list -> value) : value = host_function name (fun ~this:_ args -> f args)
@@ -126,7 +125,7 @@ let install (t : t) (define : string -> value -> unit) : unit =
          let headers = match property init "headers" with Object _ as h -> (match property h "_h" with Object _ as kept -> kept | _ -> h) | v -> v in
          let said = match headers with Object o -> List.map (fun k -> (k, str (property headers k))) (Js_value.keys o) | _ -> [] in
          let content_type = match List.find_opt (fun (k, _) -> String.lowercase_ascii k = "content-type") said with Some (_, c) -> c | None -> "text/plain;charset=UTF-8" in
-         let post = match property init "body" with Undefined | Null -> None | b -> Some (content_type, body_bytes t b) in
+         let post = match property init "body" with Undefined | Null -> None | b -> Some (content_type, body_bytes b) in
          let p, resolve, reject = Js_eval.promise t.engine in
          ignore
            (ask ~cors:true ~headers:said t ~meth ~url ~post (fun result ->

@@ -59,5 +59,5 @@ let tests =
           check "what is repeated is the character, not its last byte; the dot takes one" {|[/é+/.exec("ééé")[0].length, /^.$/.test("é"), "é€x".match(/./g).length, "a b".split(/\s/).length]|} "[3, true, 3, 2]");
       Testo.create "case and order beyond ASCII" (fun () ->
           check "accented Latin, Greek, Cyrillic" {|["École".toLowerCase(), "straße à Zürich".toUpperCase(), "ΑΘΉΝΑ".toLowerCase(), "Москва".toUpperCase()]|} {|["école", "STRAßE À ZÜRICH", "αθήνα", "МОСКВА"]|};
-          check "a dictionary's order: an accent counts last" {|["z", "é", "e", "a"].sort((a, b) => a.localeCompare(b)).join("")|} "aeéz");
+          check "case counts last; an accent is its letter's number" {|["z", "B", "é", "b", "a"].sort((a, b) => a.localeCompare(b)).join("")|} "aBbzé");
     ]

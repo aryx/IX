@@ -1080,7 +1080,7 @@ let create_with (log : string -> unit) (seed : int) (now : unit -> float) : t =
           match get_own o "prototype" with Some (Object p) -> hide_all p | _ -> ())
       | _ -> ())
     [ "Object"; "Array"; "String"; "Function"; "Number"; "Boolean"; "Symbol"; "BigInt"; "Promise"; "Map"; "Set"; "WeakMap"; "WeakSet"; "WeakRef"; "Date"; "RegExp"; "Error";
-      "TypeError"; "RangeError"; "SyntaxError"; "ReferenceError"; "EvalError"; "URIError"; "AggregateError"; "ArrayBuffer"; "DataView"; "Int8Array"; "Uint8Array";
+      "TypeError"; "RangeError"; "SyntaxError"; "ReferenceError"; "EvalError"; "URIError"; "AggregateError"; "Int8Array"; "Uint8Array";
       "Uint8ClampedArray"; "Int16Array"; "Uint16Array"; "Int32Array"; "Uint32Array"; "Float32Array"; "Float64Array"; "Reflect"; "Math"; "JSON"; "Intl"; "Iterator" ];
   (match t.protos with
   | Some ps -> List.iter hide_all [ ps.strings; ps.arrays; ps.objects; ps.functions; ps.regexps; ps.numbers ]

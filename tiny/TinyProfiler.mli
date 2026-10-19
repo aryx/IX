@@ -17,10 +17,10 @@
  * writes the map as it writes the image), so the names cannot disagree
  * with what ran. A
  * count goes to the last label at or before its address. A label that
- * a compiler makes inside a function (tiny-ml's ml.L12, tiny-c's
+ * a compiler makes inside a function (tiny-ml's TinyBrowser.L12, tiny-c's
  * tm.L51) is not a function, so its counts go to the function before
  * it; an assembly loop's labels (row_copy2) are kept, as they say which
- * loop. tiny-ml's functions are named f151_browse<>: shown as browse.
+ * loop. tiny-ml's functions are named TinyBrowser.f151_browse: shown as browse.
  *
  * A profile of tiny-machine separates the kernel's instructions (-k
  * names its map) from the programs', and the programs by the base of

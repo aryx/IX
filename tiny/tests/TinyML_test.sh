@@ -80,8 +80,25 @@ refused=($(cat $W/*.log | sed -n 's/^refused //p' | sort))
 # what is read and forgotten (ix's capabilities; TinyML_tests/forgotten.ml
 # says what): the same code as without it
 F=$ROOT/tiny/tests/TinyML_tests
-if $TML -o $W/forgotten.out $F/forgotten.ml && $TML -o $W/plain.out $F/plain.ml && cmp -s $W/forgotten.out $W/plain.out
+# (each as x.ml: a unit's name is in its symbols)
+mkdir -p $W/f $W/p; cp $F/forgotten.ml $W/f/x.ml; cp $F/plain.ml $W/p/x.ml
+if $TML -o $W/forgotten.out $W/f/x.ml && $TML -o $W/plain.out $W/p/x.ml && cmp -s $W/forgotten.out $W/plain.out
 then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; failures=$((failures + 1)); fi
+# a program of units compiled apart (TinyML_tests/units/: Shapes, with
+# its .mli, then Main), each by tiny-ml -c, its main by tiny-ml of the
+# interfaces, linked: Main.out's output, as when compiled whole; and
+# Shapes's unused function left out by tiny-linker
+UT=$F/units; mkdir -p $W/units
+if $TML -c -o $W/units/Shapes.tm $UT/Shapes.ml && $TML -c -o $W/units/Main.tm $W/units/Shapes.tmi $UT/Main.ml \
+   && $TML -o $W/units/main.tm $W/units/Shapes.tmi $W/units/Main.tmi \
+   && link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm \
+   && [ "$(timeout 60 $CPU $W/units/prog 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ] \
+   && $TML -o $W/units/whole.tm $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/whole.tm $W/main4096.tm \
+   && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
+then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's output"; else echo "FAIL units"; failures=$((failures + 1)); fi
+TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm
+if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
+else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi
 [ ${#refused[@]} = 0 ] || echo "refused (an integer beyond 31 bits): ${refused[*]}"
 echo "$failures failure(s)"
 [ $failures = 0 ]

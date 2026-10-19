@@ -2,11 +2,16 @@
  * or to an a.out for tiny-kernel. Its usage, by examples, is in [help]
  * (what tiny-linker -h prints).
  *
- * Two passes over the objects' items, in the order of the command line:
+ * Passes over the objects' items, in the order of the command line:
  *
  *     a.o b.o ...      (TinyAssembler.mli has the format)
  *        | read        each object's lines: labels, alignments,
  *        |             code with its relocs, zeros
+ *        | sweep       the pieces nothing reaches left out: what an
+ *        |             object without pieces names, and what that
+ *        |             names... (tiny-ml's functions and static
+ *        |             blocks are pieces: a library costs a program
+ *        |             only what it calls)
  *        | layout      every item its address from 0, every label its
  *        |             own (one name space: twice is an error)
  *        | fill        each reloc's place: the label's address, or
@@ -28,9 +33,11 @@
  *   (objects one after the other, a member linked when it defines what
  *   another needs) is plan_tiny_self_hosting.md's step 5, with
  *   TinyLibCore/.
- * - {b The image is unchanged by the split}: the layout is the one the
- *   assembler made when it linked (a file on a word, an .align on its
- *   address), so every image of make check is the same, byte for byte.
+ * - {b The layout is the one the assembler made when it linked} (a
+ *   file on a word, an .align on its address): an object without
+ *   pieces, all of tiny-c's and the hand-written .tm, is placed as it
+ *   was, and the split checked byte for byte on make check's images
+ *   (plan_tiny_self_hosting.md, step 3).
  *
  * plan9-is-cleaner:
  * Plan 9's assemblers do not encode: an object holds the instructions

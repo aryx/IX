@@ -505,11 +505,23 @@ A program is linked after its runtime (`tiny/TinyCRuntime/`):
 
 ### 6.3 ML: `tiny-ml`
 
-One file, no modules. Integers are 31 bits (a value is `2n+1` or a
+A file is a unit, compiled alone or with the others; its names, its
+types and its constructors are the program's, one name space (`open M`
+is read and left). Integers are 31 bits (a value is `2n+1` or a
 pointer), so a constant beyond them is refused. The runtime is
 `TinyMLRuntime/core.c`, compiled by `tiny-c`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values.
+
+    tiny-ml -c a.ml             # a.tm, and a.tmi, its interface
+    tiny-ml -c a.tmi b.ml       # b.tm and b.tmi, after a
+    tiny-ml -o main.tm a.tmi b.tmi   # the prelude, each unit's init, ml_start
+    tiny-ml -o prog.tm a.ml b.ml     # or all at once: the units and their main
+
+tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
+each unit once, in `_make/ml/`, the main of each program in
+`_make/main/`), and linked with what was not tiny-ml's; tiny-linker
+leaves out the functions nothing calls.
 
 ### 6.4 A system call
 

@@ -145,93 +145,106 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o
 	@mkdir -p $(@D)
 	$(LD) -map -o $@ $(ULIB) $(O)/user/$*.o
 
-# a program in ML: its files, below, compiled by tiny-ml, with
-# mlsys.c, TinyML's runtime and the system calls as ML's externals,
-# which has the heap from 384 KB (windows, tiny-windows:
-# ../TinyWindows.ml, after ../TinyLibDraw.ml)
+# a program in ML: its units, each compiled once by tiny-ml -c into
+# _make/ml/ (an object, U.tm, and its interface, U.tmi), after the
+# interfaces of the units it names (I_U, in the order of the programs it
+# is in: their names are one name space, so a unit sees only what comes
+# before it there); linked after mlsys.c (TinyML's runtime and the
+# system calls as ML's externals, its heap from 384 KB) with the main
+# tiny-ml makes of the program's interfaces (_make/main/: the prelude,
+# each unit's init in their order). tiny-linker leaves out what a
+# program does not use of its units.
+# (old: each program's files compiled whole by tiny-ml, as one
+# program, the library's unused toplevel left out by tiny-ml:
+# plan_tiny_self_hosting.md, step 4)
+U = $(O)/ml
+I_TinyLibStd = Calls
+I_TinyLibSystem = Calls TinyLibStd
+I_TinyLibRegex = Calls TinyLibStd TinyLibSystem
+I_TinyLibPlayground = Calls TinyLibDraw
+I_TinyLibGUI = Calls TinyLibDraw TinyLibPlayground
+I_TinyWindows = TinyLibDraw
+I_TinyAppTetris = $(I_TinyLibGUI)
+I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
+I_TinyAppTemperature = $(I_TinyAppCalculator)
+GUI = Calls TinyLibStd TinyLibDraw TinyLibPlayground TinyLibGUI
+I_TinyEditorScreen = $(GUI)
+I_TinyOffice = $(GUI)
+I_TinyTroff = $(GUI) TinyOffice
+I_TinyPlay = $(GUI)
+I_TinyBrowser = $(GUI)
+I_TinyShell = $(I_TinyLibRegex)
+I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
+I_TinyEditorLine = $(I_TinyUtilities)
+I_Square = $(I_TinyLibGUI)
+I_Machine = $(I_TinyLibGUI) Square
+I_Tetris = $(I_TinyAppTetris) TinyAppTetris
+I_Calc = $(I_TinyAppCalculator) TinyAppCalculator
+I_Temp = $(I_TinyAppTemperature) TinyAppTemperature
+I_Emacs = $(GUI) TinyEditorScreen
+I_Office = $(GUI) TinyOffice
+I_Troff = $(GUI) TinyOffice TinyTroff
+I_Play = $(GUI) TinyPlay
+I_Www = $(GUI) TinyBrowser
+# each unit's file
+F_Calls = libml/calls.ml
+F_TinyLibSystem = libml/TinyLibSystem.ml
+F_Square = ../tests/TinyLibPlayground_tests/Square.ml
+F_Machine = ../tests/TinyLibPlayground_tests/machine.ml
+F_Tetris = user/tetris.ml
+F_Calc = user/calc.ml
+F_Temp = user/temp.ml
+F_Emacs = user/emacs.ml
+F_Office = user/office.ml
+F_Troff = user/troff.ml
+F_Play = user/play.ml
+F_Www = user/www.ml
+F_Bigmem = user/bigmem.ml
+.SECONDEXPANSION:
+$(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml)
+	@mkdir -p $(@D)
+	$(TML) -c -o $@ $(filter %.tmi,$^) $(filter %.ml,$^)
+$(U)/%.tmi: $(U)/%.tm ;
+
+# each program's units, in their order (windows: tiny-windows, after
+# ../TinyLibDraw.ml; rc: tiny-shell, on ../TinyLibStd.ml, what it names
+# of OCaml's standard library, and libml/TinyLibSystem.ml, the system's
+# calls it asks for (the host's is host/TinyLibSystem.ml); utils and ed
+# with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
+# run by ../TinyLibGUI.ml's run_canvas; square: the playground's
+# test's); its memory when it asks for more than 1 MB, linked as an
+# a.out whose header says so (tiny-linker -a): tiny-kernel gives it a
+# partition of that size and mlsys.c a heap of it (bigmem: the test;
+# www: a page's lines live in its heap; play: the WAV file is read
+# whole into it). Its code must stay under 384 KB, where mlsys.c's
+# heap, or its stack of values, starts.
 ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff
-MLBINS = windows square tetris calc temp rc utils ed emacs office troff
-$(patsubst %,$(O)/user/%.tm,$(ML)):
-	@mkdir -p $(@D)
-	$(TML) -o $@ $^
+UNITS_windows = TinyLibDraw TinyWindows
+UNITS_square = $(I_Machine) Machine
+UNITS_tetris = $(I_Tetris) Tetris
+UNITS_calc = $(I_Calc) Calc
+UNITS_temp = $(I_Temp) Temp
+UNITS_emacs = $(I_Emacs) Emacs
+UNITS_office = $(I_Office) Office
+UNITS_troff = $(I_Troff) Troff
+UNITS_play = $(I_Play) Play
+UNITS_www = $(I_Www) Www
+UNITS_rc = $(I_TinyShell) TinyShell
+UNITS_utils = $(I_TinyUtilities) TinyUtilities
+UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
+UNITS_bigmem = Bigmem
+MEM_bigmem = -a 8
+MEM_www = -a 10
+MEM_play = -a 4
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
-$(patsubst %,$(O)/bin/%,$(MLBINS)): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/user/%.o
+$(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*)))
 	@mkdir -p $(@D)
-	$(LD) -map -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/$*.o
-	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; }
-$(O)/user/windows.tm: ../TinyLibDraw.ml ../TinyWindows.ml
-
-# a program that asks for more memory than 1 MB: linked as an a.out
-# whose header asks for 8 MB (tiny-linker -a 8), so tiny-kernel gives it an
-# 8 MB partition and mlsys.c a heap of that size (bigmem: the test)
-$(O)/user/bigmem.tm: user/bigmem.ml
-$(O)/bin/bigmem: $(ULIB) $(O)/libml/mlsys.o $(O)/user/bigmem.o
+	$(TML) -o $@ $(filter %.tmi,$^)
+# (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
+$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*)))
 	@mkdir -p $(@D)
-	$(LD) -map -a 8 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/bigmem.o
-
-# the web browser (www: ../TinyBrowser.ml, and user/www.ml, which runs
-# it), linked as an a.out that asks for 10 MB: a page's lines live in
-# its heap. Its code must stay under 384 KB, where mlsys.c's stack of
-# values starts.
-WWW = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyBrowser.ml user/www.ml
-$(O)/user/www.tm: $(WWW)
-$(O)/bin/www: $(ULIB) $(O)/libml/mlsys.o $(O)/user/www.o
-	@mkdir -p $(@D)
-	$(LD) -map -a 10 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/www.o
-	@test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its stack of values"; rm $@; exit 1; }
-
-# a game: on ../TinyLibPlayground.ml, whose calls are calls.ml's; its last
-# file runs it (square: the playground's test's)
-PLAY = libml/calls.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml
-SQUARE = ../tests/TinyLibPlayground_tests/Square.ml ../tests/TinyLibPlayground_tests/machine.ml
-$(O)/user/square.tm: $(PLAY) $(SQUARE)
-$(O)/user/tetris.tm: $(PLAY) ../TinyAppTetris.ml user/tetris.ml
-
-# a program with widgets: on ../TinyLibGUI.ml, which draws by the
-# playground's shapes (calc: ../TinyAppCalculator.ml; temp:
-# ../TinyAppTemperature.ml)
-$(O)/user/calc.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppCalculator.ml user/calc.ml
-$(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.ml
-
-# a tool of the host's that runs here too (rc: ../TinyShell.ml,
-# tiny-shell): on ../TinyLibStd.ml, what it names of OCaml's standard
-# library, and libml/TinyLibSystem.ml, the system's calls it asks for
-# (the host's is host/TinyLibSystem.ml)
-TOOL = libml/calls.ml ../TinyLibStd.ml libml/TinyLibSystem.ml
-$(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
-
-# the utilities (utils: ../TinyUtilities.ml, tiny-utils), on the same
-# library as rc, and ../TinyLibRegex.ml for grep
-$(O)/user/utils.tm: $(TOOL) ../TinyLibRegex.ml ../TinyUtilities.ml
-
-# the line editor (ed, and sam: ../TinyEditorLine.ml, tiny-editor), on
-# the same library as rc, and grep's ../TinyLibRegex.ml
-$(O)/user/ed.tm: $(TOOL) ../TinyLibRegex.ml ../TinyEditorLine.ml
-
-# the screen editor (emacs: ../TinyEditorScreen.ml, the editor, run by
-# ../TinyLibGUI.ml's run_canvas; user/emacs.ml, the few lines between)
-EMACS = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyEditorScreen.ml user/emacs.ml
-$(O)/user/emacs.tm: $(EMACS)
-
-# the office (../TinyOffice.ml, the page and its parts, run by
-# ../TinyLibGUI.ml's run_canvas;
-# user/office.ml, the few lines between)
-OFFICE = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml user/office.ml
-$(O)/user/office.tm: $(OFFICE)
-
-# troff (../TinyTroff.ml, a page as text or HTML, on the office's
-# reading of it; user/troff.ml, the few lines between)
-TROFF = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyOffice.ml ../TinyTroff.ml user/troff.ml
-$(O)/user/troff.tm: $(TROFF)
-
-# play (../TinyPlay.ml, a WAV file to /dev/audio; user/play.ml, the few
-# lines between), linked as an a.out that asks for 4 MB: the file is
-# read whole into its heap
-PLAY_WAV = libml/calls.ml ../TinyLibStd.ml ../TinyLibDraw.ml ../TinyLibPlayground.ml ../TinyLibGUI.ml ../TinyPlay.ml user/play.ml
-$(O)/user/play.tm: $(PLAY_WAV)
-$(O)/bin/play: $(ULIB) $(O)/libml/mlsys.o $(O)/user/play.o
-	@mkdir -p $(@D)
-	$(LD) -map -a 4 -o $@ $(ULIB) $(O)/libml/mlsys.o $(O)/user/play.o
+	$(LD) -map $(MEM_$*) -o $@ $(filter %.o,$^)
+	@case $* in bigmem|play) ;; *) test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; };; esac
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)

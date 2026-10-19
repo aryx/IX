@@ -34,7 +34,7 @@ let kinds = [ Word, "word"; Abs, "abs"; Hi, "hi"; Lo, "lo"; Pc, "pc" ]
  * word's index in the item and the place's kind; or bytes, zeros, a
  * label, an alignment, which the linker does (an address's, not the
  * file's) *)
-type item = Label of string | Words of int * ((int -> kind -> expr -> int) -> int list) | Bytes_ of string | Space of int | Align of int
+type item = Label of string | Words of int * ((int -> kind -> expr -> int) -> int list) | Bytes_ of string | Space of int | Align of int | Piece
 
 let reg s =
   match String.trim s with
@@ -128,6 +128,7 @@ let directive d args : item =
       Bytes_ (unescape (String.sub a 1 (String.length a - 2)) ^ if d = ".asciz" then "\000" else "")
   | ".space" -> Space (int_of_string (String.trim args))
   | ".align" -> Align (int_of_string (String.trim args))
+  | ".piece" -> Piece
   | _ -> error "unknown directive %s" d
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
@@ -172,6 +173,7 @@ let assemble name text =
       match it with
       | Label l -> line "label %s" l
       | Align k -> line "align %d" k
+      | Piece -> line "piece"
       | Space k -> line "space %d" k
       | Bytes_ s -> line "code %s" (hex s)
       | Words (_, f) ->

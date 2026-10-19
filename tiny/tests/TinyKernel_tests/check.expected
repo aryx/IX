@@ -87,11 +87,11 @@ $ % /dev/audio
 /dev/draw
 /dev/mouse
 ls: /cat: not there
--  25   233628 /bin/cat
--   2   227272 /bin/editor
--   2   227272 /bin/emacs
+-  25   234096 /bin/cat
+-   2   228320 /bin/editor
+-   2   228320 /bin/emacs
 -   1    70380 /bin/ping
--  25   233628 /bin/utils
+-  25   234096 /bin/utils
 %      47     188    1169 f
      47     188    1169
      47     188    1169
@@ -110,10 +110,10 @@ added
 heL0 w0rLd
 added
 ?changed files
-% -   2   201048 /bin/ed
--   2   227272 /bin/editor
--   2   227272 /bin/emacs
--   2   201048 /bin/sam
+% -   2   201484 /bin/ed
+-   2   228320 /bin/editor
+-   2   228320 /bin/emacs
+-   2   201484 /bin/sam
 % $ tiny-kernel: TinyKernel.ml, 111 MB for 8 processes
 $ $ > 0ne
 > tw0

@@ -28,17 +28,20 @@ let local name =
       String.for_all (fun c -> c >= '0' && c <= '9') (String.sub name (i + 2) (String.length name - i - 2))
   | _ -> false
 
-(* tiny-ml's functions are f<number>_<name><>: their name alone, but for
- * an anonymous one (f155_fun), whose number is all that tells it from
- * the others (in the program's .tm file) *)
+(* tiny-ml's functions are <unit>.f<number>_<name>: their name alone,
+ * but for an anonymous one (Unit.f155_fun), whose number is all that
+ * tells it from the others
+ * (old: f<number>_<name><>, a program's functions in one file) *)
 let clean name =
   let n = String.length name in
-  match String.index_opt name '_' with
-  | Some i when name.[0] = 'f' && i > 1 && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub name 1 (i - 1))
-                && n > i + 3 && String.sub name (n - 2) 2 = "<>" ->
-      let short = String.sub name (i + 1) (n - i - 3) in
-      if short = "fun" then String.sub name 0 (n - 2) else short
-  | _ -> name
+  let digit c = c >= '0' && c <= '9' in
+  let rec find i = if i + 2 >= n then None else if name.[i] = '.' && name.[i + 1] = 'f' && digit name.[i + 2] then Some i else find (i + 1) in
+  match find 0 with
+  | Some i ->
+      let rec skip j = if j < n && digit name.[j] then skip (j + 1) else j in
+      let j = skip (i + 2) in
+      if j < n && name.[j] = '_' then (let short = String.sub name (j + 1) (n - j - 1) in if short = "fun" then name else short) else name
+  | None -> name
 
 (* the functions of tiny-linker's maps (-map: "address label" lines,
  * by address), in their order *)

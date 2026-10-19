@@ -27,7 +27,7 @@ An error names the label: undefined label main
 (* an object's items (TinyAssembler's lines): a code's bytes come with
  * the places in them to fill, each its offset, its kind, its label or
  * number *)
-type item = Label of string | Align of int | Space of int | Code of string * (int * string * string) list
+type item = Label of string | Align of int | Space of int | Code of string * (int * string * string) list | Piece
 
 let unhex s = String.init (String.length s / 2) (fun i -> Char.chr (int_of_string ("0x" ^ String.sub s (2 * i) 2)))
 
@@ -40,6 +40,7 @@ let read name text =
     | [ "label"; s ], _ -> items := Label s :: !items
     | [ "align"; k ], _ -> items := Align (int_of_string k) :: !items
     | [ "space"; k ], _ -> items := Space (int_of_string k) :: !items
+    | [ "piece" ], _ -> items := Piece :: !items
     | [ "code"; h ], _ -> items := Code (unhex h, []) :: !items
     | [ "reloc"; off; k; t ], Code (s, rs) :: rest -> items := Code (s, (int_of_string off, k, t) :: rs) :: rest
     | _ -> error "%s:%d: not an object's line" name (n + 1)) (String.split_on_char '\n' text);
@@ -58,7 +59,8 @@ let layout (items : item list) =
     | Label l -> if Hashtbl.mem labels l then error "label %s defined twice" l; Hashtbl.replace labels l !pc
     | Align n -> let a = (!pc + n - 1) / n * n in placed := (!pc, Space (a - !pc)) :: !placed; pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
-    | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s) items;
+    | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s
+    | Piece -> ()) items;
   labels, List.rev !placed
 
 (* a word with an address, or what an address makes, in its place: the
@@ -78,8 +80,37 @@ let fill w kind pc v =
   if kind = "word" then m32 v
   else match decode w with Some i -> encode (imm v i) | None -> error "not an instruction at 0x%x" pc
 
+(* What nothing reaches, left out. A piece is what follows a piece line
+ * (tiny-ml's: a function, a static block) up to the next one, or the
+ * object's end; an object without one is one piece, and is kept, as is
+ * what comes before an object's first piece line. A piece is kept when
+ * a kept one names one of its labels, so what is kept is what the
+ * objects without pieces reach (the start, the C runtime, which calls
+ * ml_start). Each piece kept starts on a word. *)
+let sweep (objects : item list list) =
+  let pieces = List.concat_map (fun items ->
+    let rec split cur acc = function
+      | [] -> List.rev (List.rev cur :: acc)
+      | Piece :: l -> split [ Align 4 ] (List.rev cur :: acc) l
+      | it :: l -> split (it :: cur) acc l in
+    match split [] [] items with
+    | first :: rest -> (true, first) :: List.map (fun p -> false, p) rest
+    | [] -> []) objects in
+  let pieces = Array.of_list pieces in
+  let where = Hashtbl.create 256 in
+  Array.iteri (fun i (_, p) ->
+    List.iter (function Label l -> if Hashtbl.mem where l then error "label %s defined twice" l; Hashtbl.replace where l i | _ -> ()) p) pieces;
+  let kept = Array.map fst pieces in
+  let rec keep i =
+    List.iter (function
+      | Code (_, relocs) ->
+          List.iter (fun (_, _, t) -> match Hashtbl.find_opt where t with Some j when not kept.(j) -> kept.(j) <- true; keep j | _ -> ()) relocs
+      | _ -> ()) (snd pieces.(i)) in
+  Array.iteri (fun i k -> if k then keep i) (Array.copy kept);
+  List.concat (List.filteri (fun i _ -> kept.(i)) (List.map snd (Array.to_list pieces)))
+
 let link (objects : (string * string) list) =
-  let labels, placed = layout (List.concat_map (fun (f, text) -> read f text) objects) in
+  let labels, placed = layout (sweep (List.map (fun (f, text) -> read f text) objects)) in
   let resolve t =
     match int_of_string_opt t, Hashtbl.find_opt labels t with
     | Some n, _ | None, Some n -> n
@@ -95,7 +126,7 @@ let link (objects : (string * string) list) =
           let w = try fill w k (a + off) (resolve t) with Error e -> error "%s (%s)" e t in
           Bytes.set_int32_le s off (Int32.of_int w)) relocs;
         Buffer.add_bytes b s
-    | Label _ | Align _ -> ()) placed;
+    | Label _ | Align _ | Piece -> ()) placed;
   Buffer.contents b, List.sort (fun (_, a) (_, b) -> compare a b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
 
 (* An executable for tiny-kernel: a header of three words, then the

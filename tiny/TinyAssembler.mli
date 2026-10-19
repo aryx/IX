@@ -37,6 +37,10 @@
  *                                 label, or a number (a branch to an
  *                                 address)
  *     space N                     N zeros (.space)
+ *     piece                       (.piece) what follows, up to the next
+ *                                 one, is left out by the link when
+ *                                 nothing reaches it (tiny-ml's
+ *                                 functions and static blocks)
  *
  * An .align stays an item: what it pads depends on the address, which
  * only the link knows (v0's kernel aligns its programs on 64 KB). Every

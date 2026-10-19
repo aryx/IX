@@ -83,11 +83,12 @@ things: a tool runs on the host, the others on tiny-machine.
   the tools name, with mini-ml's runtime cut to it and a C library of
   a page; gone with plans/plan_tiny_self_hosting.md's step 2.)
 - **A program in ML on tiny-machine** (`windows`, `calc`, `temp`,
-  `tetris`) is compiled by tiny-ml from several files as one program:
-  the libraries it asks for (`TinyLibGUI`, `TinyLibPlayground`,
-  `TinyLibDraw`), its own file, and a last one that runs it. Before
-  them all tiny-ml reads `tiny/TinyLibCore.ml`, its prelude, which is
-  the core library. Under the ML: `TinyMLRuntime/core.c` (the
+  `tetris`) is units tiny-ml compiles one at a time (each file, with
+  an interface, `.tmi`, for the units after it), linked: the libraries
+  it asks for (`TinyLibGUI`, `TinyLibPlayground`, `TinyLibDraw`), its
+  own file, and a last one that runs it, of which tiny-linker keeps
+  what the program calls. Before them all comes `tiny/TinyLibCore.ml`,
+  tiny-ml's prelude, which is the core library. Under the ML: `TinyMLRuntime/core.c` (the
   allocator, the collector), given the program's memory by
   `TinyKernel/libml/mlsys.c`, and `TinyCRuntime/` for the start and the
   division.

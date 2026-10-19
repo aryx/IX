@@ -245,9 +245,9 @@ ends, tiny-assembler and tiny-arm left with
 so did tiny-lib-host, a trimmed copy of `lib_core/` under the tools
 built by IX, once it had shown what of `lib_core/` they use.
 
-That is about 17,000 lines of OCaml and ML; with their C (tiny-c's
+That is about 17,400 lines of OCaml and ML; with their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 18,800 lines** in all (the header comments are in
+t-IX is **about 19,100 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -404,7 +404,7 @@ not, something is trimmed first.
 | | budget | today (2026-10-19) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 18,500 | 6,500 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
+| **t-IX** | 25,000 | 18,900 | 6,100 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

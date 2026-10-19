@@ -6,8 +6,8 @@
  * correct. Its usage, by examples, is in [help] below, which is what
  * tiny-ml -h prints.
  *
- * It reads one ML file (or several, compiled one after the other as a
- * single program, where an open M is accepted and ignored) and writes
+ * It reads one ML file (or several, each a unit, compiled one after
+ * the other, with their main) and writes
  * its assembly for tiny-machine (the CPU of TinyMachineCPU.ml): words
  * of 4 bytes, integers of 31 bits. The runtime (the allocator, Cheney's
  * collector, the primitives, and the printing of an uncaught
@@ -22,7 +22,7 @@
  *
  * How a file is compiled:
  *
- *     file.ml ...
+ *     file.ml ...         a unit each (and M.tmi, the units' before it)
  *        | lexer, parser     tokens to a tree, by recursive descent
  *        | type checker      checks types; records each label's index
  *        |                   and which comparisons are on integers
@@ -31,7 +31,7 @@
  *        |                   calls: one [ir] list per function
  *        | machine           turns the list into assembly, and
  *        |                   static blocks into .word
- *     file.tm, for tiny-cpu (or tiny-machine)
+ *     file.tm, for tiny-assembler (with M.tmi when alone, -c)
  *
  * What a value looks like at run time (TinyMLRuntime/core.c has the
  * same picture, from the other side):
@@ -126,12 +126,27 @@
  *   function with all its arguments calls its n-ary code directly, and
  *   a function without free variables is a static block. Calls in tail
  *   position are jumps, so a let rec loop runs in constant space.
- * - {b What nothing uses is not compiled.} Before the code is made, a
- *   top-level let whose names nothing after it uses, and whose value is
- *   a function or a constant, is dropped ([prune]). So the prelude and
- *   the libraries given before a program (TinyLibStd, TinyLibGUI...)
- *   cost it only what it calls: tiny-kernel's calc went from 206 KB to
- *   152 KB, and its emacs from 287 KB to 225 KB.
+ * - {b Units, and what nothing uses left out by the link.} A file is a
+ *   unit: its symbols prefixed with its name (TinyLibGUI.f12_layout),
+ *   its toplevel in TinyLibGUI.init, the values it computes in its
+ *   globals' table. Compiled alone (-c), it writes its interface,
+ *   M.tmi (OCaml's .cmi: the types and constructors so far, each of
+ *   its names with where its value is, a static closure or a global,
+ *   and its type, M.mli's when there is one), which the units after it
+ *   read; a program's main (ml_start, the prelude, each unit's init in
+ *   their order, the curry functions, the tables) is made of the
+ *   interfaces. Names stay one name space, as when a program was its
+ *   files compiled whole: M.x is a name like another (TinyLibStd's
+ *   String.trim), open M is read and left, a record's label is the
+ *   latest record's unless the type says which; OCaml checks the
+ *   scopes of the files it builds too. Each function and static block
+ *   is a piece (.piece), which tiny-linker leaves out when nothing
+ *   reaches it: a function of the toplevel has no free variable, so
+ *   its closure is static and the init does not name it, and a library
+ *   costs a program only what it calls: tiny-kernel's calc is 153 KB,
+ *   206 KB with all of its libraries.
+ *   (old: prune, the program's toplevel lets that nothing used dropped
+ *   before the code was made, all of a program's files compiled as one)
  * - {b Exceptions with no assembly in the runtime.} try pushes a record
  *   on the machine stack (the stack pointer, r12, the handler's
  *   address, and the previous record); raise restores both stack
@@ -142,8 +157,8 @@
  * - {b The prelude is in ML.} raise, the operators, ref, ! and := are
  *   externals whose names give the instruction ("%add"); print_string
  *   and ^ name C functions of the runtime; List.map and the others are
- *   ML compiled with the program, and only what the program uses is
- *   compiled ([prune], above).
+ *   ML, the first unit, Stdlib, in each program's main, and only what
+ *   the program uses is linked (above).
  *
  * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
  * contract, quirks included (plan_tiny_self_hosting.md takes the quirks
@@ -239,12 +254,15 @@
  *    values
  *)
 
-(* a toplevel phrase, parsed and typed *)
+(* a toplevel phrase, parsed and typed; where a name's value is *)
 type item
+type binding
 
-(* the program's phrases (each with its line) to assembly, added to the
- * output: every function's code, and ml_init, the toplevel *)
-val compile : (item * int) list -> unit
+(* a unit's phrases (each with its line), with the names of the units
+ * before it, to assembly added to the output: every function's code,
+ * and <unit>.init, its toplevel; the names then, and its globals'
+ * count *)
+val compile_unit : (string * binding) list -> (item * int) list -> (string * binding) list * int
 
 (* the program: files of ML to a file of assembly (-h: how) *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> unit

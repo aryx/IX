@@ -385,3 +385,63 @@ and its library is TinyLibCore/.
     program mini-ml compiles).
   - **Not run**: make check's sessions (the images are the same
     bytes), tests/lite.sh and mkfiles/check.sh whole.
+- 2026-10-19: step 4 done, units in tiny-ml, as decided with the
+  author (an interface the compiler writes, the link's sweep, the
+  sums recorded again where they move):
+  - **A file is a unit**: its symbols prefixed with its name
+    (TinyLibGUI.f12_layout, TinyLibGUI.L40, TinyLibGUI.s3), its
+    toplevel in <unit>.init, its computed values in <unit>.globals.
+    `tiny-ml -c [x.tmi...] f.ml` writes f.tm and f.tmi, the interface
+    (OCaml's .cmi: the program's types, constructors, labels so far;
+    each name, where its value is and its type, f.mli's when there is
+    one, its vals read and the rest skipped; the curry functions it
+    needs; its globals' count). `tiny-ml -o main.tm x.tmi...` writes
+    the main: ml_start, the prelude (Stdlib, compiled in every run of
+    tiny-ml the same way, so its labels agree), each unit's init in
+    order in the handler of uncaught exceptions, the curry functions,
+    the tables one after the other as ml_globals (core.c's roots).
+    `tiny-ml -o prog.tm a.ml b.ml`, the old command line, is the same
+    in one run: the units, then their main.
+  - **Names stay one name space**, as when a program was its files
+    compiled whole: `M.x` is a name (TinyLibStd's `String.trim`,
+    libml's `TinyLibSystem.fork`), `open M` is read and left, a
+    record's label is the latest record's unless the type says which
+    (OCaml's rule; it was an error), and `M.t` in a type is `t` when M
+    is a unit read. Not done: M's names visible only as `M.x` or after
+    `open M` (§6's "open M really opens"); OCaml checks the scopes of
+    the files both compile, and the files only tiny-ml compiles
+    (libml/, user/, memory.ml) would need their opens. So a unit sees
+    exactly the units its program had before it: tiny/TinyKernel's
+    Makefile gives each its list (I_<unit>, the shortest of its
+    programs': TinyLibGUI after Calls, TinyLibDraw, TinyLibPlayground)
+    and each program its units in their old order (UNITS_<program>).
+  - **The link leaves out what nothing reaches** (TinyLinker's sweep):
+    tiny-ml marks each function and static block `.piece`; a piece is
+    kept when an object without pieces (the C runtime, the start, a
+    main's start) reaches it, through the relocs. It replaces prune:
+    without either, calc was 213 KB, emacs 299 KB, www 391 KB and
+    office over 384 KB, where mlsys.c's heap starts; with the sweep,
+    each program is within 1.2% of its pruned size (calc 154,572
+    bytes, 153,768 before; www 324,152, 323,252; office 363,548,
+    362,704; troff 266,340, 263,100), what prune dropped and the sweep
+    keeps being a unit's constants and the values its init computes.
+  - **tiny-kernel's 14 programs in ML are built a unit at a time**
+    (_make/ml/, each unit once, shared: TinyLibGUI's object is calc's,
+    temp's, emacs's...); the kernel stays a program compiled whole (one
+    program, nothing to share). mlsys.c calls ml_start by a jal, 128
+    KB: a program's main is linked right after it.
+  - **Tests**: TinyML_test.sh's units (TinyML_tests/units/: Shapes,
+    with an .mli, and Main, compiled apart, linked, their output; and
+    whole; Shapes's unused function not in the map), its forgotten
+    check compiling both files as x.ml (a unit's name is in its
+    symbols); every tiny/tests/*_test.sh that runs tiny-ml passes;
+    with mini-mk's tiny-ml too.
+  - **make check**, on tiny-kernel built this way: its 23 screens the
+    same; check.expected the same but the programs' sizes in its ls -l
+    lines (recorded again); the two sounds recorded again: play's the
+    same samples, 5 later (a program's instructions are others), and
+    tetris's the same length, its first sound at the same sample, all
+    the same but two stretches of 687 and 643 samples (86 ms each),
+    where a sound effect meets the tune a little later.
+  - **Lines**: TinyML.ml 1,753 (+177), TinyLinker.ml 166 (+31); t-IX
+    18,880 without the header comments (README's budget: 6,100 left).

@@ -7,7 +7,7 @@
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-ml [-o out.tm] file.ml...
+let help = {|usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...
 A tiny ML compiler: an ML file (its own small dialect: no modules, records nor
 arrays) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
 fact.ml, for example:
@@ -20,8 +20,13 @@ fact.ml, for example:
   tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
-is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are one
-program, one after the other; an open M is read and left.
+is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are a
+unit each, one after the other, then their main; their names one name space
+(an open M is read and left). Or a unit at a time, then the main:
+  tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
+  tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
+  tiny-ml -o main.tm a.tmi b.tmi           the prelude, a's and b's init, ml_start
+  (linked: ... main.o a.o b.o; what nothing uses left out by tiny-linker)
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
@@ -184,9 +189,18 @@ let () =
   add "[]" (KConst 0) 0 1 1 (TCon ("list", [ a ])) [];
   add "::" (KBlock 0) 2 1 1 (TCon ("list", [ a ])) [ a; TCon ("list", [ a ]) ]
 
+(* the unit being compiled (a file: its name, the prefix of its
+ * symbols), and the units whose interfaces it read: M.t in a type is
+ * t when M is one of them (a type's name is the program's, one name
+ * space, as the constructors' and the values') *)
+let unit_name = ref "Stdlib"
+let known_units : string list ref = ref []
+
 let rec of_texpr vars = function
   | TEVar v -> (match List.assoc_opt v !vars with Some t -> t | None -> let t = genvar () in vars := (v, t) :: !vars; t)
-  | TE (c, args) -> TCon (c, List.map (of_texpr vars) args)
+  | TE (c, args) ->
+      let c = match String.index_opt c '.' with Some i when List.mem (String.sub c 0 i) !known_units -> String.sub c (i + 1) (String.length c - i - 1) | _ -> c in
+      TCon (c, List.map (of_texpr vars) args)
 
 (*****************************************************************************)
 (* The parser *)
@@ -473,7 +487,8 @@ and ty_app () =
     | LID c -> advance (); [ TE (c, []) ]
     | _ -> fail ()
   in
-  let rec post args = match peek () with LID c -> advance (); post [ TE (c, args) ] | _ -> args in
+  (* (val: OCaml's keyword, not tiny-ml's: an .mli's next item) *)
+  let rec post args = match peek () with LID c when c <> "val" -> advance (); post [ TE (c, args) ] | _ -> args in
   match post args with [ t ] -> t | _ -> fail ()
 
 and any () = incr fresh; TEVar (sprintf "%%o%d" !fresh)
@@ -630,13 +645,16 @@ let rec nonexpansive = function
 let con_type c = match instantiate (find_con c).scheme with TCon (_, res :: args) -> res, args | _ -> assert false
 
 (* l's label, in the record t already is when known (an annotation's,
- * a parameter's): type-directed, so that two records may share one *)
+ * a parameter's): type-directed, so that two records may share one;
+ * else the latest record's, as OCaml's (a unit's own are read after the
+ * interfaces of those before it)
+ * (old: an error, "a field of several records: annotate which", when
+ * a program was its files compiled whole) *)
 let label_for l t =
   let known = match repr t with TCon (n, _) -> Some n | _ -> None in
   match List.filter (fun li -> known = None || known = Some li.lrec) (Hashtbl.find_all record_labels l) with
-  | [ li ] -> li
+  | li :: _ -> li
   | [] -> error "no field %s%s" l (match known with Some n -> " in " ^ n | None -> "")
-  | _ -> error "%s is a field of several records: annotate which" l
 let label_type li = match instantiate li.lscheme with TCon (_, [ r; f ]) -> r, f | _ -> assert false
 let const_type = function CInt _ -> int_t | CChar _ -> tcon "char" | CStr _ -> string_t
 
@@ -780,7 +798,7 @@ type ir =
   | Imm of int64                      (* a word, an integer already tagged *)
   | Addr of string * int              (* a symbol's address: a static block's value is its +8 *)
   | Get of int | Set of int           (* a slot of the function's frame on the value stack *)
-  | GetG of int | SetG of int         (* a global of the program *)
+  | GetG of string * int | SetG of string * int   (* a global of a unit: its table, its index *)
   | Field of int                      (* a block by its field *)
   | SetField of int                   (* the value below the block stored in its field *)
   | Alloc of int * int                (* a tag, n values by the block of them, the top its field 0 *)
@@ -833,7 +851,7 @@ let machine name nparams nslots (code : ir list) =
   let spill () = for r = 1 to !sp do put r (spill_slot r) done in
   let reload () = for r = 1 to !sp do get (spill_slot r) r done in
   let result () = ins "mov\tr%d, r13" (push ()) in
-  let lab l = sprintf "ml.L%d" l in
+  let lab l = sprintf "%s.L%d" !unit_name l in
   let jump l = Hashtbl.replace depth_at l !sp in
   let epilogue () =
     line (fun f _ _ -> sprintf "\taddi\tr12, r12, %d\n" (-4 * f));
@@ -907,8 +925,8 @@ let machine name nparams nslots (code : ir list) =
     | Addr (s, _) -> ins "la\tr%d, %s" (push ()) s
     | Get i -> get i (push ())
     | Set i -> put !sp i; decr sp
-    | GetG g -> let r = push () in ins "la\tr%d, ml_globals" r; ins "ldw\tr%d, %d(r%d)" r (4 * g) r
-    | SetG g -> ins "la\tr13, ml_globals"; ins "stw\tr%d, %d(r13)" !sp (4 * g); decr sp
+    | GetG (t, g) -> let r = push () in ins "la\tr%d, %s" r t; ins "ldw\tr%d, %d(r%d)" r (4 * g) r
+    | SetG (t, g) -> ins "la\tr13, %s" t; ins "stw\tr%d, %d(r13)" !sp (4 * g); decr sp
     | Field k -> ins "ldw\tr%d, %d(r%d)" !sp (4 * k) !sp
     | SetField k -> ins "stw\tr%d, %d(r%d)" (!sp - 1) (4 * k) !sp; sp := !sp - 2
     | Alloc (tag, n) ->
@@ -1010,6 +1028,8 @@ let machine name nparams nslots (code : ir list) =
   let f = nslots + !maxsp and c = 4 * !cargs in
   let m = (record c !tries + 7) land lnot 7 in
   let out fmt = Printf.bprintf text fmt in
+  (* a piece: tiny-linker leaves it out when nothing names its labels *)
+  out "\t.piece\n";
   out "%s:\n\taddi\tsp, sp, %d\n\tstw\tlr, %d(sp)\n\taddi\tr12, r12, %d\n" name (- m) c (4 * f);
   out "\tstw\tr13, %d(r12)\n" (-4 * f);
   for i = 1 to nparams do out "\tstw\tr%d, %d(r12)\n" i (4 * (i - f)) done;
@@ -1025,14 +1045,16 @@ let machine name nparams nslots (code : ir list) =
  * value (its first field's address) *)
 type dword = DNum of string | DCode of string | DVal of string
 
-let words sym ws =
+(* each a piece of its own, as a function is *)
+let fields sym ws =
   Printf.bprintf data "%s:\n" sym;
   List.iter (fun w -> Printf.bprintf data "\t.word\t%s\n" (match w with DNum x | DCode x | DVal x -> x)) ws
+let words sym ws = Printf.bprintf data "\t.piece\n"; fields sym ws
 
 (* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr fields = Printf.bprintf data "\t.word\t%s\n" hdr; words sym fields
+let block sym hdr ws = Printf.bprintf data "\t.piece\n\t.word\t%s\n" hdr; fields sym ws
 
 let header n tag = string_of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252
@@ -1044,7 +1066,7 @@ let static_string s =
   match Hashtbl.find_opt strings s with
   | Some sym -> sym
   | None ->
-      let sym = sprintf "s%d<>" (Hashtbl.length strings) in
+      let sym = sprintf "%s.s%d" !unit_name (Hashtbl.length strings) in
       let n = (String.length s / 4) + 1 in
       let b = Bytes.make (4 * n) '\000' in
       Bytes.blit_string s 0 b 0 (String.length s);
@@ -1055,11 +1077,13 @@ let static_string s =
       Hashtbl.replace strings s sym;
       sym
 
-(* the curry functions an arity needs *)
+(* the curry functions an arity needs (the program's, its main's to
+ * make: each unit says the arities it needs) *)
 let arities = ref []
-let curry n k = sprintf "ml_curry%d_%d<>" n k
+let curry n k = sprintf "ml_curry%d_%d" n k
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
-let static_closure lab n = let sym = "c" ^ lab in block sym (header 2 closure_tag) [ DCode (entry n lab); DCode lab ]; sym
+let closure_sym lab = lab ^ ".c"
+let static_closure lab n = let sym = closure_sym lab in block sym (header 2 closure_tag) [ DCode (entry n lab); DCode lab ]; sym
 
 (* an exception: a block with its name, compared by address; its value
  * a block [the exception; its arguments], a static one without them *)
@@ -1074,7 +1098,7 @@ let tagged n = Int64.add (Int64.mul 2L (Int64.of_int n)) 1L
 
 (* where a name's value is, and, for a function whose code is known,
  * that code and its arity *)
-type loc = Slot of int | Env of int | Glob of int | Static of string
+type loc = Slot of int | Env of int | Glob of string * int | Static of string
 type binding = Loc of loc * (string * int) option | Ext of string * int
 
 type fn = { mutable code : ir list; mutable nslots : int; mutable ntries : int }
@@ -1087,7 +1111,7 @@ let nfuns = ref 0
 
 let fun_label x =
   incr nfuns;
-  sprintf "f%d_%s<>" !nfuns (String.map (fun c -> match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> c | _ -> '_') x)
+  sprintf "%s.f%d_%s" !unit_name !nfuns (String.map (fun c -> match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> c | _ -> '_') x)
 
 let lookup env x = match List.assoc_opt x env with Some b -> b | None -> error "unbound %s" x
 
@@ -1332,7 +1356,7 @@ and var env x =
   match lookup env x with
   | Loc (Slot s, _) -> emit (Get s)
   | Loc (Env j, _) -> emit (Get 0); emit (Field (2 + j))
-  | Loc (Glob g, _) -> emit (GetG g)
+  | Loc (Glob (t, g), _) -> emit (GetG (t, g))
   | Loc (Static sym, _) -> emit (Addr (sym, 8))
   | Ext (_, n) ->
       (* a primitive as a value: the function that applies it *)
@@ -1415,7 +1439,7 @@ and alloc_closure env lab n fvs =
 and bind_rec env bs =
   let fs = List.map (function PVar x, Fun (xs, b) -> x, xs, b | _ -> error "let rec: only functions") bs in
   let labs = List.map (fun (x, xs, _) -> fun_label x, List.length xs) fs in
-  let statics = List.map2 (fun (x, _, _) (lab, n) -> x, Loc (Static ("c" ^ lab), Some (lab, n))) fs labs @ env in
+  let statics = List.map2 (fun (x, _, _) (lab, n) -> x, Loc (Static (closure_sym lab), Some (lab, n))) fs labs @ env in
   if List.for_all (fun (_, xs, b) -> captured statics (Fun (xs, b)) = []) fs then begin
     List.iter2 (fun (_, xs, b) (lab, n) ->
       ignore (static_closure lab n);
@@ -1464,38 +1488,21 @@ let curry_fun n k =
 (* The program *)
 (*****************************************************************************)
 
-(* ml_init: the toplevel, in a handler that prints an uncaught
- * exception; its names globals, the collector's roots *)
-(* The program without the top-level values that nothing uses, so that
- * a library (TinyLibStd, TinyLibGUI...) costs a program only what it
- * calls. The items are read from the last one back, with the names
- * used by the items kept so far. A let is dropped when none of its
- * names is used later and computing it does nothing: its values are
- * functions or constants, and its patterns cannot fail. A let that is
- * kept binds its names, so a use before it is of an earlier binding of
- * the same name. *)
-let prune (items : (item * int) list) =
-  let used = Hashtbl.create 256 in
-  List.fold_left (fun kept (it, l) ->
-    match it with
-    | ILet (r, bs) ->
-        let names = List.concat_map (fun (p, _) -> pat_vars p) bs in
-        let pure = List.for_all (fun (p, e) -> nonexpansive e && not (refutable p)) bs in
-        if pure && not (List.exists (Hashtbl.mem used) names) then kept
-        else begin
-          List.iter (Hashtbl.remove used) names;
-          List.iter (fun (_, e) -> List.iter (fun x -> Hashtbl.replace used x ()) (free (if r then names else []) e [])) bs;
-          (it, l) :: kept
-        end
-    | IExt (x, _, _) -> Hashtbl.remove used x; (it, l) :: kept
-    | IExn _ -> (it, l) :: kept) [] (List.rev items)
-
-let compile (items : (item * int) list) =
-  cur := { code = []; nslots = 1; ntries = 1 };
-  let handler = label () and nglobals = ref 0 in
-  emit (TryEnter (0, handler));
+(* A unit: its toplevel in <unit>.init, its names that are not static
+ * (a value computed, a closure allocated) in its globals' table,
+ * <unit>.globals, the collector's roots. What nothing uses is left out
+ * by tiny-linker, piece by piece (a function, a static block): a
+ * function of the toplevel has no free variable, so its closure is
+ * static and the init names it not (old: prune, the program's
+ * toplevel lets that nothing used dropped before the code was made,
+ * when a program was compiled whole: a library cost a program only
+ * what it called, which the link's pieces now do) *)
+let compile_unit env (items : (item * int) list) =
+  cur := { code = []; nslots = 1; ntries = 0 };
+  arities := [];
+  let table = !unit_name ^ ".globals" and nglobals = ref 0 in
   let rec arity = function TE ("->", [ _; r ]) -> 1 + arity r | _ -> 0 in
-  ignore (List.fold_left (fun env (it, l) ->
+  let env = List.fold_left (fun env (it, l) ->
     try
       match it with
       | IExt (x, t, p) -> (x, Ext (p, arity t)) :: env
@@ -1507,10 +1514,26 @@ let compile (items : (item * int) list) =
           let env' = bind env r bs in
           let added = List.filteri (fun i _ -> i < List.length env' - List.length env) env' in
           List.map (function
-            | x, Loc (Slot s, k) -> emit (Get s); emit (SetG !nglobals); incr nglobals; x, Loc (Glob (!nglobals - 1), k)
+            | x, Loc (Slot s, k) -> emit (Get s); emit (SetG (table, !nglobals)); incr nglobals; x, Loc (Glob (table, !nglobals - 1), k)
             | b -> b) added
           @ env
-    with Failure m -> error "line %d: %s" l m) [] items);
+    with Failure m -> error "line %d: %s" l m) env items in
+  emit (Imm 1L);
+  emit Ret;
+  machine (!unit_name ^ ".init") 0 !cur.nslots (List.rev !cur.code);
+  while not (Queue.is_empty queue) do (Queue.pop queue) () done;
+  env, !nglobals
+
+(* The program's main: ml_init, each unit's init in their order, in a
+ * handler that prints an uncaught exception; the curry functions the
+ * units need; the globals' tables one after the other, ml_globals, and
+ * their count, ml_nglobals (what TinyMLRuntime/core.c scans) *)
+let compile_main (units : (string * int) list) needed =
+  unit_name := "ml";
+  cur := { code = []; nslots = 1; ntries = 1 };
+  let handler = label () in
+  emit (TryEnter (0, handler));
+  List.iter (fun (u, _) -> emit (Imm 1L); emit (Call (Direct (u ^ ".init"), 0, false)); emit Drop) units;
   emit (TryExit 0);
   emit (Imm 1L);
   emit Ret;
@@ -1519,10 +1542,123 @@ let compile (items : (item * int) list) =
   emit (CallC ("ml_uncaught", 1));
   emit Ret;
   machine "ml_init" 0 !cur.nslots (List.rev !cur.code);
-  while not (Queue.is_empty queue) do (Queue.pop queue) () done;
-  List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities;
-  words "ml_nglobals" [ DNum (string_of_int !nglobals) ];
-  Printf.bprintf data "ml_globals:\n\t.space\t%d\n" (4 * max 1 !nglobals)
+  List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) (List.sort_uniq compare needed);
+  let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
+  words "ml_nglobals" [ DNum (string_of_int total) ];
+  Printf.bprintf data "\t.piece\nml_globals:\n";
+  List.iter (fun (u, n) -> Printf.bprintf data "%s.globals:\n\t.space\t%d\n" u (4 * n)) units;
+  if total = 0 then Printf.bprintf data "\t.space\t4\n"
+
+(*****************************************************************************)
+(* Interfaces *)
+(*****************************************************************************)
+
+(* A unit's interface, M.tmi, what a unit compiled after it reads (as
+ * OCaml's .cmi): its globals' count and the curry functions it needs;
+ * the types, constructors, labels of the program so far; each of its
+ * names, where its value is (a static closure and its code, a global,
+ * a primitive) and its type, M.mli's when there is one. A line each:
+ *
+ *     tiny-interface M  globals N  curry N
+ *     con C K ARITY NCONST NBLOCK (res, args...) pc_    K: c b e
+ *     label L REC IDX MUT NAMES (rec, field) pl_
+ *     abbrev T TYPE   forgotten T
+ *     val X static SYM LAB N TYPE | val X global TABLE IDX LAB N TYPE
+ *     val X ext PRIM N TYPE         (LAB N - - when unknown)
+ *
+ * A type is written as tiny-ml reads one, its variables 'v<number> *)
+let rec print_ty t =
+  match repr t with
+  | TVar { contents = Unbound (n, _) } -> sprintf "'v%d" n
+  | TCon ("->", [ a; b ]) -> sprintf "(%s -> %s)" (print_ty a) (print_ty b)
+  | TCon ("*", ts) -> "(" ^ String.concat " * " (List.map print_ty ts) ^ ")"
+  | TCon (c, []) -> c
+  | TCon (c, ts) -> "(" ^ String.concat ", " (List.map print_ty ts) ^ ") " ^ (match c with "%c" -> "pc_" | "%l" -> "pl_" | c -> c)
+  | TVar _ -> "?"
+
+let rec print_texpr = function
+  | TEVar v -> "'" ^ v
+  | TE ("->", [ a; b ]) -> sprintf "(%s -> %s)" (print_texpr a) (print_texpr b)
+  | TE ("*", ts) -> "(" ^ String.concat " * " (List.map print_texpr ts) ^ ")"
+  | TE (c, []) -> c
+  | TE (c, ts) -> "(" ^ String.concat ", " (List.map print_texpr ts) ^ ") " ^ c
+
+let read_ty s =
+  toks := lex s; pos := 0;
+  let back = function TCon ("pc_", ts) -> TCon ("%c", ts) | TCon ("pl_", ts) -> TCon ("%l", ts) | t -> t in
+  back (of_texpr (ref []) (ty ()))
+
+let write_interface (exports : (string * binding) list) types nglobals =
+  let b = Buffer.create 4096 in
+  let line fmt = Printf.ksprintf (fun s -> Buffer.add_string b (s ^ "\n")) fmt in
+  line "tiny-interface %s" !unit_name;
+  line "globals %d" nglobals;
+  List.iter (fun n -> line "curry %d" n) !arities;
+  Hashtbl.iter (fun c ci ->
+    line "con %s %s %d %d %d %s" c (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
+      ci.arity ci.nconst ci.nblock (print_ty ci.scheme)) cons;
+  Hashtbl.iter (fun l li -> line "label %s %s %d %b %s %s" l li.lrec li.idx li.mut (String.concat "," li.lnames) (print_ty li.lscheme)) record_labels;
+  List.iter (fun (t, te) -> line "abbrev %s %s" t (print_texpr te)) !abbreviations;
+  List.iter (fun t -> line "forgotten %s" t) !forgotten;
+  let known = function Some (lab, n) -> sprintf "%s %d" lab n | None -> "- -" in
+  List.iter (fun (x, bd) ->
+    match List.assoc_opt x types with
+    | None -> ()
+    | Some t ->
+        match bd with
+        | Loc (Static sym, k) -> line "val %s static %s %s %s" x sym (known k) (print_ty t)
+        | Loc (Glob (tb, i), k) -> line "val %s global %s %d %s %s" x tb i (known k) (print_ty t)
+        | Ext (p, n) -> line "val %s ext %s %d %s" x p n (print_ty t)
+        | Loc _ -> ()) exports;
+  Buffer.contents b
+
+(* an interface read: its types the program's, its names in env and in
+ * the types' env; its unit's name, globals and curry functions *)
+let read_interface text env tenv =
+  let env = ref env and tenv = ref tenv and name = ref "" and nglobals = ref 0 and needed = ref [] in
+  let rest ws k = String.concat " " (List.filteri (fun i _ -> i >= k) ws) in
+  List.iter (fun l ->
+    let ws = String.split_on_char ' ' l in
+    let known lab n = if lab = "-" then None else Some (lab, int_of_string n) in
+    match ws with
+    | [ "tiny-interface"; m ] -> name := m; known_units := m :: !known_units
+    | [ "globals"; n ] -> nglobals := int_of_string n
+    | [ "curry"; n ] -> needed := int_of_string n :: !needed
+    | "con" :: c :: k :: a :: nc :: nb :: _ ->
+        let kind = match k.[0] with 'c' -> KConst (int_of_string (String.sub k 1 (String.length k - 1))) | 'b' -> KBlock (int_of_string (String.sub k 1 (String.length k - 1))) | _ -> KExn in
+        Hashtbl.replace cons c { kind; arity = int_of_string a; nconst = int_of_string nc; nblock = int_of_string nb; scheme = read_ty (rest ws 6) }
+    | "label" :: l :: r :: i :: m :: names :: _ ->
+        let others = List.filter (fun li -> li.lrec <> r) (Hashtbl.find_all record_labels l) in
+        while Hashtbl.mem record_labels l do Hashtbl.remove record_labels l done;
+        List.iter (Hashtbl.add record_labels l) (List.rev others);
+        Hashtbl.add record_labels l { lrec = r; idx = int_of_string i; mut = m = "true"; lnames = String.split_on_char ',' names; lscheme = read_ty (rest ws 6) }
+    | "abbrev" :: t :: _ -> toks := lex (rest ws 2); pos := 0; abbreviations := (t, ty ()) :: List.remove_assoc t !abbreviations
+    | [ "forgotten"; t ] -> if not (List.mem t !forgotten) then forgotten := t :: !forgotten
+    | "val" :: x :: "static" :: sym :: lab :: n :: _ -> env := (x, Loc (Static sym, known lab n)) :: !env; tenv := (x, read_ty (rest ws 6)) :: !tenv
+    | "val" :: x :: "global" :: tb :: i :: lab :: n :: _ ->
+        env := (x, Loc (Glob (tb, int_of_string i), known lab n)) :: !env; tenv := (x, read_ty (rest ws 7)) :: !tenv
+    | "val" :: x :: "ext" :: p :: n :: _ -> env := (x, Ext (p, int_of_string n)) :: !env; tenv := (x, read_ty (rest ws 5)) :: !tenv
+    | [ "" ] -> ()
+    | _ -> error "not an interface's line: %s" l) (String.split_on_char '\n' text);
+  if !name = "" then error "not an interface of tiny-ml's";
+  !env, !tenv, (!name, !nglobals), !needed
+
+(* M.mli's vals, their types in place of what M.ml's inferred: its
+ * types and exceptions are M.ml's too, and skipped *)
+let mli_types text =
+  toks := lex text; pos := 0;
+  let starts () = match peek () with LID "val" | KW ("type" | "exception" | "external") | EOF -> true | _ -> false in
+  let rec go acc =
+    match peek () with
+    | EOF -> acc
+    | LID "val" ->
+        advance ();
+        let x = match peek () with LID x -> advance (); x | KW "(" -> advance (); let o = (match peek () with KW o -> advance (); o | _ -> fail ()) in expect (KW ")"); o | _ -> fail () in
+        expect (KW ":");
+        let t = ty () in
+        go ((x, of_texpr (ref []) t) :: acc)
+    | _ -> advance (); while not (starts ()) do advance () done; go acc in
+  go []
 
 (* ml_start called by C (the value stack's base at 0(sp)), ml_init's
  * closure slot 1, a unit (not what r13 held, which the collector would
@@ -1543,33 +1679,73 @@ let start =
  * nobody found: "also where is this tiny-ml \"prelude\"?") *)
 let prelude = TinyMLPrelude.prelude
 
+let parse s = toks := lex s; pos := 0; items ()
+
+(* a file's unit: its name without the directory and the extension,
+ * capitalized, as OCaml's module *)
+let unit_of f = String.capitalize_ascii (Filename.remove_extension (Filename.basename f))
+
+(* the prelude, the first unit, Stdlib: its names, their types, its
+ * globals and curry functions *)
+let prelude_unit () =
+  unit_name := "Stdlib";
+  (* an integer's range: 31 bits *)
+  let items = parse (prelude ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n") in
+  let tenv = List.fold_left type_item [] items in
+  let env, n = compile_unit [] items in
+  env, tenv, ("Stdlib", n), !arities
+
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
-  let output = ref "" and file = ref "" and files = ref [] in
+  let output = ref "" and file = ref "" and files = ref [] and separate = ref false in
   let exit n = CapStdlib.exit caps n in
   let rec args = function
     | "-o" :: o :: r -> output := o; args r
+    | "-c" :: r -> separate := true; args r
     | f :: r -> files := f :: !files; args r
     | [] -> ()
   in
   let argl = List.tl (Array.to_list (CapSys.argv caps)) in
   if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
   args argl;
-  if !files = [] then (Console.eprint caps "usage: tiny-ml [-o out.tm] file.ml...   (-h: how)\n"; exit 2);
-  let parse s = toks := lex s; pos := 0; items () in
+  let files = List.rev !files in
+  let read f = file := f; FS.read caps (Fpath.v f) in
+  let tmis = List.filter (fun f -> Filename.check_suffix f ".tmi") files and mls = List.filter (fun f -> Filename.check_suffix f ".ml") files in
+  if List.length mls + List.length tmis <> List.length files || files = [] || (!separate && List.length mls <> 1) then
+    (Console.eprint caps "usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...   (-h: how)\n"; exit 2);
+  let write f text = FS.write caps (Fpath.v f) text in
   try
-    (* an integer's range: 31 bits *)
-    let prelude = parse (prelude ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n") in
-    (* the files one after the other, one program: each read and typed
-     * under its own name, an error's *)
-    let env = ref (List.fold_left type_item [] prelude) in
-    let program = prelude @ List.concat_map (fun f ->
-      file := f;
-      let items = parse (FS.read caps (Fpath.v f)) in
-      env := List.fold_left type_item !env items;
-      items) (List.rev !files) in
-    compile (prune program);
-    let asm = start ^ Buffer.contents text ^ Buffer.contents data in
-    if !output = "" then Console.print caps asm else FS.write caps (Fpath.v !output) asm
+    let env, tenv, stdlib, needed = prelude_unit () in
+    (* the interfaces read, in their order: the units before this one *)
+    let env, tenv, units, needed = List.fold_left (fun (env, tenv, units, needed) f ->
+      let env, tenv, u, n = read_interface (read f) env tenv in env, tenv, units @ [ u ], needed @ n) (env, tenv, [ stdlib ], needed) tmis in
+    if !separate then begin
+      (* one unit: its object, without the prelude, and its interface *)
+      let f = List.hd mls in
+      Buffer.clear text; Buffer.clear data;
+      unit_name := unit_of f;
+      known_units := !unit_name :: !known_units;
+      let items = parse (read f) in
+      let tenv' = List.fold_left type_item tenv items in
+      let env', n = compile_unit env items in
+      let exports = List.filteri (fun i _ -> i < List.length env' - List.length env) env' in
+      let mli = Filename.remove_extension f ^ ".mli" in
+      let types = (if Sys.file_exists mli then mli_types (read mli) else []) @ tenv' in
+      let out = if !output = "" then Filename.remove_extension (Filename.basename f) ^ ".tm" else !output in
+      write out (Buffer.contents text ^ Buffer.contents data);
+      write (Filename.remove_extension out ^ ".tmi") (write_interface exports types n)
+    end else begin
+      (* the files one after the other, a unit each, then the main *)
+      let _, _, units, needed = List.fold_left (fun (env, tenv, units, needed) f ->
+        unit_name := unit_of f;
+        known_units := !unit_name :: !known_units;
+        let items = parse (read f) in
+        let tenv = List.fold_left type_item tenv items in
+        let env, n = compile_unit env items in
+        env, tenv, units @ [ (!unit_name, n) ], needed @ !arities) (env, tenv, units, needed) mls in
+      compile_main units needed;
+      let asm = start ^ Buffer.contents text ^ Buffer.contents data in
+      if !output = "" then Console.print caps asm else write !output asm
+    end
   with
   | Failure m -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m); exit 1
   | Sys_error m -> Console.eprint caps (Printf.sprintf "tiny-ml: %s\n" m); exit 1

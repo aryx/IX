@@ -575,6 +575,17 @@ through, a thing at a time.
 10. **mini-9pi.** What item 7 above lists, in the order it blocks:
    a name, secrets, the date, then mini-curl there, mini-lynx, and
    mini-netscape in a window of mini-rio, its time measured first.
+   Its waits (2026-10-19; the author: "for sure we also want
+   mini-netscape to work under mini-9pi too, so we would need to use
+   Source there"): a read of `/net` waits for every thread of mini-ml,
+   so the page's network goes through `Source`; by a network process
+   forked at the start, Plan 9's webfs's way, rather than a reader a
+   connection, since mini-9pi's fork copies the program
+   ([`notes_source.md`](../notes_source.md), sections 6 and 8). Its
+   steps: mini-netscape built for the draw platform (`OS=plan9`); the
+   network process and its pipe, tried on Linux by mini-ml's build
+   (`worker=wait`, then a loop that waits); the cookies between the two;
+   then under mini-9pi.
 11. **The docs.** The READMEs, `docs/loc.md`'s row,
     `plan_ml_bootstrap.md`'s ledger for what mini-ml or lib_core
     gained, this plan's Status.

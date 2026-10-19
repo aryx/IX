@@ -1,6 +1,6 @@
 42 1 {"y":2,"z":3} 1 2
 one
-1,2 1 1024 true symbol
+1 1024 true symbol
 null A-B-C 20
 TypeError true
 finally

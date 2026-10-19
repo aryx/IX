@@ -17,15 +17,9 @@ type t = {
   mutable seconds : float; (* a run's time at most, if steps are not the limit (a page's): infinity, none *)
   mutable deadline : float;
   mutable depth : int; (* of the calls *)
-  mutable generators : generating list; (* those whose body is running, the innermost first *)
   global_this : A.place; (* opti: where globalThis is, in the globals *)
 }
 
-(* a generator between its body and who calls next(): what the body
- * gave last, what it is given back *)
-and generating = { mutable out : out; mutable sent : sent }
-and out = Yielded of value | Ended of value | Failed of value
-and sent = Sent of value | Thrown of value | Returned of value
 
 type error = { line : int; message : string }
 
@@ -52,10 +46,6 @@ let watch_check (where : string) : unit =
 let tracing = ref 0
 
 let unwinding = Js_value.unwinding
-
-(* generator.return(v): the body left from its yield, its finally
- * blocks run on the way *)
-exception Generator_return of value
 
 (* a?.b with a null or undefined: the chain it is in ends, undefined *)
 exception Short_circuit
@@ -224,6 +214,9 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
   | Opt e -> ( match eval_expr t s this e with Undefined | Null -> raise Short_circuit | v -> v)
   | Optional e -> ( try eval_expr t s this e with Short_circuit -> Undefined)
   | Await e -> Js_promise.await (Option.get t.promises) (eval_expr t s this e)
+  (* a generator's yield: generators are read (a page's feature test
+   * compiles one: MediaWiki's) but not run here (plan_browser.md, C) *)
+  | Yield _ -> throw "SyntaxError" "not supported here: generators"
   (* tag`a${x}b`: tag(["a", "b"], x), the strings' array with itself
    * as its raw (the escapes are read already: an approximation) *)
   | Tagged (tag, strings, es) ->
@@ -231,11 +224,6 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
       let parts = new_array (List.map (fun x -> String x) strings) in
       set_own parts "raw" (Object parts);
       call_value t fn ~this:self (Object parts :: List.map (eval_expr t s this) es)
-  | Yield (false, e) -> yield t (match e with Some e -> eval_expr t s this e | None -> Undefined)
-  (* yield* xs: each of xs yielded *)
-  | Yield (true, e) ->
-      iterate t (match e with Some e -> eval_expr t s this e | None -> Undefined) (fun v -> ignore (yield t v); true);
-      Undefined
   (* a ||= b: assigned only if a is falsy; &&=, ??= the same of && and ?? *)
   | Assign ((("&&=" | "||=" | "??=") as op), target, v) ->
       let old = eval_expr t s this target in
@@ -503,64 +491,6 @@ and items_of (t : t) (v : value) : value list =
   iterate t v (fun x -> items := x :: !items; true);
   List.rev !items
 
-(* yield v, in a generator's body: v given to who called next(), the
- * body stopped until the next one; what that next() was given *)
-and yield (t : t) (v : value) : value =
-  match t.generators with
-  | [] -> throw "SyntaxError" "yield is only valid in generator functions"
-  | g :: _ -> (
-      g.out <- Yielded v;
-      Js_coroutine.suspend ();
-      match g.sent with
-      | Sent v -> v
-      | Thrown e -> raise (Throw e)
-      | Returned v -> raise (Generator_return v))
-
-(* a generator's call: its body a coroutine not started yet, and the
- * iterator that runs it a yield at a time -- next(v), return(v),
- * throw(e), and itself as its own [Symbol.iterator]() *)
-and generator (t : t) (body : unit -> value) : value =
-  let g = { out = Yielded Undefined; sent = Sent Undefined } in
-  let ended = ref false and started = ref false in
-  let run () =
-    g.out <-
-      (match body () with
-      | v -> Ended v
-      | exception Generator_return v -> Ended v
-      | exception Throw e -> Failed e
-      | exception Stack_overflow -> Failed (error "RangeError" "Maximum call stack size exceeded"));
-    ended := true
-  in
-  let co = Js_coroutine.create run in
-  let result v finished =
-    let o = new_object () in
-    set_own o "value" v;
-    set_own o "done" (Bool finished);
-    Object o
-  in
-  let resume (what : sent) : value =
-    if !ended then (match what with Thrown e -> raise (Throw e) | Returned v -> result v true | Sent _ -> result Undefined true)
-    else if (not !started) && (match what with Sent _ -> false | _ -> true) then (
-      (* stopped before it began: nothing of its body runs *)
-      ended := true;
-      match what with Thrown e -> raise (Throw e) | Returned v -> result v true | Sent _ -> result Undefined true)
-    else (
-      started := true;
-      g.sent <- what;
-      t.generators <- g :: t.generators;
-      Js_coroutine.resume co;
-      t.generators <- List.tl t.generators;
-      match g.out with Yielded v -> result v false | Ended v -> result v true | Failed e -> raise (Throw e))
-  in
-  let o = new_object () in
-  let self = Object o in
-  let arg args = match args with v :: _ -> v | [] -> Undefined in
-  set_own o "next" (host_function "next" (fun ~this:_ args -> resume (Sent (arg args))));
-  set_own o "return" (host_function "return" (fun ~this:_ args -> resume (Returned (arg args))));
-  set_own o "throw" (host_function "throw" (fun ~this:_ args -> resume (Thrown (arg args))));
-  set_own o "@@iterator" (host_function "[Symbol.iterator]" (fun ~this:_ _ -> self));
-  self
-
 (* o.k: the property, or what its getter gives *)
 and get (t : t) (target : value) (k : string) : value =
   match target with
@@ -794,7 +724,7 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
       in
       (* an async function: its body a coroutine, run to its first
        * await; the call gives its promise *)
-      (match if c.func.generator then generator t body else if c.func.async then Js_promise.async (Option.get t.promises) body else body () with
+      (match if c.func.generator then throw "TypeError" "not supported here: generators (function*)" else if c.func.async then Js_promise.async (Option.get t.promises) body else body () with
       | result ->
           t.depth <- t.depth - 1;
           if !watched <> None then watch_check ("leaving " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)"));
@@ -1126,7 +1056,7 @@ let prelude () : A.program =
 
 let create_with (log : string -> unit) (seed : int) (now : unit -> float) : t =
   let globals = Js_scope.global () in
-  let t = { globals; protos = None; promises = None; line = 0; steps = default_budget; budget = default_budget; seconds = infinity; deadline = infinity; depth = 0; generators = []; global_this = A.place () } in
+  let t = { globals; protos = None; promises = None; line = 0; steps = default_budget; budget = default_budget; seconds = infinity; deadline = infinity; depth = 0; global_this = A.place () } in
   (* what a script's function gives back to OCaml is no rope either *)
   let call f ~this args = flat (call_value t f ~this args) in
   let define x v = declare globals x ~constant:false v in

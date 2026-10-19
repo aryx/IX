@@ -113,9 +113,7 @@ let tests =
             "[true, true, 1, true, true, 1, 0]";
           check "new Number and new String: objects that hold a value" "[new Number(5) + 1, String(new Number(5)), new Number(5).toString(), new String('a') + 'b', typeof new Number(5), (255).toString(16)]"
             "[6, \"5\", \"5\", \"ab\", \"object\", \"ff\"]");
-      Testo.create "classes, generators, async: scopes kept alive" (fun () ->
+      Testo.create "classes, async: scopes kept alive" (fun () ->
           check "a class's methods see its scope" "var k = 2; class A { constructor(x) { this.x = x } twice() { return this.x * k } } class B extends A { twice() { return super.twice() + 1 } } new B(4).twice()"
-            "9";
-          check "a generator between two yields" "function* g(n) { var s = 0; for (var i = 0; i < n; i++) { s += i; yield s } } var out = []; for (var v of g(4)) out.push(v); out"
-            "[0, 1, 3, 6]");
+            "9");
     ]

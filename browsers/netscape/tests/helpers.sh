@@ -22,7 +22,7 @@ for p in mpv mini-page show gv; do
   printf '#!/bin/sh\necho %s "$@" >> %s/said\n[ -f "$1" ] && head -c 5 "$1" >> %s/said && echo >> %s/said\nexit 0\n' $p $T $T $T > $T/bin/$p
   chmod +x $T/bin/$p
 done
-run() { HOME=$T/home PATH=$T/bin:$PATH $N -fixed-time 1000 "$@" > /dev/null 2>&1; }
+run() { HOME=$T/home PATH=$T/bin:$PATH $N worker=wait -fixed-time 1000 "$@" > /dev/null 2>&1; }
 said() { cat $T/said 2>/dev/null | sed "s#$T#T#g; s#mini-netscape-[0-9-]*#F-#g" | tr '\n' ';'; rm -f $T/said; }
 
 run -dump-frame 6 $T/a.ppm profile=off url=browsers/netscape/tests/pages/helpers.html -script 'at(-238;364):1-3,click:2'

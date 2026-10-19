@@ -40,7 +40,7 @@ SITES=${*:-"https://en.wikipedia.org/wiki/OCaml https://news.ycombinator.com htt
 mkdir -p $D
 for u in $SITES; do
   n=$(echo $u | sed -E 's#https?://##; s#[/.?=&]+#_#g; s#_$##')
-  ( timeout 300 $P -dump-frame 250 $D/$n.ppm -fixed-time 1000 url=$u profile=off helpers=off console=on > $D/$n.txt 2>&1
+  ( timeout 300 $P -dump-frame 250 $D/$n.ppm -fixed-time 1000 worker=wait url=$u profile=off helpers=off console=on > $D/$n.txt 2>&1
     echo "sum $(md5sum < $D/$n.ppm | cut -c1-32)" >> $D/$n.txt
     convert $D/$n.ppm $D/$n.png && rm $D/$n.ppm ) &
 done

@@ -99,8 +99,10 @@
  * no scripts; a Netscape faithful to it, over Mosaic's kind of layout
  * (Html_layout, which the engine still has), would not show a page
  * of today. Tabs are Mozilla's (2002) and the field's offers Netscape
- * 4's and Chrome's, not Navigator 1's; no cache, and a page's requests
- * one after the other on one thread, a tab not shown waiting.
+ * 4's and Chrome's, not Navigator 1's; a page's work on a worker beside
+ * the window, Back to a page kept whole (Tab), as browsers of today;
+ * no cache, a page's requests one after the other, a tab not shown
+ * waiting.
  *
  * cs-history:
  * Netscape was Mosaic's authors' second browser. Marc Andreessen and
@@ -144,8 +146,10 @@
  * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
  * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [-v] [url=address] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
- *   (a file's path is an address; console=on: what the page's scripts
+ * usage: mini-netscape [-v] [url=address] [worker=wait|off] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
+ *   (a file's path is an address; worker: the window waits for each
+ *   piece of a page the worker does (the tests'), or does them itself,
+ *   where they are done beside it (The worker, below); console=on: what the page's scripts
  *   print, and their errors, on the standard error; strict=on: a
  *   script that does not parse refused whole, a DOM method missing a
  *   TypeError, where they are passed over with a warning; helpers=off:
@@ -198,6 +202,8 @@ type model = {
   blank : Tab.t; (* a tab with no page, the browser's settings: a new one *)
   places : Places.t; (* the history and the bookmarks *)
   choice : int; (* the Location field's offer chosen by the arrows, -1 none *)
+  piece : int option; (* the tab's piece on the worker that the window waits for (Worker) *)
+  later : (Tab.t -> Tab.t) list; (* what was done to the page meanwhile, to do when it is back, the last first *)
   location : string; (* the field's text *)
   editing : bool; (* the Location field has the keys *)
   fresh : bool; (* just clicked: the first character typed replaces the address *)
@@ -272,7 +278,9 @@ let fitted_tab (width : float) (m : model) : model = { m with tab = Tab.resized 
 let zoomed (width : float) (change : Browser_zoom.change) (m : model) : model =
   fitted_tab width { m with zooms = Browser_zoom.with_host m.zooms (host m) (Browser_zoom.apply change (zoom m)) }
 
-let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1 }
+(* (the piece on the worker, if one is, given up: the tab is another, or
+ * asked for another page) *)
+let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1; piece = None; later = [] }
 
 (* the tab at [i] shown, the others around it *)
 let select (i : int) (m : model) : model =
@@ -294,6 +302,45 @@ let remembered (m : model) : model =
   | Some p when (not (Tab.busy m.tab)) && not (Browser_url.starts_with "about:" url || Browser_url.starts_with "data:" url) -> (
       match m.places.history with q :: _ when q.url = url -> m | _ -> { m with places = Places.visited m.places { url; title = p.title } })
   | _ -> m
+
+(*****************************************************************************)
+(* The worker *)
+(*****************************************************************************)
+
+(* the tab's pieces done by a worker beside the window (Tab_worker),
+ * the window keeping its copy: what comes back merged with it *)
+let give (caps : < caps; .. >) (m : model) : model = { m with piece = Some (Tab_worker.give caps m.tab) }
+
+(* the tab a piece made, the window's (a page come of another site laid
+ * out at its zoom before it is drawn) *)
+let came (width : float) (m : model) (tab : Tab.t) : model =
+  fitted_tab width (remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) })
+
+(* the worker's piece, if it is done: the window's if it waits for it,
+ * merged with its copy and what was kept for later done; else dropped *)
+let collected (width : float) (m : model) : model =
+  match Tab_worker.take () with
+  | None -> m
+  | Some (n, r) -> (
+      match r with
+      | _ when m.piece <> Some n -> m
+      | Error e -> raise e
+      | Ok tab -> came width { m with piece = None; later = [] } (List.fold_right (fun f t -> f t) m.later (Tab.merged ~window:m.tab tab)))
+
+(* the piece of the tab shown, waited for: before another tab is shown
+ * (given up, a piece running the page's scripts would be run again
+ * when the tab is back) *)
+let finished (width : float) (m : model) : model =
+  if m.piece = None then m
+  else
+    let was = !Tab_worker.working in
+    Tab_worker.working := Tab_worker.Waited;
+    let m = collected width m in
+    Tab_worker.working := was;
+    m
+
+(* the page's own (its scripts, its fields): now, or when the piece out is done *)
+let on_page (m : model) (f : Tab.t -> Tab.t) : model = if Tab_worker.out () then { m with later = f :: m.later } else shown { m with tab = f m.tab }
 
 (* was the window drawn (the view taken) since the last piece fetched?
  * A piece is a second sometimes, and a platform then owes several
@@ -358,17 +405,16 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
   (* (a page of another site has its site's zoom: its width, before it is read) *)
   let m = fitted_tab screen.width m in
   let m =
-    if Tab.busy m.tab && !seen then begin
-      seen := false;
-      let tab = Tab.step caps m.tab in
-      (* (a page come of another site laid out at its zoom before it is drawn) *)
-      fitted_tab screen.width (remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) })
-    end
-    else m
+    if !Tab_worker.working = Tab_worker.Inline then
+      if Tab.busy m.tab && !seen then (seen := false; came screen.width m (Tab.step caps m.tab)) else m
+    else
+      let m = collected screen.width m in
+      if Tab.busy m.tab && not (Tab_worker.out ()) && (!Tab_worker.working = Tab_worker.Beside || !seen) then (seen := false; collected screen.width (give caps m)) else m
   in
-  (* the page's timers, on the frame's clock; its Date, from the time it is *)
+  (* the page's timers, on the frame's clock (not while its scripts are
+   * the worker's); its Date, from the time it is *)
   let (P.Time now) = computer.time in
-  let m = { m with tab = Tab.advance (1000. /. 60.) (Tab.at (Float.round (now *. 1000.)) m.tab) } in
+  let m = { m with tab = (if Tab_worker.out () then Tab.at (Float.round (now *. 1000.)) m.tab else Tab.advance (1000. /. 60.) (Tab.at (Float.round (now *. 1000.)) m.tab)) } in
   let m =
     match m.console with
     | None -> m
@@ -407,21 +453,22 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       match List.nth_opt (offers m) (max 0 row) with
       | Some p when inside at (field_x, toolbar_height -. 8., field_width screen.width, offer_height *. float_of_int (List.length (offers m))) -> shown { m with tab = Tab.visit m.tab p.url }
       | _ ->
-          if snd at < top m then select (int_of_float (fst at /. tab_width screen.width m)) m
+          if snd at < top m then select (int_of_float (fst at /. tab_width screen.width m)) (finished screen.width m)
           else if snd at < screen.height -. status_height then
             let x = fst at /. zoom m and y = ((snd at -. top m) /. zoom m) +. Tab.scroll m.tab in
             (* Ctrl and a click: the link in a tab of its own, behind *)
             match Tab.link_at m.tab ~x ~y with
             | Some url when control -> { m with right = Tab.visit m.blank url :: m.right }
-            | _ -> shown { m with tab = Tab.click m.tab ~x ~y }
+            | _ -> on_page m (fun t -> Tab.click t ~x ~y)
           else m
   in
   let change = if control then List.find_map (fun k -> if pressed k then Browser_zoom.key k else None) [ "="; "+"; "-"; "0" ] else None in
   let command = if control then List.find_opt pressed [ "t"; "w"; "d"; "Tab" ] else None in
   if change <> None then match change with Some c -> zoomed screen.width c m | None -> m
   else if command <> None then
+    let m = if command = Some "d" then m else finished screen.width m in
     match command with
-    | Some "t" -> { m with left = m.tab :: m.left; tab = Tab.visit m.blank "about:blank"; location = ""; editing = true; fresh = false; choice = -1 }
+    | Some "t" -> { m with left = m.tab :: m.left; tab = Tab.visit m.blank "about:blank"; location = ""; editing = true; fresh = false; choice = -1; piece = None; later = [] }
     | Some "w" -> closed m
     | Some "Tab" -> select ((List.length m.left + 1) mod List.length (tabs m)) m
     | _ -> (
@@ -437,12 +484,13 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     else if pressed "ArrowDown" then { m with choice = min (m.choice + 1) (List.length offered - 1) }
     else if pressed "ArrowUp" then { m with choice = max (m.choice - 1) (-1) }
     else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false; choice = -1 }
-    else if pressed "Escape" then shown m
+    else if pressed "Escape" then { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1 }
     else m
   else if Tab.focus m.tab <> None then
-    let m = if keys.typed <> "" then { m with tab = Tab.typed m.tab keys.typed } else m in
-    if pressed "Enter" then shown { m with tab = Tab.key m.tab "enter" }
-    else if pressed "Backspace" then { m with tab = Tab.key m.tab "backspace" }
+    let typed = keys.typed in
+    let m = if typed <> "" then { (on_page m (fun t -> Tab.typed t typed)) with location = m.location } else m in
+    if pressed "Enter" then on_page m (fun t -> Tab.key t "enter")
+    else if pressed "Backspace" then { (on_page m (fun t -> Tab.key t "backspace")) with location = m.location }
     else m
   else
     let by d = { m with tab = Tab.scrolled (d /. zoom m) ~visible:(visible /. zoom m) m.tab } in
@@ -597,7 +645,11 @@ let helped (caps : < caps; .. >) (m : model) : model =
       Browser_helpers.run caps (Browser_helpers.command rule ~url ~file);
       { m with tab }
 
-let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = saved caps (helped caps (update_window caps computer m))
+let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
+  let m = saved caps (helped caps (update_window caps computer m)) in
+  (* (mini-ml's threads: the worker's turn) *)
+  if Tab_worker.out () then Thread.yield ();
+  m
 
 (*****************************************************************************)
 (* Entry point *)
@@ -632,6 +684,7 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
   if List.assoc_opt "settle" flags = Some "off" then Tab.settles := false;
   if List.assoc_opt "draw" flags = Some "all" then Browser_draw.lazily := false;
   if List.assoc_opt "view" flags = Some "each" then memo := false;
+  (match List.assoc_opt "worker" flags with Some "off" -> Tab_worker.working := Inline | Some "wait" -> Tab_worker.working := Waited | _ -> ());
   if List.assoc_opt "console" flags = Some "on" then Js_value.say := (fun line -> Console.eprint caps (line ^ "\n"));
   (* strict=on: a page's script refused whole if it does not parse, a
    * DOM method this browser lacks a TypeError, as a browser has them;
@@ -639,7 +692,7 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
   if List.assoc_opt "strict" flags = Some "on" then (Browser_script.strict := true; Js_eval.lenient := false);
   P.game view (update caps)
     { tab; left = []; right = []; blank; places; choice = -1; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms;
-      console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0, places) }
+      console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0, places); piece = None; later = [] }
 
 let () =
   Cap.main (fun caps ->

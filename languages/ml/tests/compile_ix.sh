@@ -30,6 +30,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_cry
 # its SDL module (TinyMachineSDL) and tiny/sdl/, the tiny programs in a window of it;
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
+# nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/threads.ml)
 # the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
 # where it was not built, the two units that name it are left out
 memdata=kernels/9pi/build/pi1-ocaml
@@ -46,7 +47,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/sdl/|^tiny/TinyLibCore/|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/sdl/|^tiny/TinyLibCore/|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/|^browsers/netscape/spawn/domains\.ml$'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)

@@ -87,6 +87,25 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   and the files given to them (`Logs.info`; `-v` and `-debug` are the
   playground's `Session`'s, the reporter `Logging.setup`).
 
+- **A worker beside the window** (2026-10-19; the author: "back is
+  not always responsive when some computation is done in the rendered
+  part", "like mini-chrome ... threads or domains depending on the
+  available ocaml"). A tab's pieces (`Tab.step`) are done by a worker,
+  `Worker_spawn`: a thread under OCaml 4.14, a domain under OCaml 5
+  (dune copies `spawn/threads.ml` or `spawn/domains.ml`), lib_core's
+  cooperative thread under mini-ml (mkfile). The window draws, scrolls,
+  switches tabs and goes Back meanwhile; a click on the page or a key
+  in it waits for the piece (the page's scripts on one thread at a
+  time: Netscape's "The worker"). Back and Forward show a page left
+  whole as it was (`Tab`'s entries keep the three nearest: the layout,
+  the scripts' engine), laid out again if a link of it was followed
+  since. Measured: a link to a page that answers in 4 s, then Back,
+  260 frames in 0.12 s, the first page shown, where the window waited
+  4.1 s (`worker=off`). Under mini-ml a socket's read still waits for
+  every thread (4.4 s both ways): `Source` for the network is next.
+  `worker=wait` (the tests: the same frames each run), `worker=off` (a
+  frame does the piece, as before).
+
 ## Speed (2026-10-11)
 
 Where a load's time went was measured before anything was changed,

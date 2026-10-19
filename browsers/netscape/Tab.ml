@@ -3,8 +3,12 @@
 
 (* See Tab.mli *)
 
-(* a page left: its address, and where it was scrolled to *)
-type entry = { at : string; scrolled_to : float }
+(* a page left: its address, where it was scrolled to, and the page
+ * itself if it was whole -- laid out, its scripts' engine, its bytes,
+ * the width it was laid out at -- for Back and Forward to show it
+ * again at once (browsers' back-forward cache, Opera's in 2003) *)
+type kept = { shown : Browser_page.t; engine : Browser_script.t option; size : int; laid_at : float; seen : string list }
+type entry = { at : string; scrolled_to : float; kept : kept option }
 
 (* what is left to do, a piece a call of [step], in order: the page at
  * an address (with what a form posts, and where to scroll it), with
@@ -351,12 +355,41 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
                 Browser_script.answer s r.rid answer;
                 after_task t))
 
-let here (t : t) : entry = { at = t.url; scrolled_to = t.scroll }
+(* [r], a piece done on a copy of the tab (Netscape's worker), with
+ * what the window did to its own copy meanwhile: its width and its
+ * clock, and where it is scrolled if the page is the same *)
+let merged ~(window : t) (r : t) : t =
+  let r = resized window.width { r with epoch = window.epoch; visible = window.visible } in
+  if r.url = window.url then scrolled 0. ~visible:window.visible { r with scroll = window.scroll } else r
+
+let here (t : t) : entry =
+  let kept = match t.page with Some p when t.todo = [] -> Some { shown = p; engine = t.script; size = t.bytes; laid_at = t.width; seen = t.visited } | _ -> None in
+  { at = t.url; scrolled_to = t.scroll; kept }
+
+(* the pages kept: the three nearest each way (one of Wikipedia's,
+ * with its scripts, is tens of megabytes) *)
+let trimmed (h : entry Browser_history.t) : entry Browser_history.t =
+  let near = List.mapi (fun i (e : entry) -> if i < 3 then e else { e with kept = None }) in
+  { behind = near h.behind; ahead = near h.ahead }
+
+(* the page of an entry shown again: as it was left if it was kept,
+ * else asked for *)
+let returned (t : t) (e : entry) (history : entry Browser_history.t) : t =
+  let history = trimmed history in
+  match e.kept with
+  | Some k ->
+      (* laid out again at another width, or if a link of it was
+       * followed since (:visited, its color) *)
+      let since = List.filter (fun u -> not (List.mem u k.seen)) t.visited in
+      let followed = List.exists (fun (a : Dom.element) -> match Dom.attribute "href" a with Some h -> List.mem (Browser_url.resolve k.shown.url h) since | None -> false) (Dom.find_all "a" k.shown.tree) in
+      let p = if k.laid_at = t.width && not followed then k.shown else Browser_page.laid_out (settings t) k.shown in
+      progress { t with history; page = Some p; script = k.engine; url = e.at; scroll = e.scrolled_to; bytes = k.size; todo = []; focus = None; note = None; owed = 0 }
+  | None -> ask { t with history } ~post:None ~scroll:e.scrolled_to e.at
 
 (* [address] is whole *)
 let go_post (t : t) ~(post : (string * string) option) (address : string) : t =
   let same_page = t.page <> None && post = None && fst (Browser_url.split_fragment address) = fst (Browser_url.split_fragment t.url) in
-  let history = if t.page = None then t.history else Browser_history.visit (here t) t.history in
+  let history = if t.page = None then t.history else trimmed (Browser_history.visit (here t) t.history) in
   if same_page && snd (Browser_url.split_fragment address) <> None then
     to_fragment { t with history; url = address } (snd (Browser_url.split_fragment address))
   else ask { t with history } ~post ~scroll:0. address
@@ -371,12 +404,12 @@ let visit (t : t) (typed : string) : t =
 
 let back (t : t) : t =
   match Browser_history.back (here t) t.history with
-  | Some (e, history) -> ask { t with history } ~post:None ~scroll:e.scrolled_to e.at
+  | Some (e, history) -> returned t e history
   | None -> { t with said = "No page before this one" }
 
 let forward (t : t) : t =
   match Browser_history.forward (here t) t.history with
-  | Some (e, history) -> ask { t with history } ~post:None ~scroll:e.scrolled_to e.at
+  | Some (e, history) -> returned t e history
   | None -> { t with said = "No page after this one" }
 
 let reload (t : t) : t =

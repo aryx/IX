@@ -21,27 +21,27 @@ check() { if [ "$2" = "$3" ]; then echo "ok $1"; else echo "FAIL $1: $2, not $3"
 PAGE=browsers/netscape/tests/pages/pictures.html
 
 # the zooms
-$N -dump-frame 14 $T/in.ppm -fixed-time 1000 profile=off url=$PAGE -script 'Control:9-12,=:10,=:12' > /dev/null
-$N -dump-frame 14 $T/first.ppm -fixed-time 1000 profile=$T/p url=$PAGE -script 'Control:9-12,=:10,=:12' > /dev/null
+$N -dump-frame 14 $T/in.ppm -fixed-time 1000 worker=wait profile=off url=$PAGE -script 'Control:9-12,=:10,=:12' > /dev/null
+$N -dump-frame 14 $T/first.ppm -fixed-time 1000 worker=wait profile=$T/p url=$PAGE -script 'Control:9-12,=:10,=:12' > /dev/null
 check "the zoom is written" "$(cat $T/p/preferences)" "zoom file 1.25"
-$N -dump-frame 14 $T/second.ppm -fixed-time 1000 profile=$T/p url=$PAGE > /dev/null
+$N -dump-frame 14 $T/second.ppm -fixed-time 1000 worker=wait profile=$T/p url=$PAGE > /dev/null
 check "and read: the second run's frame is the zoomed one" "$(cksum < $T/second.ppm)" "$(cksum < $T/in.ppm)"
 
 # the window's size
-$N -dump-frame 4 $T/w.ppm -fixed-time 1000 profile=$T/p window=1400x700 url=$PAGE > /dev/null
+$N -dump-frame 4 $T/w.ppm -fixed-time 1000 worker=wait profile=$T/p window=1400x700 url=$PAGE > /dev/null
 check "the window's size is written, the zoom kept" "$(tr '\n' ';' < $T/p/preferences)" "window 1400 700;zoom file 1.25;"
-$N -dump-frame 4 $T/w2.ppm -fixed-time 1000 profile=$T/p url=$PAGE > /dev/null
+$N -dump-frame 4 $T/w2.ppm -fixed-time 1000 worker=wait profile=$T/p url=$PAGE > /dev/null
 check "and read: the second run's picture is that large" "$(head -c 15 $T/w2.ppm | tr "\n" " " | sed "s/ $//")" "P6 1400 700 255"
 
 # the history and the bookmarks (Places): the menu seen and kept (Ctrl+D);
 # the second run goes there by its title typed, the offer taken
 M=browsers/netscape/tests/pages/menu.html
-$N -dump-frame 8 $T/m.ppm -fixed-time 1000 profile=$T/q url=$M -script 'Control:4-6,d:5' > /dev/null
+$N -dump-frame 8 $T/m.ppm -fixed-time 1000 worker=wait profile=$T/q url=$M -script 'Control:4-6,d:5' > /dev/null
 check "the page seen, in the history" "$(cut -f2 $T/q/history)" "Menu"
 check "and in the bookmarks, Netscape's file" "$(head -1 $T/q/bookmarks.html; grep -o '<A HREF=.*' $T/q/bookmarks.html)" "<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <A HREF=\"file://$M\">Menu</A>"
-$N -dump-frame 12 $T/o.ppm -fixed-time 1000 profile=$T/q url=about:blank -script 'at(100;478):1-3,click:2,type(men):5,ArrowDown:6,Enter:7' > /dev/null
-$N -dump-frame 12 $T/o2.ppm -fixed-time 1000 profile=off url=file://$M > /dev/null
+$N -dump-frame 12 $T/o.ppm -fixed-time 1000 worker=wait profile=$T/q url=about:blank -script 'at(100;478):1-3,click:2,type(men):5,ArrowDown:6,Enter:7' > /dev/null
+$N -dump-frame 12 $T/o2.ppm -fixed-time 1000 worker=wait profile=off url=file://$M > /dev/null
 check "and read: Men typed, the offer taken, the menu shown" "$(cksum < $T/o.ppm)" "$(cksum < $T/o2.ppm)"
 
 # the cookies
@@ -69,12 +69,12 @@ python3 $T/server.py $T/log $T/port & SERVER=$!
 # up to 10 s: python starts slowly on a loaded machine
 for i in $(seq 50); do [ -s $T/port ] && break; sleep 0.2; done
 A=http://127.0.0.1:$(cat $T/port)
-$N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=$T/p url=$A/ > /dev/null
+$N -dump-frame 20 $T/x.ppm -fixed-time 1000 worker=wait profile=$T/p url=$A/ > /dev/null
 check "the cookies with a date are written, the script's too" "$(grep -v '^#' $T/p/cookies.txt | cut -f1,2,3,4,6,7 | sort | tr '\t\n' ' ;')" "127.0.0.1 FALSE / FALSE js 3;"
 check "the HttpOnly one marked" "$(grep '^#HttpOnly_' $T/p/cookies.txt | cut -f1,6,7 | tr '\t' ' ')" "#HttpOnly_127.0.0.1 sid 42"
 check "its owner's alone" "$(stat -c %a $T/p/cookies.txt 2> /dev/null || stat -f %Lp $T/p/cookies.txt)" "600"
-$N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=$T/p url=$A/again > /dev/null
+$N -dump-frame 20 $T/x.ppm -fixed-time 1000 worker=wait profile=$T/p url=$A/again > /dev/null
 check "the first request says none, the second run's says them back" "$(tr '\n' ';' < $T/log)" "/ Cookie: none;/again Cookie: sid=42; js=3;"
-$N -dump-frame 20 $T/x.ppm -fixed-time 1000 profile=off url=$A/off > /dev/null
+$N -dump-frame 20 $T/x.ppm -fixed-time 1000 worker=wait profile=off url=$A/off > /dev/null
 check "profile=off: none said" "$(tail -1 $T/log)" "/off Cookie: none"
 exit $fail

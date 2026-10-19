@@ -28,12 +28,13 @@
  * Under a browser's chrome (the toolbar, the Location field:
  * Netscape, each browser's own) is what it shows, a tab: the
  * page (on its way, or shown and scrolled), the history behind and
- * ahead (Browser_history's two stacks; a page come back to is fetched
- * again, and scrolled to where it was), the style sheets and the
+ * ahead (Browser_history's two stacks; a page come back to is shown
+ * as it was left if it was whole, one of the three nearest -- laid
+ * out, its scripts' engine as they left it -- else fetched again,
+ * and scrolled to where it was), the style sheets and the
  * pictures had and still to fetch, the form's field that has the
  * keys, and the page's script world (Browser_script, a JavaScript
- * realm a page). mini-netscape has one; a browser's tabs are a list
- * of these.
+ * realm a page). A browser's tabs are a list of these (Netscape's).
  *
  * What is left to do is a list, and [step] does its first:
  *
@@ -150,6 +151,12 @@ val busy : t -> bool
  * scripts run after the last; then a picture a call, and after the
  * last the page laid out again with them all *)
 val step : < Cap.network; Cap.open_in; .. > -> t -> t
+
+(* [merged ~window r]: [r], what [step] made of a copy of the tab (on
+ * the window's worker), with what the window did to [window], its own
+ * copy, meanwhile: the width, the clock, and the scroll if the page is
+ * the same *)
+val merged : window:t -> t -> t
 
 (* the link at a point of the page, its address whole *)
 val link_at : t -> x:float -> y:float -> string option

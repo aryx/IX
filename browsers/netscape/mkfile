@@ -23,7 +23,7 @@ INCLUDES=-I . -I ../html -I ../css -I $J/values -I $J/parsing -I $J/eval -I $J/o
 # (each before the ones that name it: ocamldep -sort's order; Js_quicken
 # and Js_compile after Js_eval, which they tell of themselves when the
 # program starts)
-LIB=Hershey_futural Js_prelude Browser_zoom Script_prelude Cors Style Browser_history Js_ast Per_domain Mini_opti Js_string Ua_sheet Css_syntax Dtd Dom Charset Store Input_script Lehmer Time Sub Set Color Cmd Basics Hershey Xpm Dct Vec2 Curve Affine Rgba_image Opti Framebuffer Blit Url Urlencoded Zlib Http Civil Base64 Udp Dns Packbits Lzw Huffman Sha512 Sha256 Sha1 Hmac Hkdf Chacha20 Bignum Poly1305 Aes Chacha20_poly1305 Ecdsa Gcm Rsa X25519 Tcp Clock Pem Gif Jpeg_progressive Png Circle Fill Line Stroke Svg Entities Html_lexer Css_values Js_lexer Js_parse Js_coroutine Js_regexp Browser_url Table_layout Js_value Js_operators Selectors Looks Cascade Line_mode Html_tree Forms Playground Jpeg Image_file Asn1 X509 Audio_source Session Shape_render_software Css Js_scope Js_json Js_promise Browser_picture Html_layout Glyph_unicode Stroke_text Script_events Script_dom Hit Browser_text Browser_draw Js_builtins Js_frame Js_props Css_grid Computed Redraw Tls13 Tls_client Cookie Cookie_jar Keep_alive Http_client Playground_platform Js_globals Flex_layout Grid_layout Box_layout Js_eval Js_quicken Js_compile Browser_boxes Browser_page Script_host LocalStorage Script_window Script_fetch Event_loop XMLHttpRequest Script_url Script_element Script_document Browser_forms Browser_script Browser_helpers Places Browser_profile Tab
+LIB=Hershey_futural Js_prelude Browser_zoom Script_prelude Cors Style Browser_history Js_ast Per_domain Mini_opti Js_string Ua_sheet Css_syntax Dtd Dom Charset Store Input_script Lehmer Time Sub Set Color Cmd Basics Hershey Xpm Dct Vec2 Curve Affine Rgba_image Opti Framebuffer Blit Url Urlencoded Zlib Http Civil Base64 Udp Dns Packbits Lzw Huffman Sha512 Sha256 Sha1 Hmac Hkdf Chacha20 Bignum Poly1305 Aes Chacha20_poly1305 Ecdsa Gcm Rsa X25519 Tcp Clock Pem Gif Jpeg_progressive Png Circle Fill Line Stroke Svg Entities Html_lexer Css_values Js_lexer Js_parse Js_coroutine Js_regexp Browser_url Table_layout Js_value Js_operators Selectors Looks Cascade Line_mode Html_tree Forms Playground Jpeg Image_file Asn1 X509 Audio_source Session Shape_render_software Css Js_scope Js_json Js_promise Browser_picture Html_layout Glyph_unicode Stroke_text Script_events Script_dom Hit Browser_text Browser_draw Js_builtins Js_frame Js_props Css_grid Computed Redraw Tls13 Tls_client Cookie Cookie_jar Keep_alive Http_client Playground_platform Js_globals Flex_layout Grid_layout Box_layout Js_eval Js_quicken Js_compile Browser_boxes Browser_page Script_host LocalStorage Script_window Script_fetch Event_loop XMLHttpRequest Script_url Script_element Script_document Browser_forms Browser_script Browser_helpers Places Browser_profile Worker_spawn Tab Tab_worker
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{for d in $DIRS $W; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
 LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -35,6 +35,12 @@ $D/%.$O: $LOCAL
 	mkdir -p $D
 	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
 	$ML $INCLUDES -o $target $f
+# the window's worker: lib_core's threads (Worker_spawn.mli)
+$D/Worker_spawn.$O: spawn/threads.ml Worker_spawn.mli
+	mkdir -p $D
+	cp Worker_spawn.mli $D/Worker_spawn.mli
+	cp spawn/threads.ml $D/Worker_spawn.ml
+	$ML $INCLUDES -o $target $D/Worker_spawn.ml
 $D/mini-netscape: $D/netscape
 	cp $D/netscape $target
 $D/netscape: $D/Netscape.$O $LIBS

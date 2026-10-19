@@ -5,8 +5,21 @@
 (library
  (name ix_netscape)
  (wrapped false)
- (modules Tab Browser_helpers Browser_zoom Places Browser_profile)
- (libraries ix_graphics_core ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))
+ (modules Tab Browser_helpers Browser_zoom Places Browser_profile Worker_spawn Tab_worker)
+ (libraries threads.posix ix_graphics_core ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http ix_tls ix_tcp ix_core fpath caps unix))
+
+; the window's worker, a thread under OCaml 4.14, a domain under OCaml 5
+; (Worker_spawn.mli)
+(rule
+ (targets Worker_spawn.ml)
+ (deps spawn/threads.ml)
+ (enabled_if (< %{ocaml_version} 5.0))
+ (action (copy spawn/threads.ml Worker_spawn.ml)))
+(rule
+ (targets Worker_spawn.ml)
+ (deps spawn/domains.ml)
+ (enabled_if (>= %{ocaml_version} 5.0))
+ (action (copy spawn/domains.ml Worker_spawn.ml)))
 
 (executable
  (name Netscape)

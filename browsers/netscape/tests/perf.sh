@@ -23,9 +23,9 @@ URL=${1:-https://en.wikipedia.org/wiki/OCaml}; FRAMES=${2:-250}
 D=${3:-_build/default/browsers}/netscape
 N=$D/Netscape.exe; [ -x $N ] || N=$D/netscape
 T=$(mktemp -d); trap 'rm -rf $T' EXIT
-run() { $N -dump-frame $FRAMES $T/f.ppm -fixed-time 1000 profile=off url=$URL "$@" > /dev/null 2> $T/err; }
+run() { $N -dump-frame $FRAMES $T/f.ppm -fixed-time 1000 worker=wait profile=off url=$URL "$@" > /dev/null 2> $T/err; }
 if [ -n "$CG" ]; then
-  valgrind --tool=callgrind --callgrind-out-file=$T/cg.out $N -dump-frame $FRAMES $T/f.ppm -fixed-time 1000 profile=off url=$URL > /dev/null 2> $T/log
+  valgrind --tool=callgrind --callgrind-out-file=$T/cg.out $N -dump-frame $FRAMES $T/f.ppm -fixed-time 1000 worker=wait profile=off url=$URL > /dev/null 2> $T/log
   grep "refs" $T/log
   exec python3 browsers/netscape/tests/callgrind_top.py $T/cg.out 30 "caml_c_call [" "List__mem_607 " "List__assoc_opt_623 "
 fi

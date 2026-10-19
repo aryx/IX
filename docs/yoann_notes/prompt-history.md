@@ -38064,3 +38064,19 @@ Claude folded Yoann's self-hosting suggestion into the ix plan as a new directio
 Claude proposed separate compilation driven by a real assembler and linker in the plan.
 Claude proposed treating modules as compilation units, with TinyLibCore/ organized as modules.
 Claude's plan runs the whole toolchain on tiny-machine itself, so it would be self-hosted there.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:47
+
+**Yoann:**
+
+> actually we also probably want something like tiny-strace, that maybe we can also just call trace (like we have debug)
+
+**Claude (summary):**
+
+Claude added trace as section 5 of the ix plan, renumbering later steps so trace becomes step 7.
+Claude proposed a kernel command y that stops traced processes twice per system call, at entry and exit.
+Claude argued two stops let the kernel only pause and resume, leaving decoding to the tracer program.
+Claude sketched a roughly 100-line ML trace program that reads paths and buffers with the m command.
+Claude asked whether to commit the plan with the debug rename, and nothing has been committed yet.

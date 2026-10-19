@@ -1268,8 +1268,14 @@ page is right; the tutorial's one (`select.add`) changes nothing seen.
 
 **The engine** (html, css, engine, netscape, lynx, scripts on): of its
 8,829 lines of .ml, 1,617 in definitions never run (18%), about 1,000
-more in branches. `Looks` (196, Mosaic's colours and sizes) whole;
-`Cascade.explain` (39, kept for the developer tools).
+more in branches. The most of it is **the first way of
+laying out**, before CSS: `Html_layout`'s passes (`walk`,
+`layout_block`, `lines_of`, `flow`..., about 500 of its 698 lines; its
+types, `box`, `line`, `fragment`, are `Box_layout`'s and `Hit`'s) and
+`Looks` (196, each element's look by the browser alone, Mosaic's):
+**about 700 lines for A**, the types kept, if nothing (`css=off`, a
+test) still lays out that way. And `Cascade.explain` (39, kept for
+the developer tools).
 
 **The scripts**, in lines of whole definitions reached (an upper
 bound), of `javascript/`'s 7,627 lines of .ml and `webapi/`'s 3,740:

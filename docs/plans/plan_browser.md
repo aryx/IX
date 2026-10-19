@@ -1174,6 +1174,13 @@ running, and the sites chosen are run by the coverage too.
 
 ### YouTube: a helper program, not the site's scripts
 
+Done 2026-10-19 (`94ffc370`), as proposed below, with two changes: a
+PDF file too is given to a program (mini-page, ix's `page`), the
+author's ("maybe we could drop support for pdf and instead call an
+external program"), `Pdf_viewer` gone; `helpers=off` for the tests,
+and `tests/helpers.sh`, fake programs on the PATH. The developer tools
+(below) wait: "I'm not sure we have the budget for devtools".
+
 The author: "For youtube I think it's too much work, but what would
 be good is that HN link pointing to a youtube video could be played
 when run on the host by using a metamail/mailcap/external program
@@ -1363,6 +1370,7 @@ decide; this plan says mini-netscape until then.
 | `6db6efac` | `sites.sh -c`: the pixels that differ, the pictures side by side | |
 | `39c2b842` | `TextEncoder`, `AbortController`, `Intl`, `TreeWalker`, `XMLSerializer`; warnings in the console; `strict=on` | 19,662 |
 | `babebb9a` | `ArrayBuffer` and buffers, ES2023's copies, the collation table | 19,608 |
+| `94ffc370` | helper programs (`Browser_helpers`: mpv for YouTube's films, mini-page for a PDF file, `~/.mailcap`'s, the profile's) in the place of the PDF viewer | 19,677 |
 
 Each checked by the tests (the engine's three ways), `frames.sh` on
 both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the

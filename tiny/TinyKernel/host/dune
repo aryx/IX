@@ -14,3 +14,13 @@
  (modules TinyCalls)
  (virtual_modules TinyCalls)
  (default_implementation tiny_host_calls_stub))
+
+; TinyLibSystem's host version, over Unix, for the tools that also run
+; on tiny-kernel (tiny-shell, tiny-utils, tiny-editor). tiny-machine's
+; is ../libml/TinyLibSystem.ml, in tiny-ml's ML: one interface, a file
+; for each side, as TinyCalls
+(library
+ (name tiny_lib_system)
+ (wrapped false)
+ (modules TinyLibSystem)
+ (libraries ix_core fpath unix caps))

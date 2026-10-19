@@ -73,12 +73,10 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   editors/turbopascal/*) root=editors/turbopascal; incs[$root]="$(dirs editors/turbopascal) $(dirs lib_terminal) $(dirs languages/pascal) -I lib_playground/random";;
   # (mini-emacs: a Tui program of lib_terminal's too)
   editors/emacs/*) root=editors/emacs; incs[$root]="$(dirs editors/emacs) $(dirs lib_terminal) -I lib_playground/random $(dirs languages/ml/highlight) -I languages/ml -I _build/default/languages/ml $(dirs languages/c/highlight) $(dirs assembler/highlight) $(dirs languages/smalltalk/highlight) $(dirs languages/scheme/highlight) $(dirs languages/pascal/highlight) $(dirs languages/prolog/highlight)";;
-  # (t-ix's own library: a module of it against the others of it, and the tiny programs
-  # against lib_core as tiny/mkfile's default, not against TinyLibHost's shorter interfaces)
-  tiny/TinyLibHost/*) root=tiny/TinyLibHost; incs[$root]="-I tiny/TinyLibHost/ocaml";;
-  # (tiny-ml's prelude is a unit the build makes, TinyMLPrelude.ml: dune's)
-  # (TinyLibHost first: tiny-shell's TinyLibSystem is the one there, TinyKernel/libml/'s is tiny-ml's)
-  tiny/*) incs[$root]="-I tiny/TinyLibHost $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibHost/ocaml ||g') -I _build/default/tiny";;
+  # (the tiny programs against lib_core, as tiny/mkfile; tiny-ml's prelude is a unit the
+  # build makes, TinyMLPrelude.ml: dune's)
+  # (TinyKernel/host/ first: tiny-shell's TinyLibSystem is the one there, TinyKernel/libml/'s is tiny-ml's)
+  tiny/*) incs[$root]="-I tiny/TinyKernel/host $(dirs tiny) -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

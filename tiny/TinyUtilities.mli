@@ -39,7 +39,7 @@
  *     ls       does not call it: one level only
  *
  * {b The same file on two systems.} As TinyShell.ml, it names only
- * TinyLibSystem (TinyLibHost/TinyLibSystem.mli) and the pure functions
+ * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure functions
  * of the standard library. So dune builds it for the host, and tiny-ml
  * builds it for tiny-kernel, with TinyLibStd.ml and the kernel's
  * TinyLibSystem.ml.

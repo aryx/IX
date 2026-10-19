@@ -5,7 +5,7 @@
  (modules TinyBuildSystem)
  (libraries ix_core fpath unix caps ix_crypto))
 
-; the host's tools on TinyLibSystem (TinyLibHost/'s; tiny-kernel has its
+; the host's tools on TinyLibSystem (TinyKernel/host/'s; tiny-kernel has its
 ; own): the shell, the line editor and the utilities (with grep's and the
 ; editor's regular expressions)
 (executables

@@ -1,41 +1,20 @@
-# The tiny programs, built by ix's tools: each one file (and for the
-# CPUs their library's, for tiny-vcs SHA-1 and zlib), with its start
-# and its link. TinyKernel.ml is not here: tiny-ml compiles it, for
-# tiny-machine.
-#
-# Their library is t-ix's own, TinyLibHost/ (LIB=tiny): TinyLibHost/ocaml/,
-# the modules the tiny programs name and the functions they call
-# (TinyLibHost/README.md), with mini-ml's runtime and the C library
-# that are TinyLibHost's too (TinyLibHost/c/); nothing of lib_core/ is
-# in them. Or, with mini-mk LIB=core, m-ix's: lib_core/'s standard
+# The tiny programs that run on the host, built by ix's tools: each one
+# file (and for the CPUs their library's, for tiny-vcs SHA-1 and zlib),
+# with its start and its link, on m-ix's library: lib_core/'s standard
 # library and its commons/ (with mini-git's SHA-1 and zlib, compiled
-# there). The default is TinyLibHost's where it is, for arm64 (O=7),
-# and lib_core's for arm (O=5), TinyLibHost/c/ being arm64's alone.
-# What is built is under _mk/$O/tiny for the default, _mk/$O/tiny-core
-# (or tiny-tiny) for the other.
-# (old: LIB=core the default, TinyLibHost's with LIB=tiny under
-# _mk/$O/tinylib: the library of the tiny programs was used by none of
-# them unless asked)
+# there). TinyKernel.ml is not here: tiny-ml compiles it, for
+# tiny-machine. What is built is under _mk/$O/tiny.
+# (old: on arm64 by default on TinyLibHost/, t-ix's trimmed copy of
+# lib_core/ with its own runtime and C library, LIB=core for lib_core;
+# gone with plan_tiny_self_hosting.md's step 2: it had shown what of
+# lib_core/ the tiny programs use)
 TOP=..
 <$TOP/mkfiles/mkconfig
-DEFLIB=`{case $O in 7) echo tiny;; *) echo core;; esac}
-LIB=$DEFLIB
-D=`{if [ $LIB = $DEFLIB ]; then echo $B/tiny; else echo $B/tiny-$LIB; fi}
-# TinyLibHost's units, in the order they are linked and initialized
-# (lib_core/units.txt's, then commons/'s)
-TSTD=Pervasives Int32 Int64 Seq List Char String Bytes Array Sys Hashtbl Filename Obj Queue \
- Buffer Printf Option Int Float Fun \
- Fpath Cap CapSys CapStdlib Logs Logs_fmt Unix CapUnix \
- Common Console Logging Procs Fpath_ Chan FS
-TL=$D/lib
-TUNITS=${TSTD:%=$TL/%.$O}
-# (SHA-1 and zlib: mini-git's objects, or TinyLibHost's)
-V=`{case $LIB in tiny) echo $TL;; *) echo $B/version_control;; esac}
-# (TinyLibHost first: the shell's TinyLibSystem is the one there)
-INCLUDES=`{case $LIB in tiny) echo -I TinyLibHost -I . -I $D -I TinyMachine -I TinyKernel -I TinyLibHost/ocaml;; *) echo -I TinyLibHost -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI;; esac}
-START=`{case $LIB in tiny) echo $ML -start $TSTD;; *) echo $ML -start $STD $COMMONS;; esac}
-STDOBJS=`{case $LIB in tiny) echo $TL/TinyLibHost.a;; *) echo $STDOBJS;; esac}
-STDEND=`{case $LIB in tiny) echo $TL/std_exit.$O $TL/runtime.$O $TL/start.$O;; *) echo $STDEND;; esac}
+D=$B/tiny
+V=$B/version_control
+# (the host's TinyLibSystem first: TinyKernel/libml/'s is tiny-ml's)
+INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto -I ../lib_compression $STDI
+START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 PROGS=tiny-build tiny-shell tiny-utils tiny-editor tiny-c tiny-ml tiny-db tiny-vcs tiny-cpu tiny-machine tiny-prof tiny-mkfs
@@ -48,22 +27,6 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-# (TinyLibHost's, with LIB=tiny, arm64's default)
-$TL/%.$O: TinyLibHost/ocaml/%.ml
-	mkdir -p $TL
-	$ML -I TinyLibHost/ocaml -o $target TinyLibHost/ocaml/$stem.ml
-
-# (its runtime and C library: one object of C, one of assembly; arm64's)
-TRT=`{ls TinyLibHost/c/*.[chs]}
-$TL/runtime.$O: $TRT
-	mkdir -p $TL
-	$CC -ITinyLibHost/c -o $target TinyLibHost/c/runtime.c
-$TL/start.$O: TinyLibHost/c/start.s
-	mkdir -p $TL
-	$AS -o $target TinyLibHost/c/start.s
-$TL/TinyLibHost.a: $TUNITS
-	rm -f $target
-	$AR u $target $TUNITS
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O $D/TinyProfiler.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyProfiler.$O: TinyMachine/TinyMachineDevices.ml
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
@@ -98,13 +61,13 @@ $D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 $D/tiny-build: $V/Sha1.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
 	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyBuildSystem.$O $STDEND
-# (the shell's system, the host's: TinyLibHost/TinyLibSystem.ml;
+# (the shell's system, the host's: TinyKernel/host/TinyLibSystem.ml;
 # TinyKernel/libml/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
 # compile. Not beside TinyShell.ml: mini-ml looks for a module in the
 # directory of the file it compiles before any -I)
-$D/TinyLibSystem.$O: TinyLibHost/TinyLibSystem.ml
+$D/TinyLibSystem.$O: TinyKernel/host/TinyLibSystem.ml
 	mkdir -p $D
-	$ML $INCLUDES -o $target TinyLibHost/TinyLibSystem.ml
+	$ML $INCLUDES -o $target TinyKernel/host/TinyLibSystem.ml
 $D/TinyShell.$O: $D/TinyLibSystem.$O TinyShell.ml
 $D/tiny-shell: $D/TinyLibSystem.$O $D/TinyShell.$O $LIBS
 	$START TinyLibSystem TinyShell Std_exit -o $D/TinyShell.start.$O

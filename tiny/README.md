@@ -38,8 +38,8 @@ of the system:
   for grep (whether a line matches) and for the line editor (where
   the match is, and its groups): a backtracker with a memo, so a
   line costs its length times the pattern's at most.
-  For the host's programs when ix builds them: `TinyLibHost/`, a
-  standard library (m-IX's is `lib_core/`).
+  The host's programs, when ix builds them, are on m-IX's
+  `lib_core/`.
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
   compilers: they are what a program compiled by tiny-c or by tiny-ml
   is linked with (C's start, its division and its library; ML's
@@ -72,7 +72,7 @@ The others are the system's programs, a file each (`TinyShell`,
 tiny-utils and tiny-kernel's `utils`, which the boot image has under
 the name of each utility (`cat`, `ls`...); `TinyEditorLine.ml` is the
 host's tiny-editor and tiny-kernel's `ed`, also named `sam`. What they ask of the system is
-`TinyLibSystem`, a file for each side (`TinyLibHost/TinyLibSystem.ml`
+`TinyLibSystem`, a file for each side (`TinyKernel/host/TinyLibSystem.ml`
 over Unix, `TinyKernel/libml/TinyLibSystem.ml` over the kernel's
 calls).
 
@@ -130,14 +130,13 @@ tiny-www, tiny-troff.
 [`docs/plans/done/plan_tiny_windows.md`](../docs/plans/done/plan_tiny_windows.md)
 is their plan and what was found.
 
-[`TinyLibHost/`](TinyLibHost/README.md) is the library under the host's tiny
-programs when ix builds them (`mini-mk` here, for arm64): lib_core's
-modules that they name, with the functions they call, and a runtime
-and a C library of its own. dune builds them on OCaml's standard
-library and `lib_core/commons/`; `mini-mk LIB=core`, and arm's build,
-on `lib_core/` whole, as m-ix's programs. The programs of tiny-kernel
-do not use it: they are tiny-ml's, whose library is its prelude and
-`TinyMLRuntime/`.
+dune builds the host's tiny programs on OCaml's standard library and
+`lib_core/commons/`; ix (`mini-mk` here) on `lib_core/` whole, as
+m-ix's programs (`TinyLibHost/`, a trimmed copy of `lib_core/` for
+them, left with
+[`plan_tiny_self_hosting.md`](../docs/plans/plan_tiny_self_hosting.md)'s
+step 2). The programs of tiny-kernel are tiny-ml's, whose library is
+its prelude and `TinyMLRuntime/`.
 
 `TinyKernel/steps/` has what ran on tiny-cpu and tiny-machine before
 a kernel in ML did, kept as `kernels/steps/` keeps m-ix's kernel's:

@@ -179,7 +179,7 @@ $(O)/user/temp.tm: $(PLAY) ../TinyLibGUI.ml ../TinyAppTemperature.ml user/temp.m
 # a tool of the host's that runs here too (rc: ../TinyShell.ml,
 # tiny-shell): on ../TinyLibStd.ml, what it names of OCaml's standard
 # library, and libml/TinyLibSystem.ml, the system's calls it asks for
-# (the host's is ../TinyLibHost/TinyLibSystem.ml)
+# (the host's is host/TinyLibSystem.ml)
 TOOL = libml/calls.ml ../TinyLibStd.ml libml/TinyLibSystem.ml
 $(O)/user/rc.tm: $(TOOL) ../TinyShell.ml
 

@@ -14,10 +14,9 @@
 # - mini-ml: every file of ix compiled (a directory a job), programs of
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
 # - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
-#   jobs in parallel, NPROC, and the programs side by side; the tiny
-#   programs twice, on lib_core and on TinyLibHost): then, with what was
-#   just built, mini-rc's and mini-ed's tests, the tiny programs' on
-#   TinyLibHost, the games' frames, the toolchain's
+#   jobs in parallel, NPROC, and the programs side by side): then, with
+#   what was just built, mini-rc's and mini-ed's tests, the tiny
+#   programs', the games' frames, the toolchain's
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
 # A line for each job, its seconds, the failures' first lines; the
@@ -143,12 +142,11 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }
-# the tiny programs are on t-ix's own library, runtime and C library
-# (tiny/TinyLibHost/, tiny/mkfile's default: nothing of lib_core in
-# them): `mk tiny` builds them, and their tests run on those. Built
-# too, and not tested: the same programs on lib_core (mini-mk LIB=core)
-tinycore() { (cd tiny && NPROC=32 mini-mk B=$B LIB=core) > $W/mk.tinycore.log 2>&1 || { echo "mini-mk LIB=core failed in tiny:"; tail -3 $W/mk.tinycore.log | cut -c1-200; return 1; }; }
-tinylib_tests() {
+# the tiny programs, on lib_core as m-ix's: `mk tiny` builds them, and
+# their tests run on those
+# (old: on t-ix's own copy of lib_core, tiny/TinyLibHost/, and built
+# again on lib_core, not tested: plan_tiny_self_hosting.md's step 2)
+tiny_tests() {
   local t=$K/tiny
   TS=$t/tiny-shell tiny/tests/TinyShell_test.sh && TE=$t/tiny-editor tiny/tests/TinyEditorLine_test.sh &&
   TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
@@ -163,7 +161,7 @@ ix() {
   for d in languages/c languages/ml languages/prolog languages/datalog languages/forth generators/lex generators/yacc database builder shell editors/ed machine kernels/steps/step3 $xv6; do mk $d & pids+=($!); done
   (mk games && mk editors/drscheme && mk examples && mk apps/office && mk apps/music/rebirth) & pids+=($!)
   (mk linker && mk linker/tools) & pids+=($!)
-  (mk version_control && mk tiny && tinycore) & pids+=($!)
+  (mk version_control && mk tiny) & pids+=($!)
   mk lib_crypto/tests & pids+=($!)
   mk apps/music/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
@@ -194,7 +192,7 @@ ix() {
   ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
   (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
   (! typesetting/tests/sample.sh $K | grep '^FAIL') & pids+=($!)
-  (tinylib_tests > $W/tinylib.log 2>&1 || { echo "a tiny program on TinyLibHost fails its tests:"; tail -5 $W/tinylib.log | cut -c1-200; exit 1; }) & pids+=($!)
+  (tiny_tests > $W/tiny.log 2>&1 || { echo "a tiny program built by ix fails its tests:"; tail -5 $W/tiny.log | cut -c1-200; exit 1; }) & pids+=($!)
   fi
   boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
   [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
@@ -205,7 +203,7 @@ ix() {
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs on TinyLibHost" "$no7"
+[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs" "$no7"
 job "ix built by ix, a kernel booted" ix
 
 wait

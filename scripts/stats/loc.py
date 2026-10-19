@@ -342,7 +342,7 @@ def files():
     # (not a link: a file that several directories use is counted where it is)
     # (not a tiny program's interface, tiny/TinyShell.mli: its header
     # comment, and main and one function's types, to read first; the
-    # program is its .ml. In no row and no number. TinyLibHost/'s are counted; TinyMachine/'s and TinyKernel/'s
+    # program is its .ml. In no row and no number. TinyMachine/'s and TinyKernel/'s
     # are such interfaces too)
     return [f for f in out.splitlines() if f and not os.path.islink(f)
             and not re.fullmatch(r"tiny/((TinyMachine|TinyKernel)/)?[^/]+\.mli", f)]

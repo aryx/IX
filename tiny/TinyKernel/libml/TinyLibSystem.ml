@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* TinyLibSystem on tiny-machine: what a tool asks of the system
- * (tiny-shell; TinyLibHost/TinyLibSystem.mli says each function), over
+ * (tiny-shell; ../host/TinyLibSystem.mli says each function), over
  * tiny-kernel's calls (mlsys.c's, beside this file; calls.ml names
  * them), in tiny-ml's ML. Given to tiny-ml after calls.ml and
  * TinyLibStd.ml, and before the tool's file:

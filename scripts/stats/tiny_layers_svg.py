@@ -25,26 +25,21 @@ COLUMNS = [
         ("The program", "OCaml, by mini-ml", [
             "tiny/TinyShell.ml: one file",
             "(its start object: mini-ml -start)"]),
-        ("Its library", "OCaml", [
-            "tiny/TinyLibHost/ocaml/: the standard",
-            "library's modules the tools name (List,",
+        ("Its library", "OCaml, m-ix's", [
+            "lib_core/: m-ix's standard library (List,",
             "String, Hashtbl, Buffer, Printf...) and",
-            "ix's own (Console, FS, Procs, the",
-            "capabilities), with the functions that",
-            "are called; Unix: Linux's calls"]),
-        ("Its runtime", "C", [
-            "tiny/TinyLibHost/c/: runtime.c and its",
-            "parts (gc.c, strings.c, io.c, sys.c,",
-            "unix.c...): mini-ml's runtime, cut to",
-            "what that library names"]),
-        ("Its C library", "C, assembly", [
-            "tiny/TinyLibHost/c/: libc.c (read, write,",
-            "exit by their number, malloc, memmove),",
-            "start.s (the process's start, the",
-            "system call)"]),
+            "commons/ (Console, FS, Procs, the",
+            "capabilities); Unix: Linux's calls"]),
+        ("Its runtime", "C, m-ix's", [
+            "languages/ml/runtime/: mini-ml's runtime",
+            "(the collector, the strings, the calls)"]),
+        ("Its C library", "C, assembly, m-ix's", [
+            "lib_core/libc/: Plan 9's libc, ix's,",
+            "with the process's start and the system",
+            "calls for Linux"]),
         ("The system", "", [
-            "Linux on arm64 (or mini-5i, which",
-            "answers its calls)"]),
+            "Linux on arm64 or arm (or mini-5i,",
+            "which answers its calls)"]),
     ]),
     ("A program in ML, on tiny-machine", "windows, calc, temp, tetris  (tiny-ml)", [
         ("The program", "tiny-ml's ML", [
@@ -118,9 +113,9 @@ COLUMNS = [
 ]
 
 NOTES = [
-    "Orange: t-ix's own files. Grey: what is under them. A name in two columns is the same file. The tools are compiled by m-ix's mini-ml;",
-    "what runs on tiny-machine by tiny-ml and tiny-c. While developing, dune builds a tool on OCaml's own standard library and lib_core/commons/;",
-    "for arm, or with mini-mk LIB=core, ix builds it on lib_core/ whole, as a program of m-ix (docs/pics/layers.svg, its first column).",
+    "Orange: t-ix's own files. Grey: what is under them, m-ix's or the system. A name in two columns is the same file. The tools are compiled by",
+    "m-ix's mini-ml (mini-mk), on lib_core/ whole, as m-ix's programs (docs/pics/layers.svg, its first column); what runs on tiny-machine by",
+    "tiny-ml and tiny-c. While developing, dune builds a tool on OCaml's own standard library and lib_core/commons/.",
 ]
 
 
@@ -174,7 +169,9 @@ def main():
             elif i > 0:
                 out.append(f'<line x1="{mid}" y1="{y - 20}" x2="{mid}" y2="{y - 2}" stroke="#57606a" '
                            'stroke-width="2" marker-end="url(#a)"/>')
-            out.append(rect(x, y, COL, h, GREY if system else ORANGE, WHITE if i == 0 else None))
+            # (grey: the system, and a box of m-ix's files)
+            theirs = system or not lines[0].startswith(("tiny/", "TinyKernel/"))
+            out.append(rect(x, y, COL, h, GREY if theirs else ORANGE, WHITE if i == 0 else None))
             out.append(text(x + 14, y + 23, name, 14, "600"))
             if tag:
                 out.append(text(x + COL - 12, y + 23, tag, 11, fill="#57606a", anchor="end", style="italic"))

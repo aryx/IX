@@ -72,16 +72,16 @@ needing the next:
 t-ix has four kinds of program, and they do not stand on the same
 things: a tool runs on the host, the others on tiny-machine.
 
-![What a tiny program stands on: a tool on the host (the program, TinyLibHost's OCaml, its runtime and its C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore.ml, TinyMLRuntime, TinyCRuntime, tiny-kernel), a program in C on tiny-machine (the program, TinyCRuntime, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore.ml, TinyMLRuntime, its assembly, tiny-machine)](pics/tiny-layers.svg)
+![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore.ml, TinyMLRuntime, TinyCRuntime, tiny-kernel), a program in C on tiny-machine (the program, TinyCRuntime, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore.ml, TinyMLRuntime, its assembly, tiny-machine)](pics/tiny-layers.svg)
 
 - **A tool** (tiny-shell, tiny-c, tiny-vcs...) is OCaml in one file.
-  Built by ix (`mini-mk` in `tiny/`), it has under it
-  `tiny/TinyLibHost/` and nothing of `lib_core/`: the standard
-  library's modules the tools name and ix's own (`ocaml/`), mini-ml's
-  runtime cut to what those need, and a C library of a page (`c/`).
-  Built by dune, while developing, it is on OCaml's own standard
-  library and `lib_core/commons/`; for arm, or with `mini-mk
-  LIB=core`, on `lib_core/` whole, as a program of m-ix.
+  Built by ix (`mini-mk` in `tiny/`), it is on `lib_core/` whole, as
+  a program of m-ix: its standard library and `commons/`, mini-ml's
+  runtime, `lib_core/libc/`. Built by dune, while developing, it is on
+  OCaml's own standard library and `lib_core/commons/`.
+  (old: on `tiny/TinyLibHost/`, a copy of `lib_core/` trimmed to what
+  the tools name, with mini-ml's runtime cut to it and a C library of
+  a page; gone with plans/plan_tiny_self_hosting.md's step 2.)
 - **A program in ML on tiny-machine** (`windows`, `calc`, `temp`,
   `tetris`) is compiled by tiny-ml from several files as one program:
   the libraries it asks for (`TinyLibGUI`, `TinyLibPlayground`,
@@ -99,7 +99,7 @@ things: a tool runs on the host, the others on tiny-machine.
   `TinyKernel/`, on the same prelude and the same `core.c`, with its
   own assembly for the start, the traps and the pixels' rows.
 
-`TinyLibHost/` and `TinyLibCore.ml` are therefore not two versions of
+`lib_core/` and `TinyLibCore.ml` are therefore not two versions of
 one thing: the first is under the tools, on Linux; the second under
 what tiny-ml compiles, on tiny-machine.
 `scripts/stats/tiny_layers_svg.py` draws the picture, from a table in
@@ -108,8 +108,11 @@ it.
 ## What is in an executable
 
 The same layers, measured in three files: a tiny program built on
-`tiny/TinyLibHost/` (`mini-mk` in `tiny/`), and mini-rc for Linux and for
-mini-9pi. Each byte of code is given to the source file it comes from:
+`tiny/TinyLibHost/` (`mini-mk` in `tiny/`, until
+plans/plan_tiny_self_hosting.md's step 2), and mini-rc for Linux and for
+mini-9pi. Each byte of code is given to the source file it comes from.
+On `lib_core/`, as it is built now, tiny-shell is 676,910 bytes (the
+library 404,312 of them, 32 units of lib_core's; TinyLibHost's 30 were smaller):
 
 ![What is in an executable of ix: tiny-shell for Linux on TinyLibHost, mini-rc for Linux, mini-rc for mini-9pi; in each the start, the program, the library, mini-ml's runtime, the C library and the data, with their sizes and where they come from](pics/anatomy.svg)
 
@@ -131,7 +134,7 @@ mini-9pi. Each byte of code is given to the source file it comes from:
   -H2`), the calls Plan 9's.
 - **The start** is 30,000 bytes on arm64 and 7,000 on arm.
 
-So what a tiny program needs from m-ix beside TinyLibHost's OCaml, were it
+So what a tiny program needed from m-ix beside TinyLibHost's OCaml, were it
 to be in `tiny/TinyLibHost/c/`: the runtime (`languages/ml/runtime/`, 14
 files, 2,683 lines) and the C library's 47 files (2,511 lines of C and
 assembly) with the 40 headers they reach (1,421 lines): about 6,600
@@ -142,9 +145,9 @@ To measure a program, link it again with `-v` and give the listing to
 unit and each C file):
 
     cd tiny && mini-mk && B=../_mk/7 && T=$B/tiny
-    mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $T/lib/TinyLibHost.a \
-      $T/TinyShell.7 $T/lib/std_exit.7 $B/lib_core/runtime.7 $B/lib_core/libc.a |
-      ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny -libs tiny/TinyLibHost/ocaml
+    mini-ld -m 7 -H7 -nofollow -v -o /tmp/tiny-shell $T/TinyShell.start.7 $B/lib_core/lib_core.a \
+      $T/TinyLibSystem.7 $T/TinyShell.7 $B/lib_core/std_exit.7 $B/lib_core/runtime.7 $B/lib_core/libc.a |
+      ../scripts/stats/anatomy.py /tmp/tiny-shell -prog tiny
 
 The file made is the one mini-mk made, byte for byte.
 `scripts/stats/anatomy_svg.py` draws the picture from three such

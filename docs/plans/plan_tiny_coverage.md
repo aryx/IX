@@ -48,7 +48,7 @@ which, in its "its twin" column.
 | `browsers/` | 28,826 | `TinyBrowser.ml` |
 | `lib_graphics/`, `lib_networking/` | about 12,000 | `TinyKernelGraphics.ml`, `TinyKernelNetwork.ml` |
 | `lib_gui/`, `lib_playground/` | 13,404 | `TinyLibGUI.ml`, `TinyLibPlayground.ml` |
-| `lib_core/` | 19,693 | `TinyLibHost/`, and tiny-ml's prelude and `TinyLibStd.ml` |
+| `lib_core/` | 19,693 | tiny-ml's prelude and `TinyLibStd.ml` (`TinyLibHost/`, its trimmed copy for the host's tools, left with plan_tiny_self_hosting.md) |
 | `utilities/files`, `misc`, `pipe`, `byte`, `compare` | 1,748 | `TinyUtilities.ml` (tiny-utils) |
 
 Some twins drop a large part of m-ix on purpose, as their headers say,

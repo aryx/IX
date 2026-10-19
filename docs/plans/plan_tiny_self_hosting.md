@@ -321,3 +321,23 @@ and its library is TinyLibCore/.
     this step's: TinyUtilities_test.sh's `du` (the host's order) and
     TinyKernelNetwork_test.sh's linux case on the shared, older
     `_make/boot.img` (it passes on a fresh image).
+- 2026-10-19: step 2 done, TinyLibHost out (5,000 lines of OCaml,
+  2,200 of C and assembly, its README and its two scripts,
+  `tiny_lib_trim.py` and `tiny_lib_c.py`; `short_box_header.py` too,
+  whose one use was its files). `TinyLibSystem.ml` is in
+  `TinyKernel/host/`, beside `TinyCalls`, its dune library with it.
+  `tiny/mkfile` is on `lib_core/` only (no `LIB=`, no `_mk/$O/tiny-*`);
+  tests/lite.sh builds `tiny` once and runs its programs' tests on
+  that build; compile_ix.sh compiles `tiny/` against `TinyKernel/host/`
+  and `lib_core/`. t-IX is 18,527 lines without the header comments
+  (README's budget: 11,500 left); docs/loc.md has a row.
+  - **Checked**: mini-mk in `tiny/` builds the twelve host programs on
+    `lib_core/` (a private B, in 11 s), and their tests pass on those
+    (tiny-build, -shell, -editor, -db, -vcs, -c, -ml, -cpu, -machine;
+    tiny-utils but its `du` case, the host's order, as with dune's);
+    compile_ix.sh: 48 of 48 of `tiny/`; dune's tiny-shell, -editor.
+  - **tiny-shell on `lib_core/` is 676,910 bytes**, 570,574 on
+    TinyLibHost (docs/projects.md, "What is in an executable"; its
+    picture, `anatomy.svg`, stays the measure of 2026-10, TinyLibHost's
+    column with it: redrawing it needs mini-rc's two builds too).
+  - **Not run**: tests/lite.sh's and mkfiles/check.sh's whole builds.

@@ -35,7 +35,7 @@ it buys.
 |---|---|---|
 | `tiny/TinyKernel/steps/v6/` (2,814 lines of C) | its header: "xv6 redone again, its ideas and its names": fork and exec, a kernel stack per process, inodes in layers, spinlocks for cores it does not have. A faithful twin, a mini by ix's naming; `t6/` beside it is its free variant | stays: "we don't really count it anyway in the t-ix make loc so it's fine" (`scripts/stats/loc.py` leaves `tiny/TinyKernel/steps/` out of t-IX's number: "t-ix's own exception") |
 | `TinyMkfs.ml` | the disks of v6 (xv6's format less its log and link counts) and of t6; no other program calls it | moved into `tiny/TinyKernel/steps/` (commit c4c1920): "if TinyMkfs.ml is used only by tiny-os/, let's move it inside" |
-| `tiny/TinyLibHost/` (7,091 lines, the largest row of t-IX) | `lib_core` copied and trimmed by a script: OCaml's standard library's API, and mini-ml's runtime in C | stays: "we need to compile the TinyXxx programs and they use all the code in TinyLibHost/ (also it's nice that they can be compiled by current OCaml compilers and stdlib)" |
+| `tiny/TinyLibHost/` (7,091 lines, the largest row of t-IX) | `lib_core` copied and trimmed by a script: OCaml's standard library's API, and mini-ml's runtime in C | stays: "we need to compile the TinyXxx programs and they use all the code in TinyLibHost/ (also it's nice that they can be compiled by current OCaml compilers and stdlib)". Revisited 2026-10-19: removed, its measure taken (plan_tiny_self_hosting.md, step 2): mini-mk builds the tools on `lib_core/` itself, dune on OCaml's stdlib |
 
 TinyLibHost's case is the clearest example of a constraint that pays: the
 stdlib's API is what lets one `TinyShell.ml` be built by dune with
@@ -101,8 +101,8 @@ tests.
 - **`TinyVCS.ml` deflates its objects.** Its design is free (an
   operation log, no staging, conflicts as data) and its objects' text
   is its own, which no git reads. The hash is the idea; the
-  compression is not, and it is why tiny-vcs links `Zlib` (238 lines in
-  `TinyLibHost/ocaml/`).
+  compression is not, and it is why tiny-vcs links `Zlib`
+  (`lib_compression/`; plan_tiny_self_hosting.md drops it).
 - **`TinyKernel/user/` has C programs** (`sh.c`, `cat.c`, `ls.c`...) on
   a kernel whose point is ML. They show that the kernel's calls do not
   depend on the language; a shell in ML would show the other half.

@@ -134,7 +134,7 @@ and call = { il : il; mutable callers : int }
  * next one goes *)
 and voice = { mutable ahead : int }
 
-(* a process traced by another, its tracer (db: plan_tiny_debugger.md):
+(* a process traced by another, its tracer (debug: plan_tiny_debugger.md):
  * their pids, the breakpoints (an address and the word that was there),
  * what is said to the tracer and not yet read, and the tracer's
  * descriptors on it *)
@@ -875,7 +875,7 @@ let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with [ q ] -> kill q; result p 0 | _ -> raise Bad
 
-(* trace(pid): a descriptor on a process, for its tracer (db): what is
+(* trace(pid): a descriptor on a process, for its tracer (debug): what is
  * written to it a command, what is read the answers and the process's
  * stops (command, stop). trace(0): the caller traced by its parent from
  * now on, so that it stops at its next exec, the way a debugger starts

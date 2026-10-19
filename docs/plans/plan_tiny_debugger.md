@@ -1,14 +1,18 @@
-# Plan: a debugger in t-ix, db on tiny-kernel in about 400 lines
+# Plan: a debugger in t-ix, debug and trace on tiny-kernel in about 550 lines
 
 The author (2026-10-18): "what could be a tiny-debugger?"; then
-"running on the tiny-machine"; then "let's write the plan document".
+"running on the tiny-machine"; then "let's write the plan document";
+then (2026-10-19) "we can maybe use dbg or debug instead of db", and
+"we also probably want something like tiny-strace, that maybe we can
+also just call trace (like we have debug)" (section 5).
 
 t-ix has a compiler for C and one for ML, a profiler (tiny-prof), and a
 kernel that runs their programs, but nothing that stops one of them
 to look at it. A program that goes wrong on tiny-kernel says
 `ml: 5: trap 3 at 412, 1048580: killed` and is gone. This plan is a
-debugger that runs on tiny-kernel as one of its programs, `db`, named
-after Plan 9's, and the few lines of kernel that it needs.
+debugger that runs on tiny-kernel as one of its programs, `debug`, and
+the few lines of kernel that it needs. (Plan 9's name, `db`, is taken:
+the host's tiny-db is the database.)
 
 Its twins: Plan 9's `db` and `acid`, which control a process through
 `/proc/n/{mem,regs,ctl}`, and the breakpoints of mini-5i (`machine/`),
@@ -18,7 +22,7 @@ debugger is not the CPU: it is a process that controls another one.
 ## 1. The idea: stop, look, resume, by messages
 
 ```
-    db, a process (ML, TinyLibStd): commands typed, as in ed
+    debug, a process (ML, TinyLibStd): commands typed, as in ed
         |  write "b main" "c" "s" "r" "m addr n" "w addr word"
         |  read  "stopped pc cause" "exited status" ...
         v
@@ -56,7 +60,7 @@ debugger is not the CPU: it is a process that controls another one.
   waiting either. A `/proc/n/` tree would be Plan 9's way, and it would
   suit the kernel's files as ML values, but it needs reads at an
   offset, and a single descriptor is less code.
-- **The debugger is ordinary.** db is a program like `ed`: it reads
+- **The debugger is ordinary.** debug is a program like `ed`: it reads
   commands on the console, and it knows nothing of the kernel but the
   messages. It works at the level of instructions and function names.
   There are no line numbers, since neither tiny-c nor tiny-ml emits
@@ -66,7 +70,7 @@ debugger is not the CPU: it is a process that controls another one.
 
 The messages, one per write, each answered by one line to read. The
 numbers are in decimal, the only ones the kernel's `int_of_string_opt`
-reads; db shows them in hex:
+reads; debug shows them in hex:
 
 ```
     b addr      a breakpoint: the word saved, 0 written      ok
@@ -85,10 +89,10 @@ reads; db shows them in hex:
 
 There is no message to kill: the tracer has `kill(pid)`.
 
-Starting a program stopped: the child of db calls `sys_trace` on its
+Starting a program stopped: the child of debug calls `sys_trace` on its
 own pid (0) before its `exec`, which means "stop me at my first
 instruction and wait for my parent". This is Plan 9's `hang` written to
-`/proc/n/ctl`. Attaching to a process already running, `db pid`, is
+`/proc/n/ctl`. Attaching to a process already running, `debug pid`, is
 the same call with its pid.
 
 What the kernel keeps for a traced process: who traces it, its
@@ -97,7 +101,7 @@ steps. The details that need care:
 
 - **Continuing from a breakpoint.** The word is put back, the process
   steps one instruction, the 0 is written again, and then it continues.
-  The kernel does this, not db, so that `c` is one message.
+  The kernel does this, not debug, so that `c` is one message.
 - **The timer.** The kernel's own tick (`k_timer tick`, and `counted`
   in `interrupts`) is shared with every process. A step sets the timer
   to 1 for the stepping process only and sets it back after. The time
@@ -107,24 +111,24 @@ steps. The details that need care:
   kernel writes the saved words back into the child's copy, since the
   traced process's breakpoints list is at hand.
 - **exec.** The new image replaces the code and its breakpoints. The
-  process stops at its first instruction, so db can set them again
+  process stops at its first instruction, so debug can set them again
   (`stopped pc exec`).
 - **The other causes.** A fault (`c_fault`, an address outside the
   window) stops a traced process too, and that is the most common
-  reason to run db: to see where a program dies, and from where.
+  reason to run debug: to see where a program dies, and from where.
 
 The call is added where the others are: the dispatch in TinyKernel.ml,
 `TinyKernel/libc/sys.tm` for C, and `TinyKernel/libml/calls.ml` with
 `TinyLibSystem.ml` for ML.
 
-## 3. The debugger side, db, about 300 lines
+## 3. The debugger side, debug, about 300 lines
 
-db is ML on TinyLibStd, a file of `user/` and `/bin/db` in the boot
+debug is ML on TinyLibStd, a file of `user/` and `/bin/debug` in the boot
 image. Its commands are ed's kind, a letter and its arguments:
 
 ```
-    db prog args        the program started, stopped at its first instruction
-    db pid              attached to a process
+    debug prog args        the program started, stopped at its first instruction
+    debug pid              attached to a process
     b main  b 0x1a4     a breakpoint, at a function or an address
     c  s  n             continue, one instruction, one instruction over a call
     r                   the registers, the pc with its function
@@ -144,7 +148,7 @@ What it reuses rather than rewrites:
 - **The backtrace, from the code itself.** There is no frame pointer
   and no table of frame sizes, but the epilogue of tiny-c's functions
   and of tiny-ml's (`-tm`) has the same two words: `ldw lr, k(sp)` and
-  `addi sp, sp, f`. db reads forward from the pc to the function's
+  `addi sp, sp, f`. debug reads forward from the pc to the function's
   epilogue, decodes those two words, and gets the frame's size and
   where lr was saved. Then it repeats at the caller. Two cases need
   care: a stop at a function's first instruction, before its
@@ -156,7 +160,7 @@ What it reuses rather than rewrites:
   that stack as integers or pointers. Printing them as ML values would
   need their types, so it is left out (section 4).
 
-db's core is functions over a target: its peek, its registers, its
+debug's core is functions over a target: its peek, its registers, its
 step and continue. On tiny-kernel the target is the trace descriptor.
 On the host, for its tests, the target is TinyMachineCPU running a
 `.tm` program directly. The same file is tested on the host first,
@@ -166,13 +170,13 @@ the way TinyKernelNetwork is.
 
 A program in `/bin` is an image with a header of three words (a magic
 number, the image's size, the memory it asks for) and no symbols, so
-db has nothing to name addresses with. Two ways to fix this:
+debug has nothing to name addresses with. Two ways to fix this:
 
 1. **The symbols after the image** (Plan 9's a.out: text, data, then
    the symbol table). `tiny-cpu -a` writes, after the image, its labels
    as text lines (`name address`). The header's size stays the image's,
    and `load_prog`'s check `size = n - 12` becomes `size <= n - 12`,
-   so that a loader that knows nothing of symbols still works. db reads
+   so that a loader that knows nothing of symbols still works. debug reads
    them from the file it was given, or from `/bin/` plus the process's
    name when attached.
 2. **A file beside the program** (`/bin/prog.sym`). This changes no
@@ -195,12 +199,69 @@ What is left out, deliberately:
   the host, inside tiny-machine (a `-db` option, as mini-qemu has a
   gdb stub). That is another plan: this one is a program of the
   system, for the system's programs.
-- **A window.** A db on TinyLibGUI's `run_canvas` (the registers, the
+- **A window.** A debug on TinyLibGUI's `run_canvas` (the registers, the
   instructions around the pc, and buttons for step and continue) is a
   natural second program, on the same messages, once the line version
   works.
 
-## 5. The steps
+## 5. trace, the calls a process makes
+
+A second program on the same descriptor: `trace`, strace's idea, the
+system calls of a process as they are made, one line each. Plan 9's
+twin is ratrace, which writes `startsyscall` to `/proc/n/ctl` and
+reads the process's stops; Linux's strace stops a process the same way
+(ptrace's `PTRACE_SYSCALL`). The program and the call share the name
+`trace`, as `kill` is a program and a call on Unix. What it would
+print, roughly (cat's real calls are utils's, through TinyLibSystem):
+
+```
+    % trace cat f
+    open("f", 0) = 3
+    read(3, "hello\n", 512) = 6
+    write(1, "hello\n", 6) = 6
+    hello
+    read(3, "", 512) = 0
+    close(3) = 0
+    exit(0)
+```
+
+- **The kernel: a stop on the way in and on the way out.** One more
+  command, `y` (and `n` to stop it): a traced process stops at each
+  `sys`, before the call is done, and its tracer reads
+  `call n a1 a2 a3` (the number and r1 to r3). `c` from there does the
+  call and stops the process again on its way out, `ret n r`: at once
+  if the call finished, or when its waiting closure does (in
+  `runnable`, where a Waiting process becomes Ready). Between the two,
+  the tracer reads the process's memory (`m`): a write's bytes and a
+  path on the way in, a read's bytes on the way out. `exit` has no way
+  out (its end says `exited`), and `exec`'s is its stop at the new
+  program's first instruction. About 25 lines: the call's number kept
+  in the trace while the process waits to be let in, and `syscall`
+  given the number rather than reading it from `k_tval`, so that the
+  tracer's `c` can run it later.
+- **Why two stops and not one line after the call**: the kernel would
+  have to keep the arguments, and an `exec`'s path is gone once the
+  call is done (its memory is the new program's), while a `read`'s
+  bytes are not there yet before it. The two stops keep the kernel to
+  stop, look and resume, and leave the decoding to the program.
+- **The program, about 100 lines of ML.** `trace prog args` starts its
+  program as debug does (fork, `trace(0)`, exec), `trace pid` attaches;
+  then `y`, and a loop: read a stop, print, `c`. It has a table of the
+  calls (their names in `user.h`'s order and the kind of each argument:
+  a number, a path, a buffer and its length), reads a path up to its 0
+  and a buffer's first 32 bytes with `m`, and prints them escaped, as
+  strace does. It writes to its descriptor 2, so that `trace prog > f`
+  keeps the program's output apart.
+- **Left out**: the children (strace `-f`). A forked child is not
+  traced; following it would need the tracer to get a descriptor on it
+  at the fork, and one loop over several descriptors (`ready`). A later
+  step, if `trace sh` is wanted.
+
+trace needs only step 1 and the `m` command, not the step or the
+names, so it can come before debug: it is the smaller program, and it
+exercises the same messages.
+
+## 6. The steps
 
 1. **A stop instead of a kill.** `Stopped` as a state, the tracer and
    the breakpoints in the process, `sys_trace` with `b`, `d`, `c`, `r`, and
@@ -216,7 +277,7 @@ What is left out, deliberately:
    for every change to the kernel's timing.
 2. **The step.** The timer set to 1, `s`, continuing from a
    breakpoint, and the tick kept right for the other processes.
-3. **db with addresses only.** The commands of section 3 but `bt`,
+3. **debug with addresses only.** The commands of section 3 but `bt`,
    over the target. It is tested on the host with TinyMachineCPU, and
    then on tiny-kernel.
 4. **The names.** The symbols after the image (section 4), `find`
@@ -225,8 +286,12 @@ What is left out, deliberately:
 5. **The backtrace.** Epilogues decoded, for tiny-c's programs, then
    for tiny-ml's with the value stack.
 6. **fork and exec.** The child's breakpoints undone, the stop at
-   exec. db on `sh` running a pipeline.
+   exec. debug on `sh` running a pipeline.
+7. **trace.** `y`, the two stops and `c` through a call, in the kernel;
+   `m`; the program, `/bin/trace`; a session in `make check` tracing
+   `cat` of a file (section 5). It needs only step 1, so it may come
+   next.
 
 After step 1, a program that would have been killed can be looked at.
-After step 5, db answers the question a crash raises: where, and called
+After step 5, debug answers the question a crash raises: where, and called
 from where.

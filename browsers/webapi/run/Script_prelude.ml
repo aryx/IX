@@ -16,43 +16,6 @@ let text = {prelude|
   // the day a page looks wrong because of it
   function stub(name, value) { return function () { if (typeof __missed === "function") __missed(name); return value; }; }
 
-  // EventTarget made by a page itself (new EventTarget(), a class that
-  // extends it): listeners kept on the object, told in order. An
-  // element's own are the browser's (Script_host), found before these
-  // -- and reached through these too, when a library calls the
-  // prototype's method on an element
-  // (EventTarget.prototype.dispatchEvent.call(el, e): Polymer keeps
-  // the "native" methods so; the event went to a list of no listener,
-  // and a dialog waiting to be told its animation was over waited).
-  (function () {
-    var P = g.EventTarget && g.EventTarget.prototype;
-    if (!P) return;
-    // the browser's own method of that name, if this is one of its objects
-    function own(o, name) { var f = typeof __host_get === "function" ? __host_get(o, name) : undefined; return typeof f === "function" ? f : null; }
-    function listeners(o, type) { var all = o.__listeners || (o.__listeners = {}); return all[type] || (all[type] = []); }
-    Object.defineProperty(P, "addEventListener", { value: function (type, f, options) {
-      var h = own(this, "addEventListener"); if (h) return h.apply(this, arguments);
-      var l = listeners(this, type), self = this;
-      if (!f || l.some(function (e) { return e.f === f; })) return;
-      l.push({ f: f, once: !!(options && options.once) });
-      var signal = options && typeof options === "object" && options.signal;
-      if (signal) signal.addEventListener("abort", function () { self.removeEventListener(type, f); });
-    }, writable: true, configurable: true });
-    Object.defineProperty(P, "removeEventListener", { value: function (type, f) {
-      var h = own(this, "removeEventListener"); if (h) return h.apply(this, arguments);
-      var all = this.__listeners; if (all && all[type]) all[type] = all[type].filter(function (e) { return e.f !== f; });
-    }, writable: true, configurable: true });
-    Object.defineProperty(P, "dispatchEvent", { value: function (event) {
-      var h = own(this, "dispatchEvent"); if (h) return h.apply(this, arguments);
-      var self = this; try { event.target = this; event.currentTarget = this; } catch (e) {}
-      listeners(this, event.type).slice().forEach(function (e) {
-        if (e.once) self.removeEventListener(event.type, e.f);
-        if (typeof e.f === "function") e.f.call(self, event); else if (e.f && e.f.handleEvent) e.f.handleEvent(event);
-      });
-      return !event.defaultPrevented;
-    }, writable: true, configurable: true });
-  })();
-
   // the kinds of lists the DOM gives, as names a page tests against
   // (NodeList.prototype.isPrototypeOf(x)); the lists themselves are arrays
   // the class of window.screen, as a name a page tests against
@@ -256,26 +219,6 @@ let text = {prelude|
   // still compared with -- "x === document.all" must not be true of
   // an x that is undefined, which it is if there is no such thing
   getter(D, "all", function () { return this.querySelectorAll("*"); });
-  // CSSStyleSheet: a <style>'s sheet (below, el.sheet), its rules
-  // added one at a time. (Not here: one made by a script and put on the
-  // page by document.adoptedStyleSheets, a component library's way.)
-  (function () {
-    function CSSStyleSheet() { this._text = ""; this._rules = []; this._style = null; this.cssRules = this._rules; this.disabled = false; }
-    var P = CSSStyleSheet.prototype;
-    // a rule is an object with its text (cssRules[i].cssText)
-    P._sync = function () { if (this._style) this._style.textContent = this._text + "\n" + this._rules.map(function (r) { return r.cssText; }).join("\n"); };
-    P.replaceSync = function (text) { this._text = String(text); this._rules.length = 0; this._sync(); };
-    P.replace = function (text) { this.replaceSync(text); return Promise.resolve(this); };
-    P.insertRule = function (rule, index) {
-      index = index === undefined ? 0 : index;
-      rule = String(rule);
-      this._rules.splice(index, 0, { cssText: rule, selectorText: rule.split("{")[0].trim(), type: 1, parentStyleSheet: this });
-      this._sync();
-      return index;
-    };
-    P.deleteRule = function (index) { this._rules.splice(index, 1); this._sync(); };
-    g.CSSStyleSheet = CSSStyleSheet;
-  })();
   method(D, "importNode", function (node, deep) { return node.cloneNode(deep); });
   method(D, "adoptNode", function (node) { return node; });
   method(D, "getSelection", function () { return getSelection(); });
@@ -310,7 +253,6 @@ let text = {prelude|
   }
   method(D, "write", function () { written(Array.prototype.join.call(arguments, "")); });
   method(D, "writeln", function () { written(Array.prototype.join.call(arguments, "") + "\n"); });
-  method(D, "open", stub("document.open"));
   method(D, "close", nothing);
   method(D, "createRange", function () {
     var doc = this;
@@ -365,29 +307,6 @@ let text = {prelude|
     if (box.length !== 4 || !(box[2] > 0) || !(box[3] > 0)) return matrix(1, 1, 0, 0);
     var k = Math.min(innerWidth / box[2], innerHeight / box[3]);
     return matrix(k, k, (innerWidth - box[2] * k) / 2 - box[0] * k, (innerHeight - box[3] * k) / 2 - box[1] * k);
-  });
-  // a <canvas> not drawn yet: a script that draws on one goes on, and
-  // its picture is empty (docs/plans/plan_tinybox.md, "later")
-  method(E, "getContext", function () {
-    var canvas = this, context = { canvas: canvas };
-    if (typeof __missed === "function") __missed("canvas.getContext (nothing is drawn)");
-    ["putImageData", "drawImage", "fillRect", "clearRect", "strokeRect", "beginPath", "closePath", "moveTo", "lineTo", "arc", "rect", "fill", "stroke",
-     "fillText", "strokeText", "save", "restore", "translate", "rotate", "scale", "setTransform", "clip"].forEach(function (k) { context[k] = nothing; });
-    context.measureText = function (text) { return { width: 8 * String(text).length }; };
-    context.getImageData = context.createImageData = function (x, y, w, h) { return new ImageData(w || x, h || y); };
-    return context;
-  });
-  method(E, "toDataURL", function () { return "data:,"; });
-  // a canvas of no page (a worker's, a picture made aside): the same
-  // one, not drawn either
-  global("OffscreenCanvas", function OffscreenCanvas(width, height) {
-    var canvas = document.createElement("canvas");
-    this.width = width; this.height = height;
-    this.getContext = function () { var c = canvas.getContext.apply(canvas, arguments); c.canvas = this; return c; };
-  });
-  global("ImageData", function ImageData(data, width, height) {
-    if (typeof data === "number") { this.width = data; this.height = width; this.data = new Uint8ClampedArray(4 * data * width); }
-    else { this.data = data; this.width = width; this.height = height; }
   });
   // Web Audio, the least of it: a context, its clock, a buffer of
   // samples and its source started at a time (AudioContext.mli); the
@@ -462,30 +381,15 @@ let text = {prelude|
     takeRecords() { return []; }
   };
   // MutationObserver (2012): told, in a microtask, of what changed
-  // in the nodes it observes. Before promises it was the one way to
-  // run something "right after this script": change a text node
-  // nobody sees and be told of it -- which Polymer still does for its
-  // every debounced job (YouTube's lists fill that way), and Vue 2
-  // where it finds no promise. That is the part done here: a text
-  // node's data changed (the browser calls __mutated). A child added
-  // or an attribute set is not told yet.
-  var observers = [];
+  // in the nodes it observes -- the way to run something "right after
+  // this script" before promises (Polymer's debounced jobs, YouTube's
+  // lists). Here a name, never told: a page with promises does not ask
+  // it (Vue 2 takes them first).
   g.MutationObserver = class MutationObserver {
-    constructor(callback) { this._callback = callback; this._targets = []; this._records = []; }
-    observe(target, options) {
-      this._targets.push({ target: target, options: options || {} });
-      target.__observed = true;
-      if (observers.indexOf(this) < 0) observers.push(this);
-    }
-    disconnect() { this._targets = []; this._records = []; observers = observers.filter(function (o) { return o !== this; }, this); }
-    takeRecords() { var records = this._records; this._records = []; return records; }
-  };
-  g.__mutated = function (target, type) {
-    observers.slice().forEach(function (o) {
-      if (!o._targets.some(function (t) { return t.target === target && t.options[type]; })) return;
-      o._records.push({ type: type, target: target, addedNodes: [], removedNodes: [], previousSibling: null, nextSibling: null, attributeName: null, oldValue: null });
-      if (o._records.length == 1) queueMicrotask(function () { var records = o.takeRecords(); if (records.length) o._callback(records, o); });
-    });
+    constructor(callback) { this._callback = callback; }
+    observe() {}
+    disconnect() {}
+    takeRecords() { return []; }
   };
   // what the observer tells, as a class: a page looks for its
   // prototype's members before it trusts the observer, and brings its
@@ -596,24 +500,12 @@ let text = {prelude|
   global("customElements", { define: stub("customElements.define"), get: function () { return undefined; },
     whenDefined: function () { return new Promise(function () {}); }, upgrade: nothing });
   global("DOMException", class DOMException extends Error { constructor(message, name) { super(message); this.name = name || "Error"; } });
-  method(E, "scrollTo", stub("element.scrollTo"));
-  method(E, "scrollBy", stub("element.scrollBy"));
   reflects(E, "role", "role");
   reflects(E, "nonce", "nonce");
   reflects(E, "slot", "slot");
   reflects(E, "ariaLabel", "aria-label");
   reflects(E, "ariaHidden", "aria-hidden");
   reflects(E, "ariaExpanded", "aria-expanded");
-  // a <style>'s sheet: the object a script adds rules through, one at
-  // a time (sheet.insertRule: how a CSS-in-JS library writes a
-  // component's style when it is first drawn -- styled-components,
-  // Emotion). Its rules are written after the element's own text.
-  getter(E, "sheet", function () {
-    if (this.tagName !== "STYLE") return null;
-    if (!this.__sheet) { var s = new CSSStyleSheet(); s._style = this; s._text = this.textContent; s.ownerNode = this; this.__sheet = s; }
-    return this.__sheet;
-  });
-  getter(D, "styleSheets", function () { return Array.prototype.map.call(this.querySelectorAll("style"), function (s) { return s.sheet; }); });
   getter(E, "draggable", function () { return this.getAttribute("draggable") === "true"; }, function (v) { this.setAttribute("draggable", String(!!v)); });
   getter(E, "inert", function () { return this.hasAttribute("inert"); }, function (v) { this.toggleAttribute("inert", !!v); });
   getter(E, "contentEditable", function () { return this.getAttribute("contenteditable") || "inherit"; }, function (v) { this.setAttribute("contenteditable", v); });

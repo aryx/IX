@@ -119,5 +119,12 @@ cooperative.
   alone. The French, German, Spanish, Polish and Japanese Wikipedias,
   and the five sites, the same pictures both ways. Its tests:
   `Unit_js_string`, the UTF-16 ones gone.
+- **Cut** (2026-10-19, `plan_browser.md`, "Smaller"): `Js_ast`'s
+  printers, `expr_to_string` and `stmt_to_string`, to the tests'
+  `Testutil_js_ast` (`Unit_js_parse` and `Unit_js_classic` compare
+  trees as text); a TypeError names what it cannot say "an expression".
+  `Js_prelude`'s `Object.groupBy` and `Promise.withResolvers` (ES2024),
+  which no site of the twelve called (`sites.sh`, each prelude function
+  logged when called).
 - Kept, by the coverage: a direct `eval` (4 lines).
 - 32-bit arm (ints of 31 bits): not tried.

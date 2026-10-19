@@ -13,7 +13,7 @@ let check (what : string) (s : string) (expected : string) : unit = Alcotest.(ch
 
 (* how an expression is grouped *)
 let parsed (s : string) (expected : string) : unit =
-  Alcotest.(check string) s expected (match Js_parse.parse_expression s with Ok e -> Js_ast.expr_to_string e | Error e -> "error: " ^ e.message)
+  Alcotest.(check string) s expected (match Js_parse.parse_expression s with Ok e -> Testutil_js_ast.expr_to_string e | Error e -> "error: " ^ e.message)
 
 let tests =
   Testo.categorize "Js classic"

@@ -219,24 +219,15 @@ let tests =
           Browser_script.picture t "http://site.test/other.png" (Some (1., 1.));
           Browser_script.picture t "http://site.test/news/c-240.webp" (Some (240., 135.));
           Alcotest.(check string) "load with its size; error for the one not had; nothing for another address; a srcset's first" {|["a load 640x360 true", "b error", "c load"]|} (value "seen"));
-      Testo.create "an element is of its tag's class; EventTarget; a listener's signal; a <style>'s sheet" (fun () ->
+      Testo.create "an element is of its tag's class" (fun () ->
           check "instanceof" ~html:"<a id=a href=x>l</a><button id=b>b</button>"
             {|const a = document.getElementById("a"), b = document.getElementById("b");
               [a instanceof HTMLAnchorElement, a instanceof HTMLElement, b instanceof HTMLButtonElement, b instanceof HTMLAnchorElement, document.createElement("div") instanceof HTMLDivElement]|}
             "[true, true, true, false, true]";
-          check "new EventTarget(), and a class that extends it" {|class Bus extends EventTarget {} const bus = new Bus(), seen = [];
-              const f = e => seen.push(e.type); bus.addEventListener("ping", f); bus.dispatchEvent(new Event("ping")); bus.removeEventListener("ping", f); bus.dispatchEvent(new Event("ping")); seen|}
-            {|["ping"]|};
           check "prepend of a child already there, the first or another" ~html:"<div id=d><p id=a></p><p id=b></p><p id=c></p></div>"
             {|const d = document.getElementById("d"), ids = () => [...d.children].map(e => e.id).join("");
               d.prepend(d.children[0]); const same = ids(); d.prepend(d.children[2]); const moved = ids(); d.prepend(d.children[1], d.children[0]); [same, moved, ids()]|}
             {|["abc", "cab", "acb"]|};
-          check "a <style>'s sheet: rules put in by a script, after its own text" ~html:"<style id=s>p { margin: 0 }</style><p id=p>x</p>"
-            {|const s = document.getElementById("s"), sheet = s.sheet;
-              sheet.insertRule(".a { color: red }", 0); sheet.insertRule(".b { color: blue }", 1); sheet.deleteRule(0);
-              [sheet === s.sheet, sheet.ownerNode === s, sheet.cssRules.length, sheet.cssRules[0].cssText, sheet.cssRules[0].selectorText,
-               s.textContent.replace(/\s+/g, " "), document.styleSheets.length, document.getElementById("p").sheet]|}
-            {|[true, true, 1, ".b { color: blue }", ".b", "p { margin: 0 } .b { color: blue }", 1, null]|};
           check "a <script>'s innerHTML is its text, whatever < and > it holds"
             {|const s = document.createElement("script"); s.innerHTML = "var made = 0; for (var i = 0; i<3; i++) made += i>0 ? 1 : 0;"; document.head.appendChild(s);
               const st = document.createElement("style"); st.innerHTML = "a>b { color: red }"; [made, s.textContent.length, st.textContent]|}
@@ -245,14 +236,6 @@ let tests =
             {|var told = []; const o = new IntersectionObserver(es => es.forEach(e => told.push(e.target.id + ":" + e.isIntersecting)));
               o.observe(document.getElementById("i")); [told.length, typeof o.unobserve, o.takeRecords().length]|}
             {|[0, "function", 0]|};
-          (* Polymer's microtask: a text node changed, its observer told once the script has ended *)
-          (let t = Browser_script.create (Html_tree.of_string "<body></body>") in
-           Browser_script.run_scripts t;
-           let ask e = match Browser_script.eval t e with Ok v -> Js_value.display v | Error e -> "error: " ^ e.message in
-           Alcotest.(check string) "MutationObserver: not told at once" "0"
-             (ask {|var told = [], n = document.createTextNode(""); new MutationObserver(rs => told.push(rs.length + rs[0].type)).observe(n, { characterData: true });
-                    n.textContent = 1; n.textContent = 2; var other = document.createTextNode(""); other.textContent = 3; told.length|});
-           Alcotest.(check string) "told after, once, of the two changes" {|["2characterData"]|} (ask "told"));
           (let t = Browser_script.create (Html_tree.of_string "<body><p id=p>x</p></body>") in
            Browser_script.run_scripts t;
            Browser_script.set_measure t (fun _ _ -> Some (0., 300., 100., 20.));
@@ -270,13 +253,6 @@ let tests =
            ignore (Browser_script.click t (Option.get (find (Browser_script.tree t))));
            Alcotest.(check string) "the browser's click: an Event, with its path" {|[true, true, "b"]|}
              (match Browser_script.eval t "was" with Ok v -> Js_value.display v | Error e -> "error: " ^ e.message));
-          check "EventTarget.prototype's methods called on an element are the element's" ~html:"<div id=d></div>"
-            {|var d = document.getElementById("d"), n = 0, f = () => n++;
-              d.addEventListener("go", f); EventTarget.prototype.dispatchEvent.call(d, new Event("go"));
-              EventTarget.prototype.addEventListener.call(d, "go", () => n += 10); d.dispatchEvent(new Event("go"));
-              EventTarget.prototype.removeEventListener.call(d, "go", f); d.dispatchEvent(new Event("go"));
-              var t = new EventTarget(), m = 0; t.addEventListener("x", () => m++); t.dispatchEvent(new Event("x")); [n, m]|}
-            "[22, 1]";
           (* a form about to be sent: the document's submit listener puts a token in a hidden field (Google's sign-in), another prevents *)
           (let root = Html_tree.of_string {|<body><form id=f action=/go><input type=hidden name=bg id=bg value=js_disabled><button id=b>Next</button></form><form id=g><input type=hidden name=h></form></body>|} in
            let t = Browser_script.create root in

@@ -215,8 +215,8 @@ let tests =
           let t = page "<body><script>var s = document.createElement(\"style\"); s.textContent = \"a > b { color: red }\"; var p = document.createElement(\"p\"); p.textContent = \"1 < 2 && 3\";\nvar said = [s.outerHTML, p.outerHTML]</script>" in
           Alcotest.(check string) "no entity in a style" "[\"<style>a > b { color: red }</style>\", \"<p>1 &lt; 2 &amp;&amp; 3</p>\"]" (value t "said"));
       Testo.create "screen is a Screen, the language's own members do not show" (fun () ->
-          let t = page "<body><script>var n = 0; for (var k in Array.prototype) n++; for (var k in Math) n++;\nvar said = [screen instanceof Screen, typeof screen.addEventListener, n, Object.keys(new Error(\"x\")).length, typeof new OffscreenCanvas(2, 2).getContext(\"2d\")]</script>" in
-          Alcotest.(check string) "what a page asks to know its browser was not tampered with" "[true, \"function\", 0, 0, \"object\"]" (value t "said"));
+          let t = page "<body><script>var n = 0; for (var k in Array.prototype) n++; for (var k in Math) n++;\nvar said = [screen instanceof Screen, typeof screen.addEventListener, n, Object.keys(new Error(\"x\")).length]</script>" in
+          Alcotest.(check string) "what a page asks to know its browser was not tampered with" "[true, \"function\", 0, 0]" (value t "said"));
       Testo.create "a property of an attribute not written: the empty text" (fun () ->
           let t = page "<head><meta charset=utf-8><meta name=viewport content=x></head><body><a id=a>x</a><img id=i><div id=d></div><script>var m = document.getElementsByTagName(\"meta\");\nvar said = [m[0].name, m[1].name.toLowerCase(), document.getElementById(\"a\").rel, document.getElementById(\"i\").alt, typeof document.getElementById(\"d\").name]</script>" in
           Alcotest.(check string) "a meta's name, a link's rel, a picture's alt; a div has no name" "[\"\", \"viewport\", \"\", \"\", \"undefined\"]" (value t "said"));
@@ -269,8 +269,8 @@ let tests =
           Alcotest.(check (list string)) "the three not found, and a table's cells, which a paragraph has not; not what is there"
             [ "HTMLDocument.zork"; "HTMLElement.frobnicate"; "Window.nope" ] (List.rev !asked);
           Hashtbl.reset (Script_host.missed_names ());
-          ignore (Browser_script.eval t "document.open(); document.open(); p.scrollTo(0, 10)");
-          Alcotest.(check (list string)) "called, said once each" [ "document.open()"; "element.scrollTo()" ] (List.sort compare (List.of_seq (Hashtbl.to_seq_keys (Script_host.missed_names ())))));
+          ignore (Browser_script.eval t "document.execCommand('copy'); document.execCommand('copy'); document.elementFromPoint(0, 10)");
+          Alcotest.(check (list string)) "called, said once each" [ "document.elementFromPoint()"; "document.execCommand()" ] (List.sort compare (List.of_seq (Hashtbl.to_seq_keys (Script_host.missed_names ())))));
       Testo.create "a control's form; an event's handler not set is null" (fun () ->
           let t =
             page

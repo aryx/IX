@@ -299,12 +299,7 @@ and set (t : t) (n : node) (k : string) (v : value) : unit =
   | "textContent" | "innerText" | "data" | "nodeValue" ->
       if is_text n || n.name = comment_name then (
         n.text <- str v;
-        touch t;
-        (* a text a MutationObserver watches: the observer told (data/prelude/web/) *)
-        if List.mem_assoc "__observed" n.expando then
-          match Js_eval.global t.engine "__mutated" with
-          | Some (Object _ as f) -> ignore (Js_eval.call_in_run t.engine f ~this:Undefined [ wrap t n; String "characterData" ])
-          | _ -> ())
+        touch t)
       else replace_children [ make_with (str v) [] text_name ]
   (* a <script>'s and a <style>'s is text, not markup: "r<t;r++" in a
    * script written so was read as a tag, up to the next ">" *)

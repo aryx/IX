@@ -7,12 +7,12 @@
 
 let expr (s : string) : string =
   match Js_parse.parse_expression s with
-  | Ok e -> Js_ast.expr_to_string e
+  | Ok e -> Testutil_js_ast.expr_to_string e
   | Error e -> Printf.sprintf "error on line %d: %s" e.line e.message
 
 let program (s : string) : string list =
   match Js_parse.parse s with
-  | Ok stmts -> List.map Js_ast.stmt_to_string stmts
+  | Ok stmts -> List.map Testutil_js_ast.stmt_to_string stmts
   | Error e -> [ Printf.sprintf "error on line %d: %s" e.line e.message ]
 
 let check_expr (s : string) (expected : string) : unit = Alcotest.(check string) s expected (expr s)

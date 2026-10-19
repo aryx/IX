@@ -6,22 +6,22 @@
 
    The engine's built-ins are OCaml (Js_builtins: what ES5 had, and
    what needs the engine's insides). But most of what the standard
-   added to Array, String, Math and Promise since 2016 needs nothing
-   the language does not give: Array.prototype.at is three lines over
-   length and an index, flat is a loop, Promise.withResolvers is a
-   promise made. So they are written in the language they extend, and
-   run in every engine before any script (Js_eval.create_with):
+   added to Array, String and Math since 2016 needs nothing the
+   language does not give: Array.prototype.at is three lines over
+   length and an index, flat is a loop. So they are written in the
+   language they extend, and run in every engine before any script
+   (Js_eval.create_with):
 
      at, fill, flat, flatMap, findLast, findLastIndex, reduceRight,
        copyWithin                                              (arrays)
      at, replaceAll, padEnd, trimEnd, codePointAt, matchAll,
        localeCompare, normalize; String.fromCodePoint, String.raw
-     Object.groupBy, Number.parseFloat and parseInt; a number's
-       toString(radix), toExponential, toPrecision
+     Number.parseFloat and parseInt; a number's toString(radix),
+       toExponential, toPrecision
      Math's cbrt, hypot, log2, log10, log1p, expm1, sinh, cosh, tanh,
        clz32, imul, fround
-     Promise.withResolvers; WeakRef, FinalizationRegistry,
-       AggregateError; BigInt as a number (10n is 10: the lexer's)
+     WeakRef, FinalizationRegistry, AggregateError; BigInt as a
+       number (10n is 10: the lexer's)
      JSON.stringify's toJSON, replacer and indentation
      Date, whole: the calendar's arithmetic over the engine's clock
        (the days of a date and back, a text parsed, the setters, the
@@ -181,11 +181,6 @@ let text = {prelude|
     return s;
   });
 
-  def(Object, "groupBy", function (items, key) {
-    var groups = {}, i = 0;
-    for (var x of items) { var k = key(x, i++); (groups[k] || (groups[k] = [])).push(x); }
-    return groups;
-  });
   def(Number, "parseFloat", parseFloat);
   def(Number, "parseInt", parseInt);
 
@@ -281,13 +276,6 @@ let text = {prelude|
   def(M, "imul", function (a, b) {
     var ah = (a >>> 16) & 0xffff, al = a & 0xffff, bh = (b >>> 16) & 0xffff, bl = b & 0xffff;
     return (al * bl + (((ah * bl + al * bh) << 16) >>> 0)) | 0;
-  });
-
-  // ES2024: a promise and the two functions that settle it, at once
-  def(Promise, "withResolvers", function () {
-    var r = {};
-    r.promise = new Promise(function (resolve, reject) { r.resolve = resolve; r.reject = reject; });
-    return r;
   });
 
   // a typed array is an array of its kind (no buffer here, no

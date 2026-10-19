@@ -1373,6 +1373,8 @@ decide; this plan says mini-netscape until then.
 | `94ffc370` | helper programs (`Browser_helpers`: mpv for YouTube's films, mini-page for a PDF file, `~/.mailcap`'s, the profile's) in the place of the PDF viewer | 19,677 |
 | `2132a983` | `type t = [%mli]` in `browsers/` (243 lines of types said once) | 19,434 |
 | `6df4d35b` | a string is its UTF-8 bytes (`Js_string` in the place of `Js_utf16`): five Wikipedias with accents and Japanese the same | 19,277 |
+| | `Css_syntax.components` a loop (mini-ml's mini-netscape crashed on YouTube's style sheet, a value stack overflowed: `bugs/ix.md`) | |
+| | `Js_ast`'s printers to the tests; of the preludes, what no site of twelve called and came for applications (a page's `EventTarget`, CSS-in-JS's sheet, the canvas, `MutationObserver`'s telling, ES2024's `groupBy` and `withResolvers`) | about 19,010 (264 less) |
 
 Each checked by the tests (the engine's three ways), `frames.sh` on
 both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the
@@ -1380,9 +1382,12 @@ Python tutorial against the binary before. Kept by the coverage, not
 cut: generators (Wikipedia's scripts declare two `function*`), the
 `_opti` functions beside their `_simple` ones (the author: keep them).
 
-Left of A and B: `Js_ast`'s printers, `Cors`, more of the preludes
-(what the five sites never call), then B's smaller language, sized
-by the coverage run again on these files (`coverage_ix.sh`).
+Left of A and B: B's smaller language, which Wikipedia's scripts
+keep from (the coverage: the sites run the rest of the language).
+`Cors` stays (what keeps a page from reading another site's answers
+with the user's cookies); the preludes' rest is the standard library
+and what the twelve sites call, or Netscape's own (`document.write`,
+`new Option`, `createRange` for Prototype.js's age).
 
 What C taught: a feature a page tests for at its start is needed as
 syntax even when nothing calls it (MediaWiki's `async function*`); a

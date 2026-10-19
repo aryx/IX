@@ -255,11 +255,3 @@ type program = stmt list
  * 0.30000000000000004); NaN, Infinity, -Infinity *)
 val number_to_string : float -> string
 
-(* fully parenthesized: (1 + (2 * 3)), f((x) => (x * 2), 3) *)
-val expr_to_string : expr -> string
-
-(* one line per statement, a body's statements in brackets:
- *   Let a 1
- *   If ((b > a), Block [Expr (b = 0)], Expr (b = 1))
- *   Function f [] [Return; Expr a] *)
-val stmt_to_string : stmt -> string

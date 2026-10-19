@@ -97,8 +97,9 @@ let rec describe (e : A.expr) : string =
   | Index (o, Number n) -> Printf.sprintf "%s[%s]" (describe o) (A.number_to_string n)
   | Index (o, _) -> describe o ^ "[...]"
   | Call (f, _) -> describe f ^ "(...)"
-  (* anything else as it was written, cut short: to be looked for in the script *)
-  | e -> let text = A.expr_to_string e in if String.length text > 70 then String.sub text 0 67 ^ "..." else text
+  (* anything else: the message's line says where
+   * old: as it was written, cut short (Js_ast's printer, now a test's) *)
+  | _ -> "an expression"
 
 (* a method a host object does not have, called -- a DOM's newer one, a
  * browser's API this one lacks: nothing done, undefined given, the

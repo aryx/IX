@@ -74,7 +74,19 @@ For mini-ml, and for ix's capabilities:
   custom elements, which do, went before); the hooks the custom
   elements' registry was called by (`__named`, `__created`,
   `__attribute`, `__connected`); `Script_fetch.ask`'s `~ahead`.
-- Still in: `Cors` (the plan's "never run" list).
+- **Cut** (2026-10-19, "Smaller"; none of `Script_prelude`'s functions
+  among them called on twelve sites -- the five, two more Wikipedias,
+  MDN, old.reddit.com, Stack Overflow, gnu.org -- each logged when
+  called): an `EventTarget` a page makes itself (Polymer's), a
+  `<style>`'s sheet and `CSSStyleSheet` (CSS-in-JS: styled-components,
+  Emotion), the canvas that draws nothing (`getContext`,
+  `OffscreenCanvas`, `ImageData`), `MutationObserver`'s telling (a
+  name now, never told; `Script_host`'s `__mutated`), and the stubs a
+  missing host method already is (`document.open`, `scrollTo`,
+  `scrollBy`: `Js_eval.host_missing`). Their tests. Nine sites the
+  same before and after but their own changes (`sites.sh -c`).
+- Still in: `Cors` (the plan's "never run" list): what keeps a page
+  from reading another site's answers with the user's cookies.
 - A request's answer has only its `Content-Type` of the server's
   headers (`Tab` gives it); no cookie jar (`document.cookie` is "").
 - Not linked by mini-mk (mini-netscape is not yet): compiled by

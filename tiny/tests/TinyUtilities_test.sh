@@ -11,8 +11,7 @@
 # name order, where the twin keeps the directory's order. Not tested:
 # cat with a file it cannot open before others, as Plan 9's cat stops
 # there and tiny-utils's goes on to the next file, as all its filters do;
-# cp f f, which the twin refuses and tiny-utils's cp does harmlessly (it
-# reads the file whole before it writes the copy); mv of a directory
+# mv of a directory
 # into another directory, which the twin refuses (a move between two
 # directories is a copy and a remove in 9P) and the host's rename does;
 # sleep x, which the twin reads as 0 and tiny-utils refuses; sort -n of
@@ -182,6 +181,8 @@ same "" - cp f p d/e
 same "" - cp f p l1
 same "" - cp nosuch g
 same "" - cp d g
+same "" - cp f f
+same "" - cp f ./f
 same "" - cp
 same "" - mv f g
 same "" - mv f d

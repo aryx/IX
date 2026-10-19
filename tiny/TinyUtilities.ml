@@ -378,16 +378,28 @@ let into_last caps tool paths f =
       else each_path caps tool (List.rev sources) (fun from -> f from (if into then Filename.concat dest (last_part from) else dest))
   | _ -> raise Usage
 
-(* the whole file is read before the copy is opened, so a file copied
- * onto itself is not lost, with no question of which file is which *)
+(* a path's names from the root: the current directory's first when it
+ * is relative, "." dropped and ".." resolved by the text *)
+let resolved caps p =
+  let p = if p <> "" && p.[0] = '/' then p else TinyLibSystem.getcwd caps ^ "/" ^ p in
+  List.fold_left (fun acc n -> if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc)
+    [] (String.split_on_char '/' p)
+
+(* The copy is written a piece at a time as the file is read, so a file
+ * of any size is copied in a little memory. A file copied onto itself
+ * is refused, as Plan 9's cp does: opening the copy would empty the file
+ * before it is read. Only the same path is seen; two names of one file
+ * (ln) are not. *)
 let cp caps args =
   let _, paths = options "" args in
   into_last caps "cp" paths (fun from dest ->
     if fst (TinyLibSystem.stat from) then failwith "is a directory";
-    let text = TinyLibSystem.read_file caps from in
-    let fd = TinyLibSystem.open_out caps dest in
-    TinyLibSystem.write fd text;
-    TinyLibSystem.close fd)
+    if resolved caps from = resolved caps dest then failwith "the same file";
+    let src = TinyLibSystem.open_in caps from in
+    let fd = (try TinyLibSystem.open_out caps dest with Failure m -> TinyLibSystem.close src; failwith m) in
+    pieces src (TinyLibSystem.write fd);
+    TinyLibSystem.close fd;
+    TinyLibSystem.close src)
 
 let mv caps args =
   let _, paths = options "" args in

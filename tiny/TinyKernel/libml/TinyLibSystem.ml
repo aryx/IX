@@ -140,10 +140,13 @@ let TinyLibSystem.link caps a b = if u_link a b < 0 then failwith "cannot"
 let TinyLibSystem.rename caps a b =
   if path_names a <> path_names b then begin
     if fst (TinyLibSystem.stat a) then failwith "a directory, which tiny-kernel cannot move";
-    let text = TinyLibSystem.read_file caps a in
+    (* (a piece at a time, as cp: a big file does not fit in the heap) *)
+    let src = TinyLibSystem.open_in caps a in
     let fd = TinyLibSystem.open_out caps b in
-    TinyLibSystem.write fd text;
+    let rec go () = let s = u_read src 4096 in if s <> "" then begin TinyLibSystem.write fd s; go () end in
+    go ();
     TinyLibSystem.close fd;
+    TinyLibSystem.close src;
     TinyLibSystem.remove caps a
   end
 

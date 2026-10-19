@@ -89,8 +89,19 @@ code 16.6 s.
   its `<img>`s and its boxes' backgrounds) are fetched one after the
   other, a connection each, the status bar counting them; the page is
   shown without them meanwhile and laid out again once, after the
-  last. A GIF is its first frame. A PDF file is shown (`Pdf_viewer`, mini-chrome's: `plan_pdf.md`,
-  stage F): its pages are pictures drawn as they come into view.
+  last. A GIF is its first frame.
+- **Helper programs** (`Browser_helpers`, Mosaic's and Netscape's
+  helper applications; 2026-10-19, in the place of `Pdf_viewer`): what
+  the browser does not show is given to a program beside it. A link to
+  a film of YouTube's, clicked, goes to `mpv` (the address: mpv plays
+  it by yt-dlp), the page staying; a PDF file arrived goes to
+  `mini-page` (ix's `page`: `apps/page`), written to a file first; a
+  type of `~/.mailcap`'s (`video/mp4; mpv %s`) to its program. The
+  profile's `preferences` add theirs, before those (`helper
+  youtube.com/watch mpv %u`, `helper application/pdf gv %s`). A rule
+  whose program is not on the PATH is left out: on ix without mpv, a
+  link to YouTube is followed. `helpers=off`: none (the frames' tests).
+  `tests/helpers.sh`: fake programs on the PATH say what they were given.
 - A page shown while its scripts run (a long run stops the window:
   mini-chrome's `Js_slice` is not taken); bookmarks, the history kept;
   an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard

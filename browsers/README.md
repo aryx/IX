@@ -34,7 +34,7 @@ against mini-chrome.
 | [`engine/`](engine/README.md) | the boxes laid out (blocks, inlines, floats, flex, grid, tables), drawn as the playground's shapes, letters as pen strokes | 4,044 |
 | [`javascript/`](javascript/README.md) | the language: parser, evaluator, values, the standard objects; `mini-node` | 7,676 |
 | [`webapi/`](webapi/README.md) | what a page's script sees: `document`, elements, events, timers, `fetch`, `XMLHttpRequest`, modules, `localStorage` | 3,740 |
-| [`netscape/`](netscape/README.md) | the window, the tab, the profile, the zoom, a PDF's pages | 1,142 |
+| [`netscape/`](netscape/README.md) | the window, the tab, the profile, the zoom, the helper programs (mpv, mini-page) | 1,142 |
 | [`lynx/`](lynx/README.md) | a page as text in a terminal | 162 |
 
 Outside: `lib_networking/` (DNS, TLS 1.3, HTTP, `Keep_alive`,

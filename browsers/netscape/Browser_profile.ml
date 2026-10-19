@@ -3,9 +3,9 @@
 
 (* See Browser_profile.mli *)
 
-type t = { zooms : Browser_zoom.t; window : (int * int) option }
+type t = { zooms : Browser_zoom.t; window : (int * int) option; helpers : Browser_helpers.rule list }
 
-let empty : t = { zooms = Browser_zoom.empty; window = None }
+let empty : t = { zooms = Browser_zoom.empty; window = None; helpers = [] }
 let lines (s : string) : string list = List.filter (fun l -> l <> "") (List.map String.trim (String.split_on_char '\n' s))
 
 (*****************************************************************************)
@@ -15,6 +15,7 @@ let lines (s : string) : string list = List.filter (fun l -> l <> "") (List.map 
 let to_string (p : t) : string =
   (match p.window with Some (w, h) -> Printf.sprintf "window %d %d\n" w h | None -> "")
   ^ String.concat "" (List.map (fun (host, z) -> Printf.sprintf "zoom %s %g\n" host z) p.zooms)
+  ^ Browser_helpers.to_preferences p.helpers
 
 let of_string (s : string) : t =
   let first = List.hd Browser_zoom.levels and last = List.nth Browser_zoom.levels (List.length Browser_zoom.levels - 1) in
@@ -28,7 +29,7 @@ let of_string (s : string) : t =
     | [ None; Some w; Some h ] when String.starts_with ~prefix:"window " line && w >= 100 && h >= 100 && w <= 10000 && h <= 10000 -> Some (w, h)
     | _ -> None
   in
-  { zooms = List.filter_map zoom (lines s); window = List.find_map window (lines s) }
+  { zooms = List.filter_map zoom (lines s); window = List.find_map window (lines s); helpers = Browser_helpers.of_preferences s }
 
 (*****************************************************************************)
 (* cookies.txt *)

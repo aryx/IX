@@ -83,8 +83,9 @@
  * cursor is a hand over a link or a button, an I-beam over a field.
  * A page's scripts run (browsers/webapi over browsers/javascript:
  * mini-chrome's engine and DOM of today), their timers on the frame's
- * clock. A PDF file is shown, its pages one under the other
- * (Pdf_viewer; plan_pdf.md, stage F).
+ * clock. What it does not show, a PDF file or a film of YouTube's, it
+ * gives to a program beside it, Mosaic's helper applications
+ * (Browser_helpers): ~/.mailcap's, the profile's, mini-page and mpv.
  *
  * What is ours: the name says the window's period, not the engine's
  * (plan_browser.md, decision 1). Netscape 1 had no style sheets and
@@ -135,18 +136,19 @@
  * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
  * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
+ * usage: mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; console=on: what the page's scripts
  *   print, and their errors, on the standard error; strict=on: a
  *   script that does not parse refused whole, a DOM method missing a
- *   TypeError, where they are passed over with a warning; keep=off: a
+ *   TypeError, where they are passed over with a warning; helpers=off:
+ *   no program run for what the browser does not show; keep=off: a
  *   connection a request; profile: where the cookies and the zooms are
  *   kept, ~/.config/mini-netscape if not said, off for nowhere; window:
  *   the window's size at first, the one it had last if not said) *)
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env; Cap.stderr >
+type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env; Cap.stderr; Cap.fork; Cap.exec; Cap.wait >
 
 (* the browser's own first page *)
 let home =
@@ -257,7 +259,7 @@ let saved (caps : < caps; .. >) (m : model) : model =
   | None -> m
   | Some dir -> (
       let preferences, cookies = m.kept in
-      let now : Browser_profile.t = { zooms = m.zooms; window = m.window } in
+      let now : Browser_profile.t = { (fst m.kept) with zooms = m.zooms; window = m.window } in
       let changes = Cookie_jar.changes m.jar in
       let wrote =
         if now <> preferences then Some (Browser_profile.save caps ~dir now, (now, cookies))
@@ -451,7 +453,26 @@ let view (computer : P.computer) (m : model) : P.shape list =
       last := Some (now, shapes);
       shapes
 
-let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = saved caps (update_window caps computer m)
+(* what the tab gave a program (Browser_helpers): the document written
+ * to a file, if the program is given one, and the program started
+ * beside the window *)
+let helped (caps : < caps; .. >) (m : model) : model =
+  match Tab.take_job m.tab with
+  | None, _ -> m
+  | Some (rule, url, body), tab ->
+      let file =
+        Option.map
+          (fun bytes ->
+            let dir = try CapSys.getenv caps "TMPDIR" with Not_found -> "/tmp" in
+            let path = Filename.concat dir (Printf.sprintf "mini-netscape-%d-%s" (Hashtbl.hash url) (Filename.basename (fst (Browser_url.split_query (fst (Browser_url.split_fragment url)))))) in
+            FS.write caps (Fpath.v path) bytes;
+            path)
+          body
+      in
+      Browser_helpers.run caps (Browser_helpers.command rule ~url ~file);
+      { m with tab }
+
+let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = saved caps (helped caps (update_window caps computer m))
 
 (*****************************************************************************)
 (* Entry point *)
@@ -464,7 +485,17 @@ let profile_dir (caps : < caps; .. >) (flags : P.flags) : string option =
 let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept, cookies) : Browser_profile.t * Cookie.jar) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
   let jar = Cookie_jar.create cookies in
-  let tab = Tab.visit (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about))) address in
+  (* the helper programs: the profile's, ~/.mailcap's, the built-in
+   * ones, those on the PATH; none with helpers=off (the tests: a
+   * frame dumped starts no program) *)
+  let helpers =
+    if List.assoc_opt "helpers" flags = Some "off" then []
+    else
+      let home = try Some (CapSys.getenv caps "HOME") with Not_found -> None in
+      let mailcap = match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with Some text -> Browser_helpers.of_mailcap text | None -> [] in
+      Browser_helpers.available caps (kept.helpers @ mailcap @ Browser_helpers.defaults)
+  in
+  let tab = Tab.visit (Tab.with_helpers helpers (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about)))) address in
   (* console=on: and what the engine's debugging switches say, if a
    * host sets one (Js_value.say) *)
   if List.assoc_opt "keep" flags = Some "off" then Tab.keeps := false;

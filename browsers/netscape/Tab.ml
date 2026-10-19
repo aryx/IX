@@ -31,11 +31,13 @@ type t = {
   (* the style sheets had, by address ("": one that did not come) *)
   sheets : (string * string) list;
   focus : Dom.element option;
-  (* the pictures had, by address: the page's own, all of them; of a
-   * PDF file's pages, those in view only *)
+  (* the pictures had, by address *)
   pictures : (string * Browser_picture.t) list;
-  (* the page shown is a PDF file's *)
-  pdf : Pdf_viewer.t option;
+  (* the programs that show what the browser does not (those on the
+   * PATH: Netscape's), and the one to run now: its rule, the address,
+   * the document's bytes if they are what it is given *)
+  helpers : Browser_helpers.rule list;
+  job : (Browser_helpers.rule * string * string option) option;
   (* how much of the page the window shows, as scrolled was last told *)
   visible : float;
   todo : work list;
@@ -60,13 +62,15 @@ type t = {
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; pdf = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0 }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0 }
 
 let page (t : t) = t.page
 let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
 let busy (t : t) : bool = t.todo <> []
 let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
 let with_jar (jar : Cookie_jar.t) (t : t) : t = { t with jar }
+let with_helpers (helpers : Browser_helpers.rule list) (t : t) : t = { t with helpers }
+let take_job (t : t) = (t.job, { t with job = None })
 let at (epoch : float) (t : t) : t = if epoch = t.epoch then t else { t with epoch }
 let console (t : t) : string list = match t.script with Some s -> Browser_script.console s | None -> []
 let width (t : t) : float = t.width
@@ -84,34 +88,8 @@ let settings (t : t) : Browser_page.settings =
 
 let height (t : t) : float = match t.page with Some p -> p.layout.height | None -> 0.
 
-(* a PDF file's pages: those in view, and a window's height before and
- * after, are drawn (a fraction of a second each) and kept; the others'
- * pictures are let go, a page's being megabytes (mini-chrome's
- * Browser_tab.pdf_pages) *)
-let pdf_pages (t : t) : t =
-  match (t.pdf, t.page) with
-  | Some v, Some p ->
-      let wanted =
-        List.filter_map
-          (fun (f : Html_layout.fragment) ->
-            match f.picture with
-            | Some pic -> (
-                match Pdf_viewer.page_of_src pic.src with
-                | Some n when f.baseline >= t.scroll -. t.visible && f.baseline -. pic.height <= t.scroll +. (2. *. t.visible) -> Some n
-                | _ -> None)
-            | None -> None)
-          (Html_layout.fragments p.layout)
-      in
-      let kept = List.filter (fun (url, _) -> match Pdf_viewer.page_of_src url with Some n -> List.mem n wanted | None -> true) t.pictures in
-      let missing = List.filter (fun n -> not (List.mem_assoc (Pdf_viewer.src n) kept)) wanted in
-      if missing = [] && List.length kept = List.length t.pictures then t
-      else
-        let t = { t with pictures = List.map (fun n -> (Pdf_viewer.src n, Browser_picture.Arrived (Pdf_viewer.picture v n))) missing @ kept } in
-        { t with page = Some (Browser_page.laid_out (settings t) p) }
-  | _ -> t
-
 let scrolled (by : float) ~(visible : float) (t : t) : t =
-  pdf_pages { t with visible; scroll = Float.max 0. (Float.min (height t -. visible) (t.scroll +. by)) }
+  { t with visible; scroll = Float.max 0. (Float.min (height t -. visible) (t.scroll +. by)) }
 
 (* another width: the page laid out again, kept within its new height *)
 let resized (width : float) (t : t) : t =
@@ -140,7 +118,12 @@ let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * s
     | Some html -> Ok (address, 200, Some "text/html", html)
     | None -> Error "no such page of the browser's own"
   else if starts "data:" then
-    match Browser_url.data_url address with Some bytes -> Ok (address, 200, None, bytes) | None -> Error "a data: address that cannot be read"
+    (* its type, the words before its "," or its first ";" (none: HTML, as before) *)
+    let kind = String.sub address 5 (String.length address - 5) in
+    let kind = List.hd (String.split_on_char ';' (List.hd (String.split_on_char ',' kind))) in
+    match Browser_url.data_url address with
+    | Some bytes -> Ok (address, 200, (if kind = "" then None else Some kind), bytes)
+    | None -> Error "a data: address that cannot be read"
   else if starts "http://" || starts "https://" then
     (* old: Http_client.fetch caps ~post address *)
     match Http_client.fetch_with { said = []; keep = !keeps; jar = Some t.jar } caps ~post address with
@@ -169,13 +152,12 @@ let rec with_sheets (caps : < Cap.network; Cap.open_in; .. >) (t : t) (p : Brows
     with_sheets caps t (Browser_page.laid_out (settings t) p) (rounds - 1)
 
 (* the page's pictures not had yet, nor asked for -- its <img>s and
- * its boxes' background-images -- to fetch; a PDF file's pages are
- * not, they are pdf_pages's (mini-chrome's Browser_tab.with_pictures) *)
+ * its boxes' background-images -- to fetch *)
 let pictures_wanted (t : t) (p : Browser_page.t) : string list =
   let srcs = List.filter_map (fun (e : Dom.element) -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e)) (Dom.find_all "img" p.tree) in
   let asked = List.filter_map (fun w -> match w with Picture u -> Some u | _ -> None) t.todo in
   List.sort_uniq compare
-    (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && (not (List.mem u asked)) && Pdf_viewer.page_of_src u = None) (srcs @ p.backgrounds))
+    (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && not (List.mem u asked)) (srcs @ p.backgrounds))
 
 (* what the status bar says of what is left *)
 let progress (t : t) : t =
@@ -292,23 +274,27 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
     | Ok r -> r
     | Error why -> (plain, 0, Some "text/html", Browser_page.error_html plain why)
   in
-  (* a PDF file, whatever its type is said to be: shown as a page of
-   * ours, a picture a page (Pdf_viewer) *)
-  let pdf, content_type, html =
-    if not (Pdf_viewer.sniff bytes) then (None, content_type, bytes)
-    else
-      let name = Filename.basename (fst (Browser_url.split_fragment url)) in
-      match Pdf_viewer.open_ bytes with
-      | Ok v -> (Some v, Some "text/html", Pdf_viewer.html v ~name)
-      | Error why ->
-          (None, Some "text/html", Printf.sprintf "<title>%s</title><h1>%s</h1><p>A PDF file that could not be shown: %s." name name (Browser_text.escape_html why))
+  (* a PDF file, whatever its type is said to be (a file's has none) *)
+  let content_type = if String.starts_with ~prefix:"%PDF-" bytes then Some "application/pdf" else content_type in
+  (* what is not shown here, given to its program if there is one: the
+   * page says so (Browser_helpers) *)
+  let kind = Browser_page.media_type content_type in
+  let shown = kind = "" || kind = "text/html" || String.starts_with ~prefix:"text/" kind in
+  let job = if shown || status = 0 then None else Option.map (fun r -> (r, url, Some bytes)) (Browser_helpers.for_type t.helpers kind) in
+  let html =
+    match job with
+    | Some (r, _, _) ->
+        let name = Filename.basename (fst (Browser_url.split_fragment url)) in
+        Printf.sprintf "<title>%s</title><h1>%s</h1><p>A document of type <code>%s</code>, %d bytes, given to <b>%s</b>." name name kind (String.length bytes) (Browser_helpers.name r)
+    | None -> bytes
   in
-  let t = { t with focus = None; pdf; pictures = []; script = None; note = None; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
+  let content_type = if job <> None then Some "text/html" else content_type in
+  let t = { t with job; focus = None; pictures = []; script = None; note = None; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
   let p = Browser_page.read (settings t) url status content_type html in
   let t, p = with_sheets caps t p 8 in
-  let t = pdf_pages (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); scroll; bytes = String.length bytes } fragment) in
+  let t = (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); scroll; bytes = String.length bytes } fragment) in
   if status = 0 then { t with todo = []; note = Some "Could not load the page" }
-  else if (not t.scripts) || pdf <> None then with_pictures t
+  else if not t.scripts then with_pictures t
   else
     (* its scripts of their own file fetched first, then all run in
      * order; the page shown meanwhile, as it came *)
@@ -450,7 +436,13 @@ let click (t : t) ~(x : float) ~(y : float) : t =
       else
         match (control, link, t.page) with
         | Some e, _, Some p -> form t (Browser_forms.click p e)
-        | None, Some address, _ -> go { t with focus = None } address
+        | None, Some address, _ -> (
+            (* a link to what a program shows (a film of YouTube's to
+             * mpv): run beside, the page staying (Browser_helpers) *)
+            let whole = Browser_url.resolve t.url address in
+            match Browser_helpers.for_url t.helpers whole with
+            | Some r -> { t with focus = None; job = Some (r, whole, None); said = Browser_helpers.name r ^ ": " ^ whole }
+            | None -> go { t with focus = None } address)
         | _ -> { t with focus = None })
 
 (* the page's clock moved on by [ms]: its timers due run; not while

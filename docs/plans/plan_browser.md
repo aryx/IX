@@ -1103,3 +1103,108 @@ page, which the plan first left out; and that the code is cut down,
 not copied as it is, with mini-chrome's history as a guide. Run for it, and nothing else: mini-chrome's mini-curl,
 mini-netscape and mini-chrome-software on the article, their frames
 looked at; `survey.sh`, with `-ml` and `-net`.
+
+## Smaller: browsers/ under 20,000 lines (2026-10-19)
+
+The author: "m-ix browsers/ is now the biggest component of m-ix with
+28 000 LOC. Is there anyway we could significantly reduce this to
+around 20 000 LOC or at least it is smaller than the kernel which is
+arguably more important, while still having the Html/JS/CSS and
+getting wikipedia, HN, and other websites rendered mostly correctly".
+
+**What is counted** (`scripts/stats/loc.py`'s files and its `header`,
+2026-10-19, tests left out): `make loc -v`'s 28,826 for `browsers/`
+has its header comments; m-ix's number has not.
+
+| | .ml | .mli, less its header | counted |
+|---|---:|---:|---:|
+| `browsers/` | 19,920 | 3,118 (of 8,564) | **23,038** |
+| `kernels/9pi/` (mini-9pi) | 12,507 | 1,483 | **13,990** |
+| `kernels/9pi/` and `kernels/lib_machine/` | | | about 20,400 |
+
+The scripts are most of it: `javascript/` about 8,700 and `webapi/`
+about 4,300; `html/`, `css/`, `engine/`, `netscape/` and `lynx/`
+about 10,000 together. The language is mini-chrome's tree of
+2026-10-10 whole (React for GitHub, Polymer for YouTube, Gmail,
+Ember), where its first commit's 2,238 lines and webapi's 724 are
+"the nearer measure of what a Netscape's scripts need" (above).
+
+### A: about 3,000 lines, the pages the same (the author: yes)
+
+| what | lines | why it can go |
+|---|---:|---|
+| the optimizations to `opti/` (not counted, `docs/loc.md`): `Js_compile`, `Js_quicken`, `Mini_opti`, `Per_domain`; `Cascade`'s styles kept; `Tab.settle`, `Browser_draw.later`, `Netscape.view` | about 800 | each has its simple way already, behind a switch: `MINI_OPTI=walk`, `settle=off`, `draw=all`, `view=each` |
+| the two preludes in strings, `Script_prelude` (1,084) and `Js_prelude` (549), down to what Wikipedia, HN and ocaml.org call | about 800 | Shady DOM's accessors (YouTube), `IntersectionObserver`, `AbortSignal`, `postMessage`... |
+| Stage 1's cuts inside `browsers/`, none taken yet: the printers (`Js_ast`'s 141, `Selectors`, `Cascade.explain`, `Dom.to_lines`), ES modules and import maps, generators, `with`, a direct `eval`, `Js_utf16`, frames and `@import`, named grid lines and `@layer`, `Response`, `Cors`, shadow trees | about 1,300 | never run by the article (Stage 1's coverage) |
+| a type written in both the .ml and the .mli (`Js_ast`, `Computed`, `Selectors`, `Html_layout`) | about 250 | only with `[%mli]` here, the author's to allow |
+
+About 3,100 lines: `browsers/` at about 20,000. Each cut is tried
+and the article's frame looked at, HN's and ocaml.org's too; what
+goes is said in the directory's README ("remains"). What gets worse:
+the sites the cut things came for (GitHub, Gmail, YouTube), not the
+aim.
+
+`browsers/coverage.sh` first, run again on today's files (it measured
+mini-chrome's, before the copy) and on more than the article: HN,
+ocaml.org, LWN, a second article. Its `-v` is the list of A's cuts,
+checked.
+
+### B: under the kernel, about 13,000 to 14,000 (the author: the way)
+
+The author: "by supporting less of those advanced JS heavy websites,
+we are also closer to our name, mini-netscape". The aim is a
+Netscape's scripts, not today's applications: a site that is all
+scripts (GitHub, Gmail, YouTube) is not a regression to fix, and a
+feature that came for one is a cut, not a remain.
+
+
+A smaller language: what a Netscape page's scripts do (`onclick`, a
+form checked, `document.write`, the DOM changed, timers,
+`XMLHttpRequest`), about 3,500 to 4,500 lines with its webapi, in the
+place of about 13,000: no classes, no async and its coroutines, no
+`Proxy`, no `Symbol`, no modules, the preludes small. About 9,000
+lines less, with A's engine cuts. The cost: Wikipedia's own scripts
+(jQuery under its loader) no longer run, and they reach 4,575 of the
+language's lines (Stage 1); the article reads the same without them,
+HN has none. mini-chrome stays the whole browser. After A; what the
+smaller language keeps is set by the coverage of what the four sites'
+scripts run. The author: "let's try to support Wikipedia at least and
+a few popular (not too JS heavy) sites": Wikipedia's scripts are kept
+running, and the sites chosen are run by the coverage too.
+
+### YouTube: a helper program, not the site's scripts
+
+The author: "For youtube I think it's too much work, but what would
+be good is that HN link pointing to a youtube video could be played
+when run on the host by using a metamail/mailcap/external program
+mechanism (mini-chrome has it I think) to run mpv or something that
+can play those links and video".
+
+mini-chrome has it: `src/chrome/Browser_helpers.ml` (129 lines and a
+101-line .mli), Mosaic's "helper applications". A rule is a site (a
+host and the path's beginning, the address given as `%u`) or a
+content type (the page written to a file, `%f`), and a program;
+built in, `youtube.com/watch`, `youtube.com/shorts/` and `youtu.be/`
+to `["mpv"; "%u"]`; more in the profile's `Preferences`, before it.
+It is offered by the right click's menu ("Open with mpv", "Open link
+with mpv"), which mini-netscape has not.
+
+For mini-netscape, smaller, and Netscape's own way:
+
+- **A click on a link** whose address a site's rule matches runs the
+  program, `Cap.fork` and `Cap.execv` (`lib_core/system/CapUnix`),
+  the page staying; the status bar says "mpv: <address>". No menu.
+- **A content type** the browser does not show (a page that is not
+  HTML, a picture or a PDF) is written to a file and given to its
+  program: Netscape on Unix read `~/.mailcap` for it (RFC 1524,
+  metamail's), `video/mp4; mpv %s`. The profile's `preferences` has
+  the site rules as lines, as its `zoom` ones: `helper
+  youtube.com/watch mpv %u`; types from `~/.mailcap`, if there.
+- **The built-in one**: YouTube's three to `mpv %u`, used only when
+  `mpv` is in the `PATH` (mpv plays a YouTube address by yt-dlp).
+- **On ix** (mini-9pi, tiny-kernel) there is no such program: a rule
+  whose program is not found is skipped, the link followed as now.
+
+About 60 to 80 lines in `netscape/` (`Browser_helpers`: the rules
+read, matched, run), and a test of the matching (an address, a
+type, `%u` and `%f`), not of the run: lines added, after A.

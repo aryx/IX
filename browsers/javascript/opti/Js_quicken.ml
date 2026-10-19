@@ -117,3 +117,5 @@ and statement (st : statement) : statement =
   | Export (Export_names _ | Export_all _) -> st
 
 let program (p : program) : program = List.map stmt p
+
+let () = Js_eval.quickener := Some (program, func)

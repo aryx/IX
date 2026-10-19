@@ -17,7 +17,8 @@ author's mini-chrome's <path> (its 8af888e)`).
 |---|---|---:|---|
 | `parsing/` | `Js_lexer`, `Js_ast`, `Js_parse` | 1,589 | the tokens (a newline remembered, for the semicolons not written); the tree; statements by recursive descent, expressions by Pratt's binding powers |
 | `values/` | `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Mini_opti`, `Per_domain` | 963 | a value, an object and its prototype, the conversions; a string in UTF-16's units; the switch of the optimized paths |
-| `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_quicken`, `Js_compile`, `Js_coroutine`, `Js_module` | 2,446 | the tree walked: scopes, closures, classes, generators, exceptions, a budget of steps; a function's body compiled to closures; an async function stopped at an await (a thread); ES modules |
+| `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_coroutine`, `Js_module` | 1,914 | the tree walked: scopes, closures, classes, generators, exceptions, a budget of steps; an async function stopped at an await (a thread); ES modules |
+| `opti/` | `Js_quicken`, `Js_compile` | 547 | optimizations, not in m-ix's count (`docs/loc.md`): a copy of the tree with each name's place; a function's body compiled to closures. Each tells `Js_eval` of itself when the program starts (`Js_eval.quickener`, `compiler`): the engine runs the same without them, slower |
 | `library/` | `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `Js_prelude` | 2,507 | String, Array, Math, Date, Map, Set, Symbol, Proxy, JSON, promises, regular expressions by backtracking; `Js_prelude`: mini-chrome's `data/prelude/library.js` (541 lines) in a string |
 
 And its tests, `tests/` (mini-chrome's `tests/js` but `Unit_json`: 126,

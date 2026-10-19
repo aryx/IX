@@ -137,6 +137,11 @@ let step (t : t) (line : int) : unit =
  * which is after this module and says so when the program starts *)
 let compiler : (t -> A.func -> scope -> value -> value) option ref = ref None
 
+(* opti: who gives a tree its places (a program's, a function's), if
+ * somebody does: Js_quicken, which is in opti/ and says so when the
+ * program starts; without it a name is looked for by its text *)
+let quickener : ((A.program -> A.program) * (A.func -> A.func)) option ref = ref None
+
 (* eval(text) written so, by that name: a "direct" eval, whose text is
  * run where the call is -- it sees the names of the function calling
  * it (set below, where a program's run is) *)
@@ -412,7 +417,7 @@ and make_class (t : t) (s : scope) (this : value) (c : A.class_) : value =
         { name = c.class_name; params = []; rest = Some (A.Bind "args"); body = [ stmt (A.Super_call [ A.Spread (A.Name "args") ]) ]; arrow = false; generator = false; async = false; frame = None; own_name = false; text = None }
   in
   (* opti: a constructor made here is quickened as the written ones were *)
-  let ctor = if ctor.frame = None && Js_scope.slotted s then Js_quicken.func ctor else ctor in
+  let ctor = match !quickener with Some (_, func) when ctor.frame = None && Js_scope.slotted s -> func ctor | _ -> ctor in
   let made = closure cs this { ctor with name = c.class_name } in
   let f = match made with Object f -> f | _ -> assert false in
   set_own f "prototype" (Object proto);
@@ -1078,7 +1083,8 @@ and exec_labelled (labels : string list) (t : t) (s : scope) (this : value) (st 
 (* a program's statements, in the global scope *)
 (* opti: a program's tree given its places, for an engine of the fast
  * kind (Js_quicken) *)
-let quickened (s : scope) (program : A.program) : A.program = if Js_scope.slotted s then Js_quicken.program program else program
+let quickened (s : scope) (program : A.program) : A.program =
+  match !quickener with Some (quicken, _) when Js_scope.slotted s -> quicken program | _ -> program
 
 let run_in (t : t) (scope : scope) (this : value) (program : A.program) : value =
       let program = quickened t.globals program in

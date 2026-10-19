@@ -279,3 +279,7 @@ val instance_of : t -> Js_value.value -> Js_value.value -> bool
 (* who compiles a function's body: set by Js_compile, read at a
  * function's first call when Mini_opti.compiled *)
 val compiler : (t -> Js_ast.func -> Js_value.scope -> Js_value.value -> Js_value.value) option ref
+
+(* who gives a tree its places, a program's and a function's: set by
+ * Js_quicken (opti/), read when a program is run in a scope of slots *)
+val quickener : ((Js_ast.program -> Js_ast.program) * (Js_ast.func -> Js_ast.func)) option ref

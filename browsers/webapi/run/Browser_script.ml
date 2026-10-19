@@ -199,7 +199,7 @@ let create_with ({ seed; log; base; epoch; viewport; cookies } : options) (tree 
   let t =
     { engine; root = thaw tree; changed = false; console = []; log; nodes = Hashtbl.create 64; document_listeners = []; frozen = [];
       now = 0.; timers = []; next_timer = 0; alerts = []; base; address = []; requests = []; waiting = []; next_request = 0; import_map = []; module_sources = []; module_asked = []; modules = None; module_jobs = []; navigation = None; submission = None; current_script = None; cookies;
-      more = (fun _ _ -> None); scroll_y = 0.; where = (fun _ -> None); measure = None; geometry = None; dispatch = (fun _ _ -> false); inserted = (fun _ -> ()); exempt = []; once = []; protos = []; ready = "loading"; frames = [] }
+      more = (fun _ _ -> None); scroll_y = 0.; where = (fun _ -> None); measure = None; geometry = None; dispatch = (fun _ _ -> false); inserted = (fun _ -> ()); exempt = []; once = []; protos = []; ready = "loading" }
   in
   t.more <- Script_element.get t;
   t.where <- (fun n -> !where_later t n);
@@ -461,8 +461,7 @@ let key (t : t) (k : string) : bool =
   dispatch t body "keydown" [ ("key", String k) ]
 
 (* whether the window (the document) has a listener of that type *)
-let rec listens (t : t) (typ : string) : bool =
-  List.exists (fun (ty, _) -> ty = typ) t.document_listeners || ((typ = "keydown" || typ = "keyup") && List.exists (fun (_, frame) -> listens frame typ) t.frames)
+let listens (t : t) (typ : string) : bool = List.exists (fun (ty, _) -> ty = typ) t.document_listeners
 
 (* a key as the web names it, from the platform's name (SDL's, in
  * lower case, but the arrows): "return" is "Enter", "space" is " " *)
@@ -479,11 +478,8 @@ let web_key (k : string) : string =
   | _ when String.length k >= 2 && k.[0] = 'f' && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub k 1 (String.length k - 1)) -> String.capitalize_ascii k
   | k -> k
 
-let rec window_event_at (at : Dom.element option) (t : t) (typ : string) (fields : (string * value) list) : bool =
-  let own = List.exists (fun (ty, _) -> ty = typ) t.document_listeners && dispatch_event ~nested:false t (Option.bind at (node_of_element t)) (Script_events.make ~bubbles:true typ (List.map (fun (k, v) -> if k = "key" then (k, (match v with String s -> String (web_key s) | v -> v)) else (k, v)) fields)) in
-  (* a key is its frames' too (a deck of slides in a frame, turned by the arrows) *)
-  let framed = (typ = "keydown" || typ = "keyup") && List.fold_left (fun any (_, frame) -> window_event_at None frame typ fields || any) false t.frames in
-  own || framed
+let window_event_at (at : Dom.element option) (t : t) (typ : string) (fields : (string * value) list) : bool =
+  List.exists (fun (ty, _) -> ty = typ) t.document_listeners && dispatch_event ~nested:false t (Option.bind at (node_of_element t)) (Script_events.make ~bubbles:true typ (List.map (fun (k, v) -> if k = "key" then (k, (match v with String s -> String (web_key s) | v -> v)) else (k, v)) fields))
 
 (* a picture has come (or not: [size] None): each <img> of that address
  * is told -- its load event, or error -- and says its size
@@ -533,27 +529,21 @@ let set_attribute (t : t) (e : Dom.element) (name : string) (value : string opti
   | None -> ()
 
 (* the loop's turn for the timers (Event_loop): each one due is a task *)
-let rec advance (t : t) (ms : float) : unit =
-  Event_loop.advance t ms ~task:(fun f time -> ignore (run_handler ~nested:false t f ~this:Undefined time));
-  (* its frames' timers on the same clock *)
-  List.iter (fun (_, frame) -> advance frame ms) t.frames
+let advance (t : t) (ms : float) : unit =
+  Event_loop.advance t ms ~task:(fun f time -> ignore (run_handler ~nested:false t f ~this:Undefined time))
 
 (* a request's answer, given to the script that asked: a task of its
  * own (its promises' thens run after it) *)
-let rec answer (t : t) (rid : int) (result : (answer, string) result) : unit =
-  match List.find_opt (fun (_, (frame : t)) -> List.mem_assoc rid frame.waiting) t.frames with
-  | Some (_, frame) -> answer frame rid result
-  | None ->
+let answer (t : t) (rid : int) (result : (answer, string) result) : unit =
   let give = host_function "answer" (fun ~this:_ _ -> Script_fetch.answer t rid result; Undefined) in
   (match Js_eval.call t.engine give ~this:Undefined [] with Ok _ -> () | Error e -> report t e);
   (* a module's text, perhaps the last its graph waited for *)
   run_modules t
 
-let rec take_requests (t : t) : request list =
+let take_requests (t : t) : request list =
   let r = List.rev t.requests in
   t.requests <- [];
-  (* its frames' too: numbered apart ([adopt]), to give each its answer *)
-  r @ List.concat_map (fun (_, frame) -> take_requests frame) t.frames
+  r
 
 let take_address (t : t) : (string * bool) list =
   let a = List.rev t.address in
@@ -575,74 +565,8 @@ let take_alerts (t : t) : string list =
   t.alerts <- [];
   a
 
-let changed (t : t) : bool = t.changed || List.exists (fun (_, (frame : t)) -> frame.changed) t.frames
+let changed (t : t) : bool = t.changed
 
-(*****************************************************************************)
-(* Frames *)
-(*****************************************************************************)
-
-(* what an <iframe> shows, as the page's layout names it (Frames.source,
- * Browser_page's): its srcdoc's text, else its src's address *)
-let shown_by (t : t) (n : node) : string option =
-  match (attribute n "srcdoc", attribute n "src") with
-  | Some text, _ -> Some text
-  | None, Some src when String.trim src <> "" -> Some (Browser_url.resolve t.base (String.trim src))
-  | _ -> None
-
-(* a message for a window, told to its "message" listeners in a task
- * of its own: the prelude's __deliver, given the data and who sent it *)
-let deliver (t : t) (data : value) (from : value) : unit =
-  let task =
-    host_function "message" (fun ~this:_ _ ->
-        (match Js_eval.global t.engine "__deliver" with
-        | Some f -> ( match Js_eval.call t.engine f ~this:Undefined [ data; from ] with Ok _ -> () | Error e -> report t e)
-        | None -> ());
-        Undefined)
-  in
-  ignore (Event_loop.add ~frame:false t [ task; Number 0. ] ~repeat:false)
-
-(* [adopt page ~key frame]: the world of the document a frame of the
- * page shows, made the page's. Each is its own engine: the two share
- * no object, and talk by messages alone -- the frame's window.parent
- * and the page's iframe.contentWindow are windows one can only post
- * to (postMessage), which is all two documents of different sites may
- * do in any browser, and here all that any two may *)
-let adopt (page : t) ~(key : string) (frame : t) : unit =
-  (* its requests numbered apart from the page's and its other frames' *)
-  frame.next_request <- (List.length page.frames + 1) * 1_000_000;
-  page.frames <- (key, frame) :: List.remove_assoc key page.frames;
-  let iframe () = List.find_opt (fun n -> n.name = "iframe" && shown_by page n = Some key) (elements page.root) in
-  Js_eval.define frame.engine "__post_parent"
-    (host_function "__post_parent" (fun ~this:_ args ->
-         deliver page ((match (List.nth_opt args 0) with Some v_ -> v_ | None -> Undefined)) (match iframe () with Some n -> Script_host.wrap page n | None -> Undefined);
-         Undefined));
-  Js_eval.define page.engine "__post_frame"
-    (host_function "__post_frame" (fun ~this:_ args ->
-         (match args with
-         | el :: data :: _ -> (
-             match Option.bind (try Some (Script_host.node_of page el) with _ -> None) (shown_by page) with
-             | Some key -> Option.iter (fun (to_ : t) -> deliver to_ data Undefined) (List.assoc_opt key page.frames)
-             | None -> ())
-         | _ -> ());
-         Undefined));
-  match Js_eval.eval frame.engine "__framed()" with Ok _ -> () | Error e -> report frame e
-
-(* a frame's document as its scripts have it now *)
-(* (the same tree while they change nothing: what is computed from it is kept by its identity) *)
-let frozen_here = Per_domain.make (fun () -> (Hashtbl.create 8 : (int, Dom.element) Hashtbl.t))
-
-let frame_tree (t : t) (key : string) : Dom.element option =
-  Option.map
-    (fun (frame : t) ->
-      let id = Hashtbl.hash key in
-      match Hashtbl.find_opt (frozen_here ()) id with
-      | Some kept when not frame.changed -> kept
-      | _ ->
-          let now = tree frame in
-          Hashtbl.replace (frozen_here ()) id now;
-          now)
-    (List.assoc_opt key t.frames)
-let frames (t : t) : (string * t) list = t.frames
 let console (t : t) : string list = List.rev t.console
 let print (t : t) (line : string) : unit = say t line
 let engine (t : t) : Js_eval.t = t.engine

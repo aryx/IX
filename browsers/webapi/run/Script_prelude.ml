@@ -85,49 +85,6 @@ let text = {prelude|
     }, 0);
   };
 
-  // A message from another window (a frame's from its page, a page's
-  // from its frame: Browser_script.adopt): the browser's to give, as
-  // postMessage's own. Its source is a window to answer to.
-  g.__deliver = function (data, from) {
-    var e = new Event("message");
-    e.data = data; e.origin = location.origin; e.ports = []; e.lastEventId = "";
-    e.source = from && from.contentWindow ? from.contentWindow : g.parent;
-    window.dispatchEvent(e);
-  };
-  // This document is a frame's: its parent, and the top, are a window
-  // it can only post to.
-  g.__framed = function () {
-    var up = { postMessage: function (data) { __post_parent(data); }, addEventListener: function () {}, removeEventListener: function () {},
-               focus: function () {}, blur: function () {}, location: { href: "", origin: location.origin }, frames: [], length: 0 };
-    up.parent = up.top = up.self = up.window = up;
-    g.parent = g.top = up;
-    g.frameElement = null;
-  };
-
-  // MessageChannel (HTML5's channel messaging): two ports, what is
-  // posted on one given to the other's onmessage in a task of its own.
-  // Frameworks use it as a timer that is not held back (a scheduler's
-  // "as soon as the browser has drawn").
-  global("MessageChannel", function MessageChannel() {
-    function port() {
-      var p = { onmessage: null, _other: null, _listeners: [],
-        postMessage: function (data) {
-          var to = p._other;
-          setTimeout(function () {
-            var e = { data: data, target: to, ports: [] };
-            if (typeof to.onmessage === "function") to.onmessage(e);
-            to._listeners.forEach(function (f) { f(e); });
-          }, 0);
-        },
-        addEventListener: function (type, f) { if (type === "message") p._listeners.push(f); },
-        removeEventListener: function (type, f) { p._listeners = p._listeners.filter(function (g) { return g !== f; }); },
-        start: function () {}, close: function () {} };
-      return p;
-    }
-    this.port1 = port(); this.port2 = port();
-    this.port1._other = this.port2; this.port2._other = this.port1;
-  });
-
   // URL (WHATWG's URL Standard, 2012; the class in browsers from 2014):
   // an address in parts that can be written -- u.pathname = "/x",
   // u.searchParams.append("a", "1") -- its href made of them again.
@@ -452,11 +409,9 @@ let text = {prelude|
   // an x that is undefined, which it is if there is no such thing
   getter(D, "all", function () { return this.querySelectorAll("*"); });
   getter(D, "fullscreenEnabled", function () { return false; });
-  // CSSStyleSheet made by a script (Constructable Stylesheets, Chrome
-  // 73, 2019): a sheet with no element, given its text by replaceSync
-  // and put on the page by document.adoptedStyleSheets = [sheet] --
-  // how a component library shares one sheet between its components.
-  // Here each adopted sheet is a <style> of the head, kept up to date.
+  // CSSStyleSheet: a <style>'s sheet (below, el.sheet), its rules
+  // added one at a time. (Not here: one made by a script and put on the
+  // page by document.adoptedStyleSheets, a component library's way.)
   (function () {
     function CSSStyleSheet() { this._text = ""; this._rules = []; this._style = null; this.cssRules = this._rules; this.disabled = false; }
     var P = CSSStyleSheet.prototype;
@@ -473,18 +428,6 @@ let text = {prelude|
     };
     P.deleteRule = function (index) { this._rules.splice(index, 1); this._sync(); };
     g.CSSStyleSheet = CSSStyleSheet;
-    var adopted = [];
-    getter(D, "adoptedStyleSheets", function () { return adopted; });
-    // document.adoptedStyleSheets = sheets (the document tells us: Script_document)
-    g.__adopt = function (sheets) {
-      var doc = document;
-      adopted.forEach(function (s) { if (Array.prototype.indexOf.call(sheets, s) < 0 && s._style) { s._style.remove(); s._style = null; } });
-      adopted = Array.prototype.slice.call(sheets);
-      adopted.forEach(function (s) {
-        if (!s._style && doc.head) { s._style = doc.createElement("style"); s._style.setAttribute("data-adopted", ""); doc.head.appendChild(s._style); }
-        if (s._sync) s._sync();
-      });
-    };
   })();
   getter(D, "fonts", function () { return { ready: Promise.resolve(), status: "loaded", addEventListener: nothing, removeEventListener: nothing, load: function () { return Promise.resolve([]); }, check: function () { return true; } }; });
   method(D, "importNode", function (node, deep) { return node.cloneNode(deep); });
@@ -623,36 +566,6 @@ let text = {prelude|
   method(E, "isEqualNode", function (other) { return !!other && this.outerHTML === other.outerHTML; });
   method(E, "checkVisibility", function () { return true; });
   method(E, "getAnimations", function () { return []; });
-  // el.animate(keyframes, timing) (Web Animations, Chrome 36, 2014):
-  // an animation here is over as soon as it starts -- the element is
-  // where its own style has it, which is where an animation that
-  // keeps nothing ends -- and says so a moment later: its finished
-  // promise, onfinish, its "finish" listeners. A dialog that fades
-  // away waits for that to take itself out (Polymer's; YouTube's
-  // stayed on the page). It has every member the W3C's polyfill looks
-  // for, which then leaves it alone.
-  method(E, "animate", function (keyframes, timing) {
-    var listeners = [], done = false, settle;
-    var a = {
-      id: "", effect: null, timeline: null, currentTime: 0, startTime: 0, playbackRate: 1, playState: "running", pending: false, onfinish: null, oncancel: null,
-      ready: Promise.resolve(),
-      play: nothing, pause: nothing, reverse: nothing, updatePlaybackRate: nothing, commitStyles: nothing, persist: nothing,
-      addEventListener: function (type, f) { if (type === "finish") listeners.push(f); },
-      removeEventListener: function (type, f) { listeners = listeners.filter(function (g) { return g !== f; }); },
-      cancel: function () { done = true; a.playState = "idle"; },
-      finish: function () {
-        if (done) return;
-        done = true; a.playState = "finished";
-        var e = new Event("finish"); e.currentTime = a.currentTime;
-        settle(a);
-        if (typeof a.onfinish === "function") a.onfinish(e);
-        listeners.slice().forEach(function (f) { f.call(a, e); });
-      }
-    };
-    a.finished = new Promise(function (resolve) { settle = resolve; });
-    setTimeout(a.finish, 0);
-    return a;
-  });
   method(E, "requestFullscreen", function () { return Promise.reject(new TypeError("fullscreen is not supported")); });
   method(E, "setPointerCapture", nothing);
   method(E, "releasePointerCapture", nothing);
@@ -887,102 +800,12 @@ let text = {prelude|
   method(E, "createCaption", section("caption"));
   method(E, "createTBody", function () { return this.appendChild(document.createElement("tbody")); });
 
-  // An <iframe>'s window. A frame's page is not loaded here; what a
-  // script is given is the window of an empty one (about:blank's): a
-  // document it can write in, listeners that are never called. Gmail
-  // makes a hidden frame for the "resize" of its window alone -- the
-  // old trick to be told that the size of the text changed.
-  getter(E, "contentWindow", function () {
-    if (this.localName !== "iframe") return undefined;
-    if (!this.__frame) {
-      var d = document.implementation.createHTMLDocument(""), el = this;
-      d.open = d.close = d.write = function () {};
-      var nothing = function () {};
-      // over the page's own window: the language's globals (String, Array)
-      // are asked of a frame's window by who wants them as they were made
-      this.__frame = Object.assign(Object.create(window), { document: d, parent: window, top: window, frameElement: this, location: { href: "about:blank" },
-        addEventListener: nothing, removeEventListener: nothing, dispatchEvent: function () { return true; },
-        // to the frame's own document, if it has scripts (Browser_script.adopt)
-        postMessage: function (data) { if (typeof __post_frame === "function") __post_frame(el, data); }, focus: nothing, blur: nothing, close: nothing });
-      this.__frame.self = this.__frame.window = this.__frame;
-    }
-    return this.__frame;
-  });
-  getter(E, "contentDocument", function () { return this.localName === "iframe" ? this.contentWindow.document : undefined; });
 
-  // Custom elements: a name with a dash given a class
-  // (customElements.define("user-card", class extends HTMLElement {})).
-  // An element of that name is *upgraded*: the class's prototype made
-  // its own, the class's constructor run on it, then its callbacks --
-  // attributeChangedCallback for the attributes the class observes,
-  // connectedCallback when it is in the page. It is there that a
-  // component attaches its shadow tree (libs/dom/Shadow_tree.mli). The
-  // browser says when an element enters the page (__connected).
-  // An attribute set or removed later by setAttribute and
-  // removeAttribute is told too (__attribute).
-  // Not done: new UserCard() (an element is made by its name), the
-  // callback of an element removed.
-  (function () {
-    var classes = {}, waiting = {};
-    function upgrade(el) {
-      var C = classes[el.localName];
-      if (!C || el.__upgraded) return;
-      el.__upgraded = true;
-      Object.setPrototypeOf(el, C.prototype);
-      try {
-        C.call(el);
-        if (el.attributeChangedCallback) (C.observedAttributes || []).forEach(function (a) {
-          if (el.hasAttribute(a)) el.attributeChangedCallback(a, null, el.getAttribute(a));
-        });
-        if (el.isConnected && el.connectedCallback) el.connectedCallback();
-      } catch (e) { console.error(e); }
-    }
-    function under(node) {
-      var all = node.querySelectorAll ? Array.from(node.querySelectorAll("*")) : [];
-      if (node.nodeType === 1) all.unshift(node);
-      // and in the shadow trees of those
-      all.slice().forEach(function (el) { if (el.shadowRoot) all = all.concat(under(el.shadowRoot)); });
-      return all;
-    }
-    g.customElements = {
-      define: function (name, C) {
-        if (classes[name]) throw new DOMException("the name \"" + name + "\" has already been used with this registry", "NotSupportedError");
-        classes[name] = C;
-        // those of that name now in the page: asked of the browser,
-        // which has them without a list of all the others. Simply:
-        //   under(document.documentElement).forEach(function (el) { if (el.localName === name) upgrade(el); });
-        __named(name).forEach(upgrade);
-        (waiting[name] || []).forEach(function (resolve) { resolve(C); });
-        delete waiting[name];
-      },
-      get: function (name) { return classes[name]; },
-      getName: function (C) { for (var name in classes) if (classes[name] === C) return name; return null; },
-      whenDefined: function (name) {
-        if (classes[name]) return Promise.resolve(classes[name]);
-        return new Promise(function (resolve) { (waiting[name] = waiting[name] || []).push(resolve); });
-      },
-      upgrade: function (root) { under(root).forEach(upgrade); }
-    };
-    // an attribute set or removed later, said by the browser
-    g.__attribute = function (el, name, old, now) {
-      var C = classes[el.localName];
-      if (!C || !el.attributeChangedCallback || (C.observedAttributes || []).indexOf(name) < 0) return;
-      // not in a <template>'s content (Polymer writes its bindings
-      // there as attributes, "[[data]]", and takes them away)
-      if (el.getRootNode().__inert) return;
-      el.attributeChangedCallback(name, old, now);
-    };
-    g.__connected = function (node) {
-      under(node).forEach(function (el) {
-        if (!classes[el.localName]) return;
-        if (!el.__upgraded) upgrade(el);
-        else if (el.connectedCallback) try { el.connectedCallback(); } catch (e) { console.error(e); }
-      });
-    };
-    // an element made by a script is upgraded at once: its methods are
-    // there before it is put in the page (document.createElement tells)
-    g.__created = upgrade;
-  })();
+  // Custom elements (customElements.define("user-card", class extends
+  // HTMLElement {})): not here, a component's page is not this
+  // browser's; what a page asks is answered, so that its script goes on
+  global("customElements", { define: stub("customElements.define"), get: function () { return undefined; },
+    whenDefined: function () { return new Promise(function () {}); }, upgrade: nothing });
   global("DOMException", class DOMException extends Error { constructor(message, name) { super(message); this.name = name || "Error"; } });
   method(E, "scrollTo", stub("element.scrollTo"));
   method(E, "scrollBy", stub("element.scrollBy"));
@@ -1006,18 +829,6 @@ let text = {prelude|
   getter(E, "inert", function () { return this.hasAttribute("inert"); }, function (v) { this.toggleAttribute("inert", !!v); });
   getter(E, "contentEditable", function () { return this.getAttribute("contenteditable") || "inherit"; }, function (v) { this.setAttribute("contenteditable", v); });
   getter(E, "isContentEditable", function () { return this.getAttribute("contenteditable") === "true"; });
-  getter(E, "assignedSlot", function () { return null; });
-  // a <slot>'s nodes: its host's children that name it (slot="name"),
-  // or that name none for the slot with no name
-  method(E, "assignedNodes", function () {
-    var root = this.getRootNode ? this.getRootNode() : null, host = root && root.host;
-    if (!host) return [];
-    var name = this.getAttribute("name") || "";
-    return Array.prototype.filter.call(host.childNodes, function (n) {
-      return (n.nodeType === 1 || n.nodeType === 3) && ((n.nodeType === 1 && n.getAttribute("slot")) || "") === name;
-    });
-  });
-  method(E, "assignedElements", function () { return this.assignedNodes().filter(function (n) { return n.nodeType === 1; }); });
 
   if (typeof navigator === "object") {
     var browser = {
@@ -1038,43 +849,4 @@ let text = {prelude|
   global("visualViewport", { width: g.innerWidth, height: g.innerHeight, scale: 1, offsetLeft: 0, offsetTop: 0, pageLeft: 0, pageTop: 0, addEventListener: nothing, removeEventListener: nothing });
 })();
 
-// The DOM's members on its prototypes. An element here answers for its
-// own members itself (a host object: src/webapi/dom); a real browser
-// has them on Node.prototype, Element.prototype... as accessors and
-// methods, and code that reaches under the DOM takes them from there:
-//   Object.getOwnPropertyDescriptor(Node.prototype, "firstChild").get.call(node)
-// -- a polyfill that keeps "the native one" before putting its own
-// (Shady DOM, which YouTube runs in every browser, takes thirty-five
-// so). Each is here as a thin one, asking the element itself.
-(function () {
-  if (typeof __host_get !== "function" || typeof Node !== "function") return;
-  var get = __host_get, set = __host_set;
-  function accessors(C, names) {
-    if (typeof C !== "function") return;
-    names.split(" ").forEach(function (k) {
-      if (!Object.getOwnPropertyDescriptor(C.prototype, k))
-        Object.defineProperty(C.prototype, k, { get: function () { return get(this, k); }, set: function (v) { set(this, k, v); }, configurable: true, enumerable: true });
-    });
-  }
-  function methods(C, names) {
-    if (typeof C !== "function") return;
-    names.split(" ").forEach(function (k) {
-      if (!Object.getOwnPropertyDescriptor(C.prototype, k))
-        Object.defineProperty(C.prototype, k, { value: function () { var f = get(this, k); return typeof f === "function" ? f.apply(this, arguments) : undefined; }, writable: true, configurable: true });
-    });
-  }
-  var G = typeof globalThis === "object" ? globalThis : this;
-  methods(G.EventTarget, "addEventListener removeEventListener dispatchEvent");
-  accessors(G.Node, "parentNode parentElement firstChild lastChild previousSibling nextSibling childNodes textContent nodeType nodeName nodeValue ownerDocument isConnected");
-  methods(G.Node, "appendChild insertBefore removeChild replaceChild cloneNode contains hasChildNodes getRootNode compareDocumentPosition isEqualNode isSameNode normalize");
-  accessors(G.Element, "children firstElementChild lastElementChild previousElementSibling nextElementSibling childElementCount innerHTML outerHTML id className classList tagName localName namespaceURI attributes shadowRoot slot scrollTop scrollLeft scrollWidth scrollHeight clientWidth clientHeight clientTop clientLeft");
-  methods(G.Element, "getAttribute setAttribute removeAttribute hasAttribute toggleAttribute getAttributeNames hasAttributes querySelector querySelectorAll getElementsByTagName getElementsByClassName matches closest attachShadow append prepend before after remove replaceWith replaceChildren insertAdjacentHTML insertAdjacentElement insertAdjacentText getBoundingClientRect getClientRects scrollIntoView focus blur click");
-  accessors(G.HTMLElement, "style dataset hidden title lang dir tabIndex innerText offsetParent offsetTop offsetLeft offsetWidth offsetHeight");
-  accessors(G.CharacterData, "data length");
-  accessors(G.Document, "documentElement body head activeElement children firstElementChild lastElementChild childElementCount readyState defaultView title cookie location URL");
-  methods(G.Document, "createElement createElementNS createTextNode createComment createDocumentFragment createEvent createRange createTreeWalker getElementById getElementsByTagName getElementsByClassName getElementsByName querySelector querySelectorAll importNode adoptNode elementFromPoint append prepend");
-  accessors(G.DocumentFragment, "children firstElementChild lastElementChild childElementCount");
-  methods(G.DocumentFragment, "querySelector querySelectorAll getElementById append prepend");
-  accessors(G.ShadowRoot, "host mode innerHTML activeElement");
-})();
 |prelude}

@@ -22,7 +22,7 @@
        clz32, imul, fround
      Promise.withResolvers; WeakRef, FinalizationRegistry,
        AggregateError; BigInt as a number (10n is 10: the lexer's);
-       ArrayBuffer and DataView (whole numbers of 1, 2 and 4 bytes)
+       ArrayBuffer
      JSON.stringify's toJSON, replacer and indentation
      Date, whole: the calendar's arithmetic over the engine's clock
        (the days of a date and back, a text parsed, the setters, the
@@ -334,8 +334,7 @@ let text = {prelude|
       return this._buffer;
     }, configurable: true });
     // a part of one, or what map and filter make of it, is of its kind
-    // too (a plain array would have no buffer: bytes cut with subarray,
-    // then read through a DataView)
+    // too (a plain array would have no buffer)
     ["slice", "subarray", "map", "filter"].forEach(function (m) {
       var plain = Array.prototype[m === "subarray" ? "slice" : m];
       Object.defineProperty(C.prototype, m, { value: function () { return new C(plain.apply(this, arguments)); }, writable: true, configurable: true });
@@ -344,83 +343,15 @@ let text = {prelude|
     C.of = function () { return new C(Array.prototype.slice.call(arguments)); };
   });
 
-  // bytes as a thing of their own, and a view that reads numbers of
-  // any size in them: the buffer here is an array of bytes, shared by
-  // the views made with new DataView(buffer) (a typed array made from
-  // a buffer copies it: not a view)
+  // bytes as a thing of their own: the buffer here is an array of
+  // bytes (a typed array made from a buffer copies it: not a view).
+  // Not here: DataView, a view that reads numbers of any size in them,
+  // floats by IEEE 754's bits -- what a page that decodes a file asks
   if (typeof ArrayBuffer === "undefined") {
     globalThis.ArrayBuffer = class ArrayBuffer {
       constructor(n) { this.byteLength = n || 0; this._bytes = new Array(this.byteLength).fill(0); }
       slice(a, b) { var out = new ArrayBuffer(0); out._bytes = this._bytes.slice(a, b); out.byteLength = out._bytes.length; return out; }
-      static isView(v) { return v instanceof DataView || (Array.isArray(v) && "BYTES_PER_ELEMENT" in v); }
-    };
-    globalThis.DataView = class DataView {
-      constructor(buffer, offset, length) {
-        this.buffer = buffer; this.byteOffset = offset || 0;
-        this.byteLength = length === undefined ? buffer.byteLength - this.byteOffset : length;
-      }
-      _get(at, n, little) {
-        var v = 0, b = this.buffer._bytes, o = this.byteOffset + at;
-        for (var i = 0; i < n; i++) v = v * 256 + b[little ? o + n - 1 - i : o + i];
-        return v;
-      }
-      _set(at, n, v, little) {
-        var b = this.buffer._bytes, o = this.byteOffset + at;
-        for (var i = 0; i < n; i++) { b[little ? o + i : o + n - 1 - i] = v % 256; v = Math.floor(v / 256); }
-      }
-      getUint8(at) { return this._get(at, 1); }
-      getUint16(at, little) { return this._get(at, 2, little); }
-      getUint32(at, little) { return this._get(at, 4, little); }
-      getInt8(at) { var v = this._get(at, 1); return v > 127 ? v - 256 : v; }
-      getInt16(at, little) { var v = this._get(at, 2, little); return v > 32767 ? v - 65536 : v; }
-      getInt32(at, little) { return this._get(at, 4, little) | 0; }
-      setUint8(at, v) { this._set(at, 1, v & 255); }
-      setUint16(at, v, little) { this._set(at, 2, v & 65535, little); }
-      setUint32(at, v, little) { this._set(at, 4, v >>> 0, little); }
-      setInt8(at, v) { this._set(at, 1, v & 255); }
-      setInt16(at, v, little) { this._set(at, 2, v & 65535, little); }
-      setInt32(at, v, little) { this._set(at, 4, v >>> 0, little); }
-      // a float's eight bytes (IEEE 754: a sign, eleven bits of
-      // exponent, fifty-two of fraction), by arithmetic; four for a
-      // float32 (the same, of 8 and 23 bits)
-      _float(v, ebits, fbits) {
-        var bias = (1 << (ebits - 1)) - 1, s = v < 0 || (v === 0 && 1 / v < 0) ? 1 : 0, e, f;
-        v = Math.abs(v);
-        if (v !== v) { e = (1 << ebits) - 1; f = Math.pow(2, fbits - 1); }
-        else if (v === Infinity) { e = (1 << ebits) - 1; f = 0; }
-        else if (v === 0) { e = 0; f = 0; }
-        else {
-          e = Math.min(Math.floor(Math.log(v) / Math.LN2), 1023);
-          if (v / Math.pow(2, e) < 1) e--;
-          if (v / Math.pow(2, e) >= 2) e++;
-          if (e + bias >= 1) { f = Math.round((v / Math.pow(2, e) - 1) * Math.pow(2, fbits)); e += bias; if (f >= Math.pow(2, fbits)) { f = 0; e++; } }
-          else { f = Math.round(v / Math.pow(2, 1 - bias - fbits)); e = 0; }
-        }
-        // the bytes, the high one first: sign and exponent, then the fraction
-        var bytes = [], n = (ebits + fbits + 1) / 8, high = s * Math.pow(2, ebits) + e;
-        for (var i = n - 1; i >= 0; i--) {
-          var shift = 8 * i - fbits;
-          bytes.push(shift >= 0 ? Math.floor(high / Math.pow(2, shift)) & 255 : (Math.floor(high * Math.pow(2, -shift)) & 255 & ~(Math.pow(2, -shift) - 1)) | (Math.floor(f / Math.pow(2, 8 * i)) & 255 & (i === Math.floor(fbits / 8) ? Math.pow(2, -shift) - 1 : 255)));
-        }
-        return bytes;
-      }
-      _unfloat(bytes, ebits, fbits) {
-        var bias = (1 << (ebits - 1)) - 1, bits = 0, s = bytes[0] >> 7, e = 0, f = 0, n = bytes.length;
-        // the exponent: the bits after the sign; the fraction: the rest
-        for (var i = 0; i < n * 8; i++) {
-          var bit = (bytes[i >> 3] >> (7 - (i & 7))) & 1;
-          if (i >= 1 && i <= ebits) e = e * 2 + bit; else if (i > ebits) f = f * 2 + bit;
-        }
-        if (e === (1 << ebits) - 1) return f ? NaN : s ? -Infinity : Infinity;
-        var m = e === 0 ? f / Math.pow(2, fbits) * Math.pow(2, 1 - bias) : (1 + f / Math.pow(2, fbits)) * Math.pow(2, e - bias);
-        return s ? -m : m;
-      }
-      _putBytes(at, bytes, little) { var b = this.buffer._bytes, o = this.byteOffset + at, n = bytes.length; for (var i = 0; i < n; i++) b[o + i] = bytes[little ? n - 1 - i : i]; }
-      _takeBytes(at, n, little) { var b = this.buffer._bytes, o = this.byteOffset + at, out = []; for (var i = 0; i < n; i++) out.push(b[o + (little ? n - 1 - i : i)]); return out; }
-      setFloat64(at, v, little) { this._putBytes(at, this._float(+v, 11, 52), little); }
-      setFloat32(at, v, little) { this._putBytes(at, this._float(+v, 8, 23), little); }
-      getFloat64(at, little) { return this._unfloat(this._takeBytes(at, 8, little), 11, 52); }
-      getFloat32(at, little) { return this._unfloat(this._takeBytes(at, 4, little), 8, 23); }
+      static isView(v) { return Array.isArray(v) && "BYTES_PER_ELEMENT" in v; }
     };
   }
 

@@ -43,8 +43,8 @@ let tests =
             "var o = {}, m = new Map([[1, 'a'], ['1', 'b']]); m.set(o, 'o').set(NaN, 'n'); m.set(1, 'A'); m.delete('1'); [m.size, m.get(1), m.get(o), m.get(NaN), m.has('1'), Array.from(m.values())]"
             "[3, \"A\", \"o\", \"n\", false, [\"A\", \"o\", \"n\"]]";
           check "a typed array: of its kind, its bytes a buffer other views share"
-            "var u = new Uint8Array(3); u[1] = 7; var v = new Uint8Array(u.buffer); v[2] = 9; [u instanceof Uint8Array, Array.isArray(u), u.buffer.byteLength, new Uint16Array(2).byteLength, new DataView(u.buffer).getUint8(1), u[2], ArrayBuffer.isView(u)]"
-            "[true, true, 3, 4, 7, 9, true]";
+            "var u = new Uint8Array(3); u[1] = 7; var v = new Uint8Array(u.buffer); v[2] = 9; [u instanceof Uint8Array, Array.isArray(u), u.buffer.byteLength, new Uint16Array(2).byteLength, u[2], ArrayBuffer.isView(u)]"
+            "[true, true, 3, 4, 9, true]";
           check "Reflect.construct and new.target" "function P(a) { this.a = a } class Q { hi() { return 'q' } } class E2 extends Error { constructor(m) { super(m); Object.setPrototypeOf(this, new.target.prototype) } } class E3 extends E2 {} var o = Reflect.construct(P, [5], Q); [o.a, o.hi(), new E3('x') instanceof E3]"
             "[5, \"q\", true]");
       (* an object of many properties is found by a table (Js_value.find):
@@ -225,11 +225,6 @@ let tests =
           check "an object's prototype as a property" {|var p = { hi: function () { return "p" } }, o = { a: 1 }; var before = o.__proto__ === Object.prototype;
             o.__proto__ = p; function F() {} var f = new F();
             [before, o.hi(), Object.getPrototypeOf(o) === p, f.__proto__ === F.prototype, [].__proto__ === Array.prototype, Object.keys(o)]|} {|[true, "p", true, true, true, ["a"]]|});
-      Testo.create "a DataView's floats: IEEE 754's bytes" (fun () ->
-          check "written and read back, of eight bytes and of four" {|function bytes(v, n) { var d = new DataView(new ArrayBuffer(n)); if (n === 8) d.setFloat64(0, v); else d.setFloat32(0, v); var out = []; for (var i = 0; i < n; i++) out.push(d.getUint8(i)); return out }
-            function back(v) { var d = new DataView(new ArrayBuffer(8)); d.setFloat64(0, v, true); return d.getFloat64(0, true) }
-            [bytes(1, 8), bytes(0.1, 8), bytes(1.5, 4), [-2.5, 1e300, 5e-324, 123456.789, Infinity].every(function (v) { return back(v) === v }), 1 / back(-0)]|}
-            "[[63, 240, 0, 0, 0, 0, 0, 0], [63, 185, 153, 153, 153, 153, 153, 154], [63, 192, 0, 0], true, -Infinity]");
       Testo.create "match and search with a string: an expression's text" (fun () ->
           check "a key taken out of an address (a script loader's own)" {|var path = "/js/k=base.en_US/am=AAAA/d=1/m=a,b";
             [["k", "am", "d", "m"].map(function (e) { var v = path.match("/" + e + "=([^/]+)"); return v && v[1] }), "abc".match("a.c")[0], "abc".search("b."), "a.c".replace(".", "-"), "a.c".split(".").length]|}

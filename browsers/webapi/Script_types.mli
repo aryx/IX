@@ -149,7 +149,4 @@ type t = {
   (* document.readyState: "loading" while the page's scripts run,
    * "interactive" at DOMContentLoaded, "complete" at load *)
   mutable ready : string;
-  (* the worlds of the documents its <iframe>s show, by what each shows
-   * (its srcdoc's text, its src's address): Browser_script.adopt *)
-  mutable frames : (string * t) list;
 }

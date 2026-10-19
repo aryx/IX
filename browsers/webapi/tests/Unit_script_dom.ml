@@ -219,7 +219,7 @@ let tests =
           Browser_script.picture t "http://site.test/other.png" (Some (1., 1.));
           Browser_script.picture t "http://site.test/news/c-240.webp" (Some (240., 135.));
           Alcotest.(check string) "load with its size; error for the one not had; nothing for another address; a srcset's first" {|["a load 640x360 true", "b error", "c load"]|} (value "seen"));
-      Testo.create "an element is of its tag's class; EventTarget; a listener's signal; a sheet made by a script" (fun () ->
+      Testo.create "an element is of its tag's class; EventTarget; a listener's signal; a <style>'s sheet" (fun () ->
           check "instanceof" ~html:"<a id=a href=x>l</a><button id=b>b</button>"
             {|const a = document.getElementById("a"), b = document.getElementById("b");
               [a instanceof HTMLAnchorElement, a instanceof HTMLElement, b instanceof HTMLButtonElement, b instanceof HTMLAnchorElement, document.createElement("div") instanceof HTMLDivElement]|}
@@ -272,13 +272,6 @@ let tests =
              (match Browser_script.eval t {|var p = document.getElementById("p"); [scrollY, pageYOffset, p.getBoundingClientRect().top, p.offsetTop]|} with
              | Ok v -> Js_value.display v
              | Error e -> "error: " ^ e.message));
-          check "a property given before the element's class is defined: its own, taken at the upgrade (Polymer)" ~html:"<x-a id=a></x-a>"
-            {|var a = document.getElementById("a"); a.icon = "menu"; var before = [a.hasOwnProperty("icon"), a.hasOwnProperty("id"), a.hasOwnProperty("nope")];
-              class XA extends HTMLElement {
-                constructor() { super(); if (this.hasOwnProperty("icon")) { var v = this.icon; delete this.icon; this.icon = v; } }
-                set icon(v) { this._icon = v + "!"; } get icon() { return this._icon; } }
-              customElements.define("x-a", XA); [before, a.icon, a.hasOwnProperty("icon")]|}
-            {|[[true, false, false], "menu!", false]|};
           (* a click of the browser's own is an Event *)
           (let root = Html_tree.of_string "<body><b id=b>x</b></body>" in
            let t = Browser_script.create root in
@@ -288,14 +281,6 @@ let tests =
            ignore (Browser_script.click t (Option.get (find (Browser_script.tree t))));
            Alcotest.(check string) "the browser's click: an Event, with its path" {|[true, true, "b"]|}
              (match Browser_script.eval t "was" with Ok v -> Js_value.display v | Error e -> "error: " ^ e.message));
-          (let t = Browser_script.create (Html_tree.of_string "<body><b id=b>x</b></body>") in
-           Browser_script.run_scripts t;
-           let ask e = match Browser_script.eval t e with Ok v -> Js_value.display v | Error e -> "error: " ^ e.message in
-           Alcotest.(check string) "el.animate: running, and not ended at once" {|["running", 0]|}
-             (ask {|var ends = []; var a = document.getElementById("b").animate([{ opacity: 1 }, { opacity: 0 }], 200); a.onfinish = () => ends.push("on"); a.addEventListener("finish", () => ends.push("listener")); a.finished.then(() => ends.push("promise")); [a.playState, ends.length]|});
-           Browser_script.advance t 10.;
-           Alcotest.(check string) "ended a moment later: all who waited told, once" {|["finished", "on,listener,promise"]|}
-             (ask {|a.finish(); [a.playState, ends.sort().join().replace("listener,on", "on,listener")]|}));
           check "EventTarget.prototype's methods called on an element are the element's" ~html:"<div id=d></div>"
             {|var d = document.getElementById("d"), n = 0, f = () => n++;
               d.addEventListener("go", f); EventTarget.prototype.dispatchEvent.call(d, new Event("go"));
@@ -329,11 +314,6 @@ let tests =
             {|var seen; document.getElementById("d").addEventListener("go", e => { seen = e.composedPath().map(n => n.id || n.nodeName || "window").join(" ") + " / " + (e.path.indexOf(e.currentTarget)) });
               document.getElementById("b").dispatchEvent(new Event("go", { bubbles: true })); seen|}
             "b p d BODY HTML #document window / 2";
-          check "a custom element told of an attribute it observes, set and removed later" ~html:"<x-b id=b held></x-b>"
-            {|var told = []; class XB extends HTMLElement { static get observedAttributes() { return ["held", "size"]; } attributeChangedCallback(n, o, v) { told.push(n + ":" + o + ">" + v); } }
-              customElements.define("x-b", XB); var b = document.getElementById("b");
-              b.setAttribute("size", "2"); b.setAttribute("size", "2"); b.setAttribute("other", "x"); b.removeAttribute("held"); told|}
-            {|["held:null>", "size:null>2", "held:>null"]|};
           check "its entry is a class, with the members a page looks for before it trusts the observer"
             {|["intersectionRatio" in IntersectionObserverEntry.prototype, "isIntersecting" in IntersectionObserverEntry.prototype, typeof new IntersectionObserver(() => 0).observe]|}
             {|[true, true, "function"]|};
@@ -341,16 +321,5 @@ let tests =
             {|const d = document.getElementById("d"), c = document.createComment("lit-node 0"); d.insertBefore(c, d.children[1]);
               [c.nextElementSibling.id, c.previousElementSibling.id, c.nextSibling.id, d.children[0].nextElementSibling.id, d.children[1].nextElementSibling]|}
             {|["y", "x", "y", "y", null]|};
-          check "a custom element's class takes its properties' assignments; data is not a text's here" ~html:"<x-card id=c><b>kept</b></x-card>"
-            {|class Card extends HTMLElement {}; const seen = [];
-              Object.defineProperty(Card.prototype, "endpoint", { get() { return this._e }, set(v) { this._e = v; seen.push("set " + v.url) }, configurable: true });
-              customElements.define("x-card", Card); const c = document.getElementById("c");
-              c.endpoint = { url: "/watch" }; c.data = { title: "T" }; c.id = "d";
-              [seen, c.endpoint.url, c.data.title, c.children.length, c.textContent, c.getAttribute("id"), document.createTextNode("x").data]|}
-            {|[["set /watch"], "/watch", "T", 1, "kept", "d", "x"]|};
-          check "document.all is something: undefined is not it" ~html:"<p>x</p>" {|[undefined === document.all, document.all.length > 2]|} "[false, true]";
-          check "adoptedStyleSheets: a <style> of the page"
- {|const s = new CSSStyleSheet(); s.replaceSync("p { color: red }"); document.adoptedStyleSheets = [s];
-              [document.adoptedStyleSheets.length, document.querySelector("style[data-adopted]").textContent.trim()]|}
-            {|[1, "p { color: red }"]|});
+          check "document.all is something: undefined is not it" ~html:"<p>x</p>" {|[undefined === document.all, document.all.length > 2]|} "[false, true]");
     ]

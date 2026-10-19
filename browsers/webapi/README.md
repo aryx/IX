@@ -4,7 +4,7 @@ The author's mini-chrome's `src/webapi` (`~/github/mini-chrome`, its
 `8af888e`), in its four directories, for
 [`plan_browser.md`](../../docs/plans/plan_browser.md)'s stage 9: what
 a page's scripts see of the page and of the browser. 16 modules, 3,732
-lines of `.ml` here (2,715 there but the two not taken), and 1,073 of
+lines of `.ml` here (2,715 there but the two not taken), and (2026-10-19) 845 of
 JavaScript in a string. Over `browsers/javascript` (the engine),
 `browsers/html` (`Dom`, `Html_tree`) and `browsers/css` (the
 selectors).
@@ -56,8 +56,19 @@ For mini-ml, and for ix's capabilities:
 
 ## Remains
 
-- Nothing was cut inside the files (shadow trees, frames, modules,
-  `Cors`: the plan's "never run" list).
+- **Cut** (2026-10-19, `plan_browser.md`, "Smaller", A: what came for
+  YouTube, Gmail and the frameworks, not mini-netscape's sites; the
+  five sites of `netscape/tests/sites.sh` the same before and after):
+  in `Script_prelude`, `MessageChannel`, `document.adoptedStyleSheets`
+  (`CSSStyleSheet` stays, a `<style>`'s sheet), `el.animate`, an
+  `<iframe>`'s `contentWindow`, custom elements (a stub, so that
+  `customElements.define` does not stop a page's script), a `<slot>`'s
+  nodes, the DOM's members on its prototypes (Shady DOM's); in
+  `Browser_script`, a frame's world (`adopt`, `frame_tree`, `frames`,
+  the messages between a page and its frames), which mini-netscape
+  never made; their tests. In mini-chrome they are whole.
+- Still in: shadow trees, modules, `Cors` (the plan's "never run"
+  list).
 - A request's answer has only its `Content-Type` of the server's
   headers (`Tab` gives it); no cookie jar (`document.cookie` is "").
 - Not linked by mini-mk (mini-netscape is not yet): compiled by

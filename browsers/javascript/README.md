@@ -19,7 +19,7 @@ author's mini-chrome's <path> (its 8af888e)`).
 | `values/` | `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Mini_opti`, `Per_domain` | 963 | a value, an object and its prototype, the conversions; a string in UTF-16's units; the switch of the optimized paths |
 | `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_coroutine`, `Js_module` | 1,914 | the tree walked: scopes, closures, classes, generators, exceptions, a budget of steps; an async function stopped at an await (a thread); ES modules |
 | `opti/` | `Js_quicken`, `Js_compile` | 547 | optimizations, not in m-ix's count (`docs/loc.md`): a copy of the tree with each name's place; a function's body compiled to closures. Each tells `Js_eval` of itself when the program starts (`Js_eval.quickener`, `compiler`): the engine runs the same without them, slower |
-| `library/` | `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `Js_prelude` | 2,507 | String, Array, Math, Date, Map, Set, Symbol, Proxy, JSON, promises, regular expressions by backtracking; `Js_prelude`: mini-chrome's `data/prelude/library.js` (541 lines) in a string |
+| `library/` | `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `Js_prelude` | 2,507 | String, Array, Math, Date, Map, Set, Symbol, Proxy, JSON, promises, regular expressions by backtracking; `Js_prelude`: mini-chrome's `data/prelude/library.js` in a string (541 lines; 472 since `DataView` was cut) |
 
 And its tests, `tests/` (mini-chrome's `tests/js` but `Unit_json`: 126,
 Testo, dune's only; `MINI_OPTI=off` and `MINI_OPTI=walk` run the simple
@@ -92,8 +92,12 @@ cooperative.
 - `Object.prototype.toString.call(e)` is the error's text, not
   "[object Error]" (`e instanceof TypeError` is right since
   2026-10-11: `docs/plans/bugs/mini_chrome.md`, `tests/scripts/errors.js`).
-- Nothing was cut inside the files: the plan's "truly essential"
-  (generators, `with`, the printers, modules) is still to do, by the
-  coverage of what Wikipedia runs.
+- **Cut** (2026-10-19, `plan_browser.md`, "Smaller", A): `Js_prelude`'s
+  `DataView`, numbers of any size read in bytes and floats by IEEE
+  754's bits (a page that decodes a file's, not one that is read);
+  `ArrayBuffer` and a typed array's `buffer` stay (`TextDecoder`, a
+  body of bytes). Its test.
+- The plan's "truly essential" (generators, `with`, the printers,
+  modules) is still to do, by the coverage of what Wikipedia runs.
 - `Js_parse`'s `aside` no longer does anything (it was `Js_slice`'s).
 - 32-bit arm (ints of 31 bits): not tried.

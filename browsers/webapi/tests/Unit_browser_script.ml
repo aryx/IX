@@ -201,16 +201,6 @@ let tests =
           in
           Alcotest.(check string) "a script being read is told loading: what it waits for is yet to come"
             "[\"loading\", \"change interactive\", \"DOMContentLoaded interactive\", \"change complete\", \"load complete\"]" (value t "said"));
-      Testo.create "an iframe's window: an empty page's" (fun () ->
-          let t =
-            page
-              "<body><script>var f = document.createElement(\"iframe\"); document.body.appendChild(f);\n\
-               var w = f.contentWindow; w.addEventListener(\"resize\", function () {}); w.document.open(); w.document.close();\n\
-               var said = [typeof w, w === f.contentWindow, w.parent === window, f.contentDocument === w.document, typeof document.body.contentWindow]\n\
-               var globals = [typeof w.String.prototype.replace, w.Array === Array, typeof w.setTimeout, w.window === w, w.document !== document]</script>"
-          in
-          Alcotest.(check string) "one window a frame, with a document; no other element has one" "[\"object\", true, true, true, \"undefined\"]" (value t "said");
-          Alcotest.(check string) "and the language's globals, asked of it by who wants them untouched" "[\"function\", true, \"function\", true, true]" (value t "globals"));
       Testo.create "outerHTML: a style's text as written, a paragraph's with entities" (fun () ->
           let t = page "<body><script>var s = document.createElement(\"style\"); s.textContent = \"a > b { color: red }\"; var p = document.createElement(\"p\"); p.textContent = \"1 < 2 && 3\";\nvar said = [s.outerHTML, p.outerHTML]</script>" in
           Alcotest.(check string) "no entity in a style" "[\"<style>a > b { color: red }</style>\", \"<p>1 &lt; 2 &amp;&amp; 3</p>\"]" (value t "said"));
@@ -286,33 +276,6 @@ let tests =
                var said = [i.form === get(\"f\"), get(\"b\").form.id, get(\"o\").form.id, typeof p.form, before, typeof p.onclick, document.prerendering]</script>"
           in
           Alcotest.(check string) "the form around, or the one named; null until set" "[true, \"f\", \"g\", \"undefined\", [null, true, null], \"function\", false]" (value t "said"));
-      Testo.create "a frame's world: its own globals, messages to and from its page, the page's clock, a key" (fun () ->
-          let inside = "<body><p id=m>none</p><script>var mine = 'the frame';\nwindow.addEventListener('message', function (e) { document.getElementById('m').textContent = e.data; e.source.postMessage('got ' + e.data) });\ndocument.addEventListener('keydown', function (e) { parent.postMessage('key ' + e.key) });\nsetTimeout(function () { parent.postMessage('hello') }, 50)</script>" in
-          let t =
-            page
-              ("<body><iframe id=f srcdoc=\"" ^ String.concat "&quot;" (String.split_on_char '"' (String.concat "&lt;" (String.split_on_char '<' inside))) ^ "\"></iframe><script>var mine = 'the page', heard = [], from = [];\n\
-                window.addEventListener('message', function (e) { heard.push(e.data); from.push(e.source === document.getElementById('f').contentWindow) })</script>")
-          in
-          let frame = Browser_script.create_with { Browser_script.defaults with base = "about:blank" } (Html_tree.of_string inside) in
-          Browser_script.adopt t ~key:inside frame;
-          Browser_script.run_scripts frame;
-          let said (s : Browser_script.t) e = match Browser_script.eval s e with Ok v -> Js_value.display v | Error e -> e.message in
-          Alcotest.(check (pair string string)) "two worlds: a name in each" ("the page", "the frame") (said t "mine", said frame "mine");
-          Alcotest.(check string) "the frame's parent is not itself" "false" (said frame "parent === window");
-          (* the page's clock is the frame's: its timer, then the message's task in the page *)
-          Browser_script.advance t 60.;
-          Browser_script.advance t 16.;
-          Alcotest.(check string) "the page heard its frame" {|[["hello"], [true]]|} (said t "[heard, from]");
-          ignore (Browser_script.eval t "document.getElementById('f').contentWindow.postMessage('ping')");
-          Browser_script.advance t 16.;
-          Browser_script.advance t 16.;
-          Alcotest.(check string) "the frame heard the page, and answered its source" {|["hello", "got ping"]|} (said t "heard");
-          Alcotest.(check bool) "its document changed: the page's to lay out again" true (Browser_script.changed t);
-          Alcotest.(check (option string)) "as the frame's scripts have it" (Some "ping") (Option.map (fun tree -> Dom.text_content (List.hd (Dom.find_all "p" tree))) (Browser_script.frame_tree t inside));
-          Alcotest.(check bool) "a key is the frame's too: the page, which has no listener of its own, listens" true (Browser_script.listens t "keydown");
-          ignore (Browser_script.window_event t "keydown" [ ("key", String "ArrowRight") ]);
-          Browser_script.advance t 16.;
-          Alcotest.(check string) "told to the page" "key ArrowRight" (said t "heard[2]"));
       Testo.create "another document, as a sanitizer makes and goes through one (DOMPurify's ways)" (fun () ->
           let t =
             page

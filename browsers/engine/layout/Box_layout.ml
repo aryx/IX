@@ -329,7 +329,7 @@ let place (floats : placed list ref) ~(x : float) ~(width : float) ~(top : float
  * each as wide as the floats beside it leave (greedy); a float met at
  * a line's start put at its top, one inside it below it. The lines,
  * the boxes set in them (inline-blocks, floats), the bottom *)
-let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.align) ~(pre : bool) ~(x : float) ~(width : float) ~(top : float)
+let set_lines (floats : placed list ref) (strut : word_style) (align : Looks.align) ~(pre : bool) ~at:((x, width, top) : float * float * float)
     (items : item list) : Html_layout.line list * box list * box list * float =
   let boxes = ref [] and backdrops = ref [] in
   let rec groups current acc items =
@@ -444,7 +444,9 @@ type ctx = {
 
 let is_space (c : char) : bool = c = ' ' || c = '\n' || c = '\t' || c = '\r' || c = '\012'
 
-let add_word (boxed : boxed option) (owner : Dom.element option) (edge : edge) (ctx : ctx) (ws : word_style) ~(glue : bool) (text : string) (width : float) : unit =
+(* (the word and its width as one: eight arguments were more than
+ * mini-ml's arm32 takes, 7) *)
+let add_word (boxed : boxed option) (owner : Dom.element option) (edge : edge) (ctx : ctx) (ws : word_style) ~(glue : bool) ((text, width) : string * float) : unit =
   let rec after_word items = match items with Word _ :: _ -> true | (Anchor _ | Float _) :: rest -> after_word rest | _ -> false in
   let space_before = ctx.space && after_word ctx.items in
   let space = if space_before then ctx.env.metrics ws.look " " else 0. in
@@ -469,7 +471,7 @@ let add_text (ctx : ctx) (s : Computed.t) (ws : word_style) (text : string) : un
   (* a no-break space (U+00A0, &nbsp;) joins two words, and is a space *)
   let word text =
     let text = if String.contains text '\xa0' then nbsp_to_space text else text in
-    add_word None None Body ctx ws ~glue:(s.white_space = Nowrap) text (ctx.env.metrics ws.look text)
+    add_word None None Body ctx ws ~glue:(s.white_space = Nowrap) (text, ctx.env.metrics ws.look text)
   in
   match s.white_space with
   | Pre | Pre_wrap ->
@@ -514,7 +516,7 @@ let flush_inline (ctx : ctx) : unit =
     let align = if ctx.env.measuring then Looks.Left else (look_of ctx.block ~link:None).align in
     let pre = match ctx.block.white_space with Pre | Pre_wrap -> true | _ -> false in
     let lines, boxes, backdrops, bottom =
-      set_lines ctx.floats strut align ~pre ~x:ctx.x ~width:ctx.width ~top:(if has_content then top else floats_top) items
+      set_lines ctx.floats strut align ~pre ~at:(ctx.x, ctx.width, if has_content then top else floats_top) items
     in
     ctx.children <-
       { element = None; style = ctx.block; x = ctx.x; y = top; width = ctx.width; height = (if has_content then bottom -. top else 0.);
@@ -590,8 +592,10 @@ let horizontal (s : Computed.t) ~(cb_width : float) (content : float option) : f
 (* no margin at all: an item's, once they are taken off its place *)
 let no_margins = (Computed.Len Css_values.zero, Computed.Len Css_values.zero, Computed.Len Css_values.zero, Computed.Len Css_values.zero)
 
-let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s : Computed.t) ~(cb_x : float) ~(cb_width : float)
-    ~(y : float) ~(marker : Html_layout.marker option) (content : float option) : box * float =
+(* (~at: the containing block's left and width, and the top: as one,
+ * eight arguments being more than mini-ml's arm32 takes, 7) *)
+let rec layout_block (env : env) (floats : placed list ref) (e : Dom.element) (s : Computed.t) ~at:((cb_x, cb_width, y) : float * float * float)
+    ~(marker : Html_layout.marker option) (content : float option) : box * float =
   (* measuring an intrinsic size: a percentage width is auto (it would
    * be of the size being measured: CSS Sizing, "cyclic percentages") *)
   let s = match s.width with Len l when env.measuring && l.pct <> 0. -> { s with width = Auto } | _ -> s in
@@ -722,7 +726,7 @@ and flex_children (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
                 let mt = (match (size mt width) with Some v_ -> v_ | None -> 0.) and mb = (match (size mb width) with Some v_ -> v_ | None -> 0.) in
                 let cs_in = { cs with margin = no_margins } in
                 let b, _ =
-                  layout_block env (ref []) c cs_in ~cb_x:(ctx.x +. starts.(k) +. ml) ~cb_width:(main -. ml -. mr) ~y:(!top +. mt) ~marker:None
+                  layout_block env (ref []) c cs_in ~at:(ctx.x +. starts.(k) +. ml, main -. ml -. mr, !top +. mt) ~marker:None
                     (Some (Float.max 0. (main -. ml -. mr -. ch)))
                 in
                 (b, cs, mt, mb))
@@ -773,7 +777,7 @@ and flex_children (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
               | Stretch, None -> Some (Float.max 0. (width -. ml' -. mr' -. hchrome))
               | _, None -> Some (shrink env c cs ~available:(width -. ml' -. mr' -. hchrome))
             in
-            let b, _ = layout_block env (ref []) c { cs with margin = no_margins } ~cb_x:0. ~cb_width:width ~y:0. ~marker:None content in
+            let b, _ = layout_block env (ref []) c { cs with margin = no_margins } ~at:(0., width, 0.) ~marker:None content in
             let x_offset =
               match align_of cs with
               | End -> width -. b.width -. mr'
@@ -931,7 +935,7 @@ and grid_children (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
         (* filling its area across, unless it has a width *)
         let content = if size cs.width width = None then Some (Float.max 0. (area -. ml -. mr -. chrome cs)) else None in
         let b, _ =
-          layout_block env (ref []) c { cs with margin = no_margins } ~cb_x:(ctx.x +. x +. ml) ~cb_width:(Float.max 0. (area -. ml -. mr)) ~y:(top +. mt) ~marker:None content
+          layout_block env (ref []) c { cs with margin = no_margins } ~at:(ctx.x +. x +. ml, Float.max 0. (area -. ml -. mr), top +. mt) ~marker:None content
         in
         (b, cs, cell, mt, mb))
       items
@@ -1010,7 +1014,7 @@ and shrink (env : env) (e : Dom.element) (s : Computed.t) ~(available : float) :
     match List.find_opt (fun (e', d, w', _) -> e' == e && d = s.display && w' = w) (Hashtbl.find_all env.measured key) with
     | Some (_, _, _, r) -> r
     | None ->
-        let b, _ = layout_block env (ref []) e s' ~cb_x:0. ~cb_width:1e6 ~y:0. ~marker:None (Some w) in
+        let b, _ = layout_block env (ref []) e s' ~at:(0., 1e6, 0.) ~marker:None (Some w) in
         let r = Float.max 0. (inner_right b -. b.x -. pl -. bl) in
         Hashtbl.add env.measured key (e, s.display, w, r);
         r
@@ -1048,7 +1052,7 @@ and add_block (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
   let box, through =
     match s.display with
     | Table -> (layout_table env e s ~cb_x ~cb_width ~y, 0.)
-    | _ -> layout_block env ctx.floats e s ~cb_x ~cb_width ~y ~marker None
+    | _ -> layout_block env ctx.floats e s ~at:(cb_x, cb_width, y) ~marker None
   in
   (* in a <center>: a block narrower than the line, its margins not
    * auto, centred *)
@@ -1091,7 +1095,7 @@ and add_absolute (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
     | _ -> None
   in
   let s_in = { s with margin = (let t, r, b, _ = s.margin in (t, r, b, Len Css_values.zero)) } in
-  let box, _ = layout_block env (ref []) e s_in ~cb_x:0. ~cb_width:cw ~y:0. ~marker:None content in
+  let box, _ = layout_block env (ref []) e s_in ~at:(0., cw, 0.) ~marker:None content in
   let x = match (left, right) with Some l, _ -> cx +. l +. ml | None, Some r -> cx +. cw -. r -. box.width | None, None -> static_x +. ml in
   let y = match size s.top 0. with Some t -> cy +. t | None -> static_y in
   env.positioned := moved (x -. box.x) (y -. box.y) box :: !(env.positioned)
@@ -1105,7 +1109,7 @@ and float_item (ctx : ctx) (e : Dom.element) (s : Computed.t) : item =
     else
       let content = match s.width with Auto -> Some (shrink env e s ~available:ctx.width) | _ -> None in
       let s_in = { s with margin = (Len Css_values.zero, Len Css_values.zero, Len Css_values.zero, Len Css_values.zero) } in
-      fst (layout_block env (ref []) e s_in ~cb_x:0. ~cb_width:ctx.width ~y:0. ~marker:None content)
+      fst (layout_block env (ref []) e s_in ~at:(0., ctx.width, 0.) ~marker:None content)
   in
   (* measuring: every float on the left -- only its width counts, and a
    * right one would be at the far end of an unlimited line *)
@@ -1169,7 +1173,7 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when (e.name = "select" || e.name = "textarea") && (s.position = Absolute || s.position = Fixed || s.float <> Side_none) -> (
           let look = look_of s ~link:ctx.link in
           match Html_layout.control_size ctx.env.metrics look e with
-          | Some (w, h) when s.visible -> add_word (Some (Ctl { element = e; control_height = h })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+          | Some (w, h) when s.visible -> add_word (Some (Ctl { element = e; control_height = h })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
           | _ -> ())
       | _ when s.position = Absolute || s.position = Fixed -> add_absolute ctx e s
       | _ when s.float <> Side_none -> ctx.items <- float_item ctx e s :: ctx.items
@@ -1187,18 +1191,18 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
               | None, Some h -> (h *. 4. /. 3., h)
               | None, None -> (320., 240.)
           in
-          add_word (Some (Pic { src = ""; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+          add_word (Some (Pic { src = ""; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
       | _ when e.name = "svg" ->
           (* a picture drawn from its own tree (Browser_boxes): its
            * size its style's (its width= and height=), else its
            * viewBox's, else CSS's 300 by 150 *)
           let w, h = svg_size ctx e s in
-          add_word (Some (Pic { src = ""; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+          add_word (Some (Pic { src = ""; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
       | _ when e.name = "img" -> (
           match picture_size ctx e s with
           | Some (w, h) ->
               let src = (match (picture_src e) with Some v_ -> v_ | None -> "") in
-              add_word (Some (Pic { src; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+              add_word (Some (Pic { src; height = h; middle = s.vertical_align = Middle })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
           | None -> (
               match Dom.attribute "alt" e with
               | Some alt when String.trim alt <> "" -> add_text ctx s (word_style s ~link:ctx.link) alt
@@ -1206,9 +1210,9 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
       | _ when (e.name = "input" || e.name = "select" || e.name = "textarea") -> (
           let look = look_of s ~link:ctx.link in
           match Html_layout.control_size ctx.env.metrics look e with
-          | Some (w, h) when s.visible -> add_word (Some (Ctl { element = e; control_height = h })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+          | Some (w, h) when s.visible -> add_word (Some (Ctl { element = e; control_height = h })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
           (* hidden (opacity: 0, a styled checkbox's): its room only *)
-          | Some (w, _) -> add_word None (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" w
+          | Some (w, _) -> add_word None (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", w)
           | None -> ())
       | Inline -> (
           (match (if e.name = "a" then Dom.attribute "name" e else None) with Some n -> ctx.items <- Anchor n :: ctx.items | None -> ());
@@ -1234,12 +1238,12 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
               let _, mr, _, ml = four (fun m -> (match (size m ctx.width) with Some v_ -> v_ | None -> 0.)) s.margin in
               let outer_decorations = ctx.decorations in
               if s.background.a > 0. || bt +. br +. bb +. bl > 0. then ctx.decorations <- ctx.decorations @ [ { de = e; ds = s; dml = ml; dmr = mr } ];
-              if ml +. bl +. pl > 0. then add_word None None Lead ctx ws ~glue:false "" (ml +. bl +. pl);
+              if ml +. bl +. pl > 0. then add_word None None Lead ctx ws ~glue:false ("", ml +. bl +. pl);
               List.iter (walk ctx s ws) e.children;
               if mr +. br +. pr > 0. then (
                 let space = ctx.space in
                 ctx.space <- false;
-                add_word None None Trail ctx ws ~glue:false "" (mr +. br +. pr);
+                add_word None None Trail ctx ws ~glue:false ("", mr +. br +. pr);
                 ctx.space <- space);
               ctx.decorations <- outer_decorations;
               ctx.owner <- outer_owner;
@@ -1249,10 +1253,10 @@ and walk (ctx : ctx) (parent : Computed.t) (ws : word_style) (node : Dom.node) :
           let mt, mr, mb, ml = margin in
           let content = match s.width with Auto -> Some (shrink ctx.env e s ~available:(ctx.width -. ml -. mr)) | _ -> None in
           let s_in = { s with margin = (Len Css_values.zero, Len Css_values.zero, Len Css_values.zero, Len Css_values.zero) } in
-          let ib, _ = layout_block ctx.env (ref []) e s_in ~cb_x:0. ~cb_width:ctx.width ~y:0. ~marker:None content in
+          let ib, _ = layout_block ctx.env (ref []) e s_in ~at:(0., ctx.width, 0.) ~marker:None content in
           let outer = ctx.link in
           (if e.name = "a" then match Dom.attribute "href" e with Some h -> ctx.link <- Some h | None -> ());
-          add_word (Some (Inline { ib; ml; mt; mb })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false "" (ml +. ib.width +. mr);
+          add_word (Some (Inline { ib; ml; mt; mb })) (Some e) Body ctx (word_style s ~link:ctx.link) ~glue:false ("", ml +. ib.width +. mr);
           ctx.link <- outer
       | Block | List_item | Flex | Grid | Table | Table_row_group | Table_row | Table_cell | Table_caption -> add_block ctx e s)
 
@@ -1293,7 +1297,7 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
             ((-1, 0), []) cells))
   in
   let n = List.fold_left (fun n (c : Table_layout.cell) -> max n (c.column + c.span)) 0 cells in
-  if cells = [] then fst (layout_block env (ref []) table { s with display = Block } ~cb_x ~cb_width ~y ~marker:None None)
+  if cells = [] then fst (layout_block env (ref []) table { s with display = Block } ~at:(cb_x, cb_width, y) ~marker:None None)
   else
     let spacing =
       match Option.bind (Dom.attribute "cellspacing" table) float_of_string_opt with Some sp when sp >= 0. -> sp | _ -> 2.
@@ -1309,7 +1313,7 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
     let cell_box (c : Table_layout.cell) ~x ~width ~y =
       let cs = style_of c in
       let cs = { cs with width = Auto; margin = (Len Css_values.zero, Len Css_values.zero, Len Css_values.zero, Len Css_values.zero) } in
-      fst (layout_block env (ref []) c.element cs ~cb_x:x ~cb_width:width ~y ~marker:None (Some (Float.max 0. (width -. chrome cs))))
+      fst (layout_block env (ref []) c.element cs ~at:(x, width, y) ~marker:None (Some (Float.max 0. (width -. chrome cs))))
     in
     let measured =
       List.map
@@ -1338,7 +1342,7 @@ and layout_table (env : env) (table : Dom.element) (s : Computed.t) ~(cb_x : flo
     let cell_width (c : Table_layout.cell) = sum c.column (c.column + c.span) +. (spacing *. float_of_int (c.span - 1)) in
     let caption =
       Option.map
-        (fun e -> fst (layout_block env (ref []) e (env.style e) ~cb_x:x ~cb_width:width ~y ~marker:None None))
+        (fun e -> fst (layout_block env (ref []) e (env.style e) ~at:(x, width, y) ~marker:None None))
         (Table_layout.caption table)
     in
     let top = match caption with Some c -> y +. c.height | None -> y in
@@ -1400,6 +1404,6 @@ let layout (metrics : Html_layout.metrics) (picture_size : string -> (float * fl
   let s = style root in
   (* the root is its own formatting context: its floats inside it *)
   let s = { s with overflow_hidden = true } in
-  let page, _ = layout_block env (ref []) root s ~cb_x:0. ~cb_width:(fst viewport) ~y:0. ~marker:None None in
+  let page, _ = layout_block env (ref []) root s ~at:(0., fst viewport, 0.) ~marker:None None in
   let bottom = List.fold_left (fun m (b : box) -> Float.max m (b.y +. b.height)) page.height !positioned in
   { page with height = bottom; children = page.children @ List.rev !positioned }

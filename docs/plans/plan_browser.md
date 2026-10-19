@@ -585,7 +585,12 @@ through, a thing at a time.
    steps: mini-netscape built for the draw platform (`OS=plan9`); the
    network process and its pipe, tried on Linux by mini-ml's build
    (`worker=wait`, then a loop that waits); the cookies between the two;
-   then under mini-9pi.
+   then under mini-9pi. Step 1 done (2026-10-19): `mini-mk O=5 OS=plan9` in
+   `browsers/netscape` links `_mk/5-plan9/browsers/netscape/netscape`
+   (5.6 MB), the draw device's platform and `Plan9_loop`, `/net`'s
+   `Tcp` and `Udp`; what arm's mini-ml asked: no function of more than
+   seven parameters (`Js_builtins.install` a record, `Box_layout`'s
+   `layout_block`, `set_lines`, `add_word`; `bugs/ix.md`). Not run yet.
 11. **The docs.** The READMEs, `docs/loc.md`'s row,
     `plan_ml_bootstrap.md`'s ledger for what mini-ml or lib_core
     gained, this plan's Status.

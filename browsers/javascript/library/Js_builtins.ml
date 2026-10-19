@@ -557,9 +557,10 @@ let percent_decode (s : string) : string =
   go 0;
   Buffer.contents b
 
-let install ~(call : value -> this:value -> value list -> value) ~(get : value -> string -> value) ~(put : value -> string -> value -> unit)
-    ~(items : value -> value list) ~compile:(make_function : async:bool -> string -> string -> value) ~(log : string -> unit) ~(seed : int) ~(now : unit -> float)
-    (define : string -> value -> unit) : protos =
+type host = [%mli]
+
+let install (h : host) (define : string -> value -> unit) : protos =
+  let call = h.call and get = h.get and put = h.put and items = h.items and make_function = h.compile and log = h.log and seed = h.seed and now = h.now in
   let shown args = String.concat " " (List.map display args) in
   define "console"
     (obj_of

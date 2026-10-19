@@ -1044,7 +1044,7 @@ let create_with (log : string -> unit) (seed : int) (now : unit -> float) : t =
          Undefined));
   (* new Function(params, body); an async one's constructor makes async ones *)
   let compile ~async params body = eval_in_run t (Printf.sprintf "(%sfunction anonymous(%s\n) {\n%s\n})" (if async then "async " else "") params body) in
-  t.protos <- Some (Js_builtins.install ~call ~get:(fun v k -> get t v k) ~put:(fun v k x -> put t v k x) ~items:(fun v -> items_of t v) ~compile ~log ~seed ~now define);
+  t.protos <- Some (Js_builtins.install { call; get = (fun v k -> get t v k); put = (fun v k x -> put t v k x); items = (fun v -> items_of t v); compile; log; seed; now } define);
   (* the prototype of async functions: Object.getPrototypeOf(async
    * function () {}).constructor is how a library gets to make one
    * from a text (Alpine) *)

@@ -69,31 +69,7 @@ let tests =
           check "a Map from a Map" {|new Map(new Map([[1, 2]])).get(1)|} "2");
       Testo.create "a mistake of the engine's own is the script's error, not the program's end" (fun () ->
           check "half a surrogate pair, in a string and a pattern" {|['\ud800'.length, /[\ud800-\udfff]/.test('a')]|} "[1, false]");
-      Testo.create "Proxy and Reflect" (fun () ->
-          check "the worked example: get and set seen" {|
-            const seen = [];
-            const p = new Proxy({ a: 1 }, {
-              get(target, key) { seen.push(key); return Reflect.get(target, key) },
-              set(target, key, value) { target[key] = value * 2; return true } });
-            p.a; p.b = 2; [p.b, seen]|} {|[4, ["a", "b"]]|};
-          check "has, deleteProperty; a trap not given: the target's own way" {|
-            const log = [], t = { a: 1, b: 2 };
-            const p = new Proxy(t, { has(o, k) { log.push('has ' + k); return k in o }, deleteProperty(o, k) { log.push('delete ' + k); delete o[k]; return true } });
-            const r = ['a' in p, 'z' in p]; delete p.a; p.c = 3;
-            [r, log, Object.keys(t), p.c]|} {|[[true, false], ["has a", "has z", "delete a"], ["b", "c"], 3]|};
-          check "what does not go through a trap sees the target" {|
-            const p = new Proxy({ a: 1, list: [1, 2] }, { get(o, k) { return k === 'a' ? 'trapped' : o[k] } });
-            [p.a, JSON.stringify(p), Object.keys(p), typeof p, p instanceof Object]|} {|["trapped", "{\"a\":\"trapped\",\"list\":[1,2]}", ["a", "list"], "object", true]|};
-          check "a proxy of an array is an array: its methods through the traps" {|
-            const sets = [];
-            const p = new Proxy([1, 2], { set(o, k, v) { sets.push(k); o[k] = v; return true } });
-            p.push(3);
-            [Array.isArray(p), p.length, p.map(x => x * 2), [...p], sets]|} {|[true, 3, [2, 4, 6], [1, 2, 3], ["0", "1", "2", "length"]]|};
-          check "a proxy of a function: apply; for-in: ownKeys" {|
-            const f = new Proxy(function (a, b) { return a + b }, { apply(target, self, args) { return target(...args) * 10 } });
-            const o = new Proxy({}, { ownKeys() { return ['x', 'y'] } });
-            const ks = []; for (const k in o) ks.push(k);
-            [f(1, 2), typeof f, ks]|} {|[30, "function", ["x", "y"]]|};
+      Testo.create "Reflect" (fun () ->
           check "Reflect: each operation as a function" {|
             const o = { a: 1 };
             [Reflect.get(o, 'a'), Reflect.set(o, 'b', 2), Reflect.has(o, 'b'), Reflect.ownKeys(o), Reflect.ownKeys([7]), Reflect.deleteProperty(o, 'a'), Object.keys(o),

@@ -790,7 +790,7 @@ let install ~(call : value -> this:value -> value list -> value) ~(get : value -
           a
       | _ -> array args)
     arrays
-    [ ("isArray", fn "isArray" (fun ~this:_ args -> Bool (match arg args 0 with Object o -> (match (target o).kind with Array _ -> true | _ -> false) | _ -> false)));
+    [ ("isArray", fn "isArray" (fun ~this:_ args -> Bool (match arg args 0 with Object o -> (match o.kind with Array _ -> true | _ -> false) | _ -> false)));
       (* of what can be gone through (an array, a string, a Set),
        * else of what is like an array ({ length: 3 }); each item through
        * the function given, if one is *)

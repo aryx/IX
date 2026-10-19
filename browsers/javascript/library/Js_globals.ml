@@ -15,11 +15,11 @@ let is_symbol (k : string) : bool = String.length k >= 2 && k.[0] = '@' && k.[1]
  * the engine's own marks: what Object.assign copies besides the keys
  * that show, and what getOwnPropertySymbols lists *)
 let own_symbols (v : value) : string list =
-  match v with Object o -> List.filter (fun k -> String.length k > 2 && is_symbol k && k.[2] >= '0' && k.[2] <= '9') (keys (target o)) | _ -> []
+  match v with Object o -> List.filter (fun k -> String.length k > 2 && is_symbol k && k.[2] >= '0' && k.[2] <= '9') (keys o) | _ -> []
 
 (* an object's own keys that show: not a symbol's *)
 let own_keys (v : value) : string list =
-  match (match v with Object o -> Object (target o) | v -> v) with
+  match v with
   | Object ({ kind = Array a; _ } as o) -> List.init a.length string_of_int @ List.filter (fun k -> not (is_symbol k)) (keys o)
   | Object o -> List.filter (fun k -> not (is_symbol k)) (keys o)
   | String s -> List.init (Js_utf16.length s) string_of_int
@@ -29,13 +29,13 @@ let own_keys (v : value) : string list =
 let own_names (v : value) : string list =
   match v with
   | Object ({ kind = Array a; _ } as o) when o.hidden <> [] -> List.init a.length string_of_int @ List.filter (fun k -> not (is_symbol k)) (all_keys o)
-  | Object o when (target o).hidden <> [] -> List.filter (fun k -> not (is_symbol k)) (all_keys o)
+  | Object o when o.hidden <> [] -> List.filter (fun k -> not (is_symbol k)) (all_keys o)
   | v -> own_keys v
 
 (* a key's value, read without calling a getter: an array's item, a
  * string's character, an object's own *)
 let own (v : value) (k : string) : value =
-  match ((match v with Object o -> Object (target o) | v -> v), int_of_string_opt k) with
+  match (v, int_of_string_opt k) with
   | Object { kind = Array a; _ }, Some i when i >= 0 && i < a.length -> a.elements.(i)
   | String s, Some i when i >= 0 && i < Js_utf16.length s -> String (Js_utf16.sub s i (i + 1))
   | Object o, _ -> (match (get_own o k) with Some v_ -> v_ | None -> Undefined)
@@ -307,17 +307,10 @@ let collection ~(call : value -> this:value -> value list -> value) ~(items : va
   c
 
 (*****************************************************************************)
-(* Proxy, Reflect *)
+(* Reflect *)
 (*****************************************************************************)
 
-(* new Proxy(target, handler): the traps are the interpreter's (Js_eval) *)
-let proxy : value =
-  fn "Proxy" (fun ~this:_ args ->
-      match (arg args 0, arg args 1) with
-      | Object tg, Object h -> Object { (new_object ()) with kind = Proxy (tg, h) }
-      | _ -> throw "TypeError" "Cannot create proxy with a non-object as target or handler")
-
-(* Reflect: what a trap does when it only wants the usual -- each
+(* Reflect: what a framework does when it wants the usual -- each
  * operation on an object as a function *)
 let reflect ~(call : value -> this:value -> value list -> value) ~(lookup : string -> value option) ~(get : value -> string -> value)
     ~(put : value -> string -> value -> unit) ~(has : value -> string -> bool) : value =
@@ -328,12 +321,12 @@ let reflect ~(call : value -> this:value -> value list -> value) ~(lookup : stri
   def "set" (fun args -> put (arg args 0) (to_string (arg args 1)) (arg args 2); Bool true);
   def "has" (fun args -> Bool (has (arg args 0) (to_string (arg args 1))));
   def "deleteProperty" (fun args ->
-      (match arg args 0 with Object o -> let o = target o in o.props <- List.filter (fun (k, _) -> k <> to_string (arg args 1)) o.props | _ -> ());
+      (match arg args 0 with Object o -> o.props <- List.filter (fun (k, _) -> k <> to_string (arg args 1)) o.props | _ -> ());
       Bool true);
   (* an array's: its indices and "length" too *)
   def "ownKeys" (fun args ->
       let v = arg args 0 in
-      array (List.map (fun k -> String k) (own_keys v @ match v with Object o when (match (target o).kind with Array _ -> true | _ -> false) -> [ "length" ] | _ -> [])));
+      array (List.map (fun k -> String k) (own_keys v @ match v with Object o when (match o.kind with Array _ -> true | _ -> false) -> [ "length" ] | _ -> [])));
   def "getPrototypeOf" (of_object "getPrototypeOf");
   def "defineProperty" (fun args -> ignore (of_object "defineProperty" args); Bool true);
   def "getOwnPropertyDescriptor" (of_object "getOwnPropertyDescriptor");
@@ -355,45 +348,8 @@ let install ~(call : value -> this:value -> value list -> value) ~(lookup : stri
       | Some (Object proto) ->
           let def m f = set_own proto m (fn m f) in
           def "propertyIsEnumerable" (fun ~this args -> Bool (List.mem (to_string (arg args 0)) (own_keys this)));
-          (* a proxy's prototype is what its handler's getPrototypeOf
-           * says, else its target's (a framework's tracked array: a
-           * proxy that says it is of the framework's class) *)
-          let plain = Option.get (get_own c "getPrototypeOf") in
-          let rec prototype_of (v : value) : value =
-            match v with
-            | Object { kind = Proxy (tg, h); _ } -> (
-                match get (Object h) "getPrototypeOf" with
-                | Object _ as trap -> call trap ~this:(Object h) [ Object tg ]
-                | _ -> prototype_of (Object tg))
-            | v -> call plain ~this:Undefined [ v ]
-          in
-          set_own c "getPrototypeOf" (fn "getPrototypeOf" (fun ~this:_ args -> prototype_of (arg args 0)));
           (* Object.assign through the language's own reads and writes:
-           * a source that is a proxy is asked its keys and each value
-           * (a framework's arguments: a proxy whose get computes them),
            * a getter is called, a target's setter too *)
-          (* Object.keys, values and entries of a proxy whose handler
-           * says its keys (ownKeys) *)
-          let plain_keys = Option.get (get_own c "keys") in
-          let trapped (v : value) : value list option =
-            match v with
-            | Object { kind = Proxy (tg, h); _ } -> (
-                match get (Object h) "ownKeys" with
-                | Object _ as f -> Some (List.filter (fun k -> match k with String _ -> true | _ -> false) (match call f ~this:(Object h) [ Object tg ] with Object a -> array_items a | _ -> []))
-                (* no such trap: the target's keys, the values still asked of the proxy *)
-                | _ -> Some (List.map (fun k -> String k) (own_keys (Object tg))))
-            | _ -> None
-          in
-          List.iter
-            (fun (name, item) ->
-              let plain = Option.get (get_own c name) in
-              set_own c name
-                (fn name (fun ~this args ->
-                     match trapped (arg args 0) with
-                     | Some ks -> array (List.map (fun k -> item (arg args 0) k) ks)
-                     | None -> call plain ~this args)))
-            [ ("keys", fun _ k -> k); ("values", fun v k -> get v (to_string k)); ("entries", fun v k -> array [ k; get v (to_string k) ]) ];
-          ignore plain_keys;
           let keys_of = Option.get (get_own c "keys") in
           set_own c "assign"
             (fn "assign" (fun ~this:_ args ->
@@ -418,7 +374,6 @@ let install ~(call : value -> this:value -> value list -> value) ~(lookup : stri
               let rec up (o : obj) = match o.proto with Some p -> Object p == this || (match this with Object t -> t == p | _ -> false) || up p | None -> false in
               Bool
                 (match arg args 0 with
-                | Object { kind = Proxy _; _ } as v -> ( match prototype_of v with Object p -> (match this with Object t -> t == p | _ -> false) || up p | _ -> false)
                 | Object o -> up o
                 | _ -> false));
           def "valueOf" (fun ~this _ -> this);
@@ -469,7 +424,6 @@ let install ~(call : value -> this:value -> value list -> value) ~(lookup : stri
       | _ -> ());
       define name c)
     [ "Uint8Array"; "Int8Array"; "Uint8ClampedArray"; "Uint16Array"; "Int16Array"; "Uint32Array"; "Int32Array"; "Float32Array"; "Float64Array" ];
-  define "Proxy" proxy;
   define "Reflect" (reflect ~call ~lookup ~get ~put ~has);
   define "Symbol" (symbol ());
   define "Map" (collection ~call ~items "Map" ~map:true);

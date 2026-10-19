@@ -25,19 +25,13 @@ let tests =
           check "methods and accessors before the static blocks" "var seen; class S { get a() { return 1 } static { seen = typeof Object.getOwnPropertyDescriptor(this.prototype, 'a').set } set a(v) { } } seen" "function");
       Testo.create "a regular expression's named groups" (fun () ->
           check "match, exec, replace" "var re = /(?<y>\\d+)-(?<m>\\d+)/; var m = '2026-10'.match(re); [m.groups.y, re.exec('1-2').groups.m, '2026-10'.replace(re, '$<m>/$<y>'), 'ab'.match(/a/).groups]" "[\"2026\", \"2\", \"10/2026\", undefined]");
-      Testo.create "proxies: an array answered for, the prototype" (fun () ->
-          check "spread and for-of go through the traps"
-            "var real = [1, 2, 3]; var p = new Proxy([], { get: function (t, k) { return k === 'length' ? real.length : real[k] } }); var r = []; for (var v of p) r.push(v); [r, [...p].length]"
-            "[[1, 2, 3], 3]";
-          check "getPrototypeOf: the target's, or the trap's" "function T() {} var p = new Proxy([], {}), q = new Proxy([], { getPrototypeOf: function () { return T.prototype } }); [Object.getPrototypeOf(p) === Array.prototype, Object.getPrototypeOf(q) === T.prototype, T.prototype.isPrototypeOf(q)]"
-            "[true, true, true]");
       Testo.create "small things: a boolean's text, a descriptor's silence" (fun () ->
           check "toString" "[true.toString(), 'a'.toString(), ('1|2' || '').toString().split('|').length]" "[\"true\", \"a\", 2]";
           check "defineProperty keeps what it is not told" "var o = { a: 1 }; Object.defineProperty(o, 'a', { enumerable: false }); var g = {}; Object.defineProperty(g, 'q', { get: function () { return 5 }, set: function (v) { this.w = v } }); Object.defineProperty(g, 'q', { get: function () { return 6 } }); g.q = 7; [o.a, g.q, g.w]" "[1, 6, 7]");
-      Testo.create "what frameworks lean on: assign and keys through getters and proxies, Map's order, bytes" (fun () ->
-          check "Object.assign and spread read a getter and a proxy"
-            "var s = { get a() { return 5 } }; var real = { x: 1 }; var p = new Proxy({ x: 0 }, { get: function (t, k) { return real[k] } }); var q = new Proxy({}, { ownKeys: function () { return ['k'] }, get: function () { return 9 } }); [Object.assign({}, s).a, { ...s }.a, Object.assign({}, p).x, Object.keys(q), Object.values(q), { ...q }.k]"
-            "[5, 5, 1, [\"k\"], [9], 9]";
+      Testo.create "what frameworks lean on: assign through getters, Map's order, bytes" (fun () ->
+          check "Object.assign and spread read a getter"
+            "var s = { get a() { return 5 } }; [Object.assign({}, s).a, { ...s }.a]"
+            "[5, 5]";
           check "a Map: any key, the order they were put in, one replaced in place"
             "var o = {}, m = new Map([[1, 'a'], ['1', 'b']]); m.set(o, 'o').set(NaN, 'n'); m.set(1, 'A'); m.delete('1'); [m.size, m.get(1), m.get(o), m.get(NaN), m.has('1'), Array.from(m.values())]"
             "[3, \"A\", \"o\", \"n\", false, [\"A\", \"o\", \"n\"]]";

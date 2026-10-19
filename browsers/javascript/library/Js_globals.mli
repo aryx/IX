@@ -31,7 +31,7 @@
      Symbol(), Symbol.for, Symbol.iterator
      Map, Set, WeakMap, WeakSet
      Uint8Array, Int32Array, Float64Array ...
-     Proxy, Reflect
+     Reflect
 
    Some of them are less than the real thing, and say so:
 
@@ -65,33 +65,22 @@
    was there when they were asked (Js_builtins.iterator). WeakMap and WeakSet
    are Map and Set: nothing is collected.
 
-   **A proxy** (ES2015) is an object seen through a handler's traps:
-
-     const seen = []
-     const p = new Proxy({ a: 1 }, {
-       get(target, key) { seen.push(key); return Reflect.get(target, key) },
-       set(target, key, value) { target[key] = value * 2; return true } })
-     p.a; p.b = 2; p.b          // seen: a, b; p.b is 4
-
-   which is how a library knows what a page read and what it changed,
-   to draw again only what depends on it (Vue's reactivity, Alpine's
-   data). The traps here are get, set, has (k in p, and a with's
-   names), deleteProperty, apply (a proxy of a function) and ownKeys
-   (for-in). What does not go through a trap sees the target as it
-   is: JSON.stringify, Object.keys, the console, a for-of. Reflect has
-   each operation as a function, for a trap that wants the usual.
+   **Not a proxy** (ES2015's new Proxy(target, handler), an object
+   seen through a handler's traps): it is how a library knows what a
+   page read and what it changed, to draw again only what depends on
+   it (Vue's reactivity, Alpine's data), and mini-chrome has it. Here a
+   page whose framework needs one reads as it is, and does not react
+   (ocaml.org's menus: plan_browser.md, C). Reflect has each operation
+   on an object as a function.
 
    Where it stands: installed by Js_eval.create_with after
    Js_builtins, before Js_prelude's text is run (which adds, in
    JavaScript, an ArrayBuffer and a DataView of its own, WeakRef and
-   the rest of what came after 2015). The traps of a proxy are not
-   called here but in Js_eval, at each place a property is read, set,
-   tested or deleted: this module only makes the object (Js_value's
-   Proxy). In a page, the libraries this is for are the ones
+   the rest of what came after 2015). In a page, the libraries this is for are the ones
    mini-netscape meets on the live web; mini-node shows each with a
    line: typeof Symbol.iterator is "symbol".
 
-   Reference: ECMA-262, sections 28.1 (Reflect), 28.2 (Proxy), 20.1 (Object), 20.4 (Symbol), 21.1
+   Reference: ECMA-262, sections 28.1 (Reflect), 20.1 (Object), 20.4 (Symbol), 21.1
    (Number), 24.1 and 24.2 (Map, Set). *)
 (* ix: the author's mini-chrome's languages/javascript/library/Js_globals.mli (its 8af888e) (docs/plans/plan_browser.md) *)
 

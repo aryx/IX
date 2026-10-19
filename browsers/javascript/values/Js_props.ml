@@ -16,7 +16,7 @@ let key_of (v : value) : string = match v with Symbol k -> k | Number f when Flo
 
 (* an object's prototype: its own, else its kind's (an array's
  * Array.prototype...), Object.prototype last, and nothing after it *)
-let rec proto_of (ps : Js_builtins.protos) (o : obj) : obj option =
+let proto_of (ps : Js_builtins.protos) (o : obj) : obj option =
   match o.proto with
   | Some p -> Some p
   | None -> (
@@ -28,7 +28,6 @@ let rec proto_of (ps : Js_builtins.protos) (o : obj) : obj option =
         | Closure _ | Host_function _ -> Some p.functions
         | Regexp _ -> Some p.regexps
         | Host_object _ | Accessor _ -> None
-        | Proxy (t, _) -> proto_of ps t
         (* an error has its kind's prototype: TypeError.prototype,
          * itself under Error.prototype *)
         | Plain -> ( match Js_builtins.error_proto p.errors o with Some e -> Some e | None -> Some p.objects))
@@ -78,7 +77,6 @@ let rec get (ps : Js_builtins.protos) (target : value) (k : string) : value =
   match target with
   (* o.__proto__: its prototype (Object.getPrototypeOf, as a property) *)
   | Object o when k = "__proto__" && get_own o k = None -> ( match proto_of ps o with Some p -> Object p | None -> Null)
-  | Object { kind = Proxy (t, _); _ } -> get ps (Object t) k
   | Undefined | Null -> throw "TypeError" (Printf.sprintf "Cannot read properties of %s (reading '%s')" (to_string target) k)
   (* a rope's length is known; anything else of it is of its text *)
   | Rope r -> if k = "length" then Number (float_of_int r.units) else get ps (String (flatten r)) k
@@ -117,7 +115,6 @@ let rec has (ps : Js_builtins.protos) (o : obj) (k : string) : bool =
   get_own o k <> None
   ||
   match o.kind with
-  | Proxy (t, _) -> has ps t k
   | Array a -> k = "length" || (match index_of_key k with Some i -> i < a.length | None -> false) || inherited ps o k
   (* what the host has, or its prototypes: a getter there that gives
    * null ("oninput" in el: how a library asks whether an event is known) *)
@@ -137,7 +134,7 @@ let enumerable_keys (v : value) : string list =
     let own = List.filter (fun k -> not (List.mem k seen || symbol k)) (keys o) in
     own @ match o.proto with Some p -> List.filter (( <> ) "constructor") (chain p (seen @ own)) | None -> []
   in
-  match (match v with Object o -> Object (Js_value.target o) | v -> v) with
+  match v with
   | Object ({ kind = Array a; _ } as o) -> List.init a.length string_of_int @ chain o []
   | Object { kind = Host_object _; _ } -> []
   | Object o -> chain o []
@@ -154,14 +151,13 @@ let instance_of (ps : Js_builtins.protos) (v : value) (f : value) : bool =
   | Symbol _, _ -> ( match f with Object { kind = Host_function ("Symbol", _); _ } -> true | _ -> false)
   | _ -> false
 
-let rec set (target : value) (k : string) (v : value) : unit =
+let set (target : value) (k : string) (v : value) : unit =
   (* what is kept is a String, never a rope *)
   let v = flat v in
   match target with
   (* o.__proto__ = p: its prototype, of any object (a browser's own
    * too: how a polyfill makes a fragment one of its ShadowRoots) *)
   | Object o when k = "__proto__" -> ( match v with Object p -> o.proto <- Some p | Null -> o.proto <- None | _ -> ())
-  | Object { kind = Proxy (t, _); _ } -> set (Object t) k v
   | Undefined | Null -> throw "TypeError" (Printf.sprintf "Cannot set properties of %s (setting '%s')" (to_string target) k)
   | Object ({ kind = Array a; _ } as o) -> (
       let grow n =

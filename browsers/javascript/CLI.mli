@@ -28,7 +28,7 @@
  *        |                           its chain of prototypes
  *        |-- Js_operators, Js_utf16  + and ==, the conversions; a string
  *        |                           counted in UTF-16's units
- *        |-- Js_builtins, Js_globals String, Array, Math, Map, Proxy...
+ *        |-- Js_builtins, Js_globals String, Array, Math, Map, Reflect...
  *        |-- Js_prelude              the library's part written in
  *        |                           JavaScript itself
  *        |-- Js_json, Js_regexp      JSON.parse; /a(b+)c/ by backtracking

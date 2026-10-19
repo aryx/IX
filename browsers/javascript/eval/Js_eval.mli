@@ -85,10 +85,9 @@
 
    **Names that are not variables.** In "with (o) { ... }" a name that
    is a property of o is that property (a frame keeps the object:
-   Js_value.scope's subject); and an object can be a Proxy, whose
-   handler's traps are called where a property is read, set, tested or
-   deleted. Both are how a library runs a template's expressions
-   against a page's data and learns what they read.
+   Js_value.scope's subject): how a library runs a template's
+   expressions against a page's data. (Not a Proxy, whose traps a
+   framework's reactivity needs: not here, plan_browser.md, C.)
 
    **this.** In o.f(), f runs with this bound to o; in f(), to the
    global object, as the language has done since 1995 (to undefined

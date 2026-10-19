@@ -59,7 +59,7 @@
    Where it stands: three layers make what a script finds. This one,
    in OCaml, for what ES5 had and what needs the engine's insides;
    Js_globals, in OCaml, for what libraries test for (Symbol, Map,
-   Proxy); Js_prelude, in JavaScript, for what ES2016 and after added
+   Reflect); Js_prelude, in JavaScript, for what ES2016 and after added
    and can be written over the first two. Js_eval.create_with
    installs the three in that order. What is the browser's and not
    the language's (document, window, setTimeout, fetch) is a host's:

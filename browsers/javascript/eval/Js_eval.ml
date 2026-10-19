@@ -176,14 +176,6 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
               | Object ({ kind = Array a; _ } as src) ->
                   Array.iteri (fun i v -> if i < a.length then set_own o (string_of_int i) v) a.elements;
                   List.iter (fun k -> set_own o k (get t (Object src) k)) (keys src)
-              (* a proxy's: the keys its handler says (ownKeys), else its target's *)
-              | Object ({ kind = Proxy (tg, h); _ } as src) ->
-                  let ks =
-                    match trap t h "ownKeys" with
-                    | Some f -> List.filter_map (fun k -> match k with String k -> Some k | _ -> None) (items_of t (call_value t f ~this:(Object h) [ Object tg ]))
-                    | None -> keys (Js_value.target tg)
-                  in
-                  List.iter (fun k -> set_own o k (get t (Object src) k)) ks
               | Object src -> List.iter (fun k -> set_own o k (get t (Object src) k)) (keys src)
               | String str -> String.iteri (fun i c -> set_own o (string_of_int i) (String (String.make 1 c))) str
               | Rope r -> String.iteri (fun i c -> set_own o (string_of_int i) (String (String.make 1 c))) (flatten r)
@@ -244,10 +236,8 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
       | "void" -> ignore (eval_expr t s this x); Undefined
       (* delete o.k: the property gone from the object itself *)
       | "delete" -> (
-          let rec remove o k =
+          let remove o k =
             match o with
-            | Object { kind = Proxy (tg, h); _ } -> (
-                match trap t h "deleteProperty" with Some f -> ignore (call_value t f ~this:(Object h) [ Object tg; String k ]) | None -> remove (Object tg) k)
             | Object o ->
                 o.props <- List.filter (fun (k', _) -> k' <> k) o.props;
                 (* and what a host keeps of it itself (an element's property a script set) *)
@@ -291,7 +281,7 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
   | New (f, args) ->
       let fn = eval_expr t s this f in
       let args = eval_list t s this args in
-      (match fn with Object { kind = Closure _ | Host_function _ | Proxy _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a constructor"));
+      (match fn with Object { kind = Closure _ | Host_function _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a constructor"));
       let o = new_object () in
       (match get t fn "prototype" with Object p -> o.proto <- Some p | _ -> ());
       (match call_value t fn ~this:(Object o) args with Object _ as r -> r | _ -> Object o)
@@ -336,7 +326,7 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
       let fn = eval_expr t s this f in
       match (fn, eval_expr t s this arg) with
       | Object { kind = Host_function ("eval", _); _ }, String text -> !direct_eval t s this text
-      | Object { kind = Closure _ | Host_function _ | Proxy _; _ }, v -> call_value t fn ~this:Undefined [ v ]
+      | Object { kind = Closure _ | Host_function _; _ }, v -> call_value t fn ~this:Undefined [ v ]
       | _ -> throw "TypeError" "eval is not a function")
   | Call (f, args) ->
       (* a method call: this is the object the function was read from *)
@@ -349,7 +339,7 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
             let fn = item t o key in
             (* o[k]() with no function there: the key said, which the text does not *)
             (match (fn, k) with
-            | Object { kind = Closure _ | Host_function _ | Proxy _; _ }, _ | _, (String _ | Number _) -> ()
+            | Object { kind = Closure _ | Host_function _; _ }, _ | _, (String _ | Number _) -> ()
             | _ -> throw "TypeError" (Printf.sprintf "%s is not a function (the key: %s)" (describe f) (display key)));
             (fn, o)
         (* o.m?.(): the method, if there is one, still on o *)
@@ -363,7 +353,7 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
       let args = eval_list t s this args in
       if host_missing fn self f then Undefined
       else (
-        (match fn with Object { kind = Closure _ | Host_function _ | Proxy _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a function"));
+        (match fn with Object { kind = Closure _ | Host_function _; _ } -> () | _ -> throw "TypeError" (describe f ^ " is not a function"));
         call_value t fn ~this:self args)
 
 (* class A extends B { ... }: a constructor function whose prototype
@@ -457,14 +447,7 @@ and eval_list (t : t) (s : scope) (this : value) (es : A.expr list) : value list
 and iterate (t : t) (v : value) (f : value -> bool) : unit =
   let rec each (l : value list) = match l with x :: rest -> if f x then each rest | [] -> () in
   match v with
-  (* a proxy of an array that answers for it (a get trap): its length
-   * and items asked of the proxy, not read in the array behind (a
-   * template's arguments: a proxy over an empty array) *)
-  | Object { kind = Proxy (tg, h); _ } when (match (Js_value.target tg).kind with Array _ -> true | _ -> false) && trap t h "get" <> None ->
-      let n = match get t v "length" with Number n when n > 0. -> int_of_float n | _ -> 0 in
-      let rec from i = if i < n && f (get t v (string_of_int i)) then from (i + 1) in
-      from 0
-  | Object ({ kind = Array _ | Proxy _; _ } as o) when (match (Js_value.target o).kind with Array _ -> true | _ -> false) -> each (array_items o)
+  | Object ({ kind = Array _; _ } as o) -> each (array_items o)
   (* a string's characters, a pair of halves as one (for-of, a spread, Array.from) *)
   | String str -> each (List.map (fun cp -> String (Js_utf16.of_code_point cp)) (Js_utf16.code_points str))
   | Rope r -> iterate t (String (flatten r)) f
@@ -493,14 +476,9 @@ and items_of (t : t) (v : value) : value list =
 
 (* o.k: the property, or what its getter gives *)
 and get (t : t) (target : value) (k : string) : value =
-  match target with
-  (* a proxy: its handler's get(target, key, receiver), else the target's *)
-  | Object { kind = Proxy (tg, h); _ } -> (
-      match trap t h "get" with Some f -> call_value t f ~this:(Object h) [ Object tg; String k; target ] | None -> get t (Object tg) k)
-  | _ -> (
-      match Js_props.get (protos t) target k with
-      | Object { kind = Accessor (getter, _); _ } -> if getter = Undefined then Undefined else call_value t getter ~this:target []
-      | v -> v)
+  match Js_props.get (protos t) target k with
+  | Object { kind = Accessor (getter, _); _ } -> if getter = Undefined then Undefined else call_value t getter ~this:target []
+  | v -> v
 
 (* o[k], o[k] = v: the property whose key is k as a string *)
 and item_simple (t : t) (o : value) (k : value) : value = get t o (key_of k)
@@ -527,15 +505,9 @@ and put_item_opti (t : t) (o : value) (k : value) (v : value) : unit =
 and item (t : t) (o : value) (k : value) : value = if !Mini_opti.enabled then item_opti t o k else item_simple t o k
 and put_item (t : t) (o : value) (k : value) (v : value) : unit = if !Mini_opti.enabled then put_item_opti t o k v else put_item_simple t o k v
 
-(* a handler's trap, if it has that one *)
-and trap (t : t) (handler : obj) (name : string) : value option =
-  match Js_props.get (protos t) (Object handler) name with Object { kind = Closure _ | Host_function _; _ } as f -> Some f | _ -> None
-
-(* k in o: its own or its prototypes'; a proxy's has(target, key) *)
+(* k in o: its own or its prototypes' *)
 and has_property (t : t) (o : value) (k : string) : bool =
   match o with
-  | Object { kind = Proxy (tg, h); _ } -> (
-      match trap t h "has" with Some f -> truthy (call_value t f ~this:(Object h) [ Object tg; String k ]) | None -> has_property t (Object tg) k)
   | Object o -> has t o k
   | _ -> false
 
@@ -553,8 +525,6 @@ and with_subject (t : t) (s : scope) (x : string) : value option =
  * its prototypes': looked for only where there can be one) *)
 and put (t : t) (target : value) (k : string) (v : value) : unit =
   match target with
-  | Object { kind = Proxy (tg, h); _ } -> (
-      match trap t h "set" with Some f -> ignore (call_value t f ~this:(Object h) [ Object tg; String k; v; target ]) | None -> put t (Object tg) k v)
   | Object { kind = Plain | Closure _; _ } -> (
       match Js_props.get (protos t) target k with
       | Object { kind = Accessor (_, setter); _ } -> if setter <> Undefined then ignore (call_value t setter ~this:target [ v ])
@@ -676,9 +646,6 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
   | Object { kind = Host_function (_, (f : this:value -> value list -> value)); _ } ->
       let rope = function Rope _ -> true | _ -> false in
       f ~this:(flat this) (if List.exists rope args then List.map flat args else args)
-  (* a proxy of a function: its handler's apply(target, this, arguments) *)
-  | Object { kind = Proxy (tg, h); _ } -> (
-      match trap t h "apply" with Some f -> call_value t f ~this:(Object h) [ Object tg; this; Object (new_array args) ] | None -> call_value t (Object tg) ~this args)
   | Object { kind = Closure c; _ } ->
       if t.depth >= max_depth then (
         (* JS_STACK=1: which function, to find the one that calls itself *)
@@ -939,8 +906,6 @@ and exec_labelled (labels : string list) (t : t) (s : scope) (this : value) (st 
       in
       loop
         (match eval o with
-        | Object { kind = Proxy (tg, h); _ } as o -> (
-            match trap t h "ownKeys" with Some f -> List.map to_string (items_of t (call_value t f ~this:(Object h) [ Object tg ])) | None -> enumerable_keys o)
         | o -> enumerable_keys o)
   (* the first case that is === the value, and from there every
    * statement to a break, the next cases' too; no case: the default *)
@@ -1108,7 +1073,7 @@ let create_with (log : string -> unit) (seed : int) (now : unit -> float) : t =
       | _ -> ())
     [ "Object"; "Array"; "String"; "Function"; "Number"; "Boolean"; "Symbol"; "BigInt"; "Promise"; "Map"; "Set"; "WeakMap"; "WeakSet"; "WeakRef"; "Date"; "RegExp"; "Error";
       "TypeError"; "RangeError"; "SyntaxError"; "ReferenceError"; "EvalError"; "URIError"; "AggregateError"; "ArrayBuffer"; "DataView"; "Int8Array"; "Uint8Array";
-      "Uint8ClampedArray"; "Int16Array"; "Uint16Array"; "Int32Array"; "Uint32Array"; "Float32Array"; "Float64Array"; "Proxy"; "Reflect"; "Math"; "JSON"; "Intl"; "Iterator" ];
+      "Uint8ClampedArray"; "Int16Array"; "Uint16Array"; "Int32Array"; "Uint32Array"; "Float32Array"; "Float64Array"; "Reflect"; "Math"; "JSON"; "Intl"; "Iterator" ];
   (match t.protos with
   | Some ps -> List.iter hide_all [ ps.strings; ps.arrays; ps.objects; ps.functions; ps.regexps; ps.numbers ]
   | None -> ());

@@ -24,7 +24,6 @@ and kind =
   | Host_object of host
   | Regexp of Js_regexp.t
   | Accessor of value * value
-  | Proxy of obj * obj
 
 and host = { class_name : string; get : string -> value; set : string -> value -> unit; show : unit -> string }
 
@@ -114,10 +113,6 @@ let new_array (vs : value list) : obj =
 
 let host_function (name : string) (f : this:value -> value list -> value) : value = Object (make (Host_function (name, f)))
 let host_object (h : host) : value = Object (make (Host_object h))
-(* a proxy's own properties, keys and items are its target's:
- * what reads an object as it is (JSON, the console, Object.keys) sees
- * through a proxy, without its traps *)
-let rec target (o : obj) : obj = match o.kind with Proxy (t, _) -> target t | _ -> o
 
 (* List.assoc_opt, the keys compared as strings (it compares them as
  * any two values: a third of a program's time was there) *)
@@ -149,10 +144,10 @@ let find (o : obj) (k : string) : value ref option =
       in
       scan o.props 0
 
-let get_own (o : obj) (k : string) : value option = match find (target o) k with Some r -> Some !r | None -> None
+let get_own (o : obj) (k : string) : value option = match find o k with Some r -> Some !r | None -> None
 
 let set_own (o : obj) (k : string) (v : value) : unit =
-  let o = target o and v = flat v in
+  let v = flat v in
   match find o k with
   | Some r -> r := v
   | None -> (
@@ -169,17 +164,16 @@ let set_own (o : obj) (k : string) (v : value) : unit =
 
 (* an object's own keys, in the order they were set: all of them, and
  * those that show (the enumerable ones) *)
-let all_keys (o : obj) : string list = List.rev_map fst (target o).props
+let all_keys (o : obj) : string list = List.rev_map fst o.props
 
 let keys (o : obj) : string list =
-  let o = target o in
   let all = List.rev_map fst o.props in
   if o.hidden = [] then all else List.filter (fun k -> not (List.mem k o.hidden)) all
 
-let hide (o : obj) (k : string) : unit = let o = target o in if not (List.mem k o.hidden) then o.hidden <- k :: o.hidden
-let show (o : obj) (k : string) : unit = let o = target o in if o.hidden <> [] then o.hidden <- List.filter (fun h -> h <> k) o.hidden
-let shows (o : obj) (k : string) : bool = not (List.mem k (target o).hidden)
-let array_items (o : obj) : value list = match (target o).kind with Array a -> Array.to_list (Array.sub a.elements 0 a.length) | _ -> []
+let hide (o : obj) (k : string) : unit = if not (List.mem k o.hidden) then o.hidden <- k :: o.hidden
+let show (o : obj) (k : string) : unit = if o.hidden <> [] then o.hidden <- List.filter (fun h -> h <> k) o.hidden
+let shows (o : obj) (k : string) : bool = not (List.mem k o.hidden)
+let array_items (o : obj) : value list = match o.kind with Array a -> Array.to_list (Array.sub a.elements 0 a.length) | _ -> []
 
 let error (name : string) (message : string) : value =
   let o = new_object () in
@@ -249,7 +243,6 @@ let typeof (v : value) : string =
   | String _ | Rope _ -> "string"
   | Symbol _ -> "symbol"
   | Object { kind = Closure _ | Host_function _; _ } -> "function"
-  | Object { kind = Proxy ({ kind = Closure _ | Host_function _; _ }, _); _ } -> "function"
   | Object _ -> "object"
 
 let truthy (v : value) : bool =
@@ -297,7 +290,6 @@ and to_primitive (v : value) : value = to_primitive_as "default" v
 
 and to_primitive_as (hint : string) (v : value) : value =
   match v with
-  | Object { kind = Proxy (t, _); _ } -> to_primitive (Object t)
   | Object ({ kind = Array _; _ } as o) ->
       String (String.concat "," (List.map (fun v -> match v with Undefined | Null -> "" | v -> to_string v) (array_items o)))
   (* a function as a string is its own text, as it was written: a page
@@ -387,7 +379,6 @@ let display (v : value) : string =
     match v with
     | String s -> if top then s else quoted s
     | Rope r -> go ~top seen (String (flatten r))
-    | Object { kind = Proxy (t, _); _ } -> go ~top seen (Object t)
     | Object o when List.memq o seen -> "[Circular]"
     (* five deep and no further: an application's one object holds
      * all the others, each many times *)
@@ -440,7 +431,6 @@ let to_json (v : value) : string option =
     (* JSON has no NaN and no Infinity *)
     | Number f -> Some (if Float.is_finite f then number_to_string f else "null")
     | String s -> Some (quote s)
-    | Object { kind = Proxy (t, _); _ } -> go seen (Object t)
     | Object o when List.memq o seen -> raise Cycle
     | Object ({ kind = Array _; _ } as o) ->
         Some ("[" ^ String.concat "," (List.map (fun v -> (match (go (o :: seen) v) with Some v_ -> v_ | None -> "null")) (array_items o)) ^ "]")

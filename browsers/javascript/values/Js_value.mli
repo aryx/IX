@@ -156,12 +156,6 @@ and kind =
    * two functions, undefined for the one it has not. Reading the
    * property calls the first, assigning to it the second (Js_eval) *)
   | Accessor of value * value
-  (* new Proxy(target, handler): the target, seen through the
-   * handler's traps -- reading a property calls handler.get, setting
-   * one handler.set, "k in p" handler.has (Js_eval; a trap the handler
-   * has not: the target's own way). What it is otherwise (an array, a
-   * function, its keys) is what its target is *)
-  | Proxy of obj * obj
 
 (* an object whose properties are the host's functions: reading one
  * calls [get], writing one [set] (the spec's getters and setters) --
@@ -205,8 +199,6 @@ val new_array : value list -> obj
 val host_function : string -> (this:value -> value list -> value) -> value
 val host_object : host -> value
 
-(* a proxy's target, through proxies of proxies; any other object: itself *)
-val target : obj -> obj
 
 (* an own property, if the object has it *)
 (* a property's cell in a list of properties, by its key *)

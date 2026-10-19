@@ -70,7 +70,7 @@ let inherited (k : string) : obj -> value option =
       found := Js_value.property k proto.props);
     match !found with Some { contents = Object { kind = Accessor _; _ } } | None -> None | Some cell -> Some !cell
 
-let callable (fn : value) : bool = match fn with Object { kind = Closure _ | Host_function _ | Proxy _; _ } -> true | _ -> false
+let callable (fn : value) : bool = match fn with Object { kind = Closure _ | Host_function _; _ } -> true | _ -> false
 let spread (es : A.expr list) : bool = List.exists (fun (e : A.expr) -> match e with Spread _ -> true | _ -> false) es
 
 (* each one's value, in order *)

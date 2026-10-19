@@ -166,25 +166,25 @@ let tokenize (s : string) : token list =
 let closer (c : char) : char = match c with '(' -> ')' | '[' -> ']' | _ -> '}'
 
 (* the components up to [stop] (a closing bracket) or the end: blocks
- * and functions made by matching brackets; a stray closer is a Delim *)
+ * and functions made by matching brackets; a stray closer is a Delim.
+ * A loop along a level, a call for a bracket's inside: one call a token
+ * went as deep as a sheet is long (YouTube's, past mini-ml's value
+ * stack, bugs/ix.md) *)
 let rec components (toks : raw list) ~(stop : char option) : component list * raw list =
-  match toks with
-  | [] -> ([], [])
-  | Close c :: rest when Some c = stop -> ([], rest)
-  | Close c :: rest ->
-      let cs, rest = components rest ~stop in
-      (Token (Delim c) :: cs, rest)
-  | Open c :: rest ->
-      let inside, rest = components rest ~stop:(Some (closer c)) in
-      let cs, rest = components rest ~stop in
-      (Block (c, inside) :: cs, rest)
-  | T (Function f) :: rest ->
-      let args, rest = components rest ~stop:(Some ')') in
-      let cs, rest = components rest ~stop in
-      (Func (f, args) :: cs, rest)
-  | T t :: rest ->
-      let cs, rest = components rest ~stop in
-      (Token t :: cs, rest)
+  let rec go acc toks =
+    match toks with
+    | [] -> (List.rev acc, [])
+    | Close c :: rest when Some c = stop -> (List.rev acc, rest)
+    | Close c :: rest -> go (Token (Delim c) :: acc) rest
+    | Open c :: rest ->
+        let inside, rest = components rest ~stop:(Some (closer c)) in
+        go (Block (c, inside) :: acc) rest
+    | T (Function f) :: rest ->
+        let args, rest = components rest ~stop:(Some ')') in
+        go (Func (f, args) :: acc) rest
+    | T t :: rest -> go (Token t :: acc) rest
+  in
+  go [] toks
 
 (*****************************************************************************)
 (* Rules and declarations *)
@@ -220,31 +220,34 @@ let declarations_of_block (cs : component list) : declaration list =
              | _ -> None)
          | _ -> None)
 
-let rec rules_of_block (cs : component list) : rule list =
-  match cs with
-  | [] -> []
-  | Token Whitespace :: rest -> rules_of_block rest
-  | Token (At_keyword name) :: rest ->
-      (* its prelude up to a ";" or a { } block *)
-      let rec prelude acc = function
-        | [] -> (List.rev acc, None, [])
-        | Token Semicolon :: r -> (List.rev acc, None, r)
-        | Block ('{', inside) :: r -> (List.rev acc, Some inside, r)
-        | c :: r -> prelude (c :: acc) r
-      in
-      let p, block, rest = prelude [] rest in
-      At_rule { name; prelude = trim p; block } :: rules_of_block rest
-  | _ -> (
-      (* a qualified rule: its prelude up to its { } block; none, and
-       * what is left is dropped *)
-      let rec prelude acc = function
-        | [] -> None
-        | Block ('{', inside) :: r -> Some (List.rev acc, inside, r)
-        | c :: r -> prelude (c :: acc) r
-      in
-      match prelude [] cs with
-      | Some (p, inside, rest) -> Style_rule { prelude = trim p; declarations = declarations_of_block inside } :: rules_of_block rest
-      | None -> [])
+let rules_of_block (cs : component list) : rule list =
+  let rec go acc cs =
+    match cs with
+    | [] -> List.rev acc
+    | Token Whitespace :: rest -> go acc rest
+    | Token (At_keyword name) :: rest ->
+        (* its prelude up to a ";" or a { } block *)
+        let rec prelude acc = function
+          | [] -> (List.rev acc, None, [])
+          | Token Semicolon :: r -> (List.rev acc, None, r)
+          | Block ('{', inside) :: r -> (List.rev acc, Some inside, r)
+          | c :: r -> prelude (c :: acc) r
+        in
+        let p, block, rest = prelude [] rest in
+        go (At_rule { name; prelude = trim p; block } :: acc) rest
+    | _ -> (
+        (* a qualified rule: its prelude up to its { } block; none, and
+         * what is left is dropped *)
+        let rec prelude acc = function
+          | [] -> None
+          | Block ('{', inside) :: r -> Some (List.rev acc, inside, r)
+          | c :: r -> prelude (c :: acc) r
+        in
+        match prelude [] cs with
+        | Some (p, inside, rest) -> go (Style_rule { prelude = trim p; declarations = declarations_of_block inside } :: acc) rest
+        | None -> List.rev acc)
+  in
+  go [] cs
 
 let components_of (s : string) : component list = fst (components (raw_tokens s) ~stop:None)
 let parse_stylesheet (s : string) : rule list = rules_of_block (components_of s)

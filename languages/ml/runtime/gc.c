@@ -21,6 +21,9 @@
 #define MAXHEAP 67108864
 #define STACK 4194304           /* the value stack's */
 #endif
+/* and as much again past its end, pages no one touches but a recursion
+ * too deep, seen at the next collection (collect); a kernel's has none */
+#define GUARD STACK
 #endif
 /* a half's words at the start (ML_HEAP says another); it doubles when
  * less than half is free after a collection */
@@ -44,7 +47,11 @@
  * it uses (mkconfig's STDOBJS, a library), no longer all of them. */
 static value space0[MAXHEAP];
 static value space1[MAXHEAP];
+#ifdef GUARD
+static value vstack[STACK + GUARD];
+#else
 static value vstack[STACK];
+#endif
 static value *from;             /* the heap: from..ml_limit, allocated up to ml_hp */
 static value *other;
 /* (not static: mini-ml's code takes a block from the heap itself, Gen's
@@ -245,6 +252,18 @@ collect(void)
 	lo = from;
 	hi = ml_limit;
 	next = other;
+#ifdef GUARD
+	/* The ML code does not check the value stack's end: a recursion
+	 * too deep wrote past it, over the statics that follow (stack_now,
+	 * stack_roots: this scan followed an integer as a block, a crash
+	 * of nowhere, mini-netscape on YouTube's style sheet; bugs/ix.md).
+	 * Into the guard now, and said, by ml_vsp alone (the statics are
+	 * what an overflow past the guard would have written over). A
+	 * fatal error, not a Stack_overflow to catch: raised from inside an
+	 * allocation. */
+	if(ml_vsp > vstack + STACK && ml_vsp <= vstack + STACK + GUARD)
+		fatal("Fatal error: stack overflow (mini-ml's value stack)\n");
+#endif
 	stack_top[stack_now] = ml_vsp;
 	stack_roots[stack_now] = local_roots;
 	for(i = 0; i < STACKS; i++){

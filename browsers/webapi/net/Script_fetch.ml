@@ -14,7 +14,7 @@ let header (a : answer) (name : string) : string option = Cors.header a.headers 
 (* The request out, the answer back *)
 (*****************************************************************************)
 
-let ask ~(cors : bool) ~(headers : (string * string) list) ~(ahead : (string -> unit) option) (t : t) ~(meth : string) ~(url : string) ~(post : (string * string) option) (k : (answer, string) result -> unit) : int =
+let ask ~(cors : bool) ~(headers : (string * string) list) (t : t) ~(meth : string) ~(url : string) ~(post : (string * string) option) (k : (answer, string) result -> unit) : int =
   t.next_request <- t.next_request + 1;
   let rid = t.next_request in
   if not cors then t.exempt <- rid :: t.exempt;
@@ -28,7 +28,7 @@ let ask ~(cors : bool) ~(headers : (string * string) list) ~(ahead : (string -> 
     let origin = if meth = "POST" || Cors.origin url <> Cors.origin t.base then [ ("Origin", Cors.origin t.base) ] else [] in
     (* the script's own headers, but those that are the browser's to say *)
     let own (k, _) = not (List.mem (String.lowercase_ascii k) [ "host"; "cookie"; "origin"; "connection"; "content-length"; "content-type"; "accept-encoding"; "user-agent" ]) in
-    t.requests <- { rid; meth; url; ahead; said = origin @ List.filter own headers; post = (if meth = "POST" then Some ((match post with Some v_ -> v_ | None -> ("text/plain;charset=UTF-8", ""))) else None) } :: t.requests;
+    t.requests <- { rid; meth; url; said = origin @ List.filter own headers; post = (if meth = "POST" then Some ((match post with Some v_ -> v_ | None -> ("text/plain;charset=UTF-8", ""))) else None) } :: t.requests;
     t.waiting <- (rid, k) :: t.waiting);
   rid
 
@@ -129,7 +129,7 @@ let install (t : t) (define : string -> value -> unit) : unit =
          let post = match property init "body" with Undefined | Null -> None | b -> Some (content_type, body_bytes t b) in
          let p, resolve, reject = Js_eval.promise t.engine in
          ignore
-           (ask ~cors:true ~headers:said ~ahead:None t ~meth ~url ~post (fun result ->
+           (ask ~cors:true ~headers:said t ~meth ~url ~post (fun result ->
                 match result with
                 | Ok a -> resolve (response t a)
                 (* no answer, or one not to be read: as browsers say it *)

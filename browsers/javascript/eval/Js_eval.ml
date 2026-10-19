@@ -18,9 +18,6 @@ type t = {
   mutable deadline : float;
   mutable depth : int; (* of the calls *)
   mutable generators : generating list; (* those whose body is running, the innermost first *)
-  (* import("m") in the module whose address is [base]: a promise of
-   * its names (Js_module's, once there are modules) *)
-  mutable importer : (base:string -> string -> value) option;
   global_this : A.place; (* opti: where globalThis is, in the globals *)
 }
 
@@ -81,10 +78,6 @@ let lookup = Js_scope.lookup
 let find = Js_scope.find
 let declare = Js_scope.declare
 let hoist = Js_frame.hoist
-
-(* the address of the module the code is in ("" in a script): a name
- * of its scope that no script can write *)
-let module_url (s : scope) : string = match lookup s "%module" with Some { value = String url; _ } -> url | _ -> ""
 
 (*****************************************************************************)
 (* Properties *)
@@ -218,15 +211,6 @@ let rec eval_expr (t : t) (s : scope) (this : value) (e : A.expr) : value =
   | Opt e -> ( match eval_expr t s this e with Undefined | Null -> raise Short_circuit | v -> v)
   | Optional e -> ( try eval_expr t s this e with Short_circuit -> Undefined)
   | Await e -> Js_promise.await (Option.get t.promises) (eval_expr t s this e)
-  | Import_call e -> (
-      let spec = to_string (eval_expr t s this e) in
-      match t.importer with
-      | Some (import : base:string -> string -> value) -> import ~base:(module_url s) spec
-      | None -> throw "TypeError" ("import(\"" ^ spec ^ "\"): there are no modules here"))
-  | Import_meta ->
-      let meta = new_object () in
-      set_own meta "url" (String (module_url s));
-      Object meta
   (* tag`a${x}b`: tag(["a", "b"], x), the strings' array with itself
    * as its raw (the escapes are read already: an approximation) *)
   | Tagged (tag, strings, es) ->
@@ -765,7 +749,7 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
             (match c.func.body with st :: _ -> st.line | [] -> 0)
             (match args with [] -> "" | a :: _ -> " (" ^ (let d = display a in if String.length d > 60 then String.sub d 0 60 ^ "..." else d) ^ (if List.length args > 1 then ", ..." else "") ^ ")")));
       t.depth <- t.depth + 1;
-      if !watched <> None then watch_check ("entering " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)") ^ " of " ^ Filename.basename (module_url c.scope) ^ Printf.sprintf ", line %d" t.line);
+      if !watched <> None then watch_check ("entering " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)") ^ Printf.sprintf ", line %d" t.line);
       (* "use strict": its own, or that of the code it is written in (a
        * module and a class are strict always) *)
       let strict = c.scope.strict || match c.func.body with { stmt = Expr (String "use strict"); _ } :: _ -> true | _ -> false in
@@ -798,20 +782,18 @@ and call_value (t : t) (fn : value) ~(this : value) (args : value list) : value 
       (match if c.func.generator then generator t body else if c.func.async then Js_promise.async (Option.get t.promises) body else body () with
       | result ->
           t.depth <- t.depth - 1;
-          if !watched <> None then watch_check ("leaving " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)") ^ " of " ^ Filename.basename (module_url c.scope));
+          if !watched <> None then watch_check ("leaving " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)"));
           t.line <- line;
           result
       | exception e ->
           t.depth <- t.depth - 1;
-          if !watched <> None then watch_check ("leaving " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)") ^ " of " ^ Filename.basename (module_url c.scope));
+          if !watched <> None then watch_check ("leaving " ^ (match c.func.name with Some v_ -> v_ | None -> "(no name)"));
           (* JS_STACK=1: the calls an error leaves by, the innermost first (forty at most) *)
           if !unwinding > 0 then (
             decr unwinding;
             !Js_value.say
-              (Printf.sprintf "  left %s%s%s" ((match c.func.name with Some v_ -> v_ | None -> "(no name)"))
+              (Printf.sprintf "  left %s%s" ((match c.func.name with Some v_ -> v_ | None -> "(no name)"))
                  (match c.func.body with st :: _ -> Printf.sprintf ", written at line %d" st.line | [] -> "")
-                 (* of which module, and its parameters: what to grep for *)
-                 (match module_url c.scope with "" -> "" | u -> " of " ^ Filename.basename u)
                (* and what each was given, cut short: which call it was *)
                ^ Printf.sprintf " (%s)"
                    (String.concat ", "
@@ -847,7 +829,7 @@ and declare_functions ~(nested : bool) (s : scope) (this : value) (body : A.stmt
   List.iter
     (fun (st : A.stmt) ->
       match st.stmt with
-      | Function_decl f | Export (Export_decl { stmt = Function_decl f; _ } | Export_default_decl { stmt = Function_decl f; _ }) -> (
+      | Function_decl f -> (
           let name = Option.get f.name and v = closure s this f in
           declare s name ~constant:false v;
           (* in a block: the function's var of that name is given it too
@@ -886,7 +868,7 @@ and inside (t : t) (s : scope) (this : value) (body : A.stmt) : outcome =
 (* whether a block's statements declare a name of the block's own (let,
  * const, a class, a function): one that does not needs no scope *)
 and declares (body : A.stmt list) : bool =
-  List.exists (fun (st : A.stmt) -> match st.stmt with Let ((Let_kind | Const_kind), _) | Class_decl _ | Function_decl _ | Export _ -> true | _ -> false) body
+  List.exists (fun (st : A.stmt) -> match st.stmt with Let ((Let_kind | Const_kind), _) | Class_decl _ | Function_decl _ -> true | _ -> false) body
 
 (* [labels]: those of the statement, if it is a loop: "continue l" with
  * one of them goes on with it *)
@@ -1061,20 +1043,6 @@ and exec_labelled (labels : string list) (t : t) (s : scope) (this : value) (st 
               exec_block t scope this h)
   | Block body -> exec_block t (if declares body then new_scope s else s) this body
   | Empty -> Normal
-  (* a module's (Js_module): what is imported was bound before its
-   * body ran; an export is its declaration, and the default a name
-   * no script can write *)
-  | Import _ -> Normal
-  | Export (Export_decl st) -> exec t s this st
-  | Export (Export_default e) ->
-      declare s "*default*" ~constant:true (eval e);
-      Normal
-  | Export (Export_default_decl st) ->
-      let o = exec t s this st in
-      let name = match st.stmt with Function_decl f -> f.name | Class_decl c -> c.class_name | _ -> None in
-      Option.iter (fun x -> Option.iter (fun (b : binding) -> declare s "*default*" ~constant:true b.value) (lookup s x)) name;
-      o
-  | Export (Export_names _ | Export_all _) -> Normal
 
 (*****************************************************************************)
 (* Entry points *)
@@ -1143,7 +1111,7 @@ let prelude () : A.program =
 
 let create_with (log : string -> unit) (seed : int) (now : unit -> float) : t =
   let globals = Js_scope.global () in
-  let t = { globals; protos = None; promises = None; line = 0; steps = default_budget; budget = default_budget; seconds = infinity; deadline = infinity; depth = 0; generators = []; importer = None; global_this = A.place () } in
+  let t = { globals; protos = None; promises = None; line = 0; steps = default_budget; budget = default_budget; seconds = infinity; deadline = infinity; depth = 0; generators = []; global_this = A.place () } in
   (* what a script's function gives back to OCaml is no rope either *)
   let call f ~this args = flat (call_value t f ~this args) in
   let define x v = declare globals x ~constant:false v in
@@ -1269,47 +1237,10 @@ let guarded (t : t) (f : unit -> value) : (value, error) result =
 
 let run (t : t) (program : A.program) : (value, error) result = guarded t (fun () -> run_in_run t program)
 
-(*****************************************************************************)
-(* What modules ask (Js_module) *)
-(*****************************************************************************)
-
-let protect = guarded
-let set_importer (t : t) (import : base:string -> string -> value) : unit = t.importer <- Some import
-let names_of = Js_frame.pattern_names
-
-(* a module's own scope, under the globals: what it declares is its
- * own, not the page's *)
-let module_scope (t : t) ~(url : string) : scope =
-  let s = Js_scope.strict t.globals in
-  declare s "%module" ~constant:true (String url);
-  s
-
-(* a module's functions, there before it runs: what a module in a
- * circle with it can already take *)
-let hoist_module (s : scope) (program : A.program) : unit =
-  let program = quickened s program in
-  hoist s program;
-  declare_functions ~nested:false s Undefined program
-
-(* a module's body, in its scope *)
-let exec_module (t : t) (s : scope) (program : A.program) : unit =
-  let program = quickened s program in
-  hoist s program;
-  match exec_block_at ~top:true t s Undefined program with
-  | Normal -> ()
-  | Return _ -> throw "SyntaxError" "Illegal return statement"
-  | Break _ | Continue _ -> throw "SyntaxError" "Illegal break or continue statement"
-
 let call_in_run (t : t) (f : value) ~(this : value) (args : value list) : value = flat (call_value t f ~this args)
 
-(* opti: a text already read, where it was fetched (Js_module.ahead,
- * which sets this: a worker of the pool reads a script's megabytes
- * while the window's thread does something else). YouTube's 10 MB:
- * 3.2 s of parsing on the window's thread became 0.8 *)
-let read_ahead : (string -> (A.program, Js_parse.error) result option) ref = ref (fun _ -> None)
-
 let eval (t : t) (text : string) : (value, error) result =
-  match (match !read_ahead text with Some r -> r | None -> Js_parse.parse text) with
+  match Js_parse.parse text with
   | Ok program -> run t program
   | Error e -> Error { line = e.line; message = "SyntaxError: " ^ e.message }
 

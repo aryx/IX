@@ -100,17 +100,6 @@ let rec wrap (t : t) (n : node) : value =
       n.wrapper <- Some v;
       v
 
-(* an attribute of a custom element set or removed by a script: its
- * class told, if it observes that one (attributeChangedCallback, by
- * the registry: data/prelude/web/) *)
-and told_attribute (t : t) (n : node) (a : string) (old : string option) : unit =
-  if List.mem_assoc "__upgraded" n.expando && old <> attribute n a then
-    match Js_eval.global t.engine "__attribute" with
-    | Some (Object _ as f) ->
-        let v = function Some s -> String s | None -> Null in
-        ignore (Js_eval.call_in_run t.engine f ~this:Undefined [ wrap t n; String a; v old; v (attribute n a) ])
-    | _ -> ()
-
 (* how the console shows an element: its start tag *)
 and show (n : node) : string =
   if is_text n then Printf.sprintf "%S" n.text
@@ -196,18 +185,14 @@ and get (t : t) (n : node) (k : string) : value =
   | "setAttribute" ->
       method_ k (fun args ->
           let a = String.lowercase_ascii (str (arg args 0)) in
-          let old = attribute n a in
           set_attribute n a (str (arg args 1));
           touch t;
-          told_attribute t n a old;
           Undefined)
   | "removeAttribute" ->
       method_ k (fun args ->
           let a = str (arg args 0) in
-          let old = attribute n a in
           n.attributes <- List.remove_assoc a n.attributes;
           touch t;
-          told_attribute t n a old;
           Undefined)
   | "appendChild" -> method_ k (fun args -> insert t n (arg args 0) ~before:None)
   | "insertBefore" -> method_ k (fun args -> insert t n (arg args 0) ~before:(match arg args 1 with Null | Undefined -> None | v -> Some (node_of t v)))

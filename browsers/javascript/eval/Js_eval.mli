@@ -163,11 +163,6 @@ val error_of : t -> Js_value.value -> error
  * console prints after a line typed *)
 val run : t -> Js_ast.program -> (Js_value.value, error) result
 
-(* a text's program if it was read already, elsewhere (Js_module's
- * memo, filled by [Js_module.ahead] where the text was fetched):
- * [eval] asks before it parses *)
-val read_ahead : (string -> (Js_ast.program, Js_parse.error) result option) ref
-
 (* parse, then run *)
 val eval : t -> string -> (Js_value.value, error) result
 
@@ -205,39 +200,6 @@ val set_seconds : t -> float -> unit
 
 (* how long the run being made has lasted, in seconds (0 between two) *)
 val running_for : t -> float
-
-(*****************************************************************************)
-(* {1 What modules ask} *)
-(*****************************************************************************)
-
-(* Js_module's, which is after this one: a module is a program run in
- * a scope of its own, and the rest of what a module is -- where its
- * text comes from, what it exports, who imports it -- is told there. *)
-
-(* a scope under the globals for the module of that address
- * (import.meta.url, and what its import() is relative to) *)
-val module_scope : t -> url:string -> Js_value.scope
-
-(* a module's statements run in its scope, its var's and functions
- * hoisted; its import lines do nothing (the names are bound before),
- * its exports are their declarations, the default kept as the name
- * "*default*". In a run: throws *)
-val exec_module : t -> Js_value.scope -> Js_ast.program -> unit
-
-(* a module's var's and function declarations, in its scope before it
- * runs: what a module in a circle with it finds *)
-val hoist_module : Js_value.scope -> Js_ast.program -> unit
-
-(* what import("m") does: given the address of the module asking and
- * the text asked for, a promise of the module's names *)
-val set_importer : t -> (base:string -> string -> Js_value.value) -> unit
-
-(* [protect t f]: f as a run -- its budget, its throws caught, the
- * promises' jobs after it *)
-val protect : t -> (unit -> Js_value.value) -> (Js_value.value, error) result
-
-(* the names a pattern binds: [a, {b}] binds a and b *)
-val names_of : Js_ast.pattern -> string list
 
 (*****************************************************************************)
 (* {1 What the compiler asks} *)

@@ -21,7 +21,7 @@ let comment_name = Dom.comment_name
 let fragment_name = "#document-fragment"
 let is_element (n : node) : bool = n.name = "" || n.name.[0] <> '#'
 let make_with (text : string) (attributes : (string * string) list) (name : string) : node =
-  { name; text; attributes; children = []; parent = None; expando = []; wrapper = None; listeners = []; compiled = []; shadow = None }
+  { name; text; attributes; children = []; parent = None; expando = []; wrapper = None; listeners = []; compiled = [] }
 
 let make (name : string) : node = make_with "" [] name
 
@@ -38,22 +38,8 @@ let rec thaw (e : Dom.element) : node =
         child)
       e.children
   in
-  (* a <template shadowrootmode> written in the page is its parent's
-   * shadow tree, not its child (Shadow_tree.mli: declarative) *)
-  let declared (c : node) = c.name = "template" && List.mem_assoc "shadowrootmode" c.attributes in
-  (match List.find_opt declared children with Some template -> attach_shadow n template.children | None -> ());
-  n.children <- List.filter (fun c -> not (declared c)) children;
+  n.children <- children;
   n
-
-(* a shadow tree's root for [host], holding [children]: a fragment,
- * whose parent is said to be the host -- so that what is put in it is
- * in the page, and an event in it goes up through the host *)
-and attach_shadow (host : node) (children : node list) : unit =
-  let root = make fragment_name in
-  root.children <- children;
-  List.iter (fun (c : node) -> c.parent <- Some root) children;
-  root.parent <- Some host;
-  host.shadow <- Some root
 
 (* back into a Dom value: Netscape's attributes apart again (Dtd.origin),
  * as the lexer puts them *)
@@ -150,8 +136,8 @@ let matching (selector : string) (n : node) ~(keep : node -> bool) : node list =
       let rec go (ancestors : Dom.element list) (n : node) =
         if is_element n then beside ancestors n (freeze n) else if n.name = fragment_name then List.iter (go ancestors) n.children
       in
-      (* the tree [n] is in ends at a shadow root: what is in a shadow
-       * tree is found from its root, not from the page (Shadow_tree.mli) *)
+      (* the tree [n] is in ends at a fragment: what is in one is found
+       * from its root, not from the page *)
       let rec tree_of (n : node) : node = if n.name = fragment_name then n else match n.parent with Some p -> tree_of p | None -> n in
       go [] (tree_of n);
       List.rev !found
@@ -195,7 +181,7 @@ let bare (but : (node * Dom.element) option) (n : node) : Dom.node list =
     n.children
 
 (* the ancestors of [n], frozen [e], the nearest first, up to the tree's
- * root (a shadow root ends it) *)
+ * root (a fragment ends it) *)
 let rec above (n : node) (e : Dom.element) : Dom.element list =
   match n.parent with
   | Some p when is_element p ->
@@ -217,7 +203,7 @@ let select_opti (selector : string) ~(within : node) : node list =
    * its scripts replayed went from 36 s to 29 (OCaml 5.5; 45 to 30
    * with 4.14) *)
   if String.trim selector = "*" then
-    (* as the search below goes: through elements, and what is not one (a shadow root) is not entered but from the top *)
+    (* as the search below goes: through elements, and what is not one (a fragment) is not entered but from the top *)
     let rec under (n : node) : node list = List.concat_map (fun c -> if is_element c then c :: under c else []) n.children in
     let rec from (n : node) : node list = if is_element n then n :: under n else List.concat_map from n.children in
     if is_element within then under within else List.concat_map from within.children

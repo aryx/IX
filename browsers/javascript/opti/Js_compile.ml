@@ -388,7 +388,7 @@ and stmt (t : E.t) (st : A.stmt) : run =
   | _ -> walk
 
 (* whether statements declare functions: made first, in their block *)
-and functions (body : A.stmt list) : bool = List.exists (fun (st : A.stmt) -> match st.stmt with Function_decl _ | Export _ -> true | _ -> false) body
+and functions (body : A.stmt list) : bool = List.exists (fun (st : A.stmt) -> match st.stmt with Function_decl _ -> true | _ -> false) body
 
 (* a branch's or a loop's body, in a scope of its own: a block makes its own *)
 and inside (t : E.t) (st : A.stmt) : run =
@@ -397,7 +397,7 @@ and inside (t : E.t) (st : A.stmt) : run =
   (* the evaluator gives every other body a scope; only a declaration
    * can put a name in it: no scope made for the rest (116,000 a frame
    * of the Playground's menu, with switch's below) *)
-  | Let _ | Class_decl _ | Function_decl _ | Export _ -> let r = stmt t st in fun s this -> r (Js_scope.nested s) this
+  | Let _ | Class_decl _ | Function_decl _ -> let r = stmt t st in fun s this -> r (Js_scope.nested s) this
   | _ -> stmt t st
 
 (* statements one after the other, their functions first; [scoped]: in

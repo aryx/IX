@@ -34,9 +34,7 @@
  *        |-- Js_json, Js_regexp      JSON.parse; /a(b+)c/ by backtracking
  *        |-- Js_promise              then's jobs, run when the script
  *        |                           has returned
- *        |-- Js_coroutine            an async function stopped at an await
- *        '-- Js_module               import and export, the texts asked
- *                                    of the host
+ *        '-- Js_coroutine            an async function stopped at an await
  *
  * The same three stages as the shell's (the diagram of mini-rc's
  * CLI.mli: Lexer, Parser, an Eval that walks the tree), for a language
@@ -96,11 +94,7 @@
  *     ["number", "string", "object"]
  *     > foo
  *     ReferenceError: foo is not defined
- *
- * A file that imports (or is named .mjs) is run as a module
- * (Js_module): the files it names found from its directory, read
- * through this file's capability, each run once.
- *
+ * *
  * Not Node's: require, process, files, the network, timers
  * (the language alone: Js_eval's built-ins). mini-chrome's has them
  * (its Node_host: require by CommonJS's wrapper function, "fs", and a

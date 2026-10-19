@@ -49,6 +49,9 @@ let tests =
           Alcotest.(check bool) "changed after" true (Browser_script.changed t);
           check_body "the text" t [ "p id=\"x\""; "  \"b\"" ];
           Alcotest.(check bool) "frozen: not changed any more" false (Browser_script.changed t));
+      Testo.create "no modules: a module's script not run, the one for the browsers without them (nomodule) run" (fun () ->
+          let t = page "<script>var ran = []</script><script type=module>ran.push('module')</script><script nomodule>ran.push('nomodule')</script>" in
+          Alcotest.(check string) "nomodule's only" "[\"nomodule\"]" (value t "ran"));
       Testo.create "a listener that is an object: its handleEvent" (fun () ->
           (* a framework's one object hearing every event, the method its class's *)
           let t =

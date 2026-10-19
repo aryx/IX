@@ -78,8 +78,6 @@ let get (t : t) (n : node) (k : string) : value option =
       let rec drawn (n : node) = n.name = "svg" || match n.parent with Some p -> p.name <> "foreignObject" && drawn p | None -> false in
       Some (String (if drawn n then "http://www.w3.org/2000/svg" else "http://www.w3.org/1999/xhtml"))
   | "cloneNode" -> m (fun args -> wrap t (clone ~deep:(truthy (arg args 0)) n))
-  (* its shadow tree (Shadow_tree.mli): attached, empty, and then filled
-   * as any node is; the root's host and mode are said by the prelude *)
   (* form.submit(): the form sent by a script, with no submit event (it
    * is the script's own doing) -- how a page goes on by itself when
    * what it waited for has come (Google's sign-in, told that the phone
@@ -98,14 +96,6 @@ let get (t : t) (n : node) (k : string) : value option =
                    else (fst (Browser_url.split_query (fst (Browser_url.split_fragment action))) ^ "?" ^ fields, None))
           | [] -> ());
           Undefined)
-  | "attachShadow" ->
-      m (fun _ ->
-          attach_shadow n [];
-          let root = Option.get n.shadow in
-          root.expando <- [ ("host", wrap t n); ("mode", String "open") ];
-          touch t;
-          wrap t root)
-  | "shadowRoot" -> Some (match n.shadow with Some root -> wrap t root | None -> Null)
   (* where nodes go: in it, or beside it in its parent *)
   | "append" -> m (fun args -> List.iter (fun c -> ignore (insert t n c ~before:None)) (nodes args); Undefined)
   | "prepend" ->

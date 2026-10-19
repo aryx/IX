@@ -133,13 +133,12 @@
 
    **In ix.** This module grew in the playground's teaching browsers,
    a browser at a time (TinyMosaic, TinyNetscape, TinyFirefox,
-   TinyChrome), then in mini-chrome. Beside the ten
-   modules, six more of this directory: Event_loop (the timers),
-   Script_modules (a page's modules), LocalStorage, Cors, Shadow_tree,
-   and Script_prelude (what could be written in JavaScript, in a
-   string). Under them, the engine (Js_eval), the page's tree and its
-   reader (Dom, Html_tree: innerHTML is a parse), a selector tried on
-   an element (Css.matches). Above them, one caller: Tab, of
+   TinyChrome), then in mini-chrome. Beside the ten modules, four
+   more of this directory: Event_loop (the timers), LocalStorage,
+   Cors, and Script_prelude (what could be written in JavaScript, in
+   a string). Under them, the engine (Js_eval), the
+   page's tree and its reader (Dom, Html_tree: innerHTML is a parse),
+   a selector tried on an element (Css.matches). Above them, one caller: Tab, of
    mini-netscape, and what it calls is the life of a page's scripts:
 
      the page read and laid out      create_with options tree
@@ -205,7 +204,7 @@ val script_sources : t -> string list
 
 (* the page's <script>s, in order, a <script src> its text by [source]
  * (its resolved address; one it cannot give said in the console),
- * those of another type= (JSON, modules) not: each one's error in the
+ * those of another type= (JSON, a module) not: each one's error in the
  * console; then the document's DOMContentLoaded and load listeners *)
 val run_scripts_with : (string -> string option) -> t -> unit
 

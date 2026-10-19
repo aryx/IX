@@ -129,8 +129,6 @@ type expr =
   (* ES2017: in an async function, await p stops the function until
    * the promise p is settled; its value (Js_promise) *)
   | Await of expr
-  | Import_call of expr (* import("m"): a promise of the module's names *)
-  | Import_meta (* import.meta: what a module knows of itself, its url *)
 
 (* a function: its name if it has one, its parameters, its body; an
  * arrow's expression body is [Return e]; an arrow has no this of its
@@ -242,19 +240,6 @@ and statement =
    * late itself (its [Symbol.asyncIterator], whose next() is a promise) *)
   | For_await of let_kind * pattern * expr * stmt
   | Class_decl of class_
-  | Import of import_names * string (* import ... from "m": a module's first lines *)
-  | Export of export
-
-(* import d, * as ns, { a, b as c } from "m": the default's name here,
- * the name of the whole, and each (name there, name here) *)
-and import_names = { default : string option; namespace : string option; named : (string * string) list }
-
-and export =
-  | Export_decl of stmt (* export const x = 1, export function f, export class C *)
-  | Export_default of expr (* export default e *)
-  | Export_default_decl of stmt (* export default function f / class C: named here too *)
-  | Export_names of (string * string) list * string option (* export { a, b as c } [from "m"]: (name here or there, name out) *)
-  | Export_all of string option * string (* export * [as ns] from "m" *)
 
 (* what a for-in sets at each turn: a name it declares (for (var k in
  * o)), or something assigned to (for (k in o), for (o.k in o)) *)

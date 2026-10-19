@@ -65,7 +65,7 @@ let make (t : t) (o : obj) : unit =
        * sent and fails, a moment later, as one the network lost *)
       | Some (String ("arraybuffer" | "blob")) ->
           ignore (Event_loop.add ~frame:false t [ fn "failed" (fun _ -> done_ (Error "no bytes"); Undefined); Number 0. ] ~repeat:false)
-      | _ -> sent := Some (Script_fetch.ask ~cors:true ~headers:(List.rev !headers) ~ahead:None t ~meth:!meth ~url:!url ~post done_));
+      | _ -> sent := Some (Script_fetch.ask ~cors:true ~headers:(List.rev !headers) t ~meth:!meth ~url:!url ~post done_));
       Undefined));
   (* what libraries set or call before sending, and that changes nothing here *)
   set "overrideMimeType" (fn "overrideMimeType" (fun _ -> Undefined));

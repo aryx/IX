@@ -37,7 +37,6 @@
    - Js_value.join: a long text made by + kept as a rope (Js_value.mli);
    - Js_globals.store: a Map's and a Set's entries in a table by key,
      where the simple way is a list gone through;
-   - Js_module's memo of the texts parsed;
    - Script_dom's querySelector and matches.
 
    and the switch is set by the tests, not by a command line:

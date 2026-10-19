@@ -20,7 +20,7 @@
 
      Dom.element  { name; attributes; extensions; origin; children }
      node         { name; attributes; children; parent; text;     mutable
-                    wrapper; listeners; expando; compiled; shadow }
+                    wrapper; listeners; expando; compiled }
 
    The state of a page's scripts, [t], is the engine, the root of
    that copy, the page's clock and timers, and the mailbox: what a
@@ -64,15 +64,13 @@ type node = {
   mutable wrapper : value option; (* its host object, made once *)
   mutable listeners : (string * value) list; (* addEventListener's, in order *)
   mutable compiled : (string * value) list; (* its onclick="..." attributes, compiled once *)
-  mutable shadow : node option; (* its shadow tree's root, a fragment: drawn in its children's place (Shadow_tree) *)
 }
 
 (* a setTimeout's or a setInterval's *)
 (* a request a script made (XMLHttpRequest, fetch), for the
  * browser to send: its number, by which its answer comes back; and an
  * answer, as the script is given it *)
-type request = { rid : int; meth : string; (* "GET", "POST" *) url : string; post : (string * string) option (* a body's content type, and it *); said : (string * string) list; (* the script's headers; Origin, the page's, to another site *)
-  ahead : (string -> unit) option; (* what to do with the answer's body where it is fetched (a module's text read) *) }
+type request = { rid : int; meth : string; (* "GET", "POST" *) url : string; post : (string * string) option (* a body's content type, and it *); said : (string * string) list; (* the script's headers; Origin, the page's, to another site *) }
 type answer = { status : int; headers : (string * string) list; body : string; final : string (* the URL, after the redirections *) }
 
 type timer = { tid : int; mutable due : float; every : float option; fn : value; frame : bool (* requestAnimationFrame's: called with the time *) }
@@ -98,13 +96,6 @@ type t = {
   (* those sent and not answered yet: what to do with each one's answer, or with why there is none *)
   mutable waiting : (int * ((answer, string) result -> unit)) list;
   mutable next_request : int;
-  (* the page's modules (Script_modules): their texts by address as
-   * they come, the engine's table of them, and what is ready to run *)
-  mutable import_map : (string * string) list; (* <script type=importmap>: a name, or a prefix ending in /, to an address *)
-  mutable module_sources : (string * string) list;
-  mutable module_asked : (string * ((string, string) result -> unit) list ref) list; (* those on their way, and who waits for each *)
-  mutable modules : Js_module.t option;
-  mutable module_jobs : (unit -> unit) list;
   (* where a script sent the page (location.href = ..., location.replace):
    * the address, and whether it takes the page's place in the history *)
   mutable navigation : (string * bool) option;

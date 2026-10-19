@@ -18,7 +18,7 @@ let rec expr (e : expr) : expr =
   | Local (x, _) ->
       if x = "arguments" then says_arguments_here () := true;
       e
-  | Number _ | String _ | Bool _ | Null | This | Regex _ | Super_member _ | Import_meta -> e
+  | Number _ | String _ | Bool _ | Null | This | Regex _ | Super_member _ -> e
   | Unary (op, a) -> Unary (op, expr a)
   | Update (op, prefix, a) -> Update (op, prefix, expr a)
   | Binary (op, a, b) -> Binary (op, expr a, expr b)
@@ -42,7 +42,6 @@ let rec expr (e : expr) : expr =
   | Opt a -> Opt (expr a)
   | Optional a -> Optional (expr a)
   | Await a -> Await (expr a)
-  | Import_call a -> Import_call (expr a)
 
 (* a function: its parts, then what its calls have in common *)
 and func (f : func) : func =
@@ -94,7 +93,7 @@ and statement (st : statement) : statement =
   | Let (Var_kind, decls) when List.for_all (fun (pt, _) -> match pt with Bind _ -> true | _ -> false) decls ->
       Var_set (List.concat_map (fun (pt, init) -> match pt with Bind x -> [ (x, place (), Option.map expr init) ] | _ -> []) decls)
   | Let (kind, decls) -> Let (kind, List.map (fun (pt, init) -> (pattern pt, Option.map expr init)) decls)
-  | Var_set _ | Break _ | Continue _ | Empty | Import _ -> st
+  | Var_set _ | Break _ | Continue _ | Empty -> st
   | Function_decl f -> Function_decl (func f)
   | Return e -> Return (Option.map expr e)
   | If (c, a, b) -> If (expr c, stmt a, Option.map stmt b)
@@ -111,10 +110,6 @@ and statement (st : statement) : statement =
   | For_of (kind, x, xs, b) -> For_of (kind, pattern x, expr xs, stmt b)
   | For_await (kind, x, xs, b) -> For_await (kind, pattern x, expr xs, stmt b)
   | Class_decl c -> Class_decl (class_ c)
-  | Export (Export_decl st) -> Export (Export_decl (stmt st))
-  | Export (Export_default e) -> Export (Export_default (expr e))
-  | Export (Export_default_decl st) -> Export (Export_default_decl (stmt st))
-  | Export (Export_names _ | Export_all _) -> st
 
 let program (p : program) : program = List.map stmt p
 

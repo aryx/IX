@@ -17,7 +17,7 @@ author's mini-chrome's <path> (its 8af888e)`).
 |---|---|---:|---|
 | `parsing/` | `Js_lexer`, `Js_ast`, `Js_parse` | 1,589 | the tokens (a newline remembered, for the semicolons not written); the tree; statements by recursive descent, expressions by Pratt's binding powers |
 | `values/` | `Js_value`, `Js_props`, `Js_operators`, `Js_utf16`; `Mini_opti`, `Per_domain` | 963 | a value, an object and its prototype, the conversions; a string in UTF-16's units; the switch of the optimized paths |
-| `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_coroutine`, `Js_module` | 1,914 | the tree walked: scopes, closures, classes, generators, exceptions, a budget of steps; an async function stopped at an await (a thread); ES modules |
+| `eval/` | `Js_eval`, `Js_scope`, `Js_frame`, `Js_coroutine` | 1,615 | the tree walked: scopes, closures, classes, generators, exceptions, a budget of steps; an async function stopped at an await (a thread) |
 | `opti/` | `Js_quicken`, `Js_compile` | 547 | optimizations, not in m-ix's count (`docs/loc.md`): a copy of the tree with each name's place; a function's body compiled to closures. Each tells `Js_eval` of itself when the program starts (`Js_eval.quickener`, `compiler`): the engine runs the same without them, slower |
 | `library/` | `Js_builtins`, `Js_globals`, `Js_json`, `Js_promise`, `Js_regexp`; `Js_prelude` | 2,507 | String, Array, Math, Date, Map, Set, Symbol, Proxy, JSON, promises, regular expressions by backtracking; `Js_prelude`: mini-chrome's `data/prelude/library.js` in a string (541 lines; 472 since `DataView` was cut) |
 
@@ -97,7 +97,13 @@ cooperative.
   754's bits (a page that decodes a file's, not one that is read);
   `ArrayBuffer` and a typed array's `buffer` stay (`TextDecoder`, a
   body of bytes). Its test.
-- The plan's "truly essential" (generators, `with`, the printers,
-  modules) is still to do, by the coverage of what Wikipedia runs.
-- `Js_parse`'s `aside` no longer does anything (it was `Js_slice`'s).
+- **Cut** (2026-10-19): ES modules, `Js_module` and the parser's
+  `import` and `export`, `import()` and `import.meta` (of the eight
+  sites of `coverage_ix.sh` only old.reddit.com's scripts are modules,
+  and its page is blank anyway); mini-node runs a file as a script.
+  With them `Js_parse`'s `aside` and `Js_eval.read_ahead`, the parse
+  memo of mini-chrome's worker pool. Their test, `Unit_js_module`.
+- Kept, by the coverage: generators (Wikipedia's scripts declare two
+  `function*`, never called: without them its scripts would not
+  parse), a direct `eval` (4 lines), `Js_utf16`.
 - 32-bit arm (ints of 31 bits): not tried.

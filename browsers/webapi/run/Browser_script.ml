@@ -198,7 +198,7 @@ let create_with ({ seed; log; base; epoch; viewport; cookies } : options) (tree 
   Js_eval.set_seconds engine page_seconds;
   let t =
     { engine; root = thaw tree; changed = false; console = []; log; nodes = Hashtbl.create 64; document_listeners = []; frozen = [];
-      now = 0.; timers = []; next_timer = 0; alerts = []; base; address = []; requests = []; waiting = []; next_request = 0; import_map = []; module_sources = []; module_asked = []; modules = None; module_jobs = []; navigation = None; submission = None; current_script = None; cookies;
+      now = 0.; timers = []; next_timer = 0; alerts = []; base; address = []; requests = []; waiting = []; next_request = 0; navigation = None; submission = None; current_script = None; cookies;
       more = (fun _ _ -> None); scroll_y = 0.; where = (fun _ -> None); measure = None; geometry = None; dispatch = (fun _ _ -> false); inserted = (fun _ -> ()); exempt = []; once = []; protos = []; ready = "loading" }
   in
   t.more <- Script_element.get t;
@@ -236,8 +236,6 @@ let create_with ({ seed; log; base; epoch; viewport; cookies } : options) (tree 
    * ([take_requests]), their answers given back ([answer]) *)
   XMLHttpRequest.install t (Js_eval.define engine);
   Script_fetch.install t (Js_eval.define engine);
-  (* modules: import() is there even in a page with none *)
-  ignore (Script_modules.modules t);
   (* the small web APIs written in JavaScript *)
   (match Js_eval.run engine (prelude ()) with Ok _ -> () | Error e -> log (Printf.sprintf "data/prelude/web/, line %d: %s" e.line e.message));
   Script_url.install t (Js_eval.define engine);
@@ -259,35 +257,12 @@ let eval (t : t) (text : string) : (value, Js_eval.error) result =
   r
 
 (* a script the page's: JavaScript by its type= (not JSON-LD, not a
- * template; a module is run apart), and not one for the browsers
- * that have no modules (nomodule) *)
+ * template, not a module: this browser has none, and runs what a page
+ * gives the browsers without them, <script nomodule>) *)
 let runnable (s : node) : bool =
-  attribute s "nomodule" = None
-  &&
   match Option.map String.lowercase_ascii (attribute s "type") with
   | None | Some "" | Some "text/javascript" | Some "application/javascript" -> true
   | Some _ -> false
-
-let is_module (s : node) : bool = Option.map String.lowercase_ascii (attribute s "type") = Some "module"
-
-(* the modules ready to run (Script_modules), each a task; one's run
- * may make others ready *)
-let rec run_modules (t : t) : unit =
-  match Script_modules.take_jobs t with
-  | [] -> ()
-  | jobs ->
-      List.iter
-        (fun job ->
-          let run = host_function "module" (fun ~this:_ _ -> job (); Undefined) in
-          match Js_eval.call t.engine run ~this:Undefined [] with
-          | Ok _ -> ()
-          | Error e ->
-              (* a module's error says which module: its line is that file's *)
-              let where = match Js_module.take_failing (Script_modules.modules t) with Some url -> " in " ^ url | None -> "" in
-              report t { e with message = e.message ^ where })
-        jobs;
-      run_modules t
-
 
 (* a <script> a script put in the page (document.head.appendChild(s):
  * how a loader fetches the rest of a site's code): its text run at
@@ -295,12 +270,6 @@ let rec run_modules (t : t) : unit =
  * each once *)
 let inserted (t : t) (n : node) : unit =
   let connected (n : node) = let rec up (n : node) = n == t.root || (match n.parent with Some p -> up p | None -> false) in up n in
-  (* custom elements (data/prelude/web/): an element entering the
-   * page, said to the registry, which upgrades it or calls its
-   * connectedCallback, and its descendants' *)
-  (match Js_eval.global t.engine "__connected" with
-  | Some (Object _ as f) when is_element n && connected n -> ignore (run_handler ~nested:false t f ~this:Undefined (wrap t n))
-  | _ -> ());
   let ran (s : node) = List.mem_assoc "%ran" s.expando in
   let event (s : node) (typ : string) = ignore (t.dispatch (Some s) (Script_events.make ~bubbles:false typ [])) in
   let run (s : node) (text : string) : unit =
@@ -314,15 +283,14 @@ let inserted (t : t) (n : node) : unit =
       (fun (s : node) ->
         if not (ran s) then (
           s.expando <- ("%ran", Bool true) :: s.expando;
-          match (attribute s "src", is_module s) with
-          | Some src, false when runnable s ->
+          match attribute s "src" with
+          | Some src when runnable s ->
               ignore
-                (Script_fetch.ask ~cors:false ~headers:[] ~ahead:None t ~meth:"GET" ~url:src ~post:None (fun answer ->
+                (Script_fetch.ask ~cors:false ~headers:[] t ~meth:"GET" ~url:src ~post:None (fun answer ->
                      match answer with
                      | Ok a when a.status / 100 = 2 -> run s a.body; event s "load"
                      | _ -> event s "error"))
-          | Some src, true -> Script_modules.start t ~url:(Browser_url.resolve t.base src) None
-          | None, false when runnable s -> run s (text_content s)
+          | None when runnable s -> run s (text_content s)
           | _ -> ()))
       (List.filter (fun (e : node) -> e.name = "script") (n :: elements n))
 
@@ -345,19 +313,6 @@ let run_scripts_with (source : string -> string option) (t : t) : unit =
       | None -> ignore (eval t (text_content s)));
       t.current_script <- None)
     (List.filter (fun e -> e.name = "script" && runnable e) (elements t.root));
-  (* then its modules, in order: deferred, each run once what it
-   * imports has come -- now, if nothing is missing; the page's import
-   * map first *)
-  List.iter
-    (fun (s : node) -> if Option.map String.lowercase_ascii (attribute s "type") = Some "importmap" then Script_modules.read_import_map t (text_content s))
-    (List.filter (fun e -> e.name = "script") (elements t.root));
-  List.iteri
-    (fun i (s : node) ->
-      match attribute s "src" with
-      | Some src -> Script_modules.start t ~url:(Browser_url.resolve t.base src) None
-      | None -> Script_modules.start t ~url:(Printf.sprintf "%s#module-%d" (fst (Browser_url.split_fragment t.base)) (i + 1)) (Some (text_content s)))
-    (List.filter (fun e -> e.name = "script" && is_module e) (elements t.root));
-  run_modules t;
   (* then the document is loaded: its listeners told *)
   (* (a page asks document.readyState whether its scripts are still
    * being read: Gmail's gives up on the data of a script yet to come
@@ -395,8 +350,7 @@ let tree (t : t) : Dom.element =
         (fun c -> if is_text c then Some (Dom.Text c.text) else if is_element c && c.name <> "noscript" then Some (Dom.Element (go c)) else None)
         nodes
     in
-    (* a host: its shadow tree drawn, its children where the slots are *)
-    let children = match n.shadow with Some root -> Shadow_tree.distribute ~shadow:(frozen root.children) ~light:(frozen n.children) | None -> frozen n.children in
+    let children = frozen n.children in
     let e : Dom.element = { name = n.name; attributes; extensions; origin; children } in
     pairs := (e, n) :: !pairs;
     e
@@ -536,9 +490,7 @@ let advance (t : t) (ms : float) : unit =
  * own (its promises' thens run after it) *)
 let answer (t : t) (rid : int) (result : (answer, string) result) : unit =
   let give = host_function "answer" (fun ~this:_ _ -> Script_fetch.answer t rid result; Undefined) in
-  (match Js_eval.call t.engine give ~this:Undefined [] with Ok _ -> () | Error e -> report t e);
-  (* a module's text, perhaps the last its graph waited for *)
-  run_modules t
+  match Js_eval.call t.engine give ~this:Undefined [] with Ok _ -> () | Error e -> report t e
 
 let take_requests (t : t) : request list =
   let r = List.rev t.requests in

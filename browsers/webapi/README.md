@@ -15,10 +15,10 @@ selectors).
 
 | directory | modules | what |
 |---|---|---|
-| `dom/` | `Script_dom`, `Script_host`, `Script_element`, `Script_document`, `Script_events`; `Shadow_tree` | the page's tree as a script changes it (a mutable copy, frozen back into a `Dom.element` to lay out); an element's, the document's and an event's host objects; a shadow tree (mini-chrome's `libs/dom`) |
+| `dom/` | `Script_dom`, `Script_host`, `Script_element`, `Script_document`, `Script_events` | the page's tree as a script changes it (a mutable copy, frozen back into a `Dom.element` to lay out); an element's, the document's and an event's host objects |
 | `window/` | `Script_window`, `Script_url`, `LocalStorage` | `window`, `location`, `navigator`, `history`; `URL`; `localStorage` (as long as the page) |
 | `net/` | `Script_fetch`, `XMLHttpRequest`, `Cors` | a request a script makes, queued for the browser and answered later; the same-origin policy |
-| `run/` | `Browser_script`, `Event_loop`, `Script_modules`; `Script_prelude` | a page's scripts run in order, its modules, an event dispatched (bubbling), the timers on the page's clock; `Script_prelude`: mini-chrome's `data/prelude/web/*.js` (12 files) in a string |
+| `run/` | `Browser_script`, `Event_loop`; `Script_prelude` | a page's scripts run in order (not a module: `<script nomodule>` is run), an event dispatched (bubbling), the timers on the page's clock; `Script_prelude`: mini-chrome's `data/prelude/web/*.js` (12 files) in a string |
 | | `Script_types.mli` | the types they share: a node, a request, the page's state |
 
 Who uses it: `browsers/netscape/Tab` (`Browser_script.create_with`,
@@ -26,7 +26,7 @@ Who uses it: `browsers/netscape/Tab` (`Browser_script.create_with`,
 `answer`, `take_navigation`, `tree`).
 
 `tests/`: mini-chrome's `Unit_browser_script`, `Unit_script_dom`,
-`Unit_script_modules`, `Unit_xhr` and `Unit_cors` (67, Testo, dune's
+`Unit_xhr` and `Unit_cors` (67, Testo, dune's
 only).
 
 ## What changed
@@ -67,8 +67,14 @@ For mini-ml, and for ix's capabilities:
   `Browser_script`, a frame's world (`adopt`, `frame_tree`, `frames`,
   the messages between a page and its frames), which mini-netscape
   never made; their tests. In mini-chrome they are whole.
-- Still in: shadow trees, modules, `Cors` (the plan's "never run"
-  list).
+- **Cut** (2026-10-19): a page's modules, `Script_modules` (import
+  maps, `<script type=module>`: not run, and a `<script nomodule>`
+  is, as a browser without modules does; a test says so); shadow
+  trees, `Shadow_tree` and `attachShadow` (no site attached one, and
+  custom elements, which do, went before); the hooks the custom
+  elements' registry was called by (`__named`, `__created`,
+  `__attribute`, `__connected`); `Script_fetch.ask`'s `~ahead`.
+- Still in: `Cors` (the plan's "never run" list).
 - A request's answer has only its `Content-Type` of the server's
   headers (`Tab` gives it); no cookie jar (`document.cookie` is "").
 - Not linked by mini-mk (mini-netscape is not yet): compiled by

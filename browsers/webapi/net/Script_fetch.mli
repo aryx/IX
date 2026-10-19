@@ -49,8 +49,7 @@
    changed it. Of the request it sends the method, the address and
    the body; the headers the script set are kept in the request
    (Script_types' said) and not sent yet, and the answer comes back
-   with its Content-Type alone of the server's headers. A page's
-   modules are fetched by the same two functions (Script_modules).
+   with its Content-Type alone of the server's headers.
 
    cs-history:
    fetch itself is of 2015 (Chrome 42, Firefox 39; the Fetch Standard,
@@ -71,9 +70,7 @@ open Script_types
  * there is none. The request's number. [cors] (true): whether the
  * answer is given only if the page may read it -- false for a classic
  * <script src>, which runs from anywhere *)
-(* [ahead]: called with the body where the answer is fetched (a thread
- * of the pool), before [k] has it: Script_types.request *)
-val ask : cors:bool -> headers:(string * string) list -> ahead:(string -> unit) option -> t -> meth:string -> url:string -> post:(string * string) option -> ((answer, string) result -> unit) -> int
+val ask : cors:bool -> headers:(string * string) list -> t -> meth:string -> url:string -> post:(string * string) option -> ((answer, string) result -> unit) -> int
 
 (* the request of that number will not be answered to (abort) *)
 val forget : t -> int -> unit

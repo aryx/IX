@@ -16,7 +16,6 @@ type t = {
   text : string; (* what the tokens were read from *)
   tokens : Js_lexer.token array;
   mutable pos : int;
-  aside : bool; (* read beside the window's run, on another thread: no slice of that run is its own to end *)
   (* in a for's first part: "in" is the for's, not an operator *)
   mutable no_in : bool;
   (* in an async function's body: "await" is the operator, not a name *)
@@ -109,9 +108,7 @@ let infix_of (op : string) : (int * bool) option =
  * string comparisons, asked at every token of an expression) *)
 let infix_memo : (string, (int * bool) option) Hashtbl.t = Hashtbl.create 64
 
-(* filled once, for every punctuation, and only read after: a text may
- * be parsed on a worker of the pool while another is here
- * (Js_module.parse), and a table two write at once is a table broken *)
+(* filled once, for every punctuation, and only read after *)
 let () = List.iter (fun op -> Hashtbl.replace infix_memo op (infix_of op)) Js_lexer.punctuators
 
 let infix (op : string) : (int * bool) option = match Hashtbl.find_opt infix_memo op with Some r -> r | None -> infix_of op
@@ -246,7 +243,7 @@ and body_in (p : t) ~(async : bool) ~(generator : bool) (f : unit -> stmt list) 
 and template_values (p : t) (t : Js_lexer.token) (expressions : Js_lexer.token list list) : expr list =
   List.map
     (fun (tokens : Js_lexer.token list) ->
-      let inner = { text = "" (* a ${ }'s tokens are of a text of their own: a function there has no text kept *); tokens = Array.of_list (tokens @ [ { t with kind = Eof } ]); pos = 0; aside = p.aside; no_in = false; in_async = p.in_async; in_generator = p.in_generator } in
+      let inner = { text = "" (* a ${ }'s tokens are of a text of their own: a function there has no text kept *); tokens = Array.of_list (tokens @ [ { t with kind = Eof } ]); pos = 0; no_in = false; in_async = p.in_async; in_generator = p.in_generator } in
       let e = expression inner 0 in
       if (peek inner).kind <> Eof then unexpected inner "'}'";
       e)
@@ -282,17 +279,6 @@ and prefix (p : t) : expr =
     | Name "super" when is_punct p "." ->
         ignore (advance p);
         Super_member (property_name p)
-    (* import("m"), import.meta: a module's; import is else a name *)
-    | Name "import" when is_punct p "(" ->
-        ignore (advance p);
-        let spec = expression p 1 in
-        (* a second argument (options), a trailing comma: read and dropped *)
-        if is_punct p "," then (ignore (advance p); if not (is_punct p ")") then ignore (expression p 1));
-        expect p ")";
-        Import_call spec
-    | Name "import" when is_punct p "." && (peek_at p 1).kind = Name "meta" ->
-        p.pos <- p.pos + 2;
-        Import_meta
     (* #x in o (ES2022): whether o has the private #x -- its key, as a string *)
     | Name x when String.length x > 1 && x.[0] = '#' && is_keyword p "in" -> String x
     | Name x -> Name x
@@ -605,11 +591,6 @@ and declarations (p : t) : (pattern * expr option) list =
   go []
 
 and statement (p : t) : stmt =
-  (* a bundle of megabytes is seconds to read: the window drawn
-   * meanwhile (Js_slice) -- if this is the window's run. A text read
-   * aside (a worker of the pool: Js_module.ahead) must not: it would
-   * end a slice of a run that is another thread's, which then ends
-   * unseen, and the window waits for it for ever *)
   let t = peek p in
   let line = t.line in
   let s stmt = { line; stmt } in
@@ -727,111 +708,10 @@ and statement (p : t) : stmt =
       let c = class_ p in
       if c.class_name = None then fail p "a class declaration needs a name";
       s (Class_decl c)
-  (* a module's: import and export are names, and statements only
-   * where what follows cannot go on an expression *)
-  | Name "import" when (match (peek_at p 1).kind with String _ | Name _ | Punct ("{" | "*") -> true | _ -> false) ->
-      ignore (advance p);
-      s (import p)
-  | Name "export" when (match (peek_at p 1).kind with Keyword _ | Punct ("{" | "*") | Name "async" -> true | _ -> false) ->
-      ignore (advance p);
-      s (Export (export p))
   | _ ->
       let e = expression p 0 in
       end_statement p;
       s (Expr e)
-
-(* a name in an import's or an export's list: any word (default is one) *)
-and word (p : t) : string =
-  match (advance p).kind with
-  | Name x | Keyword x -> x
-  | String x -> x
-  | _ ->
-      p.pos <- p.pos - 1;
-      unexpected p "a name"
-
-(* { a, b as c }: each (a, a) or (b, c) *)
-and name_list (p : t) : (string * string) list =
-  expect p "{";
-  let rec go acc =
-    if is_punct p "}" then (ignore (advance p); List.rev acc)
-    else
-      let a = word p in
-      let b = if (peek p).kind = Name "as" then (ignore (advance p); word p) else a in
-      if is_punct p "," then ignore (advance p);
-      go ((a, b) :: acc)
-  in
-  go []
-
-and from (p : t) : string =
-  if (peek p).kind <> Name "from" then unexpected p "from";
-  ignore (advance p);
-  match (advance p).kind with
-  | String s ->
-      (* with { type: "json" }: read and dropped *)
-      if (peek p).kind = Keyword "with" || (peek p).kind = Name "assert" then (ignore (advance p); ignore (block_skip p));
-      s
-  | _ ->
-      p.pos <- p.pos - 1;
-      unexpected p "a module's address"
-
-and block_skip (p : t) : unit =
-  expect p "{";
-  while not (is_punct p "}" || (peek p).kind = Eof) do ignore (advance p) done;
-  expect p "}"
-
-(* after "import": "m"; d from "m"; * as ns from "m"; { a, b as c } from "m"; d, { a } from "m" *)
-and import (p : t) : statement =
-  match (peek p).kind with
-  | String s ->
-      ignore (advance p);
-      end_statement p;
-      Import ({ default = None; namespace = None; named = [] }, s)
-  | _ ->
-      let default = match (peek p).kind with Name _ -> let d = name p in if is_punct p "," then ignore (advance p); Some d | _ -> None in
-      let namespace =
-        if is_punct p "*" then (
-          ignore (advance p);
-          if (peek p).kind <> Name "as" then unexpected p "as";
-          ignore (advance p);
-          Some (name p))
-        else None
-      in
-      let named = if is_punct p "{" then name_list p else [] in
-      let m = from p in
-      end_statement p;
-      Import ({ default; namespace; named }, m)
-
-(* after "export" *)
-and export (p : t) : export =
-  let line = (peek p).line in
-  match (peek p).kind with
-  | Keyword "default" -> (
-      ignore (advance p);
-      let async = (peek p).kind = Name "async" && (peek_at p 1).kind = Keyword "function" in
-      if is_keyword p "function" || async then (
-        p.pos <- p.pos + if async then 2 else 1;
-        let f = func p ~arrow:false ~async in
-        if f.name = None then Export_default (Function f) else Export_default_decl { line; stmt = Function_decl f })
-      else if is_keyword p "class" then (
-        ignore (advance p);
-        let c = class_ p in
-        if c.class_name = None then Export_default (Class c) else Export_default_decl { line; stmt = Class_decl c })
-      else
-        let e = expression p 1 in
-        end_statement p;
-        Export_default e)
-  | Punct "*" ->
-      ignore (advance p);
-      let ns = if (peek p).kind = Name "as" then (ignore (advance p); Some (word p)) else None in
-      let m = from p in
-      end_statement p;
-      Export_all (ns, m)
-  | Punct "{" ->
-      let names = name_list p in
-      let m = if (peek p).kind = Name "from" then Some (from p) else None in
-      end_statement p;
-      Export_names (names, m)
-  | _ -> Export_decl (statement p)
 
 (* for (let x of xs) body, or for (init; test; update) body: what is
  * after the "(" *)
@@ -892,22 +772,20 @@ and for_parts (p : t) (init : stmt option) : statement =
 (* Entry points *)
 (*****************************************************************************)
 
-let with_tokens ~(aside : bool) (text : string) (f : t -> 'a) : ('a, error) result =
+let with_tokens (text : string) (f : t -> 'a) : ('a, error) result =
   match Js_lexer.tokenize text with
   | exception Js_lexer.Error (line, message) -> Error { line; message }
   | tokens -> (
-      let p = { text; tokens = Array.of_list tokens; pos = 0; aside; no_in = false; in_async = false; in_generator = false } in
+      let p = { text; tokens = Array.of_list tokens; pos = 0; no_in = false; in_async = false; in_generator = false } in
       match f p with x -> Ok x | exception Parse_error e -> Error e)
 
-let parse_with ~(aside : bool) (text : string) : (program, error) result =
-  with_tokens ~aside text (fun p ->
+let parse (text : string) : (program, error) result =
+  with_tokens text (fun p ->
       let rec go acc = if (peek p).kind = Eof then List.rev acc else go (statement p :: acc) in
       go [])
 
-let parse (text : string) : (program, error) result = parse_with ~aside:false text
-
 let parse_expression (text : string) : (expr, error) result =
-  with_tokens ~aside:false text (fun p ->
+  with_tokens text (fun p ->
       let e = expression p 0 in
       if (peek p).kind <> Eof then unexpected p "the end";
       e)

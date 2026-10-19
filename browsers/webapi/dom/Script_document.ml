@@ -102,13 +102,7 @@ let document (t : t) : value =
           | "createElement" ->
               method_ k (fun args ->
                   let name = String.lowercase_ascii (str (arg args 0)) in
-                  let el = wrap t (make name) in
-                  (* a custom element (a name with a dash) is upgraded at once
-                   * if its class is defined: the registry's (data/prelude/web/) *)
-                  (match Js_eval.global t.engine "__created" with
-                  | Some (Object _ as f) when String.contains name '-' -> ignore (Js_eval.call_in_run t.engine f ~this:Undefined [ el ])
-                  | _ -> ());
-                  el)
+                  wrap t (make name))
           (* a document's elements of a name, its root among them
            * (getElementsByTagName("html")) -- of the document it is
            * called on: a sanitizer keeps the page's function and calls

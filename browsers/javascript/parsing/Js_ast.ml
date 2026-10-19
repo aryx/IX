@@ -45,8 +45,6 @@ type expr =
   | Opt of expr
   | Optional of expr
   | Await of expr
-  | Import_call of expr (* import("m"): a promise of the module's names *)
-  | Import_meta (* import.meta: what a module knows of itself, its url *)
 
 and func = {
   name : string option;
@@ -109,19 +107,6 @@ and statement =
   | For_of of let_kind * pattern * expr * stmt
   | For_await of let_kind * pattern * expr * stmt
   | Class_decl of class_
-  | Import of import_names * string (* import ... from "m": a module's first lines *)
-  | Export of export
-
-(* import d, * as ns, { a, b as c } from "m": the default's name here,
- * the name of the whole, and each (name there, name here) *)
-and import_names = { default : string option; namespace : string option; named : (string * string) list }
-
-and export =
-  | Export_decl of stmt (* export const x = 1, export function f, export class C *)
-  | Export_default of expr (* export default e *)
-  | Export_default_decl of stmt (* export default function f / class C: named here too *)
-  | Export_names of (string * string) list * string option (* export { a, b as c } [from "m"]: (name here or there, name out) *)
-  | Export_all of string option * string (* export * [as ns] from "m" *)
 
 and for_target = Declared of let_kind * string | Target of expr
 
@@ -188,8 +173,6 @@ let rec expr_to_string (e : expr) : string =
   | Opt e -> expr_to_string e ^ "?"
   | Optional e -> expr_to_string e
   | Await e -> p "(await %s)" (expr_to_string e)
-  | Import_call e -> p "import(%s)" (expr_to_string e)
-  | Import_meta -> "import.meta"
   | Class c -> class_to_string c
   | Super_call args -> p "(super(%s))" (list expr_to_string args)
   | Super_member k -> "(super." ^ k ^ ")"
@@ -261,19 +244,6 @@ and stmt_to_string (s : stmt) : string =
   | Var_set decls -> "Var " ^ list (fun (x, _, init) -> match init with Some v -> x ^ " " ^ e v | None -> x) decls
   | Function_decl f -> func_to_string f
   | Class_decl c -> class_to_string c
-  | Import (n, from) ->
-      p "Import (%s) from %S"
-        (String.concat ", "
-           ((match n.default with Some d -> [ "default as " ^ d ] | None -> [])
-           @ (match n.namespace with Some ns -> [ "* as " ^ ns ] | None -> [])
-           @ List.map (fun (a, b) -> if a = b then a else a ^ " as " ^ b) n.named))
-        from
-  | Export (Export_decl st) -> "Export " ^ stmt_to_string st
-  | Export (Export_default x) -> "Export default " ^ e x
-  | Export (Export_default_decl st) -> "Export default " ^ stmt_to_string st
-  | Export (Export_names (names, from)) ->
-      p "Export (%s)%s" (String.concat ", " (List.map (fun (a, b) -> if a = b then a else a ^ " as " ^ b) names)) (match from with Some f -> p " from %S" f | None -> "")
-  | Export (Export_all (ns, from)) -> p "Export *%s from %S" (match ns with Some n -> " as " ^ n | None -> "") from
   | Return None -> "Return"
   | Return (Some x) -> "Return " ^ e x
   | If (c, a, None) -> p "If (%s, %s)" (e c) (stmt_to_string a)

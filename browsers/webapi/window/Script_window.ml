@@ -102,18 +102,6 @@ let install (t : t) ~(viewport : float * float) (define : string -> value -> uni
    * call (data/prelude/web/, "the DOM's members on its prototypes") *)
   define "__host_get" (fn "__host_get" (fun args -> match arg args 0 with Object { kind = Host_object h; _ } -> h.get (str (arg args 1)) | _ -> Undefined));
   define "__host_set" (fn "__host_set" (fun args -> (match arg args 0 with Object { kind = Host_object h; _ } -> h.set (str (arg args 1)) (arg args 2) | _ -> ()); Undefined));
-  (* opti: the elements of a name, in the page and in its shadow trees:
-   * what the registry of custom elements asks at each class defined
-   * (data/prelude/web/). It went through every element of the page
-   * in JavaScript to find them -- YouTube's search page defines 1,103
-   * classes: 800,000 elements listed, each asked its name *)
-  define "__named"
-    (fn "__named" (fun args ->
-         let name = str (arg args 0) in
-         let rec under (n : node) : node list =
-           (if n.name = name then [ n ] else []) @ List.concat_map under n.children @ match n.shadow with Some r -> under r | None -> []
-         in
-         Object (new_array (List.map (Script_host.wrap t) (under t.root)))));
   define "getComputedStyle" (fn "getComputedStyle" (fun args -> computed_style (node_of t (arg args 0))));
   List.iter (fun name -> define name (observer name)) [ "ResizeObserver"; "PerformanceObserver" ];
   LocalStorage.install define;

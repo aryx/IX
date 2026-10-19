@@ -4,10 +4,9 @@
 
    (mini-chrome's notes_javascript.md, sections 2 and 3.)
 
-   Where it stands: Js_eval.eval parses a script's text and runs it;
-   Js_module a module's, whose import and export statements are read
-   here too; a page's scripts come by Browser_script, a line typed by
-   mini-node's CLI. Template literals come back here from the lexer
+   Where it stands: Js_eval.eval parses a script's text and runs it; a
+   page's scripts come by Browser_script, a line typed by mini-node's
+   CLI. (No import and export: a module is not this engine's.) Template literals come back here from the lexer
    as tokens, a small parse inside the parse.
 
    {2 Statements: recursive descent}
@@ -224,17 +223,11 @@
 (* a mistake: its line and what was expected *)
 type error = { line : int; message : string }
 
-(* the program, or its first mistake (Js_lexer's included). A long
- * text lets the window be drawn as it is read (Js_slice.breath) --
- * but not one read [aside], by a thread that is not the window's run
- * (a worker of the pool reading ahead): a slice is the run's to end *)
 (* ix: was the environment's JS_SYNTAX=1: the tokens before the one
  * refused said too, in the error's message *)
 val syntax_context : bool ref
 
-val parse_with : aside:bool -> string -> (Js_ast.program, error) result
-
-(* the same, not aside (ix: it was parse's ?aside) *)
+(* the program, or its first mistake (Js_lexer's included) *)
 val parse : string -> (Js_ast.program, error) result
 
 (* one expression alone (the tests', and a console's) *)

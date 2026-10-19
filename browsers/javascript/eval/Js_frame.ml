@@ -36,7 +36,6 @@ let hoisted (body : A.stmt list) : string list =
         @ (match handler with Some (_, h) -> List.concat_map names h | None -> [])
         @ (match finally with Some f -> List.concat_map names f | None -> [])
     | Block b -> List.concat_map names b
-    | Export (Export_decl st) -> names st
     (* a function declared in a block is the function's too (below) *)
     | Function_decl { name = Some f; _ } -> [ f ]
     | _ -> []

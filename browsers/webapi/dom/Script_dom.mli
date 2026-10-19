@@ -45,10 +45,6 @@ val make : string -> node
 (* the page's tree copied, and back *)
 val thaw : Dom.element -> node
 
-(* [attach_shadow host children]: a shadow tree's root given to
- * [host], a fragment holding [children] (Shadow_tree.mli); its parent
- * is said to be the host, so that what is in it is in the page *)
-val attach_shadow : node -> node list -> unit
 val freeze : node -> Dom.element
 
 (* every element under a node (itself too), in document order *)

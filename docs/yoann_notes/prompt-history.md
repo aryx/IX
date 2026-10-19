@@ -37967,3 +37967,100 @@ Claude confirmed make check passes, with `trace ok` added to check.expected, and
 **Yoann:**
 
 > ok what's next otherwise?
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:11
+
+**Yoann:**
+
+> for t-ix, what remains to get all the tiny-programs to actually run under tiny-machine? Also I wonder if we should stop having this division of tiny programs that runs under t-ix and some tiny-programs that run only on the host. Maybe we should get rid of the TinyAssembler targeting ARM? Maybe t-ix should only be concerned with the tiny-machine (and also the ability to run on the host directly, which makes things easier to test). What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:12
+
+**Yoann:**
+
+> that way maybe we could also get rid of the TinyLibHost/ or factorize with the TinyLibStd.ml and other TinyLib
+
+**Claude (summary):**
+
+Claude said it was still surveying which tiny programs already run on tiny-kernel and what blocks the rest, such as memory, library gaps, and system calls. It had not yet answered Yoann's question about replacing TinyLibHost/ with a shared TinyLib module. Yoann's reply picks up the TinyLibHost/ question. Since Claude's answer was only a progress note, I'll summarize that instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:08
+
+**Yoann:**
+
+> let's commit.
+
+**Claude (summary):**
+
+Claude committed step 1 on `main` without pushing, leaving a clean working tree with its 10 files.
+Claude said the other session had already committed `37710eaf`, so this commit holds only Claude's files, including `prompt-history.md`.
+Claude reran the kernel's full `make check` before committing, and it passed.
+Claude flagged the `tiny-db` host-name clash as still open, to be settled at step 3 when db becomes a program.
+Claude named step 2 as single-stepping: an `s` command for one instruction, and continuing from a breakpoint without losing it.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:32
+
+**Yoann:**
+
+> maybe let's use tha plan_tiny_self_hosting.md name for the document. Also I think we could still compile t-ix with m-ix, which is a good test for m-ix, but we can use directly lib_core/ instead of a copy-pasted reduced TinyLibHost/. I originally asked for the copy-pasted TinyLibHost/ to get a sense of what is used and not used from lib_core, but if we manage to self-host t-ix, we will just need TinyLibCore and TinyLibStd
+
+**Claude (summary):**
+
+Claude said it had the facts it needed and was writing the plan document.
+Claude was writing it to docs/plans/plan_tiny_self_hosting.md.
+Claude's answer contained no recommendation, finding, or completed file write beyond that.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:39
+
+**Yoann:**
+
+> maybe we can also revisit the tiny-ml no module support; now that TinyLibHost/ is gone, that frees lots of lines of code, and maybe we could have a proper TinyLibCore/ with separate modules that reminds of the OCaml standard library organization. Tiny is a free variant though, so we don't have to follow the OCaml standard library of course, still, maybe we can revisit certain things now that other things are cleaner (just one target)
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:40
+
+**Yoann:**
+
+> maybe we could also have a proper TinyAssembler and TinyLinker and separate compilation
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:35
+
+**Yoann:**
+
+> we can maybe use dbg or debug instead of db
+
+**Claude (summary):**
+
+Claude renamed the debugger from `db` to `debug`, matching plain-word names like editor and windows.
+Claude updated `plan_tiny_debugger.md` so the program is `debug`, noting that `db` is taken by tiny-db.
+Claude changed the two tracer comments in `tiny/TinyKernel.ml` to say `debug`, leaving code untouched.
+Claude kept the planned `-db` option for tiny-machine unchanged, since it is a machine flag.
+Claude left the rename uncommitted, because another session's changes share the checkout and it asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:40
+
+**Yoann:**
+
+> we could even self-host and run this under the tiny-machine/ itselfd too
+
+**Claude (summary):**
+
+Claude folded Yoann's self-hosting suggestion into the ix plan as a new direction.
+Claude proposed separate compilation driven by a real assembler and linker in the plan.
+Claude proposed treating modules as compilation units, with TinyLibCore/ organized as modules.
+Claude's plan runs the whole toolchain on tiny-machine itself, so it would be self-hosted there.

@@ -84,6 +84,11 @@ question is not whether t-ix can do without arm64 (it can: t-IX in a
 web page does), but whether the second path earns its lines. The
 author's answer is that it does.
 
+Revisited on 2026-10-19: arm64 leaves, and TinyLibHost's copy of
+`lib_core/` with it (m-ix builds the tools on `lib_core/` itself), so
+that t-ix has one target and can build itself on it:
+[plan_tiny_self_hosting.md](plans/plan_tiny_self_hosting.md).
+
 If it were ever revisited, the pieces go together: the two arm64 back
 ends, `TinyAssembler.ml`, `TinyCPUArm.ml` and tiny-ml's contract with
 ocaml-light leave or stay as one. Taking one alone breaks the others'

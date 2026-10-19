@@ -91,4 +91,13 @@ let write (caps : < Cap.open_out; .. >) ~(dir : string) (name : string) (perm : 
   with Sys_error why | Failure why -> Error why | Unix.Unix_error (e, _, _) -> Error (Filename.concat dir name ^ ": " ^ Unix.error_message e)
 
 let save (caps : < Cap.open_out; .. >) ~(dir : string) (p : t) : (unit, string) result = write caps ~dir "preferences" 0o644 (to_string p)
+let load_places (caps : < Cap.open_in; .. >) ~(dir : string) : Places.t =
+  let read (name : string) : string = match FS.read_opt caps (Fpath.v (Filename.concat dir name)) with Some s -> s | None -> "" in
+  { history = Places.history_of_string (read "history"); bookmarks = Places.bookmarks_of_html (read "bookmarks.html") }
+
+let save_places (caps : < Cap.open_out; .. >) ~(dir : string) (p : Places.t) : (unit, string) result =
+  match write caps ~dir "history" 0o600 (Places.history_to_string p) with
+  | Ok () -> write caps ~dir "bookmarks.html" 0o644 (Places.bookmarks_to_html p)
+  | Error why -> Error why
+
 let save_cookies (caps : < Cap.open_out; .. >) ~(dir : string) (jar : Cookie.jar) : (unit, string) result = write caps ~dir "cookies.txt" 0o600 (cookies_to_string jar)

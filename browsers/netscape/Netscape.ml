@@ -9,7 +9,9 @@
  * with its buttons, the Location field, the N, the status bar.
  *
  *   +--------------------------------------------------------------+
- *   | [Back] [Forward] [Reload]  Location: [ http://...       ] [N] |
+ *   | [Back] [Forward] [Reload] [Bookmarks] Location: [http:] [N]  |
+ *   +--------------------------------------------------------------+
+ *   | [a tab] [another], when there are two or more                |
  *   +--------------------------------------------------------------+
  *   |                                                              |
  *   |   the page                                                   |
@@ -68,7 +70,12 @@
  * The mouse: a click on a link follows it, on a field gives it the
  * keys, on a button sends its form; the wheel scrolls. The keys: the
  * arrows, Page Up and Down, Space, Home and End scroll; Backspace goes
- * back; in the Location field, an address typed and Enter. Ctrl and +
+ * back; in the Location field, an address or words typed and Enter, or
+ * one of the pages it offers as one types (the history's, the
+ * bookmarks': Places), taken by the arrows or a click. Ctrl and D keeps
+ * the page in the bookmarks, which the Bookmarks button shows; Ctrl
+ * and T opens a tab, Ctrl and W closes it, Ctrl and Tab goes to the
+ * next, Ctrl and a click opens a link in one behind. Ctrl and +
  * (or =), Ctrl and -, Ctrl and the wheel zoom the page, Ctrl and 0
  * back to 100% (Browser_zoom: Chrome's steps, each site its own): the
  * page is laid out narrower and drawn scaled.
@@ -91,8 +98,9 @@
  * (plan_browser.md, decision 1). Netscape 1 had no style sheets and
  * no scripts; a Netscape faithful to it, over Mosaic's kind of layout
  * (Html_layout, which the engine still has), would not show a page
- * of today. One tab, no bookmarks, no cookies, no cache, and a page's
- * requests one after the other on one thread.
+ * of today. Tabs are Mozilla's (2002) and the field's offers Netscape
+ * 4's and Chrome's, not Navigator 1's; no cache, and a page's requests
+ * one after the other on one thread, a tab not shown waiting.
  *
  * cs-history:
  * Netscape was Mosaic's authors' second browser. Marc Andreessen and
@@ -143,7 +151,8 @@
  *   TypeError, where they are passed over with a warning; helpers=off:
  *   no program run for what the browser does not show; keep=off: a
  *   connection a request; profile: where the cookies and the zooms are
- *   kept, ~/.config/mini-netscape if not said, off for nowhere; window:
+ *   kept, the history and the bookmarks too, ~/.config/mini-netscape if
+ *   not said, off for nowhere; window:
  *   the window's size at first, the one it had last if not said) *)
 
 module P = Playground
@@ -161,16 +170,32 @@ let home =
 <li><a href=\"https://news.ycombinator.com/\">news.ycombinator.com</a>
 <li><a href=\"http://example.com/\">example.com</a>
 </ul>
-<p>The arrows, Page Up and Down, Space and the wheel scroll; Backspace goes back."
+<p>The arrows, Page Up and Down, Space and the wheel scroll; Backspace goes back.
+<p>Ctrl+D keeps the page in the Bookmarks; Ctrl+T opens a tab, Ctrl+W closes it, Ctrl+Tab goes to the next, Ctrl and a click opens a link in one."
 
-let about (name : string) : string option = match name with "home" -> Some home | "blank" -> Some "" | _ -> None
+(* the history and the bookmarks as the window has them now, for their
+ * pages (a tab asks for an about: page by its name alone) *)
+let places_now : Places.t ref = ref Places.empty
+
+let about (name : string) : string option =
+  match name with
+  | "home" -> Some home
+  | "blank" -> Some ""
+  | "history" -> Some (Places.history_page !places_now)
+  | "bookmarks" -> Some (Places.bookmarks_to_html !places_now)
+  | _ -> None
 
 (*****************************************************************************)
 (* The model *)
 (*****************************************************************************)
 
 type model = {
-  tab : Tab.t;
+  tab : Tab.t; (* the tab shown *)
+  left : Tab.t list; (* the tabs before it, the nearest first *)
+  right : Tab.t list; (* and after it *)
+  blank : Tab.t; (* a tab with no page, the browser's settings: a new one *)
+  places : Places.t; (* the history and the bookmarks *)
+  choice : int; (* the Location field's offer chosen by the arrows, -1 none *)
   location : string; (* the field's text *)
   editing : bool; (* the Location field has the keys *)
   fresh : bool; (* just clicked: the first character typed replaces the address *)
@@ -181,11 +206,11 @@ type model = {
   jar : Cookie_jar.t; (* the cookies, the tab's too *)
   profile : string option; (* the directory they and the zooms are kept in, if any *)
   window : (int * int) option; (* the window's size, once it is not the playground's square *)
-  kept : Browser_profile.t * int; (* what its files have: the preferences, the jar as it was written (its changes) *)
+  kept : Browser_profile.t * int * Places.t; (* what its files have: the preferences, the jar as it was written (its changes), the places *)
 }
 
 (* the keys that do something once, when they go down *)
-let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter"; "Backspace"; "Escape"; "space"; "="; "+"; "-"; "0" ]
+let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter"; "Backspace"; "Escape"; "space"; "="; "+"; "-"; "0"; "t"; "w"; "d"; "Tab" ]
 
 (*****************************************************************************)
 (* The window's places, x right and y down from its top left *)
@@ -193,12 +218,24 @@ let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter
 
 let toolbar_height = 44.
 let status_height = 22.
-let buttons = [ ("Back", 8., 60.); ("Forward", 74., 84.); ("Reload", 164., 72.) ]
-let field_x = 330.
+let buttons = [ ("Back", 8., 60.); ("Forward", 74., 84.); ("Reload", 164., 72.); ("Bookmarks", 242., 96.) ]
+let field_x = 428.
 let field_width (width : float) : float = width -. field_x -. 60.
 let inside (x, y) (bx, by, bw, bh) = x >= bx && x <= bx +. bw && y >= by && y <= by +. bh
 let grey = P.rgb 192 192 192
 let look : Looks.t = { Browser_text.root_look with size = 13. }
+
+(* the tabs' strip under the toolbar, when there are two or more
+ * (Mozilla's way), and the page under it *)
+let strip_height = 24.
+let tabs (m : model) : Tab.t list = List.rev_append m.left (m.tab :: m.right)
+let top (m : model) : float = if m.left = [] && m.right = [] then toolbar_height else toolbar_height +. strip_height
+let tab_width (width : float) (m : model) : float = Float.min 200. (width /. float_of_int (List.length (tabs m)))
+let title (t : Tab.t) : string = match Tab.page t with Some p when p.title <> "" -> p.title | _ -> Tab.url t
+
+(* what the Location field offers under it as one types (Places), a row each *)
+let offer_height = 22.
+let offers (m : model) : Places.place list = if m.editing && not m.fresh then Places.matches m.places m.location else []
 
 (* a rectangle and a text, by their top left and their baseline *)
 let box (color : P.color) (x : float) (y : float) (w : float) (h : float) : P.shape =
@@ -228,7 +265,28 @@ let fitted_tab (width : float) (m : model) : model = { m with tab = Tab.resized 
 let zoomed (width : float) (change : Browser_zoom.change) (m : model) : model =
   fitted_tab width { m with zooms = Browser_zoom.with_host m.zooms (host m) (Browser_zoom.apply change (zoom m)) }
 
-let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false }
+let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1 }
+
+(* the tab at [i] shown, the others around it *)
+let select (i : int) (m : model) : model =
+  let all = tabs m in
+  if i < 0 || i >= List.length all then m
+  else shown { m with tab = List.nth all i; left = List.rev (List.filteri (fun j _ -> j < i) all); right = List.filteri (fun j _ -> j > i) all }
+
+(* the one after it shown, or before if it was the last; the last tab stays *)
+let closed (m : model) : model =
+  match (m.right, m.left) with
+  | t :: right, _ -> shown { m with tab = t; right }
+  | [], t :: left -> shown { m with tab = t; left }
+  | [], [] -> m
+
+(* a page come is in the history (not the browser's own, nor data:) *)
+let remembered (m : model) : model =
+  let url = Tab.url m.tab in
+  match Tab.page m.tab with
+  | Some p when (not (Tab.busy m.tab)) && not (Browser_url.starts_with "about:" url || Browser_url.starts_with "data:" url) -> (
+      match m.places.history with q :: _ when q.url = url -> m | _ -> { m with places = Places.visited m.places { url; title = p.title } })
+  | _ -> m
 
 (* was the window drawn (the view taken) since the last piece fetched?
  * A piece is a second sometimes, and a platform then owes several
@@ -244,8 +302,9 @@ let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * flo
     if List.exists (fun (_, bx, w) -> inside (x, y) (bx, 8., w, 28.)) buttons then P.Hand
     else if inside (x, y) (field_x, 8., field_width width, 28.) then P.Text
     else P.Arrow
+  else if y < top m || inside (x, y) (field_x, toolbar_height -. 8., field_width width, offer_height *. float_of_int (List.length (offers m))) then P.Hand
   else if y < height -. status_height then
-    match Tab.under m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. Tab.scroll m.tab) with
+    match Tab.under m.tab ~x:(x /. z) ~y:(((y -. top m) /. z) +. Tab.scroll m.tab) with
     | Tab.Link _ | Tab.Button -> P.Hand
     | Tab.Field -> P.Text
     | Tab.Nothing -> P.Arrow
@@ -258,12 +317,13 @@ let saved (caps : < caps; .. >) (m : model) : model =
   match m.profile with
   | None -> m
   | Some dir -> (
-      let preferences, cookies = m.kept in
-      let now : Browser_profile.t = { (fst m.kept) with zooms = m.zooms; window = m.window } in
+      let preferences, cookies, places = m.kept in
+      let now : Browser_profile.t = { preferences with zooms = m.zooms; window = m.window } in
       let changes = Cookie_jar.changes m.jar in
       let wrote =
-        if now <> preferences then Some (Browser_profile.save caps ~dir now, (now, cookies))
-        else if changes <> cookies && not (Tab.busy m.tab) then Some (Browser_profile.save_cookies caps ~dir (Cookie_jar.cookies m.jar), (preferences, changes))
+        if now <> preferences then Some (Browser_profile.save caps ~dir now, (now, cookies, places))
+        else if changes <> cookies && not (Tab.busy m.tab) then Some (Browser_profile.save_cookies caps ~dir (Cookie_jar.cookies m.jar), (preferences, changes, places))
+        else if m.places != places then Some (Browser_profile.save_places caps ~dir m.places, (preferences, cookies, m.places))
         else None
       in
       match wrote with
@@ -275,7 +335,8 @@ let saved (caps : < caps; .. >) (m : model) : model =
 
 let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
   let screen = computer.screen and mouse = computer.mouse and keys = computer.keyboard in
-  let visible = screen.height -. toolbar_height -. status_height in
+  places_now := m.places;
+  let visible = screen.height -. top m -. status_height in
   (* the window's size, for the profile: once it is its own (the screen
    * follows the window, the flag window; a picture's square is not kept) *)
   let m =
@@ -293,7 +354,7 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     if Tab.busy m.tab && !seen then begin
       seen := false;
       let tab = Tab.step caps m.tab in
-      { m with tab; location = (if m.editing then m.location else Tab.url tab) }
+      remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) }
     end
     else m
   in
@@ -329,18 +390,45 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       match List.find_opt (fun (_, x, w) -> inside at (x, 8., w, 28.)) buttons with
       | Some ("Back", _, _) -> shown { m with tab = Tab.back m.tab }
       | Some ("Forward", _, _) -> shown { m with tab = Tab.forward m.tab }
-      | Some (_, _, _) -> shown { m with tab = Tab.reload m.tab }
+      | Some ("Reload", _, _) -> shown { m with tab = Tab.reload m.tab }
+      | Some (_, _, _) -> shown { m with tab = Tab.visit m.tab "about:bookmarks" }
       | None -> if inside at (field_x, 8., field_width screen.width, 28.) then { m with editing = true; fresh = true } else { m with editing = false }
-    else if snd at < screen.height -. status_height then
-      shown { m with tab = Tab.click m.tab ~x:(fst at /. zoom m) ~y:(((snd at -. toolbar_height) /. zoom m) +. Tab.scroll m.tab) }
-    else m
+    else
+      (* an offer of the Location field, under it; a tab of the strip; the page *)
+      let row = int_of_float ((snd at -. (toolbar_height -. 8.)) /. offer_height) in
+      match List.nth_opt (offers m) (max 0 row) with
+      | Some p when inside at (field_x, toolbar_height -. 8., field_width screen.width, offer_height *. float_of_int (List.length (offers m))) -> shown { m with tab = Tab.visit m.tab p.url }
+      | _ ->
+          if snd at < top m then select (int_of_float (fst at /. tab_width screen.width m)) m
+          else if snd at < screen.height -. status_height then
+            let x = fst at /. zoom m and y = ((snd at -. top m) /. zoom m) +. Tab.scroll m.tab in
+            (* Ctrl and a click: the link in a tab of its own, behind *)
+            match Tab.link_at m.tab ~x ~y with
+            | Some url when control -> { m with right = Tab.visit m.blank url :: m.right }
+            | _ -> shown { m with tab = Tab.click m.tab ~x ~y }
+          else m
   in
   let change = if control then List.find_map (fun k -> if pressed k then Browser_zoom.key k else None) [ "="; "+"; "-"; "0" ] else None in
+  let command = if control then List.find_opt pressed [ "t"; "w"; "d"; "Tab" ] else None in
   if change <> None then match change with Some c -> zoomed screen.width c m | None -> m
+  else if command <> None then
+    match command with
+    | Some "t" -> { m with left = m.tab :: m.left; tab = Tab.visit m.blank "about:blank"; location = ""; editing = true; fresh = false; choice = -1 }
+    | Some "w" -> closed m
+    | Some "Tab" -> select ((List.length m.left + 1) mod List.length (tabs m)) m
+    | _ -> (
+        match Tab.page m.tab with
+        | Some p when not (Browser_url.starts_with "about:" (Tab.url m.tab)) -> { m with places = Places.bookmarked m.places { url = Tab.url m.tab; title = p.title } }
+        | _ -> m)
   else if m.editing then
-    let m = if keys.typed <> "" then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false } else m in
-    if pressed "Enter" then shown { m with tab = Tab.visit m.tab m.location }
-    else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false }
+    let m = if keys.typed <> "" && not control then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false; choice = -1 } else m in
+    let offered = offers m in
+    if pressed "Enter" then
+      let chosen = if m.choice >= 0 then List.nth_opt offered m.choice else None in
+      shown { m with tab = Tab.visit m.tab (match chosen with Some p -> p.url | None -> Places.destination m.location) }
+    else if pressed "ArrowDown" then { m with choice = min (m.choice + 1) (List.length offered - 1) }
+    else if pressed "ArrowUp" then { m with choice = max (m.choice - 1) (-1) }
+    else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false; choice = -1 }
     else if pressed "Escape" then shown m
     else m
   else if Tab.focus m.tab <> None then
@@ -375,7 +463,8 @@ let logo ~(busy : bool) (x : float) (y : float) : P.shape list =
 let view_simple (computer : P.computer) (m : model) (over : string option) : P.shape list =
   let screen = computer.screen in
   let width = screen.width and height = screen.height in
-  let visible = height -. toolbar_height -. status_height in
+  let top = top m in
+  let visible = height -. top -. status_height in
   let scroll = Tab.scroll m.tab and z = zoom m in
   (* the page: what of it is in the window, its top left under the toolbar *)
   let page =
@@ -385,17 +474,41 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
         let controls = Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:(Tab.focus m.tab) p.layout in
         let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. (visible /. z) then Some (Browser_draw.shape_of shape) else None) (p.drawn @ controls) in
         let r, g, b = match p.background with Some c -> c | None -> (255, 255, 255) in
-        [ box (P.rgb r g b) 0. toolbar_height width visible; P.move 0. (-.toolbar_height) (P.scale z (P.move 0. scroll (P.group seen))) ]
+        [ box (P.rgb r g b) 0. top width visible; P.move 0. (-.top) (P.scale z (P.move 0. scroll (P.group seen))) ]
   in
   let toolbar =
     box grey 0. 0. width toolbar_height
     :: box (P.rgb 96 96 96) 0. (toolbar_height -. 1.) width 1.
     :: List.concat_map (fun (name, x, w) -> Browser_draw.raised x 8. w 28. @ text name (x +. ((w -. Browser_text.metrics look name) /. 2.)) 27.) buttons
-    @ text "Location:" 250. 27.
+    @ text "Location:" 346. 27.
     @ Browser_draw.sunken field_x 8. (field_width width) 28.
     @ [ box (P.rgb 255 255 255) (field_x +. 2.) 10. (field_width width -. 4.) 24. ]
     @ text (fitted ~keep_end:m.editing (m.location ^ if m.editing then "|" else "") (field_width width -. 12.)) (field_x +. 6.) 27.
     @ logo ~busy:(Tab.busy m.tab) (width -. 46.) 4.
+  in
+  (* the tabs, the one shown white as its page *)
+  let strip =
+    if top = toolbar_height then []
+    else
+      let w = tab_width width m in
+      box grey 0. toolbar_height width strip_height
+      :: List.concat
+           (List.mapi
+              (fun i t ->
+                let x = float_of_int i *. w in
+                (if i = List.length m.left then Browser_draw.sunken else Browser_draw.raised) x toolbar_height w strip_height
+                @ text (fitted ~keep_end:false (title t) (w -. 12.)) (x +. 6.) (toolbar_height +. 17.))
+              (tabs m))
+  in
+  (* the Location field's offers, the chosen one blue *)
+  let offered =
+    List.concat
+      (List.mapi
+         (fun i (p : Places.place) ->
+           let y = toolbar_height -. 8. +. (float_of_int i *. offer_height) in
+           box (if i = m.choice then P.rgb 200 210 255 else P.rgb 255 255 255) field_x y (field_width width) offer_height
+           :: text (fitted ~keep_end:false (if p.title = "" then p.url else p.title ^ " -- " ^ p.url) (field_width width -. 12.)) (field_x +. 6.) (y +. 16.))
+         (offers m))
   in
   (* the status bar: where the link under the mouse goes, or what the last load said *)
   let status =
@@ -405,7 +518,7 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
     (* the zoom, when it is not 100% *)
     @ text (Browser_zoom.label z) (width -. 50.) (height -. 6.)
   in
-  [ P.move screen.left screen.top (P.group (page @ toolbar @ status)) ]
+  [ P.move screen.left screen.top (P.group (page @ toolbar @ strip @ status @ offered)) ]
 
 (* opti: the shapes of the frame before given back, the very list,
  * when nothing they are made of has changed: the platform then draws
@@ -424,6 +537,8 @@ type shown = {
   zoom : float;
   size : float * float * float * float;
   over : string option;
+  titles : string list * int; (* the tabs', the one shown *)
+  offer : Places.place list * int; (* the Location field's, the one chosen *)
 }
 
 let memo : bool ref = ref true
@@ -435,16 +550,17 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let z = zoom m in
   let over =
     let x = computer.mouse.mx -. screen.left and y = screen.top -. computer.mouse.my in
-    if y > toolbar_height && y < screen.height -. status_height then Tab.link_at m.tab ~x:(x /. z) ~y:(((y -. toolbar_height) /. z) +. Tab.scroll m.tab) else None
+    if y > top m && y < screen.height -. status_height then Tab.link_at m.tab ~x:(x /. z) ~y:(((y -. top m) /. z) +. Tab.scroll m.tab) else None
   in
   let now =
     { page = Tab.page m.tab; scroll = Tab.scroll m.tab; focus = Tab.focus m.tab; said = Tab.said m.tab; busy = Tab.busy m.tab; field = (m.location, m.editing); zoom = z;
-      size = (screen.width, screen.height, screen.left, screen.top); over }
+      size = (screen.width, screen.height, screen.left, screen.top); over;
+      titles = ((if m.left = [] && m.right = [] then [] else List.map title (tabs m)), List.length m.left); offer = (offers m, m.choice) }
   in
   let same (a : shown) (b : shown) : bool =
     (match (a.page, b.page) with Some p, Some q -> p == q | None, None -> true | _ -> false)
     && (match (a.focus, b.focus) with Some e, Some f -> e == f | None, None -> true | _ -> false)
-    && a.scroll = b.scroll && a.said = b.said && a.busy = b.busy && a.field = b.field && a.zoom = b.zoom && a.size = b.size && a.over = b.over
+    && a.scroll = b.scroll && a.said = b.said && a.busy = b.busy && a.field = b.field && a.zoom = b.zoom && a.size = b.size && a.over = b.over && a.titles = b.titles && a.offer = b.offer
   in
   match !last with
   | Some (was, shapes) when !memo && same was now -> shapes
@@ -482,7 +598,7 @@ let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model = s
 let profile_dir (caps : < caps; .. >) (flags : P.flags) : string option =
   match List.assoc_opt "profile" flags with Some "off" -> None | Some dir -> Some dir | None -> Browser_profile.default_dir caps
 
-let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept, cookies) : Browser_profile.t * Cookie.jar) =
+let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept, cookies, places) : Browser_profile.t * Cookie.jar * Places.t) =
   let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
   let jar = Cookie_jar.create cookies in
   (* the helper programs: the profile's, ~/.mailcap's, the built-in
@@ -495,7 +611,8 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
       let mailcap = match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with Some text -> Browser_helpers.of_mailcap text | None -> [] in
       Browser_helpers.available caps (kept.helpers @ mailcap @ Browser_helpers.defaults)
   in
-  let tab = Tab.visit (Tab.with_helpers helpers (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about)))) address in
+  let blank = Tab.with_helpers helpers (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about))) in
+  let tab = Tab.visit blank address in
   (* console=on: and what the engine's debugging switches say, if a
    * host sets one (Js_value.say) *)
   if List.assoc_opt "keep" flags = Some "off" then Tab.keeps := false;
@@ -507,7 +624,9 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
    * DOM method this browser lacks a TypeError, as a browser has them;
    * by default both are passed over with a warning (plan_browser.md, C) *)
   if List.assoc_opt "strict" flags = Some "on" then (Browser_script.strict := true; Js_eval.lenient := false);
-  P.game view (update caps) { tab; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms; console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0) }
+  P.game view (update caps)
+    { tab; left = []; right = []; blank; places; choice = -1; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms;
+      console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0, places) }
 
 let () =
   Cap.main (fun caps ->
@@ -516,10 +635,11 @@ let () =
       let flags = Playground_platform.flags caps in
       let profile = profile_dir caps flags in
       let (kept : Browser_profile.t), cookies = match profile with Some dir -> Browser_profile.load caps ~dir | None -> (Browser_profile.empty, []) in
+      let places = match profile with Some dir -> Browser_profile.load_places caps ~dir | None -> Places.empty in
       (* the screen as large as the window (Session's flag window): the
        * size it had last, if the profile says and the user does not *)
       let asked = if List.mem_assoc "window" flags then [] else [ ("window", match kept.window with Some (w, h) -> Printf.sprintf "%dx%d" w h | None -> "") ] in
-      (try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies))
+      (try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies, places))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1);

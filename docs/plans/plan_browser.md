@@ -1375,6 +1375,7 @@ decide; this plan says mini-netscape until then.
 | `6df4d35b` | a string is its UTF-8 bytes (`Js_string` in the place of `Js_utf16`): five Wikipedias with accents and Japanese the same | 19,277 |
 | | `Css_syntax.components` a loop (mini-ml's mini-netscape crashed on YouTube's style sheet, a value stack overflowed: `bugs/ix.md`) | |
 | | `Js_ast`'s printers to the tests; of the preludes, what no site of twelve called and came for applications (a page's `EventTarget`, CSS-in-JS's sheet, the canvas, `MutationObserver`'s telling, ES2024's `groupBy` and `withResolvers`) | about 19,010 (264 less) |
+| | history, bookmarks and tabs (`Places`: the profile's `history` and Netscape's `bookmarks.html`; the Location field's offers and words searched; Ctrl+T, W, Tab, D) | about 19,226 (216 more) |
 
 Each checked by the tests (the engine's three ways), `frames.sh` on
 both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the

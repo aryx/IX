@@ -14,7 +14,9 @@
 # wheel (the frame of zoom-in), a link followed in it; a page's
 # scripts: a list filled by a script's file, a timer, then a button
 # clicked twice and a link a handler keeps the page at; and the same
-# page with scripts=off),
+# page with scripts=off; a link opened in a tab behind, a tab opened
+# and the next one shown; the Location field's offers from the pages
+# seen; a page bookmarked and the bookmarks shown),
 # its last frame's sum. RECORD=1 writes the sums again.
 # usage: browsers/netscape/tests/frames.sh [dir]
 #   dir: where the program is (default: dune's, _build/default/browsers)

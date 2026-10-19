@@ -5,7 +5,8 @@
 # mini-netscape's profile (Browser_profile) and its cookies, the program
 # run twice on a directory of its own: a page zoomed in, and the second
 # run's frame is the zoomed one without a key; a window of another size
-# (the flag window), and the second run's is that large; a server's cookie (a
+# (the flag window), and the second run's is that large; the history and
+# the bookmarks, and the Location field's offers from them; a server's cookie (a
 # small one here, Python's) kept in cookies.txt if it has a date, said
 # back by the second run, and seen by the page's script but the
 # HttpOnly one.
@@ -31,6 +32,17 @@ $N -dump-frame 4 $T/w.ppm -fixed-time 1000 profile=$T/p window=1400x700 url=$PAG
 check "the window's size is written, the zoom kept" "$(tr '\n' ';' < $T/p/preferences)" "window 1400 700;zoom file 1.25;"
 $N -dump-frame 4 $T/w2.ppm -fixed-time 1000 profile=$T/p url=$PAGE > /dev/null
 check "and read: the second run's picture is that large" "$(head -c 15 $T/w2.ppm | tr "\n" " " | sed "s/ $//")" "P6 1400 700 255"
+
+# the history and the bookmarks (Places): the menu seen and kept (Ctrl+D);
+# the second run goes there by its title typed, the offer taken
+M=browsers/netscape/tests/pages/menu.html
+$N -dump-frame 8 $T/m.ppm -fixed-time 1000 profile=$T/q url=$M -script 'Control:4-6,d:5' > /dev/null
+check "the page seen, in the history" "$(cut -f2 $T/q/history)" "Menu"
+check "and in the bookmarks, Netscape's file" "$(head -1 $T/q/bookmarks.html; grep -o '<A HREF=.*' $T/q/bookmarks.html)" "<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<A HREF=\"file://$M\">Menu</A>"
+$N -dump-frame 12 $T/o.ppm -fixed-time 1000 profile=$T/q url=about:blank -script 'at(100;478):1-3,click:2,type(men):5,ArrowDown:6,Enter:7' > /dev/null
+$N -dump-frame 12 $T/o2.ppm -fixed-time 1000 profile=off url=file://$M > /dev/null
+check "and read: Men typed, the offer taken, the menu shown" "$(cksum < $T/o.ppm)" "$(cksum < $T/o2.ppm)"
 
 # the cookies
 cat > $T/server.py <<'PY'

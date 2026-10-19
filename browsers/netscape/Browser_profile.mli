@@ -7,6 +7,8 @@
                         zoom news.ycombinator.com 1.5
         cookies.txt     .example.com  TRUE   /  FALSE  1791000000  lang  en-US
                         www.example.com  FALSE  /  TRUE  1791000000  SID  31d4...
+        history         (Places)
+        bookmarks.html
 
    Two files of text, a line a thing, so that they can be read, and
    mended, in an editor. [preferences] has the window's size as it
@@ -35,8 +37,9 @@
    --cookie-jar writes it and wget's --load-cookies reads it, and
    "#HttpOnly_" is curl's addition to it.
 
-   Not done: bookmarks, the history of the pages seen; the file written under another name first and renamed (a
-   write cut short loses the cookies, here). *)
+   And the history and the bookmarks, history and bookmarks.html
+   (Places). Not done: the file written under another name first and
+   renamed (a write cut short loses the cookies, here). *)
 
 (* the sites zoomed, the window's size, the helper programs written by
  * hand ("helper youtube.com/watch mpv %u": Browser_helpers) *)
@@ -63,4 +66,8 @@ val load : < Cap.open_in; .. > -> dir:string -> t * Cookie.jar
 (* each file written, [dir] made if it is not there; cookies.txt for
  * its owner alone, being what signs in. Error says why not *)
 val save : < Cap.open_out; .. > -> dir:string -> t -> (unit, string) result
+(* the history and the bookmarks (Places); the history its owner's
+ * alone, being where one went *)
+val load_places : < Cap.open_in; .. > -> dir:string -> Places.t
+val save_places : < Cap.open_out; .. > -> dir:string -> Places.t -> (unit, string) result
 val save_cookies : < Cap.open_out; .. > -> dir:string -> Cookie.jar -> (unit, string) result

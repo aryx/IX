@@ -65,6 +65,21 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   (`Glyph_unicode`, mini-chrome's, in `browsers/engine`).
 - **The window's size**: the page is as wide as the window
   (`lib_playground`'s flag `window=WxH`, asked for by the program).
+- **History, bookmarks, tabs** (2026-10-19; the author: "let's add a
+  few Chrome and feature to mini-netscape like the omnibox, saved
+  history, etc."; bookmarks "as fundamental and classic as the back
+  button"). `Places` (ix's own): the pages seen, in the profile's
+  `history`, and the bookmarks, in its `bookmarks.html` in Netscape's
+  format (Firefox's and Chrome's export) -- Ctrl+D, and the toolbar's
+  Bookmarks button shows the file, `about:bookmarks`; `about:history`.
+  The Location field offers, as one types, the pages whose address or
+  title has the text (the arrows or a click take one), and words are
+  searched (DuckDuckGo's page without scripts: Netscape 4's Internet
+  Keywords, Chrome's Omnibox). Tabs: Ctrl+T, Ctrl+W, Ctrl+Tab, Ctrl
+  and a click for a link behind; the strip under the toolbar when
+  there are two (Mozilla's); a tab not shown waits. mini-chrome's
+  `Omnibox`, `Bookmarks` and `Window_tabs` are not copied (their text
+  field and tab bar are libs/gui's).
 
 ## Speed (2026-10-11)
 
@@ -103,8 +118,9 @@ code 16.6 s.
   link to YouTube is followed. `helpers=off`: none (the frames' tests).
   `tests/helpers.sh`: fake programs on the PATH say what they were given.
 - A page shown while its scripts run (a long run stops the window:
-  mini-chrome's `Js_slice` is not taken); bookmarks, the history kept;
-  an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
+  mini-chrome's `Js_slice` is not taken); bookmarks' folders, a
+  bookmark removed but in an editor; a text field's caret and
+  selection in the Location field; an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
   (gzip alone is asked for).
 - A file given by a relative path keeps it (`file://browsers/...`): a
   link of its page that starts with `/` goes wrong.

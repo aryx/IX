@@ -5,19 +5,7 @@
 
 (* See Box_layout.mli *)
 
-type box = {
-  element : Dom.element option;
-  style : Computed.t;
-  x : float;
-  y : float;
-  width : float;
-  height : float;
-  border : float * float * float * float;
-  children : box list;
-  lines : Html_layout.line list;
-  backdrops : box list;
-  marker : Html_layout.marker option;
-}
+type box = [%mli]
 
 (*****************************************************************************)
 (* Boxes *)

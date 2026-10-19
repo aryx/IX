@@ -7,21 +7,7 @@
 open Css_syntax
 module V = Css_values
 
-type display =
-  | Inline
-  | Block
-  | Inline_block
-  | List_item
-  | Flex
-  | Inline_flex
-  | Grid
-  | Table
-  | Table_row_group
-  | Table_row
-  | Table_cell
-  | Table_caption
-  | Display_none
-  | Contents
+type display = [%mli]
 
 type position = Static | Relative | Absolute | Fixed | Sticky
 type size = Auto | Len of Css_values.length
@@ -34,61 +20,7 @@ type side = Side_none | Side_left | Side_right | Side_both
 type flex_direction = Row | Row_reverse | Column | Column_reverse
 type align = Start | End | Center | Stretch | Space_between | Space_around | Space_evenly | Align_baseline
 
-type t = {
-  display : display;
-  position : position;
-  float : side;
-  clear : side;
-  top : size;
-  right : size;
-  bottom : size;
-  left : size;
-  width : size;
-  height : size;
-  min_width : Css_values.length;
-  min_height : Css_values.length;
-  max_width : size;
-  max_height : size;
-  margin : size * size * size * size;
-  padding : Css_values.length * Css_values.length * Css_values.length * Css_values.length;
-  border_width : float * float * float * float;
-  border_color : Css_values.color * Css_values.color * Css_values.color * Css_values.color;
-  border_box : bool;
-  color : Css_values.color;
-  background : Css_values.color;
-  background_image : string option;
-  mask_image : string option;
-  font_size : float;
-  bold : bool;
-  italic : bool;
-  family : family;
-  line_height : line_height;
-  text_align : text_align;
-  underline : bool;
-  line_through : bool;
-  uppercase : bool;
-  white_space : white_space;
-  vertical_align : vertical_align;
-  list_style : string;
-  visible : bool;
-  overflow_hidden : bool;
-  flex_direction : flex_direction;
-  flex_wrap : bool;
-  justify_content : align;
-  align_items : align;
-  align_self : align option;
-  flex_grow : float;
-  flex_shrink : float;
-  flex_basis : size;
-  row_gap : Css_values.length;
-  column_gap : Css_values.length;
-  grid_columns : Css_grid.track list;
-  grid_rows : Css_grid.track list;
-  grid_areas : string list list;
-  grid_area : Css_grid.placement;
-  align_content : align option;
-  custom : (string * Css_syntax.component list) list;
-}
+type t = [%mli]
 
 let zero = V.zero
 let black = V.black

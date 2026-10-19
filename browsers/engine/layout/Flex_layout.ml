@@ -5,15 +5,7 @@
 
 (* See Flex_layout.mli *)
 
-type item = {
-  base : float;
-  grow : float;
-  shrink : float;
-  min_size : float;
-  max_size : float;
-  auto_before : bool;
-  auto_after : bool;
-}
+type item = [%mli]
 
 let clamp (it : item) (size : float) : float = Float.max it.min_size (Float.min it.max_size size)
 

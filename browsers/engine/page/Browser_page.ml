@@ -5,32 +5,9 @@
 
 (* See Browser_page.mli *)
 
-type t = {
-  url : string;
-  status : int;
-  charset : Charset.t;
-  bytes : int;
-  lines : string list;
-  tokens : Html_lexer.token list;
-  tree : Dom.element;
-  line_mode : Line_mode.t;
-  title : string;
-  layout : Html_layout.box;
-  drawn : Browser_draw.drawn;
-  background : Looks.color option;
-  forms : Forms.form list;
-  values : (Dom.element * Forms.value) list;
-  quirks : bool;
-  backgrounds : string list;
-}
+type t = [%mli]
 
-type settings = {
-  css : bool;
-  width : float;
-  visited : string -> bool;
-  picture : string -> Browser_picture.t option;
-  sheet : string -> string option;
-}
+type settings = [%mli]
 
 (*****************************************************************************)
 (* Pages the browser writes *)

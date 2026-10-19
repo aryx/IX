@@ -2,4 +2,7 @@
 ; languages/html, its first version; README.md)
 (library
  (name ix_html)
+ ; type t = [%mli]: a type's definition taken from the .mli, said once
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (wrapped false))

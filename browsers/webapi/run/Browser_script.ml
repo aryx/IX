@@ -170,14 +170,7 @@ let node_of_element (t : t) (e : Dom.element) : node option = List.find_map (fun
 let page_budget = ref max_int
 let page_seconds = 60.
 
-type options = {
-  seed : int;
-  log : string -> unit;
-  base : string;
-  epoch : float;
-  viewport : float * float;
-  cookies : (unit -> string) * (string -> unit);
-}
+type options = [%mli]
 
 let defaults : options =
   { seed = 1; log = (fun _ -> ()); base = "about:blank"; epoch = 0.; viewport = (1000., 768.); cookies = ((fun () -> ""), fun (_ : string) -> ()) }

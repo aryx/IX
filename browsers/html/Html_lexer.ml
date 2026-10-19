@@ -7,18 +7,7 @@
 
 type attribute = string * string
 
-type token =
-  | Doctype of string
-  | Start_tag of {
-      name : string;
-      attributes : attribute list;
-      extensions : attribute list;
-      origin : Dtd.origin;
-      self_closing : bool;
-    }
-  | End_tag of string
-  | Text of string
-  | Comment of string
+type token = [%mli]
 
 (*****************************************************************************)
 (* The machine's memory *)

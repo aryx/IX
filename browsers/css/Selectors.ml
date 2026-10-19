@@ -8,23 +8,7 @@ open Css_syntax
 
 type attr_op = Exists | Equals | Includes | Dash | Prefix | Suffix | Substring
 
-type pseudo_class =
-  | First_child
-  | Last_child
-  | Only_child
-  | Nth_child of int * int
-  | Not of complex list
-  | Is of complex list * bool (* :is() (and :matches), counting as its most specific; :where(), counting nothing *)
-  | Link
-  | Visited
-  | Hover
-  | Active
-  | Focus
-  | Root
-  | Empty
-  | Checked
-  | Disabled
-  | Enabled
+type pseudo_class = [%mli]
 
 and simple =
   | Type of string

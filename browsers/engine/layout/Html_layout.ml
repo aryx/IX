@@ -9,33 +9,13 @@ type metrics = Looks.t -> string -> float
 type picture = { src : string; height : float; middle : bool }
 type control = { element : Dom.element; control_height : float }
 
-type fragment = {
-  text : string;
-  look : Looks.t;
-  x : float;
-  width : float;
-  baseline : float;
-  picture : picture option;
-  control : control option;
-  element : Dom.element;
-}
+type fragment = [%mli]
 
 type line = { top : float; height : float; baseline : float; fragments : fragment list; anchors : string list }
 type kind = Block of Dom.element | Anonymous | Rule of Dom.element
 type marker = Bullet | Number of int
 
-type box = {
-  kind : kind;
-  x : float;
-  y : float;
-  width : float;
-  height : float;
-  children : box list;
-  lines : line list;
-  floats : fragment list;
-  marker : marker option;
-  background : Looks.color option;
-}
+type box = [%mli]
 
 (* a form's control's size, in the look it is in, by its kind; none for
  * a hidden one, or what is not a control *)

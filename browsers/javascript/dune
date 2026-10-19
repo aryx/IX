@@ -5,6 +5,9 @@
 
 (library
  (name ix_javascript)
+ ; type t = [%mli]: a type's definition taken from the .mli, said once
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (wrapped false)
  (modules :standard \ CLI Main)
  ; every module linked, used by name or not: Js_compile tells Js_eval

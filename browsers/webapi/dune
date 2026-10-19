@@ -8,6 +8,9 @@
 
 (library
  (name ix_webapi)
+ ; type t = [%mli]: a type's definition taken from the .mli, said once
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (wrapped false)
  (modules_without_implementation script_types) ; types alone
  (flags (:standard -w -69-32))

@@ -12,39 +12,7 @@ type place = { mutable hops : int; mutable slot : int }
 
 let place () : place = { hops = -1; slot = 0 }
 
-type expr =
-  | Number of float
-  | String of string
-  | Bool of bool
-  | Null
-  | Name of string
-  | Local of string * place
-  | This
-  | Unary of string * expr
-  | Update of string * bool * expr
-  | Binary of string * expr * expr
-  | Logical of string * expr * expr
-  | Assign of string * expr * expr
-  | Conditional of expr * expr * expr
-  | Comma of expr * expr
-  | Member of expr * string
-  | Index of expr * expr
-  | Call of expr * expr list
-  | New of expr * expr list
-  | Function of func
-  | Array of expr list
-  | Object of property list
-  | Regex of string * string
-  | Template of string list * expr list
-  | Spread of expr
-  | Tagged of expr * string list * expr list
-  | Yield of bool * expr option
-  | Class of class_
-  | Super_call of expr list
-  | Super_member of string
-  | Opt of expr
-  | Optional of expr
-  | Await of expr
+type expr = [%mli]
 
 and func = {
   name : string option;

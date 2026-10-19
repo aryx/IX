@@ -5,17 +5,7 @@
 
 (* See Js_lexer.mli *)
 
-type kind =
-  | Keyword of string
-  | Name of string
-  | Number of float
-  | String of string
-  | Punct of string
-  | Regex of string * string
-  (* `a${x}b${y}c`: its strings ("a", "b", "c") and, between them, the
-   * tokens of each ${ } *)
-  | Template of string list * token list list
-  | Eof
+type kind = [%mli]
 
 and token = { kind : kind; line : int; newline_before : bool; at : int }
 

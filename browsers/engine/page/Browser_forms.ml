@@ -5,12 +5,7 @@
 
 (* See Browser_forms.mli *)
 
-type outcome =
-  | Nothing
-  | Focus of Dom.element
-  | Unfocus
-  | Changed of Browser_page.t
-  | Submit of { url : string; post : (string * string) option; page : Browser_page.t }
+type outcome = [%mli]
 
 let value_of = Browser_page.value_of
 let with_value = Browser_page.with_value

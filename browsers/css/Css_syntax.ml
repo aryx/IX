@@ -5,28 +5,12 @@
 
 (* See Css_syntax.mli *)
 
-type token =
-  | Ident of string
-  | Function of string
-  | At_keyword of string
-  | Hash of string
-  | String of string
-  | Url of string
-  | Delim of char
-  | Number of float
-  | Percentage of float
-  | Dimension of float * string
-  | Whitespace
-  | Colon
-  | Semicolon
-  | Comma
+type token = [%mli]
 
 type component = Token of token | Block of char * component list | Func of string * component list
 type declaration = { name : string; value : component list; important : bool }
 
-type rule =
-  | Style_rule of { prelude : component list; declarations : declaration list }
-  | At_rule of { name : string; prelude : component list; block : component list option }
+type rule = [%mli]
 
 (*****************************************************************************)
 (* Tokens *)

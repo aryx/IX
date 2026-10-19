@@ -17,5 +17,8 @@
 
 (library
  (name ix_browser_engine)
+ ; type t = [%mli]: a type's definition taken from the .mli, said once
+ (preprocess (action (run %{bin:mini-ml} -pp %{input-file})))
+ (preprocessor_deps (source_tree .))
  (wrapped false)
  (libraries ix_core ix_html ix_css ix_http ix_playground ix_graphics_software ix_graphics_images ix_graphics_svg ix_graphics_core))

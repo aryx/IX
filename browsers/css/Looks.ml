@@ -8,22 +8,7 @@
 type color = int * int * int
 type align = Left | Center | Right
 
-type t = {
-  size : float;
-  bold : bool;
-  italic : bool;
-  underline : bool;
-  strike : bool;
-  monospace : bool;
-  color : color;
-  link : string option;
-  pre : bool;
-  align : align;
-  link_color : color;
-  visited_color : color;
-  base : float;
-  extensions : bool;
-}
+type t = [%mli]
 
 let root (size : float) : t =
   {

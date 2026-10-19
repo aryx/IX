@@ -50,13 +50,13 @@ COLUMNS = [
             "tiny/TinyLibGUI.ml (widgets),",
             "TinyLibPlayground.ml (shapes, a loop),",
             "TinyLibDraw.ml (the drawing's messages):",
-            "files given to tiny-ml before its own"]),
-        ("The core library", "ML", [
-            "tiny/TinyLibCore.ml, a prelude: tiny-ml",
-            "reads it before every program (the",
-            "operators, option, the exceptions, List);",
-            "TinyKernel/libml/TinyCalls.ml: the kernel's",
-            "calls, as externals"]),
+            "modules compiled before its own"]),
+        ("The standard library", "ML", [
+            "tiny/TinyLibCore/: OCaml's modules as",
+            "tiny programs name them (Stdlib, List,",
+            "String, Buffer, Hashtbl...), the first",
+            "units of every program; TinyKernel/libml/",
+            "TinyCalls.ml: the kernel's calls"]),
         ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c: the allocator,",
             "Cheney's collector, strings, compare;",
@@ -96,8 +96,8 @@ COLUMNS = [
             "(the pixels), TinyKernelNetwork.ml (IP,",
             "IL), TinyMemory.ml (the machine's bytes,",
             "as externals)"]),
-        ("The core library", "ML", [
-            "tiny/TinyLibCore.ml: the same prelude"]),
+        ("The standard library", "ML", [
+            "tiny/TinyLibCore/: the same modules"]),
         ("TinyML's runtime", "C, by tiny-c", [
             "tiny/TinyMLRuntime/core.c, the same;",
             "included by TinyKernel/runtime.c (the",

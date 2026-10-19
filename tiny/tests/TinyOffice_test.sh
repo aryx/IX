@@ -9,7 +9,7 @@
 # overlapping, edited, removed; a sheet, a drawing; the menus; a box
 # moved and resized by its tab and its corner). Built by OCaml (dune), its lines
 # against pages.expected (RECORD=1 records them: read them first); then
-# built by tiny-ml with TinyLibStd.ml, TinyLibPlayground.ml (its
+# built by tiny-ml with TinyLibPlayground.ml (its
 # shapes; the kernel's calls under it are the host's stand-in,
 # TinyKernel/host/stub/TinyCalls.ml) and TinyLibGUI.ml (its menus) and run
 # by tiny-cpu: the same lines.
@@ -44,7 +44,7 @@ END
 printf 'typedef int value;\nvalue vstack[32768];\nvalue space0[65536];\nvalue space1[65536];\n' > $W/data.c
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
 if $TC -o $W/main.tm $W/main.c && $TC -o $W/data.tm $W/data.c \
-   && $TML -o $W/pages.tm $ROOT/tiny/TinyLibStd.ml $ROOT/tiny/TinyKernel/host/stub/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyOffice.ml $T/Pages.ml \
+   && $TML -o $W/pages.tm $ROOT/tiny/TinyKernel/host/stub/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyOffice.ml $T/Pages.ml \
    && link_tm $W/pages.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/pages.tm $W/data.tm \
    && timeout 120 $CPU $W/pages.img > $W/tm.out 2>&1 && diff $T/pages.expected $W/tm.out > $W/tm.diff
 then echo "ok pages: by tiny-ml, on tiny-cpu"; else echo "FAIL pages: by tiny-ml, on tiny-cpu"; head -10 $W/tm.diff $W/tm.out 2>/dev/null | head -20; failures=$((failures + 1)); fi

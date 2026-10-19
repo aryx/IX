@@ -136,9 +136,9 @@
  *   read; a program's main (ml_start, the prelude, each unit's init in
  *   their order, the curry functions, the tables) is made of the
  *   interfaces. A unit is a module: its names are M.x in the units
- *   after it, or x after open M; a name with a dot is as it is written
- *   (TinyLibStd's String.trim); Stdlib, the prelude, is open in all,
- *   and TinyLibStd too. The types, the constructors and the labels
+ *   after it, or x after open M; Stdlib is open in all, and with it
+ *   TinyLibCore/'s modules, the standard library, are the first
+ *   units of every program, their text the compiler's. The types, the constructors and the labels
  *   are the program's, one name space: a record's label is the latest
  *   record's unless the type says which. Each function and static block
  *   is a piece (.piece), which tiny-linker leaves out when nothing

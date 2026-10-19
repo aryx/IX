@@ -43,12 +43,13 @@ $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
 
-# (tiny-ml's prelude is a file of its ML, TinyLibCore.ml: its
-# text as a string in a unit of the compiler's, made here, as
+# (tiny-ml's standard library, TinyLibCore/'s modules in their order:
+# their text as strings in a unit of the compiler's, made here, as
 # tiny/dune's rule makes it)
-$D/TinyMLPrelude.ml: TinyLibCore.ml
+CORE=Stdlib Char List String Bytes Array Option Filename Buffer Hashtbl Common Sha1
+$D/TinyMLPrelude.ml: ${CORE:%=TinyLibCore/%.ml}
 	mkdir -p $D
-	(echo 'let prelude = {|'; cat TinyLibCore.ml; echo '|}') > $target
+	(echo 'let modules = ['; for m in $CORE; do echo "\"$m\", {|"; cat TinyLibCore/$m.ml; echo '|};'; done; echo ']') > $target
 $D/TinyMLPrelude.$O: $D/TinyMLPrelude.ml
 	$ML $INCLUDES -o $target $D/TinyMLPrelude.ml
 $D/TinyML.$O: $D/TinyMLPrelude.$O

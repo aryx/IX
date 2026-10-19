@@ -1,10 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyLibStd's functions, each called and its result printed
- * (TinyLibStd_test.sh): a program OCaml runs on its own library, which
- * says what to expect (std.expected), and tiny-ml builds with
- * TinyLibStd.ml. No Hashtbl.fold: its order is the library's own. *)
+(* TinyLibCore/'s functions, each called and its result printed
+ * (TinyLibCore_test.sh): a program OCaml runs on its own library, which
+ * says what to expect (std.expected), and tiny-ml builds on
+ * TinyLibCore/. No Hashtbl.fold's order: it is the library's own. *)
 let str s = print_string ("[" ^ s ^ "]")
 let strs l = List.iter str l; print_newline ()
 let int n = print_int n; print_char ' '
@@ -64,3 +64,18 @@ let () =
   Hashtbl.remove h "x"; bool (Hashtbl.mem h "x");
   (try strs (Hashtbl.find h "x") with Not_found -> print_endline "not found");
   int (Hashtbl.fold (fun _ _ n -> n + 1) h 0); print_newline ()
+
+(* Buffer past its first bytes, Hashtbl past its buckets: they double;
+ * add hides a key's binding, remove shows it again, as OCaml's *)
+let () =
+  let b = Buffer.create 1 in
+  for i = 0 to 999 do Buffer.add_char b (Char.chr (97 + (i mod 26))) done;
+  Buffer.add_string b (String.make 300 '.');
+  int (Buffer.length b); str (String.sub (Buffer.contents b) 990 15); print_newline ();
+  let h = Hashtbl.create 1 in
+  for i = 0 to 999 do Hashtbl.replace h (string_of_int i) i done;
+  for i = 0 to 499 do Hashtbl.remove h (string_of_int (2 * i)) done;
+  int (Hashtbl.length h); int (Hashtbl.fold (fun _ v n -> n + v) h 0); int (Hashtbl.find h "999");
+  let t = Hashtbl.create 8 in
+  Hashtbl.add t (1, "a") "first"; Hashtbl.add t (1, "a") "second"; str (Hashtbl.find t (1, "a"));
+  Hashtbl.remove t (1, "a"); str (Hashtbl.find t (1, "a")); int (Hashtbl.length t); print_newline ()

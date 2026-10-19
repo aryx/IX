@@ -463,3 +463,45 @@ and its library is TinyLibCore/.
   already had the opens OCaml asks for. tiny-kernel's kernel and 12
   of its programs the same bytes as at step 4; TinyML_test.sh checks
   Shapes.area, and area unbound without open Shapes.
+- 2026-10-19: step 5 done, TinyLibCore/ as modules. Stdlib (the
+  operators and the runtime's externals, option, the exceptions,
+  failwith..., int_of_string_opt), Char, List, String, Bytes, Array,
+  Option, Filename, Buffer, Hashtbl, and ix's Common (|||, which OCaml's
+  files get from lib_core's) and Sha1 (lib_crypto's string and to_hex,
+  for tiny-build and tiny-vcs): a file and its .mli each, from
+  TinyLibCore.ml and TinyLibStd.ml, which are gone, as is the scoping's
+  exception for a name with a dot (libml/TinyLibSystem.ml defines fork,
+  not TinyLibSystem.fork). The compiler carries their text
+  (TinyMLPrelude.ml's modules, tiny/dune's and tiny/mkfile's rule) and
+  compiles them as the first units of every program, in every run the
+  same way, so their labels agree; each main has them, and the sweep
+  keeps what the program calls: §6's lib.a, without an archive (the
+  linker has none yet: not needed while the library is in every main).
+  - **Hashtbl** is an array of buckets, a key's by core.c's ml_hash
+    (its integers, its strings' bytes, its blocks' tags and fields, ten
+    values at most; never an address, which the collector changes),
+    twice as many when twice as many bindings; add and remove as
+    OCaml's (a binding hidden, then shown again). **Buffer** is bytes
+    that double, from 256 at most (create's size is a guess, and a
+    partition 1 MB). **Sha1** computes on words as two halves of 16.
+  - **The API is OCaml's, checked by OCaml**: TinyLibCore_test.sh
+    (TinyLibStd_test.sh before) has OCaml compile module _ : sig <the
+    .mli> end = struct include List end for each module but Common and
+    Sha1 (Hashtbl's create without its ?random); std.ml's lines on
+    both (Buffer past its bytes, Hashtbl past its buckets, add and
+    remove), and Sha1's digests against sha1sum's (the padding's edges,
+    a long text): all the same, the first time.
+  - **make check**: the screens the same but tetris's, whose pieces
+    come from u_ticks at its start: the modules' inits make it start a
+    tick later, another seed, other pieces (the same score and rows);
+    its sum, the two sounds' (play's samples later), the programs'
+    sizes (1% to 3% larger: the inits, the real Hashtbl and Buffer;
+    office 368 KB of its 384) and the trace of get on a wire that loses
+    its 7th packet recorded again: get starts later, the machine sends
+    its sync twice before the answer, and the 7th is then the second
+    sync, not a data packet (the same transfer, nothing sent again).
+  - **Lines**: TinyLibCore/ 558 (TinyLibCore.ml and TinyLibStd.ml were
+    280); t-IX 19,164 without the header comments (README's budget:
+    5,800 left).
+  - **Not done**: archives in tiny-linker (with the library in every
+    main, nothing needs one yet).

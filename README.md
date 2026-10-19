@@ -220,8 +220,8 @@ tiny-machine, where it is the program `rc` (the shell one types at
 first there is still a C program of tiny-kernel's,
 `tiny/TinyKernel/user/sh.c`, kept for what it teaches). What made it
 possible: tiny-ml reads the capabilities and forgets them;
-[`TinyLibStd.ml`](tiny/TinyLibStd.ml) has what the shell names of
-OCaml's standard library; and what it asks of the system is one
+[`TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli), tiny-ml's standard
+library, has what the shell names of OCaml's, module by module; and what it asks of the system is one
 interface, `TinyLibSystem`, with a file for each side
 ([`TinyKernel/host/`](tiny/TinyKernel/host/TinyLibSystem.mli)'s over Unix,
 [`TinyKernel/libml/`](tiny/TinyKernel/libml/TinyLibSystem.ml)'s over
@@ -237,7 +237,7 @@ with what under it:
 |---|---|---|---|
 | the tools and the machine, while developing | OCaml and dune | OCaml's own | [`lib_core/commons/`](lib_core/commons/) (dune's `ix_core`), opam's `unix`, `fpath`, `logs` |
 | the same, built by IX | mini-ml, by `mini-mk` | IX's own, in `lib_core/` | `lib_core/commons/` |
-| the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore.ml`](tiny/TinyLibCore.ml), tiny-ml's prelude (read before every program: some forty functions), and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`; for a tool, `TinyLibStd` and `TinyLibSystem` |
+| the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli), its modules (Stdlib, List, String, Buffer, Hashtbl...: OCaml's subset, which OCaml checks), the first units of every program, and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`; for a tool, `TinyLibSystem` |
 
 tiny-c and tiny-ml have one target, tiny-machine: their arm64 back
 ends, tiny-assembler and tiny-arm left with
@@ -245,9 +245,9 @@ ends, tiny-assembler and tiny-arm left with
 so did tiny-lib-host, a trimmed copy of `lib_core/` under the tools
 built by IX, once it had shown what of `lib_core/` they use.
 
-That is about 17,400 lines of OCaml and ML; with their C (tiny-c's
+That is about 17,700 lines of OCaml and ML; with their C (tiny-c's
 and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 19,100 lines** in all (the header comments are in
+t-IX is **about 19,500 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -404,7 +404,7 @@ not, something is trimmed first.
 | | budget | today (2026-10-19) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 18,900 | 6,100 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
+| **t-IX** | 25,000 | 19,200 | 5,800 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

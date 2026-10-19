@@ -428,6 +428,50 @@ ml_array_set(value a, value i, value v)
 	return 1;
 }
 
+// a value's hash, for TinyLibCore/Hashtbl.ml: its integers, its
+// strings' bytes, its blocks' tags and fields, as OCaml's Hashtbl.hash
+// walks one, ten values at most; never an address, which the collector
+// changes (a closure is its tag alone)
+static unsigned
+hash(value v, value *budget)
+{
+	unsigned h;
+	value n;
+	value i;
+	value t;
+	uchar *p;
+
+	if(*budget <= 0)
+		return 0;
+	*budget = *budget - 1;
+	if(v & 1)
+		return (unsigned)(v >> 1) * 0x9e3779b1;
+	t = ((value*)v)[-1] & 255;
+	h = t;
+	if(t == 252){
+		n = length(v);
+		p = (uchar*)v;
+		for(i = 0; i < n; i++)
+			h = (h ^ p[i]) * 16777619;
+		return h;
+	}
+	if(t == 247)
+		return h;
+	n = wosize(v);
+	for(i = 0; i < n && *budget > 0; i++)
+		h = h * 31 + hash(((value*)v)[i], budget);
+	return h;
+}
+
+value
+ml_hash(value v)
+{
+	value budget;
+
+	budget = 10;
+	return ((hash(v, &budget) & 0x3fffffff) << 1) | 1;
+}
+
 // two integers compared here, before compare's frame of eight locals
 // (old: 100 instructions for min 3 4, the prelude's min being
 // polymorphic; a sound's sample clamped by min and max was 175 of them)

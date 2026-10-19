@@ -53,16 +53,16 @@
 <text x="352" y="305" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibGUI.ml (widgets),</text>
 <text x="352" y="322" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyLibPlayground.ml (shapes, a loop),</text>
 <text x="352" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyLibDraw.ml (the drawing&#x27;s messages):</text>
-<text x="352" y="356" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">files given to tiny-ml before its own</text>
+<text x="352" y="356" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">modules compiled before its own</text>
 <line x1="486" y1="369" x2="486" y2="387" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="389" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="352" y="412" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The core library</text>
+<text x="352" y="412" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
 <text x="622" y="412" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
-<text x="352" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore.ml, a prelude: tiny-ml</text>
-<text x="352" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">reads it before every program (the</text>
-<text x="352" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">operators, option, the exceptions, List);</text>
-<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyKernel/libml/TinyCalls.ml: the kernel&#x27;s</text>
-<text x="352" y="501" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">calls, as externals</text>
+<text x="352" y="433" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/: OCaml&#x27;s modules as</text>
+<text x="352" y="450" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny programs name them (Stdlib, List,</text>
+<text x="352" y="467" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">String, Buffer, Hashtbl...), the first</text>
+<text x="352" y="484" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">units of every program; TinyKernel/libml/</text>
+<text x="352" y="501" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyCalls.ml: the kernel&#x27;s calls</text>
 <line x1="486" y1="514" x2="486" y2="532" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="338" y="534" width="296" height="125" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="352" y="557" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>
@@ -129,9 +129,9 @@
 <text x="968" y="339" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">as externals)</text>
 <line x1="1102" y1="352" x2="1102" y2="370" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="372" width="296" height="57" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
-<text x="968" y="395" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The core library</text>
+<text x="968" y="395" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">The standard library</text>
 <text x="1238" y="395" font-size="11" font-weight="normal" fill="#57606a" text-anchor="end" font-style="italic" xml:space="preserve">ML</text>
-<text x="968" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore.ml: the same prelude</text>
+<text x="968" y="416" font-size="12" font-weight="normal" fill="#1f2328" text-anchor="start" xml:space="preserve">tiny/TinyLibCore/: the same modules</text>
 <line x1="1102" y1="429" x2="1102" y2="447" stroke="#57606a" stroke-width="2" marker-end="url(#a)"/>
 <rect x="954" y="449" width="296" height="91" rx="8" fill="#fff1e5" stroke="#e16f24" stroke-width="1.5"/>
 <text x="968" y="472" font-size="14" font-weight="600" fill="#1f2328" text-anchor="start" xml:space="preserve">TinyML&#x27;s runtime</text>

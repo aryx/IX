@@ -99,7 +99,7 @@ job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
 job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
 job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'
 job "tiny: shell, editor, db, vcs" sh_ 'tiny/tests/TinyShell_test.sh && tiny/tests/TinyEditorLine_test.sh && tiny/tests/TinyDatabase_test.sh 5 && tiny/tests/TinyVCS_test.sh 3'
-job "tiny: cpu, c, ml, machine, graphics, pi" sh_ 'tiny/tests/TinyCPU_test.sh 50 && tiny/tests/TinyMachine_test.sh && tiny/tests/TinyKernelGraphics_test.sh && tiny/tests/TinyLibPlayground_test.sh && tiny/tests/TinyAppTetris_test.sh && tiny/tests/TinyLibGUI_test.sh && tiny/tests/TinyLibStd_test.sh && tiny/tests/TinyEditorScreen_test.sh && tiny/tests/TinyBrowser_test.sh && tiny/tests/TinyProfiler_test.sh && tiny/tests/TinyC_test.sh && tiny/tests/TinyML_test.sh'
+job "tiny: cpu, c, ml, machine, graphics, pi" sh_ 'tiny/tests/TinyCPU_test.sh 50 && tiny/tests/TinyMachine_test.sh && tiny/tests/TinyKernelGraphics_test.sh && tiny/tests/TinyLibPlayground_test.sh && tiny/tests/TinyAppTetris_test.sh && tiny/tests/TinyLibGUI_test.sh && tiny/tests/TinyLibCore_test.sh && tiny/tests/TinyEditorScreen_test.sh && tiny/tests/TinyBrowser_test.sh && tiny/tests/TinyProfiler_test.sh && tiny/tests/TinyC_test.sh && tiny/tests/TinyML_test.sh'
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 job "mini-ml -pp" languages/ml/tests/pp.sh
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000

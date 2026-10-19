@@ -25,15 +25,12 @@ of the system:
 
 - `TinyLibXxx` is a library that tiny programs are compiled with.
   For the programs of tiny-kernel, which tiny-ml compiles:
-  `TinyLibCore.ml`, tiny-ml's prelude, in front of every one of them
-  (the operators, the option, the exceptions, the `List` functions,
-  `Bytes`; it
-  is tiny-ml's ML and not OCaml's, and the build puts its text in the
-  compiler), then `TinyLibDraw`, `TinyLibPlayground` and `TinyLibGUI`,
-  and `TinyLibStd.ml` for a tool that runs there too (tiny-shell,
-  tiny-utils):
-  what it names of OCaml's standard library beyond the prelude
-  (`String.split_on_char`, `Buffer`, `Hashtbl`), in tiny-ml's ML;
+  `TinyLibCore/`, tiny-ml's standard library, in front of every one of
+  them: OCaml's modules, as a tiny program names them (`Stdlib`,
+  `List`, `String`, `Bytes`, `Buffer`, `Hashtbl`...; and ix's `Common`
+  and `Sha1`), each a subset of OCaml's that OCaml checks, in tiny-ml's
+  ML, their text the compiler's; then `TinyLibDraw`,
+  `TinyLibPlayground` and `TinyLibGUI`;
   and `TinyLibRegex.ml`, regular expressions in Plan 9's notation,
   for grep (whether a line matches) and for the line editor (where
   the match is, and its groups): a backtracker with a memo, so a
@@ -68,8 +65,8 @@ of the system:
 
 The others are the system's programs, a file each (`TinyShell`,
 `TinyC`, `TinyWindows`...). Three of them are on both sides:
-`TinyShell.ml` is the host's tiny-shell and, built by tiny-ml with
-`TinyLibStd.ml`, tiny-kernel's `rc`; `TinyUtilities.ml` is the host's
+`TinyShell.ml` is the host's tiny-shell and, built by tiny-ml,
+tiny-kernel's `rc`; `TinyUtilities.ml` is the host's
 tiny-utils and tiny-kernel's `utils`, which the boot image has under
 the name of each utility (`cat`, `ls`...); `TinyEditorLine.ml` is the
 host's tiny-editor and tiny-kernel's `ed`, also named `sam`. What they ask of the system is

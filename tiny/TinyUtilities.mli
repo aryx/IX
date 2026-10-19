@@ -41,7 +41,7 @@
  * {b The same file on two systems.} As TinyShell.ml, it names only
  * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure functions
  * of the standard library. So dune builds it for the host, and tiny-ml
- * builds it for tiny-kernel, with TinyLibStd.ml and the kernel's
+ * builds it for tiny-kernel, on TinyLibCore/ and the kernel's
  * TinyLibSystem.ml.
  *
  * What is kept of the twins is their output, where it costs nothing:

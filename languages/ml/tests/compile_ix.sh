@@ -46,7 +46,7 @@ SINGML=$ROOT/_build/default/kernels/singularity/singml/Main.exe
 S=kernels/singularity
 mkdir -p $W/contracts
 for c in $S/contracts/*.contract; do $SINGML -o $W/contracts $c > /dev/null; done
-for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/sdl/|^tiny/TinyLib(Core|Std)\.ml$|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
+for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -vE '/tests/|^lib_core/(core|base|collections|printing|parsing|system)/|^raspberry/(video/Sdl_display|Main)\.ml$|^raspberry/web/|^tiny/TinyMachine/TinyMachine(Window|Web|SDL)\.ml$|^tiny/sdl/|^tiny/TinyLibCore/|^tiny/TinyKernel/(libml/TinyLibSystem|user/emacs)\.ml$|^languages/smalltalk/hosts/sdl/|^lib_playground/platforms/sdl/|^editors/turbopascal/hosts/sdl/|^lib_terminal/hosts/sdl/|^editors/emacs/sdl/'); do
   d=${f%%/*}; all[$d]=$((${all[$d]:-0} + 1))
   # the program's root: languages/c, languages/ml, or the top directory
   root=$d; [ $d = languages ] && root=$(echo $f | cut -d/ -f1-2)
@@ -76,7 +76,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (the tiny programs against lib_core, as tiny/mkfile; tiny-ml's prelude is a unit the
   # build makes, TinyMLPrelude.ml: dune's)
   # (TinyKernel/host/ first: tiny-shell's TinyLibSystem is the one there, TinyKernel/libml/'s is tiny-ml's)
-  tiny/*) incs[$root]="-I tiny/TinyKernel/host $(dirs tiny) -I _build/default/tiny";;
+  # (not TinyLibCore/: tiny-ml's standard library, whose List would be lib_core's)
+  tiny/*) incs[$root]="-I tiny/TinyKernel/host $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)
   [ $root = kernels ] && [ -d $memdata ] && incs[$root]="${incs[$root]} -I $memdata"

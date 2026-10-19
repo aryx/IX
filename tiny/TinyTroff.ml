@@ -4,7 +4,7 @@
 (* See TinyTroff.mli *)
 open TinyOffice
 
-(* strings joined (TinyLibStd's String.concat, two by two) *)
+(* strings joined (TinyLibCore's String.concat, two by two) *)
 let glue (l : string list) : string = String.concat "" l
 
 

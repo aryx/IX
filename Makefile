@@ -85,7 +85,7 @@ test: all
 	./tiny/tests/TinyLibPlayground_test.sh
 	./tiny/tests/TinyAppTetris_test.sh
 	./tiny/tests/TinyLibGUI_test.sh
-	./tiny/tests/TinyLibStd_test.sh
+	./tiny/tests/TinyLibCore_test.sh
 	./tiny/tests/TinyEditorScreen_test.sh
 	./tiny/tests/TinyBrowser_test.sh
 	./tiny/tests/TinyProfiler_test.sh

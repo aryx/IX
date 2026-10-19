@@ -61,8 +61,8 @@ needing the next:
   (`l.s` in GNU's syntax) and `kernels/lib_machine/libc.c`, a C library
   for ocaml-light's runtime. They are what an ix-built kernel is
   compared with, and `make loc` counts them apart.
-- **tiny-ml** has none of this: its core library is
-  `tiny/TinyLibCore.ml`, a prelude, its runtime
+- **tiny-ml** has none of this: its standard library is
+  `tiny/TinyLibCore/`, OCaml's modules as tiny programs name them, its runtime
   `tiny/TinyMLRuntime/core.c`, and the C library under it is
   tiny-c's own, `tiny/TinyCRuntime/`, not `lib_core/libc/`. The next
   picture is t-ix's side.
@@ -72,7 +72,7 @@ needing the next:
 t-ix has four kinds of program, and they do not stand on the same
 things: a tool runs on the host, the others on tiny-machine.
 
-![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore.ml, TinyMLRuntime, TinyCRuntime, tiny-kernel), a program in C on tiny-machine (the program, TinyCRuntime, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore.ml, TinyMLRuntime, its assembly, tiny-machine)](pics/tiny-layers.svg)
+![What a tiny program stands on: a tool on the host (the program, lib_core, mini-ml's runtime and lib_core's C library, Linux), a program in ML on tiny-machine (the program, TinyLibGUI, TinyLibPlayground and TinyLibDraw, TinyLibCore, TinyMLRuntime, TinyCRuntime, tiny-kernel), a program in C on tiny-machine (the program, TinyCRuntime, tiny-kernel), and the kernel (TinyKernel.ml, its parts, TinyLibCore, TinyMLRuntime, its assembly, tiny-machine)](pics/tiny-layers.svg)
 
 - **A tool** (tiny-shell, tiny-c, tiny-vcs...) is OCaml in one file.
   Built by ix (`mini-mk` in `tiny/`), it is on `lib_core/` whole, as
@@ -87,8 +87,8 @@ things: a tool runs on the host, the others on tiny-machine.
   an interface, `.tmi`, for the units after it), linked: the libraries
   it asks for (`TinyLibGUI`, `TinyLibPlayground`, `TinyLibDraw`), its
   own file, and a last one that runs it, of which tiny-linker keeps
-  what the program calls. Before them all comes `tiny/TinyLibCore.ml`,
-  tiny-ml's prelude, which is the core library. Under the ML: `TinyMLRuntime/core.c` (the
+  what the program calls. Before them all come `tiny/TinyLibCore/`'s
+  modules, tiny-ml's standard library. Under the ML: `TinyMLRuntime/core.c` (the
   allocator, the collector), given the program's memory by
   `TinyKernel/libml/mlsys.c`, and `TinyCRuntime/` for the start and the
   division.
@@ -100,9 +100,11 @@ things: a tool runs on the host, the others on tiny-machine.
   `TinyKernel/`, on the same prelude and the same `core.c`, with its
   own assembly for the start, the traps and the pixels' rows.
 
-`lib_core/` and `TinyLibCore.ml` are therefore not two versions of
-one thing: the first is under the tools, on Linux; the second under
-what tiny-ml compiles, on tiny-machine.
+`lib_core/` and `TinyLibCore/` are therefore one API twice, OCaml's
+standard library's, the second a subset of the first: the first is
+under the tools, on Linux; the second under what tiny-ml compiles, on
+tiny-machine (and, after plan_tiny_self_hosting.md, under the tools
+too).
 `scripts/stats/tiny_layers_svg.py` draws the picture, from a table in
 it.
 

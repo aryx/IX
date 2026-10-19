@@ -782,22 +782,18 @@ let type_item env (it, l) =
     | IExn _ | IOpen _ -> env
   with Failure m -> error "line %d: %s" l m
 
-(* Scopes. A unit's names are M.x for the units after it (but a name
- * with a dot already, TinyLibStd's String.trim, libml's
- * TinyLibSystem.fork, which is as it is written); open M gives a unit
- * M's names as x, for itself alone. Stdlib is open in every unit, and
- * TinyLibStd, the rest of OCaml's standard library for tiny-ml, too.
- * A name's env and a type's env are scoped alike; the types, the
+(* Scopes. A unit's names are M.x for the units after it; open M gives
+ * a unit M's names as x, for itself alone. Stdlib is open in every
+ * unit. A name's env and a type's env are scoped alike; the types, the
  * constructors and the labels are the program's, one name space
- * (old: every name the program's, open M read and left) *)
-let implicit u = u = "Stdlib" || u = "TinyLibStd"
-let qualify u x = if String.contains x '.' then x else u ^ "." ^ x
+ * (old: every name the program's, open M read and left, List.map a
+ * name with a dot) *)
+let implicit u = u = "Stdlib"
+let qualify u x = u ^ "." ^ x
 let opened u env =
   let p = u ^ "." in
   let n = String.length p in
-  List.filter_map (fun (x, b) ->
-    if String.length x > n && String.sub x 0 n = p && not (String.contains (String.sub x n (String.length x - n)) '.')
-    then Some (String.sub x n (String.length x - n), b) else None) env
+  List.filter_map (fun (x, b) -> if String.length x > n && String.sub x 0 n = p then Some (String.sub x n (String.length x - n), b) else None) env
   @ env
 let export u defs before = List.map (fun (x, b) -> qualify u x, b) defs @ (if implicit u then defs else []) @ before
 
@@ -1696,31 +1692,30 @@ let start =
       "ldw\tr2, 12(r1)"; "la\tr3, ml_handler"; "stw\tr2, 0(r3)"; "ldw\tr2, 8(r1)"; "jalr\tzero, 0(r2)" ]
   ^ "\n"
 
-(* the prelude: the Pervasives and List functions, as the program
- * would find them in ocaml-light's stdlib. Its text is
- * TinyLibCore.ml's, put here by the build (TinyMLPrelude.ml,
- * made of it: tiny/dune, tiny/mkfile), so that the compiler carries it
- * and looks for no file when it runs
- * (old: the text itself here, a hundred lines of ML in a string, which
- * nobody found: "also where is this tiny-ml \"prelude\"?") *)
-let prelude = TinyMLPrelude.prelude
-
 let parse s = toks := lex s; pos := 0; items ()
 
 (* a file's unit: its name without the directory and the extension,
  * capitalized, as OCaml's module *)
 let unit_of f = String.capitalize_ascii (Filename.remove_extension (Filename.basename f))
 
-(* the prelude, the first unit, Stdlib: its names, their types, its
- * globals and curry functions *)
-let prelude_unit () =
-  unit_name := "Stdlib";
-  (* an integer's range: 31 bits *)
-  let items = parse (prelude ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n") in
-  let tenv, tdefs = type_unit [] items in
-  let _, defs, n = compile_unit [] items in
-  ignore tenv;
-  export "Stdlib" defs [], export "Stdlib" tdefs [], ("Stdlib", n), !arities
+(* the standard library, TinyLibCore/'s modules, the first units of
+ * every program: their text is the compiler's (TinyMLPrelude.ml, made
+ * of them by the build: tiny/dune, tiny/mkfile), so that it looks for
+ * no file when it runs, and compiles them the same way in every run,
+ * their labels the same in a unit's object and in a main. Their names,
+ * their types, their globals and their curry functions.
+ * (old: the prelude, TinyLibCore.ml, one unit, Stdlib, its List.map a
+ * name with a dot) *)
+let library () =
+  List.fold_left (fun (env, tenv, units, needed) (m, text) ->
+    unit_name := m;
+    known_units := m :: !known_units;
+    (* an integer's range: 31 bits *)
+    let text = if m = "Stdlib" then text ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n" else text in
+    let items = try parse text with Failure e -> error "TinyLibCore/%s.ml: %s" m e in
+    let _, tdefs = (try type_unit tenv items with Failure e -> error "TinyLibCore/%s.ml: %s" m e) in
+    let _, defs, n = (try compile_unit env items with Failure e -> error "TinyLibCore/%s.ml: %s" m e) in
+    export m defs env, export m tdefs tenv, units @ [ (m, n) ], needed @ !arities) ([], [], [], []) TinyMLPrelude.modules
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
   let output = ref "" and file = ref "" and files = ref [] and separate = ref false in
@@ -1741,10 +1736,10 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
     (Console.eprint caps "usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...   (-h: how)\n"; exit 2);
   let write f text = FS.write caps (Fpath.v f) text in
   try
-    let env, tenv, stdlib, needed = prelude_unit () in
+    let env, tenv, stdlib, needed = library () in
     (* the interfaces read, in their order: the units before this one *)
     let env, tenv, units, needed = List.fold_left (fun (env, tenv, units, needed) f ->
-      let env, tenv, u, n = read_interface (read f) env tenv in env, tenv, units @ [ u ], needed @ n) (env, tenv, [ stdlib ], needed) tmis in
+      let env, tenv, u, n = read_interface (read f) env tenv in env, tenv, units @ [ u ], needed @ n) (env, tenv, stdlib, needed) tmis in
     if !separate then begin
       (* one unit: its object, without the prelude, and its interface *)
       let f = List.hd mls in

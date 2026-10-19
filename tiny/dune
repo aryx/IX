@@ -160,18 +160,53 @@
  (modules TinyML TinyMLPrelude)
  (libraries ix_core fpath caps))
 
-; tiny-ml's prelude, a file of its ML (TinyLibCore.ml), as a
-; string in a module of the compiler's
+; tiny-ml's standard library, TinyLibCore/'s modules in their order, as
+; strings in a module of the compiler's (TinyLibCore/Stdlib.mli says why)
 (rule
  (targets TinyMLPrelude.ml)
- (deps TinyLibCore.ml)
+ (deps TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml TinyLibCore/Hashtbl.ml TinyLibCore/Common.ml TinyLibCore/Sha1.ml)
  (action
   (with-stdout-to
    %{targets}
    (progn
-    (echo "let prelude = {|\n")
-    (cat %{deps})
-    (echo "|}\n")))))
+    (echo "let modules = [\n")
+    (echo "\"Stdlib\", {|")
+    (cat TinyLibCore/Stdlib.ml)
+    (echo "|};\n")
+    (echo "\"Char\", {|")
+    (cat TinyLibCore/Char.ml)
+    (echo "|};\n")
+    (echo "\"List\", {|")
+    (cat TinyLibCore/List.ml)
+    (echo "|};\n")
+    (echo "\"String\", {|")
+    (cat TinyLibCore/String.ml)
+    (echo "|};\n")
+    (echo "\"Bytes\", {|")
+    (cat TinyLibCore/Bytes.ml)
+    (echo "|};\n")
+    (echo "\"Array\", {|")
+    (cat TinyLibCore/Array.ml)
+    (echo "|};\n")
+    (echo "\"Option\", {|")
+    (cat TinyLibCore/Option.ml)
+    (echo "|};\n")
+    (echo "\"Filename\", {|")
+    (cat TinyLibCore/Filename.ml)
+    (echo "|};\n")
+    (echo "\"Buffer\", {|")
+    (cat TinyLibCore/Buffer.ml)
+    (echo "|};\n")
+    (echo "\"Hashtbl\", {|")
+    (cat TinyLibCore/Hashtbl.ml)
+    (echo "|};\n")
+    (echo "\"Common\", {|")
+    (cat TinyLibCore/Common.ml)
+    (echo "|};\n")
+    (echo "\"Sha1\", {|")
+    (cat TinyLibCore/Sha1.ml)
+    (echo "|};\n")
+    (echo "]\n")))))
 
 ; TinyLibRegex.ml, the regular expressions of grep and of tiny-editor
 ; (tiny-ml compiles it too, before TinyUtilities.ml and TinyEditorLine.ml)

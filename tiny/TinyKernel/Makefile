@@ -114,7 +114,7 @@ $(O)/%.o: $(L)/%.tm
 	$(AS) -o $@ $<
 .SECONDARY:
 
-$(O)/kernel.tm: ../TinyLibStd.ml TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
+$(O)/kernel.tm: TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml
 	@mkdir -p $(@D)
 	$(TML) -o $@ $^
 
@@ -158,16 +158,15 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o
 # program, the library's unused toplevel left out by tiny-ml:
 # plan_tiny_self_hosting.md, step 4)
 U = $(O)/ml
-I_TinyLibStd = TinyCalls
-I_TinyLibSystem = TinyCalls TinyLibStd
-I_TinyLibRegex = TinyCalls TinyLibStd TinyLibSystem
+I_TinyLibSystem = TinyCalls
+I_TinyLibRegex = TinyCalls TinyLibSystem
 I_TinyLibPlayground = TinyCalls TinyLibDraw
 I_TinyLibGUI = TinyCalls TinyLibDraw TinyLibPlayground
 I_TinyWindows = TinyLibDraw
 I_TinyAppTetris = $(I_TinyLibGUI)
 I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
-GUI = TinyCalls TinyLibStd TinyLibDraw TinyLibPlayground TinyLibGUI
+GUI = TinyCalls TinyLibDraw TinyLibPlayground TinyLibGUI
 I_TinyEditorScreen = $(GUI)
 I_TinyOffice = $(GUI)
 I_TinyTroff = $(GUI) TinyOffice
@@ -202,7 +201,7 @@ F_Www = user/www.ml
 F_Bigmem = user/bigmem.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibStd TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI \
+UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem
 .SECONDEXPANSION:
@@ -212,8 +211,7 @@ $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))
 $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 
 # each program's units, in their order (windows: tiny-windows, after
-# ../TinyLibDraw.ml; rc: tiny-shell, on ../TinyLibStd.ml, what it names
-# of OCaml's standard library, and libml/TinyLibSystem.ml, the system's
+# ../TinyLibDraw.ml; rc: tiny-shell, on libml/TinyLibSystem.ml, the system's
 # calls it asks for (the host's is host/TinyLibSystem.ml); utils and ed
 # with ../TinyLibRegex.ml for grep; emacs, office, troff, play, www:
 # run by ../TinyLibGUI.ml's run_canvas; square: the playground's

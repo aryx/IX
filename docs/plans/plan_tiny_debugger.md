@@ -22,7 +22,7 @@ debugger is not the CPU: it is a process that controls another one.
 ## 1. The idea: stop, look, resume, by messages
 
 ```
-    debug, a process (ML, TinyLibStd): commands typed, as in ed
+    debug, a process (ML, TinyLibCore): commands typed, as in ed
         |  write "b main" "c" "s" "r" "m addr n" "w addr word"
         |  read  "stopped pc cause" "exited status" ...
         v
@@ -123,7 +123,7 @@ The call is added where the others are: the dispatch in TinyKernel.ml,
 
 ## 3. The debugger side, debug, about 300 lines
 
-debug is ML on TinyLibStd, a file of `user/` and `/bin/debug` in the boot
+debug is ML on TinyLibCore, a file of `user/` and `/bin/debug` in the boot
 image. Its commands are ed's kind, a letter and its arguments:
 
 ```

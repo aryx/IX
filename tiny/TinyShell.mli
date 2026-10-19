@@ -123,8 +123,8 @@
  *
  * On two systems: this file is compiled by OCaml for the host and by
  * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It uses only
- * the pure functions of the standard library (tiny-ml provides them in
- * TinyLibStd) and, for everything related to the system,
+ * the pure functions of the standard library (tiny-ml's is
+ * TinyLibCore/) and, for everything related to the system,
  * TinyLibSystem, which has one implementation file per side. That is
  * why there are no labels, no modules of its own, and an exception
  * Exits where Exit from the library would otherwise be used.

@@ -3,7 +3,8 @@
 // TinyKernel.ml's tests, each a line "... ok", or what went wrong: fork
 // and wait's statuses, exec's arguments, pipes (a child writer, the
 // end seen when no writer is left, a big write in pieces), files,
-// directories and "..", a fault killed, the preemption.
+// directories and "..", a fault killed, the preemption, a process
+// traced.
 #include "../libc/user.h"
 
 char buf[2048];
@@ -203,6 +204,84 @@ preemption(void)
 	print("preemption ok\n");
 }
 
+// what the traced child calls, where its tracer stops it
+int
+traced(int x)
+{
+	return x + 1;
+}
+
+// a command to the trace t (none: 0), and whether its answer is want
+// (the answer's end only, when want starts with a dot)
+int
+ask(int t, char *command, char *want)
+{
+	char line[200];
+	int n, k;
+
+	if(command != 0 && write(t, command, strlen(command)) < 0)
+		return 0;
+	n = read(t, line, sizeof line - 1);
+	if(n < 0)
+		return 0;
+	line[n] = 0;
+	if(want[0] != '.')
+		return strcmp(line, want) == 0;
+	k = strlen(want) - 1;
+	return n >= k && strcmp(line + n - k, want + 1) == 0;
+}
+
+// a child stopped at a breakpoint (traced's first word), its pc read,
+// resumed to its end; a child stopped by a fault rather than killed;
+// a child traced from its exec, stopped at its first instruction
+void
+traces(void)
+{
+	int p[2], pid, t, st;
+	char b[40], pc[40];
+
+	pipe(p);
+	if((pid = fork()) == 0){
+		read(p[0], b, 1);
+		exit(traced(6));
+	}
+	t = trace(pid);
+	sprint(b, "b %d", (int)traced);
+	sprint(pc, ".pc %d\n", (int)traced);
+	if(t < 0 || !ask(t, b, "ok\n"))
+		{ fail("trace: a breakpoint set"); return; }
+	write(p[1], "x", 1);
+	if(!ask(t, 0, ".break\n") || !ask(t, "r", pc) || !ask(t, "c", "exited 7\n")
+	|| read(t, b, 1) != 0 || wait(&st) != pid || st != 7)
+		{ fail("trace: a breakpoint"); return; }
+	close(t);
+
+	if((pid = fork()) == 0){
+		read(p[0], b, 1);
+		*(int*)0x200000 = 1;
+		exit(0);
+	}
+	t = trace(pid);
+	write(p[1], "x", 1);
+	if(!ask(t, 0, ".fault 2097152\n") || kill(pid) != 0 || !ask(t, 0, "exited -1\n") || wait(&st) != pid)
+		{ fail("trace: a fault"); return; }
+	close(t);
+
+	if((pid = fork()) == 0){
+		close(1);
+		trace(0);
+		exec("/bin/echo", argv);
+		exit(1);
+	}
+	t = trace(pid);
+	if(!ask(t, 0, "stopped 0 exec\n") || !ask(t, "c", ".exited 0\n") || wait(&st) != pid)
+		{ fail("trace: an exec"); return; }
+	close(t);
+	close(p[0]);
+	close(p[1]);
+	print("trace ok\n");
+}
+
 void
 main(void)
 {
@@ -214,6 +293,7 @@ main(void)
 	fault();
 	kills();
 	preemption();
+	traces();
 	print(failed ? "mltests: FAILED\n" : "mltests: ALL OK\n");
 	exit(failed);
 }

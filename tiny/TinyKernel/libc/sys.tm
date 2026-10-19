@@ -175,3 +175,9 @@ rawcons:
 	sys	22
 	mov	r13, r1
 	ret
+
+trace:
+	ldw	r1, 0(sp)
+	sys	23
+	mov	r13, r1
+	ret

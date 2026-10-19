@@ -66,6 +66,8 @@ let disk_dev = -32
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
+let c_illegal = 2
+let c_fault = 3
 let c_intr = 4
 (* The timer's period is 2.5 ms of the machine's time, whatever its
  * speed: 20,000 instructions at 8 million a second. The programs count
@@ -105,7 +107,7 @@ type pipe = { mutable buf : string; mutable readers : int; mutable writers : int
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call | Voice of voice
+type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call | Voice of voice | Trace of trace
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
 
@@ -131,6 +133,12 @@ and call = { il : il; mutable callers : int }
 (* a voice of the speaker (an open of /dev/audio): where in the samples its
  * next one goes *)
 and voice = { mutable ahead : int }
+
+(* a process traced by another, its tracer (db: plan_tiny_debugger.md):
+ * their pids, the breakpoints (an address and the word that was there),
+ * what is said to the tracer and not yet read, and the tracer's
+ * descriptors on it *)
+and trace = { tpid : int; tracer : int; mutable stops : (int * int) list; mutable said : string list; mutable watchers : int }
 
 (* The image's files (and /dev), and the tree a path starts from. They
  * are the same when there is no disk. With a disk, the boot makes the
@@ -253,17 +261,18 @@ let rec load a =
 (*****************************************************************************)
 
 (* ready to run; waiting, the rest of its system call (true when it
- * could finish); ended, its status kept for its parent's wait *)
-type state = Ready | Waiting of (unit -> bool) | Zombie of int
+ * could finish); ended, its status kept for its parent's wait; stopped
+ * for its tracer, until the tracer resumes it *)
+type state = Ready | Waiting of (unit -> bool) | Zombie of int | Stopped
 
 (* A process: its slot (where its frame is), where its partition starts
  * and how big it is, its pid, its state, its parent's pid (0: none), its
- * descriptors, its current directory; and, while it waits for a child's
+ * descriptors, its current directory; while it waits for a child's
  * end, how many processes had ended when it last looked (-1: it waits
- * for something else). *)
+ * for something else); and its trace, when it is traced. *)
 type proc = {
   slot : int; mutable base : int; mutable size : int; pid : int; mutable state : state; mutable parent : int;
-  mutable fds : (int * file) list; mutable cwd : string list; mutable since : int;
+  mutable fds : (int * file) list; mutable cwd : string list; mutable since : int; mutable traced : trace option;
 }
 
 (* the processes, in the order the scheduler goes through them; how
@@ -322,6 +331,7 @@ let share f =
   | Post b -> b.posters <- b.posters + 1
   | Link l -> l.holders <- l.holders + 1
   | Call c -> c.callers <- c.callers + 1
+  | Trace t -> t.watchers <- t.watchers + 1
   | _ -> ()
 
 let links = ref []
@@ -330,8 +340,27 @@ let next_link = ref 1
 (* the machine's connections: TinyKernelNetwork.ml's, at its address *)
 let net = net_stack net_machine 1000
 
+(* the process a trace is of, while it has not ended *)
+let traced_proc t =
+  match List.filter (fun q -> q.pid = t.tpid) !procs with
+  | [ q ] -> (match q.state with Zombie _ -> None | _ -> Some q)
+  | _ -> None
+
+(* the trace ended (its tracer's last descriptor closed, or the tracer
+ * ended): the words under the breakpoints put back, the process run
+ * again if it was stopped *)
+let detach t =
+  match traced_proc t with
+  | Some q ->
+      List.iter (fun (a, w) -> poke (q.base + a) w) t.stops;
+      t.stops <- [];
+      q.traced <- None;
+      (match q.state with Stopped -> q.state <- Ready | _ -> ())
+  | None -> ()
+
 let drop f =
   match f with
+  | Trace t -> t.watchers <- t.watchers - 1; if t.watchers = 0 then detach t
   | Link l -> l.holders <- l.holders - 1; if l.holders = 0 then links := List.filter (fun m -> m.lid <> l.lid) !links
   | Call c -> c.callers <- c.callers - 1; if c.callers = 0 then il_done c.il
   | Reader pi -> pi.readers <- pi.readers - 1
@@ -438,6 +467,11 @@ let read f a n =
         Some k
       end
   | Writer _ | Draw _ | Post _ | Voice _ -> Some (-1)
+  (* what the trace said, a line at a time; its end when the process ended *)
+  | Trace t ->
+      (match t.said with
+       | m :: rest -> let k = min n (String.length m) in k_blit m 0 a k; t.said <- rest; Some k
+       | [] -> (match traced_proc t with Some _ -> None | None -> Some 0))
   (* what was last written, once; its end when no writer is left *)
   | Peek b ->
       if b.fresh then (let k = min n (String.length b.last) in b.fresh <- false; k_blit b.last 0 a k; Some k)
@@ -470,6 +504,38 @@ let net_send packet =
   let n = String.length packet in
   k_blit packet 0 net_buf n;
   net_command n 1
+
+(* A traced process stopped, and why said to its tracer: where it is
+ * (its pc), then break (a breakpoint's word), illegal and the word,
+ * fault and the address, or exec (its new program's first instruction) *)
+let traced p = match p.traced with Some _ -> true | None -> false
+let stop p why =
+  p.state <- Stopped;
+  match p.traced with
+  | Some t -> t.said <- t.said @ [ "stopped " ^ string_of_int (reg p 16) ^ " " ^ why ^ "\n" ]
+  | None -> ()
+
+(* A tracer's command (plan_tiny_debugger.md), the numbers in decimal:
+ * b addr, a breakpoint, the word there kept and 0 written in its place
+ * (no instruction is 0: the process traps there, c_illegal); d addr,
+ * the breakpoint removed, its word put back; r, the registers (r1 to
+ * r15, then the pc); c, the stopped process resumed. A breakpoint is
+ * used once: c from it puts its word back and removes it. Bad if the
+ * command is none of these, or its address not one of the process's
+ * words. *)
+let command t q words =
+  let addr s = match int_of_string_opt s with Some a when a land 3 = 0 -> ignore (user q a 4); a | _ -> raise Bad in
+  let say m = t.said <- t.said @ [ m ^ "\n" ] in
+  let unset a = (match List.assoc_opt a t.stops with Some w -> poke (q.base + a) w | None -> ()); t.stops <- List.filter (fun (b, _) -> b <> a) t.stops in
+  match words, q.state with
+  | [ "b"; s ], _ ->
+      let a = addr s in
+      if not (List.exists (fun (b, _) -> b = a) t.stops) then (t.stops <- t.stops @ [ a, peek (q.base + a) ]; poke (q.base + a) 0);
+      say "ok"
+  | [ "d"; s ], _ -> unset (addr s); say "ok"
+  | [ "r" ], _ -> say (String.concat " " (List.init 16 (fun k -> (if k = 15 then "pc" else "r" ^ string_of_int (k + 1)) ^ " " ^ string_of_int (reg q (k + 1)))))
+  | [ "c" ], Stopped -> unset (reg q 16); q.state <- Ready
+  | _ -> raise Bad
 
 let write f a n =
   match f with
@@ -513,6 +579,9 @@ let write f a n =
        | Some l when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring ->
            if speak v l then Some n else (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4; None)
        | _ -> Some (-1))
+  (* a command to the traced process, each answered by a line but c,
+   * which its next stop answers *)
+  | Trace t -> (match traced_proc t with Some q -> (try command t q (String.split_on_char ' ' (String.trim (k_string a n))); Some n with Bad -> Some (-1)) | None -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)
 
 (* whether a read would not wait *)
@@ -523,6 +592,7 @@ let readable f =
   | Peek b -> b.fresh || b.posters = 0
   | Link l -> (match l.heard with [] -> false | _ -> true)
   | Call c -> il_readable c.il
+  | Trace t -> t.said <> [] || (match traced_proc t with Some _ -> false | None -> true)
   | _ -> true
 
 (*****************************************************************************)
@@ -540,13 +610,16 @@ let sys_rw p rw =
   let a = user p (reg p 2) n in
   block p (fun () -> match rw f a n with Some k -> result p k; true | None -> false)
 
-(* its descriptors closed, its children orphans (their zombies freed);
+(* its descriptors closed, its children orphans (their zombies freed),
+ * the processes it traces let go, its end said to its tracer;
  * its status for its parent, or its slot free. The first process's
  * end is the machine's *)
 let rec exit_proc p status =
   incr deaths;
   List.iter (fun (_, f) -> drop f) p.fds;
   p.fds <- [];
+  List.iter (fun q -> match q.traced with Some t when t.tracer = p.pid -> detach t | _ -> ()) !procs;
+  (match p.traced with Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ] | None -> ());
   List.iter (fun q ->
     if q.parent = p.pid then begin
       q.parent <- 0;
@@ -558,14 +631,17 @@ let rec exit_proc p status =
 and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot and a partition of the parent's size, the partition
- * and the frame copied (the child's r1 0), the descriptors shared *)
+ * and the frame copied (the child's r1 0), the descriptors shared; the
+ * child is not traced, so the words under its parent's breakpoints are
+ * put back in its copy *)
 let sys_fork p =
   let s = free_slot () in
   let b = room p.size (-1) in
-  let q = { slot = s; base = b; size = p.size; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1 } in
+  let q = { slot = s; base = b; size = p.size; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None } in
   incr next_pid;
   k_copy b p.base p.size;
   k_copy (frame s) (frame p.slot) 68;
+  (match p.traced with Some t -> List.iter (fun (a, w) -> poke (b + a) w) t.stops | None -> ());
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
   set_reg q 1 0;
@@ -612,13 +688,16 @@ let load_prog p node argv =
   set_reg p 14 sp
 
 (* exec(path, argv): its program's text, its arguments (16 at most),
- * all read before the partition is changed, so a failed exec returns *)
+ * all read before the partition is changed, so a failed exec returns.
+ * A traced process stops at its new program's first instruction, its
+ * breakpoints gone with the old one *)
 let sys_exec p =
   let node = walk !top (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 16 then raise Bad
     else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
-  load_prog p node (args 0 [])
+  load_prog p node (args 0 []);
+  match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ()
 
 (* wait(&status): a child's end, the child freed; -1 without children *)
 let sys_wait p =
@@ -796,6 +875,31 @@ let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with [ q ] -> kill q; result p 0 | _ -> raise Bad
 
+(* trace(pid): a descriptor on a process, for its tracer (db): what is
+ * written to it a command, what is read the answers and the process's
+ * stops (command, stop). trace(0): the caller traced by its parent from
+ * now on, so that it stops at its next exec, the way a debugger starts
+ * a program; the parent's trace(pid) gives the descriptor, before or
+ * after. Not for the first process, the caller itself, or a process
+ * another one traces *)
+let sys_trace p =
+  let make q tracer = let t = { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0 } in q.traced <- Some t; t in
+  if reg p 1 = 0 then begin
+    (match p.traced with
+     | Some t -> if t.tracer <> p.parent then raise Bad
+     | None -> if p.parent = 0 then raise Bad else ignore (make p p.parent));
+    result p 0
+  end
+  else
+    match List.filter (fun q -> q.pid = reg p 1 && q.pid <> p.pid && q.pid <> 1) !procs with
+    | [ q ] ->
+        (match q.state with Zombie _ -> raise Bad | _ -> ());
+        let t = match q.traced with Some t when t.tracer = p.pid -> t | None -> make q p.pid | _ -> raise Bad in
+        let k = fdalloc p (Trace t) in
+        t.watchers <- t.watchers + 1;
+        result p k
+    | _ -> raise Bad
+
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns with Some n when is_dir n -> p.cwd <- ns; result p 0 | _ -> raise Bad
@@ -848,6 +952,7 @@ let syscall p =
     | 20 -> sys_getcwd p
     | 21 -> sys_link p
     | 22 -> sys_rawcons p
+    | 23 -> sys_trace p
     | _ -> result p (-1)
   with Bad -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()
@@ -952,7 +1057,8 @@ let rec runnable l =
            if p.since = !deaths then runnable rest
            else if attempt () then (p.state <- Ready; Some p)
            else (if p.since >= 0 then p.since <- !deaths; runnable rest)
-       | Zombie _ -> runnable rest)
+       | Zombie _ -> runnable rest
+       | Stopped -> runnable rest)
 
 (* the loop: a process run until it traps, the trap handled; the same
  * process again unless its time is up or it cannot go on (then it goes
@@ -980,6 +1086,8 @@ and run p =
   let timer =
     if cause = c_sys then (syscall p; false)
     else if cause = c_intr then interrupts (k_tval ())
+    else if cause = c_illegal && traced p then (stop p (if k_tval () = 0 then "break" else "illegal " ^ string_of_int (k_tval ())); false)
+    else if cause = c_fault && traced p then (stop p ("fault " ^ string_of_int (k_tval ())); false)
     else begin
       puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause ^ " at " ^ string_of_int (reg p 16) ^ ", "
             ^ string_of_int (k_tval ()) ^ ": killed\n");
@@ -1031,7 +1139,7 @@ let () =
    * programs the same five, so a program draws in what it was given
    * and does not ask where *)
   let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
-  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []); since = -1 } in
+  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []); since = -1; traced = None } in
   incr next_pid;
   procs := [ p ];
   (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);

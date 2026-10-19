@@ -64,20 +64,26 @@ debugger is not the CPU: it is a process that controls another one.
 
 ## 2. The kernel side, about 60 lines
 
-The messages, one per write, each answered by one line to read:
+The messages, one per write, each answered by one line to read. The
+numbers are in decimal, the only ones the kernel's `int_of_string_opt`
+reads; db shows them in hex:
 
 ```
     b addr      a breakpoint: the word saved, 0 written      ok
     d addr      the breakpoint removed: the word put back    ok
     c           continue                                     (none until it stops)
     s           one instruction                              (none until it stops)
-    r           the registers                                r1 ... r15 pc
+    r           the registers                                r1 v ... r15 v pc v
     m addr n    n bytes of memory                            their hex
     w addr v    a word written                               ok
-    k           kill                                         ok
-    (a stop)                                                 stopped pc cause tval
+    (a stop)                                                 stopped pc break
+                                                             stopped pc illegal word
+                                                             stopped pc fault addr
+                                                             stopped 0 exec
     (the end)                                                exited status
 ```
+
+There is no message to kill: the tracer has `kill(pid)`.
 
 Starting a program stopped: the child of db calls `sys_trace` on its
 own pid (0) before its `exec`, which means "stop me at my first
@@ -197,10 +203,17 @@ What is left out, deliberately:
 ## 5. The steps
 
 1. **A stop instead of a kill.** `Stopped` as a state, the tracer and
-   the breakpoints in the process, `sys_trace` with `b`, `c`, `r`, and
-   the stop on `c_illegal` and `c_fault`. A test program in C
-   (`user/dbtest.c`) that a session file in `make check` stops at
-   `main` and whose registers it prints.
+   the breakpoints in the process, `sys_trace` with `b`, `d`, `c`, `r`, and
+   the stop on `c_illegal` and `c_fault`. **Done (2026-10-19)**: about
+   100 lines of TinyKernel.ml (a `trace` record and a `Trace` file, the
+   messages in `command`, `stop`, `detach`); the stop at exec and the
+   breakpoints undone in a forked child, of step 6, came with it, as
+   they were a line each. A breakpoint is used once until step 2: `c`
+   from it puts its word back and removes it. The test is mltests's
+   `traces` (a breakpoint, a fault, an exec), not a separate program;
+   `trace` in libc's `sys.tm` and `user.h`, in docs/manuals/t-ix.md.
+   tetris's and play's sums recorded again: their sounds 5 ms later, as
+   for every change to the kernel's timing.
 2. **The step.** The timer set to 1, `s`, continuing from a
    breakpoint, and the tick kept right for the other processes.
 3. **db with addresses only.** The commands of section 3 but `bt`,

@@ -37911,3 +37911,59 @@ Claude planned a Stopped state in tiny/TinyKernel.ml, with tracer pid and breakp
 Claude planned sys_trace as call 23 in sys.tm, with run answering stopped pc cause tval.
 Claude planned user/dbtest.c to stop a forked child at main, and to check the disk-commit rule first.
 Claude noted nothing is committed yet, and single-stepping waits for step 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 07:16
+
+**Yoann:**
+
+> so let's just fix cp here
+
+**Claude (summary):**
+
+Claude committed the budget change separately, then added two self-copy cases to the `cp` utilities test.
+The pipelines step timed out once, then passed on a rerun, so Claude started running it 15 times to measure how often it hangs.
+Claude found `check.expected` had 27 changed lines though it had only changed 2, so another session had edited it too.
+Claude showed that diff, confirmed the kernel check passed, and built tiny-utils with mini-mk.
+Claude then planned to commit in the worktree and move main to that commit, but only if main was still at 6c784fde.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that the file system, `/usr/glenda`, the 30,000 budget, and the `cp` fix are already committed on main.
+Claude listed the debugger session's uncommitted work, including `tiny/TinyKernel.ml`, `libc/sys.tm`, `user/mltests.c`, two docs, and `check.expected`.
+Claude declined to commit that work from here, because the debugger session was still rebuilding the kernel during a check.
+Claude also had not reviewed or tested that work, so it could not tell whether the work was at a working point.
+Claude offered to run the debugger session's check and commit only if Yoann asked for it and the check passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 07:16
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude read the trap path and system calls, then added the trace support to TinyKernel.ml.
+Claude added the C-side trace stub in sys.tm and user.h, plus a trace test in mltests.c.
+Claude made the child's trace(0) succeed even when the parent's trace(pid) runs first.
+Claude re-recorded the expected sizes and korobeiniki sum, since the 16-byte stub shifted the output.
+Claude confirmed make check passes, with `trace ok` added to check.expected, and marked step 1 done.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 08:06
+
+**Yoann:**
+
+> ok what's next otherwise?

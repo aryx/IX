@@ -558,11 +558,22 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 17 | `box(fds)` | 16 | `ticks()` |
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
 | 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
-| 22 | `rawcons(on)` | | |
+| 22 | `rawcons(on)` | 23 | `trace(pid)` |
 
 `rawcons(1)` gives the console's ^C to the calling process as a byte
 it reads, while it lives, instead of killing every process but the
 first: emacs's C-x C-c (Plan 9's `rawon`). `rawcons(0)` gives it back.
+
+`trace(pid)` gives a descriptor on another process, for a debugger
+([plan_tiny_debugger.md](../plans/plan_tiny_debugger.md)). A write is a
+command, the numbers in decimal: `b addr` a breakpoint (the word there
+kept, 0 written in its place), `d addr` the breakpoint removed, `r` the
+registers, `c` the stopped process resumed. A read is a line: a
+command's answer (`ok`, the registers), or the process's stop
+(`stopped pc break`, `illegal word`, `fault addr` or `exec`) or its end
+(`exited status`); 0 after its end. A traced process that faults
+is stopped, not killed. `trace(0)` makes the caller traced by its
+parent, stopped at its next `exec`: how a debugger starts a program.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

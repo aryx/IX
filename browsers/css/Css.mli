@@ -1,7 +1,9 @@
-(* Css: style sheets -- CSS1's rules, matched against the tree and
-   cascaded into each element's declarations.
+(* Css: style sheets -- CSS1's rules, read and matched against the
+   tree: what a script's selectors are (querySelector, matches:
+   Script_dom), and a style= attribute's declarations. The cascade of
+   the page's sheets is Cascade's, the properties' meaning Computed's.
 
-   Mosaic's looks were the browser's (Looks' table); Netscape let the
+   Mosaic's looks were the browser's (Looks.mli); Netscape let the
    page choose some (<font>, <center>, bgcolor=) by writing them into
    the HTML, tag by tag. Cascading Style Sheets (Håkon Wium Lie's
    proposal, 1994; CSS1, W3C, December 1996; Internet Explorer 3 that
@@ -40,10 +42,10 @@
 
    What no rule says of an element, **inheritance** gives (colour, the
    font, the alignment: its parent's) or the property's initial value
-   (margins); that is Looks.styled's business, as is what each
-   property means. And before the page's rules, the browser's own:
-   Looks' table, the "user agent style sheet", which is what Mosaic's
-   table always was.
+   (margins); that is Computed's business, as is what each property
+   means. And before the page's rules, the browser's own: ua.css, the
+   "user agent style sheet", which is what Mosaic's table of looks
+   always was.
 
    The sheet is read by Css_syntax (tokens and blocks, CSS Syntax Level
    3: nothing cut in the wrong place, what does not parse skipped), the
@@ -78,10 +80,3 @@ val specificity : Selectors.complex -> int * int * int
  * nearest first *)
 val matches : Selectors.complex -> Dom.element list -> Dom.element -> bool
 
-(* the text of a page's <style> elements, in order *)
-val page_sheet : Dom.element -> string
-
-(* [cascade sheet root]: each element's declarations, cascaded -- the
- * matching rules by specificity then order, then its style=, then the
- * !important ones the same way; a property once, its winning value *)
-val cascade : sheet -> Dom.element -> Dom.element -> (string * string) list

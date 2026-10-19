@@ -4,26 +4,27 @@
  * shows:
  *
  *   bytes -Charset-> text -Html_lexer-> tokens -Html_tree-> tree
- *         -Looks, Html_layout-> boxes -Browser_draw-> shapes
- *
- * That last line is Mosaic's way; with [boxes] in the settings it is
- * CSS's, the page's style sheets found and asked for on the way
- * ([sheets_wanted]: the browser fetches, the page is laid out again):
- *
  *         -Cascade, Computed-> styles -Box_layout-> boxes
  *         -Browser_boxes-> shapes
  *
- * and both give Html_layout's boxes, lines and fragments, so that
- * what comes after (Hit, Browser_forms, a script's view of where an
- * element is) does not know which was taken.
+ * the page's style sheets found and asked for on the way
+ * ([sheets_wanted]: the browser fetches, the page is laid out again).
+ * The boxes are also given as Html_layout's lines and fragments, what
+ * comes after (Hit, Browser_forms, a script's view of where an element
+ * is) reads.
+ *
+ * history: mini-chrome's first version had Mosaic's way beside it,
+ * each element's look the browser's own table (Looks) laid out in one
+ * pass (Html_layout), and Knuth and Plass's lines as an option; no
+ * page mini-netscape reads took it, and it went (2026-10-19,
+ * docs/plans/plan_browser.md, "Smaller"). It is in mini-chrome.
  *
  * keeping every stage (a browser's views show each), and what the
  * person did to it: its form controls' values, the browser's, not the
  * tree's.
  *
  * What the layout and the drawing need that the page does not say is
- * the browser's, given as [settings]: the page's width, how lines are
- * broken, which URLs were visited (a link purple), which pictures have
+ * the browser's, given as [settings]: the page's width, which URLs were visited (a link purple), which pictures have
  * come -- a page is laid out again when any of them changes (a reflow).
  *
  * And the pages a browser writes itself, laid out like any: what is not
@@ -58,7 +59,7 @@ type t = {
   title : string; (* the text of its <title>, or "" *)
   layout : Html_layout.box;
   drawn : Browser_draw.drawn; (* all but its controls, drawn once a layout *)
-  background : Looks.color option; (* <body bgcolor=>, Netscape's; or its style sheets' *)
+  background : Looks.color option; (* its canvas's: its root's or its body's background (CSS 2.1, 14.2) *)
   forms : Forms.form list;
   values : (Dom.element * Forms.value) list; (* the controls changed, by element (==) *)
   quirks : bool; (* no DOCTYPE: quirks mode (Computed.styles), by the box model *)
@@ -66,22 +67,12 @@ type t = {
 }
 
 type settings = {
-  extensions : bool; (* Netscape's extensions to HTML honoured (Dtd.origin) *)
-  css : bool; (* the page's style sheets honoured (Css): <style>, style= *)
-  boxes : bool; (* laid out by CSS 2.1's box model (Box_layout, Browser_boxes): mini-netscape's *)
+  css : bool; (* the page's style sheets honoured: <style>, <link>, style= *)
   width : float;
-  breaker : Html_layout.breaker;
   visited : string -> bool; (* an absolute URL, no #fragment *)
   picture : string -> Browser_picture.t option; (* an absolute URL *)
-  sheet : string -> string option; (* a style sheet's text, once it has come (an absolute URL): with [boxes] *)
+  sheet : string -> string option; (* a style sheet's text, once it has come (an absolute URL) *)
 }
-
-(* Knuth and Plass's lines (Linebreak.optimal), ragged right as a
- * browser's are -- the spaces may stretch (a line may end short), not
- * shrink (it may not end past the edge) -- with the paragraph's first
- * real space for all (Linebreak's model has one): CSS's text-wrap:
- * pretty *)
-val pretty : Html_layout.breaker
 
 (* [read settings url status content_type bytes]: the page, through the
  * whole pipeline *)

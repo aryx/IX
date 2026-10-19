@@ -76,7 +76,7 @@ let focus (t : t) = t.focus
 
 let settings (t : t) : Browser_page.settings =
   {
-    extensions = true; css = true; boxes = true; width = t.width; breaker = Html_layout.greedy;
+    css = true; width = t.width;
     visited = (fun u -> List.exists (String.equal u) t.visited);
     picture = (fun u -> List.assoc_opt u t.pictures);
     sheet = (fun u -> List.assoc_opt u t.sheets);

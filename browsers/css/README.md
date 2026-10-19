@@ -19,8 +19,8 @@ Each copied file says in one line where it comes from
 | `Css_values` | lengths, `calc()`, colours |
 | `Cascade` | which declaration wins: origin, specificity, order; `@media`, custom properties |
 | `Computed` | each element's computed style, inherited down the tree |
-| `Looks` | Netscape's and HTML 2.0's own looks (`<font>`, `<center>`...), before style sheets |
-| `Css` | the small face of the first lessons: a page's `<style>`, cascaded |
+| `Looks` | a word's look (size, weight, colour, link), as `Box_layout` gives each fragment; `<font size=>`'s scale |
+| `Css` | a sheet's rules read and matched: a script's selectors (`querySelector`), a `style=` |
 | `Ua_sheet` | `ua.css`, the browser's own sheet (53 lines), in a string |
 
 And its tests, `tests/` (mini-chrome's `tests/css`: 30, Testo, dune's
@@ -32,8 +32,7 @@ No optional argument, each a pair of functions:
 
 - `Selectors.matches` and `matches_visited visited`;
   `Cascade.cascade visited` and `explain visited` (it is said);
-  `Computed.styles` and `styles_with visited ~quirks`; `Looks.root
-  size` and `root_with ~extensions size`; `Looks.length ~em ~percent`.
+  `Computed.styles` and `styles_with visited ~quirks`.
 - `Dom.attribute ~extensions:true` is `Dom.attribute_any`
   (`browsers/html`'s README).
 - `Ua_sheet.ml` is kept: mini-chrome's dune makes it of `ua.css`; here
@@ -42,6 +41,14 @@ No optional argument, each a pair of functions:
 - `Option.value` written out (`scripts/option_value.py`).
 
 mini-ml takes the rest as it is.
+
+## Cut
+
+2026-10-19 (`docs/plans/plan_browser.md`, "Smaller", A), with
+Mosaic's layout (`browsers/engine`'s README): `Looks`' table of each
+element's look and box and what style sheets did to them (`look`,
+`box`, `styled`, `length`), and `Css.cascade` and `page_sheet`, the
+first lessons' cascade (`Unit_css` runs on `Cascade` now).
 
 ## What remains in mini-chrome
 

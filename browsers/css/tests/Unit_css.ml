@@ -5,11 +5,12 @@
 
 (* See Unit_css.mli *)
 
-(* the winning value of [property] for each element named [name] *)
+(* the winning value of [property] for each element named [name], by
+ * the cascade (Cascade's; Css's own went with Mosaic's layout) *)
 let values (sheet : string) (html : string) (name : string) (property : string) : string option list =
   let root = Html_tree.of_string html in
-  let style = Css.cascade (Css.parse sheet) root in
-  List.map (fun e -> List.assoc_opt property (style e)) (Dom.find_all name root)
+  let style = Cascade.cascade (fun _ -> false) { width = 976.; height = 800. } [ { origin = Author; rules = Css_syntax.parse_stylesheet sheet } ] root in
+  List.map (fun e -> Option.map (fun v -> String.trim (Css_syntax.to_string v)) (List.assoc_opt property (style e))) (Dom.find_all name root)
 
 let tests =
   Testo.categorize "Css"

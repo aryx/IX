@@ -18,7 +18,7 @@ Each copied file says in one line where it comes from
 
 | module | what |
 |---|---|
-| `Html_layout` | Mosaic's engine: one pass, each element's look the browser's own (`Looks`); and the types the other shares with it (a line, a fragment, a line breaker) |
+| `Html_layout` | the types a page laid out ends in (a box, a line, a fragment), read by `Hit`, `Browser_draw`, `Tab`; it was also Mosaic's engine (below, "Cut") |
 | `Box_layout` | CSS's boxes: blocks, inlines, floats, positioned boxes, over `Computed`'s styles |
 | `Flex_layout`, `Table_layout` | a flex container's main axis; a table's columns |
 | `Hit` | the element under a point |
@@ -33,7 +33,7 @@ From `src/display`, 5 modules (587 lines there), and `Style` (its
 |---|---|
 | `Stroke_text` | a letter as Hershey's strokes, each a thin rectangle of the playground's |
 | `Browser_text` | a word's width by those letters: the layout's metrics |
-| `Browser_draw` | a line's words, a control, Motif's bevels: Mosaic's drawing, and the pen `Browser_boxes` shares |
+| `Browser_draw` | a line's words, a control, Motif's bevels: the pen `Browser_boxes` shares |
 | `Browser_boxes` | CSS's boxes painted: backgrounds, borders, lines, markers, in order, clipped by what is drawn |
 | `Browser_picture` | a picture waiting, arrived or broken |
 
@@ -46,28 +46,34 @@ there):
 | `Browser_forms` | a click or a key on a form's control; what a form sends |
 | `Browser_url` | a link's address against its page's; `data:` |
 | `Browser_history` | Back and Forward: two stacks |
-| `Linebreak` | Knuth and Plass's lines (`text-wrap: pretty`) |
 
 ## What changed
 
 No optional argument:
 
-- `Html_layout.layout metrics options`: a record (`breaker`,
-  `picture_size`, `style`) and `Html_layout.defaults`, where they were
-  three optional arguments. `Box_layout.layout metrics picture_size`
-  (`Html_layout.no_picture` when none has come).
-- A line breaker is `float -> unit_ array -> ...`: its `~measure`
-  label is gone (mini-ml does not see a label through a type's name).
-- Inside: `add_word`'s box, owner and edge are said at each call; a
-  block's content width is an option said.
+- `Box_layout.layout metrics picture_size` (`Html_layout.no_picture`
+  when none has come), where it was an optional argument.
 - The display: `Browser_draw.frame` and `frame_thick t`; `glyphs
   ~visited ~picture_of` and `plain_glyphs` (neither link nor picture);
-  `draw ~extensions` and `text_shapes ~cells` are said;
+  `text_shapes ~cells` is said;
   `Browser_boxes`'s tinted picture is a `Bytes` (it was a Bigarray).
 - **Pictures**: `Browser_picture.decode` reads PNG and JPEG by
   `Image_file`, GIF by `Gif` (`lib_graphics/images`) and SVG by `Svg`
   (`lib_graphics/svg`), where it named the four readers; an `<svg>`
   written in the page is drawn by `Svg.render_in`, its colour said.
+
+## Cut
+
+2026-10-19 (`docs/plans/plan_browser.md`, "Smaller", A): **Mosaic's
+layout**, which no page mini-netscape reads took (the coverage of
+eight sites): `Html_layout`'s pass (each element's look the browser's
+own table, `Looks`', its floats and tables), `Browser_draw.draw` (its
+boxes drawn, Motif's table frames), `Linebreak` (Knuth and Plass's
+lines, `Browser_page.pretty`, an option of that layout), the settings
+`extensions`, `boxes` and `breaker`, and `Css.cascade`. Their tests:
+`Unit_html_layout`; `Unit_hit` is laid out by the box model now (its
+numbers moved: the body's margin and the first paragraph's
+collapse). About 1,300 lines; whole in mini-chrome.
 
 ## ix's own
 

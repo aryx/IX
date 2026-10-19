@@ -26,7 +26,7 @@ let () =
       let root = Html_tree.of_string (Charset.decode None (read page)) in
       let media : Cascade.media = { width; height } in
       let author (text : string) : Cascade.sheet = { origin = Author; rules = Css_syntax.parse_stylesheet text } in
-      let sheets = author (Css.page_sheet root) :: List.map (fun f -> author (read f)) sheets in
+      let sheets = author (String.concat "\n" (List.map Dom.text_content (Dom.find_all "style" root))) :: List.map (fun f -> author (read f)) sheets in
       let t0 = Sys.time () in
       let styles = Computed.styles media sheets root in
       let t1 = Sys.time () in

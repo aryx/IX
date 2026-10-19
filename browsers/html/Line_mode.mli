@@ -46,9 +46,9 @@
 
    In the system: mini-lynx (Lynx) is this module with a prompt, the
    shortest path through a browser: bytes (Http_client), text
-   (Charset), a tree (Html_tree), lines. Html_layout is the same walk
-   of the same tree where a word has a width in pixels, and Box_layout
-   the same again where the blocks are CSS's and not this list.
+   (Charset), a tree (Html_tree), lines. Box_layout is the same walk
+   of the same tree where a word has a width in pixels and the blocks
+   are CSS's, not this list.
 
    cs-history:
    It was the second browser, and for two years the web most people

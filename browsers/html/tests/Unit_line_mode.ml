@@ -24,7 +24,7 @@ let tests =
             page.lines;
           Alcotest.(check (list string)) "the links" [ "recipes.html"; "/" ] page.links);
       Testo.create "greedy lines" (fun () ->
-          check ~width:20 "Linebreak.mli's words" "<p>aaa bb cc ddddd ee ff gggg" [ "aaa bb cc ddddd ee"; "ff gggg" ];
+          check ~width:20 "a paragraph's words" "<p>aaa bb cc ddddd ee ff gggg" [ "aaa bb cc ddddd ee"; "ff gggg" ];
           check ~width:5 "a long word on its own" "<p>a abcdefgh b" [ "a"; "abcdefgh"; "b" ];
           check "spaces and newlines are one space" "<p>a  \n\t b" [ "a b" ]);
       Testo.create "lists" (fun () ->

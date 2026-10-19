@@ -61,8 +61,8 @@
    others:
    The same arithmetic is older than the web: TeX's glue (Knuth, 1978)
    is a size with a stretch and a shrink, the room left on a line
-   shared in proportion to them (Linebreak.mli, where a space is such
-   a glue), and a toolkit's "springs and struts" the same for a
+   shared in proportion to them (a space between two words is such a
+   glue), and a toolkit's "springs and struts" the same for a
    window's widgets. Flexbox is glue given to the page's authors.
 
    Reference: W3C, CSS Flexible Box Layout Level 1, sections 9.2 (the

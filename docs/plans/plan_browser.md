@@ -1346,3 +1346,23 @@ DOM Inspector and Venkman); `mini-firefox` the browser alone with
 Firebug. A rename touches the binary, the profile's directory
 (`~/.config/mini-netscape`), the docs and the tests: the author's to
 decide; this plan says mini-netscape until then.
+
+### Progress (2026-10-19)
+
+| commit | what | counted lines of `browsers/` |
+|---|---|---:|
+| | the start (`make loc`'s files, no header comments) | 23,038 |
+| `3af0a002` | `Js_quicken`, `Js_compile` to `javascript/opti/` | 22,490 |
+| `bbb83fcf` | the preludes without YouTube's, Gmail's and the frameworks' (`MessageChannel`, `el.animate`, custom elements, Shady DOM's accessors, an iframe's window, adopted sheets, `DataView`); frames' worlds; `netscape/tests/sites.sh` | 22,104 |
+| `074cbc26` | Mosaic's layout (`Html_layout`'s pass, `Looks`' table, `Linebreak`, `Browser_draw.draw`, `Css.cascade`) | 20,769 |
+| `4c31368c` | ES modules (`<script nomodule>` run instead), shadow trees, the custom elements' hooks | 19,889 |
+
+Each checked by the tests (the engine's three ways), `frames.sh` on
+both builds, and `sites.sh` on Wikipedia, HN, ocaml.org, LWN and the
+Python tutorial against the binary before. Kept by the coverage, not
+cut: generators (Wikipedia's scripts declare two `function*`), the
+`_opti` functions beside their `_simple` ones (the author: keep them).
+
+Left of A and B: `Js_ast`'s printers, `Cors`, more of the preludes
+(what the five sites never call), then B's smaller language, sized
+by the coverage run again on these files (`coverage_ix.sh`).

@@ -769,3 +769,101 @@ before leaving the screen.
    bugs with one look.
 5. No place in the message: make the message say the place, once,
    for every program.
+
+## 20. Slow on one system only: a table of builds, then a clock on each step, before the profile is believed
+
+The report (2026-10-20): mini-netscape on mini-9pi took three minutes
+to show Hacker News under QEMU, a page that takes six seconds on
+Linux. Then it faulted on the same page. Three bugs, found in a
+morning. Most of the time went to a profile that pointed the wrong
+way.
+
+**A table of the same work on every build there is, before any
+tool.** What runs here: dune's OCaml, mini-ml for arm64, and mini-ml
+for 32-bit arm, which this machine runs as Linux programs (`_mk/5`).
+mini-9pi under QEMU and under mini-qemu is a fourth system, and mini-curl
+is a second program on the same library:
+
+| | arm64 | arm, Linux | arm, mini-9pi, QEMU |
+|---|---|---|---|
+| curl https://news.ycombinator.com | 1.4 s | 1.8 s | 6.9 s |
+| netscape, the same page | 5.8 s | 6.0 s | ~200 s |
+
+Two lines and three columns settle much. The network and TLS cost on
+mini-9pi what emulation costs (curl: four times arm's). The arm code is not
+the cause (arm32 on Linux is as fast). So it is netscape, on Plan 9
+only, and the code for Plan 9 alone is short: here
+`lib_networking/tcp/plan9` and `Plan9_loop`.
+
+**A profile counts instructions, not time, and its top can be an
+effect.** mini-qemu's `-prof` put half of all instructions in
+Bignum's `redc_mul`: the arithmetic of TLS's keys. It was true and it
+was not the cause. The way to tell is a counter at the hot function,
+printed every 10,000 calls (at exit is not enough: a program killed
+by the session never exits). One handshake was 39,500 calls on every
+Linux build, and 100,000 on mini-9pi. So the slow thing was the
+handshakes repeated, and the question became why. Under QEMU the
+instructions were seconds; the minutes were spent waiting, which no
+profile of instructions shows.
+
+**A clock on every step, in the real setting.** The time put in front
+of each `-v` line (Logging's header, for the session only) and a line
+at each piece of `Tab.step`. The pattern was plain: the page in 7 s,
+then each of five files in 32 s, with 10,000 multiplications each (a
+new handshake each). Thirty is a number from the code: `Tcp.timeout`.
+*A round number in a duration is a timeout.* The rest was reading:
+`Tls_client.send` called `step`, which reads before it writes; Linux's
+read returns at once, Plan 9's waits (`Tcp.arrived`), and a kept
+connection's server says nothing until it is asked. It is the same
+code with different system calls under it, so look where the two
+systems' modules differ.
+
+**The fault: from the trap's numbers to the bug, with no debugger.**
+`fault write va=0xcf3a000 pc=0x4fa86c lr=0x50414c sp=0xcf0e68c`.
+- The pc and lr, by the program's map (`netscape.map`, which mini-ld
+  writes; `scripts/where.sh`): `String.trim` called by `List.map`, a
+  deep recursion.
+- The fault address is page-aligned and 178 KB above the stack
+  pointer. A stack down there is not Plan 9's stack segment (at the
+  top of the address space); it is in the data. In a mini-ml program
+  that is a thread's: its memory is one piece, the machine stack
+  below and the value stack above. Its sizes are in gc.c, and the
+  numbers add up: the value stack's 128 KB ended exactly at the
+  faulting page, the end of the break.
+- Reproduced on Linux before any change: the arm64 mini-ml build on
+  the same page, a segmentation fault in one second. Then the fix was
+  tried in seconds instead of in a five-minute emulator session.
+
+**A warning that causes what it warns of.** Before the page could
+load at all, about:home ran at 4 frames a second with the playground's
+red border: the mark of a frame whose ticks were cut. The meter
+(`stats=on`) said update 0 ms, view 0 ms, show 250 ms at every frame,
+for a page that does not change. A temporary line in the platform's
+`show`, printing which shape first differed from the last frame's,
+gave the answer in one run: two frames of 2 and 6 shapes, taking
+turns. The 4 extra were the red border. A slow frame made the next
+late, the border made it another picture, so it was drawn in full and
+was slow, and a frame without the border was another picture again.
+An indicator added to a picture must not make the picture differ when
+nothing else does.
+
+**Getting the profile out.** `graphics.py` ends the emulator with
+SIGKILL, and mini-qemu writes its profile only at exit or on SIGTERM.
+A wrapper script started the emulator in the background and wrote its
+pid. The session's kill took the wrapper and left the emulator
+running, then `kill -TERM` made it write the profile. The kernel's
+samples (addresses above 0x80000000) are read with the kernel's ELF
+(`nm -n build/pi1-ocaml-ixu/kernel.elf`); the program's with its map
+(`kernels/9pi/tests/perf/pcprof.py` takes either).
+
+**The order, for next time:**
+1. Fill the table: each build that runs here, and a second program on
+   the same library. Find the column and the line where it breaks.
+2. Time each step in the setting that is slow, with the program's own
+   log. Look for round numbers.
+3. Profile last, and count the top function's calls on both systems
+   before believing it is the cause.
+4. Reproduce a fault on the fastest build that shows it, then fix it
+   there.
+5. Every probe goes in a copy kept aside and is taken out by copying
+   back (a probe's own `| _ ->` gave the author a warning in Tab.ml).

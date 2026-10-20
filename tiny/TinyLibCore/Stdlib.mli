@@ -2,9 +2,10 @@
  * tiny-windows, the applications, the tools), in tiny-ml's ML, a
  * module a file as OCaml's: Stdlib, open in every unit, then Char,
  * List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
- * (what tiny-ml's reading of a format calls: Printf.mli), Hashtbl, and
+ * (what tiny-ml's reading of a format calls: Printf.mli), Marshal
+ * (OCaml's format, in the runtime), Hashtbl, and
  * ix's Common and Sha1 (lib_core's and lib_crypto's, which the tools
- * name). Each .mli but Printf's is a subset of OCaml's (lib_core's,
+ * name). Each .mli but Printf's and Marshal's is a subset of OCaml's (lib_core's,
  * lib_crypto's):
  * the same names, the same types, the same results, so that a file
  * is built by OCaml on its own library for the host and by tiny-ml on

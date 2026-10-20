@@ -134,10 +134,10 @@
  *   unit: its symbols prefixed with its name (TinyLibGUI.f12_layout),
  *   its toplevel in TinyLibGUI.init, the values it computes in its
  *   globals' table. Compiled alone (-c), it writes its interface,
- *   M.tmi (OCaml's .cmi: the types and constructors so far, each of
+ *   M.tmi (OCaml's .cmi: the types and constructors it added, each of
  *   its names with where its value is, a static closure or a global,
- *   and its type, M.mli's when there is one), which the units after it
- *   read; a program's main (ml_start, each unit's init in their order,
+ *   and its type, M.mli's when there is one; a record, marshalled),
+ *   which the units after it read; a program's main (ml_start, each unit's init in their order,
  *   the curry functions, the tables) is made of the interfaces. A unit
  *   is a module: its names are M.x in the units after it, or x after
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,

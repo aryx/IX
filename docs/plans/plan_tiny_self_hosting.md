@@ -659,3 +659,81 @@ and its library is TinyLibCore/.
     assembler's numbers, the overflow check); README's budget: 4,700
     left.
   - **Not run**: tests/lite.sh and mkfiles/check.sh whole.
+- 2026-10-20: step 8, the system from its sources: tiny-kernel builds
+  its own image. The sources are in the image under `/src` (1.1 MB,
+  every file the build reads and the `.mli` beside each `.ml`; not
+  `/sys/src`: the author, "let's not use /sys under t-ix", `/sys` being
+  principia's devsys), the library's interfaces and objects under
+  `/lib/ml`, and `/src/TinyKernel/Buildfile`, tiny-build's rules, which
+  `TinyKernel/Makefile` writes from its own lists (one description of
+  the build; rc's recipes, `/bin`'s ml, as, ld and cc). `make self`
+  boots on a blank 64 MB disk, builds the image in `/usr/glenda/self`
+  (`self.keys`), then a comment added to a module and a line to calc,
+  and reads the image off the disk (`TinyKernelFS_tests/Cat`) to
+  compare it with the host's.
+  - **TinyLibCore compiled once**, as units (§6's design; the author
+    chose it over the embedded library): tiny-ml reads its interfaces
+    from `/lib/ml` (`-L`, `-nostdlib`); TinyMLPrelude.ml gone.
+  - **tiny-ml made faster, by root causes** (the author: "let's
+    speedup tiny-ml if most of the time is spent there"; "do not add
+    optimisation hack for things that are not the root cause"):
+    the toplevel's names in hash tables, the locals a list (Stdlib's
+    names were at the end of one list: "using Hashtbl instead of List
+    makes sense"); keywords and symbols in tables; an interface with
+    its unit's own types only, as OCaml's `.cmi` (each repeated all
+    the program's: 310 KB of interfaces to 152 KB); the interfaces
+    marshalled (TinyLibCore's Marshal, OCaml's format, in C in the
+    runtime: the host's OCaml and tiny-kernel write the same bytes;
+    the author: "maybe we should add one (in C or whatever) to
+    tiny-ml ... if it helps improve the speed of the program and also
+    clarity"); a function's text into one buffer. A unit of one line:
+    47 s on tiny-kernel at the step's start, 2.2 s now; TinyML.ml:
+    11 minutes (step 7), 151 s before Marshal.
+  - **Printf in tiny-ml again**, read by the parser as the
+    `String.concat` it makes (the type checker sees no format); 145
+    chains of `^` written as Printf again ("the code is clearer
+    indeed"); String.concat a primitive of the runtime (in ML it cost
+    more than the `^` it replaced).
+  - **tiny-kernel**: the image up to 10 MB (the value stack, the frames
+    and the packet above it); names of 64 bytes and a date on each file
+    (the author: "the filesystem should have dates, and allow filenames
+    of 64 characters"), in memory and on the disk (TinyKernelFS: the
+    inode's date, 68-byte entries, a new magic); a date at -56(r0)
+    (seconds since 2000: 31 bits hold them until 2034), calls 25 `time`
+    and 26 `stat` (`ls -l /bin` read its directory three times a name:
+    7 minutes once the entries doubled, 4 s now, with a listing made
+    once and not quadratically); exec takes 64 arguments, paths of 1
+    KB, and zeroes no partition (only the image written; a comment
+    says it shows another process's bytes, to revisit for security,
+    "zero what's needed"), its arguments' ending 0 written (it had
+    come from the zeroed partition: bugs/ix.md); `k_copy` and `k_zero`
+    in memory.tm ("so entry.tm remain small"); ld 32 MB (office's link
+    needs 8 MB).
+  - **tiny-build** reads a file once a run, and not at all when its
+    size and date are those it recorded with its digest (git's index,
+    its "racy" rule).
+  - **make check**: the machine's date fixed (`-date`); what moves with
+    the code and the timing masked before the diff (a program's size,
+    a trap's address, a ping's time, tiny-vcs's hashes; the lossy
+    wire's trace kept as the fact that a packet was lost); the author:
+    "if those tests constant change because the size of binaries
+    constantly change, maybe we should just mask those size". Still
+    recorded again at most builds: tetris's screen (its seed is the
+    clock) and the two sounds' sums.
+  - **The first build on tiny-kernel** (the tree before the dates and
+    Marshal): 94 files made, the kernel's image, the C runtime, the
+    library, the units and mains it reached and sh, rc and emacs, each
+    the host's byte for byte; then ld ran out of memory at office (16
+    MB, now 32). The whole build on the final tree: below.
+  - **Bugs** (bugs/ix.md): a name of more than 19 bytes hung `ls`;
+    exec's arguments past 15 dropped unsaid; the arguments' ending 0.
+  - **Checked**: every tiny/tests/*_test.sh (TinyUtilities' 166 cases
+    all, its `du` failure gone), TinyML's, TinyC's and TinyLibCore's
+    tests on mini-mk's build too (its `bin/mini-ld` link is broken in
+    this checkout, another session's: dune's linker given instead),
+    compile_ix.sh tiny 51 of 51, the network's Linux checks, make
+    check's text, 23 screens and sounds, run in parts on the final
+    image.
+  - **Lines**: t-IX 21,003 (+658 since step 7: Marshal's C, the dates,
+    stat, the Printf expansion, the tables); README's budget: 4,000
+    left. Several cores: plan_tiny_multicore.md, written.

@@ -56,7 +56,8 @@ for p in std digests; do
   # 128 KB, and std is more; old: tiny-ml -o p.tm p.ml, its ml_start at the end)
   if $TML -L $W/lib -c -o $W/$p.tm $T/$p.ml && $TML -L $W/lib -o $W/${p}_main.tm $W/$p.tmi \
      && link_tm $W/$p.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/${p}_main.tm $W/$p.tm $W/mem.tm $LIB_O; then
-    timeout 60 $CPU $W/$p.img > $W/$p.out 2>&1
+    # (SLOW: more for tiny-cpu built by mini-ml, as TinyML_test.sh's)
+    timeout ${SLOW:-60} $CPU $W/$p.img > $W/$p.out 2>&1
   else echo "FAIL $p: tiny-ml or the link"; failures=$((failures + 1)); fi
 done
 if diff $T/std.expected $W/std.out; then echo "ok std: OCaml's lines"; else echo "FAIL std"; failures=$((failures + 1)); fi

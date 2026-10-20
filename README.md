@@ -216,7 +216,7 @@ step 8 has t-IX built there.
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
 | **tiny-c** | a C subset compiler, to tiny-cpu | 1,020 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
-| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 1,990 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 2,000 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
 | **tiny-assembler**, **tiny-linker** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 460 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
 
 **The window system** and the programs in its windows.
@@ -247,9 +247,9 @@ over the kernel's calls), `TinyCalls` for the graphical programs
 | on the host, for the tests | OCaml and dune | OCaml's own, and [`lib_core/commons/`](lib_core/commons/) |
 | on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 
-The programs are about 18,700 lines of OCaml and ML; with their C
+The programs are about 18,800 lines of OCaml and ML; with their C
 (tiny-c's and tiny-ml's runtimes, tiny-kernel's programs in C)
-t-IX is **about 20,500 lines** in all (the header comments are in
+t-IX is **about 21,000 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -406,7 +406,7 @@ not, something is trimmed first.
 | | budget | today (2026-10-19) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 20,500 | 4,500 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
+| **t-IX** | 25,000 | 21,000 | 4,000 | tiny-debugger, several cores (plan_tiny_multicore.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

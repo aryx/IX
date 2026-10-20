@@ -690,3 +690,342 @@ ml_run(value *stack, value *space0, value *space1, value words, value initial)
 	ml_vsp = vbase;
 	ml_start(vbase);
 }
+
+/* Marshal: a value as bytes and back, in OCaml's format (its small
+ * header: the magic number, the data's length, the blocks, their words
+ * on 32 and on 64 bits; then the value depth first, a code each: an
+ * integer, a string, a block and its fields, or a block met before, so
+ * what is shared stays shared), the format lib_core's Marshal.ml writes
+ * for mini-ml: a value written by the host's tiny-ml (OCaml's Marshal)
+ * and by tiny-kernel's ml is the same bytes, when its blocks are. No
+ * float, no custom block, no closure.
+ *
+ * Writing goes twice over the value, once to count the bytes, then
+ * into the string made of that size: nothing is allocated meanwhile,
+ * so nothing moves. A block met has its header marked (bit 8, its
+ * number above it), the header kept in the trail, which is the
+ * collector's other half, free between two collections; the headers
+ * are put back at the end. Reading makes every block in one allocation
+ * of the words the header says (as OCaml's intern), so no collection
+ * happens while the blocks are filled; its table of the blocks read is
+ * in the other half too. */
+static value *trail;
+static value ntrail;
+static uchar *mout;     /* the bytes written, or 0: only counted */
+static value mlen;
+static value mwords32;
+static value mwords64;
+
+static void
+mbyte(value b)
+{
+	if(mout)
+		mout[mlen] = b;
+	mlen++;
+}
+
+/* n's low bytes, the high one first */
+static void
+mput(value n, value bytes)
+{
+	value i;
+
+	for(i = bytes - 1; i >= 0; i--)
+		mbyte((n >> (8 * i)) & 255);
+}
+
+static void
+mint(value n)
+{
+	if(n >= 0 && n < 64)
+		mbyte(0x40 + n);
+	else if(n >= -128 && n < 128){
+		mbyte(0x00);
+		mput(n, 1);
+	}
+	else if(n >= -32768 && n < 32768){
+		mbyte(0x01);
+		mput(n, 2);
+	}
+	else {
+		mbyte(0x02);
+		mput(n, 4);
+	}
+}
+
+static void
+extern_value(value v)
+{
+	value *p;
+	value h;
+	value n;
+	value tag;
+	value i;
+	value len;
+	value ago;
+
+	for(;;){
+		if(v & 1){
+			mint(v >> 1);
+			return;
+		}
+		p = (value*)v;
+		h = p[-1];
+		if(h & 0x100){
+			ago = ntrail - (h >> 10);
+			if(ago < 256){
+				mbyte(0x04);
+				mput(ago, 1);
+			} else if(ago < 65536){
+				mbyte(0x05);
+				mput(ago, 2);
+			} else {
+				mbyte(0x06);
+				mput(ago, 4);
+			}
+			return;
+		}
+		n = h >> 10;
+		tag = h & 255;
+		if(n == 0){
+			mbyte(0x80 + tag);
+			return;
+		}
+		if((ntrail + 1) * 2 > maxheap)
+			fatal("Fatal error: Marshal.to_string: too many blocks\n");
+		trail[2 * ntrail] = v;
+		trail[2 * ntrail + 1] = h;
+		p[-1] = (ntrail << 10) | 0x100 | tag;
+		ntrail++;
+		if(tag == 252){
+			len = n * W - 1 - ((uchar*)p)[n * W - 1];
+			if(len < 32)
+				mbyte(0x20 + len);
+			else if(len < 256){
+				mbyte(0x09);
+				mput(len, 1);
+			} else {
+				mbyte(0x0A);
+				mput(len, 4);
+			}
+			for(i = 0; i < len; i++)
+				mbyte(((uchar*)p)[i]);
+			mwords32 = mwords32 + 2 + len / 4;
+			mwords64 = mwords64 + 2 + len / 8;
+			return;
+		}
+		if(tag >= 247)
+			fatal("Fatal error: Marshal.to_string: a closure, a float or a custom block\n");
+		if(tag < 16 && n < 8)
+			mbyte(0x80 + tag + n * 16);
+		else {
+			mbyte(0x08);
+			mput(n * 1024 + tag, 4);
+		}
+		mwords32 = mwords32 + 1 + n;
+		mwords64 = mwords64 + 1 + n;
+		for(i = 0; i < n - 1; i++)
+			extern_value(p[i]);
+		/* (the last field in this loop: a long list is no deep stack) */
+		v = p[n - 1];
+	}
+}
+
+/* the value counted (out 0) or written into out; the headers put back */
+static void
+extern_pass(value v, uchar *out)
+{
+	value i;
+
+	trail = other;
+	ntrail = 0;
+	mout = out;
+	mlen = 20;
+	mwords32 = 0;
+	mwords64 = 0;
+	extern_value(v);
+	for(i = 0; i < ntrail; i++)
+		((value*)trail[2 * i])[-1] = trail[2 * i + 1];
+}
+
+value
+ml_marshal_to_string(value v, value flags)
+{
+	value s;
+
+	extern_pass(v, 0);
+	push(v);
+	s = string_alloc(mlen);
+	v = pop();
+	extern_pass(v, (uchar*)s);
+	/* the header, now that its numbers are known */
+	mlen = 0;
+	mput(0x8495A6BE, 4);
+	mput(length(s) - 20, 4);
+	mput(ntrail, 4);
+	mput(mwords32, 4);
+	mput(mwords64, 4);
+	return s;
+}
+
+/* Reading */
+static uchar *min;
+static value mpos;
+static value *mobj;
+static value nobj;
+static value *mnext;   /* where the next block's header goes */
+static value unfinished;
+
+static value
+mget(value bytes)
+{
+	value n;
+	value i;
+
+	n = 0;
+	for(i = 0; i < bytes; i++){
+		n = (n << 8) | min[mpos];
+		mpos++;
+	}
+	return n;
+}
+
+static value
+msigned(value bytes)
+{
+	value n;
+
+	n = mget(bytes);
+	if(bytes < 4 && (n >> (8 * bytes - 1)) != 0)
+		n = n - (1 << (8 * bytes));
+	return n;
+}
+
+static value
+mstring(value len)
+{
+	value *b;
+	value w;
+	value i;
+
+	w = len / W + 1;
+	b = mnext + 1;
+	b[-1] = (w << 10) | 252;
+	b[w - 1] = 0;
+	for(i = 0; i < len; i++)
+		((uchar*)b)[i] = min[mpos + i];
+	((uchar*)b)[w * W - 1] = w * W - 1 - len;
+	mpos = mpos + len;
+	mnext = b + w;
+	mobj[nobj] = (value)b;
+	nobj++;
+	return (value)b;
+}
+
+static value intern_value(void);
+
+/* a block of n fields: all but its last read, unfinished set */
+static value
+mblock(value tag, value n)
+{
+	value *b;
+	value i;
+
+	if(n == 0)
+		return (value)&empty_array[1];
+	b = mnext + 1;
+	b[-1] = (n << 10) | tag;
+	mnext = b + n;
+	for(i = 0; i < n; i++)
+		b[i] = 1;
+	mobj[nobj] = (value)b;
+	nobj++;
+	for(i = 0; i < n - 1; i++)
+		b[i] = intern_value();
+	unfinished = 1;
+	return (value)b;
+}
+
+/* the next item: a value, or a block whose last field is still to read */
+static value
+intern_item(void)
+{
+	value code;
+
+	unfinished = 0;
+	code = min[mpos];
+	mpos++;
+	if(code >= 0x80)
+		return mblock(code & 15, (code >> 4) & 7);
+	if(code >= 0x40)
+		return (code & 63) * 2 + 1;
+	if(code >= 0x20)
+		return mstring(code & 31);
+	if(code == 0x00)
+		return msigned(1) * 2 + 1;
+	if(code == 0x01)
+		return msigned(2) * 2 + 1;
+	if(code == 0x02)
+		return msigned(4) * 2 + 1;
+	if(code == 0x04)
+		return mobj[nobj - mget(1)];
+	if(code == 0x05)
+		return mobj[nobj - mget(2)];
+	if(code == 0x06)
+		return mobj[nobj - mget(4)];
+	if(code == 0x08){
+		code = mget(4);
+		return mblock(code & 255, code >> 10);
+	}
+	if(code == 0x09)
+		return mstring(mget(1));
+	if(code == 0x0A)
+		return mstring(mget(4));
+	fatal("Fatal error: Marshal.from_string: what this runtime does not read\n");
+	return 1;
+}
+
+static value
+intern_value(void)
+{
+	value v;
+	value last;
+	value b;
+
+	v = intern_item();
+	b = v;
+	while(unfinished){
+		last = intern_item();
+		((value*)b)[wosize(b) - 1] = last;
+		b = last;
+	}
+	return v;
+}
+
+value
+ml_marshal_from_string(value s, value ofs)
+{
+	value words;
+	value *chunk;
+
+	ofs = ofs >> 1;
+	min = (uchar*)s + ofs;
+	mpos = 0;
+	if(mget(4) != 0x8495A6BE)
+		fatal("Fatal error: Marshal.from_string: bad object\n");
+	mpos = 12;
+	words = mget(4);
+	if(words * 2 > maxheap)
+		fatal("Fatal error: Marshal.from_string: too many blocks\n");
+	if(words > 0){
+		push(s);
+		chunk = (value*)ml_alloc(words - 1, 0);
+		s = pop();
+		mnext = chunk - 1;
+	}
+	min = (uchar*)s + ofs;
+	mpos = 20;
+	mobj = other;
+	nobj = 0;
+	return intern_value();
+}

@@ -187,4 +187,12 @@ let () =
   strs [ Printf.sprintf "%5d|%-5d|%05d|%3s|%-3s|" 42 42 (-42) "a" "b"; Printf.sprintf "%S" "a\"b\n\001"; Printf.sprintf "no hole" ];
   let f = Printf.sprintf "%s-%d" in strs [ f "a" 1; Printf.sprintf "%s/%s" "x" "y" ^ "!" ];
   (try Printf.ksprintf failwith "bad %d" 7 with Failure m -> str m);
-  let b = Buffer.create 8 in Printf.bprintf b "%d+%d" 1 2; Printf.bprintf b "=%s" "3"; str (Buffer.contents b); print_newline ()
+  let b = Buffer.create 8 in Printf.bprintf b "%d+%d" 1 2; Printf.bprintf b "=%s" "3"; str (Buffer.contents b); print_newline ();
+  (* Marshal: OCaml's bytes, and the values back; what is shared, shared *)
+  let hex s = String.concat "" (List.init (String.length s) (fun i -> Printf.sprintf "%02x" (Char.code s.[i]))) in
+  let shared = "ab" in
+  let v = ([ 1; -1; 63; 64; -129; 40000; -40000; 1000000; 1000000000 ], (shared, shared), Some (ref [ None; Some 'z' ]), String.make 40 'x', String.make 300 'y', Array.of_list [ 1; 2 ]) in
+  let m = Marshal.to_string v [] in
+  str (hex m); int (String.length m); print_newline ();
+  let (l, (s1, s2), r, x, y, a) = (Marshal.from_string m 0 : int list * (string * string) * char option list ref option * string * string * int array) in
+  ints l; bool (s1 == s2); str s1; (match r with Some r -> int (List.length !r) | None -> ()); int (String.length x); int (String.length y); int (Array.length a); print_newline ()

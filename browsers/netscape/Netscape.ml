@@ -226,8 +226,10 @@ let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter
 
 let toolbar_height = 44.
 let status_height = 22.
-let buttons = [ ("Back", 8., 60.); ("Forward", 74., 84.); ("Reload", 164., 72.); ("Bookmarks", 242., 96.) ]
-let field_x = 428.
+(* (Stop: only while something is on its way, greyed otherwise, as Netscape's) *)
+let buttons = [ ("Back", 8., 60.); ("Forward", 74., 84.); ("Reload", 164., 72.); ("Stop", 242., 56.); ("Bookmarks", 304., 96.) ]
+let location_x = 408.
+let field_x = 490.
 let field_width (width : float) : float = width -. field_x -. 60.
 let inside (x, y) (bx, by, bw, bh) = x >= bx && x <= bx +. bw && y >= by && y <= by +. bh
 let grey = P.rgb 192 192 192
@@ -249,8 +251,11 @@ let offers (m : model) : Places.place list = if m.editing && not m.fresh then Pl
 let box (color : P.color) (x : float) (y : float) (w : float) (h : float) : P.shape =
   P.move (x +. (w /. 2.)) (-.(y +. (h /. 2.))) (P.rectangle color w h)
 
-let text (s : string) (x : float) (baseline : float) : P.shape list =
+let text_in (look : Looks.t) (s : string) (x : float) (baseline : float) : P.shape list =
   Browser_draw.plain_glyphs { text = s; look; x; width = Browser_text.metrics look s; baseline; picture = None; control = None; element = Dom.element "span" [] }
+
+let text (s : string) (x : float) (baseline : float) : P.shape list = text_in look s x baseline
+let greyed : Looks.t = { look with color = (140, 140, 140) }
 
 (* a text cut to what fits in [room], its end kept (an address typed) or its start *)
 let fitted ~(keep_end : bool) (s : string) (room : float) : string =
@@ -445,6 +450,7 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       | Some ("Back", _, _) -> shown { m with tab = Tab.back m.tab }
       | Some ("Forward", _, _) -> shown { m with tab = Tab.forward m.tab }
       | Some ("Reload", _, _) -> shown { m with tab = Tab.reload m.tab }
+      | Some ("Stop", _, _) -> if Tab.busy m.tab then shown { m with tab = Tab.stop m.tab } else m
       | Some (_, _, _) -> shown { m with tab = Tab.visit m.tab "about:bookmarks" }
       | None -> if inside at (field_x, 8., field_width screen.width, 28.) then { m with editing = true; fresh = true } else { m with editing = false }
     else
@@ -501,19 +507,47 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     else if pressed "Home" then by (-1e9)
     else if pressed "End" then by 1e9
     else if pressed "Backspace" then shown { m with tab = Tab.back m.tab }
+    else if pressed "Escape" && Tab.busy m.tab then shown { m with tab = Tab.stop m.tab }
     else m
 
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
 
-(* Netscape's N: white on the dark blue of its night sky *)
-(* (and, while a page is on its way, dark on the white of a comet's
- * tail: Netscape's N moved then) *)
-let logo ~(busy : bool) (x : float) (y : float) : P.shape list =
+(* Netscape's N: white on the dark blue of its night sky; while a page
+ * is on its way, meteors falling across it (Navigator's throbber,
+ * 1994 on), at [phase], a twelfth of a second each.
+ * old: inverted, dark on white, while busy: not seen as busy *)
+let meteors = 18
+
+let logo ~(phase : int option) (x : float) (y : float) : P.shape list =
   let style : Style.t = { bold = true; italic = false; underline = false; strike = false; size = 26. } in
   let sky = P.rgb 0 0 96 and white = P.rgb 255 255 255 in
-  box (if busy then white else sky) x y 36. 36. :: Stroke_text.glyph (if busy then sky else white) style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.))
+  (* three on parallel paths, from the top right to the bottom left,
+   * a third of the way apart, a streak along its way *)
+  let falling (k : int) : P.shape list =
+    List.map
+      (fun i ->
+        let t = float_of_int ((k + (i * meteors / 3)) mod meteors) /. float_of_int meteors in
+        let along = (t *. 24.) -. 12. and aside = float_of_int ((i - 1) * 10) in
+        let cx = x +. 18. +. ((aside -. along) *. 0.7) and cy = y +. 18. +. ((aside +. along) *. 0.7) in
+        P.rectangle (P.rgb 255 255 200) 7. 1.5 |> P.rotate 45. |> P.move cx (-.cy))
+      [ 0; 1; 2 ]
+  in
+  (box sky x y 36. 36. :: Stroke_text.glyph white style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.)))
+  @ match phase with Some k -> falling k | None -> []
+
+(* the status bar's progress: the pieces done of those known, Netscape's
+ * thermometer *)
+let progress_bar (x : float) (y : float) ((done_, known) : int * int) : P.shape list =
+  let w = 100. and h = 10. in
+  let filled = if known = 0 then 0. else w *. float_of_int done_ /. float_of_int known in
+  Browser_draw.sunken x y w h @ if filled > 2. then [ box (P.rgb 0 0 128) (x +. 1.) (y +. 1.) (filled -. 2.) (h -. 2.) ] else []
+
+(* the throbber's place in its fall, by the frame's clock, while busy *)
+let phase (computer : P.computer) (m : model) : int option =
+  let (P.Time now) = computer.time in
+  if Tab.busy m.tab then Some (int_of_float (now *. 12.) mod meteors) else None
 
 (* the window's shapes, from all that they are made of *)
 let view_simple (computer : P.computer) (m : model) (over : string option) : P.shape list =
@@ -535,12 +569,16 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
   let toolbar =
     box grey 0. 0. width toolbar_height
     :: box (P.rgb 96 96 96) 0. (toolbar_height -. 1.) width 1.
-    :: List.concat_map (fun (name, x, w) -> Browser_draw.raised x 8. w 28. @ text name (x +. ((w -. Browser_text.metrics look name) /. 2.)) 27.) buttons
-    @ text "Location:" 346. 27.
+    :: List.concat_map
+         (fun (name, x, w) ->
+           let l = if name = "Stop" && not (Tab.busy m.tab) then greyed else look in
+           Browser_draw.raised x 8. w 28. @ text_in l name (x +. ((w -. Browser_text.metrics look name) /. 2.)) 27.)
+         buttons
+    @ text "Location:" location_x 27.
     @ Browser_draw.sunken field_x 8. (field_width width) 28.
     @ [ box (P.rgb 255 255 255) (field_x +. 2.) 10. (field_width width -. 4.) 24. ]
     @ text (fitted ~keep_end:m.editing (m.location ^ if m.editing then "|" else "") (field_width width -. 12.)) (field_x +. 6.) 27.
-    @ logo ~busy:(Tab.busy m.tab) (width -. 46.) 4.
+    @ logo ~phase:(phase computer m) (width -. 46.) 4.
   in
   (* the tabs, the one shown white as its page *)
   let strip =
@@ -570,7 +608,8 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
   let status =
     box grey 0. (height -. status_height) width status_height
     :: box (P.rgb 96 96 96) 0. (height -. status_height) width 1.
-    :: text (fitted ~keep_end:false (match over with Some link when not (Tab.busy m.tab) -> link | _ -> Tab.said m.tab) (width -. 80.)) 8. (height -. 6.)
+    :: text (fitted ~keep_end:false (match over with Some link when not (Tab.busy m.tab) -> link | _ -> Tab.said m.tab) (width -. if Tab.busy m.tab then 190. else 80.)) 8. (height -. 6.)
+    @ (if Tab.busy m.tab then progress_bar (width -. 170.) (height -. 16.) (Tab.pieces m.tab) else [])
     (* the zoom, when it is not 100% *)
     @ text (Browser_zoom.label z) (width -. 50.) (height -. 6.)
   in
@@ -595,6 +634,8 @@ type shown = {
   over : string option;
   titles : string list * int; (* the tabs', the one shown *)
   offer : Places.place list * int; (* the Location field's, the one chosen *)
+  phase : int option; (* the throbber's *)
+  pieces : int * int;
 }
 
 let memo : bool ref = ref true
@@ -611,12 +652,12 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let now =
     { page = Tab.page m.tab; scroll = Tab.scroll m.tab; focus = Tab.focus m.tab; said = Tab.said m.tab; busy = Tab.busy m.tab; field = (m.location, m.editing); zoom = z;
       size = (screen.width, screen.height, screen.left, screen.top); over;
-      titles = ((if m.left = [] && m.right = [] then [] else List.map title (tabs m)), List.length m.left); offer = (offers m, m.choice) }
+      titles = ((if m.left = [] && m.right = [] then [] else List.map title (tabs m)), List.length m.left); offer = (offers m, m.choice); phase = phase computer m; pieces = Tab.pieces m.tab }
   in
   let same (a : shown) (b : shown) : bool =
     (match (a.page, b.page) with Some p, Some q -> p == q | None, None -> true | _ -> false)
     && (match (a.focus, b.focus) with Some e, Some f -> e == f | None, None -> true | _ -> false)
-    && a.scroll = b.scroll && a.said = b.said && a.busy = b.busy && a.field = b.field && a.zoom = b.zoom && a.size = b.size && a.over = b.over && a.titles = b.titles && a.offer = b.offer
+    && a.scroll = b.scroll && a.said = b.said && a.busy = b.busy && a.field = b.field && a.zoom = b.zoom && a.size = b.size && a.over = b.over && a.titles = b.titles && a.offer = b.offer && a.phase = b.phase && a.pieces = b.pieces
   in
   match !last with
   | Some (was, shapes) when !memo && same was now -> shapes

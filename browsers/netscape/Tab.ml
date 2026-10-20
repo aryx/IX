@@ -63,14 +63,18 @@ type t = {
   (* a layout owed: the scripts changed the tree, and the page shown is
    * the one before; for how many frames (0: none owed) *)
   owed : int;
+  (* the pieces done since the page was asked for: the status bar's
+   * progress, with what is left *)
+  taken : int;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0 }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0 }
 
 let page (t : t) = t.page
 let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
 let busy (t : t) : bool = t.todo <> []
+let pieces (t : t) : int * int = (t.taken, t.taken + List.length t.todo)
 let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
 let with_jar (jar : Cookie_jar.t) (t : t) : t = { t with jar }
 let with_helpers (helpers : Browser_helpers.rule list) (t : t) : t = { t with helpers }
@@ -215,7 +219,7 @@ let rec at_path (root : Dom.element) (path : int list) : Dom.element option =
 
 (* the page at [address] asked for: [step] fetches it; what was left of
  * the page before is dropped *)
-let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t = progress { t with todo = [ Page (address, post, scroll) ] }
+let ask (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t = progress { t with todo = [ Page (address, post, scroll) ]; taken = 0 }
 
 (* opti: a layout the scripts' change of the tree asks for is owed, and
  * made once ([settle]) when the page's work is done, or after half a
@@ -329,7 +333,7 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
   match t.todo with
   | [] -> t
   | work :: rest ->
-      let t = { t with todo = rest } in
+      let t = { t with todo = rest; taken = t.taken + 1 } in
       (* (the page's work done: the layout owed, if one is) *)
       (fun (t : t) -> if t.todo = [] && t.owed > 0 then progress (settle t) else t)
       @@ progress
@@ -414,6 +418,9 @@ let forward (t : t) : t =
 
 let reload (t : t) : t =
   if t.url = "" then t else ask { t with sheets = []; sources = [] } ~post:None ~scroll:t.scroll t.url
+
+(* (what Netscape said then) *)
+let stop (t : t) : t = if t.todo = [] then t else progress (settle { t with todo = []; note = Some "Transfer interrupted!" })
 
 (*****************************************************************************)
 (* The mouse and the keys *)

@@ -141,10 +141,18 @@ val back : t -> t
 val forward : t -> t
 val reload : t -> t
 
+(* Stop: what is left to fetch dropped, the page as it came so far *)
+val stop : t -> t
+
 (* is something left to fetch? Then [url] is the address asked for,
  * and [said] what is being done ("Loading http://... ...", "Loading
  * pictures: 3 of 19") *)
 val busy : t -> bool
+
+(* how far it is: the pieces done since the page was asked for, and
+ * those known, done or not (a page's pictures are known once it is
+ * read: the second may grow) *)
+val pieces : t -> int * int
 
 (* a piece of it done: the page with its style sheets, read and laid
  * out, shown without its pictures; then a script's file a call, the

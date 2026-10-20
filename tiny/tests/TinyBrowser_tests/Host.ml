@@ -18,5 +18,5 @@ let () =
       let rec go i = if i < n then begin TinyBrowser.feed p (String.sub s i (min size (n - i))); go (i + size) end in
       go 0;
       TinyBrowser.finish p;
-      print_string (TinyBrowser.dump p)
+      print_string (Testutil_browser.dump p (int_of_string width))
   | _ -> prerr_endline "usage: Host.exe width page.html [size]"; exit 2

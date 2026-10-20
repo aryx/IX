@@ -23,10 +23,8 @@ let is_space c = c = ' ' || c = '\n' || c = '\t' || c = '\r'
 (* Is w one of the space-separated words of a class attribute? *)
 let has_class classes w = w <> "" && List.mem w (String.split_on_char ' ' classes)
 
-let number s =
-  let n = String.length s in
-  let rec go i acc = if i < n && s.[i] >= '0' && s.[i] <= '9' then go (i + 1) (acc * 10 + Char.code s.[i] - 48) else acc in
-  go 0 0
+(* an attribute's number, 0 when it is not one *)
+let number s = match int_of_string_opt s with Some n -> n | None -> 0
 
 (*****************************************************************************)
 (* Characters *)
@@ -73,21 +71,11 @@ let entity name =
   | _ -> -1
 
 (* Returns the code point of an entity, given the text between its &
- * and its ; (like "amp" or "#8211"), or -1 if it is unknown. *)
+ * and its ; (like "amp", "#8211" or "#x2013"), or -1 if it is unknown:
+ * a number's, as int_of_string reads 08211 and 0x2013 *)
 let entity_code s =
   let n = String.length s in
-  if n > 1 && s.[0] = '#' then begin
-    if s.[1] = 'x' || s.[1] = 'X' then begin
-      let rec hex i acc =
-        if i >= n then acc
-        else
-          let c = s.[i] in
-          let d = if c >= '0' && c <= '9' then Char.code c - 48 else if c >= 'a' && c <= 'f' then Char.code c - 87 else if c >= 'A' && c <= 'F' then Char.code c - 55 else -1 in
-          if d < 0 then -1 else hex (i + 1) (acc * 16 + d) in
-      hex 2 0
-    end
-    else number (String.sub s 1 (n - 1))
-  end
+  if n > 1 && s.[0] = '#' then (match int_of_string_opt ("0" ^ String.lowercase_ascii (String.sub s 1 (n - 1))) with Some u -> u | None -> -1)
   else entity s
 
 (* How many bytes a UTF-8 character has, given its first byte. *)
@@ -779,7 +767,6 @@ let finish p =
   if p.heading <> [] then lay_heading p;
   end_line p.page_flow
 
-let lines p = List.rev p.page_flow.out
 let title p = p.page_title
 let base p = p.page_base
 let anchor p id = List.assoc_opt id p.anchors
@@ -807,30 +794,6 @@ let lines_between p a b =
     let rec take k acc = if k < a then acc else take (k - 1) (f.cache.(k) :: acc) in
     take (b - 1) []
   end
-
-(*****************************************************************************)
-(* The lines as text *)
-(*****************************************************************************)
-
-(* A picture's first row shows as [its alternative text, w x h]; its
- * other rows as nothing. *)
-let show_line p width (l : line) =
-  if l.rule then String.make width '-'
-  else begin
-    let at = ref 0 in
-    String.concat "" (List.map (fun (r : run) ->
-      let pad = if r.pic = -2 then "" else if r.col > !at then String.make (r.col - !at) ' ' else "" in
-      let text =
-        if r.pic >= 0 && r.pic mod 256 = 0 then
-          let pc = picture_of p (r.pic / 256) in
-          "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", " ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
-        else if r.pic = -2 then ""
-        else r.text in
-      if r.pic <> -2 then at := max !at r.col + String.length text;
-      pad ^ text) l.runs)
-  end
-
-let dump p = String.concat "" (List.map (fun l -> show_line p p.page_flow.width l ^ "\n") (lines p))
 
 (*****************************************************************************)
 (* The screen *)

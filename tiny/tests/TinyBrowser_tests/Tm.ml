@@ -17,4 +17,4 @@ let () =
   let rec go () = let s = www_read 1000 in if s <> "" then begin TinyBrowser.feed p s; go () end in
   go ();
   TinyBrowser.finish p;
-  print_string (TinyBrowser.dump p)
+  print_string (Testutil_browser.dump p (www_width ()))

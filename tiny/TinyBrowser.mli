@@ -4,10 +4,12 @@
  * mini-lynx, built on the mini-chrome engine); this one keeps only the
  * essentials. The design is in docs/plans/done/plan_tiny_browser.md.
  *
- * So far this file only does the reading part: it turns the bytes of a
- * page, as they arrive, into the lines shown on the screen. Fetching
- * pages, drawing, following links, and pictures are the next steps of
- * the plan.
+ * The file has two parts. The reading turns the bytes of a page, as
+ * they arrive, into the lines shown on the screen; it is most of what
+ * follows. The browser around it, www, asks the wire's other end
+ * (TinyMachinePeer, which speaks HTTPS for it) for the page and then
+ * its pictures, draws the lines as they come, follows links, and has
+ * TinyLibGUI's menus and an address field.
  *
  * The main idea: {b a page is read only once, as it arrives, and turned
  * directly into lines}. There is no document tree and no style sheet.
@@ -88,9 +90,7 @@ val create : int -> page
 val feed : page -> string -> unit
 val finish : page -> unit
 
-(* The lines made so far, from the top of the page; the page's <title>;
- * the address in its <base>. *)
-val lines : page -> line list
+(* The page's <title>; the address in its <base>. *)
 val title : page -> string
 val base : page -> string
 
@@ -112,9 +112,6 @@ val picture_of : page -> int -> picture
 (* Converts a text to ASCII: entities and UTF-8 characters become what
  * the font can show. *)
 val ascii : string -> string
-
-(* The lines as plain text, one per line (a rule becomes dashes). *)
-val dump : page -> string
 
 (* The program www: the page at [address] asked of the wire's other end
  * (the line "www address" on port 70: TinyMachinePeer.www_address says

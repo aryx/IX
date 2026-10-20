@@ -167,8 +167,12 @@ and form =
    * frame, a picture decoded by the program) *)
   | Bitmap of number (* width *) * number (* height *) * Rgba_image.t
   | Words of color * string
+  (* ix: a run of text in Hershey's strokes, each letter at its place
+   * (Playground.mli) *)
+  | Letters of color * letters
 
   | Group of shape list
+and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -207,6 +211,8 @@ let (polygon: color -> (number * number) list -> shape) = fun color points ->
 
 let (words: color -> string -> shape) = fun color str ->
   shape 0. 0. 0. 1. 1. (Words (color, str))
+
+let letters (color : color) (l : letters) : shape = shape 0. 0. 0. 1. 1. (Letters (color, l))
 
 (* claude: the font used to render [words], shared by the native and web
  * backends so that text looks the same in both. It used to be each

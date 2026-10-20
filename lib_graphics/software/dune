@@ -11,4 +11,4 @@
 (library
  (name ix_graphics_software)
  (wrapped false)
- (libraries ix_graphics_core ix_graphics_geometry ix_graphics_images))
+ (libraries ix_core ix_graphics_core ix_graphics_geometry ix_graphics_images))

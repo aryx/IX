@@ -24,11 +24,14 @@
  * Next to the Playground's own [words] (Playground.mli), which also
  * draws text:
  *
- *                 Playground.words            Stroke_text.glyph
- *   takes         a colour and a string       a colour, a look, one
- *                                             character
- *   gives         one shape, the platform's   the letter's strokes as
- *                 to draw                     shapes: thin rectangles
+ *                 Playground.words            Stroke_text.run
+ *   takes         a colour and a string       a colour, a look, the
+ *                                             letters and their places
+ *   gives         one shape, the platform's   one shape, Playground's
+ *                 to draw                     Letters: the platform
+ *                                             draws each letter's
+ *                                             strokes (Letter_strokes),
+ *                                             once, then copies it
  *   the letters   the platform's              Hershey's on every
  *                                             platform: a page is laid
  *                                             out the same on all
@@ -39,7 +42,9 @@
  *
  * A word wrapped at the right place needs the last three, so a page's
  * text is drawn here: Browser_text asks [metrics] for the layout and
- * Browser_draw [glyph] for the screen.
+ * Browser_draw [run] for the screen. (Until 2026-10-20 [glyph] gave a
+ * letter's strokes, thin rectangles, and every platform drew them all
+ * again at each frame: docs/notes_font.md.)
  *
  * The browser's copy of the office apps' Stroke_text, with the
  * letters beyond ASCII (Glyph_unicode).
@@ -66,8 +71,8 @@
 (* the width of a character in a look: Hershey's, scaled to its size *)
 val metrics : Style.t -> string -> float
 
-(* [glyph color look ch ~x ~baseline]: [ch] drawn in [look], its left
- * edge at [x] and its baseline at [baseline], in the playground's
- * coordinates (y up) *)
-val glyph :
-  Playground.color -> Style.t -> string -> x:float -> baseline:float -> Playground.shape list
+(* [run color look letters ~baseline]: the letters, each its left edge
+ * at its x, on [baseline], in the playground's coordinates (y up), in
+ * [look]: one shape, and the underline and the strike as rules under
+ * and through them all *)
+val run : Playground.color -> Style.t -> (float * string) list -> baseline:float -> Playground.shape list

@@ -77,7 +77,7 @@ OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
 INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $T/netcode -I $T/tcp -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $J $GI -I $V -I $VF -I $C $STDI
-SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey
+SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey Glyph_unicode
 # (lib_playground's folders: core/, random/, itself, layers/)
 CORE=Color Basics Time Cmd Sub Set
 RANDOM=Lehmer
@@ -155,7 +155,7 @@ APISOBJS=`{for u in $APIS; do echo $AO/$u.$O; done}
 PHYSICSOBJS=`{for u in $PHYSICS; do echo $HO/$u.$O; done}
 # (the Plan 9 platforms' loop: not for the one without a window)
 LOOP=`{case $PLATFORM in ppm) ;; *) echo Plan9_loop;; esac}
-RENDER=Shape_render_software $RENDERPDF Input_script Session Redraw Store $LOOP
+RENDER=Letter_strokes Shape_render_software $RENDERPDF Input_script Session Redraw Store $LOOP
 RENDEROBJS=`{for u in $RENDER; do echo $RO/$u.$O; done}
 PLAT=Playground_platform
 # (the draw device's client, for a platform with a window; a list that may

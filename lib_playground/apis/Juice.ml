@@ -147,7 +147,7 @@ let rec transform (m : linear) (s : shape) : shape =
   let even () = { s with x; y; angle = atan2 l.c l.a *. 180. /. Float.pi; scale = sqrt (Float.abs ((l.a *. l.d) -. (l.b *. l.c))) } in
   match s.form with
   | Group shapes -> baked (Group (List.map (transform l) shapes))
-  | Words _ -> even ()
+  | Words _ | Letters _ -> even ()
   | Image (w, h, url) when diagonal l -> baked (Image (w *. Float.abs l.a, h *. Float.abs l.d, url))
   | Image _ -> even ()
   | Bitmap (w, h, img) when diagonal l -> baked (Bitmap (w *. Float.abs l.a, h *. Float.abs l.d, img))
@@ -176,6 +176,7 @@ let rec whiten (s : shape) : shape =
     | Ngon (_, n, r) -> Ngon (white, n, r)
     | Polygon (_, points) -> Polygon (white, points)
     | Words (_, text) -> Words (white, text)
+    | Letters (_, l) -> Letters (white, l)
     | (Image _ | Bitmap _) as image -> image
     | Group shapes -> Group (List.map whiten shapes)
   in

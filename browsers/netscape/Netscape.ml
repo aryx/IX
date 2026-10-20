@@ -534,7 +534,7 @@ let logo ~(phase : int option) (x : float) (y : float) : P.shape list =
         P.rectangle (P.rgb 255 255 200) 7. 1.5 |> P.rotate 45. |> P.move cx (-.cy))
       [ 0; 1; 2 ]
   in
-  (box sky x y 36. 36. :: Stroke_text.glyph white style "N" ~x:(x +. 9.) ~baseline:(-.(y +. 27.)))
+  (box sky x y 36. 36. :: Stroke_text.run white style [ (x +. 9., "N") ] ~baseline:(-.(y +. 27.)))
   @ match phase with Some k -> falling k | None -> []
 
 (* the status bar's progress: the pieces done of those known, Netscape's

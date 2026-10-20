@@ -114,6 +114,12 @@ let rec hitboxes_of (world : number * number -> number * number) (scale : number
   (* an estimate: the playground doesn't know the font's widths *)
   | Words (_, text) ->
       polygon (Shape.box_corners (0.6 *. words_font_size *. float_of_int (String.length text)) words_font_size)
+  (* (a run of letters: its letters' places, a size high) *)
+  | Letters (_, { at = []; _ }) -> []
+  | Letters (_, l) ->
+      let xs = List.map fst l.at in
+      let x0 = List.fold_left min infinity xs and x1 = List.fold_left max neg_infinity xs +. l.size in
+      polygon [ (x0, l.baseline); (x1, l.baseline); (x1, l.baseline +. l.size); (x0, l.baseline +. l.size) ]
   | Group shapes -> List.concat_map (hitboxes_of to_world (scale *. s.scale)) shapes
 
 let hitboxes (b : body) : Shape.placed list =

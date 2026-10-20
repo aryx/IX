@@ -354,6 +354,8 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
     | Circle (c, r) -> ellipse win m r r (src c)
     | Oval (c, w, h) -> ellipse win m (w /. 2.) (h /. 2.) (src c)
     | Words (c, str) -> words win m str (src c)
+    (* (a run of letters: its strokes, for now) *)
+    | Letters (c, l) -> List.iter (shape win m) (List.map (fun (k : Playground.shape) -> { k with alpha = s.alpha }) (Letter_strokes.shapes c l))
     | Bitmap (w, h, img) -> (
         match if s.alpha < 1. then None else picture win m w h img with
         | Some image ->

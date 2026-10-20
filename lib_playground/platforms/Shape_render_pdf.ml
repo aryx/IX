@@ -66,12 +66,14 @@ let form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t
       end;
       List.iter (fun (line : (float * float) list) -> Pdf_write.polyline c (List.map (Affine.apply m) line)) strokes;
       if strokes <> [] then Pdf_write.stroke c
-  | Group _ -> ()
+  | Letters _ | Group _ -> ()
 
 let rec shape (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t) (s : Playground.shape) : unit =
   let m = Affine.compose m (Shape_render_software.shape_transform s) in
   match s.form with
   | Group inside -> List.iter (shape file c st m) inside
+  (* (a run of letters: its strokes, as paths) *)
+  | Letters (color, l) -> List.iter (shape file c st m) (List.map (fun (k : Playground.shape) -> { k with alpha = s.alpha }) (Letter_strokes.shapes color l))
   | f -> if s.alpha > 0. then form file c st m s.alpha f
 
 let shapes (file : Pdf_write.t) (c : Pdf_write.content) (m : Affine.t) (all : Playground.shape list) : unit =

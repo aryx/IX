@@ -110,7 +110,10 @@ by the server. This is what the X desktops did until GL.
   a glyph; nothing is shaped.
 
 **Cairo, browsers, terminals, today.** The same as XRender, with the
-graphics card as the server. Letters are rasterized by FreeType
+graphics card as the server. (Cairo drawing in memory, its image
+backend, keeps the same cache in the program: a *scaled font*, the
+font at a size and a transform, holds each glyph's mask once
+rasterized, and text is those masks composited at their places.) Letters are rasterized by FreeType
 (or the system's: Core Text, DirectWrite) into a *glyph atlas*, one
 large texture of the letters in use. A text run is then a rectangle
 per letter, each sampling its place in the atlas: Skia's in Chrome,
@@ -144,9 +147,24 @@ common line.
   playground's (`Letters`). The platform knows it is text, as a
   string message tells the device, and as `XRenderCompositeGlyphs`
   tells the server.
-- **On Linux**, the software renderer draws a run by the strokes it
-  is made of (the same rectangles as `Stroke_text.glyph` made), so the
-  pictures do not change: nothing is kept, the machine is fast enough.
+- **On Linux**, the software renderer keeps a *mask* for each letter
+  at a size, a look and a scale: its strokes (`Letter_strokes`, the
+  rectangles `Stroke_text.glyph` made) drawn once, white over black,
+  how much of each pixel they cover; a letter drawn is then the colour
+  put through it, at the nearest whole pixel. Cairo's image backend's
+  way. Done 2026-10-20 (the author: "scrolling on linux still feels
+  slow though on HN for instance, but also wikipedia"; the plan of
+  2026-10-09 had kept the strokes there, "the machine is fast
+  enough": it was not). Measured, Hacker News, a frame scrolled:
+
+  | | strokes | masks |
+  |---|---|---|
+  | OCaml's code, at 100% | 12 ms | 1.7 ms |
+  | OCaml's code, at 250% | 29 ms | 4.3 ms |
+  | mini-ml's code, at 100% | 107 ms | 9 ms |
+
+  The letters' shapes are the same; their places are rounded, so the
+  recorded frames were recorded again.
 - **On mini-9pi**, the draw platform keeps a *font image* in the
   kernel for each look at a size in pixels, Plan 9's cache image, and
   puts each letter there the first time it is used. A letter drawn is

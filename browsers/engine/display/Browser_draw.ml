@@ -91,22 +91,19 @@ let glyphs ~(visited : string -> bool) ~(picture_of : string -> Browser_picture.
   (* a form's control: drawn with its value every frame (control_shapes) *)
   | None, Some _ -> []
   | None, None ->
-      if f.look.monospace then
-        let cell = Browser_text.cell_of f.look in
-        characters f.text
-        |> List.mapi (fun i c ->
-               if c = " " then []
-               else
-                 let w = Stroke_text.metrics style c in
-                 Stroke_text.glyph color style c ~x:(f.x +. (cell *. float_of_int i) +. ((cell -. w) /. 2.)) ~baseline)
-        |> List.concat
-      else
-        let _, shapes =
-          List.fold_left
-            (fun (x, shapes) c -> (x +. Stroke_text.metrics style c, Stroke_text.glyph color style c ~x ~baseline :: shapes))
-            (f.x, []) (characters f.text)
-        in
-        List.concat (List.rev shapes)
+      (* each letter's left: in its cell, or after the one before it *)
+      let letters =
+        if f.look.monospace then
+          let cell = Browser_text.cell_of f.look in
+          List.concat
+            (List.mapi
+               (fun i c -> if c = " " then [] else [ (f.x +. (cell *. float_of_int i) +. ((cell -. Stroke_text.metrics style c) /. 2.), c) ])
+               (characters f.text))
+        else
+          let _, at = List.fold_left (fun (x, at) c -> (x +. Stroke_text.metrics style c, (x, c) :: at)) (f.x, []) (characters f.text) in
+          List.rev at
+      in
+      Stroke_text.run color style letters ~baseline
 
 
 let plain_glyphs (f : Html_layout.fragment) : shape list = glyphs ~visited:(fun _ -> false) ~picture_of:(fun _ -> None) f

@@ -265,7 +265,15 @@ and form =
   | Image of number * number * string
   | Bitmap of number * number * Rgba_image.t
   | Words of color * string
+  | Letters of color * letters
   | Group of shape list
+
+(* ix: a run of text in Hershey's strokes (the browser's and the word
+ * processor's: Stroke_text), each letter at its place on a baseline,
+ * in a look: its size, bold (a wider pen), italic (a slant). A
+ * platform knows it is text, and may keep a letter it has drawn (the
+ * software renderer, a mask a letter; docs/notes_font.md) *)
+and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
 
 (** {2 Basic Shapes } *)
 
@@ -456,6 +464,9 @@ val bitmap : number -> number -> Rgba_image.t -> shape
 You can use {!val:scale} to make the words bigger or smaller.
 *)
 val words : color -> string -> shape
+
+(* ix: a run of letters (above, [letters]) *)
+val letters : color -> letters -> shape
 
 (**/**)
 (* claude: the font size (in playground units) and font family used by the

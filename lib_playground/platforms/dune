@@ -8,7 +8,7 @@
 (library
  (name ix_playground_render)
  (wrapped false)
- (modules Shape_render_software Shape_render_pdf Input_script Session Redraw Store)
+ (modules Letter_strokes Shape_render_software Shape_render_pdf Input_script Session Redraw Store)
  (libraries ix_playground ix_graphics_software ix_graphics_pdf ix_core caps fpath unix))
 
 ; the loop the Plan 9 platforms share (the draw device's client under it)

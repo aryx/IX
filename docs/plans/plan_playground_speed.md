@@ -388,7 +388,15 @@ the same. **Not changed by it**: a frame where something changes (the
 mouse over a menu's name lights it: the whole page drawn again, 400
 ms); T1 and T3 below are for that.
 
-### The redesign: text a shape, and only what changed drawn (2026-10-09, agreed; not begun)
+### The redesign: text a shape, and only what changed drawn (2026-10-09, agreed; A begun 2026-10-20)
+
+Status (2026-10-20): A's text a shape, for the browser (`Playground.Letters`,
+`Stroke_text.run`, `Letter_strokes`), and on Linux a mask a letter in the
+software renderer, not the strokes (docs/notes_font.md, 5): a frame of
+Hacker News scrolled 1.7 ms where it was 12 (OCaml), 9 where it was 107
+(mini-ml). Left: mini-office's text (its own `Stroke_text`); the draw
+platform's font images on mini-9pi (A's second stage, the masks
+loaded into the kernel's images); B.
 
 The author, the arrows still slow on mini-9pi ("Typing the arrows to
 move the cursor is still slow") and two more things kept being added

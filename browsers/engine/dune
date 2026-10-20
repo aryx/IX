@@ -7,8 +7,8 @@
 ;             Table_layout; Html_layout (the lines and fragments they
 ;             end in), Hit (what is under a point)
 ;   display/  the boxes as the playground's shapes: Style (a letter's
-;             look), Stroke_text and Glyph_unicode (the letters, by
-;             Hershey's pen), Browser_text (a word's width),
+;             look), Stroke_text (the letters, by Hershey's pen, and
+;             Glyph_unicode's: lib_graphics/software), Browser_text (a word's width),
 ;             Browser_draw, Browser_boxes, Browser_picture
 ;   page/     Browser_page (a page read, laid out and drawn),
 ;             Browser_forms, Browser_url, Browser_history

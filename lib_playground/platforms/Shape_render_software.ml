@@ -120,6 +120,12 @@ let ellipse_polygon (m : Affine.t) ~rx ~ry : (float * float) list =
   let segments = Circle.segments_for_radius (Float.max rx ry *. scale) in
   List.map (Affine.apply m) (Circle.ellipse_points ~rx ~ry ~segments)
 
+(* A letter's box from its left on its baseline, at a size: Hershey's
+ * letters go from 7 units under the baseline to 25 over it, and are at
+ * most 30 wide, at 30 an em; with the pen, an italic's slant and a
+ * mark over a capital (Glyph_unicode) *)
+let letter_box (size : float) : float * float * float * float = (-0.3 *. size, -0.45 *. size, 1.4 *. size, 1.3 *. size)
+
 (* The box around a form, in its local coordinates, as
  * (xmin, ymin, xmax, ymax); None when there's nothing to draw *)
 let local_bounds (form : Playground.form) : (float * float * float * float) option =
@@ -136,6 +142,11 @@ let local_bounds (form : Playground.form) : (float * float * float * float) opti
       let size = Playground.words_font_size in
       let _strokes, width = Hershey.layout str in
       centered (width *. size /. Hershey.units_per_em) size
+  | Letters (_, { at = []; _ }) -> None
+  | Letters (_, l) ->
+      let xs = List.map fst l.at in
+      let x0, y0, x1, y1 = letter_box l.size in
+      Some (List.fold_left min infinity xs +. x0, l.baseline +. y0, List.fold_left max neg_infinity xs +. x1, l.baseline +. y1)
   | Group _ -> None
 
 (* The axis-aligned box, in pixel coordinates, around the local box
@@ -258,6 +269,68 @@ let draw_words (options : options) (fb : Framebuffer.t) (m : Affine.t) (str : st
 (* Shapes *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Letters, each drawn once *)
+(*****************************************************************************)
+
+(* A run of letters (Playground's Letters): each letter drawn once, at a
+ * size, a look and a transform, in a mask of its own -- how much of
+ * each pixel its strokes cover -- and after that the colour put through
+ * the mask at the letter's place, as Cairo's glyph cache and Plan 9's
+ * fonts do (docs/notes_font.md). The strokes are Letter_strokes', white
+ * over black: where two overlap the cover is 1 - (1 - a)(1 - b), what
+ * drawing them one after the other in the colour gives. A letter's
+ * place is a whole pixel, the nearest (half a pixel off at most): that
+ * is what lets one mask serve each "e" of a page.
+ * old: the strokes drawn, a thin rectangle each, at each frame *)
+type mask = { w : int; h : int; ox : int; oy : int; cover : float array }
+
+let masks : (string * float * bool * bool * bool * float * float * float * float, mask) Hashtbl.t = Hashtbl.create 512
+
+(* the letter [s] in [l]'s look, [m]'s turn and scale (not its move),
+ * its origin at (ox, oy) of the mask *)
+let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) : mask =
+  let key = (s, l.size, l.bold, l.italic, aa, m.a, m.b, m.c, m.d) in
+  match Hashtbl.find_opt masks key with
+  | Some k -> k
+  | None ->
+      let linear = { m with tx = 0.; ty = 0. } in
+      let x0, y0, x1, y1 = letter_box l.size in
+      let corners = List.map (Affine.apply linear) [ (x0, y0); (x1, y0); (x1, y1); (x0, y1) ] in
+      let xs = List.map fst corners and ys = List.map snd corners in
+      let left = int_of_float (floor (List.fold_left min infinity xs)) - 1 and top = int_of_float (floor (List.fold_left min infinity ys)) - 1 in
+      let w = int_of_float (ceil (List.fold_left max neg_infinity xs)) + 2 - left and h = int_of_float (ceil (List.fold_left max neg_infinity ys)) + 2 - top in
+      let fb = Framebuffer.create ~width:w ~height:h in
+      Framebuffer.clear fb ~rgb:0;
+      let at = Affine.compose (Affine.translate (float (-left)) (float (-top))) linear in
+      List.iter
+        (fun (stroke : Playground.shape) ->
+          match stroke.form with
+          | Rectangle (_, sw, sh) -> fill_polygon ~aa fb (List.map (Affine.apply (Affine.compose at (shape_transform stroke))) (rectangle_corners sw sh)) ~rgb:0xffffff ~alpha:1.
+          | _ -> ())
+        (Letter_strokes.letter Playground.white ~size:l.size ~bold:l.bold ~italic:l.italic s ~x:0. ~baseline:0.);
+      let cover = Array.init (w * h) (fun i -> float ((Framebuffer.get_rgb fb ~x:(i mod w) ~y:(i / w) lsr 16) land 0xff) /. 255.) in
+      let k = { w; h; ox = -left; oy = -top; cover } in
+      (* (a page's letters at a few sizes are some hundreds: kept, the
+       * table emptied when it is larger than any page needs) *)
+      if Hashtbl.length masks >= 4096 then Hashtbl.reset masks;
+      Hashtbl.replace masks key k;
+      k
+
+let draw_letters (options : options) (fb : Framebuffer.t) (m : Affine.t) (l : Playground.letters) ~(rgb : int) ~(alpha : float) : unit =
+  List.iter
+    (fun ((x, s) : float * string) ->
+      let k = mask_of ~aa:options.antialiasing m l s in
+      let px, py = Affine.apply m (x, l.baseline) in
+      let x0 = int_of_float (Float.round px) - k.ox and y0 = int_of_float (Float.round py) - k.oy in
+      for j = 0 to k.h - 1 do
+        for i = 0 to k.w - 1 do
+          let c = k.cover.((j * k.w) + i) in
+          if c > 0. then Framebuffer.plot fb ~x:(x0 + i) ~y:(y0 + j) ~rgb ~alpha:(c *. alpha)
+        done
+      done)
+    l.at
+
 (* The color to draw a (non-group) form with *)
 let form_rgb (form : Playground.form) : int =
   match form with
@@ -266,7 +339,8 @@ let form_rgb (form : Playground.form) : int =
   | Rectangle (color, _, _)
   | Ngon (color, _, _)
   | Polygon (color, _)
-  | Words (color, _) ->
+  | Words (color, _)
+  | Letters (color, _) ->
       rgb_of_color color
   | Image _ | Bitmap _ | Group _ -> image_placeholder_rgb
 
@@ -287,6 +361,7 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
   | Image (w, h, _) -> polygon (rectangle_corners w h)
   | Bitmap (w, h, img) -> draw_pixels fb m ~w ~h img ~alpha
   | Words (_, str) -> draw_words options fb m str ~rgb ~alpha
+  | Letters (_, l) -> draw_letters options fb m l ~rgb ~alpha
   | Group _ -> ()
 
 (* [m] is the transform from the coordinates [shape] lives in (the

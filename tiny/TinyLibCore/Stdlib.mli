@@ -1,9 +1,11 @@
 (* TinyLibCore: the standard library of tiny-ml's programs (the kernel,
  * tiny-windows, the applications, the tools), in tiny-ml's ML, a
  * module a file as OCaml's: Stdlib, open in every unit, then Char,
- * List, String, Bytes, Array, Option, Filename, Buffer, Hashtbl, and
+ * List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
+ * (what tiny-ml's reading of a format calls: Printf.mli), Hashtbl, and
  * ix's Common and Sha1 (lib_core's and lib_crypto's, which the tools
- * name). Each .mli is a subset of OCaml's (lib_core's, lib_crypto's):
+ * name). Each .mli but Printf's is a subset of OCaml's (lib_core's,
+ * lib_crypto's):
  * the same names, the same types, the same results, so that a file
  * is built by OCaml on its own library for the host and by tiny-ml on
  * this one; TinyLibCore_test.sh has OCaml check each .mli against its
@@ -19,7 +21,7 @@
  * them by the build, and compiled them again at each run)
  *
  *     Stdlib  Char  List  String  Bytes  Array  Option
- *        Filename  Buffer  Hashtbl  Common  Sha1
+ *        Filename  Buffer  Printf  Hashtbl  Common  Sha1
  *     (each after those before it: String.map is List.init's)
  *
  * (old: TinyLibCore.ml, a prelude whose dotted names, List.map, were

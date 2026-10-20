@@ -61,7 +61,7 @@ let layout (items : item list) =
   let pc = ref 0 and placed = ref [] in
   List.iter (fun it ->
     match it with
-    | Label l -> if Hashtbl.mem labels l then error ("label " ^ l ^ " defined twice"); Hashtbl.replace labels l !pc; order := (l, !pc) :: !order
+    | Label l -> if Hashtbl.mem labels l then error (Printf.sprintf "label %s defined twice" l); Hashtbl.replace labels l !pc; order := (l, !pc) :: !order
     | Align n -> let a = (!pc + n - 1) / n * n in placed := (!pc, Space (a - !pc)) :: !placed; pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s
@@ -113,7 +113,7 @@ let sweep (objects : item list list) =
   let pieces = Array.of_list pieces in
   let where = Hashtbl.create 256 in
   for i = 0 to Array.length pieces - 1 do
-    List.iter (fun it -> match it with Label l -> if Hashtbl.mem where l then error ("label " ^ l ^ " defined twice"); Hashtbl.replace where l i | _ -> ()) (snd pieces.(i))
+    List.iter (fun it -> match it with Label l -> if Hashtbl.mem where l then error (Printf.sprintf "label %s defined twice" l); Hashtbl.replace where l i | _ -> ()) (snd pieces.(i))
   done;
   let kept = Array.map fst pieces in
   let rec keep i =
@@ -177,9 +177,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
           try
             let image, labels = link (List.map (fun f -> f, TinyLibSystem.read_file caps f) files) in
             write out (match mb with Some n -> aout (n * 0x100000) image | None -> image);
-            (* (old: Printf's %x) *)
-            if map then write (out ^ ".map") (String.concat "" (List.map (fun (l, a) -> let h = hex a in String.sub h 2 (String.length h - 2) ^ " " ^ l ^ "\n") labels));
+            if map then write (out ^ ".map") (String.concat "" (List.map (fun (l, a) -> Printf.sprintf "%x %s\n" a l) labels));
             0
-          with Error e -> TinyLibSystem.eprint caps ("tiny-linker: " ^ e ^ "\n"); 1
+          with Error e -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-linker: %s\n" e); 1
 
 let () = TinyLibSystem.main "tiny-linker" main

@@ -35,15 +35,21 @@ let iteri f s = for i = 0 to length s - 1 do f i (get s i) done
 (* the result made once, its length counted first, each string copied
  * into it (old: joined by ^ two by two, then their pairs..., each byte
  * copied log n times; and init a string of a character for each) *)
+(* (each length asked once, an empty separator not copied: Printf's
+ * strings, a piece of a few bytes each; old: 7 calls of the runtime a
+ * piece, 3 now) *)
 let concat sep l =
-  let n = List.fold_left (fun n s -> n + length s) 0 l + (length sep * max 0 (List.length l - 1)) in
+  let ls = length sep in
+  let n = List.fold_left (fun n s -> n + length s + ls) 0 l - (match l with [] -> 0 | _ -> ls) in
   let r = make n '\000' in
   let rec go pos l = match l with
     | [] -> ()
     | s :: rest ->
-        unsafe_blit s 0 r pos (length s);
-        let pos = pos + length s in
-        match rest with [] -> () | _ -> unsafe_blit sep 0 r pos (length sep); go (pos + length sep) rest in
+        let k = length s in
+        unsafe_blit s 0 r pos k;
+        match rest with
+        | [] -> ()
+        | _ -> if ls > 0 then unsafe_blit sep 0 r (pos + k) ls; go (pos + k + ls) rest in
   go 0 l; r
 let init n f =
   let r = make n '\000' in

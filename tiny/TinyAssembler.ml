@@ -238,9 +238,9 @@ let assemble name text =
     List.iter (fun it ->
       match it with
       | Label l -> line ("label " ^ l)
-      | Align k -> line ("align " ^ string_of_int k)
+      | Align k -> line (Printf.sprintf "align %d" k)
       | Piece -> line "piece"
-      | Space k -> line ("space " ^ string_of_int k)
+      | Space k -> line (Printf.sprintf "space %d" k)
       | Bytes_ s -> Buffer.add_string b "code "; String.iter (fun c -> add_hex b (Char.code c)) s; Buffer.add_char b '\n'
       | Data es ->
           Buffer.add_string b "code "; List.iter (fun e -> add_word b (match e with Num n -> n | Sym _ -> (0, 0))) es; Buffer.add_char b '\n';
@@ -274,6 +274,6 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
     | [ "-o"; out; f ] when Filename.check_suffix f ".tm" -> assemble_to f out
     | [ f ] when Filename.check_suffix f ".tm" -> assemble_to f (default f)
     | _ -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
-  with Error e -> TinyLibSystem.eprint caps ("tiny-assembler: " ^ e ^ "\n"); 1
+  with Error e -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-assembler: %s\n" e); 1
 
 let () = TinyLibSystem.main "tiny-assembler" main

@@ -23,7 +23,7 @@ link_tm() {
   done
   $TL -o $out "${objs[@]}"
 }
-CORE="Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl Common Sha1"
+CORE="Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Hashtbl Common Sha1"
 ml_lib() {
   local dir=$1 m before=
   mkdir -p $dir

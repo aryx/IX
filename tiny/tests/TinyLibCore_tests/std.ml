@@ -178,4 +178,10 @@ let () =
   List.iter (fun f -> bool (Filename.is_relative f)) [ ""; "a"; "/a"; "./a" ]; print_newline ();
   strs [ Filename.chop_suffix "a.c" ".c"; Filename.chop_suffix "x/b.tm" ".tm" ];
   strs (List.map Filename.remove_extension [ "a.c"; "a/b.c"; ".profile"; "a.b/c"; "x..y"; "a.tar.gz"; "/a/.b.c"; "noext"; "" ]);
-  let s = "abc" in let b = Bytes.of_string s in Bytes.set b 0 'x'; strs [ s; Bytes.to_string b ]
+  let s = "abc" in let b = Bytes.of_string s in Bytes.set b 0 'x'; strs [ s; Bytes.to_string b ];
+  (* Printf, which tiny-ml reads as concatenations *)
+  strs [ Printf.sprintf "r%d, r%d" 3 (-12); Printf.sprintf "%s=%c%%" "x" 'y'; Printf.sprintf "%x %x %02x" 0 255 7 ];
+  strs [ Printf.sprintf "%5d|%-5d|%05d|%3s|%-3s|" 42 42 (-42) "a" "b"; Printf.sprintf "%S" "a\"b\n\001"; Printf.sprintf "no hole" ];
+  let f = Printf.sprintf "%s-%d" in strs [ f "a" 1; Printf.sprintf "%s/%s" "x" "y" ^ "!" ];
+  (try Printf.ksprintf failwith "bad %d" 7 with Failure m -> str m);
+  let b = Buffer.create 8 in Printf.bprintf b "%d+%d" 1 2; Printf.bprintf b "=%s" "3"; str (Buffer.contents b); print_newline ()

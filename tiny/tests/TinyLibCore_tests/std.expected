@@ -68,3 +68,7 @@ true true false true
 [a][x/b]
 [a][a/b][.profile][a.b/c][x.][a.tar][/a/.b][noext][]
 [abc][xbc]
+[r3, r-12][x=y%][0 ff 07]
+[   42|42   |-0042|  a|b  |]["a\"b\n\001"][no hole]
+[a-1][x/y!]
+[bad 7][1+2=3]

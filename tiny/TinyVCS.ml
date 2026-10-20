@@ -23,7 +23,8 @@ and .tvcsignore's), every command undoable, a merge's conflicts committed.
 
 exception Error of string
 
-(* (old: a format, Printf.ksprintf's: tiny-ml has no Printf) *)
+(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
+ * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 (*****************************************************************************)
@@ -57,12 +58,11 @@ let encode = function
          | File h -> "f " ^ h | Exec h -> "x " ^ h | Dir h -> "d " ^ h
          | Conflict c -> "c " ^ c.text ^ " " ^ opt c.base ^ " " ^ opt c.ours ^ " " ^ opt c.theirs) ^ " " ^ name ^ "\n") es)
   | Commit c ->
-      "commit\ntree " ^ c.tree ^ "\n" ^ String.concat "" (List.map (fun p -> "parent " ^ p ^ "\n") c.parents)
-      ^ "date " ^ string_of_int c.date ^ "\nauthor " ^ c.author ^ "\n\n" ^ c.msg
+      Printf.sprintf "commit\ntree %s\n%sdate %d\nauthor %s\n\n%s" c.tree
+        (String.concat "" (List.map (fun p -> Printf.sprintf "parent %s\n" p) c.parents)) c.date c.author c.msg
   | Op o ->
-      "op\n" ^ (match o.prev with Some p -> "prev " ^ p ^ "\n" | None -> "") ^ "date " ^ string_of_int o.odate
-      ^ "\nwhat " ^ o.what ^ "\ncurrent " ^ o.current ^ "\n"
-      ^ String.concat "" (List.map (fun (b, h) -> "branch " ^ h ^ " " ^ b ^ "\n") o.branches)
+      Printf.sprintf "op\n%sdate %d\nwhat %s\ncurrent %s\n" (match o.prev with Some p -> "prev " ^ p ^ "\n" | None -> "") o.odate o.what o.current
+      ^ String.concat "" (List.map (fun (b, h) -> Printf.sprintf "branch %s %s\n" h b) o.branches)
 
 (* "key value" lines, until a blank line; the rest *)
 let headers s =
@@ -333,7 +333,7 @@ let unified name_a name_b a b =
   if edits = [] then ""
   else begin
     let buf = Buffer.create 256 in
-    Buffer.add_string buf ("--- " ^ name_a ^ "\n+++ " ^ name_b ^ "\n");
+    Printf.bprintf buf "--- %s\n+++ %s\n" name_a name_b;
     (* edits whose contexts touch go in one hunk *)
     let rec groups = function
       | [] -> []
@@ -347,8 +347,7 @@ let unified name_a name_b a b =
       let (a0, _, b0, _) = List.hd g and (_, a1, _, b1) = List.nth g (List.length g - 1) in
       let s = max 0 (a0 - 3) and e = min (Array.length a) (a1 + 3) in
       let sb = b0 - (a0 - s) and eb = b1 + (e - a1) in
-      Buffer.add_string buf ("@@ -" ^ string_of_int (if e = s then s else s + 1) ^ "," ^ string_of_int (e - s)
-        ^ " +" ^ string_of_int (if eb = sb then sb else sb + 1) ^ "," ^ string_of_int (eb - sb) ^ " @@\n");
+      Printf.bprintf buf "@@ -%d,%d +%d,%d @@\n" (if e = s then s else s + 1) (e - s) (if eb = sb then sb else sb + 1) (eb - sb);
       let at = ref s in
       List.iter (fun (a0, a1, b0, b1) ->
         for i = !at to a0 - 1 do Buffer.add_string buf (line " " a.(i)) done;
@@ -522,7 +521,7 @@ let run (caps : caps) (args : string list) =
           let rec conflicts prefix es = List.concat_map (fun (n, e) ->
             let p = if prefix = "" then n else prefix ^ "/" ^ n in
             match e with Conflict _ -> [ p ] | Dir h -> conflicts p (tree r h) | _ -> []) es in
-          List.iter (fun p -> print ("C " ^ p ^ "\n")) (conflicts "" (tree r snap))
+          List.iter (fun p -> print (Printf.sprintf "C %s\n" p)) (conflicts "" (tree r snap))
       | "diff", ([] | [ _ ] | [ _; _ ]) ->
           let tree_at h = tree r (commit r h).tree in
           let a, b = match rest with
@@ -558,7 +557,7 @@ let run (caps : caps) (args : string list) =
           go (Option.to_list (tip r))
       | "branch", [] -> List.iter (fun (b, h) -> print ((if b = s.current then "*" else " ") ^ " " ^ b ^ " " ^ short h ^ "\n")) s.branches
       | "branch", [ b ] ->
-          if List.mem_assoc b s.branches then error ("branch " ^ b ^ " exists");
+          if List.mem_assoc b s.branches then error (Printf.sprintf "branch %s exists" b);
           (match tip r with Some h -> record r ("branch " ^ b) ((b, h) :: s.branches) | None -> error "no commit yet")
       | "switch", [ b ] ->
           clean r;
@@ -573,15 +572,15 @@ let run (caps : caps) (args : string list) =
           | Some base when base = theirs -> print "already merged\n"
           | Some base when base = ours ->
               checkout r (Some (commit r ours).tree) (commit r theirs).tree;
-              record r ("merge " ^ b ^ " (fast-forward)") ((s.current, theirs) :: List.remove_assoc s.current s.branches);
+              record r (Printf.sprintf "merge %s (fast-forward)" b) ((s.current, theirs) :: List.remove_assoc s.current s.branches);
               print ("fast-forward to " ^ short theirs ^ "\n")
           | base ->
               let es, conflicts = merge_trees r (tree_of_commit r base) (tree_of_commit r (Some ours)) (tree_of_commit r (Some theirs)) "" in
               let t = put r (Tree es) in
-              let c = put r (Commit { tree = t; parents = [ ours; theirs ]; date = now caps; author = author caps; msg = "merge " ^ b ^ "\n" }) in
+              let c = put r (Commit { tree = t; parents = [ ours; theirs ]; date = now caps; author = author caps; msg = Printf.sprintf "merge %s\n" b }) in
               checkout r (Some (commit r ours).tree) t;
               record r ("merge " ^ b) ((s.current, c) :: List.remove_assoc s.current s.branches);
-              List.iter (fun p -> print ("conflict: " ^ p ^ "\n")) conflicts;
+              List.iter (fun p -> print (Printf.sprintf "conflict: %s\n" p)) conflicts;
               print (s.current ^ ": " ^ c ^ "\n"))
       | "ops", [] ->
           let rec go h = let o = match get r h with Op o -> o | _ -> error "bad op" in
@@ -597,7 +596,7 @@ let run (caps : caps) (args : string list) =
           if Some (snapshot r) = old_tree || old_tree = None then
             (match back with Some t -> checkout r old_tree t | None -> ());
           record_at r before.current ("undo " ^ s.what) before.branches;
-          print ("undid: " ^ s.what ^ "\n")
+          print (Printf.sprintf "undid: %s\n" s.what)
       | "pull", [ src ] -> (
           clean r;
           let sr = load caps src in
@@ -615,7 +614,7 @@ let run (caps : caps) (args : string list) =
                    record r ("pull " ^ src) (with_ours theirs);
                    print ("fast-forward to " ^ short theirs ^ "\n")
                | _ -> record r ("pull " ^ src) (("pulled/" ^ s.current, theirs) :: s.branches);
-                   print ("diverged: merge pulled/" ^ s.current ^ "\n")))
+                   print (Printf.sprintf "diverged: merge pulled/%s\n" s.current)))
       | "push", [ dst ] ->
           let dr = load caps dst in
           let dst_state = match get dr (String.trim (read_file caps (Filename.concat dst ".tvcs/head"))) with Op o -> o | _ -> error "bad head" in
@@ -640,4 +639,4 @@ let run (caps : caps) (args : string list) =
 let () =
   TinyLibSystem.main "tiny-vcs" (fun caps ->
     try run (caps :> caps) (List.tl (TinyLibSystem.argv caps)); 0
-    with Error m -> TinyLibSystem.eprint caps ("tiny-vcs: " ^ m ^ "\n"); 1)
+    with Error m -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-vcs: %s\n" m); 1)

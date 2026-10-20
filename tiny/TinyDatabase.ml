@@ -8,7 +8,8 @@ let ( ||| ) a b = match a with Some x -> x | None -> b
 
 exception Error of string
 
-(* (old: a format, Printf.ksprintf's: tiny-ml has no Printf) *)
+(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
+ * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 (*****************************************************************************)
@@ -451,8 +452,8 @@ let plan (t : table) (stages : stage list) =
 let show_access (t : table) = function
   | Scan -> "scan " ^ t.name
   | Range (c, v, op) ->
-      "range " ^ t.name ^ "." ^ (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
-      ^ " " ^ List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ] ^ " " ^ show v ^ (if c = None then " (key)" else " (index)")
+      Printf.sprintf "range %s.%s %s %s%s" t.name (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
+        (List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ]) (show v) (if c = None then " (key)" else " (index)")
 
 let rows db (t : table) (a : access) : row Seq.t =
   let f = db.file in
@@ -561,7 +562,7 @@ let exec caps db (s : stmt) =
   let f = db.file in
   match s with
   | Create (name, cols) ->
-      if List.exists (fun t -> t.name = name) db.tables then error ("table " ^ name ^ " exists");
+      if List.exists (fun t -> t.name = name) db.tables then error (Printf.sprintf "table %s exists" name);
       let key = match List.filteri (fun _ (_, _, k) -> k) cols with
         | [ _ ] -> let rec go i = function (_, _, true) :: _ -> i | _ :: rest -> go (i + 1) rest | [] -> 0 in go 0 cols
         | [] -> 0 | _ -> error "one key" in
@@ -576,7 +577,7 @@ let exec caps db (s : stmt) =
   | Index (name, c) ->
       let t = table db name in
       if not (List.mem_assoc c t.cols) then error ("no column " ^ c);
-      if List.mem_assoc c t.indexes then error ("index on " ^ c ^ " exists");
+      if List.mem_assoc c t.indexes then error (Printf.sprintf "index on %s exists" c);
       let pos = col_pos (names t) c in
       let root = Seq.fold_left (fun root r -> insert f root [ r.(pos); r.(t.key) ] no_row) (empty_tree f) (rows db t Scan) in
       commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
@@ -586,7 +587,7 @@ let exec caps db (s : stmt) =
       if explain then
         print caps (String.concat " | " (show_access t a :: List.map (function
           | Where _ -> "where" | Select _ -> "select" | Join t -> "hash join " ^ t | Group _ -> "group"
-          | Sort _ -> "sort" | Take n -> "take " ^ string_of_int n) stages) ^ "\n")
+          | Sort _ -> "sort" | Take n -> Printf.sprintf "take %d" n) stages) ^ "\n")
       else Seq.iter (fun r -> print caps (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
   | Help ->
       let col (c, ty) = c ^ if ty = TInt then " int" else " text" in
@@ -610,14 +611,14 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; C
       let db = open_db caps path in
       (* at a terminal, a prompt, as sqlite's *)
       let tty = TinyLibSystem.isatty 0 in
-      if tty then print caps ("tiny-db: " ^ path ^ "; help for how, ^D to end\n");
+      if tty then print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
       let rec loop n =
         if tty then (print caps "tiny-db> "; TinyLibSystem.flush ());
         match TinyLibSystem.read_line caps with
         | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
-             with Error m -> TinyLibSystem.flush (); TinyLibSystem.eprint caps ("tiny-db: line " ^ string_of_int n ^ ": " ^ m ^ "\n"));
+             with Error m -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       let code = loop 1 in

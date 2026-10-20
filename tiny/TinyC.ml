@@ -23,7 +23,8 @@ tiny/TinyCRuntime/libc.h and prints fact(10):
 An error names the file and the line: fact.c: line 3: expected ;
 |}
 
-(* (old: Printf.ksprintf's, a format and its values) *)
+(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
+ * it is written, Printf.sprintf at the call) *)
 let error s = failwith s
 
 (* the machine, TinyCPU, has words of 4 bytes: pointers too, and no
@@ -317,12 +318,12 @@ type ir =
 
 let show i =
   let w t = string_of_int (size t) ^ (if unsigned t then "u" else "") in
-  let l k = "L" ^ string_of_int k in
+  let l k = Printf.sprintf "L%d" k in
   match i with
-  | Imm v -> "imm " ^ Int64.to_string v | Place (Global s) -> "addr " ^ s | Place (Local o) -> "frame -" ^ string_of_int o
-  | Place (Param o) -> "param " ^ string_of_int o | Load t -> "load " ^ w t | Store t -> "store " ^ w t
+  | Imm v -> "imm " ^ Int64.to_string v | Place (Global s) -> "addr " ^ s | Place (Local o) -> Printf.sprintf "frame -%d" o
+  | Place (Param o) -> Printf.sprintf "param %d" o | Load t -> "load " ^ w t | Store t -> "store " ^ w t
   | Op (o, t) -> "op " ^ binop_name o ^ " " ^ w t | Unop (o, _) -> if o = Neg then "neg" else "com" | Ext t -> "ext " ^ w t
-  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> "call " ^ (f ||| "*") ^ " " ^ string_of_int n ^ (if r then " ->" else "")
+  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> Printf.sprintf "call %s %d%s" (f ||| "*") n (if r then " ->" else "")
   | Label k -> l k ^ ":" | Jmp k -> "jmp " ^ l k | Jz k -> "jz " ^ l k
   | Jnz k -> "jnz " ^ l k | Ret v -> if v then "ret value" else "ret"
 
@@ -455,11 +456,11 @@ let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
 
 (* a global of n bytes: its label and its data, the gaps zeros *)
 let globl name n =
-  let line s = Buffer.add_string data ("\t" ^ s ^ "\n") in
+  let line s = Printf.bprintf data "\t%s\n" s in
   Buffer.add_string data ("\t.align\t4\n" ^ sym name ^ ":\n");
   let bytes l = line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
   let at = List.fold_left (fun at (off, d) ->
-    if off > at then line (".space\t" ^ string_of_int (off - at));
+    if off > at then line (Printf.sprintf ".space\t%d" (off - at));
     match d with
     | Bytes b -> bytes (List.map Char.code (List.init (String.length b) (String.get b))); off + String.length b
     | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
@@ -467,7 +468,7 @@ let globl name n =
     | Value (k, v) -> line (".word\t" ^ word v); if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32)); off + k
     | Address s -> line (".word\t" ^ sym s); off + 4)
     0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Hashtbl.find_opt pending name ||| []))) in
-  if n > at then line (".space\t" ^ string_of_int (n - at));
+  if n > at then line (Printf.sprintf ".space\t%d" (n - at));
   Hashtbl.remove pending name
 let strings = ref 0
 let tags = ref 0                          (* the anonymous structures' *)
@@ -483,7 +484,7 @@ let local t = frame := round (!frame + size t) (max 1 (min 8 (align t))); Local 
 (* a string, as a static array of bytes *)
 let string_lit s =
   incr strings;
-  let name = "s" ^ string_of_int !strings ^ "<>" in
+  let name = Printf.sprintf "s%d<>" !strings in
   let s = s ^ "\000" in
   for i = 0 to (String.length s - 1) / 8 do
     datum name (8 * i) (Bytes (String.sub s (8 * i) (min 8 (String.length s - (8 * i)))))
@@ -519,7 +520,7 @@ let rec base_type () =
   !storage, t
 
 and struct_type () =
-  let tag = match peek () with Id x -> ignore (next ()); x | _ -> incr tags; "." ^ string_of_int !tags in
+  let tag = match peek () with Id x -> ignore (next ()); x | _ -> incr tags; Printf.sprintf ".%d" !tags in
   let s = match Hashtbl.find_opt structs tag with Some s -> s | None -> let s = { fields = []; ssize = 0; salign = 1 } in Hashtbl.replace structs tag s; s in
   if accept "{" then begin
     (* each member at its size's alignment, the whole rounded to 8, as 7c *)
@@ -812,13 +813,13 @@ let machine name locals (body : ir list) =
   let jump l = Hashtbl.replace depth_at l !sp in
   let lab l = !unit_name ^ ".L" ^ string_of_int l in
   (* a register's name, a number's text (old: Printf's formats, %d) *)
-  let r k = "r" ^ string_of_int k and n k = string_of_int k in
+  let r k = Printf.sprintf "r%d" k and n k = string_of_int k in
   (* the code, each line a function of the frame's size (known at the
    * end); slot k the k-th save, below the locals; lr above the
    * outgoing arguments *)
   let lines = ref [] in
   let at f = lines := f :: !lines in
-  let ins s = at (fun _ -> "\t" ^ s ^ "\n") in
+  let ins s = at (fun _ -> Printf.sprintf "\t%s\n" s) in
   let slot k = locals + (4 * k) in
   (* a value extended from its type: the registers are 32 bits, so only
    * a char's and a short's need it *)
@@ -1017,7 +1018,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
           if Array.length ls = 0 then TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n")
           else (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in TinyLibSystem.eprint caps (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
           1
-      | File_error m -> TinyLibSystem.eprint caps ("tiny-c: " ^ m ^ "\n"); 1
+      | File_error m -> TinyLibSystem.eprint caps (Printf.sprintf "tiny-c: %s\n" m); 1
     end
   end
 

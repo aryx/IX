@@ -75,9 +75,6 @@ let percent n total =
     let t = ((n / g * 2000 / (total / g)) + 1) / 2 in
     string_of_int (t / 10) ^ "." ^ string_of_int (t mod 10)
 
-(* s right-aligned in width w; n in hexadecimal (Printf's %12s, %x) *)
-let pad w s = String.make (max 0 (w - String.length s)) ' ' ^ s
-let rec hex n = (if n >= 16 then hex (n / 16) else "") ^ String.make 1 (String.get "0123456789abcdef" (n mod 16))
 
 let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
   let print = TinyLibSystem.print caps in
@@ -123,15 +120,15 @@ let main (caps : < Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; .. >) =
        * order is its library's: OCaml's and tiny-ml's are others) *)
       let most (a, n) (b, m) = if n <> m then compare m n else compare a b in
       let rows = List.sort most (Hashtbl.fold (fun w n acc -> (w, n) :: acc) by []) in
-      print (commas total ^ " instructions: the kernel " ^ percent !kernel total ^ "%, programs " ^ percent user total ^ "%\n");
+      print (Printf.sprintf "%s instructions: the kernel %s%%, programs %s%%\n" (commas total) (percent !kernel total) (percent user total));
       if Hashtbl.fold (fun _ n k -> if n > 0 then k + 1 else k) programs 0 > 1 then
-        print ("programs, by their window's base: "
-          ^ String.concat ", " (List.map (fun (b, n) -> hex b ^ " " ^ commas n)
-              (List.sort most (Hashtbl.fold (fun b n acc -> if n > 0 then (b, n) :: acc else acc) programs [])))
-          ^ " (-u is the one at " ^ hex named ^ ")\n");
-      print (pad 12 "count" ^ " " ^ pad 6 "%" ^ "     function\n");
+        print (Printf.sprintf "programs, by their window's base: %s (-u is the one at %x)\n"
+          (String.concat ", " (List.map (fun (b, n) -> Printf.sprintf "%x %s" b (commas n))
+             (List.sort most (Hashtbl.fold (fun b n acc -> if n > 0 then (b, n) :: acc else acc) programs []))))
+          named);
+      print (Printf.sprintf "%12s %6s     function\n" "count" "%");
       List.iteri (fun i ((mode, name), n) ->
-        if i < top && n > 0 then print (pad 12 (commas n) ^ " " ^ pad 6 (percent n total) ^ "  " ^ mode ^ "  " ^ name ^ "\n")) rows;
+        if i < top && n > 0 then print (Printf.sprintf "%12s %6s  %s  %s\n" (commas n) (percent n total) mode name)) rows;
       0
 
 let () = TinyLibSystem.main "tiny-prof" main

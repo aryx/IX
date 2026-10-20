@@ -96,7 +96,7 @@ T = ../tests/TinyKernel_tests
 # compiled once (_make/lib/: X.tm, X.tmi, X.o), the first units of every
 # program in ML, which tiny-ml reads with -L (old: their text in tiny-ml,
 # compiled again at each run, and each program's main 420 KB of them)
-CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl Common Sha1
+CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Hashtbl Common Sha1
 LIB = $(CORE:%=$(O)/lib/%.o)
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin

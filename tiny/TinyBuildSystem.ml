@@ -60,7 +60,8 @@ let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
 exception Error of string
 
-(* (old: a format, Printf.ksprintf's: tiny-ml has no Printf) *)
+(* (old: a format, Printf.ksprintf's: tiny-ml reads a format only where
+ * it is written, Printf.sprintf at the call) *)
 let error s = raise (Error s)
 
 (*****************************************************************************)
@@ -238,18 +239,6 @@ let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
   if exists file && not (TinyLibSystem.is_directory file) then Some (Sha1.to_hex (Sha1.string (TinyLibSystem.read_file caps file)))
   else None
 
-(* a name as OCaml's %S writes it, for dot (old: Printf.printf's %S) *)
-let quoted s =
-  let escaped c =
-    match c with
-    | '"' -> "\\\""
-    | '\\' -> "\\\\"
-    | '\n' -> "\\n"
-    | '\t' -> "\\t"
-    | _ when c < ' ' || c > '~' -> let n = Char.code c in "\\" ^ string_of_int (n / 100) ^ string_of_int (n / 10 mod 10) ^ string_of_int (n mod 10)
-    | _ -> String.make 1 c in
-  "\"" ^ String.concat "" (List.init (String.length s) (fun i -> escaped s.[i])) ^ "\""
-
 (* a recipe run by the system's shell: sh -e on the host, rc -e on
  * tiny-kernel (TinyLibSystem.shell); its pid (old: CapUnix.fork and
  * execve of /bin/sh -e -c here) *)
@@ -302,7 +291,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     | Some n ->
         Hashtbl.remove running pid;
         if st = "" then (Hashtbl.replace stamps n.name (stamp n); finish n)
-        else (TinyLibSystem.flush (); TinyLibSystem.eprint caps ("tiny-build: " ^ n.name ^ " failed\n"); failed := true)
+        else (TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s failed\n" n.name); failed := true)
   in
   let rec loop todo =
     let ready n = List.for_all (fun d -> Hashtbl.mem digests d.name) n.deps in
@@ -317,7 +306,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     else if todo <> [] && not !failed && List.exists ready todo then loop todo
   in
   loop (order root);
-  if !ran = 0 && not !failed then TinyLibSystem.print caps ("tiny-build: " ^ root.name ^ " is up to date\n");
+  if !ran = 0 && not !failed then TinyLibSystem.print caps (Printf.sprintf "tiny-build: %s is up to date\n" root.name);
   not !failed
 
 (*****************************************************************************)
@@ -331,7 +320,7 @@ let run (caps : Cap.all_caps) : int =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false in
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
-  let bad o = raise (Bad ("tiny-build: unknown option '" ^ o ^ "'\n" ^ usage ^ "\n")) in
+  let bad o = raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage)) in
   let rec options = function
     | "-f" :: f :: rest -> file := f; options rest
     | "-j" :: n :: rest -> (match int_of_string_opt n with Some n -> jobs := n | None -> bad ("-j " ^ n)); options rest
@@ -363,7 +352,7 @@ let run (caps : Cap.all_caps) : int =
         if !dot then begin
           TinyLibSystem.print caps "digraph G {\n";
           order root |> List.iter (fun n ->
-            List.iter (fun d -> TinyLibSystem.print caps ("  " ^ quoted n.name ^ " -> " ^ quoted d.name ^ ";\n")) n.deps);
+            List.iter (fun d -> TinyLibSystem.print caps (Printf.sprintf "  %S -> %S;\n" n.name d.name)) n.deps);
           TinyLibSystem.print caps "}\n";
           true
         end
@@ -375,7 +364,7 @@ let run (caps : Cap.all_caps) : int =
       TinyLibSystem.close fd
     end;
     if ok then 0 else 1
-  with Error msg -> TinyLibSystem.flush (); TinyLibSystem.eprint caps ("tiny-build: " ^ msg ^ "\n"); 1
+  with Error msg -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg); 1
 
 (* -h, and an unknown option said, not raised *)
 let main (caps : Cap.all_caps) : int =

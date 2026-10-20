@@ -855,8 +855,6 @@ let colours =
 (* Addresses *)
 (*****************************************************************************)
 
-let starts pre s = String.length s >= String.length pre && String.sub s 0 (String.length pre) = pre
-
 (* an address and its #fragment, apart ("" when there is none) *)
 let fragment url =
   match String.index_opt url '#' with
@@ -869,7 +867,7 @@ let fragment url =
  * article, a name with a dot is https://. *)
 let absolute typed =
   let s = String.trim typed in
-  if starts "http://" s || starts "https://" s then s
+  if String.starts_with "http://" s || String.starts_with "https://" s then s
   else begin
     let first = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
     if String.contains first '.' && not (String.contains first ' ') then "https://" ^ s
@@ -886,20 +884,20 @@ let site url =
  * (Wikipedia's is //en.wikipedia.org/wiki/, and its links ./OCaml). *)
 let resolve url base href =
   if href = "" then url
-  else if starts "http://" href || starts "https://" href then href
-  else if starts "//" href then "https:" ^ href
+  else if String.starts_with "http://" href || String.starts_with "https://" href then href
+  else if String.starts_with "//" href then "https:" ^ href
   else if href.[0] = '#' then fst (fragment url) ^ href
   else if href.[0] = '/' then site url ^ href
   else begin
     let dir =
-      if base <> "" then (if starts "//" base then "https:" ^ base else base)
+      if base <> "" then (if String.starts_with "//" base then "https:" ^ base else base)
       else begin
         let u = fst (fragment url) in
         match String.rindex_opt u '/' with
         | Some i when i > String.length (site url) -> String.sub u 0 (i + 1)
         | _ -> site url ^ "/"
       end in
-    dir ^ (if starts "./" href then String.sub href 2 (String.length href - 2) else href)
+    dir ^ (if String.starts_with "./" href then String.sub href 2 (String.length href - 2) else href)
   end
 
 (*****************************************************************************)

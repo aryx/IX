@@ -576,7 +576,12 @@ and binding () =
  * type (ix's capabilities, which OCaml checks when it builds the same
  * file; here a program's caps are a value like another, and (e :> t)
  * is e); so is a name declared as one, type caps = < ... > *)
-and ty () = let t = ty_tuple () in if accept (KW "->") then TE ("->", [ t; ty () ]) else t
+(* a label, prefix:string -> ... in an .mli, read and dropped: a call
+ * gives the arguments in their order, without their labels, which
+ * OCaml accepts of a whole application *)
+and ty () =
+  (match peek (), peek_at 1 with LID _, KW ":" -> advance (); advance () | _ -> ());
+  let t = ty_tuple () in if accept (KW "->") then TE ("->", [ t; ty () ]) else t
 
 and ty_tuple () = match ty_args () with [ t ] -> t | l -> TE ("*", l)
 

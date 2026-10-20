@@ -21,3 +21,6 @@ val lowercase_ascii : string -> string
 val capitalize_ascii : string -> string
 val trim : string -> string
 val split_on_char : char -> string -> string list
+(* (called without the label: String.starts_with "http://" s) *)
+val starts_with : prefix:string -> string -> bool
+val get_uint16_le : string -> int -> int

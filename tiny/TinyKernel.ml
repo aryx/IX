@@ -208,9 +208,7 @@ let dir_of ns =
  * TinyAppTemperature.mli could not be listed, its .tmi not made). The
  * first block, which this kernel has no use for, says the file's links
  * instead: how many names it has. A name has 27 bytes at most *)
-let word n =
-  String.make 1 (Char.chr (n land 255)) ^ String.make 1 (Char.chr ((n lsr 8) land 255))
-  ^ String.make 1 (Char.chr ((n lsr 16) land 255)) ^ String.make 1 (Char.chr ((n lsr 24) land 255))
+let word n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255))
 
 (* a node's names: the entries in the whole tree that hold the same
  * value (==), the file itself and not a copy of it *)
@@ -678,7 +676,7 @@ let sys_fork p =
  * where the image starts in the file, its size, and the memory. *)
 let aout_magic = 0x7a0ce5
 let header bytes =
-  let word i = Char.code bytes.[i] + (Char.code bytes.[i + 1] lsl 8) + (Char.code bytes.[i + 2] lsl 16) + (Char.code bytes.[i + 3] lsl 24) in
+  let word i = String.get_uint16_le bytes i + (String.get_uint16_le bytes (i + 2) lsl 16) in
   if String.length bytes >= 12 && word 0 = aout_magic then Some (word 4, word 8) else None
 
 (* Loads a file's program into p, in a partition of the size it asks for

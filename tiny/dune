@@ -1,3 +1,7 @@
+; the labels of OCaml's functions left out, String.starts_with "//" s:
+; tiny-ml has none (warning 6, an error in dune's default profile)
+(env (_ (flags (:standard -w -6))))
+
 (executable
  (name TinyBuildSystem)
  (public_name tiny-build)

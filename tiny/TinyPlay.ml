@@ -9,8 +9,8 @@ open TinyLibPlayground
 type wav = { rate : int; channels : int; bits : int; at : int; bytes : int }
 
 (* numbers of 16 and 32 bits, the low byte first *)
-let u16 s i = Char.code s.[i] + (256 * Char.code s.[i + 1])
-let u32 s i = u16 s i + (65536 * u16 s (i + 2))
+let u16 = String.get_uint16_le
+let u32 s i = u16 s i + (u16 s (i + 2) lsl 16)
 
 (* RIFF's chunks from 12 on, each four letters, a length and its bytes
  * (an odd length padded): "fmt " says the encoding (1, PCM), the

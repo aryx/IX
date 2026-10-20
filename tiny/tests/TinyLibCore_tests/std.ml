@@ -48,6 +48,9 @@ let () =
   str (String.map (fun c -> if c = ' ' then '_' else c) "Plan 9 os"); str (String.map (fun c -> c) ""); print_newline ();
   str (String.lowercase_ascii "OCaml 4.14!"); str (String.lowercase_ascii "small"); str (String.lowercase_ascii ""); print_newline ();
   str (String.trim "  a b \t\n"); str (String.trim "   "); str (String.trim ""); str (String.trim "x"); print_newline ();
+  (* (their labels left out, as the tiny programs call them) *)
+  bool (String.starts_with "ht" "http"); bool (String.starts_with "http" "ht"); bool (String.starts_with "" "");
+  int (String.get_uint16_le "\001\002" 0); int (String.get_uint16_le "x\255\255" 1); print_newline ();
   bool (Filename.check_suffix "a.ml" ".ml"); bool (Filename.check_suffix "ml" ".ml"); bool (Filename.check_suffix "a.ml" ""); print_newline ()
 
 let () =

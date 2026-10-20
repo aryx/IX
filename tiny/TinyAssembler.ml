@@ -265,9 +265,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
     TinyLibSystem.write fd (assemble f (TinyLibSystem.read_file caps f));
     TinyLibSystem.close fd; 0 in
   (* x.tm's object: x.o, here *)
-  let default f =
-    let base = match String.rindex_opt f '/' with Some i -> String.sub f (i + 1) (String.length f - i - 1) | None -> f in
-    String.sub base 0 (String.length base - 3) ^ ".o" in
+  let default f = Filename.chop_suffix (Filename.basename f) ".tm" ^ ".o" in
   try
     match List.tl (TinyLibSystem.argv caps) with
     | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0

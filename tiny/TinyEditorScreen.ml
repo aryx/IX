@@ -212,11 +212,9 @@ let prompt = function
   | Replace_from -> "Replace string: "
   | Replace_to from -> "Replace string " ^ from ^ " with: "
 
-let starts (p : string) (s : string) = String.length p <= String.length s && String.sub s 0 (String.length p) = p
-
 (* Tab: what is typed made as long as all the names it starts agree *)
 let complete (typed : string) : string =
-  match List.filter (starts typed) (List.map fst commands) with
+  match List.filter (fun c -> String.starts_with typed c) (List.map fst commands) with
   | [] -> typed
   | first :: rest ->
       let rec common a b i = if i < String.length a && i < String.length b && a.[i] = b.[i] then common a b (i + 1) else i in
@@ -233,7 +231,7 @@ let rec answered (e : editor) (what : answer) (typed : string) =
   let t = e.t in
   match what with
   | Command -> (
-      match List.assoc_opt typed commands, List.filter (starts typed) (List.map fst commands) with
+      match List.assoc_opt typed commands, List.filter (fun c -> String.starts_with typed c) (List.map fst commands) with
       | _ when typed = "goto-line" -> e.x.reading <- Some (Goto, "")
       | _ when typed = "replace-string" -> e.x.reading <- Some (Replace_from, "")
       | Some keys, _ -> e.x.queue <- List.init (String.length keys) (fun i -> Char.code keys.[i]) @ e.x.queue

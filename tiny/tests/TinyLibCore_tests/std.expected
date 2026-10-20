@@ -27,6 +27,7 @@ true false true false true false true
 [Plan_9_os][]
 [ocaml 4.14!][small][]
 [a b][][][x]
+true false true 513 65535 
 true false true 
 [one two]7 0 [x]
 [c]

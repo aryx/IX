@@ -59,3 +59,5 @@ let split_on_char c s =
     else go j (i - 1) acc
   in
   go (length s) (length s - 1) []
+let starts_with prefix s = let n = length prefix in length s >= n && unsafe_sub s 0 n = prefix
+let get_uint16_le s i = Char.code (get s i) lor (Char.code (get s (i + 1)) lsl 8)

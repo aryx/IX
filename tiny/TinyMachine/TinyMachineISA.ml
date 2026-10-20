@@ -50,9 +50,7 @@ exception Error of string
 let error s = raise (Error s)
 
 (* a number in hexadecimal, 0x and its digits *)
-let hex n =
-  let rec go n acc = if n = 0 then acc else go (n lsr 4) (String.make 1 "0123456789abcdef".[n land 15] ^ acc) in
-  "0x" ^ (if n = 0 then "0" else go n "")
+let hex n = Printf.sprintf "0x%x" n
 
 (*****************************************************************************)
 (* The words *)

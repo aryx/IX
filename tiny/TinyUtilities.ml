@@ -19,16 +19,6 @@ exception Usage
 let print caps s = TinyLibSystem.print caps s
 let complain caps tool s = TinyLibSystem.eprint caps (tool ^ ": " ^ s ^ "\n")
 
-(* s with spaces in front, so that it is at least w characters wide *)
-let pad w s = String.make (max 0 (w - String.length s)) ' ' ^ s
-
-let digits = "0123456789abcdef"
-
-(* n in hexadecimal, with exactly w digits *)
-let hex w n =
-  let rec go w n acc = if w = 0 then acc else go (w - 1) (n / 16) (String.make 1 digits.[n mod 16] ^ acc) in
-  go w n ""
-
 (* what follows the last slash of a path *)
 let last_part path =
   match String.rindex_opt path '/' with Some i -> String.sub path (i + 1) (String.length path - i - 1) | None -> path
@@ -110,7 +100,7 @@ let wc caps args =
   let asked = if asked = [] then [ 'l'; 'w'; 'c' ] else asked in
   let report c name =
     let columns = List.filter (fun (letter, _) -> List.mem letter asked) [ 'l', c.lines; 'w', c.words; 'c', c.bytes ] in
-    let columns = List.map (fun (_, n) -> pad 7 (string_of_int n)) columns in
+    let columns = List.map (fun (_, n) -> Printf.sprintf "%7d" n) columns in
     print caps (String.concat " " (columns @ (if name = "" then [] else [ name ])) ^ "\n") in
   let total = counts () and files_counted = ref 0 in
   let status =
@@ -168,7 +158,7 @@ let tee caps args =
 let character c =
   let k = Char.code c in
   if k = 9 then " \\t" else if k = 13 then " \\r" else if k = 10 then " \\n" else if k = 8 then " \\b"
-  else if k < 32 || k >= 127 then " " ^ hex 2 k
+  else if k < 32 || k >= 127 then Printf.sprintf " %02x" k
   else "  " ^ String.make 1 c
 
 (* xd: 16 bytes a line after their address, as numbers of 4 bytes (the
@@ -179,9 +169,9 @@ let xd caps args =
   let flags, files = options "bc" args in
   let size, show =
     if List.mem 'c' flags then 1, (fun g -> character g.[0])
-    else if List.mem 'b' flags then 1, (fun g -> " " ^ hex 2 (Char.code g.[0]))
-    else 4, (fun g -> " " ^ String.concat "" (List.init 4 (fun i -> if i < String.length g then hex 2 (Char.code g.[i]) else "00"))) in
-  let address a = hex 7 a ^ " " in
+    else if List.mem 'b' flags then 1, (fun g -> Printf.sprintf " %02x" (Char.code g.[0]))
+    else 4, (fun g -> " " ^ String.concat "" (List.init 4 (fun i -> if i < String.length g then Printf.sprintf "%02x" (Char.code g.[i]) else "00"))) in
+  let address a = Printf.sprintf "%07x " a in
   each_input caps "xd" files (fun _ fd ->
     let pending = ref "" and addr = ref 0 in
     let line s =
@@ -312,7 +302,7 @@ let ls caps args =
     if not (List.mem 'l' flags) then ""
     else begin
       let is_dir, size = TinyLibSystem.stat name in
-      (if is_dir then "d" else "-") ^ pad 4 (string_of_int (TinyLibSystem.links name)) ^ pad 9 (string_of_int size) ^ " "
+      (if is_dir then "d" else "-") ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links name) size
     end in
   List.iter (fun name -> print caps (long name ^ quote name ^ "\n")) (List.sort compare !names);
   status

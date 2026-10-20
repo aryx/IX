@@ -97,22 +97,21 @@ let picture text w h pixels =
 (* www *)
 (*****************************************************************************)
 
-let starts p s = String.length s >= String.length p && String.sub s 0 (String.length p) = p
 let wiki_prefix = "/wiki/" and rest_prefix = "/api/rest_v1/page/html/"
 
 (* a Wikipedia address cut in two: its host (en.wikipedia.org) and the
  * article's title, if it is one *)
 let wikipedia url =
   match String.index_opt url ':' with
-  | Some i when starts "https://" url || starts "http://" url ->
+  | Some i when String.starts_with "https://" url || String.starts_with "http://" url ->
       let rest = String.sub url (i + 3) (String.length url - i - 3) in
       (match String.index_opt rest '/' with
        | Some j ->
            let host = String.sub rest 0 j and path = String.sub rest j (String.length rest - j) in
            let title p = String.sub path (String.length p) (String.length path - String.length p) in
            if not (Filename.check_suffix host ".wikipedia.org") then None
-           else if starts wiki_prefix path then Some (host, title wiki_prefix)
-           else if starts rest_prefix path then Some (host, title rest_prefix)
+           else if String.starts_with wiki_prefix path then Some (host, title wiki_prefix)
+           else if String.starts_with rest_prefix path then Some (host, title rest_prefix)
            else None
        | None -> None)
   | _ -> None
@@ -121,7 +120,7 @@ let www_address typed =
   let s = String.trim typed in
   let s = match String.index_opt s '#' with Some i -> String.sub s 0 i | None -> s in
   let url =
-    if starts "https://" s || starts "http://" s then s
+    if String.starts_with "https://" s || String.starts_with "http://" s then s
     else
       let first = match String.index_opt s '/' with Some i -> String.sub s 0 i | None -> s in
       if String.contains first '.' && not (String.contains first ' ') then "https://" ^ s

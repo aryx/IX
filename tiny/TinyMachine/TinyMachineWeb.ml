@@ -319,7 +319,7 @@ let wire_said dir packet =
   let line = TinyMachinePeer.net_describe packet in
   (* (without ", from 10.0.0.2 to 10.0.0.1": the direction says it) *)
   let line = if String.length line > 27 && String.sub line (String.length line - 27) 7 = ", from " then String.sub line 0 (String.length line - 27) else line in
-  let starts p = String.length line >= String.length p && String.sub line 0 (String.length p) = p in
+  let starts p = String.starts_with p line in
   let colour = if dir = "x" then "#cc0000" else if starts "data" then "#0055aa" else if starts "query" || starts "state" then "#dd8800"
     else if starts "echo" then "#222222" else if starts "ack" then "#999999" else "#228822" in
   dots := { born = now (); to_machine = dir <> ">"; lost = dir = "x"; colour } :: !dots;

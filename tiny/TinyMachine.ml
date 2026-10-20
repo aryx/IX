@@ -120,10 +120,13 @@ let ppm (m : TinyMachineCPU.machine) =
   done;
   Bytes.to_string out
 
+(* a number's 32 bits, the low byte first: a WAV's, a pcap's *)
+let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
+
 (* the speaker's samples as a WAV: RIFF's header, then 8 bits a sample,
  * which a WAV has unsigned (128 the silence) *)
 let wav samples =
-  let le32 n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) and le16 n = String.init 2 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
+  let le16 n = String.init 2 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
   let n = String.length samples and hz = TinyMachineDevices.hz in
   "RIFF" ^ le32 (36 + n) ^ "WAVEfmt " ^ le32 16 ^ le16 1 ^ le16 1 ^ le32 hz ^ le32 hz ^ le16 1 ^ le16 8
   ^ "data" ^ le32 n ^ String.map (fun ch -> Char.chr (Char.code ch lxor 128)) samples
@@ -281,7 +284,6 @@ let outside caps : TinyMachinePeer.outside =
  * bytes at most, link type 101: raw IP), and a packet after its time
  * (seconds, microseconds) and its length twice, all little-endian:
  * what tcpdump -r and Wireshark read *)
-let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
 let pcap_header = le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
 let pcap_packet instructions packet =
   let us = int_of_float (float_of_int instructions *. 1e6 /. float_of_int !TinyMachineDevices.rate) in

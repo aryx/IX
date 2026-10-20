@@ -36,7 +36,7 @@ for m in Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Ha
   else echo "FAIL $m.mli: $(echo "$out" | grep -m3 -i 'error\|val\|type')"; failures=$((failures + 1)); fi
 done
 
-[ -n "${RECORD:-}" ] && ocaml $T/std.ml > $T/std.expected
+[ -n "${RECORD:-}" ] && ocaml -w -6 $T/std.ml > $T/std.expected
 # (the stack of values and the heap's halves at the end, in mem.tm: as
 # main.c's statics they were between the runtime's code and ml_start,
 # further than a jal reaches)

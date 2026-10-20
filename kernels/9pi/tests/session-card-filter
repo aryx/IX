@@ -82,11 +82,15 @@ mini-9pi:
 
 % grep -v '^#' /mnt/fat/config.txt | sort -u
 
+[all]
+[pi1]
+[pi2]
 arm_freq=800
 core_freq=250
 force_turbo=1
 gpu_mem=16
 kernel=mini9pi1.img
+kernel=mini9pi2.img
 over_voltage=0
 sdram_freq=400
 % 

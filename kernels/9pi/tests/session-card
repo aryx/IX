@@ -36,11 +36,13 @@ part data 0 262144
 part dos 2048 67584
 part other 67584 262144
 % ls -l /root
---rw-rw-rw- M 2 bill trog   17864 Sep 26  2026 /root/BOOTCODE.BIN
---rw-rw-rw- M 2 bill trog    1489 Sep 26  2026 /root/CONFIG.TXT
---rw-rw-rw- M 2 bill trog    2365 Sep 26  2026 /root/FIXUP_CD.DAT
---rw-rw-rw- M 2 bill trog 8309044 Sep 26  2026 /root/MINI9PI1.IMG
---rw-rw-rw- M 2 bill trog  586616 Sep 26  2026 /root/START_CD.ELF
+--rw-rw-rw- M 2 bill trog   52624 Sep 26  2026 /root/BOOTCODE.BIN
+--rw-rw-rw- M 2 bill trog    1806 Sep 26  2026 /root/CONFIG.TXT
+--rw-rw-rw- M 2 bill trog    3280 Sep 26  2026 /root/FIXUP_CD.DAT
+--rw-rw-rw- M 2 bill trog 8409880 Sep 26  2026 /root/MINI9PI1.IMG
+--rw-rw-rw- M 2 bill trog 8413480 Sep 26  2026 /root/MINI9PI2.IMG
+--rw-rw-rw- M 2 bill trog  844380 Sep 26  2026 /root/START_CD.ELF
+--rw-rw-rw- M 2 bill trog      51 Sep 26  2026 /root/VERSION.TXT
 % cat /root/config.txt
 # mini-9pi's SD card (kernels/9pi's make card): what the Raspberry Pi's
 # firmware reads from the FAT partition before it starts a kernel
@@ -49,9 +51,19 @@ part other 67584 262144
 # the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
 gpu_mem=16
 
-# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
-# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
-# (2015) may not know the sections, and would take them all.
+# One card for the Pi 1 and the Pi 2 (docs/plans/plan_pi2.md): the
+# firmware reads the section of the board it is on, and loads that
+# board's mini-9pi (make card), each with ix's programs in its image,
+# at 0x8000. (The sections want a firmware that knows them:
+# kernels/firmware/pi1-pi2's does; the files of 2015 would take every
+# line, and the last kernel=.)
+
+# the Pi 2 (the 2B, with a BCM2836 or a BCM2837)
+[pi2]
+kernel=mini9pi2.img
+
+# the Pi 1 (and the Zero)
+[pi1]
 kernel=mini9pi1.img
 
 # The processor overclocked (it is 700 MHz), by the Foundation's
@@ -90,6 +102,9 @@ force_turbo=1
 #sdram_freq=600
 #over_voltage=6
 #force_turbo=1
+
+# what follows is every board's again
+[all]
 % echo written by plan 9 > /root/note.txt; cat /root/note.txt; ls -l /root/note.txt
 written by plan 9
 --rw-rw-rw- M 2 bill trog 18 Jan  1  1970 /root/note.txt

@@ -32,12 +32,13 @@ dossrv: serving #s/dos
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % grep -n 'i[sx]' readme /mnt/fat/config.txt
 readme:1: mini-9pi: the card's second partition, xv6's file system, is the root (make card).
-/mnt/fat/config.txt:8: # the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
-/mnt/fat/config.txt:9: # at 0x8000. The last kernel= line, and under no [pi1]: this firmware
-/mnt/fat/config.txt:13: # The processor overclocked (it is 700 MHz), by the Foundation's
-/mnt/fat/config.txt:28: # Medium. More voltage: with force_turbo, the board's warranty bit is
+/mnt/fat/config.txt:9: # firmware reads the section of the board it is on, and loads that
+/mnt/fat/config.txt:10: # board's mini-9pi (make card), each with ix's programs in its image,
+/mnt/fat/config.txt:23: # The processor overclocked (it is 700 MHz), by the Foundation's
+/mnt/fat/config.txt:38: # Medium. More voltage: with force_turbo, the board's warranty bit is
+/mnt/fat/config.txt:60: # what follows is every board's again
 % grep -c . /mnt/fat/config.txt
-41
+51
 % grep -i XV6 readme
 mini-9pi: the card's second partition, xv6's file system, is the root (make card).
 % grep nothing readme
@@ -63,9 +64,19 @@ mini-9pi: the card's second partition, xv6's file system, is the root (make card
 # the firmware's own memory, the least: the cut-down firmware (start_cd.elf)
 gpu_mem=16
 
-# the Pi 1: mini-9pi with ix's programs in its image (make ix), loaded
-# at 0x8000. The last kernel= line, and under no [pi1]: this firmware
-# (2015) may not know the sections, and would take them all.
+# One card for the Pi 1 and the Pi 2 (docs/plans/plan_pi2.md): the
+# firmware reads the section of the board it is on, and loads that
+# board's mini-9pi (make card), each with ix's programs in its image,
+# at 0x8000. (The sections want a firmware that knows them:
+# kernels/firmware/pi1-pi2's does; the files of 2015 would take every
+# line, and the last kernel=.)
+
+# the Pi 2 (the 2B, with a BCM2836 or a BCM2837)
+[pi2]
+kernel=mini9pi2.img
+
+# the Pi 1 (and the Zero)
+[pi1]
 kernel=mini9pi1.img
 
 # The processor overclocked (it is 700 MHz), by the Foundation's
@@ -104,6 +115,9 @@ force_turbo=1
 #sdram_freq=600
 #over_voltage=6
 #force_turbo=1
+
+# what follows is every board's again
+[all]
 % tail -c 20 readme
 e root (make card).
 % xd -c readme

@@ -1803,12 +1803,46 @@ let rec print_texpr = function
   | TE (c, []) -> c
   | TE (c, ts) -> "(" ^ String.concat ", " (List.map print_texpr ts) ^ ") " ^ c
 
-let read_ty s =
-  toks := lex s; pos := 0;
-  let back = function TCon ("pc_", ts) -> TCon ("%c", ts) | TCon ("pl_", ts) -> TCon ("%l", ts) | t -> t in
-  back (of_texpr (ref []) (ty ()))
+(* a type as print_ty and print_texpr write it, read without the lexer:
+ * 'a, t, (a -> b), (a * b * c), (a, b) t (old: lexed, then parsed by
+ * ty: the lexer was half of a unit's compile, run on each type of each
+ * interface it reads) *)
+let texpr_of_string s =
+  let n = String.length s and i = ref 0 in
+  let skip () = while !i < n && s.[!i] = ' ' do incr i done in
+  let word () = skip (); let j = !i in while !i < n && not (String.contains " (),*-" s.[!i]) do incr i done; String.sub s j (!i - j) in
+  let rec ty () =
+    skip ();
+    if s.[!i] <> '(' then (let w = word () in if w.[0] = '\'' then TEVar (String.sub w 1 (String.length w - 1)) else TE (w, []))
+    else begin
+      incr i;
+      let a = ty () in
+      skip ();
+      match s.[!i] with
+      | '-' -> i := !i + 2; let b = ty () in skip (); incr i; TE ("->", [ a; b ])
+      | '*' -> TE ("*", more '*' [ a ])
+      | _ -> let ts = more ',' [ a ] in TE (word (), ts)
+    end
+  (* the others after sep, to the closing parenthesis *)
+  and more sep acc = skip (); if s.[!i] = sep then (incr i; let t = ty () in more sep (t :: acc)) else (incr i; List.rev acc) in
+  ty ()
 
-let write_interface (exports : (string * binding) list) types nglobals =
+let read_ty s =
+  let back = function TCon ("pc_", ts) -> TCon ("%c", ts) | TCon ("pl_", ts) -> TCon ("%l", ts) | t -> t in
+  back (of_texpr (ref []) (texpr_of_string s))
+
+(* what the program's tables held before a unit: its interface has only
+ * what the unit added, as OCaml's .cmi (old: the whole program's so far,
+ * each unit's .tmi repeating every one before it, all read again by
+ * each unit after: 310 KB of interfaces for tiny-kernel's programs) *)
+let snapshot () =
+  let c = Hashtbl.copy cons and l = Hashtbl.copy record_labels and a = !abbreviations and f = !forgotten in
+  (fun k ci -> match Hashtbl.find_opt c k with Some ci' -> ci' == ci | None -> false),
+  (fun k li -> List.memq li (Hashtbl.find_all l k)),
+  (fun ab -> List.memq ab a),
+  (fun t -> List.mem t f)
+
+let write_interface (old_con, old_label, old_abbrev, old_forgotten) (exports : (string * binding) list) types nglobals =
   let b = Buffer.create 4096 in
   let line s = Buffer.add_string b (s ^ "\n") in
   line ("tiny-interface " ^ !unit_name);
@@ -1821,13 +1855,15 @@ let write_interface (exports : (string * binding) list) types nglobals =
   let names tbl = List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
   List.iter (fun c ->
     let ci = Hashtbl.find cons c in
-    line (Printf.sprintf "con %s %s %d %d %d %s" c (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
-      ci.arity ci.nconst ci.nblock (print_ty ci.scheme))) (names cons);
+    if not (old_con c ci) then
+      line (Printf.sprintf "con %s %s %d %d %d %s" c (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
+        ci.arity ci.nconst ci.nblock (print_ty ci.scheme))) (names cons);
   List.iter (fun l -> List.iter (fun li ->
-    line ("label " ^ l ^ " " ^ li.lrec ^ " " ^ string_of_int li.idx ^ " " ^ (if li.mut then "true" else "false") ^ " " ^ String.concat "," li.lnames ^ " " ^ print_ty li.lscheme))
+    if not (old_label l li) then
+      line ("label " ^ l ^ " " ^ li.lrec ^ " " ^ string_of_int li.idx ^ " " ^ (if li.mut then "true" else "false") ^ " " ^ String.concat "," li.lnames ^ " " ^ print_ty li.lscheme))
     (Hashtbl.find_all record_labels l)) (names record_labels);
-  List.iter (fun (t, (ps, te)) -> line (Printf.sprintf "abbrev %s %s %s" t (if ps = [] then "-" else String.concat "," ps) (print_texpr te))) (List.rev !abbreviations);
-  List.iter (fun t -> line ("forgotten " ^ t)) !forgotten;
+  List.iter (fun ((t, (ps, te)) as a) -> if not (old_abbrev a) then line (Printf.sprintf "abbrev %s %s %s" t (if ps = [] then "-" else String.concat "," ps) (print_texpr te))) (List.rev !abbreviations);
+  List.iter (fun t -> if not (old_forgotten t) then line ("forgotten " ^ t)) !forgotten;
   let known = function Some (lab, n) -> (lab ^ " " ^ string_of_int n) | None -> "- -" in
   List.iter (fun (x, bd) ->
     match List.assoc_opt x types with
@@ -1866,8 +1902,7 @@ let read_interface text env tenv =
         Hashtbl.add record_labels l { lrec = r; idx = int_of_string i; mut = m = "true"; lnames = String.split_on_char ',' names; lscheme = read_ty (rest ws 6) }
     | "abbrev" :: t :: ps :: _ ->
         let ps = if ps = "-" then [] else String.split_on_char ',' ps in
-        toks := lex (rest ws 3); pos := 0;
-        abbreviations := (t, (ps, ty ())) :: List.filter (fun (t', (ps', _)) -> t' <> t || List.length ps' <> List.length ps) !abbreviations
+        abbreviations := (t, (ps, texpr_of_string (rest ws 3))) :: List.filter (fun (t', (ps', _)) -> t' <> t || List.length ps' <> List.length ps) !abbreviations
     | [ "forgotten"; t ] -> if not (List.mem t !forgotten) then forgotten := t :: !forgotten
     | "val" :: x :: "static" :: sym :: lab :: n :: _ -> add x (Loc (Static sym, known lab n)) (read_ty (rest ws 6))
     | "val" :: x :: "global" :: tb :: i :: lab :: n :: _ -> add x (Loc (Glob (tb, int_of_string i), known lab n)) (read_ty (rest ws 7))
@@ -1959,6 +1994,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       Buffer.clear text; Buffer.clear data;
       unit_name := unit_of f;
       known_units := !unit_name :: !known_units;
+      (* (before the parse: a type's constructors are the parser's) *)
+      let old = snapshot () in
       let items = parse (read f) in
       let _, tdefs = type_unit tenv items in
       let _, exports, n = compile_unit env items in
@@ -1968,7 +2005,7 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let types = (match mli_text with Some t -> file := mli; mli_types t | None -> []) @ tdefs in
       let out = if !output = "" then Filename.remove_extension (Filename.basename f) ^ ".tm" else !output in
       write out (Buffer.contents text ^ Buffer.contents data);
-      write (Filename.remove_extension out ^ ".tmi") (write_interface exports types n)
+      write (Filename.remove_extension out ^ ".tmi") (write_interface old exports types n)
     end else begin
       (* the files one after the other, a unit each, then the main *)
       let _, _, units, needed = List.fold_left (fun (env, tenv, units, needed) f ->

@@ -6,13 +6,13 @@
 type t = int
 
 (* The runtime's part: a thread is a number, 0 the program's first.
- * thread_new gives one its two stacks and the function it starts with
+ * thread_new gives one its two stacks (large: the program's sizes) and the function it starts with
  * (Failure when there are too many); thread_switch leaves the running
  * one where it is and goes on with another, where that one left (or at
  * its function, the first time); thread_free gives a finished one's
  * number and stacks back (not its own: a thread cannot free the stack
  * it runs on). *)
-external thread_new : (unit -> unit) -> t = "thread_new"
+external thread_new : bool -> (unit -> unit) -> t = "thread_new"
 external thread_switch : t -> unit = "thread_switch"
 external thread_free : t -> unit = "thread_free"
 
@@ -76,8 +76,8 @@ let join t =
     sleep ()
   end
 
-let create fn arg =
-  let t = thread_new (fun () ->
+let make (large : bool) (fn : 'a -> 'b) (arg : 'a) : t =
+  let t = thread_new large (fun () ->
     (try ignore (fn arg) with e ->
        (* (where it was raised, asked before anything else is called:
         * Printexc.get_backtrace) *)
@@ -89,3 +89,6 @@ let create fn arg =
   Hashtbl.replace alive t ();
   Queue.add t ready;
   t
+
+let create (fn : 'a -> 'b) (arg : 'a) : t = make false fn arg
+let create_large (fn : 'a -> 'b) (arg : 'a) : t = make true fn arg

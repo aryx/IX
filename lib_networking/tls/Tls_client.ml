@@ -76,6 +76,15 @@ let connect (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(ho
       write t hello;
       Ok t
 
+(* the handshake done: what was queued, written *)
+let flush (t : t) : unit =
+  if Tls13.state t.machine = Open && t.outbox <> "" then begin
+    let m, records = Tls13.write t.machine t.outbox in
+    t.machine <- m;
+    t.outbox <- "";
+    write t records
+  end
+
 let step (t : t) : unit =
   if not (t.eof || t.closed) then begin
     (* old: a read that does not block here (Unix.set_nonblock at connect, EAGAIN): Tcp.arrived's now, which Plan 9 has another of *)
@@ -85,13 +94,7 @@ let step (t : t) : unit =
       t.machine <- m;
       write t answer
     end;
-    (* the handshake done: what was queued *)
-    if Tls13.state t.machine = Open && t.outbox <> "" then begin
-      let m, records = Tls13.write t.machine t.outbox in
-      t.machine <- m;
-      t.outbox <- "";
-      write t records
-    end
+    flush t
   end
 
 let state (t : t) : Tls13.state =
@@ -99,9 +102,15 @@ let state (t : t) : Tls13.state =
 
 let machine (t : t) : Tls13.t = t.machine
 
+(* (on a connection open, the request written at once: step reads
+ * first, and a read waits on Plan 9 (Tcp.arrived) -- on a kept
+ * connection, whose server says nothing until it is asked, for all of
+ * Tcp.timeout, then the connection taken as lost: each request after
+ * a page's first 30 s and a new handshake, mini-netscape on mini-9pi.
+ * old: step t, whatever the state) *)
 let send (t : t) (data : string) : unit =
   t.outbox <- t.outbox ^ data;
-  step t
+  if Tls13.state t.machine = Open then flush t else step t
 
 let receive (t : t) : string =
   step t;

@@ -13,7 +13,9 @@
 
    dune copies one of spawn/threads.ml and spawn/domains.ml to
    Worker_spawn.ml, by the compiler's version (dune); mini-mk's build
-   takes spawn/threads.ml (mkfile). Mutex and Condition are the same
+   takes spawn/large_threads.ml (mkfile): a thread with the program's
+   stacks, where lib_core's are small (a page's List.map overflowed
+   one on mini-9pi). Mutex and Condition are the same
    names in all three.
 
    What a piece on the worker may share with the window is said where

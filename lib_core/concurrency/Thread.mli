@@ -80,6 +80,15 @@ type t
  * 256 are alive already (the runtime's STACKS: each has its two
  * stacks; a finished one's place is taken again). *)
 val create : ('a -> 'b) -> 'a -> t
+
+(* ix: [create_large f x], the same with the program's stacks: its
+ * value stack (4 MB on Plan 9) and a machine stack as large, where
+ * [create]'s are 128 KB and 256 KB. Either thread's stacks past their
+ * end: a fatal error, "stack overflow". For a thread that does what the
+ * program's first did, deep recursions and all: mini-netscape's
+ * worker (Worker_spawn). Not OCaml's, whose threads' stacks are the
+ * system's (8 MB on Linux). *)
+val create_large : ('a -> 'b) -> 'a -> t
 val self : unit -> t
 (* its number: 0 for the program's first *)
 val id : t -> int

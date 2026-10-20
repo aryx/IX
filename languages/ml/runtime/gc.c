@@ -145,9 +145,26 @@ ml_stack_switch(int i)
 #ifndef __GNUC__
 #define TSTACK (256 * 1024)	/* a thread's machine stack, in bytes */
 #define TVALUES 32768		/* and its value stack, in words */
+/* A large thread (Thread.create_large: mini-netscape's worker, which
+ * lays out a page as the program's first thread did) has the
+ * program's value stack, and a machine stack as large in bytes:
+ * TVALUES was a List.map over Hacker News's page, past the end of the
+ * memory, a fault (bugs/ix.md; 47 KB of the machine's used for 128 KB
+ * of values). Each stack has a guard as large as itself on the side
+ * it grows to, as the program's value stack (vstack's): pages no one
+ * touches but an overflow, seen by collect. A thread's memory:
+ *
+ *   | guard | machine stack <- | -> value stack | guard |
+ *
+ * Addresses, not memory: a page is the system's at its first touch. */
+#define LVALUES STACK
 static value thread_context[STACKS][3];
 static char *thread_memory[STACKS];
 static char thread_used[STACKS];
+/* each one's memory made large, its machine stack's bytes and its value stack's words */
+static char thread_large[STACKS];
+static value thread_machine[STACKS];
+static value thread_values[STACKS];
 extern void ml_swtch(value**);
 extern value callback(value, value);
 static void fatal(char*);
@@ -161,23 +178,31 @@ thread_entry(void)
 }
 
 value
-thread_new(value f)
+thread_new(value large, value f)
 {
 	value *base;
-	int i;
+	int i, l, machine;
 
-	for(i = 1; i < STACKS && thread_used[i]; i++)
+	/* (a number free whose memory is of the size asked, or has none:
+	 * memory is not given back, a large one not made again) */
+	l = Bool_val(large);
+	for(i = 1; i < STACKS && (thread_used[i] || (thread_memory[i] != nil && thread_large[i] != l)); i++)
 		;
 	if(i == STACKS)
 		failwith("Thread.create: too many threads");
-	if(thread_memory[i] == nil)
-		thread_memory[i] = m_alloc(TSTACK + TVALUES * sizeof(value));
+	if(thread_memory[i] == nil){
+		thread_values[i] = l ? LVALUES : TVALUES;
+		thread_machine[i] = l ? LVALUES * sizeof(value) : TSTACK;
+		thread_memory[i] = m_alloc(2 * thread_machine[i] + 2 * thread_values[i] * sizeof(value));
+		thread_large[i] = l;
+	}
 	thread_used[i] = 1;
-	base = (value*)(thread_memory[i] + TSTACK);
+	machine = 2 * thread_machine[i];
+	base = (value*)(thread_memory[i] + machine);
 	ml_stack(i, base);
 	base[0] = f;
 	stack_top[i] = base + 1;
-	thread_context[i][0] = (value)(thread_memory[i] + TSTACK - 64);
+	thread_context[i][0] = (value)(thread_memory[i] + machine - 64);
 	thread_context[i][1] = (value)thread_entry;
 	thread_context[i][2] = 0;
 	return Val_int(i);
@@ -263,6 +288,14 @@ collect(void)
 	 * allocation. */
 	if(ml_vsp > vstack + STACK && ml_vsp <= vstack + STACK + GUARD)
 		fatal("Fatal error: stack overflow (mini-ml's value stack)\n");
+#ifndef __GNUC__
+	/* (a thread's, into one of its guards: its machine stack's is
+	 * below, where this frame is) */
+	if(stack_now > 0 && ml_vsp > stack_base[stack_now] + thread_values[stack_now])
+		fatal("Fatal error: stack overflow (a thread's value stack)\n");
+	if(stack_now > 0 && (char*)&scan < thread_memory[stack_now] + thread_machine[stack_now])
+		fatal("Fatal error: stack overflow (a thread's machine stack)\n");
+#endif
 #endif
 	stack_top[stack_now] = ml_vsp;
 	stack_roots[stack_now] = local_roots;

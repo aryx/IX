@@ -43,11 +43,11 @@ $D/%.$O: $LOCAL
 	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
 	$ML $INCLUDES -o $target $f
 
-# the window's worker: lib_core's threads (Worker_spawn.mli)
-$D/Worker_spawn.$O: spawn/threads.ml Worker_spawn.mli
+# the window's worker: lib_core's threads, a large one (Worker_spawn.mli)
+$D/Worker_spawn.$O: spawn/large_threads.ml Worker_spawn.mli
 	mkdir -p $D
 	cp Worker_spawn.mli $D/Worker_spawn.mli
-	cp spawn/threads.ml $D/Worker_spawn.ml
+	cp spawn/large_threads.ml $D/Worker_spawn.ml
 	$ML $INCLUDES -o $target $D/Worker_spawn.ml
 
 $D/mini-netscape: $D/netscape

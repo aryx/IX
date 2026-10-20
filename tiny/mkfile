@@ -44,17 +44,6 @@ $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
 
-# (tiny-ml's standard library, TinyLibCore/'s modules in their order:
-# their text as strings in a unit of the compiler's, made here, as
-# tiny/dune's rule makes it)
-CORE=Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl Common Sha1
-$D/TinyMLPrelude.ml: ${CORE:%=TinyLibCore/%.ml}
-	mkdir -p $D
-	(echo 'let modules = ['; for m in $CORE; do echo "\"$m\", {|"; cat TinyLibCore/$m.ml; echo '|};'; done; echo ']') > $target
-$D/TinyMLPrelude.$O: $D/TinyMLPrelude.ml
-	$ML $INCLUDES -o $target $D/TinyMLPrelude.ml
-$D/TinyML.$O: $D/TinyMLPrelude.$O
-
 # (tiny-mkfs is t6's, a step before tiny-kernel: its file is there)
 $D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 	mkdir -p $D
@@ -90,9 +79,9 @@ $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIB
 $D/tiny-c: $D/TinyLibSystem.$O $D/TinyC.$O $LIBS
 	$START TinyLibSystem TinyC Std_exit -o $D/TinyC.start.$O
 	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyC.$O $STDEND
-$D/tiny-ml: $D/TinyLibSystem.$O $D/TinyMLPrelude.$O $D/TinyML.$O $LIBS
-	$START TinyLibSystem TinyMLPrelude TinyML Std_exit -o $D/TinyML.start.$O
-	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMLPrelude.$O $D/TinyML.$O $STDEND
+$D/tiny-ml: $D/TinyLibSystem.$O $D/TinyML.$O $LIBS
+	$START TinyLibSystem TinyML Std_exit -o $D/TinyML.start.$O
+	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyML.$O $STDEND
 $D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $LIBS
 	$START TinyLibSystem TinyMachineISA TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
 	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $STDEND

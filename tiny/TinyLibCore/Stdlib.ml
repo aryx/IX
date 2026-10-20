@@ -71,6 +71,10 @@ let abs n = if n < 0 then - n else n
 let min a b = if a <= b then a else b
 let max a b = if a >= b then a else b
 let ( |> ) x f = f x
+(* an integer's range on tiny-machine: 31 bits (old: lines the compiler
+ * added to this file's text) *)
+let max_int = 1073741823
+let min_int = - max_int - 1
 let rec ( @ ) l1 l2 = match l1 with [] -> l2 | x :: l -> x :: (l @ l2)
 
 (* a number, with its sign: decimal, or hexadecimal after 0x

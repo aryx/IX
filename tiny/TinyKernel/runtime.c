@@ -6,10 +6,10 @@
 // calls as externals (its values: an integer n is 2n+1).
 //
 // The memory (128 MB). The kernel uses the first 32 MB: the image at 0
-// and the files it carries after it (7.5 MB at most: the Makefile
-// checks); the value stack at 7.5 MB; the processes' frames, and a
-// packet's place; the file system's buffers and map (TinyKernelFS.ml),
-// 80 KB at 10 MB; the rest unused but the speaker's ring; 2 MB of
+// and the files it carries after it (10 MB at most: the Makefile
+// checks); the file system's buffers and map (TinyKernelFS.ml), 80 KB
+// at 10 MB; the value stack at 11 MB; the processes' frames, and a
+// packet's place; the rest unused but the speaker's ring; 2 MB of
 // images, and the screen's megabyte (its 640 by 480 bytes, then images
 // again); the heap's two halves of 8 MB from 16 MB to 32 MB, where a
 // file written lives (a compiler's output: TinyML.ml's object is 1.3
@@ -18,12 +18,13 @@
 // browser filled the image; then 4.5 MB, the rest 3 MB lower, until
 // tiny-db, tiny-vcs and tiny-build came; the heap's halves were 1 MB,
 // at 8 MB, until the toolchain came, plan_tiny_self_hosting.md's step
-// 7.) The processes' partitions are above 32 MB (TinyKernel.ml). The devices are in the
+// 7; the image's limit 7.5 MB, the value stack, the frames and the
+// packet below 8 MB, until its sources came, step 8.) The processes' partitions are above 32 MB (TinyKernel.ml). The devices are in the
 // last 48 bytes, reached by negative addresses, which the machine takes
 // modulo its memory size.
 #include "../TinyMLRuntime/core.c"
 
-#define VSTACK 0x780000
+#define VSTACK 0xb00000
 #define HEAP0 0x1000000
 #define HEAP1 0x1800000
 #define HALF 2097152

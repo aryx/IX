@@ -87,8 +87,7 @@
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
  * node (Seq's). A module is a file, a unit (M.x, open M); its types,
  * constructors and labels are the program's, one name space, so M.C
- * is C. {|quoted strings|}, OCaml's, are read (a help's text, the
- * prelude's modules). Left out: modules inside a file and functors,
+ * is C. {|quoted strings|}, OCaml's, are read (a help's text). Left out: modules inside a file and functors,
  * floats, labels, objects, or-patterns with names in their
  * alternatives, character ranges and inline records: the tools and the
  * toolchain were written again without them.
@@ -138,12 +137,13 @@
  *   M.tmi (OCaml's .cmi: the types and constructors so far, each of
  *   its names with where its value is, a static closure or a global,
  *   and its type, M.mli's when there is one), which the units after it
- *   read; a program's main (ml_start, the prelude, each unit's init in
- *   their order, the curry functions, the tables) is made of the
- *   interfaces. A unit is a module: its names are M.x in the units
- *   after it, or x after open M; Stdlib is open in all, and with it
- *   TinyLibCore/'s modules, the standard library, are the first
- *   units of every program, their text the compiler's. The types, the constructors and the labels
+ *   read; a program's main (ml_start, each unit's init in their order,
+ *   the curry functions, the tables) is made of the interfaces. A unit
+ *   is a module: its names are M.x in the units after it, or x after
+ *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
+ *   the standard library, are the first units of every program, each
+ *   compiled once (-nostdlib), their interfaces read from a directory
+ *   (/sys/lib/ml, or -L's). The types, the constructors and the labels
  *   are the program's, one name space: a record's label is the latest
  *   record's unless the type says which. Each function and static block
  *   is a piece (.piece), which tiny-linker leaves out when nothing
@@ -163,8 +163,8 @@
  * - {b The prelude is in ML.} raise, the operators, ref, ! and := are
  *   externals whose names give the instruction ("%add"); print_string
  *   and ^ name C functions of the runtime; List.map and the others are
- *   ML, the first unit, Stdlib, in each program's main, and only what
- *   the program uses is linked (above).
+ *   ML, the first unit, Stdlib, and only what the program uses is
+ *   linked (above).
  *
  * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
  * contract, quirks included (plan_tiny_self_hosting.md takes the quirks

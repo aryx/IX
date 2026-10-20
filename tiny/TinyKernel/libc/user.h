@@ -11,8 +11,9 @@
 typedef unsigned int uint;
 
 // a directory's entry, as read from it (t6's: a first block, which here
-// is the file's links instead, how many names it has)
-struct dirent { char name[20]; int type; uint first; uint size; };
+// is the file's links instead, how many names it has; a name of 28
+// bytes, the disk's, where t6's had 20: TinyAppTemperature.tmi)
+struct dirent { char name[28]; int type; uint first; uint size; };
 
 #define T_DIR 1
 #define T_FILE 2

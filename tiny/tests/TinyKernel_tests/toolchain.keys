@@ -1,14 +1,14 @@
 rc
-cd /src/TinyCRuntime; cc -o /libc.tm libc.c
-cd /src/TinyKernel/user; cc -o /ping.tm ping.c
+cd /sys/src/TinyCRuntime; cc -o /libc.tm libc.c
+cd /sys/src/TinyKernel/user; cc -o /ping.tm ping.c
 cd /
-as -o start.o src/TinyCRuntime/start.tm
-as -o udivmod.o src/TinyCRuntime/udivmod.tm
-as -o sys.o src/TinyKernel/libc/sys.tm
+as -o start.o sys/src/TinyCRuntime/start.tm
+as -o udivmod.o sys/src/TinyCRuntime/udivmod.tm
+as -o sys.o sys/src/TinyKernel/libc/sys.tm
 as libc.tm; as ping.tm
 ld -o ping start.o udivmod.o libc.o sys.o ping.o
 cmp ping /bin/ping && echo ping: /bin/ping
-cd /src/TinyMachine; ml -c -o /isa.tm TinyMachineISA.ml; cd /
+cd /sys/src/TinyMachine; ml -c -o /isa.tm TinyMachineISA.ml; cd /
 cmp isa.tm /examples/TinyMachineISA.tm && echo isa.tm: the host
 cmp isa.tmi /examples/TinyMachineISA.tmi && echo isa.tmi: the host
 as isa.tm; cmp isa.o /examples/TinyMachineISA.o && echo isa.o: the host

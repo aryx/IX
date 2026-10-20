@@ -38,7 +38,7 @@ void
 list(int fd, char *path)
 {
 	struct dirent d;
-	char name[21];
+	char name[29];
 	int dir, i;
 
 	put(fd, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
@@ -48,7 +48,7 @@ list(int fd, char *path)
 		while(read(dir, (char*)&d, sizeof d) == sizeof d){
 			if(d.type == 0)
 				continue;
-			for(i = 0; i < 20 && d.name[i]; i++)
+			for(i = 0; i < 28 && d.name[i]; i++)
 				name[i] = d.name[i];
 			name[i] = 0;
 			put(fd, "<li><a href=\""); put(fd, path); put(fd, name); put(fd, d.type == T_DIR ? "/\">" : "\">");

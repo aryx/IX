@@ -46,7 +46,7 @@ let part = 0x100000
 let nslots = 8
 let mem_low = 0x2000000
 let mem_high = 0x7ff0000
-let frame slot = 0x7c0000 + (slot * 68)
+let frame slot = 0xb40000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
  * negative numbers, which the machine takes modulo its memory size, so
  * the kernel works whatever that size is (-16 is the last 16 bytes). *)
@@ -55,9 +55,9 @@ let halt_dev = -12
 let cons_in = -8
 let mouse_dev = -4
 (* the network's four words (an address, a length, a command, whether
- * there is a wire), and a packet's place in memory, below the file system's buffers *)
+ * there is a wire), and a packet's place in memory, after the frames *)
 let net_dev = -48
-let net_buf = 0x7f0000
+let net_buf = 0xb50000
 (* the speaker's word (its ring's address written, the samples played
  * read), and its ring, in the megabytes nothing else uses *)
 let speaker_dev = -52
@@ -202,10 +202,12 @@ let dir_of ns =
   | [] -> None
   | last :: r -> (match walk !top (List.rev r) with Some n when is_dir n -> Some (home n, last) | _ -> None)
 
-(* a directory read as a file: an entry of 32 bytes per name, t6's (its
- * name in 20, its type, a first block, its size), which ls reads. The
+(* a directory read as a file: an entry of 40 bytes per name, t6's (its
+ * name, its type, a first block, its size), which ls reads, but for
+ * the name's 28 bytes, the disk's (old: t6's 20: the sources'
+ * TinyAppTemperature.mli could not be listed, its .tmi not made). The
  * first block, which this kernel has no use for, says the file's links
- * instead: how many names it has *)
+ * instead: how many names it has. A name has 27 bytes at most *)
 let word n =
   String.make 1 (Char.chr (n land 255)) ^ String.make 1 (Char.chr ((n lsr 8) land 255))
   ^ String.make 1 (Char.chr ((n lsr 16) land 255)) ^ String.make 1 (Char.chr ((n lsr 24) land 255))
@@ -222,7 +224,7 @@ let entry name n =
   let t, size, l = match n with
     | Dir _ -> 1, 0, links n | Data d -> 2, d.dsize, links n | Rom (_, k) -> 2, k, links n
     | Disk (r, i) -> fs_kind r i | Union _ -> 1, 0, 1 | _ -> 3, 0, links n in
-  name ^ String.make (20 - String.length name) '\000' ^ word t ^ word l ^ word size
+  name ^ String.make (28 - String.length name) '\000' ^ word t ^ word l ^ word size
 
 let contents node =
   match node with
@@ -710,14 +712,15 @@ let load_prog p node argv =
   k_zero (frame p.slot) 68;
   set_reg p 14 sp
 
-(* exec(path, argv): its program's text, its arguments (16 at most),
+(* exec(path, argv): its program's text, its arguments (64 at most:
+ * a linker's line names its objects; old: 16),
  * all read before the partition is changed, so a failed exec returns.
  * A traced process stops at its new program's first instruction, its
  * breakpoints gone with the old one *)
 let sys_exec p =
   let node = walk !top (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
-    if i >= 16 then raise Bad
+    if i >= 64 then raise Bad
     else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
   load_prog p node (args 0 []);
   match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ()
@@ -748,9 +751,9 @@ let sys_open p =
   let node =
     match walk !top ns, dir_of ns with
     | Some n, _ -> n
-    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last < 20 ->
+    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last < 28 ->
         let n = Data (data "") in d := !d @ [ last, n ]; n
-    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last < 20 -> Disk (0, fs_create i last 2)
+    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last < 28 -> Disk (0, fs_create i last 2)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
@@ -842,8 +845,8 @@ let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 let sys_mkdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns, dir_of ns with
-  | None, Some (Dir d, last) when String.length last < 20 -> d := !d @ [ last, Dir (ref []) ]; result p 0
-  | None, Some (Disk (0, i), last) when String.length last < 20 -> ignore (fs_create i last 1); result p 0
+  | None, Some (Dir d, last) when String.length last < 28 -> d := !d @ [ last, Dir (ref []) ]; result p 0
+  | None, Some (Disk (0, i), last) when String.length last < 28 -> ignore (fs_create i last 1); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
@@ -871,9 +874,9 @@ let sys_link p =
   let old = walk !top (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
   match old, walk !top ns, dir_of ns with
   | Some n, _, _ when is_dir n -> raise Bad
-  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last < 20 -> fs_link i last j; result p 0
+  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last < 28 -> fs_link i last j; result p 0
   | Some (Disk _), _, _ -> raise Bad
-  | Some node, None, Some (Dir d, last) when String.length last < 20 -> d := !d @ [ last, node ]; result p 0
+  | Some node, None, Some (Dir d, last) when String.length last < 28 -> d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 
 (* getcwd(buf, n): the current directory's path, ended by a 0, in the n

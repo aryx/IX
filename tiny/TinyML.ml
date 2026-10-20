@@ -6,7 +6,7 @@
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
-let usage = "usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi..."
+let usage = "usage: tiny-ml [-L dir | -nostdlib] [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi..."
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -19,16 +19,20 @@ fact.ml, for example:
   tiny-c -o main.tm main.c
   L=tiny/TinyCRuntime
   for f in $L/start $L/udivmod exit fact main; do tiny-assembler -o $f.o $f.tm; done
-  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o
+  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o /sys/lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
-is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. Several files are a
+is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The standard library,
+TinyLibCore/'s modules, is read from /sys/lib/ml (-L: another directory), its
+interfaces Stdlib.tmi ... Sha1.tmi, and linked from there, each module compiled
+once by tiny-ml -c -nostdlib after the ones before it. Several files are a
 module each, one after the other, then their main: a's x is A.x in b, or x
 after open A. Or a module at a time, then the main:
   tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
   tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
-  tiny-ml -o main.tm a.tmi b.tmi           the prelude, a's and b's init, ml_start
-  (linked: ... main.o a.o b.o; what nothing uses left out by tiny-linker)
+  tiny-ml -o main.tm a.tmi b.tmi           the library's, a's and b's init, ml_start
+  (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
+  tiny-linker)
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
@@ -1800,33 +1804,28 @@ let parse s = toks := lex s; pos := 0; items ()
  * capitalized, as OCaml's module *)
 let unit_of f = String.capitalize_ascii (Filename.remove_extension (Filename.basename f))
 
-(* the standard library, TinyLibCore/'s modules, the first units of
- * every program: their text is the compiler's (TinyMLPrelude.ml, made
- * of them by the build: tiny/dune, tiny/mkfile), so that it looks for
- * no file when it runs, and compiles them the same way in every run,
- * their labels the same in a unit's object and in a main. Their names,
- * their types, their globals and their curry functions.
- * (old: the prelude, TinyLibCore.ml, one unit, Stdlib, its List.map a
- * name with a dot) *)
-let library () =
-  List.fold_left (fun (env, tenv, units, needed) (m, text) ->
-    unit_name := m;
-    known_units := m :: !known_units;
-    (* an integer's range: 31 bits *)
-    let text = if m = "Stdlib" then text ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n" else text in
-    let items = try parse text with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e) in
-    let _, tdefs = (try type_unit tenv items with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e)) in
-    let _, defs, n = (try compile_unit env items with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e)) in
-    export m defs env, export m tdefs tenv, units @ [ (m, n) ], needed @ !arities) ([], [], [], []) TinyMLPrelude.modules
+(* the standard library, TinyLibCore/'s modules in their order, the
+ * first units of every program: each compiled once, by tiny-ml -c
+ * -nostdlib after the ones before it, and read as interfaces from a
+ * directory, /sys/lib/ml on tiny-kernel (-L another), its objects
+ * linked as any unit's.
+ * (old: their text the compiler's, TinyMLPrelude.ml made of them by the
+ * build, compiled again at each run: a unit of one line took 47 s on tiny-kernel,
+ * and every program's main the library's code, 420 KB of assembly;
+ * older: the prelude, TinyLibCore.ml, one unit, its List.map a name
+ * with a dot) *)
+let library = [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Option"; "Int64"; "Filename"; "Buffer"; "Hashtbl"; "Common"; "Sha1" ]
 
 (* a file that cannot be read or made, said apart from an error in one *)
 exception File_error of string
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
-  let output = ref "" and file = ref "" and files = ref [] and separate = ref false in
+  let output = ref "" and file = ref "" and files = ref [] and separate = ref false and lib = ref (Some "/sys/lib/ml") in
   let rec args l = match l with
     | "-o" :: o :: r -> output := o; args r
     | "-c" :: r -> separate := true; args r
+    | "-L" :: d :: r -> lib := Some d; args r
+    | "-nostdlib" :: r -> lib := None; args r
     | f :: r -> files := f :: !files; args r
     | [] -> ()
   in
@@ -1843,12 +1842,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
     let fd = try TinyLibSystem.open_out caps f with Failure m -> raise (File_error m) in
     TinyLibSystem.write fd text; TinyLibSystem.close fd in
   try
-    let env, tenv, stdlib, needed = library () in
-    (* the interfaces read, in their order: the units before this one *)
+    (* the interfaces read, in their order: the library's, then the
+     * units before this one *)
+    let lib = match !lib with Some d -> List.map (fun m -> d ^ "/" ^ m ^ ".tmi") library | None -> [] in
     let env, tenv, units, needed = List.fold_left (fun (env, tenv, units, needed) f ->
-      let env, tenv, u, n = read_interface (read f) env tenv in env, tenv, units @ [ u ], needed @ n) (env, tenv, stdlib, needed) tmis in
+      let env, tenv, u, n = read_interface (read f) env tenv in env, tenv, units @ [ u ], needed @ n) ([], [], [], []) (lib @ tmis) in
     if !separate then begin
-      (* one unit: its object, without the prelude, and its interface *)
+      (* one unit: its object and its interface *)
       let f = List.hd mls in
       Buffer.clear text; Buffer.clear data;
       unit_name := unit_of f;

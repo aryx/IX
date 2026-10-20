@@ -10,10 +10,13 @@
  * module, and compares a program's lines on both. What is left out is
  * what no tiny program names.
  *
- * The compiler carries the files' text (tiny/dune's and tiny/mkfile's
- * rule make TinyMLPrelude.ml of them) and compiles them before a
- * program's units, the first units of every program's main; what a
+ * Each module is compiled once, by tiny-ml -c -nostdlib after the ones
+ * before it, to its object and its interface: on tiny-kernel in
+ * /sys/lib/ml, where tiny-ml reads the interfaces (-L another
+ * directory). They are the first units of every program; what a
  * program does not call, tiny-linker leaves out (its pieces).
+ * (old: the compiler carried the files' text, TinyMLPrelude.ml made of
+ * them by the build, and compiled them again at each run)
  *
  *     Stdlib  Char  List  String  Bytes  Array  Option
  *        Filename  Buffer  Hashtbl  Common  Sha1
@@ -27,7 +30,7 @@
  * This module: the operators, the machine's and the runtime's
  * (core.c's) as externals; option and the exceptions; the few
  * functions OCaml's Stdlib has that tiny programs name. max_int and
- * min_int are the compiler's, the target's 31 bits. *)
+ * min_int are the target's, 31 bits. *)
 
 val raise : exn -> 'a
 val ( = ) : 'a -> 'a -> bool

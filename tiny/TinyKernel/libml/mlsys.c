@@ -293,17 +293,21 @@ u_fork(value unit)
 
 // the program at path, its arguments an ML list of strings (a cell is
 // a block of two words, the end is not a block; a string ends by a 0;
-// 15 at most, the kernel's limit); it returns only when it failed: -1
+// 63 at most, the kernel's limit); it returns only when it failed: -1,
+// as for more (old: 15, the ones after them left out unsaid; ld's
+// lines for a program in ML have 30)
 value
 u_exec(value path, value args)
 {
-	char *argv[16];
+	char *argv[64];
 	int n;
 
-	for(n = 0; n < 15 && (args & 1) == 0; n++){
+	for(n = 0; n < 63 && (args & 1) == 0; n++){
 		argv[n] = (char*)((value*)args)[0];
 		args = ((value*)args)[1];
 	}
+	if((args & 1) == 0)
+		return -1 * 2 + 1;
 	argv[n] = 0;
 	return exec((char*)path, argv) * 2 + 1;
 }

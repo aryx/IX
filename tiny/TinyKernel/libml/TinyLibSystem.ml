@@ -26,7 +26,8 @@
  *   above 2: a window's program has its drawing at 3 and its mouse at 4
  * - a wait for one child: the kernel says the next that ended, so the
  *   others' ends are kept until asked for
- * - more than 15 arguments for a program, its name one of them: said
+ * - more than 63 arguments for a program, its name one of them: said
+ *   (old: 15; a linker's line names 30 objects)
  * - a signal, a terminal to ask about, a reason for a call that
  *   failed: nothing, yes, "cannot" (old: a file written at its end,
  *   >>, refused, before the kernel's seek)
@@ -107,8 +108,8 @@ let read_file caps file =
   close fd;
   s
 
-(* a directory is read as a file of entries of 32 bytes (user.h's
- * dirent): a name of 20 bytes ended by a 0, its type (1 for a
+(* a directory is read as a file of entries of 40 bytes (user.h's
+ * dirent): a name of 28 bytes ended by a 0, its type (1 for a
  * directory), its links, and its size *)
 let entries dir =
   let fd = u_open (if dir = "" then "." else dir) 0 in
@@ -116,9 +117,9 @@ let entries dir =
   else begin
     let s = read_all fd in
     ignore (u_close fd);
-    let name i = String.sub s i ((String.index_from_opt s i '\000' ||| (i + 20)) - i) in
+    let name i = String.sub s i ((String.index_from_opt s i '\000' ||| (i + 28)) - i) in
     let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
-    List.init (String.length s / 32) (fun k -> name (k * 32), (Char.code s.[k * 32 + 20] = 1, word (k * 32 + 28), word (k * 32 + 24)))
+    List.init (String.length s / 40) (fun k -> name (k * 40), (Char.code s.[k * 40 + 28] = 1, word (k * 40 + 36), word (k * 40 + 32)))
   end
 
 let readdir dir = List.map fst (entries dir)
@@ -208,7 +209,7 @@ let fork caps = u_fork ()
 let exec caps file argv env =
   List.iter (fun d -> ignore (u_close d)) !private_fds;
   private_fds := [];
-  if List.length argv > 15 then "more than 15 arguments"
+  if List.length argv > 63 then "more than 63 arguments"
   else if u_exec file argv < 0 then "not found" else ""
 
 (* the children that ended while another was waited for: pid, status *)

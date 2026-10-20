@@ -116,12 +116,14 @@
  *
  *     0x000000   the image: entry.tm, the runtime, this file; then the
  *                files it carries, each a name, a size, the bytes
- *     0x780000   the value stack: the kernel's own roots (TinyML's)
- *     0x7c0000   the frames, 68 bytes per slot: r1 to r15 and the pc
- *                of each process that is not running
+ *                (10 MB at most: /sys/src, the sources, are among them)
  *     0xa00000   the file system's buffers and its map of the
  *                disk's blocks (TinyKernelFS.ml)
- *     0xa14000   unused (but the speaker's ring, at 0xc00000)
+ *     0xb00000   the value stack: the kernel's own roots (TinyML's)
+ *     0xb40000   the frames, 68 bytes per slot: r1 to r15 and the pc
+ *                of each process that is not running
+ *     0xb50000   a packet's place, sent or received
+ *     0xb51000   unused (but the speaker's ring, at 0xc00000)
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
  *    0x1000000   the heap, two halves of 8 MB: every file written,

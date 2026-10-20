@@ -512,17 +512,21 @@ constructors are the program's, one name space. Integers are 31 bits (a value is
 pointer), so a constant beyond them is refused. The runtime is
 `TinyMLRuntime/core.c`, compiled by `tiny-c`, with a `main` that gives
 it its memory. A C or assembly function is called as an `external`,
-with C's convention and ML's values.
+with C's convention and ML's values. The standard library,
+`TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each
+module after the ones before it); tiny-ml reads its interfaces from
+`/sys/lib/ml` (`-L` another directory), and a program is linked with its
+objects.
 
     tiny-ml -c a.ml             # a.tm, and a.tmi, its interface
     tiny-ml -c a.tmi b.ml       # b.tm and b.tmi, after a
-    tiny-ml -o main.tm a.tmi b.tmi   # the prelude, each unit's init, ml_start
+    tiny-ml -o main.tm a.tmi b.tmi   # each unit's init, the library's first, ml_start
     tiny-ml -o prog.tm a.ml b.ml     # or all at once: the units and their main
 
 tiny-kernel's programs are made the first way (`tiny/TinyKernel/Makefile`:
-each unit once, in `_make/ml/`, the main of each program in
-`_make/main/`), and linked with what was not tiny-ml's; tiny-linker
-leaves out the functions nothing calls.
+the library in `_make/lib/`, each unit once in `_make/ml/`, the main of
+each program in `_make/main/`), and linked with what was not tiny-ml's;
+tiny-linker leaves out the functions nothing calls.
 
 ### 6.4 A system call
 
@@ -544,11 +548,11 @@ What the numbers mean is up to who answers:
 
 | addresses | what |
 |---|---|
-| from 0 | the kernel's image, then the files it carries |
-| `0x780000` | the ML runtime's stack of values (the image and its files, 7.5 MB at most, end below it) |
-| `0x7c0000` | the processes' frames: 17 words each, their registers and pc |
-| `0x7f0000` | a packet's place, on its way to or from the network's device |
+| from 0 | the kernel's image, then the files it carries (10 MB at most) |
 | `0xa00000` | the file system's buffers and its map of the disk's blocks |
+| `0xb00000` | the ML runtime's stack of values |
+| `0xb40000` | the processes' frames: 17 words each, their registers and pc |
+| `0xb50000` | a packet's place, on its way to or from the network's device |
 | `0xc00000` | the speaker's ring |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |

@@ -1,5 +1,6 @@
-; TinyKernelFS.ml's test on the host (TinyKernelFS_test.sh)
-(executable
- (name Host)
- (modules Host)
+; TinyKernelFS.ml's test on the host (TinyKernelFS_test.sh), and Cat, a
+; file of a disk (TinyKernel/Makefile's self)
+(executables
+ (names Host Cat)
+ (modules Host Cat)
  (libraries tiny_kernel_fs tiny_host_memory))

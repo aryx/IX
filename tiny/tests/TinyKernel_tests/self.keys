@@ -1,0 +1,10 @@
+rc
+mkdir sys; cd sys
+build -f /sys/src/TinyKernel/Buildfile
+ls -l boot.img; cp boot.img first.img
+echo '(* a comment *)' >> /sys/src/TinyLibRegex.ml
+build -f /sys/src/TinyKernel/Buildfile
+echo 'let () = print_string ""' >> /sys/src/TinyKernel/user/calc.ml
+build -f /sys/src/TinyKernel/Buildfile
+build -f /sys/src/TinyKernel/Buildfile
+exit

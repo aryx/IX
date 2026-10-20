@@ -22,6 +22,8 @@ let receive (k : t) =
 
 let up = "\xef\x80\x8e" and down = "\xef\xa0\x80"
 let left = "\xef\x80\x91" and right = "\xef\x80\x92"
+let page_up = "\xef\x80\x8f" and page_down = "\xef\x80\x93"
+let home = "\xef\x80\x8d" and end_ = "\xef\x80\x98"
 
 (* /dev/kbd: a read is a message, k or K, the keys down (each its
  * character's bytes), a zero byte *)

@@ -63,6 +63,13 @@ val down : string
 val left : string
 val right : string
 
+(* and the keys that move by a page or to an end (Page Up 0xF00F,
+ * Page Down 0xF013, Home 0xF00D, End 0xF018) *)
+val page_up : string
+val page_down : string
+val home : string
+val end_ : string
+
 (* The keys held (/dev/kbd, 9front's file, which mini-9pi's kernel and
  * mini-rio's windows have): the console gives what is typed, and no
  * key's release; this file says, each time a key goes down or comes up,

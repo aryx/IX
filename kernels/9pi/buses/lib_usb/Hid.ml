@@ -33,9 +33,13 @@ let keyup = 0x80
  * arrows, the right Alt) have 0xe0 before theirs *)
 (* (0xe0 by its number: the kernel's compiler has no "\x" in a string) *)
 let scan esc sc = (if esc then String.make 1 (Char.chr 0xe0) else "") ^ String.make 1 (Char.chr sc)
+(* (from 0x47, Home's: kb.c's hasesc1 says > 0x47, and Home came
+ * without its 0xe0, the keypad's 7, which Kbd does not make Home; the
+ * keypad's 7 is Home now, as its 8 was Up already.
+ * old: sc > 0x47 || sc = 0x38) *)
 let key up k =
   let sc = if k < Array.length sctab then sctab.(k) else 0 in
-  if sc = 0 then [] else [ scan (sc > 0x47 || sc = 0x38) (if up then sc lor keyup else sc) ]
+  if sc = 0 then [] else [ scan (sc >= 0x47 || sc = 0x38) (if up then sc lor keyup else sc) ]
 
 (* the modifiers' byte: a bit a key (Ctrl 0, Shift 1, Alt 2 at the
  * left; the same from 4 at the right); each bit that changed is a key

@@ -38080,3 +38080,1006 @@ Claude proposed a kernel command y that stops traced processes twice per system 
 Claude argued two stops let the kernel only pause and resume, leaving decoding to the tracer program.
 Claude sketched a roughly 100-line ML trace program that reads paths and buffers with the m command.
 Claude asked whether to commit the plan with the debug rename, and nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 09:49
+
+**Yoann:**
+
+> let's start the plan tiny self hosting
+
+**Claude (summary):**
+
+Claude said it was starting step 1 of the plan, removing arm64 support.
+Claude was surveying the two back ends, TinyC.ml and TinyML.ml, the arm64 tools, and the goken-dependent tests.
+Yoann's follow-up questions whether tiny-c dropping arm64 makes 7c support pointless.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 09:55
+
+**Yoann:**
+
+> tiny-c will also drop support for arm64 no? so why do we care about 7c?
+
+**Claude (summary):**
+
+- Claude recommended using the host's cc as tiny-c's reference, via a small host `libc.h` mapping `print` to `printf`.
+- Claude proposed recording outputs as `TinyC_tests/*.out` files, like tiny-ml's, so `make test` needs only tiny-c.
+- Claude proposed cutting the vlong lines from arith.c, calls.c and struct.c, since tiny-c becomes 32-bit only.
+- Claude noted that m-ix's `languages/c/tests/simple.sh 7` still depends on 7c, and suggested mini-asm plus mini-ld to replace TinyAssembler.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 09:56
+
+**Yoann:**
+
+> what is step 1?
+
+**Claude (summary):**
+
+Claude proposed step 1 as one commit that removes arm64 entirely, leaving tiny-machine as the only target.
+It would delete TinyAssembler.ml, TinyCPUArm.ml and TinyLinker.ml with their .mli files and their tests.
+TinyC.ml and TinyML.ml would lose the arm64 back ends and the -tm flag, about 300 lines in all.
+The build files and docs would drop tiny-assembler and tiny-arm, and every caller passing -tm would be updated.
+Steps 2 to 8 come afterwards, and Claude asked whether to start on step 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 09:57
+
+**Yoann:**
+
+> yes go ahead. What do we lose from TinyAssembler.ml that was good that is in not in m-ix assembler/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:09
+
+**Yoann:**
+
+> make test-lite seems to fail; and so is make build-docker
+
+**Claude (summary):**
+
+Claude found one failing test-lite job, "mini-ml compiles tiny", with three of 88 files failing.
+Claude exported `cursor_hook` in TinyKernelGraphics.mli, which TinyKernel.ml used but the interface hid.
+Claude added `open TinyKernelAudio` to TinyKernel.ml so the standalone mini-ml check finds `sound_length` and `mix_sound`.
+Claude excluded TinyMachineSDL.ml and sdl/TinyCalls.ml from compile_ix.sh, matching the other SDL hosts already excluded.
+Claude left `make build-docker` running in the background and has not rerun the full test-lite yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:19
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended committing HEAD plus only its own hunk for the `.mli` file.
+Claude found that the `.mli` also carried another session's change, removing `-tm`.
+Claude decided to leave that other session's `-tm` removal out of the commit.
+Claude planned to restore the working file afterward so the other session's change stays in place.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:30
+
+**Yoann:**
+
+> m-ix browsers/ is now the biggest component of m-ix with 28 000 LOC. Is there anway we could significantly reduce this to around 20 000 LOC o at least it is smaller than the kernel which is arguable more important, while still having the Html/JS/CSS and getting wikipedia, HN, and other websites rendered mostly correctly
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:30
+
+**Yoann:**
+
+> analyze and report
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:31
+
+**Yoann:**
+
+> (it's true its .mli are 10 000 LOC and are not counted in the end in the final m-ix stats, so maybe the number is actually smaller)
+
+**Claude (summary):**
+
+Claude checked which JS/web APIs the prelude carries and which sites need them, but reported no findings.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:38
+
+**Yoann:**
+
+> let's add it to the end of plan_browser.md and I like the opti/ idea, and most of what you propose. For youtube I think it's too much work, but what would be good is that HN link pointing to a youtube video could be played when run on the host by using a metamail/mailcap/external program mechanism (mini-chrome has it I Think) to run mpv or something that can play those links and video
+
+**Claude (summary):**
+
+Claude proposed a generic helper mechanism: links matching a site rule run an external program through Cap.fork and Cap.execv.
+Site rules would live in the profile's preferences file, like the zoom lines, for example "helper youtube.com/watch mpv %u".
+File types the browser can't show would fall back to ~/.mailcap entries in RFC 1524 format, such as "video/mp4; mpv %s".
+Claude also added a 95-line section to the end of docs/plans/plan_browser.md, uncommitted, covering the opti/ move and the JavaScript cuts.
+Claude suggested starting with the self-contained helper program, or with the mechanical opti/ move first.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:40
+
+**Yoann:**
+
+> by supporting less of those advanced JS heavy websites, we are also closer to our name, mini-netscape
+
+**Claude (summary):**
+
+Claude made option B the chosen direction in plan_browser.md, treating all-script sites as cut material.
+Claude left open whether Wikipedia's jQuery loader scripts stay within the smaller language's supported subset.
+Claude proposed settling that after step A, using script coverage from Wikipedia, HN, ocaml.org and LWN.
+Claude noted the Wikipedia article reads the same without its scripts, so dropping them costs little.
+Claude also saved the aim as a memory and suggested a four-step order starting with coverage.sh.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:42
+
+**Yoann:**
+
+> commit the plan and start with the coverage run. And yes let's try to support Wikipedia at least and a few popular (not too JS heavy) sites.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:43
+
+**Yoann:**
+
+> If one wants the really complete browser, they can still use mini-chrome
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:44
+
+**Yoann:**
+
+> maybe with the freed space we can actually get closer to a mini-firefox and add the firefox devtools (like the one in mini-chrome) to help debug web pages
+
+**Claude (summary):**
+
+Claude reported that a coverage run was going in the background.
+Claude said the run covered Wikipedia (two articles), HN, ocaml.org, LWN, old.reddit, the Python docs, and craigslist.
+Claude said it would pick the run back up when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:44
+
+**Yoann:**
+
+> add the devtools to the plan too
+
+------------------------------------------------------------------------
+
+## 2026-10-19 09:58
+
+**Yoann:**
+
+> same for TinyCPUArm.ml
+
+**Claude (summary):**
+
+Claude had left step 1 (arm64 removal) uncommitted, with the deletions already staged in the shared index.
+Claude removed TinyAssembler.ml, TinyCPUArm.ml, TinyLinker.ml and the arm64 runtime.c, plus the -tm flag.
+Claude flagged two choices for review: tiny-c's integer promotion now follows ANSI, and tiny-ml keeps its ocaml-light quirks.
+Claude named TinyLibHost removal as step 2, the next step once step 1 is committed.
+Claude moved the tiny-c and tiny-ml tests onto tiny-cpu and into make test.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:45
+
+**Yoann:**
+
+> (maybe we should rename to mini-mozilla? When was added the classic devtools with the JS console, html browser, web load diagram, etc. ?)
+
+**Claude (summary):**
+
+Claude asked whether to commit the one uncommitted plan edit left after commit d1799d6d and start the opti/ move for option A.
+Claude noted that the commit swept in its earlier coverage scripts and 134 lines of plan_browser.md, which are still in history.
+For A, Claude proposed cutting the old pre-CSS layout passes in Html_layout and Looks, about 700 lines that no tested site runs.
+With that cut, A brings browsers/ to about 16,500 counted lines, still above mini-9pi's 14,000.
+Claude also ran coverage on eight sites and mapped the devtools lineage from Netscape's console to Firebug.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:47
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude offered to write step 3's object format into the plan before any code was written.
+Claude planned a real tiny-assembler and tiny-linker that split the assembler out of TinyMachineCPU.ml.
+Claude set the step 3 check as every image from make check staying byte-for-byte identical to today's.
+Claude noted that the object format is t-ix's own design, so it wanted approval before coding.
+Claude committed step 1 as d1799d6d and step 2 as c095f4a0, leaving the other session's staged files out.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:53
+
+**Yoann:**
+
+> yes commit and start the opti/ move
+
+**Claude (summary):**
+
+Claude moved Js_compile and Js_quicken into opti/ through the Js_eval.compiler hook, with JavaScript tests passing.
+Claude fixed stale mini-ld and lib_core.a builds so linking worked, then updated the README.
+Claude started sizing the remaining xxx_opti functions that sit inside ordinary modules beside their xxx_simple twins.
+Claude was measuring those in-module opti functions when the answer stopped, with no edits made yet.
+Claude's answer did not yet say which of those functions should move out of their modules.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:02
+
+**Yoann:**
+
+> ok let's keep the remaining _opti then. For CSS, we do want CSS support, so that mini-netscape renders better wikipedia than tiny-www for example. For the preludes yes let's simplify them if lots of the stuff in it is for youtube and gmail that we have no hope really to handle given our LOC budget
+
+**Claude (summary):**
+
+Claude cut YouTube, Gmail and framework parts from the preludes, leaving the five test sites unchanged.
+Claude proposed the next cut: the pre-CSS layout in Html_layout's passes and Looks, about 700 lines.
+Claude noted no site runs these passes, so CSS through Cascade, Computed and Box_layout would stay.
+Claude planned to verify that cut with sites.sh against the previous binary on the five live sites.
+Claude had left the prelude cut uncommitted, asking whether to commit it with sites.sh first.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 10:58
+
+**Yoann:**
+
+> let's do it; Also I think we can restore the budget to 25000 LOC with those simplifications
+
+**Claude (summary):**
+
+Claude finished step 3 by splitting tiny-assembler and tiny-linker out of tiny-machine, with byte-identical images and the budget restored.
+Claude left step 3 uncommitted and offered to commit it by pathspec, as it had done before.
+Claude pointed out that nothing is committed yet and waited for Yoann's go-ahead.
+Claude named step 4 as the next move: modules in tiny-ml, with .mli files, M.x names and a real open.
+Claude described step 4 as compiling one module at a time in tiny-ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:26
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the work as bb00d519 and measured that without pruning, programs grow 7 to 39 percent.
+Claude recommended a generated `M.tmi` interface per module, holding each name's type and arity so direct calls survive.
+Claude proposed taking each type from `M.mli` when present, otherwise from the `.ml` file.
+Claude recommended having tiny-linker drop functions nothing reaches, rather than raising the 384 KB limit in `mlsys.c`.
+Claude proposed keeping screens unchanged and re-recording tetris and play sums only if their timing moved.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:23
+
+**Yoann:**
+
+> yes let's commit and do the next step
+
+**Claude (summary):**
+
+Claude committed the prelude step as bbb83fcf, then cut Mosaic's old layout from `browsers/`, dropping 22,104 counted lines to 20,769.
+Claude removed `Html_layout`'s one-pass algorithm, `Looks`' element table, `Linebreak`, and the old cascade, keeping the box, line and fragment types.
+Claude deleted `Unit_html_layout`, moved `Unit_css`'s cascade tests onto `Cascade`, and rebuilt `Unit_hit` on the box model with recomputed coordinates.
+Claude checked unit tests, frames, mini-ml builds, and five live sites, and all matched the old binary except LWN's ad script.
+Claude left the cut uncommitted and listed the next Stage 1 cuts: printers, ES modules, generators and `Js_utf16`.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:36
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude compressed the rest of the work into tiny-ml's unit compilation, the linker sweep replacing prune, and passing tests.
+Claude waited on the full tiny-kernel make check, with 23 screen sessions and two sound sums, before committing step 4.
+Claude planned to record any screen or sound sums that moved, with reasons, then commit.
+Claude drafted the plan's Status entry and README budget row, leaving the check's outcome blank.
+Claude flagged the one-namespace departure, where `open` is ignored, for Yoann to review.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:50
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the module, shadow tree and custom-element hook removals as 4c31368c, leaving browsers/ at 19,889 lines.
+Claude kept generator support, since Wikipedia's scripts declare two function* and would otherwise fail to parse.
+Claude recorded the cut table in plan_browser.md, after checking the JS modes, frames.sh and five live sites.
+Claude also fixed mini-netscape's mkfile, which still listed the deleted Script_modules unit, before committing.
+Claude listed Js_ast printers, Cors, prelude leftovers, Path B and devtools as remaining work.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 12:48
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that nothing was left to commit, since today's work was already in.
+Claude identified the last two commits as 4c31368c (ES modules and shadow trees removed) and 1b5a1d55 (progress table in `plan_browser.md`).
+Claude confirmed that nothing under `browsers/` or in `plan_browser.md` remained uncommitted.
+Claude attributed commits 317b0b66 and bb00d519 to another session's tiny self-hosting work, not its own.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 11:54
+
+**Yoann:**
+
+> let's commit and move forward!
+
+**Claude (summary):**
+
+Claude finished the step 4 check, with all 23 screens matching, and committed it as 317b0b66.
+Claude proposed starting step 5 with real scoping in tiny-ml, so unit names become M.x for later units.
+Claude proposed renaming libml/calls.ml to TinyCalls.ml and memory.ml to TinyMemory.ml, and adding missing open lines.
+Claude proposed TinyLibCore/ as archived modules (Stdlib, List, String, Hashtbl, Buffer, Sha1) that tiny-linker takes per use.
+Claude proposed a real bucket-array Hashtbl with C hashing, a doubling Buffer, and Sha1 on 16-bit halves.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 12:50
+
+**Yoann:**
+
+> we still need to reduce
+
+**Claude (summary):**
+
+Claude committed da71627b, trimming `browsers/` from 23,038 to 19,841 counted lines.
+Claude found most remaining code runs on five sites, and the preludes are barely used.
+Claude proposed option 1: a smaller language, rewriting `javascript/` and `webapi/` to fit Wikipedia's and ocaml.org's scripts.
+Claude estimated option 1 saves about 3,000 lines, to roughly 16,500, but is a large, riskier job.
+Claude also laid out option 2, Netscape-level scripts only, which would drop Wikipedia's and ocaml.org's scripts.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:01
+
+**Yoann:**
+
+> is there a way where we could reduce the langage and API while still being able to get some of the scripts running so at least the site looks mostly  the same (does not have to be equal). For sure we want JS for interactive thing, because that's what make the page dynamic, but we don't have to support all the JS feature; also maybe there is a way to continue running a script even if some API are not provided to at least get some of the result from the script?
+
+**Claude (summary):**
+
+Claude recommended adding a "C: degrade, don't fail" item to the ix plan, and Yoann approved starting it.
+Claude proposed parse recovery in `Js_parse`: an unparseable function becomes a stub that throws "not supported here", and the rest of the script still runs.
+Claude also proposed lenient host calls in `Js_eval`, so a missing DOM method on an element, `document`, or `window` becomes a logged no-op instead of a TypeError.
+Claude planned to start with these two steps, then test by removing generators and checking whether Wikipedia's scripts still run.
+Claude also covered cutting rarely used features like Proxy, typed arrays, and UTF-16 strings, and switching `sites.sh` to a pixel-diff mode, but treated those as later work.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:11
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude finished the first plan steps: parse recovery, lenient DOM calls, generator runtime removal, Proxy removal, and a sites.sh comparison tool.
+Claude proposed rewriting the preludes in plain ES5 as the largest remaining item, about 1,300 lines of JavaScript.
+Claude said the preludes pull roughly 4,000 engine lines into pages with little script, mostly through classes and getters.
+Claude noted the five test sites call almost nothing in the preludes, so cutting them looked low-risk.
+Claude asked whether to start on the preludes next or stop at the current 19,808 counted lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:34
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-19 12:52
+
+**Yoann:**
+
+> let's do it!
+
+**Claude (summary):**
+
+Claude finished step 5 in two commits, fa73c44a for scoping and 7b625abf for the library modules.
+Claude proposed step 6 as the next move, porting tiny-prof, tiny-db, tiny-vcs without zlib, and tiny-build.
+Claude planned to move each port onto the shared OCaml/tiny-ml dialect used by the other tools.
+Claude planned a make check line per port, running each program from tiny-kernel's /bin.
+Claude left step 6 untouched, with the ports not yet started and no check lines added.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:34
+
+**Yoann:**
+
+> also maybe we can add a flag -strict that returns an error like before (or maybe we can just use the JS console to log those errors as warnings)
+
+**Claude (summary):**
+
+Claude added the strict=on flag and console warnings, and cut several prelude features, bringing browsers/ to 19,608 lines.
+Claude laid out where the C approach stands, noting each further cut is worth only 50–150 lines.
+The largest remaining cut, Js_utf16 at about 185 lines, would split letters in scripts that cut accented text.
+Claude said going much below 19,600 means choosing what the pages lose, and option B would cost Wikipedia and ocaml.org scripts.
+Claude asked whether to keep cutting down the list or stop here and move to devtools and the mpv helper.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:47
+
+**Yoann:**
+
+> I'm not sure we have the budget for devtools, so let's do the mpv helper and calling other external programs for format and media not handled by mini-netscape
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:47
+
+**Yoann:**
+
+> maybe we could drop support for pdf and instead call an external program (like page when under m-ix), but since pdf is now a library, maybe it will not reduce that much the LOC
+
+**Claude (summary):**
+
+Claude replaced mini-netscape's built-in PDF viewer with an external program: PDFs are written to a file and given to `mini-page`, or `page` under m-ix.
+Claude kept `lib_graphics/pdf` in place, since `mini-page` and the office tools still depend on it, so only the viewer went.
+Dropping the viewer saved about 80 lines, but the new helper rules added about 150, leaving `browsers/` at 19,677 counted lines.
+Claude added `helpers.sh` tests using fake programs on the PATH, and they pass on both the dune and mini-ml builds.
+Claude committed the work as 94ffc370, leaving another session's `tests/lite.sh` change out of that commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 14:09
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude left the modified `docs/plans/bugs/ix.md` out of the commit because its uncommitted rows belong to another session.
+Those rows cover the tiny-ml and tiny-db bugs, so Claude did not stage them.
+Claude's own mini-ml YouTube crash row was already included in the helpers commit, 147be675.
+Claude committed the rest, including the helper programs and the `plan_browser.md` progress table.
+Claude also reported `browsers/` shrinking from 23,038 to 19,677 counted lines today.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 14:14
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude first suggested running the full test-lite suite, trying the helpers on a real machine, and fixing the mini-ml crash.
+Claude flagged that removing Js_utf16, about 185 lines, would split accented letters in scripts that cut text.
+Claude described the %mli change in browsers/ as removing about 250 duplicated type lines with no behaviour change.
+Claude noted that the %mli change only applies where Yoann explicitly asks, per his existing rule for that tag.
+Claude left the larger library cuts outside browsers/, up to about 1,500 lines, as later options.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 14:19
+
+**Yoann:**
+
+> let's do the %mli, and let's remove JS_utf16 if in practice mini-netscape still display correctly most pages using accents (e.g., wikipedia)
+
+------------------------------------------------------------------------
+
+## 2026-10-19 14:19
+
+**Yoann:**
+
+> Also I thought craiglist was not working; we have TLS 1.2 and it's still not working?
+
+**Claude (summary):**
+
+Claude explained that craigslist fails because ix has no TLS 1.2 at all, not a missing cipher.
+Claude noted that ix speaks only TLS 1.3, while craigslist accepts only TLS 1.2 with AES-256-GCM.
+Claude estimated a TLS 1.2 handshake at 150–250 lines across lib_networking and lib_crypto, then asked whether to build it.
+Yoann declined that work, so craigslist stays unsupported.
+Earlier, Claude also committed the `[%mli]` type sharing and replaced Js_utf16 with a byte-based Js_string.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 13:35
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude ported tiny-prof, tiny-db, tiny-vcs and tiny-build, each one file that both OCaml and tiny-ml build.
+Claude checked tiny-db's 40 sessions against SQLite, and tiny-vcs's hashes against the host's, on tiny-kernel.
+Claude added db, vcs and build to tiny-kernel's /bin, with console session tests in TinyKernel_tests.
+To make these ports fit, Claude added parameterized abbreviations to tiny-ml and raised the kernel's image limit to 7.5 MB.
+Step 6 is not committed yet, and the tiny-kernel `build -j 3` pipeline hang is recorded as open.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 16:48
+
+**Yoann:**
+
+> excellent! Let's commit
+
+**Claude (summary):**
+
+Claude committed step 6 by pathspec, covering all 62 of its files in one commit.
+Claude's commit held the four ported tools, tiny-ml, the library and kernel changes, docs, and tests.
+It also picked up the new Seq files and the three .keys sessions.
+Claude left docs/yoann_notes/prompt-history.md out, so it stays staged as the other session had it.
+Claude named step 7, running the toolchain on tiny-kernel, as the next task.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 16:39
+
+**Yoann:**
+
+> not worth it. Ok what's next?
+
+**Claude (summary):**
+
+Claude reported browsers/ at 19,277 counted lines, meeting the 20,000 target but still above the kernel.
+Claude recommended cutting about 400 to 700 more lines toward 18,600, starting with Js_ast's printers and Cors.
+Claude proposed trimming the uncalled parts of Script_prelude (641 lines) and Js_prelude (500), found via coverage.
+Each cut would be checked with sites.sh -c, as before, to confirm the five test sites still pass.
+Claude also recommended fixing the mini-ml crash on YouTube's live page, logged in docs/plans/bugs/ix.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 16:49
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-19 16:50
+
+**Yoann:**
+
+> let's do 1 and 2
+
+**Claude (summary):**
+
+Claude listed its uncommitted changes: two new Testutil_js_ast files, edited browsers/ files, and runtime/gc.c.
+Claude also listed docs/plans/bugs/ix.md and docs/plans/plan_browser.md as uncommitted, alongside those code changes.
+Claude said the tiny/ and README.md changes came from another session, so they should stay out of its commit.
+Claude asked whether to commit its own changes, since nothing had been committed yet.
+Earlier, Claude fixed the mini-ml YouTube crash and trimmed about 264 lines from the browser preludes.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 17:48
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the progress as two separate commits, using pathspecs to leave the other session's staged files out.
+Commit f46346db fixes the mini-ml YouTube crash by making the style-sheet reader loop instead of recursing per token.
+That commit also adds a guard area after mini-ml's value stack, raises a clear "stack overflow" error, and marks the bug fixed in `bugs/ix.md`.
+Commit 675e2eef moves the printers into the tests and removes the unused application parts of the two preludes.
+Claude updated the affected tests, the plan's progress table, and both READMEs, leaving `browsers/` about 264 lines smaller.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 17:50
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended finishing the size work first: fix the line-count mismatch in the plan table and run the full `make test-lite`.
+Claude found `browsers/` at about 19,010 lines, under target, with the table's 19,277 figure measured differently.
+Claude listed two remaining options: a per-call stack check in mini-ml, and a kernel cut that would drop Wikipedia's scripts.
+Claude also offered speed work or more `sites.sh` testing as the next directions.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 17:51
+
+**Yoann:**
+
+> maybe let's add a few "Chrome" and feature to mini-netscape like the omnibox, saved history, etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 17:51
+
+**Yoann:**
+
+> hopefully we don't need too many LOC
+
+------------------------------------------------------------------------
+
+## 2026-10-19 16:51
+
+**Yoann:**
+
+> I guess the toplevel README.md and tiny/README.md can be simplified now; we used to have different categories, for the prog that were running only on the host, and otherwise, and now it should be simpler
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:01
+
+**Yoann:**
+
+> those multiline string with ^ are horrible
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:02
+
+**Yoann:**
+
+> I think you can use multiline string
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:02
+
+**Yoann:**
+
+> no need to those intermediate "" ^
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:02
+
+**Yoann:**
+
+> I think a string can be on multiple lines
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:02
+
+**Yoann:**
+
+> if not, then let's add {| |
+
+------------------------------------------------------------------------
+
+## 2026-10-19 17:52
+
+**Yoann:**
+
+> probably we can also have bookmarks which is a classic browser feature; it's as fundamental and classic as the back button in some sense
+
+**Claude (summary):**
+
+Claude added bookmarks to mini-netscape, with a Bookmarks button before Location and Ctrl+D to bookmark the current page.
+Claude saved bookmarks in the profile as bookmarks.html, in Netscape's format that Firefox and Chrome can import and export.
+Claude made the Bookmarks button open about:bookmarks, and the Location drop-down offers matching bookmarks and history pages.
+Claude also added history, tabs, and DuckDuckGo Lite search, costing 216 lines in total across mini-netscape.
+Claude verified both builds pass 30 frame sessions, then left the changes uncommitted and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:08
+
+**Yoann:**
+
+> great! let's commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:08
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude committed the change as 820594d7 by pathspec, leaving another session's edit to docs/plans/bugs/ix.md out of it.
+Claude recommended trying bin/mini-netscape in a real window, since the Ctrl shortcuts were only tested with recorded key scripts.
+Claude flagged a line-count mismatch: its count gives 19,833 against the 19,277 in the plan's table, to be recounted.
+Claude proposed running the full make test-lite, which hasn't run since the size cuts, and then adding Find in page and View source.
+Claude recommended the order: Yoann's window run first, then the line count and tests, then Find in page.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:12
+
+**Yoann:**
+
+> can you add a -v to mini-netscape similar to mini-chrome where we see the files modified on the disk (e.g., loading preferences, saving preferences), via Logs.info, the url fetched etc.
+
+**Claude (summary):**
+
+Claude added a `-v` flag to mini-netscape that logs profile reads and writes, each fetch and its answer, and helper runs via `Logs.info`.
+Claude made `-v` and `-debug` options of the playground's `Session`, so every platform parses them and any playground program gets them.
+Claude installed the log reporter with `Logging.setup` before flag parsing, so nothing prints without `-v`.
+Claude fixed `bookmarks.html` being rewritten whenever only the history changed, so each file is now written only when its own list changes.
+Claude left the 57-added, 18-removed change across six files uncommitted after the netscape tests passed on both builds, and offered to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:17
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the `-v` change as 141285f5 and confirmed nothing in `browsers/` or `lib_playground/` remains uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:18
+
+**Yoann:**
+
+> a weird thing I see is that if I go to HN, and use Ctrl^ to augment the font, and then I click a link, for a very short period of time it's like the HN page is reloaded with a smaller font and then it follows the link
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:19
+
+**Yoann:**
+
+> also back is not always responsive when some compuation is done in the rendered part; are we using threads for mini-netscape?
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:19
+
+**Yoann:**
+
+> (ideally we could do like mini-chrome and have either threads or domains depending on the available ocaml (and source or threads when using mini-ml)
+
+**Claude (summary):**
+
+Claude recommended a build-time Worker_spawn module: Thread on OCaml 4.14, Domain on OCaml 5, and lib_core's Thread for mini-ml.
+Claude proposed running a tab's fetch, parse, scripts and layout on a worker, so the window stays responsive.
+Claude said Back, a click or a new address would replace the tab at once and drop late results.
+Claude noted that Cookie_jar and Keep_alive's connections need a lock, and mini-ml socket reads must go through Source.
+Claude fixed the zoom flash, caused by per-site zoom read from Tab.url, but left the fix uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:25
+
+**Yoann:**
+
+> let's commit and begin Worker_spawn work for a more interactive and responsive mini-netscape
+
+**Claude (summary):**
+
+Claude found that mini-ml's cooperative threads block on any socket read, so its build still waits 4 seconds.
+Claude proposed fixing this by routing mini-ml's network reads through Source, step 3 of the plan.
+Claude did not explain how Source works in that answer; it only named it as the fix.
+Claude said it would leave the ix.md changes out, since another session wrote them.
+Claude committed the zoom fix as 5585e416 and built the Tab_worker background loader, which is still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 19:05
+
+**Yoann:**
+
+> yes, let's commit and go on to Source. Also I still don't fully understand this Source thing, how it works, why it was simpler that implementing real threads like in OCaml itself
+
+**Claude (summary):**
+
+Claude committed the worker as dde77021 and found that mini-netscape's mini-ml build has no window.
+Claude explained Source as forked reader processes feeding one shared pipe, read only when all threads wait.
+Claude contrasted it with OCaml systhreads, which need a thread-safe runtime, pthreads, and lock-releasing blocking calls.
+Claude argued Source was simpler because nothing is shared and it needs only fork, pipe, read and write.
+Claude noted that mini-9pi would need Source too, since its window build must wait on channels.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 19:13
+
+**Yoann:**
+
+> ok i now understand better the source design; maybe we should create a note document for it. Regarding the options, for sure we also want mini-netscape to work under mini-9pi too, so we would need to use Source there
+
+**Claude (summary):**
+
+Claude wrote docs/notes_source.md explaining Source's design, linked from docs/README.md and Source.mli, with nothing committed yet.
+Claude recommended a network process forked once at startup for mini-netscape on mini-9pi, modeled on Plan 9's webfs.
+Claude rejected forking a process per connection, since mini-9pi's fork copies all memory the program has touched.
+Claude laid out stage 10 in four steps, starting with the first-ever build of mini-netscape for OS=plan9.
+Claude asked whether to commit these docs and start that first build, which can be checked without the emulator.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 19:18
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-19 19:19
+
+**Yoann:**
+
+> also just like every TinyPrograms (except TinyMachine itself) should run under the tiny-kernel in the tiny-machine, all m-ix programs should run under mini-9pi running under mini-qemu.
+
+**Claude (summary):**
+
+Claude got mini-netscape building for mini-9pi, fixing four arm32 parameter-limit functions and the mkfile details.
+Claude listed the uncommitted files: the Js_builtins and Js_eval JavaScript files, Box_layout.ml, netscape's mkfile, the plan, and one bugs/ix.md row.
+Claude proposed committing only its own bugs/ix.md row, leaving the two lines from another session's work untouched.
+Claude suggested running netscape once under mini-9pi to show about:home, as a minutes-long emulator check.
+Claude then asked whether to commit first and then do the mini-9pi run.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 18:03
+
+**Yoann:**
+
+> {| |} to tiny-ml; I'd rather add 10 lines in tiny-ml to implement this feature than having all those horrible help string concatenation expressions
+
+**Claude (summary):**
+
+Claude finished step 7 of t-IX, leaving everything uncommitted, with tiny-kernel's /bin now holding the toolchain.
+Claude verified each toolchain tool matches the host byte for byte, including ml compiling TinyML.ml itself.
+Claude re-recorded check.expected, four changed screen sums, and two sound sums that move with timing.
+Claude left tests/lite.sh and mkfiles/check.sh unrun, and noted TinyUtilities' du failure predates this step.
+Claude updated the t-IX line count to 20,345, leaving 4,700 of the 25,000 budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 07:21
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude announced step 8 as the next task: building the system on tiny-kernel.
+The build would run from the tiny-kernel sources under /sys/src.
+Step 8 was stated as the next action and had not started when the answer ended.
+Claude committed step 7 as 423d5e76, covering 55 changed files and 5 new ones.
+Claude left out docs/yoann_notes/prompt-history.md and browsers/, and the prompt history stays staged.
+
+------------------------------------------------------------------------
+
+## 2026-10-19 19:28
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as 41fff3e5, staging only its own line in `docs/plans/bugs/ix.md`.
+Claude left the other session's two new lines uncommitted in the working file.
+Claude's next step is running the build once under mini-9pi, showing `about:home` in a mini-rio window.
+That run also checks whether the build fits in the Pi 1's memory.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 07:26
+
+**Yoann:**
+
+> where is mini-netscape on the mini-9pi disk image under /progs?
+
+**Claude (summary):**
+
+Claude said mini-netscape is not on the mini-9pi card image, since `kernels/9pi/Makefile` has no category for it. It proposed a `net` category in `CARD_PROGS` that would bind `/root/progs/net` after `/bin`. It also noted the 5.6 MB netscape binary and the unchecked space on the 95 MB card. Claude then asked whether to add the `net` category and run the step-1 test, and Yoann said yes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 07:27
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude put mini-netscape on the card as `/progs/net/netscape` and ran it under mini-9pi, where `about:home` rendered.
+Claude said the red border showed only on QEMU's first screen, with no source found yet.
+Claude guessed it was the screen's state during startup and planned to compare it with mini-qemu's screens.
+Claude also noted the mouse position differed, since the second mini-qemu run had two extra moves.
+Claude said only `about:home` was shown because network fetches need the unbuilt network process, and nothing was committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 07:22
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude raised the exec argument limits to 63 and moved the kernel's buffers to fit a 10 MB image.
+Claude started the full self-build from /sys/src on a 64 MB disk, running in the background on tiny-kernel.
+Claude traced the network test's "linux" failure to the stale October 19 _make/boot.img, not this step's changes.
+Claude booted the new image directly, and its Linux checks passed with 0 failures, httpd listing included.
+Claude planned to check the self-build in about 30 minutes, since it will run for hours.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:26
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude noted step 8 was uncommitted while tiny-kernel's self-build ran, roughly 25 minutes in.
+Claude had compiled TinyLibCore once, so tiny-ml reads interfaces from /sys/lib/ml and programs link its objects.
+Claude had also put the sources into the image at /sys/src and /sys/lib/ml, plus a generated TinyKernel Buildfile.
+Claude had raised the kernel's directory-name limit to 27 bytes and exec arguments to 63, fixing two bugs.
+Claude had added make self, booting a blank disk to run the full self-build and cmp checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 07:42
+
+**Yoann:**
+
+> let's commit; the red is because it has very low fps and the playground lib adds it to warn something is bad. I dunno why netscape has so low fps; also the network does not seem to work and I could not reach the web from mini-pi -g -q mini-9pi
+
+**Claude (summary):**
+
+Claude traced the low frame rate to the red border feeding itself, since slow frames got it and forced redraws.
+Claude made Plan9_loop.ml add the border only when the picture changed, cutting idle redraws to about one per second.
+Claude closed three network gaps: mini-pi now adds usb-net, boot.rc runs timesync from /bin, and the card gets /lib/tls/ca.pem.
+Claude checked under QEMU that date is right and curl fetches example.com over both http and https, 577 bytes each.
+Claude proposed one commit of those files plus two bugs/ix.md rows, noting the card and window checks were not run.

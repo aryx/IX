@@ -291,6 +291,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
     and clock = Event.wrap (Event.receive ticks) (fun () -> Tick) in
     let holds = match kbd with Some h -> [ Event.wrap (Keyboard.message h) (fun (m : string) -> Held m) ] | None -> [] in
     let quit = ref false and ticked = ref false in
+    (* the program's picture at the last frame, for the red frame *)
+    let previous : Playground.shape list ref = ref [] in
     (* The meter (the flag stats=on): every 40 frames drawn, what one
      * cost, on the standard error: the program's ticks (its update), its
      * view made, the frame shown (the platform says more of that part). *)
@@ -365,7 +367,16 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
            * old: if did then incr drawn) *)
           let t1 = if stats then Unix.gettimeofday () else 0. in
           let shapes = Session.view run in
-          let shapes = if cut then shapes @ late_frame else shapes in
+          (* (the red frame only on a picture that changed: a program
+           * whose picture is the very list of the frame before is
+           * still, late only for having drawn it. Else the red frame
+           * kept itself: drawn, a frame took 250 ms, the next was late,
+           * one without it was another picture, drawn again: mini-
+           * netscape on a page at rest, every frame drawn under QEMU.
+           * old: if cut then shapes @ late_frame else shapes) *)
+          let still = shapes == !previous in
+          previous := shapes;
+          let shapes = if cut && not still then shapes @ late_frame else shapes in
           let t2 = if stats then Unix.gettimeofday () else 0. in
           let did = show shapes !fps in
           incr drawn;

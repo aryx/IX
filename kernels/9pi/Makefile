@@ -849,6 +849,9 @@ endef
 #              a MOD, a MIDI file, an ABC tune, two MP3s, an MP2:
 #              lib_audio/tests/data's; play /lib/sounds/tune.mod:
 #              docs/plans/plan_audio.md, stage 5)
+#              and the roots a certificate is checked against
+#              (/lib/tls/ca.pem: this machine's, Tls_client's place on
+#              a card), for https:// in netscape, lynx and curl
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)
@@ -905,6 +908,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
   lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \
+  lib/tls/ca.pem=$(CA_PEM) \
   usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources

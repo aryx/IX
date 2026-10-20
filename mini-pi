@@ -198,7 +198,10 @@ case $1 in
       # busy cores there are four times slower than one.
       # old: [ $qemu = 1 ] && ..., mini-qemu having one core)
       [ $board = pi2 ] && others+=(-device loader,addr=0x7000,data=0x534d5021,data-len=4)
-      args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${others[@]}" "${sd[@]}" "${display[@]}")
+      # (an Ethernet, as the board's: QEMU's user network, the host's
+      # Internet behind 10.0.2.2, which boot.rc configures)
+      net=(-device usb-net,netdev=n0 -netdev user,id=n0)
+      args=(-M $machine -device loader,file=$image,addr=0x8000,cpu-num=0,force-raw=on "${others[@]}" "${sd[@]}" "${display[@]}" "${net[@]}")
     else
       image=kernel-pi4-ix.elf; [ $graphics = 1 ] && image=kernel-pi4-ixu.elf
       smp=1; [ $qemu = 1 ] && smp=4

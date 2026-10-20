@@ -133,7 +133,8 @@ if(ls '#l0/ether0' > /dev/null >[2] /dev/null){
 		echo add 10.0.2.15 255.255.255.0 > /net/ipifc/0/ctl
 		echo add 0 0 10.0.2.2 > /net/iproute
 		echo 'dns=10.0.2.3' > /net/ndb
-		if(ls /boot/timesync > /dev/null >[2] /dev/null){
+		# (/bin: the image's /boot, or the card's /progs/net)
+		if(ls /bin/timesync > /dev/null >[2] /dev/null){
 			now=`{timesync pool.ntp.org >[2] /dev/null}
 			if(! ~ $#now 0) echo $now > /dev/time
 		}

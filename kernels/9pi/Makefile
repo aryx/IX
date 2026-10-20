@@ -314,7 +314,7 @@ IX9 = $(IX)/_mk/5-plan9
 IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc apps/music/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
-  typesetting/troff typesetting/man
+  typesetting/troff typesetting/man networking browsers/lynx browsers/netscape
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -811,6 +811,10 @@ endef
 #                games      tetris, wolfenstein, cameltry, breakout, tronscroll
 #                           (for two boards: its network), and their
 #                           -soft variants
+#                net        mini-netscape and the networking programs
+#                           ("we could have /progs/net/ and put the
+#                           mini-netscape in it at some point"):
+#                           netscape, lynx, curl, timesync
 #                utilities  utilities/'s, in its directories (a
 #                           directory with more than ten programs is
 #                           cut further; none for one program: cmp,
@@ -822,9 +826,7 @@ endef
 #              and, when they are on the card, toolchain: the
 #              assembler, the linker, the compilers ("I was thinking of
 #              /progs/toolchain actually for mini-asm, mini-ld, etc.";
-#              plan_self_hosting.md), and net: mini-netscape and the
-#              networking programs ("we could have /progs/net/ and put
-#              the mini-netscape in it at some point")
+#              plan_self_hosting.md)
 #              (old: all of them in bin/arm, Plan 9's place)
 #   rc/bin     the commands that are scripts (kill), bound after it too
 #   usr/pad    a user's directory, where the shell starts
@@ -877,7 +879,9 @@ CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
 # the typesetter and the manual (docs/plans/plan_typesetting.md, stage 8)
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
-CARD_PROGS = system apps devtools games utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
+# the browsers and the network's programs (plan_browser.md, stage 10)
+CARD_net = netscape=$(IX9)/browsers/netscape/netscape lynx=$(IX9)/browsers/lynx/mini-lynx curl=$(IX9)/networking/mini-curl timesync=$(IX9)/networking/mini-timesync
+CARD_PROGS = system apps devtools games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe

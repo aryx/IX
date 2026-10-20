@@ -564,7 +564,13 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
         let controls = Browser_draw.controls_drawn ~value:(Browser_page.value_of p) ~focus:(Tab.focus m.tab) p.layout in
         let seen = List.filter_map (fun (top, bottom, shape) -> if bottom > scroll && top < scroll +. (visible /. z) then Some (Browser_draw.shape_of shape) else None) (p.drawn @ controls) in
         let r, g, b = match p.background with Some c -> c | None -> (255, 255, 255) in
-        [ box (P.rgb r g b) 0. top width visible; P.move 0. (-.top) (P.scale z (P.move 0. scroll (P.group seen))) ]
+        (* (a shape's move is not scaled by its own scale, Playground's
+         * transform being the move, then the scale: the scroll, in the
+         * page's units, is z times as much in the window's. old: (P.scale
+         * z (P.move 0. scroll ...)), the page scrolled by scroll / z where
+         * the lines kept were those from scroll: at 250%, a band of them
+         * missing at the window's top, wider as one scrolled) *)
+        [ box (P.rgb r g b) 0. top width visible; P.move 0. ((scroll *. z) -. top) (P.scale z (P.group seen)) ]
   in
   let toolbar =
     box grey 0. 0. width toolbar_height

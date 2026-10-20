@@ -295,6 +295,50 @@ ml_concat(value a, value b)
 	return s;
 }
 
+/* String.concat: the strings of a list (a cell a block of two fields,
+ * [] an integer, as ML makes them) joined by sep, the result made once
+ * (old: in ML, TinyLibCore's String.concat, three calls of the runtime
+ * a piece: Printf's strings, many pieces of a few bytes, cost more than
+ * the ^ they replaced) */
+value
+ml_string_concat(value sep, value l)
+{
+	value n;
+	value ls;
+	value c;
+	value s;
+	value r;
+	value pos;
+	value i;
+	value k;
+
+	ls = length(sep);
+	n = 0;
+	for(c = l; (c & 1) == 0; c = ((value*)c)[1])
+		n += length(((value*)c)[0]) + ls;
+	if((l & 1) == 0)
+		n -= ls;
+	push(sep);
+	push(l);
+	r = string_alloc(n);
+	l = pop();
+	sep = pop();
+	pos = 0;
+	for(c = l; (c & 1) == 0; c = ((value*)c)[1]){
+		s = ((value*)c)[0];
+		k = length(s);
+		for(i = 0; i < k; i++)
+			((uchar*)r)[pos + i] = ((uchar*)s)[i];
+		pos += k;
+		if((((value*)c)[1] & 1) == 0){
+			for(i = 0; i < ls; i++)
+				((uchar*)r)[pos + i] = ((uchar*)sep)[i];
+			pos += ls;
+		}
+	}
+	return r;
+}
+
 /* n's digits at the end of buf; where they start */
 static value
 digits(value n, char *buf)

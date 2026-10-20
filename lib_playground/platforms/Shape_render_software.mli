@@ -106,3 +106,12 @@ val length_scale : Affine.t -> float
  * draw platform makes a picture's pixels with, before the device has
  * them *)
 val draw_pixels : Framebuffer.t -> Affine.t -> w:float -> h:float -> Rgba_image.t -> alpha:float -> unit
+
+(* ix: [mask_of ~aa m letters s ~qx ~qy]: the letter [s] in [letters]'
+ * look, by m's turn and scale (not its move), placed qx and qy
+ * quarters of a pixel right and down: how much of each pixel of a
+ * box of w by h its strokes cover, row by row, the letter's origin at
+ * (ox, oy) of the box. Kept once made. What the draw platform gives
+ * the device for a letter, once. *)
+type mask = { w : int; h : int; ox : int; oy : int; cover : float array }
+val mask_of : aa:bool -> Affine.t -> Playground.letters -> string -> qx:int -> qy:int -> mask

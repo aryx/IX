@@ -51,7 +51,12 @@ type window = {
   mutable last : Playground.shape list option;
   (* the last pictures shown, each an image of the kernel's *)
   mutable pictures : picture list;
+  (* the letters drawn so far, each an image of the kernel's (Letters) *)
+  letters : (letter, (Display.image * Shape_render_software.mask) option) Hashtbl.t;
 }
+
+(* a letter in a look, at a size, by a transform's turn and scale *)
+and letter = string * float * bool * bool * float * float * float * float
 
 (* a Bitmap's picture as it was last shown: which (the value itself),
  * through which transform, less its place; and the kernel's image of
@@ -93,7 +98,7 @@ let window (display : Display.t) : window =
   { view; at = Rectangle.v x y (x + n) (y + n); size = n; scale = float n /. Playground.default_width;
     (* (the screen's format: showing it is a copy) *)
     back = Display.alloc display (Rectangle.v 0 0 n n) (Display.format display) ~repl:false Display.white;
-    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = [] }
+    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; letters = Hashtbl.create 512 }
 
 (* What a shape costs here is counted in the plan
  * (docs/plans/plan_playground_speed.md): by mini-ml's code on arm a
@@ -337,6 +342,67 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
       win.pictures <- List.filteri (fun (i : int) (_ : picture) -> i < kept_pictures) now;
       image
 
+(* Letters: each letter's mask made by the software renderer, as on
+ * Linux (Shape_render_software.mask_of), given to the device once, an
+ * image of a bit a pixel (k1); a letter drawn is then one message, the
+ * colour through it, the device's way with a character of a font
+ * (Memdraw's fast case for a mask of bits). XRender's glyph sets with
+ * the software renderer as FreeType (docs/notes_font.md). A pixel is
+ * the letter's when its strokes cover a third of it or more (the
+ * device has no smoothing at a mask of bits; a half lost a thin
+ * stroke's pixels); the place is a whole pixel.
+ * old: each letter's strokes, Letter_strokes' thin rectangles, a line
+ * or a polygon each (letters_kept := false, the flag letters=strokes) *)
+let letters_kept = ref true
+let covered = 1. /. 3.
+
+let letter_image (win : window) (m : Affine.t) (l : Playground.letters) (s : string) : (Display.image * Shape_render_software.mask) option =
+  let key = (s, l.size, l.bold, l.italic, m.a, m.b, m.c, m.d) in
+  match Hashtbl.find_opt win.letters key with
+  | Some k -> k
+  | None ->
+      let k : Shape_render_software.mask = Shape_render_software.mask_of ~aa:true m l s ~qx:0 ~qy:0 in
+      let row = (k.w + 7) / 8 in
+      let bits = Bytes.make (row * k.h) '\000' in
+      let any = ref false in
+      for j = 0 to k.h - 1 do
+        for i = 0 to k.w - 1 do
+          if k.cover.((j * k.w) + i) >= covered then begin
+            any := true;
+            let b = (j * row) + (i / 8) in
+            (* (the leftmost pixel the byte's high bit, Plan 9's) *)
+            Bytes.set bits b (Char.chr (Char.code (Bytes.get bits b) lor (0x80 lsr (i mod 8))))
+          end
+        done
+      done;
+      (* (a space: no image) *)
+      let image =
+        if not !any then None
+        else begin
+          let image = Display.alloc win.back.display (Rectangle.v 0 0 k.w k.h) "k1" ~repl:false Display.black in
+          Display.load image image.r (Bytes.to_string bits);
+          Some (image, k)
+        end in
+      (* (a page's letters at a few sizes are some hundreds; a zoom
+       * makes others: the table emptied when larger than a page needs) *)
+      if Hashtbl.length win.letters >= 2048 then begin
+        Hashtbl.iter (fun (_ : letter) (i : (Display.image * Shape_render_software.mask) option) -> Option.iter (fun ((i : Display.image), _) -> Display.free i) i) win.letters;
+        Hashtbl.reset win.letters
+      end;
+      Hashtbl.replace win.letters key image;
+      image
+
+let letters (win : window) (m : Affine.t) (l : Playground.letters) (src : Display.image) : unit =
+  List.iter
+    (fun ((x, s) : float * string) ->
+      match letter_image win m l s with
+      | Some (image, k) ->
+          let p = pt (Affine.apply m (x, l.baseline)) in
+          let x0 = p.x - k.ox and y0 = p.y - k.oy in
+          Draw.draw_mask win.back (Rectangle.v x0 y0 (x0 + k.w) (y0 + k.h)) src Point.zero image Point.zero
+      | None -> ())
+    l.at
+
 let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
   let m = placed m s in
   let src (c : Color.t) : Display.image = ink win (rgb_of_color c) s.alpha in
@@ -354,7 +420,7 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
     | Circle (c, r) -> ellipse win m r r (src c)
     | Oval (c, w, h) -> ellipse win m (w /. 2.) (h /. 2.) (src c)
     | Words (c, str) -> words win m str (src c)
-    (* (a run of letters: its strokes, for now) *)
+    | Letters (c, l) when !letters_kept -> letters win m l (src c)
     | Letters (c, l) -> List.iter (shape win m) (List.map (fun (k : Playground.shape) -> { k with alpha = s.alpha }) (Letter_strokes.shapes c l))
     | Bitmap (w, h, img) -> (
         match if s.alpha < 1. then None else picture win m w h img with
@@ -470,10 +536,12 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   stats := List.assoc_opt "stats" (Plan9_loop.flags caps) = Some "on";
   counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
   bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
+  letters_kept := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "strokes";
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors;
         List.iter (fun (p : picture) -> Option.iter Display.free p.image) w.pictures;
+        Hashtbl.iter (fun (_ : letter) (i : (Display.image * Shape_render_software.mask) option) -> Option.iter (fun ((i : Display.image), _) -> Display.free i) i) w.letters;
         Display.free w.back) }
     caps flags app

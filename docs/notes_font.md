@@ -168,11 +168,28 @@ common line.
   letters' shapes are the same, their edges smoothed otherwise: the
   recorded frames were recorded again, and the playground's golden
   pictures are compared with a tolerance (games/tests/frames.sh).
-- **On mini-9pi**, the draw platform keeps a *font image* in the
-  kernel for each look at a size in pixels, Plan 9's cache image, and
-  puts each letter there the first time it is used. A letter drawn is
-  then one copy in the kernel, the colour through the font image as a
-  mask: Plan 9's 's', one message a letter.
+- **On mini-9pi**, the draw platform keeps an image in the kernel for
+  each letter at a size, a look and a scale, and puts the letter there
+  the first time it is used. A letter drawn is then one copy in the
+  kernel, the colour through that image as a mask: Plan 9's 's', one
+  message a letter. Done 2026-10-20 the second way below (the author:
+  "I would experiment first with reusing the software renderer also
+  for mini-9pi and send the letter via bitmap once to the kernel"):
+  Linux's mask, a pixel the letter's where its strokes cover a third
+  of it, an image of a bit a pixel (k1), whose copy is the device's
+  fast case for a character. The flag `letters=strokes` draws the
+  strokes again. Measured under QEMU, about:home with the mouse over
+  its links (`stats=on`), a frame shown:
+
+  | | strokes | letters kept |
+  |---|---|---|
+  | the messages (the program) | 220 ms | 20 ms |
+  | the device (the kernel) | 113 ms | 90 ms |
+
+  What is left is the device's, not yet looked into: at each change
+  the frame is made white and copied whole to the window, which the
+  letters' copies may not be the most of (plan_playground_speed.md's
+  other stages: a frame drawn only where it changed).
 - **Who rasterizes, two ways** (the author: "An alternative would be
   to do this caching font work user-side and not send draw commands
   (strokes) but instead a bitmap of the 'rendered' image user side";

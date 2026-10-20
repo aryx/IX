@@ -517,27 +517,24 @@ let print (caps : < Cap.stdout; .. >) s = TinyLibSystem.print caps s
 
 (* help: a database made and queried first, then the rest; the tables
  * after it *)
-(* (old: a {|quoted string|}, which tiny-ml does not read) *)
-let help =
-  String.concat "\n" [
-    "A statement a line. A table, its rows, then queries:";
-    "  table books (id int key, title text, author text, year int)";
-    "  insert books (1, \"SICP\", \"Abelson\", 1985), (2, \"TAOCP\", \"Knuth\", 1968)";
-    "  books";
-    "  books | where year > 1980 | select title, year";
-    "A query is a table, then stages, each after a |:";
-    "  where year > 1980 and not author = \"Knuth\"   (= != < <= > >= + - * / or)";
-    "  select title, age = 2026 - year              the columns, computed ones too";
-    "  join authors                                 on the columns of the same name";
-    "  group author (n = count, last = max year)    (count, sum c, min c, max c)";
-    "  sort year desc, title";
-    "  take 10";
-    "  delete, or set year = year + 1               last, on the rows the wheres kept";
-    "Also:";
-    "  index books year        an index on a column, which where uses";
-    "  explain QUERY           how a query reads its table";
-    "  help                    this, and the tables";
-    "" ]
+let help = {|A statement a line. A table, its rows, then queries:
+  table books (id int key, title text, author text, year int)
+  insert books (1, "SICP", "Abelson", 1985), (2, "TAOCP", "Knuth", 1968)
+  books
+  books | where year > 1980 | select title, year
+A query is a table, then stages, each after a |:
+  where year > 1980 and not author = "Knuth"   (= != < <= > >= + - * / or)
+  select title, age = 2026 - year              the columns, computed ones too
+  join authors                                 on the columns of the same name
+  group author (n = count, last = max year)    (count, sum c, min c, max c)
+  sort year desc, title
+  take 10
+  delete, or set year = year + 1               last, on the rows the wheres kept
+Also:
+  index books year        an index on a column, which where uses
+  explain QUERY           how a query reads its table
+  help                    this, and the tables
+|}
 
 (* delete, or set its items (old: a case of exec, Delete (name, stages)
  * | Update (name, stages, _), an or-pattern with variables, which

@@ -27,6 +27,9 @@ external ( lsl ) : int -> int -> int = "%lsl"
 external ( lsr ) : int -> int -> int = "%lsr"
 external ( asr ) : int -> int -> int = "%asr"
 external lnot : int -> int = "%lnot"
+(* OCaml's: a block of one field, as %ref makes it, which r.contents and
+ * { contents = x } name (tiny-ml's type checker matches on them) *)
+type 'a ref = { mutable contents : 'a }
 external ref : 'a -> 'a ref = "%ref"
 external ( ! ) : 'a ref -> 'a = "%field0"
 external ( := ) : 'a ref -> 'a -> unit = "%setfield0"
@@ -53,6 +56,8 @@ exception Not_found
 exception Failure of string
 exception Invalid_argument of string
 exception Exit
+(* (Int64's: tiny-ml's / gives 0, as ocaml-light's did) *)
+exception Division_by_zero
 
 let failwith s = raise (Failure s)
 let invalid_arg s = raise (Invalid_argument s)

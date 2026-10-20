@@ -8,6 +8,8 @@ external length : bytes -> int = "ml_string_length"
 external get : bytes -> int -> char = "ml_string_get"
 external set : bytes -> int -> char -> unit = "ml_bytes_set"
 external to_string : bytes -> string = "ml_bytes_to_string"
+(* (a copy, either way: the runtime's one function) *)
+external of_string : string -> bytes = "ml_bytes_to_string"
 external blit_string : string -> int -> bytes -> int -> int -> unit = "ml_bytes_blit_string"
 
 (* (bytes and a string are the same block: string's functions; blit

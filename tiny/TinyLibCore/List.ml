@@ -24,6 +24,19 @@ let rec mem x = function [] -> false | y :: l -> x = y || mem x l
 let rec assoc x = function [] -> raise Not_found | (a, b) :: l -> if a = x then b else assoc x l
 let rec assoc_opt x = function [] -> None | (a, b) :: l -> if a = x then Some b else assoc_opt x l
 let rec find_opt p = function [] -> None | x :: l -> if p x then Some x else find_opt p l
+let rec find p = function [] -> raise Not_found | x :: l -> if p x then x else find p l
+let rec find_map f = function [] -> None | x :: l -> (match f x with Some y -> Some y | None -> find_map f l)
+let rec rev_append l acc = match l with [] -> acc | x :: l -> rev_append l (x :: acc)
+let rec combine l1 l2 =
+  match l1, l2 with
+  | [], [] -> []
+  | x :: l1, y :: l2 -> (x, y) :: combine l1 l2
+  | _ -> invalid_arg "List.combine"
+let rec for_all2 p l1 l2 =
+  match l1, l2 with
+  | [], [] -> true
+  | x :: l1, y :: l2 -> p x y && for_all2 p l1 l2
+  | _ -> invalid_arg "List.for_all2"
 let rec mem_assoc x = function [] -> false | (a, _) :: l -> a = x || mem_assoc x l
 let rec iter2 f l1 l2 =
   match l1, l2 with

@@ -413,7 +413,7 @@ let run image disk www =
        done_ := !done_ + !n
      with
      | TinyMachineDevices.Halt code -> running := false; status (Printf.sprintf "the machine halted (%d); reload the page to boot it again" code)
-     | TinyMachineCPU.Error e -> running := false; status ("tiny-machine: " ^ e));
+     | TinyMachineISA.Error e -> running := false; status ("tiny-machine: " ^ e));
     screen_show screen mc.cpu; show_text (); wire_show ();
     if mc.mouse.cursor <> !cursor then begin
       cursor := mc.mouse.cursor;

@@ -519,24 +519,34 @@ let basename caps args =
   0
 
 (* the first byte where two files differ, or the one that ends first;
- * -s: only the status *)
+ * -s: only the status. Read a piece at a time, side by side (old: each
+ * file whole: a compiler's output was more than a program's 1 MB on
+ * tiny-kernel) *)
+type compared = Same_bytes | Differ_at of int | Ends_first of string * int
+
 let cmp caps args =
   let flags, files = options "s" args in
   match files with
   | [ f1; f2 ] -> begin
-      match (try Some (TinyLibSystem.read_file caps f1, TinyLibSystem.read_file caps f2) with Failure m -> complain caps "cmp" m; None) with
+      match (try let a = TinyLibSystem.open_in caps f1 in Some (a, try TinyLibSystem.open_in caps f2 with Failure m -> TinyLibSystem.close a; failwith m) with Failure m -> complain caps "cmp" m; None) with
       | None -> 1
-      | Some (a, b) ->
-          let n = min (String.length a) (String.length b) in
-          let rec first i = if i < n && a.[i] = b.[i] then first (i + 1) else i in
-          let i = first 0 in
+      | Some (fa, fb) ->
+          (* pos bytes the same so far; sa and sb what is read past them *)
+          let rec go pos sa sb =
+            let sa = if sa = "" then TinyLibSystem.read fa 4096 else sa and sb = if sb = "" then TinyLibSystem.read fb 4096 else sb in
+            let n = min (String.length sa) (String.length sb) in
+            let rec first i = if i < n && sa.[i] = sb.[i] then first (i + 1) else i in
+            let i = first 0 in
+            if i < n then Differ_at (pos + i)
+            else if n = 0 then (if sa = "" && sb = "" then Same_bytes else Ends_first ((if sa = "" then f1 else f2), pos))
+            else go (pos + n) (String.sub sa n (String.length sa - n)) (String.sub sb n (String.length sb - n)) in
+          let r = go 0 "" "" in
+          TinyLibSystem.close fa; TinyLibSystem.close fb;
           let say s = if not (List.mem 's' flags) then print caps (s ^ "\n") in
-          if i < n then begin say (f1 ^ " " ^ f2 ^ " differ: char " ^ string_of_int (i + 1)); 1 end
-          else if String.length a <> String.length b then begin
-            say ("EOF on " ^ (if String.length a < String.length b then f1 else f2) ^ " after " ^ string_of_int n ^ " bytes");
-            1
-          end
-          else 0
+          match r with
+          | Same_bytes -> 0
+          | Differ_at i -> say (f1 ^ " " ^ f2 ^ " differ: char " ^ string_of_int (i + 1)); 1
+          | Ends_first (f, n) -> say ("EOF on " ^ f ^ " after " ^ string_of_int n ^ " bytes"); 1
     end
   | _ -> raise Usage
 

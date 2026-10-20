@@ -87,10 +87,11 @@
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
  * node (Seq's). A module is a file, a unit (M.x, open M); its types,
  * constructors and labels are the program's, one name space, so M.C
- * is C. Left out: modules inside a file and functors, floats, labels,
- * objects, or-patterns with names in their alternatives, character
- * ranges, inline records, and {|quoted strings|}: tiny-db, tiny-vcs
- * and tiny-build were written again without them.
+ * is C. {|quoted strings|}, OCaml's, are read (a help's text, the
+ * prelude's modules). Left out: modules inside a file and functors,
+ * floats, labels, objects, or-patterns with names in their
+ * alternatives, character ranges and inline records: the tools and the
+ * toolchain were written again without them.
  *
  * What keeps it small while still being an ML compiler:
  *
@@ -270,4 +271,4 @@ type binding
 val compile_unit : (string * binding) list -> (item * int) list -> (string * binding) list * (string * binding) list * int
 
 (* the program: files of ML to a file of assembly (-h: how) *)
-val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> unit
+val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

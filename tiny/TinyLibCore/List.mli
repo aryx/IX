@@ -16,6 +16,11 @@ val mem : 'a -> 'a list -> bool
 val assoc : 'a -> ('a * 'b) list -> 'b
 val assoc_opt : 'a -> ('a * 'b) list -> 'b option
 val find_opt : ('a -> bool) -> 'a list -> 'a option
+val find : ('a -> bool) -> 'a list -> 'a
+val find_map : ('a -> 'b option) -> 'a list -> 'b option
+val rev_append : 'a list -> 'a list -> 'a list
+val combine : 'a list -> 'b list -> ('a * 'b) list
+val for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
 val mem_assoc : 'a -> ('a * 'b) list -> bool
 val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
 val rev_map : ('a -> 'b) -> 'a list -> 'b list

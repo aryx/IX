@@ -119,14 +119,14 @@
  *     0x780000   the value stack: the kernel's own roots (TinyML's)
  *     0x7c0000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
- *     0x800000   the heap, two halves of 1 MB: every file written,
- *                every pipe, descriptor table and closure
  *     0xa00000   the file system's buffers and its map of the
  *                disk's blocks (TinyKernelFS.ml)
  *     0xa14000   unused (but the speaker's ring, at 0xc00000)
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
- *    0x1000000   the processes' partitions: 1 MB each, or what an
+ *    0x1000000   the heap, two halves of 8 MB: every file written,
+ *                every pipe, descriptor table and closure
+ *    0x2000000   the processes' partitions: 1 MB each, or what an
  *                a.out's header asks for (tiny-linker -a), found
  *                first-fit when a program starts
  *    0x7ffffd0   the devices, reached as -48 to -4

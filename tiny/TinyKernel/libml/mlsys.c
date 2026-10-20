@@ -5,12 +5,16 @@
 // system calls as the externals an ML program declares (their values
 // ML's: an integer n is 2n+1, a string its bytes and its length).
 //
-// The partition: the program from 0, under 384 KB (the Makefile
-// checks); the value stack at 0x60000; the heap's two halves from
-// 0x70000, as large as the partition allows; the last 64 KB for C's
-// stack and the arguments. In the usual 1 MB, the halves are 256 KB
-// each. A program linked as an a.out that asks for more memory
-// (tiny-linker -a) gets bigger halves. The heap uses the whole half from
+// The partition: the program from 0; the value stack at 0x60000, or
+// after the program when it is larger (end.tm's _end, linked last:
+// tiny-ml's 541 KB; old: the Makefile refused a program past 384 KB),
+// 64 KB, or a sixteenth of a partition larger than 1 MB; the heap's
+// two halves after it, as large
+// as the partition allows; the last 64 KB for C's stack and the
+// arguments. In the usual 1 MB, the halves are 256 KB each. A program
+// linked as an a.out that asks for more memory (tiny-linker -a) gets
+// bigger halves, and a deeper stack (cc's recursions over a file's
+// tokens: 1 MB of its 16). The heap uses the whole half from
 // the start: starting small and growing made it collect often while it
 // grew, a quarter of the browser's time (plan_tiny_browser.md).
 //
@@ -21,7 +25,9 @@
 #include "../libc/user.h"
 
 #define VSTACK 0x60000
-#define HEAP0 0x70000
+
+// the program's end (end.tm)
+extern char _end[];
 
 // the program's arguments, for u_argc and u_arg
 int u_nargs;
@@ -30,13 +36,21 @@ char **u_args;
 void
 main(int argc, char **argv)
 {
-	long top, half;
+	long top, vstack, vsize, heap0, half;
 
 	u_nargs = argc;
 	u_args = argv;
 	top = ((long)argv + 0xfffff) & ~0xfffff;
-	half = (top - HEAP0 - 0x10000) / 2 / 4;		// in words
-	ml_run((value*)VSTACK, (value*)HEAP0, (value*)(HEAP0 + half * 4), half, half);
+	vstack = ((long)_end + 0xffff) & ~0xffff;
+	if(vstack < VSTACK)
+		vstack = VSTACK;
+	vsize = top / 16;
+	if(vsize < 0x10000)
+		vsize = 0x10000;
+	ml_vlimit = (value*)(vstack + vsize - 0x1000);	// (what a few frames push between two allocations)
+	heap0 = vstack + vsize;
+	half = (top - heap0 - 0x10000) / 2 / 4;		// in words
+	ml_run((value*)vstack, (value*)heap0, (value*)(heap0 + half * 4), half, half);
 	flush();
 	exit(0);
 }

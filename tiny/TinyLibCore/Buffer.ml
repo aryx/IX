@@ -17,7 +17,7 @@ let grow b more =
     let n = ref (2 * cap) in
     while !n < need do n := 2 * !n done;
     let bytes = Bytes.make !n '\000' in
-    Bytes.blit_string (Bytes.to_string b.buffer_bytes) 0 bytes 0 b.buffer_length;
+    Bytes.blit b.buffer_bytes 0 bytes 0 b.buffer_length;
     b.buffer_bytes <- bytes
   end
 
@@ -27,6 +27,6 @@ let add_string b s =
   Bytes.blit_string s 0 b.buffer_bytes b.buffer_length n;
   b.buffer_length <- b.buffer_length + n
 let add_char b c = grow b 1; Bytes.set b.buffer_bytes b.buffer_length c; b.buffer_length <- b.buffer_length + 1
-let contents b = String.sub (Bytes.to_string b.buffer_bytes) 0 b.buffer_length
+let contents b = Bytes.sub_string b.buffer_bytes 0 b.buffer_length
 let length b = b.buffer_length
 let clear b = b.buffer_length <- 0

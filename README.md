@@ -176,28 +176,18 @@ history, and the types of `main` and of one function) ([map](https://aryx.github
 [tiny/README.md](tiny/README.md) says what idea each one keeps from
 its original and what it redesigns.
 
-**The tools**, programs of the host (Linux): what one works with.
+Every program of t-IX runs on tiny-machine, under tiny-kernel; the
+host (Linux, macOS) is the machine itself, and a test bench where dune
+builds the same files with OCaml to try them.
 
-| program | what it is | lines | mini twin | file |
-|---|---|---:|---|---|
-| **tiny-shell** | a shell in rc's spirit: lists as the only value; on the host, and on tiny-machine as `rc` | 610 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
-| **tiny-editor** | an editor with sam's command language | 750 | mini-ed | [`TinyEditorLine.ml`](tiny/TinyEditorLine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditorLine.ml)) |
-| **tiny-build** | a build system: rules, `%`, digests, `-j` | 390 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
-| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 630 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
-| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 650 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
-| **tiny-c** | a C subset compiler, to tiny-cpu | 990 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
-| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 1,580 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
-| **tiny-assembler**, **tiny-linker** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 340 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
-
-**The machine**, programs of the host too: what the system below runs on.
+**The machine**, the host's programs: what everything else runs on.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
 | **tiny-cpu** | a CPU of our own design, for teaching | 350 | mini-5i, Knuth's MIX | [`TinyCPU.ml`](tiny/TinyCPU.ml), [`TinyMachineCPU.ml`](tiny/TinyMachine/TinyMachineCPU.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyCPU.ml)) |
 | **tiny-machine** | tiny-cpu with what a kernel needs: two modes, traps, a timer, protection, a console, a disk, a screen and a mouse ([run it in your browser](https://aryx.github.io/IX/t-ix.html)) | 710 | mini-qemu | [`TinyMachine.ml`](tiny/TinyMachine.ml), [`TinyMachineDevices.ml`](tiny/TinyMachine/TinyMachineDevices.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyMachine.ml)) |
 
-**The system**, which runs on tiny-machine: a kernel, its window
-system, and the programs in its windows.
+**The kernel**, and what it is made of.
 
 | program | what it is | lines | mini twin | file |
 |---|---|---:|---|---|
@@ -205,6 +195,34 @@ system, and the programs in its windows.
 | **tiny-graphics** | the kernel's drawing: one operation, `draw`, on images a byte a pixel; texts, lines; a program says what by messages | 210 | mini-9pi's draw device | [`TinyKernelGraphics.ml`](tiny/TinyKernel/TinyKernelGraphics.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel/TinyKernelGraphics.ml)) |
 | **tiny-fs** | the kernel's file system on the disk: inodes and their blocks as in Unix, but nothing written over: a change copies its blocks up to the root, and a commit is one block, so a crash needs no fsck; a collector finds the free blocks; each boot's files kept in `/dump` | 210 | mini-xv6's Fs | [`TinyKernelFS.ml`](tiny/TinyKernel/TinyKernelFS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel/TinyKernelFS.ml)) |
 | **tiny-network** | the kernel's network, and the other end of tiny-machine's wire: functions of strings: IP's envelope, the echo (`ping`), and Plan 9's IL for messages that arrive once and in order (`get`, `www`: a web page, its pictures painted as their packets arrive; `httpd`: its files in a browser) | 660 | mini-9pi's ip | [`TinyKernelNetwork.ml`](tiny/TinyKernel/TinyKernelNetwork.ml), [`TinyMachinePeer.ml`](tiny/TinyMachine/TinyMachinePeer.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyKernel/TinyKernelNetwork.ml)) |
+
+**The tools**, in tiny-kernel's `/bin` (`rc`, `ed`, `build`, `db`,
+`vcs`, `prof`).
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-shell** | a shell in rc's spirit: lists as the only value | 610 | mini-rc | [`TinyShell.ml`](tiny/TinyShell.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyShell.ml)) |
+| **tiny-editor** | an editor with sam's command language | 750 | mini-ed | [`TinyEditorLine.ml`](tiny/TinyEditorLine.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyEditorLine.ml)) |
+| **tiny-build** | a build system: rules, `%`, digests, `-j` | 390 | mini-mk | [`TinyBuildSystem.ml`](tiny/TinyBuildSystem.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBuildSystem.ml)) |
+| **tiny-db** | a database whose query language is the relational algebra, over a copy-on-write B-tree | 630 | mini-chidb | [`TinyDatabase.ml`](tiny/TinyDatabase.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyDatabase.ml)) |
+| **tiny-vcs** | version control with git's objects, an undo log, and no staging area | 650 | mini-git | [`TinyVCS.ml`](tiny/TinyVCS.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyVCS.ml)) |
+| **tiny-prof** | a profiler: every instruction counted by its address, the kernel's and each program's apart, named by the linker's map | 130 | mini-prof | [`TinyProfiler.ml`](tiny/TinyProfiler.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyProfiler.ml)) |
+
+**The toolchain**, in tiny-kernel's `/bin` too (`cc`, `ml`, `as`,
+`ld`), where each makes what the host's makes, byte for byte;
+[plan_tiny_self_hosting.md](docs/plans/plan_tiny_self_hosting.md)'s
+step 8 has t-IX built there.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
+| **tiny-c** | a C subset compiler, to tiny-cpu | 1,020 | mini-cc | [`TinyC.ml`](tiny/TinyC.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyC.ml)) |
+| **tiny-ml** | an ML compiler (Hindley-Milner types, closures, exceptions, a garbage collector) to tiny-cpu | 1,880 | mini-ml | [`TinyML.ml`](tiny/TinyML.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyML.ml)) |
+| **tiny-assembler**, **tiny-linker** | tiny-machine's assembler, a file to an object (its words, its labels, the places a label's address goes), and its linker, objects to an image, filling each place by encoding again | 460 | mini-asm, mini-ld | [`TinyAssembler.ml`](tiny/TinyAssembler.ml), [`TinyLinker.ml`](tiny/TinyLinker.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyAssembler.ml)) |
+
+**The window system** and the programs in its windows.
+
+| program | what it is | lines | mini twin | file |
+|---|---|---:|---|---|
 | **tiny-windows** | a window system, a program in ML: a window looks like the machine, so it runs in one of its own windows | 420 | mini-rio | [`TinyWindows.ml`](tiny/TinyWindows.ml), [`TinyLibDraw.ml`](tiny/TinyLibDraw.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyWindows.ml)) |
 | **tiny-playground** | what a game is written on: a model, a view as shapes, a key, a frame; the loop and the drawing are the library's | 110 | the playground | [`TinyLibPlayground.ml`](tiny/TinyLibPlayground.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibPlayground.ml)) |
 | **tiny-gui** | what a program with buttons and fields is written on: widgets made from the model, each carrying the message it sends; the layout, the mouse, the keys' focus and the drawing are the library's | 220 | lib_gui | [`TinyLibGUI.ml`](tiny/TinyLibGUI.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyLibGUI.ml)) |
@@ -214,40 +232,24 @@ system, and the programs in its windows.
 | **tiny-troff** | the office's documents, or Markdown, printed as text, a web page or PDF | 310 | mini-troff | [`TinyTroff.ml`](tiny/TinyTroff.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyTroff.ml)) |
 | **tiny-browser** | a web browser, `www`: a page read as it arrives, its links followed, its pictures painted as their packets come, Wikipedia's articles fetched by the host | 1,040 | mini-netscape | [`TinyBrowser.ml`](tiny/TinyBrowser.ml) ([map](https://aryx.github.io/IX/codemap.html?focus=tiny/TinyBrowser.ml)) |
 
-The two sides first met in one program, the shell: the same
-`TinyShell.ml` is built by OCaml for the host and by tiny-ml for
-tiny-machine, where it is the program `rc` (the shell one types at
-first there is still a C program of tiny-kernel's,
-`tiny/TinyKernel/user/sh.c`, kept for what it teaches). What made it
-possible: tiny-ml reads the capabilities and forgets them;
-[`TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli), tiny-ml's standard
-library, has what the shell names of OCaml's, module by module; and what it asks of the system is one
-interface, `TinyLibSystem`, with a file for each side
-([`TinyKernel/host/`](tiny/TinyKernel/host/TinyLibSystem.mli)'s over Unix,
-[`TinyKernel/libml/`](tiny/TinyKernel/libml/TinyLibSystem.ml)'s over
-the kernel's calls). The graphical programs meet the same way: what
-they ask of the kernel is `TinyCalls`, a virtual library of dune's,
-whose host side is a window of SDL's, so the office, emacs, the
-calculator, tetris, troff and the browser are built for the host from
-the kernel's own few lines of each ([`tiny/sdl/`](tiny/sdl/)). The other tools are still OCaml that needs a
-library tiny-ml does not have. What each side is compiled by, and
-with what under it:
+A program is in what both OCaml and tiny-ml compile, and asks the
+system through one interface with a file for each side:
+`TinyLibSystem` for the tools
+([`TinyKernel/host/`](tiny/TinyKernel/host/TinyLibSystem.mli)'s over
+Unix, [`TinyKernel/libml/`](tiny/TinyKernel/libml/TinyLibSystem.ml)'s
+over the kernel's calls), `TinyCalls` for the graphical programs
+(a virtual library of dune's, whose host side is a window of SDL's:
+[`tiny/sdl/`](tiny/sdl/)). Its three builds:
 
-| | compiled by | its standard library | and beside it |
-|---|---|---|---|
-| the tools and the machine, while developing | OCaml and dune | OCaml's own | [`lib_core/commons/`](lib_core/commons/) (dune's `ix_core`), opam's `unix`, `fpath`, `logs` |
-| the same, built by IX | mini-ml, by `mini-mk` | IX's own, in `lib_core/` | `lib_core/commons/` |
-| the system | tiny-ml (and OCaml, for its tests on the host) | [`tiny/TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli), its modules (Stdlib, List, String, Buffer, Hashtbl...: OCaml's subset, which OCaml checks), the first units of every program, and [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) under it | `TinyLibDraw`, `TinyLibPlayground`, `TinyLibGUI`; for a tool, `TinyLibSystem` |
+| | compiled by | its standard library |
+|---|---|---|
+| on tiny-machine | tiny-ml | [`tiny/TinyLibCore/`](tiny/TinyLibCore/Stdlib.mli) (Stdlib, List, String, Buffer, Hashtbl...: OCaml's subset, which OCaml checks), on [`tiny/TinyMLRuntime/`](tiny/TinyMLRuntime/) |
+| on the host, for the tests | OCaml and dune | OCaml's own, and [`lib_core/commons/`](lib_core/commons/) |
+| on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 
-tiny-c and tiny-ml have one target, tiny-machine: their arm64 back
-ends, tiny-assembler and tiny-arm left with
-[plan_tiny_self_hosting.md](docs/plans/plan_tiny_self_hosting.md), and
-so did tiny-lib-host, a trimmed copy of `lib_core/` under the tools
-built by IX, once it had shown what of `lib_core/` they use.
-
-That is about 18,100 lines of OCaml and ML; with their C (tiny-c's
-and tiny-ml's runtimes, tiny-kernel's programs)
-t-IX is **about 19,900 lines** in all (the header comments are in
+The programs are about 18,500 lines of OCaml and ML; with their C
+(tiny-c's and tiny-ml's runtimes, tiny-kernel's programs in C)
+t-IX is **about 20,300 lines** in all (the header comments are in
 the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
@@ -404,7 +406,7 @@ not, something is trimmed first.
 | | budget | today (2026-10-19) | left | what is missing |
 |---|---:|---:|---:|---|
 | **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 19,900 | 5,100 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
+| **t-IX** | 25,000 | 20,300 | 4,700 | tiny-debugger, self-hosting (plan_tiny_self_hosting.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

@@ -7,6 +7,9 @@ external length : string -> int = "ml_string_length"
 external get : string -> int -> char = "ml_string_get"
 external make : int -> char -> string = "ml_string_make"
 external unsafe_sub : string -> int -> int -> string = "ml_string_sub"
+(* (a string just made, filled: bytes and a string are the same block) *)
+external unsafe_set : string -> int -> char -> unit = "ml_bytes_set"
+external unsafe_blit : string -> int -> string -> int -> int -> unit = "ml_bytes_blit_string"
 
 (* (get s i, not s.[i], which is String.get: this module's own name
  * is get until it ends) *)
@@ -17,6 +20,7 @@ let index_from_opt s i c =
   if i < 0 || i > n then invalid_arg "String.index_from_opt" else go i
 let index_opt s c = index_from_opt s 0 c
 let index_from s i c = match index_from_opt s i c with Some j -> j | None -> raise Not_found
+let index s c = index_from s 0 c
 let rindex_opt s c =
   let rec go i = if i < 0 then None else if get s i = c then Some i else go (i - 1) in
   go (length s - 1)
@@ -28,12 +32,23 @@ let iteri f s = for i = 0 to length s - 1 do f i (get s i) done
 
 (* the strings joined by pairs, so that a long list is copied log n
  * times, not n *)
+(* the result made once, its length counted first, each string copied
+ * into it (old: joined by ^ two by two, then their pairs..., each byte
+ * copied log n times; and init a string of a character for each) *)
 let concat sep l =
-  let two a b = if sep = "" then a ^ b else a ^ sep ^ b in
-  let rec pairs = function a :: b :: rest -> two a b :: pairs rest | l -> l in
-  let rec join = function [] -> "" | [ s ] -> s | l -> join (pairs l) in
-  join l
-let init n f = concat "" (List.init n (fun i -> make 1 (f i)))
+  let n = List.fold_left (fun n s -> n + length s) 0 l + (length sep * max 0 (List.length l - 1)) in
+  let r = make n '\000' in
+  let rec go pos l = match l with
+    | [] -> ()
+    | s :: rest ->
+        unsafe_blit s 0 r pos (length s);
+        let pos = pos + length s in
+        match rest with [] -> () | _ -> unsafe_blit sep 0 r pos (length sep); go (pos + length sep) rest in
+  go 0 l; r
+let init n f =
+  let r = make n '\000' in
+  for i = 0 to n - 1 do unsafe_set r i (f i) done;
+  r
 let map f s = init (length s) (fun i -> f (get s i))
 let lowercase_ascii s =
   let upper c = c >= 'A' && c <= 'Z' in

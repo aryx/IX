@@ -128,8 +128,7 @@ val net_give : machine -> after:int -> string -> unit
 val timed_events : string -> (int * string) list
 val event : mouse -> console -> string -> unit
 
-(* the registers of control, by their numbers (tiny-assembler names
- * them); the listing of the machine's own instructions, csrr, csrw,
- * eret, csrrw, amoswap (tiny-assembler makes them) *)
-val csr_names : string array
+(* the listing of the machine's own instructions, csrr, csrw, eret,
+ * csrrw, amoswap (tiny-assembler makes them; the registers of control
+ * by their names, TinyMachineISA.csr_names) *)
 val show : int -> string option

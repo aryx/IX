@@ -28,7 +28,8 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  each of its ticks of 2.5 ms
   tiny-machine -prof p kernel.img               each instruction counted by where it was
                                                  (the kernel's or a program's, its address)
-                                                 into p at the end, for tiny-prof
+                                                 into p at the end (or at a SIGTERM), for
+                                                 tiny-prof
   tiny-machine -events f -screen s.ppm kernel.img
                                                  the keys and the mouse from f, a line
                                                  each (1000 m 320 240 1: at time 1000 the
@@ -418,6 +419,9 @@ let run caps o image =
     | None -> env
     | Some f ->
         at_exit (fun () -> FS.write caps (Fpath.v f) (TinyMachineCPU.profile_lines profile));
+        (* and when killed, as by timeout: what ran so far (tiny-ml on
+         * tiny-kernel, a run of minutes) *)
+        Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 1));
         TinyMachineCPU.profiled env profile (fun _ ->
           if TinyMachineDevices.supervisor mc then 1, 0 else 0, TinyMachineDevices.window_base mc) in
   let halted n =
@@ -477,6 +481,6 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
         options { disk_file = None; screen_file = None; audio_file = None; events_file = None; window = false; rate = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
+  | TinyMachineISA.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-machine"; CapStdlib.exit caps (main caps))

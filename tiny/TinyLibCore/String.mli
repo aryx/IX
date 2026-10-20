@@ -8,6 +8,7 @@ val sub : string -> int -> int -> string
 val index_from_opt : string -> int -> char -> int option
 val index_opt : string -> char -> int option
 val index_from : string -> int -> char -> int
+val index : string -> char -> int
 val rindex_opt : string -> char -> int option
 val contains : string -> char -> bool
 val exists : (char -> bool) -> string -> bool

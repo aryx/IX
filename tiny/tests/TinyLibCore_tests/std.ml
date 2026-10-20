@@ -146,3 +146,36 @@ let () =
   let h2 = Hashtbl.copy h in
   Hashtbl.replace h2 "k" 2; Hashtbl.replace h2 "j" 3;
   int (Hashtbl.find h "k"); int (Hashtbl.length h); int (Hashtbl.find h2 "k"); int (Hashtbl.length h2); print_newline ()
+
+(* for tiny-c and the toolchain: Int64 (tiny-ml's of four pieces), its
+ * edges, and what tiny-c folds; List's find, find_map, rev_append,
+ * combine, for_all2; String.index; Filename's basename, is_relative,
+ * chop_suffix, remove_extension; Bytes.of_string a copy *)
+let () =
+  let i64 x = str (Int64.to_string x) in
+  let vs = List.map Int64.of_string [ "0"; "1"; "-1"; "7"; "-7"; "0x7fffffff"; "0xffffffff"; "-2147483648"; "12345678901"; "-987654321987";
+                                      "9223372036854775807"; "-9223372036854775808"; "0x8000000000000000"; "0o17"; "0b101"; "1_000" ] in
+  List.iter i64 vs; print_newline ();
+  List.iter (fun a -> List.iter (fun b ->
+    i64 (Int64.add a b); i64 (Int64.sub a b); i64 (Int64.mul a b);
+    (if b <> Int64.zero then (i64 (Int64.div a b); i64 (Int64.rem a b)));
+    i64 (Int64.logand a b); i64 (Int64.logor a b); i64 (Int64.logxor a b); int (Int64.compare a b); bool (Int64.equal a b)) vs;
+    List.iter (fun n -> i64 (Int64.shift_left a n); i64 (Int64.shift_right a n); i64 (Int64.shift_right_logical a n)) [ 0; 1; 15; 16; 17; 31; 32; 48; 63 ];
+    i64 (Int64.neg a); i64 (Int64.lognot a); i64 (Int64.succ a); i64 (Int64.pred a); i64 (Int64.abs a); int (Int64.to_int a land 0xffff);
+    print_newline ()) vs;
+  List.iter (fun n -> i64 (Int64.of_int n)) [ 0; 5; -5; 0x3fffffff; - 0x40000000 ];
+  i64 Int64.max_int; i64 Int64.min_int; i64 Int64.minus_one; i64 Int64.one; i64 Int64.zero;
+  (try i64 (Int64.div Int64.one Int64.zero) with Division_by_zero -> print_string "division by zero ");
+  (try i64 (Int64.of_string "12a") with Failure _ -> print_string "not a number ");
+  print_newline ();
+  int (List.find (fun x -> x > 1) [ 1; 2; 3 ]); (try int (List.find (fun x -> x > 5) [ 1 ]) with Not_found -> print_string "not found ");
+  opt (List.find_map (fun x -> if x > 1 then Some (10 * x) else None) [ 1; 2; 3 ]); opt (List.find_map (fun _ -> None) [ 1 ]);
+  ints (List.rev_append [ 1; 2 ] [ 3; 4 ]);
+  List.iter (fun (a, b) -> int a; str b) (List.combine [ 1; 2 ] [ "a"; "b" ]); print_newline ();
+  bool (List.for_all2 (fun a b -> a < b) [ 1; 2 ] [ 2; 3 ]); bool (List.for_all2 (fun a b -> a < b) [ 1; 4 ] [ 2; 3 ]);
+  int (String.index "a=b" '='); (try int (String.index "ab" '=') with Not_found -> print_string "not found "); print_newline ();
+  strs (List.map Filename.basename [ ""; "/"; "a"; "a/b"; "/a/b/"; "a//"; "//" ]);
+  List.iter (fun f -> bool (Filename.is_relative f)) [ ""; "a"; "/a"; "./a" ]; print_newline ();
+  strs [ Filename.chop_suffix "a.c" ".c"; Filename.chop_suffix "x/b.tm" ".tm" ];
+  strs (List.map Filename.remove_extension [ "a.c"; "a/b.c"; ".profile"; "a.b/c"; "x..y"; "a.tar.gz"; "/a/.b.c"; "noext"; "" ]);
+  let s = "abc" in let b = Bytes.of_string s in Bytes.set b 0 'x'; strs [ s; Bytes.to_string b ]

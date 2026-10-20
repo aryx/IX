@@ -6,8 +6,10 @@
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
+let usage = "usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi..."
+
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...
+let help = usage ^ {|
 A tiny ML compiler: an ML file (its own small dialect: a file a module, no
 functors nor labels) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
 fact.ml, for example:
@@ -30,8 +32,10 @@ after open A. Or a module at a time, then the main:
 An error names the file and the line: fact.ml: line 2: this has type int ...
 |}
 
-let error fmt = Printf.ksprintf failwith fmt
-let sprintf = Printf.sprintf
+(* (old: Printf.ksprintf's and Printf.sprintf, a format and its values;
+ * tiny-ml has no Printf: its own text is concatenations, as it
+ * compiles itself) *)
+let error s = failwith s
 
 (* the machine, tiny-machine, has words of 4 bytes: an integer 31 bits
  * (a constant beyond them is refused), a block's fields 4 bytes each *)
@@ -55,12 +59,15 @@ let symbols = [ "|||"; ";;"; "->"; "::"; ":="; ":>"; "<-"; "<="; ">="; "<>"; "==
 let lex (s : string) : (token * int) array =
   let n = String.length s and out = ref [] and line = ref 1 in
   let add t = out := (t, !line) :: !out in
-  let is_id c = match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' | '\'' -> true | _ -> false in
+  (* (old: 'a' .. 'z' and the others as patterns: tiny-ml has no
+   * character ranges) *)
+  let lower c = c >= 'a' && c <= 'z' and upper c = c >= 'A' && c <= 'Z' and digit c = c >= '0' && c <= '9' in
+  let is_id c = lower c || upper c || digit c || c = '_' || c = '\'' in
   let rec span j = if j < n && is_id s.[j] then span (j + 1) else j in
   let escape i =
     match s.[i] with
     | 'n' -> 10, i + 1 | 't' -> 9, i + 1 | 'r' -> 13, i + 1 | 'b' -> 8, i + 1
-    | '0' .. '9' -> int_of_string (String.sub s i 3), i + 3
+    | c when digit c -> int_of_string (String.sub s i 3), i + 3
     | c -> Char.code c, i + 1
   in
   let rec comment i depth =
@@ -75,15 +82,15 @@ let lex (s : string) : (token * int) array =
       | '\n' -> incr line; go (i + 1)
       | ' ' | '\t' | '\r' -> go (i + 1)
       | '(' when i + 1 < n && s.[i + 1] = '*' -> go (comment (i + 2) 1)
-      | '0' .. '9' -> let j = span i in add (INT (int_of_string (String.sub s i (j - i)))); go j
-      | 'a' .. 'z' | '_' ->
+      | c when digit c -> let j = span i in add (INT (int_of_string (String.sub s i (j - i)))); go j
+      | c when lower c || c = '_' ->
           let j = span i in
           let w = String.sub s i (j - i) in
           add (if w = "_" then KW w else if List.mem w keywords then KW w else if w = "true" || w = "false" then UID w else LID w);
           go j
-      | 'A' .. 'Z' ->
+      | c when upper c ->
           let j = span i in
-          let j = if j + 1 < n && s.[j] = '.' && (match s.[j + 1] with 'a' .. 'z' | 'A' .. 'Z' -> true | _ -> false) then span (j + 1) else j in
+          let j = if j + 1 < n && s.[j] = '.' && (lower s.[j + 1] || upper s.[j + 1]) then span (j + 1) else j in
           let w = String.sub s i (j - i) in
           (* (M.C is the constructor C: constructors are one namespace) *)
           add (match String.rindex_opt w '.' with Some k when w.[k + 1] >= 'a' -> LID w | Some k -> UID (String.sub w (k + 1) (String.length w - k - 1)) | None -> UID w);
@@ -92,6 +99,12 @@ let lex (s : string) : (token * int) array =
           let c, j = if s.[i + 1] = '\\' then escape (i + 2) else Char.code s.[i + 1], i + 2 in
           add (CHAR c);
           go (j + 1)
+      (* {|...|}, OCaml's quoted string: its text as it is, no escape *)
+      | '{' when i + 1 < n && s.[i + 1] = '|' ->
+          let rec close j = if j + 1 >= n then error "unterminated string" else if s.[j] = '|' && s.[j + 1] = '}' then j else (if s.[j] = '\n' then incr line; close (j + 1)) in
+          let j = close (i + 2) in
+          add (STR (String.sub s (i + 2) (j - i - 2)));
+          go (j + 2)
       | '"' ->
           let b = Buffer.create 16 in
           let rec str j =
@@ -171,7 +184,7 @@ let cons : (string, cinfo) Hashtbl.t = Hashtbl.create 64
  * field), as a constructor's; several records may have it *)
 type linfo = { lrec : string; idx : int; mut : bool; lnames : string list; lscheme : ty }
 let record_labels : (string, linfo) Hashtbl.t = Hashtbl.create 64
-let find_con c = match Hashtbl.find_opt cons c with Some ci -> ci | None -> error "unknown constructor %s" c
+let find_con c = match Hashtbl.find_opt cons c with Some ci -> ci | None -> error ("unknown constructor " ^ c)
 
 let generic = max_int
 let level = ref 1 and counter = ref 0
@@ -207,14 +220,14 @@ let rec of_texpr vars = function
 (* The parser *)
 (*****************************************************************************)
 
-let toks = ref [||] and pos = ref 0
-let peek () = fst !toks.(!pos)
-let peek_at k = fst !toks.(min (!pos + k) (Array.length !toks - 1))
-let line () = snd !toks.(!pos)
+let toks : (token * int) array ref = ref (Array.of_list []) and pos = ref 0
+let peek () = fst (!toks).(!pos)
+let peek_at k = fst (!toks).(min (!pos + k) (Array.length !toks - 1))
+let line () = snd (!toks).(!pos)
 let advance () = if peek () <> EOF then incr pos
 let accept t = if peek () = t then (advance (); true) else false
-let show_tok = function INT n -> string_of_int n | CHAR _ -> "a character" | STR _ -> "a string" | LID x | UID x | KW x -> x | EOF -> "the end"
-let fail () = error "line %d: syntax error at %s" (line ()) (show_tok (peek ()))
+let show_tok = function INT n -> string_of_int n | CHAR _ -> "a character" | STR _ -> "a string" | LID x -> x | UID x -> x | KW x -> x | EOF -> "the end"
+let fail () = error ("line " ^ string_of_int (line ()) ^ ": syntax error at " ^ (show_tok (peek ())))
 let expect t = if not (accept t) then fail ()
 let var x = Var (x, ref (tcon "?"))
 let fresh = ref 0
@@ -251,8 +264,8 @@ let con_args c args untuple =
   match args with
   | [] when ci.arity = 0 -> []
   | [ a ] when ci.arity = 1 -> [ a ]
-  | [ a ] when ci.arity > 1 -> (match untuple ci.arity a with Some l when List.length l = ci.arity -> l | _ -> error "line %d: %s expects %d arguments" (line ()) c ci.arity)
-  | _ -> error "line %d: %s expects %d arguments" (line ()) c ci.arity
+  | [ a ] when ci.arity > 1 -> (match untuple ci.arity a with Some l when List.length l = ci.arity -> l | _ -> error ("line " ^ string_of_int (line ()) ^ ": " ^ c ^ " expects " ^ string_of_int ci.arity ^ " arguments"))
+  | _ -> error ("line " ^ string_of_int (line ()) ^ ": " ^ c ^ " expects " ^ string_of_int ci.arity ^ " arguments")
 
 let starts_atom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("(" | "[" | "{" | "begin" | "!") -> true | _ -> false
 let starts_patom = function INT _ | CHAR _ | STR _ | LID _ | UID _ | KW ("_" | "(" | "[" | "{") -> true | _ -> false
@@ -316,9 +329,9 @@ and binary min =
                    | App (Var ("Array.get", _), [ a; i ]) ->
                        (* i, a, then the value, ocamlopt's order *)
                        incr fresh;
-                       let a' = sprintf "%%a%d" !fresh and i' = sprintf "%%i%d" !fresh in
+                       let a' = "%a" ^ string_of_int !fresh and i' = "%i" ^ string_of_int !fresh in
                        Let (false, [ PVar i', i ], Let (false, [ PVar a', a ], App (var "Array.set", [ var a'; var i'; rhs ])))
-                   | _ -> error "line %d: <- on a field or an array's element only" (line ()))
+                   | _ -> error ("line " ^ string_of_int (line ()) ^ ": <- on a field or an array's element only"))
                | _ -> App (var op, [ lhs; rhs ]))
         | _ -> lhs)
     | _ -> lhs
@@ -458,10 +471,16 @@ and fun_of ps body =
     List.fold_right (fun p (names, body) ->
       match p with
       | PVar x -> x :: names, body
-      | p -> incr fresh; let x = sprintf "%%p%d" !fresh in x :: names, Let (false, [ p, var x ], body))
+      | p -> incr fresh; let x = "%p" ^ string_of_int !fresh in x :: names, Let (false, [ p, var x ], body))
       ps ([], body)
   in
-  Fun (names, body)
+  (* fun x -> function ...: one function of both, as OCaml makes it
+   * (old: a closure made at each call of the first, List.length's
+   * len n = function ..., an allocation an element: half of tiny-ml's
+   * time on tiny-kernel) *)
+  match body with
+  | Fun (more, body) when List.length names + List.length more <= 10 && not (List.exists (fun x -> List.mem x names) more) -> Fun (names @ more, body)
+  | _ -> Fun (names, body)
 
 and bindings () = let b = binding () in if accept (KW "and") then b :: bindings () else [ b ]
 
@@ -501,7 +520,7 @@ and ty_app () =
   let rec post args = match peek () with LID c when c <> "val" -> advance (); post [ TE (c, args) ] | _ -> args in
   match post args with [ t ] -> t | _ -> fail ()
 
-and any () = incr fresh; TEVar (sprintf "%%o%d" !fresh)
+and any () = incr fresh; TEVar ("%o" ^ string_of_int !fresh)
 
 and skip_object () = advance (); while peek () <> KW ">" do (if peek () = EOF then fail ()); advance () done; advance ()
 
@@ -540,7 +559,7 @@ let rec type_decl () =
     abbreviations := (name, (params, ty ())) :: !abbreviations
   end else begin
     let rec ctors () =
-      let c = match peek () with UID c -> advance (); c | _ -> error "line %d: a constructor or a record expected" (line ()) in
+      let c = match peek () with UID c -> advance (); c | _ -> error ("line " ^ string_of_int (line ()) ^ ": a constructor or a record expected") in
       let args = if accept (KW "of") then List.map (of_texpr vars) (ty_args ()) else [] in
       (c, args) :: (if accept (KW "|") then ctors () else [])
     in
@@ -596,8 +615,8 @@ let rec repr t = match t with TVar { contents = Link t } -> repr t | t -> t
 
 let rec show t =
   match repr t with
-  | TVar { contents = Unbound (n, _) } -> sprintf "'_%d" n
-  | TCon ("->", [ a; b ]) -> sprintf "(%s -> %s)" (show a) (show b)
+  | TVar { contents = Unbound (n, _) } -> ("'_" ^ string_of_int n)
+  | TCon ("->", [ a; b ]) -> ("(" ^ (show a) ^ " -> " ^ (show b) ^ ")")
   | TCon ("*", ts) -> "(" ^ String.concat " * " (List.map show ts) ^ ")"
   | TCon (c, []) -> c
   | TCon (c, ts) -> "(" ^ String.concat ", " (List.map show ts) ^ ") " ^ c
@@ -615,7 +634,9 @@ let rec occurs r lv t =
 let rec unify a b =
   match repr a, repr b with
   | TVar r, TVar r' when r == r' -> ()
-  | TVar ({ contents = Unbound (_, l) } as r), t | t, TVar ({ contents = Unbound (_, l) } as r) -> occurs r l t; r := Link t
+  (* (old: one case, an or-pattern with names) *)
+  | TVar ({ contents = Unbound (_, l) } as r), t -> occurs r l t; r := Link t
+  | t, TVar ({ contents = Unbound (_, l) } as r) -> occurs r l t; r := Link t
   | TCon (c, ts), TCon (d, us) when c = d && List.length ts = List.length us -> List.iter2 unify ts us
   | a, b ->
       (* a type's second name (abbreviations): the type in its place *)
@@ -623,7 +644,7 @@ let rec unify a b =
       match named a, named b with
       | Some t, _ -> unify t b
       | _, Some t -> unify a t
-      | None, None -> error "this has type %s but is used with type %s" (show a) (show b)
+      | None, None -> error ("this has type " ^ (show a) ^ " but is used with type " ^ (show b))
 
 (* the variables deeper than the current let become parameters *)
 let rec generalize t =
@@ -646,10 +667,11 @@ let instantiate t =
 (* the value restriction: only a value is generalized *)
 let rec nonexpansive = function
   | Const _ | Var _ | Fun _ -> true
-  | Con (_, l) | Tuple l -> List.for_all nonexpansive l
+  | Con (_, l) -> List.for_all nonexpansive l
+  | Tuple l -> List.for_all nonexpansive l
   | _ -> false
 
-let con_type c = match instantiate (find_con c).scheme with TCon (_, res :: args) -> res, args | _ -> assert false
+let con_type c = match instantiate (find_con c).scheme with TCon (_, res :: args) -> res, args | _ -> invalid_arg "con_type"
 
 (* l's label, in the record t already is when known (an annotation's,
  * a parameter's): type-directed, so that two records may share one;
@@ -661,8 +683,8 @@ let label_for l t =
   let known = match repr t with TCon (n, _) -> Some n | _ -> None in
   match List.filter (fun li -> known = None || known = Some li.lrec) (Hashtbl.find_all record_labels l) with
   | li :: _ -> li
-  | [] -> error "no field %s%s" l (match known with Some n -> " in " ^ n | None -> "")
-let label_type li = match instantiate li.lscheme with TCon (_, [ r; f ]) -> r, f | _ -> assert false
+  | [] -> error ("no field " ^ l ^ (match known with Some n -> " in " ^ n | None -> ""))
+let label_type li = match instantiate li.lscheme with TCon (_, [ r; f ]) -> r, f | _ -> invalid_arg "label_type"
 let const_type = function CInt _ -> int_t | CChar _ -> tcon "char" | CStr _ -> string_t
 
 (* known: the type the value matched is already known to have (the
@@ -689,7 +711,7 @@ let rec pat_type known p : ty * (string * ty) list =
       let r = newvar () in
       let bs = List.map (fun (l, p) ->
         let li = match List.find_opt (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) with
-          | Some li -> li | None -> error "no field %s in %s" l li0.lrec in
+          | Some li -> li | None -> error ("no field " ^ l ^ " in " ^ li0.lrec) in
         let r', f = label_type li in
         unify r r';
         let pt, b = pat_type f p in
@@ -705,7 +727,7 @@ let rec pat_type known p : ty * (string * ty) list =
 let rec infer env e : ty =
   match e with
   | Const c -> const_type c
-  | Var (x, r) -> (match List.assoc_opt x env with Some t -> r := instantiate t; !r | None -> error "unbound %s" x)
+  | Var (x, r) -> (match List.assoc_opt x env with Some t -> r := instantiate t; !r | None -> error ("unbound " ^ x))
   | Con (c, args) -> let res, targs = con_type c in List.iter2 (fun a t -> unify (infer env a) t) args targs; res
   | Tuple es -> TCon ("*", List.map (infer env) es)
   | App (f, args) -> List.fold_left (fun tf a -> let r = newvar () in unify tf (arrow (infer env a) r); r) (infer env f) args
@@ -728,14 +750,14 @@ let rec infer env e : ty =
   | SetDot (e, l, i, v) ->
       let t = infer env e in
       let li = label_for l t in
-      if not li.mut then error "the field %s is not mutable" l;
+      if not li.mut then error ("the field " ^ l ^ " is not mutable");
       let r, f = label_type li in
       i := li.idx; unify t r; unify (infer env v) f; unit_t
   | Record (fs, order) ->
       (* the record whose labels are exactly these *)
       let names = List.sort compare (List.map fst fs) in
       let li0 = match List.filter (fun li -> List.sort compare li.lnames = names) (Hashtbl.find_all record_labels (fst (List.hd fs))) with
-        | li :: _ -> li | [] -> error "no record has the fields %s" (String.concat ", " names) in
+        | li :: _ -> li | [] -> error ("no record has the fields " ^ (String.concat ", " names)) in
       let r = newvar () in
       order := List.map (fun (l, e) ->
         let li = List.find (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) in
@@ -748,7 +770,7 @@ let rec infer env e : ty =
       let li0 = label_for (fst (List.hd fs)) t in
       idxs := List.map (fun (l, v) ->
         let li = match List.find_opt (fun li -> li.lrec = li0.lrec) (Hashtbl.find_all record_labels l) with
-          | Some li -> li | None -> error "no field %s in %s" l li0.lrec in
+          | Some li -> li | None -> error ("no field " ^ l ^ " in " ^ li0.lrec) in
         let r, f = label_type li in
         unify t r; unify (infer env v) f; li.idx) fs;
       n := List.length li0.lnames;
@@ -789,7 +811,7 @@ let type_item env (it, l) =
     | ILet (true, bs) -> rec_types env bs
     | IExt (x, t, _) -> (x, of_texpr (ref []) t) :: env
     | IExn _ | IOpen _ -> env
-  with Failure m -> error "line %d: %s" l m
+  with Failure m -> error ("line " ^ string_of_int l ^ ": " ^ m)
 
 (* Scopes. A unit's names are M.x for the units after it; open M gives
  * a unit M's names as x, for itself alone. Stdlib is open in every
@@ -811,7 +833,11 @@ let type_unit env items =
   List.fold_left (fun (env, defs) (it, l) ->
     match it with
     | IOpen u -> opened u env, defs
-    | _ -> let env' = type_item env (it, l) in env', List.filteri (fun i _ -> i < List.length env' - List.length env) env' @ defs) (env, []) items
+    | _ ->
+        (* (the names added counted once: compile_unit's old) *)
+        let env' = type_item env (it, l) in
+        let k = List.length env' - List.length env in
+        env', List.filteri (fun i _ -> i < k) env' @ defs) (env, []) items
 
 (*****************************************************************************)
 (* The stack machine *)
@@ -823,6 +849,9 @@ type target = Direct of string | Code of int   (* a function's n-ary code, or a 
 
 (* a binary operation's first operand is on top, as every operation's:
  * arguments are pushed from the last, as OCaml evaluates them *)
+(* a word's 32 bits, signed: what the machine keeps of an int64 *)
+let low32 v = Int64.shift_right (Int64.shift_left v 32) 32
+
 type ir =
   | Imm of int64                      (* a word, an integer already tagged *)
   | Addr of string * int              (* a symbol's address: a static block's value is its +8 *)
@@ -871,80 +900,80 @@ let text = Buffer.create 65536 and data = Buffer.create 16384
 let machine name nparams nslots (code : ir list) =
   let lines = ref [] in
   let line f = lines := f :: !lines in
-  let ins fmt = Printf.ksprintf (fun s -> line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
+  let ins s = line (fun _ _ _ -> "\t" ^ s ^ "\n") in
   let sp = ref 0 and maxsp = ref 0 and tries = ref 0 and cargs = ref 0 and dead = ref false in
   let depth_at = Hashtbl.create 16 and catch_at = Hashtbl.create 4 in
-  let get i r = line (fun f _ _ -> sprintf "\tldw\tr%d, %d(r12)\n" r (4 * (i - f))) in
-  let put r i = line (fun f _ _ -> sprintf "\tstw\tr%d, %d(r12)\n" r (4 * (i - f))) in
+  let get i r = line (fun f _ _ -> ("\tldw\tr" ^ string_of_int r ^ ", " ^ string_of_int (4 * (i - f)) ^ "(r12)\n")) in
+  let put r i = line (fun f _ _ -> ("\tstw\tr" ^ string_of_int r ^ ", " ^ string_of_int (4 * (i - f)) ^ "(r12)\n")) in
   let spill_slot r = nslots + r - 1 in
-  let push () = incr sp; if !sp > 11 then error "%s: an expression too deep (tiny-machine has 11 registers for it)" name; maxsp := max !maxsp !sp; !sp in
+  let push () = incr sp; if !sp > 11 then error (name ^ ": an expression too deep (tiny-machine has 11 registers for it)"); maxsp := max !maxsp !sp; !sp in
   let spill () = for r = 1 to !sp do put r (spill_slot r) done in
   let reload () = for r = 1 to !sp do get (spill_slot r) r done in
-  let result () = ins "mov\tr%d, r13" (push ()) in
-  let lab l = sprintf "%s.L%d" !unit_name l in
+  let result () = ins ("mov\tr" ^ string_of_int (push ()) ^ ", r13") in
+  let lab l = (!unit_name ^ ".L" ^ string_of_int l) in
   let jump l = Hashtbl.replace depth_at l !sp in
   let epilogue () =
-    line (fun f _ _ -> sprintf "\taddi\tr12, r12, %d\n" (-4 * f));
-    line (fun _ _ c -> sprintf "\tldw\tlr, %d(sp)\n" c);
-    line (fun _ m _ -> sprintf "\taddi\tsp, sp, %d\n" m)
+    line (fun f _ _ -> ("\taddi\tr12, r12, " ^ string_of_int (-4 * f) ^ "\n"));
+    line (fun _ _ c -> ("\tldw\tlr, " ^ string_of_int c ^ "(sp)\n"));
+    line (fun _ m _ -> ("\taddi\tsp, sp, " ^ string_of_int m ^ "\n"))
   in
   let record c k = c + 4 + (16 * k) in
   let at k d f = line (fun _ _ c -> "\t" ^ f (record c k + d) ^ "\n") in
   let c_call f =
     ins "la\tlr, ml_vsp"; ins "stw\tr12, 0(lr)";
-    ins "la\tlr, %s" f; ins "jalr\tlr, 0(lr)";
+    ins ("la\tlr, " ^ f); ins "jalr\tlr, 0(lr)";
     ins "la\tlr, ml_vsp"; ins "ldw\tr12, 0(lr)"
   in
   let bin f = let a = !sp in decr sp; f a !sp in
-  let tagged d = ins "shli\tr%d, r%d, 1" d d; ins "ori\tr%d, r%d, 1" d d in
+  let tagged d = ins ("shli\tr" ^ string_of_int d ^ ", r" ^ string_of_int d ^ ", 1"); ins ("ori\tr" ^ string_of_int d ^ ", r" ^ string_of_int d ^ ", 1") in
   (* the length of the string in register s, untagged, into r13; lr used *)
   let length_of s =
-    ins "ldw\tr13, -4(r%d)" s;
+    ins ("ldw\tr13, -4(r" ^ string_of_int s ^ ")");
     ins "shri\tr13, r13, 10";
     ins "shli\tr13, r13, 2";
-    ins "add\tlr, r%d, r13" s;
+    ins ("add\tlr, r" ^ string_of_int s ^ ", r13");
     ins "ldb\tlr, -1(lr)";
     ins "sub\tr13, r13, lr";
     ins "addi\tr13, r13, -1" in
   let op o =
     let a = !sp in
     match o with
-    | Add -> bin (fun a b -> ins "add\tr%d, r%d, r%d" b a b; ins "addi\tr%d, r%d, -1" b b)
-    | Sub -> bin (fun a b -> ins "sub\tr%d, r%d, r%d" b a b; ins "addi\tr%d, r%d, 1" b b)
-    | Mul -> bin (fun a b -> ins "addi\tr%d, r%d, -1" a a; ins "sari\tr%d, r%d, 1" b b; ins "mul\tr%d, r%d, r%d" b a b; ins "addi\tr%d, r%d, 1" b b)
+    | Add -> bin (fun a b -> ins ("add\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("addi\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", -1"))
+    | Sub -> bin (fun a b -> ins ("sub\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("addi\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"))
+    | Mul -> bin (fun a b -> ins ("addi\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", -1"); ins ("sari\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"); ins ("mul\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("addi\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"))
     | Div | Mod ->
         bin (fun a b ->
-          ins "sari\tr%d, r%d, 1" a a; ins "sari\tr%d, r%d, 1" b b;
-          ins "%s\tr%d, r%d, r%d" (if o = Div then "div" else "rem") b a b;
+          ins ("sari\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", 1"); ins ("sari\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1");
+          ins ((if o = Div then "div" else "rem") ^ "\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b);
           tagged b)
-    | And -> bin (fun a b -> ins "and\tr%d, r%d, r%d" b a b)
-    | Or -> bin (fun a b -> ins "or\tr%d, r%d, r%d" b a b)
-    | Xor -> bin (fun a b -> ins "xor\tr%d, r%d, r%d" b a b; ins "ori\tr%d, r%d, 1" b b)
-    | Lsl -> bin (fun a b -> ins "addi\tr%d, r%d, -1" a a; ins "sari\tr%d, r%d, 1" b b; ins "shl\tr%d, r%d, r%d" b a b; ins "ori\tr%d, r%d, 1" b b)
-    | Lsr | Asr -> bin (fun a b -> ins "sari\tr%d, r%d, 1" b b; ins "%s\tr%d, r%d, r%d" (if o = Lsr then "shr" else "sar") b a b; ins "ori\tr%d, r%d, 1" b b)
+    | And -> bin (fun a b -> ins ("and\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b))
+    | Or -> bin (fun a b -> ins ("or\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b))
+    | Xor -> bin (fun a b -> ins ("xor\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("ori\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"))
+    | Lsl -> bin (fun a b -> ins ("addi\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", -1"); ins ("sari\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"); ins ("shl\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("ori\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"))
+    | Lsr | Asr -> bin (fun a b -> ins ("sari\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"); ins ((if o = Lsr then "shr" else "sar") ^ "\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("ori\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1"))
     | Cmp r ->
         (* a r b, 1 or 0, then tagged *)
         bin (fun a b ->
           (match r with
-           | Lt -> ins "slt\tr%d, r%d, r%d" b a b
-           | Gt -> ins "slt\tr%d, r%d, r%d" b b a
-           | Le -> ins "slt\tr%d, r%d, r%d" b b a; ins "xori\tr%d, r%d, 1" b b
-           | Ge -> ins "slt\tr%d, r%d, r%d" b a b; ins "xori\tr%d, r%d, 1" b b
-           | Eq -> ins "sub\tr%d, r%d, r%d" b a b; ins "sltiu\tr%d, r%d, 1" b b
-           | Ne -> ins "sub\tr%d, r%d, r%d" b a b; ins "sltu\tr%d, zero, r%d" b b);
+           | Lt -> ins ("slt\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b)
+           | Gt -> ins ("slt\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", r" ^ string_of_int a)
+           | Le -> ins ("slt\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", r" ^ string_of_int a); ins ("xori\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1")
+           | Ge -> ins ("slt\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("xori\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1")
+           | Eq -> ins ("sub\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("sltiu\tr" ^ string_of_int b ^ ", r" ^ string_of_int b ^ ", 1")
+           | Ne -> ins ("sub\tr" ^ string_of_int b ^ ", r" ^ string_of_int a ^ ", r" ^ string_of_int b); ins ("sltu\tr" ^ string_of_int b ^ ", zero, r" ^ string_of_int b));
           tagged b)
-    | Neg -> ins "sub\tr%d, zero, r%d" a a; ins "addi\tr%d, r%d, 2" a a
-    | Lnot -> ins "addi\tr13, zero, -1"; ins "xor\tr%d, r%d, r13" a a; ins "ori\tr%d, r%d, 1" a a
-    | Not -> ins "xori\tr%d, r%d, 2" a a
-    | IsInt -> ins "andi\tr%d, r%d, 1" a a; tagged a
-    | Tag -> ins "ldb\tr%d, -4(r%d)" a a; tagged a
+    | Neg -> ins ("sub\tr" ^ string_of_int a ^ ", zero, r" ^ string_of_int a); ins ("addi\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", 2")
+    | Lnot -> ins "addi\tr13, zero, -1"; ins ("xor\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", r13"); ins ("ori\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", 1")
+    | Not -> ins ("xori\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", 2")
+    | IsInt -> ins ("andi\tr" ^ string_of_int a ^ ", r" ^ string_of_int a ^ ", 1"); tagged a
+    | Tag -> ins ("ldb\tr" ^ string_of_int a ^ ", -4(r" ^ string_of_int a ^ ")"); tagged a
   in
   (* a block of n fields from the runtime, in r13 *)
   let alloc tag n =
     spill ();
     cargs := max !cargs 2;
-    ins "li\tr13, %d" n; ins "stw\tr13, 0(sp)";
-    ins "li\tr13, %d" tag; ins "stw\tr13, 4(sp)";
+    ins ("li\tr13, " ^ string_of_int n); ins "stw\tr13, 0(sp)";
+    ins ("li\tr13, " ^ string_of_int tag); ins "stw\tr13, 4(sp)";
     c_call "ml_alloc" in
   List.iter (fun i ->
     match i with
@@ -957,42 +986,42 @@ let machine name nparams nslots (code : ir list) =
     (* old: Int64.to_int32 v alone: 4611686018427387903 became -1, and
      * the program printed something else than OCaml *)
     | Imm v ->
-        if Int64.of_int32 (Int64.to_int32 v) <> v then error "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
-        ins "li\tr%d, %ld" (push ()) (Int64.to_int32 v)
-    | Addr (s, _) -> ins "la\tr%d, %s" (push ()) s
+        if low32 v <> v then error "an integer beyond 31 bits: not on TinyCPU (a 32-bit machine)";
+        ins ("li\tr" ^ string_of_int (push ()) ^ ", " ^ Int64.to_string v)
+    | Addr (s, _) -> ins ("la\tr" ^ string_of_int (push ()) ^ ", " ^ s)
     | Get i -> get i (push ())
     | Set i -> put !sp i; decr sp
-    | GetG (t, g) -> let r = push () in ins "la\tr%d, %s" r t; ins "ldw\tr%d, %d(r%d)" r (4 * g) r
-    | SetG (t, g) -> ins "la\tr13, %s" t; ins "stw\tr%d, %d(r13)" !sp (4 * g); decr sp
-    | Field k -> ins "ldw\tr%d, %d(r%d)" !sp (4 * k) !sp
-    | SetField k -> ins "stw\tr%d, %d(r%d)" (!sp - 1) (4 * k) !sp; sp := !sp - 2
+    | GetG (t, g) -> let r = push () in ins ("la\tr" ^ string_of_int r ^ ", " ^ t); ins ("ldw\tr" ^ string_of_int r ^ ", " ^ string_of_int (4 * g) ^ "(r" ^ string_of_int r ^ ")")
+    | SetG (t, g) -> ins ("la\tr13, " ^ t); ins ("stw\tr" ^ string_of_int !sp ^ ", " ^ string_of_int (4 * g) ^ "(r13)"); decr sp
+    | Field k -> ins ("ldw\tr" ^ string_of_int !sp ^ ", " ^ string_of_int (4 * k) ^ "(r" ^ string_of_int !sp ^ ")")
+    | SetField k -> ins ("stw\tr" ^ string_of_int (!sp - 1) ^ ", " ^ string_of_int (4 * k) ^ "(r" ^ string_of_int !sp ^ ")"); sp := !sp - 2
     | Alloc (tag, n) ->
         alloc tag n;
-        for k = 0 to n - 1 do get (spill_slot (!sp - k)) 15; ins "stw\tr15, %d(r13)" (4 * k) done;
+        for k = 0 to n - 1 do get (spill_slot (!sp - k)) 15; ins ("stw\tr15, " ^ string_of_int (4 * k) ^ "(r13)") done;
         sp := !sp - n;
         reload ();
         result ()
     | Blank (tag, n) ->
         alloc tag n;
         ins "li\tr15, 1";
-        for k = 0 to n - 1 do ins "stw\tr15, %d(r13)" (4 * k) done;
+        for k = 0 to n - 1 do ins ("stw\tr15, " ^ string_of_int (4 * k) ^ "(r13)") done;
         reload ();
         result ()
     | Op o -> op o
     | Call (t, n, tail) ->
-        if n > 10 then error "%s: %d arguments (tiny-machine passes 10 at most)" name n;
+        if n > 10 then error (name ^ ": " ^ string_of_int n ^ " arguments (tiny-machine passes 10 at most)");
         spill ();
         get (spill_slot !sp) 13;
         for k = 1 to n do get (spill_slot (!sp - k)) k done;
         sp := !sp - n - 1;
         if tail then begin
           epilogue ();
-          (match t with Direct f -> ins "la\tr11, %s" f | Code k -> ins "ldw\tr11, %d(r13)" (4 * k));
+          (match t with Direct f -> ins ("la\tr11, " ^ f) | Code k -> ins ("ldw\tr11, " ^ string_of_int (4 * k) ^ "(r13)"));
           ins "jalr\tzero, 0(r11)";
           dead := true
         end
         else begin
-          (match t with Direct f -> ins "la\tlr, %s" f | Code k -> ins "ldw\tlr, %d(r13)" (4 * k));
+          (match t with Direct f -> ins ("la\tlr, " ^ f) | Code k -> ins ("ldw\tlr, " ^ string_of_int (4 * k) ^ "(r13)"));
           ins "jalr\tlr, 0(lr)";
           reload ();
           result ()
@@ -1005,7 +1034,7 @@ let machine name nparams nslots (code : ir list) =
      * is saved by the prologue). *)
     | CallC ("ml_string_length", 1) ->
         length_of !sp;
-        ins "mov\tr%d, r13" !sp;
+        ins ("mov\tr" ^ string_of_int !sp ^ ", r13");
         tagged !sp
     (* s.[i]: s is on top of the stack, i below it, and the byte takes
      * i's register. The index is checked against the length; only an
@@ -1014,16 +1043,16 @@ let machine name nparams nslots (code : ir list) =
         let s = !sp and i = !sp - 1 in
         let slow = label () and done_ = label () in
         length_of s;
-        ins "sari\tlr, r%d, 1" i;
-        ins "bgeu\tlr, r13, %s" (lab slow);
-        ins "add\tlr, r%d, lr" s;
-        ins "ldb\tr%d, 0(lr)" i;
+        ins ("sari\tlr, r" ^ string_of_int i ^ ", 1");
+        ins ("bgeu\tlr, r13, " ^ (lab slow));
+        ins ("add\tlr, r" ^ string_of_int s ^ ", lr");
+        ins ("ldb\tr" ^ string_of_int i ^ ", 0(lr)");
         tagged i;
-        ins "j\t%s" (lab done_);
+        ins ("j\t" ^ (lab done_));
         line (fun _ _ _ -> lab slow ^ ":\n");
         spill ();
         cargs := max !cargs 2;
-        for k = 0 to 1 do get (spill_slot (!sp - k)) 13; ins "stw\tr13, %d(sp)" (4 * k) done;
+        for k = 0 to 1 do get (spill_slot (!sp - k)) 13; ins ("stw\tr13, " ^ string_of_int (4 * k) ^ "(sp)") done;
         sp := !sp - 2;
         c_call "ml_string_get";
         reload ();
@@ -1032,17 +1061,17 @@ let machine name nparams nslots (code : ir list) =
     | CallC (f, n) ->
         spill ();
         cargs := max !cargs n;
-        for k = 0 to n - 1 do get (spill_slot (!sp - k)) 13; ins "stw\tr13, %d(sp)" (4 * k) done;
+        for k = 0 to n - 1 do get (spill_slot (!sp - k)) 13; ins ("stw\tr13, " ^ string_of_int (4 * k) ^ "(sp)") done;
         sp := !sp - n;
         c_call f;
         reload ();
         result ()
-    | Jmp l -> jump l; ins "j\t%s" (lab l); dead := true
-    | Jz l -> let r = !sp in decr sp; jump l; ins "li\tr13, 1"; ins "beq\tr%d, r13, %s" r (lab l)
-    | Jnz l -> let r = !sp in decr sp; jump l; ins "li\tr13, 1"; ins "bne\tr%d, r13, %s" r (lab l)
+    | Jmp l -> jump l; ins ("j\t" ^ (lab l)); dead := true
+    | Jz l -> let r = !sp in decr sp; jump l; ins "li\tr13, 1"; ins ("beq\tr" ^ string_of_int r ^ ", r13, " ^ (lab l))
+    | Jnz l -> let r = !sp in decr sp; jump l; ins "li\tr13, 1"; ins ("bne\tr" ^ string_of_int r ^ ", r13, " ^ (lab l))
     | Drop -> decr sp
-    | Ret -> ins "mov\tr13, r%d" !sp; decr sp; epilogue (); ins "ret"; dead := true
-    | Raise -> ins "mov\tr13, r%d" !sp; ins "la\tlr, ml_raise"; ins "jalr\tzero, 0(lr)"; dead := true
+    | Ret -> ins ("mov\tr13, r" ^ string_of_int !sp); decr sp; epilogue (); ins "ret"; dead := true
+    | Raise -> ins ("mov\tr13, r" ^ string_of_int !sp); ins "la\tlr, ml_raise"; ins "jalr\tzero, 0(lr)"; dead := true
     | TryEnter (k, handler) ->
         (* the record: sp, r12, the handler's address (call's link: the
          * j after it), the previous record *)
@@ -1050,30 +1079,30 @@ let machine name nparams nslots (code : ir list) =
         Hashtbl.replace catch_at k !sp;
         tries := max !tries (k + 1);
         let set = label () in
-        ins "call\t%s" (lab set);
-        ins "j\t%s" (lab handler);
+        ins ("call\t" ^ (lab set));
+        ins ("j\t" ^ (lab handler));
         line (fun _ _ _ -> lab set ^ ":\n");
-        at k 0 (sprintf "stw\tsp, %d(sp)");
-        at k 4 (sprintf "stw\tr12, %d(sp)");
-        at k 8 (sprintf "stw\tlr, %d(sp)");
+        at k 0 ((fun x0 -> "stw\tsp, " ^ string_of_int x0 ^ "(sp)"));
+        at k 4 ((fun x0 -> "stw\tr12, " ^ string_of_int x0 ^ "(sp)"));
+        at k 8 ((fun x0 -> "stw\tlr, " ^ string_of_int x0 ^ "(sp)"));
         ins "la\tlr, ml_handler";
         ins "ldw\tr13, 0(lr)";
-        at k 12 (sprintf "stw\tr13, %d(sp)");
-        at k 0 (sprintf "addi\tr13, sp, %d");
+        at k 12 ((fun x0 -> "stw\tr13, " ^ string_of_int x0 ^ "(sp)"));
+        at k 0 ((fun x0 -> "addi\tr13, sp, " ^ string_of_int x0));
         ins "stw\tr13, 0(lr)"
-    | TryExit k -> at k 12 (sprintf "ldw\tr13, %d(sp)"); ins "la\tlr, ml_handler"; ins "stw\tr13, 0(lr)")
+    | TryExit k -> at k 12 ((fun x0 -> "ldw\tr13, " ^ string_of_int x0 ^ "(sp)")); ins "la\tlr, ml_handler"; ins "stw\tr13, 0(lr)")
     code;
-  if nparams > 10 then error "%s: %d parameters (tiny-machine passes 10 at most)" name nparams;
+  if nparams > 10 then error (name ^ ": " ^ string_of_int nparams ^ " parameters (tiny-machine passes 10 at most)");
   let f = nslots + !maxsp and c = 4 * !cargs in
   let m = (record c !tries + 7) land lnot 7 in
-  let out fmt = Printf.bprintf text fmt in
+  let out s = Buffer.add_string text s in
   (* a piece: tiny-linker leaves it out when nothing names its labels *)
   out "\t.piece\n";
-  out "%s:\n\taddi\tsp, sp, %d\n\tstw\tlr, %d(sp)\n\taddi\tr12, r12, %d\n" name (- m) c (4 * f);
-  out "\tstw\tr13, %d(r12)\n" (-4 * f);
-  for i = 1 to nparams do out "\tstw\tr%d, %d(r12)\n" i (4 * (i - f)) done;
+  out (name ^ ":\n\taddi\tsp, sp, " ^ string_of_int (- m) ^ "\n\tstw\tlr, " ^ string_of_int c ^ "(sp)\n\taddi\tr12, r12, " ^ string_of_int (4 * f) ^ "\n");
+  out ("\tstw\tr13, " ^ string_of_int (-4 * f) ^ "(r12)\n");
+  for i = 1 to nparams do out ("\tstw\tr" ^ string_of_int i ^ ", " ^ string_of_int (4 * (i - f)) ^ "(r12)\n") done;
   (* the other slots zeroed: the collector scans them *)
-  for i = nparams + 1 to f - 1 do out "\tstw\tzero, %d(r12)\n" (4 * (i - f)) done;
+  for i = nparams + 1 to f - 1 do out ("\tstw\tzero, " ^ string_of_int (4 * (i - f)) ^ "(r12)\n") done;
   List.iter (fun l -> Buffer.add_string text (l f m c)) (List.rev !lines)
 
 (*****************************************************************************)
@@ -1086,14 +1115,14 @@ type dword = DNum of string | DCode of string | DVal of string
 
 (* each a piece of its own, as a function is *)
 let fields sym ws =
-  Printf.bprintf data "%s:\n" sym;
-  List.iter (fun w -> Printf.bprintf data "\t.word\t%s\n" (match w with DNum x | DCode x | DVal x -> x)) ws
-let words sym ws = Printf.bprintf data "\t.piece\n"; fields sym ws
+  Buffer.add_string data (sym ^ ":\n");
+  List.iter (fun w -> Buffer.add_string data ("\t.word\t" ^ (match w with DNum x -> x | DCode x -> x | DVal x -> x) ^ "\n")) ws
+let words sym ws = Buffer.add_string data "\t.piece\n"; fields sym ws
 
 (* a static block, its header then its fields. Its symbol is the first
  * field's, the value itself (the assembler's expressions have no
  * sym+n) *)
-let block sym hdr ws = Printf.bprintf data "\t.piece\n\t.word\t%s\n" hdr; fields sym ws
+let block sym hdr ws = Buffer.add_string data ("\t.piece\n\t.word\t" ^ hdr ^ "\n"); fields sym ws
 
 let header n tag = string_of_int ((n lsl 10) lor tag)
 let closure_tag = 247 and string_tag = 252
@@ -1105,21 +1134,23 @@ let static_string s =
   match Hashtbl.find_opt strings s with
   | Some sym -> sym
   | None ->
-      let sym = sprintf "%s.s%d" !unit_name (Hashtbl.length strings) in
+      let sym = (!unit_name ^ ".s" ^ string_of_int (Hashtbl.length strings)) in
       let n = (String.length s / 4) + 1 in
       let b = Bytes.make (4 * n) '\000' in
       Bytes.blit_string s 0 b 0 (String.length s);
       Bytes.set b ((4 * n) - 1) (Char.chr ((4 * n) - 1 - String.length s));
       block sym (header n string_tag)
         (List.init n (fun i ->
-           DNum (Int32.to_string (Bytes.get_int32_le b (4 * i)))));
+           let byte k = Char.code (Bytes.get b ((4 * i) + k)) in
+           (* (old: Int32.to_string of Bytes.get_int32_le) *)
+           DNum (Int64.to_string (low32 (Int64.logor (Int64.shift_left (Int64.of_int (byte 3)) 24) (Int64.of_int (byte 0 lor (byte 1 lsl 8) lor (byte 2 lsl 16))))))));
       Hashtbl.replace strings s sym;
       sym
 
 (* the curry functions an arity needs (the program's, its main's to
  * make: each unit says the arities it needs) *)
 let arities = ref []
-let curry n k = sprintf "ml_curry%d_%d" n k
+let curry n k = ("ml_curry" ^ string_of_int n ^ "_" ^ string_of_int k)
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
 let closure_sym lab = lab ^ ".c"
 let static_closure lab n = let sym = closure_sym lab in block sym (header 2 closure_tag) [ DCode (entry n lab); DCode lab ]; sym
@@ -1129,7 +1160,8 @@ let static_closure lab n = let sym = closure_sym lab in block sym (header 2 clos
 let exn_id c = "ml_exn_" ^ c
 let exn_const c = "ml_exv_" ^ c
 
-let tagged n = Int64.add (Int64.mul 2L (Int64.of_int n)) 1L
+(* (old: 2L, 1L, literals tiny-ml does not read) *)
+let tagged n = Int64.add (Int64.mul (Int64.of_int 2) (Int64.of_int n)) Int64.one
 
 (*****************************************************************************)
 (* From the tree to the stack machine *)
@@ -1143,45 +1175,61 @@ type binding = Loc of loc * (string * int) option | Ext of string * int
 type fn = { mutable code : ir list; mutable nslots : int; mutable ntries : int }
 
 let cur = ref { code = []; nslots = 1; ntries = 0 }
-let emit i = !cur.code <- i :: !cur.code
-let slot () = let s = !cur.nslots in !cur.nslots <- s + 1; s
-let queue : (unit -> unit) Queue.t = Queue.create ()
+let emit i = (!cur).code <- i :: (!cur).code
+let slot () = let s = (!cur).nslots in (!cur).nslots <- s + 1; s
+(* the functions to compile, in their order: a queue as two lists, the
+ * next ones and the ones added since, last first (old: OCaml's Queue,
+ * which TinyLibCore does not have) *)
+let queue : (unit -> unit) list ref = ref [] and queued : (unit -> unit) list ref = ref []
+let enqueue f = queued := f :: !queued
+let rec dequeue () =
+  match !queue, !queued with
+  | f :: rest, _ -> queue := rest; Some f
+  | [], [] -> None
+  | [], l -> queue := List.rev l; queued := []; dequeue ()
 let nfuns = ref 0
 
 let fun_label x =
   incr nfuns;
-  sprintf "%s.f%d_%s" !unit_name !nfuns (String.map (fun c -> match c with 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> c | _ -> '_') x)
+  (!unit_name ^ ".f" ^ string_of_int !nfuns ^ "_" ^ (String.map (fun c -> if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c = '_' then c else '_') x))
 
-let lookup env x = match List.assoc_opt x env with Some b -> b | None -> error "unbound %s" x
+let lookup env x = match List.assoc_opt x env with Some b -> b | None -> error ("unbound " ^ x)
 
 let rec pat_vars = function
   | PAny | PConst _ -> []
   | PVar x -> [ x ]
-  | PCon (_, ps) | PTuple ps -> List.concat_map pat_vars ps
+  | PCon (_, ps) -> List.concat_map pat_vars ps
+  | PTuple ps -> List.concat_map pat_vars ps
   | PRecord (fs, _, _) -> List.concat_map (fun (_, p) -> pat_vars p) fs
   | PAlias (p, x) -> x :: pat_vars p
   | PAnnot (p, _) -> pat_vars p
   | POr (p, _) -> pat_vars p
 
 (* the names free in e, each once, in their order *)
+(* (old: or-patterns with names, Match (e, cs) | Try (e, cs): written
+ * apart, as tiny-ml compiles this file too) *)
 let rec free bound e acc =
   let fr = free bound in
+  let cases e cs =
+    List.fold_left (fun acc (p, g, b) ->
+      let bound = pat_vars p @ bound in
+      free bound b (match g with Some g -> free bound g acc | None -> acc)) (fr e acc) cs in
   match e with
   | Const _ -> acc
   | Var (x, _) -> if List.mem x bound || List.mem x acc then acc else acc @ [ x ]
-  | Con (_, l) | Tuple l -> List.fold_left (fun acc e -> fr e acc) acc l
+  | Con (_, l) -> List.fold_left (fun acc e -> fr e acc) acc l
+  | Tuple l -> List.fold_left (fun acc e -> fr e acc) acc l
   | App (f, l) -> List.fold_left (fun acc e -> fr e acc) acc (f :: l)
   | Fun (xs, b) -> free (xs @ bound) b acc
   | Let (r, bs, b) ->
       let vs = List.concat_map (fun (p, _) -> pat_vars p) bs in
       let acc = List.fold_left (fun acc (_, e) -> free (if r then vs @ bound else bound) e acc) acc bs in
       free (vs @ bound) b acc
-  | Match (e, cs) | Try (e, cs) ->
-      List.fold_left (fun acc (p, g, b) ->
-        let bound = pat_vars p @ bound in
-        free bound b (match g with Some g -> free bound g acc | None -> acc)) (fr e acc) cs
+  | Match (e, cs) -> cases e cs
+  | Try (e, cs) -> cases e cs
   | If (a, b, c) -> fr c (fr b (fr a acc))
-  | Seq (a, b) | While (a, b) -> fr b (fr a acc)
+  | Seq (a, b) -> fr b (fr a acc)
+  | While (a, b) -> fr b (fr a acc)
   | For (x, a, b, _, body) -> free (x :: bound) body (fr b (fr a acc))
   | Record (fs, _) -> List.fold_left (fun acc (_, e) -> fr e acc) acc fs
   | With (e, fs, _, _) -> List.fold_left (fun acc (_, e) -> fr e acc) (fr e acc) fs
@@ -1198,7 +1246,8 @@ let body_env env fvs =
 
 let rec refutable = function
   | PAny | PVar _ -> false
-  | PAlias (p, _) | PAnnot (p, _) -> refutable p
+  | PAlias (p, _) -> refutable p
+  | PAnnot (p, _) -> refutable p
   | PTuple ps -> List.exists refutable ps
   | PRecord (fs, _, _) -> List.exists (fun (_, p) -> refutable p) fs
   | PCon (c, ps) -> let ci = find_con c in ci.nconst + ci.nblock > 1 || ci.kind = KExn || List.exists refutable ps
@@ -1219,7 +1268,8 @@ let rec test acc s p fail =
   | PVar x -> (x, Loc (Slot s, None)) :: acc
   | PAlias (p, x) -> test ((x, Loc (Slot s, None)) :: acc) s p fail
   | PAnnot (p, _) -> test acc s p fail
-  | PConst (CInt n | CChar n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
+  | PConst (CInt n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
+  | PConst (CChar n) -> check [ Imm (tagged n); Op (Cmp Eq) ]; acc
   | PConst (CStr str) -> check [ Addr (static_string str, 8); CallC ("ml_equal", 2) ]; acc
   | PTuple ps -> fields 0 ps acc
   (* a record is a tuple: the fields not named are _ *)
@@ -1258,7 +1308,7 @@ let prim p n ty =
       | Ne -> emit (CallC ("ml_equal", 2)); emit (Op Not)
       | r ->
           (* compare's result r 0 is 0 r' compare's result *)
-          emit (CallC ("ml_compare", 2)); emit (Imm 1L);
+          emit (CallC ("ml_compare", 2)); emit (Imm (tagged 0));
           emit (Op (Cmp (match r with Lt -> Gt | Gt -> Lt | Le -> Ge | Ge -> Le | r -> r)))
   in
   let ops = [ "%add", Add; "%sub", Sub; "%mul", Mul; "%div", Div; "%mod", Mod; "%and", And; "%or", Or; "%xor", Xor;
@@ -1272,11 +1322,11 @@ let prim p n ty =
   | "%ref" -> emit (Alloc (0, 1))
   | "%field0" -> emit (Field 0)
   | "%field1" -> emit (Field 1)
-  | "%setfield0" -> emit (SetField 0); emit (Imm 1L)
+  | "%setfield0" -> emit (SetField 0); emit (Imm (tagged 0))
   | "%raise" -> emit Raise
   | "%identity" -> ()
-  | "%ignore" -> emit Drop; emit (Imm 1L)
-  | _ when p.[0] = '%' -> error "unknown primitive %s" p
+  | "%ignore" -> emit Drop; emit (Imm (tagged 0))
+  | _ when p.[0] = '%' -> error ("unknown primitive " ^ p)
   | _ -> emit (CallC (p, n))
 
 (* a closure: static, its symbol, when it captures nothing, else
@@ -1286,7 +1336,8 @@ type closure = Closure_static of string * string * int | Closure_pushed of strin
 (* e's value pushed *)
 let rec value env e =
   match e with
-  | Const (CInt n | CChar n) -> emit (Imm (tagged n))
+  | Const (CInt n) -> emit (Imm (tagged n))
+  | Const (CChar n) -> emit (Imm (tagged n))
   | Const (CStr s) -> emit (Addr (static_string s, 8))
   | Var (x, _) -> var env x
   | Con (c, args) -> (
@@ -1314,13 +1365,13 @@ let rec value env e =
       done;
       emit (Alloc (0, !n))
   | Dot (e, _, i) -> value env e; emit (Field !i)
-  | SetDot (e, _, i, v) -> value env v; value env e; emit (SetField !i); emit (Imm 1L)
+  | SetDot (e, _, i, v) -> value env v; value env e; emit (SetField !i); emit (Imm (tagged 0))
   | App (f, args) -> ignore (app env f args false)
   | Fun (xs, b) -> (match closure env "fun" xs b with Closure_static (sym, _, _) -> emit (Addr (sym, 8)) | Closure_pushed _ -> ())
   | Let _ | Match _ | If _ | Seq _ -> control env e false
   | Try (b, cases) ->
-      let k = !cur.ntries in
-      !cur.ntries <- k + 1;
+      let k = (!cur).ntries in
+      (!cur).ntries <- k + 1;
       let handler = label () and out = label () in
       emit (TryEnter (k, handler));
       value env b;
@@ -1335,7 +1386,7 @@ let rec value env e =
       emit (Label out)
   | While (c, b) ->
       let top = label () and out = label () in
-      emit (Label top); value env c; emit (Jz out); value env b; emit Drop; emit (Jmp top); emit (Label out); emit (Imm 1L)
+      emit (Label top); value env c; emit (Jz out); value env b; emit Drop; emit (Jmp top); emit (Label out); emit (Imm (tagged 0))
   | For (x, a, b, up, body) ->
       value env a;
       let i = slot () in
@@ -1348,10 +1399,10 @@ let rec value env e =
       emit (Get lim); emit (Get i); emit (Op (Cmp (if up then Gt else Lt))); emit (Jnz out);
       value ((x, Loc (Slot i, None)) :: env) body;
       emit Drop;
-      emit (Imm 3L); emit (Get i); emit (Op (if up then Add else Sub)); emit (Set i);
+      emit (Imm (tagged 1)); emit (Get i); emit (Op (if up then Add else Sub)); emit (Set i);
       emit (Jmp top);
       emit (Label out);
-      emit (Imm 1L)
+      emit (Imm (tagged 0))
 
 (* e as a function's last: its value returned, or a call made a jump *)
 and tail env e =
@@ -1373,7 +1424,7 @@ and control env e tl =
       else (let out = label () in emit (Jmp out); emit (Label other); k env b; emit (Label out))
   | Let (r, bs, body) -> k (bind env r bs) body
   | Match (e, cases) -> value env e; let s = slot () in emit (Set s); match_cases env s cases tl match_failure
-  | _ -> assert false
+  | _ -> invalid_arg "control"
 
 (* the clauses in order, each tests then its body; after an irrefutable
  * one, nothing *)
@@ -1386,7 +1437,7 @@ and match_cases env s cases tl on_fail =
         let env = test env s p fail in
         Option.iter (fun g -> value env g; emit (Jz fail)) g;
         if tl then tail env body else (value env body; emit (Jmp out));
-        if refutable p || Option.is_some g then (emit (Label fail); go rest)
+        if refutable p || g <> None then (emit (Label fail); go rest)
   in
   go cases;
   if not tl then emit (Label out)
@@ -1399,7 +1450,7 @@ and var env x =
   | Loc (Static sym, _) -> emit (Addr (sym, 8))
   | Ext (_, n) ->
       (* a primitive as a value: the function that applies it *)
-      let xs = List.init n (fun i -> sprintf "%%e%d" i) in
+      let xs = List.init n (fun i -> "%e" ^ string_of_int i) in
       value env (Fun (xs, App (var_ x, List.map var_ xs)))
 
 and var_ x = Var (x, ref (tcon "?"))
@@ -1460,7 +1511,7 @@ and closure env name xs b =
   let lab = fun_label name and n = List.length xs in
   let fvs = captured env (Fun (xs, b)) in
   let benv = body_env env fvs in
-  Queue.add (fun () -> compile_fun lab xs benv b) queue;
+  enqueue (fun () -> compile_fun lab xs benv b);
   if fvs = [] then Closure_static (static_closure lab n, lab, n)
   else begin
     alloc_closure env lab n fvs;
@@ -1498,7 +1549,7 @@ and bind_rec env bs =
   if List.for_all (fun (_, xs, b) -> captured statics (Fun (xs, b)) = []) fs then begin
     List.iter2 (fun (_, xs, b) (lab, n) ->
       ignore (static_closure lab n);
-      Queue.add (fun () -> compile_fun lab xs (body_env statics []) b) queue) fs labs;
+      enqueue (fun () -> compile_fun lab xs (body_env statics []) b)) fs labs;
     statics
   end
   else begin
@@ -1509,7 +1560,7 @@ and bind_rec env bs =
     List.iteri (fun i ((_, xs, b), fvs) ->
       let lab, n = List.nth labs i in
       let benv = body_env env fvs in
-      Queue.add (fun () -> compile_fun lab xs benv b) queue;
+      enqueue (fun () -> compile_fun lab xs benv b);
       alloc_closure env lab n fvs;
       emit (Set (List.nth slots i))) (List.combine fs fvss);
     List.iteri (fun i fvs ->
@@ -1525,7 +1576,7 @@ and compile_fun lab xs benv b =
   cur := { code = []; nslots = 1 + List.length xs; ntries = 0 };
   let env = List.rev (List.mapi (fun i x -> x, Loc (Slot (i + 1), None)) xs) @ benv in
   tail env b;
-  machine lab (List.length xs) !cur.nslots (List.rev !cur.code)
+  machine lab (List.length xs) (!cur).nslots (List.rev (!cur).code)
 
 (* ml_curry<n>_<k>: a closure of arity n given its k+1-th argument; a
  * block [the next one; the closure; the k arguments...], or the call *)
@@ -1537,7 +1588,7 @@ let curry_fun n k =
   if k > 0 then emit (Field 1);
   if k < n - 1 then (emit (Addr (curry n (k + 1), 0)); emit (Alloc (closure_tag, k + 3)); emit Ret)
   else emit (Call (Code 1, n, true));
-  machine (curry n k) 1 !cur.nslots (List.rev !cur.code)
+  machine (curry n k) 1 (!cur).nslots (List.rev (!cur).code)
 
 (*****************************************************************************)
 (* The program *)
@@ -1568,16 +1619,21 @@ let compile_unit env (items : (item * int) list) =
           env, defs
       | ILet (r, bs) ->
           let env' = bind env r bs in
-          let added = List.filteri (fun i _ -> i < List.length env' - List.length env) env' in
+          (* (old: the lengths counted again for each name: quadratic in
+           * the names known, the prelude's, a minute of tiny-ml's on
+           * tiny-kernel) *)
+          let k = List.length env' - List.length env in
+          let added = List.filteri (fun i _ -> i < k) env' in
           let added = List.map (function
             | x, Loc (Slot s, k) -> emit (Get s); emit (SetG (table, !nglobals)); incr nglobals; x, Loc (Glob (table, !nglobals - 1), k)
             | b -> b) added in
           added @ env, added @ defs
-    with Failure m -> error "line %d: %s" l m) (env, []) items in
-  emit (Imm 1L);
+    with Failure m -> error ("line " ^ string_of_int l ^ ": " ^ m)) (env, []) items in
+  emit (Imm (tagged 0));
   emit Ret;
-  machine (!unit_name ^ ".init") 0 !cur.nslots (List.rev !cur.code);
-  while not (Queue.is_empty queue) do (Queue.pop queue) () done;
+  machine (!unit_name ^ ".init") 0 (!cur).nslots (List.rev (!cur).code);
+  let rec drain () = match dequeue () with Some f -> f (); drain () | None -> () in
+  drain ();
   env, defs, !nglobals
 
 (* The program's main: ml_init, each unit's init in their order, in a
@@ -1589,21 +1645,21 @@ let compile_main (units : (string * int) list) needed =
   cur := { code = []; nslots = 1; ntries = 1 };
   let handler = label () in
   emit (TryEnter (0, handler));
-  List.iter (fun (u, _) -> emit (Imm 1L); emit (Call (Direct (u ^ ".init"), 0, false)); emit Drop) units;
+  List.iter (fun (u, _) -> emit (Imm (tagged 0)); emit (Call (Direct (u ^ ".init"), 0, false)); emit Drop) units;
   emit (TryExit 0);
-  emit (Imm 1L);
+  emit (Imm (tagged 0));
   emit Ret;
   emit (Label handler);
   emit (Catch 0);
   emit (CallC ("ml_uncaught", 1));
   emit Ret;
-  machine "ml_init" 0 !cur.nslots (List.rev !cur.code);
+  machine "ml_init" 0 (!cur).nslots (List.rev (!cur).code);
   List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) (List.sort_uniq compare needed);
   let total = List.fold_left (fun t (_, n) -> t + n) 0 units in
   words "ml_nglobals" [ DNum (string_of_int total) ];
-  Printf.bprintf data "\t.piece\nml_globals:\n";
-  List.iter (fun (u, n) -> Printf.bprintf data "%s.globals:\n\t.space\t%d\n" u (4 * n)) units;
-  if total = 0 then Printf.bprintf data "\t.space\t4\n"
+  Buffer.add_string data "\t.piece\nml_globals:\n";
+  List.iter (fun (u, n) -> Buffer.add_string data (u ^ ".globals:\n\t.space\t" ^ string_of_int (4 * n) ^ "\n")) units;
+  if total = 0 then Buffer.add_string data "\t.space\t4\n"
 
 (*****************************************************************************)
 (* Interfaces *)
@@ -1625,8 +1681,8 @@ let compile_main (units : (string * int) list) needed =
  * A type is written as tiny-ml reads one, its variables 'v<number> *)
 let rec print_ty t =
   match repr t with
-  | TVar { contents = Unbound (n, _) } -> sprintf "'v%d" n
-  | TCon ("->", [ a; b ]) -> sprintf "(%s -> %s)" (print_ty a) (print_ty b)
+  | TVar { contents = Unbound (n, _) } -> ("'v" ^ string_of_int n)
+  | TCon ("->", [ a; b ]) -> ("(" ^ (print_ty a) ^ " -> " ^ (print_ty b) ^ ")")
   | TCon ("*", ts) -> "(" ^ String.concat " * " (List.map print_ty ts) ^ ")"
   | TCon (c, []) -> c
   | TCon (c, ts) -> "(" ^ String.concat ", " (List.map print_ty ts) ^ ") " ^ (match c with "%c" -> "pc_" | "%l" -> "pl_" | c -> c)
@@ -1634,7 +1690,7 @@ let rec print_ty t =
 
 let rec print_texpr = function
   | TEVar v -> "'" ^ v
-  | TE ("->", [ a; b ]) -> sprintf "(%s -> %s)" (print_texpr a) (print_texpr b)
+  | TE ("->", [ a; b ]) -> ("(" ^ (print_texpr a) ^ " -> " ^ (print_texpr b) ^ ")")
   | TE ("*", ts) -> "(" ^ String.concat " * " (List.map print_texpr ts) ^ ")"
   | TE (c, []) -> c
   | TE (c, ts) -> "(" ^ String.concat ", " (List.map print_texpr ts) ^ ") " ^ c
@@ -1646,25 +1702,33 @@ let read_ty s =
 
 let write_interface (exports : (string * binding) list) types nglobals =
   let b = Buffer.create 4096 in
-  let line fmt = Printf.ksprintf (fun s -> Buffer.add_string b (s ^ "\n")) fmt in
-  line "tiny-interface %s" !unit_name;
-  line "globals %d" nglobals;
-  List.iter (fun n -> line "curry %d" n) !arities;
-  Hashtbl.iter (fun c ci ->
-    line "con %s %s %d %d %d %s" c (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
-      ci.arity ci.nconst ci.nblock (print_ty ci.scheme)) cons;
-  Hashtbl.iter (fun l li -> line "label %s %s %d %b %s %s" l li.lrec li.idx li.mut (String.concat "," li.lnames) (print_ty li.lscheme)) record_labels;
-  List.iter (fun (t, (ps, te)) -> line "abbrev %s %s %s" t (if ps = [] then "-" else String.concat "," ps) (print_texpr te)) (List.rev !abbreviations);
-  List.iter (fun t -> line "forgotten %s" t) !forgotten;
-  let known = function Some (lab, n) -> sprintf "%s %d" lab n | None -> "- -" in
+  let line s = Buffer.add_string b (s ^ "\n") in
+  line ("tiny-interface " ^ !unit_name);
+  line ("globals " ^ string_of_int nglobals);
+  List.iter (fun n -> line ("curry " ^ string_of_int n)) !arities;
+  (* the tables by their names, a label's records the latest first, as
+   * the table has them (old: Hashtbl.iter's order, which is OCaml's
+   * or TinyLibCore's: an interface was not the same from the two
+   * builds of tiny-ml) *)
+  let names tbl = List.sort_uniq compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl []) in
+  List.iter (fun c ->
+    let ci = Hashtbl.find cons c in
+    line ("con " ^ c ^ " " ^ (match ci.kind with KConst n -> "c" ^ string_of_int n | KBlock n -> "b" ^ string_of_int n | KExn -> "e")
+      ^ " " ^ string_of_int ci.arity ^ " " ^ string_of_int ci.nconst ^ " " ^ string_of_int ci.nblock ^ " " ^ print_ty ci.scheme)) (names cons);
+  List.iter (fun l -> List.iter (fun li ->
+    line ("label " ^ l ^ " " ^ li.lrec ^ " " ^ string_of_int li.idx ^ " " ^ (if li.mut then "true" else "false") ^ " " ^ String.concat "," li.lnames ^ " " ^ print_ty li.lscheme))
+    (Hashtbl.find_all record_labels l)) (names record_labels);
+  List.iter (fun (t, (ps, te)) -> line ("abbrev " ^ t ^ " " ^ (if ps = [] then "-" else String.concat "," ps) ^ " " ^ (print_texpr te))) (List.rev !abbreviations);
+  List.iter (fun t -> line ("forgotten " ^ t)) !forgotten;
+  let known = function Some (lab, n) -> (lab ^ " " ^ string_of_int n) | None -> "- -" in
   List.iter (fun (x, bd) ->
     match List.assoc_opt x types with
     | None -> ()
     | Some t ->
         match bd with
-        | Loc (Static sym, k) -> line "val %s static %s %s %s" (qualify !unit_name x) sym (known k) (print_ty t)
-        | Loc (Glob (tb, i), k) -> line "val %s global %s %d %s %s" (qualify !unit_name x) tb i (known k) (print_ty t)
-        | Ext (p, n) -> line "val %s ext %s %d %s" (qualify !unit_name x) p n (print_ty t)
+        | Loc (Static sym, k) -> line ("val " ^ (qualify !unit_name x) ^ " static " ^ sym ^ " " ^ (known k) ^ " " ^ (print_ty t))
+        | Loc (Glob (tb, i), k) -> line ("val " ^ (qualify !unit_name x) ^ " global " ^ tb ^ " " ^ string_of_int i ^ " " ^ (known k) ^ " " ^ (print_ty t))
+        | Ext (p, n) -> line ("val " ^ (qualify !unit_name x) ^ " ext " ^ p ^ " " ^ string_of_int n ^ " " ^ (print_ty t))
         | Loc _ -> ()) exports;
   Buffer.contents b
 
@@ -1698,7 +1762,7 @@ let read_interface text env tenv =
         env := (x, Loc (Glob (tb, int_of_string i), known lab n)) :: !env; tenv := (x, read_ty (rest ws 7)) :: !tenv
     | "val" :: x :: "ext" :: p :: n :: _ -> env := (x, Ext (p, int_of_string n)) :: !env; tenv := (x, read_ty (rest ws 5)) :: !tenv
     | [ "" ] -> ()
-    | _ -> error "not an interface's line: %s" l) (String.split_on_char '\n' text);
+    | _ -> error ("not an interface's line: " ^ l)) (String.split_on_char '\n' text);
   if !name = "" then error "not an interface of tiny-ml's";
   if implicit !name then (env := opened !name !env; tenv := opened !name !tenv);
   !env, !tenv, (!name, !nglobals), !needed
@@ -1750,29 +1814,34 @@ let library () =
     known_units := m :: !known_units;
     (* an integer's range: 31 bits *)
     let text = if m = "Stdlib" then text ^ "let max_int = 1073741823\nlet min_int = - max_int - 1\n" else text in
-    let items = try parse text with Failure e -> error "TinyLibCore/%s.ml: %s" m e in
-    let _, tdefs = (try type_unit tenv items with Failure e -> error "TinyLibCore/%s.ml: %s" m e) in
-    let _, defs, n = (try compile_unit env items with Failure e -> error "TinyLibCore/%s.ml: %s" m e) in
+    let items = try parse text with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e) in
+    let _, tdefs = (try type_unit tenv items with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e)) in
+    let _, defs, n = (try compile_unit env items with Failure e -> error ("TinyLibCore/" ^ m ^ ".ml: " ^ e)) in
     export m defs env, export m tdefs tenv, units @ [ (m, n) ], needed @ !arities) ([], [], [], []) TinyMLPrelude.modules
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
+(* a file that cannot be read or made, said apart from an error in one *)
+exception File_error of string
+
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   let output = ref "" and file = ref "" and files = ref [] and separate = ref false in
-  let exit n = CapStdlib.exit caps n in
-  let rec args = function
+  let rec args l = match l with
     | "-o" :: o :: r -> output := o; args r
     | "-c" :: r -> separate := true; args r
     | f :: r -> files := f :: !files; args r
     | [] -> ()
   in
-  let argl = List.tl (Array.to_list (CapSys.argv caps)) in
-  if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
+  let argl = List.tl (TinyLibSystem.argv caps) in
   args argl;
   let files = List.rev !files in
-  let read f = file := f; FS.read caps (Fpath.v f) in
+  let read f = file := f; try TinyLibSystem.read_file caps f with Failure m -> raise (File_error m) in
   let tmis = List.filter (fun f -> Filename.check_suffix f ".tmi") files and mls = List.filter (fun f -> Filename.check_suffix f ".ml") files in
-  if List.length mls + List.length tmis <> List.length files || files = [] || (!separate && List.length mls <> 1) then
-    (Console.eprint caps "usage: tiny-ml [-o out.tm] file.ml... | -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi...   (-h: how)\n"; exit 2);
-  let write f text = FS.write caps (Fpath.v f) text in
+  if List.mem "-h" argl || List.mem "--help" argl then (TinyLibSystem.print caps help; 0)
+  else if List.length mls + List.length tmis <> List.length files || files = [] || (!separate && List.length mls <> 1) then
+    (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2)
+  else
+  let write f text =
+    let fd = try TinyLibSystem.open_out caps f with Failure m -> raise (File_error m) in
+    TinyLibSystem.write fd text; TinyLibSystem.close fd in
   try
     let env, tenv, stdlib, needed = library () in
     (* the interfaces read, in their order: the units before this one *)
@@ -1788,7 +1857,9 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
       let _, tdefs = type_unit tenv items in
       let _, exports, n = compile_unit env items in
       let mli = Filename.remove_extension f ^ ".mli" in
-      let types = (if Sys.file_exists mli then mli_types (read mli) else []) @ tdefs in
+      (* (old: Sys.file_exists mli, then read) *)
+      let mli_text = try Some (TinyLibSystem.read_file caps mli) with Failure _ -> None in
+      let types = (match mli_text with Some t -> file := mli; mli_types t | None -> []) @ tdefs in
       let out = if !output = "" then Filename.remove_extension (Filename.basename f) ^ ".tm" else !output in
       write out (Buffer.contents text ^ Buffer.contents data);
       write (Filename.remove_extension out ^ ".tmi") (write_interface exports types n)
@@ -1803,10 +1874,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
         export !unit_name defs env, export !unit_name tdefs tenv, units @ [ (!unit_name, n) ], needed @ !arities) (env, tenv, units, needed) mls in
       compile_main units needed;
       let asm = start ^ Buffer.contents text ^ Buffer.contents data in
-      if !output = "" then Console.print caps asm else write !output asm
-    end
+      if !output = "" then TinyLibSystem.print caps asm else write !output asm
+    end;
+    0
   with
-  | Failure m -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m); exit 1
-  | Sys_error m -> Console.eprint caps (Printf.sprintf "tiny-ml: %s\n" m); exit 1
+  | Failure m -> TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n"); 1
+  | File_error m -> TinyLibSystem.eprint caps ("tiny-ml: " ^ m ^ "\n"); 1
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-ml"; main caps)
+let () = TinyLibSystem.main "tiny-ml" main

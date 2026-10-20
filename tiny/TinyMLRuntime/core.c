@@ -30,6 +30,11 @@ extern value ml_nglobals;
 
 value *ml_vsp;
 void *ml_handler;
+/* the value stack's end, when the includer says it (mlsys.c): past it,
+ * a recursion too deep is said at the next allocation (old: none, the
+ * stack ran into the heap's first blocks: tiny-c's List.map over a
+ * file's tokens, wrong values, then a loop or an exception) */
+value *ml_vlimit;
 
 /* the memory, the includer's (ml_init_heap): the value stack's base,
  * the heap's two halves and their size in words */
@@ -139,6 +144,8 @@ ml_alloc(value n, value tag)
 
 	if(hp + n + 1 > limit)
 		gc(n + 1);
+	if(ml_vlimit && ml_vsp > ml_vlimit)
+		fatal("Fatal error: stack overflow\n");
 	p = hp + 1;
 	p[-1] = (n << 10) | tag;
 	hp = p + n;

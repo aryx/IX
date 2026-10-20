@@ -92,7 +92,7 @@ O = _make
 T = ../tests/TinyKernel_tests
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/font.o $(O)/kernel.o $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build
+PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -156,7 +156,8 @@ $(O)/bin/%: $(ULIB) $(O)/user/%.o
 # interfaces of the units it names (I_U, in the order of the programs it
 # is in: their names are one name space, so a unit sees only what comes
 # before it there); linked after mlsys.c (TinyML's runtime and the
-# system calls as ML's externals, its heap from 384 KB) with the main
+# system calls as ML's externals, its stack of values and its heap from
+# 384 KB, or from its end when it is larger) with the main
 # tiny-ml makes of the program's interfaces (_make/main/: the prelude,
 # each unit's init in their order). tiny-linker leaves out what a
 # program does not use of its units.
@@ -185,6 +186,10 @@ I_TinyProfiler = TinyCalls TinyLibSystem
 I_TinyDatabase = TinyCalls TinyLibSystem
 I_TinyVCS = TinyCalls TinyLibSystem
 I_TinyBuildSystem = TinyCalls TinyLibSystem
+I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA
+I_TinyLinker = $(I_TinyAssembler)
+I_TinyC = TinyCalls TinyLibSystem
+I_TinyML = TinyCalls TinyLibSystem TinyMLPrelude
 I_Square = $(I_TinyLibGUI)
 I_Machine = $(I_TinyLibGUI) Square
 I_Tetris = $(I_TinyAppTetris) TinyAppTetris
@@ -209,9 +214,11 @@ F_Troff = user/troff.ml
 F_Play = user/play.ml
 F_Www = user/www.ml
 F_Bigmem = user/bigmem.ml
+F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
+F_TinyMLPrelude = $(O)/TinyMLPrelude.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem \
+UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyMLPrelude TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem
 .SECONDEXPANSION:
@@ -229,9 +236,9 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 # a.out whose header says so (tiny-linker -a): tiny-kernel gives it a
 # partition of that size and mlsys.c a heap of it (bigmem: the test;
 # www: a page's lines live in its heap; play: the WAV file is read
-# whole into it). Its code must stay under 384 KB, where mlsys.c's
-# heap, or its stack of values, starts.
-ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build
+# whole into it; as, ld, cc, ml: the toolchain, a file whole in memory
+# and the compilers' recursions over it).
+ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml
 UNITS_windows = TinyLibDraw TinyWindows
 UNITS_square = $(I_Machine) Machine
 UNITS_tetris = $(I_Tetris) Tetris
@@ -250,18 +257,33 @@ UNITS_prof = $(I_TinyProfiler) TinyProfiler
 UNITS_db = $(I_TinyDatabase) TinyDatabase
 UNITS_vcs = $(I_TinyVCS) TinyVCS
 UNITS_build = $(I_TinyBuildSystem) TinyBuildSystem
+UNITS_as = $(I_TinyAssembler) TinyAssembler
+UNITS_ld = $(I_TinyLinker) TinyLinker
+UNITS_cc = $(I_TinyC) TinyC
+UNITS_ml = $(I_TinyML) TinyML
 MEM_bigmem = -a 8
 MEM_www = -a 10
 MEM_play = -a 4
+MEM_as = -a 16
+MEM_ld = -a 16
+MEM_cc = -a 16
+MEM_ml = -a 32
 $(O)/libml/mlsys.tm: ../TinyMLRuntime/core.c
+# tiny-ml's library, TinyLibCore/'s modules as strings in a unit of its
+# own (tiny/dune's and tiny/mkfile's rule)
+CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl Common Sha1
+$(O)/TinyMLPrelude.ml: $(CORE:%=../TinyLibCore/%.ml)
+	@mkdir -p $(@D)
+	(echo 'let modules = ['; for m in $(CORE); do echo "\"$$m\", {|"; cat ../TinyLibCore/$$m.ml; echo '|};'; done; echo ']') > $@
 $(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML) -o $@ $(filter %.tmi,$^)
 # (the main right after mlsys.c, which calls its ml_start by a jal: 128 KB)
-$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*)))
+# (end.o last: _end, where mlsys.c puts its stack of values when the
+# program is past 384 KB; old: a program past it refused here)
+$(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(O)/end.o
 	@mkdir -p $(@D)
 	$(LD) -map $(MEM_$*) -o $@ $(filter %.o,$^)
-	@case $* in bigmem|play) ;; *) test $$(wc -c < $@) -lt 393216 || { echo "$@: over 384 KB, where mlsys.c has its heap"; rm $@; exit 1; };; esac
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
@@ -287,8 +309,17 @@ BINS = $(addprefix $(O)/bin/,$(PROGS))
 # m-ix's mini-play, at 11,025 samples a second in 16 bits); a profile and
 # its map, which prof reads (prof /examples/spin.prof -u
 # /examples/spin.map: ../tests/TinyProfiler_tests/spin.tm, linked with
-# -map and run by tiny-cpu -prof)
-EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map
+# -map and run by tiny-cpu -prof); a unit's object and interface as
+# the host's tiny-ml and tiny-assembler made them, which ml's and as's on
+# tiny-kernel are compared with (make check)
+EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml examples/report.ixd examples/korobeiniki.wav $(O)/spin.prof $(O)/spin.map \
+	$(U)/TinyMachineISA.tm $(U)/TinyMachineISA.tmi $(U)/TinyMachineISA.o
+
+# sources, in /src as they are in tiny/, for the toolchain on tiny-kernel:
+# ping's C and what it is linked with, a unit of ML
+# (plan_tiny_self_hosting.md, step 7; its step 8 puts them all)
+SRC = TinyKernel/user/ping.c TinyKernel/libc/user.h TinyKernel/libc/sys.tm TinyCRuntime/start.tm TinyCRuntime/udivmod.tm \
+	TinyCRuntime/libc.c TinyCRuntime/libc.h TinyMachine/TinyMachineISA.ml TinyMachine/TinyMachineISA.mli
 
 $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
 	@mkdir -p $(@D)
@@ -297,10 +328,11 @@ $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
 	$(CPU) -prof $@ $(O)/spin > /dev/null
 $(O)/spin.map: $(O)/spin.prof
 
-$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES)
+$(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%)
 	cp $(O)/kernel.img $@
 	for f in $(BINS); do printf 'bin/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
 	for f in $(EXAMPLES); do printf 'examples/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
+	for f in $(SRC); do printf 'src/%s\n%d\n' $$f $$(wc -c < ../$$f) >> $@; cat ../$$f >> $@; done
 	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
 	printf '\n' >> $@
@@ -333,6 +365,7 @@ check: $(O)/boot.img
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/db.keys >> $(O)/check.out
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/vcs.keys >> $(O)/check.out
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys >> $(O)/check.out
+	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out

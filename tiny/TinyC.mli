@@ -184,5 +184,6 @@
  * code for the stack machine, then the assembly added to the output *)
 val external_decl : unit -> unit
 
-(* the program: a file of C to a file of assembly (-h: how) *)
-val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. > -> unit
+(* the program: a file of C to a file of assembly (-h: how), to its
+ * exit status *)
+val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

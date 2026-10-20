@@ -6,8 +6,10 @@
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
+let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
+
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-c [-ir] [-o out.tm] file.c
+let help = usage ^ {|
 
 A tiny C compiler: a C file to TinyCPU's assembly, for tiny-cpu, with its own
 libc; -ir prints its stack machine's code instead. A fact.c that includes
@@ -21,7 +23,8 @@ tiny/TinyCRuntime/libc.h and prints fact(10):
 An error names the file and the line: fact.c: line 3: expected ;
 |}
 
-let error fmt = Printf.ksprintf failwith fmt
+(* (old: Printf.ksprintf's, a format and its values) *)
+let error s = failwith s
 
 (* the machine, TinyCPU, has words of 4 bytes: pointers too, and no
  * long long *)
@@ -42,6 +45,9 @@ type ty =
 and sdef = { mutable fields : (string * ty * int) list; mutable ssize : int; mutable salign : int }
 
 let int_t = Int (4, true) and long_t = Int (8, true) and char_t = Int (1, true)
+(* an int's largest value (old: 0x7fffffffL, a literal tiny-ml does
+ * not read) *)
+let int_max = Int64.of_string "0x7fffffff"
 let rec size = function Void -> 1 | Int (n, _) -> n | Ptr _ | Func _ -> 4 | Arr (t, n) -> n * size t | Struct s -> s.ssize
 let rec align = function Int (n, _) -> n | Arr (t, _) -> align t | Struct s -> s.salign | _ -> 4
 let round n a = (n + a - 1) / a * a
@@ -54,7 +60,8 @@ let unsigned = function Int (_, s) -> not s | Ptr _ -> true | _ -> false
 let rec no_vlong t =
   match t with
   | Int (8, _) -> error "long long: not on TinyCPU (a 32-bit machine)"
-  | Arr (t, _) | Ptr t -> no_vlong t
+  | Arr (t, _) -> no_vlong t
+  | Ptr t -> no_vlong t
   | Func (r, ps, _) -> no_vlong r; List.iter no_vlong ps
   | _ -> ()
 
@@ -98,11 +105,15 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t) (read : string 
     match t with
     | Id x when Hashtbl.mem macros x -> out := List.rev_append (List.map (fun (t, _) -> t, l) (Hashtbl.find macros x)) !out
     | t -> out := (t, l) :: !out in
+  (* (old: '0' .. '9' and the others as patterns: tiny-ml has no
+   * character ranges) *)
+  let digit c = c >= '0' && c <= '9' in
+  let letter c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' in
   let escape i =
     (* the escapes: n t r, octal, and any other character as itself *)
     match s.[i] with
     | 'n' -> 10, i + 1 | 't' -> 9, i + 1 | 'r' -> 13, i + 1
-    | '0' .. '7' -> let rec oct j v = if j < n && j < i + 3 && s.[j] >= '0' && s.[j] <= '7' then oct (j + 1) ((v * 8) + Char.code s.[j] - 48) else v, j in oct i 0
+    | c when c >= '0' && c <= '7' -> let rec oct j v = if j < n && j < i + 3 && s.[j] >= '0' && s.[j] <= '7' then oct (j + 1) ((v * 8) + Char.code s.[j] - 48) else v, j in oct i 0
     | c -> Char.code c, i + 1
   in
   let rec span j p = if j < n && p s.[j] then span (j + 1) p else j in
@@ -133,12 +144,12 @@ let rec tokens (macros : (string, (token * loc) list) Hashtbl.t) (read : string 
       | '/' when i + 1 < n && s.[i + 1] = '*' ->
           let rec close j = if j + 1 >= n then n else if s.[j] = '*' && s.[j + 1] = '/' then j + 2 else close (j + 1) in
           go (close (i + 2)) bol
-      | 'a' .. 'z' | 'A' .. 'Z' | '_' ->
-          let j = span i (function 'a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_' -> true | _ -> false) in
+      | c when letter c ->
+          let j = span i (fun c -> letter c || digit c) in
           emit i (Id (String.sub s i (j - i)));
           go j false
-      | '0' .. '9' ->
-          let k = span i (function '0' .. '9' | 'a' .. 'f' | 'A' .. 'F' | 'x' | 'X' -> true | _ -> false) in
+      | c when digit c ->
+          let k = span i (fun c -> digit c || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c = 'x' || c = 'X') in
           let lit = String.sub s i (k - i) in
           let lit = if String.length lit > 1 && lit.[0] = '0' && lit.[1] <> 'x' && lit.[1] <> 'X' then "0o" ^ String.sub lit 1 (String.length lit - 1) else lit in
           let j = span k (function 'u' | 'U' | 'l' | 'L' -> true | _ -> false) in
@@ -201,8 +212,10 @@ and desc =
   | Bin of binop * expr * expr        (* both operands of one type; a relation's value an int *)
   | Cond of expr * expr * expr        (* && || ! are made of it *)
   | Asg of expr * expr * bool         (* an lvalue, its new value, which uses Cur *)
-  | Call of string * expr list
-  | CallPtr of expr * expr list       (* through a function's address *)
+  | Apply of string * expr list       (* a call (old: Call, the stack machine's
+                                       * name too: tiny-ml's constructors are
+                                       * one name space) *)
+  | ApplyPtr of expr * expr list      (* through a function's address *)
   | Conv of expr                      (* to t *)
   | Comma of expr * expr
 
@@ -218,7 +231,7 @@ let conv (e : expr) t =
   | Int _, Int (n, sg), Const v ->
       (* a constant converted now: truncated, extended *)
       let bits = 8 * n in
-      let v = if bits = 64 then v else if sg then Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits) else Int64.logand v (Int64.pred (Int64.shift_left 1L bits)) in
+      let v = if bits = 64 then v else if sg then Int64.shift_right (Int64.shift_left v (64 - bits)) (64 - bits) else Int64.logand v (Int64.pred (Int64.shift_left Int64.one bits)) in
       num v t
   | (Ptr _ | Arr _), Ptr _, _ | Ptr _, Int (8, _), _ | Int (8, _), Ptr _, _ -> { e with t }
   | _ -> mk (Conv e) t
@@ -247,24 +260,25 @@ let rec binary op (a : expr) (b : expr) =
   | R _, Ptr _, _ | R _, _, Ptr _ -> let t = if is_ptr a.t then a.t else b.t in mk (Bin (op, conv a t, conv b t)) int_t
   | R _, Int _, Int _ -> let t = common a.t b.t in mk (Bin (op, conv a t, conv b t)) int_t
   | A o, Int _, Int _ -> let t = if o = Shl || o = Shr then promote a.t else common a.t b.t in mk (Bin (op, conv a t, conv b t)) t
-  | _ -> error "bad operands for %s" (binop_name op)
+  | _ -> error ("bad operands for " ^ binop_name op)
 
 let addr (e : expr) = match e.d with Deref a -> { a with t = Ptr e.t } | _ -> error "not an lvalue"
 let deref (e : expr) = let e = rv e in match e.t with Ptr t -> mk (Deref e) t | _ -> error "not a pointer"
 
-let assign ~cur (l : expr) (r : expr) = match l.d with Deref _ -> mk (Asg (l, conv (rv r) l.t, cur)) l.t | _ -> error "not an lvalue"
+(* (old: ~cur, a label, which tiny-ml does not read) *)
+let assign cur (l : expr) (r : expr) = match l.d with Deref _ -> mk (Asg (l, conv (rv r) l.t, cur)) l.t | _ -> error "not an lvalue"
 
 (* x op= y: the value computed from x's, loaded once *)
-let asg_op o (l : expr) r = assign ~cur:true l (binary (A o) (mk Cur l.t) r)
+let asg_op o (l : expr) r = assign true l (binary (A o) (mk Cur l.t) r)
 
 (* a variable, as an lvalue *)
 let var p t = mk (Deref (mk (Addr p) (Ptr t))) t
 
 (* a condition's value, 1 or 0; !, && and || as ?: of them *)
-let truth c = mk (Cond (rv c, num 1L int_t, num 0L int_t)) int_t
-let lnot c = mk (Cond (rv c, num 0L int_t, num 1L int_t)) int_t
-let both a b = mk (Cond (rv a, truth b, num 0L int_t)) int_t
-let either a b = mk (Cond (rv a, num 1L int_t, truth b)) int_t
+let truth c = mk (Cond (rv c, num Int64.one int_t, num Int64.zero int_t)) int_t
+let lnot c = mk (Cond (rv c, num Int64.zero int_t, num Int64.one int_t)) int_t
+let both a b = mk (Cond (rv a, truth b, num Int64.zero int_t)) int_t
+let either a b = mk (Cond (rv a, num Int64.one int_t, truth b)) int_t
 
 (*****************************************************************************)
 (* Statements *)
@@ -302,14 +316,15 @@ type ir =
   | Ret of bool
 
 let show i =
-  let w t = Printf.sprintf "%d%s" (size t) (if unsigned t then "u" else "") in
+  let w t = string_of_int (size t) ^ (if unsigned t then "u" else "") in
+  let l k = "L" ^ string_of_int k in
   match i with
-  | Imm v -> Printf.sprintf "imm %Ld" v | Place (Global s) -> "addr " ^ s | Place (Local o) -> Printf.sprintf "frame -%d" o
-  | Place (Param o) -> Printf.sprintf "param %d" o | Load t -> "load " ^ w t | Store t -> "store " ^ w t
-  | Op (o, t) -> Printf.sprintf "op %s %s" (binop_name o) (w t) | Unop (o, _) -> if o = Neg then "neg" else "com" | Ext t -> "ext " ^ w t
-  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> Printf.sprintf "call %s %d%s" (f ||| "*") n (if r then " ->" else "")
-  | Label l -> Printf.sprintf "L%d:" l | Jmp l -> Printf.sprintf "jmp L%d" l | Jz l -> Printf.sprintf "jz L%d" l
-  | Jnz l -> Printf.sprintf "jnz L%d" l | Ret v -> if v then "ret value" else "ret"
+  | Imm v -> "imm " ^ Int64.to_string v | Place (Global s) -> "addr " ^ s | Place (Local o) -> "frame -" ^ string_of_int o
+  | Place (Param o) -> "param " ^ string_of_int o | Load t -> "load " ^ w t | Store t -> "store " ^ w t
+  | Op (o, t) -> "op " ^ binop_name o ^ " " ^ w t | Unop (o, _) -> if o = Neg then "neg" else "com" | Ext t -> "ext " ^ w t
+  | Dup -> "dup" | Drop -> "drop" | Call (f, n, r) -> "call " ^ (f ||| "*") ^ " " ^ string_of_int n ^ (if r then " ->" else "")
+  | Label k -> l k ^ ":" | Jmp k -> "jmp " ^ l k | Jz k -> "jz " ^ l k
+  | Jnz k -> "jnz " ^ l k | Ret v -> if v then "ret value" else "ret"
 
 let code : ir list ref = ref []           (* the current function's, the last first *)
 let emit i = code := i :: !code
@@ -339,8 +354,8 @@ let rec value (e : expr) : unit =
       if cur then emit Dup;
       value r;
       emit (Store l.t)
-  | Call (f, args) -> List.iter value args; emit (Call (Some f, List.length args, e.t <> Void))
-  | CallPtr (f, args) -> List.iter value args; value f; emit (Call (None, List.length args, e.t <> Void))
+  | Apply (f, args) -> List.iter value args; emit (Call (Some f, List.length args, e.t <> Void))
+  | ApplyPtr (f, args) -> List.iter value args; value f; emit (Call (None, List.length args, e.t <> Void))
   | Conv a -> value a; (match a.t, e.t with (Arr _ | Ptr _ | Void), _ | _, Void -> () | _ -> emit (Ext e.t))
   | Comma (a, b) -> value a; if a.t <> Void then emit Drop; value b
 
@@ -379,7 +394,7 @@ let rec lower (k : targets) (s : stmt) =
       emit (Jmp top); emit (Label out)
   | Switch (tmp, v, body) ->
       (* the value in a temporary, the cases after the body *)
-      for_effect (assign ~cur:false tmp v);
+      for_effect (assign false tmp v);
       let dispatch = label () and out = label () in
       emit (Jmp dispatch);
       let cases = ref [] in
@@ -404,12 +419,12 @@ type storage = Auto | Static | Extern | Typedef
 
 type var = { vty : ty; where : place }
 
-let toks = ref [||] and pos = ref 0
-let locs : loc array ref = ref [||]      (* each token's, for the errors *)
-let peek () = if !pos < Array.length !toks then !toks.(!pos) else EOF
+let toks : token array ref = ref (Array.of_list []) and pos = ref 0
+let locs : loc array ref = ref (Array.of_list [])      (* each token's, for the errors *)
+let peek () = if !pos < Array.length !toks then (!toks).(!pos) else EOF
 let next () = let t = peek () in incr pos; t
 let accept p = if peek () = P p then (incr pos; true) else false
-let expect p = if not (accept p) then error "expected %s" p
+let expect p = if not (accept p) then error ("expected " ^ p)
 let ident () = match next () with Id x -> x | _ -> error "expected a name"
 
 let globals : (string, var) Hashtbl.t = Hashtbl.create 64
@@ -434,21 +449,25 @@ let pending : (string, (int * datum) list) Hashtbl.t = Hashtbl.create 16
 
 let datum name off d = Hashtbl.replace pending name ((off, d) :: (Hashtbl.find_opt pending name ||| []))
 
+(* a value's low 32 bits, signed, in decimal (old: Printf's %ld of
+ * Int64.to_int32) *)
+let word v = Int64.to_string (Int64.shift_right (Int64.shift_left v 32) 32)
+
 (* a global of n bytes: its label and its data, the gaps zeros *)
 let globl name n =
-  let line fmt = Printf.ksprintf (fun s -> Buffer.add_string data ("\t" ^ s ^ "\n")) fmt in
-  Buffer.add_string data (Printf.sprintf "\t.align\t4\n%s:\n" (sym name));
-  let bytes l = line ".byte\t%s" (String.concat ", " (List.map string_of_int l)) in
+  let line s = Buffer.add_string data ("\t" ^ s ^ "\n") in
+  Buffer.add_string data ("\t.align\t4\n" ^ sym name ^ ":\n");
+  let bytes l = line (".byte\t" ^ String.concat ", " (List.map string_of_int l)) in
   let at = List.fold_left (fun at (off, d) ->
-    if off > at then line ".space\t%d" (off - at);
+    if off > at then line (".space\t" ^ string_of_int (off - at));
     match d with
     | Bytes b -> bytes (List.map Char.code (List.init (String.length b) (String.get b))); off + String.length b
     | Value (1, v) -> bytes [ Int64.to_int v land 0xff ]; off + 1
     | Value (2, v) -> bytes [ Int64.to_int v land 0xff; (Int64.to_int v lsr 8) land 0xff ]; off + 2
-    | Value (k, v) -> line ".word\t%ld" (Int64.to_int32 v); if k = 8 then line ".word\t%ld" (Int64.to_int32 (Int64.shift_right v 32)); off + k
-    | Address s -> line ".word\t%s" (sym s); off + 4)
+    | Value (k, v) -> line (".word\t" ^ word v); if k = 8 then line (".word\t" ^ word (Int64.shift_right v 32)); off + k
+    | Address s -> line (".word\t" ^ sym s); off + 4)
     0 (List.sort (fun (a, _) (b, _) -> compare a b) (List.rev (Hashtbl.find_opt pending name ||| []))) in
-  if n > at then line ".space\t%d" (n - at);
+  if n > at then line (".space\t" ^ string_of_int (n - at));
   Hashtbl.remove pending name
 let strings = ref 0
 let tags = ref 0                          (* the anonymous structures' *)
@@ -456,7 +475,7 @@ let tags = ref 0                          (* the anonymous structures' *)
 let lookup x =
   match List.find_map (fun s -> Hashtbl.find_opt s x) !scopes with
   | Some v -> v
-  | None -> (match Hashtbl.find_opt globals x with Some v -> v | None -> error "undeclared: %s" x)
+  | None -> (match Hashtbl.find_opt globals x with Some v -> v | None -> error ("undeclared: " ^ x))
 
 (* a local's place, below SP at its alignment *)
 let local t = frame := round (!frame + size t) (max 1 (min 8 (align t))); Local !frame
@@ -464,7 +483,7 @@ let local t = frame := round (!frame + size t) (max 1 (min 8 (align t))); Local 
 (* a string, as a static array of bytes *)
 let string_lit s =
   incr strings;
-  let name = Printf.sprintf "s%d<>" !strings in
+  let name = "s" ^ string_of_int !strings ^ "<>" in
   let s = s ^ "\000" in
   for i = 0 to (String.length s - 1) / 8 do
     datum name (8 * i) (Bytes (String.sub s (8 * i) (min 8 (String.length s - (8 * i)))))
@@ -483,7 +502,7 @@ let rec base_type () =
   let storage = ref Auto and words = ref [] and t = ref None in
   let rec go () =
     match peek () with
-    | Id ("static" | "extern" | "typedef" as w) -> ignore (next ()); storage := List.assoc w [ "static", Static; "extern", Extern; "typedef", Typedef ]; go ()
+    | Id (("static" | "extern" | "typedef") as w) -> ignore (next ()); storage := List.assoc w [ "static", Static; "extern", Extern; "typedef", Typedef ]; go ()
     | Id ("const" | "volatile") -> ignore (next ()); go ()
     | Id (("void" | "char" | "short" | "int" | "long" | "unsigned" | "signed") as w) -> ignore (next ()); words := w :: !words; go ()
     | Id "struct" -> ignore (next ()); t := Some (struct_type ()); go ()
@@ -500,7 +519,7 @@ let rec base_type () =
   !storage, t
 
 and struct_type () =
-  let tag = match peek () with Id x -> ignore (next ()); x | _ -> incr tags; Printf.sprintf ".%d" !tags in
+  let tag = match peek () with Id x -> ignore (next ()); x | _ -> incr tags; "." ^ string_of_int !tags in
   let s = match Hashtbl.find_opt structs tag with Some s -> s | None -> let s = { fields = []; ssize = 0; salign = 1 } in Hashtbl.replace structs tag s; s in
   if accept "{" then begin
     (* each member at its size's alignment, the whole rounded to 8, as 7c *)
@@ -529,7 +548,7 @@ and enum_type () =
   (match peek () with Id _ -> ignore (next ()) | _ -> ());
   if accept "{" then begin
     let rec go v = if not (accept "}") then (let x = ident () in let v = if accept "=" then const_expr () else v in Hashtbl.replace enums x v; ignore (accept ","); go (Int64.succ v)) in
-    go 0L
+    go Int64.zero
   end;
   int_t
 
@@ -556,7 +575,7 @@ and declarator_rec () : string * (ty -> ty) * string list =
       expect ")";
       r
     end
-    else ((match peek () with Id x -> ignore (next ()); x | _ -> ""), Fun.id, []) in
+    else ((match peek () with Id x -> ignore (next ()); x | _ -> ""), (fun t -> t), []) in
   if accept "(" then begin
     (* the parameters, named or not, an array's as a pointer; ... *)
     let rec params () =
@@ -586,7 +605,7 @@ and expr () = let e = assign_expr () in if accept "," then (let r = expr () in m
 and assign_expr () =
   let l = cond_expr () in
   match peek () with
-  | P "=" -> ignore (next ()); assign ~cur:false l (assign_expr ())
+  | P "=" -> ignore (next ()); assign false l (assign_expr ())
   | P op when List.mem_assoc op asg_ops -> ignore (next ()); asg_op (List.assoc op asg_ops) l (assign_expr ())
   | _ -> l
 
@@ -625,7 +644,7 @@ and unary () =
   | P "!" -> ignore (next ()); lnot (unary ())
   | P "*" -> ignore (next ()); deref (unary ())
   | P "&" -> ignore (next ()); addr (unary ())
-  | P ("++" | "--" as op) -> ignore (next ()); asg_op (if op = "++" then Add else Sub) (unary ()) (num 1L int_t)
+  | P (("++" | "--") as op) -> ignore (next ()); asg_op (if op = "++" then Add else Sub) (unary ()) (num Int64.one int_t)
   | Id "sizeof" ->
       ignore (next ());
       let t = if paren_type () then type_name () else (unary ()).t in
@@ -653,15 +672,15 @@ and postfix e =
       ignore (next ());
       let f = rv e in
       let rt, ps = match f.t with Ptr (Func (r, p, _)) -> r, p | _ -> error "not a function" in
-      postfix (mk (CallPtr (f, call_args ps)) rt)
+      postfix (mk (ApplyPtr (f, call_args ps)) rt)
   | P "[" -> ignore (next ()); let i = expr () in expect "]"; postfix (deref (binary (A Add) e i))
   | P "." -> ignore (next ()); postfix (member e (ident ()))
   | P "->" -> ignore (next ()); postfix (member (deref e) (ident ()))
-  | P ("++" | "--" as op) ->
+  | P (("++" | "--") as op) ->
       ignore (next ());
       (* x++ is (x += 1) - 1, and so on *)
       let o, back = if op = "++" then Add, Sub else Sub, Add in
-      postfix (conv (binary (A back) (asg_op o e (num 1L int_t)) (num 1L int_t)) e.t)
+      postfix (conv (binary (A back) (asg_op o e (num Int64.one int_t)) (num Int64.one int_t)) e.t)
   | _ -> e
 
 and member e f =
@@ -669,18 +688,18 @@ and member e f =
   | Struct s -> (
       match List.find_opt (fun (n, _, _) -> n = f) s.fields with
       | Some (_, t, off) -> mk (Deref (mk (Bin (A Add, conv (addr e) long_t, num (Int64.of_int off) long_t)) (Ptr t))) t
-      | None -> error "no member %s" f)
+      | None -> error ("no member " ^ f))
   | _ -> error "not a structure"
 
 and primary () =
   match next () with
-  | Num (v, ll) -> num v (if ll || Int64.compare v 0x7fffffffL > 0 then long_t else int_t)
+  | Num (v, ll) -> num v (if ll || Int64.compare v int_max > 0 then long_t else int_t)
   | Str s -> string_lit s
   | P "(" -> let e = expr () in expect ")"; e
   | Id f when peek () = P "(" && (match (try Some (lookup f) with Failure _ -> None) with Some { vty = Func _; _ } | None -> true | _ -> false) ->
       ignore (next ());
       let rt, ps, sym = match (try Some (lookup f) with Failure _ -> None) with Some { vty = Func (r, p, _); where = Global s } -> r, p, s | _ -> int_t, [], f in
-      mk (Call (sym, call_args ps)) rt
+      mk (Apply (sym, call_args ps)) rt
   | Id x when Hashtbl.mem enums x && not (List.exists (fun s -> Hashtbl.mem s x) !scopes || Hashtbl.mem globals x) -> num (Hashtbl.find enums x) int_t
   | Id x -> let v = lookup x in var v.where v.vty
   | _ -> error "expected an expression"
@@ -699,8 +718,8 @@ and const_expr () =
         let a = fold a and b = fold b in
         (match o with
          | Add -> Int64.add a b | Sub -> Int64.sub a b | Mul -> Int64.mul a b
-         | Div -> if b = 0L then error "division by zero" else Int64.div a b
-         | Mod -> if b = 0L then error "division by zero" else Int64.rem a b
+         | Div -> if b = Int64.zero then error "division by zero" else Int64.div a b
+         | Mod -> if b = Int64.zero then error "division by zero" else Int64.rem a b
          | And -> Int64.logand a b | Or -> Int64.logor a b | Xor -> Int64.logxor a b
          | Shl -> Int64.shift_left a (Int64.to_int b) | Shr -> Int64.shift_right a (Int64.to_int b))
     | _ -> error "not a constant" in
@@ -761,7 +780,7 @@ and locals () =
         no_vlong t;
         let p = local t in
         Hashtbl.replace (List.hd !scopes) name { vty = t; where = p };
-        if accept "=" then [ Expr (assign ~cur:false (var p t) (assign_expr ())) ] else []
+        if accept "=" then [ Expr (assign false (var p t) (assign_expr ())) ] else []
       end
     in
     init @ (if accept "," then go () else [])
@@ -789,26 +808,30 @@ let machine name locals (body : ir list) =
   let sp = ref 0 and saves = ref 0 and outgoing = ref 0 and dead = ref false in
   let depth_at = Hashtbl.create 16 in
   let top () = !sp in
-  let push () = incr sp; if !sp > 12 then error "%s: an expression too deep" name; !sp in
+  let push () = incr sp; if !sp > 12 then error (name ^ ": an expression too deep"); !sp in
   let jump l = Hashtbl.replace depth_at l !sp in
-  let lab l = Printf.sprintf "%s.L%d" !unit_name l in
+  let lab l = !unit_name ^ ".L" ^ string_of_int l in
+  (* a register's name, a number's text (old: Printf's formats, %d) *)
+  let r k = "r" ^ string_of_int k and n k = string_of_int k in
   (* the code, each line a function of the frame's size (known at the
    * end); slot k the k-th save, below the locals; lr above the
    * outgoing arguments *)
   let lines = ref [] in
   let at f = lines := f :: !lines in
-  let ins fmt = Printf.ksprintf (fun s -> at (fun _ -> "\t" ^ s ^ "\n")) fmt in
+  let ins s = at (fun _ -> "\t" ^ s ^ "\n") in
   let slot k = locals + (4 * k) in
   (* a value extended from its type: the registers are 32 bits, so only
    * a char's and a short's need it *)
-  let extend t r =
+  let extend t a =
     match t with
-    | Int (n, s) when n < 4 ->
-        if s then (ins "shli\tr%d, r%d, %d" r r (32 - (8 * n)); ins "sari\tr%d, r%d, %d" r r (32 - (8 * n)))
-        else ins "andi\tr%d, r%d, %d" r r ((1 lsl (8 * n)) - 1)
+    | Int (k, s) when k < 4 ->
+        if s then (ins ("shli\t" ^ r a ^ ", " ^ r a ^ ", " ^ n (32 - (8 * k))); ins ("sari\t" ^ r a ^ ", " ^ r a ^ ", " ^ n (32 - (8 * k))))
+        else ins ("andi\t" ^ r a ^ ", " ^ r a ^ ", " ^ n ((1 lsl (8 * k)) - 1))
     | _ -> () in
   let lr_at () = !outgoing in
-  let epilogue () = at (fun f -> Printf.sprintf "\tldw\tlr, %d(sp)\n\taddi\tsp, sp, %d\n\tret\n" (lr_at ()) f) in
+  let epilogue () = at (fun f -> "\tldw\tlr, " ^ n (lr_at ()) ^ "(sp)\n\taddi\tsp, sp, " ^ n f ^ "\n\tret\n") in
+  (* an instruction of three registers *)
+  let three op a b c = ins (op ^ "\t" ^ r a ^ ", " ^ r b ^ ", " ^ r c) in
   List.iter (fun i ->
     match i with
     | Label l ->
@@ -816,46 +839,46 @@ let machine name locals (body : ir list) =
         dead := false;
         at (fun _ -> lab l ^ ":\n")
     | _ when !dead -> ()
-    | Imm v -> ins "li\tr%d, %ld" (push ()) (Int64.to_int32 v)
-    | Place (Global s) -> ins "la\tr%d, %s" (push ()) (sym s)
-    | Place (Local o) -> let r = push () in at (fun f -> Printf.sprintf "\taddi\tr%d, sp, %d\n" r (f - o))
-    | Place (Param o) -> let r = push () in at (fun f -> Printf.sprintf "\taddi\tr%d, sp, %d\n" r (f + (4 * (o / 8))))
+    | Imm v -> let a = push () in ins ("li\t" ^ r a ^ ", " ^ word v)
+    | Place (Global s) -> let a = push () in ins ("la\t" ^ r a ^ ", " ^ sym s)
+    | Place (Local o) -> let a = push () in at (fun f -> "\taddi\t" ^ r a ^ ", sp, " ^ n (f - o) ^ "\n")
+    | Place (Param o) -> let a = push () in at (fun f -> "\taddi\t" ^ r a ^ ", sp, " ^ n (f + (4 * (o / 8))) ^ "\n")
     | Load t ->
         let a = top () in
         (match t with
-         | Int (1, _) -> ins "ldb\tr%d, 0(r%d)" a a
-         | Int (2, _) -> ins "ldb\tr13, 0(r%d)" a; ins "ldb\tr%d, 1(r%d)" a a; ins "shli\tr%d, r%d, 8" a a; ins "or\tr%d, r%d, r13" a a
-         | _ -> ins "ldw\tr%d, 0(r%d)" a a);
+         | Int (1, _) -> ins ("ldb\t" ^ r a ^ ", 0(" ^ r a ^ ")")
+         | Int (2, _) -> ins ("ldb\tr13, 0(" ^ r a ^ ")"); ins ("ldb\t" ^ r a ^ ", 1(" ^ r a ^ ")"); ins ("shli\t" ^ r a ^ ", " ^ r a ^ ", 8"); ins ("or\t" ^ r a ^ ", " ^ r a ^ ", r13")
+         | _ -> ins ("ldw\t" ^ r a ^ ", 0(" ^ r a ^ ")"));
         extend t a
     | Store t ->
         let v = top () in
         decr sp;
         let a = top () in
         (match size t with
-         | 1 -> ins "stb\tr%d, 0(r%d)" v a
-         | 2 -> ins "stb\tr%d, 0(r%d)" v a; ins "shri\tr13, r%d, 8" v; ins "stb\tr13, 1(r%d)" a
-         | _ -> ins "stw\tr%d, 0(r%d)" v a);
-        ins "mov\tr%d, r%d" a v
+         | 1 -> ins ("stb\t" ^ r v ^ ", 0(" ^ r a ^ ")")
+         | 2 -> ins ("stb\t" ^ r v ^ ", 0(" ^ r a ^ ")"); ins ("shri\tr13, " ^ r v ^ ", 8"); ins ("stb\tr13, 1(" ^ r a ^ ")")
+         | _ -> ins ("stw\t" ^ r v ^ ", 0(" ^ r a ^ ")"));
+        ins ("mov\t" ^ r a ^ ", " ^ r v)
     | Op (o, t) -> (
         let b = top () in
         decr sp;
         let a = top () and u = unsigned t in
         let slt = if u then "sltu" else "slt" in
         match o with
-        | R Lt -> ins "%s\tr%d, r%d, r%d" slt a a b
-        | R Gt -> ins "%s\tr%d, r%d, r%d" slt a b a
-        | R Le -> ins "%s\tr%d, r%d, r%d" slt a b a; ins "xori\tr%d, r%d, 1" a a
-        | R Ge -> ins "%s\tr%d, r%d, r%d" slt a a b; ins "xori\tr%d, r%d, 1" a a
-        | R Eq -> ins "sub\tr%d, r%d, r%d" a a b; ins "sltiu\tr%d, r%d, 1" a a
-        | R Ne -> ins "sub\tr%d, r%d, r%d" a a b; ins "sltu\tr%d, zero, r%d" a a
+        | R Lt -> three slt a a b
+        | R Gt -> three slt a b a
+        | R Le -> three slt a b a; ins ("xori\t" ^ r a ^ ", " ^ r a ^ ", 1")
+        | R Ge -> three slt a a b; ins ("xori\t" ^ r a ^ ", " ^ r a ^ ", 1")
+        | R Eq -> three "sub" a a b; ins ("sltiu\t" ^ r a ^ ", " ^ r a ^ ", 1")
+        | R Ne -> three "sub" a a b; ins ("sltu\t" ^ r a ^ ", zero, " ^ r a)
         | A ((Div | Mod) as o) when u ->
             (* TinyCPU divides signed only: the runtime's __udivmod, its
              * operands and the remainder below sp, the quotient in r13 *)
-            ins "stw\tr%d, -4(sp)" a; ins "stw\tr%d, -8(sp)" b; ins "call\t__udivmod";
-            if o = Div then ins "mov\tr%d, r13" a else ins "ldw\tr%d, -4(sp)" a;
+            ins ("stw\t" ^ r a ^ ", -4(sp)"); ins ("stw\t" ^ r b ^ ", -8(sp)"); ins "call\t__udivmod";
+            if o = Div then ins ("mov\t" ^ r a ^ ", r13") else ins ("ldw\t" ^ r a ^ ", -4(sp)");
             extend t a
         | A o ->
-            ins "%s\tr%d, r%d, r%d"
+            three
               (match o with
                | Add -> "add" | Sub -> "sub" | Mul -> "mul" | Div -> "div" | Mod -> "rem"
                | And -> "and" | Or -> "or" | Xor -> "xor" | Shl -> "shl" | Shr -> if u then "shr" else "sar")
@@ -863,29 +886,29 @@ let machine name locals (body : ir list) =
             extend t a)
     | Unop (o, t) ->
         let a = top () in
-        if o = Neg then ins "sub\tr%d, zero, r%d" a a else (ins "addi\tr13, zero, -1"; ins "xor\tr%d, r%d, r13" a a);
+        if o = Neg then ins ("sub\t" ^ r a ^ ", zero, " ^ r a) else (ins "addi\tr13, zero, -1"; ins ("xor\t" ^ r a ^ ", " ^ r a ^ ", r13"));
         extend t a
     | Ext t -> extend t (top ())
-    | Dup -> let a = top () in ins "mov\tr%d, r%d" (push ()) a
+    | Dup -> let a = top () in let d = push () in ins ("mov\t" ^ r d ^ ", " ^ r a)
     | Drop -> decr sp
-    | Call (f, n, r) ->
-        let base = !sp - n - (if f = None then 1 else 0) in
+    | Call (f, k, res) ->
+        let base = !sp - k - (if f = None then 1 else 0) in
         saves := max !saves base;
-        for k = 1 to base do at (fun fr -> Printf.sprintf "\tstw\tr%d, %d(sp)\n" k (fr - slot k)) done;
-        for k = 0 to n - 1 do ins "stw\tr%d, %d(sp)" (base + 1 + k) (4 * k) done;
-        outgoing := max !outgoing (4 * n);
-        (match f with Some f -> ins "call\t%s" (sym f) | None -> ins "jalr\tlr, 0(r%d)" (base + n + 1));
-        for k = 1 to base do at (fun fr -> Printf.sprintf "\tldw\tr%d, %d(sp)\n" k (fr - slot k)) done;
+        for j = 1 to base do at (fun fr -> "\tstw\t" ^ r j ^ ", " ^ n (fr - slot j) ^ "(sp)\n") done;
+        for j = 0 to k - 1 do ins ("stw\t" ^ r (base + 1 + j) ^ ", " ^ n (4 * j) ^ "(sp)") done;
+        outgoing := max !outgoing (4 * k);
+        (match f with Some f -> ins ("call\t" ^ sym f) | None -> ins ("jalr\tlr, 0(" ^ r (base + k + 1) ^ ")"));
+        for j = 1 to base do at (fun fr -> "\tldw\t" ^ r j ^ ", " ^ n (fr - slot j) ^ "(sp)\n") done;
         sp := base;
-        if r then ins "mov\tr%d, r13" (push ())
-    | Jmp l -> jump l; ins "j\t%s" (lab l); dead := true
-    | Jz l -> let a = top () in decr sp; jump l; ins "beq\tr%d, zero, %s" a (lab l)
-    | Jnz l -> let a = top () in decr sp; jump l; ins "bne\tr%d, zero, %s" a (lab l)
-    | Ret v -> if v then (ins "mov\tr13, r%d" (top ()); decr sp); epilogue (); dead := true)
+        if res then (let d = push () in ins ("mov\t" ^ r d ^ ", r13"))
+    | Jmp l -> jump l; ins ("j\t" ^ lab l); dead := true
+    | Jz l -> let a = top () in decr sp; jump l; ins ("beq\t" ^ r a ^ ", zero, " ^ lab l)
+    | Jnz l -> let a = top () in decr sp; jump l; ins ("bne\t" ^ r a ^ ", zero, " ^ lab l)
+    | Ret v -> if v then (ins ("mov\tr13, " ^ r (top ())); decr sp); epilogue (); dead := true)
     body;
   if not !dead then epilogue ();
   let frame = round (!outgoing + 4 + (4 * !saves) + locals) 8 in
-  Buffer.add_string out (Printf.sprintf "%s:\n\taddi\tsp, sp, %d\n\tstw\tlr, %d(sp)\n" (sym name) (- frame) (lr_at ()));
+  Buffer.add_string out (sym name ^ ":\n\taddi\tsp, sp, " ^ n (- frame) ^ "\n\tstw\tlr, " ^ n (lr_at ()) ^ "(sp)\n");
   List.iter (fun f -> Buffer.add_string out (f frame)) (List.rev !lines)
 
 (*****************************************************************************)
@@ -914,7 +937,7 @@ let rec init_data name t off =
       (match e.d, e.t with
        | Const v, _ -> datum name off (Value (size t, v))
        | Addr (Global s), _ -> datum name off (Address s)
-       | _ -> error "%s: not a constant init_data" name);
+       | _ -> error (name ^ ": not a constant init_data"));
       1
 
 let external_decl () =
@@ -951,39 +974,51 @@ let external_decl () =
   in
   if not (accept ";") then go ()
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; Cap.exit; .. >) =
+(* a file that cannot be read or made, said apart from an error in one *)
+exception File_error of string
+
+let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
   let output = ref "" and file = ref "" in
-  let exit n = CapStdlib.exit caps n in
-  let rec args = function
+  let rec args l = match l with
     | "-ir" :: r -> ir_only := true; args r
     | "-o" :: o :: r -> output := o; args r
     | f :: r -> file := f; args r
     | [] -> ()
   in
-  let argl = List.tl (Array.to_list (CapSys.argv caps)) in
-  if List.mem "-h" argl || List.mem "--help" argl then (Console.print caps help; exit 0);
-  args argl;
-  if !file = "" then (Console.eprint caps "usage: tiny-c [-ir] [-o out.tm] file.c   (-h: how)\n"; exit 2);
-  unit_name := Filename.remove_extension (Filename.basename !file);
-  (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
-   * pointer (TinyMLRuntime/'s values, a word each) *)
-  Hashtbl.replace typedefs "intptr" int_t;
-  let read f = FS.read caps (Fpath.v f) in
-  try
-    let ts = tokens (Hashtbl.create 16) read !file in
-    toks := Array.of_list (List.map fst ts);
-    locs := Array.of_list (List.map snd ts);
-    while peek () <> EOF do external_decl () done;
-    let text = Buffer.contents out ^ (if !ir_only then "" else Buffer.contents data) in
-    if !output = "" then Console.print caps text else FS.write caps (Fpath.v !output) text
-  with Failure m ->
-    (* where: the last token read (a missing ; is then on its line, not
-     * the next one's), in its file (an #include's); the lexer's errors
-     * have none *)
-    (match !locs with
-     | ls when Array.length ls = 0 -> Console.eprint caps (Printf.sprintf "%s: %s\n" !file m)
-     | ls -> let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in Console.eprint caps (Printf.sprintf "%s: line %d: %s\n" f l m));
-    exit 1
-  | Sys_error m -> Console.eprint caps (Printf.sprintf "tiny-c: %s\n" m); exit 1
+  let argl = List.tl (TinyLibSystem.argv caps) in
+  if List.mem "-h" argl || List.mem "--help" argl then (TinyLibSystem.print caps help; 0)
+  else begin
+    args argl;
+    if !file = "" then (TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2)
+    else begin
+      unit_name := Filename.remove_extension (Filename.basename !file);
+      (* intptr, Plan 9's uintptr's signed twin: an integer as wide as a
+       * pointer (TinyMLRuntime/'s values, a word each) *)
+      Hashtbl.replace typedefs "intptr" int_t;
+      let read f = try TinyLibSystem.read_file caps f with Failure m -> raise (File_error m) in
+      try
+        let ts = tokens (Hashtbl.create 16) read !file in
+        toks := Array.of_list (List.map fst ts);
+        locs := Array.of_list (List.map snd ts);
+        while peek () <> EOF do external_decl () done;
+        let text = Buffer.contents out ^ (if !ir_only then "" else Buffer.contents data) in
+        if !output = "" then TinyLibSystem.print caps text
+        else begin
+          let fd = try TinyLibSystem.open_out caps !output with Failure m -> raise (File_error m) in
+          TinyLibSystem.write fd text; TinyLibSystem.close fd
+        end;
+        0
+      with
+      | Failure m ->
+          (* where: the last token read (a missing ; is then on its line, not
+           * the next one's), in its file (an #include's); the lexer's errors
+           * have none *)
+          let ls = !locs in
+          if Array.length ls = 0 then TinyLibSystem.eprint caps (!file ^ ": " ^ m ^ "\n")
+          else (let f, l = ls.(max 0 (min (!pos - 1) (Array.length ls - 1))) in TinyLibSystem.eprint caps (f ^ ": line " ^ string_of_int l ^ ": " ^ m ^ "\n"));
+          1
+      | File_error m -> TinyLibSystem.eprint caps ("tiny-c: " ^ m ^ "\n"); 1
+    end
+  end
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-c"; main caps)
+let () = TinyLibSystem.main "tiny-c" main

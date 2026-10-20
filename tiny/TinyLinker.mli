@@ -60,8 +60,9 @@ val link : (string * string) list -> string * (string * int) list
 
 (* an executable for tiny-kernel: a header of three words (a magic
  * number, the image's size, the memory the program asks for in bytes),
- * then the image, linked at 0 *)
-val aout : memory:int -> string -> string
+ * then the image, linked at 0; the memory first (old: ~memory, a
+ * label, which tiny-ml does not read) *)
+val aout : int -> string -> string
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

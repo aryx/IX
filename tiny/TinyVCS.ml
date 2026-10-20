@@ -6,23 +6,20 @@
 (* -h: how, by examples, each one as it runs *)
 open Common
 
-(* (old: a {|quoted string|}, which tiny-ml does not read) *)
-let help =
-  String.concat "\n" [
-    "usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it";
-    "git's ideas, the roads after git: no staging (every file tracked but dotfiles";
-    "and .tvcsignore's), every command undoable, a merge's conflicts committed.";
-    "  tiny-vcs init; echo hello > a.txt";
-    "  tiny-vcs status                    A a.txt";
-    "  tiny-vcs commit -m first           master: d1c4126e...";
-    "  tiny-vcs branch feature; tiny-vcs switch feature";
-    "  echo more >> a.txt; tiny-vcs diff  +more, unified";
-    "  tiny-vcs commit -m second; tiny-vcs log";
-    "  tiny-vcs switch master; tiny-vcs merge feature";
-    "  tiny-vcs ops; tiny-vcs undo        the operations; the last one undone";
-    "  tiny-vcs show a.txt                a file as committed";
-    "  tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo";
-    "" ]
+let help = {|usage: tiny-vcs CMD [args], in a directory with .tvcs, or below it
+git's ideas, the roads after git: no staging (every file tracked but dotfiles
+and .tvcsignore's), every command undoable, a merge's conflicts committed.
+  tiny-vcs init; echo hello > a.txt
+  tiny-vcs status                    A a.txt
+  tiny-vcs commit -m first           master: d1c4126e...
+  tiny-vcs branch feature; tiny-vcs switch feature
+  echo more >> a.txt; tiny-vcs diff  +more, unified
+  tiny-vcs commit -m second; tiny-vcs log
+  tiny-vcs switch master; tiny-vcs merge feature
+  tiny-vcs ops; tiny-vcs undo        the operations; the last one undone
+  tiny-vcs show a.txt                a file as committed
+  tiny-vcs clone ../repo copy; tiny-vcs pull ../repo; tiny-vcs push ../repo
+|}
 
 exception Error of string
 

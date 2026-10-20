@@ -29,7 +29,7 @@ W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
 failures=0
 
-for m in Stdlib Char Seq List String Bytes Array Option Filename Buffer Hashtbl; do
+for m in Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl; do
   fix=; [ $m = Hashtbl ] && fix="let create n = create n"
   printf 'module _ : sig\n%s\nend = struct include %s %s end\n' "$(cat $C/$m.mli)" $m "$fix" > $W/sig_$m.ml
   if out=$(ocaml $W/sig_$m.ml 2>&1) && [ -z "$out" ]; then echo "ok $m.mli: OCaml's $m has it"
@@ -37,17 +37,24 @@ for m in Stdlib Char Seq List String Bytes Array Option Filename Buffer Hashtbl;
 done
 
 [ -n "${RECORD:-}" ] && ocaml $T/std.ml > $T/std.expected
+# (the stack of values and the heap's halves at the end, in mem.tm: as
+# main.c's statics they were between the runtime's code and ml_start,
+# further than a jal reaches)
 cat > $W/main.c <<END
 #include "$ROOT/tiny/TinyMLRuntime/core.c"
-static value vstack[32768];
-static value space0[65536];
-static value space1[65536];
+extern value vstack[];
+extern value space0[];
+extern value space1[];
 void main(void) { ml_run(vstack, space0, space1, 65536, 64); flush(); exit(0); }
 END
 printf 'exit:\n\tldw\tr1, 0(sp)\n\tsys\t0\n' > $W/exit.tm
+printf '\t.align\t4\nvstack:\n\t.space\t131072\nspace0:\n\t.space\t262144\nspace1:\n\t.space\t262144\n' > $W/mem.tm
 $TC -o $W/main.tm $W/main.c || { echo "FAIL the runtime: tiny-c"; exit 1; }
 for p in std digests; do
-  if $TML -o $W/$p.tm $T/$p.ml && link_tm $W/$p.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/$p.tm $W/main.tm; then
+  # (a unit and its main, the main first after the runtime's: jal reaches
+  # 128 KB, and std is more; old: tiny-ml -o p.tm p.ml, its ml_start at the end)
+  if $TML -c -o $W/$p.tm $T/$p.ml && $TML -o $W/${p}_main.tm $W/$p.tmi \
+     && link_tm $W/$p.img $L/start.tm $L/udivmod.tm $W/exit.tm $W/main.tm $W/${p}_main.tm $W/$p.tm $W/mem.tm; then
     timeout 60 $CPU $W/$p.img > $W/$p.out 2>&1
   else echo "FAIL $p: tiny-ml or the link"; failures=$((failures + 1)); fi
 done

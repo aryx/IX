@@ -18,9 +18,10 @@ The other tiny programs (tiny-shell, tiny-utils, tiny-editor,
 tiny-prof, tiny-db, tiny-vcs, tiny-build) run on the host and on
 tiny-kernel, the same file built by OCaml and by tiny-ml (`rc`, the
 utilities, `ed`, `prof`, `db`, `vcs`, `build` in its `/bin`), and are
-not covered here beyond that; the toolchain runs on the host
-([plan_tiny_self_hosting.md](../plans/plan_tiny_self_hosting.md)
-brings it to the machine).
+not covered here beyond that; so does the toolchain (`cc`, `ml`, `as`,
+`ld` there), each making the host's files byte for byte
+([plan_tiny_self_hosting.md](../plans/plan_tiny_self_hosting.md),
+step 7; tiny-cpu stays the host's).
 
 ## 1. The quick way
 
@@ -89,8 +90,8 @@ Each is one file, but not all stand alone. From `tiny/dune` (and
 
 | program | outside `tiny/` |
 |---|---|
-| tiny-c, tiny-ml, tiny-assembler, tiny-linker, tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
-| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyKernel/host/`) |
+| tiny-cpu, tiny-mkfs | `lib_core/`, `fpath`, `caps` |
+| tiny-machine, tiny-shell, tiny-utils, tiny-editor, tiny-prof, tiny-db, tiny-c, tiny-ml, tiny-assembler, tiny-linker | `lib_core/`, `fpath`, `caps`, `unix` (the tools through the host's `TinyLibSystem`, `TinyKernel/host/`) |
 | tiny-vcs, tiny-build | the same, and `lib_crypto/` (SHA-1; TinyLibCore's `Sha1` under tiny-ml) |
 | tiny-machine-window | SDL by `tsdl` (`TinyMachine/TinyMachineSDL.ml`; mini-qemu has its own, `raspberry/video/Sdl_display.ml`) |
 | tiny-machine-fetch | `lib_networking/` (DNS, TLS 1.3, HTTP), `lib_graphics/images/` (PNG, JPEG, GIF), `lib_compression/`, `lib_crypto/` |
@@ -544,14 +545,15 @@ What the numbers mean is up to who answers:
 | addresses | what |
 |---|---|
 | from 0 | the kernel's image, then the files it carries |
-| `0x480000` | the ML runtime's stack of values (the image and its files, 4.5 MB at most, end below it) |
-| `0x4c0000` | the processes' frames: 17 words each, their registers and pc |
-| `0x500000` to `0x700000` | the ML heap, two halves of 1 MB |
-| `0x700000` to `0xd00000` | unused |
+| `0x780000` | the ML runtime's stack of values (the image and its files, 7.5 MB at most, end below it) |
+| `0x7c0000` | the processes' frames: 17 words each, their registers and pc |
+| `0x7f0000` | a packet's place, on its way to or from the network's device |
+| `0xa00000` | the file system's buffers and its map of the disk's blocks |
+| `0xc00000` | the speaker's ring |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
 | `0xf00000` | the screen, 640 by 480 bytes; then images again |
-| `0x4f0000` | a packet's place, on its way to or from the network's device |
-| `0x1000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
+| `0x1000000` to `0x2000000` | the ML heap, two halves of 8 MB: the files written live there |
+| `0x2000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
 | the last 48 bytes | the devices, which the kernel reaches by negative addresses (-16 is the console) |
 
 A process sees its partition as addresses from 0 to its size: its

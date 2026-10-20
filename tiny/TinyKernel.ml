@@ -36,15 +36,15 @@ external k_blit : string -> int -> int -> int -> unit = "k_blit"
 external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
 
-(* The memory. The first 16 MB are the kernel's (runtime.c says how they
- * are used): its image, the processes' frames, its heap, the images it
- * draws, the screen. The processes' memory is above, up to 64 KB below
+(* The memory. The first 32 MB are the kernel's (runtime.c says how they
+ * are used): its image, the processes' frames, the images it draws, the
+ * screen, its heap. The processes' memory is above, up to 64 KB below
  * the top of the machine's 128 MB. A process has a partition of the size
  * its program asks for (1 MB if it does not say), found when it starts.
  * There are at most [nslots] processes; a slot is a process's frame. *)
 let part = 0x100000
 let nslots = 8
-let mem_low = 0x1000000
+let mem_low = 0x2000000
 let mem_high = 0x7ff0000
 let frame slot = 0x7c0000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
@@ -55,7 +55,7 @@ let halt_dev = -12
 let cons_in = -8
 let mouse_dev = -4
 (* the network's four words (an address, a length, a command, whether
- * there is a wire), and a packet's place in memory, below the heap *)
+ * there is a wire), and a packet's place in memory, below the file system's buffers *)
 let net_dev = -48
 let net_buf = 0x7f0000
 (* the speaker's word (its ring's address written, the samples played

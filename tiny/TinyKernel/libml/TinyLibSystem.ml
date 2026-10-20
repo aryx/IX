@@ -98,7 +98,9 @@ let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
 let seek_end fd = let off = u_seek fd 0 2 in if off < 0 then failwith "cannot seek" else off
 let close fd = ignore (u_close fd); private_fds := List.filter (fun d -> d <> fd) !private_fds
 
-let read_all fd = let rec go acc = let s = u_read fd 4096 in if s = "" then acc else go (acc ^ s) in go ""
+(* (the pieces joined at the end; old: acc ^ s at each, the file copied
+ * again at each 4 KB) *)
+let read_all fd = let rec go acc = let s = u_read fd 4096 in if s = "" then String.concat "" (List.rev acc) else go (s :: acc) in go []
 let read_file caps file =
   let fd = open_in caps file in
   let s = read_all fd in

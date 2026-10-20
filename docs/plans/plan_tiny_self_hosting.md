@@ -588,3 +588,73 @@ and its library is TinyLibCore/.
     files 1,803 (+93: Printf, the help strings and Int64 written out); t-IX
     19,863 without the header comments (README's budget: 5,100 left).
   - **Not run**: tests/lite.sh and mkfiles/check.sh whole.
+- 2026-10-19: step 7 done, the toolchain on tiny-kernel. tiny-assembler,
+  tiny-linker, tiny-c and tiny-ml are each in the dialect OCaml and
+  tiny-ml share, and tiny-kernel's `/bin` has them as `as`, `ld`, `cc`
+  and `ml` (16 MB each, `ml` 32). Each makes the host's files, byte
+  for byte: `/bin/ping` from ping.c (cc, as, ld), core.c's runtime,
+  libc.c, and TinyML.ml compiled by `ml` itself (its `.tm` of 1.3 MB
+  and its `.tmi`, 11 minutes of the machine's time). The check:
+  `TinyKernel_tests/toolchain.keys`, ping made again from `/src`, and a
+  unit (TinyMachineISA) compiled by `ml` and assembled by `as`, against
+  the host's `.tm`, `.tmi` and `.o` in `/examples`.
+  - **tiny-cpu is not ported.** Its CPU is 32-bit arithmetic on ints
+    and OCaml's 32-bit loads, the machine's speed; on tiny-ml's 31
+    bits it would be another interpreter, and nothing of steps 7 and 8
+    runs it. The words tiny-assembler and tiny-linker make are now
+    `TinyMachine/TinyMachineISA.ml`'s (the instructions, encode,
+    decode, the registers of control's names), a file of the dialect;
+    `TinyMachineCPU.ml` keeps the interpreter.
+  - **32 bits on 31.** The assembler reads a number as its word's two
+    halves of 16 (tiny-ml's code has 2147483647, a tagged max_int,
+    and its strings' words); the linker writes a word from an int by
+    its bytes. tiny-c's constants are Int64's, a new module of
+    TinyLibCore (four pieces of 16, a type named `int64` as OCaml
+    names it: `t` is Sha1's, see bugs/ix.md); tiny-ml's are Int64's
+    too, a word printed as its low 32 bits (old: Int64.to_int32).
+  - **tiny-ml**: `{|...|}` read (the author: "I'd rather add 10 lines
+    in tiny-ml ... than having all those horrible help string
+    concatenation expressions"), so every help is one again, step 6's
+    four included, and the prelude's rule is as before; `fun x ->
+    function ...` one function of both, as OCaml's (List.length's
+    `len n = function`, a closure an element: half the time of `ml`
+    on tiny-kernel); the names a let adds counted once, not at each
+    name (quadratic in the prelude's names); an interface's
+    constructors and labels by name (two builds gave two orders);
+    Stdlib's `'a ref` is OCaml's record `{ mutable contents }`, which
+    its type checker matches on; or-patterns with names, Printf (a
+    script turned 176 of them into concatenations, tiny-ml evaluating
+    right to left as OCaml), Queue (two lists), character ranges,
+    `assert` written again.
+  - **TinyLibCore**: Int64, List's find, find_map, rev_append, combine,
+    for_all2, String.index, Filename's basename, chop_suffix,
+    remove_extension, is_relative, Bytes.of_string, Division_by_zero
+    (each in std.ml, OCaml's output and tiny-cpu's the same). Faster
+    for every program: String.concat and String.init make their
+    result once (they joined two by two), Buffer copies once when it
+    grows, libml's read_all joins its pieces at the end.
+  - **tiny-kernel**: its heap two halves of 8 MB at 16 MB (they were 1
+    MB at 8 MB: a file written lives there, and TinyML.ml's object is
+    1.3 MB), the partitions from 32 MB (95 MB for 8 processes);
+    mlsys.c's stack of values after the program when it is past 384
+    KB (end.tm's `_end`, linked last: `ml` is 534 KB; the Makefile's
+    384 KB limit gone), a sixteenth of a larger partition, and its
+    overflow said (`Fatal error: stack overflow`; it ran into the heap
+    unseen: bugs/ix.md); `cmp` reads its files a piece at a time
+    (whole, it needed more than utils's 1 MB for a compiler's output);
+    tiny-machine writes its `-prof` at a SIGTERM too, to profile a run
+    of minutes.
+  - **make check**: check.expected recorded again (95 MB, `/src`, the
+    programs' sizes, the toolchain's lines, the lossy wire's trace in
+    a third variant); the screens of windows and nested (`ls` shows
+    `/src`), play (its square blinks by frames: another frame) and
+    tetris (another seed), and the two sounds, recorded again. The 19
+    other screens the same.
+  - **Checked**: every tiny/tests/*_test.sh but TinyUtilities' `du`
+    (as before), the network's on the new image; TinyCPU_test,
+    TinyC_test, TinyML_test and TinyLibCore_test on mini-mk's builds
+    too; compile_ix.sh tiny 51 of 51.
+  - **Lines**: t-IX 20,345 (+482: Int64, TinyMachineISA, the
+    assembler's numbers, the overflow check); README's budget: 4,700
+    left.
+  - **Not run**: tests/lite.sh and mkfiles/check.sh whole.

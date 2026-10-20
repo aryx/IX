@@ -20,7 +20,7 @@
  (public_name tiny-c)
  (package ix)
  (modules TinyC)
- (libraries ix_core fpath caps))
+ (libraries ix_core fpath caps tiny_lib_system))
 
 (executable
  (name TinyDatabase)
@@ -37,14 +37,13 @@
  (libraries ix_core unix caps ix_crypto tiny_lib_system))
 
 ; tiny-machine's assembler and linker: a .tm file to an object, objects to
-; an image (TinyMachineCPU's instructions; TinyMachineDevices's names its
-; registers of control)
+; an image (TinyMachineISA's instructions, in tiny_machine_cpu)
 (executables
  (names TinyAssembler TinyLinker)
  (public_names tiny-assembler tiny-linker)
  (package ix)
  (modules TinyAssembler TinyLinker)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_machine_devices))
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system))
 
 ; tiny-cpu, and tiny-prof: where the instructions went, by function, from
 ; a profile of tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
@@ -166,13 +165,13 @@
  (public_name tiny-ml)
  (package ix)
  (modules TinyML TinyMLPrelude)
- (libraries ix_core fpath caps))
+ (libraries ix_core fpath caps tiny_lib_system))
 
 ; tiny-ml's standard library, TinyLibCore/'s modules in their order, as
 ; strings in a module of the compiler's (TinyLibCore/Stdlib.mli says why)
 (rule
  (targets TinyMLPrelude.ml)
- (deps TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/Seq.ml TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml TinyLibCore/Hashtbl.ml TinyLibCore/Common.ml TinyLibCore/Sha1.ml)
+ (deps TinyLibCore/Stdlib.ml TinyLibCore/Char.ml TinyLibCore/Seq.ml TinyLibCore/List.ml TinyLibCore/String.ml TinyLibCore/Bytes.ml TinyLibCore/Array.ml TinyLibCore/Option.ml TinyLibCore/Int64.ml TinyLibCore/Filename.ml TinyLibCore/Buffer.ml TinyLibCore/Hashtbl.ml TinyLibCore/Common.ml TinyLibCore/Sha1.ml)
  (action
   (with-stdout-to
    %{targets}
@@ -201,6 +200,9 @@
     (echo "|};\n")
     (echo "\"Option\", {|")
     (cat TinyLibCore/Option.ml)
+    (echo "|};\n")
+    (echo "\"Int64\", {|")
+    (cat TinyLibCore/Int64.ml)
     (echo "|};\n")
     (echo "\"Filename\", {|")
     (cat TinyLibCore/Filename.ml)

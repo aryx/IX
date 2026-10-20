@@ -3,10 +3,12 @@
 
 (* See TinyLinker.mli *)
 
-open TinyMachineCPU
+open TinyMachineISA
+
+let usage = "usage: tiny-linker [-a megabytes] [-map] -o out file.o..."
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: tiny-linker [-a megabytes] [-map] -o out file.o...
+let help = usage ^ {|
 
 tiny-assembler's objects to an image for tiny-cpu or tiny-machine: the files one
 after the other from address 0, their labels one name space, each place a
@@ -29,10 +31,12 @@ An error names the label: undefined label main
  * number *)
 type item = Label of string | Align of int | Space of int | Code of string * (int * string * string) list | Piece
 
-let unhex s = String.init (String.length s / 2) (fun i -> Char.chr (int_of_string ("0x" ^ String.sub s (2 * i) 2)))
+let unhex s =
+  let digit c = let k = Char.code c in if c <= '9' then k - 48 else k - 87 in
+  String.init (String.length s / 2) (fun i -> Char.chr ((16 * digit s.[2 * i]) + digit s.[(2 * i) + 1]))
 
 let read name text =
-  if not (String.length text >= 11 && String.sub text 0 11 = "tiny-object") then error "%s: not an object of tiny-assembler's" name;
+  if not (String.length text >= 11 && String.sub text 0 11 = "tiny-object") then error (name ^ ": not an object of tiny-assembler's");
   let items = ref [] in
   List.iteri (fun n l ->
     match String.split_on_char ' ' l, !items with
@@ -43,42 +47,52 @@ let read name text =
     | [ "piece" ], _ -> items := Piece :: !items
     | [ "code"; h ], _ -> items := Code (unhex h, []) :: !items
     | [ "reloc"; off; k; t ], Code (s, rs) :: rest -> items := Code (s, (int_of_string off, k, t) :: rs) :: rest
-    | _ -> error "%s:%d: not an object's line" name (n + 1)) (String.split_on_char '\n' text);
+    | _ -> error (name ^ ":" ^ string_of_int (n + 1) ^ ": not an object's line")) (String.split_on_char '\n' text);
   List.rev !items
 
 (*****************************************************************************)
 (* The link *)
 (*****************************************************************************)
 
-(* the first pass: each item its address, each label its own *)
+(* the first pass: each item its address, each label its own (and the
+ * labels in their order, which is their addresses') *)
 let layout (items : item list) =
-  let labels = Hashtbl.create 64 in
+  let labels = Hashtbl.create 64 and order = ref [] in
   let pc = ref 0 and placed = ref [] in
   List.iter (fun it ->
     match it with
-    | Label l -> if Hashtbl.mem labels l then error "label %s defined twice" l; Hashtbl.replace labels l !pc
+    | Label l -> if Hashtbl.mem labels l then error ("label " ^ l ^ " defined twice"); Hashtbl.replace labels l !pc; order := (l, !pc) :: !order
     | Align n -> let a = (!pc + n - 1) / n * n in placed := (!pc, Space (a - !pc)) :: !placed; pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s
     | Piece -> ()) items;
-  labels, List.rev !placed
+  labels, List.rev !order, List.rev !placed
+
+(* a word in the code's bytes, the low first; an instruction's, which
+ * fits in an int on both sides (its opcode under 0x40) *)
+let get_word s off = List.fold_right (fun i w -> (w lsl 8) lor Char.code (Bytes.get s (off + i))) [ 0; 1; 2; 3 ] 0
+(* a value's 32 bits, from an int that has 31 (tiny-ml's) or 63:
+ * an address, or a word made by encode (old: Bytes.set_int32_le) *)
+let set_word s off v = List.iter (fun i -> Bytes.set s (off + i) (Char.chr ((v asr (8 * i)) land 0xff))) [ 0; 1; 2; 3 ]
 
 (* a word with an address, or what an address makes, in its place: the
  * whole word, or the instruction made again with it as its immediate,
  * so that encode says what does not fit *)
-let fill w kind pc v =
-  let imm v = function
+let fill s off kind pc v =
+  let imm v i = match i with
     | Alui (op, d, a, _) -> Alui (op, d, a, v) | Lui (d, _) -> Lui (d, v)
     | Load (s, d, a, _) -> Load (s, d, a, v) | Store (s, d, a, _) -> Store (s, d, a, v)
     | Branch (c, d, a, _) -> Branch (c, d, a, v) | Jal (d, _) -> Jal (d, v)
     | Jalr (d, a, _) -> Jalr (d, a, v) | Sys _ -> Sys v
-    | Alu _ -> error "no immediate in 0x%x" w in
+    | Alu _ -> error ("no immediate in " ^ hex (get_word s off)) in
   let v = match kind with
-    | "word" | "abs" -> v | "hi" -> m32 v lsr 16 | "lo" -> m32 v land 0xffff
-    | "pc" -> if v land 3 <> 0 then error "unaligned target 0x%x" v; (v - (pc + 4)) / 4
-    | k -> error "not a kind of place: %s" k in
-  if kind = "word" then m32 v
-  else match decode w with Some i -> encode (imm v i) | None -> error "not an instruction at 0x%x" pc
+    | "word" | "abs" -> v | "hi" -> (v asr 16) land 0xffff | "lo" -> v land 0xffff
+    | "pc" -> if v land 3 <> 0 then error ("unaligned target " ^ hex v); (v - (pc + 4)) / 4
+    | k -> error ("not a kind of place: " ^ k) in
+  if kind = "word" then set_word s off v
+  else match decode (get_word s off) with
+    | Some i -> set_word s off (encode (imm v i))
+    | None -> error ("not an instruction at " ^ hex pc)
 
 (* What nothing reaches, left out. A piece is what follows a piece line
  * (tiny-ml's: a function, a static block) up to the next one, or the
@@ -89,7 +103,7 @@ let fill w kind pc v =
  * ml_start). Each piece kept starts on a word. *)
 let sweep (objects : item list list) =
   let pieces = List.concat_map (fun items ->
-    let rec split cur acc = function
+    let rec split cur acc l = match l with
       | [] -> List.rev (List.rev cur :: acc)
       | Piece :: l -> split [ Align 4 ] (List.rev cur :: acc) l
       | it :: l -> split (it :: cur) acc l in
@@ -98,36 +112,39 @@ let sweep (objects : item list list) =
     | [] -> []) objects in
   let pieces = Array.of_list pieces in
   let where = Hashtbl.create 256 in
-  Array.iteri (fun i (_, p) ->
-    List.iter (function Label l -> if Hashtbl.mem where l then error "label %s defined twice" l; Hashtbl.replace where l i | _ -> ()) p) pieces;
+  for i = 0 to Array.length pieces - 1 do
+    List.iter (fun it -> match it with Label l -> if Hashtbl.mem where l then error ("label " ^ l ^ " defined twice"); Hashtbl.replace where l i | _ -> ()) (snd pieces.(i))
+  done;
   let kept = Array.map fst pieces in
   let rec keep i =
-    List.iter (function
+    List.iter (fun it -> match it with
       | Code (_, relocs) ->
           List.iter (fun (_, _, t) -> match Hashtbl.find_opt where t with Some j when not kept.(j) -> kept.(j) <- true; keep j | _ -> ()) relocs
       | _ -> ()) (snd pieces.(i)) in
-  Array.iteri (fun i k -> if k then keep i) (Array.copy kept);
+  (* (the roots, as they were before keep marks more) *)
+  let roots = Array.copy kept in
+  for i = 0 to Array.length roots - 1 do if roots.(i) then keep i done;
   List.concat (List.filteri (fun i _ -> kept.(i)) (List.map snd (Array.to_list pieces)))
 
 let link (objects : (string * string) list) =
-  let labels, placed = layout (sweep (List.map (fun (f, text) -> read f text) objects)) in
+  let labels, order, placed = layout (sweep (List.map (fun (f, text) -> read f text) objects)) in
   let resolve t =
     match int_of_string_opt t, Hashtbl.find_opt labels t with
-    | Some n, _ | None, Some n -> n
-    | None, None -> error "undefined label %s" t in
+    | Some n, _ -> n
+    | None, Some n -> n
+    | None, None -> error ("undefined label " ^ t) in
   let b = Buffer.create 4096 in
   List.iter (fun (a, it) ->
     match it with
     | Space n -> Buffer.add_string b (String.make n '\000')
     | Code (s, relocs) ->
         let s = Bytes.of_string s in
-        List.iter (fun (off, k, t) ->
-          let w = Int32.to_int (Bytes.get_int32_le s off) land 0xffffffff in
-          let w = try fill w k (a + off) (resolve t) with Error e -> error "%s (%s)" e t in
-          Bytes.set_int32_le s off (Int32.of_int w)) relocs;
-        Buffer.add_bytes b s
+        List.iter (fun (off, k, t) -> try fill s off k (a + off) (resolve t) with Error e -> error (e ^ " (" ^ t ^ ")")) relocs;
+        Buffer.add_string b (Bytes.to_string s)
     | Label _ | Align _ | Piece -> ()) placed;
-  Buffer.contents b, List.sort (fun (_, a) (_, b) -> compare a b) (Hashtbl.fold (fun l a acc -> (l, a) :: acc) labels [])
+  (* (old: the table's labels sorted by address, those at one address in
+   * the table's order, which is OCaml's or TinyLibCore's) *)
+  Buffer.contents b, order
 
 (* An executable for tiny-kernel: a header of three words, then the
  * image, linked at 0. The words are a magic number, the image's size,
@@ -138,29 +155,31 @@ let link (objects : (string * string) list) =
  * word was the address where the image was linked, 0x800000.) *)
 let aout_magic = 0x7a0ce5
 
-let aout ~memory image =
-  let b = Buffer.create (String.length image + 12) in
-  List.iter (fun v -> Buffer.add_int32_le b (Int32.of_int v)) [ aout_magic; String.length image; memory ];
-  Buffer.add_string b image;
-  Buffer.contents b
+let aout memory image =
+  let h = Bytes.make 12 '\000' in
+  List.iteri (fun i v -> set_word h (4 * i) v) [ aout_magic; String.length image; memory ];
+  Bytes.to_string h ^ image
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
-  let rec args mb map = function
-    | "-a" :: n :: r when (match int_of_string_opt n with Some n -> n > 0 && n <= 100 | None -> false) -> args (Some (int_of_string n)) map r
+  let write f text = let fd = TinyLibSystem.open_out caps f in TinyLibSystem.write fd text; TinyLibSystem.close fd in
+  let megabytes n = match int_of_string_opt n with Some n -> n > 0 && n <= 100 | None -> false in
+  let rec args mb map l = match l with
+    | "-a" :: n :: r when megabytes n -> args (Some (int_of_string n)) map r
     | "-map" :: r -> args mb true r
-    | "-o" :: out :: (_ :: _ as files) -> Some (mb, map, out, files)
+    | "-o" :: out :: files when files <> [] -> Some (mb, map, out, files)
     | _ -> None in
-  match List.tl (Array.to_list (CapSys.argv caps)) with
-  | ("-h" | "--help") :: _ -> Console.print caps help; 0
+  match List.tl (TinyLibSystem.argv caps) with
+  | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
   | l ->
       match args None false l with
-      | None -> Console.eprint caps "usage: tiny-linker [-a megabytes] [-map] -o out file.o...   (-h: how)\n"; 2
+      | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
       | Some (mb, map, out, files) ->
           try
-            let image, labels = link (List.map (fun f -> f, FS.read caps (Fpath.v f)) files) in
-            FS.write caps (Fpath.v out) (match mb with Some n -> aout ~memory:(n * 0x100000) image | None -> image);
-            if map then FS.write caps (Fpath.v (out ^ ".map")) (String.concat "" (List.map (fun (l, a) -> Printf.sprintf "%x %s\n" a l) labels));
+            let image, labels = link (List.map (fun f -> f, TinyLibSystem.read_file caps f) files) in
+            write out (match mb with Some n -> aout (n * 0x100000) image | None -> image);
+            (* (old: Printf's %x) *)
+            if map then write (out ^ ".map") (String.concat "" (List.map (fun (l, a) -> let h = hex a in String.sub h 2 (String.length h - 2) ^ " " ^ l ^ "\n") labels));
             0
-          with Error e | Sys_error e -> Console.eprint caps ("tiny-linker: " ^ e ^ "\n"); 1
+          with Error e -> TinyLibSystem.eprint caps ("tiny-linker: " ^ e ^ "\n"); 1
 
-let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))
+let () = TinyLibSystem.main "tiny-linker" main

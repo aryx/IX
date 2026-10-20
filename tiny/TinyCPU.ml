@@ -53,12 +53,12 @@ let interpret caps prof image args =
     Bytes.blit_string (a ^ "\000") 0 m.mem top (String.length a + 1); top, top :: addrs) (!TinyMachineCPU.memsize, []) args in
   let n = List.length args in
   let sp = (top - (4 * (n + 3))) land lnot 7 in
-  let put a v = TinyMachineCPU.store m TinyMachineCPU.W a v in
+  let put a v = TinyMachineCPU.store m TinyMachineISA.W a v in
   put sp n;
   put (sp + 4) (sp + 8);
   List.iteri (fun k s -> put (sp + 8 + (4 * k)) s) (List.rev addrs);
   put (sp + 8 + (4 * n)) 0;
-  m.r.(TinyMachineCPU.sp) <- sp;
+  m.r.(TinyMachineISA.sp) <- sp;
   try while true do TinyMachineCPU.step env m done; 0 with Exit n -> n
 
 let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
@@ -77,6 +77,6 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
     | _ -> raise Usage
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineCPU.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
+  | TinyMachineISA.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

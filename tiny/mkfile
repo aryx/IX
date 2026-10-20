@@ -27,8 +27,9 @@ $D/%.$O: %.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
-$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O $D/TinyAssembler.$O $D/TinyLinker.$O: TinyMachine/TinyMachineCPU.ml
-$D/TinyAssembler.$O: TinyMachine/TinyMachineDevices.ml
+$D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineISA.ml
+$D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
+$D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyC.$O $D/TinyML.$O: $D/TinyLibSystem.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
 $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
@@ -46,7 +47,7 @@ $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 # (tiny-ml's standard library, TinyLibCore/'s modules in their order:
 # their text as strings in a unit of the compiler's, made here, as
 # tiny/dune's rule makes it)
-CORE=Stdlib Char Seq List String Bytes Array Option Filename Buffer Hashtbl Common Sha1
+CORE=Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Hashtbl Common Sha1
 $D/TinyMLPrelude.ml: ${CORE:%=TinyLibCore/%.ml}
 	mkdir -p $D
 	(echo 'let modules = ['; for m in $CORE; do echo "\"$m\", {|"; cat TinyLibCore/$m.ml; echo '|};'; done; echo ']') > $target
@@ -86,18 +87,18 @@ $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
-$D/tiny-c: $D/TinyC.$O $LIBS
-	$START TinyC Std_exit -o $D/TinyC.start.$O
-	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyC.$O $STDEND
-$D/tiny-ml: $D/TinyMLPrelude.$O $D/TinyML.$O $LIBS
-	$START TinyMLPrelude TinyML Std_exit -o $D/TinyML.start.$O
-	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyMLPrelude.$O $D/TinyML.$O $STDEND
-$D/tiny-assembler: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyAssembler.$O $LIBS
-	$START TinyMachineCPU TinyMachineDevices TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
-	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyAssembler.$O $STDEND
-$D/tiny-linker: $D/TinyMachineCPU.$O $D/TinyLinker.$O $LIBS
-	$START TinyMachineCPU TinyLinker Std_exit -o $D/TinyLinker.start.$O
-	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyLinker.$O $STDEND
+$D/tiny-c: $D/TinyLibSystem.$O $D/TinyC.$O $LIBS
+	$START TinyLibSystem TinyC Std_exit -o $D/TinyC.start.$O
+	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyC.$O $STDEND
+$D/tiny-ml: $D/TinyLibSystem.$O $D/TinyMLPrelude.$O $D/TinyML.$O $LIBS
+	$START TinyLibSystem TinyMLPrelude TinyML Std_exit -o $D/TinyML.start.$O
+	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMLPrelude.$O $D/TinyML.$O $STDEND
+$D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $LIBS
+	$START TinyLibSystem TinyMachineISA TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
+	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $STDEND
+$D/tiny-linker: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLinker.$O $LIBS
+	$START TinyLibSystem TinyMachineISA TinyLinker Std_exit -o $D/TinyLinker.start.$O
+	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLinker.$O $STDEND
 $D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
 $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
 	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
@@ -106,12 +107,12 @@ $D/TinyVCS.$O: $D/TinyLibSystem.$O TinyVCS.ml
 $D/tiny-vcs: $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 	$START Sha1 TinyLibSystem TinyVCS Std_exit -o $D/TinyVCS.start.$O
 	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
-$D/tiny-cpu: $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
-	$START TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
-	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
-	$START TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
+$D/tiny-cpu: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
+	$START TinyMachineISA TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
+	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
+$D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
+	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
 $D/tiny-prof: $D/TinyLibSystem.$O $D/TinyProfiler.$O $LIBS
 	$START TinyLibSystem TinyProfiler Std_exit -o $D/TinyProfiler.start.$O

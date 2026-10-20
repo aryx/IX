@@ -16,7 +16,7 @@ and hartid = 9 and ip = 10 and ie_csr = 11 and satp = 12   (* scratch, 13, only 
 (* The machine's speed in instructions per second, so that a kernel can
  * turn its time, which counts instructions, into seconds. *)
 and rate_csr = 14
-let csr_names = [| "status"; "epc"; "cause"; "tval"; "tvec"; "time"; "timecmp"; "base"; "bound"; "hartid"; "ip"; "ie"; "satp"; "scratch"; "rate" |]
+let csr_names = TinyMachineISA.csr_names
 let read_only k = k = time || k = hartid || k = ip || k = rate_csr
 
 (* status: the mode, the interrupts' bit, and the two as they were
@@ -318,7 +318,7 @@ let translate mc (m : TinyMachineCPU.machine) access va =
   else begin
     let va = TinyMachineCPU.m32 va in
     let fault () = raise (Trap (c_fault, va)) in
-    let entry at = if not (TinyMachineCPU.ult at memsize) then fault (); TinyMachineCPU.load m TinyMachineCPU.W at in
+    let entry at = if not (TinyMachineCPU.ult at memsize) then fault (); TinyMachineCPU.load m TinyMachineISA.W at in
     let e1 = entry (((sat land 0x3fffff) lsl 12) + (4 * (va lsr 22))) in
     if e1 land 1 = 0 || e1 land 14 <> 0 then fault ();
     let e0 = entry (((e1 lsr 10) lsl 12) + (4 * ((va lsr 12) land 0x3ff))) in
@@ -378,8 +378,8 @@ let extra mc (m : TinyMachineCPU.machine) w =
   mc.touched <- true;
   if op = 0x3d then begin
     let at = m.r.(k land 15) in
-    let old = load mc m TinyMachineCPU.W at in
-    store mc m TinyMachineCPU.W at m.r.(a);
+    let old = load mc m TinyMachineISA.W at in
+    store mc m TinyMachineISA.W at m.r.(a);
     if d <> 0 then m.r.(d) <- old;
     next ()
   end
@@ -400,7 +400,7 @@ let extra mc (m : TinyMachineCPU.machine) w =
   end
 
 let env mc : TinyMachineCPU.env = {
-  fetch = (fun m pc -> TinyMachineCPU.load m TinyMachineCPU.W (translate mc m Exec pc));
+  fetch = (fun m pc -> TinyMachineCPU.load m TinyMachineISA.W (translate mc m Exec pc));
   load = load mc;
   store = store mc;
   sys = (fun _ n -> raise (Trap (c_sys, n)));
@@ -431,7 +431,7 @@ let show w =
 let create ~put ~on_open ~send ~hear ~disk ~events image =
   TinyMachineCPU.memsize := memsize;
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
-  m.r.(TinyMachineCPU.sp) <- devices;
+  m.r.(TinyMachineISA.sp) <- devices;
   let c = Array.make (Array.length csr_names) 0 in
   c.(status) <- supervisor_bit;
   c.(timecmp) <- 0xffffffff;

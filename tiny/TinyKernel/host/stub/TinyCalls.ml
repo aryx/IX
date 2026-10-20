@@ -16,6 +16,8 @@ let u_write fd s = if fd = 3 then Buffer.add_string drawn s; 1
 let u_read (_ : int) (_ : int) = ""
 let u_ready (_ : int array) (_ : int) (_ : int) = 0
 let u_ticks () = 0
+let u_time () = 0
+let u_stat (_ : string) = ""
 let u_dial (_ : string) (_ : int) = -1
 let u_close (_ : int) = 0
 let u_rawcons (_ : int) = 0

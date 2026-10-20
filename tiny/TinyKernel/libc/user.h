@@ -11,9 +11,10 @@
 typedef unsigned int uint;
 
 // a directory's entry, as read from it (t6's: a first block, which here
-// is the file's links instead, how many names it has; a name of 28
-// bytes, the disk's, where t6's had 20: TinyAppTemperature.tmi)
-struct dirent { char name[28]; int type; uint first; uint size; };
+// is the file's links instead, how many names it has; a name of 64
+// bytes, the disk's, where t6's had 20; the date of the last write,
+// seconds since 2000)
+struct dirent { char name[64]; int type; uint first; uint size; uint date; };
 
 #define T_DIR 1
 #define T_FILE 2
@@ -64,6 +65,13 @@ int seek(int fd, int n, int whence);
 int ready(int *fds, int n, int until);
 // the clock: the kernel's timer interrupts since the boot
 int ticks(void);
+// the date: seconds since 2000-01-01 (the machine's at the boot, then
+// the kernel's ticks)
+int time(void);
+// a path's entry, as its directory has it, at d: 0, or -1 when it is
+// not there
+struct dirent;
+int stat(char *path, struct dirent *d);
 // a box: a pipe that keeps only what was last written (a mouse's
 // place); fds[0] reads it, fds[1] writes it
 int box(int *fds);

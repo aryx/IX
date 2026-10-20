@@ -65,6 +65,8 @@ let ring_at = 0xc00000
 (* the disk's four words: a block, an address, a command, a status; the
  * first, read, is the disk's size in blocks (0: no disk) *)
 let disk_dev = -32
+(* the date at the boot, seconds since 2000-01-01 (the machine's) *)
+let date_dev = -56
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -101,9 +103,9 @@ let halt status = fs_commit (); poke halt_dev status
  * each write: a database that grows by appends took a second for each
  * statement, tiny-db's) *)
 type node = Dir of (string * node) list ref | Data of data | Rom of int * int | Tty | Screen | Pointer | Speaker | Disk of int * int | Union of node list
-and data = { mutable dbytes : bytes; mutable dsize : int }
+and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 
-let data s = let b = Bytes.make (String.length s) ' ' in Bytes.blit_string s 0 b 0 (String.length s); { dbytes = b; dsize = String.length s }
+let data s = let b = Bytes.make (String.length s) ' ' in Bytes.blit_string s 0 b 0 (String.length s); { dbytes = b; dsize = String.length s; dtime = 0 }
 let text d = Bytes.sub_string d.dbytes 0 d.dsize
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
@@ -202,12 +204,13 @@ let dir_of ns =
   | [] -> None
   | last :: r -> (match walk !top (List.rev r) with Some n when is_dir n -> Some (home n, last) | _ -> None)
 
-(* a directory read as a file: an entry of 40 bytes per name, t6's (its
+(* a directory read as a file: an entry of 80 bytes per name, t6's (its
  * name, its type, a first block, its size), which ls reads, but for
- * the name's 28 bytes, the disk's (old: t6's 20: the sources'
- * TinyAppTemperature.mli could not be listed, its .tmi not made). The
- * first block, which this kernel has no use for, says the file's links
- * instead: how many names it has. A name has 27 bytes at most *)
+ * the name's 64 bytes, the disk's, and the date of the last write after
+ * the size (old: t6's 20 bytes of name: the sources'
+ * TinyAppTemperature.mli could not be listed, its .tmi not made; then
+ * 28, and no date). The first block, which this kernel has no use for,
+ * says the file's links instead: how many names it has. *)
 let word n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255))
 
 (* a node's names: the entries in the whole tree that hold the same
@@ -216,13 +219,15 @@ let links node =
   let rec count d = List.fold_left (fun acc (_, n) -> acc + (if n == node then 1 else 0) + (match n with Dir e -> count e | _ -> 0)) 0 !d in
   match root with Dir d -> count d | _ -> 0
 
-(* an entry: a name, a type, the links, a size; a disk's file says its
- * own (its type is 1 or 2 as here) *)
+(* an entry: a name, a type, the links, a size, a date; a disk's file
+ * says its own (its type is 1 or 2 as here); the image's files have the
+ * date 0, 2000-01-01, a directory in memory too *)
 let entry name n =
   let t, size, l = match n with
     | Dir _ -> 1, 0, links n | Data d -> 2, d.dsize, links n | Rom (_, k) -> 2, k, links n
     | Disk (r, i) -> fs_kind r i | Union _ -> 1, 0, 1 | _ -> 3, 0, links n in
-  name ^ String.make (28 - String.length name) '\000' ^ word t ^ word l ^ word size
+  let date = match n with Data d -> d.dtime | Disk (r, i) -> fs_date r i | _ -> 0 in
+  name ^ String.make (64 - String.length name) '\000' ^ word t ^ word l ^ word size ^ word date
 
 let contents node =
   match node with
@@ -230,7 +235,10 @@ let contents node =
   | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
   | Disk (r, i) when not (fs_is_dir r i) -> fs_contents r i
-  | _ -> List.fold_left (fun acc (name, n) -> acc ^ entry name n) "" (children node)
+  (* (made once: old, acc ^ entry, the listing copied again at each name,
+   * quadratic: ls -l of /bin, 55 names each listing it twice, took 7
+   * minutes when the entries went from 40 bytes to 80) *)
+  | _ -> String.concat "" (List.map (fun (name, n) -> entry name n) (children node))
 
 (* [place d name node]: node under name in d; a name with a slash,
  * examples/wc.c, in its directory, which is made the first time *)
@@ -299,10 +307,12 @@ let set_reg p k v = poke (frame p.slot + (4 * k)) v
 exception Bad
 let user p va n = if va < 0 || n < 0 || va + n > p.size then raise Bad else p.base + va
 
-(* a string of the user's, 64 bytes at most *)
+(* a string of the user's, a path: 1024 bytes at most (old: 64, a path
+ * of a few names, when a name had 20) *)
 let ustr p va =
-  let rec go i acc = if i >= 64 then raise Bad else let c = peekb (user p (va + i) 1) in if c = 0 then acc else go (i + 1) (acc ^ String.make 1 (Char.chr c)) in
-  go 0 ""
+  let b = Buffer.create 64 in
+  let rec go i = if i >= 1024 then raise Bad else let c = peekb (user p (va + i) 1) in if c = 0 then Buffer.contents b else (Buffer.add_char b (Char.chr c); go (i + 1)) in
+  go 0
 
 let free_slot () =
   let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> p.slot = s) !procs then go (s + 1) else s in
@@ -403,6 +413,10 @@ let font = arena 0xd00000 0x200000; free 0xf4b000 0xb4000; font_mask (k_font ())
  * counted *)
 let mouse = { last = ""; fresh = false; posters = 1 }
 let ticks = ref 0
+
+(* the date: the boot's, and the seconds since, 400 ticks each (old:
+ * none, the time of the day 0 for every program) *)
+let date () = peek date_dev + (!ticks / 400)
 
 (* the earliest time a waiting process asked to be told of (0: none) *)
 let alarm = ref 0
@@ -588,6 +602,7 @@ let write f a n =
           end;
           Bytes.blit_string (k_string a n) 0 d.dbytes at n;
           d.dsize <- max d.dsize (at + n);
+          d.dtime <- date ();
           o.off <- at + n;
           Some n
       | Disk (0, i) when o.writes -> (try fs_write_at i o.off a n; o.off <- o.off + n; Some n with Disk_full -> Some (-1))
@@ -696,12 +711,24 @@ let load_prog p node argv =
   let b = if memory = p.size then p.base else room memory p.pid in
   p.base <- b;
   p.size <- memory;
-  k_zero b memory;
+  (* Only the image is written, its statics in it (tiny-linker writes a
+   * .space as zeros); the rest of the
+   * partition, the stack and the heap, is left as the last process to
+   * have it left it, as no program reads a word it has not written
+   * (the ML runtime's stack of values and heap, libc's heap a static
+   * array). It is the same at each run, but it shows the bytes of
+   * another process to this one: to revisit for security, as Plan 9
+   * and Linux give a page zeroed at its first touch (they have pages;
+   * tiny-machine a window). (old: k_zero of the whole partition, 32 MB
+   * for ml, 35 million instructions an exec: a fifth of a small unit's
+   * compile) *)
   (match node with Some (Data d) -> k_blit (Bytes.sub_string d.dbytes skip size) 0 b size | Some (Rom (at, _)) -> row_copy b (at + skip) size | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
     k_blit s 0 (b + !top) (String.length s);
+    (* (its end, a 0: old, the zeros of the partition, zeroed whole) *)
+    pokeb (b + !top + String.length s) 0;
     ptrs := !ptrs @ [ !top ]) argv;
   let sp = (!top - ((List.length argv + 3) * 4)) land lnot 7 in
   poke (b + sp) (List.length argv);
@@ -749,9 +776,9 @@ let sys_open p =
   let node =
     match walk !top ns, dir_of ns with
     | Some n, _ -> n
-    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last < 28 ->
-        let n = Data (data "") in d := !d @ [ last, n ]; n
-    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last < 28 -> Disk (0, fs_create i last 2)
+    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last <= 64 ->
+        let n = Data { (data "") with dtime = date () } in d := !d @ [ last, n ]; n
+    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last <= 64 -> Disk (0, fs_create i last 2)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
@@ -762,7 +789,7 @@ let sys_open p =
         if mode land o_trunc = 0 then fs_write_at j 0 at n;
         Disk (0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
-        let made = Data (data (if mode land o_trunc <> 0 then "" else k_string at n)) in
+        let made = Data { (data (if mode land o_trunc <> 0 then "" else k_string at n)) with dtime = date () } in
         d := List.map (fun (name, old) -> if name = last then name, made else name, old) !d;
         made
     | _ -> node in
@@ -770,7 +797,7 @@ let sys_open p =
   (match node with
    | Dir _ when writes -> raise Bad
    | Disk (r, i) when writes && (r <> 0 || fs_is_dir r i) -> raise Bad
-   | Data d when mode land o_trunc <> 0 -> d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0
+   | Data d when mode land o_trunc <> 0 -> d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- date ()
    | Disk (_, i) when writes && mode land o_trunc <> 0 -> fs_truncate i
    | _ -> ());
   result p (fdalloc p (match node with
@@ -843,8 +870,8 @@ let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 let sys_mkdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns, dir_of ns with
-  | None, Some (Dir d, last) when String.length last < 28 -> d := !d @ [ last, Dir (ref []) ]; result p 0
-  | None, Some (Disk (0, i), last) when String.length last < 28 -> ignore (fs_create i last 1); result p 0
+  | None, Some (Dir d, last) when String.length last <= 64 -> d := !d @ [ last, Dir (ref []) ]; result p 0
+  | None, Some (Disk (0, i), last) when String.length last <= 64 -> ignore (fs_create i last 1); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
@@ -872,9 +899,9 @@ let sys_link p =
   let old = walk !top (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
   match old, walk !top ns, dir_of ns with
   | Some n, _, _ when is_dir n -> raise Bad
-  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last < 28 -> fs_link i last j; result p 0
+  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last <= 64 -> fs_link i last j; result p 0
   | Some (Disk _), _, _ -> raise Bad
-  | Some node, None, Some (Dir d, last) when String.length last < 28 -> d := !d @ [ last, node ]; result p 0
+  | Some node, None, Some (Dir d, last) when String.length last <= 64 -> d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 
 (* getcwd(buf, n): the current directory's path, ended by a 0, in the n
@@ -936,6 +963,19 @@ let sys_seek p =
       result p off
   | _ -> raise Bad
 
+(* stat(path, buf): the path's entry, as its directory has it (80 bytes,
+ * user.h's dirent), at buf: 0, or -1 when it is not there (old: none, a
+ * program read the whole directory for one name: ls -l of /bin, three
+ * times a name, 1.7 billion instructions) *)
+let sys_stat p =
+  let ns = names p.cwd (ustr p (reg p 1)) in
+  match walk !top ns with
+  | Some node ->
+      let e = entry (match List.rev ns with n :: _ -> n | [] -> "/") node in
+      k_blit e 0 (user p (reg p 2) 80) 80;
+      result p 0
+  | None -> raise Bad
+
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns with Some n when is_dir n -> p.cwd <- ns; result p 0 | _ -> raise Bad
@@ -990,6 +1030,8 @@ let syscall p =
     | 22 -> sys_rawcons p
     | 23 -> sys_trace p
     | 24 -> sys_seek p
+    | 25 -> result p (date ())
+    | 26 -> sys_stat p
     | _ -> result p (-1)
   with Bad -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()
@@ -1160,6 +1202,7 @@ let () =
   let blocks = peek disk_dev in
   if blocks > 0 then begin
     fs_io := (fun b a cmd -> poke disk_dev b; poke (disk_dev + 4) a; poke (disk_dev + 8) cmd; poke (disk_dev + 12) 0);
+    fs_clock := date;
     fs_mount blocks;
     let made d name = match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
     ignore (made 1 "bin");

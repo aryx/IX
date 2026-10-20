@@ -38,8 +38,7 @@
  *   directory
  * - a file's time: touch makes a file that is not there, and does
  *   nothing to one that is
- * - a clock of the day, a file's modes: time is 0, no file is a
- *   program to run (x)
+ * - a file's modes: no file is a program to run (x)
  *)
 
 open Common
@@ -108,18 +107,18 @@ let read_file caps file =
   close fd;
   s
 
-(* a directory is read as a file of entries of 40 bytes (user.h's
- * dirent): a name of 28 bytes ended by a 0, its type (1 for a
- * directory), its links, and its size *)
+(* a directory is read as a file of entries of 80 bytes (user.h's
+ * dirent): a name of 64 bytes ended by a 0 when shorter, its type (1
+ * for a directory), its links, its size and its date *)
 let entries dir =
   let fd = u_open (if dir = "" then "." else dir) 0 in
   if fd < 0 then []
   else begin
     let s = read_all fd in
     ignore (u_close fd);
-    let name i = String.sub s i ((String.index_from_opt s i '\000' ||| (i + 28)) - i) in
+    let name i = let e = i + 64 in String.sub s i ((match String.index_from_opt s i '\000' with Some j when j < e -> j | _ -> e) - i) in
     let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
-    List.init (String.length s / 40) (fun k -> name (k * 40), (Char.code s.[k * 40 + 28] = 1, word (k * 40 + 36), word (k * 40 + 32)))
+    List.init (String.length s / 80) (fun k -> name (k * 80), (Char.code s.[k * 80 + 64] = 1, word (k * 80 + 72), word (k * 80 + 68), word (k * 80 + 76)))
   end
 
 let readdir dir = List.map fst (entries dir)
@@ -130,19 +129,18 @@ let path_names file =
   let clean acc n = if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc in
   List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
 
-(* the file's entry in its directory: whether it is one, its size, its
- * links (the root has no entry: a directory with one name) *)
+(* the file's entry, the kernel's stat: whether it is a directory, its
+ * size, its links, its date (old: its directory read whole for it) *)
 let entry file =
-  match List.rev (path_names file) with
-  | [] -> true, 0, 1
-  | last :: up ->
-      let dir = List.fold_left (fun acc n -> "/" ^ n ^ acc) "" up in
-      (match List.assoc_opt last (entries (if dir = "" then "/" else dir)) with
-       | Some e -> e
-       | None -> failwith "not there")
+  let s = u_stat (if file = "" then "." else file) in
+  if s = "" then failwith "not there"
+  else
+    let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
+    Char.code s.[64] = 1, word 72, word 68, word 76
 
-let stat file = let is_dir, size, _ = entry file in is_dir, size
-let links file = let _, _, n = entry file in n
+let stat file = let is_dir, size, _, _ = entry file in is_dir, size
+let links file = let _, _, n, _ = entry file in n
+let mtime file = let _, _, _, d = entry file in d
 
 let is_directory file = try fst (stat file) with Failure _ -> false
 
@@ -173,7 +171,7 @@ let touch caps file =
 
 let getcwd caps = u_getcwd ()
 
-let time () = 0
+let time () = u_time ()
 
 (* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
 let sleep ms = if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))

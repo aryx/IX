@@ -2,9 +2,10 @@
 ;
 ; TinyKernel.ml's loops over memory, in assembly, with entry.tm's
 ; convention (the arguments at 0(sp), 4(sp)..., ML's integers: n is
-; 2n+1): a partition copied at fork, zeroed at exec. (old: in entry.tm,
-; which keeps what needs the machine's own instructions: the traps,
-; k_run, the registers of control)
+; 2n+1): a partition copied at fork; a frame and the speaker's ring
+; zeroed (no more a partition at exec: TinyKernel.ml's load_prog).
+; (old: in entry.tm, which keeps what needs the machine's own
+; instructions: the traps, k_run, the registers of control)
 
 ; k_copy(dst, src, n): n bytes, a multiple of 4, a word at a time (a
 ; partition copied at fork is a MB: the kernel's hottest loop)

@@ -189,3 +189,15 @@ seek:
 	sys	24
 	mov	r13, r1
 	ret
+
+time:
+	sys	25
+	mov	r13, r1
+	ret
+
+stat:
+	ldw	r1, 0(sp)
+	ldw	r2, 4(sp)
+	sys	26
+	mov	r13, r1
+	ret

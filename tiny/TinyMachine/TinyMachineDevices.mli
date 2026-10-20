@@ -62,6 +62,11 @@ val time : int
 val default_rate : int
 val rate : int ref
 
+(* the date at the boot, in seconds since 2000-01-01 UTC, which the
+ * kernel reads at -56(r0): set by a host before [create] (the host's
+ * clock, or tiny-machine's -date) *)
+val date : int ref
+
 (* a trap (its cause, what goes with it), inside the machine; the halt
  * and its status, which ends [ticks] *)
 exception Trap of int * int

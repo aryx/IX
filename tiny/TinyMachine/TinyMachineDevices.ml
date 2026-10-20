@@ -35,7 +35,8 @@ let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8 and i_net = 16
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
- * 16 below those, the speaker's word below them (and three free) *)
+ * 16 below those, the speaker's word below them, the date's (and two
+ * free) *)
 let memsize = 1 lsl 27
 (* old: devices = memsize - 32, before the network's four words *)
 (* old: devices = memsize - 48, before the speaker's word *)
@@ -45,6 +46,13 @@ let disk_block = memsize - 32 and disk_addr = memsize - 28 and disk_cmd = memsiz
 let mouse_dev = memsize - 4
 let net_addr = memsize - 48 and net_len = memsize - 44 and net_cmd = memsize - 40 and net_status = memsize - 36
 let speaker_dev = memsize - 52
+(* the date at the boot, read at -56(r0): seconds since 2000-01-01 UTC
+ * (an ML integer of 31 bits holds them until 2034, where 1970's would
+ * not fit), the host's clock or -date's, so a run is the same each time
+ * when asked; the kernel counts on from it by its ticks. The web page
+ * leaves it at 0. (old: none: tiny-kernel had no clock of the day) *)
+let date_dev = memsize - 56
+let date = ref 0
 (* the screen, below the devices: a megabyte no kernel's image reaches *)
 let screen = 0xf00000 and width = 640 and height = 480
 
@@ -341,6 +349,7 @@ let load mc m s a =
   | w when w = net_len -> (match mc.net.waiting with p :: _ -> String.length p | [] -> 0)
   | w when w = net_status -> if mc.net.wired then 1 else 0
   | w when w = speaker_dev -> speaker_play mc.speaker m mc.csr.(time) mc.hear; mc.speaker.played
+  | w when w = date_dev -> !date
   | w when w >= devices -> 0
   | _ -> TinyMachineCPU.load m s a
 

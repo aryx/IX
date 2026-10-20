@@ -135,6 +135,27 @@ u_ticks(value unit)
 	return ticks() * 2 + 1;
 }
 
+value
+u_time(value unit)
+{
+	return time() * 2 + 1;
+}
+
+// the path's entry (user.h's dirent, its 80 bytes) as a string, or ""
+// when it is not there
+value
+u_stat(value path)
+{
+	value s;
+
+	push(path);
+	s = string_alloc(sizeof(struct dirent));
+	path = pop();
+	if(stat((char*)path, (struct dirent*)s) < 0)
+		return string_alloc(0);
+	return s;
+}
+
 // a program run with the five descriptors a window's has: in its 0,
 // out its 1 and 2, draw its 3, mouse its 4, and none of the caller's
 // others; its pid, or -1. (The lowest free descriptor is the one just

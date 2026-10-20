@@ -88,14 +88,16 @@
  * What it deliberately does not do, to stay tiny: quoting (names cannot
  * contain blanks), ${X:%.c=%.o} substitutions, a single recipe making
  * several targets at once (a b: c runs the recipe once per target),
- * archives, and mk's -t, -w, -k and -e options. The digests are
- * recomputed at each run by reading every input: that is the price of
- * not trusting timestamps. A file that has the name of a virtual target
+ * archives, and mk's -t, -w, -k and -e options. A file is read for its
+ * digest once a run, and not at all when its size and date are the
+ * ones .tiny-build recorded with its digest, as git's index does: the
+ * date says only "unchanged", never "newer", and a digest is recorded
+ * only for a file dated before the second it was read in (one written
+ * again within it, at the same size, would keep its date: git's "racy"
+ * files). A file that has the name of a virtual target
  * (a file called "clean") makes that target look like a real one.
  *
- * Exercises: add ${X:%.c=%.o}; when a source file is unchanged since
- * the last run, use its (mtime, size) as its stamp, to avoid reading
- * it again; replace the scan with a count of pending prerequisites per
+ * Exercises: add ${X:%.c=%.o}; replace the scan with a count of pending prerequisites per
  * node, and measure the difference; let a recipe declare the
  * dependencies it discovered while running (like redo's redo-ifchange),
  * which the one-pass scheduler can support if a node is decided again
@@ -129,8 +131,9 @@
  * is restored with an old date, or when two files are written in the
  * same second, and it rebuilds everything above a file that was touched
  * but not changed. It won for thirty years on the strength of that one
- * stat. A digest has to read every file at every run, and needs a file
- * of its own (.tiny-build) that can be lost or become stale; but it is
+ * stat. A digest has to read a file once (then its size and date
+ * stand for it, which only says it did not change), and needs a file of
+ * its own (.tiny-build) that can be lost or become stale; but it is
  * right in those four cases.
  *
  * others:

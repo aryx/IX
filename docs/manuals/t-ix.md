@@ -274,10 +274,11 @@ valid page.
 ## 5. The devices
 
 Sixteen words at the top of memory, outside any window, so only a
-kernel reaches them (three of them unused).
+kernel reaches them (two of them unused).
 
 | address | | device |
 |---|---|---|
+| `-56(r0)` | `0x7ffffc8` | the date at the boot, read: seconds since 2000-01-01 (the host's clock, or tiny-machine's `-date`) |
 | `-52(r0)` | `0x7ffffcc` | the speaker (5.6): written, its ring's address (0 off); read, the samples played |
 | `-48(r0)` | `0x7ffffd0` | the network (5.5): a memory address |
 | `-44(r0)` | `0x7ffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
@@ -584,12 +585,22 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 18 | `dial(address, port)` | 19 | `listen(port)` |
 | 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
 | 22 | `rawcons(on)` | 23 | `trace(pid)` |
-| 24 | `seek(fd, n, whence)` | | |
+| 24 | `seek(fd, n, whence)` | 25 | `time()` |
+| 26 | `stat(path, entry)` | | |
 
 `seek` sets a file's offset at `n` from its start (`whence` 0), from
 where it is (1) or from its end (2), as Plan 9's, and gives the new
 one: `db`'s file is read and written at any place, and `>>` is an
 open, then a seek to the end.
+
+`time` is the date, in seconds since 2000-01-01: the machine's at the
+boot, then the kernel's ticks (a 31-bit integer of tiny-ml's holds it
+until 2034, where Unix's seconds since 1970 would not fit). `stat`
+writes a path's entry at `entry`, as its directory has it (80 bytes,
+`user.h`'s `dirent`: a name of up to 64 bytes, the type, the links, the
+size, the date of the last write), or gives -1. A file on the disk has
+its date in its inode; one in memory its last write's; the image's
+files 0.
 
 `rawcons(1)` gives the console's ^C to the calling process as a byte
 it reads, while it lives, instead of killing every process but the

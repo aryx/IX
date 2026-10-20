@@ -92,7 +92,7 @@
  *   its next trap, so the kernel calls a process like a function, the
  *   way a hypervisor's KVM_RUN runs a guest), the trap entry, the
  *   timer, and the window; memory.tm, the loops that copy a partition
- *   at fork and zero one at exec.
+ *   at fork and zero memory.
  * The compiler needs no new primitive: the machine is reached through
  * externals, which are functions written in C or in assembly.
  *

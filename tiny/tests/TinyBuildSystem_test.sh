@@ -52,6 +52,16 @@ echo link; cat hello.o world.o > hello
 link" "$TB"
 check "the result" "hello
 world!" cat hello
+# a file of the same size and date as recorded is not read again: made
+# unreadable after a build a second later (its digest recorded), it is
+# still up to date; a second later, rewritten at the same size, read
+sleep 1; $TB > /dev/null; chmod 000 world.c
+check "a file not read again when its size and date are the same" "tiny-build: hello is up to date" "$TB"
+chmod 644 world.c; sleep 1; echo 'world?' > world.c
+check "read again when its date changed" "echo cc world; cp world.c world.o
+cc world
+echo link; cat hello.o world.o > hello
+link" "$TB"
 check "a virtual target always runs" "rm -f *.o hello" "$TB" clean
 check "and again" "rm -f *.o hello" "$TB" clean
 check "-n runs nothing" "echo cc hello; cp hello.c hello.o

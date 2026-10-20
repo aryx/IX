@@ -34,6 +34,13 @@ val u_ready : int array -> int -> int -> int
 (* the clock, 400 ticks a second *)
 val u_ticks : unit -> int
 
+(* the date, seconds since 2000-01-01 *)
+val u_time : unit -> int
+
+(* a path's entry (user.h's dirent: a name of 64 bytes, its type, links,
+ * size and date, a word each), or "" when it is not there *)
+val u_stat : string -> string
+
 (* a file opened (flags as user.h's: 0 to read, 0x601 to write it anew),
  * its descriptor, or -1; closed *)
 val u_open : string -> int -> int

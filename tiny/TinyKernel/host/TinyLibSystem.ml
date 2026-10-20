@@ -62,6 +62,7 @@ let write n s =
 
 let stat file = reason (fun () -> let st = Unix.stat file in st.st_kind = Unix.S_DIR, st.st_size)
 let links file = reason (fun () -> (Unix.stat file).st_nlink)
+let mtime file = reason (fun () -> int_of_float (Unix.stat file).st_mtime - 946684800)
 let mkdir (caps : < Cap.open_out; .. >) dir = reason (fun () -> FS.mkdir caps dir 0o777)
 let remove (caps : < Cap.open_out; .. >) file = reason (fun () -> FS.remove_any caps file)
 let rename (_caps : < Cap.open_out; .. >) a b = reason (fun () -> Unix.rename a b)
@@ -75,7 +76,8 @@ let touch (caps : < Cap.open_out; .. >) file =
   reason (fun () -> if Sys.file_exists file then Unix.utimes file 0.0 0.0 else Unix.close (FS.create_fd caps file 0o666))
 
 let getcwd (caps : < Cap.readdir; .. >) = FS.getcwd caps ()
-let time () = int_of_float (Unix.time ())
+(* (946684800: 2000-01-01 in Unix's seconds) *)
+let time () = int_of_float (Unix.time ()) - 946684800
 let sleep ms = Unix.sleepf (float_of_int ms /. 1000.0)
 
 (*****************************************************************************)

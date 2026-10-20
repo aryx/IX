@@ -109,6 +109,18 @@ let show () =
 (* the clock, 400 ticks a second *)
 let start = Unix.gettimeofday ()
 let u_ticks () = int_of_float ((Unix.gettimeofday () -. start) *. 400.)
+(* (946684800: 2000-01-01 in Unix's seconds) *)
+let u_time () = int_of_float (Unix.time ()) - 946684800
+(* the host's file as tiny-kernel's entry (user.h's dirent) *)
+let u_stat (path : string) : string =
+  match Unix.stat path with
+  | st ->
+      let word n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
+      let name = Filename.basename path in
+      let name = if String.length name > 64 then String.sub name 0 64 else name in
+      name ^ String.make (64 - String.length name) '\000' ^ word (if st.st_kind = Unix.S_DIR then 1 else 2)
+      ^ word st.st_nlink ^ word st.st_size ^ word (int_of_float st.st_mtime - 946684800)
+  | exception Unix.Unix_error _ -> ""
 
 (* the keys typed and not read; the mouse, and whether it moved since it
  * was read; an ENQ to answer *)

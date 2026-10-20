@@ -233,11 +233,37 @@ let exists file = try ignore (TinyLibSystem.stat file); true with Failure _ -> f
 
 let read_file caps file = if exists file then Some (TinyLibSystem.read_file caps file) else None
 
-(* old: Digest's MD5 (Digest.file, Digest.string): SHA-1 is in t-ix
- * already, tiny-vcs's, and MD5 was here only *)
+(* A file's digest, the SHA-1 of its bytes, read once in a run
+ * (file_digests), and not at all when its size and date are the ones
+ * .tiny-build recorded with its digest (known): git's index, where make
+ * trusts the date alone. A digest is recorded only for a file dated
+ * before the second it was read in: one written again within that
+ * second, at the same size, would have the same date and another
+ * digest (git's "racy" files).
+ * (old: every file read at each run, twice, its digest computed again:
+ * minutes of tiny-kernel's for its own build; older: Digest's MD5,
+ * where SHA-1 was in t-ix already, tiny-vcs's) *)
+let file_digests : (string, string option) Hashtbl.t = Hashtbl.create 101
+let known : (string, int * int * string) Hashtbl.t = Hashtbl.create 101
+
 let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
-  if exists file && not (TinyLibSystem.is_directory file) then Some (Sha1.to_hex (Sha1.string (TinyLibSystem.read_file caps file)))
-  else None
+  match Hashtbl.find_opt file_digests file with
+  | Some d -> d
+  | None ->
+      let d =
+        if exists file && not (TinyLibSystem.is_directory file) then begin
+          let _, size = TinyLibSystem.stat file and date = TinyLibSystem.mtime file in
+          match Hashtbl.find_opt known file with
+          | Some (s, t, d) when s = size && t = date -> Some d
+          | _ ->
+              let now = TinyLibSystem.time () in
+              let d = Sha1.to_hex (Sha1.string (TinyLibSystem.read_file caps file)) in
+              if date < now then Hashtbl.replace known file (size, date, d) else Hashtbl.remove known file;
+              Some d
+        end
+        else None in
+      Hashtbl.replace file_digests file d;
+      d
 
 (* a recipe run by the system's shell: sh -e on the host, rc -e on
  * tiny-kernel (TinyLibSystem.shell); its pid (old: CapUnix.fork and
@@ -290,7 +316,8 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     | None -> ()
     | Some n ->
         Hashtbl.remove running pid;
-        if st = "" then (Hashtbl.replace stamps n.name (stamp n); finish n)
+        (* (its file made again: its digest too) *)
+        if st = "" then (Hashtbl.remove file_digests n.name; Hashtbl.replace stamps n.name (stamp n); finish n)
         else (TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s failed\n" n.name); failed := true)
   in
   let rec loop todo =
@@ -345,6 +372,10 @@ let run (caps : Cap.all_caps) : int =
       String.split_on_char '\n' s |> List.iter (fun l ->
         match String.split_on_char ' ' l with
         | [ name; st ] -> Hashtbl.replace stamps name st
+        | [ "file"; name; size; date; d ] ->
+            (match int_of_string_opt size, int_of_string_opt date with
+             | Some s, Some t -> Hashtbl.replace known name (s, t, d)
+             | _ -> ())
         | _ -> ())) (read_file caps stampfile);
     let ok =
       List.for_all (fun t ->
@@ -361,6 +392,7 @@ let run (caps : Cap.all_caps) : int =
     if not !dry then begin
       let fd = TinyLibSystem.open_out caps stampfile in
       TinyLibSystem.write fd (Hashtbl.fold (fun k v acc -> acc ^ k ^ " " ^ v ^ "\n") stamps "");
+      TinyLibSystem.write fd (Hashtbl.fold (fun k (s, t, d) acc -> acc ^ Printf.sprintf "file %s %d %d %s\n" k s t d) known "");
       TinyLibSystem.close fd
     end;
     if ok then 0 else 1

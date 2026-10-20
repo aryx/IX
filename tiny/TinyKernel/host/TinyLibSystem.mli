@@ -106,6 +106,11 @@ val stat : string -> bool * int
  * when it is not there *)
 val links : string -> int
 
+(* the date of a file's last write, seconds since 2000-01-01 (the image's
+ * files on tiny-kernel: 0); Failure with the reason when it is not
+ * there *)
+val mtime : string -> int
+
 (* a new directory; a file, or a directory that is empty, removed.
  * Failure with the reason *)
 val mkdir : < Cap.open_out; .. > -> string -> unit
@@ -132,8 +137,10 @@ val touch : < Cap.open_out; .. > -> string -> unit
 (* the directory the process is in *)
 val getcwd : < Cap.readdir; .. > -> string
 
-(* the seconds since 1970 (0 on tiny-kernel, which has no clock of the
- * day) *)
+(* the date, in seconds since 2000-01-01 UTC, on both sides: a 31-bit
+ * integer of tiny-ml's holds them until 2034, where 1970's would not
+ * fit (old: Unix's seconds on the host, 0 on tiny-kernel, which had no
+ * clock of the day) *)
 val time : unit -> int
 
 (* nothing done for so many milliseconds *)

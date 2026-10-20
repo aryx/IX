@@ -11,12 +11,13 @@
  * to move a block between the disk and memory ([fs_io]).
  *
  * {b The classic layout.} The disk is made of blocks of 1 KB. A file is
- * an inode: its type, its size, its number of links, and the numbers of
- * its blocks. The first 11 blocks are listed in the inode itself; after
- * them comes an indirect block (256 more numbers), then a double
- * indirect one (256 blocks of 256 numbers). A directory is a file whose
- * contents are entries, each a name and an inode's number. This is the
- * file system of Unix since 1971, and of xv6.
+ * an inode: its type, its size, its number of links, the date of its
+ * last write, and the numbers of its blocks. The first 10 blocks are
+ * listed in the inode itself; after them comes an indirect block (256
+ * more numbers), then a double indirect one (256 blocks of 256
+ * numbers). A directory is a file whose contents are entries, each a
+ * name of up to 64 bytes and an inode's number. This is the file system
+ * of Unix since 1971, and of xv6.
  *
  * {b What is different: nothing is ever written over.} A classic file
  * system changes a block where it is. If the machine stops in the middle
@@ -131,8 +132,13 @@ val fs_free : unit -> int
  * directory. The types are 1 for a directory and 2 for a file, as in
  * the entries the kernel gives to ls. *)
 
-(* [fs_kind r n]: inode n's type, size and links *)
+(* [fs_kind r n]: inode n's type, size and links; [fs_date r n]: its
+ * last write's date, seconds since 2000 *)
 val fs_kind : int -> int -> int * int * int
+val fs_date : int -> int -> int
+
+(* what a write or a new file gets as its date: the kernel's clock *)
+val fs_clock : (unit -> int) ref
 val fs_is_dir : int -> int -> bool
 
 (* [fs_lookup r d name]: the inode under name in directory d (0: none) *)

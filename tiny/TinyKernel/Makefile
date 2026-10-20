@@ -12,8 +12,8 @@
 #                     /examples/report.ixd), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
-#                     packet lost, each packet as -net-trace says it,
-#                     without its time), against check.expected;
+#                     packet lost and the file whole anyway), against
+#                     check.expected, programs' sizes masked (MASK);
 #                     then three recorded sessions, the mouse and the keys
 #                     from a file, the screen at the halt against its sum:
 #                     paint.events (paint on the screen), windows.events
@@ -461,6 +461,22 @@ run: $(O)/boot.img
 # read ../tests/www's pages
 SCREENS = paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint \
 	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory
+# What changes with the programs' code and the kernel's timing, masked in
+# check.out before it is compared: a program's size in /bin (ls -l is
+# checked for its names and links), where a program died (the trap's
+# address), a ping's time, tiny-vcs's hashes (its commits have the date
+# of their second, the boot's and the ticks since). (old: recorded, and
+# recorded again at each
+# change of a program; the lossy wire's trace whole, in one of three
+# variants, where now that a packet was lost; the get's whole file
+# before it says it was sent again)
+MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap ([0-9]+) at [0-9]+,|: trap \1 at *,|' -e 's|in [0-9.]+ ms$$|in * ms|' \
+	-e 's|[0-9a-f]{40}|*|g' -e 's|^(%? ?)[0-9a-f]{10} |\1* |'
+
+# (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
+# run is the same each time: tiny-vcs's commits, the files' dates;
+# override: tiny-machine gives MACHINE on the command line)
+check self: override MACHINE := $(MACHINE) -date 820540800
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
@@ -484,16 +500,17 @@ check: $(O)/boot.img
 	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
 	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
-	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers >> $(O)/check.out
+	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers | tr -d ' ' >> $(O)/check.out
 	printf 'rc\nfor(f in `{get \x27\x27}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
-	cut -c15- $(O)/check.trace >> $(O)/check.out
+	cut -c15- $(O)/check.trace | grep -q '^x ' && echo "the wire: a packet lost" >> $(O)/check.out
 	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
 	rm -f $(O)/check.img
 	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
 	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
+	sed -E $(MASK) $(O)/check.out > $(O)/check.masked; mv $(O)/check.masked $(O)/check.out
 	diff $(T)/check.expected $(O)/check.out
 	for s in $(SCREENS); do \
 	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \

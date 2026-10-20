@@ -1,0 +1,19 @@
+# The libraries a program links, ix's own (mkfiles/mklib), as xix's
+# programs name their lib.cma: the includer sets LIBDIRS, each library's
+# directory from TOP, each after the ones it names, then includes this.
+# LIBA: their archives, for the link; LIBI: their interfaces'
+# directories, for mini-ml's -I; LIBSRC: their files, which a program's
+# own units are compiled again after (mini-ml reads a unit's .mli, or
+# its .ml when it has none). Each library's own mini-mk is asked at
+# every build (make -C's way; :Pfalse:, out of date always), and says
+# whether its archive is older than its files: a program built alone
+# never links a library older than its sources, and is linked again
+# only when an archive changed.
+# The start names the libraries' units in their order:
+#   $ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Main Std_exit ...
+LIBA=${LIBDIRS:%=$B/%/lib.a}
+LIBSRC=`{for d in $LIBDIRS; do find $TOP/$d -name '*.ml' -o -name '*.mli' -o -name mkfile | grep -v /tests/; done}
+LIBI=`{for d in $LIBDIRS; do find $TOP/$d -name '*.mli' | grep -v /tests/ | xargs -n 1 dirname; done | sort -u | sed 's/^/-I /'}
+
+$B/%/lib.a:Pfalse: $TOP/%/mkfile
+	cd $TOP/$stem && mini-mk O=$O OS=$OS

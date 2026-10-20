@@ -1,8 +1,9 @@
 # mini-netscape, built by ix's tools (docs/plans/plan_browser.md, stage
-# 10): every unit it stands on -- the cryptography, the network, the
-# pictures' readers, the playground and one platform of it,
-# HTML, CSS, JavaScript, a page's scripts, the boxes -- found by its
-# name in their directories and compiled here, then the program. The
+# 10): every unit it stands on -- the pictures' readers, the
+# playground and one platform of it, HTML, CSS, JavaScript, a page's
+# scripts, the boxes -- found by its name in their directories and
+# compiled here, then the program, linked with the libraries
+# (mkfiles/mklibs: the cryptography, the compression, the network). The
 # platform is ppm's on Linux (no window: a frame written to a file, the
 # tests'), the draw device's with OS=plan9 (mini-9pi: a window of
 # mini-rio, as the games', games/mkgames).
@@ -10,30 +11,28 @@ TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/netscape
 PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
-# (Plan 9's Tcp and Udp, /net's files where Linux's are sockets: found
-# last, and so taken, as networking/mkfile's)
-OSDIR=`{case $OS in plan9) echo ../../lib_networking/tcp/plan9;; *) echo .;; esac}
 # (the draw device's client and the Plan 9 platforms' loop: not for ppm)
 CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard Plan9_loop;; esac}
 G=$TOP/lib_graphics
+LIBDIRS=lib_crypto lib_compression lib_networking
+<$TOP/mkfiles/mklibs
 P=$TOP/lib_playground
-N=$TOP/lib_networking
 J=../javascript
 W=../webapi
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
 DIRS=. ../html ../css $J/values $J/parsing $J/eval $J/opti $J/library ../engine/layout ../engine/display ../engine/page $W/dom $W/window $W/net $W/run \
  $P/platforms/$PLATFORM $P/platforms $P $P/core $P/random \
  $G/core $G/geometry $G/images $G/software $G/svg $G/fonts \
- $TOP/lib_compression $TOP/lib_crypto $N/tcp $N/tls $N/http $G $OSDIR
+ $G
 # (written out: mk's ${DIRS:%=-I %} gives -I. for the first)
-INCLUDES=-I . -I ../html -I ../css -I $J/values -I $J/parsing -I $J/eval -I $J/opti -I $J/library -I ../engine/layout -I ../engine/display -I ../engine/page -I $W -I $W/dom -I $W/window -I $W/net -I $W/run -I $P/platforms/$PLATFORM -I $P/platforms -I $P -I $P/core -I $P/random -I $G/core -I $G/geometry -I $G/images -I $G/software -I $G/svg -I $G/fonts -I $TOP/lib_compression -I $TOP/lib_crypto -I $N/tcp -I $N/tls -I $N/http -I $G $STDI
+INCLUDES=-I . -I ../html -I ../css -I $J/values -I $J/parsing -I $J/eval -I $J/opti -I $J/library -I ../engine/layout -I ../engine/display -I ../engine/page -I $W -I $W/dom -I $W/window -I $W/net -I $W/run -I $P/platforms/$PLATFORM -I $P/platforms -I $P -I $P/core -I $P/random -I $G/core -I $G/geometry -I $G/images -I $G/software -I $G/svg -I $G/fonts -I $G $LIBI $STDI
 # (each before the ones that name it: ocamldep -sort's order; Js_quicken
 # and Js_compile after Js_eval, which they tell of themselves when the
 # program starts)
-LIB=Hershey_futural Js_prelude Browser_zoom Script_prelude Cors Style Browser_history Js_ast Per_domain Mini_opti Js_string Ua_sheet Css_syntax Dtd Dom Charset Store Input_script Lehmer Time Sub Set Color Cmd Basics Hershey Xpm Dct Vec2 Curve Affine Rgba_image Opti Framebuffer Blit Url Urlencoded Zlib Http Civil Base64 Udp Dns Packbits Lzw Huffman Sha512 Sha256 Sha1 Hmac Hkdf Chacha20 Bignum Poly1305 Aes Chacha20_poly1305 Ecdsa Gcm Rsa X25519 Tcp Clock Pem Gif Jpeg_progressive Png Circle Fill Line Stroke Svg Entities Html_lexer Css_values Js_lexer Js_parse Js_coroutine Js_regexp Browser_url Table_layout Js_value Js_operators Selectors Looks Cascade Line_mode Html_tree Forms Playground Jpeg Image_file Asn1 X509 Audio_source Session Glyph_unicode Letter_strokes Shape_render_software Css Js_scope Js_json Js_promise Browser_picture Html_layout Stroke_text Script_events Script_dom Hit Browser_text Browser_draw Js_builtins Js_frame Js_props Css_grid Computed Redraw Tls13 Tls_client Cookie Cookie_jar Keep_alive Http_client $CLIENT Playground_platform Js_globals Flex_layout Grid_layout Box_layout Js_eval Js_quicken Js_compile Browser_boxes Browser_page Script_host LocalStorage Script_window Script_fetch Event_loop XMLHttpRequest Script_url Script_element Script_document Browser_forms Browser_script Browser_helpers Places Browser_profile Worker_spawn Tab Tab_worker
+LIB=Hershey_futural Js_prelude Browser_zoom Script_prelude Cors Style Browser_history Js_ast Per_domain Mini_opti Js_string Ua_sheet Css_syntax Dtd Dom Charset Store Input_script Lehmer Time Sub Set Color Cmd Basics Hershey Xpm Dct Vec2 Curve Affine Rgba_image Opti Framebuffer Blit Gif Jpeg_progressive Png Circle Fill Line Stroke Svg Entities Html_lexer Css_values Js_lexer Js_parse Js_coroutine Js_regexp Browser_url Table_layout Js_value Js_operators Selectors Looks Cascade Line_mode Html_tree Forms Playground Jpeg Image_file Audio_source Session Glyph_unicode Letter_strokes Shape_render_software Css Js_scope Js_json Js_promise Browser_picture Html_layout Stroke_text Script_events Script_dom Hit Browser_text Browser_draw Js_builtins Js_frame Js_props Css_grid Computed Redraw $CLIENT Playground_platform Js_globals Flex_layout Grid_layout Box_layout Js_eval Js_quicken Js_compile Browser_boxes Browser_page Script_host LocalStorage Script_window Script_fetch Event_loop XMLHttpRequest Script_url Script_element Script_document Browser_forms Browser_script Browser_helpers Places Browser_profile Worker_spawn Tab Tab_worker
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{for d in $DIRS $W; do ls $d/*.ml $d/*.mli 2> /dev/null; done; ls $N/tcp/plan9/*.ml}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LOCAL=`{for d in $DIRS $W; do ls $d/*.ml $d/*.mli 2> /dev/null; done} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 # (netscape: the name the frames' test asks for, as a game's; mini-netscape: the program's)
 all:V: $D/mini-netscape
@@ -53,8 +52,8 @@ $D/Worker_spawn.$O: spawn/large_threads.ml Worker_spawn.mli
 $D/mini-netscape: $D/netscape
 	cp $D/netscape $target
 $D/netscape: $D/Netscape.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Netscape Std_exit -o $D/Netscape.start.$O
-	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBOBJS $D/Netscape.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIB Netscape Std_exit -o $D/Netscape.start.$O
+	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBA $LIBOBJS $D/Netscape.$O $STDEND
 
 clean:V:
 	rm -rf $D

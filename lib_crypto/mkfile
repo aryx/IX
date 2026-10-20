@@ -1,0 +1,9 @@
+# lib_crypto, a library of ix's tools (mkfiles/mklib): the hashes, the
+# ciphers and the public keys TLS 1.3 asks for (README.md)
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_crypto
+DIRS=.
+INCLUDES=-I . $STDI
+UNITS=Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
+<$TOP/mkfiles/mklib

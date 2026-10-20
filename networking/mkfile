@@ -1,40 +1,30 @@
-# networking's programs, built by ix's tools: the libraries' units
-# (lib_crypto, lib_networking's tcp, tls and http), compiled here, each
-# found by its name in their directories, then a program with its start
-# and its link
+# networking's programs, built by ix's tools: each program's unit, then
+# its start and its link with the libraries (mkfiles/mklibs: lib_crypto,
+# lib_compression, lib_networking, each made by its own mkfile)
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/networking
-# (Plan 9's Tcp and Udp, /net's files where Linux's are sockets, found
-# last and so taken: mini-mk O=5 OS=plan9, for mini-9pi)
-OSDIR=`{case $OS in plan9) echo ../lib_networking/tcp/plan9;; *) echo .;; esac}
 # (mini-httpd is sockets: Linux's only)
 PROGS=`{case $OS in plan9) echo '$D/mini-curl $D/mini-timesync';; *) echo '$D/mini-curl $D/mini-timesync $D/mini-httpd';; esac}
-DIRS=. ../lib_compression ../lib_crypto ../lib_networking/tcp ../lib_networking/tls ../lib_networking/http $OSDIR
-INCLUDES=-I . -I ../lib_compression -I ../lib_crypto -I ../lib_networking/tcp -I ../lib_networking/tls -I ../lib_networking/http $STDI
-# (each before the ones that name it)
-CRYPTO=Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
-NET=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Zlib Http Cookie Cookie_jar Keep_alive Http_client
-LIB=$CRYPTO $NET
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../lib_networking/tcp/plan9/*.ml ../lib_compression/Zlib.ml ../lib_compression/Zlib.mli ../lib_crypto/*.ml ../lib_crypto/*.mli ../lib_networking/*/*.ml ../lib_networking/*/*.mli}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LIBDIRS=lib_crypto lib_compression lib_networking
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . $LIBI $STDI
+LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $PROGS
 
-$D/%.$O: $LOCAL
+$D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
+	$ML $INCLUDES -o $target $stem.ml
 $D/mini-curl: $D/Curl.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Curl Std_exit -o $D/Curl.start.$O
-	$LD $LDH -nofollow -o $target $D/Curl.start.$O $STDOBJS $LIBOBJS $D/Curl.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Curl Std_exit -o $D/Curl.start.$O
+	$LD $LDH -nofollow -o $target $D/Curl.start.$O $STDOBJS $LIBA $D/Curl.$O $STDEND
 $D/mini-timesync: $D/Timesync.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Timesync Std_exit -o $D/Timesync.start.$O
-	$LD $LDH -nofollow -o $target $D/Timesync.start.$O $STDOBJS $LIBOBJS $D/Timesync.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Timesync Std_exit -o $D/Timesync.start.$O
+	$LD $LDH -nofollow -o $target $D/Timesync.start.$O $STDOBJS $LIBA $D/Timesync.$O $STDEND
 $D/mini-httpd: $D/Httpd.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Httpd Std_exit -o $D/Httpd.start.$O
-	$LD $LDH -nofollow -o $target $D/Httpd.start.$O $STDOBJS $LIBOBJS $D/Httpd.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Httpd Std_exit -o $D/Httpd.start.$O
+	$LD $LDH -nofollow -o $target $D/Httpd.start.$O $STDOBJS $LIBA $D/Httpd.$O $STDEND
 
 clean:V:
 	rm -rf $D

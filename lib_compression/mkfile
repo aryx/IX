@@ -1,0 +1,9 @@
+# lib_compression, a library of ix's tools (mkfiles/mklib): zlib's
+# inflate and deflate, and the pictures' LZW, PackBits and Huffman codes
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_compression
+DIRS=.
+INCLUDES=-I . $STDI
+UNITS=Huffman Lzw Packbits Zlib
+<$TOP/mkfiles/mklib

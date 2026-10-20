@@ -1,0 +1,24 @@
+# A library of ix's, built by ix's tools: its units compiled, then kept
+# in one archive, $B/<its directory>/lib.a, in the order they start in
+# (xix's mkfiles/mklib and its lib.cma; lib_core's lib_core.a is one
+# too). `mini-ar t` lists an archive's units in that order: what a
+# program's start names (mkfiles/mklibs).
+# The includer sets, after mkconfig: LIB, its directory from TOP;
+# UNITS, each after the ones it names; DIRS, where they are (the last
+# one found taken: a system's own file after the common one); INCLUDES.
+D=$B/$LIB
+OBJS=${UNITS:%=$D/%.$O}
+LOCAL=`{for d in $DIRS; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
+
+all:V: $D/lib.a
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	$ML $INCLUDES -o $target $f
+$D/lib.a: $OBJS mkfile
+	rm -f $target
+	$AR u $target $OBJS
+
+clean:V:
+	rm -rf $D

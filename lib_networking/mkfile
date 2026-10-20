@@ -1,0 +1,14 @@
+# lib_networking, a library of ix's tools (mkfiles/mklib): TCP, UDP and
+# DNS, TLS 1.3 and its certificates, HTTP and its cookies. (netcode/,
+# the games' lockstep, names the playground's Lehmer, and 9p/ is
+# OCaml's: not in it.)
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_networking
+# (Plan 9's Tcp and Udp, /net's files where Linux's are sockets: found
+# last, and so taken)
+OSDIR=`{case $OS in plan9) echo tcp/plan9;; esac}
+DIRS=tcp tls http $OSDIR
+INCLUDES=-I tcp -I tls -I http -I ../lib_crypto -I ../lib_compression $STDI
+UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client
+<$TOP/mkfiles/mklib

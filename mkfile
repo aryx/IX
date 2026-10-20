@@ -10,7 +10,8 @@ DIRS=lib_core assembler linker linker/tools languages/c database builder shell e
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
 # The libraries and the assembler first (the others read their
-# objects), then the rest side by side, each directory a mini-mk; the
+# objects; a program asks its libraries' mkfiles too, mkfiles/mklibs,
+# which side by side would make one archive twice at once), then the rest side by side, each directory a mini-mk; the
 # two that take another's objects after it (mini-ar the linker's,
 # tiny-vcs mini-git's SHA-1 and zlib, mini-bc mini-dc's machine, mini-man mini-troff's units, and the
 # playground's programs of apps/ and examples/ the games' libraries: games/mkgames). NPROC is each mini-mk's own jobs.
@@ -19,7 +20,7 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 #   if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) || exit 1; done; fi)
 # (the machine's cores, 16 at most: there are as many directories at once)
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
-FIRST=lib_core assembler
+FIRST=lib_core lib_crypto lib_compression lib_networking assembler
 AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
 all:V:
 	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done

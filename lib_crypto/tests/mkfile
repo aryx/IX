@@ -1,32 +1,25 @@
-# lib_crypto's vectors by ix's tools (mini-mk): the library's units,
-# compiled here, then Vectors with its start and its link (vectors.sh
+# lib_crypto's vectors by ix's tools (mini-mk): Vectors and Speed, each
+# with its start and its link with the library (mkfiles/mklibs; vectors.sh
 # runs it)
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/lib_crypto/tests
-INCLUDES=-I . -I .. $STDI
-LIB=Sha256 Sha512 Hmac Hkdf Chacha20 Bignum Poly1305 Chacha20_poly1305 Aes Gcm X25519 Ecdsa Rsa
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls Vectors.ml Speed.ml ../*.ml ../*.mli}
+LIBDIRS=lib_crypto
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . $LIBI $STDI
+LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
 
 all:V: $D/vectors $D/speed
 
-$D/%.$O: ../%.ml $LOCAL
+$D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
-	$ML $INCLUDES -o $target ../$stem.ml
-$D/Vectors.$O: Vectors.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target Vectors.ml
-# (mkfile: LIB's order is the order the units start in)
-$D/vectors: $D/Vectors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
-	$ML -start $STD $COMMONS $LIB Vectors Std_exit -o $D/Vectors.start.$O
-	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBOBJS $D/Vectors.$O $STDEND
-$D/Speed.$O: Speed.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target Speed.ml
-$D/speed: $D/Speed.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig mkfile
-	$ML -start $STD $COMMONS $LIB Speed Std_exit -o $D/Speed.start.$O
-	$LD $LDH -nofollow -o $target $D/Speed.start.$O $STDOBJS $LIBOBJS $D/Speed.$O $STDEND
+	$ML $INCLUDES -o $target $stem.ml
+$D/vectors: $D/Vectors.$O $LIBS
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Vectors Std_exit -o $D/Vectors.start.$O
+	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBA $D/Vectors.$O $STDEND
+$D/speed: $D/Speed.$O $LIBS
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Speed Std_exit -o $D/Speed.start.$O
+	$LD $LDH -nofollow -o $target $D/Speed.start.$O $STDOBJS $LIBA $D/Speed.$O $STDEND
 
 clean:V:
 	rm -rf $D

@@ -269,7 +269,7 @@ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 $ % % hello world
    2000    2000    8893 numbers
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
-$ answer from 10.0.0.1 in 10.0 ms
+$ answer from 10.0.0.1 in 12.5 ms
 answer from 10.0.0.1 in 10.0 ms
 answer from 10.0.0.1 in 10.0 ms
 $ no answer from 10.0.0.9
@@ -292,13 +292,16 @@ $ > sync id 1000 ack 0, from 10.0.0.2 to 10.0.0.1
 < close id 5002 ack 1002, from 10.0.0.1 to 10.0.0.2
 > sync id 2000 ack 0, from 10.0.0.2 to 10.0.0.1
 < sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-< sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-x sync id 6000 ack 2000, from 10.0.0.1 to 10.0.0.2
-> ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > ack id 2001 ack 6000, from 10.0.0.2 to 10.0.0.1
 > data id 2001 ack 6000, 8 bytes, from 10.0.0.2 to 10.0.0.1
 < data id 6001 ack 2001, 1024 bytes, from 10.0.0.1 to 10.0.0.2
-< data id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+x data id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+< query id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2
+> state id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+< data? id 6002 ack 2001, 989 bytes, from 10.0.0.1 to 10.0.0.2
+> ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
+> state id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6001, from 10.0.0.2 to 10.0.0.1
 > ack id 2002 ack 6002, from 10.0.0.2 to 10.0.0.1
 < close id 6003 ack 2001, from 10.0.0.1 to 10.0.0.2

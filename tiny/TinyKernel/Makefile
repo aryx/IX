@@ -52,6 +52,7 @@
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
+# the loops that copy and zero a partition (memory.tm),
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml: TinyMemory.ml,
 # TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
@@ -98,7 +99,7 @@ T = ../tests/TinyKernel_tests
 # compiled again at each run, and each program's main 420 KB of them)
 CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Hashtbl Common Sha1
 LIB = $(CORE:%=$(O)/lib/%.o)
-KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
+KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin
 PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml
 # other names (hard links), a name:program each
@@ -333,7 +334,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml exa
 # step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
 # Plan 9's, as /sys is principia's devsys)
 C_PROGS = sh mltests ping get put httpd
-SRC_FILES = entry.tm draw.tm end.tm runtime.c TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml \
+SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c libml/mlsys.c \
 	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h examples/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)

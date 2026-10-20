@@ -15,7 +15,7 @@ open TinyKernelAudio
 open TinyKernelFS
 
 (*****************************************************************************)
-(* The machine: entry.tm's and runtime.c's functions *)
+(* The machine: entry.tm's, memory.tm's and runtime.c's functions *)
 (*****************************************************************************)
 
 external k_init : unit -> unit = "k_init"

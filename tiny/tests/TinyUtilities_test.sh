@@ -7,8 +7,9 @@
 # the same input, in a directory made here. Their standard output and
 # their exit status must be the same. Standard error is not compared:
 # tiny-utils words all its errors as "tool: file: reason" on purpose.
-# A case marked "sorted" compares the outputs sorted: du -a lists in
-# name order, where the twin keeps the directory's order. Not tested:
+# A case marked "sorted" compares the outputs sorted: du lists in
+# name order, where the twin keeps the directory's order (du of two
+# directories, d and 'a dir', or du -a). Not tested:
 # cat with a file it cannot open before others, as Plan 9's cat stops
 # there and tiny-utils's goes on to the next file, as all its filters do;
 # mv of a directory
@@ -96,7 +97,7 @@ same "" - ls nosuch
 same "" - walk
 same "" - walk d
 same "" - walk d/h
-same "" - du
+same "" sorted du
 same "" - du d
 same "" - du d/h
 same "" sorted du -a d

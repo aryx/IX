@@ -5,42 +5,27 @@
 
 (* See Stroke_text.mli *)
 
-(* Hershey has glyphs for printable ASCII; anything else is its '?' *)
-let char_of (s : string) = if String.length s = 1 then s.[0] else '?'
+(* a character's glyph: Hershey's for ASCII, Glyph_unicode's for the
+ * rest (a letter with its mark, quotes, dashes), its '?' for what it
+ * does not know: the letters' strokes are Letter_strokes', which are.
+ * old: Hershey.glyph (if String.length s = 1 then s.[0] else '?') *)
 
 (* font units to the playground's, at a look's size *)
 let scale_of (look : Style.t) = look.size /. Hershey.units_per_em
 
 let metrics look s =
-  let g = Hershey.glyph (char_of s) in
+  let g = Glyph_unicode.glyph s in
   float_of_int (g.right - g.left) *. scale_of look
 
+(* (the letter one shape, Playground's Letters, which the platform draws
+ * from its strokes, once: old: its strokes made here, a thin rectangle
+ * a segment, drawn by every platform at each frame) *)
 let glyph color (look : Style.t) s ~x ~baseline =
-  let g = Hershey.glyph (char_of s) in
-  let k = scale_of look in
-  (* a look is a pen: thicker for bold *)
   let pen = if look.bold then look.size /. 7. else look.size /. 16. in
-  let slant = if look.italic then 0.2 else 0. in
-  (* a point of the glyph, in the playground: Hershey's y goes down
-   * with the baseline at 9, the playground's goes up from it *)
-  let at (gx, gy) =
-    let up = float_of_int (9 - gy) *. k in
-    (x +. (float_of_int (gx - g.left) *. k) +. (up *. slant), baseline +. up)
-  in
-  let segment (x1, y1) (x2, y2) =
-    let dx = x2 -. x1 and dy = y2 -. y1 in
-    (* one pen-width longer than the segment, so that joints overlap
-     * rather than leaving notches *)
-    Playground.rectangle color (sqrt ((dx *. dx) +. (dy *. dy)) +. pen) pen
-    |> Playground.rotate (atan2 dy dx *. 180. /. Float.pi)
-    |> Playground.move ((x1 +. x2) /. 2.) ((y1 +. y2) /. 2.)
-  in
-  let rec pairs = function a :: (b :: _ as rest) -> segment a b :: pairs rest | _ -> [] in
-  let strokes = List.concat_map (fun stroke -> pairs (List.map at stroke)) g.strokes in
-  let advance = float_of_int (g.right - g.left) *. k in
+  let advance = metrics look s in
   let rule y =
     Playground.rectangle color advance (pen *. 0.8) |> Playground.move (x +. (advance /. 2.)) y
   in
-  strokes
-  @ (if look.underline then [ rule (baseline -. (look.size *. 0.18)) ] else [])
-  @ if look.strike then [ rule (baseline +. (look.size *. 0.25)) ] else []
+  Playground.letters color { size = look.size; bold = look.bold; italic = look.italic; baseline; at = [ (x, s) ] }
+  :: ((if look.underline then [ rule (baseline -. (look.size *. 0.18)) ] else [])
+  @ if look.strike then [ rule (baseline +. (look.size *. 0.25)) ] else [])

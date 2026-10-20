@@ -151,8 +151,9 @@ common line.
   at a size, a look and a scale: its strokes (`Letter_strokes`, the
   rectangles `Stroke_text.glyph` made) drawn once, white over black,
   how much of each pixel they cover; a letter drawn is then the colour
-  put through it, at the nearest whole pixel. Cairo's image backend's
-  way. Done 2026-10-20 (the author: "scrolling on linux still feels
+  put through it, at the nearest quarter of a pixel (a mask for each
+  quarter: Skia's way, where whole pixels put the office's PDF export
+  too far from its screen). Cairo's image backend's way. Done 2026-10-20 (the author: "scrolling on linux still feels
   slow though on HN for instance, but also wikipedia"; the plan of
   2026-10-09 had kept the strokes there, "the machine is fast
   enough": it was not). Measured, Hacker News, a frame scrolled:
@@ -163,8 +164,10 @@ common line.
   | OCaml's code, at 250% | 29 ms | 4.3 ms |
   | mini-ml's code, at 100% | 107 ms | 9 ms |
 
-  The letters' shapes are the same; their places are rounded, so the
-  recorded frames were recorded again.
+  (With quarters, 2.1 ms and 13 ms for the first and third.) The
+  letters' shapes are the same, their edges smoothed otherwise: the
+  recorded frames were recorded again, and the playground's golden
+  pictures are compared with a tolerance (games/tests/frames.sh).
 - **On mini-9pi**, the draw platform keeps a *font image* in the
   kernel for each look at a size in pixels, Plan 9's cache image, and
   puts each letter there the first time it is used. A letter drawn is
@@ -183,10 +186,10 @@ common line.
   Both end in the same font image and the same copies. Which is
   faster to fill, and whether a letter looks better either way, is to
   be measured; a switch keeps both while it is.
-- **Whole pixels.** A letter is copied to a whole pixel, half a pixel
-  off at most from where the layout put it, as Plan 9's and X core's
-  text are. The atlases' sub-pixel copies are what a finer grid would
-  cost: four letters kept for one.
+- **Whole pixels on mini-9pi.** A letter is copied to a whole pixel,
+  half a pixel off at most from where the layout put it, as Plan 9's
+  and X core's text are. Linux's masks keep quarters (16 a letter);
+  the device's font image could too, at the same cost.
 
 What ix leaves out, and the reason, so that it is a choice and not a
 gap: hinting (strokes have no outline to hint), antialiasing on

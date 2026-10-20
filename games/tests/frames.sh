@@ -13,7 +13,8 @@
 # may be one of its scenes too (TinyWolfenstein's treasure: its
 # Scenes_2d.ml's script): where the playground is there (~/playground,
 # or PLAYGROUND=...) with a picture of that name, and python3 with PIL
-# to read its PNG, the frame is compared with it too, pixel by pixel.
+# to read its PNG, the frame is compared with it too: ok when few
+# pixels are far apart (a level of 64) and the mean difference is small.
 # A session with redraw=each has the sum of the same one without: every
 # frame drawn by what changed (Redraw) ends with the same picture.
 # A line may end with a second sum, the frame by mini-ml's code where it
@@ -63,9 +64,16 @@ while IFS='|' read -r game name args sum sum2; do
 import sys
 from PIL import Image
 a = Image.open(sys.argv[1]).convert('RGB'); b = Image.open(sys.argv[2]).convert('RGB')
-n = sum(1 for p, q in zip(a.getdata(), b.getdata()) if p != q) if a.size == b.size else -1
-print(('ok' if n == 0 else 'FAIL') + " the playground's golden frame: %d pixels differ of %d" % (n, a.size[0] * a.size[1]))
-sys.exit(0 if n == 0 else 1)
+if a.size != b.size: sys.exit("FAIL the playground's golden frame: sizes differ: %s and %s" % (a.size, b.size))
+pairs = [(p, q) for p, q in zip(a.getdata(), b.getdata()) if p != q]
+far = sum(1 for p, q in pairs if max(abs(x - y) for x, y in zip(p, q)) > 64)
+mean = sum(abs(x - y) for p, q in pairs for x, y in zip(p, q)) / (3 * a.size[0] * a.size[1])
+# (letters drawn through masks smooth their edges otherwise than the
+# playground's strokes: a page of office's text 33,000 pixels a level
+# or more apart, 8 far apart, a mean of 0.4, 2026-10-20)
+ok = far < a.size[0] * a.size[1] / 10000 and mean < 1
+print(('ok' if ok else 'FAIL') + " the playground's golden frame: %d pixels differ of %d, %d far apart, the mean difference %.2f" % (len(pairs), a.size[0] * a.size[1], far, mean))
+sys.exit(0 if ok else 1)
 PY
   fi
 done < $in

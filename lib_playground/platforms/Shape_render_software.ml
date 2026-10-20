@@ -280,17 +280,22 @@ let draw_words (options : options) (fb : Framebuffer.t) (m : Affine.t) (str : st
  * fonts do (docs/notes_font.md). The strokes are Letter_strokes', white
  * over black: where two overlap the cover is 1 - (1 - a)(1 - b), what
  * drawing them one after the other in the colour gives. A letter's
- * place is a whole pixel, the nearest (half a pixel off at most): that
- * is what lets one mask serve each "e" of a page.
- * old: the strokes drawn, a thin rectangle each, at each frame *)
+ * place is kept to a quarter of a pixel, a mask for each of the 16
+ * (Skia's way): an eighth of a pixel off at most, and a page's "e"s
+ * share 16 masks.
+ * old: the strokes drawn, a thin rectangle each, at each frame; then
+ * (2026-10-20) a letter at the nearest whole pixel, one mask: half a
+ * pixel off, mini-office's page 38,000 pixels apart from the
+ * playground's picture of it, its PDF too far from its screen *)
+let steps = 4
 type mask = { w : int; h : int; ox : int; oy : int; cover : float array }
 
-let masks : (string * float * bool * bool * bool * float * float * float * float, mask) Hashtbl.t = Hashtbl.create 512
+let masks : (string * float * bool * bool * bool * float * float * float * float * int * int, mask) Hashtbl.t = Hashtbl.create 512
 
 (* the letter [s] in [l]'s look, [m]'s turn and scale (not its move),
  * its origin at (ox, oy) of the mask *)
-let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) : mask =
-  let key = (s, l.size, l.bold, l.italic, aa, m.a, m.b, m.c, m.d) in
+let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) ~(qx : int) ~(qy : int) : mask =
+  let key = (s, l.size, l.bold, l.italic, aa, m.a, m.b, m.c, m.d, qx, qy) in
   match Hashtbl.find_opt masks key with
   | Some k -> k
   | None ->
@@ -302,7 +307,8 @@ let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) : 
       let w = int_of_float (ceil (List.fold_left max neg_infinity xs)) + 2 - left and h = int_of_float (ceil (List.fold_left max neg_infinity ys)) + 2 - top in
       let fb = Framebuffer.create ~width:w ~height:h in
       Framebuffer.clear fb ~rgb:0;
-      let at = Affine.compose (Affine.translate (float (-left)) (float (-top))) linear in
+      let step = 1. /. float steps in
+      let at = Affine.compose (Affine.translate (float (-left) +. (float qx *. step)) (float (-top) +. (float qy *. step))) linear in
       List.iter
         (fun (stroke : Playground.shape) ->
           match stroke.form with
@@ -320,9 +326,16 @@ let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) : 
 let draw_letters (options : options) (fb : Framebuffer.t) (m : Affine.t) (l : Playground.letters) ~(rgb : int) ~(alpha : float) : unit =
   List.iter
     (fun ((x, s) : float * string) ->
-      let k = mask_of ~aa:options.antialiasing m l s in
       let px, py = Affine.apply m (x, l.baseline) in
-      let x0 = int_of_float (Float.round px) - k.ox and y0 = int_of_float (Float.round py) - k.oy in
+      (* the place: a whole pixel, and the quarters after it *)
+      let split (v : float) : int * int =
+        let q = int_of_float (Float.round (v *. float steps)) in
+        let whole = int_of_float (Float.of_int q /. float steps |> Float.floor) in
+        (whole, q - (whole * steps))
+      in
+      let wx, qx = split px and wy, qy = split py in
+      let k = mask_of ~aa:options.antialiasing m l s ~qx ~qy in
+      let x0 = wx - k.ox and y0 = wy - k.oy in
       for j = 0 to k.h - 1 do
         for i = 0 to k.w - 1 do
           let c = k.cover.((j * k.w) + i) in

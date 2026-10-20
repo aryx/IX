@@ -37,16 +37,19 @@
  *   Hershey          a glyph's strokes and its two sides    lib_graphics
  *   [metrics]        its width in a look  ->  Page.layout, which
  *                    places every glyph and knows no font
- *   [glyph]          a placed glyph  ->  thin rectangles, turned
- *                    (Office_view for a document's text and bands,
- *                    Part_text for a text box, Figure_shapes for a
- *                    drawing's text)
- *   the platform     the rectangles filled; or written to a PDF
- *                    (Shape_render_pdf)
+ *   [glyph]          a placed glyph  ->  one shape, Playground's
+ *                    Letters (Office_view for a document's text and
+ *                    bands, Part_text for a text box, Figure_shapes
+ *                    for a drawing's text)
+ *   the platform     its strokes (Letter_strokes: thin rectangles,
+ *                    turned) drawn once a letter in a mask, then
+ *                    copied (the software renderer); or written to a
+ *                    PDF (Shape_render_pdf)
  *
- * A page of text is so some thousands of rectangles, which a small
- * machine feels: Office_view keeps a page's letters as one group while the
- * page is the same. And the words of an exported PDF are drawings
+ * A page of text was some thousands of rectangles, which a small
+ * machine felt (until 2026-10-20, when they were made here); it is a
+ * letter a shape now. Office_view keeps a page's letters as one group
+ * while the page is the same. And the words of an exported PDF are drawings
  * of letters, not text: they cannot be searched or copied.
  *
  * others:

@@ -19,11 +19,11 @@ fact.ml, for example:
   tiny-c -o main.tm main.c
   L=tiny/TinyCRuntime
   for f in $L/start $L/udivmod exit fact main; do tiny-assembler -o $f.o $f.tm; done
-  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o /sys/lib/ml/*.o
+  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o /lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
 main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
 is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The standard library,
-TinyLibCore/'s modules, is read from /sys/lib/ml (-L: another directory), its
+TinyLibCore/'s modules, is read from /lib/ml (-L: another directory), its
 interfaces Stdlib.tmi ... Sha1.tmi, and linked from there, each module compiled
 once by tiny-ml -c -nostdlib after the ones before it. Several files are a
 module each, one after the other, then their main: a's x is A.x in b, or x
@@ -1913,7 +1913,7 @@ let unit_of f = String.capitalize_ascii (Filename.remove_extension (Filename.bas
 (* the standard library, TinyLibCore/'s modules in their order, the
  * first units of every program: each compiled once, by tiny-ml -c
  * -nostdlib after the ones before it, and read as interfaces from a
- * directory, /sys/lib/ml on tiny-kernel (-L another), its objects
+ * directory, /lib/ml on tiny-kernel (-L another), its objects
  * linked as any unit's.
  * (old: their text the compiler's, TinyMLPrelude.ml made of them by the
  * build, compiled again at each run: a unit of one line took 47 s on tiny-kernel,
@@ -1926,7 +1926,7 @@ let library = [ "Stdlib"; "Char"; "Seq"; "List"; "String"; "Bytes"; "Array"; "Op
 exception File_error of string
 
 let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
-  let output = ref "" and file = ref "" and files = ref [] and separate = ref false and lib = ref (Some "/sys/lib/ml") in
+  let output = ref "" and file = ref "" and files = ref [] and separate = ref false and lib = ref (Some "/lib/ml") in
   let rec args l = match l with
     | "-o" :: o :: r -> output := o; args r
     | "-c" :: r -> separate := true; args r

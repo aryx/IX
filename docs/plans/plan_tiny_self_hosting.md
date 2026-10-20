@@ -246,7 +246,8 @@ compilation.
    compiling a small program, the tools, and itself. Each result is the
    host's, byte for byte.
 8. **The system from its sources.** The sources in the image (or on
-   the disk) under `/sys/src`, Plan 9's place; tiny-build's mkfile for
+   the disk) under `/src` (not Plan 9's `/sys/src`: `/sys` is
+   principia's devsys, the system's state, as Linux's); tiny-build's mkfile for
    `/bin` and for the kernel; the boot image made on tiny-kernel, booted
    with `-d`, and equal to the one `TinyKernel/Makefile` made on the
    host. A change to one module recompiles that module and relinks.

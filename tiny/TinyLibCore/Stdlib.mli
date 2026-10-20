@@ -14,7 +14,7 @@
  *
  * Each module is compiled once, by tiny-ml -c -nostdlib after the ones
  * before it, to its object and its interface: on tiny-kernel in
- * /sys/lib/ml, where tiny-ml reads the interfaces (-L another
+ * /lib/ml, where tiny-ml reads the interfaces (-L another
  * directory). They are the first units of every program; what a
  * program does not call, tiny-linker leaves out (its pieces).
  * (old: the compiler carried the files' text, TinyMLPrelude.ml made of

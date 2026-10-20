@@ -143,7 +143,7 @@
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
  *   the standard library, are the first units of every program, each
  *   compiled once (-nostdlib), their interfaces read from a directory
- *   (/sys/lib/ml, or -L's). The types, the constructors and the labels
+ *   (/lib/ml, or -L's). The types, the constructors and the labels
  *   are the program's, one name space: a record's label is the latest
  *   record's unless the type says which. Each function and static block
  *   is a piece (.piece), which tiny-linker leaves out when nothing

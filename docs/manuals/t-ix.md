@@ -515,7 +515,7 @@ it its memory. A C or assembly function is called as an `external`,
 with C's convention and ML's values. The standard library,
 `TinyLibCore/`'s modules, is compiled once (`tiny-ml -c -nostdlib`, each
 module after the ones before it); tiny-ml reads its interfaces from
-`/sys/lib/ml` (`-L` another directory), and a program is linked with its
+`/lib/ml` (`-L` another directory), and a program is linked with its
 objects.
 
     tiny-ml -c a.ml             # a.tm, and a.tmi, its interface

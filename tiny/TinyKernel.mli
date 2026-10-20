@@ -116,7 +116,7 @@
  *
  *     0x000000   the image: entry.tm, the runtime, this file; then the
  *                files it carries, each a name, a size, the bytes
- *                (10 MB at most: /sys/src, the sources, are among them)
+ *                (10 MB at most: /src, the sources, are among them)
  *     0xa00000   the file system's buffers and its map of the
  *                disk's blocks (TinyKernelFS.ml)
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)

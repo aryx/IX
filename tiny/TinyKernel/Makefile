@@ -252,9 +252,10 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 # partition of that size and mlsys.c a heap of it (bigmem: the test;
 # www: a page's lines live in its heap; play: the WAV file is read
 # whole into it; as, ld, cc, ml: the toolchain, a file whole in memory
-# and the compilers' recursions over it (ld 32: office's link needs 8
-# MB, more than half of 16, its collector's; old: 16, out of memory at
-# office in the first build on tiny-kernel); build: the files it digests,
+# and the compilers' recursions over it (as and ld 32: TinyML.tm's
+# assembly and office's link need more than half of 16, their
+# collector's; old: 16, out of memory there in the first builds on
+# tiny-kernel); build: the files it digests,
 # each read whole, the system's objects among them).
 ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml
 UNITS_windows = TinyLibDraw TinyWindows
@@ -282,7 +283,7 @@ UNITS_ml = $(I_TinyML) TinyML
 MEM_bigmem = -a 8
 MEM_www = -a 10
 MEM_play = -a 4
-MEM_as = -a 16
+MEM_as = -a 32
 MEM_ld = -a 32
 MEM_cc = -a 16
 MEM_ml = -a 32

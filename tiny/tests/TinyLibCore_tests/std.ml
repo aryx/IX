@@ -194,5 +194,6 @@ let () =
   let v = ([ 1; -1; 63; 64; -129; 40000; -40000; 1000000; 1000000000 ], (shared, shared), Some (ref [ None; Some 'z' ]), String.make 40 'x', String.make 300 'y', Array.of_list [ 1; 2 ]) in
   let m = Marshal.to_string v [] in
   str (hex m); int (String.length m); print_newline ();
+  str (hex (Marshal.to_string (shared, shared, [ 1; 2 ]) [ Marshal.No_sharing ])); print_newline ();
   let (l, (s1, s2), r, x, y, a) = (Marshal.from_string m 0 : int list * (string * string) * char option list ref option * string * string * int array) in
   ints l; bool (s1 == s2); str s1; (match r with Some r -> int (List.length !r) | None -> ()); int (String.length x); int (String.length y); int (Array.length a); print_newline ()

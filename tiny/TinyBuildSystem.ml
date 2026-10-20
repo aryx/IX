@@ -277,6 +277,18 @@ let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >) (vars : (st
 
 let stampfile = ".tiny-build"
 
+(* the stamps and the digests known, written to .tiny-build: after each
+ * recipe that ends well, so that a build stopped (killed, the machine
+ * halted) keeps what it made (old: at the end only: tiny-kernel's
+ * build of itself, stopped after 5 hours, began again from nothing) *)
+let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
+  let b = Buffer.create 4096 in
+  Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
+  Hashtbl.iter (fun k (size, date, d) -> Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
+  let fd = TinyLibSystem.open_out caps stampfile in
+  TinyLibSystem.write fd (Buffer.contents b);
+  TinyLibSystem.close fd
+
 let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap.env; Cap.stdout; Cap.stderr; .. >)
     (vars : (string, string list) Hashtbl.t) (stamps : (string, string) Hashtbl.t)
     jobs dry (root : node) : bool =
@@ -317,7 +329,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     | Some n ->
         Hashtbl.remove running pid;
         (* (its file made again: its digest too) *)
-        if st = "" then (Hashtbl.remove file_digests n.name; Hashtbl.replace stamps n.name (stamp n); finish n)
+        if st = "" then (Hashtbl.remove file_digests n.name; Hashtbl.replace stamps n.name (stamp n); finish n; save caps stamps)
         else (TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s failed\n" n.name); failed := true)
   in
   let rec loop todo =
@@ -389,12 +401,7 @@ let run (caps : Cap.all_caps) : int =
         end
         else build caps vars stamps (max 1 !jobs) !dry root) targets
     in
-    if not !dry then begin
-      let fd = TinyLibSystem.open_out caps stampfile in
-      TinyLibSystem.write fd (Hashtbl.fold (fun k v acc -> acc ^ k ^ " " ^ v ^ "\n") stamps "");
-      TinyLibSystem.write fd (Hashtbl.fold (fun k (s, t, d) acc -> acc ^ Printf.sprintf "file %s %d %d %s\n" k s t d) known "");
-      TinyLibSystem.close fd
-    end;
+    if not !dry then save caps stamps;
     if ok then 0 else 1
   with Error msg -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg); 1
 

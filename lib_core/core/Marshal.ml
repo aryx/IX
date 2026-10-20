@@ -112,6 +112,10 @@ let number (t : seen) (v : Obj.t) : int option =
 type writer = {
   out : Buffer.t;
   seen : seen;
+  (* No_sharing not asked: a block met before written as such (asked,
+   * each copy written anew and no block counted, as OCaml's; old: the
+   * flags left, tiny-ml's interfaces not OCaml's bytes) *)
+  sharing : bool;
   (* the words the blocks take when read, for the header *)
   mutable words32 : int;
   mutable words64 : int;
@@ -175,7 +179,7 @@ let rec written (w : writer) (v : Obj.t) : bool =
   if Obj.is_int v then (write_int w (Obj.obj v); true)
   else if Obj.size v = 0 then (put w (0x80 + Obj.tag v) 1; true)
   else
-    match number w.seen v with
+    match if w.sharing then number w.seen v else None with
     | Some n -> write_shared w (w.seen.count - n); true
     | None ->
         let tag = Obj.tag v in
@@ -206,9 +210,9 @@ and write (w : writer) (v : Obj.t) : unit =
     v := Obj.field !v (Obj.size !v - 1)
   done
 
-let to_string (v : 'a) (_flags : extern_flags list) : string =
+let to_string (v : 'a) (flags : extern_flags list) : string =
   let seen = { blocks = Array.make 64 (Obj.repr 0); numbers = Array.make 64 0; count = 0; epoch = collections () } in
-  let w = { out = Buffer.create 4096; seen; words32 = 0; words64 = 0 } in
+  let w = { out = Buffer.create 4096; seen; sharing = not (List.mem No_sharing flags); words32 = 0; words64 = 0 } in
   Buffer.add_string w.out magic;
   put w 0 (header_size - 4);
   write w (Obj.repr v);
@@ -258,8 +262,10 @@ let signed (r : reader) (bytes : int) : int =
   let high = byte r in
   after r (if high >= 128 then high - 256 else high) (bytes - 1)
 
+(* (none when the header counts none: No_sharing's, as OCaml's intern;
+ * old: always, out of the table's bounds) *)
 let numbered (r : reader) (v : Obj.t) : Obj.t =
-  r.blocks.(r.count) <- v;
+  if r.count < Array.length r.blocks then r.blocks.(r.count) <- v;
   r.count <- r.count + 1;
   v
 

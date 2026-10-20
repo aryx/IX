@@ -1853,7 +1853,11 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten) (exports : (
   Marshal.to_string
     { iname = !unit_name; iglobals = nglobals; icurry = !arities; icons = icons; ilabels = ilabels;
       iabbrevs = List.filter (fun a -> not (old_abbrev a)) (List.rev !abbreviations);
-      iforgotten = List.filter (fun t -> not (old_forgotten t)) !forgotten; ivals = ivals } []
+      iforgotten = List.filter (fun t -> not (old_forgotten t)) !forgotten; ivals = ivals }
+    (* (No_sharing: which of two equal names is the same string depends
+     * on a table's order, OCaml's or TinyLibCore's; shared, the host's
+     * and tiny-kernel's interfaces differed in 3 of the system's 40) *)
+    [ Marshal.No_sharing ]
 
 (* an interface read: its types the program's, its names in the tables
  * (globals, tglobals); its unit's name, globals and curry functions *)

@@ -715,6 +715,8 @@ static uchar *mout;     /* the bytes written, or 0: only counted */
 static value mlen;
 static value mwords32;
 static value mwords64;
+static value msharing;  /* 0: No_sharing asked (OCaml's: each copy
+			 * written anew, no block counted) */
 
 static void
 mbyte(value b)
@@ -771,7 +773,7 @@ extern_value(value v)
 		}
 		p = (value*)v;
 		h = p[-1];
-		if(h & 0x100){
+		if(msharing && (h & 0x100)){
 			ago = ntrail - (h >> 10);
 			if(ago < 256){
 				mbyte(0x04);
@@ -791,12 +793,14 @@ extern_value(value v)
 			mbyte(0x80 + tag);
 			return;
 		}
-		if((ntrail + 1) * 2 > maxheap)
-			fatal("Fatal error: Marshal.to_string: too many blocks\n");
-		trail[2 * ntrail] = v;
-		trail[2 * ntrail + 1] = h;
-		p[-1] = (ntrail << 10) | 0x100 | tag;
-		ntrail++;
+		if(msharing){
+			if((ntrail + 1) * 2 > maxheap)
+				fatal("Fatal error: Marshal.to_string: too many blocks\n");
+			trail[2 * ntrail] = v;
+			trail[2 * ntrail + 1] = h;
+			p[-1] = (ntrail << 10) | 0x100 | tag;
+			ntrail++;
+		}
 		if(tag == 252){
 			len = n * W - 1 - ((uchar*)p)[n * W - 1];
 			if(len < 32)
@@ -852,7 +856,13 @@ value
 ml_marshal_to_string(value v, value flags)
 {
 	value s;
+	value l;
 
+	/* No_sharing, the flags' first constructor: 0, an integer */
+	msharing = 1;
+	for(l = flags; (l & 1) == 0; l = ((value*)l)[1])
+		if(((value*)l)[0] == 1)
+			msharing = 0;
 	extern_pass(v, 0);
 	push(v);
 	s = string_alloc(mlen);
@@ -1028,4 +1038,115 @@ ml_marshal_from_string(value s, value ofs)
 	mobj = other;
 	nobj = 0;
 	return intern_value();
+}
+
+/* SHA-1: the digest of a string, 20 bytes, in C on the machine's words
+ * of 32 bits (old: TinyLibCore's Sha1 in ML, a word as two halves of
+ * 16, as tiny-ml's integers have 31: 2.6 KB a second on tiny-kernel,
+ * hours of tiny-build's digests in tiny-kernel's build of itself) */
+static value sha_h[5];
+static value sha_w[80];
+static uchar sha_last[128];
+
+/* a block of 64 bytes; a rotation left by n written out, x << n | x >>
+ * (32 - n), the high bits that >> (arithmetic) brings masked off (tiny-c
+ * has no macro with parameters, and a call each was a third of the
+ * time) */
+static void
+sha_block(uchar *p)
+{
+	value x;
+	value a;
+	value b;
+	value c;
+	value d;
+	value e;
+	value f;
+	value k;
+	value t;
+	value temp;
+
+	for(t = 0; t < 16; t++)
+		sha_w[t] = (p[4 * t] << 24) | (p[4 * t + 1] << 16) | (p[4 * t + 2] << 8) | p[4 * t + 3];
+	for(t = 16; t < 80; t++){
+		x = sha_w[t - 3] ^ sha_w[t - 8] ^ sha_w[t - 14] ^ sha_w[t - 16];
+		sha_w[t] = (x << 1) | ((x >> 31) & 1);
+	}
+	a = sha_h[0];
+	b = sha_h[1];
+	c = sha_h[2];
+	d = sha_h[3];
+	e = sha_h[4];
+	for(t = 0; t < 80; t++){
+		if(t < 20){
+			f = (b & c) | (~b & d);
+			k = 0x5A827999;
+		} else if(t < 40){
+			f = b ^ c ^ d;
+			k = 0x6ED9EBA1;
+		} else if(t < 60){
+			f = (b & c) | (b & d) | (c & d);
+			k = 0x8F1BBCDC;
+		} else {
+			f = b ^ c ^ d;
+			k = 0xCA62C1D6;
+		}
+		temp = ((a << 5) | ((a >> 27) & 31)) + f + e + k + sha_w[t];
+		e = d;
+		d = c;
+		c = (b << 30) | ((b >> 2) & 0x3FFFFFFF);
+		b = a;
+		a = temp;
+	}
+	sha_h[0] = sha_h[0] + a;
+	sha_h[1] = sha_h[1] + b;
+	sha_h[2] = sha_h[2] + c;
+	sha_h[3] = sha_h[3] + d;
+	sha_h[4] = sha_h[4] + e;
+}
+
+value
+ml_sha1_string(value s)
+{
+	value n;
+	value i;
+	value rest;
+	value total;
+	value bits;
+	value r;
+	uchar *p;
+
+	sha_h[0] = 0x67452301;
+	sha_h[1] = 0xEFCDAB89;
+	sha_h[2] = 0x98BADCFE;
+	sha_h[3] = 0x10325476;
+	sha_h[4] = 0xC3D2E1F0;
+	n = length(s);
+	p = (uchar*)s;
+	for(i = 0; i + 64 <= n; i = i + 64)
+		sha_block(p + i);
+	/* the rest, a 1 bit, zeros, the length in bits: one block or two */
+	rest = n - i;
+	for(total = 0; total < 128; total++)
+		sha_last[total] = 0;
+	for(total = 0; total < rest; total++)
+		sha_last[total] = p[i + total];
+	sha_last[rest] = 128;
+	total = rest + 9 <= 64 ? 64 : 128;
+	bits = n * 8;
+	sha_last[total - 4] = (bits >> 24) & 255;
+	sha_last[total - 3] = (bits >> 16) & 255;
+	sha_last[total - 2] = (bits >> 8) & 255;
+	sha_last[total - 1] = bits & 255;
+	sha_block(sha_last);
+	if(total == 128)
+		sha_block(sha_last + 64);
+	r = string_alloc(20);
+	for(i = 0; i < 5; i++){
+		((uchar*)r)[4 * i] = (sha_h[i] >> 24) & 255;
+		((uchar*)r)[4 * i + 1] = (sha_h[i] >> 16) & 255;
+		((uchar*)r)[4 * i + 2] = (sha_h[i] >> 8) & 255;
+		((uchar*)r)[4 * i + 3] = sha_h[i] & 255;
+	}
+	return r;
 }

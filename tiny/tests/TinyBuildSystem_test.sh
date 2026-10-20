@@ -103,6 +103,21 @@ start=$(date +%s%3N)
 "$TB" -j 2 > /dev/null
 check "-j 2 runs both at once" "yes" sh -c "[ \$((\$(date +%s%3N) - $start)) -lt 1900 ] && echo yes || echo no"
 
+# a build killed midway keeps what it made: its stamps written after
+# each recipe
+fresh
+cat > Buildfile <<'EOF'
+all: a b
+a:
+	touch a
+b:
+	sleep 3; touch b
+EOF
+"$TB" > /dev/null 2>&1 & pid=$!
+sleep 1; kill $pid; wait $pid 2> /dev/null
+check "a build killed midway keeps what it made" "sleep 3; touch b
+tiny-build: a is up to date" sh -c "\"$TB\" -n b; \"$TB\" -n a"
+
 # the checks
 fresh
 printf 'a: b\n\ttouch a\nb: c\n\ttouch b\nc: a\n\ttouch c\n' > Buildfile

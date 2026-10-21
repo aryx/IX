@@ -318,7 +318,13 @@ let give (caps : < caps; .. >) (m : model) : model = { m with piece = Some (Tab_
 
 (* the tab a piece made, the window's (a page come of another site laid
  * out at its zoom before it is drawn) *)
+(* (and said, with -v, when a page is whole: the heap, what is alive
+ * of it with the pages kept, which Tab.trimmed bounds) *)
 let came (width : float) (m : model) (tab : Tab.t) : model =
+  if Tab.busy m.tab && not (Tab.busy tab) then
+    Logs.info (fun m ->
+        let g : Gc.stat = Gc.stat () and mb (words : int) = float (words * (Sys.word_size / 8)) /. 1048576. in
+        m "%s whole; the heap %.1f MB alive, %.1f MB (at most %.1f)" (Tab.url tab) (mb g.live_words) (mb g.heap_words) (mb g.top_heap_words));
   fitted_tab width (remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) })
 
 (* the worker's piece, if it is done: the window's if it waits for it,

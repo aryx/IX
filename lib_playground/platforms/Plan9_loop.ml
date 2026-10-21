@@ -352,7 +352,9 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
     let previous : Playground.shape list ref = ref [] in
     (* The meter (the flag stats=on): every 40 frames drawn, what one
      * cost, on the standard error: the program's ticks (its update), its
-     * view made, the frame shown (the platform says more of that part). *)
+     * view made, the frame shown (the platform says more of that part);
+     * and the heap: what was alive at the last collection, the heap's
+     * size now and at most (Gc.stat; mini-ml's, one half of two) *)
     (* (the command line's flags, not the ones the program chose to pass on) *)
     let stats = List.assoc_opt "stats" (Playground.flags_of_strings cli.args) = Some "on" in
     let most = match Option.bind (List.assoc_opt "late" (Playground.flags_of_strings cli.args)) int_of_string_opt with Some n when n > 0 -> n | _ -> most in
@@ -365,6 +367,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
         prerr_string
           (Printf.sprintf "40 frames in %.1f s, %d ticks: update %.0f ms, view %.0f ms, show %.0f ms each\n" (t -. !m_since) !m_ticks
              (!m_update *. 25.) (!m_view *. 25.) (!m_show *. 25.));
+        let g : Gc.stat = Gc.stat () and mb (words : int) = float (words * (Sys.word_size / 8)) /. 1048576. in
+        prerr_string (Printf.sprintf "  the heap: %.1f MB alive, %.1f MB (at most %.1f)\n" (mb g.live_words) (mb g.heap_words) (mb g.top_heap_words));
         flush stderr;
         m_update := 0.; m_view := 0.; m_show := 0.; m_ticks := 0; m_frames := 0; m_since := t
       end in

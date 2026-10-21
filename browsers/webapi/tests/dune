@@ -3,5 +3,13 @@
 (include_subdirs no)
 (executable
  (name Test)
+ (modules :standard \ Memory)
  (flags (:standard -w -32-26-27))
  (libraries ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http alcotest testo))
+
+; what a page read keeps, part by part, and its scripts' engine
+; (Obj.reachable_words): OCaml's
+(executable
+ (name Memory)
+ (modules Memory)
+ (libraries ix_webapi ix_javascript ix_browser_engine ix_css ix_html))

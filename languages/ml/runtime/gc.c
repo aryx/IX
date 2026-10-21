@@ -63,6 +63,8 @@ static value *lo;               /* the collector's: the space collected, */
 static value *hi;
 static value *next;             /* and where the next copy goes */
 static value collections;       /* how many there were */
+static value top;               /* the largest half so far, in words */
+static value live;              /* what was alive after the last one, in words */
 
 /* An index out of bounds: OCaml's Invalid_argument "index out of
  * bounds", which a program may catch (tiny-cpu's search of a table
@@ -353,10 +355,13 @@ static void
 gc(value need)
 {
 	collect();
+	live = ml_hp - from;
 	while((uvlong)(ml_hp - from + need) * (100 + overhead) / 100 > (uvlong)size && size < MAXHEAP)
 		size = size * 2;
 	if(size > MAXHEAP)
 		size = MAXHEAP;
+	if(size > top)
+		top = size;
 	ml_limit = from + size;
 	if(ml_hp + need > ml_limit)
 		fatal("Fatal error: out of memory\n");
@@ -405,6 +410,21 @@ gc_set(value c)
 	if(overhead < 100)
 		overhead = 100;
 	return Val_unit;
+}
+
+/* Gc.stat's: the collections, a half's words now and at most so far,
+ * the words alive after the last collection */
+value
+gc_counters(value u)
+{
+	value r;
+
+	r = ml_alloc(4, 0);
+	Field(r, 0) = Val_int(collections);
+	Field(r, 1) = Val_int(size);
+	Field(r, 2) = Val_int(top > size ? top : size);
+	Field(r, 3) = Val_int(live);
+	return r;
 }
 
 static void

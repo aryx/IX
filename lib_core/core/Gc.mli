@@ -40,3 +40,19 @@ type control = { mutable minor_heap_size : int; mutable major_heap_increment : i
 external get : unit -> control = "gc_get"
 external set : control -> unit = "gc_set"
         (* [Gc.set { (Gc.get ()) with space_overhead = 700 }], as in OCaml. *)
+
+type stat = {
+  minor_words : float; promoted_words : float; major_words : float; minor_collections : int; major_collections : int;
+  heap_words : int; heap_chunks : int; live_words : int; live_blocks : int; free_words : int; free_blocks : int;
+  largest_free : int; fragments : int; compactions : int; top_heap_words : int; stack_size : int; forced_major_collections : int }
+        (* OCaml's record. Here, of mini-ml's two halves: [heap_words]
+           a half's size now (the program holds both: twice that, once
+           both have been written), [top_heap_words] the largest so
+           far, [live_words] what was alive after the last collection
+           (OCaml's [stat] counts it now; [quick_stat] says 0),
+           [minor_collections] and [major_collections] the
+           collections; the counters mini-ml has not, 0 (the floats)
+           or what a heap of one piece says. *)
+val stat : unit -> stat
+val quick_stat : unit -> stat
+        (* the same here: nothing is counted that is not kept *)

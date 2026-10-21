@@ -267,6 +267,15 @@ external uart_rx_enable : unit -> unit = "uart_rx_enable"
 external web_input : bytes -> int = "web_input"
 external web_cursor : bytes -> int = "web_cursor"
 external halt : unit -> unit = "machine_halt"
+(* what the kernel says when it stops or is stuck, on the screen too,
+ * over whatever is there (machine.c's lastwords: white on red lines
+ * from the top, the kernel's font, the framebuffer's bytes, nothing
+ * taken: it works when the rest is broken; nothing before fb_init).
+ * [doing pid program what]: what this core runs, for the watchdog's
+ * words (runtime.c: a core that waits 10 seconds for the kernel's lock
+ * says who holds it, and what each core was doing) *)
+external last_words : string -> unit = "last_words"
+external doing : int -> string -> string -> unit = "doing"
 
 (* the file system's image, linked in the kernel (a disk in memory):
  * its physical address, its size *)
@@ -375,7 +384,9 @@ val putc : char -> unit
 val screen : (char -> unit) ref
 val print : string -> unit
 
-(* the message, the machine stopped (xv6's panic) *)
+(* the message, the machine stopped (xv6's panic): on the UART and on
+ * the screen (last_words), not through screen, which may be what is
+ * broken *)
 val panic : string -> 'a
 
 (* little-endian bytes, as C lays out a short and an int *)

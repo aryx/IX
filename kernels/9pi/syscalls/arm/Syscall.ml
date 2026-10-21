@@ -153,6 +153,7 @@ let syscall (p : proc) =
       let words = user_read p (sp + 4) 20 in
       let a = Array.init 5 (fun i -> Machine.get_le32 words (4 * i)) in
       p.psstate <- name;
+      Machine.doing p.pid p.text name;
       let traced = !trace in
       if traced then Devcons.print (Printf.sprintf "[%d %s %x %x %x]" p.pid name a.(0) a.(1) a.(2));
       let r =

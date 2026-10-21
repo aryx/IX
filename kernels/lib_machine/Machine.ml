@@ -76,6 +76,8 @@ external uart_rx_enable : unit -> unit = "uart_rx_enable"
 external web_input : bytes -> int = "web_input"
 external web_cursor : bytes -> int = "web_cursor"
 external halt : unit -> unit = "machine_halt"
+external last_words : string -> unit = "last_words"
+external doing : int -> string -> string -> unit = "doing"
 
 (* the file system's image *)
 external heap_top : unit -> int = "heap_top"
@@ -115,7 +117,14 @@ let putc c = uart_putc (Char.code c); !screen c
 let print s = for i = 0 to String.length s - 1 do putc s.[i] done
 
 (* the kernel's end: xv6's panic *)
-let panic s = print ("panic: " ^ s ^ "\n"); halt (); failwith s
+(* (old: print ("panic: " ^ s ^ "\n"), the screen's console too: drawn
+ * by the draw device's OCaml, which a panic may come from the middle
+ * of; nothing seen when it is stuck there. last_words' bytes instead) *)
+let panic s =
+  let m = "panic: " ^ s ^ "\n" in
+  for i = 0 to String.length m - 1 do uart_putc (Char.code m.[i]) done;
+  last_words m;
+  halt (); failwith s
 
 (*****************************************************************************)
 (* Bytes as C lays them out *)

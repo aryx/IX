@@ -58,6 +58,14 @@ let init () =
        | "hostdomain" -> hostdomain := chomp s
        | "sysname" -> if off <> 0 || s = "" then raise (Error ebadarg); sysname := chomp s
        | "sysstat" -> ()
+       (* (Plan 9's "panic", the machine stopped, its words on the screen
+        * too: Machine.panic's last words, to try them on a board. And
+        * "hang", ix's: the kernel looping with its lock held, for the
+        * watchdog (lib_machine's runtime.c): on several cores another
+        * says it after 10 s; with one, the machine is only stuck.
+        * "reboot" itself, a new kernel, not yet.) *)
+       | "reboot" when chomp s = "panic" -> Machine.panic "/dev/reboot"
+       | "reboot" when chomp s = "hang" -> while true do () done
        | _ -> raise (Error eperm));
       String.length s);
   }

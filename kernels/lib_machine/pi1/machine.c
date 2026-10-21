@@ -213,16 +213,19 @@ void core_run(void);
 #define LOCAL(off) (*(volatile unsigned *)(LOCAL_BASE + (off)))
 
 /* A core's own timer (ARMv7's generic timer, the virtual one, which
- * needs nothing of the hypervisor's mode the kernel left): on, for a
- * tick (10 ms: CNTFRQ says its rate; the firmware sets 19.2 MHz, and
- * QEMU says its own), or off. */
-void core_timer(int on)
+ * needs nothing of the hypervisor's mode the kernel left): on, for
+ * [ticks] hundredths of a second (1: a process's slice, 10 ms; an idle
+ * core's longer wait, runtime.c's watchdog. CNTFRQ says its rate; the
+ * firmware sets 19.2 MHz, and QEMU says its own), or off (0). Set
+ * again, a timer that fired no longer is (its interrupt masked, a wait
+ * would end at once otherwise). */
+void core_timer(int ticks)
 {
-  unsigned hz, ctl = on ? 1 : 0;
-  if (on) {
+  unsigned hz, ctl = ticks ? 1 : 0;
+  if (ticks) {
     __asm__ volatile("mrc p15, 0, %0, c14, c0, 0" : "=r"(hz));     /* CNTFRQ */
     if (hz == 0) hz = 19200000;
-    hz /= 100;
+    hz = hz / 100 * ticks;
     __asm__ volatile("mcr p15, 0, %0, c14, c3, 0" : : "r"(hz));    /* CNTV_TVAL */
   }
   __asm__ volatile("mcr p15, 0, %0, c14, c3, 1" : : "r"(ctl));     /* CNTV_CTL: enable */

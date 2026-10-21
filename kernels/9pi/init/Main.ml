@@ -68,6 +68,7 @@ let trap () = guard "a system call" (fun () -> Syscall.syscall (Proc.myproc ()))
 let irq () =
   guard "an interrupt" (fun () ->
     let p = Proc.myproc () in
+    Machine.doing p.pid p.text "interrupt";
     (* (the devices and the clock are the first core's; another core's
      * interrupt is its own timer's, for the slice) *)
     let tick = if Machine.core () = 0 then devices () else Machine.core_tick () in
@@ -86,6 +87,7 @@ let hex s =
 let fault ec ((esr : string), (pc : string), (addr : string)) =
   guard "a fault" (fun () ->
     let p = Proc.myproc () in
+    Machine.doing p.pid p.text "fault";
     (* an abort in a segment: its page given, the instruction restarted
      * (a note interrupting the page's read: restarted too, the note
      * delivered first) *)

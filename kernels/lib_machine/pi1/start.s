@@ -294,28 +294,33 @@ core_wake:
 	bx	lr
 @ The kernel's lock (runtime.c says where it is taken): a word, 1 when
 @ a core has it, taken by ARMv6K's pair, a load that marks the word
-@ and a store that fails if another core wrote it since. A core that
-@ waits turns here, its interrupts masked. The first core has it from
-@ the start.
-	.global klock_take
-klock_take:
+@ and a store that fails if another core wrote it since. One try,
+@ 1 when taken: a core that waits turns in runtime.c's klock_take, its
+@ interrupts masked, which looks at the time meanwhile (its watchdog).
+@ The first core has it from the start.
+@ old: klock_take here, the loop around the pair
+	.global klock_try
+klock_try:
 	ldr	r1, =klock
 	mov	r2, #1
-	@ (taken: a yield before looking again, ARM's hint to whoever runs
-	@ the core that it only waits. Nothing on a board; an emulator
-	@ that runs the cores in turns, mini-qemu, gives the turn to the
-	@ one that holds the lock: without it a waiting core spun through
-	@ its turn, a quarter of the host's time of a boot.
+	@ (taken: a yield before giving up, ARM's hint to whoever runs the
+	@ core that it only waits. Nothing on a board; an emulator that runs
+	@ the cores in turns, mini-qemu, gives the turn to the one that
+	@ holds the lock: without it a waiting core spun through its turn, a
+	@ quarter of the host's time of a boot.
 	@ old: cmp r0, #0; bne 1b)
 1:	ldrex	r0, [r1]
 	cmp	r0, #0
 	beq	2f
+	.word	0xf57ff01f			@ clrex: the load's mark dropped
 	.word	0xe320f001			@ yield
-	b	1b
+	mov	r0, #0
+	bx	lr
 2:	strex	r0, r2, [r1]
 	cmp	r0, #0
 	bne	1b
 	mcr	p15, 0, r0, c7, c10, 5		@ (a barrier: what the last holder wrote is seen)
+	mov	r0, #1
 	bx	lr
 	.global klock_give
 klock_give:

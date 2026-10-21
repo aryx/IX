@@ -299,14 +299,45 @@ value core_idle(value vc)
   return Val_long(v & 0x3fffffff);
 }
 
+/* What each core runs (Machine.doing: the process, its program, a
+ * system call's name or what entered the kernel), for the watchdog's
+ * words below; copied (the collector moves an OCaml string), and cut
+ * short: a core's line of the screen */
+static struct { int pid; char prog[16]; char what[16]; } doing_[NCORE];
+
+static void copy_(char *d, value s, int n)
+{
+  int i, len = string_length(s);
+  for (i = 0; i < n - 1 && i < len; i++) d[i] = String_val(s)[i];
+  d[i] = 0;
+}
+
+value doing(value pid, value prog, value what)
+{
+  int c = core();
+  doing_[c].pid = Int_val(pid);
+  copy_(doing_[c].prog, prog, sizeof doing_[c].prog);
+  copy_(doing_[c].what, what, sizeof doing_[c].what);
+  return Val_unit;
+}
+
+/* numbers for the last words, which take no printf (machine.c's) */
+void lastwords(const char *s);
+static void lw_dec(unsigned v)
+{
+  char b[12]; int i = 11;
+  b[i] = 0;
+  do { b[--i] = '0' + v % 10; v /= 10; } while (v);
+  lastwords(b + i);
+}
 #ifdef CORES
-/* the kernel's lock (the board's: ldrex and strex); held by the first
- * core from its start */
-void klock_take(void);
+/* the kernel's lock (the board's: ldrex and strex, klock_try one try);
+ * held by the first core from its start */
+int klock_try(void);
 void klock_give(void);
 void wait_for_interrupt(void);
 /* the board's: a core's own timer and the cores' mailboxes */
-void core_timer(int on);
+void core_timer(int ticks);
 int core_timer_fired(void);
 void core_mail(int c);
 void core_mail_clear(void);
@@ -316,8 +347,53 @@ void core_mail_clear(void);
 static volatile int cores_running;
 static int waiting[NCORE];
 
+/* The watchdog (the author, 2026-10-21, the Pi 2's screen frozen, no
+ * cursor: "we should find a way to display some kernel panic info").
+ * A core stuck in the kernel, or two waiting for each other, keeps the
+ * kernel's lock, and every other core then waits for it, the first
+ * one too at its clock's interrupt (its cursor no longer moves). A core
+ * that has waited WATCHDOG_US says so once, in last words (machine.c):
+ * which core holds the lock, for how long, and what each core was
+ * doing (Machine.doing); then it waits on, the words staying on the
+ * screen. The times are the board's clock's, the 30 bits of timer_now
+ * (17 minutes, and round). The kernel never holds the lock that long
+ * when it works: a program's start from the card, the longest, is a
+ * second or two. */
+#define WATCHDOG_US 10000000
+static volatile int klock_holder;               /* -1: nobody; the first core from its start */
+static volatile unsigned klock_since;
+static volatile int watchdog_said;
+
+static unsigned now_us(void) { return Long_val(timer_now(Val_unit)); }
+static unsigned since_us(unsigned t) { return (now_us() - t) & 0x3fffffff; }
+
+static void watchdog(int me)
+{
+  int c, h = klock_holder;
+  watchdog_said = 1;
+  lastwords("watchdog: core "); lw_dec(me); lastwords(" waited 10 s for the kernel's lock, held by core ");
+  if (h < 0) lastwords("none"); else lw_dec(h);
+  lastwords(" for "); lw_dec(since_us(klock_since) / 1000000); lastwords(" s\n");
+  for (c = 0; c < NCORE; c++) {
+    lastwords("  core "); lw_dec(c);
+    if (doing_[c].prog[0] == 0) lastwords(": nothing yet");
+    else { lastwords(": pid "); lw_dec(doing_[c].pid); lastwords(" "); lastwords(doing_[c].prog); lastwords(", "); lastwords(doing_[c].what); }
+    lastwords(waiting[c] ? ", idle\n" : "\n");
+  }
+}
+
+/* old: klock_take the board's, its loop there */
+void klock_take(void)
+{
+  unsigned t0 = now_us();
+  while (!klock_try())
+    if (!watchdog_said && since_us(t0) > WATCHDOG_US) watchdog(core());
+  klock_holder = core();
+  klock_since = now_us();
+}
+
 void kernel_enter(void) { klock_take(); restore_view(&contexts[current]); }
-void kernel_leave(void) { save_view(&contexts[current]); klock_give(); }
+void kernel_leave(void) { save_view(&contexts[current]); klock_holder = -1; klock_give(); }
 
 /* a process is about to run: another core's own timer, for its slice
  * (the first core has the board's, the clock's) */
@@ -326,14 +402,19 @@ void core_slice(void) { if (core() != 0) core_timer(1); }
 /* nothing to run: the lock given back while the core waits for an
  * interrupt (masked: wfi returns when one is pending). The first
  * core's are the devices' and the clock's; another's is its mailbox,
- * written by a core that made a process ready (its timer is off: a
- * timer left pending would end each wait at once). */
+ * written by a core that made a process ready, or its own timer, a
+ * second (set again at each wait: a timer left pending would end each
+ * wait at once). That second is the watchdog's: the core then takes
+ * the lock, and a core stuck with it is seen (klock_take), the first
+ * one too, whose interrupts are then masked.
+ * old: core_timer(0), the timer off: a core stuck with the lock and the
+ * others idle, nobody saw it */
 value wait_interrupt(value unit)
 {
   int c = core();
   unsigned t;
   (void)unit;
-  if (c != 0) core_timer(0);
+  if (c != 0) core_timer(100);
   waiting[c] = 1;
   idle_begin();
   kernel_leave();

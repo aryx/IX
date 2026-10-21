@@ -867,3 +867,40 @@ samples (addresses above 0x80000000) are read with the kernel's ELF
    there.
 5. Every probe goes in a copy kept aside and is taken out by copying
    back (a probe's own `| _ ->` gave the author a warning in Tab.ml).
+
+## 21. A board frozen with nothing on its screen: last words that need nothing, and a watchdog
+
+On the author's Pi 2 (2026-10-21), mini-9pi froze after a game quit
+under mini-rio: no cursor, no message. The board had no serial cable,
+so the screen was all there was. Three kinds of end showed nothing:
+
+- a panic printed through the console's window, which is drawn by the
+  draw device's OCaml code, the code the trouble may be in;
+- a kernel's fault and the runtime's fatal errors went to the UART
+  only;
+- a core stuck with the kernel's lock says nothing at all, and the
+  other cores wait for the lock behind it. The first core does too, at
+  its clock's interrupt, so the cursor stops.
+
+**Last words.** `lastwords` (lib_machine's machine.c) writes white on
+red lines from the top of the screen, over whatever rio drew. It uses
+the kernel's 8 x 16 font, which every image carries, and writes the
+framebuffer's bytes itself. It takes no lock, allocates nothing and
+calls no OCaml, so it works when the rest is broken. A panic, a
+kernel's fault and a "Fatal error" all print through it, besides the
+UART.
+
+**A watchdog.** A core that has waited 10 s for the kernel's lock says
+which core holds it, for how long, and what each core was doing: the
+process, its program, the system call, recorded at each entry into the
+kernel (`Machine.doing`). An idle core wakes each second to look, or
+nobody would wait when the stuck core is the first one with the others
+idle; the first test (`hang` on the first core, three cores idle with
+their timers off) showed nothing until then. Swcursor watches the other
+case: a cursor left undrawn 10 s because a copy keeps its rows busy.
+
+**Tried on purpose.** `echo panic > /sys/reboot` (Plan 9's) and `echo
+hang > /sys/reboot` (ix's: a loop with the lock held) show both under
+QEMU, then on the board. Test a debugging aid with a failure made on
+purpose before the real one comes: the first try found the idle cores'
+gap.

@@ -97,15 +97,35 @@ let cursoroff () = hide ()
 
 let ksetcursor off clr set = cursoroff (); load off clr set; ignore (cursoron ())
 
+(* The watchdog's half here (the lock's is runtime.c's): a cursor to
+ * draw that stays undrawn 10 seconds, its rows busy all that time (a
+ * copy without the kernel's lock that never said its end, the
+ * console's drawlock never let go), is said in last words: the screen
+ * looks frozen, the kernel is not. Once. [blocked]: since when, the
+ * board's microseconds (-1: it is not) *)
+let blocked = ref (-1) and watchdog_said = ref false
+
+let watchdog (x, y) =
+  if !blocked < 0 then blocked := Machine.timer_now ()
+  else if not !watchdog_said && (Machine.timer_now () - !blocked) land 0x3fffffff > 10000000 then begin
+    watchdog_said := true;
+    let (x0, y0, x1, y1) = !r in
+    Machine.last_words
+      (Printf.sprintf "watchdog: the cursor not drawn for 10 s: drawlock %b, its old place (%d,%d,%d,%d) busy %b, its new one (%d,%d) busy %b\n"
+         !drawlock x0 y0 x1 y1 (Kdraw.busy !r) x y (Kdraw.busy (x, y, x + 32, y + 32)))
+  end
+
 let clock xy =
   if !enabled then begin
     move xy;
     (* (nor while a copy without the kernel's lock writes the screen's
      * rows it is in or goes to: Kdraw.busy; the next tick's) *)
     let (x, y) = !pt in
-    if not (!visible && !pt = !vispt && !vers = !visvers) && not !drawlock
-       && not (Kdraw.busy !r) && not (Kdraw.busy (x, y, x + 32, y + 32)) then begin
-      hide ();
-      draw ()
-    end
+    if not (!visible && !pt = !vispt && !vers = !visvers) then begin
+      if not !drawlock && not (Kdraw.busy !r) && not (Kdraw.busy (x, y, x + 32, y + 32)) then begin
+        blocked := -1;
+        hide ();
+        draw ()
+      end else watchdog (x, y)
+    end else blocked := -1
   end

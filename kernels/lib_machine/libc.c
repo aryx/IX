@@ -34,12 +34,14 @@ static void putc_(char c)
 static void puts_(const char *s) { while (*s) putc_(*s++); }
 
 void exit(int status);
+void lastwords(const char *s);
 
 static void panic(const char *what)
 {
   puts_("mini-xv6: panic: ");
   puts_(what);
   puts_("\n");
+  lastwords("panic: "); lastwords(what); lastwords("\n");
   exit(2);
 }
 
@@ -300,19 +302,27 @@ int sprintf(char *out, const char *fmt, ...)
   return n;
 }
 
-/* the runtime's fatal errors and GC messages: to the console */
+/* the runtime's fatal errors and GC messages: to the console; a fatal
+ * error ("Fatal error: ...", "Out of memory", the runtime's words before
+ * it exits) on the screen too, the kernel's last words (machine.c) */
 typedef struct { int fd; } FILE;
 static FILE stderr_ = { 2 };
 FILE *stderr = &stderr_;
 
+static int prefix_(const char *s, const char *p) { while (*p) if (*s++ != *p++) return 0; return 1; }
+
 int fprintf(FILE *f, const char *fmt, ...)
 {
+  static int fatal;
   char buf[512];
   va_list ap; va_start(ap, fmt);
   int n = format(buf, fmt, ap);
   va_end(ap);
   (void)f;
   puts_(buf);
+  /* (the words that follow a fatal error's first are its own too) */
+  if (prefix_(buf, "Fatal error") || prefix_(buf, "Out of memory")) fatal = 1;
+  if (fatal) lastwords(buf);
   return n;
 }
 

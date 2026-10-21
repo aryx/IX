@@ -1,6 +1,7 @@
 (* '#k', the system's files (principia's devsys.c): osversion, config,
  * hostowner (written: the kernel's owner, eve), hostdomain, sysname,
- * drivers, reboot, sysstat.
+ * drivers, reboot (written: "panic", the machine stopped, as Plan 9's;
+ * "hang", the kernel stuck with its lock, for the watchdog), sysstat.
  *
  * plan9-is-cleaner:
  * No root. Unix has a user of number 0 whom no check stops, and a

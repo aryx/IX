@@ -175,7 +175,9 @@ value web_cursor(value s) { (void)s; return Val_long(0); }
 value uart_getc(value unit) { (void)unit; return Val_long((UART[6] & 0x10) ? -1 : (long)(UART[0] & 0xff)); }
 
 /* for a kernel's fault: the machine says which and where, and stops */
-static void puts_(const char *s) { while (*s) uart_putc(Val_long(*s++)); }
+/* (and on the screen: lastwords, below) */
+void lastwords_putc(int c);
+static void puts_(const char *s) { while (*s) { lastwords_putc(*s); uart_putc(Val_long(*s++)); } cache_drain(); }
 
 static void puthex(uintptr v)
 {
@@ -209,6 +211,10 @@ value wait_interrupt(value unit) { (void)unit; idle_begin(); idle_end(idle_wait(
 static volatile unsigned fbinfo_[32];
 #define fbinfo VC(fbinfo_)
 static unsigned fb_pitch_;
+/* (the framebuffer as lastwords, below, writes it: its physical address,
+ * 0 before fb_init, and its size) */
+static uintptr fb_pa_;
+static unsigned fb_w_, fb_h_, fb_depth_;
 
 /* a framebuffer of [w] x [h] pixels of [depth] bits: its physical
  * address, or 0. The request's address is the VideoCore's (BUS_ALIAS);
@@ -233,9 +239,80 @@ value fb_init(value w, value h, value depth)
     if ((v & 0xf) == 1) break;
   }
   fb_pitch_ = fbinfo[4];
+  fb_pa_ = fbinfo[8] & 0x3fffffff; fb_w_ = Long_val(w); fb_h_ = Long_val(h); fb_depth_ = Long_val(depth);
   /* (the screen's memory is the VideoCore's to read: never cached) */
   if (fbinfo[8] != 0) uncached_add(fbinfo[8] & 0x3fffffff, fbinfo[9] ? fbinfo[9] : fbinfo[4] * Long_val(h));
   return Val_long(fbinfo[8] & 0x3fffffff);
 }
 
 value fb_pitch(value unit) { (void)unit; return Val_long(fb_pitch_); }
+
+/*****************************************************************************/
+/* Last words: the machine's end on the screen */
+/*****************************************************************************/
+
+/* What the kernel says when it stops or is stuck (a panic, a kernel's
+ * fault, the runtime's fatal error, the watchdog: runtime.c), written
+ * on the screen too, where the UART's cable is often not plugged: the
+ * board's monitor is all one sees (the author, 2026-10-21, the Pi 2's
+ * screen frozen under rio: "we should find a way to display some kernel
+ * panic info even after running under rio"). Not the console's window
+ * (Swconsole: OCaml, the draw device's memory, which the trouble may
+ * be in the middle of), but the framebuffer's bytes here, white on
+ * red lines from the screen's top, over whatever rio drew, in the
+ * kernel's font (font1.bin: 128 characters of 8 x 16, a byte a row, its
+ * lowest bit the leftmost pixel), twice as big on a big screen. Nothing
+ * taken, no lock, no allocation: it works with the rest broken. The
+ * lines wrap at the screen's right, and start again at its top past
+ * its bottom. Nothing before fb_init. */
+static unsigned lw_x, lw_y;
+
+static void lw_pixel(volatile unsigned char *fb, unsigned x, unsigned y, int on)
+{
+  volatile unsigned char *p = fb + y * fb_pitch_ + x * (fb_depth_ / 8);
+  if (fb_depth_ == 16) *(volatile unsigned short *)p = on ? 0xffff : 0xa000;
+  else if (fb_depth_ == 32) *(volatile unsigned *)p = on ? 0xffffffff : 0xffa00000;
+}
+
+static void lw_newline(volatile unsigned char *fb, unsigned scale)
+{
+  unsigned x, y;
+  lw_x = 0;
+  lw_y += 16 * scale;
+  if (lw_y + 16 * scale > fb_h_) lw_y = 0;
+  /* (the new line's band red already, the end of a line not wrapped
+   * then red too) */
+  for (y = lw_y; y < lw_y + 16 * scale; y++)
+    for (x = 0; x < fb_w_; x++) lw_pixel(fb, x, y, 0);
+}
+
+void lastwords_putc(int c)
+{
+  volatile unsigned char *fb;
+  unsigned scale, k, b, i, j;
+  if (fb_pa_ == 0 || (fb_depth_ != 16 && fb_depth_ != 32)) return;
+  fb = (volatile unsigned char *)P2V(fb_pa_);
+  scale = fb_w_ >= 1600 ? 2 : 1;
+  if (lw_x == 0 && lw_y == 0) { lw_y = fb_h_; lw_newline(fb, scale); }   /* the first line's band */
+  if (c == '\n') { lw_newline(fb, scale); return; }
+  if (lw_x + 8 * scale > fb_w_) lw_newline(fb, scale);
+  for (k = 0; k < 16; k++) {
+    unsigned bits = (c > ' ' && c < 128) ? (unsigned char)font_image[c * 16 + k] : 0;
+    for (b = 0; b < 8; b++)
+      for (i = 0; i < scale; i++)
+        for (j = 0; j < scale; j++)
+          lw_pixel(fb, lw_x + b * scale + j, lw_y + k * scale + i, (bits >> b) & 1);
+  }
+  lw_x += 8 * scale;
+}
+
+void lastwords(const char *s) { while (*s) lastwords_putc(*s++); cache_drain(); }
+
+/* Machine.last_words: an OCaml string's bytes, the same */
+value last_words(value s)
+{
+  long i, n = string_length(s);
+  for (i = 0; i < n; i++) lastwords_putc(String_val(s)[i]);
+  cache_drain();
+  return Val_unit;
+}

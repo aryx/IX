@@ -111,7 +111,8 @@ val draw_pixels : Framebuffer.t -> Affine.t -> w:float -> h:float -> Rgba_image.
  * look, by m's turn and scale (not its move), placed qx and qy
  * quarters of a pixel right and down: how much of each pixel of a
  * box of w by h its strokes cover, row by row, the letter's origin at
- * (ox, oy) of the box. Kept once made. What the draw platform gives
+ * (ox, oy) of the box. The box is the pixels covered and no more (0
+ * by 0 for a space). Kept once made. What the draw platform gives
  * the device for a letter, once. *)
 type mask = { w : int; h : int; ox : int; oy : int; cover : float array }
 val mask_of : aa:bool -> Affine.t -> Playground.letters -> string -> qx:int -> qy:int -> mask

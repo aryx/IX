@@ -66,17 +66,41 @@ and letter = string * float * bool * bool * float * float * float * float
 and picture = { pixels : Rgba_image.t; a : float; b : float; c : float; d : float; image : Display.image option }
 
 (* The meter (the flag stats=on, with the loop's): of a frame's showing,
- * the messages made here and the device's time for them (the messages
- * are then all kept until the frame's end: Display.hold). *)
+ * the messages made here and the device's time for them, in three
+ * parts: the picture made white (or its background drawn), the shapes,
+ * the picture copied to the window. The messages are kept until a
+ * part's end (Display.hold), then flushed: the device does that part
+ * alone, timed (with stats=off one flush a frame). And the letters
+ * drawn, a message each. *)
 let stats = ref false
-let m_messages = ref 0. and m_device = ref 0. and m_frames = ref 0
-let meter (messages : float) (device : float) (shapes : int) : unit =
-  m_messages := !m_messages +. messages; m_device := !m_device +. device;
+let m_messages = ref 0. and m_device = Array.make 3 0.
+let m_frames = ref 0 and m_letters = ref 0
+let meter (shapes : int) : unit =
   incr m_frames;
   if !m_frames = 40 then begin
-    prerr_string (Printf.sprintf "  the showing: %d shapes, messages %.0f ms, the device %.0f ms each\n" shapes (!m_messages *. 25.) (!m_device *. 25.));
+    let ms (t : float) = t *. 25. in
+    let d = m_device in
+    prerr_string
+      (Printf.sprintf
+         "  the showing: %d shapes, %d letters, messages %.0f ms, the device %.0f ms\n\
+         \    (white %.0f, shapes %.0f, copy %.0f) each\n"
+         shapes (!m_letters / 40) (ms !m_messages) (ms (d.(0) +. d.(1) +. d.(2)))
+         (ms d.(0)) (ms d.(1)) (ms d.(2)));
     flush stderr;
-    m_messages := 0.; m_device := 0.; m_frames := 0
+    m_messages := 0.; Array.fill m_device 0 3 0.; m_frames := 0; m_letters := 0
+  end
+
+(* a part of a frame's showing ends (stats=on): its messages flushed,
+ * the time to make them and the device's for them counted *)
+let clock = ref 0.
+let part (display : Display.t) (i : int) : unit =
+  if !stats then begin
+    let t = Unix.gettimeofday () in
+    m_messages := !m_messages +. (t -. !clock);
+    Display.flush display;
+    let t' = Unix.gettimeofday () in
+    m_device.(i) <- m_device.(i) +. (t' -. t);
+    clock := t'
   end
 
 (* the square's side, at most (the flag size=480; 0: the window's): a
@@ -410,7 +434,8 @@ let letters (win : window) (m : Affine.t) (l : Playground.letters) (src : Displa
       | Some (image, k) ->
           let p = pt (Affine.apply m (x, l.baseline)) in
           let x0 = p.x - k.ox and y0 = p.y - k.oy in
-          Draw.draw_mask win.back (Rectangle.v x0 y0 (x0 + k.w) (y0 + k.h)) src Point.zero image Point.zero
+          Draw.draw_mask win.back (Rectangle.v x0 y0 (x0 + k.w) (y0 + k.h)) src Point.zero image Point.zero;
+          incr m_letters
       | None -> ())
     l.at
 
@@ -489,7 +514,7 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
   if (match win.last with Some last -> same last shapes | None -> false) then false
   else begin
     win.last <- Some shapes;
-    let t0 = if !stats then Unix.gettimeofday () else 0. in
+    if !stats then clock := Unix.gettimeofday ();
     (* the playground's units to the picture's pixels: up is less, the middle is (0, 0) *)
     let half = float win.size /. 2. in
     let m = Affine.compose (Affine.compose (Affine.translate half half) (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
@@ -529,11 +554,13 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
           clear (max y y1) rest
       | [] -> if y < all.max.y then Draw.draw win.back (Rectangle.v all.min.x y all.max.x all.max.y) white None Point.zero in
     clear all.min.y (List.sort (fun ((a : int), (_ : int)) ((b : int), (_ : int)) -> a - b) rows);
+    part display 0;
     List.iter (shape win m) others;
+    part display 1;
     Draw.draw win.view win.at win.back None Point.zero;
-    let t1 = if !stats then Unix.gettimeofday () else 0. in
+    part display 2;
     Display.flush display;
-    if !stats then meter (t1 -. t0) (Unix.gettimeofday () -. t1) (List.length shapes);
+    if !stats then meter (List.length shapes);
     true
   end
 

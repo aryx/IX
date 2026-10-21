@@ -411,6 +411,31 @@ the likely answer: a link lit under the mouse is then a few messages,
 not the page. Not yet run with the letters: mini-office and Hacker
 News on mini-9pi, the recorded mini-9pi checks beyond check-quick.
 
+**Measured** (2026-10-21, the author: "I'm scared we're adding
+optimization hacks when we should address the core issue"; then
+"ok let's start"): `tests/perf/hover.sh`, about:home with the mouse
+across a link 120 times under QEMU, the draw platform's meter now
+saying the device's parts (each flushed alone with stats=on). Then
+mini-qemu's samples of 60 such frames (`-prof`, 10 crossings less
+70): 27% in the kernel's `memcpy`, a byte a turn (memmove had its
+words, memcpy not: lib_machine/libc.c), used by Memdraw's fill
+(`imag_rows`, the frame's white); 23% in Memdraw's loop for a
+smoothed letter, at about 800 pixels a letter: `mask_of`'s box is
+room for any letter, 650 pixels at 13 where one covers 100. Both
+fixed where they are, for every program: memcpy is memmove; a mask
+cut to its pixels once made (the same pixels).
+
+| a hover's frame, ms | before | memcpy | + masks cut |
+|---|---|---|---|
+| the device | 93-100 | 78-84 | 62-66 |
+| white | 24-25 | 11-13 | 12-13 |
+| shapes (450 letters) | 51-58 | 47-56 | 31-35 |
+| copy to the window | 17-18 | 16-18 | 18-19 |
+| shown, in all | 112-113 | 97-98 | 78-79 |
+
+Left there: the letters' loop (an empty pixel 21 instructions; a
+covered one a call of C, `Bytes.blit_string` of two bytes), then B.
+
 The author, the arrows still slow on mini-9pi ("Typing the arrows to
 move the cursor is still slow") and two more things kept being added
 for it (a text's layout kept whatever the caret; a kept group drawn

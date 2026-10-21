@@ -316,7 +316,29 @@ let mask_of ~(aa : bool) (m : Affine.t) (l : Playground.letters) (s : string) ~(
           | _ -> ())
         (Letter_strokes.letter Playground.white ~size:l.size ~bold:l.bold ~italic:l.italic s ~x:0. ~baseline:0.);
       let cover = Array.init (w * h) (fun i -> float ((Framebuffer.get_rgb fb ~x:(i mod w) ~y:(i / w) lsr 16) land 0xff) /. 255.) in
-      let k = { w; h; ox = -left; oy = -top; cover } in
+      (* OPTIMIZATION: the mask cut to the pixels the letter covers.
+       * letter_box is room for any letter (a W, an italic's slant, a
+       * descender), 650 pixels for a page's letter of 13 where it
+       * covers about 100, and each draw went over all of them: this
+       * loop below, and on mini-9pi the kernel's (a frame of 450
+       * letters, a third of its time, the mouse over a link). The same
+       * pixels: only the zeros around are cut.
+       * old: let k = { w; h; ox = -left; oy = -top; cover } in *)
+      let x0 = ref w and y0 = ref h and x1 = ref (-1) and y1 = ref (-1) in
+      Array.iteri
+        (fun (i : int) (c : float) ->
+          if c > 0. then begin
+            let x = i mod w and y = i / w in
+            x0 := min !x0 x; x1 := max !x1 x; y0 := min !y0 y; y1 := max !y1 y
+          end)
+        cover;
+      let k =
+        (* (a space: no pixel, an empty mask) *)
+        if !x1 < 0 then { w = 0; h = 0; ox = 0; oy = 0; cover = [||] }
+        else
+          let cw = !x1 - !x0 + 1 and ch = !y1 - !y0 + 1 in
+          { w = cw; h = ch; ox = -left - !x0; oy = -top - !y0;
+            cover = Array.init (cw * ch) (fun i -> cover.(((!y0 + (i / cw)) * w) + !x0 + (i mod cw))) } in
       (* (a page's letters at a few sizes are some hundreds: kept, the
        * table emptied when it is larger than any page needs) *)
       if Hashtbl.length masks >= 4096 then Hashtbl.reset masks;

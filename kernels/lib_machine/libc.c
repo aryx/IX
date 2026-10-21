@@ -93,12 +93,18 @@ int host_fill(void *d, int c, size_t n);
 #define HOST_FILL(d, c, n)
 #endif
 
+/* memmove's words: the two do not overlap, which memmove's forward
+ * copy is right for. A byte at a time, it was 27% of mini-9pi's time
+ * under mini-netscape with the mouse over a link: Memdraw's fill
+ * (imag_rows) repeats a row with it, a frame's white 1.2 MB.
+ * old: char *dd = d; const char *ss = s;
+ *      HOST_MOVE(d, s, n);
+ *      while (n--) *dd++ = *ss++;
+ *      return d; */
+void *memmove(void *d, const void *s, size_t n);
 void *memcpy(void *d, const void *s, size_t n)
 {
-  char *dd = d; const char *ss = s;
-  HOST_MOVE(d, s, n);
-  while (n--) *dd++ = *ss++;
-  return d;
+  return memmove(d, s, n);
 }
 
 /* A word at a time whenever d and s share their alignment (a

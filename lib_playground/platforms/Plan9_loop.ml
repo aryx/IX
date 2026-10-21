@@ -74,6 +74,57 @@ let late_frame : Playground.shape list =
     Playground.rectangle Playground.red t h |> Playground.move ((w -. t) /. 2.) 0.;
     Playground.rectangle Playground.red t h |> Playground.move (-.(w -. t) /. 2.) 0. ]
 
+(* The cursor a program asks for (Playground.cursor), written to
+ * /dev/cursor (Cursor; in a window, mini-rio's, which keeps one a
+ * window). Plan 9 has its arrow and no other: the hand, the I-beam and
+ * the cross are drawn here, 16 by 16, a row a string: '#' black, '.'
+ * white, ' ' the screen, rio's way (windows/Cursors). *)
+let cursor ((x, y) : int * int) (rows : string list) : Cursor.t =
+  let bits (c : char) : string =
+    String.concat ""
+      (List.map
+         (fun (row : string) ->
+           let half (from : int) = String.make 1 (Char.chr (List.fold_left (fun b i -> if row.[from + i] = c || row.[from + i] = '#' then b lor (0x80 lsr i) else b) 0 [ 0; 1; 2; 3; 4; 5; 6; 7 ])) in
+           half 0 ^ half 8)
+         rows) in
+  { offset = Point.v x y; clr = bits '.'; set = bits '#' }
+
+(* (its point the finger's tip) *)
+let hand = cursor (-5, 0)
+  [ "     ##         ";
+    "    #..#        ";
+    "    #..#        ";
+    "    #..#        ";
+    "    #..###      ";
+    "    #..#..###   ";
+    "    #..#..#..## ";
+    " ## #..#..#..#.#";
+    "#..##........#.#";
+    "#...#..........#";
+    " #.............#";
+    "  #............#";
+    "  #...........# ";
+    "   #..........# ";
+    "    #........#  ";
+    "    ##########  " ]
+
+let ibeam = cursor (-4, -7)
+  ([ ".###.###.       "; " ...#...        " ] @ List.init 12 (fun _ -> "   .#.          ") @ [ " ...#...        "; ".###.###.       " ])
+
+let cross = cursor (-7, -7)
+  (List.init 6 (fun _ -> "      .#.       ")
+   @ [ " ......#....... "; ".##############."; " ......#....... " ]
+   @ List.init 6 (fun _ -> "      .#.       ") @ [ "                " ])
+
+(* (no bit: nothing of it is seen) *)
+let hidden : Cursor.t = { offset = Point.zero; clr = String.make 32 '\000'; set = String.make 32 '\000' }
+
+(* (what writes the cursor: run_app's, which has the capability) *)
+let setter : (Cursor.t option -> unit) ref = ref (fun (_ : Cursor.t option) -> ())
+
+let set_cursor (c : Playground.cursor) : unit =
+  !setter (match c with Playground.Arrow -> None | Playground.Hand -> Some hand | Playground.Text -> Some ibeam | Playground.Crosshair -> Some cross | Playground.Hidden -> Some hidden)
+
 let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
@@ -105,6 +156,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
    * the program was ended for want of a page (2026-10-10:
    * docs/plans/bugs/ix.md) *)
   let kbd = Keyboard.held caps in
+  (* (a system without /dev/cursor keeps its arrow) *)
+  setter := (fun (c : Cursor.t option) -> try Cursor.set caps c with Unix.Unix_error _ -> ());
   (* (and the clock's, which the loop below asks: the fourth) *)
   let alarm = Source.alarm caps in
   let run = Session.start app flags in
@@ -390,5 +443,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
         wake ()
       end;
       if not !quit then loop () in
-    loop ()
+    loop ();
+    (* (the arrow again, for what the window shows next) *)
+    set_cursor Playground.Arrow
   end

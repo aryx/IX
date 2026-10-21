@@ -2,11 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* The kernel's calls for a program in ML: mlsys.c's functions, as
- * externals, their values ML's; -1 when the kernel refuses. Given to
- * tiny-ml before the files that name them: TinyLibPlayground.ml (the
- * first four: on the host its names are ../host/TinyCalls.ml's) and
- * TinyLibSystem.ml. An external a program does not call costs it
- * nothing. (TinyWindows.ml says its own: OCaml checks that file
+ * externals, their values ML's; -1 when the kernel refuses. On the
+ * host these names are ../host/TinyCalls.ml's. An external a program
+ * does not call costs it nothing. (TinyWindows.ml says its own: OCaml checks that file
  * alone.) *)
 external u_write : int -> string -> int = "u_write"
 external u_read : int -> int -> string = "u_read"

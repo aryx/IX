@@ -2,8 +2,7 @@
  * on the host: what TinyLibDraw.ml, TinyLibPlayground.ml, TinyLibGUI.ml
  * and the few lines of a program on them (TinyKernel/user/office.ml...)
  * ask of tiny-kernel. On tiny-machine these names are externals
- * (TinyKernel/libml/TinyCalls.ml, which names mlsys.c's functions); tiny-ml
- * reads `open TinyCalls` and leaves it.
+ * (TinyKernel/libml/TinyCalls.ml, which names mlsys.c's functions).
  *
  * A virtual library of dune's: this interface, and two
  * implementations, a program choosing one when it is linked:

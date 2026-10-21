@@ -29,9 +29,9 @@
  *
  * Where it stands: the image is what tiny-machine -d gives a kernel as
  * its disk (TinyMachineDevices's four words: a block's number, an
- * address, a command, a status), and the two formats are read by
- * tiny-os's kernels in C, v6 and t6. TinyKernel has no disk: its files
- * are values in its heap, carried by the boot image. In m-ix the real
+ * address, a command, a status), and its format is read by t6's
+ * kernel in C. TinyKernel's disk has a format of its own
+ * (TinyKernelFS.mli), which the kernel makes on a blank disk. In m-ix the real
  * FAT, as MS-DOS left it, is mini-dossrv's (Plan 9's dossrv), and
  * mini-9pi boots from a card that has one.
  *

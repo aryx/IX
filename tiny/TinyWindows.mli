@@ -1,14 +1,7 @@
 (* A tiny window system, written in ML as a program that runs on
  * TinyKernel.ml. It keeps the essentials of Plan 9's rio; the
- * full-size version in ix is windows/ (mini-rio). It is compiled by
- * tiny-ml after TinyLibDraw.ml, with TinyKernel/libml/mlsys.c
- * providing its runtime and its system calls. The design is in
+ * full-size version in ix is windows/ (mini-rio). The design is in
  * plan_tiny_windows.md.
- *
- *     ./tiny-machine -window tiny-kernel
- *     $ windows
- *     the right button: New, then a rectangle swept with the left one;
- *     in the window, a shell: ls, paint, windows
  *
  * The main idea comes from rio: {b a window looks like the machine}.
  * Every program on TinyKernel.ml is given five file descriptors: 0, 1
@@ -107,7 +100,7 @@
  * Where it stands: TinyKernel provides the five descriptors, the
  * pipes, the box and ready; TinyKernelGraphics, inside the kernel,
  * holds the images; TinyLibDraw builds and parses the messages. The
- * programs that run in a window (paint in C from TinyKernel/user, and
+ * programs that run in a window (paint in C, TinyKernel/examples/paint.c, and
  * TinyAppTetris on TinyLibPlayground) also run without it. mini-rio is
  * the complete version: Wm and Window, a Terminal for the text of a
  * window, and Fileserver, Virtual_cons and Virtual_mouse for the files

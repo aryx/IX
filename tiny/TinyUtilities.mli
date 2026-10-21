@@ -40,15 +40,12 @@
  *
  * {b The same file on two systems.} As TinyShell.ml, it names only
  * TinyLibSystem (TinyKernel/host/TinyLibSystem.mli) and the pure functions
- * of the standard library. So dune builds it for the host, and tiny-ml
- * builds it for tiny-kernel, on TinyLibCore/ and the kernel's
- * TinyLibSystem.ml.
+ * of the standard library, so it is tiny-kernel's utils and the host's
+ * tiny-utils.
  *
  * What is kept of the twins is their output, where it costs nothing:
  * wc's columns, xd's lines, du's kilobytes, cmp's messages, ls's
- * sorted names. So the test (tests/TinyUtilities_test.sh) runs each
- * utility and its twin, mini-wc, mini-xd..., on the same arguments,
- * and compares what they print and their exit status.
+ * sorted names.
  *
  * What is dropped: most options (each utility keeps the one or two that
  * carry its idea), UTF-8 (wc counts bytes), floating point in seq, most

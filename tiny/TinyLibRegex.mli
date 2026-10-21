@@ -24,10 +24,6 @@
  *
  * Errors are sam's: "no operand for `*'", "unmatched `('", "malformed
  * `[]'". Bytes, not UTF-8's characters: . takes one byte.
- *
- * As the other TinyLibXxx, this is the same file for OCaml (dune's
- * library) and for tiny-ml (given before the program's file); a program
- * opens it.
  *)
 
 (* a pattern, parsed *)

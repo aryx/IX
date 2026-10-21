@@ -1,5 +1,4 @@
-(* A tiny web browser, called www, that runs on tiny-kernel. It is
- * written in the subset of ML that both tiny-ml and OCaml accept. The
+(* A tiny web browser, called www, that runs on tiny-kernel. The
  * full-size browser in ix lives in browsers/ (mini-netscape and
  * mini-lynx, built on the mini-chrome engine); this one keeps only the
  * essentials. The design is in docs/plans/done/plan_tiny_browser.md.

@@ -1,7 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyMachineCPU.mli *)
+(* See TinyMachineCPU.mli. Its laws are checked by tests/TinyCPU_test.sh:
+ * the first on the programs of tests/TinyCPU_tests/, the second on
+ * random programs of every instruction. *)
 
 (* The instructions, their words: TinyMachineISA's, in what tiny-ml
  * compiles too, for tiny-assembler and tiny-linker on tiny-kernel *)

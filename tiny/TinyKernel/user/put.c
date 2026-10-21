@@ -2,9 +2,10 @@
 //
 // put file [name]: a file of tiny-kernel's kept at the wire's other end
 // (10.0.0.1), under name (the file's own, without its directories, by
-// default). tiny-kernel's files are in its memory and go with it; what
-// is put is in tiny-machine's -net directory, or the web page's
-// browser, and get brings it back after the next boot: get name > name.
+// default). Without a disk (-d), tiny-kernel's files are in its memory
+// and go with it; what is put is in tiny-machine's -net directory, or
+// the web page's browser, and get brings it back after the next boot:
+// get name > name.
 // get '' says what was put (Gopher's empty line, its menu).
 //
 // get's way the other way round: a connection to port 70, a first

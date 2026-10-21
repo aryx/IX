@@ -3,9 +3,13 @@
 
 (* See TinyShell.mli *)
 
-(* -h: the usage, and the language by example, as it runs (a string
- * between quotes, not {| |} as the other tools': tiny-ml builds this
- * file too) *)
+(* The tests: tests/TinyShell_test.sh runs scripts written in this
+ * subset both through this shell and through 9base's rc, which must
+ * print the same thing. Also, mini-mk builds all of xix using this
+ * shell (as MKSHELL, through a link named rc, so that mini-mk exports
+ * lists the way rc expects them, joined by \001). *)
+
+(* -h: the usage, and the language by example, as it runs *)
 open Common
 
 let help = "usage: tiny-shell [-eiI] [-c cmd | file] [arg ...]

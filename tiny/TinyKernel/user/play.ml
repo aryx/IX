@@ -2,8 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* play, a program of TinyKernel.ml's: ../../TinyPlay.ml, a WAV file's
- * sound written to /dev/audio a block at a time (given to tiny-ml with what
- * it is on, as one program: the Makefile).
+ * sound written to /dev/audio a block at a time.
  *
  *     play /examples/korobeiniki.wav
  *

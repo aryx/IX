@@ -3,6 +3,10 @@
 
 (* See TinyDatabase.mli *)
 
+(* The test, tests/TinyDatabase_test.sh, runs pipelines through this
+ * database and the equivalent SQL through SQLite (Python's sqlite3),
+ * and compares the resulting rows. *)
+
 (* Common's, here too: the file is OCaml's and tiny-ml's *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 

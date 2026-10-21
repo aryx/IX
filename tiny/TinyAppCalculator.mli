@@ -1,20 +1,10 @@
 (* A tiny calculator: the four operations on whole numbers, with sixteen
- * buttons.
- *
- * It is written in the subset of ML that both tiny-ml and OCaml accept.
- * Usage:
- *
- *     ./tiny-machine -window tiny-kernel
- *     $ windows                  then a window, and in it:
- *     $ calc
- *     the mouse on the buttons, or the keys: the digits, + - * /,
- *     = or the Enter, c clears; q quits
+ * buttons, pressed with the mouse or by their keys (the digits, + - * /,
+ * = or Enter, c clears; q quits).
  *
  * The calculator is a value of TinyLibGUI's [gui] type: a model, its
  * view, an update function and the keys. There is no loop, no drawing
- * and no mouse handling in this file. So the arithmetic can be tested
- * on the host by sending messages to [update], and the buttons by
- * sending mouse events to TinyLibGUI (tests/TinyLibGUI_test.sh).
+ * and no mouse handling in this file.
  *
  * The model is the state of a pocket calculator, not an expression: the
  * number shown, the number kept, and the operation waiting for its

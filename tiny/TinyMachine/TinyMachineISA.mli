@@ -2,9 +2,9 @@
  * makes, tiny-linker fills, and TinyMachineCPU runs (its header has
  * the machine, the format and the design). A file of its own so that
  * the assembler and the linker, which need the words and not the
- * interpreter, are in what both OCaml and tiny-ml compile, and run on
- * tiny-kernel; the interpreter keeps OCaml's 32-bit loads, which the
- * machine's speed is made of. *)
+ * interpreter, are compiled by tiny-ml and run on tiny-kernel; the
+ * interpreter keeps OCaml's 32-bit loads, which the machine's speed is
+ * made of. *)
 
 (* The instructions, and their words (an immediate is a word's low 16
  * bits, encode says what does not fit); the ALU's operations and the

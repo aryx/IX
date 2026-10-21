@@ -3,8 +3,7 @@
 
 (* troff, a program of TinyKernel.ml's: ../../TinyTroff.ml, a page of
  * the office's (or a Markdown file) printed as text or as a web page
- * (given to tiny-ml with ../../TinyOffice.ml, which reads the page,
- * and what it is on, as one program: the Makefile).
+ * (../../TinyOffice.ml reads the page).
  *
  *     troff file        its text, 72 columns
  *     troff -h file     its web page

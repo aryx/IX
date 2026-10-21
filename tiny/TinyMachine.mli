@@ -93,9 +93,9 @@
  * - {b The keys} arrive as console input, including the window's keys
  *   with -window (the arrows are bytes 128 to 131: up, down, left,
  *   right; a key held down repeats).
- * - {b A fixed speed} with -window: 8 million instructions per second,
- *   so that a program's time, counted in instructions, is the same on
- *   every host.
+ * - {b A fixed speed} with -window: 20 million instructions per second
+ *   (-rate n changes it), so that a game's time, counted in
+ *   instructions, follows the host's clock and not the host's speed.
  * - {b A replayed session} (-events f): mouse and key events are read
  *   from a file, each at its time. Since time is counted in
  *   instructions, the screen at the halt is the same on every run.
@@ -176,16 +176,6 @@
  * decoded here as csrr, csrw or eret (in supervisor mode), or amoswap,
  * or else it traps. The loop around [step] adds the rest: the time and
  * the interrupts.
- *
- * The tests: TinyMachine_test.sh runs TinyKernel/steps/v0/kernel.tm, a
- * one-page kernel, linked with its four user programs (two that print, one
- * that executes csrw, one that stores into the kernel), with a long and
- * a short timer period. It checks that every letter is printed, that
- * both faults are caught, and that the output is interleaved with the
- * short period but not with the long one. It also runs the programs in
- * TinyMachine_tests/ (amoswap and csrrw, pages, console input, the disk,
- * the relocating window) against their .expected files. t6 runs on the
- * machine too (its make check), and so does tiny-kernel.
  *
  * Exercises. Each one is cheap, because time is counted in instructions
  * and everything else is a hook of the CPU:

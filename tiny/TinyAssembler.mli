@@ -45,8 +45,8 @@
  * An .align stays an item: what it pads depends on the address, which
  * only the link knows (v0's kernel aligns its programs on 64 KB). Every
  * label is the program's: the link is one name space, as the
- * compilers write it (tiny-c's statics carry their file's name, tiny-ml
- * writes a program as one file).
+ * compilers write it (tiny-c's statics carry their file's name, tiny-ml's
+ * labels their unit's).
  *
  * What makes it small:
  *

@@ -1,12 +1,6 @@
-(* A tiny playground: the library that the games of TinyKernel.ml are
- * written with. It keeps the essentials of the author's playground
- * (the full-size version in ix is lib_playground/), which follows the
- * Elm architecture. It is a library written in the subset of ML that
- * both tiny-ml and OCaml accept, and it is given to tiny-ml before the
- * game itself (see plan_tiny_windows.md):
- *
- *     tiny-ml -o tetris.tm TinyCalls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyAppTetris.ml tetris.ml
- *     (the last one line: let () = run game)
+(* A tiny playground: the tiny version of lib_playground, the library
+ * games are written with. It keeps the essentials of the author's
+ * playground, which follows the Elm architecture.
  *
  * The main idea: {b a game is a value and three functions} (and two
  * more for its sounds and its music, below). The value

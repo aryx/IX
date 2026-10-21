@@ -4,8 +4,8 @@
  * program for a register machine, which works on B-trees made of
  * fixed-size pages that are changed in place. This one keeps the same
  * ideas but takes the other road at each choice. Its statements are
- * shown by example in [help] below (which is also what help prints at
- * its prompt, and the start of what tiny-db -h prints):
+ * shown by example in the [help] string of the .ml (which is also what
+ * help prints at its prompt, and the start of what db -h prints):
  *
  * - {b A query is a pipeline of the operators of the algebra}, read
  *   from left to right like a Unix pipe: a table, then where (sigma),
@@ -83,10 +83,6 @@
  * computed columns, and atomic statements. What is dropped: SQL, NULL,
  * the register machine and its programs, the 1,024-byte pages, and
  * SQLite's file format.
- *
- * The test, TinyDatabase_test.sh, runs pipelines through this database
- * and the equivalent SQL through SQLite (Python's sqlite3), and
- * compares the resulting rows.
  *
  * Exercises, all cheap because nodes never change:
  * - transactions of several statements: begin ... commit, where the

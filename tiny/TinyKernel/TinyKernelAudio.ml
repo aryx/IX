@@ -3,6 +3,9 @@
 
 (* See TinyKernelAudio.mli *)
 
+(* OCaml builds this file too, on the host, where its sounds are tested
+ * without a machine (tests/TinyKernelAudio_tests/Host.ml) *)
+
 open TinyMemory
 
 let per_ms = 8

@@ -3,6 +3,9 @@
 
 (* See TinyEditorScreen.mli *)
 
+(* With no system calls, the editor is tested on the host by typing keys
+ * at it (tests/TinyEditorScreen_test.sh). *)
+
 open TinyLibPlayground
 
 (*****************************************************************************)

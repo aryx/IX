@@ -3,14 +3,16 @@
 
 (* See TinyEditorLine.mli *)
 
+(* Testing: tests/TinyEditorLine_test.sh runs scripts through this
+ * editor and through 9base's sam -d, and compares the results. *)
+
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b
 
 (* the regular expressions: compile, search, search_back *)
 open TinyLibRegex
 
-(* -h: the commands by example, each one as it runs (a string between
- * quotes, not {| |}: tiny-ml builds this file too) *)
+(* -h: the commands by example, each one as it runs *)
 let help = "usage: tiny-editor [file]: sam's command language, without the screen,
 the commands on standard input, one a line, each on dot, a range of the text:
   ,p  3p  3,5p  $p  #10,#20p  all, line 3, lines 3 to 5, the last, chars 10 to 20

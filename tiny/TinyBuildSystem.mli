@@ -7,8 +7,9 @@
  * of mk; this one is what remains when compatibility is dropped and
  * only the idea is kept.
  *
- * A Buildfile has five kinds of lines, shown by example in [help]
- * below (which is what tiny-build -h prints along with the usage), and
+ * A Buildfile has five kinds of lines, shown by example in the
+ * [help] string of the .ml (which build -h prints along with the
+ * usage), and
  * that is the whole syntax. Variables in rule lines are expanded as
  * the lines are read. A recipe receives the variables, plus $target,
  * $prereq and $stem, in its environment (on tiny-kernel, which has
@@ -23,8 +24,8 @@
  *
  *     stamp(hello) = sha1(recipe, "hello.o", sha1(hello.o), "world.o", ...)
  *
- * (The digest is SHA-1, from lib_crypto's Sha1, which tiny-vcs already
- * brings into t-ix; it used to be MD5.) For the Buildfile in [help],
+ * (The digest is SHA-1, Sha1's, which tiny-vcs uses too; it used to
+ * be MD5.) For the Buildfile in [help],
  * the graph under hello is:
  *
  *     hello                 has its own recipe: cc -o $target $prereq

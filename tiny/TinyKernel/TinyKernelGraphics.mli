@@ -2,11 +2,7 @@
  * libmemdraw; ix's twins are lib_graphics/ and mini-9pi's
  * lib_memdraw), for tiny-machine's screen: 640 by 480 pixels, a byte
  * each, a colour of Plan 9's table. Not a program: TinyKernel.ml's part
- * that draws (plan_tiny_windows.md), in tiny-ml's ML, which is OCaml's
- * too, so that it is tested on the host first:
- *
- *     tiny-ml -o kernel.tm TinyMemory.ml TinyKernelGraphics.ml TinyKernel.ml   (TinyKernel/Makefile)
- *     dune build ./tiny/tests/TinyKernelGraphics_tests/Host.exe     (TinyKernelGraphics_test.sh)
+ * that draws (plan_tiny_windows.md).
  *
  * It asks five functions of bytes of its machine, TinyMemory's: peekb
  * and pokeb, and a row's three loops (copied, filled, a colour where a

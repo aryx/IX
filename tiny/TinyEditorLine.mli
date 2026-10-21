@@ -4,11 +4,10 @@
  * lines. This editor is what Rob Pike made of ed when he designed sam
  * ("The Text Editor sam", "Structural Regular Expressions", 1987), but
  * without the screen. The commands, with examples, and the usage are
- * in [help] below, which is what tiny-editor -h prints.
+ * the [help] string of the .ml, which is what ed -h prints.
  *
- * It is tiny-kernel's ed too (and sam, the same program by another
- * name): as TinyShell.ml, it asks the system only through
- * TinyLibSystem, and tiny-ml compiles it as well as OCaml.
+ * It is tiny-kernel's ed (and sam, the same program by another name):
+ * as TinyShell.ml, it asks the system only through TinyLibSystem.
  *
  * Three ideas make it sam rather than ed, and they are the core of
  * this file:
@@ -81,9 +80,6 @@
  * - several dots instead of one: keep the matches of an x as a set of
  *   selections, and run the next command on each of them (the editing
  *   model of Kakoune and vis, which grew out of sam's x).
- *
- * Testing: test.sh runs scripts through this editor and through
- * 9base's sam -d, and compares the results.
  *
  * Where it stands: ix has three editors, mini-ed (lines, an editor for
  * a teletype), this one (ranges, but still no screen) and mini-emacs

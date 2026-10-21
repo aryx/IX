@@ -8,7 +8,7 @@
  *            ___________/        \___________
  *   on the host                        on tiny-machine
  *   TinyKernel/host/TinyLibSystem.ml   TinyKernel/libml/TinyLibSystem.ml
- *   (this one's), OCaml, built by      tiny-ml's ML, given to tiny-ml
+ *   (this one's), OCaml, built by      built by tiny-ml,
  *   dune or mini-mk                    on TinyLibCore/
  *   over Unix, Cap, FS, Procs          over tiny-kernel's calls
  *   Linux                              tiny-kernel

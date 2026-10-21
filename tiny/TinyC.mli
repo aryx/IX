@@ -88,8 +88,8 @@
  * globals with initializers (numbers, strings, addresses, and arrays
  * of them); static, extern, typedef; functions and prototypes, and
  * calls to variadic functions; function pointers (C's inside-out
- * declarators, and calls through any expression, as needed by tiny-os's
- * system call table and devices); every operator, including op=, ++,
+ * declarators, and calls through any expression, as needed by t6's
+ * system call table); every operator, including op=, ++,
  * --, ?:, casts, sizeof and the comma, with constant expressions
  * folded (for an array size or a case); if, while, do, for, switch,
  * break, continue, return and blocks; #include "file" and #define of a

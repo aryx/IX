@@ -2,13 +2,8 @@
  * TinyKernel.ml are written. It keeps the essentials of a widget
  * toolkit. Its full-size counterpart in ix is lib_gui/, from the
  * author's playground, which offers four ways to write such a
- * program; this library keeps only the last one, Mvu. It is written
- * in the subset of ML that both tiny-ml and OCaml accept, and is
- * given to tiny-ml before the program and after the playground, whose
- * shapes it uses for drawing:
- *
- *     tiny-ml -o calc.tm TinyCalls.ml TinyLibDraw.ml TinyLibPlayground.ml TinyLibGUI.ml TinyAppCalculator.ml calc.ml
- *     (the last one line: let () = run calculator)
+ * program; this library keeps only the last one, Mvu. It draws with
+ * the playground's shapes.
  *
  * The main idea: {b an interface is a value computed from the model,
  * together with the messages it sends back}. [view] builds the widgets

@@ -3,13 +3,8 @@
  *
  * It is the second of the 7GUIs tasks (m-ix's
  * version is examples/Gui7Temperature.ml), here with whole numbers
- * only, written in the subset of ML that both tiny-ml and OCaml accept.
- * Usage:
- *
- *     ./tiny-machine -window tiny-kernel
- *     $ temp
- *     a click in a field, then the keys: digits, a sign, the backspace;
- *     the Escape quits (or q, before a field is clicked)
+ * only. A click in a field, then the keys: digits, a sign, the
+ * backspace; the Escape quits (or q, before a field is clicked).
  *
  * What the task asks for, and why it comes second: a change must
  * propagate in both directions, and half of what the user types is not

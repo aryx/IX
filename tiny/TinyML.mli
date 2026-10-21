@@ -6,16 +6,13 @@
  * correct. Its usage, by examples, is in [help] below, which is what
  * tiny-ml -h prints.
  *
- * It reads one ML file (or several, each a unit, compiled one after
- * the other, with their main) and writes
+ * It reads ML files, a unit each (with -c, one, after the interfaces
+ * of the units it uses), and writes
  * its assembly for tiny-machine (the CPU of TinyMachineCPU.ml): words
  * of 4 bytes, integers of 31 bits. The runtime (the allocator, Cheney's
  * collector, the primitives, and the printing of an uncaught
  * exception) is in C, TinyMLRuntime/core.c, compiled by tiny-c; the
- * program's own main gives it memory. The test is that a program
- * prints exactly what OCaml's ocamlopt makes it print (for the
- * recorded ones, ocaml-light's on arm64, whose back end this compiler
- * also had until plan_tiny_self_hosting.md). TinyKernel.ml is the
+ * program's own main gives it memory. TinyKernel.ml is the
  * program it was made for: a kernel in ML, which reaches the machine
  * through externals (functions in C or assembly), so the compiler
  * needs no special primitive for it.
@@ -77,9 +74,8 @@
  * references, and exceptions (declared, raised, caught). The constructs
  * are let, let rec, and, fun, function, match with guards, as and
  * or-patterns (without variables), if, sequences, while, for, and type
- * annotations (p : t). There is external, used by the prelude (the
- * Pervasives and List functions a program uses, written in ML; see
- * below). Types are Hindley-Milner with the value restriction. Strings
+ * annotations (p : t). There is external, used by the standard
+ * library (TinyLibCore/, written in ML; see below). Types are Hindley-Milner with the value restriction. Strings
  * can span several lines. ix's capabilities are parsed and then ignored:
  * an object type in an annotation, or declared under a name, means any
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
@@ -160,11 +156,11 @@
  *   what a call jumping over the handler leaves in lr, as with setjmp.
  * - {b Its own frames.} The compiler writes each function's prologue
  *   and epilogue itself, so a tail call can pop the frame and jump.
- * - {b The prelude is in ML.} raise, the operators, ref, ! and := are
- *   externals whose names give the instruction ("%add"); print_string
- *   and ^ name C functions of the runtime; List.map and the others are
- *   ML, the first unit, Stdlib, and only what the program uses is
- *   linked (above).
+ * - {b The standard library is in ML.} raise, the operators, ref, ! and
+ *   := are externals whose names give the instruction ("%add");
+ *   print_string and ^ name C functions of the runtime; List.map and
+ *   the others are ML, TinyLibCore/'s units, and only what the program
+ *   uses is linked (above).
  *
  * Its behavior follows ocaml-light's arm64 ocamlopt, which was the
  * contract, quirks included (plan_tiny_self_hosting.md takes the quirks
@@ -190,9 +186,9 @@
  * - exhaustiveness warnings (Maranget, "Warnings for pattern
  *   matching", 2007).
  *
- * Where it stands: TinyKernel, TinyKernelGraphics, TinyWindows,
- * TinyLibPlayground and TinyAppTetris are its programs, and OCaml
- * compiles the same files. Its runtime is C compiled by TinyC, and its
+ * Where it stands: every program in ML of tiny-kernel is its, the
+ * kernel first and tiny-ml itself, and OCaml compiles the same files
+ * on the host. Its runtime is C compiled by TinyC, and its
  * assembly is TinyMachineCPU's. The stack machine, with
  * its stack kept in registers, comes from TinyC, so the two compilers
  * read as one design used twice: what differs is everything C does not

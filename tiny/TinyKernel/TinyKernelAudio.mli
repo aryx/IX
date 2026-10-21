@@ -1,13 +1,7 @@
 (* Tiny sound: TinyKernel.ml's part that makes the samples
  * (plan_tiny_audio.md), as TinyKernelGraphics.ml is its part that
- * makes the pixels. Not a program: tiny-ml's ML, which is OCaml's too,
- * so that it is tested on the host first:
- *
- *     tiny-ml -o kernel.tm TinyMemory.ml ... TinyKernelAudio.ml TinyKernel.ml   (TinyKernel/Makefile)
- *     dune build ./tiny/tests/TinyKernelAudio_tests/Host.exe                    (TinyKernelAudio_test.sh)
- *
- * It asks two functions of its machine's bytes, TinyMemory's peekb and
- * pokeb.
+ * makes the pixels. It asks two functions of its machine's bytes,
+ * TinyMemory's peekb and pokeb.
  *
  * {b The kernel has the samples, a program says what}, as for the
  * screen: a program writes a message to /dev/audio, `s wave hz to_hz ms

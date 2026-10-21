@@ -3,6 +3,9 @@
 
 (* See TinyOffice.mli *)
 
+(* With no system calls, the office is tested on the host by typing keys
+ * and moving the mouse at it (tests/TinyOffice_test.sh). *)
+
 open TinyLibPlayground
 open TinyLibGUI
 

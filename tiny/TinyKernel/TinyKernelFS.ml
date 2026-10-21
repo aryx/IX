@@ -3,6 +3,9 @@
 
 (* See TinyKernelFS.mli *)
 
+(* OCaml builds this file too, on the host, where it is tested with a
+ * disk of bytes in memory (tests/TinyKernelFS_tests/Host.ml) *)
+
 open TinyMemory
 
 (*****************************************************************************)

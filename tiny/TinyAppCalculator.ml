@@ -2,6 +2,9 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
 (* See TinyAppCalculator.mli *)
+(* The arithmetic is tested on the host by sending messages to [update],
+ * and the buttons by sending mouse events to TinyLibGUI
+ * (tests/TinyLibGUI_test.sh). *)
 open TinyLibGUI
 
 (*****************************************************************************)

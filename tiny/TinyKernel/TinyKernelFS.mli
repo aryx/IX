@@ -1,11 +1,7 @@
 (* Tiny file system: TinyKernel.ml's part that keeps files on the disk,
- * as TinyKernelGraphics.ml is its part that draws. The kernel mounts it
- * on /usr; the rest of the tree stays in memory and is lost at the
- * halt. Like the other parts, it is written in tiny-ml's ML, which is
- * also OCaml, so it is tested on the host first:
- *
- *     tiny-ml -o kernel.tm TinyMemory.ml ... TinyKernelFS.ml TinyKernel.ml   (TinyKernel/Makefile)
- *     dune build ./tiny/tests/TinyKernelFS_tests/Host.exe                    (TinyKernelFS_test.sh)
+ * as TinyKernelGraphics.ml is its part that draws. The disk is the
+ * root, in a union with the boot image's files (TinyKernel.mli's "The
+ * files").
  *
  * It needs two things from the machine: TinyMemory's bytes, and a way
  * to move a block between the disk and memory ([fs_io]).

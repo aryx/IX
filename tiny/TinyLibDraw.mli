@@ -6,11 +6,7 @@
  * The Plan 9 equivalent is libdraw, the library used by programs,
  * while TinyKernelGraphics.ml plays the role of the kernel's draw
  * device and of libmemdraw. For C programs, the equivalent is
- * TinyKernel/libc/draw.h. It is written in the subset of ML that both
- * tiny-ml and OCaml accept, and is given to tiny-ml before the
- * program's own files:
- *
- *     tiny-ml -o windows.tm TinyLibDraw.ml TinyWindows.ml
+ * TinyKernel/libc/draw.h.
  *
  * The messages are described in the header of TinyKernelGraphics.mli:
  * a letter, followed by signed 16-bit numbers, low byte first.
@@ -21,7 +17,7 @@
  *     a program            TinyAppTetris on TinyLibPlayground, TinyWindows
  *        | d_fill ...      this file: makes a string of 19 bytes
  *        | written on 3    on tiny-machine: a system call (TinyKernel/
- *        |                 user's TinyCalls.ml); on the host: TinyCalls,
+ *        |                 libml's TinyCalls.ml); on the host: TinyCalls,
  *        |                 which keeps it for the test to check
  *        | (through a pipe, renumbered by TinyWindows, when in a window)
  *        | [messages]      TinyKernelGraphics: inside TinyKernel; on the

@@ -1,7 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See TinyML.mli *)
+(* See TinyML.mli. Its tests, tests/TinyML_test.sh: a program prints
+ * exactly what OCaml's ocamlopt makes it print (the recorded ones were
+ * ocaml-light's on arm64, whose back end this compiler also had until
+ * plan_tiny_self_hosting.md). *)
 
 (* Common's, here too: this file links nothing of lib_core *)
 let ( ||| ) a b = match a with Some x -> x | None -> b

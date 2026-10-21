@@ -67,7 +67,7 @@
  *
  * Who is around it:
  *
- *     .tm files: by hand (tiny-os v0), by tiny-c, by tiny-ml
+ *     .tm files: by hand (v0), by tiny-c, by tiny-ml
  *                  |  tiny-assembler, tiny-linker: an image
  *     this file:   the CPU ([step], given an [env]), the encoding
  *                  they use, the listing
@@ -94,8 +94,6 @@
  *   assembly again, which reassembled gives the same words (print,
  *   parse, encode and decode agree; not for data, whose words may
  *   decode as instructions with bits the encoding ignores).
- *   TinyCPU_test.sh checks the first on its programs, the second
- *   on random programs of every instruction.
  *
  * Exercises, each cheap because the interpreter is the definition and
  * a machine changes the CPU only through env:
@@ -106,7 +104,7 @@
  *   closure kept by its address, and dropped when a store hits it;
  *   measure the speed against step;
  * - compressed instructions: 16-bit forms of the commonest (RISC-V's
- *   RVC), the density measured on tiny-os's programs, the listing's
+ *   RVC), the density measured on tiny-kernel's programs, the listing's
  *   law checking them;
  * - a debugger by env: breakpoints as a word decode does not know,
  *   caught by illegal, the program's registers and memory then shown.

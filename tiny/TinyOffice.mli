@@ -114,8 +114,8 @@
  * draws a character in some 13,000 instructions, and a page redrawn at
  * each key would be seconds of tiny-machine.
  *
- * This file uses no system calls: OCaml compiles
- * it for the tests (tests/TinyOffice_test.sh), tiny-ml for tiny-kernel.
+ * This file uses no system calls: the program around reads the keys and
+ * the mouse, draws and writes the file.
  *
  * What is left out, for now: charts other than bars (a pie, lines),
  * moving a drawing's shapes once drawn, a sheet's floating point, its

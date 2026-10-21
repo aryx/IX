@@ -2,12 +2,9 @@
  * the essential of a network stack (ix's twins are mini-9pi's
  * kernels/9pi/network/ip/, the twin of Plan 9's, and the programs'
  * lib_networking/). Not a program: TinyKernel.ml's part that speaks to
- * the network (plan_tiny_network.md), in tiny-ml's ML, which is OCaml's
- * too, so that it is tested on the host first; and, by OCaml, the
- * other end of the wire in TinyMachine.ml:
+ * the network (plan_tiny_network.md), and the other end of the wire in
+ * TinyMachine.ml:
  *
- *     tiny-ml -o kernel.tm TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernel.ml   (TinyKernel/Makefile)
- *     dune build ./tiny/tests/TinyKernelNetwork_tests/Host.exe      (TinyKernelNetwork_test.sh)
  *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel     then: ping, get il.txt
  *
  * The idea kept: {b the stack is functions of strings}. A packet is a

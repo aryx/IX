@@ -1,10 +1,7 @@
 (* A tiny kernel, written in ML, for tiny-machine (TinyMachine.ml). It
  * contains the essentials of an operating system and borrows nothing
- * from an existing kernel except ideas. It is compiled by tiny-ml
- * (the second back end of TinyML.ml), it uses TinyML's runtime
- * (Cheney's collector, written in C and compiled by tiny-c), and
- * its user programs are in C (compiled by tiny-c, on top of
- * TinyCRuntime/):
+ * from an existing kernel except ideas. Its programs are in ML (most of
+ * them) or in C (sh, mltests and the network's):
  *
  *     ./tiny-machine tiny-kernel   (at the top of ix; or make run in TinyKernel/)
  *     $ echo hello | wc; mkdir d; cd d; echo x > f; cd ..; cat d/f; ls
@@ -161,14 +158,6 @@
  * channel, no wakeup. The closure holds the file, the address and the
  * count, which is exactly what a C kernel keeps the sleeping process's
  * kernel stack for.
- *
- * Testing: make check in TinyKernel/ runs mltests (fork, exec, wait
- * statuses, pipes and their closing, files, directories and "..", a
- * process killed by a fault, preemption) and a script through the
- * shell, compared against check.expected. It also replays three
- * sessions with recorded mouse and keyboard input and compares a
- * checksum of the screen at halt: paint, tiny-windows, and
- * tiny-windows running inside one of its own windows.
  *
  * Exercises, each cheap in this design:
  * - a cache of the disk's blocks, and the count of the instructions it

@@ -24,15 +24,16 @@
  * What makes it small:
  *
  * - {b A place is filled by encoding again}: the word is decoded
- *   (TinyMachineCPU.decode), its immediate replaced, and encoded, so
+ *   (TinyMachineISA.decode), its immediate replaced, and encoded, so
  *   [encode]'s checks say what does not fit (an addi of an address
  *   above 32 KB, a branch too far), as they did when the assembler
  *   linked; there is no table of where each kind of instruction keeps
  *   its field.
- * - {b No library yet}: every object given is linked whole. An archive
- *   (objects one after the other, a member linked when it defines what
- *   another needs) is plan_tiny_self_hosting.md's step 5, with
- *   TinyLibCore/.
+ * - {b No archive}: every object given is linked, but for its pieces
+ *   that nothing reaches. TinyLibCore/'s objects are given to every
+ *   program in ML (/lib/ml/*.o), the sweep keeping what it calls, so an
+ *   archive (objects one after the other, a member linked when it
+ *   defines what another needs) is not needed yet.
  * - {b The layout is the one the assembler made when it linked} (a
  *   file on a word, an .align on its address): an object without
  *   pieces, all of tiny-c's and the hand-written .tm, is placed as it

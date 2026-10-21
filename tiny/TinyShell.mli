@@ -66,26 +66,20 @@
  *
  * What is dropped, each of which is a few lines in mini-rc, and none of
  * which is needed by the recipes in xix's mkfiles (the test for this
- * shell, see below): switch and if not, here documents, joining a list
+ * shell): switch and if not, here documents, joining a list
  * into one word, subscripts, `sep{} and <{}, `{} inside a word, eval
  * and ., all builtins except cd, exit, shift, wait and ~, functions in
  * the environment, a $path separate from $PATH, -x, rcmain, signals
  * other than an interrupt at the prompt, and $prompt. These make good
  * exercises, roughly in that order.
  *
- * The tests: test.sh runs scripts written in this subset both through
- * this shell and through 9base's rc, which must print the same thing.
- * Also, mini-mk builds all of xix using this shell (as MKSHELL, through
- * a link named rc, so that mini-mk exports lists the way rc expects
- * them, joined by \001).
- *
- * Usage: see [help] below, which shows the language by example; it is
- * what tiny-shell -h prints.
+ * Usage: rc -h (the [help] string of the .ml) shows the language by
+ * example.
  *
  * Where it stands: the shell relies on five kernel calls, fork, exec,
- * wait, pipe and dup (from CapUnix and Unix here; the loops around
- * them are in Procs, which is shared with mini-mk and
- * TinyBuildSystem). TinyKernel has the same five calls and a shell in
+ * wait, pipe and dup (TinyLibSystem's: on the host over Unix, the
+ * loops around them in lib_core's Procs, shared with mini-mk; on
+ * tiny-kernel its calls). TinyKernel has the same five calls and a shell in
  * C built on them (its user/sh.c), and mini-9pi's calls are what
  * mini-rc's Process uses. Above this shell is mini-mk, which hands it
  * each recipe. The history of shells, from Pouzin's RUNCOM to rc, is
@@ -121,13 +115,10 @@
  * under sh and rc. Past that, fork fails and the shell says "try
  * again", as rc does.
  *
- * On two systems: this file is compiled by OCaml for the host and by
- * tiny-ml for tiny-machine, where it is tiny-kernel's rc. It uses only
- * the pure functions of the standard library (tiny-ml's is
- * TinyLibCore/) and, for everything related to the system,
- * TinyLibSystem, which has one implementation file per side. That is
- * why there are no labels, no modules of its own, and an exception
- * Exits where Exit from the library would otherwise be used.
+ * On two systems: it is tiny-kernel's rc and the host's tiny-shell. It
+ * uses only the pure functions of the standard library and, for
+ * everything related to the system, TinyLibSystem, which has one
+ * implementation file per side.
  *
  * References: Tom Duff, "Rc -- The Plan 9 Shell" (1990), for the
  * language and for the principle that the lists protect: input "is

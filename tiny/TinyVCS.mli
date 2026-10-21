@@ -4,8 +4,8 @@
  * one keeps git's ideas -- objects named by the hash of their content,
  * trees of objects, a DAG of commits, three-way merge -- and for
  * everything else follows the roads taken by the systems that came
- * after git. Its commands are shown by example in [help] below (which
- * is what tiny-vcs -h prints):
+ * after git. Its commands are shown by example in the [help] string of
+ * the .ml (which is what vcs -h prints):
  *
  * - {b The repository is one hash.} Objects are appended to a single
  *   file and never changed. The state of the repository (the branches,
@@ -66,18 +66,11 @@
  *
  * The text of the objects uses a format specific to this file, which
  * is canonical and readable ("tree\nf HASH name\n..."); it is hashed
- * with SHA-1 (lib_crypto, TinyLibCore's Sha1 for tiny-ml) and stored
- * as it is. What is dropped: git's formats, compression (old: deflate,
+ * with SHA-1 (Sha1) and stored as it is. What is dropped: git's formats, compression (old: deflate,
  * lib_compression's Zlib; gone when tiny-vcs went to tiny-kernel, as
  * plan_tiny_self_hosting.md says), packs and deltas, the wire protocol,
  * the index, submodules and symbolic links, rename detection, tags,
  * and rebase.
- *
- * The tests, in TinyVCS_test.sh, check the laws: switching to a commit
- * restores its tree exactly; merging disjoint changes is symmetric and
- * keeps both; undo restores the branches; a clone has the same log.
- * They also check diff against GNU patch (applying the diff gives back
- * the new file).
  *
  * Exercises, all cheap because the repository is made of objects that
  * never change and are named by their hash, with its state being one

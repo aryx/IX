@@ -1,14 +1,7 @@
 (* A tiny Tetris, a game for TinyKernel.ml built on
- * TinyLibPlayground.ml keeping the essentials of the game.
- *
- * It was written using only integers, in the subset of ML that both
- * tiny-ml and OCaml accept. Usage:
- *
- *     ./tiny-machine -window tiny-kernel
- *     $ windows                  then a window, and in it:
- *     $ tetris
- *     the arrows: left, right, up turns the piece, down a row;
- *     the space drops it; m the music off and on; q quits
+ * TinyLibPlayground.ml keeping the essentials of the game, using only
+ * integers. The keys: the arrows left and right, up turns the piece,
+ * down a row; the space drops it; m the music off and on; q quits.
  *
  * The rules: the well is 10 by 20 cells. There are seven pieces of four
  * cells, each with its own colour; one piece is falling, and the next
@@ -18,10 +11,7 @@
  *
  * The game is a value of TinyLibPlayground's [game] type: a model and
  * three functions. There is no loop, no clock and no drawing in this
- * file. So the rules can be tested on the host by feeding keys and
- * frames to these functions and printing the well as text
- * (tests/TinyAppTetris_test.sh), and the picture can be tested with
- * TinyKernelGraphics.ml.
+ * file.
  *
  * The parts that are not obvious:
  *

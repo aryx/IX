@@ -1,7 +1,7 @@
 (* TinyLibCore: the standard library of tiny-ml's programs (the kernel,
  * tiny-windows, the applications, the tools), in tiny-ml's ML, a
  * module a file as OCaml's: Stdlib, open in every unit, then Char,
- * List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
+ * Seq, List, String, Bytes, Array, Option, Int64, Filename, Buffer, Printf
  * (what tiny-ml's reading of a format calls: Printf.mli), Marshal
  * (OCaml's format, in the runtime), Hashtbl, and
  * ix's Common and Sha1 (lib_core's and lib_crypto's, which the tools
@@ -21,8 +21,8 @@
  * (old: the compiler carried the files' text, TinyMLPrelude.ml made of
  * them by the build, and compiled them again at each run)
  *
- *     Stdlib  Char  List  String  Bytes  Array  Option
- *        Filename  Buffer  Printf  Hashtbl  Common  Sha1
+ *     Stdlib  Char  Seq  List  String  Bytes  Array  Option  Int64
+ *        Filename  Buffer  Printf  Marshal  Hashtbl  Common  Sha1
  *     (each after those before it: String.map is List.init's)
  *
  * (old: TinyLibCore.ml, a prelude whose dotted names, List.map, were

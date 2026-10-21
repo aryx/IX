@@ -2,8 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* emacs, a program of TinyKernel.ml's: ../../TinyEditorScreen.ml, the
- * editor, run by ../../TinyLibGUI.ml's run_canvas (given to tiny-ml
- * before this file, as one program: the Makefile).
+ * editor, run by ../../TinyLibGUI.ml's run_canvas.
  *
  *     emacs file
  *
@@ -12,9 +11,9 @@
  * is here: the editor of the file on a screen of the window's size,
  * its picture (a white ground, its lines), and a key given to it with
  * those it gives itself (a macro's, M-x's), a save done when it asks.
- * The file is the kernel's, in its memory: put keeps it. OCaml compiles
- * it too, for the host (tiny-emacs, ../../sdl/): its calls TinyCalls's,
- * a window's (the editor opened last, its key and view over the GUI's). *)
+ * The file is the kernel's: on its disk when it has one, else in its
+ * memory (put keeps a copy). OCaml compiles it too, for the host
+ * (tiny-emacs, ../../sdl/): its calls TinyCalls's, a window's (the editor opened last, its key and view over the GUI's). *)
 open TinyCalls
 open TinyLibPlayground
 open TinyLibGUI

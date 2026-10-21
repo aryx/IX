@@ -3,6 +3,9 @@
 
 (* See TinyKernelGraphics.mli *)
 
+(* OCaml builds this file too, on the host, where it is tested without
+ * a machine (tests/TinyKernelGraphics_tests/Host.ml) *)
+
 open TinyMemory
 
 (* a bad message, or no memory: a program's mistake, said to it *)

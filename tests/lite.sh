@@ -19,7 +19,8 @@
 #   programs', the games' frames, the toolchain's
 #   own output on a few files against dune's, a kernel's step and
 #   mini-xv6 booted under mini-qemu.
-# A line for each job, its seconds, the failures' first lines; the
+# A line for each job as soon as it ends, its seconds, the failures'
+# first lines (and their names again at the end); the
 # logs are kept when one fails. What this machine cannot do is said
 # too, a "skip" line with its reason, and is not a failure: mini-xv6
 # without xv6's disk image (~/xv6), mini-9pi's two units that need
@@ -40,12 +41,15 @@ dune build 2> $W/dune.log || { echo "FAIL dune build"; head -20 $W/dune.log; exi
 
 # a job: its name, then the command (its input an empty pipe: tests/all.sh says why)
 names=()
+jobpids=()
 job() {
   local name=$1; shift
   names+=("$name")
   local k=$W/job${#names[@]}
   ( t0=$(now); if true | "$@" > $k.log 2>&1; then s=ok; else s=FAIL; fi
-    echo "$s $(( $(now) - t0 ))" > $k.status ) &
+    # (renamed: the loop at the end never reads it half written)
+    echo "$s $(( $(now) - t0 ))" > $k.st && mv $k.st $k.status ) &
+  jobpids+=($!)
 }
 sh_() { bash -c "$1"; }
 # what is left out here, and why
@@ -214,16 +218,16 @@ else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm6
 [ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs" "$no7"
 job "ix built by ix, a kernel booted" ix
 
-wait
+# each job's line as soon as it ends (so the order is the jobs' ends)
 failures=0
-n=0
-for name in "${names[@]}"; do
-  n=$((n + 1)); k=$W/job$n
+failed=()
+report() {
+  local n=$1 k=$W/job$1 s ms
   # no status: the job's shell itself died, a failure too
   read -r s ms < $k.status 2> /dev/null || { s=FAIL; ms=0; echo "(no status: the job's shell died)" >> $k.log; }
-  printf "%-4s %5.1f s  %s\n" $s $(echo "$ms / 1000" | bc -l) "$name"
+  printf "%-4s %5.1f s  %s\n" $s $(echo "$ms / 1000" | bc -l) "${names[n-1]}"
   if [ $s = FAIL ]; then
-    failures=$((failures + 1))
+    failures=$((failures + 1)); failed+=("${names[n-1]}")
     # its lines that say a failure (Testo's are "[FAIL]", in colors: taken out;
     # not its legend, nor a test's name with "error" in it), then the log's
     # end: in Docker the log itself is gone with the build
@@ -232,8 +236,21 @@ for name in "${names[@]}"; do
     echo "              ... the log's end:"
     grep -av '^\[RUN\]\|^\[PASS\]\|^$\|Path to captured log' $k.txt | tail -20 | cut -c1-160 | sed 's/^/              | /'
   fi
+}
+left=${#names[@]}
+done_=()
+while [ $left -gt 0 ]; do
+  for n in $(seq 1 ${#names[@]}); do
+    [ -n "${done_[n]}" ] && continue
+    # ended: its status written, or its shell gone (then its status looked at again)
+    [ -f $W/job$n.status ] || ! kill -0 ${jobpids[n-1]} 2> /dev/null || continue
+    report $n; done_[n]=1; left=$((left - 1))
+  done
+  [ $left -gt 0 ] && sleep 0.2
 done
+wait
 for k in "${skips[@]}"; do echo "skip           $k"; done
+for k in "${failed[@]}"; do echo "FAIL           $k"; done
 printf "test-lite: %d jobs, %d failure(s), %d skipped, %.0f s\n" ${#names[@]} $failures ${#skips[@]} $(echo "($(now) - $begun) / 1000" | bc -l)
 if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
 [ $failures = 0 ]

@@ -618,28 +618,38 @@ ends a read of the console with nothing read, the end of the input
 for `cat` or `db`. `rawcons(0)` gives them back.
 
 `trace(pid)` gives a descriptor on another process, for a debugger
-([plan_tiny_debugger.md](../plans/plan_tiny_debugger.md)). A write is a
+([plan_tiny_debugger.md](../plans/done/plan_tiny_debugger.md)). A write is a
 command, the numbers in decimal: `b addr` a breakpoint (the word there
 kept, 0 written in its place; it stays until `d addr` removes it), `r`
 the registers, `m addr n` n bytes in hexadecimal (a breakpoint's are
 the word it hides), `w addr v` a word written, `c` the stopped process
 resumed, `s` resumed for one instruction, `y` and `n` a stop at each of
-its calls or not. A read is a line: a command's answer (`ok`, the
+its calls or not, `f` its children traced too (by the same tracer, which
+gets a descriptor on each with `trace(pid)`, their stops kept till then).
+A read is a line: a command's answer (`ok`, the
 registers, the bytes), or the process's stop (`stopped pc break`,
 `illegal word`, `fault addr`, `exec` or `step`; `call n a1 a2 a3`
 before a call, its number and its first three registers, and `ret n r`
 after it) or its end (`exited status`); 0 after its end. A traced
 process that faults is stopped, not killed. `trace(0)` makes the caller
 traced by its parent, stopped at its next `exec`: how a debugger starts
-a program. Two programs of `/bin` are made of it: `trace prog args` (or
-`trace pid`) says the calls of a program as it makes them, a line each
-on its error output (`read(3, "hello\n", 4096) = 6`, strace's way), and
+a program. Two programs of `/bin` are made of it (TinyTracer.mli and
+TinyDebugger.mli): `trace prog args` (or `trace pid`) says the calls of
+a program as it makes them, a line each on its error output
+(`read(5, "hello\n", 4096) = 6`, strace's way), and with `-f` those of
+the processes it forks too, each line after its pid (`[13] exec(...)`);
 `debug prog args` (or `debug pid prog`) is a debugger at the level of
 the instructions, its commands ed's kind: `b addr`, `d addr`, `c`, `s`,
-`n` (over a call), `r`, `bt` (the calls the pc is in), `x addr n`,
-`x/i addr n`, `q`; an address is a number, `pc`, or a function's name
-(`main`, `main+0x14`), from the labels `tiny-linker -s` writes after
-the program's image, as every program of `/bin` has them.
+`n` (over a call, a recursive one's deeper returns run past), `r`, `bt`
+(the calls the pc is in, and an ML function's slots on the value stack:
+integers in decimal, pointers in hexadecimal, `_` not yet set),
+`x addr n`, `x/i addr n`, `q`; an address is a number, `pc`, or a
+function's name (`main`, `main+0x14`), from the labels `tiny-linker -s`
+writes after the program's image, as every program of `/bin` has them.
+`debug -window prog args` is the same in a window: the registers, the
+instructions around the pc and the backtrace after each command, what
+was said and what the program wrote below them, buttons for `s`, `n`
+and `c`, which an empty command line also takes as keys.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

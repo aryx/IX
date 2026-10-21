@@ -38,7 +38,7 @@ of the system:
   line costs its length times the pattern's at most. And
   `TinyLibSymbols.ml`, a program's labels as tiny-linker writes them
   (its map, or after the image), for tiny-prof's names and for
-  tiny-kernel's `debug` (`TinyKernel/user/debug.ml`, beside `trace`).
+  tiny-kernel's `debug` (`TinyDebugger.ml`, beside `trace`).
   The host's programs, when ix builds them, are on m-IX's
   `lib_core/`.
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two
@@ -117,6 +117,8 @@ on.
 | `TinyAppCalculator.ml` | `calc` (tiny-calc) | none (`examples/Gui7Counter.ml` and the other 7GUIs are lib_gui's small programs) | the calculator of four operations: a number shown, a number kept, the operation that awaits; a key is its button's message |
 | `TinyAppTemperature.ml` | `temp` | `examples/Gui7Temperature.ml` | two fields, each the other's answer: the model is the two texts, not a temperature, since half of what is typed is not a number; the message says which field was typed in, so nothing echoes |
 | `TinyBrowser.ml` | `www` (tiny-www; `www OCaml`, with its links and pictures, its menus and its address field on `TinyLibGUI.ml`: [`plan_tiny_browser.md`](../docs/plans/done/plan_tiny_browser.md)) | `browsers/` (mini-netscape, mini-lynx) | a page is read once, as it arrives, and turned directly into lines; there is no document tree and no style sheet, and the meaning of a tag is a row in a table; a table's cells are kept until the widths of its columns are known |
+| `TinyDebugger.ml` | `debug` (`debug -window` on `TinyLibGUI.ml`) | none in m-ix; principia's `debuggers/` (db, acid; libmach) | the program stopped, looked at and resumed by text lines on one descriptor (`trace(pid)`), the kernel keeping the breakpoints; a step by the timer's interrupt after one instruction, not by decoding where the next one is; the names a.out's text lines (`tiny-linker -s`); the backtrace read from the prologues, an ML function's value-stack slots with it; gdb's letters; [`plan_tiny_debugger.md`](../docs/plans/done/plan_tiny_debugger.md) |
+| `TinyTracer.ml` | `trace` (`trace -f`, the children too) | none in m-ix; principia's `debuggers/tracers/` (ratrace), strace | a stop before each system call and one after it, so the kernel keeps and decodes nothing: the tracer reads an exec's path before and a read's bytes after; a table of the calls and their arguments' kinds |
 | `TinyVCS.ml` | `vcs` (tiny-vcs) | `version_control/` (mini-git; git9) | git's objects, trees and DAG; the repository as one hash (an operation log, so every command is atomic and undoable); no staging area; merges that always succeed, conflicts committed as data |
 
 The graphical programs (`./tiny-machine -window tiny-kernel`, then

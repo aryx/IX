@@ -9,8 +9,10 @@
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
 #                     ^C, M-x and a macro; office's page, a text and a sheet, saved,
 #                     and a page not saved left by File's Quit twice; troff's text and web page of
-#                     /examples/report.ixd), trace's of cat and debug's of
-#                     ping (stopped in write, bt, a step), then the network (ping,
+#                     /examples/report.ixd), trace's of cat and of rc's
+#                     pipeline (-f), debug's of ping (stopped in write,
+#                     bt, a step) and of trace (an ML backtrace, the
+#                     value stack's slots), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost and the file whole anyway), against
@@ -30,7 +32,10 @@
 #                     (calc, on ../TinyLibGUI.ml, in a window: 12 * 3 = by its
 #                     buttons, + 6 by the keys, a press taken back, a
 #                     button held) and temp.events (temp, its two
-#                     fields typed in, in a window) and emacs.events
+#                     fields typed in, in a window) and debug.events
+#                     (debug -window ping in a window: a breakpoint, c,
+#                     s, the next and continue buttons, to its end) and
+#                     emacs.events
 #                     (emacs f in a window: two lines typed, a word
 #                     killed and another typed, saved, quit, cat f);
 #                     the office's (office, officesheet, officedraw,
@@ -218,8 +223,10 @@ I_Office = $(GUI) TinyOffice
 I_Troff = $(GUI) TinyOffice TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(GUI) TinyBrowser
-I_Trace = TinyCalls
-I_Debug = TinyCalls TinyMachineISA TinyLibSymbols
+I_TinyTracer = TinyCalls
+I_TinyDebugger = $(GUI) TinyMachineISA TinyLibSymbols
+I_Trace = TinyCalls TinyTracer
+I_Debug = $(I_TinyDebugger) TinyDebugger
 # each unit's file
 F_TinyCalls = libml/TinyCalls.ml
 F_TinyLibSystem = libml/TinyLibSystem.ml
@@ -240,7 +247,7 @@ F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
 UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyML \
-  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
+  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
 $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(O)/lib/Stdlib.tm $(TMLBIN)
@@ -278,7 +285,7 @@ UNITS_rc = $(I_TinyShell) TinyShell
 UNITS_utils = $(I_TinyUtilities) TinyUtilities
 UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
 UNITS_bigmem = Bigmem
-UNITS_trace = TinyCalls Trace
+UNITS_trace = $(I_Trace) Trace
 UNITS_debug = $(I_Debug) Debug
 UNITS_prof = $(I_TinyProfiler) TinyProfiler
 UNITS_db = $(I_TinyDatabase) TinyDatabase
@@ -470,7 +477,7 @@ run: $(O)/boot.img
 
 # the recorded sessions, each against its screen's sum; the browser's
 # read ../tests/www's pages
-SCREENS = paint windows nested play tetris calc temp emacs emacsmx emacscolors office officesheet officedraw officepaint \
+SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
 	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory
 # What changes with the programs' code and the kernel's timing, masked in
 # check.out before it is compared: a program's size in /bin (ls -l is
@@ -560,10 +567,11 @@ $(O)/check/25.out: $(O)/boot.img
 	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 # trace and debug (plan_tiny_debugger.md): cat's calls, its output kept
-# apart; ping stopped in write (its labels after its image: -s), the
-# backtrace, a step from the breakpoint, to its exit
+# apart, a pipeline's processes (-f); ping stopped in write (its labels
+# after its image: -s), the backtrace, a step from the breakpoint, to
+# its exit; an ML program's backtrace (trace's), with its slots
 $(O)/check/26.out: $(O)/boot.img
-	printf 'rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

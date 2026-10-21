@@ -19,6 +19,14 @@ Its twins: Plan 9's `db` and `acid`, which control a process through
 which a debugger can have for free because it is the CPU. Here the
 debugger is not the CPU: it is a process that controls another one.
 
+**Status: done (2026-10-21)**, steps 1 to 8: `debug` (TinyDebugger.ml,
+`-window` too) and `trace` (TinyTracer.ml, `-f` too) on tiny-kernel,
+in make check (session 26, and `debug.events`'s window). What is left:
+`make self` was not run with them (its self.expected lists the
+programs and their `ld -s` lines); `debug pid` and `trace pid` not
+tried (sh runs nothing in the background); the value stack's slots are
+words, not ML values (their types would be needed: section 4).
+
 ## 1. The idea: stop, look, resume, by messages
 
 ```
@@ -294,7 +302,8 @@ exercises the same messages.
    kernel's `run` looks at the trace first), every screen the same.
 3. **debug with addresses only.** The commands of section 3 but `bt`,
    over the target. It is tested on the host with TinyMachineCPU, and
-   then on tiny-kernel. **Done (2026-10-21)**: `user/debug.ml`, about
+   then on tiny-kernel. **Done (2026-10-21)**: `user/debug.ml` (now
+   TinyDebugger.ml), about
    230 lines, `/bin/debug`; TinyMachineISA's `decode` and `print` for
    the listing, `n` a breakpoint after a `jal` or `jalr` to lr (in a
    recursive function it may stop at a deeper call's return: no
@@ -342,13 +351,45 @@ exercises the same messages.
    `syscall` given the number; a call let in by `c` is made when the
    process next runs (not in the tracer's write: `command` comes
    before `syscall`); a trace let go while stopped before a call puts
-   the pc back on its `sys`. `user/trace.ml`, about 170 lines; mltests's
+   the pc back on its `sys`. `user/trace.ml` (now TinyTracer.ml), about
+   170 lines; mltests's
    `traces` checks `call` and `ret`; make check's session traces `cat`
    (and `cat > g`, its output apart). The plan's example, as it came:
    `read(5, "", 4096) = 0` (strace's `""` for a read of nothing, not
    its buffer's address, so that the session's text stays the same).
    Not tried: `trace pid` and `debug pid` (sh runs nothing in the
    background); `make self`, whose self.expected lists the programs.
+
+8. **The rest** (the author: "let's do 2, 3, 4, and 5", of: an sp
+   check for `n`, `trace -f`, the value stack in `bt`, a window;
+   "maybe debug can also have a -window argument"). **Done
+   (2026-10-21)**:
+   - `n`'s stop after a call is run past while its sp is lower than at
+     the call: a recursive function's deeper call returns to the same
+     place first (checked on trace's `line`, whose `go` recurses: a
+     plain breakpoint there stops two calls deeper, `n` in the same
+     frame).
+   - `trace -f`: the kernel's `f`, a traced process's forks traced by
+     the same tracer, with its stops (`sys_fork`, `{ t with ... }`);
+     trace opens a descriptor on each child when its fork returns, and
+     waits on all of them with `ready`, a `[pid]` before each line.
+     make check traces `rc -c 'cat f | wc'`.
+   - `bt`'s ML frames: an ML function's third instruction is
+     `addi r12, r12, v`, its frame on the value stack; its slots follow
+     its name (integers in decimal, pointers in hexadecimal, `_` a
+     slot not yet set), r12's at the first frame in ML, `ml_vsp`'s when
+     the pc is in C. make check stops `trace` in `u_write`.
+   - `debug -window`: run_canvas's picture (a bar of buttons, from
+     TinyLibGUI's `place`; the registers, six instructions, five frames,
+     the log, the command line); the program's output and errors on a
+     pipe, read while waiting for its stops. `debug.events` records
+     one, its screen's sum in make check.
+   - The code moved to `tiny/TinyDebugger.ml` and `TinyTracer.ml`,
+     each with a `.mli` that says how it relates to Plan 9's db,
+     acid and ratrace (read in principia's `debuggers/` for that) and
+     what is ours; `user/debug.ml` and `user/trace.ml` one line each
+     (the author: "the code under TinyKernel/user/*.ml to remain
+     small").
 
 After step 1, a program that would have been killed can be looked at.
 After step 5, debug answers the question a crash raises: where, and called

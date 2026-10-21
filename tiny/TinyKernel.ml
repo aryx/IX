@@ -188,7 +188,8 @@ and voice = { mutable ahead : int }
  * it is stopped before or let in (-1: none), the call whose end it
  * waits for, to stop then (-1: none); whether it runs one instruction
  * and stops (a step), and the breakpoint it runs the word of, the 0
- * written again after (-1: none) *)
+ * written again after (-1: none); whether its children are traced too
+ * (trace -f) *)
 and trace = {
   tpid : int;
   tracer : int;
@@ -200,6 +201,7 @@ and trace = {
   mutable ret : int;
   mutable step : bool;
   mutable over : int;
+  mutable follow : bool;
 }
 
 (* The image's files (and /dev), and the tree a path starts from. They
@@ -704,7 +706,8 @@ let hex_bytes l =
  * the breakpoint removed, its word put back; r, the registers (r1 to
  * r15, then the pc); m addr n, n bytes in hexadecimal (1024 at most; a
  * breakpoint's are the word it hides); w addr v, a word written; y and
- * n, a stop at each call or not (trace); c, the stopped process
+ * n, a stop at each call or not (trace); f, the children it forks
+ * traced too, by the same tracer (trace -f); c, the stopped process
  * resumed; s, resumed for one instruction. From a breakpoint, c and s
  * run its word, then write the 0 again (run); from a call, they let
  * the call in. Bad if the command is none of these, or its address
@@ -750,6 +753,7 @@ let command t q words =
       say "ok"
   | [ "y" ], _ -> t.calls <- true; say "ok"
   | [ "n" ], _ -> t.calls <- false; say "ok"
+  | [ "f" ], _ -> t.follow <- true; say "ok"
   | [ ("c" | "s") as c ], Stopped ->
       let pc = reg q 16 in
       (match List.assoc_opt pc t.stops with
@@ -888,8 +892,10 @@ and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot and a partition of the parent's size, the partition
  * and the frame copied (the child's r1 0), the descriptors shared; the
- * child is not traced, so the words under its parent's breakpoints are
- * put back in its copy *)
+ * child has none of its parent's breakpoints, their words put back in
+ * its copy. It is traced by its parent's tracer when the parent's
+ * children are (f), stopping at its calls if the parent does: the
+ * tracer's trace(pid) gives the descriptor, its stops kept till then *)
 let sys_fork p =
   let s = free_slot () in
   let b = room p.size (-1) in
@@ -901,7 +907,12 @@ let sys_fork p =
   k_copy b p.base p.size;
   k_copy (frame s) (frame p.slot) 68;
   (match p.traced with
-   | Some t -> List.iter (fun (a, w) -> poke (b + a) w) t.stops
+   | Some t ->
+       List.iter (fun (a, w) -> poke (b + a) w) t.stops;
+       if t.follow then
+         q.traced <- Some { t with tpid = q.pid; stops = []; said = [];
+                                   watchers = 0; call = -1; ret = -1;
+                                   step = false; over = -1 }
    | None -> ());
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
@@ -1218,7 +1229,8 @@ let sys_trace p =
   let make q tracer =
     let t =
       { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0;
-        calls = false; call = -1; ret = -1; step = false; over = -1 } in
+        calls = false; call = -1; ret = -1; step = false; over = -1;
+        follow = false } in
     q.traced <- Some t;
     t in
   if reg p 1 = 0 then begin

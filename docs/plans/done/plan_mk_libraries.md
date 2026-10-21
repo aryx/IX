@@ -1,14 +1,17 @@
 # Plan: libraries in the mkfiles, as xix's
 
-**Status**: steps 1 and 2 done (2026-10-20), step 3 but
-version_control (2026-10-21): 21 libraries (lib_crypto,
+**Status**: done (steps 1 and 2 2026-10-20, step 3 2026-10-21): 21
+libraries (lib_crypto,
 lib_compression, lib_networking and its netcode, lib_graphics,
 lib_playground and its apis, platforms and three platforms,
 lib_physics, lib_juice, lib_gui, lib_audio; browsers/html, css,
 javascript, engine, webapi); networking's programs, mini-lynx,
-mini-netscape, mini-node, mini-troff, mini-man, lib_crypto's and the
-engine's tests and every program of games/mkgames's link them. Left:
-version_control, with tiny/'s session.
+mini-netscape, mini-node, mini-troff, mini-man, mini-git and its two,
+tiny-build, tiny-vcs, lib_crypto's and the engine's tests and every
+program of games/mkgames's link them. Left: mini-man still takes
+mini-troff's own units (troff's could be a library too); programs whose
+units come from another program's directory (WITH in mkgames: scheme,
+formula, office...) are not libraries.
 
 The author, 2026-10-20, reading netscape's mkfile: "this long list of
 modules ... why not use libraries? that collect together a set of
@@ -119,7 +122,7 @@ A program's (networking's):
    sessions' screens the same: wolf and drscheme among them). Found: mk makes `${DIRS:%=-I %}`
    `-Icore` (goken's mk too): mklib says `-I ./%`.
 3. **mkprog's programs, troff and man, the browsers.** Done
-   2026-10-21 but version_control. mkprog includes mklibs: a program
+   2026-10-21. mkprog includes mklibs: a program
    that sets LIBDIRS links them (its own LIBI kept as PROGI; mklibs's
    LIBA by a loop, which of no library is nothing, where
    `${LIBDIRS:%=...}` gave the name). mini-troff and mini-man link
@@ -139,6 +142,18 @@ A program's (networking's):
    on a page and on https://example.com, every mkprog program built
    again and then up to date, the Plan 9 builds of troff, man, lynx,
    node, netscape and boxes.
-   Left: version_control (Sha1, Zlib) with lib_crypto and
-   lib_compression, and tiny/mkfile, which links version_control's
-   Sha1 object: changed with tiny/'s session, which is changing Sha1.
+   version_control the same day (the author chose to change
+   tiny/mkfile with it): mini-git, mini-diff and mini-merge3 link
+   lib_crypto and lib_compression, where they compiled Sha1 and Zlib;
+   tiny-build and tiny-vcs link lib_crypto's archive, where they took
+   version_control's Sha1 object. Checked: TinyBuildSystem_test.sh (21
+   ok) and TinyVCS_test.sh (0 failures) on mini-mk's builds, mini-git's
+   log of repo.sh's repository, its repack accepted by git fsck
+   --strict and verify-pack, the same objects. (version_control is not
+   built for Plan 9: Proto's Unix.socketpair.) The top mkfile: tiny
+   no longer after version_control (that line made version_control a
+   second time beside the loop's). The whole top mini-mk: 1 min 22 s,
+   then nothing made in a second one, which still took 33 s: each
+   program asks each of its libraries' mkfiles, and each library its
+   NEEDS' dirs (to look at, if it matters: a library's dirs asked once
+   a build).

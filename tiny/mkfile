@@ -1,9 +1,9 @@
 # The tiny programs that run on the host, built by ix's tools: each one
 # file (and for the CPUs their library's, for tiny-vcs SHA-1 and zlib),
 # with its start and its link, on m-ix's library: lib_core/'s standard
-# library and its commons/ (with mini-git's SHA-1 and zlib, compiled
-# there). TinyKernel.ml is not here: tiny-ml compiles it, for
-# tiny-machine. What is built is under _mk/$O/tiny.
+# library and its commons/, and lib_crypto's SHA-1 (mkfiles/mklibs).
+# TinyKernel.ml is not here: tiny-ml compiles it, for tiny-machine.
+# What is built is under _mk/$O/tiny.
 # (old: on arm64 by default on TinyLibHost/, t-ix's trimmed copy of
 # lib_core/ with its own runtime and C library, LIB=core for lib_core;
 # gone with plan_tiny_self_hosting.md's step 2: it had shown what of
@@ -11,7 +11,8 @@
 TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/tiny
-V=$B/version_control
+LIBDIRS=lib_crypto
+<$TOP/mkfiles/mklibs
 # (the host's TinyLibSystem first: TinyKernel/libml/'s is tiny-ml's)
 INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
@@ -50,9 +51,9 @@ $D/TinyMkfs.$O: TinyKernel/steps/t6/TinyMkfs.ml
 	$ML $INCLUDES -o $target TinyKernel/steps/t6/TinyMkfs.ml
 
 $D/TinyBuildSystem.$O: $D/TinyLibSystem.$O TinyBuildSystem.ml
-$D/tiny-build: $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
+$D/tiny-build: $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $LIBS
 	$START Sha1 TinyLibSystem TinyBuildSystem Std_exit -o $D/TinyBuildSystem.start.$O
-	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
+	$LINK -o $target $D/TinyBuildSystem.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyBuildSystem.$O $STDEND
 # (the shell's system, the host's: TinyKernel/host/TinyLibSystem.ml;
 # TinyKernel/libml/TinyLibSystem.ml is tiny-machine's, tiny-ml's to
 # compile. Not beside TinyShell.ml: mini-ml looks for a module in the
@@ -93,9 +94,9 @@ $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
 	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
 	$LINK -o $target $D/TinyDatabase.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyDatabase.$O $STDEND
 $D/TinyVCS.$O: $D/TinyLibSystem.$O TinyVCS.ml
-$D/tiny-vcs: $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
+$D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 	$START Sha1 TinyLibSystem TinyVCS Std_exit -o $D/TinyVCS.start.$O
-	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $V/Sha1.$O $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
+	$LINK -o $target $D/TinyVCS.start.$O $STDOBJS $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $STDEND
 $D/tiny-cpu: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyMachineISA TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND

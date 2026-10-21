@@ -13,7 +13,7 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 # objects; a program asks its libraries' mkfiles too, mkfiles/mklibs,
 # which side by side would make one archive twice at once), then the rest side by side, each directory a mini-mk; the
 # two that take another's objects after it (mini-ar the linker's,
-# tiny-vcs mini-git's SHA-1 and zlib, mini-bc mini-dc's machine, mini-man mini-troff's units, and the
+# mini-bc mini-dc's machine, mini-man mini-troff's units, and the
 # playground's programs of apps/ and examples/ the games' libraries: games/mkgames). NPROC is each mini-mk's own jobs.
 # (old: one directory after the other, 3 minutes:
 #   for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done
@@ -22,7 +22,7 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
 FIRST=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
  lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/ppm assembler
-AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
+AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
 all:V:
 	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done
 	pids=
@@ -31,7 +31,6 @@ all:V:
 		(cd $d && mini-mk O=$O) & pids="$pids $!"
 	done
 	(cd linker && mini-mk O=$O && cd tools && mini-mk O=$O) & pids="$pids $!"
-	(cd version_control && mini-mk O=$O && cd ../tiny && mini-mk O=$O) & pids="$pids $!"
 	(cd utilities/calc/dc && mini-mk O=$O && cd ../bc && mini-mk O=$O) & pids="$pids $!"
 	(cd typesetting/troff && mini-mk O=$O && cd ../man && mini-mk O=$O) & pids="$pids $!"
 	(cd games && mini-mk O=$O && cd ../editors/drscheme && mini-mk O=$O && cd ../../examples && mini-mk O=$O && cd ../apps/office && mini-mk O=$O) & pids="$pids $!"

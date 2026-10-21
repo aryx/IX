@@ -4,4 +4,6 @@
  * tiny-ml's has 31) *)
 type t
 val string : string -> t
+(* the digest of the pieces [next ()] gives until "", none kept *)
+val reads : (unit -> string) -> t
 val to_hex : t -> string

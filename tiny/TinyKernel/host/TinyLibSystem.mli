@@ -146,6 +146,10 @@ val time : unit -> int
 (* nothing done for so many milliseconds *)
 val sleep : int -> unit
 
+(* a clock in milliseconds, from some start (the boot on tiny-kernel, 2.5
+ * at a time, its ticks): for a time taken, the difference of two *)
+val millis : unit -> int
+
 (*****************************************************************************)
 (* Descriptors *)
 (*****************************************************************************)

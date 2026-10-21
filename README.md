@@ -210,7 +210,7 @@ builds the same files with OCaml to try them.
 
 **The toolchain**, in tiny-kernel's `/bin` too (`cc`, `ml`, `as`,
 `ld`), where each makes what the host's makes, byte for byte;
-[plan_tiny_self_hosting.md](docs/plans/plan_tiny_self_hosting.md)'s
+[plan_tiny_self_hosting.md](docs/plans/done/plan_tiny_self_hosting.md)'s
 step 8 has t-IX built there.
 
 | program | what it is | lines | mini twin | file |

@@ -1105,32 +1105,20 @@ sha_block(uchar *p)
 	sha_h[4] = sha_h[4] + e;
 }
 
-value
-ml_sha1_string(value s)
+/* the end: the rest of n bytes (fewer than 64), a 1 bit, zeros, the
+ * length in bits: one block or two; the digest's 20 bytes */
+static value
+sha_end(uchar *p, value rest, value n)
 {
-	value n;
 	value i;
-	value rest;
 	value total;
 	value bits;
 	value r;
-	uchar *p;
 
-	sha_h[0] = 0x67452301;
-	sha_h[1] = 0xEFCDAB89;
-	sha_h[2] = 0x98BADCFE;
-	sha_h[3] = 0x10325476;
-	sha_h[4] = 0xC3D2E1F0;
-	n = length(s);
-	p = (uchar*)s;
-	for(i = 0; i + 64 <= n; i = i + 64)
-		sha_block(p + i);
-	/* the rest, a 1 bit, zeros, the length in bits: one block or two */
-	rest = n - i;
 	for(total = 0; total < 128; total++)
 		sha_last[total] = 0;
 	for(total = 0; total < rest; total++)
-		sha_last[total] = p[i + total];
+		sha_last[total] = p[total];
 	sha_last[rest] = 128;
 	total = rest + 9 <= 64 ? 64 : 128;
 	bits = n * 8;
@@ -1149,4 +1137,101 @@ ml_sha1_string(value s)
 		((uchar*)r)[4 * i + 3] = sha_h[i] & 255;
 	}
 	return r;
+}
+
+static void
+sha_start(void)
+{
+	sha_h[0] = 0x67452301;
+	sha_h[1] = 0xEFCDAB89;
+	sha_h[2] = 0x98BADCFE;
+	sha_h[3] = 0x10325476;
+	sha_h[4] = 0xC3D2E1F0;
+}
+
+value
+ml_sha1_string(value s)
+{
+	value n;
+	value i;
+	uchar *p;
+
+	sha_start();
+	n = length(s);
+	p = (uchar*)s;
+	for(i = 0; i + 64 <= n; i = i + 64)
+		sha_block(p + i);
+	return sha_end(p + i, n - i, n);
+}
+
+/* a digest made piece by piece (Sha1.reads: a file is not read whole
+ * to be digested, tiny-build's boot.img of 8 MB in its 16): its context
+ * a string of 96 bytes, the five words, the length so far, then the
+ * bytes of the block begun */
+value
+ml_sha1_init(value u)
+{
+	value c;
+	value i;
+
+	c = string_alloc(96);
+	sha_start();
+	for(i = 0; i < 5; i++)
+		((value*)c)[i] = sha_h[i];
+	((value*)c)[5] = 0;
+	return c;
+}
+
+value
+ml_sha1_update(value c, value s)
+{
+	value *w;
+	uchar *buf;
+	uchar *p;
+	value n;
+	value i;
+	value have;
+
+	w = (value*)c;
+	buf = (uchar*)c + 32;
+	for(i = 0; i < 5; i++)
+		sha_h[i] = w[i];
+	n = length(s);
+	p = (uchar*)s;
+	have = w[5] & 63;
+	w[5] = w[5] + n;
+	i = 0;
+	while(have > 0 && have < 64 && i < n){
+		buf[have] = p[i];
+		have = have + 1;
+		i = i + 1;
+	}
+	if(have == 64){
+		sha_block(buf);
+		have = 0;
+	}
+	if(have == 0){
+		while(i + 64 <= n){
+			sha_block(p + i);
+			i = i + 64;
+		}
+		while(i < n){
+			buf[have] = p[i];
+			have = have + 1;
+			i = i + 1;
+		}
+	}
+	for(i = 0; i < 5; i++)
+		w[i] = sha_h[i];
+	return 1;
+}
+
+value
+ml_sha1_final(value c)
+{
+	value i;
+
+	for(i = 0; i < 5; i++)
+		sha_h[i] = ((value*)c)[i];
+	return sha_end((uchar*)c + 32, ((value*)c)[5] & 63, ((value*)c)[5]);
 }

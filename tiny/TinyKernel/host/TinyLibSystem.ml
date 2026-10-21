@@ -79,6 +79,7 @@ let getcwd (caps : < Cap.readdir; .. >) = FS.getcwd caps ()
 (* (946684800: 2000-01-01 in Unix's seconds) *)
 let time () = int_of_float (Unix.time ()) - 946684800
 let sleep ms = Unix.sleepf (float_of_int ms /. 1000.0)
+let millis () = int_of_float (Unix.gettimeofday () *. 1000.0)
 
 (*****************************************************************************)
 (* Descriptors *)

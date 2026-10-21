@@ -5,11 +5,13 @@
 
 (* -h: the usage, and a Buildfile's five kinds of lines, by example, as
  * it runs *)
-let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [target ...]
+let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]
 
 The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
-.tiny-build). -n: the recipes printed, not run; -g: the graph, for dot.
+.tiny-build). -n: the recipes printed, not run; -g: the graph, for dot;
+-t: each recipe's time as it ends, then the times by kind of target (bin/*, ml/*.tm),
+and what was not a recipe's (the digests, the graph).
 
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment
@@ -239,7 +241,9 @@ let read_file caps file = if exists file then Some (TinyLibSystem.read_file caps
  * trusts the date alone. A digest is recorded only for a file dated
  * before the second it was read in: one written again within that
  * second, at the same size, would have the same date and another
- * digest (git's "racy" files).
+ * digest (git's "racy" files). The file is digested as it is read, 4
+ * KB at a time (old: read whole: boot.img, 8 MB, put tiny-kernel's
+ * tiny-build, in 16, out of memory).
  * (old: every file read at each run, twice, its digest computed again:
  * minutes of tiny-kernel's for its own build; older: Digest's MD5,
  * where SHA-1 was in t-ix already, tiny-vcs's) *)
@@ -257,7 +261,9 @@ let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
               let now = TinyLibSystem.time () in
-              let d = Sha1.to_hex (Sha1.string (TinyLibSystem.read_file caps file)) in
+              let fd = TinyLibSystem.open_in caps file in
+              let d = Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096)) in
+              TinyLibSystem.close fd;
               if date < now then Hashtbl.replace known file (size, date, d) else Hashtbl.remove known file;
               Some d
         end
@@ -277,6 +283,9 @@ let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >) (vars : (st
 
 let stampfile = ".tiny-build"
 
+(* the recipes run, each with its time in milliseconds (-t) *)
+let times : (string * int) list ref = ref []
+
 (* the stamps and the digests known, written to .tiny-build: after each
  * recipe that ends well, so that a build stopped (killed, the machine
  * halted) keeps what it made (old: at the end only: tiny-kernel's
@@ -291,9 +300,9 @@ let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
 
 let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap.env; Cap.stdout; Cap.stderr; .. >)
     (vars : (string, string list) Hashtbl.t) (stamps : (string, string) Hashtbl.t)
-    jobs dry (root : node) : bool =
+    jobs dry timed (root : node) : bool =
   let digests = Hashtbl.create 101 in    (* the nodes done: their digest *)
-  let running = Hashtbl.create 7 in      (* pid -> node *)
+  let running = Hashtbl.create 7 in      (* pid -> node, its start *)
   let ran = ref 0 and failed = ref false in
   (* the Buildfile's variables, then the environment's (TinyLibSystem.shell's;
    * old: the environment's first) *)
@@ -318,7 +327,7 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
       TinyLibSystem.print caps (expand true shown r.text ^ "\n");
       incr ran;
       if dry then Hashtbl.replace digests n.name ("dry " ^ n.name)
-      else Hashtbl.replace running (start caps (own @ env) r.text) n
+      else Hashtbl.replace running (start caps (own @ env) r.text) (n, TinyLibSystem.millis ())
   in
   let wait () =
     match TinyLibSystem.wait_any caps with
@@ -326,8 +335,14 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     | Some (pid, st) ->
     match Hashtbl.find_opt running pid with
     | None -> ()
-    | Some n ->
+    | Some (n, began) ->
         Hashtbl.remove running pid;
+        (* (said at once: a build that fails later keeps them) *)
+        if timed then begin
+          let ms = TinyLibSystem.millis () - began in
+          times := (n.name, ms) :: !times;
+          TinyLibSystem.print caps (Printf.sprintf "%8d ms  %s\n" ms n.name)
+        end;
         (* (its file made again: its digest too) *)
         if st = "" then (Hashtbl.remove file_digests n.name; Hashtbl.replace stamps n.name (stamp n); finish n; save caps stamps)
         else (TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s failed\n" n.name); failed := true)
@@ -352,11 +367,29 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
 (* Entry point *)
 (*****************************************************************************)
 
-let usage = "usage: tiny-build [-f file] [-j N] [-n] [-g] [target ...]   (-h: how)"
+let usage = "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
 exception Bad of string
 
+(* -t, at the end: the times by kind of target: its
+ * directory and its extension (bin/*, ml/*.tm, *.o), and the rest of the
+ * run's, which was no recipe's *)
+let report caps total =
+  let kind name =
+    let dir = Filename.dirname name and base = Filename.basename name in
+    let ext = match String.rindex_opt base '.' with Some i -> String.sub base i (String.length base - i) | None -> "" in
+    (if dir = "." then "" else dir ^ "/") ^ "*" ^ ext in
+  let by = Hashtbl.create 17 in
+  List.iter (fun (name, ms) ->
+    let n, t = match Hashtbl.find_opt by (kind name) with Some x -> x | None -> 0, 0 in
+    Hashtbl.replace by (kind name) (n + 1, t + ms)) (List.rev !times);
+  let rows = List.sort (fun (_, (_, a)) (_, (_, b)) -> compare b a) (Hashtbl.fold (fun k v acc -> (k, v) :: acc) by []) in
+  List.iter (fun (k, (n, t)) -> TinyLibSystem.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
+  let recipes = List.fold_left (fun acc (_, ms) -> acc + ms) 0 !times in
+  TinyLibSystem.print caps (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n" (total - recipes) total)
+
 let run (caps : Cap.all_caps) : int =
-  let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false in
+  let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false and timed = ref false in
+  let began = TinyLibSystem.millis () in
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
   let bad o = raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage)) in
@@ -365,6 +398,7 @@ let run (caps : Cap.all_caps) : int =
     | "-j" :: n :: rest -> (match int_of_string_opt n with Some n -> jobs := n | None -> bad ("-j " ^ n)); options rest
     | "-n" :: rest -> dry := true; options rest
     | "-g" :: rest -> dot := true; options rest
+    | "-t" :: rest -> timed := true; options rest
     | o :: _ when o <> "" && o.[0] = '-' -> bad o
     | t :: rest -> targets := !targets @ [ t ]; options rest
     | [] -> ()
@@ -399,9 +433,10 @@ let run (caps : Cap.all_caps) : int =
           TinyLibSystem.print caps "}\n";
           true
         end
-        else build caps vars stamps (max 1 !jobs) !dry root) targets
+        else build caps vars stamps (max 1 !jobs) !dry !timed root) targets
     in
     if not !dry then save caps stamps;
+    if !timed then report caps (TinyLibSystem.millis () - began);
     if ok then 0 else 1
   with Error msg -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg); 1
 

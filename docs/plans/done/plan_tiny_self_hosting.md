@@ -22,7 +22,7 @@ have a proper TinyAssembler and TinyLinker and separate compilation";
 too". Section 6 is those three.
 
 This revisits two decisions of 2026-10-11 recorded in
-[notes_tiny_spirit.md](../notes_tiny_spirit.md): arm64 kept (its §3) and
+[notes_tiny_spirit.md](../../notes_tiny_spirit.md): arm64 kept (its §3) and
 TinyLibHost kept (its §2). That note already said that, if arm64 were
 ever revisited, its pieces leave together; they do here.
 
@@ -725,6 +725,45 @@ and its library is TinyLibCore/.
     library, the units and mains it reached and sh, rc and emacs, each
     the host's byte for byte; then ld ran out of memory at office (16
     MB, now 32). The whole build on the final tree: below.
+  - **What the whole builds found** (the author: "What other things
+    we could do to significantly reduce this 5h 30 time?"): SHA-1 in
+    the runtime, in C (tiny-build digests every file, and in ML, a
+    word as two halves of 16, it ran at 2.6 KB a second: about 3.8 of
+    the 5.5 hours); interfaces marshalled with `No_sharing` (which of
+    two equal names is one string depends on a table's order, and 3 of
+    the 40 interfaces differed from the host's; lib_core's Marshal
+    honours it too, its reader no more out of bounds); as 32 MB
+    (TinyML.tm's assembly); tiny-build's stamps saved after each recipe
+    (a build killed began again from nothing); a file digested as it
+    is read, 4 KB at a time (`Sha1.reads`: tiny-build, in 16 MB, read
+    boot.img's 8 MB whole and ran out of memory after the image and in
+    every build after it: bugs/ix.md); `-t`, each recipe's time.
+  - **The whole build on tiny-kernel** (2026-10-20, the tree of
+    a2da2e93): the 29 programs and the image in about 2 h 16 of the
+    host's time (the session 2 h 36 with the builds after it); the
+    image read off the disk the host's byte for byte (7,938,333
+    bytes), and of the 261 files it made 258 the host's, the 3 others
+    calc's, changed by the test on purpose. Its later builds stopped
+    on the digest's out of memory (above). With the fix, `make self`
+    whole (2026-10-21, 2 h 57 of the host's time): the image again the
+    host's byte for byte (8,001,567 bytes); the comment made the unit
+    compiled again and the image made again (the sources are in it),
+    nothing else; calc's line its unit compiled, assembled, calc linked
+    and the image made; then "boot.img is up to date". `self.expected`
+    recorded from it.
+  - **Where the time goes** (`build -t`, 2026-10-21, tiny-kernel's
+    clock: 3 h 10 of the machine's, 2 h 20 of the host's): the links
+    33% (29, ml's 646 s, troff's 420), the assembly 31% (TinyML.o 357
+    s, twice its compilation), tiny-ml's compilations 16%, tiny-build
+    itself between recipes 12% (23 minutes: digests, the graph, forks),
+    the two images 7%. tiny-ml is no longer the first cost: ld and as
+    are, each link reading the library's 16 objects again.
+  - **Left**: as and ld made faster, by their root causes (to be
+    profiled first, `prof` on one link); tiny-build's 23 minutes;
+    several cores (plan_tiny_multicore.md); tetris's screen and the two
+    sounds' sums, which make check records again at most builds; make
+    check's `printf '\x27'` lines, which need bash (`make check
+    SHELL=/bin/bash`: dash's printf leaves them).
   - **Bugs** (bugs/ix.md): a name of more than 19 bytes hung `ls`;
     exec's arguments past 15 dropped unsaid; the arguments' ending 0.
   - **Checked**: every tiny/tests/*_test.sh (TinyUtilities' 166 cases
@@ -737,3 +776,7 @@ and its library is TinyLibCore/.
   - **Lines**: t-IX 21,003 (+658 since step 7: Marshal's C, the dates,
     stat, the Printf expansion, the tables); README's budget: 4,000
     left. Several cores: plan_tiny_multicore.md, written.
+- 2026-10-21: **done**, the eight steps: t-IX on tiny-machine alone,
+  and tiny-kernel building its own image, the host's byte for byte
+  (`make self`). What is left is step 8's **Left** above: as and ld
+  faster, tiny-build's time between recipes, several cores.

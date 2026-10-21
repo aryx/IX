@@ -28,18 +28,38 @@ let blocks (h : int array) (b : Bytes.t) =
     h.(3) <- (h.(3) + !d) land mask; h.(4) <- (h.(4) + !e) land mask
   done
 
-let strings (ss : string list) : t =
-  let len = List.fold_left (fun n s -> n + String.length s) 0 ss in
-  let padded = (len + 9 + 63) / 64 * 64 in
+let start () = [| 0x67452301; 0xefcdab89; 0x98badcfe; 0x10325476; 0xc3d2e1f0 |]
+
+(* the last [rest] bytes of [len], padded, then the five words *)
+let finish (h : int array) (ss : string list) (rest : int) (len : int) : t =
+  let padded = (rest + 9 + 63) / 64 * 64 in
   let b = Bytes.make padded '\000' in
   ignore (List.fold_left (fun off s -> Bytes.blit_string s 0 b off (String.length s); off + String.length s) 0 ss);
-  Bytes.set b len '\x80';
+  Bytes.set b rest '\x80';
   Bytes.set_int64_be b (padded - 8) (Int64.of_int (len * 8));
-  let h = [| 0x67452301; 0xefcdab89; 0x98badcfe; 0x10325476; 0xc3d2e1f0 |] in
   blocks h b;
   let out = Bytes.create 20 in
   Array.iteri (fun i x -> Bytes.set_int32_be out (i * 4) (Int32.of_int x)) h;
   Bytes.to_string out
+
+let strings (ss : string list) : t =
+  let len = List.fold_left (fun n s -> n + String.length s) 0 ss in
+  finish (start ()) ss len len
+
+(* the whole blocks digested as they come, the rest kept for the next *)
+let reads (next : unit -> string) : t =
+  let h = start () and len = ref 0 in
+  let rec go rest =
+    match next () with
+    | "" -> finish h [ rest ] (String.length rest) !len
+    | s ->
+        len := !len + String.length s;
+        let s = rest ^ s in
+        let whole = String.length s / 64 * 64 in
+        blocks h (Bytes.unsafe_of_string (String.sub s 0 whole));
+        go (String.sub s whole (String.length s - whole))
+  in
+  go ""
 
 let string s = strings [ s ]
 

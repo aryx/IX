@@ -85,6 +85,11 @@ val string : string -> t
 (* the digest of the concatenation, without building it *)
 val strings : string list -> t
 
+(* the digest of the pieces [next ()] gives until "", none kept: a file
+ * digested as it is read (tiny-build's, on tiny-kernel, of 8 MB in a
+ * process of 16) *)
+val reads : (unit -> string) -> t
+
 val to_hex : t -> string
 
 (* 40 lowercase hex digits, or Invalid_argument *)

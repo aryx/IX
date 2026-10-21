@@ -174,6 +174,8 @@ let getcwd caps = u_getcwd ()
 let time () = u_time ()
 
 (* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
+(* (the ticks, 400 a second) *)
+let millis () = u_ticks () * 5 / 2
 let sleep ms = if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
 
 let chdir caps dir = if u_chdir dir < 0 then failwith "cannot"

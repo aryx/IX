@@ -24,7 +24,7 @@ Three toolchains build ix, and each has its scope:
   builds only what runs on the tiny machine: TinyKernel.ml, the steps
   before it (`tiny/TinyKernel/steps/`)
   and their programs (tiny-windows and tetris among them, in ML). It does not build its own tools yet
-  ([plans/plan_tiny_self_hosting.md](plans/plan_tiny_self_hosting.md)).
+  ([plans/done/plan_tiny_self_hosting.md](plans/done/plan_tiny_self_hosting.md)).
 
 [manuals/t-ix.md](manuals/t-ix.md), section 2, has the details of the
 tiny side.
@@ -81,7 +81,7 @@ things: a tool runs on the host, the others on tiny-machine.
   OCaml's own standard library and `lib_core/commons/`.
   (old: on `tiny/TinyLibHost/`, a copy of `lib_core/` trimmed to what
   the tools name, with mini-ml's runtime cut to it and a C library of
-  a page; gone with plans/plan_tiny_self_hosting.md's step 2.)
+  a page; gone with plans/done/plan_tiny_self_hosting.md's step 2.)
 - **A program in ML on tiny-machine** (`windows`, `calc`, `temp`,
   `tetris`) is units tiny-ml compiles one at a time (each file, with
   an interface, `.tmi`, for the units after it), linked: the libraries
@@ -112,7 +112,7 @@ it.
 
 The same layers, measured in three files: a tiny program built on
 `tiny/TinyLibHost/` (`mini-mk` in `tiny/`, until
-plans/plan_tiny_self_hosting.md's step 2), and mini-rc for Linux and for
+plans/done/plan_tiny_self_hosting.md's step 2), and mini-rc for Linux and for
 mini-9pi. Each byte of code is given to the source file it comes from.
 On `lib_core/`, as it is built now, tiny-shell is 676,910 bytes (the
 library 404,312 of them, 32 units of lib_core's; TinyLibHost's 30 were smaller):
@@ -206,7 +206,7 @@ Each machine, with what makes its guest code and what runs on it:
 The tiny side has no real architecture: tiny-c and tiny-ml had an
 arm64 back end, with tiny-assembler and tiny-arm
 (plans/done/plan_tiny_arm64.md), until
-plans/plan_tiny_self_hosting.md left tiny-machine their one target.
+plans/done/plan_tiny_self_hosting.md left tiny-machine their one target.
 The mini side has arm32 and arm64.
 
 ## The kernels

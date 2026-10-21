@@ -87,7 +87,7 @@ author's answer is that it does.
 Revisited on 2026-10-19: arm64 leaves, and TinyLibHost's copy of
 `lib_core/` with it (m-ix builds the tools on `lib_core/` itself), so
 that t-ix has one target and can build itself on it:
-[plan_tiny_self_hosting.md](plans/plan_tiny_self_hosting.md). Its
+[plan_tiny_self_hosting.md](plans/done/plan_tiny_self_hosting.md). Its
 step 1, arm64 out, is done (2026-10-19): what this section lists is
 history now, its files in git's.
 

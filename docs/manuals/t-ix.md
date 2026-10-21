@@ -20,7 +20,7 @@ tiny-kernel, the same file built by OCaml and by tiny-ml (`rc`, the
 utilities, `ed`, `prof`, `db`, `vcs`, `build` in its `/bin`), and are
 not covered here beyond that; so does the toolchain (`cc`, `ml`, `as`,
 `ld` there), each making the host's files byte for byte
-([plan_tiny_self_hosting.md](../plans/plan_tiny_self_hosting.md),
+([plan_tiny_self_hosting.md](../plans/done/plan_tiny_self_hosting.md),
 step 7; tiny-cpu stays the host's).
 
 ## 1. The quick way

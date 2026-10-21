@@ -74,7 +74,7 @@ built by dune with OCaml, for its tests. The machine alone
 (`TinyMachine.ml`, `TinyCPU.ml` and the programs beside them) is only
 the host's; the toolchain is both, the host's building tiny-kernel,
 tiny-kernel's (`cc`, `ml`, `as`, `ld`) making the same files there
-([`plan_tiny_self_hosting.md`](../docs/plans/plan_tiny_self_hosting.md),
+([`plan_tiny_self_hosting.md`](../docs/plans/done/plan_tiny_self_hosting.md),
 step 7). A tool asks the system through `TinyLibSystem`, a file for
 each side (`TinyKernel/host/TinyLibSystem.ml` over Unix,
 `TinyKernel/libml/TinyLibSystem.ml` over the kernel's calls), so a

@@ -433,8 +433,15 @@ cut to its pixels once made (the same pixels).
 | copy to the window | 17-18 | 16-18 | 18-19 |
 | shown, in all | 112-113 | 97-98 | 78-79 |
 
-Left there: the letters' loop (an empty pixel 21 instructions; a
-covered one a call of C, `Bytes.blit_string` of two bytes), then B.
+Then the letters' loop: a covered pixel of 16 bits its two bytes
+stored, not a call of C (`Bytes.blit_string`): shapes 31 ms, the
+device 53-55 (white 9, copy 15), a frame shown 66-72. mini-qemu's
+samples after the three: memmove 11% (the white and the copy),
+Memdraw's loop 7%, a message's handling about 10% in a dozen
+functions of less than 1% each (Devdraw's parsing, the three images'
+lookups, the clip, the colour read, its pattern, a division a row):
+some 60 µs a letter under QEMU, no one cause. What is left is B: a
+hover then 50 letters, not 450, and no frame made white and copied.
 
 The author, the arrows still slow on mini-9pi ("Typing the arrows to
 move the cursor is still slow") and two more things kept being added

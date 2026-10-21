@@ -280,13 +280,27 @@ let faster dst r src sr mask mr op =
      * the next of the same colour *)
     let colour = (cr lsl 16) lor (cg lsl 8) lor cb in
     if colour <> !blended then begin Array.fill over 0 256 (-1); blended := colour end;
+    (* (the colour's two bytes in the screen's format, for a pixel the
+     * letter covers whole) *)
+    let c0 = String.unsafe_get pat 0 and c1 = String.unsafe_get pat (min 1 (n - 1)) in
     (* (the bounds: the clip's, drawclip's; the rows' addresses the
      * image's own) *)
     for j = 0 to dy - 1 do
       let mrow = byteaddr mask mx0 (my0 + j) and drow = byteaddr dst x0 (y0 + j) in
       for i = 0 to dx - 1 do
         let m = Char.code (Bytes.unsafe_get ms (mrow + i)) in
-        if m = 255 then Bytes.blit_string pat 0 ds (drow + (i * n)) n
+        (* OPTIMIZATION: a pixel covered whole, of the screen's 16
+         * bits, its two bytes stored here: a blit is a call of C, for
+         * two bytes, a third of a letter's pixels (mini-qemu's samples,
+         * docs/plans/plan_playground_speed.md).
+         * old: if m = 255 then Bytes.blit_string pat 0 ds (drow + (i * n)) n *)
+        if m = 255 then begin
+          if rgb16 then begin
+            let p = drow + (2 * i) in
+            Bytes.unsafe_set ds p c0; Bytes.unsafe_set ds (p + 1) c1
+          end
+          else Bytes.blit_string pat 0 ds (drow + (i * n)) n
+        end
         else if m > 0 then
           if rgb16 then begin
             let p = drow + (2 * i) in

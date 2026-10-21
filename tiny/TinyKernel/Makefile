@@ -12,7 +12,8 @@
 #                     /examples/report.ixd), trace's of cat and of rc's
 #                     pipeline (-f), debug's of ping (stopped in write,
 #                     bt, a step) and of trace (an ML backtrace, the
-#                     value stack's slots), then the network (ping,
+#                     value stack's slots), both attached to a loop of
+#                     rc's in the background, then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost and the file whole anyway), against
@@ -569,9 +570,11 @@ $(O)/check/25.out: $(O)/boot.img
 # trace and debug (plan_tiny_debugger.md): cat's calls, its output kept
 # apart, a pipeline's processes (-f); ping stopped in write (its labels
 # after its image: -s), the backtrace, a step from the breakpoint, to
-# its exit; an ML program's backtrace (trace's), with its slots
+# its exit; an ML program's backtrace (trace's), with its slots; a
+# loop of rc's in the background, attached to by trace (to its end) and
+# by debug (stopped in its wait, let go)
 $(O)/check/26.out: $(O)/boot.img
-	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } &\ntrace \$$apid\n{ for(i in 1 2 3) { sleep 1; echo \$$i } } &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

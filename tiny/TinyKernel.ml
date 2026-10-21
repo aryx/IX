@@ -1495,7 +1495,11 @@ let interrupts sources =
   else false
 
 (* the first process that can run: ready, or waiting and its call now
- * finished *)
+ * finished. A traced one whose call ended may stop instead (waited),
+ * which its tracer reads: the processes looked at again from the first,
+ * since the tracer may be before it, already passed over (old: runnable
+ * rest, and the tracer waited for the next key or alarm: trace of a
+ * process in the background stopped at a wait's end) *)
 let rec runnable l =
   match l with
   | [] -> None
@@ -1505,7 +1509,7 @@ let rec runnable l =
        | Waiting attempt ->
            if p.since = !deaths then runnable rest
            else if attempt () then
-             (p.state <- Ready; if waited p then runnable rest else Some p)
+             (p.state <- Ready; if waited p then runnable !procs else Some p)
            else (if p.since >= 0 then p.since <- !deaths; runnable rest)
        | Zombie _ -> runnable rest
        | Stopped -> runnable rest)

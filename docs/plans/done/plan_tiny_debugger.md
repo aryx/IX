@@ -19,12 +19,11 @@ Its twins: Plan 9's `db` and `acid`, which control a process through
 which a debugger can have for free because it is the CPU. Here the
 debugger is not the CPU: it is a process that controls another one.
 
-**Status: done (2026-10-21)**, steps 1 to 8: `debug` (TinyDebugger.ml,
+**Status: done (2026-10-21)**, steps 1 to 9: `debug` (TinyDebugger.ml,
 `-window` too) and `trace` (TinyTracer.ml, `-f` too) on tiny-kernel,
 in make check (session 26, and `debug.events`'s window). What is left:
 `make self` was not run with them (its self.expected lists the
-programs and their `ld -s` lines); `debug pid` and `trace pid` not
-tried (sh runs nothing in the background); the value stack's slots are
+programs and their `ld -s` lines); the value stack's slots are
 words, not ML values (their types would be needed: section 4).
 
 ## 1. The idea: stop, look, resume, by messages
@@ -390,6 +389,18 @@ exercises the same messages.
      what is ours; `user/debug.ml` and `user/trace.ml` one line each
      (the author: "the code under TinyKernel/user/*.ml to remain
      small").
+
+9. **Attaching** (the author: "yes, do 1 and 2"). **Done
+   (2026-10-21)**: rc runs a block in the background (`&`, `$apid`),
+   so `trace $apid` and `debug $apid /bin/rc` were tried on a loop of
+   sleeps and echoes, and trace stopped at the loop's third wait: a
+   bug of step 7's `waited` in the scheduler (bugs/ix.md), fixed in
+   `runnable`. make check's session 26 attaches both. An attached
+   debug cannot stop a running process (Plan 9's ctl has `stop`): it
+   waits for a breakpoint, and a breakpoint in what the process forks
+   is not seen (the child's words are put back). And `tiny/mkfile`
+   built by mini-mk (TinyLibSymbols in tiny-linker and tiny-prof): its
+   tiny-linker's `-s` gives the same bytes as dune's and `/bin/ping`.
 
 After step 1, a program that would have been killed can be looked at.
 After step 5, debug answers the question a crash raises: where, and called

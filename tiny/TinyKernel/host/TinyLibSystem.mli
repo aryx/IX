@@ -190,7 +190,9 @@ val wait_any : < Cap.wait; .. > -> (int * string) option
  * rc -e (there in a file, an argument having 64 bytes at most, which
  * rc reads whole and removes first; no environment: vars are rc's
  * assignments before it) *)
-val shell : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. > -> (string * string list) list -> string -> int
+val shell :
+  < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. > ->
+  (string * string list) list -> string -> int
 
 (* the end of this process, at once: nothing flushed *)
 val exit : int -> 'a

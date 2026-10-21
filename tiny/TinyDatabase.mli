@@ -167,4 +167,7 @@ type stmt
 val exec : < Cap.stdout; .. > -> db -> stmt -> unit
 
 (* the program: its arguments (-h: how) to its exit status *)
-val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. > -> int
+val main :
+  < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr;
+    .. > ->
+  int

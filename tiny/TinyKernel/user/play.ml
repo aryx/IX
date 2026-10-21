@@ -19,5 +19,7 @@ let () =
   if out < 0 then (ignore (u_write 2 "play: no /dev/audio\n"); exit 1);
   let data = read_file (u_arg 1) in
   (try play out (if data = "" then failwith "no such file, or empty" else data)
-   with Failure why -> ignore (u_write 2 ("play: " ^ u_arg 1 ^ ": " ^ why ^ "\n")); exit 1);
+   with Failure why ->
+     ignore (u_write 2 ("play: " ^ u_arg 1 ^ ": " ^ why ^ "\n"));
+     exit 1);
   exit 0

@@ -31,23 +31,24 @@
  * speed (TinyMachineDevices.rate), and no more than [budget] milliseconds
  * of them, so that a browser too slow for the speed still draws and
  * listens: the machine is then slower, and the status line says so,
- * as a part of the full speed. Then the screen, if it changed, and the console's new text.
+ * as a part of the full speed. Then the screen, if it changed, and the
+ * console's new text.
  *
  * The machine's wire (plan_tiny_network.md) leads to the page: its
  * other end is TinyMachinePeer, tiny-kernel's own stack run here, and the
  * page gives it its documents, which is where the Internet comes in:
  *
- *     tiny-kernel: www OCaml                   this page
- *        | IL, over the wire's packets  ===>   TinyMachinePeer, port 70: the line
- *        |                                        | "www address": the page fetched
- *        |                                        |   (Wikipedia's REST HTML)
- *        |                                        | "img w h address": its picture,
- *        |                                        |   read and made small by the
- *        |                                        |   browser, each pixel then the
- *        |                                        |   nearest of the screen's colours
- *     the page drawn, then      <===  IL  ===  its messages; a picture's, a
- *     its pictures a row at                     message a row
- *     each message
+ *  tiny-kernel: www OCaml                this page
+ *     | IL, over the wire's packets ===> TinyMachinePeer, port 70: the line
+ *     |                                     | "www address": the page fetched
+ *     |                                     |   (Wikipedia's REST HTML)
+ *     |                                     | "img w h address": its picture,
+ *     |                                     |   read and made small by the
+ *     |                                     |   browser, each pixel then the
+ *     |                                     |   nearest of the screen's colours
+ *  the page drawn, then   <===  IL  ===  its messages; a picture's, a
+ *  its pictures a row at                  message a row
+ *  each message
  *
  * A name alone (get) is a file fetched from www/ beside the image; a
  * page that cannot be fetched is a copy kept there, if there is one. A page

@@ -23,13 +23,16 @@ let mix ring size at wave hz to_hz n volume =
   let step0 = hz * 8192 / 1000 * 256 in
   let dstep = ((to_hz * 8192 / 1000 * 256) - step0) / n in
   let damp = volume * 65536 / n in
-  let phase = ref 0 and step = ref step0 and amp = ref (volume * 65536) and noise = ref 1 in
+  let phase = ref 0 and step = ref step0 and amp = ref (volume * 65536)
+  and noise = ref 1 in
   for i = 0 to n - 1 do
     let v = if i < 16 then ((!amp lsr 16) * i) lsr 4 else !amp lsr 16 in
     let q = !phase land 0xffff in
     let x =
       if wave = 0 then (if q < 32768 then v else - v)
-      else if wave = 1 then (let t = (q * 4 * v) lsr 16 in if t < 2 * v then t - v else (3 * v) - t)
+      else if wave = 1 then (
+        let t = (q * 4 * v) lsr 16 in
+        if t < 2 * v then t - v else (3 * v) - t)
       else if wave = 2 then ((q * 2 * v) lsr 16) - v
       else ((((!noise lsr 16) land 255) * 2 * v) lsr 8) - v in
     let r = ring + ((at + i) land (size - 1)) in
@@ -37,7 +40,8 @@ let mix ring size at wave hz to_hz n volume =
     let y = (if b > 127 then b - 256 else b) + x in
     pokeb r ((if y > 127 then 127 else if y < -128 then -128 else y) land 255);
     let next = (!phase + (!step lsr 8)) land 0xffffff in
-    if next lsr 16 <> !phase lsr 16 then noise := ((!noise * 69069) + 1) land 0xffffff;
+    if next lsr 16 <> !phase lsr 16 then
+      noise := ((!noise * 69069) + 1) land 0xffffff;
     phase := next;
     step := !step + dstep;
     amp := !amp - damp
@@ -47,7 +51,8 @@ let mix ring size at wave hz to_hz n volume =
  * samples, a volume), or samples *)
 type sound = Tone of int * int * int * int * int | Samples of string
 
-let sound_length snd = match snd with Tone (_, _, _, n, _) -> n | Samples s -> String.length s
+let sound_length snd =
+  match snd with Tone (_, _, _, n, _) -> n | Samples s -> String.length s
 
 (* samples added to the ring as a tone's are *)
 let add_samples ring size at s =
@@ -72,12 +77,16 @@ let sounds s =
   let num i = Char.code s.[i] + (256 * Char.code s.[i + 1]) in
   let rec from i =
     if i = String.length s then []
-    else if i + 3 <= String.length s && s.[i] = 'p' && i + 3 + num (i + 1) <= String.length s then
+    else if i + 3 <= String.length s && s.[i] = 'p'
+            && i + 3 + num (i + 1) <= String.length s then
       Samples (String.sub s (i + 3) (num (i + 1))) :: from (i + 3 + num (i + 1))
     else if i + 11 > String.length s || s.[i] <> 's' then raise Bad_sound
     else begin
-      let wave = num (i + 1) and hz = num (i + 3) and to_hz = num (i + 5) and ms = num (i + 7) and volume = num (i + 9) in
-      if wave > 3 || hz > 4000 || to_hz > 4000 || ms > 1000 || volume > 127 then raise Bad_sound;
+      let wave = num (i + 1) and hz = num (i + 3) and to_hz = num (i + 5)
+      and ms = num (i + 7) and volume = num (i + 9) in
+      if wave > 3 || hz > 4000 || to_hz > 4000 || ms > 1000 || volume > 127 then
+        raise Bad_sound;
+
       Tone (wave, hz, to_hz, ms * per_ms, volume) :: from (i + 11)
     end in
   from 0

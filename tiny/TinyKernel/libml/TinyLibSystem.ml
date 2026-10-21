@@ -44,7 +44,13 @@ open TinyCalls
 
 type Cap.all_caps = < >
 
-let main name f = exit (try f () with Failure m -> u_flush (); ignore (u_write 2 (name ^ ": " ^ m ^ "\n")); 1)
+let main name f =
+  exit
+    (try f () with
+     | Failure m ->
+         u_flush ();
+         ignore (u_write 2 (name ^ ": " ^ m ^ "\n"));
+         1)
 let argv caps = List.init (u_argc ()) u_arg
 let environment caps = [ "PATH", "/bin" ]
 let getpid () = u_getpid ()
@@ -85,20 +91,37 @@ let keep fd = private_fds := fd :: !private_fds; fd
 
 (* user.h's O_RDONLY, O_WRONLY | O_CREATE | O_TRUNC, and O_WRONLY |
  * O_CREATE then a seek to the end *)
-let open_in caps file = let fd = u_open file 0 in if fd < 0 then failwith "cannot open" else fd
-let open_out caps file = let fd = u_open file 0x601 in if fd < 0 then failwith "cannot create" else fd
+let open_in caps file =
+  let fd = u_open file 0 in
+  if fd < 0 then failwith "cannot open" else fd
+let open_out caps file =
+  let fd = u_open file 0x601 in
+  if fd < 0 then failwith "cannot create" else fd
 let open_append caps file =
   let fd = u_open file 0x201 in
-  if fd < 0 then failwith "cannot create" else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek") else fd
+  if fd < 0 then failwith "cannot create"
+  else if u_seek fd 0 2 < 0 then (ignore (u_close fd); failwith "cannot seek")
+  else fd
 (* user.h's O_RDWR | O_CREATE; seek's whence 0 the start, 2 the end *)
-let open_rw caps file = let fd = u_open file 0x202 in if fd < 0 then failwith "cannot open" else fd
+let open_rw caps file =
+  let fd = u_open file 0x202 in
+  if fd < 0 then failwith "cannot open" else fd
 let seek fd off = if u_seek fd off 0 < 0 then failwith "cannot seek"
-let seek_end fd = let off = u_seek fd 0 2 in if off < 0 then failwith "cannot seek" else off
-let close fd = ignore (u_close fd); private_fds := List.filter (fun d -> d <> fd) !private_fds
+let seek_end fd =
+  let off = u_seek fd 0 2 in
+  if off < 0 then failwith "cannot seek" else off
+let close fd =
+  ignore (u_close fd);
+  private_fds := List.filter (fun d -> d <> fd) !private_fds
 
 (* (the pieces joined at the end; old: acc ^ s at each, the file copied
  * again at each 4 KB) *)
-let read_all fd = let rec go acc = let s = u_read fd 4096 in if s = "" then String.concat "" (List.rev acc) else go (s :: acc) in go []
+let read_all fd =
+  let rec go acc =
+    let s = u_read fd 4096 in
+    if s = "" then String.concat "" (List.rev acc) else go (s :: acc)
+  in
+  go []
 let read_file caps file =
   let fd = open_in caps file in
   let s = read_all fd in
@@ -114,9 +137,22 @@ let entries dir =
   else begin
     let s = read_all fd in
     ignore (u_close fd);
-    let name i = let e = i + 64 in String.sub s i ((match String.index_from_opt s i '\000' with Some j when j < e -> j | _ -> e) - i) in
-    let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
-    List.init (String.length s / 80) (fun k -> name (k * 80), (Char.code s.[k * 80 + 64] = 1, word (k * 80 + 72), word (k * 80 + 68), word (k * 80 + 76)))
+    let name i =
+      let e = i + 64 in
+      String.sub s i
+        ((match String.index_from_opt s i '\000' with
+          | Some j when j < e -> j
+          | _ -> e)
+         - i)
+    in
+    let word i =
+      Char.code s.[i] + (Char.code s.[i + 1] lsl 8)
+      + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24)
+    in
+    List.init (String.length s / 80) (fun k ->
+      name (k * 80),
+      (Char.code s.[k * 80 + 64] = 1, word (k * 80 + 72), word (k * 80 + 68),
+       word (k * 80 + 76)))
   end
 
 let readdir dir = List.map fst (entries dir)
@@ -124,7 +160,11 @@ let readdir dir = List.map fst (entries dir)
 (* a path's names from the root, as the kernel finds them *)
 let path_names file =
   let start = if String.length file > 0 && file.[0] = '/' then "" else u_getcwd () in
-  let clean acc n = if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc in
+  let clean acc n =
+    if n = "" || n = "." then acc
+    else if n = ".." then (match acc with [] -> [] | _ :: r -> r)
+    else n :: acc
+  in
   List.rev (List.fold_left clean [] (String.split_on_char '/' (start ^ "/" ^ file)))
 
 (* the file's entry, the kernel's stat: whether it is a directory, its
@@ -133,7 +173,10 @@ let entry file =
   let s = u_stat (if file = "" then "." else file) in
   if s = "" then failwith "not there"
   else
-    let word i = Char.code s.[i] + (Char.code s.[i + 1] lsl 8) + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24) in
+    let word i =
+      Char.code s.[i] + (Char.code s.[i + 1] lsl 8)
+      + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24)
+    in
     Char.code s.[64] = 1, word 72, word 68, word 76
 
 let stat file = let is_dir, size, _, _ = entry file in is_dir, size
@@ -154,7 +197,10 @@ let rename caps a b =
     (* (a piece at a time, as cp: a big file does not fit in the heap) *)
     let src = open_in caps a in
     let fd = open_out caps b in
-    let rec go () = let s = u_read src 4096 in if s <> "" then begin write fd s; go () end in
+    let rec go () =
+      let s = u_read src 4096 in
+      if s <> "" then begin write fd s; go () end
+    in
     go ();
     close fd;
     close src;
@@ -165,7 +211,8 @@ let is_executable file = false
 let set_executable caps file x = ()
 
 let touch caps file =
-  if not (try ignore (stat file); true with Failure _ -> false) then close (open_out caps file)
+  if not (try ignore (stat file); true with Failure _ -> false) then
+    close (open_out caps file)
 
 let getcwd caps = u_getcwd ()
 
@@ -174,7 +221,9 @@ let time () = u_time ()
 (* a tick is 2.5 ms; ready on no descriptor until a tick is a sleep *)
 (* (the ticks, 400 a second) *)
 let millis () = u_ticks () * 5 / 2
-let sleep ms = if ms > 0 then ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
+let sleep ms =
+  if ms > 0 then
+    ignore (u_ready (Array.make 0 0) 0 (u_ticks () + ((ms * 2) + 4) / 5))
 
 let chdir caps dir = if u_chdir dir < 0 then failwith "cannot"
 
@@ -189,7 +238,9 @@ let dup2 a b =
     ignore (u_close b);
     let rec go others =
       let d = u_dup a in
-      if d = b || d < 0 then List.iter (fun o -> ignore (u_close o)) others else go (d :: others) in
+      if d = b || d < 0 then List.iter (fun o -> ignore (u_close o)) others
+      else go (d :: others)
+    in
     go []
   end
 
@@ -215,7 +266,8 @@ let ended = ref []
 
 (* a status's low byte as rc's; a process the kernel ended (a fault, a
  * kill) has -1 *)
-let status st = if st = 0 then "" else if st = 255 then "signal: kill" else string_of_int st
+let status st =
+  if st = 0 then "" else if st = 255 then "signal: kill" else string_of_int st
 
 (* u_waits's number: the child's pid, and 256 times it, its status's
  * low byte *)
@@ -229,7 +281,9 @@ let rec wait caps pid =
 let wait_any caps =
   match !ended with
   | (p, st) :: rest -> ended := rest; Some (p, status st)
-  | [] -> let r = u_waits () in if r < 0 then None else Some (r / 256, status (r mod 256))
+  | [] ->
+      let r = u_waits () in
+      if r < 0 then None else Some (r / 256, status (r mod 256))
 
 (* rc's words quoted, '' a quote inside *)
 let quote w = "'" ^ String.concat "''" (String.split_on_char '\'' w) ^ "'"
@@ -241,7 +295,14 @@ let shell caps vars script =
   else begin
     let file = ".shell" ^ string_of_int (u_getpid ()) in
     let fd = open_out caps file in
-    write fd ("rm " ^ file ^ "\n" ^ String.concat "" (List.map (fun (k, v) -> k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n") vars) ^ script ^ "\n");
+    write fd
+      ("rm " ^ file ^ "\n"
+       ^ String.concat ""
+           (List.map
+              (fun (k, v) ->
+                k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n")
+              vars)
+       ^ script ^ "\n");
     close fd;
     ignore (exec caps "/bin/rc" [ "rc"; "-e"; file ] []);
     exit 127

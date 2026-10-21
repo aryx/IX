@@ -6,7 +6,7 @@
  *     the machine                              the host
  *
  *     tiny-kernel, 10.0.0.2                    the peer, 10.0.0.1
- *       TinyKernelNetwork.ml (by tiny-ml)              TinyKernelNetwork.ml (by OCaml)
+ *       TinyKernelNetwork.ml (by tiny-ml)      TinyKernelNetwork.ml (by OCaml)
  *            |                                        |      |
  *     the network's device  == send ==========>  [send]      [document]:
  *     (TinyMachineDevices)      <= give, later ====  [give]      a line to its
@@ -53,8 +53,15 @@ type t
  * take a message for one. And port 53 of the peer answers a name by
  * its address as text, from [name] ("" when it has none), which is
  * all there is of DNS. *)
-type relay = { take : unit -> string option; put : string -> unit; shut : unit -> unit }
-type outside = { name : string -> string; connect : string -> int -> relay option }
+type relay = {
+  take : unit -> string option;
+  put : string -> unit;
+  shut : unit -> unit;
+}
+type outside = {
+  name : string -> string;
+  connect : string -> int -> relay option;
+}
 
 (* The peer. [give after packet]: the machine's net_give, a packet to
  * land so many instructions from now. [said dir packet]: each packet
@@ -66,7 +73,9 @@ type outside = { name : string -> string; connect : string -> int -> relay optio
  * is kept, why not otherwise, which put says. The empty line, Gopher's
  * menu, is [document]'s too: what was put, a name a line. *)
 val create :
-  give:(int -> string -> unit) -> said:(string -> string -> unit) -> document:(string -> (string list -> unit) -> unit) ->
+  give:(int -> string -> unit) ->
+  said:(string -> string -> unit) ->
+  document:(string -> (string list -> unit) -> unit) ->
   store:(string -> string -> string) -> outside:outside option -> t
 
 (* the machine's [send]: a packet of its kernel's ("": the peer's own

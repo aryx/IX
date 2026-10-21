@@ -202,7 +202,8 @@ split(struct proc *p, char *path, char *full, char **names)
 // 0 if found; -1 if not, its name in last (where create puts it); -2 if
 // a directory on the way is missing
 int
-walk(struct proc *p, char *path, struct dirent *e, uint *eb, uint *eo, uint *dir, char *last)
+walk(struct proc *p, char *path, struct dirent *e, uint *eb, uint *eo,
+	uint *dir, char *last)
 {
 	char full[128], *names[16];
 	int n, i;
@@ -295,7 +296,8 @@ fileopen(char *path, int mode, struct proc *p)
 		addent(dir, &e, &eb, &eo);
 		r = 0;
 	}
-	if(r < 0 || (e.type == T_DIR && (mode & (O_WRONLY | O_RDWR))) || (f = falloc()) == 0)
+	if(r < 0 || (e.type == T_DIR && (mode & (O_WRONLY | O_RDWR))) ||
+	   (f = falloc()) == 0)
 		return 0;
 	if((mode & O_TRUNC) && e.type == T_FILE){
 		freechain(e.first);
@@ -500,7 +502,8 @@ sys_open(void)
 	char path[64];
 	struct file *f;
 
-	if(ustr(cur, cur->r[1], path, 64) < 0 || (f = fileopen(path, cur->r[2], cur)) == 0)
+	if(ustr(cur, cur->r[1], path, 64) < 0 ||
+	   (f = fileopen(path, cur->r[2], cur)) == 0)
 		return -1;
 	return fdalloc(f);
 }
@@ -575,7 +578,8 @@ sys_mkdir(void)
 	struct dirent e;
 	uint eb, eo, dir;
 
-	if(ustr(cur, cur->r[1], path, 64) < 0 || walk(cur, path, &e, &eb, &eo, &dir, name) != -1)
+	if(ustr(cur, cur->r[1], path, 64) < 0 ||
+	   walk(cur, path, &e, &eb, &eo, &dir, name) != -1)
 		return -1;
 	memset(&e, 0, sizeof e);
 	strcpy(e.name, name);
@@ -593,7 +597,8 @@ sys_unlink(void)
 	struct dirent e, d;
 	uint eb, eo, dir, k, b, o;
 
-	if(ustr(cur, cur->r[1], path, 64) < 0 || walk(cur, path, &e, &eb, &eo, &dir, name) != 0 || eb == 0)
+	if(ustr(cur, cur->r[1], path, 64) < 0 ||
+	   walk(cur, path, &e, &eb, &eo, &dir, name) != 0 || eb == 0)
 		return -1;
 	if(e.type == T_DIR)
 		for(k = 0; (b = bmap(&e.first, k, 0)) != 0; k++){
@@ -617,7 +622,8 @@ sys_chdir(void)
 	uint eb, eo, dir;
 	int n, i;
 
-	if(ustr(cur, cur->r[1], path, 64) < 0 || walk(cur, path, &e, &eb, &eo, &dir, name) != 0 || e.type != T_DIR)
+	if(ustr(cur, cur->r[1], path, 64) < 0 ||
+	   walk(cur, path, &e, &eb, &eo, &dir, name) != 0 || e.type != T_DIR)
 		return -1;
 	n = split(cur, path, full, names);
 	strcpy(cur->cwd, "/");

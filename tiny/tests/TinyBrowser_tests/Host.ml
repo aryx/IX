@@ -13,9 +13,15 @@ let () =
       let s = really_input_string ic (in_channel_length ic) in
       close_in ic;
       let n = String.length s in
-      let size = if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3) else max 1 n in
+      let size =
+        if Array.length Sys.argv > 3 then int_of_string Sys.argv.(3)
+        else max 1 n in
       let p = TinyBrowser.create (int_of_string width) in
-      let rec go i = if i < n then begin TinyBrowser.feed p (String.sub s i (min size (n - i))); go (i + size) end in
+      let rec go i =
+        if i < n then begin
+          TinyBrowser.feed p (String.sub s i (min size (n - i)));
+          go (i + size)
+        end in
       go 0;
       TinyBrowser.finish p;
       print_string (Testutil_browser.dump p (int_of_string width))

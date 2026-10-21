@@ -98,8 +98,9 @@
  * files). A file that has the name of a virtual target
  * (a file called "clean") makes that target look like a real one.
  *
- * Exercises: add ${X:%.c=%.o}; replace the scan with a count of pending prerequisites per
- * node, and measure the difference; let a recipe declare the
+ * Exercises: add ${X:%.c=%.o}; replace the scan with a count of pending
+ * prerequisites per node, and measure the difference; let a recipe
+ * declare the
  * dependencies it discovered while running (like redo's redo-ifchange),
  * which the one-pass scheduler can support if a node is decided again
  * once its new prerequisites are done.

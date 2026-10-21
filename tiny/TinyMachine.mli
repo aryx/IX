@@ -281,8 +281,12 @@ type options
 (* an image, run to the machine's halt: the hosts' turns (the console,
  * the window), then the machine's instruction; to the exit status *)
 val run :
-  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. > -> options -> string -> int
+  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.open_in; Cap.open_out; Cap.fork;
+    Cap.exec; .. > ->
+  options -> string -> int
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main :
-  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. > -> int
+  < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out;
+    Cap.fork; Cap.exec; .. > ->
+  int

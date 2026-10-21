@@ -38,7 +38,8 @@ exception Error of string
 (*****************************************************************************)
 
 (* #n n /re/ ?re? . $ *)
-type simple = Chars of int | Line of int | Search of dir * string | Dot | Dollar
+type simple =
+  | Chars of int | Line of int | Search of dir * string | Dot | Dollar
 and dir = Fwd | Back
 
 (* a first simple address, then steps each relative to the one before
@@ -76,10 +77,12 @@ and where = After | Before | Instead
  * and v/re/ (if dot matches, or not) *)
 (* old: Loop of char * string option * cmd: a y without a pattern could
  * be built, and ran as x does, where sam refuses it *)
-and loop = Lines | Matches of string | Between of string | If of bool * string
+and loop =
+  | Lines | Matches of string | Between of string | If of bool * string
 
 (* r w e f *)
-(* old: File of char * string, whose last case, a catch-all, stood for f *)
+(* old: File of char * string, whose last case, a catch-all, stood for
+ * f *)
 and file = Read | Write | Edit | Name
 
 (* the input, one character of pushback; read a line at a time, when
@@ -96,12 +99,21 @@ let refill () =
     match !next_line () with
     | Some l -> input := l ^ "\n"; ip := 0
     | None -> ()
-let peekc () = refill (); if !ip < String.length !input then (!input).[!ip] else '\000'
+let peekc () =
+  refill (); if !ip < String.length !input then (!input).[!ip] else '\000'
 let getc () = let c = peekc () in incr ip; c
 
-let skipbl () = while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
-let atnl () = if skipbl () <> '\n' && peekc () <> '\000' then raise (Error "newline expected") else incr ip
-let num () = let s = !ip in while peekc () >= '0' && peekc () <= '9' do incr ip done; if !ip = s then 1 else Option.get (int_of_string_opt (String.sub !input s (!ip - s)))
+let skipbl () =
+  while peekc () = ' ' || peekc () = '\t' do incr ip done; peekc ()
+let atnl () =
+  if skipbl () <> '\n' && peekc () <> '\000' then
+    raise (Error "newline expected")
+  else incr ip
+let num () =
+  let s = !ip in
+  while peekc () >= '0' && peekc () <= '9' do incr ip done;
+  if !ip = s then 1
+  else Option.get (int_of_string_opt (String.sub !input s (!ip - s)))
 
 let lastpat = ref ""
 
@@ -131,7 +143,9 @@ let rhs delim s =
         (match getc () with
          | 'n' -> Buffer.add_char b '\n'
          | c when c = delim -> Buffer.add_char b c
-         | c -> if s || c <> '\\' then Buffer.add_char b '\\'; Buffer.add_char b c);
+         | c ->
+             if s || c <> '\\' then Buffer.add_char b '\\';
+             Buffer.add_char b c);
         go ()
     | c when c = delim || c = '\n' || c = '\000' -> decr ip
     | c -> Buffer.add_char b c; go ()
@@ -143,20 +157,28 @@ let simple () : simple option =
   match skipbl () with
   | '#' -> incr ip; Some (Chars (num ()))
   | c when c >= '0' && c <= '9' -> Some (Line (num ()))
-  | ('/' | '?') as c -> incr ip; Some (Search ((if c = '/' then Fwd else Back), regexp c))
+  | ('/' | '?') as c ->
+      incr ip; Some (Search ((if c = '/' then Fwd else Back), regexp c))
   | '.' -> incr ip; Some Dot
   | '$' -> incr ip; Some Dollar
   | _ -> None
 
 let chain () : chain option =
   (* . and $ only first *)
-  let later s = match s with Some (Dot | Dollar) -> raise (Error "address") | _ -> s in
+  let later s =
+    match s with Some (Dot | Dollar) -> raise (Error "address") | _ -> s in
   let first = simple () in
   let rec steps () =
     match skipbl () with
-    | ('+' | '-') as c -> incr ip; let s = later (simple ()) in ((if c = '+' then Fwd else Back), s) :: steps ()
+    | ('+' | '-') as c ->
+        incr ip;
+        let s = later (simple ()) in
+        ((if c = '+' then Fwd else Back), s) :: steps ()
     (* 3/re/ is 3+/re/: the + is implied *)
-    | _ -> (match later (simple ()) with Some s -> (Fwd, Some s) :: steps () | None -> [])
+    | _ ->
+        (match later (simple ()) with
+         | Some s -> (Fwd, Some s) :: steps ()
+         | None -> [])
   in
   match first, steps () with
   | None, [] -> None
@@ -165,7 +187,9 @@ let chain () : chain option =
 let rec compound () : addr option =
   let left = chain () in
   match skipbl () with
-  | (',' | ';') as c -> incr ip; Some (Range ((if c = ',' then Comma else Semi), left, compound ()))
+  | (',' | ';') as c ->
+      incr ip;
+      Some (Range ((if c = ',' then Comma else Semi), left, compound ()))
   | _ -> (match left with Some c -> Some (Chain c) | None -> None)
 
 let rec parse () : cmd option =
@@ -176,7 +200,10 @@ let rec parse () : cmd option =
     let delim () =
       match skipbl () with
       | '\n' | '\000' -> raise (Error "no pattern")
-      | c when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') -> raise (Error ("bad delimiter `" ^ String.make 1 c ^ "'"))
+      | c
+        when (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+             || (c >= '0' && c <= '9') ->
+          raise (Error ("bad delimiter `" ^ String.make 1 c ^ "'"))
       | _ -> getc ()
     in
     let text () =
@@ -186,18 +213,37 @@ let rec parse () : cmd option =
         let b = Buffer.create 64 in
         let rec lines () =
           refill ();
-          let e = match String.index_from_opt !input !ip '\n' with Some e -> e | None -> String.length !input in
+          let e =
+            match String.index_from_opt !input !ip '\n' with
+            | Some e -> e
+            | None -> String.length !input in
           let l = String.sub !input !ip (e - !ip) in
           ip := e + 1;
-          if l <> "." && !ip <= String.length !input + 1 && e < String.length !input then (Buffer.add_string b l; Buffer.add_char b '\n'; lines ())
+          if l <> "." && !ip <= String.length !input + 1
+             && e < String.length !input
+          then (Buffer.add_string b l; Buffer.add_char b '\n'; lines ())
         in
         lines ();
         Buffer.contents b
       end
-      else (let d = getc () in let t = rhs d false in if peekc () = d then incr ip; atnl (); t)
+      else
+        (let d = getc () in
+         let t = rhs d false in
+         if peekc () = d then incr ip;
+         atnl ();
+         t)
     in
-    let word () = ignore (skipbl ()); let s = !ip in while peekc () <> '\n' && peekc () <> '\000' do incr ip done; let w = String.sub !input s (!ip - s) in atnl (); String.trim w in
-    let sub () = match skipbl () with '\n' -> incr ip; { addr = None; op = Print } | _ -> Option.get (parse ()) in
+    let word () =
+      ignore (skipbl ());
+      let s = !ip in
+      while peekc () <> '\n' && peekc () <> '\000' do incr ip done;
+      let w = String.sub !input s (!ip - s) in
+      atnl ();
+      String.trim w in
+    let sub () =
+      match skipbl () with
+      | '\n' -> incr ip; { addr = None; op = Print }
+      | _ -> Option.get (parse ()) in
     let op =
       match c with
       | 'a' -> Text (After, text ())
@@ -209,22 +255,37 @@ let rec parse () : cmd option =
           let d = delim () in
           let re = regexp d in
           let t = rhs d true in
-          let g = if peekc () = d then (incr ip; if peekc () = 'g' then (incr ip; true) else false) else false in
+          let g =
+            if peekc () = d then
+              (incr ip; if peekc () = 'g' then (incr ip; true) else false)
+            else false in
           atnl ();
           Subst (n, re, t, g)
       | 'p' -> atnl (); Print
-      | '=' -> let chars = peekc () = '#' in if chars then incr ip; atnl (); Eq chars
-      | 'm' | 't' -> (match chain () with Some a -> atnl (); Move (c = 'm', a) | None -> raise (Error "address"))
-      | 'x' when (let n = peekc () in n = ' ' || n = '\t' || n = '\n') -> Loop (Lines, sub ())
+      | '=' ->
+          let chars = peekc () = '#' in if chars then incr ip; atnl (); Eq chars
+      | 'm' | 't' ->
+          (match chain () with
+           | Some a -> atnl (); Move (c = 'm', a)
+           | None -> raise (Error "address"))
+      | 'x' when (let n = peekc () in n = ' ' || n = '\t' || n = '\n') ->
+          Loop (Lines, sub ())
       | 'x' | 'y' | 'g' | 'v' ->
           let re = regexp (delim ()) in
-          let loop = match c with 'x' -> Matches re | 'y' -> Between re | _ -> If (c = 'g', re) in
+          let loop =
+            match c with
+            | 'x' -> Matches re
+            | 'y' -> Between re
+            | _ -> If (c = 'g', re) in
           Loop (loop, sub ())
       | '{' ->
           let rec cmds acc =
             if skipbl () = '\n' then incr ip;
             if skipbl () = '}' then (incr ip; atnl (); List.rev acc)
-            else match parse () with Some c -> cmds (c :: acc) | None -> raise (Error "missing }")
+            else
+              match parse () with
+              | Some c -> cmds (c :: acc)
+              | None -> raise (Error "missing }")
           in
           Block (cmds [])
       | 'r' -> File (Read, word ())
@@ -247,7 +308,8 @@ let rec parse () : cmd option =
 (* The buffer, and changes made in parallel *)
 (*****************************************************************************)
 
-let text = ref "" and dot = ref (0, 0) and file = ref "" and modified = ref false and warned = ref false
+let text = ref "" and dot = ref (0, 0) and file = ref "" and modified = ref false
+and warned = ref false
 let changes : (int * int * string) list ref = ref []   (* reversed *)
 let hi = ref 0      (* the changes so far end here: the next must not start before *)
 
@@ -260,7 +322,8 @@ let change p0 p1 s =
  * change's range replaced by the text it replaced, in order too *)
 let commit () =
   let cs = List.rev !changes in
-  let b = Buffer.create (String.length !text) and at = ref 0 and delta = ref 0 in
+  let b = Buffer.create (String.length !text) and at = ref 0
+  and delta = ref 0 in
   let inverse = List.map (fun (p0, p1, s) ->
     Buffer.add_string b (String.sub !text !at (p0 - !at));
     Buffer.add_string b s;
@@ -283,7 +346,12 @@ let commit () =
  * the command (sam's, the one when its first change was made: after an
  * x, the first match); a w makes every other state modified (sam's
  * menu says unmodified after an undo past a w) *)
-type record = { edits : (int * int * string) list; rdot : int * int; rmodified : bool; rfile : string }
+type record = {
+  edits : (int * int * string) list;
+  rdot : int * int;
+  rmodified : bool;
+  rfile : string;
+}
 let undos : record list ref = ref [] and redos : record list ref = ref []
 let before = ref { edits = []; rdot = (0, 0); rmodified = false; rfile = "" }
 let now edits = { edits; rdot = !dot; rmodified = !modified; rfile = !file }
@@ -310,7 +378,9 @@ let undo n =
   done
 
 (* where old position p is after the changes before it *)
-let shift p = List.fold_left (fun q (p0, p1, s) -> if p1 <= p then q + String.length s - (p1 - p0) else q) p !changes
+let shift p =
+  List.fold_left (fun q (p0, p1, s) ->
+    if p1 <= p then q + String.length s - (p1 - p0) else q) p !changes
 
 (* the library's errors, as this file's *)
 let compile p = try compile p with Failure m -> raise (Error m)
@@ -331,7 +401,8 @@ let lineaddr n (q0, q1) sign =
       if n = 0 then (start := q1; p := q1 - 1)
       else begin
         let k = ref 1 in
-        if not (sign = 0 || q1 = 0) then (p := q1 - 1; k := (if t.[!p] = '\n' then 1 else 0); incr p);
+        if not (sign = 0 || q1 = 0) then
+          (p := q1 - 1; k := (if t.[!p] = '\n' then 1 else 0); incr p);
         while !k < n do
           if !p >= nc then raise (Error "address range");
           if t.[!p] = '\n' then incr k;
@@ -365,17 +436,29 @@ let next_match pat (q0, q1) forward =
   let re = compile pat in
   let t = !text in
   if forward then begin
-    let find p = match search re t p (len ()) with Some c -> Some c | None -> search re t 0 (len ()) in
+    let find p =
+      match search re t p (len ()) with
+      | Some c -> Some c
+      | None -> search re t 0 (len ()) in
     match find q1 with
     | None -> raise (Error "search")
-    | Some c when c.(0) = c.(1) && c.(0) = q1 -> (match find (if q1 + 1 > len () then 0 else q1 + 1) with Some c -> (c.(0), c.(1)) | None -> raise (Error "search"))
+    | Some c when c.(0) = c.(1) && c.(0) = q1 ->
+        (match find (if q1 + 1 > len () then 0 else q1 + 1) with
+         | Some c -> (c.(0), c.(1))
+         | None -> raise (Error "search"))
     | Some c -> (c.(0), c.(1))
   end
   else begin
-    let find p = match search_back re t p with Some c -> Some c | None -> search_back re t (len ()) in
+    let find p =
+      match search_back re t p with
+      | Some c -> Some c
+      | None -> search_back re t (len ()) in
     match find q0 with
     | None -> raise (Error "search")
-    | Some c when c.(0) = c.(1) && c.(1) = q0 -> (match find (if q0 - 1 < 0 then len () else q0 - 1) with Some c -> (c.(0), c.(1)) | None -> raise (Error "search"))
+    | Some c when c.(0) = c.(1) && c.(1) = q0 ->
+        (match find (if q0 - 1 < 0 then len () else q0 - 1) with
+         | Some c -> (c.(0), c.(1))
+         | None -> raise (Error "search"))
     | Some c -> (c.(0), c.(1))
   end
 
@@ -385,11 +468,15 @@ let simple_address (s : simple) (a : int * int) (sign : int) : int * int =
   match s with
   | Chars n ->
       let q0, q1 = a in
-      let r = if sign = 0 then (n, n) else if sign < 0 then (q0 - n, q0 - n) else (q1 + n, q1 + n) in
+      let r =
+        if sign = 0 then (n, n)
+        else if sign < 0 then (q0 - n, q0 - n)
+        else (q1 + n, q1 + n) in
       if fst r < 0 || snd r > len () then raise (Error "address range");
       r
   | Line n -> lineaddr n a sign
-  | Search (d, pat) -> next_match pat a (if d = Fwd then sign >= 0 else sign < 0)
+  | Search (d, pat) ->
+      next_match pat a (if d = Fwd then sign >= 0 else sign < 0)
   | Dot -> !dot
   | Dollar -> (len (), len ())
 
@@ -397,7 +484,9 @@ let chain_address (c : chain) (a : int * int) : int * int =
   let a = match c.first with Some s -> simple_address s a 0 | None -> a in
   List.fold_left (fun a (d, s) ->
     let sign = if d = Fwd then 1 else -1 in
-    match s with Some s -> simple_address s a sign | None -> lineaddr 1 a sign) a c.steps
+    match s with
+    | Some s -> simple_address s a sign
+    | None -> lineaddr 1 a sign) a c.steps
 
 let rec address (ad : addr) (a : int * int) : int * int =
   match ad with
@@ -405,7 +494,10 @@ let rec address (ad : addr) (a : int * int) : int * int =
   | Range (sep, l, r) ->
       let a1 = match l with Some l -> chain_address l a | None -> (0, 0) in
       if sep = Semi then dot := a1;
-      let a2 = match r with Some r -> address r (if sep = Semi then a1 else a) | None -> (len (), len ()) in
+      let a2 =
+        match r with
+        | Some r -> address r (if sep = Semi then a1 else a)
+        | None -> (len (), len ()) in
       if snd a2 < fst a1 then raise (Error "address order");
       (fst a1, snd a2)
 
@@ -414,37 +506,57 @@ let rec address (ad : addr) (a : int * int) : int * int =
 (*****************************************************************************)
 
 let out = Buffer.create 4096
-let flush (caps : < Cap.stdout; .. >) = TinyLibSystem.print caps (Buffer.contents out); Buffer.clear out; TinyLibSystem.flush ()
+let flush (caps : < Cap.stdout; .. >) =
+  TinyLibSystem.print caps (Buffer.contents out);
+  Buffer.clear out;
+  TinyLibSystem.flush ()
 
 let print_posn (q0, q1) chars =
   let t = !text in
-  let count a b = let n = ref 0 in for i = a to b - 1 do if t.[i] = '\n' then incr n done; !n in
+  let count a b =
+    let n = ref 0 in
+    for i = a to b - 1 do if t.[i] = '\n' then incr n done;
+    !n in
   if not chars then begin
     let l1 = 1 + count 0 q0 in
-    let l2 = l1 + count q0 q1 - (if q1 > q0 && t.[q1 - 1] = '\n' then 1 else 0) in
-    Buffer.add_string out (if l2 <> l1 then string_of_int l1 ^ "," ^ string_of_int l2 ^ "; " else string_of_int l1 ^ "; ")
+    let l2 =
+      l1 + count q0 q1 - (if q1 > q0 && t.[q1 - 1] = '\n' then 1 else 0) in
+    Buffer.add_string out
+      (if l2 <> l1 then string_of_int l1 ^ "," ^ string_of_int l2 ^ "; "
+       else string_of_int l1 ^ "; ")
   end;
-  Buffer.add_string out (if q1 <> q0 then "#" ^ string_of_int q0 ^ ",#" ^ string_of_int q1 ^ "\n" else "#" ^ string_of_int q0 ^ "\n")
+  Buffer.add_string out
+    (if q1 <> q0 then "#" ^ string_of_int q0 ^ ",#" ^ string_of_int q1 ^ "\n"
+     else "#" ^ string_of_int q0 ^ "\n")
 
 (* the file's line in sam's menu: ' when modified *)
 let menu name = (if !modified then "'" else " ") ^ "-. " ^ name ^ "\n"
 
 let read_file (caps : < Cap.open_in; .. >) name =
-  if name = "" then None else try Some (TinyLibSystem.read_file caps name) with Failure _ -> None
+  if name = "" then None
+  else try Some (TinyLibSystem.read_file caps name) with Failure _ -> None
 
-let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) (c : cmd) : unit =
-  let a = match c.addr, c.op with None, File (Write, _) -> (0, len ()) | None, _ -> !dot | Some ad, _ -> address ad !dot in
+let rec exec
+    (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    (c : cmd) : unit =
+  let a =
+    match c.addr, c.op with
+    | None, File (Write, _) -> (0, len ())
+    | None, _ -> !dot
+    | Some ad, _ -> address ad !dot in
   let q0, q1 = a in
   match c.op with
   | Text (w, s) ->
       (* the range the text replaces *)
-      let p0, p1 = match w with After -> q1, q1 | Before -> q0, q0 | Instead -> q0, q1 in
+      let p0, p1 =
+        match w with After -> q1, q1 | Before -> q0, q0 | Instead -> q0, q1 in
       change p0 p1 s;
       dot := (p0, p0 + String.length s)
   | Delete -> change q0 q1 ""; dot := (q0, q0)
   | Subst (n, pat, rep, g) ->
       let re = compile pat in
-      let n = ref n and p = ref q0 and op = ref (-1) and did = ref false and delta = ref 0 in
+      let n = ref n and p = ref q0 and op = ref (-1) and did = ref false
+      and delta = ref 0 in
       (try
          while !p <= q1 do
            match search re !text !p q1 with
@@ -466,7 +578,10 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
                           (match rep.[!i] with
                            | d when d >= '1' && d <= '9' ->
                                let g = Char.code d - 48 in
-                               if m.(2 * g) >= 0 && m.((2 * g) + 1) >= 0 then Buffer.add_string b (String.sub !text m.(2 * g) (m.((2 * g) + 1) - m.(2 * g)))
+                               if m.(2 * g) >= 0 && m.((2 * g) + 1) >= 0 then
+                                 Buffer.add_string b
+                                   (String.sub !text m.(2 * g)
+                                      (m.((2 * g) + 1) - m.(2 * g)))
                            | c -> Buffer.add_char b c)
                       | '&' -> Buffer.add_string b (String.sub !text s (e - s))
                       | c -> Buffer.add_char b c);
@@ -494,7 +609,9 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
         if q1 <= p then (change q0 q1 ""; change p p s)
         else if q0 >= p then (change p p s; change q0 q1 "")
         else raise (Error "addresses overlap");
-        dot := (shift p - (if p >= q1 then q1 - q0 else 0), shift p - (if p >= q1 then q1 - q0 else 0) + String.length s)
+        dot :=
+          (shift p - (if p >= q1 then q1 - q0 else 0),
+           shift p - (if p >= q1 then q1 - q0 else 0) + String.length s)
       end
       else (change p p s; dot := (p, p + String.length s))
   | Loop (If (g, pat), sub) ->
@@ -503,7 +620,10 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
   | Loop (Lines, sub) ->
       let p = ref q0 in
       while !p < q1 do
-        let e = match String.index_from_opt !text !p '\n' with Some e when e < q1 -> e + 1 | _ -> q1 in
+        let e =
+          match String.index_from_opt !text !p '\n' with
+          | Some e when e < q1 -> e + 1
+          | _ -> q1 in
         dot := (!p, e);
         exec caps sub;
         p := e
@@ -512,7 +632,11 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
       (* looper(): x on each match, y on the text between (the two
        * other loops are the cases above; tiny-ml has no or-pattern
        * that binds a name, (Matches pat | Between pat)) *)
-      let x, pat = match k with Matches p -> true, p | Between p -> false, p | _ -> raise (Error "loop") in
+      let x, pat =
+        match k with
+        | Matches p -> true, p
+        | Between p -> false, p
+        | _ -> raise (Error "loop") in
       let re = compile pat in
       let p = ref q0 and op = ref (if x then -1 else q0) in
       (try
@@ -537,7 +661,10 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
   | Block cmds -> List.iter (fun c -> dot := a; exec caps c) cmds
   | File (Read, name) -> (
       match read_file caps name with
-      | Some s -> change q0 q1 s; dot := (q0, q0 + String.length s); Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
+      | Some s ->
+          change q0 q1 s;
+          dot := (q0, q0 + String.length s);
+          Buffer.add_string out ("#" ^ string_of_int (String.length s) ^ "\n")
       | None -> raise (Error ("can't open " ^ name)))
   | File (Write, name) ->
       let name = if name = "" then !file else name in
@@ -552,24 +679,31 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
       end;
       if !file = "" then file := name;
       Buffer.add_string out (name ^ ": ");
-      if q1 > q0 && (!text).[q1 - 1] <> '\n' then (flush caps; TinyLibSystem.eprint caps "?warning: last char not newline\n");
+      if q1 > q0 && (!text).[q1 - 1] <> '\n' then
+        (flush caps;
+         TinyLibSystem.eprint caps "?warning: last char not newline\n");
       Buffer.add_string out ("#" ^ string_of_int (q1 - q0) ^ "\n")
   | File (Edit, name) ->
       let name = if name = "" then !file else name in
       (match read_file caps name with
-       | Some s -> change 0 (len ()) s; apply (); file := name; dot := (0, 0); modified := false
+       | Some s ->
+           change 0 (len ()) s; apply (); file := name; dot := (0, 0);
+           modified := false
        | None -> raise (Error ("can't open " ^ name)));
       Buffer.add_string out (menu name)
-  | File (Name, name) -> if name <> "" then file := name; Buffer.add_string out (menu !file)
+  | File (Name, name) ->
+      if name <> "" then file := name; Buffer.add_string out (menu !file)
   | Quit ->
-      if !modified && not !warned then (warned := true; raise (Error "changed files"));
+      if !modified && not !warned then
+        (warned := true; raise (Error "changed files"));
       flush caps;
       TinyLibSystem.exit 0
   | Undo n -> undo n
   | Newline -> (
       (* the next line, or the line dot is in if it is not one *)
       match c.addr with
-      | Some _ -> Buffer.add_string out (String.sub !text q0 (q1 - q0)); dot := a
+      | Some _ ->
+          Buffer.add_string out (String.sub !text q0 (q1 - q0)); dot := a
       | None ->
           let b0, _ = lineaddr 0 !dot (-1) and _, b1 = lineaddr 0 !dot 1 in
           let r = if (b0, b1) = !dot then lineaddr 1 !dot 1 else (b0, b1) in
@@ -579,7 +713,8 @@ let rec exec (caps : < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) 
 let main (caps : Cap.all_caps) : int =
   next_line := (fun () -> TinyLibSystem.read_line caps);
   match TinyLibSystem.argv caps with
-  | [ _; ("-h" | "--help") ] -> TinyLibSystem.print caps help; TinyLibSystem.flush (); 0
+  | [ _; ("-h" | "--help") ] ->
+      TinyLibSystem.print caps help; TinyLibSystem.flush (); 0
   | argv ->
       (match argv with
        | [ _; name ] ->
@@ -613,7 +748,8 @@ let main (caps : Cap.all_caps) : int =
             loop ()
         | None -> loop () in
       loop ();
-      if !modified && not !warned then (flush caps; TinyLibSystem.eprint caps "?changed files\n");
+      if !modified && not !warned then
+        (flush caps; TinyLibSystem.eprint caps "?changed files\n");
       flush caps;
       0
 

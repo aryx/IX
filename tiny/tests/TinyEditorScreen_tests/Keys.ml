@@ -1,9 +1,9 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* TinyEditorScreen's test (TinyEditorScreen_test.sh): keys typed at the editor, with
- * no screen and no file, and after each scene its screen printed, a
- * line each between bars, then the cursor's place. A screen of 24
+(* TinyEditorScreen's test (TinyEditorScreen_test.sh): keys typed at the
+ * editor, with no screen and no file, and after each scene its screen
+ * printed, a line each between bars, then the cursor's place. A screen of 24
  * columns and 7 lines, 5 of them the text's. The same file is built by
  * OCaml and by tiny-ml for tiny-cpu: the same lines. A control key is
  * its byte in a string: C-a is \001, C-x \024, Escape \027; the arrows
@@ -14,15 +14,20 @@ let show what e =
   print_string ("== " ^ what); print_newline ();
   List.iter (fun l -> print_string ("|" ^ l ^ "|"); print_newline ()) (view e);
   let x, y = cursor e in
-  print_string ("cursor " ^ string_of_int x ^ " " ^ string_of_int y); print_newline ()
+  print_string ("cursor " ^ string_of_int x ^ " " ^ string_of_int y);
+  print_newline ()
 
 (* the keys of a string, each followed by those the editor gives itself
  * (a macro's, M-x's), and what the last one asked *)
 let keys e s =
   let last = ref Continue in
-  let rec given () = match pending e with Some k -> last := key e k; given () | None -> () in
+  let rec given () =
+    match pending e with Some k -> last := key e k; given () | None -> () in
   String.iter (fun c -> last := key e (Char.code c); given ()) s;
-  match !last with Continue -> () | Save -> print_string "asks: save"; print_newline () | Quit -> print_string "asks: quit"; print_newline ()
+  match !last with
+  | Continue -> ()
+  | Save -> print_string "asks: save"; print_newline ()
+  | Quit -> print_string "asks: quit"; print_newline ()
 
 let () =
   let e = create 24 7 "notes" "" in
@@ -49,7 +54,11 @@ let () =
   keys e "\024\017"
 
 let () =
-  let text = String.concat "\n" (List.init 12 (fun i -> "line " ^ string_of_int (i + 1) ^ (if i mod 4 = 3 then " needle" else ""))) in
+  let text =
+    String.concat "\n" (List.init 12 (fun i ->
+      "line " ^ string_of_int (i + 1)
+      ^ (if i mod 4 = 3 then " needle" else "")))
+  in
   let e = create 24 7 "twelve" text in
   show "a text of twelve lines" e;
   keys e "\022";
@@ -74,7 +83,9 @@ let () =
   show "what is not a command" e
 
 let () =
-  let e = create 24 7 "wide" "\tif(x)\n\t\treturn a\tb;\nabcdefghijklmnopqrstuvwxyz0123456789" in
+  let e =
+    create 24 7 "wide"
+      "\tif(x)\n\t\treturn a\tb;\nabcdefghijklmnopqrstuvwxyz0123456789" in
   show "tabs, and a line wider than the screen" e;
   keys e "\006\014";
   show "after the first tab, a line down: the same character's column" e;
@@ -122,19 +133,35 @@ let () =
 let show_faces what e =
   print_string ("== " ^ what); print_newline ();
   let v = view e in
-  List.iteri (fun i f -> print_string ("|" ^ List.nth v i ^ "|"); print_newline (); print_string ("|" ^ f ^ "|"); print_newline ()) (faces e)
+  List.iteri (fun i f ->
+    print_string ("|" ^ List.nth v i ^ "|"); print_newline ();
+    print_string ("|" ^ f ^ "|"); print_newline ()) (faces e)
 
 let () =
-  let ml = "let x = 'a' (* a (* nested *)\n  comment *) in\nif s = \"say \\\"hi\\\"\" then 'b'\nlet f x' = x' :: []" in
+  let ml =
+    "let x = 'a' (* a (* nested *)\n  comment *) in\n"
+    ^ "if s = \"say \\\"hi\\\"\" then 'b'\nlet f x' = x' :: []"
+  in
   let e = create 32 7 "a.ml" ml in
-  show_faces "OCaml: a comment over two lines, nested; strings, characters, x'" e;
-  let e = create 32 7 "a.c" "#include <u.h>\nint f(char *s) /* a\n comment */ {\n\treturn s[0] == '\\n'; // end\n}" in
+  show_faces
+    "OCaml: a comment over two lines, nested; strings, characters, x'" e;
+  let e =
+    create 32 7 "a.c"
+      ("#include <u.h>\nint f(char *s) /* a\n comment */ {\n"
+       ^ "\treturn s[0] == '\\n'; // end\n}")
+  in
   show_faces "C: #include, a comment over two lines, a tab, // to the end" e;
   let e = create 32 7 "notes" "let x = 1" in
-  print_string ("a file of no language: " ^ string_of_int (List.length (faces e)) ^ " lines of faces"); print_newline ()
+  print_string ("a file of no language: "
+    ^ string_of_int (List.length (faces e)) ^ " lines of faces");
+  print_newline ()
 
 let () =
-  let text = String.concat "\n" (List.init 9 (fun i -> if i = 2 then "(* open" else if i = 6 then "closed *) let" else "let " ^ string_of_int i)) in
+  let text =
+    String.concat "\n" (List.init 9 (fun i ->
+      if i = 2 then "(* open"
+      else if i = 6 then "closed *) let"
+      else "let " ^ string_of_int i)) in
   let e = create 24 5 "b.ml" text in
   keys e "\022\022";
   show_faces "two screens down: the comment opened above the first line shown" e

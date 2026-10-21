@@ -13,14 +13,24 @@ external empty : int -> unit -> 'a array = "ml_array_make"
 let of_list l =
   match l with
   | [] -> empty 0 ()
-  | x :: _ -> let a = make (List.length l) x in List.iteri (fun i y -> set a i y) l; a
-let to_list a = let rec go i acc = if i < 0 then acc else go (i - 1) (get a i :: acc) in go (length a - 1) []
+  | x :: _ ->
+    let a = make (List.length l) x in
+    List.iteri (fun i y -> set a i y) l;
+    a
+let to_list a =
+  let rec go i acc = if i < 0 then acc else go (i - 1) (get a i :: acc) in
+  go (length a - 1) []
 let init n f =
-  if n = 0 then empty 0 () else (let a = make n (f 0) in for i = 1 to n - 1 do set a i (f i) done; a)
-let sub a off n = if off < 0 || n < 0 || off + n > length a then invalid_arg "Array.sub" else init n (fun i -> get a (off + i))
+  if n = 0 then empty 0 ()
+  else (let a = make n (f 0) in for i = 1 to n - 1 do set a i (f i) done; a)
+let sub a off n =
+  if off < 0 || n < 0 || off + n > length a then invalid_arg "Array.sub"
+  else init n (fun i -> get a (off + i))
 let copy a = sub a 0 (length a)
 let map f a = init (length a) (fun i -> f (get a i))
-let append a b = let n = length a in init (n + length b) (fun i -> if i < n then get a i else get b (i - n))
+let append a b =
+  let n = length a in
+  init (n + length b) (fun i -> if i < n then get a i else get b (i - n))
 let concat l = of_list (List.concat_map to_list l)
 let iter f a = for i = 0 to length a - 1 do f (get a i) done
 let to_seq a = Seq.init (length a) (get a)

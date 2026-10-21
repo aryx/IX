@@ -66,9 +66,10 @@
  *
  * The text of the objects uses a format specific to this file, which
  * is canonical and readable ("tree\nf HASH name\n..."); it is hashed
- * with SHA-1 (Sha1) and stored as it is. What is dropped: git's formats, compression (old: deflate,
- * lib_compression's Zlib; gone when tiny-vcs went to tiny-kernel, as
- * plan_tiny_self_hosting.md says), packs and deltas, the wire protocol,
+ * with SHA-1 (Sha1) and stored as it is. What is dropped: git's formats,
+ * compression (old: deflate, lib_compression's Zlib; gone when tiny-vcs
+ * went to tiny-kernel, as plan_tiny_self_hosting.md says), packs and
+ * deltas, the wire protocol,
  * the index, submodules and symbolic links, rename detection, tags,
  * and rebase.
  *
@@ -155,4 +156,6 @@
 
 (* a command and its arguments, done in the repository found from the
  * current directory: init, commit, log, diff, switch, merge, undo... *)
-val run : < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir > -> string list -> unit
+val run :
+  < Cap.env; Cap.open_in; Cap.open_out; Cap.stdout; Cap.readdir > ->
+  string list -> unit

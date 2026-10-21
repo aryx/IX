@@ -166,7 +166,9 @@ val say : office -> string -> unit
  * chart's bars, each its label and value, from its sheet on the page,
  * or none and why. An object's called is a sheet's name ("" for the
  * other kinds), its page_no the page it is on (from 0). *)
-type obj = { kind : string; x : int; y : int; w : int; h : int; data : string; called : string; page_no : int }
+type obj = {
+  kind : string; x : int; y : int; w : int; h : int; data : string;
+  called : string; page_no : int }
 val parse : int -> int -> string -> obj list
 val decode : string -> string * string
 type value = Num of int | Str of string | Err of string

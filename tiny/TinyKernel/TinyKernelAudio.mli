@@ -28,8 +28,10 @@
  * triangle's; 535 while its clamp was the prelude's min and max, each
  * a call of the runtime's compare), and a sound crosses a pipe as 11
  * bytes, not 5,600. A tune of two parts is 3.9 million instructions a
- * second: half of an 8 MHz machine, a fifth of a window's 20. Samples are a message too (`p`), for
- * what is no recipe: a WAV played (TinyPlay.ml).
+ * second: half of an 8 MHz machine, a fifth of a window's 20. Samples
+ * are a message too (`p`), for what is no recipe: a WAV played
+ * (TinyPlay.ml).
+
  *
  * cs-history:
  * This is a sound chip's bargain: the Atari 2600's TIA (1977), General

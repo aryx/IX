@@ -14,7 +14,9 @@ external www_read : int -> string = "www_read"
 
 let () =
   let p = TinyBrowser.create (www_width ()) in
-  let rec go () = let s = www_read 1000 in if s <> "" then begin TinyBrowser.feed p s; go () end in
+  let rec go () =
+    let s = www_read 1000 in
+    if s <> "" then begin TinyBrowser.feed p s; go () end in
   go ();
   TinyBrowser.finish p;
   print_string (Testutil_browser.dump p (www_width ()))

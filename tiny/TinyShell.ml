@@ -63,10 +63,13 @@ and redir = Open of int * mode * word | Dup of int * int
 and mode = Read | Write | Append
 
 exception Error of string
-(* (not Exit: that is the standard library's, and tiny-ml has one space of names) *)
+(* (not Exit: that is the standard library's, and tiny-ml has one space of
+ * names) *)
 exception Exits of string
 
-type caps = < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stderr >
+type caps =
+  < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
+    Cap.stdin; Cap.stderr >
 
 (*****************************************************************************)
 (* Lexing *)
@@ -78,11 +81,15 @@ type token =
 
 type lexer = { text : string; mutable pos : int }
 
-let peekc lx = if lx.pos < String.length lx.text then Some lx.text.[lx.pos] else None
+let peekc lx =
+  if lx.pos < String.length lx.text then Some lx.text.[lx.pos] else None
 let skip lx = lx.pos <- lx.pos + 1
 let wordchr c = not (String.contains " \t\n#;&|`'{}()<>^$" c)
-let idchr c = c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9')
-let while_ lx p = while (match peekc lx with Some c -> p c | None -> false) do skip lx done
+let idchr c =
+  c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+  || ('0' <= c && c <= '9')
+let while_ lx p =
+  while (match peekc lx with Some c -> p c | None -> false) do skip lx done
 
 let rec token lx : token =
   let op tok = skip lx; tok in
@@ -91,7 +98,8 @@ let rec token lx : token =
   | None -> EOF
   | Some (' ' | '\t') -> skip lx; token lx
   | Some '#' -> while_ lx (( <> ) '\n'); token lx
-  | Some '\\' when lx.pos + 1 < String.length lx.text && lx.text.[lx.pos + 1] = '\n' ->
+  | Some '\\'
+    when lx.pos + 1 < String.length lx.text && lx.text.[lx.pos + 1] = '\n' ->
       lx.pos <- lx.pos + 2; token lx   (* a line continued *)
   | Some '\n' -> op NL | Some ';' -> op SEMI | Some '`' -> op BACKQ
   | Some '(' -> op LPAREN | Some ')' -> op RPAREN
@@ -99,7 +107,10 @@ let rec token lx : token =
   | Some '&' -> two '&' AMP ANDAND
   | Some '|' -> two '|' PIPE OROR
   | Some '<' -> skip lx; redir lx 0 Read
-  | Some '>' -> skip lx; if peekc lx = Some '>' then (skip lx; redir lx 1 Append) else redir lx 1 Write
+  | Some '>' ->
+      skip lx;
+      if peekc lx = Some '>' then (skip lx; redir lx 1 Append)
+      else redir lx 1 Write
   | Some _ -> WORD (word lx)
 
 (* <file >[2]file >[2=1] *)
@@ -110,12 +121,16 @@ and redir lx fd mode : token =
     match int_of_string_opt (String.sub lx.text start (lx.pos - start)) with
     | Some n -> n | None -> raise (Error "bad redirection")
   in
-  let file fd = match token lx with WORD w -> Open (fd, mode, w) | _ -> raise (Error "redirection without a file") in
+  let file fd =
+    match token lx with
+    | WORD w -> Open (fd, mode, w)
+    | _ -> raise (Error "redirection without a file") in
   if peekc lx <> Some '[' then REDIR (file fd)
   else begin
     skip lx;
     let a = num () in
-    if peekc lx = Some '=' then (skip lx; let b = num () in skip lx; REDIR (Dup (a, b)))
+    if peekc lx = Some '=' then
+      (skip lx; let b = num () in skip lx; REDIR (Dup (a, b)))
     else (skip lx; REDIR (file a))
   end
 
@@ -128,7 +143,10 @@ and word lx : word =
       let rec quoted () =
         match peekc lx with
         | None -> raise (Error "eof in quotes")
-        | Some '\'' -> skip lx; if peekc lx = Some '\'' then (skip lx; Buffer.add_char b '\''; quoted ())
+        | Some '\'' ->
+            skip lx;
+            if peekc lx = Some '\'' then
+              (skip lx; Buffer.add_char b '\''; quoted ())
         | Some c -> skip lx; Buffer.add_char b c; quoted ()
       in
       quoted ();
@@ -150,7 +168,10 @@ and word lx : word =
       lit :: more lx
 
 (* the pieces that follow with nothing between *)
-and more lx = match peekc lx with Some c when wordchr c || String.contains "'$^" c -> word lx | _ -> []
+and more lx =
+  match peekc lx with
+  | Some c when wordchr c || String.contains "'$^" c -> word lx
+  | _ -> []
 
 (*****************************************************************************)
 (* Parsing *)
@@ -158,7 +179,10 @@ and more lx = match peekc lx with Some c when wordchr c || String.contains "'$^"
 
 type parser = { lx : lexer; mutable ahead : token option }
 
-let peek p = match p.ahead with Some t -> t | None -> let t = token p.lx in p.ahead <- Some t; t
+let peek p =
+  match p.ahead with
+  | Some t -> t
+  | None -> let t = token p.lx in p.ahead <- Some t; t
 let next p = let t = peek p in p.ahead <- None; t
 let expect p t = if next p <> t then raise (Error "syntax error")
 let rec skipnl p = if peek p = NL then (ignore (next p); skipnl p)
@@ -169,9 +193,14 @@ type keyword = Kbang | Kat | Kif | Kwhile | Kfor | Kin | Kfn | Ktilde
 let keyword p : keyword option =
   match peek p with
   | WORD [ Lit (k, false) ] ->
-      List.assoc_opt k [ "!", Kbang; "@", Kat; "if", Kif; "while", Kwhile; "for", Kfor; "in", Kin; "fn", Kfn; "~", Ktilde ]
+      List.assoc_opt k
+        [ "!", Kbang; "@", Kat; "if", Kif; "while", Kwhile; "for", Kfor;
+          "in", Kin; "fn", Kfn; "~", Ktilde ]
   | _ -> None
-let name p what = match next p with WORD [ Lit (x, _) ] -> x | _ -> raise (Error (what ^ ": a name"))
+let name p what =
+  match next p with
+  | WORD [ Lit (x, _) ] -> x
+  | _ -> raise (Error (what ^ ": a name"))
 
 (* x= at the start of a word: x, and what follows the = *)
 let assignment (w : word) =
@@ -189,7 +218,11 @@ let rec body p stop : cmd =
   let c = and_or p in
   if stop (peek p) then c
   else
-    let c = match next p with AMP -> Async c | SEMI | NL -> c | _ -> raise (Error "syntax error") in
+    let c =
+      match next p with
+      | AMP -> Async c
+      | SEMI | NL -> c
+      | _ -> raise (Error "syntax error") in
     if stop (peek p) then c else Seq (c, body p stop)
 
 and and_or p =
@@ -203,16 +236,21 @@ and and_or p =
 
 and pipe p =
   let c = ref (unit p) in
-  while peek p = PIPE do ignore (next p); c := Pipe (!c, operand p unit) done;
+  while peek p = PIPE do
+    ignore (next p); c := Pipe (!c, operand p unit)
+  done;
   !c
 
 (* what follows a | && or ||, on its line or the next ones; the text's
  * end there is an error, rc's, and at a terminal a line to continue *)
-and operand p command = skipnl p; if peek p = EOF then raise (Error "syntax error"); command p
+and operand p command =
+  skipnl p; if peek p = EOF then raise (Error "syntax error"); command p
 
-and cond p = expect p LPAREN; let c = body p (( = ) RPAREN) in expect p RPAREN; skipnl p; c
+and cond p =
+  expect p LPAREN; let c = body p (( = ) RPAREN) in expect p RPAREN; skipnl p; c
 
-and block p = expect p LBRACE; let c = body p (( = ) RBRACE) in expect p RBRACE; c
+and block p =
+  expect p LBRACE; let c = body p (( = ) RBRACE) in expect p RBRACE; c
 
 (* as in rc's grammar, ! and @ take a pipe, if while and for all the
  * rest *)
@@ -227,7 +265,9 @@ and unit p : cmd =
       kw ();
       expect p LPAREN;
       let x = name p "for" in
-      let list = if keyword p = Some Kin then (ignore (next p); Some (words p)) else None in
+      let list =
+        if keyword p = Some Kin then (ignore (next p); Some (words p))
+        else None in
       expect p RPAREN;
       skipnl p;
       For (x, list, and_or p)
@@ -239,7 +279,8 @@ and unit p : cmd =
       let x, v = Option.get (assignment w) in
       let value =
         match v, peek p with
-        | [], LPAREN -> ignore (next p); let ws = words p in expect p RPAREN; ws
+        | [], LPAREN ->
+            ignore (next p); let ws = words p in expect p RPAREN; ws
         | [], BACKQ -> [ one_word p ]
         | [], _ -> []
         | v, _ -> [ v ]
@@ -260,12 +301,20 @@ and simple p =
   in
   go [] []
 
-and redirs p = match peek p with REDIR r -> ignore (next p); r :: redirs p | _ -> []
+and redirs p =
+  match peek p with REDIR r -> ignore (next p); r :: redirs p | _ -> []
 
 (* a word; a `{cmd} is one *)
-and one_word p = match next p with WORD w -> w | BACKQ -> [ Back (block p) ] | _ -> raise (Error "syntax error")
+and one_word p =
+  match next p with
+  | WORD w -> w
+  | BACKQ -> [ Back (block p) ]
+  | _ -> raise (Error "syntax error")
 
-and words p = match peek p with WORD _ | BACKQ -> let w = one_word p in w :: words p | _ -> []
+and words p =
+  match peek p with
+  | WORD _ | BACKQ -> let w = one_word p in w :: words p
+  | _ -> []
 
 (*****************************************************************************)
 (* Matching and globbing *)
@@ -274,16 +323,23 @@ and words p = match peek p with WORD _ | BACKQ -> let w = one_word p in w :: wor
 (* in a word being built, a character not to glob has a \000 before it *)
 let escape s =
   if not (String.exists (fun c -> String.contains "*?[\000" c) s) then s
-  else String.concat "" (List.map (fun c -> (if String.contains "*?[\000" c then "\000" else "") ^ String.make 1 c)
-                           (List.init (String.length s) (String.get s)))
+  else
+    String.concat ""
+      (List.map (fun c ->
+         (if String.contains "*?[\000" c then "\000" else "") ^ String.make 1 c)
+         (List.init (String.length s) (String.get s)))
 
 let unescape s =
   let b = Buffer.create (String.length s) and esc = ref false in
-  String.iter (fun c -> if c = '\000' && not !esc then esc := true else (esc := false; Buffer.add_char b c)) s;
+  String.iter (fun c ->
+    if c = '\000' && not !esc then esc := true
+    else (esc := false; Buffer.add_char b c)) s;
   Buffer.contents b
 
 let rec has_meta s i =
-  i < String.length s && (if s.[i] = '\000' then has_meta s (i + 2) else String.contains "*?[" s.[i] || has_meta s (i + 1))
+  i < String.length s
+  && (if s.[i] = '\000' then has_meta s (i + 2)
+      else String.contains "*?[" s.[i] || has_meta s (i + 1))
 
 (* [matches pat s]: * ? [a-z] [~a-z], on an escaped pattern *)
 let matches (pat : string) (s : string) : bool =
@@ -293,16 +349,19 @@ let matches (pat : string) (s : string) : bool =
     else match pat.[i] with
       | '*' -> go (i + 1) j || (j < m && go i (j + 1))
       | '?' -> j < m && go (i + 1) (j + 1)
-      | '[' when j < m && String.index_from_opt pat (min (i + 2) n) ']' <> None ->
+      | '['
+        when j < m && String.index_from_opt pat (min (i + 2) n) ']' <> None ->
           let close = String.index_from pat (i + 2) ']' in
           let neg = pat.[i + 1] = '~' in
           let rec member k =
             k < close
-            && (if k + 2 < close && pat.[k + 1] = '-' then (pat.[k] <= s.[j] && s.[j] <= pat.[k + 2]) || member (k + 3)
+            && (if k + 2 < close && pat.[k + 1] = '-' then
+                  (pat.[k] <= s.[j] && s.[j] <= pat.[k + 2]) || member (k + 3)
                 else pat.[k] = s.[j] || member (k + 1))
           in
           member (if neg then i + 2 else i + 1) <> neg && go (close + 1) (j + 1)
-      | '\000' when i + 1 < n -> j < m && pat.[i + 1] = s.[j] && go (i + 2) (j + 1)
+      | '\000' when i + 1 < n ->
+          j < m && pat.[i + 1] = s.[j] && go (i + 2) (j + 1)
       | c -> j < m && c = s.[j] && go (i + 1) (j + 1)
   in
   go 0 0
@@ -314,18 +373,27 @@ let matches (pat : string) (s : string) : bool =
  * examples/g on tiny-kernel, where 9base's rc says d/g) *)
 let glob (w : string) : string list =
   let rec expand dir = function
-    | [] -> if (try ignore (TinyLibSystem.stat dir); true with Failure _ -> false) then [ dir ] else []
-    | comp :: rest when not (has_meta comp 0) -> expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
+    | [] ->
+        if (try ignore (TinyLibSystem.stat dir); true with Failure _ -> false)
+        then [ dir ]
+        else []
+    | comp :: rest when not (has_meta comp 0) ->
+        expand (dir ^ unescape comp ^ if rest = [] then "" else "/") rest
     | comp :: rest ->
         List.sort compare (TinyLibSystem.readdir (if dir = "" then "." else dir))
         |> List.filter (matches comp)
         |> List.concat_map (fun e ->
-            if rest = [] then [ dir ^ e ] else if TinyLibSystem.is_directory (dir ^ e) then expand (dir ^ e ^ "/") rest else [])
+            if rest = [] then [ dir ^ e ]
+            else if TinyLibSystem.is_directory (dir ^ e) then
+              expand (dir ^ e ^ "/") rest
+            else [])
   in
   if not (has_meta w 0) then [ unescape w ]
   else
     let comps = List.filter (( <> ) "") (String.split_on_char '/' w) in
-    match expand (if w.[0] = '/' then "/" else "") comps with [] -> [ unescape w ] | l -> l
+    match expand (if w.[0] = '/' then "/" else "") comps with
+    | [] -> [ unescape w ]
+    | l -> l
 
 (*****************************************************************************)
 (* Variables and statuses *)
@@ -337,10 +405,12 @@ let fns : (string, cmd) Hashtbl.t = Hashtbl.create 16
 let get x =
   let find x = Hashtbl.find_opt vars x ||| [] in
   match int_of_string_opt x with
-  | Some n when n > 0 -> (match List.nth_opt (find "*") (n - 1) with Some v -> [ v ] | None -> [])
+  | Some n when n > 0 ->
+      (match List.nth_opt (find "*") (n - 1) with Some v -> [ v ] | None -> [])
   | _ -> find x
 
-let set x v = if v = [] then Hashtbl.remove vars x else Hashtbl.replace vars x v
+let set x v =
+  if v = [] then Hashtbl.remove vars x else Hashtbl.replace vars x v
 let status () = String.concat "" (get "status")
 let set_status s = set "status" [ s ]
 
@@ -362,7 +432,10 @@ let truth s = String.for_all (fun c -> c = '0' || c = '|') s
 (* an exit code: rc's, the leading number, or 1 *)
 let code s =
   if truth s then 0
-  else match int_of_string_opt (List.hd (String.split_on_char '|' s)) with Some n when n > 0 -> n | _ -> 1
+  else
+    match int_of_string_opt (List.hd (String.split_on_char '|' s)) with
+    | Some n when n > 0 -> n
+    | _ -> 1
 
 (*****************************************************************************)
 (* Processes and fds *)
@@ -371,10 +444,12 @@ let code s =
 (* a child's status; one a signal ended is said, as rc says it *)
 let wait caps pid =
   let s = TinyLibSystem.wait caps pid in
-  if String.length s >= 6 && String.sub s 0 6 = "signal" then TinyLibSystem.eprint caps (string_of_int pid ^ ": " ^ s ^ "\n");
+  if String.length s >= 6 && String.sub s 0 6 = "signal" then
+    TinyLibSystem.eprint caps (string_of_int pid ^ ": " ^ s ^ "\n");
   s
 
-let die (caps : < Cap.stderr; .. >) m = TinyLibSystem.eprint caps ("tiny-shell: " ^ m ^ "\n"); "error"
+let die (caps : < Cap.stderr; .. >) m =
+  TinyLibSystem.eprint caps ("tiny-shell: " ^ m ^ "\n"); "error"
 
 (* f in a child, which exits with the status it leaves *)
 let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
@@ -384,22 +459,29 @@ let fork (caps : < Cap.fork; Cap.stderr; .. >) (f : unit -> unit) : int =
    * host's raises); "try again" is rc's word for it *)
   | -1 -> raise (Error "try again")
   | 0 ->
-      let st = try f (); status () with Exits s -> s | Error m -> die caps m in
+      let st =
+        try f (); status () with Exits s -> s | Error m -> die caps m in
       TinyLibSystem.flush ();
       TinyLibSystem.exit (code st)
   | pid -> pid
 
 (* lists, rc's way: joined by \001 *)
 let environment () =
-  Hashtbl.fold (fun x v acc -> if x = "*" then acc else (x ^ "=" ^ String.concat "\001" v) :: acc) vars []
+  Hashtbl.fold (fun x v acc ->
+    if x = "*" then acc else (x ^ "=" ^ String.concat "\001" v) :: acc)
+    vars []
 
 let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
   let name = List.hd argv in
   let files =
     if String.contains name '/' then [ name ]
-    else List.map (fun d -> Filename.concat d name) (String.split_on_char ':' (String.concat "" (get "PATH")))
+    else
+      List.map (fun d -> Filename.concat d name)
+        (String.split_on_char ':' (String.concat "" (get "PATH")))
   in
-  let why = List.fold_left (fun _ f -> TinyLibSystem.exec caps f argv (environment ())) "not found" files in
+  let why =
+    List.fold_left (fun _ f -> TinyLibSystem.exec caps f argv (environment ()))
+      "not found" files in
   TinyLibSystem.eprint caps (name ^ ": " ^ why ^ "\n");
   TinyLibSystem.exit 1
 
@@ -408,21 +490,28 @@ let exec (caps : < Cap.exec; Cap.stderr; .. >) (argv : string list) =
 (* a redirection's target: a file opened, or another fd *)
 type target = To_file of string * mode | To_fd of int
 
-let with_fds (caps : < Cap.open_in; Cap.open_out; .. >) (changes : (int * target) list) f =
+let with_fds (caps : < Cap.open_in; Cap.open_out; .. >)
+    (changes : (int * target) list) f =
   TinyLibSystem.flush ();
   let saved = List.map (fun (n, _) -> n, TinyLibSystem.save n) changes in
   let restore () =
     TinyLibSystem.flush ();
     List.rev saved |> List.iter (fun (n, s) ->
-      match s with Some s -> TinyLibSystem.dup2 s n; TinyLibSystem.close s | None -> TinyLibSystem.close n)
+      match s with
+      | Some s -> TinyLibSystem.dup2 s n; TinyLibSystem.close s
+      | None -> TinyLibSystem.close n)
   in
   let change (n, to_) =
     match to_ with
     | To_fd m -> TinyLibSystem.dup2 m n
     | To_file (file, mode) ->
         (* (not close-on-exec, as it was: it is closed two lines down) *)
-        let f = try (match mode with Read -> TinyLibSystem.open_in caps file | Write -> TinyLibSystem.open_out caps file
-                                   | Append -> TinyLibSystem.open_append caps file)
+        let f =
+          try
+            (match mode with
+             | Read -> TinyLibSystem.open_in caps file
+             | Write -> TinyLibSystem.open_out caps file
+             | Append -> TinyLibSystem.open_append caps file)
           with Failure m -> raise (Error (file ^ ": " ^ m)) in
         TinyLibSystem.dup2 f n;
         TinyLibSystem.close f
@@ -431,7 +520,9 @@ let with_fds (caps : < Cap.open_in; Cap.open_out; .. >) (changes : (int * target
   protect f restore
 
 (* [into w f]: f in a child whose standard output is w *)
-let into caps w r f = fork caps (fun () -> TinyLibSystem.dup2 w 1; TinyLibSystem.close w; TinyLibSystem.close r; f ())
+let into caps w r f =
+  fork caps (fun () ->
+    TinyLibSystem.dup2 w 1; TinyLibSystem.close w; TinyLibSystem.close r; f ())
 
 (*****************************************************************************)
 (* Evaluation *)
@@ -466,22 +557,26 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
   | Not c -> cond c; set_status (if truth (status ()) then "false" else "")
   | If (c, body) -> cond c; if truth (status ()) then run body
   | While (c, body) ->
-      let rec loop () = cond c; if truth (status ()) then (run body; loop ()) in
+      let rec loop () =
+        cond c; if truth (status ()) then (run body; loop ()) in
       loop ()
   | For (x, list, body) ->
-      List.iter (fun v -> set x [ v ]; run body) (match list with Some ws -> words ws | None -> get "*")
+      List.iter (fun v -> set x [ v ]; run body)
+        (match list with Some ws -> words ws | None -> get "*")
   | Fn (f, body) -> Hashtbl.replace fns f body
   | Assign (x, v, None) -> set x (words v)
   | Assign (x, v, Some c) -> local x (words v) (fun () -> run c)
   | Brace (c, rs) -> with_fds caps (redirs caps rs) (fun () -> run c)
-  | Subshell c -> set_status (wait caps (fork caps (fun () -> child caps e c))); check e
+  | Subshell c ->
+      set_status (wait caps (fork caps (fun () -> child caps e c))); check e
   | Pipe _ ->
       (* The shell forks each stage but the last, which it runs itself,
        * and each child execs its command in place (child). So a|b|c|d
        * costs four processes, not seven: tiny-kernel has eight.
        * old: a|b|c, the tree Pipe (Pipe (a, b), c), ran a|b in a child
        * shell, which forked for a and for b, and so on to the left *)
-      let rec stages c acc = match c with Pipe (a, b) -> stages a (b :: acc) | c -> c :: acc in
+      let rec stages c acc =
+        match c with Pipe (a, b) -> stages a (b :: acc) | c -> c :: acc in
       let saved = Option.get (TinyLibSystem.save 0) in
       let pids = ref [] in
       let rec go = function
@@ -496,14 +591,24 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
         | [] -> ()
       in
       (* a stage that cannot be forked: the ones that were are waited for *)
-      (try protect (fun () -> go (stages c [])) (fun () -> TinyLibSystem.flush (); TinyLibSystem.dup2 saved 0; TinyLibSystem.close saved)
-       with ex -> List.iter (fun pid -> ignore (wait caps pid)) !pids; raise ex);
+      (try
+         protect (fun () -> go (stages c [])) (fun () ->
+           TinyLibSystem.flush ();
+           TinyLibSystem.dup2 saved 0;
+           TinyLibSystem.close saved)
+       with ex ->
+         List.iter (fun pid -> ignore (wait caps pid)) !pids; raise ex);
       let last = status () in
       (* rc's status: a|b|c is (a|b)|c, where a|b's is what a child that
        * ran it would exit with, its first number. So 1|2|3 is 1|3 *)
-      let exited s = let n = code s in if n = 0 then "" else string_of_int n in
-      let join acc s = match acc with None -> Some s | Some a -> Some (exited a ^ "|" ^ s) in
-      set_status (Option.get (List.fold_left join None (List.map (wait caps) (List.rev !pids) @ [ last ])));
+      let exited s =
+        let n = code s in if n = 0 then "" else string_of_int n in
+      let join acc s =
+        match acc with None -> Some s | Some a -> Some (exited a ^ "|" ^ s) in
+      set_status
+        (Option.get
+           (List.fold_left join None
+              (List.map (wait caps) (List.rev !pids) @ [ last ])));
       check e
   (* old: Simple with a first word "~", matched as a pattern in the
    * tree, though ~ is a keyword as ! and @ are *)
@@ -511,7 +616,11 @@ let rec run (caps : caps) (e : bool) (c : cmd) : unit =
       (* ~ subject pattern ...: the words as they are, not globbed *)
       with_fds caps (redirs caps rs) (fun () ->
         match List.concat_map (word caps) args with
-        | subject :: pats -> set_status (if List.exists (fun p -> matches p (unescape subject)) pats then "" else "no match")
+        | subject :: pats ->
+            set_status
+              (if List.exists (fun p -> matches p (unescape subject)) pats
+               then ""
+               else "no match")
         | [] -> set_status "no match")
   | Simple (ws, rs) ->
       let argv = words ws in
@@ -528,7 +637,8 @@ and child caps e c =
       with_fds caps (redirs caps rs) (fun () -> command caps true argv)
   | c -> run caps e c
 
-and check e = if !eflag && e && not (truth (status ())) then raise (Exits (status ()))
+and check e =
+  if !eflag && e && not (truth (status ())) then raise (Exits (status ()))
 
 (* inplace: in a child with nothing left to do, a program is exec'd
  * without a fork *)
@@ -536,14 +646,20 @@ and command caps (inplace : bool) (argv : string list) =
   match argv with
   | [] -> ()
   (* a function's body is no condition, even called from one *)
-  | f :: args when Hashtbl.mem fns f -> local "*" args (fun () -> run caps true (Hashtbl.find fns f))
+  | f :: args when Hashtbl.mem fns f ->
+      local "*" args (fun () -> run caps true (Hashtbl.find fns f))
   | [ "cd" ] | [ "cd"; _ ] ->
-      let dir = match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
+      let dir =
+        match argv with [ _; d ] -> d | _ -> String.concat "" (get "HOME") in
       (try TinyLibSystem.chdir caps dir; set_status ""
-       with Failure m -> TinyLibSystem.eprint caps ("Can't cd " ^ dir ^ ": " ^ m ^ "\n"); set_status "can't cd")
-  | "exit" :: args -> raise (Exits (match args with s :: _ -> s | [] -> status ()))
+       with Failure m ->
+         TinyLibSystem.eprint caps ("Can't cd " ^ dir ^ ": " ^ m ^ "\n");
+         set_status "can't cd")
+  | "exit" :: args ->
+      raise (Exits (match args with s :: _ -> s | [] -> status ()))
   | [ "shift" ] | [ "shift"; _ ] ->
-      let n = match argv with [ _; n ] -> (int_of_string_opt n ||| 1) | _ -> 1 in
+      let n =
+        match argv with [ _; n ] -> (int_of_string_opt n ||| 1) | _ -> 1 in
       set "*" (List.filteri (fun i _ -> i >= n) (get "*"));
       set_status ""
   | [ "wait" ] ->
@@ -573,14 +689,19 @@ and word caps (w : word) : string list =
         let out = TinyLibSystem.read_all r in
         TinyLibSystem.close r;
         set_status (wait caps pid);
-        String.split_on_char '\n' out |> List.concat_map (String.split_on_char ' ')
-        |> List.concat_map (String.split_on_char '\t') |> List.filter (( <> ) "") |> List.map escape
+        String.split_on_char '\n' out
+        |> List.concat_map (String.split_on_char ' ')
+        |> List.concat_map (String.split_on_char '\t')
+        |> List.filter (( <> ) "")
+        |> List.map escape
   in
   match w with
   | [] -> []
-  | first :: rest -> List.fold_left (fun acc p -> join acc (piece p)) (piece first) rest
+  | first :: rest ->
+      List.fold_left (fun acc p -> join acc (piece p)) (piece first) rest
 
-and words caps (ws : word list) : string list = List.concat_map (fun w -> List.concat_map glob (word caps w)) ws
+and words caps (ws : word list) : string list =
+  List.concat_map (fun w -> List.concat_map glob (word caps w)) ws
 
 (*****************************************************************************)
 (* Main *)
@@ -591,7 +712,8 @@ let source caps (text : string) =
   let p = { lx = { text; pos = 0 }; ahead = None } in
   let rec loop () =
     skipnl p;
-    if peek p <> EOF then (run caps true (body p (fun t -> t = NL || t = EOF)); loop ())
+    if peek p <> EOF then
+      (run caps true (body p (fun t -> t = NL || t = EOF)); loop ())
   in
   loop ()
 
@@ -611,9 +733,21 @@ let interactive (caps : caps) =
         Buffer.add_string buf (line ^ "\n");
         let text = Buffer.contents buf in
         let p = { lx = { text; pos = 0 }; ahead = None } in
-        (* an error at the text's end: the command goes on, on the next line *)
-        (match (try Some (body p (( = ) EOF)) with Error m -> if p.lx.pos < String.length text then (Buffer.clear buf; set_status (die caps m)); None) with
-         | Some c -> Buffer.clear buf; (try run caps true c with Error m -> set_status (die caps m) | Failure m -> set_status (die caps m))
+        (* an error at the text's end: the command goes on, on the next
+         * line *)
+        (match
+           (try Some (body p (( = ) EOF))
+            with Error m ->
+              if p.lx.pos < String.length text then
+                (Buffer.clear buf; set_status (die caps m));
+              None)
+         with
+         | Some c ->
+             Buffer.clear buf;
+             (try run caps true c
+              with
+              | Error m -> set_status (die caps m)
+              | Failure m -> set_status (die caps m))
          | None -> ());
         loop ()
   in
@@ -621,11 +755,14 @@ let interactive (caps : caps) =
 
 let start (caps : Cap.all_caps) : int =
   (* the environment, with rc's lists split back *)
-  TinyLibSystem.environment caps |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
+  TinyLibSystem.environment caps
+  |> List.iter (fun (k, v) -> set k (String.split_on_char '\001' v));
   set "pid" [ string_of_int (TinyLibSystem.getpid ()) ];
   let iflag = ref false in
   let rec flags = function
-    | a :: rest when String.length a > 1 && a.[0] = '-' && String.for_all (fun c -> String.contains "-eIi" c) a ->
+    | a :: rest
+      when String.length a > 1 && a.[0] = '-'
+           && String.for_all (fun c -> String.contains "-eIi" c) a ->
         if String.contains a 'e' then eflag := true;
         if String.contains a 'i' then iflag := true;
         flags rest

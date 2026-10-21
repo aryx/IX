@@ -19,21 +19,26 @@ type piece = { kind : int; turn : int; x : int; y : int }
 (* a kind's four turns, a turn four rows from the top, a row a
  * hexadecimal digit, its high bit the left cell *)
 let turns =
-  "0F00222200F04444" ^ "8E0064400E2044C0" ^ "2E0044600E80C440" ^ "6600660066006600" ^ "6C00462006C08C40"
+  "0F00222200F04444" ^ "8E0064400E2044C0" ^ "2E0044600E80C440"
+  ^ "6600660066006600" ^ "6C00462006C08C40"
   ^ "4E0046400E404C40" ^ "C60026400C604C80"
 
-(* a kind's colour, a byte of the table: cyan, blue, orange, yellow, green, purple, red *)
+(* a kind's colour, a byte of the table: cyan, blue, orange, yellow, green,
+ * purple, red *)
 let colours = "\050\054\248\252\063\180\240"
 
 let digit c = if c >= 'A' then Char.code c - 55 else Char.code c - 48
-let filled kind turn row col = (digit turns.[(((kind * 4) + turn) * 4) + row] lsr (3 - col)) land 1 = 1
+let filled kind turn row col =
+  (digit turns.[(((kind * 4) + turn) * 4) + row] lsr (3 - col)) land 1 = 1
 
 (* a piece's four cells in the well: a column and a row each *)
 let cells { kind; turn; x; y } =
   let rec from row col acc =
     if row = 4 then acc
     else if col = 4 then from (row + 1) 0 acc
-    else from row (col + 1) (if filled kind turn row col then (x + col, y + row) :: acc else acc)
+    else
+      from row (col + 1)
+        (if filled kind turn row col then (x + col, y + row) :: acc else acc)
   in
   from 0 0 []
 
@@ -67,9 +72,13 @@ type model = {
 
 (* a piece is where it may be: in the well's sides and floor (its top
  * may be over the well), on no cell taken *)
-let fits (well : int array) p = List.for_all (fun (c, r) -> c >= 0 && c < 10 && r < 20 && (r < 0 || well.((r * 10) + c) = 0)) (cells p)
+let fits (well : int array) p =
+  List.for_all (fun (c, r) ->
+      c >= 0 && c < 10 && r < 20 && (r < 0 || well.((r * 10) + c) = 0))
+    (cells p)
 
-(* the frames a row takes: a second, a tenth less each level, a level every ten rows *)
+(* the frames a row takes: a second, a tenth less each level, a level every
+ * ten rows *)
 let delay rows = max 3 (30 - (3 * (rows / 10)))
 
 (*****************************************************************************)
@@ -77,16 +86,26 @@ let delay rows = max 3 (30 - (3 * (rows / 10)))
 (*****************************************************************************)
 
 (* a cell is 16 pixels, the well's corner at (8, 8) *)
-let cell kind col row = Move (8 + (16 * col), 8 + (16 * row), Rect (Char.code colours.[kind], 15, 15))
-let shown (p : piece) = Group (List.map (fun (c, r) -> cell p.kind c r) (List.filter (fun (_, r) -> r >= 0) (cells p)))
+let cell kind col row =
+  Move (8 + (16 * col), 8 + (16 * row), Rect (Char.code colours.[kind], 15, 15))
+let shown (p : piece) =
+  Group (List.map (fun (c, r) -> cell p.kind c r)
+           (List.filter (fun (_, r) -> r >= 0) (cells p)))
 
 let white = 255
 let grey = 0xaa
 
 (* the well's cells and the panel: its numbers, the next piece *)
 let ground_of (well : int array) next score rows =
-  let rec taken i acc = if i = 200 then acc else taken (i + 1) (if well.(i) = 0 then acc else cell (well.(i) - 1) (i mod 10) (i / 10) :: acc) in
-  let line y name n = Group [ Move (184, y, Words (grey, name)); Move (184, y + 16, Words (white, string_of_int n)) ] in
+  let rec taken i acc =
+    if i = 200 then acc
+    else
+      taken (i + 1)
+        (if well.(i) = 0 then acc
+         else cell (well.(i) - 1) (i mod 10) (i / 10) :: acc) in
+  let line y name n =
+    Group [ Move (184, y, Words (grey, name));
+            Move (184, y + 16, Words (white, string_of_int n)) ] in
   let panel =
     Group [ Move (184, 8, Words (white, "TETRIS"));
             line 48 "score" score;
@@ -94,7 +113,8 @@ let ground_of (well : int array) next score rows =
             line 144 "level" (rows / 10) ] in
   let coming = Group [ Move (184, 192, Words (grey, "next")); 
                        shown { kind = next; turn = 0; x = 11; y = 13 } ] in
-  Group (Rect (0, 288, 336) :: Move (8, 8, Rect (0x11, 160, 320)) :: panel :: coming :: taken 0 [])
+  Group (Rect (0, 288, 336) :: Move (8, 8, Rect (0x11, 160, 320))
+         :: panel :: coming :: taken 0 [])
 
 let banner =
   Move (16, 136, Group [ Rect (white, 144, 48); 
@@ -102,7 +122,9 @@ let banner =
                          Move (36, 6, Words (white, "GAME OVER"));
                          Move (20, 24, Words (grey, "space: again")) ])
 
-let view m = if m.over then [ m.board.ground; shown m.piece; banner ] else [ m.board.ground; shown m.piece ]
+let view m =
+  if m.over then [ m.board.ground; shown m.piece; banner ]
+  else [ m.board.ground; shown m.piece ]
 
 (*****************************************************************************)
 (* The rules *)
@@ -113,7 +135,8 @@ let view m = if m.over then [ m.board.ground; shown m.piece; banner ] else [ m.b
 let enter (well : int array) next seed score rows quiet =
   let piece = { kind = next; turn = 0; x = 3; y = 0 } in
   let seed = random seed in
-  let board = { well; ground = ground_of well (seed mod 7) score rows; next = seed mod 7; seed; score; rows } in
+  let board = { well; ground = ground_of well (seed mod 7) score rows;
+                next = seed mod 7; seed; score; rows } in
   { board; piece; wait = delay rows; over = not (fits well piece); quiet }
 
 let start seed quiet =
@@ -126,17 +149,24 @@ let start seed quiet =
 let land_ { board = b; piece; quiet; _ } =
   let well = Array.make 200 0 in
   for i = 0 to 199 do well.(i) <- b.well.(i) done;
-  List.iter (fun (c, r) -> if r >= 0 then well.((r * 10) + c) <- piece.kind + 1) (cells piece);
+  List.iter (fun (c, r) -> if r >= 0 then well.((r * 10) + c) <- piece.kind + 1)
+    (cells piece);
   let left = Array.make 200 0 in
-  let full r = let rec from c = c = 10 || (well.((r * 10) + c) <> 0 && from (c + 1)) in from 0 in
+  let full r =
+    let rec from c = c = 10 || (well.((r * 10) + c) <> 0 && from (c + 1)) in
+    from 0 in
   let rec down r into n =
     if r < 0 then n
     else if full r then down (r - 1) into (n + 1)
-    else (for c = 0 to 9 do left.((into * 10) + c) <- well.((r * 10) + c) done; down (r - 1) (into - 1) n)
+    else (for c = 0 to 9 do left.((into * 10) + c) <- well.((r * 10) + c) done;
+          down (r - 1) (into - 1) n)
   in
   let n = down 19 19 0 in
-  let gain = if n = 0 then 0 else if n = 1 then 100 else if n = 2 then 300 else if n = 3 then 500 else 800 in
-  enter left b.next b.seed (b.score + 4 + (gain * (1 + (b.rows / 10)))) (b.rows + n) quiet
+  let gain =
+    if n = 0 then 0 else if n = 1 then 100 else if n = 2 then 300
+    else if n = 3 then 500 else 800 in
+  enter left b.next b.seed (b.score + 4 + (gain * (1 + (b.rows / 10))))
+    (b.rows + n) quiet
 
 (* the piece somewhere else, if it may be there: else the same model *)
 let moved m p = if fits m.board.well p then { m with piece = p; over = false } else m
@@ -144,9 +174,13 @@ let moved m p = if fits m.board.well p then { m with piece = p; over = false } e
 (* a row down, or landed *)
 let fall m =
   let lower = { m.piece with y = m.piece.y + 1 } in
-  if fits m.board.well lower then { m with piece = lower; wait = delay m.board.rows; over = false } else land_ m
+  if fits m.board.well lower then
+    { m with piece = lower; wait = delay m.board.rows; over = false }
+  else land_ m
 
-let rec drop m = if fits m.board.well { m.piece with y = m.piece.y + 1 } then drop (fall m) else land_ m
+let rec drop m =
+  if fits m.board.well { m.piece with y = m.piece.y + 1 } then drop (fall m)
+  else land_ m
 
 let frame m =
   if m.over then m
@@ -167,7 +201,9 @@ let key k m =
   else if k = 128 then begin
     let turned dx = { p with turn = (p.turn + 1) mod 4; x = p.x + dx } in
     let a = moved m (turned 0) in
-    if a != m then a else (let b = moved m (turned (-1)) in if b != m then b else moved m (turned 1))
+    if a != m then a
+    else (let b = moved m (turned (-1)) in
+          if b != m then b else moved m (turned 1))
   end
   else m
 
@@ -206,22 +242,32 @@ let sound was m =
  * an octave bass on a triangle (the NES's band). A note is its pitch in
  * Hz (e is E5, 659; B is B4, 494; z a rest) and its eighths. *)
 let melody =
-  let e = 659 and b = 494 and c = 523 and d = 587 and a4 = 440 and f = 698 and a = 880 and g = 784 in
+  let e = 659 and b = 494 and c = 523 and d = 587
+  and a4 = 440 and f = 698 and a = 880 and g = 784 in
   [
-  (e, 2); (b, 1); (c, 1); (d, 2); (c, 1); (b, 1);   (a4, 2); (a4, 1); (c, 1); (e, 2); (d, 1); (c, 1);
-  (b, 3); (c, 1); (d, 2); (e, 2);                   (c, 2); (a4, 2); (a4, 4);
-  (0, 1); (d, 2); (f, 1); (a, 2); (g, 1); (f, 1);   (e, 3); (c, 1); (e, 2); (d, 1); (c, 1);
-  (b, 2); (b, 1); (c, 1); (d, 2); (e, 2);           (c, 2); (a4, 2); (a4, 4) ]
+  (e, 2); (b, 1); (c, 1); (d, 2); (c, 1); (b, 1);
+  (a4, 2); (a4, 1); (c, 1); (e, 2); (d, 1); (c, 1);
+  (b, 3); (c, 1); (d, 2); (e, 2);
+  (c, 2); (a4, 2); (a4, 4);
+  (0, 1); (d, 2); (f, 1); (a, 2); (g, 1); (f, 1);
+  (e, 3); (c, 1); (e, 2); (d, 1); (c, 1);
+  (b, 2); (b, 1); (c, 1); (d, 2); (e, 2);
+  (c, 2); (a4, 2); (a4, 4) ]
 
 (* a bar of the bass: a note and its octave above, four times (E,,E,
  * is E2 then E3) *)
-let bar low = [ (low, 1); (2 * low, 1); (low, 1); (2 * low, 1); (low, 1); (2 * low, 1); (low, 1); (2 * low, 1) ]
+let bar low =
+  [ (low, 1); (2 * low, 1); (low, 1); (2 * low, 1);
+    (low, 1); (2 * low, 1); (low, 1); (2 * low, 1) ]
 let bass = List.concat (List.map bar [ 82; 110; 82; 110; 73; 65; 82; 110 ])
 
 (* 200 ms an eighth, a tenth faster each level (m-ix's faster); none
  * when the game is over or the music is off *)
-let theme = [ { timbre = Square; level = 28; notes = melody }; { timbre = Triangle; level = 48; notes = bass } ]
-let music m = if m.over || m.quiet then None else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
+let theme = [ { timbre = Square; level = 28; notes = melody };
+              { timbre = Triangle; level = 48; notes = bass } ]
+let music m =
+  if m.over || m.quiet then None
+  else Some { pace = 2000 / (10 + (m.board.rows / 10)); parts = theme }
 
 let game = { 
     width = 288; height = 336;

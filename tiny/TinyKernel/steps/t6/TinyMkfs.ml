@@ -43,7 +43,8 @@ let make files =
     let first = if n = 0 then 0 else !next in
     for k = 0 to n - 1 do
       let b = !next + k in
-      Bytes.blit_string data (k * bsize) disk (b * bsize) (min bsize (String.length data - (k * bsize)));
+      Bytes.blit_string data (k * bsize) disk (b * bsize)
+        (min bsize (String.length data - (k * bsize)));
       fat b (if k = n - 1 then 0xffffffff else b + 1)
     done;
     next := !next + n;
@@ -52,17 +53,23 @@ let make files =
     if String.length name > 20 then failwith ("a name longer than 20: " ^ name);
     let b = Bytes.make 32 '\000' in
     Bytes.blit_string name 0 b 0 (String.length name);
-    List.iteri (fun k v -> Bytes.set_int32_le b (20 + (4 * k)) (Int32.of_int v)) [ typ; first; size ];
+    List.iteri (fun k v -> Bytes.set_int32_le b (20 + (4 * k)) (Int32.of_int v))
+      [ typ; first; size ];
     Bytes.to_string b in
   let root = !next in
   incr next;
-  let entries = List.map (fun (name, data) -> entry name t_file (chain data) (String.length data)) files in
+  let entries =
+    List.map
+      (fun (name, data) -> entry name t_file (chain data) (String.length data))
+      files
+  in
   let dir = String.concat "" (entries @ [ entry "console" t_dev 0 0 ]) in
   if String.length dir > bsize then failwith "too many files for the root's block";
   Bytes.blit_string dir 0 disk (root * bsize) (String.length dir);
   fat root 0xffffffff;
   for b = 0 to fat_data - 1 do fat b 0xffffffff done;
-  List.iteri (fun k v -> put32 (4 * k) v) [ fat_magic; nblocks; fatstart; fatblocks; root ];
+  List.iteri (fun k v -> put32 (4 * k) v)
+    [ fat_magic; nblocks; fatstart; fatblocks; root ];
   Bytes.to_string disk
 
 (*****************************************************************************)
@@ -76,18 +83,29 @@ let list disk =
   List.init (bsize / 32) (fun e ->
     let at = (root * bsize) + (e * 32) in
     let name = String.sub disk at 20 in
-    let name = match String.index_opt name '\000' with Some i -> String.sub name 0 i | None -> name in
-    if get32 (at + 20) = 0 then "" else Printf.sprintf "%-20s %d %4d %d\n" name (get32 (at + 20)) (get32 (at + 24)) (get32 (at + 28)))
+    let name =
+      match String.index_opt name '\000' with
+      | Some i -> String.sub name 0 i
+      | None -> name
+    in
+    if get32 (at + 20) = 0 then ""
+    else
+      Printf.sprintf "%-20s %d %4d %d\n" name (get32 (at + 20))
+        (get32 (at + 24)) (get32 (at + 28)))
   |> String.concat ""
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >) =
+let main
+    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
+    =
   let read f = FS.read caps (Fpath.v f) in
   try
     match List.tl (Array.to_list (CapSys.argv caps)) with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
     | [ "-l"; img ] -> Console.print caps (list (read img)); 0
     | img :: files when img.[0] <> '-' ->
-        FS.write caps (Fpath.v img) (make (List.map (fun f -> Filename.basename f, read f) files)); 0
+        FS.write caps (Fpath.v img)
+          (make (List.map (fun f -> Filename.basename f, read f) files));
+        0
     | _ -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   with Failure e | Sys_error e -> Console.eprint caps ("tiny-mkfs: " ^ e ^ "\n"); 1
 

@@ -47,10 +47,12 @@ main(int argc, char **argv)
 	vsize = top / 16;
 	if(vsize < 0x10000)
 		vsize = 0x10000;
-	ml_vlimit = (value*)(vstack + vsize - 0x1000);	// (what a few frames push between two allocations)
+	// (what a few frames push between two allocations)
+	ml_vlimit = (value*)(vstack + vsize - 0x1000);
 	heap0 = vstack + vsize;
 	half = (top - heap0 - 0x10000) / 2 / 4;		// in words
-	ml_run((value*)vstack, (value*)heap0, (value*)(heap0 + half * 4), half, half);
+	ml_run((value*)vstack, (value*)heap0, (value*)(heap0 + half * 4),
+		half, half);
 	flush();
 	exit(0);
 }

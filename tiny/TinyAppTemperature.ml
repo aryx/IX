@@ -16,8 +16,14 @@ type msg = Celsius of string | Fahrenheit of string
  * six digits) *)
 let number (s : string) : int * bool =
   let n = String.length s in
-  let rec from i v = if i = n then v, true else if s.[i] >= '0' && s.[i] <= '9' then from (i + 1) ((10 * v) + Char.code s.[i] - 48) else 0, false in
-  if n > 0 && s.[0] = '-' then (if n = 1 || n > 7 then 0, false else (let (v, ok) = from 1 0 in - v, ok))
+  let rec from i v =
+    if i = n then v, true
+    else if s.[i] >= '0' && s.[i] <= '9' then
+      from (i + 1) ((10 * v) + Char.code s.[i] - 48)
+    else 0, false in
+  if n > 0 && s.[0] = '-' then
+    (if n = 1 || n > 7 then 0, false
+     else (let (v, ok) = from 1 0 in - v, ok))
   else if n = 0 || n > 6 then 0, false
   else from 0 0
 

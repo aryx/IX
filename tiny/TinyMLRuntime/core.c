@@ -684,7 +684,8 @@ ml_uncaught(value exn)
 				eadd(", ", 2);
 			v = ((value*)b)[i];
 			if(v & 1)
-				eadd(buf + digits(v >> 1, buf), 24 - digits(v >> 1, buf));
+				eadd(buf + digits(v >> 1, buf),
+					24 - digits(v >> 1, buf));
 			else if((((value*)v)[-1] & 255) == 252){
 				eadd("\"", 1);
 				eadd((char*)v, length(v));
@@ -1109,7 +1110,8 @@ sha_block(uchar *p)
 	value temp;
 
 	for(t = 0; t < 16; t++)
-		sha_w[t] = (p[4 * t] << 24) | (p[4 * t + 1] << 16) | (p[4 * t + 2] << 8) | p[4 * t + 3];
+		sha_w[t] = (p[4 * t] << 24) | (p[4 * t + 1] << 16) |
+			(p[4 * t + 2] << 8) | p[4 * t + 3];
 	for(t = 16; t < 80; t++){
 		x = sha_w[t - 3] ^ sha_w[t - 8] ^ sha_w[t - 14] ^ sha_w[t - 16];
 		sha_w[t] = (x << 1) | ((x >> 31) & 1);

@@ -11,7 +11,8 @@
 (* (grep's patterns: compile, matches) *)
 open TinyLibRegex
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
 
 (* raised by a utility given arguments it does not take: the driver
  * then prints the utility's usage *)
@@ -26,12 +27,15 @@ let complain caps tool s = TinyLibSystem.eprint caps (tool ^ ": " ^ s ^ "\n")
 
 (* what follows the last slash of a path *)
 let last_part path =
-  match String.rindex_opt path '/' with Some i -> String.sub path (i + 1) (String.length path - i - 1) | None -> path
+  match String.rindex_opt path '/' with
+  | Some i -> String.sub path (i + 1) (String.length path - i - 1)
+  | None -> path
 
 (* a name as rc reads it back: between quotes, a quote doubled, when it
  * is empty or has a space, a control character or a quote *)
 let quote name =
-  if name <> "" && not (String.exists (fun c -> c <= ' ' || c = '\'') name) then name
+  if name <> "" && not (String.exists (fun c -> c <= ' ' || c = '\'') name)
+  then name
   else "'" ^ String.concat "''" (String.split_on_char '\'' name) ^ "'"
 
 (* [options letters args]: the letters of the options in front of args,
@@ -43,7 +47,9 @@ let options letters args =
     | "--" :: rest -> acc, rest
     | a :: rest when String.length a > 1 && a.[0] = '-' ->
         let given = List.init (String.length a - 1) (fun i -> a.[i + 1]) in
-        if List.for_all (fun c -> String.contains letters c) given then go (acc @ given) rest else raise Usage
+        if List.for_all (fun c -> String.contains letters c) given
+        then go (acc @ given) rest
+        else raise Usage
     | _ -> acc, args in
   go [] args
 
@@ -73,21 +79,36 @@ let lines fd f =
 
 let each_input caps tool files f =
   let one status name fd =
-    try f name fd; status with Failure m -> complain caps tool ((if name = "" then "stdin" else name) ^ ": " ^ m); 1 in
+    try f name fd; status
+    with Failure m ->
+      complain caps tool ((if name = "" then "stdin" else name) ^ ": " ^ m);
+      1 in
   if files = [] then one 0 "" 0
   else
     List.fold_left (fun status file ->
-      match (try Some (TinyLibSystem.open_in caps file) with Failure m -> complain caps tool (file ^ ": " ^ m); None) with
+      match
+        (try Some (TinyLibSystem.open_in caps file)
+         with Failure m -> complain caps tool (file ^ ": " ^ m); None)
+      with
       | None -> 1
-      | Some fd -> let status = one status file fd in TinyLibSystem.close fd; status) 0 files
+      | Some fd ->
+          let status = one status file fd in
+          TinyLibSystem.close fd;
+          status) 0 files
 
 let cat caps args =
   let _, files = options "" args in
-  each_input caps "cat" files (fun _ fd -> pieces fd (fun s -> print caps s; TinyLibSystem.flush ()))
+  each_input caps "cat" files (fun _ fd ->
+    pieces fd (fun s -> print caps s; TinyLibSystem.flush ()))
 
 (* the counts so far, and whether the last byte counted was inside a
  * word: a word can be cut in two by the end of a piece *)
-type counts = { mutable lines : int; mutable words : int; mutable bytes : int; mutable inword : bool }
+type counts = {
+  mutable lines : int;
+  mutable words : int;
+  mutable bytes : int;
+  mutable inword : bool;
+}
 
 let counts () = { lines = 0; words = 0; bytes = 0; inword = false }
 
@@ -104,9 +125,13 @@ let wc caps args =
   let asked, files = options "lwc" args in
   let asked = if asked = [] then [ 'l'; 'w'; 'c' ] else asked in
   let report c name =
-    let columns = List.filter (fun (letter, _) -> List.mem letter asked) [ 'l', c.lines; 'w', c.words; 'c', c.bytes ] in
+    let columns =
+      List.filter (fun (letter, _) -> List.mem letter asked)
+        [ 'l', c.lines; 'w', c.words; 'c', c.bytes ] in
     let columns = List.map (fun (_, n) -> Printf.sprintf "%7d" n) columns in
-    print caps (String.concat " " (columns @ (if name = "" then [] else [ name ])) ^ "\n") in
+    print caps
+      (String.concat " " (columns @ (if name = "" then [] else [ name ]))
+       ^ "\n") in
   let total = counts () and files_counted = ref 0 in
   let status =
     each_input caps "wc" files (fun name fd ->
@@ -129,11 +154,19 @@ let lines_of from_end n s =
     if from_end then begin
       (* back from the end over n newlines, the one that ends the text
        * not counted *)
-      let rec back i k = if i < 0 then 0 else if s.[i] = '\n' then (if k = n then i + 1 else back (i - 1) (k + 1)) else back (i - 1) k in
-      if n = 0 then len else back (if len > 0 && s.[len - 1] = '\n' then len - 2 else len - 1) 1
+      let rec back i k =
+        if i < 0 then 0
+        else if s.[i] = '\n' then
+          (if k = n then i + 1 else back (i - 1) (k + 1))
+        else back (i - 1) k in
+      if n = 0 then len
+      else back (if len > 0 && s.[len - 1] = '\n' then len - 2 else len - 1) 1
     end
     else begin
-      let rec skip i k = if k <= 1 || i >= len then i else if s.[i] = '\n' then skip (i + 1) (k - 1) else skip (i + 1) k in
+      let rec skip i k =
+        if k <= 1 || i >= len then i
+        else if s.[i] = '\n' then skip (i + 1) (k - 1)
+        else skip (i + 1) k in
       skip 0 n
     end in
   String.sub s start (len - start)
@@ -142,11 +175,13 @@ let tail caps args =
   let from_end, n, files =
     match args with
     | "-n" :: n :: rest -> true, n, rest
-    | a :: rest when String.length a > 1 && (a.[0] = '-' || a.[0] = '+') -> a.[0] = '-', String.sub a 1 (String.length a - 1), rest
+    | a :: rest when String.length a > 1 && (a.[0] = '-' || a.[0] = '+') ->
+        a.[0] = '-', String.sub a 1 (String.length a - 1), rest
     | _ -> true, "10", args in
   match int_of_string_opt n, files with
   | Some n, ([] | [ _ ]) when n >= 0 ->
-      each_input caps "tail" files (fun _ fd -> print caps (lines_of from_end n (TinyLibSystem.read_all fd)))
+      each_input caps "tail" files (fun _ fd ->
+        print caps (lines_of from_end n (TinyLibSystem.read_all fd)))
   | _ -> raise Usage
 
 let tee caps args =
@@ -154,15 +189,23 @@ let tee caps args =
   let status = ref 0 in
   let fds =
     List.concat_map (fun file ->
-      try [ TinyLibSystem.open_out caps file ] with Failure m -> complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
-  pieces 0 (fun s -> print caps s; TinyLibSystem.flush (); List.iter (fun fd -> TinyLibSystem.write fd s) fds);
+      try [ TinyLibSystem.open_out caps file ]
+      with Failure m ->
+        complain caps "tee" (file ^ ": " ^ m); status := 1; []) files in
+  pieces 0 (fun s ->
+    print caps s;
+    TinyLibSystem.flush ();
+    List.iter (fun fd -> TinyLibSystem.write fd s) fds);
   List.iter TinyLibSystem.close fds;
   !status
 
 (* a byte as xd -c shows it, in three columns *)
 let character c =
   let k = Char.code c in
-  if k = 9 then " \\t" else if k = 13 then " \\r" else if k = 10 then " \\n" else if k = 8 then " \\b"
+  if k = 9 then " \\t"
+  else if k = 13 then " \\r"
+  else if k = 10 then " \\n"
+  else if k = 8 then " \\b"
   else if k < 32 || k >= 127 then Printf.sprintf " %02x" k
   else "  " ^ String.make 1 c
 
@@ -174,13 +217,22 @@ let xd caps args =
   let flags, files = options "bc" args in
   let size, show =
     if List.mem 'c' flags then 1, (fun g -> character g.[0])
-    else if List.mem 'b' flags then 1, (fun g -> Printf.sprintf " %02x" (Char.code g.[0]))
-    else 4, (fun g -> " " ^ String.concat "" (List.init 4 (fun i -> if i < String.length g then Printf.sprintf "%02x" (Char.code g.[i]) else "00"))) in
+    else if List.mem 'b' flags then
+      1, (fun g -> Printf.sprintf " %02x" (Char.code g.[0]))
+    else
+      4, (fun g ->
+        " " ^ String.concat "" (List.init 4 (fun i ->
+          if i < String.length g then Printf.sprintf "%02x" (Char.code g.[i])
+          else "00"))) in
   let address a = Printf.sprintf "%07x " a in
   each_input caps "xd" files (fun _ fd ->
     let pending = ref "" and addr = ref 0 in
     let line s =
-      let groups = List.init ((String.length s + size - 1) / size) (fun j -> show (String.sub s (j * size) (min size (String.length s - (j * size))))) in
+      let groups =
+        List.init ((String.length s + size - 1) / size) (fun j ->
+          show
+            (String.sub s (j * size) (min size (String.length s - (j * size)))))
+      in
       print caps (address !addr ^ String.concat "" groups ^ "\n") in
     let rec whole_lines () =
       if String.length !pending >= 16 then begin
@@ -216,9 +268,14 @@ let grep caps args =
               incr count;
               found := true;
               if not (List.mem 'c' flags || List.mem 'l' flags) then
-                print caps (named name ^ (if List.mem 'n' flags then string_of_int !number ^ ": " else "") ^ line ^ (if ended then "\n" else ""))
+                print caps
+                  (named name
+                   ^ (if List.mem 'n' flags then string_of_int !number ^ ": "
+                      else "")
+                   ^ line ^ (if ended then "\n" else ""))
             end);
-          if List.mem 'c' flags then print caps (named name ^ string_of_int !count ^ "\n");
+          if List.mem 'c' flags then
+            print caps (named name ^ string_of_int !count ^ "\n");
           if List.mem 'l' flags && !count > 0 then print caps (name ^ "\n")) in
       if status <> 0 then status else if !found then 0 else 1
 
@@ -226,10 +283,15 @@ let grep caps args =
  * when there is none *)
 let number_of text =
   let n = String.length text in
-  let rec blanks i = if i < n && (text.[i] = ' ' || text.[i] = '\t') then blanks (i + 1) else i in
+  let rec blanks i =
+    if i < n && (text.[i] = ' ' || text.[i] = '\t') then blanks (i + 1)
+    else i in
   let i = blanks 0 in
   let negative = i < n && text.[i] = '-' in
-  let rec digits i acc = if i < n && text.[i] >= '0' && text.[i] <= '9' then digits (i + 1) ((acc * 10) + Char.code text.[i] - 48) else acc in
+  let rec digits i acc =
+    if i < n && text.[i] >= '0' && text.[i] <= '9' then
+      digits (i + 1) ((acc * 10) + Char.code text.[i] - 48)
+    else acc in
   let v = digits (if negative then i + 1 else i) 0 in
   if negative then - v else v
 
@@ -256,11 +318,15 @@ let sort caps args =
   let field, files =
     match rest with
     | a :: l when String.length a > 1 && a.[0] = '+' -> begin
-        match int_of_string_opt (String.sub a 1 (String.length a - 1)) with Some k when k >= 0 -> k, l | _ -> raise Usage
+        match int_of_string_opt (String.sub a 1 (String.length a - 1)) with
+        | Some k when k >= 0 -> k, l
+        | _ -> raise Usage
       end
     | _ -> 0, rest in
   let all = ref [] in
-  let status = each_input caps "sort" files (fun _ fd -> lines fd (fun line _ -> all := line :: !all)) in
+  let status =
+    each_input caps "sort" files (fun _ fd ->
+      lines fd (fun line _ -> all := line :: !all)) in
   let key line =
     let text = from_field field line in
     if List.mem 'n' flags then (number_of text, "") else (0, text) in
@@ -272,7 +338,8 @@ let sort caps args =
     | (k1, l1) :: (k2, _) :: rest when k1 = k2 -> unique ((k1, l1) :: rest)
     | x :: rest -> x :: unique rest
     | [] -> [] in
-  List.iter (fun (_, line) -> print caps (line ^ "\n")) (if List.mem 'u' flags then unique sorted else sorted);
+  List.iter (fun (_, line) -> print caps (line ^ "\n"))
+    (if List.mem 'u' flags then unique sorted else sorted);
   status
 
 (*****************************************************************************)
@@ -283,12 +350,17 @@ let entries dir = List.sort compare (TinyLibSystem.readdir dir)
 
 let rec fold path f =
   let is_dir, size = TinyLibSystem.stat path in
-  f path is_dir size (fun () -> if is_dir then List.map (fun e -> fold (Filename.concat path e) f) (entries path) else [])
+  f path is_dir size (fun () ->
+    if is_dir then
+      List.map (fun e -> fold (Filename.concat path e) f) (entries path)
+    else [])
 
 (* [each_path caps tool paths f]: f on each path; one that fails is
  * reported, and the status is then 1 *)
 let each_path caps tool paths f =
-  List.fold_left (fun status p -> try f p; status with Failure m -> complain caps tool (p ^ ": " ^ m); 1) 0 paths
+  List.fold_left (fun status p ->
+    try f p; status
+    with Failure m -> complain caps tool (p ^ ": " ^ m); 1) 0 paths
 
 (* a directory's entries, or a file's name; all of them sorted together,
  * and quoted for rc. -l: each with its kind (d for a directory), its
@@ -302,14 +374,18 @@ let ls caps args =
     else
       each_path caps "ls" paths (fun p ->
         let is_dir, _ = TinyLibSystem.stat p in
-        names := (if is_dir then List.map (Filename.concat p) (entries p) else [ p ]) @ !names) in
+        names :=
+          (if is_dir then List.map (Filename.concat p) (entries p) else [ p ])
+          @ !names) in
   let long name =
     if not (List.mem 'l' flags) then ""
     else begin
       let is_dir, size = TinyLibSystem.stat name in
-      (if is_dir then "d" else "-") ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links name) size
+      (if is_dir then "d" else "-")
+      ^ Printf.sprintf "%4d%9d " (TinyLibSystem.links name) size
     end in
-  List.iter (fun name -> print caps (long name ^ quote name ^ "\n")) (List.sort compare !names);
+  List.iter (fun name -> print caps (long name ^ quote name ^ "\n"))
+    (List.sort compare !names);
   status
 
 (* every path under a directory (under the current one, without "./",
@@ -321,7 +397,9 @@ let walk caps args =
   else
     each_path caps "walk" paths (fun p ->
       let is_dir, _ = TinyLibSystem.stat p in
-      if is_dir then List.iter (fun e -> fold (Filename.concat p e) pre) (entries p) else print caps (p ^ "\n"))
+      if is_dir then
+        List.iter (fun e -> fold (Filename.concat p e) pre) (entries p)
+      else print caps (p ^ "\n"))
 
 (* the kilobytes under each directory, after what it has; -a: each file
  * too *)
@@ -331,8 +409,11 @@ let du caps args =
   each_path caps "du" paths (fun root ->
     ignore
       (fold root (fun p is_dir size entries ->
-         let k = List.fold_left (fun a b -> a + b) (if is_dir then 0 else (size + 1023) / 1024) (entries ()) in
-         if is_dir || p = root || List.mem 'a' flags then print caps (string_of_int k ^ "\t" ^ quote p ^ "\n");
+         let k =
+           List.fold_left (fun a b -> a + b)
+             (if is_dir then 0 else (size + 1023) / 1024) (entries ()) in
+         if is_dir || p = root || List.mem 'a' flags then
+           print caps (string_of_int k ^ "\t" ^ quote p ^ "\n");
          k)))
 
 (* -r: a directory with what it has, its entries first *)
@@ -340,7 +421,9 @@ let rm caps args =
   let flags, paths = options "r" args in
   if paths = [] then raise Usage;
   each_path caps "rm" paths (fun root ->
-    if List.mem 'r' flags then fold root (fun p _ _ entries -> ignore (entries ()); TinyLibSystem.remove caps p)
+    if List.mem 'r' flags then
+      fold root (fun p _ _ entries ->
+        ignore (entries ()); TinyLibSystem.remove caps p)
     else TinyLibSystem.remove caps root)
 
 (* -p: the directories above it too, and no complaint when it is there *)
@@ -354,7 +437,8 @@ let mkdir caps args =
         if i <= String.length dir then begin
           if i = String.length dir || dir.[i] = '/' then begin
             let d = String.sub dir 0 i in
-            if not (TinyLibSystem.is_directory d) then TinyLibSystem.mkdir caps d
+            if not (TinyLibSystem.is_directory d) then
+              TinyLibSystem.mkdir caps d
           end;
           make (i + 1)
         end in
@@ -369,15 +453,23 @@ let into_last caps tool paths f =
   match List.rev paths with
   | dest :: sources when sources <> [] ->
       let into = TinyLibSystem.is_directory dest in
-      if List.length sources > 1 && not into then begin complain caps tool (dest ^ ": not a directory"); 1 end
-      else each_path caps tool (List.rev sources) (fun from -> f from (if into then Filename.concat dest (last_part from) else dest))
+      if List.length sources > 1 && not into then begin
+        complain caps tool (dest ^ ": not a directory"); 1
+      end
+      else
+        each_path caps tool (List.rev sources) (fun from ->
+          f from (if into then Filename.concat dest (last_part from) else dest))
   | _ -> raise Usage
 
 (* a path's names from the root: the current directory's first when it
  * is relative, "." dropped and ".." resolved by the text *)
 let resolved caps p =
-  let p = if p <> "" && p.[0] = '/' then p else TinyLibSystem.getcwd caps ^ "/" ^ p in
-  List.fold_left (fun acc n -> if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc)
+  let p =
+    if p <> "" && p.[0] = '/' then p else TinyLibSystem.getcwd caps ^ "/" ^ p in
+  List.fold_left (fun acc n ->
+      if n = "" || n = "." then acc
+      else if n = ".." then (match acc with [] -> [] | _ :: r -> r)
+      else n :: acc)
     [] (String.split_on_char '/' p)
 
 (* The copy is written a piece at a time as the file is read, so a file
@@ -391,14 +483,17 @@ let cp caps args =
     if fst (TinyLibSystem.stat from) then failwith "is a directory";
     if resolved caps from = resolved caps dest then failwith "the same file";
     let src = TinyLibSystem.open_in caps from in
-    let fd = (try TinyLibSystem.open_out caps dest with Failure m -> TinyLibSystem.close src; failwith m) in
+    let fd =
+      (try TinyLibSystem.open_out caps dest
+       with Failure m -> TinyLibSystem.close src; failwith m) in
     pieces src (TinyLibSystem.write fd);
     TinyLibSystem.close fd;
     TinyLibSystem.close src)
 
 let mv caps args =
   let _, paths = options "" args in
-  into_last caps "mv" paths (fun from dest -> TinyLibSystem.rename caps from dest)
+  into_last caps "mv" paths (fun from dest ->
+    TinyLibSystem.rename caps from dest)
 
 (* a second name for a file: its bytes are not copied, and a change by
  * one name is seen by the other *)
@@ -424,10 +519,21 @@ let pwd caps args =
 let sleep _caps args =
   match args with
   | [ a ] ->
-      let point = match String.index_opt a '.' with Some i -> i | None -> String.length a in
-      let thousandths = String.sub (String.sub a (min (point + 1) (String.length a)) (String.length a - min (point + 1) (String.length a)) ^ "000") 0 3 in
-      (match int_of_string_opt ("0" ^ String.sub a 0 point), int_of_string_opt thousandths with
-       | Some s, Some ms when ms >= 0 -> TinyLibSystem.sleep ((s * 1000) + ms); 0
+      let point =
+        match String.index_opt a '.' with
+        | Some i -> i
+        | None -> String.length a in
+      let thousandths =
+        String.sub
+          (String.sub a (min (point + 1) (String.length a))
+             (String.length a - min (point + 1) (String.length a))
+           ^ "000") 0 3 in
+      (match
+         int_of_string_opt ("0" ^ String.sub a 0 point),
+         int_of_string_opt thousandths
+       with
+       | Some s, Some ms when ms >= 0 ->
+           TinyLibSystem.sleep ((s * 1000) + ms); 0
        | _ -> raise Usage)
   | _ -> raise Usage
 
@@ -448,32 +554,51 @@ let test _caps args =
   let peek () = match !rest with a :: _ -> Some a | [] -> None in
   let next () = match !rest with a :: l -> rest := l; a | [] -> raise Usage in
   let file f = try Some (TinyLibSystem.stat f) with Failure _ -> None in
-  let number s = match int_of_string_opt s with Some n -> n | None -> raise Usage in
+  let number s =
+    match int_of_string_opt s with Some n -> n | None -> raise Usage in
   let rec either () =
     let p = both () in
-    if peek () = Some "-o" then begin ignore (next ()); let q = either () in p || q end else p
+    if peek () = Some "-o" then begin
+      ignore (next ()); let q = either () in p || q
+    end
+    else p
   and both () =
     let p = negation () in
-    if peek () = Some "-a" then begin ignore (next ()); let q = both () in p && q end else p
-  and negation () = if peek () = Some "!" then begin ignore (next ()); not (negation ()) end else primary ()
+    if peek () = Some "-a" then begin
+      ignore (next ()); let q = both () in p && q
+    end
+    else p
+  and negation () =
+    if peek () = Some "!" then begin ignore (next ()); not (negation ()) end
+    else primary ()
   and primary () =
     match next () with
     | "(" -> let p = either () in if next () <> ")" then raise Usage; p
     | "-e" -> file (next ()) <> None
-    | "-f" -> (match file (next ()) with Some (is_dir, _) -> not is_dir | None -> false)
-    | "-d" -> (match file (next ()) with Some (is_dir, _) -> is_dir | None -> false)
-    | "-s" -> (match file (next ()) with Some (_, size) -> size > 0 | None -> false)
+    | "-f" ->
+        (match file (next ()) with
+         | Some (is_dir, _) -> not is_dir
+         | None -> false)
+    | "-d" ->
+        (match file (next ()) with Some (is_dir, _) -> is_dir | None -> false)
+    | "-s" ->
+        (match file (next ()) with Some (_, size) -> size > 0 | None -> false)
     | "-n" -> next () <> ""
     | "-z" -> next () = ""
     | a -> begin
         match peek () with
         | Some "=" -> ignore (next ()); a = next ()
         | Some "!=" -> ignore (next ()); a <> next ()
-        | Some op when List.mem op [ "-eq"; "-ne"; "-gt"; "-lt"; "-ge"; "-le" ] ->
+        | Some op
+          when List.mem op [ "-eq"; "-ne"; "-gt"; "-lt"; "-ge"; "-le" ] ->
             ignore (next ());
             let m = number a and n = number (next ()) in
-            if op = "-eq" then m = n else if op = "-ne" then m <> n else if op = "-gt" then m > n
-            else if op = "-lt" then m < n else if op = "-ge" then m >= n else m <= n
+            if op = "-eq" then m = n
+            else if op = "-ne" then m <> n
+            else if op = "-gt" then m > n
+            else if op = "-lt" then m < n
+            else if op = "-ge" then m >= n
+            else m <= n
         | _ -> a <> ""
       end in
   if args = [] then 1
@@ -490,26 +615,43 @@ let bracket caps args =
   | _ -> raise Usage
 
 let echo caps args =
-  let newline, words = match args with "-n" :: rest -> false, rest | _ -> true, args in
+  let newline, words =
+    match args with "-n" :: rest -> false, rest | _ -> true, args in
   print caps (String.concat " " words ^ (if newline then "\n" else ""));
   0
 
 let seq caps args =
-  let numbers = List.map (fun a -> match int_of_string_opt a with Some n -> n | None -> raise Usage) args in
-  let first, step, last = match numbers with [ l ] -> 1, 1, l | [ f; l ] -> f, 1, l | [ f; s; l ] -> f, s, l | _ -> raise Usage in
+  let numbers =
+    List.map (fun a ->
+      match int_of_string_opt a with Some n -> n | None -> raise Usage) args in
+  let first, step, last =
+    match numbers with
+    | [ l ] -> 1, 1, l
+    | [ f; l ] -> f, 1, l
+    | [ f; s; l ] -> f, s, l
+    | _ -> raise Usage in
   if step = 0 then raise Usage;
-  let rec go i = if (step > 0 && i <= last) || (step < 0 && i >= last) then begin print caps (string_of_int i ^ "\n"); go (i + step) end in
+  let rec go i =
+    if (step > 0 && i <= last) || (step < 0 && i >= last) then begin
+      print caps (string_of_int i ^ "\n"); go (i + step)
+    end in
   go first;
   0
 
 (* the last part of a path, without the suffix; -d: all but the last part *)
 let basename caps args =
-  let dir, args = match args with "-d" :: rest -> true, rest | _ -> false, args in
-  let name, suffix = match args with [ n ] -> n, "" | [ n; s ] -> n, s | _ -> raise Usage in
+  let dir, args =
+    match args with "-d" :: rest -> true, rest | _ -> false, args in
+  let name, suffix =
+    match args with [ n ] -> n, "" | [ n; s ] -> n, s | _ -> raise Usage in
   let last = last_part name in
   print caps
-    ((if dir then (match String.rindex_opt name '/' with Some i -> String.sub name 0 i | None -> ".")
-      else if suffix <> "" && Filename.check_suffix last suffix then String.sub last 0 (String.length last - String.length suffix)
+    ((if dir then
+        (match String.rindex_opt name '/' with
+         | Some i -> String.sub name 0 i
+         | None -> ".")
+      else if suffix <> "" && Filename.check_suffix last suffix then
+        String.sub last 0 (String.length last - String.length suffix)
       else last) ^ "\n");
   0
 
@@ -523,25 +665,39 @@ let cmp caps args =
   let flags, files = options "s" args in
   match files with
   | [ f1; f2 ] -> begin
-      match (try let a = TinyLibSystem.open_in caps f1 in Some (a, try TinyLibSystem.open_in caps f2 with Failure m -> TinyLibSystem.close a; failwith m) with Failure m -> complain caps "cmp" m; None) with
+      match
+        (try
+           let a = TinyLibSystem.open_in caps f1 in
+           Some (a, try TinyLibSystem.open_in caps f2
+                    with Failure m -> TinyLibSystem.close a; failwith m)
+         with Failure m -> complain caps "cmp" m; None)
+      with
       | None -> 1
       | Some (fa, fb) ->
           (* pos bytes the same so far; sa and sb what is read past them *)
           let rec go pos sa sb =
-            let sa = if sa = "" then TinyLibSystem.read fa 4096 else sa and sb = if sb = "" then TinyLibSystem.read fb 4096 else sb in
+            let sa = if sa = "" then TinyLibSystem.read fa 4096 else sa
+            and sb = if sb = "" then TinyLibSystem.read fb 4096 else sb in
             let n = min (String.length sa) (String.length sb) in
-            let rec first i = if i < n && sa.[i] = sb.[i] then first (i + 1) else i in
+            let rec first i =
+              if i < n && sa.[i] = sb.[i] then first (i + 1) else i in
             let i = first 0 in
             if i < n then Differ_at (pos + i)
-            else if n = 0 then (if sa = "" && sb = "" then Same_bytes else Ends_first ((if sa = "" then f1 else f2), pos))
-            else go (pos + n) (String.sub sa n (String.length sa - n)) (String.sub sb n (String.length sb - n)) in
+            else if n = 0 then
+              (if sa = "" && sb = "" then Same_bytes
+               else Ends_first ((if sa = "" then f1 else f2), pos))
+            else
+              go (pos + n) (String.sub sa n (String.length sa - n))
+                (String.sub sb n (String.length sb - n)) in
           let r = go 0 "" "" in
           TinyLibSystem.close fa; TinyLibSystem.close fb;
           let say s = if not (List.mem 's' flags) then print caps (s ^ "\n") in
           match r with
           | Same_bytes -> 0
-          | Differ_at i -> say (f1 ^ " " ^ f2 ^ " differ: char " ^ string_of_int (i + 1)); 1
-          | Ends_first (f, n) -> say ("EOF on " ^ f ^ " after " ^ string_of_int n ^ " bytes"); 1
+          | Differ_at i ->
+              say (f1 ^ " " ^ f2 ^ " differ: char " ^ string_of_int (i + 1)); 1
+          | Ends_first (f, n) ->
+              say ("EOF on " ^ f ^ " after " ^ string_of_int n ^ " bytes"); 1
     end
   | _ -> raise Usage
 
@@ -578,27 +734,39 @@ let utilities =
 
 let rec find name = function
   | [] -> None
-  | (n, usage, _, f) :: rest -> if n = name then Some (n, usage, f) else find name rest
+  | (n, usage, _, f) :: rest ->
+      if n = name then Some (n, usage, f) else find name rest
 
 let help () =
   "usage: tiny-utils name [arg ...], or name [arg ...] by a link named after it\n"
-  ^ String.concat "" (List.map (fun (n, usage, what, _) -> let u = n ^ " " ^ usage in "  " ^ u ^ String.make (max 1 (32 - String.length u)) ' ' ^ what ^ "\n") utilities)
+  ^ String.concat "" (List.map (fun (n, usage, what, _) ->
+      let u = n ^ " " ^ usage in
+      "  " ^ u ^ String.make (max 1 (32 - String.length u)) ' ' ^ what ^ "\n")
+      utilities)
 
 let main (caps : Cap.all_caps) : int =
   let status =
     match TinyLibSystem.argv caps with
     | [] -> 1
     | arg0 :: args -> begin
-        (* the utility is the name the program was run by, else its first argument *)
+        (* the utility is the name the program was run by, else its first
+         * argument *)
         let called = last_part arg0 in
-        let name, args = match find called utilities, args with Some _, _ -> called, args | None, n :: rest -> n, rest | None, [] -> "", [] in
+        let name, args =
+          match find called utilities, args with
+          | Some _, _ -> called, args
+          | None, n :: rest -> n, rest
+          | None, [] -> "", [] in
         match find name utilities with
         | Some (n, usage, f) -> begin
             try f (caps :> caps) args with
-            | Usage -> TinyLibSystem.eprint caps ("usage: " ^ n ^ " " ^ usage ^ "\n"); 1
+            | Usage ->
+                TinyLibSystem.eprint caps ("usage: " ^ n ^ " " ^ usage ^ "\n");
+                1
             | Failure m -> complain caps n m; 1
           end
-        | None when name = "-h" || name = "--help" -> TinyLibSystem.print caps (help ()); 0
+        | None when name = "-h" || name = "--help" ->
+            TinyLibSystem.print caps (help ()); 0
         | None -> TinyLibSystem.eprint caps (help ()); 1
       end in
   TinyLibSystem.flush ();

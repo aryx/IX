@@ -82,7 +82,8 @@ let c_intr = 4
  * at the same pace on a faster machine. *)
 let tick = let r = k_rate () in if r < 400 then 20000 else r / 400
 
-let puts s = for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
+let puts s =
+  for i = 0 to String.length s - 1 do pokeb cons_out (Char.code s.[i]) done
 (* (what the disk has not been told yet is told first) *)
 let halt status = fs_commit (); poke halt_dev status
 
@@ -93,10 +94,11 @@ let halt status = fs_commit (); poke halt_dev status
 (* a directory is a list of names in the order they were made; the
  * console is a node too, /dev/console, and the screen, the mouse and
  * the speaker, /dev/draw, /dev/mouse and /dev/audio (the programs are
- * in /bin, examples to look at in /examples). A file of the image is read where the image has it (its
- * address, its size) until it is written: the programs, a megabyte of
- * them, are then not the collector's to copy at each collection (old:
- * each a string, Data; a collection was 3 million instructions).
+ * in /bin, examples to look at in /examples). A file of the image is
+ * read where the image has it (its address, its size) until it is
+ * written: the programs, a megabyte of them, are then not the
+ * collector's to copy at each collection (old: each a string, Data; a
+ * collection was 3 million instructions).
  * A file or a directory on the disk (TinyKernelFS.ml) is a tree and an
  * inode's number: tree 0 is the live one, the others are the snapshots.
  * A union is several directories seen as one, as Plan 9's bind -a makes:
@@ -105,23 +107,47 @@ let halt status = fs_commit (); poke halt_dev status
  * doubled when a write goes past them (old: a string, made again at
  * each write: a database that grows by appends took a second for each
  * statement, tiny-db's) *)
-type node = Dir of (string * node) list ref | Data of data | Rom of int * int | Tty | Screen | Pointer | Speaker | Disk of int * int | Union of node list
+type node =
+  | Dir of (string * node) list ref
+  | Data of data
+  | Rom of int * int
+  | Tty
+  | Screen
+  | Pointer
+  | Speaker
+  | Disk of int * int
+  | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
 
-let data s = let b = Bytes.make (String.length s) ' ' in Bytes.blit_string s 0 b 0 (String.length s); { dbytes = b; dsize = String.length s; dtime = 0 }
+let data s =
+  let b = Bytes.make (String.length s) ' ' in
+  Bytes.blit_string s 0 b 0 (String.length s);
+  { dbytes = b; dsize = String.length s; dtime = 0 }
 let text d = Bytes.sub_string d.dbytes 0 d.dsize
 
 (* a pipe: the bytes written not yet read (512 at most), its readers'
  * and its writers' descriptors (a read of an empty pipe with no writer
  * left is its end) *)
-type pipe = { mutable buf : string; mutable readers : int; mutable writers : int }
+type pipe =
+  { mutable buf : string; mutable readers : int; mutable writers : int }
 
 (* an open file: a node (its offset, whether it is written), a pipe's
  * end, the console, a connection to the screen, a box's end. The
  * collector frees them; only pipes count their ends, as a reader must
  * learn that no writer is left, and a connection its descriptors, as
  * its images are not the collector's *)
-type file = Open of opened | Reader of pipe | Writer of pipe | Console | Draw of drawing | Peek of box | Post of box | Link of link | Call of call | Voice of voice | Trace of trace
+type file =
+  | Open of opened
+  | Reader of pipe
+  | Writer of pipe
+  | Console
+  | Draw of drawing
+  | Peek of box
+  | Post of box
+  | Link of link
+  | Call of call
+  | Voice of voice
+  | Trace of trace
 and opened = { node : node; mutable off : int; writes : bool }
 and drawing = { conn : conn; mutable refs : int }
 
@@ -136,7 +162,13 @@ and box = { mutable last : string; mutable fresh : bool; mutable posters : int }
  * What is written is sent there as a question, and a read gives an
  * answer's bytes, whole, in the order they came; a link has a number,
  * which its questions carry and their answers bring back *)
-and link = { peer : string; lid : int; mutable asked : int; mutable heard : string list; mutable holders : int }
+and link = {
+  peer : string;
+  lid : int;
+  mutable asked : int;
+  mutable heard : string list;
+  mutable holders : int;
+}
 
 (* a connection to a program of another machine (TinyKernelNetwork.ml's IL):
  * a write is a message, which arrives once and in order or is sent
@@ -152,7 +184,13 @@ and voice = { mutable ahead : int }
  * their pids, the breakpoints (an address and the word that was there),
  * what is said to the tracer and not yet read, and the tracer's
  * descriptors on it *)
-and trace = { tpid : int; tracer : int; mutable stops : (int * int) list; mutable said : string list; mutable watchers : int }
+and trace = {
+  tpid : int;
+  tracer : int;
+  mutable stops : (int * int) list;
+  mutable said : string list;
+  mutable watchers : int;
+}
 
 (* The image's files (and /dev), and the tree a path starts from. They
  * are the same when there is no disk. With a disk, the boot makes the
@@ -166,12 +204,19 @@ let top = ref root
  * it starts with /, "." dropped, ".." the name before it removed (by
  * the text, as Plan 9's cleanname: no ".." in a directory) *)
 let names cwd path =
-  let start = if String.length path > 0 && path.[0] = '/' then [] else List.rev cwd in
+  let start =
+    if String.length path > 0 && path.[0] = '/' then [] else List.rev cwd in
   List.rev (List.fold_left (fun acc n ->
-    if n = "" || n = "." then acc else if n = ".." then (match acc with [] -> [] | _ :: r -> r) else n :: acc)
+    if n = "" || n = "." then acc
+    else if n = ".." then (match acc with [] -> [] | _ :: r -> r)
+    else n :: acc)
     start (String.split_on_char '/' path))
 
-let is_dir node = match node with Dir _ | Union _ -> true | Disk (r, i) -> fs_is_dir r i | _ -> false
+let is_dir node =
+  match node with
+  | Dir _ | Union _ -> true
+  | Disk (r, i) -> fs_is_dir r i
+  | _ -> false
 
 (* In a union, the name is looked up in each directory. The first one
  * found is the answer, unless it is a directory found in several: then
@@ -179,13 +224,18 @@ let is_dir node = match node with Dir _ | Union _ -> true | Disk (r, i) -> fs_is
 let rec walk node ns =
   match ns, node with
   | [], _ -> Some node
-  | n :: rest, Dir d -> (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
-  | n :: rest, Disk (r, i) when fs_is_dir r i -> (match fs_lookup r i n with 0 -> None | j -> walk (Disk (r, j)) rest)
+  | n :: rest, Dir d ->
+      (match List.assoc_opt n !d with Some c -> walk c rest | None -> None)
+  | n :: rest, Disk (r, i) when fs_is_dir r i ->
+      (match fs_lookup r i n with 0 -> None | j -> walk (Disk (r, j)) rest)
   | n :: rest, Union l ->
-      (match List.fold_left (fun acc m -> match walk m [ n ] with Some c -> acc @ [ c ] | None -> acc) [] l with
+      (match List.fold_left (fun acc m ->
+         match walk m [ n ] with Some c -> acc @ [ c ] | None -> acc) [] l with
        | [] -> None
        | [ c ] -> walk c rest
-       | c :: more -> walk (if is_dir c then Union (List.filter is_dir (c :: more)) else c) rest)
+       | c :: more ->
+           walk (if is_dir c then Union (List.filter is_dir (c :: more)) else c)
+             rest)
   | _ -> None
 
 (* a directory's names and what they are (in a union, a name once: the
@@ -193,8 +243,12 @@ let rec walk node ns =
 let rec children node =
   match node with
   | Dir d -> !d
-  | Disk (r, i) -> List.map (fun (name, j) -> name, Disk (r, j)) (fs_entries r i)
-  | Union l -> List.fold_left (fun acc m -> acc @ List.filter (fun (name, _) -> not (List.exists (fun (k, _) -> k = name) acc)) (children m)) [] l
+  | Disk (r, i) ->
+      List.map (fun (name, j) -> name, Disk (r, j)) (fs_entries r i)
+  | Union l ->
+      List.fold_left (fun acc m ->
+        acc @ List.filter (fun (name, _) ->
+          not (List.exists (fun (k, _) -> k = name) acc)) (children m)) [] l
   | _ -> []
 
 (* where a directory's new names go: a union's first *)
@@ -205,7 +259,10 @@ let rec home node = match node with Union (m :: _) -> home m | _ -> node
 let dir_of ns =
   match List.rev ns with
   | [] -> None
-  | last :: r -> (match walk !top (List.rev r) with Some n when is_dir n -> Some (home n, last) | _ -> None)
+  | last :: r ->
+      (match walk !top (List.rev r) with
+       | Some n when is_dir n -> Some (home n, last)
+       | _ -> None)
 
 (* a directory read as a file: an entry of 80 bytes per name, t6's (its
  * name, its type, a first block, its size), which ls reads, but for
@@ -219,7 +276,10 @@ let word n = String.init 4 (fun k -> Char.chr ((n lsr (8 * k)) land 255))
 (* a node's names: the entries in the whole tree that hold the same
  * value (==), the file itself and not a copy of it *)
 let links node =
-  let rec count d = List.fold_left (fun acc (_, n) -> acc + (if n == node then 1 else 0) + (match n with Dir e -> count e | _ -> 0)) 0 !d in
+  let rec count d =
+    List.fold_left (fun acc (_, n) ->
+      acc + (if n == node then 1 else 0)
+      + (match n with Dir e -> count e | _ -> 0)) 0 !d in
   match root with Dir d -> count d | _ -> 0
 
 (* an entry: a name, a type, the links, a size, a date; a disk's file
@@ -227,10 +287,16 @@ let links node =
  * date 0, 2000-01-01, a directory in memory too *)
 let entry name n =
   let t, size, l = match n with
-    | Dir _ -> 1, 0, links n | Data d -> 2, d.dsize, links n | Rom (_, k) -> 2, k, links n
-    | Disk (r, i) -> fs_kind r i | Union _ -> 1, 0, 1 | _ -> 3, 0, links n in
-  let date = match n with Data d -> d.dtime | Disk (r, i) -> fs_date r i | _ -> 0 in
-  name ^ String.make (64 - String.length name) '\000' ^ word t ^ word l ^ word size ^ word date
+    | Dir _ -> 1, 0, links n
+    | Data d -> 2, d.dsize, links n
+    | Rom (_, k) -> 2, k, links n
+    | Disk (r, i) -> fs_kind r i
+    | Union _ -> 1, 0, 1
+    | _ -> 3, 0, links n in
+  let date =
+    match n with Data d -> d.dtime | Disk (r, i) -> fs_date r i | _ -> 0 in
+  name ^ String.make (64 - String.length name) '\000'
+  ^ word t ^ word l ^ word size ^ word date
 
 let contents node =
   match node with
@@ -241,7 +307,8 @@ let contents node =
   (* (made once: old, acc ^ entry, the listing copied again at each name,
    * quadratic: ls -l of /bin, 55 names each listing it twice, took 7
    * minutes when the entries went from 40 bytes to 80) *)
-  | _ -> String.concat "" (List.map (fun (name, n) -> entry name n) (children node))
+  | _ ->
+      String.concat "" (List.map (fun (name, n) -> entry name n) (children node))
 
 (* [place d name node]: node under name in d; a name with a slash,
  * examples/wc.c, in its directory, which is made the first time *)
@@ -249,10 +316,14 @@ let rec place d name node =
   match String.index_opt name '/' with
   | None -> d := !d @ [ name, node ]
   | Some i ->
-      let dir = String.sub name 0 i and rest = String.sub name (i + 1) (String.length name - i - 1) in
+      let dir = String.sub name 0 i
+      and rest = String.sub name (i + 1) (String.length name - i - 1) in
       (match List.assoc_opt dir !d with
        | Some (Dir sub) -> place sub rest node
-       | _ -> let sub = ref [] in d := !d @ [ dir, Dir sub ]; place sub rest node)
+       | _ ->
+           let sub = ref [] in
+           d := !d @ [ dir, Dir sub ];
+           place sub rest node)
 
 (* the files the image carries after the kernel (TinyKernel/Makefile's): a
  * path, a line; its size, a line; its bytes; an empty path at the end.
@@ -261,13 +332,19 @@ let rec place d name node =
  * no bytes (bin/utils, under the name of each of its utilities:
  * bin/cat, bin/ls...) *)
 let rec load a =
-  let rec line a acc = let c = peekb a in if c = 10 then acc, a + 1 else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
+  let rec line a acc =
+    let c = peekb a in
+    if c = 10 then acc, a + 1
+    else line (a + 1) (acc ^ String.make 1 (Char.chr c)) in
   let name, a = line a "" in
   if name <> "" then begin
     let size, a = line a "" in
     match root with
     | Dir d when String.length size > 5 && String.sub size 0 5 = "link " ->
-        (match walk root (names [] (String.sub size 5 (String.length size - 5))) with Some node -> place d name node | None -> ());
+        (match walk root (names [] (String.sub size 5 (String.length size - 5)))
+         with
+         | Some node -> place d name node
+         | None -> ());
         load a
     | Dir d ->
         let n = Option.get (int_of_string_opt size) in
@@ -291,8 +368,10 @@ type state = Ready | Waiting of (unit -> bool) | Zombie of int | Stopped
  * end, how many processes had ended when it last looked (-1: it waits
  * for something else); and its trace, when it is traced. *)
 type proc = {
-  slot : int; mutable base : int; mutable size : int; pid : int; mutable state : state; mutable parent : int;
-  mutable fds : (int * file) list; mutable cwd : string list; mutable since : int; mutable traced : trace option;
+  slot : int; mutable base : int; mutable size : int; pid : int;
+  mutable state : state; mutable parent : int;
+  mutable fds : (int * file) list; mutable cwd : string list;
+  mutable since : int; mutable traced : trace option;
 }
 
 (* the processes, in the order the scheduler goes through them; how
@@ -308,17 +387,26 @@ let set_reg p k v = poke (frame p.slot + (4 * k)) v
 (* a user's address, n bytes long, as the kernel reaches it; Bad if it
  * leaves the partition *)
 exception Bad
-let user p va n = if va < 0 || n < 0 || va + n > p.size then raise Bad else p.base + va
+let user p va n =
+  if va < 0 || n < 0 || va + n > p.size then raise Bad else p.base + va
 
 (* a string of the user's, a path: 1024 bytes at most (old: 64, a path
  * of a few names, when a name had 20) *)
 let ustr p va =
   let b = Buffer.create 64 in
-  let rec go i = if i >= 1024 then raise Bad else let c = peekb (user p (va + i) 1) in if c = 0 then Buffer.contents b else (Buffer.add_char b (Char.chr c); go (i + 1)) in
+  let rec go i =
+    if i >= 1024 then raise Bad
+    else
+      let c = peekb (user p (va + i) 1) in
+      if c = 0 then Buffer.contents b
+      else (Buffer.add_char b (Char.chr c); go (i + 1)) in
   go 0
 
 let free_slot () =
-  let rec go s = if s >= nslots then raise Bad else if List.exists (fun p -> p.slot = s) !procs then go (s + 1) else s in
+  let rec go s =
+    if s >= nslots then raise Bad
+    else if List.exists (fun p -> p.slot = s) !procs then go (s + 1)
+    else s in
   go 0
 
 (* Finds room for a partition of [size] bytes: the first gap that is big
@@ -327,18 +415,27 @@ let free_slot () =
  * replaces it). Bad if there is no room. *)
 let room size except =
   let used = List.filter (fun q -> q.pid <> except && q.size > 0) !procs in
-  let rec insert q = function [] -> [ q ] | r :: rest -> if q.base <= r.base then q :: r :: rest else r :: insert q rest in
+  let rec insert q = function
+    | [] -> [ q ]
+    | r :: rest ->
+        if q.base <= r.base then q :: r :: rest else r :: insert q rest in
   let sorted = List.fold_left (fun l q -> insert q l) [] used in
   let rec go at = function
     | [] -> if at + size <= mem_high then at else raise Bad
-    | q :: rest -> if at + size <= q.base then at else go (max at (q.base + q.size)) rest in
+    | q :: rest ->
+        if at + size <= q.base then at
+        else go (max at (q.base + q.size)) rest in
   go mem_low sorted
 
 (* a descriptor's file; the lowest free descriptor (32 a process: a
  * window system has four a window), given f *)
-let fd p k = match List.assoc_opt k p.fds with Some f -> f | None -> raise Bad
+let fd p k =
+  match List.assoc_opt k p.fds with Some f -> f | None -> raise Bad
 let fdalloc p f =
-  let rec go k = if k >= 32 then raise Bad else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1) else k in
+  let rec go k =
+    if k >= 32 then raise Bad
+    else if List.exists (fun (j, _) -> j = k) p.fds then go (k + 1)
+    else k in
   let k = go 0 in
   p.fds <- p.fds @ [ k, f ];
   k
@@ -383,7 +480,10 @@ let detach t =
 let drop f =
   match f with
   | Trace t -> t.watchers <- t.watchers - 1; if t.watchers = 0 then detach t
-  | Link l -> l.holders <- l.holders - 1; if l.holders = 0 then links := List.filter (fun m -> m.lid <> l.lid) !links
+  | Link l ->
+      l.holders <- l.holders - 1;
+      if l.holders = 0 then
+        links := List.filter (fun m -> m.lid <> l.lid) !links
   | Call c -> c.callers <- c.callers - 1; if c.callers = 0 then il_done c.il
   | Reader pi -> pi.readers <- pi.readers - 1
   | Writer pi -> pi.writers <- pi.writers - 1
@@ -409,7 +509,10 @@ let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
 (* the mouse's look a program asks for (www, over a link) is written to
  * the machine's mouse word, which the host shows *)
 let () = cursor_hook := (fun kind -> poke mouse_dev kind)
-let font = arena 0xd00000 0x200000; free 0xf4b000 0xb4000; font_mask (k_font ()) (alloc 16384)
+let font =
+  arena 0xd00000 0x200000;
+  free 0xf4b000 0xb4000;
+  font_mask (k_font ()) (alloc 16384)
 
 (* the mouse: a box the kernel writes (x, y, the buttons, a word each)
  * when the machine's word changed; the clock: the timer's interrupts
@@ -430,10 +533,10 @@ let counted = ref 0
 (* The speaker (plan_tiny_audio.md): tiny-machine plays the ring, 8,192
  * samples, 8,000 a second, and silences what it played. Each open of
  * /dev/audio is a voice: a program writes messages, each a sound or
- * samples (TinyKernelAudio.mli), which the kernel makes into the ring, added to
- * what is there already, so two programs are heard at once and neither
- * waits for the other. A voice's sounds follow one another: the next
- * one goes where the last ended, or, when the speaker passed it, a
+ * samples (TinyKernelAudio.mli), which the kernel makes into the ring,
+ * added to what is there already, so two programs are heard at once and
+ * neither waits for the other. A voice's sounds follow one another: the
+ * next one goes where the last ended, or, when the speaker passed it, a
  * little ahead of the speaker ([lead], 5 ms, more than a write takes to
  * start); a write waits until all its sounds fit, a ring (a second)
  * ahead of the speaker at most. *)
@@ -442,11 +545,15 @@ let lead = 40
 let played () = peek speaker_dev
 let speak v sounds =
   let now = played () in
-  if (v.ahead - now) land 0x3fffffff > ring then v.ahead <- (now + lead) land 0x3fffffff;
-  let total = List.fold_left (fun acc snd -> acc + sound_length snd) 0 sounds in
+  if (v.ahead - now) land 0x3fffffff > ring then
+    v.ahead <- (now + lead) land 0x3fffffff;
+  let total =
+    List.fold_left (fun acc snd -> acc + sound_length snd) 0 sounds in
   if total > ring - ((v.ahead - now) land 0x3fffffff) then false
   else begin
-    List.iter (fun snd -> mix_sound ring_at ring v.ahead snd; v.ahead <- (v.ahead + sound_length snd) land 0x3fffffff) sounds;
+    List.iter (fun snd ->
+      mix_sound ring_at ring v.ahead snd;
+      v.ahead <- (v.ahead + sound_length snd) land 0x3fffffff) sounds;
     true
   end
 
@@ -461,14 +568,20 @@ let typed_end = ref false
 (* the process that has the console raw (rawcons), or 0: its ^C is a
  * byte typed, not the kill of every process *)
 let raw = ref 0
-let raw_on () = List.exists (fun q -> q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs
+let raw_on () =
+  List.exists (fun q ->
+    q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs
 
 let read f a n =
   match f with
   | Link l ->
       (match l.heard with
        | [] -> None
-       | m :: rest -> let k = min n (String.length m) in k_blit m 0 a k; l.heard <- rest; Some k)
+       | m :: rest ->
+           let k = min n (String.length m) in
+           k_blit m 0 a k;
+           l.heard <- rest;
+           Some k)
   (* a message, whole (what is over n bytes is lost); the end *)
   | Call c ->
       (match il_hear c.il with
@@ -480,10 +593,15 @@ let read f a n =
       if t = "" then (if !typed_end then Some 0 else None)
       (* ^D, but at a raw console: the read's end, nothing read, as
        * Plan 9's (old: a byte, and only the input's end ended a read) *)
-      else if eot && t.[0] = '\004' then (typed := String.sub t 1 (String.length t - 1); Some 0)
+      else if eot && t.[0] = '\004' then
+        (typed := String.sub t 1 (String.length t - 1); Some 0)
       else begin
         (* up to a line's end, or a ^D *)
-        let rec upto i = if i >= String.length t || i >= n then i else if t.[i] = '\n' then i + 1 else if eot && t.[i] = '\004' then i else upto (i + 1) in
+        let rec upto i =
+          if i >= String.length t || i >= n then i
+          else if t.[i] = '\n' then i + 1
+          else if eot && t.[i] = '\004' then i
+          else upto (i + 1) in
         let k = upto 0 in
         k_blit t 0 a k;
         typed := String.sub t k (String.length t - k);
@@ -501,11 +619,19 @@ let read f a n =
   (* what the trace said, a line at a time; its end when the process ended *)
   | Trace t ->
       (match t.said with
-       | m :: rest -> let k = min n (String.length m) in k_blit m 0 a k; t.said <- rest; Some k
+       | m :: rest ->
+           let k = min n (String.length m) in
+           k_blit m 0 a k;
+           t.said <- rest;
+           Some k
        | [] -> (match traced_proc t with Some _ -> None | None -> Some 0))
   (* what was last written, once; its end when no writer is left *)
   | Peek b ->
-      if b.fresh then (let k = min n (String.length b.last) in b.fresh <- false; k_blit b.last 0 a k; Some k)
+      if b.fresh then
+        (let k = min n (String.length b.last) in
+         b.fresh <- false;
+         k_blit b.last 0 a k;
+         Some k)
       else if b.posters = 0 then Some 0
       else None
   | Open o -> (
@@ -533,7 +659,8 @@ let read f a n =
           Some k)
 
 (* the network device's command (1 send, 2 take) on n bytes at the buffer *)
-let net_command n cmd = poke net_dev net_buf; poke (net_dev + 4) n; poke (net_dev + 8) cmd
+let net_command n cmd =
+  poke net_dev net_buf; poke (net_dev + 4) n; poke (net_dev + 8) cmd
 
 (* a packet to the wire: at the buffer, then the device's send *)
 let net_send packet =
@@ -548,7 +675,9 @@ let traced p = match p.traced with Some _ -> true | None -> false
 let stop p why =
   p.state <- Stopped;
   match p.traced with
-  | Some t -> t.said <- t.said @ [ "stopped " ^ string_of_int (reg p 16) ^ " " ^ why ^ "\n" ]
+  | Some t ->
+      t.said <-
+        t.said @ [ "stopped " ^ string_of_int (reg p 16) ^ " " ^ why ^ "\n" ]
   | None -> ()
 
 (* A tracer's command (plan_tiny_debugger.md), the numbers in decimal:
@@ -560,16 +689,27 @@ let stop p why =
  * command is none of these, or its address not one of the process's
  * words. *)
 let command t q words =
-  let addr s = match int_of_string_opt s with Some a when a land 3 = 0 -> ignore (user q a 4); a | _ -> raise Bad in
+  let addr s =
+    match int_of_string_opt s with
+    | Some a when a land 3 = 0 -> ignore (user q a 4); a
+    | _ -> raise Bad in
   let say m = t.said <- t.said @ [ m ^ "\n" ] in
-  let unset a = (match List.assoc_opt a t.stops with Some w -> poke (q.base + a) w | None -> ()); t.stops <- List.filter (fun (b, _) -> b <> a) t.stops in
+  let unset a =
+    (match List.assoc_opt a t.stops with
+     | Some w -> poke (q.base + a) w
+     | None -> ());
+    t.stops <- List.filter (fun (b, _) -> b <> a) t.stops in
   match words, q.state with
   | [ "b"; s ], _ ->
       let a = addr s in
-      if not (List.exists (fun (b, _) -> b = a) t.stops) then (t.stops <- t.stops @ [ a, peek (q.base + a) ]; poke (q.base + a) 0);
+      if not (List.exists (fun (b, _) -> b = a) t.stops) then
+        (t.stops <- t.stops @ [ a, peek (q.base + a) ]; poke (q.base + a) 0);
       say "ok"
   | [ "d"; s ], _ -> unset (addr s); say "ok"
-  | [ "r" ], _ -> say (String.concat " " (List.init 16 (fun k -> (if k = 15 then "pc" else "r" ^ string_of_int (k + 1)) ^ " " ^ string_of_int (reg q (k + 1)))))
+  | [ "r" ], _ ->
+      say (String.concat " " (List.init 16 (fun k ->
+        (if k = 15 then "pc" else "r" ^ string_of_int (k + 1))
+        ^ " " ^ string_of_int (reg q (k + 1)))))
   | [ "c" ], Stopped -> unset (reg q 16); q.state <- Ready
   | _ -> raise Bad
 
@@ -579,7 +719,8 @@ let write f a n =
       if n > 1024 then Some (-1)
       else begin
         l.asked <- l.asked + 1;
-        net_send (ip_packet ip_icmp net_machine l.peer (icmp_message icmp_ask l.lid l.asked (k_string a n)));
+        net_send (ip_packet ip_icmp net_machine l.peer
+          (icmp_message icmp_ask l.lid l.asked (k_string a n)));
         Some n
       end
   (* a message: now, or when the other end has acknowledged enough of
@@ -587,13 +728,17 @@ let write f a n =
   | Call c ->
       if n > il_max || il_over c.il then Some (-1)
       else if n = 0 then Some 0
-      else if il_room c.il then (net_send (il_write c.il (k_string a n) !ticks); Some n)
+      else if il_room c.il then
+        (net_send (il_write c.il (k_string a n) !ticks); Some n)
       else None
   | Console -> k_console a n; Some n
   | Writer pi ->
       if pi.readers = 0 then Some (-1)
       else if String.length pi.buf = 512 then None
-      else (let k = min n (512 - String.length pi.buf) in pi.buf <- pi.buf ^ k_string a k; Some k)
+      else
+        (let k = min n (512 - String.length pi.buf) in
+         pi.buf <- pi.buf ^ k_string a k;
+         Some k)
   | Open o -> (
       match o.node with
       | Data d when o.writes ->
@@ -608,21 +753,37 @@ let write f a n =
           d.dtime <- date ();
           o.off <- at + n;
           Some n
-      | Disk (0, i) when o.writes -> (try fs_write_at i o.off a n; o.off <- o.off + n; Some n with Disk_full -> Some (-1))
+      | Disk (0, i) when o.writes ->
+          (try fs_write_at i o.off a n; o.off <- o.off + n; Some n
+           with Disk_full -> Some (-1))
       | _ -> Some (-1))
   (* messages, whole; a bad one is said on the console, the write -1 *)
-  | Draw d -> (try messages d.conn (k_string a n); Some n with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
+  | Draw d ->
+      (try messages d.conn (k_string a n); Some n
+       with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
   | Post b -> b.last <- k_string a n; b.fresh <- true; Some n
   (* sounds, whole, when they fit in the ring (else a look again in 10
    * ms); a bad one, or more than a ring, -1 *)
   | Voice v ->
       (match (try Some (sounds (k_string a n)) with Bad_sound -> None) with
-       | Some l when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring ->
-           if speak v l then Some n else (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4; None)
+       | Some l
+         when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring
+         ->
+           if speak v l then Some n
+           else
+             (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4;
+              None)
        | _ -> Some (-1))
   (* a command to the traced process, each answered by a line but c,
    * which its next stop answers *)
-  | Trace t -> (match traced_proc t with Some q -> (try command t q (String.split_on_char ' ' (String.trim (k_string a n))); Some n with Bad -> Some (-1)) | None -> Some (-1))
+  | Trace t ->
+      (match traced_proc t with
+       | Some q ->
+           (try
+              command t q (String.split_on_char ' ' (String.trim (k_string a n)));
+              Some n
+            with Bad -> Some (-1))
+       | None -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)
 
 (* whether a read would not wait *)
@@ -633,7 +794,9 @@ let readable f =
   | Peek b -> b.fresh || b.posters = 0
   | Link l -> (match l.heard with [] -> false | _ -> true)
   | Call c -> il_readable c.il
-  | Trace t -> t.said <> [] || (match traced_proc t with Some _ -> false | None -> true)
+  | Trace t ->
+      t.said <> []
+      || (match traced_proc t with Some _ -> false | None -> true)
   | _ -> true
 
 (*****************************************************************************)
@@ -642,7 +805,8 @@ let readable f =
 
 (* a call that may wait: tried now, and until it finishes by the
  * scheduler, the process Waiting meanwhile *)
-let block p attempt = if not (attempt ()) then (p.state <- Waiting attempt; p.since <- -1)
+let block p attempt =
+  if not (attempt ()) then (p.state <- Waiting attempt; p.since <- -1)
 
 let result p v = set_reg p 1 v
 
@@ -659,8 +823,13 @@ let rec exit_proc p status =
   incr deaths;
   List.iter (fun (_, f) -> drop f) p.fds;
   p.fds <- [];
-  List.iter (fun q -> match q.traced with Some t when t.tracer = p.pid -> detach t | _ -> ()) !procs;
-  (match p.traced with Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ] | None -> ());
+  List.iter (fun q ->
+    match q.traced with
+    | Some t when t.tracer = p.pid -> detach t
+    | _ -> ()) !procs;
+  (match p.traced with
+   | Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ]
+   | None -> ());
   List.iter (fun q ->
     if q.parent = p.pid then begin
       q.parent <- 0;
@@ -678,11 +847,16 @@ and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
 let sys_fork p =
   let s = free_slot () in
   let b = room p.size (-1) in
-  let q = { slot = s; base = b; size = p.size; pid = !next_pid; state = Ready; parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None } in
+  let q = {
+    slot = s; base = b; size = p.size; pid = !next_pid; state = Ready;
+    parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
+  } in
   incr next_pid;
   k_copy b p.base p.size;
   k_copy (frame s) (frame p.slot) 68;
-  (match p.traced with Some t -> List.iter (fun (a, w) -> poke (b + a) w) t.stops | None -> ());
+  (match p.traced with
+   | Some t -> List.iter (fun (a, w) -> poke (b + a) w) t.stops
+   | None -> ());
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
   set_reg q 1 0;
@@ -694,8 +868,11 @@ let sys_fork p =
  * where the image starts in the file, its size, and the memory. *)
 let aout_magic = 0x7a0ce5
 let header bytes =
-  let word i = String.get_uint16_le bytes i + (String.get_uint16_le bytes (i + 2) lsl 16) in
-  if String.length bytes >= 12 && word 0 = aout_magic then Some (word 4, word 8) else None
+  let word i =
+    String.get_uint16_le bytes i
+    + (String.get_uint16_le bytes (i + 2) lsl 16) in
+  if String.length bytes >= 12 && word 0 = aout_magic then Some (word 4, word 8)
+  else None
 
 (* Loads a file's program into p, in a partition of the size it asks for
  * (rounded up to whole megabytes), from address 0. Its arguments are put
@@ -704,11 +881,23 @@ let header bytes =
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =
-  let node = match node with Some (Disk (r, i)) -> Some (Data (data (fs_contents r i))) | _ -> node in
-  let n = match node with Some (Data d) -> d.dsize | Some (Rom (_, n)) -> n | _ -> raise Bad in
-  let first = match node with Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 12) | Some (Rom (at, _)) -> k_string at (min n 12) | _ -> "" in
+  let node =
+    match node with
+    | Some (Disk (r, i)) -> Some (Data (data (fs_contents r i)))
+    | _ -> node in
+  let n =
+    match node with
+    | Some (Data d) -> d.dsize
+    | Some (Rom (_, n)) -> n
+    | _ -> raise Bad in
+  let first =
+    match node with
+    | Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 12)
+    | Some (Rom (at, _)) -> k_string at (min n 12)
+    | _ -> "" in
   let skip, size, memory = match header first with
-    | Some (size, memory) when size = n - 12 -> 12, size, (memory + part - 1) / part * part
+    | Some (size, memory) when size = n - 12 ->
+        12, size, (memory + part - 1) / part * part
     | _ -> 0, n, part in
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
   let b = if memory = p.size then p.base else room memory p.pid in
@@ -725,7 +914,10 @@ let load_prog p node argv =
    * tiny-machine a window). (old: k_zero of the whole partition, 32 MB
    * for ml, 35 million instructions an exec: a fifth of a small unit's
    * compile) *)
-  (match node with Some (Data d) -> k_blit (Bytes.sub_string d.dbytes skip size) 0 b size | Some (Rom (at, _)) -> row_copy b (at + skip) size | _ -> ());
+  (match node with
+   | Some (Data d) -> k_blit (Bytes.sub_string d.dbytes skip size) 0 b size
+   | Some (Rom (at, _)) -> row_copy b (at + skip) size
+   | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
@@ -749,7 +941,9 @@ let sys_exec p =
   let node = walk !top (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 64 then raise Bad
-    else let a = peek (user p (reg p 2 + (4 * i)) 4) in if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
+    else
+      let a = peek (user p (reg p 2 + (4 * i)) 4) in
+      if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
   load_prog p node (args 0 []);
   match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ()
 
@@ -759,15 +953,20 @@ let sys_wait p =
   if a <> 0 then ignore (user p a 4);
   block p (fun () ->
     let kids = List.filter (fun q -> q.parent = p.pid) !procs in
-    match kids, List.filter (fun q -> match q.state with Zombie _ -> true | _ -> false) kids with
+    match kids,
+          List.filter (fun q ->
+            match q.state with Zombie _ -> true | _ -> false) kids with
     | [], _ -> result p (-1); true
     | _, [] -> false
     | _, q :: _ ->
-        (match q.state with Zombie s -> if a <> 0 then poke (user p a 4) s | _ -> ());
+        (match q.state with
+         | Zombie s -> if a <> 0 then poke (user p a 4) s
+         | _ -> ());
         release q;
         result p q.pid;
         true);
-  (* (a shell waits most of its life: its call is retried when a process ended, not at each turn) *)
+  (* (a shell waits most of its life: its call is retried when a process
+   * ended, not at each turn) *)
   (match p.state with Waiting _ -> p.since <- !deaths | _ -> ())
 
 let o_create = 0x200
@@ -779,9 +978,14 @@ let sys_open p =
   let node =
     match walk !top ns, dir_of ns with
     | Some n, _ -> n
-    | None, Some (Dir d, last) when mode land o_create <> 0 && String.length last <= 64 ->
-        let n = Data { (data "") with dtime = date () } in d := !d @ [ last, n ]; n
-    | None, Some (Disk (0, i), last) when mode land o_create <> 0 && String.length last <= 64 -> Disk (0, fs_create i last 2)
+    | None, Some (Dir d, last)
+      when mode land o_create <> 0 && String.length last <= 64 ->
+        let n = Data { (data "") with dtime = date () } in
+        d := !d @ [ last, n ];
+        n
+    | None, Some (Disk (0, i), last)
+      when mode land o_create <> 0 && String.length last <= 64 ->
+        Disk (0, fs_create i last 2)
     | _ -> raise Bad in
   (* (a file of the image opened to be written is in memory from now on;
    * or a file of the disk, when its directory is there too: /bin's) *)
@@ -792,15 +996,19 @@ let sys_open p =
         if mode land o_trunc = 0 then fs_write_at j 0 at n;
         Disk (0, j)
     | Rom (at, n), Some (Dir d, last) when writes ->
-        let made = Data { (data (if mode land o_trunc <> 0 then "" else k_string at n)) with dtime = date () } in
-        d := List.map (fun (name, old) -> if name = last then name, made else name, old) !d;
+        let made =
+          Data { (data (if mode land o_trunc <> 0 then "" else k_string at n))
+                 with dtime = date () } in
+        d := List.map (fun (name, old) ->
+          if name = last then name, made else name, old) !d;
         made
     | _ -> node in
   (* (a snapshot is read only) *)
   (match node with
    | Dir _ when writes -> raise Bad
    | Disk (r, i) when writes && (r <> 0 || fs_is_dir r i) -> raise Bad
-   | Data d when mode land o_trunc <> 0 -> d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- date ()
+   | Data d when mode land o_trunc <> 0 ->
+       d.dbytes <- Bytes.make 0 ' '; d.dsize <- 0; d.dtime <- date ()
    | Disk (_, i) when writes && mode land o_trunc <> 0 -> fs_truncate i
    | _ -> ());
   result p (fdalloc p (match node with
@@ -825,10 +1033,14 @@ let ends p r w =
   poke (a + 4) w;
   result p 0
 
-let sys_pipe p = let pi = { buf = ""; readers = 1; writers = 1 } in ends p (Reader pi) (Writer pi)
+let sys_pipe p =
+  let pi = { buf = ""; readers = 1; writers = 1 } in
+  ends p (Reader pi) (Writer pi)
 
 (* a box, its reading end and its writing end *)
-let sys_box p = let b = { last = ""; fresh = false; posters = 1 } in ends p (Peek b) (Post b)
+let sys_box p =
+  let b = { last = ""; fresh = false; posters = 1 } in
+  ends p (Peek b) (Post b)
 
 (* dial(address, port): a descriptor on a connection to the program
  * that listens on that port of the machine at that address
@@ -836,7 +1048,8 @@ let sys_box p = let b = { last = ""; fresh = false; posters = 1 } in ends p (Pee
  * answers. Port 0 is the echo: a link, made at once *)
 let sys_dial p =
   let to_ = net_address (ustr p (reg p 1)) and port = reg p 2 in
-  if to_ = "" || port < 0 || port > 0xffff || peek (net_dev + 12) = 0 then raise Bad;
+  if to_ = "" || port < 0 || port > 0xffff || peek (net_dev + 12) = 0 then
+    raise Bad;
   if port = 0 then begin
     let l = { peer = to_; lid = !next_link; asked = 0; heard = []; holders = 1 } in
     incr next_link;
@@ -848,7 +1061,10 @@ let sys_dial p =
     net_send sync;
     block p (fun () ->
       match c.il_at with
-      | Il_established -> (try result p (fdalloc p (Call { il = c; callers = 1 })) with Bad -> il_done c; result p (-1)); true
+      | Il_established ->
+          (try result p (fdalloc p (Call { il = c; callers = 1 }))
+           with Bad -> il_done c; result p (-1));
+          true
       | Il_closed -> result p (-1); true
       | _ -> false)
   end
@@ -859,12 +1075,17 @@ let sys_dial p =
 let sys_listen p =
   let port = reg p 1 in
   if port <= 0 || port > 0xffff || peek (net_dev + 12) = 0 then raise Bad;
-  if not (List.mem port net.ns_ports) then net.ns_ports <- port :: net.ns_ports;
+  if not (List.mem port net.ns_ports) then
+    net.ns_ports <- port :: net.ns_ports;
   block p (fun () ->
     match List.filter (fun c -> c.il_lport = port) net.ns_fresh with
     | c :: _ ->
-        net.ns_fresh <- List.filter (fun d -> d.il_lport <> port || d.il_rport <> c.il_rport || d.il_peer <> c.il_peer) net.ns_fresh;
-        (try result p (fdalloc p (Call { il = c; callers = 1 })) with Bad -> il_done c; result p (-1));
+        net.ns_fresh <-
+          List.filter (fun d ->
+            d.il_lport <> port || d.il_rport <> c.il_rport
+            || d.il_peer <> c.il_peer) net.ns_fresh;
+        (try result p (fdalloc p (Call { il = c; callers = 1 }))
+         with Bad -> il_done c; result p (-1));
         true
     | [] -> false)
 
@@ -873,8 +1094,10 @@ let sys_dup p = let f = fd p (reg p 1) in share f; result p (fdalloc p f)
 let sys_mkdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
   match walk !top ns, dir_of ns with
-  | None, Some (Dir d, last) when String.length last <= 64 -> d := !d @ [ last, Dir (ref []) ]; result p 0
-  | None, Some (Disk (0, i), last) when String.length last <= 64 -> ignore (fs_create i last 1); result p 0
+  | None, Some (Dir d, last) when String.length last <= 64 ->
+      d := !d @ [ last, Dir (ref []) ]; result p 0
+  | None, Some (Disk (0, i), last) when String.length last <= 64 ->
+      ignore (fs_create i last 1); result p 0
   | _ -> raise Bad
 
 (* a name removed; a directory only if empty *)
@@ -899,18 +1122,24 @@ let sys_unlink p =
  * it is written by: then the names part). Not for a directory, as on
  * Unix: a directory with two parents would make the tree a graph *)
 let sys_link p =
-  let old = walk !top (names p.cwd (ustr p (reg p 1))) and ns = names p.cwd (ustr p (reg p 2)) in
+  let old = walk !top (names p.cwd (ustr p (reg p 1)))
+  and ns = names p.cwd (ustr p (reg p 2)) in
   match old, walk !top ns, dir_of ns with
   | Some n, _, _ when is_dir n -> raise Bad
-  | Some (Disk (0, j)), None, Some (Disk (0, i), last) when String.length last <= 64 -> fs_link i last j; result p 0
+  | Some (Disk (0, j)), None, Some (Disk (0, i), last)
+    when String.length last <= 64 ->
+      fs_link i last j; result p 0
   | Some (Disk _), _, _ -> raise Bad
-  | Some node, None, Some (Dir d, last) when String.length last <= 64 -> d := !d @ [ last, node ]; result p 0
+  | Some node, None, Some (Dir d, last) when String.length last <= 64 ->
+      d := !d @ [ last, node ]; result p 0
   | _ -> raise Bad
 
 (* getcwd(buf, n): the current directory's path, ended by a 0, in the n
  * bytes at buf; its length, -1 when it does not fit *)
 let sys_getcwd p =
-  let path = if p.cwd = [] then "/" else List.fold_left (fun acc n -> acc ^ "/" ^ n) "" p.cwd in
+  let path =
+    if p.cwd = [] then "/"
+    else List.fold_left (fun acc n -> acc ^ "/" ^ n) "" p.cwd in
   let n = String.length path in
   let a = user p (reg p 1) (reg p 2) in
   if n + 1 > reg p 2 then raise Bad;
@@ -927,7 +1156,9 @@ let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
 (* kill(pid): its process ended as a fault ends one, its status -1 *)
 let kill q = match q.state with Zombie _ -> () | _ -> exit_proc q (-1)
 let sys_kill p =
-  match List.filter (fun q -> q.pid = reg p 1) !procs with [ q ] -> kill q; result p 0 | _ -> raise Bad
+  match List.filter (fun q -> q.pid = reg p 1) !procs with
+  | [ q ] -> kill q; result p 0
+  | _ -> raise Bad
 
 (* trace(pid): a descriptor on a process, for its tracer (debug): what is
  * written to it a command, what is read the answers and the process's
@@ -937,7 +1168,11 @@ let sys_kill p =
  * after. Not for the first process, the caller itself, or a process
  * another one traces *)
 let sys_trace p =
-  let make q tracer = let t = { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0 } in q.traced <- Some t; t in
+  let make q tracer =
+    let t =
+      { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0 } in
+    q.traced <- Some t;
+    t in
   if reg p 1 = 0 then begin
     (match p.traced with
      | Some t -> if t.tracer <> p.parent then raise Bad
@@ -945,10 +1180,15 @@ let sys_trace p =
     result p 0
   end
   else
-    match List.filter (fun q -> q.pid = reg p 1 && q.pid <> p.pid && q.pid <> 1) !procs with
+    match List.filter (fun q ->
+      q.pid = reg p 1 && q.pid <> p.pid && q.pid <> 1) !procs with
     | [ q ] ->
         (match q.state with Zombie _ -> raise Bad | _ -> ());
-        let t = match q.traced with Some t when t.tracer = p.pid -> t | None -> make q p.pid | _ -> raise Bad in
+        let t =
+          match q.traced with
+          | Some t when t.tracer = p.pid -> t
+          | None -> make q p.pid
+          | _ -> raise Bad in
         let k = fdalloc p (Trace t) in
         t.watchers <- t.watchers + 1;
         result p k
@@ -959,8 +1199,19 @@ let sys_trace p =
 let sys_seek p =
   match fd p (reg p 1) with
   | Open o ->
-      let size = match o.node with Rom (_, n) -> n | Data d -> d.dsize | Disk (r, i) -> let _, n, _ = fs_kind r i in n | n -> String.length (contents n) in
-      let off = reg p 2 + (match reg p 3 with 0 -> 0 | 1 -> o.off | 2 -> size | _ -> raise Bad) in
+      let size =
+        match o.node with
+        | Rom (_, n) -> n
+        | Data d -> d.dsize
+        | Disk (r, i) -> let _, n, _ = fs_kind r i in n
+        | n -> String.length (contents n) in
+      let off =
+        reg p 2
+        + (match reg p 3 with
+           | 0 -> 0
+           | 1 -> o.off
+           | 2 -> size
+           | _ -> raise Bad) in
       if off < 0 then raise Bad;
       o.off <- off;
       result p off
@@ -981,7 +1232,9 @@ let sys_stat p =
 
 let sys_chdir p =
   let ns = names p.cwd (ustr p (reg p 1)) in
-  match walk !top ns with Some n when is_dir n -> p.cwd <- ns; result p 0 | _ -> raise Bad
+  match walk !top ns with
+  | Some n when is_dir n -> p.cwd <- ns; result p 0
+  | _ -> raise Bad
 
 (* ready(fds, n, until): the first of n descriptors (32 at most) that a
  * read would not wait on; -1 when the clock reaches until (0: no
@@ -991,14 +1244,18 @@ let sys_ready p =
   let n = reg p 2 and until = reg p 3 in
   if n < 0 || n > 32 then raise Bad;
   let a = user p (reg p 1) (4 * n) in
-  let rec list i = if i >= n then [] else (let k = peek (a + (4 * i)) in k, fd p k) :: list (i + 1) in
+  let rec list i =
+    if i >= n then []
+    else (let k = peek (a + (4 * i)) in k, fd p k) :: list (i + 1) in
   let l = list 0 in
   block p (fun () ->
     match List.filter (fun (_, f) -> readable f) l with
     | (k, _) :: _ -> result p k; true
     | [] ->
         if until > 0 && !ticks >= until then (result p (-1); true)
-        else (if until > 0 && (!alarm = 0 || until < !alarm) then alarm := until; false))
+        else
+          (if until > 0 && (!alarm = 0 || until < !alarm) then alarm := until;
+           false))
 
 (* by their numbers, the machine's sys n: exit, write and read first,
  * tiny-cpu's own (libc's). A call that changed the disk is committed
@@ -1057,7 +1314,9 @@ let net_news = ref false
 
 (* whether a program has messages it has not read; the tick at which
  * the network's interrupt is taken again all the same *)
-let net_behind () = List.exists (fun c -> match c.il_r.il_heard with [] -> false | _ -> true) net.ns_conns
+let net_behind () =
+  List.exists (fun c ->
+    match c.il_r.il_heard with [] -> false | _ -> true) net.ns_conns
 let net_open = ref 0
 
 (* the tick of the connections' next look at the time *)
@@ -1071,7 +1330,10 @@ let net_take () =
      | back, answer ->
          List.iter net_send back;
          (match answer with
-          | Some (from, id, _, data) -> List.iter (fun l -> if l.lid = id && l.peer = from then l.heard <- l.heard @ [ data ]) !links
+          | Some (from, id, _, data) ->
+              List.iter (fun l ->
+                if l.lid = id && l.peer = from then
+                  l.heard <- l.heard @ [ data ]) !links
           | None -> ()))
     (* (one packet a call: the interrupt stays while another waits, and
      * the timer's is seen between two, so a burst does not stop the
@@ -1091,7 +1353,8 @@ let interrupts sources =
   if sources land 8 <> 0 then begin
     (* the machine's word: x in 12 bits, y in the next 12, the buttons above *)
     let m = peek mouse_dev in
-    mouse.last <- word (m land 0xfff) ^ word ((m lsr 12) land 0xfff) ^ word (m lsr 24);
+    mouse.last <-
+      word (m land 0xfff) ^ word ((m lsr 12) land 0xfff) ^ word (m lsr 24);
     mouse.fresh <- true
   end;
   if sources land 2 <> 0 then begin
@@ -1099,8 +1362,12 @@ let interrupts sources =
       let c = peek cons_in in
       if c = -2 then typed_end := true
       else if c = 3 && not (raw_on ()) then
-        (typed := ""; List.iter (fun q -> if q.pid <> 1 then kill q) !procs; puts "\n"; take ())
-      else if c <> -1 then (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
+        (typed := "";
+         List.iter (fun q -> if q.pid <> 1 then kill q) !procs;
+         puts "\n";
+         take ())
+      else if c <> -1 then
+        (typed := !typed ^ String.make 1 (Char.chr c); take ()) in
     take ()
   end;
   (* the ticks since the last one counted, by the machine's time: the
@@ -1112,7 +1379,8 @@ let interrupts sources =
     ticks := !ticks + (passed / tick);
     counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
     k_timer (tick - (passed mod tick));
-    if !ticks >= !net_open || not (net_behind ()) then (net_open := !ticks + 8; k_ie 27);
+    if !ticks >= !net_open || not (net_behind ()) then
+      (net_open := !ticks + 8; k_ie 27);
     (* the connections' time: what they send when nothing came, and one
      * that gave up is news for who waits on it *)
     (* (every fourth tick, 10 ms: a pass over the connections is 3,400
@@ -1124,7 +1392,8 @@ let interrupts sources =
          if !ticks >= !net_next then begin
            net_next := !ticks + 4;
            List.iter net_send (net_tick net !ticks);
-           if List.length net.ns_conns < List.length conns then net_news := true
+           if List.length net.ns_conns < List.length conns then
+             net_news := true
          end);
     true
   end
@@ -1163,7 +1432,9 @@ and idle () =
   ignore (k_run 0);
   let sources = k_tval () in
   ignore (interrupts sources);
-  if sources land 26 <> 0 || !net_news || (!alarm > 0 && !ticks >= !alarm) then (alarm := 0; net_news := false; schedule ()) else idle ()
+  if sources land 26 <> 0 || !net_news || (!alarm > 0 && !ticks >= !alarm)
+  then (alarm := 0; net_news := false; schedule ())
+  else idle ()
 
 and run p =
   k_window p.base p.size;
@@ -1171,19 +1442,27 @@ and run p =
   let timer =
     if cause = c_sys then (syscall p; false)
     else if cause = c_intr then interrupts (k_tval ())
-    else if cause = c_illegal && traced p then (stop p (if k_tval () = 0 then "break" else "illegal " ^ string_of_int (k_tval ())); false)
-    else if cause = c_fault && traced p then (stop p ("fault " ^ string_of_int (k_tval ())); false)
+    else if cause = c_illegal && traced p then
+      (stop p
+         (if k_tval () = 0 then "break"
+          else "illegal " ^ string_of_int (k_tval ()));
+       false)
+    else if cause = c_fault && traced p then
+      (stop p ("fault " ^ string_of_int (k_tval ())); false)
     else begin
-      puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause ^ " at " ^ string_of_int (reg p 16) ^ ", "
+      puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause
+            ^ " at " ^ string_of_int (reg p 16) ^ ", "
             ^ string_of_int (k_tval ()) ^ ": killed\n");
       exit_proc p (-1);
       false
     end in
   let alive = List.exists (fun q -> q.pid = p.pid) !procs in
-  if alive && (not timer) && (match p.state with Ready -> true | _ -> false) then run p
+  if alive && (not timer) && (match p.state with Ready -> true | _ -> false)
+  then run p
   else begin
     (* last in the round *)
-    if alive then procs := List.filter (fun q -> q.pid <> p.pid) !procs @ [ p ];
+    if alive then
+      procs := List.filter (fun q -> q.pid <> p.pid) !procs @ [ p ];
     schedule ()
   end
 
@@ -1196,10 +1475,16 @@ let () =
   counted := k_clock ();
   k_timer tick;
   load (k_end ());
-  (match root with Dir d -> d := !d @ [ "dev", Dir (ref [ "console", Tty; "draw", Screen; "mouse", Pointer; "audio", Speaker ]) ] | _ -> ());
+  (match root with
+   | Dir d ->
+       d := !d @ [ "dev", Dir (ref [ "console", Tty; "draw", Screen;
+                                    "mouse", Pointer; "audio", Speaker ]) ]
+   | _ -> ());
   k_zero ring_at ring;
   poke speaker_dev ring_at;
-  puts ("tiny-kernel: TinyKernel.ml, " ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for " ^ string_of_int nslots ^ " processes\n");
+  puts ("tiny-kernel: TinyKernel.ml, "
+        ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for "
+        ^ string_of_int nslots ^ " processes\n");
   (* The disk, when there is one, is the root: the top becomes a union
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that
@@ -1207,16 +1492,26 @@ let () =
    * first shell starts in /usr/glenda. *)
   let blocks = peek disk_dev in
   if blocks > 0 then begin
-    fs_io := (fun b a cmd -> poke disk_dev b; poke (disk_dev + 4) a; poke (disk_dev + 8) cmd; poke (disk_dev + 12) 0);
+    fs_io := (fun b a cmd ->
+      poke disk_dev b;
+      poke (disk_dev + 4) a;
+      poke (disk_dev + 8) cmd;
+      poke (disk_dev + 12) 0);
     fs_clock := date;
     fs_mount blocks;
-    let made d name = match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
+    let made d name =
+      match fs_lookup 0 d name with 0 -> fs_create d name 1 | j -> j in
     ignore (made 1 "bin");
     ignore (made (made 1 "usr") "glenda");
     fs_commit ();
-    let dumps = List.map (fun (r, boot) -> string_of_int boot, Disk (r, 1)) (fs_snapshots ()) in
-    top := Union [ Disk (0, 1); Dir (ref [ "boot", root; "dump", Dir (ref dumps) ]); root ];
-    puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks ^ " KB, " ^ string_of_int (fs_free ()) ^ " KB free; "
+    let dumps =
+      List.map (fun (r, boot) -> string_of_int boot, Disk (r, 1))
+        (fs_snapshots ()) in
+    top := Union [ Disk (0, 1);
+                   Dir (ref [ "boot", root; "dump", Dir (ref dumps) ]);
+                   root ];
+    puts ("tiny-kernel: / on a disk of " ^ string_of_int blocks ^ " KB, "
+          ^ string_of_int (fs_free ()) ^ " KB free; "
           ^ string_of_int (List.length dumps) ^ " snapshots in /dump\n")
   end;
   (* the first process: /bin/sh, the console its 0, 1 and 2; and for the
@@ -1224,9 +1519,16 @@ let () =
    * connection) and the mouse its 4: a window system gives a window's
    * programs the same five, so a program draws in what it was given
    * and does not ask where *)
-  let fds = [ 0, Console; 1, Console; 2, Console; 3, Draw { conn = connect screen font; refs = 1 }; 4, Peek mouse ] in
-  let p = { slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0; fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []); since = -1; traced = None } in
+  let fds = [ 0, Console; 1, Console; 2, Console;
+              3, Draw { conn = connect screen font; refs = 1 };
+              4, Peek mouse ] in
+  let p = {
+    slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0;
+    fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
+    since = -1; traced = None;
+  } in
   incr next_pid;
   procs := [ p ];
-  (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ] with Bad -> puts "no /bin/sh\n"; halt 1);
+  (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ]
+   with Bad -> puts "no /bin/sh\n"; halt 1);
   schedule ()

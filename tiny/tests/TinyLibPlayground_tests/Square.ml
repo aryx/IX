@@ -19,12 +19,17 @@ let blue = 0x36
 let yellow = 0xfc
 
 let view m =
-  [ Rect (grey, 320, 240); Rect (blue, 320, 20); Move (8, 2, Words (white, "square: the arrows move it, q quits"));
+  [ Rect (grey, 320, 240); Rect (blue, 320, 20);
+    Move (8, 2, Words (white, "square: the arrows move it, q quits"));
     Move (8, 216, Words (black, string_of_int (m.frames / 30) ^ " s"));
-    Move (m.x, m.y, Group [ Rect (black, 16, 16); Move (2, 2, Rect ((if m.frames / 15 mod 2 = 0 then yellow else white), 12, 12)) ]) ]
+    Move (m.x, m.y,
+          Group [ Rect (black, 16, 16);
+                  Move (2, 2, Rect ((if m.frames / 15 mod 2 = 0 then yellow
+                                     else white), 12, 12)) ]) ]
 
 let key k m =
-  let at x y = { x = max 0 (min 304 x); y = max 24 (min 196 y); frames = m.frames } in
+  let at x y =
+    { x = max 0 (min 304 x); y = max 24 (min 196 y); frames = m.frames } in
   if k = 128 then at m.x (m.y - 8)
   else if k = 129 then at m.x (m.y + 8)
   else if k = 130 then at (m.x - 8) m.y
@@ -35,4 +40,8 @@ let key k m =
  * blinks, and the playground draws then) *)
 let frame m = { x = m.x; y = m.y; frames = m.frames + 1 }
 
-let game = { width = 320; height = 240; init = (fun _ -> { x = 152; y = 112; frames = 0 }); view = view; key = key; frame = frame; sound = (fun _ _ -> []); music = (fun _ -> None) }
+let game = {
+  width = 320; height = 240; init = (fun _ -> { x = 152; y = 112; frames = 0 });
+  view = view; key = key; frame = frame; sound = (fun _ _ -> []);
+  music = (fun _ -> None);
+}

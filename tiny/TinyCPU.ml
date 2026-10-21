@@ -31,26 +31,33 @@ let syscall (caps : < caps; .. >) (m : TinyMachineCPU.machine) n =
   | 0 -> raise (Exit (r.(1) land 0xff))
   | 1 ->
       let s = String.init r.(3) (fun i -> Bytes.get m.mem (addr (r.(2) + i))) in
-      if r.(1) = 2 then Console.eprint caps s else (Console.print caps s; flush stdout);
+      if r.(1) = 2 then Console.eprint caps s
+      else (Console.print caps s; flush stdout);
       r.(1) <- r.(3)
   | 2 ->
       let (_ : < Cap.stdin; .. >) = caps in
       let b = Bytes.create r.(3) in
       let k = try input stdin b 0 r.(3) with Sys_error _ -> 0 in
-      Bytes.iteri (fun i c -> if i < k then Bytes.set m.mem (addr (r.(2) + i)) c) b;
+      Bytes.iteri
+        (fun i c -> if i < k then Bytes.set m.mem (addr (r.(2) + i)) c) b;
       r.(1) <- k
   | n -> TinyMachineCPU.error "unknown system call %d" n
 
 (* [prof]: a profile counted meanwhile (-prof), the program's alone *)
 let interpret caps prof image args =
   let env = TinyMachineCPU.plain ~sys:(syscall caps) in
-  let env = match prof with Some p -> TinyMachineCPU.profiled env p (fun _ -> 0, 0) | None -> env in
+  let env =
+    match prof with
+    | Some p -> TinyMachineCPU.profiled env p (fun _ -> 0, 0)
+    | None -> env
+  in
   let m : TinyMachineCPU.machine = TinyMachineCPU.boot image in
   (* the strings from the top down, then argv's array and nil, argv,
    * and argc at sp *)
   let top, addrs = List.fold_left (fun (top, addrs) a ->
     let top = top - String.length a - 1 in
-    Bytes.blit_string (a ^ "\000") 0 m.mem top (String.length a + 1); top, top :: addrs) (!TinyMachineCPU.memsize, []) args in
+    Bytes.blit_string (a ^ "\000") 0 m.mem top (String.length a + 1);
+    top, top :: addrs) (!TinyMachineCPU.memsize, []) args in
   let n = List.length args in
   let sp = (top - (4 * (n + 3))) land lnot 7 in
   let put a v = TinyMachineCPU.store m TinyMachineISA.W a v in
@@ -67,7 +74,10 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | [ "-l"; f ] -> Console.print caps (TinyMachineCPU.listing ~show:(fun _ -> None) ~origin:0 (image f)); 0
+    | [ "-l"; f ] ->
+        Console.print caps
+          (TinyMachineCPU.listing ~show:(fun _ -> None) ~origin:0 (image f));
+        0
     | "-prof" :: out :: f :: rest ->
         let p = TinyMachineCPU.profile () in
         let status = interpret caps (Some p) (image f) (f :: rest) in
@@ -77,6 +87,7 @@ let main (caps : < caps; Cap.argv; Cap.open_in; Cap.open_out; .. >) =
     | _ -> raise Usage
   with
   | Usage -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineISA.Error e | Sys_error e -> Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
+  | TinyMachineISA.Error e | Sys_error e ->
+      Console.eprint caps ("tiny-cpu: " ^ e ^ "\n"); 1
 
 let () = Cap.main (fun caps -> CapStdlib.exit caps (main caps))

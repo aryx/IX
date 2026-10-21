@@ -13,17 +13,31 @@ let () =
   let g = Square.game in
   let after keys m = List.fold_left (fun m k -> g.key k m) m keys in
   let rec frames n m = if n = 0 then m else frames (n - 1) (g.frame m) in
-  (* right three times, down twice, a second and a half; up against the field's top *)
-  let m = g.init 1 |> after [ 131; 131; 131; 129; 129 ] |> frames 45 |> after (List.init 20 (fun _ -> 128)) in
+  (* right three times, down twice, a second and a half; up against the
+   * field's top *)
+  let m =
+    g.init 1 |> after [ 131; 131; 131; 129; 129 ] |> frames 45
+    |> after (List.init 20 (fun _ -> 128)) in
   Printf.printf "the square at %d, %d after %d frames\n" m.x m.y m.frames;
-  TinyCalls.u_write 3 (TinyLibDraw.d_image TinyLibPlayground.picture 0 0 g.width g.height 0) |> ignore;
-  TinyCalls.u_write 3 (TinyLibDraw.d_image TinyLibPlayground.ground 0 0 g.width g.height 0) |> ignore;
+  TinyCalls.u_write 3
+    (TinyLibDraw.d_image TinyLibPlayground.picture 0 0 g.width g.height 0)
+  |> ignore;
+  TinyCalls.u_write 3
+    (TinyLibDraw.d_image TinyLibPlayground.ground 0 0 g.width g.height 0)
+  |> ignore;
   TinyLibPlayground.show g [] (g.view m);
   (* twice the same random numbers from a seed *)
-  let rec numbers n s = if n = 0 then [] else let s = TinyLibPlayground.random s in (s mod 7) :: numbers (n - 1) s in
-  Printf.printf "random: %s\n" (String.concat " " (List.map string_of_int (numbers 12 1)));
+  let rec numbers n s =
+    if n = 0 then []
+    else let s = TinyLibPlayground.random s in (s mod 7) :: numbers (n - 1) s in
+  Printf.printf "random: %s\n"
+    (String.concat " " (List.map string_of_int (numbers 12 1)));
   TinyKernelGraphics.arena 0xf4b000 0xb4000;
-  let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480; at = 0xf00000; repl = false } in
-  let c = TinyKernelGraphics.connect screen (TinyKernelGraphics.font_mask 0x1000 (TinyKernelGraphics.alloc 16384)) in
+  let screen = { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 640 480;
+                 at = 0xf00000; repl = false } in
+  let c =
+    TinyKernelGraphics.connect screen
+      (TinyKernelGraphics.font_mask 0x1000 (TinyKernelGraphics.alloc 16384)) in
   TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
-  Out_channel.with_open_bin Sys.argv.(2) (fun oc -> output_string oc (TinyMemory.ppm ()))
+  Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
+    output_string oc (TinyMemory.ppm ()))

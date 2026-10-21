@@ -10,10 +10,14 @@ external set : bytes -> int -> char -> unit = "ml_bytes_set"
 external to_string : bytes -> string = "ml_bytes_to_string"
 (* (a copy, either way: the runtime's one function) *)
 external of_string : string -> bytes = "ml_bytes_to_string"
-external blit_string : string -> int -> bytes -> int -> int -> unit = "ml_bytes_blit_string"
+external blit_string : string -> int -> bytes -> int -> int -> unit
+  = "ml_bytes_blit_string"
 
 (* (bytes and a string are the same block: string's functions; blit
  * copies forward, so not within one bytes to a later place) *)
 external blit : bytes -> int -> bytes -> int -> int -> unit = "ml_bytes_blit_string"
 external unsafe_sub : bytes -> int -> int -> string = "ml_string_sub"
-let sub_string b ofs len = if ofs < 0 || len < 0 || ofs > length b - len then invalid_arg "Bytes.sub_string" else unsafe_sub b ofs len
+let sub_string b ofs len =
+  if ofs < 0 || len < 0 || ofs > length b - len
+  then invalid_arg "Bytes.sub_string"
+  else unsafe_sub b ofs len

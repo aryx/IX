@@ -22,7 +22,9 @@ let quoted s =
     | c when c < ' ' || c > '~' ->
         let k = Char.code c in
         Buffer.add_char b '\\';
-        Buffer.add_string b (string_of_int (k / 100) ^ string_of_int (k / 10 mod 10) ^ string_of_int (k mod 10))
+        Buffer.add_string b
+          (string_of_int (k / 100) ^ string_of_int (k / 10 mod 10)
+           ^ string_of_int (k mod 10))
     | c -> Buffer.add_char b c) s;
   Buffer.add_char b '"';
   Buffer.contents b
@@ -32,5 +34,6 @@ let pad left zero w s =
   if n >= w then s
   else if left then s ^ String.make (w - n) ' '
   else if not zero then String.make (w - n) ' ' ^ s
-  else if n > 0 && s.[0] = '-' then "-" ^ String.make (w - n) '0' ^ String.sub s 1 (n - 1)
+  else if n > 0 && s.[0] = '-'
+  then "-" ^ String.make (w - n) '0' ^ String.sub s 1 (n - 1)
   else String.make (w - n) '0' ^ s

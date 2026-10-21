@@ -15,16 +15,22 @@
  * comes is dropped, so that a sound stays near what it goes with.
  *
  * mini-qemu has its own (raspberry/video/Sdl_display.ml), which does
- * more: 44,100 samples a second in two channels, a meter under the screen, a mouse grabbed and relative
- * as a USB mouse is. This one is what tiny-machine needs, so that t-ix
- * depends on nothing of mini-qemu's. *)
+ * more: 44,100 samples a second in two channels, a meter under the
+ * screen, a mouse grabbed and relative as a USB mouse is. This one is
+ * what tiny-machine needs, so that t-ix depends on nothing of
+ * mini-qemu's. *)
 
 (* What is done in the window: closed; the mouse's place (in the frame's
  * pixels); a mouse button (1 left, 2 middle, 4 right, as Plan 9's),
  * down or up; a key (its USB HID usage, which is SDL's scancode), down
  * or up; a step of the wheel or of two fingers on a trackpad (negative
  * up). *)
-type event = Quit | At of int * int | Button of int * bool | Key of int * bool | Wheel of int
+type event =
+  | Quit
+  | At of int * int
+  | Button of int * bool
+  | Key of int * bool
+  | Wheel of int
 
 (* [present w h rgb]: a frame of w by h pixels, three bytes each (red,
  * green, blue). [poll ()]: the events since the last poll. [cursor n]:
@@ -32,7 +38,10 @@ type event = Quit | At of int * int | Button of int * bool | Key of int * bool |
  * samples]: the machine's speaker's, a byte each (signed), 8,000 a
  * second, played after those before; the sound opened at the first.
  * [queued ()]: the samples waiting to be played. *)
-type t = { present : int -> int -> string -> unit; poll : unit -> event list; cursor : int -> unit; play : string -> unit; queued : unit -> int }
+type t = {
+  present : int -> int -> string -> unit; poll : unit -> event list;
+  cursor : int -> unit; play : string -> unit; queued : unit -> int;
+}
 
 val create : title:string -> t
 

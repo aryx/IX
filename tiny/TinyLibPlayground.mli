@@ -134,7 +134,11 @@
  * words: its colour plus bold, italic, underlined, large (a character
  * 16 by 32), as many as it has; or fat_pixels, a paint's row: each
  * character a colour's letter (pixel_letters), a square of 4 by 4 *)
-type shape = Rect of int * int * int | Words of int * string | Group of shape list | Move of int * int * shape
+type shape =
+  | Rect of int * int * int
+  | Words of int * string
+  | Group of shape list
+  | Move of int * int * shape
 val bold : int
 val italic : int
 val underlined : int
@@ -169,7 +173,8 @@ type tune = { pace : int; parts : part list }
  * change, from the model before to the model after (played one after
  * the other); and the tune the model wants playing, None for silence *)
 type 'm game = {
-  width : int; height : int; init : int -> 'm; view : 'm -> shape list; key : int -> 'm -> 'm; frame : 'm -> 'm;
+  width : int; height : int; init : int -> 'm; view : 'm -> shape list;
+  key : int -> 'm -> 'm; frame : 'm -> 'm;
   sound : 'm -> 'm -> sound list; music : 'm -> tune option;
 }
 

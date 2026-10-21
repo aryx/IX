@@ -24,8 +24,13 @@ open TinyTroff
 let () =
   let n = u_argc () in
   let flag = if n = 3 then u_arg 1 else "" in
-  if n <> 2 && flag <> "-h" && flag <> "-p" then (ignore (u_write 2 "usage: troff [-h | -p] file\n"); exit 1);
+  if n <> 2 && flag <> "-h" && flag <> "-p" then
+    (ignore (u_write 2 "usage: troff [-h | -p] file\n"); exit 1);
   let file = u_arg (n - 1) in
   let doc = read_file file in
-  ignore (u_write 1 (if flag = "-h" then to_html file doc else if flag = "-p" then to_pdf doc else to_text 72 doc));
+  ignore
+    (u_write 1
+       (if flag = "-h" then to_html file doc
+        else if flag = "-p" then to_pdf doc
+        else to_text 72 doc));
   exit 0

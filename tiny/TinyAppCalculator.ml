@@ -39,14 +39,20 @@ type msg = Digit of int | Op of char | Equals | Clear
  * past the limit: a product is asked by a division, before it is made) *)
 let result { kept = a; shown = b; op; _ } =
   if op = '/' then (if b = 0 then 0, false else a / b, true)
-  else if op = '*' then (if a <> 0 && abs b > limit / abs a then 0, false else a * b, true)
-  else (let v = if op = '+' then a + b else if op = '-' then a - b else b in v, abs v <= limit)
+  else if op = '*' then
+    (if a <> 0 && abs b > limit / abs a then 0, false else a * b, true)
+  else
+    (let v = if op = '+' then a + b else if op = '-' then a - b else b in
+     v, abs v <= limit)
 
 (* an operation asked (' ': the equals): the one that awaited is done,
  * this one awaits; asked right after another, it takes its place *)
 let operate m op =
-  if m.fresh && m.op <> ' ' && op <> ' ' then { m with op; fresh = true; wrong = false }
-  else (let (v, ok) = result m in { shown = v; kept = v; op = op; fresh = true; wrong = not ok })
+  if m.fresh && m.op <> ' ' && op <> ' ' then
+    { m with op; fresh = true; wrong = false }
+  else
+    (let (v, ok) = result m in
+     { shown = v; kept = v; op = op; fresh = true; wrong = not ok })
 
 let update (msg : msg) (m : model) : model =
   match msg with

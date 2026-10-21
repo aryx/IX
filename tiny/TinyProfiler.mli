@@ -42,14 +42,17 @@
  *
  *     printf '20000000 k www OCaml\\n\n600000000 k        \n' > pages.events
  *     printf '20000000 k www OCaml\\n\n600000000 k x\n' > base.events
- *     tiny-machine -prof base.prof -net tiny/tests/www -events base.events tiny/TinyKernel/_make/boot.img
- *     tiny-machine -prof pages.prof -net tiny/tests/www -events pages.events tiny/TinyKernel/_make/boot.img
+ *     tiny-machine -prof base.prof -net tiny/tests/www -events base.events \
+ *       tiny/TinyKernel/_make/boot.img
+ *     tiny-machine -prof pages.prof -net tiny/tests/www -events pages.events \
+ *       tiny/TinyKernel/_make/boot.img
  *
  * Then the maps of what ran, the kernel's and www's (tiny/TinyKernel's
  * Makefile links each with -map):
  *
  *     M=tiny/TinyKernel/_make
- *     tiny-prof -diff base.prof pages.prof -k $M/kernel.img.map -u $M/bin/www.map
+ *     tiny-prof -diff base.prof pages.prof -k $M/kernel.img.map \
+ *       -u $M/bin/www.map
  *
  * (old: the .tm files given, in their link's order, and assembled
  * again by tiny-prof, before tiny-linker)

@@ -114,7 +114,8 @@ files(void)
 	buf[n] = 0;
 	if(strcmp(buf, "hello, world\n") != 0)
 		{ fail("files"); return; }
-	if(open("f", O_CREATE | O_WRONLY | O_TRUNC) < 0 || (fd = open("f", O_RDONLY)) < 0 || read(fd, buf, 10) != 0)
+	if(open("f", O_CREATE | O_WRONLY | O_TRUNC) < 0 ||
+	   (fd = open("f", O_RDONLY)) < 0 || read(fd, buf, 10) != 0)
 		{ fail("truncate"); return; }
 	if(unlink("f") != 0 || open("f", O_RDONLY) >= 0)
 		{ fail("unlink"); return; }
@@ -263,7 +264,8 @@ traces(void)
 	}
 	t = trace(pid);
 	write(p[1], "x", 1);
-	if(!ask(t, 0, ".fault 2097152\n") || kill(pid) != 0 || !ask(t, 0, "exited -1\n") || wait(&st) != pid)
+	if(!ask(t, 0, ".fault 2097152\n") || kill(pid) != 0 ||
+	   !ask(t, 0, "exited -1\n") || wait(&st) != pid)
 		{ fail("trace: a fault"); return; }
 	close(t);
 
@@ -274,7 +276,8 @@ traces(void)
 		exit(1);
 	}
 	t = trace(pid);
-	if(!ask(t, 0, "stopped 0 exec\n") || !ask(t, "c", ".exited 0\n") || wait(&st) != pid)
+	if(!ask(t, 0, "stopped 0 exec\n") || !ask(t, "c", ".exited 0\n") ||
+	   wait(&st) != pid)
 		{ fail("trace: an exec"); return; }
 	close(t);
 	close(p[0]);

@@ -47,7 +47,13 @@ type file = { fd : int; cache : (int, node) Hashtbl.t }
 
 let read_at f off len =
   TinyLibSystem.seek f.fd off;
-  let rec go acc n = if n >= len then String.concat "" (List.rev acc) else match TinyLibSystem.read f.fd (len - n) with "" -> error "truncated file" | s -> go (s :: acc) (n + String.length s) in
+  let rec go acc n =
+    if n >= len then String.concat "" (List.rev acc)
+    else
+      match TinyLibSystem.read f.fd (len - n) with
+      | "" -> error "truncated file"
+      | s -> go (s :: acc) (n + String.length s)
+  in
   go [] 0
 
 let write_at f off s = TinyLibSystem.seek f.fd off; TinyLibSystem.write f.fd s
@@ -55,13 +61,22 @@ let write_at f off s = TinyLibSystem.seek f.fd off; TinyLibSystem.write f.fd s
 (* an int as 8 bytes, the most significant first; the bytes above the
  * int's own are its sign's (tiny-ml's int has 31 bits: a larger
  * number in a file OCaml wrote is read as its low bits there) *)
-(* old: Bytes.set_int64_be and get_int64_be, Int64's, which tiny-ml has not *)
+(* old: Bytes.set_int64_be and get_int64_be, Int64's, which tiny-ml has
+ * not *)
 let int_bytes n =
   let b = Bytes.make 8 '\000' in
-  let rec go i n = if i >= 0 then (Bytes.set b i (Char.chr (n land 255)); go (i - 1) (n asr 8)) in
+  let rec go i n =
+    if i >= 0 then (
+      Bytes.set b i (Char.chr (n land 255));
+      go (i - 1) (n asr 8))
+  in
   go 7 n;
   Bytes.to_string b
-let int_at s p = let rec go n i = if i = 8 then n else go ((n lsl 8) lor Char.code s.[p + i]) (i + 1) in go 0 0
+let int_at s p =
+  let rec go n i =
+    if i = 8 then n else go ((n lsl 8) lor Char.code s.[p + i]) (i + 1)
+  in
+  go 0 0
 
 (* a value at the end of the file: its length, then its bytes *)
 let append f (s : string) =
@@ -80,34 +95,60 @@ let load f off = read_at f (off + 8) (int_at (read_at f off 8) 0)
 let put_int b n = Buffer.add_string b (int_bytes n)
 let put_str b s = put_int b (String.length s); Buffer.add_string b s
 let put_list put b l = put_int b (List.length l); List.iter (put b) l
-let put_value b = function Int n -> put_int b 0; put_int b n | Text s -> put_int b 1; put_str b s
+let put_value b = function
+  | Int n -> put_int b 0; put_int b n
+  | Text s -> put_int b 1; put_str b s
 let put_values b l = put_list put_value b l
 
 let get_int (s, p) = let n = int_at s !p in p := !p + 8; n
-let get_str (s, p) = let n = get_int (s, p) in let v = String.sub s !p n in p := !p + n; v
-let get_list get r = let rec go n = if n = 0 then [] else let x = get r in x :: go (n - 1) in go (get_int r)
-let get_value r = match get_int r with 0 -> Int (get_int r) | _ -> Text (get_str r)
+let get_str (s, p) =
+  let n = get_int (s, p) in
+  let v = String.sub s !p n in
+  p := !p + n;
+  v
+let get_list get r =
+  let rec go n = if n = 0 then [] else let x = get r in x :: go (n - 1) in
+  go (get_int r)
+let get_value r =
+  match get_int r with 0 -> Int (get_int r) | _ -> Text (get_str r)
 let get_values r = get_list get_value r
 
 let node_bytes (n : node) =
   let b = Buffer.create 256 in
   (match n with
-   | Leaf a -> put_int b 0; put_list (fun b (k, r) -> put_values b k; put_values b (Array.to_list r)) b (Array.to_list a)
-   | Inner (ks, cs) -> put_int b 1; put_list put_values b (Array.to_list ks); put_list put_int b (Array.to_list cs));
+   | Leaf a ->
+       put_int b 0;
+       put_list (fun b (k, r) -> put_values b k; put_values b (Array.to_list r))
+         b (Array.to_list a)
+   | Inner (ks, cs) ->
+       put_int b 1;
+       put_list put_values b (Array.to_list ks);
+       put_list put_int b (Array.to_list cs));
   Buffer.contents b
 
 let node_of_bytes s : node =
   let r = (s, ref 0) in
   match get_int r with
-  | 0 -> Leaf (Array.of_list (get_list (fun r -> let k = get_values r in (k, Array.of_list (get_values r))) r))
-  | _ -> let ks = get_list get_values r in Inner (Array.of_list ks, Array.of_list (get_list get_int r))
+  | 0 ->
+      Leaf (Array.of_list (get_list (fun r ->
+        let k = get_values r in
+        (k, Array.of_list (get_values r))) r))
+  | _ ->
+      let ks = get_list get_values r in
+      Inner (Array.of_list ks, Array.of_list (get_list get_int r))
 
 let node f off =
   match Hashtbl.find_opt f.cache off with
   | Some n -> n
-  | None -> let n = node_of_bytes (load f off) in Hashtbl.replace f.cache off n; n
+  | None ->
+      let n = node_of_bytes (load f off) in
+      Hashtbl.replace f.cache off n;
+      n
 
-let write f (n : node) = let off = append f (node_bytes n) in Hashtbl.replace f.cache off n; off
+let write f (n : node) =
+  let off = append f (node_bytes n) in
+  Hashtbl.replace f.cache off n;
+  off
 
 (*****************************************************************************)
 (* Copy-on-write B-trees *)
@@ -118,19 +159,33 @@ let max_entries = 16
 let empty_tree f = write f (Leaf (Array.of_list []))
 
 (* the child for a key: the number of separators at or below it *)
-let child seps k = let rec go i = if i < Array.length seps && seps.(i) <= k then go (i + 1) else i in go 0
+let child seps k =
+  let rec go i =
+    if i < Array.length seps && seps.(i) <= k then go (i + 1) else i
+  in
+  go 0
 
 (* the entries from [from] on, in key order, read as they are pulled *)
 let rec scan f off (from : key option) : (key * row) Seq.t =
   match node f off with
-  | Leaf es -> Seq.drop_while (fun (k, _) -> match from with Some lo -> k < lo | None -> false) (Array.to_seq es)
+  | Leaf es ->
+      Seq.drop_while
+        (fun (k, _) -> match from with Some lo -> k < lo | None -> false)
+        (Array.to_seq es)
   | Inner (seps, kids) ->
       let start = match from with Some lo -> child seps lo | None -> 0 in
-      Seq.concat_map (fun i -> scan f kids.(i) (if i = start then from else None)) (Seq.init (Array.length kids - start) (( + ) start))
+      Seq.concat_map
+        (fun i -> scan f kids.(i) (if i = start then from else None))
+        (Seq.init (Array.length kids - start) (( + ) start))
 
-let find f off k = match scan f off (Some k) () with Seq.Cons ((k', r), _) when k' = k -> Some r | _ -> None
+let find f off k =
+  match scan f off (Some k) () with
+  | Seq.Cons ((k', r), _) when k' = k -> Some r
+  | _ -> None
 
-let insert_at a i x = Array.concat [ Array.sub a 0 i; Array.make 1 x; Array.sub a i (Array.length a - i) ]
+let insert_at a i x =
+  Array.concat
+    [ Array.sub a 0 i; Array.make 1 x; Array.sub a i (Array.length a - i) ]
 
 (* the new subtree: one node, or two and the separator between *)
 type split = One of int | Two of int * key * int
@@ -139,35 +194,57 @@ type split = One of int | Two of int * key * int
 let rec ins f off k r =
   match node f off with
   | Leaf es ->
-      let i = let rec go i = if i < Array.length es && fst es.(i) < k then go (i + 1) else i in go 0 in
-      if i < Array.length es && fst es.(i) = k then error ("duplicate key " ^ String.concat ", " (List.map show k));
+      let i =
+        let rec go i =
+          if i < Array.length es && fst es.(i) < k then go (i + 1) else i
+        in
+        go 0
+      in
+      if i < Array.length es && fst es.(i) = k then
+        error ("duplicate key " ^ String.concat ", " (List.map show k));
       let es = insert_at es i (k, r) in
       if Array.length es <= max_entries then One (write f (Leaf es))
       else
         let m = Array.length es / 2 in
-        Two (write f (Leaf (Array.sub es 0 m)), fst es.(m), write f (Leaf (Array.sub es m (Array.length es - m))))
+        Two (write f (Leaf (Array.sub es 0 m)), fst es.(m),
+             write f (Leaf (Array.sub es m (Array.length es - m))))
   | Inner (seps, kids) -> (
       let i = child seps k in
       match ins f kids.(i) k r with
-      | One c -> let kids = Array.copy kids in kids.(i) <- c; One (write f (Inner (seps, kids)))
+      | One c ->
+          let kids = Array.copy kids in
+          kids.(i) <- c;
+          One (write f (Inner (seps, kids)))
       | Two (a, sep, b) ->
           let seps = insert_at seps i sep and kids = insert_at kids i a in
           kids.(i + 1) <- b;
-          if Array.length kids <= max_entries then One (write f (Inner (seps, kids)))
+          if Array.length kids <= max_entries then
+            One (write f (Inner (seps, kids)))
           else
             (* the middle separator goes up; each half keeps its children *)
             let m = Array.length seps / 2 in
-            Two (write f (Inner (Array.sub seps 0 m, Array.sub kids 0 (m + 1))), seps.(m),
-                  write f (Inner (Array.sub seps (m + 1) (Array.length seps - m - 1), Array.sub kids (m + 1) (Array.length kids - m - 1)))))
+            Two (write f (Inner (Array.sub seps 0 m, Array.sub kids 0 (m + 1))),
+                 seps.(m),
+                 write f (Inner (Array.sub seps (m + 1)
+                                   (Array.length seps - m - 1),
+                                 Array.sub kids (m + 1)
+                                   (Array.length kids - m - 1)))))
 
 let insert f root k r =
-  match ins f root k r with One root -> root | Two (a, sep, b) -> write f (Inner (Array.make 1 sep, Array.of_list [ a; b ]))
+  match ins f root k r with
+  | One root -> root
+  | Two (a, sep, b) -> write f (Inner (Array.make 1 sep, Array.of_list [ a; b ]))
 
 (* no rebalancing: an underfull node, even an empty leaf, is still right *)
 let rec delete f off k =
   match node f off with
-  | Leaf es -> write f (Leaf (Array.of_list (List.filter (fun (k', _) -> k' <> k) (Array.to_list es))))
-  | Inner (seps, kids) -> let i = child seps k and kids = Array.copy kids in kids.(i) <- delete f kids.(i) k; write f (Inner (seps, kids))
+  | Leaf es ->
+      write f (Leaf (Array.of_list
+        (List.filter (fun (k', _) -> k' <> k) (Array.to_list es))))
+  | Inner (seps, kids) ->
+      let i = child seps k and kids = Array.copy kids in
+      kids.(i) <- delete f kids.(i) k;
+      write f (Inner (seps, kids))
 
 (*****************************************************************************)
 (* The catalog *)
@@ -187,7 +264,9 @@ let tables_bytes (ts : table list) =
   let b = Buffer.create 256 in
   put_list (fun b (t : table) ->
     put_str b t.name;
-    put_list (fun b (c, ty) -> put_str b c; put_int b (match ty with TInt -> 0 | TText -> 1)) b t.cols;
+    put_list (fun b (c, ty) ->
+      put_str b c;
+      put_int b (match ty with TInt -> 0 | TText -> 1)) b t.cols;
     put_int b t.key; put_int b t.root;
     put_list (fun b (c, root) -> put_str b c; put_int b root) b t.indexes) b ts;
   Buffer.contents b
@@ -195,14 +274,23 @@ let tables_bytes (ts : table list) =
 let tables_of_bytes s : table list =
   get_list (fun r ->
     let name = get_str r in
-    let cols = get_list (fun r -> let c = get_str r in (c, if get_int r = 0 then TInt else TText)) r in
+    let cols =
+      get_list (fun r ->
+        let c = get_str r in
+        (c, if get_int r = 0 then TInt else TText)) r
+    in
     let key = get_int r in
     let root = get_int r in
-    { name; cols; key; root; indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r }) (s, ref 0)
+    { name; cols; key; root;
+      indexes = get_list (fun r -> let c = get_str r in (c, get_int r)) r })
+    (s, ref 0)
 
 let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
   (* (made when it is not there) *)
-  let fd = try TinyLibSystem.open_rw caps path with Failure m -> failwith (path ^ ": " ^ m) in
+  let fd =
+    try TinyLibSystem.open_rw caps path
+    with Failure m -> failwith (path ^ ": " ^ m)
+  in
   let file = { fd; cache = Hashtbl.create 256 } in
   (* (an empty file is a new database; old: one under 16 bytes, so a
    * short file that was not one was written over) *)
@@ -211,7 +299,8 @@ let open_db (caps : < Cap.open_in; Cap.open_out; .. >) path =
     write_at file 0 (magic ^ String.make 8 '\000');
     { file; tables = [] }
   end
-  else if size < 16 || read_at file 0 8 <> magic then failwith (path ^ ": not a tiny-db file")
+  else if size < 16 || read_at file 0 8 <> magic then
+    failwith (path ^ ": not a tiny-db file")
   else
     let off = int_at (read_at file 8 8) 0 in
     { file; tables = (if off = 0 then [] else tables_of_bytes (load file off)) }
@@ -222,13 +311,22 @@ let commit db tables =
   write_at db.file 8 (int_bytes (append db.file (tables_bytes tables)));
   db.tables <- tables
 
-let table db name = match List.find_opt (fun t -> t.name = name) db.tables with Some t -> t | None -> error ("no table " ^ name)
+let table db name =
+  match List.find_opt (fun t -> t.name = name) db.tables with
+  | Some t -> t
+  | None -> error ("no table " ^ name)
 
-let replace db (t : table) = List.map (fun t' -> if t'.name = t.name then t else t') db.tables
+let replace db (t : table) =
+  List.map (fun t' -> if t'.name = t.name then t else t') db.tables
 
 (* a table's columns; a column's place among columns *)
 let names (t : table) = List.map fst t.cols
-let col_pos cols c = let rec go i = function x :: rest -> if x = c then i else go (i + 1) rest | [] -> error ("no column " ^ c) in go 0 cols
+let col_pos cols c =
+  let rec go i = function
+    | x :: rest -> if x = c then i else go (i + 1) rest
+    | [] -> error ("no column " ^ c)
+  in
+  go 0 cols
 
 (* an index's entry has no row *)
 let no_row : row = Array.of_list []
@@ -237,11 +335,17 @@ let no_row : row = Array.of_list []
 let add f (t : table) (r : row) =
   let k = r.(t.key) in
   { t with root = insert f t.root [ k ] r;
-           indexes = List.map (fun (c, root) -> c, insert f root [ r.(col_pos (names t) c); k ] no_row) t.indexes }
+           indexes =
+             List.map (fun (c, root) ->
+               c, insert f root [ r.(col_pos (names t) c); k ] no_row)
+               t.indexes }
 
 let remove f (t : table) (r : row) =
   let k = r.(t.key) in
-  { t with root = delete f t.root [ k ]; indexes = List.map (fun (c, root) -> c, delete f root [ r.(col_pos (names t) c); k ]) t.indexes }
+  { t with root = delete f t.root [ k ];
+           indexes =
+             List.map (fun (c, root) ->
+               c, delete f root [ r.(col_pos (names t) c); k ]) t.indexes }
 
 (*****************************************************************************)
 (* The language *)
@@ -268,16 +372,26 @@ let tokens (s : string) : token list =
           while !j < n && is_digit s.[!j] do incr j done;
           go !j (Num (int_of_string (String.sub s i (!j - i))) :: acc)
       | ('"' | '\'') as q ->
-          let j = match String.index_from_opt s (i + 1) q with Some j -> j | None -> error "unclosed string" in
+          let j =
+            match String.index_from_opt s (i + 1) q with
+            | Some j -> j
+            | None -> error "unclosed string"
+          in
           go (j + 1) (Str (String.sub s (i + 1) (j - i - 1)) :: acc)
-      | '!' | '<' | '>' when i + 1 < n && s.[i + 1] = '=' -> go (i + 2) (Sym (String.sub s i 2) :: acc)
+      | '!' | '<' | '>' when i + 1 < n && s.[i + 1] = '=' ->
+          go (i + 2) (Sym (String.sub s i 2) :: acc)
       | c -> go (i + 1) (Sym (String.make 1 c) :: acc)
   in
   go 0 []
 
 type binop = Add | Sub | Mul | Div | Eq | Ne | Lt | Le | Gt | Ge | And | Or
 
-type expr = Lit of value | Col of string | Bin of binop * expr * expr | Not of expr | Neg of expr
+type expr =
+  | Lit of value
+  | Col of string
+  | Bin of binop * expr * expr
+  | Not of expr
+  | Neg of expr
 
 type agg = Count | Sum of string | Min of string | Max of string
 
@@ -310,13 +424,23 @@ let comparisons = [ "=", Eq; "!=", Ne; "<", Lt; "<=", Le; ">", Gt; ">=", Ge ]
 let parse (ts : token list) : stmt =
   let ts = ref ts in
   let peek () = match !ts with t :: _ -> Some t | [] -> None in
-  let next () = match !ts with t :: rest -> ts := rest; t | [] -> error "unexpected end" in
+  let next () =
+    match !ts with t :: rest -> ts := rest; t | [] -> error "unexpected end"
+  in
   let expect t = if next () <> t then error "syntax error" in
   let name () = match next () with Name n -> n | _ -> error "a name expected" in
   let accept t = if peek () = Some t then (ignore (next ()); true) else false in
-  let rec list f = let x = f () in if accept (Sym ",") then x :: list f else [ x ] in
+  let rec list f =
+    let x = f () in
+    if accept (Sym ",") then x :: list f else [ x ]
+  in
   let literal () = match next () with
-    | Num n -> Int n | Str s -> Text s | Sym "-" -> (match next () with Num n -> Int (- n) | _ -> error "a number expected")
+    | Num n -> Int n
+    | Str s -> Text s
+    | Sym "-" ->
+        (match next () with
+         | Num n -> Int (- n)
+         | _ -> error "a number expected")
     | _ -> error "a value expected" in
   let rec expr () = binary [ [ Name "or", Or ]; [ Name "and", And ] ] not_
   and binary levels last =
@@ -324,7 +448,9 @@ let parse (ts : token list) : stmt =
     | [] -> last ()
     | ops :: rest ->
         let rec loop l = match peek () with
-          | Some t when List.mem_assoc t ops -> ignore (next ()); loop (Bin (List.assoc t ops, l, binary rest last))
+          | Some t when List.mem_assoc t ops ->
+              ignore (next ());
+              loop (Bin (List.assoc t ops, l, binary rest last))
           | _ -> l in
         loop (binary rest last)
   and not_ () = if accept (Name "not") then Not (not_ ()) else comparison ()
@@ -342,11 +468,19 @@ let parse (ts : token list) : stmt =
     | Sym "-" -> Neg (atom ())
     | Sym "(" -> let e = expr () in expect (Sym ")"); e
     | _ -> error "syntax error" in
-  let item () = let n = name () in if accept (Sym "=") then n, expr () else n, Col n in
+  let item () =
+    let n = name () in
+    if accept (Sym "=") then n, expr () else n, Col n
+  in
   let aggregate () =
     let n = name () in
     expect (Sym "=");
-    n, (match name () with "count" -> Count | "sum" -> Sum (name ()) | "min" -> Min (name ()) | "max" -> Max (name ()) | a -> error ("no aggregate " ^ a)) in
+    n, (match name () with
+        | "count" -> Count
+        | "sum" -> Sum (name ())
+        | "min" -> Min (name ())
+        | "max" -> Max (name ())
+        | a -> error ("no aggregate " ^ a)) in
   let rec stages () =
     if not (accept (Sym "|")) then []
     else match name () with
@@ -354,16 +488,27 @@ let parse (ts : token list) : stmt =
       | "select" -> let items = list item in Select items :: stages ()
       | "join" -> let t = name () in Join t :: stages ()
       | "group" ->
-          let rec keys () = match peek () with Some (Name n) -> ignore (next ()); n :: keys () | _ -> [] in
+          let rec keys () =
+            match peek () with
+            | Some (Name n) -> ignore (next ()); n :: keys ()
+            | _ -> []
+          in
           let ks = keys () in
           expect (Sym "(");
           let aggs = list aggregate in
           expect (Sym ")");
           Group (ks, aggs) :: stages ()
-      | "sort" -> let ks = list (fun () -> let n = name () in n, accept (Name "desc")) in Sort ks :: stages ()
-      | "take" -> (match next () with Num n -> Take n :: stages () | _ -> error "take: a number expected")
+      | "sort" ->
+          let ks = list (fun () -> let n = name () in n, accept (Name "desc")) in
+          Sort ks :: stages ()
+      | "take" ->
+          (match next () with
+           | Num n -> Take n :: stages ()
+           | _ -> error "take: a number expected")
       | "delete" -> [ Take (-1) ]     (* a marker, taken apart below *)
-      | "set" -> let items = list item in [ Select ((" set", Lit (Int 0)) :: items) ]
+      | "set" ->
+          let items = list item in
+          [ Select ((" set", Lit (Int 0)) :: items) ]
       | s -> error ("no stage " ^ s) in
   let query explain =
     let t = name () in
@@ -379,14 +524,23 @@ let parse (ts : token list) : stmt =
         expect (Sym "(");
         let cols = list (fun () ->
           let c = name () in
-          let typ = match name () with "int" -> TInt | "text" -> TText | ty -> error ("no type " ^ ty) in
+          let typ =
+            match name () with
+            | "int" -> TInt
+            | "text" -> TText
+            | ty -> error ("no type " ^ ty)
+          in
           c, typ, accept (Name "key")) in
         expect (Sym ")");
         Create (t, cols)
     | Name "insert" :: _ ->
         ignore (next ());
         let t = name () in
-        Insert (t, list (fun () -> expect (Sym "("); let vs = list literal in expect (Sym ")"); vs))
+        Insert (t, list (fun () ->
+          expect (Sym "(");
+          let vs = list literal in
+          expect (Sym ")");
+          vs))
     | Name "index" :: _ -> ignore (next ()); let t = name () in Index (t, name ())
     | Name "explain" :: _ -> ignore (next ()); query true
     | [ Name "help" ] -> ignore (next ()); Help
@@ -404,7 +558,10 @@ let rec compile (cols : string list) (e : expr) : row -> value =
   | Lit v -> fun _ -> v
   | Col c -> let i = col_pos cols c in fun r -> r.(i)
   | Not e -> let f = compile cols e in fun r -> of_bool (not (truth (f r)))
-  | Neg e -> let f = compile cols e in fun r -> (match f r with Int n -> Int (- n) | Text _ -> error "- of a text")
+  | Neg e ->
+      let f = compile cols e in
+      fun r ->
+        (match f r with Int n -> Int (- n) | Text _ -> error "- of a text")
   | Bin (op, a, b) ->
       let fa = compile cols a and fb = compile cols b in
       fun r ->
@@ -429,9 +586,13 @@ let rec compile (cols : string list) (e : expr) : row -> value =
  * or on an index, from a conjunct column op literal; or a scan. The
  * where still filters every row, so a range only has to contain the
  * rows wanted: from the value for > >= =, up to it for < <= = *)
-type access = Scan | Range of string option * value * binop   (* an index's column, or the key *)
+type access =
+  | Scan
+  | Range of string option * value * binop   (* an index's column, or the key *)
 
-let rec conjuncts = function Bin (And, a, b) -> conjuncts a @ conjuncts b | e -> [ e ]
+let rec conjuncts = function
+  | Bin (And, a, b) -> conjuncts a @ conjuncts b
+  | e -> [ e ]
 
 let plan (t : table) (stages : stage list) =
   let key = fst (List.nth t.cols t.key) in
@@ -439,7 +600,8 @@ let plan (t : table) (stages : stage list) =
   let usable = function
     | Bin (op, Col c, Lit v) when ranges op -> Some (c, v, op)
     | Bin (op, Lit v, Col c) when ranges op ->
-        Some (c, v, match op with Lt -> Gt | Le -> Ge | Gt -> Lt | Ge -> Le | o -> o)
+        Some (c, v,
+              match op with Lt -> Gt | Le -> Ge | Gt -> Lt | Ge -> Le | o -> o)
     | _ -> None in
   match stages with
   | Where e :: _ -> (
@@ -447,7 +609,9 @@ let plan (t : table) (stages : stage list) =
       match List.find_opt (fun (c, _, _) -> c = key) cs with
       | Some (_, v, op) -> Range (None, v, op)
       | None -> (
-          match List.find_opt (fun (c, _, _) -> List.mem_assoc c t.indexes) cs with
+          match
+            List.find_opt (fun (c, _, _) -> List.mem_assoc c t.indexes) cs
+          with
           | Some (c, v, op) -> Range (Some c, v, op)
           | None -> Scan))
   | _ -> Scan
@@ -455,37 +619,53 @@ let plan (t : table) (stages : stage list) =
 let show_access (t : table) = function
   | Scan -> "scan " ^ t.name
   | Range (c, v, op) ->
-      Printf.sprintf "range %s.%s %s %s%s" t.name (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
-        (List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ]) (show v) (if c = None then " (key)" else " (index)")
+      Printf.sprintf "range %s.%s %s %s%s" t.name
+        (match c with Some c -> c | None -> fst (List.nth t.cols t.key))
+        (List.assoc op [ Eq, "="; Lt, "<"; Le, "<="; Gt, ">"; Ge, ">=" ])
+        (show v) (if c = None then " (key)" else " (index)")
 
 let rows db (t : table) (a : access) : row Seq.t =
   let f = db.file in
-  let bounded v op (k : key) = match op, k with (Eq | Lt | Le), v' :: _ -> v' <= v | _ -> true in
+  let bounded v op (k : key) =
+    match op, k with (Eq | Lt | Le), v' :: _ -> v' <= v | _ -> true
+  in
   let from v op = match op with Eq | Gt | Ge -> Some [ v ] | _ -> None in
   match a with
   | Scan -> Seq.map snd (scan f t.root None)
-  | Range (None, v, op) -> Seq.map snd (Seq.take_while (fun (k, _) -> bounded v op k) (scan f t.root (from v op)))
+  | Range (None, v, op) ->
+      Seq.map snd (Seq.take_while (fun (k, _) -> bounded v op k)
+                     (scan f t.root (from v op)))
   | Range (Some c, v, op) ->
-      Seq.take_while (fun (k, _) -> bounded v op k) (scan f (List.assoc c t.indexes) (from v op))
-      |> Seq.filter_map (fun (k, _) -> match k with [ _; pk ] -> find f t.root [ pk ] | _ -> None)
+      Seq.take_while (fun (k, _) -> bounded v op k)
+        (scan f (List.assoc c t.indexes) (from v op))
+      |> Seq.filter_map (fun (k, _) ->
+           match k with [ _; pk ] -> find f t.root [ pk ] | _ -> None)
 
 (* a stage: its output columns and rows, from its input's *)
 let stage db (cols, (rs : row Seq.t)) = function
-  | Where e -> let f = compile cols e in cols, Seq.filter (fun r -> truth (f r)) rs
+  | Where e ->
+      let f = compile cols e in
+      cols, Seq.filter (fun r -> truth (f r)) rs
   | Select items ->
       let fs = List.map (fun (_, e) -> compile cols e) items in
-      List.map fst items, Seq.map (fun r -> Array.of_list (List.map (fun f -> f r) fs)) rs
+      List.map fst items,
+      Seq.map (fun r -> Array.of_list (List.map (fun f -> f r) fs)) rs
   | Join name ->
       (* a hash join: the right table in a table by the shared columns *)
       let t = table db name in
       let shared = List.filter (fun c -> List.mem c cols) (names t) in
       let h = Hashtbl.create 64 in
-      Seq.iter (fun r -> Hashtbl.add h (List.map (fun c -> r.(col_pos (names t) c)) shared) r) (rows db t Scan);
+      Seq.iter (fun r ->
+        Hashtbl.add h (List.map (fun c -> r.(col_pos (names t) c)) shared) r)
+        (rows db t Scan);
       let rest = List.filter (fun c -> not (List.mem c shared)) (names t) in
       cols @ rest,
       Seq.concat_map (fun l ->
         let k = List.map (fun c -> l.(col_pos cols c)) shared in
-        List.to_seq (List.rev_map (fun r -> Array.append l (Array.of_list (List.map (fun c -> r.(col_pos (names t) c)) rest))) (Hashtbl.find_all h k))) rs
+        List.to_seq (List.rev_map (fun r ->
+            Array.append l
+              (Array.of_list (List.map (fun c -> r.(col_pos (names t) c)) rest)))
+          (Hashtbl.find_all h k))) rs
   | Group (keys, aggs) ->
       let key = List.map (fun k -> compile cols (Col k)) keys in
       let groups = Hashtbl.create 64 and order = ref [] in
@@ -495,17 +675,26 @@ let stage db (cols, (rs : row Seq.t)) = function
         Hashtbl.replace groups k (r :: (Hashtbl.find_opt groups k ||| []))) rs;
       let fold (a : agg) (g : row list) =
         let col c = let f = compile cols (Col c) in List.map f g in
-        let ints c = List.map (function Int n -> n | Text _ -> error "sum of a text") (col c) in
+        let ints c =
+          List.map (function Int n -> n | Text _ -> error "sum of a text")
+            (col c)
+        in
         match a with
         | Count -> Int (List.length g)
         | Sum c -> Int (List.fold_left ( + ) 0 (ints c))
         | Min c -> List.fold_left min (List.hd (col c)) (col c)
         | Max c -> List.fold_left max (List.hd (col c)) (col c) in
       keys @ List.map fst aggs,
-      List.to_seq (List.rev_map (fun k -> let g = Hashtbl.find groups k in Array.of_list (k @ List.map (fun (_, a) -> fold a g) aggs)) !order)
+      List.to_seq (List.rev_map (fun k ->
+        let g = Hashtbl.find groups k in
+        Array.of_list (k @ List.map (fun (_, a) -> fold a g) aggs)) !order)
   | Sort ks ->
       let fs = List.map (fun (c, desc) -> compile cols (Col c), desc) ks in
-      let cmp a b = List.fold_left (fun acc (f, desc) -> if acc <> 0 then acc else (if desc then -1 else 1) * compare (f a) (f b)) 0 fs in
+      let cmp a b =
+        List.fold_left (fun acc (f, desc) ->
+          if acc <> 0 then acc
+          else (if desc then -1 else 1) * compare (f a) (f b)) 0 fs
+      in
       cols, List.to_seq (List.stable_sort cmp (List.of_seq rs))
   | Take n -> cols, Seq.take n rs
 
@@ -546,14 +735,18 @@ Also:
 let change db name stages (items : (string * expr) list option) =
   let f = db.file in
   let t = table db name in
-  if List.exists (function Where _ -> false | _ -> true) stages then error "only where before delete or set";
+  if List.exists (function Where _ -> false | _ -> true) stages then
+    error "only where before delete or set";
   (* the rows first, then the changes: the iterators read the old tree *)
   let _, (_, rs) = run_query db t stages in
   let rs = List.of_seq rs in
   let t = List.fold_left (remove f) t rs in
   let t = match items with
     | Some items ->
-        let fs = List.map (fun (c, e) -> col_pos (names t) c, compile (names t) e) items in
+        let fs =
+          List.map (fun (c, e) -> col_pos (names t) c, compile (names t) e)
+            items
+        in
         List.fold_left (fun t r ->
           let r' = Array.copy r in
           List.iter (fun (i, e) -> r'.(i) <- e r) fs;
@@ -565,63 +758,105 @@ let exec caps db (s : stmt) =
   let f = db.file in
   match s with
   | Create (name, cols) ->
-      if List.exists (fun t -> t.name = name) db.tables then error (Printf.sprintf "table %s exists" name);
+      if List.exists (fun t -> t.name = name) db.tables then
+        error (Printf.sprintf "table %s exists" name);
       let key = match List.filteri (fun _ (_, _, k) -> k) cols with
-        | [ _ ] -> let rec go i = function (_, _, true) :: _ -> i | _ :: rest -> go (i + 1) rest | [] -> 0 in go 0 cols
+        | [ _ ] ->
+            let rec go i = function
+              | (_, _, true) :: _ -> i
+              | _ :: rest -> go (i + 1) rest
+              | [] -> 0
+            in
+            go 0 cols
         | [] -> 0 | _ -> error "one key" in
-      commit db (db.tables @ [ { name; cols = List.map (fun (c, ty, _) -> c, ty) cols; key; root = empty_tree f; indexes = [] } ])
+      commit db (db.tables @
+        [ { name; cols = List.map (fun (c, ty, _) -> c, ty) cols; key;
+            root = empty_tree f; indexes = [] } ])
   | Insert (name, tuples) ->
       let t = table db name in
       let t = List.fold_left (fun t vs ->
-        if List.length vs <> List.length t.cols then error (name ^ " has " ^ string_of_int (List.length t.cols) ^ " columns");
-        List.iter2 (fun v (c, ty) -> if type_of v <> ty then error (c ^ ": a " ^ (if ty = TInt then "int" else "text"))) vs t.cols;
+        if List.length vs <> List.length t.cols then
+          error (name ^ " has " ^ string_of_int (List.length t.cols)
+                 ^ " columns");
+        List.iter2 (fun v (c, ty) ->
+          if type_of v <> ty then
+            error (c ^ ": a " ^ (if ty = TInt then "int" else "text")))
+          vs t.cols;
         add f t (Array.of_list vs)) t tuples in
       commit db (replace db t)
   | Index (name, c) ->
       let t = table db name in
       if not (List.mem_assoc c t.cols) then error ("no column " ^ c);
-      if List.mem_assoc c t.indexes then error (Printf.sprintf "index on %s exists" c);
+      if List.mem_assoc c t.indexes then
+        error (Printf.sprintf "index on %s exists" c);
       let pos = col_pos (names t) c in
-      let root = Seq.fold_left (fun root r -> insert f root [ r.(pos); r.(t.key) ] no_row) (empty_tree f) (rows db t Scan) in
+      let root =
+        Seq.fold_left (fun root r ->
+          insert f root [ r.(pos); r.(t.key) ] no_row)
+          (empty_tree f) (rows db t Scan)
+      in
       commit db (replace db { t with indexes = t.indexes @ [ c, root ] })
   | Query (explain, name, stages) ->
       let t = table db name in
       let a, (_, rs) = run_query db t stages in
       if explain then
         print caps (String.concat " | " (show_access t a :: List.map (function
-          | Where _ -> "where" | Select _ -> "select" | Join t -> "hash join " ^ t | Group _ -> "group"
-          | Sort _ -> "sort" | Take n -> Printf.sprintf "take %d" n) stages) ^ "\n")
-      else Seq.iter (fun r -> print caps (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
+          | Where _ -> "where" | Select _ -> "select"
+          | Join t -> "hash join " ^ t | Group _ -> "group"
+          | Sort _ -> "sort" | Take n -> Printf.sprintf "take %d" n) stages)
+          ^ "\n")
+      else
+        Seq.iter (fun r ->
+          print caps
+            (String.concat "|" (Array.to_list (Array.map show r)) ^ "\n")) rs
   | Help ->
       let col (c, ty) = c ^ if ty = TInt then " int" else " text" in
       let tables = List.map (fun t ->
-        "  " ^ t.name ^ " (" ^ String.concat ", " (List.mapi (fun i c -> col c ^ if i = t.key then " key" else "") t.cols) ^ ")"
-        ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes) ^ "\n") db.tables in
-      print caps (help ^ (if tables = [] then "No tables yet.\n" else "The tables:\n" ^ String.concat "" tables))
+        "  " ^ t.name ^ " ("
+        ^ String.concat ", " (List.mapi (fun i c ->
+            col c ^ if i = t.key then " key" else "") t.cols)
+        ^ ")"
+        ^ String.concat "" (List.map (fun (c, _) -> ", index " ^ c) t.indexes)
+        ^ "\n") db.tables in
+      print caps
+        (help
+         ^ (if tables = [] then "No tables yet.\n"
+            else "The tables:\n" ^ String.concat "" tables))
   | Delete (name, stages) -> change db name stages None
   | Update (name, stages, items) -> change db name stages (Some items)
 
-let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout; Cap.stderr; .. >) =
+let main
+    (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stdout;
+              Cap.stderr; .. >) =
   match TinyLibSystem.argv caps with
   | [ _; ("-h" | "--help") ] ->
       (* help's first lines, a table made and queried *)
-      let session = List.filteri (fun i _ -> i < 5) (String.split_on_char '\n' help) in
-      print caps ("usage: tiny-db file.db\nThe statements on standard input, at a terminal a prompt (# a comment).\n"
+      let session =
+        List.filteri (fun i _ -> i < 5) (String.split_on_char '\n' help)
+      in
+      print caps ("usage: tiny-db file.db\n"
+                  ^ "The statements on standard input, at a terminal a prompt"
+                  ^ " (# a comment).\n"
                   ^ String.concat "\n" session
-                  ^ "\nThen help, at the prompt: the stages, the other statements, and the tables.\n");
+                  ^ "\nThen help, at the prompt: the stages, the other"
+                  ^ " statements, and the tables.\n");
       0
   | [ _; path ] ->
       let db = open_db caps path in
       (* at a terminal, a prompt, as sqlite's *)
       let tty = TinyLibSystem.isatty 0 in
-      if tty then print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
+      if tty then
+        print caps (Printf.sprintf "tiny-db: %s; help for how, ^D to end\n" path);
       let rec loop n =
         if tty then (print caps "tiny-db> "; TinyLibSystem.flush ());
         match TinyLibSystem.read_line caps with
         | None -> if tty then print caps "\n"; 0
         | Some line ->
             (try match tokens line with [] -> () | ts -> exec caps db (parse ts)
-             with Error m -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-db: line %d: %s\n" n m));
+             with Error m ->
+               TinyLibSystem.flush ();
+               TinyLibSystem.eprint caps
+                 (Printf.sprintf "tiny-db: line %d: %s\n" n m));
             loop (n + 1)
       in
       let code = loop 1 in

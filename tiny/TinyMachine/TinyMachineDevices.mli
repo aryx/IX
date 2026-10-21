@@ -78,11 +78,17 @@ exception Halt of int
 
 (* the devices' state, a host's to look at and to feed: the console's
  * input, the disk, the mouse, the network *)
-type console = { mutable queue : string; mutable next : int; mutable eof : bool; mutable opened : bool; mutable eof_read : bool }
+type console = {
+  mutable queue : string; mutable next : int; mutable eof : bool;
+  mutable opened : bool; mutable eof_read : bool;
+}
 (* the disk's block, 1 KB; [wrote], told of each block written (its
  * number), the host's to keep it *)
 val bsize : int
-type disk = { image : Bytes.t; mutable block : int; mutable addr : int; mutable done_ : bool; mutable wrote : int -> unit }
+type disk = {
+  image : Bytes.t; mutable block : int; mutable addr : int;
+  mutable done_ : bool; mutable wrote : int -> unit;
+}
 (* the mouse: its word, whether it changed since it was read, and the
  * look a program asked for by writing that word (0 the arrow, 1 a hand
  * over a link), which the host shows *)
@@ -90,11 +96,16 @@ type mouse = { mutable at : int; mutable moved : bool; mutable cursor : int }
 type net
 (* the speaker: its ring's address (0: off), the samples played, the
  * time of the last *)
-type speaker = { mutable ring_at : int; mutable played : int; mutable since : int }
+type speaker = {
+  mutable ring_at : int; mutable played : int; mutable since : int;
+}
 
 type machine = {
-  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk; mouse : mouse; net : net; speaker : speaker; mutable events : (int * string) list;
-  put : char -> unit; on_open : console -> unit; send : string -> unit; hear : string -> unit;
+  cpu : TinyMachineCPU.machine; csr : int array; cons : console; disk : disk;
+  mouse : mouse; net : net; speaker : speaker;
+  mutable events : (int * string) list;
+  put : char -> unit; on_open : console -> unit; send : string -> unit;
+  hear : string -> unit;
   mutable touched : bool;
 }
 
@@ -103,7 +114,8 @@ type machine = {
  * [send], when there is a network, has each packet sent, [hear] the
  * speaker's samples, played; a disk's image, a session's events *)
 val create :
-  put:(char -> unit) -> on_open:(console -> unit) -> send:(string -> unit) option -> hear:(string -> unit) ->
+  put:(char -> unit) -> on_open:(console -> unit) ->
+  send:(string -> unit) option -> hear:(string -> unit) ->
   disk:Bytes.t -> events:(int * string) list option -> string -> machine
 
 (* The speaker: a ring of [ring] samples in memory (a byte each, signed),

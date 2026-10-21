@@ -90,7 +90,15 @@ let int_of_string_opt s =
     else if hex && c >= 'a' && c <= 'f' then int_of_char c - 87
     else if hex && c >= 'A' && c <= 'F' then int_of_char c - 55
     else -1 in
-  let rec go i acc = if i >= n then Some acc else let d = digit (stdlib_get s i) in if d < 0 then None else go (i + 1) ((acc * base) + d) in
+  let rec go i acc =
+    if i >= n then Some acc
+    else
+      let d = digit (stdlib_get s i) in
+      if d < 0 then None else go (i + 1) ((acc * base) + d) in
   if n = i then None
-  else match go (if hex then i + 2 else i) 0 with Some v -> Some (if neg then - v else v) | None -> None
-let int_of_string s = match int_of_string_opt s with Some n -> n | None -> failwith "int_of_string"
+  else
+    match go (if hex then i + 2 else i) 0 with
+    | Some v -> Some (if neg then - v else v)
+    | None -> None
+let int_of_string s =
+  match int_of_string_opt s with Some n -> n | None -> failwith "int_of_string"

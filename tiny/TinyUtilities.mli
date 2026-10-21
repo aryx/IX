@@ -56,7 +56,8 @@
  * docs/plans/done/plan_tiny_utilities.md.
  *)
 
-type caps = < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps =
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
 
 (* [each_input caps tool files f]: f on each file named, as its name
  * and a descriptor open on it, or on "" and the standard input when no

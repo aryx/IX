@@ -6,8 +6,9 @@
  * each connection, with two pipes.
  *
  *     tiny-machine-socket dial example.com 80     a connection there
- *     tiny-machine-socket listen 8080             the first one made to this
- *                                                 machine's port 8080 (127.0.0.1's)
+ *     tiny-machine-socket listen 8080             the first one made to
+ *                                                 this machine's port 8080
+ *                                                 (127.0.0.1's)
  *     tiny-machine-socket name example.com        its address, a line
  *
  * dial and listen first write one byte, + when the connection is
@@ -15,13 +16,13 @@
  * is read on the standard input is written to the connection and what
  * comes from it to the standard output, until either ends.
  *
- *     tiny-kernel            tiny-machine                 this program        the world
+ *     tiny-kernel         tiny-machine                this program   the world
  *
  *     get / example.com
- *       dial, IL  ========>  TinyMachinePeer: a sync for
- *                            another address: connect ->  dial example.com 70
- *                                                         "+"                 a TCP
- *       messages  <=======>  a relay: two pipes  <=====>  bytes  <==========> connection
+ *       dial, IL  ======> TinyMachinePeer: a sync for
+ *                         another address: connect -> dial example.com 70
+ *                                                     "+"            a TCP
+ *       messages  <=====> a relay: two pipes  <=====> bytes  <=====> connection
  *
  * The machine speaks IL and the world TCP; the two are joined here
  * and in TinyMachinePeer's relay, which cuts the bytes in messages. It is

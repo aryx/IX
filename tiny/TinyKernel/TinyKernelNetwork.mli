@@ -5,7 +5,8 @@
  * the network (plan_tiny_network.md), and the other end of the wire in
  * TinyMachine.ml:
  *
- *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel     then: ping, get il.txt
+ *     ./tiny-machine -net tiny/tests/www -net-trace tiny-kernel
+ *         then: ping, get il.txt
  *
  * The idea kept: {b the stack is functions of strings}. A packet is a
  * string; a packet that came gives the packets to send back and what a
@@ -33,11 +34,17 @@
  *
  * A packet, byte by byte (a ping of four bytes: 32 in all):
  *
- *     IP's header, 20 bytes                 what it carries: ICMP, 8 and the bytes
- *     45 00 | 00 20 | 00 00 00 00 | 40 | 01 | sum | 10.0.0.2 | 10.0.0.1 | 08 00 | sum | id | seq | p i n g
- *     version  the    no fragment  hops what  the   from       to         echo?   its   whose  which
- *     4, five  whole               left it is header's                            own   ping   one
- *     words    length                   ICMP  check                               check
+ *     IP's header, 20 bytes
+ *     45 00 | 00 20 | 00 00 00 00 | 40 | 01 | sum | 10.0.0.2 | 10.0.0.1
+ *     version  the    no fragment  hops what  the   from       to
+ *     4, five  whole               left it is header's
+ *     words    length                   ICMP  check
+ *
+ *     what it carries: ICMP, 8 and the bytes
+ *     08 00 | sum | id | seq | p i n g
+ *     echo?   its   whose  which
+ *             own   ping   one
+ *             check
  *
  * What is left out, each because the wire has two ends and one
  * program at each: Ethernet and its addresses, ARP (who has this
@@ -89,16 +96,21 @@
  *
  * Its packet, after IP's 20 bytes (IP's number for it is 40):
  *
- *     sum | length | kind | 00 | from port | to port | id, 4 bytes | ack, 4 bytes | the message
+ *     sum | length | kind | 00 | from port | to port | id, 4 bytes |
  *     of all, with the      one of seven: sync 0, data 1, data? 2,
  *     message               ack 3, query 4, state 5, close 6
+ *     ack, 4 bytes | the message
  *
  * One end of a connection is in one of five places:
  *
- *     Il_syncer  --- the other's sync --->  Il_established  --- close said --->  Il_closing --> Il_closed
- *     (dialed)                                ^                  or heard          (said by both)
- *     Il_syncee  --- an ack, or data ---------+
- *     (was dialed)                    any of them, patience over: Il_closed
+ *     Il_syncer  --- the other's sync --->  Il_established
+ *     (dialed)                                ^      |
+ *     Il_syncee  --- an ack, or data ---------+      | close said
+ *     (was dialed)                                   | or heard
+ *                                                    v
+ *                                               Il_closing --> Il_closed
+ *                                                              (said by both)
+ *                                 any of them, patience over: Il_closed
  *
  * The same two functions run it at both ends ([net_input]: a packet
  * came; [net_tick]: time passed), and time is a number their caller
@@ -111,13 +123,14 @@
  * 20 messages, the query before sending again, only what was sent
  * before the query sent again. Changed: an ack says what the program
  * took, where il.c's says what was received and drops what its reader
- * has no room for (a state and a close still say what was received); the wait is fixed (0.1 s,
- * twice that each time, over after six with nothing heard) where il.c
- * measures the round trip; the end is said only when what was written has
- * arrived (il.c drops it); the last close of four is not sent. Left
- * out: the query every ten seconds of a connection where nothing is
- * owed, so an end that waits to read does not notice the other gone
- * silent (it does when the other says the end, which giving up does).
+ * has no room for (a state and a close still say what was received);
+ * the wait is fixed (0.1 s, twice that each time, over after six with
+ * nothing heard) where il.c measures the round trip; the end is said
+ * only when what was written has arrived (il.c drops it); the last
+ * close of four is not sent. Left out: the query every ten seconds of
+ * a connection where nothing is owed, so an end that waits to read does
+ * not notice the other gone silent (it does when the other says the
+ * end, which giving up does).
  *
  * A number of IL's has 32 bits and tiny-ml's int 31: both ends here
  * start small and stay under 2^30; a packet with more is not read.
@@ -189,17 +202,20 @@ val il_read : string -> (int * int * int * int * int * string) option
 type il_at = Il_syncer | Il_syncee | Il_established | Il_closing | Il_closed
 
 type il_sending = {
-  mutable il_next : int; mutable il_unacked : (int * string) list; mutable il_leaving : bool; mutable il_asked : int;
+  mutable il_next : int; mutable il_unacked : (int * string) list;
+  mutable il_leaving : bool; mutable il_asked : int;
   mutable il_timeout : int; mutable il_tries : int; mutable il_silent : int;
 }
 
 type il_receiving = {
-  mutable il_rstart : int; mutable il_recvd : int; mutable il_told : int; mutable il_early : (int * string) list;
+  mutable il_rstart : int; mutable il_recvd : int; mutable il_told : int;
+  mutable il_early : (int * string) list;
   mutable il_heard : string list;
 }
 
 type il = {
-  il_me : string; il_peer : string; il_lport : int; il_rport : int; mutable il_at : il_at; il_start : int; il_s : il_sending;
+  il_me : string; il_peer : string; il_lport : int; il_rport : int;
+  mutable il_at : il_at; il_start : int; il_s : il_sending;
   il_r : il_receiving;
 }
 
@@ -233,8 +249,10 @@ val il_done : il -> unit
  * connection's [il_me] is then that address, and what is at the
  * gateway's other side is its caller's. *)
 type net_stack = {
-  ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list; mutable ns_fresh : il list; mutable ns_start : int;
-  mutable ns_port : int; mutable ns_gate : bool; mutable ns_others : (string * int) list;
+  ns_me : string; mutable ns_conns : il list; mutable ns_ports : int list;
+  mutable ns_fresh : il list; mutable ns_start : int;
+  mutable ns_port : int; mutable ns_gate : bool;
+  mutable ns_others : (string * int) list;
 }
 
 val net_stack : string -> int -> net_stack
@@ -250,5 +268,7 @@ val net_dial : net_stack -> string -> int -> int -> il * string
  * bytes). Time passed (called at each tick of whoever counts: IL's
  * waits are 40 of them, then twice that): the packets to send. Both
  * change the connections: messages heard, a state, [ns_fresh]. *)
-val net_input : net_stack -> int -> string -> string list * (string * int * int * string) option
+val net_input :
+  net_stack -> int -> string ->
+  string list * (string * int * int * string) option
 val net_tick : net_stack -> int -> string list

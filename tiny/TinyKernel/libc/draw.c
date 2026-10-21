@@ -51,7 +51,8 @@ void
 d_draw(int dst, int src, int mask, int x0, int y0, int x1, int y1, int px, int py)
 {
 	d_start('d', 19);
-	d_put(dst); d_put(src); d_put(mask); d_put(x0); d_put(y0); d_put(x1); d_put(y1); d_put(px); d_put(py);
+	d_put(dst); d_put(src); d_put(mask);
+	d_put(x0); d_put(y0); d_put(x1); d_put(y1); d_put(px); d_put(py);
 }
 
 void

@@ -11,12 +11,14 @@
  * branches' tests in their opcodes' order, with their names; an
  * immediate form's name *)
 type reg = int
-type alu = Add | Sub | Mul | Div | Rem | And | Or | Xor | Shl | Shr | Sar | Slt | Sltu
+type alu =
+  | Add | Sub | Mul | Div | Rem | And | Or | Xor | Shl | Shr | Sar | Slt | Sltu
 type cmp = Eq | Ne | Lt | Ge | Ltu | Geu
 type size = W | B
 type instr =
   | Alu of alu * reg * reg * reg          (* d, a, b *)
-  | Alui of alu * reg * reg * int         (* d, a, imm: add and or xor shl shr sar slt sltu *)
+  | Alui of alu * reg * reg * int
+      (* d, a, imm: add and or xor shl shr sar slt sltu *)
   | Lui of reg * int
   | Load of size * reg * reg * int        (* d, a, offset *)
   | Store of size * reg * reg * int       (* the value's register, a, offset *)

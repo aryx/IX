@@ -20,7 +20,10 @@ let pokeb a v = Bytes.set mem a (Char.chr (v land 255))
  * given a colour where the mask's byte is not 0 *)
 let row_copy dst src n = for i = 0 to n - 1 do pokeb (dst + i) (peekb (src + i)) done
 let row_fill dst colour n = Bytes.fill mem dst n (Char.chr (colour land 255))
-let row_mask dst colour mask n = for i = 0 to n - 1 do if peekb (mask + i) <> 0 then pokeb (dst + i) colour done
+let row_mask dst colour mask n =
+  for i = 0 to n - 1 do
+    if peekb (mask + i) <> 0 then pokeb (dst + i) colour
+  done
 
 (* a text's n characters from dst, in an image [width] wide, through the
  * font's mask (1024 wide, character c at column 8c), as draw.tm's *)
@@ -29,7 +32,8 @@ let glyphs dst width colour font s n =
     let c = Char.code s.[i] in
     let c = if c > 127 then 63 else c in
     for row = 0 to 15 do
-      row_mask (dst + (8 * i) + (row * width)) colour (font + (row * 1024) + (8 * c)) 8
+      row_mask (dst + (8 * i) + (row * width)) colour
+        (font + (row * 1024) + (8 * c)) 8
     done
   done
 
@@ -46,11 +50,16 @@ let colour i =
   let g = j lsr 2 and b = j land 3 in
   let den = max r (max g b) in
   if den = 0 then [ 17 * v; 17 * v; 17 * v ]
-  else let num = 17 * ((4 * den) + v) in [ r * num / den; g * num / den; b * num / den ]
+  else
+    let num = 17 * ((4 * den) + v) in
+    [ r * num / den; g * num / den; b * num / den ]
 
 (* the screen as a PPM, the bytes tiny-machine -screen writes *)
 let ppm () =
   let b = Buffer.create 1000000 in
   Buffer.add_string b "P6\n640 480\n255\n";
-  for i = 0 to (640 * 480) - 1 do List.iter (fun c -> Buffer.add_char b (Char.chr c)) (colour (peekb (0xf00000 + i))) done;
+  for i = 0 to (640 * 480) - 1 do
+    List.iter (fun c -> Buffer.add_char b (Char.chr c))
+      (colour (peekb (0xf00000 + i)))
+  done;
   Buffer.contents b

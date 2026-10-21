@@ -75,7 +75,8 @@
  * are let, let rec, and, fun, function, match with guards, as and
  * or-patterns (without variables), if, sequences, while, for, and type
  * annotations (p : t). There is external, used by the standard
- * library (TinyLibCore/, written in ML; see below). Types are Hindley-Milner with the value restriction. Strings
+ * library (TinyLibCore/, written in ML; see below). Types are
+ * Hindley-Milner with the value restriction. Strings
  * can span several lines. ix's capabilities are parsed and then ignored:
  * an object type in an annotation, or declared under a name, means any
  * type, and a coercion to one, (e :> t), is just e; OCaml checks them
@@ -83,8 +84,9 @@
  * type word = piece list, or with parameters, type 'a t = unit -> 'a
  * node (Seq's). A module is a file, a unit (M.x, open M); its types,
  * constructors and labels are the program's, one name space, so M.C
- * is C. {|quoted strings|}, OCaml's, are read (a help's text). Left out: modules inside a file and functors,
- * floats, labels, objects, or-patterns with names in their
+ * is C. {|quoted strings|}, OCaml's, are read (a help's text). Left
+ * out: modules inside a file and functors, floats, labels, objects,
+ * or-patterns with names in their
  * alternatives, character ranges and inline records: the tools and the
  * toolchain were written again without them.
  *
@@ -133,8 +135,9 @@
  *   M.tmi (OCaml's .cmi: the types and constructors it added, each of
  *   its names with where its value is, a static closure or a global,
  *   and its type, M.mli's when there is one; a record, marshalled),
- *   which the units after it read; a program's main (ml_start, each unit's init in their order,
- *   the curry functions, the tables) is made of the interfaces. A unit
+ *   which the units after it read; a program's main (ml_start, each
+ *   unit's init in their order, the curry functions, the tables) is
+ *   made of the interfaces. A unit
  *   is a module: its names are M.x in the units after it, or x after
  *   open M; Stdlib is open in all, and with it TinyLibCore/'s modules,
  *   the standard library, are the first units of every program, each
@@ -264,7 +267,9 @@ type binding
  * before it, to assembly added to the output: every function's code,
  * and <unit>.init, its toplevel; the names then, those it defined, and
  * its globals' count *)
-val compile_unit : (string * binding) list -> (item * int) list -> (string * binding) list * (string * binding) list * int
+val compile_unit :
+  (string * binding) list -> (item * int) list ->
+  (string * binding) list * (string * binding) list * int
 
 (* the program: files of ML to a file of assembly (-h: how) *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

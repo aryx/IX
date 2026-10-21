@@ -20,4 +20,6 @@ let () =
     let r = Sha1.to_hex (Sha1.reads (pieces s)) in
     if r <> d then print_endline ("Sha1.reads: " ^ r))
     [ ""; "abc"; String.make 55 'a'; String.make 56 'a'; String.make 64 'a';
-      String.concat "" (List.init 2000 (fun i -> string_of_int i ^ " lines of the tiny machine\n")) ]
+      String.concat ""
+        (List.init 2000 (fun i ->
+          string_of_int i ^ " lines of the tiny machine\n")) ]

@@ -24,4 +24,6 @@ let reads next =
 
 let to_hex t =
   let digit n = String.get "0123456789abcdef" n in
-  String.init (2 * String.length t) (fun i -> let c = Char.code (String.get t (i / 2)) in digit (if i mod 2 = 0 then c lsr 4 else c land 15))
+  String.init (2 * String.length t) (fun i ->
+    let c = Char.code (String.get t (i / 2)) in
+    digit (if i mod 2 = 0 then c lsr 4 else c land 15))

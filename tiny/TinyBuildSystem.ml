@@ -56,7 +56,8 @@ and step = { text : string; stem : string }
 let target_of (s : string) =
   match String.index_opt s '%' with
   | None -> Exact s
-  | Some i -> Pattern (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
+  | Some i ->
+      Pattern (String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
 
 let show_target = function Exact s -> s | Pattern (pre, suf) -> pre ^ "%" ^ suf
 
@@ -78,7 +79,10 @@ let words (s : string) : string list =
  * printing a recipe (keep), left for the shell (old: ~keep and the
  * other labels: tiny-ml reads none) *)
 let expand keep (vars : (string, string list) Hashtbl.t) (s : string) : string =
-  let is_name c = c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') in
+  let is_name c =
+    c = '_' || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+    || ('0' <= c && c <= '9')
+  in
   let b = Buffer.create (String.length s) and n = String.length s in
   let rec go i =
     if i < n then
@@ -91,7 +95,8 @@ let expand keep (vars : (string, string list) Hashtbl.t) (s : string) : string =
         let value =
           match Hashtbl.find_opt vars name with
           | Some v -> String.concat " " v
-          | None when keep -> String.sub s i ((if braced then !j + 1 else !j) - i)
+          | None when keep ->
+              String.sub s i ((if braced then !j + 1 else !j) - i)
           | None -> error ("undefined variable $" ^ name)
         in
         Buffer.add_string b value;
@@ -112,22 +117,30 @@ let parse (read : string -> string option) (text : string) :
     let n = String.length text and b = Buffer.create (String.length text) in
     String.iteri (fun i c ->
       if c = '\\' && i + 1 < n && text.[i + 1] = '\n' then Buffer.add_char b ' '
-      else if not (c = '\n' && i > 0 && text.[i - 1] = '\\') then Buffer.add_char b c) text;
+      else if not (c = '\n' && i > 0 && text.[i - 1] = '\\') then
+        Buffer.add_char b c) text;
     String.split_on_char '\n' (Buffer.contents b)
   in
   let is_recipe l = l <> "" && (l.[0] = '\t' || l.[0] = ' ') in
-  let strip l = match String.index_opt l '#' with Some i -> String.sub l 0 i | None -> l in
+  let strip l =
+    match String.index_opt l '#' with Some i -> String.sub l 0 i | None -> l
+  in
   let rec go = function
     | [] -> ()
     | l :: _ when is_recipe l -> error ("a recipe line with no rule: " ^ l)
     | l :: rest when String.length l > 1 && l.[0] = '<' ->
-        let file = String.trim (expand false vars (String.sub l 1 (String.length l - 1))) in
+        let file =
+          String.trim (expand false vars (String.sub l 1 (String.length l - 1)))
+        in
         Option.iter (fun text -> go (lines text)) (read file);
         go rest
     | l :: rest ->
         let l = strip l in
         let before i = words (expand false vars (String.sub l 0 i)) in
-        let after i = words (expand false vars (String.sub l (i + 1) (String.length l - i - 1))) in
+        let after i =
+          words (expand false vars
+            (String.sub l (i + 1) (String.length l - i - 1)))
+        in
         (* whichever of = and : comes first *)
         match String.index_opt l '=', String.index_opt l ':' with
         | Some i, j when (match j with Some j -> i < j | None -> true) ->
@@ -141,7 +154,8 @@ let parse (read : string -> string option) (text : string) :
             let body, rest = recipe [] rest in
             let prereqs = after j in
             let recipe = if body = "" then None else Some body in
-            before j |> List.iter (fun t -> rules := { target = target_of t; prereqs; recipe } :: !rules);
+            before j |> List.iter (fun t ->
+              rules := { target = target_of t; prereqs; recipe } :: !rules);
             go rest
         | _ ->
             if String.trim l <> "" then error ("not a rule nor a variable: " ^ l);
@@ -159,8 +173,10 @@ let matches (t : target) (name : string) : string option =
   match t with
   | Exact s -> if s = name then Some "" else None
   | Pattern (pre, suf) ->
-      let n = String.length name and np = String.length pre and ns = String.length suf in
-      if np + ns <= n && String.sub name 0 np = pre && String.sub name (n - ns) ns = suf
+      let n = String.length name and np = String.length pre
+      and ns = String.length suf in
+      if np + ns <= n && String.sub name 0 np = pre
+         && String.sub name (n - ns) ns = suf
       then Some (String.sub name np (n - np - ns)) else None
 
 let subst stem (p : string) = String.concat stem (String.split_on_char '%' p)
@@ -168,9 +184,13 @@ let subst stem (p : string) = String.concat stem (String.split_on_char '%' p)
 (* From a target to its node: the rules naming it exactly, merged (at
  * most one with a recipe); if none has a recipe, the one pattern rule
  * whose prerequisites can all be made. *)
-let graph (rules : rule list) (exists : string -> bool) (target : string) : node =
+let graph (rules : rule list) (exists : string -> bool) (target : string) :
+    node =
   let memo = Hashtbl.create 101 in
-  let exact, patterns = List.partition (fun r -> match r.target with Exact _ -> true | Pattern _ -> false) rules in
+  let exact, patterns =
+    List.partition
+      (fun r -> match r.target with Exact _ -> true | Pattern _ -> false) rules
+  in
   let rec node path used name =
     match Hashtbl.find_opt memo name with
     | Some n -> n
@@ -188,19 +208,29 @@ let graph (rules : rule list) (exists : string -> bool) (target : string) : node
                 patterns |> List.filter_map (fun r ->
                   if List.memq r used then None
                   else match matches r.target name with
-                    | Some stem when List.for_all (makeable path (r :: used)) (List.map (subst stem) r.prereqs)
+                    | Some stem
+                      when List.for_all (makeable path (r :: used))
+                             (List.map (subst stem) r.prereqs)
                       -> Some (r, stem)
                     | _ -> None)
               in
               (match candidates with
                | [] -> Source, [], used
                | [ (r, stem) ] ->
-                   let make = match r.recipe with Some text -> Recipe { text; stem } | None -> Source in
+                   let make =
+                     match r.recipe with
+                     | Some text -> Recipe { text; stem }
+                     | None -> Source
+                   in
                    make, List.map (subst stem) r.prereqs, r :: used
                | _ -> error ("ambiguous: several patterns make " ^ name))
         in
-        let n = { name; make; deps = List.map (node (name :: path) used) (prereqs @ extra) } in
-        if make = Source && n.deps = [] && not (exists name) then error ("don't know how to make " ^ name);
+        let n =
+          { name; make;
+            deps = List.map (node (name :: path) used) (prereqs @ extra) }
+        in
+        if make = Source && n.deps = [] && not (exists name) then
+          error ("don't know how to make " ^ name);
         Hashtbl.replace memo name n;
         n
   (* can this name be made: a file, or a target of some rule? *)
@@ -209,7 +239,9 @@ let graph (rules : rule list) (exists : string -> bool) (target : string) : node
     || List.exists (fun r ->
          not (List.memq r used) && not (List.mem name path)
          && match matches r.target name with
-            | Some stem -> List.for_all (makeable (name :: path) (r :: used)) (List.map (subst stem) r.prereqs)
+            | Some stem ->
+                List.for_all (makeable (name :: path) (r :: used))
+                  (List.map (subst stem) r.prereqs)
             | None -> false) patterns
   in
   node [] [] target
@@ -231,9 +263,11 @@ let order (root : node) : node list =
 (* The outside world *)
 (*****************************************************************************)
 
-let exists file = try ignore (TinyLibSystem.stat file); true with Failure _ -> false
+let exists file =
+  try ignore (TinyLibSystem.stat file); true with Failure _ -> false
 
-let read_file caps file = if exists file then Some (TinyLibSystem.read_file caps file) else None
+let read_file caps file =
+  if exists file then Some (TinyLibSystem.read_file caps file) else None
 
 (* A file's digest, the SHA-1 of its bytes, read once in a run
  * (file_digests), and not at all when its size and date are the ones
@@ -256,15 +290,19 @@ let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
   | None ->
       let d =
         if exists file && not (TinyLibSystem.is_directory file) then begin
-          let _, size = TinyLibSystem.stat file and date = TinyLibSystem.mtime file in
+          let _, size = TinyLibSystem.stat file
+          and date = TinyLibSystem.mtime file in
           match Hashtbl.find_opt known file with
           | Some (s, t, d) when s = size && t = date -> Some d
           | _ ->
               let now = TinyLibSystem.time () in
               let fd = TinyLibSystem.open_in caps file in
-              let d = Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096)) in
+              let d =
+                Sha1.to_hex (Sha1.reads (fun () -> TinyLibSystem.read fd 4096))
+              in
               TinyLibSystem.close fd;
-              if date < now then Hashtbl.replace known file (size, date, d) else Hashtbl.remove known file;
+              if date < now then Hashtbl.replace known file (size, date, d)
+              else Hashtbl.remove known file;
               Some d
         end
         else None in
@@ -274,7 +312,8 @@ let digest_file (caps : < Cap.open_in; .. >) (file : string) : string option =
 (* a recipe run by the system's shell: sh -e on the host, rc -e on
  * tiny-kernel (TinyLibSystem.shell); its pid (old: CapUnix.fork and
  * execve of /bin/sh -e -c here) *)
-let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >) (vars : (string * string list) list) (recipe : string) : int =
+let start (caps : < Cap.fork; Cap.exec; Cap.env; Cap.open_out; .. >)
+    (vars : (string * string list) list) (recipe : string) : int =
   TinyLibSystem.shell caps vars recipe
 
 (*****************************************************************************)
@@ -293,13 +332,17 @@ let times : (string * int) list ref = ref []
 let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
   let b = Buffer.create 4096 in
   Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
-  Hashtbl.iter (fun k (size, date, d) -> Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
+  Hashtbl.iter (fun k (size, date, d) ->
+    Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
   let fd = TinyLibSystem.open_out caps stampfile in
   TinyLibSystem.write fd (Buffer.contents b);
   TinyLibSystem.close fd
 
-let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap.env; Cap.stdout; Cap.stderr; .. >)
-    (vars : (string, string list) Hashtbl.t) (stamps : (string, string) Hashtbl.t)
+let build
+    (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out;
+              Cap.env; Cap.stdout; Cap.stderr; .. >)
+    (vars : (string, string list) Hashtbl.t)
+    (stamps : (string, string) Hashtbl.t)
     jobs dry timed (root : node) : bool =
   let digests = Hashtbl.create 101 in    (* the nodes done: their digest *)
   let running = Hashtbl.create 7 in      (* pid -> node, its start *)
@@ -319,15 +362,22 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
   let decide n =
     match n.make with
     | Source -> finish n
-    | Recipe _ when digest_file caps n.name <> None && Hashtbl.find_opt stamps n.name = Some (stamp n) -> finish n
+    | Recipe _
+      when digest_file caps n.name <> None
+           && Hashtbl.find_opt stamps n.name = Some (stamp n) -> finish n
     | Recipe r ->
-      let own = [ "target", [ n.name ]; "stem", [ r.stem ]; "prereq", List.map (fun d -> d.name) n.deps ] in
+      let own =
+        [ "target", [ n.name ]; "stem", [ r.stem ];
+          "prereq", List.map (fun d -> d.name) n.deps ]
+      in
       let shown = Hashtbl.copy vars in
       List.iter (fun (k, v) -> Hashtbl.replace shown k v) own;
       TinyLibSystem.print caps (expand true shown r.text ^ "\n");
       incr ran;
       if dry then Hashtbl.replace digests n.name ("dry " ^ n.name)
-      else Hashtbl.replace running (start caps (own @ env) r.text) (n, TinyLibSystem.millis ())
+      else
+        Hashtbl.replace running (start caps (own @ env) r.text)
+          (n, TinyLibSystem.millis ())
   in
   let wait () =
     match TinyLibSystem.wait_any caps with
@@ -344,8 +394,16 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
           TinyLibSystem.print caps (Printf.sprintf "%8d ms  %s\n" ms n.name)
         end;
         (* (its file made again: its digest too) *)
-        if st = "" then (Hashtbl.remove file_digests n.name; Hashtbl.replace stamps n.name (stamp n); finish n; save caps stamps)
-        else (TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s failed\n" n.name); failed := true)
+        if st = "" then (
+          Hashtbl.remove file_digests n.name;
+          Hashtbl.replace stamps n.name (stamp n);
+          finish n;
+          save caps stamps)
+        else (
+          TinyLibSystem.flush ();
+          TinyLibSystem.eprint caps
+            (Printf.sprintf "tiny-build: %s failed\n" n.name);
+          failed := true)
   in
   let rec loop todo =
     let ready n = List.for_all (fun d -> Hashtbl.mem digests d.name) n.deps in
@@ -360,14 +418,17 @@ let build (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out; Cap
     else if todo <> [] && not !failed && List.exists ready todo then loop todo
   in
   loop (order root);
-  if !ran = 0 && not !failed then TinyLibSystem.print caps (Printf.sprintf "tiny-build: %s is up to date\n" root.name);
+  if !ran = 0 && not !failed then
+    TinyLibSystem.print caps
+      (Printf.sprintf "tiny-build: %s is up to date\n" root.name);
   not !failed
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-let usage = "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
+let usage =
+  "usage: tiny-build [-f file] [-j N] [-n] [-g] [-t] [target ...]   (-h: how)"
 exception Bad of string
 
 (* -t, at the end: the times by kind of target: its
@@ -376,26 +437,45 @@ exception Bad of string
 let report caps total =
   let kind name =
     let dir = Filename.dirname name and base = Filename.basename name in
-    let ext = match String.rindex_opt base '.' with Some i -> String.sub base i (String.length base - i) | None -> "" in
+    let ext =
+      match String.rindex_opt base '.' with
+      | Some i -> String.sub base i (String.length base - i)
+      | None -> ""
+    in
     (if dir = "." then "" else dir ^ "/") ^ "*" ^ ext in
   let by = Hashtbl.create 17 in
   List.iter (fun (name, ms) ->
-    let n, t = match Hashtbl.find_opt by (kind name) with Some x -> x | None -> 0, 0 in
+    let n, t =
+      match Hashtbl.find_opt by (kind name) with Some x -> x | None -> 0, 0
+    in
     Hashtbl.replace by (kind name) (n + 1, t + ms)) (List.rev !times);
-  let rows = List.sort (fun (_, (_, a)) (_, (_, b)) -> compare b a) (Hashtbl.fold (fun k v acc -> (k, v) :: acc) by []) in
-  List.iter (fun (k, (n, t)) -> TinyLibSystem.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
+  let rows =
+    List.sort (fun (_, (_, a)) (_, (_, b)) -> compare b a)
+      (Hashtbl.fold (fun k v acc -> (k, v) :: acc) by [])
+  in
+  List.iter (fun (k, (n, t)) ->
+    TinyLibSystem.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
   let recipes = List.fold_left (fun acc (_, ms) -> acc + ms) 0 !times in
-  TinyLibSystem.print caps (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n" (total - recipes) total)
+  TinyLibSystem.print caps
+    (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n"
+       (total - recipes) total)
 
 let run (caps : Cap.all_caps) : int =
-  let file = ref "Buildfile" and jobs = ref 1 and dry = ref false and dot = ref false and timed = ref false in
+  let file = ref "Buildfile" and jobs = ref 1 and dry = ref false
+  and dot = ref false and timed = ref false in
   let began = TinyLibSystem.millis () in
   let targets = ref [] in
   (* old: Arg.parse_argv, for these four options *)
-  let bad o = raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage)) in
+  let bad o =
+    raise (Bad (Printf.sprintf "tiny-build: unknown option '%s'\n%s\n" o usage))
+  in
   let rec options = function
     | "-f" :: f :: rest -> file := f; options rest
-    | "-j" :: n :: rest -> (match int_of_string_opt n with Some n -> jobs := n | None -> bad ("-j " ^ n)); options rest
+    | "-j" :: n :: rest ->
+        (match int_of_string_opt n with
+         | Some n -> jobs := n
+         | None -> bad ("-j " ^ n));
+        options rest
     | "-n" :: rest -> dry := true; options rest
     | "-g" :: rest -> dot := true; options rest
     | "-t" :: rest -> timed := true; options rest
@@ -405,7 +485,11 @@ let run (caps : Cap.all_caps) : int =
   in
   options (List.tl (TinyLibSystem.argv caps));
   try
-    let text = match read_file caps !file with Some s -> s | None -> error ("no " ^ !file) in
+    let text =
+      match read_file caps !file with
+      | Some s -> s
+      | None -> error ("no " ^ !file)
+    in
     let rules, vars = parse (read_file caps) text in
     let targets =
       match !targets, rules with
@@ -429,7 +513,9 @@ let run (caps : Cap.all_caps) : int =
         if !dot then begin
           TinyLibSystem.print caps "digraph G {\n";
           order root |> List.iter (fun n ->
-            List.iter (fun d -> TinyLibSystem.print caps (Printf.sprintf "  %S -> %S;\n" n.name d.name)) n.deps);
+            List.iter (fun d ->
+              TinyLibSystem.print caps
+                (Printf.sprintf "  %S -> %S;\n" n.name d.name)) n.deps);
           TinyLibSystem.print caps "}\n";
           true
         end
@@ -438,7 +524,10 @@ let run (caps : Cap.all_caps) : int =
     if not !dry then save caps stamps;
     if !timed then report caps (TinyLibSystem.millis () - began);
     if ok then 0 else 1
-  with Error msg -> TinyLibSystem.flush (); TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg); 1
+  with Error msg ->
+    TinyLibSystem.flush ();
+    TinyLibSystem.eprint caps (Printf.sprintf "tiny-build: %s\n" msg);
+    1
 
 (* -h, and an unknown option said, not raised *)
 let main (caps : Cap.all_caps) : int =

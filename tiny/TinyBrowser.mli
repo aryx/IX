@@ -104,7 +104,10 @@ val anchor : page -> string -> int option
 (* The page's pictures: how many, and one by its number. A picture's
  * pc_got is -1 before it is asked for, -3 once asked, -2 when there is
  * none to be had, and the rows received so far after that. *)
-type picture = { pc_src : string; pc_w : int; pc_h : int; pc_alt : string; mutable pc_got : int }
+type picture = {
+  pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
+  mutable pc_got : int
+}
 val pictures : page -> int
 val picture_of : page -> int -> picture
 

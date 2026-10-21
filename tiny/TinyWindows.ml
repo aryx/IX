@@ -34,8 +34,10 @@ let red = 6
 
 (* (written past a kilobyte too: a message joined to n bytes copies them) *)
 let gathered = ref ""
-let flush () = if !gathered <> "" then (ignore (u_write 3 !gathered); gathered := "")
-let send m = gathered := !gathered ^ m; if String.length !gathered > 1024 then flush ()
+let flush () =
+  if !gathered <> "" then (ignore (u_write 3 !gathered); gathered := "")
+let send m =
+  gathered := !gathered ^ m; if String.length !gathered > 1024 then flush ()
 
 (* the numbers in use; the lowest free one *)
 let used = ref []
@@ -47,10 +49,13 @@ let fresh () =
 let release n = used := List.filter (fun k -> k <> n) !used
 
 (* a rectangle is its two corners; what two have in common; one of no pixel *)
-let clip (ax0, ay0, ax1, ay1) (bx0, by0, bx1, by1) = max ax0 bx0, max ay0 by0, min ax1 bx1, min ay1 by1
+let clip (ax0, ay0, ax1, ay1) (bx0, by0, bx1, by1) =
+  max ax0 bx0, max ay0 by0, min ax1 bx1, min ay1 by1
 let empty (x0, y0, x1, y1) = x1 <= x0 || y1 <= y0
 let inside (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
-let fill dst colour r = if not (empty r) then (let x0, y0, x1, y1 = r in send (d_fill dst colour x0 y0 x1 y1))
+let fill dst colour r =
+  if not (empty r) then
+    (let x0, y0, x1, y1 = r in send (d_fill dst colour x0 y0 x1 y1))
 let everything = 0, 0, 640, 480
 
 (*****************************************************************************)
@@ -59,21 +64,28 @@ let everything = 0, 0, 640, 480
 
 (* A window. Our ends of what its shell was given: its keys, what it
  * prints, what it draws, its mouse *)
-type ends = { keys : int; mutable keys_open : bool; prints : int; draws : int; mouse : int }
+type ends = {
+  keys : int; mutable keys_open : bool; prints : int; draws : int; mouse : int
+}
 
 (* what is in it: the drawn bytes that are not a whole message yet; its
  * programs' numbers for their images, and ours; whether it is a
  * picture; where the next character goes, and the line typed so far *)
 type page = {
-  mutable pending : string; mutable ids : (int * int) list; mutable picture : bool;
+  mutable pending : string; mutable ids : (int * int) list;
+  mutable picture : bool;
   mutable col : int; mutable row : int; mutable line : string;
-  mutable cursor : int;  (* the mouse's look its program asked for (d_cursor) *)
+  mutable cursor : int;
+    (* the mouse's look its program asked for (d_cursor) *)
 }
 
 (* its image (w by h pixels) and where its border's corner is on the
  * screen; its shell's pid. (Three records: tiny-ml makes one of
  * nine fields at most, an expression being 11 registers deep.) *)
-type window = { image : int; w : int; h : int; mutable x : int; mutable y : int; pid : int; ends : ends; page : page }
+type window = {
+  image : int; w : int; h : int; mutable x : int; mutable y : int; pid : int;
+  ends : ends; page : page
+}
 
 (* the front one first: it has the keys *)
 let windows = ref []
@@ -83,26 +95,35 @@ let current w = match !windows with v :: _ -> v == w | [] -> false
  * asked for it (d_cursor), while the mouse is in that window; the arrow
  * anywhere else. Sent only when it changes. *)
 let shown_cursor = ref 0
-let show_cursor kind = if kind <> !shown_cursor then begin shown_cursor := kind; send (d_cursor kind) end
+let show_cursor kind =
+  if kind <> !shown_cursor then begin
+    shown_cursor := kind; send (d_cursor kind)
+  end
 
 let border = 3
 let outer w = w.x, w.y, w.x + w.w + (2 * border), w.y + w.h + (2 * border)
 let inner w = w.x + border, w.y + border, w.x + border + w.w, w.y + border + w.h
 
 (* a rectangle's four sides, so many pixels thick, each given to f *)
-let sides (x0, y0, x1, y1) t f = f (x0, y0, x1, y0 + t); f (x0, y1 - t, x1, y1); f (x0, y0, x0 + t, y1); f (x1 - t, y0, x1, y1)
+let sides (x0, y0, x1, y1) t f =
+  f (x0, y0, x1, y0 + t); f (x0, y1 - t, x1, y1);
+  f (x0, y0, x0 + t, y1); f (x1 - t, y0, x1, y1)
 
 (* a window's part in a rectangle of the screen: its border (the
  * current one's is blue), its image *)
 let show r w =
-  sides (outer w) border (fun side -> fill screen (if current w then blue else pale) (clip r side));
+  sides (outer w) border (fun side ->
+    fill screen (if current w then blue else pale) (clip r side));
   let c = clip r (inner w) in
   if not (empty c) then begin
     let x0, y0, x1, y1 = c in
-    send (d_draw screen w.image (-1) x0 y0 x1 y1 (x0 - w.x - border) (y0 - w.y - border))
+    send
+      (d_draw screen w.image (-1) x0 y0 x1 y1
+         (x0 - w.x - border) (y0 - w.y - border))
   end
 
-(* a rectangle of the screen again: the background, the windows back to front *)
+(* a rectangle of the screen again: the background, the windows back to
+ * front *)
 let refresh r = fill screen grey r; List.iter (show r) (List.rev !windows)
 
 (* a rectangle of a window's image changed: that part of the screen
@@ -110,21 +131,32 @@ let refresh r = fill screen grey r; List.iter (show r) (List.rev !windows)
  * change: a ball of 16 pixels moved was 80,000 copied, more than the
  * machine has between two moves) *)
 let update w (x0, y0, x1, y1) =
-  let r = clip (inner w) (x0 + w.x + border, y0 + w.y + border, x1 + w.x + border, y1 + w.y + border) in
-  let rec upto l = match l with [] -> [] | v :: rest -> if v == w then [ v ] else v :: upto rest in
+  let r =
+    clip (inner w)
+      (x0 + w.x + border, y0 + w.y + border,
+       x1 + w.x + border, y1 + w.y + border) in
+  let rec upto l =
+    match l with
+    | [] -> []
+    | v :: rest -> if v == w then [ v ] else v :: upto rest in
   if not (empty r) then List.iter (show r) (List.rev (upto !windows))
 
 (* the smallest rectangle with both; one of no pixel is no part of it *)
 let both a b =
   if empty a then b else if empty b then a
-  else (let ax0, ay0, ax1, ay1 = a and bx0, by0, bx1, by1 = b in min ax0 bx0, min ay0 by0, max ax1 bx1, max ay1 by1)
+  else
+    (let ax0, ay0, ax1, ay1 = a and bx0, by0, bx1, by1 = b in
+     min ax0 bx0, min ay0 by0, max ax1 bx1, max ay1 by1)
 
 (*****************************************************************************)
 (* A window's text *)
 (*****************************************************************************)
 
 (* the cell where the next character goes: a bar under it, or none *)
-let cursor w ink = fill w.image ink (w.page.col * 8, (w.page.row * 16) + 13, (w.page.col * 8) + 8, (w.page.row * 16) + 15)
+let cursor w ink =
+  fill w.image ink
+    (w.page.col * 8, (w.page.row * 16) + 13,
+     (w.page.col * 8) + 8, (w.page.row * 16) + 15)
 
 (* the next line; at the bottom the image is drawn on itself a line up
  * (counted: what shows is then all of the window) *)
@@ -133,7 +165,10 @@ let newline w =
   let last = ((w.h / 16) - 1) * 16 in
   w.page.col <- 0;
   if (w.page.row + 1) * 16 <= last then w.page.row <- w.page.row + 1
-  else (incr scrolls; send (d_draw w.image w.image (-1) 0 0 w.w last 0 16); fill w.image white (0, last, w.w, w.h))
+  else
+    (incr scrolls;
+     send (d_draw w.image w.image (-1) 0 0 w.w last 0 16);
+     fill w.image white (0, last, w.w, w.h))
 
 (* what a program printed: the characters that fit the line are one
  * text, on cells made white (old: a message a character, three seconds
@@ -141,19 +176,31 @@ let newline w =
  * its mouse box as a mouse at (width, height) with the buttons -1 *)
 let print w s =
   let n = String.length s in
-  let cells k = fill w.image white (w.page.col * 8, w.page.row * 16, (w.page.col + k) * 8, (w.page.row * 16) + 16) in
+  let cells k =
+    fill w.image white
+      (w.page.col * 8, w.page.row * 16,
+       (w.page.col + k) * 8, (w.page.row * 16) + 16) in
   let rec from i =
     if i < n then begin
       if s.[i] = '\n' then (newline w; from (i + 1))
-      else if s.[i] = '\b' then (if w.page.col > 0 then (w.page.col <- w.page.col - 1; cells 1); from (i + 1))
-      else if s.[i] = '\005' then (ignore (u_write w.ends.mouse (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1))); from (i + 1))
+      else if s.[i] = '\b' then
+        (if w.page.col > 0 then (w.page.col <- w.page.col - 1; cells 1);
+         from (i + 1))
+      else if s.[i] = '\005' then
+        (ignore
+           (u_write w.ends.mouse
+              (i16 w.w ^ i16 0 ^ i16 w.h ^ i16 0 ^ i16 (-1) ^ i16 (-1)));
+         from (i + 1))
       else begin
         if (w.page.col + 1) * 8 > w.w then newline w;
         let room = (w.w / 8) - w.page.col in
-        let rec upto j = if j < n && j - i < room && s.[j] >= ' ' then upto (j + 1) else j in
+        let rec upto j =
+          if j < n && j - i < room && s.[j] >= ' ' then upto (j + 1) else j in
         let j = max (i + 1) (upto i) in
         cells (j - i);
-        send (d_text w.image black (w.page.col * 8) (w.page.row * 16) (String.sub s i (j - i)));
+        send
+          (d_text w.image black (w.page.col * 8) (w.page.row * 16)
+             (String.sub s i (j - i)));
         w.page.col <- w.page.col + j - i;
         from j
       end
@@ -165,7 +212,8 @@ let print w s =
   cursor w black;
   w.page.picture <- false;
   (* the lines it went through; all of it if it scrolled *)
-  if !scrolls <> before then update w (0, 0, w.w, w.h) else update w (0, row * 16, w.w, (w.page.row + 1) * 16)
+  if !scrolls <> before then update w (0, 0, w.w, w.h)
+  else update w (0, row * 16, w.w, (w.page.row + 1) * 16)
 
 (* a key for the window that has them: a picture's program gets it as
  * typed; a text's line is edited here and given whole (Control-D with
@@ -173,14 +221,21 @@ let print w s =
 let key w c =
   let give s = if w.ends.keys_open then ignore (u_write w.ends.keys s) in
   if w.page.picture then give (String.make 1 c)
-  else if c = '\n' || c = '\r' then (print w "\n"; give (w.page.line ^ "\n"); w.page.line <- "")
+  else if c = '\n' || c = '\r' then
+    (print w "\n"; give (w.page.line ^ "\n"); w.page.line <- "")
   else if c = '\b' || c = '\127' then begin
-    if w.page.line <> "" then (w.page.line <- String.sub w.page.line 0 (String.length w.page.line - 1); print w "\b")
+    if w.page.line <> "" then
+      (w.page.line <- String.sub w.page.line 0 (String.length w.page.line - 1);
+       print w "\b")
   end
   else if c = '\004' then begin
-    if w.page.line = "" then (if w.ends.keys_open then (w.ends.keys_open <- false; ignore (u_close w.ends.keys))) else (give w.page.line; w.page.line <- "")
+    if w.page.line = "" then
+      (if w.ends.keys_open then
+         (w.ends.keys_open <- false; ignore (u_close w.ends.keys)))
+    else (give w.page.line; w.page.line <- "")
   end
-  else if c >= ' ' then (w.page.line <- w.page.line ^ String.make 1 c; print w (String.make 1 c))
+  else if c >= ' ' then
+    (w.page.line <- w.page.line ^ String.make 1 c; print w (String.make 1 c))
 
 (*****************************************************************************)
 (* A window's picture: its programs' messages, renumbered *)
@@ -192,7 +247,12 @@ let key w c =
 let ours w k =
   if k = 0 then w.image
   else if k < 0 then k
-  else (let rec find l = match l with [] -> 32767 | (theirs, mine) :: rest -> if theirs = k then mine else find rest in find w.page.ids)
+  else
+    (let rec find l =
+       match l with
+       | [] -> 32767
+       | (theirs, mine) :: rest -> if theirs = k then mine else find rest in
+     find w.page.ids)
 
 (* the bytes read from its pipe, after those that were not a whole
  * message: each message sent on with our numbers (an image made gets
@@ -211,23 +271,37 @@ let forward w s =
       else if i + len > n then i, drew
       else begin
         let letter = p.[i] and first = int16 p (i + 1) in
-        if letter = 'a' && first > 0 && ours w first = 32767 then w.page.ids <- (first, fresh ()) :: w.page.ids;
-        if letter = 'c' then begin w.page.cursor <- first; if current w then show_cursor first end
+        if letter = 'a' && first > 0 && ours w first = 32767 then
+          w.page.ids <- (first, fresh ()) :: w.page.ids;
+        if letter = 'c' then begin
+          w.page.cursor <- first; if current w then show_cursor first
+        end
         else if first <> 0 || (letter <> 'a' && letter <> 'f') then begin
           send (String.make 1 letter);
-          for k = 0 to images - 1 do send (i16 (ours w (int16 p (i + 1 + (2 * k))))) done;
+          for k = 0 to images - 1 do
+            send (i16 (ours w (int16 p (i + 1 + (2 * k)))))
+          done;
           send (String.sub p (i + 1 + (2 * images)) (len - 1 - (2 * images)))
         end;
-        if letter = 'f' then (release (ours w first); w.page.ids <- List.filter (fun (theirs, _) -> theirs <> first) w.page.ids);
-        (* what it changed of the window: a draw's rectangle, a line's two ends, a text's cells, a row of pixels *)
+        if letter = 'f' then
+          (release (ours w first);
+           w.page.ids <-
+             List.filter (fun (theirs, _) -> theirs <> first) w.page.ids);
+        (* what it changed of the window: a draw's rectangle, a line's two
+         * ends, a text's cells, a row of pixels *)
         let at k = int16 p (i + 1 + (2 * k)) in
         let changed =
           if first <> 0 then nothing
           else if letter = 'd' then at 3, at 4, at 5, at 6
-          else if letter = 'l' then min (at 2) (at 4), min (at 3) (at 5), max (at 2) (at 4) + 1, max (at 3) (at 5) + 1
+          else if letter = 'l' then
+            min (at 2) (at 4), min (at 3) (at 5),
+            max (at 2) (at 4) + 1, max (at 3) (at 5) + 1
           else if letter = 's' then at 2, at 3, at 2 + (8 * at 4), at 3 + 16
-          else if letter = 't' && at 5 land 16 <> 0 then at 2, at 3, at 2 + (4 * at 4), at 3 + 4
-          else if letter = 't' then (let k = if at 5 land 8 <> 0 then 2 else 1 in at 2, at 3, at 2 + (8 * k * at 4) + (4 * k), at 3 + (16 * k))
+          else if letter = 't' && at 5 land 16 <> 0 then
+            at 2, at 3, at 2 + (4 * at 4), at 3 + 4
+          else if letter = 't' then
+            (let k = if at 5 land 8 <> 0 then 2 else 1 in
+             at 2, at 3, at 2 + (8 * k * at 4) + (4 * k), at 3 + (16 * k))
           else if letter = 'p' then at 1, at 2, at 1 + at 3, at 2 + 1
           else nothing in
         next (i + len) (both drew changed)
@@ -252,15 +326,27 @@ let snap x = x - ((x + border) land 3)
  * 3 and its 4. Its inside is whole characters, 8 by 16 *)
 let create (x0, y0, x1, y1) =
   let k = u_pipe () and p = u_pipe () and d = u_pipe () and m = u_box () in
-  let pid = if k < 0 || p < 0 || d < 0 || m < 0 then -1 else u_spawn (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh" in
+  let pid =
+    if k < 0 || p < 0 || d < 0 || m < 0 then -1
+    else u_spawn (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh" in
   (* the shell's ends are not ours; ours neither when there is no shell *)
-  List.iter (fun fd -> if fd >= 0 then ignore (u_close fd)) [ k land 255; p / 256; d / 256; m land 255 ];
-  if pid < 0 then List.iter (fun fd -> if fd >= 0 then ignore (u_close fd)) [ k / 256; p land 255; d land 255; m / 256 ]
+  List.iter (fun fd -> if fd >= 0 then ignore (u_close fd))
+    [ k land 255; p / 256; d / 256; m land 255 ];
+  if pid < 0 then
+    List.iter (fun fd -> if fd >= 0 then ignore (u_close fd))
+      [ k / 256; p land 255; d land 255; m / 256 ]
   else begin
-    let ends = { keys = k / 256; keys_open = true; prints = p land 255; draws = d land 255; mouse = m / 256 } in
-    let page = { pending = ""; ids = []; picture = false; col = 0; row = 0; line = ""; cursor = 0 } in
-    let wide = (x1 - x0 - (2 * border)) / 8 * 8 and high = (y1 - y0 - (2 * border)) / 16 * 16 in
-    let w = { image = fresh (); w = wide; h = high; x = snap x0; y = y0; pid = pid; ends = ends; page = page } in
+    let ends =
+      { keys = k / 256; keys_open = true; prints = p land 255;
+        draws = d land 255; mouse = m / 256 } in
+    let page =
+      { pending = ""; ids = []; picture = false; col = 0; row = 0; line = "";
+        cursor = 0 } in
+    let wide = (x1 - x0 - (2 * border)) / 8 * 8
+    and high = (y1 - y0 - (2 * border)) / 16 * 16 in
+    let w =
+      { image = fresh (); w = wide; h = high; x = snap x0; y = y0; pid = pid;
+        ends = ends; page = page } in
     send (d_image w.image 0 0 w.w w.h 255);
     windows := w :: !windows;
     refresh everything
@@ -268,7 +354,8 @@ let create (x0, y0, x1, y1) =
 
 (* its ends closed, its shell ended, its images freed *)
 let delete w =
-  List.iter (fun fd -> ignore (u_close fd)) [ w.ends.prints; w.ends.draws; w.ends.mouse ];
+  List.iter (fun fd -> ignore (u_close fd))
+    [ w.ends.prints; w.ends.draws; w.ends.mouse ];
   if w.ends.keys_open then ignore (u_close w.ends.keys);
   ignore (u_kill w.pid);
   ignore (u_wait ());
@@ -286,7 +373,12 @@ let delete w =
  * under the mouse); an item chosen, the left button awaited; a
  * rectangle swept (its first corner, the last one drawn); a window
  * dragged (the mouse in it, its last place drawn) *)
-type doing = Idle | Menu of int * int * int | Chosen of int | Sweep of int * int * int * int | Drag of window * int * int * int * int
+type doing =
+  | Idle
+  | Menu of int * int * int
+  | Chosen of int
+  | Sweep of int * int * int * int
+  | Drag of window * int * int * int * int
 
 let doing = ref Idle
 let buttons = ref 0
@@ -297,15 +389,22 @@ let menu_box mx my = mx - 1, my - 1, mx + 65, my + 65
 let menu mx my chosen =
   fill screen black (menu_box mx my);
   List.iteri (fun i name ->
-    fill screen (if i = chosen then blue else white) (mx, my + (16 * i), mx + 64, my + (16 * i) + 16);
-    send (d_text screen (if i = chosen then white else black) (mx + 4) (my + (16 * i)) name)) items
+    fill screen (if i = chosen then blue else white)
+      (mx, my + (16 * i), mx + 64, my + (16 * i) + 16);
+    send
+      (d_text screen (if i = chosen then white else black)
+         (mx + 4) (my + (16 * i)) name)) items
 
-(* a rectangle's four sides, two pixels thick: drawn in red, or what is under them again *)
+(* a rectangle's four sides, two pixels thick: drawn in red, or what is
+ * under them again *)
 let outline r = sides r 2 (fill screen red)
 let erase r = sides r 2 refresh
 
 let corners xa ya xb yb = min xa xb, min ya yb, max xa xb, max ya yb
-let rec over x y l = match l with [] -> None | w :: rest -> if inside (outer w) x y then Some w else over x y rest
+let rec over x y l =
+  match l with
+  | [] -> None
+  | w :: rest -> if inside (outer w) x y then Some w else over x y rest
 let word v = i16 v ^ i16 (v asr 16)
 
 let finish () = List.iter delete !windows; flush (); exit 0
@@ -313,21 +412,29 @@ let finish () = List.iter delete !windows; flush (); exit 0
 (* the mouse at (x, y), its buttons b (1 left, 4 right) *)
 let mouse x y b =
   (match !doing, over x y !windows with
-   | Idle, Some w when current w && inside (inner w) x y -> show_cursor w.page.cursor
+   | Idle, Some w when current w && inside (inner w) x y ->
+       show_cursor w.page.cursor
    | _ -> show_cursor 0);
-  let left = b land 1 <> 0 && !buttons land 1 = 0 and right = b land 4 <> 0 && !buttons land 4 = 0 in
+  let left = b land 1 <> 0 && !buttons land 1 = 0
+  and right = b land 4 <> 0 && !buttons land 4 = 0 in
   buttons := b;
   match !doing with
   | Idle -> (
       match over x y !windows with
       | Some w when current w && w.page.picture && inside (inner w) x y ->
-          ignore (u_write w.ends.mouse (word (x - w.x - border) ^ word (y - w.y - border) ^ word b))
+          ignore
+            (u_write w.ends.mouse
+               (word (x - w.x - border) ^ word (y - w.y - border) ^ word b))
       | _ when right -> doing := Menu (x, y, -1); menu x y (-1)
-      | Some w when left && not (current w) -> windows := w :: List.filter (fun v -> v != w) !windows; refresh everything
+      | Some w when left && not (current w) ->
+          windows := w :: List.filter (fun v -> v != w) !windows;
+          refresh everything
       | _ -> ())
   | Menu (mx, my, was) ->
-      let item = if inside (mx, my, mx + 64, my + 64) x y then (y - my) / 16 else -1 in
-      if b land 4 <> 0 then (if item <> was then (doing := Menu (mx, my, item); menu mx my item))
+      let item =
+        if inside (mx, my, mx + 64, my + 64) x y then (y - my) / 16 else -1 in
+      if b land 4 <> 0 then
+        (if item <> was then (doing := Menu (mx, my, item); menu mx my item))
       else begin
         refresh (menu_box mx my);
         if item = 3 then finish ();
@@ -344,7 +451,8 @@ let mouse x y b =
       end
   | Sweep (sx, sy, lx, ly) ->
       erase (corners sx sy lx ly);
-      if b land 1 <> 0 then (doing := Sweep (sx, sy, x, y); outline (corners sx sy x y))
+      if b land 1 <> 0 then
+        (doing := Sweep (sx, sy, x, y); outline (corners sx sy x y))
       else begin
         doing := Idle;
         let x0, y0, x1, y1 = corners sx sy x y in
@@ -353,8 +461,11 @@ let mouse x y b =
   | Drag (w, gx, gy, lx, ly) ->
       let size = w.w + (2 * border), w.h + (2 * border) in
       erase (lx, ly, lx + fst size, ly + snd size);
-      if b land 1 <> 0 then (doing := Drag (w, gx, gy, x - gx, y - gy); outline (x - gx, y - gy, x - gx + fst size, y - gy + snd size))
-      else (doing := Idle; w.x <- snap (x - gx); w.y <- y - gy; refresh everything)
+      if b land 1 <> 0 then
+        (doing := Drag (w, gx, gy, x - gx, y - gy);
+         outline (x - gx, y - gy, x - gx + fst size, y - gy + snd size))
+      else
+        (doing := Idle; w.x <- snap (x - gx); w.y <- y - gy; refresh everything)
 
 (*****************************************************************************)
 (* The loop *)
@@ -371,7 +482,10 @@ let rec loop () =
   flush ();
   let fds = Array.make 32 0 and n = ref 2 in
   fds.(0) <- 4;
-  List.iter (fun w -> if !n < 31 then (fds.(!n) <- w.ends.draws; fds.(!n + 1) <- w.ends.prints; n := !n + 2)) !windows;
+  List.iter (fun w ->
+    if !n < 31 then
+      (fds.(!n) <- w.ends.draws; fds.(!n + 1) <- w.ends.prints; n := !n + 2))
+    !windows;
   let fd = u_ready fds !n 0 in
   if fd = 4 then begin
     let s = u_read 4 12 in
@@ -381,17 +495,23 @@ let rec loop () =
   else if fd = 0 then begin
     let s = u_read 0 256 in
     if s = "" then exit 0;
-    for i = 0 to String.length s - 1 do match !windows with w :: _ -> key w s.[i] | [] -> () done
+    for i = 0 to String.length s - 1 do
+      match !windows with w :: _ -> key w s.[i] | [] -> ()
+    done
   end
   else
     List.iter (fun w ->
       if fd = w.ends.prints || fd = w.ends.draws then begin
         let s = u_read fd 512 in
-        if s = "" then delete w else if fd = w.ends.prints then print w s else forward w s
+        if s = "" then delete w
+        else if fd = w.ends.prints then print w s
+        else forward w s
       end) !windows;
   loop ()
 
 let () =
-  send (d_colour grey 0xaa ^ d_colour white 255 ^ d_colour black 0 ^ d_colour blue 0x36 ^ d_colour pale 0x99 ^ d_colour red 0xf0);
+  send
+    (d_colour grey 0xaa ^ d_colour white 255 ^ d_colour black 0
+     ^ d_colour blue 0x36 ^ d_colour pale 0x99 ^ d_colour red 0xf0);
   refresh everything;
   loop ()

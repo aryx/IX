@@ -18,8 +18,14 @@ let rec leaves x y s acc =
   match s with
   | Move (dx, dy, s) -> leaves (x + dx) (y + dy) s acc
   | Group l -> List.fold_right (fun s acc -> leaves x y s acc) l acc
-  | Rect (c, w, h) -> ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1) :: acc
-  | Words (c, t) -> ("words " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y ^ " |" ^ t ^ "|", true) :: acc
+  | Rect (c, w, h) ->
+    ("rect " ^ string_of_int c ^ " " ^ string_of_int x ^ " " ^ string_of_int y
+     ^ " " ^ string_of_int w ^ " " ^ string_of_int h, w > 1 && h > 1)
+    :: acc
+  | Words (c, t) ->
+    ("words " ^ string_of_int c ^ " " ^ string_of_int x ^ " "
+     ^ string_of_int y ^ " |" ^ t ^ "|", true)
+    :: acc
 
 (* each shape of the view, its leaves after, without the frames' lines
  * (rectangles a pixel wide, the same each time) to keep it short *)
@@ -27,9 +33,13 @@ let show what o =
   print_string ("== " ^ what); print_newline ();
   List.iteri (fun i s ->
     print_string ("  shape " ^ string_of_int i); print_newline ();
-    List.iter (fun (l, shown) -> if shown then (print_string ("    " ^ l); print_newline ())) (leaves 0 0 s [])) (view o)
+    List.iter (fun (l, shown) ->
+      if shown then (print_string ("    " ^ l); print_newline ()))
+      (leaves 0 0 s [])) (view o)
 
-let file what o = print_string ("== " ^ what ^ ": the file"); print_newline (); print_string (text o); print_string "--"; print_newline ()
+let file what o =
+  print_string ("== " ^ what ^ ": the file"); print_newline ();
+  print_string (text o); print_string "--"; print_newline ()
 
 let asked r =
   match r with
@@ -55,8 +65,12 @@ let () =
   let o = create 320 200 "notes" "" in
   show "an empty page" o;
   click o 1 20 40;
-  keys o "\015\012A title\012\n\nSome \002bold words\002 and plain ones, more than a line holds.";
-  show "a click at 20 40, C-o, a large title (C-l), a paragraph with bold words (C-b) typed: being edited" o;
+  keys o
+    ("\015\012A title\012\n\nSome \002bold words\002 and plain ones, "
+     ^ "more than a line holds.");
+  show
+    ("a click at 20 40, C-o, a large title (C-l), a paragraph with bold "
+     ^ "words (C-b) typed: being edited") o;
   click o 1 300 150;
   show "a click elsewhere: the box shows its text filled" o;
   file "the page" o;
@@ -74,11 +88,14 @@ let () =
   keys o "\024\003"
 
 let () =
-  let page = "\\box[10 40 150 52]{\nhello there\n}\n\n\\box[100 50 120 52]{\ntop\n}\n" in
+  let page =
+    "\\box[10 40 150 52]{\nhello there\n}\n\n\\box[100 50 120 52]{\ntop\n}\n" in
   let o = create 320 200 "two" page in
   show "a page of two boxes, from its file" o;
   click o 1 110 54;
-  show "a click where they overlap: the top one is edited, its cursor where the click was" o;
+  show
+    ("a click where they overlap: the top one is edited, its cursor where "
+     ^ "the click was") o;
   keys o "\005!";
   click o 1 5 190;
   show "C-e, a ! typed, a click outside" o;
@@ -103,7 +120,9 @@ let () =
   keys o "Rent\nFood\nTotal\n";
   show "Rent, Food, Total typed, each with Enter: down a cell each" o;
   keys o "\128\128\128\128\131500\n300\n=b1+b2\n=sum(b1:b2)*2";
-  show "up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)" o;
+  show
+    ("up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed "
+     ^ "(the formula bar)") o;
   keys o "\n\131\128\128\128\128=c1+1\n=a1+1\n=1/0\n=2+\n";
   show "Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error" o;
   keys o "\130\128\128\128\128\128\n\127\127\1278\n";
@@ -147,11 +166,15 @@ let () =
   click o 1 100 5;
   show "a click on Insert: its menu open" o;
   click o 1 110 40;
-  show "a click on its Sheet: a sheet, where the last click was (none yet: 16 40)" o;
+  show
+    "a click on its Sheet: a sheet, where the last click was (none yet: 16 40)"
+    o;
   drag o 1 60 5 60 22;
   show "Edit pressed, the mouse down to Undo, let go: the sheet undone" o;
   jump o 1 100 5 110 56;
-  show "Insert pressed, let go on Drawing (nothing seen between): a drawing, and its Draw menu" o;
+  show
+    ("Insert pressed, let go on Drawing (nothing seen between): a drawing, "
+     ^ "and its Draw menu") o;
   click o 1 170 5;
   click o 1 170 38;
   show "Draw's Arrow: the tool an arrow, marked in the menu" o;
@@ -163,7 +186,9 @@ let () =
   show "File's Save" o;
   click o 1 10 5;
   click o 1 10 38;
-  show "File's Quit, the page not saved (the program has not said it wrote): refused" o;
+  show
+    "File's Quit, the page not saved (the program has not said it wrote): refused"
+    o;
   click o 1 10 5;
   click o 1 10 38
 
@@ -172,7 +197,9 @@ let () =
   click o 1 60 80;
   show "a click in the box: edited, its tab above it, its corner" o;
   jump o 1 50 50 150 70;
-  show "its tab pressed, let go 100 right, 20 down (nothing seen between): the box there" o;
+  show
+    ("its tab pressed, let go 100 right, 20 down (nothing seen between): "
+     ^ "the box there") o;
   jump o 1 285 128 255 148;
   show "its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller" o;
   keys o "\031";
@@ -206,7 +233,9 @@ let () =
   click o 1 170 5;
   click o 1 170 198;
   jump o 1 40 80 100 120;
-  show "2, red; the Paint menu's thick brush; a stroke seen only at its two ends: a thick line between them" o;
+  show
+    ("2, red; the Paint menu's thick brush; a stroke seen only at its two "
+     ^ "ends: a thick line between them") o;
   file "the page" o;
   click o 1 170 5;
   click o 1 170 214;
@@ -219,7 +248,8 @@ let page = String.concat "\n" [
   "\\box[10 40 200 84]{";
   "# A **title**";
   "";
-  "Some *slanted*, ***both***, \\u{under} and \\large{big} words; a star \\* and \\} kept.";
+  "Some *slanted*, ***both***, \\u{under} and \\large{big} words; "
+  ^ "a star \\* and \\} kept.";
   "}";
   "";
   "\\box[220 40 170 70]{";
@@ -250,7 +280,9 @@ let () =
   file "written again" o
 
 let () =
-  let o = create 400 220 "notes.md" "# Notes\n\nA *Markdown* file, with no box.\nIts second line.\n" in
+  let o =
+    create 400 220 "notes.md"
+      "# Notes\n\nA *Markdown* file, with no box.\nIts second line.\n" in
   show "a Markdown file: one text box" o;
   file "written" o
 
@@ -266,7 +298,9 @@ let () =
   click o 1 120 60;
   click o 1 170 5;
   click o 1 170 40;
-  show "b1 chosen, the Sheet menu's Chart of this column: a chart beside the sheet" o;
+  show
+    "b1 chosen, the Sheet menu's Chart of this column: a chart beside the sheet"
+    o;
   click o 1 120 60;
   click o 1 120 76;
   keys o "900\n";

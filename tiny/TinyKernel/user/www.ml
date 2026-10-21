@@ -15,6 +15,9 @@ open TinyBrowser
 let () =
   let n = u_argc () in
   if n < 2 then (ignore (u_write 2 "usage: www address\n"); exit 1);
-  let rec words i acc = if i >= n then acc else words (i + 1) (if acc = "" then u_arg i else acc ^ " " ^ u_arg i) in
+  let rec words i acc =
+    if i >= n then acc
+    else words (i + 1) (if acc = "" then u_arg i else acc ^ " " ^ u_arg i)
+  in
   browse (words 1 "");
   exit 0

@@ -13,7 +13,8 @@
  * those it gives itself (a macro's, M-x's), a save done when it asks.
  * The file is the kernel's: on its disk when it has one, else in its
  * memory (put keeps a copy). OCaml compiles it too, for the host
- * (tiny-emacs, ../../sdl/): its calls TinyCalls's, a window's (the editor opened last, its key and view over the GUI's). *)
+ * (tiny-emacs, ../../sdl/): its calls TinyCalls's, a window's (the
+ * editor opened last, its key and view over the GUI's). *)
 open TinyCalls
 open TinyLibPlayground
 open TinyLibGUI
@@ -25,12 +26,21 @@ let () =
   let answer e r =
     match r with
     | Continue -> true
-    | Save -> (if write_file file (text e) then saved e else say e ("Cannot write " ^ file)); true
+    | Save ->
+      (if write_file file (text e) then saved e
+       else say e ("Cannot write " ^ file));
+      true
     | Quit -> false in
-  let rec given e r = answer e r && (match pending e with Some k -> given e (key e k) | None -> true) in
+  let rec given e r =
+    answer e r
+    && (match pending e with Some k -> given e (key e k) | None -> true)
+  in
   run_canvas {
     first = (fun w h -> (create (w / 8) (h / 16) file (read_file file), w, h));
     picture = (fun (e, w, h) -> Rect (255, w, h) :: shapes e (h / 16));
-    typed = (fun k m -> let (e, _, _) = m in if given e (key e k) then Some m else None);
+    typed =
+      (fun k m ->
+        let (e, _, _) = m in
+        if given e (key e k) then Some m else None);
     moved = (fun _ _ _ m -> Some m) };
   exit 0

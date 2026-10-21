@@ -5,9 +5,13 @@
 
 external hash : 'a -> int = "ml_hash"
 
-type ('a, 'b) t = { mutable hashtbl_size : int; mutable hashtbl_data : ('a * 'b) list array }
+type ('a, 'b) t = {
+  mutable hashtbl_size : int;
+  mutable hashtbl_data : ('a * 'b) list array;
+}
 
-let create n = { hashtbl_size = 0; hashtbl_data = Array.make (max 8 (min n 1024)) [] }
+let create n =
+  { hashtbl_size = 0; hashtbl_data = Array.make (max 8 (min n 1024)) [] }
 let length h = h.hashtbl_size
 let index h k = hash k mod Array.length h.hashtbl_data
 
@@ -17,18 +21,26 @@ let resize h =
   let data = Array.make (2 * Array.length old) [] in
   h.hashtbl_data <- data;
   for i = 0 to Array.length old - 1 do
-    List.iter (fun (k, v) -> let j = index h k in data.(j) <- (k, v) :: data.(j)) (List.rev old.(i))
+    List.iter (fun (k, v) -> let j = index h k in data.(j) <- (k, v) :: data.(j))
+      (List.rev old.(i))
   done
 
 (* (the buckets copied: their lists are not changed in place) *)
-let copy h = { hashtbl_size = h.hashtbl_size; hashtbl_data = Array.copy h.hashtbl_data }
+let copy h =
+  { hashtbl_size = h.hashtbl_size; hashtbl_data = Array.copy h.hashtbl_data }
 let find_opt h k = List.assoc_opt k h.hashtbl_data.(index h k)
 let find h k = List.assoc k h.hashtbl_data.(index h k)
-let find_all h k = List.filter_map (fun (a, v) -> if a = k then Some v else None) h.hashtbl_data.(index h k)
+let find_all h k =
+  List.filter_map (fun (a, v) -> if a = k then Some v else None)
+    h.hashtbl_data.(index h k)
 let mem h k = List.exists (fun (a, _) -> a = k) h.hashtbl_data.(index h k)
 let remove h k =
   let i = index h k in
-  let rec drop = function [] -> [] | (a, v) :: l -> if a = k then (h.hashtbl_size <- h.hashtbl_size - 1; l) else (a, v) :: drop l in
+  let rec drop = function
+    | [] -> []
+    | (a, v) :: l ->
+      if a = k then (h.hashtbl_size <- h.hashtbl_size - 1; l)
+      else (a, v) :: drop l in
   h.hashtbl_data.(i) <- drop h.hashtbl_data.(i)
 let add h k v =
   let i = index h k in

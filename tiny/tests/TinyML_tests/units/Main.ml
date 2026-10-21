@@ -9,7 +9,9 @@
 open Shapes
 
 let () =
-  List.iter (fun b -> print_string b.name; print_string " "; print_int (area (scaled 2 b.shape)); print_newline ()) boxes;
+  List.iter (fun b ->
+    print_string b.name; print_string " ";
+    print_int (area (scaled 2 b.shape)); print_newline ()) boxes;
   print_string (largest boxes).name; print_newline ();
   (try ignore (largest []) with Empty m -> print_string m; print_newline ());
   print_int (area Dot); print_newline ();

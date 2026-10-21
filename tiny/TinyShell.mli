@@ -130,7 +130,10 @@
 (* the commands of a text, each run once it is read: the lexer, the
  * parser and [run] at work, without the command line around them *)
 val source :
-  < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out; Cap.stdin; Cap.stderr > -> string -> unit
+  < Cap.fork; Cap.exec; Cap.wait; Cap.chdir; Cap.open_in; Cap.open_out;
+    Cap.stdin; Cap.stderr > ->
+  string -> unit
 
-(* the program: its arguments (-h: the language by example) to its exit status *)
+(* the program: its arguments (-h: the language by example) to its exit
+ * status *)
 val main : Cap.all_caps -> int

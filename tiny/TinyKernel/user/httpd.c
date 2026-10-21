@@ -51,8 +51,10 @@ list(int fd, char *path)
 			for(i = 0; i < 64 && d.name[i]; i++)
 				name[i] = d.name[i];
 			name[i] = 0;
-			put(fd, "<li><a href=\""); put(fd, path); put(fd, name); put(fd, d.type == T_DIR ? "/\">" : "\">");
-			put(fd, name); put(fd, d.type == T_DIR ? "/" : ""); put(fd, "</a></li>\n");
+			put(fd, "<li><a href=\""); put(fd, path); put(fd, name);
+			put(fd, d.type == T_DIR ? "/\">" : "\">");
+			put(fd, name); put(fd, d.type == T_DIR ? "/" : "");
+			put(fd, "</a></li>\n");
 		}
 		close(dir);
 	}
@@ -72,7 +74,8 @@ serve(int fd)
 		len += k;
 		req[len] = 0;
 		for(p = req; *p; p++)
-			if(p[0] == '\n' && (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')))
+			if(p[0] == '\n' &&
+			   (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')))
 				break;
 		if(*p)
 			break;
@@ -98,7 +101,9 @@ serve(int fd)
 		return;
 	}
 	put(fd, "HTTP/1.0 200 OK\r\nContent-Type: ");
-	put(fd, len > 5 && strcmp(path + len - 5, ".html") == 0 ? "text/html" : len > 4 && strcmp(path + len - 4, ".txt") == 0 ? "text/plain" : "application/octet-stream");
+	put(fd, len > 5 && strcmp(path + len - 5, ".html") == 0 ? "text/html" :
+		len > 4 && strcmp(path + len - 4, ".txt") == 0 ? "text/plain" :
+		"application/octet-stream");
 	put(fd, "\r\n\r\n");
 	flush(fd);
 	while((k = read(file, buf, 1024)) > 0)

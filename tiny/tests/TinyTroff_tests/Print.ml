@@ -11,7 +11,8 @@ let page = String.concat "\n" [
   "\\box[10 40 300 100]{";
   "# A **report**";
   "";
-  "Some *slanted*, ***both***, \\u{under} and plain words, more than a line holds, <and> & \"quoted\".";
+  "Some *slanted*, ***both***, \\u{under} and plain words, more than a line "
+  ^ "holds, <and> & \"quoted\".";
   "}";
   "";
   "\\box[10 150 170 86 budget]{";
@@ -61,7 +62,9 @@ let () =
   print_string (to_html "report <1>" page);
   print_string "== the page as PDF\n";
   print_string (to_pdf page);
-  let two = "\\box[10 40 200 40]{\n# One\n}\n\n\\newpage\n\n\\box[10 40 200 40]{\nTwo, *the second* page.\n}\n" in
+  let two =
+    "\\box[10 40 200 40]{\n# One\n}\n\n\\newpage\n\n"
+    ^ "\\box[10 40 200 40]{\nTwo, *the second* page.\n}\n" in
   print_string "== a document of two pages as text\n";
   print_string (to_text 40 two);
   print_string "== as PDF\n";

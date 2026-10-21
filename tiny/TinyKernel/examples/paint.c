@@ -17,7 +17,8 @@ clear(void)
 {
 	d_fill(SCREEN, Grey, 0, 0, 640, 480);
 	d_fill(SCREEN, Blue, 0, 0, 640, 20);
-	d_text(SCREEN, White, 8, 2, "paint: the mouse paints with a button down; c clears, q quits");
+	d_text(SCREEN, White, 8, 2,
+		"paint: the mouse paints with a button down; c clears, q quits");
 	d_line(SCREEN, Black, 0, 60, 639, 60);
 }
 
@@ -43,9 +44,11 @@ main(void)
 		if(k == mouse){
 			if(read(mouse, (char*)m, 12) != 12)
 				break;
-			ink = m[2] & 1 ? Black : m[2] & 2 ? Red : m[2] & 4 ? White : 0;
+			ink = m[2] & 1 ? Black : m[2] & 2 ? Red :
+				m[2] & 4 ? White : 0;
 			if(ink && m[1] > 60)
-				d_fill(SCREEN, ink, m[0] - 4, m[1] - 4, m[0] + 4, m[1] + 4);
+				d_fill(SCREEN, ink, m[0] - 4, m[1] - 4,
+					m[0] + 4, m[1] + 4);
 		} else if(k == 0){
 			if(read(0, &c, 1) != 1 || c == 'q')
 				break;

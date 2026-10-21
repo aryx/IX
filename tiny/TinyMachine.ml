@@ -4,7 +4,11 @@
 (* See TinyMachine.mli. Its tests, on v0's kernel and on the programs of
  * tests/TinyMachine_tests/, are tests/TinyMachine_test.sh. *)
 
-let usage = "usage: tiny-machine [-l | -d disk | -window | -rate n | -date n | -seed n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] image"
+let usage =
+  "usage: tiny-machine [-l | -d disk | -window | -rate n | -date n | -seed n "
+  ^ "| -prof file | -screen ppm | -audio wav | -events file | -net dir "
+  ^ "| -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f "
+  ^ "| -net-loop n] image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -97,20 +101,27 @@ let interrupted = ref false
 let console_open (caps : < Cap.stdin; .. >) (k : TinyMachineDevices.console) =
   if not k.opened then begin
     k.opened <- true;
-    if not (tty) then (k.queue <- Procs.read_all (Console.stdin_fd caps); k.eof <- true)
-    else Sys.set_signal Sys.sigint (Sys.Signal_handle (fun _ -> interrupted := true))
+    if not (tty) then (
+      k.queue <- Procs.read_all (Console.stdin_fd caps);
+      k.eof <- true)
+    else
+      Sys.set_signal Sys.sigint
+        (Sys.Signal_handle (fun _ -> interrupted := true))
   end
 
 (* a terminal's bytes, when some are there *)
 let console_poll (k : TinyMachineDevices.console) =
-  if !interrupted then (interrupted := false; TinyMachineDevices.console_type k "\003");
+  if !interrupted then (
+    interrupted := false;
+    TinyMachineDevices.console_type k "\003");
   if k.opened && not k.eof && k.next >= String.length k.queue && tty then
     match Unix.select [ Unix.stdin ] [] [] 0.0 with
     | [], _, _ -> ()
     | _ ->
         let b = Bytes.create 256 in
         let n = Unix.read Unix.stdin b 0 256 in
-        if n = 0 then k.eof <- true else (k.queue <- Bytes.sub_string b 0 n; k.next <- 0)
+        if n = 0 then k.eof <- true
+        else (k.queue <- Bytes.sub_string b 0 n; k.next <- 0)
     | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()   (* a ^C meanwhile *)
 
 (*****************************************************************************)
@@ -126,7 +137,9 @@ let ppm (m : TinyMachineCPU.machine) =
   let out = Bytes.create (h + (3 * width * height)) in
   Bytes.blit_string header 0 out 0 h;
   for i = 0 to (width * height) - 1 do
-    Bytes.blit_string TinyMachineDevices.colours (3 * Char.code (Bytes.get m.mem (TinyMachineDevices.screen + i))) out (h + (3 * i)) 3
+    Bytes.blit_string TinyMachineDevices.colours
+      (3 * Char.code (Bytes.get m.mem (TinyMachineDevices.screen + i)))
+      out (h + (3 * i)) 3
   done;
   Bytes.to_string out
 
@@ -138,8 +151,10 @@ let le32 v = String.init 4 (fun i -> Char.chr ((v lsr (8 * i)) land 255))
 let wav samples =
   let le16 n = String.init 2 (fun k -> Char.chr ((n lsr (8 * k)) land 255)) in
   let n = String.length samples and hz = TinyMachineDevices.hz in
-  "RIFF" ^ le32 (36 + n) ^ "WAVEfmt " ^ le32 16 ^ le16 1 ^ le16 1 ^ le32 hz ^ le32 hz ^ le16 1 ^ le16 8
-  ^ "data" ^ le32 n ^ String.map (fun ch -> Char.chr (Char.code ch lxor 128)) samples
+  "RIFF" ^ le32 (36 + n) ^ "WAVEfmt " ^ le32 16 ^ le16 1 ^ le16 1
+  ^ le32 hz ^ le32 hz ^ le16 1 ^ le16 8
+  ^ "data" ^ le32 n
+  ^ String.map (fun ch -> Char.chr (Char.code ch lxor 128)) samples
 
 (* The host's window (-window) is another program's, tiny-machine-window
  * (TinyMachineWindow.ml), so that this one links no library of C's and
@@ -162,31 +177,47 @@ let wav samples =
  * (a game) keeps its pace, and a program that computes (the browser)
  * finishes sooner. *)
 type window = {
-  to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string; mutable frame : float; mutable partial : string;
+  to_w : Unix.file_descr; from_w : Unix.file_descr; mutable shown : string;
+  mutable frame : float; mutable partial : string;
   mutable cursor : int; heard : Buffer.t;
   mutable due : float;
 }
 
 let window_open (caps : < Cap.fork; Cap.exec; .. >) =
-  let screen_r, to_w = Unix.pipe ~cloexec:true () and from_w, events_w = Unix.pipe ~cloexec:true () in
+  let screen_r, to_w = Unix.pipe ~cloexec:true ()
+  and from_w, events_w = Unix.pipe ~cloexec:true () in
   (* beside this program, by its installed name or by dune's *)
-  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineWindow.exe" else "tiny-machine-window" in
-  ignore (Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) [] ~stdin:screen_r ~stdout:events_w);
+  let name =
+    if Filename.check_suffix Sys.executable_name ".exe" then
+      "TinyMachine/TinyMachineWindow.exe"
+    else "tiny-machine-window" in
+  ignore (Procs.spawn caps
+    (Filename.concat (Filename.dirname Sys.executable_name) name) []
+    ~stdin:screen_r ~stdout:events_w);
   Unix.close screen_r; Unix.close events_w;
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;   (* the window closed while a screen is written: its end is read next *)
-  { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0; heard = Buffer.create 4096; due = Unix.gettimeofday () }
+  (* the window closed while a screen is written: its end is read next *)
+  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  { to_w; from_w; shown = ""; frame = 0.; partial = ""; cursor = 0;
+    heard = Buffer.create 4096; due = Unix.gettimeofday () }
 
 (* every [polled] instructions *)
 let polled = 0x10000
-let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k =
+let window_poll w (m : TinyMachineCPU.machine)
+    (ms : TinyMachineDevices.mouse) k =
   let now = Unix.gettimeofday () in
-  w.due <- w.due +. (float_of_int polled /. float_of_int !TinyMachineDevices.rate);
-  if w.due > now then Unix.sleepf (w.due -. now) else if now -. w.due > 0.1 then w.due <- now;
+  w.due <-
+    w.due +. (float_of_int polled /. float_of_int !TinyMachineDevices.rate);
+  if w.due > now then Unix.sleepf (w.due -. now)
+  else if now -. w.due > 0.1 then w.due <- now;
   let now = Unix.gettimeofday () in
   if now -. w.frame > 1. /. 30. then begin
     w.frame <- now;
-    let pixels = Bytes.sub_string m.mem TinyMachineDevices.screen (TinyMachineDevices.width * TinyMachineDevices.height) in
-    if pixels <> w.shown then (w.shown <- pixels; Procs.write_all w.to_w (ppm m));
+    let pixels =
+      Bytes.sub_string m.mem TinyMachineDevices.screen
+        (TinyMachineDevices.width * TinyMachineDevices.height) in
+    if pixels <> w.shown then (
+      w.shown <- pixels;
+      Procs.write_all w.to_w (ppm m));
     (* the mouse's look, when a program changed it *)
     if ms.cursor <> w.cursor then begin
       w.cursor <- ms.cursor;
@@ -195,7 +226,9 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
     (* the speaker's samples since the last picture: a line "A n", then
      * the n bytes *)
     if Buffer.length w.heard > 0 then begin
-      Procs.write_all w.to_w (Printf.sprintf "A %d\n%s" (Buffer.length w.heard) (Buffer.contents w.heard));
+      Procs.write_all w.to_w
+        (Printf.sprintf "A %d\n%s" (Buffer.length w.heard)
+           (Buffer.contents w.heard));
       Buffer.clear w.heard
     end;
     match Unix.select [ w.from_w ] [] [] 0.0 with
@@ -204,10 +237,15 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
         let b = Bytes.create 4096 in
         let n = Unix.read w.from_w b 0 4096 in
         if n = 0 then raise (TinyMachineDevices.Halt 0);
-        (match String.split_on_char '\n' (w.partial ^ Bytes.sub_string b 0 n) with
+        (match
+           String.split_on_char '\n' (w.partial ^ Bytes.sub_string b 0 n)
+         with
          | [] -> ()
          | lines ->
-             let rec go = function [ last ] -> w.partial <- last | l :: rest -> TinyMachineDevices.event ms k l; go rest | [] -> () in
+             let rec go = function
+               | [ last ] -> w.partial <- last
+               | l :: rest -> TinyMachineDevices.event ms k l; go rest
+               | [] -> () in
              go lines)
     | exception Unix.Unix_error (Unix.EINTR, _, _) -> ()
   end
@@ -216,7 +254,13 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; audio_file : string option; events_file : string option; window : bool; rate : int option; date : int option; seed : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
+type options = {
+  disk_file : string option; screen_file : string option;
+  audio_file : string option; events_file : string option; window : bool;
+  rate : int option; date : int option; seed : int option;
+  net_loop : int option; net : string option; net_trace : bool;
+  net_lose : int list; net_out : bool; net_forward : (int * int) list;
+  net_pcap : string option; prof : string option }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -226,10 +270,22 @@ type options = { disk_file : string option; screen_file : string option; audio_f
 let helpers = ref []
 
 let helper (caps : < Cap.fork; Cap.exec; .. >) args =
-  helpers := List.filter (fun pid -> match Unix.waitpid [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !helpers;
-  let in_r, to_ = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
-  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineSocket.exe" else "tiny-machine-socket" in
-  helpers := Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w :: !helpers;
+  helpers := List.filter (fun pid ->
+      match Unix.waitpid [ Unix.WNOHANG ] pid with
+      | 0, _ -> true
+      | _ -> false
+      | exception Unix.Unix_error _ -> false) !helpers;
+  let in_r, to_ = Unix.pipe ~cloexec:true ()
+  and from, out_w = Unix.pipe ~cloexec:true () in
+  let name =
+    if Filename.check_suffix Sys.executable_name ".exe" then
+      "TinyMachine/TinyMachineSocket.exe"
+    else "tiny-machine-socket" in
+  helpers :=
+    Procs.spawn caps
+      (Filename.concat (Filename.dirname Sys.executable_name) name) args
+      ~stdin:in_r ~stdout:out_w
+    :: !helpers;
   Unix.close in_r; Unix.close out_w;
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   to_, from
@@ -238,7 +294,9 @@ let helper (caps : < Cap.fork; Cap.exec; .. >) args =
 let helper_read from wait =
   match Unix.select [ from ] [] [] wait with
   | [], _, _ -> None
-  | _ -> let b = Bytes.create 4096 in Some (Bytes.sub_string b 0 (Unix.read from b 0 4096))
+  | _ ->
+      let b = Bytes.create 4096 in
+      Some (Bytes.sub_string b 0 (Unix.read from b 0 4096))
   | exception Unix.Unix_error (Unix.EINTR, _, _) -> None
 
 (* [first]: the bytes that came with the helper's + (a client's
@@ -247,8 +305,13 @@ let helper_relay (to_, from) first : TinyMachinePeer.relay =
   let first = ref first in
   { take = (fun () ->
       if !first <> "" then (let bytes = !first in first := ""; Some bytes)
-      else match helper_read from 0. with None -> Some "" | Some "" -> None | Some bytes -> Some bytes);
-    put = (fun bytes -> try Procs.write_all to_ bytes with Unix.Unix_error _ -> ());
+      else
+        match helper_read from 0. with
+        | None -> Some ""
+        | Some "" -> None
+        | Some bytes -> Some bytes);
+    put = (fun bytes ->
+      try Procs.write_all to_ bytes with Unix.Unix_error _ -> ());
     shut = (fun () -> Unix.close to_; Unix.close from) }
 
 (* what the helper said first, if it has: a relay when it is +, its
@@ -256,7 +319,9 @@ let helper_relay (to_, from) first : TinyMachinePeer.relay =
 let helper_said pipes wait =
   match helper_read (snd pipes) wait with
   | None -> None
-  | Some bytes when bytes <> "" && bytes.[0] = '+' -> Some (Some (helper_relay pipes (String.sub bytes 1 (String.length bytes - 1))))
+  | Some bytes when bytes <> "" && bytes.[0] = '+' ->
+      Some (Some (helper_relay pipes
+        (String.sub bytes 1 (String.length bytes - 1))))
   | Some _ -> (helper_relay pipes "").shut (); Some None
 
 (* -net-out, for "www address": a web page fetched by tiny-machine-fetch,
@@ -265,9 +330,16 @@ let helper_said pipes wait =
  * its time. None when the helper could not fetch it (no network, no
  * such host): then its output is a line that says why. *)
 let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
-  let in_r, in_w = Unix.pipe ~cloexec:true () and from, out_w = Unix.pipe ~cloexec:true () in
-  let name = if Filename.check_suffix Sys.executable_name ".exe" then "TinyMachine/TinyMachineFetch.exe" else "tiny-machine-fetch" in
-  let pid = Procs.spawn caps (Filename.concat (Filename.dirname Sys.executable_name) name) args ~stdin:in_r ~stdout:out_w in
+  let in_r, in_w = Unix.pipe ~cloexec:true ()
+  and from, out_w = Unix.pipe ~cloexec:true () in
+  let name =
+    if Filename.check_suffix Sys.executable_name ".exe" then
+      "TinyMachine/TinyMachineFetch.exe"
+    else "tiny-machine-fetch" in
+  let pid =
+    Procs.spawn caps
+      (Filename.concat (Filename.dirname Sys.executable_name) name) args
+      ~stdin:in_r ~stdout:out_w in
   Unix.close in_r; Unix.close in_w; Unix.close out_w;
   let out = Procs.read_all from in
   Unix.close from;
@@ -286,7 +358,10 @@ let outside caps : TinyMachinePeer.outside =
       | None -> (helper_relay pipes "").shut (); None);
     name = (fun name ->
       let to_, from = helper caps [ "name"; name ] in
-      let answer = match helper_read from 10. with Some line -> String.trim line | None -> "" in
+      let answer =
+        match helper_read from 10. with
+        | Some line -> String.trim line
+        | None -> "" in
       Unix.close to_; Unix.close from;
       answer) }
 
@@ -294,10 +369,15 @@ let outside caps : TinyMachinePeer.outside =
  * bytes at most, link type 101: raw IP), and a packet after its time
  * (seconds, microseconds) and its length twice, all little-endian:
  * what tcpdump -r and Wireshark read *)
-let pcap_header = le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535 ^ le32 101
+let pcap_header =
+  le32 0xa1b2c3d4 ^ "\002\000\004\000" ^ le32 0 ^ le32 0 ^ le32 65535
+  ^ le32 101
 let pcap_packet instructions packet =
-  let us = int_of_float (float_of_int instructions *. 1e6 /. float_of_int !TinyMachineDevices.rate) in
-  le32 (us / 1000000) ^ le32 (us mod 1000000) ^ le32 (String.length packet) ^ le32 (String.length packet) ^ packet
+  let us =
+    int_of_float (float_of_int instructions *. 1e6
+                  /. float_of_int !TinyMachineDevices.rate) in
+  le32 (us / 1000000) ^ le32 (us mod 1000000) ^ le32 (String.length packet)
+  ^ le32 (String.length packet) ^ packet
 
 (* The speed with a window, in instructions per second, when -rate does
  * not say. A host that cannot keep up just runs as fast as it can: a
@@ -306,44 +386,71 @@ let pcap_packet instructions packet =
 let window_rate = 20_000_000
 
 let run caps o image =
-  TinyMachineDevices.rate := (match o.rate with Some r -> r | None -> if o.window then window_rate else TinyMachineDevices.default_rate);
+  TinyMachineDevices.rate :=
+    (match o.rate with
+     | Some r -> r
+     | None ->
+         if o.window then window_rate else TinyMachineDevices.default_rate);
   (* (946684800: 2000-01-01 in Unix's seconds) *)
-  TinyMachineDevices.date := (match o.date with Some d -> d | None -> int_of_float (Unix.time ()) - 946684800);
+  TinyMachineDevices.date :=
+    (match o.date with
+     | Some d -> d
+     | None -> int_of_float (Unix.time ()) - 946684800);
   TinyMachineDevices.seed := (match o.seed with Some s -> s | None -> 0);
   let disk_file = o.disk_file in
   (* the disk: the file's, or a blank one of 8 MB when there is no such
    * file; each block the kernel writes, written to it at once *)
   let disk = match disk_file with
-    | Some f when Sys.file_exists f -> Bytes.of_string (FS.read caps (Fpath.v f))
-    | Some f -> let blank = Bytes.make (8 * 1024 * 1024) '\000' in FS.write caps (Fpath.v f) (Bytes.to_string blank); blank
+    | Some f when Sys.file_exists f ->
+        Bytes.of_string (FS.read caps (Fpath.v f))
+    | Some f ->
+        let blank = Bytes.make (8 * 1024 * 1024) '\000' in
+        FS.write caps (Fpath.v f) (Bytes.to_string blank);
+        blank
     | None -> Bytes.empty in
-  let disk_fd = Option.map (fun f -> Unix.openfile f [ Unix.O_WRONLY ] 0) disk_file in
+  let disk_fd =
+    Option.map (fun f -> Unix.openfile f [ Unix.O_WRONLY ] 0) disk_file in
   (* a session's keys are the console's input: the host's is then not
    * read, and a session's last event is its end. A window's keys are
    * the console's too, with the host's: a kernel that writes on the
    * console and not yet on the screen is typed at where it answers *)
-  let events = Option.map (fun f -> TinyMachineDevices.timed_events (FS.read caps (Fpath.v f))) o.events_file in
+  let events =
+    Option.map (fun f ->
+        TinyMachineDevices.timed_events (FS.read caps (Fpath.v f)))
+      o.events_file in
   let stdin_keys = events = None in
-  let put ch = Console.print caps (String.make 1 ch); flush (Console.stdout caps) in
+  let put ch =
+    Console.print caps (String.make 1 ch);
+    flush (Console.stdout caps) in
   (* the wire's other end: with -net-loop, the wire itself, coming back.
    * [send] is called by the machine it gives packets to: by a reference *)
   let machine = ref None in
-  let give after packet = Option.iter (fun mc -> TinyMachineDevices.net_give mc ~after packet) !machine in
+  let give after packet =
+    Option.iter (fun mc -> TinyMachineDevices.net_give mc ~after packet)
+      !machine in
   (* -net-trace: a packet's line, with the machine's time in its ms *)
   let said dir packet =
     if o.net_trace then
       Option.iter (fun (mc : TinyMachineDevices.machine) ->
-        Console.eprint caps (Printf.sprintf "%9.1f ms  %s %s\n" (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000. /. float_of_int !TinyMachineDevices.rate) dir (TinyMachinePeer.net_describe packet))) !machine in
-  (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel has
-   * it, at the other address), its documents the directory's files by
+        Console.eprint caps
+          (Printf.sprintf "%9.1f ms  %s %s\n"
+             (float_of_int mc.csr.(TinyMachineDevices.time) *. 1000.
+              /. float_of_int !TinyMachineDevices.rate)
+             dir (TinyMachinePeer.net_describe packet))) !machine in
+  (* -net dir: the peer (TinyMachinePeer: TinyKernelNetwork.ml as the kernel
+   * has it, at the other address), its documents the directory's files by
    * their names, no path; -net-lose: which of its packets are lost *)
   let document dir line messages =
-    let file name = if name = "" || name.[0] = '.' || String.contains name '/' then None else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
+    let file name =
+      if name = "" || name.[0] = '.' || String.contains name '/' then None
+      else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
     (* "www address": a web page for tiny-kernel's browser. With
      * -net-out it is fetched; without, or when the fetch fails, a kept
      * copy of a Wikipedia article in dir (OCaml.html) answers. *)
     if String.length line > 4 && String.sub line 0 4 = "www " then begin
-      let url = TinyMachinePeer.www_address (String.sub line 4 (String.length line - 4)) in
+      let url =
+        TinyMachinePeer.www_address
+          (String.sub line 4 (String.length line - 4)) in
       let kept () = Option.bind (TinyMachinePeer.www_kept url) file in
       let page =
         if o.net_out then
@@ -353,7 +460,9 @@ let run caps o image =
         else
           match kept () with
           | Some body -> body
-          | None -> "www: " ^ url ^ ": no copy kept in " ^ dir ^ " (with -net-out, tiny-machine fetches it)\n" in
+          | None ->
+              "www: " ^ url ^ ": no copy kept in " ^ dir
+              ^ " (with -net-out, tiny-machine fetches it)\n" in
       messages (TinyMachinePeer.messages page)
     end
     (* "img w h address": a picture of a page, w by h, in the machine's
@@ -361,38 +470,64 @@ let run caps o image =
      * a kept copy in dir *)
     else if String.length line > 4 && String.sub line 0 4 = "img " then begin
       let none = TinyMachinePeer.picture "" 0 0 "" in
-      messages (match String.split_on_char ' ' (String.sub line 4 (String.length line - 4)) with
-        | w :: h :: address when int_of_string_opt w <> None && int_of_string_opt h <> None ->
-            let w = int_of_string w and h = int_of_string h and url = String.concat " " address in
-            let decode source = match fetch caps [ "-picture"; string_of_int w; string_of_int h; source ] with
-              | Ok pixels when String.length pixels = w * h -> Some (TinyMachinePeer.picture "" w h pixels)
+      messages (match String.split_on_char ' '
+                        (String.sub line 4 (String.length line - 4)) with
+        | w :: h :: address
+          when int_of_string_opt w <> None && int_of_string_opt h <> None ->
+            let w = int_of_string w and h = int_of_string h
+            and url = String.concat " " address in
+            let decode source =
+              match fetch caps [ "-picture"; string_of_int w;
+                                 string_of_int h; source ] with
+              | Ok pixels when String.length pixels = w * h ->
+                  Some (TinyMachinePeer.picture "" w h pixels)
               | _ -> None in
             let kept () = match TinyMachinePeer.www_picture_kept url with
-              | Some name when Sys.file_exists (Filename.concat dir name) -> decode (Filename.concat dir name)
+              | Some name when Sys.file_exists (Filename.concat dir name) ->
+                  decode (Filename.concat dir name)
               | _ -> None in
             if w <= 0 || h <= 0 || w > TinyKernelNetwork.il_max then none
-            else (match (if o.net_out then decode url else None) with Some l -> l | None -> (match kept () with Some l -> l | None -> none))
+            else (match (if o.net_out then decode url else None) with
+                  | Some l -> l
+                  | None ->
+                      (match kept () with Some l -> l | None -> none))
         | _ -> none)
     end
     (* the empty line, Gopher's menu: dir's files, a name a line *)
     else if line = "" then
-      messages (TinyMachinePeer.messages (String.concat "" (List.map (fun n -> n ^ "\n")
-        (List.filter (fun n -> n.[0] <> '.' && not (Sys.is_directory (Filename.concat dir n))) (List.sort compare (Array.to_list (Sys.readdir dir)))))))
-    else messages (match file line with Some text -> TinyMachinePeer.messages text | None -> [ "get: no " ^ line ^ "\n" ]) in
+      messages (TinyMachinePeer.messages
+        (String.concat "" (List.map (fun n -> n ^ "\n")
+          (List.filter (fun n ->
+               n.[0] <> '.'
+               && not (Sys.is_directory (Filename.concat dir n)))
+             (List.sort compare (Array.to_list (Sys.readdir dir)))))))
+    else
+      messages (match file line with
+        | Some text -> TinyMachinePeer.messages text
+        | None -> [ "get: no " ^ line ^ "\n" ]) in
   (* put: a file the machine keeps in dir, so that it outlives it; a
    * name only, as get's *)
   let store dir name bytes =
-    if name = "" || name.[0] = '.' || String.contains name '/' then "a name has no / and no . first"
-    else try FS.write caps (Fpath.v (Filename.concat dir name)) bytes; "" with Sys_error why | Failure why -> why in
+    if name = "" || name.[0] = '.' || String.contains name '/' then
+      "a name has no / and no . first"
+    else
+      try FS.write caps (Fpath.v (Filename.concat dir name)) bytes; ""
+      with Sys_error why | Failure why -> why in
   (* -net-pcap: the packets that crossed, written at the halt *)
   let capture = Buffer.create 4096 in
   let said dir packet =
     said dir packet;
     if o.net_pcap <> None && dir <> "x" then
-      Option.iter (fun (mc : TinyMachineDevices.machine) -> Buffer.add_string capture (pcap_packet mc.csr.(TinyMachineDevices.time) packet)) !machine in
+      Option.iter (fun (mc : TinyMachineDevices.machine) ->
+          Buffer.add_string capture
+            (pcap_packet mc.csr.(TinyMachineDevices.time) packet))
+        !machine in
   let peer = match o.net_loop, o.net with
     | None, Some dir ->
-        let peer = TinyMachinePeer.create ~give ~said ~document:(document dir) ~store:(store dir) ~outside:(if o.net_out then Some (outside caps) else None) in
+        let peer =
+          TinyMachinePeer.create ~give ~said ~document:(document dir)
+            ~store:(store dir)
+            ~outside:(if o.net_out then Some (outside caps) else None) in
         List.iter (TinyMachinePeer.lose peer) o.net_lose;
         Some peer
     | _ -> None in
@@ -404,13 +539,23 @@ let run caps o image =
    * host's port 8080; when it says one is there, the peer dials the
    * machine's port 80 with it as the other side, and another helper
    * waits for the next. One that cannot listen is said and dropped *)
-  let waiting = ref (List.map (fun (host, port) -> host, port, helper caps [ "listen"; string_of_int host ]) o.net_forward) in
+  let waiting =
+    ref (List.map (fun (host, port) ->
+             host, port, helper caps [ "listen"; string_of_int host ])
+           o.net_forward) in
   let forwards peer =
     waiting := List.filter_map (fun (host, port, pipes) ->
       match helper_said pipes 0. with
       | None -> Some (host, port, pipes)
-      | Some (Some relay) -> TinyMachinePeer.dial peer port relay; Some (host, port, helper caps [ "listen"; string_of_int host ])
-      | Some None -> Console.eprint caps (Printf.sprintf "tiny-machine: -net-forward: the host's port %d cannot be listened on\n" host); None)
+      | Some (Some relay) ->
+          TinyMachinePeer.dial peer port relay;
+          Some (host, port, helper caps [ "listen"; string_of_int host ])
+      | Some None ->
+          Console.eprint caps
+            (Printf.sprintf
+               "tiny-machine: -net-forward: the host's port %d cannot be listened on\n"
+               host);
+          None)
       !waiting in
   (* the speaker's samples: to the window, and kept for -audio *)
   let window = if o.window then Some (window_open caps) else None in
@@ -424,15 +569,21 @@ let run caps o image =
      * the speaker's start to the halt, make check's korobeiniki.wav
      * another file at each change of the kernel) *)
     if o.audio_file <> None then begin
-      let rec silent i = if i < String.length samples && samples.[i] = '\000' then silent (i + 1) else i in
+      let rec silent i =
+        if i < String.length samples && samples.[i] = '\000' then
+          silent (i + 1)
+        else i in
       let i = if Buffer.length recorded > 0 then 0 else silent 0 in
       Buffer.add_substring recorded samples i (String.length samples - i)
     end in
-  let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear ~disk ~events image in
+  let mc : TinyMachineDevices.machine =
+    TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear
+      ~disk ~events image in
   machine := Some mc;
   Option.iter (fun fd -> mc.disk.wrote <- (fun b ->
     ignore (Unix.lseek fd (b * TinyMachineDevices.bsize) Unix.SEEK_SET);
-    ignore (Unix.write fd disk (b * TinyMachineDevices.bsize) TinyMachineDevices.bsize))) disk_fd;
+    ignore (Unix.write fd disk (b * TinyMachineDevices.bsize)
+              TinyMachineDevices.bsize))) disk_fd;
   let m = mc.cpu and c = mc.csr in
   let env = TinyMachineDevices.env mc in
   (* -prof f: each instruction counted by where it was (the kernel's or
@@ -442,21 +593,29 @@ let run caps o image =
   let env = match o.prof with
     | None -> env
     | Some f ->
-        at_exit (fun () -> FS.write caps (Fpath.v f) (TinyMachineCPU.profile_lines profile));
+        at_exit (fun () ->
+          FS.write caps (Fpath.v f) (TinyMachineCPU.profile_lines profile));
         (* and when killed, as by timeout: what ran so far (tiny-ml on
          * tiny-kernel, a run of minutes) *)
         Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 1));
         TinyMachineCPU.profiled env profile (fun _ ->
-          if TinyMachineDevices.supervisor mc then 1, 0 else 0, TinyMachineDevices.window_base mc) in
+          if TinyMachineDevices.supervisor mc then 1, 0
+          else 0, TinyMachineDevices.window_base mc) in
   let halted n =
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
     Option.iter (fun f ->
       TinyMachineDevices.speaker_hear mc;
       let sound = Buffer.contents recorded in
-      let rec last i = if i > 0 && sound.[i - 1] = '\000' then last (i - 1) else i in
-      FS.write caps (Fpath.v f) (wav (String.sub sound 0 (last (String.length sound))))) o.audio_file;
-    Option.iter (fun f -> FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture)) o.net_pcap;
-    (* (the helpers that wait for a connection: their input's end is theirs) *)
+      let rec last i =
+        if i > 0 && sound.[i - 1] = '\000' then last (i - 1) else i in
+      FS.write caps (Fpath.v f)
+        (wav (String.sub sound 0 (last (String.length sound)))))
+      o.audio_file;
+    Option.iter (fun f ->
+        FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture))
+      o.net_pcap;
+    (* (the helpers that wait for a connection: their input's end is
+     * theirs) *)
     List.iter (fun (_, _, pipes) -> (helper_relay pipes "").shut ()) !waiting;
     n in
   try
@@ -464,27 +623,37 @@ let run caps o image =
       (* the hosts' turns, by the time this instruction will be *)
       let t = c.(TinyMachineDevices.time) + 1 in
       if stdin_keys && t land 1023 = 0 then console_poll mc.cons;
-      if t land (polled - 1) = 0 && listening then TinyMachineDevices.speaker_hear mc;
-      if t land (polled - 1) = 0 then Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
-      if t land (polled - 1) = 0 && !waiting <> [] then Option.iter forwards peer;
-      (* old: TinyMachineDevices.tick mc env, an instruction a turn of this
-       * loop; now the instructions to the next turn that does something *)
+      if t land (polled - 1) = 0 && listening then
+        TinyMachineDevices.speaker_hear mc;
+      if t land (polled - 1) = 0 then
+        Option.iter (fun w -> window_poll w m mc.mouse mc.cons) window;
+      if t land (polled - 1) = 0 && !waiting <> [] then
+        Option.iter forwards peer;
+      (* old: TinyMachineDevices.tick mc env, an instruction a turn of
+       * this loop; now the instructions to the next turn that does
+       * something *)
       TinyMachineDevices.ticks mc env (1024 - (t land 1023))
     done;
     0
   with TinyMachineDevices.Halt n -> halted n
 
-let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; .. >) =
+let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
+                   Cap.open_out; Cap.fork; Cap.exec; .. >) =
   let args = List.tl (Array.to_list (CapSys.argv caps)) in
   TinyMachineCPU.memsize := TinyMachineDevices.memsize;
   let image files =
     match files with
-    | [ f ] when f.[0] <> '-' -> TinyMachineCPU.image f (FS.read caps (Fpath.v f))
+    | [ f ] when f.[0] <> '-' ->
+        TinyMachineCPU.image f (FS.read caps (Fpath.v f))
     | _ -> raise Exit in
   try
     match args with
     | ("-h" | "--help") :: _ -> Console.print caps help; 0
-    | "-l" :: files -> Console.print caps (TinyMachineCPU.listing ~show:TinyMachineDevices.show ~origin:0 (image files)); 0
+    | "-l" :: files ->
+        Console.print caps
+          (TinyMachineCPU.listing ~show:TinyMachineDevices.show ~origin:0
+             (image files));
+        0
     | args ->
         let rec options o = function
           | "-d" :: f :: rest -> options { o with disk_file = Some f } rest
@@ -492,25 +661,46 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-audio" :: f :: rest -> options { o with audio_file = Some f } rest
           | "-events" :: f :: rest -> options { o with events_file = Some f } rest
           | "-window" :: rest -> options { o with window = true } rest
-          | "-rate" :: n :: rest when (match int_of_string_opt n with Some n -> n > 0 && n <= 1000 | None -> false) ->
+          | "-rate" :: n :: rest
+            when (match int_of_string_opt n with
+                  | Some n -> n > 0 && n <= 1000
+                  | None -> false) ->
               options { o with rate = Some (int_of_string n * 1_000_000) } rest
-          | "-date" :: n :: rest when int_of_string_opt n <> None -> options { o with date = int_of_string_opt n } rest
-          | "-seed" :: n :: rest when int_of_string_opt n <> None -> options { o with seed = int_of_string_opt n } rest
+          | "-date" :: n :: rest when int_of_string_opt n <> None ->
+              options { o with date = int_of_string_opt n } rest
+          | "-seed" :: n :: rest when int_of_string_opt n <> None ->
+              options { o with seed = int_of_string_opt n } rest
           | "-net" :: dir :: rest -> options { o with net = Some dir } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
-          | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
+          | "-net-lose" :: n :: rest when int_of_string_opt n <> None ->
+              options { o with net_lose = int_of_string n :: o.net_lose } rest
           | "-net-out" :: rest -> options { o with net_out = true } rest
           | "-net-pcap" :: f :: rest -> options { o with net_pcap = Some f } rest
           | "-prof" :: f :: rest -> options { o with prof = Some f } rest
           | "-net-forward" :: ports :: rest
-            when (match List.map int_of_string_opt (String.split_on_char ':' ports) with [ Some _; Some _ ] -> true | _ -> false) ->
-              let ports = List.map int_of_string (String.split_on_char ':' ports) in
-              options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
-          | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
+            when (match List.map int_of_string_opt
+                          (String.split_on_char ':' ports) with
+                  | [ Some _; Some _ ] -> true
+                  | _ -> false) ->
+              let ports =
+                List.map int_of_string (String.split_on_char ':' ports) in
+              options { o with net_forward =
+                                 (List.hd ports, List.nth ports 1)
+                                 :: o.net_forward } rest
+          | "-net-loop" :: n :: rest when int_of_string_opt n <> None ->
+              options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; audio_file = None; events_file = None; window = false; rate = None; date = None; seed = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
+        options { disk_file = None; screen_file = None; audio_file = None;
+                  events_file = None; window = false; rate = None;
+                  date = None; seed = None; net_loop = None; net = None;
+                  net_trace = false; net_lose = []; net_out = false;
+                  net_forward = []; net_pcap = None; prof = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
-  | TinyMachineISA.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
+  | TinyMachineISA.Error e | Sys_error e ->
+      Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1
 
-let () = Cap.main (fun caps -> Logging.setup caps ~name:"tiny-machine"; CapStdlib.exit caps (main caps))
+let () =
+  Cap.main (fun caps ->
+    Logging.setup caps ~name:"tiny-machine";
+    CapStdlib.exit caps (main caps))

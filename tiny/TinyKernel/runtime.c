@@ -19,7 +19,8 @@
 // tiny-db, tiny-vcs and tiny-build came; the heap's halves were 1 MB,
 // at 8 MB, until the toolchain came, plan_tiny_self_hosting.md's step
 // 7; the image's limit 7.5 MB, the value stack, the frames and the
-// packet below 8 MB, until its sources came, step 8.) The processes' partitions are above 32 MB (TinyKernel.ml). The devices are in the
+// packet below 8 MB, until its sources came, step 8.) The processes'
+// partitions are above 32 MB (TinyKernel.ml). The devices are in the
 // last 48 bytes, reached by negative addresses, which the machine takes
 // modulo its memory size.
 #include "../TinyMLRuntime/core.c"

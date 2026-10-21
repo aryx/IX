@@ -21,7 +21,8 @@ int d_flush(void);
 // a colour: an image of one pixel, filled with a colour's byte
 void d_colour(int id, int colour);
 // dst's rectangle: src's pixels from (px, py), where mask's are set
-void d_draw(int dst, int src, int mask, int x0, int y0, int x1, int y1, int px, int py);
+void d_draw(int dst, int src, int mask, int x0, int y0, int x1, int y1,
+	int px, int py);
 // a rectangle of a colour
 void d_fill(int dst, int src, int x0, int y0, int x1, int y1);
 void d_line(int dst, int src, int x0, int y0, int x1, int y1);

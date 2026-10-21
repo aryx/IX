@@ -30,12 +30,18 @@ let parse_re (p : string) : re * int =
   let next () =
     let c = p.[!pos] in
     incr pos;
-    if c = '\\' && !pos < String.length p then (incr pos; Quoted (match p.[!pos - 1] with 'n' -> '\n' | c -> c))
+    if c = '\\' && !pos < String.length p then (
+      incr pos;
+      Quoted (match p.[!pos - 1] with 'n' -> '\n' | c -> c))
     else Plain c
   in
   let rec alt () =
     let a = cat () in
-    if peek () = Some '|' then (incr pos; after := '|'; mk (Alt (a, alt ()))) else a
+    if peek () = Some '|' then (
+      incr pos;
+      after := '|';
+      mk (Alt (a, alt ())))
+    else a
   and cat () =
     let a = rep () in
     match peek () with None | Some ('|' | ')') -> a | _ -> mk (Cat (a, cat ()))
@@ -83,7 +89,9 @@ let parse_re (p : string) : re * int =
               if peek () = Some '-' then begin
                 incr pos;
                 if !pos >= String.length p then malformed ();
-                match next () with Plain ']' -> malformed () | pc -> ranges ((c, byte_of pc) :: acc)
+                match next () with
+                | Plain ']' -> malformed ()
+                | pc -> ranges ((c, byte_of pc) :: acc)
               end
               else ranges ((c, c) :: acc)
         in
@@ -115,7 +123,8 @@ let memo size base lim = Array.make (((size * (lim - base + 1)) / 30) + 1) 0
 
 (* [ends_in seen base]: ends, with the pairs already tried marked in
  * seen, positions counted from base *)
-let ends_in seen base re (text : string) (s : int) (lim : int) (k : int -> int array -> unit) =
+let ends_in seen base re (text : string) (s : int) (lim : int)
+    (k : int -> int array -> unit) =
   let caps = Array.make 20 (-1) in
   let rec m n i k =
     let key = (n.id * (lim - base + 1)) + (i - base) in
@@ -125,7 +134,11 @@ let ends_in seen base re (text : string) (s : int) (lim : int) (k : int -> int a
       | Chr c -> if i < lim && text.[i] = c then k (i + 1)
       | Any -> if i < lim && text.[i] <> '\n' then k (i + 1)
       | Set (neg, rs) ->
-          if i < lim && text.[i] <> '\n' && List.exists (fun (a, b) -> a <= text.[i] && text.[i] <= b) rs <> neg then k (i + 1)
+          if
+            i < lim && text.[i] <> '\n'
+            && List.exists (fun (a, b) -> a <= text.[i] && text.[i] <= b) rs
+               <> neg
+          then k (i + 1)
       | Bol -> if i = 0 || text.[i - 1] = '\n' then k i
       | Eol -> if i = String.length text || text.[i] = '\n' then k i
       | Empty -> k i
@@ -135,7 +148,11 @@ let ends_in seen base re (text : string) (s : int) (lim : int) (k : int -> int a
       | Group (g, a) ->
           let o = caps.(2 * g) in
           caps.(2 * g) <- i;
-          m a i (fun j -> let e = caps.((2 * g) + 1) in caps.((2 * g) + 1) <- j; k j; caps.((2 * g) + 1) <- e);
+          m a i (fun j ->
+              let e = caps.((2 * g) + 1) in
+              caps.((2 * g) + 1) <- j;
+              k j;
+              caps.((2 * g) + 1) <- e);
           caps.(2 * g) <- o
     end
   in
@@ -144,16 +161,29 @@ let ends_in seen base re (text : string) (s : int) (lim : int) (k : int -> int a
 let ends (re, size) text s lim k = ends_in (memo size s lim) s re text s lim k
 
 (* a copy of the captures (tiny-ml has no Array.copy) *)
-let copy a = let b = Array.make (Array.length a) 0 in for i = 0 to Array.length a - 1 do b.(i) <- a.(i) done; b
+let copy a =
+  let b = Array.make (Array.length a) 0 in
+  for i = 0 to Array.length a - 1 do
+    b.(i) <- a.(i)
+  done;
+  b
 
 (* the longest match starting at s *)
 let longest re text s lim =
   let best = ref None in
-  ends re text s lim (fun j caps -> match !best with Some (e, _) when e >= j -> () | _ -> best := Some (j, copy caps));
+  ends re text s lim (fun j caps ->
+      match !best with
+      | Some (e, _) when e >= j -> ()
+      | _ -> best := Some (j, copy caps));
   match !best with Some (_, c) -> Some c | None -> None
 
 (* the leftmost-longest match starting in [p, lim] *)
-let rec search re text p lim = if p > lim then None else match longest re text p lim with Some c -> Some c | None -> search re text (p + 1) lim
+let rec search re text p lim =
+  if p > lim then None
+  else
+    match longest re text p lim with
+    | Some c -> Some c
+    | None -> search re text (p + 1) lim
 
 (* backwards from p: the match ending nearest before p, then the
  * longest of those *)

@@ -119,7 +119,8 @@ spawn(struct proc *parent, char *path, char **argv, int *map)
 	for(i = 0; i < NFD; i++)
 		p->fd[i] = 0;
 	for(i = 0; i < 3; i++)
-		if(parent && map && map[i] >= 0 && map[i] < NFD && parent->fd[map[i]])
+		if(parent && map && map[i] >= 0 && map[i] < NFD &&
+		   parent->fd[map[i]])
 			p->fd[i] = filedup(parent->fd[map[i]]);
 	strcpy(p->cwd, parent ? parent->cwd : "/");
 	for(i = strlen(path); i > 0 && path[i - 1] != '/'; i--)
@@ -354,7 +355,8 @@ trap(void)
 	} else if(cause == C_INTR)
 		timer = devintr(r_tval());
 	else {
-		printf("t6: %d %s: trap %d at %x, %x: killed\n", cur->pid, cur->name, cause, cur->pc, r_tval());
+		printf("t6: %d %s: trap %d at %x, %x: killed\n", cur->pid, cur->name,
+			cause, cur->pc, r_tval());
 		exit1(cur, -1);
 	}
 	if(timer || cur->state != READY)

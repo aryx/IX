@@ -223,7 +223,8 @@ main(void)
 	w_tvec((uint)trapvec);
 	w_ie(I_TIMER | I_CONSOLE);
 	w_timecmp(r_time() + TICK);
-	printf("t6: tiny-os's free kernel, %d partitions of %d KB\n", NPROC, PART / 1024);
+	printf("t6: tiny-os's free kernel, %d partitions of %d KB\n",
+		NPROC, PART / 1024);
 	spawn1(0, "/init");
 	schedule();
 }

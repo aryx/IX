@@ -12,12 +12,20 @@ let () = for c = 0 to 255 do bytes.(c) <- String.make 1 (Char.chr c) done
  * image's number, made once: a message was two concatenations a
  * number, half of what a browser's page down cost in the program) *)
 let small = Array.make 1024 ""
-let () = for v = 0 to 1023 do small.(v) <- bytes.(v land 255) ^ bytes.((v asr 8) land 255) done
-let i16 v = if v >= 0 && v < 1024 then small.(v) else bytes.(v land 255) ^ bytes.((v asr 8) land 255)
-let int16 s i = let v = Char.code s.[i] + (256 * Char.code s.[i + 1]) in if v >= 32768 then v - 65536 else v
+let () =
+  for v = 0 to 1023 do
+    small.(v) <- bytes.(v land 255) ^ bytes.((v asr 8) land 255)
+  done
+let i16 v =
+  if v >= 0 && v < 1024 then small.(v)
+  else bytes.(v land 255) ^ bytes.((v asr 8) land 255)
+let int16 s i =
+  let v = Char.code s.[i] + (256 * Char.code s.[i + 1]) in
+  if v >= 32768 then v - 65536 else v
 
 (* a message: its letter, its numbers *)
-let msg letter args = List.fold_left (fun s v -> s ^ i16 v) bytes.(Char.code letter) args
+let msg letter args =
+  List.fold_left (fun s v -> s ^ i16 v) bytes.(Char.code letter) args
 
 (* an image of that rectangle, filled with a colour's byte (the one
  * that had this number freed); a colour: one pixel, repeating *)
@@ -27,14 +35,16 @@ let d_free id = msg 'f' [ id ]
 
 (* dst's rectangle: src's pixels from (px, py) on, where mask's are
  * set (-1: no mask); a rectangle of a colour *)
-let d_draw dst src mask x0 y0 x1 y1 px py = msg 'd' [ dst; src; mask; x0; y0; x1; y1; px; py ]
+let d_draw dst src mask x0 y0 x1 y1 px py =
+  msg 'd' [ dst; src; mask; x0; y0; x1; y1; px; py ]
 let d_fill dst src x0 y0 x1 y1 = d_draw dst src (-1) x0 y0 x1 y1 0 0
 
 (* a line, both ends drawn; a text (a character is 8 by 16), its top
  * left corner at (x, y) *)
 let d_line dst src xa ya xb yb = msg 'l' [ dst; src; xa; ya; xb; yb ]
 let d_text dst src x y s = msg 's' [ dst; src; x; y; String.length s ] ^ s
-let d_styled dst src x y style s = msg 't' [ dst; src; x; y; String.length s; style ] ^ s
+let d_styled dst src x y style s =
+  msg 't' [ dst; src; x; y; String.length s; style ] ^ s
 
 (* a row of pixels, a byte each, its left end at (x, y) *)
 let d_pixels dst x y s = msg 'p' [ dst; x; y; String.length s ] ^ s
@@ -51,8 +61,17 @@ let d_shape s i =
   | 'f' -> 3, 1
   | 'd' -> 19, 3
   | 'l' -> 13, 2
-  | 's' -> if i + 11 > String.length s then 11, 2 else if int16 s (i + 9) < 0 then -1, 0 else 11 + int16 s (i + 9), 2
-  | 't' -> if i + 13 > String.length s then 13, 2 else if int16 s (i + 9) < 0 then -1, 0 else 13 + int16 s (i + 9), 2
-  | 'p' -> if i + 9 > String.length s then 9, 1 else if int16 s (i + 7) < 0 then -1, 0 else 9 + int16 s (i + 7), 1
+  | 's' ->
+      if i + 11 > String.length s then 11, 2
+      else if int16 s (i + 9) < 0 then -1, 0
+      else 11 + int16 s (i + 9), 2
+  | 't' ->
+      if i + 13 > String.length s then 13, 2
+      else if int16 s (i + 9) < 0 then -1, 0
+      else 13 + int16 s (i + 9), 2
+  | 'p' ->
+      if i + 9 > String.length s then 9, 1
+      else if int16 s (i + 7) < 0 then -1, 0
+      else 9 + int16 s (i + 7), 1
   | 'c' -> 3, 0
   | _ -> -1, 0

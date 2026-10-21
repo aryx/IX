@@ -35,8 +35,14 @@ let fs_map = fs_buf 16
 let fs_max = 65536
 
 (* the words are 4 bytes, the low byte first, as the machine's *)
-let fs_get a = peekb a lor (peekb (a + 1) lsl 8) lor (peekb (a + 2) lsl 16) lor (peekb (a + 3) lsl 24)
-let fs_set a v = pokeb a (v land 255); pokeb (a + 1) ((v lsr 8) land 255); pokeb (a + 2) ((v lsr 16) land 255); pokeb (a + 3) ((v lsr 24) land 255)
+let fs_get a =
+  peekb a lor (peekb (a + 1) lsl 8) lor (peekb (a + 2) lsl 16)
+  lor (peekb (a + 3) lsl 24)
+let fs_set a v =
+  pokeb a (v land 255);
+  pokeb (a + 1) ((v lsr 8) land 255);
+  pokeb (a + 2) ((v lsr 16) land 255);
+  pokeb (a + 3) ((v lsr 24) land 255)
 
 (* The superblock's words: the magic number, the disk's size in blocks,
  * the boots counted, the snapshots kept. Then the roots, an inode each:
@@ -71,7 +77,10 @@ exception Disk_full
  * a file hangs: the inode's word, how many levels of pointers are under
  * that word, and the index under them. (old: no date, 11 direct
  * blocks) *)
-let fs_slot i = if i < 10 then 4 + i, 0, i else if i < 266 then 14, 1, i - 10 else 15, 2, i - 266
+let fs_slot i =
+  if i < 10 then 4 + i, 0, i
+  else if i < 266 then 14, 1, i - 10
+  else 15, 2, i - 266
 
 (* the date a write or a new file gets: the kernel's clock (the tests'
  * own) *)
@@ -87,7 +96,9 @@ let rec fs_find ptr level i =
   end
 
 (* block i of the inode at ino *)
-let fs_block ino i = let k, level, j = fs_slot i in fs_find (fs_get (ino + (4 * k))) level j
+let fs_block ino i =
+  let k, level, j = fs_slot i in
+  fs_find (fs_get (ino + (4 * k))) level j
 
 (* Marking: the blocks a tree uses, from an inode at ino. A block already
  * marked is skipped with what is under it (the trees share most of
@@ -100,21 +111,28 @@ let rec fs_mark ptr level d leaf =
     if level > 0 || leaf then begin
       let a = fs_buf (8 + d) in
       fs_read ptr a;
-      if level > 0 then for k = 0 to 255 do fs_mark (fs_get (a + (4 * k))) (level - 1) (d + 1) leaf done
+      if level > 0 then
+        for k = 0 to 255 do
+          fs_mark (fs_get (a + (4 * k))) (level - 1) (d + 1) leaf
+        done
       else for k = 0 to 15 do fs_mark_inode (a + (64 * k)) (d + 1) false done
     end
   end
 
 and fs_mark_inode ino d leaf =
   if fs_get ino <> 0 then
-    for k = 4 to 15 do fs_mark (fs_get (ino + (4 * k))) (if k < 14 then 0 else k - 13) d leaf done
+    for k = 4 to 15 do
+      fs_mark (fs_get (ino + (4 * k))) (if k < 14 then 0 else k - 13) d leaf
+    done
 
 (* The collection: a block is free when no tree uses it. The trees are
  * the live one, the snapshots, and the tree of the last commit on the
  * disk (a crash would come back to it). A fresh block stays used even
  * when no tree has it yet: a write may be halfway through linking it. *)
 let fs_gc () =
-  for b = 1 to !fs_blocks - 1 do if peekb (fs_map + b) = 1 then pokeb (fs_map + b) 0 done;
+  for b = 1 to !fs_blocks - 1 do
+    if peekb (fs_map + b) = 1 then pokeb (fs_map + b) 0
+  done;
   fs_read 0 (fs_buf 7);
   fs_mark_inode (fs_buf 7 + 16) 0 true;
   for r = 0 to fs_nsnaps () do fs_mark_inode (fs_root r) 0 true done;
@@ -124,17 +142,29 @@ let fs_gc () =
 (* a free block, now fresh; the collection runs when there is none left *)
 let rec fs_alloc again =
   let n = !fs_blocks in
-  let rec look b left = if left = 0 then 0 else if peekb (fs_map + b) = 0 then b else look (if b + 1 >= n then 1 else b + 1) (left - 1) in
+  let rec look b left =
+    if left = 0 then 0
+    else if peekb (fs_map + b) = 0 then b
+    else look (if b + 1 >= n then 1 else b + 1) (left - 1)
+  in
   let b = look !fs_next (n - 1) in
   if b = 0 then (if again then (fs_gc (); fs_alloc false) else raise Disk_full)
-  else (pokeb (fs_map + b) 2; fs_fresh := b :: !fs_fresh; fs_next := b; decr fs_nfree; b)
+  else (
+    pokeb (fs_map + b) 2;
+    fs_fresh := b :: !fs_fresh;
+    fs_next := b;
+    decr fs_nfree;
+    b)
 
 (* Room for n new blocks, and 8 more. Even a removal needs new blocks,
  * for the copies of the directory and of the inodes on their way to the
  * root: so what makes files (a write, a creation) must leave a few to
  * what removes them, or a full disk could not be emptied (ZFS keeps such
  * a reserve too). *)
-let fs_room n = if !fs_nfree < n + 8 then (fs_gc (); if !fs_nfree < n + 8 then raise Disk_full)
+let fs_room n =
+  if !fs_nfree < n + 8 then (
+    fs_gc ();
+    if !fs_nfree < n + 8 then raise Disk_full)
 
 (* The block ptr in memory at a, and the block it may be written back to:
  * itself when it is fresh, a new one when a commit has it (copy on
@@ -161,15 +191,24 @@ let rec fs_store ptr level i f =
   b
 
 (* block i of the inode at ino changed by f *)
-let fs_put ino i f = let k, level, j = fs_slot i in let w = ino + (4 * k) in fs_set w (fs_store (fs_get w) level j f)
+let fs_put ino i f =
+  let k, level, j = fs_slot i in
+  let w = ino + (4 * k) in
+  fs_set w (fs_store (fs_get w) level j f)
 
 (* Inode n of tree r, loaded at fs_ino; saved into the live tree. An
  * inode file is a file like the others: an inode's change is a write to
  * it, and goes up to the root in the superblock. *)
 let fs_load r n =
   let b = fs_block (fs_root r) (n / 16) in
-  if b = 0 then row_fill fs_ino 0 64 else (fs_read b (fs_buf 4); row_copy fs_ino (fs_buf 4 + (64 * (n mod 16))) 64)
-let fs_save n = fs_put (fs_root 0) (n / 16) (fun a -> row_copy (a + (64 * (n mod 16))) fs_ino 64)
+  if b = 0 then row_fill fs_ino 0 64
+  else (
+    fs_read b (fs_buf 4);
+    row_copy fs_ino (fs_buf 4 + (64 * (n mod 16))) 64)
+let fs_save n =
+  fs_put (fs_root 0) (n / 16) (fun a ->
+      row_copy (a + (64 * (n mod 16))) fs_ino 64)
+
 let fs_word k = fs_get (fs_ino + (4 * k))
 let fs_setw k v = fs_set (fs_ino + (4 * k)) v
 
@@ -178,7 +217,10 @@ let fs_setw k v = fs_set (fs_ino + (4 * k)) v
 let fs_new typ =
   fs_room 4;
   let count = fs_get (fs_root 0 + 4) in
-  let rec free n = if n >= count then n else (fs_load 0 n; if fs_word 0 = 0 then n else free (n + 1)) in
+  let rec free n =
+    if n >= count then n
+    else (fs_load 0 n; if fs_word 0 = 0 then n else free (n + 1))
+  in
   let n = free 2 in
   if n >= count then fs_set (fs_root 0 + 4) (n + 1);
   row_fill fs_ino 0 64;
@@ -206,7 +248,8 @@ let fs_read_at r n off a len =
       let o = (off + d) mod fs_bsize in
       let k = min (len - d) (fs_bsize - o) in
       let b = fs_block fs_ino ((off + d) / fs_bsize) in
-      if b = 0 then row_fill (a + d) 0 k else (fs_read b (fs_buf 3); row_copy (a + d) (fs_buf 3 + o) k);
+      if b = 0 then row_fill (a + d) 0 k
+      else (fs_read b (fs_buf 3); row_copy (a + d) (fs_buf 3 + o) k);
       go (d + k)
     end in
   go 0;
@@ -242,14 +285,21 @@ let fs_write_string n off s =
   go 0
 
 (* its size 0; its blocks are left to the collection *)
-let fs_truncate n = fs_load 0 n; fs_setw 1 0; fs_setw 3 (!fs_clock ()); for k = 4 to 15 do fs_setw k 0 done; fs_save n
+let fs_truncate n =
+  fs_load 0 n;
+  fs_setw 1 0;
+  fs_setw 3 (!fs_clock ());
+  for k = 4 to 15 do fs_setw k 0 done;
+  fs_save n
 
 (* the whole of inode n of tree r, as a string *)
 let fs_contents r n =
   let size = (fs_load r n; fs_word 1) in
   let rec go at acc =
     if at >= size then String.concat "" (List.rev acc)
-    else (let k = fs_read_at r n at (fs_buf 6) fs_bsize in go (at + k) (row_string (fs_buf 6) k :: acc)) in
+    else (
+      let k = fs_read_at r n at (fs_buf 6) fs_bsize in
+      go (at + k) (row_string (fs_buf 6) k :: acc)) in
   go 0 []
 
 (*****************************************************************************)
@@ -260,8 +310,12 @@ let fs_contents r n =
  * by zeros when shorter) and an inode's number. There is no "." or
  * "..": the kernel resolves ".." by the path's text. (old: 32 bytes, a
  * name of 28) *)
-let fs_bytes n = String.concat "" (List.map (fun k -> String.make 1 (Char.chr ((n lsr k) land 255))) [ 0; 8; 16; 24 ])
-let fs_entry name n = name ^ String.make (64 - String.length name) '\000' ^ fs_bytes n
+let fs_bytes n =
+  String.concat ""
+    (List.map (fun k -> String.make 1 (Char.chr ((n lsr k) land 255)))
+       [ 0; 8; 16; 24 ])
+let fs_entry name n =
+  name ^ String.make (64 - String.length name) '\000' ^ fs_bytes n
 
 let fs_entries r d =
   let s = fs_contents r d in
@@ -269,13 +323,17 @@ let fs_entries r d =
     if i + 68 > String.length s then List.rev acc
     else begin
       let rec len k = if k < 64 && s.[i + k] <> '\000' then len (k + 1) else k in
-      let n = Char.code s.[i + 64] lor (Char.code s.[i + 65] lsl 8) lor (Char.code s.[i + 66] lsl 16) lor (Char.code s.[i + 67] lsl 24) in
+      let n =
+        Char.code s.[i + 64] lor (Char.code s.[i + 65] lsl 8)
+        lor (Char.code s.[i + 66] lsl 16) lor (Char.code s.[i + 67] lsl 24)
+      in
       go (i + 68) ((String.sub s i (len 0), n) :: acc)
     end in
   go 0 []
 
 (* the inode under a name in directory d of tree r (0: none) *)
-let fs_lookup r d name = match List.assoc_opt name (fs_entries r d) with Some n -> n | None -> 0
+let fs_lookup r d name =
+  match List.assoc_opt name (fs_entries r d) with Some n -> n | None -> 0
 
 (* one more name for inode n, in directory d *)
 let fs_link d name n =
@@ -294,7 +352,10 @@ let fs_unlink d name =
   let l = fs_entries 0 d in
   let n = fs_lookup 0 d name in
   fs_truncate d;
-  fs_write_string d 0 (String.concat "" (List.map (fun (m, k) -> fs_entry m k) (List.filter (fun (m, _) -> m <> name) l)));
+  fs_write_string d 0
+    (String.concat ""
+       (List.map (fun (m, k) -> fs_entry m k)
+          (List.filter (fun (m, _) -> m <> name) l)));
   if n <> 0 then begin
     fs_load 0 n;
     fs_setw 2 (fs_word 2 - 1);
@@ -332,7 +393,11 @@ let fs_format n =
 
 (* whether two roots are the same tree (their third word, the boot, aside) *)
 let fs_same r q =
-  let rec go k = k >= 16 || ((k = 2 || fs_get (fs_root r + (4 * k)) = fs_get (fs_root q + (4 * k))) && go (k + 1)) in
+  let rec go k =
+    k >= 16
+    || ((k = 2 || fs_get (fs_root r + (4 * k)) = fs_get (fs_root q + (4 * k)))
+        && go (k + 1))
+  in
   go 0
 
 (* The mount, at the boot, on a disk of n blocks: a blank disk is
@@ -366,7 +431,9 @@ let fs_mount n =
   fs_commit ()
 
 (* the snapshots: each its root and the boot it was the live tree of *)
-let fs_snapshots () = List.init (fs_nsnaps ()) (fun i -> i + 1, fs_get (fs_root (i + 1) + 8))
+let fs_snapshots () =
+  List.init (fs_nsnaps ()) (fun i -> i + 1, fs_get (fs_root (i + 1) + 8))
+
 
 (* the free blocks, counted after a collection *)
 let fs_free () = fs_gc (); !fs_nfree

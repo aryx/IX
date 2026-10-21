@@ -23,33 +23,46 @@
  * on-disk file system. In ML other paths are shorter, so this kernel
  * keeps the concepts and chooses its own way to implement each one:
  *
- *   concept                    how it is done                        why it is cheap here
- *   user and kernel modes,     a trap returns from k_run; a system   the machine has one way in
- *   system calls               call is a match on its number         and one way out
- *   preemptive scheduling      round robin on the timer              a list; the process that ran
- *                                                                    is moved to the end
- *   protection                 tiny-machine's relocating window,     no page tables to build
- *                              a 1 MB partition per process
- *   processes                  fork, exec, exit, wait                with a window, fork just copies
- *                                                                    a partition: one k_copy
- *   blocking                   each waiting process has a closure,   no kernel stack per process,
- *                              the rest of its call, retried by the  no swtch, no sleep, no locks
- *                              scheduler
- *   files and directories      the disk's (TinyKernelFS.ml):         no log, no fsck, no map of
- *                              inodes, copied on write, the root;    free blocks: a commit is one
- *                              the boot image's, a tree of ML        block written; a collector
- *                              values, in a union with it            finds the free ones
- *   console, pipes             other kinds of open files             pipes make a shell a shell
- *   a screen, a mouse          descriptors 3 and 4 of a program: it  TinyKernelGraphics.ml draws;
- *                              writes drawing messages (the kernel   no memory is shared, so
- *                              owns the pixels) and reads the mouse  nothing to map
- *                              position
- *   a window system            a program (TinyWindows.ml) using      a window's program gets the
- *                              pipes and a box, a pipe that keeps    same kind of interface the
- *                              only the last write (for a window's   kernel gives
- *                              mouse)
- *   waiting for several        ready(fds, n, until): one more        again a closure: a list is
- *   things, or for a time      closure, using the clock's ticks      scanned, no select queues
+ *   concept                how it is done             why it is cheap here
+ *   user and kernel        a trap returns from        the machine has one way
+ *   modes, system calls    k_run; a system call is a  in and one way out
+ *                          match on its number
+ *   preemptive scheduling  round robin on the timer   a list; the process that
+ *                                                     ran is moved to the end
+ *   protection             tiny-machine's relocating  no page tables to build
+ *                          window, a 1 MB partition
+ *                          per process
+ *   processes              fork, exec, exit, wait     with a window, fork just
+ *                                                     copies a partition: one
+ *                                                     k_copy
+ *   blocking               each waiting process has   no kernel stack per
+ *                          a closure, the rest of     process, no swtch, no
+ *                          its call, retried by the   sleep, no locks
+ *                          scheduler
+ *   files and directories  the disk's                 no log, no fsck, no map
+ *                          (TinyKernelFS.ml):         of free blocks: a commit
+ *                          inodes, copied on write,   is one block written; a
+ *                          the root; the boot         collector finds the free
+ *                          image's, a tree of ML      ones
+ *                          values, in a union with
+ *                          it
+ *   console, pipes         other kinds of open files  pipes make a shell a
+ *                                                     shell
+ *   a screen, a mouse      descriptors 3 and 4 of a   TinyKernelGraphics.ml
+ *                          program: it writes         draws; no memory is
+ *                          drawing messages (the      shared, so nothing to map
+ *                          kernel owns the pixels)
+ *                          and reads the mouse
+ *                          position
+ *   a window system        a program                  a window's program gets
+ *                          (TinyWindows.ml) using     the same kind of
+ *                          pipes and a box, a pipe    interface the kernel
+ *                          that keeps only the last   gives
+ *                          write (for a window's
+ *                          mouse)
+ *   waiting for several    ready(fds, n, until): one  again a closure: a list
+ *   things, or for a time  more closure, using the    is scanned, no select
+ *                          clock's ticks              queues
  *
  * The files. The programs come in the boot image, after the kernel,
  * and are read from memory. With a disk (-d), the disk is the root,

@@ -9,24 +9,36 @@ external make : int -> char -> string = "ml_string_make"
 external unsafe_sub : string -> int -> int -> string = "ml_string_sub"
 (* (a string just made, filled: bytes and a string are the same block) *)
 external unsafe_set : string -> int -> char -> unit = "ml_bytes_set"
-external unsafe_blit : string -> int -> string -> int -> int -> unit = "ml_bytes_blit_string"
+external unsafe_blit : string -> int -> string -> int -> int -> unit
+  = "ml_bytes_blit_string"
 
 (* (get s i, not s.[i], which is String.get: this module's own name
  * is get until it ends) *)
-let sub s ofs len = if ofs < 0 || len < 0 || ofs > length s - len then invalid_arg "String.sub" else unsafe_sub s ofs len
+let sub s ofs len =
+  if ofs < 0 || len < 0 || ofs > length s - len then invalid_arg "String.sub"
+  else unsafe_sub s ofs len
 let index_from_opt s i c =
   let n = length s in
-  let rec go i = if i >= n then None else if get s i = c then Some i else go (i + 1) in
+  let rec go i =
+    if i >= n then None else if get s i = c then Some i else go (i + 1) in
   if i < 0 || i > n then invalid_arg "String.index_from_opt" else go i
 let index_opt s c = index_from_opt s 0 c
-let index_from s i c = match index_from_opt s i c with Some j -> j | None -> raise Not_found
+let index_from s i c =
+  match index_from_opt s i c with Some j -> j | None -> raise Not_found
 let index s c = index_from s 0 c
 let rindex_opt s c =
-  let rec go i = if i < 0 then None else if get s i = c then Some i else go (i - 1) in
+  let rec go i =
+    if i < 0 then None else if get s i = c then Some i else go (i - 1) in
   go (length s - 1)
 let contains s c = match index_opt s c with Some _ -> true | None -> false
-let exists p s = let n = length s in let rec go i = i < n && (p (get s i) || go (i + 1)) in go 0
-let for_all p s = let n = length s in let rec go i = i >= n || (p (get s i) && go (i + 1)) in go 0
+let exists p s =
+  let n = length s in
+  let rec go i = i < n && (p (get s i) || go (i + 1)) in
+  go 0
+let for_all p s =
+  let n = length s in
+  let rec go i = i >= n || (p (get s i) && go (i + 1)) in
+  go 0
 let iter f s = for i = 0 to length s - 1 do f (get s i) done
 let iteri f s = for i = 0 to length s - 1 do f i (get s i) done
 
@@ -42,9 +54,13 @@ let init n f =
 let map f s = init (length s) (fun i -> f (get s i))
 let lowercase_ascii s =
   let upper c = c >= 'A' && c <= 'Z' in
-  if exists upper s then map (fun c -> if upper c then Char.chr (Char.code c + 32) else c) s else s
+  if exists upper s
+  then map (fun c -> if upper c then Char.chr (Char.code c + 32) else c) s
+  else s
 let capitalize_ascii s =
-  if length s > 0 && get s 0 >= 'a' && get s 0 <= 'z' then make 1 (Char.chr (Char.code (get s 0) - 32)) ^ sub s 1 (length s - 1) else s
+  if length s > 0 && get s 0 >= 'a' && get s 0 <= 'z'
+  then make 1 (Char.chr (Char.code (get s 0) - 32)) ^ sub s 1 (length s - 1)
+  else s
 let trim s =
   let blank c = c = ' ' || c = '\t' || c = '\n' || c = '\r' || c = '\012' in
   let n = length s in
@@ -59,5 +75,7 @@ let split_on_char c s =
     else go j (i - 1) acc
   in
   go (length s) (length s - 1) []
-let starts_with prefix s = let n = length prefix in length s >= n && unsafe_sub s 0 n = prefix
+let starts_with prefix s =
+  let n = length prefix in
+  length s >= n && unsafe_sub s 0 n = prefix
 let get_uint16_le s i = Char.code (get s i) lor (Char.code (get s (i + 1)) lsl 8)

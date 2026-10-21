@@ -141,7 +141,10 @@ type 'msg widget =
 
 (* a program: its first model, the model as widgets, the model after a
  * message, a key's messages when no field has the keys (none: []) *)
-type ('m, 'msg) gui = { init : 'm; view : 'm -> 'msg widget; update : 'msg -> 'm -> 'm; key : int -> 'msg list }
+type ('m, 'msg) gui = {
+  init : 'm; view : 'm -> 'msg widget; update : 'msg -> 'm -> 'm;
+  key : int -> 'msg list;
+}
 
 (* The program's loop, with no end but an Escape, a q that no field
  * takes, or the keys' end (the mouse or a key waited for, what changed
@@ -161,28 +164,40 @@ type 'msg action = Send of 'msg | Edit of string * (string -> 'msg)
 (* the size a widget asks for; a model's widgets at their places: a
  * shape each, and the boxes that answer the mouse or the keys *)
 val size : 'msg widget -> int * int
-val laid : ('m, 'msg) gui -> 'm -> TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
+val laid :
+  ('m, 'msg) gui -> 'm ->
+  TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
 
 (* [place x y w h widget]: a widget given that box, as [laid] places a
  * model's (a program that draws its own window and has a few widgets
  * on it: the browser's toolbar) *)
-val place : int -> int -> int -> int -> 'msg widget -> TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
+val place :
+  int -> int -> int -> int -> 'msg widget ->
+  TinyLibPlayground.shape list * ((int * int * int * int) * 'msg action) list
 
 (* what is drawn over the widgets, by the mouse: a held button's edges,
  * the caret of the field that has the keys; each with its box *)
-val over : ((int * int * int * int) * 'msg action) list -> mouse -> ((int * int * int * int) * TinyLibPlayground.shape) list
+val over :
+  ((int * int * int * int) * 'msg action) list -> mouse ->
+  ((int * int * int * int) * TinyLibPlayground.shape) list
 
 (* [mouse g boxes model m x y buttons]: the model and the mouse after
  * the mouse is there; [key g boxes model m k]: the model after a key *)
-val mouse : ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm -> mouse -> int -> int -> int -> 'm * mouse
-val key : ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm -> mouse -> int -> 'm
+val mouse :
+  ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm ->
+  mouse -> int -> int -> int -> 'm * mouse
+val key :
+  ('m, 'msg) gui -> ((int * int * int * int) * 'msg action) list -> 'm ->
+  mouse -> int -> 'm
 
 (* [redraw shown was now is]: after the shapes shown and what was over
  * them, the shapes now and what is over them, drawn where they differ
  * (a test's: on the window, image 0) *)
 val redraw :
-  TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list ->
-  TinyLibPlayground.shape list -> ((int * int * int * int) * TinyLibPlayground.shape) list -> unit
+  TinyLibPlayground.shape list ->
+  ((int * int * int * int) * TinyLibPlayground.shape) list ->
+  TinyLibPlayground.shape list ->
+  ((int * int * int * int) * TinyLibPlayground.shape) list -> unit
 
 (* Pull-down menus, for a program that draws its whole window (the
  * office): a bar of titles across its top, each a menu of items, each
@@ -210,11 +225,15 @@ val bar_height : int
 type 'msg menu_answer = Ignored | Taken | Picked of 'msg
 
 (* [menu_mouse menus state x y buttons] *)
-val menu_mouse : (string * (string * 'msg) list) list -> menu_state -> int -> int -> int -> 'msg menu_answer
+val menu_mouse :
+  (string * (string * 'msg) list) list -> menu_state -> int -> int -> int ->
+  'msg menu_answer
 
 (* [menu_view width menus state]: the bar, the open menu: two shapes,
  * drawn last, over the program's *)
-val menu_view : int -> (string * (string * 'msg) list) list -> menu_state -> TinyLibPlayground.shape list
+val menu_view :
+  int -> (string * (string * 'msg) list) list -> menu_state ->
+  TinyLibPlayground.shape list
 
 (* a point in a box (x, y, width, height) *)
 val inside : int -> int -> int * int * int * int -> bool
@@ -225,7 +244,10 @@ val inside : int -> int -> int * int * int * int -> bool
  * of the whole window); a key and the next model, or None to end; the
  * mouse at (x, y) and its buttons (1 left, 2 middle, 4 right), and the
  * next model, or None *)
-type 'm canvas = { first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list; typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm option }
+type 'm canvas = {
+  first : int -> int -> 'm; picture : 'm -> TinyLibPlayground.shape list;
+  typed : int -> 'm -> 'm option; moved : int -> int -> int -> 'm -> 'm option;
+}
 
 (* [run_canvas c]: the program until its typed says None or the keys
  * end; then its window white. After each key (or each read of the

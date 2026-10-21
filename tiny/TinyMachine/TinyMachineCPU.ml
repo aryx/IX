@@ -33,7 +33,7 @@ type env = {
   fetch : machine -> int -> int;           (* the instruction's word at pc *)
   load : machine -> size -> int -> int;
   store : machine -> size -> int -> int -> unit;
-  sys : machine -> int -> unit;            (* the call's number, pc past the sys *)
+  sys : machine -> int -> unit;  (* the call's number, pc past the sys *)
   illegal : machine -> int -> unit;        (* the word, pc still on it *)
 }
 
@@ -56,15 +56,22 @@ let alu op a b =
   let sa = signed a and sb = signed b in
   m32 (match op with
     | Add -> a + b | Sub -> a - b | Mul -> a * b
-    | Div -> if b = 0 then -1 else if sa = -0x80000000 && sb = -1 then sa else Int.div sa sb   (* truncated *)
-    | Rem -> if b = 0 then a else if sa = -0x80000000 && sb = -1 then 0 else Int.rem sa sb
+    | Div ->   (* truncated *)
+        if b = 0 then -1 else if sa = -0x80000000 && sb = -1 then sa
+        else Int.div sa sb
+    | Rem ->
+        if b = 0 then a else if sa = -0x80000000 && sb = -1 then 0
+        else Int.rem sa sb
     | And -> a land b | Or -> a lor b | Xor -> a lxor b
-    | Shl -> a lsl (b land 31) | Shr -> a lsr (b land 31) | Sar -> sa asr (b land 31)
+    | Shl -> a lsl (b land 31) | Shr -> a lsr (b land 31)
+    | Sar -> sa asr (b land 31)
     | Slt -> if sa < sb then 1 else 0 | Sltu -> if ult a b then 1 else 0)
 
 let compare c a b =
   match c with
-  | Eq -> a = b | Ne -> a <> b | Lt -> signed a < signed b | Ge -> signed a >= signed b | Ltu -> ult a b | Geu -> not (ult a b)
+  | Eq -> a = b | Ne -> a <> b
+  | Lt -> signed a < signed b | Ge -> signed a >= signed b
+  | Ltu -> ult a b | Geu -> not (ult a b)
 
 (* memory alone, and an unknown word an error *)
 let plain ~sys = {
@@ -91,7 +98,8 @@ let plain ~sys = {
  * allocation being a few instructions.) *)
 let keep_decoded = ref true
 let kept = 16384
-let decoded : (int * instr option) array = Array.make kept (0, None)   (* 0 is no instruction *)
+(* 0 is no instruction *)
+let decoded : (int * instr option) array = Array.make kept (0, None)
 
 let decode_kept w =
   let k = (w lxor (w lsr 11) lxor (w lsr 22)) land (kept - 1) in
@@ -127,9 +135,11 @@ let step env m =
        | Lui (d, imm) -> set r d (imm lsl 16)
        | Load (s, d, a, off) -> set r d (env.load m s (r.(a) + off))
        | Store (s, d, a, off) -> env.store m s (r.(a) + off) r.(d)
-       | Branch (c, d, a, off) -> if compare c r.(d) r.(a) then m.pc <- addr (pc + 4 + (4 * off))
+       | Branch (c, d, a, off) ->
+           if compare c r.(d) r.(a) then m.pc <- addr (pc + 4 + (4 * off))
        | Jal (d, off) -> set r d (pc + 4); m.pc <- addr (pc + 4 + (4 * off))
-       | Jalr (d, a, off) -> let t = word (r.(a) + off) in set r d (pc + 4); m.pc <- t
+       | Jalr (d, a, off) ->
+           let t = word (r.(a) + off) in set r d (pc + 4); m.pc <- t
        | Sys n -> env.sys m n)
 
 (* the machine at its start: the image at 0, sp at the top of memory *)
@@ -145,7 +155,10 @@ let boot image =
 
 (* the memory's first bytes, no header: the CPU starts at 0 (tiny-linker
  * made it) *)
-let image name text = if String.length text > !memsize then error "%s: larger than the memory" name; text
+let image name text =
+  if String.length text > !memsize then
+    error "%s: larger than the memory" name;
+  text
 
 (* the listing: address, word, instruction, as assembly again *)
 let listing ~show ~origin image =
@@ -177,7 +190,9 @@ let profiled (env : env) (p : profile) (where : machine -> int * int) =
   { env with fetch = (fun m pc ->
       let mode, base = where m in
       let k = (((base lsl 1) lor mode) lsl 32) lor (pc land 0xffffffff) in
-      (match Hashtbl.find_opt p k with Some n -> incr n | None -> Hashtbl.add p k (ref 1));
+      (match Hashtbl.find_opt p k with
+       | Some n -> incr n
+       | None -> Hashtbl.add p k (ref 1));
       env.fetch m pc) }
 
 (* the profile as lines "k|u base pc count", the addresses in hexadecimal,
@@ -186,5 +201,6 @@ let profile_lines (p : profile) =
   let l = Hashtbl.fold (fun k n acc -> (k, !n) :: acc) p [] in
   let l = List.sort (fun (_, a) (_, b) -> b - a) l in
   String.concat "" (List.map (fun (k, n) ->
-    Printf.sprintf "%c %x %x %d\n" (if (k lsr 32) land 1 = 1 then 'k' else 'u') (k lsr 33) (k land 0xffffffff) n) l)
+    Printf.sprintf "%c %x %x %d\n" (if (k lsr 32) land 1 = 1 then 'k' else 'u')
+      (k lsr 33) (k land 0xffffffff) n) l)
 

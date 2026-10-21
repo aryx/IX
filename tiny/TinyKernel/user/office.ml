@@ -24,7 +24,10 @@ let () =
   let answer o r =
     match r with
     | Continue -> Some o
-    | Save -> (if write_file file (text o) then saved o else say o ("Cannot write " ^ file)); Some o
+    | Save ->
+      (if write_file file (text o) then saved o
+       else say o ("Cannot write " ^ file));
+      Some o
     | Quit -> None in
   run_canvas {
     first = (fun w h -> create w h file (read_file file));

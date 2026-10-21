@@ -15,8 +15,9 @@ there. The plan is five stages, from `hello.s` assembled on the card
 to mini-ml compiling itself there, each a program built on the card
 and compared, byte for byte, with the one Linux builds.**
 
-**Status: stages 1 and 2 done, stage 3 started** (2026-10-21; Status
-below).
+**Status: stages 1, 2 and 3's first half done** (2026-10-21: mini-mk
+on mini-9pi builds lib_core and a program by their mkfiles, the
+program Linux's bytes; Status below).
 
 ## Where it starts from (2026-10-09)
 
@@ -176,9 +177,18 @@ below).
   - **`make card-self`**: a card of 1 GB with `/src/ix` (the
     repository but docs/: 4,894 files), the whole toolchain, and room
     for a build (346 MB on Linux for mini-9pi's programs); the
-    everyday card stays 128 MB. Stage 3's first session on it, lib_core
-    and utilities/misc by `mk` on the Pi 2 under QEMU, was running at
-    this commit.
+    everyday card stays 128 MB.
+  - **Stage 3, its first half**: on that card, the Pi 2 under QEMU,
+    `mk` in /src/ix/lib_core (69 units, the C runtime, the C library)
+    then in utilities/misc (eleven programs): mini-echo made there is
+    `/bin/echo`'s bytes (`cmp`), and runs. lib_core 771 s, misc 311
+    s; on Linux 4.95 s each, one job at a time: 156 and 63 times
+    (misc is mostly links). One core: `NPROC` was 1, the Pi 2's kernel
+    runs its other cores under an emulator only when built `SMP=1`
+    (check-cores' image).
+  - **Next**: the SMP kernel for the build (four jobs); the rest of
+    stage 3 (the other programs of misc compared, a library of
+    lib_xxx); then the whole build, profiled.
   - **The time to expect**: the Plan 9 build on Linux is 40 s for the
     libraries and 173 s for the programs, one job at a time; 50 to
     300 times that is 3 to 4 hours on one emulated core. The levers:

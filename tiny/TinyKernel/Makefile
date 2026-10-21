@@ -479,51 +479,87 @@ MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;
 # override: tiny-machine gives MACHINE on the command line)
-check self: override MACHINE := $(MACHINE) -date 820540800 -seed 1
+check check-parts self: override MACHINE := $(MACHINE) -date 820540800 -seed 1
+# its parts side by side, J at a time unless make was given -j: each
+# session's text in $(O)/check/NN.out, put together in their order, each
+# screen and sound in its own files; sessions that share a disk or files
+# in one rule, one after the other (old: every session one after the
+# other, some 15 minutes)
+J = 32
+NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
 check: $(O)/boot.img
-	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
-	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nmkdir b; ln /bin/wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\ncd /bin; ls | grep \047^t\047 | sort -r\nls | grep -c \047^(ls|wc|cat)$$\047\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \047[2-4]\047\ngrep \047(\047 /bin/sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; wc f; ls -l /bin | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /bin/ed /bin/sam /bin/emacs /bin/editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img >> $(O)/check.out
-	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img >> $(O)/check.out
-	timeout 300 $(MACHINE) -events $(T)/officequit.events $(O)/boot.img >> $(O)/check.out
-	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; troff -p /examples/report.ixd > r.pdf; wc r.html r.pdf; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'prof /examples/spin.prof -u /examples/spin.map\nprof -n 2 /examples/spin.prof\nprof\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/db.keys >> $(O)/check.out
-	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/vcs.keys >> $(O)/check.out
-	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys >> $(O)/check.out
-	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys >> $(O)/check.out
-	rm -rf $(O)/kept; mkdir $(O)/kept
-	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \047\047\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
-	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers | tr -d ' ' >> $(O)/check.out
-	printf 'rc\nfor(f in `{get \047\047}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
-	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
-	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
-	cut -c15- $(O)/check.trace | grep -q '^x ' && echo "the wire: a packet lost" >> $(O)/check.out
-	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img >> $(O)/check.out
-	rm -f $(O)/check.img
-	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
-	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
-	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check.img $(O)/boot.img >> $(O)/check.out
-	sed -E $(MASK) $(O)/check.out > $(O)/check.masked; mv $(O)/check.masked $(O)/check.out
-	diff $(T)/check.expected $(O)/check.out
-	for s in $(SCREENS); do \
-	  timeout 300 $(MACHINE) -net ../tests/www -events $(T)/$$s.events -screen $(O)/check.ppm $(O)/boot.img > /dev/null || exit 1; \
-	  cksum < $(O)/check.ppm > $(O)/check.sum; diff $(T)/$$s.cksum $(O)/check.sum || { echo "tiny-kernel: $$s.events: another screen ($(O)/check.ppm)"; exit 1; }; \
-	done
-	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check.wav $(O)/boot.img > /dev/null
-	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/tetris.wav.cksum $(O)/check.sum || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check.wav)"; exit 1; }
-	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check.wav $(O)/boot.img > /dev/null
-	cksum < $(O)/check.wav > $(O)/check.sum; diff $(T)/korobeiniki.wav.cksum $(O)/check.sum || { echo "tiny-kernel: play: other sounds ($(O)/check.wav)"; exit 1; }
-	rm $(O)/check.out $(O)/check.trace $(O)/check.ppm $(O)/check.wav $(O)/check.sum $(O)/check.img && echo "tiny-kernel: check ok"
+	rm -rf $(O)/check; mkdir -p $(O)/check
+	$(MAKE) $(if $(findstring jobserver,$(MAKEFLAGS)),,-j$(J)) check-parts
+	cat $(NCHECK:%=$(O)/check/%.out) | sed -E $(MASK) > $(O)/check/check.out
+	diff $(T)/check.expected $(O)/check/check.out
+	rm -rf $(O)/check && echo "tiny-kernel: check ok"
+check-parts: $(NCHECK:%=$(O)/check/%.out) $(SCREENS:%=$(O)/check/%.sum) $(O)/check/tetris.wav.sum $(O)/check/korobeiniki.wav.sum
+$(O)/check/01.out: $(O)/boot.img
+	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/02.out: $(O)/boot.img
+	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/03.out: $(O)/boot.img
+	printf 'echo hi | cat > f; cat f; ls; wc < f; rm f; cat f; mkdir d; cd d; echo x > g; cd ..; cat d/g\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/04.out: $(O)/boot.img
+	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/05.out: $(O)/boot.img
+	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/06.out: $(O)/boot.img
+	printf 'rc\nmkdir b; ln /bin/wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/07.out: $(O)/boot.img
+	printf 'rc\ncd /bin; ls | grep \047^t\047 | sort -r\nls | grep -c \047^(ls|wc|cat)$$\047\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \047[2-4]\047\ngrep \047(\047 /bin/sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/08.out: $(O)/boot.img
+	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; wc f; ls -l /bin | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/09.out: $(O)/boot.img
+	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/10.out: $(O)/boot.img
+	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /bin/ed /bin/sam /bin/emacs /bin/editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/11.out: $(O)/boot.img
+	timeout 300 $(MACHINE) -events $(T)/emacskeys.events $(O)/boot.img > $@
+$(O)/check/12.out: $(O)/boot.img
+	timeout 300 $(MACHINE) -events $(T)/officekeys.events $(O)/boot.img > $@
+$(O)/check/13.out: $(O)/boot.img
+	timeout 300 $(MACHINE) -events $(T)/officequit.events $(O)/boot.img > $@
+$(O)/check/14.out: $(O)/boot.img
+	printf 'rc\ntroff /examples/report.ixd\ntroff -h /examples/report.ixd > r.html; troff -p /examples/report.ixd > r.pdf; wc r.html r.pdf; troff\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/15.out: $(O)/boot.img
+	printf 'play /nosuch\nplay /examples/report.ixd\nplay\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/16.out: $(O)/boot.img
+	printf 'prof /examples/spin.prof -u /examples/spin.map\nprof -n 2 /examples/spin.prof\nprof\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+$(O)/check/17.out: $(O)/boot.img
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/db.keys > $@
+$(O)/check/18.out: $(O)/boot.img
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/vcs.keys > $@
+$(O)/check/19.out: $(O)/boot.img
+	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys > $@
+$(O)/check/20.out: $(O)/boot.img
+	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys > $@
+$(O)/check/21.out: $(O)/boot.img
+	rm -rf $(O)/check/kept; mkdir $(O)/check/kept
+	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \047\047\nexit\n' | timeout 300 $(MACHINE) -net $(O)/check/kept $(O)/boot.img >> $@
+	cat $(O)/check/kept/notes >> $@; wc -c < $(O)/check/kept/numbers | tr -d ' ' >> $@
+	printf 'rc\nfor(f in `{get \047\047}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/check/kept $(O)/boot.img >> $@
+$(O)/check/22.out: $(O)/boot.img
+	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img > $@
+$(O)/check/23.out: $(O)/boot.img
+	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img > $@ 2> $(O)/check/trace
+	cut -c15- $(O)/check/trace | grep -q '^x ' && echo "the wire: a packet lost" >> $@
+$(O)/check/24.out: $(O)/boot.img
+	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img > $@
+$(O)/check/25.out: $(O)/boot.img
+	rm -f $(O)/check/disk.img
+	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
+	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
+	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
+$(O)/check/%.sum: $(T)/%.events $(O)/boot.img
+	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
+	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }
+$(O)/check/tetris.wav.sum: $(O)/boot.img
+	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check/tetris.wav $(O)/boot.img > /dev/null
+	cksum < $(O)/check/tetris.wav > $@; diff $(T)/tetris.wav.cksum $@ || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check/tetris.wav)"; exit 1; }
+$(O)/check/korobeiniki.wav.sum: $(O)/boot.img
+	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check/korobeiniki.wav $(O)/boot.img > /dev/null
+	cksum < $(O)/check/korobeiniki.wav > $@; diff $(T)/korobeiniki.wav.cksum $@ || { echo "tiny-kernel: play: other sounds ($(O)/check/korobeiniki.wav)"; exit 1; }
 
 # tiny-kernel building itself (plan_tiny_self_hosting.md, step 8): booted
 # on a blank disk of 64 MB, the first shell runs tiny-build on
@@ -546,5 +582,5 @@ self: $(O)/boot.img
 clean:
 	rm -rf $(O)
 
-.PHONY: all run check self clean
+.PHONY: all run check check-parts self clean
 .SECONDARY:

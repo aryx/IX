@@ -42,7 +42,28 @@ let firmware, firmware_date =
  * QEMU's number; QEMU's Pi 2 has a cycle counter, by its own clock,
  * and would say 1005) *)
 let mhz = if firmware = "346337" then 0 else Machine.cpu_mhz ()
-let files = [ "cputype", Printf.sprintf "ARM %s %d\n" cpu mhz; "cputemp", "0\n" ]
+
+(* The files, each read when it is read: what the board says now
+ * (Machine.board_sense: the firmware lowers the processor's clock when
+ * the chip is hot or its power low; the author's Pi 2 under a game,
+ * 2026-10-21). cputype's speed the clock measured now, the one measured
+ * at the start when the firmware does not say (the emulators); cputemp
+ * the chip's degrees, 9front's form (0 when not said); cputhrottle,
+ * ix's, the firmware's throttling bits, now and since the boot, in
+ * words.
+ * old: [ "cputype", ...mhz; "cputemp", "0\n" ], fixed at the start *)
+let throttle_words = [ 0, "under-voltage"; 1, "frequency-capped"; 2, "throttled"; 3, "soft-temperature-limit" ]
+
+let throttle () =
+  let b = Machine.board_sense 2 in
+  let said shift = String.concat " " (List.map snd (List.filter (fun (i, _) -> b land (1 lsl (i + shift)) <> 0) throttle_words)) in
+  let line what shift = what ^ ": " ^ (match said shift with "" -> "none" | w -> w) ^ "\n" in
+  line "now" 0 ^ line "since boot" 16
+
+let files = [
+  "cputype", (fun () -> let hz = Machine.board_sense 1 in Printf.sprintf "ARM %s %d\n" cpu (if hz > 0 then hz / 1000000 else mhz));
+  "cputemp", (fun () -> let t = Machine.board_sense 0 in Printf.sprintf "%d.%d\n" (t / 1000) (t mod 1000 / 100));
+  "cputhrottle", throttle ]
 
 let root = { path = 0; vers = 0; typ = Qt_dir }
 
@@ -65,6 +86,6 @@ let init () =
     Dev.dirs = Dev.tab_dirs entries;
     Dev.open_ = Dev.tab_open;
     Dev.read = (fun c n off ->
-      let s = snd (List.nth files (c.qid.path - 1)) in
+      let s = (snd (List.nth files (c.qid.path - 1))) () in
       if off >= String.length s then "" else String.sub s off (min n (String.length s - off)));
   }

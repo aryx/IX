@@ -332,6 +332,14 @@ external font_base : unit -> int = "font_base"
  * On the Pi1, by the mailbox's property tags; the emulators answer 50
  * MHz for 1. *)
 external clock_rate : int -> int = "clock_rate"
+(* What the board says of its processor now, 0 when it does not (the
+ * emulators, the Pi 4's kernel): [board_sense 0] the chip's temperature
+ * in thousandths of a degree; 1 the ARM's clock as measured now, in Hz
+ * (lowered by the firmware when the chip is hot or its power low); 2
+ * the firmware's throttling bits (0 under-voltage, 1 the frequency
+ * capped, 2 throttled, 3 the soft temperature limit; each 16 higher:
+ * since the boot). *)
+external board_sense : int -> int = "board_sense"
 
 (* The board's revision, the firmware's number for which Pi this is
  * (0x900021 an A+, what the emulators say; 2 to 0xf the first Model

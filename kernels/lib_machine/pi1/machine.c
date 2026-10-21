@@ -375,6 +375,32 @@ value clock_rate(value id)
   return Val_long(ok ? (hz & 0x3fffffff) : 0);
 }
 
+/* What the board says of its processor now (the author, 2026-10-21,
+ * TinyCameltry on the Pi 2 slowing from 50 frames a second to 33 after
+ * a while, a reboot making it fast again, nothing of it under QEMU:
+ * the board slowing itself?). [which]: 0 the chip's temperature, in
+ * thousandths of a degree (the tag 0x00030006, get temperature, of
+ * sensor 0); 1 the ARM's clock as measured now, in Hz (0x00030047, get
+ * clock rate measured, of clock 3: the firmware lowers it when the
+ * chip is hot or its power low, whatever config.txt asked); 2 the
+ * firmware's throttling bits (0x00030046, get throttled, its one word:
+ * bit 0 under-voltage now, 1 the ARM's frequency capped now, 2
+ * throttled now, 3 the soft temperature limit now, and bits 16 to 19
+ * the same since the boot). 0 when the firmware does not say (QEMU
+ * answers none of them; a firmware older than the tag neither). */
+value board_sense(value which)
+{
+  int ok;
+  unsigned v = 0;
+  switch (Long_val(which)) {
+  case 0: v = property(0x00030006, 0, 0, &ok); break;
+  case 1: v = property(0x00030047, 3, 0, &ok); break;
+  case 2: property(0x00030046, 0, 0, &ok); v = ok ? vcreq[5] : 0; break;
+  default: ok = 0;
+  }
+  return Val_long(ok ? (v & 0x3fffffff) : 0);
+}
+
 /* A byte of the board's Ethernet address (the tag 0x00010003, get
  * board MAC address: six bytes, the first of the answer's two words
  * and half of the second), or -1 when the firmware does not say. The

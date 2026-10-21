@@ -1,5 +1,9 @@
-(* '#P', the machine's files (principia's arm devarch.c): cputype,
- * cputemp. *)
+(* '#P', the machine's files (principia's arm devarch.c): cputype (its
+ * last word the processor's speed in MHz, measured now when the board
+ * says it), cputemp (the chip's degrees); and cputhrottle, ix's: the
+ * firmware's throttling (under-voltage, the frequency capped,
+ * throttled, the soft temperature limit), now and since the boot. A
+ * board slowing itself under a long load shows there. *)
 
 (* the processor's speed in MHz, measured at the start (Machine.cpu_mhz):
  * cputype's last word, the banner's "cpu0:" line *)

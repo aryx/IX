@@ -21,7 +21,9 @@ FROM ubuntu:24.04
 # - opam
 # - 9base for the references,
 # - SDL2 and libffi for tsdl (mini-qemu's window), 
-# - python3 and curl for version_control/tests/net.sh's http server, 
+# - python3 for the tests written in Python (the fuzzers, the sessions, make
+#   test's and test-lite's; the build does without it) and, with curl,
+#   version_control/tests/net.sh's http server,
 # - GNU's binutils for arm and arm64 for the tiny ARM tests' and the decoders'
 #   reference: a plain objdump knows only its host's
 # - bc for the tests' seconds

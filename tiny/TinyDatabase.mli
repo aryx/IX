@@ -156,6 +156,10 @@
  *    System" (IEEE TKDE, 1994): the iterator model
  *  - E. F. Codd, "A Relational Model of Data for Large Shared Data
  *    Banks" (CACM, 1970): the algebra
+ *  - B. Sotomayor and A. Shaw, "chidb: Building a Simple Relational
+ *    Database System from Scratch" (SIGCSE, 2016): chidb, which
+ *    mini-chidb follows; not a Plan 9 program (principia's database/
+ *    has Plan 9's ndb, and no chidb)
  *)
 
 (* the open file with its tables; a line, parsed *)

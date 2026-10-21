@@ -4,7 +4,14 @@
  * the assembler and the linker, which need the words and not the
  * interpreter, are compiled by tiny-ml and run on tiny-kernel; the
  * interpreter keeps OCaml's 32-bit loads, which the machine's speed is
- * made of. *)
+ * made of.
+ *
+ * In m-ix a word's two directions are two programs' and two types:
+ * mini-ld's Arm encodes its opcodes (5.out.h's), mini-5i's Arm32_isa
+ * decodes a word into a variant of its own, checked against objdump.
+ * Here one type serves both directions, in one file, so the listing's law
+ * (TinyMachineCPU's: a listing reassembled gives the same words) is a
+ * test of this file. *)
 
 (* The instructions, and their words (an immediate is a word's low 16
  * bits, encode says what does not fit); the ALU's operations and the

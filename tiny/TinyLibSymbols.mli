@@ -9,7 +9,14 @@
  * TinyBrowser.L12, tiny-c's tm.L51) is not a function, and is left
  * out: an address in it is in the function before it. An assembly
  * loop's labels (row_copy2) are kept, as they say which loop. tiny-ml's
- * functions are named TinyBrowser.f151_browse: shown as browse. *)
+ * functions are named TinyBrowser.f151_browse: shown as browse.
+ *
+ * m-ix has no twin of it: mini-ld writes no symbol table. Plan 9's 5l
+ * writes one in binary after the image (principia's linkers/5l,
+ * debugging.c: a symbol a value, a type letter, T text, D data, B bss,
+ * and its name; then a table from pcs to source lines), which libmach
+ * reads for db and acid. Here a label is a line, as in the map: no
+ * kind, no source lines, nothing to decode. *)
 
 (* [local name]: whether it is a label a compiler made inside a function *)
 val local : string -> bool

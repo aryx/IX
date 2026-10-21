@@ -24,6 +24,16 @@
  *
  * Errors are sam's: "no operand for `*'", "unmatched `('", "malformed
  * `[]'". Bytes, not UTF-8's characters: . takes one byte.
+ *
+ * Its twin is m-ix's Regex (lib_core), mini-ed's and mini-grep's,
+ * which follows libregexp (principia's lib_strings/libregexp/:
+ * regcomp.c, regexec.c) to give its answers, by the same algorithm, a
+ * list of threads advanced a character at a time, and decodes UTF-8.
+ * sam has a matcher of its own (principia's editors/sam/regexp.c, its
+ * execute and, for a search backward, bexecute), lists of threads too.
+ * Ours is a backtracker, the shorter program, kept linear by the memo;
+ * where libregexp's answer comes from the order of its list (the
+ * corner cases in Regex.mli), this one's may differ.
  *)
 
 (* a pattern, parsed *)

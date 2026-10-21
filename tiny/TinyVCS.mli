@@ -152,6 +152,11 @@
  *  - R. C. Merkle, "A Digital Signature Based on a Conventional
  *    Encryption Function" (CRYPTO, 1987): the tree of hashes
  *  - B. Cohen, patience diff (2005)
+ *  - git9 (Ori Bernstein, 2019), which mini-git follows: principia's
+ *    version_control/git9/, its programs in C and its commands rc
+ *    scripts (commit.rc, merge.rc...); its diff and merge3 are
+ *    version_control/diff/'s, Hunt and McIlroy's diff (Stone's
+ *    algorithm, diffreg.c) where this file has Myers'
  *)
 
 (* a command and its arguments, done in the repository found from the

@@ -83,6 +83,10 @@
  *                                     a square of 4 by 4
  *     p dst x y n, n bytes            a row of pixels, its left end at (x, y)
  *
+ * They are a few of Plan 9's own draw messages (principia's
+ * kernel/devices/screen/drawmesg.c has 27), f, d and s keeping their
+ * letters; what is dropped of them is said above.
+ *
  * Exercises:
  * - a row copied a word at a time where it can (draw.tm's row_copy);
  * - ellipses and filled polygons, for the playground's shapes;

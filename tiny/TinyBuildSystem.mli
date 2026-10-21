@@ -163,6 +163,10 @@
  *    cycles are reported earlier, by the walk that builds the graph
  *  - Andrey Mokhov, Neil Mitchell and Simon Peyton Jones, "Build
  *    Systems a la Carte" (ICFP 2018): verifying traces
+ *  - principia's builders/mk, mk's C, which mini-mk follows: graph.c
+ *    makes the graph (with cyclechk and ambiguous, the checks above),
+ *    and mk.c's loop calls work on the whole graph again after each
+ *    waitup, the re-walk this file does without
  *)
 
 (* a rule of the file; a target with what it is made from and how *)

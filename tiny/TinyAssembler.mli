@@ -71,6 +71,19 @@
  * plan_tiny_self_hosting.md, a TinyAssembler.ml for arm64, 7a and 7l
  * made one, in git's history.)
  *
+ * Its twin, mini-asm (assembler/), is Plan 9's 5a and 7a (principia's
+ * assemblers/5a), and the two are opposites. mini-asm encodes nothing:
+ * it parses Plan 9's syntax (TEXT, GLOBL, DATA, the destination last)
+ * and marshals the instructions as it read them, the linker choosing
+ * each one's words (TinyLinker's plan9-is-cleaner compares the two
+ * roads). Here the words are made at once and the object is text, a
+ * Unix assembler's way, which costs little since an address goes in
+ * five kinds of place (word, abs, hi, lo, pc), not a table per
+ * machine. The syntax is ours too, the RISC manuals' (a label and a
+ * colon, the destination first, gas's .word and .align, a ; comment);
+ * no #include or #define, no TEXT with its frame's size: a function is
+ * a label, its frame the compiler's instructions.
+ *
  * cs-history:
  * The first assemblers assembled and loaded in one step: the EDSAC's
  * initial orders (David Wheeler, 1949) read orders punched on paper

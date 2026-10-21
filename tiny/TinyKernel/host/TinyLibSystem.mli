@@ -21,6 +21,14 @@
  * nothing: no environment but a PATH, no signal, no terminal to ask
  * about.
  *
+ * m-ix has the same seam one level lower: its tools (mini-rc,
+ * mini-cat...) stand on lib_core (Cap, FS, Procs) over OCaml's Unix,
+ * and lib_core/system/ has that Unix twice, by Linux's system calls
+ * and by Plan 9's (system/plan9/), so one tool runs on Linux and on
+ * mini-9pi. Here the seam is the tools' own interface, cut to what
+ * tiny-kernel gives, so that a tool cannot ask the host for what the
+ * other system lacks.
+ *
  * The capabilities are the host's: there, a function that reaches the
  * system takes the object that allows it, and OCaml checks it. tiny-ml
  * reads them and forgets them.

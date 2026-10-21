@@ -109,6 +109,14 @@
  * - a debugger by env: breakpoints as a word decode does not know,
  *   caught by illegal, the program's registers and memory then shown.
  *
+ * The twin, mini-5i, keeps its decoded words too, by address (Cpu): a
+ * program that wrote over its code would run the old one, and
+ * mini-qemu's loop empties the cache when a mapping changes. Here they
+ * are kept by the word itself ([keep_decoded], in the .ml), which no
+ * store can make wrong. mini-5i also has a second execute for what a
+ * kernel runs most, which allocates nothing (Arm32_fast), Arm32's
+ * staying the definition; here [step] is both.
+ *
  * cs-history:
  * Knuth designed MIX in the 1960s for The Art of Computer Programming
  * so that the book's programs would be real ones with costs one can

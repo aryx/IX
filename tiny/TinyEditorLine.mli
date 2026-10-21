@@ -64,7 +64,13 @@
  * matcher is TinyLibRegex's, which grep uses too: a small backtracker
  * that returns the leftmost-longest match like sam's, with a memo of
  * (node, position) pairs. libregexp gives different answers in some
- * corner cases (see mini-ed's Regex.mli).
+ * corner cases (see lib_core's Regex.mli, which mini-ed uses).
+ *
+ * The original is principia's editors/sam/ (mini-ed's is editors/ed/):
+ * its parallel changes are file.c's log, the changes a command makes
+ * kept aside and applied together at its end, as undo applies its own.
+ * [commit] is the same trick on a list of triples; sam pages its text
+ * and its logs to a temporary file, where here the text is one string.
  *
  * Exercises. Each is cheap because a command's changes are a list,
  * made against the old text and applied together:

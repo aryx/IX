@@ -135,6 +135,18 @@
  * A number of IL's has 32 bits and tiny-ml's int 31: both ends here
  * start small and stay under 2^30; a packet with more is not read.
  *
+ * Against its twin, mini-9pi's stack (kernels/9pi/network/: Ip, Icmp,
+ * Udp, Tcp, and Devip's files), which speaks to the Internet: there,
+ * Ethernet and ARP, routes, UDP for names and the time, TCP (the
+ * twin of principia's tcp.c, a stream of bytes; no IL), and a program
+ * reaches it by Plan 9's files, /net/tcp/clone, its ctl and its data,
+ * which libc's dial writes. Here, IL alone, since a request, a block
+ * or a drawing message is a message already, and a program reaches it
+ * by two system calls of TinyKernel's, dial(address, port) and
+ * listen(port), each giving a descriptor of messages; port 0 is the
+ * echo (ping). The world, which speaks TCP, is reached through the
+ * wire's other end (TinyMachinePeer, a translator).
+ *
  * cs-history:
  * IP is Cerf and Kahn's (1974), split from TCP in 1978 so that what
  * needs no reliability (a voice, a question and its answer) need not

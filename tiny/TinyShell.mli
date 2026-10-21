@@ -125,7 +125,9 @@
  * never scanned more than once"; D. M. Ritchie and K. Thompson, "The
  * UNIX Time-Sharing System" (CACM, 1974), for fork and exec as two
  * separate calls, between which the child sets up its own file
- * descriptors, and for the shell as an ordinary program. *)
+ * descriptors, and for the shell as an ordinary program; principia's
+ * shells/rc, rc's C, which mini-rc follows and this file knows only
+ * through mini-rc. *)
 
 (* the commands of a text, each run once it is read: the lexer, the
  * parser and [run] at work, without the command line around them *)

@@ -91,6 +91,14 @@
  * instruction is counted: the machine is slow enough for that to cost
  * little more than running it, and two runs give the same profile.
  *
+ * Plan 9's emulators had the idea first: vi and 5i count every
+ * instruction fetched by its address and print, by the program's
+ * symbol table, each function's count and share ($ip: principia's
+ * machine/5i, stats.c's iprofile, its columns cycles, %, symbol and
+ * file); mini-5i left it out. What is ours: the counts a file of their
+ * own, so that a run can be taken off another (-diff), and a machine
+ * with a kernel, whose counts and each program's are told apart.
+ *
  * cs-history:
  * Unix's prof (1973 or so) counted where the program was at each tick
  * of the clock, the kernel adding one to a histogram of addresses

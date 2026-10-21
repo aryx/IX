@@ -199,6 +199,18 @@
  * compiler that compiles ix itself is the other one, mini-ml (with
  * Typing, Resolve, and one back end per machine).
  *
+ * What it shares with its twin, and where it parts: mini-ml's simple
+ * back end (Gen) is the same design, a stack machine kept in
+ * registers, the values on a stack of their own, Cheney's collector in
+ * C (plan_ml.md's decision 5 is both's), and mini-ml has no functor
+ * either. Its parser is ocamlyacc's, tiny-ml's recursive descent; it
+ * writes Plan 9's assembly for arm and arm64, and has -O and an SSA
+ * back end with a register allocator, where tiny-ml has one machine
+ * and no optimization. One road goes the other way: mini-ml has no
+ * compiled interface (a unit's .mli is read again by each unit that
+ * names it), tiny-ml writes M.tmi, OCaml's .cmi, with where each value
+ * is, which an .mli does not say.
+ *
  * cs-history:
  * ML is the Meta Language of Edinburgh's LCF, a proof assistant (Robin
  * Milner and others, 1973 to 1978): it was the language in which users

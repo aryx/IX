@@ -54,6 +54,12 @@
  * the wording of each program's errors: here they are all "tool: file:
  * reason". The plan, and what was found on the way:
  * docs/plans/done/plan_tiny_utilities.md.
+ *
+ * The originals are principia's utilities/, Plan 9's C (files/cat.c,
+ * misc/wc.c, byte/xd.c, text/grep/...), known here through m-ix's
+ * twins. ln has neither: Plan 9 has no second name for a file, and
+ * tiny-kernel's tree has (ls -l counts them), so ln is ours, three
+ * lines over TinyLibSystem.link.
  *)
 
 type caps =

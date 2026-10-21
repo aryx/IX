@@ -23,6 +23,11 @@
  *
  * This is the part of the web that the tiny machine does not do itself:
  * the encrypted half (plan_tiny_browser.md, section 3). Everything from
- * the first < of the page on is the machine's. *)
+ * the first < of the page on is the machine's.
+ *
+ * In m-ix the same work is mini-curl's (networking/'s Curl, on the
+ * same lib_networking), which runs on mini-9pi itself, and the
+ * pictures are decoded by the browser there; here both are the host's,
+ * so tiny-kernel has no TLS and no decoder of PNG or JPEG. *)
 
 val main : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. > -> int

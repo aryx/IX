@@ -44,6 +44,19 @@
  *   was, and the split checked byte for byte on make check's images
  *   (plan_tiny_self_hosting.md, step 3).
  *
+ * Its twin, mini-ld (linker/), is Plan 9's 5l and 7l (principia's
+ * linkers/5l), goken's output byte for byte. Kept: the three classical
+ * jobs, resolution, allocation and relocation. Dropped, as what 5l
+ * does for its machine and its system: choosing and encoding the
+ * instructions (the assembler did), the code laid along its flow
+ * (mini-ld's Follow), literal pools, the prologues a linker writes for
+ * a TEXT, libraries (mini-ar's archives, above), ELF's and Mach-O's
+ * headers: the a.out's is three words of its own. Added: the sweep,
+ * which neither 5l nor mini-ld has (a library's member is taken
+ * whole); and -s writes the labels as text lines, where 5l writes a
+ * binary table (debugging.c's putsymb: a value, a type letter, a
+ * name) and a table of the pcs' source lines beside it.
+ *
  * plan9-is-cleaner:
  * Plan 9's assemblers do not encode: an object holds the instructions
  * as parsed, and the linker, which knows every address, chooses each

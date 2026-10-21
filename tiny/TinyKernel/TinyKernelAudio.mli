@@ -33,6 +33,16 @@
  * (TinyPlay.ml).
 
  *
+ * Its twins are mini-9pi's /dev/audio (kernels/9pi/'s Devaudio, Plan
+ * 9's audio(3)) and lib_audio: there the device takes samples only, 16
+ * bits, two ears, 44,100 a second, and one program at a time (an open
+ * while another has it fails, Einuse, as in principia's devaudio.c),
+ * and a program mixes and makes its sounds itself, by lib_audio's Sfx
+ * and Mixer. Ours: the recipe and the mixing moved into the kernel, so
+ * each open of /dev/audio is a voice and several programs are heard at
+ * once; a byte a sample, one ear, 8,000 a second, which a game's beeps
+ * and a melody need and no more.
+ *
  * cs-history:
  * This is a sound chip's bargain: the Atari 2600's TIA (1977), General
  * Instrument's AY-3-8910 (1978), the Commodore 64's SID (1982), the

@@ -30,6 +30,11 @@
  * translation), a connection at a time, and what Plan 9's machines
  * needed a gateway for when the world did not speak IL.
  *
+ * mini-qemu has the same way out inside itself (raspberry/'s Usernet,
+ * QEMU's slirp: the guest's TCP answered, and a socket of the host's
+ * opened for each of its connections); here it is a program apart, so
+ * that tiny-machine links no socket.
+ *
  * Not compiled by mini-ml (it asks the system for names: getaddrinfo),
  * and not in t-ix's count of tiny programs: a helper of the host's. *)
 

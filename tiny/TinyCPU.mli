@@ -34,6 +34,15 @@
  * read an ELF header to get the same three answers, because that is
  * what the Linux kernel does.
  *
+ * mini-5i follows Plan 9's 5i (principia's machine/5i), which is also
+ * a debugger, with db's commands (:b, :c, :s, cmd.c), and a profiler
+ * ($ip: every instruction counted by its address, then summed by
+ * function, stats.c's iprofile). Here the two are programs of their
+ * own: tiny-cpu writes the counts (-prof) for tiny-prof, and the
+ * debugger is tiny-kernel's debug (TinyDebugger), not the emulator's.
+ * mini-5i answers a whole system's calls, Linux's or Plan 9's; tiny-cpu
+ * three, what start.tm needs.
+ *
  * Status: this is the first step for running a program on this
  * machine. Programs compiled by tiny-c run here with its libc (the
  * three calls made by start.tm are the three calls provided here).

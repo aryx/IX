@@ -1,22 +1,22 @@
-# mini-troff, built by ix's tools: pic's grammar by mini-yacc; the
-# program's own units, which are in folders (doc, roff, pic, ixdoc,
-# latex), linked with the libraries (mkfiles/mklibs): lib_graphics's
-# Pdf_write, its fonts' widths and names and its pictures' readers (PNG,
-# JPEG, GIF), lib_compression's Zlib
-# old: those units compiled here, each found by its name in its directory
+# typesetting/troff as a library (mkfiles/mklib): the typesetter, for
+# mini-man; and mini-troff, its Main linked with it. Its units are in
+# folders (doc, roff, pic, ixdoc, latex), pic's grammar made by
+# mini-yacc beside the objects; it needs lib_graphics's Pdf_write, its
+# fonts' widths and names and its pictures' readers (PNG, JPEG, GIF),
+# lib_compression's Zlib
+# old: a program's mkfile, its units compiled here and mini-man linking
+# their objects, naming each and each of the folders
 TOP=../..
 <$TOP/mkfiles/mkconfig
-D=$B/typesetting/troff
+LIB=typesetting/troff
+DIRS=. doc roff pic ixdoc latex
+NEEDS=lib_compression lib_graphics
+# (each before the ones that name it)
+UNITS=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
+<$TOP/mkfiles/mklib
+
 LIBDIRS=lib_compression lib_graphics
 <$TOP/mkfiles/mklibs
-DIRS=. doc roff pic ixdoc latex $D
-INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D $LIBI $STDI
-# (each before the ones that name it; mini-man links them too)
-SRC=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
-LIBOBJS=${SRC:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly} $LIBSRC
-LIBS=$LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-
 all:V: $D/mini-troff
 
 # pic's grammar, by mini-yacc: made beside the objects, and there
@@ -26,13 +26,6 @@ $D/Pic_parser.ml: pic/Pic_parser.mly
 	$YACC -b $D/Pic_parser pic/Pic_parser.mly
 $D/Pic_parser.$O $D/Pic_lexer.$O $D/Pic.$O: $D/Pic_parser.ml
 
-$D/%.$O: $LOCAL
-	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
-$D/mini-troff: $D/Main.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $SRC Main Std_exit -o $D/mini-troff.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBA $LIBOBJS $D/Main.$O $STDEND
-
-clean:V:
-	rm -rf $D
+$D/mini-troff: $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA $D/lib.a` Main Std_exit -o $D/mini-troff.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBA $D/lib.a $D/Main.$O $STDEND

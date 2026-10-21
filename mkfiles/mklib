@@ -16,8 +16,10 @@
 D=$B/$LIB
 NEEDI=`{for d in $NEEDS; do cat $B/$d/dirs 2> /dev/null || echo "mklib: $d's library not built: the libraries first (mini-mk libs at the top)" >&2; done | awk '!seen[$0]++'}
 NEEDD=`{for d in $NEEDS; do echo $B/$d/dirs; done}
-# (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too)
-INCLUDES=${DIRS:%=-I ./%} $NEEDI $STDI
+# (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too; $D: a unit
+# made there, by mini-yacc or mini-lex, the mkfile saying how, as
+# typesetting/troff's pic grammar)
+INCLUDES=${DIRS:%=-I ./%} -I $D $NEEDI $STDI
 OBJS=${UNITS:%=$D/%.$O}
 LOCAL=`{for d in $DIRS; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
 
@@ -28,7 +30,7 @@ lib:V: $D/lib.a $D/dirs
 
 $D/%.$O: $LOCAL
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	for d in $DIRS $D; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
 	$ML $INCLUDES -o $target $f
 $D/lib.a: $OBJS mkfile
 	rm -f $target
@@ -40,7 +42,7 @@ $D/lib.a: $OBJS mkfile
 # written beside its archive
 $D/dirs: mkfile $NEEDD
 	mkdir -p $D
-	{ for d in $DIRS; do echo -I `cd $d && pwd`; done
+	{ for d in $DIRS $D; do echo -I `cd $d && pwd`; done
 	  set -- $NEEDI; while [ $# -gt 0 ]; do echo $1 $2; shift 2; done; } > $target
 
 clean:V:

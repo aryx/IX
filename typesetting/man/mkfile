@@ -1,14 +1,17 @@
-# mini-man, built by ix's tools: mini-troff's units (made there first)
-# and the libraries they write a PDF file with, and the program
+# mini-man, built by ix's tools: the program, linked with the
+# typesetter's library (typesetting/troff) and the ones it writes a PDF
+# file with
+# old: mini-troff's 26 units and 7 directories named here, their
+# objects taken from troff's build
 TOP=../..
 DIR=typesetting/man
 PROG=mini-man
 SRC=Main
-LOCAL=`{ls *.ml ../troff/*.ml ../troff/*.mli ../troff/*/*.ml ../troff/*/*.mli}
+LOCAL=`{ls *.ml}
 GEN=
-LIBI=-I ../troff -I ../troff/doc -I ../troff/roff -I ../troff/pic -I ../troff/ixdoc -I ../troff/latex -I $TOP/_mk/$O/typesetting/troff
-LIBDIRS=lib_compression lib_graphics
-LIBUNITS=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
+LIBI=
+LIBDIRS=lib_compression lib_graphics typesetting/troff
+LIBUNITS=
 <$TOP/mkfiles/mkconfig
-LIBOBJS=${LIBUNITS:%=$B/typesetting/troff/%.$O}
+LIBOBJS=
 <$TOP/mkfiles/mkprog

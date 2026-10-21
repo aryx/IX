@@ -172,7 +172,7 @@ ix() {
   mk lib_crypto/tests & pids+=($!)
   mk apps/music/play & pids+=($!)
   (mk networking && mk browsers/lynx) & pids+=($!)
-  (mk typesetting/troff && mk typesetting/man) & pids+=($!)
+  mk typesetting/man & pids+=($!)
   mk browsers/javascript & pids+=($!)
   mk browsers/engine/tests & pids+=($!)
   mk browsers/netscape & pids+=($!)

@@ -15,7 +15,7 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 # here; mini-mk libs: the libraries alone), and the assembler (the others read its
 # objects), then the rest side by side, each directory a mini-mk; the
 # two that take another's objects after it (mini-ar the linker's,
-# mini-bc mini-dc's machine, mini-man mini-troff's units, and the
+# mini-bc mini-dc's machine, and the
 # playground's programs of apps/ and examples/ the games' libraries: games/mkgames). NPROC is each mini-mk's own jobs.
 # (old: one directory after the other, 3 minutes:
 #   for d in $DIRS; do (cd $d && mini-mk O=$O) || exit 1; done
@@ -29,9 +29,9 @@ OS=linux
 PLATFORMS=`{case $OS in plan9) echo draw software;; *) echo ppm;; esac}
 LIBS=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
  lib_networking/netcode lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
- browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi
+ browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 FIRST=$LIBS assembler
-AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
+AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
 all:V: libs
 	(cd assembler && mini-mk O=$O) || exit 1
 	pids=
@@ -41,7 +41,6 @@ all:V: libs
 	done
 	(cd linker && mini-mk O=$O && cd tools && mini-mk O=$O) & pids="$pids $!"
 	(cd utilities/calc/dc && mini-mk O=$O && cd ../bc && mini-mk O=$O) & pids="$pids $!"
-	(cd typesetting/troff && mini-mk O=$O && cd ../man && mini-mk O=$O) & pids="$pids $!"
 	(cd games && mini-mk O=$O && cd ../editors/drscheme && mini-mk O=$O && cd ../../examples && mini-mk O=$O && cd ../apps/office && mini-mk O=$O) & pids="$pids $!"
 	for d in $KERNELS; do (cd $d && mini-mk O=$O) & pids="$pids $!"; done
 	for p in $pids; do wait $p || exit 1; done

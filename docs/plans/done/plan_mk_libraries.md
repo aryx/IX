@@ -186,4 +186,16 @@ A program's (networking's):
    listing troff's 26 units and its directories; the archive in
    troff's `lib` target, mini-troff made by `all` beside it, as
    browsers/javascript's mini-node. Small, mostly tidying.
+   Done 2026-10-21 (the author: "let's do 2"): its 26 units, CLI
+   among them (mini-man's `CLI.typeset`), Main alone outside; the
+   library built by the top mkfile's `libs`, after lib_graphics, and
+   mini-man in the loop with the others (no longer after troff), as
+   in tests/lite.sh and kernels/9pi's IXDIRS. mklib takes a unit made
+   in `$D` (pic's grammar, mini-yacc's): looked for there last, `-I
+   $D`, and `$D` in the library's dirs. mini-man's old `-I
+   $TOP/_mk/$O/...` was not `$B`'s (tests/lite.sh's `_mk/lite`, OS=plan9's
+   `_mk/5-plan9`). Checked: sample.sh and latex.sh (21 books, 0
+   failures) on mini-mk's mini-troff and mini-man, make test-lite (69
+   jobs, 0 failures), O=5 OS=plan9's libs and mini-man, the top
+   mini-mk when nothing changed 2.1 s.
 

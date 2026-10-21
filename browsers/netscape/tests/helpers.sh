@@ -25,7 +25,7 @@ done
 run() { HOME=$T/home PATH=$T/bin:$PATH $N worker=wait -fixed-time 1000 "$@" > /dev/null 2>&1; }
 said() { cat $T/said 2>/dev/null | sed "s#$T#T#g; s#mini-netscape-[0-9-]*#F-#g" | tr '\n' ';'; rm -f $T/said; }
 
-run -dump-frame 6 $T/a.ppm profile=off url=browsers/netscape/tests/pages/helpers.html -script 'at(-238;364):1-3,click:2'
+run -dump-frame 9 $T/a.ppm profile=off url=browsers/netscape/tests/pages/helpers.html -script 'at(-238;364):4-6,click:5'
 check "a link to YouTube, clicked: mpv given the address" "$(said)" "mpv https://www.youtube.com/watch?v=x;"
 run -dump-frame 3 $T/b.ppm profile=off url=lib_graphics/pdf/tests/data/shapes.pdf
 check "a PDF file: mini-page given a file of its bytes" "$(said)" "mini-page /tmp/F-shapes.pdf;%PDF-;"

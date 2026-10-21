@@ -8,6 +8,13 @@
  * changing a program: one text, one window, and what you type goes
  * where the cursor is.
  *
+ * mini-emacs is written after efuns (Fabrice Le Fessant's Emacs in
+ * OCaml, 1998): its text a gap buffer (its Text), a key looked up in
+ * keymaps, each key a command, a function on the editor's structure.
+ * This one keeps Emacs's keys and their names, but a key
+ * is a case of [key]'s match, with no keymap; a command's name is
+ * only the keys it stands for (M-x below); the text is lines (below).
+ *
  * The text is stored as its lines, split at the line of the cursor:
  *
  *     above    the lines before the cursor's line, nearest first

@@ -148,7 +148,9 @@
  * Concurrent Window System" (2000), on a window system as a
  * multiplexer that gives programs the same interface it uses itself;
  * N. Wirth and J. Gutknecht, "Project Oberon" (1992), for the other
- * road, where windows are part of the system. *)
+ * road, where windows are part of the system; principia's
+ * windows/rio/ (rio's C: wm.c, fsys.c, terminal.c...) and xix's rio in
+ * OCaml, which mini-rio follows, module by module. *)
 
 (* A program: its last lines are its loop, and it gives nothing to
  * another file. OCaml only checks it (its system calls are the

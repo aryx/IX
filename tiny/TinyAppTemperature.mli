@@ -31,6 +31,14 @@
  *   trigger a callback, and the program would have to stop that echo
  *   itself.
  *
+ * Its twin, examples/Gui7Temperature.ml (from the author's
+ * playground), keeps the same model, the two texts, but is written in
+ * lib_gui's immediate way: both fields are asked for at every frame,
+ * and the one typed in is the one whose text came back changed, with
+ * no message type; its numbers are floats, shown with one decimal.
+ * Here it is TinyLibGUI's model, view and update: the field typed in
+ * is said by its message (above).
+ *
  * What is left out: fractions (tiny-ml has no floats, so we round to
  * the nearest whole number: 34 Fahrenheit gives 1 Celsius, and 1
  * Celsius gives 34), showing a field in red when its text is not a

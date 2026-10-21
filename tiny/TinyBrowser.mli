@@ -49,6 +49,24 @@
  * quote becomes a straight one, an accented letter loses its accent,
  * and anything else becomes ?.
  *
+ * What is ours, against the twins: mini-netscape reads a page into a
+ * tree (html's Dom), styles it by its style sheets, lays out boxes and
+ * runs its scripts; even mini-lynx, the text one, builds that tree
+ * first and walks it (Line_mode's render). Here the tree is never
+ * made: a page costs what its lines cost, and a page cut anywhere
+ * reads the same. Dropped with it: style sheets (but a display:none,
+ * hidden), scripts, forms, a page's colours and fonts, anything but
+ * ASCII.
+ *
+ * others:
+ * Plan 9's mothra (principia's browsers/mothra/) reads a page the same
+ * way: a table of the tags (html.syntax.c), a stack of looks pushed at
+ * a tag and popped at its end, and each word given at once to
+ * libpanel's rich text (rdhtml.c's plrtstr), with no tree. Its tables
+ * are rows of cells one after the other, not columns. abaco, which
+ * came after it, reads a page with libhtml's parsehtml into a list of
+ * items, a table one of them, sized as a whole (abaco's html.c).
+ *
  * cs-history:
  * Mosaic (1993) displayed a page progressively as it came over the
  * modem, and this browser works the same way: there are no style sheets

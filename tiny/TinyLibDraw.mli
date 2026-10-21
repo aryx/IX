@@ -31,6 +31,23 @@
  * place, and everything above them is tested by dune before
  * tiny-machine ever runs it.
  *
+ * Its twin in m-ix is lib_graphics's Draw and Display (libdraw's, by
+ * way of xix): a Display that keeps the messages until [flush], images
+ * as records, numbers of four bytes. What is ours:
+ *
+ * - {b A message is a string returned}: no Display, no Image record,
+ *   no buffer of the library's; the program concatenates them and
+ *   writes them when it wants them shown.
+ * - {b Numbers of two bytes}, where libdraw's are four: a screen of
+ *   640 by 480 needs no more.
+ * - {b Eight letters} (a f d l s t p c), the operations
+ *   TinyKernelGraphics keeps.
+ * - {b The messages are parsed too} ([d_shape]), which libdraw has no
+ *   need of: on Plan 9 a window's program writes to the kernel's draw
+ *   device itself, finding its window's image by the name in
+ *   /dev/winname, and rio never reads its messages. Here TinyWindows
+ *   forwards them, renumbered.
+ *
  * plan9-is-cleaner:
  * Drawing by writing bytes to a file comes from Plan 9: its draw
  * device is a directory in /dev, and libdraw turns each call into a

@@ -13,6 +13,16 @@
  * three functions. There is no loop, no clock and no drawing in this
  * file.
  *
+ * Its twin is m-ix's games/puzzle/Tetris.ml, on lib_playground: the
+ * author's playground's port of elm-flatris, in Elm's way, where the
+ * well is the list of its full cells, a piece four cells turned by
+ * computing their places again, and the falling piece's height a
+ * float, for the speed of its fall. What is ours is below: the
+ * rotations a table of bits, the well an array, integers only (a
+ * level's speed is a number of frames); a turn that does not fit is
+ * tried one cell to each side, where the twin tries two. Plan 9 has
+ * its own, games/4s (not in principia; from memory).
+ *
  * The parts that are not obvious:
  *
  * - {b Each rotation of a piece is 16 bits}: a 4 by 4 square, one

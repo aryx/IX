@@ -31,6 +31,13 @@
  *   have only 31 bits; this way the answers are the same on the host,
  *   whose integers have 63 bits.
  *
+ * It has no twin in m-ix: lib_gui's small programs are the 7GUIs
+ * (examples/Gui7Counter.ml and the others), and a calculator is not
+ * one of them. Plan 9's calculators are text programs, hoc and dc
+ * (principia's utilities/calc/); this one follows the pocket
+ * calculator instead (below), the smallest program that is all
+ * buttons, written for TinyLibGUI.
+ *
  * What is dropped: fractions (tiny-ml has no floats), a sign key, a
  * memory, deleting the last digit, priorities and parentheses.
  *

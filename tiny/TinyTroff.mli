@@ -36,6 +36,20 @@
  * parts' size), the pages one under the other, as the office shows
  * them. As PDF, a page each, all the size of the largest.
  *
+ * Its twin is mini-troff (typesetting/), which reads what was written
+ * for troff (a manual page's and a paper's macros, tbl, pic), LaTeX,
+ * and the same Markdown's lines, into one document (Doc) laid out
+ * for a terminal or a PDF in Times. What is ours: one format only,
+ * the office's, read by the office's functions, so there is no
+ * document type of troff's own, no roff and no LaTeX; a part kept at
+ * its place on its page, where mini-troff fills a flow of
+ * paragraphs; HTML, which mini-troff does not write; PDF in Courier,
+ * one width for every character, so no font's metrics are needed.
+ * Plan 9's troff (principia's typesetting/troff/) is the original of
+ * both; Plan 9 makes HTML with other programs, troff2html from
+ * troff's output and htmlroff from -ms input (principia's
+ * typesetting/).
+ *
  * cs-history:
  * troff (Joe Ossanna, 1973) made the documents of Unix from a text
  * with requests, for the screen (nroff) and for the phototypesetter;

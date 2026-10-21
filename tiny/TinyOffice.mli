@@ -117,6 +117,19 @@
  * This file uses no system calls: the program around reads the keys and
  * the mouse, draws and writes the file.
  *
+ * mini-office is the author's playground's apps/office/TinyOffice.ml,
+ * brought to ix under that name: a part there is a record of
+ * functions (Component), a file a value marshalled behind a line
+ * (Saved), the shapes floats that move, scale and rotate, the letters
+ * Hershey's strokes, a text a piece table (lib_gui's Text_edit), the
+ * menus Gui's, in immediate mode, and a PDF written from the view.
+ * What is ours, against it: an object's kind a word and its
+ * data a string, a match on the kind where a part has its functions;
+ * the file text in mini-troff's format, so emacs and troff read it
+ * with nothing of the office's; integers in pixels, the kernel's one
+ * font and its looks; the page drawn by run_canvas where it changed;
+ * PDF left to tiny-troff.
+ *
  * What is left out, for now: charts other than bars (a pie, lines),
  * moving a drawing's shapes once drawn, a sheet's floating point, its
  * other functions than sum, and formulas that follow a cell moved, a

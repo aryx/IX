@@ -68,8 +68,8 @@ program Linux's bytes; Status below).
    on arm under an emulator, or on a Pi1 (700 MHz), to be measured at
    stage 2: lib_core is 69 units, ix 2,000. A build of all of ix there may be hours; a build of one
    program is the goal first.
-5. **The tree on the card**: `/src/ix/` as the repository (the mkfiles
-   name `$TOP/...`), `/src/ix/_mk/5-plan9/` for what is made. What
+5. **The tree on the card**: `/src` as the repository (the mkfiles
+   name `$TOP/...`), `/src/_mk/5-plan9/` for what is made. What
    mini-mkfs is given: the list of `tests/ix_files.sh`, not 2,000
    arguments on a command line.
 6. **The same bytes.** A program built on the card must be the one
@@ -93,13 +93,13 @@ program Linux's bytes; Status below).
    `cmp`'d. Measured: the seconds and the megabytes of one unit.
 3. **mini-mk on the card, and a program built by its mkfile.**
    `Unix.utimes` and what follows; a small program's directory in
-   `/src/ix/` (`utilities/misc`: mini-echo) with `mkfiles/`, built by
+   `/src` (`utilities/misc`: mini-echo) with `mkfiles/`, built by
    `mk`, `cmp`'d. Then lib_core built there (69 units, the C runtime,
    the C library).
 4. **The tools built on the card**: mini-asm, mini-ld, mini-cc, mini-ml
    by the mkfiles, each `cmp`'d with Linux's; then mini-ml built by
    the mini-ml built there (the fixed point, as on Linux).
-5. **All of `/src/ix`**, and the kernel: mini-9pi's image built under
+5. **All of `/src`**, and the kernel: mini-9pi's image built under
    mini-9pi, booted. What a session of it costs in time decides what
    of it is a test.
 
@@ -114,10 +114,10 @@ program Linux's bytes; Status below).
   there?
 - **The file system**: stay with xv6's (simple; its limits to be
   read), or is this the day for another (Plan 9's kfs, cwfs)?
-- **`/src`'s layout**: `/src/ix/...` as the repository, with today's
-  five files moved into it where they come from
-  (`/src/ix/kernels/9pi/tests/hello/Hello.ml`), or a flat `/src` of
-  examples beside it?
+- **`/src`'s layout**: decided, 2026-10-21: `/src` is the repository,
+  on make card-self's card (the author: "the code should be put under
+  /src/ on the card, like I think we do for t-ix"); the everyday card
+  keeps its five small examples there.
 - **The sources on the card and in git**: a card built from a commit;
   a file changed on the card with emacs comes back how (mini-git is
   there, `version_control/`)?
@@ -174,7 +174,8 @@ program Linux's bytes; Status below).
     copy of the tree, against sh's: the same 1,306 files, the same
     bytes but the 20 libraries' `dirs` (each copy's path); make
     test-lite, 69 jobs, 0 failures; xv6fs.sh.
-  - **`make card-self`**: a card of 1 GB with `/src/ix` (the
+  - **`make card-self`**: a card of 1 GB with `/src/ix` (`/src` since,
+    below; the
     repository but docs/: 4,894 files), the whole toolchain, and room
     for a build (346 MB on Linux for mini-9pi's programs); the
     everyday card stays 128 MB.

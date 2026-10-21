@@ -137,7 +137,12 @@ let resolve (cmd : string) (env : string array) : string =
 let spawn caps ~shell ~env ~args ~stdin ~stdout =
   let argv = Array.of_list (shell @ shell_flags shell @ args) in
   let prog = resolve (List.hd shell) env in
-  match CapUnix.fork caps () with
+  (* Plan 9's mk's rfork: an environment of its own (RFENVG, a copy),
+   * where execve writes the job's $target and $stem: jobs at once in
+   * one /env read each other's (mini-9pi, four at once:
+   * plan_self_hosting.md); on Linux a fork, its environment its own
+   * old: match CapUnix.fork caps () with *)
+  match Sys_plan9.rfork caps Sys_plan9.(rfproc lor rffdg lor rfenvg) with
   | 0 ->
       Option.iter (fun fd -> Unix.dup2 fd Unix.stdin) stdin;
       Option.iter (fun fd -> Unix.dup2 fd Unix.stdout) stdout;

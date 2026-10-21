@@ -778,7 +778,7 @@ card: ix
 	$(MAKE) $(CARD)
 	@$(if $(filter card,$(MAKECMDGOALS)),$(cardhelp))
 # the card to build ix on (docs/plans/plan_self_hosting.md): the same
-# programs, ix's sources under /src/ix (the repository but docs/: 4,900
+# programs, ix's sources in /src (the repository but docs/: 4,900
 # files, 18 MB), the whole toolchain in /progs/toolchain, and room for
 # what a build makes (346 MB for mini-9pi's programs): 1 GB, where the
 # everyday card stays 128 MB, flashed 8 times faster
@@ -943,8 +943,11 @@ CARD_toolchain += ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc m
   lex=$(IX9)/generators/lex/mini-lex yacc=$(IX9)/generators/yacc/mini-yacc
 # (not prerequisites: some are names of this Makefile's patterns,
 # expected-%; card-self makes its file system again each time)
-# (files: the symbolic links in git are copied, but bin, a directory)
-CARD_IX := $(foreach f,$(shell cd ../.. && git ls-files -co --exclude-standard | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/ix/$(f)=../../$(f))
+# (files: the symbolic links in git are copied, but bin, a directory;
+# /src is the repository, as tiny-kernel's image's: not the everyday
+# card's five small examples)
+CARD_IX := $(foreach f,$(shell cd ../.. && git ls-files -co --exclude-standard | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/$(f)=../../$(f))
+CARD_SRC =
 endif
 # the binds that make /bin of them, one for each directory: the card's
 # /lib/namespace, lines of rc that boot.rc reads (Plan 9's file of that

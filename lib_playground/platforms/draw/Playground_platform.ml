@@ -25,7 +25,8 @@
  *     the window
  *
  * What the device does not do, and so is not here: an edge is not
- * smoothed (a pixel is in a shape or is not), and the device neither
+ * smoothed (a pixel is in a shape or is not; but a letter's, below,
+ * the software renderer's mask given to it), and the device neither
  * scales nor turns a picture: a Bitmap's pixels are made here, at the
  * size shown, and given to it once (below, A picture); an Image, a
  * picture by its file's name, is its box, grey.
@@ -344,16 +345,20 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
 
 (* Letters: each letter's mask made by the software renderer, as on
  * Linux (Shape_render_software.mask_of), given to the device once, an
- * image of a bit a pixel (k1); a letter drawn is then one message, the
- * colour through it, the device's way with a character of a font
- * (Memdraw's fast case for a mask of bits). XRender's glyph sets with
- * the software renderer as FreeType (docs/notes_font.md). A pixel is
- * the letter's when its strokes cover a third of it or more (the
- * device has no smoothing at a mask of bits; a half lost a thin
- * stroke's pixels); the place is a whole pixel.
+ * image of a byte a pixel (k8): how much of each pixel the strokes
+ * cover, the letter's edges smoothed as Linux's; a letter drawn is
+ * then one message, the colour through it, the device's way with a
+ * character of a font (Memdraw's fast case for a mask of bytes).
+ * XRender's glyph sets with the software renderer as FreeType
+ * (docs/notes_font.md). The place is a whole pixel.
+ * old: a bit a pixel (k1), the letter's where its strokes cover a third
+ * of it or more (a half lost a thin stroke's pixels): ragged at a
+ * page's 13 pixels (the author: "mini-netscape fonts are not super
+ * readable under mini-9pi"); smooth := false, the flag letters=bits.
  * old: each letter's strokes, Letter_strokes' thin rectangles, a line
  * or a polygon each (letters_kept := false, the flag letters=strokes) *)
 let letters_kept = ref true
+let smooth = ref true
 let covered = 1. /. 3.
 
 let letter_image (win : window) (m : Affine.t) (l : Playground.letters) (s : string) : (Display.image * Shape_render_software.mask) option =
@@ -362,12 +367,18 @@ let letter_image (win : window) (m : Affine.t) (l : Playground.letters) (s : str
   | Some k -> k
   | None ->
       let k : Shape_render_software.mask = Shape_render_software.mask_of ~aa:true m l s ~qx:0 ~qy:0 in
-      let row = (k.w + 7) / 8 in
+      (* (a row's bytes, the draw protocol's: a byte a pixel, or their bits) *)
+      let row = if !smooth then k.w else (k.w + 7) / 8 in
       let bits = Bytes.make (row * k.h) '\000' in
       let any = ref false in
       for j = 0 to k.h - 1 do
         for i = 0 to k.w - 1 do
-          if k.cover.((j * k.w) + i) >= covered then begin
+          let c = k.cover.((j * k.w) + i) in
+          if !smooth then begin
+            let v = max 0 (min 255 (int_of_float ((c *. 255.) +. 0.5))) in
+            if v > 0 then begin any := true; Bytes.set bits ((j * row) + i) (Char.chr v) end
+          end
+          else if c >= covered then begin
             any := true;
             let b = (j * row) + (i / 8) in
             (* (the leftmost pixel the byte's high bit, Plan 9's) *)
@@ -379,7 +390,7 @@ let letter_image (win : window) (m : Affine.t) (l : Playground.letters) (s : str
       let image =
         if not !any then None
         else begin
-          let image = Display.alloc win.back.display (Rectangle.v 0 0 k.w k.h) "k1" ~repl:false Display.black in
+          let image = Display.alloc win.back.display (Rectangle.v 0 0 k.w k.h) (if !smooth then "k8" else "k1") ~repl:false Display.black in
           Display.load image image.r (Bytes.to_string bits);
           Some (image, k)
         end in
@@ -537,6 +548,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   counter := List.assoc_opt "fps" (Plan9_loop.flags caps) <> Some "off";
   bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
   letters_kept := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "strokes";
+  smooth := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "bits";
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;

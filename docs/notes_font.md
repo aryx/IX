@@ -190,6 +190,28 @@ common line.
   the frame is made white and copied whole to the window, which the
   letters' copies may not be the most of (plan_playground_speed.md's
   other stages: a frame drawn only where it changed).
+
+  Smoothed 2026-10-21 (the author: "mini-netscape fonts are not super
+  readable under mini-9pi"; "let's do c, with the memdraw fast path
+  too"): the mask given is Linux's whole, a byte a pixel (k8), how
+  much of it the strokes cover, so a letter's edges are as on Linux.
+  The device had no fast case for such a mask, and its general loop
+  is about 1,400 instructions a pixel: `Memdraw` has one now
+  (`fast_grey`), the general loop's arithmetic with its terms known
+  (mul m s + mul (255 - m) d), the blend of a coverage over a pixel
+  kept for the next letter of the colour, since a letter's edges are
+  over the page's background (`tests/memdraw/run.sh` compares it with
+  the general loop: the same bytes). The flag `letters=bits` is the
+  bit a pixel of before. Measured under QEMU, the same session (the
+  mouse on and off a link of about:home, 40 frames, two runs each):
+
+  | the device, a frame | run 1 | run 2 |
+  |---|---|---|
+  | a bit a pixel (k1) | 78 ms | 75 ms |
+  | a byte a pixel (k8) | 82 ms | 82 ms |
+
+  (Without the blends kept, 22 to 30 ms more a frame; QEMU's runs
+  vary by 10 ms or more when two run at once.)
 - **Who rasterizes, two ways** (the author: "An alternative would be
   to do this caching font work user-side and not send draw commands
   (strokes) but instead a bitmap of the 'rendered' image user side";
@@ -209,8 +231,7 @@ common line.
   the device's font image could too, at the same cost.
 
 What ix leaves out, and the reason, so that it is a choice and not a
-gap: hinting (strokes have no outline to hint), antialiasing on
-mini-9pi (a pixel is in the letter or not, as Plan 9's subfonts),
+gap: hinting (strokes have no outline to hint),
 kerning and shaping (Hershey's widths, a letter a glyph: Latin and its
 marks), font selection and fallback (one font, its "?").
 

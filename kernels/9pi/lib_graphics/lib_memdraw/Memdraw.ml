@@ -68,7 +68,8 @@ open Memgeneral
  * solid colour filled (a console's background, rio's rectangles), an
  * image copied to one of its chan (a window to its screen), a picture
  * of 32 bits a pixel to a screen of 16, a solid colour through a 1-bit
- * mask (a character). The general loop reads,
+ * mask (a character) or a mask of a byte (a smoothed one). The general
+ * loop reads,
  * composes and writes each pixel: 19 times slower than 9pi's C to
  * boot under mini-qemu (323s to rc's prompt, the C 17s). Off
  * ([fast] false), the general loop does them all. *)
@@ -92,6 +93,13 @@ external rows : Bytes.t -> int -> int -> int -> string -> unit = "mem_rows"
 (* an image of bits through a mask of bits, below; off: by the general
  * loop *)
 let fast_bits = ref true
+
+(* a colour through a mask of a byte a pixel, below; off: by the
+ * general loop *)
+let fast_grey = ref true
+
+(* its blends: a coverage's, over which pixel, of which colour *)
+let over = Array.make 256 (-1) and made = Array.make 256 0 and blended = ref (-1)
 
 let faster dst r src sr mask mr op =
   let d = dst.chan.Memchan.depth in
@@ -240,6 +248,67 @@ let faster dst r src sr mask mr op =
       for i = 0 to dx - 1 do
         let lx = lx0 + i in
         if Char.code (Bytes.get ms (mrow + (lx asr 3))) land (0x80 lsr (lx land 7)) <> 0 then Bytes.blit_string pat 0 ds (drow + (i * n)) n
+      done
+    done;
+    true
+  end
+  else if !fast_grey && single src && mask.chan.Memchan.depth = 8 && mask.chan.Memchan.grey && not mask.chan.Memchan.alpha
+          && not mask.repl && op = o_soverd && mask.data != dst.data
+          && (let (x, y) = corner src in let (_, _, _, a) = read src x y in a = 255) then begin
+    (* OPTIMIZATION: a smoothed character: an opaque colour through a
+     * mask of a byte a pixel (k8), how much of the pixel the letter
+     * covers (lib_playground's draw platform: a letter's mask made by
+     * its software renderer, docs/notes_font.md). The general loop's
+     * arithmetic, its terms known: a source of alpha 255 gives fs = m
+     * and fd = 255 - m, so a pixel is mul m s + mul (255 - m) d, the
+     * colour's bytes where m is 255, nothing where 0. The screen's
+     * format (r5g6b5) read and written here, as [read] and [write]
+     * keep its top bits; another by them. The general loop was some
+     * 1,400 instructions a pixel, a page of text a hundred thousand *)
+    let (x, y) = corner src in
+    let (cr, cg, cb, ca) = read src x y in
+    let k = if src.chan.Memchan.grey || src.chan.Memchan.depth < 8 then cr else Memchan.rgb2k cr cg cb in
+    let pat = pattern dst (cr, cg, cb, ca) k in
+    let n = String.length pat and (mx0, my0, _, _) = mr in
+    let rgb16 = dst.chan.Memchan.hi = 0x0005 && dst.chan.Memchan.lo = 0x1625 in
+    let ms = mask.data.bytes and ds = dst.data.bytes in
+    let c (m : int) (s : int) (d : int) = mul m s + mul (255 - m) d in
+    (* OPTIMIZATION: a pixel's blend kept by its coverage, with the
+     * pixel it was made over: a letter's edges are over the page's
+     * background, the same pixel each time, and a blend is then one
+     * look (the screen's format; -1: none yet), kept from a letter to
+     * the next of the same colour *)
+    let colour = (cr lsl 16) lor (cg lsl 8) lor cb in
+    if colour <> !blended then begin Array.fill over 0 256 (-1); blended := colour end;
+    (* (the bounds: the clip's, drawclip's; the rows' addresses the
+     * image's own) *)
+    for j = 0 to dy - 1 do
+      let mrow = byteaddr mask mx0 (my0 + j) and drow = byteaddr dst x0 (y0 + j) in
+      for i = 0 to dx - 1 do
+        let m = Char.code (Bytes.unsafe_get ms (mrow + i)) in
+        if m = 255 then Bytes.blit_string pat 0 ds (drow + (i * n)) n
+        else if m > 0 then
+          if rgb16 then begin
+            let p = drow + (2 * i) in
+            let v = Char.code (Bytes.unsafe_get ds p) lor (Char.code (Bytes.unsafe_get ds (p + 1)) lsl 8) in
+            let w =
+              if Array.unsafe_get over m = v then Array.unsafe_get made m
+              else begin
+                (* (a channel's bits widened to 8, Memchan.repl's) *)
+                let r5 = v lsr 11 and g6 = (v lsr 5) land 63 and b5 = v land 31 in
+                let r = c m cr ((r5 lsl 3) lor (r5 lsr 2)) and g = c m cg ((g6 lsl 2) lor (g6 lsr 4))
+                and b = c m cb ((b5 lsl 3) lor (b5 lsr 2)) in
+                let w = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
+                Array.unsafe_set over m v; Array.unsafe_set made m w;
+                w
+              end in
+            Bytes.unsafe_set ds p (Char.unsafe_chr (w land 255));
+            Bytes.unsafe_set ds (p + 1) (Char.unsafe_chr (w lsr 8))
+          end
+          else begin
+            let (dr, dg, db, da) = read dst (x0 + i) (y0 + j) in
+            write dst (x0 + i) (y0 + j) (c m cr dr, c m cg dg, c m cb db, c m ca da) (c m k dr)
+          end
       done
     done;
     true

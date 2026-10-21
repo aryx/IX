@@ -93,3 +93,7 @@ val solid_done : Memimage.t -> rect -> unit
 
 (* drawreplxy: x in [min, max), the plane tiled *)
 val replxy : int -> int -> int -> int
+
+(* an opaque colour through a mask of a byte a pixel (a smoothed
+ * letter) by a loop of its own; off: by the general loop *)
+val fast_grey : bool ref

@@ -20,6 +20,17 @@ _entry:
 spin:
 	j	spin
 
+; int k_step(int frame): k_run for one instruction (a debugger's step):
+; the timer's interrupt comes after the process's first instruction.
+; The machine looks at the timer before each instruction, when the
+; time has moved: from this csrr to eret are 31 instructions, so the
+; process's first is at the time read plus 31 and runs, and the timer
+; at plus 32 interrupts before its second. (A trap of that first
+; instruction comes first: a call, a fault.)
+k_step:
+	csrr	r2, time
+	addi	r2, r2, 32
+	csrw	timecmp, r2
 ; int k_run(int frame): the process of that frame run (its window set
 ; by k_window) until its next trap; the trap's cause. frame 0: the
 ; kernel waits for an interrupt instead, with them on (nothing to run)

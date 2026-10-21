@@ -205,15 +205,18 @@ preemption(void)
 	print("preemption ok\n");
 }
 
-// what the traced child calls, where its tracer stops it
+// what the traced child calls, where its tracer stops it; a word its
+// tracer writes
 int
 traced(int x)
 {
 	return x + 1;
 }
+int poked;
 
 // a command to the trace t (none: 0), and whether its answer is want
-// (the answer's end only, when want starts with a dot)
+// (the answer's end only, when want starts with a dot; its start only,
+// with a ^)
 int
 ask(int t, char *command, char *want)
 {
@@ -226,35 +229,58 @@ ask(int t, char *command, char *want)
 	if(n < 0)
 		return 0;
 	line[n] = 0;
+	k = strlen(want) - 1;
+	if(want[0] == '^'){
+		line[n < k ? n : k] = 0;
+		return strcmp(line, want + 1) == 0;
+	}
 	if(want[0] != '.')
 		return strcmp(line, want) == 0;
-	k = strlen(want) - 1;
 	return n >= k && strcmp(line + n - k, want + 1) == 0;
 }
 
-// a child stopped at a breakpoint (traced's first word), its pc read,
-// resumed to its end; a child stopped by a fault rather than killed;
-// a child traced from its exec, stopped at its first instruction
+// a child stopped at a breakpoint (traced's first word) at each of
+// its two calls: its pc read, the word under the breakpoint read, a
+// step, a word written, then its calls stopped at (getpid's, exit's)
+// to its end; a child stopped by a fault rather than killed; a child
+// traced from its exec, stopped at its first instruction
 void
 traces(void)
 {
-	int p[2], pid, t, st;
-	char b[40], pc[40];
+	int p[2], pid, t, st, w;
+	char b[40], pc[40], m[40], s[40], wr[40], ret[40];
 
 	pipe(p);
 	if((pid = fork()) == 0){
 		read(p[0], b, 1);
-		exit(traced(6));
+		st = traced(traced(5));
+		getpid();
+		exit(st + poked);
 	}
 	t = trace(pid);
 	sprint(b, "b %d", (int)traced);
 	sprint(pc, ".pc %d\n", (int)traced);
+	sprint(m, "m %d 4", (int)traced);
+	w = *(int*)traced;
+	sprint(s, "%x%x%x%x\n", (w & 255) >> 4, w & 15, (w >> 12) & 15,
+		(w >> 8) & 15);
+	sprint(s + 4, "%x%x%x%x\n", (w >> 20) & 15, (w >> 16) & 15,
+		(w >> 28) & 15, (w >> 24) & 15);
+	sprint(wr, "w %d 10", (int)&poked);
+	sprint(ret, "ret 6 %d\n", pid);
 	if(t < 0 || !ask(t, b, "ok\n"))
 		{ fail("trace: a breakpoint set"); return; }
 	write(p[1], "x", 1);
-	if(!ask(t, 0, ".break\n") || !ask(t, "r", pc) || !ask(t, "c", "exited 7\n")
-	|| read(t, b, 1) != 0 || wait(&st) != pid || st != 7)
+	if(!ask(t, 0, ".break\n") || !ask(t, "r", pc) || !ask(t, m, s))
 		{ fail("trace: a breakpoint"); return; }
+	sprint(pc, ".%d step\n", (int)traced + 4);
+	if(!ask(t, "s", pc) || !ask(t, "c", ".break\n") || !ask(t, wr, "ok\n"))
+		{ fail("trace: a step"); return; }
+	if(!ask(t, "y", "ok\n") || !ask(t, "c", "^call 6 ") || !ask(t, "c", ret)
+	|| !ask(t, "c", "^call 0 17 ") || !ask(t, "n", "ok\n")
+	|| !ask(t, "c", "exited 17\n")
+	|| read(t, b, 1) != 0 || wait(&st) != pid || st != 17)
+		{ fail("trace: the calls"); return; }
 	close(t);
 
 	if((pid = fork()) == 0){

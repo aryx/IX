@@ -9,7 +9,8 @@
 #                     rc (utils: walk, du, cp, mv, xd, test, ln, grep, sort, ls -l...; pipes of six stages; ed and sam; emacs's
 #                     ^C, M-x and a macro; office's page, a text and a sheet, saved,
 #                     and a page not saved left by File's Quit twice; troff's text and web page of
-#                     /examples/report.ixd), then the network (ping,
+#                     /examples/report.ixd), trace's of cat and debug's of
+#                     ping (stopped in write, a step), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost and the file whole anyway), against
@@ -101,7 +102,7 @@ CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Prin
 LIB = $(CORE:%=$(O)/lib/%.o)
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
 FONT = ../../kernels/lib_machine/font1.bin
-PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml
+PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml trace debug
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
@@ -216,6 +217,8 @@ I_Office = $(GUI) TinyOffice
 I_Troff = $(GUI) TinyOffice TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(GUI) TinyBrowser
+I_Trace = TinyCalls
+I_Debug = TinyCalls TinyMachineISA
 # each unit's file
 F_TinyCalls = libml/TinyCalls.ml
 F_TinyLibSystem = libml/TinyLibSystem.ml
@@ -230,12 +233,14 @@ F_Troff = user/troff.ml
 F_Play = user/play.ml
 F_Www = user/www.ml
 F_Bigmem = user/bigmem.ml
+F_Trace = user/trace.ml
+F_Debug = user/debug.ml
 F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
 UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
-  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem
+  TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
 $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(O)/lib/Stdlib.tm $(TMLBIN)
 	@mkdir -p $(@D)
@@ -257,7 +262,7 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 # collector's; old: 16, out of memory there in the first builds on
 # tiny-kernel); build: the files it digests,
 # each read whole, the system's objects among them).
-ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml
+ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml trace debug
 UNITS_windows = TinyLibDraw TinyWindows
 UNITS_square = $(I_Machine) Machine
 UNITS_tetris = $(I_Tetris) Tetris
@@ -272,6 +277,8 @@ UNITS_rc = $(I_TinyShell) TinyShell
 UNITS_utils = $(I_TinyUtilities) TinyUtilities
 UNITS_ed = $(I_TinyEditorLine) TinyEditorLine
 UNITS_bigmem = Bigmem
+UNITS_trace = TinyCalls Trace
+UNITS_debug = $(I_Debug) Debug
 UNITS_prof = $(I_TinyProfiler) TinyProfiler
 UNITS_db = $(I_TinyDatabase) TinyDatabase
 UNITS_vcs = $(I_TinyVCS) TinyVCS
@@ -486,7 +493,7 @@ check check-parts self: override MACHINE := $(MACHINE) -date 820540800 -seed 1
 # in one rule, one after the other (old: every session one after the
 # other, some 15 minutes)
 J = 32
-NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
 check: $(O)/boot.img
 	rm -rf $(O)/check; mkdir -p $(O)/check
 	$(MAKE) $(if $(findstring jobserver,$(MAKEFLAGS)),,-j$(J)) check-parts
@@ -551,6 +558,10 @@ $(O)/check/25.out: $(O)/boot.img
 	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
+# trace and debug (plan_tiny_debugger.md): cat's calls, its output kept
+# apart; ping stopped in write, a step from the breakpoint, to its exit
+$(O)/check/26.out: $(O)/boot.img
+	printf 'rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ndebug ping\nb 0xc\nc\nx/i pc 3\ns\nn\nd 0xc\nc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

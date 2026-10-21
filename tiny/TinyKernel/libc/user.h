@@ -52,10 +52,11 @@ int kill(int pid);
 // the console raw for this process while it lives (on 1), or not (0):
 // its ^C is then a byte read, not the kill above (emacs's C-x C-c)
 int rawcons(int on);
-// a descriptor on a process, for its tracer (a debugger): a write is a
-// command (b addr, d addr, r, c), a read a line, its answer or where
-// the process stopped (TinyKernel.ml's command and stop); trace(0): the
-// caller traced by its parent, and stopped at its next exec
+// a descriptor on a process, for its tracer (debug, trace): a write is
+// a command (b addr, d addr, r, m addr n, w addr v, y, n, c, s), a read
+// a line, its answer or where the process stopped (TinyKernel.ml's
+// command, stop, call); trace(0): the caller traced by its parent, and
+// stopped at its next exec
 int trace(int pid);
 // a file's offset, at n from its start (whence 0), from where it is
 // (1) or from its end (2): the new offset, or -1

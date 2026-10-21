@@ -67,6 +67,7 @@ ln: nosuch: cannot
 ls: c: not there
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 $ % troff
+trace
 touch
 tetris
 test
@@ -93,9 +94,9 @@ ls: /cat: not there
 -   2 * /bin/emacs
 -   1 * /bin/ping
 -  25 * /bin/utils
-%      55     220    1359 f
-     55     220    1359
-     55     220    1359
+%      57     228    1411 f
+     57     228    1411
+     57     228    1411
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 $ %       3
 % 1|1
@@ -328,4 +329,33 @@ hello
 rm: d: cannot
 rm: /dump/1/usr/glenda/d/f: cannot
 tiny-shell: /dump/1/x: cannot create
+% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ % % open("f", 0) = 5
+read(5, "hello\n", 4096) = 6
+hello
+write(1, "hello\n", 6) = 6
+read(5, "", 4096) = 0
+close(5) = 0
+exit(0)
+exited 0
+% open("f", 0) = 5
+read(5, "hello\n", 4096) = 6
+write(1, "hello\n", 6) = 6
+read(5, "", 4096) = 0
+close(5) = 0
+exit(0)
+exited 0
+hello
+% trace: nosuch: not found
+% exec
+0:	jal	r15, 0x10ff8
+break
+c:	ldw	r1, 0(r14)
+c:	ldw	r1, 0(r14)
+10:	ldw	r2, 4(r14)
+14:	ldw	r3, 8(r14)
+10:	ldw	r2, 4(r14)
+14:	ldw	r3, 8(r14)
+ping: no network, or not an address: 10.0.0.1
+exited 1
 % $ 

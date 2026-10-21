@@ -20,6 +20,7 @@ open TinyKernelFS
 
 external k_init : unit -> unit = "k_init"
 external k_run : int -> int = "k_run"
+external k_step : int -> int = "k_step"
 external k_tval : unit -> int = "k_tval"
 external k_timer : int -> unit = "k_timer"
 external k_ie : int -> unit = "k_ie"
@@ -183,13 +184,22 @@ and voice = { mutable ahead : int }
 (* a process traced by another, its tracer (debug: plan_tiny_debugger.md):
  * their pids, the breakpoints (an address and the word that was there),
  * what is said to the tracer and not yet read, and the tracer's
- * descriptors on it *)
+ * descriptors on it; whether it stops at its calls (trace), the call
+ * it is stopped before or let in (-1: none), the call whose end it
+ * waits for, to stop then (-1: none); whether it runs one instruction
+ * and stops (a step), and the breakpoint it runs the word of, the 0
+ * written again after (-1: none) *)
 and trace = {
   tpid : int;
   tracer : int;
   mutable stops : (int * int) list;
   mutable said : string list;
   mutable watchers : int;
+  mutable calls : bool;
+  mutable call : int;
+  mutable ret : int;
+  mutable step : bool;
+  mutable over : int;
 }
 
 (* The image's files (and /dev), and the tree a path starts from. They
@@ -467,11 +477,13 @@ let traced_proc t =
 
 (* the trace ended (its tracer's last descriptor closed, or the tracer
  * ended): the words under the breakpoints put back, the process run
- * again if it was stopped *)
+ * again if it was stopped; one stopped before a call goes back to its
+ * sys, to make the call (its registers are as they were) *)
 let detach t =
   match traced_proc t with
   | Some q ->
       List.iter (fun (a, w) -> poke (q.base + a) w) t.stops;
+      if t.call >= 0 then set_reg q 16 (reg q 16 - 4);
       t.stops <- [];
       q.traced <- None;
       (match q.state with Stopped -> q.state <- Ready | _ -> ())
@@ -668,26 +680,35 @@ let net_send packet =
   k_blit packet 0 net_buf n;
   net_command n 1
 
-(* A traced process stopped, and why said to its tracer: where it is
- * (its pc), then break (a breakpoint's word), illegal and the word,
- * fault and the address, or exec (its new program's first instruction) *)
+(* A traced process stopped, and the line that says why to its tracer
+ * (a step ends there); stop's: where it is (its pc), then break (a
+ * breakpoint's word), illegal and the word, fault and the address,
+ * exec (its new program's first instruction), or step *)
 let traced p = match p.traced with Some _ -> true | None -> false
-let stop p why =
+let pause p line =
   p.state <- Stopped;
   match p.traced with
-  | Some t ->
-      t.said <-
-        t.said @ [ "stopped " ^ string_of_int (reg p 16) ^ " " ^ why ^ "\n" ]
+  | Some t -> t.step <- false; t.said <- t.said @ [ line ^ "\n" ]
   | None -> ()
+let stop p why = pause p ("stopped " ^ string_of_int (reg p 16) ^ " " ^ why)
+
+(* bytes in hexadecimal, two digits each *)
+let hex_bytes l =
+  let d = "0123456789abcdef" in
+  String.concat "" (List.map (fun b ->
+    String.make 1 d.[b lsr 4] ^ String.make 1 d.[b land 15]) l)
 
 (* A tracer's command (plan_tiny_debugger.md), the numbers in decimal:
  * b addr, a breakpoint, the word there kept and 0 written in its place
  * (no instruction is 0: the process traps there, c_illegal); d addr,
  * the breakpoint removed, its word put back; r, the registers (r1 to
- * r15, then the pc); c, the stopped process resumed. A breakpoint is
- * used once: c from it puts its word back and removes it. Bad if the
- * command is none of these, or its address not one of the process's
- * words. *)
+ * r15, then the pc); m addr n, n bytes in hexadecimal (1024 at most; a
+ * breakpoint's are the word it hides); w addr v, a word written; y and
+ * n, a stop at each call or not (trace); c, the stopped process
+ * resumed; s, resumed for one instruction. From a breakpoint, c and s
+ * run its word, then write the 0 again (run); from a call, they let
+ * the call in. Bad if the command is none of these, or its address
+ * not the process's. *)
 let command t q words =
   let addr s =
     match int_of_string_opt s with
@@ -710,7 +731,32 @@ let command t q words =
       say (String.concat " " (List.init 16 (fun k ->
         (if k = 15 then "pc" else "r" ^ string_of_int (k + 1))
         ^ " " ^ string_of_int (reg q (k + 1)))))
-  | [ "c" ], Stopped -> unset (reg q 16); q.state <- Ready
+  | [ "m"; s; k ], _ ->
+      (match int_of_string_opt s, int_of_string_opt k with
+       | Some a, Some n when n > 0 && n <= 1024 ->
+           let at = user q a n in
+           say (hex_bytes (List.init n (fun i ->
+             match List.assoc_opt ((a + i) land lnot 3) t.stops with
+             | Some w -> (w lsr (8 * ((a + i) land 3))) land 255
+             | None -> peekb (at + i))))
+       | _ -> raise Bad)
+  | [ "w"; s; v ], _ ->
+      let a = addr s in
+      (match int_of_string_opt v with
+       | Some v when List.exists (fun (b, _) -> b = a) t.stops ->
+           t.stops <- List.map (fun (b, w) -> b, if b = a then v else w) t.stops
+       | Some v -> poke (q.base + a) v
+       | None -> raise Bad);
+      say "ok"
+  | [ "y" ], _ -> t.calls <- true; say "ok"
+  | [ "n" ], _ -> t.calls <- false; say "ok"
+  | [ ("c" | "s") as c ], Stopped ->
+      let pc = reg q 16 in
+      (match List.assoc_opt pc t.stops with
+       | Some w when t.call < 0 -> poke (q.base + pc) w; t.over <- pc
+       | _ -> ());
+      t.step <- c = "s";
+      q.state <- Ready
   | _ -> raise Bad
 
 let write f a n =
@@ -1170,7 +1216,8 @@ let sys_kill p =
 let sys_trace p =
   let make q tracer =
     let t =
-      { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0 } in
+      { tpid = q.pid; tracer = tracer; stops = []; said = []; watchers = 0;
+        calls = false; call = -1; ret = -1; step = false; over = -1 } in
     q.traced <- Some t;
     t in
   if reg p 1 = 0 then begin
@@ -1261,8 +1308,7 @@ let sys_ready p =
  * tiny-cpu's own (libc's). A call that changed the disk is committed
  * when it ends, but a write: a file's writes are committed by the next
  * call that is not one, its close at the latest (TinyKernelFS.mli) *)
-let syscall p =
-  let n = k_tval () in
+let syscall p n =
   (try
     match n with
     | 0 -> exit_proc p (reg p 1)
@@ -1298,6 +1344,38 @@ let syscall p =
     | _ -> result p (-1)
   with Bad -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()
+
+(* A traced process that stops at its calls (trace) stops before each,
+ * its tracer told the call's number and its first three registers,
+ * and after it, told its result: at once, or when it ends if it waits
+ * (runnable). An exit has no after (its end is said), and an exec's is
+ * its stop at its new program's first instruction. *)
+let returned p n =
+  pause p ("ret " ^ string_of_int n ^ " " ^ string_of_int (reg p 1))
+let called p n =
+  syscall p n;
+  match p.traced, p.state with
+  | _ when not (List.exists (fun q -> q.pid = p.pid) !procs) -> ()
+  | Some t, Ready when t.calls -> returned p n
+  | Some t, Ready when t.step -> stop p "step"
+  | Some t, Waiting _ when t.calls -> t.ret <- n
+  | _ -> ()
+let call p n =
+  match p.traced with
+  | Some t when t.call >= 0 -> t.call <- -1; called p n
+  | Some t when t.calls ->
+      t.call <- n;
+      pause p ("call " ^ String.concat " " (List.map string_of_int
+                                             [ n; reg p 1; reg p 2; reg p 3 ]))
+  | _ -> syscall p n
+
+(* a traced process whose wait ended, stopped if its tracer asked for
+ * the call's end or a step *)
+let waited p =
+  match p.traced with
+  | Some t when t.ret >= 0 -> let n = t.ret in t.ret <- -1; returned p n; true
+  | Some t when t.step -> stop p "step"; true
+  | _ -> false
 
 (*****************************************************************************)
 (* The scheduler: round robin, preemptive *)
@@ -1348,6 +1426,13 @@ let net_take () =
     if net_behind () then k_ie 11
   end
 
+(* the ticks since the last one counted, the timer set for the next *)
+let count_ticks () =
+  let passed = (k_clock () - !counted) land 0x3fffffff in
+  ticks := !ticks + (passed / tick);
+  counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
+  k_timer (tick - (passed mod tick))
+
 let interrupts sources =
   if sources land 16 <> 0 then net_take ();
   if sources land 8 <> 0 then begin
@@ -1375,10 +1460,7 @@ let interrupts sources =
    * is several ticks (old: one counted at each interrupt, the timer
    * set a tick from then; a game's second was two under a window) *)
   if sources land 1 <> 0 then begin
-    let passed = (k_clock () - !counted) land 0x3fffffff in
-    ticks := !ticks + (passed / tick);
-    counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
-    k_timer (tick - (passed mod tick));
+    count_ticks ();
     if !ticks >= !net_open || not (net_behind ()) then
       (net_open := !ticks + 8; k_ie 27);
     (* the connections' time: what they send when nothing came, and one
@@ -1409,7 +1491,8 @@ let rec runnable l =
        | Ready -> Some p
        | Waiting attempt ->
            if p.since = !deaths then runnable rest
-           else if attempt () then (p.state <- Ready; Some p)
+           else if attempt () then
+             (p.state <- Ready; if waited p then runnable rest else Some p)
            else (if p.since >= 0 then p.since <- !deaths; runnable rest)
        | Zombie _ -> runnable rest
        | Stopped -> runnable rest)
@@ -1437,25 +1520,52 @@ and idle () =
   else idle ()
 
 and run p =
+  match p.traced with
+  | Some t when t.call >= 0 -> call p t.call; next p false
+  | Some t when t.step || t.over >= 0 -> step p t
+  | _ -> k_window p.base p.size; next p (trapped p (k_run (frame p.slot)))
+
+(* A traced process run for one instruction: a step, or a breakpoint's
+ * word run (its 0 written again after, the process going on). The
+ * timer's interrupt ends it (or the instruction's trap), and the timer
+ * is set again for the next tick; an interrupt that came before the
+ * instruction ran is taken, and the process run again. A step that
+ * makes a call that waits stops when the call ends (waited). *)
+and step p t =
   k_window p.base p.size;
-  let cause = k_run (frame p.slot) in
-  let timer =
-    if cause = c_sys then (syscall p; false)
-    else if cause = c_intr then interrupts (k_tval ())
-    else if cause = c_illegal && traced p then
-      (stop p
-         (if k_tval () = 0 then "break"
-          else "illegal " ^ string_of_int (k_tval ()));
-       false)
-    else if cause = c_fault && traced p then
-      (stop p ("fault " ^ string_of_int (k_tval ())); false)
-    else begin
-      puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause
-            ^ " at " ^ string_of_int (reg p 16) ^ ", "
-            ^ string_of_int (k_tval ()) ^ ": killed\n");
-      exit_proc p (-1);
-      false
-    end in
+  let cause = k_step (frame p.slot) in
+  let ran = cause <> c_intr || k_tval () land 1 <> 0 in
+  let timer = trapped p cause in
+  if cause <> c_intr then count_ticks ();
+  if ran && List.exists (fun q -> q.pid = p.pid) !procs then begin
+    if t.over >= 0 && List.exists (fun (b, _) -> b = t.over) t.stops then
+      poke (p.base + t.over) 0;
+    t.over <- -1;
+    match p.state with Ready when t.step -> stop p "step" | _ -> ()
+  end;
+  next p timer
+
+(* a trap handled; whether it was the timer's *)
+and trapped p cause =
+  if cause = c_sys then (call p (k_tval ()); false)
+  else if cause = c_intr then interrupts (k_tval ())
+  else if cause = c_illegal && traced p then
+    (stop p
+       (if k_tval () = 0 then "break"
+        else "illegal " ^ string_of_int (k_tval ()));
+     false)
+  else if cause = c_fault && traced p then
+    (stop p ("fault " ^ string_of_int (k_tval ())); false)
+  else begin
+    puts ("ml: " ^ string_of_int p.pid ^ ": trap " ^ string_of_int cause
+          ^ " at " ^ string_of_int (reg p 16) ^ ", "
+          ^ string_of_int (k_tval ()) ^ ": killed\n");
+    exit_proc p (-1);
+    false
+  end
+
+(* the same process again unless its time is up or it cannot go on *)
+and next p timer =
   let alive = List.exists (fun q -> q.pid = p.pid) !procs in
   if alive && (not timer) && (match p.state with Ready -> true | _ -> false)
   then run p

@@ -278,9 +278,30 @@ exercises the same messages.
    for every change to the kernel's timing.
 2. **The step.** The timer set to 1, `s`, continuing from a
    breakpoint, and the tick kept right for the other processes.
+   **Done (2026-10-21)**, with one change: the timer set to 1 by
+   `k_timer` would fire inside the kernel, before the process's first
+   instruction (the machine looks at the timer before each one, the
+   kernel's too). entry.tm's `k_step` sets it itself, then falls into
+   `k_run`: from its `csrr` to the `eret` are 31 instructions, so the
+   timer at the time read plus 32 lets one instruction of the process
+   run (mltests checks that the pc moved by 4). An interrupt that
+   comes before that instruction is taken and the step tried again;
+   after the step `count_ticks` (what the timer's interrupt did,
+   factored out) sets the timer for the next tick, and the ticks stay
+   counted by the clock. Breakpoints stay: `c` and `s` from one run its
+   word alone (`over`) and write the 0 again. `m` and `w` came with it.
+   tetris's sounds recorded again: a few start a little later (the
+   kernel's `run` looks at the trace first), every screen the same.
 3. **debug with addresses only.** The commands of section 3 but `bt`,
    over the target. It is tested on the host with TinyMachineCPU, and
-   then on tiny-kernel.
+   then on tiny-kernel. **Done (2026-10-21)**: `user/debug.ml`, about
+   230 lines, `/bin/debug`; TinyMachineISA's `decode` and `print` for
+   the listing, `n` a breakpoint after a `jal` or `jalr` to lr (in a
+   recursive function it may stop at a deeper call's return: no
+   check of sp yet). Tested on tiny-kernel only, by make check's
+   session (ping stopped in start.tm's `write`, a step from the
+   breakpoint, `n`, to its end), not on the host: the target as
+   functions would have doubled the program for a test.
 4. **The names.** The symbols after the image (section 4), `find`
    and `clean` shared with tiny-prof, `b main`, and the function at
    each stop.
@@ -291,7 +312,17 @@ exercises the same messages.
 7. **trace.** `y`, the two stops and `c` through a call, in the kernel;
    `m`; the program, `/bin/trace`; a session in `make check` tracing
    `cat` of a file (section 5). It needs only step 1, so it may come
-   next.
+   next. **Done (2026-10-21)**: `call` and `called` in TinyKernel.ml,
+   `syscall` given the number; a call let in by `c` is made when the
+   process next runs (not in the tracer's write: `command` comes
+   before `syscall`); a trace let go while stopped before a call puts
+   the pc back on its `sys`. `user/trace.ml`, about 170 lines; mltests's
+   `traces` checks `call` and `ret`; make check's session traces `cat`
+   (and `cat > g`, its output apart). The plan's example, as it came:
+   `read(5, "", 4096) = 0` (strace's `""` for a read of nothing, not
+   its buffer's address, so that the session's text stays the same).
+   Not tried: `trace pid` and `debug pid` (sh runs nothing in the
+   background); `make self`, whose self.expected lists the programs.
 
 After step 1, a program that would have been killed can be looked at.
 After step 5, debug answers the question a crash raises: where, and called

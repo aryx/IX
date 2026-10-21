@@ -618,13 +618,23 @@ for `cat` or `db`. `rawcons(0)` gives them back.
 `trace(pid)` gives a descriptor on another process, for a debugger
 ([plan_tiny_debugger.md](../plans/plan_tiny_debugger.md)). A write is a
 command, the numbers in decimal: `b addr` a breakpoint (the word there
-kept, 0 written in its place), `d addr` the breakpoint removed, `r` the
-registers, `c` the stopped process resumed. A read is a line: a
-command's answer (`ok`, the registers), or the process's stop
-(`stopped pc break`, `illegal word`, `fault addr` or `exec`) or its end
-(`exited status`); 0 after its end. A traced process that faults
-is stopped, not killed. `trace(0)` makes the caller traced by its
-parent, stopped at its next `exec`: how a debugger starts a program.
+kept, 0 written in its place; it stays until `d addr` removes it), `r`
+the registers, `m addr n` n bytes in hexadecimal (a breakpoint's are
+the word it hides), `w addr v` a word written, `c` the stopped process
+resumed, `s` resumed for one instruction, `y` and `n` a stop at each of
+its calls or not. A read is a line: a command's answer (`ok`, the
+registers, the bytes), or the process's stop (`stopped pc break`,
+`illegal word`, `fault addr`, `exec` or `step`; `call n a1 a2 a3`
+before a call, its number and its first three registers, and `ret n r`
+after it) or its end (`exited status`); 0 after its end. A traced
+process that faults is stopped, not killed. `trace(0)` makes the caller
+traced by its parent, stopped at its next `exec`: how a debugger starts
+a program. Two programs of `/bin` are made of it: `trace prog args` (or
+`trace pid`) says the calls of a program as it makes them, a line each
+on its error output (`read(3, "hello\n", 4096) = 6`, strace's way), and
+`debug prog args` (or `debug pid`) is a debugger at the level of the
+instructions, its commands ed's kind: `b addr`, `d addr`, `c`, `s`, `n`
+(over a call), `r`, `x addr n`, `x/i addr n`, `q`; no names yet.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1
@@ -660,7 +670,7 @@ never waits. A process has 32 descriptors.
 The files are a tree of ML values in the kernel's heap, made at the
 boot from what the image carries after the kernel:
 
-    /bin        the programs (sh, rc, the utilities by their names, emacs, office, play, prof, db, vcs, build...)
+    /bin        the programs (sh, rc, the utilities by their names, emacs, office, play, prof, db, vcs, build, trace, debug...)
     /dev        the devices: console, draw, mouse, audio (7.3)
     /examples   files to look at: sources, a page of the office's, a WAV
 

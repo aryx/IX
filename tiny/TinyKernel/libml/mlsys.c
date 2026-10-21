@@ -198,6 +198,14 @@ u_kill(value pid)
 	return kill(pid >> 1) * 2 + 1;
 }
 
+// a descriptor on a process, for its tracer (trace, debug: user.h's
+// trace); trace(0), the caller traced by its parent from its next exec
+value
+u_trace(value pid)
+{
+	return trace(pid >> 1) * 2 + 1;
+}
+
 // a child's end waited for; its pid, or -1 without children
 value
 u_wait(value unit)

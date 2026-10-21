@@ -1,6 +1,7 @@
 /* Claude Code
- * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
-/* TinyML's runtime, its part common to every program (the host's,
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+ *
+ * TinyML's runtime, its part common to every program (the host's,
  * runtime.c; TinyKernel.ml's, TinyKernel/runtime.c): the allocator
  * and Cheney's copying collector, the primitives the prelude names,
  * stdout's buffer, the uncaught exception. Its includer gives the
@@ -14,7 +15,8 @@
  * base to ml_vsp (which the ML code stores before calling C), and the
  * program's globals (ml_globals, ml_nglobals, written by tiny-ml). A C
  * function that allocates pushes its values on the value stack first,
- * and reads them back: the collector moves them. */
+ * and reads them back: the collector moves them.
+ */
 
 typedef intptr value;
 typedef unsigned char uchar;
@@ -35,6 +37,10 @@ void *ml_handler;
  * stack ran into the heap's first blocks: tiny-c's List.map over a
  * file's tokens, wrong values, then a loop or an exception) */
 value *ml_vlimit;
+
+/*****************************************************************************/
+/* The heap, the collector */
+/*****************************************************************************/
 
 /* the memory, the includer's (ml_init_heap): the value stack's base,
  * the heap's two halves and their size in words */
@@ -171,6 +177,10 @@ wosize(value v)
 {
 	return ((value*)v)[-1] >> 10;
 }
+
+/*****************************************************************************/
+/* Strings, bytes */
+/*****************************************************************************/
 
 /* strings: the last byte the number of padding bytes before it */
 static value
@@ -379,6 +389,10 @@ ml_string_of_int(value v)
 	return s;
 }
 
+/*****************************************************************************/
+/* Compare */
+/*****************************************************************************/
+
 /* OCaml's compare: integers before blocks, then the tags, strings by
  * their bytes, the other blocks by their sizes then their fields */
 static value
@@ -427,6 +441,29 @@ compare(value a, value b)
 	}
 	return 0;
 }
+
+// two integers compared here, before compare's frame of eight locals
+// (old: 100 instructions for min 3 4, the prelude's min being
+// polymorphic; a sound's sample clamped by min and max was 175 of them)
+value
+ml_compare(value a, value b)
+{
+	if(a & b & 1)
+		return a < b ? -1 : a == b ? 1 : 3;
+	return compare(a, b) * 2 + 1;
+}
+
+value
+ml_equal(value a, value b)
+{
+	if(a & b & 1)
+		return a == b ? 3 : 1;
+	return compare(a, b) == 0 ? 3 : 1;
+}
+
+/*****************************************************************************/
+/* Arrays */
+/*****************************************************************************/
 
 /* arrays: a block of tag 0, as a tuple; the empty one (and a
  * negative size's, which OCaml refuses) static, as
@@ -479,6 +516,10 @@ ml_array_set(value a, value i, value v)
 	return 1;
 }
 
+/*****************************************************************************/
+/* Hashtbl */
+/*****************************************************************************/
+
 // a value's hash, for TinyLibCore/Hashtbl.ml: its integers, its
 // strings' bytes, its blocks' tags and fields, as OCaml's Hashtbl.hash
 // walks one, ten values at most; never an address, which the collector
@@ -523,24 +564,9 @@ ml_hash(value v)
 	return ((hash(v, &budget) & 0x3fffffff) << 1) | 1;
 }
 
-// two integers compared here, before compare's frame of eight locals
-// (old: 100 instructions for min 3 4, the prelude's min being
-// polymorphic; a sound's sample clamped by min and max was 175 of them)
-value
-ml_compare(value a, value b)
-{
-	if(a & b & 1)
-		return a < b ? -1 : a == b ? 1 : 3;
-	return compare(a, b) * 2 + 1;
-}
-
-value
-ml_equal(value a, value b)
-{
-	if(a & b & 1)
-		return a == b ? 3 : 1;
-	return compare(a, b) == 0 ? 3 : 1;
-}
+/*****************************************************************************/
+/* Stdout */
+/*****************************************************************************/
 
 /* stdout: ocaml-light's channel, a buffer written when full, flushed
  * by print_newline and at exit, lost on an uncaught exception */
@@ -611,6 +637,10 @@ ml_exit(value n)
 	return 1;
 }
 
+/*****************************************************************************/
+/* Exceptions */
+/*****************************************************************************/
+
 /* an uncaught exception, as ocaml-light's printexc.c prints it: its
  * name, then its integer and string arguments (a single tuple's
  * fields, as Match_failure's) */
@@ -671,6 +701,10 @@ ml_uncaught(value exn)
 	return 1;
 }
 
+/*****************************************************************************/
+/* The start */
+/*****************************************************************************/
+
 /* the heap and the value stack: the includer's memory; then the
  * program's toplevel */
 void
@@ -690,6 +724,10 @@ ml_run(value *stack, value *space0, value *space1, value words, value initial)
 	ml_vsp = vbase;
 	ml_start(vbase);
 }
+
+/*****************************************************************************/
+/* Marshal */
+/*****************************************************************************/
 
 /* Marshal: a value as bytes and back, in OCaml's format (its small
  * header: the magic number, the data's length, the blocks, their words
@@ -1039,6 +1077,10 @@ ml_marshal_from_string(value s, value ofs)
 	nobj = 0;
 	return intern_value();
 }
+
+/*****************************************************************************/
+/* SHA-1 */
+/*****************************************************************************/
 
 /* SHA-1: the digest of a string, 20 bytes, in C on the machine's words
  * of 32 bits (old: TinyLibCore's Sha1 in ML, a word as two halves of

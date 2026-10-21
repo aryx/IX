@@ -34,9 +34,9 @@ It boots on real hardware: the
 anyone can afford, and on its own emulator.
 Each program comes in two sizes: <a href="m-ix.html"><em>mini</em></a>, the Plan 9 original
 reimplemented faithfully, and <a href="t-ix.html"><em>tiny</em></a>, a free variant in one
-file. All the minis together are about 130,000 lines (OCaml mostly,
+file. All the minis together are about 150,000 lines (OCaml mostly,
 with their libraries and the C under them), all the tinies about
-19,000: two whole systems, each small enough to read.
+25,000: two whole systems, each small enough to read.
 </p>
 
 <p>
@@ -49,8 +49,8 @@ that one person can understand (<a href="#goal">the goal</a>).
 <h2 id="news">What's New</h2>
 
 <ul>
-<li><strong>October 10, 2026</strong> &mdash; <a href="m-ix.html">m-IX boots in your browser</a>: mini-qemu, the Raspberry Pi emulator, compiled to JavaScript, boots mini-9pi from its SD card, with the shell, rio and the card's programs. A first version, and slow: a minute and a half to the prompt.</li>
-<li><strong>October 10, 2026</strong> &mdash; <a href="t-ix.html">t-IX runs in your browser</a>: tiny-machine, a machine of our own design in OCaml, compiled to JavaScript, boots tiny-kernel, its window system and tetris in a page (and tiny-os, two kernels in C).</li>
+<li><strong>October 10, 2026</strong> &mdash; <a href="m-ix.html">m-IX boots in your browser</a>: mini-qemu, the Raspberry Pi emulator, compiled to JavaScript, boots mini-9pi from its SD card, with the shell, rio and the card's programs.</li>
+<li><strong>October 10, 2026</strong> &mdash; <a href="t-ix.html">t-IX runs in your browser</a>: tiny-machine, a machine of our own design in OCaml, compiled to JavaScript, boots tiny-kernel, its window system and tetris in a page.</li>
 <li><strong>October 3, 2026</strong> &mdash; The website is online, with a <a href="#source">code map</a> of the whole repository.<br><a href="codemap.html"><img src="pics/codemap.png" alt="IX's code map: every folder a region, every file a block" width="240"></a></li>
 <li><strong>October 3, 2026</strong> &mdash; A first screenshot: mini-9pi, Plan 9's kernel in OCaml, running Plan 9's own <code>rio</code> under mini-qemu, <span class="ix"><span class="mt"><sup>m</sup><sub>t</sub></span>IX</span>'s Raspberry Pi emulator.<br><a href="pics/mini-9pi.png"><img src="pics/mini-9pi.png" alt="mini-9pi under mini-qemu: a rio window, with echo, date, ls and ps typed in it" width="320"></a></li>
 <li><strong>October 2, 2026</strong> &mdash; <span class="ix"><span class="mt"><sup>m</sup><sub>t</sub></span>IX</span> is bootstrapped: it builds itself. A first build needs OCaml 4.14 and gcc; after that <code>mini-mk</code> rebuilds it with its own tools only, <code>mini-ml</code>, <code>mini-cc</code>, <code>mini-asm</code> and <code>mini-ld</code>, and that build, building itself again, gives the same files byte for byte (see <a href="https://github.com/aryx/IX/blob/main/changes.txt">the changes</a>).</li>

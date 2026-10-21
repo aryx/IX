@@ -39083,3 +39083,1885 @@ Claude made Plan9_loop.ml add the border only when the picture changed, cutting 
 Claude closed three network gaps: mini-pi now adds usb-net, boot.rc runs timesync from /bin, and the card gets /lib/tls/ca.pem.
 Claude checked under QEMU that date is right and curl fetches example.com over both http and https, 577 bytes each.
 Claude proposed one commit of those files plus two bugs/ix.md rows, noting the card and window checks were not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:34
+
+**Yoann:**
+
+> let's commit the progress first
+
+**Claude (summary):**
+
+Claude committed the step 8 work as 20ee0370, leaving out another session's files, `browsers/`, and `prompt-history.md`.
+Claude reported that the full self-build on tiny-kernel was still running when the commit landed.
+Claude planned to compare the self-built image against the host's image once the build finished.
+Claude planned to record `self.expected`, then rerun `make check` and re-record `check.expected` and the screen sums.
+Claude planned to write the plan's Status section after those checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:41
+
+**Yoann:**
+
+> continue step 8: check the progress of the self-build (scratchpad/tk15/self.out)
+
+**Claude (summary):**
+
+Claude committed the step 8 work so far as 20ee0370, leaving out another session's files and browsers/.
+Claude said the self-build on tiny-kernel was about 40 minutes in, with `as` assembling its 1.3 MB of output.
+Claude estimated several hours remained, with the ML compile already done and the units and programs still to come.
+Claude planned to compare the image with the host's, record self.expected, rerun make check, and write the plan's Status.
+Claude proposed checking the self-build again in an hour, and noted make check would fail until re-recorded.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:36
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the fixes as 068f2500, then added 6adfc67b to remove a duplicated docs/plans/bugs/ix.md entry.
+Claude flagged that every program on mini-9pi uses Plan9_loop, so that change reaches all of them.
+Claude admitted it never ran the mini-qemu network or the recorded screen checks after that change.
+Claude listed check-windows and the games as unrun, though they exercise every mini-9pi program through Plan9_loop.
+Claude also said check-card listings may now show /lib/tls, which is unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:43
+
+**Yoann:**
+
+> I tried netscape under mini-9pi and after clicking on news.ycombinator.com link from the homepage, I got a suicide: sys: trap: fault write va=0xcf3a000 pc=0x4fa86c  trace: lr=0x50414c sp=0xcf0e68c: etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:44
+
+**Yoann:**
+
+> we should also allocate bigger stack
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:41
+
+**Yoann:**
+
+> you can stop; I will not wait an hour or more
+
+**Claude (summary):**
+
+Claude stopped the self-build and cancelled the wakeup, after it had run about 40 minutes.
+Claude said the full build on tiny-kernel and its comparison, which takes hours, were never reached, so the image was not checked against the host's.
+Claude noted that `make check` fails because `check.expected` and some screen sums are stale after commit 20ee0370, and it could re-record them in a few minutes.
+Claude suggested the full build could fit a session only if it got faster, either through tiny-build's `-j` (ml alone takes 32 of 95 MB) or by speeding up tiny-ml.
+Claude pointed to tiny-ml's association-list environments as the time sink, which is where Yoann wants to focus next.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:45
+
+**Yoann:**
+
+> let's speedup tiny-ml is most of the time is spent there; also maybe we can run the tiny-machine with a higher-rate if possible
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:52
+
+**Yoann:**
+
+> entry.tm should be used only for the entry code of a program no? assembly utilities should probably go in another file no? Unless those utilities are used only by the entry code
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:53
+
+**Yoann:**
+
+> Also do not add optimisation hack for things that are not the root cause
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:53
+
+**Yoann:**
+
+> (or not too much at least)
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:54
+
+**Yoann:**
+
+> using Hashtbl instead of List makes sense
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:54
+
+**Yoann:**
+
+> and we should do that
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:44
+
+**Yoann:**
+
+> for worker threads
+
+**Claude (summary):**
+
+Claude investigated a worker-thread crash in the ix runtime, touching `gc.c` and lib_core's Thread `create` and `create_large`.
+Claude reproduced the arm64 mini-ml segfault on Hacker News with and without the worker, then rebuilt runtime and lib_core.
+Claude wrote scratch overflow programs to test thread stack limits, but both overflows printed nothing and exited without the fatal message.
+Claude confirmed netscape's frames test passed, `dune build` passed, and `compile_ix.sh` compiled the changed files.
+Claude added the bug row to `docs/plans/bugs/ix.md` and left the longer QEMU Hacker News run still going.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 08:54
+
+**Yoann:**
+
+> because it's clear Hashtbl are faster than List (and not that much harder to use so the code is almost as long)
+
+**Claude (summary):**
+
+Claude named the code generator's `^` string chains as the top remaining root cause of TinyML.ml's compile time.
+Claude traced them to step 7's removal of Printf, since each piece now allocates a new string.
+Claude ranked this first among the next root causes and proposed writing straight into the Buffer instead.
+Claude called that a large but mechanical edit, and asked whether to do it before rerunning `make self`.
+Claude also reported the hash-table speedup, undid four symptom patches, and left nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:13
+
+**Yoann:**
+
+> maybe we could restore Printf in tiny-ml? Why was it removed? How much it cost? How much it simplifies and speedup things?
+
+**Claude (summary):**
+
+Claude explained that Printf was removed because OCaml types format strings inside its own checker, which tiny-ml lacks.
+Claude noted tiny-ml infers bottom up, so step 7 replaced all 176 Printf calls with caret chains.
+Claude proposed expanding literal formats at parse time into String.concat, leaving the type checker untouched.
+Claude estimated this simplifies the code and cuts 20–30% of compile time, pending measurement.
+Claude recommended the restore and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:21
+
+**Yoann:**
+
+> it's true the type of format is complicated and probably complicates the typechecker.
+
+**Claude (summary):**
+
+Claude recommended expanding printf-style format literals in the parser, before typing, leaving the type checker unchanged.
+Claude proposed rewriting literals after Printf.sprintf, printf, eprintf or ksprintf into String.concat over literal pieces and string_of_int calls.
+Claude said a partial application such as ksprintf failwith "%s: %d" would become a fun over the missing arguments.
+Claude said non-literal formats, such as variables, would be rejected at their line, costing about 40-50 parser lines.
+Claude explained that OCaml's format6 typing would be bypassed, since tiny-ml checks the expanded plain code instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:22
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:35
+
+**Yoann:**
+
+> I just plugged an USB device in this machine. Do you know what is it?
+
+**Claude (summary):**
+
+Claude said the first device was a USB-C hub, connected at 11:34:58.
+Claude identified the VIA VL817 hub chip (2109:2817/0817), common in cheap USB-C docks.
+Claude read the VIA "USB Billboard Device" (2109:8888) as the dock's USB-C side, likely with DisplayPort alt-mode.
+Claude matched the Realtek card reader (0bda:0306) to /dev/sda and /dev/sdb, both slots empty, and the ELMCU receiver (0c40:8000) to a wireless keyboard and mouse.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:36
+
+**Yoann:**
+
+> what about the one I just inserted now?
+
+**Claude (summary):**
+
+Claude identified the newly inserted device as a USB WiFi adapter, a Realtek RTL8188EUS with USB ID 0bda:8179.
+Claude reported it as a cheap 2.4 GHz-only 802.11n adapter that the in-kernel rtl8xxxu driver loaded as interface wlx14ebb694be9e.
+Claude said the "Path A RX IQK failed" kernel message is common with this driver and usually harmless.
+Claude also noted the hub reset dropped the ELMCU keyboard receiver, and the SD card reader is still present with empty slots.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:37
+
+**Yoann:**
+
+> does mini-9pi have a driver for it? (or principia, or plan9, or 9front)
+
+**Claude (summary):**
+
+Claude said none of the four systems has a driver for this RTL8188EUS USB WiFi adapter.
+Claude said mini-9pi's Etherusb.ml handles only wired adapters: SMSC LAN9512/9514 on Pi boards and QEMU CDC.
+Claude recalled from memory that 9front's ether4330 driver covers the Pi 3 and 4 Broadcom WiFi chip.
+Claude said the Pi 1 and 2 use built-in SMSC wired Ethernet, which mini-9pi already supports.
+Claude advised that wired options, such as QEMU's usb-net or an ASIX dongle, are far easier than WiFi.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:39
+
+**Yoann:**
+
+> I have a Pi4. Does it support Wifi?
+
+**Claude (summary):**
+
+Claude confirmed the Pi 4 has built-in WiFi, but noted that mini-9pi and principia have no network support for it yet.
+Claude described the CYW43455 as an SDIO-attached chip needing a host driver, boot firmware, and software WPA2.
+Claude called a WiFi port of Richard Miller's `ether4330.c` the natural reference, though it recalled that from memory and did not check it.
+Claude said the WiFi path is much more work than GENET, with the 4-way handshake and AES-CCMP as the hardest parts.
+Claude suggested starting with GENET wired Ethernet as the simpler first step before attempting WiFi.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:42
+
+**Yoann:**
+
+> would be good because of the teaching context of principia, m-ix (and t-ix), to explain how wifi works, but ideally the code for it would not be too complicated, with a not too complicated device
+
+**Claude (summary):**
+
+Claude proposed splitting WiFi into an OCaml 802.11 protocol layer, with no device dependence, plus a separate device layer.
+Claude recommended a virtual radio in tiny-machine and mini-qemu for t-ix and m-ix, where the emulator plays the access point.
+Claude suggested the Pi 4's built-in CYW43455 chip later, reusing the same WPA2 handshake code from layer one.
+Claude offered to write this up as a plan in docs/plans/, which Yoann accepted.
+Claude advised against writing a driver for USB dongles, since their vendor register tables are mostly opaque.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:31
+
+**Yoann:**
+
+> in any case, I think adding printf support in tiny-ml is good; the code is clearer indeed
+
+**Claude (summary):**
+
+Claude recommended making String.concat a single C runtime primitive in core.c, about 20 lines.
+Claude explained it would walk the list, sum the lengths and copy once, like ml_concat for `^`.
+Claude estimated each Printf call would then cost one C call instead of three or more per piece.
+Claude proposed timing the same TinyML.ml before and after the change to measure the gain.
+Claude kept Printf in tiny-ml and eight programs, though TinyML.ml compiles in 202 s versus 171 s.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:54
+
+**Yoann:**
+
+> ok let's commit the progress and implement String.concat in C if it significantly speedup the building of t-ix under t-ix
+
+**Claude (summary):**
+
+Claude turned `String.concat` into a runtime primitive: one C function in core.c that walks the list and copies once.
+Claude timed TinyML.ml on both images: 168 s with the C version against 195 s with the ML version, 14% faster.
+The C build's object is 3 KB larger, since each call now goes into C rather than an ML function.
+Claude kept the C change uncommitted after the TinyLibCore and TinyML tests passed, and asked whether to commit it.
+Earlier, Claude committed the progress as fe58f4b3, leaving `make check` and `make self` not yet run.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:51
+
+**Yoann:**
+
+> yes, write the plan in docs/plans/. I also added just now a new USB dongle; what is it?
+
+**Claude (summary):**
+
+Claude identified both of Yoann's USB Wi-Fi dongles, including the new one, as SoftMAC Realtek chips.
+Claude stated this identification up front, before doing any other work on the ix plan.
+Claude said it was writing the plan into docs/plans/ and would answer the new-dongle question at the end.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:01
+
+**Yoann:**
+
+> let's commit the plan and I think it makes sense to not support those realtek and focus on the Pi4 wifi embedded device if we want to showcare wifi in IX
+
+**Claude (summary):**
+
+Claude committed the plan as c8b0fa6c, and that commit contains only docs/plans/plan_wifi.md.
+Claude rewrote the plan to target the Pi 4's built-in CYW43455 chip, with no USB dongle support.
+Claude reordered the work so lib_crypto gains PBKDF2 and AES key wrap before the host-side WPA2 handshake.
+Claude marked the emulator section as written before your decision, suggesting mini-qemu emulate the CYW43455 instead.
+Claude noted the chip's firmware handles data-frame encryption, so 802.11 frames go untaught unless the emulated chip covers them.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:00
+
+**Yoann:**
+
+> continue: read the String.concat comparison (task bxb5p115b) and decide whether to keep the C primitive
+
+**Claude (summary):**
+
+Claude decided to keep `String.concat` as a C runtime primitive after the comparison.
+Claude measured the same TinyML.ml compile at 168 s with the C version against 195 s in ML, 14% faster.
+Claude noted the object came out 3 KB larger, since each call now goes into C rather than an ML function.
+Claude put the change at about 30 lines in core.c, with String.ml shrinking to a one-line external.
+Claude left it uncommitted, pending go-ahead, with `make check` and `make self` still to run.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 09:04
+
+**Yoann:**
+
+> why it's taking a long time? It should not take a long time
+
+**Claude (summary):**
+
+Claude measured the whole page load at 5.7 s on Linux arm64 and set out to separate network, TLS, and layout time.
+Claude's curl timings under QEMU showed network and TLS cost about 6 to 7 s, so they are not the gap.
+Claude's table put netscape on Hacker News at about 200 s under QEMU, versus 1.2 s native, roughly 170 times slower.
+Claude found no mini-qemu profile because graphics.py sends SIGKILL, so the profile is never written at exit.
+Claude planned to read the next profile from collector and page-fault samples, and to report when that run finishes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:11
+
+**Yoann:**
+
+> we recently reorganized quite a bit tiny/ and removed support for arm64 and a new TinyLibCore/. Are there things we could do to reduce the LOC in tiny/? (see make loc). Any thing we could factorize in standard OCaml functions in TinyLibCore/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:08
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the String.concat C primitive as c7aaf5e6, touching only core.c and String.ml.
+Claude laid out what remains of step 8, starting with make check, which fails until recorded.
+Claude noted that make check still fails until check.expected and the screen sums are recorded.
+For make self, Claude listed running it, recording self.expected, and diffing the tiny-kernel image against the host's.
+Claude also listed the plan's Status entry and the line counts as docs still to update.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:11
+
+**Yoann:**
+
+> anything really
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:12
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude reported finding duplicated helper code across the ix tools during its analysis.
+Claude identified duplicated prefix tests, little-endian byte coding, and digit/space predicate helpers.
+Claude proposed TinyLibCore changes to consolidate these duplicates, which Yoann approved.
+Claude was still checking more duplicated patterns before writing the report.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:24
+
+**Yoann:**
+
+> tiny/tests should definitely not cound for make loc; for m-ix we actually list the toplevel tests/ separately. Otherwise let's do all those TinyLibCore change, I think they are good. For label, we can simply use the function without the label at the call site and it should work if we put them in the right order and it will still compile with OCaml.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:11
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude started the self-build in the background on the current tk21 image, built from c7aaf5e6.
+Claude set that run to build tiny-kernel's whole image from /sys/src on a fresh 64 MB disk.
+Claude queued two incremental rebuilds after the full build to test the incremental path.
+Claude also ran make check with -i on a separate tk22 copy, to see which check.expected and screen sums need re-recording.
+Claude counted t-IX at 20,541 lines, up 196 since step 7, leaving 4,459 of the 25,000 budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:26
+
+**Yoann:**
+
+> let's not use /sys under t-ix; we already don't use it under princpia; use instead /src/
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:09
+
+**Yoann:**
+
+> there is warning 11 redundant case on Tab.ml
+
+**Claude (summary):**
+
+Claude left both fixes uncommitted, spanning gc.c, Thread, Worker_spawn, the mkfile, spawn/large_threads.ml, Tls_client.ml, compile_ix.sh, and docs/plans/bugs/ix.md.
+Claude's stack fix adds Thread.create_large for mini-netscape's worker, giving it a value stack and machine stack as large as the main program's.
+Claude's stack fix also gives each thread a guard as large as its stack, so overflows stop with "stack overflow" instead of crashing.
+Claude's TLS fix makes Tls_client.send write the request at once on a finished handshake, cutting each later file from 32 s to 0.3 s.
+Claude left mini-rio and mini-qemu unchecked with the fixes, and the Tab.ml warning was from a probe Claude removed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:28
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the work as 7ac6027f, with nothing of its own left uncommitted.
+The commit includes larger worker stacks with overflow guards for the workers.
+It also fixes a request on a kept connection so it is written at once, not held back.
+Claude added the two corresponding rows to bugs/ix.md.
+Not yet run: the recorded screens of mini-rio, other threaded programs, and anything under mini-qemu.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:30
+
+**Yoann:**
+
+> maybe some good technique to add to note_debugging_techniques.txt (or the perf note document)
+
+**Claude (summary):**
+
+Claude added section 20 to `docs/notes_debugging_techniques.md`, titled "Slow on one system only: a table of builds, then a clock on each step," without committing it.
+The section covers a build table, instruction counts over time, timed steps, reading a fault from its numbers, and profiling a killed emulator.
+Claude also added a warning that the red border made each frame a different picture, plus a five-step order for next time.
+While writing, Claude found its arm32 curl time had been measured on example.com, so it re-measured on Hacker News (1.8 s) and fixed the table and ratio.
+Claude left the performance note unchanged, since its only lesson concerns correctness rather than speed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:31
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:31
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended three steps: run the skipped checks, speed up netscape frames on mini-9pi, then move the network fetch into a forked process.
+Claude proposed starting `make check-quick` in the background, since today's commits touched code every mini-9pi program uses.
+Claude suggested splitting `show`'s 250 ms frame cost between building device messages and device drawing, using the stats meter.
+Claude also flagged the mini-ml arm compile failure and the 128 KB thread guard issue as smaller items for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:25
+
+**Yoann:**
+
+> TinyKernel/steps/ should also not be counted for make loc (the same way we don't count kernels/steps/ either )
+
+**Claude (summary):**
+
+Claude checked that its edits carried only its own hunks, since another session was editing tiny/ at the same time.
+Claude left TinyML.mli, TinyKernel.mli, Stdlib.mli, the Makefile, and the .keys files out, as they were not its own.
+Its own changes were tiny-ml's label skipping, TinyLibCore's String.starts_with and get_uint16_le, and warning 6 off for tiny/.
+Claude also moved TinyMachine's le32 above wav, and mini-ml compiled all 51 tiny files.
+One TinyUtilities test failure was still open, with Claude checking whether its own change caused it.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:33
+
+**Yoann:**
+
+> I also noticed moving the cursor in netscape under mini-9pi feels a bit slow or not smooth. Let's commit and move forward with 1 and 2 probably and then 3
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:36
+
+**Yoann:**
+
+> I'd rather not do hack optimizations that obscure the code
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:36
+
+**Yoann:**
+
+> especially when there is maybe a better optimization that is not a hack but address the code issue
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:36
+
+**Yoann:**
+
+> not saying this is the case here
+
+**Claude (summary):**
+
+Claude recommended a new glyph shape in Playground carrying a character, look, colour, and Hershey strokes.
+Claude proposed that mini-9pi draw letters once into a cache image, then copy them per occurrence.
+Stroke_text would return one glyph shape instead of a list of rectangles, so browser_draw and mini-office both gain.
+Software, SDL, draw, and web platforms would all need handling, about 100–150 lines, with about:home measured before and after.
+Claude also noted that layout is unchanged, while mini-9pi pixels may round slightly differently.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:39
+
+**Yoann:**
+
+> yes let's do this; I think it was an optimization mentioned multiple times before; An alternative would be to do this caching font work user-side and not send draw commands (strokes) but instead a bitmap of the "rendered" image user side, but I dunno if that would be fast enough
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:40
+
+**Yoann:**
+
+> maybe we can do both
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:27
+
+**Yoann:**
+
+> we use /sys/ in principia for devsys.c I think to show like in Linux stats or information about the systems
+
+**Claude (summary):**
+
+Claude said nothing was committed yet, and that it would run the full `make check` before any commit.
+Claude had recorded `check.expected` and the screen and sound sums from individual runs, not from one end-to-end run.
+Claude renamed `/sys/src` to `/src` and `/sys/lib/ml` to `/lib/ml` across the image, Buildfile, keys, and docs.
+Claude was still waiting on the self-build, about 16 minutes in, before recording `self.expected` and writing the plan's Status.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 7cdf2d32 with the move to /src and /lib/ml, recorded make check text, screens, sounds, and README counts.
+Claude left prompt-history.md and browsers/ out of the commit and noted make check was recorded from separate parts, not a full run.
+Claude said the self-build on tiny-kernel is still running and is the next thing to finish.
+Once it finishes, Claude will compare the self-built image against the host's image.
+Claude will then record self.expected and write the Status entry in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:34
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the staged work as 3d7f0db9, on top of 840cc17a.
+Claude then began resyncing the git index for its 17 paths to the new HEAD.
+Claude left the other session's staged prompt-history.md untouched in the index.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:43
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude pointed out that `k_copy` and `k_zero` still sit in entry.tm as memory loops.
+Claude said moving them next to `row_copy` in draw.tm would be a pure move, with no behavior change.
+Yoann's reply treats that move as the right call if the loops are drawing code rather than entry code.
+Claude also raised the failing `du` test on the host, offering to fix it or record it in `bugs/ix.md`.
+Claude's other remarks covered the self-build wait, the boot.img comparison, saving `self.expected`, and the step 8 status entry.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:43
+
+**Yoann:**
+
+> look at the du failure in TinyUtilities
+
+**Claude (summary):**
+
+Claude traced the du failure to the test, since ext4 returns directory entries in hash order.
+Claude changed the plain du case in tiny/tests/TinyUtilities_test.sh to compare sorted output, so disk order no longer matters.
+Claude also updated the test header to name which du cases need sorting, leaving program code unchanged.
+With that fix all 166 TinyUtilities cases pass, and Claude reported the result.
+Claude then offered to commit the test change, and Yoann replied "let's commit."
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:44
+
+**Yoann:**
+
+> let's move the k_xxx to draw.tm if they are more draw related code than entry code
+
+**Claude (summary):**
+
+Claude recommended moving `k_copy` and `k_zero` out of entry.tm, since they are kernel memory loops, not drawing or entry code.
+Claude proposed a third file, memory.tm, holding `k_copy`, `k_zero`, and possibly `row_copy`/`row_fill` from draw.tm.
+Claude noted entry.tm would keep only the entry, traps, `k_run`, and control registers, which need the machine's own instructions.
+Claude said the split costs one file and one Makefile line, and changes no behaviour.
+Claude had moved nothing yet and offered to create memory.tm on request.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the test fix as 854509e0 in the ix repository.
+The commit touched only tiny/tests/TinyUtilities_test.sh, the test fix file.
+Claude left prompt-history.md out of it, since someone else had staged that file.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:45
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting the line-cost review with TinyBrowser, which is 1,463 lines long.
+Claude proposed listing each TinyBrowser feature with the lines it costs and what dropping it would lose.
+Claude gave examples such as HTML tables, image formats, and Wikipedia handling as candidates to weigh for cutting.
+Claude said the review would be a report with no code changes, so Yoann would pick which features to drop.
+Claude also noted the helper hunt saved only 9 lines and flagged kernel boot tests and Int64 cleanup as minor leftovers.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:41
+
+**Yoann:**
+
+> but before doing that, should we finish what we were doing first?
+
+**Claude (summary):**
+
+Claude said a recording run was going in the background.
+Claude first saved a copy of the current expected sums, so it could see which screens changed.
+Once recording finished, Claude planned to inspect the differing screens.
+Claude's last step would be running `check-card` to verify the results.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:49
+
+**Yoann:**
+
+> maybe we could have a notes_font.md document, like we have notes_keyboard.md where we discuss all those issues related to font, and speed, and cache, and where to do it, and how it's done in Linux and freetype and fontconfig and so on, so maybe the current design of how it's done in ix does not look too different than the other systems (including plan 9)
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:47
+
+**Yoann:**
+
+> yes, start with TinyBrowser
+
+**Claude (summary):**
+
+Claude read all of TinyBrowser.ml and checked its tests against the plan's feature list.
+Claude noted the plan explicitly asks for pictures, then checked which other features the author requested.
+Claude also checked which character cases Wikipedia actually sends, to judge what each feature would cost to drop.
+Yoann rejected the options for features 2 and 3, saying he uses tables on his websites and wants to keep them.
+Yoann chose option 1, so Claude's pictures-versus-tables cost analysis is the part being pursued.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:50
+
+**Yoann:**
+
+> (maybe we should have a docs/notes/ directory at this point)
+
+**Claude (summary):**
+
+Claude asked whether to commit the uncommitted work: 17 graphical screen-sum files and 6 console session records.
+Claude proposed committing those records together with the new `docs/notes_font.md` note on ix's font handling.
+Claude offered to start the letters' stage A1 right after that commit.
+Claude deferred moving the 11 notes into `docs/notes/`, since 193 files link to them and another session has files open.
+Claude also reported that 7 of ix's 11 card sessions matched, with the other differences explained by today's changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:54
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude outlined stage A1 for letters: a new `Letters` shape that the software renderer draws with today's strokes.
+Claude planned `Stroke_text` to return runs of text, so the rendering change stays separate from new glyph output.
+The golden frames were to stay unchanged on Linux, so stage A1 would not alter any rendered output there.
+Claude framed stage A1 as groundwork to finish before any text-rendering optimization.
+Earlier, Claude committed mini-9pi's screen sums as e4beed6e and added docs/notes_font.md as 31114e95, unlinked from the README.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:45
+
+**Yoann:**
+
+> yes, let's do memory.tm, so entry.tm remain small
+
+**Claude (summary):**
+
+Claude moved `k_copy` and `k_zero` from entry.tm into a new TinyKernel/memory.tm, leaving entry.tm at 173 lines.
+Claude re-recorded check.expected and the two sound sums because the kernel layout moved, and all 23 screens held.
+Claude confirmed the image is byte-identical with TinyBrowser as committed, so the recordings hold on a clean checkout.
+Claude left everything uncommitted and said it would leave the other session's TinyBrowser files out of the commit.
+Claude noted the self-build was still running, so `make self` needs one more run after the memory.tm move.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the move as f954c45c with memory.tm, entry.tm, the Makefile, and check.expected, leaving out other uncommitted TinyBrowser edits.
+Claude reported that the self-build is still running on the image from before the move.
+Claude planned to compare that build's image against the new one once the self-build finishes.
+Claude then intended to run `make self` once on the current state, so the result can be recorded.
+Claude would record the output as self.expected, along with the two sound sums.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:54
+
+**Yoann:**
+
+> I like tables; I actually use them on the principia-softwarica.org website, and the xix and ix websites, so I don't think I want 2 and 3. But let's do 1
+
+**Claude (summary):**
+
+Claude saved Yoann's table preference first, then carried out option 1 from the earlier list.
+Claude moved `dump` and `show_line` into a new `TinyBrowser_tests/Testutil_browser.ml` helper shared by Host.ml and Tm.ml.
+Claude dropped `dump`, `show_line`, and the unused `lines` from TinyBrowser, and switched `number` and `entity_code` to `int_of_string_opt`.
+Claude rewrote the stale header paragraph, and all TinyBrowser tests passed with the recorded `.expected` lines unchanged.
+Claude then updated the test script comment and started checking www's tiny-ml and mini-ml builds.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:59
+
+**Yoann:**
+
+> let's commit and stop there
+
+**Claude (summary):**
+
+Claude committed the TinyBrowser change as 4b1dc33e, containing only its eight files, including Testutil_browser.ml.
+Claude kept the other session's check.expected and staged prompt-history.md outside the commit.
+Across the session, Claude made three commits and cut t-ix from 20,541 to 20,495 lines.
+Claude's commits were 3d7f0db9 (standard OCaml helpers), 854509e0 (sorted du test output), and 4b1dc33e (TinyBrowser test code moved).
+Claude did not run the recorded tiny-kernel sessions, so TinyKernel's changed word and header are untested.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:59
+
+**Yoann:**
+
+> anythinh we can do to speedup this self compilation of building t-ix under t-ix ?
+
+**Claude (summary):**
+
+Claude listed four build speedups for tiny-kernel and tiny-build, led by repeated interface parsing and per-run digests.
+Claude pointed to tiny-machine's interpreter, about 14 million instructions a second, as the host-side bottleneck everything scales with.
+Claude said a faster dispatch in TinyMachineCPU.step would help every program, not only the build.
+Claude ruled out -j in tiny-build, since tiny-machine's single CPU would make parallel recipes just share it.
+Claude proposed timing each recipe under tiny-machine -prof after the current self-build, then asked to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:06
+
+**Yoann:**
+
+> 1: what does ocaml itself do? the .cmi contains everything too? 2 what trusting a file size and stamp mean? does it mean adding lots of code to tiny-build or having to memorize extra things on the disk? 3: what does plan9 and linux do? 4: using the buffer would complicate the code? You could still use sprintf?  for the interpreter, I wonder if we could do like for mini-qemu and leverage ocaml domains when we can and so propose to have multiple cores in tiny-cpu that tiny-build could then leverage and so we could speedup things there too. Tiny-machine is a simplified machine, and having 1 core definitely simplifies things, but nowaday and I think for a long time we will have machines with multiple cores, so maybe it is more didactic to also have a tiny machine with multiple cores, and not wait for m-ix to see and leverage those multiple cores; I dunno though how much could this would add in TinyMachine, TinyKernel, TinyBuild, etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 10:57
+
+**Yoann:**
+
+> before optimizing the rendering of text, there are currently some bugs in mini-netscape; scrolling on HN for instance is slow but more importantly some of the previous entries disappear as we scroll down
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:07
+
+**Yoann:**
+
+> maybe we could have a plan_tiny_multicore.md or something
+
+**Claude (summary):**
+
+Claude wrote the uncommitted docs/plans/plan_tiny_multicore.md, answering the four questions and the multicore design.
+Claude suggested doing items (1) per-unit .tmi files and (4) Buffer-based printing first, both inside tiny-ml.
+Claude said those two help every unit, so they should come before the size-and-stamp and exec-zeroing decisions.
+Claude put multicore last, after step 8 closes, since it gives no speedup under OCaml 4.14 or for TinyML.ml.
+Claude's plan has tiny-machine's `-cores` flag and tiny-kernel's master-and-slaves design, with a 256 MB memory limit.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:12
+
+**Yoann:**
+
+> continue step 8: check the self-build (scratchpad/tk23/self.out); when done, compare its image with the host's (Cat), record self.expected, write the plan's Status
+
+**Claude (summary):**
+
+Claude recommended that each tiny-ml .tmi file hold only its own unit's types, not the whole name space.
+Claude said this lets each type parse once per unit, not up to 20 times.
+Claude estimated a modest change to write_interface and read_interface, plus a read_ty that skips the full lexer.
+Claude proposed doing (1) and (4) first, then deciding (2) and (3), with multicore after step 8.
+Claude also wrote docs/plans/plan_tiny_multicore.md, uncommitted, covering size-and-stamp caching, exec zeroing, Buffer printing, and multicore.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:13
+
+**Yoann:**
+
+> ok let's do what you proposed in order (1, 2, 3, etc.). I like your plan. Let's do it one at a time
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:15
+
+**Yoann:**
+
+> also let's rewrite code to circumvect some arbistrary limit we put on certain things
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:15
+
+**Yoann:**
+
+> not
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:15
+
+**Yoann:**
+
+> I mean let's not rewrite code to circumvect ...
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:16
+
+**Yoann:**
+
+> for instance the filesystem should have dates, and allow filenames of 64 characters
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:16
+
+**Yoann:**
+
+> and if this become an issue, we can extend
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:16
+
+**Yoann:**
+
+> also marshall is a great library and very useful in programs;
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:16
+
+**Yoann:**
+
+> maybe we should add one (in C or whatever) to tiny-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:16
+
+**Yoann:**
+
+> if it helps improve the speed of the program and also clarity
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:09
+
+**Yoann:**
+
+> would be good also maybe to show visually when the web engine is running and the page is not finished loading; the status line gives some info, but I wonder what netscape used to do, to give visual feedback
+
+**Claude (summary):**
+
+Claude found no reproduction of the vanishing Hacker News entries, but flagged that Page Up and Page Down fail on mini-9pi.
+Claude explained that Netscape's animated "N" throbber streaked meteors while loading, and proposed making mini-netscape's N move frame by frame.
+Claude proposed a status-bar progress thermometer showing percentage and "of N KB", filling as bytes arrived in Netscape.ml.
+Claude also proposed lighting the Stop button's red sign only while a page is loading.
+Claude warned that each throbber change triggers a 300 ms full redraw on mini-9pi, and asked whether to do it now or after the letters.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:17
+
+**Yoann:**
+
+> and our marhall does not have to be backward compatible with ocaml; this is tiny, we are free
+
+**Claude (summary):**
+
+Claude recommended a Marshal format of our own, since the `.tmi` files are shared between host and tiny-kernel.
+Claude noted that tiny-ml on the host and `ml` on tiny-kernel must write identical bytes, so the format needs two implementations.
+Claude pointed out the host side would be OCaml over `Obj`, and the device side would be C in TinyMLRuntime.
+Claude proposed replacing the 80-line `write_interface` and `read_interface` text code with a marshalled record, expected to be faster and clearer.
+Claude also reported item (1) done but uncommitted, with unit outputs byte-identical and TinyML's tests passing.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:18
+
+**Yoann:**
+
+> let's do it! Let's add those 3 visual feedback
+
+**Claude (summary):**
+
+Claude added an animated meteor throbber on the N, a status-bar progress bar, and a Stop button that Esc also triggers.
+Claude made Stop show "Transfer interrupted!" and moved the Location field right by 62 pixels.
+Claude fixed Page Up, Page Down, Home and End on mini-9pi, moving the USB extended-key threshold to 0x47.
+Claude rebuilt the usbd and kernel Kusb images, then rechecked netscape's 30 frames, profile, helpers, and check-quick.
+Claude left everything uncommitted, with the keys bug recorded in bugs/ix.md and the disappearing entries still open.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:55
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed Page Up, Page Down, Home and End support for mini-9pi as commit a1102550.
+That commit also carries Home's escape fix in the USB driver, along with the bug row for it.
+Claude kept the mini-9pi key work separate from the loading feedback commit, ae0fb387, which re-recorded netscape's frames.
+Claude left the other session's plan_tiny_multicore.md out of both commits.
+Claude left the disappearing Hacker News entries open, pending how Yoann scrolled when it happened.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:56
+
+**Yoann:**
+
+> it's a bit sad that under mini-9pi just moving the cursor around on the first page slow down the fps significantly to the point where the mouse movement is not smooth
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:57
+
+**Yoann:**
+
+> also I can see 250% for HN progress on the top right under Linux, and on 9pi I could not even see this number. But why 250% instead of 100%?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:58
+
+**Yoann:**
+
+> regarding the scrolling but that hide the previous HN entries, I was able to reproduce again
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:58
+
+**Yoann:**
+
+> just on Linux, running mini-netscape, selecting HN, and the scrolling shows this bug
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:22
+
+**Yoann:**
+
+> let's commit first. let's do 2, 3, 4.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:03
+
+**Yoann:**
+
+> if those tests constant change because the size of binaries constantly change, maybe we should just mask those size or just remove the test; what is the test testing?
+
+**Claude (summary):**
+
+Claude finished item (2), with the date and masking work, and asked whether to commit it before item (3).
+Claude reported that the self-build in scratchpad was still running, 64 lines in at `office`, about 1 h 45 in.
+Claude said that run started on the older image, so `make self` had not yet tested these changes.
+Claude said the self-build's result would only show whether the older image matches the host's, not the new changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 11:59
+
+**Yoann:**
+
+> (I have zoomed in for the font, so maybe you don't even scroll because your font for HN is small)
+
+**Claude (summary):**
+
+Claude traced the disappearing entries to one line in `Netscape.ml`'s view, `P.scale z (P.move 0. scroll page)`.
+Because the playground's transform applies the move unscaled, the page scrolled by `scroll / z` while the line filter used the real `scroll`.
+At 250% and scroll 288, that left 173 page pixels of lines undrawn, matching the missing band.
+Claude changed the page move to `scroll × z` and added a `zoom-scroll` session over a 40-line `long.html`, with 31 of 31 frames passing.
+Claude noted the 250% in the status bar is the page zoom, and that nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:14
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the fix as d7779b39, including the new `zoom-scroll` session, its `long.html` page, and the bug's row.
+Claude said the about:home measurement while the mouse moves on mini-9pi was still running.
+Claude said it would report the results once that measurement finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:15
+
+**Yoann:**
+
+> what about the cursor smoothness measurement?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:15
+
+**Yoann:**
+
+> this is mostly visible though on mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:15
+
+**Yoann:**
+
+> because on Linux the machine is too fast
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:17
+
+**Yoann:**
+
+> scrolling on linux still feels slow though on HN for instance, but also wikipedia
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:09
+
+**Yoann:**
+
+> continue step 8: check the self-build (scratchpad/tk23/self.out); when done, compare its image with the host's (Cat), record self.expected, write the plan's Status
+
+**Claude (summary):**
+
+Claude named item (3) as "zeroing at exec," the step after item (2), and gave no further detail on it.
+Claude asked whether to commit item (2) first, or start (3) while the self-build runs.
+Claude suggested committing (2) and going on to (3) in the meantime, since the self-build would take another 1.5 to 2 hours.
+Claude reported the self-build at about 1 h 45 in, at `office`, with 26 of 29 programs still to link.
+Claude also summarized item (2): a boot date, kernel clock and `time`/`stat` calls, dated files, and a faster `ls -l`.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:19
+
+**Yoann:**
+
+> what was 3?
+
+**Claude (summary):**
+
+Claude recommended zeroing only the part of a program's image on exec, not the whole partition, to save about 2.5 s per `ml` compile.
+Claude explained that Plan 9 and Linux zero pages on demand, which tiny-machine's base/bound window cannot do.
+Claude noted the cost: a program could read the previous owner's bytes in its heap and stack, a deterministic cross-process leak.
+Yoann chose the zero-only-what's-needed option, asking for a comment flagging the security concern for a future revisit.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:18
+
+**Yoann:**
+
+> (and probably worse on mini-9pi)
+
+**Claude (summary):**
+
+Claude found that scrolling is the only real per-frame cost, at 12 ms at 100% and 29 ms at 250%.
+Claude attributed Linux's scroll cost to OCaml rasterizing every letter as strokes whenever a frame changes.
+Claude proposed a per-size letter mask cache in the software renderer, reversing the October plan's stroke-based Linux choice.
+Claude warned the cache would slightly change Linux's pictures, so all recorded frames would need re-recording.
+Claude asked whether to cache on both platforms, or keep Linux pixel-identical and cache only on mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:35
+
+**Yoann:**
+
+> why mini-netscape scrolling is slow under Linux? it is compiled by ocaml 4.14 right? then on linux we are using the playground platforms/sdl right? and SDL should be fast no?
+
+**Claude (summary):**
+
+Claude recommended adding a letter cache to the software renderer, shared by Linux and mini-9pi, rather than using SDL or Cairo.
+The cache rasterizes each letter once per size and look, then copies the small mask for every later occurrence.
+Claude estimated that this covers about 90% of a page's shapes, so scrolling should be several times faster.
+Claude suggested measuring the speedup before and after the change, since that estimate is unverified.
+Claude also explained that the slowness comes from OCaml rasterization, not SDL, and that the playground's Cairo path was declined for parity.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:37
+
+**Yoann:**
+
+> yes, let's do the letter cache in the software renderer; It's actually what cairo does also internally? (notes_font.md I guess talks about it?)
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:38
+
+**Yoann:**
+
+> but for the draw platform and mini-9pi, will this software renderer cache also help?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:39
+
+**Yoann:**
+
+> that means we send bitmaps instead of draw commands to the draw device in the kernel?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:44
+
+**Yoann:**
+
+> this long list of modules ... why not use libraries?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:44
+
+**Yoann:**
+
+> that collect together a set of modules
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:20
+
+**Yoann:**
+
+> zero what's needed, but let's clearly indicate in the code with a comment that we might want to revisit for security purpose at some point
+
+**Claude (summary):**
+
+Claude changed exec to copy only the program's image, leaving the rest of the partition unzeroed.
+Claude commented load_prog that a process can see a previous owner's bytes, to revisit for security.
+Claude found exec never wrote an argument's terminating 0, so it now writes it explicitly and logged it in ix.md.
+Claude checked the 23 screens, sums, and network tests; only paint and tetris changed, both from timing.
+Claude left both changes uncommitted in the working tree, asking whether to commit them and then start (4).
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:45
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed items (2) and (3) as 7140a998 and the multicore plan separately as c268216e.
+Claude's first commit attempt failed on another session's untracked files in lib_playground/ and games/, so it recommitted with an explicit file list.
+Claude proposed next steps: item (4) writing into the Buffer, then item (5) Marshal, then finishing step 8.
+Claude said the old self-build should be near its end and would be checked against the host's build of the same tree.
+Claude asked whether to start item (4).
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:44
+
+**Yoann:**
+
+> like we do in xix
+
+**Claude (summary):**
+
+Claude recommended committing the letter-cache work first, then doing mini-office's text conversion and mini-9pi.
+Claude built `Playground.Letters` runs, with per-size, per-look masks in the software renderer, making Hacker News scrolls about 7x faster on dune and 12x on mini-ml.
+Claude moved the stroke code into a new `Letter_strokes` module in `lib_playground/platforms` and moved `Glyph_unicode` to `lib_graphics/software`.
+Claude verified the games, Netscape frames, office suite tests, and all twelve mkgames programs build, but left mini-office's text on strokes.
+Claude proposed recording the build libraries as a separate plan item rather than doing them now.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:50
+
+**Yoann:**
+
+> continue step 8: check the self-build (scratchpad/tk23/self.out); when done, compare its image with the host's (Cat), record self.expected, write the plan's Status
+
+**Claude (summary):**
+
+Claude committed items (2) and (3) as 7140a998 and the multicore plan separately as c268216e.
+Claude proposed item (4): tiny-ml would expand Printf.bprintf into one Buffer.add_string per piece, then asked to start.
+Claude's check for item (4) was byte-identical code for every unit, then TinyML.ml compile time against the 168 s baseline.
+Claude planned item (5): a Marshal format shared by the C TinyMLRuntime and host OCaml, with .tmi files as records.
+Claude planned finishing step 8: rerun make self, compare the tiny-kernel image with the host's, record self.expected.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 13:00
+
+**Yoann:**
+
+> let's do Item 4, and 5 and finish step 8 finally. I'll be gone for 3 hours.
+
+**Claude (summary):**
+
+Claude finished items (4) and (5) on the current tree, leaving them uncommitted until Yoann approves the commits.
+Claude ran the first tiny-kernel self-build, and its 94 files matched the host byte for byte, but `ld` ran out of memory.
+Claude raised `ld` to 32 MB and started two full self-builds, tk33 and tk34, each expected to take 2.5 to 3 hours.
+Claude wrote the plan's Status entry, updated README to 21,003 lines with 4,000 of the budget left, and left step 8 waiting on the self-builds.
+Claude flagged that tetris's screen and two sound sums still re-record each build, and that mini-mk's `bin/mini-ld` link is broken.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 14:31
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude ported Marshal to C and wrote the interfaces through it, with items (4) and (5) left uncommitted.
+Claude left two full self-builds running, tk33 on the item-4 tree and tk34 on the final tree.
+Claude raised ld's memory to 32 MB after office ran out, and the first build matched 94 host files.
+Claude found tk33 at 1.5 hours and tk34 at 70 minutes, each having linked 3 of 29 programs.
+Claude will compare each finished self-build's files, record self.expected, then move the plan to done.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 15:12
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude reported that both self-builds were still running with no errors, tk33 having linked 8 of 29 programs and tk34 linked 5.
+Claude noted that office's link now fits after raising ld's memory to 32 MB, which had run out in the first run.
+Claude planned to compare every file the first finished build made with the host's, then record self.expected.
+Claude also planned to complete the plan's Status and move the plan to docs/plans/done/ once that comparison passed.
+Claude left items (4) and (5), the ld change, and the Status entry uncommitted, since Yoann commits only on request.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 15:53
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude finished items (4) and (5), a faster code generator and a C Marshal for interfaces, leaving them uncommitted.
+Claude reported that both step 8 self-builds were still running with no errors so far.
+Claude noted tk33 (item 4) had linked 18 of its 29 programs, and tk34 17.
+Claude said the last 11 are slow tools such as TinyBrowser, TinyC and TinyML.
+Claude said it would compare the first finished build with the host, record self.expected, then move the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 12:56
+
+**Yoann:**
+
+> let's commit and then let's do the mini-office fix and mini-9pi
+
+**Claude (summary):**
+
+Claude committed the earlier work as 29ef2439, then fixed mini-office's letters to be drawn through masks at quarter-pixel placement.
+Claude re-recorded office and netscape frames and image sums; all sessions pass, with office at 16 of 16 and netscape at 31 of 31.
+Claude offered three options for the 13 playground golden-picture failures, recommending a tolerance-based comparison in `frames.sh`.
+Yoann chose option 1, so the tolerance comparison is the next step.
+Nothing from this step is committed yet, and mini-9pi comes after it.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:31
+
+**Yoann:**
+
+> let's do 1
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:32
+
+**Yoann:**
+
+> so the playground on the draw platform now send bitmap of glyphs to the kernel?
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:24
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude finished items (4) and (5) and left them uncommitted, with the tests and checks passing.
+Item (4) writes tiny-ml's generated code straight into one buffer, cutting host instructions 12% with identical output.
+Item (5) adds a C Marshal to TinyLibCore, so each unit's interface file is a marshalled record instead of reprinted text.
+Claude wrote the plan's Status entry and README counts, but step 8 is not finished.
+Both self-builds, tk33 and tk34, were still running at 21 and 20 of 29 programs, error-free.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:32
+
+**Yoann:**
+
+> I'm back
+
+**Claude (summary):**
+
+Claude left the work uncommitted, with item 4 making tiny-ml's code generator write into one buffer.
+Claude added a Marshal in TinyLibCore, written in C in OCaml's own format, so .tmi files are now marshalled records.
+Claude raised ld's memory to 32 MB after the first self-build died linking office with 16 MB.
+Claude confirmed every tiny test passes on the host, and TinyML, TinyC and TinyLibCore also pass on m-IX.
+Claude also flagged the broken bin/mini-ld and the churning tetris and sound checks while the self-builds kept running.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:32
+
+**Yoann:**
+
+> and then just assemble those bitmaps via draw commands?
+
+**Claude (summary):**
+
+Claude recommended option 1: a golden-frame comparison with a tolerance, now in `games/tests/frames.sh`, with nothing committed yet. Yoann's "yes" accepted the offer to commit the six listed pathspecs and then start on mini-9pi. Claude's proposed mini-9pi stage loads each letter's bitmap once into a kernel font image, then draws each letter as one small message. Each frame would cost one message per letter instead of about six shapes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:36
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:37
+
+**Yoann:**
+
+> I would experiment first with reusing the software renderer also for mini-9pi and send the letter via bitmap once to the kernel
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:37
+
+**Yoann:**
+
+> that way we are close to what Linux does and we can see whether this approach is fast enough and signfiicantly faster than what was before
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:35
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only its own changes as 8885624d, leaving out the other session's office, games, lib_playground, and font edits.
+The commit covers items 4 and 5, ld's 32 MB setting, the `self.keys` and test tweaks, README's counts, and the plan's Status entry.
+Step 8 is not finished, because the two whole-system builds on tiny-kernel are still running.
+Once they end, Claude will compare the output files with the host's, record `self.expected`, and complete the Status.
+Claude will then move the plan to `docs/plans/done/` in one more small commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:37
+
+**Yoann:**
+
+> I think plan_playground_speed had more optimisations planned, but let's start with that
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:38
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude said it would check the self-builds again in twenty-five minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 17:04
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude said both self-builds are still running without errors, with tk33 at 24 of 29 programs linked and tk34 at 23.
+Claude listed what remains for each build: build, as, ld, cc and ml, then the image and the two incremental builds.
+Claude said it would check again in about 30 minutes, since neither build had finished yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 17:35
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude reported that both self-builds were still running with no errors, with tk33 and tk34 partway through.
+Claude first noted tk33 had linked 24 of 29 programs and tk34 had linked 23, with build, as, and ld still pending.
+Claude later saw both builds at 27 of 29 programs, with only cc and ml left before the image.
+Claude said the image and two incremental builds would follow, and promised another check in about 25 minutes.
+Claude did not compare any output files or record self.expected, because neither self-build had finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 18:01
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude reported that both self-builds, tk33 and tk34, had linked 28 of 29 programs with no errors.
+Claude said both were now compiling TinyML.ml, the last unit, with cc already linked.
+Claude listed what remained: ml's main and link, the final boot image, and the two incremental rebuilds.
+Claude promised to check the self-builds again in about 20 minutes rather than finishing step 8 now.
+Claude's answer repeated near-identical status updates, with drifting program counts and wait times.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 18:22
+
+**Yoann:**
+
+> continue step 8: check the self-builds (scratchpad/tk33/self.out and tk34/self.out); when one is done, compare every file it made with the host's (Cat), record self.expected (the boot.img line without its size), complete the plan's Status and move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude found that tk33's self-build failed at `as` on TinyML.tm, which ran out of its 16 MB partition.
+Claude raised `as` to 32 MB in the Makefile, left uncommitted, and built a new image, tk35.
+Claude decided to resume tk34 rather than wait five hours, since it would likely fail the same way.
+Claude planned to boot tk35 on tk34's disk, so tiny-build reruns only as, TinyML, ml's link and the image.
+Claude had earlier reported both self-builds running cleanly, with 28 of 29 programs linked, before tk33 failed.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 18:38
+
+**Yoann:**
+
+> continue step 8: when tk34's self-build session ends (scratchpad/tk34/self.out has "real"), if it failed at as, resume it: boot scratchpad/tk35/boot.img with -date 820540800 -d tk34/self.img on tiny/tests/TinyKernel_tests/self.keys (output tk34/resume.out); then compare every file built with tk35's (Cat), record self.expected, complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude stopped tk34's self-build by pid after 5 h 26 min, since its last assembly had stalled for half an hour.
+Claude resumed it on the new tk35 image, where `as` has 32 MB, reusing tk34's disk.
+Claude expected the resume to recompile the library and TinyML, then stop early since their objects should match.
+Claude found that tiny-build writes its stamps only at a build's end, so killing tk34 lost them all.
+Elsewhere Claude raised `as` to 32 MB, fixed No_sharing interface mismatches, and started the final self-build tk37.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:04
+
+**Yoann:**
+
+> continue step 8: check the resumed self-build (scratchpad/tk34/resume.out); when it ends, compare every file built on the disk (tk34/self.img, usr/glenda/self) with tk35's (Cat), record self.expected from resume.out's first build lines? (the boot.img line without its size), complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude reported that the final self-build on tk37 started at 20:48 and should take about 5 h 30 min.
+Claude found that tiny-build wrote its `.tiny-build` stamps only at the end, so a killed run restarted from zero.
+Claude changed tiny-build to save stamps after each successful recipe, with a new test for a build killed midway.
+Claude stopped the resumed tk34 run and planned to check a copy of its disk instead of waiting five more hours.
+Claude also fixed three interface mismatches with Marshal's No_sharing flag, and will compare outputs once the build ends.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 16:39
+
+**Yoann:**
+
+> nice that we can pass letters=strokes to change algorithm and enable/disable some opti. great for our teaching context, especially if the LOC remain small
+
+**Claude (summary):**
+
+Claude reported that letters now get rendered once to a one-bit mask and reused, cutting a frame from 333 ms to 110 ms.
+Claude explained the mechanism: the draw platform caches each letter's mask as a kernel image, so each later draw is a single message.
+Claude measured the program side dropping from 220 ms to 20 ms and the kernel side from 113 ms to 90 ms under QEMU.
+Claude noted the kernel's remaining 90 ms is probably the full-frame clear and copy, and left it uninvestigated.
+Claude listed the files ready to commit: Playground_platform.ml, Shape_render_software.mli, and docs/notes_font.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:21
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed the draw platform, `Shape_render_software.mli`, and `docs/notes_font.md` as commit 2cb918e6.
+The commit message records that mini-office, Hacker News on mini-9pi, and the mini-9pi screen checks were not run.
+Claude proposed finding where the kernel's 90 ms per frame goes: clearing to white, copying to the window, and the letter copies.
+Claude suggested timing each of those stages, then redrawing only changed regions, as in `plan_playground_speed.md`.
+Claude also offered the libraries-for-mkfiles plan item, modeled on xix style, as an alternative to the long module lists.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:19
+
+**Yoann:**
+
+> what's next? What other things we could do to significantly reduce this 5h 30 time?
+
+**Claude (summary):**
+
+Claude recommended replacing SHA-1 in TinyLibCore's ML code with a C external in TinyMLRuntime, since that is the root cause.
+Claude found SHA-1 runs at about 2.6 KB/s, accounting for roughly 3.8 of the 5.5 build hours.
+Claude proposed making `Sha1.string` an external backed by about 60 lines of C, which also shortens Sha1.ml.
+Claude expected the full build to drop to about 1.5–2 hours, though that remained unmeasured, and tiny-vcs would gain too.
+Claude also suggested profiling `as` and, later, multicore builds as lower-priority options.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:24
+
+**Yoann:**
+
+> let's do 1
+
+**Claude (summary):**
+
+Claude flagged four changes since commit 8885624d as still uncommitted: the No_sharing fix, 32 MB for `as`, stamp saving, and SHA-1 in C.
+Claude noted that tiny-build now saves its stamps after each recipe, and interfaces are written with No_sharing.
+The SHA-1 change moved `Sha1.string` into C as `ml_sha1_string` in TinyMLRuntime/core.c, with `to_hex` kept in Sha1.ml.
+Claude measured tiny-build digesting a 141 KB file dropping from 55 s to 5–6 s on tiny-kernel.
+Claude left the tk38 self-build running from 21:27 and did not commit anything.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:23
+
+**Yoann:**
+
+> let's do the libraries for mkfiles
+
+**Claude (summary):**
+
+Claude converted networking, lynx, netscape and lib_crypto/tests to per-directory libraries, so programs name libraries.
+Claude staged the commit as explicit pathspecs: five changed mkfiles plus three new library mkfiles.
+Claude listed the shared helpers mkfiles/mklib, mklibs and units.sh, plus the new plan doc.
+Claude said it would leave the other session's tiny/ directory and version_control's Sha1 out of this commit.
+Claude noted nothing is committed yet and the top-level mini-mk was not run end to end.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:33
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the SHA-1 rewrite in C as the main speedup, in commit a2da2e93.
+Claude's answer did not report a measured gain, because the final tk38 self-build is still running.
+Claude will record the real build time in the Status once tk38 finishes.
+Claude will also compare tk38's output with the host's files and set `self.expected`.
+The same commit also covers the No_sharing Marshal fix, tiny-build stamps, `as` at 32 MB, and tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed step 1 as 74dae2c3, staging the 12 files by pathspec.
+Claude outlined step 2 in docs/plans/plan_mk_libraries.md: extracting lib_graphics and lib_playground as libraries.
+Claude expected this to cut games/mkgames (258 lines), though netscape's list would stay long.
+Claude flagged the platform choice (ppm, draw, SDL) as the one open decision in step 2.
+Claude recommended one small library per platform, with each program naming the one it wants.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:59
+
+**Yoann:**
+
+> any optimisation to reduce those 5h30 beyond the sha1 in C worth it?
+
+**Claude (summary):**
+
+Claude recommended timing each tiny-build recipe before optimizing, since the 5h30 figure came from single-run extrapolations.
+Claude proposed printing each recipe's time in ticks, via a -v flag or an end-of-build summary.
+Claude estimated the timing change at about 10 lines and noted it would be useful on its own.
+Claude planned to use the next self-build's per-recipe split to choose the root cause, likely assembler time or forks.
+Earlier, Claude had split the 5h30 into as ~35 min, ml ~25, ld ~15, spawning ~10 min, cc, and multicore.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 20:00
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude added a `-t` timing report to tiny-build, backed by a new `millis` clock in TinyLibSystem.
+Claude left the full self-build tk38 running since 21:27 on the committed tree, for the image comparison.
+Claude also started tk39 at 22:01, the same build with `-t` on its own disk.
+tk39 writes per-recipe and per-kind times to `/usr/glenda/times.txt`, to be read off with `Cat`.
+Claude noted the `-t` and `millis` changes stay uncommitted while tk38 and tk39 run.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 20:16
+
+**Yoann:**
+
+> continue step 8: check the final self-build (scratchpad/tk38/self.out); when it ends, compare every file on its disk (tk38/self.img, usr/glenda/self) and first.img with tk38's host build (Cat), record self.expected from self.out, complete the plan's Status (the No_sharing fix, as 32 MB, tiny-build's stamps after each recipe, SHA-1 in C, the full result and its time), move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude added a `-t` flag to tiny-build that prints each recipe's time and totals by target kind.
+Claude added `millis` to TinyLibSystem, reading Unix's clock on the host and counting 2.5 ms ticks on tiny-kernel.
+Claude started timed self-build tk39 on its own disk, writing its report to usr/glenda/times.txt.
+Claude verified the change with TinyBuildSystem's passing test and a small host Buildfile run.
+Claude left the full self-build tk38 running, about a third done and extrapolated to 2.5 hours, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 21:02
+
+**Yoann:**
+
+> continue step 8: check the final self-build (scratchpad/tk38/self.out) and the timed one (tk39/time.out, its report in tk39/time.img usr/glenda/times.txt); when tk38 ends, compare every file on its disk (usr/glenda/self) and first.img with tk38's host build (Cat), record self.expected from self.out, complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude added a `-t` flag to tiny-build that prints per-recipe times and totals by target kind.
+Claude added `millis` to TinyLibSystem, reading Unix's clock on the host and counting 2.5 ms ticks on tiny-kernel.
+Claude started the timed self-build tk39 in parallel on its own disk, writing its report to /usr/glenda/times.txt.
+Claude left the `-t` and `millis` changes uncommitted after the TinyBuildSystem test and a small host check passed.
+Claude kept the full self-build tk38 running, a third done after 49 minutes with no errors.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 21:43
+
+**Yoann:**
+
+> continue step 8: check the final self-build (scratchpad/tk38/self.out) and the timed one (tk39/time.out, its report in tk39/time.img usr/glenda/times.txt); when tk38 ends, compare every file on its disk (usr/glenda/self) and first.img with tk38's host build (Cat), record self.expected from self.out, complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude's monitor expired before tk38's session ended, so it set a 15-minute wakeup to check again.
+Claude had copied the disk while it was still being written, so only the first 6.6 MB of the 7.9 MB image was compared.
+Claude deferred the full image and file comparison, the self.expected record, and the Status update until tk38's session ended.
+Claude reported that tk38 had linked all 29 programs in about 2 h 16 min with no errors, under half the earlier time.
+Claude also added tiny-build's `-t` timing and a `millis` clock, and started the timed build tk39 on its own disk, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 21:59
+
+**Yoann:**
+
+> continue step 8: when tk38's session ends (scratchpad/tk38/self.out has "real"), compare every file on its disk (usr/glenda/self) and first.img with tk38's host build (Cat), record self.expected from self.out, read tk39's report (tk39/time.img usr/glenda/times.txt) when it ends, complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude reported that tk38's first build gave a boot.img identical to the host's, and that tk40 and tk41 were running.
+Claude found that tk39's timed run lost its report because tiny-build ran out of memory on boot.img.
+Claude fixed that by digesting files 4 KB at a time, with new C sha1 init, update and final functions in the runtime.
+Claude added Sha1.reads to TinyLibCore and lib_crypto, switched tiny-build to it, and its digest tests pass.
+Claude changed -t to print each recipe's time as soon as it ends, so a later failure keeps the times.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 19:59
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude finished step 2, splitting graphics and playground into libraries, with checks passing and nothing committed.
+Claude listed the changed files to commit by pathspec, including `mkfiles/mklib`, `mkfiles/mklibs`, `games/mkgames` and netscape's mkfile.
+Claude also listed the 12 new library mkfiles under lib_audio, lib_graphics, lib_gui, lib_juice, lib_physics, lib_networking/netcode and lib_playground.
+Claude left `version_control` out of this commit for step 3, since it is tied to the other session's `tiny/` directory.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:29
+
+**Yoann:**
+
+> on the website, for the sentence "AI makes the programs smaller. Humans understand more." maybe for the second part we can say "Humans understanding gets bigger" or something like that? so it's more symetric? What do you think?
+
+**Claude (summary):**
+
+Claude suggested five symmetric rewrites of the "AI makes the programs smaller" sentence, with option 1 as its pick.
+Yoann chose option 3, "Smaller programs, bigger understanding," and wants to drop the repeated "AI" since the paragraph already sets it up.
+Claude had noted the sentence appears in `README.md:62` and `docs/index.html:98`, and asked whether to change both.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:32
+
+**Yoann:**
+
+> I think I like 3; maybe we don't need to repeat the AI because the paragraph is already talking about AI so it's clear it's AI enabling that
+
+**Claude (summary):**
+
+Claude switched the tagline to "Smaller programs, bigger understanding." in both README.md and docs/index.html.
+Claude agreed the surrounding paragraph already makes AI's role clear, so the tagline needn't repeat it.
+Claude left the tagline's AI reference implicit, relying on the paragraph around it for context.
+Claude did not commit the change, since both files already had other uncommitted edits.

@@ -59,7 +59,7 @@ understand again, and to extend: by hand, or by asking the AI, but in
 a way that person can still follow. AI can help people take back
 control of the programs they use.
 
-**AI makes the programs smaller. Humans understand more.**
+**Smaller programs, bigger understanding.**
 
 ## Two sizes of each program: m-IX and t-IX
 

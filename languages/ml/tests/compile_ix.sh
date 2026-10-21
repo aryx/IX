@@ -31,7 +31,7 @@ shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_cry
 # mini-squeak's window, and lib_playground's platform with one, mini-drscheme's)
 # nor tiny-machine's page and mini-qemu's (raspberry/web), which are js_of_ocaml's (Js_of_ocaml: built by dune only)
 # nor OCaml 5's domains (mini-netscape's Worker_spawn by OCaml 5: dune's only; mini-ml's is spawn/large_threads.ml)
-# the kernel's Memdata is generated from principia's fonts (its Makefile's, conf/mkpixdata.py):
+# the kernel's Memdata is generated from principia's fonts (its Makefile's, mini-mkpixdata):
 # where it was not built, the two units that name it are left out
 memdata=kernels/9pi/build/pi1-ocaml
 nomem='^$'; [ -d $memdata ] || nomem='^kernels/9pi/lib_graphics/lib_memdraw/(Memchan|Memfont)\.ml$'

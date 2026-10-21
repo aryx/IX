@@ -6,7 +6,7 @@ D=$B/kernels/tools
 INCLUDES=-I . $STDI
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-all:V: $D/mini-mkbootdir $D/mini-mkcard $D/mini-mkfs
+all:V: $D/mini-mkbootdir $D/mini-mkcard $D/mini-mkfs $D/mini-mkpixdata
 
 $D/%.$O: %.ml
 	mkdir -p $D
@@ -17,6 +17,9 @@ $D/mini-mkbootdir: $D/Mkbootdir.$O $LIBS
 $D/mini-mkcard: $D/Mkcard.$O $LIBS
 	$ML -start $STD $COMMONS Mkcard Std_exit -o $D/Mkcard.start.$O
 	$LD $LDH -nofollow -o $target $D/Mkcard.start.$O $STDOBJS $D/Mkcard.$O $STDEND
+$D/mini-mkpixdata: $D/Mkpixdata.$O $LIBS
+	$ML -start $STD $COMMONS Mkpixdata Std_exit -o $D/Mkpixdata.start.$O
+	$LD $LDH -nofollow -o $target $D/Mkpixdata.start.$O $STDOBJS $D/Mkpixdata.$O $STDEND
 
 # (with lib_xv6fs's unit, the kernel's too)
 X=../9pi/filesystems/lib_xv6fs

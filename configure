@@ -18,7 +18,9 @@ set -eu # to debug this script add '-x'
 #    Makefile.config, and the other projects' checkouts (ocaml-light,
 #    principia, xv6): all optional, mini-9pi being built by ix's own
 #    tools without them
-#  - what a few tests compare with (GNU's objdump, qemu, 9base)
+#  - what a few tests compare with (GNU's objdump, qemu, 9base), and
+#    python3, which the build does without (its tools are OCaml's) but
+#    many tests, the kernels' checks and make loc are written in
 
 for arg in "$@"; do
     case "$arg" in
@@ -169,7 +171,6 @@ need_command ocaml
 need_command opam
 need_command make
 need_command bash
-need_command python3
 need_command tar
 command -v tar >/dev/null 2>&1 && check_tar
 
@@ -248,6 +249,7 @@ want_command qemu-arm                 "the arm programs' tests under qemu-user w
 want_command arm-linux-gnueabihf-objdump "the ARM decoders' tests against GNU's objdump won't run"
 want_command aarch64-linux-gnu-objdump   "the arm64 decoders' tests against GNU's objdump won't run"
 want_command bc                       "the tests' timings won't print"
+want_command python3                  "make test, make test-lite, the kernels' checks and make loc won't run (the build does without it)"
 
 echo ""
 

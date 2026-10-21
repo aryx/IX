@@ -9,6 +9,13 @@
  * file a line "name size" and its bytes, then a line "end". The usage:
  * [help], what mini-mkbootdir -h prints.
  *
+ * The kerndate may be principia's directory instead: 9pi's own then
+ * (its conf compiled with -DKERNDATE=`date -n`), for mini-9pi's devices
+ * to have 9pi's dates: the little-endian word of 9pi's image in the
+ * minute before its conf's object was written (pi.5's mtime; `date -n`
+ * ran just before the compile); that mtime if none, the time now if
+ * there is no 9pi. (old: conf/kerndate.py)
+ *
  * Lines and bytes, not a marshalled list: Devroot reads the files where
  * they are in the image, without a copy of them in the heap (rc alone
  * is 700 KB), and the kernel's runtime has no Marshal.
@@ -36,14 +43,36 @@ mini-9pi's bootdir: the files of the kernel's own image, its /boot.
   mini-mkbootdir bootdir 1757430000 boot=boot.rc rc=mini-rc ed=mini-ed
                                       /boot/boot, /boot/rc and /boot/ed, their
                                       date the second argument (seconds)
+  mini-mkbootdir bootdir ~/principia boot=boot.rc
+                                      their date 9pi's, found in its image
 |}
+
+(* 9pi's kerndate, in principia's kernel/COMPILE/9/bcm *)
+let kerndate_9pi (caps : < Cap.open_in; .. >) (principia : string) : int =
+  let bcm = Filename.concat principia "kernel/COMPILE/9/bcm" in
+  match Unix.stat (Filename.concat bcm "pi.5"), FS.read caps (Fpath.v (Filename.concat bcm "9pi")) with
+  | exception (Unix.Unix_error _ | Sys_error _) -> int_of_float (Unix.time ())
+  | (st : Unix.stats), image ->
+      let t = int_of_float st.st_mtime in
+      let found = ref 0 in
+      for i = 0 to String.length image / 4 - 1 do
+        let v = String.get_uint16_le image (4 * i) lor (String.get_uint16_le image (4 * i + 2) lsl 16) in
+        if t - 60 <= v && v <= t && v > !found then found := v
+      done;
+      if !found = 0 then t else !found
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   match List.tl (Array.to_list argv) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; 0
-  | out :: kerndate :: (_ :: _ as pairs) when int_of_string_opt kerndate <> None -> (
+  | out :: kerndate :: (_ :: _ as pairs)
+    when int_of_string_opt kerndate <> None || Sys.file_exists kerndate -> (
+      let kerndate =
+        match int_of_string_opt kerndate with
+        | Some t -> t
+        | None -> kerndate_9pi caps kerndate
+      in
       let b = Buffer.create (1 lsl 20) in
-      Buffer.add_string b (Printf.sprintf "9pi bootdir %s\n" kerndate);
+      Buffer.add_string b (Printf.sprintf "9pi bootdir %d\n" kerndate);
       try
         List.iter (fun pair ->
           match String.index_opt pair '=' with

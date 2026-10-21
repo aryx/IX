@@ -16,7 +16,10 @@ under its *name*, before any disk is read. `/boot/boot`, a script,
 is the first process.
 
 *Kerndate*, in seconds since 1970, is the files' date, and the date
-the kernel's devices say they were made.
+the kernel's devices say they were made. It may be principia's
+directory instead: 9pi's date then, found in its image (the word in
+the minute before its `pi.5` was compiled), or the time now when
+there is no 9pi.
 
 *Out* is a line `9pi bootdir` *kerndate*, then for each file a line
 with its name and its size and its bytes, then a line `end`.
@@ -29,6 +32,7 @@ It is a program of the host, run when the kernel is built.
 # EXAMPLES
 ```
 mkbootdir bootdir 1757430000 boot=boot.rc rc=mini-rc ed=mini-ed
+mkbootdir bootdir ~/principia boot=boot.rc
 ```
 
 # SEE ALSO

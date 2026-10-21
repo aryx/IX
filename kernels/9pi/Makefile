@@ -77,9 +77,9 @@ BOOTDIR = boot=$(BOOTRC) rcmain=$(PRINCIPIA)/ROOT/rc/lib/rcmain rc=$(RC) \
 FS = $(B)/bootdir
 
 # the devices' files' date: 9pi's (its conf compiled with
-# -DKERNDATE=`date -n`: conf/kerndate.py finds it in 9pi's image), so that
-# their entries are 9pi's
-KERNDATE ?= $(shell conf/kerndate.py $(PRINCIPIA))
+# -DKERNDATE=`date -n`: mini-mkbootdir finds it in 9pi's image, given
+# principia's directory), so that their entries are 9pi's
+KERNDATE ?= $(PRINCIPIA)
 
 # the pixels (lib_graphics/Kdraw.mli): PIXEL=ocaml (the default), stage
 # F's OCaml (lib_graphics/ocaml's Kdraw, over lib_memdraw and
@@ -151,7 +151,7 @@ $(B)/drawglue.o: lib_graphics/c/drawglue.c | $(B)
 # claude: lib_graphics/Memdata.ml is in the repository (no principia
 # needed); made again from principia's C, if that changes:
 pixdata:
-	conf/mkpixdata.py $(PRINCIPIA) lib_graphics
+	../../_build/default/kernels/tools/Mkpixdata.exe $(PRINCIPIA) lib_graphics
 
 # (remade when one of its files is: name=file's files)
 MKBOOTDIR = ../../_build/default/kernels/tools/Mkbootdir.exe
@@ -302,7 +302,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 # (apps/misc). No SD
 # card, nothing of principia's in the bootdir (its date: KERNDATE_IX,
 # the day mini-9pi was started; the pixels' tables are still
-# principia's: conf/mkpixdata.py).
+# principia's: mini-mkpixdata).
 #   make ix          the image
 #   make run-ix      under mini-qemu (../../mini-pi mini-9pi)
 #   make check-ix    two sessions, under mini-qemu and QEMU, the console

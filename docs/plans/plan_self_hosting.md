@@ -187,9 +187,23 @@ program Linux's bytes; Status below).
     (misc is mostly links). One core: `NPROC` was 1, the Pi 2's kernel
     runs its other cores under an emulator only when built `SMP=1`
     (check-cores' image).
-  - **Next**: the SMP kernel for the build (four jobs); the rest of
-    stage 3 (the other programs of misc compared, a library of
-    lib_xxx); then the whole build, profiled.
+  - **Four cores, measured** (lib_core by `mk` on the card, the Pi 2
+    under QEMU): the normal kernel, one job, 771 s; the SMP kernel
+    (`SMP=1`, check-cores'), one job, 1,160 s; the SMP kernel, four
+    jobs, 1,315 s (each compile 27 s where it is 6 s alone, about 2.6
+    at a time). The SMP kernel costs 1.5 times under QEMU by itself
+    (QEMU's cores as threads: their exclusive loads and stores,
+    barriers, TLB flushes across them), and four jobs do not overlap:
+    a build here is mostly in the kernel, under its one lock (the
+    card read word by word, Kfs, the faults). More cores pay once
+    less of it is under the lock: plan_multicore.md's finer locks, or
+    less kernel time a build (the profile).
+  - **Next**: the whole build on one core, its `time` lines the
+    profile (`mk 'ML=time ml -m 5' ...`); the files it makes against
+    Linux's from the same sources. Running (2026-10-21): its times
+    0.00r after 73 minutes, the kernel's clock stopped (a timer
+    compare written already past, bugs/ix.md; fixed in timer_arm, the
+    running build on the old kernel).
   - **The time to expect**: the Plan 9 build on Linux is 40 s for the
     libraries and 173 s for the programs, one job at a time; 50 to
     300 times that is 3 to 4 hours on one emulated core. The levers:

@@ -469,11 +469,20 @@ void usb_power(void)
 #define INTC ((volatile unsigned *)0xFE00B200)     /* basic pending, pending 1 ... */
 
 /* the next tick in [us] microseconds: compare 3's match cleared, the
- * compare set; its IRQ (3) enabled */
+ * compare set; its IRQ (3) enabled. The match is on equality: a
+ * compare the counter is already past when it is written rings only
+ * when the counter comes round, 71 minutes later, the clock stopped
+ * until then. Under QEMU a vCPU held up by the host between the read
+ * and the write does it (the whole build on the card, its times all
+ * 0.00r after 73 minutes, bugs/ix.md); so set again until the compare
+ * is ahead, or has rung.
+ * old: TIMER[6] = TIMER[1] + Long_val(us); */
 value timer_arm(value us)
 {
   TIMER[0] = 1 << 3;
-  TIMER[6] = TIMER[1] + Long_val(us);
+  do
+    TIMER[6] = TIMER[1] + Long_val(us);
+  while ((int)(TIMER[6] - TIMER[1]) <= 0 && !(TIMER[0] & (1 << 3)));
   INTC[4] = 1 << 3;                               /* enable IRQs 1 */
   return Val_unit;
 }

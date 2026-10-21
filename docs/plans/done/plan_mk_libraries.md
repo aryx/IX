@@ -175,7 +175,10 @@ A program's (networking's):
    mklib), which mklib's NEEDI and mklibs's LIBI read; mklibs's rule
    for an archive says to build the libraries when one is missing,
    and asks no library's mkfile. mini-9pi's programs: 8.6 s, games/
-   0.6 s; make test-lite 132 s (181 s before), 0 failures. Given up:
+   0.6 s; make test-lite 132 s (181 s before), 0 failures; the whole
+   top mini-mk when nothing changed 2.0 s (33 s before; measured
+   after bf2e9796, a first run making what had changed in 40 s, the
+   second nothing). Given up:
    a program built alone no longer builds a library older than its
    sources.
 2. **troff's units as a library** (`typesetting/troff`, its units

@@ -59,3 +59,7 @@ let spawn caps prog args ~stdin ~stdout =
       prerr_endline (prog ^ ": not found");
       Unix._exit 127
   | pid -> pid
+
+let create_process (_caps : < Cap.exec; .. >) prog args ~stdin ~stdout =
+  flush_all ();
+  Unix.create_process prog (Array.of_list (prog :: args)) stdin stdout Unix.stderr

@@ -75,10 +75,13 @@ let available (caps : < Cap.env; .. >) (rules : rule list) : rule list =
 (* the programs started and not yet seen to end *)
 let running : int list ref = ref []
 
-let run (caps : < Cap.fork; Cap.exec; Cap.wait; .. >) (command : string list) : unit =
+let run (caps : < Cap.exec; Cap.wait; .. >) (command : string list) : unit =
   running := List.filter (fun pid -> match CapUnix.waitpid caps [ Unix.WNOHANG ] pid with 0, _ -> true | _ -> false | exception Unix.Unix_error _ -> false) !running;
   match command with
   | prog :: args ->
       Logs.info (fun m -> m "running %s" (String.concat " " command));
-      running := Procs.spawn caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
+      (* (not Procs.spawn: OCaml 5's Unix.fork fails once the tab's worker,
+       * a domain, was spawned: Worker_spawn) *)
+      (try running := Procs.create_process caps prog args ~stdin:Unix.stdin ~stdout:Unix.stdout :: !running
+       with Unix.Unix_error (e, _, _) -> Logs.warn (fun m -> m "%s: %s" prog (Unix.error_message e)))
   | [] -> ()

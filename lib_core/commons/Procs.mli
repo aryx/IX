@@ -24,3 +24,9 @@ val split_env : string array -> (string * string) list
  * given, its standard error ours; its pid. A program that cannot be
  * run exits 127 with a message, as a shell's child does. *)
 val spawn : < Cap.fork; Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr -> stdout:Unix.file_descr -> int
+
+(* the same by Unix.create_process, with no fork in OCaml 5 (posix_spawn):
+ * what a program that has spawned a domain runs, since OCaml 5's
+ * Unix.fork fails after one (mini-netscape's helpers, its worker a
+ * domain). A program that cannot be run: Unix_error, in OCaml's. *)
+val create_process : < Cap.exec; .. > -> string -> string list -> stdin:Unix.file_descr -> stdout:Unix.file_descr -> int

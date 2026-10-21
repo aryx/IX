@@ -155,6 +155,7 @@ val closedir : dir_handle -> unit
 val fork : unit -> int
 val execv : string -> string array -> 'a
 val execve : string -> string array -> string array -> 'a
+val create_process : string -> string array -> file_descr -> file_descr -> file_descr -> int
 type process_status = WEXITED of int | WSIGNALED of int | WSTOPPED of int
 type wait_flag = WNOHANG | WUNTRACED
 val wait : unit -> int * process_status

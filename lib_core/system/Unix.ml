@@ -329,6 +329,19 @@ let getpid () = sys (20, 172) z z z z z z
 let getppid () = sys (64, 173) z z z z z z
 let _exit n = ignore (sys (248, 94) (i n) z z z z z); exit n
 
+(* OCaml's by posix_spawn; here a fork, then the program looked up in
+ * $PATH (when it has no '/'), 127 when none runs, as a shell's child *)
+let create_process prog args fd0 fd1 fd2 =
+  match fork () with
+  | 0 ->
+      dup2 fd0 stdin; dup2 fd1 stdout; dup2 fd2 stderr;
+      let path = try Sys.getenv "PATH" with Not_found -> "/bin:/usr/bin" in
+      let files = if String.contains prog '/' then [ prog ]
+        else List.map (fun d -> (if d = "" then "." else d) ^ "/" ^ prog) (String.split_on_char ':' path) in
+      List.iter (fun f -> try execv f args with Unix_error _ -> ()) files;
+      _exit 127
+  | pid -> pid
+
 (* uname: six names of 65 bytes, the node's the second *)
 let gethostname () = let b = Bytes.make 390 '\000' in unit "gethostname" "" (sys (122, 160) (by b) z z z z z); cstring b 65
 

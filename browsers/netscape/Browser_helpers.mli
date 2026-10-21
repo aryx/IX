@@ -63,4 +63,4 @@ val available : < Cap.env; .. > -> rule list -> rule list
 
 (* [run caps command]: the program started beside the browser, not
    waited for (the ones ended are, when the next one starts) *)
-val run : < Cap.fork; Cap.exec; Cap.wait; .. > -> string list -> unit
+val run : < Cap.exec; Cap.wait; .. > -> string list -> unit

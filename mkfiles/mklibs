@@ -17,5 +17,8 @@ LIBA=`{for d in $LIBDIRS; do echo $B/$d/lib.a; done}
 LIBSRC=`{for d in $LIBDIRS; do find $TOP/$d -name '*.ml' -o -name '*.mli' -o -name mkfile | grep -v /tests/; done}
 LIBI=`{for d in $LIBDIRS; do (cd $TOP/$d && mini-mk O=$O OS=$OS dirs); done | awk '!seen[$0]++'}
 
+# (B given on when it was said, as games/mkfile does: tests/lite.sh's
+# _mk/lite, which the library's own mkconfig would make _mk/$O)
 $B/%/lib.a:Pfalse: $TOP/%/mkfile
-	cd $TOP/$stem && mini-mk O=$O OS=$OS lib
+	b=; case $B in /*) b="B=$B";; esac
+	cd $TOP/$stem && mini-mk O=$O OS=$OS $b lib

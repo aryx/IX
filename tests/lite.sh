@@ -152,9 +152,17 @@ tiny_tests() {
   TD=$t/tiny-db tiny/tests/TinyDatabase_test.sh 5 && V=$t/tiny-vcs tiny/tests/TinyVCS_test.sh 3 &&
   TB=$t/tiny-build tiny/tests/TinyBuildSystem_test.sh && TA=$t/tiny-assembler TL=$t/tiny-linker T=$t/tiny-cpu tiny/tests/TinyCPU_test.sh 50
 }
+# the libraries, one after the other, as the top mkfile's FIRST (a
+# program asks its libraries' mkfiles too, mkfiles/mklibs: two programs
+# side by side would make one archive twice at once), the browsers' too
+LIBS="lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio
+ lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/ppm
+ browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi"
 ix() {
   rm -rf $B
-  mk lib_core && mk assembler || return 1
+  local l
+  for l in $LIBS; do mk $l || return 1; done
+  mk assembler || return 1
   # side by side; the two that take another's objects after it (mini-ar
   # the linker's, tiny-vcs mini-git's SHA-1 and zlib)
   local pids=() d bad=0

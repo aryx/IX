@@ -867,15 +867,27 @@ and grid_children (ctx : ctx) (e : Dom.element) (s : Computed.t) : unit =
   let unlimited = measuring && ctx.width >= 1e5 in
   let width = ctx.width in
   let column_gap = Css_values.resolve s.column_gap (if unlimited then 0. else width) and row_gap = Css_values.resolve s.row_gap 0. in
+  (* repeat(auto-fill, minmax(160px, 1fr)): as many columns as fit (a
+   * page of cards; none read, they were one column as wide as the page,
+   * its pictures' width: 100% the page's) *)
+  let grid_columns =
+    match s.grid_columns_repeat with
+    | None -> s.grid_columns
+    | Some (before, repeated) ->
+        let n = Css_grid.repetitions ~room:(if unlimited then infinity else width) ~gap:column_gap repeated in
+        List.filteri (fun i _ -> i < before) s.grid_columns
+        @ List.concat (List.init n (fun _ -> repeated))
+        @ List.filteri (fun i _ -> i >= before) s.grid_columns
+  in
   let cells, rows, columns =
-    Grid_layout.place ~rows:(List.length s.grid_rows) ~columns:(List.length s.grid_columns) ~areas:s.grid_areas
+    Grid_layout.place ~rows:(List.length s.grid_rows) ~columns:(List.length grid_columns) ~areas:s.grid_areas
       (Array.to_list (Array.map (fun ((_, cs) : Dom.element * Computed.t) -> cs.grid_area) items))
   in
   let cells = Array.of_list cells in
   let tracks (said : Css_grid.track list) (count : int) : Css_grid.track array =
     Array.init count (fun i -> match List.nth_opt said i with Some t -> t | None -> Css_grid.auto)
   in
-  let column_tracks = tracks s.grid_columns columns and row_tracks = tracks s.grid_rows rows in
+  let column_tracks = tracks grid_columns columns and row_tracks = tracks s.grid_rows rows in
   (* whether a track's size reads its content's narrowest, its widest.
    * An fr track reads neither in a room to share (it takes what is
    * left): its items are not measured -- Wikipedia's article, in

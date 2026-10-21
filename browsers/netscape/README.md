@@ -10,7 +10,7 @@ first window and tab (`~/github/mini-chrome`, `475a979`:
 `src/main/MiniChrome.ml`, `src/chrome/Browser_tab.ml`, 1,104 lines
 there): two files then, 369 lines of `.ml`; five today, 1,142.
 
-    mini-netscape [url=address]
+    mini-netscape [address | url=address]
 
 - `Tab`: a page looked at and the pages before it. `go` asks for a
   page and returns; `step` fetches it, a piece a call: the page and

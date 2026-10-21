@@ -51,7 +51,7 @@ argument, no `Lazy.t`, no mutex).
 
 ## mini-netscape
 
-    mini-netscape [url=address] [scripts=off] [console=on] [strict=on] [profile=dir|off] [window=WxH]
+    mini-netscape [address | url=address] [scripts=off] [console=on] [strict=on] [profile=dir|off] [window=WxH]
                   [keep=off] [settle=off] [draw=all] [view=each]
 
 An address is `http://`, `https://`, `file://`, a path, `data:` or

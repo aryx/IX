@@ -141,6 +141,9 @@ type t = {
    * named areas; where the element goes in its parent's; and how the
    * tracks are packed in the room across (None: normal, stretched) *)
   grid_columns : Css_grid.track list;
+  (* repeat(auto-fill, ...)'s place among them and its tracks: as many
+   * as fit, the layout's *)
+  grid_columns_repeat : (int * Css_grid.track list) option;
   grid_rows : Css_grid.track list;
   grid_areas : string list list;
   grid_area : Css_grid.placement;

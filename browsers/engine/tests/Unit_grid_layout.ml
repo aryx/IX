@@ -35,6 +35,15 @@ let tests =
           Alcotest.(check bool) "a percentage" true (tracks "30%" = [| { min = Length { px = 0.; pct = 30. }; max = Length { px = 0.; pct = 30. } } |]);
           Alcotest.(check int) "a line's name is no track" 2 (Array.length (tracks "[start] 1fr [middle] 1fr [end]"));
           Alcotest.(check int) "none" 0 (Array.length (tracks "none")));
+      Testo.create "Css_grid: repeat(auto-fill, ...), as many as fit" (fun () ->
+          let auto css = Css_grid.auto_repeat ctx (Css_syntax.components_of css) in
+          let fit css room = match auto css with Some (_, r) -> Css_grid.repetitions ~room ~gap:16. r | None -> 0 in
+          (* (the cards of aryx.github.io's games: 160 px and a gap of 16) *)
+          Alcotest.(check int) "970 px: five of 160 with their gaps" 5 (fit "repeat(auto-fill, minmax(160px, 1fr))" 970.);
+          Alcotest.(check int) "100 px: one, however narrow" 1 (fit "repeat(auto-fill, minmax(160px, 1fr))" 100.);
+          Alcotest.(check int) "no fixed size: one" 1 (fit "repeat(auto-fit, 1fr)" 970.);
+          Alcotest.(check bool) "after a track: its place" true (match auto "200px repeat(auto-fill, 100px)" with Some (1, [ _ ]) -> true | _ -> false);
+          Alcotest.(check bool) "repeat(3, ...) is not one" true (auto "repeat(3, 1fr)" = None));
       Testo.create "Css_grid: the areas and grid-area read" (fun () ->
           Alcotest.(check (list (list string))) "a row a string" wikipedia
             (Css_grid.areas (Css_syntax.components_of "'siteNotice  siteNotice' 'columnStart pageContent' 'footer footer'"));

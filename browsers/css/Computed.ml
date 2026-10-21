@@ -75,6 +75,7 @@ let initial : t =
     row_gap = zero;
     column_gap = zero;
     grid_columns = [];
+    grid_columns_repeat = None;
     grid_rows = [];
     grid_areas = [];
     grid_area = Auto_placed;
@@ -482,6 +483,7 @@ let compute (m : Cascade.media) ~(root_font_size : float) ~(parent : t) (declare
     row_gap = length "row-gap" ~inh:parent.row_gap ~init:zero;
     column_gap = length "column-gap" ~inh:parent.column_gap ~init:zero;
     grid_columns = (match get "grid-template-columns" with Some v -> Css_grid.tracks ctx v | None -> []);
+    grid_columns_repeat = (match get "grid-template-columns" with Some v -> Css_grid.auto_repeat ctx v | None -> None);
     grid_rows = (match get "grid-template-rows" with Some v -> Css_grid.tracks ctx v | None -> []);
     grid_areas = (match get "grid-template-areas" with Some v -> Css_grid.areas v | None -> []);
     grid_area = (match get "grid-area" with Some v -> Css_grid.placement v | None -> Auto_placed);

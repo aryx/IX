@@ -51,6 +51,34 @@ let rec tracks (ctx : Css_values.context) (value : component list) : track list 
           | None -> []))
     (Css_values.parts value)
 
+(* repeat(auto-fill, ...), repeat(auto-fit, ...): how many tracks are
+ * before it, and its tracks, which the layout repeats as often as they
+ * fit in the grid's width (tracks above leaves it out) *)
+let auto_repeat (ctx : Css_values.context) (value : component list) : (int * track list) option =
+  let rec go (before : int) (cs : component list) =
+    match cs with
+    | [] -> None
+    | Func (f, args) :: rest when String.lowercase_ascii f = "repeat" -> (
+        match split_on Comma args with
+        | count :: repeated -> (
+            match Css_values.parts count with
+            | [ Token (Ident a) ] when (let a = String.lowercase_ascii a in a = "auto-fill" || a = "auto-fit") ->
+                Some (before, tracks ctx (List.concat repeated))
+            | _ -> go (before + List.length (tracks ctx [ Func (f, args) ])) rest)
+        | [] -> go before rest)
+    | c :: rest -> go (before + List.length (tracks ctx [ c ])) rest
+  in
+  go 0 (Css_values.parts value)
+
+(* how many times the repeated tracks fit in [room] with their gaps,
+ * each its fixed size (its most if that is a length, else its least),
+ * at least once *)
+let repetitions ~(room : float) ~(gap : float) (repeated : track list) : int =
+  let fixed (t : track) = match (t.max, t.min) with Length l, _ | _, Length l -> Css_values.resolve l room | _ -> 0. in
+  let sizes = List.fold_left (fun w t -> w +. fixed t) 0. repeated in
+  let one = sizes +. (gap *. float_of_int (List.length repeated)) in
+  if sizes <= 0. || room = infinity then 1 else max 1 (int_of_float ((room +. gap) /. one))
+
 let areas (value : component list) : string list list =
   List.filter_map
     (fun (c : component) ->

@@ -42,7 +42,10 @@
    max-content, auto, minmax(), repeat(n, ...), fit-content() as auto),
    grid-template-areas, the shorthand grid-template as "rows / columns"
    (Computed cuts it), and grid-area as a name or as "row / column".
-   Not read: line names ("[main-start]"), repeat(auto-fill, ...),
+   repeat(auto-fill, ...) and repeat(auto-fit, ...) apart, their count
+   known at layout (auto_repeat, repetitions; auto-fit's empty tracks
+   not collapsed).
+   Not read: line names ("[main-start]"),
    spans ("span 2"), grid-row and grid-column, grid-auto-flow (rows),
    grid-auto-rows and -columns (auto).
 
@@ -65,6 +68,13 @@ val tracks : Css_values.context -> Css_syntax.component list -> track list
 
 (* grid-template-areas' value: a row a string, a cell a word ("." a
  * cell of no area) *)
+(* [auto_repeat ctx value]: a repeat(auto-fill or auto-fit, ...) in
+   the value: how many tracks come before it, and its tracks *)
+val auto_repeat : Css_values.context -> Css_syntax.component list -> (int * track list) option
+
+(* [repetitions ~room ~gap repeated]: how many times they fit in room *)
+val repetitions : room:float -> gap:float -> track list -> int
+
 val areas : Css_syntax.component list -> string list list
 
 (* where an item goes: where the next free cell is, in the area of that

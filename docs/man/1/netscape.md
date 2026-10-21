@@ -4,7 +4,7 @@
 netscape – a web browser, in a window
 
 # SYNOPSIS
-**netscape** \[ *name*`=`*value* ... ]
+**netscape** \[ *address* ] \[ *name*`=`*value* ... ]
 
 # DESCRIPTION
 *Netscape* is a browser with Netscape Navigator's window (1994): the
@@ -24,7 +24,8 @@ What it is given is a list of *name*`=`*value*:
 
 `url=`*address*
 :    The first page: `about:home`, its own, when not said. A file's path is
-     an address.
+     an address. The address alone says the same (`netscape
+     https://example.com/`): a word with a `:`, a `/` or a `.`.
 
 `scripts=off`
 :    The pages' scripts are not run.

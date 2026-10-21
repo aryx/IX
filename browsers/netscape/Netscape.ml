@@ -146,7 +146,7 @@
  * chapter, the same pipeline. Tali Garsiel and Paul Irish, "How
  * Browsers Work" (2011): WebKit's and Gecko's seen from above.
  *
- * usage: mini-netscape [-v] [url=address] [worker=wait|off] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
+ * usage: mini-netscape [-v] [address | url=address] [worker=wait|off] [scripts=off] [console=on] [strict=on] [helpers=off] [keep=off] [settle=off] [draw=all] [view=each] [profile=dir|off] [window=WxH]
  *   (a file's path is an address; worker: the window waits for each
  *   piece of a page the worker does (the tests'), or does them itself,
  *   where they are done beside it (The worker, below); console=on: what the page's scripts
@@ -720,7 +720,11 @@ let profile_dir (caps : < caps; .. >) (flags : P.flags) : string option =
   match List.assoc_opt "profile" flags with Some "off" -> None | Some dir -> Some dir | None -> Browser_profile.default_dir caps
 
 let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept, cookies, places) : Browser_profile.t * Cookie.jar * Places.t) =
-  let address = match List.assoc_opt "url" flags with Some a -> a | None -> "about:home" in
+  (* url=address, or the address alone (as Netscape's own command
+   * line): a word with a ':', a '/' or a '.', which no flag's name has
+   * (one with a '=' in it, a query's, comes as a flag cut there) *)
+  let bare = List.find_map (fun (n, v) -> if String.exists (fun c -> c = ':' || c = '/' || c = '.') n then Some (if v = "" then n else n ^ "=" ^ v) else None) flags in
+  let address = match (List.assoc_opt "url" flags, bare) with Some a, _ | None, Some a -> a | None, None -> "about:home" in
   let jar = Cookie_jar.create cookies in
   (* the helper programs: the profile's, ~/.mailcap's, the built-in
    * ones, those on the PATH; none with helpers=off (the tests: a

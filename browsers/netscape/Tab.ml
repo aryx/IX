@@ -83,10 +83,14 @@ type t = {
   (* the pieces done since the page was asked for: the status bar's
    * progress, with what is left *)
   taken : int;
+  (* the page's own move of its scroll, from where to where (its
+   * #fragment again, still_at_fragment): the window's, if it is still
+   * there *)
+  jumped : (float * float) option;
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0 }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0; jumped = None }
 
 let page (t : t) = t.page
 let url (t : t) =
@@ -184,11 +188,52 @@ let sheets_left (t : t) (p : Browser_page.t) : string list =
 
 (* the page's pictures not had yet, nor asked for -- its <img>s and
  * its boxes' background-images -- to fetch *)
-let pictures_wanted (t : t) (p : Browser_page.t) : string list =
+(* each <img>'s place: its address, how far from what the window
+ * shows (0: in it) the nearest of it and the elements around it that
+ * the layout placed is -- a box's top, a word's baseline (a picture not
+ * come yet and without a size is no picture in the layout: its alt
+ * text, or nothing) *)
+let picture_places (t : t) (p : Browser_page.t) : (string * float) list =
+  let top = t.scroll and bottom = t.scroll +. t.visible in
+  let away (y : float) = if y < top then top -. y else if y > bottom then y -. bottom else 0. in
+  (* (by Dom.hash, an element found among its bucket's by (==), as
+   * Cascade.find_element: a list was a search of every word of a page
+   * for each of its pictures) *)
+  let placed : (int, Dom.element * float) Hashtbl.t = Hashtbl.create 1024 in
+  let place (e : Dom.element) (y : float) = Hashtbl.add placed (Dom.hash e) (e, y) in
+  let rec boxes (b : Html_layout.box) =
+    (match b.kind with Block e -> place e b.y | _ -> ());
+    List.iter (fun (l : Html_layout.line) -> List.iter (fun (f : Html_layout.fragment) -> place f.element f.baseline) l.fragments) b.lines;
+    List.iter boxes b.children
+  in
+  boxes p.layout;
+  let rec go (around : Dom.element list) (e : Dom.element) : (string * float) list =
+    let here =
+      match (e.name, Box_layout.picture_src e) with
+      | "img", Some src -> (
+          match List.find_map (fun a -> List.assq_opt a (Hashtbl.find_all placed (Dom.hash a))) (e :: around) with
+          | Some y -> [ (Browser_url.resolve p.url src, away y) ]
+          | None -> [])
+      | _ -> []
+    in
+    here @ List.concat_map (fun (n : Dom.node) -> match n with Dom.Element c -> go (e :: around) c | Dom.Text _ -> []) e.children
+  in
+  go [] p.tree
+
+(* the page's pictures not had yet, nor asked for -- its <img>s and
+ * its boxes' background-images -- to fetch, and of them those in what
+ * the window shows: the nearest first, then the backgrounds and those
+ * the layout has no place for, in the page's order.
+ * old: List.sort_uniq compare, by their addresses (the author, of a page
+ * of 146 cards: "mini-netscape should first load the images that are
+ * close to what is displayed") *)
+let pictures_wanted (t : t) (p : Browser_page.t) : string list * string list =
   let srcs = List.filter_map (fun (e : Dom.element) -> Option.map (Browser_url.resolve p.url) (Box_layout.picture_src e)) (Dom.find_all "img" p.tree) in
   let asked = List.filter_map (fun w -> match w with Picture u -> Some u | _ -> None) t.todo in
-  List.sort_uniq compare
-    (List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && not (List.mem u asked)) (srcs @ p.backgrounds))
+  let places = List.stable_sort (fun ((_, a) : string * float) (_, b) -> compare a b) (picture_places t p) in
+  let rec firsts (seen : string list) (us : string list) = match us with [] -> [] | u :: rest -> if List.mem u seen then firsts seen rest else u :: firsts (u :: seen) rest in
+  let all = List.filter (fun u -> (not (List.mem_assoc u t.pictures)) && not (List.mem u asked)) (firsts [] (List.map fst places @ srcs @ p.backgrounds)) in
+  (List.filter (fun u -> List.exists (fun (v, d) -> v = u && d = 0.) places) all, List.filter (fun u -> not (List.exists (fun (v, d) -> v = u && d = 0.) places)) all)
 
 (* what the status bar says of what is left *)
 let progress (t : t) : t =
@@ -213,9 +258,12 @@ let with_pictures (t : t) : t =
   match t.page with
   | None -> t
   | Some p -> (
+      (* (laid out again once those in view have come, then at the end) *)
       match pictures_wanted t p with
-      | [] -> t
-      | wanted -> { t with todo = List.filter (fun w -> w <> Pictures_in) t.todo @ List.map (fun u -> Picture u) wanted @ [ Pictures_in ] })
+      | [], [] -> t
+      | seen, rest ->
+          let after (us : string list) = if us = [] then [] else List.map (fun u -> Picture u) us @ [ Pictures_in ] in
+          { t with todo = List.filter (fun w -> w <> Pictures_in) t.todo @ after seen @ after rest })
 
 (* where an element is in its tree: the indexes of the elements down to
  * it -- how the field in focus is found again in a tree a script froze
@@ -297,6 +345,19 @@ let run_scripts (t : t) : t =
 let to_fragment (t : t) (fragment : string option) : t =
   match (t.page, fragment) with
   | Some p, Some name -> ( match Hit.anchor p.layout name with Some y -> { t with scroll = y } | None -> t)
+  | _ -> t
+
+(* laid out again (its pictures come, taller): at its #fragment again if
+ * it was there and nobody scrolled since ([was]: before), as browsers
+ * keep it now (a page of cards, aryx.github.io's games#first-person,
+ * showed the puzzles once its pictures had come) *)
+let still_at_fragment (was : t) (t : t) : t =
+  let fragment = snd (Browser_url.split_fragment t.url) in
+  match (was.page, fragment) with
+  (* (within a pixel: the window's copy of the scroll comes back rounded) *)
+  | Some p, Some name when (match Hit.anchor p.layout name with Some y -> Float.abs (y -. was.scroll) < 1. | None -> false) ->
+      let t = to_fragment t fragment in
+      { t with jumped = Some (was.scroll, t.scroll) }
   | _ -> t
 
 (* the page at [address] fetched, to read next; the history is the
@@ -383,7 +444,7 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
         (* a picture has its size only when it has come: the page laid
          * out again with them all, once (in mini-chrome they come four
          * at a time and the page is laid out at each) *)
-        | Pictures_in -> ( match t.page with Some _ when t.owed > 0 -> relaid t | Some p -> { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> t)
+        | Pictures_in -> still_at_fragment t ( match t.page with Some _ when t.owed > 0 -> relaid t | Some p -> { t with page = Some (Browser_page.laid_out (settings t) p) } | None -> t)
         | Request r -> (
             match t.script with
             | None -> t
@@ -402,7 +463,10 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
  * clock, and where it is scrolled if the page is the same *)
 let merged ~(window : t) (r : t) : t =
   let r = resized window.width { r with epoch = window.epoch; visible = window.visible } in
-  if r.url = window.url then scrolled 0. ~visible:window.visible { r with scroll = window.scroll } else r
+  if r.url <> window.url then r
+  else
+    let scroll = match r.jumped with Some (from, to_) when Float.abs (window.scroll -. from) < 1. -> to_ | _ -> window.scroll in
+    scrolled 0. ~visible:window.visible { r with scroll; jumped = None }
 
 let here (t : t) : entry =
   let kept = match t.page with Some p when t.todo = [] -> Some { shown = p; engine = t.script; size = t.bytes; laid_at = t.width; seen = t.visited } | _ -> None in

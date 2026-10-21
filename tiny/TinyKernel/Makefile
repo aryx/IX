@@ -487,7 +487,7 @@ check: $(O)/boot.img
 	printf 'rc\nx=(a b c); echo $$x $$#x $$x^.c\nfor(i in a b) echo $$i\nfn greet { echo hello $$1 }; greet you\ny=`{echo one two}; echo $$#y\n{ echo a; echo b } > f; cat f | wc; cat < f; rm f\n~ b $$x && echo b is in x\nnosuch || echo failed: $$status\nmkdir d; echo x > d/g; echo */g; cd /nowhere\necho x >> f\necho no >[1=2]\nexit\necho echo $$1 $$2 > s\nrc s from a file\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nmkdir -p d/e; cd d; pwd; echo hello > e/f; walk; du; cp e/f g; mv g e/h; ls e; cmp e/f e/h && echo same\nxd -c e/f; seq 2 2 6; tail -1 e/f; test -d e -a ! -f e && echo dir; [ -f nosuch ] || echo none\nmv e x; cd /; rm -r d; ls d\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nmkdir b; ln /bin/wc b/wc; echo one two three | b/wc -w\necho hi > f; ln f g; echo bye > g; cat f; rm f; cat g\nln b c; ln nosuch c; ls c\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
-	printf 'rc\ncd /bin; ls | grep \x27^t\x27 | sort -r\nls | grep -c \x27^(ls|wc|cat)$$\x27\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \x27[2-4]\x27\ngrep \x27(\x27 /bin/sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
+	printf 'rc\ncd /bin; ls | grep \047^t\047 | sort -r\nls | grep -c \047^(ls|wc|cat)$$\047\nseq 12 -3 1 | sort -n; seq 5 | sort -r | grep -v \047[2-4]\047\ngrep \047(\047 /bin/sh; echo $$status\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; wc f; ls -l /bin | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /bin/ed /bin/sam /bin/emacs /bin/editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out
@@ -502,9 +502,9 @@ check: $(O)/boot.img
 	timeout 300 $(MACHINE) $(O)/boot.img < $(T)/build.keys >> $(O)/check.out
 	timeout 600 $(MACHINE) $(O)/boot.img < $(T)/toolchain.keys >> $(O)/check.out
 	rm -rf $(O)/kept; mkdir $(O)/kept
-	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \x27\x27\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
+	printf 'rc\necho hello world > notes; put notes\nseq 2000 > big; put big numbers\nput nosuch\nput notes ../x\nget \047\047\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	cat $(O)/kept/notes >> $(O)/check.out; wc -c < $(O)/kept/numbers | tr -d ' ' >> $(O)/check.out
-	printf 'rc\nfor(f in `{get \x27\x27}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
+	printf 'rc\nfor(f in `{get \047\047}) get $$f > $$f\ncat notes; wc numbers\nexit\n' | timeout 300 $(MACHINE) -net $(O)/kept $(O)/boot.img >> $(O)/check.out
 	printf 'ping\nping 10.0.0.9\n' | timeout 300 $(MACHINE) -net . $(O)/boot.img >> $(O)/check.out
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img >> $(O)/check.out 2> $(O)/check.trace
 	cut -c15- $(O)/check.trace | grep -q '^x ' && echo "the wire: a packet lost" >> $(O)/check.out

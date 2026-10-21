@@ -48,7 +48,7 @@ The file is ix's own, not ar's: a marshalled value, as an object is.
 |}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let name (o : Asm.obj) = Fpath.to_string o.file in
+  let name = Link.member_file in
   match List.tl (Array.to_list argv) with
   | args when List.mem "-h" args || List.mem "--help" args -> Console.print caps help; 0
   | key :: lib :: files when key <> "" && String.for_all (fun c -> String.contains "utvc" c) key -> (
@@ -56,15 +56,17 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
         let lib = path lib in
-        if String.contains key 't' then
-          List.iter (fun ((o : Asm.obj), names) ->
-            Console.print caps (name o ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) (Link.read_library caps lib)
-        else begin
-          let old = if Sys.file_exists (Fpath.to_string lib) then List.map fst (Link.read_library caps lib) else [] in
-          let added = List.map (fun f -> Asm.load caps (path f)) files in
-          let replaced (o : Asm.obj) = List.exists (fun (n : Asm.obj) -> name n = name o) added in
+        if String.contains key 't' then begin
+          (* (the members as they are in the file: none read as an object) *)
+          let l = Link.read_library caps lib in
+          List.iter2 (fun m (_, names) ->
+            Console.print caps (name m ^ (if verbose then ": " ^ String.concat " " names else "") ^ "\n")) l (Link.index l)
+        end else begin
+          let old = if Sys.file_exists (Fpath.to_string lib) then Link.read_library caps lib else [] in
+          let added = List.map (fun f -> Link.member_of (Asm.load caps (path f))) files in
+          let replaced m = List.exists (fun n -> name n = name m) added in
           if verbose then
-            List.iter (fun (n : Asm.obj) ->
+            List.iter (fun n ->
               Console.print caps (Printf.sprintf "%s - %s\n" (if List.exists (fun o -> name o = name n) old then "r" else "a") (name n))) added;
           (* an older object of the same source goes; the new ones last, in their order *)
           Link.write_library caps lib (List.filter (fun o -> not (replaced o)) old @ added)

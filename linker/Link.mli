@@ -135,11 +135,17 @@ val load : < Cap.open_in; .. > -> 'm t -> decode:(string -> 'm option) -> needs:
  * which load takes those that define what is undefined. ix's own
  * file, a marshalled value as an object is, not ar's; mini-ar makes it
  * (Plan 9's ar; xix's Library_file). In the file a member is its
- * object's bytes: load reads as values those it takes, read_library
- * all of them. *)
-type library = (Asm.obj * string list) list
-val read_library : < Cap.open_in; .. > -> Fpath.t -> library
-val write_library : < Cap.open_out; .. > -> Fpath.t -> Asm.obj list -> unit
+ * object's source, its bytes and the names it defines: load reads as
+ * values only those it takes, mini-ar none. *)
+type def_kind = T | D
+type member = string * string * (def_kind * string) list
+val member_of : Asm.obj -> member
+val member_file : member -> string
+(* each member's bytes and the names indexed for it (a text name
+ * defined again by a later member is not indexed for it, as ar) *)
+val index : member list -> (string * string list) list
+val read_library : < Cap.open_in; .. > -> Fpath.t -> member list
+val write_library : < Cap.open_out; .. > -> Fpath.t -> member list -> unit
 
 (* branch targets: a BL f(SB) to f's TEXT, a branch to a branch to the
  * final one (5l's patch and brloop; xix's Resolve) *)

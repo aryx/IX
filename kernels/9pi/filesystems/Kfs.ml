@@ -44,15 +44,23 @@ let perm_of fs i = if is_dir fs i then 0o777 else 0o666
  * it was. *)
 let cached = ref true
 let piece = 4096
-(* 512 pieces, 2 MB, then all forgotten: simple, and a program read
- * whole fits *)
-let pieces : (int, string) Hashtbl.t = Hashtbl.create 512
-(* the pieces changed since the call began, with how to write them *)
+(* 8192 pieces, 32 MB, then all forgotten: simple, and what a build
+ * reads again and again fits (mini-ml 2.7 MB, mini-mk, mini-rc,
+ * mini-ld, lib_core.a 5.6 MB, the sources). 2 MB was less than
+ * mini-ml: each compile read it from the card again, 40% of a
+ * compile's time under QEMU (plan_self_hosting.md).
+ * old: 512 pieces, 2 MB *)
+let max_pieces = 8192
+let pieces : (int, string) Hashtbl.t = Hashtbl.create max_pieces
+(* the pieces changed and not yet written, with how to write them, and
+ * how many *)
 let dirty : (int * (int -> string -> unit)) list ref = ref []
+let ndirty = ref 0
 
 let flush () =
   List.iter (fun (k, write) -> write (k * piece) (Hashtbl.find pieces k)) (List.rev !dirty);
-  dirty := []
+  dirty := [];
+  ndirty := 0
 
 let cache_read (device : int -> int -> string) at n =
   if not !cached then device at n
@@ -65,7 +73,7 @@ let cache_read (device : int -> int -> string) at n =
         try Hashtbl.find pieces k
         with Not_found ->
           let bytes = device (k * piece) piece in
-          if Hashtbl.length pieces >= 512 then begin flush (); Hashtbl.clear pieces end;
+          if Hashtbl.length pieces >= max_pieces then begin flush (); Hashtbl.clear pieces end;
           Hashtbl.replace pieces k bytes;
           bytes in
       let o = pos - (k * piece) in
@@ -88,15 +96,36 @@ let cache_write (device : int -> int -> string) (write : int -> string -> unit) 
       let from = max at (k * piece) and upto = min (at + String.length s) ((k * piece) + Bytes.length b) in
       if upto > from then Bytes.blit_string s (from - at) b (from - (k * piece)) (upto - from);
       Hashtbl.replace pieces k (Bytes.to_string b);
-      if not (List.mem_assoc k !dirty) then dirty := (k, write) :: !dirty
+      if not (List.mem_assoc k !dirty) then begin dirty := (k, write) :: !dirty; incr ndirty end
     done
 
-(* a call of the file system: its failure the kernel's error, and what
- * it wrote written to the device when it ends, as it fails too *)
+(* A call of the file system: its failure the kernel's error. What it
+ * wrote stays in the pieces, written to the device with what the next
+ * calls write, once 256 pieces (1 MB) are waiting or a second later
+ * (the writer, below) or when a call fails: a file written in several
+ * calls, and the pieces many files share (their inodes, the bitmap, a
+ * directory), go to the card once. A build on the card wrote them at
+ * each call: the card's writes, word by word, a fifth of a compile
+ * under QEMU (plan_self_hosting.md). A machine stopped loses the last
+ * second's writes, as Plan 9's file servers' caches do.
+ * old: flush () at the end of each call *)
 let failing f =
   let x = try f () with Failure m -> flush (); raise (Error m) | e -> flush (); raise e in
-  flush ();
+  if !ndirty >= 256 then flush ();
   x
+
+(* the writer: a process of the kernel's own, the pieces waiting
+ * written each second (between calls: the kernel runs one at a time) *)
+let writer = ref false
+let start_writer () =
+  if not !writer then begin
+    writer := true;
+    Kproc.start (Proc.myproc ()) "kfs" (fun () ->
+      while true do
+        (try Proc.tsleep 1000 with Error _ -> ());
+        (try if !dirty <> [] then flush () with Error _ | Failure _ -> ())
+      done)
+  end
 
 (* (a file of mini-mkfs's has no time: the kernel's date, as a device's) *)
 let dir_of (c : chan) i name =
@@ -126,6 +155,7 @@ let fs part =
       go 0 in
     (* old: Xv6fs.make read (Some write): each read the device's *)
     let f = failing (fun () -> Xv6fs.make (cache_read read) (Some (cache_write read write))) in
+    start_writer ();
     attached := !attached @ [ part, f ];
     f
 

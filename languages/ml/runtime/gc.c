@@ -32,7 +32,14 @@
 /* a half's words at the start (ML_HEAP says another); it doubles when
  * less than half is free after a collection */
 #ifndef HEAPSTART
+#ifdef plan9
+/* (4 MB on mini-9pi: a compile by mini-ml on the card collected
+ * from 1 MB up, 5% of its time; 16 MB gave no more,
+ * plan_self_hosting.md) */
+#define HEAPSTART (1 << 20)
+#else
 #define HEAPSTART (1 << 18)
+#endif
 #endif
 
 /* Both halves have been written after two collections, so a program

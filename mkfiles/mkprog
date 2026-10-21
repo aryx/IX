@@ -15,23 +15,23 @@ OBJS=${SRC:%=$D/%.$O}
 PROGI=$LIBI
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . -I $D $PROGI $LIBI $STDI
+# $D made once, as the mkfile is read, not by each recipe (a process
+# each on mini-9pi: mkfiles/mklib)
+MADE=`{mkdir -p $D}
 
 all:V: $D/$PROG
 
 # a unit: mini-ml reads the others' interfaces from their sources, so a
 # change in any of the directory's files remakes them all (a second each)
 $D/%.$O: %.ml $LOCAL $GEN $LIBSRC
-	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
 # a lexer and a parser: made beside the objects; the mkfile has the rule
 # that compiles each ($D/Parser.$O: $D/Parser.ml), which here would be
 # a second way to make every unit, and mk refuses two
 $D/%.ml: %.mll
-	mkdir -p $D
 	$LEX -o $target $stem.mll
 $D/%.ml: %.mly
-	mkdir -p $D
 	$YACC -b $D/$stem $stem.mly
 
 # the start: the units' initializations, in their order
@@ -39,7 +39,6 @@ $D/%.ml: %.mly
 # case does not count (macOS), that is a unit Start's object too
 # (editors/emacs's Start.ml)
 $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
-	mkdir -p $D
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIBUNITS $SRC Std_exit -o $target
 
 # (the libraries too: a program is linked again when one of them is remade)

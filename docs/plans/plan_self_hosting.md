@@ -204,6 +204,22 @@ program Linux's bytes; Status below).
     0.00r after 73 minutes, the kernel's clock stopped (a timer
     compare written already past, bugs/ix.md; fixed in timer_arm, the
     running build on the old kernel).
+  - **Where a compile's time goes** (the Pi's PC sampled by QEMU's gdb
+    stub, mini-ml on Pervasives: 0.07 s on Linux, 7.0 s on the card):
+    the SD card's driver 40% (Kfs's cache of 2 MB, all forgotten when
+    full, smaller than mini-ml's 2.7 MB: each compile read it from the
+    card again, word by word), mini-ml 40% (its collector a quarter of
+    it), the rest of the kernel 20%. Not QEMU, not exec (0.12 s). Done:
+    Kfs's cache 32 MB (5.1 s); what a call writes kept, written by 1 MB
+    or each second by a kernel process (4.3 s); mini-ml's first heap 4
+    MB on Plan 9 (4.05 s); mini-ar's members their source and names
+    beside their bytes (ar t reads no object, ar u keeps the others':
+    lib_core.a 49 s on the card); mklib's and mkprog's recipes without
+    their mkdir and an ls a directory (up to ten processes a unit, mk's
+    own part a fifth of a library's time). Not done: pages filled from
+    the file still zeroed first (under 1%); text pages shared between
+    execs of a program (Plan 9's image cache), to decide on the next
+    profile.
   - **The time to expect**: the Plan 9 build on Linux is 40 s for the
     libraries and 173 s for the programs, one job at a time; 50 to
     300 times that is 3 to 4 hours on one emulated core. The levers:

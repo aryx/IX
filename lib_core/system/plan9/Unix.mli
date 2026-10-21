@@ -102,6 +102,7 @@ val last_times : int -> int * int * int
 val kill : int -> int -> unit
 val getpid : unit -> int
 val _exit : int -> 'a
+val create_process : string -> string array -> file_descr -> file_descr -> file_descr -> int
 val environment : unit -> string array
 
 (* time *)

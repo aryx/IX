@@ -332,6 +332,17 @@ let getpid () = int_of_string (String.trim (contents "#c/pid"))
 (* exits: no string when all went well, else the number's digits *)
 let _exit n = ignore (sys exits (if n = 0 then z else s (string_of_int n)) z z z z); exit n
 
+(* OCaml's by posix_spawn; here a fork, then the program in /bin when
+ * it has no '/' (Plan 9's binds put every one there), 127 when none
+ * runs, as a shell's child *)
+let create_process prog args fd0 fd1 fd2 =
+  match fork () with
+  | 0 ->
+      dup2 fd0 stdin; dup2 fd1 stdout; dup2 fd2 stderr;
+      (try execv (if String.contains prog '/' then prog else "/bin/" ^ prog) args with Unix_error _ -> ());
+      _exit 127
+  | pid -> pid
+
 (*****************************************************************************)
 (* Time *)
 (*****************************************************************************)

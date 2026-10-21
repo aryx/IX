@@ -233,6 +233,13 @@ test-ml: all
 test-pi: all
 	./tests/pi.sh $(XV6_USERTESTS)
 
+# Speed regressions: the build when nothing changed (mini-9pi's
+# programs, the top mini-mk) and a game's frames a second on mini-9pi
+# under QEMU, each against a limit from the author's machine, the only
+# one they are for; each measure added to tests/speed_history.txt.
+test-speed:
+	./tests/speed.sh
+
 # mini-git over the Internet: ix cloned from GitHub by mini-git (https,
 # through curl), checked by git fsck and walk.
 test-github: all

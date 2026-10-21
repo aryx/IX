@@ -1,0 +1,10 @@
+# lib_gui, a library of ix's tools (mkfiles/mklib): widgets, their
+# layout and focus, immediate and retained (the playground's Gui over
+# it)
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_gui
+DIRS=.
+NEEDS=lib_playground
+UNITS=Mvc Text Theme Widget Text_edit Look Layout Grid Focus Immediate Mvu Retained
+<$TOP/mkfiles/mklib

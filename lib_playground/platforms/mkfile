@@ -1,0 +1,11 @@
+# what lib_playground's platforms share, a library of its own
+# (mkfiles/mklib): the software renderer, the PDF one, the recorded
+# sessions, the redraw by what changed, Plan 9's loop. A program links
+# it and one platform (platforms/ppm, draw, software).
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground/platforms
+DIRS=.
+NEEDS=lib_playground lib_graphics
+UNITS=Input_script Letter_strokes Session Shape_render_software Store Shape_render_pdf Redraw Plan9_loop
+<$TOP/mkfiles/mklib

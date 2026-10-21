@@ -1,0 +1,13 @@
+# lib_playground, a library of ix's tools (mkfiles/mklib): Elm's
+# architecture (core/: Cmd, Sub...), the shapes (Playground), the
+# random numbers and the layers (camera, sprites, tiles). Its other
+# parts are libraries of their own, after the ones they stand on:
+# apis/ (after lib_physics, lib_gui, lib_audio, lib_juice, netcode),
+# platforms/ and each platform (platforms/ppm...).
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground
+DIRS=core random . layers
+NEEDS=lib_graphics
+UNITS=Basics Cmd Color Set Time Lehmer Audio_source Sub Playground Camera2d Scene2d Sprite Tilemap
+<$TOP/mkfiles/mklib

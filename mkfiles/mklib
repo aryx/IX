@@ -5,8 +5,13 @@
 # program's start names (mkfiles/mklibs).
 # The includer sets, after mkconfig: LIB, its directory from TOP;
 # UNITS, each after the ones it names; DIRS, where they are (the last
-# one found taken: a system's own file after the common one); INCLUDES.
+# one found taken: a system's own file after the common one); NEEDS,
+# the libraries whose units they name (their mkfiles say where their
+# interfaces are: dirs, below), even to nothing.
 D=$B/$LIB
+NEEDI=`{for d in $NEEDS; do (cd $TOP/$d && mini-mk O=$O OS=$OS dirs); done | awk '!seen[$0]++'}
+# (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too)
+INCLUDES=${DIRS:%=-I ./%} $NEEDI $STDI
 OBJS=${UNITS:%=$D/%.$O}
 LOCAL=`{for d in $DIRS; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
 
@@ -19,6 +24,13 @@ $D/%.$O: $LOCAL
 $D/lib.a: $OBJS mkfile
 	rm -f $target
 	$AR u $target $OBJS
+
+# its directories, for a program's -I (mkfiles/mklibs asks them: the
+# library knows which, a system's or a platform's among them), and the
+# ones of the libraries it needs (an interface names their types)
+dirs:VQ:
+	for d in $DIRS; do echo -I `cd $d && pwd`; done
+	set -- $NEEDI; while [ $# -gt 0 ]; do echo $1 $2; shift 2; done
 
 clean:V:
 	rm -rf $D

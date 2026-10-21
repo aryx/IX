@@ -1,0 +1,9 @@
+# the playground's platform draw, a library of its own (mkfiles/mklib):
+# the draw device asked for each shape (Plan 9's, mini-9pi)
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground/platforms/draw
+DIRS=.
+NEEDS=lib_playground/platforms
+UNITS=Playground_platform
+<$TOP/mkfiles/mklib

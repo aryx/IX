@@ -1,0 +1,9 @@
+# the playground's platform ppm, a library of its own (mkfiles/mklib):
+# no window: a frame written to a file (Linux's, the tests')
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground/platforms/ppm
+DIRS=.
+NEEDS=lib_playground/platforms
+UNITS=Playground_platform
+<$TOP/mkfiles/mklib

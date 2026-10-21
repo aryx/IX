@@ -4,6 +4,6 @@ TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_compression
 DIRS=.
-INCLUDES=-I . $STDI
+NEEDS=
 UNITS=Huffman Lzw Packbits Zlib
 <$TOP/mkfiles/mklib

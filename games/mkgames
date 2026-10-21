@@ -1,7 +1,8 @@
 # A directory of games, built by ix's tools: the author's playground's
-# games (docs/plans/done/plan_playground.md), each linked with lib_playground,
-# the rasterizer (lib_graphics/software, with core/, geometry/ and
-# images/ beside it) and one platform (PLATFORM):
+# games (docs/plans/done/plan_playground.md), each linked with the
+# libraries (mkfiles/mklibs): lib_playground and its APIs' libraries
+# (physics, gui, audio, juice, netcode), lib_graphics, and one platform
+# (PLATFORM):
 # ppm, no window, a frame written to a file (Linux's); and Plan 9's two
 # (mini-mk O=5 OS=plan9: mini-9pi's), over lib_graphics's client of the
 # draw device: draw, the device asked for each shape (the default there:
@@ -9,206 +10,82 @@
 # default to the draw-device platform then when building games, for
 # now"), and software, the pixels computed here and given as a picture
 # (PLATFORM=software: made beside, games/puzzle-soft). A directory's mkfile sets TOP,
-# DIR (its directory from TOP) and GAMES (its units: Tetris), says its
-# first target (all: games), then includes this; games/mkfile makes the
-# libraries once (libs), then each directory. The libraries' units are
-# compiled here,
-# each directory's objects in a directory of its own (a % of mk's takes a
-# / too: one directory under another would be two rules for a unit).
+# DIR (its directory from TOP), GAMES (its units: Tetris) and WITH,
+# says its first target (all: games), then includes this; games/mkfile
+# makes the libraries once (libs), then each directory.
+# A program links only the units it uses: every library is named, and
+# WITH says only which of other programs' units a directory's programs
+# stand on, compiled here, each directory's objects in a directory of
+# its own (a % of mk's takes a / too: one directory under another would
+# be two rules for a unit).
+# old: each library's units listed here by WITH (physics, gui, audio,
+# juice, multiplayer, ways, pdf, studio: now in the libraries) and
+# compiled here, as many lists as libraries
 <$TOP/mkfiles/mkconfig
 PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
 # (a game linked with the platform that computes its pixels is made
 # beside the other: games/puzzle-soft)
 BESIDE=`{case $PLATFORM in software) echo -soft;; esac}
 D=$B/$DIR$BESIDE
-# (lib_graphics's folders of pixels computed here: a unit is compiled
-# from the one that has it, as apps/office's)
-GDIRS=core geometry images software
-GI=${GDIRS:%=-I $TOP/lib_graphics/%}
-P=$TOP/lib_playground
-F=$P/platforms/$PLATFORM
-GO=$B/lib_graphics/software
-PO=$B/lib_playground/lib
-EO=$B/lib_playground/core
-NO=$B/lib_playground/random
-LO=$B/lib_playground/layers
-AO=$B/lib_playground/apis
-H=$TOP/lib_physics
-HO=$B/lib_physics
-RO=$B/lib_playground/render
-FO=$B/lib_playground/$PLATFORM
-C=$TOP/lib_graphics
-CO=$B/lib_playground/client
-U=$TOP/lib_gui
-UO=$B/lib_playground/gui
-W=$P/ways
-WO=$B/lib_playground/ways
+# (each after the ones it names)
+LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking \
+ lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
 S=$TOP/languages/scheme
 SO=$B/lib_playground/scheme
 M=$TOP/apps/office/formula
 MO=$B/lib_playground/formula
 X=$TOP/examples/gui4
 XO=$B/lib_playground/gui4
-Z=$TOP/lib_compression
-ZO=$B/lib_playground/compression
 Q=$TOP/apps/office
 QO=$B/lib_playground/office
-AU=$TOP/lib_audio
-AUO=$B/lib_playground/audio
-AUDIRS=signal synthesis instruments effects formats/abc formats/wav formats/midi formats/mod
-AUI=-I $AU ${AUDIRS:%=-I $AU/%}
-AUALL=$AU ${AUDIRS:%=$AU/%}
 K=$TOP/games/shmup/kit
-# (a game for several computers: lib_networking's netcode, and under it
-# Udp alone of tcp/, Plan 9's /net/udp where Linux's is a socket)
-T=$TOP/lib_networking
-TO=$B/lib_playground/netcode
-TDIRS=`{case $OS in plan9) echo $T/netcode $T/tcp $T/tcp/plan9;; *) echo $T/netcode $T/tcp;; esac}
-J=$TOP/lib_juice
-JO=$B/lib_juice
+KO=$B/lib_playground/shmup
 R=$TOP/apps/music/rebirth
 RBO=$B/lib_playground/rebirth
-KO=$B/lib_playground/shmup
-V=$TOP/lib_graphics/pdf
-VF=$TOP/lib_graphics/fonts
-VO=$B/lib_playground/pdf
 # (apps/office's folders: a unit is compiled from the one that has it)
 OFFICEDIRS=document richtext paint draw sheet shapes parts file_menu suite
 OFFICEI=${OFFICEDIRS:%=-I $Q/%}
 # (lib_playground before lib_core: its Cmd is Elm's, not commons/'s)
-INCLUDES=-I . -I $F -I $P/platforms -I $P -I $P/core -I $P/random -I $P/layers -I $P/apis $AUI -I $K -I $T/netcode -I $T/tcp -I $R -I $W -I $U -I $S -I $M -I $X -I $Z $OFFICEI -I $H -I $J $GI -I $V -I $VF -I $C $STDI
-SOFT=Opti Rgba_image Xpm Framebuffer Vec2 Affine Blit Fill Line Circle Stroke Hershey_futural Hershey Glyph_unicode
-# (lib_playground's folders: core/, random/, itself, layers/)
-CORE=Color Basics Time Cmd Sub Set
-RANDOM=Lehmer
-# (Audio_source: where a platform finds a program's sound, if it has one)
-PLAY=Playground Audio_source
-LAYERS=Camera2d Sprite Tilemap Scene2d
-# (what only some games ask is linked for those: a directory's mkfile
-# says WITH=physics; a program is its units whole, 0.3 MB more with these
-# ten, and mini-9pi's card is 31 MB. Physics, and lib_physics, the engine
-# under it.)
-# (and for a program that is not a game, apps/'s and examples/':
-# gui, lib_gui and the playground's Gui over it; ways, Bigbang; scheme,
-# the language, languages/scheme's units but its command; formula, a
-# sheet's formulas (apps/office/formula); undo, apps/office's Undo alone; gui4,
-# the tasks written four ways (examples/gui4); office, what
-# mini-office stands on (apps/office's folders: a text with looks and
-# its page, a picture as bits, one as objects, a document's bytes,
-# their shapes, the parts), and Packbits under them; and, for its
-# Export, a PDF file written (lib_graphics/pdf's Pdf_write, Zlib under
-# it, Shape_render_pdf over it: docs/plans/done/plan_pdf.md), and for a
-# picture inserted from a file the pictures' readers (Image_file over
-# Png and Jpeg, Huffman under Jpeg: docs/plans/plan_office.md, stage 7))
-# (and audio: the synthesizer, lib_audio's units but the MPEG decoders
-# and Player, each before the ones that name it, and the playground's
-# Audio over them (docs/plans/plan_audio.md, stage 4); shmup: the
-# shooters' kit, games/shmup/kit)
-# (and juice: a game's feel, lib_juice's units, each before the ones
-# that name it, and the playground's Juice over them: TinyBreakout)
-APIS=`{case "$WITH" in *physics*) echo Physics;; esac; case "$WITH" in *gui*) echo Gui;; esac; case "$WITH" in *audio*) echo Audio;; esac; case "$WITH" in *juice*) echo Juice;; esac; case "$WITH" in *multiplayer*) echo Multiplayer;; esac}
-# (and multiplayer: the players' inputs exchanged, lib_networking/netcode's
-# units and Udp, each before the ones that name it, and the playground's
-# Multiplayer over them: TinyTronscroll)
-NETCODE=`{case "$WITH" in *multiplayer*) echo Udp Wire Checksum Inputs Lockstep Rollback Sim_net Transport;; esac}
-NETCODEOBJS=`{for u in $NETCODE; do echo $TO/$u.$O; done}
-JUICE=`{case "$WITH" in *juice*) echo Hash Ease Tween Squash Trauma Emitter Follow;; esac}
-JUICEOBJS=`{for u in $JUICE; do echo $JO/$u.$O; done}
-# (and studio: what is played live, lib_audio's instruments/ and effects/
-# as mini-rebirth asks, and Spectrum; rebirth: its studio and its two
-# voices, apps/music/rebirth's units but the program)
-AUDIO=`{case "$WITH" in *audio*) echo Pitch_effect Control Signal Noise Envelope Filter Pluck Fm Oscillator Mod Abc Doremi Midi Mix Resample Space Synth Wav Paula Mod_player Music Instrument Sfx Mixer;; esac; case "$WITH" in *studio*) echo Spectrum Moog_ladder Diode_ladder Modal Sequencer Svf Vco Voicing Effect Dynamics Drive Delay;; esac}
+INCLUDES=-I . -I $K -I $R -I $S -I $M -I $X $OFFICEI $LIBI $STDI
+# (what only some programs ask, other programs' units: a directory's
+# mkfile says WITH=scheme. scheme, the language, languages/scheme's
+# units but its command; formula, a sheet's formulas
+# (apps/office/formula); undo, apps/office's Undo alone; gui4, the tasks
+# written four ways (examples/gui4); office, what mini-office stands on
+# (apps/office's folders: a text with looks and its page, a picture as
+# bits, one as objects, a document's bytes, their shapes, the parts);
+# sheet, a sheet and how it is drawn, alone, for Gui7Cells; rebirth,
+# mini-rebirth's studio and its two voices, apps/music/rebirth's units
+# but the program; shmup, the shooters' kit, games/shmup/kit)
 REBIRTH=`{case "$WITH" in *rebirth*) echo Patch_text Voice_tb303 Voice_tr808 Studio_rebirth Skin;; esac}
 REBIRTHOBJS=`{for u in $REBIRTH; do echo $RBO/$u.$O; done}
-AUDIOOBJS=`{for u in $AUDIO; do echo $AUO/$u.$O; done}
 KIT=`{case "$WITH" in *shmup*) echo Shots;; esac}
 KITOBJS=`{for u in $KIT; do echo $KO/$u.$O; done}
-GUI=`{case "$WITH" in *gui*) echo Widget Theme Text Text_edit Focus Layout Grid Look Immediate Retained Mvc Mvu;; esac}
-WAYS=`{case "$WITH" in *ways*) echo Bigbang;; esac}
 SCHEME=`{case "$WITH" in *scheme*) echo Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step;; esac}
+SCHEMEOBJS=`{for u in $SCHEME; do echo $SO/$u.$O; done}
 FORMULA=`{case "$WITH" in *formula*) echo Formula;; esac}
+FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}
 KITS=`{case "$WITH" in *office*|*undo*) echo Undo;; esac}
-# (and pdf: a PDF file read and drawn, for mini-page: lib_graphics/pdf's
-# reader over lib_graphics/fonts, a curve made lines, the pictures'
-# readers (Jpeg, Png) and Huffman under Jpeg)
-COMPRESSION=`{case "$WITH" in *office*) echo Packbits;; esac; case "$WITH" in *office*|*pdf*) echo Zlib;; esac; case "$WITH" in *office*|*pdf*) echo Huffman;; esac}
-READ=`{case "$WITH" in *pdf*) echo Curve;; esac; case "$WITH" in *office*|*pdf*) echo Dct Jpeg_progressive Jpeg Png Image_file;; esac}
-READOBJS=`{for u in $READ; do echo $GO/$u.$O; done}
-# (Glyph_names first: Pdf_write names it too, for a text's characters
-# in the fonts' encoding)
-PDF=`{case "$WITH" in *office*|*pdf*) echo Glyph_names;; esac; case "$WITH" in *office*) echo Pdf_write;; esac; case "$WITH" in *pdf*) echo Outline Standard_widths Truetype Cff Type1 Pdf_object Pdf_filter Pdf Pdf_color Pdf_canvas Pdf_font Pdf_shading Pdf_image Pdf_render;; esac}
-PDFOBJS=`{for u in $PDF; do echo $VO/$u.$O; done}
-RENDERPDF=`{case "$WITH" in *office*) echo Shape_render_pdf;; esac}
-COMPRESSIONOBJS=`{for u in $COMPRESSION; do echo $ZO/$u.$O; done}
-# (sheet: a sheet and how it is drawn, alone, for Gui7Cells; with formula)
+KITSOBJS=`{for u in $KITS; do echo $QO/$u.$O; done}
+GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
+GUI4OBJS=`{for u in $GUI4; do echo $XO/$u.$O; done}
 OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart Part_image File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export;; *sheet*) echo Sheet Sheet_view;; esac}
 OFFICEOBJS=`{for u in $OFFICE; do echo $QO/$u.$O; done}
-GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
-FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}
-KITSOBJS=`{for u in $KITS; do echo $QO/$u.$O; done}
-GUI4OBJS=`{for u in $GUI4; do echo $XO/$u.$O; done}
-GUIOBJS=`{for u in $GUI; do echo $UO/$u.$O; done}
-WAYSOBJS=`{for u in $WAYS; do echo $WO/$u.$O; done}
-SCHEMEOBJS=`{for u in $SCHEME; do echo $SO/$u.$O; done}
-PHYSICS=`{case "$WITH" in *physics*) echo Body Shape Contact Collide Broadphase Resolve Joint2d Solver Force Integrate;; esac}
-APISOBJS=`{for u in $APIS; do echo $AO/$u.$O; done}
-PHYSICSOBJS=`{for u in $PHYSICS; do echo $HO/$u.$O; done}
-# (the Plan 9 platforms' loop: not for the one without a window)
-LOOP=`{case $PLATFORM in ppm) ;; *) echo Plan9_loop;; esac}
-RENDER=Letter_strokes Shape_render_software $RENDERPDF Input_script Session Redraw Store $LOOP
-RENDEROBJS=`{for u in $RENDER; do echo $RO/$u.$O; done}
-PLAT=Playground_platform
-# (the draw device's client, for a platform with a window; a list that may
-# be empty is the shell's to turn into objects: mk's ${X:%=...} of nothing
-# is the name X)
-CLIENT=`{case $PLATFORM in ppm) ;; *) echo Point Rectangle Display Draw Font_default Font Mouse Keyboard;; esac}
-CLIENTOBJS=`{for u in $CLIENT; do echo $CO/$u.$O; done}
-LIB=$SOFT $COMPRESSION $READ $PDF $CLIENT $PHYSICS $JUICE $CORE $RANDOM $NETCODE $AUDIO $REBIRTH $GUI $FORMULA $KITS $GUI4 $PLAY $LAYERS $KIT $APIS $WAYS $SCHEME $OFFICE $RENDER $PLAT
-LIBOBJS=${SOFT:%=$GO/%.$O} $COMPRESSIONOBJS $READOBJS $PDFOBJS $CLIENTOBJS $PHYSICSOBJS $JUICEOBJS ${CORE:%=$EO/%.$O} ${RANDOM:%=$NO/%.$O} $NETCODEOBJS $AUDIOOBJS $REBIRTHOBJS $GUIOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS ${PLAY:%=$PO/%.$O} ${LAYERS:%=$LO/%.$O} $KITOBJS $APISOBJS $WAYSOBJS $SCHEMEOBJS $OFFICEOBJS $RENDEROBJS ${PLAT:%=$FO/%.$O}
-LOCAL=`{ls *.ml $TOP/lib_graphics/[cgis]*/*.ml $TOP/lib_graphics/[cgis]*/*.mli $P/*.ml $P/*.mli $P/core/*.ml $P/core/*.mli $P/random/*.ml $P/random/*.mli $P/layers/*.ml $P/layers/*.mli $P/apis/*.ml $P/apis/*.mli $W/*.ml $W/*.mli $U/*.ml $U/*.mli $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Z/*.ml $Z/*.mli $V/*.ml $V/*.mli $VF/*.ml $VF/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $H/*.ml $H/*.mli $J/*.ml $J/*.mli $AU/*.ml $AU/*.mli $AU/*/*.ml $AU/*/*.mli $AU/formats/*/*.ml $AU/formats/*/*.mli $K/*.ml $K/*.mli $T/netcode/*.ml $T/netcode/*.mli $T/tcp/Udp.ml $T/tcp/Udp.mli $T/tcp/plan9/Udp.ml $R/*.ml $R/*.mli $P/platforms/*.ml $P/platforms/*.mli $F/*.ml $F/*.mli $C/*.ml $C/*.mli 2> /dev/null}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LIB=$REBIRTH $FORMULA $KITS $GUI4 $KIT $SCHEME $OFFICE
+LIBOBJS=$REBIRTHOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS $KITOBJS $SCHEMEOBJS $OFFICEOBJS
+LOCAL=`{ls *.ml $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli 2> /dev/null} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
-libs:V: $LIBOBJS
+libs:V: $LIBA $LIBOBJS
 games:V: ${GAMES:%=$D/%.linked}
 
-$GO/%.$O: $LOCAL
-	mkdir -p $GO
-	$ML $INCLUDES -o $target `ls $TOP/lib_graphics/[cgis]*/$stem.ml`
-$PO/%.$O: $P/%.ml $LOCAL
-	mkdir -p $PO
-	$ML $INCLUDES -o $target $P/$stem.ml
-$EO/%.$O: $P/core/%.ml $LOCAL
-	mkdir -p $EO
-	$ML $INCLUDES -o $target $P/core/$stem.ml
-$NO/%.$O: $P/random/%.ml $LOCAL
-	mkdir -p $NO
-	$ML $INCLUDES -o $target $P/random/$stem.ml
-$LO/%.$O: $P/layers/%.ml $LOCAL
-	mkdir -p $LO
-	$ML $INCLUDES -o $target $P/layers/$stem.ml
-$AO/%.$O: $P/apis/%.ml $LOCAL
-	mkdir -p $AO
-	$ML $INCLUDES -o $target $P/apis/$stem.ml
-$AUO/%.$O: $LOCAL
-	mkdir -p $AUO
-	for d in $AUALL; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
 $RBO/%.$O: $R/%.ml $LOCAL
 	mkdir -p $RBO
 	$ML $INCLUDES -o $target $R/$stem.ml
-$TO/%.$O: $LOCAL
-	mkdir -p $TO
-	for d in $TDIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
 $KO/%.$O: $K/%.ml $LOCAL
 	mkdir -p $KO
 	$ML $INCLUDES -o $target $K/$stem.ml
-$UO/%.$O: $U/%.ml $LOCAL
-	mkdir -p $UO
-	$ML $INCLUDES -o $target $U/$stem.ml
-$WO/%.$O: $W/%.ml $LOCAL
-	mkdir -p $WO
-	$ML $INCLUDES -o $target $W/$stem.ml
 $SO/%.$O: $S/%.ml $LOCAL
 	mkdir -p $SO
 	$ML $INCLUDES -o $target $S/$stem.ml
@@ -218,30 +95,9 @@ $MO/%.$O: $M/%.ml $LOCAL
 $XO/%.$O: $X/%.ml $LOCAL
 	mkdir -p $XO
 	$ML $INCLUDES -o $target $X/$stem.ml
-$ZO/%.$O: $Z/%.ml $LOCAL
-	mkdir -p $ZO
-	$ML $INCLUDES -o $target $Z/$stem.ml
-$VO/%.$O: $LOCAL
-	mkdir -p $VO
-	$ML $INCLUDES -o $target `ls $TOP/lib_graphics/pdf/$stem.ml $TOP/lib_graphics/fonts/$stem.ml 2> /dev/null`
 $QO/%.$O: $LOCAL
 	mkdir -p $QO
 	$ML $INCLUDES -o $target `ls $Q/*/$stem.ml | grep -v '/tests/\|/formula/'`
-$HO/%.$O: $H/%.ml $LOCAL
-	mkdir -p $HO
-	$ML $INCLUDES -o $target $H/$stem.ml
-$JO/%.$O: $J/%.ml $LOCAL
-	mkdir -p $JO
-	$ML $INCLUDES -o $target $J/$stem.ml
-$RO/%.$O: $P/platforms/%.ml $LOCAL
-	mkdir -p $RO
-	$ML $INCLUDES -o $target $P/platforms/$stem.ml
-$FO/%.$O: $F/%.ml $LOCAL
-	mkdir -p $FO
-	$ML $INCLUDES -o $target $F/$stem.ml
-$CO/%.$O: $C/%.ml $LOCAL
-	mkdir -p $CO
-	$ML $INCLUDES -o $target $C/$stem.ml
 
 # a game: its unit (Tetris.ml), the program its name in small letters
 # (tetris); Tetris.linked says it is made
@@ -249,10 +105,10 @@ $D/%.$O: %.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/%.linked: $D/%.$O $LIBS
-	$ML -start $STD $COMMONS $LIB $stem Std_exit -o $D/$stem.start.$O
-	$LD $LDH -nofollow -o $D/`echo $stem | tr A-Z a-z` $D/$stem.start.$O $STDOBJS $LIBOBJS $D/$stem.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIB $stem Std_exit -o $D/$stem.start.$O
+	$LD $LDH -nofollow -o $D/`echo $stem | tr A-Z a-z` $D/$stem.start.$O $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
 	touch $target
 
 clean:V:
 	rm -rf $D
-	if [ $DIR = games ]; then rm -rf $GO $B/lib_playground $HO $JO; fi
+	if [ $DIR = games ]; then rm -rf $B/lib_playground/scheme $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth; fi

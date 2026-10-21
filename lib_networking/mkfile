@@ -9,6 +9,6 @@ LIB=lib_networking
 # last, and so taken)
 OSDIR=`{case $OS in plan9) echo tcp/plan9;; esac}
 DIRS=tcp tls http $OSDIR
-INCLUDES=-I tcp -I tls -I http -I ../lib_crypto -I ../lib_compression $STDI
+NEEDS=lib_crypto lib_compression
 UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client
 <$TOP/mkfiles/mklib

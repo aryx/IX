@@ -20,7 +20,8 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 #   if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) || exit 1; done; fi)
 # (the machine's cores, 16 at most: there are as many directories at once)
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
-FIRST=lib_core lib_crypto lib_compression lib_networking assembler
+FIRST=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
+ lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/ppm assembler
 AFTER=linker/tools tiny utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
 all:V:
 	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done

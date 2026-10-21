@@ -1,0 +1,9 @@
+# the playground's platform software, a library of its own (mkfiles/mklib):
+# the pixels computed here, given to the draw device as a picture (Plan 9's)
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_playground/platforms/software
+DIRS=.
+NEEDS=lib_playground/platforms
+UNITS=Playground_platform
+<$TOP/mkfiles/mklib

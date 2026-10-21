@@ -1,0 +1,10 @@
+# lib_physics, a library of ix's tools (mkfiles/mklib): bodies, their
+# contacts and joints, a step of the world (the playground's Physics
+# over it)
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_physics
+DIRS=.
+NEEDS=lib_graphics
+UNITS=Body Contact Force Integrate Resolve Shape Joint2d Collide Broadphase Solver
+<$TOP/mkfiles/mklib

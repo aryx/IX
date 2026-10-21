@@ -1,0 +1,11 @@
+# lib_networking's netcode, a library of its own (mkfiles/mklib): the
+# players' inputs exchanged, lockstep and rollback, over Udp (the
+# playground's Multiplayer over it); apart from lib_networking, since it
+# names the playground's Lehmer
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=lib_networking/netcode
+DIRS=.
+NEEDS=lib_networking lib_playground
+UNITS=Checksum Sim_net Transport Wire Inputs Lockstep Rollback
+<$TOP/mkfiles/mklib

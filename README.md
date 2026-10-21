@@ -247,10 +247,10 @@ over the kernel's calls), `TinyCalls` for the graphical programs
 | on the host, for the tests | OCaml and dune | OCaml's own, and [`lib_core/commons/`](lib_core/commons/) |
 | on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 
-The programs are about 18,800 lines of OCaml and ML; with their C
+The programs are about 24,100 lines of OCaml and ML; with their C
 (tiny-c's and tiny-ml's runtimes, tiny-kernel's programs in C)
-t-IX is **about 21,000 lines** in all (the header comments are in
-the `.mli` files, which are not counted), of a budget of 25,000. tiny-cpu and tiny-machine also
+t-IX is **about 26,300 lines** in all (the header comments are in
+the `.mli` files, which are not counted), of a budget of 30,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
 and a kernel in C with a disk and a shell (t6). Their 2,000 lines are not counted in t-IX: t-IX's kernel is
@@ -392,21 +392,22 @@ an office suite and a web browser.
 ### The budget
 
 A system a person can read needs a limit set before it is full:
-**150,000 lines for m-IX** and **25,000 for t-IX**, without the tests
+**150,000 lines for m-IX** and **30,000 for t-IX**, without the tests
 and without the header comments that tell each module's idea and
 history (m-IX's was 100,000 until 2026-10-09, when the office suite
 and the two libraries under it, the GUI toolkit and the playground,
 came to be counted, and 125,000 until 2026-10-10, the web browser
 in; t-IX's was 20,000 until 2026-10-13, its GUI toolkit in, 25,000
 until 2026-10-19, its file system in, then 30,000, and 25,000 again
-the same day, its arm64 side and TinyLibHost out).
+the same day, its arm64 side and TinyLibHost out, and 30,000 since
+2026-10-21, its code rewrapped to 80 columns).
 What is still to come has to fit in what is left, and when it does
 not, something is trimmed first.
 
-| | budget | today (2026-10-19) | left | what is missing |
+| | budget | today (2026-10-21) | left | what is missing |
 |---|---:|---:|---:|---|
-| **m-IX** | 150,000 | 153,600 | -3,600 | the debuggers, the profiler |
-| **t-IX** | 25,000 | 21,000 | 4,000 | tiny-debugger, several cores (plan_tiny_multicore.md) |
+| **m-IX** | 150,000 | 151,000 | -1,000 | the debuggers, the profiler |
+| **t-IX** | 30,000 | 26,300 | 3,700 | tiny-debugger, several cores (plan_tiny_multicore.md) |
 
 [docs/loc.md](docs/loc.md) is the log of these numbers, with what
 moved them.

@@ -59,6 +59,12 @@ the day TinyGUI and its two programs came in, which put t-ix at
 20,418: about 4,600 left. m-ix's is 150,000 since 2026-10-10, and m-ix
 at 146,618: about 3,400 left.
 
+Since 2026-10-21 t-ix's budget is **30,000 lines** (the author: "it's
+fine for now, we can put back the budget at 30 000"), the day t-ix's
+code was rewrapped to 80 columns (the author: "going up to 100 just to
+try to reduce the LOC to stay in budget is not ok"), which put t-ix at
+26,302: about 3,700 left.
+
 A line is added when a step lands that moves the numbers
 (`scripts/stats/loc.py -l` prints it, for the commit it is run at),
 with what moved them.
@@ -78,3 +84,4 @@ with what moved them.
 | 2026-10-10 | after `d219226` | 128,576 | 3,065 | 1,760 | 6,119 | 18,824 | the header comments of the whole tree, written or extended (526 files, comments only): m-ix's 13,397 lines to 26,618 in 1,140 header comments, t-ix's 1,604 to 2,967 in 101, neither counted; 6,187 of m-ix's lines under a tag, in 716 paragraphs. m-ix's 15 lines and t-ix's 38 over the last entry are the day's programs, other sessions' |
 | 2026-10-11 | after `f39145c` | 129,942 | 3,063 | 1,762 | 5,975 | 18,825 | not counted from `137d482`: the tiny programs' interfaces (`tiny/X.mli`, thirteen since `d10592b`: a program's header comment, moved there from its `.ml`, and the types of `main` and of one function), in no row and in neither number; so t-ix's header comments read 1,248 lines in 101 where 2,967, the thirteen moved ones, about 1,730 lines, being counted nowhere. m-ix's header comments 26,948 lines in 1,151 (two rounds of their facts checked, `60e074e` and `f39145c`: comments only); 6,266 lines under a tag, in 722 paragraphs. m-ix's 1,366 lines over the last entry are the day's programs, other sessions' (mini-netscape's cookies and profile, the web kernel) |
 | 2026-10-19 | after `d1799d6` | 153,554 | 3,066 | 1,762 | 6,359 | 18,527 | t-ix: plan_tiny_self_hosting.md's steps 1 and 2: arm64 out (`TinyAssembler.ml`, `TinyCPUArm.ml`, `TinyLinker.ml`, tiny-c's and tiny-ml's arm64 back ends: about 1,300 lines), then `tiny/TinyLibHost/` (7,100: its copy of `lib_core/`, runtime and C library; mini-mk builds the tools on `lib_core/` itself, dune on OCaml's stdlib). m-ix's number is the day's, what moved it since the last row not logged |
+| 2026-10-21 | `6ef649ce` | 150,986 | 3,066 | 2,464 | 7,946 | 26,302 | t-ix at 80 columns, 85 now and then (`21ded260`, layout only: about 2,800 lines past 85 columns, up to 381, rewrapped; t-ix 21,034 to 26,311), and what it prints within 80 too (`6ef649ce`); its budget 30,000, where it was 25,000 |

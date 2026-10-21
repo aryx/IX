@@ -310,7 +310,7 @@ usage: get name [host [port]]
 new
 ln: d/f: cannot
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
-tiny-kernel: / on a disk of 8192 KB, 8102 KB free; 1 snapshots in /dump
+tiny-kernel: / on a disk of 8192 KB, 8101 KB free; 1 snapshots in /dump
 $ % /usr/glenda
 hello
 hello
@@ -318,7 +318,7 @@ hello
 /dump/1
 hello
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
-tiny-kernel: / on a disk of 8192 KB, 8099 KB free; 2 snapshots in /dump
+tiny-kernel: / on a disk of 8192 KB, 8098 KB free; 2 snapshots in /dump
 $ % /dump/1
 /dump/2
 /dump/2/usr/glenda/d
@@ -348,14 +348,18 @@ exited 0
 hello
 % trace: nosuch: not found
 % exec
-0:	jal	r15, 0x10ff8
+_start:	jal	r15, 0x10ff8 <main>
 break
-c:	ldw	r1, 0(r14)
-c:	ldw	r1, 0(r14)
-10:	ldw	r2, 4(r14)
-14:	ldw	r3, 8(r14)
-10:	ldw	r2, 4(r14)
-14:	ldw	r3, 8(r14)
+write:	ldw	r1, 0(r14)
+0	write
+1	print+0xb4
+2	main+0xac
+3	_start
+write:	ldw	r1, 0(r14)
+write+0x4:	ldw	r2, 4(r14)
+write+0x8:	ldw	r3, 8(r14)
+write+0x4:	ldw	r2, 4(r14)
+write+0x8:	ldw	r3, 8(r14)
 ping: no network, or not an address: 10.0.0.1
 exited 1
 % $ 

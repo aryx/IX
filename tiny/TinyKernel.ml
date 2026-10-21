@@ -910,8 +910,9 @@ let sys_fork p =
 
 (* A program's file is either a raw image, run in 1 MB, or an a.out: a
  * header of three words (a magic number, the image's size, the memory
- * the program asks for), then the image (tiny-linker -a). This returns
- * where the image starts in the file, its size, and the memory. *)
+ * the program asks for), then the image (tiny-linker -a), and maybe its
+ * labels, for debug (-s), which are not loaded. This returns where the
+ * image starts in the file, its size, and the memory. *)
 let aout_magic = 0x7a0ce5
 let header bytes =
   let word i =
@@ -942,7 +943,7 @@ let load_prog p node argv =
     | Some (Rom (at, _)) -> k_string at (min n 12)
     | _ -> "" in
   let skip, size, memory = match header first with
-    | Some (size, memory) when size = n - 12 ->
+    | Some (size, memory) when size <= n - 12 ->
         12, size, (memory + part - 1) / part * part
     | _ -> 0, n, part in
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;

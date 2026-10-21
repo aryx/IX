@@ -10,7 +10,7 @@
 #                     ^C, M-x and a macro; office's page, a text and a sheet, saved,
 #                     and a page not saved left by File's Quit twice; troff's text and web page of
 #                     /examples/report.ixd), trace's of cat and debug's of
-#                     ping (stopped in write, a step), then the network (ping,
+#                     ping (stopped in write, bt, a step), then the network (ping,
 #                     get, and put kept across two boots, against
 #                     tiny-machine's end of the wire, a
 #                     packet lost and the file whole anyway), against
@@ -61,7 +61,8 @@
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-linker's images (linked at 0: the kernel runs each
-# at the start of its partition), start.tm first, with libc
+# at the start of its partition), a.outs with their labels after the
+# image (-s: debug's names), start.tm first, with libc
 # (../TinyCRuntime/) and sys.tm. Each .tm is an object of
 # tiny-assembler's first (_make/x.o, from x.tm here or in _make/). A hard link is a name and a line
 # "link utils" (what link() does, at the boot): utils (../TinyUtilities.ml, tiny-utils) is in the image once,
@@ -166,7 +167,7 @@ $(O)/%.tm: %.c libc/user.h
 
 $(O)/bin/%: $(ULIB) $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(LD) -map -o $@ $(ULIB) $(O)/user/$*.o
+	$(LD) -map -s -o $@ $(ULIB) $(O)/user/$*.o
 
 # a program in ML: its units, each compiled once by tiny-ml -c into
 # _make/ml/ (an object, U.tm, and its interface, U.tmi), after the
@@ -199,12 +200,12 @@ I_TinyBrowser = $(GUI)
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
-I_TinyProfiler = TinyCalls TinyLibSystem
+I_TinyProfiler = TinyCalls TinyLibSystem TinyLibSymbols
 I_TinyDatabase = TinyCalls TinyLibSystem
 I_TinyVCS = TinyCalls TinyLibSystem
 I_TinyBuildSystem = TinyCalls TinyLibSystem
 I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA
-I_TinyLinker = $(I_TinyAssembler)
+I_TinyLinker = $(I_TinyAssembler) TinyLibSymbols
 I_TinyC = TinyCalls TinyLibSystem
 I_TinyML = TinyCalls TinyLibSystem
 I_Square = $(I_TinyLibGUI)
@@ -218,7 +219,7 @@ I_Troff = $(GUI) TinyOffice TinyTroff
 I_Play = $(GUI) TinyPlay
 I_Www = $(GUI) TinyBrowser
 I_Trace = TinyCalls
-I_Debug = TinyCalls TinyMachineISA
+I_Debug = TinyCalls TinyMachineISA TinyLibSymbols
 # each unit's file
 F_TinyCalls = libml/TinyCalls.ml
 F_TinyLibSystem = libml/TinyLibSystem.ml
@@ -238,7 +239,7 @@ F_Debug = user/debug.ml
 F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyML \
+UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyML \
   TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
@@ -304,7 +305,7 @@ $(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/St
 # program is past 384 KB; old: a program past it refused here)
 $(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(LIB) $(O)/end.o
 	@mkdir -p $(@D)
-	$(LD) -map $(MEM_$*) -o $@ $(filter %.o,$^)
+	$(LD) -map -s $(MEM_$*) -o $@ $(filter %.o,$^)
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
@@ -313,11 +314,11 @@ $(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
 	$(TC) -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 	@mkdir -p $(@D)
-	$(LD) -map -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
+	$(LD) -map -s -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 # a program that reaches a machine by its name: with net.c
 $(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(LD) -map -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
+	$(LD) -map -s -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
@@ -429,9 +430,9 @@ user/%.tm: $(K)/user/%.c $(K)/libc/user.h
 	mkdir -p user; cc -o $$target $(K)/user/$$stem.c
 user/paint.tm: $(K)/examples/paint.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p user; cc -o $$target $(K)/examples/paint.c
-$(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
-	mkdir -p bin; ld -map -o $$target $$prereq
-$(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -o $$target $$prereq$(nl))
+$(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
+	mkdir -p bin; ld -map -s -o $$target $$prereq
+$(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -o $$target $$prereq$(nl))
 # ML: each unit after the interfaces it reads, each program's main, and
 # the program
 ml/%.tm:
@@ -439,7 +440,7 @@ ml/%.tm:
 ml/%.tmi: ml/%.tm
 $(foreach u,$(UNITS),ml/$(u).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.tm:
 	mkdir -p main; ml -nostdlib -o $$target $$prereq
-$(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map $(MEM_$(p)) -o $$target $$prereq$(nl))
+$(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s $(MEM_$(p)) -o $$target $$prereq$(nl))
 endef
 $(O)/Buildfile: Makefile
 	@mkdir -p $(@D)
@@ -559,9 +560,10 @@ $(O)/check/25.out: $(O)/boot.img
 	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 # trace and debug (plan_tiny_debugger.md): cat's calls, its output kept
-# apart; ping stopped in write, a step from the breakpoint, to its exit
+# apart; ping stopped in write (its labels after its image: -s), the
+# backtrace, a step from the breakpoint, to its exit
 $(O)/check/26.out: $(O)/boot.img
-	printf 'rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ndebug ping\nb 0xc\nc\nx/i pc 3\ns\nn\nd 0xc\nc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf 'rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

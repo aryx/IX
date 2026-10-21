@@ -86,9 +86,9 @@ $D/tiny-ml: $D/TinyLibSystem.$O $D/TinyML.$O $LIBS
 $D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $LIBS
 	$START TinyLibSystem TinyMachineISA TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
 	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $STDEND
-$D/tiny-linker: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLinker.$O $LIBS
-	$START TinyLibSystem TinyMachineISA TinyLinker Std_exit -o $D/TinyLinker.start.$O
-	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLinker.$O $STDEND
+$D/tiny-linker: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLibSymbols.$O $D/TinyLinker.$O $LIBS
+	$START TinyLibSystem TinyMachineISA TinyLibSymbols TinyLinker Std_exit -o $D/TinyLinker.start.$O
+	$LINK -o $target $D/TinyLinker.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyLibSymbols.$O $D/TinyLinker.$O $STDEND
 $D/TinyDatabase.$O: $D/TinyLibSystem.$O TinyDatabase.ml
 $D/tiny-db: $D/TinyLibSystem.$O $D/TinyDatabase.$O $LIBS
 	$START TinyLibSystem TinyDatabase Std_exit -o $D/TinyDatabase.start.$O
@@ -103,10 +103,11 @@ $D/tiny-cpu: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 $D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
 	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
 	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
+$D/TinyProfiler.$O $D/TinyLinker.$O: $D/TinyLibSymbols.$O
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
-$D/tiny-prof: $D/TinyLibSystem.$O $D/TinyProfiler.$O $LIBS
-	$START TinyLibSystem TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
-	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyProfiler.$O $STDEND
+$D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibSymbols.$O $D/TinyProfiler.$O $LIBS
+	$START TinyLibSystem TinyLibSymbols TinyProfiler Std_exit -o $D/TinyProfiler.start.$O
+	$LINK -o $target $D/TinyProfiler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibSymbols.$O $D/TinyProfiler.$O $STDEND
 $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 	$START TinyMkfs Std_exit -o $D/TinyMkfs.start.$O
 	$LINK -o $target $D/TinyMkfs.start.$O $STDOBJS $D/TinyMkfs.$O $STDEND

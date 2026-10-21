@@ -5,7 +5,7 @@
 
 open TinyMachineISA
 
-let usage = "usage: tiny-linker [-a megabytes] [-map] -o out file.o..."
+let usage = "usage: tiny-linker [-a megabytes] [-s] [-map] -o out file.o..."
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -14,8 +14,11 @@ tiny-assembler's objects to an image for tiny-cpu or tiny-machine: the files one
 after the other from address 0, their labels one name space, each place a
 label's address goes filled. With -a, an executable for tiny-kernel that asks
 for that much memory: a header (a magic number, the image's size, the memory),
-then the image. With -map, out.map too: each label's address, by address (what
-tiny-prof reads). In tiny/tests/TinyCPU_tests/, for example:
+then the image. With -s, an executable too (of 1 MB unless -a says), with its
+labels after the image, but the compilers' local ones (what debug reads). With
+-map, out.map too: each label's address, by address (what tiny-prof reads).
+A label's line is its address in hexadecimal and its name. In
+tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
   tiny-cpu hello                           Hello, world
   tiny-linker -a 10 -o prog start.o prog.o  an a.out of 10 MB, for tiny-kernel
@@ -207,29 +210,36 @@ let main
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100
     | None -> false in
-  let rec args mb map l = match l with
-    | "-a" :: n :: r when megabytes n -> args (Some (int_of_string n)) map r
-    | "-map" :: r -> args mb true r
-    | "-o" :: out :: files when files <> [] -> Some (mb, map, out, files)
+  let rec args mb syms map l = match l with
+    | "-a" :: n :: r when megabytes n ->
+        args (Some (int_of_string n)) syms map r
+    | "-s" :: r -> args mb true map r
+    | "-map" :: r -> args mb syms true r
+    | "-o" :: out :: files when files <> [] -> Some (mb, syms, map, out, files)
     | _ -> None in
   match List.tl (TinyLibSystem.argv caps) with
   | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
   | l ->
-      match args None false l with
+      match args None false false l with
       | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
-      | Some (mb, map, out, files) ->
+      | Some (mb, syms, map, out, files) ->
           try
             let image, labels =
               link (List.map (fun f -> f, TinyLibSystem.read_file caps f) files)
             in
+            let lines l =
+              String.concat "" (List.map (fun (l, a) ->
+                Printf.sprintf "%x %s\n" a l) l) in
             write out
-              (match mb with
-               | Some n -> aout (n * 0x100000) image
-               | None -> image);
-            if map then
-              write (out ^ ".map")
-                (String.concat "" (List.map (fun (l, a) ->
-                   Printf.sprintf "%x %s\n" a l) labels));
+              (match mb, syms with
+               | Some n, false -> aout (n * 0x100000) image
+               | _, true ->
+                   aout ((match mb with Some n -> n | None -> 1) * 0x100000)
+                     image
+                   ^ lines (List.filter (fun (l, _) ->
+                       not (TinyLibSymbols.local l)) labels)
+               | None, false -> image);
+            if map then write (out ^ ".map") (lines labels);
             0
           with Error e ->
             TinyLibSystem.eprint caps (Printf.sprintf "tiny-linker: %s\n" e); 1

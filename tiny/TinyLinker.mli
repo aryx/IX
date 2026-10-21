@@ -19,6 +19,10 @@
  *     image            the memory's first bytes: the CPU starts at 0
  *     (-a n: a.out)    a header (a magic number, the image's size, the
  *                      memory asked for) then the image
+ *     (-s: symbols)    an a.out (of 1 MB unless -a), its labels after
+ *                      the image, the compilers' local ones left out
+ *                      (TinyLibSymbols): debug's, Plan 9's a.out symbol
+ *                      table; the loader reads the header's size only
  *     (-map: out.map)  "address label" a line, by address: tiny-prof's
  *
  * What makes it small:

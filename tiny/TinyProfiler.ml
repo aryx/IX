@@ -25,56 +25,13 @@ let read_profile caps file =
     | _ -> ()) (String.split_on_char '\n' (TinyLibSystem.read_file caps file));
   counts
 
-(* A label a compiler makes inside a function: a dot, an L, digits *)
-let local name =
-  match String.rindex_opt name '.' with
-  | Some i when i + 2 < String.length name && name.[i + 1] = 'L' ->
-      String.for_all (fun c -> c >= '0' && c <= '9')
-        (String.sub name (i + 2) (String.length name - i - 2))
-  | _ -> false
-
-(* tiny-ml's functions are <unit>.f<number>_<name>: their name alone,
- * but for an anonymous one (Unit.f155_fun), whose number is all that
- * tells it from the others
- * (old: f<number>_<name><>, a program's functions in one file) *)
-let clean name =
-  let n = String.length name in
-  let digit c = c >= '0' && c <= '9' in
-  let rec find i =
-    if i + 2 >= n then None
-    else if name.[i] = '.' && name.[i + 1] = 'f' && digit name.[i + 2] then
-      Some i
-    else find (i + 1) in
-  match find 0 with
-  | Some i ->
-      let rec skip j = if j < n && digit name.[j] then skip (j + 1) else j in
-      let j = skip (i + 2) in
-      if j < n && name.[j] = '_' then
-        (let short = String.sub name (j + 1) (n - j - 1) in
-         if short = "fun" then name else short)
-      else name
-  | None -> name
-
-(* the functions of tiny-linker's maps (-map: "address label" lines,
- * by address), in their order *)
+(* the functions of tiny-linker's maps (-map: "address label" lines),
+ * by address (TinyLibSymbols's, as the function an address is in) *)
 let functions caps files =
-  let labels = List.concat_map (fun f ->
-    List.filter_map (fun line ->
-      match String.split_on_char ' ' line with
-      | [ a; l ] when not (local l) -> Some (l, int_of_string ("0x" ^ a))
-      | _ -> None)
-      (String.split_on_char '\n' (TinyLibSystem.read_file caps f))) files in
-  Array.of_list (List.sort (fun (_, a) (_, b) -> compare a b) labels)
-
-(* the function an address is in: the last one at or before it *)
+  TinyLibSymbols.labels
+    (String.concat "\n" (List.map (TinyLibSystem.read_file caps) files))
 let find funcs pc =
-  let rec go lo hi =
-    if hi - lo <= 1 then lo
-    else
-      let mid = (lo + hi) / 2 in
-      if snd funcs.(mid) <= pc then go mid hi else go lo mid in
-  if Array.length funcs = 0 || pc < snd funcs.(0) then "?"
-  else clean (fst funcs.(go 0 (Array.length funcs)))
+  match TinyLibSymbols.find funcs pc with Some (f, _) -> f | None -> "?"
 
 (* 1234567 as 1,234,567 *)
 let commas n =

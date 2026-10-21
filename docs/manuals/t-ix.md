@@ -567,7 +567,9 @@ A process sees its partition as addresses from 0 to its size: its
 program is loaded at 0, its stack starts at the top. The size is 1 MB,
 unless the program is an a.out (`tiny-linker -a n`) whose header asks for
 n MB: its three words are a magic number (`0x7a0ce5`), the image's size
-and the memory wanted. A child of `fork` gets its parent's size. An ML
+and the memory wanted. What follows the image is not loaded: the
+programs of `/bin` have their labels there (`tiny-linker -s`), for
+`debug`. A child of `fork` gets its parent's size. An ML
 program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 `bigmem`, a test, keeps 3 MB alive in 8 MB.
 
@@ -632,9 +634,12 @@ traced by its parent, stopped at its next `exec`: how a debugger starts
 a program. Two programs of `/bin` are made of it: `trace prog args` (or
 `trace pid`) says the calls of a program as it makes them, a line each
 on its error output (`read(3, "hello\n", 4096) = 6`, strace's way), and
-`debug prog args` (or `debug pid`) is a debugger at the level of the
-instructions, its commands ed's kind: `b addr`, `d addr`, `c`, `s`, `n`
-(over a call), `r`, `x addr n`, `x/i addr n`, `q`; no names yet.
+`debug prog args` (or `debug pid prog`) is a debugger at the level of
+the instructions, its commands ed's kind: `b addr`, `d addr`, `c`, `s`,
+`n` (over a call), `r`, `bt` (the calls the pc is in), `x addr n`,
+`x/i addr n`, `q`; an address is a number, `pc`, or a function's name
+(`main`, `main+0x14`), from the labels `tiny-linker -s` writes after
+the program's image, as every program of `/bin` has them.
 
 `dial` gives a descriptor on a connection to another machine, by its
 address as text (`"10.0.0.1"`: the wire's other end) and a port; -1

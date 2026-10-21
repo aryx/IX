@@ -304,9 +304,35 @@ exercises the same messages.
    functions would have doubled the program for a test.
 4. **The names.** The symbols after the image (section 4), `find`
    and `clean` shared with tiny-prof, `b main`, and the function at
-   each stop.
+   each stop. **Done (2026-10-21)**: `tiny-linker -s`, an a.out (1 MB
+   unless `-a`) with the labels after the image, in the map's format
+   (`10ff8 main`), the compilers' local ones left out; every program of
+   `/bin` linked so (the Makefile and its Buildfile), and the kernel's
+   loader takes an a.out longer than its image. boot.img from 8.45 to
+   8.77 MB, under its 10 MB. `TinyLibSymbols.ml` (`local`, `clean`,
+   `labels`, `find`, `address`), tiny-prof's functions moved there, a
+   library of dune's and a unit of tiny-ml's (tiny-linker's and
+   tiny-prof's on tiny-kernel too). debug reads the labels from the
+   program's file, past the image its header sizes (`debug pid prog`
+   when attached: the kernel knows no process's file); it shows
+   `main+0x14:`, takes `b main` and `b main+0x14`, and names a jump's
+   target at a function's start, as objdump (`jal r15, 0x10ff8 <main>`).
+   make check's toolchain session links ping with `ld -s` on
+   tiny-kernel, the same bytes as `/bin/ping`. Recorded again: paint's
+   screen (its ball, which moves with the clock, elsewhere: the
+   programs are longer and placed elsewhere in the image, and their
+   loads take another time; 128 pixels) and tetris's sounds.
 5. **The backtrace.** Epilogues decoded, for tiny-c's programs, then
-   for tiny-ml's with the value stack.
+   for tiny-ml's with the value stack. **Done (2026-10-21)**, by the
+   prologues rather than the epilogues: with the names, a function's
+   start is known, and tiny-c's and tiny-ml's functions all begin with
+   `addi sp, sp, -f` and `stw lr, k(sp)`; at its first two instructions
+   the return address is still in lr. A function without them
+   (assembly: `write`, `_start`) ends the walk after the first frame.
+   `bt` on ping in `write` gives write, print, main, _start; on an ML
+   program it goes through `ml_run` and `ml_init` to the unit's
+   toplevel. The value stack's slots are not shown (left for when a
+   value's printing is wanted).
 6. **fork and exec.** The child's breakpoints undone, the stop at
    exec. debug on `sh` running a pipeline.
 7. **trace.** `y`, the two stops and `c` through a call, in the kernel;

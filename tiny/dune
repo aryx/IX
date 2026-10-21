@@ -47,7 +47,15 @@
  (public_names tiny-assembler tiny-linker)
  (package ix)
  (modules TinyAssembler TinyLinker)
- (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system))
+ (libraries ix_core fpath caps tiny_machine_cpu tiny_lib_system
+  tiny_lib_symbols))
+
+; a program's labels, as tiny-linker writes them: tiny-prof's names, and
+; debug's on tiny-kernel
+(library
+ (name tiny_lib_symbols)
+ (wrapped false)
+ (modules TinyLibSymbols))
 
 ; tiny-cpu, and tiny-prof: where the instructions went, by function, from
 ; a profile of tiny-cpu -prof or tiny-machine -prof and tiny-linker's maps of what ran
@@ -64,7 +72,7 @@
  (public_name tiny-prof)
  (package ix)
  (modules TinyProfiler)
- (libraries ix_core fpath unix caps tiny_lib_system))
+ (libraries ix_core fpath unix caps tiny_lib_system tiny_lib_symbols))
 
 (executable
  (name TinyMachine)

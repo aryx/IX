@@ -35,7 +35,10 @@ of the system:
   and `TinyLibRegex.ml`, regular expressions in Plan 9's notation,
   for grep (whether a line matches) and for the line editor (where
   the match is, and its groups): a backtracker with a memo, so a
-  line costs its length times the pattern's at most.
+  line costs its length times the pattern's at most. And
+  `TinyLibSymbols.ml`, a program's labels as tiny-linker writes them
+  (its map, or after the image), for tiny-prof's names and for
+  tiny-kernel's `debug` (`TinyKernel/user/debug.ml`, beside `trace`).
   The host's programs, when ix builds them, are on m-IX's
   `lib_core/`.
 - `TinyCRuntime/` and `TinyMLRuntime/` are not parts of the two

@@ -35,8 +35,8 @@ let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8 and i_net = 16
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
- * 16 below those, the speaker's word below them, the date's (and two
- * free) *)
+ * 16 below those, the speaker's word below them, the date's, the
+ * seed's (and one free) *)
 let memsize = 1 lsl 27
 (* old: devices = memsize - 32, before the network's four words *)
 (* old: devices = memsize - 48, before the speaker's word *)
@@ -53,6 +53,14 @@ let speaker_dev = memsize - 52
  * leaves it at 0. (old: none: tiny-kernel had no clock of the day) *)
 let date_dev = memsize - 56
 let date = ref 0
+(* a seed, read at -60(r0), for the programs' first random numbers
+ * (tetris's pieces): tiny-machine's -seed, so that a run is the same
+ * however long the boot took; 0, the default, says none, and the
+ * kernel gives its clock instead. (old: none, a game seeded by the
+ * clock alone: make check's tetris another game at each change of the
+ * kernel's code) *)
+let seed_dev = memsize - 60
+let seed = ref 0
 (* the screen, below the devices: a megabyte no kernel's image reaches *)
 let screen = 0xf00000 and width = 640 and height = 480
 
@@ -350,6 +358,7 @@ let load mc m s a =
   | w when w = net_status -> if mc.net.wired then 1 else 0
   | w when w = speaker_dev -> speaker_play mc.speaker m mc.csr.(time) mc.hear; mc.speaker.played
   | w when w = date_dev -> !date
+  | w when w = seed_dev -> !seed
   | w when w >= devices -> 0
   | _ -> TinyMachineCPU.load m s a
 

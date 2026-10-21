@@ -67,6 +67,10 @@ val rate : int ref
  * clock, or tiny-machine's -date) *)
 val date : int ref
 
+(* the seed, read at -60(r0), for the programs' first random numbers;
+ * 0 for none (the kernel gives its clock): tiny-machine's -seed *)
+val seed : int ref
+
 (* a trap (its cause, what goes with it), inside the machine; the halt
  * and its status, which ends [ticks] *)
 exception Trap of int * int

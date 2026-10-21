@@ -274,10 +274,11 @@ valid page.
 ## 5. The devices
 
 Sixteen words at the top of memory, outside any window, so only a
-kernel reaches them (two of them unused).
+kernel reaches them (one of them unused).
 
 | address | | device |
 |---|---|---|
+| `-60(r0)` | `0x7ffffc4` | a seed, read: the programs' first random number (tiny-machine's `-seed`; 0, none, the kernel giving its clock) |
 | `-56(r0)` | `0x7ffffc8` | the date at the boot, read: seconds since 2000-01-01 (the host's clock, or tiny-machine's `-date`) |
 | `-52(r0)` | `0x7ffffcc` | the speaker (5.6): written, its ring's address (0 off); read, the samples played |
 | `-48(r0)` | `0x7ffffd0` | the network (5.5): a memory address |
@@ -469,7 +470,8 @@ The samples due are played when somebody looks, the kernel by reading
 the word or the host by taking them, so the speaker costs no
 instruction of its own and a run is the same every time:
 
-    tiny-machine -audio a.wav kernel.img     # the samples as a WAV (8 bits, 8,000 Hz), at the halt
+    tiny-machine -audio a.wav kernel.img     # the samples as a WAV (8 bits, 8,000 Hz), at the halt,
+                                             # from the first sound to the last
     tiny-machine -window kernel.img          # the window plays them
 
 The window gets them as a line `A n` and `n` bytes, about thirty times
@@ -586,7 +588,7 @@ program's heap grows up to what its partition leaves (`libml/mlsys.c`);
 | 20 | `getcwd(buf, n)` | 21 | `link(old, new)` |
 | 22 | `rawcons(on)` | 23 | `trace(pid)` |
 | 24 | `seek(fd, n, whence)` | 25 | `time()` |
-| 26 | `stat(path, entry)` | | |
+| 26 | `stat(path, entry)` | 27 | `seed()` |
 
 `seek` sets a file's offset at `n` from its start (`whence` 0), from
 where it is (1) or from its end (2), as Plan 9's, and gives the new
@@ -601,6 +603,11 @@ writes a path's entry at `entry`, as its directory has it (80 bytes,
 size, the date of the last write), or gives -1. A file on the disk has
 its date in its inode; one in memory its last write's; the image's
 files 0.
+
+`seed` is a program's first random number: the machine's (tiny-machine's
+`-seed`), or the clock's ticks when it has none. A game is seeded by it
+(tetris's pieces), another one at each run, the same one in make
+check's, however long the boot took.
 
 `rawcons(1)` gives the console's ^C to the calling process as a byte
 it reads, while it lives, instead of killing every process but the

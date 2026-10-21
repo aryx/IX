@@ -141,6 +141,12 @@ u_time(value unit)
 	return time() * 2 + 1;
 }
 
+value
+u_seed(value unit)
+{
+	return seed() * 2 + 1;
+}
+
 // the path's entry (user.h's dirent, its 80 bytes) as a string, or ""
 // when it is not there
 value

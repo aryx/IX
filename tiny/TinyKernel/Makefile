@@ -479,7 +479,7 @@ MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;
 # override: tiny-machine gives MACHINE on the command line)
-check self: override MACHINE := $(MACHINE) -date 820540800
+check self: override MACHINE := $(MACHINE) -date 820540800 -seed 1
 check: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $(O)/check.out
 	echo bigmem | timeout 300 $(MACHINE) $(O)/boot.img >> $(O)/check.out

@@ -111,6 +111,7 @@ let start = Unix.gettimeofday ()
 let u_ticks () = int_of_float ((Unix.gettimeofday () -. start) *. 400.)
 (* (946684800: 2000-01-01 in Unix's seconds) *)
 let u_time () = int_of_float (Unix.time ()) - 946684800
+let u_seed () = u_ticks ()
 (* the host's file as tiny-kernel's entry (user.h's dirent) *)
 let u_stat (path : string) : string =
   match Unix.stat path with

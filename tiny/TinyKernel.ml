@@ -67,6 +67,9 @@ let ring_at = 0xc00000
 let disk_dev = -32
 (* the date at the boot, seconds since 2000-01-01 (the machine's) *)
 let date_dev = -56
+(* the seed, for the programs' first random numbers (the machine's;
+ * 0: none) *)
+let seed_dev = -60
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -1032,6 +1035,9 @@ let syscall p =
     | 24 -> sys_seek p
     | 25 -> result p (date ())
     | 26 -> sys_stat p
+    (* the seed: the machine's, or the clock when it has none, so that a
+     * game is another each time *)
+    | 27 -> result p (match peek seed_dev with 0 -> !ticks | s -> s)
     | _ -> result p (-1)
   with Bad -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()

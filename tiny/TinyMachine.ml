@@ -3,7 +3,7 @@
 
 (* See TinyMachine.mli *)
 
-let usage = "usage: tiny-machine [-l | -d disk | -window | -rate n | -date n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] image"
+let usage = "usage: tiny-machine [-l | -d disk | -window | -rate n | -date n | -seed n | -prof file | -screen ppm | -audio wav | -events file | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f | -net-loop n] image"
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -29,6 +29,11 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
   tiny-machine -date 819000000 kernel.img        the date at the boot, in seconds since
                                                  2000-01-01 (the host's clock otherwise):
                                                  make check's, so its runs are the same
+  tiny-machine -seed 1 kernel.img                the programs' first random number (a
+                                                 game's: tetris's pieces), not 0; the
+                                                 clock's ticks otherwise: make check's,
+                                                 so its games are the same however long
+                                                 the boot took
   tiny-machine -prof p kernel.img               each instruction counted by where it was
                                                  (the kernel's or a program's, its address)
                                                  into p at the end (or at a SIGTERM), for
@@ -41,7 +46,8 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
                                                  end after the last; the screen at the
                                                  halt in s.ppm
   tiny-machine -audio a.wav kernel.img           the speaker's samples (8,000 a second, a
-                                                 byte each) written in a.wav at the halt
+                                                 byte each) from its first sound to its
+                                                 last, written in a.wav at the halt
                                                  (tiny-kernel: tetris's sounds); with
                                                  -window the window plays them
   tiny-machine -net dir -net-trace kernel.img    a network: the wire's other end is this
@@ -209,7 +215,7 @@ let window_poll w (m : TinyMachineCPU.machine) (ms : TinyMachineDevices.mouse) k
 (* The loop: the hosts' turns, then the machine's instruction *)
 (*****************************************************************************)
 
-type options = { disk_file : string option; screen_file : string option; audio_file : string option; events_file : string option; window : bool; rate : int option; date : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
+type options = { disk_file : string option; screen_file : string option; audio_file : string option; events_file : string option; window : bool; rate : int option; date : int option; seed : int option; net_loop : int option; net : string option; net_trace : bool; net_lose : int list; net_out : bool; net_forward : (int * int) list; net_pcap : string option; prof : string option }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -302,6 +308,7 @@ let run caps o image =
   TinyMachineDevices.rate := (match o.rate with Some r -> r | None -> if o.window then window_rate else TinyMachineDevices.default_rate);
   (* (946684800: 2000-01-01 in Unix's seconds) *)
   TinyMachineDevices.date := (match o.date with Some d -> d | None -> int_of_float (Unix.time ()) - 946684800);
+  TinyMachineDevices.seed := (match o.seed with Some s -> s | None -> 0);
   let disk_file = o.disk_file in
   (* the disk: the file's, or a blank one of 8 MB when there is no such
    * file; each block the kernel writes, written to it at once *)
@@ -410,7 +417,16 @@ let run caps o image =
   let listening = window <> None || o.audio_file <> None in
   let hear samples =
     Option.iter (fun w -> Buffer.add_string w.heard samples) window;
-    if o.audio_file <> None then Buffer.add_string recorded samples in
+    (* -audio's from the first sound (and to the last, at the halt): the
+     * silence before it is the boot's length, the one after it the
+     * time to the halt, both moving with the kernel's code (old: from
+     * the speaker's start to the halt, make check's korobeiniki.wav
+     * another file at each change of the kernel) *)
+    if o.audio_file <> None then begin
+      let rec silent i = if i < String.length samples && samples.[i] = '\000' then silent (i + 1) else i in
+      let i = if Buffer.length recorded > 0 then 0 else silent 0 in
+      Buffer.add_substring recorded samples i (String.length samples - i)
+    end in
   let mc : TinyMachineDevices.machine = TinyMachineDevices.create ~put ~on_open:(console_open caps) ~send ~hear ~disk ~events image in
   machine := Some mc;
   Option.iter (fun fd -> mc.disk.wrote <- (fun b ->
@@ -433,7 +449,11 @@ let run caps o image =
           if TinyMachineDevices.supervisor mc then 1, 0 else 0, TinyMachineDevices.window_base mc) in
   let halted n =
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
-    Option.iter (fun f -> TinyMachineDevices.speaker_hear mc; FS.write caps (Fpath.v f) (wav (Buffer.contents recorded))) o.audio_file;
+    Option.iter (fun f ->
+      TinyMachineDevices.speaker_hear mc;
+      let sound = Buffer.contents recorded in
+      let rec last i = if i > 0 && sound.[i - 1] = '\000' then last (i - 1) else i in
+      FS.write caps (Fpath.v f) (wav (String.sub sound 0 (last (String.length sound))))) o.audio_file;
     Option.iter (fun f -> FS.write caps (Fpath.v f) (pcap_header ^ Buffer.contents capture)) o.net_pcap;
     (* (the helpers that wait for a connection: their input's end is theirs) *)
     List.iter (fun (_, _, pipes) -> (helper_relay pipes "").shut ()) !waiting;
@@ -474,6 +494,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
           | "-rate" :: n :: rest when (match int_of_string_opt n with Some n -> n > 0 && n <= 1000 | None -> false) ->
               options { o with rate = Some (int_of_string n * 1_000_000) } rest
           | "-date" :: n :: rest when int_of_string_opt n <> None -> options { o with date = int_of_string_opt n } rest
+          | "-seed" :: n :: rest when int_of_string_opt n <> None -> options { o with seed = int_of_string_opt n } rest
           | "-net" :: dir :: rest -> options { o with net = Some dir } rest
           | "-net-trace" :: rest -> options { o with net_trace = true } rest
           | "-net-lose" :: n :: rest when int_of_string_opt n <> None -> options { o with net_lose = int_of_string n :: o.net_lose } rest
@@ -486,7 +507,7 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in; Cap
               options { o with net_forward = (List.hd ports, List.nth ports 1) :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None -> options { o with net_loop = int_of_string_opt n } rest
           | files -> run caps o (image files) in
-        options { disk_file = None; screen_file = None; audio_file = None; events_file = None; window = false; rate = None; date = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
+        options { disk_file = None; screen_file = None; audio_file = None; events_file = None; window = false; rate = None; date = None; seed = None; net_loop = None; net = None; net_trace = false; net_lose = []; net_out = false; net_forward = []; net_pcap = None; prof = None } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineISA.Error e | Sys_error e -> Console.eprint caps ("tiny-machine: " ^ e ^ "\n"); 1

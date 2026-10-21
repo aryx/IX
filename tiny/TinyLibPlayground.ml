@@ -209,7 +209,7 @@ let run g =
   in
   put (d_image picture 0 0 g.width g.height 0 ^ d_image ground 0 0 g.width g.height 0);
   speaker := u_open "/dev/audio" 1;
-  let first = g.init (u_ticks ()) in
+  let first = g.init (u_seed ()) in
   let shapes = g.view first in
   show g [] shapes;
   loop first first shapes (u_ticks () + period)

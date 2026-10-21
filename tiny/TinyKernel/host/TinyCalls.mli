@@ -37,6 +37,10 @@ val u_ticks : unit -> int
 (* the date, seconds since 2000-01-01 *)
 val u_time : unit -> int
 
+(* a seed for a program's first random number: the machine's, or the
+ * clock when it has none *)
+val u_seed : unit -> int
+
 (* a path's entry (user.h's dirent: a name of 64 bytes, its type, links,
  * size and date, a word each), or "" when it is not there *)
 val u_stat : string -> string

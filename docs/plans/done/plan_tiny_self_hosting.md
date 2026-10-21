@@ -760,10 +760,11 @@ and its library is TinyLibCore/.
     are, each link reading the library's 16 objects again.
   - **Left**: as and ld made faster, by their root causes (to be
     profiled first, `prof` on one link); tiny-build's 23 minutes;
-    several cores (plan_tiny_multicore.md); tetris's screen and the two
-    sounds' sums, which make check records again at most builds; make
-    check's `printf '\x27'` lines, which need bash (`make check
-    SHELL=/bin/bash`: dash's printf leaves them).
+    several cores (plan_tiny_multicore.md). (Done since: make check's
+    `printf '\x27'` lines, which needed bash, `\047` now, ad781950;
+    tetris's screen and the two sounds' sums, which make check recorded
+    again at most builds, steady now: the machine's `-seed` for the
+    game, `-audio` from the first sound to the last.)
   - **Bugs** (bugs/ix.md): a name of more than 19 bytes hung `ls`;
     exec's arguments past 15 dropped unsaid; the arguments' ending 0.
   - **Checked**: every tiny/tests/*_test.sh (TinyUtilities' 166 cases

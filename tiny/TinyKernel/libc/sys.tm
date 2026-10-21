@@ -195,6 +195,11 @@ time:
 	mov	r13, r1
 	ret
 
+seed:
+	sys	27
+	mov	r13, r1
+	ret
+
 stat:
 	ldw	r1, 0(sp)
 	ldw	r2, 4(sp)

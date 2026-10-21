@@ -68,6 +68,9 @@ int ticks(void);
 // the date: seconds since 2000-01-01 (the machine's at the boot, then
 // the kernel's ticks)
 int time(void);
+// a seed for a program's first random number: the machine's (its
+// -seed), or the clock's ticks when it has none
+int seed(void);
 // a path's entry, as its directory has it, at d: 0, or -1 when it is
 // not there
 struct dirent;

@@ -39,8 +39,11 @@
  * What is left to do is a list, and [step] does its first:
  *
  *   go "http://host/"         [Page]
- *   step   the page and its   [Script_file a.js; Script_file b.js;
- *          sheets: shown       Run]
+ *   step   the page fetched   [Read]
+ *   step   read, laid out     [Sheet a.css; Styled]
+ *   step   its sheet          [Styled]
+ *   step   laid out with it:  [Script_file a.js; Script_file b.js;
+ *          shown               Run]
  *   step, step                [Run]
  *   step   the scripts run,   [Picture logo.png; Picture x.gif;
  *          the tree theirs     Pictures_in]

@@ -420,7 +420,14 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       if Tab.busy m.tab && !seen then (seen := false; came screen.width m (Tab.step caps m.tab)) else m
     else
       let m = collected screen.width m in
-      if Tab.busy m.tab && not (Tab_worker.out ()) && (!Tab_worker.working = Tab_worker.Beside || !seen) then (seen := false; collected screen.width (give caps m)) else m
+      (* (beside a window that runs at once with it, a domain: the next
+       * piece at once; a thread, which runs when the window lets it (a
+       * mini-ml thread runs its piece whole in the update's yield, and
+       * a late frame owes several updates), once the window has drawn,
+       * as inline: on mini-9pi the page's pieces all ran before a frame,
+       * the progress bar empty for minutes on Hacker News's comments.
+       * old: Beside || !seen) *)
+      if Tab.busy m.tab && not (Tab_worker.out ()) && ((!Tab_worker.working = Tab_worker.Beside && Worker_spawn.parallel) || !seen) then (seen := false; collected screen.width (give caps m)) else m
   in
   (* the page's timers, on the frame's clock (not while its scripts are
    * the worker's); its Date, from the time it is *)

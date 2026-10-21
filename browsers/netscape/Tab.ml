@@ -10,13 +10,30 @@
 type kept = { shown : Browser_page.t; engine : Browser_script.t option; size : int; laid_at : float; seen : string list }
 type entry = { at : string; scrolled_to : float; kept : kept option }
 
+(* a page's bytes, come: the address asked (its #fragment), where they
+ * came from, the status, their type, what is to be read (the bytes, or
+ * a page that says which program has them), how many bytes came, and
+ * where to scroll it *)
+type fetched = { asked : string; came : string; status : int; kind : string option; html : string; size : int; scroll : float }
+
 (* what is left to do, a piece a call of [step], in order: the page at
- * an address (with what a form posts, and where to scroll it), with
- * its sheets; a script's file; the page's scripts run, their files all
- * had; a picture; the page laid out with the pictures that came; a
- * request a script made (XMLHttpRequest, fetch), answered *)
+ * an address (with what a form posts, and where to scroll it) fetched;
+ * read (its tree, laid out); a style sheet of it fetched; the page laid
+ * out with its sheets, then shown (if they ask for more, @import, a
+ * round more: eight at most); a script's file; the page's scripts run,
+ * their files all had; a picture; the page laid out with the pictures
+ * that came; a request a script made (XMLHttpRequest, fetch), answered.
+ * (A piece each, so that the window draws between them, on mini-ml's
+ * threads too, which take turns only there: the page, its sheets and
+ * its layout were one piece, the progress bar empty until the page was
+ * whole (the author: "it was empty and then suddently the new page
+ * (HN) appeared fully rendered"). old: Page fetched, read, its sheets
+ * and its layouts at once) *)
 type work =
   | Page of string * (string * string) option * float
+  | Read of fetched
+  | Sheet of string
+  | Styled of fetched * Browser_page.t * int
   | Script_file of string
   | Run
   | Picture of string
@@ -72,7 +89,10 @@ let empty (width : float) (about : string -> string option) : t =
   { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0 }
 
 let page (t : t) = t.page
-let url (t : t) = match t.todo with Page (address, _, _) :: _ -> address | _ -> t.url
+let url (t : t) =
+  match List.find_map (fun w -> match w with Page (a, _, _) -> Some a | Read r | Styled (r, _, _) -> Some r.asked | _ -> None) t.todo with
+  | Some a -> a
+  | None -> t.url
 let busy (t : t) : bool = t.todo <> []
 let pieces (t : t) : int * int = (t.taken, t.taken + List.length t.todo)
 let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
@@ -158,16 +178,9 @@ let fetch (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * s
    | Error why -> Logs.info (fun m -> m "%s: %s" address why));
   r
 
-(* the page's sheets not had yet fetched, and theirs, the page laid out
- * again with them: eight rounds at most (an @import four deep, and a
- * margin) *)
-let rec with_sheets (caps : < Cap.network; Cap.open_in; .. >) (t : t) (p : Browser_page.t) (rounds : int) : t * Browser_page.t =
-  let wanted = List.sort_uniq compare (List.filter (fun u -> not (List.mem_assoc u t.sheets)) (Browser_page.sheets_wanted (settings t) p)) in
-  if wanted = [] || rounds = 0 then (t, p)
-  else
-    let had = List.map (fun u -> (u, match fetch caps t ~post:None u with Ok (_, status, _, bytes) when status < 400 -> bytes | _ -> "")) wanted in
-    let t = { t with sheets = had @ t.sheets } in
-    with_sheets caps t (Browser_page.laid_out (settings t) p) (rounds - 1)
+(* the page's sheets not had yet (Sheet's pieces fetch them) *)
+let sheets_left (t : t) (p : Browser_page.t) : string list =
+  List.sort_uniq compare (List.filter (fun u -> not (List.mem_assoc u t.sheets)) (Browser_page.sheets_wanted (settings t) p))
 
 (* the page's pictures not had yet, nor asked for -- its <img>s and
  * its boxes' background-images -- to fetch *)
@@ -184,6 +197,9 @@ let progress (t : t) : t =
     match t.todo with
     | [] -> ( match t.note with Some note -> note | None -> Printf.sprintf "Document: Done (%d bytes)" t.bytes)
     | Page (address, _, _) :: _ -> "Loading " ^ fst (Browser_url.split_fragment address) ^ " ..."
+    | Read r :: _ -> Printf.sprintf "Reading the page (%d bytes)" r.size
+    | Sheet _ :: _ -> Printf.sprintf "Loading style sheets: %d left" (count (fun w -> match w with Sheet _ -> true | _ -> false))
+    | Styled _ :: _ -> "Laying out the page"
     | Script_file _ :: _ -> Printf.sprintf "Loading scripts: %d left" (count (fun w -> match w with Script_file _ -> true | _ -> false))
     | Run :: _ -> "Running the page's scripts"
     | (Picture _ | Pictures_in) :: _ -> Printf.sprintf "Loading pictures: %d left" (count (fun w -> match w with Picture _ -> true | _ -> false))
@@ -283,10 +299,10 @@ let to_fragment (t : t) (fragment : string option) : t =
   | Some p, Some name -> ( match Hit.anchor p.layout name with Some y -> { t with scroll = y } | None -> t)
   | _ -> t
 
-(* the page at [address] shown, scrolled to [scroll] or to its
- * #fragment; the history is the caller's *)
+(* the page at [address] fetched, to read next; the history is the
+ * caller's *)
 let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * string) option) ~(scroll : float) (address : string) : t =
-  let plain, fragment = Browser_url.split_fragment address in
+  let plain = fst (Browser_url.split_fragment address) in
   let url, status, content_type, bytes =
     match fetch caps t ~post plain with
     | Ok r -> r
@@ -308,10 +324,14 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
   in
   let content_type = if job <> None then Some "text/html" else content_type in
   let t = { t with job; focus = None; pictures = []; script = None; note = None; visited = (if List.mem url t.visited then t.visited else url :: t.visited) } in
-  let p = Browser_page.read (settings t) url status content_type html in
-  let t, p = with_sheets caps t p 8 in
-  let t = (to_fragment { t with page = Some p; url = (match fragment with Some f -> url ^ "#" ^ f | None -> url); scroll; bytes = String.length bytes } fragment) in
-  if status = 0 then { t with todo = []; note = Some "Could not load the page" }
+  { t with todo = [ Read { asked = address; came = url; status; kind = content_type; html; size = String.length bytes; scroll } ] }
+
+(* the page, read and laid out at last: shown, scrolled to [scroll] or
+ * to its #fragment; its scripts, if it runs them, to fetch then run *)
+let shown (t : t) (r : fetched) (p : Browser_page.t) : t =
+  let fragment = snd (Browser_url.split_fragment r.asked) in
+  let t = (to_fragment { t with page = Some p; url = (match fragment with Some f -> r.came ^ "#" ^ f | None -> r.came); scroll = r.scroll; bytes = r.size } fragment) in
+  if r.status = 0 then { t with todo = []; note = Some "Could not load the page" }
   else if not t.scripts then with_pictures t
   else
     (* its scripts of their own file fetched first, then all run in
@@ -327,6 +347,21 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
     let missing = List.filter (fun u -> not (List.mem_assoc u t.sources)) (Browser_script.script_sources s) in
     { t with todo = List.map (fun u -> Script_file u) missing @ [ Run ] }
 
+(* its sheets not had, a piece each, then the page laid out with them
+ * ([rounds] left: an @import four deep, and a margin); none: shown *)
+let with_sheets (t : t) (r : fetched) (p : Browser_page.t) (rounds : int) : t =
+  match sheets_left t p with
+  | [] -> shown t r p
+  | _ when rounds = 0 -> shown t r p
+  | left -> { t with todo = List.map (fun u -> Sheet u) left @ [ Styled (r, p, rounds) ] }
+
+(* the page's bytes read: its tree, laid out (without the sheets it asks
+ * for, which are fetched next) *)
+let read (t : t) (r : fetched) : t = with_sheets t r (Browser_page.read (settings t) r.came r.status r.kind r.html) 8
+
+(* laid out with the sheets that came; and theirs, if they ask for more *)
+let styled (t : t) (r : fetched) (p : Browser_page.t) (rounds : int) : t = with_sheets t r (Browser_page.laid_out (settings t) p) (rounds - 1)
+
 (* a piece of what is left done *)
 let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
   let had u = match fetch caps t ~post:None u with Ok (_, status, _, bytes) when status < 400 -> Some bytes | _ -> None in
@@ -339,6 +374,9 @@ let step (caps : < Cap.network; Cap.open_in; .. >) (t : t) : t =
       @@ progress
         (match work with
         | Page (address, post, scroll) -> load caps { t with todo = [] } ~post ~scroll address
+        | Read r -> read t r
+        | Sheet u -> { t with sheets = (u, match had u with Some bytes -> bytes | None -> "") :: t.sheets }
+        | Styled (r, p, rounds) -> styled t r p rounds
         | Script_file u -> { t with sources = (u, match had u with Some text -> text | None -> "") :: t.sources }
         | Run -> run_scripts t
         | Picture u -> { t with pictures = (u, match had u with Some bytes -> Browser_picture.decode bytes | None -> Browser_picture.Broken) :: t.pictures }
@@ -512,7 +550,7 @@ let click (t : t) ~(x : float) ~(y : float) : t =
 (* the page's clock moved on by [ms]: its timers due run; not while
  * the page or its scripts are still on their way *)
 let advance (ms : float) (t : t) : t =
-  let loading = List.exists (fun w -> match w with Page _ | Script_file _ | Run -> true | _ -> false) t.todo in
+  let loading = List.exists (fun w -> match w with Page _ | Read _ | Sheet _ | Styled _ | Script_file _ | Run -> true | _ -> false) t.todo in
   match t.script with
   | Some s when not loading ->
       Browser_script.advance s ms;

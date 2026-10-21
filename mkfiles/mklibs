@@ -2,23 +2,25 @@
 # programs name their lib.cma: the includer sets LIBDIRS, each library's
 # directory from TOP, each after the ones it names, then includes this.
 # LIBA: their archives, for the link; LIBI: their directories, for
-# mini-ml's -I, as each library's mkfile says them (mklib's dirs); LIBSRC: their files, which a program's
-# own units are compiled again after (mini-ml reads a unit's .mli, or
-# its .ml when it has none). Each library's own mini-mk is asked at
-# every build (make -C's way; :Pfalse:, out of date always), and says
-# whether its archive is older than its files: a program built alone
-# never links a library older than its sources, and is linked again
-# only when an archive changed.
+# mini-ml's -I, as each library wrote them beside its archive (mklib's
+# dirs); LIBSRC: their files, which a program's own units are compiled
+# again after (mini-ml reads a unit's .mli, or its .ml when it has
+# none). The libraries are built first, in their order (the top
+# mkfile's libs, as xix's and principia's top mkfiles build their
+# libraries before the programs): a program's mkfile takes their
+# archives as they are, and says to build them when one is missing.
+# old: each library's own mini-mk asked at every build (make -C's way;
+# :Pfalse:, out of date always), and its dirs asked of it: a build
+# where nothing changed took 3 minutes 21 for mini-9pi's programs, 8.5 s
+# before (2026-10-21)
 # The start names the libraries' units in their order:
 #   $ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Main Std_exit ...
 # (not ${LIBDIRS:%=$B/%/lib.a}: of an empty list, mk gives the name
 # LIBDIRS; mkprog's programs name none)
 LIBA=`{for d in $LIBDIRS; do echo $B/$d/lib.a; done}
 LIBSRC=`{for d in $LIBDIRS; do find $TOP/$d -name '*.ml' -o -name '*.mli' -o -name mkfile | grep -v /tests/; done}
-LIBI=`{for d in $LIBDIRS; do (cd $TOP/$d && mini-mk O=$O OS=$OS dirs); done | awk '!seen[$0]++'}
+LIBI=`{for d in $LIBDIRS; do cat $B/$d/dirs 2> /dev/null || echo "mklibs: $d's library not built: the libraries first (mini-mk libs at the top)" >&2; done | awk '!seen[$0]++'}
 
-# (B given on when it was said, as games/mkfile does: tests/lite.sh's
-# _mk/lite, which the library's own mkconfig would make _mk/$O)
-$B/%/lib.a:Pfalse: $TOP/%/mkfile
-	b=; case $B in /*) b="B=$B";; esac
-	cd $TOP/$stem && mini-mk O=$O OS=$OS $b lib
+$B/%/lib.a:
+	echo "mklibs: $target not built: the libraries first, in their order (mini-mk O=$O OS=$OS libs at the top)" >&2
+	exit 1

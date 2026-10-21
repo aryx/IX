@@ -6,10 +6,16 @@
 # The includer sets, after mkconfig: LIB, its directory from TOP;
 # UNITS, each after the ones it names; DIRS, where they are (the last
 # one found taken: a system's own file after the common one); NEEDS,
-# the libraries whose units they name (their mkfiles say where their
-# interfaces are: dirs, below), even to nothing.
+# the libraries whose units they name (their dirs files say where their
+# interfaces are: below), even to nothing. The libraries are built in
+# order, each after the ones it needs (the top mkfile's libs, as xix's
+# and principia's top mkfiles): a library's mkfile never asks another's.
+# old: NEEDI asked each needed library's mini-mk (its dirs target),
+# which asked its own needed ones: mini-mk run again and again by every
+# mkfile read, a build where nothing changed 25 times slower
 D=$B/$LIB
-NEEDI=`{for d in $NEEDS; do (cd $TOP/$d && mini-mk O=$O OS=$OS dirs); done | awk '!seen[$0]++'}
+NEEDI=`{for d in $NEEDS; do cat $B/$d/dirs 2> /dev/null || echo "mklib: $d's library not built: the libraries first (mini-mk libs at the top)" >&2; done | awk '!seen[$0]++'}
+NEEDD=`{for d in $NEEDS; do echo $B/$d/dirs; done}
 # (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too)
 INCLUDES=${DIRS:%=-I ./%} $NEEDI $STDI
 OBJS=${UNITS:%=$D/%.$O}
@@ -17,8 +23,8 @@ LOCAL=`{for d in $DIRS; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
 
 # (lib: what mkfiles/mklibs asks; a library's mkfile may make a program
 # too, all then, as browsers/javascript's mini-node)
-all:V: $D/lib.a
-lib:V: $D/lib.a
+all:V: $D/lib.a $D/dirs
+lib:V: $D/lib.a $D/dirs
 
 $D/%.$O: $LOCAL
 	mkdir -p $D
@@ -28,12 +34,14 @@ $D/lib.a: $OBJS mkfile
 	rm -f $target
 	$AR u $target $OBJS
 
-# its directories, for a program's -I (mkfiles/mklibs asks them: the
+# its directories, for a program's -I (mkfiles/mklibs reads them: the
 # library knows which, a system's or a platform's among them), and the
-# ones of the libraries it needs (an interface names their types)
-dirs:VQ:
-	for d in $DIRS; do echo -I `cd $d && pwd`; done
-	set -- $NEEDI; while [ $# -gt 0 ]; do echo $1 $2; shift 2; done
+# ones of the libraries it needs (an interface names their types),
+# written beside its archive
+$D/dirs: mkfile $NEEDD
+	mkdir -p $D
+	{ for d in $DIRS; do echo -I `cd $d && pwd`; done
+	  set -- $NEEDI; while [ $# -gt 0 ]; do echo $1 $2; shift 2; done; } > $target
 
 clean:V:
 	rm -rf $D

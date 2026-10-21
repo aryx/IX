@@ -9,9 +9,11 @@ DIRS=lib_core assembler linker linker/tools languages/c database builder shell e
  typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
-# The libraries and the assembler first (the others read their
-# objects; a program asks its libraries' mkfiles too, mkfiles/mklibs,
-# which side by side would make one archive twice at once), then the rest side by side, each directory a mini-mk; the
+# The libraries first, one after the other in their order, each after
+# the ones it needs (xix's and principia's top mkfiles: a directory
+# then takes the libraries as they are, a stale one built again from
+# here; mini-mk libs: the libraries alone), and the assembler (the others read its
+# objects), then the rest side by side, each directory a mini-mk; the
 # two that take another's objects after it (mini-ar the linker's,
 # mini-bc mini-dc's machine, mini-man mini-troff's units, and the
 # playground's programs of apps/ and examples/ the games' libraries: games/mkgames). NPROC is each mini-mk's own jobs.
@@ -20,11 +22,18 @@ KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/step
 #   if [ $O = 7 ]; then for d in $KERNELS; do (cd $d && mini-mk) || exit 1; done; fi)
 # (the machine's cores, 16 at most: there are as many directories at once)
 NPROC=`{n=$(nproc); if [ $n -gt 16 ]; then n=16; fi; echo $n}
-FIRST=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
- lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/ppm assembler
+# (OS=plan9: mini-9pi's, kernels/9pi's Makefile; its games' two
+# platforms, the draw device's and the software one, where Linux's is
+# ppm)
+OS=linux
+PLATFORMS=`{case $OS in plan9) echo draw software;; *) echo ppm;; esac}
+LIBS=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
+ lib_networking/netcode lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
+ browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi
+FIRST=$LIBS assembler
 AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office typesetting/troff typesetting/man
-all:V:
-	for d in $FIRST; do (cd $d && mini-mk O=$O) || exit 1; done
+all:V: libs
+	(cd assembler && mini-mk O=$O) || exit 1
 	pids=
 	for d in $DIRS; do
 		case " $FIRST $AFTER " in *" $d "*) continue;; esac
@@ -36,6 +45,12 @@ all:V:
 	(cd games && mini-mk O=$O && cd ../editors/drscheme && mini-mk O=$O && cd ../../examples && mini-mk O=$O && cd ../apps/office && mini-mk O=$O) & pids="$pids $!"
 	for d in $KERNELS; do (cd $d && mini-mk O=$O) & pids="$pids $!"; done
 	for p in $pids; do wait $p || exit 1; done
+
+# (B given on when it was said, as games/mkfile does: tests/lite.sh's
+# _mk/lite, where each library's own mkconfig would say _mk/$O)
+libs:V:
+	b=; case $B in /*) b="B=$B";; esac
+	for d in $LIBS; do (cd $d && mini-mk O=$O OS=$OS $b) || exit 1; done
 
 clean:V:
 	rm -rf _mk

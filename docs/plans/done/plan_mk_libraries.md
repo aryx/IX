@@ -160,18 +160,23 @@ A program's (networking's):
 
 ## Next (the author, 2026-10-21: "let's put those next steps in their appropriate plan document")
 
-1. **A build where nothing changed takes 33 s** (the whole top
-   mini-mk; 1 min 22 s from nothing). Each program asks each of its
-   libraries' mkfiles (mklibs's `:Pfalse:` rule, and its `LIBI`, a
-   `mini-mk dirs` a library), and each library asks its NEEDS' dirs
-   again, so games' directories, drscheme, examples and office ask
-   the same dozen libraries over and over. To measure first (how much
-   is the archives' asking, how much the dirs); then a library's
-   dirs asked once a build (written beside its archive, `$B/lib_xxx/
-   dirs`, made by its own mkfile) and the top mkfile's libraries,
-   already made first, not asked again by each program (a variable
-   the top mkfile passes down, as `B=` is). The rule to keep: a
-   program built alone still never links a library older than its
+1. **A build where nothing changed** — done 2026-10-21 (the author:
+   "we can do like in xix and principia, just build the libraries in
+   a certain order, so you can then assume than in another dir the
+   library has already been built"; a stale library is then built
+   again from the top, which the author accepted). Measured first:
+   mini-9pi's programs (kernels/9pi's `card ix-usb`, what
+   `./mini-pi -g mini-9pi` builds) took 3 min 21 s when nothing
+   changed, 8.5 s on 2026-10-18; games/ alone 23 s. Now the top
+   mkfile's `libs` makes the libraries one after the other, in their
+   order (OS=plan9: the draw and software platforms, else ppm), and
+   its `all`, tests/lite.sh and kernels/9pi's `ix` run it first; a
+   library writes its `-I`s beside its archive (`$B/lib_xxx/dirs`,
+   mklib), which mklib's NEEDI and mklibs's LIBI read; mklibs's rule
+   for an archive says to build the libraries when one is missing,
+   and asks no library's mkfile. mini-9pi's programs: 8.6 s, games/
+   0.6 s; make test-lite 132 s (181 s before), 0 failures. Given up:
+   a program built alone no longer builds a library older than its
    sources.
 2. **troff's units as a library** (`typesetting/troff`, its units
    but Main and CLI), so mini-man names it in LIBDIRS and stops

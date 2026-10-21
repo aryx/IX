@@ -311,7 +311,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = lib_core shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
+IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc apps/music/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
   typesetting/troff typesetting/man networking browsers/lynx browsers/netscape
@@ -325,7 +325,10 @@ KERNDATE_IX = 1790380800
 IMAGE_IX = $(basename $(IMAGE))-ix$(suffix $(IMAGE))
 BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(BOOT))
 QEMU_BOOT_IX = $(subst $(IMAGE),$(IMAGE_IX),$(QEMU_BOOT))
+# (the libraries first, in their order: the top mkfile's libs, a
+# program's mkfile taking their archives as they are)
 ix: | $(B)
+	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 libs > /dev/null
 	for d in $(IXDIRS); do (cd $(IX)/$$d && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null) || exit 1; done
 	cd $(IX)/games && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 PLATFORM=software > /dev/null
 	$(MAKE) B=build/$(BOARD)$(PIX)-ix IMAGE=$(IMAGE_IX) BOOTDIR="$(BOOTDIR_IX)" KERNDATE=$(KERNDATE_IX) $(IMAGE_IX)
@@ -393,6 +396,7 @@ QEMU_BOOT_IXT = $(subst $(IMAGE),$(IMAGE_IXT),$(QEMU_BOOT))
 TRON = $(IX)/_mk/7/games/arcade/tinytronscroll
 ix-tron: ix
 	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=5 OS=plan9 > /dev/null
+	cd $(IX) && PATH=$(IX)/bin:$$PATH mini-mk O=7 libs > /dev/null
 	cd $(IX)/games/arcade && PATH=$(IX)/bin:$$PATH mini-mk O=7 > /dev/null
 	$(MAKE) B=build/$(BOARD)$(PIX)-ixt IMAGE=$(IMAGE_IXT) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd tronscroll=$(IX9)/games/arcade/tinytronscroll" KERNDATE=$(KERNDATE_IX) $(IMAGE_IXT)
 check-tron: ix-tron

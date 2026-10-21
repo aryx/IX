@@ -1,0 +1,9 @@
+# browsers/css as a library (mkfiles/mklib): style sheets read,
+# matched and computed
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=browsers/css
+DIRS=.
+NEEDS=browsers/html
+UNITS=Ua_sheet Css_syntax Css_values Selectors Looks Cascade Css Css_grid Computed
+<$TOP/mkfiles/mklib

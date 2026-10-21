@@ -1,28 +1,22 @@
-# mini-lynx, built by ix's tools: browsers/html's units, compiled here,
-# each found by its name in its directory, then the program, linked
-# with the libraries (mkfiles/mklibs)
+# mini-lynx, built by ix's tools: the program, linked with the libraries
+# (mkfiles/mklibs: the network and browsers/html)
+# old: browsers/html's units compiled here
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/lynx
-LIBDIRS=lib_crypto lib_compression lib_networking
+LIBDIRS=lib_crypto lib_compression lib_networking browsers/html
 <$TOP/mkfiles/mklibs
-DIRS=. ../html
-INCLUDES=-I . -I ../html $LIBI $STDI
-# (each before the ones that name it)
-LIB=Dtd Dom Entities Charset Html_lexer Html_tree Forms Line_mode
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../html/*.ml ../html/*.mli} $LIBSRC
-LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+INCLUDES=-I . $LIBI $STDI
+LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-lynx
 
-$D/%.$O: $LOCAL
+$D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
+	$ML $INCLUDES -o $target $stem.ml
 $D/mini-lynx: $D/Lynx.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIB Lynx Std_exit -o $D/Lynx.start.$O
-	$LD $LDH -nofollow -o $target $D/Lynx.start.$O $STDOBJS $LIBA $LIBOBJS $D/Lynx.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Lynx Std_exit -o $D/Lynx.start.$O
+	$LD $LDH -nofollow -o $target $D/Lynx.start.$O $STDOBJS $LIBA $D/Lynx.$O $STDEND
 
 clean:V:
 	rm -rf $D

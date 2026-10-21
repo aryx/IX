@@ -1,29 +1,23 @@
-# browsers/engine's boxes by ix's tools (mini-mk): the units of
-# browsers/html, css and engine, compiled here, each found by its name
-# in their directories, then Boxes with its start and its link
-# (boxes.sh runs it)
+# browsers/engine's boxes by ix's tools (mini-mk): Boxes with its start
+# and its link, with the libraries (mkfiles/mklibs: browsers/html, css
+# and engine; boxes.sh runs it)
+# old: their units compiled here
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/engine/tests
-DIRS=. ../layout ../../html ../../css
-INCLUDES=-I . -I ../layout -I ../../html -I ../../css $STDI
-# (each before the ones that name it)
-HTML=Dtd Dom Entities Charset Html_lexer Html_tree Forms Line_mode
-CSS=Css_syntax Css_values Looks Selectors Ua_sheet Cascade Css_grid Computed Css
-ENGINE=Flex_layout Grid_layout Table_layout Html_layout Hit Box_layout
-LIB=$HTML $CSS $ENGINE
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls Boxes.ml ../layout/*.ml ../layout/*.mli ../../html/*.ml ../../html/*.mli ../../css/*.ml ../../css/*.mli}
+LIBDIRS=browsers/html browsers/css browsers/engine
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . $LIBI $STDI
+LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/boxes
 
-$D/%.$O: $LOCAL
+$D/Boxes.$O: Boxes.ml $LIBSRC
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
-$D/boxes: $D/Boxes.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB Boxes Std_exit -o $D/Boxes.start.$O
-	$LD $LDH -nofollow -o $target $D/Boxes.start.$O $STDOBJS $LIBOBJS $D/Boxes.$O $STDEND
+	$ML $INCLUDES -o $target Boxes.ml
+$D/boxes: $D/Boxes.$O $LIBS
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Boxes Std_exit -o $D/Boxes.start.$O
+	$LD $LDH -nofollow -o $target $D/Boxes.start.$O $STDOBJS $LIBA $D/Boxes.$O $STDEND
 
 clean:V:
 	rm -rf $D

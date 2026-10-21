@@ -1,29 +1,29 @@
-# mini-node, built by ix's tools: the engine's units, each found by its
-# name in its five directories, compiled here; Lehmer (Math.random's
-# numbers) from lib_playground/random
+# browsers/javascript as a library (mkfiles/mklib): the language read
+# and run, for mini-netscape; and mini-node, the engine at a prompt,
+# linked with it and lib_playground's (Lehmer, Math.random's numbers)
+# old: mini-node's units compiled here, Lehmer among them, no library
 TOP=../..
 <$TOP/mkfiles/mkconfig
-D=$B/browsers/javascript
-DIRS=. values parsing eval opti library $TOP/lib_playground/random
-INCLUDES=-I . -I values -I parsing -I eval -I opti -I library -I $TOP/lib_playground/random $STDI
-# (each before the ones that name it; Js_quicken and Js_compile, opti/'s,
-# after Js_eval, which they tell of themselves when the program starts)
-JS=Lehmer Mini_opti Per_domain Js_ast Js_lexer Js_parse Js_string Js_value Js_props Js_operators Js_scope Js_frame \
- Js_regexp Js_json Js_coroutine Js_promise Js_builtins Js_globals Js_prelude Js_eval Js_quicken Js_compile
-LIB=$JS CLI
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli */*.ml */*.mli $TOP/lib_playground/random/Lehmer.ml}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LIB=browsers/javascript
+DIRS=values parsing eval opti library
+NEEDS=lib_playground
+# (each before the ones that name it; Js_quicken and Js_compile after
+# Js_eval, which they tell of themselves when the program starts:
+# nobody names them, a program links their objects, as dune's -linkall)
+UNITS=Js_prelude Js_ast Per_domain Mini_opti Js_string Js_lexer Js_parse Js_coroutine Js_regexp Js_value Js_operators \
+ Js_scope Js_json Js_promise Js_builtins Js_frame Js_props Js_globals Js_eval Js_quicken Js_compile
+<$TOP/mkfiles/mklib
 
+LIBDIRS=lib_playground
+<$TOP/mkfiles/mklibs
+WHOLE=$D/Js_quicken.$O $D/Js_compile.$O
 all:V: $D/mini-node
 
-$D/%.$O: $LOCAL
+$D/CLI.$O: CLI.ml CLI.mli $LOCAL
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
-	$ML $INCLUDES -o $target $f
-$D/mini-node: $D/Main.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Main Std_exit -o $D/Main.start.$O
-	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBOBJS $D/Main.$O $STDEND
-
-clean:V:
-	rm -rf $D
+	$ML $INCLUDES -o $target CLI.ml
+$D/Main.$O: Main.ml $D/CLI.$O
+	$ML $INCLUDES -I . -o $target Main.ml
+$D/mini-node: $D/CLI.$O $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA $D/lib.a` CLI Main Std_exit -o $D/Main.start.$O
+	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBA $D/lib.a $WHOLE $D/CLI.$O $D/Main.$O $STDEND

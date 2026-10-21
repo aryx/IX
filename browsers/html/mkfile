@@ -1,0 +1,9 @@
+# browsers/html as a library (mkfiles/mklib): HTML read into a tree,
+# for mini-lynx and mini-netscape
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=browsers/html
+DIRS=.
+NEEDS=
+UNITS=Dtd Dom Charset Entities Html_lexer Line_mode Html_tree Forms
+<$TOP/mkfiles/mklib

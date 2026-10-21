@@ -4,19 +4,23 @@
 # and mini-yacc make: $D/Parser.ml...), and what else it links: LIBI
 # (-I for other directories of ix, whose interfaces it names), LIBUNITS
 # and LIBOBJS (their units and their objects, in order). Each is set,
-# even to nothing. Then it includes mkconfig and this file; a unit in a
+# even to nothing. LIBDIRS, when it is, names the libraries it links
+# (mkfiles/mklibs: lib_graphics...). Then it includes mkconfig and this file; a unit in a
 # subdirectory (compat/Follow) has a rule of its own after, by its name.
 # (Not ${LIBDIRS:%=-I %}: of an empty list, mk gives the name LIBDIRS.)
 
 D=$B/$DIR
 OBJS=${SRC:%=$D/%.$O}
-INCLUDES=-I . -I $D $LIBI $STDI
+# (the program's LIBI kept: mklibs sets LIBI, its libraries')
+PROGI=$LIBI
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . -I $D $PROGI $LIBI $STDI
 
 all:V: $D/$PROG
 
 # a unit: mini-ml reads the others' interfaces from their sources, so a
 # change in any of the directory's files remakes them all (a second each)
-$D/%.$O: %.ml $LOCAL $GEN
+$D/%.$O: %.ml $LOCAL $GEN $LIBSRC
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 
@@ -36,14 +40,14 @@ $D/%.ml: %.mly
 # (editors/emacs's Start.ml)
 $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
-	$ML -start $STD $COMMONS $LIBUNITS $SRC Std_exit -o $target
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIBUNITS $SRC Std_exit -o $target
 
 # (the libraries too: a program is linked again when one of them is remade)
 # -nofollow: the code in the objects' order, not moved along its flow as
 # 5l does (linker/compat/, for goken's bytes): a program of 1 MB of code
 # then has conditional branches farther than they reach
-$D/$PROG: $D/$PROG.start.$O $OBJS $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
-	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBOBJS $OBJS $STDEND
+$D/$PROG: $D/$PROG.start.$O $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
+	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
 
 clean:V:
 	rm -rf $D

@@ -1,0 +1,11 @@
+# browsers/webapi as a library (mkfiles/mklib): a page's scripts, what
+# they see and change (dom, window, net, run; Script_types, types
+# alone, here)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+LIB=browsers/webapi
+DIRS=. dom window net run
+NEEDS=browsers/engine browsers/javascript
+UNITS=Script_prelude Cors Script_events Script_dom Script_host LocalStorage Script_window Script_fetch Event_loop \
+ XMLHttpRequest Script_url Script_element Script_document Browser_script
+<$TOP/mkfiles/mklib

@@ -1,11 +1,14 @@
 # Plan: libraries in the mkfiles, as xix's
 
-**Status**: steps 1 and 2 done (2026-10-20): 16 libraries (lib_crypto,
+**Status**: steps 1 and 2 done (2026-10-20), step 3 but
+version_control (2026-10-21): 21 libraries (lib_crypto,
 lib_compression, lib_networking and its netcode, lib_graphics,
 lib_playground and its apis, platforms and three platforms,
-lib_physics, lib_juice, lib_gui, lib_audio); networking's programs,
-mini-lynx, mini-netscape, lib_crypto's tests and every program of
-games/mkgames's link them. Step 3 to do.
+lib_physics, lib_juice, lib_gui, lib_audio; browsers/html, css,
+javascript, engine, webapi); networking's programs, mini-lynx,
+mini-netscape, mini-node, mini-troff, mini-man, lib_crypto's and the
+engine's tests and every program of games/mkgames's link them. Left:
+version_control, with tiny/'s session.
 
 The author, 2026-10-20, reading netscape's mkfile: "this long list of
 modules ... why not use libraries? that collect together a set of
@@ -51,6 +54,14 @@ order and includes `mkfiles/mklib`; a program names its libraries.
   over lib_networking/netcode, which is over lib_playground's Lehmer,
   so apis/ is a library of its own, after; each platform
   (platforms/ppm...) is one, a program naming the one it wants.
+- **A unit nobody names** (browsers/javascript's Js_quicken and
+  Js_compile, which tell Js_eval of themselves when the program starts:
+  dune's -linkall) would be left in its archive: a program that links
+  the library gives their objects on its link line (WHOLE), and
+  mini-ld takes an object given always, a member only when named.
+- **A library's mkfile may make a program too** (javascript's
+  mini-node): mklibs asks a library for `lib`, mklib's target for the
+  archive alone, and `all` is the library's and its program's.
 - **A system's own file** (Plan 9's Tcp and Udp, `tcp/plan9/`) is the
   library's choice, by OS, as lib_core's Unix is: a program does not
   know it is there.
@@ -107,11 +118,27 @@ A program's (networking's):
    the software platform too), mini-9pi's check-quick (its five
    sessions' screens the same: wolf and drscheme among them). Found: mk makes `${DIRS:%=-I %}`
    `-Icore` (goken's mk too): mklib says `-I ./%`.
-   Not changed: troff's and man's (their own copies of Affine, Zlib,
-   the pictures' readers: step 3).
-3. **mkprog's programs**: `$LIBA` in its start and link, for a
-   program that sets LIBDIRS. version_control (Sha1, Zlib) then, with
-   tiny/mkfile, which links version_control's Sha1 object: changed
-   with its session. typesetting/troff and man, with lib_graphics and
-   lib_compression (man takes troff's units).
-   browsers/html, css and javascript as libraries of the browsers.
+3. **mkprog's programs, troff and man, the browsers.** Done
+   2026-10-21 but version_control. mkprog includes mklibs: a program
+   that sets LIBDIRS links them (its own LIBI kept as PROGI; mklibs's
+   LIBA by a loop, which of no library is nothing, where
+   `${LIBDIRS:%=...}` gave the name). mini-troff and mini-man link
+   lib_compression and lib_graphics, where troff compiled their 14
+   units (Affine, Zlib, Pdf_write, the pictures' readers); man still
+   takes troff's own units. The browsers' five directories, libraries
+   as dune's: html, css (html), javascript (lib_playground: Lehmer),
+   engine (css, the network, the playground), webapi (engine,
+   javascript; Script_types in its root). mini-netscape's list 110
+   units to 7, its own; mini-lynx's 8 to none; the engine's Boxes 23
+   to none; mini-node's 23 to 2 (CLI, Main), Lehmer from
+   lib_playground's archive. Sizes about the same (troff 2.45 MB,
+   netscape 5.66 MB: they used nearly all they compiled; lynx 1.44 to
+   1.42, boxes 1.42 to 1.38). Checked: typesetting's sample.sh,
+   netscape's frames 31 of 31 on mini-ml's build, boxes.sh, mini-node's
+   scripts.sh (its map has Js_quicken's and Js_compile's), mini-lynx
+   on a page and on https://example.com, every mkprog program built
+   again and then up to date, the Plan 9 builds of troff, man, lynx,
+   node, netscape and boxes.
+   Left: version_control (Sha1, Zlib) with lib_crypto and
+   lib_compression, and tiny/mkfile, which links version_control's
+   Sha1 object: changed with tiny/'s session, which is changing Sha1.

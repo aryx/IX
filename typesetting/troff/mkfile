@@ -1,24 +1,21 @@
-# mini-troff, built by ix's tools: pic's grammar by mini-yacc; what a
-# PDF file is written with
-# (lib_graphics's Pdf_write, the fonts' widths and names under it, Zlib),
-# compiled here, each found by its name in its directory, then the
+# mini-troff, built by ix's tools: pic's grammar by mini-yacc; the
 # program's own units, which are in folders (doc, roff, pic, ixdoc,
-# latex)
+# latex), linked with the libraries (mkfiles/mklibs): lib_graphics's
+# Pdf_write, its fonts' widths and names and its pictures' readers (PNG,
+# JPEG, GIF), lib_compression's Zlib
+# old: those units compiled here, each found by its name in its directory
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/typesetting/troff
-G=$TOP/lib_graphics
-DIRS=. doc roff pic ixdoc latex $D $G/geometry $G/core $G/fonts $G/pdf $G/images $TOP/lib_compression
-INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D -I $G/geometry -I $G/core -I $G/fonts -I $G/pdf -I $G/images -I $TOP/lib_compression $STDI
-# (each before the ones that name it)
-PDF=Affine Rgba_image Zlib Glyph_names Standard_widths Pdf_write
-# (and what a picture's file is read with: PNG, JPEG, GIF)
-IMAGES=Huffman Lzw Dct Jpeg_progressive Jpeg Png Gif Image_file
+LIBDIRS=lib_compression lib_graphics
+<$TOP/mkfiles/mklibs
+DIRS=. doc roff pic ixdoc latex $D
+INCLUDES=-I . -I doc -I roff -I pic -I ixdoc -I latex -I $D $LIBI $STDI
+# (each before the ones that name it; mini-man links them too)
 SRC=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
-LIB=$PDF $IMAGES $SRC
-LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly $G/geometry/Affine.ml* $G/core/Rgba_image.ml* $G/fonts/Glyph_names.ml* $G/fonts/Standard_widths.ml* $G/pdf/Pdf_write.ml* $G/images/*.ml* $TOP/lib_compression/Zlib.ml* $TOP/lib_compression/Huffman.ml* $TOP/lib_compression/Lzw.ml*}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LIBOBJS=${SRC:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli */*.ml */*.mli */*.mly} $LIBSRC
+LIBS=$LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-troff
 
@@ -34,8 +31,8 @@ $D/%.$O: $LOCAL
 	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
 	$ML $INCLUDES -o $target $f
 $D/mini-troff: $D/Main.$O $LIBS
-	$ML -start $STD $COMMONS $LIB Main Std_exit -o $D/mini-troff.start.$O
-	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBOBJS $D/Main.$O $STDEND
+	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $SRC Main Std_exit -o $D/mini-troff.start.$O
+	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBA $LIBOBJS $D/Main.$O $STDEND
 
 clean:V:
 	rm -rf $D

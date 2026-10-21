@@ -6,36 +6,38 @@
  * ocaml-light's on arm64, whose back end this compiler also had until
  * plan_tiny_self_hosting.md). *)
 
-(* Common's, here too: this file links nothing of lib_core *)
-let ( ||| ) a b = match a with Some x -> x | None -> b
+open Common
 
-let usage =
-  "usage: tiny-ml [-L dir | -nostdlib] [-o out.tm] file.ml... "
-  ^ "| -c [-o out.tm] file.tmi... file.ml | -o main.tm file.tmi..."
+let usage = {|usage: tiny-ml [-L dir | -nostdlib] [-o out.tm] file.ml...
+       | tiny-ml -c [-o out.tm] file.tmi... file.ml
+       | tiny-ml -o main.tm file.tmi...|}
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
 A tiny ML compiler: an ML file (its own small dialect: a file a module, no
-functors nor labels) to tiny-machine's assembly, for tiny-cpu, on stdout without -o. A
-fact.ml, for example:
+functors nor labels) to tiny-machine's assembly, for tiny-cpu, on stdout
+without -o. A fact.ml, for example:
   let rec fact n = if n = 0 then 1 else n * fact (n - 1)
   let () = print_string "fact 10 = "; print_int (fact 10); print_newline ()
   tiny-ml -o fact.tm fact.ml               ml_start: ldw r12, 0(sp) ...
   tiny-c -o main.tm main.c
   L=tiny/TinyCRuntime
-  for f in $L/start $L/udivmod exit fact main; do tiny-assembler -o $f.o $f.tm; done
-  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o /lib/ml/*.o
+  for f in $L/start $L/udivmod exit fact main
+  do tiny-assembler -o $f.o $f.tm; done
+  tiny-linker -o fact $L/start.o $L/udivmod.o exit.o fact.o main.o \
+    /lib/ml/*.o
   tiny-cpu fact                            fact 10 = 3628800
-main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run), exit.tm
-is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The standard library,
-TinyLibCore/'s modules, is read from /lib/ml (-L: another directory), its
-interfaces Stdlib.tmi ... Sha1.tmi, and linked from there, each module compiled
-once by tiny-ml -c -nostdlib after the ones before it. Several files are a
-module each, one after the other, then their main: a's x is A.x in b, or x
-after open A. Or a module at a time, then the main:
+main.c includes tiny/TinyMLRuntime/core.c and gives it memory (ml_run),
+exit.tm is exit (sys 0), as tiny/tests/TinyML_test.sh makes them. The
+standard library, TinyLibCore/'s modules, is read from /lib/ml (-L: another
+directory), its interfaces Stdlib.tmi ... Sha1.tmi, and linked from there,
+each module compiled once by tiny-ml -c -nostdlib after the ones before it.
+Several files are a module each, one after the other, then their main: a's
+x is A.x in b, or x after open A. Or a module at a time, then the main:
   tiny-ml -c a.ml                          a.tm, its code; a.tmi, its interface
   tiny-ml -c a.tmi b.ml                    b.tm and b.tmi, after a
-  tiny-ml -o main.tm a.tmi b.tmi           the library's, a's and b's init, ml_start
+  tiny-ml -o main.tm a.tmi b.tmi           the library's, a's and b's init,
+                                           ml_start
   (linked: ... main.o a.o b.o and the library's; what nothing uses left out by
   tiny-linker)
 An error names the file and the line: fact.ml: line 2: this has type int ...

@@ -173,12 +173,11 @@ let il_laws () =
            | Some (k, _, _, _, _, _) -> k = il_dataquery || k = il_query
            | None -> false)
          trace) in
-  Printf.printf
-    "a slow reader: %d packets, %d ticks, %d messages waiting at most, %d asked or sent again\n"
-    sent ticks most again;
+  Printf.printf "a slow reader: %d packets, %d ticks, at most %d waiting, "
+    sent ticks most;
+  Printf.printf "%d asked or sent again\n" again;
   check
-    ("a reader of a message every 8 ticks: all 100, never more than 20 "
-     ^ "waiting, nothing asked or sent again")
+    "read every 8 ticks: all 100, at most 20 waiting, nothing asked or sent again"
     (got_a = slow && ended && most <= il_window && again = 0);
   (* and one slower than the other end's patience: asked where it is, it
    * says what it received, and nothing is sent again *)
@@ -197,8 +196,7 @@ let il_laws () =
     "a slower reader: %d packets, %d ticks, %d queries, %d states, %d sent again\n"
     sent ticks (kinds il_query) (kinds il_state) (kinds il_dataquery);
   check
-    ("a reader of a message every 60 ticks: all 30, asked where it is, "
-     ^ "nothing sent again")
+    "read every 60 ticks: all 30, asked where it is, nothing sent again"
     (got_a = slower && ended && kinds il_query > 0 && kinds il_dataquery = 0);
   (* nobody listens; nobody is there *)
   let s = net_stack a 1000 and t = net_stack b 5000 in
@@ -216,8 +214,7 @@ let il_laws () =
   done;
   Printf.printf "nobody there: %d packets, given up at tick %d\n" !syncs !now;
   check
-    ("nobody there: asked again five times, each wait twice the one before, "
-     ^ "then the end said and over")
+    "nobody there: asked again five times, each wait doubled, then over"
     (c.il_at = Il_closed && s.ns_conns = [] && !syncs = 7);
   (* a gateway: the wire's end that answers for another address, when it
    * said it would, once *)
@@ -237,8 +234,7 @@ let il_laws () =
   g.ns_others <- [ far, 80 ];
   let agreed = fst (net_input g 0 sync) in
   check
-    ("and for one it has: a connection, the gateway's end of it at that "
-     ^ "address, the leave used")
+    "and for one it has: a connection, the gateway's end there, the leave used"
     (List.length agreed = 1
      && (match g.ns_fresh with
          | [ d ] -> d.il_me = far && d.il_peer = a && d.il_lport = 80
@@ -251,6 +247,8 @@ let il_laws () =
     (net_input other 0 sync = ([], None));
   (* the law: over a wire that loses, every message once and in order *)
   let from_a = numbered "a" 30 and from_b = numbered "b" 300 in
+  print_endline
+    "30 messages there and 300 back, over a wire that loses, each once, in order:";
   List.iter (fun percent ->
     List.iter (fun seed ->
       let got_a, got_b, ended, sent, dropped, ticks, _ =
@@ -259,10 +257,9 @@ let il_laws () =
       check
         (Printf.sprintf "%2d%% lost, seed %d: %s; %d packets, %d lost, %d ticks"
            percent seed
-           (if whole then "30 messages there and 300 back, each once, in order"
+           (if whole then "all"
             else
-              Printf.sprintf
-                "given up after %d there and %d back, each once, in order"
+              Printf.sprintf "given up at %d, %d"
                 (List.length got_b) (List.length got_a))
            sent dropped ticks)
         (prefix got_a from_b && prefix got_b from_a

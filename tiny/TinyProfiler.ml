@@ -3,9 +3,8 @@
 
 (* See TinyProfiler.mli *)
 
-let usage =
-  "usage: tiny-prof [-n count] [-diff base] [-base hex] profile " ^
-  "[-k file.map...] [-u file.map...]"
+let usage = {|usage: tiny-prof [-n count] [-diff base] [-base hex] profile
+         [-k file.map...] [-u file.map...]|}
 
 (* [add tbl k n]: n added to k's count, 0 when k has none (by hand:
  * OCaml's Option.value takes ~default, ix's does not) *)

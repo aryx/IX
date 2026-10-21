@@ -18,7 +18,7 @@ then the image. With -map, out.map too: each label's address, by address (what
 tiny-prof reads). In tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm && tiny-linker -o hello hello.o
   tiny-cpu hello                           Hello, world
-  tiny-linker -a 10 -o prog start.o prog.o      an a.out of 10 MB for tiny-kernel
+  tiny-linker -a 10 -o prog start.o prog.o  an a.out of 10 MB, for tiny-kernel
 An error names the label: undefined label main
 |}
 

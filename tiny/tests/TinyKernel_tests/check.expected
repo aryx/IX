@@ -181,7 +181,8 @@ $ 2,504 instructions: the kernel 0.0%, programs 100.0%
 $ 2,504 instructions: the kernel 0.0%, programs 100.0%
        count      %     function
        2,504  100.0  u  (the program)
-$ usage: tiny-prof [-n count] [-diff base] [-base hex] profile [-k file.map...] [-u file.map...]
+$ usage: tiny-prof [-n count] [-diff base] [-base hex] profile
+         [-k file.map...] [-u file.map...]
 $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 $ tiny-db: t.db; help for how, ^D to end
 tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> range books.year >= 1985 (index) | where | sort
@@ -285,7 +286,8 @@ $ the wire: a packet lost
 tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 $ %     589   14363  257035
 %     589   14363  257035
-% www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs: no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
+% www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs:
+no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
 % $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
 tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump
 $ % -   1     8893 ./big

@@ -69,8 +69,7 @@ let () =
     ("\015\012A title\012\n\nSome \002bold words\002 and plain ones, "
      ^ "more than a line holds.");
   show
-    ("a click at 20 40, C-o, a large title (C-l), a paragraph with bold "
-     ^ "words (C-b) typed: being edited") o;
+    "a click at 20 40, C-o, a title (C-l), bold words (C-b) typed: edited" o;
   click o 1 300 150;
   show "a click elsewhere: the box shows its text filled" o;
   file "the page" o;
@@ -94,8 +93,7 @@ let () =
   show "a page of two boxes, from its file" o;
   click o 1 110 54;
   show
-    ("a click where they overlap: the top one is edited, its cursor where "
-     ^ "the click was") o;
+    "a click where they overlap: the top one edited, its cursor at the click" o;
   keys o "\005!";
   click o 1 5 190;
   show "C-e, a ! typed, a click outside" o;
@@ -121,8 +119,7 @@ let () =
   show "Rent, Food, Total typed, each with Enter: down a cell each" o;
   keys o "\128\128\128\128\131500\n300\n=b1+b2\n=sum(b1:b2)*2";
   show
-    ("up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed "
-     ^ "(the formula bar)") o;
+    "up, right, to b1: 500, 300, =b1+b2, =sum(b1:b2)*2 typed (the formula bar)" o;
   keys o "\n\131\128\128\128\128=c1+1\n=a1+1\n=1/0\n=2+\n";
   show "Enter; to c1: a cycle, text in a sum, a division by 0, a syntax error" o;
   keys o "\130\128\128\128\128\128\n\127\127\1278\n";
@@ -173,8 +170,7 @@ let () =
   show "Edit pressed, the mouse down to Undo, let go: the sheet undone" o;
   jump o 1 100 5 110 56;
   show
-    ("Insert pressed, let go on Drawing (nothing seen between): a drawing, "
-     ^ "and its Draw menu") o;
+    "Insert pressed, let go on Drawing (unseen between): a drawing, its menu" o;
   click o 1 170 5;
   click o 1 170 38;
   show "Draw's Arrow: the tool an arrow, marked in the menu" o;
@@ -198,8 +194,7 @@ let () =
   show "a click in the box: edited, its tab above it, its corner" o;
   jump o 1 50 50 150 70;
   show
-    ("its tab pressed, let go 100 right, 20 down (nothing seen between): "
-     ^ "the box there") o;
+    "its tab pressed, let go 100 right, 20 down (unseen between): the box there" o;
   jump o 1 285 128 255 148;
   show "its corner pressed, let go 30 left, 20 down: 30 narrower, 20 taller" o;
   keys o "\031";
@@ -234,8 +229,7 @@ let () =
   click o 1 170 198;
   jump o 1 40 80 100 120;
   show
-    ("2, red; the Paint menu's thick brush; a stroke seen only at its two "
-     ^ "ends: a thick line between them") o;
+    "2, red; a thick brush; a stroke seen at its two ends: a thick line between" o;
   file "the page" o;
   click o 1 170 5;
   click o 1 170 214;

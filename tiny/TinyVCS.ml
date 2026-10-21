@@ -914,9 +914,9 @@ let run (caps : caps) (args : string list) =
             | [] -> error "no file" in
           print (find (tree_of_commit r (tip r)) (String.split_on_char '/' path))
       | _ ->
-          error ("usage: tiny-vcs init|status|diff|commit -m msg|log|branch [b]"
-                 ^ "|switch b|merge b|ops|undo|clone src dst|pull src|push dst"
-                 ^ "|show path"))
+          error ("usage: tiny-vcs init|status|diff|commit -m msg|log|branch [b]\n"
+                 ^ "  |switch b|merge b|ops|undo|clone src dst|pull src|push dst\n"
+                 ^ "  |show path"))
   | [] -> error "usage: tiny-vcs CMD   (-h: how)"
 
 let () =

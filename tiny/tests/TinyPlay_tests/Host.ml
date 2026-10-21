@@ -37,9 +37,9 @@ let say name data =
   | w ->
       let n = samples w in
       let all = piece w data 0 n in
-      Printf.printf
-        "%s: %d Hz, %d channel(s), %d bits, %d bytes; %d samples, sum %d, first %s\n"
-        name w.rate w.channels w.bits w.bytes n (sum all)
+      Printf.printf "%s: %d Hz, %d channel(s), %d bits, %d bytes\n"
+        name w.rate w.channels w.bits w.bytes;
+      Printf.printf "  %d samples, sum %d, first %s\n" n (sum all)
         (String.concat " "
            (List.map string_of_int
               (List.filteri (fun i _ -> i < 8) (signed all))))

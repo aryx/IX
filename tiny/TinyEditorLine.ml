@@ -14,11 +14,11 @@ open TinyLibRegex
 (* -h: the commands by example, each one as it runs *)
 let help = "usage: tiny-editor [file]: sam's command language, without the screen,
 the commands on standard input, one a line, each on dot, a range of the text:
-  ,p  3p  3,5p  $p  #10,#20p  all, line 3, lines 3 to 5, the last, chars 10 to 20
+  ,p  3p  3,5p  $p  #10,#20p  all, line 3, lines 3 to 5, the last, chars 10-20
   /main/p  /main/;/^}/d      the next match; from it to a } starting a line
   =  =#                      where dot is, in lines, in characters
   a/text/ i/text/ c/text/    after dot, before it, instead (a alone: lines to .)
-  d  s/old/new/g             dot deleted; each old in it new (& \\1: match, group)
+  d  s/old/new/g             dot gone; each old in it new (& \\1: match, group)
   m 5  t 5                   dot moved, copied, after line 5
   ,x/o/c/0/                  every o made 0 (x: a loop on matches; y: between)
   ,x/.*\\n/g/TODO/p           the lines with a TODO (g: if dot matches; v: not)

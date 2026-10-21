@@ -4,11 +4,10 @@
 (* See TinyMachine.mli. Its tests, on v0's kernel and on the programs of
  * tests/TinyMachine_tests/, are tests/TinyMachine_test.sh. *)
 
-let usage =
-  "usage: tiny-machine [-l | -d disk | -window | -rate n | -date n | -seed n "
-  ^ "| -prof file | -screen ppm | -audio wav | -events file | -net dir "
-  ^ "| -net-trace | -net-lose n | -net-out | -net-forward h:m | -net-pcap f "
-  ^ "| -net-loop n] image"
+let usage = {|usage: tiny-machine [-l | -d disk | -window | -rate n | -date n
+         | -seed n | -prof file | -screen ppm | -audio wav | -events file
+         | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m
+         | -net-pcap f | -net-loop n] image|}
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -17,72 +16,62 @@ console and a disk. ./tiny-machine tiny-kernel, t6 or v0 builds a kernel
 and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
   for f in kernel a b c d; do tiny-assembler $f.tm; done
   tiny-linker -o kernel.img kernel.o a.o b.o c.o d.o
-                                                 an image (the kernel first, at 0)
-  tiny-machine kernel.img                        the image run: aabbc<illegal>...
-  tiny-machine -l kernel.img                     the listing: 0:  20100000  lui r1, 0x0
-  tiny-machine -d fs.img kernel.img              t6 (in TinyKernel/steps/t6/), fs.img its disk,
-                                                 written back at the halt
-  tiny-machine -window kernel.img                its screen (640 by 480, at 0xf00000) in
-                                                 a window, whose keys and mouse are its
-  tiny-machine -window -rate 40 kernel.img       the machine at 40 million instructions a
-                                                 second (with a window, 20 by default; without
-                                                 one, 8, the speed the recorded sessions and
-                                                 the web page use). tiny-kernel reads the
-                                                 rate, so its programs keep their pace: a
-                                                 faster machine has more instructions in
-                                                 each of its ticks of 2.5 ms
-  tiny-machine -date 819000000 kernel.img        the date at the boot, in seconds since
-                                                 2000-01-01 (the host's clock otherwise):
-                                                 make check's, so its runs are the same
-  tiny-machine -seed 1 kernel.img                the programs' first random number (a
-                                                 game's: tetris's pieces), not 0; the
-                                                 clock's ticks otherwise: make check's,
-                                                 so its games are the same however long
-                                                 the boot took
-  tiny-machine -prof p kernel.img               each instruction counted by where it was
-                                                 (the kernel's or a program's, its address)
-                                                 into p at the end (or at a SIGTERM), for
-                                                 tiny-prof
+      an image (the kernel first, at 0)
+  tiny-machine kernel.img
+      the image run: aabbc<illegal>...
+  tiny-machine -l kernel.img
+      the listing: 0:  20100000  lui r1, 0x0
+  tiny-machine -d fs.img kernel.img
+      t6 (in TinyKernel/steps/t6/), fs.img its disk, written back at the halt
+  tiny-machine -window kernel.img
+      its screen (640 by 480, at 0xf00000) in a window, whose keys and mouse
+      are its
+  tiny-machine -window -rate 40 kernel.img
+      the machine at 40 million instructions a second (with a window, 20 by
+      default; without one, 8, the speed the recorded sessions and the web
+      page use). tiny-kernel reads the rate, so its programs keep their
+      pace: a faster machine has more instructions in each of its ticks of
+      2.5 ms
+  tiny-machine -date 819000000 kernel.img
+      the date at the boot, in seconds since 2000-01-01 (the host's clock
+      otherwise): make check's, so its runs are the same
+  tiny-machine -seed 1 kernel.img
+      the programs' first random number (a game's: tetris's pieces), not 0;
+      the clock's ticks otherwise: make check's, so its games are the same
+      however long the boot took
+  tiny-machine -prof p kernel.img
+      each instruction counted by where it was (the kernel's or a program's,
+      its address) into p at the end (or at a SIGTERM), for tiny-prof
   tiny-machine -events f -screen s.ppm kernel.img
-                                                 the keys and the mouse from f, a line
-                                                 each (1000 m 320 240 1: at time 1000 the
-                                                 mouse there, its left button down;
-                                                 2000 k ls\n: these keys), the input's
-                                                 end after the last; the screen at the
-                                                 halt in s.ppm
-  tiny-machine -audio a.wav kernel.img           the speaker's samples (8,000 a second, a
-                                                 byte each) from its first sound to its
-                                                 last, written in a.wav at the halt
-                                                 (tiny-kernel: tetris's sounds); with
-                                                 -window the window plays them
-  tiny-machine -net dir -net-trace kernel.img    a network: the wire's other end is this
-                                                 program, at 10.0.0.1 (the machine is
-                                                 10.0.0.2), answering a ping (tiny-kernel:
-                                                 ping) 5 ms of the machine's time after,
-                                                 and giving dir's files by their names
-                                                 (tiny-kernel: get hello.txt);
-                                                 -net-trace: each packet said on the
-                                                 standard error, with its time;
-                                                 -net-lose 9: its ninth packet is lost;
-                                                 -net-pcap f: the packets written in f at
-                                                 the halt, for tcpdump -r or Wireshark
-  tiny-machine -net dir -net-out kernel.img      and it is the way to other machines: a
-                                                 connection the kernel asks for to another
-                                                 address is made by the host (TCP), and a
-                                                 name has an address (tiny-kernel: get /
-                                                 gopher.floodgap.com, web example.com);
-                                                 a line "www address" asks the host for a
-                                                 web page, fetched by tiny-machine-fetch
-                                                 (tiny-kernel: rc, then get 'www OCaml'),
-                                                 or kept in dir without -net-out
+      the keys and the mouse from f, a line each (1000 m 320 240 1: at time
+      1000 the mouse there, its left button down; 2000 k ls\n: these keys),
+      the input's end after the last; the screen at the halt in s.ppm
+  tiny-machine -audio a.wav kernel.img
+      the speaker's samples (8,000 a second, a byte each) from its first
+      sound to its last, written in a.wav at the halt (tiny-kernel: tetris's
+      sounds); with -window the window plays them
+  tiny-machine -net dir -net-trace kernel.img
+      a network: the wire's other end is this program, at 10.0.0.1 (the
+      machine is 10.0.0.2), answering a ping (tiny-kernel: ping) 5 ms of the
+      machine's time after, and giving dir's files by their names
+      (tiny-kernel: get hello.txt); -net-trace: each packet said on the
+      standard error, with its time; -net-lose 9: its ninth packet is lost;
+      -net-pcap f: the packets written in f at the halt, for tcpdump -r or
+      Wireshark
+  tiny-machine -net dir -net-out kernel.img
+      and it is the way to other machines: a connection the kernel asks for
+      to another address is made by the host (TCP), and a name has an
+      address (tiny-kernel: get / gopher.floodgap.com, web example.com); a
+      line "www address" asks the host for a web page, fetched by
+      tiny-machine-fetch (tiny-kernel: rc, then get 'www OCaml'), or kept in
+      dir without -net-out
   tiny-machine -net dir -net-forward 8080:80 kernel.img
-                                                 a connection to the host's port 8080 is
-                                                 one to the machine's port 80 (tiny-kernel:
-                                                 httpd, then http://localhost:8080/)
-  tiny-machine -net-loop 100 kernel.img          a network whose wire comes back: each
-                                                 packet sent is received 100 instructions
-                                                 after (a test's; -36(r0) then reads 1)
-The console is this terminal; ^D ends v6's shell, and the machine; ^C
+      a connection to the host's port 8080 is one to the machine's port 80
+      (tiny-kernel: httpd, then http://localhost:8080/)
+  tiny-machine -net-loop 100 kernel.img
+      a network whose wire comes back: each packet sent is received 100
+      instructions after (a test's; -36(r0) then reads 1)
+The console is this terminal; ^D ends t6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
 
@@ -461,7 +450,7 @@ let run caps o image =
           match kept () with
           | Some body -> body
           | None ->
-              "www: " ^ url ^ ": no copy kept in " ^ dir
+              "www: " ^ url ^ ":\nno copy kept in " ^ dir
               ^ " (with -net-out, tiny-machine fetches it)\n" in
       messages (TinyMachinePeer.messages page)
     end
@@ -553,7 +542,7 @@ let run caps o image =
       | Some None ->
           Console.eprint caps
             (Printf.sprintf
-               "tiny-machine: -net-forward: the host's port %d cannot be listened on\n"
+               "tiny-machine: -net-forward: cannot listen on the host's port %d\n"
                host);
           None)
       !waiting in

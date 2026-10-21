@@ -11,7 +11,7 @@
     words 0 104 1 |Insert|
     words 0 168 1 |Page|
   shape 3
-== a click at 20 40, C-o, a large title (C-l), a paragraph with bold words (C-b) typed: being edited
+== a click at 20 40, C-o, a title (C-l), bold words (C-b) typed: edited
   shape 0
     rect 255 0 0 320 200
   shape 1
@@ -188,7 +188,7 @@ asks: quit
     words 0 104 1 |Insert|
     words 0 168 1 |Page|
   shape 5
-== a click where they overlap: the top one is edited, its cursor where the click was
+== a click where they overlap: the top one edited, its cursor at the click
   shape 0
     rect 255 0 0 320 200
   shape 1
@@ -358,7 +358,7 @@ top
     words 0 168 1 |Sheet|
     words 0 224 1 |Page|
   shape 4
-== up, right, to b1: 500, 300, =b1+b2, and =sum(b1:b2)*2 being typed (the formula bar)
+== up, right, to b1: 500, 300, =b1+b2, =sum(b1:b2)*2 typed (the formula bar)
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -808,7 +808,7 @@ text 30 150 a note
     words 0 104 1 |Insert|
     words 0 168 1 |Page|
   shape 3
-== Insert pressed, let go on Drawing (nothing seen between): a drawing, and its Draw menu
+== Insert pressed, let go on Drawing (unseen between): a drawing, its menu
   shape 0
     rect 255 0 0 400 220
   shape 1
@@ -920,7 +920,7 @@ asks: quit
     words 0 168 1 |Format|
     words 0 232 1 |Page|
   shape 4
-== its tab pressed, let go 100 right, 20 down (nothing seen between): the box there
+== its tab pressed, let go 100 right, 20 down (unseen between): the box there
   shape 0
     rect 255 0 0 320 200
   shape 1
@@ -1145,7 +1145,7 @@ Plain, , *slanted* and ***bold*** \u{under}.
     words 0 168 1 |Paint|
     words 0 224 1 |Page|
   shape 4
-== 2, red; the Paint menu's thick brush; a stroke seen only at its two ends: a thick line between them
+== 2, red; a thick brush; a stroke seen at its two ends: a thick line between
   shape 0
     rect 255 0 0 320 200
   shape 1

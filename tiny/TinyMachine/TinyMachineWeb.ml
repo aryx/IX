@@ -373,7 +373,7 @@ let peer_document www line messages =
         (String.sub line 4 (String.length line - 4)) in
     let failed () =
       messages
-        [ "www: " ^ url ^ ": not reached (no network, or the site does not "
+        [ "www: " ^ url ^ ": not reached\n(no network, or the site does not "
           ^ "allow a web page to fetch it)\n" ] in
     fetch url (function
       | Some page -> messages (TinyMachinePeer.messages page)
@@ -594,7 +594,7 @@ let run image disk www =
           (if percent >= 97 then "Running at full speed."
            else
              Printf.sprintf
-               "Running at %d%% of full speed in this browser: everything is that much slower."
+               "Running at %d%% of full speed here: everything that much slower."
                percent);
         done_ := 0; since := start
       end;

@@ -15,7 +15,8 @@ libc; -ir prints its stack machine's code instead. A fact.c that includes
 tiny/TinyCRuntime/libc.h and prints fact(10):
   L=tiny/TinyCRuntime; (cd $L && tiny-c -o libc.tm libc.c)
   tiny-c -o fact.tm fact.c
-  for f in $L/start $L/udivmod $L/libc fact; do tiny-assembler -o $f.o $f.tm; done
+  for f in $L/start $L/udivmod $L/libc fact
+  do tiny-assembler -o $f.o $f.tm; done
   tiny-linker -o fact $L/start.o $L/udivmod.o $L/libc.o fact.o
   tiny-cpu fact                            fact 10 = 3628800
   tiny-c -ir fact.c                        fact: param 0, load 4, imm 0, ...

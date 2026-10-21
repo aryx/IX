@@ -10,8 +10,8 @@ let help = {|usage: tiny-build [-f Buildfile] [-j N] [-n] [-g] [-t] [target ...]
 The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
 .tiny-build). -n: the recipes printed, not run; -g: the graph, for dot;
--t: each recipe's time as it ends, then the times by kind of target (bin/*, ml/*.tm),
-and what was not a recipe's (the digests, the graph).
+-t: each recipe's time as it ends, then the times by kind of target (bin/*,
+ml/*.tm), and what was not a recipe's (the digests, the graph).
 
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment

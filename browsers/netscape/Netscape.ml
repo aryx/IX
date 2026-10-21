@@ -760,7 +760,10 @@ let () =
       (* the screen as large as the window (Session's flag window): the
        * size it had last, if the profile says and the user does not *)
       let asked = if List.mem_assoc "window" flags then [] else [ ("window", match kept.window with Some (w, h) -> Printf.sprintf "%dx%d" w h | None -> "") ] in
-      (try Playground_platform.run_app caps (asked @ flags) (app caps flags profile (kept, cookies, places))
+      (* heap=modest: pages are kept, tens of megabytes (Plan9_loop: a
+       * game's heap is eight times what is alive, a browser's halves
+       * then at their largest at once; mini-page's and mini-office's) *)
+      (try Playground_platform.run_app caps ((("heap", "modest") :: asked) @ flags) (app caps flags profile (kept, cookies, places))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1);

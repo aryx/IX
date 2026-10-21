@@ -102,62 +102,71 @@ value ml_lessequal(value a, value b) { return Val_bool(relation(a, b) <= 0 && !c
 value ml_greaterthan(value a, value b) { return Val_bool(relation(a, b) > 0 && !cmp_unordered); }
 value ml_greaterequal(value a, value b) { return Val_bool(relation(a, b) >= 0 && !cmp_unordered); }
 
-/* Hashtbl.hash: a bounded walk, breadth first, as ocaml-light's hash.c
- * (count meaningful values, limit visited at most) */
-static uvalue hash_acc;
-static value hash_count, hash_limit;
-
+/* Hashtbl.hash: a bounded walk, breadth first, as OCaml's (4.00 on):
+ * the values in a queue, a block's fields after it in their order, at
+ * most limit of them; count meaningful ones (ints, strings, floats)
+ * mixed in, a block's tag and size mixed in but not counted.
+ * old: ocaml-light's hash.c, depth first from a block's last field,
+ * blocks counted: an element of mini-netscape's tree was hashed by its
+ * last descendants' values, and Hacker News's comments' rows, alike
+ * at their end, were 13,852 of a page's 27,841 elements in one bucket
+ * (868 by OCaml's walk) */
 #define Alpha 65599
 #define Beta 19
-
-static void
-hash_rec(value v)
-{
-	value i;
-
-	hash_limit--;
-	if(hash_count < 0 || hash_limit < 0)
-		return;
-	if(Is_int(v)){
-		hash_count--;
-		hash_acc = hash_acc * Alpha + Long_val(v);
-		return;
-	}
-	switch(Tag(v)){
-	case String_tag:
-		hash_count--;
-		for(i = length(v) - 1; i >= 0; i--)
-			hash_acc = hash_acc * Alpha + Bytes(v)[i];
-		break;
-	case Double_tag:
-		hash_count--;
-		for(i = W - 1; i >= 0; i--)
-			hash_acc = hash_acc * Alpha + Bytes(v)[i];
-		break;
-	case Int32_tag:
-	case Int64_tag:
-		hash_count--;
-		for(i = (Tag(v) == Int64_tag ? 8 : 4) - 1; i >= 0; i--)
-			hash_acc = hash_acc * Alpha + Bytes(v)[i];
-		break;
-	case Closure_tag:
-		hash_count--;
-		break;
-	default:
-		hash_count--;
-		hash_acc = hash_acc * Beta + Tag(v);
-		for(i = Wosize(v) - 1; i >= 0; i--)
-			hash_rec(Field(v, i));
-		break;
-	}
-}
+#define HASH_QUEUE 256
 
 value
 hash_univ_param(value count, value limit, value obj)
 {
-	hash_acc = 0;
-	hash_count = Long_val(count);
-	hash_limit = Long_val(limit);
-	hash_rec(obj);
-	return Val_int(hash_acc & (((uvalue)1 << (8 * W - 2)) - 1));
+	value queue[HASH_QUEUE];
+	value v, i, n, rd, wr, num, sz;
+	uvalue acc;
+
+	acc = 0;
+	num = Long_val(count);
+	sz = Long_val(limit);
+	if(sz < 0 || sz > HASH_QUEUE)
+		sz = HASH_QUEUE;
+	rd = 0;
+	wr = 0;
+	if(sz > 0)
+		queue[wr++] = obj;
+	while(rd < wr && num > 0){
+		v = queue[rd++];
+		if(Is_int(v)){
+			num--;
+			acc = acc * Alpha + Long_val(v);
+			continue;
+		}
+		switch(Tag(v)){
+		case String_tag:
+			num--;
+			for(i = length(v) - 1; i >= 0; i--)
+				acc = acc * Alpha + Bytes(v)[i];
+			break;
+		case Double_tag:
+			num--;
+			for(i = W - 1; i >= 0; i--)
+				acc = acc * Alpha + Bytes(v)[i];
+			break;
+		case Int32_tag:
+		case Int64_tag:
+			num--;
+			for(i = (Tag(v) == Int64_tag ? 8 : 4) - 1; i >= 0; i--)
+				acc = acc * Alpha + Bytes(v)[i];
+			break;
+		case Closure_tag:
+			break;
+		default:
+			n = Wosize(v);
+			acc = acc * Beta + Tag(v);
+			acc = acc * Beta + n;
+			/* (fields that are values: the collector's < 251) */
+			if(Tag(v) < 251)
+				for(i = 0; i < n && wr < sz; i++)
+					queue[wr++] = Field(v, i);
+			break;
+		}
+	}
+	return Val_int(acc & (((uvalue)1 << (8 * W - 2)) - 1));
 }

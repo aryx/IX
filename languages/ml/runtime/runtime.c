@@ -159,6 +159,7 @@ main(int ac, char *av[])
 {
 	char *s;
 
+	machine_top = (char*)&s;
 	argc = ac;
 	argv = av;
 	init_exceptions();

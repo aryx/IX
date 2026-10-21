@@ -371,10 +371,24 @@ let here (t : t) : entry =
   { at = t.url; scrolled_to = t.scroll; kept }
 
 (* the pages kept: the three nearest each way (one of Wikipedia's,
- * with its scripts, is tens of megabytes) *)
+ * with its scripts, is tens of megabytes), and of them only while
+ * their bytes together, behind then ahead, the nearest first, are no
+ * more than [kept_bytes]. A page alive is some 40 times its HTML:
+ * Hacker News's comments, 1.3 MB, are 57.6 MB under mini-ml, most of
+ * mini-9pi's heap; Back to one asks for it again.
+ * old: the three nearest each way, whatever their size *)
+let kept_bytes = 1_000_000
+
 let trimmed (h : entry Browser_history.t) : entry Browser_history.t =
-  let near = List.mapi (fun i (e : entry) -> if i < 3 then e else { e with kept = None }) in
-  { behind = near h.behind; ahead = near h.ahead }
+  let used = ref 0 in
+  let near =
+    List.mapi (fun i (e : entry) ->
+        match e.kept with
+        | Some k when i < 3 && !used + k.size <= kept_bytes -> used := !used + k.size; e
+        | _ -> { e with kept = None })
+  in
+  let behind = near h.behind in
+  { behind; ahead = near h.ahead }
 
 (* the page of an entry shown again: as it was left if it was kept,
  * else asked for *)

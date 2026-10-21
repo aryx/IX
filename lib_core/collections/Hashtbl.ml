@@ -17,10 +17,19 @@ external hash_param : int -> int -> 'a -> int = "hash_univ_param" "noalloc"
 let hash x = hash_param 10 100 x
 
 (* We do dynamic hashing, and resize the table and rehash the elements
-   when buckets become too long. *)
+   when it holds more than twice as many as its buckets.
+   ix: by its number of entries, as OCaml's (4.00 on), never past the
+   largest array. It was ocaml-light's, a table resized whenever a
+   bucket was longer than [max_len], which then doubled: keys of one
+   hash (Hacker News's comments, 13,852 of a page's 27,841 elements in
+   mini-netscape's tables of elements) doubled its array again and
+   again, 4 million words and past the most a block holds on 32 bits
+   ("index out of bounds"), out of memory first on mini-9pi.
+   old: { mutable max_len: int; mutable data: ... },
+   if bucket_too_long h.max_len bucket then resize hash h *)
 
 type ('a, 'b) t =
-  { mutable max_len: int;                     (* max length of a bucket *)
+  { mutable size: int;                        (* the entries *)
     mutable data: ('a, 'b) bucketlist array } (* the buckets *)
 
 and ('a, 'b) bucketlist =
@@ -29,49 +38,45 @@ and ('a, 'b) bucketlist =
 
 let create initial_size =
   if initial_size <= 0 then invalid_arg "hashtbl__new" else
-  { max_len = 3; data = Array.create initial_size Empty }
+  { size = 0; data = Array.create initial_size Empty }
 
 let clear h =
+  h.size <- 0;
   for i = 0 to Array.length h.data - 1 do
     h.data.(i) <- Empty
   done
 
-let copy h = { max_len = h.max_len; data = Array.copy h.data }
+let copy h = { size = h.size; data = Array.copy h.data }
 
-let length h =
-  let rec bucket_length n = function
-      Empty -> n
-    | Cons(_, _, rest) -> bucket_length (n + 1) rest in
-  Array.fold_left (fun acc b -> acc + bucket_length 0 b) 0 h.data
+let length h = h.size
 
 let resize hashfun tbl =
   let odata = tbl.data in
   let osize = Array.length odata in
   let nsize = 2 * osize + 1 in
-  let ndata = Array.create nsize Empty in
-  let rec insert_bucket = function
-      Empty -> ()
-    | Cons(key, data, rest) ->
-        insert_bucket rest; (* preserve original order of elements *)
-        let nidx = (hashfun key) mod nsize in
-        ndata.(nidx) <- Cons(key, data, ndata.(nidx)) in
-  for i = 0 to osize - 1 do
-    insert_bucket odata.(i)
-  done;
-  tbl.data <- ndata;
-  tbl.max_len <- 2 * tbl.max_len
-          
-let rec bucket_too_long n bucket =
-  if n < 0 then true else
-    match bucket with
-      Empty -> false
-    | Cons(_,_,rest) -> bucket_too_long (n - 1) rest
+  if nsize < Sys.max_array_length then begin
+    let ndata = Array.create nsize Empty in
+    let rec insert_bucket = function
+        Empty -> ()
+      | Cons(key, data, rest) ->
+          insert_bucket rest; (* preserve original order of elements *)
+          let nidx = (hashfun key) mod nsize in
+          ndata.(nidx) <- Cons(key, data, ndata.(nidx)) in
+    for i = 0 to osize - 1 do
+      insert_bucket odata.(i)
+    done;
+    tbl.data <- ndata
+  end
+
+(* more than twice as many entries as buckets *)
+let grown tbl = if tbl.size > 2 * Array.length tbl.data then resize hash tbl
 
 let add h key info =
   let i = (hash_param 10 100 key) mod (Array.length h.data) in
   let bucket = Cons(key, info, h.data.(i)) in
   h.data.(i) <- bucket;
-  if bucket_too_long h.max_len bucket then resize hash h
+  h.size <- h.size + 1;
+  grown h
 
 (* ix: a key is compared by compare, as OCaml's and as mem and replace
  * below (they were by =: a nan put was never found nor removed) *)
@@ -80,7 +85,7 @@ let remove h key =
       Empty ->
         Empty
     | Cons(k, i, next) ->
-        if compare k key = 0 then next else Cons(k, i, remove_bucket next) in
+        if compare k key = 0 then (h.size <- h.size - 1; next) else Cons(k, i, remove_bucket next) in
   let i = (hash_param 10 100 key) mod (Array.length h.data) in
   h.data.(i) <- remove_bucket h.data.(i)
 
@@ -166,7 +171,8 @@ let replace h key info =
      * filled by replace kept its first size, its buckets long lists) *)
     let bucket = Cons(key, info, l) in
     h.data.(i) <- bucket;
-    if bucket_too_long h.max_len bucket then resize hash h
+    h.size <- h.size + 1;
+    grown h
 
 let find_opt h key =
   let rec find_in_bucket = function
@@ -185,7 +191,7 @@ let filter_map_inplace f h =
         Empty
     | Cons(k, d, rest) ->
         match f k d with
-          None -> do_bucket rest
+          None -> h.size <- h.size - 1; do_bucket rest
         | Some d -> Cons(k, d, do_bucket rest) in
   for i = 0 to Array.length h.data - 1 do
     h.data.(i) <- do_bucket h.data.(i)

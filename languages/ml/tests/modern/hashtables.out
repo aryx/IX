@@ -8,4 +8,6 @@ removed: false, 1 bindings
 a: 3, all 3 1
 a: 1
 a: false
+one hash: true
+4000 keys of one hash, 4000 found, 3999 after a remove
 exit 0

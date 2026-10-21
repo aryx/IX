@@ -13,9 +13,13 @@
  * the board's memory, cleared at the start.) */
 #ifndef MAXHEAP
 #ifdef plan9
-/* (mini-9pi's processes: 512 MB of addresses each, the stack's 8 apart;
- * here 64 MB a half) */
-#define MAXHEAP 16777216
+/* (mini-9pi's processes: 512 MB of addresses each, the stack's 8 at
+ * their top: here 192 MB a half, the value stack, a large thread's
+ * and the program beside. A half was 64 MB (16 M words): Hacker
+ * News's comments in mini-netscape are 57.6 MB alive, the page before
+ * kept besides. Memory only as a half grows to it: the author, "My pi2
+ * has 1GB of memory, so no reason to limit ourselves to 64MB") */
+#define MAXHEAP 50331648
 #define STACK 1048576
 #else
 #define MAXHEAP 67108864
@@ -63,6 +67,10 @@ static value *lo;               /* the collector's: the space collected, */
 static value *hi;
 static value *next;             /* and where the next copy goes */
 static value collections;       /* how many there were */
+/* the program's machine stack's top (main's frame), for a stack
+ * overflow's calls (exceptions.c's overflowed) */
+static char *machine_top;
+static void overflowed(char*, char*, char*);
 static value top;               /* the largest half so far, in words */
 static value live;              /* what was alive after the last one, in words */
 
@@ -289,14 +297,14 @@ collect(void)
 	 * fatal error, not a Stack_overflow to catch: raised from inside an
 	 * allocation. */
 	if(ml_vsp > vstack + STACK && ml_vsp <= vstack + STACK + GUARD)
-		fatal("Fatal error: stack overflow (mini-ml's value stack)\n");
+		overflowed("Fatal error: stack overflow (mini-ml's value stack)", (char*)&scan, stack_now > 0 ? nil : machine_top);
 #ifndef __GNUC__
 	/* (a thread's, into one of its guards: its machine stack's is
 	 * below, where this frame is) */
 	if(stack_now > 0 && ml_vsp > stack_base[stack_now] + thread_values[stack_now])
-		fatal("Fatal error: stack overflow (a thread's value stack)\n");
+		overflowed("Fatal error: stack overflow (a thread's value stack)", (char*)&scan, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
 	if(stack_now > 0 && (char*)&scan < thread_memory[stack_now] + thread_machine[stack_now])
-		fatal("Fatal error: stack overflow (a thread's machine stack)\n");
+		overflowed("Fatal error: stack overflow (a thread's machine stack)", (char*)&scan, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
 #endif
 #endif
 	stack_top[stack_now] = ml_vsp;

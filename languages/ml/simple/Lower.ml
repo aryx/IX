@@ -481,10 +481,15 @@ and app env (f : Scope.expr) args tl =
     | _ -> None
   in
   match f.e, known, args with
+  (* a && b, a || b: an if, whose b is in tail position when the
+   * whole is (OCaml's rule: is_utf_8's ok, "valid d && ok (i + n)", a
+   * frame a character of a page of 1.3 MB, overflowed the stack) *)
   | Evar (Prim ("%sequand", _, _)), _, [ a; b ] ->
-      value env { f with e = Eif (a, b, Some { f with e = Econst (Int 0) }) }; false
+      let e = { f with e = Eif (a, b, Some { f with e = Econst (Int 0) }) } in
+      if tl then (control env e true; true) else (value env e; false)
   | Evar (Prim ("%sequor", _, _)), _, [ a; b ] ->
-      value env { f with e = Eif (a, { f with e = Econst (Int 1) }, Some b) }; false
+      let e = { f with e = Eif (a, { f with e = Econst (Int 1) }, Some b) } in
+      if tl then (control env e true; true) else (value env e; false)
   | Evar (Prim (p, n, _)), _, _ when m >= n ->
       let ls = slots (later n) in
       operands env (List.map (fun e -> E e) (List.rev (first n)));

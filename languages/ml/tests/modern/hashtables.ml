@@ -1,6 +1,10 @@
 (* Hashtbl as OCaml's: a table filled by replace grows (lib_core's did
  * not: 100,000 keys were minutes), a key is compared by compare (a nan
- * is found and removed), replace keeps one binding and add hides one *)
+ * is found and removed), replace keeps one binding and add hides one;
+ * keys of one hash make a long bucket, not a table grown without end
+ * (lib_core's doubled its array at each bucket too long: 20,000 such
+ * keys, past the largest array on 32 bits, "index out of bounds", and
+ * on the way arrays of megabytes) *)
 
 let () =
   let n = 100000 in
@@ -36,3 +40,16 @@ let () =
   Printf.printf "a: %d\n" (Hashtbl.find t "a");
   Hashtbl.remove t "a";
   Printf.printf "a: %b\n" (Hashtbl.mem t "a")
+
+let () =
+  (* (the same first ten values: one hash, OCaml's and mini-ml's) *)
+  let key (i : int) : int list = List.init 12 (fun j -> if j = 11 then i else 0) in
+  (* (each found by walking the bucket: 20,000 were 50 s) *)
+  let n = 4000 in
+  let t : (int list, int) Hashtbl.t = Hashtbl.create 16 in
+  for i = 0 to n - 1 do Hashtbl.add t (key i) i done;
+  Printf.printf "one hash: %b\n" (Hashtbl.hash (key 0) = Hashtbl.hash (key (n - 1)));
+  let found = ref 0 in
+  for i = 0 to n - 1 do if Hashtbl.find t (key i) = i then incr found done;
+  Hashtbl.remove t (key 7);
+  Printf.printf "%d keys of one hash, %d found, %d after a remove\n" n !found (Hashtbl.length t)

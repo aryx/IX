@@ -130,6 +130,66 @@ returns(uvalue w)
 }
 #endif
 
+/* A stack overflow, said with its calls: the machine stack, from the
+ * frame that found it (lo) to the stack's top (hi), read for the words
+ * that are returns (as a trace's, above), each counted. A recursion
+ * too deep is one of them thousands of times: the most frequent are
+ * said, the call's address and how many, scripts/where.sh naming
+ * them. (A page of 250,000 words overflowed mini-netscape's stacks,
+ * and the message said nothing of where.) None with gcc's C, nor
+ * without a top known. */
+#define NCALLS 64
+static void
+overflowed(char *msg, char *lo, char *hi)
+{
+#ifndef __GNUC__
+	uvalue at[NCALLS], *p;
+	value n[NCALLS];
+	char d[20];
+	int k, i, best, said, s;
+
+	write(2, msg, strlen(msg));
+	k = 0;
+	if(hi != nil)
+		for(p = (uvalue*)lo; (char*)p < hi; p++)
+			if(returns(*p)){
+				for(i = 0; i < k && at[i] != *p; i++)
+					;
+				if(i < k)
+					n[i]++;
+				else if(k < NCALLS){
+					at[k] = *p;
+					n[k] = 1;
+					k++;
+				}
+			}
+	if(k > 0)
+		write(2, "; the calls most on the stack:", 30);
+	for(said = 0; said < 6 && k > 0; said++){
+		best = 0;
+		for(i = 1; i < k; i++)
+			if(n[i] > n[best])
+				best = i;
+		if(n[best] == 0)
+			break;
+		s = digits(at[best] - 4, 16, 0, d, 20);
+		write(2, " ", 1);
+		write(2, d + s, 20 - s);
+		s = digits(n[best], 10, 0, d, 20);
+		write(2, " (", 2);
+		write(2, d + s, 20 - s);
+		write(2, ")", 1);
+		n[best] = 0;
+	}
+	fatal("\n");
+#else
+	USED(lo);
+	USED(hi);
+	write(2, msg, strlen(msg));
+	fatal("\n");
+#endif
+}
+
 /* the trace in tbuf, as text: the addresses in hexadecimal; its length */
 static int
 trace(void)

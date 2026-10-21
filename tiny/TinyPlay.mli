@@ -31,7 +31,7 @@
  * thousands of lines for them), floats, a WAV's other encodings
  * (24 or 32 bits, floats, ADPCM, A-law), and the -c and -s options.
  *
- * history:
+ * cs-history:
  * WAV is Microsoft's and IBM's RIFF (1991), itself Electronic Arts'
  * IFF (1985, the Amiga's) with its numbers little-endian: chunks, each
  * four letters and a length, so a reader skips what it does not know.

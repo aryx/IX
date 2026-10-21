@@ -18,14 +18,13 @@
  * ".." in a path by its text, as Plan 9's cleanname.
  *
  * Exercises, each cheap because a disk image is a string to walk:
- * - a checker (-c): every block used once, the bitmap (or the FAT's
- *   free blocks) agreeing, every entry's inode or chain whole: fsck's
+ * - a checker (-c): every block used once, the FAT's free blocks
+ *   agreeing, every entry's chain whole: fsck's
  *   first passes, and the law for a kernel's writes (an image checked
  *   after make check);
  * - extraction (-x name): a file read back from an image, the round
  *   trip a law of its own;
- * - v6's log region, or t6's second FAT, made here as the kernels learn
- *   to use them.
+ * - t6's second FAT, made here as the kernel learns to use it.
  *
  * Where it stands: the image is what tiny-machine -d gives a kernel as
  * its disk (TinyMachineDevices's four words: a block's number, an

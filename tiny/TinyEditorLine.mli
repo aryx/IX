@@ -83,9 +83,7 @@
  *
  * Where it stands: ix has three editors, mini-ed (lines, an editor for
  * a teletype), this one (ranges, but still no screen) and mini-emacs
- * (with a screen). The regexp matcher is TinyLibRegex's; mini-ed's
- * Regex.mli is a twin of libregexp and documents where the two differ.
- * Recording changes and then applying them in one step is the same
+ * (with a screen). Recording changes and then applying them in one step is the same
  * idea as a statement in TinyDatabase and a command in TinyVCS:
  * nothing is ever half done, and undoing is cheap.
  *

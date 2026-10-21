@@ -6,8 +6,7 @@
 (* Testing: tests/TinyEditorLine_test.sh runs scripts through this
  * editor and through 9base's sam -d, and compares the results. *)
 
-(* Common's, here too: this file links nothing of lib_core *)
-let ( ||| ) a b = match a with Some x -> x | None -> b
+open Common
 
 (* the regular expressions: compile, search, search_back *)
 open TinyLibRegex

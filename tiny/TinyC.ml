@@ -3,8 +3,7 @@
 
 (* See TinyC.mli *)
 
-(* Common's, here too: this file links nothing of lib_core *)
-let ( ||| ) a b = match a with Some x -> x | None -> b
+open Common
 
 let usage = "usage: tiny-c [-ir] [-o out.tm] file.c"
 

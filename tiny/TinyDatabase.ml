@@ -7,8 +7,7 @@
  * database and the equivalent SQL through SQLite (Python's sqlite3),
  * and compares the resulting rows. *)
 
-(* Common's, here too: the file is OCaml's and tiny-ml's *)
-let ( ||| ) a b = match a with Some x -> x | None -> b
+open Common
 
 exception Error of string
 

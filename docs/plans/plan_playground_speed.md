@@ -390,13 +390,26 @@ ms); T1 and T3 below are for that.
 
 ### The redesign: text a shape, and only what changed drawn (2026-10-09, agreed; A begun 2026-10-20)
 
-Status (2026-10-20): A's text a shape, for the browser (`Playground.Letters`,
-`Stroke_text.run`, `Letter_strokes`), and on Linux a mask a letter in the
-software renderer, not the strokes (docs/notes_font.md, 5): a frame of
-Hacker News scrolled 1.7 ms where it was 12 (OCaml), 9 where it was 107
-(mini-ml). Left: mini-office's text (its own `Stroke_text`); the draw
-platform's font images on mini-9pi (A's second stage, the masks
-loaded into the kernel's images); B.
+Status (2026-10-21): A done. Text a shape (`Playground.Letters`,
+`Stroke_text.run`, `Letter_strokes`), the browser's and mini-office's
+(021f53db); on Linux a mask a letter in the software renderer, not the
+strokes (docs/notes_font.md, 5): a frame of Hacker News scrolled 1.7
+ms where it was 12 (OCaml), 9 where it was 107 (mini-ml). On mini-9pi
+(2cb918e6) the software renderer's mask loaded once into a k1 image
+of the kernel's, then one draw message a letter (`letters=strokes`
+the old way): about:home with the mouse over its links, the messages
+220 ms a frame to 20, the device 113 ms to 90.
+
+**Next** (the author, 2026-10-21, closing the session that did A):
+the device's 90 ms a frame, which is what is left, and why the cursor
+is not smooth over mini-netscape on mini-9pi (the kernel does not move
+it while a frame is copied over its rows: `Swcursor.clock`,
+`Kdraw.busy`). Measure first where those 90 ms go (the frame made
+white, the letters' copies, the frame copied whole to the window);
+then B below, the draw platform drawing only what changed, which is
+the likely answer: a link lit under the mouse is then a few messages,
+not the page. Not yet run with the letters: mini-office and Hacker
+News on mini-9pi, the recorded mini-9pi checks beyond check-quick.
 
 The author, the arrows still slow on mini-9pi ("Typing the arrows to
 move the cursor is still slow") and two more things kept being added

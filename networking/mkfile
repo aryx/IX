@@ -5,7 +5,7 @@ TOP=..
 <$TOP/mkfiles/mkconfig
 D=$B/networking
 # (mini-httpd is sockets: Linux's only)
-PROGS=`{case $OS in plan9) echo '$D/mini-curl $D/mini-timesync';; *) echo '$D/mini-curl $D/mini-timesync $D/mini-httpd';; esac}
+PROGS=`{if(~ $OS plan9) echo '$D/mini-curl $D/mini-timesync'; if not echo '$D/mini-curl $D/mini-timesync $D/mini-httpd'}
 LIBDIRS=lib_crypto lib_compression lib_networking
 <$TOP/mkfiles/mklibs
 INCLUDES=-I . $LIBI $STDI
@@ -17,13 +17,13 @@ $D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-curl: $D/Curl.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Curl Std_exit -o $D/Curl.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Curl Std_exit -o $D/Curl.start.$O
 	$LD $LDH -nofollow -o $target $D/Curl.start.$O $STDOBJS $LIBA $D/Curl.$O $STDEND
 $D/mini-timesync: $D/Timesync.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Timesync Std_exit -o $D/Timesync.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Timesync Std_exit -o $D/Timesync.start.$O
 	$LD $LDH -nofollow -o $target $D/Timesync.start.$O $STDOBJS $LIBA $D/Timesync.$O $STDEND
 $D/mini-httpd: $D/Httpd.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Httpd Std_exit -o $D/Httpd.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Httpd Std_exit -o $D/Httpd.start.$O
 	$LD $LDH -nofollow -o $target $D/Httpd.start.$O $STDOBJS $LIBA $D/Httpd.$O $STDEND
 
 clean:V:

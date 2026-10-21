@@ -17,4 +17,4 @@ LIBOBJS=
 FOLDED=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Host_calls Linux Plan9 Host Show_arm32 Show_arm64
 ${FOLDED:%=$D/%.$O}: $LOCAL
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1

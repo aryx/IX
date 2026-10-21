@@ -9,6 +9,9 @@
 #   mini-mk check    a session at its shell, under mini-qemu and QEMU
 #   ./numbers.sh     what a call, a yield, a message and a process cost
 TOP=../..
+# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
+# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+MKSHELL=sh
 DIR=kernels/singularity
 <$TOP/mkfiles/mkconfig
 

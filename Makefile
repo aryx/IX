@@ -10,6 +10,8 @@
 # Main targets
 ###############################################################################
 
+# (the mkfiles' recipes are rc's, mini-rc's: mkfiles/mkconfig)
+export MKSHELL = mini-rc
 all:
 	dune build
 

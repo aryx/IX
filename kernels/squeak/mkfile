@@ -15,6 +15,9 @@
 # arm64 only: OCaml's integers have 31 bits on arm, and the machine
 # wants 32 (the plan's Status, stage 1).
 TOP=../..
+# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
+# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+MKSHELL=sh
 DIR=kernels/squeak
 <$TOP/mkfiles/mkconfig
 

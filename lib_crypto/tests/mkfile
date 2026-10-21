@@ -15,10 +15,10 @@ $D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/vectors: $D/Vectors.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Vectors Std_exit -o $D/Vectors.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Vectors Std_exit -o $D/Vectors.start.$O
 	$LD $LDH -nofollow -o $target $D/Vectors.start.$O $STDOBJS $LIBA $D/Vectors.$O $STDEND
 $D/speed: $D/Speed.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Speed Std_exit -o $D/Speed.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Speed Std_exit -o $D/Speed.start.$O
 	$LD $LDH -nofollow -o $target $D/Speed.start.$O $STDOBJS $LIBA $D/Speed.$O $STDEND
 
 clean:V:

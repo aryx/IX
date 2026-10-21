@@ -14,14 +14,14 @@
 # which asked its own needed ones: mini-mk run again and again by every
 # mkfile read, a build where nothing changed 25 times slower
 D=$B/$LIB
-NEEDI=`{for d in $NEEDS; do cat $B/$d/dirs 2> /dev/null || echo "mklib: $d's library not built: the libraries first (mini-mk libs at the top)" >&2; done | awk '!seen[$0]++'}
-NEEDD=`{for d in $NEEDS; do echo $B/$d/dirs; done}
+NEEDI=`{$RC $TOP/mkfiles/dirs.rc $B $NEEDS}
+NEEDD=`{for(d in $NEEDS) echo $B/$d/dirs}
 # (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too; $D: a unit
 # made there, by mini-yacc or mini-lex, the mkfile saying how, as
 # typesetting/troff's pic grammar)
 INCLUDES=${DIRS:%=-I ./%} -I $D $NEEDI $STDI
 OBJS=${UNITS:%=$D/%.$O}
-LOCAL=`{for d in $DIRS; do ls $d/*.ml $d/*.mli 2> /dev/null; done}
+LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null}
 
 # (lib: what mkfiles/mklibs asks; a library's mkfile may make a program
 # too, all then, as browsers/javascript's mini-node)
@@ -30,7 +30,7 @@ lib:V: $D/lib.a $D/dirs
 
 $D/%.$O: $LOCAL
 	mkdir -p $D
-	for d in $DIRS $D; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	for(d in $DIRS $D) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
 $D/lib.a: $OBJS mkfile
 	rm -f $target
@@ -42,8 +42,8 @@ $D/lib.a: $OBJS mkfile
 # written beside its archive
 $D/dirs: mkfile $NEEDD
 	mkdir -p $D
-	{ for d in $DIRS $D; do echo -I `cd $d && pwd`; done
-	  set -- $NEEDI; while [ $# -gt 0 ]; do echo $1 $2; shift 2; done; } > $target
+	{ for(d in $DIRS $D) echo -I `{cd $d && pwd}
+	  echo $NEEDI | awk '{ for (i = 1; i < NF; i += 2) print $i, $(i + 1) }' } > $target
 
 clean:V:
 	rm -rf $D

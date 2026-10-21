@@ -25,5 +25,5 @@ $D/CLI.$O: CLI.ml CLI.mli $LOCAL
 $D/Main.$O: Main.ml $D/CLI.$O
 	$ML $INCLUDES -I . -o $target Main.ml
 $D/mini-node: $D/CLI.$O $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA $D/lib.a` CLI Main Std_exit -o $D/Main.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} CLI Main Std_exit -o $D/Main.start.$O
 	$LD $LDH -nofollow -o $target $D/Main.start.$O $STDOBJS $LIBA $D/lib.a $WHOLE $D/CLI.$O $D/Main.$O $STDEND

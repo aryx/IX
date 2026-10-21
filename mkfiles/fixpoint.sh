@@ -19,6 +19,8 @@
 # usage: mkfiles/fixpoint.sh [7|5]   (after dune build; 7, arm64: about
 #   10 minutes; 5: about an hour)
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 O=${1:-7}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

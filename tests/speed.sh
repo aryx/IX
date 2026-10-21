@@ -26,6 +26,8 @@
 #               its lines but the first (the start): 25 on 2026-10-21,
 #               the same on 2026-10-18's tree
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH

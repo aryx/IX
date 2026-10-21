@@ -15,6 +15,8 @@
 # Needs: bin/ (make ix), _mk/5-plan9 (the card's other programs), dune
 # build ./raspberry/tests/Boot_bench.exe ./kernels/tools, the web kernel
 # (make -C kernels/9pi ix-web), an arm nm for KS. Minutes.
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 R=$(cd "$(dirname "$0")/../.." && pwd); S=${1:?a directory}; name=${2:-play}; ips=${3:-12}
 mkdir -p $S/gb; [ -d $S/gb/lib_core ] || cp -r $R/_mk/5-plan9/lib_core $S/gb/
 cd $R/games && PATH=$R/bin:$PATH mini-mk O=5 OS=plan9 CATEGORIES=arcade B=$S/gb > $S/gb.log 2>&1 || { grep -v '^mini-ml\|^mkdir' $S/gb.log | tail -20; exit 1; }

@@ -27,5 +27,5 @@ $D/Pic_parser.ml: pic/Pic_parser.mly
 $D/Pic_parser.$O $D/Pic_lexer.$O $D/Pic.$O: $D/Pic_parser.ml
 
 $D/mini-troff: $D/Main.$O $D/lib.a $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA $D/lib.a` Main Std_exit -o $D/mini-troff.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA $D/lib.a} Main Std_exit -o $D/mini-troff.start.$O
 	$LD $LDH -nofollow -o $target $D/mini-troff.start.$O $STDOBJS $LIBA $D/lib.a $D/Main.$O $STDEND

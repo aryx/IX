@@ -16,23 +16,12 @@ let attached : (string * Xv6fs.t) list ref = ref []
 let seen : (int * int, string * int) Hashtbl.t = Hashtbl.create 64
 
 let fs_of (c : chan) = snd (List.nth !attached c.devno)
-let failing f = try f () with Failure m -> raise (Error m)
 
 let is_dir fs i = Xv6fs.kind fs i = Xv6fs.Dir
 let qid_of fs i = { path = i; vers = 0; typ = (if is_dir fs i then Qt_dir else Qt_file) }
 
 (* xv6 keeps no permissions: what every file is said to have *)
 let perm_of fs i = if is_dir fs i then 0o777 else 0o666
-
-(* (a file of mini-mkfs's has no time: the kernel's date, as a device's) *)
-let dir_of (c : chan) i name =
-  let fs = fs_of c in
-  failing (fun () ->
-    let d = Dev.mkdir c name (qid_of fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (perm_of fs i) in
-    match Xv6fs.mtime fs i with 0 -> d | secs -> { d with d_mtime = secs })
-
-(* the time, for what is written *)
-let now = Dev.now
 
 (*****************************************************************************)
 (* An optimization: a cache of the device's bytes *)
@@ -43,14 +32,27 @@ let now = Dev.now
  * of the SD card is a command to it whatever its size. A program of
  * 650 KB started from the card took 1.7 s under QEMU so (plan_rio.md).
  * Here the device is read by pieces of 4 KB, kept: what is asked is
- * cut from them. A write goes to the device at once, as before, and
- * the pieces it touches are forgotten. [cached] false: every read is
- * the device's, as it was. *)
+ * cut from them. A write changes the pieces it touches, and they are
+ * written to the device when the call that wrote them ends ([failing],
+ * below), each once and whole: a file's block appended was five small
+ * writes (the bitmap's byte, the block zeroed, its number, its bytes,
+ * the size and the time), each a command to the card and, for less
+ * than its sector, a read of it first; and each forgot a piece that
+ * the next read fetched again. cp of 5.6 MB took 58 s under QEMU so
+ * (plan_self_hosting.md). The card is as right as before at the end of
+ * each call. [cached] false: every read and write is the device's, as
+ * it was. *)
 let cached = ref true
 let piece = 4096
 (* 512 pieces, 2 MB, then all forgotten: simple, and a program read
  * whole fits *)
 let pieces : (int, string) Hashtbl.t = Hashtbl.create 512
+(* the pieces changed since the call began, with how to write them *)
+let dirty : (int * (int -> string -> unit)) list ref = ref []
+
+let flush () =
+  List.iter (fun (k, write) -> write (k * piece) (Hashtbl.find pieces k)) (List.rev !dirty);
+  dirty := []
 
 let cache_read (device : int -> int -> string) at n =
   if not !cached then device at n
@@ -63,7 +65,7 @@ let cache_read (device : int -> int -> string) at n =
         try Hashtbl.find pieces k
         with Not_found ->
           let bytes = device (k * piece) piece in
-          if Hashtbl.length pieces >= 512 then Hashtbl.clear pieces;
+          if Hashtbl.length pieces >= 512 then begin flush (); Hashtbl.clear pieces end;
           Hashtbl.replace pieces k bytes;
           bytes in
       let o = pos - (k * piece) in
@@ -74,7 +76,37 @@ let cache_read (device : int -> int -> string) at n =
     Buffer.contents b
   end
 
-let cache_written at n = if !cached then for k = at / piece to (at + n - 1) / piece do Hashtbl.remove pieces k done
+(* old: the device written at once, the pieces forgotten:
+ * let cache_written at n = if !cached then for k = at / piece to (at + n - 1) / piece do Hashtbl.remove pieces k done *)
+let cache_write (device : int -> int -> string) (write : int -> string -> unit) at s =
+  if not !cached then write at s
+  else
+    for k = at / piece to (at + String.length s - 1) / piece do
+      ignore (cache_read device (k * piece) 1);
+      let b = Bytes.of_string (Hashtbl.find pieces k) in
+      (* the part of s in this piece, and where *)
+      let from = max at (k * piece) and upto = min (at + String.length s) ((k * piece) + Bytes.length b) in
+      if upto > from then Bytes.blit_string s (from - at) b (from - (k * piece)) (upto - from);
+      Hashtbl.replace pieces k (Bytes.to_string b);
+      if not (List.mem_assoc k !dirty) then dirty := (k, write) :: !dirty
+    done
+
+(* a call of the file system: its failure the kernel's error, and what
+ * it wrote written to the device when it ends, as it fails too *)
+let failing f =
+  let x = try f () with Failure m -> flush (); raise (Error m) | e -> flush (); raise e in
+  flush ();
+  x
+
+(* (a file of mini-mkfs's has no time: the kernel's date, as a device's) *)
+let dir_of (c : chan) i name =
+  let fs = fs_of c in
+  failing (fun () ->
+    let d = Dev.mkdir c name (qid_of fs i) (if is_dir fs i then 0 else Xv6fs.size fs i) (perm_of fs i) in
+    match Xv6fs.mtime fs i with 0 -> d | secs -> { d with d_mtime = secs })
+
+(* the time, for what is written *)
+let now = Dev.now
 
 (* the partition's file system: the disk's device read and written
  * from here (as Kdos) *)
@@ -93,7 +125,7 @@ let fs part =
       let rec go o = if o < String.length s then go (o + dev.Dev.write c (String.sub s o (String.length s - o)) (at + o)) in
       go 0 in
     (* old: Xv6fs.make read (Some write): each read the device's *)
-    let f = failing (fun () -> Xv6fs.make (cache_read read) (Some (fun at s -> write at s; cache_written at (String.length s)))) in
+    let f = failing (fun () -> Xv6fs.make (cache_read read) (Some (cache_write read write))) in
     attached := !attached @ [ part, f ];
     f
 

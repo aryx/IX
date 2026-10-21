@@ -40,7 +40,7 @@ $D/%.ml: %.mly
 # (editors/emacs's Start.ml)
 $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
 	mkdir -p $D
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIBUNITS $SRC Std_exit -o $target
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIBUNITS $SRC Std_exit -o $target
 
 # (the libraries too: a program is linked again when one of them is remade)
 # -nofollow: the code in the objects' order, not moved along its flow as

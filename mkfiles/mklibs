@@ -14,13 +14,13 @@
 # where nothing changed took 3 minutes 21 for mini-9pi's programs, 8.5 s
 # before (2026-10-21)
 # The start names the libraries' units in their order:
-#   $ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Main Std_exit ...
+#   $ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Main Std_exit ...
 # (not ${LIBDIRS:%=$B/%/lib.a}: of an empty list, mk gives the name
 # LIBDIRS; mkprog's programs name none)
-LIBA=`{for d in $LIBDIRS; do echo $B/$d/lib.a; done}
-LIBSRC=`{for d in $LIBDIRS; do find $TOP/$d -name '*.ml' -o -name '*.mli' -o -name mkfile | grep -v /tests/; done}
-LIBI=`{for d in $LIBDIRS; do cat $B/$d/dirs 2> /dev/null || echo "mklibs: $d's library not built: the libraries first (mini-mk libs at the top)" >&2; done | awk '!seen[$0]++'}
+LIBA=`{for(d in $LIBDIRS) echo $B/$d/lib.a}
+LIBSRC=`{for(d in $LIBDIRS) $WALK $TOP/$d | awk '/\.mli?$|\/mkfile$/ && !/\/tests\//'}
+LIBI=`{$RC $TOP/mkfiles/dirs.rc $B $LIBDIRS}
 
 $B/%/lib.a:
-	echo "mklibs: $target not built: the libraries first, in their order (mini-mk O=$O OS=$OS libs at the top)" >&2
+	echo 'mklibs: '^$target^' not built: the libraries first, in their order (mini-mk O='^$O^' OS='^$OS^' libs at the top)' >[1=2]
 	exit 1

@@ -1,0 +1,11 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# The -I of libraries of ix's, each library's as it wrote them beside
+# its archive (mkfiles/mklib's dirs), a directory once: for mklib's
+# NEEDI and mklibs' LIBI. An rc script, as the recipes (a backquote of
+# mk's ends at its first }: no braces in one).
+# usage: $RC mkfiles/dirs.rc $B library...
+b=$1
+shift
+{ for(d in $*) cat $b/$d/dirs >[2]/dev/null || echo 'mk: '^$d^'''s library not built: the libraries first (mini-mk libs at the top)' >[1=2] } | awk '!seen[$0]++'

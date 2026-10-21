@@ -11,12 +11,12 @@
 #   PI2      1 for the Pi 2 (mini-mk O=5 PI2=1): the Pi 1's files, with
 #            what differs (docs/plans/plan_pi2.md); nothing otherwise
 PI2=
-ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
-P=`{case $O in 5) echo pi1/;; esac}
-LOAD=`{case $O in 5) echo 0x8000;; 7) echo 0x80000;; esac}
+ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
+P=`{if(~ $O 5) echo pi1/}
+LOAD=`{if(~ $O 5) echo 0x8000; if not if(~ $O 7) echo 0x80000}
 # (quoted: an = that mk would read as attributes)
-BOOT=`{case $O in 5) echo '-M raspi1ap -device loader,file=IMAGE,addr=0x8000,cpu-num=0,force-raw=on';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel IMAGE';; esac}
-QEMU=`{case $O in 5) echo qemu-system-arm;; 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64;; esac}
-QEMUSMP=`{case $O in 7) echo '-smp 4';; esac}
+BOOT=`{if(~ $O 5) echo '-M raspi1ap -device loader,file=IMAGE,addr=0x8000,cpu-num=0,force-raw=on'; if not if(~ $O 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel IMAGE'}
+QEMU=`{if(~ $O 5) echo qemu-system-arm; if not if(~ $O 7) echo /home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64}
+QEMUSMP=`{if(~ $O 7) echo '-smp 4'}
 LIBC=$TOP/lib_core/libc
 CINC=-I$LIBC/include -I$LIBC/include/utf -I$LIBC -I$LIBC/include/arch/$ARCH -D$ARCH -Dlinux

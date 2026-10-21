@@ -25,16 +25,16 @@ FOLDED=Conf Delta Diff Flags Hash Merge3 Object Pack Proto Loose Difftool Store 
  Index9 Get Fs Save Send Serve Walk Commands
 ${FOLDED:%=$D/%.$O}: $LOCAL
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
 
 # the two other programs: the same units, each its main and its start
 all:V: $D/mini-diff $D/mini-merge3
 VCSOBJS=${VCS:%=$D/%.$O}
 $D/start_diff.$O: mkfile $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $VCS Diffmain Std_exit -o $target
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $VCS Diffmain Std_exit -o $target
 $D/mini-diff: $D/start_diff.$O $LIBA $VCSOBJS $D/Diffmain.$O $STDOBJS $STDEND
 	$LD -H7 -nofollow -o $target $D/start_diff.$O $STDOBJS $LIBA $VCSOBJS $D/Diffmain.$O $STDEND
 $D/start_merge3.$O: mkfile $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $VCS Merge3main Std_exit -o $target
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $VCS Merge3main Std_exit -o $target
 $D/mini-merge3: $D/start_merge3.$O $LIBA $VCSOBJS $D/Merge3main.$O $STDOBJS $STDEND
 	$LD -H7 -nofollow -o $target $D/start_merge3.$O $STDOBJS $LIBA $VCSOBJS $D/Merge3main.$O $STDEND

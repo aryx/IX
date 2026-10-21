@@ -13,7 +13,7 @@
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/browsers/netscape
-PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (each after the ones it names)
 LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi \
@@ -46,7 +46,7 @@ $D/Worker_spawn.$O: spawn/large_threads.ml Worker_spawn.mli
 $D/mini-netscape: $D/netscape
 	cp $D/netscape $target
 $D/netscape: $D/Netscape.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIB Netscape Std_exit -o $D/Netscape.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Netscape Std_exit -o $D/Netscape.start.$O
 	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBA $WHOLE $LIBOBJS $D/Netscape.$O $STDEND
 
 clean:V:

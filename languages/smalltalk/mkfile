@@ -23,12 +23,12 @@ MINI=morphic/MiniMorphic
 ST=`{ls kernel/*.st kernel/*/*.st}
 $D/St_kernel.ml: $ST mkfile
 	mkdir -p $D
-	files() { for f in "$@"; do printf '("%s.st", {st|' $f; cat kernel/$f.st; echo '|st});'; done; echo ']'; }
-	(echo '(* generated from kernel/*.st by languages/smalltalk/dune *)'
-	 echo 'let files = ['; files $BLUE
-	 echo 'let squeak_base = files @ ['; files $BASE
-	 echo 'let squeak = squeak_base @ ['; files $SQUEAK
-	 echo 'let mini_morphic = squeak_base @ ['; files $MINI) > $target
+	fn files { for(f in $*){ echo -n '("'^$f^'.st", {st|'; cat kernel/$f.st; echo '|st});' }; echo ']' }
+	{ echo '(* generated from kernel/*.st by languages/smalltalk/dune *)'
+	  echo 'let files = ['; files $BLUE
+	  echo 'let squeak_base = files @ ['; files $BASE
+	  echo 'let squeak = squeak_base @ ['; files $SQUEAK
+	  echo 'let mini_morphic = squeak_base @ ['; files $MINI } > $target
 $D/St_kernel.$O: $D/St_kernel.ml $LOCAL
 	$ML $INCLUDES -o $target $D/St_kernel.ml
 
@@ -37,4 +37,4 @@ $D/St_kernel.$O: $D/St_kernel.ml $LOCAL
 FOLDED=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot
 ${FOLDED:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1

@@ -21,6 +21,8 @@
 # no built-in rules: a kernel's disk image is a source here, never a
 # target (make's %: %.o rule once tried to rebuild ~/xv6's fs.img from
 # its fs.img.o, and the failed link deleted it: plan_kernel.md)
+# (the mkfiles' recipes are rc's, mini-rc's: mkfiles/mkconfig)
+export MKSHELL = mini-rc
 MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 

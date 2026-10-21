@@ -23,16 +23,16 @@ $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 COMPAT=Multiply Acom Regs Cgen Arm Arm64 Prtree
 ${COMPAT:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t compat/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t compat/^`{basename $t .$O}^.ml || exit 1
 SIMPLE=Ir Lower Gen
 ${SIMPLE:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t simple/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t simple/^`{basename $t .$O}^.ml || exit 1
 OPTI=Opti Peep
 ${OPTI:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t opti/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t opti/^`{basename $t .$O}^.ml || exit 1
 FACTS=Facts Ir_facts
 ${FACTS:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t facts/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t facts/^`{basename $t .$O}^.ml || exit 1

@@ -15,8 +15,8 @@ there. The plan is five stages, from `hello.s` assembled on the card
 to mini-ml compiling itself there, each a program built on the card
 and compared, byte for byte, with the one Linux builds.**
 
-**Status: not started** (this plan; a first `/src` of five small
-files on the card, for mini-emacs).
+**Status: stages 1 and 2 done, stage 3 started** (2026-10-21; Status
+below).
 
 ## Where it starts from (2026-10-09)
 
@@ -40,7 +40,7 @@ files on the card, for mini-emacs).
   | mini-lex, mini-yacc (`generators/`) | yes | 570, 631 KB |
   | mini-ml (`languages/ml/`) | yes | 2,565 KB |
   | mini-rc (`shell/`) | yes, in the kernel's image | 743 KB |
-  | mini-mk (`builder/`) | **no**: `CLI.ml:62: unbound value Unix.utimes` (Plan 9's `Unix` has none) | |
+  | mini-mk (`builder/`) | yes since 2026-10-21 (Plan 9's `Unix.utimes`, a wstat) | 816 KB |
 
   None of them has been run on mini-9pi but mini-rc.
 - **The sources**: 2,021 files of code, 8.0 MB (947 `.ml` 5.4 MB, 635
@@ -125,7 +125,67 @@ files on the card, for mini-emacs).
 
 ## Status
 
-Not started. 2026-10-09: this plan, with the tools tried for Plan 9
+- 2026-10-21: stages 1 and 2 done, under QEMU; stage 3 begun (the
+  author: "we recently build t-ix under t-ix. We should try to do the
+  same for m-ix: building m-ix from under m-ix").
+  - **Stage 1**: mini-asm and mini-ld built for Plan 9 and on the card
+    (`/progs/toolchain`: `asm`, `ld`, mini-X as X as every program
+    there); `/src/hello.s` assembled and linked on mini-9pi, the 136
+    bytes Linux's (`xd`).
+  - **Stage 2**: mini-ml, lib_core's sources and its Plan 9 objects on
+    the card; `hello.ml` compiled, its start made, linked, run, the
+    three files Linux's (`cmp`). Under QEMU (Pi 1): the unit 2.9 s,
+    the start 2.5 s, the link 18.8 s; on Linux (arm64) 0.01, 0.02 and
+    0.37 s. The link's 50 times: 3.6 for ix's 32-bit code (the same
+    link as a Linux arm program, natively on this host: 1.33 s), 4.4
+    for QEMU's emulation (under `qemu-arm`: 5.85 s), 3.2 for the
+    system emulated and mini-9pi (the card read at 1.3 MB/s, the
+    faults, the heap's growth). A small unit's 300 is start-up: `ml`
+    itself (2.7 MB, 0.9 s) and lib_core's interfaces read through Kfs.
+  - **The card's file system**: names of 62 characters (a fifth of
+    ix's files have names of more than 14: `Out_channel.mli`), in
+    entries of 64 bytes, ix's third extension to xv6's format; xv6's
+    own images are no longer read (the author: "there is no need to
+    remain backward compatible with the actual xv6 filesystem").
+    Kfs's cache keeps what a call writes and writes each changed
+    piece of 4 KB once when the call ends (each write was five small
+    ones to the card, and forgot the pieces it touched): `cp` of 5.6
+    MB 58.6 s, now 24.6 s; a read 1.3 MB/s.
+  - **mini-mk for Plan 9**: Plan 9's `Unix.utimes` (a wstat).
+  - **The mkfiles' recipes are rc's, on Linux too** (the author chose
+    "rc everywhere" over an sh on mini-9pi; then: "you can also set
+    the MKSHELL env var so no need set MKSHELL in every mkfile"):
+    `MKSHELL=mini-rc` exported by the Makefiles and the scripts that
+    run mini-mk (mini-mk's default stays sh, goken's mk's); on the
+    card boot.rc sets it, with Plan 9's `objtype=arm` and `NPROC` (a
+    line of `#c/sysstat` a core). mkconfig names the tools by
+    `$objtype` (`mini-ml` on Linux, `ml` on the card: `$ML`, `$MK`,
+    `$WALK`, `$RC`) and takes `O` and `OS` from it on Plan 9 (plain
+    `mk` there). `mkfiles/units.sh` is `units.rc`, with `dirs.rc`
+    (rc scripts under mkfiles/ end in .rc, the author: "to
+    differentiate them clearly from mkfile components"). Two rules of
+    Plan 9's mk and rc met: a backquote ends at its first `}` (no
+    braces inside: `if(...) x; if not y`), and `=` in an argument is
+    quoted (`$MK 'O='$O`). Still sh's (`MKSHELL=sh` in them): the
+    oberon, singularity, squeak and xv6 kernels. (This corrects the
+    above: on Linux sh ran the recipes, not mini-rc.)
+  - **Checked**: the whole Plan 9 build on Linux by rc's recipes, in a
+    copy of the tree, against sh's: the same 1,306 files, the same
+    bytes but the 20 libraries' `dirs` (each copy's path); make
+    test-lite, 69 jobs, 0 failures; xv6fs.sh.
+  - **`make card-self`**: a card of 1 GB with `/src/ix` (the
+    repository but docs/: 4,894 files), the whole toolchain, and room
+    for a build (346 MB on Linux for mini-9pi's programs); the
+    everyday card stays 128 MB. Stage 3's first session on it, lib_core
+    and utilities/misc by `mk` on the Pi 2 under QEMU, was running at
+    this commit.
+  - **The time to expect**: the Plan 9 build on Linux is 40 s for the
+    libraries and 173 s for the programs, one job at a time; 50 to
+    300 times that is 3 to 4 hours on one emulated core. The levers:
+    the Pi 2's four cores (QEMU's -smp, mini-qemu's domains), the
+    card's I/O, a profile of the first whole build (the author: "we
+    can also profile and see where the time is spent").
+- 2026-10-09: this plan, with the tools tried for Plan 9
 (above); `/src` on the card with `hello.ml`, `hellodraw.ml`,
 `hellorio.ml`, `hello.c` and `hello.s` (`kernels/9pi/Makefile`:
 `CARD_SRC`), texts for mini-emacs.

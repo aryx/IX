@@ -13,7 +13,7 @@ TOP=../../..
 <$TOP/mkfiles/mkconfig
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step1
-EXPECTED=`{case $O in 5) echo expected;; 7) echo expected-pi4;; esac}
+EXPECTED=`{if(~ $O 5) echo expected; if not if(~ $O 7) echo expected-pi4}
 # the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
 # (quoted: after a variable's =, mk reads a word before another = as attributes)
 HEAP='-DMAXHEAP=4194304' '-DSTACK=131072'
@@ -31,7 +31,7 @@ $D/runtime.$O: $RTSRC mkfile
 	$CC $CINC $HEAP -o $target $TOP/languages/ml/runtime/runtime.c
 $D/l.$O: ../step0/${P}l.s
 	mkdir -p $D
-	$AS -o $target ../step0/${P}l.s
+	$AS -o $target $prereq
 $D/shim.$O: ../step0/shim.c
 	mkdir -p $D
 	$CC $CINC -o $target ../step0/shim.c
@@ -41,13 +41,13 @@ $D/kernel8.img: $OBJS
 	$LD -H0 -T $LOAD -E _start -nofollow -o $target $OBJS
 
 check:V: $D/kernel8.img
-	boot=`echo "$BOOT" | sed "s|IMAGE|$D/kernel8.img|"`
-	timeout 20 mini-qemu $boot -nographic < /dev/null > $D/mini.txt 2> /dev/null || true
-	cmp $D/mini.txt $EXPECTED && echo "ok step1: under mini-qemu"
-	if [ -x "`command -v $QEMU`" ]; then
-		timeout 10 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu.txt < /dev/null 2> /dev/null || true
-		cmp $D/qemu.txt $EXPECTED && echo "ok step1: under QEMU"
-	fi
+	boot=`{echo $BOOT | sed 's|IMAGE|'$D/kernel8.img'|'}
+	timeout 20 mini-qemu $boot -nographic < /dev/null > $D/mini.txt >[2]/dev/null || true
+	cmp $D/mini.txt $EXPECTED && echo 'ok step1: under mini-qemu'
+	if(whatis $QEMU >/dev/null >[2=1]){
+		timeout 10 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu.txt < /dev/null >[2]/dev/null || true
+		cmp $D/qemu.txt $EXPECTED && echo 'ok step1: under QEMU'
+	}
 
 clean:V:
 	rm -rf $D

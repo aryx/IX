@@ -17,6 +17,8 @@
 # - the kernels' steps on the Pi 1: each booted, its lines the expected.
 # usage: mkfiles/check_arm.sh     (after dune build, and mini-mk for _mk/7)
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 export PATH=$ROOT/bin:$PATH
 W=$(mktemp -d); trap 'rm -rf $W' EXIT

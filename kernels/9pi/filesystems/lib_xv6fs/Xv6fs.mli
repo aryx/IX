@@ -11,21 +11,26 @@
  * each: a type, a count of names, a size, and the numbers of the
  * file's blocks (58 direct, then a block of numbers); a bitmap, a bit
  * a block taken; the blocks. A directory is a file of entries of 16
- * bytes: an inode's number and a name of 14 characters at most. A file
- * is its inode's number: names are only in directories.
+ * bytes: an inode's number and a name of 14 characters at most (64
+ * and 62 here: below). A file is its inode's number: names are only
+ * in directories.
  *
  * The format is xv6-multiarch's, with ONE EXTENSION OF IX'S, not
  * xv6's: a second block of numbers, of blocks of numbers (xv6's
  * exercise "large files"), its own number in the inode's 8 bytes xv6
  * leaves unused (at byte 8). Without it a file has 314 KB at most,
- * less than one of ix's programs; with it, 64 MB. An image of xv6's
- * is read as it is (those bytes are 0 there); a file made larger than
- * xv6's limit is one xv6 cannot read whole (ix's mini-xv6 can:
+ * less than one of ix's programs; with it, 64 MB. A file made larger
+ * than xv6's limit is one xv6 cannot read whole (ix's mini-xv6 can:
  * kernels/xv6's Fs has the same extension). In Xv6fs.ml each line of
  * it is marked "ix's extension". A SECOND ONE, smaller: the time a file
  * was last written, in the 4 bytes after (byte 12; 0, as xv6 leaves
  * them: not known). xv6 keeps no time, and no permissions: there is no
- * place left for those.
+ * place left for those. A THIRD ONE: directory entries of 64 bytes,
+ * names of 62 characters (a fifth of ix's sources have names longer
+ * than 14: Out_channel.mli; docs/plans/plan_self_hosting.md). With it
+ * xv6's own images are no longer read, nor ix's by xv6: the format is
+ * xv6's layout, ix's (the author: "there is no need to remain backward
+ * compatible with the actual xv6 filesystem").
  *
  * No log, no cache of blocks: each change is written at once, as
  * lib_fat's. What fails raises Failure.
@@ -43,7 +48,7 @@
  *
  * The inode is the file; a directory only gives it names. So one
  * file may have several (links, counted in the inode: it goes when
- * the count is 0), a rename moves 16 bytes, and the n-th block of a
+ * the count is 0), a rename changes one entry, and the n-th block of a
  * file is one lookup in the inode's list, or two through the block
  * of numbers. The inode's and the root's numbers above are an
  * example's.

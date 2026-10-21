@@ -22,10 +22,10 @@
 # juice, multiplayer, ways, pdf, studio: now in the libraries) and
 # compiled here, as many lists as libraries
 <$TOP/mkfiles/mkconfig
-PLATFORM=`{case $OS in plan9) echo draw;; *) echo ppm;; esac}
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (a game linked with the platform that computes its pixels is made
 # beside the other: games/puzzle-soft)
-BESIDE=`{case $PLATFORM in software) echo -soft;; esac}
+BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/$DIR$BESIDE
 # (each after the ones it names)
 LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking \
@@ -58,23 +58,23 @@ INCLUDES=-I . -I $K -I $R -I $S -I $M -I $X $OFFICEI $LIBI $STDI
 # sheet, a sheet and how it is drawn, alone, for Gui7Cells; rebirth,
 # mini-rebirth's studio and its two voices, apps/music/rebirth's units
 # but the program; shmup, the shooters' kit, games/shmup/kit)
-REBIRTH=`{case "$WITH" in *rebirth*) echo Patch_text Voice_tb303 Voice_tr808 Studio_rebirth Skin;; esac}
-REBIRTHOBJS=`{for u in $REBIRTH; do echo $RBO/$u.$O; done}
-KIT=`{case "$WITH" in *shmup*) echo Shots;; esac}
-KITOBJS=`{for u in $KIT; do echo $KO/$u.$O; done}
-SCHEME=`{case "$WITH" in *scheme*) echo Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step;; esac}
-SCHEMEOBJS=`{for u in $SCHEME; do echo $SO/$u.$O; done}
-FORMULA=`{case "$WITH" in *formula*) echo Formula;; esac}
-FORMULAOBJS=`{for u in $FORMULA; do echo $MO/$u.$O; done}
-KITS=`{case "$WITH" in *office*|*undo*) echo Undo;; esac}
-KITSOBJS=`{for u in $KITS; do echo $QO/$u.$O; done}
-GUI4=`{case "$WITH" in *gui4*) echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles;; esac}
-GUI4OBJS=`{for u in $GUI4; do echo $XO/$u.$O; done}
-OFFICE=`{case "$WITH" in *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart Part_image File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export;; *sheet*) echo Sheet Sheet_view;; esac}
-OFFICEOBJS=`{for u in $OFFICE; do echo $QO/$u.$O; done}
+REBIRTH=`{~ $WITH *rebirth* && echo Patch_text Voice_tb303 Voice_tr808 Studio_rebirth Skin}
+REBIRTHOBJS=`{for(u in $REBIRTH) echo $RBO/$u.$O}
+KIT=`{~ $WITH *shmup* && echo Shots}
+KITOBJS=`{for(u in $KIT) echo $KO/$u.$O}
+SCHEME=`{~ $WITH *scheme* && echo Sexpr Sexpr_read Scheme_image Scheme Scheme_syntax Scheme_prims Scheme_prelude Scheme_eval Scheme_step}
+SCHEMEOBJS=`{for(u in $SCHEME) echo $SO/$u.$O}
+FORMULA=`{~ $WITH *formula* && echo Formula}
+FORMULAOBJS=`{for(u in $FORMULA) echo $MO/$u.$O}
+KITS=`{~ $WITH *office* *undo* && echo Undo}
+KITSOBJS=`{for(u in $KITS) echo $QO/$u.$O}
+GUI4=`{~ $WITH *gui4* && echo Gui4 Gui4Counter Gui4Temperature Gui4Flight Gui4Timer Gui4Circles}
+GUI4OBJS=`{for(u in $GUI4) echo $XO/$u.$O}
+OFFICE=`{if(~ $WITH *office*) echo Saved Style Rich Page Bitmap Pattern Seed_fill Paint Figure Drawing Sheet Sheet_view Stroke_text Figure_shapes Component Part_text Part_sheet Part_picture Part_drawing Part_chart Part_image File_menu Document Office_page Office_templates Office_model Office_edit Office_update Office_view Office_export; if not if(~ $WITH *sheet*) echo Sheet Sheet_view}
+OFFICEOBJS=`{for(u in $OFFICE) echo $QO/$u.$O}
 LIB=$REBIRTH $FORMULA $KITS $GUI4 $KIT $SCHEME $OFFICE
 LIBOBJS=$REBIRTHOBJS $FORMULAOBJS $KITSOBJS $GUI4OBJS $KITOBJS $SCHEMEOBJS $OFFICEOBJS
-LOCAL=`{ls *.ml $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli 2> /dev/null} $LIBSRC
+LOCAL=`{ls *.ml $S/*.ml $S/*.mli $M/*.ml $M/*.mli $X/*.ml $X/*.mli $Q/[a-eg-z]*/*.ml $Q/[a-eg-z]*/*.mli $Q/file_menu/*.ml $Q/file_menu/*.mli $K/*.ml $K/*.mli $R/*.ml $R/*.mli >[2]/dev/null} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 libs:V: $LIBA $LIBOBJS
@@ -97,7 +97,7 @@ $XO/%.$O: $X/%.ml $LOCAL
 	$ML $INCLUDES -o $target $X/$stem.ml
 $QO/%.$O: $LOCAL
 	mkdir -p $QO
-	$ML $INCLUDES -o $target `ls $Q/*/$stem.ml | grep -v '/tests/\|/formula/'`
+	$ML $INCLUDES -o $target `{ls $Q/*/$stem.ml | awk '!/\/tests\/|\/formula\//'}
 
 # a game: its unit (Tetris.ml), the program its name in small letters
 # (tetris); Tetris.linked says it is made
@@ -105,10 +105,10 @@ $D/%.$O: %.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/%.linked: $D/%.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` $LIB $stem Std_exit -o $D/$stem.start.$O
-	$LD $LDH -nofollow -o $D/`echo $stem | tr A-Z a-z` $D/$stem.start.$O $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB $stem Std_exit -o $D/$stem.start.$O
+	$LD $LDH -nofollow -o $D/`{echo $stem | tr A-Z a-z} $D/$stem.start.$O $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
 	touch $target
 
 clean:V:
 	rm -rf $D
-	if [ $DIR = games ]; then rm -rf $B/lib_playground/scheme $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth; fi
+	if(~ $DIR games) rm -rf $B/lib_playground/scheme $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth

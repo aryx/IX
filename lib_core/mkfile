@@ -47,7 +47,7 @@ $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
 
 # mini-ml's runtime, on the C library
-ARCH=`{case $O in 5) echo arm;; 7) echo arm64;; esac}
+ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory
 # is searched, and os/posix/ is its os/unix/ under that name)
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
@@ -75,15 +75,15 @@ LIBC_plan95=ix/vlrt syscall/os/plan9/zsyscall_plan9_arm
 LIBC_S5=arch/arm/div arch/arm/getcallerpc arch/arm/rt0 arch/arm/vlop syscall/os/$OS/svc_arm
 LIBC_S7=arch/arm64/rt0 syscall/os/$OS/svc_arm64
 LC=$L/libc
-LIBC=`{case $OS$O in linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5;; linux7) echo $LIBC_C $LIBC_linux $LIBC_linux7 $LIBC_S7;; \
- plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm;; esac}
+LIBC=`{if(~ $OS^$O linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5; if not if(~ $OS^$O linux7) echo $LIBC_C $LIBC_linux $LIBC_linux7 $LIBC_S7; \
+ if not if(~ $OS^$O plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm}
 LIBCOBJS=${LIBC:%=$LC/%.$O}
 
 $LC/%.$O: libc/%.c
-	mkdir -p `dirname $target`
+	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$CC $CINC -o $target libc/$stem.c
 $LC/%.$O: libc/%.s
-	mkdir -p `dirname $target`
+	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$AS -o $target libc/$stem.s
 
 $L/libc.a: $LIBCOBJS

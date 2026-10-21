@@ -3,24 +3,17 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Xv6fs on the host (lib_xv6fs is the kernel's and mini-mkfs's; here it
-# runs as OCaml's, with no emulator): xv6's own image read (the format
-# is its mkfs's), then images made here, of each block size, changed
-# and read back.
-# usage: xv6fs.sh   (from anywhere; dune build first; XV6: xv6-multiarch's tree)
+# runs as OCaml's, with no emulator): images made here, of each block
+# size, changed and read back. (old: xv6's own image read too, before
+# ix's entries of 64 bytes, the author: "no need to remain backward
+# compatible with the actual xv6 filesystem")
+# usage: xv6fs.sh   (from anywhere; dune build first)
 set -u
 ROOT=$(cd "$(dirname "$0")/../../../../.." && pwd)
 F=$ROOT/_build/default/kernels/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe; W=$(mktemp -d -p ${TMPDIR:-/tmp}); fail=0
-XV6=${XV6:-$HOME/xv6}
 ok() { echo "ok xv6fs$tag: $1"; }
 bad() { echo "FAIL xv6fs$tag: $1"; fail=1; }
 tag=
-# xv6's image: its files are there, one of them read whole (README is text)
-for img in $XV6/forks/arm-pi1/user/fs.img $XV6/forks/arm64-pi4/fs.img; do
-  [ -f $img ] || { echo "skip: $img not there"; continue; }
-  cp $img $W/x.img
-  n=$($F $W/x.img ls / | wc -l); $F $W/x.img ls / | grep -q "^sh " && $F $W/x.img ls / | grep -q "^README " && ok "$(basename $(dirname $img)): xv6's own image, $n names, sh and README among them" || bad "xv6's image $img"
-  $F $W/x.img cat /README | head -1 | grep -qi "xv6" && ok "its README read" || bad "README"
-done
 head -c 300000 /dev/urandom > $W/big; printf 'hello, xv6\n' > $W/small; head -c 2500000 /dev/urandom > $W/huge
 for bsize in 512 1024; do
   tag=" $bsize"; img=$W/fs$bsize.img; rm -f $img
@@ -35,7 +28,10 @@ for bsize in 512 1024; do
   $F $img mv /small renamed && $F $img mv /dir/inner within && [ "$($F $img cat /renamed)" = "hello, xv6" ] && [ "$($F $img cat /dir/within)" = "hello, xv6" ] && ! $F $img cat /small 2>/dev/null && $F $img mv /renamed small && $F $img mv /dir/within inner && ok "a name changed, and back" || bad "rename"
   $F $img mv /small big 2>/dev/null && bad "renamed over another file" || ok "a name that is taken refused"
   [ "$($F $img mtime /small)" = 0 ] && $F $img touch /small 1790380800 && [ "$($F $img mtime /small)" = 1790380800 ] && [ "$($F $img cat /small)" = "hello, xv6" ] && ok "a time written (ix's), none before" || bad "mtime"
-  $F $img create /a-name-too-long 2>/dev/null && bad "a name of 15 characters taken" || ok "a name of 15 characters refused"
+  # (names of 62 characters: ix's extension; xv6's are 14)
+  n62=$(printf 'n%.0s' $(seq 62))
+  $F $img create /$n62 && $F $img ls / | grep -q "^$n62 " && $F $img mv /$n62 Out_channel.mli && $F $img ls / | grep -q "^Out_channel.mli " && ok "a name of 62 characters, and of 15 (ix's)" || bad "a long name"
+  $F $img create /${n62}x 2>/dev/null && bad "a name of 63 characters taken" || ok "a name of 63 characters refused"
   $F $img rm /dir 2>/dev/null && bad "a full directory removed" || ok "a directory that is not empty stays"
   # what is given back is taken again: the huge file removed, then written again, three times, on 8 MB
   r=0; for k in 1 2 3; do $F $img rm /huge && $F $img create /huge && $F $img write /huge 0 $W/huge && r=$((r+1)); done; [ $r = 3 ] && $F $img cat /huge | cmp -s - $W/huge && ok "removed and written again, three times (its blocks given back)" || bad "blocks not given back ($r)"

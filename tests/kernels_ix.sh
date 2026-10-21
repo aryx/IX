@@ -12,6 +12,8 @@
 # compared with the C kernel's; mini-9pi: 13), and fewer is a failure.
 # usage: tests/kernels_ix.sh     (after make kernels-ix)
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH

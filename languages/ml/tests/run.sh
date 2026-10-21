@@ -20,6 +20,8 @@
 # Plan 9 files, mini-ld -H2), run by mini-5i.
 # usage: run.sh 5|7 workdir prog.ml|dir...
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 set -u
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 IX=$ROOT/_build/default

@@ -110,6 +110,9 @@ val environment : unit -> string array
 val time : unit -> float
 (* the seconds and their fraction *)
 val gettimeofday : unit -> float
+(* the time a file was written set (the time it was read, the first, is
+ * not kept: ignored); 0., 0.: now *)
+val utimes : string -> float -> float -> unit
 val sleepf : float -> unit
 type tm = {
   tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;

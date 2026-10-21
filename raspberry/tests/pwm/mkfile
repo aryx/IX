@@ -12,7 +12,7 @@ all:V: $D/tone.img
 
 $D/l.$O: $S/${P}l.s
 	mkdir -p $D
-	$AS -o $target $S/${P}l.s
+	$AS -o $target $prereq
 $D/shim.$O: $S/shim.c
 	mkdir -p $D
 	$CC $CINC -o $target $S/shim.c

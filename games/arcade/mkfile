@@ -12,9 +12,9 @@ WITH=physics
 # units whole)
 all:V: games sounding networked
 sounding:V: games
-	b=; case $B in /*) b="B=$B";; esac
-	mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b GAMES=TinyBreakout 'WITH=audio juice' games
+	b=(); if(~ $B /*) b='B='^$B
+	$MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM $b 'GAMES='TinyBreakout 'WITH=audio juice' games
 networked:V: sounding
-	b=; case $B in /*) b="B=$B";; esac
-	mini-mk O=$O OS=$OS PLATFORM=$PLATFORM $b GAMES=TinyTronscroll WITH=multiplayer games
+	b=(); if(~ $B /*) b='B='^$B
+	$MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM $b 'GAMES='TinyTronscroll 'WITH='multiplayer games
 <../mkgames

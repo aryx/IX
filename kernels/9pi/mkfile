@@ -17,8 +17,8 @@ GFX=lib_graphics
 # the Makefile's ML, for the machine (the trap frame's Ureg: arm64's on
 # the Pi 4, arm's on the Pi 1, mini-mk O=5; the drivers under arm/ are
 # the two boards')
-UREG=syscalls/`{case $O in 5) echo arm;; 7) echo arm64;; esac}
-BOARD=`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
+UREG=syscalls/`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
+BOARD=`{if(~ $O 5) echo pi1; if not if(~ $O 7) echo pi4}
 KML=$UREG/Ureg core/Errors core/Types files/Dev processes/Proc files/Kchan processes/Kproc devices/sys/Devroot security/Rng console/Devcons \
  devices/sys/Devenv devices/sys/Devsys devices/sys/Devarch devices/sys/Devdup devices/sys/Devsrv devices/sys/Devpipe \
  devices/sys/Devproc devices/storage/arm/Emmc devices/storage/Devsd filesystems/lib_fat/Fat filesystems/Kdos filesystems/lib_xv6fs/Xv6fs filesystems/Kfs files/P9 files/P9_wire devices/sys/Devmnt \
@@ -49,8 +49,8 @@ BOOTRC=$PRINCIPIA/kernel/init/user/boot/arm/boot.rc
 BIN=$PRINCIPIA/ROOT/arch/arm/bin
 $D/bootdir: $BOOTRC
 	mkdir -p $D
-	mini-mkbootdir $target $PRINCIPIA boot=$BOOTRC rcmain=$PRINCIPIA/ROOT/rc/lib/rcmain \
-	  rc=$BIN/rc echo=$BIN/echo bind=$BIN/bind fdisk=$BIN/fdisk dossrv=$BIN/dossrv mount=$BIN/mount ls=$BIN/ls
+	mini-mkbootdir $target $PRINCIPIA 'boot='$BOOTRC 'rcmain='$PRINCIPIA/ROOT/rc/lib/rcmain \
+	  'rc='$BIN/rc 'echo='$BIN/echo 'bind='$BIN/bind 'fdisk='$BIN/fdisk 'dossrv='$BIN/dossrv 'mount='$BIN/mount 'ls='$BIN/ls
 
 SD=-drive file=$PRINCIPIA/qemu-sd.img,if=sd,format=raw,snapshot=on
 run:V: $IMAGE
@@ -64,7 +64,7 @@ run:V: $IMAGE
 #   mini-mk check    (long: every session under mini-qemu and QEMU)
 IMAGE_B=$B/kernels/9pi-b/`{basename $IMAGE}
 stageb:V:
-	mini-mk O=$O DIR=kernels/9pi-b BOOTRC=tests/boot-b.rc
+	$MK 'O='$O 'DIR='kernels/9pi-b 'BOOTRC='tests/boot-b.rc
 check:V: $IMAGE stageb
 	mkdir -p $D/check
-	make BOARD=$BOARD check IMAGE=$IMAGE IMAGE_B=$IMAGE_B B=$D/check -o $IMAGE -o $IMAGE_B 2>&1 | grep '^ok \|^[<>] \|differ\|rror' | sed "s/^ok 9pi:/ok 9pi on the $BOARD, by ix:/"
+	make 'BOARD='$BOARD check 'IMAGE='$IMAGE 'IMAGE_B='$IMAGE_B 'B='$D/check -o $IMAGE -o $IMAGE_B >[2=1] | grep '^ok \|^[<>] \|differ\|rror' | sed 's/^ok 9pi:/ok 9pi on the '^$BOARD^', by ix:/'

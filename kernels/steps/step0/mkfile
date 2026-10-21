@@ -14,16 +14,18 @@ TOP=../../..
 <$TOP/kernels/lib_machine/mkboard
 D=$B/kernels/steps/step0
 IMAGE=$LD -H0 -T $LOAD -E _start -nofollow
+# (the board's expected lines: pi1/expected-s on the Pi 1)
+EXPECTED=${P}expected
 
 all:V: $D/hello-s.img $D/hello-c.img
 
 # (the assembly is the board's; the C is for both)
 $D/hello.$O: ${P}hello.s
 	mkdir -p $D
-	$AS -o $target ${P}hello.s
+	$AS -o $target $prereq
 $D/l.$O: ${P}l.s
 	mkdir -p $D
-	$AS -o $target ${P}l.s
+	$AS -o $target $prereq
 $D/shim.$O: shim.c
 	mkdir -p $D
 	$CC $CINC -o $target shim.c
@@ -38,15 +40,15 @@ $D/hello-c.img: $D/l.$O $D/shim.$O $D/helloc.$O $L/libc.a
 
 # a kernel does not stop: its line, then the emulator is ended
 check:V: all
-	for k in s c; do
-		boot=`echo "$BOOT" | sed "s|IMAGE|$D/hello-$k.img|"`
-		timeout 3 mini-qemu $boot -nographic < /dev/null > $D/mini-$k.txt 2> /dev/null || true
-		cmp $D/mini-$k.txt ${P}expected-$k && echo "ok step0: hello-$k under mini-qemu"
-		if [ -x "`command -v $QEMU`" ]; then
-			timeout 3 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu-$k.txt < /dev/null 2> /dev/null || true
-			cmp $D/qemu-$k.txt ${P}expected-$k && echo "ok step0: hello-$k under QEMU"
-		fi
-	done
+	for(k in s c){
+		boot=`{echo $BOOT | sed 's|IMAGE|'$D/hello-$k.img'|'}
+		timeout 3 mini-qemu $boot -nographic < /dev/null > $D/mini-$k.txt >[2]/dev/null || true
+		cmp $D/mini-$k.txt $EXPECTED-$k && echo 'ok step0: hello-'$k' under mini-qemu'
+		if(whatis $QEMU >/dev/null >[2=1]){
+			timeout 3 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu-$k.txt < /dev/null >[2]/dev/null || true
+			cmp $D/qemu-$k.txt $EXPECTED-$k && echo 'ok step0: hello-'$k' under QEMU'
+		}
+	}
 
 clean:V:
 	rm -rf $D

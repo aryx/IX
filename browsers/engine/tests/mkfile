@@ -16,7 +16,7 @@ $D/Boxes.$O: Boxes.ml $LIBSRC
 	mkdir -p $D
 	$ML $INCLUDES -o $target Boxes.ml
 $D/boxes: $D/Boxes.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Boxes Std_exit -o $D/Boxes.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Boxes Std_exit -o $D/Boxes.start.$O
 	$LD $LDH -nofollow -o $target $D/Boxes.start.$O $STDOBJS $LIBA $D/Boxes.$O $STDEND
 
 clean:V:

@@ -1,0 +1,8 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# The units of libraries of ix's (mkfiles/mklib's lib.a), in the order
+# they start in: what $AR t lists, a unit's source file, made its
+# name. An rc script, as the recipes (mkfiles/mkconfig's $RC runs it).
+# usage: $RC mkfiles/units.rc lib.a...
+for(a in $*) $AR t $a | sed 's,.*/,,; s,\.ml$,,'

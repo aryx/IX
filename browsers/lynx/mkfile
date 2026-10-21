@@ -15,7 +15,7 @@ $D/%.$O: %.ml $LIBSRC
 	mkdir -p $D
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-lynx: $D/Lynx.$O $LIBS
-	$ML -start $STD $COMMONS `$TOP/mkfiles/units.sh $LIBA` Lynx Std_exit -o $D/Lynx.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Lynx Std_exit -o $D/Lynx.start.$O
 	$LD $LDH -nofollow -o $target $D/Lynx.start.$O $STDOBJS $LIBA $D/Lynx.$O $STDEND
 
 clean:V:

@@ -8,6 +8,9 @@
 #   mini-mk check    the Makefile's session, under mini-qemu and QEMU:
 #                    the same expected-pi4 (expected-pi1)
 TOP=../..
+# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
+# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+MKSHELL=sh
 DIR=kernels/xv6
 # (Usbhost is kernels/lib_machine's: not every kernel wants it)
 KML=Types Proc Fs File ../lib_machine/Usbhost Exec Syscall Main

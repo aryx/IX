@@ -372,6 +372,18 @@ let gettimeofday () =
 
 let time () = floor (gettimeofday ())
 
+(* the time written set by a wstat (Sys_plan9's: every other field all
+ * ones, unchanged; the strings empty), the seconds by their halves;
+ * 0., 0.: now, as OCaml's. Plan 9 keeps no time read to set (the
+ * first float is ignored). mini-mk's touch (mk -t). *)
+let utimes path _atime mtime =
+  let t = if mtime = 0.0 then time () else mtime in
+  let b16 v = String.init 2 (fun k -> Char.chr ((v lsr (8 * k)) land 0xff)) in
+  let hi = Float.to_int (t /. 65536.0) in
+  let body = String.make 27 '\xff' ^ b16 (Float.to_int (t -. (float_of_int hi *. 65536.0))) ^ b16 hi ^ String.make 8 '\xff' ^ String.make 8 '\000' in
+  let b = b16 (String.length body) ^ body in
+  ignore (plan9_call "utimes" path 18 [| s path; s b; i (String.length b); z; z; z |])
+
 type tm = {
   tm_sec : int; tm_min : int; tm_hour : int; tm_mday : int; tm_mon : int; tm_year : int; tm_wday : int; tm_yday : int;
   tm_isdst : bool;

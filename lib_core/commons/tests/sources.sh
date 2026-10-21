@@ -7,6 +7,8 @@
 # arm64 Linux, and Plan 9 on arm under mini-5i), the same lines.
 # usage: lib_core/commons/tests/sources.sh    (after dune build)
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 export PATH=$ROOT/bin:$PATH
 cd $ROOT/lib_core/commons/tests

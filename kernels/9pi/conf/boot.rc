@@ -57,6 +57,18 @@ if(ls /dev/sdM0/data > /dev/null >[2] /dev/null){
 		bind -a /root/rc/bin /bin
 		home=/usr/pad
 		cd $home
+		# what Plan 9's termrc gives its programs, mk's among them,
+		# when the card has ix's sources and tools
+		# (docs/plans/plan_self_hosting.md): the machine's type
+		# (mkfiles/mkconfig names ix's tools ml, ld... by it, and
+		# mini-ml, mini-ld... on Linux, which has none), its cores
+		# (mk's jobs at once: a line of #c/sysstat each), and the
+		# recipes' shell
+		objtype=arm
+		ifs='
+' { cores=`{cat '#c/sysstat'} }
+		NPROC=$#cores
+		MKSHELL=/bin/rc
 	}
 	# the first partition, the firmware's FAT (the kernel is one of
 	# its files): at /mnt/fat. dossrv serves it; without dossrv in the

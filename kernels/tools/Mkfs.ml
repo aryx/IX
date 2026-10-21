@@ -35,7 +35,7 @@ that ends with / is a directory, empty.
                               by default)
   mini-mkcard -fs fs.img card.img ...
                               the image as a card's second partition
-A name is 14 characters at most (xv6's).
+A name is 62 characters at most (xv6's 14: ix's entries are 64 bytes).
 |}
 
 let main (caps : < caps; .. >) (argv : string array) : int =

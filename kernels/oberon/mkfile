@@ -8,6 +8,9 @@
 #   mini-mk run      under mini-qemu (Ctrl-A x quits)
 #   mini-mk check    its boot's lines on the serial line, under mini-qemu and QEMU
 TOP=../..
+# (its recipes are still sh's: MKSHELL=sh, where the others are rc's,
+# mkfiles/mkconfig; docs/plans/plan_self_hosting.md)
+MKSHELL=sh
 DIR=kernels/oberon
 <$TOP/mkfiles/mkconfig
 

@@ -28,19 +28,19 @@
 <$TOP/kernels/lib_machine/mkboard
 D=$B/$DIR
 KLIB=$TOP/kernels/lib_machine
-BD=$KLIB/`{case $O in 5) echo pi1;; 7) echo pi4;; esac}
+BD=$KLIB/`{if(~ $O 5) echo pi1; if not if(~ $O 7) echo pi4}
 RT=$TOP/languages/ml/runtime
 # (the Pi 2: board.h's PI2 for the C, l2.s for the assembly)
-BFLAGS=`{case $O$PI2 in 51) echo -DPI2;; esac}
-LS=`{case $O$PI2 in 5) echo l1.s;; 51) echo l2.s;; *) echo l.s;; esac}
+BFLAGS=`{if(~ $O^$"PI2 51) echo -DPI2}
+LS=`{if(~ $O^$"PI2 5) echo l1.s; if not if(~ $O^$"PI2 51) echo l2.s; if not echo l.s}
 KINC=$CINC -I$RT -I$BD $BFLAGS
 # the image's name (the firmware's, for each board), its text's
 # address, its entry (the Pi 4's vectors are its first bytes), and a
 # word of its data: its bytes
-IMAGE=$D/`{case $O in 5) echo kernel.img;; 7) echo kernel8.img;; esac}
-KTEXT=`{case $O in 5) echo 0x80008000;; 7) echo 0xffffff8000080000;; esac}
-ENTRY=`{case $O in 5) echo _start;; 7) echo vectors;; esac}
-WORD=`{case $O in 5) echo 4;; 7) echo 8;; esac}
+IMAGE=$D/`{if(~ $O 5) echo kernel.img; if not if(~ $O 7) echo kernel8.img}
+KTEXT=`{if(~ $O 5) echo 0x80008000; if not if(~ $O 7) echo 0xffffff8000080000}
+ENTRY=`{if(~ $O 5) echo _start; if not if(~ $O 7) echo vectors}
+WORD=`{if(~ $O 5) echo 4; if not if(~ $O 7) echo 8}
 # the heap: two halves of 4M words (32 MB each), a value stack of 1 MB
 # for the boot's; with the image, far below the 256 MB where the
 # processes' pages start (board.h's HEAP_LIMIT)
@@ -50,7 +50,7 @@ LIB_ML=Machine Screen Page Arch Mmu
 ALL_ML=$LIB_ML $KNAMES
 MLI=-I $KLIB -I $BD $KI $STDI
 # (mkboard's, the image's name in it; quoted: its =)
-BOOT=`{case $O$PI2 in 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on';; 51) echo '-M raspi2b -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3';; 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE;; esac}
+BOOT=`{if(~ $O^$"PI2 5) echo '-M raspi1ap -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on'; if not if(~ $O^$"PI2 51) echo '-M raspi2b -device loader,file='$IMAGE',addr=0x8000,cpu-num=0,force-raw=on -device loader,addr=0x8000,cpu-num=1 -device loader,addr=0x8000,cpu-num=2 -device loader,addr=0x8000,cpu-num=3'; if not if(~ $O^$"PI2 7) echo '-cpu cortex-a72 -M raspi4b -m 2G -kernel '$IMAGE}
 
 all:V: $IMAGE
 
@@ -58,23 +58,21 @@ all:V: $IMAGE
 LIBSRC=`{ls $KLIB/*.ml $KLIB/*.mli $BD/*.ml}
 ${LIB_ML:%=$D/%.$O}: $LIBSRC
 	mkdir -p $D
-	for t in $target; do
-		u=`basename $t .$O`
-		f=$KLIB/$u.ml; [ -f $f ] || f=$BD/$u.ml
+	for(t in $target){
+		u=`{basename $t .$O}
+		f=$KLIB/$u.ml; if(! ls $f >/dev/null >[2=1]) f=$BD/$u.ml
 		$ML $MLI -o $t $f || exit 1
-	done
+	}
 
 # (one rule for them all: a module is in a directory of its own, and a
 # change in one interface may change the others' code)
 KSRC=${KML:%=%.ml}
 ${KNAMES:%=$D/%.$O}: $KSRC $LIBSRC
 	mkdir -p $D
-	for t in $target; do
-		u=`basename $t .$O`
-		for m in $KML; do
-			if [ `basename $m` = $u ]; then $ML $MLI -o $t $m.ml || exit 1; fi
-		done
-	done
+	for(t in $target){
+		u=`{basename $t .$O}
+		for(m in $KML) if(~ `{basename $m} $u){ $ML $MLI -o $t $m.ml || exit 1 }
+	}
 $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
@@ -105,9 +103,9 @@ $D/l.$O: $BD/$LS $BD/l.s
 # xv6's disk on the Pi 4; mini-asm takes 2 seconds
 $D/images.$O: $FS $KLIB/font1.bin
 	mkdir -p $D
-	data() { od -An -v -tx$WORD $2 | awk -v n=$1 -v w=$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }'; }
-	(data fs_image $FS; data font_image $KLIB/font1.bin
-	 echo "DATA	fs_image_size+0(SB)/$WORD, \$`wc -c < $FS | tr -d ' '`"; echo "GLOBL	fs_image_size+0(SB), \$$WORD") > $D/images.s
+	fn data { od -An -v -tx$WORD $2 | awk -v 'n='$1 -v 'w='$WORD '{ for (i = 1; i <= NF; i++) printf "DATA\t%s+%d(SB)/%d, $0x%s\n", n, k++ * w, w, $i } END { printf "GLOBL\t%s+0(SB), $%d\n", n, k * w }' }
+	{ data fs_image $FS; data font_image $KLIB/font1.bin
+	  echo 'DATA	fs_image_size+0(SB)/'^$WORD^', $'^`{wc -c < $FS | tr -d ' '}; echo 'GLOBL	fs_image_size+0(SB), $'^$WORD } > $D/images.s
 	$AS -o $target $D/images.s
 
 # (l first: its vectors, or on the Pi 1 its start, are the image's first bytes)

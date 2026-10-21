@@ -29,6 +29,8 @@
 # qemu-aarch64 registered, binfmt_misc).
 # usage: tests/lite.sh
 
+# (the mkfiles' recipes are rc's: mkfiles/mkconfig)
+export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd $ROOT
 export PATH=$ROOT/bin:$PATH

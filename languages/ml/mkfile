@@ -23,11 +23,11 @@ $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 PP=Bits Derive Pp
 ${PP:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t pp/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t pp/^`{basename $t .$O}^.ml || exit 1
 SIMPLE=Ir Lower Gen
 ${SIMPLE:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t simple/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t simple/^`{basename $t .$O}^.ml || exit 1
 $D/Gas.$O: compat/Gas.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target compat/Gas.ml
 $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
@@ -35,8 +35,8 @@ $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 SSA=Ssa Ssa_build Alloc Emit
 ${SSA:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t ssa/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t ssa/^`{basename $t .$O}^.ml || exit 1
 FACTS=Ssa_facts Closure_facts
 ${FACTS:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t facts/`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t facts/^`{basename $t .$O}^.ml || exit 1

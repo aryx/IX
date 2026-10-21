@@ -18,7 +18,7 @@ all:V: $D/mini-play
 
 $D/%.$O: $LOCAL
 	mkdir -p $D
-	for d in $DIRS; do [ -f $d/$stem.ml ] && f=$d/$stem.ml; done
+	for(d in $DIRS) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
 $D/mini-play: $D/Play.$O $LIBS mkfile
 	$ML -start $STD $COMMONS $LIB Play Std_exit -o $D/Play.start.$O

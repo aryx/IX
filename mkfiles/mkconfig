@@ -2,27 +2,40 @@
 # The tools are the installed ones (make install, or PATH=$TOP/bin:$PATH):
 # mini-mk reads this, mini-ml, mini-lex, mini-yacc, mini-cc, mini-asm,
 # mini-ar and mini-ld do the work. Included after TOP is set.
+# The recipes are rc's, on Linux too (mini-rc: MKSHELL=mini-rc in the
+# environment, as kernels/9pi's Makefile and tests/lite.sh give it;
+# mini-mk's own default on Plan 9), so that mini-9pi builds ix from
+# the same mkfiles (docs/plans/plan_self_hosting.md).
 
-# the machine: 7 (arm64) or 5 (arm), as Plan 9's letters
-O=7
-ML=mini-ml -m $O
-CC=mini-cc -m $O
-AS=mini-asm -m $O
-AR=mini-ar
-LD=mini-ld -m $O -map
-LEX=mini-lex
-YACC=mini-yacc
+# the tools' names: mini-ml on Linux, ml on mini-9pi's card, which
+# sets $objtype as Plan 9 does (its mk reads it; Linux has none)
+TOOLPRE=`{~ $#objtype 0 && echo mini-}
+# the machine: 7 (arm64) or 5 (arm), as Plan 9's letters; on Plan 9
+# its own, by $objtype
+O=`{if(~ $#objtype 0) echo 7; if not if(~ $objtype arm64) echo 7; if not echo 5}
+ML=${TOOLPRE}ml -m $O
+CC=${TOOLPRE}cc -m $O
+AS=${TOOLPRE}asm -m $O
+AR=${TOOLPRE}ar
+LD=${TOOLPRE}ld -m $O -map
+LEX=${TOOLPRE}lex
+YACC=${TOOLPRE}yacc
+# (for the shell's commands: walk, Plan 9's find; rc, for mkfiles/units.rc;
+# mk, for a directory's builds by another's)
+WALK=${TOOLPRE}walk
+RC=${TOOLPRE}rc
+MK=${TOOLPRE}mk
 
 # the system the programs are for: linux, or plan9 (plan_rio.md: for
 # mini-9pi; arm only today: mini-mk O=5 OS=plan9), its executables
-# Plan 9's a.out (mini-ld -H2)
-OS=linux
-LDH=`{case $OS in plan9) echo -H2;; *) echo -H7;; esac}
+# Plan 9's a.out (mini-ld -H2); on Plan 9 its own
+OS=`{if(~ $#objtype 0) echo linux; if not echo plan9}
+LDH=`{if(~ $OS plan9) echo -H2; if not echo -H7}
 
 # what is made goes there, not beside the sources: dune reads those
 # directories too, and would take a Parser.ml for a source; Plan 9's
 # beside Linux's (_mk/5-plan9)
-B=`{case $OS in linux) echo $TOP/_mk/$O;; *) echo $TOP/_mk/$O-$OS;; esac}
+B=`{if(~ $OS linux) echo $TOP/_mk/$O; if not echo $TOP/_mk/$O-$OS}
 L=$B/lib_core
 
 # the stdlib's units, in the order they are linked and initialized
@@ -38,9 +51,9 @@ COMMONS=Common I64 Binary Utf8 Console Logging Procs Json Set_ Map_ Regex Sys_pl
 STDDIRS=core base collections printing parsing system concurrency commons
 # (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
 # with an interface of its own, found first)
-UNIXDIR=`{case $OS in plan9) echo system/plan9;; *) echo system;; esac}
+UNIXDIR=`{if(~ $OS plan9) echo system/plan9; if not echo system}
 # (and Sys_plan9, Plan 9's own for ix's programs: nothing elsewhere)
-P9DIR=`{case $OS in plan9) echo system/plan9;; *) echo commons;; esac}
+P9DIR=`{if(~ $OS plan9) echo system/plan9; if not echo commons}
 STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here),
 # kept in a library: a program links the units it uses (mini-ml -start

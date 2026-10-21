@@ -17,7 +17,7 @@ GEN=$B/database/Parser.ml $B/database/Lexer.ml
 FOLDED=Pager Record Btree Cursor Bytecode Dbm Dbmfile Ast Show_ast Sql Schema Codegen Optimizer
 ${FOLDED:%=$D/%.$O}: $LOCAL $GEN
 	mkdir -p $D
-	for t in $target; do $ML $INCLUDES -o $t */`basename $t .$O`.ml || exit 1; done
+	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
 
 # the lexer and the grammar, which are in sql/ (mkprog's rules are for
 # this directory's)

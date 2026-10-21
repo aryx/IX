@@ -47,6 +47,8 @@
 #   make expected-screen  the C 9pi's screens, under QEMU (tests/*.ppm.gz)
 #   make expected-rio     the C 9pi's rio screens (their md5s) and console
 
+# (the mkfiles' recipes are rc's, mini-rc's: mkfiles/mkconfig)
+export MKSHELL = mini-rc
 MAKEFLAGS += --no-builtin-rules
 
 PRINCIPIA ?= $(HOME)/principia
@@ -314,7 +316,7 @@ IX9 = $(IX)/_mk/5-plan9
 IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc apps/music/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
-  typesetting/man networking browsers/lynx browsers/netscape
+  typesetting/man networking browsers/lynx browsers/netscape assembler linker linker/tools languages/ml languages/c builder generators/lex generators/yacc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
   bind=$(IX9)/utilities/namespace/mini-bind mount=$(IX9)/utilities/namespace/mini-mount \
@@ -775,6 +777,15 @@ card: ix
 	$(MAKE) BOARD=pi2 ix
 	$(MAKE) $(CARD)
 	@$(if $(filter card,$(MAKECMDGOALS)),$(cardhelp))
+# the card to build ix on (docs/plans/plan_self_hosting.md): the same
+# programs, ix's sources under /src/ix (the repository but docs/: 4,900
+# files, 18 MB), the whole toolchain in /progs/toolchain, and room for
+# what a build makes (346 MB for mini-9pi's programs): 1 GB, where the
+# everyday card stays 128 MB, flashed 8 times faster
+card-self: ix
+	$(MAKE) BOARD=pi2 ix
+	rm -f build/card-self-fs.img
+	$(MAKE) SELF=1 build/card-self.img
 # what make card says last (not when card is another target's
 # prerequisite): where the image is and how it gets on a card. The
 # device is the reader's to find: a wrong one is a disk erased
@@ -886,9 +897,12 @@ CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
 # the typesetter and the manual (docs/plans/plan_typesetting.md, stage 8)
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
+# the assembler and the linker, for ix built on the card
+# (docs/plans/plan_self_hosting.md, stage 1)
+CARD_toolchain = asm=$(IX9)/assembler/mini-asm ld=$(IX9)/linker/mini-ld
 # the browsers and the network's programs (plan_browser.md, stage 10)
 CARD_net = netscape=$(IX9)/browsers/netscape/netscape lynx=$(IX9)/browsers/lynx/mini-lynx curl=$(IX9)/networking/mini-curl timesync=$(IX9)/networking/mini-timesync
-CARD_PROGS = system apps devtools games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
+CARD_PROGS = system apps devtools toolchain games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe
@@ -903,8 +917,8 @@ CARD_FS = build/card-fs.img
 # manual's 93 pages (2026-10-14)
 CARD_FS_INODES = 1024
 # the manual's pages, ix's own (docs/man/1), named without their .md
-# as Plan 9's are; not turbopascal-tty's, a name longer than the card's
-# file system takes (14 letters), of a program not on the card
+# as Plan 9's are; not turbopascal-tty's, of a program not on the card
+# (old: its name longer than the card's file system took, 14 letters)
 CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/man/1/*.md)),lib/man/1/$(basename $(notdir $(f)))=$(f))
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
@@ -919,6 +933,19 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
 # on the card, and ix built from them there, later)
 CARD_SRC = src/hello.ml=tests/hello/Hello.ml src/hellodraw.ml=../../lib_graphics/tests/Hellodraw.ml src/hellorio.ml=../../windows/tests/Hellorio.ml \
   src/hello.c=../steps/step0/hello.c src/hello.s=../../linker/tests/golden/hello_plan9_arm.s
+ifdef SELF
+CARD = build/card-self.img
+CARD_FS = build/card-self-fs.img
+CARD_MB = 1024
+CARD_FS_MB = 991
+CARD_FS_INODES = 16384
+CARD_toolchain += ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc mk=$(IX9)/builder/mini-mk ar=$(IX9)/linker/tools/mini-ar \
+  lex=$(IX9)/generators/lex/mini-lex yacc=$(IX9)/generators/yacc/mini-yacc
+# (not prerequisites: some are names of this Makefile's patterns,
+# expected-%; card-self makes its file system again each time)
+# (files: the symbolic links in git are copied, but bin, a directory)
+CARD_IX := $(foreach f,$(shell cd ../.. && git ls-files -co --exclude-standard | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/ix/$(f)=../../$(f))
+endif
 # the binds that make /bin of them, one for each directory: the card's
 # /lib/namespace, lines of rc that boot.rc reads (Plan 9's file of that
 # name is its own format, read by newns)
@@ -934,7 +961,7 @@ $(CARD_NS): Makefile
 	@mkdir -p build
 	for d in $(CARD_PROGS); do echo "bind -a /root/progs/$$d /bin"; done > $@
 $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/process/kill.rc $(foreach p,$(CARD_LIB) $(CARD_SRC),$(lastword $(subst =, ,$(p)))) $(foreach p,$(CARD_BIN),$(lastword $(subst =, ,$(p))))
-	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) mnt/fat/ mnt/wsys/ tmp/
+	$(MKFS) -m $(CARD_FS_MB) -i $(CARD_FS_INODES) $@ $(card_progs) lib/namespace=$(CARD_NS) rc/bin/kill=../../utilities/process/kill.rc usr/pad/readme=tests/card-motd.txt $(CARD_LIB) $(CARD_SRC) $(CARD_IX) mnt/fat/ mnt/wsys/ tmp/
 # version.txt: which card this is, a line that boot.rc says last on a
 # board (not under an emulator: the recorded screens): mini-9pi's
 # version (changes.txt's first), the commit (a + when the tree differs

@@ -27,7 +27,10 @@ let double_at = 8             (* ix's extension *)
 (* IX'S SECOND EXTENSION: when the file was last written, seconds since
  * 1970, in the 4 bytes after (xv6: unused, 0: not known) *)
 let mtime_at = 12             (* ix's extension *)
-let dirsiz = 14
+(* IX'S THIRD EXTENSION: a directory's entries of 64 bytes, names of
+ * 62 characters (xv6: 16 and 14) *)
+let dirent = 64               (* ix's extension *)
+let dirsiz = dirent - 2
 
 let pread (t : t) at n = let s = t.pread at n in if String.length s < n then failwith "i/o error" else s
 let pwrite (t : t) at s = match t.pwrite with Some w -> w at s | None -> failwith "read only file system"
@@ -170,8 +173,8 @@ let ialloc (t : t) k =
 let slots (t : t) dir =
   if kind t dir <> Dir then failwith "not a directory";
   let s = read t dir 0 (size t dir) in
-  List.init (String.length s / 16) (fun k ->
-    let o = 16 * k in
+  List.init (String.length s / dirent) (fun k ->
+    let o = dirent * k in
     let name = String.sub s (o + 2) dirsiz in
     let rec len j = if j < dirsiz && name.[j] <> '\000' then len (j + 1) else j in
     o, le16 s o, String.sub name 0 (len 0))
@@ -189,7 +192,7 @@ let link (t : t) dir name i =
 let fresh (t : t) dir name =
   let bad = ref (name = "" || name = "." || name = ".." || String.length name > dirsiz) in
   for j = 0 to String.length name - 1 do if name.[j] = '/' || name.[j] = '\000' then bad := true done;
-  if !bad then failwith (if String.length name > dirsiz then "file name too long (14 characters at most)" else "bad file name");
+  if !bad then failwith (if String.length name > dirsiz then "file name too long (" ^ string_of_int dirsiz ^ " characters at most)" else "bad file name");
   if lookup t dir name <> None then failwith "file already exists"
 
 let create (t : t) dir name k =
@@ -207,7 +210,7 @@ let remove (t : t) dir name =
       if name = "." || name = ".." then failwith "permission denied";
       let is_dir = kind t i = Dir in
       if is_dir && entries t i <> [] then failwith "directory not empty";
-      write t dir o (String.make 16 '\000');
+      write t dir o (String.make dirent '\000');
       (* (a directory's own two names are not counted against it) *)
       let left = nlink t i - 1 in
       if left <= 0 || (is_dir && left <= 1) then begin
@@ -217,7 +220,7 @@ let remove (t : t) dir name =
       end
       else set16 t (dinode t i + 6) left
 
-(* a name changed, in its directory: its entry's 14 characters *)
+(* a name changed, in its directory: its entry's characters *)
 let rename (t : t) dir name new_name =
   match List.filter (fun (_, i, n) -> i <> 0 && n = name) (slots t dir) with
   | [] -> failwith "file does not exist"

@@ -40965,3 +40965,129 @@ Claude switched the tagline to "Smaller programs, bigger understanding." in both
 Claude agreed the surrounding paragraph already makes AI's role clear, so the tagline needn't repeat it.
 Claude left the tagline's AI reference implicit, relying on the paragraph around it for context.
 Claude did not commit the change, since both files already had other uncommitted edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:32
+
+**Yoann:**
+
+> commit just this change
+
+**Claude (summary):**
+
+Claude committed only the two changed lines, in `README.md` and `docs/index.html`, using a separate git index.
+Claude's commit included nothing else, since the other working-tree edits in those two files stayed uncommitted.
+Claude also left the already-staged changes alone: the plan moved to `done/` and `prompt-history.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-20 22:33
+
+**Yoann:**
+
+> continue step 8: when tk38's session ends (scratchpad/tk38/self.out has "real"), compare every file on its disk (usr/glenda/self) and first.img with tk38's host build (Cat), record self.expected from self.out, read tk39's report (tk39/time.img usr/glenda/times.txt) when it ends, complete the plan's Status, move the plan to docs/plans/done/
+
+**Claude (summary):**
+
+Claude recommended that the Makefile set `SHELL := /bin/bash`, since make check fails under dash's printf, and left that as Yoann's decision.
+Claude reported that tk40 passed: the self-built image matches the host's byte for byte, and the rebuilds end cleanly.
+Claude recorded self.expected from tk40, replaced the PENDING line in the plan's Status, and added tk41's per-recipe time breakdown.
+Claude moved the plan to docs/plans/done/plan_tiny_self_hosting.md and updated links in README.md, tiny/README.md, and three docs files.
+Nothing was committed, and Claude listed the pathspecs it would commit, excluding the other sessions' mkfiles and prompt-history.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:43
+
+**Yoann:**
+
+> let's commit! Great work.
+
+**Claude (summary):**
+
+Claude committed the 18 files of this work as c441fe52, picking each one by name.
+Claude found the plan's move to docs/plans/done/ already included in Yoann's earlier commit 341ec30 ("more").
+Claude's commit carries only the plan's text changes, and its message says so.
+Claude left out the mkfiles, plan_mk_libraries.md, and prompt-history.md, which another session had staged.
+Still open: whether make check should run under bash, and profiling ld and as for the next speed work.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:46
+
+**Yoann:**
+
+> ok I think we can close this session then?
+
+**Claude (summary):**
+
+Claude confirmed the self-builds tk38 to tk41 have ended, leaving about 64 MB of disk images in the scratchpad.
+Claude reported that all of this session's work is committed in c441fe52, so none of it remains uncommitted.
+Claude pointed out that the uncommitted mkfiles, plan_mk_libraries.md, and prompt-history.md belong to other sessions.
+Claude recorded two open points in the done plan's Status: profiling ld and as for speed, and whether make check runs under bash.
+Claude said the session can close, since nothing is running or pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 05:21
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude recommended committing step 3 by pathspec, since step 2 was already committed as a868f660.
+Claude listed the changed mkfiles and the plan doc, plus new mkfiles for html, css, engine and webapi.
+Claude held version_control out of the commit, because tiny/mkfile links Sha1, which another session is editing.
+Claude noted that bin/mini-ld is broken in this checkout, so the builds used dune's linker.
+Claude reported passing checks for sample.sh, netscape's frames, boxes.sh, scripts.sh, mini-lynx, and the Plan 9 builds.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:47
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed step 3 as `1f46dfe5` by pathspec, leaving the pre-staged `prompt-history.md` untouched.
+Claude flagged that `version_control` must switch to `lib_crypto` and `lib_compression` together with the tiny session.
+Claude explained that this is needed because `tiny/mkfile` links the `Sha1` object from those libraries.
+Claude found that `bin/mini-ld` points to a nonexistent file, so it built with dune's linker instead.
+Claude left `mini-ld` unfixed, since the earlier commit said another session had broken it.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 07:50
+
+**Yoann:**
+
+> make test-lite (and make build-docker) is failing currently
+
+**Claude (summary):**
+
+Claude traced the CI failure to Browser_helpers forking under OCaml 5 while a domain was running.
+Claude added Procs.create_process to lib_core, backed by mini-ml's fork-based Unix.create_process, and switched Browser_helpers to it.
+Claude narrowed run's capabilities to exec and wait, and made empty PATH entries mean the current directory.
+Claude confirmed helpers.sh passes on 4.14 and 5.5.1 in a copy, and the old code fails on 5.5.1.
+Claude recorded both bugs in docs/plans/bugs/ix.md and reported test-lite passing with 69 jobs and no failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:01
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude had finished the library move, linking version_control and tiny to lib_crypto and lib_compression.
+Claude proposed committing by pathspec: mkfile, tiny/mkfile, version_control/mkfile, and the plan's move to done/.
+Claude kept out another session's uncommitted edits to mkfiles/mklibs, tests/lite.sh, Browser_helpers, Procs and Unix.
+Claude pointed out that prompt-history.md is staged, so a pathspec commit would leave it out.
+Claude marked the plan as done, listing troff units and mkgames' WITH units as possible future library work.

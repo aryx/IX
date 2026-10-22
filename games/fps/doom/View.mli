@@ -12,7 +12,11 @@
  * edge's angle, viewangletox each fine angle's column. id's angles
  * are those quantized ones, and so are a texel's place and a light's
  * level: with the exact sine, a few pixels in every hundred are
- * another texel (Render.mli, plan_doom.md's table).
+ * another texel (Render.mli, plan_doom.md's table). Their values are
+ * id's fixed_t too (16 bits of fraction), and tantoangle id's table of
+ * 2,049 angles: libm's sin, tan and atan differ in their last bits
+ * between x86 and arm64, which the rounding keeps out of a frame; the
+ * player's thrust, bob and use line take the same sine, as id's.
  *
  *   the light: a sector's 0-255 is 16 levels; level i starts at
  *   colormap (15 - i) * 4 and darkens

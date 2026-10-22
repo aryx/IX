@@ -21,10 +21,10 @@ arcade/TinyTronscroll|duel|180 -fixed-time 1000 -script space:2-3,up:40,right:90
 arcade/TinyTronscroll|1997|180 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=100 netcode=1997|6aba3f2d48ac54c4acaf42782f5be971250939544c901e45a382d7669374afce|40fe39ff8dc8f3148faaece8e7426d2d77dfc4810e9c2abcf00b7dd717205f0b
 arcade/TinyTronscroll|lockstep|400 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=60 loss=10 netcode=lockstep|e1b6c759bb240b6887060ee76ff7a73d2604440c6124fa138c4feccefdf39d9c
 arcade/TinyTronscroll|rollback|400 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=60 loss=10 netcode=rollback|c011a3afd1296f826201d34b25bc957437d50516e5f1b6f2308e0713f9b646ef
-fps/doom/Doom|start|2|1a67b85459fa17346af30bed47122f8da0d03d5b640d91db7f8622fb0ff33dcd|1cad2cc71633ed0326d81f8fe5c4ee97e6476df6e60ee25b50c32eeb37d147e0
-fps/doom/Doom|lift|200 -script up:1-100|576eb09e9e4cbd37f262fae49fb5298c4107ba0b0e79913582fbf65da330965a|41a8fee99f308e411d7505e9a8496d365933964d45dee2298526d33b40275b0b
-fps/doom/Doom|lift_each|200 -script up:1-100 redraw=each|576eb09e9e4cbd37f262fae49fb5298c4107ba0b0e79913582fbf65da330965a|41a8fee99f308e411d7505e9a8496d365933964d45dee2298526d33b40275b0b
-fps/doom/Doom|door|60 -script space:3 x=832 y=470 angle=90|11d07f30001efc78c5079f43572882231a33fa9577df1d1c8e92443649357e30|bbe219485900f20587b20a37ff6b3a2b98c6eabcef1eeebe537ae3d4ef02ae5e
+fps/doom/Doom|start|2|e3bf6feeb0455cd5bdccca0df16ff658753d0a302341a293ab6cc3d530eb3f75|f2ef65a18e42739ecfcae8c62caf072f5232c1bc2bbe3a5004d5428a4003773c
+fps/doom/Doom|lift|200 -script up:1-100|770597c86a4795f7772ba647cbdc9a269788f72acf3c85cee53309f82bcbd935|355379b490e513e81367a066ce635a6c5aa966d4db20c9a7874bd8f0e9060c05
+fps/doom/Doom|lift_each|200 -script up:1-100 redraw=each|770597c86a4795f7772ba647cbdc9a269788f72acf3c85cee53309f82bcbd935|355379b490e513e81367a066ce635a6c5aa966d4db20c9a7874bd8f0e9060c05
+fps/doom/Doom|door|60 -script space:3 x=832 y=470 angle=90|9bd1f0e7552ae6b5cc7294b10248ab14adca64fde8d0e0d65f4bc3f603518f35|fdf4f59c668646220de05db7568e135e45e7434f9923d0ef6f18a8d9b6096f42
 fps/quake/Quake|start|2|63359a7834c2524b0d6627cd67f9d3f68e5ee5a6cc87e1d117b116b8b930d53b
 fps/quake/Quake|walk|200 -script up:1-600,right:150-190|4cb500486a46e0a1917a026ead5322c0a6584c75bdca92d456c7d1a501e36d9c
 fps/quake/Quake|walk_each|200 -script up:1-600,right:150-190 redraw=each|4cb500486a46e0a1917a026ead5322c0a6584c75bdca92d456c7d1a501e36d9c

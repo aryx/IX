@@ -123,7 +123,7 @@ let calc_height (t : t) : unit =
   p.bob <- Float.min maxbob (((p.momx *. p.momx) +. (p.momy *. p.momy)) /. 4.);
   if p.z > p.floorz then p.viewz <- Float.min (p.ceilingz -. 4.) (p.z +. viewheight)
   else begin
-    let bob = p.bob /. 2. *. sin (2. *. pi *. float t.tic /. 20.) in
+    let bob = p.bob /. 2. *. View.fsin (2. *. pi *. float t.tic /. 20.) in
     p.viewheight <- p.viewheight +. p.deltaviewheight;
     if p.viewheight > viewheight then begin p.viewheight <- viewheight; p.deltaviewheight <- 0. end;
     if p.viewheight < viewheight /. 2. then begin
@@ -145,8 +145,8 @@ let tic (t : t) (cmd : cmd) : unit =
   if onground then begin
     let thrust (a : float) (move : int) : unit =
       let m = float move /. 32. in
-      p.momx <- p.momx +. (m *. cos a);
-      p.momy <- p.momy +. (m *. sin a) in
+      p.momx <- p.momx +. (m *. View.fcos a);
+      p.momy <- p.momy +. (m *. View.fsin a) in
     if cmd.forward <> 0 then thrust p.angle cmd.forward;
     if cmd.side <> 0 then thrust (p.angle -. (pi /. 2.)) cmd.side
   end;

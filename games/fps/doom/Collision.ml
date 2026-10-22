@@ -110,7 +110,7 @@ let change_sector (t : t) : bool =
  * that closes the way ends it *)
 let use_target (t : t) : Level.line option =
   let p = t.player in
-  let x2 = p.x +. (userange *. cos p.angle) and y2 = p.y +. (userange *. sin p.angle) in
+  let x2 = p.x +. (userange *. View.fcos p.angle) and y2 = p.y +. (userange *. View.fsin p.angle) in
   let dx = x2 -. p.x and dy = y2 -. p.y in
   let hits =
     List.filter_map

@@ -19,8 +19,12 @@ let signed (a : float) : float = let a = norm a in if a >= pi then a -. two_pi e
  * sine put a few in every hundred pixels a texel apart) *)
 let fineangles = 8192
 let finestep = two_pi /. float fineangles
-let finesine = Array.init (fineangles + (fineangles / 4)) (fun (i : int) -> sin ((float i +. 0.5) *. finestep))
-let finetangent = Array.init (fineangles / 2) (fun (i : int) -> tan ((float (i - (fineangles / 4)) +. 0.5) *. finestep))
+(* (their values id's fixed_t, 16 bits of fraction: libm's sin and tan
+ * are not the same to the last bit on x86 and arm64, and a frame
+ * recorded on one is then another on the other) *)
+let fixed (v : float) : float = Float.round (v *. 65536.) /. 65536.
+let finesine = Array.init (fineangles + (fineangles / 4)) (fun (i : int) -> fixed (sin ((float i +. 0.5) *. finestep)))
+let finetangent = Array.init (fineangles / 2) (fun (i : int) -> fixed (tan ((float (i - (fineangles / 4)) +. 0.5) *. finestep)))
 
 (* an angle's fine angle (angle >> ANGLETOFINESHIFT) *)
 let fine (a : float) : int = int_of_float (norm a /. finestep) land (fineangles - 1)
@@ -189,7 +193,12 @@ let slope_div (num : float) (den : float) : float =
   let d = floor (den *. 256.) in
   if d < 2. then 2048. else Float.min 2048. (floor (num *. 524288. /. d))
 
-let tantoangle (slope : float) : float = atan (slope /. 2048.)
+(* (id's table of 2049, an angle of 2^32 a turn: atan's last bits not
+ * the frame's) *)
+let tantoangle_table =
+  let unit = two_pi /. 4294967296. in
+  Array.init 2049 (fun (i : int) -> Float.round (atan (float i /. 2048.) /. unit) *. unit)
+let tantoangle (slope : float) : float = tantoangle_table.(int_of_float slope)
 
 let point_to_angle (r : t) (x : float) (y : float) : float =
   let x = x -. r.viewx and y = y -. r.viewy in

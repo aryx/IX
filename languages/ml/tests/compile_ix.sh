@@ -78,6 +78,9 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # build makes, TinyMLPrelude.ml: dune's)
   # (TinyKernel/host/ first: tiny-shell's TinyLibSystem is the one there, TinyKernel/libml/'s is tiny-ml's)
   # (not TinyLibCore/: tiny-ml's standard library, whose List would be lib_core's)
+  # (the debugger and the tracer: tiny-kernel's alone, dune builds neither; their TinyCalls is
+  # libml's, the kernel's every call: fork, exec, trace..., which the host's has not)
+  tiny/TinyDebugger.ml|tiny/TinyTracer.ml) root=tiny/TinyKernel/libml; incs[$root]="-I tiny/TinyKernel/libml -I tiny/TinyKernel/host $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   tiny/*) incs[$root]="-I tiny/TinyKernel/host $(dirs tiny | sed -E 's|-I [^ ]*tiny/TinyLibCore ||g') -I _build/default/tiny";;
   esac
   [ -z "${incs[$root]:-}" ] && incs[$root]=$(dirs $root)

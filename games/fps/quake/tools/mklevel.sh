@@ -29,4 +29,4 @@ for w in $(grep -m1 '^"wad"' $W/lq1/maps/src/$MAP.map | sed 's/^"wad" "//; s/"$/
 done
 (cd $W/lq1/maps/src/$(dirname $MAP) && $QBSP $(basename $MAP).map $W/level.bsp > $W/qbsp.log)
 (cd $W && $VIS level.bsp > vis.out)
-$T/Light.exe $W/level.bsp $OUT
+$T/Light.exe $W/level.bsp $OUT $LQ/lq1/gfx/palette.lmp

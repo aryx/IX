@@ -51,13 +51,25 @@
  * (a sample whose ray towards the sun, "_sun_mangle", ends in a sky
  * face is lit, by the angle only) and "_sunlight2" (the same from 32
  * directions of the sky's dome, the light shared among them), the
- * worldspawn's "light" (the least a sample gets). Not: "_bounce"
- * (light reflected by the walls), "_dirt" (corners darkened), colours
+ * worldspawn's "light" (the least a sample gets), and "_bounce": the
+ * light the walls send back, after the direct light and before the
+ * sums are halved (section 2 below: a radiosity of a few passes;
+ * "_bouncescale" scales it). Not: "_dirt" (corners darkened), colours
  * (a .lit file), "delay" (other falloffs), surface lights.
  *
- * usage: mini-light in.bsp out.bsp *)
+ * history:
+ * id's light (1996) had the direct light only: Quake's rooms are dark
+ * where no lamp sees, their corners black. Radiosity (Goral, Torrance,
+ * Greenberg and Battaile, "Modeling the Interaction of Light Between
+ * Diffuse Surfaces", SIGGRAPH 1984) was what offline renderers did; id
+ * baked it for Quake II's lightmaps (qrad3, 1997), and ericw-tools
+ * gave Quake's maps a bounce in the 2010s.
+ *
+ * usage: mini-light in.bsp out.bsp [palette.lmp]
+ *   palette: the textures' colours, for how much they reflect (half,
+ *   without it) *)
 
-let usage = "usage: mini-light in.bsp out.bsp"
+let usage = "usage: mini-light in.bsp out.bsp [palette.lmp]"
 
 open Model
 
@@ -257,9 +269,20 @@ let points (m : Model.t) (f : surface) : vec array * int * int =
   in
   (pts, w, h)
 
-let light_face (m : Model.t) (lights : light list) (sun : (vec * float) list)
-    (minlight : float) (f : surface) : (int * string) list =
-  let pts, _, _ = points m f in
+(* a face being lit: its samples, its side, its sums a style *)
+type lit = {
+  face : surface;
+  pts : vec array;
+  (* the grid's columns: w + 1 *)
+  cols : int;
+  normal : vec;
+  mutable maps : (int * float array) list;
+}
+
+(* 1. the direct light: each light, the sun, the sky's dome *)
+let direct (m : Model.t) (lights : light list) (sun : (vec * float) list)
+    (f : surface) : lit =
+  let pts, w, _ = points m f in
   let n = Array.length pts in
   let normal = if f.back then scale (-1.) f.plane.normal else f.plane.normal in
   let dist = if f.back then -.f.plane.dist else f.plane.dist in
@@ -319,6 +342,220 @@ let light_face (m : Model.t) (lights : light list) (sun : (vec * float) list)
           pts
       end)
     sun;
+  { face = f; pts; cols = w + 1; normal; maps = !maps }
+
+(*****************************************************************************)
+(* 2. The bounce (ericw-tools' _bounce) *)
+(*****************************************************************************)
+
+(* A wall lit sends part of its light back: what makes a room lit
+ * from one lamp not black where the lamp does not see. The faces' own
+ * samples are the senders, by 4 by 4 (a patch of 64 by 64 texels,
+ * its light their mean, as much as its texture's colour reflects), and
+ * the receivers: what a receiver gets of a patch falls with the square
+ * of the distance, and by the cosines at both ends (a patch seen
+ * edge-on sends nothing):
+ *
+ *     received = light x reflectivity x area x cos e x cos r / (pi d^2)
+ *
+ * so a sample before a wide wall of light L gets about L times its
+ * reflectivity, as a sample would in the real world. The patch must
+ * see the sample (a trace) from a leaf that may (the PVS). Each pass
+ * sends what the pass before received: the map's _bounce says how
+ * many. Only the steady light (style 0) bounces. *)
+
+type patch = {
+  pos : vec;
+  pnormal : vec;
+  flux : float;
+  reach2 : float;
+  leaf : int;
+}
+
+(* a texture's reflectivity: its mean colour, 0 to 1 (0.5 without the
+ * palette) *)
+let reflectivity (palette : string option) (t : texture) : float =
+  match palette with
+  | None -> 0.5
+  | Some pal ->
+      let mip = t.mips.(3) in
+      let sum = ref 0 in
+      String.iter
+        (fun (c : char) ->
+          let i = 3 * Char.code c in
+          sum :=
+            !sum
+            + Char.code pal.[i]
+            + Char.code pal.[i + 1]
+            + Char.code pal.[i + 2])
+        mip;
+      float !sum /. (3. *. 255. *. float (String.length mip))
+
+let pi = 4. *. atan 1.
+
+(* the light a sample must get from a patch to count: a quarter of a
+ * level of the lightmap's 256 (before id's halving) *)
+let least = 0.05
+
+let bounce (m : Model.t) (lits : lit array) (palette : string option)
+    (passes : int) (bouncescale : float) : unit =
+  let hull = m.hulls.(0) and root = m.submodels.(0).headnode.(0) in
+  let pvs_rows = Hashtbl.create 256 in
+  let row (leaf : int) : Bytes.t =
+    match Hashtbl.find_opt pvs_rows leaf with
+    | Some r -> r
+    | None ->
+        let r = Model.pvs m m.leaves.(leaf) in
+        Hashtbl.add pvs_rows leaf r;
+        r
+  in
+  (* each receiver: its middle, its radius, its leaf (a little off it:
+   * not the rock's) *)
+  let middle (l : lit) : vec =
+    scale (1. /. float (Array.length l.pts)) (Array.fold_left add zero l.pts)
+  in
+  let mids = Array.map middle lits in
+  let radius =
+    Array.mapi
+      (fun (i : int) (l : lit) ->
+        Array.fold_left
+          (fun (r : float) (p : vec) -> Float.max r (length (sub p mids.(i))))
+          0. l.pts)
+      lits
+  in
+  let leaves =
+    Array.mapi
+      (fun (i : int) (l : lit) ->
+        (Model.leaf_at m (add mids.(i) (scale 4. l.normal))).lindex)
+      lits
+  in
+  let sent =
+    ref
+      (Array.map
+         (fun (l : lit) ->
+           match List.assoc_opt 0 l.maps with
+           | Some a -> a
+           | None -> Array.make (Array.length l.pts) 0.)
+         lits)
+  in
+  for _pass = 1 to passes do
+    (* the patches of what was received last *)
+    let patches =
+      List.concat
+        (Array.to_list
+           (Array.mapi
+              (fun (i : int) (l : lit) ->
+                let ti = l.face.texinfo in
+                let refl = bouncescale *. reflectivity palette ti.texture in
+                (* (a sample's area: 16 texels each way, in units) *)
+                let area = 16. /. length ti.s *. (16. /. length ti.t) in
+                let a = !sent.(i) in
+                let groups = Hashtbl.create 16 in
+                Array.iteri
+                  (fun (k : int) (p : vec) ->
+                    let key = (k mod l.cols / 4, k / l.cols / 4) in
+                    let sp, sl, n =
+                      match Hashtbl.find_opt groups key with
+                      | Some g -> g
+                      | None -> (zero, 0., 0)
+                    in
+                    Hashtbl.replace groups key (add sp p, sl +. a.(k), n + 1))
+                  l.pts;
+                Hashtbl.fold
+                  (fun _ ((sp, sl, n) : vec * float * int) (acc : patch list) ->
+                    let flux = sl *. refl *. area in
+                    if flux <= 0. then acc
+                    else
+                      let pos = scale (1. /. float n) sp in
+                      {
+                        pos;
+                        pnormal = l.normal;
+                        flux;
+                        (* (at most 1,024 units: the time bounded) *)
+                        reach2 =
+                          Float.min (1024. *. 1024.) (flux /. (pi *. least));
+                        leaf =
+                          (Model.leaf_at m (add pos (scale 4. l.normal))).lindex;
+                      }
+                      :: acc)
+                  groups []
+                |> List.sort compare)
+              lits))
+    in
+    let got =
+      Array.map (fun (l : lit) -> Array.make (Array.length l.pts) 0.) lits
+    in
+    List.iter
+      (fun (pa : patch) ->
+        let vis = row pa.leaf in
+        let reach = sqrt pa.reach2 in
+        Array.iteri
+          (fun (i : int) (l : lit) ->
+            let r = leaves.(i) in
+            (* in a leaf the patch's may see; near enough; each in
+             * front of the other *)
+            let seen =
+              r > 0
+              && Char.code (Bytes.get vis ((r - 1) lsr 3))
+                 land (1 lsl ((r - 1) land 7))
+                 <> 0
+            in
+            let to_mid = sub mids.(i) pa.pos in
+            if
+              seen
+              && length to_mid -. radius.(i) < reach
+              && dot to_mid pa.pnormal > -.radius.(i)
+              && -.dot to_mid l.normal > -.radius.(i)
+            then
+              Array.iteri
+                (fun (k : int) (p : vec) ->
+                  let d = sub p pa.pos in
+                  let d2 = dot d d in
+                  if d2 < pa.reach2 then begin
+                    let dl = sqrt d2 in
+                    let ce = dot d pa.pnormal /. dl
+                    and cr = -.dot d l.normal /. dl in
+                    if ce > 0. && cr > 0. then begin
+                      (* (no nearer than a patch's size: no infinity
+                       * where it touches) *)
+                      let e =
+                        pa.flux *. ce *. cr /. (pi *. Float.max d2 1024.)
+                      in
+                      if e > least && first_hit hull root pa.pos p = -1 then
+                        got.(i).(k) <- got.(i).(k) +. e
+                    end
+                  end)
+                l.pts)
+          lits)
+      patches;
+    (* what each face got, added to its steady light, and sent next *)
+    Array.iteri
+      (fun (i : int) (l : lit) ->
+        match List.assoc_opt 0 l.maps with
+        | Some a ->
+            Array.iteri
+              (fun (k : int) (v : float) -> a.(k) <- a.(k) +. v)
+              got.(i)
+        | None ->
+            if Array.exists (fun (v : float) -> v > 1.) got.(i) then
+              l.maps <- (0, Array.copy got.(i)) :: l.maps)
+      lits;
+    sent := got
+  done
+
+(* 3. the sums made bytes: the least light, style 0 first, 4 at most,
+ * halved (id's rangescale), clamped *)
+let finish (minlight : float) (l : lit) : (int * string) list =
+  let n = Array.length l.pts in
+  let maps = ref l.maps in
+  let map_of (style : int) : float array =
+    match List.assoc_opt style !maps with
+    | Some a -> a
+    | None ->
+        let a = Array.make n 0. in
+        maps := !maps @ [ (style, a) ];
+        a
+  in
   if minlight > 0. then begin
     let a = map_of 0 in
     Array.iteri
@@ -343,7 +580,7 @@ let light_face (m : Model.t) (lights : light list) (sun : (vec * float) list)
 (*****************************************************************************)
 
 let make (caps : < Cap.open_in ; Cap.open_out ; Cap.stdout ; .. >)
-    (input : string) (output : string) : unit =
+    (input : string) (output : string) (palette : string option) : unit =
   let bsp = Bspfile.parse (FS.read caps (Fpath.v input)) in
   let m = Model.load bsp in
   let world = match m.entities with w :: _ -> w | [] -> [] in
@@ -364,6 +601,18 @@ let make (caps : < Cap.open_in ; Cap.open_out ; Cap.stdout ; .. >)
     else List.map (fun (d : vec) -> (scale (-1.) d, v /. 32.)) dome
   in
   let minlight = float_value world "light" 0. in
+  let lits =
+    Array.of_list
+      (List.filter_map
+         (fun (f : surface) ->
+           if f.texinfo.special then None else Some (direct m lights sun f))
+         (Array.to_list m.surfaces))
+  in
+  let passes = int_of_float (float_value world "_bounce" 0.) in
+  let bouncescale = float_value world "_bouncescale" 1. in
+  if passes > 0 then bounce m lits palette passes bouncescale;
+  let by_face = Array.make (Array.length m.surfaces) None in
+  Array.iter (fun (l : lit) -> by_face.(l.face.index) <- Some l) lits;
   let data = Buffer.create 1_000_000 in
   let faces = Bytes.of_string bsp.lumps.(Bspfile.faces) in
   let lit = ref 0 in
@@ -371,7 +620,7 @@ let make (caps : < Cap.open_in ; Cap.open_out ; Cap.stdout ; .. >)
     (fun (f : surface) ->
       let o = f.index * 20 in
       let maps =
-        if f.texinfo.special then [] else light_face m lights sun minlight f
+        match by_face.(f.index) with Some l -> finish minlight l | None -> []
       in
       List.iteri
         (fun (i : int) ((s, _) : int * string) ->
@@ -402,6 +651,7 @@ let () =
       Exit.exit caps @@ Exit.catch
       @@ fun () ->
       (match Array.to_list (CapSys.argv caps) with
-      | [ _; i; o ] -> make caps i o
+      | [ _; i; o ] -> make caps i o None
+      | [ _; i; o; p ] -> make caps i o (Some (FS.read caps (Fpath.v p)))
       | _ -> failwith usage);
       Exit.OK)

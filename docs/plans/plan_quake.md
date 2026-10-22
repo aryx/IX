@@ -44,8 +44,9 @@ read through chocolate-quake, which keeps its C paths.
    by the angle, a lightmap a style (up to 4 a face). Extensions of
    ericw's the map asks, kept small: `_sunlight` (a ray towards the
    sun that ends in the sky), `mangle` spotlights, `wait`, `delay`'s
-   falloffs. Not `_bounce`, `_dirt` (ambient occlusion), colour (the
-   `.lit`): vanilla Quake's lightmaps are one byte a sample.
+   falloffs; `_bounce` since (below). Not `_dirt` (ambient
+   occlusion), colour (the `.lit`): vanilla Quake's lightmaps are one
+   byte a sample.
 3. **The texture WADs from LibreQuake's PNGs** (`tools/Mkwad.ml`,
    `mini-mkwad2`, WAD2): the PNGs are already of Quake's palette,
    indexed; each miptex's four mips made as id's `qlumpy` did (2 by
@@ -182,10 +183,35 @@ mini-9pi), 6 not started.
   sky), 116 million in the soldiers' room (its surfaces made, three
   models); Doom's frame was 40 million. To start: 382 million (the
   .bsp read), 586 with the models (2,517 million before the models'
-  normals were made only for the frames drawn). So a few frames a
-  second on the Pi 2, below mini-doom's 8, until what plan_doom.md's
-  stage 6 and the compiler's plans give.
+  normals were made only for the frames drawn). Those counts are of
+  the first frames, which make the surfaces the cache keeps after.
+  Under QEMU, the author (2026-10-22): "under qemu actually quake
+  seems to be around 7fps, almost like doom" (mini-doom's 5 to 6
+  there): once the cache holds a view's surfaces, a frame's work is
+  its spans, and the picture's way to the screen, the same as Doom's.
 - 4,521 lines of `.ml` at 80 columns (ocamlformat's margin; 3,159 before
   it, Doom's 3,348 with its longer lines), 1,111 of `.mli`; the tools 610.
-- Not run: mini-9pi under QEMU or mini-qemu, the Pi 2; the card not
+- **The bounce** (2026-10-22, the author: "let's do 1 and commit", 1
+  being the bounce): `tools/Light.ml`'s section 2, ericw's `_bounce`
+  (lq_e0m1 asks 3 passes). The samples by 4 by 4 are patches that send
+  back what they received times their texture's mean colour (the
+  palette's, now `mini-light`'s third argument), to the samples they
+  see (a trace) from a leaf their PVS has, as
+  light x reflectivity x area x cos x cos / (pi d^2): physical, a
+  sample before a wide wall of light L gets L times its reflectivity.
+  `_bouncescale` (ericw's key, 1) multiplies it. On lq_e0m1, 13 s (2
+  without), the mean sample 42.9 to 46.7; on the hub, 35.3 to 37.1,
+  ericw's 55.7. LibreQuake's textures reflect 16% on average (7 to
+  52), so the physical bounce is a faint light in the shadows (the
+  crates' dark sides no longer black), not ericw's brightness, which
+  is stronger than physical. A scale of 2 ran past 12 minutes (brighter
+  patches reach farther: the traces grow with the square), so the reach
+  is capped at 1,024 units. A contribution under 0.05 is not traced
+  (at 0.5, two thirds of the light was lost in small parts).
+- **A bug found on the way**: `Model` cut each mip as
+  `w * h lsr (2 * k)`, which is `w * (h lsr 2k)`: the smallest mip of
+  a texture less than 64 high was empty, and a far face drawn with it
+  read past its string (`unsafe_get`). Now `(w * h) lsr (2 * k)`; the
+  frames' sums recorded again (the new lightmaps changed them all).
+- Not run (by me): mini-9pi under QEMU or mini-qemu, the Pi 2; the card not
   remade; `make test-lite`; the reference (stage 6).

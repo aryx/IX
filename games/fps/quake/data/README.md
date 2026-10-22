@@ -18,11 +18,13 @@ Quake map is, by three tools:
    runs on several threads, and two runs may differ in a few bytes of
    the PVS (13,036 and 13,043 bytes here), not in what it says;
 3. `light`: ours, `tools/Light.ml` (`mini-light`), id's algorithm
-   (plan_quake.md, decision 2). ericw-tools' `light` was not used:
-   nixpkgs' is built without embree and does not run.
+   (plan_quake.md, decision 2), with the bounce the map asks
+   (`_bounce 3`) and LibreQuake's palette for the textures' colours:
+   13 s. ericw-tools' `light` was not used: nixpkgs' is built without
+   embree and does not run.
 
 A `.bsp` of version 29, 1.6 MB: 3,507 faces, 108 textures (981 KB with
-their mips), 1,053 leaves, 159 KB of lightmaps, 25 brush models.
+their mips), 1,053 leaves, 161 KB of lightmaps, 25 brush models.
 
 `palette.lmp` and `colormap.lmp` are LibreQuake's `lq1/gfx/` ones: the
 palette is id's (the same bytes), the colormap 64 rows of light by 256

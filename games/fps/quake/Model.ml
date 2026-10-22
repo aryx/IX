@@ -267,7 +267,7 @@ let load_textures (lump : string) : texture option array =
               Array.init 4 (fun (k : int) ->
                   String.sub lump
                     (o + Bspfile.int32 lump (o + 24 + (4 * k)))
-                    (w * (h lsr (2 * k))))
+                    ((w * h) lsr (2 * k)))
             in
             Some
               {

@@ -16,8 +16,15 @@ or something, but first, let's do mini-doom".
 on 2026-10-07 ("use that only as a last resort"), its target then
 TinyDoom's shapes. mini-doom is the other kind of game that plan
 foresaw: one that makes its own pixels, every one of them at each
-frame. **Nothing here is begun: this is the proposal, for the
-author's review.**
+frame.
+
+Where it stands (2026-10-22, the Status at the end tells it): **F2 is
+done** (mini-doom 8 to 15-24 frames a second on the Pi 2, mini-quake
+about 15); **F5, redefined as an integer scaled draw in the kernel, and
+F4 are next**, for a picture larger than 320 by 200 at the same speed
+(the author: "now it would be great if we could enlarge the screen
+since right now the doom "window" is very small on the whole
+screen"); F1 and F3 after, if their gains are measured to matter.
 
 ## What a frame of mini-doom costs now (2026-10-22, measured)
 
@@ -166,30 +173,83 @@ scaling that is most of the second row of the table above. With
 and the framebuffer platform writes it where it fits, centred. Needed
 by F1 and F3, useful alone (the draw platform's slow case gone).
 
-### F5. Scaling in the kernel, if the copy matters
+Measured again after F2 (2026-10-22): `size=` caps the square, so
+`scale=2` (640 by 400 in a square of 640) is a whole multiple and takes
+the Pixels path; `scale=3` (960 by 600) and `scale=4` (1280 by 800) do
+not fit the square of the screen's shorter side (768 under QEMU),
+are scaled down blended, and drew fewer than 40 frames in 20 seconds.
+With F4, `scale=3` is 960 by 600 on a screen of 1024 by 768, whole,
+the largest whole multiple there; `scale=4` needs a screen of 1280 by
+800 at least (the author's monitor is 1280 by 800, mini-9pi's 1024 by
+768 stretched to it). The author, of this:
+"yes we can't go through blending I think so we need to scale in
+fixed number".
 
-A frame of 320 by 200 doubled is 512 KB to write at 16 bits; the
-kernel could double it while copying (`framebufferctl`: `scale 2`),
-the program writing 128 KB. 9front does the same in its draw device
-(`affinewarp`). Only if F1's measures say the write is a frame's
-larger part.
+### F5. Scaling in the kernel: a draw by a whole number
+
+The author (2026-10-22), seeing `scale=2` at 8-9 frames a second under
+QEMU where `scale=1` was 13-14: "can't we get this scale kernel side
+instead? so we load the same bytes, but they are scaled then? Or maybe
+it's a hack". Not a hack: the step a GPU does in Chocolate Doom (a
+texture shown larger), and the device's in 9front's doom (affinewarp).
+
+Where `scale=2`'s frame goes today (Pixels at k = 2): the table pass
+writes each index twice in a row and the row twice (mini-ml's code, k
+times the work: most of its 53-81 ms of messages), and the load and the
+device's copies carry 512 KB instead of 128 (notes_frame.md, Part II:
+five copies of it). With the scaling in the kernel, the program's part
+is scale 1's whatever the scale: 128 KB made, loaded into the kept
+image; then one message draws that image onto a rectangle k times its
+size, each pixel k by k, from the image straight to the window's back
+image: the 512 KB written once, by the kernel's code (ocaml-light's),
+with no image of that size in between.
+
+Three ways it could be asked, the first proposed:
+
+- **A scaled draw**, a message of its own beside 'd': the destination,
+  its rectangle, the source image and its point, and k (a whole
+  number, 1 to 8: no blending, never a fraction). Kdraw's OCaml
+  pixels (lib_memdraw) do it: each destination row is a source row's
+  pixels each written k times, the k - 1 rows after it copies of it
+  (block copies); only when the two images are of one format and no
+  mask (else an error: the program has the slow way). Principia's C
+  pixels (`PIXEL=c`) answer it with an error, not a second
+  implementation.
+- A scaled load ('y' into an image k times larger): the program sends
+  128 KB, but the 512 KB image is still made, then copied by 'd': one
+  copy of 512 KB more than the scaled draw.
+- An image flagged scaled (its draws replicate): no new message, but a
+  state on an image that every drawing must know about.
+
+What it is not: Plan 9's draw protocol has no scaling at all (a
+picture is drawn at its size, or through a mask); this is an
+extension of ix's, said as such in Devdraw and lib_graphics's Draw.
+F4 is needed with it, for k = 3.
+
+Expected: a frame at k = 2 or 3 near k = 1's 13-14 under QEMU (the
+program's part the same, the kernel's loop simple); to be measured.
 
 ## The stages
 
-1. **F4**: the draw and software platforms honour `window`; mini-doom
-   asks for it. Measured: mini-doom at `scale=2`, 640 by 400 shown as
-   it is (today under 2 a second).
-2. **F1**: `#f` in mini-9pi (`framebufferctl`, `framebuffer`), the
-   screen given back on close; a test program that fills the screen
-   with a gradient and reads it back (`kernels/9pi/tests`).
-3. **F2**: `Playground.Pixels`, drawn by every platform (ppm, sdl,
-   draw, software), mini-doom giving its bytes and palette; the
+In the order of 2026-10-22's evening (the first order was F4, F1, F2,
+F3, F5):
+
+1. **F2** (done): `Playground.Pixels`, drawn by every platform,
+   mini-doom and mini-quake giving their bytes and palette; the
    frames' tests the same pictures.
-4. **F3**: the framebuffer's record, and the platform chosen at run
-   time; mkgames' `-soft` builds and the card's `*-soft` gone.
-   Measured: mini-doom's frame on the three, under QEMU and on the
-   author's Pi1 (E1 of the speed plan).
-5. **F5**, only by stage 4's numbers.
+2. **F5**: the scaled draw in the kernel (Devdraw, lib_memdraw;
+   lib_graphics's Draw), the draw platform using it for Pixels at a
+   whole multiple; a test of the kernel's (a picture drawn at k = 2
+   and 3, read back, compared with the program's own doubling).
+3. **F4**: the Plan 9 platforms honour `window` (the picture's own
+   size, not a square), so that `scale=3` fits a screen of 1024 by
+   768. Measured: mini-doom and mini-quake at scales 1, 2, 3 under
+   QEMU, the screens looked at; then the author's Pi 2.
+4. **F1**, if the show at scale 1 (15-20 ms) is then worth it: a
+   window of rio's costs about what the bare screen does (the author:
+   "running under rio gives similar number"), and F1 is the bare
+   screen's only.
+5. **F3**: the platform chosen at run time, if F1 is made.
 
 ## Open questions, for the author
 
@@ -198,10 +258,14 @@ larger part.
 - The screen taken from rio's windows while a program has it: rio
   itself running under it (its windows redrawn after), or only from
   the console?
-- `Playground.Pixels` (a new shape, the playground's file changed), or
-  RGBA only?
+- ~~`Playground.Pixels` (a new shape, the playground's file changed), or
+  RGBA only?~~ Pixels (F2).
 - The screen at 32 bits (K5) first, since every path is simpler with
   one format?
+- F5: a message of ix's own in the draw protocol (proposed), and its
+  letter; or the scaled load, which needs no new drawing in memdraw?
+- `scale=4`: mini-9pi's screen on the Pi at 1280 by 800 (the author's
+  monitor), or 1024 by 768 and `scale=3` the largest?
 
 ## Status
 
@@ -260,3 +324,21 @@ of the device's loaded with 4 bytes a pixel).
 - Checked: games, examples, office and drscheme's frames' tests (130
   sessions) the same; mini-mk O=5 OS=plan9 of lib_playground, its
   platforms and apis, mini-doom, mini-quake.
+
+2026-10-22, later, **a larger picture** (the author: "now it would be
+great if we could enlarge the screen since right now the doom
+"window" is very small on the whole screen; not sure how to remain
+fast; maybe by doublimg/scaling", "maybe we can scale=4 to get the
+whole screen?"). Under QEMU, the main tree's card, the up arrow held
+20 s (an argument with `=` is quoted for rc: `doom 'scale=2'`):
+
+| mini-doom | frames a second | the view | the show (the messages) |
+|---|---|---|---|
+| `scale=1` | 13 to 14 | 37-46 ms | 17-22 (13-17) |
+| `scale=2`, 640 by 400 | 8 to 9 | 29-43 | 56-83 (53-81) |
+| `scale=3`, 960 by 600 | under 2: no meter's line in 20 s | | |
+| `scale=4`, 1280 by 800 | under 2 | | |
+
+`scale=2` is a whole multiple and takes the Pixels path, but pays it
+k times (F5); 3 and 4 do not fit the square (F4). Hence F5 and F4, the
+plan's next stages.

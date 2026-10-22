@@ -1,0 +1,4 @@
+; build/ is what the Makefile makes, not sources: make self copies the
+; card's /src there (build/self/src), the repository with its
+; dune-project, which dune would read as a second package ix.
+(dirs :standard \ build)

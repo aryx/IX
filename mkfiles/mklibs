@@ -17,9 +17,11 @@
 #   $ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Main Std_exit ...
 # (not ${LIBDIRS:%=$B/%/lib.a}: of an empty list, mk gives the name
 # LIBDIRS; mkprog's programs name none)
-LIBA=`{for(d in $LIBDIRS) echo $B/$d/lib.a}
-LIBSRC=`{for(d in $LIBDIRS) $WALK $TOP/$d | awk '/\.mli?$|\/mkfile$/ && !/\/tests\//'}
-LIBI=`{$RC $TOP/mkfiles/dirs.rc $B $LIBDIRS}
+# The three by mkfiles/libs.rc, one rc for them.
+# old: LIBA=`{for(d in $LIBDIRS) echo $B/$d/lib.a}
+#      LIBSRC=`{for(d in $LIBDIRS) $WALK $TOP/$d | awk ...}
+#      LIBI=`{$RC $TOP/mkfiles/dirs.rc $B $LIBDIRS}
+<|. $TOP/mkfiles/libs.rc libs
 
 $B/%/lib.a:
 	echo 'mklibs: '^$target^' not built: the libraries first, in their order (mini-mk O='^$O^' OS='^$OS^' libs at the top)' >[1=2]

@@ -14,14 +14,18 @@
 # which asked its own needed ones: mini-mk run again and again by every
 # mkfile read, a build where nothing changed 25 times slower
 D=$B/$LIB
-NEEDI=`{$RC $TOP/mkfiles/dirs.rc $B $NEEDS}
-NEEDD=`{for(d in $NEEDS) echo $B/$d/dirs}
+# NEEDI, NEEDD and LOCAL (below) by mkfiles/libs.rc, one rc for them,
+# which makes $D too (below)
+# old: NEEDI=`{$RC $TOP/mkfiles/dirs.rc $B $NEEDS}
+#      NEEDD=`{for(d in $NEEDS) echo $B/$d/dirs}
+#      LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null}
+#      MADE=`{mkdir -p $D}
+<|. $TOP/mkfiles/libs.rc lib
 # (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too; $D: a unit
 # made there, by mini-yacc or mini-lex, the mkfile saying how, as
 # typesetting/troff's pic grammar)
 INCLUDES=${DIRS:%=-I ./%} -I $D $NEEDI $STDI
 OBJS=${UNITS:%=$D/%.$O}
-LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null}
 # $D made once, as the mkfile is read: on mini-9pi a process is a tenth
 # of a second, and each unit's recipe made it, then looked for its
 # source with an ls in each directory (up to ten processes a unit, a
@@ -30,7 +34,6 @@ LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null}
 # when no directory has it.
 # old: mkdir -p $D
 #      for(d in $DIRS $D) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
-MADE=`{mkdir -p $D}
 
 # (lib: what mkfiles/mklibs asks; a library's mkfile may make a program
 # too, all then, as browsers/javascript's mini-node)

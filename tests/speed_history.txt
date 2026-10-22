@@ -2,3 +2,8 @@
 2026-10-21 c5a9003e build-9pi   201.5 s
 2026-10-21 ec719b1a build-9pi     8.5 s
 2026-10-21 ec719b1a cameltry     26.7 fps
+2026-10-22 ca664887 build-9pi    24.1 s
+2026-10-22 ca664887 build-top     5.6 s
+2026-10-22 ca664887 cameltry     33.3 fps
+2026-10-22 9e096d2b build-9pi    12.0 s
+2026-10-22 9e096d2b build-top     2.8 s

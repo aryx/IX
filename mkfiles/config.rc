@@ -1,0 +1,37 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# mkconfig's values that depend on the system, as mk text, for mk's <|:
+# one rc and one echo where a backquote each took an rc and an echo
+# (7 of them, read by every mini-mk: three times longer a build where
+# nothing changed, 2026-10-22). Read by rc's . (no rc started for it),
+# in two parts: machine (from $objtype, as before mkconfig's O and OS
+# from the command line, which mk keeps over these), then system (from
+# the O and OS mk then has).
+# usage: <|. $TOP/mkfiles/config.rc machine|system
+switch($1){
+case machine
+	# the tools' names: mini-ml on Linux, ml on mini-9pi's card
+	p=''
+	o=5
+	os=plan9
+	if(~ $#objtype 0){ p=mini-; o=7; os=linux }
+	if(~ $objtype arm64) o=7
+	echo 'TOOLPRE='^$p^'
+O='^$o^'
+OS='^$os
+case system
+	ldh=-H7
+	b=$TOP/_mk/$O-$OS
+	unixdir=system
+	p9dir=commons
+	if(~ $OS plan9){ ldh=-H2; unixdir=system/plan9; p9dir=system/plan9 }
+	if(~ $OS linux) b=$TOP/_mk/$O
+	# (rc's glob, not an ls)
+	rtsrc=($TOP/languages/ml/runtime/*.[ch])
+	echo 'LDH='^$ldh^'
+B='^$b^'
+UNIXDIR='^$unixdir^'
+P9DIR='^$p9dir^'
+RTSRC='^$"rtsrc
+}

@@ -7,12 +7,13 @@
 # mini-mk's own default on Plan 9), so that mini-9pi builds ix from
 # the same mkfiles (docs/plans/plan_self_hosting.md).
 
-# the tools' names: mini-ml on Linux, ml on mini-9pi's card, which
-# sets $objtype as Plan 9 does (its mk reads it; Linux has none)
-TOOLPRE=`{~ $#objtype 0 && echo mini-}
-# the machine: 7 (arm64) or 5 (arm), as Plan 9's letters; on Plan 9
-# its own, by $objtype
-O=`{if(~ $#objtype 0) echo 7; if not if(~ $objtype arm64) echo 7; if not echo 5}
+# (what depends on the system is mkfiles/config.rc's, rc's work: a
+# backquote each was an rc and an echo, read by every mini-mk)
+# TOOLPRE, the tools' names: mini-ml on Linux, ml on mini-9pi's card,
+# which sets $objtype as Plan 9 does (its mk reads it; Linux has none);
+# O, the machine: 7 (arm64) or 5 (arm), as Plan 9's letters; on Plan 9
+# its own, by $objtype; OS (below)
+<|. $TOP/mkfiles/config.rc machine
 ML=${TOOLPRE}ml -m $O
 CC=${TOOLPRE}cc -m $O
 AS=${TOOLPRE}asm -m $O
@@ -28,14 +29,11 @@ MK=${TOOLPRE}mk
 
 # the system the programs are for: linux, or plan9 (plan_rio.md: for
 # mini-9pi; arm only today: mini-mk O=5 OS=plan9), its executables
-# Plan 9's a.out (mini-ld -H2); on Plan 9 its own
-OS=`{if(~ $#objtype 0) echo linux; if not echo plan9}
-LDH=`{if(~ $OS plan9) echo -H2; if not echo -H7}
-
-# what is made goes there, not beside the sources: dune reads those
+# Plan 9's a.out (LDH, mini-ld -H2); on Plan 9 its own (config.rc)
+# B: what is made goes there, not beside the sources: dune reads those
 # directories too, and would take a Parser.ml for a source; Plan 9's
-# beside Linux's (_mk/5-plan9)
-B=`{if(~ $OS linux) echo $TOP/_mk/$O; if not echo $TOP/_mk/$O-$OS}
+# beside Linux's (_mk/5-plan9). UNIXDIR, P9DIR and RTSRC: below.
+<|. $TOP/mkfiles/config.rc system
 L=$B/lib_core
 
 # the stdlib's units, in the order they are linked and initialized
@@ -50,10 +48,8 @@ STD=Pervasives Int32 Int64 Seq List Char Uchar String Bytes Array Sys Hashtbl Fi
 COMMONS=Common I64 Binary Utf8 Console Logging Procs Json Set_ Map_ Regex Sys_plan9 Exception Exit Arg_ Fpath_ Chan FS Source
 STDDIRS=core base collections printing parsing system concurrency commons
 # (Unix is the system's: Linux's in system/, Plan 9's in system/plan9/,
-# with an interface of its own, found first)
-UNIXDIR=`{if(~ $OS plan9) echo system/plan9; if not echo system}
-# (and Sys_plan9, Plan 9's own for ix's programs: nothing elsewhere)
-P9DIR=`{if(~ $OS plan9) echo system/plan9; if not echo commons}
+# with an interface of its own, found first: UNIXDIR; and Sys_plan9,
+# Plan 9's own for ix's programs, nothing elsewhere: P9DIR)
 STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here),
 # kept in a library: a program links the units it uses (mini-ml -start
@@ -63,6 +59,5 @@ STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
 STDUNITS=${STD:%=$L/%.$O} ${COMMONS:%=$L/%.$O}
 STDOBJS=$L/lib_core.a
 STDEND=$L/std_exit.$O $L/runtime.$O $L/libc.a
-# mini-ml's runtime's sources: runtime.c, the one file compiled, the
-# parts it includes (gc.c, io.c...) and its headers
-RTSRC=`{ls $TOP/languages/ml/runtime/*.[ch]}
+# RTSRC (config.rc): mini-ml's runtime's sources, runtime.c, the one
+# file compiled, the parts it includes (gc.c, io.c...) and its headers

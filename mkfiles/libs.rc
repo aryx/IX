@@ -1,0 +1,48 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# What mkfiles/mklibs and mkfiles/mklib find of the libraries, as mk
+# text for mk's <|, read by rc's . (no rc started for it): a backquote
+# each was an rc, and an echo, a cat or an ls for each library or
+# directory (2026-10-22: with mkconfig's, a build where nothing changed
+# three times longer than by sh's backquotes). mk's variables are the
+# environment.
+#   <|. $TOP/mkfiles/libs.rc libs   mklibs: LIBA, LIBSRC and LIBI, of
+#                                   LIBDIRS (and B, TOP, WALK)
+#   <|. $TOP/mkfiles/libs.rc lib    mklib: NEEDI and NEEDD, of NEEDS;
+#                                   LOCAL, of DIRS; and $D made
+
+# the -I of libraries (each library's as it wrote them beside its
+# archive, mkfiles/mklib's dirs), a directory once
+fn dirs {
+	{ for(d in $*) cat $B/$d/dirs >[2]/dev/null || echo 'mk: '^$d^'''s library not built: the libraries first (mini-mk libs at the top)' >[1=2] } | awk '!seen[$0]++'
+}
+
+switch($1){
+case libs
+	a=()
+	s=()
+	i=()
+	if(! ~ $#LIBDIRS 0){
+		a=$B/$LIBDIRS^/lib.a
+		s=`{$WALK $TOP/$LIBDIRS | awk '/\.mli?$|\/mkfile$/ && !/\/tests\//'}
+		i=`{dirs $LIBDIRS}
+	}
+	echo 'LIBA='^$"a^'
+LIBSRC='^$"s^'
+LIBI='^$"i
+case lib
+	i=()
+	n=()
+	if(! ~ $#NEEDS 0){
+		i=`{dirs $NEEDS}
+		n=$B/$NEEDS^/dirs
+	}
+	# (rc's globs: a pattern that matches nothing stays as it is)
+	l=()
+	for(f in $DIRS^/*.ml $DIRS^/*.mli) if(! ~ $f *'*'*) l=($l $f)
+	mkdir -p $D
+	echo 'NEEDI='^$"i^'
+NEEDD='^$"n^'
+LOCAL='^$"l
+}

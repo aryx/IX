@@ -39,6 +39,12 @@
  * where the last link was followed from, as a browser's Back: a
  * book's references are a jump there and a jump back.
  *
+ * A file is opened where it was left: its place (how far down, the
+ * zoom, the turn) kept in a file of places, written once the window
+ * has been still half a second, and on q (a window closed or Ctrl+Q
+ * ends the program without a word to it: a place kept only at the end
+ * would be lost). -v says which file (Logs.info).
+ *
  * Not done: page's menu of the pages (a number and Enter goes to
  * one); a file's outline; text found or copied (-t prints a file's
  * words).
@@ -69,9 +75,11 @@
  * docs/plans/done/plan_pdf.md. *)
 
 let usage =
-  "usage: mini-page file            a PDF file's pages, or a picture (PNG, JPEG), in a window\n\
+  "usage: mini-page file            a PDF file or a picture (PNG, JPEG) in a window\n\
+  \       mini-page -v file         and says where it keeps the files' places\n\
+  \       mini-page places=off file not where it was left (places=FILE: another)\n\
   \       mini-page -t file         the words of each page, printed\n\
-  \       mini-page -ppm n file out page n's picture written to out (a PPM), a pixel a point\n\
+  \       mini-page -ppm n file out page n to out (a PPM), a pixel a point\n\
    in the window:\n\
   \  space, PageDown, right        the next page\n\
   \  Backspace, PageUp, left       the page before\n\
@@ -119,6 +127,10 @@ let size (s : source) (page : int) (turn : int) : float * float =
 (* The model *)
 (*****************************************************************************)
 
+(* a file's place: how far down its pages at a zoom of 1 (the pages'
+ * heights are a zoom's multiple), the zoom, the turn *)
+type place = float * float * int
+
 (* a picture kept: of which page, at which zoom (in thousandths) and
  * turn; and the page's links, read with it (a book's named
  * destinations are a tree of objects to walk: not each frame) *)
@@ -155,6 +167,12 @@ type model = {
   held : (float * float) option;
   pressed : float * float;
   hand : bool;
+  (* the place of the frame before, for how many frames it has not
+   * changed, and the one kept last in the file of places *)
+  place : place;
+  still : int;
+  saved : place;
+  remember : place -> unit;
   quit : unit -> unit;
   (* an address shown, by another program *)
   open_url : string -> unit;
@@ -265,7 +283,11 @@ let fit (width : float) (m : model) : model =
   in
   go m.page { m with zoom; x = 0. }
 
-let start (name : string) (bytes : string) ~(quit : unit -> unit)
+let place_of (m : model) : place = (m.down /. m.zoom, m.zoom, m.turn)
+
+(* the file's pages, at the place it was left if one is kept *)
+let start (name : string) (bytes : string) ~(was : place option)
+    ~(remember : place -> unit) ~(quit : unit -> unit)
     ~(open_url : string -> unit) : model =
   let s =
     Playground.to_screen Playground.default_width Playground.default_height
@@ -273,9 +295,20 @@ let start (name : string) (bytes : string) ~(quit : unit -> unit)
   let m =
     { name; source = source bytes; page = 0; zoom = 1.; turn = 0;
       down = 0.; x = 0.; kept = []; number = ""; back = []; was = [];
-      held = None; pressed = (0., 0.); hand = false; quit; open_url }
+      held = None; pressed = (0., 0.); hand = false;
+      place = (0., 1., 0); still = 0; saved = (0., 1., 0); remember; quit;
+      open_url }
   in
-  drawn s (within s (fit s.width m))
+  let m = within s (fit s.width m) in
+  let m =
+    match was with
+    | Some (down, zoom, turn)
+      when zoom >= 0.1 && zoom <= 8. && turn >= 0 && turn < 4 ->
+        let m = within s { m with zoom; turn; down = down *. zoom } in
+        { m with page = middle s m }
+    | _ -> m
+  in
+  drawn s { m with place = place_of m; saved = place_of m }
 
 (*****************************************************************************)
 (* Links *)
@@ -384,7 +417,10 @@ let update (computer : Playground.computer) (m : model) : model =
     else if typed '-' then zoomed s 0.8 m
     else if typed 'f' then fit s.width m
     else if typed 'r' then fit s.width { m with turn = (m.turn + 1) mod 4 }
-    else if typed 'q' then (m.quit (); m)
+    else if typed 'q' then (
+      if place_of m <> m.saved then m.remember (place_of m);
+      m.quit ();
+      m)
     else if typed 'b' then
       match m.back with
       | (page, down) :: back -> { m with page; down = down *. m.zoom; back }
@@ -424,7 +460,87 @@ let update (computer : Playground.computer) (m : model) : model =
   if hand <> m.hand then
     Playground_platform.set_cursor
       (if hand then Playground.Hand else Playground.Arrow);
-  { m with hand }
+  (* the place kept once still half a second (at 60 frames a second) *)
+  let place = place_of m in
+  let still = if place = m.place then m.still + 1 else 0 in
+  if still = 30 && place <> m.saved then (
+    m.remember place;
+    { m with hand; place; still; saved = place })
+  else { m with hand; place; still }
+
+(*****************************************************************************)
+(* Where each file was left *)
+(*****************************************************************************)
+
+(* the file of places: places=FILE, or none with places=off; else
+ * $XDG_CONFIG_HOME/mini-page/places, ~/.config/mini-page/places, or on
+ * Plan 9 $home/lib/mini-page/places (mini-netscape's profile's ways) *)
+let places_file (caps : < Cap.env ; .. >) (flags : Playground.flags) :
+    string option =
+  let env (name : string) : string option =
+    match CapSys.getenv caps name with
+    | "" -> None
+    | v -> Some v
+    | exception Not_found -> None
+  in
+  let ( / ) = Filename.concat in
+  match List.assoc_opt "places" flags with
+  | Some "off" -> None
+  | Some file -> Some file
+  | None -> (
+      match (env "XDG_CONFIG_HOME", env "HOME", env "home") with
+      | Some config, _, _ -> Some (config / "mini-page" / "places")
+      | None, Some home, _ -> Some (home / ".config" / "mini-page" / "places")
+      | None, None, Some home -> Some (home / "lib" / "mini-page" / "places")
+      | None, None, None -> None)
+
+(* a line a file, the last left first: "down zoom turn path" *)
+let read_places (caps : < Cap.open_in ; .. >) (file : string) :
+    (string * place) list =
+  match FS.read_opt caps (Fpath.v file) with
+  | None ->
+      Logs.info (fun m -> m "places: no %s yet" file);
+      []
+  | Some text ->
+      Logs.info (fun m -> m "places: reading %s" file);
+      List.filter_map
+        (fun (line : string) ->
+          match String.split_on_char ' ' line with
+          | down :: zoom :: turn :: (_ :: _ as path) -> (
+              match
+                ( float_of_string_opt down,
+                  float_of_string_opt zoom,
+                  int_of_string_opt turn )
+              with
+              | Some down, Some zoom, Some turn ->
+                  Some (String.concat " " path, (down, zoom, turn))
+              | _ -> None)
+          | _ -> None)
+        (String.split_on_char '\n' text)
+
+(* the files kept, the last left first *)
+let kept_places = 100
+
+let write_places (caps : < Cap.open_out ; .. >) (file : string)
+    (places : (string * place) list) : unit =
+  Logs.info (fun m -> m "places: writing %s" file);
+  (* the directories made where they are not (Store's way: one there,
+   * or that may not be made, is the write's error) *)
+  let rec mkdir (dir : string) =
+    if dir <> "/" && dir <> "." && dir <> "" then begin
+      mkdir (Filename.dirname dir);
+      try FS.mkdir caps dir 0o755 with Unix.Unix_error _ -> ()
+    end
+  in
+  let line ((path, (down, zoom, turn)) : string * place) =
+    (* (%.17g: read back the same number, the same picture) *)
+    Printf.sprintf "%.17g %.17g %d %s\n" down zoom turn path
+  in
+  try
+    mkdir (Filename.dirname file);
+    FS.write caps (Fpath.v file) (String.concat "" (List.map line places))
+  with Sys_error why ->
+    Logs.warn (fun m -> m "places: %s" why)
 
 (*****************************************************************************)
 (* The view *)
@@ -520,6 +636,8 @@ let () =
             if n < 1 || n > Array.length pages then failwith (Printf.sprintf "%s has %d page(s)" file (Array.length pages));
             FS.write caps (Fpath.v out) (ppm (Pdf_render.render ~options:Pdf_render.full ~stroke_glyph:Pdf_render.hershey pdf cache pages.(n - 1) ~scale:1.))
         | _ -> (
+            (* the traces' reporter, before the flags: -v, -debug (Session) *)
+            Logging.setup caps ~name:"mini-page";
             let flags = Playground_platform.flags caps in
             (* the file: the first word that is no name=value *)
             match List.find_opt (fun ((_, value) : string * string) -> value = "") flags with
@@ -537,8 +655,35 @@ let () =
                          (Unix.error_message e))
                 in
                 let quit () = CapStdlib.exit caps 0 in
+                (* the file by its whole path, the same from anywhere *)
+                let path =
+                  FS.cleanname
+                    (if Filename.is_relative file then
+                       Filename.concat (FS.getcwd caps ()) file
+                     else file)
+                in
+                let places_file = places_file caps flags in
+                let places =
+                  ref
+                    (match places_file with
+                    | Some f -> read_places caps f
+                    | None -> [])
+                in
+                let remember (place : place) =
+                  match places_file with
+                  | Some f ->
+                      let rest = List.remove_assoc path !places in
+                      places :=
+                        List.filteri
+                          (fun (i : int) (_ : string * place) -> i < kept_places)
+                          ((path, place) :: rest);
+                      write_places caps f !places
+                  | None -> ()
+                in
+                let was = List.assoc_opt path !places in
                 let model =
-                  start (Filename.basename file) (read file) ~quit ~open_url
+                  start (Filename.basename file) (read file) ~was ~remember
+                    ~quit ~open_url
                 in
                 (* heap=modest: a page's picture is megabytes kept, not a
                  * game's floats of a frame (Plan9_loop says what it changes) *)

@@ -21,10 +21,12 @@ debugger is not the CPU: it is a process that controls another one.
 
 **Status: done (2026-10-21)**, steps 1 to 9: `debug` (TinyDebugger.ml,
 `-window` too) and `trace` (TinyTracer.ml, `-f` too) on tiny-kernel,
-in make check (session 26, and `debug.events`'s window). What is left:
-`make self` was not run with them (its self.expected lists the
-programs and their `ld -s` lines); the value stack's slots are
-words, not ML values (their types would be needed: section 4).
+in make check (session 26, and `debug.events`'s window); make self
+with them (2026-10-22, the host's image byte for byte). What is left:
+the value stack's slots are words, not ML values (their types would
+be needed: section 4); an attached debug cannot stop a running
+process (Plan 9's ctl has stop); a fork's breakpoints are not its
+child's.
 
 ## 1. The idea: stop, look, resume, by messages
 

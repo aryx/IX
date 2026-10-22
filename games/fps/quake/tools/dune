@@ -1,0 +1,8 @@
+; mini-mkwad2 (texture WADs from PNGs) and mini-light (the lightmaps):
+; mini-quake's level made from LibreQuake's source (run by hand:
+; games/fps/quake/data/README.md)
+(executables
+ (names Mkwad Light)
+ (public_names mini-mkwad2 mini-light)
+ (package ix)
+ (libraries ix_quake ix_graphics_images ix_graphics_core ix_core fpath caps unix))

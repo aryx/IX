@@ -1,0 +1,14 @@
+; games/fps/quake: mini-quake (docs/plans/plan_quake.md), Quake's
+; software renderer over a .bsp; here with the platform that writes a
+; frame to a file (the tests'); sdl/ is the one with a window,
+; bin/mini-quake
+(library
+ (name ix_quake)
+ (wrapped false)
+ (modules Bspfile Model View Edges Scan Surfcache Spans Bsp Trace Alias Things Render Brushes Play)
+ (libraries ix_core))
+
+(executable
+ (name Quake)
+ (modules Quake)
+ (libraries ix_quake ix_playground ix_playground_ppm ix_graphics_core ix_core fpath caps unix))

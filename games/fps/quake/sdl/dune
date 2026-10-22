@@ -1,0 +1,11 @@
+; mini-quake in a window on Linux (SDL): ../Quake.ml, the same text,
+; linked with the platform that has a window
+; (lib_playground/platforms/sdl). Dune's alone: SDL is outside what
+; mini-ml compiles, as Tetris's window.
+;   dune exec games/fps/quake/sdl/Quake.exe       (bsp=, scale=: Quake.ml)
+(copy_files ../Quake.ml)
+(executable
+ (name Quake)
+ (public_name mini-quake)
+ (package ix)
+ (libraries ix_quake ix_playground ix_playground_sdl ix_graphics_core ix_core fpath caps unix))

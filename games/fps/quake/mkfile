@@ -1,0 +1,40 @@
+# mini-quake, built by ix's tools (docs/plans/plan_quake.md): its units,
+# compiled here, then the program, linked with the libraries
+# (mkfiles/mklibs): the playground and one platform of it, the
+# pictures' core. The platform is ppm's on Linux (no window: a frame
+# written to a file, the tests'), the draw device's with OS=plan9
+# (mini-9pi: a window of mini-rio, or the bare screen, as the games',
+# ../../mkgames); PLATFORM=software, the pixels given as a picture,
+# made beside (games/fps/quake-soft).
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
+BESIDE=`{~ $PLATFORM software && echo -soft}
+D=$B/games/fps/quake$BESIDE
+# (each after the ones it names)
+LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
+# (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
+INCLUDES=-I . $LIBI $STDI
+# (each before the ones that name it)
+LIB=Bspfile Model View Edges Scan Surfcache Spans Bsp Trace Alias Things Render Brushes Play
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+# (quake: the name the frames' test asks for, as a game's,
+# ../../tests/frames.sh; mini-quake: the program's)
+all:V: $D/mini-quake
+
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+
+$D/mini-quake: $D/quake
+	cp $D/quake $target
+$D/quake: $D/Quake.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Quake Std_exit -o $D/Quake.start.$O
+	$LD $LDH -nofollow -o $target $D/Quake.start.$O $STDOBJS $LIBA $LIBOBJS $D/Quake.$O $STDEND
+
+clean:V:
+	rm -rf $D

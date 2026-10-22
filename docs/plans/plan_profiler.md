@@ -121,3 +121,15 @@ On mini-9pi itself (arm32, mini-ml's ints of 31 bits): `-a` refuses
 (a word's top bit, the condition, is lost), and a total of more than a
 thousand million instructions overflows; mini-qemu's profiles (one in
 1024) stay below it.
+
+2026-10-22, target 3, m-ix built under m-ix: a compile is billions of
+instructions (mini-ml built -O3 compiling Typing.ml on arm: 2.9
+thousand million). mini-prof's answer: the copying collector 30%
+(copy, collect, ml_alloc: what is alive, every interface read, copied
+at each collection), polymorphic compare and hash 8%, String.get
+checked by calls 7%, obj_block 4.7%, arm's division 2.4%. A heap three
+times what is alive, not twice (mini-ml's Main: space_overhead 200):
+45 collections to 28, 10% fewer instructions, the same heap; 400 16%,
+700 19%, at halves of 64 and 128 MB (mini-9pi's most is 64). And the
+optimizations' own cost to compile (-O3 against -O0): under 1%; mini-ml
+built -O3 compiles 11% faster (variants/ssa.md).

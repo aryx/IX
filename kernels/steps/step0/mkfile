@@ -48,6 +48,7 @@ check:V: all
 			timeout 3 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu-$k.txt < /dev/null >[2]/dev/null || true
 			cmp $D/qemu-$k.txt $EXPECTED-$k && echo 'ok step0: hello-'$k' under QEMU'
 		}
+		if not echo 'step0: hello-'$k', no QEMU, not booted under it'
 	}
 
 clean:V:

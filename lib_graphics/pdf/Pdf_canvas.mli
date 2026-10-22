@@ -58,6 +58,16 @@ val everywhere : t -> clip
 
 val fill : t -> clip -> even_odd:bool -> point list list -> float * float * float -> float -> unit
 
+(* a shape's coverage kept, to be laid again elsewhere (a glyph): [mask
+ * t polygons], the polygons inside the paper, its pixels from (left,
+ * top); [lay t c m ~x ~y color alpha], laid with its pixel (0, 0) at
+ * (x, y), as [fill] would have filled the shape moved there *)
+type mask = { left : int; top : int; width : int; height : int; levels : Bytes.t }
+
+val mask : t -> point list list -> mask
+val lay :
+  t -> clip -> mask -> x:int -> y:int -> float * float * float -> float -> unit
+
 (* [clip_box c x0 y0 x1 y1], [clip_shape t c ~even_odd polygons]: the clip made smaller *)
 val clip_box : clip -> float -> float -> float -> float -> clip
 

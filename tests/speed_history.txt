@@ -15,3 +15,6 @@
 2026-10-22 a87e5c73 page-linux   68.4 fps
 2026-10-22 a87e5c73 doom-linux  458.0 fps
 2026-10-22 62ee342d page-linux   70.5 fps
+2026-10-22 265e63ea page-linux   87.9 fps
+2026-10-22 1666dfff page-linux   90.1 fps
+2026-10-22 64393712 page-linux   89.0 fps

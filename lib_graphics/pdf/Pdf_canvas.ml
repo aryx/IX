@@ -82,6 +82,48 @@ let blend (t : t) (x : int) (y : int) ((r, g, b) : float * float * float) (a : f
 let fill (t : t) (c : clip) ~(even_odd : bool) (polygons : point list list) (color : float * float * float) (alpha : float) : unit =
   cover t c ~even_odd polygons (fun x y covered -> blend t x y color (covered *. alpha))
 
+(* a shape's coverage kept (a glyph's: Pdf_render's cache), a byte a
+ * pixel of its box, and laid again as [fill] lays it: the coverage by
+ * the clip, by the opacity *)
+type mask = { left : int; top : int; width : int; height : int; levels : Bytes.t }
+
+let mask (t : t) (polygons : point list list) : mask =
+  match List.concat polygons with
+  | [] -> { left = 0; top = 0; width = 0; height = 0; levels = Bytes.empty }
+  | (x, y) :: rest ->
+      let bx0, by0, bx1, by1 =
+        List.fold_left
+          (fun (x0, y0, x1, y1) (x, y) ->
+            (Float.min x0 x, Float.min y0 y, Float.max x1 x, Float.max y1 y))
+          (x, y, x, y) rest
+      in
+      let floor (v : float) = int_of_float (Float.floor v)
+      and ceil (v : float) = int_of_float (Float.ceil v) in
+      let left = max 0 (floor bx0 - 1) and top = max 0 (floor by0 - 1) in
+      let right = min t.width (ceil bx1 + 1)
+      and bottom = min t.height (ceil by1 + 1) in
+      let width = max 0 (right - left) and height = max 0 (bottom - top) in
+      let levels = Bytes.make (width * height) '\000' in
+      cover t (everywhere t) ~even_odd:false polygons (fun x y covered ->
+        if x >= left && x < right && y >= top && y < bottom then
+          Bytes.set_uint8 levels
+            (((y - top) * width) + (x - left))
+            (int_of_float (Float.round (covered *. 255.))));
+      { left; top; width; height; levels }
+
+let lay (t : t) (c : clip) (m : mask) ~(x : int) ~(y : int)
+    (color : float * float * float) (alpha : float) : unit =
+  let x0 = max c.x0 (x + m.left) and x1 = min c.x1 (x + m.left + m.width) in
+  let y0 = max c.y0 (y + m.top) and y1 = min c.y1 (y + m.top + m.height) in
+  for py = y0 to y1 - 1 do
+    for px = x0 to x1 - 1 do
+      let at = ((py - y - m.top) * m.width) + (px - x - m.left) in
+      let level = Bytes.get_uint8 m.levels at in
+      if level > 0 then
+        blend t px py color (float_of_int level /. 255. *. allowed c px py *. alpha)
+    done
+  done
+
 (* a clip made smaller: by a rectangle of whole pixels, or by any shape *)
 let clip_box (c : clip) (bx0 : float) (by0 : float) (bx1 : float) (by1 : float) : clip =
   let x0 = max c.x0 (int_of_float (Float.round bx0)) and y0 = max c.y0 (int_of_float (Float.round by0)) in

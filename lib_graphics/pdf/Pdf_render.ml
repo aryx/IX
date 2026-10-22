@@ -50,6 +50,7 @@ type state = {
   stroke_space : Pdf_color.space;
   line_width : float;
   font : Pdf_font.t option;
+  font_number : int; (* its object's, the glyphs' cache's key; -1 none *)
   size : float;
   char_space : float;
   word_space : float;
@@ -60,9 +61,26 @@ type state = {
   fill_shading : (Pdf_object.t * Affine.t) option; (* filled with a gradient, in its own space *)
 }
 
-type cache = { fonts : (int, Pdf_font.t) Hashtbl.t }
+(* the glyphs filled so far, each a mask (Pdf_canvas.mask): by its
+ * font's object, its code, its transform's scale and turn in
+ * thousandths, and where it falls in a pixel, in quarters. A page's
+ * letters were filled one by one, each time, the outline made polygons
+ * and the polygons filled: most of a book's page (principia's Kernel,
+ * 21 pages: 3.42 s by OCaml's code, 0.96 without the letters; 19.65 s
+ * by mini-ml's, 3.36), and under QEMU on mini-9pi seconds a page, the
+ * scrolling stopped at each new one. A glyph is now laid within a
+ * quarter pixel of where it was filled before *)
+type glyph_key = int * int * int * int * int * int * int * int
 
-let cache () : cache = { fonts = Hashtbl.create 16 }
+type cache = {
+  fonts : (int, Pdf_font.t) Hashtbl.t;
+  glyphs : (glyph_key, Pdf_canvas.mask) Hashtbl.t;
+}
+
+let cache () : cache = { fonts = Hashtbl.create 16; glyphs = Hashtbl.create 1024 }
+
+(* the glyphs kept, at most (another zoom's, the pages before) *)
+let kept_glyphs = 4000
 
 type context = {
   pdf : Pdf.t;
@@ -74,6 +92,43 @@ type context = {
   (* each glyph shown: where (the page's pixels), how big, what it reads as *)
   mutable shown : (float * float * float * float * int list) list;
 }
+
+(* a glyph filled as its font's outline: its mask made once, where it
+ * falls in a pixel to a quarter, far enough from the paper's corner
+ * that none of it is cut (cache's glyphs), then laid at its pixel *)
+let laid (cx : context) (st : state) (code : int) (trm : Affine.t)
+    (o : Outline.t) : unit =
+  let thousandths (v : float) = int_of_float (Float.round (v *. 1000.)) in
+  let x = Float.floor trm.tx and y = Float.floor trm.ty in
+  let qx = int_of_float (Float.floor ((trm.tx -. x) *. 4.))
+  and qy = int_of_float (Float.floor ((trm.ty -. y) *. 4.)) in
+  let key =
+    ( st.font_number, code, thousandths trm.a, thousandths trm.b,
+      thousandths trm.c, thousandths trm.d, qx, qy )
+  in
+  let m =
+    match Hashtbl.find_opt cx.cache.glyphs key with
+    | Some m -> m
+    | None ->
+        let size =
+          Float.abs trm.a +. Float.abs trm.b +. Float.abs trm.c +. Float.abs trm.d
+        in
+        let room = Float.ceil (2. *. size) +. 2. in
+        let at =
+          { trm with tx = room +. (float_of_int qx /. 4.);
+                     ty = room +. (float_of_int qy /. 4.) }
+        in
+        let polygons = Outline.polygons ~tolerance:0.2 (Affine.apply at) o in
+        let m = Pdf_canvas.mask cx.canvas polygons in
+        let r = int_of_float room in
+        let m = { m with left = m.left - r; top = m.top - r } in
+        if Hashtbl.length cx.cache.glyphs >= kept_glyphs then
+          Hashtbl.reset cx.cache.glyphs;
+        Hashtbl.replace cx.cache.glyphs key m;
+        m
+  in
+  Pdf_canvas.lay cx.canvas st.clip m ~x:(int_of_float x) ~y:(int_of_float y)
+    st.fill st.fill_alpha
 
 (* our stroke font's letter: the pen's paths in an em of 1 from the
  * baseline up, and how far the pen moves after it (ASCII: Hershey's) *)
@@ -178,6 +233,10 @@ let rec run (cx : context) (resources : Pdf_object.t) (content : string) (st : s
                 let m = Affine.compose trm (matrix font.matrix) in
                 (try run cx (if font.resources = Null then resources else font.resources) p { !st with ctm = m } ~depth:(depth + 1) with _ -> ());
                 known
+            | Outlines, Shape o
+              when !st.mode = 0 && !st.font_number >= 0 && o <> [] ->
+                laid cx !st code trm o;
+                if known < 0. then 0.5 else known
             | Outlines, Shape o ->
                 if o <> [] && !st.mode <> 3 then (
                   let polygons = Outline.polygons ~tolerance:0.2 (Affine.apply trm) o in
@@ -271,7 +330,14 @@ let rec run (cx : context) (resources : Pdf_object.t) (content : string) (st : s
                  st := { !st with fill_alpha = alpha "ca" !st.fill_alpha; stroke_alpha = alpha "CA" !st.stroke_alpha; line_width = number "LW" !st.line_width }
              | _ -> ())
          | "BT" -> tm := Affine.identity; line_tm := Affine.identity
-         | "Tf" -> ( match args with Name name :: _ -> st := { !st with font = font_of (match Pdf.dict pdf (Pdf.get pdf (Pdf.dict pdf resources) "Font") |> List.assoc_opt name with Some v -> v | None -> Null); size = f 1 } | _ -> ())
+         | "Tf" -> (
+             match args with
+             | Name name :: _ ->
+                 let fonts = Pdf.dict pdf (Pdf.get pdf (Pdf.dict pdf resources) "Font") in
+                 let v = match List.assoc_opt name fonts with Some v -> v | None -> Null in
+                 let number = match v with Ref n -> n | _ -> -1 in
+                 st := { !st with font = font_of v; font_number = number; size = f 1 }
+             | _ -> ())
          | "Td" -> next_line (f 0) (f 1)
          | "TD" -> st := { !st with leading = -.f 1 }; next_line (f 0) (f 1)
          | "Tm" -> line_tm := matrix (List.map to_float args); tm := !line_tm
@@ -354,7 +420,7 @@ let draw ~(options : options) ~(stroke_glyph : int -> (float * float) list list 
   let black = (0., 0., 0.) in
   (try
      run cx p.resources (Pdf.content pdf p)
-       { ctm; clip = Pdf_canvas.everywhere canvas; fill = black; stroke = black; fill_alpha = 1.; stroke_alpha = 1.; fill_space = Gray; stroke_space = Gray; line_width = 1.; font = None; size = 0.;
+       { ctm; clip = Pdf_canvas.everywhere canvas; fill = black; stroke = black; fill_alpha = 1.; stroke_alpha = 1.; fill_space = Gray; stroke_space = Gray; line_width = 1.; font = None; font_number = -1; size = 0.;
          char_space = 0.; word_space = 0.; stretch = 1.; leading = 0.; rise = 0.; mode = 0; fill_shading = None }
        ~depth:0
    with _ -> ());

@@ -261,22 +261,27 @@ let within (s : Playground.screen) (m : model) : model =
 (* the window's pages' pictures, drawn if they are not kept. A PDF's
  * page is drawn at the zoom and turned by the reader (sharp at any
  * size); a picture is kept as it is, and the view scales and turns it *)
+(* a page's picture kept: at the model's zoom and turn *)
+let is (m : model) (i : int) (k : kept) : bool =
+  k.page = i && k.zoom = thousandths m.zoom && k.turn = m.turn
+
+(* a page's picture drawn, and its links read *)
+let draw (pdf : Pdf.t) (cache : Pdf_render.cache) (pages : Pdf.page array)
+    (m : model) (i : int) : kept =
+  Logs.debug (fun f -> f "page %d drawn at %d%%" (i + 1) (thousandths m.zoom / 10));
+  let p = pages.(i) in
+  let p = { p with rotate = (p.rotate + (90 * m.turn)) mod 360 } in
+  let image =
+    Pdf_render.render ~options:Pdf_render.full ~stroke_glyph:Pdf_render.hershey
+      pdf cache p ~scale:m.zoom
+  in
+  { page = i; zoom = thousandths m.zoom; turn = m.turn; image;
+    links = Pdf.links pdf pages p }
+
 let drawn (s : Playground.screen) (m : model) : model =
   match m.source with
   | Pages (pdf, cache, pages) ->
-      let zoom = thousandths m.zoom in
-      let is (i : int) (k : kept) =
-        k.page = i && k.zoom = zoom && k.turn = m.turn
-      in
-      let draw (i : int) : kept =
-        let p = pages.(i) in
-        let p = { p with rotate = (p.rotate + (90 * m.turn)) mod 360 } in
-        let image =
-          Pdf_render.render ~options:Pdf_render.full
-            ~stroke_glyph:Pdf_render.hershey pdf cache p ~scale:m.zoom
-        in
-        { page = i; zoom; turn = m.turn; image; links = Pdf.links pdf pages p }
-      in
+      let is = is m and draw = draw pdf cache pages m in
       let shown = shown s m in
       let now =
         List.map
@@ -294,6 +299,32 @@ let drawn (s : Playground.screen) (m : model) : model =
       let others = List.filteri (fun (i : int) (_ : kept) -> i < keep) others in
       { m with kept = now @ others }
   | Picture _ | Nothing _ -> m
+
+(* A page drawn ahead while the window is still: the one after the
+ * window's last, then the one before its first, a page a frame, kept
+ * first among the others. Under QEMU on mini-9pi a page of a book is
+ * seconds to draw, and the scrolling stopped at each new one (the
+ * author: "scrolling with the mousewheel still feel very sluggish",
+ * then "looks like rendering the next page while idle might help").
+ * A key pressed meanwhile waits for it *)
+let ahead (s : Playground.screen) (m : model) : model =
+  match (m.source, shown s m) with
+  | Pages (pdf, cache, pages), (first :: _ as shown) ->
+      let last = List.fold_left max first shown in
+      let wanted (i : int) =
+        i >= 0 && i < Array.length pages
+        && not (List.exists (is m i) m.kept)
+      in
+      (match List.find_opt wanted [ last + 1; first - 1 ] with
+       | Some i ->
+           let now, others =
+             List.partition
+               (fun (k : kept) -> List.exists (fun (j : int) -> is m j k) shown)
+               m.kept
+           in
+           { m with kept = now @ (draw pdf cache pages m i :: others) }
+       | None -> m)
+  | _ -> m
 
 (* another page, its top at the window's *)
 let go (page : int) (m : model) : model =
@@ -522,6 +553,7 @@ let update (computer : Playground.computer) (m : model) : model =
   (* the place kept once still half a second (at 60 frames a second) *)
   let place = place_of m in
   let still = if place = m.place then m.still + 1 else 0 in
+  let m = if still >= 10 then ahead s m else m in
   if still = 30 && place <> m.saved then (
     m.remember place;
     { m with hand; place; still; saved = place })
@@ -668,7 +700,10 @@ let view (computer : Playground.computer) (m : model) : Playground.shape list =
   in
   let key : view_key =
     ( status, m.down, m.x, m.zoom, m.turn, s.width, s.height,
-      List.map (fun (k : kept) -> (k.page, k.zoom, k.turn)) m.kept )
+      (* (the pictures of the pages shown: one drawn ahead is not) *)
+      List.map
+        (fun (k : kept) -> (k.page, k.zoom, k.turn))
+        (List.filter (fun (k : kept) -> List.mem k.page (shown s m)) m.kept) )
   in
   match !(m.last) with
   | Some (k, shapes) when k = key -> shapes

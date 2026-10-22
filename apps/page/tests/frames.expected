@@ -1,17 +1,17 @@
-page/Pageview|first|3 -fixed-time 1000 lib_graphics/pdf/tests/data/tex.pdf|a0eb7a7a109a87016f8e1c2924a68cde4f18ad1db3c72b55d0f06b52f6297a16
-page/Pageview|next|6 -fixed-time 1000 -script 'space:2' lib_graphics/pdf/tests/data/tex.pdf|bfec2a3352c503c073bedf467a1640c57cf3c747ee34996d2ba5a0184802b060
-page/Pageview|back|9 -fixed-time 1000 -script 'space:2,backspace:5' lib_graphics/pdf/tests/data/tex.pdf|a0eb7a7a109a87016f8e1c2924a68cde4f18ad1db3c72b55d0f06b52f6297a16
+page/Pageview|first|3 -fixed-time 1000 lib_graphics/pdf/tests/data/tex.pdf|06d5ed31e03ea1ed3e2fe1049e26e6ce0a3338183f49fa6703aa5b02b43feb54
+page/Pageview|next|6 -fixed-time 1000 -script 'space:2' lib_graphics/pdf/tests/data/tex.pdf|641716187f2d84744cbc4b26d1ac943c740dc5263678152c2ae038594f5b807e
+page/Pageview|back|9 -fixed-time 1000 -script 'space:2,backspace:5' lib_graphics/pdf/tests/data/tex.pdf|06d5ed31e03ea1ed3e2fe1049e26e6ce0a3338183f49fa6703aa5b02b43feb54
 page/Pageview|number|9 -fixed-time 1000 -script 'type(2):2,return:4' lib_graphics/pdf/tests/data/bitmap.pdf|5431d5f08f1b2a6217ff559001bb1a28a95746e379c24149dfccd72f6d32e95f
-page/Pageview|larger|6 -fixed-time 1000 -script 'type(+):2' lib_graphics/pdf/tests/data/shapes.pdf|944227e09c4273f2f4c8a6a274a946d28fdc5c03946165679464fc6809c2fb5d|ff53285c14e4acc68cf8e576e19f2d474ba1c019ad61015885929b3ba1ba9f55
-page/Pageview|turned|6 -fixed-time 1000 -script 'type(r):2' lib_graphics/pdf/tests/data/shapes.pdf|7a00a88bfabf4c4780fe037760d843da06e883c87735c0051063db8b44ce82e3|fd8c54a7351ca98d227fab5f55ff89618b90b6e6588b320730b9f01cc48f8100
-page/Pageview|moved|12 -fixed-time 1000 -script 'down:2-6,at(0;0):7-12,click:8-11,at(60;40):9-12' lib_graphics/pdf/tests/data/cff.pdf|5a2bbac5cd0f488d6363f75e08e57e3e6454057d9ab31d1ad11b1bf6bf14a2e0|7319ded649c12e024f8f93cd505b67b0f162d9eb605088e04b3319ffea074bd1
+page/Pageview|larger|6 -fixed-time 1000 -script 'type(+):2' lib_graphics/pdf/tests/data/shapes.pdf|e481a649fcc1c162c1201922802f657b2a0c6e172cff15dd9189af05a10915f2|239b2c88ec0c6b27bbf44ce4dc5979b5fe1c207fb3a71eb68d36af72b6a2f388
+page/Pageview|turned|6 -fixed-time 1000 -script 'type(r):2' lib_graphics/pdf/tests/data/shapes.pdf|952dbb05c789c0dbcfe75e8c7c33b39a64ca8e51765d3055617cb3309a162b7c|fcb2021f1fa8938ae94a950514db3cd74fc46d3a9243dc1a71fcd26954db217b
+page/Pageview|moved|12 -fixed-time 1000 -script 'down:2-6,at(0;0):7-12,click:8-11,at(60;40):9-12' lib_graphics/pdf/tests/data/cff.pdf|c288a0589ed2e010a98119772f9730ac0becd07c14f4e0c989044c7de68ac700|8132d10e039a110f4ae0f0bcc00decfde5abc091147d119ada0fb4ccb655b803
 page/Pageview|picture|3 -fixed-time 1000 lib_graphics/pdf/tests/data/shapes-1.png|8527b01c56cbd0c5df7d093683829d2c116b757d992e7b10898dab56824c427d
 page/Pageview|picture-turned|6 -fixed-time 1000 -script 'type(r):2,type(+):4' lib_graphics/pdf/tests/data/shapes-1.png|417bd28af8b8a51c863a5d4d58080fccde175aaced2870a0e6e0a36cc8fdf6a2|764d598c6d687da63ff893c7221f382c5bd325aa7c386822078a11562d18074f
 page/Pageview|neither|3 -fixed-time 1000 lib_graphics/pdf/tests/data/make.sh|cbbd5278252e90846764686c06ac2be73ca447876aa9adc1151d7fdf6035496a
-page/Pageview|wheel|6 -fixed-time 1000 -script 'type(+):2,wheel(-2):4' lib_graphics/pdf/tests/data/tex.pdf|dfa175348865f29b75d0379a67e88de5a0a84fdbcfc6f91173746686ba6b2658
-page/Pageview|wheel-end|10 -fixed-time 1000 -script 'wheel(-5):2,wheel(-5):4,wheel(-5):6' lib_graphics/pdf/tests/data/tex.pdf|bfec2a3352c503c073bedf467a1640c57cf3c747ee34996d2ba5a0184802b060
-page/Pageview|link-hover|4 -fixed-time 1000 -script 'at(-134;376):2-4' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6
-page/Pageview|link-followed|10 -fixed-time 1000 -script 'at(-134;376):2-10,click:4-5' lib_graphics/pdf/tests/data/links.pdf|731f3db3a0ec618ea47490743f7ce7473a0adacad85e28d7874e8a16ed2a336c
-page/Pageview|link-back|14 -fixed-time 1000 -script 'at(-134;376):2-14,click:4-5,type(b):12' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6
-page/Pageview|link-address|4 -fixed-time 1000 -script 'at(-219;334):2-4' lib_graphics/pdf/tests/data/links.pdf|5ebe147fd66135db290c2eeb7a82c7ff3a1c2a4019d1407de97a9953fe32bf66
-page/Pageview|link-dragged|10 -fixed-time 1000 -script 'at(-134;376):2-5,at(-134;366):6-10,click:4-7' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6
+page/Pageview|wheel|6 -fixed-time 1000 -script 'type(+):2,wheel(-2):4' lib_graphics/pdf/tests/data/tex.pdf|dfae4afcd23576264e297b1547554fe5ad3314ff2eb677d27914279f55d84adb
+page/Pageview|wheel-end|10 -fixed-time 1000 -script 'wheel(-5):2,wheel(-5):4,wheel(-5):6' lib_graphics/pdf/tests/data/tex.pdf|641716187f2d84744cbc4b26d1ac943c740dc5263678152c2ae038594f5b807e
+page/Pageview|link-hover|4 -fixed-time 1000 -script 'at(-134;376):2-4' lib_graphics/pdf/tests/data/links.pdf|690662dc41bca77700386a58469e08147cb2f62c006a43ec90b72d1bf39fb518
+page/Pageview|link-followed|10 -fixed-time 1000 -script 'at(-134;376):2-10,click:4-5' lib_graphics/pdf/tests/data/links.pdf|08a93d3ad8cd9da0296fb4115dec5cdf97f8a2ac830254fcadd93d35c4fddfe9
+page/Pageview|link-back|14 -fixed-time 1000 -script 'at(-134;376):2-14,click:4-5,type(b):12' lib_graphics/pdf/tests/data/links.pdf|690662dc41bca77700386a58469e08147cb2f62c006a43ec90b72d1bf39fb518
+page/Pageview|link-address|4 -fixed-time 1000 -script 'at(-219;334):2-4' lib_graphics/pdf/tests/data/links.pdf|ea94d7390a0a4fff80985d4b71be7a798f91a069bcfecaa4e670dd59060bc80e
+page/Pageview|link-dragged|10 -fixed-time 1000 -script 'at(-134;376):2-5,at(-134;366):6-10,click:4-7' lib_graphics/pdf/tests/data/links.pdf|690662dc41bca77700386a58469e08147cb2f62c006a43ec90b72d1bf39fb518

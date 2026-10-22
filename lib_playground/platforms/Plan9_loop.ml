@@ -125,6 +125,14 @@ let setter : (Cursor.t option -> unit) ref = ref (fun (_ : Cursor.t option) -> (
 let set_cursor (c : Playground.cursor) : unit =
   !setter (match c with Playground.Arrow -> None | Playground.Hand -> Some hand | Playground.Text -> Some ibeam | Playground.Crosshair -> Some cross | Playground.Hidden -> Some hidden)
 
+(* the window system's snarf (Snarf), the same way; before run_app, the
+ * program's own text *)
+let kept = ref ""
+let reader : (unit -> string) ref = ref (fun () -> !kept)
+let writer : (string -> unit) ref = ref (fun (s : string) -> kept := s)
+let clipboard () : string = !reader ()
+let set_clipboard (s : string) : unit = !writer s
+
 let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >)
     (flags : Playground.flags) (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
@@ -158,6 +166,8 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
   let kbd = Keyboard.held caps in
   (* (a system without /dev/cursor keeps its arrow) *)
   setter := (fun (c : Cursor.t option) -> try Cursor.set caps c with Unix.Unix_error _ -> ());
+  reader := (fun () -> Snarf.read caps);
+  writer := Snarf.write caps;
   (* (and the clock's, which the loop below asks: the fourth) *)
   let alarm = Source.alarm caps in
   let run = Session.start app flags in

@@ -15,7 +15,12 @@ style sheets cascaded, its boxes laid out, the page drawn; its scripts
 run by the engine of \man{node}{1}, on a copy of the tree.
 
 A click in the Location field, an address typed and Enter go to it; a
-click on a link follows it. The arrows, Page Up and Page Down, Home,
+click on a link follows it. In the field a click puts the caret, a drag
+selects, a double click selects the whole address; Control with `A`,
+`C`, `X`, `V` selects all, copies, cuts, pastes (the window system's
+clipboard: \man{rio}{1}'s snarf on Plan 9). A page longer than the
+window has a scrollbar at its right, its thumb dragged or its track
+clicked. The arrows, Page Up and Page Down, Home,
 End, Space and the wheel scroll; Backspace goes back; Control with `+`
 or `-`, or with the wheel, zooms the page, and Control with `0` brings
 it back to its size: each site's zoom is remembered. Control-Q ends it.

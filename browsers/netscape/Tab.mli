@@ -124,6 +124,9 @@ val scrolled : float -> visible:float -> t -> t
 val width : t -> float
 val resized : float -> t -> t
 
+(* how long the page is laid out *)
+val height : t -> float
+
 (* the field that takes the keys, if one does *)
 val focus : t -> Dom.element option
 

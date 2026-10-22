@@ -68,7 +68,11 @@
  * way cut short: from the tree straight to lines of text (Line_mode).
  *
  * The mouse: a click on a link follows it, on a field gives it the
- * keys, on a button sends its form; the wheel scrolls. The keys: the
+ * keys, on a button sends its form; the wheel scrolls, and the
+ * scrollbar at the right of a page longer than the window (Scrollbar).
+ * In the Location field (Location_field) a click puts the caret, a drag
+ * selects, a double click selects all; Ctrl and A, C, X, V, the
+ * clipboard being the desktop's (Playground_platform). The keys: the
  * arrows, Page Up and Down, Space, Home and End scroll; Backspace goes
  * back; in the Location field, an address or words typed and Enter, or
  * one of the pages it offers as one types (the history's, the
@@ -204,9 +208,13 @@ type model = {
   choice : int; (* the Location field's offer chosen by the arrows, -1 none *)
   piece : int option; (* the tab's piece on the worker that the window waits for (Worker) *)
   later : (Tab.t -> Tab.t) list; (* what was done to the page meanwhile, to do when it is back, the last first *)
-  location : string; (* the field's text *)
+  location : Location_field.t; (* its text, caret and selection *)
   editing : bool; (* the Location field has the keys *)
-  fresh : bool; (* just clicked: the first character typed replaces the address *)
+  fresh : bool; (* just clicked: nothing typed since, nothing offered *)
+  down : bool; (* the mouse's button held at the frame before *)
+  pressed_at : float; (* when it last went down, for a double click *)
+  selecting : bool; (* held since a press in the Location field *)
+  grab : float option; (* held on the scrollbar's thumb, so far under its top *)
   before : string list; (* the keys held at the frame before, of those below *)
   cursor : P.cursor; (* the one last asked of the platform *)
   zooms : Browser_zoom.t; (* the sites zoomed (Ctrl and +, -, 0) *)
@@ -218,7 +226,10 @@ type model = {
 }
 
 (* the keys that do something once, when they go down *)
-let once = [ "ArrowDown"; "ArrowUp"; "PageDown"; "PageUp"; "Home"; "End"; "Enter"; "Backspace"; "Escape"; "space"; "="; "+"; "-"; "0"; "t"; "w"; "d"; "Tab" ]
+let once =
+  [ "ArrowDown"; "ArrowUp"; "ArrowLeft"; "ArrowRight"; "PageDown"; "PageUp";
+    "Home"; "End"; "Enter"; "Backspace"; "Delete"; "Escape"; "space";
+    "="; "+"; "-"; "0"; "t"; "w"; "d"; "Tab"; "a"; "c"; "x"; "v" ]
 
 (*****************************************************************************)
 (* The window's places, x right and y down from its top left *)
@@ -245,7 +256,13 @@ let title (t : Tab.t) : string = match Tab.page t with Some p when p.title <> ""
 
 (* what the Location field offers under it as one types (Places), a row each *)
 let offer_height = 22.
-let offers (m : model) : Places.place list = if m.editing && not m.fresh then Places.matches m.places m.location else []
+let offers (m : model) : Places.place list = if m.editing && not m.fresh then Places.matches m.places m.location.text else []
+
+(* the Location field's text: its place, the room it has, how wide a
+ * text of it is *)
+let text_x = field_x +. 6.
+let room (width : float) : float = field_width width -. 12.
+let measure (s : string) : float = Browser_text.metrics look s
 
 (* a rectangle and a text, by their top left and their baseline *)
 let box (color : P.color) (x : float) (y : float) (w : float) (h : float) : P.shape =
@@ -285,7 +302,7 @@ let zoomed (width : float) (change : Browser_zoom.change) (m : model) : model =
 
 (* (the piece on the worker, if one is, given up: the tab is another, or
  * asked for another page) *)
-let shown (m : model) : model = { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1; piece = None; later = [] }
+let shown (m : model) : model = { m with location = Location_field.focused (Tab.url m.tab); editing = false; fresh = false; choice = -1; piece = None; later = [] }
 
 (* the tab at [i] shown, the others around it *)
 let select (i : int) (m : model) : model =
@@ -325,7 +342,7 @@ let came (width : float) (m : model) (tab : Tab.t) : model =
     Logs.info (fun m ->
         let g : Gc.stat = Gc.stat () and mb (words : int) = float (words * (Sys.word_size / 8)) /. 1048576. in
         m "%s whole; the heap %.1f MB alive, %.1f MB (at most %.1f)" (Tab.url tab) (mb g.live_words) (mb g.heap_words) (mb g.top_heap_words));
-  fitted_tab width (remembered { m with tab; location = (if m.editing then m.location else Tab.url tab) })
+  fitted_tab width (remembered { m with tab; location = (if m.editing then m.location else Location_field.focused (Tab.url tab)) })
 
 (* the worker's piece, if it is done: the window's if it waits for it,
  * merged with its copy and what was kept for later done; else dropped *)
@@ -359,6 +376,12 @@ let on_page (m : model) (f : Tab.t -> Tab.t) : model = if Tab_worker.out () then
  * one, the window still and what it says old all the while *)
 let seen = ref true
 
+(* the page's scrollbar, at the window's right, in the page's units *)
+let scrollbar (width : float) (height : float) (m : model) : Scrollbar.t =
+  let visible = height -. top m -. status_height in
+  { right = width; top = top m; height = visible; total = Tab.height m.tab;
+    shown = visible /. zoom m; offset = Tab.scroll m.tab }
+
 (* the cursor for a place of the window: a hand over what a click
  * follows or presses, the I-beam over what is typed in *)
 let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * float) : P.cursor =
@@ -368,6 +391,7 @@ let cursor_at (width : float) (height : float) (m : model) ((x, y) : float * flo
     else if inside (x, y) (field_x, 8., field_width width, 28.) then P.Text
     else P.Arrow
   else if y < top m || inside (x, y) (field_x, toolbar_height -. 8., field_width width, offer_height *. float_of_int (List.length (offers m))) then P.Hand
+  else if Scrollbar.at (scrollbar width height m) (x, y) <> None then P.Arrow
   else if y < height -. status_height then
     match Tab.under m.tab ~x:(x /. z) ~y:(((y -. top m) /. z) +. Tab.scroll m.tab) with
     | Tab.Link _ | Tab.Button -> P.Hand
@@ -456,6 +480,48 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
     else if control then zoomed screen.width (if mouse.mwheel > 0. then Browser_zoom.Up else Browser_zoom.Down) m
     else { m with tab = Tab.scrolled (-.mouse.mwheel *. 60. /. zoom m) ~visible:(visible /. zoom m) m.tab }
   in
+  (* the button gone down (with its release in the same frame, a quick
+   * click): in the Location field, the caret put there, and the
+   * selection follows the pointer while it is held; a double click
+   * selects all, as a click in the field at rest. On the scrollbar:
+   * its thumb held, or a page up or down. The rest is done by the
+   * click, the release *)
+  let bar = scrollbar screen.width screen.height m in
+  let scrolled (by : float) (m : model) : model =
+    { m with tab = Tab.scrolled by ~visible:(visible /. zoom m) m.tab } in
+  let index (f : Location_field.t) : int =
+    Location_field.index_at measure f ~room:(room screen.width)
+      (fst at -. text_x) in
+  let m =
+    if m.down || not (mouse.mdown || mouse.mclick) then m
+    else
+      let double = now -. m.pressed_at < 0.4 in
+      let m = { m with pressed_at = now } and f = m.location in
+      if inside at (field_x, 8., field_width screen.width, 28.) then
+        if not m.editing then
+          { m with editing = true; fresh = true;
+                   location = Location_field.focused f.text }
+        else if double then { m with location = Location_field.select_all f }
+        else
+          { m with selecting = true;
+                   location = Location_field.caret_at ~select:false (index f) f }
+      else
+        let page = (visible -. 40.) /. zoom m in
+        match Scrollbar.at bar at with
+        | Some (Scrollbar.Thumb g) -> { m with grab = Some g }
+        | Some Scrollbar.Before -> scrolled (-.page) m
+        | Some Scrollbar.After -> scrolled page m
+        | None -> m
+  in
+  let m =
+    match m.grab with
+    | Some grab when mouse.mdown ->
+        scrolled (Scrollbar.dragged bar ~grab (snd at) -. Tab.scroll m.tab) m
+    | _ when m.selecting && mouse.mdown ->
+        let f = m.location in
+        { m with location = Location_field.caret_at ~select:true (index f) f }
+    | _ -> m
+  in
   let m =
     if not mouse.mclick then m
     else if snd at < toolbar_height then
@@ -465,7 +531,7 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       | Some ("Reload", _, _) -> shown { m with tab = Tab.reload m.tab }
       | Some ("Stop", _, _) -> if Tab.busy m.tab then shown { m with tab = Tab.stop m.tab } else m
       | Some (_, _, _) -> shown { m with tab = Tab.visit m.tab "about:bookmarks" }
-      | None -> if inside at (field_x, 8., field_width screen.width, 28.) then { m with editing = true; fresh = true } else { m with editing = false }
+      | None -> if inside at (field_x, 8., field_width screen.width, 28.) then m else { m with editing = false }
     else
       (* an offer of the Location field, under it; a tab of the strip; the page *)
       let row = int_of_float ((snd at -. (toolbar_height -. 8.)) /. offer_height) in
@@ -473,6 +539,7 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
       | Some p when inside at (field_x, toolbar_height -. 8., field_width screen.width, offer_height *. float_of_int (List.length (offers m))) -> shown { m with tab = Tab.visit m.tab p.url }
       | _ ->
           if snd at < top m then select (int_of_float (fst at /. tab_width screen.width m)) (finished screen.width m)
+          else if m.grab <> None || Scrollbar.at bar at <> None then m
           else if snd at < screen.height -. status_height then
             let x = fst at /. zoom m and y = ((snd at -. top m) /. zoom m) +. Tab.scroll m.tab in
             (* Ctrl and a click: the link in a tab of its own, behind *)
@@ -481,13 +548,16 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
             | _ -> on_page m (fun t -> Tab.click t ~x ~y)
           else m
   in
+  let m =
+    if mouse.mdown then { m with down = true }
+    else { m with down = false; selecting = false; grab = None } in
   let change = if control then List.find_map (fun k -> if pressed k then Browser_zoom.key k else None) [ "="; "+"; "-"; "0" ] else None in
   let command = if control then List.find_opt pressed [ "t"; "w"; "d"; "Tab" ] else None in
   if change <> None then match change with Some c -> zoomed screen.width c m | None -> m
   else if command <> None then
     let m = if command = Some "d" then m else finished screen.width m in
     match command with
-    | Some "t" -> { m with left = m.tab :: m.left; tab = Tab.visit m.blank "about:blank"; location = ""; editing = true; fresh = false; choice = -1; piece = None; later = [] }
+    | Some "t" -> { m with left = m.tab :: m.left; tab = Tab.visit m.blank "about:blank"; location = Location_field.focused ""; editing = true; fresh = false; choice = -1; piece = None; later = [] }
     | Some "w" -> closed m
     | Some "Tab" -> select ((List.length m.left + 1) mod List.length (tabs m)) m
     | _ -> (
@@ -495,15 +565,38 @@ let update_window (caps : < caps; .. >) (computer : P.computer) (m : model) : mo
         | Some p when not (Browser_url.starts_with "about:" p.url) -> { m with places = Places.bookmarked m.places { url = p.url; title = p.title } }
         | _ -> m)
   else if m.editing then
-    let m = if keys.typed <> "" && not control then { m with location = (if m.fresh then "" else m.location) ^ keys.typed; fresh = false; choice = -1 } else m in
+    (* (the offers once the text is another, not when the caret moves) *)
+    let edited (f : Location_field.t) : model =
+      if f = m.location then m
+      else { m with location = f; choice = -1;
+                    fresh = m.fresh && f.text = m.location.text } in
+    let m =
+      if keys.typed = "" || control then m
+      else edited (Location_field.typed keys.typed m.location) in
     let offered = offers m in
-    if pressed "Enter" then
+    (* Ctrl and A, C, X, V: the desktop's clipboard *)
+    let letter =
+      if control then List.find_opt pressed [ "a"; "c"; "x"; "v" ] else None in
+    let commanded =
+      match letter with
+      | Some l ->
+          Location_field.command Playground_platform.set_clipboard
+            Playground_platform.clipboard l m.location
+      | None -> None in
+    let keyed =
+      List.find_map
+        (fun k ->
+          if pressed k then Location_field.key ~shift:keys.kshift k m.location
+          else None)
+        [ "Backspace"; "Delete"; "ArrowLeft"; "ArrowRight"; "Home"; "End" ] in
+    if commanded <> None then match commanded with Some f -> edited f | None -> m
+    else if pressed "Enter" then
       let chosen = if m.choice >= 0 then List.nth_opt offered m.choice else None in
-      shown { m with tab = Tab.visit m.tab (match chosen with Some p -> p.url | None -> Places.destination m.location) }
+      shown { m with tab = Tab.visit m.tab (match chosen with Some p -> p.url | None -> Places.destination m.location.text) }
     else if pressed "ArrowDown" then { m with choice = min (m.choice + 1) (List.length offered - 1) }
     else if pressed "ArrowUp" then { m with choice = max (m.choice - 1) (-1) }
-    else if pressed "Backspace" then { m with location = (if m.fresh || m.location = "" then "" else String.sub m.location 0 (String.length m.location - 1)); fresh = false; choice = -1 }
-    else if pressed "Escape" then { m with location = Tab.url m.tab; editing = false; fresh = false; choice = -1 }
+    else if keyed <> None then match keyed with Some f -> edited f | None -> m
+    else if pressed "Escape" then { m with location = Location_field.focused (Tab.url m.tab); editing = false; fresh = false; choice = -1 }
     else m
   else if Tab.focus m.tab <> None then
     let typed = keys.typed in
@@ -562,6 +655,21 @@ let phase (computer : P.computer) (m : model) : int option =
   let (P.Time now) = computer.time in
   if Tab.busy m.tab then Some (int_of_float (now *. 12.) mod meteors) else None
 
+(* the Location field's text; being edited, its part that shows, over
+ * the selection's band and the caret *)
+let location_drawn (width : float) (m : model) : P.shape list =
+  let f = m.location and room = room width in
+  if not m.editing then text (fitted ~keep_end:false f.text room) text_x 27.
+  else
+    let place i = text_x +. Location_field.place measure f ~room i in
+    let a = min f.anchor f.caret and b = max f.anchor f.caret in
+    let from = Location_field.first_shown measure f ~room in
+    let rest = String.sub f.text from (String.length f.text - from) in
+    (if a < b then [ box (P.rgb 180 213 254) (place a) 12. (place b -. place a) 20. ]
+     else [])
+    @ [ box (P.rgb 0 0 0) (place f.caret) 12. 1. 20. ]
+    @ text (fitted ~keep_end:false rest room) text_x 27.
+
 (* the window's shapes, from all that they are made of *)
 let view_simple (computer : P.computer) (m : model) (over : string option) : P.shape list =
   let screen = computer.screen in
@@ -596,7 +704,7 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
     @ text "Location:" location_x 27.
     @ Browser_draw.sunken field_x 8. (field_width width) 28.
     @ [ box (P.rgb 255 255 255) (field_x +. 2.) 10. (field_width width -. 4.) 24. ]
-    @ text (fitted ~keep_end:m.editing (m.location ^ if m.editing then "|" else "") (field_width width -. 12.)) (field_x +. 6.) 27.
+    @ location_drawn width m
     @ logo ~phase:(phase computer m) (width -. 46.) 4.
   in
   (* the tabs, the one shown white as its page *)
@@ -632,7 +740,8 @@ let view_simple (computer : P.computer) (m : model) (over : string option) : P.s
     (* the zoom, when it is not 100% *)
     @ text (Browser_zoom.label z) (width -. 50.) (height -. 6.)
   in
-  [ P.move screen.left screen.top (P.group (page @ toolbar @ strip @ status @ offered)) ]
+  let bar = Scrollbar.shapes (scrollbar width height m) in
+  [ P.move screen.left screen.top (P.group (page @ bar @ toolbar @ strip @ status @ offered)) ]
 
 (* opti: the shapes of the frame before given back, the very list,
  * when nothing they are made of has changed: the platform then draws
@@ -647,7 +756,7 @@ type shown = {
   focus : Dom.element option;
   said : string;
   busy : bool;
-  field : string * bool;
+  field : Location_field.t * bool;
   zoom : float;
   size : float * float * float * float;
   over : string option;
@@ -755,7 +864,7 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
    * by default both are passed over with a warning (plan_browser.md, C) *)
   if List.assoc_opt "strict" flags = Some "on" then (Browser_script.strict := true; Js_eval.lenient := false);
   P.game view (update caps)
-    { tab; left = []; right = []; blank; places; choice = -1; location = Tab.url tab; editing = false; fresh = false; before = []; cursor = P.Arrow; zooms = kept.zooms;
+    { tab; left = []; right = []; blank; places; choice = -1; location = Location_field.focused (Tab.url tab); editing = false; fresh = false; down = false; pressed_at = -1.; selecting = false; grab = None; before = []; cursor = P.Arrow; zooms = kept.zooms;
       console = (if List.assoc_opt "console" flags = Some "on" then Some 0 else None); jar; profile; window = kept.window; kept = (kept, 0, places); piece = None; later = [] }
 
 let () =

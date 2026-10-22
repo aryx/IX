@@ -86,6 +86,8 @@ let flags = Plan9_loop.flags
 
 (* Plan9_loop's: a picture written to /dev/cursor *)
 let set_cursor = Plan9_loop.set_cursor
+let clipboard = Plan9_loop.clipboard
+let set_clipboard = Plan9_loop.set_clipboard
 
 let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =

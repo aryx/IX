@@ -65,3 +65,7 @@ val run_app :
 (* the cursor over the window, Playground_platform's: Plan 9's arrow,
  * or a picture of the platform's written to /dev/cursor *)
 val set_cursor : Playground.cursor -> unit
+
+(* Playground_platform's clipboard: /dev/snarf (Snarf) *)
+val clipboard : unit -> string
+val set_clipboard : string -> unit

@@ -28,6 +28,11 @@ let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flag
 (* no window, no cursor *)
 let set_cursor (_ : Playground.cursor) : unit = ()
 
+(* no desktop: the program's own text *)
+let kept = ref ""
+let clipboard () : string = !kept
+let set_clipboard (s : string) : unit = kept := s
+
 let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in

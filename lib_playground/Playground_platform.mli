@@ -32,8 +32,8 @@
  *                 (Fill, Line, Circle,       (Display, Draw)
  *                  Stroke, Hershey, Blit)
  *
- * ix: the playground's playground/Playground_platform.mli has more (the
- * clipboard, pictures loaded ahead, the window's pixels
+ * ix: the playground's playground/Playground_platform.mli has more
+ * (pictures loaded ahead, the window's pixels
  * read back), each to come with the first program that
  * asks for it (its documents stored are platforms/Store's here, one
  * module for every platform, which a library may name: a platform is
@@ -87,3 +87,11 @@ val run_app :
  * window. A program calls it when what is under the mouse changes
  * (mini-netscape: a hand over a link), not at each frame. *)
 val set_cursor : Playground.cursor -> unit
+
+(* The text the desktop's programs share: what a copy puts there
+ * ([set_clipboard], Ctrl+C) and a paste takes ([clipboard], "" when it
+ * holds no text). Effects, as [set_cursor], called from an update.
+ * SDL's in sdl/; on Plan 9 the window system's /dev/snarf (Snarf);
+ * without a window (ppm/) a text of the program's own. *)
+val clipboard : unit -> string
+val set_clipboard : string -> unit

@@ -81,6 +81,23 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   `Omnibox`, `Bookmarks` and `Window_tabs` are not copied (their text
   field and tab bar are libs/gui's).
 
+- **The Location field edited, a scrollbar** (2026-10-22; the author:
+  "allow to select in the omnibox the text, with double click to select
+  the whole line, C-c to copy, etc. Let's also add a Scrollbar when the
+  page can be scrolled", "I think mini-chrome implement those things").
+  `Location_field` (mini-chrome's `Gui_field` and its `Omnibox`'s keys):
+  a caret, a click puts it, a drag selects, a double click selects all
+  (two presses within 0.4 s, by the frame's clock), Shift and the
+  arrows, Home, End select; Ctrl+A, C, X, V. The text's part that shows
+  follows the caret, measured in the field's letters (mini-chrome's
+  cells of a monospace font). The clipboard is the platform's
+  (`Playground_platform.clipboard`, new): SDL's, `/dev/snarf` on Plan 9
+  (lib_graphics' `Snarf`: mini-rio's, which its terminal pastes), the
+  program's own text without a window. `Scrollbar` (mini-chrome's
+  `Gui_scrollbar`, y down, drawn as Netscape's: a grey track, a raised
+  thumb), over the page's right edge when the page is longer than the
+  window: its thumb dragged, a click above or below it a page.
+
 - **-v** (2026-10-19, as mini-chrome's): on the standard error, the
   profile's files read and written, each address fetched and what came
   (its status, type and size), `~/.mailcap`, the helper programs run
@@ -144,8 +161,9 @@ code 16.6 s.
   `tests/helpers.sh`: fake programs on the PATH say what they were given.
 - A page shown while its scripts run (a long run stops the window:
   mini-chrome's `Js_slice` is not taken); bookmarks' folders, a
-  bookmark removed but in an editor; a text field's caret and
-  selection in the Location field; an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
+  bookmark removed but in an editor; a page's text selected (a field's
+  of the page has no caret either); a key held that repeats (Left, Backspace);
+  an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
   (gzip alone is asked for).
 - A file given by a relative path keeps it (`file://browsers/...`): a
   link of its page that starts with `/` goes wrong.
@@ -161,7 +179,10 @@ no network), each its last frame's sum (`frames.expected`): the first
 page, a page with its sheet, a link clicked, Back, an address typed and
 Enter, a form filled and sent, a `#fragment`, Backspace and Page Down,
 a file that is not there. The frames were looked at when recorded
-(2026-10-09).
+(2026-10-09). Since: the Location field's caret, drag, copy and paste,
+and its double click (without `-fixed-time`: the frames' clock then
+goes, a click 0.4 s after another is not a double one), the scrollbar
+dragged and clicked (2026-10-22).
 
 By hand, 2026-10-09, without a window (`-dump-frame`):
 `url=https://en.wikipedia.org/wiki/OCaml`, two arrows down: the article

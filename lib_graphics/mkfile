@@ -8,7 +8,7 @@ LIB=lib_graphics
 DIRS=core geometry images software fonts pdf svg .
 NEEDS=lib_compression
 UNITS=Opti Rgba_image Affine Vec2 Dct Gif Jpeg_progressive Png Xpm Hershey_futural Hershey Glyph_names Standard_widths \
- Pdf_object Pdf_write Font_default Keyboard Point Rectangle Mouse Display Cursor Pdf_filter Glyph_unicode Jpeg Image_file \
+ Pdf_object Pdf_write Font_default Keyboard Point Rectangle Mouse Display Cursor Snarf Pdf_filter Glyph_unicode Jpeg Image_file \
  Curve Framebuffer Blit Circle Fill Line Stroke Outline Truetype Type1 Pdf_canvas Pdf Svg Draw Font Menu Pdf_color Cff \
  Pdf_font Pdf_image Pdf_shading Pdf_render
 <$TOP/mkfiles/mklib

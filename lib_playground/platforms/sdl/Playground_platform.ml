@@ -102,6 +102,11 @@ let set_cursor (c : Playground.cursor) : unit =
               Sdl.set_cursor (Some cursor)
           | Error _ -> ()))
 
+(* the desktop's clipboard, SDL's *)
+let clipboard () : string =
+  match Sdl.get_clipboard_text () with Ok s -> s | Error _ -> ""
+let set_clipboard (s : string) : unit = ignore (Sdl.set_clipboard_text s)
+
 (* The sound, when the program has one (Audio_source): SDL's device
  * asked for 16 bits, two channels, 44,100, and after each frame what
  * is missing of three frames queued ahead is pulled and queued (the

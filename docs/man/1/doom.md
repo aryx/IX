@@ -41,8 +41,9 @@ Space, `e`
 :    Its level of that name (*E1M2*, *MAP01*); the first by default.
 
 **scale=**
-:    Each of Doom's 320 by 200 pixels drawn *n* by *n* (1 to 4; 2 by
-     default).
+:    Each of Doom's 320 by 200 pixels drawn *n* by *n* (1 to 4; 1 by
+     default on Plan 9, 2 elsewhere). On the Raspberry Pi, 2 is a
+     frame or two a second.
 
 **monsters**
 :    The level's monsters, standing.

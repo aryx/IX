@@ -12,13 +12,15 @@
  *   (Doom's , and .); shift runs; space (or e) uses (a door, a
  *   switch, a lift)
  *
- *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=2] [x=X y=Y angle=A] [monsters] [lumps]
+ *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=n] [x=X y=Y angle=A] [monsters] [lumps]
  *     wad=   the WAD (default: /lib/doom/freedoom.wad, else
  *            games/fps/doom/data/freedoom.wad: the card's, the
  *            repository's); an IWAD of id's works the same
  *            (doom1.wad), the levels its own
  *     map=   which level (the WAD's first by default)
- *     scale= each of Doom's 320 by 200 pixels made n by n (1 to 4);
+ *     scale= each of Doom's 320 by 200 pixels made n by n (1 to 4;
+ *            2 by default, 1 on Plan 9: mini-9pi under QEMU made a
+ *            frame of 640 by 400 in 0.7 s, of 320 by 200 in 68 ms);
  *            the platform's size= is then 320 n, so that it shows the
  *            picture as it is (unless size= is said)
  *     x= y= angle=  the player put there, looking that way (degrees):
@@ -125,10 +127,11 @@ let view (computer : P.computer) (m : model) : P.shape list =
    * square's at size=320n) *)
   let w = screen.width and h = screen.width *. float (Render.height m.render) /. float (Render.width m.render) in
   let text (s : string) (y : float) : P.shape = P.words P.white s |> P.scale 2. |> P.move 0. y in
-  (* (the black around the picture, where the screen is a square: the
-   * Plan 9 platforms'; a window of the picture's size has none, its
-   * pixels then the picture's only) *)
-  (if h < screen.height then [ P.rectangle P.black screen.width screen.height ] else [])
+  (* (a grey around the picture, where the screen is a square: the
+   * Plan 9 platforms'; not black, where the platform's counter of
+   * frames, in black, would not be seen. A window of the picture's
+   * size has none, its pixels then the picture's only) *)
+  (if h < screen.height then [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ] else [])
   @ [ P.bitmap w h m.images.(m.frames land 1) ]
   @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
   @
@@ -186,7 +189,7 @@ let () =
            let texture (name : string) : int = let k = Textures.texture textures name in if k = 0 then -1 else k in
            let map = match flag "map" with Some m -> String.uppercase_ascii m | None -> (match Level.maps wad with m :: _ -> m | [] -> failwith "no level in the WAD") in
            let level = Level.load wad map texture (Textures.flat textures) in
-           let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> n | _ -> 2 in
+           let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> n | _ -> if Sys.os_type = "Plan9" then 1 else 2 in
            let render = Render.create 320 200 in
            let image () : Rgba_image.t = Rgba_image.create ~width:(320 * scale) ~height:(200 * scale) in
            let rgba = Bytes.create 1024 in
@@ -216,7 +219,9 @@ let () =
            (* heap=modest: a WAD's megabytes are alive the whole game, and a
             * game's heap of eight times what is alive (Plan9_loop) does
             * not fit in mini-9pi's memory *)
-           Playground_platform.run_app caps (("heap", "modest") :: flags) (P.game view update model)
+           (* changes=all: a new picture each frame, Redraw's comparing
+            * of two for nothing (Redraw.choose) *)
+           Playground_platform.run_app caps (("heap", "modest") :: flags @ [ ("changes", "all") ]) (P.game view update model)
          end
        with Failure msg ->
          Console.eprint caps ("mini-doom: " ^ msg ^ "\n");

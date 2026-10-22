@@ -676,7 +676,9 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   letters_kept := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "strokes";
   smooth := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "bits";
   Redraw.choose (List.assoc_opt "redraw" (Plan9_loop.flags caps));
-  side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
+  (* (the command line's size=, else the program's: mini-doom asks the
+   * size of its picture, not to have it scaled) *)
+  side := (match List.assoc_opt "size" (Plan9_loop.flags caps @ flags) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors;

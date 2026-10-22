@@ -170,7 +170,8 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
    * playground is a pixel now, a label a quarter taller, where the
    * screen has the room (its title bar's 40 pixels left) *)
   let size =
-    match List.assoc_opt "size" own with
+    (* (the command line's, else the program's) *)
+    match List.assoc_opt "size" (own @ flags) with
     | Some s -> int_of_string s
     | None -> (
         match Sdl.get_display_usable_bounds 0 with

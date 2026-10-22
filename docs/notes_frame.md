@@ -62,7 +62,12 @@ system call per batch of messages, and a copy of what they carry.
 In a window of mini-rio's the same files are the window's: rio gives
 the program the name of its window's image, and the program draws in
 it through the same device, as on Plan 9. Rio draws only its borders
-and menus; it is not on a program's path to the screen.
+and menus; it is not on a program's path to the screen. A window is a
+layer (memlayer): a draw on a window seen whole goes to the screen's
+pixels directly, a covered part to the layer's own memory; the cost is
+the clipping by the windows above it. On the author's Pi 2, mini-doom
+and mini-quake in a window: "similar number; maybe slightly lower, but
+I'm not even sure" (2026-10-22).
 
 ## 2. The paths
 
@@ -112,8 +117,11 @@ each ball a filled ellipse ('E'). While it turns every shape moves, so Redraw's
 box is the whole picture and nothing is saved there; standing still,
 only the ball's boxes. No Bitmap is loaded. Measured (2026-10-22,
 turning): 25 to 30 frames a second; its view under 1 ms, the messages
-9 to 10 ms, the kernel drawing them 16 to 23 ms. Its cost is the
-device's polygons, and mini-ml's code making the messages.
+9 to 10 ms, the kernel drawing them 16 to 23 ms. On the author's Pi 2
+the same evening: "around 44, 50 fps depending on the area" (50 before
+too, bugs/ix.md's force_turbo: Pixels changed nothing here, as it
+should not). Its cost is the device's polygons, and mini-ml's code
+making the messages.
 
 **TinyWolfenstein** (A). A column of the view a ray, drawn as an upright
 rectangle: hundreds of 'd' a frame, each of a colour (no textures).
@@ -122,8 +130,11 @@ Everything changes as the player turns.
 **mini-doom, mini-quake** (D). Their renderers make 320 by 200 palette
 indices; the platform makes them the screen's two bytes a pixel and
 loads them into an image it keeps: Part II. 13 to 14 and 11 to 15
-frames a second under QEMU; the renderer, in mini-ml's code, is now
-the larger part of a frame.
+frames a second under QEMU; mini-doom on the author's Pi 2 "around 15
+fps on big area, and more like 24 on smaller area" (8 before),
+mini-quake "around 15 fps too, depend on the zone". The
+renderer, in mini-ml's code, is now the larger part of a frame, and
+the one that varies with the view.
 
 **mini-page** (B). A PDF page is a Bitmap, made at the size it is shown
 (the author: "also it shows low fps"; commit 48ff2664), kept by the

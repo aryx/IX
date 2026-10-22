@@ -244,9 +244,10 @@ mini-9pi), 6 not started.
   as mini-doom's id reference (tests/compare.sh), the pixels that
   differ counted; it needs a `progs.dat`, LibreQuake's QuakeC compiled
   (fteqcc, maybe nixpkgs').
-- **Speed**: plan_doom.md's stage 6, the framebuffer (both games at
-  about 7 frames a second under QEMU, the picture's way to the screen
-  half of a frame); then, of id's own: a face's edges shared with its
+- **Speed**: since Playground.Pixels (plan_playground_framebuffer.md,
+  F2), 11 to 15 frames a second under QEMU, and on the author's Pi 2
+  "around 15 fps too, depend on the zone, not bad either"; then the
+  framebuffer (F1: the show left, 17 to 36 ms under QEMU); then, of id's own: a face's edges shared with its
   neighbour (the edge cache), 16 pixels between divisions; mini-prof
   on a frame. Not measured: the Pi 2 (mini-doom's 8 there), mini-qemu
   at -ips 200.

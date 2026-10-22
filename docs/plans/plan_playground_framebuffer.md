@@ -251,7 +251,12 @@ of the device's loaded with 4 bytes a pixel).
   code for the messages are what is left, not the path of a picture.
   A Bitmap (an app's RGBA pictures: a page, a browser's images) still
   takes the slow path when it is new each frame (a video's).
+- On the author's Pi 2 (the main tree's card, made the same evening,
+  mini-9pi 0.2 at 7f15c58f+), mini-doom outside rio: "around 15 fps on
+  big area, and more like 24 on smaller area; quite smooth. could be
+  better but not bad" (8 a second before, plan_doom.md); TinyCameltry,
+  of shapes: "around 44, 50 fps depending on the area", as before;
+  mini-quake: "around 15 fps too, depend on the zone, not bad either".
 - Checked: games, examples, office and drscheme's frames' tests (130
   sessions) the same; mini-mk O=5 OS=plan9 of lib_playground, its
-  platforms and apis, mini-doom, mini-quake. Not run: the Pi 2; the
-  main tree's card not remade.
+  platforms and apis, mini-doom, mini-quake.

@@ -332,8 +332,12 @@ let remembered (m : model) : model =
 (*****************************************************************************)
 
 (* the tab's pieces done by a worker beside the window (Tab_worker),
- * the window keeping its copy: what comes back merged with it *)
-let give (caps : < caps; .. >) (m : model) : model = { m with piece = Some (Tab_worker.give caps m.tab) }
+ * the window keeping its copy: what comes back merged with it. The
+ * worker's copy without the program to start (Tab.take_job): the
+ * window starts it, else it comes back with the next piece (a PDF
+ * given to mini-page twice) *)
+let give (caps : < caps; .. >) (m : model) : model =
+  { m with piece = Some (Tab_worker.give caps (snd (Tab.take_job m.tab))) }
 
 (* the tab a piece made, the window's (a page come of another site laid
  * out at its zoom before it is drawn) *)

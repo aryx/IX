@@ -554,6 +554,14 @@ Playground's notes_opti_ocaml.md: mini-doom's 640x400 picture 21 ms by
     7.0 to 0.5 ms (mini-ml); switch `-nocache`.
 - **mini-qemu's pace** (a3fa43e0): the board caught up from 0.5 to 0.9-1.0
   of the host's clock at 30 moves a second.
+- **mini-9pi's copy on write at fork** (2026-10-22, kernels/9pi/memory/Fault.ml;
+  memory, not time): every Playground program forks four helpers at its
+  start (the keys, the mouse, the clock, the keys held), and each got a
+  copy of all its parent had touched. `page /lib/pdf/tex.pdf` under QEMU,
+  `/dev/swap`'s user pages: 43,691 (170 MB of the Pi1's 352) to 28,327
+  (110 MB); each helper had held 20 MB. Before it, troff.pdf's start
+  failed at a fork and one zoom of tex.pdf ended mini-page (or rio, the
+  next to ask). No switch: the stack is still copied at fork.
 
 ## Open questions (claims not verified)
 

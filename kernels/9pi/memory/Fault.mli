@@ -53,9 +53,8 @@
  * No page ever leaves: there is no swap, and no reclaiming of a text
  * page that could be read again. When memory runs out, the process
  * that asked is ended with a note saying so (Main.fault) and the
- * rest go on. No copy on write either (Sysproc's rfork copies), and
- * a text page can be written by its program: every page is mapped
- * for writing. A swap's plan is plan_kernel_swap.md.
+ * rest go on. A text page can be written by its program: it is
+ * mapped for writing. A swap's plan is plan_kernel_swap.md.
  *
  * others:
  * xv6 has one table, the process's: exec reads the whole program in,
@@ -79,21 +78,25 @@ open Errors
  * length) *)
 val create : seg_kind -> int -> int -> chan option -> int -> int -> segment
 
-(* [fault p va]: the page at va mapped, made if need be (true), or not
- * in a segment (false: the process's trap) *)
+(* [fault p va]: the page at va mapped, made if need be, or copied if
+ * written while shared since a fork (true), or not in a segment, or
+ * mapped and refused (false: the process's trap) *)
 val fault : proc -> int -> bool
 
 (* [validaddr p addr len]: the pages of [addr, addr+len) that are in a
- * segment, mapped *)
+ * segment, mapped, and the process's own (none shared since a fork) *)
 val validaddr : proc -> int -> int -> unit
 
 (* [page pgdir s va]: a page of s made (zeroed) and mapped in the table
  * pgdir (exec writing the arguments in its new space) *)
 val page : int -> segment -> int -> unit
 
-(* [dup s pgdir share]: a fork's segment: s itself (shared: text, and
- * with RFMEM data and bss), or a copy of its pages, mapped in pgdir *)
-val dup : segment -> int -> bool -> segment
+(* [dup s from pgdir share]: a fork's segment, from the table [from]:
+ * s itself (shared: text, and with RFMEM data and bss), or for data
+ * and bss its pages, then to be read only in both tables and copied
+ * when written (fault), or a copy of its pages (the stack, a segment
+ * shared), mapped in pgdir. The table [from]'s TLB is to be flushed *)
+val dup : segment -> int -> int -> bool -> segment
 
 (* a process's segments given up (exec, exits): a segment's pages freed,
  * its image closed, by its last process; the table's own pages freed *)

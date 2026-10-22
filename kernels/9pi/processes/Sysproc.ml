@@ -75,13 +75,15 @@ let sysrfork (p : proc) flag =
   end else begin
     let slot = match Proc.free_slot () with Some s -> s | None -> raise (Error "no free processes") in
     let pgdir = match Mmu.create () with Some d -> d | None -> raise (Error enovmem) in
-    (* the memory (dupseg): text shared, data and bss too with RFMEM, the
-     * stack copied *)
+    (* the memory (dupseg): text shared, data and bss too with RFMEM, else
+     * shared until written (Fault's copy on write), the stack copied *)
     let share s = s.kind = Text || (flag land rfmem <> 0 && s.kind <> Stack) in
     let segs = List.fold_left (fun acc s ->
       match acc with
       | None -> None
-      | Some l -> (try Some (Fault.dup s pgdir (share s) :: l) with Error _ -> Fault.release pgdir l; None)) (Some []) p.segs in
+      | Some l -> (try Some (Fault.dup s p.pgdir pgdir (share s) :: l) with Error _ -> Fault.release pgdir l; None)) (Some []) p.segs in
+    (* (the parent's pages now to be read only: its TLB said otherwise) *)
+    Machine.mmu_switch p.pgdir;
     let segs = match segs with Some l -> List.rev l | None -> raise (Error enovmem) in
     let fg, pg, eg = groups p flag in
     let pid = !Proc.nextpid in

@@ -60,9 +60,10 @@
  * a page at fork only when one side writes it, takes pages back and
  * writes them to a disk, and uses entries of the upper levels for
  * blocks of 2 MB: all of them tricks on these same entries. xv6
- * leaves them as exercises; mini-9pi does the first (its Fault: a
+ * leaves them as exercises; mini-9pi does the first two (its Fault: a
  * page given at its first touch, a segment shared by several
- * processes), with [map], [unmap] and [mapped] below.
+ * processes, a page shared after a fork until written), with [map],
+ * [map_ro], [unmap] and [mapped] below.
  *
  * References: the xv6 book's "Page tables" (kalloc.c, vm.c; the
  * RISC-V walk is three levels, as the Pi4's). The ARM Architecture
@@ -99,6 +100,9 @@ val lookup : int -> int -> Page.t option
  * write; false: no page for a table), [unmap pgdir va] one unmapped but
  * not freed, [free_tables pgdir] a space's tables freed, not its pages *)
 val map : int -> int -> int -> bool
+(* [map_ro pgdir va pa]: the same, the user's to read only (a page
+ * shared after a fork until one side writes it) *)
+val map_ro : int -> int -> int -> bool
 val unmap : int -> int -> unit
 val free_tables : int -> unit
 

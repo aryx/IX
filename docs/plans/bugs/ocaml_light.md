@@ -167,6 +167,35 @@ test (`languages/ml/tests/modern/stdlib.ml`, `formats.ml`):
   them when the last argument comes, as OCaml's: `printf "a%d"`
   without its argument writes nothing either.
 
+## 9. `Hashtbl.replace` never grows the table, and recurses down a bucket (a bug)
+
+**What**: `stdlib/hashtbl.ml`'s `replace` has its resize in a `TODO`
+comment (`h.size <- succ h.size; if h.size > ... then resize`), and
+its `replace_bucket` is a call per binding of the bucket, raising
+`Not_found` at the end for a new key. A table filled by `replace`
+keeps its first number of buckets, and each new key costs a call per
+binding already in its bucket. lib_core's copy had the same `TODO`
+(bugs/ix.md, 2026-10-09: fixed there for mini-ml's programs);
+ocaml-light's own, which the kernels by ocaml-light link, still has it.
+
+**Found** 2026-10-22, mini-9pi's copy on write at fork (Fault): a table
+of the pages several processes hold, `Hashtbl.create 1024` then
+`replace` at each page given or taken; mini-page's four helpers made it
+tens of thousands of pages. `replace_bucket` went more than 1,024
+calls deep, past a process's kernel stack (runtime.c's `KSTACK`, 16
+KB) into its neighbour's, and the next collection stopped the kernel
+(`kernel fault: in the kernel, data abort, lr ... far 00000000`, in
+`do_local_roots`: a return address not in the frame table). Found by
+gdb on QEMU: at the fault, slots 4 to 7 of `kstacks` used to their
+first byte, and one of them full of `Hashtbl.replace_bucket`'s return
+address.
+
+**Fix**: `replace` as OCaml's: count the bindings, resize as `add`
+does; `replace_bucket` and `remove_bucket` by a loop or a tail call.
+
+**Workaround** (`kernels/9pi/memory/Fault.ml`'s `set`): `remove` then
+`add`, which resizes.
+
 ## Not ocaml-light's, found on the way
 
 - **Ubuntu's armhf libgcc is Thumb-2 for ARMv7**: an ARMv6 cannot run

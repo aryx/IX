@@ -156,6 +156,8 @@ let free pgdir =
  * processes: rfork's RFMEM): a page mapped at va (the user's, to write),
  * one unmapped (not freed), the tables freed but not the pages *)
 let map pgdir va pa = set pgdir va (Some { pa = pa; perm = User_rw })
+(* (the user's to read only: a page shared until written, Fault) *)
+let map_ro pgdir va pa = set pgdir va (Some { pa = pa; perm = User_ro })
 let unmap pgdir va = ignore (set pgdir va None)
 
 let free_tables pgdir =

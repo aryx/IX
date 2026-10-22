@@ -44,31 +44,120 @@ let make pgdir s pg =
 let fill pgdir s pg =
   try map pgdir pg (Hashtbl.find s.pages pg) with Not_found -> make pgdir s pg
 
+(* Copy on write (Plan 9's fork and fixfault): a fork gives the child
+ * the data and bss pages of its parent, mapped to be read only in
+ * both, and a page is copied when one of them writes it. How many
+ * segments hold a physical page, when more than one; the others hold
+ * theirs alone. A segment that several processes share (RFMEM) holds
+ * only pages of its own (dup), so that a copy is seen by all who share
+ * it. The stack is copied at the fork as before: the kernel writes the
+ * child's in it (its pid, Sysproc).
+ * What it saves: every Playground program forks four helpers at its
+ * start (Plan9_loop: the keys, the mouse, the clock, the keys held),
+ * and each had a copy of all the parent had touched, 20 MB for
+ * mini-page. `page /lib/pdf/tex.pdf` under QEMU, the user's pages in
+ * use (/dev/swap): 43,691 (170 MB of the Pi1's 352) before, 28,327
+ * (110 MB) after (2026-10-22). Before it, troff.pdf's start failed at
+ * a fork, and a zoom ended mini-page, or rio, the next to ask. *)
+let holders : (int, int) Hashtbl.t = Hashtbl.create 1024
+let held pa = try Hashtbl.find holders pa with Not_found -> 1
+
+(* a binding changed (Hashtbl.replace: ocaml-light's never grows the
+ * table and goes down a bucket by a call per binding, and a table of
+ * thousands of pages took a process's kernel stack, 16 KB, and the
+ * next one's: docs/plans/bugs/ocaml_light.md) *)
+let set (t : (int, int) Hashtbl.t) k v = Hashtbl.remove t k; Hashtbl.add t k v
+
+(* one holder less: the page freed by its last *)
+let let_go pa =
+  match held pa with
+  | 1 -> Mmu.kfree pa
+  | 2 -> Hashtbl.remove holders pa
+  | n -> set holders pa (n - 1)
+
+let shareable s = s.kind = Data || s.kind = Bss
+
+(* the page at pg of s made the segment's own, mapped to be written:
+ * copied if another holds it too *)
+let own pgdir s pg =
+  let pa = Hashtbl.find s.pages pg in
+  let pa =
+    if held pa = 1 then pa
+    else begin
+      let npa = match Mmu.kalloc () with Some x -> x | None -> raise (Error enovmem) in
+      Machine.Phys.copy npa pa pgsize;
+      let_go pa;
+      set s.pages pg npa;
+      npa
+    end in
+  map pgdir pg pa
+
+(* a page mapped to be read only, of a segment that may share it *)
+let shared pgdir s pg =
+  shareable s && (match Mmu.lookup pgdir pg with Some page -> page.perm = Page.User_ro | None -> false)
+
 let fault (p : proc) va =
   match segment p va with
   | None -> false
   | Some s ->
       let pg = va land lnot (pgsize - 1) in
-      (* a mapped page's fault is its rights': not resolved here *)
-      if Mmu.mapped p.pgdir pg then false else begin fill p.pgdir s pg; true end
+      (* a mapped page's fault is its rights': a write to a page shared
+       * since a fork, or the program's error *)
+      if shared p.pgdir s pg then begin own p.pgdir s pg; Machine.mmu_switch p.pgdir; true end
+      else if Mmu.mapped p.pgdir pg then false
+      else begin fill p.pgdir s pg; true end
 
+(* (a page shared since a fork is made the process's own here, though
+ * the call may only read it: the kernel then writes a user's page
+ * through its physical address, and a semaphore's address is its
+ * page's) *)
 let validaddr (p : proc) addr len =
+  let owned = ref false in
   let rec go pg =
     if pg < addr + len then begin
       (match segment p pg with
-       | Some s -> if not (Mmu.mapped p.pgdir pg) then fill p.pgdir s pg
+       | Some s ->
+           if shared p.pgdir s pg then begin own p.pgdir s pg; owned := true end
+           else if not (Mmu.mapped p.pgdir pg) then fill p.pgdir s pg
        | None -> ());
       go (pg + pgsize)
     end in
-  if len > 0 then go (addr land lnot (pgsize - 1))
+  if len > 0 then go (addr land lnot (pgsize - 1));
+  if !owned then Machine.mmu_switch p.pgdir
 
 let page pgdir s va = fill pgdir s (va land lnot (pgsize - 1))
 
-let dup s pgdir share =
+let release pgdir segs =
+  List.iter (fun s ->
+    s.sref <- s.sref - 1;
+    if s.sref = 0 then begin
+      Hashtbl.iter (fun _ pa -> let_go pa) s.pages;
+      Hashtbl.clear s.pages;
+      match s.image with Some c -> Kchan.close c | None -> ()
+    end) segs;
+  if pgdir <> 0 then Mmu.free_tables pgdir
+
+let dup s from pgdir share =
   if share then begin
+    (* (its pages made its own first: one copied later would be the
+     * copier's only) *)
+    if shareable s then begin
+      let pgs = Hashtbl.fold (fun pg _ acc -> pg :: acc) s.pages [] in
+      List.iter (fun pg -> if held (Hashtbl.find s.pages pg) > 1 then own from s pg) pgs
+    end;
     s.sref <- s.sref + 1;
     Hashtbl.iter (fun pg pa -> map pgdir pg pa) s.pages;
     s
+  end else if shareable s && s.sref = 1 then begin
+    (match s.image with Some c -> Kchan.incref c | None -> ());
+    let n = create s.kind s.base s.top s.image s.fstart s.flen in
+    (try
+       Hashtbl.iter (fun pg pa ->
+         set holders pa (held pa + 1);
+         Hashtbl.add n.pages pg pa;
+         if not (Mmu.map_ro from pg pa && Mmu.map_ro pgdir pg pa) then raise (Error enovmem)) s.pages
+     with e -> release 0 [ n ]; raise e);
+    n
   end else begin
     (match s.image with Some c -> Kchan.incref c | None -> ());
     let n = create s.kind s.base s.top s.image s.fstart s.flen in
@@ -80,20 +169,10 @@ let dup s pgdir share =
     n
   end
 
-let release pgdir segs =
-  List.iter (fun s ->
-    s.sref <- s.sref - 1;
-    if s.sref = 0 then begin
-      Hashtbl.iter (fun _ pa -> Mmu.kfree pa) s.pages;
-      Hashtbl.clear s.pages;
-      match s.image with Some c -> Kchan.close c | None -> ()
-    end) segs;
-  if pgdir <> 0 then Mmu.free_tables pgdir
-
 let shrink (p : proc) s newtop =
   if s.sref > 1 then raise (Error einuse);
   let gone = ref [] in
   Hashtbl.iter (fun pg pa -> if pg >= newtop then gone := (pg, pa) :: !gone) s.pages;
-  List.iter (fun (pg, pa) -> Hashtbl.remove s.pages pg; Mmu.unmap p.pgdir pg; Mmu.kfree pa) !gone;
+  List.iter (fun (pg, pa) -> Hashtbl.remove s.pages pg; Mmu.unmap p.pgdir pg; let_go pa) !gone;
   (* the TLB flushed *)
   Machine.mmu_switch p.pgdir

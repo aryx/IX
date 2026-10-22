@@ -112,6 +112,30 @@ let on_curve (c : curve) (x : Bignum.t) (y : Bignum.t) : bool =
   let rhs = Bignum.add_mod c.p (Bignum.sub_mod c.p x3 (Bignum.rem (Bignum.mul (Bignum.of_int 3) x) pv)) c.b in
   Bignum.equal (m y y) rhs
 
+(* a point as SEC 1 writes it uncompressed: 04, x, y *)
+let encode (c : curve) (x : Bignum.t) (y : Bignum.t) : string =
+  "\004" ^ Bignum.to_bytes ~len:c.bytes x ^ Bignum.to_bytes ~len:c.bytes y
+
+let generator (c : curve) : string = encode c c.gx c.gy
+
+let multiply (c : curve) (k : string) (point : string) : string option =
+  let n = c.bytes in
+  if String.length point <> 1 + (2 * n) || point.[0] <> '\004' then None
+  else
+    let x = Bignum.of_bytes (String.sub point 1 n) in
+    let y = Bignum.of_bytes (String.sub point (1 + n) n) in
+    if not (on_curve c x y) then None
+    else
+      let pt = scalar_mult c (Bignum.of_bytes k) (affine c x y) in
+      if Bignum.mont_is_zero pt.z then None
+      else
+        (* back from Jacobian: x = X/Z^2, y = Y/Z^3 *)
+        let m = Bignum.mul_mod c.p in
+        let zi = Bignum.inverse_prime c.p (Bignum.to_nat c.p pt.z) in
+        let zi2 = m zi zi in
+        Some (encode c (m (Bignum.to_nat c.p pt.x) zi2)
+                (m (Bignum.to_nat c.p pt.y) (m zi2 zi)))
+
 let generator_ok (c : curve) : bool =
   on_curve c c.gx c.gy && Bignum.mont_is_zero (scalar_mult c (Bignum.modulus_value c.n) (affine c c.gx c.gy)).z
 

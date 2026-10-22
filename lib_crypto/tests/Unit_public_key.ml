@@ -87,6 +87,24 @@ let tests =
       Testo.create "the curves' constants: G on the curve, n*G = O" (fun () ->
           Alcotest.(check bool) "P-256" true (Ecdsa.generator_ok Ecdsa.p256);
           Alcotest.(check bool) "P-384" true (Ecdsa.generator_ok Ecdsa.p384));
+      Testo.create "ECDH on P-256 and P-384: Python's keys and secrets" (fun () ->
+          (* (Python's cryptography: a = 01 02 03 ..., b's public key, and
+           * the x of a*B) *)
+          let check curve a public_a public_b shared =
+            let n = Ecdsa.size curve in
+            check_hex "a*G" public_a (Option.get (Ecdsa.multiply curve (unhex a) (Ecdsa.generator curve)));
+            check_hex "a*B" shared (String.sub (Option.get (Ecdsa.multiply curve (unhex a) (unhex public_b))) 1 n);
+            Alcotest.(check bool) "a point off the curve" true
+              (Ecdsa.multiply curve (unhex a) (hex (flip (unhex public_b) 5)) = None)
+          in
+          check Ecdsa.p256 "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+            "04515c3d6eb9e396b904d3feca7f54fdcd0cc1e997bf375dca515ad0a6c3b4035f4536be3a50f318fbf9a5475902a221502bef0d57e08c53b2cc0a56f17d9f9354"
+            "045142f48a7c80caf47544a428fc57d272a6c678ad5e93ffcba36666a99639e51dd1bdb6fb598144567a2657e8ff3619fbaa0cd2a040c19ab22af910c705a757ba"
+            "26d4eeef6a6c76d81c054d19d75dc4f0bdc45d632599df3b8b4c2a86134ffb6c";
+          check Ecdsa.p384 "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30"
+            "04c76f2283dda95cd49b0ed9e733d2904474e37216f124e13d2c9ab4cf01021c49ad9cabb3d0b97499aef2f0ab313fa02826bc1f83451b5c8962a75caff73588d4400a6296436154fb343c393e91048a6c7bcbadc83cd8a5f26feae883156f92a1"
+            "04341e0b5d46340a8787ade329b48c59510e3d0cfe0c40ca09b5b7dd0d54fc4c3f8a9d2ed8fcaeb133f2d12bfeeebe52999a8935be97f271d17a96acc37378084be53528ed48c3eb3fa8c561be9abc053a0df7b8384cfcb01653f9db30de04f8a7"
+            "f755ecd7dae900e0cd7ae375f361809328402009a9e16f9d6f2e8edb9ae26608eb77e9ad160d36c8fe03e0a71f0bfb34");
       Testo.create "ECDSA: Python's signatures, and changed ones" (fun () ->
           let check curve digest cases =
             List.iteri

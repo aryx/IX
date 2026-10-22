@@ -10,5 +10,5 @@ LIB=lib_networking
 OSDIR=`{~ $OS plan9 && echo tcp/plan9}
 DIRS=tcp tls http $OSDIR
 NEEDS=lib_crypto lib_compression
-UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client
+UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls12 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client
 <$TOP/mkfiles/mklib

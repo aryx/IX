@@ -348,6 +348,14 @@ def files():
             and not re.fullmatch(r"tiny/((TinyMachine|TinyKernel)/)?[^/]+\.mli", f)]
 
 
+# the entries said on a line of their own, after a name and their sum
+# (without -v): the author, 2026-10-22, "maybe sdl/ tty/ web in one
+# group and opti/ ssa/ compat/ in another line"; then kernels/ and
+# languages/, whose entries are said without the directory
+LINES = [("hosts", ["sdl/", "tty/", "web/"]),
+         ("variants", ["compat/", "opti/", "ssa/"]),
+         ("kernels/", None), ("languages/", None)]
+
 # What is not counted in m-ix, but said at the end, each with its
 # lines: alternatives and options, which ix builds and runs the same
 # without. A name (its row's), why it is apart, and what a path must
@@ -355,8 +363,10 @@ def files():
 APART = [
     ("compat/", "kept for a reference's exact output (5c's code, 5l's layout)",
      lambda dirs, path: "compat" in dirs),
-    ("opti/, ssa/", "optimizations, each behind a flag",
-     lambda dirs, path: "opti" in dirs or "ssa" in dirs),
+    ("opti/", "optimizations, each behind a flag",
+     lambda dirs, path: "opti" in dirs),
+    ("ssa/", "mini-ml's optimizations in SSA form, behind a flag",
+     lambda dirs, path: "ssa" in dirs),
     # (the author, 2026-10-10: "maybe we should also skip code under
     # web/ for make loc?")
     ("web/", "m-ix in a web page (plan_web.md): mini-qemu's host there, the kernel's requests to it",
@@ -372,8 +382,14 @@ APART = [
      lambda dirs, path: path.startswith("kernels/9pi/lib_graphics/c/")),
     # (the author, 2026-10-07: "those are optional and currently the
     # games are using the draw-device platform")
+    # (2026-10-22: lib_graphics/'s software/, core/, geometry/ and
+    # images/ were here too; every module of them is now named by
+    # counted code, the decoders by the browser and the office, the
+    # rasterizers by Shape_render_software, and the author: "yes the
+    # decoders should count, and as we currently optimize the
+    # playground, we might need more of lib_graphics to be counted")
     ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
-     lambda dirs, path: path.startswith(("lib_graphics/software/", "lib_graphics/core/", "lib_graphics/geometry/", "lib_graphics/images/", "lib_playground/platforms/software/"))),
+     lambda dirs, path: path.startswith("lib_playground/platforms/software/")),
     # (the author, 2026-10-08: "let's adjust make loc to not count
     # those languages too"; lib_terminal/ is what Pascal's machine
     # talks through, and nothing else's yet)
@@ -402,11 +418,14 @@ APART = [
     # "just like we didn't count kernels/xv6/ and other kernels")
     ("tiny/TinyKernel/steps/", "the steps before tiny-kernel on tiny-machine: v0 in assembly, t6 in C, with tiny-mkfs, its disk's (tiny-os, until v6 was removed)",
      lambda dirs, path: path.startswith("tiny/TinyKernel/steps/")),
-    # (the author, 2026-10-17: "the paint demo should not be counted, maybe
-    # it should be put in examples/ or something and we could skip this
-    # dir too")
-    ("tiny/TinyKernel/examples/", "tiny-kernel's demos and example files: paint (the mouse paints), a page of the office's",
-     lambda dirs, path: path.startswith("tiny/TinyKernel/examples/")),
+    # (tiny/TinyKernel/examples/ was here, 2026-10-17 to 10-22, the author
+    # then: "is also small (70 lines) so we can probably not count it; not
+    # worth the space it takes in the final make loc output": in t-ix)
+    # (the author, 2026-10-22, after a server that speaks no 1.3: "let's
+    # add TLS 1.2, and maybe skip it in 'make loc'"; Tls13's branches to
+    # it and Ecdsa.multiply are counted, about 60 lines)
+    ("TLS 1.2", "Tls12, for the servers that have no 1.3 (a university's, craigslist)",
+     lambda dirs, path: path.startswith("lib_networking/tls/Tls12.ml")),
     # (the author, 2026-10-17: "for make loc we should not count sh.c and
     # mltests.c under TinyKernel/"; rc is t-ix's shell, TinyShell.ml)
     ("tiny-kernel's sh.c, mltests.c", "its first shell, in C, before rc (TinyShell.ml), still the console's; and the test of its ML programs' calls",
@@ -420,8 +439,10 @@ APART = [
     # in make loc; they are optional as what matters is what is running
     # under mini-9pi"; last, so a program that is apart keeps its own in
     # its row)
-    ("sdl/, tty/", "a program's hosts on Linux, a window of SDL's or a terminal: what counts runs under mini-9pi",
-     lambda dirs, path: "sdl" in dirs or "tty" in dirs or path == "tiny/TinyMachine/TinyMachineWindow.ml"),
+    ("sdl/", "a program's host on Linux, a window of SDL's: what counts runs under mini-9pi",
+     lambda dirs, path: "sdl" in dirs or path == "tiny/TinyMachine/TinyMachineWindow.ml"),
+    ("tty/", "a program's host on Linux, a terminal: the same",
+     lambda dirs, path: "tty" in dirs),
 ]
 
 # The kernel that counts in m-ix is mini-9pi, with what it stands on
@@ -557,13 +578,16 @@ def main():
         # docs/loc.md's: the date, the commit, m-ix, what is apart (compat/,
         # opti/ and ssa/, then the kernel's: the steps, the reference
         # build and the pixels in C, as one number; not the software
-        # platform, nor the other systems of kernels/, SYSTEMS), t-ix
+        # platform, nor the other systems of kernels/, SYSTEMS), t-ix.
+        # old: APART[2:5], which since web/ came (2026-10-10) was web/,
+        # the steps and the reference build, not the pixels in C
+        KERNEL_APART = ["kernels/steps/", "the reference kernels", "lib_graphics/c/"]
         def git(*args):
             return subprocess.run(["git", *args], check=True, capture_output=True, text=True).stdout.strip()
         tiny = sum(s["lines"] for s in stats.get("tiny", {}).values())
         print(f"| {git('log', '-1', '--format=%ad', '--date=short')} | `{git('log', '-1', '--format=%h')}` "
-              f"| {mix['lines'] - taught['mix']:,} | {extra['compat/']['lines']:,} | {extra['opti/, ssa/']['lines']:,} "
-              f"| {sum(extra[n]['lines'] for n, _, _ in APART[2:5]):,} | {tiny - taught['tiny']:,} | |")
+              f"| {mix['lines'] - taught['mix']:,} | {extra['compat/']['lines']:,} | {extra['opti/']['lines'] + extra['ssa/']['lines']:,} "
+              f"| {sum(extra[n]['lines'] for n in KERNEL_APART):,} | {tiny - taught['tiny']:,} | |")
         return
 
     def total(subs):
@@ -637,15 +661,18 @@ def main():
         row("all of them", total(extra.values()), 2)
     else:
         # one row, then each entry's lines (-v: a row each, with why): those
-        # of kernels/ and of languages/ on lines of their own, the
-        # directory said once, with its sum
+        # of LINES' on lines of their own, the group said once, with its sum
         row("all of them", total(extra.values()), 2)
-        groups = {"": [], "kernels/": [], "languages/": []}
+        groups = {"": []}
+        groups.update((g, []) for g, _ in LINES)
         sums = dict.fromkeys(groups, 0)
-        for name, _ in there:
-            group = next((g for g in groups if g and name.startswith(g)), "")
-            short = "the reference ones" if name == "the reference kernels" else name[len(group):]
-            group = "kernels/" if name == "the reference kernels" else group
+        # (a LINES group's in its order)
+        place = {n: i for _, names in LINES for i, n in enumerate(names or [])}
+        for name, _ in sorted(there, key=lambda e: place.get(e[0], 0)):
+            group = next((g for g, names in LINES if (name in names if names else name.startswith(g))), "")
+            short = name[len(group):] if group.endswith("/") else name
+            if name == "the reference kernels":
+                group, short = "kernels/", "the reference ones"
             groups[group].append(f"{short} {extra[name]['lines']:,}")
             sums[group] += extra[name]["lines"]
         for group, items in groups.items():

@@ -2,7 +2,8 @@
 
 - `9p/`: 9P2000, Plan 9's file protocol; ix's own
   ([`plan_rio.md`](../docs/plans/done/plan_rio.md)).
-- `tcp/`, `tls/`, `http/`: a URL fetched, over TCP or inside TLS 1.3,
+- `tcp/`, `tls/`, `http/`: a URL fetched, over TCP or inside TLS 1.3
+  (or 1.2, for the servers that have no 1.3),
   for the browser and the programs beside it
   ([`plan_browser.md`](../docs/plans/plan_browser.md), its stage 3):
   the author's playground's `libs/networking` (`~/playground`), what
@@ -27,6 +28,7 @@ mini-chrome's first version, the plan's base).
 | `tcp/` | `Tcp` | `libs/networking/unix` |
 | `tls/` | `Asn1`, `Pem`, `X509`, `Tls13` | `libs/networking/tls` |
 | `tls/` | `Tls_client` | `libs/networking/unix` |
+| `tls/` | `Tls12` (2026-10-22, P-384 added) | mini-chrome's `libs/network/tls` |
 | `tls/` | `Base64`; `Civil`, `Clock` | `libs/core`; `libs/core/time` |
 | `tests/` | `Unit_url`, `Unit_urlencoded`, `Unit_http`, `Unit_x509`, `Unit_tls13`, `Rfc8448`, `tls/*.pem` | `libs/networking/tests` |
 

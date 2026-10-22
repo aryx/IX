@@ -76,7 +76,9 @@
    X509, Rsa or Ecdsa for the certificates and CertificateVerify.
    Three questions, three mechanisms: a secret nobody else has (the
    exchange), the right server (the signature), nothing changed on the
-   way (the transcript in everything, and the AEAD's tags).
+   way (the transcript in everything, and the AEAD's tags). A server
+   that answers in TLS 1.2 (no supported_versions in its ServerHello)
+   is handed to Tls12 from there: its handshake, then its records.
 
    cs-history:
    From SSL. Netscape made the Secure Sockets Layer for its browser

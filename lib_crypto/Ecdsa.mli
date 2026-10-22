@@ -40,7 +40,9 @@
    and for the server's CertificateVerify (verify_scheme, for Tls13).
    Nothing here signs: a client of the web has no key of its own. And
    so nothing here is secret, which is why arithmetic whose time
-   depends on its numbers (Bignum) is no leak in this module.
+   depends on its numbers (Bignum) is no leak in this module -- but
+   for [multiply], a TLS 1.2 server's key exchange on P-256 or P-384
+   (Tls12), whose secret serves one handshake.
 
    cs-history:
    Elliptic curves for cryptography are Neal Koblitz's and Victor
@@ -83,6 +85,15 @@ val size : curve -> int
 (* [verify curve ~public ~hash ~r ~s]: [public] the point as SEC 1 writes
  * it uncompressed (04, x, y), [hash] the message's digest *)
 val verify : curve -> public:string -> hash:string -> r:Bignum.t -> s:Bignum.t -> bool
+
+(* the curves' points for a key exchange (ECDH, Tls12's): [generator
+ * curve] is G, as SEC 1 writes a point uncompressed (04, x, y);
+ * [multiply curve k point], k (big-endian bytes) times the point --
+ * None if the point is not on the curve, or the product is O. A
+ * secret is used here, and the time taken depends on it: a key made
+ * for one handshake and thrown away, never a key kept *)
+val generator : curve -> string
+val multiply : curve -> string -> string -> string option
 
 (* for the tests: is G on the curve, and n*G the point at infinity? *)
 val generator_ok : curve -> bool

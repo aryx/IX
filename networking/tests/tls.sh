@@ -9,7 +9,9 @@
 # and over AES-128-GCM, the handshake signed by ECDSA and by RSA (PSS);
 # refused when the certificate is not trusted (the system's roots), and
 # when the host asked is another name (127.0.0.1). As the author's
-# playground's Unit_tls_client. Skipped without openssl.
+# playground's Unit_tls_client. And TLS 1.2 (Tls12), the server told to
+# speak no other: its key exchange on X25519, P-256 and P-384, signed
+# by ECDSA and by RSA. Skipped without openssl.
 #
 # usage: tls.sh [dir]     (dir: where mini-curl is; default: dune's)
 
@@ -19,11 +21,12 @@ command -v openssl > /dev/null || { echo "skipped: no openssl"; exit 0; }
 W=$(mktemp -d); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
 fail=0
 port=$((21000 + $$ % 9000))
-serve() { # the key's kind, the cipher suite
+serve() { # the key's kind, the cipher suite; TLS 1.2: its group
   local newkey="-newkey ec -pkeyopt ec_paramgen_curve:P-256"; [ $1 = rsa ] && newkey="-newkey rsa:2048"
   [ -f $W/$1.pem ] || openssl req -x509 $newkey -nodes -keyout $W/$1.key -out $W/$1.pem -days 2 -subj /CN=localhost -addext subjectAltName=DNS:localhost 2> /dev/null
   port=$((port + 1))
-  openssl s_server -quiet -www -tls1_3 -ciphersuites $2 -accept $port -cert $W/$1.pem -key $W/$1.key > /dev/null 2>&1 &
+  local version="-tls1_3 -ciphersuites $2"; [ -n "$3" ] && version="-tls1_2 -cipher $2 -groups $3"
+  openssl s_server -quiet -www $version -accept $port -cert $W/$1.pem -key $W/$1.key > /dev/null 2>&1 &
   pid=$!
   # until it listens (5 s at most): a fixed half second was too short for
   # the first server on a loaded machine (the CI's: "Connection refused")
@@ -43,5 +46,13 @@ check "AES-128-GCM, RSA" 'TLS_AES_128_GCM_SHA256' --cacert $W/rsa.pem https://lo
 kill $pid; wait $pid 2> /dev/null
 serve ec TLS_AES_128_GCM_SHA256
 check "AES-128-GCM, ECDSA" 'TLS_AES_128_GCM_SHA256' --cacert $W/ec.pem https://localhost:$port/
-[ $fail = 0 ] && echo "ok: TLS 1.3 with openssl's server, two ciphers, two kinds of key"
+for group in X25519 P-256 P-384; do
+  serve ec ECDHE-ECDSA-AES128-GCM-SHA256 $group
+  check "TLS 1.2, $group, AES-128-GCM, ECDSA" 'ECDHE-ECDSA-AES128-GCM-SHA256' --cacert $W/ec.pem https://localhost:$port/
+  kill $pid; wait $pid 2> /dev/null
+done
+serve rsa ECDHE-RSA-CHACHA20-POLY1305 P-384
+check "TLS 1.2, P-384, ChaCha20-Poly1305, RSA" 'ECDHE-RSA-CHACHA20-POLY1305' --cacert $W/rsa.pem https://localhost:$port/
+kill $pid; wait $pid 2> /dev/null
+[ $fail = 0 ] && echo "ok: TLS 1.3 and 1.2 with openssl's server, two ciphers, two kinds of key, three groups"
 exit $fail

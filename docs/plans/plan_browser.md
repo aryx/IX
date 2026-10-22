@@ -500,7 +500,12 @@ and 1,893 of the page's 2,679, to show the page as without them.
 7. **TLS 1.3 only, and both ciphers kept** (AES-GCM is 174 lines, and
    what Wikipedia picks when a client prefers it; ChaCha20 would do
    alone). RSA kept (74 lines): the chain's last signature is RSA's
-   unless the root just under it is trusted.
+   unless the root just under it is trusted. TLS 1.2 came after all
+   (2026-10-22; the author, after a PDF of a university's server that
+   speaks no 1.3: "let's add TLS 1.2, and maybe skip it in 'make
+   loc'"): mini-chrome's `Tls12` and `Tls13`'s branches to it, and the
+   key exchange on P-384 too, which that server alone takes
+   (`Ecdsa.multiply`); `Tls12` is not in `make loc`.
 8. **The interfaces' lessons kept**: mini-chrome's `.mli` files open
    with what the module is and its history, which is why they are half
    the `.ml`'s lines. Not a trimming target, as the stdlib's.

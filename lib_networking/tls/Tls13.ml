@@ -95,6 +95,9 @@ type t = {
   chain : X509.t list;
   certificate_request : string option; (* its context, if the server asked for our certificate *)
   app : Buffer.t;
+  random : string; (* our hello's *)
+  (* the server speaks TLS 1.2: its handshake and records (Tls12) *)
+  older : Tls12.t option;
 }
 
 let hello_retry = "\xcf\x21\xad\x74\xe5\x9a\x61\x11\xbe\x1d\x8c\x02\x1e\x65\xb8\x91\xc2\xa2\x11\x16\x7a\xbb\x8c\x5e\x07\x9e\x09\xe2\xc8\xa8\x33\x9c"
@@ -105,14 +108,17 @@ let client_hello ~(host : string) ~(random : string) ~(public : string) ~(sessio
     String.concat ""
       [
         ext 0x0000 (vec16 (u8 0 ^ vec16 host)) (* server_name *);
-        ext 0x000a (vec16 (u16 0x001d)) (* supported_groups: x25519 *);
+        (* supported_groups: x25519; P-256 and P-384, for a TLS 1.2
+         * server that has no other *)
+        ext 0x000a (vec16 (u16 0x001d ^ u16 0x0017 ^ u16 0x0018));
         ext 0x000d (vec16 (String.concat "" (List.map u16 [ 0x0403; 0x0503; 0x0804; 0x0805; 0x0806; 0x0401; 0x0501; 0x0601 ])))
         (* signature_algorithms *);
-        ext 0x002b (vec8 (u16 0x0304)) (* supported_versions: 1.3 *);
+        ext 0x002b (vec8 (u16 0x0304 ^ u16 0x0303)) (* supported_versions: 1.3, else 1.2 *);
+        Tls12.hello_extensions;
         ext 0x0033 (vec16 (u16 0x001d ^ vec16 public)) (* key_share *);
       ]
   in
-  let body = u16 0x0303 ^ random ^ vec8 session_id ^ vec16 (u16 0x1303 ^ u16 0x1301) ^ vec8 "\000" ^ vec16 extensions in
+  let body = u16 0x0303 ^ random ^ vec8 session_id ^ vec16 (u16 0x1303 ^ u16 0x1301 ^ String.concat "" (List.map u16 Tls12.suites)) ^ vec8 "\000" ^ vec16 extensions in
   u8 1 ^ u24 (String.length body) ^ body
 
 let client ~(host : string) ~(random : string) ~(secret : string) ~(session_id : string) ~(verify : X509.t list -> (unit, string) result) : t * string =
@@ -120,6 +126,7 @@ let client ~(host : string) ~(random : string) ~(secret : string) ~(session_id :
   ( {
       secret; verify; state = Handshaking; waiting = Server_hello; inbox = ""; pending = ""; transcript = hello; cipher = None; hs = "";
       client_secret = ""; server_secret = ""; read_keys = None; write_keys = None; chain = []; certificate_request = None; app = Buffer.create 4096;
+      random; older = None;
     },
     u8 22 ^ u16 0x0301 ^ vec16 hello )
 
@@ -135,9 +142,19 @@ let server_hello (t : t) (body : string) : t =
   let sid_len = get8 body 34 in
   let random = String.sub body 2 32 in
   let suite = get16 body (35 + sid_len) in
-  let exts = extensions body (35 + sid_len + 3) in
+  (* (a ServerHello of 1.2 may end at its compression: no extension) *)
+  let exts = if String.length body >= 35 + sid_len + 5 then extensions body (35 + sid_len + 3) else [] in
   if random = hello_retry then fail t "HelloRetryRequest: the server wants another group (not supported)"
-  else if List.assoc_opt 0x002b exts <> Some (u16 0x0304) then fail t "not TLS 1.3"
+  else if List.assoc_opt 0x002b exts = None && get16 body 0 = 0x0303 then (
+    (* no supported_versions: TLS 1.2, its own handshake from here *)
+    match
+      Tls12.start ~secret:t.secret ~verify:t.verify ~client_random:t.random
+        ~server_random:random ~suite ~extended:(List.mem_assoc 0x0017 exts)
+        ~transcript:t.transcript
+    with
+    | Ok older -> { t with older = Some older }
+    | Error why -> fail t why)
+  else if List.assoc_opt 0x002b exts <> Some (u16 0x0304) then fail t "not TLS 1.3, nor 1.2"
   else
     match (suite, List.assoc_opt 0x0033 exts) with
     | (0x1303 | 0x1301), Some share when get16 share 0 = 0x001d && get16 share 2 = 32 ->
@@ -171,7 +188,17 @@ let certificate_verify_content (transcript : string) : string =
   String.make 64 ' ' ^ "TLS 1.3, server CertificateVerify" ^ "\000" ^ hash transcript
 
 (* one handshake message, [msg] with its 4-byte header; the bytes to send *)
-let handle (t : t) (typ : int) (msg : string) : t * string =
+let rec handle (t : t) (typ : int) (msg : string) : t * string =
+  match t.older with
+  | Some older -> (
+      match Tls12.handshake older typ msg with
+      | Ok (older, out, opened) ->
+          ({ t with older = Some older; chain = Tls12.certificates older;
+                    state = (if opened then Open else t.state) }, out)
+      | Error why -> (fail t why, ""))
+  | None -> handle13 t typ msg
+
+and handle13 (t : t) (typ : int) (msg : string) : t * string =
   let body = String.sub msg 4 (String.length msg - 4) in
   let t_after = { t with transcript = t.transcript ^ msg } in
   match (t.waiting, typ) with
@@ -239,6 +266,21 @@ let rec messages (t : t) (out : string) : t * string =
 let alert (t : t) (data : string) : t =
   if String.length data >= 2 && get8 data 1 = 0 then { t with state = Closed } else fail t (Printf.sprintf "the server's alert %d" (if String.length data >= 2 then get8 data 1 else -1))
 
+(* TLS 1.2: a record's type is in its header, encrypted or not *)
+let older_record (t : t) (older : Tls12.t) (typ : int) (body : string) :
+    t * string =
+  if typ = 20 then ({ t with older = Some (Tls12.change_cipher older) }, "")
+  else
+    match Tls12.received older typ body with
+    | None -> (fail t "a record that does not decrypt", "")
+    | Some (data, older) -> (
+        let t = { t with older = Some older } in
+        match typ with
+        | 22 -> messages { t with pending = t.pending ^ data } ""
+        | 23 -> Buffer.add_string t.app data; (t, "")
+        | 21 -> (alert t data, "")
+        | other -> (fail t (Printf.sprintf "a record of type %d" other), ""))
+
 (* the whole records in the inbox *)
 let rec records (t : t) (out : string) : t * string =
   if String.length t.inbox < 5 then (t, out)
@@ -249,6 +291,9 @@ let rec records (t : t) (out : string) : t * string =
       let header = String.sub t.inbox 0 5 and body = String.sub t.inbox 5 len in
       let t = { t with inbox = String.sub t.inbox (5 + len) (String.length t.inbox - 5 - len) } in
       let t, more =
+        match t.older with
+        | Some older -> older_record t older typ body
+        | None ->
         match (typ, t.read_keys) with
         | 20, _ -> (t, "") (* ChangeCipherSpec: ignored, as 1.3 says *)
         | 21, _ -> (alert t body, "")
@@ -275,9 +320,18 @@ let read (t : t) : t * string =
   (t, s)
 
 let write (t : t) (data : string) : t * string =
-  match (t.state, t.write_keys) with
-  | Open, Some k ->
-      (* records of at most 2^14 bytes *)
+  (* records of at most 2^14 bytes; TLS 1.2's by Tls12 *)
+  match (t.state, t.write_keys, t.older) with
+  | Open, _, Some older ->
+      let rec go older i out =
+        if i >= String.length data then ({ t with older = Some older }, String.concat "" (List.rev out))
+        else
+          let chunk = String.sub data i (min 16384 (String.length data - i)) in
+          let r, older = Tls12.sealed older 23 chunk in
+          go older (i + String.length chunk) (r :: out)
+      in
+      go older 0 []
+  | Open, Some k, None ->
       let rec go k i out =
         if i >= String.length data then ({ t with write_keys = Some k }, String.concat "" (List.rev out))
         else
@@ -289,8 +343,11 @@ let write (t : t) (data : string) : t * string =
   | _ -> (t, "")
 
 let close (t : t) : t * string =
-  match (t.state, t.write_keys) with
-  | Open, Some k ->
+  match (t.state, t.write_keys, t.older) with
+  | Open, _, Some older ->
+      let r, older = Tls12.sealed older 21 "\001\000" in
+      ({ t with older = Some older; state = Closed }, r)
+  | Open, Some k, None ->
       let r, k = seal k 21 "\001\000" in
       ({ t with write_keys = Some k; state = Closed }, r)
   | _ -> (t, "")

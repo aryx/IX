@@ -341,8 +341,18 @@ let func m out (fn : func) (lf : L.func) =
   in
   (* OPTIMIZATION (immediates): a small constant an operand, in the
    * instruction (ocamlopt's Selection): x + 1 an ADD of 2, x < 10 a CMP
-   * with 21, x lsr 14 a shift of 14 (both machines encode 0 to 255) *)
-  let small v = match Hashtbl.find fn.defs v with Const n when n >= 0 && 2 * n + 1 < 256 -> Some n | _ -> None in
+   * with 21, x lsr 14 a shift of 14 (both machines encode 0 to 255);
+   * the constant as the target's word holds it, not the host's int:
+   * 0x80000000 is 0 on arm whether mini-ml runs on 63 bits or 31 (or
+   * the fixed point of ix built by ix on arm differs); n < 128, not
+   * 2 * n + 1 < 256, which on 31 bits takes 946684800 (2 * n wraps) *)
+  let small v =
+    match Hashtbl.find fn.defs v with
+    | Const n ->
+      let n = Int64.to_int (Int64.shift_right (tagged m n) 1) in
+      if n >= 0 && n < 128 then Some n else None
+    | _ -> None
+  in
   let compare_with x y =
     let a = src x r1 in
     match small y with

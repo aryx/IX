@@ -904,3 +904,35 @@ hang > /sys/reboot` (ix's: a loop with the lock held) show both under
 QEMU, then on the board. Test a debugging aid with a failure made on
 purpose before the real one comes: the first try found the idle cores'
 gap.
+
+## 22. Slower after a while on a board only: ask the board before the code
+
+On the author's Pi 2 (2026-10-21), TinyCameltry ran at 50 frames a
+second, then 33 after some minutes; a reboot made it fast again for a
+while. That looks like the kernel: a leak, a list that grows, a
+collector that works harder. Everything of the kernel was looked at
+first and was flat: its memory before and after the game, QEMU for 11
+minutes, the game's logic on Linux over 128,000 frames. The card of a
+week before slid the same, so no change of the code was the cause.
+
+What a reboot resets and an emulator does not have is the board
+itself. So the kernel was given the firmware's own readings, read live
+(`board_sense`): `/dev/cputemp`, the clock as measured now at the end
+of `/dev/cputype`, and `/dev/cputhrottle`, the firmware's flags for
+under-voltage, capped and throttled, now and since boot. One reading
+after the game said all: 600 MHz where it was 900, 42 degrees, no
+flag. Neither heat nor power: the firmware lowers the ARM to its least
+clock when no system asks for more, and mini-9pi never asks. The
+ratio checks it: 50 x 600 / 900 = 33.
+
+The fix was a line of config.txt (`force_turbo=1` for the Pi 2, which
+had been the Pi 1's alone). Lessons:
+
+- A slowdown that a reboot cures and an emulator never shows: read the
+  board's clock and temperature before profiling the code. Give the
+  kernel those readings early; they cost 30 lines.
+- Read the measured clock, not the one asked for: the firmware answers
+  what it was told otherwise.
+- Check the ratio. Two speeds whose ratio is two clocks' is the clock.
+- config.txt's sections run to the next one: a line under `[pi1]` is
+  not the Pi 2's.

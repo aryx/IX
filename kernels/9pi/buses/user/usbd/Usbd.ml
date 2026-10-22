@@ -27,7 +27,7 @@
  * kernel has ethernet), nor its file server for drivers that are
  * other programs. *)
 
-type caps = < Usbdev.caps; Cap.fork; Cap.stderr >
+type caps = < Usbdev.caps; Cap.fork; Cap.stderr; Cap.argv >
 
 (* The device's process: a report read (the endpoint's largest packet,
  * no more: a report is one packet, and a read of more would wait for
@@ -41,8 +41,8 @@ let reports fd maxpkt (kind : Hid.kind) out =
       let report = Bytes.sub_string b 0 n in
       match kind with
       | Hid.Keyboard -> let keyboard, codes = Hid.typed keyboard report in List.iter write codes; loop keyboard
-      | Hid.Mouse ->
-          (match Hid.moved report with Some (x, y, buttons) -> write (Printf.sprintf "m%11d %11d %11d" x y buttons) | None -> ());
+      | Hid.Mouse mouse ->
+          (match Hid.moved mouse report with Some (x, y, buttons) -> write (Printf.sprintf "m%11d %11d %11d" x y buttons) | None -> ());
           loop keyboard
     end in
   loop Hid.keyboard
@@ -58,12 +58,15 @@ let drive (caps : < caps; .. >) (d : Usbdev.t) (kind : Hid.kind) (e : Usbdesc.en
     (* a note group of its own: the console's interrupt (Devcons) is
      * for its shell's programs, not for who reads the keyboard *)
     ignore (Sys_plan9.rfork caps Sys_plan9.rfnoteg);
-    reports (Option.get ep.data) e.maxpkt kind (FS.open_rw_fd caps (match kind with Hid.Keyboard -> "#Ι/kbin" | Hid.Mouse -> "#m/mousein"));
+    reports (Option.get ep.data) e.maxpkt kind (FS.open_rw_fd caps (match kind with Hid.Keyboard -> "#Ι/kbin" | Hid.Mouse _ -> "#m/mousein"));
     Unix._exit 0
   end;
   Usbdev.close ep
 
 let main (caps : < caps; .. >) : Exit.t =
+  (* -v: each step said (Usbbus.verbose): what a port answers, what a
+   * device is, how a mouse is read *)
+  Usbbus.verbose := Array.mem "-v" (CapSys.argv caps);
   match Usbdev.open_ caps "ep1.0" with
   | exception Failure m -> Console.eprint caps (Printf.sprintf "usbd: #u/usb/ep1.0: %s\n" m); Exit.Err "no usb"
   | root ->

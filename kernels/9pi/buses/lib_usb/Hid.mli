@@ -31,10 +31,29 @@
  * keys at once at most, which is where that limit of cheap
  * keyboards comes from. *)
 
-type kind = Keyboard | Mouse
+(* A mouse's report by its own description: where its fields are (a
+ * field: after the report's number if it has one, from which bit, how
+ * many, signed or not), the generic desktop's X, Y and wheel and the
+ * buttons by their number (1 left, 2 right, 3 middle). A mouse is read
+ * by the boot protocol's 3 bytes, or by its layout: by the boot
+ * protocol a mouse need not say its wheel, and a real one does not
+ * (the author's on the Pi 2: "the mouse wheel didn't seem to work";
+ * QEMU's sends a 4th byte anyway) *)
+type field = { at : int; bits : int; signed : bool }
+type layout = {
+  id : int;
+  x : field;
+  y : field;
+  wheel : field option;
+  buttons : (int * field) list;
+}
+
+type mouse = Boot | Report of layout
+type kind = Keyboard | Mouse of mouse
 
 (* an interface that is a keyboard's or a mouse's (class 3, the boot
- * subclass), with the endpoint its reports come from *)
+ * subclass), with the endpoint its reports come from (a mouse: Boot,
+ * until its layout is read) *)
 val driven : Usbdesc.interface -> (kind * Usbdesc.endpoint) option
 
 (* how often the device is to say its state unasked, in 4 ms (USB's
@@ -50,9 +69,21 @@ val idle : kind -> int
  * no clock, no process more (kb.c has one for that). *)
 type keyboard
 val keyboard : keyboard
+
+(* [report_length conf iface]: how long the interface's report
+ * descriptor is (its HID descriptor, in the configuration's), 0 if
+ * not said *)
+val report_length : string -> int -> int
+
+(* a report descriptor read: the mouse's layout, or None (no X and Y
+ * found). Plan 9's usb/kb reads it too; the subset of HID a mouse uses:
+ * Input items, usages, usage ranges, report numbers *)
+val layout : string -> layout option
 val typed : keyboard -> string -> keyboard * string list
 
-(* a mouse's report (the buttons, how far right, how far down, the
- * wheel): how far it moved, and its buttons as Plan 9's (1 left, 2
- * middle, 4 right; 8 and 16 the wheel); None for less than 3 bytes *)
-val moved : string -> (int * int * int) option
+(* a mouse's report (by the boot protocol: the buttons, how far right,
+ * how far down, maybe the wheel; else by its layout): how far it moved,
+ * and its buttons as Plan 9's (1 left, 2 middle, 4 right; 8 the wheel
+ * turned away, 16 towards you); None for a report that is not it (too
+ * short, another report's number) *)
+val moved : mouse -> string -> (int * int * int) option

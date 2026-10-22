@@ -85,8 +85,8 @@ let clock () =
                  let keys, codes = Hid.typed d.keys report in
                  d.keys <- keys;
                  List.iter (fun s -> for i = 0 to String.length s - 1 do Kbd.kbdputsc (Char.code s.[i]) done) codes
-             | Hid.Mouse ->
-                 (match Hid.moved report with Some (x, y, buttons) -> Devmouse.track x y buttons | None -> ()));
+             | Hid.Mouse mouse ->
+                 (match Hid.moved mouse report with Some (x, y, buttons) -> Devmouse.track x y buttons | None -> ()));
             if left > 1 then ask (left - 1) in
       ask most
     end) !devices

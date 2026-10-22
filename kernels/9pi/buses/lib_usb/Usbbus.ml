@@ -112,10 +112,33 @@ let attach t h p =
     List.iter (fun i ->
       match Hid.driven i with
       | Some (kind, e) ->
-          (* the boot protocol (a class's request to the interface:
-           * 0x21; SET_PROTOCOL 0x0b, 0), and how often it says its
-           * state unasked (SET_IDLE 0x0a) *)
-          io.send d 0x21 0x0b 0 i.iface "";
+          (* a mouse's report descriptor (GET_DESCRIPTOR 6 asked of the
+           * interface, 0x81; type 0x22): its layout, if read *)
+          let layout =
+            match kind with
+            | Hid.Mouse _ ->
+                let n = Hid.report_length conf i.iface in
+                if n <= 0 then None
+                else
+                  (try Hid.layout (io.ask d 0x81 6 0x2200 i.iface n)
+                   with Failure _ -> None)
+            | Hid.Keyboard -> None in
+          let kind = match layout with Some l -> Hid.Mouse (Hid.Report l) | None -> kind in
+          let what =
+            match kind with
+            | Hid.Keyboard -> "a keyboard"
+            | Hid.Mouse Hid.Boot -> "a mouse, by the boot protocol"
+            | Hid.Mouse (Hid.Report l) ->
+                Printf.sprintf "a mouse, by its report (number %d), %s" l.Hid.id
+                  (if l.Hid.wheel = None then "no wheel" else "a wheel") in
+          if !verbose then
+            io.say (Printf.sprintf "usb: %s: interface %d, %s\n" (io.name d) i.iface what);
+          (* the boot protocol, or the report's for a mouse whose layout
+           * is known (a class's request to the interface: 0x21;
+           * SET_PROTOCOL 0x0b, 0 the boot's, 1 the report's), and how
+           * often it says its state unasked (SET_IDLE 0x0a) *)
+          let protocol = match kind with Hid.Mouse (Hid.Report _) -> 1 | _ -> 0 in
+          io.send d 0x21 0x0b protocol i.iface "";
           (try io.send d 0x21 0x0a (Hid.idle kind lsl 8) i.iface "" with Failure _ -> ());
           io.drive d kind e;
           io.say "usb/kb... "

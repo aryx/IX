@@ -1,0 +1,4 @@
+; Hid's report descriptors read on the host, for hid.sh
+(executable
+ (name Hidtest)
+ (libraries ix_usb))

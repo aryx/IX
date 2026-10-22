@@ -203,9 +203,12 @@ run time are a plan of their own, after it (below, stage 6).
   held: **5 to 6 frames a second at 320 by 200 shown as it is** (the
   default on Plan 9: 40 frames in 6.4 to 8 s, the view 46 to 106 ms,
   the showing 70 to 84), under 2 at `scale=2`; the software platform
-  under 1 (it draws the whole square). Numbers of 15 a second were
-  said here first, and were wrong: the eye never moved on mini-9pi
-  (the author: "I see 15fps but I can't do anything"). The game took
+  under 1 (it draws the whole square). On the author's Pi 2, about 8
+  frames a second (the author, 2026-10-22: "under the actual Pi2, doom
+  is at around 8fps"), and about 7 in a window of rio's ("I also ran
+  doom under rio on the pi2, and it's around 7fps"). Numbers of 15 a
+  second were said here first, and were wrong: the eye never moved on
+  mini-9pi (the author: "I see 15fps but I can't do anything"). The game took
   the keys; its picture was one of two buffers changed in place, and
   the draw platform keeps the device's image of a picture it has
   shown, found by the value itself (`==`): it showed the first two
@@ -223,6 +226,6 @@ run time are a plan of their own, after it (below, stage 6).
   as the picture is scaled; the picture is made three times before the
   device has it.
 - Not run: the recorded mini-9pi sessions (`make check-*`), mini-qemu
-  at `-ips 200` (a board's pace), a board; `make test-lite`; a
+  at `-ips 200` (a board's pace), the Pi 1; `make test-lite`; a
   mini-doom session under rio. The main tree's `build/card.img` was
   not remade (the numbers are from a card in the scratchpad).

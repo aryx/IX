@@ -1,28 +1,41 @@
 # profilers/misc, built by ix's tools (for mini-9pi: mini-mk O=5
-# OS=plan9): mini-prof, and mini-stats with lib_graphics's units
+# OS=plan9): mini-prof with machine's units (the instructions decoded
+# and printed: -a), and mini-stats with lib_graphics's units
 TOP=../..
 <$TOP/mkfiles/mkconfig
 D=$B/profilers/misc
 G=../../lib_graphics
-INCLUDES=-I . -I $G $STDI
+M=../../machine
+MI=-I $M/core -I $M/arm32 -I $M/arm64 -I $M/process -I $M/compat
+INCLUDES=-I . -I $G $MI $STDI
+MACH=Bits Memory Elf Arm32_isa Arm32 Arm64_isa Arm64 Show_arm32 Show_arm64
+MACHOBJS=${MACH:%=$D/%.$O}
 LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+MLOCAL=`{ls $M/*/*.ml $M/*/*.mli}
 
 all:V: $D/mini-prof $D/mini-stats
 
 $D/%.$O: $G/%.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target $G/$stem.ml
-$D/Profiler.$O: Profiler.ml $LOCAL
+
+# machine's units: said whole (a second rule with %, mk refuses), each
+# found by its name in machine's folders
+$MACHOBJS: $MLOCAL
+	mkdir -p $D
+	for(t in $target) $ML $INCLUDES -o $t $M/*/^`{basename $t .$O}^.ml || exit 1
+
+$D/Profiler.$O: Profiler.ml $LOCAL $MLOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Profiler.ml
-$D/Prof.$O: Prof.ml $LOCAL
+$D/Prof.$O: Prof.ml $LOCAL $MLOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Prof.ml
-$D/mini-prof: $D/Profiler.$O $D/Prof.$O $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS Profiler Prof Std_exit -o $D/Prof.start.$O
-	$LD $LDH -nofollow -o $target $D/Prof.start.$O $STDOBJS $D/Profiler.$O $D/Prof.$O $STDEND
+$D/mini-prof: $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $MACH Profiler Prof Std_exit -o $D/Prof.start.$O
+	$LD $LDH -nofollow -o $target $D/Prof.start.$O $STDOBJS $MACHOBJS $D/Profiler.$O $D/Prof.$O $STDEND
 $D/Stats.$O: Stats.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target Stats.ml

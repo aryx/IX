@@ -104,3 +104,20 @@ inline; known functions of more than 7 parameters called directly; stage
 2 to see a per-pixel loop's instructions; the collector (a generational
 one, or big long-lived data out of the copied heap). Not yet profiled:
 scale=1 (mini-9pi's), m-ix built under m-ix.
+
+2026-10-22: stage 2 done, `mini-prof -a name` (mini-5i's decoder and
+printer, `machine`'s units linked into mini-prof). On `to_rgba` (30% of
+mini-doom's frame, mini-ml without `-O` or `-ssa`, as the mkfiles
+build): the inner loop's turn is 55 instructions for 4 bytes written,
+and what they are is the toolchain plan's candidates:
+- every variable in the stack frame, loaded and stored at each use, the
+  loop's index and bound included (J: a loop's values in registers);
+- a comparison made a boolean, then compared with 1 to branch: 7
+  instructions for a loop's test, where `cmp; bgt` is 2;
+- a tagged constant not folded: `x + 1` is `mov r1, #3; add; sub #1`,
+  one `add #2`; `mov r1, #1` (the unit) after each byte stored;
+- the entry: 37 slots zeroed, one store each (C).
+On mini-9pi itself (arm32, mini-ml's ints of 31 bits): `-a` refuses
+(a word's top bit, the condition, is lost), and a total of more than a
+thousand million instructions overflows; mini-qemu's profiles (one in
+1024) stay below it.

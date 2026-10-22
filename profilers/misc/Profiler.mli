@@ -17,6 +17,16 @@
  * mini-ml's (f19_draw_column: the 19th function of its unit; <>, one
  * local to its file) or the C's and the runtime's (ml_alloc, copy<>).
  *
+ * With -a name, one function's instructions instead, each with its
+ * count, read from the program beside its map (doom for doom.map: an
+ * ELF, arm32 or arm64, or Plan 9's a.out) and printed by mini-5i's
+ * decoder, objdump's way: what a back end's change is decided on.
+ *
+ *          count  address  instruction
+ *      1,926,000    5acd0  ldr	r1, [sl, #-84]      a loop's bound and its
+ *      1,926,000    5acd4  ldr	r2, [sl, #-88]      index, from the stack
+ *      1,926,000    5acd8  cmp	r2, r1              at each turn
+ *
  * With -diff base, a profile of a shorter run is taken off first: the
  * same program stopped before what is measured (mini-doom's start and a
  * frame, against the start and 31), so that what is left is the frames

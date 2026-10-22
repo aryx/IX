@@ -15,6 +15,15 @@ export MKSHELL = mini-rc
 all:
 	dune build
 
+# The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
+# by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
+install: all
+	dune install
+
+clean:
+	dune clean
+	rm -rf _mk
+
 # (tiny-c and tiny-ml on random programs, against the host's cc and
 # OCaml, in $(TINY_W); see tiny/tests/TinyC_fuzz.py and TinyML_fuzz.py)
 TINY_W = /tmp/ix-tiny
@@ -106,11 +115,6 @@ test: all
 	./machine/tests/random_blocks.py -vfp 1000 30
 	./machine/tests/random_blocks.py -64fp 1000 30
 
-# The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
-# by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
-install: all
-	dune install
-
 # The website's machine (docs/t-ix.html; plan_web.md): tiny-machine by
 # js_of_ocaml and the kernels' images, put in the assets' repository,
 # which its own GitHub Pages serve (the playground's programs are there
@@ -152,10 +156,6 @@ website-mini: website-mini-js
 	mkdir -p $(ASSETS)/ix/mini-9pi
 	gzip -9 -n -c kernels/9pi/kernel-pi1-web.img > $(ASSETS)/ix/mini-9pi/kernel.img.gz
 	gzip -9 -n -c kernels/9pi/build/card.img > $(ASSETS)/ix/mini-9pi/card.img.gz
-
-clean:
-	dune clean
-	rm -rf _mk
 
 ###############################################################################
 # Tests against the references
@@ -293,6 +293,7 @@ test-fixpoint-arm: all
 	./mkfiles/fixpoint.sh 5
 test-kernels-ix: all
 	./tests/kernels_ix.sh
+
 self self-quick:
 	$(MAKE) --no-print-directory -j2 $@-tix $@-mix
 self-tix self-quick-tix: all

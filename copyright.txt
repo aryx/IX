@@ -1,4 +1,4 @@
-ix - Claude Code, under the direction of Yoann Padioleau
+IX - Claude Code, under the direction of Yoann Padioleau
 
 Copyright (C) 2026 Yoann Padioleau
 

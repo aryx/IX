@@ -41091,3 +41091,2274 @@ Claude proposed committing by pathspec: mkfile, tiny/mkfile, version_control/mkf
 Claude kept out another session's uncommitted edits to mkfiles/mklibs, tests/lite.sh, Browser_helpers, Procs and Unix.
 Claude pointed out that prompt-history.md is staged, so a pathspec commit would leave it out.
 Claude marked the plan as done, listing troff units and mkgames' WITH units as possible future library work.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the libraries plan as f0219272, including the top mkfile, tiny/mkfile and version_control/mkfile.
+Claude's first next step was the kernel's draw device, where about 90 ms of each mini-9pi frame goes.
+Claude tied that cost to the sluggish cursor in netscape, and ranked it first.
+Claude also proposed asking each library's mkfile once per build, cutting the 33 s no-op build.
+Claude listed troff's units as a small shared library so man stops naming them one by one.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:14
+
+**Yoann:**
+
+> ok let's put those next steps in their appropriate plan document and let's close this session
+
+**Claude (summary):**
+
+Claude recommended committing its two plan edits, with `git commit -- docs/plans/plan_playground_speed.md docs/plans/done/plan_mk_libraries.md`.
+Claude added a Next paragraph to `plan_playground_speed.md` covering the 90 ms per-frame cost and drawing only what changed.
+Claude also listed the unrun mini-9pi letter checks there: mini-office, Hacker News, and the recorded checks beyond check-quick.
+Claude added a Next section to `plan_mk_libraries.md` with the 33 s no-change build and troff's units as a library.
+Claude noted the session's earlier work was already committed as a868f660, 1f46dfe5 and f0219272.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude confirmed that all of the session's work is committed, with the next steps landing in `9b5f9cc4`.
+Claude noted that only `docs/yoann_notes/prompt-history.md` still shows as changed, staged earlier and left untouched.
+Claude listed seven commits, from `021f53db` (mini-office lettering) through `f0219272` (SHA-1 from lib_crypto).
+Claude added the first library mkfiles, including lib_crypto, lib_compression, lib_networking, lib_graphics, and lib_playground.
+Claude warned that `bin/mini-ld` points to a missing file, so dune's linker must come first on PATH.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude limited the commit to its own hunks within nine modified files.
+Claude chose to commit by pathspec, so unrelated changes in those files stayed out.
+Claude then started the commit with explicit pathspecs naming those nine files.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:15
+
+**Yoann:**
+
+> it would be better if make test-lite print the test results as they go, instead of only at the very end, so we can track the progress
+
+**Claude (summary):**
+
+Claude recommended writing each test-lite progress update to a temporary file first.
+Claude planned to rename that temporary file over the status file, so readers never see partial writes.
+The write-then-rename step avoids a race where a reader catches a half-written status file.
+Claude also planned to update the header comment to match the new print-as-you-go behavior.
+Claude's answer stopped there, with no edits or commits shown yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:22
+
+**Yoann:**
+
+> how difficult it would be to remove the dependency to python?
+
+**Claude (summary):**
+
+Claude classified the 77 Python files by role, sorting them into build, test, and stats scripts.
+Claude planned one more check, looking for shell scripts that call Python inline.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:21
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed only `tests/lite.sh` as `13b47431`, as Yoann asked with "let's commit".
+Claude left `docs/yoann_notes/prompt-history.md` out of the commit and kept it uncommitted in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:24
+
+**Yoann:**
+
+> let's do 1 and 2, and then maybe make python as optional then in the configure?
+
+**Claude (summary):**
+
+Claude finished steps 1 and 2: `mini-mkbootdir` and `mini-mkpixdata` replace the Python generators, with matching output.
+Claude checked that Python is used only by tests, checks, and `make loc` before changing `configure`.
+Claude began making `python3` an optional check in `configure` instead of a hard requirement.
+Claude then started checking whether the README and install docs still list `python3` as required.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:30
+
+**Yoann:**
+
+> let's put the dependency to python in configure last, or at least after the qemu and arm thing
+
+**Claude (summary):**
+
+Claude moved the python3 check to the end of the optional tests section in configure.
+It now runs after the qemu check, both objdumps, and the bc check.
+It still runs before the "Installing opam dependencies" step, which is the next step in the script.
+Claude checked that the script still parses, but did not actually run it.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:31
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude judged that all the pending changes in the working tree were its own work.
+Claude committed only its own paths, leaving `prompt-history.md` out of the commit.
+Claude also left out `Unix.ml`, which belongs to another session editing the same tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:32
+
+**Yoann:**
+
+> fix the Dockerfile comment about python3 too
+
+**Claude (summary):**
+
+Claude rewrote the Dockerfile comment at lines 23–25 to explain the `python3` dependency.
+The new comment says `python3` serves the Python-written tests and the HTTP server that `net.sh` runs with `curl`.
+Claude left the `apt-get` line unchanged, since the build itself does not need `python3`.
+Claude did not commit the edit, leaving the Dockerfile change uncommitted in the working tree.
+Claude offered to put the Dockerfile fix in its own separate commit if Yoann wanted one.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:32
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Dockerfile comment fix as commit 64ff4e50, touching only the Dockerfile.
+Claude left the staged prompt-history.md uncommitted, since it was not part of the Dockerfile change.
+Claude also left the other session's lib_core/system/plan9/Unix.ml and Unix.mli uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:26
+
+**Yoann:**
+
+> ./mini-pi -g -q mini-9pi is failing
+
+**Claude (summary):**
+
+Claude reported that `mini-9pi` now builds and boots all the way to the prompt.
+Claude said it was recording the `mini-9pi` failure as a new entry in `docs/plans/bugs/ix.md`.
+Claude matched the entry's format to the earlier bugs already logged in that file.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:33
+
+**Yoann:**
+
+> let's commit and push
+
+**Claude (summary):**
+
+Claude committed the fix as c5a9003e and pushed it to `main`.
+The commit covers three files: `lib_core/system/plan9/Unix.ml`, `Unix.mli`, and `docs/plans/bugs/ix.md`.
+Claude left out the other working-tree changes, including the `kernels/9pi` and `mkbootdir` edits and `prompt-history.md`.
+Those remaining changes are still uncommitted in the working tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:41
+
+**Yoann:**
+
+> mini-netscape fonts are not super readable under mini-9pi, maybe because of the lower resolution there. moreover the progress bar didn't seem to really work; it was empty and then suddently the new page (HN) appeared fully rendered.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:41
+
+**Yoann:**
+
+> also the cursor is not changing under mini-9pi when hovering a link (should be a hand)
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:42
+
+**Yoann:**
+
+> and again just moving the cursor suddently make the fps drop (and the red rectangle appear around)
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:48
+
+**Yoann:**
+
+> ./mini-pi -g -q mini-9pi    is I feel slower to build that it used too. Moreover when ran, I think I got some speed regression in cameltry which is now at 16-22fps; I think it was much higher (like 45) before when running with -g -q
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:48
+
+**Yoann:**
+
+> I think a few days ago things were faster to build and run
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:51
+
+**Yoann:**
+
+> I can maybe try to build with the version of ix of a few days ago and make sure the fps were indeed better
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:43
+
+**Yoann:**
+
+> also I quickly got "Fatal error: out of memory"
+
+**Claude (summary):**
+
+Claude probed mini-ml's peak memory under qemu-arm, the 32-bit build with a larger cap on Linux.
+Claude added cursor support to the shared Plan9_loop module used by both mini-9pi platforms.
+Claude confirmed the cursor change compiles with dune and rebuilt mini-netscape for Plan 9 with mini-mk.
+Claude checked that mini-mk actually recompiled Plan9_loop, with the Plan 9 build timestamped 10:51:47 after the edit.
+Claude recorded the bugs found along the way in docs/plans/bugs/ix.md, following the project's convention.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:57
+
+**Yoann:**
+
+> first let's commit
+
+**Claude (summary):**
+
+Claude committed only its own changes to the five files it had edited.
+Claude left the tiny/ changes and the prompt-history changes out of the commit, since they belong to someone else.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:27
+
+**Yoann:**
+
+> make test is failing, about some wc program
+
+**Claude (summary):**
+
+Claude reran `make test` after the token test failed to reproduce, then turned to the wc failure.
+Claude replaced the quote escape on three lines with `\047`, the octal form POSIX requires, since bash and dash both print a quote.
+Claude then reran the check, and the text part of the wc test passed.
+Claude found the screen check on tetris still failing, a step that had not run before the text diff stopped make.
+Claude started a full `make test` run and was waiting for it to finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:51
+
+**Yoann:**
+
+> I mean you
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:59
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `\047` fix in tiny/TinyKernel/Makefile as ad781950, with three new checksums.
+Claude committed by pathspec, so other tree changes, including prompt-history.md, stayed out of the commit.
+The commit message records 22 of 23 screens matching, with only tetris differing.
+Claude corrected its earlier claim of 20 matching screens to 22 of 23.
+The full make test run is still going, with its tiny-kernel text check already passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:04
+
+**Yoann:**
+
+> I also think we will need to add some speed regression test, so we know when suddently cameltry fps are going down, the time to build mini-pi is significantly higher, etc.
+
+**Claude (summary):**
+
+Claude recommended fixing the build-time regression by asking each library once per build, not once per program directory.
+Claude also proposed skipping the `dirs` calls when no mkfile has changed.
+Claude traced the slowdown to the mk-libraries commits (a868f660 onward), where `mkfiles/mklibs` reruns each library's `mini-mk` on every build.
+Claude measured a no-change rebuild at 8.5 s on Oct 18 versus 3 min 21 s today, while cameltry fps was unchanged.
+Claude suggested two speed tests as a separate make target, a build-time check and a QEMU-based fps check, and changed nothing in the repo.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:16
+
+**Yoann:**
+
+> For the build, we can do like in xix and principia, just build the libraries in a certain order, so you can then assume than in another dir the library has already been built
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:16
+
+**Yoann:**
+
+> xix and principia are using mkfile and it's reasonably fast
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:17
+
+**Yoann:**
+
+> you can use the toplevel mkfile in xix and principia as inspiration
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:18
+
+**Yoann:**
+
+> they assume that for stale libs you need to rebuild from the top
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:14
+
+**Yoann:**
+
+> excellent. What's next?
+
+**Claude (summary):**
+
+Claude recommended letting tetris or tiny-machine take a fixed -seed, so the screen and sound sums stop moving.
+Claude traced the drift to TinyLibPlayground.ml:212, where each game seeds itself from u_ticks(), the time since boot.
+Claude proposed making -seed mirror the existing -date option, so tetris sums change only when tetris changes.
+Claude also planned to update the Status in docs/plans/done/plan_tiny_self_hosting.md, dropping the resolved printf bash item and the sums item.
+Claude flagged the stale tiny-machine in ~/.opam/4.14.2/bin, suggesting a dune install to refresh it, and left korobeiniki unchecked.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:18
+
+**Yoann:**
+
+> but I think it's ok
+
+**Claude (summary):**
+
+Claude made the libraries rebuild from the top, so each program now just uses the archive it finds.
+Claude moved `all` ahead of `libs` in the top mkfile, since `libs` had become the first target.
+Claude updated `tests/lite.sh` and kernels/9pi's Makefile to match, and removed stale comments about per-program library checks.
+Claude verified the no-change libraries pass in 3.5 s and `make test-lite` passes with 69 jobs, 0 failures.
+Claude left the `Memdraw` and `Playground_platform` edits alone, since another session owns them, and updated the slowness note in `plan_mk_libraries.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude said every change in the working tree was its own, then began committing only the six paths it had touched.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:26
+
+**Yoann:**
+
+> let's add the speed regression tests
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:26
+
+**Yoann:**
+
+> and we can assume I would run them only from this machine, so we can have stable numbers
+
+**Claude (summary):**
+
+Claude added `make test-speed`, backed by a new `tests/speed.sh`, with checks for build-9pi, build-top, and cameltry.
+Claude set the limits from this machine's numbers: build-9pi 15 s max, build-top 10 s max, cameltry at least 20 fps.
+Claude reused `kernels/9pi/tests/perf/frames.sh` for the fps check, running it right after build-9pi builds the card.
+Claude warned that the fps check needs an idle machine, since QEMU speed depends on the host, and logged each run to `speed_history.txt`.
+Claude reported the two runnable checks passing at 8.5 s and 26.7 fps, left build-top failing from another session's edit, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:37
+
+**Yoann:**
+
+> ok I tried mini-9pi2 and got also low fps number for cameltry. Let's commit first
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:39
+
+**Yoann:**
+
+> I recorded than cameltry was 50fps on the real Pi2 board, so maybe let's make the card so I can try on my Pi2
+
+**Claude (summary):**
+
+Claude reported that mini-9pi2 runs at 15–25 fps under QEMU on four cores and 21–27 fps on one.
+Claude said QEMU timings don't carry over to hardware, so your physical Pi2 was the real test.
+Claude then started working out how the card for a real Pi2 board is produced and run.
+Claude's answer stopped at that step, before naming any concrete build steps or files.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:45
+
+**Yoann:**
+
+> On the Pi2, outside windows, at rest on a border I have 41fps, which is smaller than what I had a week ago I think where I remember getting 50fps. and actually I get 30fps after some time now.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:47
+
+**Yoann:**
+
+> good news is that office under the pi2 looks faster now
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:47
+
+**Yoann:**
+
+> moving around sheets around text is now far smoother
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:50
+
+**Yoann:**
+
+> I think I recoreded in my personal journal that I got 46fps on the Pi2, and 16fps on the Pi1 for cameltry, but I dunno if it was outside rio, and when under rio what was the size of the windwows, which has an influence on the fps
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:50
+
+**Yoann:**
+
+> on 12 Oct I got those 16 and 46fps number (pi1, pi2)
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:52
+
+**Yoann:**
+
+> hmm after quitting cameltry under rio after playing for a bit I also got the whole screen to freeze; no mouse cursor at all even when I move the mouse
+
+------------------------------------------------------------------------
+
+## 2026-10-21 08:58
+
+**Yoann:**
+
+> let's do c, with the memdraw fast path too
+
+**Claude (summary):**
+
+Claude added a smooth-letter memdraw fast path and checked it pixel by pixel against the general loop.
+Claude fixed an x8r8g8b8 mismatch and the unpadded k8 row stride that caused it.
+Claude ran mini-netscape on about:home under QEMU, comparing smooth and 1-bit letters and the cursor.
+Claude re-recorded the office screens, confirmed the boot-screen mismatch predated the change, and got all five checks passing.
+Claude updated notes_font.md and the comments that still described mini-9pi letters as 1-bit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:20
+
+**Yoann:**
+
+> ok let's do all those things, starting with the -seed so we don't have to update test expected data everytime
+
+**Claude (summary):**
+
+Claude threaded a `-seed` option from the machine word through kernel call 27, libc, libml, and the host stubs.
+Claude recorded new expected sums for the seed, boot-delay, fork-delay, and tetris runs, so tests stop needing manual edits.
+Claude updated the manual and the done plan's Left list, then marked the plan's Status as updated.
+Claude wrote the mini-ml default label as a `match`, since `~default` does not type there.
+`make test-lite` passed with 69 jobs and 0 failures, while tiny-kernel's full `make check` was still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:07
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude stated that every change in the pending files was its own work.
+Claude committed those files by pathspec, staging only the listed paths rather than the whole tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:09
+
+**Yoann:**
+
+> is the 33s still true after the recent work on improving the speed of mkfiles ?
+
+**Claude (summary):**
+
+Claude reported that the top mini-mk build with no changes dropped from 33 s to 2.0 s, thanks to commit ec719b1a.
+Claude found that plan_mk_libraries.md in docs/plans/done/ still shows the old 33 s figure in its Done section.
+Claude noted that item 1 under Next covers mini-9pi and games/ but not the top mini-mk build.
+Claude offered to add "the top mini-mk when nothing changed: 33 s → 2.0 s" to item 1, leaving item 2 as the only open item.
+Claude also explained that the first run took 40 s from rebuilding today's tiny changes, and the second run rebuilt nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:16
+
+**Yoann:**
+
+> let's update the plan document then with this new info
+
+**Claude (summary):**
+
+Claude updated item 1 of the plan's Next section in docs/plans/done/plan_mk_libraries.md with new timings.
+Claude recorded that the whole top mini-mk now takes 2.0 s when nothing changed.
+Claude measured it after commit bf2e9796, where a first run took 40 s and the second rebuilt nothing.
+Claude left the older 33 s figure in the Done section, since it records the earlier measurement.
+Claude had not committed the change yet and asked whether to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:20
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the plan file as 2dc23b4d and listed two open plans.
+Claude recommended starting with plan_playground_speed.md, measuring the 90 ms draw cost before changing anything.
+For item 2 of plan_mk_libraries.md, Claude proposed turning troff's units into a library.
+That would let mini-man name the library in LIBDIRS instead of listing troff's 26 units and directories.
+Claude called it small, mostly tidying work, unlike the playground speed plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:53
+
+**Yoann:**
+
+> nothing displayed on the screen unfortunately; we should find a way to display some kernel panic info even after running under rio so we can hope to debug it and fix it
+
+**Claude (summary):**
+
+Claude suggested running Cameltry outside rio, at rest on a border, on both cards.
+Claude pointed to the Oct 12 card (23a81263) in the scratchpad as the baseline for comparing frame rates.
+Claude suspected the four-core multicore work, since the Oct 12 Pi 2 ran on a single core.
+Claude asked Yoann to note whether the frame rate also slides to 30 after a while.
+Claude also proposed a screen panic band and a hang watchdog, and asked for go-ahead before building them.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:26
+
+**Yoann:**
+
+> ok I tried the old card.img and while at the beginning it feels a bit faster and I can see some 50fps, it also drops after some time at around 33fps
+
+**Claude (summary):**
+
+Claude noted the Oct 12 card also slides from about 50 to 33 fps.
+Claude concluded the slowdown predates this week's changes, so those changes are not the cause.
+Claude suspected either the game slowing as it runs or the board overheating under load.
+Claude planned to run thousands of frames on Linux without an emulator, checking whether frame time grows.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:27
+
+**Yoann:**
+
+> office is also significantly slower on this old card img
+
+**Claude (summary):**
+
+Claude attributed office's slowdown on the old card to the letters work added since Oct 12.
+Claude explained that each letter now goes to the kernel once and is drawn with one message.
+Claude cited quarter-pixel placement, which cut a QEMU frame's messages from 220 to 20 ms on Oct 20.
+Claude read the slowdown as proof the letter changes help on the board, without addressing visual quality.
+Claude compared the cards: office is faster today, Cameltry starts at 41–46 fps, and both drop to the low 30s.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:28
+
+**Yoann:**
+
+> and not looking as good too
+
+**Claude (summary):**
+
+Claude explained that the Oct 12 card drew letters as whole-pixel stroke rectangles, which looked rough.
+Claude said the Oct 20 change computes each letter once as a smoothed shape in the software renderer.
+Claude noted that letters are now placed to a quarter pixel, so the spacing looks more even.
+Claude argued that this one change should make text look cleaner and draw faster.
+Claude left Cameltry's slide to the low 30s on both cards as open, proposing a restart test next.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:28
+
+**Yoann:**
+
+> so definitely some progress on some aspects
+
+**Claude (summary):**
+
+Claude laid out a comparison table of the Pi2 cards: the new card is smoother for office use, and the mini-pi no-change build dropped from 3 min 21 s to 8.5 s.
+Claude listed three open issues: Cameltry's fps slide over time, its slower start (suspecting the four cores), and the freeze after quitting under rio.
+Claude's leading suspicion for the slide is heat or the power supply, since QEMU doesn't reproduce it, and it suggested a restart test or added readings.
+Claude named the last-words-on-screen routine plus a watchdog for hangs as the fix for the post-quit freeze, which Yoann picked to do first.
+Claude then asked which open item to take first, and Yoann chose the kernel panic display and watchdog.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:31
+
+**Yoann:**
+
+> let's do the kernel panic display and watchdog first
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:31
+
+**Yoann:**
+
+> but first can you make the card
+
+------------------------------------------------------------------------
+
+## 2026-10-21 09:58
+
+**Yoann:**
+
+> great work! let's commit
+
+**Claude (summary):**
+
+Claude committed the smooth-letters work as `06d5e605` with seven files: `Memdraw.ml`/`.mli`, `Playground_platform.ml`, `tests/memdraw/Grey.ml`, `run.sh`, `office-bare.md5`, and `docs/notes_font.md`.
+Claude left the `tiny/` files and two docs uncommitted, since they belong to someone else.
+Claude also noted that `prompt-history.md` is staged but was not included in either commit.
+Claude listed three open items from Yoann's reports: the out-of-memory error, the stuck progress bar, and stage B.
+Stage B is drawing only changed regions, so moving windows stops dropping fps and showing the red frame.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:37
+
+**Yoann:**
+
+> excellent work
+
+**Claude (summary):**
+
+Claude recommended tackling option (a), the out-of-memory error, as the next step.
+Claude proposed first adding a heap figure to the `stats=on` output, so memory use is measured.
+That figure would show what each page keeps alive under mini-ml before any fix is chosen.
+Claude laid out three candidate fixes: `heap=modest`, dropping the script engine from history, or raising the 64 MB cap.
+Claude otherwise just acknowledged the earlier work and the planned order of remaining items.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:37
+
+**Yoann:**
+
+> regarding the fps on the Pi2, restarting the game helps a bit but we get quick to the lower 30 or less fps. Rebooting helped to restart at a higher fps and stat at 40fps for longer
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:43
+
+**Yoann:**
+
+> It feels wrong to abuse /dev/swap for things that are not swap related
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:43
+
+**Yoann:**
+
+> on principia we also have devsys.c and /sys/ I think for sys related control
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:21
+
+**Yoann:**
+
+> let's do 2
+
+**Claude (summary):**
+
+Claude edited the mklib, troff, and mini-man mkfiles, plus the top mkfile, lite.sh, and kernels/9pi.
+Claude verified make test-lite passes with 69 jobs and zero failures on the mini-mk-built programs.
+Claude ran the Plan 9 build that kernels/9pi's make ix uses, building libs with O=5 OS=plan9, then mini-man.
+Claude confirmed mini-man and troff build on both Linux and Plan 9, and a no-op top build takes 2.1 s.
+Claude then reported item 2 of the plan as built for both Linux and Plan 9.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:47
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the seven files as e5a3590c, staging by pathspec so the other session's `kernels/lib_machine/machine.c` and `prompt-history.md` stayed out.
+Claude reported that both "Next" items in plan_mk_libraries.md are now done.
+Claude named the open item as plan_playground_speed.md: locate where the draw device's 90 ms per frame goes on mini-9pi.
+Claude's stated follow-up is to make the draw platform redraw only the parts that changed.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:43
+
+**Yoann:**
+
+> maybe it's time for a Devsys.ml or something?
+
+**Claude (summary):**
+
+Claude confirmed mini-9pi binds `#k` on `/sys`, so panic is `echo panic > /sys/reboot`, and `make test-lite` passed.
+Claude checked the Pi2 card's images and found both were gcc builds with the watchdog enabled, not `COMPILER=ix` builds.
+Claude recorded the Pi2 freeze as an open bug in `docs/plans/bugs/ix.md`, with what is known so far.
+Claude added a new technique entry to `docs/notes_debugging_techniques.md`, the notes file you asked to keep current.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:55
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude confirmed that all the uncommitted hunks in the working tree were its own edits.
+Claude then announced it was committing those 14 paths.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:59
+
+**Yoann:**
+
+> before running cameltry, free show 14M used by the kernel; after 16M used
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:01
+
+**Yoann:**
+
+> actually running another time and closing kept at 17M
+
+------------------------------------------------------------------------
+
+## 2026-10-21 10:38
+
+**Yoann:**
+
+> let's do a indeed
+
+**Claude (summary):**
+
+Claude added allocation counters to `languages/ml/runtime/gc.c` and exposed them through OCaml's `Gc.stat` in lib_core.
+Claude moved `gc_counters` beside `gc_get` so `ml_alloc` is declared, and added heap size to the `stats=on` output.
+Claude added a per-page line under `-v` that reports when each page has come whole.
+Claude forced a full collection before each figure, since `Gc.stat` otherwise counts unswept garbage.
+Claude narrowed the mini-netscape segfault to early HTML reading rather than layout, and began checking the input for recursion.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:09
+
+**Yoann:**
+
+> we recently build t-ix under t-ix. We should try to do the same for m-ix: building m-ix from under m-ix.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:11
+
+**Yoann:**
+
+> first let's add "sectioning comments" (the //**** for C) in TinyMLRuntime/core.c with the different grouping (array, string, hastbl, exn, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:12
+
+**Yoann:**
+
+> I've adjusted myself a few lines in this file
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:02
+
+**Yoann:**
+
+> so no increase
+
+**Claude (summary):**
+
+Claude reported that the QEMU run was still in progress, with 151 meter lines so far and about 9 of 11 minutes elapsed.
+Claude ruled out a growing kernel heap, since the heap stayed at 17 MB across runs.
+Claude suspected remaining causes: fragmentation in that heap, leftover state in the draw device, or the board's clock or heat.
+Claude said that if QEMU shows no slowdown, the board is the main suspect, so the next step is reading the real ARM clock and throttle state from firmware.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:15
+
+**Yoann:**
+
+> let's commit; I like the change
+
+**Claude (summary):**
+
+Claude committed the pending changes with Yoann's edits included, as requested.
+Claude left the build and `make check` running in the background, still unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:20
+
+**Yoann:**
+
+> let's keep it in one file for now, but let's keep it open to do the split in the near future
+
+**Claude (summary):**
+
+Claude kept `core.c` as one file and saved a memory note that it is a future split candidate.
+Claude recommended splitting it later the same way as `languages/ml/runtime/runtime.c`, with `#include` per banner section.
+That keeps `core.c` one compilation unit, so the static helpers stay shared across all the parts.
+Claude noted that `TinyKernel/Makefile` would need every part as a prerequisite, including the `/src/TinyMLRuntime/` copies.
+Claude said the `dune build` and `make -C tiny/TinyKernel check` results were still pending, and would be reported if either failed.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:21
+
+**Yoann:**
+
+> we should improve the speed of those checks; ideally it would run under a min or 2
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:22
+
+**Yoann:**
+
+> but before
+
+**Claude (summary):**
+
+Claude found that `make -C tiny/TinyKernel check` runs about 25 command sessions, each booting `tiny-machine` from scratch.
+Claude noted that a loop over 23 recorded screens adds more fresh boots, roughly 50 in total.
+Claude had not timed any session yet, and was still partway through the `wwwscroll` screen run.
+Claude proposed timing each session first, so any parallel speed-up could target the slowest sessions.
+Claude also asked what "but before" meant, since the message seemed cut off.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:10
+
+**Yoann:**
+
+> we recently removed some python dependency for the build, so this should unblock things
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:23
+
+**Yoann:**
+
+> can we run some of those tests in parallel to speed things up? I'm planning to do a few simple refactorings and ideally running some tests to check for regression would be fast
+
+**Claude (summary):**
+
+Claude rewrote the `check` rule to run tests in parallel, after a script dropped its header block, which it restored.
+Claude's first parallel run took 75 s, including relinking `ml`, and all tests passed.
+Claude measured the sequential baseline at about 12 minutes of machine time (700 s of CPU).
+Claude timed a second run with nothing to rebuild, which came in at 72 s.
+Claude then checked that a deliberately wrong screen still fails the parallel check.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:28
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude applied the four cleanup rules to three pilot examples and left them uncommitted for review.
+Claude proposed rolling the rules out to about 20 .mli headers, including the four TinyKernel ones and Stdlib.mli.
+Claude flagged six .ml files with the same patterns, such as TinyKernel/user/calc.ml, tetris.ml and TinyML.ml.
+Claude's plan kept the kernel's usage block and all teaching sections, removing only build mechanics and repeated usage.
+Claude asked whether to apply these rules to the remaining files before making further changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:33
+
+**Yoann:**
+
+> yes, go ahead with the rest
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:23
+
+**Yoann:**
+
+> I think it takes right now 3h to build t-ix under t-ix; hopefully it will be far faster to build m-ix under m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:53
+
+**Yoann:**
+
+> you can also set the MKSHELL env var so no need set MKSHELL in every mkfile
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:54
+
+**Yoann:**
+
+> yes we could run on mini-9pi2 and leverage the 4 cores (and use domains for mini-qemu)
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:55
+
+**Yoann:**
+
+> we can also profile and see where the time is spent; we optimzie t-ix to take 6h down to 3h to compile t-ix under t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:42
+
+**Yoann:**
+
+> let's use the .rc extension for rc script under mkfiles/ to differentiate them clearly from mkfile components included by other mkfiles
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:42
+
+**Yoann:**
+
+> so mkfiles/units.rc
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:09
+
+**Yoann:**
+
+> let's do 1, 2, and 4. We should also do 6. My pi2 has 1GB of memory, so no reason to limit ourselves to 64MB.
+
+**Claude (summary):**
+
+Claude listed the uncommitted changes awaiting commit, since the last commit, across mini-ml and lib_core.
+Claude fixed mini-ml's compiler in simple/Lower.ml so the right side of && and || is a tail call.
+Claude changed mini-ml's runtime: breadth-first Hashtbl.hash, stack-overflow return addresses, and 192 MB Plan 9 heap halves.
+Claude also changed lib_core's Hashtbl to grow by entry count, and set mini-netscape to heap=modest.
+Claude noted test-lite passed before the last two changes, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:45
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:34
+
+**Yoann:**
+
+> for good tests related comments, maybe they can be moved in the .ml; judgment
+
+**Claude (summary):**
+
+Claude had four agents move accurate test comments from header files into matching `.ml` files, deleting stale ones.
+Claude confirmed the combined diff changed only comments, then ran the build and test suite.
+Claude stopped a `dune build` that one agent had left hanging for 33 minutes.
+The 72-second kernel check passed, and Claude began spot-checking the agents' factual fixes against the code.
+Claude also fixed `put.c` directly and handled the calculator and kernel test notes as part of the same pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:42
+
+**Yoann:**
+
+> dirs.rc probably too
+
+**Claude (summary):**
+
+Claude renamed the `units` script and updated every reference to it across the tree.
+The references were in mklib, mklibs, mkprog, a comment in mkconfig, and ten mkfiles.
+Claude then ran a quick check in the scratch copy on directories that use both scripts.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:49
+
+**Yoann:**
+
+> let's commit; regarding xv6 there is no need to remain backwared compatible with the actual xv6 filesystem.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:47
+
+**Yoann:**
+
+> let's commit first.
+
+**Claude (summary):**
+
+Claude reported that all 59 modified files under `tiny/` came from the cleanup.
+Claude then started committing those files by pathspec.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:49
+
+**Yoann:**
+
+> why it's 50 to 300 times slower? Emulation could be faster than this; qemu is not 300 times slower executing binaries
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:51
+
+**Yoann:**
+
+> let's reuse the ||| from Common. let's fix the remaining .mli you mentioned.
+
+**Claude (summary):**
+
+Claude checked that lib_core's Common only adds `let*` beyond `|||`, so `open Common` was safe here.
+Claude replaced the local `|||` copies with the one from Common, removing the duplicated definitions.
+Claude reported that host builds and tests passed after the replacement.
+Claude then started the kernel check, since tiny-ml builds `ed`, `db` and `cc` with `open Common` too.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:54
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the seven files as 55f6c5b8, closing the leftover items from the `tiny/` comment cleanup.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:56
+
+**Yoann:**
+
+> I've also noticed a few files where code using far more than 80 columns; using punctually 85 is ok, but going up to 100 just to try to reduce the LOC to stay in budget is not ok;
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:56
+
+**Yoann:**
+
+> I'm restricting to tiny/
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:57
+
+**Yoann:**
+
+> we can compare the make loc before and after for t-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:58
+
+**Yoann:**
+
+> tiny-ml has {| |}
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:52
+
+**Yoann:**
+
+> let's commit the progress in the mean time
+
+**Claude (summary):**
+
+Claude committed its 61 files as bff90213, leaving other sessions' changes uncommitted, after dropping xv6 compatibility.
+Claude reported stage 3 still running on QEMU's Pi 2, with lib_core and utilities/misc being built by mk on the card.
+Claude said it would report stage 3's result and timings once the run finishes.
+Claude planned to record those timings in the plan's Status entry, with stage 3 marked as running.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:00
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:59
+
+**Yoann:**
+
+> and we should also avoid using strings with more than 80 columns since we also want to use the console with 80 columns display if possible
+
+**Claude (summary):**
+
+Claude added Yoann's 80-column rule for printed text to the shared rules and saved it to memory.
+Claude kept that rule out of this pass, since changing printed strings means updating the tests' expected outputs.
+Claude had each agent list every printed line over 80 characters for a second pass.
+Claude also rewrapped tiny/ with eight agents, then added a file make check needed.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:00
+
+**Yoann:**
+
+> the code should be put under /src/ on the card, like I think we do for t-ix
+
+**Claude (summary):**
+
+Claude proposed rebuilding the SD card with `/src` as the repository root, as Yoann asked.
+Claude started the session on a writable copy of the card, using the four-core kernel.
+Claude found that the card's second partition starts at sector 67,584, which the read-back depends on.
+Claude wrote a script to copy `/src/_mk` off the card with `Xv6test`'s `ls` and `cat`, recursively.
+Claude reported QEMU at 287% CPU, so the build was running, and planned to read the card back when it finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 12:45
+
+**Yoann:**
+
+> and let's start (b)
+
+**Claude (summary):**
+
+Claude checked that `Netscape.ml`'s zoom still follows `Tab.url` after the new fetch, read, sheets, and layout pieces.
+Claude found 14 of 31 frame sessions ending on different frames, then shifted each frame number to match the new piece count.
+Claude wrote the new arguments into `frames.expected`, updated `loading`'s sum, and confirmed all 31 sessions and helpers pass.
+Claude reran the mini-9pi QEMU progress-bar session in the private copy, which was still running in the background.
+Claude added the progress bar's row to the bugs file, and attributed the `dune build` shell errors to mini-mk, not its changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:50
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the rewrap as 21ded260, covering all 120 files under tiny/ plus the tetris.wav checksum.
+Claude also flagged that t-ix is now 26,311 lines, 1,311 over its 25,000 budget.
+Claude proposed a second pass over printed text longer than 80 characters and waited for your go-ahead.
+Claude scoped it to usage and help texts, a few messages, and the check names and labels in the network and office tests.
+Claude noted that the expected outputs of those network and office tests would be updated along with the renamed labels.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:51
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the progress bar fix as `b6cb5f9d`, touching only its five files, and deleted the private copy of the tree.
+Yoann's reply, "let's commit the progress", points at the progress bar fix, so the summary centers on it.
+Claude listed the progress bar as fixed, alongside the cursor, fonts, and out-of-memory error commits.
+Still open: the frame-rate drop and red frame on link hover, which needs stage B of `plan_playground_speed.md` to redraw only what changed.
+Other open items: slow big pages on mini-9pi, a `mini-mk` rebuild gap for compiler changes, and no Pi testing yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:55
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude found no uncommitted changes in the working tree, so there was nothing new to commit.
+Claude pointed out that the progress bar work is already committed as b6cb5f9d, the latest commit on main.
+Claude confirmed that none of its own files had pending edits left to commit.
+Claude offered to write a status summary of where things stand if Yoann meant a progress write-up.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:56
+
+**Yoann:**
+
+> I ran on Linux ./bin/mini-netscape https://aryx.github.io/ocaml-elm-playground/games/#first-person  but it didn't load the page passed in argv
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:59
+
+**Yoann:**
+
+> regarding https://aryx.github.io/ocaml-elm-playground/games/#first-person I think mini-netscape should first load the images that are close to what is displayed, and also I think the images are rendered too big currently in mini-netscape; do we respect the specified size in the .html?
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:52
+
+**Yoann:**
+
+> let's do this second pass
+
+**Claude (summary):**
+
+Claude rewrote tiny-machine's usage and help so each example has its own indented line, within 80 columns.
+Claude moved tiny-ml's usage and help to the same layout, and fixed a missed local `|||` in TinyML.ml.
+Claude shortened two over-long ed help lines and updated the network, office, and play test texts, keeping their numbers.
+Claude split two 87-column Printf formats in the tests into separate `printf` calls, since formats can't be joined with `^`.
+Claude confirmed every program's `-h` and usage output is under 80 columns, then reran the full tiny test suite.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 14:02
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the second pass as 6ef649ce, covering 16 files under `tiny/`, with t-ix at 80 columns.
+Claude reported that t-ix was still 1,302 lines over the 25,000-line budget.
+Claude treated that overage as the one open question, since the budget limit was Yoann's decision to make.
+Claude left the 25,000 limit untouched rather than changing it on its own.
+Claude's recommendation was to decide the budget before any further trimming of t-ix.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 14:02
+
+**Yoann:**
+
+> it's fine for now, we can put back the budget at 30 000
+
+**Claude (summary):**
+
+Claude set the t-IX budget back to 30,000 in `README.md` and `docs/loc.md`, leaving both changes uncommitted.
+Claude updated the README's budget history to end at "30,000 since 2026-10-21" and refreshed the t-IX line counts.
+The t-IX paragraph now reports about 24,100 lines of OCaml and ML, and about 26,300 in all.
+Claude added a `docs/loc.md` paragraph quoting Yoann's budget decision, plus a log row for commit 6ef649ce.
+Claude also noted m-IX at 151,000 lines, 1,000 over its 150,000 budget, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 14:04
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the updated line budgets as 8f1e6ba6, touching only `README.md` and `docs/loc.md`.
+Claude reported that t-IX has 3,700 of its 30,000 lines left in the budget.
+Claude flagged that m-IX is still 1,000 lines over its 150,000-line budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 13:50
+
+**Yoann:**
+
+> still running?
+
+**Claude (summary):**
+
+Claude found that every directory in the card's build had failed, traced to a timing override it had added.
+Claude traced the failures to mini-mk's parallel jobs sharing `/env`, and made `spawn` fork with its own environment, as Plan 9 mk does.
+Claude added `rfork` to the Linux stand-in in `Sys_plan9`, confirmed both builds pass, and logged the race in `bugs/ix.md`.
+Claude committed the race fix and `/src` as the card's repository in commit `65e4b333`.
+Claude stopped the failing session and restarted the full build on a fresh copy with the normal kernel.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 14:01
+
+**Yoann:**
+
+> in chrome, the images looks small on the same page
+
+**Claude (summary):**
+
+Claude explained the picture-size bug as a grid problem, where `repeat(auto-fill, …)` produced no columns, and fixed it so auto-fill and auto-fit give as many columns as fit. Claude added unit tests for that, and the engine's 54 tests pass, including the new one. Claude also changed picture loading to fetch pictures nearest the visible window first, which made `#first-person` show Maze War, Battlezone and Wolfenstein first. Claude also made mini-netscape accept a bare address on the command line, and noted that mini-mk needs `MKSHELL=mini-rc`. Nothing is committed yet; Claude asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:19
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:18
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended splitting `TinyMLRuntime/core.c` first, since its banners already mark the split points.
+Claude also listed three other options: large tiny/ modules, an open C line-wrap style question, and m-IX's 1,000-line budget overage.
+Claude said the `make -C tiny/TinyKernel check` run takes 72 seconds, plus about a minute for the shell tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:19
+
+**Yoann:**
+
+> just asking
+
+**Claude (summary):**
+
+Claude reported the build 1.5 hours in with no failures, and queued a byte-for-byte comparison, a profile, and a plan update.
+Claude found that every `time` line has read 0.00r since about 72 minutes in, 74 of 528 so far.
+Claude suspected mini-9pi's clock wraps at 2^32 microseconds, since it reads only the Pi timer's low 32 bits.
+Claude had not yet checked the kernel code, and planned to fix the wrap and log it in bugs/ix.md.
+Claude also planned to get full timings on the next run, since the current profile covers only the first 72 minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:21
+
+**Yoann:**
+
+> the spirit of tiny/ is to have one file per prog, so let's not split, even if above 700 LOC.
+
+**Claude (summary):**
+
+Claude agreed that each tiny/ program stays one file, even when it runs past 700 lines.
+Claude saved this one-file-per-program rule to its memory notes for future sessions.
+Claude took the planned split of core.c off its refactoring list entirely.
+Claude also kept the tiny-ml runtime unsplit, asking whether it should be an exception.
+Claude still lists the C wrapping style question and m-IX's 1,000-line overrun as open items.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:19
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended committing the games-page work now, covering the argv address, `repeat(auto-fill)`, nearest-first picture fetching, and `#first-person`.
+Claude planned to commit only those files by pathspec, leaving out the kernel, `tiny/`, and `plan_self_hosting.md` changes from the other session.
+Claude proposed starting next on the mini-9pi hover redraw, using stage B of `plan_playground_speed.md` to redraw only the changed link and cursor.
+Claude also listed the slow first layout of big pages, missing `aspect-ratio` support, and an unreproduced 41 s `about:blank` oddity as later items.
+Claude then asked whether to commit and start on the hover redraw.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 11:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude pointed out that `cputemp` and `cputype` live in `Devarch` under `/dev`, so they map to `/dev/cputemp` and `/dev/cputype`.
+Claude then looked at how the kernel already requests a clock's rate from firmware, to follow that pattern.
+Claude also read `Devarch`, where the files are served live, and checked `cputhrottle`.
+Yoann's reply, "yes", approves that direction, and his next message asks to commit the work so far.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:23
+
+**Yoann:**
+
+> excellent, let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:22
+
+**Yoann:**
+
+> fix the clock wrap while it runs
+
+**Claude (summary):**
+
+Claude traced `time`'s `0.00r` to the kernel clock freezing after about 4,295 seconds, past 2³² µs.
+Claude fixed the kernel's clock handling so it keeps advancing past that wraparound point.
+Claude verified the fixed kernel: `sleep 3` now reports 3.28 seconds of real time.
+Claude recorded the bug in `bugs/ix.md` and started building the same C for the Pi 1.
+Claude scheduled a peek at the running build's log for 19:14 to confirm the cause.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:26
+
+**Yoann:**
+
+> looks like make test-lite has some regressions related to mini-netscae
+
+**Claude (summary):**
+
+Claude reported that the make test-lite regression comes from the helpers test in mini-netscape.
+Claude found that the click on the YouTube link no longer launches mpv.
+Claude started checking where the YouTube link is now drawn in mini-netscape.
+Claude had not yet identified the cause or changed any files at that point.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:39
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing the mouse-move redraw on mini-9pi, the last open item on the list.
+Claude proposed redrawing only the changed link underline, cursor, and status line instead of the whole page.
+Claude would first time a mouse-move frame under QEMU to confirm the full redraw is what makes it late.
+Claude planned a rectangle-limited redraw with the full redraw kept switchable, checked against mini-netscape's 31 recorded sessions.
+Claude also listed the other open items: double layout on big pages, unsupported aspect-ratio, and an unreproduced 41 s about:blank.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:33
+
+**Yoann:**
+
+> let's commit the progress in the mean time?
+
+**Claude (summary):**
+
+Claude committed the progress as 71f44c7b, staging the timer_arm fix, the clock bug row, and the self-hosting notes by pathspec.
+Claude reported that the full build was still running on the old, unfixed kernel when the answer was written.
+Claude said the 19:14 peek would check whether the old kernel's timings resumed about 71.6 minutes after they stopped.
+Claude explained that a missed alarm would produce that pattern, but the cause was still unconfirmed.
+Claude planned to compare the finished build's files with Linux's and report the result once the build completed.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:42
+
+**Yoann:**
+
+> still running?
+
+**Claude (summary):**
+
+Claude estimated the full run at roughly 5 to 6 hours, with about 1h55 already elapsed.
+Claude attributed the length to the big remaining directories, such as smalltalk, netscape, and the toolchain.
+Claude said a few more hours of waiting remained, so the run would not finish soon.
+Claude reported progress at directory 34 of 74 at 18:42 with no failures, and kept the 19:14 peek scheduled.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:43
+
+**Yoann:**
+
+> it takes far too much time; compiling t-ix under t-ix was taking 3h; I was expecting compiling m-ix under mini-9pi2 would take less
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:24
+
+**Yoann:**
+
+> let's commit this work in the mean time
+
+**Claude (summary):**
+
+Claude committed the board readings as 923d2f0d, leaving the other session's plan and prompt-history changes uncommitted.
+Claude told Yoann to cat the three /dev/cpu readouts at Cameltry start and near 33 fps.
+Claude said a clock below 900 MHz, or any flag besides none, means the board is self-throttling.
+Claude said 900 MHz and none at 33 fps would put the slowdown in the kernel.
+Claude noted the readings were only tried under QEMU, and make test-lite was not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:27
+
+**Yoann:**
+
+> let's start the tiny-debugger work from its plan document (and tiny-strace, with the debug and trace command under t-ix)
+
+**Claude (summary):**
+
+Claude built tiny-strace's `trace` on the ML side, with `/bin/trace` following calls and killing faulting processes.
+Claude added exact instruction counting to the kernel's `k_step`, confirmed by mltests landing at `traced+4`.
+Claude wrote tiny-debugger's `debug` with breakpoints, memory words, single-step, and `n` stepping over calls.
+Claude got `make check` passing all 26 sessions, screens and sounds, after switching to `""` and start.tm's `write` at 0xc.
+Claude updated the manual's `trace(pid)` paragraph and marked plan steps 2, 3 and 7 done.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:42
+
+**Yoann:**
+
+> I'm scared we're adding optimization hacks when we should address the core issue. Is it a good optimization? Will that have wide impact, not just mini-netscape?
+
+**Claude (summary):**
+
+Claude recommended measuring the device's 90 ms per frame first, before any other change.
+Claude proposed splitting that 90 ms into clearing the frame, copying the letters, and copying the frame to the window.
+If one of those parts dominates, fixing it would speed up every playground program on every frame.
+Claude then sequenced the open Redraw bug in bugs/ix.md ahead of stage B in lib_playground.
+Claude noted that stage B fixes hover redraws across playground programs, but not full-screen repaints or kernel cursor lag.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:53
+
+**Yoann:**
+
+> let's commit! excellent work, and let's move forward
+
+**Claude (summary):**
+
+Claude committed the work as bcb778a2, leaving out Yoann's prompt-history.md because it is his personal file. Claude then implemented plan steps 4 and 5: the names and the backtrace. For names, it made the linker accept `-s` and had the kernel loader read symbols after the image, while keeping the kernel's image and spin raw. Debug now reads labels from the program's file, so `b main+0x8` and `function+offset` addresses work, and calls to function starts show names as objdump does. For the backtrace, Claude checked it on tiny-c and on an ML program under debug, and added `word` refusal for tiny-ml values in the 0x40 top-byte range. Claude also updated `make check` and the docs, and the Makefile's header, and ran the 24 host tests, which were still running when it stopped.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:43
+
+**Yoann:**
+
+> why does it take so much time? Are you running under qemu which should also be far faster than tiny-machine emulator
+
+**Claude (summary):**
+
+Claude raised Kfs's cache from 2 MB to 32 MB, cutting Pervasives from 7.0 s to 5.1 s.
+Claude proposed holding Kfs card writes until close or sync, instead of flushing at the end of every system call.
+Claude proposed a larger starting heap for mini-ml's GC, since collections took about 15 percent of samples.
+Claude asked whether to finish those two fixes and commit them with the uncommitted cache change.
+Claude found QEMU isn't the bottleneck; mini-9pi's own kernel overheads dominate the compile time.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:33
+
+**Yoann:**
+
+> great work, let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed steps 4 and 5 as 5740c823, leaving `prompt-history.md` and two other-session files out.
+Claude recommended fixing `n` in recursive functions by saving `sp` and checking it on the temporary breakpoint.
+Claude proposed `trace -f` to follow forked children, needing kernel support and a pid on each line.
+Claude suggested printing tiny-ml's value-stack slots in `bt`, so ML backtraces show arguments, not just return addresses.
+Claude also offered a windowed `debug` with source and registers in TinyLibDraw panes, flagged as the largest, least-needed item.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:37
+
+**Yoann:**
+
+> make self takes too much time I think, like 3h, so let's do the other things instead and we can run make self during the night while I sleep instead. let's do 2 (I don't fully understand it), 3, 4, and 5. They all seems useful.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:37
+
+**Yoann:**
+
+> maybe debug can also have a -window argument
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:37
+
+**Yoann:**
+
+> to run graphically
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:42
+
+**Yoann:**
+
+> it looks that you're following  closely the tracing and debugging code in principia softwarica and plan9 no?
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:42
+
+**Yoann:**
+
+> I see code that looks quite similar to plan 9
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:43
+
+**Yoann:**
+
+> ok them maybe it would be good to add comments about this design in the TinyDebugger.mli
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:43
+
+**Yoann:**
+
+> so we know how it relates, what is the "free spirit" part
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:43
+
+**Yoann:**
+
+> (Ideally we would have similar design notes in the other .mli in tiny/ )
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:35
+
+**Yoann:**
+
+> yes, let's do all those speedup; seems like optimisations that are not hack and make sense
+
+**Claude (summary):**
+
+Claude raised Kfs's cache from 2 MB to 32 MB so ml, mk, rc, ld and lib_core.a stay in memory.
+Claude batched Kfs writes to flush at 256 pieces, within a second, or on failure, instead of on every call.
+Claude changed mini-ar to store each member's source and defined names (format version 4), so `ar u` on lib_core dropped from 0.37 s to 0.16 s.
+Claude made mklib and mkprog create their output directory once at mkfile read time, and raised mini-ml's starting heap in gc.c to 4 MB.
+Claude has committed nothing yet, and the full build on the new card and kernel is still running as task bcy629k8m.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:56
+
+**Yoann:**
+
+> ok let's start
+
+**Claude (summary):**
+
+Claude recommended fixing the kernel's per-letter draw cost first, since it slows every program's frames.
+Claude measured a hover frame on mini-9pi under QEMU at about 125 ms, with the kernel's drawing taking 93–100 ms.
+Most of that kernel time was the 452 letter draws at roughly 125 µs each, plus 42 ms clearing and copying the picture.
+Claude proposed profiling a few hundred letter draws in the kernel to find where each message's time goes.
+Claude left the uncommitted meter change in Playground_platform.ml and kept the scratchpad build for the profiling.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:45
+
+**Yoann:**
+
+> remember that we want the code under TinyKernel/user/*.ml to remain small; it should just be small wrappers and adapters of the real important code in the TinyXxx.ml under tiny/
+
+**Claude (summary):**
+
+Claude confirmed the build works and boot.img is 8.90 MB, under its 10 MB limit.
+Claude tested `trace -f`, `bt` showing ML value-stack slots, and the window on tiny-machine, then fixed two cosmetic issues.
+Claude recorded the window session into `check.expected`, and `make check`, the dune build, and all 24 host tests passed.
+Claude updated the t-ix manual, plan, and README, checking Plan 9 claims against principia's `debuggers/` directory.
+Claude added the plan's last step and moved the plan to `done/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:20
+
+**Yoann:**
+
+> yes, let's commit and start on that
+
+**Claude (summary):**
+
+Claude committed the debugger work as 8fdfce0e and began surveying the tiny/*.mli headers.
+Claude instructed four agents to add twin, original, and our-differences paragraphs, insert-only, tagging unchecked claims "(from memory)."
+Claude reported that the toolchain group added paragraphs to eight of nine files, with TinyC already fully covered.
+Claude reported the tools group cited principia originals in seven files and fixed a stale Regex.mli pointer.
+Claude flagged a TinyMachineCPU exercise about a decode cache the code already implements, leaving the wording to Yoann.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:29
+
+**Yoann:**
+
+> what do you think, those added comments are useful?
+
+**Claude (summary):**
+
+Claude recommended trimming TinyEditorLine's sam paragraph to two lines about the file.c log and temp-file paging.
+Claude proposed dropping the TinyMachineWindow comment and cutting TinyKernelGraphics's draw-message list to one sentence.
+Claude planned to add verbs to the telegraphic sentences the agents wrote, such as "Here one type and both directions in one file."
+Claude suggested waiting for the GUI and applications group's report, then showing the final diff before committing anything.
+Claude found the TinyAssembler, TinyLinker, TinyKernelFS, and TinyMachineCPU comments useful, and the rest mostly sound.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:58
+
+**Yoann:**
+
+> good, let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the speedups as ab01afe9 by pathspec, cutting one card compile from 7.0 s to 4.05 s.
+Claude left the full card-and-kernel build running, with the old build alongside as its baseline.
+Claude plans to compare the two builds directory by directory once the new build finishes.
+Claude will check whether the games directory fails again in the new build.
+Claude will then decide from the profile whether sharing text pages between program runs is worth doing next.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:31
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:30
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude trimmed the TinyEditorLine sam paragraph from eleven lines down to five.
+Claude kept sam's file.c log origin, the list-commit trick, and temporary-file paging in that paragraph.
+Claude made TinyKernelGraphics name drawmesg.c's 27 messages and dropped the repeated protocol differences.
+Claude dropped TinyMachineWindow's mini-qemu trivia and gave TinyMachineISA's verbless sentence a verb.
+Claude left the GUI and applications group running, with its diff to show before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 18:59
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended committing the three uncommitted changes, then doing the blit change in the letter loop.
+Claude found the kernel's `memcpy` was a byte loop, and changed it to call `memmove`, cutting the white from 25 ms to 12.
+Claude also cut each letter's mask to its covered pixels in `Shape_render_software.mask_of`, bringing the letters from about 55 ms to 34.
+Together these took a hover frame from about 9 fps to about 13, with 68 of 69 tests passing.
+Claude asked whether to commit `libc.c`, `Shape_render_software.ml`/`.mli` and the meter, then do the letter-loop blit.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:32
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the three design-note groups as 9cf128f9 and the GUI group as bd0cd422, with `dune build ./tiny` passing.
+Claude flagged the TinyMachineCPU exercise "a decode cache (threaded code)" as misleading, since `keep_decoded` already caches decoded words.
+Claude left that exercise wording for Yoann to reword, because it is his own text and was not changed.
+Claude noted that `make self` is still waiting on its overnight run, so `self.expected` must be re-recorded afterward.
+Claude marked the "games/4s" claim in TinyAppTetris as from memory, since principia does not contain it.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:38
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended closing the loose ends before the larger options like watchpoints.
+Claude proposed running `debug` and `trace` on a background `sleep` process, recording the results in session 26.
+Claude planned to run the `tiny/mkfile` build through mini-mk, since TinyLibSymbols was added two commits ago and never built.
+The other items, a `make self` check in `tiny/TinyKernel` and three ranked larger options, were listed but not started.
+Claude then asked whether to start with items 1 and 2, which Yoann approved.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:34
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended keeping the measurement session as `tests/perf/hover.sh` so the plan's numbers stay reproducible.
+Claude reran the script from the private copy, then wrote the measurement, two causes, and table into the plan.
+Claude committed the five files by pathspec as b11ab2e9 before starting the next change.
+Claude began a letter-loop optimization that stores a fully covered 16-bit pixel's two bytes directly, not via a per-pixel C call.
+Claude checked memdraw's test still matches the general loop, rebuilt the kernel, and started two sampled runs taking about ten minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:42
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude noted that the letter-loop change in `kernels/9pi/lib_graphics/lib_memdraw/Memdraw.ml` is still uncommitted, with the old code kept alongside it.
+Claude reported that this change cut letter drawing under mini-qemu from 31–36 ms to 31 ms, with Memdraw's test still passing in all three formats.
+Claude recommended committing that change first, then fixing the open `Redraw` bug in `bugs/ix.md` before starting stage B.
+Claude proposed stage B to redraw only changed regions, cutting a hover's kernel time from about 55 ms to an estimated 10 ms.
+Claude also said a hover frame now takes about 70 ms, down from 112 ms, but the gains should be measured on a board.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the letter-loop change as 2753afbd, cutting mouse-crossing frames from 112 ms to 66–72 ms.
+Claude named the Redraw bug in bugs/ix.md as the next item to tackle.
+Claude said stage B, drawing only what changed, would follow once the Redraw bug was fixed.
+Claude asked Yoann to say when to start, with both Redraw and stage B still pending.
+Claude did not run the kernel's check-quick checks or test on a board.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:39
+
+**Yoann:**
+
+> yes, do 1 and 2
+
+**Claude (summary):**
+
+Claude built the tiny/mkfile target, where mini-mk built all 14 host programs in 33 seconds.
+Claude built tiny-linker and tiny-prof with TinyLibSymbols, after copying the ML runtime files the libraries needed.
+Claude confirmed mini-mk's tiny-linker, dune's build, and /bin/ping from make check produced identical bytes.
+Claude reported make check all green, though a stray PATH tiny-linker printed usage without -s, still unresolved.
+Claude also fixed trace on the background loop, tried attach via debug, and logged the scheduler bug.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 20:02
+
+**Yoann:**
+
+> let's fix the Redraw bug
+
+**Claude (summary):**
+
+Claude reproduced the Redraw bug, finding 153 menu-bar pixels that differed from a whole-picture draw.
+Claude traced the cause to render_region offsetting origins as floats, so edge pixels rounded differently.
+Claude proposed the proper fix: region framebuffers store their origin and compute positions exactly as render does.
+Claude planned edits to Framebuffer, Fill, Line, Blit and render_region, with Fill scanning from the shape's first row.
+Claude estimated only a few dozen lines in lib_graphics, plus a README note update.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 20:21
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the scheduler fix and attach tests as c06130a9, leaving out prompt-history.md and Kfs.ml.
+Claude recommended running `cd tiny/TinyKernel && make self` before bed tonight.
+Claude said it would check the make self result tomorrow, October 22, once it finishes.
+Claude planned to re-record self.expected only if the diff is limited to the program list and ld -s lines.
+Claude's plan depends on that check, so nothing outside the commit has changed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 20:23
+
+**Yoann:**
+
+> ok going to bed so you can start the make self thing
+
+**Claude (summary):**
+
+Claude said the tiny-kernel image matches the host's build byte for byte. It planned to re-record self.expected and delete the leftover files. Yoann's reply "let's commit" points to the re-recorded self.expected and cleanup, so those are the focus.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the re-recorded `tiny/tests/TinyKernel_tests/self.expected` file as commit d674252d.
+Claude kept the commit to that single file, leaving nothing uncommitted under `tiny/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:44
+
+**Yoann:**
+
+> I also see 'make self', 'make check', where are those targets defined? I don't find them in the toplevel Makefile
+
+**Claude (summary):**
+
+Claude found that `check` and `self` are defined in `tiny/TinyKernel/Makefile`, not the top-level Makefile.
+Claude explained that `check` replays recorded sessions 01–26 and compares their output, screens, and sounds against expected files.
+Claude explained that `self` boots tiny-kernel to build its own image from `/src` and compares it with the host's `boot.img`.
+Claude noted that both targets fix the clock and seed with `-date 820540800 -seed 1` so runs are reproducible.
+Claude said the top-level `test` target reaches only `check`, via `$(MAKE) -C tiny/TinyKernel check` at `Makefile:96`.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:45
+
+**Yoann:**
+
+> ok, so I guess we can close this session? Everything is done mostly?
+
+**Claude (summary):**
+
+Claude pointed out that the plan's Status section still listed `make self` as not run.
+Claude said it would update that Status entry now that `make self` has passed.
+Claude intended to replace the not-run entry with the passing result in the plan.
+The Status edit was the only change Claude described in that reply.
+Claude's reply did not yet address whether the session could be closed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:46
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the plan's Status update as 68aa17be, containing only that one file.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 19:31
+
+**Yoann:**
+
+> what are we waiting?
+
+**Claude (summary):**
+
+Claude reported the full ix build finished on the card in 2 h 59 min, 1.6 times faster than the old run.
+Claude traced the card's three failures: netscape ran out of memory in mini-ld, and games hit a mkdir race.
+Claude fixed the mkdir race in utilities/files/Mkdir.ml and switched Asm.save and Link.member_of to No_sharing marshalling.
+Claude confirmed the 32-bit mini-cc gave the card's bytes, and make test-lite passed 68 of 69, with one unrelated failure.
+Claude left the changes uncommitted and did not re-run the card build to prove the outputs now match.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:47
+
+**Yoann:**
+
+> make test-lite is failing again
+
+**Claude (summary):**
+
+Claude traced the `make test-lite` failure to the "mini-ml compiles tiny" check, where 2 files hit "unbound value".
+Claude re-ran that check with `-v` to get the detailed error output for the failing files.
+Claude then reported that all 56 files now compile, without naming the change that fixed them.
+Claude started a fresh `make test-lite` run to confirm the whole suite passes.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:56
+
+**Yoann:**
+
+> let's commit and close this session
+
+**Claude (summary):**
+
+Claude committed the fix as fce8b7b4, containing only `languages/ml/tests/compile_ix.sh`.
+Claude left the other modified files in the tree uncommitted, since they came from other sessions.
+Claude confirmed the session could be closed after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:55
+
+**Yoann:**
+
+> let's commit. What's next? Can we close this session? Looks like m-ix build itself on mini-9pi? btw what is the command to test this? For t-ix there is a make self target inside TinyKernel/. For m-ix ?
+
+**Claude (summary):**
+
+Claude planned to commit bugs/ix.md without the other session's uncommitted Redraw row change.
+Claude staged HEAD plus only its own three rows, so the other session's Redraw edit stayed out.
+Claude noticed the Kfs row was already in HEAD, so only two new rows needed committing.
+Claude then restored the working copy of bugs/ix.md exactly as the other session had left it.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 06:58
+
+**Yoann:**
+
+> let's do 1 and commit; we'll run make self tonight.
+
+**Claude (summary):**
+
+Claude started `make self-quick` in the background while it worked on the Makefile targets.
+Claude checked what `QEMU_BOOT_IX` produces with `BOARD=pi2`, since the QEMU line has to match the Pi 2.
+Claude added a plan line for the new target while the run was still going.
+Claude held the commit until `make self-quick` finished, but the answer never said what that target does.
+Claude also found the card is used with `snapshot=on`, so `make self` needs its own copy.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:04
+
+**Yoann:**
+
+> what is make self-quick?
+
+**Claude (summary):**
+
+Claude described make self-quick as a shortened make self that checks the whole build chain without the three-hour run.
+Claude said it rebuilds the card, then runs tests/self.rc -q under QEMU on lib_core, lib_crypto, utilities/misc, linker and mini-ar.
+Claude explained that it copies /src off the card, rebuilds the same sources on Linux, and compares every _mk file.
+Claude said results land in kernels/9pi/build/self/ as logs, times.txt and differ.txt, reporting ok or FAIL.
+Claude estimated about 15 minutes on the card, while make self covers all 74 directories.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:04
+
+**Yoann:**
+
+> do we also have a self-quick for TinyKernel/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:05
+
+**Yoann:**
+
+> Can we reduce the number of stuff buillt during self-quick so it's even faster, like under 5min?
+
+**Claude (summary):**
+
+Claude measured lib_core's six-minute build from last night's log to decide what a quick build should keep.
+Claude found that mini-time fails on Linux: it reports zeros, searches only /bin, and drops the exit status.
+Claude recommended timing self.rc only where /dev/sysstat exists, which means mini-9pi, and restarted make self-quick.
+Claude updated the Makefile comment and the plan to describe the new quick build while that run was in progress.
+Claude said it would commit once make self-quick passes.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 20:23
+
+**Yoann:**
+
+> let's do the proper fix if it's simple and small in terms of LOC
+
+**Claude (summary):**
+
+Claude fixed the Redraw bug, so mini-office's drawn-by-changes frames now match the whole-picture frames exactly.
+Claude added Framebuffer.part in lib_graphics, recording where a part sits and the window's size.
+Claude made Fill, Line and Blit bound their work by the window size, so shapes compute identically within a part.
+Claude deleted Shape_render_software.render_region, so Redraw draws each changed rectangle with plain render.
+Claude reported the tests passing except an unrelated mini-ml tiny job, then asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:09
+
+**Yoann:**
+
+> make test-speed seems to have some regression; maybe the initial limit was not good? or something changed recently that introduced the speed regression?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:13
+
+**Yoann:**
+
+> also Error: The package "ix" is defined more than once:
+
+**Claude (summary):**
+
+Claude found that most of the walk's time goes to process spawns: 2617 `echo`, 1619 `awk`, 1406 `cat`, and 1385 mini-rc runs.
+Claude traced the 1619 `awk` invocations to `mkfiles/dirs.rc`, which it identified as the main source of the slowdown.
+Claude proposed checking whether mini-mk supports `<|`, so all of mkconfig's values could come from one rc call.
+Claude also planned to investigate why mini-rc starts about twice as slowly as dash.
+Claude also fixed the duplicate "ix" package error, so `dune build` works again.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:21
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:07
+
+**Yoann:**
+
+> and maybe we could have a toplevel self-quick: target in the toplevel Makefile that call it (in parallel) for t-ix and m-ix
+
+**Claude (summary):**
+
+Claude committed the work as 9e096d2b, adding a top-level `make self-quick` that runs t-ix and m-ix in parallel.
+Claude reported that m-ix's `self-quick` compiles lib_core's C library, runtime, and three OCaml units, but never links.
+Claude explained that a link needs all of `lib_core.a` first, about 6 minutes on the card, so `self-quick` skips it.
+Claude noted that t-ix's `self-quick` does link, building `bin/ping` with cc, as, and ld from the real Buildfile.
+Claude also left mini-ld's memory limit and the netscape link failure for another session.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:33
+
+**Yoann:**
+
+> let's commit; but it would be good to test linking also for m-ix like we do for t-ix, even for a small program
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:34
+
+**Yoann:**
+
+> ideally we would link a small C and ocaml program
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:34
+
+**Yoann:**
+
+> under m-ix

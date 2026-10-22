@@ -1,0 +1,40 @@
+# mini-doom, built by ix's tools (docs/plans/plan_doom.md): its units,
+# compiled here, then the program, linked with the libraries
+# (mkfiles/mklibs): the playground and one platform of it, the
+# pictures' core. The platform is ppm's on Linux (no window: a frame
+# written to a file, the tests'), the draw device's with OS=plan9
+# (mini-9pi: a window of mini-rio, or the bare screen, as the games',
+# ../../mkgames); PLATFORM=software, the pixels given as a picture,
+# made beside (games/fps/doom-soft).
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
+BESIDE=`{~ $PLATFORM software && echo -soft}
+D=$B/games/fps/doom$BESIDE
+# (each after the ones it names)
+LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
+# (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
+INCLUDES=-I . $LIBI $STDI
+# (each before the ones that name it)
+LIB=Wad Level Textures Things View Planes Segs Sprites Render Play
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+# (doom: the name the frames' test asks for, as a game's,
+# ../../tests/frames.sh; mini-doom: the program's)
+all:V: $D/mini-doom
+
+$D/%.$O: %.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+
+$D/mini-doom: $D/doom
+	cp $D/doom $target
+$D/doom: $D/Doom.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Doom Std_exit -o $D/Doom.start.$O
+	$LD $LDH -nofollow -o $target $D/Doom.start.$O $STDOBJS $LIBA $LIBOBJS $D/Doom.$O $STDEND
+
+clean:V:
+	rm -rf $D

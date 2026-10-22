@@ -50,8 +50,13 @@ let fun_label x = incr nfuns; Printf.sprintf "f%d_%s<>" !nfuns (String.map (func
 (* (the curry functions are the program's, one of each in its start
  * object (curry_funcs): a call compares a closure's first field with
  * one, below (calls_whole).
- * old: each unit's own, "ml_curry%d_%d<>", those of the arities it has) *)
-let curry n k = Printf.sprintf "ml_curry%d_%d" n k
+ * old: each unit's own, "ml_curry%d_%d<>", those of the arities it has)
+ * (of the arities up to 7 only, arm's registers less the closure's: a
+ * function of more parameters, rare, has its unit's own curry
+ * functions, as before, the start object not knowing the units'
+ * arities; and calls_whole is not for it) *)
+let shared_most = 7
+let curry n k = Printf.sprintf (if n <= shared_most then "ml_curry%d_%d" else "ml_curry%d_%d<>") n k
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
 
 (* (off: mini-ml -calls) *)
@@ -510,7 +515,7 @@ and app env (f : Scope.expr) args tl =
    * function. Every call of a library's function of two arguments was
    * so: a sixth of a game's instructions were curry functions
    * (docs/plans/plan_playground_speed.md). *)
-  | _, _, _ :: _ when !calls_whole && m >= 2 && m <= 7 ->
+  | _, _, _ :: _ when !calls_whole && m >= 2 && m <= shared_most ->
       let ss = slots args in
       let c = to_slot env f in
       let slow = label () and out = label () in
@@ -627,15 +632,28 @@ and compile_fun lab ps benv body =
   funcs := { name = lab; nparams = List.length ps; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs
 
 (* ml_curry<n>_<k>: a closure of arity n given its k+1-th argument; a
- * block [the next one; the closure; the k arguments...], or the call *)
+ * block [the next one; the closure; the k arguments...], or the call;
+ * the block's fields on the stack machine, or for more than arm's
+ * registers hold, stored one by one (as a big block's) *)
 let curry_fun n k =
   cur := { code = []; nslots = 2; ntries = 0 };
-  if k < n - 1 then begin
+  if k < n - 1 && n <= shared_most then begin
     emit (Get 1);
     for i = k downto 1 do emit (Get 0); emit (Field (1 + i)) done;
     emit (Get 0);
     if k > 0 then emit (Field 1);
     emit (Sym (curry n (k + 1))); emit (Alloc (closure_tag, k + 3)); emit Ret
+  end
+  else if k < n - 1 then begin
+    emit (Int (k + 3)); emit (Int closure_tag); emit (CallC ("obj_block", 2));
+    let b = slot () in
+    emit (Set b);
+    let set pos = emit (Get b); emit (SetField pos) in
+    emit (Sym (curry n (k + 1))); set 0;
+    emit (Get 0); if k > 0 then emit (Field 1); set 1;
+    for i = 2 to k + 1 do emit (Get 0); emit (Field i); set i done;
+    emit (Get 1); set (k + 2);
+    emit (Get b); emit Ret
   end
   else begin
     let field i = emit (Get 0); emit (Field i); let s = slot () in emit (Set s); s in
@@ -645,10 +663,11 @@ let curry_fun n k =
   end;
   funcs := { name = curry n k; nparams = 1; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs
 
-(* the curry functions of every arity up to [most], for the start object *)
-let curry_funcs most =
+(* the curry functions of every arity up to shared_most, for the start
+ * object *)
+let curry_funcs () =
   funcs := [];
-  for n = 2 to most do for k = 0 to n - 1 do curry_fun n k done done;
+  for n = 2 to shared_most do for k = 0 to n - 1 do curry_fun n k done done;
   let fs = List.rev !funcs in
   funcs := [];
   fs
@@ -688,5 +707,6 @@ let unit_ name (items : Scope.item list) =
   funcs := { name = mangle name ^ ".Init"; nparams = 0; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs;
   while not (Queue.is_empty queue) do (Queue.pop queue) () done;
   (* old: List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities; *)
+  List.iter (fun n -> if n > shared_most then for k = 0 to n - 1 do curry_fun n k done) !arities;
   data := Roots (mangle name ^ ".Roots", List.rev !globals) :: !data;
   { funcs = List.rev !funcs; data = List.rev !data }

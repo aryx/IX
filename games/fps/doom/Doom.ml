@@ -1,0 +1,193 @@
+(* Claude Code
+ * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
+
+(* mini-doom: Doom (id Software, 1993), its renderer and its data, as a
+ * program of ix's playground (docs/plans/plan_doom.md). A walk through
+ * a level of a WAD -- Freedoom's E1M1 by default, made from Freedoom's
+ * source by tools/Mkwad.ml (data/README.md) -- its walls, floors,
+ * ceilings and sky textured and lit as Doom drew them, its doors and
+ * lifts working, to its exit.
+ *
+ *   the keys: the arrows (or w, s) walk and turn; a and d step aside
+ *   (Doom's , and .); shift runs; space (or e) uses (a door, a
+ *   switch, a lift)
+ *
+ *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=2] [x=X y=Y angle=A] [monsters] [lumps]
+ *     wad=   the WAD (default: /lib/doom/freedoom.wad, else
+ *            games/fps/doom/data/freedoom.wad: the card's, the
+ *            repository's); an IWAD of id's works the same
+ *            (doom1.wad), the levels its own
+ *     map=   which level (the WAD's first by default)
+ *     scale= each of Doom's 320 by 200 pixels made n by n (1 to 4);
+ *            the platform's size= is then 320 n, so that it shows the
+ *            picture as it is (unless size= is said)
+ *     x= y= angle=  the player put there, looking that way (degrees):
+ *            a test's camera (tests/compare.sh)
+ *     monsters  the level's monsters, standing (Doom's -nomonsters is
+ *            the default: none moves nor attacks here)
+ *     lumps  the WAD's lumps listed, and the end
+ *
+ * A frame (the playground's view): Play's tics since the last frame
+ * (35 a second, at most 4 a frame), then Render's picture of the
+ * player's eye, 320 by 200 bytes of the palette, made the platform's
+ * pixels (each index its colour, n by n), one Bitmap shape; the
+ * messages are the playground's words over it.
+ *
+ *          the keys                         the picture
+ *   computer.keyboard --> Play.command --> Play.tic (x 35 a second)
+ *                                              |
+ *                                      the player's eye
+ *                                              v
+ *   Bitmap <-- the palette, n by n <-- Render.frame: 320 x 200 bytes
+ *
+ * This is the slow way on mini-9pi: the draw platform is given a new
+ * picture at every frame (plan_doom.md, stage 6: a framebuffer).
+ *
+ * history:
+ * id's game ran on DOS, then on NeXTSTEP (where it was written), Linux
+ * (linuxdoom, whose source id gave in 1997), and everywhere since;
+ * 9front's doom9 is linuxdoom with a draw device for its window: what
+ * this does on mini-9pi. *)
+
+module P = Playground
+
+type model = {
+  play : Play.t;
+  sprites : Things.sprites;
+  render : Render.t;
+  (* two pictures, one a frame in turn: the platform compares a frame's
+   * shapes with the last's (Redraw), which must not be the same bytes
+   * changed *)
+  images : Rgba_image.t array;
+  mutable frames : int;
+  scale : int;
+  (* each index's pixel, four bytes *)
+  rgba : Bytes.t;
+  mutable last : float; (* the time of the last frame *)
+  mutable pending : float; (* the time not yet made tics *)
+  (* use pressed since the last tic: a frame's press between two tics
+   * (60 frames a second, 35 tics) is not lost *)
+  mutable use_pressed : bool;
+}
+
+(* Doom's picture, the platform's pixels: each byte its colour, n by n *)
+let to_rgba (m : model) : unit =
+  let src = Render.screen m.render and w = Render.width m.render and h = Render.height m.render in
+  let k = m.scale and dst = m.images.(m.frames land 1).rgba and rgba = m.rgba in
+  let row = 4 * w * k in
+  for y = 0 to h - 1 do
+    let o = ref (y * k * row) in
+    for x = 0 to w - 1 do
+      let c = 4 * Char.code (Bytes.unsafe_get src ((y * w) + x)) in
+      (* (four stores, not a blit: a call of C a pixel by mini-ml's code) *)
+      let r = Bytes.unsafe_get rgba c and g = Bytes.unsafe_get rgba (c + 1) and b = Bytes.unsafe_get rgba (c + 2) in
+      for _n = 1 to k do
+        let i = !o in
+        Bytes.unsafe_set dst i r;
+        Bytes.unsafe_set dst (i + 1) g;
+        Bytes.unsafe_set dst (i + 2) b;
+        Bytes.unsafe_set dst (i + 3) '\255';
+        o := i + 4
+      done
+    done;
+    (* (the row's copies below it) *)
+    for j = 1 to k - 1 do Bytes.blit dst (y * k * row) dst (((y * k) + j) * row) row done
+  done
+
+let view (computer : P.computer) (m : model) : P.shape list =
+  let p = m.play.player in
+  Render.frame m.render m.play.level m.play.textures m.sprites m.play.by_sector m.play.tic p.x p.y p.viewz p.angle;
+  m.frames <- m.frames + 1;
+  to_rgba m;
+  let screen = computer.screen in
+  (* (as many units as the platform has pixels, at size=320n) *)
+  let w = screen.width and h = screen.width *. float (Render.height m.render) /. float (Render.width m.render) in
+  let text (s : string) (y : float) : P.shape = P.words P.white s |> P.scale 2. |> P.move 0. y in
+  [ P.rectangle P.black screen.width screen.height; P.bitmap w h m.images.(m.frames land 1) ]
+  @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
+  @
+  if m.play.exited then
+    [ text (Printf.sprintf "%s finished: %d of %d secrets" m.play.level.name m.play.secrets (Play.secrets_total m.play)) 0. ]
+  else []
+
+let tics_a_second = 35.
+
+let update (computer : P.computer) (m : model) : model =
+  let (P.Time now) = computer.time in
+  (* (the first frame, or a clock that jumped: no time to catch up) *)
+  if m.last = 0. || now -. m.last > 0.5 then m.last <- now;
+  m.pending <- Float.min (4. /. tics_a_second) (m.pending +. (now -. m.last));
+  m.last <- now;
+  let k = computer.keyboard in
+  let held (name : string) : bool = Set_.mem name k.keys in
+  if k.kspace || held "e" then m.use_pressed <- true;
+  while m.pending >= 1. /. tics_a_second do
+    m.pending <- m.pending -. (1. /. tics_a_second);
+    if not m.play.exited then
+      Play.tic m.play
+        (Play.command m.play.player
+           { up = k.kup || k.kw; down = k.kdown || k.ks; left = k.kleft; right = k.kright; run = k.kshift;
+             strafe_left = k.ka || held ","; strafe_right = k.kd || held "."; use_key = m.use_pressed });
+    m.use_pressed <- k.kspace || held "e"
+  done;
+  m
+
+let default_wads = [ "/lib/doom/freedoom.wad"; "games/fps/doom/data/freedoom.wad" ]
+
+let () =
+  Cap.main (fun caps ->
+      Exit.exit caps @@ Exit.catch @@ fun () ->
+      (try
+         let flags = Playground_platform.flags caps in
+         let flag (name : string) : string option = List.assoc_opt name flags in
+         let path =
+           match flag "wad" with
+           | Some f -> f
+           | None -> (
+               match List.find_opt (fun (f : string) -> Sys.file_exists f) default_wads with
+               | Some f -> f
+               | None -> failwith "no WAD: wad=file.wad")
+         in
+         let wad = Wad.parse (FS.read caps (Fpath.v path)) in
+         if flag "lumps" <> None then
+           Array.iter
+             (fun (l : Wad.lump) -> Console.print caps (Printf.sprintf "%-8s %d\n" l.name (String.length l.data)))
+             wad.lumps
+         else begin
+           let textures = Textures.load wad in
+           (* (texture 0 is no texture, as in Doom: R_TextureNumForName's
+            * "-" and the first of TEXTURE1 the same) *)
+           let texture (name : string) : int = let k = Textures.texture textures name in if k = 0 then -1 else k in
+           let map = match flag "map" with Some m -> String.uppercase_ascii m | None -> (match Level.maps wad with m :: _ -> m | [] -> failwith "no level in the WAD") in
+           let level = Level.load wad map texture (Textures.flat textures) in
+           let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> n | _ -> 2 in
+           let render = Render.create 320 200 in
+           let image () : Rgba_image.t = Rgba_image.create ~width:(320 * scale) ~height:(200 * scale) in
+           let rgba = Bytes.create 1024 in
+           Array.iteri
+             (fun (i : int) (c : int) ->
+               Bytes.set rgba (4 * i) (Char.chr ((c lsr 16) land 255));
+               Bytes.set rgba ((4 * i) + 1) (Char.chr ((c lsr 8) land 255));
+               Bytes.set rgba ((4 * i) + 2) (Char.chr (c land 255));
+               Bytes.set rgba ((4 * i) + 3) '\255')
+             textures.palette;
+           let play = Play.create level textures (flag "monsters" <> None) in
+           (* (things=off: none drawn, a test's: tests/compare.sh) *)
+           if flag "things" = Some "off" then List.iter (fun (m : Things.mobj) -> m.alive <- false) play.things;
+           (* (x=, y=, angle=: the player put there, a test's camera) *)
+           (match (Option.bind (flag "x") float_of_string_opt, Option.bind (flag "y") float_of_string_opt) with
+           | Some x, Some y ->
+               let a = match Option.bind (flag "angle") float_of_string_opt with Some a -> a | None -> 0. in
+               Play.place play x y (a *. 4. *. atan 1. /. 180.)
+           | _ -> ());
+           let model = { play; sprites = Things.load wad; render; images = [| image (); image () |]; frames = 0; scale; rgba; last = 0.; pending = 0.; use_pressed = false } in
+           let flags = if flag "size" = None then ("size", string_of_int (320 * scale)) :: flags else flags in
+           (* heap=modest: a WAD's megabytes are alive the whole game, and a
+            * game's heap of eight times what is alive (Plan9_loop) does
+            * not fit in mini-9pi's memory *)
+           Playground_platform.run_app caps (("heap", "modest") :: flags) (P.game view update model)
+         end
+       with Failure msg ->
+         Console.eprint caps ("mini-doom: " ^ msg ^ "\n");
+         CapStdlib.exit caps 1);
+      Exit.OK)

@@ -879,6 +879,8 @@ endef
 #              and the roots a certificate is checked against
 #              (/lib/tls/ca.pem: this machine's, Tls_client's place on
 #              a card), for https:// in netscape, lynx and curl
+#              and doom's WAD (/lib/doom/freedoom.wad: Freedoom's
+#              E1M1, games/fps/doom/data; docs/plans/plan_doom.md)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)
@@ -893,7 +895,7 @@ CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/dr
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog
 CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand missile-soft=$(IX9)/games/shmup-soft/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
-  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout tronscroll=$(IX9)/games/arcade/tinytronscroll
+  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein doom=$(IX9)/games/fps/doom/mini-doom doom-soft=$(IX9)/games/fps/doom-soft/mini-doom cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout tronscroll=$(IX9)/games/arcade/tinytronscroll
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
   mtime=$(IX9)/utilities/files/mini-mtime walk=$(IX9)/utilities/files/mini-walk
@@ -939,6 +941,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
   lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \
   lib/tls/ca.pem=$(CA_PEM) \
+  lib/doom/freedoom.wad=../../games/fps/doom/data/freedoom.wad \
   usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources

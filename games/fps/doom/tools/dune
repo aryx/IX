@@ -1,0 +1,7 @@
+; mini-mkwad: mini-doom's WAD made from Freedoom's source (run by hand:
+; games/fps/doom/data/README.md)
+(executable
+ (name Mkwad)
+ (public_name mini-mkwad)
+ (package ix)
+ (libraries ix_doom ix_graphics_images ix_graphics_core ix_core fpath caps unix))

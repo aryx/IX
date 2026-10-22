@@ -16,12 +16,13 @@ type mach = {
   sp : string;
   link : string;
   frame : string;
+  nregs : int;              (* the arguments', from R1 *)
   regs : int list;          (* the scratch registers *)
   vregs : int list;         (* the values' (Alloc's) *)
 }
 
-let arm = { arch = Arm; w = 4; mov = "MOVW"; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; regs = [ 1; 2; 3 ]; vregs = [] }
-let arm64 = { arch = Arm64; w = 8; mov = "MOV"; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; regs = [ 1; 2; 3 ];
+let arm = { arch = Arm; w = 4; mov = "MOVW"; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; nregs = 8; regs = [ 1; 2; 3 ]; vregs = [] }
+let arm64 = { arch = Arm64; w = 8; mov = "MOV"; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; nregs = 15; regs = [ 1; 2; 3 ];
               vregs = [ 20; 21; 22; 23; 24; 25 ] }
 let sprintf = Printf.sprintf
 
@@ -72,6 +73,15 @@ let func m out (fn : func) (lf : L.func) =
   (* the register to compute v in; then v put where it lives *)
   let dst v s = match loc v with Alloc.Reg c -> vreg c | _ -> s in
   let finish v r = match loc v with Alloc.Reg c -> if vreg c <> r then ins "%s\tR%d, R%d" mov r (vreg c) | Mem i -> put_slot r i | Nil -> () in
+  (* a call's arguments: in R0.., those past the registers in the
+   * callee's slots, above the top, and for a tail call copied down
+   * into this frame's (simple's Gen, its Call) *)
+  let args xs tail =
+    List.iteri (fun k x -> if k <= m.nregs then load x k) xs;
+    let extra = List.filteri (fun k _ -> k > m.nregs) (List.mapi (fun k x -> k, x) xs) in
+    List.iter (fun (k, x) -> let r = src x t in ins "%s\tR%d, %d(R%d)" mov r (w * k) vsp) extra;
+    if tail then List.iter (fun (k, _) -> ins "%s\t%d(R%d), R%d" mov (w * k) vsp t; put_slot t k) extra
+  in
   let r1, r2, r3 = match m.regs with [ a; b; c ] -> a, b, c | _ -> 1, 2, 3 in
   let link = 0 in
   let epilogue () =
@@ -212,7 +222,7 @@ let func m out (fn : func) (lf : L.func) =
       | Op (o, [ x ]) -> let a = src x r1 in let d = dst v r2 in unary o a d; finish v d
       | Op _ -> failwith (fn.name ^ ": ssa: an operation's operands")
       | Call (tg, xs) ->
-          List.iteri (fun k x -> load x k) xs;
+          args xs false;
           (match tg with L.Direct f -> ins "BL\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; ins "BL\t(R%d)" t);
           finish v 0
       | CallC (f, xs) -> call_c f xs; finish v 0
@@ -233,7 +243,7 @@ let func m out (fn : func) (lf : L.func) =
     | Ret v -> load v 0; epilogue (); ins "%s" (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)")
     | Raise v -> load v 0; ins "B\tml_raise(SB)"
     | Tail (tg, xs) ->
-        List.iteri (fun k x -> load x k) xs;
+        args xs true;
         (match tg with L.Direct f -> epilogue (); ins "B\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; epilogue (); ins "B\t(R%d)" t))
     fn.blocks;
   List.iter (fun (l, p, s) -> lab l; copies p s; ins "B\t%s" (blabel s)) (List.rev !split);
@@ -243,7 +253,7 @@ let func m out (fn : func) (lf : L.func) =
   pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
   pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
   let slot_at i = let pre, a = slot_ref f i in pr "%s" pre; a in
-  for i = 0 to fn.nparams do let a = slot_at i in pr "\t%s\tR%d, %s\n" mov i a done;
+  for i = 0 to min fn.nparams m.nregs do let a = slot_at i in pr "\t%s\tR%d, %s\n" mov i a done;
   (* the other slots zeroed: the collector scans them *)
   (match m.arch with
    | Arm64 -> for i = fn.nparams + 1 to f - 1 do let a = slot_at i in pr "\tMOV\tZR, %s\n" a done

@@ -1,0 +1,14 @@
+; games/fps/doom: mini-doom (docs/plans/plan_doom.md), Doom's renderer
+; over a WAD; here with the platform that writes a frame to a file (the
+; tests'); sdl/ is the one with a window, bin/mini-doom; mini-mk's
+; mkfile builds it for mini-9pi
+(library
+ (name ix_doom)
+ (wrapped false)
+ (modules Wad Level Textures Things View Planes Segs Sprites Render Play)
+ (libraries ix_core))
+
+(executable
+ (name Doom)
+ (modules Doom)
+ (libraries ix_doom ix_playground ix_playground_ppm ix_graphics_core ix_core fpath caps unix))

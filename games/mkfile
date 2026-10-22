@@ -7,7 +7,7 @@ DIR=games
 # by side: its units are made here first, once)
 WITH=audio
 GAMES=
-CATEGORIES=puzzle fps arcade shmup
+CATEGORIES=puzzle fps fps/doom arcade shmup
 # (B, where what is made goes, is given on when it was said, as
 # tests/lite.sh does: the default is a path from each directory)
 all:V: directories

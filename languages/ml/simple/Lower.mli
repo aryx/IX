@@ -121,9 +121,9 @@
 val unit_ : string -> Scope.item list -> Ir.unit_
 
 (* the curry functions (ml_curry<n>_<k>: a closure of arity n given its
- * k+1-th argument), of every arity from 2 to the one given: the
- * program's, in its start object *)
-val curry_funcs : int -> Ir.func list
+ * k+1-th argument), of every arity from 2 to 7: the program's, in its
+ * start object; a unit has its own of a greater arity *)
+val curry_funcs : unit -> Ir.func list
 
 (* a function not known where it is called, given as many arguments as
  * it takes (its closure says), called with them all; else, and when

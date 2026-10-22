@@ -77,8 +77,7 @@ let func m out (fn : func) =
   let spill_slot r = fn.nslots + r - 1 in
   let push () =
     incr sp;
-    (* (ml_curry8: a function of 8 parameters, one more than arm's registers take) *)
-    if !sp > m.nregs then error "%s: an expression too deep (or a function of more than %d parameters: group some in a tuple)" fn.name (m.nregs - 1);
+    if !sp > m.nregs then error "%s: an expression too deep" fn.name;
     maxsp := max !maxsp !sp;
     !sp in
   let spill () = for r = 1 to !sp do put r (spill_slot r) done in
@@ -355,9 +354,19 @@ let func m out (fn : func) =
         result ()
     | Op o -> op o
     | Call (t, slots, tail) ->
-        if List.length slots - 1 > m.nregs then error "%s: a call of %d arguments" fn.name (List.length slots - 1);
         spill ();
-        List.iteri (fun k s -> get s k) slots;
+        List.iteri (fun k s -> if k <= m.nregs then get s k) slots;
+        (* the arguments past the registers: each where the callee's
+         * slot k will be, k words above the top (its frame starts at
+         * the top), and its entry leaves them there. Nothing allocates
+         * before it raises the top, so they need not be seen by the
+         * collector meanwhile. A tail call's callee has its frame
+         * where this one's is: they are copied down into this frame's
+         * slots after all are read, so that none is overwritten
+         * before it is. *)
+        let extra = List.filteri (fun k _ -> k > m.nregs) (List.mapi (fun k s -> k, s) slots) in
+        List.iter (fun (k, s) -> get s m.tmp; ins "%s\tR%d, %d(R%d)" mov m.tmp (w * k) vsp) extra;
+        if tail then List.iter (fun (k, _) -> ins "%s\t%d(R%d), R%d" mov (w * k) vsp m.tmp; put m.tmp k) extra;
         let target = match t with Direct f -> f ^ "(SB)" | Code k -> ins "%s\t%d(R0), R%d" mov (w * k) m.tmp; sprintf "(R%d)" m.tmp in
         if tail then (epilogue (); ins "B\t%s" target; dead := true) else (ins "BL\t%s" target; reload (); result ())
     | CallC (f, n) -> spill (); call_c f n; reload (); result ()
@@ -389,9 +398,9 @@ let func m out (fn : func) =
   let pr fmt = Printf.bprintf out fmt in
   pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
   pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
-  if fn.nparams > m.nregs then error "%s: %d parameters (at most %d: group some in a tuple)" fn.name fn.nparams (m.nregs - 1);
   let slot i = let pre, a = slot_ref m (w * (i - f)) in pr "%s" pre; a in
-  for i = 0 to fn.nparams do let a = slot i in pr "\t%s\tR%d, %s\n" mov i a done;
+  (* (the parameters past the registers already in their slots: Call) *)
+  for i = 0 to min fn.nparams m.nregs do let a = slot i in pr "\t%s\tR%d, %s\n" mov i a done;
   (* the other slots zeroed: the collector scans them *)
   (match m.arch with
    | Arm64 -> for i = fn.nparams + 1 to f - 1 do let a = slot i in pr "\tMOV\tZR, %s\n" a done
@@ -520,8 +529,7 @@ let startup m units =
     @ [ TryExit 0; Int 0; Ret; Label handler; Catch 0; CallC ("ml_uncaught", 1); Ret ]
   in
   func m out { name = "ml_program"; nparams = 0; nslots = 1; code };
-  (* the curry functions, once for all the units (a function of one
-   * parameter more than the registers hold is refused where it is) *)
-  List.iter (func m out) (Lower.curry_funcs (m.nregs - 1));
+  (* the curry functions, once for all the units *)
+  List.iter (func m out) (Lower.curry_funcs ());
   words m out "ml_units" (string_of_int (List.length units) :: List.map (fun u -> Lower.mangle u ^ ".Roots(SB)") units);
   Buffer.contents out

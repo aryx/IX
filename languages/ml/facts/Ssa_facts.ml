@@ -45,7 +45,9 @@ let func (fn : Ssa.func) : string =
         (fun (v : Ssa.value) ->
           let ins : Ssa.ins = Hashtbl.find fn.defs v in
           fact b "def" [ value v; value v ];
-          (match ins with Ssa.Zero -> fact b "zero" [ value v ] | _ -> ());
+          (* (zero: no storage, as Alloc's real says: the constant 0, and a
+           * constant made where it is read) *)
+          (match ins with Ssa.Zero | Ssa.Const _ | Ssa.Blk _ | Ssa.Symb _ -> fact b "zero" [ value v ] | _ -> ());
           List.iter (fun (x : Ssa.value) -> fact b "use" [ value x; value v ]) (Ssa_build.operands ins))
         bl.body;
       let used : Ssa.value list =

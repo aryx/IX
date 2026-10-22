@@ -17,9 +17,13 @@ case machine
 	os=plan9
 	if(~ $#objtype 0){ p=mini-; o=7; os=linux }
 	if(~ $objtype arm64) o=7
+	# mini-ml's optimizations: all (-O3), or the environment's
+	# (MLOPT=-O0: none, the simple code generator's whole build)
+	if(~ $#MLOPT 0) MLOPT=-O3
 	echo 'TOOLPRE='^$p^'
 O='^$o^'
-OS='^$os
+OS='^$os^'
+MLOPT='^$"MLOPT
 case system
 	ldh=-H7
 	b=$TOP/_mk/$O-$OS

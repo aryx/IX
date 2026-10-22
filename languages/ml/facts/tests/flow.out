@@ -25,4 +25,4 @@ live_out('f1_triangle<>:v1','f1_triangle<>:b2').
 live_out('f1_triangle<>:v14','f1_triangle<>:b2').
 live_out('f1_triangle<>:v3','f1_triangle<>:b2').
 differences: 0
-without the phis' operands: 6
+without the phis' operands: 2

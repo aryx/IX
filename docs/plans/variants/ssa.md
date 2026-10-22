@@ -238,6 +238,40 @@ OCaml. The tests (`tests/tiny`, `runtime`, `bench`, `ML_HEAP=64`, both
 machines, `-ssa` and `-O -ssa`) fail as without (arm's 64-bit outputs,
 costs and marshalling).
 
+*The mkfiles' flags (2026-10-22)*: `mini-ml -O3`, every optimization
+mini-ml has (opti's passes and `-ssa` today, what is added later with
+them), and `-O0`, none (the author: "let's have a -O3 indicating max
+opti so that as we add stuff, we don't have to modify the mkfiles and
+always use -O3. we will probably also want to make sure things also
+compile without opti, so sanity check the simple code generation").
+mkconfig's `ML` has `$MLOPT`, `-O3` unless the environment sets it
+(`mkfiles/config.rc`): `MLOPT=-O0 mini-mk` builds the tree the simple
+way, and `MLOPT=-O0 tests/lite.sh` checks it. Both pass `make
+test-lite` (ix built by ix from nothing, the games' recorded frames, a
+kernel's step and mini-xv6 booted); mini-9pi's programs and image
+built with `-O3`.
+
+The macro set (the author: mini-doom's and mini-quake's frames a
+second under QEMU, cameltry, rebirth, xv6, mini-ml itself, m-ix built
+under m-ix), two copies of the tree built for arm, `MLOPT=-O0` and
+`-O3`, every unit by its flag (`tests/macro.sh`: a frame, frames 31 to
+61 of a walk, by mini-5i's count; mini-ml compiling Lower, Typing and
+Ssa_build):
+
+| | -O0 | -O3 | |
+|---|---:|---:|---:|
+| mini-doom, a frame | 43,583,340 | 37,488,660 | 0.86 |
+| mini-quake, a frame | 62,624,537 | 51,976,850 | 0.83 |
+| cameltry, a frame | 4,970,497 | 4,528,236 | 0.91 |
+| mini-ml compiling three of its units | 349,216,048 | 301,025,003 | 0.86 |
+
+Under QEMU (mini-9pi on raspi1ap, a card of each tree, `live.py` with
+LIVE_START=6: the up arrow before doom reads the keyboard is lost),
+mini-doom's 40 frames walking, one run each: -O0 7.5 s (the view 49
+ms, the showing 78), -O3 6.7 s (37 ms, 95): 5.3 frames a second to
+6.0, the view 24% less; the showing varies by run. Not measured yet:
+rebirth (in mini-9pi's build, not Linux's), xv6, m-ix under m-ix.
+
 ## Tests and numbers
 
 The four combinations of decision 2 through the same tests, on both

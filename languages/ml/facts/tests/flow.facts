@@ -36,43 +36,59 @@ next('Flow.Init:v30', 'Flow.Init:t0').
 last('Flow.Init:b0', 'Flow.Init:t0').
 def('Flow.Init:v0', 'Flow.Init:v0').
 def('Flow.Init:v1', 'Flow.Init:v1').
+zero('Flow.Init:v1').
 def('Flow.Init:v2', 'Flow.Init:v2').
+zero('Flow.Init:v2').
 def('Flow.Init:v3', 'Flow.Init:v3').
+zero('Flow.Init:v3').
 def('Flow.Init:v4', 'Flow.Init:v4').
 use('Flow.Init:v3', 'Flow.Init:v4').
 use('Flow.Init:v2', 'Flow.Init:v4').
 use('Flow.Init:v1', 'Flow.Init:v4').
 def('Flow.Init:v5', 'Flow.Init:v5').
+zero('Flow.Init:v5').
 def('Flow.Init:v6', 'Flow.Init:v6').
+zero('Flow.Init:v6').
 def('Flow.Init:v7', 'Flow.Init:v7').
+zero('Flow.Init:v7').
 def('Flow.Init:v8', 'Flow.Init:v8').
 use('Flow.Init:v7', 'Flow.Init:v8').
 use('Flow.Init:v6', 'Flow.Init:v8').
 use('Flow.Init:v5', 'Flow.Init:v8').
 def('Flow.Init:v9', 'Flow.Init:v9').
+zero('Flow.Init:v9').
 def('Flow.Init:v10', 'Flow.Init:v10').
+zero('Flow.Init:v10').
 def('Flow.Init:v11', 'Flow.Init:v11').
+zero('Flow.Init:v11').
 def('Flow.Init:v12', 'Flow.Init:v12').
 use('Flow.Init:v11', 'Flow.Init:v12').
 use('Flow.Init:v10', 'Flow.Init:v12').
 def('Flow.Init:v13', 'Flow.Init:v13').
+zero('Flow.Init:v13').
 def('Flow.Init:v14', 'Flow.Init:v14').
 use('Flow.Init:v13', 'Flow.Init:v14').
 use('Flow.Init:v12', 'Flow.Init:v14').
 def('Flow.Init:v15', 'Flow.Init:v15').
+zero('Flow.Init:v15').
 def('Flow.Init:v16', 'Flow.Init:v16').
 use('Flow.Init:v15', 'Flow.Init:v16').
 use('Flow.Init:v14', 'Flow.Init:v16').
 use('Flow.Init:v9', 'Flow.Init:v16').
 def('Flow.Init:v17', 'Flow.Init:v17').
+zero('Flow.Init:v17').
 def('Flow.Init:v18', 'Flow.Init:v18').
+zero('Flow.Init:v18').
 def('Flow.Init:v19', 'Flow.Init:v19').
+zero('Flow.Init:v19').
 def('Flow.Init:v20', 'Flow.Init:v20').
 use('Flow.Init:v19', 'Flow.Init:v20').
 use('Flow.Init:v18', 'Flow.Init:v20').
 use('Flow.Init:v17', 'Flow.Init:v20').
 def('Flow.Init:v21', 'Flow.Init:v21').
+zero('Flow.Init:v21').
 def('Flow.Init:v22', 'Flow.Init:v22').
+zero('Flow.Init:v22').
 def('Flow.Init:v23', 'Flow.Init:v23').
 use('Flow.Init:v22', 'Flow.Init:v23').
 use('Flow.Init:v21', 'Flow.Init:v23').
@@ -93,6 +109,7 @@ def('Flow.Init:v29', 'Flow.Init:v29').
 use('Flow.Init:v28', 'Flow.Init:v29').
 use('Flow.Init:v27', 'Flow.Init:v29').
 def('Flow.Init:v30', 'Flow.Init:v30').
+zero('Flow.Init:v30').
 use('Flow.Init:v30', 'Flow.Init:t0').
 function('f1_triangle<>').
 entry('f1_triangle<>:b0').
@@ -107,9 +124,11 @@ last('f1_triangle<>:b0', 'f1_triangle<>:t0').
 def('f1_triangle<>:v0', 'f1_triangle<>:v0').
 def('f1_triangle<>:v1', 'f1_triangle<>:v1').
 def('f1_triangle<>:v2', 'f1_triangle<>:v2').
+zero('f1_triangle<>:v2').
 def('f1_triangle<>:v3', 'f1_triangle<>:v3').
 use('f1_triangle<>:v2', 'f1_triangle<>:v3').
 def('f1_triangle<>:v4', 'f1_triangle<>:v4').
+zero('f1_triangle<>:v4').
 succ('f1_triangle<>:b0', 'f1_triangle<>:b1').
 block('f1_triangle<>:b1', 'f1_triangle<>').
 phi('f1_triangle<>:v6', 'f1_triangle<>:b1').
@@ -142,7 +161,9 @@ def('f1_triangle<>:v11', 'f1_triangle<>:v11').
 use('f1_triangle<>:v3', 'f1_triangle<>:v11').
 use('f1_triangle<>:v10', 'f1_triangle<>:v11').
 def('f1_triangle<>:v12', 'f1_triangle<>:v12').
+zero('f1_triangle<>:v12').
 def('f1_triangle<>:v13', 'f1_triangle<>:v13').
+zero('f1_triangle<>:v13').
 def('f1_triangle<>:v14', 'f1_triangle<>:v14').
 use('f1_triangle<>:v6', 'f1_triangle<>:v14').
 use('f1_triangle<>:v13', 'f1_triangle<>:v14').
@@ -153,6 +174,7 @@ next('f1_triangle<>:v15', 'f1_triangle<>:v16').
 next('f1_triangle<>:v16', 'f1_triangle<>:t3').
 last('f1_triangle<>:b3', 'f1_triangle<>:t3').
 def('f1_triangle<>:v15', 'f1_triangle<>:v15').
+zero('f1_triangle<>:v15').
 def('f1_triangle<>:v16', 'f1_triangle<>:v16').
 use('f1_triangle<>:v3', 'f1_triangle<>:v16').
 use('f1_triangle<>:v16', 'f1_triangle<>:t3').
@@ -170,6 +192,7 @@ def('f2_gcd<>:v0', 'f2_gcd<>:v0').
 def('f2_gcd<>:v1', 'f2_gcd<>:v1').
 def('f2_gcd<>:v2', 'f2_gcd<>:v2').
 def('f2_gcd<>:v3', 'f2_gcd<>:v3').
+zero('f2_gcd<>:v3').
 def('f2_gcd<>:v4', 'f2_gcd<>:v4').
 use('f2_gcd<>:v2', 'f2_gcd<>:v4').
 use('f2_gcd<>:v3', 'f2_gcd<>:v4').
@@ -189,6 +212,7 @@ def('f2_gcd<>:v5', 'f2_gcd<>:v5').
 use('f2_gcd<>:v1', 'f2_gcd<>:v5').
 use('f2_gcd<>:v2', 'f2_gcd<>:v5').
 def('f2_gcd<>:v6', 'f2_gcd<>:v6').
+zero('f2_gcd<>:v6').
 use('f2_gcd<>:v6', 'f2_gcd<>:t2').
 use('f2_gcd<>:v2', 'f2_gcd<>:t2').
 use('f2_gcd<>:v5', 'f2_gcd<>:t2').
@@ -206,6 +230,7 @@ def('f3_length<>:v0', 'f3_length<>:v0').
 def('f3_length<>:v1', 'f3_length<>:v1').
 def('f3_length<>:v2', 'f3_length<>:v2').
 def('f3_length<>:v3', 'f3_length<>:v3').
+zero('f3_length<>:v3').
 def('f3_length<>:v4', 'f3_length<>:v4').
 use('f3_length<>:v1', 'f3_length<>:v4').
 use('f3_length<>:v3', 'f3_length<>:v4').
@@ -235,10 +260,12 @@ last('f3_length<>:b3', 'f3_length<>:t3').
 def('f3_length<>:v6', 'f3_length<>:v6').
 use('f3_length<>:v1', 'f3_length<>:v6').
 def('f3_length<>:v7', 'f3_length<>:v7').
+zero('f3_length<>:v7').
 def('f3_length<>:v8', 'f3_length<>:v8').
 use('f3_length<>:v2', 'f3_length<>:v8').
 use('f3_length<>:v7', 'f3_length<>:v8').
 def('f3_length<>:v9', 'f3_length<>:v9').
+zero('f3_length<>:v9').
 use('f3_length<>:v9', 'f3_length<>:t3').
 use('f3_length<>:v6', 'f3_length<>:t3').
 use('f3_length<>:v8', 'f3_length<>:t3').
@@ -252,13 +279,17 @@ next('f3_length<>:v14', 'f3_length<>:v15').
 next('f3_length<>:v15', 'f3_length<>:t4').
 last('f3_length<>:b4', 'f3_length<>:t4').
 def('f3_length<>:v10', 'f3_length<>:v10').
+zero('f3_length<>:v10').
 def('f3_length<>:v11', 'f3_length<>:v11').
+zero('f3_length<>:v11').
 def('f3_length<>:v12', 'f3_length<>:v12').
+zero('f3_length<>:v12').
 def('f3_length<>:v13', 'f3_length<>:v13').
 use('f3_length<>:v12', 'f3_length<>:v13').
 use('f3_length<>:v11', 'f3_length<>:v13').
 use('f3_length<>:v10', 'f3_length<>:v13').
 def('f3_length<>:v14', 'f3_length<>:v14').
+zero('f3_length<>:v14').
 def('f3_length<>:v15', 'f3_length<>:v15').
 use('f3_length<>:v14', 'f3_length<>:v15').
 use('f3_length<>:v13', 'f3_length<>:v15').
@@ -306,6 +337,7 @@ def('f4_safe_div<>:v9', 'f4_safe_div<>:v9').
 def('f4_safe_div<>:v10', 'f4_safe_div<>:v10').
 use('f4_safe_div<>:v9', 'f4_safe_div<>:v10').
 def('f4_safe_div<>:v11', 'f4_safe_div<>:v11').
+zero('f4_safe_div<>:v11').
 def('f4_safe_div<>:v12', 'f4_safe_div<>:v12').
 use('f4_safe_div<>:v11', 'f4_safe_div<>:v12').
 use('f4_safe_div<>:v10', 'f4_safe_div<>:v12').
@@ -317,6 +349,7 @@ first('f4_safe_div<>:b3', 'f4_safe_div<>:v13').
 next('f4_safe_div<>:v13', 'f4_safe_div<>:t3').
 last('f4_safe_div<>:b3', 'f4_safe_div<>:t3').
 def('f4_safe_div<>:v13', 'f4_safe_div<>:v13').
+zero('f4_safe_div<>:v13').
 succ('f4_safe_div<>:b3', 'f4_safe_div<>:b5').
 block('f4_safe_div<>:b4', 'f4_safe_div<>').
 first('f4_safe_div<>:b4', 'f4_safe_div<>:v14').
@@ -349,6 +382,7 @@ def('f5_collatz<>:v0', 'f5_collatz<>:v0').
 def('f5_collatz<>:v1', 'f5_collatz<>:v1').
 def('f5_collatz<>:v2', 'f5_collatz<>:v2').
 def('f5_collatz<>:v3', 'f5_collatz<>:v3').
+zero('f5_collatz<>:v3').
 def('f5_collatz<>:v4', 'f5_collatz<>:v4').
 use('f5_collatz<>:v1', 'f5_collatz<>:v4').
 use('f5_collatz<>:v3', 'f5_collatz<>:v4').
@@ -367,7 +401,9 @@ next('f5_collatz<>:v7', 'f5_collatz<>:v8').
 next('f5_collatz<>:v8', 'f5_collatz<>:t2').
 last('f5_collatz<>:b2', 'f5_collatz<>:t2').
 def('f5_collatz<>:v5', 'f5_collatz<>:v5').
+zero('f5_collatz<>:v5').
 def('f5_collatz<>:v6', 'f5_collatz<>:v6').
+zero('f5_collatz<>:v6').
 def('f5_collatz<>:v7', 'f5_collatz<>:v7').
 use('f5_collatz<>:v1', 'f5_collatz<>:v7').
 use('f5_collatz<>:v6', 'f5_collatz<>:v7').
@@ -386,14 +422,17 @@ next('f5_collatz<>:v12', 'f5_collatz<>:v13').
 next('f5_collatz<>:v13', 'f5_collatz<>:t3').
 last('f5_collatz<>:b3', 'f5_collatz<>:t3').
 def('f5_collatz<>:v9', 'f5_collatz<>:v9').
+zero('f5_collatz<>:v9').
 def('f5_collatz<>:v10', 'f5_collatz<>:v10').
 use('f5_collatz<>:v2', 'f5_collatz<>:v10').
 use('f5_collatz<>:v9', 'f5_collatz<>:v10').
 def('f5_collatz<>:v11', 'f5_collatz<>:v11').
+zero('f5_collatz<>:v11').
 def('f5_collatz<>:v12', 'f5_collatz<>:v12').
 use('f5_collatz<>:v1', 'f5_collatz<>:v12').
 use('f5_collatz<>:v11', 'f5_collatz<>:v12').
 def('f5_collatz<>:v13', 'f5_collatz<>:v13').
+zero('f5_collatz<>:v13').
 use('f5_collatz<>:v13', 'f5_collatz<>:t3').
 use('f5_collatz<>:v12', 'f5_collatz<>:t3').
 use('f5_collatz<>:v10', 'f5_collatz<>:t3').
@@ -408,11 +447,14 @@ next('f5_collatz<>:v19', 'f5_collatz<>:v20').
 next('f5_collatz<>:v20', 'f5_collatz<>:t4').
 last('f5_collatz<>:b4', 'f5_collatz<>:t4').
 def('f5_collatz<>:v14', 'f5_collatz<>:v14').
+zero('f5_collatz<>:v14').
 def('f5_collatz<>:v15', 'f5_collatz<>:v15').
 use('f5_collatz<>:v2', 'f5_collatz<>:v15').
 use('f5_collatz<>:v14', 'f5_collatz<>:v15').
 def('f5_collatz<>:v16', 'f5_collatz<>:v16').
+zero('f5_collatz<>:v16').
 def('f5_collatz<>:v17', 'f5_collatz<>:v17').
+zero('f5_collatz<>:v17').
 def('f5_collatz<>:v18', 'f5_collatz<>:v18').
 use('f5_collatz<>:v17', 'f5_collatz<>:v18').
 use('f5_collatz<>:v1', 'f5_collatz<>:v18').
@@ -420,6 +462,7 @@ def('f5_collatz<>:v19', 'f5_collatz<>:v19').
 use('f5_collatz<>:v18', 'f5_collatz<>:v19').
 use('f5_collatz<>:v16', 'f5_collatz<>:v19').
 def('f5_collatz<>:v20', 'f5_collatz<>:v20').
+zero('f5_collatz<>:v20').
 use('f5_collatz<>:v20', 'f5_collatz<>:t4').
 use('f5_collatz<>:v19', 'f5_collatz<>:t4').
 use('f5_collatz<>:v15', 'f5_collatz<>:t4').

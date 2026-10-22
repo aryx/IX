@@ -37,7 +37,8 @@ units' interfaces, the stdlib's too (-I, or -L lib_core), and dune their files:
   (preprocessor_deps (source_tree .) (source_tree %{project_root}/lib_core))
 To debug: -dast the tree, -dscope the names, -dir the stack machine's code,
 -dssa its SSA; -ssa compiles from it, -ssa-stack through it and back; -O all
-of Opti's passes, -Otails... one each; -unsafe-types, no type checker.
+of Opti's passes, -Otails... one each; -O3 every optimization (-O and
+-ssa, the mkfiles' MLOPT), -O0 none; -unsafe-types, no type checker.
 -facts: no object; the unit as the facts of which function may be which
 variable's value (Closure_facts.mli); a program's units' together, then:
   mini-datalog -q 'never_called(G)' languages/datalog/analyses/pointer.dl \
@@ -222,6 +223,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     (* mlpp: *)
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
     "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes), " every pass of opti/ (-Oname: one)";
+    (* the mkfiles' (mkconfig's MLOPT): what is added later comes with it *)
+    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; ssa := true), " every optimization: -O and -ssa";
+    "-O0", Arg.Unit (fun () -> opti := []; ssa := false), " none: the stack machine's code as Lower makes it";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
     "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
@@ -240,6 +244,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | exception Arg.Bad m -> eprint caps m; 2
   | () ->
   if !gas then mach := Gen.gnu !mach;
+  (* (-O3 with -gas: opti's passes alone) *)
+  if !gas && !ssa && List.mem "-O3" (Array.to_list argv) then ssa := false;
   if !gas && !ssa then failwith "-ssa: not with -gas (gcc's calls of C)";
   let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
   let ext = match Gen.arch !mach with _ when !gas -> ".s" | Arm -> ".5" | Arm64 -> ".7" in

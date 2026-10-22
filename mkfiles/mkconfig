@@ -14,7 +14,8 @@
 # O, the machine: 7 (arm64) or 5 (arm), as Plan 9's letters; on Plan 9
 # its own, by $objtype; OS (below)
 <|. $TOP/mkfiles/config.rc machine
-ML=${TOOLPRE}ml -m $O
+# (MLOPT: mini-ml's optimizations, config.rc's: -O3 unless MLOPT is set)
+ML=${TOOLPRE}ml -m $O $MLOPT
 CC=${TOOLPRE}cc -m $O
 AS=${TOOLPRE}asm -m $O
 AR=${TOOLPRE}ar

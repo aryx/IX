@@ -1,5 +1,5 @@
 $ mk NPROC=2 all
-sleep 0.2; echo a slot=0
+sleep 1; echo a slot=0
 echo b slot=1
 b slot=1
 a slot=0

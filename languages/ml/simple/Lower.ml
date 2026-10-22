@@ -56,7 +56,7 @@ let fun_label x = incr nfuns; Printf.sprintf "f%d_%s<>" !nfuns (String.map (func
  * functions, as before, the start object not knowing the units'
  * arities; and calls_whole is not for it) *)
 let shared_most = 7
-let curry n k = Printf.sprintf (if n <= shared_most then "ml_curry%d_%d" else "ml_curry%d_%d<>") n k
+let curry n k = if n <= shared_most then Printf.sprintf "ml_curry%d_%d" n k else Printf.sprintf "ml_curry%d_%d<>" n k
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
 
 (* (off: mini-ml -calls) *)

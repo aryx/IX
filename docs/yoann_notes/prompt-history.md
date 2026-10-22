@@ -43997,3 +43997,404 @@ Claude's frame breakdown put the renderer at 48 ms, with showing the picture tak
 Claude proposed a short mini-9pi check of today's three commits under QEMU, expecting it still draws the old square.
 Claude noted that the Plan 9 platforms ignore `window=`, so `scale=2` stays under 2 fps there.
 Claude suggested starting with that mini-9pi check, then profiling the renderer's hot loops with mini-5i or callgrind.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:27
+
+**Yoann:**
+
+> let's add a notes_opti_inventory.md document, then manybe we can have a docs/manual/m-ix.md where we document all those heap=mode, redraw=top, etc. Then let's commit
+
+**Claude (summary):**
+
+Claude committed 8cbf452f with stage B, the per-group redraw comparison, the inventory note, and the m-ix manual.
+Claude's table showed the diff comparison slowing cameltry: 28 ms per frame whole-frame versus 29–32 ms with the comparison.
+Claude explained that cameltry moves the whole maze each frame, so the comparison can never pay off there.
+Claude's inventory note flagged the kernel's lock-release change as doubtful, with no measured gain.
+Claude left `apps/page/*` and `docs/yoann_notes/prompt-history.md` out of the commit, since they hold other changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:33
+
+**Yoann:**
+
+> and other articles
+
+**Claude (summary):**
+
+Claude tested the PDF reader on a real 1083-page Principia book, not just small test PDFs.
+Claude timed a 300-frame scroll and a fully zoomed-out view with many small pages visible.
+Claude switched the page layout to one column with a gap above the first page, and updated the header and usage text.
+Claude found that mini-ml's neither-frame sum now matched OCaml's, and removed RECORD=2's stale second sum.
+Claude then split lines past 80 columns, fixed one usage line, and reran both builds and tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:34
+
+**Yoann:**
+
+> I just tried to run doom under mini-9pi and I was not even able to move (or maybe it was because of an extremey low fps? I could not see the fps because of the black bands
+
+**Claude (summary):**
+
+Claude found mini-doom ran at about 1.4 frames a second under QEMU because its default was `scale=2`.
+Claude also found the draw platform ignored `size=320` from the program's flags, and the black frame counter was invisible on the bands.
+Claude changed Plan 9's `scale` default to 1, read `size=` from the program's flags, and made the bands grey.
+Claude committed these changes as `e2d069ef` through a temporary index, holding only its own hunks in the platform files.
+Claude left the other session's uncommitted draw-platform edits in the working files and flagged a possible 523 ms slowdown there.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:48
+
+**Yoann:**
+
+> let's commit the progress first
+
+**Claude (summary):**
+
+Claude committed the ix and playground progress, leaving other sessions' ix working-tree files untouched.
+Claude listed commit e2d069ef as the one where mini-doom moves on mini-9pi.
+Claude's answer gave no check, in this session, that keys reach mini-doom under mini-9pi.
+Claude pointed out that the mini-9pi scaled view slowed from 26 ms to 523 ms per frame.
+Claude suspected that slowdown came from the other session's draw-platform work, not from mini-doom itself.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:51
+
+**Yoann:**
+
+> I still can't move under mini-9pi with doom; it does not look like it takes my keys, the up arrow, or wasd; I see 15fps but I can't do anything
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:39
+
+**Yoann:**
+
+> maybe each game/app could give a hint to the playground whether it wants the Redraw opti; for instance it's not worth doing those diff comparison for cameltry, and probably also not worth it for doom; that way each platform could then branch differently depending on those hints
+
+**Claude (summary):**
+
+Claude added a `changes=all` hint that lets cameltry, TinyWolfenstein and mini-doom skip the Redraw frame comparison. Claude's measurements showed the hint won back about 2 ms on cameltry and changed nothing for doom. The hint was left uncommitted, with Redraw.choose reading it alongside the command-line `redraw=` flag. Claude also updated `docs/manuals/m-ix.md` and `notes_opti_inventory.md` and recommended committing only its own files by pathspec.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:45
+
+**Yoann:**
+
+> let's commit; let's also handle link so one can click on the link in the pdf (intra and extra link); maybe change the cursor when it hovers such link
+
+**Claude (summary):**
+
+Claude committed the continuous scrolling work first, as commit `33a8073c`, before starting on links.
+Claude's answer did not say what that commit changed to make scrolling faster or smoother, so no optimization is described.
+The only speed figure Claude reported is that reading a page's links costs about 28 ms on the Kernel book.
+Because of that cost, Claude made mini-page read a page's links once, when it draws that page.
+The link work (`Pdf.links`, page object numbers, `links.pdf`, and the Pageview changes) is still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:57
+
+**Yoann:**
+
+> wow this is great; the scolling is also quite smooth; did you optimize anything?
+
+**Claude (summary):**
+
+Claude explained that the smooth scrolling comes from pages drawn once and then only moved, with no optimization done this session.
+Claude pointed to the recent mini-doom commit `a4fbbdc5`, where `Blit.draw_copy` copies unscaled pages row by row, cutting 21 ms to 1.7 ms.
+Claude also cited the "Redraw: a shape's hash reads not a picture's pixels" commit, which hashes a picture's place and size instead of its pixels.
+Claude measured about 2.5 ms per frame on the headless platform, not the SDL window, and flagged uncommitted changes in `lib_graphics/Display` and `lib_playground/platforms/Redraw`.
+Claude warned that first-time page draws can cause a short stall at page boundaries, more so under mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:58
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:58
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude committed the work as 39617918 and listed five other reading improvements for mini-page.
+Claude proposed that mini-page remember each file's page and position in a small file under the home directory.
+Claude estimated this at about 20 lines and expected it to matter most for long books.
+Claude recommended doing items 1 and 2 together next, then item 3 on page labels.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:51
+
+**Yoann:**
+
+> I used mini-pi -g -q mini-9pi
+
+**Claude (summary):**
+
+Claude fixed mini-doom's frozen picture by giving each frame a new value that wraps the same two buffers, committed as `fbfc0317`.
+Claude found the real frame rate is 5–6 fps under QEMU, not 15, with showing the picture taking 70–84 ms per frame.
+Claude corrected `plan_doom.md` and the framebuffer plan, which now argues more strongly for `/dev/framebuffer`.
+Claude verified under QEMU that the arrow keys and `d` move the view and that all 43 game frame tests pass.
+Claude's earlier commit `e2d069ef` had swept in a stray `changes=all` line, which the new commit drops.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:03
+
+**Yoann:**
+
+> ok it works now, I can move; it is indeed 5fps under qemu. Let's commit
+
+**Claude (summary):**
+
+Claude agreed that 5 fps matched its own measurement and noted the fix is already in commit fbfc0317.
+Claude said about half of each frame goes to mini-ml's renderer code and half to getting the picture on screen.
+Claude recommended profiling and speeding up mini-ml's renderer code as the first direction to take.
+Claude noted that faster mini-ml code would also speed up every other program built on it.
+Claude's alternative was starting the framebuffer plan, which would cut most of the 70–84 ms display time.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:04
+
+**Yoann:**
+
+> ok sounds like a good plan; let's start with profiling mini-ml's code; we can add code under opti/ and ssa/ easily if they are worth it. and this could improve every program.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:04
+
+**Yoann:**
+
+> but doom is not compiled by ocaml-light for mini-9pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:05
+
+**Yoann:**
+
+> also we have a tiny-profile but we can start work on a mini-profiler, that could help for this too
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:05
+
+**Yoann:**
+
+> counting the instructions is also a good starting point
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:05
+
+**Yoann:**
+
+> and useful for profiling
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:07
+
+**Yoann:**
+
+> we can start a plan_profiler.md possibly, and hopefully it can help optimizing this doom game and mini-ml and more
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:07
+
+**Yoann:**
+
+> and also maybe reduce the time it takes to compile m-ix under m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:02
+
+**Yoann:**
+
+> let's do 1, and let's support -v, like for some other progs, and use Logs.info so we know where at the preference file after using -v.
+
+**Claude (summary):**
+
+Claude made mini-page remember each file's page, zoom, and turn in a places file.
+The places file lives at $XDG_CONFIG_HOME/mini-page/places, else ~/.config, or $home/lib on Plan 9.
+Claude made -v log the places file path it reads and writes, through Logs.info.
+Claude made it save after 30 still frames or on q, because closing the window skips a save.
+Claude checked that the Kernel book reopened at page 500 and frames.sh passed; nothing is committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 13:07
+
+**Yoann:**
+
+> (3h right now)
+
+**Claude (summary):**
+
+Claude proposed committing mini-prof, the `mini-5i -prof` counting option, the runtime input fix with its test, and the plan.
+Claude then suggested starting stage 2, a per-instruction view of what mini-ml generates for the hot loops.
+Claude's fix made `caml_input` copy the channel buffer whole, cutting mini-doom's start from 651 to 568 million instructions.
+Claude added a runtime test, `input.ml`, covering 4 KB buffer edges, passing on arm64, arm and Plan 9.
+Claude also profiled a mini-doom frame, 43 million instructions with to_rgba at 30 percent, and wrote the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:12
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as 8e8b6880, touching only `apps/page/Pageview.ml` and `apps/page/tests/frames.sh`.
+Claude left the profiler, runtime, and notes changes uncommitted in the working tree.
+Claude noted the committed work has not yet been run under mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:13
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended trying the ix programs under mini-9pi first, since none of the last four changes had been tested there.
+Claude suggested this was a short manual session, with the places file going to `$home/lib/mini-page/places` on Plan 9.
+Claude offered to drive the session under QEMU and compare screens, or leave it to Yoann to run.
+Claude ranked the outline (bookmarks) feature second, about 150 lines, as the fastest way to navigate long books.
+Claude listed text search, PageLabels, and page prefetching as later items, with search being the largest project.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:13
+
+**Yoann:**
+
+> ok let's commit first
+
+**Claude (summary):**
+
+Claude committed the work as 7342e787 by pathspec, with the caml_input speedup and the input.ml test.
+Claude added `mini-5i -prof`, which counts every instruction address and writes `pc count` lines like mini-qemu.
+Claude built `mini-prof` in `machine/profiler` to name those addresses by function, using the link's map file.
+Claude made `mini-prof -diff` subtract a shorter run exactly, so frames can be measured without startup.
+Claude proposed `mini-prof -a name` next, to show per-instruction counts for `to_rgba`'s loop before any optimizer changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:15
+
+**Yoann:**
+
+> ok let's me try 1 under qemu
+
+**Claude (summary):**
+
+Claude gave the commands `./mini-pi -q -g mini-9pi` and `page -v /lib/pdf/tex.pdf` to run the viewer under qemu.
+Claude warned that continuous scrolling now draws several pages per frame, so mini-9pi may run slower than the old one-page view.
+Claude also noted that the places check wakes up every frame, though it only writes once after a scroll.
+Claude asked for the `-v` output and what Yoann sees so it could follow up on the speed concern.
+Claude also covered scrolling, the keys, the Plan 9 places path, and that writes are lost without `-w`.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:20
+
+**Yoann:**
+
+> page is working under qemu under mini-9pi; on tex.pdf I get 5fps
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:21
+
+**Yoann:**
+
+> on tex.pdf I actually got a suicide
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:21
+
+**Yoann:**
+
+> and it even caused rio to quit
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:54
+
+**Yoann:**
+
+> ok does not seem worth it; let's revert this flag, it does not optimize anything for now
+
+**Claude (summary):**
+
+Claude restored the other changed files to HEAD, including Redraw.choose, the four platforms, cameltry, and Wolfenstein.
+Claude removed the hint's three lines from Doom.ml by hand, since commit e2d069ef already contained them.
+Claude left the other session's uncommitted edits in Doom.ml untouched, changing only the hint lines.
+Claude kept one bullet in notes_opti_inventory.md recording the hint's numbers and that it does not seem worth it.
+Claude offered to drop that bullet and proposed committing only the Doom.ml hunk plus the notes line.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:21
+
+**Yoann:**
+
+> rio 81: suicide: sys: trap: fault: virtual memory allocation failed va=0x1038e000 pc=0x6afe8
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:18
+
+**Yoann:**
+
+> first, let's move the profiler to profilers/ like we do in principia, and let's move also Stats.c under profilers/ as this cpu monitoring tool can be used for profiling
+
+**Claude (summary):**
+
+Claude moved mini-prof and mini-stats into profilers/misc/ with git mv, renaming Main.ml to Prof.ml.
+Claude gave profilers/misc its own dune file and mkfile, and removed Stats from apps/misc's build files.
+Claude added profilers/misc to the top mkfile, kernels/9pi/Makefile, and kernels/9pi/tests/self.rc, and updated the stats card path.
+Claude also fixed path comments in Stats, Spin.ml, plan_multicore.md, and plan_profiler.md, then ran dune and mini-mk builds.
+Claude left the move uncommitted and proposed stage 2 (mini-prof -a) as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:23
+
+**Yoann:**
+
+> let's commit the move
+
+**Claude (summary):**
+
+Claude committed the profiler move as 1c20599f, leaving the other sessions' notes and prompt-history files out.
+Claude proposed stage 2 of the profiling plan: mini-prof -a name, listing one function's instruction counts.
+Claude described stage 2 output as each instruction in the chosen function with its execution count.
+Claude picked to_rgba as the first target because it takes 30% of a frame.
+Claude planned to begin stage 2 with to_rgba, since it takes 30% of each frame.

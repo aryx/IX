@@ -21,7 +21,7 @@ arcade/TinyTronscroll|duel|180 -fixed-time 1000 -script space:2-3,up:40,right:90
 arcade/TinyTronscroll|1997|180 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=100 netcode=1997|6aba3f2d48ac54c4acaf42782f5be971250939544c901e45a382d7669374afce|40fe39ff8dc8f3148faaece8e7426d2d77dfc4810e9c2abcf00b7dd717205f0b
 arcade/TinyTronscroll|lockstep|400 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=60 loss=10 netcode=lockstep|e1b6c759bb240b6887060ee76ff7a73d2604440c6124fa138c4feccefdf39d9c
 arcade/TinyTronscroll|rollback|400 -fixed-time 1000 -script space:2-3,up:40,right:90,down:140,s:60,d:110,w:150 seed=1 net=simulate latency=60 loss=10 netcode=rollback|c011a3afd1296f826201d34b25bc957437d50516e5f1b6f2308e0713f9b646ef
-fps/doom/Doom|start|2|82af3601616e29a4676c7449d9f80129796786a83ae1de59cd9521d72d2d54b8|94d45aaab229fa1bab7c4306865bd5361bbe363f7dfdcd4145d570dc22111351
-fps/doom/Doom|lift|200 -script up:1-100|73586780a0831f77e6227b45a375532940c512bb7549c6f4ffa05e3c379d1ce6|afbe20cec4e5bbc6671e9fae11e958723c79b4056a6d48e60733c56ee25a5d34
-fps/doom/Doom|lift_each|200 -script up:1-100 redraw=each|73586780a0831f77e6227b45a375532940c512bb7549c6f4ffa05e3c379d1ce6|afbe20cec4e5bbc6671e9fae11e958723c79b4056a6d48e60733c56ee25a5d34
-fps/doom/Doom|door|60 -script space:3 x=832 y=470 angle=90|8ba25c854147445f700591840f1e619ba8af2e94fc21111de091f145122e68b9|96afbe4d36750aefb8b43ddcd9e5f9a8a3df1f6223516e9ad44fdb15b5f63c06
+fps/doom/Doom|start|2|1a67b85459fa17346af30bed47122f8da0d03d5b640d91db7f8622fb0ff33dcd|1cad2cc71633ed0326d81f8fe5c4ee97e6476df6e60ee25b50c32eeb37d147e0
+fps/doom/Doom|lift|200 -script up:1-100|576eb09e9e4cbd37f262fae49fb5298c4107ba0b0e79913582fbf65da330965a|41a8fee99f308e411d7505e9a8496d365933964d45dee2298526d33b40275b0b
+fps/doom/Doom|lift_each|200 -script up:1-100 redraw=each|576eb09e9e4cbd37f262fae49fb5298c4107ba0b0e79913582fbf65da330965a|41a8fee99f308e411d7505e9a8496d365933964d45dee2298526d33b40275b0b
+fps/doom/Doom|door|60 -script space:3 x=832 y=470 angle=90|11d07f30001efc78c5079f43572882231a33fa9577df1d1c8e92443649357e30|bbe219485900f20587b20a37ff6b3a2b98c6eabcef1eeebe537ae3d4ef02ae5e

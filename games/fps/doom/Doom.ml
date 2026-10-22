@@ -29,7 +29,8 @@
  *
  * A frame (the playground's view): Play's tics since the last frame
  * (35 a second, at most 4 a frame), then Render's picture of the
- * player's eye, 320 by 200 bytes of the palette, made the platform's
+ * player's eye (between its last two tics: [eye]), 320 by 200 bytes
+ * of the palette, made the platform's
  * pixels (each index its colour, n by n), one Bitmap shape; the
  * messages are the playground's words over it.
  *
@@ -68,6 +69,9 @@ type model = {
   (* use pressed since the last tic: a frame's press between two tics
    * (60 frames a second, 35 tics) is not lost *)
   mutable use_pressed : bool;
+  (* the eye at the tic before the last (x, y, z, angle): a frame shows
+   * it between that tic and the last *)
+  mutable before : float * float * float * float;
 }
 
 (* Doom's picture, the platform's pixels: each byte its colour, n by n *)
@@ -94,23 +98,43 @@ let to_rgba (m : model) : unit =
     for j = 1 to k - 1 do Bytes.blit dst (y * k * row) dst (((y * k) + j) * row) row done
   done
 
+let tics_a_second = 35.
+
+(* The eye drawn between its last two tics, as far as the time since
+ * the last says: 35 tics at 60 frames a second, a frame that showed
+ * the last tic's eye showed it again or moved by one, and the walk
+ * went by jerks (the author, 2026-10-22: "this machine is 100x faster
+ * than a 486Dx66 from 1995 where doom was running smoothly"; id's
+ * game drew at most a frame a tic, and the ports since draw this way,
+ * the picture a tic late). A move longer than a tic's run (a
+ * teleporter) is not drawn on its way. *)
+let eye (m : model) : float * float * float * float =
+  let p = m.play.player and x, y, z, angle = m.before in
+  let f = Float.min 1. (m.pending *. tics_a_second) in
+  let between (a : float) (b : float) : float = a +. (f *. (b -. a)) in
+  if Float.abs (p.x -. x) +. Float.abs (p.y -. y) > 64. then (p.x, p.y, p.viewz, p.angle)
+  else (between x p.x, between y p.y, between z p.viewz, between angle p.angle)
+
 let view (computer : P.computer) (m : model) : P.shape list =
-  let p = m.play.player in
-  Render.frame m.render m.play.level m.play.textures m.sprites m.play.by_sector m.play.tic p.x p.y p.viewz p.angle;
+  let x, y, z, angle = eye m in
+  Render.frame m.render m.play.level m.play.textures m.sprites m.play.by_sector m.play.tic x y z angle;
   m.frames <- m.frames + 1;
   to_rgba m;
   let screen = computer.screen in
-  (* (as many units as the platform has pixels, at size=320n) *)
+  (* (as many units as the platform has pixels: the window's, or the
+   * square's at size=320n) *)
   let w = screen.width and h = screen.width *. float (Render.height m.render) /. float (Render.width m.render) in
   let text (s : string) (y : float) : P.shape = P.words P.white s |> P.scale 2. |> P.move 0. y in
-  [ P.rectangle P.black screen.width screen.height; P.bitmap w h m.images.(m.frames land 1) ]
+  (* (the black around the picture, where the screen is a square: the
+   * Plan 9 platforms'; a window of the picture's size has none, its
+   * pixels then the picture's only) *)
+  (if h < screen.height then [ P.rectangle P.black screen.width screen.height ] else [])
+  @ [ P.bitmap w h m.images.(m.frames land 1) ]
   @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
   @
   if m.play.exited then
     [ text (Printf.sprintf "%s finished: %d of %d secrets" m.play.level.name m.play.secrets (Play.secrets_total m.play)) 0. ]
   else []
-
-let tics_a_second = 35.
 
 let update (computer : P.computer) (m : model) : model =
   let (P.Time now) = computer.time in
@@ -123,6 +147,8 @@ let update (computer : P.computer) (m : model) : model =
   if k.kspace || held "e" then m.use_pressed <- true;
   while m.pending >= 1. /. tics_a_second do
     m.pending <- m.pending -. (1. /. tics_a_second);
+    let p = m.play.player in
+    m.before <- (p.x, p.y, p.viewz, p.angle);
     if not m.play.exited then
       Play.tic m.play
         (Play.command m.play.player
@@ -180,7 +206,12 @@ let () =
                let a = match Option.bind (flag "angle") float_of_string_opt with Some a -> a | None -> 0. in
                Play.place play x y (a *. 4. *. atan 1. /. 180.)
            | _ -> ());
-           let model = { play; sprites = Things.load wad; render; images = [| image (); image () |]; frames = 0; scale; rgba; last = 0.; pending = 0.; use_pressed = false } in
+           let model = { play; sprites = Things.load wad; render; images = [| image (); image () |]; frames = 0; scale; rgba; last = 0.; pending = 0.; use_pressed = false;
+               before = (play.player.x, play.player.y, play.player.viewz, play.player.angle) } in
+           (* the window the picture's size, a unit a pixel (SDL's,
+            * ppm's: Session.window); the Plan 9 platforms' square of
+            * 320 n then (they have no window= yet) *)
+           let flags = if flag "window" = None then ("window", Printf.sprintf "%dx%d" (320 * scale) (200 * scale)) :: flags else flags in
            let flags = if flag "size" = None then ("size", string_of_int (320 * scale)) :: flags else flags in
            (* heap=modest: a WAD's megabytes are alive the whole game, and a
             * game's heap of eight times what is alive (Plan9_loop) does

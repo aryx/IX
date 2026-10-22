@@ -25,7 +25,7 @@ dune build ./games/fps/doom/Doom.exe 2> /dev/null
 while [ $# -ge 3 ]; do
   x=$1 y=$2 a=$3; shift 3
   (cd $W && REF_X=$x REF_Y=$y REF_ANGLE=$a REF_OUT=$W/ref.ppm env ${NOTHINGS:+REF_NOTHINGS=1} timeout 30 "$ref" -warp 1 1 -nomonsters > /dev/null 2>&1)
-  ./_build/default/games/fps/doom/Doom.exe -dump-frame 1 $W/mine.ppm wad=$wad x=$x y=$y angle=$a scale=1 fps=off ${NOTHINGS:+things=off}
+  ./_build/default/games/fps/doom/Doom.exe -dump-frame 1 $W/mine.ppm wad=$wad x=$x y=$y angle=$a scale=1 window=320x320 ${NOTHINGS:+things=off}
   python3 - $W/ref.ppm $W/mine.ppm "$x $y $a" <<'PY'
 import sys
 def ppm(f):
@@ -35,7 +35,8 @@ def ppm(f):
     return w, h, parts[4]
 w, h, a = ppm(sys.argv[1])
 mw, mh, b = ppm(sys.argv[2])
-# (mini-doom's picture is in the middle of the platform's square)
+# (mini-doom's picture in the middle of a square, the platform's
+# counter below it, in the black)
 top = (mh - h) // 2
 b = b[3 * mw * top: 3 * mw * (top + h)]
 n = sum(1 for i in range(w * h) if a[3*i:3*i+3] != b[3*i:3*i+3])

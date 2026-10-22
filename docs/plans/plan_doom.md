@@ -163,6 +163,27 @@ run time are a plan of their own, after it (below, stage 6).
 - Linux (OCaml, arm64): a frame 2.3 ms, the picture to the platform's
   pixels included (300 frames walking: 0.69 s); `redraw=each` 17 ms (the
   ppm platform's software renderer drawing the bitmap).
+- **Smooth on Linux** (2026-10-22, the author: "mini-doom is not super
+  smooth when running under Linux. Why?", then "this machine is 100x
+  faster than a 486Dx66 from 1995 where doom was running smoothly").
+  SDL's window, a temporary copy of its platform timed, the up arrow
+  held:
+
+  | | frames in 6 s | the view | the showing |
+  |---|---:|---:|---:|
+  | before: the `size=640` mini-doom asked for not read by the SDL platform (its command line's only), the 640 by 400 picture blended up to the window's ~1000 | 35 | 2.3 ms | 167 ms |
+  | `size=640` typed: the picture as it is, by `Blit.draw_fast` (a float transform and `plot` a pixel) | 241, 79 frames a tick or two late | 2.5 | 14.3 (Redraw 14.5 of it) |
+  | `Blit.draw_copy` (as it is: an image's row copied, no float) and `window=640x400` (no square, no black around) | 335, every one on its tick | 3.9 | 4.6 |
+
+  The three changes: `Blit.draw_copy` (lib_graphics, behind
+  `Opti.enabled`, the same pixels: every frames' test the same);
+  mini-doom asks `window=` its picture's size (SDL's and ppm's
+  platforms follow it; the Plan 9 ones have no `window` yet and keep
+  `size=`); and the eye drawn between its last two tics (`Doom.eye`),
+  as the ports since id's do: 35 tics shown at 60 frames moved the
+  view on some frames and not others. Left: Redraw hashes the two
+  pictures of a megabyte to compare frames (2 ms of the 4.6); the
+  draw and SDL platforms read `size=` from the command line only.
 - **mini-9pi** (stage 5): runs. mini-ml refused `Render`'s functions
   of more than 7 parameters (`draw_column` has 10); by the author's
   rule (lift the limit, do not reshape the code) mini-ml now passes

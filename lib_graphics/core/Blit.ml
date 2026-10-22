@@ -144,5 +144,44 @@ let draw_fast (fb : Framebuffer.t) (image : image) (m : Affine.t) ~filter ~alpha
     done
   done
 
-let draw fb image m ~filter ~alpha =
-  if !Opti.enabled then draw_fast fb image m ~filter ~alpha else draw_simple fb image m ~filter ~alpha
+(* Optimization (Opti.enabled), the same pixels as draw_fast where the
+ * image is drawn as it is (nearest, neither scaled nor turned, moved
+ * by whole pixels): framebuffer pixel (x, y) is image pixel (x - tx,
+ * y - ty), no float, and an opaque one is stored without plot's
+ * clipping and alpha, each row's range clipped once. mini-doom's
+ * 640 by 400 picture, new at each frame: 21 ms by draw_fast, the
+ * whole of a frame's budget (2026-10-22, the author: "this machine
+ * is 100x faster than a 486Dx66 from 1995 where doom was running
+ * smoothly"). *)
+let draw_copy (fb : Framebuffer.t) (image : image) ~(tx : int) ~(ty : int) ~(alpha : float) : unit =
+  let data = image.rgba and iw = image.width and pixels = fb.pixels in
+  let x0 = max (max tx 0) fb.left and x1 = min (min (tx + iw) fb.window_width) (fb.left + fb.width) in
+  let y0 = max (max ty 0) fb.top and y1 = min (min (ty + image.height) fb.window_height) (fb.top + fb.height) in
+  for y = y0 to y1 - 1 do
+    let src = 4 * (((y - ty) * iw) - tx) and dst = 4 * (((y - fb.top) * fb.width) - fb.left) in
+    for x = x0 to x1 - 1 do
+      let i = src + (4 * x) in
+      let a = Char.code (Bytes.unsafe_get data (i + 3)) in
+      if a = 255 && alpha >= 1. then begin
+        (* (the framebuffer's order: blue, green, red, one not used) *)
+        let o = dst + (4 * x) in
+        Bytes.unsafe_set pixels o (Bytes.unsafe_get data (i + 2));
+        Bytes.unsafe_set pixels (o + 1) (Bytes.unsafe_get data (i + 1));
+        Bytes.unsafe_set pixels (o + 2) (Bytes.unsafe_get data i);
+        Bytes.unsafe_set pixels (o + 3) '\255'
+      end
+      else if a > 0 then
+        let rgb =
+          (Char.code (Bytes.unsafe_get data i) lsl 16)
+          lor (Char.code (Bytes.unsafe_get data (i + 1)) lsl 8)
+          lor Char.code (Bytes.unsafe_get data (i + 2)) in
+        Framebuffer.plot fb ~x ~y ~rgb ~alpha:(alpha *. float a /. 255.)
+    done
+  done
+
+let draw fb image (m : Affine.t) ~filter ~alpha =
+  let whole (f : float) : bool = Float.round f = f in
+  if !Opti.enabled && filter = Nearest && m.a = 1. && m.d = 1. && m.b = 0. && m.c = 0. && whole m.tx && whole m.ty then
+    draw_copy fb image ~tx:(int_of_float m.tx) ~ty:(int_of_float m.ty) ~alpha
+  else if !Opti.enabled then draw_fast fb image m ~filter ~alpha
+  else draw_simple fb image m ~filter ~alpha

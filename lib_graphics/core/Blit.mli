@@ -103,5 +103,7 @@ type filter = Nearest | Bilinear
  * matrix product per pixel, then [sample_nearest] or
  * [sample_bilinear]), and an optimized one computing the same pixels
  * (forward differencing, samplers inlined; see Blit.ml and
- * notes_opti.md). *)
+ * notes_opti.md); and with it, an image drawn as it is (nearest,
+ * neither scaled nor turned, moved by whole pixels) copied a row at a
+ * time, no float. *)
 val draw : Framebuffer.t -> image -> Affine.t -> filter:filter -> alpha:float -> unit

@@ -113,8 +113,9 @@ let text_shapes ~(cells : bool) (look : Looks.t) (text : string) ~(x : float) ~(
   let look = { look with color = (0, 0, 0); underline = false; link = None; bold = false; italic = false; monospace = cells } in
   plain_glyphs { text; look; x; width = metrics look text; baseline; picture = None; control = None; element = Dom.element "span" [] }
 
-let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : Html_layout.fragment) (c : Html_layout.control)
-    : shape list =
+let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool)
+    ~(editing : Text_field.t option) (f : Html_layout.fragment)
+    (c : Html_layout.control) : shape list =
   match Forms.control c.element with
   | None -> []
   | Some control -> (
@@ -124,6 +125,30 @@ let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : 
       let tail = Browser_text.tail in
       let caret x baseline = if focused then [ rectangle (rgb 0 0 0) 1.5 size |> move x (-.(baseline -. (0.35 *. size))) ] else [] in
       match control.kind with
+      | (Text | Password) when focused && editing <> None ->
+          (* being edited: the part around the caret, over the
+           * selection's band (Text_field), in cells *)
+          let e = Text_field.clamped (Option.get editing) in
+          let measure s = cell *. float_of_int (List.length (characters s)) in
+          let room = w -. 8. -. cell in
+          let from = Text_field.first_shown measure e ~room in
+          let rest =
+            characters (String.sub e.text from (String.length e.text - from)) in
+          let rest =
+            if control.kind = Password then List.map (fun _ -> "*") rest
+            else rest in
+          let fits = int_of_float ((w -. 8.) /. cell) - 1 in
+          let shown = String.concat "" (List.filteri (fun i _ -> i < fits) rest) in
+          let place i = f.x +. 4. +. Text_field.place measure e ~room i in
+          let a = min e.anchor e.caret and b = max e.anchor e.caret in
+          let middle = -.(f.baseline -. (0.35 *. size)) in
+          sunken f.x top w h
+          @ (if a >= b then []
+             else
+               [ rectangle (rgb 180 213 254) (place b -. place a) size
+                 |> move ((place a +. place b) /. 2.) middle ])
+          @ text_shapes ~cells:true f.look shown ~x:(f.x +. 4.) ~baseline:f.baseline
+          @ caret (place e.caret) f.baseline
       | Text | Password ->
           let shown = if control.kind = Password then String.make (List.length (characters v.text)) '*' else v.text in
           let shown = tail (int_of_float ((w -. 8.) /. cell) - 1) shown in
@@ -167,14 +192,16 @@ let control_shapes ~(value : Dom.element -> Forms.value) ~(focused : bool) (f : 
             | [] -> [])
       | Hidden -> [])
 
-let controls_drawn ~(value : Dom.element -> Forms.value) ~(focus : Dom.element option) (layout : Html_layout.box) : drawn =
+let controls_drawn ~(value : Dom.element -> Forms.value)
+    ~(focus : Dom.element option) ~(editing : Text_field.t option)
+    (layout : Html_layout.box) : drawn =
   ready
   @@ (Html_layout.fragments layout
   |> List.filter_map (fun (f : Html_layout.fragment) ->
          match f.control with
          | Some c ->
              let focused = match focus with Some e -> e == c.element | None -> false in
-             Some (f.baseline -. c.control_height, f.baseline +. c.control_height, group (control_shapes ~value ~focused f c))
+             Some (f.baseline -. c.control_height, f.baseline +. c.control_height, group (control_shapes ~value ~focused ~editing f c))
          | None -> None))
 
 (*****************************************************************************)

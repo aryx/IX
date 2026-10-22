@@ -22,7 +22,7 @@ LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground \
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=-I . $LIBI $STDI
 # (each before the ones that name it)
-LIB=Browser_zoom Browser_helpers Places Location_field Scrollbar Browser_profile Worker_spawn Tab Tab_worker
+LIB=Browser_zoom Browser_helpers Places Scrollbar Browser_profile Worker_spawn Tab Tab_worker
 LIBOBJS=${LIB:%=$D/%.$O}
 # (JavaScript's two units nobody names: browsers/javascript's mkfile)
 WHOLE=$B/browsers/javascript/Js_quicken.$O $B/browsers/javascript/Js_compile.$O

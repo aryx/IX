@@ -85,7 +85,8 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   "allow to select in the omnibox the text, with double click to select
   the whole line, C-c to copy, etc. Let's also add a Scrollbar when the
   page can be scrolled", "I think mini-chrome implement those things").
-  `Location_field` (mini-chrome's `Gui_field` and its `Omnibox`'s keys):
+  `Text_field` (mini-chrome's `Gui_field` and its `Omnibox`'s keys;
+  `browsers/engine/page/`, the page's fields' too since):
   a caret, a click puts it, a drag selects, a double click selects all
   (two presses within 0.4 s, by the frame's clock), Shift and the
   arrows, Home, End select; Ctrl+A, C, X, V. The text's part that shows
@@ -97,6 +98,18 @@ file (the tests'), in `sdl/` with a window (`bin/mini-netscape`).
   `Gui_scrollbar`, y down, drawn as Netscape's: a grey track, a raised
   thumb), over the page's right edge when the page is longer than the
   window: its thumb dragged, a click above or below it a page.
+
+- **The page's fields edited as the Location field, keys that repeat**
+  (2026-10-22; the author: "let's do 1 and 2"). A text field or a
+  password of the page has `Text_field`'s caret and selection: a click
+  that gives it the keys puts the caret there, a drag selects, a double
+  click selects all, the keys and Ctrl+A, C, X, V as in the Location
+  field; `Tab` keeps the caret of the field in focus, `Browser_draw`
+  shows the part around it. Each change of the text is an input event
+  for the page's scripts (typing was not one). A textarea keeps its
+  caret at its end. A key held repeats after half a second, 30 times a
+  second (the arrows, Page Up and Down, Space; Backspace and Delete in
+  a field, not as Back); the letters' repeat is the platform's.
 
 - **-v** (2026-10-19, as mini-chrome's): on the standard error, the
   profile's files read and written, each address fetched and what came
@@ -161,9 +174,8 @@ code 16.6 s.
   `tests/helpers.sh`: fake programs on the PATH say what they were given.
 - A page shown while its scripts run (a long run stops the window:
   mini-chrome's `Js_slice` is not taken); bookmarks' folders, a
-  bookmark removed but in an editor; a page's text selected (a field's
-  of the page has no caret either); a key held that repeats (Left, Backspace);
-  an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
+  bookmark removed but in an editor; a page's text selected; a
+  textarea's caret elsewhere than at its end; an answer's cache (mini-chrome's `Http_cache`); Brotli and Zstandard
   (gzip alone is asked for).
 - A file given by a relative path keeps it (`file://browsers/...`): a
   link of its page that starts with `/` goes wrong.

@@ -87,13 +87,18 @@ val glyphs :
  * arguments *)
 val plain_glyphs : Html_layout.fragment -> Playground.shape list
 
-(* a control with its [value], its caret if [focused] *)
+(* a control with its [value], its caret if [focused]; a text field or
+ * a password being edited, its part around the caret and its selection
+ * ([editing]: the text, caret and anchor of the field in focus) *)
 val control_shapes :
-  value:(Dom.element -> Forms.value) -> focused:bool -> Html_layout.fragment -> Html_layout.control -> Playground.shape list
+  value:(Dom.element -> Forms.value) -> focused:bool ->
+  editing:Text_field.t option -> Html_layout.fragment -> Html_layout.control -> Playground.shape list
 
 (* every control of the page, drawn with its value (every frame: they
  * change as one types, where the rest is drawn once a layout) *)
-val controls_drawn : value:(Dom.element -> Forms.value) -> focus:Dom.element option -> Html_layout.box -> drawn
+val controls_drawn :
+  value:(Dom.element -> Forms.value) -> focus:Dom.element option ->
+  editing:Text_field.t option -> Html_layout.box -> drawn
 
 (* the layout's boxes outlined, as a browser's inspector does: blocks
  * blue, the anonymous boxes of inline content green, their lines grey *)

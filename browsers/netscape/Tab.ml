@@ -52,6 +52,8 @@ type t = {
   (* the style sheets had, by address ("": one that did not come) *)
   sheets : (string * string) list;
   focus : Dom.element option;
+  (* the caret and the anchor in the field in focus (Text_field's) *)
+  caret : int * int;
   (* the pictures had, by address *)
   pictures : (string * Browser_picture.t) list;
   (* the programs that show what the browser does not (those on the
@@ -90,7 +92,7 @@ type t = {
 }
 
 let empty (width : float) (about : string -> string option) : t =
-  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0; jumped = None }
+  { width; about; page = None; url = ""; said = ""; scroll = 0.; history = Browser_history.empty; visited = []; sheets = []; focus = None; caret = (0, 0); pictures = []; helpers = []; job = None; visible = 700.; todo = []; scripts = true; script = None; sources = []; bytes = 0; note = None; jar = Cookie_jar.create []; epoch = 0.; owed = 0; taken = 0; jumped = None }
 
 let page (t : t) = t.page
 let url (t : t) =
@@ -563,7 +565,14 @@ let under (t : t) ~(x : float) ~(y : float) : under =
 let form (t : t) (outcome : Browser_forms.outcome) : t =
   match outcome with
   | Browser_forms.Nothing -> t
-  | Browser_forms.Focus e -> { t with focus = Some e }
+  | Browser_forms.Focus e
+    when (match t.focus with Some f -> f == e | None -> false) -> t
+  | Browser_forms.Focus e ->
+      let n =
+        match t.page with
+        | Some p -> String.length (Browser_page.value_of p e).text
+        | None -> 0 in
+      { t with focus = Some e; caret = (n, n) }
   | Browser_forms.Unfocus -> { t with focus = None }
   | Browser_forms.Changed p -> (
       let t = { t with page = Some p } in
@@ -574,6 +583,71 @@ let form (t : t) (outcome : Browser_forms.outcome) : t =
           progress (settle (after_task t))
       | _ -> t)
   | Browser_forms.Submit { url; post; page } -> go_post { t with page = Some page } ~post (Browser_url.resolve t.url url)
+
+(* the field in focus, if it is typed in, and its place in the layout *)
+let typed_in (t : t) : (Browser_page.t * Dom.element * Forms.kind) option =
+  match (t.page, t.focus) with
+  | Some p, Some e -> (
+      match Forms.control e with
+      | Some { kind = (Forms.Text | Forms.Password | Forms.Textarea) as k; _ }
+        -> Some (p, e, k)
+      | _ -> None)
+  | _ -> None
+
+(* a textarea's caret stays at its end: its lines are drawn from the
+ * last when it has the keys (Browser_draw), not around a caret *)
+let editing (t : t) : Text_field.t option =
+  match typed_in t with
+  | Some (p, e, kind) ->
+      let text = (Browser_page.value_of p e).text in
+      let n = String.length text in
+      let caret, anchor = if kind = Forms.Textarea then (n, n) else t.caret in
+      Some (Text_field.clamped { text; caret; anchor })
+  | None -> None
+
+let edited (t : t) (edit : Text_field.t -> Text_field.t) : t =
+  match (typed_in t, editing t) with
+  | Some (p, e, _), Some f ->
+      let g = edit f in
+      let t = { t with caret = (g.caret, g.anchor) } in
+      if g.text = f.text then t
+      else
+        let v = Browser_page.value_of p e in
+        form t (Browser_forms.Changed (Browser_page.with_value p e { v with text = g.text }))
+  | _ -> t
+
+(* the field's fragment: where its text starts, the room it has, its
+ * letters' width; and its box *)
+let field_place (t : t) :
+    (float * float * (string -> float) * (float * float * float * float)) option =
+  match (t.page, t.focus) with
+  | Some p, Some e ->
+      List.find_map
+        (fun (f : Html_layout.fragment) ->
+          match f.control with
+          | Some c when c.element == e ->
+              let cell = Browser_text.cell_of f.look in
+              let measure s =
+                cell *. float_of_int (List.length (Browser_text.characters s)) in
+              let h = c.control_height in
+              let top = f.baseline -. (0.75 *. h) in
+              Some (f.x +. 4., f.width -. 8. -. cell, measure, (f.x, top, f.width, h))
+          | _ -> None)
+        (Html_layout.fragments p.layout)
+  | _ -> None
+
+let pointed (t : t) ~(x : float) ~(select : bool) : t =
+  match (editing t, field_place t) with
+  | Some f, Some (left, room, measure, _) ->
+      let i = Text_field.index_at measure f ~room (x -. left) in
+      edited t (Text_field.caret_at ~select i)
+  | _ -> t
+
+let on_field (t : t) ~(x : float) ~(y : float) : bool =
+  match field_place t with
+  | Some (_, _, _, (bx, by, w, h)) ->
+      x >= bx && x <= bx +. w && y >= by && y <= by +. h
+  | None -> false
 
 (* the page's scripts first (the element under the pointer, its click
  * bubbling); then, unless one prevented it, the browser's own: a
@@ -601,7 +675,12 @@ let click (t : t) ~(x : float) ~(y : float) : t =
       if prevented then t
       else
         match (control, link, t.page) with
-        | Some e, _, Some p -> form t (Browser_forms.click p e)
+        | Some e, _, Some p ->
+            (* a field given the keys by it: the caret where it was *)
+            let had = t.focus in
+            let t = form t (Browser_forms.click p e) in
+            let other = match had with Some h -> not (h == e) | None -> true in
+            if t.focus <> None && other then pointed t ~x ~select:false else t
         | None, Some address, _ -> (
             (* a link to what a program shows (a film of YouTube's to
              * mpv): run beside, the page staying (Browser_helpers) *)
@@ -626,8 +705,6 @@ let advance (ms : float) (t : t) : t =
       if t.todo == was && t.note = None then t else progress t
   | _ -> t
 
-let typed (t : t) (text : string) : t =
-  match (t.page, t.focus) with Some p, Some e -> { t with page = Some (Browser_forms.typed p e text) } | _ -> t
-
 let key (t : t) (name : string) : t =
   match (t.page, t.focus) with Some p, Some e -> form t (Browser_forms.key p e name) | _ -> t
+

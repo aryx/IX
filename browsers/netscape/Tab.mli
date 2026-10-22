@@ -186,10 +186,24 @@ val under : t -> x:float -> y:float -> under
  * a link followed, a field given the keys, a button's form sent *)
 val click : t -> x:float -> y:float -> t
 
-(* text typed, and a key ("enter", "backspace"), for the field that has
- * the keys *)
-val typed : t -> string -> t
+(* a key for the field that has the keys: "enter" (its form sent, a
+ * new line in a textarea), "escape" (the keys given up) *)
 val key : t -> string -> t
+
+(* the field that has the keys, if it is typed in (a text field, a
+ * password, a textarea), as it is edited: its text, caret and
+ * selection (a textarea's caret at its end); [edited tab edit]: the
+ * edit made (Text_field's: a text typed, a key, Ctrl and a letter),
+ * the page's scripts told of a changed text (an input event);
+ * [pointed tab ~x ~select]: the caret put at [x] of the page, the
+ * selection kept from the anchor if [select] (a drag). A click that
+ * gives a field the keys puts its caret there too *)
+val editing : t -> Text_field.t option
+val edited : t -> (Text_field.t -> Text_field.t) -> t
+val pointed : t -> x:float -> select:bool -> t
+
+(* is a point of the page on the field that has the keys? *)
+val on_field : t -> x:float -> y:float -> bool
 
 (* is an https:// connection kept for the next file from its host
  * (Keep_alive)? true; a switch, for the measure *)

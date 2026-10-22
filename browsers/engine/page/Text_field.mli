@@ -1,17 +1,18 @@
-(* Location_field: the text of the Location field being edited -- its
- * caret and its selection, the keys and the mouse's edits of it, and
- * the part of it that shows.
+(* Text_field: a line of text being edited -- its caret and its
+ * selection, the keys' and the mouse's edits of it, and the part of it
+ * that shows. The browser's two: mini-netscape's Location field, and
+ * the page's text fields (Tab keeps the caret of the one in focus).
  *
  *     https://en.wikipedia.org/wiki/OCaml
  *             ^anchor          ^caret       the selection between
  *             [================]            them, blue under the text
  *
- * A click in the field at rest selects all of it, the address to be
- * typed over; then a click puts the caret, a drag selects from where
- * the button went down, a double click selects all again. Shift and
- * the arrows, Home and End move the caret and select; Ctrl and A
- * selects all, Ctrl and C copies the selection, Ctrl and X cuts it,
- * Ctrl and V pastes (Netscape), a pasted text's first line only.
+ * A click puts the caret, a drag selects from where the button went
+ * down, a double click selects all (the Location field at rest: a
+ * click selects all, the address to be typed over). Shift and the
+ * arrows, Home and End move the caret and select; Ctrl and A selects
+ * all, Ctrl and C copies the selection, Ctrl and X cuts it, Ctrl and V
+ * pastes (Netscape), a pasted text's first line only.
  *
  * The positions are bytes of the text, each at a character's first
  * (UTF-8: a letter with an accent is two). What shows is measured in
@@ -52,12 +53,17 @@ type move = Left | Right | Home | End
  * else gone -- Left and Right then first go to its nearer end *)
 val moved : select:bool -> move -> t -> t
 
+(* the caret and the anchor within the text, at a character's first
+ * byte: the text may have changed under them (a page's script) *)
+val clamped : t -> t
+
 (* the caret put at a byte (a click), the anchor kept if [select] (a
  * drag) *)
 val caret_at : select:bool -> int -> t -> t
 
 (* [key ~shift name f]: the keys that edit without Ctrl (Backspace,
- * Delete, the arrows, Home, End); None for another *)
+ * Delete, ArrowLeft, ArrowRight, Home, End: the playground's names);
+ * None for another *)
 val key : shift:bool -> string -> t -> t option
 
 (* [command copy paste letter f]: Ctrl and A, C, X or V; [copy] given

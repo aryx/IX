@@ -5,6 +5,6 @@ TOP=../..
 LIB=browsers/engine
 DIRS=layout display page
 NEEDS=browsers/css lib_networking lib_playground
-UNITS=Style Browser_history Browser_url Table_layout Browser_picture Html_layout Stroke_text Hit Browser_text Browser_draw \
+UNITS=Text_field Style Browser_history Browser_url Table_layout Browser_picture Html_layout Stroke_text Hit Browser_text Browser_draw \
  Flex_layout Grid_layout Box_layout Browser_boxes Browser_page Browser_forms
 <$TOP/mkfiles/mklib

@@ -4,7 +4,7 @@
 (* ix: the author's mini-chrome's libs/gui/Gui_field.ml and
  * src/chrome/Omnibox.ml (its 8af888e) *)
 
-(* See Location_field.mli *)
+(* See Text_field.mli *)
 
 type t = { text : string; caret : int; anchor : int }
 
@@ -65,6 +65,13 @@ let moved ~(select : bool) (how : move) (f : t) : t =
     | Right -> if a < b && not select then b else next f.text f.caret
   in
   { f with caret; anchor = (if select then f.anchor else caret) }
+
+let clamped (f : t) : t =
+  let within i =
+    let i = max 0 (min (length f) i) in
+    if inside f.text i then prev f.text i else i
+  in
+  { f with caret = within f.caret; anchor = within f.anchor }
 
 let caret_at ~(select : bool) (i : int) (f : t) : t =
   let caret = max 0 (min (length f) i) in

@@ -24,10 +24,31 @@
  * (a page is megabytes): going back to the page before is at once.
  * The model is a value, as every Playground program's; a page's
  * picture is made in the update (the view only shows), which is why a
- * key that changes the page takes the time of its drawing. Where a
- * page is down the pages is worked out again each frame from the
- * pages' sizes (tops): a thousand pages are a thousand additions,
- * nothing next to drawing one.
+ * key that changes the page takes the time of its drawing, unless the
+ * page was drawn ahead: once the window is still, the next page and
+ * the one before are drawn, a page a frame (ahead). Where each page's
+ * top is down the pages comes from their sizes (tops), kept at a zoom
+ * and a turn: a book's thousand pages are not gone through each
+ * frame.
+ *
+ * How a page reaches the screen. Pdf_render draws the whole page in
+ * this program's memory, its letters with the rest: each glyph filled
+ * once from the PDF's own font, a mask kept by its font, size and
+ * quarter pixel, then laid wherever it comes again (Pdf_render's
+ * cache, for the pages after too). The page is one picture, a
+ * Playground Bitmap; on mini-9pi the draw platform loads it into an
+ * image of the kernel's once (megabytes: 40 to 70 ms under QEMU) and
+ * each frame after is one copy from it, however many letters the page
+ * has. mini-office's text goes the other way (Office_view): its
+ * letters are shapes, each kept as an image of the kernel's, and a
+ * frame is a message a letter. That fits a text that changes as it is
+ * typed, in one stroke font of a few looks; a PDF's page does not
+ * change, and its text may be clipped, transparent, filled with a
+ * pattern or over a picture, which Pdf_render does and the kernel's
+ * device would have to: one picture, and scrolling is one message a
+ * frame, not a page's three thousand letters. What it costs is the
+ * moment a page is new: drawn here, then loaded, which drawing ahead
+ * does while the reader reads (docs/notes_font.md, section 2).
  *
  * A picture (PNG, JPEG) is a document of one page, scaled and turned
  * as it is shown, not drawn again.

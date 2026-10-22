@@ -43,9 +43,31 @@ letter is drawn by drawing lines, which every platform can.
       -> every platform               a rectangle each, as any other shape:
                                       no platform knows it was a letter
 
+    a PDF file's text (mini-page,   Pdf_render: the file's own font (outlines),
+    office's export read back)       each glyph filled once into a mask (its font,
+                                     code, size, quarter pixel: Pdf_render's cache),
+                                     laid into the page's picture with the rest
+      -> every platform               one Bitmap, the whole page; on mini-9pi
+                                      loaded into the kernel once, a frame one copy
+
 The second path is the one that costs. A letter of a page is about six
 shapes. The platform transforms each, in floats, at every frame drawn,
-and on mini-9pi sends each to the device, which fills it.
+and on mini-9pi sends each to the device, which fills it. (Since
+2026-10-20 the platforms keep a letter's mask instead: section 5.)
+
+The third is drawn once a page, not each frame, and its letters cost
+the page's first drawing only: a page of principia's Kernel book,
+21 pages by mini-ml's code on Linux, 19.65 s with each glyph filled
+each time, 6.42 with Pdf_render's cache (2026-10-22). The two caches,
+the playground's and Pdf_render's, are the same idea (Cairo's, Skia's
+quarters) in two places: the playground's masks are of its stroke
+font, a `float array` each, laid into a Framebuffer or kept by the
+kernel; Pdf_render's are of a PDF's outlines, `Bytes`, laid into the
+page's canvas through the PDF's clip and opacity. What they could
+share is a table and a key, not worth a module. Which way suits which
+program: the shapes (mini-office, mini-netscape) for a text that
+changes, a picture (mini-page) for a page that does not, and whose
+text the reader draws with all PDF's means.
 
 ## 3. What it costs (measured)
 

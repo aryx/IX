@@ -32,7 +32,18 @@
  * shapes to a PDF. So the slide shown and the page printed cannot
  * differ from the one edited: there is no second drawing code to
  * keep in step. It costs a flag, [chrome], for what belongs to the
- * editing and not to the document. *)
+ * editing and not to the document.
+ *
+ * A page's letters are shapes (Playground's Letters), not pixels: the
+ * platform keeps each letter, at a size and a look, as a mask (on
+ * Linux, Shape_render_software's) or as an image of the kernel's (on
+ * mini-9pi, the draw platform's), and a frame lays each letter from
+ * it, a message a letter on mini-9pi. The text changes as it is typed,
+ * and a letter typed is one shape more, not a page drawn again.
+ * mini-page does the other: a PDF's page, which does not change, drawn
+ * whole in the program, its letters from the file's fonts (Pdf_render's
+ * own cache of glyphs), then given to the kernel once as one picture,
+ * and a frame is one copy of it (docs/notes_font.md, section 2). *)
 
 (* what is on the pages, in the screen's coordinates (Office_page's
    origin): with [chrome] the caret, the selection and an object's

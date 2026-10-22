@@ -19,18 +19,32 @@ type t = {
 let create ~(width : int) ~(height : int) ~(scale : float) (options : Shape_render_software.options) : t =
   { width; height; scale; options; last = None }
 
+(* A shape's hash, a picture's pixels not read: its place and size.
+ * Hashtbl.hash goes through ten numbers and strings of a value, and a
+ * Bitmap's tenth is its bytes, a megabyte read whole (mini-doom's
+ * 640 by 400 picture: 0.56 ms a hash, four in a frame that changed
+ * it). Two pictures at the same place and size have the same hash;
+ * [compare] tells them apart, at their first pixel that differs.
+ * old: the table's keys the shapes, hashed by Hashtbl.hash *)
+let hash (s : Playground.shape) : int =
+  match s.form with Bitmap (w, h, _) -> Hashtbl.hash (s.x, s.y, w, h) | _ -> Hashtbl.hash s
+
 (* The shapes of one list that are not in the other, each as many times
  * as it is there more: the others' shapes counted in a table, by what
- * they are (a shape is numbers and strings: compared whole). *)
+ * they are (a shape is numbers and strings: compared whole), a hash
+ * having those alike. *)
 let only_in (these : Playground.shape list) (others : Playground.shape list) : Playground.shape list =
-  let counts : (Playground.shape, int ref) Hashtbl.t = Hashtbl.create 64 in
+  let counts : (int, Playground.shape * int ref) Hashtbl.t = Hashtbl.create 64 in
+  let count (s : Playground.shape) : int ref option =
+    Option.map snd
+      (List.find_opt (fun ((t, _) : Playground.shape * int ref) -> t == s || compare t s = 0) (Hashtbl.find_all counts (hash s))) in
   List.iter
     (fun (s : Playground.shape) ->
-      match Hashtbl.find_opt counts s with Some n -> incr n | None -> Hashtbl.add counts s (ref 1))
+      match count s with Some n -> incr n | None -> Hashtbl.add counts (hash s) (s, ref 1))
     others;
   List.filter
     (fun (s : Playground.shape) ->
-      match Hashtbl.find_opt counts s with
+      match count s with
       | Some n when !n > 0 -> decr n; false
       | _ -> true)
     these

@@ -118,9 +118,9 @@ type t = {
   scalelight : int array array; (* by level, by scale: a colormap's offset *)
   zlight : int array array; (* by level, by distance *)
   screen : Bytes.t;
-  (* the columns closed (id's solidsegs), and how many are open *)
-  solid : int array;
-  mutable open_columns : int;
+  (* the columns closed: id's solidsegs, ranges first to last, sorted,
+   * none touching another (Bsp) *)
+  mutable solidsegs : (int * int) list;
   ceilingclip : int array;
   floorclip : int array;
   (* the visplanes: those of this frame are the first [nplanes] *)

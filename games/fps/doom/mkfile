@@ -17,7 +17,7 @@ LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/platforms lib
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=-I . $LIBI $STDI
 # (each before the ones that name it)
-LIB=Wad Level Textures Things View Planes Segs Sprites Render Play
+LIB=Wad Level Textures Things View Planes Segs Sprites Bsp Render World Collision Specials Play
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

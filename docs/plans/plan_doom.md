@@ -229,3 +229,30 @@ run time are a plan of their own, after it (below, stage 6).
   at `-ips 200` (a board's pace), the Pi 1; `make test-lite`; a
   mini-doom session under rio. The main tree's `build/card.img` was
   not remade (the numbers are from a card in the scratchpad).
+
+2026-10-22, **the modules as id's files**, for reading mini-doom beside
+id's source and Fabien Sanglard's Game Engine Black Book: DOOM (the
+author: "ideally mini-doom reproduce the classic algorithm used by the
+original doom, so it can be used as a teaching resource", "so one can
+then read the book by Sanglard on doom", "it would make sense to have a
+Bsp.ml though; it's such an emblematic feature of Doom"; and "we don't
+have to follow exactly what id software did if it complicates the
+code", "just if it does not cost much, we can follow a little"):
+- `Bsp` (r_bsp.c): the tree's walk out of Render (left with
+  R_RenderView), and id's solidsegs, the closed columns as sorted
+  ranges, R_ClipSolidWallSegment and R_ClipPassWallSegment, where it
+  was a flag a column; a box's check one range, not a scan. id's walk
+  too: no early stop once every column is closed (the same frames, no
+  slower: 0.98 s for 600 frames either way).
+- Play's 628 lines as `World` (the state, the thinkers: d_player.h,
+  p_spec.h, p_local.h), `Collision` (p_map.c: where the player can be;
+  its `try_move` given what to do with a line crossed, where id's
+  calls P_CrossSpecialLine itself), `Specials` (p_spec.c, p_doors.c,
+  p_plats.c, p_floor.c, p_switch.c, p_lights.c) and `Play` (p_user.c,
+  p_tick.c, G_BuildTiccmd). Not further: a module a file of id's would
+  be twelve, of 20 to 60 lines.
+- The .ml 2,204 lines to 2,253, the .mli 864 to 1,095 (the headers;
+  World's types written in its .mli). Checked: 14 frames (walks,
+  turns, the lift, a door, places, scale=1, things=off) the same sums
+  before and after; games/tests/frames.sh's four, OCaml's and mini-ml's
+  builds; mini-mk O=5 OS=plan9.

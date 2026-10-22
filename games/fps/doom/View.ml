@@ -109,9 +109,9 @@ type t = {
   scalelight : int array array; (* by level, by scale: a colormap's offset *)
   zlight : int array array; (* by level, by distance *)
   screen : Bytes.t;
-  (* the columns closed (id's solidsegs), and how many are open *)
-  solid : int array;
-  mutable open_columns : int;
+  (* the columns closed: id's solidsegs, ranges first to last, sorted,
+   * none touching another (Bsp) *)
+  mutable solidsegs : (int * int) list;
   ceilingclip : int array;
   floorclip : int array;
   (* the visplanes: those of this frame are the first [nplanes] *)
@@ -166,7 +166,7 @@ let create (width : int) (height : int) : t =
       Array.init lightlevels (fun (i : int) ->
           Array.init maxlightz (fun (j : int) -> clampmap (startmap i - ((655360 / (j + 1)) lsr 12 / 2))));
     screen = Bytes.make (width * height) '\000';
-    solid = Array.make width 0; open_columns = width;
+    solidsegs = [];
     ceilingclip = Array.make width (-1); floorclip = Array.make width height;
     planes = [||]; nplanes = 0; spanstart = Array.make height 0;
     drawsegs = []; vissprites = []; sector_seen = [||]; frame_number = 0;

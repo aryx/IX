@@ -55,7 +55,7 @@
 module P = Playground
 
 type model = {
-  play : Play.t;
+  play : World.t;
   sprites : Things.sprites;
   render : Render.t;
   (* two pictures' bytes, one a frame in turn: the platform compares a

@@ -62,16 +62,15 @@
  * fixed point is 16.16 in 32 bits, which a map's coordinates overflow
  * on the Pi1's 31-bit ints: the geometry here is floats (a seg's
  * angles, its scale, a column's texture), the loops of pixels integers
- * (16.16 in a column, a flat's coordinates taken modulo 64 before). Its
- * solidsegs (the closed columns as a list of ranges) are a flag a
- * column. A texture's height wraps where it is (id's wrapped at 128).
+ * (16.16 in a column, a flat's coordinates taken modulo 64 before). A
+ * texture's height wraps where it is (id's wrapped at 128).
  * Not here: the player's weapon (psprites), the fuzz of a spectre, the
  * limits (MAXVISPLANES, MAXDRAWSEGS: none here).
  *
  * Its parts are id's files: View (r_main.c, r_draw.c: the state, the
- * tables, R_DrawColumn), Planes (r_plane.c: 4), Segs (r_segs.c: 3),
- * Sprites (r_things.c: 5), and this one, r_bsp.c's walk (1, 2) and
- * R_RenderView.
+ * tables, R_DrawColumn), Bsp (r_bsp.c: 1, 2), Segs (r_segs.c: 3),
+ * Planes (r_plane.c: 4), Sprites (r_things.c: 5), and this one,
+ * R_RenderView (r_main.c), the frame from the five.
  *
  * Where it stands in mini-doom: Doom.ml asks a frame of it with the
  * player's eye; Play's moves change what Level holds, which it draws as

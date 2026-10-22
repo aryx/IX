@@ -8,21 +8,26 @@
  * Plan 9's page is a viewer round other programs: Ghostscript draws a
  * PostScript or a PDF file's pages, jpg and png read a picture, and
  * page shows what they give it. Here the drawing is in the program:
- * lib_graphics/pdf reads the file and draws a page (Pdf_render), and
- * the page is one picture, a Bitmap of Playground's, moved about the
- * window. No PostScript: there is no interpreter of it here.
+ * lib_graphics/pdf reads the file and draws a page (Pdf_render), each
+ * page is a picture, a Bitmap of Playground's, and the pages are one
+ * under another, a gap of grey between, the window going along them
+ * (as most viewers today; Plan 9's page shows one page, and the next
+ * is a key away). No PostScript: there is no interpreter of it here.
  *
- *   file's bytes --Pdf--> pages --Pdf_render, at a zoom--> a picture
+ *   file's bytes --Pdf--> pages --Pdf_render, at a zoom--> pictures
  *                                                             |
- *                         keys and mouse: which page, the     v
- *                         zoom, a turn, where it is      Bitmap, moved
+ *                     keys and mouse: which page, the         v
+ *                     zoom, a turn, how far down     the window's Bitmaps
  *
- * A page is drawn when it is first shown at a zoom and a turn, and
- * the last few pictures are kept (a page is megabytes): going back to
- * the page before is at once. The model is a value, as every
- * Playground program's; a page's picture is made in the update (the
- * view only shows), which is why a key that changes the page takes
- * the time of its drawing.
+ * A page is drawn when it first comes into the window at a zoom and a
+ * turn; the pictures in the window are kept, and the last few others
+ * (a page is megabytes): going back to the page before is at once.
+ * The model is a value, as every Playground program's; a page's
+ * picture is made in the update (the view only shows), which is why a
+ * key that changes the page takes the time of its drawing. Where a
+ * page is down the pages is worked out again each frame from the
+ * pages' sizes (tops): a thousand pages are a thousand additions,
+ * nothing next to drawing one.
  *
  * A picture (PNG, JPEG) is a document of one page, scaled and turned
  * as it is shown, not drawn again.
@@ -64,8 +69,8 @@ let usage =
   \  space, PageDown, right        the next page\n\
   \  Backspace, PageUp, left       the page before\n\
   \  a number, then Enter          that page\n\
-  \  up, down, the wheel           the page moved; past its end, the next or the one before\n\
-  \                                the mouse's button held drags it\n\
+  \  up, down, the wheel           the pages moved along\n\
+  \  the mouse's button held       drags them\n\
   \  + and -                       larger, smaller;  f  the window's width again\n\
   \  r                             a quarter turn;   q  the end\n"
 
@@ -111,121 +116,197 @@ type kept = { page : int; zoom : int; turn : int; image : Rgba_image.t }
 type model = {
   name : string;
   source : source;
-  page : int; (* from 0 *)
+  (* from 0: the one gone to, or at the window's middle once moved along *)
+  page : int;
   zoom : float; (* pixels a point *)
   turn : int; (* quarter turns, clockwise: 0 to 3 *)
-  (* where the page's centre is in the window *)
+  (* the pages one under another: how far down them the window's top
+   * is, in pixels, and where their middle is across the window *)
+  down : float;
   x : float;
-  y : float;
-  (* the last pictures drawn, the newest first *)
+  (* the pictures drawn, those in the window first *)
   kept : kept list;
   (* a page's number being typed *)
   number : string;
-  (* the frame before: the keys held, and where the mouse held the page *)
+  (* the frame before: the keys held, and where the mouse held the pages *)
   was : string list;
   held : (float * float) option;
   quit : unit -> unit;
 }
 
+(* pictures kept besides the window's *)
 let keep = 3
-let thousandths (zoom : float) : int = int_of_float (Float.round (zoom *. 1000.))
 
-(* the page's picture, drawn if it is not kept. A PDF's page is drawn
- * at the zoom and turned by the reader (sharp at any size); a picture
- * is kept as it is, and the view scales and turns it *)
-let drawn (m : model) : model =
+let thousandths (zoom : float) : int =
+  int_of_float (Float.round (zoom *. 1000.))
+
+(* points between two pages, and above the first and below the last *)
+let gap = 8.
+
+(* where each page's top is down the pages, in pixels; the last of the
+ * array is their whole height *)
+let tops (m : model) : float array =
+  let n = count m.source in
+  let a = Array.make (n + 1) (gap *. m.zoom) in
+  for i = 0 to n - 1 do
+    let _, h = size m.source i m.turn in
+    a.(i + 1) <- a.(i) +. ((h +. gap) *. m.zoom)
+  done;
+  a
+
+(* the window's height above the status line *)
+let status_line = 30.
+let room (s : Playground.screen) : float = s.height -. status_line
+
+(* the pages in the window *)
+let shown (s : Playground.screen) (m : model) : int list =
+  let tops = tops m in
+  let inside (i : int) =
+    tops.(i + 1) -. (gap *. m.zoom) > m.down && tops.(i) < m.down +. room s
+  in
+  List.filter inside (List.init (count m.source) (fun (i : int) -> i))
+
+(* the page at the window's middle *)
+let middle (s : Playground.screen) (m : model) : int =
+  let tops = tops m and at = m.down +. (room s /. 2.) in
+  let rec find (i : int) : int =
+    if i + 1 < count m.source && tops.(i + 1) <= at then find (i + 1) else i
+  in
+  find 0
+
+(* the window within the pages: not past their ends; pages shorter
+ * than the window in its middle *)
+let within (s : Playground.screen) (m : model) : model =
+  let total = (tops m).(count m.source) and room = room s in
+  let down =
+    if total <= room then (total -. room) /. 2.
+    else Float.max 0. (Float.min m.down (total -. room))
+  in
+  { m with down }
+
+(* the window's pages' pictures, drawn if they are not kept. A PDF's
+ * page is drawn at the zoom and turned by the reader (sharp at any
+ * size); a picture is kept as it is, and the view scales and turns it *)
+let drawn (s : Playground.screen) (m : model) : model =
   match m.source with
   | Pages (pdf, cache, pages) ->
       let zoom = thousandths m.zoom in
-      if List.exists (fun (k : kept) -> k.page = m.page && k.zoom = zoom && k.turn = m.turn) m.kept then m
-      else
-        let p = pages.(m.page) in
+      let is (i : int) (k : kept) =
+        k.page = i && k.zoom = zoom && k.turn = m.turn
+      in
+      let draw (i : int) : kept =
+        let p = pages.(i) in
         let p = { p with rotate = (p.rotate + (90 * m.turn)) mod 360 } in
-        let image = Pdf_render.render ~options:Pdf_render.full ~stroke_glyph:Pdf_render.hershey pdf cache p ~scale:m.zoom in
-        { m with kept = List.filteri (fun (i : int) (_ : kept) -> i < keep) ({ page = m.page; zoom; turn = m.turn; image } :: m.kept) }
+        let image =
+          Pdf_render.render ~options:Pdf_render.full
+            ~stroke_glyph:Pdf_render.hershey pdf cache p ~scale:m.zoom
+        in
+        { page = i; zoom; turn = m.turn; image }
+      in
+      let shown = shown s m in
+      let now =
+        List.map
+          (fun (i : int) ->
+            match List.find_opt (is i) m.kept with
+            | Some k -> k
+            | None -> draw i)
+          shown
+      in
+      let others =
+        List.filter
+          (fun (k : kept) -> not (List.exists (fun (i : int) -> is i k) shown))
+          m.kept
+      in
+      let others = List.filteri (fun (i : int) (_ : kept) -> i < keep) others in
+      { m with kept = now @ others }
   | Picture _ | Nothing _ -> m
 
-(* the window's width, less a margin each side, and where a page starts:
- * its top at the window's *)
-let room = 960.
-let top = 480.
-let fit (m : model) : model =
-  let w, h = size m.source m.page m.turn in
-  let zoom = match m.source with Picture _ -> Float.min 1. (room /. w) | Pages _ | Nothing _ -> room /. w in
-  { m with zoom; x = 0.; y = Float.min 0. (top -. (h *. zoom /. 2.)) }
+(* another page, its top at the window's *)
+let go (page : int) (m : model) : model =
+  let page = max 0 (min (count m.source - 1) page) in
+  { m with page; down = (tops m).(page) -. (gap *. m.zoom) }
+
+(* the page as wide as the window, less a margin each side (a picture:
+ * no larger than it is; no page: as it is), from its top *)
+let fit (width : float) (m : model) : model =
+  let w, _ = size m.source m.page m.turn in
+  let zoom = (width -. 40.) /. w in
+  let zoom =
+    match m.source with
+    | Picture _ -> Float.min 1. zoom
+    | Nothing _ -> 1.
+    | Pages _ -> zoom
+  in
+  go m.page { m with zoom; x = 0. }
 
 let start (name : string) (bytes : string) ~(quit : unit -> unit) : model =
-  drawn (fit { name; source = source bytes; page = 0; zoom = 1.; turn = 0; x = 0.; y = 0.; kept = []; number = ""; was = []; held = None; quit })
+  let s =
+    Playground.to_screen Playground.default_width Playground.default_height
+  in
+  let m =
+    { name; source = source bytes; page = 0; zoom = 1.; turn = 0;
+      down = 0.; x = 0.; kept = []; number = ""; was = []; held = None;
+      quit }
+  in
+  drawn s (within s (fit s.width m))
 
 (*****************************************************************************)
 (* The update *)
 (*****************************************************************************)
 
-(* another page, from its top *)
-let go (page : int) (m : model) : model =
-  let page = max 0 (min (count m.source - 1) page) in
-  if page = m.page then m
-  else
-    let m = { m with page } in
-    let _, h = size m.source m.page m.turn in
-    { m with x = 0.; y = Float.min 0. (top -. (h *. m.zoom /. 2.)) }
-
-let zoomed (by : float) (m : model) : model =
+let zoomed (s : Playground.screen) (by : float) (m : model) : model =
   let zoom = Float.max 0.1 (Float.min 8. (m.zoom *. by)) in
-  (* what is at the window's centre stays there *)
-  { m with zoom; x = m.x *. zoom /. m.zoom; y = m.y *. zoom /. m.zoom }
-
-(* the page moved by step (up the window when positive), no further
- * than its end. From an end already in the window the page after is
- * shown, from its top, or the one before, from its bottom, as Plan 9's
- * page; on a step of the wheel or a key pressed, not one held, which
- * would turn a page a frame *)
-let scrolled (s : Playground.screen) (step : float) ~(turns : bool) (m : model) : model =
-  let half = (snd (size m.source m.page m.turn) *. m.zoom) /. 2. in
-  (* above the status line *)
-  let bottom = s.bottom +. 30. in
-  if step > 0. then
-    if m.y -. half < bottom -. 0.5 then { m with y = Float.min (m.y +. step) (bottom +. half) }
-    else if turns then go (m.page + 1) m
-    else m
-  else if step < 0. then
-    if m.y +. half > s.top +. 0.5 then { m with y = Float.max (m.y +. step) (s.top -. half) }
-    else if turns && m.page > 0 then
-      let m = go (m.page - 1) m in
-      let half = (snd (size m.source m.page m.turn) *. m.zoom) /. 2. in
-      { m with y = Float.max 0. (bottom +. half) }
-    else m
-  else m
+  (* what is at the window's middle stays there *)
+  let half = room s /. 2. and by = zoom /. m.zoom in
+  { m with zoom; x = m.x *. by; down = ((m.down +. half) *. by) -. half }
 
 let update (computer : Playground.computer) (m : model) : model =
+  let s = computer.screen in
   let k = computer.keyboard and mouse = computer.mouse in
   let now = Set_.elements k.keys in
   let pressed (key : string) = List.mem key now && not (List.mem key m.was) in
-  let digits = String.concat "" (List.filter (fun (s : string) -> s >= "0" && s <= "9") (List.init (String.length k.typed) (fun (i : int) -> String.make 1 k.typed.[i]))) in
+  let digits =
+    String.concat ""
+      (List.filter
+         (fun (s : string) -> s >= "0" && s <= "9")
+         (List.init (String.length k.typed) (fun (i : int) ->
+              String.make 1 k.typed.[i])))
+  in
   let typed (c : char) = String.contains k.typed c in
   let m = { m with number = m.number ^ digits } in
   let m =
-    if pressed "Enter" && m.number <> "" then { (go (int_of_string m.number - 1) m) with number = "" }
+    if pressed "Enter" && m.number <> "" then
+      { (go (int_of_string m.number - 1) m) with number = "" }
     else if pressed "Escape" then { m with number = "" }
-    else if pressed "space" || pressed "PageDown" || pressed "ArrowRight" then go (m.page + 1) m
-    else if pressed "Backspace" || pressed "PageUp" || pressed "ArrowLeft" then go (m.page - 1) m
-    else if typed '+' || typed '=' then zoomed 1.25 m
-    else if typed '-' then zoomed 0.8 m
-    else if typed 'f' then fit m
-    else if typed 'r' then fit { m with turn = (m.turn + 1) mod 4 }
+    else if pressed "space" || pressed "PageDown" || pressed "ArrowRight"
+    then go (m.page + 1) m
+    else if pressed "Backspace" || pressed "PageUp" || pressed "ArrowLeft"
+    then go (m.page - 1) m
+    else if typed '+' || typed '=' then zoomed s 1.25 m
+    else if typed '-' then zoomed s 0.8 m
+    else if typed 'f' then fit s.width m
+    else if typed 'r' then fit s.width { m with turn = (m.turn + 1) mod 4 }
     else if typed 'q' then (m.quit (); m)
     else m
   in
-  (* the page moved: the arrows held, the wheel, the mouse dragging it *)
-  let step = (if k.kup then -30. else 0.) +. (if k.kdown then 30. else 0.) -. (mouse.mwheel *. 60.) in
-  let m = scrolled computer.screen step ~turns:(mouse.mwheel <> 0. || pressed "ArrowUp" || pressed "ArrowDown") m in
+  let m = within s m in
+  (* the pages moved along: the arrows held, the wheel, the mouse
+   * dragging them; the page is then the one at the middle *)
+  let step =
+    (if k.kup then -30. else 0.) +. (if k.kdown then 30. else 0.)
+    -. (mouse.mwheel *. 60.)
+  in
+  let before = m.down in
+  let m = { m with down = m.down +. step } in
   let m =
     match (mouse.mdown, m.held) with
-    | true, Some (hx, hy) -> { m with x = mouse.mx -. hx; y = mouse.my -. hy }
-    | true, None -> { m with held = Some (mouse.mx -. m.x, mouse.my -. m.y) }
+    | true, Some (hx, hy) -> { m with x = mouse.mx -. hx; down = mouse.my +. hy }
+    | true, None -> { m with held = Some (mouse.mx -. m.x, m.down -. mouse.my) }
     | false, _ -> { m with held = None }
   in
-  drawn { m with was = now }
+  let m = within s m in
+  let m = if m.down <> before then { m with page = middle s m } else m in
+  drawn s { m with was = now }
 
 (*****************************************************************************)
 (* The view *)
@@ -233,35 +314,52 @@ let update (computer : Playground.computer) (m : model) : model =
 
 let view (computer : Playground.computer) (m : model) : Playground.shape list =
   let s = computer.screen in
-  let w, h = size m.source m.page m.turn in
-  let page =
+  let tops = tops m in
+  let page (i : int) : Playground.shape list =
+    (* its middle, up the window *)
+    let _, h = size m.source i m.turn in
+    let y = s.top -. (tops.(i) +. (h *. m.zoom /. 2.) -. m.down) in
     match m.source with
     | Pages _ -> (
         let zoom = thousandths m.zoom in
-        match List.find_opt (fun (k : kept) -> k.page = m.page && k.zoom = zoom && k.turn = m.turn) m.kept with
+        let is (k : kept) = k.page = i && k.zoom = zoom && k.turn = m.turn in
+        match List.find_opt is m.kept with
         | Some k ->
             (* its corner on a pixel, not its centre (a picture of an odd
              * width has its centre in the middle of one): the pixels are
              * then shown as they are, none blended with its neighbour *)
             let w = float k.image.width and h = float k.image.height in
-            let on_pixel (centre : float) (size : float) = Float.round (centre -. (size /. 2.)) +. (size /. 2.) in
-            [ Playground.bitmap w h k.image |> Playground.move (on_pixel m.x w) (on_pixel m.y h) ]
+            let on_pixel (centre : float) (size : float) =
+              Float.round (centre -. (size /. 2.)) +. (size /. 2.)
+            in
+            [ Playground.bitmap w h k.image
+              |> Playground.move (on_pixel m.x w) (on_pixel y h) ]
         | None -> [])
     | Picture img ->
         (* (turned by the shape's angle, which goes the other way) *)
-        [ Playground.bitmap (float img.width *. m.zoom) (float img.height *. m.zoom) img |> Playground.rotate (-90. *. float m.turn) |> Playground.move m.x m.y ]
+        let w = float img.width *. m.zoom and h = float img.height *. m.zoom in
+        [ Playground.bitmap w h img
+          |> Playground.rotate (-90. *. float m.turn)
+          |> Playground.move m.x y ]
     | Nothing why -> [ Playground.words Playground.black why ]
   in
+  let w, h = size m.source m.page m.turn in
   let status =
-    Printf.sprintf "%s     page %d of %d     %d%%     %d by %d%s" m.name (m.page + 1) (count m.source)
+    Printf.sprintf "%s     page %d of %d     %d%%     %d by %d%s" m.name
+      (m.page + 1) (count m.source)
       (int_of_float (Float.round (m.zoom *. 100.)))
       (int_of_float (Float.round w)) (int_of_float (Float.round h))
       (if m.number = "" then "" else "     go to page " ^ m.number)
   in
-  (Playground.rectangle (Playground.rgb 120 120 128) s.width s.height :: page)
+  let grey = Playground.rgb 120 120 128 in
+  let bar = s.bottom +. (status_line /. 2.) in
+  (Playground.rectangle grey s.width s.height
+   :: List.concat_map page (shown s m))
   @ [
-      Playground.rectangle (Playground.rgb 225 225 225) s.width 30. |> Playground.move 0. (s.bottom +. 15.);
-      Playground.words (Playground.rgb 40 40 40) status |> Playground.move 0. (s.bottom +. 15.);
+      Playground.rectangle (Playground.rgb 225 225 225) s.width status_line
+      |> Playground.move 0. bar;
+      Playground.words (Playground.rgb 40 40 40) status
+      |> Playground.move 0. bar;
     ]
 
 (*****************************************************************************)

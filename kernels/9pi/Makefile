@@ -872,6 +872,9 @@ endef
 #              docs/man, written in the new format), with troff's
 #              page as a PDF file too (/lib/pdf/troff.pdf;
 #              docs/plans/plan_typesetting.md, stage 8)
+#              and a book of principia's, when it is there: its
+#              Kernel, 1083 pages, 3 MB (page /lib/pdf/kernel.pdf:
+#              what mini-page is most used for; BOOKS=, its clone)
 #              and six small files of sound for play (/lib/sounds:
 #              a MOD, a MIDI file, an ABC tune, two MP3s, an MP2:
 #              lib_audio/tests/data's; play /lib/sounds/tune.mod:
@@ -933,6 +936,9 @@ CARD_FS = build/card-fs.img
 # its files and directories, at most: xv6's 200 were full at the
 # manual's 93 pages (2026-10-14)
 CARD_FS_INODES = 1024
+# (principia's book: on the card if the clone is there, else not)
+BOOKS ?= $(HOME)/github/principia-softwarica
+CARD_BOOK = $(if $(wildcard $(BOOKS)/kernel/Kernel-12.pdf),lib/pdf/kernel.pdf=$(BOOKS)/kernel/Kernel-12.pdf)
 # the manual's pages, ix's own (docs/man/1), named without their .md
 # as Plan 9's are; not turbopascal-tty's, of a program not on the card
 # (old: its name longer than the card's file system took, 14 letters)
@@ -940,6 +946,7 @@ CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/m
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
   $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
+  $(CARD_BOOK) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
   lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \

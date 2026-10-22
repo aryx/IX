@@ -17,7 +17,7 @@ type t = {
   bytes : string;
   places : (int, place) Hashtbl.t;
   objects : (int, Pdf_object.t) Hashtbl.t; (* those read so far *)
-  unpacked : (int, Pdf_object.t array) Hashtbl.t; (* a packing stream's objects: those of the last few read *)
+  unpacked : (int, string * int array) Hashtbl.t; (* a packing stream's text and where each of its objects is: those of the last few read *)
   mutable trailer : dict;
 }
 
@@ -29,7 +29,10 @@ type page = {
   number : int;
 }
 
-let kept_unpacked = 4
+(* (16: a stream kept is its text now, its objects not parsed; a book's
+ * pages listed unpacked its 268 streams 393 times by 4, 298 by 16:
+ * 0.41 s to 0.32. old: 4) *)
+let kept_unpacked = 16
 
 (* the object "n g obj" at a place *)
 let rec object_at (t : t) (at : int) : Pdf_object.t =
@@ -50,7 +53,11 @@ and resolve (t : t) (v : Pdf_object.t) : Pdf_object.t =
           let o =
             match Hashtbl.find_opt t.places n with
             | Some (At at) -> ( try object_at t at with _ -> Null)
-            | Some (Packed (container, index)) -> ( try (packed t container).(index) with _ -> Null)
+            | Some (Packed (container, index)) -> (
+                try
+                  let data, at = packed t container in
+                  fst (parse data at.(index))
+                with _ -> Null)
             | None -> Null
           in
           let o = match o with Ref _ -> resolve t o | o -> o in
@@ -59,8 +66,13 @@ and resolve (t : t) (v : Pdf_object.t) : Pdf_object.t =
   | v -> v
 
 (* the objects packed in a stream: n pairs of a number and an offset,
- * then the objects themselves *)
-and packed (t : t) (container : int) : Pdf_object.t array =
+ * then the objects themselves, each parsed when it is asked for.
+ * ix: where all were parsed at once: a book of pdfTeX's has its pages
+ * in nearly all its streams, a hundred objects or two in each, and
+ * listing its pages parsed the whole file (principia's Kernel, 1083
+ * pages: 0.55 s of the 0.83 Pdf.pages took, OCaml's code; under QEMU
+ * on mini-9pi more than a minute before the first page) *)
+and packed (t : t) (container : int) : string * int array =
   match Hashtbl.find_opt t.unpacked container with
   | Some objects -> objects
   | None ->
@@ -71,8 +83,8 @@ and packed (t : t) (container : int) : Pdf_object.t array =
             let int key = match List.assoc_opt key d with Some v -> to_int (resolve t v) | None -> 0 in
             let first = int "First" in
             let rec offsets i k acc = if k = 0 then List.rev acc else let _, i = parse data i in let o, i = parse data i in offsets i (k - 1) (to_int o :: acc) in
-            Array.of_list (List.map (fun o -> fst (parse data (first + o))) (offsets 0 (int "N") []))
-        | _ -> [||]
+            (data, Array.of_list (List.map (fun o -> first + o) (offsets 0 (int "N") [])))
+        | _ -> ("", [||])
       in
       (* ix: the last few only. A file of pdfTeX's has nearly all its
        * objects in such streams, a hundred or two in each, and its

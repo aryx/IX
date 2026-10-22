@@ -192,6 +192,10 @@ type model = {
    * compared to the last one down to the pages' pixels, and every
    * frame was shown again, 155 ms a frame under QEMU) *)
   last : (view_key * Playground.shape list) option ref;
+  (* the pages' tops (tops) at a zoom and a turn: a book's thousand
+   * pages were gone through several times a frame, 65 ms of each under
+   * QEMU (principia's Kernel, 1083 pages) *)
+  tops : (float * int * float array) option ref;
 }
 
 (* the status line, down, across, the zoom, the turn, the screen's size,
@@ -212,13 +216,17 @@ let gap = 8.
 (* where each page's top is down the pages, in pixels; the last of the
  * array is their whole height *)
 let tops (m : model) : float array =
-  let n = count m.source in
-  let a = Array.make (n + 1) (gap *. m.zoom) in
-  for i = 0 to n - 1 do
-    let _, h = size m.source i m.turn in
-    a.(i + 1) <- a.(i) +. ((h +. gap) *. m.zoom)
-  done;
-  a
+  match !(m.tops) with
+  | Some (zoom, turn, a) when zoom = m.zoom && turn = m.turn -> a
+  | _ ->
+      let n = count m.source in
+      let a = Array.make (n + 1) (gap *. m.zoom) in
+      for i = 0 to n - 1 do
+        let _, h = size m.source i m.turn in
+        a.(i + 1) <- a.(i) +. ((h +. gap) *. m.zoom)
+      done;
+      m.tops := Some (m.zoom, m.turn, a);
+      a
 
 (* the window's height above the status line *)
 let status_line = 30.
@@ -321,7 +329,7 @@ let start (name : string) (bytes : string) ~(was : place option)
       back = [];
       was = []; held = None; pressed = (0., 0.); hand = false;
       place = (0., 1., 0); still = 0; saved = (0., 1., 0); remember; quit;
-      open_url; last = ref None }
+      open_url; last = ref None; tops = ref None }
   in
   let m = within s (fit s.width m) in
   let m =

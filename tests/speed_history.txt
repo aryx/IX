@@ -14,3 +14,4 @@
 2026-10-22 17d84027 doom-linux  446.3 fps
 2026-10-22 a87e5c73 page-linux   68.4 fps
 2026-10-22 a87e5c73 doom-linux  458.0 fps
+2026-10-22 62ee342d page-linux   70.5 fps

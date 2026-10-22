@@ -20,9 +20,7 @@
 # compat/ (a reference's exact output), opti/ and ssa/ (optimizations),
 # the kernel's steps, the kernels' reference build (by ocaml-light
 # and gcc) with mini-9pi's pixels in C, the runtime's header for gcc
-# (gnu.h), the games' software platform
-# (lib_graphics/software/ and the playground's platform over it; the
-# games draw by the draw device), the systems of kernels/ that
+# (gnu.h), the systems of kernels/ that
 # are not mini-9pi's (mini-xv6, mini-oberon, mini-singularity...),
 # mini-smalltalk, which is mini-squeak's, and the playground's
 # languages (mini-scheme, mini-pascal with lib_terminal/) and their
@@ -350,11 +348,22 @@ def files():
 
 # the entries said on a line of their own, after a name and their sum
 # (without -v): the author, 2026-10-22, "maybe sdl/ tty/ web in one
-# group and opti/ ssa/ compat/ in another line"; then kernels/ and
-# languages/, whose entries are said without the directory
+# group and opti/ ssa/ compat/ in another line"; then, the same day,
+# "I like the grouping like hosts: variants: kernels: languages:, maybe
+# we can have more of that": the other routes (gnu.h, the pixels in C)
+# with the variants, a tiny/ group. kernels/ and languages/ take every
+# entry under them, said without the directory, and those of GROUP_OF
 LINES = [("hosts", ["sdl/", "tty/", "web/"]),
-         ("variants", ["compat/", "opti/", "ssa/"]),
+         ("variants", ["compat/", "opti/", "ssa/", "runtime/gnu.h",
+                       "lib_graphics/c/"]),
+         ("tiny/", ["tiny/TinyKernel/steps/", "tiny-kernel's sh.c, mltests.c",
+                    "tiny/TinyEditorLine.ml"]),
          ("kernels/", None), ("languages/", None)]
+# an entry in a group its name does not start with, and how it is said
+GROUP_OF = {"the reference kernels": "kernels/",
+            "editors/drscheme/, turbopascal/": "languages/"}
+SHORT = {"the reference kernels": "the reference ones",
+         "tiny-kernel's sh.c, mltests.c": "TinyKernel/user/sh.c, mltests.c"}
 
 # What is not counted in m-ix, but said at the end, each with its
 # lines: alternatives and options, which ix builds and runs the same
@@ -388,8 +397,9 @@ APART = [
     # rasterizers by Shape_render_software, and the author: "yes the
     # decoders should count, and as we currently optimize the
     # playground, we might need more of lib_graphics to be counted")
-    ("the software platform", "the games' pixels by the program (PLATFORM=software): they draw by the draw device",
-     lambda dirs, path: path.startswith("lib_playground/platforms/software/")),
+    # (then lib_playground/platforms/software/ alone, about 100 lines,
+    # until the author, 2026-10-22: "let's remove the 'software
+    # platform' since it's very few LOC": counted)
     # (the author, 2026-10-08: "let's adjust make loc to not count
     # those languages too"; lib_terminal/ is what Pascal's machine
     # talks through, and nothing else's yet)
@@ -421,11 +431,10 @@ APART = [
     # (tiny/TinyKernel/examples/ was here, 2026-10-17 to 10-22, the author
     # then: "is also small (70 lines) so we can probably not count it; not
     # worth the space it takes in the final make loc output": in t-ix)
-    # (the author, 2026-10-22, after a server that speaks no 1.3: "let's
-    # add TLS 1.2, and maybe skip it in 'make loc'"; Tls13's branches to
-    # it and Ecdsa.multiply are counted, about 60 lines)
-    ("TLS 1.2", "Tls12, for the servers that have no 1.3 (a university's, craigslist)",
-     lambda dirs, path: path.startswith("lib_networking/tls/Tls12.ml")),
+    # (TLS 1.2, Tls12, was here on 2026-10-22, the author after a server
+    # that speaks no 1.3: "let's add TLS 1.2, and maybe skip it in 'make
+    # loc'"; then, the same day: "it's not that big and it's required
+    # for many sites so let's count it")
     # (the author, 2026-10-17: "for make loc we should not count sh.c and
     # mltests.c under TinyKernel/"; rc is t-ix's shell, TinyShell.ml)
     ("tiny-kernel's sh.c, mltests.c", "its first shell, in C, before rc (TinyShell.ml), still the console's; and the test of its ML programs' calls",
@@ -669,10 +678,9 @@ def main():
         # (a LINES group's in its order)
         place = {n: i for _, names in LINES for i, n in enumerate(names or [])}
         for name, _ in sorted(there, key=lambda e: place.get(e[0], 0)):
-            group = next((g for g, names in LINES if (name in names if names else name.startswith(g))), "")
-            short = name[len(group):] if group.endswith("/") else name
-            if name == "the reference kernels":
-                group, short = "kernels/", "the reference ones"
+            group = GROUP_OF.get(name) or next(
+                (g for g, names in LINES if (name in names if names else name.startswith(g))), "")
+            short = SHORT.get(name) or (name[len(group):] if name.startswith(group) else name)
             groups[group].append(f"{short} {extra[name]['lines']:,}")
             sums[group] += extra[name]["lines"]
         for group, items in groups.items():

@@ -29,9 +29,9 @@ is to be weighed.
     the steps mini-xv6 was built up by; the reference kernels' own
     files (ocaml-light's and gcc's start and C library); mini-9pi's
     pixels in C (`lib_graphics/c/`);
-  - the games' software platform (since 2026-10-07; in m-ix before):
-    `lib_graphics/software/` and `lib_playground/platforms/software/`,
-    the pixels by the program; the games draw by the draw device.
+  - the games' software platform (2026-10-07 to 2026-10-22; counted
+    again since, `lib_graphics/software/` from `e833ae2a`, then
+    `lib_playground/platforms/software/`'s 100 lines).
 - **t-ix**: the tiny programs (`tiny/`), each a file, with what a
   program has beside its file, in a directory of its name:
   `tiny/TinyC/` (tiny-c -tm's C library), `tiny/TinyML/` (tiny-ml's

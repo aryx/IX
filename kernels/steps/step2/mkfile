@@ -55,6 +55,7 @@ check:V: $D/kernel8.img
 		timeout 10 $QEMU $boot $QEMUSMP -display none -monitor none -serial file:$D/qemu.txt < /dev/null >[2]/dev/null || true
 		cmp $D/qemu.txt expected && echo 'ok step2: under QEMU'
 	}
+	if not echo 'step2: no QEMU, not booted under it'
 
 clean:V:
 	rm -rf $D

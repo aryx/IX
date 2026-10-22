@@ -43362,3 +43362,66 @@ Claude also left mini-ld's memory limit and the netscape link failure for anothe
 **Yoann:**
 
 > under m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:31
+
+**Yoann:**
+
+> great improvement
+
+**Claude (summary):**
+
+Claude traced the earlier failure to its own test, not the script under test.
+Claude had passed LIBDIRS to rc as one bash string, but mini-mk hands rc a list.
+Claude rewrote the test to use mk's list syntax for LIBDIRS.
+Claude retested through mini-mk itself, and the expected message still came out correctly.
+Claude then ran `make test-lite` to confirm the fix end to end.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:39
+
+**Yoann:**
+
+> let's commit, great work
+
+**Claude (summary):**
+
+Claude committed the work as 112d2442, covering the mkfiles, test-speed, and dune fixes.
+Claude staged only its own files by pathspec, so other sessions' edits stayed out of the commit.
+Claude left docs/yoann_notes/prompt-history.md (staged) and kernels/9pi/tests/self* uncommitted, flagging them as another session's work.
+Claude ran make test-lite and dune build, both passing, but skipped the card's self-quick build and cameltry measure.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:34
+
+**Yoann:**
+
+> like we do for the self-quick for t-ix
+
+**Claude (summary):**
+
+Claude explained that ix's libc has no `print`, so the new test programs use `write` and `exits` instead.
+Claude added `hello-c` (712 bytes, from `hello.c`) and `hello-ml` (100 KB, from `Hello.ml`) under `kernels/9pi/tests/self/`, with their own mkfile.
+Claude wired both into `self.rc -q` and `self.sh`, which runs them on the card and fails if either expected line is missing.
+Claude ran `make self-quick` in `kernels/9pi`: it passed in 4 min 6 s, both lines appeared, and the 66 files matched Linux byte for byte.
+Claude committed the change as 1b80ce51 after updating the "no link" comments, and noted that the top-level `make self-quick` was not re-run.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:45
+
+**Yoann:**
+
+> great! let's commit, and I guess we can close this session
+
+**Claude (summary):**
+
+Claude said nothing was left to commit, because all of this session's work was already in.
+Claude listed the last three commits: ca664887 (Kfs cache fix), 9e096d2b (make self targets), and 1b80ce51 (m-ix self-quick).
+Claude noted the remaining working-tree changes belong to other sessions: lib_graphics, lib_playground, speed notes, and prompt history.
+Claude pointed out that none of those other-session changes were committed here, so nothing was added to this session's commits.
+Claude also covered the overnight `make self` run, the expected netscape link failure, and the follow-up items for later sessions.

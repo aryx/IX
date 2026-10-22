@@ -24,7 +24,7 @@ let filled (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (rgb : int)
   end
 
 (* [m]: the form's own coordinates to the content's *)
-let form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t) (alpha : float) (form : Playground.form) : unit =
+let rec form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t) (alpha : float) (shape_form : Playground.form) : unit =
   let polygon (rgb : int) (corners : (float * float) list) =
     filled file c st rgb alpha;
     Pdf_write.polygon c (List.map (Affine.apply m) corners);
@@ -35,7 +35,7 @@ let form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t
     Pdf_write.ellipse c m ~rx ~ry;
     Pdf_write.fill c
   in
-  match form with
+  match shape_form with
   | Rectangle (color, w, h) -> polygon (Shape_render_software.rgb_of_color color) (Shape_render_software.rectangle_corners w h)
   | Polygon (color, points) -> polygon (Shape_render_software.rgb_of_color color) points
   | Ngon (color, n, r) -> polygon (Shape_render_software.rgb_of_color color) (Shape_render_software.ngon_corners n r)
@@ -50,6 +50,8 @@ let form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affine.t
       Pdf_write.transform c (Affine.compose m (Affine.compose (Affine.translate (-.w /. 2.) (-.h /. 2.)) (Affine.scale w h)));
       Pdf_write.draw c (Pdf_write.picture file img);
       Pdf_write.restore c
+  (* ix: its RGBA, a pixel a pixel *)
+  | Pixels (w, h, p) -> form file c st m alpha (Bitmap (w, h, Shape_render_software.pixels_rgba p 1))
   | Words (color, str) ->
       let rgb = Shape_render_software.rgb_of_color color in
       let strokes, width = Hershey.layout str in

@@ -152,6 +152,8 @@ let rec transform (m : linear) (s : shape) : shape =
   | Image _ -> even ()
   | Bitmap (w, h, img) when diagonal l -> baked (Bitmap (w *. Float.abs l.a, h *. Float.abs l.d, img))
   | Bitmap _ -> even ()
+  | Pixels (w, h, px) when diagonal l -> baked (Pixels (w *. Float.abs l.a, h *. Float.abs l.d, px))
+  | Pixels _ -> even ()
   | Circle (color, r) when diagonal l -> baked (Oval (color, 2. *. r *. Float.abs l.a, 2. *. r *. Float.abs l.d))
   | Oval (color, w, h) when diagonal l -> baked (Oval (color, w *. Float.abs l.a, h *. Float.abs l.d))
   | Rectangle (color, w, h) when diagonal l -> baked (Rectangle (color, w *. Float.abs l.a, h *. Float.abs l.d))
@@ -177,7 +179,7 @@ let rec whiten (s : shape) : shape =
     | Polygon (_, points) -> Polygon (white, points)
     | Words (_, text) -> Words (white, text)
     | Letters (_, l) -> Letters (white, l)
-    | (Image _ | Bitmap _) as image -> image
+    | (Image _ | Bitmap _ | Pixels _) as image -> image
     | Group shapes -> Group (List.map whiten shapes)
   in
   { s with form }

@@ -101,6 +101,9 @@ val length_scale : Affine.t -> float
  * them *)
 val draw_pixels : Framebuffer.t -> Affine.t -> w:float -> h:float -> Rgba_image.t -> alpha:float -> unit
 
+(* ix: [pixels_rgba p k]: a Pixels' picture as RGBA, each pixel k by k *)
+val pixels_rgba : Playground.pixels -> int -> Rgba_image.t
+
 (* ix: [mask_of ~aa m letters s ~qx ~qy]: the letter [s] in [letters]'
  * look, by m's turn and scale (not its move), placed qx and qy
  * quarters of a pixel right and down: how much of each pixel of a

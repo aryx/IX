@@ -62,11 +62,10 @@ type model = {
    * frame's shapes with the last's (Redraw), which must not be the same
    * bytes changed; and each frame's picture a new value over them
    * ([view]) *)
-  images : Rgba_image.t array;
+  screens : Bytes.t array;
   mutable frames : int;
-  scale : int;
-  (* each index's pixel, four bytes *)
-  rgba : Bytes.t;
+  (* the palette, r g b an index *)
+  palette : string;
   mutable last : float; (* the time of the last frame *)
   mutable pending : float; (* the time not yet made tics *)
   (* use pressed since the last tic: a frame's press between two tics
@@ -77,29 +76,16 @@ type model = {
   mutable before : float * float * float * float;
 }
 
-(* Doom's picture, the platform's pixels: each byte its colour, n by n *)
-let to_rgba (m : model) : unit =
-  let src = Render.screen m.render and w = Render.width m.render and h = Render.height m.render in
-  let k = m.scale and dst = m.images.(m.frames land 1).rgba and rgba = m.rgba in
-  let row = 4 * w * k in
-  for y = 0 to h - 1 do
-    let o = ref (y * k * row) in
-    for x = 0 to w - 1 do
-      let c = 4 * Char.code (Bytes.unsafe_get src ((y * w) + x)) in
-      (* (four stores, not a blit: a call of C a pixel by mini-ml's code) *)
-      let r = Bytes.unsafe_get rgba c and g = Bytes.unsafe_get rgba (c + 1) and b = Bytes.unsafe_get rgba (c + 2) in
-      for _n = 1 to k do
-        let i = !o in
-        Bytes.unsafe_set dst i r;
-        Bytes.unsafe_set dst (i + 1) g;
-        Bytes.unsafe_set dst (i + 2) b;
-        Bytes.unsafe_set dst (i + 3) '\255';
-        o := i + 4
-      done
-    done;
-    (* (the row's copies below it) *)
-    for j = 1 to k - 1 do Bytes.blit dst (y * k * row) dst (((y * k) + j) * row) row done
-  done
+(* Doom's picture as it is, 320 by 200 bytes of the palette, given to
+ * the platform (a Pixels shape), which makes of it what its device
+ * wants: the screen's format on Plan 9, RGBA elsewhere, each pixel n by
+ * n (docs/plans/plan_playground_framebuffer.md, F2).
+ * old: made RGBA here, each pixel n by n (to_rgba), 30% of a frame on
+ * the Pi 2 by mini-ml's code; the draw platform then made it again in
+ * the screen's format *)
+let snapshot (m : model) : unit =
+  let src = Render.screen m.render in
+  Bytes.blit src 0 m.screens.(m.frames land 1) 0 (Bytes.length src)
 
 let tics_a_second = 35.
 
@@ -122,7 +108,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let x, y, z, angle = eye m in
   Render.frame m.render m.play.level m.play.textures m.sprites m.play.by_sector m.play.tic x y z angle;
   m.frames <- m.frames + 1;
-  to_rgba m;
+  snapshot m;
   let screen = computer.screen in
   (* (as many units as the platform has pixels: the window's, or the
    * square's at size=320n) *)
@@ -138,7 +124,9 @@ let view (computer : P.computer) (m : model) : P.shape list =
    * found by the value itself (==), and a picture changed in place was
    * shown as it was the first time: on mini-9pi the eye never moved,
    * the author: "I see 15fps but I can't do anything") *)
-  @ [ P.bitmap w h { (m.images.(m.frames land 1)) with width = Render.width m.render * m.scale } ]
+  @ [ P.pixels w h
+        { pwidth = Render.width m.render; pheight = Render.height m.render; indices = m.screens.(m.frames land 1);
+          palette = m.palette } ]
   @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
   @
   if m.play.exited then
@@ -197,15 +185,9 @@ let () =
            let level = Level.load wad map texture (Textures.flat textures) in
            let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> n | _ -> if Sys.os_type = "Plan9" then 1 else 2 in
            let render = Render.create 320 200 in
-           let image () : Rgba_image.t = Rgba_image.create ~width:(320 * scale) ~height:(200 * scale) in
-           let rgba = Bytes.create 1024 in
-           Array.iteri
-             (fun (i : int) (c : int) ->
-               Bytes.set rgba (4 * i) (Char.chr ((c lsr 16) land 255));
-               Bytes.set rgba ((4 * i) + 1) (Char.chr ((c lsr 8) land 255));
-               Bytes.set rgba ((4 * i) + 2) (Char.chr (c land 255));
-               Bytes.set rgba ((4 * i) + 3) '\255')
-             textures.palette;
+           let palette =
+             String.init 768 (fun (k : int) -> Char.chr ((textures.palette.(k / 3) lsr (8 * (2 - (k mod 3)))) land 255))
+           in
            let play = Play.create level textures (flag "monsters" <> None) in
            (* (things=off: none drawn, a test's: tests/compare.sh) *)
            if flag "things" = Some "off" then List.iter (fun (m : Things.mobj) -> m.alive <- false) play.things;
@@ -215,7 +197,7 @@ let () =
                let a = match Option.bind (flag "angle") float_of_string_opt with Some a -> a | None -> 0. in
                Play.place play x y (a *. 4. *. atan 1. /. 180.)
            | _ -> ());
-           let model = { play; sprites = Things.load wad; render; images = [| image (); image () |]; frames = 0; scale; rgba; last = 0.; pending = 0.; use_pressed = false;
+           let model = { play; sprites = Things.load wad; render; screens = [| Bytes.create (320 * 200); Bytes.create (320 * 200) |]; frames = 0; palette; last = 0.; pending = 0.; use_pressed = false;
                before = (play.player.x, play.player.y, play.player.viewz, play.player.angle) } in
            (* the window the picture's size, a unit a pixel (SDL's,
             * ppm's: Session.window); the Plan 9 platforms' square of

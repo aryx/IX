@@ -264,6 +264,7 @@ and form =
   | Polygon of color * (number * number) list
   | Image of number * number * string
   | Bitmap of number * number * Rgba_image.t
+  | Pixels of number * number * pixels
   | Words of color * string
   | Letters of color * letters
   | Group of shape list
@@ -274,6 +275,18 @@ and form =
  * platform knows it is text, and may keep a letter it has drawn (the
  * software renderer, a mask a letter; docs/notes_font.md) *)
 and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
+
+(* ix: a picture of a palette's colours, a byte a pixel, row by row
+ * from the top: each byte the index of its colour in the palette (256
+ * of r g b, 768 bytes). A game that makes its own pixels this way
+ * (mini-doom, mini-quake: 320 by 200 bytes) gives them as they are,
+ * and each platform makes what its device wants of them, once: the
+ * screen's own format on Plan 9's draw device (two bytes a pixel at
+ * 16 bits, from a table of 256), RGBA elsewhere
+ * (docs/plans/plan_playground_framebuffer.md, F2). Shown at a whole
+ * multiple of its size, each pixel is that many by that many; at
+ * another size it is scaled as a Bitmap is. *)
+and pixels = { pwidth : int; pheight : int; indices : Bytes.t; palette : string }
 
 (** {2 Basic Shapes } *)
 
@@ -447,6 +460,11 @@ val image : number -> number -> string -> shape
     each new image is encoded as a PNG, fine for a picture, slow for a
     video. *)
 val bitmap : number -> number -> Rgba_image.t -> shape
+
+(* ix: [pixels w h p]: a picture of palette indices (the type pixels,
+ * above) in a box of w by h; as a bitmap's, give a new value for a new
+ * picture (a platform compares a frame's shapes with the last's) *)
+val pixels : number -> number -> pixels -> shape
 
 (** {2 Words } *)
 

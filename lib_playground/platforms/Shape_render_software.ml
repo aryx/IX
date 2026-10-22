@@ -133,7 +133,7 @@ let local_bounds (form : Playground.form) : (float * float * float * float) opti
   let centered w h = Some (-.w /. 2., -.h /. 2., w /. 2., h /. 2.) in
   match form with
   | Circle (_, r) | Ngon (_, _, r) -> centered (2. *. r) (2. *. r)
-  | Oval (_, w, h) | Rectangle (_, w, h) | Image (w, h, _) | Bitmap (w, h, _) -> centered w h
+  | Oval (_, w, h) | Rectangle (_, w, h) | Image (w, h, _) | Bitmap (w, h, _) | Pixels (w, h, _) -> centered w h
   | Polygon (_, []) -> None
   | Polygon (_, points) ->
       let xs = List.map fst points and ys = List.map snd points in
@@ -181,6 +181,30 @@ let draw_pixels (fb : Framebuffer.t) (m : Affine.t) ~w ~h (image : Rgba_image.t)
   let m = Affine.compose m (image_to_local ~w ~h image) in
   let as_it_is = m.a = 1. && m.d = 1. && m.b = 0. && m.c = 0. && Float.round m.tx = m.tx && Float.round m.ty = m.ty in
   Blit.draw fb image m ~filter:(if as_it_is then Blit.Nearest else Blit.Bilinear) ~alpha
+
+(* ix: a Pixels' picture as RGBA, each pixel k by k *)
+(* each index's four bytes, then each row's k copies of each pixel and
+ * the row's k - 1 copies under it *)
+let pixels_rgba (p : Playground.pixels) (k : int) : Rgba_image.t =
+  let img = Rgba_image.create ~width:(p.pwidth * k) ~height:(p.pheight * k) in
+  let rgba = Bytes.create 1024 in
+  for i = 0 to 255 do
+    for c = 0 to 2 do Bytes.set rgba ((4 * i) + c) p.palette.[(3 * i) + c] done;
+    Bytes.set rgba ((4 * i) + 3) '\255'
+  done;
+  let dst = img.rgba and w = p.pwidth and row = 4 * p.pwidth * k in
+  for y = 0 to p.pheight - 1 do
+    let o = ref (y * k * row) in
+    for x = 0 to w - 1 do
+      let c = 4 * Char.code (Bytes.unsafe_get p.indices ((y * w) + x)) in
+      for _n = 1 to k do
+        Bytes.blit rgba c dst !o 4;
+        o := !o + 4
+      done
+    done;
+    for j = 1 to k - 1 do Bytes.blit dst (y * k * row) dst (((y * k) + j) * row) row done
+  done;
+  img
 
 (*****************************************************************************)
 (* Text *)
@@ -378,7 +402,7 @@ let form_rgb (form : Playground.form) : int =
   | Words (color, _)
   | Letters (color, _) ->
       rgb_of_color color
-  | Image _ | Bitmap _ | Group _ -> image_placeholder_rgb
+  | Image _ | Bitmap _ | Pixels _ | Group _ -> image_placeholder_rgb
 
 (* A (non-group) form, [m] taking its local coordinates to pixels *)
 let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : Playground.form) ~rgb ~alpha =
@@ -396,6 +420,11 @@ let render_form (options : options) (fb : Framebuffer.t) (m : Affine.t) (form : 
   (* ix: a file's picture is its box: no file is fetched here *)
   | Image (w, h, _) -> polygon (rectangle_corners w h)
   | Bitmap (w, h, img) -> draw_pixels fb m ~w ~h img ~alpha
+  (* ix: as many times its size as its box is in pixels, a whole number:
+   * then drawn as it is *)
+  | Pixels (w, h, p) ->
+      let k = max 1 (int_of_float (Float.round (Float.abs m.a *. w /. float p.pwidth))) in
+      draw_pixels fb m ~w ~h (pixels_rgba p k) ~alpha
   | Words (_, str) -> draw_words options fb m str ~rgb ~alpha
   | Letters (_, l) -> draw_letters options fb m l ~rgb ~alpha
   | Group _ -> ()

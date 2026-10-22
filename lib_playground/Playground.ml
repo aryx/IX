@@ -166,6 +166,8 @@ and form =
   (* claude: an image already in memory, its pixels given (a video's
    * frame, a picture decoded by the program) *)
   | Bitmap of number (* width *) * number (* height *) * Rgba_image.t
+  (* ix: palette indices (Playground.mli) *)
+  | Pixels of number (* width *) * number (* height *) * pixels
   | Words of color * string
   (* ix: a run of text in Hershey's strokes, each letter at its place
    * (Playground.mli) *)
@@ -173,6 +175,7 @@ and form =
 
   | Group of shape list
 and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
+and pixels = { pwidth : int; pheight : int; indices : Bytes.t; palette : string }
 
 (* less: could use deriving constructor? *)
 let shape x y angle scale alpha form =
@@ -235,6 +238,9 @@ let (image: number -> number -> string -> shape) = fun w h src ->
 
 let (bitmap: number -> number -> Rgba_image.t -> shape) = fun w h img ->
   shape 0. 0. 0. 1. 1. (Bitmap (w, h, img))
+
+let (pixels: number -> number -> pixels -> shape) = fun w h p ->
+  shape 0. 0. 0. 1. 1. (Pixels (w, h, p))
 
 let (group: shape list -> shape) = fun xs ->
   shape 0. 0. 0. 1. 1. (Group xs)

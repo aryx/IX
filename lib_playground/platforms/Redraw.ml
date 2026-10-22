@@ -31,7 +31,7 @@ let create ~(width : int) ~(height : int) ~(scale : float) (options : Shape_rend
  * [compare] tells them apart, at their first pixel that differs.
  * old: the table's keys the shapes, hashed by Hashtbl.hash *)
 let hash (s : Playground.shape) : int =
-  match s.form with Bitmap (w, h, _) -> Hashtbl.hash (s.x, s.y, w, h) | _ -> Hashtbl.hash s
+  match s.form with Bitmap (w, h, _) | Pixels (w, h, _) -> Hashtbl.hash (s.x, s.y, w, h) | _ -> Hashtbl.hash s
 
 (* The shapes of one list that are not in the other, each as many times
  * as it is there more: the others' shapes counted in a table, by what

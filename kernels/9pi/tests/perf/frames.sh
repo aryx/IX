@@ -14,6 +14,7 @@
 #           "ML_HEAP=4194304 wolfenstein": the heap's half 16 MB)
 #     keys: tests/live.py's (default spc,right:12000: the game started,
 #           the right arrow held 12 seconds)
+#   CARD=file in the environment: another card than build/card.img
 # The parts are read from a clock of 10 ms: right to 2 or 3 ms over 40
 # frames. QEMU runs integers at about a thousand million instructions a
 # second and floats at a quarter of that (it computes them): no board's
@@ -22,5 +23,5 @@ cd "$(dirname "$0")/../.."
 d=${3:-$(mktemp -d)}
 LIVE_START=6 tests/live.py $d 1 "$1 'stats=on'" ${2:-spc,right:12000} -- \
   qemu-system-arm -M raspi1ap -device loader,file=kernel-pi1-ixu.img,addr=0x8000,cpu-num=0,force-raw=on \
-  -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=build/card.img,if=sd,format=raw,snapshot=on > /dev/null 2>&1
+  -serial mon:stdio -display none -device usb-kbd -device usb-mouse -drive file=${CARD:-build/card.img},if=sd,format=raw,snapshot=on > /dev/null 2>&1
 grep -a "^40 frames\|the showing" $d/console.txt | tail -4

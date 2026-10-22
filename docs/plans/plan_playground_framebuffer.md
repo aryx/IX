@@ -208,3 +208,50 @@ larger part.
 2026-10-22: proposed, nothing begun. The numbers above were taken on
 a card of the scratchpad's (the main tree's `build/card.img` not
 remade).
+
+2026-10-22, **F2 done** (the author: "Should we also do the playground
+speedup work at the same time? Can we get doom and quake at high fps
+under mini-9pi and qemu and also the real Pi2?", then "yes let's
+start"; and "ideally what we do can also benefit every playground
+games, like cameltry, and also some apps"). Taken first: the measures
+said the device was 3 ms of the showing, the program's making of the
+picture the rest (the game's RGBA, the opacity scan, Shape_render_
+software's draw into a Framebuffer through a transform, a new image
+of the device's loaded with 4 bytes a pixel).
+- `Playground.Pixels` (the open question's answer: a new shape, said
+  in the playground's file as an ix addition): palette indices and
+  their palette. The draw platform (`pixels_image`) writes them in the
+  screen's own format (r5g6b5 or x8r8g8b8: a table of 256), each pixel
+  k by k when the box is a whole multiple, into one image kept and
+  loaded again each frame; drawn to the window's back image (of the
+  screen's format: no conversion in the device). Else, and on the
+  other platforms (Shape_render_software, the PDF writer), RGBA at the
+  same whole multiple (`Shape_render_software.pixels_rgba`): the
+  pictures of before, byte for byte. Juice, Physics and Redraw know it
+  as a Bitmap.
+- mini-doom and mini-quake give their 320 by 200 bytes (two buffers in
+  turn: each frame's picture a new value) and their palette (mini-
+  quake's with its gamma); their `to_rgba` gone.
+- Under QEMU (`kernels/9pi/tests/perf/frames.sh`, now with `CARD=`,
+  the up arrow held 12 s, the meter's two 40-frame lines):
+
+  | | before | after |
+  |---|---|---|
+  | mini-doom | 4.7 to 6.7 a second: view 58-99 ms, show 76-92 (the device 3) | **13 to 14**: view 37-46, show 17-22 (the device 1-4) |
+  | mini-quake | 5.3 to 5.9: view 30-86, show 64-76 (the device 3-4) | **11 to 15**: view 18-37, show 33-36 (the device 3) |
+
+  The view is faster too: the game's RGBA was in it. The screens
+  looked at: they move, their colours right.
+- For the other programs (the author's ask): Pixels helps a program
+  that makes its own pixels. TinyCameltry, of shapes, measured the
+  same day: 25 to 30 a second, its showing 27-32 ms of which the
+  device 16-23 and the messages 9-10, its view under 1: there the
+  device (the kernel's drawing, compiled by ocaml-light: kernel.mk's
+  COMPILER=light; COMPILER=ix would be mini-ml's code) and mini-ml's
+  code for the messages are what is left, not the path of a picture.
+  A Bitmap (an app's RGBA pictures: a page, a browser's images) still
+  takes the slow path when it is new each frame (a video's).
+- Checked: games, examples, office and drscheme's frames' tests (130
+  sessions) the same; mini-mk O=5 OS=plan9 of lib_playground, its
+  platforms and apis, mini-doom, mini-quake. Not run: the Pi 2; the
+  main tree's card not remade.

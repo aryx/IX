@@ -54,6 +54,9 @@ type window = {
   mutable last : Playground.shape list option;
   (* the last pictures shown, each an image of the kernel's *)
   mutable pictures : picture list;
+  (* ix: the image a Pixels' picture is loaded into each frame, and the
+   * bytes made for it (pixels_image) *)
+  mutable indexed : (Display.image * Bytes.t) option;
   (* the letters drawn so far, each an image of the kernel's (Letters) *)
   letters : (letter, (Display.image * Shape_render_software.mask) option) Hashtbl.t;
   (* what changed since the last frame (Redraw's accounting), and the
@@ -142,7 +145,7 @@ let window (display : Display.t) : window =
     back =
       Display.alloc display (Rectangle.v 0 0 width height) (Display.format display)
         ~repl:false Display.white;
-    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; letters = Hashtbl.create 512;
+    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; indexed = None; letters = Hashtbl.create 512;
     redraw = Redraw.create ~width ~height ~scale Shape_render_software.default_options;
     inside = None }
 
@@ -417,6 +420,74 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
       win.pictures <- List.filteri (fun (i : int) (_ : picture) -> i < kept_pictures) now;
       image
 
+(* ix: a Pixels' picture (docs/plans/plan_playground_framebuffer.md,
+ * F2): the device's image of it in the screen's own format, made from
+ * a table of the palette's 256 colours in that format, each pixel k by
+ * k: one pass of table look-ups, one load, and a copy the device need
+ * not convert (the window's back image is of the screen's format).
+ * The image and its bytes are kept and loaded again each frame: a
+ * game's picture is new at every frame. Only upright, at a whole
+ * multiple of its size, in a format of 2 or 4 bytes a pixel known here
+ * (r5g6b5, x8r8g8b8); else None, and it is shown as a Bitmap. *)
+let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Playground.pixels) : Display.image option =
+  let near0 (v : float) : bool = Float.abs v < 1e-9 in
+  let k = int_of_float (Float.round (m.a *. w /. float p.pwidth)) in
+  let fmt = Display.format win.back.display in
+  let size = match fmt with "r5g6b5" -> 2 | "x8r8g8b8" -> 4 | _ -> 0 in
+  if not (near0 m.b && near0 m.c && k >= 1 && size > 0
+          && Float.abs ((m.a *. w) -. float (k * p.pwidth)) < 0.5
+          && Float.abs ((-.m.d *. h) -. float (k * p.pheight)) < 0.5)
+  then None
+  else begin
+    let bw = k * p.pwidth and bh = k * p.pheight in
+    let image, bytes =
+      match win.indexed with
+      | Some (i, b) when Rectangle.dx i.r = bw && Rectangle.dy i.r = bh -> (i, b)
+      | old ->
+          Option.iter (fun ((i, _) : Display.image * Bytes.t) -> Display.free i) old;
+          let i = Display.alloc win.back.display (Rectangle.v 0 0 bw bh) fmt ~repl:false Display.white in
+          let b = Bytes.create (size * bw * bh) in
+          win.indexed <- Some (i, b);
+          (i, b)
+    in
+    (* each colour in the format, little-endian, as the device's words *)
+    let table = Bytes.create (4 * 256) in
+    for c = 0 to 255 do
+      let r = Char.code p.palette.[3 * c] and g = Char.code p.palette.[(3 * c) + 1] and b = Char.code p.palette.[(3 * c) + 2] in
+      if size = 2 then begin
+        let v = ((r lsr 3) lsl 11) lor ((g lsr 2) lsl 5) lor (b lsr 3) in
+        Bytes.set table (4 * c) (Char.chr (v land 255));
+        Bytes.set table ((4 * c) + 1) (Char.chr (v lsr 8))
+      end
+      else begin
+        Bytes.set table (4 * c) (Char.chr b);
+        Bytes.set table ((4 * c) + 1) (Char.chr g);
+        Bytes.set table ((4 * c) + 2) (Char.chr r);
+        Bytes.set table ((4 * c) + 3) '\255'
+      end
+    done;
+    let row = size * bw and src = p.indices and pw = p.pwidth in
+    for y = 0 to p.pheight - 1 do
+      let o = ref (y * k * row) in
+      for x = 0 to pw - 1 do
+        let c = 4 * Char.code (Bytes.unsafe_get src ((y * pw) + x)) in
+        for _n = 1 to k do
+          let i = !o in
+          Bytes.unsafe_set bytes i (Bytes.unsafe_get table c);
+          Bytes.unsafe_set bytes (i + 1) (Bytes.unsafe_get table (c + 1));
+          if size = 4 then begin
+            Bytes.unsafe_set bytes (i + 2) (Bytes.unsafe_get table (c + 2));
+            Bytes.unsafe_set bytes (i + 3) (Bytes.unsafe_get table (c + 3))
+          end;
+          o := i + size
+        done
+      done;
+      for j = 1 to k - 1 do Bytes.blit bytes (y * k * row) bytes (((y * k) + j) * row) row done
+    done;
+    Display.load_sub image image.r bytes 0 (row * bh);
+    Some image
+  end
+
 (* Letters: each letter's mask made by the software renderer, as on
  * Linux (Shape_render_software.mask_of), given to the device once, an
  * image of a byte a pixel (k8): how much of each pixel the strokes
@@ -520,6 +591,17 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
             let r = Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r) in
             if shown win r then Draw.draw win.back r image None (Point.v 0 0)
         | None -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha))
+    | Pixels (w, h, p) -> (
+        match if s.alpha < 1. then None else pixels_image win m w h p with
+        | Some image ->
+            let cx, cy = Affine.apply m (0., 0.) in
+            let x0 = round (cx -. (float (Rectangle.dx image.r) /. 2.)) and y0 = round (cy -. (float (Rectangle.dy image.r) /. 2.)) in
+            let r = Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r) in
+            if shown win r then Draw.draw win.back r image None (Point.v 0 0)
+        | None ->
+            (* (turned, or at another size: as a Bitmap) *)
+            let k = max 1 (int_of_float (Float.round (Float.abs m.a *. w /. float p.pwidth))) in
+            shape win m { s with form = Bitmap (w, h, Shape_render_software.pixels_rgba p k) })
     (* (a picture's box) *)
     | Image (w, h, _) -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha)
 

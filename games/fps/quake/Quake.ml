@@ -55,39 +55,23 @@ type model = {
   (* the level's message: its name *)
   name : string;
   things : Things.thing list;
-  images : Rgba_image.t array;
+  (* two pictures' bytes, one a frame in turn: the platform compares a
+   * frame's shapes with the last's, so each frame's picture is a new
+   * value, not the same bytes changed *)
+  screens : Bytes.t array;
   mutable frames : int;
-  scale : int;
-  rgba : Bytes.t;
+  (* the palette, r g b an index, made brighter (gamma) *)
+  palette : string;
   mutable last : float;
 }
 
-(* the picture, the platform's pixels: each byte its colour, n by n *)
-let to_rgba (m : model) : unit =
-  let v = m.render.view in
-  let src = v.screen and w = v.width and h = v.height in
-  let k = m.scale and dst = m.images.(m.frames land 1).rgba and rgba = m.rgba in
-  let row = 4 * w * k in
-  for y = 0 to h - 1 do
-    let o = ref (y * k * row) in
-    for x = 0 to w - 1 do
-      let c = 4 * Char.code (Bytes.unsafe_get src ((y * w) + x)) in
-      let r = Bytes.unsafe_get rgba c
-      and g = Bytes.unsafe_get rgba (c + 1)
-      and b = Bytes.unsafe_get rgba (c + 2) in
-      for _n = 1 to k do
-        let i = !o in
-        Bytes.unsafe_set dst i r;
-        Bytes.unsafe_set dst (i + 1) g;
-        Bytes.unsafe_set dst (i + 2) b;
-        Bytes.unsafe_set dst (i + 3) '\255';
-        o := i + 4
-      done
-    done;
-    for j = 1 to k - 1 do
-      Bytes.blit dst (y * k * row) dst (((y * k) + j) * row) row
-    done
-  done
+(* the picture as it is, 320 by 200 bytes of the palette, given to the
+ * platform (a Pixels shape), which makes of it what its device wants,
+ * each pixel n by n (docs/plans/plan_playground_framebuffer.md, F2).
+ * old: made RGBA here (to_rgba), then again by the draw platform *)
+let snapshot (m : model) : unit =
+  let src = m.render.view.screen in
+  Bytes.blit src 0 m.screens.(m.frames land 1) 0 (Bytes.length src)
 
 let view (computer : P.computer) (m : model) : P.shape list =
   let p = m.play in
@@ -98,7 +82,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
   Render.frame m.render m.level (Play.eye p) p.pitch (Play.yaw p) p.time
     p.styles (Play.bmodels p) m.things;
   m.frames <- m.frames + 1;
-  to_rgba m;
+  snapshot m;
   let screen = computer.screen in
   let v = m.render.view in
   let w = screen.width
@@ -110,8 +94,13 @@ let view (computer : P.computer) (m : model) : P.shape list =
      [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ]
    else [])
   @ [
-      P.bitmap w h
-        { (m.images.(m.frames land 1)) with width = v.width * m.scale };
+      P.pixels w h
+        {
+          pwidth = v.width;
+          pheight = v.height;
+          indices = m.screens.(m.frames land 1);
+          palette = m.palette;
+        };
     ]
   (* (a door's, a trigger's message, for 2 seconds: Quake's centerprint) *)
   @ (match Brushes.message p.brushes with
@@ -212,23 +201,16 @@ let () =
              | _ -> if Sys.os_type = "Plan9" then 1 else 2
            in
            let render = Render.create level colormap in
-           let image () : Rgba_image.t =
-             Rgba_image.create ~width:(320 * scale) ~height:(200 * scale)
-           in
            let gamma =
              match Option.bind (flag "gamma") float_of_string_opt with
              | Some g when g >= 0.3 && g <= 1. -> g
              | _ -> default_gamma
            in
-           let rgba = Bytes.create 1024 in
-           for i = 0 to 255 do
-             for c = 0 to 2 do
-               Bytes.set rgba
-                 ((4 * i) + c)
-                 (Char.chr (with_gamma gamma (Char.code palette.[(3 * i) + c])))
-             done;
-             Bytes.set rgba ((4 * i) + 3) '\255'
-           done;
+           let palette =
+             String.map
+               (fun (c : char) -> Char.chr (with_gamma gamma (Char.code c)))
+               palette
+           in
            if flag "lightmaps" <> None then Surfcache.grey := true;
            let play = Play.create level in
            (match
@@ -269,10 +251,9 @@ let () =
                play;
                name;
                things;
-               images = [| image (); image () |];
+               screens = [| Bytes.create (320 * 200); Bytes.create (320 * 200) |];
                frames = 0;
-               scale;
-               rgba;
+               palette;
                last = 0.;
              }
            in

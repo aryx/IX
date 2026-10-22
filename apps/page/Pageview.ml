@@ -32,9 +32,16 @@
  * A picture (PNG, JPEG) is a document of one page, scaled and turned
  * as it is shown, not drawn again.
  *
+ * A link of a page (Pdf.links) is followed by a click: to a page of
+ * the file, at the height it names, or to an address, given to
+ * mini-netscape (Plan 9's page would plumb it). Over one the cursor is
+ * a hand and the status line says where it leads; b goes back to
+ * where the last link was followed from, as a browser's Back: a
+ * book's references are a jump there and a jump back.
+ *
  * Not done: page's menu of the pages (a number and Enter goes to
- * one); a file's outline and links; text found or copied (-t prints
- * a file's words).
+ * one); a file's outline; text found or copied (-t prints a file's
+ * words).
  *
  * Where it stands. It is the reader of what mini-office writes:
  * Office_export makes a document a PDF file (Shape_render_pdf,
@@ -71,6 +78,8 @@ let usage =
   \  a number, then Enter          that page\n\
   \  up, down, the wheel           the pages moved along\n\
   \  the mouse's button held       drags them\n\
+  \  a link, clicked               followed: a page; an address, in mini-netscape\n\
+  \  b                             back to where the last link was followed from\n\
   \  + and -                       larger, smaller;  f  the window's width again\n\
   \  r                             a quarter turn;   q  the end\n"
 
@@ -110,8 +119,16 @@ let size (s : source) (page : int) (turn : int) : float * float =
 (* The model *)
 (*****************************************************************************)
 
-(* a picture kept: of which page, at which zoom (in thousandths) and turn *)
-type kept = { page : int; zoom : int; turn : int; image : Rgba_image.t }
+(* a picture kept: of which page, at which zoom (in thousandths) and
+ * turn; and the page's links, read with it (a book's named
+ * destinations are a tree of objects to walk: not each frame) *)
+type kept = {
+  page : int;
+  zoom : int;
+  turn : int;
+  image : Rgba_image.t;
+  links : Pdf.link list;
+}
 
 type model = {
   name : string;
@@ -128,10 +145,19 @@ type model = {
   kept : kept list;
   (* a page's number being typed *)
   number : string;
-  (* the frame before: the keys held, and where the mouse held the pages *)
+  (* where links were followed from: a page and how far down, at a
+   * zoom of 1 (the pages' heights are a zoom's multiple) *)
+  back : (int * float) list;
+  (* the frame before: the keys held, where the mouse held the pages,
+   * where its button went down (a click there, not a drag, follows a
+   * link), and whether the cursor is a hand *)
   was : string list;
   held : (float * float) option;
+  pressed : float * float;
+  hand : bool;
   quit : unit -> unit;
+  (* an address shown, by another program *)
+  open_url : string -> unit;
 }
 
 (* pictures kept besides the window's *)
@@ -201,7 +227,7 @@ let drawn (s : Playground.screen) (m : model) : model =
           Pdf_render.render ~options:Pdf_render.full
             ~stroke_glyph:Pdf_render.hershey pdf cache p ~scale:m.zoom
         in
-        { page = i; zoom; turn = m.turn; image }
+        { page = i; zoom; turn = m.turn; image; links = Pdf.links pdf pages p }
       in
       let shown = shown s m in
       let now =
@@ -239,16 +265,88 @@ let fit (width : float) (m : model) : model =
   in
   go m.page { m with zoom; x = 0. }
 
-let start (name : string) (bytes : string) ~(quit : unit -> unit) : model =
+let start (name : string) (bytes : string) ~(quit : unit -> unit)
+    ~(open_url : string -> unit) : model =
   let s =
     Playground.to_screen Playground.default_width Playground.default_height
   in
   let m =
     { name; source = source bytes; page = 0; zoom = 1.; turn = 0;
-      down = 0.; x = 0.; kept = []; number = ""; was = []; held = None;
-      quit }
+      down = 0.; x = 0.; kept = []; number = ""; back = []; was = [];
+      held = None; pressed = (0., 0.); hand = false; quit; open_url }
   in
   drawn s (within s (fit s.width m))
+
+(*****************************************************************************)
+(* Links *)
+(*****************************************************************************)
+
+(* how a page is turned, its own turn and ours: 0, 90, 180 or 270 *)
+let turned (pages : Pdf.page array) (i : int) (m : model) : int =
+  (pages.(i).rotate + (90 * m.turn)) mod 360
+
+(* the link under a point of the window, if a page's picture is there *)
+let link_at (s : Playground.screen) (m : model) ((px, py) : float * float) :
+    Pdf.target option =
+  match m.source with
+  | Pages (_, _, pages) ->
+      let tops = tops m and zoom = thousandths m.zoom in
+      let on (i : int) : Pdf.target option =
+        let _, h = size m.source i m.turn in
+        let y = s.top -. (tops.(i) +. (h *. m.zoom /. 2.) -. m.down) in
+        (* from the page's middle, in points, y up; turned back *)
+        let dx = (px -. m.x) /. m.zoom and dy = (py -. y) /. m.zoom in
+        let a, b =
+          match turned pages i m with
+          | 90 -> (-.dy, dx)
+          | 180 -> (-.dx, -.dy)
+          | 270 -> (dy, -.dx)
+          | _ -> (dx, dy)
+        in
+        let x0, y0, x1, y1 = pages.(i).box in
+        let u = ((x0 +. x1) /. 2.) +. a and v = ((y0 +. y1) /. 2.) +. b in
+        let inside ((l : Pdf.link)) =
+          let lx0, ly0, lx1, ly1 = l.rect in
+          lx0 <= u && u <= lx1 && ly0 <= v && v <= ly1
+        in
+        match
+          List.find_opt
+            (fun (k : kept) -> k.page = i && k.zoom = zoom && k.turn = m.turn)
+            m.kept
+        with
+        | Some k -> (
+            match List.find_opt inside k.links with
+            | Some l -> Some l.target
+            | None -> None)
+        | None -> None
+      in
+      List.fold_left
+        (fun (found : Pdf.target option) (i : int) ->
+          match found with Some _ -> found | None -> on i)
+        None (shown s m)
+  | Picture _ | Nothing _ -> None
+
+(* what the status line says of a link *)
+let leads (t : Pdf.target) : string =
+  match t with
+  | Page (i, _) -> Printf.sprintf "to page %d" (i + 1)
+  | Uri u -> "to " ^ u
+
+(* a link followed: its page, at the height it names (a page turned:
+ * its top), where we were kept for b; or its address shown *)
+let follow (t : Pdf.target) (m : model) : model =
+  match (t, m.source) with
+  | Uri u, _ -> m.open_url u; m
+  | Page (i, top), Pages (_, _, pages) -> (
+      let m' = go i { m with back = (m.page, m.down /. m.zoom) :: m.back } in
+      let _, _, _, y1 = pages.(m'.page).box in
+      match top with
+      | Some top when turned pages m'.page m' = 0 ->
+          (* (go's down has a gap above the page; one more: the
+           * height named is a line's foot, pdfTeX's anchors) *)
+          { m' with down = m'.down +. ((y1 -. top -. gap) *. m'.zoom) }
+      | _ -> m')
+  | Page _, (Picture _ | Nothing _) -> m
 
 (*****************************************************************************)
 (* The update *)
@@ -287,6 +385,10 @@ let update (computer : Playground.computer) (m : model) : model =
     else if typed 'f' then fit s.width m
     else if typed 'r' then fit s.width { m with turn = (m.turn + 1) mod 4 }
     else if typed 'q' then (m.quit (); m)
+    else if typed 'b' then
+      match m.back with
+      | (page, down) :: back -> { m with page; down = down *. m.zoom; back }
+      | [] -> m
     else m
   in
   let m = within s m in
@@ -301,12 +403,28 @@ let update (computer : Playground.computer) (m : model) : model =
   let m =
     match (mouse.mdown, m.held) with
     | true, Some (hx, hy) -> { m with x = mouse.mx -. hx; down = mouse.my +. hy }
-    | true, None -> { m with held = Some (mouse.mx -. m.x, m.down -. mouse.my) }
+    | true, None ->
+        { m with held = Some (mouse.mx -. m.x, m.down -. mouse.my);
+                 pressed = (mouse.mx, mouse.my) }
     | false, _ -> { m with held = None }
   in
   let m = within s m in
   let m = if m.down <> before then { m with page = middle s m } else m in
-  drawn s { m with was = now }
+  (* a click, where the button went down: the link there followed *)
+  let px, py = m.pressed in
+  let still = Float.abs (mouse.mx -. px) < 4. && Float.abs (mouse.my -. py) < 4. in
+  let m =
+    match link_at s m (mouse.mx, mouse.my) with
+    | Some t when mouse.mclick && still -> within s (follow t m)
+    | _ -> m
+  in
+  let m = drawn s { m with was = now } in
+  (* the cursor a hand over a link *)
+  let hand = link_at s m (mouse.mx, mouse.my) <> None in
+  if hand <> m.hand then
+    Playground_platform.set_cursor
+      (if hand then Playground.Hand else Playground.Arrow);
+  { m with hand }
 
 (*****************************************************************************)
 (* The view *)
@@ -349,7 +467,10 @@ let view (computer : Playground.computer) (m : model) : Playground.shape list =
       (m.page + 1) (count m.source)
       (int_of_float (Float.round (m.zoom *. 100.)))
       (int_of_float (Float.round w)) (int_of_float (Float.round h))
-      (if m.number = "" then "" else "     go to page " ^ m.number)
+      (match (m.number, link_at s m (computer.mouse.mx, computer.mouse.my)) with
+       | "", None -> ""
+       | "", Some t -> "     a link " ^ leads t
+       | number, _ -> "     go to page " ^ number)
   in
   let grey = Playground.rgb 120 120 128 in
   let bar = s.bottom +. (status_line /. 2.) in
@@ -404,7 +525,21 @@ let () =
             match List.find_opt (fun ((_, value) : string * string) -> value = "") flags with
             | None -> failwith usage
             | Some (file, _) ->
-                let model = start (Filename.basename file) (read file) ~quit:(fun () -> CapStdlib.exit caps 0) in
+                (* an address: to mini-netscape, a program of its own *)
+                let open_url (url : string) =
+                  try
+                    ignore
+                      (Procs.create_process caps "mini-netscape" [ url ]
+                         ~stdin:Unix.stdin ~stdout:Unix.stdout)
+                  with Unix.Unix_error (e, _, _) ->
+                    Console.eprint caps
+                      (Printf.sprintf "mini-netscape %s: %s\n" url
+                         (Unix.error_message e))
+                in
+                let quit () = CapStdlib.exit caps 0 in
+                let model =
+                  start (Filename.basename file) (read file) ~quit ~open_url
+                in
                 (* heap=modest: a page's picture is megabytes kept, not a
                  * game's floats of a frame (Plan9_loop says what it changes) *)
                 Playground_platform.run_app caps (("heap", "modest") :: flags) (Playground.game view update model))

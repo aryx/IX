@@ -42,8 +42,8 @@
    hand, as the tests' standard.pdf -- is read by looking for every
    "n g obj" in it ([of_string] does it when the table leads nowhere).
 
-   Not read: an encrypted file (said), the outline, links and form
-   fields, the names of pages.
+   Not read: an encrypted file (said), the outline, form fields.
+   Links are read (links): a page's, to another page or an address.
 
    Where it stands in ix: this module is the door of the directory,
    bytes in and a picture out, and under the directory are most of
@@ -107,7 +107,7 @@
 
    - A subset, the one ordinary files are written in: what pdfTeX, a
      browser and an office program produce. Not read: an encrypted
-     file, the outline, links; a scanned page's pictures (JBIG2, JPEG
+     file, the outline; a scanned page's pictures (JBIG2, JPEG
      2000, CCITT fax); a colour profile, taken by its number of
      channels as grey, RGB or CMYK. Ghostscript has all of these, and
      hinted fonts, tens of devices and printers, overprint, halftones,
@@ -133,8 +133,15 @@ type t
 
 (* a page: its dictionary, what its content names (fonts, pictures...),
  * the part of the paper shown (in points, 1/72 inch: left, bottom,
- * right, top), and how it is turned (0, 90, 180 or 270 degrees) *)
-type page = { dict : Pdf_object.dict; resources : Pdf_object.t; box : float * float * float * float; rotate : int }
+ * right, top), how it is turned (0, 90, 180 or 270 degrees), and its
+ * object's number, which a link to it names (0 if it has none) *)
+type page = {
+  dict : Pdf_object.dict;
+  resources : Pdf_object.t;
+  box : float * float * float * float;
+  rotate : int;
+  number : int;
+}
 
 (* whether bytes look like a PDF file: "%PDF-" in the first kilobyte *)
 val sniff : string -> bool
@@ -161,3 +168,18 @@ val pages : t -> page list
 
 (* a page's drawing operators (Pdf_render) *)
 val content : t -> page -> string
+
+(* where a link leads: a page of the file (from 0) and, if the link
+ * says, the height on it to show at the window's top (in the page's
+ * points, as box); or an address (a URI action) *)
+type target = Page of int * float option | Uri of string
+
+(* a link: where on its page (in points, as box: left, bottom, right,
+ * top) and where it leads *)
+type link = { rect : float * float * float * float; target : target }
+
+(* [links t pages p]: page p's links, its /Annots of subtype /Link
+ * (section 12.5.6.5), that lead to a page of [pages] (a destination,
+ * named or not: section 12.3.2) or to a URI (12.6.4.7); the others
+ * (another file, a program run, JavaScript) are left out *)
+val links : t -> page array -> page -> link list

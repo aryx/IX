@@ -21,7 +21,13 @@ type t = {
   mutable trailer : dict;
 }
 
-type page = { dict : dict; resources : Pdf_object.t; box : float * float * float * float; rotate : int }
+type page = {
+  dict : dict;
+  resources : Pdf_object.t;
+  box : float * float * float * float;
+  rotate : int;
+  number : int;
+}
 
 let kept_unpacked = 4
 
@@ -199,7 +205,13 @@ let pages (t : t) : page list =
     | _ ->
         let box key = match get t inherited key with Array [ a; b; c; d ] -> let f v = to_float (resolve t v) in Some (f a, f b, f c, f d) | _ -> None in
         let x0, y0, x1, y1 = match box "CropBox" with Some b -> b | None -> ( match box "MediaBox" with Some b -> b | None -> (0., 0., 612., 792.)) in
-        [ { dict = d; resources = get t inherited "Resources"; box = (Float.min x0 x1, Float.min y0 y1, Float.max x0 x1, Float.max y0 y1); rotate = ((to_int (get t inherited "Rotate") mod 360) + 360) mod 360 } ]
+        let number = match node with Ref n -> n | _ -> 0 in
+        let box =
+          (Float.min x0 x1, Float.min y0 y1, Float.max x0 x1, Float.max y0 y1)
+        in
+        let rotate = ((to_int (get t inherited "Rotate") mod 360) + 360) mod 360 in
+        let resources = get t inherited "Resources" in
+        [ { dict = d; resources; box; rotate; number } ]
   in
   walk (get t (root t) "Pages") [] 0
 
@@ -209,3 +221,110 @@ let content (t : t) (p : page) : string =
   | Array parts -> String.concat "\n" (List.map (data t) parts)
   | Stream _ as s -> data t s
   | _ -> ""
+
+(*****************************************************************************)
+(* Links *)
+(*****************************************************************************)
+
+type target = Page of int * float option | Uri of string
+type link = { rect : float * float * float * float; target : target }
+
+(* a name tree's value (section 7.9.6): the keys of each node sorted,
+ * a node's /Limits its first and last *)
+let rec in_tree (t : t) (node : dict) (key : string) (depth : int) :
+    Pdf_object.t =
+  let rec pairs (l : Pdf_object.t list) =
+    match l with
+    | k :: v :: rest -> (
+        match resolve t k with
+        | String k when k = key -> resolve t v
+        | _ -> pairs rest)
+    | _ -> Null
+  in
+  match (get t node "Names", get t node "Kids") with
+  | Array l, _ -> pairs l
+  | _, Array kids when depth < 32 ->
+      let within (kid : dict) =
+        match get t kid "Limits" with
+        | Array [ lo; hi ] -> (
+            match (resolve t lo, resolve t hi) with
+            | String lo, String hi -> lo <= key && key <= hi
+            | _ -> true)
+        | _ -> true
+      in
+      List.fold_left
+        (fun (found : Pdf_object.t) (kid : Pdf_object.t) ->
+          if found <> Null then found
+          else
+            let kid = dict t kid in
+            if within kid then in_tree t kid key (depth + 1) else Null)
+        Null kids
+  | _ -> Null
+
+(* a destination (section 12.3.2): [page /XYZ left top zoom], [page
+ * /FitH top], ...; or its name, in the catalog's /Dests (PDF 1.1) or
+ * its /Names' /Dests tree (pdfTeX's) *)
+let rec destination (t : t) (pages : page array) (d : Pdf_object.t)
+    (depth : int) : target option =
+  match resolve t d with
+  | Array (Ref n :: Name kind :: args) -> (
+      let rec index (i : int) =
+        if i >= Array.length pages then None
+        else if pages.(i).number = n then Some i
+        else index (i + 1)
+      in
+      let top (v : Pdf_object.t) =
+        match resolve t v with
+        | (Int _ | Real _) as v -> Some (to_float v)
+        | _ -> None
+      in
+      match (index 0, kind, args) with
+      | Some i, "XYZ", _ :: y :: _ | Some i, ("FitH" | "FitBH"), y :: _ ->
+          Some (Page (i, top y))
+      | Some i, "FitR", [ _; _; _; y ] -> Some (Page (i, top y))
+      | Some i, _, _ -> Some (Page (i, None))
+      | None, _, _ -> None)
+  | Dict d' when depth < 4 -> destination t pages (get t d' "D") (depth + 1)
+  | (Name name | String name) when depth < 4 -> (
+      let root = root t in
+      match get t (dict t (get t root "Dests")) name with
+      | Null -> (
+          match get t (dict t (get t root "Names")) "Dests" with
+          | Null -> None
+          | tree ->
+              destination t pages (in_tree t (dict t tree) name 0) (depth + 1))
+      | found -> destination t pages found (depth + 1))
+  | _ -> None
+
+let links (t : t) (pages : page array) (p : page) : link list =
+  let annots = match get t p.dict "Annots" with Array l -> l | _ -> [] in
+  List.filter_map
+    (fun (a : Pdf_object.t) ->
+      let a = dict t a in
+      let rect =
+        match get t a "Rect" with
+        | Array [ a; b; c; d ] ->
+            let f v = to_float (resolve t v) in
+            let x0, y0, x1, y1 = (f a, f b, f c, f d) in
+            Some
+              ( Float.min x0 x1,
+                Float.min y0 y1,
+                Float.max x0 x1,
+                Float.max y0 y1 )
+        | _ -> None
+      in
+      let target =
+        if get t a "Subtype" <> Name "Link" then None
+        else
+          let action = dict t (get t a "A") in
+          match (get t action "S", get t action "URI") with
+          | Name "URI", String uri -> Some (Uri uri)
+          | Name "GoTo", _ -> destination t pages (get t action "D") 0
+          | _ ->
+              if action = [] then destination t pages (get t a "Dest") 0
+              else None
+      in
+      match (rect, target) with
+      | Some rect, Some target -> Some { rect; target }
+      | _ -> None)
+    annots

@@ -16,6 +16,8 @@
 #             (Type 0, Identity-H), rounded boxes, a circle
 #   office    LibreOffice: TrueType fonts in Windows' encoding
 #   standard  written by hand: Helvetica and Times named, not embedded
+#   links     pdfTeX with hyperref: a link to a section of the next page
+#             (a named destination), one to an address, one back
 set -e
 python3 - <<'PY'
 import cairo, math
@@ -53,6 +55,16 @@ TEX
 sed 's/\\pagestyle{empty}/\\pagestyle{empty}\\usepackage[T1]{fontenc}/; s/and mathematics,.*dx = \\frac{1}{3}\$\./in bitmap letters./' $tmp/tex.tex > $tmp/bitmap.tex
 (cd $tmp && pdflatex -interaction=batchmode tex.tex > /dev/null && pdflatex -interaction=batchmode bitmap.tex > /dev/null)
 cp $tmp/tex.pdf $tmp/bitmap.pdf .
+cat > $tmp/links.tex <<'TEX'
+\documentclass{article}\pagestyle{empty}\usepackage[paperwidth=10cm,paperheight=5cm,margin=8mm]{geometry}
+\usepackage[colorlinks=true]{hyperref}
+\begin{document}\noindent\hypertarget{start}{Links}: to Section~\ref{sec:far},\par\noindent
+and to \href{https://example.org/ix}{an address}.
+\newpage\section{Far}\label{sec:far}\noindent Back to \hyperlink{start}{the start}.
+\end{document}
+TEX
+(cd $tmp && pdflatex -interaction=batchmode links.tex > /dev/null && pdflatex -interaction=batchmode links.tex > /dev/null)
+cp $tmp/links.pdf .
 cat > $tmp/browser.html <<'HTML'
 <html><head><style>@page { size: 4in 3in; margin: 0.3in }</style></head><body style="font-family: DejaVu Sans; margin: 0"><h2>Hello, PDF</h2><p>Printed by a browser: <i>italic</i>, <b>bold</b>.</p>
 <div style="width:150px;height:40px;background:#fc0;border:3px solid #036;border-radius:10px"></div><p style="color:#c00">red words</p></body></html>
@@ -76,6 +88,6 @@ endobj
 6 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >> endobj
 trailer << /Root 1 0 R >>
 PDF
-for f in shapes tex bitmap cff browser office standard; do
+for f in shapes tex bitmap cff browser office standard links; do
   pdftoppm -r 72 -png $f.pdf $f
 done

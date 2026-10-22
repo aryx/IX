@@ -10,3 +10,8 @@ page/Pageview|picture-turned|6 -fixed-time 1000 -script 'type(r):2,type(+):4' li
 page/Pageview|neither|3 -fixed-time 1000 lib_graphics/pdf/tests/data/make.sh|cbbd5278252e90846764686c06ac2be73ca447876aa9adc1151d7fdf6035496a
 page/Pageview|wheel|6 -fixed-time 1000 -script 'type(+):2,wheel(-2):4' lib_graphics/pdf/tests/data/tex.pdf|dfa175348865f29b75d0379a67e88de5a0a84fdbcfc6f91173746686ba6b2658
 page/Pageview|wheel-end|10 -fixed-time 1000 -script 'wheel(-5):2,wheel(-5):4,wheel(-5):6' lib_graphics/pdf/tests/data/tex.pdf|bfec2a3352c503c073bedf467a1640c57cf3c747ee34996d2ba5a0184802b060
+page/Pageview|link-hover|4 -fixed-time 1000 -script 'at(-134;376):2-4' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6
+page/Pageview|link-followed|10 -fixed-time 1000 -script 'at(-134;376):2-10,click:4-5' lib_graphics/pdf/tests/data/links.pdf|731f3db3a0ec618ea47490743f7ce7473a0adacad85e28d7874e8a16ed2a336c
+page/Pageview|link-back|14 -fixed-time 1000 -script 'at(-134;376):2-14,click:4-5,type(b):12' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6
+page/Pageview|link-address|4 -fixed-time 1000 -script 'at(-219;334):2-4' lib_graphics/pdf/tests/data/links.pdf|5ebe147fd66135db290c2eeb7a82c7ff3a1c2a4019d1407de97a9953fe32bf66
+page/Pageview|link-dragged|10 -fixed-time 1000 -script 'at(-134;376):2-5,at(-134;366):6-10,click:4-7' lib_graphics/pdf/tests/data/links.pdf|50905d3fa016fb13b2afef5e19d159fe15093e91dc9d61afda3858df068323c6

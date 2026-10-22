@@ -84,6 +84,37 @@ let test_file () =
   let cut = let b = read "tex.pdf" in String.sub b 0 (String.length b - 300) in
   Alcotest.(check bool) "cut short: read anyway, or said" true (match Pdf.of_string cut with exception Failure _ -> true | p -> List.length (Pdf.pages p) >= 0)
 
+(* pdfTeX's hyperref: a named destination, an address, and back *)
+let test_links () =
+  let pdf = Pdf.of_string (read "links.pdf") in
+  let pages = Array.of_list (Pdf.pages pdf) in
+  let show (t : Pdf.target) =
+    match t with
+    | Page (i, Some _) -> Printf.sprintf "page %d, a height" i
+    | Page (i, None) -> Printf.sprintf "page %d" i
+    | Uri u -> u
+  in
+  let targets (i : int) =
+    List.map (fun (l : Pdf.link) -> show l.target)
+      (Pdf.links pdf pages pages.(i))
+  in
+  Alcotest.(check (list string))
+    "page 1's: a section by its name, an address"
+    [ "page 1, a height"; "https://example.org/ix" ]
+    (targets 0);
+  Alcotest.(check (list string))
+    "page 2's: back to the start" [ "page 0, a height" ] (targets 1);
+  (match Pdf.links pdf pages pages.(0) with
+  | l :: _ ->
+      let x0, y0, x1, y1 = l.rect in
+      Alcotest.(check bool) "a link's place, on the page" true
+        (x0 < x1 && y0 < y1 && x1 <= 284. && y1 <= 142.)
+  | [] -> Alcotest.fail "no link");
+  let tex = Pdf.of_string (read "tex.pdf") in
+  let tex_pages = Array.of_list (Pdf.pages tex) in
+  Alcotest.(check int) "a file without links" 0
+    (List.length (Pdf.links tex tex_pages tex_pages.(0)))
+
 let test_colors () =
   let close = Alcotest.(triple (float 0.5) (float 0.5) (float 0.5)) in
   Alcotest.check close "grey" (127.5, 127.5, 127.5) (Pdf_color.color Gray [ 0.5 ]);
@@ -110,4 +141,5 @@ let tests =
       t "filters" test_filters;
       t "files: a table, a table as a stream, no table" test_file;
       t "colours and a gradient's function" test_colors;
+      t "links: to a page, named or not, and to an address" test_links;
     ]

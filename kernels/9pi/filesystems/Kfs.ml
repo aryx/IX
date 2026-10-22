@@ -33,15 +33,13 @@ let perm_of fs i = if is_dir fs i then 0o777 else 0o666
  * 650 KB started from the card took 1.7 s under QEMU so (plan_rio.md).
  * Here the device is read by pieces of 4 KB, kept: what is asked is
  * cut from them. A write changes the pieces it touches, and they are
- * written to the device when the call that wrote them ends ([failing],
- * below), each once and whole: a file's block appended was five small
- * writes (the bitmap's byte, the block zeroed, its number, its bytes,
- * the size and the time), each a command to the card and, for less
- * than its sector, a read of it first; and each forgot a piece that
- * the next read fetched again. cp of 5.6 MB took 58 s under QEMU so
- * (plan_self_hosting.md). The card is as right as before at the end of
- * each call. [cached] false: every read and write is the device's, as
- * it was. *)
+ * written to the device later ([failing], below), each once and
+ * whole: a file's block appended was five small writes (the bitmap's
+ * byte, the block zeroed, its number, its bytes, the size and the
+ * time), each a command to the card and, for less than its sector, a
+ * read of it first; and each forgot a piece that the next read fetched
+ * again. cp of 5.6 MB took 58 s under QEMU so (plan_self_hosting.md).
+ * [cached] false: every read and write is the device's, as it was. *)
 let cached = ref true
 let piece = 4096
 (* 8192 pieces, 32 MB, then all forgotten: simple, and what a build
@@ -51,16 +49,53 @@ let piece = 4096
  * compile's time under QEMU (plan_self_hosting.md).
  * old: 512 pieces, 2 MB *)
 let max_pieces = 8192
-let pieces : (int, string) Hashtbl.t = Hashtbl.create max_pieces
+(* Each piece in a page of the processes' memory (Mmu.kalloc), with
+ * its length (the device's last is shorter), not a string of the
+ * kernel's heap: the kernel's malloc never takes back what it gave
+ * (libc.c), and a cache of 32 MB of strings, made and dropped as the
+ * card is read and written, took its heap from 15 MB to its 96 in
+ * twenty minutes of a build, the kernel then stopped (out of memory).
+ * old: let pieces : (int, string) Hashtbl.t = Hashtbl.create 512 *)
+let pieces : (int, int * int) Hashtbl.t = Hashtbl.create max_pieces
+(* how many (ocaml-light's Hashtbl.length counts them, its buckets
+ * all looked at) *)
+let npieces = ref 0
 (* the pieces changed and not yet written, with how to write them, and
  * how many *)
 let dirty : (int * (int -> string -> unit)) list ref = ref []
 let ndirty = ref 0
 
+let bytes_of (pa, len) = Machine.Phys.read pa len
+
 let flush () =
-  List.iter (fun (k, write) -> write (k * piece) (Hashtbl.find pieces k)) (List.rev !dirty);
+  List.iter (fun (k, write) -> write (k * piece) (bytes_of (Hashtbl.find pieces k)))
+    (List.rev !dirty);
   dirty := [];
   ndirty := 0
+
+(* all forgotten, what was changed written first, their pages given back *)
+let forget () =
+  flush ();
+  Hashtbl.iter (fun _ (pa, _) -> Mmu.kfree pa) pieces;
+  Hashtbl.clear pieces;
+  npieces := 0
+
+(* piece [k], read from the device when it is not here *)
+let piece_of (device : int -> int -> string) k =
+  try Hashtbl.find pieces k
+  with Not_found ->
+    let bytes = device (k * piece) piece in
+    if !npieces >= max_pieces then forget ();
+    let pa = match Mmu.kalloc () with
+      | Some pa -> pa
+      | None ->
+          forget ();
+          (match Mmu.kalloc () with Some pa -> pa | None -> raise (Error enovmem)) in
+    Machine.Phys.write pa bytes;
+    let e = (pa, String.length bytes) in
+    Hashtbl.replace pieces k e;
+    incr npieces;
+    e
 
 let cache_read (device : int -> int -> string) at n =
   if not !cached then device at n
@@ -69,17 +104,14 @@ let cache_read (device : int -> int -> string) at n =
     while Buffer.length b < n do
       let pos = at + Buffer.length b in
       let k = pos / piece in
-      let bytes =
-        try Hashtbl.find pieces k
-        with Not_found ->
-          let bytes = device (k * piece) piece in
-          if Hashtbl.length pieces >= max_pieces then begin flush (); Hashtbl.clear pieces end;
-          Hashtbl.replace pieces k bytes;
-          bytes in
+      let pa, len = piece_of device k in
       let o = pos - (k * piece) in
       (* (the device's end: a piece shorter than asked) *)
-      if o >= String.length bytes then Buffer.add_string b (String.make (n - Buffer.length b) '\000')
-      else Buffer.add_string b (String.sub bytes o (min (String.length bytes - o) (n - Buffer.length b)))
+      if o >= len then Buffer.add_string b (String.make (n - Buffer.length b) '\000')
+      else begin
+        let m = min (len - o) (n - Buffer.length b) in
+        Buffer.add_string b (Machine.Phys.read (pa + o) m)
+      end
     done;
     Buffer.contents b
   end
@@ -90,13 +122,16 @@ let cache_write (device : int -> int -> string) (write : int -> string -> unit) 
   if not !cached then write at s
   else
     for k = at / piece to (at + String.length s - 1) / piece do
-      ignore (cache_read device (k * piece) 1);
-      let b = Bytes.of_string (Hashtbl.find pieces k) in
+      let pa, len = piece_of device k in
       (* the part of s in this piece, and where *)
-      let from = max at (k * piece) and upto = min (at + String.length s) ((k * piece) + Bytes.length b) in
-      if upto > from then Bytes.blit_string s (from - at) b (from - (k * piece)) (upto - from);
-      Hashtbl.replace pieces k (Bytes.to_string b);
-      if not (List.mem_assoc k !dirty) then begin dirty := (k, write) :: !dirty; incr ndirty end
+      let from = max at (k * piece)
+      and upto = min (at + String.length s) ((k * piece) + len) in
+      if upto > from then
+        Machine.Phys.write_sub (pa + from - (k * piece)) s (from - at) (upto - from);
+      if not (List.mem_assoc k !dirty) then begin
+        dirty := (k, write) :: !dirty;
+        incr ndirty
+      end
     done
 
 (* A call of the file system: its failure the kernel's error. What it

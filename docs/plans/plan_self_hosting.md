@@ -198,12 +198,22 @@ program Linux's bytes; Status below).
     card read word by word, Kfs, the faults). More cores pay once
     less of it is under the lock: plan_multicore.md's finer locks, or
     less kernel time a build (the profile).
-  - **Next**: the whole build on one core, its `time` lines the
-    profile (`mk 'ML=time ml -m 5' ...`); the files it makes against
-    Linux's from the same sources. Running (2026-10-21): its times
-    0.00r after 73 minutes, the kernel's clock stopped (a timer
-    compare written already past, bugs/ix.md; fixed in timer_arm, the
-    running build on the old kernel).
+  - **The whole build on one core** (74 directories by `mk`, their
+    `time` lines the profile: `mk 'ML=time ml -m 5' ...`): 4 h 52 min
+    the first (2026-10-21), its times 0.00r for 71 minutes (the
+    kernel's clock stopped: a timer compare written already past,
+    bugs/ix.md, fixed in timer_arm); 2 h 59 min with the speedups
+    below, 1.6 times less where both were timed (13,088 s to 8,116),
+    the libraries 2.3. On Linux the same build, four jobs: 2 min.
+    Three directories failed in both: games twice (`mkdir -p` in
+    parallel jobs, each making the same parent: fixed in mini-mkdir),
+    browsers/netscape (mini-ld out of memory: the link takes 540 MB
+    as an arm32 Linux program, a half of mini-ml's heap is 192 MB on
+    Plan 9). The 1,269 files made against Linux's from the card's
+    `/src`: the same bytes but the 20 libraries' `dirs` (each tree's
+    path) and 5 of libc's objects, mini-cc built by mini-ml sharing
+    other blocks than built by OCaml (fixed: objects marshalled
+    without sharing, bugs/ix.md). Not yet run again on the card.
   - **Where a compile's time goes** (the Pi's PC sampled by QEMU's gdb
     stub, mini-ml on Pervasives: 0.07 s on Linux, 7.0 s on the card):
     the SD card's driver 40% (Kfs's cache of 2 MB, all forgotten when

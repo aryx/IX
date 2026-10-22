@@ -188,8 +188,14 @@ let cond_of_string =
  * 5: an operand may be a system register (Spr) *)
 let version = 5
 
-(* the files through the capabilities *)
-let save caps file (o : obj) = FS.write caps file (Marshal.to_string (version, o) [])
+(* the files through the capabilities; No_sharing: an object's bytes
+ * its value's alone, not which of its parts are one block in memory,
+ * which depends on the compiler that built the tool (mini-cc by OCaml
+ * and by mini-ml: the same code, 5 of libc's objects not the same
+ * bytes, plan_self_hosting.md), for 5% more
+ * old: Marshal.to_string (version, o) [] *)
+let save caps file (o : obj) =
+  FS.write caps file (Marshal.to_string (version, o) [ Marshal.No_sharing ])
 
 let load caps file : obj =
   let v, (o : obj) = Marshal.from_string (FS.read caps file) 0 in

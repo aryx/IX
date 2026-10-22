@@ -149,7 +149,9 @@ type members = (string * string list) list
  * source and names *)
 let lib_version = 4
 
-let member_of (o : Asm.obj) : member = (Fpath.to_string o.file, Marshal.to_string o [], defined_names o)
+(* (No_sharing: as Asm.save) *)
+let member_of (o : Asm.obj) : member =
+  (Fpath.to_string o.file, Marshal.to_string o [ Marshal.No_sharing ], defined_names o)
 let member_file ((file, _, _) : member) = file
 
 (* the index, as ar: a text name defined again by a later object is

@@ -48,9 +48,13 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     (* false when it could not be made *)
     let makedir s =
       let said msg = Console.eprint caps msg; failed := true; false in
-      if exists s then said (Printf.sprintf "mkdir: %s already exists\n" s)
+      if not !parents && exists s then said (Printf.sprintf "mkdir: %s already exists\n" s)
       else match FS.mkdir caps s !mode with
         | () -> true
+        (* -p (mkdirp looked first): made meanwhile by another, mk's
+         * jobs in parallel making the same parent (games' build on
+         * mini-9pi failed so) *)
+        | exception Unix.Unix_error _ when !parents && exists s -> true
         | exception Unix.Unix_error (e, _, _) -> said (Printf.sprintf "mkdir: can't create %s: %s\n" s (Unix.error_message e)) in
     (* -p: the path's directories from the first, each made when it is
      * not there (a / at the start is not one's end) *)

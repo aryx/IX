@@ -10,3 +10,7 @@
 2026-10-22 1b80ce51 build-9pi    11.9 s
 2026-10-22 1b80ce51 build-top     2.8 s
 2026-10-22 1b80ce51 cameltry     36.4 fps
+2026-10-22 17d84027 page-linux   68.3 fps
+2026-10-22 17d84027 doom-linux  446.3 fps
+2026-10-22 a87e5c73 page-linux   68.4 fps
+2026-10-22 a87e5c73 doom-linux  458.0 fps

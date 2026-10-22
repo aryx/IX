@@ -128,7 +128,10 @@ let size (s : source) (page : int) (turn : int) : float * float =
 (*****************************************************************************)
 
 (* a file's place: how far down its pages at a zoom of 1 (the pages'
- * heights are a zoom's multiple), the zoom, the turn *)
+ * heights are a zoom's multiple), the zoom, the turn. A zoom of 0: as
+ * wide as the window, whatever its width when the file is opened
+ * again (a zoom kept as a number, fitted to a window made larger,
+ * opened the page too large for the next one) *)
 type place = float * float * int
 
 (* a picture kept: of which page, at which zoom (in thousandths) and
@@ -152,6 +155,9 @@ type model = {
    * when the window changes (the platform's window known after the
    * start, a window made larger) *)
   fitted : float option;
+  (* the window's width at the last frame, and for how many frames it
+   * has been the same: fitted again once the window is left alone *)
+  seen : float * int;
   turn : int; (* quarter turns, clockwise: 0 to 3 *)
   (* the pages one under another: how far down them the window's top
    * is, in pixels, and where their middle is across the window *)
@@ -299,7 +305,8 @@ let fit_zoom (width : float) (m : model) : float =
 let fit (width : float) (m : model) : model =
   go m.page { m with zoom = fit_zoom width m; fitted = Some width; x = 0. }
 
-let place_of (m : model) : place = (m.down /. m.zoom, m.zoom, m.turn)
+let place_of (m : model) : place =
+  (m.down /. m.zoom, (if m.fitted = None then m.zoom else 0.), m.turn)
 
 (* the file's pages, at the place it was left if one is kept *)
 let start (name : string) (bytes : string) ~(was : place option)
@@ -310,7 +317,8 @@ let start (name : string) (bytes : string) ~(was : place option)
   in
   let m =
     { name; source = source bytes; page = 0; zoom = 1.; fitted = None;
-      turn = 0; down = 0.; x = 0.; kept = []; number = ""; back = [];
+      seen = (-1., 0); turn = 0; down = 0.; x = 0.; kept = []; number = "";
+      back = [];
       was = []; held = None; pressed = (0., 0.); hand = false;
       place = (0., 1., 0); still = 0; saved = (0., 1., 0); remember; quit;
       open_url; last = ref None }
@@ -323,6 +331,10 @@ let start (name : string) (bytes : string) ~(was : place option)
         let m =
           within s { m with zoom; fitted = None; turn; down = down *. zoom }
         in
+        { m with page = middle s m }
+    | Some (down, zoom, turn) when zoom = 0. && turn >= 0 && turn < 4 ->
+        let m = fit s.width { m with turn } in
+        let m = within s { m with down = down *. m.zoom } in
         { m with page = middle s m }
     | _ -> m
   in
@@ -411,10 +423,19 @@ let zoomed (s : Playground.screen) (by : float) (m : model) : model =
            down = ((m.down +. half) *. by) -. half }
 
 (* the zoom fitted to another window's width, what is at the window's
- * top staying there *)
+ * top staying there; once the width has stayed the same 10 frames (a
+ * window being made larger by the mouse is a new width at each frame,
+ * and each had its pages drawn again), or at once for the first one *)
 let refitted (s : Playground.screen) (m : model) : model =
+  let seen =
+    match m.seen with
+    | width, n when width = s.width -> (width, n + 1)
+    | width, _ when width < 0. -> (s.width, 10)
+    | _ -> (s.width, 0)
+  in
+  let m = { m with seen } in
   match m.fitted with
-  | Some width when width <> s.width ->
+  | Some width when width <> s.width && snd seen >= 10 ->
       let zoom = fit_zoom s.width m in
       let by = zoom /. m.zoom in
       { m with zoom; fitted = Some s.width; x = m.x *. by;
@@ -591,13 +612,19 @@ let shapes (s : Playground.screen) (m : model) (status : string) :
         | Some k ->
             (* its corner on a pixel, not its centre (a picture of an odd
              * width has its centre in the middle of one): the pixels are
-             * then shown as they are, none blended with its neighbour *)
+             * then shown as they are, none blended with its neighbour.
+             * The window's pixels count from its left and its top, and
+             * its middle, the playground's 0, is in the middle of a pixel
+             * when it is odd: a window made a pixel wider drew every page
+             * from four pixels each, each frame (1281 by 901, the Kernel
+             * book scrolled: 120 frames in 16.9 s, 2.4 at 1280 by 900).
+             * old: Float.round (centre -. (size /. 2.)) +. (size /. 2.) *)
             let w = float k.image.width and h = float k.image.height in
-            let on_pixel (centre : float) (size : float) =
-              Float.round (centre -. (size /. 2.)) +. (size /. 2.)
-            in
-            [ Playground.bitmap w h k.image
-              |> Playground.move (on_pixel m.x w) (on_pixel y h) ]
+            let left = m.x -. (w /. 2.) +. (s.width /. 2.)
+            and top = (s.height /. 2.) -. y -. (h /. 2.) in
+            let x = m.x -. (left -. Float.round left)
+            and y = y +. (top -. Float.round top) in
+            [ Playground.bitmap w h k.image |> Playground.move x y ]
         | None -> [])
     | Picture img ->
         (* (turned by the shape's angle, which goes the other way) *)
@@ -734,7 +761,8 @@ let () =
                  * drawn at the pixels it is shown: the draw platform's
                  * fit) *)
                 Playground_platform.run_app caps
-                  (("heap", "modest") :: ("window", "") :: flags)
+                  (* (the command line's first: window=WxH there wins) *)
+                  (flags @ [ ("heap", "modest"); ("window", "") ])
                   (Playground.game view update model))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");

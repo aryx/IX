@@ -27,6 +27,18 @@
 #               the maze turned 15 seconds each way), the median of
 #               its lines but the first (the start): 25 on 2026-10-21,
 #               the same on 2026-10-18's tree
+#   page-linux  mini-page on Linux (dune's build, the ppm platform with
+#               redraw=each: every frame drawn, as in a window), the
+#               Kernel book of principia scrolled 600 frames in a window
+#               of 1281 by 901, an odd size: the frames a second, its
+#               opening included. 69 on 2026-10-22; 7 that morning, a
+#               page's corner on a half pixel in an odd window, drawn
+#               from four pixels each (the author: "go from 50fps with
+#               original window size, to 2 fps if enlarge a bit the
+#               window")
+#   doom-linux  mini-doom on Linux the same way, 600 frames walking and
+#               turning: 450 on 2026-10-22 (OCaml's arm64 code, no
+#               window; under QEMU on mini-9pi it is 5 to 6, cameltry 36)
 
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
 export MKSHELL=mini-rc
@@ -68,12 +80,38 @@ cameltry() {
   record cameltry $fps fps 20 min
 }
 
-for t in ${@:-build-9pi build-top cameltry}; do
+# a program's frames on Linux, each one drawn: NAME LIMIT FRAMES EXE ARGS...
+linux_frames() {
+  local name=$1 limit=$2 frames=$3 exe=$4 t0; shift 4
+  dune build ./$exe 2> $W/$name.log \
+    || { fail $name "not built: $W/$name.log"; return; }
+  t0=$(now)
+  _build/default/$exe -dump-frame $frames $W/$name.ppm -fixed-time 1000 \
+    redraw=each "$@" > $W/$name.log 2>&1 \
+    || { fail $name "it failed: $W/$name.log"; return; }
+  record $name $(echo "$frames / ($(now) - $t0)" | bc -l) fps $limit min
+}
+BOOK=${BOOK:-$HOME/github/principia-softwarica/kernel/Kernel-12.pdf}
+page() {
+  local s='wheel(-1):5' i
+  for i in $(seq 6 2 600); do s="$s,wheel(-1):$i"; done
+  [ -f $BOOK ] || { fail page-linux "no $BOOK (BOOK=)"; return; }
+  linux_frames page-linux 50 600 apps/page/Pageview.exe -script "$s" \
+    window=1281x901 places=off $BOOK
+}
+doom() {
+  linux_frames doom-linux 300 600 games/fps/doom/Doom.exe \
+    -script up:1-300,left:300-400,up:400-600
+}
+
+for t in ${@:-build-9pi build-top cameltry page-linux doom-linux}; do
   case $t in
     build-9pi) nothing_changed build-9pi 15 build_9pi;;
     build-top) nothing_changed build-top 10 build_top;;
     # (after build-9pi, which makes the card it runs from)
     cameltry) cameltry;;
+    page-linux) page;;
+    doom-linux) doom;;
     *) echo "speed.sh: $t?"; exit 2;;
   esac
 done

@@ -200,18 +200,27 @@ run time are a plan of their own, after it (below, stage 6).
   memory allocation failed"). Built by `games/fps/doom/mkfile` (draw)
   and `PLATFORM=software` (`doom-soft`), on the card as `doom`,
   `doom-soft`, `/lib/doom/freedoom.wad`. Under QEMU, the up arrow
-  held: **15 frames a second at 320 by 200 shown as it is**
-  (`scale=1 size=320`: the view 48 ms, the showing 7-10), 12 scaled
-  to the screen's 768 square, under 2 at `scale=2`; the software
-  platform under 1 (it draws the whole square). By mini-5i, mini-ml's
+  held: **5 to 6 frames a second at 320 by 200 shown as it is** (the
+  default on Plan 9: 40 frames in 6.4 to 8 s, the view 46 to 106 ms,
+  the showing 70 to 84), under 2 at `scale=2`; the software platform
+  under 1 (it draws the whole square). Numbers of 15 a second were
+  said here first, and were wrong: the eye never moved on mini-9pi
+  (the author: "I see 15fps but I can't do anything"). The game took
+  the keys; its picture was one of two buffers changed in place, and
+  the draw platform keeps the device's image of a picture it has
+  shown, found by the value itself (`==`): it showed the first two
+  frames again and again, cheaply. Each frame's picture is now a new
+  value over the two buffers (`Doom.view`); found by looking at the
+  screens of a session, not its meter. By mini-5i, mini-ml's
   arm code: 40 million instructions a frame, 648 million to start (the
   WAD read, its textures made). mini-ml's frames are not OCaml's
   (arm64's fused multiply-add: 2 to 4% of the pixels, a texel apart):
   each frames' session has its second sum.
 - What follows is [`plan_playground_framebuffer.md`](plan_playground_framebuffer.md)
-  (stage 6): the view is most of a frame (mini-ml's speed, 4 to 5 times
-  OCaml's here), but the path to the screen is ruinous as soon as the
-  picture is scaled, and the picture is made three times before the
+  (stage 6): the view is half of a frame (mini-ml's speed, 4 to 5
+  times OCaml's here), the path to the screen the other half (a new
+  image of the device's each frame, made, loaded) and ruinous as soon
+  as the picture is scaled; the picture is made three times before the
   device has it.
 - Not run: the recorded mini-9pi sessions (`make check-*`), mini-qemu
   at `-ips 200` (a board's pace), a board; `make test-lite`; a

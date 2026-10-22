@@ -20,7 +20,7 @@
  *     map=   which level (the WAD's first by default)
  *     scale= each of Doom's 320 by 200 pixels made n by n (1 to 4;
  *            2 by default, 1 on Plan 9: mini-9pi under QEMU made a
- *            frame of 640 by 400 in 0.7 s, of 320 by 200 in 68 ms);
+ *            frame of 640 by 400 in 0.7 s, of 320 by 200 in 0.17);
  *            the platform's size= is then 320 n, so that it shows the
  *            picture as it is (unless size= is said)
  *     x= y= angle=  the player put there, looking that way (degrees):
@@ -58,9 +58,10 @@ type model = {
   play : Play.t;
   sprites : Things.sprites;
   render : Render.t;
-  (* two pictures, one a frame in turn: the platform compares a frame's
-   * shapes with the last's (Redraw), which must not be the same bytes
-   * changed *)
+  (* two pictures' bytes, one a frame in turn: the platform compares a
+   * frame's shapes with the last's (Redraw), which must not be the same
+   * bytes changed; and each frame's picture a new value over them
+   * ([view]) *)
   images : Rgba_image.t array;
   mutable frames : int;
   scale : int;
@@ -132,7 +133,12 @@ let view (computer : P.computer) (m : model) : P.shape list =
    * frames, in black, would not be seen. A window of the picture's
    * size has none, its pixels then the picture's only) *)
   (if h < screen.height then [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ] else [])
-  @ [ P.bitmap w h m.images.(m.frames land 1) ]
+  (* (a new picture each frame, though its bytes are one of two: the
+   * draw platform keeps the device's image of a picture it has shown,
+   * found by the value itself (==), and a picture changed in place was
+   * shown as it was the first time: on mini-9pi the eye never moved,
+   * the author: "I see 15fps but I can't do anything") *)
+  @ [ P.bitmap w h { (m.images.(m.frames land 1)) with width = Render.width m.render * m.scale } ]
   @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
   @
   if m.play.exited then
@@ -219,9 +225,7 @@ let () =
            (* heap=modest: a WAD's megabytes are alive the whole game, and a
             * game's heap of eight times what is alive (Plan9_loop) does
             * not fit in mini-9pi's memory *)
-           (* changes=all: a new picture each frame, Redraw's comparing
-            * of two for nothing (Redraw.choose) *)
-           Playground_platform.run_app caps (("heap", "modest") :: flags @ [ ("changes", "all") ]) (P.game view update model)
+           Playground_platform.run_app caps (("heap", "modest") :: flags) (P.game view update model)
          end
        with Failure msg ->
          Console.eprint caps ("mini-doom: " ^ msg ^ "\n");

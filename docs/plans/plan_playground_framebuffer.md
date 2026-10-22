@@ -27,10 +27,16 @@ draw platform's device time); a frame is 40 frames' time / 40:
 
 | | a frame | the update (tics) | the view | the showing |
 |---|---:|---:|---:|---:|
-| draw platform, `scale=1`, the platform's square 768: the 320 by 200 picture scaled to 768 | 80 ms (12 a second) | 7-11 ms | 37-39 | 26-28 (the device 25: the scaled picture made, loaded) |
-| draw platform, `scale=1 size=320`: shown as it is | 68 ms (15 a second) | 2-3 | 48 | 7-10 (the device 5) |
+| draw platform, `scale=1`, `size=320` (mini-doom's default on Plan 9): shown as it is | 160-200 ms (5 to 6 a second) | 5 ms | 46-106 | 70-84 |
 | draw platform, `scale=2` (640 by 400 scaled to 768) | no meter's line in 20 s: under 2 a second | | | |
 | software platform, `scale=1` (it has no `size=`: its square is the screen's 768) | no meter's line in 60 s: under 1 a second (the whole 768 square made by the software renderer each frame, the picture scaled into it) | | | |
+
+(Corrected the same day. The first numbers here, 15 frames a second
+shown as it is and 12 scaled, were of frames that showed nothing new:
+mini-doom changed its picture's bytes in place, and the draw platform
+keeps the device's image of a picture it has shown, found by the value
+itself; it showed the first two frames again and again, and the eye
+never moved. `plan_doom.md`'s Status says it.)
 
 And on Linux, the same frame by the two compilers' code (arm64,
 300 frames walking, 320 by 200):
@@ -45,16 +51,16 @@ and by mini-5i, mini-ml's arm code: 40 million instructions a frame
 
 So for mini-doom today:
 
-1. **The view (the renderer, mini-ml's code) is most of a frame**:
-   48 ms under QEMU. That is mini-ml's speed (4 to 5 times OCaml's
-   here: [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md)),
-   not the path to the screen; no framebuffer changes it.
-2. **The path to the screen is cheap when nothing is scaled** (7 to 10
-   ms at 320 by 200), and **ruinous when it is**: the draw platform
-   makes a Bitmap's pixels at the size shown with the software
-   renderer (its neighbours blended), then gives the device a new
-   image each frame. A 640 by 400 picture on a 768 square is under 2
-   frames a second.
+1. **The view (the renderer, mini-ml's code) is half of a frame**:
+   46 to 106 ms under QEMU. That is mini-ml's speed (4 to 5 times
+   OCaml's here: [`plan_mini_toolchain_optimization.md`](plan_mini_toolchain_optimization.md));
+   no framebuffer changes it.
+2. **The path to the screen is the other half, unscaled** (70 to 84 ms
+   at 320 by 200: each frame a new picture, so the draw platform
+   makes its pixels again, allocates an image of the device's, loads
+   it, frees the oldest of the four it keeps), and **ruinous when the
+   picture is scaled** (its pixels made with neighbours blended). A
+   640 by 400 picture on a 768 square is under 2 frames a second.
 3. **The picture is made three times before the device has it**: the
    renderer's bytes of the palette, the program's RGBA (1.7 ms by
    mini-ml at 320 by 200, four times that at 640 by 400), the

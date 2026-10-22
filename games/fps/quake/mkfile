@@ -1,4 +1,4 @@
-# mini-quake, built by ix's tools (docs/plans/plan_quake.md): its units,
+# mini-quake, built by ix's tools (docs/plans/done/plan_quake.md): its units,
 # compiled here, then the program, linked with the libraries
 # (mkfiles/mklibs): the playground and one platform of it, the
 # pictures' core. The platform is ppm's on Linux (no window: a frame

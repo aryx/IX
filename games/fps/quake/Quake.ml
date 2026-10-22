@@ -3,7 +3,7 @@
 
 (* mini-quake: Quake (id Software, 1996), its software renderer and
  * its lightmaps, as a program of ix's playground
- * (docs/plans/plan_quake.md). A walk through a level of a .bsp --
+ * (docs/plans/done/plan_quake.md). A walk through a level of a .bsp --
  * LibreQuake's lq_e0m1 by default, compiled by qbsp and vis, lit by
  * tools/Light.ml (data/README.md) -- textured and lit as Quake drew
  * it, its doors, buttons, lifts and triggers working, its monsters and
@@ -14,7 +14,8 @@
  *   button: what Quake's shot did); page up and down look
  *
  *   usage: mini-quake [bsp=file.bsp] [scale=n]
- *            [x=X y=Y z=Z angle=A pitch=P] [lightmaps] [things=off] [entities]
+ *            [x=X y=Y z=Z angle=A pitch=P] [lightmaps] [things=off]
+ *            [gamma=g] [entities]
  *     bsp=   the level (default: /lib/quake/e0m1.bsp, else
  *            games/fps/quake/data/e0m1.bsp); the palette and the
  *            colormap beside it
@@ -23,6 +24,8 @@
  *            (degrees): a test's camera
  *     lightmaps  the textures grey: the lightmaps alone
  *     things=off  no monster nor item drawn
+ *     gamma= the brightness: 1 the palette as it is (id's default) to
+ *            0.3; 0.7 by default
  *     entities   the level's entities listed, and the end
  *
  * A frame (the playground's view): Play's move for the time since the
@@ -147,6 +150,23 @@ let update (computer : P.computer) (m : model) : model =
     };
   m
 
+(* The palette made brighter (id's BuildGammaTable, vid.c): each
+ * component c becomes 255 ((c + 0.5) / 255.5)^gamma. Quake's Options
+ * menu's Brightness was this, from 1 (the palette as it is, id's
+ * default) to 0.5; it changes no pixel's index, only the colours shown,
+ * so it costs nothing a frame. 0.7 by default here: LibreQuake's map
+ * was lit by ericw-tools for brighter rooms than tools/Light.ml's (the
+ * author, 2026-10-22: "many zones seems still very dark (it's actually
+ * hard to see some dogs in the shadow)"). *)
+let default_gamma = 0.7
+
+let with_gamma (g : float) (c : int) : int =
+  if g = 1. then c
+  else
+    max 0
+      (min 255
+         (int_of_float ((255. *. (((float c +. 0.5) /. 255.5) ** g)) +. 0.5)))
+
 let default_bsps = [ "/lib/quake/e0m1.bsp"; "games/fps/quake/data/e0m1.bsp" ]
 
 let () =
@@ -195,10 +215,17 @@ let () =
            let image () : Rgba_image.t =
              Rgba_image.create ~width:(320 * scale) ~height:(200 * scale)
            in
+           let gamma =
+             match Option.bind (flag "gamma") float_of_string_opt with
+             | Some g when g >= 0.3 && g <= 1. -> g
+             | _ -> default_gamma
+           in
            let rgba = Bytes.create 1024 in
            for i = 0 to 255 do
              for c = 0 to 2 do
-               Bytes.set rgba ((4 * i) + c) palette.[(3 * i) + c]
+               Bytes.set rgba
+                 ((4 * i) + c)
+                 (Char.chr (with_gamma gamma (Char.code palette.[(3 * i) + c])))
              done;
              Bytes.set rgba ((4 * i) + 3) '\255'
            done;

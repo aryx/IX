@@ -883,7 +883,7 @@ endef
 #              E1M1, games/fps/doom/data; docs/plans/plan_doom.md)
 #              and quake's level (/lib/quake/e0m1.bsp, its palette.lmp
 #              and colormap.lmp: LibreQuake's lq_e0m1,
-#              games/fps/quake/data; docs/plans/plan_quake.md)
+#              games/fps/quake/data; docs/plans/done/plan_quake.md)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
 #              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)

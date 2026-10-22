@@ -13,6 +13,13 @@ The trilogy: TinyWolfenstein (rays through a grid), mini-doom (a 2D BSP
 walked front to back, columns and spans), mini-quake (a 3D BSP, the
 PVS, the edge list and its spans, the surface cache, the lightmaps).
 
+**Status: done** (2026-10-22; the author: "let's move the plan to
+done/ and add the smaller gaps and other remaining stuff to do in it"),
+and this file kept as its record: stages 1 to 5 below (5 run by the
+author under QEMU, about 7 frames a second), the bounce and the
+brightness after them. What is left, for plans of their own if they
+are wanted: the last section, "What is left".
+
 ## The survey (2026-10-22)
 
 | | what | lines | what it gives mini-quake |
@@ -215,3 +222,52 @@ mini-9pi), 6 not started.
   frames' sums recorded again (the new lightmaps changed them all).
 - Not run (by me): mini-9pi under QEMU or mini-qemu, the Pi 2; the card not
   remade; `make test-lite`; the reference (stage 6).
+- **The brightness** (2026-10-22, the author: "many zones seems still
+  very dark (it's actually hard to see some dogs in the shadow)"):
+  `gamma=`, id's BuildGammaTable on the palette (Quake's Options menu's
+  Brightness, 1 to 0.5), nothing a frame; 0.7 by default here, where
+  id's was 1. The level stays darker than LibreQuake's authors lit it
+  (their ericw-tools' bounce, stronger than physical, and its dirt):
+  the lightmaps are the cause, the gamma a player's remedy, as in
+  1996. The frames' sums recorded again.
+
+## What is left
+
+- **The light as the map's authors saw it**: tools/Light.ml's bounce
+  is physical and faint (mean 37 against ericw's 56 on the hub). A
+  faster bounce (receivers gathered by patch, a trace a pair of
+  patches; or the light's rays shot from the patches, as Quake II's
+  qrad3) would make `_bouncescale` above 1 affordable; ericw's own
+  formula read (bounce.cc) for what it does beyond the physical;
+  `_dirt` (corners darkened), colour (`.lit`), surface lights.
+- **The reference** (stage 6): chocolate-quake built without a window,
+  as mini-doom's id reference (tests/compare.sh), the pixels that
+  differ counted; it needs a `progs.dat`, LibreQuake's QuakeC compiled
+  (fteqcc, maybe nixpkgs').
+- **Speed**: plan_doom.md's stage 6, the framebuffer (both games at
+  about 7 frames a second under QEMU, the picture's way to the screen
+  half of a frame); then, of id's own: a face's edges shared with its
+  neighbour (the edge cache), 16 pixels between divisions; mini-prof
+  on a frame. Not measured: the Pi 2 (mini-doom's 8 there), mini-qemu
+  at -ips 200.
+- **The models**: a triangle clipped by the screen's edges and the near
+  plane (R_AliasClipTriangle; one with a corner behind the eye is left
+  out, one past the border drawn in part); id's 162 normals (anorms.h)
+  if their exact shading matters; the items QuakeC made brush models
+  (health, ammunition, barrels: maps/b_*.bsp compiled by qbsp from
+  LibreQuake's sources); the monsters' bounding boxes not solid (the
+  player walks through them).
+- **The game**: the monsters moving and attacking (QuakeC's ai.qc,
+  fight.qc, each monster's .qc), weapons and the player's view model,
+  the items picked up (but the keys), health and the status bar, damage
+  (lava, slime, crushers), trigger_hurt, trigger_push, func_train and
+  path_corner, the changelevel's next map (lq_e0m2 compiled the same
+  way), dynamic lights (muzzle flashes, rockets: R_AddDynamicLights),
+  particles, the water's view warp (D_WarpScreen) and its tint, sound,
+  the console, the network.
+- **The renderer's corners**: transparent `{` textures (not vanilla's),
+  rotating brush models (Hipnotic's), the cache's eviction of a
+  surface still to be drawn this frame (id's r_cache_thrash), the sky's
+  layers moving a texel at a time (id's skytime).
+- **mini-9pi**: the card made again with `quake` and `/lib/quake/`
+  (built, not remade by me); `-framebuffer` once it exists.

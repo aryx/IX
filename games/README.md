@@ -8,7 +8,7 @@ Six of the games of the author's playground (`~/playground`, its
 | `puzzle/Tetris.ml` | Tetris (`4s` on mini-9pi) |
 | `fps/TinyWolfenstein.ml` | a walk in a maze, seen from inside, in the 2D playground |
 | `fps/doom/` | mini-doom: Doom's renderer and data, a walk through a WAD's level (Freedoom's E1M1), textured; ix's own, not the playground's ([`plan_doom.md`](../docs/plans/plan_doom.md); `doom` on mini-9pi) |
-| `fps/quake/` | mini-quake: Quake's software renderer (the PVS, the edge list, the surface cache) and its lightmaps, baked by a `light` of ours, a walk through a `.bsp` (LibreQuake's lq_e0m1) ([`plan_quake.md`](../docs/plans/plan_quake.md); `quake` on mini-9pi) |
+| `fps/quake/` | mini-quake: Quake's software renderer (the PVS, the edge list, the surface cache) and its lightmaps, baked by a `light` of ours, a walk through a `.bsp` (LibreQuake's lq_e0m1) ([`plan_quake.md`](../docs/plans/done/plan_quake.md); `quake` on mini-9pi) |
 | `arcade/TinyCameltry.ml` | the maze turns, the ball rolls: on `lib_physics/` |
 | `arcade/TinyBreakout.ml` | Breakout, with its sounds and its juice: on `lib_juice/` (`breakout` on mini-9pi; `juice=off` is the dry game) |
 | `arcade/TinyTronscroll.ml` | light cycles on a map bigger than the screen, for two: on one keyboard, or on two computers over UDP, on `lib_networking/netcode/` (`tronscroll` on mini-9pi; the author's own network game of 1997) |

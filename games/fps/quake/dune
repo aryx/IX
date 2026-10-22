@@ -1,4 +1,4 @@
-; games/fps/quake: mini-quake (docs/plans/plan_quake.md), Quake's
+; games/fps/quake: mini-quake (docs/plans/done/plan_quake.md), Quake's
 ; software renderer over a .bsp; here with the platform that writes a
 ; frame to a file (the tests'); sdl/ is the one with a window,
 ; bin/mini-quake

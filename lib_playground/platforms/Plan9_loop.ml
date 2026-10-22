@@ -43,9 +43,13 @@ let edits = [ "Enter"; "Backspace"; "Tab"; "Escape" ]
 type 'w window = {
   make : Display.t -> 'w;
   at : 'w -> Rectangle.t;
+  units : 'w -> int * int;
   show : Display.t -> 'w -> Playground.shape list -> int -> bool;
   free : 'w -> unit;
 }
+
+let square =
+  (int_of_float Playground.default_width, int_of_float Playground.default_height)
 
 let flags (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. >) : Playground.flags = Playground.flags_of_strings (Session.parse caps).args
 
@@ -176,7 +180,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
   let buttons = ref 0 and was : (float * float) option ref = ref None in
   let on_mouse (m : Mouse.state) : unit =
     let at = w.at !win in
-    let k = Playground.default_width /. float (Rectangle.dx at) in
+    let k = float (fst (w.units !win)) /. float (Rectangle.dx at) in
     let x = float (m.pos.x - at.min.x) -. (float (Rectangle.dx at) /. 2.) and y = (float (Rectangle.dy at) /. 2.) -. float (m.pos.y - at.min.y) in
     Session.event run (Sub.EMouseMove (int_of_float (x *. k), int_of_float (y *. k)));
     (* how far it moved, too (mdx, mdy), as the playground's loop says
@@ -266,7 +270,10 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
   let resized () : unit =
     w.free !win;
     win := w.make display;
-    Session.event run (Sub.EResized (int_of_float Playground.default_width, int_of_float Playground.default_height)) in
+    Session.event run (Sub.EResized (w.units !win)) in
+  (* (a screen other than the square: the program told at once) *)
+  if w.units !win <> square then
+    Session.event run (Sub.EResized (w.units !win));
   if cli.frames > 0 then begin
     (* a session played at once, then its picture, until Ctrl-Q *)
     (* (-dump-audio file: each frame's sixtieth of a second of sound

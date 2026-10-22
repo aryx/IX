@@ -148,6 +148,10 @@ type model = {
   (* from 0: the one gone to, or at the window's middle once moved along *)
   page : int;
   zoom : float; (* pixels a point *)
+  (* the window's width the zoom fits (f), if it does: fitted again
+   * when the window changes (the platform's window known after the
+   * start, a window made larger) *)
+  fitted : float option;
   turn : int; (* quarter turns, clockwise: 0 to 3 *)
   (* the pages one under another: how far down them the window's top
    * is, in pixels, and where their middle is across the window *)
@@ -176,7 +180,19 @@ type model = {
   quit : unit -> unit;
   (* an address shown, by another program *)
   open_url : string -> unit;
+  (* the last view and what it was made from: the same shapes again,
+   * the very value, when nothing changed, which the platform then
+   * does not show again (draw's show: [==] at once; a new list was
+   * compared to the last one down to the pages' pixels, and every
+   * frame was shown again, 155 ms a frame under QEMU) *)
+  last : (view_key * Playground.shape list) option ref;
 }
+
+(* the status line, down, across, the zoom, the turn, the screen's size,
+ * the pictures kept *)
+and view_key =
+  string * float * float * float * int * float * float
+  * (int * int * int) list
 
 (* pictures kept besides the window's *)
 let keep = 3
@@ -272,16 +288,16 @@ let go (page : int) (m : model) : model =
 
 (* the page as wide as the window, less a margin each side (a picture:
  * no larger than it is; no page: as it is), from its top *)
-let fit (width : float) (m : model) : model =
+let fit_zoom (width : float) (m : model) : float =
   let w, _ = size m.source m.page m.turn in
   let zoom = (width -. 40.) /. w in
-  let zoom =
-    match m.source with
-    | Picture _ -> Float.min 1. zoom
-    | Nothing _ -> 1.
-    | Pages _ -> zoom
-  in
-  go m.page { m with zoom; x = 0. }
+  match m.source with
+  | Picture _ -> Float.min 1. zoom
+  | Nothing _ -> 1.
+  | Pages _ -> zoom
+
+let fit (width : float) (m : model) : model =
+  go m.page { m with zoom = fit_zoom width m; fitted = Some width; x = 0. }
 
 let place_of (m : model) : place = (m.down /. m.zoom, m.zoom, m.turn)
 
@@ -293,22 +309,24 @@ let start (name : string) (bytes : string) ~(was : place option)
     Playground.to_screen Playground.default_width Playground.default_height
   in
   let m =
-    { name; source = source bytes; page = 0; zoom = 1.; turn = 0;
-      down = 0.; x = 0.; kept = []; number = ""; back = []; was = [];
-      held = None; pressed = (0., 0.); hand = false;
+    { name; source = source bytes; page = 0; zoom = 1.; fitted = None;
+      turn = 0; down = 0.; x = 0.; kept = []; number = ""; back = [];
+      was = []; held = None; pressed = (0., 0.); hand = false;
       place = (0., 1., 0); still = 0; saved = (0., 1., 0); remember; quit;
-      open_url }
+      open_url; last = ref None }
   in
   let m = within s (fit s.width m) in
   let m =
     match was with
     | Some (down, zoom, turn)
       when zoom >= 0.1 && zoom <= 8. && turn >= 0 && turn < 4 ->
-        let m = within s { m with zoom; turn; down = down *. zoom } in
+        let m =
+          within s { m with zoom; fitted = None; turn; down = down *. zoom }
+        in
         { m with page = middle s m }
     | _ -> m
   in
-  drawn s { m with place = place_of m; saved = place_of m }
+  { m with place = place_of m; saved = place_of m }
 
 (*****************************************************************************)
 (* Links *)
@@ -389,7 +407,19 @@ let zoomed (s : Playground.screen) (by : float) (m : model) : model =
   let zoom = Float.max 0.1 (Float.min 8. (m.zoom *. by)) in
   (* what is at the window's middle stays there *)
   let half = room s /. 2. and by = zoom /. m.zoom in
-  { m with zoom; x = m.x *. by; down = ((m.down +. half) *. by) -. half }
+  { m with zoom; fitted = None; x = m.x *. by;
+           down = ((m.down +. half) *. by) -. half }
+
+(* the zoom fitted to another window's width, what is at the window's
+ * top staying there *)
+let refitted (s : Playground.screen) (m : model) : model =
+  match m.fitted with
+  | Some width when width <> s.width ->
+      let zoom = fit_zoom s.width m in
+      let by = zoom /. m.zoom in
+      { m with zoom; fitted = Some s.width; x = m.x *. by;
+               down = m.down *. by }
+  | _ -> m
 
 let update (computer : Playground.computer) (m : model) : model =
   let s = computer.screen in
@@ -404,7 +434,7 @@ let update (computer : Playground.computer) (m : model) : model =
               String.make 1 k.typed.[i])))
   in
   let typed (c : char) = String.contains k.typed c in
-  let m = { m with number = m.number ^ digits } in
+  let m = refitted s { m with number = m.number ^ digits } in
   let m =
     if pressed "Enter" && m.number <> "" then
       { (go (int_of_string m.number - 1) m) with number = "" }
@@ -546,8 +576,8 @@ let write_places (caps : < Cap.open_out ; .. >) (file : string)
 (* The view *)
 (*****************************************************************************)
 
-let view (computer : Playground.computer) (m : model) : Playground.shape list =
-  let s = computer.screen in
+let shapes (s : Playground.screen) (m : model) (status : string) :
+    Playground.shape list =
   let tops = tops m in
   let page (i : int) : Playground.shape list =
     (* its middle, up the window *)
@@ -577,6 +607,19 @@ let view (computer : Playground.computer) (m : model) : Playground.shape list =
           |> Playground.move m.x y ]
     | Nothing why -> [ Playground.words Playground.black why ]
   in
+  let grey = Playground.rgb 120 120 128 in
+  let bar = s.bottom +. (status_line /. 2.) in
+  (Playground.rectangle grey s.width s.height
+   :: List.concat_map page (shown s m))
+  @ [
+      Playground.rectangle (Playground.rgb 225 225 225) s.width status_line
+      |> Playground.move 0. bar;
+      Playground.words (Playground.rgb 40 40 40) status
+      |> Playground.move 0. bar;
+    ]
+
+let view (computer : Playground.computer) (m : model) : Playground.shape list =
+  let s = computer.screen in
   let w, h = size m.source m.page m.turn in
   let status =
     Printf.sprintf "%s     page %d of %d     %d%%     %d by %d%s" m.name
@@ -588,16 +631,16 @@ let view (computer : Playground.computer) (m : model) : Playground.shape list =
        | "", Some t -> "     a link " ^ leads t
        | number, _ -> "     go to page " ^ number)
   in
-  let grey = Playground.rgb 120 120 128 in
-  let bar = s.bottom +. (status_line /. 2.) in
-  (Playground.rectangle grey s.width s.height
-   :: List.concat_map page (shown s m))
-  @ [
-      Playground.rectangle (Playground.rgb 225 225 225) s.width status_line
-      |> Playground.move 0. bar;
-      Playground.words (Playground.rgb 40 40 40) status
-      |> Playground.move 0. bar;
-    ]
+  let key : view_key =
+    ( status, m.down, m.x, m.zoom, m.turn, s.width, s.height,
+      List.map (fun (k : kept) -> (k.page, k.zoom, k.turn)) m.kept )
+  in
+  match !(m.last) with
+  | Some (k, shapes) when k = key -> shapes
+  | _ ->
+      let shapes = shapes s m status in
+      m.last := Some (key, shapes);
+      shapes
 
 (*****************************************************************************)
 (* Without a window *)
@@ -686,8 +729,13 @@ let () =
                     ~quit ~open_url
                 in
                 (* heap=modest: a page's picture is megabytes kept, not a
-                 * game's floats of a frame (Plan9_loop says what it changes) *)
-                Playground_platform.run_app caps (("heap", "modest") :: flags) (Playground.game view update model))
+                 * game's floats of a frame (Plan9_loop says what it changes);
+                 * window: the screen is the window, a unit a pixel (a page
+                 * drawn at the pixels it is shown: the draw platform's
+                 * fit) *)
+                Playground_platform.run_app caps
+                  (("heap", "modest") :: ("window", "") :: flags)
+                  (Playground.game view update model))
       with Failure msg ->
         Console.eprint caps (msg ^ "\n");
         CapStdlib.exit caps 1);

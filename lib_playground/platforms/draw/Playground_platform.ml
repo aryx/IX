@@ -35,15 +35,17 @@
  *
  * The loop is Plan9_loop's. *)
 
-(* where the program draws: the window, the picture's square in it, the
- * image the frame is drawn in before it is shown, the colours made so
- * far (each an image of one pixel, repeated: by its red, green, blue
- * and opacity), and the last frame's shapes *)
+(* where the program draws: the window, the picture's square in it (or
+ * all of the window: the flag window), the image the frame is drawn in
+ * before it is shown, the colours made so far (each an image of one
+ * pixel, repeated: by its red, green, blue and opacity), and the last
+ * frame's shapes *)
 type window = {
   view : Display.image;
   at : Rectangle.t;
   back : Display.image;
-  size : int;
+  width : int;
+  height : int;
   scale : float;
   colors : (int, Display.image) Hashtbl.t;
   recent : int array;
@@ -114,21 +116,35 @@ let part (display : Display.t) (i : int) : unit =
  * 11fps", where it was 22) *)
 let side = ref 0
 
+(* the flag window without a size (Session.window, as SDL's
+ * platform): the program's screen is all of the window, a unit a
+ * pixel, where it is otherwise a square of 1000 units. A page of mini-page's is then drawn at the
+ * pixels it is shown, not drawn for 1000 and made smaller here, each
+ * pixel from four (draw_pixels: a new page's 200 ms under QEMU, and
+ * its letters blurred) *)
+let follows = ref false
+
 let window (display : Display.t) : window =
   let view = Display.screen display in
   Display.hold display !stats;
   let w = Rectangle.dx view.r and h = Rectangle.dy view.r in
   let n = max 1 (min w h) in
   let n = if !side > 0 then min n !side else n in
-  let x = view.r.min.x + ((w - n) / 2) and y = view.r.min.y + ((h - n) / 2) in
+  let width, height = if !follows then (max 1 w, max 1 h) else (n, n) in
+  let scale = if !follows then 1. else float n /. Playground.default_width in
+  let x = view.r.min.x + ((w - width) / 2)
+  and y = view.r.min.y + ((h - height) / 2) in
   let white = Display.color display Display.white in
   Draw.fill view view.r white;
   Display.free white;
-  { view; at = Rectangle.v x y (x + n) (y + n); size = n; scale = float n /. Playground.default_width;
+  { view; at = Rectangle.v x y (x + width) (y + height); width; height; scale;
     (* (the screen's format: showing it is a copy) *)
-    back = Display.alloc display (Rectangle.v 0 0 n n) (Display.format display) ~repl:false Display.white;
+    back =
+      Display.alloc display (Rectangle.v 0 0 width height) (Display.format display)
+        ~repl:false Display.white;
     colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; letters = Hashtbl.create 512;
-    redraw = Redraw.create ~width:n ~height:n ~scale:(float n /. Playground.default_width) Shape_render_software.default_options; inside = None }
+    redraw = Redraw.create ~width ~height ~scale Shape_render_software.default_options;
+    inside = None }
 
 (* What a shape costs here is counted in the plan
  * (docs/plans/plan_playground_speed.md): by mini-ml's code on arm a
@@ -525,14 +541,16 @@ let rec font_boxes (win : window) (m : Affine.t) (boxes : Rectangle.t list) (s :
 let bounds (win : window) (m : Affine.t) (s : Playground.shape) : (int * int * int * int) option =
   let add (b : (int * int * int * int) option) (r : Rectangle.t) : (int * int * int * int) option =
     let x0 = max 0 (r.min.x - 1) and y0 = max 0 (r.min.y - 1) in
-    let x1 = min win.size (r.max.x + 1) and y1 = min win.size (r.max.y + 1) in
+    let x1 = min win.width (r.max.x + 1) and y1 = min win.height (r.max.y + 1) in
     if x0 >= x1 || y0 >= y1 then b
     else
       match b with
       | None -> Some (x0, y0, x1, y1)
       | Some (a0, b0, a1, b1) -> Some (min a0 x0, min b0 y0, max a1 x1, max b1 y1) in
-  let n = win.size in
-  List.fold_left add (Shape_render_software.pixel_bounds ~width:n ~height:n ~scale:win.scale [ s ]) (font_boxes win m [] s)
+  List.fold_left add
+    (Shape_render_software.pixel_bounds ~width:win.width ~height:win.height
+       ~scale:win.scale [ s ])
+    (font_boxes win m [] s)
 
 (* OPTIMIZATION (docs/plans/plan_playground_speed.md, stage B): only
  * what changed drawn again, Redraw's boxes, as the other platforms.
@@ -571,7 +589,10 @@ let show_boxes (display : Display.t) (win : window) (m : Affine.t) (shapes : Pla
  * only where it changed (show_boxes). A frame whose shapes are the
  * last one's is not drawn again. *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
-  let shapes = if !counter then shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] else shapes in
+  let shapes =
+    if !counter then
+      shapes @ [ Session.fps_counter ~width:win.width ~height:win.height ~scale:win.scale fps ]
+    else shapes in
   (* opti: is this frame the last one? [x == y] before [x = y].
    *
    * [x = y] is the structural comparison: it goes into both shapes
@@ -610,8 +631,8 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
     win.last <- Some shapes;
     if !stats then clock := Unix.gettimeofday ();
     (* the playground's units to the picture's pixels: up is less, the middle is (0, 0) *)
-    let half = float win.size /. 2. in
-    let m = Affine.compose (Affine.compose (Affine.translate half half) (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
+    let middle = Affine.translate (float win.width /. 2.) (float win.height /. 2.) in
+    let m = Affine.compose (Affine.compose middle (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
     match Redraw.changed win.redraw (bounds win m) shapes with
     | Some boxes -> show_boxes display win m shapes boxes
     | None ->
@@ -679,8 +700,13 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   (* (the command line's size=, else the program's: mini-doom asks the
    * size of its picture, not to have it scaled) *)
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps @ flags) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
+  (* (window=WxH, mini-doom's picture's size, not yet: the square, and
+   * size=, as before) *)
+  follows := Session.window (Plan9_loop.flags caps @ flags) = Session.Follows None;
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
+      units =
+        (fun (w : window) -> if !follows then (w.width, w.height) else Plan9_loop.square);
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors;
         List.iter (fun (p : picture) -> Option.iter Display.free p.image) w.pictures;
         Hashtbl.iter (fun (_ : letter) (i : (Display.image * Shape_render_software.mask) option) -> Option.iter (fun ((i : Display.image), _) -> Display.free i) i) w.letters;

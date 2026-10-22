@@ -47,14 +47,20 @@
 
 (* a platform's own: where it draws (made again when the window changes:
  * the one before is freed), the picture's square there (for the mouse),
- * a frame shown (the view's shapes, the frames a second to write;
- * false when there was nothing to draw: the frame before, again) *)
+ * the program's screen in its units (square: 1000 by 1000; or the
+ * window's pixels, the flag window), a frame shown (the view's shapes,
+ * the frames a second to write; false when there was nothing to draw:
+ * the frame before, again) *)
 type 'w window = {
   make : Display.t -> 'w;
   at : 'w -> Rectangle.t;
+  units : 'w -> int * int;
   show : Display.t -> 'w -> Playground.shape list -> int -> bool;
   free : 'w -> unit;
 }
+
+(* the playground's screen, 1000 units by 1000 *)
+val square : int * int
 
 (* Playground_platform's two, the second with the platform's window *)
 val flags : < Cap.argv ; Cap.stdout ; Cap.stderr ; .. > -> Playground.flags

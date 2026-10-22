@@ -96,5 +96,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   (* (the flag redraw=all: each frame the whole picture, the simple way) *)
   Redraw.choose (List.assoc_opt "redraw" (Plan9_loop.flags caps));
   Plan9_loop.run_app
-    { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show; free = (fun (w : window) -> Display.free w.image) }
+    { Plan9_loop.make = window; at = (fun (w : window) -> w.at);
+      units = (fun (_ : window) -> Plan9_loop.square); show;
+      free = (fun (w : window) -> Display.free w.image) }
     caps flags app

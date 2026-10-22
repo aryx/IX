@@ -15,6 +15,13 @@ gpu_mem=16
 # the Pi 2 (the 2B, with a BCM2836 or a BCM2837)
 [pi2]
 kernel=mini9pi2.img
+# At its full speed always (900 MHz), none more: without it the
+# firmware lets the ARM fall to its least, 600, after a while, there
+# being no system asking for more (the author's Pi 2, a Cortex-A53,
+# 2026-10-22: TinyCameltry from 50 frames a second to 33, cputype's
+# 600, 42 degrees, cputhrottle's none). No over_voltage: the warranty
+# bit stays unset.
+force_turbo=1
 
 # the Pi 1 (and the Zero)
 [pi1]

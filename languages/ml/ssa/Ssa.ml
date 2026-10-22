@@ -85,6 +85,10 @@ type ins =
   | Op of Ir.op * value list          (* a o b is [a; b], as the stack's top first *)
   | Call of Ir.target * value list    (* the closure, then the arguments *)
   | CallC of string * value list
+  (* a string's byte read or written, its length, a float's arithmetic:
+   * the stack code's in-place instructions (Ir's ByteGet ... IntOfFloat),
+   * the operands as Op's *)
+  | Prim of Ir.t * value list
   | Caught of int                     (* at a handler's entry, the exception *)
   | TryExit of int
 

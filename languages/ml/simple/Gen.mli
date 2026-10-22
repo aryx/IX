@@ -144,3 +144,6 @@ val startup : mach -> string list -> string
  * only when there is no room; and so a float's arithmetic, a new float
  * each (off: mini-ml -calls; never with gcc's C) *)
 val alloc_in_place : bool ref
+
+(* the most fields of a block taken so (arm64's small offsets) *)
+val alloc_most : int

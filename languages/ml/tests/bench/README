@@ -1,4 +1,8 @@
 Programs for measuring mini-ml's code against ocamlopt's (count.sh):
 calls (fib, tak) and allocation (maps). Small enough to be counted
 instruction by instruction under QEMU.
+Loops, each a program's of ix's, its loop alone (bench.sh: mini-ml's
+code by itself, arm and arm64): pixels (bytes: mini-doom's to_rgba),
+limbs (integers in arrays: lib_crypto's Montgomery product), samples
+(floats in a record and arrays: lib_audio's sine instrument).
 marshalling: Marshal's writing and reading, timed (its seconds on stderr).

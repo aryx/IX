@@ -1,7 +1,10 @@
 # Plan: ssa/, an optimizing back end in SSA form, beside simple/ and opti/
 
-Status: **phases 1, 2, 3a and 3b done (SSA, -dssa; ssa's own
-emission; registers); 3c (parallel moves, coalescing, zeroing) next.**
+Status: **phases 1 to 3c done (SSA, -dssa; ssa's own emission;
+registers; parallel moves), and ssa ahead of simple (2026-10-22: 0.57
+to 0.91 of its instructions, floats aside); the mkfiles' flags, the
+author's to choose; floats unboxed, a call's entry (zeroing), known
+functions and inlining next.**
 Written 2026-09-27. For mini-ml
 first, then mini-cc. Companions: [`opti.md`](opti.md)
 (the measurements that ask for it), [`simple.md`](simple.md)
@@ -202,6 +205,38 @@ simple's sequences. All four combinations pass, both machines. The
 counts (`count.sh`, `-O -ssa`, against simple's `-O`): fib 2.85 (3.22),
 loops 5.04 (6.13), tak 3.13 (2.58): tak's loop (opti's `tails`) has
 three phis, each copied through the staging slots, which 3c removes.
+
+*Phase 3c and after (2026-10-22)*, toward ssa as the back end the
+mkfiles use (the author: "let's do it", for keeping loops' values in
+registers, after the profiler showed mini-doom's to_rgba at 55
+instructions a pixel; "keep them under opti/ and/or ssa/"; "what
+matters is the ratio of added lines in mini-ml compared to the
+speedup it provides to most programs"). Measured by `tests/bench.sh`
+(the loops of three of ix's programs, besides fib, tak, maps and
+sched), each step against the last; `-O -ssa`'s instructions as a
+share of simple's (no flag); lines of code, about (262 in all, 80 of
+step 1's simple's sequences again):
+
+| step | lines | pixels arm | limbs arm | sched arm | pixels arm64 | limbs arm64 |
+|---|---:|---:|---:|---:|---:|---:|
+| `-ssa` before (a byte, a float, a block: the runtime's calls) | | 3.26 | 1.26 | | 3.00 | 0.76 |
+| 1. Prim: bytes, floats in place, blocks inline (simple's Gen's) | +100 | 1.41 | 1.24 | 1.30 | 1.28 | 0.74 |
+| 2. opti's `refs` (a ref a variable), `drops`; tails past 7 | +51 | 1.39 | 1.19 | 1.21 | 1.51 | 0.99 |
+| 3. constants made where read, parallel copies, arm's R4-R8 and arm64's R4-R15 | +40 | 1.00 | 0.97 | 0.82 | 0.81 | 0.64 |
+| 4. the values chosen by their loops' weight | +34 | 0.82 | 0.72 | 0.82 | 0.81 | 0.64 |
+| 5. a comparison fused with its branch; small constants as operands | +37 | **0.67** | **0.64** | **0.74** | **0.65** | **0.57** |
+
+Step 2 alone made `-O -ssa` worse: a ref made a variable is a phi at
+its loop's head, and the phis' copies went through memory; step 3's
+parallel copies are what it needed. fib 0.82, tak 0.91, maps 0.88 on
+arm after step 5; samples (floats) 1.06, the only one worse: each
+float a block, a safepoint at each operation (unboxing next). mini-doom
+on arm, its own units by `-O -ssa` (the libraries and the stdlib
+simple's), a frame of 30 walking: 43.2 million instructions, 37.4
+(the same picture). mini-ml by mini-ml writes the same assembly as by
+OCaml. The tests (`tests/tiny`, `runtime`, `bench`, `ML_HEAP=64`, both
+machines, `-ssa` and `-O -ssa`) fail as without (arm's 64-bit outputs,
+costs and marshalling).
 
 ## Tests and numbers
 

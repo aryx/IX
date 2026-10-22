@@ -116,7 +116,7 @@ for ml in "$@"; do
     arm-linux-gnueabihf-gcc -marm -o $W/$b $W/$b.start.s $objs ${own[@]} $W/std/std_exit.s $W/runtime.o -lm 2> $W/$b.ld.log \
       || { echo "FAIL $b: gcc: $(head -1 $W/$b.ld.log)"; failures=$((failures + 1)); continue; }
   else
-  $IX/linker/Main.exe -m $O $H -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/mk/lib_core/libc.a \
+  $IX/linker/Main.exe -m $O $H -map -o $W/$b $W/$b.start.$O $objs ${own[@]} $W/std/std_exit.$O $W/runtime.$O $W/mk/lib_core/libc.a \
     || { echo "FAIL $b: mini-ld"; failures=$((failures + 1)); continue; }
   fi
   if [ -n "${LIVE:-}" ]; then

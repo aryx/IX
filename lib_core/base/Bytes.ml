@@ -82,6 +82,8 @@ let copy b = of_string (uts b)
 let cat a b = unsafe_of_string (uts a ^ uts b)
 let concat sep l = unsafe_of_string (String.concat (uts sep) (List.map uts l))
 let iteri f b = String.iteri f (uts b)
+let iter f b = String.iter f (uts b)
+let init n f = unsafe_of_string (String.init n f)
 let index_from_opt b i c = String.index_from_opt (uts b) i c
 
 (* the binary fields: the readers are String's *)

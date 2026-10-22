@@ -21,10 +21,21 @@ type mach = {
   vregs : int list;         (* the values' (Alloc's) *)
 }
 
-let arm = { arch = Arm; w = 4; mov = "MOVW"; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; nregs = 8; regs = [ 1; 2; 3 ]; vregs = [] }
+(* the values' registers: no value is in one across a call (Alloc's
+ * safepoints), so an argument's register holds one between calls, a
+ * call's arguments loaded by a parallel move (args); arm's DIV is a
+ * call of _div, which keeps R0-R3, R4-R8 untouched
+ * old: arm's none, arm64's R20-R25 *)
+let arm = { arch = Arm; w = 4; mov = "MOVW"; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; nregs = 8; regs = [ 1; 2; 3 ];
+            vregs = [ 4; 5; 6; 7; 8 ] }
 let arm64 = { arch = Arm64; w = 8; mov = "MOV"; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; nregs = 15; regs = [ 1; 2; 3 ];
-              vregs = [ 20; 21; 22; 23; 24; 25 ] }
+              vregs = [ 20; 21; 22; 23; 24; 25; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15 ] }
 let sprintf = Printf.sprintf
+
+(* a parallel move's: where a value goes (a register, a slot), what it
+ * comes from (a place, or a constant made there) *)
+type place = In_reg of int | In_slot of int
+type source = At of place | Made of value
 
 let tagged m n =
   let v = Int64.add (Int64.mul 2L (Int64.of_int n)) 1L in
@@ -42,8 +53,10 @@ let glabel () = incr labels; sprintf "Q%d" !labels
  * slot 0 the closure, then the parameters, then the stack code's slots
  * (a handler's function's variables), then one per value; on the
  * machine stack the link at 0, C's outgoing arguments, the handlers'
- * records. Every value lives in its slot (phase 3a): an instruction
- * loads its operands into registers, computes, stores its result *)
+ * records. A value lives where Alloc says, a register, a slot or
+ * nowhere (a constant, made where it is read); an instruction reads
+ * its operands from there, computes into its result's register, or
+ * into a scratch one then its slot *)
 let func m out (fn : func) (lf : L.func) =
   let w = m.w and mov = m.mov and vsp = m.vsp and t = m.tmp in
   let lines = ref [] in
@@ -52,8 +65,6 @@ let func m out (fn : func) (lf : L.func) =
   let lab l = line (fun _ _ _ -> l ^ ":\n") in
   let tries = ref 0 and cargs = ref (if m.arch = Arm then 1 else 0) in
   let loc, frame = Alloc.alloc fn ~nregs:(List.length m.vregs) ~base:lf.nslots in
-  (* the phis' copies go through slots of their own, after memory's *)
-  let stage = frame and staged = ref 0 in
   let slot_ref f i =
     let off = w * (i - f) in
     if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) vsp, "0(R19)" else "", sprintf "%d(R%d)" off vsp
@@ -66,7 +77,13 @@ let func m out (fn : func) (lf : L.func) =
     match loc v with
     | Alloc.Reg c -> vreg c
     | Mem i -> get_slot i s; s
-    | Nil -> ins "%s\t$0, R%d" mov s; s
+    | Nil ->
+        (match Hashtbl.find fn.defs v with
+         | Const n -> ins "%s\t$%Ld, R%d" mov (tagged m n) s
+         | Blk b -> ins "%s\t$%s+%d(SB), R%d" mov b w s
+         | Symb y -> ins "%s\t$%s(SB), R%d" mov y s
+         | _ -> ins "%s\t$0, R%d" mov s);
+        s
   in
   (* into register d: v, wherever it is *)
   let load v d = let r = src v d in if r <> d then ins "%s\tR%d, R%d" mov r d in
@@ -76,13 +93,40 @@ let func m out (fn : func) (lf : L.func) =
   (* a call's arguments: in R0.., those past the registers in the
    * callee's slots, above the top, and for a tail call copied down
    * into this frame's (simple's Gen, its Call) *)
+  (* moves all at once, (where, from), sequenced: first a move whose
+   * place no other still reads; a cycle broken by the scratch register
+   * (a parallel copy, as a phi's or a call's arguments are) *)
+  let r1, r2, r3 = match m.regs with [ a; b; c ] -> a, b, c | _ -> 1, 2, 3 in
+  let place v = match loc v with Alloc.Reg c -> Some (In_reg (vreg c)) | Mem i -> Some (In_slot i) | Nil -> None in
+  let from v = match place v with Some p -> At p | None -> Made v in
+  let read s r = match s with At (In_reg x) -> x | At (In_slot i) -> get_slot i r; r | Made v -> src v r in
+  let write d s =
+    match d with
+    | In_reg x -> let r = read s x in if r <> x then ins "%s\tR%d, R%d" mov r x
+    | In_slot i -> let r = read s r1 in put_slot r i
+  in
+  let pmove (moves : (place * source) list) =
+    let pending = ref (List.filter (fun ((d, s) : place * source) -> s <> At d) moves) in
+    while !pending <> [] do
+      let reads d = List.exists (fun ((d', s) : place * source) -> d' <> d && s = At d) !pending in
+      match List.partition (fun ((d, _) : place * source) -> not (reads d)) !pending with
+      | (d, s) :: free, busy -> write d s; pending := free @ busy
+      | [], (_, s) :: _ ->
+          write (In_reg t) s;
+          pending := List.map (fun ((d, s') : place * source) -> d, if s' = s then At (In_reg t) else s') !pending
+      | [], [] -> ()
+    done
+  in
+  (* a call's arguments: in R0.., those past the registers in the
+   * callee's slots, above the top (first: they read registers the
+   * others are moved into), and for a tail call copied down into this
+   * frame's (simple's Gen, its Call) *)
   let args xs tail =
-    List.iteri (fun k x -> if k <= m.nregs then load x k) xs;
     let extra = List.filteri (fun k _ -> k > m.nregs) (List.mapi (fun k x -> k, x) xs) in
     List.iter (fun (k, x) -> let r = src x t in ins "%s\tR%d, %d(R%d)" mov r (w * k) vsp) extra;
+    pmove (List.filteri (fun k _ -> k <= m.nregs) (List.mapi (fun k x -> In_reg k, from x) xs));
     if tail then List.iter (fun (k, _) -> ins "%s\t%d(R%d), R%d" mov (w * k) vsp t; put_slot t k) extra
   in
-  let r1, r2, r3 = match m.regs with [ a; b; c ] -> a, b, c | _ -> 1, 2, 3 in
   let link = 0 in
   let epilogue () =
     line (fun f _ _ -> sprintf "\tSUB\t$%d, R%d\n" (w * f) vsp);
@@ -156,16 +200,123 @@ let func m out (fn : func) (lf : L.func) =
     ins "%s\t$%d, R%d" (shift Lsl) (if w = 4 then 2 else 3) i;
     ins "ADD\tR%d, R%d" b i
   in
+  (* OPTIMIZATION (Gen.alloc_in_place, its switch): a block taken from
+   * the heap here, simple's Gen's way (ml_alloc's two words, the
+   * runtime called only when there is no room); so a new float, its
+   * arithmetic the processor's, and a string's byte and length read in
+   * place: Prim. Without them a call of the runtime each, 3 times
+   * simple's instructions on a loop over bytes (tests/bench/pixels.ml) *)
+  let in_place = !Gen.alloc_in_place in
+  let fmov = match m.arch with Arm -> "MOVD" | Arm64 -> "FMOVD" in
+  let float_words = 8 / w and float_tag = 253 in
+  (* n words taken, the block in R0; to [slow] when there is no room *)
+  let take n tag slow =
+    ins "%s\tml_hp(SB), R0" mov;
+    ins "%s\tml_limit(SB), R%d" mov t;
+    ins "ADD\t$%d, R0" (w * (n + 1));
+    ins "CMP\tR%d, R0" t;
+    ins "BHI\t%s" slow;
+    ins "%s\tR0, ml_hp(SB)" mov;
+    ins "%s\t$%d, R%d" mov ((n lsl 10) lor tag) t;
+    ins "%s\tR%d, %d(R0)" mov t (- (w * (n + 1)));
+    ins "SUB\t$%d, R0" (w * n)
+  in
+  (* F0 in a new float, v; else [f] of the operands, the runtime's *)
+  let float_result v f xs =
+    let slow = glabel () and ok = glabel () in
+    take float_words float_tag slow;
+    ins "%s\tF0, 0(R0)" fmov;
+    ins "B\t%s" ok;
+    lab slow;
+    call_c f xs;
+    lab ok;
+    finish v 0
+  in
+  let prim v (p : L.t) xs =
+    match p, xs with
+    (* a string's byte: the index untagged and added to its address *)
+    | ByteGet, [ s; i ] ->
+        let a = src s r1 in let b = src i r2 in let d = dst v r3 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        ins "ADD\tR%d, R%d" a t;
+        ins "MOVBU\t0(R%d), R%d" t d;
+        ins "%s\t$1, R%d" (shift Lsl) d;
+        ins "ORR\t$1, R%d" d;
+        finish v d
+    | ByteSet, [ s; i; x ] ->
+        let a = src s r1 in let b = src i r2 in let c = src x r3 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        ins "ADD\tR%d, R%d" a t;
+        ins "%s\t$1, R%d, R%d" (shift Asr) c r3;
+        ins "MOVB\tR%d, 0(R%d)" r3 t
+    (* its words' bytes, less one, less what its last byte says *)
+    | StrLen, [ s ] ->
+        let a = src s r1 in let d = dst v r2 in
+        ins "%s\t%d(R%d), R%d" mov (-w) a t;
+        ins "%s\t$10, R%d" (shift Lsr) t;
+        ins "%s\t$%d, R%d" (shift Lsl) (if w = 4 then 2 else 3) t;
+        ins "SUB\t$1, R%d" t;
+        ins "ADD\tR%d, R%d, R%d" t a r3;
+        ins "MOVBU\t0(R%d), R%d" r3 r3;
+        ins "SUB\tR%d, R%d, R%d" r3 t d;
+        ins "%s\t$1, R%d" (shift Lsl) d;
+        ins "ORR\t$1, R%d" d;
+        finish v d
+    | Float2 f, [ x; y ] when in_place ->
+        let a = src x r1 in let b = src y r2 in
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\t0(R%d), F1" fmov b;
+        ins "%s\tF1, F0"
+          (match m.arch, f with
+           | Arm, "caml_addfloat" -> "ADDD" | Arm, "caml_subfloat" -> "SUBD" | Arm, "caml_mulfloat" -> "MULD" | Arm, _ -> "DIVD"
+           | Arm64, "caml_addfloat" -> "FADDD" | Arm64, "caml_subfloat" -> "FSUBD" | Arm64, "caml_mulfloat" -> "FMULD" | Arm64, _ -> "FDIVD");
+        float_result v f xs
+    (* the sign's bit of the high word changed, as the runtime does *)
+    | Float1 f, [ x ] when in_place && m.arch = Arm ->
+        let slow = glabel () and ok = glabel () in
+        take float_words float_tag slow;
+        let a = src x r1 in
+        ins "MOVW\t0(R%d), R%d" a t;
+        ins "MOVW\tR%d, 0(R0)" t;
+        ins "MOVW\t4(R%d), R%d" a t;
+        ins "%s\t$0x80000000, R%d" (if f = "caml_negfloat" then "EOR" else "BIC") t;
+        ins "MOVW\tR%d, 4(R0)" t;
+        ins "B\t%s" ok;
+        lab slow;
+        call_c f xs;
+        lab ok;
+        finish v 0
+    | FloatOfInt, [ x ] when in_place ->
+        let a = src x r1 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) a t;
+        ins "%s\tR%d, F0" (match m.arch with Arm -> "MOVWD" | Arm64 -> "SCVTFD") t;
+        float_result v "caml_floatofint" xs
+    | IntOfFloat, [ x ] when in_place ->
+        let a = src x r1 in let d = dst v r2 in
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\tF0, R%d" (match m.arch with Arm -> "MOVDW" | Arm64 -> "FCVTZSD") d;
+        ins "%s\t$1, R%d" (shift Lsl) d;
+        ins "ORR\t$1, R%d" d;
+        finish v d
+    (* old: (and without in_place) the runtime's, as before *)
+    | ByteGet, _ -> call_c "ml_string_get" xs; finish v 0
+    | ByteSet, _ -> call_c "ml_string_set" xs
+    | StrLen, _ -> call_c "ml_string_length" xs; finish v 0
+    | (Float2 f | Float1 f), _ -> call_c f xs; finish v 0
+    | FloatOfInt, _ -> call_c "caml_floatofint" xs; finish v 0
+    | IntOfFloat, _ -> call_c "caml_intoffloat" xs; finish v 0
+    | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
+  in
   incr funcs;
   let fid = !funcs in
   let blabel b = sprintf "Q%d_%d" fid b in
-  (* a phi's copies at the end of p toward s: through the staging slots,
-   * all read before any is written *)
+  (* a phi's copies at the end of p toward s, a parallel move
+   * old: through the staging slots, all read before any written
+   *   List.iteri (fun k (_, x) -> let r = src x r1 in put_slot r (stage + k)) moves;
+   *   List.iteri (fun k (dst, _) -> get_slot (stage + k) r1; finish dst r1) moves *)
   let copies p s =
     let moves = List.filter_map (fun phi -> match Hashtbl.find fn.defs phi with Phi ops -> Some (phi, List.assoc p ops) | _ -> None) fn.blocks.(s).phis in
-    staged := max !staged (List.length moves);
-    List.iteri (fun k (_, x) -> let r = src x r1 in put_slot r (stage + k)) moves;
-    List.iteri (fun k (dst, _) -> get_slot (stage + k) r1; finish dst r1) moves
+    pmove (List.filter_map (fun (phi, x) -> Option.map (fun d -> d, from x) (place phi)) moves)
   in
   let split = ref [] in
   let edge p s ~alone =
@@ -173,14 +324,53 @@ let func m out (fn : func) (lf : L.func) =
     else if alone then (copies p s; blabel s)
     else (let l = glabel () in split := (l, p, s) :: !split; l)
   in
+  (* OPTIMIZATION (fused): a comparison read only by its block's branch,
+   * and the block's last, is the branch's: CMP, then B.cond, where its
+   * boolean was made then compared with true (7 instructions a loop's
+   * test on arm, 3) *)
+  let reads = Hashtbl.create 64 in
+  let read v = Hashtbl.replace reads v (1 + match Hashtbl.find_opt reads v with Some k -> k | None -> 0) in
+  Array.iter (fun (b : block) ->
+    List.iter (fun v -> List.iter read (Ssa_build.operands (Hashtbl.find fn.defs v))) (b.phis @ b.body);
+    match b.term with Br (v, _, _) | Ret v | Raise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
+  let fused (b : block) =
+    match b.term, List.rev b.body with
+    | Br (v, _, _), last :: _ when last = v && Hashtbl.find_opt reads v = Some 1 -> (
+        match Hashtbl.find fn.defs v with Op (Cmp r, [ x; y ]) -> Some (r, x, y) | _ -> None)
+    | _ -> None
+  in
+  (* OPTIMIZATION (immediates): a small constant an operand, in the
+   * instruction (ocamlopt's Selection): x + 1 an ADD of 2, x < 10 a CMP
+   * with 21, x lsr 14 a shift of 14 (both machines encode 0 to 255) *)
+  let small v = match Hashtbl.find fn.defs v with Const n when n >= 0 && 2 * n + 1 < 256 -> Some n | _ -> None in
+  let compare_with x y =
+    let a = src x r1 in
+    match small y with
+    | Some n -> ins "CMP\t$%d, R%d" (2 * n + 1) a
+    | None -> let bb = src y r2 in ins "CMP\tR%d, R%d" bb a
+  in
+  let op_imm v (o : L.op) x y =
+    match o, small y, small x with
+    | (Add | Sub), Some n, _ -> let a = src x r1 in let d = dst v r3 in ins "%s\t$%d, R%d, R%d" (if o = Add then "ADD" else "SUB") (2 * n) a d; finish v d; true
+    | Add, None, Some n -> let a = src y r1 in let d = dst v r3 in ins "ADD\t$%d, R%d, R%d" (2 * n) a d; finish v d; true
+    | Cmp r, Some _, _ -> let d = dst v r3 in compare_with x y; set_bool r d; finish v d; true
+    | (Lsl | Lsr | Asr), Some n, _ when n < 8 * w - 1 ->
+        let a = src x r1 in let d = dst v r3 in
+        (match o with
+         | Lsl -> ins "SUB\t$1, R%d, R%d" a d; ins "%s\t$%d, R%d" (shift Lsl) n d
+         | _ -> ins "%s\t$%d, R%d, R%d" (shift o) n a d);
+        ins "ORR\t$1, R%d" d; finish v d; true
+    | _ -> false
+  in
   Array.iter (fun (b : block) ->
     lab (blabel b.id);
+    let fuse = fused b in
     List.iter (fun v ->
+      if fuse <> None && Some v = (match b.term with Br (c, _, _) -> Some c | _ -> None) then () else
       match Hashtbl.find fn.defs v with
       | Zero | Param _ | Phi _ -> ()
-      | Const n -> let d = dst v r1 in ins "%s\t$%Ld, R%d" mov (tagged m n) d; finish v d
-      | Blk s -> let d = dst v r1 in ins "%s\t$%s+%d(SB), R%d" mov s w d; finish v d
-      | Symb s -> let d = dst v r1 in ins "%s\t$%s(SB), R%d" mov s d; finish v d
+      (* made where they are read (src) *)
+      | Const _ | Blk _ | Symb _ -> ()
       | GetG g -> let d = dst v r1 in ins "%s\t%s(SB), R%d" mov g d; finish v d
       | SetG (g, x) -> let r = src x r1 in ins "%s\tR%d, %s(SB)" mov r g
       | Slot i -> let d = dst v r1 in get_slot i d; finish v d
@@ -191,6 +381,21 @@ let func m out (fn : func) (lf : L.func) =
           let bb = src blk r1 in load i r2; index bb r2;
           let d = dst v r3 in ins "%s\t0(R%d), R%d" mov r2 d; finish v d
       | SetIndex (blk, i, x) -> let bb = src blk r1 in load i r2; index bb r2; let r = src x r3 in ins "%s\tR%d, 0(R%d)" mov r r2
+      | Alloc (tag, xs) when in_place && List.length xs <= Gen.alloc_most ->
+          let slow = glabel () and ok = glabel () in
+          take (List.length xs) tag slow;
+          List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
+          ins "B\t%s" ok;
+          lab slow;
+          cargs := max !cargs 2;
+          ins "%s\t$%d, R0" mov (List.length xs);
+          ins "%s\t$%d, R%d" mov tag t;
+          ins "%s\tR%d, %d(%s)" mov t (2 * w) m.sp;
+          ins "%s\tR%d, ml_vsp(SB)" mov vsp;
+          ins "BL\tml_alloc(SB)";
+          List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
+          lab ok;
+          finish v 0
       | Alloc (tag, xs) ->
           (* the collector may run: the fields, in memory, read after *)
           cargs := max !cargs 2;
@@ -218,6 +423,7 @@ let func m out (fn : func) (lf : L.func) =
           ins "%s\tR0, R%d" mov d;
           lab ok;
           finish v d
+      | Op (o, [ x; y ]) when op_imm v o x y -> ()
       | Op (o, [ x; y ]) -> let a = src x r1 in let bb = src y r2 in let d = dst v r3 in op o a bb d; finish v d
       | Op (o, [ x ]) -> let a = src x r1 in let d = dst v r2 in unary o a d; finish v d
       | Op _ -> failwith (fn.name ^ ": ssa: an operation's operands")
@@ -226,13 +432,16 @@ let func m out (fn : func) (lf : L.func) =
           (match tg with L.Direct f -> ins "BL\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; ins "BL\t(R%d)" t);
           finish v 0
       | CallC (f, xs) -> call_c f xs; finish v 0
+      | Prim (p, xs) -> prim v p xs
       | Caught _ -> finish v 0
       | TryExit k -> at k (3 * w) (fun o -> sprintf "%s\t%d(%s), R%d" mov o m.sp t); ins "%s\tR%d, ml_handler(SB)" mov t) b.body;
     match b.term with
     | Jmp s -> let l = edge b.id s ~alone:true in ins "B\t%s" l
     | Br (v, tr, fl) ->
         let lt = edge b.id tr ~alone:false and lf = edge b.id fl ~alone:false in
-        let r = src v r1 in ins "CMP\t$1, R%d" r; ins "BEQ\t%s" lf; ins "B\t%s" lt
+        (match fuse with
+         | Some (r, x, y) -> compare_with x y; ins "B%s\t%s" (cond r) lt; ins "B\t%s" lf
+         | None -> let r = src v r1 in ins "CMP\t$1, R%d" r; ins "BEQ\t%s" lf; ins "B\t%s" lt)
     | Try (k, body, h) ->
         tries := max !tries (k + 1);
         ins "%s\t%s, R0" mov m.sp;
@@ -247,7 +456,7 @@ let func m out (fn : func) (lf : L.func) =
         (match tg with L.Direct f -> epilogue (); ins "B\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; epilogue (); ins "B\t(R%d)" t))
     fn.blocks;
   List.iter (fun (l, p, s) -> lab l; copies p s; ins "B\t%s" (blabel s)) (List.rev !split);
-  let f = stage + !staged and c = round (max (w * (!cargs + 1)) (link + w)) 16 in
+  let f = frame and c = round (max (w * (!cargs + 1)) (link + w)) 16 in
   let msize = record c !tries in
   let pr fmt = Printf.bprintf out fmt in
   pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;

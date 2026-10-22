@@ -14,12 +14,18 @@ let term_uses (b : block) = match b.term with Br (v, _, _) | Ret v | Raise v -> 
 
 (* the instructions after which the collector may have run, or which a
  * handler's entry follows *)
-let safepoint = function Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true | _ -> false
+let safepoint = function
+  | Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true
+  (* a new float: the runtime's when there is no room *)
+  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt), _) -> true
+  | _ -> false
 
 let def (fn : func) v = Hashtbl.find fn.defs v
 
-(* the values that need no storage: a Zero is the constant 0 *)
-let real (fn : func) v = match def fn v with Zero -> false | _ -> true
+(* the values that need no storage: a Zero is the constant 0, and a
+ * constant is made where it is read (Emit's src)
+ * old: match def fn v with Zero -> false | _ -> true *)
+let real (fn : func) v = match def fn v with Zero | Const _ | Blk _ | Symb _ -> false | _ -> true
 
 let uses (fn : func) v = List.filter (real fn) (Ssa_build.operands (def fn v))
 
@@ -75,8 +81,51 @@ let alloc (fn : func) ~nregs ~base =
   let idom = Ssa_build.dominators fn in
   let children = Array.make n [] in
   Array.iteri (fun b d -> if b <> 0 && d >= 0 then children.(d) <- b :: children.(d)) idom;
+  (* OPTIMIZATION (the values chosen): which values get a register, the
+   * most used first, a use in a loop counting 8 times one outside it;
+   * each taken while no point has more of them live than there are
+   * registers, so that the coloring below never fails (an SSA program's
+   * interference: its colors are its most values live at once). Before,
+   * the first in the dominator tree's order took them, an outer loop's
+   * values those of the inner one, which lived in slots (arm's five:
+   * tests/bench/pixels.ml).
+   * old: let candidate v = real v && (not (Hashtbl.mem memory v)) && nregs > 0 in *)
+  let rec dominates a b = a = b || (b <> 0 && idom.(b) >= 0 && dominates a idom.(b)) in
+  (* a loop: an edge back to a block that dominates its source; its
+   * blocks those that reach the source without passing the head *)
+  let depth = Array.make n 0 in
+  Array.iter (fun (bl : block) ->
+    List.iter (fun h ->
+      if idom.(bl.id) >= 0 && dominates h bl.id then begin
+        let body = Hashtbl.create 16 in
+        Hashtbl.replace body h ();
+        let rec back b = if not (Hashtbl.mem body b) then (Hashtbl.replace body b (); List.iter back fn.blocks.(b).preds) in
+        back bl.id;
+        Hashtbl.iter (fun b () -> depth.(b) <- depth.(b) + 1) body
+      end) (successors bl)) fn.blocks;
+  let weight = Hashtbl.create 256 in
+  let use v b = if real v then Hashtbl.replace weight v ((match Hashtbl.find_opt weight v with Some x -> x | None -> 0) + (1 lsl (3 * min depth.(b) 6))) in
+  Array.iter (fun (bl : block) ->
+    List.iter (fun v -> use v bl.id) bl.phis;
+    List.iter (fun v -> use v bl.id; List.iter (fun x -> use x bl.id) (uses v)) bl.body;
+    List.iter (fun x -> use x bl.id) (term_uses bl);
+    List.iter (fun s ->
+      List.iter (fun phi -> match def phi with Phi ops -> (match List.assoc_opt bl.id ops with Some x -> use x bl.id | None -> ()) | _ -> ()) fn.blocks.(s).phis)
+      (successors bl)) fn.blocks;
+  (* the points: each block's start, each instruction's end *)
+  let points = Array.of_list (Array.to_list live_in @ Hashtbl.fold (fun _ live acc -> live :: acc) after []) in
+  let at = Hashtbl.create 256 in
+  Array.iteri (fun k live -> IS.iter (fun v -> Hashtbl.replace at v (k :: (match Hashtbl.find_opt at v with Some l -> l | None -> []))) live) points;
+  let count = Array.make (Array.length points) 0 and chosen = Hashtbl.create 64 in
+  let wanted = Hashtbl.fold (fun v w acc -> if not (Hashtbl.mem memory v) then (w, v) :: acc else acc) weight [] in
+  List.iter (fun (_, v) ->
+    let ks = match Hashtbl.find_opt at v with Some l -> l | None -> [] in
+    if List.for_all (fun k -> count.(k) < nregs) ks then begin
+      Hashtbl.replace chosen v ();
+      List.iter (fun k -> count.(k) <- count.(k) + 1) ks
+    end) (List.sort (fun ((w1, v1) : int * int) ((w2, v2) : int * int) -> if w1 <> w2 then compare w2 w1 else compare v1 v2) wanted);
   let color = Hashtbl.create 64 in
-  let candidate v = real v && (not (Hashtbl.mem memory v)) && nregs > 0 in
+  let candidate v = real v && Hashtbl.mem chosen v && nregs > 0 in
   let held s = IS.fold (fun x acc -> match Hashtbl.find_opt color x with Some c -> IS.add c acc | None -> acc) s IS.empty in
   let pick busy = List.find_opt (fun c -> not (IS.mem c busy)) (List.init nregs Fun.id) in
   (* busy at a definition: the registers of the values live after it
@@ -99,7 +148,7 @@ let alloc (fn : func) ~nregs ~base =
   let dead v = match Hashtbl.find_opt after v with Some live -> not (IS.mem v live) && not (Hashtbl.mem memory v) | None -> false in
   let loc v =
     match def v with
-    | Zero -> Nil
+    | Zero | Const _ | Blk _ | Symb _ -> Nil
     | _ when dead v -> Nil
     | Param i -> Mem i
     | _ -> (

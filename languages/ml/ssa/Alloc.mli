@@ -12,8 +12,10 @@
  * the dominator tree's order, each the lowest register that no value
  * live after its definition holds: for SSA, whose interference graph
  * is chordal, that order colors optimally (Hack, Grund and Goos,
- * below); one that finds none
- * lives in memory. No value in a register is live across a call, so
+ * below). Which values those are is chosen first: the most used, a use
+ * in a loop 8 times one outside it, each while no point has more of
+ * them live than there are registers; the others live in memory. A
+ * constant lives nowhere: Emit makes it where it is read. No value in a register is live across a call, so
  * every register is the caller's to save, as simple's and C's are.
  *
  * Liveness is the analysis met three times in the tree: here over
@@ -37,10 +39,10 @@
  * order colors with the fewest colors.
  *
  * modern:
- * What is left hard, and not done here (phase 3c): the phis. A phi
- * is a move on each edge into its block unless its operands got its
- * register, and choosing registers so that most such moves vanish
- * (coalescing) is NP-complete again. ocamlopt colors a graph, with
+ * What is left hard, and not done here: the phis. A phi is a move on
+ * each edge into its block unless its operands got its register (Emit
+ * makes them one parallel copy), and choosing registers so that most
+ * such moves vanish (coalescing) is NP-complete again. ocamlopt colors a graph, with
  * linear scan as an option (-linscan). Go's compiler runs what its
  * source calls a version of linear scan, a greedy walk of the
  * function as one long block; LLVM's default allocator, Greedy,

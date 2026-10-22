@@ -150,6 +150,16 @@ val cat : bytes -> bytes -> bytes
     {!Sys.max_string_length} bytes.
     @since 4.05.0 in BytesLabels *)
 
+val init : int -> (int -> char) -> bytes
+(** [init n f] returns a fresh byte sequence of length [n],
+    with character [i] initialized to the result of [f i].
+    @raise Invalid_argument if [n < 0] or [n > ]{!Sys.max_string_length}. *)
+
+val iter : (char -> unit) -> bytes -> unit
+(** [iter f s] applies function [f] in turn to all the bytes of [s].
+    It is equivalent to [f (get s 0); f (get s 1); ...;
+    f (get s (length s - 1)); ()]. *)
+
 val iteri : (int -> char -> unit) -> bytes -> unit
 (** Same as {!iter}, but the function is applied to the index of
     the byte as first argument and the byte itself as second

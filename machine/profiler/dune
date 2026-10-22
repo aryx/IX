@@ -1,0 +1,9 @@
+; mini-prof (docs/plans/plan_profiler.md): mini-5i's and mini-qemu's
+; profiles, by the link's map, function by function
+(include_subdirs no)
+(executable
+ (name Main)
+ (public_name mini-prof)
+ (package ix)
+ (modules Profiler Main)
+ (libraries ix_core caps fpath))

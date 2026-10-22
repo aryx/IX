@@ -93,6 +93,9 @@ extern value _syscall6(value, value, value, value, value, value, value);
 #define ux _syscall6
 #endif
 
+/* strings.c's copy, words when it can */
+extern void move_bytes(char*, char*, value);
+
 /* Linux's read, by its number: its answer says an interruption (-4,
  * EINTR), which a libc's read hides */
 #define Interrupted (-4)
@@ -179,19 +182,27 @@ caml_input(value ch, value s, value ofs, value len)
 {
 	Chan *c;
 	value n;
-	int b;
 
 	c = (Chan*)ch;
 	if(c->len == 0 && Long_val(len) > 0 && fill_or_signal(c) == Interrupted)
 		return Val_int(-1);
-	n = 0;
-	while(n < Long_val(len) && c->len > 0){
-		b = getc_chan(c);
-		if(b < 0)
-			break;
-		Bytes(s)[Long_val(ofs) + n] = b;
-		n++;
-	}
+	/* what the buffer has, at once (strings.c's move_bytes: words when
+	 * it can). A file read was a call of getc_chan a byte: mini-doom's
+	 * WAD of 2 MB, 90 million instructions of its start (mini-prof,
+	 * plan_profiler.md).
+	 * old: n = 0;
+	 *   while(n < Long_val(len) && c->len > 0){
+	 *     b = getc_chan(c);
+	 *     if(b < 0) break;
+	 *     Bytes(s)[Long_val(ofs) + n] = b;
+	 *     n++;
+	 *   } */
+	n = Long_val(len) < c->len ? Long_val(len) : c->len;
+	if(n < 0)
+		n = 0;
+	move_bytes((char*)Bytes(s) + Long_val(ofs), (char*)c->buf + c->pos, n);
+	c->pos += n;
+	c->len -= n;
 	return Val_int(n);
 }
 

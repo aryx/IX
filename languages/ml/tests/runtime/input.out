@@ -1,0 +1,10 @@
+size 0: read back
+size 1: read back
+size 4095: read back
+size 4096: read back
+size 4097: read back
+size 12289: read back
+a 4 "bc\nd" "efgh" "ij"
+end of file
+input at the end: 0
+exit 0

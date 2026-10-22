@@ -85,7 +85,7 @@ create_string(value n)
  * word apart and the copy can go forward.
  * old: memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n));
  *   for(i = 0; i < Long_val(n); i++) Bytes(s)[Long_val(o) + i] = Long_val(c); */
-static void
+void
 move_bytes(char *d, char *s, value n)
 {
 	if((((uvalue)d ^ (uvalue)s) & (W - 1)) != 0 || (d > s && d < s + n)){

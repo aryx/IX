@@ -44398,3 +44398,1619 @@ Claude proposed stage 2 of the profiling plan: mini-prof -a name, listing one fu
 Claude described stage 2 output as each instruction in the chosen function with its execution count.
 Claude picked to_rgba as the first target because it takes 30% of a frame.
 Claude planned to begin stage 2 with to_rgba, since it takes 30% of each frame.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:24
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:29
+
+**Yoann:**
+
+> regarding mini-doom; doom is famouse for its use of BSP but I don't see any Bsp.ml file? Also how much of the code of mini-doom is due to the original doom, to doom9, or to ocamldoom under ~/github/ocamldoom/, or TinyDoom?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:30
+
+**Yoann:**
+
+> ideally mini-doom reproduce the classic algorithm used by the original doom, so it can be used as a teaching resource to learn about the doom engine
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:22
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended re-measuring mini-doom under QEMU now that its frames are real, default versus redraw=all.
+Claude noted the earlier 27 ms doom timings were void, since mini-9pi kept repeating the first two frames.
+Only cameltry's Redraw result still stood, at 27 against 29–31 ms, so the hint might still help doom.
+Claude planned a roughly ten-minute QEMU session, then committing the corrected notes_opti_inventory.md bullet by pathspec.
+Claude kept the bigger wins, such as Blit.draw_copy at 21 to 1.7 ms, as later steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-21 16:47
+
+**Yoann:**
+
+> can you remake the card and give back the instructions for me to do on the pi2?
+
+**Claude (summary):**
+
+Claude rebuilt the Pi 2 card image from commit 923d2f0d into kernels/9pi/build/card.img, with the new cputhrottle file.
+Claude gave the lsblk step to find the SD card, then a dd command to write card.img to it, which replaces the card's contents.
+Claude gave the on-Pi steps: read cputype, cputemp and cputhrottle at boot, then run cameltry with stats on.
+Claude said to play until about 33 fps, re-read the three files, and optionally repeat after the board cools.
+Claude mapped the results: a clock below 900 MHz at high temperature means overheating, while under-voltage points to the power supply.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:33
+
+**Yoann:**
+
+> let's rebuild the card, so I can also test doom under Pi2 as well as page
+
+**Claude (summary):**
+
+Claude said the card already lists both doom and page, so no card changes were needed for those.
+Claude said it would rebuild the card so it picks up today's tree.
+The rebuild was the step Claude took to get doom and page testable under Pi2.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:38
+
+**Yoann:**
+
+> actually after the game cputype says ARM Cortex-A53 600. I think it was 900 before
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:38
+
+**Yoann:**
+
+> temperature went from 38 to 42
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:30
+
+**Yoann:**
+
+> so one can then read the book by Sanglard on doom and understand better things, thx to the ocaml code of mini-doom
+
+**Claude (summary):**
+
+Claude described stage 2 of mini-prof, `-a name`, which lists one function's instructions with their run counts.
+Claude found that mini-doom's `to_rgba`, about 30% of a frame, spends 55 instructions per pass writing 4 bytes.
+Claude traced that cost to mini-ml's codegen: stack-resident variables, 7-instruction loop tests, and unfolded constants.
+Claude noted that mini-ml's 31-bit integers on 32-bit arm make `-a` refuse rather than print wrong instructions.
+Claude also mapped the BSP walk into Render.ml and asked whether to commit stage 2 first.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:23
+
+**Yoann:**
+
+> also maybe we can raise some limits
+
+**Claude (summary):**
+
+Claude quoted the `=` for rc and reran the build, which takes about seven minutes.
+Claude planned to time a zoomed page on Linux with the mini-ml build, to isolate the drawing cost.
+Claude found the mini-ml Linux build grew from 67 MB to 264 MB resident after five `+` presses.
+Claude contrasted that with OCaml's build, which rose only from 21 MB to 117 MB.
+Claude said it would examine what the renderer allocates to explain the memory gap.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:42
+
+**Yoann:**
+
+> note that I don't remmeber doing any zoom; I was just trying to open troff.pdf and it crashed
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:43
+
+**Yoann:**
+
+> it worked on the Pi2
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:40
+
+**Yoann:**
+
+> under the actual Pi2, doom is at around 8fps
+
+**Claude (summary):**
+
+Claude recorded the Pi 2's 8 fps doom result in `plan_doom.md`'s Status, uncommitted, beside the QEMU figure.
+Claude guessed the Pi 2 splits its 125 ms frame about evenly, so the view half needs compiler work.
+For the view half, Claude pointed at register-kept loop values, single-branch comparisons, and cheaper function entry to speed up `to_rgba`.
+For the showing half, Claude pointed at the framebuffer plan (stage 6) to skip the per-frame device image, and asked for the `stats=on` numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:39
+
+**Yoann:**
+
+> cputhrottle is the same, now: none, since boot: none
+
+**Claude (summary):**
+
+Claude traced the slowdown to firmware dropping the Pi 2 clock to 600 MHz, because force_turbo was only set under [pi1].
+Claude added force_turbo=1 to the [pi2] section of kernels/9pi/conf/config.txt, holding 900 MHz without overclocking or extra voltage.
+Claude rebuilt the card image with that change, left nothing committed, and offered SD-card edit or dd reflash options.
+Claude gave a checklist to confirm cputype stays at 900 and fps near 50 while staying under 80°C.
+Claude also suggested a longer-term fix: the kernel requesting full speed from firmware at boot, as Linux does.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:49
+
+**Yoann:**
+
+> ok it works better, I get 49fps or 41 fps depending on the area where I am and after cputype now says 900. Also when I don't move I get 60fps but I think that's the Redraw opti
+
+**Claude (summary):**
+
+Claude confirmed the Pi 2 now holds 900 MHz; the 60 fps idle cap is redraw skipping.
+Claude found the only uncommitted change was a force_turbo=1 line in the [pi2] section of kernels/9pi/conf/config.txt.
+Claude left that change uncommitted and asked Yoann to say when it should be committed.
+Claude noted the cleaner fix was having the kernel ask firmware for full speed at boot.
+Claude offered to implement that boot-time firmware request next, so speed no longer depends on config.txt.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:50
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+1. Claude left full speed without `config.txt` open, proposing the kernel ask the firmware for full speed at boot, as Linux does.
+2. That alternative would replace the `force_turbo=1` line Claude committed as 78fe7630 in `kernels/9pi/conf/config.txt`.
+3. The commit message records the readings and the 49/41 fps board result, so the numbers stay with the change.
+4. Claude also listed the Pi 2 freeze after quitting cameltry and the untested Doom and page runs as open.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:43
+
+**Yoann:**
+
+> also it shows low fps
+
+**Claude (summary):**
+
+Claude said the fork failure at startup is new and that it would track down where it happens.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:45
+
+**Yoann:**
+
+> I also ran doom under rio on the pi2, and it's around 7fps, so similar fps; that's good, it's nice to be able to also run doom in a window
+
+**Claude (summary):**
+
+Claude recorded the 7 fps rio result in plan_doom.md beside the bare-screen 8 fps and reranked the remaining speedups.
+Claude listed stage 2 of the profiler, under profilers/misc/ and plan_profiler.md, as still uncommitted.
+Claude also flagged plan_doom.md, carrying the new Pi 2 numbers, as an uncommitted change.
+Both sets of changes were still in the working tree, with no commits made yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:53
+
+**Yoann:**
+
+> let's commit first
+
+**Claude (summary):**
+
+Claude committed the work as 211616ca, with `mini-prof -a`, the `to_rgba` findings, and the Pi 2 numbers, leaving other sessions' notes out.
+Claude listed a compiler item as the other open step: register-held loop values and single-branch comparisons to speed up `to_rgba`.
+Claude proposed restructuring mini-doom for teaching, with a new `Bsp.ml` built around id's `solidsegs`.
+Claude also proposed splitting `Play.ml` along the boundaries of id's original Doom source files.
+Claude left the restructuring unstarted, as an open next step rather than work already done.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:54
+
+**Yoann:**
+
+> let's do the restructuring first
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:54
+
+**Yoann:**
+
+> but we don't have to follow exactly what id software did if it complicates the code
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:51
+
+**Yoann:**
+
+> I think it's fine it depends on config.txt. Also let's record this new finding somewhere (solved mystery).
+
+**Claude (summary):**
+
+Claude added a row to `docs/plans/bugs/ix.md` for the slowdown, from 50 fps to 33, with its cause and fix.
+Claude traced the cause to firmware dropping the ARM clock to 600 MHz, and noted the 50 × 600/900 = 33 ratio.
+Claude added section 22 to `docs/notes_debugging_techniques.md` on checking the board's clock and temperature before profiling code.
+Claude committed both files as dbb910cb, though Yoann had only asked to record the finding, and said it shouldn't have.
+Claude offered to amend the commit if Yoann wants any changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:54
+
+**Yoann:**
+
+> just if it does not cost much, we can follow a little
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:55
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude said nothing was pending on its side, so the next steps depend on testing the Pi 2 board.
+Claude recommended first running doom and page on the Pi 2, checking that page opens /lib/pdf/tex.pdf and that /dev/cputype stays at 900.
+Claude identified the freeze after quitting cameltry under rio as the one real open bug, and asked for a photo of the white-on-red lines.
+Claude pointed out that the speed check in tests/speed.sh only measures QEMU, so it would miss on-board slowdowns like today's.
+Claude suggested adding a one-line note of the 49/41 fps baseline at 900 MHz to the speed history, and running items 1 and 2 together.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:59
+
+**Yoann:**
+
+> let's adjust make loc again, especially finally skipped part. I like the grouping like hosts: variants: kernels: languages:, maybe we can have more of that (tiny-kernels: ?), and let's remove the "software platforms" since it's very few LOC and I still don't know what it is and how it differs from the hosts: category we have now.
+
+**Claude (summary):**
+
+Claude reworked the apart-grouping in `scripts/stats/loc.py` and dropped the software-platform entry.
+Claude added new groups to the apart list, in the same style as the hosts, variants, kernels, and languages groups Yoann liked.
+Claude checked the regenerated output and judged the grouping right.
+Claude updated the list of what is kept apart in `docs/loc.md` to match the new groups.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:31
+
+**Yoann:**
+
+> let's do 1
+
+**Claude (summary):**
+
+Claude measured mini-doom under QEMU in three redraw modes, finding about 58 ms per frame in each.
+Claude updated the "tried and dropped" bullet in docs/notes_opti_inventory.md with the 40-frame figures for each mode.
+The bullet now records that redraw modes make no difference, because comparing doom frames stops at the first differing byte.
+That docs/notes_opti_inventory.md edit is Claude's only change, and it remains uncommitted in the working tree.
+Claude asked whether to commit that one file by pathspec rather than committing everything.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:03
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the inventory note as 086a380c, containing only `docs/notes_opti_inventory.md`, leaving the working tree clean.
+Claude found the diff removed four lines, because another session's commit had already included its first version of the bullet.
+Claude replaced that earlier bullet with the doom numbers so the note reflects the final figures.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:03
+
+**Yoann:**
+
+> what's next?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:02
+
+**Yoann:**
+
+> ok it's better; maybe let's remove TLS 1.2 and count it, it's not that big and it's required for many sites so let's count it
+
+**Claude (summary):**
+
+Claude removed TLS 1.2 from the skipped list in scripts/stats/loc.py, so it now counts.
+Claude counted Tls12 (386 lines), which raises the m-ix total to 156,364 lines.
+Claude rewrote the Tls12 comment to record your reason for counting it.
+Claude left examples/ skipped and docs/loc.md's dated row unchanged, with nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:03
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since all its work is committed in 8cbf452f and 086a380c.
+Claude said 8cbf452f holds the Redraw change that looks inside groups, the opti inventory, and `m-ix.md`.
+Claude said 086a380c holds the hint that was tried and dropped, along with doom's numbers.
+Claude removed its private build worktree, so a new session would need to rebuild one for QEMU measurements.
+Claude advised starting any later doom work with the `scale=1` measurement and fixing the inventory's stale O31 line.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:04
+
+**Yoann:**
+
+> let's commit. Can I close this session? Anything remaining?
+
+**Claude (summary):**
+
+Claude committed the `make loc` changes as `fbd1bd42`, touching only `scripts/stats/loc.py` and `docs/loc.md`.
+Claude said the session is clean and can be closed, since other uncommitted changes belong to other sessions.
+Claude left the doom, kernel, and `prompt-history.md` changes alone because they belong to other sessions.
+Claude did not add today's row (156,364 lines) to the log in `docs/loc.md`.
+Claude suggested running `scripts/stats/loc.py -l` to print that row so it can be pasted in.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:56
+
+**Yoann:**
+
+> it would make sense to have a Bsp.ml though; it's such an emblematic feature of Doom
+
+**Claude (summary):**
+
+Claude split mini-doom's Render, Play and Collide code into Bsp, World, Collision, Specials and Play modules, with all 14 frames unchanged.
+Claude asked whether to commit only games/fps/doom/, plan_doom.md and bugs/ix.md, since the restructuring was still uncommitted.
+Claude noted that other sessions are editing other files in the tree, so a pathspec commit would leave their changes out.
+Claude also recorded the Collide-to-Collision rename in bugs/ix.md after a segfault from a clashing lib_physics module.
+Claude did not run the tests/compare.sh check against id's game, because it needs doom1.wad and the reference build.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the mini-doom restructuring as 6264d271, covering 19 files under games/fps/doom plus plan_doom.md and bugs/ix.md.
+Claude proposed compiler work from the profile: keeping loop values in registers instead of on the stack.
+Claude also proposed testing comparisons with a single branch, which would cut most of to_rgba's 55-instruction loop.
+Claude said every program mini-ml builds would gain from the register change.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:13
+
+**Yoann:**
+
+> let's do it. 
+>
+> mini-ml 4x slower on mini-xv6 than ocaml apparently, many opti
+> try to keep them under opti/ and/or ssa/
+>
+> also for crypto/ for https, mini-ml "keeping loop values in registers"
+> to speedup crypto
+>
+> also for audio play, float-loop speed, tetris super slow because of midi play
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:15
+
+**Yoann:**
+
+> great initiative to create a set of benchmark
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:16
+
+**Yoann:**
+
+> note that ocaml-light also has some benchmark, but for now we can limit ourselves to synthesized one if they already give good values
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:16
+
+**Yoann:**
+
+> and help find good opti
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:16
+
+**Yoann:**
+
+> Note that we can also extend lib_core/
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:16
+
+**Yoann:**
+
+> especially for functions that the OCaml standard library provide
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:20
+
+**Yoann:**
+
+> note that modern ocaml now has also a middle_end/ in addition to the classic opti one can see in ~/ocaml-light. maybe there are good ideas to take from.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:20
+
+**Yoann:**
+
+> inlining I think is also pretty important (the secret of the ghc inliner is a famous paper)
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:20
+
+**Yoann:**
+
+> what matters is the ratio of added lines in mini-ml compared to the speedup it provides to most programs
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> a good bench for instance is the fps progress of mini-doom under QEMU and mini-9pi for instance, a "macro benchmark"
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> same for cameltry
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> rebirth
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> xv6
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> mini-ml itself
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> building m-ix under m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:21
+
+**Yoann:**
+
+> etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:18
+
+**Yoann:**
+
+> we recently added mini-doom (and its BSP). we should add mini-quake to finish the trilogy, and again take inspiration from TinyQuake in the playground, ocamlquake in ~/github/ocamlquake, and ioquake and other OSS original quake code. Quake is famous for its fast lightning system so again, like for mini-doom, which can be used as a teaching resource to learn about game engine, we could also explain well those light map and other nice things introduced by quake.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 14:52
+
+**Yoann:**
+
+> great, let's do 1, and 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:22
+
+**Yoann:**
+
+> those are good numbers to keep track as we improve things
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:27
+
+**Yoann:**
+
+> copy-on-write is a pretty fundamental kernel feature in plan9 but also linux, maybe even xv6. Are there other similar features/opti that are still lacking in mini-9pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:30
+
+**Yoann:**
+
+> this 170MB vs 110MB is worth remembering somewhere, in the comment of the kernel next to this new feature, or the opti_inventory or whatever
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:23
+
+**Yoann:**
+
+> do you think quake can run smoothly on Pi2? (independently of our work on IX)
+
+**Claude (summary):**
+
+Claude found that vis writes its vis.log into the current directory, so its own run had left one behind.
+Claude deleted that stray vis.log from the working tree before anything got committed.
+Claude changed mklevel.sh so vis runs in its temporary directory, keeping logs out of the tree.
+Earlier, Claude built a Quake renderer, matched mini-ml's frames to OCaml's, and estimated roughly Doom-level Pi 2 speed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:31
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude checked that all four tracked diffs were from this session, then committed them by pathspec.
+The commit is `72c9e4ca`, touching 55 files, all from this session's work.
+The staged `docs/yoann_notes/prompt-history.md` from another session stayed staged and was left out of the commit.
+The commit message quotes your request and lists what was checked and what was not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:31
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended first running mini-quake on mini-9pi, building the card with `quake` and checking it fits under `heap=modest`.
+Claude proposed measuring frames per second under QEMU by comparing screens, as was done for mini-doom, before trying the Pi 2.
+Claude expected only a few frames per second on the Pi 2, below mini-doom's 8, based on instruction counts rather than a real run.
+Claude suggested mini-prof to find the hot spots: span loops, surface cache block loops, and float code in Edges and Scan.
+Claude also listed mini-light bounce lighting, a stage 6 reference against id's engine, and smaller gaps, with a pick of step 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:35
+
+**Yoann:**
+
+> under qemu actually quake seems to be around 7fps, almost like doom
+
+**Claude (summary):**
+
+Claude attributed the 7 fps Quake result to steady-state frames, not its earlier first-frame estimate.
+Claude said first frames build every surface's texture-times-lightmap, which dominates their 55–116 million instructions.
+Claude argued steady frames only draw spans and sort edges, costing about what Doom's columns and spans cost.
+Claude tied both games to the same bottleneck, blitting the 320×200 picture, which puts Quake near mini-doom's 5–6 fps under QEMU.
+Claude recorded the number and explanation as uncommitted status in plan_quake.md, and suggested the framebuffer plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:35
+
+**Yoann:**
+
+> but those quake and doom are compiled by mini-ml or ocaml-light?
+
+**Claude (summary):**
+
+Claude said both quake and doom on the card are compiled by mini-ml, not ocaml-light.
+Claude traced the card's programs in kernels/9pi/Makefile to mini-mk's O=5 OS=plan9 output for both games.
+Claude noted each unit is built with mini-ml -m 5 and then linked by mini-ld.
+Claude found ocaml-light only compiles the mini-9pi kernel, with OCaml 4.14 as the kernel's alternative compiler.
+Claude concluded both games pay mini-ml's code quality, about 5× slower than native OCaml on Linux.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:27
+
+**Yoann:**
+
+> note that ocaml-light does not use SSA I Think and already do lots of nice opti (liveness, dataflow, etc., see the code ocamlopt in ocaml-light)
+
+**Claude (summary):**
+
+Claude recommended turning on `-O -ssa` everywhere by adding the flags to `mkconfig`, so all ix-built programs get faster code.
+Claude noted this would change every program built by ix's tools, so it asked for Yoann's decision before doing it.
+Claude proposed measuring the macro set afterward: mini-doom, cameltry, rebirth on QEMU, xv6, and mini-ml compiling itself.
+Claude also asked whether to commit the current step first, since nothing had been committed yet.
+Claude reported 9% to 43% fewer instructions with `-O -ssa`, with floats the exception, and listed next optimizations.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:38
+
+**Yoann:**
+
+> let's commit and yes let's make the -O -ssa or maybe let's have a -O3 indicating max opti so that as we add stuff, we don't have to modify the mkfiles and always use -O3. we will probably also want to make sure things also compile without opti, so sanity check the simple code generation
+
+------------------------------------------------------------------------
+
+## 2026-10-22 15:31
+
+**Yoann:**
+
+> excellent, let's commit once make test-lite isconfirmed to still work
+
+**Claude (summary):**
+
+Claude committed the copy-on-write fork as 5dc5fceb after `make test-lite` passed with 69 jobs and no failures.
+Claude left the page work uncommitted: `apps/page/Pageview.ml`, `Plan9_loop.ml` and `.mli`, and the draw and software `Playground_platform.ml` files.
+Pageview now returns the same view list when nothing changed, so the platform's `==` check skips redrawing unchanged frames.
+Under QEMU, page reached 60 fps on the bare screen, with `make check-*`, mini-9pi2, and SDL on-screen checks not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:36
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended bouncing light in `mini-light` as the next step, ranking it first among the options.
+Each lit face would send a share of its light, tinted by its texture's average colour, back out as small lights.
+Samples would gather that bounced light with the existing traces, repeated as many times as the map's `_bounce` value asks.
+The cost is build time, about 2 s to maybe a minute, judged by eye on the `lightmaps` view and against ericw's hub-level lightmaps.
+Claude also ranked the framebuffer speed work, a headless chocolate-quake reference, and smaller gaps below it, and flagged the uncommitted `plan_quake.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:39
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the frame-rate fix as 48ff2664 across five files, including apps/page/Pageview.ml.
+Claude flagged that on Linux, page now opens in a resizable 1280 by 900 window instead of a square.
+Claude said it had not looked at that Linux window change, and offered a one-line revert.
+Claude noted the Plan 9 Pi 1 needs a rebuilt kernel and card before it shows either fix.
+Claude had earlier committed the copy-on-write fork as 5dc5fceb, as a separate change.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:01
+
+**Yoann:**
+
+> mini-page got some important speed regression on linux; it used to be smooth and now is at 2 fps
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:01
+
+**Yoann:**
+
+> we should maybe add it to the test-speed regression testing
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:01
+
+**Yoann:**
+
+> I just enlarged the windows
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:02
+
+**Yoann:**
+
+> it is now fast again, but resume to a weird zoom for the page
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:02
+
+**Yoann:**
+
+> because it goes back to the original window size with the previous zoom, and so show the left of the page only zoomed
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:03
+
+**Yoann:**
+
+> it is smooth again
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:03
+
+**Yoann:**
+
+> when opening a new pdf
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:03
+
+**Yoann:**
+
+> but as soon as you resize the window, things get horrible slow
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:04
+
+**Yoann:**
+
+> go from 50fps with original window size, to 2 fps if enlarge a bit the window
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:04
+
+**Yoann:**
+
+> let's add mini-page to test-speed regression testing
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:40
+
+**Yoann:**
+
+> let's do 1 and commit
+
+**Claude (summary):**
+
+Claude implemented the radiosity bounce in `tools/Light.ml` as three passes on lq_e0m1, per the map's setting.
+Claude threaded LibreQuake's palette through `mini-light`'s new optional argument, so bounced light takes each texture's colour.
+Claude capped patch reach at 1,024 units and skipped contributions under 0.05, keeping lq_e0m1's build near 13 seconds.
+The bounce is faint, raising lq_e0m1's mean light from 42.9 to 46.7, well below ericw's stronger bounce.
+Claude also fixed a mip-size precedence bug, re-recorded the frames, and committed everything as 17d84027.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:05
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude ranked the next steps, with the framebuffer plan first and a chocolate-quake pixel reference second.
+Claude proposed a brighter bounce by gathering receivers per patch instead of per sample, tracing once per patch pair.
+That would make a `_bouncescale` of 2–4 affordable, moving mini-quake closer to LibreQuake's intended brightness.
+Claude framed the bounce as the lever for brightness, the item closest to the dark zones Yoann reported.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:06
+
+**Yoann:**
+
+> just tried mini-quake and many zones seems still very dark (it's actually hard to see some dogs in the shadwo)
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:04
+
+**Yoann:**
+
+> (and maybe doom and quake too)
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:07
+
+**Yoann:**
+
+> let's move the plan to done/ and add the smaller gaps and other remaining stuff to do in it
+
+**Claude (summary):**
+
+Claude updated the references after moving the plan into done/.
+Claude said it was committing the move of the plan to done/.
+Claude also said it was committing the gamma changes in the same batch.
+Claude included the frames changes in that commit too.
+Claude's answer gave no commit hash or file list, so the commit's contents are unconfirmed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:09
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing of its own to commit, since commit a87e5c73 already holds the done/ move, gamma, and frames.
+Claude attributed the remaining working-tree changes to other sessions, naming mini-ml, lib_playground, and the prompt history.
+Claude deliberately left those other-session changes uncommitted rather than sweeping them into a commit with its own files.
+Claude treated the mini-ml and lib_playground changes as separate work, outside the ix files it had finished.
+Claude made no commit in this turn, so no other session's work was touched or staged.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:10
+
+**Yoann:**
+
+> there is work in another session to speedup mini-ml code gen, so all the progs will execute faster. Should we also do the playground speedup work at the same time? Can we get doom and quake at high fps under mini-9pi and qemu and also the real Pi2? What would be the biggest opti to try first?
+
+**Claude (summary):**
+
+Claude recommended profiling both games' frame split under QEMU first, so each stage's gain gets measured.
+Claude picked stage F2 of plan_playground_framebuffer.md as the first optimisation, letting the game pass palette bytes and palette.
+Claude's reason: to_rgba is 30% of mini-doom's frame on the Pi 2, and F2 helps every platform.
+After F2, Claude planned F1, a /dev/framebuffer bare-screen path, then F4 so Plan 9 platforms honour window.
+Claude also judged the playground work parallel-safe with the mini-ml codegen session, since directories differ.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:13
+
+**Yoann:**
+
+> yes let's start
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:08
+
+**Yoann:**
+
+> how doom can have such a high fps when it's far more complex than cameltry which as 36 fps?
+
+**Claude (summary):**
+
+Claude fixed the page slowdown at odd window sizes by snapping pages onto whole pixels in `apps/page/Pageview.ml`.
+Scrolling the Kernel book for 120 frames dropped from 16.9 s at 1281 by 901 to 2.4 s.
+While an edge is dragged, page now waits for 10 stable frames before refitting pages to the new width.
+Claude added `page-linux` (68 fps, limit 50) and `doom-linux` checks to `tests/speed.sh`, and fixed the reopen zoom and `window=WxH` too.
+Nothing was committed yet, and Claude was waiting for Yoann to say when to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 16:38
+
+**Yoann:**
+
+> note that we just added mini-quake, and it has similar fps to doom; quake could be part of those "macro bench" and fps number to keep track
+
+**Claude (summary):**
+
+Claude set mini-ml's default to -O3, with -O0 turning every optimization off.
+Claude made mkconfig's `ML` take `$MLOPT`, which config.rc sets to -O3 unless overridden.
+Claude checked that `MLOPT=-O0 mini-mk` builds the whole tree and passes `tests/lite.sh`.
+Claude reported that mini-ml compiling three of its own units took 0.86 of the -O0 instructions.
+Claude committed it as 2f68061d and noted existing `_mk` trees keep -O0 code until rebuilt.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:57
+
+**Yoann:**
+
+> ok page looks better indeed, even after resizing windows. Let's commit
+
+**Claude (summary):**
+
+Claude committed the page viewer fix as 061c8d68, touching `apps/page/Pageview.ml`, `tests/speed.sh` and `tests/speed_history.txt`.
+Claude wrapped the long lines in `tests/speed.sh`, so `make test-speed` now also runs `page-linux` and `doom-linux`.
+A regression in those two targets should now fail `make test-speed`, the way today's drop would have.
+Claude did not run `mini-9pi` or `test-speed` at this commit, since only the line wrapping changed.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:11
+
+**Yoann:**
+
+> GHA CI seems to be failing
+
+**Claude (summary):**
+
+Claude traced the CI failures to two games quake tools, the step1-3 kernel boots, and flow.out.
+Claude fixed the quake tools by giving them their own root with `games/fps/quake` on the path, like the usbd line.
+Claude added an `if not` branch to steps 1-3, because a bare false `if` leaves mini-rc's status at 1 and fails the recipe.
+Claude confirmed games now passes 40 of 40 and step1's check still passes with QEMU present locally.
+Claude left the flow.out failure alone, since another session's uncommitted Ssa_facts.ml work is already fixing it.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:00
+
+**Yoann:**
+
+> let's commit and push
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:59
+
+**Yoann:**
+
+> great. What's next? Can we close this session?
+
+**Claude (summary):**
+
+Claude said the session can close, since its four commits are in the tree: 8e8b6880, 5dc5fceb, 48ff2664, 061c8d68.
+Claude's top next step is running `./mini-pi -g -q mini-9pi` on the Pi 1, because none of today's commits has run on a board yet.
+That run rebuilds the kernel and card, then pages troff.pdf and tex.pdf, both inside and outside rio.
+Claude listed follow-ups after that: shared text between runs, a PDF outline, and text search in page.
+Claude left the other tree changes (mini-ml, mkfiles, quake, the profiler) alone, since other sessions own them.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:00
+
+**Yoann:**
+
+> can we close this session? Can you monitor whether GHA is passing after the push?
+
+**Claude (summary):**
+
+Claude noted that closing the session would stop any monitoring, so it offered three options.
+Claude said that with the session open, it would watch run 39827583537 and report when it finishes.
+Claude warned that test-lite would likely fail on mini-ml -flow's flow.out, since that fix was never pushed.
+Claude said the real check was whether the kernels' steps and "mini-ml compiles games" pass.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:20
+
+**Yoann:**
+
+> ideally what we do can also benefit every playground games, like cameltry, and also some apps
+
+**Claude (summary):**
+
+Claude made mini-doom and mini-quake about twice as fast under QEMU, using a new Pixels shape.
+Claude said Doom and Quake gain fully, since they make their own pixels and hand them over.
+Claude said shape games like cameltry gain little, since their time goes to device drawing and messages.
+Claude named two cameltry fixes: mini-ml's faster code for messages, and COMPILER=ix for the kernel's drawing.
+Claude proposed a direct path for upright RGBA Bitmaps at whole scales, as the next step for apps.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:01
+
+**Yoann:**
+
+> let me try again page on mini-9pi
+
+**Claude (summary):**
+
+Claude told Yoann to rebuild with `./mini-pi -g -q mini-9pi` from the top of the tree.
+Claude said that build includes both fixes, copy on write and rendering at the window's pixels.
+For the troff.pdf check, Claude expected full-screen, sharp output at about 60 fps, the file that had crashed before.
+If troff.pdf was off, Claude asked for the `suicide:` line or the `stats=on` output.
+Claude also listed checks for tex.pdf zoom and scrolling, rio resizing, and a `/dev/swap` memory comparison.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:05
+
+**Yoann:**
+
+> page seems ok on troff.pdf now, but it would be good to put a pdf with multiple pages on the card
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:06
+
+**Yoann:**
+
+> + and scrolling on tex.pdf is also ok. Good news!
+
+**Claude (summary):**
+
+Claude got tex.pdf scrolling working and built the Kernel book into the 9pi card, but Yoann's reply focuses on the slowness.
+Claude fixed a slowdown in `apps/page/Pageview.ml` by caching each page's top instead of recomputing it several times per frame.
+On QEMU, the 1083-page Kernel book opened without crashing, and a still page went from 28 to 56 fps.
+Claude built the card with the book at `/lib/pdf/kernel.pdf` (95 MB) and verified page's frame tests under OCaml and mini-ml builds.
+Changes are uncommitted in `Pageview.ml`, `kernels/9pi/Makefile`, and `tests/speed_history.txt`, with `make check-*` and a board test not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:45
+
+**Yoann:**
+
+> takes a long time on kernel.pdf ...
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:04
+
+**Yoann:**
+
+> can you better expain what we were doing before, and what do we now, so I better this opti; maybe with concrete example and ASCII diagrams
+
+**Claude (summary):**
+
+Claude diagrammed the old mini-doom frame path, where the same picture was built three times over.
+Claude's before-diagram traced one green pixel from palette index 112 to the screen bytes ED 77.
+Claude's after-diagram showed a 256-entry colour table and a single pass into one kept 128 KB buffer.
+Claude explained why the Bitmap shape suits static pictures, while Pixels suits games drawn upright at whole multiples.
+Claude also noted that mini-doom went from 4.7 to 6.7 frames a second up to 13 to 14 under QEMU.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:53
+
+**Yoann:**
+
+> I like those explanations. Maybe we should store the different design choices and alternatives in notes_frame.md or something, with those ASCII diagrams and discussions.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:54
+
+**Yoann:**
+
+> Also I don't fully understand the "SAME IMAGE". For each frame, mini-doom needs to load the image bytes in the kernel no?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:45
+
+**Yoann:**
+
+> still not done
+
+**Claude (summary):**
+
+Claude made the Kernel book open faster by parsing PDF objects only when they are needed.
+Claude kept 16 unpacked object streams instead of 4, at no extra memory cost.
+Claude measured the first page under QEMU at 20 to 30 seconds, down from about a minute.
+Claude left four uncommitted files: Pdf.ml, Pageview.ml, kernels/9pi/Makefile, and speed_history.txt.
+Claude passed the PDF unit tests and the page-linux timing, but did not run make check or board tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:02
+
+**Yoann:**
+
+> ok I keep this session open for you to monitor
+
+**Claude (summary):**
+
+Claude is monitoring GitHub Actions run 39827583537 in the background and will report when it finishes.
+Claude found that step0 failed at HEAD because the `for` loop passed on its last `if`'s status, and fixed it inside the loop.
+Claude confirmed that step0 is now fixed after applying the same loop-status fix.
+Claude reproduced the fixpoint-arm failure, where tiny-cpu and tiny-db differ between the two stages, and suspects `-O3`.
+Claude is rerunning fixpoint-arm with `MLOPT=-O0` to check whether `-O3` is the cause.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:55
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 265e63ea after page's frame tests passed with mini-ml's build, touching Pdf.ml, Pageview.ml, and the 9pi Makefile.
+Claude flagged that kernel.pdf's first page takes 20 to 30 seconds, because every page is read upfront.
+Claude proposed laying out the whole book from one page's size instead of reading each page's real dimensions.
+Claude suggested reading a page only when it scrolls into view, aiming for a one or two second wait.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:00
+
+**Yoann:**
+
+> on mini-9pi, pages show good fps, like 26, but scrolling with the mousewheel still feel very sluggish
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:54
+
+**Yoann:**
+
+> so that's a draw message to the device, and some copies there too?
+
+**Claude (summary):**
+
+Claude explained that each frame re-sends the 128 KB image to the kernel, which copies it about five times.
+Claude said reusing the image only saves the per-frame allocate and free messages and halves the copy size.
+Claude noted the remaining copies are cheap block copies, and `/dev/framebuffer` would cut them to a single write.
+Claude listed two smaller trims: an offset instead of `String.sub` in Devdraw, and a split write in `load_sub`.
+Claude said it would add this copy chain to the notes, since "same image" was misleading.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 17:59
+
+**Yoann:**
+
+> ideally when building m-ix under m-ix we will use the mini-ml compiled with -O3 but maybe we would compile with -00 which should be faster (finishing to compile faster, but code produced slower).
+
+**Claude (summary):**
+
+Claude proposed measuring how much faster mini-ml compiles at `-O0` than at `-O3` before deciding.
+Claude is waiting on the compile counts, timing three units built both ways with the `-O3` mini-ml on arm.
+Claude checked that each run wrote its object file, but gave no duration for how long the profile would take.
+Claude said it would report the mini-ml profile results once the run finished.
+Claude also committed mini-5i's `statx` fix and the corrected numbers as 2257d463 while the profile ran.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:19
+
+**Yoann:**
+
+> what are we waiting for? For how long?
+
+**Claude (summary):**
+
+Claude found that the garbage collector takes about 30% of a mini-ml compile of Typing.ml on arm.
+Claude recommended trying a larger heap first, by raising mini-ml's `space_overhead` setting as the games do.
+Claude explained that a bigger heap means fewer collections, though each one still copies the same live data.
+Claude said a generational collector would be the bigger fix if the larger heap is not enough.
+Claude listed the other hotspots, including compare, `String.get` checks, and `obj_block`, and asked whether to try the heap change.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:20
+
+**Yoann:**
+
+> yes try the larger heap for mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-22 18:55
+
+**Yoann:**
+
+> let's commit and push the fixes and continue fixing GHA CI
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:02
+
+**Yoann:**
+
+> there are currently also many ways, just under mini-9pi to display things, and different opti; you can use the playground, or directly lib_graphics, you can use the draw device shapes, or instead load images, you can then use the Redraw opti, the letter font cache, etc. Would be good to write down all those possible paths, and take concrete example lie what cameltry is doing (shapes? redraw working? bitmaps loaded?), doom, quake, office, page, etc.
+
+**Claude (summary):**
+
+Claude mapped the mini-9pi display paths: playground versus lib_graphics, draw device shapes, and bitmap loading.
+Claude wrote the new map as the first part, replacing the old sections 1 and 2.
+Claude checked the draw protocol letters, TinyWolfenstein's columns, the fast shortcut, and mini-colors before finishing.
+Claude corrected filled polygons and ellipses to 'P' and 'E', since lowercase letters are outlines.
+Claude also fixed fast as the short form for colours, not shapes, and mapped the playground programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:23
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude committed the work as fbcd4afe across 14 files, leaving out the other sessions' changes.
+Claude flagged that the speedup won't show on the Pi 2 until the main tree's card is remade.
+Claude said to run `make card` in kernels/9pi to rebuild that card.
+Claude noted its measurements came from a scratchpad card, so the main tree's card hasn't been measured.
+Claude mentioned the commit adds a CARD= override to tests/perf/frames.sh for choosing which card to use.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:24
+
+**Yoann:**
+
+> can you make the card so I can test on the Pi2 doom and quake (and cameltry and other games)
+
+**Claude (summary):**
+
+Claude predicted mini-doom would reach roughly 15 fps on the Pi 2, up from about 8 fps before this change.
+Claude expected Quake to run close to that rate, and asked for the real numbers to confirm it.
+The estimate came from a QEMU run of doom off the new card, which gave 13–14 fps.
+Claude asked for the `stats=on` lines (update, view, show timings) so it could record them in the plans.
+Claude built `kernels/9pi/build/card.img` with `make card`, relinked the games, and gave a `dd` command to write it.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:31
+
+**Yoann:**
+
+> doom, outside rio, on the pi2 is around 15 fps on big area, and more like 24 on smaller area; quite smooth. could be better but not bad
+
+**Claude (summary):**
+
+Claude said it would record Yoann's doom frame-rate measurement, around 15 fps on a large area and 24 on a smaller one, in the F2 numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:32
+
+**Yoann:**
+
+> cameltry is around 44, 50 fps depending on the area
+
+**Claude (summary):**
+
+Claude recorded the cameltry measurement and explained why it stays near 50 fps on the Pi 2.
+Claude said the Pixels change does not affect cameltry, because it draws shapes rather than pixels.
+The spread by area comes from the number of turned tiles, each a filled polygon drawn by the kernel.
+Claude tabulated Pi 2 numbers: cameltry 44–50 fps, mini-doom 15–24 fps, mini-quake untried.
+Claude added the measurements to `docs/notes_frame.md` and `plan_playground_framebuffer.md`, uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:33
+
+**Yoann:**
+
+> quake is around 15 fps too, depend on the zone, not bad either
+
+**Claude (summary):**
+
+Claude reported mini-quake at about 15 fps on the Pi 2, varying by zone.
+Claude explained that Quake's zones vary more than Doom's, since new faces or flickering lights force surface-cache rebuilds.
+Claude recorded the Pi 2 figure in plan_quake.md's "What is left", replacing the earlier "not measured" entry.
+Claude also left the three doc edits uncommitted and named mini-ml code generation as the next gain.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:00
+
+**Yoann:**
+
+> also how is text rendered on mini-9pi? The letter glyph cache is used? with 8bits mask loaded on in the kernel for each letter?
+
+**Claude (summary):**
+
+Claude found that under QEMU, key presses made while a page is drawing get lost.
+Claude reported that the new card turned twice as many pages as the old one in the same time.
+Claude said the exact ARM speedup waits on the mini-5i instruction count, which is still running.
+Claude re-recorded both builds' frame tests, since glyph edges now shift by up to a quarter pixel.
+Claude added a per-font glyph cache, cutting mini-ml page draws from 0.86 to 0.23 seconds.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:37
+
+**Yoann:**
+
+> looks like rendering the next page while idle might help.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:38
+
+**Yoann:**
+
+> I was able to run page on kernel.pdf on the Pi2 under rio; it worked
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:38
+
+**Yoann:**
+
+> but each page change had a lag
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:35
+
+**Yoann:**
+
+> running under rio gives similar number; maybe slightly lower, but I'm not even sure
+
+**Claude (summary):**
+
+Claude added a note to the Part I rio paragraph explaining why drawing under rio costs about the same.
+The note says a fully visible window is a memlayer layer, so its draws go straight to screen pixels.
+It also says the extra cost is clipping against the window stack, small next to the 128 KB load and renderer.
+The note adds that rio is not on the per-frame path, so a slightly lower fps is plausible.
+Claude suggested confirming with `stats=on` at a fixed spot, since zone-to-zone fps varies too much to compare.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:39
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the Pi 2 numbers as d754454d across notes_frame.md, plan_playground_framebuffer.md, and plan_quake.md.
+Claude recorded mini-doom rising from about 8 fps to 15–24 fps on the Pi 2 framebuffer.
+Claude recorded that mini-doom in a rio window runs about the same as the framebuffer run.
+Claude explained in notes_frame.md why the rio window result comes out that way.
+Claude kept the mini-quake (about 15 fps) and cameltry (44–50 fps) figures unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:40
+
+**Yoann:**
+
+> now it would be great if we could enlarge the screen since right now the doom "window" is very small on the whole screen; not sure how to remain fast; maybe by doublimg/scaling
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:41
+
+**Yoann:**
+
+> yes we can't go through blending I think so we need to scale in fixed number
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:41
+
+**Yoann:**
+
+> maybe we can scale=4 to get the whole screen?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:20
+
+**Yoann:**
+
+> or the heap should grow as needed no?
+
+**Claude (summary):**
+
+Claude explained that the heap doubles to fit live data, but the default margin of 100 forced 45 collections.
+Claude set mini-ml's space_overhead to 200 in languages/ml/Main.ml, cutting a Typing.ml compile's instructions by 10%.
+Claude rejected 400 because its 64 MB heap halves would not fit four parallel compiles in mini-9pi's 352 MB.
+Claude verified byte-identical objects across all four settings and builds under dune and mini-mk, but no self-build.
+Claude left the space_overhead change uncommitted and asked whether to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:21
+
+**Yoann:**
+
+> what is the current status?
+
+**Claude (summary):**
+
+Claude pushed commit 7f15c58f and started a background watch on the CI run that push triggered.
+The one known CI failure left was Doom's recorded frames on the x86 runner, and Claude had not yet fixed it.
+Claude was checking how frames.sh tolerates small pixel differences, to propose a concrete option for that failure.
+Before pushing, Claude had moved Doom to id's fixed-point tables, changing only the four Doom frame lines.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 64393712 with mini-ml's larger heap and the compile profile in plan_profiler.md.
+Claude listed the m-ix-under-m-ix speedups, led by inlining the checked String.get, about 7% of a compile.
+Claude named inlining obj_block, at about 4.7%, as the next cheap win after that.
+Claude called a generational collector the real fix for copying, still the largest cost in a self-build.
+Claude said float unboxing comes first for the games and audio work.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:39
+
+**Yoann:**
+
+> also the mouse wheel didm't seem to work thee
+
+**Claude (summary):**
+
+Claude traced the missing wheel to Usbbus forcing HID boot protocol, which drops the wheel byte.
+Claude recommended a real fix: read the mouse's report descriptor as Plan 9's usb/kb does, in buses/lib_usb.
+Claude estimated a 100 to 150 line parser, testable under QEMU but only confirmed on your Pi.
+Claude proposed committing the uncommitted page work first: glyph cache, drawing ahead, and re-recorded frames.
+Claude also reported mini-5i counting 14.9 thousand million instructions for five page turns, with no uncached baseline.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:42
+
+**Yoann:**
+
+> can't we get this scale kernel side instead? so we load the same bytes, but they are scaled then? Or maybe it's a hack
+
+**Claude (summary):**
+
+Claude argued kernel-side scaling is the right place, not a hack, keeping one 128 KB load per frame.
+Claude proposed a scaled-draw message with integer scale only, implemented in the OCaml Kdraw first, with C erroring "not supported".
+Claude planned Pixels to use it on whole multiples, plus F4 so scale 3's 960×600 fits on 1024×768.
+Claude expected scale 2 and 3 near scale 1's speed, to be measured under QEMU and on the Pi 2.
+Claude had measured scale 2 at 8–9 fps, saw scale 3 and 4 miss the fast path, then asked for go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:43
+
+**Yoann:**
+
+> ok I'm boing to sleep, you can maybe bench building m-ix under m-ix; maybe it will be less than 3h now
+
+**Claude (summary):**
+
+Claude started m-ix's self-build in a clean HEAD copy, leaving your working tree and `_mk` untouched.
+Claude expected about 20% less build time than the 2h59 baseline, since mini-ml runs 11% faster.
+Claude attributed the expected gain to `-O3` on the card's tools and mini-ml's larger heap, with 10% less GC work.
+Claude called the 20% a guess, since the kernel and SD card were 60% of a compile in the earlier profile.
+Claude fixed a missing `.git` in the copy, restarted `make self`, and confirmed it was running under QEMU.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:43
+
+**Yoann:**
+
+> let's do both and commit; I'm going to sleep, I'll check tomorrow morning
+
+**Claude (summary):**
+
+Claude built page's glyph cache so each glyph's coverage is filled once as a byte mask.
+The cached mask is laid wherever that glyph appears, across pages, instead of being redrawn each time.
+A Kernel book page drew in 0.23 s on Linux instead of 0.86 s, measured against mini-ml's code.
+Glyphs stay within a quarter pixel of their old positions, and the enlarged pictures look the same.
+Claude also added drawing-ahead to page, moved the wheel fix into the USB code, and committed both (34379808, 03496542).
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:00
+
+**Yoann:**
+
+> I think I've already seen some glyph cached used before, in the playground, maybe for mini-office; are we reusing the same code?
+
+**Claude (summary):**
+
+Claude said the playground's `Shape_render_software.mask_of` and Pdf_render's `laid` are separate caches, sharing only a small cache table and key. Claude then offered to switch the playground's float-array masks to bytes to cut mini-ml allocation cost, noting that would change its frame tests. Claude also noted the mini-9pi draw platform loads those playground masks into the kernel once.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:03
+
+**Yoann:**
+
+> so page does not send each letter as images to the kernel like the playground does for mini-office?
+
+**Claude (summary):**
+
+Claude explained that page sends a whole rendered page picture to the kernel, while mini-office sends one draw message per letter.
+Claude argued the page-picture approach suits a PDF viewer, since scrolling becomes one copy per frame instead of about 3,000 messages.
+Claude noted PDF text can be clipped, transparent, pattern-filled, or drawn over pictures, which Pdf_render handles before the kernel sees it.
+Claude said the cost is the new-page moment: in-process drawing plus 40 to 70 ms of transfer under QEMU per page.
+Claude said drawing ahead, plus the glyph cache, absorbs that cost while the reader is still reading the current page.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:46
+
+**Yoann:**
+
+> let's adjust the playground optimization plan document with all those new plans and info first
+
+**Claude (summary):**
+
+Claude updated `plan_playground_framebuffer.md` (uncommitted) with the new plans and today's measurements.
+Claude rewrote the intro to show F2 done with Pi 2 numbers, and F5 and F4 next.
+Claude rewrote F5 as an integer scaled draw in the kernel, with three possible request designs and their trade-offs.
+Claude documented F4, explaining why scale=3 and scale=4 fall to the slow blended path today.
+Claude reordered the stages to F2, F5, F4, then F1 and F3, and asked about the message format and Pi screen size.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:04
+
+**Yoann:**
+
+> I see; those differences might be interesting to record in some notes document, or in the Page.mli and Office.mli to compare the choices and alternatives
+
+**Claude (summary):**
+
+Claude added a "How a page reaches the screen" paragraph to Pageview.ml's header, contrasting whole-page drawing with mini-office's per-letter shapes.
+Claude wrote the mirror comparison into Office_view.mli's header, explaining why its letters stay shapes as text changes while typing.
+Claude added a PDF-text path to section 2 of docs/notes_font.md, with the 21-page timing dropping from 19.65 s to 6.42 s.
+Claude verified that page and mini-office still build, and left the changes uncommitted until Yoann approved a commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:58
+
+**Yoann:**
+
+> independently, what is the current speed of the code generate by mini-ml compared to ocaml-light or compared to ocaml 4.14?

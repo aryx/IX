@@ -54,8 +54,12 @@ PC:
 - `Shape_render_software`: a `Bitmap` is drawn (`Blit`: the nearest
   pixel where it is neither scaled nor turned, else its neighbours
   blended); an `Image`, a picture by its file's name, is its grey box:
-  no file is fetched. No debug views. `Shape_render_pdf` beside it is
-  ix's own: the same shapes as a PDF's operators.
+  no file is fetched. No debug views. No `render_region`: `Redraw`
+  draws a box that changed into `lib_graphics`' `Framebuffer.part`, a
+  framebuffer that is that part of the window, by `render` (the
+  window's moved transform gave other floats: pixels at edges
+  differed). `Shape_render_pdf` beside it is ix's own: the same shapes
+  as a PDF's operators.
 - `Sprite`: a picture's bytes are a `Bytes`, not a Bigarray.
 - `platforms/software/Playground_platform`: the playground's software
   platform, SDL's window become Plan 9's draw device's (the pixels

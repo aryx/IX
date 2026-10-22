@@ -4,9 +4,10 @@
 (* ix: the playground's playground/platforms/software/Shape_render_software.ml,
  * less: a picture by its file's name (Image: drawn here as its box, grey:
  * no file is fetched), its debug views (bounding boxes, wireframe: the
- * playground's "b" and "f" keys). And its optional arguments said (the
- * options and the scale of render and of render_region, Fill's rule);
- * render_region and pixel_bounds take the scale too. *)
+ * playground's "b" and "f" keys), render_region (a framebuffer that is
+ * a part of the window instead: Framebuffer.part). And its optional
+ * arguments said (the options and the scale of render, Fill's rule);
+ * pixel_bounds takes the scale too. *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -65,7 +66,7 @@ let image_placeholder_rgb = 0xc0c0c0
  * i.e. first flip y (scale 1 -1), then move the origin to the center. *)
 let screen_transform (fb : Framebuffer.t) : Affine.t =
   Affine.compose
-    (Affine.translate (float fb.width /. 2.) (float fb.height /. 2.))
+    (Affine.translate (float fb.window_width /. 2.) (float fb.window_height /. 2.))
     (Affine.scale 1. (-1.))
 
 (* A shape's own scale, then rotation, then move -- the same order as
@@ -414,19 +415,6 @@ let rec render_shape (options : options) (fb : Framebuffer.t) (m : Affine.t) (sh
 
 let render ~(options : options) ~(scale : float) (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
   let m = if scale = 1. then screen_transform fb else Affine.compose (screen_transform fb) (Affine.scale scale scale) in
-  List.iter (render_shape options fb m) shapes
-
-(* claude: [render]'s screen transform shifted by (x0, y0): the pixel
- * (x0, y0) of the window lands on the framebuffer's (0, 0) *)
-let render_region ~(options : options) ~(scale : float) ~window:((width, height) : int * int) ~origin:((x0, y0) : int * int)
-    (fb : Framebuffer.t) (shapes : Playground.shape list) : unit =
-  let m =
-    Affine.compose
-      (Affine.compose
-         (Affine.translate ((float width /. 2.) -. float x0) ((float height /. 2.) -. float y0))
-         (Affine.scale 1. (-1.)))
-      (Affine.scale scale scale)
-  in
   List.iter (render_shape options fb m) shapes
 
 (*****************************************************************************)

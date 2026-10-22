@@ -58,13 +58,32 @@
  * copy made of it (Display.load). *)
 type pixels = Bytes.t
 
-type t = { width : int; height : int; pixels : pixels }
+(* ix: [left], [top] and the window's size: a part of a window (a
+ * frame drawn again where it changed only, Redraw), its pixels the
+ * window's from (left, top), width by height. The functions take the
+ * window's coordinates, and those that draw bound what they compute
+ * by the window's size, not the part's: a shape's pixels are then the
+ * same numbers in a part and in the whole, only those outside the part
+ * not written. For a framebuffer of its own: 0, 0, its size. *)
+type t = {
+  width : int;
+  height : int;
+  pixels : pixels;
+  left : int;
+  top : int;
+  window_width : int;
+  window_height : int;
+}
 
 (* A new framebuffer, all white; for offscreen drawing and tests *)
 val create : width:int -> height:int -> t
 
 (* A framebuffer on top of existing memory: 4 * width * height bytes *)
 val of_pixels : width:int -> height:int -> pixels -> t
+
+(* ix: [part ~window:(w, h) ~at:(x, y) ~width ~height]: a new
+ * framebuffer, all white, for that part of a window of w by h *)
+val part : window:int * int -> at:int * int -> width:int -> height:int -> t
 
 (* Fill the whole framebuffer with one (opaque) color *)
 val clear : t -> rgb:int -> unit

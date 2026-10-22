@@ -95,8 +95,12 @@ let frame (t : t) (shapes : Playground.shape list) : (box * Framebuffer.t) list 
       else
         List.map
           (fun ((x0, y0, x1, y1) as b : box) ->
-            let fb = Framebuffer.create ~width:(x1 - x0) ~height:(y1 - y0) in
-            Shape_render_software.render_region ~options:t.options ~scale:t.scale ~window:(t.width, t.height) ~origin:(x0, y0) fb shapes;
+            (* (old: a framebuffer of its own, the window's transform
+             * moved by (x0, y0): its floats added in another order, a
+             * pixel at an edge then another, mini-office's menu bar
+             * 153 pixels off; bugs/ix.md) *)
+            let fb = Framebuffer.part ~window:(t.width, t.height) ~at:(x0, y0) ~width:(x1 - x0) ~height:(y1 - y0) in
+            Shape_render_software.render ~options:t.options ~scale:t.scale fb shapes;
             (b, fb))
           boxes
 

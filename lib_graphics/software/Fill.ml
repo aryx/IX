@@ -132,7 +132,9 @@ let scan ~(rule : fill_rule) ~height (contours : (float * float) list list) ~(on
 (* A span from xa to xb covers the pixels whose center is in [xa, xb),
  * the same rule as for rows *)
 let polygons ~rule (fb : Framebuffer.t) contours ~rgb ~alpha =
-  scan ~rule ~height:fb.height contours ~on_span:(fun ~y xa xb ->
+  (* (ix: a part's last row its own: a row's crossings are the rows'
+   * above's, so stopping there changes none of those drawn) *)
+  scan ~rule ~height:(fb.top + fb.height) contours ~on_span:(fun ~y xa xb ->
       Framebuffer.fill_span fb ~y ~x0:(first_pixel xa) ~x1:(first_pixel xb) ~rgb ~alpha)
 
 let polygon ~rule fb points ~rgb ~alpha = polygons ~rule fb [ points ] ~rgb ~alpha
@@ -156,11 +158,11 @@ let subrows = 4
 
 let polygons_aa_simple ~rule (fb : Framebuffer.t) contours ~rgb ~alpha =
   let n = float subrows in
-  let coverage = Array.make fb.width 0. in
+  let coverage = Array.make fb.window_width 0. in
   let row = ref (-1) in
   let flush () =
     if !row >= 0 then
-      for x = 0 to fb.width - 1 do
+      for x = 0 to fb.window_width - 1 do
         if coverage.(x) > 0. then begin
           Framebuffer.plot fb ~x ~y:!row ~rgb ~alpha:(alpha *. Float.min 1. coverage.(x));
           coverage.(x) <- 0.
@@ -168,13 +170,13 @@ let polygons_aa_simple ~rule (fb : Framebuffer.t) contours ~rgb ~alpha =
       done
   in
   let stretched = List.map (List.map (fun (x, y) -> (x, y *. n))) contours in
-  scan ~rule ~height:(fb.height * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
+  scan ~rule ~height:((fb.top + fb.height) * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
       let y = subrow / subrows in
       if y <> !row then begin
         flush ();
         row := y
       end;
-      for x = max 0 (int_of_float (Float.floor xa)) to min (fb.width - 1) (int_of_float (Float.ceil xb) - 1) do
+      for x = max 0 (int_of_float (Float.floor xa)) to min (fb.window_width - 1) (int_of_float (Float.ceil xb) - 1) do
         coverage.(x) <- coverage.(x) +. (overlap (xa, xb) x /. n)
       done);
   flush ()
@@ -259,13 +261,13 @@ let polygons_aa_sparse ~rule (fb : Framebuffer.t) contours ~rgb ~alpha =
   (* the polygon stretched [subrows] times vertically: its rows are our
    * sub-rows, sampled at (k + 0.5) / subrows within each pixel row *)
   let stretched = List.map (List.map (fun (x, y) -> (x, y *. float subrows))) contours in
-  scan ~rule ~height:(fb.height * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
+  scan ~rule ~height:((fb.top + fb.height) * subrows) stretched ~on_span:(fun ~y:subrow xa xb ->
       let y = subrow / subrows in
       if y <> !row then begin
         flush ();
         row := y
       end;
-      add_span cells ~weight ~width:fb.width xa xb);
+      add_span cells ~weight ~width:fb.window_width xa xb);
   flush ()
 
 let polygons_aa ~rule fb contours ~rgb ~alpha =

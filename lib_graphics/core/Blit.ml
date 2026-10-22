@@ -64,9 +64,9 @@ let covered_box (fb : Framebuffer.t) (image : image) (m : Affine.t) =
   let xs = List.map fst corners and ys = List.map snd corners in
   let first_pixel v = int_of_float (Float.ceil (v -. 0.5)) in
   ( max 0 (first_pixel (List.fold_left min infinity xs)),
-    min fb.width (first_pixel (List.fold_left max neg_infinity xs)),
+    min fb.window_width (first_pixel (List.fold_left max neg_infinity xs)),
     max 0 (first_pixel (List.fold_left min infinity ys)),
-    min fb.height (first_pixel (List.fold_left max neg_infinity ys)) )
+    min fb.window_height (first_pixel (List.fold_left max neg_infinity ys)) )
 
 (* The original, simple version: for each covered pixel, where does its
  * center come from in the image? (a matrix product), then the color

@@ -11,7 +11,15 @@
 
 type pixels = Bytes.t
 
-type t = { width : int; height : int; pixels : pixels }
+type t = {
+  width : int;
+  height : int;
+  pixels : pixels;
+  left : int;
+  top : int;
+  window_width : int;
+  window_height : int;
+}
 
 (*****************************************************************************)
 (* Colors *)
@@ -49,7 +57,7 @@ let blend ~(src : int) ~(dst : int) ~(alpha : float) : int =
 
 let of_pixels ~(width : int) ~(height : int) (pixels : pixels) : t =
   if Bytes.length pixels <> 4 * width * height then invalid_arg "Framebuffer.of_pixels";
-  { width; height; pixels }
+  { width; height; pixels; left = 0; top = 0; window_width = width; window_height = height }
 
 (* The simple version: each pixel set *)
 let clear_simple (fb : t) ~(rgb : int) : unit =
@@ -74,7 +82,10 @@ let create ~(width : int) ~(height : int) : t =
   clear fb ~rgb:0xFFFFFF;
   fb
 
-let get_rgb (fb : t) ~(x : int) ~(y : int) : int = get_pixel fb.pixels (4 * ((y * fb.width) + x))
+let part ~window:((window_width, window_height) : int * int) ~at:((left, top) : int * int) ~(width : int) ~(height : int) : t =
+  { (create ~width ~height) with left; top; window_width; window_height }
+
+let get_rgb (fb : t) ~(x : int) ~(y : int) : int = get_pixel fb.pixels (4 * (((y - fb.top) * fb.width) + x - fb.left))
 
 (*****************************************************************************)
 (* Spans *)
@@ -84,6 +95,8 @@ let fill_span (fb : t) ~(y : int) ~(x0 : int) ~(x1 : int) ~(rgb : int) ~(alpha :
   (* clipping: keep only the part of the span that is inside the
    * framebuffer; e.g. on a 1000-pixel-wide framebuffer, the span
    * [-20, 30) becomes [0, 30), and [990, 1200) becomes [990, 1000) *)
+  (* (ix: a part's, from the window's coordinates to its own) *)
+  let y = y - fb.top and x0 = x0 - fb.left and x1 = x1 - fb.left in
   let x0 = max x0 0 and x1 = min x1 fb.width in
   if y >= 0 && y < fb.height && x0 < x1 && alpha > 0. then begin
     let row = 4 * y * fb.width in

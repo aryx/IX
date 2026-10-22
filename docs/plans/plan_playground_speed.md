@@ -508,7 +508,9 @@ above goes round and does not remove:
   touch it drawn. A caret moved, a menu's name lit: a few messages.
 - First, the row of `docs/plans/bugs/ix.md`: mini-office's picture by
   what changed is not the one drawn whole (the menu bar's row). Both
-  platforms would stand on that code.
+  platforms would stand on that code. Fixed 2026-10-21: the boxes
+  were right, the region's floats not (Framebuffer.part); the draw
+  platform uses the boxes alone, the kernel drawing in them.
 - What it touches: the draw platform, `Redraw`.
 
 **What is taken out after** (each measured without, before it goes):

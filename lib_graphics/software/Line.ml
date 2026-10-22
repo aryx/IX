@@ -90,7 +90,7 @@ let draw (fb : Framebuffer.t) p0 p1 ~rgb ~alpha =
   (* clip to a hair inside the right and bottom borders, so that the
    * pixel containing a clipped end is always a real one: x = width
    * exactly would be in the column just after the last *)
-  let width = float fb.width -. 0.001 and height = float fb.height -. 0.001 in
+  let width = float fb.window_width -. 0.001 and height = float fb.window_height -. 0.001 in
   match clip ~width ~height p0 p1 with
   | None -> ()
   | Some ((x0, y0), (x1, y1)) ->
@@ -125,7 +125,7 @@ let wu (fb : Framebuffer.t) (x0, y0) (x1, y1) ~rgb ~alpha =
   done
 
 let draw_aa (fb : Framebuffer.t) p0 p1 ~rgb ~alpha =
-  let width = float fb.width -. 0.001 and height = float fb.height -. 0.001 in
+  let width = float fb.window_width -. 0.001 and height = float fb.window_height -. 0.001 in
   match clip ~width ~height p0 p1 with
   | None -> ()
   | Some ((x0, y0), (x1, y1)) ->

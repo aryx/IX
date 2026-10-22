@@ -34,12 +34,12 @@
  * is not drawn, it is a matrix its members are drawn through.
  *
  * Where it stands: three of the four platforms end here
- * (Playground_platform.mli draws them), Redraw calls [render_region]
- * for the boxes that changed, and Shape_render_pdf is the same walk
- * stopped after its second step, the points written down where here
- * they are filled. The fourth platform sends the same points to
- * Plan 9's draw device, and the kernel's Memdraw does the last two
- * steps.
+ * (Playground_platform.mli draws them), Redraw calls [render] on a
+ * part of the window (Framebuffer.part) for each box that changed,
+ * and Shape_render_pdf is the same walk stopped after its second
+ * step, the points written down where here they are filled. The
+ * fourth platform sends the same points to Plan 9's draw device, and
+ * the kernel's Memdraw does the last two steps.
  *
  * terminology:
  * A *rasterizer* turns geometry into a raster, a grid of pixels;
@@ -51,7 +51,7 @@
 
 (* ix: of the playground's options, the two that are not debug views;
  * render's options and scale are said (they were optional: the
- * defaults, and 1.), for render_region and pixel_bounds too. *)
+ * defaults, and 1.), for pixel_bounds too. *)
 
 (* Rendering features that can be turned on or off *)
 type options = {
@@ -68,17 +68,11 @@ type options = {
 val default_options : options
 
 (* [render ~options ~scale fb shapes]: the shapes drawn into [fb], the
- * playground's (0, 0) at its center; [scale] pixels per playground unit,
- * e.g. 0.48 to draw the 1000 units of a game's screen into a 480-wide
- * framebuffer *)
+ * playground's (0, 0) at its window's center (a part of a window,
+ * Framebuffer.part: its pixels of the whole's, the same numbers);
+ * [scale] pixels per playground unit, e.g. 0.48 to draw the 1000
+ * units of a game's screen into a 480-wide framebuffer *)
 val render : options:options -> scale:float -> Framebuffer.t -> Playground.shape list -> unit
-
-(* [render_region ~options ~scale ~window:(width, height) ~origin:(x0, y0) fb shapes]:
- * the part of the [width] x [height] window that [fb] covers, from the
- * window's pixel (x0, y0): the same pixels as [render] on the whole
- * window, cropped, for less work when only a part is needed *)
-val render_region :
-  options:options -> scale:float -> window:int * int -> origin:int * int -> Framebuffer.t -> Playground.shape list -> unit
 
 (* [pixel_bounds ~width ~height ~scale shapes]: the box, (x0, y0, x1, y1) in
  * pixels of a [width] x [height] window (x1, y1 excluded, clipped to

@@ -1,0 +1,48 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# ix built by ix, the directories one after the other, each by its own
+# mk (make self, tests/self.sh): on mini-9pi in the card's /src, and on
+# Linux in a copy of it, the same list, for the same files. A directory
+# that fails says FAILED and the next goes on; each mk's time is said
+# on mini-9pi (its time: the kernel's times, which Linux's has not).
+# (Not the top mkfile's all: it stops at the first failure, and builds
+# the directories side by side.)
+# usage: rc kernels/9pi/tests/self.rc [-q] [mk's arguments...]
+#   -q: a part of lib_core, a few minutes on the card, not hours: its C
+#   library (cc, asm, ar), the runtime and three units (ml); no link,
+#   which takes all of lib_core.a first (6 minutes)
+#   mk's arguments: 'ML=time ml -m 5' ..., each compile's time too
+LIBS=(lib_core lib_crypto lib_compression lib_networking lib_graphics \
+ lib_playground lib_physics lib_juice lib_gui lib_audio \
+ lib_networking/netcode lib_playground/apis lib_playground/platforms \
+ lib_playground/platforms/draw lib_playground/platforms/software \
+ browsers/html browsers/css browsers/javascript browsers/engine \
+ browsers/webapi typesetting/troff)
+PROGS=(shell editors/ed utilities/files utilities/misc utilities/namespace \
+ utilities/time utilities/pipe utilities/compare utilities/process \
+ utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc \
+ utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello \
+ kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads \
+ lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
+ kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd \
+ lib_graphics/tests windows windows/tests apps/misc apps/music/play \
+ apps/music/rebirth games languages/smalltalk \
+ languages/smalltalk/hosts/draw languages/scheme languages/pascal \
+ languages/prolog editors/drscheme apps/office apps/page \
+ editors/turbopascal/hosts/draw editors/emacs/draw typesetting/man \
+ networking browsers/lynx browsers/netscape assembler linker \
+ linker/tools languages/ml languages/c builder generators/lex \
+ generators/yacc)
+# (games again for its other platform, the software one)
+SOFT=(games)
+T=(); if(test -e /dev/sysstat) T=time
+fn b { echo '=== '^$1; @{cd $1 && $T mk $*(2-)} || echo 'FAILED '^$1 }
+if(~ $1 -q){
+  shift
+  L=../_mk/5-plan9/lib_core
+  b lib_core $* $L/libc.a $L/runtime.5 $L/Pervasives.5 $L/List.5 $L/Printf.5
+  exit
+}
+for(d in $LIBS $PROGS) b $d $*
+for(d in $SOFT) b $d 'PLATFORM=software' $*

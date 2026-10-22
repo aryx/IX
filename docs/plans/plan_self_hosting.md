@@ -214,6 +214,20 @@ program Linux's bytes; Status below).
     path) and 5 of libc's objects, mini-cc built by mini-ml sharing
     other blocks than built by OCaml (fixed: objects marshalled
     without sharing, bugs/ix.md). Not yet run again on the card.
+  - **`make self`** in kernels/9pi (the author: "For t-ix there is a
+    make self target inside TinyKernel/. For m-ix ?"): card-self, then
+    tests/self.rc on it under QEMU, the card's /src copied out, the
+    same self.rc on Linux in that copy, each file compared
+    (tests/self.sh; build/self/: the logs, times.txt, differ.txt).
+    `make self-quick`: a part of lib_core, every tool but the linker
+    (libc.a by cc, asm and ar, the runtime, three units by ml), a few
+    minutes (the author: "like under 5min?"); a link takes all of
+    lib_core.a first, 6 minutes on the card. The top Makefile's
+    `make self` and `self-quick` run t-ix's (tiny/TinyKernel, its
+    self-quick new: ping and tiny-ml's library by the Buildfile) and
+    m-ix's side by side (the author: "a toplevel self-quick ... in
+    parallel for t-ix and m-ix"): self-quick 4 min 46 s, both ok, the
+    58 files of m-ix's the host's.
   - **Where a compile's time goes** (the Pi's PC sampled by QEMU's gdb
     stub, mini-ml on Pervasives: 0.07 s on Linux, 7.0 s on the card):
     the SD card's driver 40% (Kfs's cache of 2 MB, all forgotten when

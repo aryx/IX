@@ -786,6 +786,17 @@ card-self: ix
 	$(MAKE) BOARD=pi2 ix
 	rm -f build/card-self-fs.img
 	$(MAKE) SELF=1 build/card-self.img
+# ix built by ix on that card, the Pi 2 under QEMU (one core: boot.rc's
+# NPROC), and each file it makes against Linux's from the same sources
+# (tests/self.sh, tests/self.rc; build/self/); self-quick: a part of
+# lib_core (its C library, the runtime, three units; no link), minutes
+# on the card where self is 3 hours
+self self-quick: card-self
+	cd ../.. && dune build ./kernels/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe
+	$(MAKE) --no-print-directory BOARD=pi2 SELFQ=$(if $(filter self-quick,$@),-q) self-run
+.PHONY: self self-quick self-run
+self-run:
+	tests/self.sh $(SELFQ) build/card-self.img build/self -- $(QEMU) $(QEMU_BOOT_IX)
 # what make card says last (not when card is another target's
 # prerequisite): where the image is and how it gets on a card. The
 # device is the reader's to find: a wrong one is a disk erased

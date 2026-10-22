@@ -56,6 +56,7 @@
 #                     A few minutes
 #   make self         tiny-kernel builds its image from its sources,
 #                     /src, on a disk: the host's, byte for byte (hours)
+#   make self-quick   a few of its targets, the same way (3 minutes)
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
@@ -495,7 +496,7 @@ MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;
 # override: tiny-machine gives MACHINE on the command line)
-check check-parts self: override MACHINE := $(MACHINE) -date 820540800 -seed 1
+check check-parts self self-quick: override MACHINE := $(MACHINE) -date 820540800 -seed 1
 # its parts side by side, J at a time unless make was given -j: each
 # session's text in $(O)/check/NN.out, put together in their order, each
 # screen and sound in its own files; sessions that share a disk or files
@@ -603,8 +604,17 @@ self: $(O)/boot.img
 	cmp $(O)/boot.img $(O)/self.boot.img
 	rm $(O)/self.img $(O)/self.out $(O)/self.boot.img && echo "tiny-kernel: self ok, its image the host's"
 
+# self in minutes: a few of the Buildfile's targets, ping (cc, as, ld)
+# and the library (ml, as), each compared with the host's in the image
+# (self-quick.keys: cmp); what the shell printed is self-quick.expected
+self-quick: $(O)/boot.img
+	rm -f $(O)/self-quick.img; truncate -s 64M $(O)/self-quick.img
+	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
+	diff $(T)/self-quick.expected $(O)/self-quick.out
+	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
+
 clean:
 	rm -rf $(O)
 
-.PHONY: all run check check-parts self clean
+.PHONY: all run check check-parts self self-quick clean
 .SECONDARY:

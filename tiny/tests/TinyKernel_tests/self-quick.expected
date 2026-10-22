@@ -1,0 +1,19 @@
+tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+tiny-kernel: / on a disk of 65536 KB, 65532 KB free; 0 snapshots in /dump
+$ % % as -o start.o /src/TinyCRuntime/start.tm
+as -o udivmod.o /src/TinyCRuntime/udivmod.tm
+cc -o libc.tm /src/TinyCRuntime/libc.c
+as -o libc.o libc.tm
+mkdir -p libc; as -o libc/sys.o /src/TinyKernel/libc/sys.tm
+mkdir -p user; cc -o user/ping.tm /src/TinyKernel/user/ping.c
+as -o user/ping.o user/ping.tm
+mkdir -p bin; ld -map -s -o bin/ping start.o udivmod.o libc.o libc/sys.o user/ping.o
+mkdir -p lib; b=(); for(m in Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1) { ml -c -nostdlib -o lib/$m.tm $b /src/TinyLibCore/$m.ml; b=($b lib/$m.tmi) }
+as -o lib/Stdlib.o lib/Stdlib.tm
+as -o lib/List.o lib/List.tm
+as -o lib/Printf.o lib/Printf.tm
+% bin/ping: the host
+% lib/Stdlib: the host
+lib/List: the host
+lib/Printf: the host
+% $ 

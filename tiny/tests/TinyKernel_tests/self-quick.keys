@@ -1,0 +1,6 @@
+rc
+mkdir q; cd q
+build -f /src/TinyKernel/Buildfile bin/ping lib/Stdlib.o lib/List.o lib/Printf.o
+cmp bin/ping /bin/ping && echo bin/ping: the host
+for(m in Stdlib List Printf) { cmp lib/$m.tmi /lib/ml/$m.tmi && cmp lib/$m.o /lib/ml/$m.o && echo lib/$m: the host }
+exit

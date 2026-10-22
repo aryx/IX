@@ -279,6 +279,10 @@ kernels-ix: ix ix-arm
 # - test-arm: the arm programs, under qemu-arm (mkfiles/check_arm.sh);
 #   test-fixpoint-arm: ix for arm built again by them, twice
 # - test-kernels-ix: mini-xv6's and mini-9pi's checks, on the Pi 4
+# - self: ix built by ix in its own system, t-ix in tiny-kernel and
+#   m-ix in mini-9pi (the Pi 2 under QEMU), side by side, each file the
+#   host's (tiny/TinyKernel's make self, kernels/9pi's); hours.
+#   self-quick: a part of each, a few minutes
 test-ix: all
 	true | ./mkfiles/check.sh
 test-fixpoint: all
@@ -289,6 +293,12 @@ test-fixpoint-arm: all
 	./mkfiles/fixpoint.sh 5
 test-kernels-ix: all
 	./tests/kernels_ix.sh
+self self-quick:
+	$(MAKE) --no-print-directory -j2 $@-tix $@-mix
+self-tix self-quick-tix: all
+	$(MAKE) -C tiny/TinyKernel $(@:-tix=)
+self-mix self-quick-mix: all
+	$(MAKE) -C kernels/9pi $(@:-mix=)
 
 ###############################################################################
 # All the tests
@@ -370,4 +380,4 @@ visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
 .PHONY: all install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix test-all test-quick test-lite test-github visual visual-all
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-quick test-lite test-github visual visual-all

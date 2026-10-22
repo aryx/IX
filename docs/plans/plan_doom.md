@@ -181,9 +181,12 @@ run time are a plan of their own, after it (below, stage 6).
   platforms follow it; the Plan 9 ones have no `window` yet and keep
   `size=`); and the eye drawn between its last two tics (`Doom.eye`),
   as the ports since id's do: 35 tics shown at 60 frames moved the
-  view on some frames and not others. Left: Redraw hashes the two
-  pictures of a megabyte to compare frames (2 ms of the 4.6); the
-  draw and SDL platforms read `size=` from the command line only.
+  view on some frames and not others. Then Redraw's hash (the author:
+  "let's optimize this hash thing"): it read a picture's megabyte at
+  each hash, four in a frame that changed it (2.2 ms); now a picture's
+  place and size, `compare` telling two apart (a frame where a message
+  comes or goes, 5.45 ms to 2.05). Left: the draw and SDL platforms
+  read `size=` from the command line only.
 - **mini-9pi** (stage 5): runs. mini-ml refused `Render`'s functions
   of more than 7 parameters (`draw_column` has 10); by the author's
   rule (lift the limit, do not reshape the code) mini-ml now passes

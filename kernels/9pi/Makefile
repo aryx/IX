@@ -789,8 +789,9 @@ card-self: ix
 # ix built by ix on that card, the Pi 2 under QEMU (one core: boot.rc's
 # NPROC), and each file it makes against Linux's from the same sources
 # (tests/self.sh, tests/self.rc; build/self/); self-quick: a part of
-# lib_core (its C library, the runtime, three units; no link), minutes
-# on the card where self is 3 hours
+# lib_core (its C library, the runtime, three units) and two programs
+# linked with them, in C and OCaml, run (tests/self/), 4 minutes where
+# self is 3 hours
 self self-quick: card-self
 	cd ../.. && dune build ./kernels/9pi/filesystems/lib_xv6fs/tests/Xv6test.exe
 	$(MAKE) --no-print-directory BOARD=pi2 SELFQ=$(if $(filter self-quick,$@),-q) self-run

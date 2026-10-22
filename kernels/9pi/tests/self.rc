@@ -10,8 +10,9 @@
 # the directories side by side.)
 # usage: rc kernels/9pi/tests/self.rc [-q] [mk's arguments...]
 #   -q: a part of lib_core, a few minutes on the card, not hours: its C
-#   library (cc, asm, ar), the runtime and three units (ml); no link,
-#   which takes all of lib_core.a first (6 minutes)
+#   library (cc, asm, ar), the runtime and three units (ml); then
+#   tests/self/'s programs, one in C and one in OCaml, linked (ld) with
+#   those alone (all of lib_core.a takes 6 minutes)
 #   mk's arguments: 'ML=time ml -m 5' ..., each compile's time too
 LIBS=(lib_core lib_crypto lib_compression lib_networking lib_graphics \
  lib_playground lib_physics lib_juice lib_gui lib_audio \
@@ -24,6 +25,7 @@ PROGS=(shell editors/ed utilities/files utilities/misc utilities/namespace \
  utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc \
  utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello \
  kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads \
+ kernels/9pi/tests/self \
  lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd \
  lib_graphics/tests windows windows/tests apps/misc apps/music/play \
@@ -41,7 +43,8 @@ fn b { echo '=== '^$1; @{cd $1 && $T mk $*(2-)} || echo 'FAILED '^$1 }
 if(~ $1 -q){
   shift
   L=../_mk/5-plan9/lib_core
-  b lib_core $* $L/libc.a $L/runtime.5 $L/Pervasives.5 $L/List.5 $L/Printf.5
+  b lib_core $* $L/libc.a $L/runtime.5 $L/std_exit.5 $L/Pervasives.5 $L/List.5 $L/Printf.5
+  b kernels/9pi/tests/self $*
   exit
 }
 for(d in $LIBS $PROGS) b $d $*

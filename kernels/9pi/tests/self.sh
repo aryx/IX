@@ -9,7 +9,8 @@
 # BUILD, where the build writes (the checks' cards are snapshots);
 # EMULATOR: the Pi 2's, with its four cores. Then:
 #  1. tests/self.rc on the card, at the console, each compile and link
-#     timed (BUILD/console.txt, the card's /tmp/self.log as BUILD/card.log);
+#     timed (BUILD/console.txt, the card's /tmp/self.log as BUILD/card.log),
+#     then tests/self/'s two programs run;
 #  2. the card's /src copied out by Xv6test: its sources to BUILD/src,
 #     what the build made to BUILD/card-mk;
 #  3. tests/self.rc on Linux in BUILD/src, the tools under the card's
@@ -37,6 +38,8 @@ T=('ML=time ml -m 5' 'LD=time ld -m 5 -map' 'CC=time cc -m 5' 'AS=time asm -m 5'
 rc kernels/9pi/tests/self.rc $q \$T > /tmp/self.log >[2=1]
 grep FAILED /tmp/self.log
 du -s /src/_mk
+/src/_mk/5-plan9/kernels/9pi/tests/self/hello-c
+/src/_mk/5-plan9/kernels/9pi/tests/self/hello-ml
 EOF
 echo "self: the build on the card, under QEMU (BUILD/console.txt; $(date +%H:%M))"
 start=$(date +%s)
@@ -75,6 +78,11 @@ done
 
 # 4. the two compared
 status=0
+# (tests/self/'s programs, run on the card after the build)
+for l in "hello from C" "hello from OCaml"; do
+  if grep -q "^$l" "$build/console.txt"; then echo "ok self: on the card: $l"
+  else echo "FAIL self: on the card, no \"$l\" (BUILD/console.txt)"; status=1; fi
+done
 for l in card linux; do
   n=$(grep -c '^=== ' "$build/$l.log")
   f=$(grep '^FAILED ' "$build/$l.log" | sed 's/^FAILED //' | tr '\n' ' ')

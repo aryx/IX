@@ -219,10 +219,12 @@ program Linux's bytes; Status below).
     tests/self.rc on it under QEMU, the card's /src copied out, the
     same self.rc on Linux in that copy, each file compared
     (tests/self.sh; build/self/: the logs, times.txt, differ.txt).
-    `make self-quick`: a part of lib_core, every tool but the linker
-    (libc.a by cc, asm and ar, the runtime, three units by ml), a few
-    minutes (the author: "like under 5min?"); a link takes all of
-    lib_core.a first, 6 minutes on the card. The top Makefile's
+    `make self-quick`: a part of lib_core (libc.a by cc, asm and ar,
+    the runtime, three units by ml), then two programs linked with it
+    alone and run on the card, as t-ix's ping (tests/self/: hello-c
+    over libc.a, hello-ml started with Pervasives alone, where all of
+    lib_core.a takes 6 minutes); 4 minutes (the author: "like under
+    5min?", then "ideally we would link a small C and ocaml program"). The top Makefile's
     `make self` and `self-quick` run t-ix's (tiny/TinyKernel, its
     self-quick new: ping and tiny-ml's library by the Buildfile) and
     m-ix's side by side (the author: "a toplevel self-quick ... in

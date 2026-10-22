@@ -1,0 +1,30 @@
+# make self-quick's programs (tests/self.rc -q), each built and linked
+# on the card as on Linux, as t-ix's self-quick links ping: one in C
+# over lib_core's C library, one in OCaml started with Pervasives
+# alone, not all of lib_core.a (6 minutes on the card: mkfiles/mkprog
+# links it), their objects what self-quick makes of lib_core
+#   hello-c    hello.c, by mini-cc
+#   hello-ml   Hello.ml, by mini-ml
+TOP=../../../..
+<$TOP/mkfiles/mkconfig
+D=$B/kernels/9pi/tests/self
+MADE=`{mkdir -p $D}
+LC=$TOP/lib_core/libc
+CINC=-I$LC/include -I$LC/include/utf -I$LC -I$LC/include/arch/arm -Darm -D$OS
+
+all:V: $D/hello-c $D/hello-ml
+
+$D/hello.$O: hello.c
+	$CC $CINC -o $target hello.c
+$D/hello-c: $D/hello.$O $L/libc.a
+	$LD $LDH -nofollow -o $target $prereq
+
+$D/Hello.$O: Hello.ml
+	$ML $STDI -o $target Hello.ml
+$D/hello-ml.start.$O: mkfile
+	$ML -start Pervasives Hello Std_exit -o $target
+$D/hello-ml: $D/hello-ml.start.$O $L/Pervasives.$O $D/Hello.$O $STDEND
+	$LD $LDH -nofollow -o $target $prereq
+
+clean:V:
+	rm -rf $D

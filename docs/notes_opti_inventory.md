@@ -444,10 +444,14 @@ Playground's notes_opti_ocaml.md: mini-doom's 640x400 picture 21 ms by
 - **The imagmem lock release** (O7): a gain was never shown.
 - **A program's hint `changes=all`** (2026-10-22, not committed): a
   picture that moves whole each frame drawn whole, Redraw's comparing
-  skipped. Cameltry 27 ms a frame with it, 29-31 without. mini-doom's
-  27 either way is void: it showed its first two frames again and again
-  then (fbfc0317), nothing new to send. The author: "does not seem
-  worth it".
+  skipped. Cameltry 27 ms a frame with it, 29-31 without. mini-doom
+  (its frames new again since fbfc0317; before, the same two shown, 27
+  ms whatever the mode), under QEMU, the up arrow held, 40 frames in
+  5.0 to 5.3 s, the showing 56 to 59 ms in each mode (redraw=all, top,
+  the default): its comparing stops at a first byte, nothing to save.
+  The showing is the picture made at the window's size and sent whole
+  (`picture`: draw_pixels, then a 'y' of 400 KB), not Redraw. The
+  author: "does not seem worth it".
 - **Postponed or not tried**: K5 (a 32-bit screen; accepted, not done), K8
   and F1 (a framebuffer in the program's memory, or /dev/framebuffer;
   proposed 2026-10-22, nothing begun), K2, K3, K6, K9, K10, M2, M3, M6.

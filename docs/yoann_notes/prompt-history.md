@@ -43425,3 +43425,575 @@ Claude listed the last three commits: ca664887 (Kfs cache fix), 9e096d2b (make s
 Claude noted the remaining working-tree changes belong to other sessions: lib_graphics, lib_playground, speed notes, and prompt history.
 Claude pointed out that none of those other-session changes were committed here, so nothing was added to this session's commits.
 Claude also covered the overnight `make self` run, the expected netscape link failure, and the follow-up items for later sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:51
+
+**Yoann:**
+
+> let's improve a bit mini-netscape; first let's allow to select in the ominibox the text, with double click to select the whole line, C-c to copy, etc. Let's also add a Scrollbar when the page can be scrolled.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:13
+
+**Yoann:**
+
+> yes, let's commit
+
+**Claude (summary):**
+
+Claude rewrapped two long comments in Shape_render_software.mli and committed the Redraw fix as 29caa303.
+Claude named stage B as the next step, aimed at mini-9pi's draw platform.
+Stage B would send only the rectangles that changed in Redraw, not whole frames.
+The kernel's clip would be applied around those changed rectangles when drawing.
+Claude did not say whether the Linux SDL platform already sends only changed regions.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:52
+
+**Yoann:**
+
+> Is it the case already on the Linux (SDL) platform? we send only what changed?
+
+**Claude (summary):**
+
+Claude said SDL redraws only changed boxes yet uploads the whole buffer, and the software platform is fully partial.
+Claude found the draw platform skips Redraw and resends every shape, letter and copy each frame.
+Claude tied this to the 53–55 ms per hover frame that mini-9pi's default draw platform costs.
+Claude proposed Stage B: feed Redraw's changed boxes to draw, sending only shapes touching them.
+Claude said each box would be sent with the kernel clip set to that box.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:54
+
+**Yoann:**
+
+> ok let's do stage B
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:55
+
+**Yoann:**
+
+> let me know how much LOC it required to implement stage B, how much more complicated the code got
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:00
+
+**Yoann:**
+
+> I've found some bugs in cameltry when running under mini-9pi
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:01
+
+**Yoann:**
+
+> lots of the background rectangles were not drawn
+
+------------------------------------------------------------------------
+
+## 2026-10-22 07:51
+
+**Yoann:**
+
+> I think mini-chrome implement those things
+
+**Claude (summary):**
+
+Claude ported mini-chrome's Gui_field and Gui_scrollbar into mini-netscape's Location field and page area.
+Claude added the new editing and scrollbar modules, wired them into Netscape.ml, and extended the platforms' clipboard access.
+Claude scripted frames sessions for caret placement, drag selection, copy, paste, double-click, and scrollbar drag and paging, all passing.
+Claude fixed arrow keys that wrongly made the field offer pages, added two sessions to frames.expected, and re-recorded.
+Claude built with mini-mk and mini-ml, updated the docs, rewrapped new code to 80 columns, and asked about other clipboard gaps.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:13
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended committing only draw/Playground_platform.ml, the one file the other session also touches.
+Claude committed that file as HEAD plus its own two added lines, leaving the other session's working copy untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:13
+
+**Yoann:**
+
+> I get an error on mini-netscape under Linux for https://web.maths.unsw.edu.au/~davidharvey/research/subnlogn.pdf
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:14
+
+**Yoann:**
+
+> let's add TLS 1.2, and maybe skip it in 'make loc'
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:14
+
+**Yoann:**
+
+> also what is "Software platforms" in make loc output?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:15
+
+**Yoann:**
+
+> also maybe we should group sdl/, tty/, web/, opti/, ssa/, compat/ on the same line (with their count) as they are a bit related; or maybe sdl/ tty/ web in one group and opti/ ssa/ compat/ in another line
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:20
+
+**Yoann:**
+
+> let's add a mini-doom. You can look at the TinyDoom in the playground, but also ~/github/ocamldoom/; I would like esppecially to have textures in minidoom, like in ocamldoom, so it's quite close to the original; you have also doom9 in 9front for inspiration. Note that it maybe be too low fps because of the way the playground and draw platform work on mini-9pi, but we can maybe think about a /dev/framebuffer that would provide a faster path (albeit no rio/windows support), with raw access so less copy and intermediates. Ideally the games could be run with -framebuffer, -software, -draw, etc. so lib_playground/ for plan 9 would allow to choose dynamically if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:20
+
+**Yoann:**
+
+> for plan 9 I mean for m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:21
+
+**Yoann:**
+
+> if needed, we could even make a plan_playground_framebuffer.md or something, but first, let's do mini-doom (feel free to create a plan document for it and follow it)
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:16
+
+**Yoann:**
+
+> TinyKernel/examples/ is also small (70 lines) so we can probably not count it; not worth the space it takes in the final make loc output
+
+**Claude (summary):**
+
+Claude checked how `make loc` prints its "not counted" lines, which are the exclusions.
+Claude found that the "hosts" section follows APART's ordering, with web/ listed first.
+Claude reordered that section to sdl/, tty/, web/ as Yoann asked, and confirmed the output reads as suggested.
+Claude also finished TLS 1.2 on P-384, with ECDH vectors, tls.sh cases, and a 3.8 s mini-ml PDF fetch.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:24
+
+**Yoann:**
+
+> yes the decoders should count, and as we currently optimize the playground, we might need more of lib_graphics to be counted actually
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:24
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude reported that m-ix grew by 4,576 lines, covering the decoders, rasterizers, and geometry.
+Claude noted that "the software platform" now stands at 98 lines.
+Claude said it was committing the progress and first checking which modified files were its own.
+Claude identified eleven modified diffs as its own work to include in the commit.
+Claude left out Display, Redraw, the draw platform, and the staged prompt-history, which belong to another session.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:21
+
+**Yoann:**
+
+> I'll be back in a few hours
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:27
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended giving the page's own text fields the Location field's caret, selection, and clipboard editing first.
+Claude proposed a key-repeat timer in update_window, repeating after about 0.5 s and then every 1/30 s.
+Claude estimated the text-field editing at about 100 lines, since any form would hit it first.
+Claude listed smaller items: a docs/loc.md row for today and a /dev/snarf clipboard check under mini-9pi.
+Claude also proposed drag-selecting and copying page text, the larger item Yoann has now set aside.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:29
+
+**Yoann:**
+
+> yes let's do 1 and 2. No need for 3 for now. And let's do also the smaller items
+
+**Claude (summary):**
+
+Claude left the round uncommitted and asked whether to commit it before the clipboard check.
+Claude said the commit would hold the Text_field git mv, the Tab and Netscape changes, and three new frame sessions.
+Claude noted the docs/loc.md row and README update belong in it, with all 37 sessions passing under dune and mini-ml.
+Claude offered either committing this round first or running the mini-9pi clipboard check, which needs a card rebuild.
+Claude had finished the page text fields and held-key repeat, but left the clipboard check undone.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 13 files as 4122ab52, covering the page's text fields and key repeat.
+Claude added the docs/loc.md row and recorded `Location_field` → `browsers/engine/page/Text_field` as a rename.
+Claude left out the other session's Display, Redraw, draw platform, and doom, games and ml files.
+Claude kept `prompt-history.md` staged and out of the commit.
+Claude noted in the commit message that the Plan 9 clipboard check is still not done.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:27
+
+**Yoann:**
+
+> I think we can call it just plan_doom.md like for the other mini programs, for consistency
+
+**Claude (summary):**
+
+Claude's mini-ml change lets arm functions take more than 7 parameters by passing extras on the value stack.
+It touches simple/Gen.ml, Lower.ml, Lower.mli and ssa/Emit.ml, with a new many_params.ml runtime test.
+Claude noted that this change sits in the working tree beside other sessions' uncommitted edits in browsers/ and elsewhere.
+Claude advised committing it by its own paths only, since the agent's worktree is still at .claude/worktrees/agent-aa8ff6ad28900d2fa.
+Claude also renamed the plan to plan_doom.md and split Render into View, Planes, Segs, Sprites and Render.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:19
+
+**Yoann:**
+
+> not sure why but when I got to a page with a pdf, like the one mentioned before, thx to TLS 1.2 it now works, but mini-page is ran 2 times
+
+**Claude (summary):**
+
+Claude traced the double run of mini-page to the worker receiving the tab back with its job still attached.
+Claude fixed the frame ordering so the job is cleared before the tab returns to the worker.
+Claude checked the fix with a logging helper on a local PDF, comparing against a private copy of the unfixed code.
+The unfixed build started mини-page three times in that check, while the fixed build started it once.
+Claude then started the frame tests, and the answer ends before reporting their result.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:23
+
+**Yoann:**
+
+> let's commit the fix
+
+**Claude (summary):**
+
+Claude committed the fix as dbee047d, which is the commit Yoann asked for.
+The commit touches only `browsers/netscape/Netscape.ml`, so it stays scoped to that one file.
+Claude deliberately left the other session's uncommitted files out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:24
+
+**Yoann:**
+
+> I think we can close this session right?
+
+**Claude (summary):**
+
+Claude confirmed the session can close because all of its work is committed.
+Claude listed four commits: d663657d for Location field selection and the scrollbar, and e833ae2a for TLS 1.2 and the make loc changes.
+Claude also noted that 4122ab52 covers page field editing, key repeat, and the docs/loc.md row, and dbee047d loads the PDF once for mini-page.
+Claude said the uncommitted files in the tree belong to the other session, so they were left alone.
+The one open item is testing mini-netscape copy and paste under mini-9pi, which needs make card after the draw-platform work lands.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:23
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude confirmed that every file in the pending changes belonged to its own session.
+Claude committed those files by listing their exact paths, which is safer than staging everything.
+Claude left out the files from the other sessions: browsers, lib_graphics, lib_playground, and prompt-history.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 08:01
+
+**Yoann:**
+
+> (maybe I build the image while you were doing work though)
+
+**Claude (summary):**
+
+Claude reported that the Redraw change is not a clear win, because mini-netscape got slower.
+With the mouse over a link, Claude measured 85–95 ms per frame with boxes against 72 ms with `redraw=all`.
+Claude explained that Redraw compares only top-level shapes, and mini-netscape's whole page is one group.
+Claude measured almost no gain on cameltry, at 26–30 ms with boxes versus 26–27 ms whole.
+Claude also fixed a dangling-else bug that hid cameltry's walls, and advised against committing stage B.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:27
+
+**Yoann:**
+
+> mini-doom is not super smooth when running under Linux. Why?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:29
+
+**Yoann:**
+
+> I'm confused. Is this Redraw opti working?
+
+**Claude (summary):**
+
+Claude said Redraw's top-level-only comparison wins only when shapes are separate, and proposed a fix.
+Claude explained that the uncommitted stage B, the draw-platform version for mini-9pi, was no faster on mini-netscape or cameltry in its measurements.
+Claude recommended making Redraw compare inside groups, which would also help SDL on Linux, and offered to time stage B on mini-office first.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:35
+
+**Yoann:**
+
+> ok let's try to compare inside groups and see if before/after is a big win across mini-netscape, mini-office, mini-emacs, cameltry, etc.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:36
+
+**Yoann:**
+
+> we did lots of optimizations in lib_graphics and lib_playground and also kernel/.../lib_graphics to reduce those fps; would be good to have a good summary and what each opti brings and whether they are worth it and whether some cancel each other
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:27
+
+**Yoann:**
+
+> make test-lite seems to fail; not sure what introduced the regression, but it broke many times lately, so maybe we need to make it a rule to run make test-lite before committing new code if this continues
+
+**Claude (summary):**
+
+Claude traced the first failure to a mini-ml format-typing issue in Lower.ml, introduced by the mini-doom commit.
+Claude fixed a separate unbound module in the games code that was breaking the test run.
+Claude also fixed `-pp` scanning a leftover agent worktree, which was a third, independent cause.
+After those three fixes, the rerun shows "mini-ml compiles games" passing.
+One new failure remains, in the mini-mk unit tests, and Claude is checking it now.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:54
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the four test-lite fixes as 249481f7, including only its five files.
+Claude staged `Lower.ml`, `compile_ix.sh`, `tests/ix_files.sh`, `nproc.mk` and `nproc.out` for that commit.
+Claude left out `prompt-history.md` and another session's doom, Blit, Display, Redraw and Playground_platform edits.
+Claude confirmed those other edits remain in the working tree exactly as they were.
+Claude then asked whether to save "run make test-lite before committing" as a rule.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:30
+
+**Yoann:**
+
+> this machine is 100x faster than a 486Dx66 from 1995 where doom was running smoothly
+
+**Claude (summary):**
+
+Claude fixed Doom's window size, added a fast blit copy, and interpolated the eye, none committed yet.
+Claude left Redraw and the draw platform alone, since another session was editing them.
+Claude found Redraw spends 2 ms of its 4.6 ms frame hashing both one-megabyte pictures.
+Claude left that hash unchanged, flagging it as the remaining cost worth optimizing next.
+Claude listed six files as the commit-ready set, waiting for Yoann's go-ahead.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 11:37
+
+**Yoann:**
+
+> (in the last month)
+
+**Claude (summary):**
+
+Claude had a subagent list 31 optimizations, with measurements and switch-off methods, in a scratchpad opti_inventory.md file.
+Claude flagged the unlocked kernel image copies (571a997e, +423 lines) as never shown to help.
+Claude listed interacting optimizations, such as memcpy routed through the slow byte path for eight days.
+Claude noted that most kernel switches need source edits, and only the caches were measured on a board.
+Claude measured stage B with groups at +248/−49 lines over eight files, left uncommitted, with a timing table.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:22
+
+**Yoann:**
+
+> in mini-page, using the scroll wheel should show the other pages; instead I just see some grey
+
+**Claude (summary):**
+
+Claude looked at how Plan 9's page handles scrolling past a page's end, to match it.
+Claude changed mini-page so scrolling stops at the page's end, as Plan 9's does.
+One more scroll step past an end now shows the next page's top or the previous page's bottom.
+Claude then checked the "moved" frame test, which likely changed because the page now fits the window.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:21
+
+**Yoann:**
+
+> let's commit, and let's optimize this hash thing
+
+**Claude (summary):**
+
+Claude committed the smoothness changes as a4fbbdc5 and the hash fix as cf0c8439, plus the plan note 4b56b016.
+The one open item is that the draw and SDL platforms read size= only from the command line.
+Claude flagged that they ignore the same setting when it comes from the program's own flags.
+Claude did not change that behavior in this round and listed it as still open.
+The other session's uncommitted Redraw.ml edits were left in the working file, untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:28
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `610dbee8`, containing only `apps/page/Pageview.ml` and `tests/frames.expected`.
+Claude left your other working-tree changes out of the commit, including `prompt-history.md`.
+Claude noted in the commit message that the "moved" session's mini-ml build checksum is still the old one.
+Claude said that checksum needs `RECORD=2` on a fresh mini-mk build to be updated.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:29
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude described stacking all pages vertically with gaps as an alternative to Plan 9-style page turning.
+Claude called it a larger change, since the view would show two or three page pictures at once.
+It would also mean keeping more pages in memory than the three that are kept now.
+Claude advised building it only if the turning behavior doesn't feel right after real use.
+Claude also listed a checksum fix, mini-9pi scroll testing, and the header's "Not done" list as the other next steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:31
+
+**Yoann:**
+
+> how much more LOC is 3?
+
+**Claude (summary):**
+
+Claude estimated the continuous-scroll rewrite of Pageview.ml would add about 30 lines, reaching 316.
+Claude said the main cost is replacing the "page and where it is" model with a single document position.
+Claude proposed one long column of all pages, each page's height at the current zoom plus a gap.
+Claude said the current page would be derived from the scroll position instead of stored, feeding the status line and arrows.
+Claude noted PNG and JPEG viewing stays as it is, and several test checksums would need re-recording.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:31
+
+**Yoann:**
+
+> ok let's improve page while we're at it
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:33
+
+**Yoann:**
+
+> it's an important program
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:33
+
+**Yoann:**
+
+> I often use a pdf viewer
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:33
+
+**Yoann:**
+
+> to read the principia softwarica pdf
+
+------------------------------------------------------------------------
+
+## 2026-10-22 12:29
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude recommended speeding up mini-doom on mini-9pi, where it runs at about 15 frames a second.
+Claude's frame breakdown put the renderer at 48 ms, with showing the picture taking 7 to 10 ms.
+Claude proposed a short mini-9pi check of today's three commits under QEMU, expecting it still draws the old square.
+Claude noted that the Plan 9 platforms ignore `window=`, so `scale=2` stays under 2 fps there.
+Claude suggested starting with that mini-9pi check, then profiling the renderer's hot loops with mini-5i or callgrind.

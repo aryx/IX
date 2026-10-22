@@ -106,6 +106,33 @@ let write_stat64 mem a (st : Host_calls.stat) =
   put32 mem (a + 88) (secs st.ctime); put32 mem (a + 92) (nsecs st.ctime);
   put64 mem (a + 96) st.ino
 
+(* struct statx, the same on both machines (lib_core's Unix stats by
+ * it): the fields its reader takes, the rest 0 *)
+let write_statx mem a (st : Host_calls.stat) =
+  for i = 0 to 63 do put32 mem (a + (4 * i)) 0 done;
+  put32 mem a 0x7ff;
+  put32 mem (a + 4) 4096;
+  put32 mem (a + 16) st.nlink;
+  put32 mem (a + 20) st.uid;
+  put32 mem (a + 24) st.gid;
+  put32 mem (a + 28) (kind_bits st.kind lor st.perm);
+  put64 mem (a + 32) st.ino;
+  put64 mem (a + 40) st.size;
+  put64 mem (a + 48) ((st.size + 511) / 512);
+  let time o t = put64 mem (a + o) (secs t); put32 mem (a + o + 8) (nsecs t) in
+  time 64 st.atime; time 96 st.ctime; time 112 st.mtime;
+  (* a device's major and minor halves, glibc's makedev undone *)
+  let dev o d = put32 mem (a + o) ((d lsr 8) land 0xfff); put32 mem (a + o + 4) ((d land 0xff) lor ((d lsr 12) land 0xfff00)) in
+  dev 128 st.rdev; dev 136 st.dev
+
+(* statx: a path from the current directory (another directory's, not
+ * done), or the descriptor itself (AT_EMPTY_PATH, fstat); links
+ * followed even for lstat's AT_SYMLINK_NOFOLLOW (the host's calls have
+ * no lstat) *)
+let statx (h : Host_calls.t) mem fd path flags buf =
+  let r = if flags land 0x1000 <> 0 && path = "" then h.fstat fd else h.stat path in
+  match r with Ok s -> write_statx mem buf s; 0 | Error e -> - e
+
 (*****************************************************************************)
 (* The system calls, arm32 *)
 (*****************************************************************************)
@@ -234,6 +261,7 @@ let syscall32 p (st : Arm32_isa.state) =
         if String.length d + 1 > r.(1) then - 34 else (Memory.write_string m r.(0) (d ^ "\000"); String.length d + 1)
     | 194 -> unit (h.ftruncate r.(0) r.(2))                             (* ftruncate64: the length in r2:r3 *)
     | 197 -> (match h.fstat r.(0) with Ok s -> write_stat64 m r.(1) s; 0 | Error e -> - e)
+    | 397 -> statx h m r.(0) (str r.(1)) r.(2) r.(4)
     | 217 -> getdents p r.(0) r.(1) r.(2)                                 (* getdents64 *)
     | 382 -> unit (h.rename (str r.(1)) (str r.(3)))                     (* renameat2 *)
     | 403 ->                                                           (* clock_gettime64 *)
@@ -361,6 +389,7 @@ let syscall64 p (st : Arm64_isa.state) =
         if String.length d + 1 > long 1 then - 34 else (Memory.write_string m (ptr 0) (d ^ "\000"); String.length d + 1)
     | 46 -> unit (h.ftruncate (int 0) (long 1))
     | 80 -> (match h.fstat (int 0) with Ok s -> write_stat_generic m (ptr 1) s; 0 | Error e -> - e)
+    | 291 -> statx h m (int 0) (str 1) (int 2) (ptr 4)
     | 61 -> getdents p (int 0) (ptr 1) (long 2)
     | 38 | 276 -> unit (h.rename (str 1) (str 3))                        (* renameat, renameat2 *)
     | 113 ->                                                           (* clock_gettime *)

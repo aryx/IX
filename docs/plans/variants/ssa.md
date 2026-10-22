@@ -263,13 +263,19 @@ Ssa_build):
 | mini-doom, a frame | 43,583,340 | 37,488,660 | 0.86 |
 | mini-quake, a frame | 62,624,537 | 51,976,850 | 0.83 |
 | cameltry, a frame | 4,970,497 | 4,528,236 | 0.91 |
-| mini-ml compiling three of its units | 349,216,048 | 301,025,003 | 0.86 |
+| mini-ml compiling three of its units | 11,654,716,315 | 10,353,188,555 | 0.89 |
 
 Under QEMU (mini-9pi on raspi1ap, a card of each tree, `live.py` with
 LIVE_START=6: the up arrow before doom reads the keyboard is lost),
 mini-doom's 40 frames walking, one run each: -O0 7.5 s (the view 49
 ms, the showing 78), -O3 6.7 s (37 ms, 95): 5.3 frames a second to
-6.0, the view 24% less; the showing varies by run. Not measured yet:
+6.0, the view 24% less; the showing varies by run. (mini-ml's row was
+first 349 million to 301: mini-ml stopping at a statx mini-5i did not
+have, which it has since.) The flags' own cost, the same three units:
+-O3 is 1.0% more instructions to compile than -O0 by a mini-ml built
+-O0, 0.6% by one built -O3: compiling without the optimizations saves
+nothing worth having (the author's question, for m-ix built under
+m-ix), and mini-ml built -O3 compiles 11% faster. Not measured yet:
 rebirth (in mini-9pi's build, not Linux's), xv6, m-ix under m-ix.
 
 ## Tests and numbers

@@ -28,6 +28,8 @@
  *   -frames n   n frames at once, the script's keys in them, then the
  *               picture stays (Session.mli)
  *   redraw=all  (a flag) each frame drawn whole, not what changed only
+ *   redraw=top  (a flag) what changed looked for at the top only, a
+ *               group whole (Redraw)
  *   window=WxH  (a flag) the program's screen is the window's, a unit a
  *               pixel, W by H at first and following it after
  *               (Session.mli); what a browser asks, not a game *)
@@ -159,7 +161,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
     (app : ('model, 'msg) Playground.app) : unit =
   let cli = Session.parse caps in
   let own = Playground.flags_of_strings cli.args in
-  if List.assoc_opt "redraw" own = Some "all" then Redraw.enabled := false;
+  Redraw.choose (List.assoc_opt "redraw" own);
   (* (the window's name: the program's) *)
   let name = Filename.remove_extension (Filename.basename (CapSys.argv caps).(0)) in
   ok (Sdl.init Sdl.Init.video);

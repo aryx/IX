@@ -41,6 +41,8 @@
  * usage: game [-frames n [-script script] [-fixed-time seconds]] [name=value]...
  *   redraw=all  (a flag) each frame drawn whole, not what changed only:
  *               to see what Redraw saves
+ *   redraw=top  (a flag) what changed looked for at the top only, a
+ *               group whole (Redraw)
  *   -frames n   n frames at once, the script's keys in them, then the
  *               picture stays: a session that is the same each time,
  *               for a test to compare its screen (Session.mli) *)
@@ -92,7 +94,7 @@ let set_clipboard = Plan9_loop.set_clipboard
 let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse ; Cap.keyboard ; Cap.fork ; Cap.open_out ; .. >) (flags : Playground.flags)
     (app : ('model, 'msg) Playground.app) : unit =
   (* (the flag redraw=all: each frame the whole picture, the simple way) *)
-  if List.assoc_opt "redraw" (Plan9_loop.flags caps) = Some "all" then Redraw.enabled := false;
+  Redraw.choose (List.assoc_opt "redraw" (Plan9_loop.flags caps));
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show; free = (fun (w : window) -> Display.free w.image) }
     caps flags app

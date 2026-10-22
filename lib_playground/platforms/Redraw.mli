@@ -11,6 +11,10 @@
  * Off ([enabled] false: the simple way), each frame is the whole
  * picture. The pixels are the same either way.
  *
+ * Two groups at the same place are compared the same way, by their
+ * members: lighting a link of a page drawn as one group is the link's
+ * box, not the page's.
+ *
  * What it does not see: two shapes that stay as they are and change
  * places in the list, one over the other (which is on top changes, no
  * shape does).
@@ -37,6 +41,15 @@
 
 val enabled : bool ref
 
+(* false: the shapes compared at the top of the list only, a group
+ * whole (old); true: inside the groups too, two groups at the same
+ * place by their members *)
+val groups : bool ref
+
+(* a platform's redraw= flag: "all" each frame whole, "top" the shapes
+ * compared at the top only *)
+val choose : string option -> unit
+
 type t
 
 (* a picture of width by height pixels, [scale] pixels a unit of the
@@ -48,6 +61,13 @@ val create : width:int -> height:int -> scale:float -> Shape_render_software.opt
  * in it) and its pixels, a Framebuffer of the box's size. The first
  * frame is the whole picture; a frame like the one before is no part. *)
 val frame : t -> Playground.shape list -> ((int * int * int * int) * Framebuffer.t) list
+
+(* [changed t bounds shapes]: the same accounting without the pixels,
+ * for a platform that draws them itself (the draw device): the boxes
+ * that changed since the last frame, a shape's box by [bounds] (the
+ * pixels it may paint, there); None: all of the picture (the first
+ * frame, or most of it changed); Some []: nothing *)
+val changed : t -> (Playground.shape -> (int * int * int * int) option) -> Playground.shape list -> (int * int * int * int) list option
 
 (* the parts copied where they go in a picture of the whole (a platform
  * that keeps one: the frame written to a file) *)

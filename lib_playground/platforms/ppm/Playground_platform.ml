@@ -63,7 +63,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
    * changes at each frame is then minutes by mini-ml's code). *)
   (* (redraw=all: every frame too, and each one whole: what a frame costs) *)
   let how = List.assoc_opt "redraw" flags in
-  if how = Some "all" then Redraw.enabled := false;
+  Redraw.choose how;
   let each = how = Some "each" || how = Some "all" in
   let pace = match Option.bind (List.assoc_opt "pace" flags) int_of_string_opt with Some p when p > 0 -> 1. /. float p | _ -> 0. in
   for n = 1 to cli.frames do

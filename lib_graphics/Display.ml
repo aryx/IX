@@ -137,6 +137,10 @@ let close (d : t) = Unix.close d.data; Unix.close d.ctl
 
 let free (i : image) = message i.display (fun b -> char b 'f'; long b i.id)
 
+(* 'c': the image, whether it repeats, its clipping rectangle *)
+let clip (i : image) (r : Rectangle.t) =
+  message i.display (fun b -> char b 'c'; long b i.id; byte b (if i.repl then 1 else 0); rect b r)
+
 (* Windows: a screen is an image (the display's) on which the kernel
  * keeps windows, images that may cover one another: it draws what
  * shows of each and keeps what does not (libmemlayer). 'A': the

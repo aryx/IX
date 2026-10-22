@@ -40,7 +40,8 @@
  *     A  an image made a screen of windows        t  windows to the
  *     o  a window moved                              front or the back
  *     N  an image given a name                    n  the image of a name
- *     v  what was drawn, shown
+ *     v  what was drawn, shown                    c  an image's clipping
+ *                                                    rectangle
  *
  * An image's number is chosen by the program ([alloc] counts up from
  * 1), not given back by the kernel: so no message needs an answer,
@@ -158,6 +159,9 @@ val color : t -> color -> image
 (* the mask that hides nothing *)
 val opaque : t -> image
 val free : image -> unit
+(* what is drawn in an image from now on kept inside a rectangle of it
+ * (its clipping one: at first all of it) *)
+val clip : image -> Rectangle.t -> unit
 (* an image's pixels given: rows of bytes, as its format packs them *)
 val load : image -> Rectangle.t -> string -> unit
 (* [load_sub img r pixels off n]: the same, the pixels n bytes of a

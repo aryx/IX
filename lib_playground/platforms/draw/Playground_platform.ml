@@ -54,6 +54,10 @@ type window = {
   mutable pictures : picture list;
   (* the letters drawn so far, each an image of the kernel's (Letters) *)
   letters : (letter, (Display.image * Shape_render_software.mask) option) Hashtbl.t;
+  (* what changed since the last frame (Redraw's accounting), and the
+   * box being drawn again (None: all of the picture) *)
+  redraw : Redraw.t;
+  mutable inside : Rectangle.t option;
 }
 
 (* a letter in a look, at a size, by a transform's turn and scale *)
@@ -123,7 +127,8 @@ let window (display : Display.t) : window =
   { view; at = Rectangle.v x y (x + n) (y + n); size = n; scale = float n /. Playground.default_width;
     (* (the screen's format: showing it is a copy) *)
     back = Display.alloc display (Rectangle.v 0 0 n n) (Display.format display) ~repl:false Display.white;
-    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; letters = Hashtbl.create 512 }
+    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; letters = Hashtbl.create 512;
+    redraw = Redraw.create ~width:n ~height:n ~scale:(float n /. Playground.default_width) Shape_render_software.default_options; inside = None }
 
 (* What a shape costs here is counted in the plan
  * (docs/plans/plan_playground_speed.md): by mini-ml's code on arm a
@@ -184,6 +189,22 @@ let ink (win : window) ((r, g, b) : int * int * int) (alpha : float) : Display.i
 let round (v : float) : int = int_of_float (Float.floor (v +. 0.5))
 let pt ((x, y) : float * float) : Point.t = Point.v (round x) (round y)
 
+(* Is r in the box drawn again (show, below)? A message for a shape
+ * outside it is not sent: the device would draw none of it. *)
+let shown (win : window) (r : Rectangle.t) : bool =
+  match win.inside with
+  | None -> true
+  | Some b -> r.min.x < b.max.x && b.min.x < r.max.x && r.min.y < b.max.y && b.min.y < r.max.y
+(* the same for points, and n pixels around each (all is shown: their
+ * box not computed) *)
+let shown_points (win : window) (ps : Point.t list) (n : int) : bool =
+  win.inside = None
+  || shown win
+       (List.fold_left
+          (fun (r : Rectangle.t) (p : Point.t) ->
+            Rectangle.v (min r.min.x (p.x - n)) (min r.min.y (p.y - n)) (max r.max.x (p.x + n + 1)) (max r.max.y (p.y + n + 1)))
+          (Rectangle.v max_int max_int min_int min_int) ps)
+
 (* a shape's own scale, then its turn, then its move (Shape_render_software's) *)
 let shape_transform (shape : Playground.shape) : Affine.t =
   let radians = shape.angle *. Float.pi /. 180. in
@@ -199,7 +220,8 @@ let rectangle_corners (w : float) (h : float) : (float * float) list =
   [ (-.x, y); (x, y); (x, -.y); (-.x, -.y) ]
 
 let polygon (win : window) (m : Affine.t) (corners : (float * float) list) (src : Display.image) : unit =
-  Draw.fillpoly win.back (List.map (fun (p : float * float) -> pt (Affine.apply m p)) corners) src
+  let ps = List.map (fun (p : float * float) -> pt (Affine.apply m p)) corners in
+  if shown_points win ps 1 then Draw.fillpoly win.back ps src
 
 (* an upright rectangle's pixels *)
 let box (m : Affine.t) (w : float) (h : float) : Rectangle.t =
@@ -237,17 +259,21 @@ let rectangle (win : window) (m : Affine.t) (w : float) (h : float) (src : Displ
     let r = box m w h in
     let r = if r.max.x = r.min.x && w > 0. then Rectangle.v r.min.x r.min.y (r.min.x + 1) r.max.y else r in
     let r = if r.max.y = r.min.y && h > 0. then Rectangle.v r.min.x r.min.y r.max.x (r.min.y + 1) else r in
-    Draw.draw win.back r src None Point.zero
+    if shown win r then Draw.draw win.back r src None Point.zero
   end
-  else if (if w < h then w else h) *. length_scale m < thin then
+  else if (if w < h then w else h) *. length_scale m < thin then begin
     (* (the middles of its two short sides) *)
     let p0, p1 = if w >= h then ((-.w /. 2., 0.), (w /. 2., 0.)) else ((0., -.h /. 2.), (0., h /. 2.)) in
-    Draw.line win.back (pt (Affine.apply m p0)) (pt (Affine.apply m p1)) 0 src
+    let p0 = pt (Affine.apply m p0) and p1 = pt (Affine.apply m p1) in
+    if shown_points win [ p0; p1 ] 1 then Draw.line win.back p0 p1 0 src
+  end
   else polygon win m (rectangle_corners w h) src
 
 let ellipse (win : window) (m : Affine.t) (rx : float) (ry : float) (src : Display.image) : unit =
-  if upright m then
-    Draw.fillellipse win.back (pt (Affine.apply m (0., 0.))) (round (Float.abs m.a *. rx)) (round (Float.abs m.d *. ry)) src
+  if upright m then begin
+    let c = pt (Affine.apply m (0., 0.)) and a = round (Float.abs m.a *. rx) and b = round (Float.abs m.d *. ry) in
+    if shown win (Rectangle.v (c.x - a - 1) (c.y - b - 1) (c.x + a + 2) (c.y + b + 2)) then Draw.fillellipse win.back c a b src
+  end
   else begin
     (* turned: its outline as a polygon, as many sides as its size asks *)
     let segments = Circle.segments_for_radius (Float.max rx ry *. length_scale m) in
@@ -278,7 +304,8 @@ let bitmap = ref true
 let font : Font.t option ref = ref None
 let smallest = 11. and largest = 16.
 
-let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : unit =
+(* the font, when a word is drawn with it *)
+let font_of (win : window) (m : Affine.t) (str : string) : Font.t option =
   let size = Playground.words_font_size *. length_scale m in
   let fits (f : Font.t) : bool =
     String.length str = 1
@@ -286,13 +313,20 @@ let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : u
   let f = if !bitmap && upright m && size >= smallest && size <= largest then
       Some (match !font with Some f -> f | None -> let f = Font.default win.back.display in font := Some f; f)
     else None in
-  if (match f with Some f -> fits f | None -> false) then begin
-    let f = match f with Some f -> f | None -> assert false in
-    (* (centred where the strokes are: on the shape's place) *)
-    let c = pt (Affine.apply m (0., 0.)) in
-    ignore (Font.string win.back (Point.v (c.x - (Font.width f str / 2)) (c.y - (Font.height f / 2))) src f str)
-  end
-  else
+  match f with Some f when fits f -> Some f | _ -> None
+
+(* its pixels then: centred where the strokes are, on the shape's place *)
+let font_box (f : Font.t) (m : Affine.t) (str : string) : Rectangle.t =
+  let c = pt (Affine.apply m (0., 0.)) in
+  let x = c.x - (Font.width f str / 2) and y = c.y - (Font.height f / 2) in
+  Rectangle.v x y (x + Font.width f str) (y + Font.height f)
+
+let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : unit =
+  match font_of win m str with
+  | Some f ->
+      let r = font_box f m str in
+      if shown win r then ignore (Font.string win.back r.min src f str)
+  | None ->
   let strokes, thick =
     match if !fast then Hashtbl.find_opt win.written str else None with
     | Some (m', strokes, thick) when m' = m -> (strokes, thick)
@@ -307,7 +341,7 @@ let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : u
         if Hashtbl.length win.written >= 64 then Hashtbl.reset win.written;
         Hashtbl.replace win.written str (at, strokes, thick);
         (strokes, thick) in
-  List.iter (fun (stroke : Point.t list) -> Draw.poly win.back stroke thick src) strokes
+  List.iter (fun (stroke : Point.t list) -> if shown_points win stroke (thick + 1) then Draw.poly win.back stroke thick src) strokes
 
 (* A shape not turned: m, then its move and its scale, written out
  * (the same numbers as the three products below give, a turn of 0
@@ -434,8 +468,11 @@ let letters (win : window) (m : Affine.t) (l : Playground.letters) (src : Displa
       | Some (image, k) ->
           let p = pt (Affine.apply m (x, l.baseline)) in
           let x0 = p.x - k.ox and y0 = p.y - k.oy in
-          Draw.draw_mask win.back (Rectangle.v x0 y0 (x0 + k.w) (y0 + k.h)) src Point.zero image Point.zero;
-          incr m_letters
+          let r = Rectangle.v x0 y0 (x0 + k.w) (y0 + k.h) in
+          if shown win r then begin
+            Draw.draw_mask win.back r src Point.zero image Point.zero;
+            incr m_letters
+          end
       | None -> ())
     l.at
 
@@ -464,7 +501,8 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
             (* where its centre goes, less half its size *)
             let cx, cy = Affine.apply m (0., 0.) in
             let x0 = round (cx -. (float (Rectangle.dx image.r) /. 2.)) and y0 = round (cy -. (float (Rectangle.dy image.r) /. 2.)) in
-            Draw.draw win.back (Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r)) image None (Point.v 0 0)
+            let r = Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r) in
+            if shown win r then Draw.draw win.back r image None (Point.v 0 0)
         | None -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha))
     (* (a picture's box) *)
     | Image (w, h, _) -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha)
@@ -474,8 +512,64 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
  * that waits for a key is still but for that number) *)
 let counter = ref true
 
-(* a frame: every shape asked of the device, on white, then shown. A
- * frame whose shapes are the last one's is not drawn again. *)
+(* A shape's box for Redraw: the pixels the software renderer would
+ * paint, and a word's in Plan 9's font, which are not its strokes'
+ * (a word of one letter, 9 pixels wide, is often wider) *)
+let rec font_boxes (win : window) (m : Affine.t) (boxes : Rectangle.t list) (s : Playground.shape) : Rectangle.t list =
+  let m = placed m s in
+  match s.form with
+  | Group shapes -> List.fold_left (font_boxes win m) boxes shapes
+  | Words (_, str) -> (match font_of win m str with Some f -> font_box f m str :: boxes | None -> boxes)
+  | _ -> boxes
+
+let bounds (win : window) (m : Affine.t) (s : Playground.shape) : (int * int * int * int) option =
+  let add (b : (int * int * int * int) option) (r : Rectangle.t) : (int * int * int * int) option =
+    let x0 = max 0 (r.min.x - 1) and y0 = max 0 (r.min.y - 1) in
+    let x1 = min win.size (r.max.x + 1) and y1 = min win.size (r.max.y + 1) in
+    if x0 >= x1 || y0 >= y1 then b
+    else
+      match b with
+      | None -> Some (x0, y0, x1, y1)
+      | Some (a0, b0, a1, b1) -> Some (min a0 x0, min b0 y0, max a1 x1, max b1 y1) in
+  let n = win.size in
+  List.fold_left add (Shape_render_software.pixel_bounds ~width:n ~height:n ~scale:win.scale [ s ]) (font_boxes win m [] s)
+
+(* OPTIMIZATION (docs/plans/plan_playground_speed.md, stage B): only
+ * what changed drawn again, Redraw's boxes, as the other platforms.
+ * Each box is made white and all the shapes are asked of the device
+ * again, its clip on the box: a shape is computed from its whole
+ * points, whatever the clip, so its pixels in the box are the ones a
+ * whole frame has; and one outside the box is not sent at all
+ * (shown). Then only the boxes are copied to the window. A link lit
+ * by the mouse in a page of mini-netscape's is its few letters, where
+ * it was the page's 450 and the picture copied whole.
+ * (old, the flag redraw=all: each frame the whole picture, below) *)
+let show_boxes (display : Display.t) (win : window) (m : Affine.t) (shapes : Playground.shape list) (boxes : (int * int * int * int) list) : bool =
+  let white = ink win (255, 255, 255) 1. in
+  List.iter
+    (fun ((x0, y0, x1, y1) : int * int * int * int) ->
+      let r = Rectangle.v x0 y0 x1 y1 in
+      win.inside <- Some r;
+      Display.clip win.back r;
+      Draw.draw win.back r white None Point.zero;
+      List.iter (shape win m) shapes)
+    boxes;
+  win.inside <- None;
+  Display.clip win.back win.back.r;
+  part display 1;
+  List.iter
+    (fun ((x0, y0, x1, y1) : int * int * int * int) ->
+      let r = Rectangle.add (Rectangle.v x0 y0 x1 y1) win.at.min in
+      Draw.draw win.view r win.back None (Point.v x0 y0))
+    boxes;
+  part display 2;
+  Display.flush display;
+  if !stats then meter (List.length shapes);
+  boxes <> []
+
+(* a frame: every shape asked of the device, on white, then shown; or
+ * only where it changed (show_boxes). A frame whose shapes are the
+ * last one's is not drawn again. *)
 let show (display : Display.t) (win : window) (shapes : Playground.shape list) (fps : int) : bool =
   let shapes = if !counter then shapes @ [ Session.fps_counter ~width:win.size ~height:win.size ~scale:win.scale fps ] else shapes in
   (* opti: is this frame the last one? [x == y] before [x = y].
@@ -518,6 +612,9 @@ let show (display : Display.t) (win : window) (shapes : Playground.shape list) (
     (* the playground's units to the picture's pixels: up is less, the middle is (0, 0) *)
     let half = float win.size /. 2. in
     let m = Affine.compose (Affine.compose (Affine.translate half half) (Affine.scale 1. (-1.))) (Affine.scale win.scale win.scale) in
+    match Redraw.changed win.redraw (bounds win m) shapes with
+    | Some boxes -> show_boxes display win m shapes boxes
+    | None ->
     (* OPTIMIZATION: the picture is not made white where the first
      * shapes cover it. A game's first shapes are its background, a
      * rectangle not turned, opaque, as wide as the picture
@@ -578,6 +675,7 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   bitmap := List.assoc_opt "font" (Plan9_loop.flags caps) <> Some "hershey";
   letters_kept := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "strokes";
   smooth := List.assoc_opt "letters" (Plan9_loop.flags caps) <> Some "bits";
+  Redraw.choose (List.assoc_opt "redraw" (Plan9_loop.flags caps));
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;

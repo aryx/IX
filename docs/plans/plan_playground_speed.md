@@ -512,6 +512,14 @@ above goes round and does not remove:
   were right, the region's floats not (Framebuffer.part); the draw
   platform uses the boxes alone, the kernel drawing in them.
 - What it touches: the draw platform, `Redraw`.
+- Done 2026-10-22. Compared at the top of the list only, as Redraw
+  did, it lost: mini-netscape's page is one group, a lit link the
+  whole page again and the diff besides (79-88 ms a frame against 66
+  whole). `Redraw` now compares inside groups, and gives up past 64
+  shapes (a paragraph reflowed). QEMU: mini-netscape's hover 66 to
+  20-24 ms, mini-office's typing 87 to 35-39, DrScheme 80 to 25-29,
+  cameltry 28 to 29-31 (`notes_opti_inventory.md`, O30; `redraw=all`,
+  `redraw=top` to compare; `kernels/9pi/tests/perf/redraw.sh`).
 
 **What is taken out after** (each measured without, before it goes):
 `Office_page.kept` and `Office_view.glyphs_at`'s kept letters and

@@ -12,7 +12,7 @@
  *
  * Written when mini-9pi first ran processes on the Pi 2's four cores
  * (docs/plans/plan_multicore.md): two games had each about half of
- * one's frames a second, stats (apps/misc) showed every core busy,
+ * one's frames a second, stats (profilers/misc) showed every core busy,
  * and the question was what they waited for, the kernel's one lock or
  * the board's memory. An emulator answers for the lock and not for
  * the memory: QEMU's four cores are four threads of a host whose

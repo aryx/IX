@@ -28,8 +28,8 @@ PROGS=(shell editors/ed utilities/files utilities/misc utilities/namespace \
  kernels/9pi/tests/self \
  lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
  kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd \
- lib_graphics/tests windows windows/tests apps/misc apps/music/play \
- apps/music/rebirth games languages/smalltalk \
+ lib_graphics/tests windows windows/tests apps/misc profilers/misc \
+ apps/music/play apps/music/rebirth games languages/smalltalk \
  languages/smalltalk/hosts/draw languages/scheme languages/pascal \
  languages/prolog editors/drscheme apps/office apps/page \
  editors/turbopascal/hosts/draw editors/emacs/draw typesetting/man \

@@ -1,7 +1,7 @@
 ; apps/misc: Plan 9's small graphical programs, in OCaml
-; (plan_rio.md): mini-colors, mini-stats
+; (plan_rio.md): mini-colors (mini-stats: profilers/misc)
 (executables
- (names Colors Stats)
- (public_names mini-colors mini-stats)
+ (names Colors)
+ (public_names mini-colors)
  (package ix)
  (libraries ix_graphics ix_threads ix_core threads.posix unix caps fpath))

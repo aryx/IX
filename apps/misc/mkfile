@@ -8,7 +8,7 @@ LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
 
-all:V: $D/mini-colors $D/mini-stats
+all:V: $D/mini-colors
 
 $D/%.$O: $G/%.ml $LOCAL
 	mkdir -p $D
@@ -19,12 +19,6 @@ $D/Colors.$O: Colors.ml $LOCAL
 $D/mini-colors: $D/Colors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 	$ML -start $STD $COMMONS $LIB Colors Std_exit -o $D/Colors.start.$O
 	$LD $LDH -nofollow -o $target $D/Colors.start.$O $STDOBJS $LIBOBJS $D/Colors.$O $STDEND
-$D/Stats.$O: Stats.ml $LOCAL
-	mkdir -p $D
-	$ML $INCLUDES -o $target Stats.ml
-$D/mini-stats: $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
-	$ML -start $STD $COMMONS $LIB Stats Std_exit -o $D/Stats.start.$O
-	$LD $LDH -nofollow -o $target $D/Stats.start.$O $STDOBJS $LIBOBJS $D/Stats.$O $STDEND
 
 clean:V:
 	rm -rf $D

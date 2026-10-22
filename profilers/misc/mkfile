@@ -1,0 +1,34 @@
+# profilers/misc, built by ix's tools (for mini-9pi: mini-mk O=5
+# OS=plan9): mini-prof, and mini-stats with lib_graphics's units
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/profilers/misc
+G=../../lib_graphics
+INCLUDES=-I . -I $G $STDI
+LIB=Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{ls *.ml *.mli ../../lib_graphics/*.ml ../../lib_graphics/*.mli}
+
+all:V: $D/mini-prof $D/mini-stats
+
+$D/%.$O: $G/%.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $G/$stem.ml
+$D/Profiler.$O: Profiler.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Profiler.ml
+$D/Prof.$O: Prof.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Prof.ml
+$D/mini-prof: $D/Profiler.$O $D/Prof.$O $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS Profiler Prof Std_exit -o $D/Prof.start.$O
+	$LD $LDH -nofollow -o $target $D/Prof.start.$O $STDOBJS $D/Profiler.$O $D/Prof.$O $STDEND
+$D/Stats.$O: Stats.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target Stats.ml
+$D/mini-stats: $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+	$ML -start $STD $COMMONS $LIB Stats Std_exit -o $D/Stats.start.$O
+	$LD $LDH -nofollow -o $target $D/Stats.start.$O $STDOBJS $LIBOBJS $D/Stats.$O $STDEND
+
+clean:V:
+	rm -rf $D

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-stats: Plan 9's stats (principia's apps/misc/stats.c), of which
+(* mini-stats: Plan 9's stats (principia's profilers/misc/stats.c), of which
  * it keeps one graph, the one asked for (the author, 2026-10-12:
  * "an application to display the cpu activity, a bit like xosview on
  * linux", "so we can see the 4 cores activity, whether they are idle

@@ -1,4 +1,4 @@
-# Plan: mini-prof, a profiler for m-ix (`machine/profiler`)
+# Plan: mini-prof, a profiler for m-ix (`profilers/misc`)
 
 The author (2026-10-22), once mini-doom moved on mini-9pi at 5 frames a
 second and its profiling was to start: "we have a tiny-profile but we
@@ -82,7 +82,7 @@ m-ix (each tool's share of the 3 hours, then inside the slowest).
 (no change to the loop: off, its cost is the same test as before);
 on, mini-5i is 1.8 times slower (mini-doom's start, 983 million
 instructions: 61 s, 109 counted). `mini-prof`: 110 lines, built by
-dune and by mini-mk (`machine/profiler`).
+dune and by mini-mk (`profilers/misc`).
 
 mini-doom on 32-bit arm Linux (`_mk/5`, the ppm platform, scale=2,
 640 by 400), `-diff` of 31 frames walking and 1: 43 million

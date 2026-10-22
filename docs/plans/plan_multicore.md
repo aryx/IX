@@ -505,7 +505,7 @@ soon as it ends, so a core waiting for the kernel's lock is busy, not
 idle); the kernel has `/dev/sysstat`, a line a core in 9pi's ten
 numbers (the processes switched to and the percent idle are counted,
 the others 0; the percent is of the last fifth of a second), and
-`apps/misc`'s mini-stats (`stats` on the card) draws a strip a core,
+`profilers/misc`'s mini-stats (`stats` on the card) draws a strip a core,
 five samples a second. Checked under QEMU's four cores (SMP=1): idle
 cores read 100, two shells that compute take two cores to 0, the four
 strips on the bare screen. Not checked: on the board; in a window of

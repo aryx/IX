@@ -64,7 +64,8 @@ let usage =
   \  space, PageDown, right        the next page\n\
   \  Backspace, PageUp, left       the page before\n\
   \  a number, then Enter          that page\n\
-  \  up, down, the wheel           the page moved; the mouse's button held drags it\n\
+  \  up, down, the wheel           the page moved; past its end, the next or the one before\n\
+  \                                the mouse's button held drags it\n\
   \  + and -                       larger, smaller;  f  the window's width again\n\
   \  r                             a quarter turn;   q  the end\n"
 
@@ -174,6 +175,28 @@ let zoomed (by : float) (m : model) : model =
   (* what is at the window's centre stays there *)
   { m with zoom; x = m.x *. zoom /. m.zoom; y = m.y *. zoom /. m.zoom }
 
+(* the page moved by step (up the window when positive), no further
+ * than its end. From an end already in the window the page after is
+ * shown, from its top, or the one before, from its bottom, as Plan 9's
+ * page; on a step of the wheel or a key pressed, not one held, which
+ * would turn a page a frame *)
+let scrolled (s : Playground.screen) (step : float) ~(turns : bool) (m : model) : model =
+  let half = (snd (size m.source m.page m.turn) *. m.zoom) /. 2. in
+  (* above the status line *)
+  let bottom = s.bottom +. 30. in
+  if step > 0. then
+    if m.y -. half < bottom -. 0.5 then { m with y = Float.min (m.y +. step) (bottom +. half) }
+    else if turns then go (m.page + 1) m
+    else m
+  else if step < 0. then
+    if m.y +. half > s.top +. 0.5 then { m with y = Float.max (m.y +. step) (s.top -. half) }
+    else if turns && m.page > 0 then
+      let m = go (m.page - 1) m in
+      let half = (snd (size m.source m.page m.turn) *. m.zoom) /. 2. in
+      { m with y = Float.max 0. (bottom +. half) }
+    else m
+  else m
+
 let update (computer : Playground.computer) (m : model) : model =
   let k = computer.keyboard and mouse = computer.mouse in
   let now = Set_.elements k.keys in
@@ -195,7 +218,7 @@ let update (computer : Playground.computer) (m : model) : model =
   in
   (* the page moved: the arrows held, the wheel, the mouse dragging it *)
   let step = (if k.kup then -30. else 0.) +. (if k.kdown then 30. else 0.) -. (mouse.mwheel *. 60.) in
-  let m = { m with y = m.y +. step } in
+  let m = scrolled computer.screen step ~turns:(mouse.mwheel <> 0. || pressed "ArrowUp" || pressed "ArrowDown") m in
   let m =
     match (mouse.mdown, m.held) with
     | true, Some (hx, hy) -> { m with x = mouse.mx -. hx; y = mouse.my -. hy }

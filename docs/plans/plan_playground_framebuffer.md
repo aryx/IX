@@ -402,3 +402,27 @@ the draw protocol", then, of the three steps proposed, "let's start").
   draw-wolf, tetris-win, colors-win, win-new and menu the same.
 - Not checked: a game at k > 1 in a window of rio's (Memlayer.scale's
   show) on the screen; the Pi 2 (the author's card to try).
+
+2026-10-23, later: the scale chosen by itself (the author, after the
+card on the Pi 2: "it works great! what would be good now is that to
+detect the size of the window or screen and select automatically a
+good scale if no scale=xxx is specified").
+- mini-doom and mini-quake on Plan 9 without scale=: the flag window
+  alone (the program's screen the window's, a unit a pixel), and the
+  picture the largest of the window's size at 16 by 10 (the width, or
+  the height when the window is wider); the draw platform's
+  pixels_image already takes the largest whole multiple of 320 by 200
+  that fits it, centred, the device scaling (F5). 1280 by 800: 4;
+  1024 by 768: 3; a window of rio's, what fits it, again at each new
+  size. size=320 still passed, for the software platform's square
+  (doom-soft), which has no window=. Elsewhere scale=2 as before.
+- Plan9_loop's red frame (a late frame's) was the 1000 by 1000 units
+  whatever the program's screen: in a window of pixels, two red columns
+  1000 apart across the 1024 by 768. It is now around the program's
+  screen (Plan9_loop.late_frame of the window's units).
+- Under QEMU, no scale=: mini-doom 13 frames a second, 960 by 600 at
+  (32, 84), every 3 by 3 block one colour; mini-quake the same picture
+  and 9 frames a second where the eye was; with late=1 the red frame on
+  the screen's edges, rows 0-2 and 765-767, columns 0-2 and 1021-1023.
+- Not checked: the Pi 2 (4 expected on 1280 by 800), a game in a
+  window of rio's.

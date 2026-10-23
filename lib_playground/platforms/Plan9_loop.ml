@@ -69,10 +69,12 @@ let most = 8
 (* What says so on the picture: a thin red frame around it, on the
  * frames whose ticks were cut (the author: "maybe we should draw a
  * thin red rectangle when we are in this degenerated cap mode? so we
- * know the game is not operating at normal speed?"). The picture is
- * the playground's 1000 by 1000, its middle (0, 0). *)
-let late_frame : Playground.shape list =
-  let t = 3. and w = Playground.default_width and h = Playground.default_height in
+ * know the game is not operating at normal speed?"). Around the
+ * program's screen, its middle (0, 0): the playground's 1000 by 1000,
+ * or the window's pixels (old: always 1000 by 1000, two red columns
+ * across a window of 1024 by 768) *)
+let late_frame ((w, h) : int * int) : Playground.shape list =
+  let t = 3. and w = float w and h = float h in
   [ Playground.rectangle Playground.red w t |> Playground.move 0. ((h -. t) /. 2.);
     Playground.rectangle Playground.red w t |> Playground.move 0. (-.(h -. t) /. 2.);
     Playground.rectangle Playground.red t h |> Playground.move ((w -. t) /. 2.) 0.;
@@ -454,7 +456,7 @@ let run_app (w : 'w window) (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.d
            * old: if cut then shapes @ late_frame else shapes) *)
           let still = shapes == !previous in
           previous := shapes;
-          let shapes = if cut && not still then shapes @ late_frame else shapes in
+          let shapes = if cut && not still then shapes @ late_frame (w.units !win) else shapes in
           let t2 = if stats then Unix.gettimeofday () else 0. in
           let did = show shapes !fps in
           incr drawn;

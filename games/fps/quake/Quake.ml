@@ -19,7 +19,8 @@
  *     bsp=   the level (default: /lib/quake/e0m1.bsp, else
  *            games/fps/quake/data/e0m1.bsp); the palette and the
  *            colormap beside it
- *     scale= each pixel made n by n (1 to 4; 2 by default, 1 on Plan 9)
+ *     scale= each pixel made n by n (1 to 4; 2 by default; on Plan 9
+ *            the window or screen, the largest whole n that fits)
  *     x= y= z= angle= pitch=  the eye put there, looking that way
  *            (degrees): a test's camera
  *     lightmaps  the textures grey: the lightmaps alone
@@ -85,12 +86,14 @@ let view (computer : P.computer) (m : model) : P.shape list =
   snapshot m;
   let screen = computer.screen in
   let v = m.render.view in
-  let w = screen.width
-  and h = screen.width *. float v.height /. float v.width in
+  let w =
+    Float.min screen.width (screen.height *. float v.width /. float v.height)
+  in
+  let h = w *. float v.height /. float v.width in
   let text (s : string) (y : float) : P.shape =
     P.words P.white s |> P.scale 2. |> P.move 0. y
   in
-  (if h < screen.height then
+  (if h < screen.height || w < screen.width then
      [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ]
    else [])
   @ [
@@ -197,8 +200,9 @@ let () =
            and colormap = beside "colormap.lmp" in
            let scale =
              match Option.bind (flag "scale") int_of_string_opt with
-             | Some n when n >= 1 && n <= 4 -> n
-             | _ -> if Sys.os_type = "Plan9" then 1 else 2
+             | Some n when n >= 1 && n <= 4 -> Some n
+             (* (None: the window's size, the platform's whole multiple) *)
+             | _ -> if Sys.os_type = "Plan9" then None else Some 2
            in
            let render = Render.create level colormap in
            let gamma =
@@ -258,14 +262,17 @@ let () =
              }
            in
            let flags =
-             if flag "window" = None then
-               ("window", Printf.sprintf "%dx%d" (320 * scale) (200 * scale))
-               :: flags
-             else flags
+             match (flag "window", scale) with
+             | Some _, _ -> flags
+             | None, Some n ->
+                 ("window", Printf.sprintf "%dx%d" (320 * n) (200 * n))
+                 :: flags
+             | None, None -> ("window", "") :: flags
            in
+           (* (no scale: the software platform's square of 320) *)
+           let side = match scale with Some n -> 320 * n | None -> 320 in
            let flags =
-             if flag "size" = None then
-               ("size", string_of_int (320 * scale)) :: flags
+             if flag "size" = None then ("size", string_of_int side) :: flags
              else flags
            in
            Playground_platform.run_app caps

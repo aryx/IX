@@ -41,9 +41,11 @@ Space, `e`
 :    Its level of that name (*E1M2*, *MAP01*); the first by default.
 
 **scale=**
-:    Each of Doom's 320 by 200 pixels drawn *n* by *n* (1 to 4; 1 by
-     default on Plan 9, 2 elsewhere). On the Raspberry Pi, 2 is a
-     frame or two a second.
+:    Each of Doom's 320 by 200 pixels drawn *n* by *n* (1 to 4; 2 by
+     default elsewhere than Plan 9). On Plan 9 the picture is by
+     default as large as the window or the screen has room for, a
+     whole *n*: 4 on a screen of 1280 by 800, 3 on 1024 by 768. The
+     draw device enlarges it, so a larger picture is about as fast.
 
 **monsters**
 :    The level's monsters, standing.

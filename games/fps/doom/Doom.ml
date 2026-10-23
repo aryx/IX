@@ -19,10 +19,11 @@
  *            (doom1.wad), the levels its own
  *     map=   which level (the WAD's first by default)
  *     scale= each of Doom's 320 by 200 pixels made n by n (1 to 4;
- *            2 by default, 1 on Plan 9: mini-9pi under QEMU made a
- *            frame of 640 by 400 in 0.7 s, of 320 by 200 in 0.17);
- *            the platform's size= is then 320 n, so that it shows the
- *            picture as it is (unless size= is said)
+ *            2 by default); the platform's size= is then 320 n, so
+ *            that it shows the picture as it is (unless size= is
+ *            said). On Plan 9 by default, the picture is all of the
+ *            window or screen, the largest whole n that fits (the
+ *            device makes it n times larger: mini-9pi's 'z')
  *     x= y= angle=  the player put there, looking that way (degrees):
  *            a test's camera (tests/compare.sh)
  *     monsters  the level's monsters, standing (Doom's -nomonsters is
@@ -112,13 +113,14 @@ let view (computer : P.computer) (m : model) : P.shape list =
   let screen = computer.screen in
   (* (as many units as the platform has pixels: the window's, or the
    * square's at size=320n) *)
-  let w = screen.width and h = screen.width *. float (Render.height m.render) /. float (Render.width m.render) in
+  let w = Float.min screen.width (screen.height *. float (Render.width m.render) /. float (Render.height m.render)) in
+  let h = w *. float (Render.height m.render) /. float (Render.width m.render) in
   let text (s : string) (y : float) : P.shape = P.words P.white s |> P.scale 2. |> P.move 0. y in
   (* (a grey around the picture, where the screen is a square: the
    * Plan 9 platforms'; not black, where the platform's counter of
    * frames, in black, would not be seen. A window of the picture's
    * size has none, its pixels then the picture's only) *)
-  (if h < screen.height then [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ] else [])
+  (if h < screen.height || w < screen.width then [ P.rectangle (P.rgb 96 96 96) screen.width screen.height ] else [])
   (* (a new picture each frame, though its bytes are one of two: the
    * draw platform keeps the device's image of a picture it has shown,
    * found by the value itself (==), and a picture changed in place was
@@ -183,7 +185,8 @@ let () =
            let texture (name : string) : int = let k = Textures.texture textures name in if k = 0 then -1 else k in
            let map = match flag "map" with Some m -> String.uppercase_ascii m | None -> (match Level.maps wad with m :: _ -> m | [] -> failwith "no level in the WAD") in
            let level = Level.load wad map texture (Textures.flat textures) in
-           let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> n | _ -> if Sys.os_type = "Plan9" then 1 else 2 in
+           (* (None: the window's size, the platform's whole multiple) *)
+           let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> Some n | _ -> if Sys.os_type = "Plan9" then None else Some 2 in
            let render = Render.create 320 200 in
            let palette =
              String.init 768 (fun (k : int) -> Char.chr ((textures.palette.(k / 3) lsr (8 * (2 - (k mod 3)))) land 255))
@@ -199,11 +202,17 @@ let () =
            | _ -> ());
            let model = { play; sprites = Things.load wad; render; screens = [| Bytes.create (320 * 200); Bytes.create (320 * 200) |]; frames = 0; palette; last = 0.; pending = 0.; use_pressed = false;
                before = (play.player.x, play.player.y, play.player.viewz, play.player.angle) } in
-           (* the window the picture's size, a unit a pixel (SDL's,
-            * ppm's: Session.window); the Plan 9 platforms' square of
-            * 320 n then (they have no window= yet) *)
-           let flags = if flag "window" = None then ("window", Printf.sprintf "%dx%d" (320 * scale) (200 * scale)) :: flags else flags in
-           let flags = if flag "size" = None then ("size", string_of_int (320 * scale)) :: flags else flags in
+           (* the window the picture's size, a unit a pixel
+            * (Session.window); the software platform's square of 320 n
+            * (it has no window=). No scale: the window, whatever its
+            * size, and the software platform's square of 320 *)
+           let flags =
+             match (flag "window", scale) with
+             | Some _, _ -> flags
+             | None, Some n -> ("window", Printf.sprintf "%dx%d" (320 * n) (200 * n)) :: flags
+             | None, None -> ("window", "") :: flags in
+           let side = match scale with Some n -> 320 * n | None -> 320 in
+           let flags = if flag "size" = None then ("size", string_of_int side) :: flags else flags in
            (* heap=modest: a WAD's megabytes are alive the whole game, and a
             * game's heap of eight times what is alive (Plan9_loop) does
             * not fit in mini-9pi's memory *)

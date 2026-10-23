@@ -107,4 +107,6 @@ another (CDC Ethernet), and that is what `check-tron` plays over.
 `fighting`, `flight`, `platform`, `programming`, `racing`, `rhythm`,
 `rpg`, `sports`, `strategy`, and the shooters' kit's `Path`. Most ask
 what `lib_playground` has not yet: pictures, 3D
-([`plan_gpu.md`](../docs/plans/plan_gpu.md): TinyVirtuaRacing).
+([`plan_gpu.md`](../docs/plans/plan_gpu.md); TinyVirtuaRacing as
+mini-virtuaracing,
+[`plan_virtuaracing.md`](../docs/plans/plan_virtuaracing.md)).

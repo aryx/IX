@@ -14,6 +14,12 @@ would love to have mini-9pi running on it"; "Pi2 should go in
 separate plan document, that can be linked from this one":
 [`plan_pi2.md`](plan_pi2.md).
 
+(2026-10-23: the game itself is now
+[`plan_virtuaracing.md`](plan_virtuaracing.md)'s, mini-virtuaracing,
+drawn by a software renderer of its own on the Pi 2; this plan stays
+the way to the playground's other 3D games, and the processor may
+draw that game's meshes later.)
+
 **The goal is that game on that board**, and it decides what the
 processor is asked (the survey's "TinyVirtuaRacing"): its frame is not
 slow by its pixels but by its scene, so the processor must place the
@@ -416,3 +422,8 @@ device made one that keeps meshes and places vertices (decision 5),
 stages 3, 4 and 6 written for it; the Pi 2B's port its own plan
 ([`plan_pi2.md`](plan_pi2.md)); the shaders by hand, and the
 processor in mini-pi left for later (the author).
+
+2026-10-23: TinyVirtuaRacing's own plan,
+[`plan_virtuaracing.md`](plan_virtuaracing.md): a renderer of the
+game's own, not Playground3d, measured against the Pi 2's frame; the
+game is no longer what waits for this plan's processor.

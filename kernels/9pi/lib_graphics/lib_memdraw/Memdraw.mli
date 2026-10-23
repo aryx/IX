@@ -100,7 +100,7 @@ val fast_grey : bool ref
 
 (* ix: [scale dst r src sp k]: src from sp drawn into dst's r k times
  * larger, each pixel k by k, no blending (the draw device's 'z', an
- * extension of Plan 9's protocol: docs/plans/plan_playground_framebuffer.md,
+ * extension of Plan 9's protocol: docs/plans/done/plan_playground_framebuffer.md,
  * F5). A game's 320 by 200 shown on the whole screen: the program
  * gives its small picture, and the kernel's one loop writes the large
  * one, where the program wrote it k times larger and sent all of it

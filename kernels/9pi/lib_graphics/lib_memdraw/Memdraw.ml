@@ -491,7 +491,7 @@ let draw dst r src sp mask mp op =
         flush dst r
 
 (* ix: a picture drawn k times larger, each pixel k by k (the draw
- * device's 'z', docs/plans/plan_playground_framebuffer.md, F5): its
+ * device's 'z', docs/plans/done/plan_playground_framebuffer.md, F5): its
  * rows by the machine's C (Machine.Imag.scale), as a copy's. Only
  * between two images of one chan of whole bytes a pixel, the source
  * not repeated and not the destination's memory; else false, nothing

@@ -17,7 +17,7 @@ mini-ml, emulator and audio changes that moved the same numbers are in
 
 Sources: `git log --since=2026-09-22`, the commit messages, the code's
 OPTIMIZATION, opti: and old: comments, plans/plan_playground_speed.md,
-plans/plan_playground_framebuffer.md, [notes_performance.md](notes_performance.md)
+plans/done/plan_playground_framebuffer.md, [notes_performance.md](notes_performance.md)
 (section 1), [notes_font.md](notes_font.md) (section 5),
 plans/bugs/ix.md, and the Playground's
 `~/playground/docs/claude_notes/dev/notes_opti_ocaml.md`. Every number

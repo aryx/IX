@@ -19,7 +19,7 @@ the paths a program can take through them, the optimizations on each,
 and which path each program of the card takes. Part II is one path
 told in full, a game's own pixels (the Bitmap's way, then the Pixels'),
 with the choices behind it, the roads not taken, and how other systems
-do it. The plans: [`plan_playground_framebuffer.md`](plans/plan_playground_framebuffer.md)
+do it. The plans: [`plan_playground_framebuffer.md`](plans/done/plan_playground_framebuffer.md)
 (F2: the Pixels path), [`plan_playground_speed.md`](plans/plan_playground_speed.md)
 (the measures of the playground's other paths); the letters have their
 own note, [`notes_font.md`](notes_font.md).

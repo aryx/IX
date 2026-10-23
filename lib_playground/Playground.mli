@@ -283,7 +283,7 @@ and letters = { size : number; bold : bool; italic : bool; baseline : number; at
  * and each platform makes what its device wants of them, once: the
  * screen's own format on Plan 9's draw device (two bytes a pixel at
  * 16 bits, from a table of 256), RGBA elsewhere
- * (docs/plans/plan_playground_framebuffer.md, F2). Shown at a whole
+ * (docs/plans/done/plan_playground_framebuffer.md, F2). Shown at a whole
  * multiple of its size, each pixel is that many by that many; at
  * another size it is scaled as a Bitmap is. *)
 and pixels = { pwidth : int; pheight : int; indices : Bytes.t; palette : string }

@@ -3,6 +3,10 @@
 
 (* See Segs.mli *)
 
+(* OPTIMIZATION: Int's min and max, not Stdlib's polymorphic ones (as
+ * View's) *)
+let min = Int.min and max = Int.max
+
 (* R_StoreWallRange: the seg's columns start to stop, which are open;
  * [angle1] its first end's angle (rw_angle1) *)
 let store_wall_range (r : View.t) (textures : Textures.t) (level : Level.t) (pl : View.planes) (seg : Level.seg) (angle1 : float) (start : int)

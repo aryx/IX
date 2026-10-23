@@ -262,7 +262,7 @@ run time are a plan of their own, after it (below, stage 6).
   WAD read, its textures made). mini-ml's frames are not OCaml's
   (arm64's fused multiply-add: 2 to 4% of the pixels, a texel apart):
   each frames' session has its second sum.
-- What follows is [`plan_playground_framebuffer.md`](plan_playground_framebuffer.md)
+- What follows is [`plan_playground_framebuffer.md`](done/plan_playground_framebuffer.md)
   (stage 6): the view is half of a frame (mini-ml's speed, 4 to 5
   times OCaml's here), the path to the screen the other half (a new
   image of the device's each frame, made, loaded) and ruinous as soon

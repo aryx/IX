@@ -789,7 +789,7 @@ value imag_rows(value ds, value a0, value bw, value len, value dy)
 }
 
 /* An image drawn k times larger (Memdraw's scale, the draw device's
- * 'z': docs/plans/plan_playground_framebuffer.md, F5): each pixel of
+ * 'z': docs/plans/done/plan_playground_framebuffer.md, F5): each pixel of
  * src k by k in dst, no blending. a = [| da; dbw; sa; sbw; bpp; k; px;
  * py; w; h |]: dst's w by h pixels from da, the first of them px
  * columns and py rows into its source pixel's k by k (a clipped

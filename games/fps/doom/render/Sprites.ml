@@ -3,6 +3,10 @@
 
 (* See Sprites.mli *)
 
+(* OPTIMIZATION: Int's min and max, not Stdlib's polymorphic ones (as
+ * View's) *)
+let min = Int.min and max = Int.max
+
 (* R_ProjectSprite: a thing's picture's columns and scale, if it can be
  * seen *)
 let project_sprite (r : View.t) (sprites : Things.sprites) (tic : int) (m : Things.mobj) : unit =

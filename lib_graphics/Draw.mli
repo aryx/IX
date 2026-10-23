@@ -99,7 +99,7 @@ val draw_mask : Display.image -> Rectangle.t -> Display.image -> Point.t -> Disp
 (* ix: [scale dst r src p k]: src from p drawn into dst's r k times
  * larger, each pixel k by k, no blending: a game's small picture on
  * the whole screen, made larger by the kernel's one loop (mini-9pi's
- * 'z', not Plan 9's: docs/plans/plan_playground_framebuffer.md, F5).
+ * 'z', not Plan 9's: docs/plans/done/plan_playground_framebuffer.md, F5).
  * dst and src of one format. [can_scale dst src]: does the device
  * have it (mini-9pi's C pixels, PIXEL=c, do not); a pixel of dst
  * drawn to find out *)

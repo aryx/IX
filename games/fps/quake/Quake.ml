@@ -68,7 +68,7 @@ type model = {
 
 (* the picture as it is, 320 by 200 bytes of the palette, given to the
  * platform (a Pixels shape), which makes of it what its device wants,
- * each pixel n by n (docs/plans/plan_playground_framebuffer.md, F2).
+ * each pixel n by n (docs/plans/done/plan_playground_framebuffer.md, F2).
  * old: made RGBA here (to_rgba), then again by the draw platform *)
 let snapshot (m : model) : unit =
   let src = m.render.view.screen in

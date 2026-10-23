@@ -3,6 +3,15 @@
 
 (* See View.mli *)
 
+(* OPTIMIZATION: min and max on ints here, Int's: Stdlib's are
+ * polymorphic, a call of the runtime's compare each time, and the
+ * renderer takes them for each column and span (a column's light, its
+ * clipped top and bottom). With OCaml 4.14 on arm64 a frame of
+ * mini-doom's was 7.59 million instructions, 5.52 with these, the same
+ * picture; with mini-ml 16.25 and 16.10.
+ * old: Stdlib's min and max *)
+let min = Int.min and max = Int.max
+
 let pi = 4. *. atan 1.
 let two_pi = 2. *. pi
 let half_pi = pi /. 2.

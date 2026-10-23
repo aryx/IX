@@ -26,6 +26,8 @@ under QEMU), for a picture larger than 320 by 200 at the same speed
 (the author: "now it would be great if we could enlarge the screen
 since right now the doom "window" is very small on the whole
 screen"); F1 and F3 after, if their gains are measured to matter.
+**Done (2026-10-23)**: F2, F5, F4, and the scale chosen by itself; F1
+and F3 not made (the Status says why); F6 an experiment left.
 
 ## What a frame of mini-doom costs now (2026-10-22, measured)
 
@@ -434,3 +436,19 @@ good scale if no scale=xxx is specified").
   the scaling. Reverted (the author: "let's revert those changes if
   they are actually not taht useful for cameltry since we don't send
   pixels to draw (like doom and quake)").
+
+2026-10-23, **closed** (the author: "let's close the plan then?").
+Done: F2 (Pixels), F5 (the kernel's 'z'), F4 (window=WxH), the Pi's
+screen the monitor's size, and the picture as large as the screen
+without scale=. On the Pi 2, the author: "it works great!" (scale=4
+on 1280 by 800, before the scale was chosen by itself). Not made:
+- F1 (/dev/framebuffer) and F3 (the platform chosen at run time): the
+  device's part of a frame is now 6-8 ms under QEMU (the 'z' and the
+  copy), the rest the game's and the platform's palette's; F1 would
+  save little of it, and F3 is F1's only.
+- F6 (the Pi's own scaler): an experiment, F5 being enough.
+Left: the author's Pi 2 with the scale chosen by itself (4 expected on
+1280 by 800), a game at k > 1 in a window of rio's, never looked at.
+Where a frame's time is now, the game's own code: mini-ml's against
+OCaml 4.14's in plan_mini_toolchain_optimization.md's session (a frame
+of mini-doom 2.5 times the instructions, 2026-10-23).

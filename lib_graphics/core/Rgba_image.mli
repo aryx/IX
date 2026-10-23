@@ -28,6 +28,15 @@
    whose four bytes are in the screen's order, blue first, with no
    alpha: a picture is laid on the screen, not copied to it.
 
+   Not for a picture made again at every frame. mini-doom and
+   mini-quake gave one each frame (a Playground Bitmap), made from
+   their 320 by 200 bytes of a palette, each pixel n by n: on the Pi 2
+   30% of a frame, and the draw platform then converted it again
+   to the screen's format. They now give their bytes and palette as
+   they are (Playground.Pixels: a byte a pixel, a quarter of the
+   memory), which each platform turns into what its device wants, once
+   (docs/plans/done/plan_playground_framebuffer.md, F2).
+
    terminology:
    Straight and premultiplied alpha. Here a half-opaque white is FF FF
    FF 80: the colour, and apart from it how much of the pixel it

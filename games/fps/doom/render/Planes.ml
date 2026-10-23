@@ -3,6 +3,10 @@
 
 (* See Planes.mli *)
 
+(* OPTIMIZATION: Int's min and max, not Stdlib's polymorphic ones (as
+ * View's) *)
+let min = Int.min and max = Int.max
+
 (* a new visplane of this frame, its columns none *)
 let new_plane (r : View.t) (height : float) (pic : int) (light : int) : View.plane =
   if r.nplanes = Array.length r.planes then

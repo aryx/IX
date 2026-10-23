@@ -133,7 +133,7 @@ let side = ref 0
  * its letters blurred) *)
 let follows = ref false
 
-(* ix: the flag window=WxH (docs/plans/plan_playground_framebuffer.md,
+(* ix: the flag window=WxH (docs/plans/done/plan_playground_framebuffer.md,
  * F4): the program's screen that size, a unit a pixel, centred, when
  * the window has the room; else all of the window, as the flag window
  * alone. The size it starts at, as on SDL: a
@@ -438,7 +438,7 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
       win.pictures <- List.filteri (fun (i : int) (_ : picture) -> i < kept_pictures) now;
       image
 
-(* ix: a Pixels' picture (docs/plans/plan_playground_framebuffer.md,
+(* ix: a Pixels' picture (docs/plans/done/plan_playground_framebuffer.md,
  * F2): the device's image of it in the screen's own format, made from
  * a table of the palette's 256 colours in that format, each pixel k by
  * k: one pass of table look-ups, one load, and a copy the device need

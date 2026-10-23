@@ -3,6 +3,10 @@
 
 (* See Bsp.mli *)
 
+(* OPTIMIZATION: Int's min and max, not Stdlib's polymorphic ones (as
+ * View's) *)
+let min = Int.min and max = Int.max
+
 (*****************************************************************************)
 (* The closed columns (solidsegs) *)
 (*****************************************************************************)

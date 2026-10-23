@@ -95,7 +95,7 @@ type model = {
 (* Doom's picture as it is, 320 by 200 bytes of the palette, given to
  * the platform (a Pixels shape), which makes of it what its device
  * wants: the screen's format on Plan 9, RGBA elsewhere, each pixel n by
- * n (docs/plans/plan_playground_framebuffer.md, F2).
+ * n (docs/plans/done/plan_playground_framebuffer.md, F2).
  * old: made RGBA here, each pixel n by n (to_rgba), 30% of a frame on
  * the Pi 2 by mini-ml's code; the draw platform then made it again in
  * the screen's format *)

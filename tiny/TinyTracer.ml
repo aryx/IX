@@ -21,7 +21,8 @@ let calls =
     "ready", [ Addr; Num; Num ]; "ticks", []; "box", [ Addr ];
     "dial", [ Path; Num ]; "listen", [ Num ]; "getcwd", [ Filled; Num ];
     "link", [ Path; Path ]; "rawcons", [ Num ]; "trace", [ Num ];
-    "seek", [ Num; Num; Num ]; "time", []; "stat", [ Path; Addr ]; "seed", [] ]
+    "seek", [ Num; Num; Num ]; "time", []; "stat", [ Path; Addr ]; "seed", [];
+    "spawn", [ Path; Addr ] ]
 
 (* the process whose stop is handled and its trace's descriptor; the
  * next line read, and a command and its answer ("" when the kernel
@@ -135,8 +136,9 @@ let handle p =
       let n = num n and r = num r in
       say_of ((if fills n then line n args r else text) ^ " = "
               ^ string_of_int r);
-      (* a child forked: traced from its first call, which waits for it *)
-      if n = 3 && r > 0 && !children then begin
+      (* a child forked or spawned: traced from its first call, which
+       * waits for it *)
+      if (n = 3 || n = 28) && r > 0 && !children then begin
         let fd = u_trace r in
         if fd >= 0 then
           procs := !procs @ [ { tpid = r; fd = fd; pending = None } ]

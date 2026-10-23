@@ -357,8 +357,8 @@ hello
 [12] close(6) = 0
 [12] fork() = 14
 [13] close(1) = 0
-[13] dup(7) = 1
 [14] close(5) = 0
+[13] dup(7) = 1
 [13] close(7) = 0
 [13] close(6) = 0
 [14] exec("/bin/wc", 0xffd48) = 0
@@ -368,11 +368,11 @@ hello
 [13] read(5, "hello\n", 4096) = 6
 [13] write(1, "hello\n", 6) = 6
 [13] read(5, "", 4096) = 0
-[14] read(0, "hello\n", 4096) = 6
 [13] close(5) = 0
 [13] exit(0)
 [12] wait(0xffe68) = 13
 [13] exited 0
+[14] read(0, "hello\n", 4096) = 6
 [14] read(0, "", 4096) = 0
       1       1       6
 [14] write(1, "      1       1       6\n", 24) = 24
@@ -385,7 +385,7 @@ hello
 [12] exit(0)
 [12] exited 0
 % exec
-_start:	jal	r15, 0x10ff8 <main>
+_start:	jal	r15, 0x1100c <main>
 break
 write:	ldw	r1, 0(r14)
 0	write
@@ -400,13 +400,13 @@ write+0x8:	ldw	r3, 8(r14)
 ping: no network, or not an address: 10.0.0.1
 exited 1
 % exec
-_start:	jal	r15, 0x17254 <main>
+_start:	jal	r15, 0x17268 <main>
 break
 u_write:	addi	r14, r14, -40
 0	u_write
-1	say+0x50	0x228ec 0x228ec 2
+1	say+0x50	0x22c34 0x22c34 2
 2	main+0x1cc	0 0 1 1 _ _ ...
-3	Trace.init+0x40	_ 0 0x227a0
+3	Trace.init+0x40	_ 0 0x22ae8
 4	ml_init+0x24c	0
 5	ml_run+0x164
 6	main+0x1ec
@@ -423,8 +423,8 @@ exit(0)
 exited 0
 % % 1
 2
+3
 break
 wait:	ldw	r1, 0(r14)
-3
 % 4
 % $ 

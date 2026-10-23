@@ -30,10 +30,11 @@
  *   preemptive scheduling  round robin on the timer   a list; the process that
  *                                                     ran is moved to the end
  *   protection             tiny-machine's relocating  no page tables to build
- *                          window, a 1 MB partition
- *                          per process
- *   processes              fork, exec, exit, wait     with a window, fork just
- *                                                     copies a partition: one
+ *                          window, a partition per
+ *                          process, of the size its
+ *                          program asks
+ *   processes              fork, exec, spawn, exit,   with a window, fork just
+ *                          wait                       copies a partition: one
  *                                                     k_copy
  *   blocking               each waiting process has   no kernel stack per
  *                          a closure, the rest of     process, no swtch, no
@@ -163,6 +164,16 @@
  *                first-fit when a program starts
  *    0xfffffc0   the devices, reached as -64 to -4
  *
+ * A partition is the simplest way to give a process memory: one block,
+ * its size the program's (its a.out says it), found first-fit when the
+ * program starts and never grown; the machine adds the block's start
+ * (base) to every address of the process and checks it against its
+ * end (bound). fork copies the parent's block whole; spawn, fork and
+ * exec in one, copies nothing (tiny-build starts each recipe's rc
+ * with it: its own block is 16 MB). The price, and the segments and
+ * pages that came after, are in the tagged paragraphs below and in
+ * plan_tiny_memory.md.
+ *
  * A process consists of two very different things. One is its
  * partition and its frame, plain memory that the collector never sees
  * and that is accessed with peek and poke. The other is its record, an
@@ -199,7 +210,7 @@
  *   typed one);
  * - copy-on-write fork: share the partition until one side writes,
  *   using pages (tiny-machine's Sv32), which is why pages were
- *   invented;
+ *   invented (plan_tiny_memory.md's stage 4);
  * - measure the kernel's own heap: print its live words after each
  *   collection, and at halt.
  *
@@ -230,10 +241,11 @@
  * Two costs are accepted. First, a waiting call is retried at every
  * round instead of being woken up, which wastes work while nothing
  * changes (the two shortcuts in [runnable] and [idle] exist because
- * this showed up). Second, fork copies a whole megabyte whatever the
- * size of the program, and there can be only eight processes. Both
- * are things a real kernel spends its cleverness on, and both can be
- * measured here (the machine counts instructions).
+ * this showed up). Second, fork copies the parent's whole partition
+ * (16 MB for tiny-build: hence spawn), a program's memory is a guess
+ * made when it is linked, and there can be only sixteen processes.
+ * Both are things a real kernel spends its cleverness on, and both
+ * can be measured here (the machine counts instructions).
  *
  * comeback:
  * A kernel written in a language with a garbage collector and no
@@ -245,6 +257,77 @@
  * language can do some of the protection that hardware and discipline
  * do in C. Here protection is still done by the hardware (the window);
  * what the language provides is the file tree and the closures.
+ *
+ * cs-history:
+ * Partitions are how IBM's OS/360 (1966) shared a machine between
+ * jobs. Its MFT cut memory into a fixed number of partitions, set by
+ * the operator; its MVT cut a region of the size each job asked for,
+ * as this kernel does with an a.out's size, and met external
+ * fragmentation: the free memory in holes too small for the next job.
+ * The 360 had no relocation at run time (the loader relocated a
+ * program once, as it loaded it) and protected memory by keys, one
+ * for each 2 KB. A base and a bound register, tiny-machine's window,
+ * are the CDC 6600's RA and FL (1964): every address added to RA and
+ * checked against FL. Knuth's first volume (1968) weighs first fit
+ * against best fit, with the fifty-percent rule: in a steady state
+ * there are about half as many holes as blocks in use. Denning's
+ * survey "Virtual Memory" (1970) presents partitions and relocation
+ * as the step before pages, the order in which this kernel takes them.
+ *
+ * cs-history:
+ * Pages are in fact older: Manchester's Atlas (1962) had a "one-level
+ * store", pages of 512 words that the supervisor moved between core
+ * and drum, unseen by the program. IBM's 360 Model 67 (1967)
+ * translated addresses for TSS/360 and CP-67, and the 370 brought
+ * virtual storage to all its systems (1972). Unix got demand paging
+ * on the VAX, in Berkeley's 3BSD (1979, Babaoglu and Joy). Pages
+ * answer the three troubles of partitions that this kernel shows: no
+ * fragmentation (any free frame will do), memory given when touched
+ * rather than reserved, and a fork that copies a page only when one
+ * side writes it (copy-on-write).
+ *
+ * evolution:
+ * Segments came in between: memory cut along the program's parts
+ * rather than by process. The Burroughs B5000 (1961) gave each array
+ * and procedure a descriptor. The PDP-11's memory management (the
+ * 11/40's and 11/45's) mapped a program's 64 KB in eight segments
+ * that DEC called pages; the 11/45 had a second set for instructions,
+ * and Unix's a.out said which a program wanted: 0407 one block, 0410
+ * its text read-only and shared by all its runs, 0411 instructions
+ * and data in two spaces. Intel's 8086 (1978) had four segment
+ * registers (code, data, stack, extra) and no protection: an address
+ * was the segment times 16 plus the offset. The 80286 (1982) made a
+ * segment a descriptor (base, limit, rights) in a table; the 80386
+ * (1985) put pages under the segments, and Unix, then Windows NT, set
+ * every segment to base 0 and limit 4 GB (the flat model), pages
+ * alone doing the work; AMD64 (2003) kept only FS's and GS's bases,
+ * for each thread's data. Multics (1969) had both: a file was a
+ * segment, mapped, and its segments were paged.
+ *
+ * others:
+ * Not every system makes a process the way Unix does. VMS's $CREPRC
+ * and Windows's CreateProcess start a process in a program, with no
+ * fork at all; POSIX added posix_spawn (1003.1d, 1999), for machines
+ * without an MMU and for speed; BSD's vfork (from memory: 3BSD's)
+ * let the child borrow its parent's memory until its exec, before
+ * copy-on-write; Plan 9's rfork says what the child shares. Baumann et
+ * al., "A fork() in the road" (2019), argue that fork has become a
+ * burden. This kernel has both: fork and exec because a shell is
+ * written with them (rc's redirections are done in the child),
+ * spawn because a parent of 16 MB that starts rc should not copy
+ * itself first.
+ *
+ * terminology:
+ * A partition (OS/360's) is set in advance; MVT called its variable
+ * ones regions. A segment is a part of an address space with its own
+ * base and limit (code, data, stack); ELF's segments are only the
+ * parts of a file to load, and its .text a section. A page is a piece
+ * of fixed size of the address space (4 KB in Sv32), the frame the
+ * memory under it. Virtual memory is the whole idea (the addresses a
+ * program uses are not the memory's), paging one way to do it,
+ * swapping another (whole processes to the disk, as Unix V7 did). And
+ * core was memory before it was a processor: magnetic cores, hence a
+ * core dump.
  *
  * References:
  *  - P. Brinch Hansen, "Structured Multiprogramming" (CACM 1972): await
@@ -262,6 +345,12 @@
  *    kernel in OCaml
  *  - P. Denning, "Virtual Memory" (Computing Surveys 1970): partitions
  *    before pages
+ *  - D. Knuth, The Art of Computer Programming, vol. 1 (1968), 2.5:
+ *    first fit, best fit, the fifty-percent rule
+ *  - T. Kilburn et al., "One-Level Storage System" (IRE Transactions
+ *    on Electronic Computers, 1962): Atlas's pages
+ *  - A. Baumann et al., "A fork() in the road" (HotOS 2019): spawn
+ *    against fork
  *)
 
 (* A program, and tiny-ml's alone: OCaml does not compile TinyKernel.ml

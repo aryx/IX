@@ -270,7 +270,9 @@ $(UNITS:%=$(U)/%.tmi): $(U)/%.tmi: $(U)/%.tm ;
 # and the compilers' recursions over it (as and ld 32: TinyML.tm's
 # assembly and office's link need more than half of 16, their
 # collector's; old: 16, out of memory there in the first builds on
-# tiny-kernel); build: the files it digests,
+# tiny-kernel; ld 48: bin/ml's link, past 32 since 2026-10-23, when
+# TinyML.ml grew by its records of more than 11 fields, died on an
+# illegal instruction, bugs/ix.md); build: the files it digests,
 # each read whole, the system's objects among them).
 ML = windows bigmem www play square tetris calc temp rc utils ed emacs office troff prof db vcs build as ld cc ml trace debug
 UNITS_windows = TinyLibDraw TinyWindows
@@ -301,7 +303,7 @@ MEM_bigmem = -a 8
 MEM_www = -a 10
 MEM_play = -a 4
 MEM_as = -a 32
-MEM_ld = -a 32
+MEM_ld = -a 48
 MEM_cc = -a 16
 MEM_ml = -a 32
 MEM_build = -a 16

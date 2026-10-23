@@ -169,7 +169,7 @@ u_stat(value path)
 // others; its pid, or -1. (The lowest free descriptor is the one just
 // closed: Unix's way, as sh's.)
 value
-u_spawn(value in, value out, value draw, value mouse, value path)
+u_spawn_window(value in, value out, value draw, value mouse, value path)
 {
 	char *argv[2];
 	int pid, i;
@@ -347,6 +347,24 @@ u_exec(value path, value args)
 		return -1 * 2 + 1;
 	argv[n] = 0;
 	return exec((char*)path, argv) * 2 + 1;
+}
+
+// a child running the program at path, its arguments as u_exec's: its
+// pid, or -1
+value
+u_spawn(value path, value args)
+{
+	char *argv[64];
+	int n;
+
+	for(n = 0; n < 63 && (args & 1) == 0; n++){
+		argv[n] = (char*)((value*)args)[0];
+		args = ((value*)args)[1];
+	}
+	if((args & 1) == 0)
+		return -1 * 2 + 1;
+	argv[n] = 0;
+	return spawn((char*)path, argv) * 2 + 1;
 }
 
 // a child's end waited for: its pid and, 256 times it, its status's

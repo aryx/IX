@@ -11,7 +11,8 @@ The targets out of date remade, by the rules of the Buildfile (-f: another),
 N recipes at once (-j); up to date by content, not time (the stamps kept in
 .tiny-build). -n: the recipes printed, not run; -g: the graph, for dot;
 -t: each recipe's time as it ends, then the times by kind of target (bin/*,
-ml/*.tm), and what was not a recipe's (the digests, the graph).
+ml/*.tm), and what was not a recipe's (the digests, the graph); with -j,
+the recipes' sum and how many ran at once on average.
 
 A Buildfile's five kinds of lines, and that is all the syntax:
   # a comment
@@ -472,9 +473,18 @@ let report caps total =
   List.iter (fun (k, (n, t)) ->
     TinyLibSystem.print caps (Printf.sprintf "%8d ms  %4d  %s\n" t n k)) rows;
   let recipes = List.fold_left (fun acc (_, ms) -> acc + ms) 0 !times in
-  TinyLibSystem.print caps
-    (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n"
-       (total - recipes) total)
+  (* (with -j the recipes overlap: their sum may pass the whole's, and
+   * how many ran at once on average is what is worth saying) *)
+  if recipes <= total then
+    TinyLibSystem.print caps
+      (Printf.sprintf "%8d ms        not a recipe's\n%8d ms        in all\n"
+         (total - recipes) total)
+  else
+    TinyLibSystem.print caps
+      (Printf.sprintf
+         "%8d ms        the recipes', %d.%d at once\n%8d ms        in all\n"
+         recipes (recipes / max 1 total) (recipes * 10 / max 1 total mod 10)
+         total)
 
 let run (caps : Cap.all_caps) : int =
   let file = ref "Buildfile" and jobs = ref 1 and dry = ref false

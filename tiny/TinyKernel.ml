@@ -431,9 +431,12 @@ let ustr p va =
       else (Buffer.add_char b (Char.chr c); go (i + 1)) in
   go 0
 
+(* a slot, a partition: none free now (with_room, below, waits for one) *)
+exception No_room
+
 let free_slot () =
   let rec go s =
-    if s >= nslots then raise Bad
+    if s >= nslots then raise No_room
     else if List.exists (fun p -> p.slot = s) !procs then go (s + 1)
     else s in
   go 0
@@ -441,7 +444,7 @@ let free_slot () =
 (* Finds room for a partition of [size] bytes: the first gap that is big
  * enough between the partitions of the other processes, ordered by
  * address. [except] is a process whose partition does not count (exec
- * replaces it). Bad if there is no room. *)
+ * replaces it). No_room if there is none now. *)
 let room size except =
   let used = List.filter (fun q -> q.pid <> except && q.size > 0) !procs in
   let rec insert q = function
@@ -450,7 +453,7 @@ let room size except =
         if q.base <= r.base then q :: r :: rest else r :: insert q rest in
   let sorted = List.fold_left (fun l q -> insert q l) [] used in
   let rec go at = function
-    | [] -> if at + size <= mem_high then at else raise Bad
+    | [] -> if at + size <= mem_high then at else raise No_room
     | q :: rest ->
         if at + size <= q.base then at
         else go (max at (q.base + q.size)) rest in
@@ -913,29 +916,61 @@ and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
  * its copy. It is traced by its parent's tracer when the parent's
  * children are (f), stopping at its calls if the parent does: the
  * tracer's trace(pid) gives the descriptor, its stops kept till then *)
-let sys_fork p =
-  let s = free_slot () in
-  let b = room p.size (-1) in
-  let q = {
-    slot = s; base = b; size = p.size; pid = !next_pid; state = Ready;
-    parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
-    core = -1; doomed = false;
-  } in
+(* A call that needs a slot or a partition: done now or, when there is none,
+ * waited for while another process can run (and end, freeing one):
+ * what a build of several recipes at once runs into (tiny-build -j 6:
+ * six compilers of 32 MB). When none can, -1 (old: -1 at once, and
+ * rc said "not found"). Tried again when a process has ended, as a
+ * wait (old: at each round, a walk of the slots: with a build's forks
+ * waiting, a round was longer than a tick, every process entered with
+ * its time already up, and none ran an instruction) *)
+let with_room p f =
+  try f () with No_room ->
+    block p (fun () ->
+      try f (); true with
+      | No_room ->
+          if List.exists (fun q ->
+               q.pid <> p.pid && (match q.state with Ready -> true | _ -> false))
+               !procs
+          then false
+          else (result p (-1); true)
+      | Bad -> result p (-1); true);
+    match p.state with Waiting _ -> p.since <- !deaths | _ -> ()
+
+(* a child of p's, in slot s: its descriptors and directory p's; traced
+ * when p's children are; its pid the next *)
+let child p s = {
+  slot = s; base = 0; size = 0; pid = !next_pid; state = Ready;
+  parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
+  core = -1; doomed = false;
+}
+
+(* the child made a process: its trace if p's children are traced, its
+ * descriptors shared, its place at the end of the round, its pid p's
+ * answer *)
+let adopt p q =
   incr next_pid;
-  k_copy b p.base p.size;
-  k_copy (frame s) (frame p.slot) 68;
   (match p.traced with
-   | Some t ->
-       List.iter (fun (a, w) -> poke (b + a) w) t.stops;
-       if t.follow then
-         q.traced <- Some { t with tpid = q.pid; stops = []; said = [];
-                                   watchers = 0; call = -1; ret = -1;
-                                   step = false; over = -1 }
-   | None -> ());
+   | Some t when t.follow ->
+       q.traced <- Some { t with tpid = q.pid; stops = []; said = [];
+                                 watchers = 0; call = -1; ret = -1;
+                                 step = false; over = -1 }
+   | _ -> ());
   List.iter (fun (_, f) -> share f) p.fds;
   procs := !procs @ [ q ];
-  set_reg q 1 0;
   result p q.pid
+
+let sys_fork p = with_room p (fun () ->
+  let q = child p (free_slot ()) in
+  q.base <- room p.size (-1);
+  q.size <- p.size;
+  k_copy q.base p.base p.size;
+  k_copy (frame q.slot) (frame p.slot) 68;
+  (match p.traced with
+   | Some t -> List.iter (fun (a, w) -> poke (q.base + a) w) t.stops
+   | None -> ());
+  set_reg q 1 0;
+  adopt p q)
 
 (* A program's file is either a raw image, run in 1 MB, or an a.out: a
  * header of three words (a magic number, the image's size, the memory
@@ -1008,20 +1043,39 @@ let load_prog p node argv =
   k_zero (frame p.slot) 68;
   set_reg p 14 sp
 
-(* exec(path, argv): its program's text, its arguments (64 at most:
- * a linker's line names its objects; old: 16),
- * all read before the partition is changed, so a failed exec returns.
- * A traced process stops at its new program's first instruction, its
- * breakpoints gone with the old one *)
-let sys_exec p =
+(* exec's and spawn's (path, argv): the program's file, its arguments
+ * (64 at most: a linker's line names its objects; old: 16) *)
+let program p =
   let node = walk !top (names p.cwd (ustr p (reg p 1))) in
   let rec args i acc =
     if i >= 64 then raise Bad
     else
       let a = peek (user p (reg p 2 + (4 * i)) 4) in
       if a = 0 then List.rev acc else args (i + 1) (ustr p a :: acc) in
-  load_prog p node (args 0 []);
-  match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ()
+  node, args 0 []
+
+(* exec(path, argv): the program and its arguments are all read before
+ * the partition is changed, so a failed exec returns. A traced process
+ * stops at its new program's first instruction, its breakpoints gone
+ * with the old one *)
+let sys_exec p =
+  let node, argv = program p in
+  with_room p (fun () ->
+    load_prog p node argv;
+    match p.traced with Some t -> t.stops <- []; stop p "exec" | None -> ())
+
+(* spawn(path, argv): a fork and an exec in one, a child that starts
+ * in the program; its pid, or -1. Nothing of the parent is copied: a
+ * fork copies the parent's whole partition (16 MB for tiny-build, at
+ * each recipe) for the exec to throw it away a moment later. What a
+ * child does between the two (a dup, a close) the parent does around
+ * the spawn: the child has the parent's descriptors at the spawn *)
+let sys_spawn p =
+  let node, argv = program p in
+  with_room p (fun () ->
+    let q = child p (free_slot ()) in
+    load_prog q node argv;
+    adopt p q)
 
 (* wait(&status): a child's end, the child freed; -1 without children *)
 let sys_wait p =
@@ -1385,8 +1439,9 @@ let syscall p n =
     (* the seed: the machine's, or the clock when it has none, so that a
      * game is another each time *)
     | 27 -> result p (match peek seed_dev with 0 -> !ticks | s -> s)
+    | 28 -> sys_spawn p
     | _ -> result p (-1)
-  with Bad -> result p (-1) | Disk_full -> result p (-1));
+  with Bad | No_room -> result p (-1) | Disk_full -> result p (-1));
   if n <> 1 then fs_commit ()
 
 (* A traced process that stops at its calls (trace) stops before each,
@@ -1759,5 +1814,5 @@ let () =
   incr next_pid;
   procs := [ p ];
   (try load_prog p (walk !top [ "bin"; "sh" ]) [ "sh" ]
-   with Bad -> puts "no /bin/sh\n"; halt 1);
+   with Bad | No_room -> puts "no /bin/sh\n"; halt 1);
   schedule ()

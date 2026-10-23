@@ -254,10 +254,49 @@ where said.
   by its first instruction: exact, as a trap, an eret and the write of
   status before the loop of idle each end a batch. cores.expected has
   the three lines (in turns the same at each run).
-- **Measuring, running**: the self-build with `build -j 4` on four
-  domains and the one-core one, 87 minutes in, the first nearly through
-  the first build (219 lines), the other at 161; `build -t -j 6` on
-  four domains with the counts, just started: each recipe's time (the
-  critical path: the library's one recipe, the large units) and each
-  core's use, to reorganize the Buildfile (the library a recipe a
-  module) and the code where a unit holds everything up.
+- **The first measures, and what they found** (2026-10-23):
+  - `build -j 4` on four domains: 115 minutes, then `bin/ml`'s link
+    failed (`trap 2`, an illegal instruction): **tiny-kernel's ld out
+    of its 32 MB**, which today's 1.7 KB more of bin/ml crossed; the
+    same with the kernel, the machine and the ld of before that day,
+    so not the cores'. MEM_ld 48 (bin/ml then the host's byte for
+    byte); bugs/ix.md has the row (a limit reached without a word).
+    The one-core build would have failed there too; stopped.
+  - `build -t -j 6` on four domains: failed after 15 minutes, `as: not
+    found`: six recipes at once (two ml, two as, ld, cc) took 176 MB,
+    the seventh found no partition and exec failed. Now **an exec or a
+    fork that finds no slot or no partition waits** for a process to
+    end (`with_room`), as long as another can run; retried when one
+    has ended (`since`, a wait's), not at each round: retried at each
+    round, its walk of the slots made a round longer than a tick, every
+    process entered with its time already up, and none ran an
+    instruction (found with the -j 8 test of bugs/ix.md's -j row,
+    which now builds its eight targets).
+  - The counts of those 15 minutes, mostly the library's one recipe:
+    core 0 programs 0%, kernel 56%, idle 43%; core 1 41% programs;
+    cores 2 and 3 about 8%: one program at a time then, and core 0's
+    kernel as busy as all the programs. Part of it: **each recipe a
+    fork of build, its 16 MB copied** (k_copy, 18 million
+    instructions, over 2 s of the machine's time, on core 0). To
+    measure on the whole build, then a spawn (fork and exec in one) or
+    a smaller build.
+  - tiny-build -t with -j: the recipes' sum and how many ran at once
+    (it said a negative "not a recipe's").
+- **A first four-core run lost** (`-j 6`, four domains, 109 minutes):
+  bin/ml's link died as before, the image's ld still of 32 MB (the
+  Makefile does not relink a program when its `MEM_` changes:
+  bugs/ix.md). Its counts still say where the time went: core 0 2%
+  programs, 73% kernel, 24% idle; cores 1-3 38%, 22%, 19% programs,
+  the rest idle. The kernel on core 0 is the bottleneck: fork's copy
+  of build's 16 MB at each recipe, among others; hence spawn
+  (plan_tiny_memory.md, stage 1).
+- **The first whole self-build on four cores** (fork, `build -t -j
+  6`, four domains, ld of 48 MB; 2026-10-23, 11:56 to 14:11): 135
+  minutes, the image built the host's byte for byte. The first build's
+  recipes took 33,000 s of machine time in 7,900: 4.1 at once. Where:
+  the links (bin/*, 31 of them) 10,250 s, the assemblies (ml/*.o, 43)
+  8,300 s, the compiles (ml/*.tm, 43) 4,660 s. Each core's counts:
+  core 0 71% kernel, 28% idle; cores 1-3 36%, 15%, 14% programs, the
+  rest idle.
+- **Measuring, running**: the self-build with `build -t` on one core
+  (fork), and four domains with spawn.

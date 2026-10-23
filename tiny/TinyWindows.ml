@@ -14,7 +14,8 @@ external u_pipe : unit -> int = "u_pipe"
 external u_box : unit -> int = "u_box"
 external u_close : int -> int = "u_close"
 external u_ready : int array -> int -> int -> int = "u_ready"
-external u_spawn : int -> int -> int -> int -> string -> int = "u_spawn"
+external u_spawn_window : int -> int -> int -> int -> string -> int
+  = "u_spawn_window"
 external u_kill : int -> int = "u_kill"
 external u_wait : unit -> int = "u_wait"
 
@@ -328,7 +329,9 @@ let create (x0, y0, x1, y1) =
   let k = u_pipe () and p = u_pipe () and d = u_pipe () and m = u_box () in
   let pid =
     if k < 0 || p < 0 || d < 0 || m < 0 then -1
-    else u_spawn (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh" in
+    else
+      u_spawn_window (k land 255) (p / 256) (d / 256) (m land 255) "/bin/sh"
+  in
   (* the shell's ends are not ours; ours neither when there is no shell *)
   List.iter (fun fd -> if fd >= 0 then ignore (u_close fd))
     [ k land 255; p / 256; d / 256; m land 255 ];

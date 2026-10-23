@@ -288,24 +288,31 @@ let wait_any caps =
 (* rc's words quoted, '' a quote inside *)
 let quote w = "'" ^ String.concat "''" (String.split_on_char '\'' w) ^ "'"
 
+(* the scripts written, for their files' names *)
+let scripts = ref 0
+
+(* The script in a file that removes itself, run by rc in a child made
+ * by spawn: nothing of this process copied, where a fork copied it
+ * whole (tiny-build's 16 MB at each recipe) for rc's exec to drop it.
+ * Its pid, or -1. (old: u_fork, and the child wrote the file, named by
+ * its pid, and exec'ed rc) *)
 let shell caps vars script =
   u_flush ();
-  let pid = u_fork () in
-  if pid <> 0 then pid
-  else begin
-    let file = ".shell" ^ string_of_int (u_getpid ()) in
-    let fd = open_out caps file in
-    write fd
-      ("rm " ^ file ^ "\n"
-       ^ String.concat ""
-           (List.map
-              (fun (k, v) ->
-                k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n")
-              vars)
-       ^ script ^ "\n");
-    close fd;
-    ignore (exec caps "/bin/rc" [ "rc"; "-e"; file ] []);
-    exit 127
-  end
+  incr scripts;
+  let file =
+    ".shell" ^ string_of_int (u_getpid ()) ^ "." ^ string_of_int !scripts in
+  let fd = open_out caps file in
+  write fd
+    ("rm " ^ file ^ "\n"
+     ^ String.concat ""
+         (List.map
+            (fun (k, v) ->
+              k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n")
+            vars)
+     ^ script ^ "\n");
+  close fd;
+  let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] in
+  if pid < 0 then ignore (u_unlink file);
+  pid
 
 let exit n = exit n

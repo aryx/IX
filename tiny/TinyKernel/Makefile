@@ -64,7 +64,8 @@
 # the machine's font (font.tm, made of mini-9pi's console's: 128
 # characters of 8 by 16 bits), the kernel (tiny-ml: TinyMemory.ml,
 # TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
-# TinyKernelFS.ml and ../TinyKernel.ml, one program), end.tm last. Its
+# TinyKernelFS.ml, TinyKernelMemory.ml and ../TinyKernel.ml, one
+# program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
 # programs are tiny-linker's images (linked at 0: the kernel runs each
@@ -145,7 +146,7 @@ $(O)/lib/Stdlib.tm: $(CORE:%=../TinyLibCore/%.ml) $(CORE:%=../TinyLibCore/%.mli)
 	b=; for m in $(CORE); do $(TML) -c -nostdlib -o $(@D)/$$m.tm $$b ../TinyLibCore/$$m.ml || exit 1; b="$$b $(@D)/$$m.tmi"; done
 $(CORE:%=$(O)/lib/%.tmi) $(filter-out %/Stdlib.tm,$(CORE:%=$(O)/lib/%.tm)): $(O)/lib/Stdlib.tm ;
 TML_L = $(TML) -L $(O)/lib
-$(O)/kernel.tm: TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml $(O)/lib/Stdlib.tm $(TMLBIN)
+$(O)/kernel.tm: TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml TinyKernelMemory.ml ../TinyKernel.ml $(O)/lib/Stdlib.tm $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -o $@ $(filter %.ml,$^)
 
@@ -356,7 +357,7 @@ EXAMPLES = steps/t6/user/wc.c user/sh.c user/emacs.ml ../TinyEditorScreen.ml exa
 # step 8; old: step 7's /src had ping's C and a unit; not /sys/src,
 # Plan 9's, as /sys is principia's devsys)
 C_PROGS = sh mltests ping get put httpd
-SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml \
+SRC_FILES = entry.tm draw.tm memory.tm end.tm runtime.c TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml TinyKernelMemory.ml ../TinyKernel.ml \
 	$(foreach u,$(UNITS),$(or $(F_$(u)),../$(u).ml)) $(CORE:%=../TinyLibCore/%.ml) libc/user.h libc/sys.tm libc/draw.c libc/draw.h libc/net.c libml/mlsys.c \
 	../TinyMLRuntime/core.c ../TinyCRuntime/start.tm ../TinyCRuntime/udivmod.tm ../TinyCRuntime/libc.c ../TinyCRuntime/libc.h examples/paint.c $(C_PROGS:%=user/%.c)
 # (a path of this directory's, as tiny/'s)
@@ -423,7 +424,7 @@ libc/sys.o: $(K)/libc/sys.tm
 	mkdir -p libc; as -o $$target $(K)/libc/sys.tm
 
 # the kernel
-kernel.tm: $$LIB $(call insrc,TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml ../TinyKernel.ml)
+kernel.tm: $$LIB $(call insrc,TinyMemory.ml TinyKernelGraphics.ml TinyKernelNetwork.ml TinyKernelAudio.ml TinyKernelFS.ml TinyKernelMemory.ml ../TinyKernel.ml)
 	ml -nostdlib -o $$target $$prereq
 kernel.img: $(KERNEL:$(O)/%=%)
 	ld -map -o $$target $$prereq

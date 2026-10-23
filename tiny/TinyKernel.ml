@@ -8,11 +8,12 @@
  * one program *)
 open TinyMemory
 open TinyKernelGraphics
-(* and what speaks to the network, what makes the sounds, and what
- * keeps files on the disk *)
+(* and what speaks to the network, what makes the sounds, what
+ * keeps files on the disk, and what gives a process its memory *)
 open TinyKernelNetwork
 open TinyKernelAudio
 open TinyKernelFS
+open TinyKernelMemory
 
 (*****************************************************************************)
 (* The machine: entry.tm's, memory.tm's and runtime.c's functions *)
@@ -40,16 +41,12 @@ external k_font : unit -> int = "k_font"
 
 (* The memory. The first 32 MB are the kernel's (runtime.c says how they
  * are used): its image, the processes' frames, the images it draws, the
- * screen, its heap. The processes' memory is above, up to 64 KB below
- * the top of the machine's 256 MB. A process has a partition of the size
- * its program asks for (1 MB if it does not say), found when it starts.
- * There are at most [nslots] processes; a slot is a process's frame.
- * (old: 8 slots and 128 MB, before the cores: tiny-build -j 4 runs four
- * rc and four compilers of 32 MB) *)
-let part = 0x100000
+ * screen, its heap. The processes' memory is above, TinyKernelMemory's:
+ * a partition of the size a program asks for (1 MB if it does not say),
+ * found when it starts. There are at most [nslots] processes; a slot is
+ * a process's frame. (old: 8 slots and 128 MB, before the cores:
+ * tiny-build -j 4 runs four rc and four compilers of 32 MB) *)
 let nslots = 16
-let mem_low = 0x2000000
-let mem_high = 0xfff0000
 let frame slot = 0xb40000 + (slot * 68)
 (* The devices are at the top of memory. Their addresses are written as
  * negative numbers, which the machine takes modulo its memory size, so
@@ -388,15 +385,15 @@ let rec load a =
  * for its tracer, until the tracer resumes it *)
 type state = Ready | Waiting of (unit -> bool) | Zombie of int | Stopped
 
-(* A process: its slot (where its frame is), where its partition starts
- * and how big it is, its pid, its state, its parent's pid (0: none), its
+(* A process: its slot (where its frame is), its memory, its pid, its
+ * state, its parent's pid (0: none), its
  * descriptors, its current directory; while it waits for a child's
  * end, how many processes had ended when it last looked (-1: it waits
  * for something else); and its trace, when it is traced. The core it
  * runs on (-1: none; 0 while core 0 runs it or handles its trap), and
  * whether it was killed there, its end then at its next trap. *)
 type proc = {
-  slot : int; mutable base : int; mutable size : int; pid : int;
+  slot : int; mem : space; pid : int;
   mutable state : state; mutable parent : int;
   mutable fds : (int * file) list; mutable cwd : string list;
   mutable since : int; mutable traced : trace option;
@@ -417,7 +414,8 @@ let set_reg p k v = poke (frame p.slot + (4 * k)) v
  * leaves the partition *)
 exception Bad
 let user p va n =
-  if va < 0 || n < 0 || va + n > p.size then raise Bad else p.base + va
+  let a = mem_address p.mem va n in
+  if a < 0 then raise Bad else a
 
 (* a string of the user's, a path: 1024 bytes at most (old: 64, a path
  * of a few names, when a name had 20) *)
@@ -431,33 +429,14 @@ let ustr p va =
       else (Buffer.add_char b (Char.chr c); go (i + 1)) in
   go 0
 
-(* a slot, a partition: none free now (with_room, below, waits for one) *)
-exception No_room
-
+(* a slot: none free now is No_room, as for a partition (with_room,
+ * below, waits for one) *)
 let free_slot () =
   let rec go s =
     if s >= nslots then raise No_room
     else if List.exists (fun p -> p.slot = s) !procs then go (s + 1)
     else s in
   go 0
-
-(* Finds room for a partition of [size] bytes: the first gap that is big
- * enough between the partitions of the other processes, ordered by
- * address. [except] is a process whose partition does not count (exec
- * replaces it). No_room if there is none now. *)
-let room size except =
-  let used = List.filter (fun q -> q.pid <> except && q.size > 0) !procs in
-  let rec insert q = function
-    | [] -> [ q ]
-    | r :: rest ->
-        if q.base <= r.base then q :: r :: rest else r :: insert q rest in
-  let sorted = List.fold_left (fun l q -> insert q l) [] used in
-  let rec go at = function
-    | [] -> if at + size <= mem_high then at else raise No_room
-    | q :: rest ->
-        if at + size <= q.base then at
-        else go (max at (q.base + q.size)) rest in
-  go mem_low sorted
 
 (* a descriptor's file; the lowest free descriptor (32 a process: a
  * window system has four a window), given f *)
@@ -504,7 +483,7 @@ let traced_proc t =
 let detach t =
   match traced_proc t with
   | Some q ->
-      List.iter (fun (a, w) -> poke (q.base + a) w) t.stops;
+      List.iter (fun (a, w) -> mem_store q.mem a w) t.stops;
       if t.call >= 0 then set_reg q 16 (reg q 16 - 4);
       t.stops <- [];
       q.traced <- None;
@@ -740,14 +719,14 @@ let command t q words =
   let say m = t.said <- t.said @ [ m ^ "\n" ] in
   let unset a =
     (match List.assoc_opt a t.stops with
-     | Some w -> poke (q.base + a) w
+     | Some w -> mem_store q.mem a w
      | None -> ());
     t.stops <- List.filter (fun (b, _) -> b <> a) t.stops in
   match words, q.state with
   | [ "b"; s ], _ ->
       let a = addr s in
       if not (List.exists (fun (b, _) -> b = a) t.stops) then
-        (t.stops <- t.stops @ [ a, peek (q.base + a) ]; poke (q.base + a) 0);
+        (t.stops <- t.stops @ [ a, mem_fetch q.mem a ]; mem_store q.mem a 0);
       say "ok"
   | [ "d"; s ], _ -> unset (addr s); say "ok"
   | [ "r" ], _ ->
@@ -768,7 +747,7 @@ let command t q words =
       (match int_of_string_opt v with
        | Some v when List.exists (fun (b, _) -> b = a) t.stops ->
            t.stops <- List.map (fun (b, w) -> b, if b = a then v else w) t.stops
-       | Some v -> poke (q.base + a) v
+       | Some v -> mem_store q.mem a v
        | None -> raise Bad);
       say "ok"
   | [ "y" ], _ -> t.calls <- true; say "ok"
@@ -777,7 +756,7 @@ let command t q words =
   | [ ("c" | "s") as c ], Stopped ->
       let pc = reg q 16 in
       (match List.assoc_opt pc t.stops with
-       | Some w when t.call < 0 -> poke (q.base + pc) w; t.over <- pc
+       | Some w when t.call < 0 -> mem_store q.mem pc w; t.over <- pc
        | _ -> ());
       t.step <- c = "s";
       q.state <- Ready
@@ -908,7 +887,9 @@ let rec exit_proc p status =
   if p.pid = 1 then halt status;
   if p.parent = 0 then release p else p.state <- Zombie status
 
-and release q = procs := List.filter (fun r -> r.pid <> q.pid) !procs
+and release q =
+  mem_release q.mem;
+  procs := List.filter (fun r -> r.pid <> q.pid) !procs
 
 (* fork: a new slot and a partition of the parent's size, the partition
  * and the frame copied (the child's r1 0), the descriptors shared; the
@@ -940,7 +921,7 @@ let with_room p f =
 (* a child of p's, in slot s: its descriptors and directory p's; traced
  * when p's children are; its pid the next *)
 let child p s = {
-  slot = s; base = 0; size = 0; pid = !next_pid; state = Ready;
+  slot = s; mem = mem_empty (); pid = !next_pid; state = Ready;
   parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
   core = -1; doomed = false;
 }
@@ -962,12 +943,10 @@ let adopt p q =
 
 let sys_fork p = with_room p (fun () ->
   let q = child p (free_slot ()) in
-  q.base <- room p.size (-1);
-  q.size <- p.size;
-  k_copy q.base p.base p.size;
+  mem_copy q.mem p.mem;
   k_copy (frame q.slot) (frame p.slot) 68;
   (match p.traced with
-   | Some t -> List.iter (fun (a, w) -> poke (q.base + a) w) t.stops
+   | Some t -> List.iter (fun (a, w) -> mem_store q.mem a w) t.stops
    | None -> ());
   set_reg q 1 0;
   adopt p q)
@@ -1011,9 +990,7 @@ let load_prog p node argv =
         12, size, (memory + part - 1) / part * part
     | _ -> 0, n, part in
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
-  let b = if memory = p.size then p.base else room memory p.pid in
-  p.base <- b;
-  p.size <- memory;
+  mem_place p.mem memory;
   (* Only the image is written, its statics in it (tiny-linker writes a
    * .space as zeros); the rest of the
    * partition, the stack and the heap, is left as the last process to
@@ -1026,20 +1003,21 @@ let load_prog p node argv =
    * for ml, 35 million instructions an exec: a fifth of a small unit's
    * compile) *)
   (match node with
-   | Some (Data d) -> k_blit (Bytes.sub_string d.dbytes skip size) 0 b size
-   | Some (Rom (at, _)) -> row_copy b (at + skip) size
+   | Some (Data d) -> mem_write p.mem 0 (Bytes.sub_string d.dbytes skip size)
+   | Some (Rom (at, _)) -> mem_blit p.mem 0 (at + skip) size
    | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
     top := (!top - String.length s - 1) land lnot 3;
-    k_blit s 0 (b + !top) (String.length s);
+    mem_write p.mem !top s;
     (* (its end, a 0: old, the zeros of the partition, zeroed whole) *)
-    pokeb (b + !top + String.length s) 0;
+    mem_store_byte p.mem (!top + String.length s) 0;
     ptrs := !ptrs @ [ !top ]) argv;
   let sp = (!top - ((List.length argv + 3) * 4)) land lnot 7 in
-  poke (b + sp) (List.length argv);
-  poke (b + sp + 4) (sp + 8);
-  ignore (List.fold_left (fun at a -> poke at a; at + 4) (b + sp + 8) !ptrs);
+  mem_store p.mem sp (List.length argv);
+  mem_store p.mem (sp + 4) (sp + 8);
+  ignore (List.fold_left (fun at a -> mem_store p.mem at a; at + 4) (sp + 8)
+            !ptrs);
   k_zero (frame p.slot) 68;
   set_reg p 14 sp
 
@@ -1633,8 +1611,7 @@ let give k p =
   p.core <- k;
   on.(k) <- Some p;
   let m = mailbox k in
-  poke (m + 4) p.base;
-  poke (m + 8) p.size;
+  mem_post p.mem (m + 4);
   poke (m + 12) tick;
   poke m (frame p.slot);
   poke ipi_dev k
@@ -1680,7 +1657,7 @@ and run p =
   | Some t when t.step || t.over >= 0 -> step p t
   | _ ->
       p.core <- 0;
-      k_window p.base p.size;
+      mem_window p.mem;
       let cause = k_run (frame p.slot) in
       next p (trapped p cause (k_tval ()))
 
@@ -1691,14 +1668,14 @@ and run p =
  * instruction ran is taken, and the process run again. A step that
  * makes a call that waits stops when the call ends (waited). *)
 and step p t =
-  k_window p.base p.size;
+  mem_window p.mem;
   let cause = k_step (frame p.slot) in
   let ran = cause <> c_intr || k_tval () land 1 <> 0 in
   let timer = trapped p cause (k_tval ()) in
   if cause <> c_intr then count_ticks ();
   if ran && List.exists (fun q -> q.pid = p.pid) !procs then begin
     if t.over >= 0 && List.exists (fun (b, _) -> b = t.over) t.stops then
-      poke (p.base + t.over) 0;
+      mem_store p.mem t.over 0;
     t.over <- -1;
     match p.state with Ready when t.step -> stop p "step" | _ -> ()
   end;
@@ -1807,7 +1784,7 @@ let () =
               3, Draw { conn = connect screen font; refs = 1 };
               4, Peek mouse ] in
   let p = {
-    slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0;
+    slot = 0; mem = mem_empty (); pid = 1; state = Ready; parent = 0;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
     since = -1; traced = None; core = -1; doomed = false;
   } in

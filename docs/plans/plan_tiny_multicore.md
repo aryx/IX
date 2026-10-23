@@ -298,5 +298,11 @@ where said.
   8,300 s, the compiles (ml/*.tm, 43) 4,660 s. Each core's counts:
   core 0 71% kernel, 28% idle; cores 1-3 36%, 15%, 14% programs, the
   rest idle.
-- **Measuring, running**: the self-build with `build -t` on one core
-  (fork), and four domains with spawn.
+- **The same on one core** (fork, `build -t`, 11:56 to 15:06): 190
+  minutes, the image the host's. So four cores, 135, are 1.41 times
+  faster. The first build: 13,500 s of machine time, 2,575 not a
+  recipe's (tiny-build's digests and graph); the links 4,190 s, the
+  assemblies 2,140, the compiles 1,560. On four cores the same recipes
+  summed 10,250, 8,300 and 4,660 s: each recipe took 2 to 4 times
+  longer, waiting for core 0, which handles every process's traps.
+- **Measuring, running**: four domains with spawn.

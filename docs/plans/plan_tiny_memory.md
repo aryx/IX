@@ -104,10 +104,15 @@ program that outgrows its partition (ld died on an illegal
 instruction, bugs/ix.md); the Makefile relinking a program when its
 `MEM_` changes (it does not: the ld of 48 MB needed a `rm`).
 
-## Stage 2: TinyKernelMemory.ml, partitions alone
+## Stage 2: TinyKernelMemory.ml, partitions alone (done, 2026-10-23)
 
-Moved out of TinyKernel.ml, no behaviour changed (the check the same,
-byte for byte):
+Moved out of TinyKernel.ml (1,818 lines to 1,795; the module 95, its
+.mli the memory's chapter), no behaviour changed: every screen of the
+check the same; tetris.wav's length (17 bytes shorter) and two
+processes' lines in trace -f's interleaving re-recorded, the kernel
+a few calls slower. On four cores (`-cores 4`), a pipeline and a cat
+run as before. The functions take a `mem_` prefix, as TinyKernelFS's
+take `fs_` (the kernel has its own `write`, `size`). What was planned:
 
 - a process's memory, a record of its own (`space`: base and size
   today), kept in the process;
@@ -116,11 +121,12 @@ byte for byte):
 - `user space va n` (the kernel's address for a user's bytes),
   `copy` (fork's), `load` (exec's image and arguments), `release`,
   and `window space` (what entry.tm and a core's mailbox get);
-- its .mli the memory chapter's header: the layout of the 256 MB
-  (from TinyKernel.mli), the history notes (now in TinyKernel.mli,
-  moved there).
+- its .mli the memory chapter's header: a partition drawn, the
+  history notes (moved from TinyKernel.mli; the layout of the 256 MB
+  stayed there, being the kernel's whole, and spawn's note, being a
+  call's).
 
-One question: the kernel reaches a user's bytes as one address
+Left from this stage: the kernel reaches a user's bytes as one address
 (`user p va n`), used by read, write and the strings. With pages a
 buffer crosses pages that are not together; the calls that take a
 buffer then go page by page (`user_iter`), a change to make in this
@@ -167,7 +173,8 @@ stage already, so that stage 4 changes only the module.
 
 ## Status
 
-2026-10-23: plan written; stage 1's spawn built and checked (above).
+2026-10-23: plan written; stage 1's spawn built and checked (above);
+stage 2, TinyKernelMemory.ml, done but for `user_iter`.
 Measuring: the self-build on four cores (`-j 6`) with spawn, beside
 the same with fork and one core with fork (plan_tiny_multicore.md's
 Status will have the numbers).

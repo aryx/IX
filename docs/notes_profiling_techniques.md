@@ -27,6 +27,7 @@ code" while two of the tools below were in the tree.
 | Is it the collector? | `ML_HEAP=n program`; `Gc.set` of `space_overhead`; `copy<>` and `collect<>` in a profile | 1 | the same run with a larger heap: what changes is the collector's |
 | What does one operation cost? | ten lines compiled as the program is, 100 turns and 1,100 under `mini-5i -s` | 2 | "a float multiplied: 65 instructions; an integer division: 200" |
 | On Linux, with OCaml's compiler? | timers in the loop (`Unix.gettimeofday`), then `perf`, then callgrind | 1 to 5 | ms a part; functions. Not mini-ml's code: callgrind stops at an instruction of its |
+| How far is mini-ml's code from OCaml's? | `tests/icount.c` on the arm64 host, both builds of the same program; `mini-5i -prof` and callgrind by function | 10 | "a frame of mini-doom: 16.25 million, 7.59 by OCaml 4.14" |
 | A command's time at rc's prompt | `tests/perf/timecmd.py CMD -- EMULATOR...` | 5 | wall time, N times |
 | The boot, the collector's parameters | `tests/perf/gc_boot.sh` | 5 | seconds, collections |
 
@@ -137,6 +138,42 @@ not a profile: `mini-5i -s` on `-dump-frame n` for n of 35, 65 and
 instructions each against 6.2 before them; 1.9 after the fix. **A
 profile says where a session's time went; the session has to do what
 the user did.**
+
+## mini-ml's code against OCaml's (the arm64 host)
+
+The question "is it the compiler or the program?" has a reference
+on the host: it is aarch64, and OCaml 4.14's ocamlopt compiles ix's
+sources to arm64 (dune's build) as mini-ml does (`mini-mk`, `_mk/7`),
+from the same files, to the same platform (ppm's, `-dump-frame`).
+ocaml-light, OCaml 1.07, is not that reference: ix's programs use what
+it does not have (`1_000_000`, labels, `Option`).
+
+- **The count.** `tests/icount.c`: the processor's counter of user
+  instructions on a command (perf_event_open; there is no `perf` on
+  the host). Exact for mini-ml's code, within 0.2% for OCaml's. A
+  frame: the run to frame 61 less the run to frame 31, by 30.
+- **By function.** mini-ml's: `mini-5i -prof` (it runs arm64 Linux
+  executables) and `mini-prof -diff` of the two runs (a few minutes).
+  OCaml's: callgrind on the two runs, the functions' counts
+  subtracted. Not callgrind on mini-ml's: valgrind stops at an
+  instruction mini-ld emits (LDRSW of a literal). Ubuntu's qemu-user
+  has no `-plugin`.
+- **The frames are not the same bytes** across the two compilers on
+  arm64 (OCaml fuses a multiplication and an addition; a few % of
+  mini-doom's pixels): compare each compiler's frames with its own.
+- Build both in a worktree of HEAD (other sessions change the tree),
+  with `MKSHELL=mini-rc` for mini-mk by hand.
+
+What it found the first time (2026-10-23, mini-doom, a frame): mini-ml
+17.87 million, OCaml 7.13: 2.5 times. And something of the program,
+not of either compiler: about half of OCaml's frame was its runtime's
+polymorphic compare, most of it the renderer's `min` and `max` on
+ints (Stdlib's are polymorphic: a call to compare each time, in each
+column and span). With `Int.min` and `Int.max`, OCaml's frame 27% fewer
+instructions, mini-ml's 1% (its compare was cheaper, and most of its
+`cmp` is elsewhere, likely the floats' comparisons it does not type).
+Comparing with another compiler finds what neither profile alone
+says.
 
 ## The collector, which is in every profile
 

@@ -186,8 +186,8 @@ caml_input(value ch, value s, value ofs, value len)
 	c = (Chan*)ch;
 	if(c->len == 0 && Long_val(len) > 0 && fill_or_signal(c) == Interrupted)
 		return Val_int(-1);
-	/* what the buffer has, at once (strings.c's move_bytes: words when
-	 * it can). A file read was a call of getc_chan a byte: mini-doom's
+	/* what the buffer has, at once (strings.c's move_bytes: the C
+	 * library's memmove). A file read was a call of getc_chan a byte: mini-doom's
 	 * WAD of 2 MB, 90 million instructions of its start (mini-prof,
 	 * plan_profiler.md).
 	 * old: n = 0;

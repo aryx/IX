@@ -76,35 +76,24 @@ create_string(value n)
 	return string_alloc(Long_val(n));
 }
 
-/* OPTIMIZATION: a string's bytes copied and filled a word at a time
- * (the bytes before the first whole word and after the last, one by
- * one): the C library's memmove is a byte a turn, and the fill was so
- * here; a frame of pixels a program makes is a megabyte cleared, then
- * copied (docs/plans/plan_playground_speed.md: the two were 29% of a
- * frame's instructions). Words when the two places are a multiple of a
- * word apart and the copy can go forward.
- * old: memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n));
- *   for(i = 0; i < Long_val(n); i++) Bytes(s)[Long_val(o) + i] = Long_val(c); */
+/* a string's bytes copied: the C library's memmove, each machine's
+ * assembly (lib_core/libc/arch: 16 bytes a turn on arm64), where it
+ * was a byte a turn and this copied by words (docs/plans/plan_pi4.md:
+ * 9% of the Pi 4's boot then).
+ * old: if((((uvalue)d ^ (uvalue)s) & (W - 1)) != 0 || (d > s && d < s + n)){
+ *     memmove(d, s, n);
+ *     return;
+ *   }
+ *   while(n > 0 && ((uvalue)d & (W - 1)) != 0){ *d++ = *s++; n--; }
+ *   for(; n >= W; n -= W){ *(value*)d = *(value*)s; d += W; s += W; }
+ *   while(n > 0){ *d++ = *s++; n--; }
+ * which was itself an optimization (plan_playground_speed.md: copy and
+ * fill 29% of a frame's instructions) of
+ *   memmove(Bytes(s2) + Long_val(o2), Bytes(s1) + Long_val(o1), Long_val(n)); */
 void
 move_bytes(char *d, char *s, value n)
 {
-	if((((uvalue)d ^ (uvalue)s) & (W - 1)) != 0 || (d > s && d < s + n)){
-		memmove(d, s, n);
-		return;
-	}
-	while(n > 0 && ((uvalue)d & (W - 1)) != 0){
-		*d++ = *s++;
-		n--;
-	}
-	for(; n >= W; n -= W){
-		*(value*)d = *(value*)s;
-		d += W;
-		s += W;
-	}
-	while(n > 0){
-		*d++ = *s++;
-		n--;
-	}
+	memmove(d, s, n);
 }
 
 value

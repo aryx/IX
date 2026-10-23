@@ -251,3 +251,16 @@ mini-ml bug, bugs/ix.md's row). Not run: `check-ix` and the graphical
 checks. **The shared tree's Pi 4 kernel faults at its boot today with
 either memmove**: other sessions' changes not committed (mini-ml's
 runtime and code generation, the kernel's drawing), not this work.
+
+2026-10-23, paused (the author: "let's pause the Pi4 now because I miss
+the mini hdmi cable"). Stage 0 is done and committed (a75924a0,
+7001c4be). What QEMU could still do before the board, when this
+resumes: stage 1 (the firmware's answers asked, not written in
+`pi4/machine.c`: QEMU answers the property channel) and stage 2's first
+half (the SD card on EMMC2 under QEMU's raspi4b). The board needs the
+cable (the Pi 4's ports are micro HDMI), and the open questions above
+are still to be answered. Meanwhile: mini-ml's runtime `move_bytes` is
+the C library's memmove (its word loop kept as an `old:` comment);
+`languages/ml/tests/run.sh` 5 and 7 on `runtime/` and `tiny/` as
+before (arm's arith and strings failing, bugs/ix.md); the Pi 4's boot
+not timed again.

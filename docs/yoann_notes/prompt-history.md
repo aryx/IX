@@ -46014,3 +46014,252 @@ Claude verified that page and mini-office still build, and left the changes unco
 **Yoann:**
 
 > independently, what is the current speed of the code generate by mini-ml compared to ocaml-light or compared to ocaml 4.14?
+
+------------------------------------------------------------------------
+
+## 2026-10-22 19:43
+
+**Yoann:**
+
+> ok going to sleep, hopefully GHA CI is working when I wakeup
+
+**Claude (summary):**
+
+Claude said good night and promised to keep watching CI, reporting each run's result by morning.
+Claude reported that the `7f15c58f` run passed test-all, and traced the 5.5.1 build failure to the Doom frames.
+Claude noted that commit `1666dfff` addresses the Doom frames failure, and started watching its run 39840838761.
+Claude also picked up the newest run, 39842718298, from another session's push, to check it too.
+Claude committed to report which job failed and its log if any run fails, and to fix it when the cause is clear.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:06
+
+**Yoann:**
+
+> I've pushed more commits
+
+**Claude (summary):**
+
+Claude said it would wait for the CI run triggered by Yoann's newly pushed commits.
+Claude committed to reporting that run's result once it finished.
+If the run failed, Claude would name the failing job and explain why it failed.
+Claude gave no results or details about the earlier CI fixes in this reply.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:06
+
+**Yoann:**
+
+> excellent, let's commit those notes
+
+**Claude (summary):**
+
+Claude committed the notes as 2c034b97, the commit requested in this turn.
+Claude's commit covers three files: apps/page/Pageview.ml, apps/office/suite/Office_view.mli, and docs/notes_font.md.
+Claude checked that all of its changes from this session are now included in that commit.
+Claude reported that nothing from this session remains uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:05
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the framebuffer plan as `781ea5df`, touching only `plan_playground_framebuffer.md`.
+Claude recommended a new scaled-draw message in the draw protocol, rather than a scaled load that copies 512 KB more per frame.
+Claude asked whether the Pi's screen is 1280×800, where `scale=4` fills the monitor, or 1024×768, where `scale=3` gives 960×600.
+Claude flagged the 1024×768 option with `scale=3` as the largest integer fit, so the choice was between the two screens.
+Claude was waiting on those answers before starting F5, the integer scaled draw in the kernel, and then F4.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:09
+
+**Yoann:**
+
+> we can do the largest; and it's ok to have a new message in the draw protocol; we don't need to maintain backward compatibility with plan 9 or principia. Do you think there is a better plan to get reasonable fps with the whole screen used for doom/quake and possiblt other games?
+
+**Claude (summary):**
+
+Claude compared kernel scaling, a Pi hardware-scaled full-screen mode (F6), and a faster Doom renderer.
+Claude's stretch argument assumed mini-9pi's 1024×768 framebuffer gets scaled to the 1280×800 monitor by the Pi's GPU.
+Claude recommended setting mini-9pi's Pi screen to 1280×800, so scale=4 maps game pixels exactly onto the display.
+Claude suggested measuring at scale=4 on the Pi 2 before deciding whether F6 was worth adding to the plan.
+Claude then asked whether to add F6 to the plan and start on F5 and F4.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:07
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended making page's book opening lazy, because reading all 1083 page dictionaries takes 20 to 30 seconds under QEMU.
+Claude proposed laying out the book from one page's size, then reading each page only when it scrolls into view.
+That should cut opening to a second or two, but it changes `Pdf.pages` and page layout, so Claude wants mixed-size tests.
+Claude ranked this as the next step, ahead of shared program text in mini-9pi, the PDF outline, and text search in page.
+Claude also listed the Pi 2 mouse wheel check and smaller items like the letter masks and kernel stack guard pages.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:06
+
+**Yoann:**
+
+> we're mostly focused on arm for now, with the Pi1, Pi2 work
+
+**Claude (summary):**
+
+Claude said `count.sh` only handled arm64, so it added an `O=5` setting to count arm under qemu-arm against ocaml-light's arm ocamlopt. Its arm64 `-O3` table was limbs 1.52, fib 2.63, tak 2.51, sched 2.07, maps 0.70 versus ocaml-light's ocamlopt. Claude reported fib at 2.67 times ocaml-light's instructions with `-O3` on arm. It said pixels and samples can't be compiled with ocaml-light because it predates `Bytes` and most of `Float`. The arm counts were still running in the background at the time.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:17
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude fixed the kernel's 1,024-byte exec argument limit that broke lib_graphics's file-list echo in mkfiles/libs.rc.
+Exec now exports maxargs at 256 KB, and Usermem.user_string reads user pages one at a time.
+Claude also made self.sh pass ${MLOPT:--O3}, so the card's OCaml objects should match Linux's build.
+Claude added a bugs/ix.md row for the exec bug and changed count.sh to O=5, all uncommitted.
+Claude also reported the 176-minute self-build, failing only on netscape's link and the games' silent ml exit.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:14
+
+**Yoann:**
+
+> so page loads some images in the kernel, pages, and then just move them around when you scroll? and it loads a few pages? and then frees them?
+
+**Claude (summary):**
+
+Claude confirmed that pages are loaded into the kernel once and then moved by copy each frame.
+Claude flagged a gap: drawing ahead hides the next page's drawing, but not its 40 to 70 ms kernel load.
+That load lands on the first frame where the next page appears, since the platform loads a picture only on first display.
+Claude proposed letting the platform load a Bitmap marked "not shown" before it is displayed, via a small interface change.
+Claude said to do this only if the load cost actually matters on the Pi 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-22 20:07
+
+**Yoann:**
+
+> what did you do in summary to fix all the previous CI issues today?
+
+**Claude (summary):**
+
+Claude traced CI's red runs from 2026-10-21 and got them green again with run 39840838761.
+Claude added `if not echo` guards to the kernels' test-all recipes, so rc's false status no longer fails them.
+Claude pointed mini-quake's Light.ml and Mkwad.ml at games/fps/quake in compile_ix.sh, and another session fixed flow.out.
+Claude fixed a mini-ml -O3 bug that read constants with the host's int width, breaking fixpoint-arm on 31-bit arm.
+Claude rounded mini-doom's sine, tangent and tantoangle tables to id's fixed point and re-recorded its frames.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:09
+
+**Yoann:**
+
+> let's commit the progress
+
+**Claude (summary):**
+
+Claude committed the work as fb90f611, raising the exec argument limit from 1,024 bytes to 256 KB.
+Claude changed tests/self.sh to compile with -O3 and set O=5 in languages/ml/tests/count.sh.
+Claude recorded the bug in bugs/ix.md and this run's result in plan_self_hosting.md: 176 minutes against 2h59.
+Claude did not run the -O3 card build, which takes about three hours under QEMU, or make check.
+Claude left docs/yoann_notes/prompt-history.md out of the commit, since another session had staged it.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found no commits of its own pending, since all five fixes were already pushed.
+Claude left docs/yoann_notes/prompt-history.md alone, because other sessions stage and edit that file.
+Claude pointed out that fb90f611, the mini-9pi exec-argument commit, is committed locally but not pushed.
+Claude asked whether Yoann wanted prompt-history.md committed and both commits pushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:09
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that everything from this session is committed, and that the other uncommitted changes belong to another session.
+Claude asked Yoann to run `usbd -v` on the Pi 2 to confirm the wheel and drawing-ahead behaviour on real hardware.
+Claude listed five follow-ups: loading ahead pages in the kernel, lazy page reads, a stack guard page, patching ocaml-light's `Hashtbl.replace`, and sharing program text across execs.
+Claude also suggested PDF outline navigation and text search as reading features.
+Claude recommended the stack guard page first, since it would have saved hours on the session's worst bug, then page loading.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:10
+
+**Yoann:**
+
+> cam we close the session?
+
+**Claude (summary):**
+
+Claude said this session can be closed now without losing any of its work.
+Claude reported that GitHub CI is passing and every fix from this session has been pushed.
+Claude confirmed that nothing from this session is still running in the background.
+Claude flagged prompt-history.md as uncommitted and commit fb90f611 as unpushed, both from other sessions.
+Claude said closing this session will not affect those leftover items, so they can stay as they are.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:10
+
+**Yoann:**
+
+> can we close the session?
+
+**Claude (summary):**
+
+Claude confirmed the session could be closed, since no QEMU run or build was still going.
+Claude reported that all work is committed in fb90f611, and only docs/yoann_notes/prompt-history.md remains modified, belonging to another session.
+Claude recommended rerunning the card build with self.sh's fix, about three hours under QEMU, to match Linux's objects at -O3.
+Claude flagged one doom or quake `ml` compile that exits 1 silently on the card but works under qemu-arm.
+Claude suggested starting on mini-ml's call entry and exit cost, the main gap against ocaml-light, and pointed to the scratchpad copy of the tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 05:10
+
+**Yoann:**
+
+> can we close the session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since all of its work is committed at 2c034b97.
+Claude listed the open items: the ocaml_light bug in section 9, copy-on-write numbers, and font paths.
+Claude noted that the modified files in the tree belong to another session, not this one.
+Claude said the private build copy under the /tmp scratchpad is disposable and can be discarded.
+Claude suggested a new session start from its last list, beginning with the Pi 2 wheel test.

@@ -229,6 +229,20 @@ let func m out (fn : func) =
     ins "%s\t$%d, R%d" (shift Lsl) (if w = 4 then 2 else 3) i;
     ins "ADD\tR%d, R%d" b i
   in
+  (* the untagged index in i checked against string s's length (R0 and
+   * the scratch register: the length as StrLen computes it) *)
+  let byte_bound s i =
+    ins "%s\t%d(R%d), R0" mov (-w) s;
+    ins "%s\t$10, R0" (shift Lsr);
+    ins "%s\t$%d, R0" (shift Lsl) (if w = 4 then 2 else 3);
+    ins "SUB\t$1, R0";
+    ins "ADD\tR0, R%d, R%d" s m.tmp;
+    ins "MOVBU\t0(R%d), R%d" m.tmp m.tmp;
+    ins "SUB\tR%d, R0" m.tmp;
+    ins "CMP\tR0, R%d" i;
+    ins "BLO\t2(PC)";
+    ins "BL\tcaml_array_bound_error(SB)"
+  in
   List.iter (fun i ->
     match i with
     | Label l ->
@@ -251,18 +265,20 @@ let func m out (fn : func) =
     | SetIndex -> let b = !sp in index b (b - 1); ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1); sp := b - 3
     (* a string's byte: the index untagged and added to the string's
      * address; the byte tagged when read, untagged (in the scratch
-     * register) when written. No check: the unchecked accessors'. *)
-    | ByteGet ->
+     * register) when written. Checked: the safe accessors'. *)
+    | ByteGet checked ->
         let s = !sp in
         decr sp;
         ins "%s\t$1, R%d" (shift Asr) !sp;
+        if checked then byte_bound s !sp;
         ins "ADD\tR%d, R%d" s !sp;
         ins "MOVBU\t0(R%d), R%d" !sp !sp;
         ins "%s\t$1, R%d" (shift Lsl) !sp;
         ins "ORR\t$1, R%d" !sp
-    | ByteSet ->
+    | ByteSet checked ->
         let s = !sp in
         ins "%s\t$1, R%d" (shift Asr) (s - 1);
+        if checked then byte_bound s (s - 1);
         ins "ADD\tR%d, R%d" s (s - 1);
         ins "%s\t$1, R%d, R%d" (shift Asr) (s - 2) m.tmp;
         ins "MOVB\tR%d, 0(R%d)" m.tmp (s - 1);

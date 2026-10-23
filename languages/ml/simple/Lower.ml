@@ -225,6 +225,14 @@ let raise_failure exn line =
 (* Primitives *)
 (*****************************************************************************)
 
+(* OPTIMIZATION (immediates): the comparisons that the type checker saw
+ * on ints, chars, booleans or () (Typing.immediates), by their place
+ * in the text: the integers' comparison, a CMP and its branch, not
+ * Poly's test of both operands then compare's call for others. fib's
+ * n < 2 was 11 instructions on arm, 2 now.
+ * old: every =, <... Poly (empty with mini-ml -unsafe-types) *)
+let immediates : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
+
 (* (off: mini-ml -calls) *)
 let strings_in_place = ref true
 let floats_in_place = ref true
@@ -261,8 +269,16 @@ let prim p n =
    * a pixel is four bytes, a message to the draw device forty).
    * old: every one of the five a CallC *)
   | "%string_length" when !strings_in_place -> emit StrLen
-  | "%string_unsafe_get" when !strings_in_place -> emit ByteGet
-  | "%string_unsafe_set" when !strings_in_place -> emit ByteSet; emit (Int 0)
+  | "%string_unsafe_get" when !strings_in_place -> emit (ByteGet false)
+  | "%string_unsafe_set" when !strings_in_place -> emit (ByteSet false); emit (Int 0)
+  (* OPTIMIZATION (strings_in_place): the checked ones too, the index
+   * compared with the length there (ocamlopt's way). mini-ml compiling
+   * its Typing.ml spent 7% of its instructions in ml_string_get's
+   * calls, the lexer's and the strings' functions' (String.get, the
+   * other's Bytes.get: s.[i]).
+   * old: (below) the runtime's ml_string_get and ml_string_set *)
+  | "%string_safe_get" when !strings_in_place -> emit (ByteGet true)
+  | "%string_safe_set" when !strings_in_place -> emit (ByteSet true); emit (Int 0)
   | "%string_length" -> emit (CallC ("ml_string_length", 1))
   | "%string_safe_get" | "%string_unsafe_get" -> emit (CallC ("ml_string_get", 2))
   | "%string_safe_set" | "%string_unsafe_set" -> emit (CallC ("ml_string_set", 3))
@@ -498,7 +514,9 @@ and app env (f : Scope.expr) args tl =
   | Evar (Prim (p, n, _)), _, _ when m >= n ->
       let ls = slots (later n) in
       operands env (List.map (fun e -> E e) (List.rev (first n)));
-      prim p n;
+      (match List.assoc_opt p ops with
+       | Some (Poly r) when Hashtbl.mem immediates f.span -> emit (Op (Cmp r))
+       | _ -> prim p n);
       rest ls
   | Evar _, Some (lab, n), _ when m >= n ->
       let ss = slots args in

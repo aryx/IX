@@ -50,8 +50,8 @@ let arity : L.t -> int * int = function
   | SetField _ -> 2, 0
   | Index -> 2, 1
   | SetIndex -> 3, 0
-  | ByteGet -> 2, 1
-  | ByteSet -> 3, 0
+  | ByteGet _ -> 2, 1
+  | ByteSet _ -> 3, 0
   | StrLen -> 1, 1
   | Float2 _ -> 2, 1
   | Float1 _ | FloatOfInt | IntOfFloat -> 1, 1
@@ -163,8 +163,8 @@ let build (f : L.func) =
       | SetIndex -> let b = pop () in let i = pop () in let v = pop () in ignore (emit id (SetIndex (b, i, v)))
       (* old: each a call of the runtime's (ml_string_get, caml_addfloat...)
        *   | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs))) *)
-      | ByteSet -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
-      | ByteGet | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat ->
+      | ByteSet _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
+      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat ->
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
@@ -336,7 +336,9 @@ let show_ins = function
   | CallC (g, l) -> Printf.sprintf "callc %s %s" g (vs l)
   | Prim (p, l) ->
       let name = match p with
-        | ByteGet -> "byte" | ByteSet -> "setbyte" | StrLen -> "length" | Float2 f | Float1 f -> f
+        | ByteGet c -> if c then "byte?" else "byte"
+        | ByteSet c -> if c then "setbyte?" else "setbyte"
+        | StrLen -> "length" | Float2 f | Float1 f -> f
         | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat" | _ -> "prim" in
       Printf.sprintf "%s %s" name (vs l)
   | Caught k -> Printf.sprintf "caught %d" k
@@ -424,7 +426,7 @@ let out (lf : L.func) (fn : func) : L.func =
       | Op (o, xs) -> List.iter get (List.rev xs); emit (L.Op o); set v
       | Call (t, xs) -> emit (L.Call (t, List.map slot xs, false)); set v
       | CallC (g, xs) -> List.iter get (List.rev xs); emit (L.CallC (g, List.length xs)); set v
-      | Prim (L.ByteSet, xs) -> List.iter get (List.rev xs); emit L.ByteSet
+      | Prim ((L.ByteSet _ as p), xs) -> List.iter get (List.rev xs); emit p
       | Prim (p, xs) -> List.iter get (List.rev xs); emit p; set v
       | Caught k -> emit (L.Catch k); set v
       | TryExit k -> emit (L.TryExit k)

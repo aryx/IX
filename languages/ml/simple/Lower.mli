@@ -137,7 +137,12 @@ val poly_function : Ir.rel -> string
 
 val mangle : string -> string
 
-(* a string's byte (the unchecked accessors') and its length as
+(* the places of the comparisons on immediates (Typing.immediates),
+ * compiled as the integers' (Ir.Cmp), not compare's (Ir.Poly); set
+ * before unit_ *)
+val immediates : (Ast.span, unit) Hashtbl.t
+
+(* a string's byte (checked or not) and its length as
  * instructions (Ir.ByteGet, ByteSet, StrLen), not calls of the runtime:
  * on, unless mini-ml -calls *)
 val strings_in_place : bool ref

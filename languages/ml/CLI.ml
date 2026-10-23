@@ -295,6 +295,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | _ when !facts -> print caps (Closure_facts.unit_ name items); 0
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
+                Hashtbl.reset Lower.immediates;
+                if not !unsafe && !Lower.calls_whole then
+                  List.iter (fun sp -> Hashtbl.replace Lower.immediates sp ())
+                    (Typing.immediates ());
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->

@@ -64,7 +64,16 @@ let func m out (fn : func) (lf : L.func) =
   let ins fmt = Printf.ksprintf (fun s -> line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
   let lab l = line (fun _ _ _ -> l ^ ":\n") in
   let tries = ref 0 and cargs = ref (if m.arch = Arm then 1 else 0) in
-  let loc, frame = Alloc.alloc fn ~nregs:(List.length m.vregs) ~base:lf.nslots in
+  (* OPTIMIZATION: the stack code's own slots (its variables and
+   * temporaries) are values here, in registers or in slots of their
+   * own, so the frame has none of them, unless a handler's function
+   * reads and writes them in memory (Ssa_build): fib's frame was 9
+   * words, 7 of them zeroed at each call, now 3.
+   * old: ~base:lf.nslots always *)
+  let memory = List.exists (function L.TryEnter _ -> true | _ -> false) lf.code in
+  let base = if memory then lf.nslots else fn.nparams + 1 in
+  let def v = Hashtbl.find fn.defs v in
+  let loc, frame = Alloc.alloc fn ~nregs:(List.length m.vregs) ~base in
   let slot_ref f i =
     let off = w * (i - f) in
     if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) vsp, "0(R19)" else "", sprintf "%d(R%d)" off vsp
@@ -232,20 +241,37 @@ let func m out (fn : func) (lf : L.func) =
     lab ok;
     finish v 0
   in
+  (* the untagged index in t checked against string a's length,
+   * computed in R0 and r3 (Gen's byte_bound) *)
+  let byte_bound a =
+    ins "%s\t%d(R%d), R0" mov (-w) a;
+    ins "%s\t$10, R0" (shift Lsr);
+    ins "%s\t$%d, R0" (shift Lsl) (if w = 4 then 2 else 3);
+    ins "SUB\t$1, R0";
+    ins "ADD\tR0, R%d, R%d" a r3;
+    ins "MOVBU\t0(R%d), R%d" r3 r3;
+    ins "SUB\tR%d, R0" r3;
+    ins "CMP\tR0, R%d" t;
+    ins "BLO\t2(PC)";
+    ins "BL\tcaml_array_bound_error(SB)"
+  in
   let prim v (p : L.t) xs =
     match p, xs with
     (* a string's byte: the index untagged and added to its address *)
-    | ByteGet, [ s; i ] ->
+    | ByteGet checked, [ s; i ] ->
         let a = src s r1 in let b = src i r2 in let d = dst v r3 in
         ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        if checked then byte_bound a;
         ins "ADD\tR%d, R%d" a t;
         ins "MOVBU\t0(R%d), R%d" t d;
         ins "%s\t$1, R%d" (shift Lsl) d;
         ins "ORR\t$1, R%d" d;
         finish v d
-    | ByteSet, [ s; i; x ] ->
-        let a = src s r1 in let b = src i r2 in let c = src x r3 in
+    | ByteSet checked, [ s; i; x ] ->
+        let a = src s r1 in let b = src i r2 in
         ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        if checked then byte_bound a;
+        let c = src x r3 in
         ins "ADD\tR%d, R%d" a t;
         ins "%s\t$1, R%d, R%d" (shift Asr) c r3;
         ins "MOVB\tR%d, 0(R%d)" r3 t
@@ -299,8 +325,8 @@ let func m out (fn : func) (lf : L.func) =
         ins "ORR\t$1, R%d" d;
         finish v d
     (* old: (and without in_place) the runtime's, as before *)
-    | ByteGet, _ -> call_c "ml_string_get" xs; finish v 0
-    | ByteSet, _ -> call_c "ml_string_set" xs
+    | ByteGet _, _ -> call_c "ml_string_get" xs; finish v 0
+    | ByteSet _, _ -> call_c "ml_string_set" xs
     | StrLen, _ -> call_c "ml_string_length" xs; finish v 0
     | (Float2 f | Float1 f), _ -> call_c f xs; finish v 0
     | FloatOfInt, _ -> call_c "caml_floatofint" xs; finish v 0
@@ -406,6 +432,28 @@ let func m out (fn : func) (lf : L.func) =
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
           lab ok;
           finish v 0
+      (* OPTIMIZATION (in_place): a big block (Lower.block: more than 4
+       * fields, made empty then filled) taken here too, its fields (),
+       * as the runtime's obj_block does: mini-ml compiling its Typing.ml
+       * spent 4.4% of its instructions in obj_block's calls.
+       * old: the call, as below *)
+      | CallC ("obj_block", [ x; y ])
+        when in_place
+             && (match def x, def y with
+                 | Const _, Const n -> n > 0 && n <= Gen.alloc_most
+                 | _ -> false) ->
+          let tag, n =
+            match def x, def y with Const t, Const n -> t, n | _ -> assert false
+          in
+          let slow = glabel () and ok = glabel () in
+          take n tag slow;
+          ins "%s\t$1, R%d" mov t;
+          for k = 0 to n - 1 do ins "%s\tR%d, %d(R0)" mov t (w * k) done;
+          ins "B\t%s" ok;
+          lab slow;
+          call_c "obj_block" [ x; y ];
+          lab ok;
+          finish v 0
       | Alloc (tag, xs) ->
           (* the collector may run: the fields, in memory, read after *)
           cargs := max !cargs 2;
@@ -473,6 +521,17 @@ let func m out (fn : func) (lf : L.func) =
   pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
   let slot_at i = let pre, a = slot_ref f i in pr "%s" pre; a in
   for i = 0 to min fn.nparams m.nregs do let a = slot_at i in pr "\t%s\tR%d, %s\n" mov i a done;
+  (* the parameters with a register (Alloc), from their slots, in
+   * their order (not the table's: the stdlib's hash function's) *)
+  let params =
+    Hashtbl.fold (fun v ins acc ->
+      match ins, loc v with
+      | Param i, Alloc.Reg c -> (i, vreg c) :: acc
+      | _ -> acc) fn.defs []
+  in
+  List.iter (fun ((i, r) : int * int) ->
+    let a = slot_at i in
+    pr "\t%s\t%s, R%d\n" mov a r) (List.sort compare params);
   (* the other slots zeroed: the collector scans them *)
   (match m.arch with
    | Arm64 -> for i = fn.nparams + 1 to f - 1 do let a = slot_at i in pr "\tMOV\tZR, %s\n" a done

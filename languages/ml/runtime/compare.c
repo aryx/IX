@@ -36,9 +36,18 @@ top:
 	if(ta != tb)
 		return ta < tb ? -1 : 1;
 	if(ta == String_tag){
+		if(a == b)
+			return 0;
 		n = length(a);
 		m = length(b);
-		for(i = 0; i < n && i < m; i++)
+		/* OPTIMIZATION: a word at a time while the two are the same,
+		 * the words both have whole; then the bytes (names compared by
+		 * Hashtbl and List.assoc: mini-ml compiling its Typing.ml spent
+		 * 5% of its instructions in cmp).
+		 * old: i = 0, the bytes' loop alone */
+		for(i = 0; i + W <= n && i + W <= m && Field(a, i / W) == Field(b, i / W); i += W)
+			;
+		for(; i < n && i < m; i++)
 			if(Bytes(a)[i] != Bytes(b)[i])
 				return Bytes(a)[i] < Bytes(b)[i] ? -1 : 1;
 		return n < m ? -1 : n > m ? 1 : 0;

@@ -46,8 +46,9 @@
  * since ref [] is a call, which makes one cell: generalized, the cell
  * would take integers and give them back as strings.
  *
- * Nothing after this pass reads a type: Lower compiles the tree it
- * checked. So a program ocaml-light accepts compiles without it
+ * Nothing after this pass reads a type, but for one optimization, the
+ * comparisons on integers (immediates below): Lower compiles the tree
+ * it checked. So a program ocaml-light accepts compiles without it
  * (-unsafe-types), and the tests compare what it accepts, and what
  * -i prints, with ocaml-light's.
  *
@@ -130,5 +131,9 @@ val unit_ : string -> Scope.item list -> (string * string) list
  * is (no instance). Then unit_ doesn't stop at a definition's type
  * error: errors has them, their lines and messages, and a definition
  * with one has the dictionaries that were found *)
+(* the comparisons (=, <, ...) the unit just checked has on ints, chars,
+ * booleans or (), where each is in the text: Lower's immediates *)
+val immediates : unit -> Ast.span list
+
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list
 val errors : unit -> (int * string) list

@@ -74,7 +74,12 @@ let alloc (fn : func) ~nregs ~base =
        | _ -> ());
       live := IS.union (IS.remove v !live) (IS.of_list (uses v))) (List.rev bl.body);
     (match bl.term with Try (_, _, h) -> IS.iter (fun x -> Hashtbl.replace memory x ()) live_in.(h) | _ -> ())) fn.blocks;
-  Hashtbl.iter (fun v ins -> match ins with Param _ | Caught _ -> Hashtbl.replace memory v () | _ -> ()) fn.defs;
+  (* OPTIMIZATION: a parameter not live across a safepoint may have a
+   * register too, loaded from its slot at the entry (Emit), and not at
+   * each use: an accessor's, a loop's bound...
+   * old: Param _ | Caught _ -> memory *)
+  Hashtbl.iter (fun v ins ->
+    match ins with Caught _ -> Hashtbl.replace memory v () | _ -> ()) fn.defs;
   (* the others colored in the dominator tree's order, the lowest free
    * register not held by a value live there: optimal for SSA, whose
    * interference graph is chordal (Hack, 2006); none free, memory *)
@@ -150,7 +155,8 @@ let alloc (fn : func) ~nregs ~base =
     match def v with
     | Zero | Const _ | Blk _ | Symb _ -> Nil
     | _ when dead v -> Nil
-    | Param i -> Mem i
+    | Param i ->
+        (match Hashtbl.find_opt color v with Some c -> Reg c | None -> Mem i)
     | _ -> (
         match Hashtbl.find_opt color v with
         | Some c -> Reg c

@@ -15,7 +15,7 @@
  *
  *     let rec loop i acc = if i = 0 then acc else loop (i - 1) (acc + i)
  *
- *     Int 0; Get 1; Op (Poly Eq); Jz 3     i = 0? (i pushed last: on top)
+ *     Int 0; Get 1; Op (Cmp Eq); Jz 3      i = 0? (i pushed last: on top)
  *     Get 2; Ret                           acc
  *     Label 3
  *     Get 1; Get 2; Op Add; Set 3          acc + i, the last argument first
@@ -25,10 +25,11 @@
  *
  * Two things to see. A call's operands are not on the stack but in
  * slots, named by the call: at a call nothing is left in a register
- * (Gen.mli says why, the collector). And = is [Poly Eq], though i is
- * an int: the types were forgotten before Lower, so the comparison
- * tests at run time whether both are integers (Opti's eqs sees the
- * constant, and makes it [Cmp Eq]).
+ * (Gen.mli says why, the collector). And = is [Cmp Eq], the
+ * integers', because the type checker saw an int (Lower.immediates);
+ * at a type it did not know, or with -unsafe-types, it is [Poly Eq],
+ * which tests at run time whether both are integers and calls compare
+ * for the others (Opti's eqs sees a constant, and makes it [Cmp Eq]).
  *
  * design:
  * A stack machine needs no decision from the compiler that makes its
@@ -79,11 +80,11 @@ type t =
   | SetField of int                   (* the value below the block stored in its field *)
   | Index                             (* a block, an index (ML) by the field; bounds checked *)
   | SetIndex                          (* a block, an index, a value; bounds checked *)
-  (* a string's byte read and written in place, and its length: the
-   * unchecked accessors' (Lower.strings_in_place; calls of the runtime
-   * otherwise, as the checked ones are) *)
-  | ByteGet                           (* a string, an index by the byte there *)
-  | ByteSet                           (* a string, an index, a byte *)
+  (* a string's byte read and written in place, and its length
+   * (Lower.strings_in_place; calls of the runtime otherwise); true: the
+   * index checked, the safe accessors' *)
+  | ByteGet of bool                   (* a string, an index by the byte there *)
+  | ByteSet of bool                   (* a string, an index, a byte *)
   | StrLen                            (* a string by its length *)
   (* two floats by a new one, their sum, difference, product or
    * quotient; an integer by its float; a float by its integer: the

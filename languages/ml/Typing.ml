@@ -392,6 +392,13 @@ let rec pattern (p : Scope.pattern) : t * (int * t) list =
       List.iter (fun (id, t) -> match List.assoc_opt id ba with Some t' -> unify_what "this variable" t t' | None -> ()) bb;
       t, ba
 
+(* OPTIMIZATION (immediates): each comparison's type, where it is in
+ * the text; read once the unit is checked, its variables then linked *)
+let comparisons =
+  [ "%equal"; "%notequal"; "%lessthan"; "%lessequal"; "%greaterthan";
+    "%greaterequal" ]
+let compared : (Ast.span * t) list ref = ref []
+
 let rec infer env (e : Scope.expr) : t =
   let saved = !loc in
   loc := e.loc;
@@ -409,7 +416,10 @@ and infer_ env (e : Scope.expr) =
       | Some t, _ -> implicit env e (instantiate t)
       | None, Some ty -> implicit env e (instance ty)
       | None, None -> newvar ())
-  | Evar (Prim (_, _, ty)) -> instance ty
+  | Evar (Prim (p, _, ty)) ->
+      let t = instance ty in
+      if List.mem p comparisons then compared := (e.span, t) :: !compared;
+      t
   | Elet (false, bs, body) -> infer (let_ env bs) body
   | Elet (true, bs, body) -> infer (letrec env bs) body
   | Efunction cs ->
@@ -550,6 +560,7 @@ let rec generalize_all t =
 
 let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
+  compared := [];
   current := name;
   level := 1;
   wanted := []; found := []; failures := []; Hashtbl.reset givens;
@@ -586,3 +597,21 @@ let unit_ name (items : Scope.item list) =
              if not (instance_of declared inferred) then
                fail 0 (Printf.sprintf "the value %s: its interface's type isn't an instance of %s" x (show inferred))) decls);
   List.rev_map (fun (x, sym, prim) -> x, show (Hashtbl.find globals sym) ^ prim) !shown
+
+(* OPTIMIZATION (immediates): the comparisons whose operands are ints,
+ * chars, booleans or (): no pointer to follow, so the integers'
+ * comparison, not compare's (Lower). A place of the text seen at two
+ * types (an expression copied) is not one, unless both are. *)
+let immediates () =
+  let imm t =
+    List.exists (fun c ->
+      match expanded t, c with
+      | Con (d, []), Con (d', []) -> d.tpath = d'.tpath
+      | _ -> false) [ int_t; char_t; bool_t; unit_t ]
+  in
+  let h = Hashtbl.create 64 in
+  List.iter (fun (span, t) ->
+    let ok = match expanded t with Arrow (a, _) -> imm a | _ -> false in
+    let before = match Hashtbl.find_opt h span with Some b -> b | None -> true in
+    Hashtbl.replace h span (ok && before)) !compared;
+  Hashtbl.fold (fun span ok acc -> if ok then span :: acc else acc) h []

@@ -112,11 +112,14 @@ let sysrfork (p : proc) flag =
 (* exec, exits, await *)
 (*****************************************************************************)
 
-(* argv: the user's array of strings, to its 0 *)
+(* argv: the user's array of strings, to its 0; a string as long as
+ * the stack allows, as Plan 9's (mk's echo of lib_graphics's 93 files,
+ * mkfiles/libs.rc, is 1.6 KB)
+ * old: user_string p v maxpath *)
 let user_args (p : proc) addr =
   let rec go a acc =
     let v = Machine.get_le32 (user_read p a 4) 0 in
-    if v = 0 then List.rev acc else go (a + 4) (user_string p v maxpath :: acc) in
+    if v = 0 then List.rev acc else go (a + 4) (user_string p v Exec.maxargs :: acc) in
   go addr []
 
 let sysexec (p : proc) name argv =

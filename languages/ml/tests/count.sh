@@ -9,13 +9,17 @@
 # same count as mini-5i -s on mini-ml's; mini-5i cannot run ocamlopt's,
 # whose glibc uses NEON). ML_FLAGS: mini-ml's flags (opti's, later).
 # For variants/opti.md's numbers.
+# O=5: on arm instead, under qemu-arm, against ocaml-light's arm
+# ocamlopt (the Pi 1's and 2's machine).
 # usage: count.sh workdir prog.ml...   (needs goken, ocaml-light's arm64
 #   ocamlopt as for run.sh, and dune build)
 set -u
 ROOT=$(cd $(dirname $0)/../../.. && pwd)
 W=$(realpath -m $1); shift
-LIVE=1 $ROOT/languages/ml/tests/run.sh 7 $W "$@" | grep -v "^ok" >&2
-count() { (cd $W/run && qemu-aarch64 -one-insn-per-tb -d exec,nochain -D $W/q.log $1 > /dev/null 2>&1); grep -c '^Trace' $W/q.log; }
+O=${O:-7}
+QEMU=qemu-aarch64; [ $O = 5 ] && QEMU=qemu-arm
+LIVE=1 $ROOT/languages/ml/tests/run.sh $O $W "$@" | grep -v "^ok" >&2
+count() { (cd $W/run && $QEMU -one-insn-per-tb -d exec,nochain -D $W/q.log $1 > /dev/null 2>&1); grep -c '^Trace' $W/q.log; }
 echo "program mini-ml ocamlopt ratio"
 for ml in "$@"; do
   b=$(basename $ml .ml)

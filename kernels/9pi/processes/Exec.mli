@@ -73,6 +73,10 @@ val utzero : int
 val ustktop : int
 val tos_size : int
 
+(* the most the arguments may take, their strings and argv (TSTKSIZ's
+ * pages): exec's only bound on them, a string's too *)
+val maxargs : int
+
 (* [exec p path args]: the process's new program, its registers set
  * (pc, sp); the value its R0 gets (the Tos's address); Error when
  * the file is not a program, the old program kept *)

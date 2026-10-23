@@ -18,6 +18,7 @@ let aout_magic = 0x647
 
 (* the most the arguments may take (TSTKSIZ's pages) *)
 let stack_pages = 64
+let maxargs = stack_pages * pgsize
 
 (* the Pi1's clock, as 9pi's Tos says it (cpu->cpuhz) *)
 let cyclefreq = 700000000
@@ -98,7 +99,7 @@ let exec p path args =
   let t = round (utzero + hdr_size + text) pgsize in
   let d = round (t + data) pgsize and b = round (t + data + bss) pgsize in
   let ssize, stack = stack_image args p.pid in
-  if ssize > stack_pages * pgsize then begin Kchan.close c; raise (Error enovmem) end;
+  if ssize > maxargs then begin Kchan.close c; raise (Error enovmem) end;
   (* the new space: only the stack's pages the arguments are on; the
    * rest at their first touch (Fault) *)
   let pgdir = match Mmu.create () with Some d -> d | None -> Kchan.close c; raise (Error enovmem) in

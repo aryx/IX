@@ -32,9 +32,11 @@ build=$(mkdir -p "$build" && cd "$build" && pwd)
 cp "$card" "$build/card.img"
 
 # 1. the build on the card
+# (the card's ml with MLOPT as mkconfig's, -O3 unless set: its objects
+# Linux's)
 cat > "$build/session.cmds" <<EOF
 cd /src
-T=('ML=time ml -m 5' 'LD=time ld -m 5 -map' 'CC=time cc -m 5' 'AS=time asm -m 5' 'AR=time ar')
+T=('ML=time ml -m 5 ${MLOPT:--O3}' 'LD=time ld -m 5 -map' 'CC=time cc -m 5' 'AS=time asm -m 5' 'AR=time ar')
 rc kernels/9pi/tests/self.rc $q \$T > /tmp/self.log >[2=1]
 grep FAILED /tmp/self.log
 du -s /src/_mk

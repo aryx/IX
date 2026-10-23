@@ -213,7 +213,15 @@ program Linux's bytes; Status below).
     `/src`: the same bytes but the 20 libraries' `dirs` (each tree's
     path) and 5 of libc's objects, mini-cc built by mini-ml sharing
     other blocks than built by OCaml (fixed: objects marshalled
-    without sharing, bugs/ix.md). Not yet run again on the card.
+    without sharing, bugs/ix.md). Run again 2026-10-22 (`make self`,
+    mini-ml -O3 since 2f68061d, another session's QEMU beside it): 25
+    directories failed first, an exec argument past 1 KB refused
+    (libs.rc's echo, bugs/ix.md); fixed, 176 minutes, the same three
+    failing. games' is not mkdir's alone: an `ml` of doom's or quake's
+    exits 1 with no word on the card (the same compile fine under
+    qemu-arm). And the card compiled OCaml without -O3: self.sh's
+    `ML=time ml -m 5` replaced mkconfig's, its MLOPT lost, 888 objects
+    not Linux's (fixed: `${MLOPT:--O3}`; not run again).
   - **`make self`** in kernels/9pi (the author: "For t-ix there is a
     make self target inside TinyKernel/. For m-ix ?"): card-self, then
     tests/self.rc on it under QEMU, the card's /src copied out, the

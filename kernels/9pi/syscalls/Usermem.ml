@@ -9,13 +9,25 @@ open Errors
 let errmax = 128
 let maxpath = 1024
 
-let user_string (p : proc) addr max =
-  Fault.validaddr p addr max;
-  match Mmu.read_string p.pgdir addr max with Some s -> s | None -> raise (Error ebadarg)
-
 let user_read (p : proc) addr n =
   Fault.validaddr p addr n;
   match Mmu.read p.pgdir addr n with Some s -> s | None -> raise (Error ebadarg)
+
+(* a page at a time, each faulted in when reached: max may be the
+ * stack's 256 KB (exec's arguments), and only the pages up to the NUL
+ * are touched
+ * old: Fault.validaddr p addr max;
+ *      match Mmu.read_string p.pgdir addr max with
+ *      | Some s -> s | None -> raise (Error ebadarg) *)
+let user_string (p : proc) addr max =
+  let b = Buffer.create 64 in
+  let rec go a left =
+    if left <= 0 then raise (Error ebadarg);
+    let k = min left (Mmu.pgsize - (a land (Mmu.pgsize - 1))) in
+    let s = user_read p a k in
+    try Buffer.add_string b (String.sub s 0 (String.index s '\000')); Buffer.contents b
+    with Not_found -> Buffer.add_string b s; go (a + k) (left - k) in
+  go addr max
 
 let user_write (p : proc) addr s =
   Fault.validaddr p addr (String.length s);

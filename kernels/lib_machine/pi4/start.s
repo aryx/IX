@@ -240,7 +240,22 @@ user_return:
 	ldp	x0, x1, [x0]
 	eret
 
+// claude: a probe (machine.c's io_probe: probing[0] set) is the kernel
+// asking whether a device is there: its fault is the answer (probing[1]
+// made not 0) and the kernel goes on after the load that faulted
+// (l.s's kernel_exception says why)
 kernel_exception:
+	stp	x0, x1, [sp, #-16]!
+	ldr	x0, =probing
+	ldr	w1, [x0]
+	cbz	w1, 1f
+	str	w0, [x0, #4]
+	mrs	x1, elr_el1
+	add	x1, x1, #4
+	msr	elr_el1, x1
+	ldp	x0, x1, [sp], #16
+	eret
+1:	add	sp, sp, #16
 	mrs	x0, esr_el1
 	mrs	x1, elr_el1
 	mrs	x2, far_el1

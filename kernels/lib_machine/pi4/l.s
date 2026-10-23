@@ -336,8 +336,34 @@ TEXT user_return+0(SB), $-8
 	MOV	0(R0), R0
 	ERET
 
-// kfault64(esr, elr, far), then the end
-TEXT kernel_exception+0(SB), $48
+// A probe (machine.c's io_probe: probing[0] set) is the kernel asking
+// whether a device is there: its fault is the answer (probing[1] made
+// not 0) and the kernel goes on after the load that faulted. QEMU's
+// raspi4b has no memory where the board has its RNG. R0 and R1 are
+// kept on the stack, the flags in SPSR. Else kfault64(esr, elr, far),
+// then the end
+TEXT kernel_exception+0(SB), $-8
+	SUB	$16, RSP
+	MOV	R0, 0(RSP)
+	MOV	R1, 8(RSP)
+	MOV	$probing+0(SB), R0
+	MOVW	(R0), R1
+	CBZ	R1, notprobe
+	MOVW	R0, 4(R0)
+	MRS	ELR_EL1, R1
+	ADD	$4, R1
+	MSR	R1, ELR_EL1
+	MOV	0(RSP), R0
+	MOV	8(RSP), R1
+	ADD	$16, RSP
+	ERET
+notprobe:
+	MOV	0(RSP), R0
+	MOV	8(RSP), R1
+	ADD	$16, RSP
+	B	kernel_fault+0(SB)
+
+TEXT kernel_fault+0(SB), $48
 	MOV	$setSB(SB), R28
 	MRS	ELR_EL1, R1
 	MOV	R1, 16(RSP)

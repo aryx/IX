@@ -365,9 +365,9 @@ external firmware_rev : int -> int = "firmware_rev"
 (* [io_probe off]: is there a device at this register (an offset as
  * io_get16's)? False where a read of it faults: an emulator that has
  * no memory there (QEMU's raspi has no PWM), which without the
- * question is the kernel's end at the driver's first write. Always
- * true on the Pi 4, and no answer but a halt in the Pi 1's kernel by
- * ix's own tools (l.s), for now. *)
+ * question is the kernel's end at the driver's first write (QEMU's
+ * raspi4b has no RNG). No answer but a halt in the Pi 1's kernel by
+ * ix's own tools (l1.s, l2.s), for now. *)
 external io_probe : int -> bool = "io_probe"
 
 (* A device's register, by its offset from the devices' base

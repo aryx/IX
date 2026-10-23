@@ -12,7 +12,8 @@
  *     start          once, at boot: started long before a read
  *     bytes n        n bytes, two from each word read (a register is
  *                    read by halves, each read a new word); None when
- *                    no word comes (a machine without the device)
+ *                    no word comes, or no device answers at
+ *                    the address (QEMU's raspi4b has none: io_probe)
  *
  * history:
  * Plan 9's kernel has no such device on most machines: its

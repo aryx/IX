@@ -129,8 +129,24 @@ value board_rev(value unit) { (void)unit; return Val_long(0xb03115); }
 value board_mac(value which) { (void)which; return Val_long(-1); }
 /* (not asked: QEMU's) */
 value firmware_rev(value half) { return Val_long(Long_val(half) == 0 ? 346337 & 0xffff : 346337 >> 16); }
-/* (no probe on this machine yet: a device is taken to be there) */
-value io_probe(value off) { (void)off; return Val_bool(1); }
+/* Is there a device at this register? Read with the kernel's exception
+ * entry told that a fault here is an answer (l.s's kernel_exception,
+ * start.s's): QEMU's raspi4b has nothing where the board has its RNG,
+ * and an access there is a bus error */
+volatile unsigned probing[2];
+/* (the value read is kept: mini-cc, as 7c, drops a load whose value is
+ * not used, volatile or not) */
+volatile unsigned probed;
+
+value io_probe(value off)
+{
+  volatile unsigned *p = (volatile unsigned *)(IO_BASE + Long_val(off));
+  probing[1] = 0;
+  probing[0] = 1;
+  probed = *p;
+  probing[0] = 0;
+  return Val_bool(probing[1] == 0);
+}
 /* (the Pi1's: the display's size asked of the firmware; not asked here) */
 value display_size(value unit) { (void)unit; return Val_long(0); }
 /* (the Pi1's: the USB controller's power asked of the firmware) */

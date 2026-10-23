@@ -72,10 +72,10 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
       a network whose wire comes back: each packet sent is received 100
       instructions after (a test's; -36(r0) then reads 1)
   tiny-machine -cores 4 kernel.img
-      four harts (tiny-kernel: tiny-build -j 4 compiles four units at
+      four cores (tiny-kernel: tiny-build -j 4 compiles four units at
       once), in turns: a slice of each in one thread, the same run each
-      time; -cores-parallel: a hart a domain, on the host's cores, where
-      OCaml has domains (5: tiny-machine built by it)
+      time; -cores-parallel: each core on a domain of its own, on the
+      host's cores, where OCaml has domains (5: tiny-machine built by it)
 The console is this terminal; ^D ends t6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
@@ -597,12 +597,12 @@ let run caps o image =
         TinyMachineCPU.profiled env profile (fun _ ->
           if TinyMachineDevices.supervisor mc then 1, 0
           else 0, TinyMachineDevices.window_base mc) in
-  (* the other harts (-cores): in turns, a slice of each after hart 0's
+  (* the other cores (-cores): in turns, a slice of each after core 0's
    * in this loop; or, asked and where OCaml has domains, each on its
-   * own, a slice after another until one fails or hart 0 halts *)
+   * own, a slice after another until one fails or core 0 halts *)
   let others =
     List.init (o.cores - 1) (fun k ->
-      let h = TinyMachineDevices.hart mc (k + 1) in
+      let h = TinyMachineDevices.core mc (k + 1) in
       h, TinyMachineDevices.env h) in
   let parallel = o.parallel && others <> [] && Parallel.available in
   if o.parallel && not Parallel.available then

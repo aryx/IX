@@ -1,22 +1,22 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; Three harts (TinyMachine_test.sh runs it with -cores 3; harts.expected):
-; each starts at 0 and goes by its hartid. Hart 0 prints the harts
-; register, then raises the interrupt of harts 1 and 2 (a store at
+; Three cores (TinyMachine_test.sh runs it with -cores 3; cores.expected):
+; each starts at 0 and goes by its core. Core 0 prints the cores
+; register, then raises the interrupt of cores 1 and 2 (a store at
 ; -64(r0)) and waits for theirs. Each of the others, interrupted,
 ; counts to 1000 in a loop of its own and writes, in its row of rows:
-; the senders it read at -64(r0) (1: hart 0), its hartid, its count's
+; the senders it read at -64(r0) (1: core 0), its core, its count's
 ; thousands; then reaches the console, a device, and faults (3), the
-; cause in its row too; then raises hart 0's interrupt. Hart 0, when
+; cause in its row too; then raises core 0's interrupt. Core 0, when
 ; both have (their bits, 2 and 4, seen), prints the rows and halts.
 
-	csrr	r1, hartid
+	csrr	r1, core
 	bne	r1, zero, other
 	la	r1, trap0
 	csrw	tvec, r1
-	li	r1, 32			; the harts' interrupt only
+	li	r1, 32			; the cores' interrupt only
 	csrw	ie, r1
-	csrr	r5, harts
+	csrr	r5, cores
 	addi	r5, r5, 48
 	stb	r5, -16(r0)
 	li	r5, 10
@@ -30,7 +30,7 @@
 wait0:
 	j	wait0
 
-; hart 0's: the senders added to those seen; both: the rows
+; core 0's: the senders added to those seen; both: the rows
 trap0:
 	ldw	r2, -64(r0)
 	la	r3, seen
@@ -58,7 +58,7 @@ col:
 	bne	r6, zero, row
 	stw	r0, -12(r0)
 
-; the other harts: interrupted by hart 0, then their work
+; the other cores: interrupted by core 0, then their work
 other:
 	la	r1, tramp
 	csrw	tvec, r1
@@ -69,8 +69,8 @@ other:
 waitk:
 	j	waitk
 tramp:
-	csrr	r1, hartid
-	shli	r3, r1, 4		; its row: rows + 16 * hartid
+	csrr	r1, core
+	shli	r3, r1, 4		; its row: rows + 16 * core
 	la	r2, rows
 	add	r3, r3, r2
 	ldw	r2, -64(r0)
@@ -86,11 +86,11 @@ count:
 	stw	r5, 8(r3)
 	la	r2, fault
 	csrw	tvec, r2
-	stb	r5, -16(r0)		; the console: hart 0's, a fault
+	stb	r5, -16(r0)		; the console: core 0's, a fault
 fault:
 	csrr	r2, cause
 	stw	r2, 12(r3)
-	stw	r0, -64(r0)		; hart 0's interrupt
+	stw	r0, -64(r0)		; core 0's interrupt
 stop:
 	j	stop
 

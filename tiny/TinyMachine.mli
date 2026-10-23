@@ -56,13 +56,13 @@
  * since). Each addition is kept separate so that v0 still runs as it
  * did (plan_tiny_os.md, phase 2):
  *
- * - {b 256 MB} of memory (16 MB until 2026-10-15, 128 MB until the harts),
+ * - {b 256 MB} of memory (16 MB until 2026-10-15, 128 MB until the cores),
  *   with the devices still at the top (-16(r0) is the console).
  * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
  *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
  *   and the window off; a page fault puts the address in tval.
  * - {b amoswap d, a, (b)}, the atomic swap that spinlocks are built
- *   from, usable in either mode; {b hartid}, the core's number (0 but with
+ *   from, usable in either mode; {b core}, the core's number (0 but with
  *   -cores, below); {b scratch} and {b csrrw}, to free a
  *   first register at the start of a trap.
  * - {b Interrupts by source}: ip (pending) and ie (enabled), with one
@@ -133,25 +133,33 @@
  *
  * For several cores (plan_tiny_multicore.md), behind -cores n:
  *
- * - {b Harts}: n CPUs, each with its registers, its pc and its
- *   registers of control (hartid its number, harts their count),
+ * - {b Cores}: n CPUs, each with its registers, its pc and its
+ *   registers of control (core its number, cores their count),
  *   sharing the memory. All start at 0 in supervisor mode, as RISC-V's
- *   harts start at the reset's address; a kernel parks the others by
- *   their hartid. The devices are wired to hart 0: another hart that
+ *   cores start at the reset's address; a kernel parks the others by
+ *   their core. The devices are wired to core 0: another core that
  *   reaches one faults.
- * - {b The interrupt between harts}, the sixth source (32): a store of
- *   k at -64(r0) raises hart k's, from anyone; a load gives the harts
+ * - {b The interrupt between cores}, the sixth source (32): a store of
+ *   k at -64(r0) raises core k's, from anyone; a load gives the cores
  *   that raised this one's, a bit each, and clears them. A mailbox in
- *   memory and this interrupt are all tiny-kernel's harts need.
- * - {b In turns or at once.} By default the harts take turns in one
+ *   memory and this interrupt are all tiny-kernel's cores need.
+ * - {b In turns or at once.} By default the cores take turns in one
  *   thread, a slice of up to 1,024 instructions each: a run is the same
- *   every time, and one hart is the machine as it was. With
+ *   every time, and one core is the machine as it was. With
  *   -cores-parallel, where OCaml has domains (tiny-machine built by
- *   OCaml 5), each hart is a domain on one of the host's cores, counting
+ *   OCaml 5), each core is a domain on one of the host's cores, counting
  *   its own time; the memory is shared without a lock (a race between
- *   harts is the program's, as on hardware), the interrupt by an
+ *   cores is the program's, as on hardware), the interrupt by an
  *   Atomic; amoswap is then no longer atomic, which tiny-kernel does
  *   not need.
+ *
+ * terminology:
+ * RISC-V says hart (a hardware thread: hartid, its number) where this
+ * machine says core. They differ only on a core that runs several
+ * threads at once, sharing its units (Intel's Hyper-Threading, SMT),
+ * which the kernel then sees as several CPUs: Linux's /proc/cpuinfo
+ * counts those. tiny-machine has no such core, so a core is one CPU,
+ * the word a reader knows.
  *
  * Here is all of it as a kernel sees it. Memory is 256 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
@@ -163,7 +171,7 @@
  *                (base, bound) or by pages
  *     0xf00000   the screen: 480 rows of 640 bytes, up to 0xf4b000
  *        ...
- *     0xfffffc0  the interrupt between harts             -64(r0)
+ *     0xfffffc0  the interrupt between cores             -64(r0)
  *     0xfffffcc  the speaker: its ring's address, the     -52(r0)
  *                samples played
  *     0xfffffd0  the network: an address, a length,       -48(r0) up
@@ -202,7 +210,7 @@
  *
  * Exercises. Each one is cheap, because time is counted in instructions
  * and everything else is a hook of the CPU:
- * - the harts' turns in an order drawn from a seed (-cores takes them
+ * - the cores' turns in an order drawn from a seed (-cores takes them
  *   in a fixed one), so a race can be replayed from its seed, which
  *   real hardware never allows;
  * - wfi: a core waits for an interrupt and time jumps to timecmp, so an

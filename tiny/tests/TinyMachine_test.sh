@@ -17,7 +17,7 @@
 # 4. the programs linked in another order (tiny-linker; every .tm here
 #    is assembled and linked by link.sh's link_tm), the same output;
 # 5. each program of TinyMachine_tests/ (the machine's features for
-#    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, hartid, ip, the pages, the console's input,
+#    v6, a kernel that was (xv6's kind, removed on 2026-10-13): amoswap, core, ip, the pages, the console's input,
 #    the disk) prints its .expected, given its .input if there is one;
 #    disk.tm a fresh image (block 1 "hello, disk"), whose block 2 it
 #    has written WRITTEN after the halt; screen.tm its events
@@ -25,8 +25,8 @@
 #    has screen.cksum's sum; net.tm a wire that comes back (-net-loop
 #    100), and, run again without one, a machine that says it has none;
 #    rate.tm the speed that -rate 16 gives the machine, read from its
-#    rate register; harts.tm three harts (-cores 3): their count, the
-#    interrupt between them and who raised it, a device of hart 0's
+#    rate register; cores.tm three cores (-cores 3): their count, the
+#    interrupt between them and who raised it, a device of core 0's
 #    reached by another, a fault.
 #
 # Usage: TinyMachine_test.sh
@@ -83,7 +83,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   fi
   [ $b = net ] && opts="-net-loop 100"
   [ $b = rate ] && opts="-rate 16"
-  [ $b = harts ] && opts="-cores 3"
+  [ $b = cores ] && opts="-cores 3"
   [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
   link_tm $W/$b.image $t && timeout 10 $T $opts $W/$b.image < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"

@@ -26,7 +26,7 @@ external k_timer : int -> unit = "k_timer"
 external k_ie : int -> unit = "k_ie"
 external k_clock : unit -> int = "k_clock"
 external k_rate : unit -> int = "k_rate"
-external k_harts : unit -> int = "k_harts"
+external k_cores : unit -> int = "k_cores"
 external k_window : int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
@@ -44,7 +44,7 @@ external k_font : unit -> int = "k_font"
  * the top of the machine's 256 MB. A process has a partition of the size
  * its program asks for (1 MB if it does not say), found when it starts.
  * There are at most [nslots] processes; a slot is a process's frame.
- * (old: 8 slots and 128 MB, before the harts: tiny-build -j 4 runs four
+ * (old: 8 slots and 128 MB, before the cores: tiny-build -j 4 runs four
  * rc and four compilers of 32 MB) *)
 let part = 0x100000
 let nslots = 16
@@ -74,17 +74,17 @@ let date_dev = -56
 (* the seed, for the programs' first random numbers (the machine's;
  * 0: none) *)
 let seed_dev = -60
-(* The harts (plan_tiny_multicore.md): the kernel is hart 0's, the
- * others run processes only (entry.tm's slave). Hart k's mailbox: the
+(* The cores (plan_tiny_multicore.md): the kernel is core 0's, the
+ * others run processes only (entry.tm's slave). Core k's mailbox: the
  * frame to run (0: none), the window (base, size), the slice; then
- * the trap's cause and value, posted. The interrupt between harts:
- * hart k's raised by storing k at -64(r0); read, the harts that raised
+ * the trap's cause and value, posted. The interrupt between cores:
+ * core k's raised by storing k at -64(r0); read, the cores that raised
  * this one's. *)
-let harts = k_harts ()
+let cores = k_cores ()
 let ipi_dev = -64
 let mailbox k = 0xb41000 + (32 * k)
-(* the interrupts taken, the harts' always when there are several *)
-let k_ie sources = k_ie (if harts > 1 then sources lor 32 else sources)
+(* the interrupts taken, the cores' always when there are several *)
+let k_ie sources = k_ie (if cores > 1 then sources lor 32 else sources)
 
 (* a trap's causes (TinyMachine.ml's), the timer's period *)
 let c_sys = 1
@@ -392,15 +392,15 @@ type state = Ready | Waiting of (unit -> bool) | Zombie of int | Stopped
  * and how big it is, its pid, its state, its parent's pid (0: none), its
  * descriptors, its current directory; while it waits for a child's
  * end, how many processes had ended when it last looked (-1: it waits
- * for something else); and its trace, when it is traced. The hart it
- * runs on (-1: none; 0 while hart 0 runs it or handles its trap), and
+ * for something else); and its trace, when it is traced. The core it
+ * runs on (-1: none; 0 while core 0 runs it or handles its trap), and
  * whether it was killed there, its end then at its next trap. *)
 type proc = {
   slot : int; mutable base : int; mutable size : int; pid : int;
   mutable state : state; mutable parent : int;
   mutable fds : (int * file) list; mutable cwd : string list;
   mutable since : int; mutable traced : trace option;
-  mutable hart : int; mutable doomed : bool;
+  mutable core : int; mutable doomed : bool;
 }
 
 (* the processes, in the order the scheduler goes through them; how
@@ -919,7 +919,7 @@ let sys_fork p =
   let q = {
     slot = s; base = b; size = p.size; pid = !next_pid; state = Ready;
     parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
-    hart = -1; doomed = false;
+    core = -1; doomed = false;
   } in
   incr next_pid;
   k_copy b p.base p.size;
@@ -1230,12 +1230,12 @@ let sys_getcwd p =
 let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
 
 (* kill(pid): its process ended as a fault ends one, its status -1; on
- * another hart, at its next trap, which the harts' interrupt makes
+ * another core, at its next trap, which the cores' interrupt makes
  * now (its partition is not another's before) *)
 let kill q =
   match q.state with
   | Zombie _ -> ()
-  | _ when q.hart > 0 -> q.doomed <- true; poke ipi_dev q.hart
+  | _ when q.core > 0 -> q.doomed <- true; poke ipi_dev q.core
   | _ -> exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with
@@ -1277,11 +1277,11 @@ let sys_trace p =
           let k = fdalloc p (Trace t) in
           t.watchers <- t.watchers + 1;
           result p k in
-        (* on another hart: called back (a traced process stays on hart
+        (* on another core: called back (a traced process stays on core
          * 0), the descriptor given when it is back, its frame then its
          * registers *)
-        if q.hart > 0 then
-          (poke ipi_dev q.hart; block p (fun () -> q.hart <= 0 && (given (); true)))
+        if q.core > 0 then
+          (poke ipi_dev q.core; block p (fun () -> q.core <= 0 && (given (); true)))
         else given ()
     | _ -> raise Bad
 
@@ -1477,21 +1477,21 @@ let count_ticks () =
   counted := (!counted + (passed / tick * tick)) land 0x3fffffff;
   k_timer (tick - (passed mod tick))
 
-(* what each hart runs, but hart 0 (the processes' hart says it too);
- * [back], given a process's trap on another hart, is the scheduler's
+(* what each core runs, but core 0 (the processes' core says it too);
+ * [back], given a process's trap on another core, is the scheduler's
  * (below) *)
-let on = Array.make harts None
+let on = Array.make cores None
 let back_hook = ref (fun (_ : int) (_ : proc) (_ : int) (_ : int) -> ())
 
 let interrupts sources =
-  (* the harts' traps, each from the hart that raised the interrupt *)
+  (* the cores' traps, each from the core that raised the interrupt *)
   if sources land 32 <> 0 then begin
     let from = peek ipi_dev in
-    for k = 1 to harts - 1 do
+    for k = 1 to cores - 1 do
       match on.(k) with
       | Some p when from land (1 lsl k) <> 0 ->
           on.(k) <- None;
-          p.hart <- -1;
+          p.core <- -1;
           !back_hook k p (peek (mailbox k + 16)) (peek (mailbox k + 20))
       | _ -> ()
     done
@@ -1567,15 +1567,15 @@ let rec runnable ok l =
        | Zombie _ -> runnable ok rest
        | Stopped -> runnable ok rest)
 
-(* what hart 0 may run: a process on no hart; what another may: one
- * not traced too (a tracer reads its frame, steps it: hart 0's) *)
-let anywhere p = p.hart < 0
-let elsewhere p = p.hart < 0 && not (traced p)
+(* what core 0 may run: a process on no core; what another may: one
+ * not traced too (a tracer reads its frame, steps it: core 0's) *)
+let anywhere p = p.core < 0
+let elsewhere p = p.core < 0 && not (traced p)
 
-(* The other harts (entry.tm's slave). A process given to hart k: its
+(* The other cores (entry.tm's slave). A process given to core k: its
  * frame, its window and a slice in k's mailbox, then k's interrupt *)
 let give k p =
-  p.hart <- k;
+  p.core <- k;
   on.(k) <- Some p;
   let m = mailbox k in
   poke (m + 4) p.base;
@@ -1584,9 +1584,9 @@ let give k p =
   poke m (frame p.slot);
   poke ipi_dev k
 
-(* each free hart given a process that can run *)
+(* each free core given a process that can run *)
 let dispatch () =
-  for k = 1 to harts - 1 do
+  for k = 1 to cores - 1 do
     if on.(k) = None then
       match runnable elsewhere !procs with
       | Some p -> give k p
@@ -1624,7 +1624,7 @@ and run p =
   | Some t when t.call >= 0 -> call p t.call; next p false
   | Some t when t.step || t.over >= 0 -> step p t
   | _ ->
-      p.hart <- 0;
+      p.core <- 0;
       k_window p.base p.size;
       let cause = k_run (frame p.slot) in
       next p (trapped p cause (k_tval ()))
@@ -1667,19 +1667,19 @@ and trapped p cause tval =
   end
 
 (* the same process again unless its time is up or it cannot go on
- * (the other harts given what can run first: what p's call made ready) *)
+ * (the other cores given what can run first: what p's call made ready) *)
 and next p timer =
   let alive = List.exists (fun q -> q.pid = p.pid) !procs in
   if alive && (not timer) && (match p.state with Ready -> true | _ -> false)
   then (dispatch (); run p)
   else begin
-    p.hart <- -1;
+    p.core <- -1;
     if alive then last p;
     schedule ()
   end
 
-(* A trap of p's on hart k, handled here as hart 0's (its interrupt is
- * the hart's timer: its slice is up); p on k again unless its time is
+(* A trap of p's on core k, handled here as core 0's (its interrupt is
+ * the core's timer: its slice is up); p on k again unless its time is
  * up or it cannot go on, as [next]. Killed while it ran, it ends now. *)
 let back k p cause tval =
   if p.doomed then exit_proc p (-1)
@@ -1700,7 +1700,7 @@ let () = back_hook := back
 
 let () =
   k_init ();
-  if harts > 1 then k_ie 27;
+  if cores > 1 then k_ie 27;
   counted := k_clock ();
   k_timer tick;
   load (k_end ());
@@ -1754,7 +1754,7 @@ let () =
   let p = {
     slot = 0; base = mem_low; size = 0; pid = 1; state = Ready; parent = 0;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
-    since = -1; traced = None; hart = -1; doomed = false;
+    since = -1; traced = None; core = -1; doomed = false;
   } in
   incr next_pid;
   procs := [ p ];

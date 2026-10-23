@@ -71,10 +71,10 @@ val date : int ref
  * 0 for none (the kernel gives its clock): tiny-machine's -seed *)
 val seed : int ref
 
-(* the number of harts, set by a host before [create] (tiny-machine's
- * -cores): 1 by default, the machine as it was. A hart is a machine of
- * its own ([hart]) sharing the memory and the devices; the devices are
- * hart 0's, the others reach only -64(r0), the interrupt between harts
+(* the number of cores, set by a host before [create] (tiny-machine's
+ * -cores): 1 by default, the machine as it was. A core is a machine of
+ * its own ([core]) sharing the memory and the devices; the devices are
+ * core 0's, the others reach only -64(r0), the interrupt between cores
  * (the .ml says how) *)
 val cores : int ref
 
@@ -134,9 +134,9 @@ val ring : int
 val hz : int
 val speaker_hear : machine -> unit
 
-(* hart k (0 < k < !cores) of the machine made by [create], which is
- * hart 0: its own registers and registers of control, its pc at 0 *)
-val hart : machine -> int -> machine
+(* core k (0 < k < !cores) of the machine made by [create], which is
+ * core 0: its own registers and registers of control, its pc at 0 *)
+val core : machine -> int -> machine
 
 (* the CPU's five hooks for it, and so many instructions of its time
  * (Halt when the kernel halts it) *)

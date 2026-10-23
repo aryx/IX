@@ -121,22 +121,22 @@
  * on a condition, as with Brinch Hansen's await and Plan 9's
  * sleep(r, cond), at the price of one retry per scheduling round.
  *
- * Several harts (tiny-machine -cores n, plan_tiny_multicore.md). The
- * kernel stays hart 0's, whole: one heap, one collector, written for
+ * Several cores (tiny-machine -cores n, plan_tiny_multicore.md). The
+ * kernel stays core 0's, whole: one heap, one collector, written for
  * one thread. The others run processes only, in entry.tm's slave loop,
- * which runs no ML: hart 0 writes a process's frame, window and slice
- * in hart k's mailbox and raises k's interrupt; k runs the process
- * until its trap, writes the cause back and raises hart 0's, which
+ * which runs no ML: core 0 writes a process's frame, window and slice
+ * in core k's mailbox and raises k's interrupt; k runs the process
+ * until its trap, writes the cause back and raises core 0's, which
  * handles the trap as one of its own ([back]). So the kernel needs no
  * lock and its structures did not change; what does not scale is the
- * system calls, one hart's, which a compiler makes few of. The first
+ * system calls, one core's, which a compiler makes few of. The first
  * multiprocessor Unix kernels worked the same way, master and slaves
  * (Purdue's dual VAX, Goble and Marsh, 1982):
  *
- *     hart k                                  hart 0
+ *     core k                                  core 0
  *     runs P (k's mailbox) ── a trap ──>      [interrupts]: P's trap,
  *     cause, value in the mailbox,            handled as its own ([back]);
- *     hart 0's interrupt; waits               P or another given to k
+ *     core 0's interrupt; waits               P or another given to k
  *                               <── k's interrupt (frame, window, slice)
  *
  * Here is how the kernel divides the machine's 256 MB (runtime.c has
@@ -151,7 +151,7 @@
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)
  *     0xb40000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
- *     0xb41000   the harts' mailboxes, 32 bytes each
+ *     0xb41000   the cores' mailboxes, 32 bytes each
  *     0xb50000   a packet's place, sent or received
  *     0xb51000   unused (but the speaker's ring, at 0xc00000)
  *     0xd00000   pixels of images: the font, the hidden windows

@@ -197,9 +197,13 @@ one without setting up a register: `stb r3, -16(r0)` prints a byte.
 
 ## 4. The machine (`TinyMachine.ml`)
 
-The CPU with what a kernel needs. 128 MB of memory (16 MB until
-2026-10-15). It starts at
+The CPU with what a kernel needs. 256 MB of memory (16 MB until
+2026-10-15, 128 MB until 2026-10-23). It starts at
 address 0 in supervisor mode, with `sp` just below the devices.
+With `tiny-machine -cores n` it has n cores, each with its registers,
+its pc and its registers of control, sharing the memory; every core
+starts at 0, and a kernel tells them apart by the register `core`
+(4.2); they signal each other by an interrupt (4.3, and `-64(r0)`, 5).
 
 ### 4.1 Modes and traps
 
@@ -228,7 +232,8 @@ Read by `csrr d, name`, written by `csrw name, a`, both at once by
 | `base`, `bound` | the window (4.4) |
 | `satp` | the pages' root; its top bit turns pages on (4.4) |
 | `ip`, `ie` | the interrupts pending (read only) and enabled, a bit a source |
-| `hartid` | the core's number, 0 (read only) |
+| `core` | the core's number, 0 to `cores` - 1 (read only) |
+| `cores` | the number of cores (read only) |
 | `scratch` | a word for the kernel |
 | `rate` | the machine's speed, in instructions per second (read only) |
 
@@ -252,6 +257,8 @@ both pending and enabled. `tval` then holds the sources.
 | 2 | the console's input | its bytes are read |
 | 4 | the disk | its status word is written |
 | 8 | the mouse | its word is read |
+| 16 | the network | its packet is taken |
+| 32 | another core | `-64(r0)` is read |
 
 Only the timer is enabled at the start.
 
@@ -274,25 +281,26 @@ valid page.
 ## 5. The devices
 
 Sixteen words at the top of memory, outside any window, so only a
-kernel reaches them (one of them unused).
+kernel reaches them; and only core 0, but for the first.
 
 | address | | device |
 |---|---|---|
-| `-60(r0)` | `0x7ffffc4` | a seed, read: the programs' first random number (tiny-machine's `-seed`; 0, none, the kernel giving its clock) |
-| `-56(r0)` | `0x7ffffc8` | the date at the boot, read: seconds since 2000-01-01 (the host's clock, or tiny-machine's `-date`) |
-| `-52(r0)` | `0x7ffffcc` | the speaker (5.6): written, its ring's address (0 off); read, the samples played |
-| `-48(r0)` | `0x7ffffd0` | the network (5.5): a memory address |
-| `-44(r0)` | `0x7ffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
-| `-40(r0)` | `0x7ffffd8` | the network: the command, 1 send, 2 receive |
-| `-36(r0)` | `0x7ffffdc` | the network: reads 1 when there is a wire |
-| `-32(r0)` | `0x7ffffe0` | the disk: a block's number |
-| `-28(r0)` | `0x7ffffe4` | the disk: a memory address |
-| `-24(r0)` | `0x7ffffe8` | the disk: the command, 1 read the block into memory, 2 write it from memory |
-| `-20(r0)` | `0x7ffffec` | the disk: reads 1 when a transfer is done; a write ends its interrupt |
-| `-16(r0)` | `0x7fffff0` | the console's output: a byte stored is printed |
-| `-12(r0)` | `0x7fffff4` | the halt: the value stored is the machine's exit status |
-| `-8(r0)` | `0x7fffff8` | the console's input: the next byte; `0xffffffff` none yet, `0xfffffffe` the input's end |
-| `-4(r0)` | `0x7fffffc` | the mouse (5.2) |
+| `-64(r0)` | `0xfffffc0` | the interrupt between cores: k stored raises core k's; read, the cores that raised this one's, a bit each (1 for core 0, 2 for core 1...), cleared |
+| `-60(r0)` | `0xfffffc4` | a seed, read: the programs' first random number (tiny-machine's `-seed`; 0, none, the kernel giving its clock) |
+| `-56(r0)` | `0xfffffc8` | the date at the boot, read: seconds since 2000-01-01 (the host's clock, or tiny-machine's `-date`) |
+| `-52(r0)` | `0xfffffcc` | the speaker (5.6): written, its ring's address (0 off); read, the samples played |
+| `-48(r0)` | `0xfffffd0` | the network (5.5): a memory address |
+| `-44(r0)` | `0xfffffd4` | the network: a length; read, the length of the packet that waits, 0 if none |
+| `-40(r0)` | `0xfffffd8` | the network: the command, 1 send, 2 receive |
+| `-36(r0)` | `0xfffffdc` | the network: reads 1 when there is a wire |
+| `-32(r0)` | `0xfffffe0` | the disk: a block's number |
+| `-28(r0)` | `0xfffffe4` | the disk: a memory address |
+| `-24(r0)` | `0xfffffe8` | the disk: the command, 1 read the block into memory, 2 write it from memory |
+| `-20(r0)` | `0xfffffec` | the disk: reads 1 when a transfer is done; a write ends its interrupt |
+| `-16(r0)` | `0xffffff0` | the console's output: a byte stored is printed |
+| `-12(r0)` | `0xffffff4` | the halt: the value stored is the machine's exit status |
+| `-8(r0)` | `0xffffff8` | the console's input: the next byte; `0xffffffff` none yet, `0xfffffffe` the input's end |
+| `-4(r0)` | `0xffffffc` | the mouse (5.2) |
 
 The disk is a file given by `-d`, in blocks of 1 KB. A transfer is
 done at once, and the file is written back when the machine halts.

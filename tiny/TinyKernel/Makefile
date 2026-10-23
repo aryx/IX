@@ -614,12 +614,12 @@ self-quick: $(O)/boot.img
 	diff $(T)/self-quick.expected $(O)/self-quick.out
 	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
-# self on several harts (plan_tiny_multicore.md): tiny-machine -cores 4,
+# self on several cores (plan_tiny_multicore.md): tiny-machine -cores 4,
 # each build -j 4; the image of the first build compared with the host's,
-# alone (the recipes' lines are in the order they started, the harts'
+# alone (the recipes' lines are in the order they started, the cores'
 # own). In turns by default: the same run each time, as slow as one
-# hart on the host. On the host's cores, a hart a domain: tiny-machine
-# built by OCaml 5 (in _build5, as ./mini-pi -P), and
+# core on the host. On the host's cores, each core on a domain:
+# tiny-machine built by OCaml 5 (in _build5, as ./mini-pi -P), and
 #   make self-cores CORES='-cores 4 -cores-parallel' \
 #     MACHINE=../../_build5/default/tiny/TinyMachine.exe
 CORES = -cores 4

@@ -52,8 +52,8 @@ let sp = 14 and lr = 15
 (* the machine's registers of control, by number (TinyMachineDevices's) *)
 let csr_names =
   Array.of_list [ "status"; "epc"; "cause"; "tval"; "tvec"; "time"; "timecmp";
-                  "base"; "bound"; "hartid"; "ip"; "ie"; "satp"; "scratch";
-                  "rate"; "harts" ]
+                  "base"; "bound"; "core"; "ip"; "ie"; "satp"; "scratch";
+                  "rate"; "cores" ]
 
 exception Error of string
 (* old: Printf.ksprintf's, a format and its values *)

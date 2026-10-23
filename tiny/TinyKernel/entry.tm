@@ -14,13 +14,13 @@
 ; its next trap (a hypervisor's KVM_RUN): no trap handler of ML, no
 ; kernel stack per process.
 ;
-; With several harts (tiny-machine -cores n, plan_tiny_multicore.md)
-; the kernel is hart 0's alone; the others start here too and go to
-; slave, a loop that runs no ML: the process hart 0 puts in its
+; With several cores (tiny-machine -cores n, plan_tiny_multicore.md)
+; the kernel is core 0's alone; the others start here too and go to
+; slave, a loop that runs no ML: the process core 0 puts in its
 ; mailbox run until its trap, the trap posted back.
 
 _entry:
-	csrr	r1, hartid
+	csrr	r1, core
 	bne	r1, zero, slave
 	la	sp, kstacktop
 	call	kmain			; runtime.c: the heap, then the ML toplevel
@@ -102,7 +102,7 @@ trapvec:
 	stw	r2, 4(r1)
 	csrr	r2, epc
 	stw	r2, 64(r1)
-	csrr	r2, hartid
+	csrr	r2, core
 	bne	r2, zero, slave_post
 k_back:
 	csrw	scratch, zero
@@ -117,22 +117,22 @@ k_back:
 	ret
 
 k_waited:
-	csrr	r1, hartid
+	csrr	r1, core
 	beq	r1, zero, k_back
 	j	slave_take
 
-; A slave (hart k > 0). Its mailbox, at 0xb41000 + 32k (TinyKernel.ml's
+; A slave (core k > 0). Its mailbox, at 0xb41000 + 32k (TinyKernel.ml's
 ; mailbox): the frame of the process to run (0: none), the window's
 ; base and size, the slice (instructions until its timer), then the
-; trap's cause and value, posted. It waits for the harts' interrupt
-; (hart 0's word at -64(r0)): a frame there, it runs it; a trap of the
+; trap's cause and value, posted. It waits for the cores' interrupt
+; (core 0's word at -64(r0)): a frame there, it runs it; a trap of the
 ; process saved in the frame (trapvec), the cause and the value
-; written, hart 0's interrupt raised, and it waits again. Its timer
+; written, core 0's interrupt raised, and it waits again. Its timer
 ; is on only while a process runs.
 slave:
 	la	r1, trapvec
 	csrw	tvec, r1
-	li	r1, 33			; its timer, the harts' interrupt
+	li	r1, 33			; its timer, the cores' interrupt
 	csrw	ie, r1
 slave_wait:
 	li	r1, -1
@@ -144,7 +144,7 @@ slave_spin:
 	j	slave_spin
 slave_take:
 	ldw	r1, -64(r0)		; the senders, cleared
-	csrr	r3, hartid
+	csrr	r3, core
 	shli	r3, r3, 5
 	li	r2, 0xb41000
 	add	r3, r3, r2
@@ -168,7 +168,7 @@ slave_post:
 	stw	r2, 16(r3)
 	csrr	r2, tval
 	stw	r2, 20(r3)
-	stw	zero, -64(r0)		; hart 0's interrupt
+	stw	zero, -64(r0)		; core 0's interrupt
 	j	slave_wait
 
 ; the trap's value (a system call's number, a fault's address, the
@@ -218,9 +218,9 @@ k_clock:
 	ori	r13, r13, 1
 	ret
 
-; the number of harts (an ML integer)
-k_harts:
-	csrr	r13, harts
+; the number of cores (an ML integer)
+k_cores:
+	csrr	r13, cores
 	shli	r13, r13, 1
 	ori	r13, r13, 1
 	ret

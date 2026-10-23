@@ -1,8 +1,8 @@
 ; Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyMachine.ml)
 ;
-; amoswap, hartid and ip, one line each (TinyMachine_test.sh compares
+; amoswap, core and ip, one line each (TinyMachine_test.sh compares
 ; with amo.expected): the swap's old value and the word after it; the
-; word cleared; a spinlock taken, then found taken (1); hartid; ip's
+; word cleared; a spinlock taken, then found taken (1); core; ip's
 ; timer bit, before and after timecmp is reached; csrrw's swap with
 ; scratch (the old value, then the new); amoswap in user mode,
 ; the word it left read by the supervisor after the user's sys.
@@ -34,7 +34,7 @@ acquire:
 	stb	r5, -16(r0)
 	li	r5, 10
 	stb	r5, -16(r0)
-	csrr	r5, hartid
+	csrr	r5, core
 	addi	r5, r5, 48
 	stb	r5, -16(r0)
 	li	r5, 10

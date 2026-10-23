@@ -96,6 +96,16 @@ val draw : Display.image -> Rectangle.t -> Display.image -> Display.image option
 (* the same, the mask's point said apart (a character in a font's image) *)
 val draw_mask : Display.image -> Rectangle.t -> Display.image -> Point.t -> Display.image -> Point.t -> unit
 
+(* ix: [scale dst r src p k]: src from p drawn into dst's r k times
+ * larger, each pixel k by k, no blending: a game's small picture on
+ * the whole screen, made larger by the kernel's one loop (mini-9pi's
+ * 'z', not Plan 9's: docs/plans/plan_playground_framebuffer.md, F5).
+ * dst and src of one format. [can_scale dst src]: does the device
+ * have it (mini-9pi's C pixels, PIXEL=c, do not); a pixel of dst
+ * drawn to find out *)
+val scale : Display.image -> Rectangle.t -> Display.image -> Point.t -> int -> unit
+val can_scale : Display.image -> Display.image -> bool
+
 (* a rectangle filled; its border, n pixels wide, inside it *)
 val fill : Display.image -> Rectangle.t -> Display.image -> unit
 val border : Display.image -> Rectangle.t -> int -> Display.image -> unit

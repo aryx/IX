@@ -126,3 +126,14 @@ let load w r data compressed =
   let n = if compressed then Memimage.cload w r data else Memimage.load w r data in
   (match w.layer with Some _ when n >= 0 -> show w r | _ -> Memimage.flush w r);
   n
+
+(* ix: Memdraw.scale, then a window's changed rectangle on its screen,
+ * as draw *)
+let scale dst r src sp k =
+  Memdraw.scale dst r src sp k
+  && begin
+    (match dst.layer, clip r dst.r with
+     | Some _, Some r -> (match clip r dst.clipr with Some r -> show dst r | None -> ())
+     | _ -> ());
+    true
+  end

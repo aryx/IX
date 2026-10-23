@@ -71,6 +71,8 @@ external poly : image -> image -> int array -> int = "draw_poly"
 external ellipse : image -> image -> int array -> unit = "draw_ellipse"
 (* [memload dst [| r[4] compressed |] data]: the bytes used, -1 bad *)
 external memload : image -> int array -> string -> int = "draw_memload"
+(* ix: the OCaml pixels' only: none here *)
+let scale (_ : image) (_ : image) (_ : int array) = false
 (* [unload img [| r[4] |]]: its pixels *)
 external unload : image -> int array -> string = "draw_unload"
 

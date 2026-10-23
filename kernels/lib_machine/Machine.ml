@@ -29,6 +29,7 @@ module Imag = struct
   external size : unit -> int = "imag_size"
   external copy : Bytes.t -> Bytes.t -> int array -> unit = "imag_copy"
   external rows : Bytes.t -> int -> int -> int -> int -> unit = "imag_rows"
+  external scale : Bytes.t -> Bytes.t -> int array -> unit = "imag_scale"
   external flush : Bytes.t -> int array -> unit = "imag_flush"
   external screen : Bytes.t -> unit = "imag_screen"
   external covers : int -> int -> bool = "imag_covers"

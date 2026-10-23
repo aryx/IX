@@ -20,8 +20,9 @@ frame.
 
 Where it stands (2026-10-22, the Status at the end tells it): **F2 is
 done** (mini-doom 8 to 15-24 frames a second on the Pi 2, mini-quake
-about 15); **F5, redefined as an integer scaled draw in the kernel, and
-F4 are next**, for a picture larger than 320 by 200 at the same speed
+about 15); **F5, an integer scaled draw in the kernel, and F4 are
+done** (2026-10-23: mini-doom at 960 by 600 as fast as at 320 by 200
+under QEMU), for a picture larger than 320 by 200 at the same speed
 (the author: "now it would be great if we could enlarge the screen
 since right now the doom "window" is very small on the whole
 screen"); F1 and F3 after, if their gains are measured to matter.
@@ -180,8 +181,9 @@ not fit the square of the screen's shorter side (768 under QEMU),
 are scaled down blended, and drew fewer than 40 frames in 20 seconds.
 With F4, `scale=3` is 960 by 600 on a screen of 1024 by 768, whole,
 the largest whole multiple there; `scale=4` needs a screen of 1280 by
-800 at least (the author's monitor is 1280 by 800, mini-9pi's 1024 by
-768 stretched to it). The author, of this:
+800 at least (the author's monitor is 1280 by 800; mini-9pi's 1024 by
+768 is shown on it as it is, not stretched: "I can actually see a
+black column on the left and right"). The author, of this:
 "yes we can't go through blending I think so we need to scale in
 fixed number".
 
@@ -225,6 +227,18 @@ What it is not: Plan 9's draw protocol has no scaling at all (a
 picture is drawn at its size, or through a mask); this is an
 extension of ix's, said as such in Devdraw and lib_graphics's Draw.
 F4 is needed with it, for k = 3.
+
+### F6. The Pi's own scaler (an experiment, if F5 is not enough)
+
+The Pi's display hardware (the VideoCore's HVS) can scale a picture
+to the monitor for nothing, as a graphics card shows DOS's 320 by 200
+on any screen: a game on the bare screen would ask the firmware for a
+framebuffer of 320 by 200 (or 640 by 400; 8 bits a pixel and its
+palette, perhaps) and give it the screen back after. Not on rio, not
+under QEMU, a board's only. And not known to work: the author's Pi 2
+shows mini-9pi's 1024 by 768 on its 1280 by 800 monitor as it is,
+black around it, so the firmware may show a 320 by 200 the same, small
+in the middle (2026-10-23). To try on the board before planning more.
 
 Expected: a frame at k = 2 or 3 near k = 1's 13-14 under QEMU (the
 program's part the same, the kernel's loop simple); to be measured.
@@ -342,3 +356,49 @@ whole screen?"). Under QEMU, the main tree's card, the up arrow held
 `scale=2` is a whole multiple and takes the Pixels path, but pays it
 k times (F5); 3 and 4 do not fit the square (F4). Hence F5 and F4, the
 plan's next stages.
+
+2026-10-23, **F5 and F4 done, the Pi's screen the monitor's** (the
+author: "we can do the largest; and it's ok to have a new message in
+the draw protocol", then, of the three steps proposed, "let's start").
+- The kernel: 'z' dstid[4] srcid[4] R[4*4] P[2*4] k[1], src drawn into
+  R k times larger, each pixel k by k (Devdraw, Kdraw.scale,
+  Memlayer.scale, Memdraw.scale: clipped as a draw, then shown as a
+  draw on a window is). Its loop is C, runtime.c's imag_scale beside
+  imag_copy: a source row's pixels each written k times, the k - 1 rows
+  after it copies of it, counters and no division (the Pi 1), the
+  kernel's lock given back as a copy's. Only between images of one
+  chan of whole bytes a pixel; else an error. PIXEL=c: an error.
+- The program: Draw.scale; Draw.can_scale asks the device once (a
+  pixel drawn, Display.accepted: whether the write was taken). The
+  draw platform's Pixels: the image at the picture's own size, loaded,
+  then 'z'; at the largest whole multiple that fits its box, centred
+  (old: only a box a whole multiple; else a Bitmap, blended). The
+  flag kscale=off: the program's own k by k, as before.
+- F4: window=WxH, when it fits, is the program's screen, a unit a
+  pixel, centred; the size it starts at (a window made again follows
+  the window, as the flag window alone).
+- The Pi's screen (Swconsole): the monitor's own size from the
+  firmware, up to 1920 by 1200 (1280 by 800 on the author's Pi 2); an
+  emulator's 640 by 480 keeps 1024 by 768.
+- Tests: tests/memdraw/run.sh compiles runtime.c's imag_scale on the
+  host, and Scale.ml checks it against a pixel by pixel reference
+  (2, 3 and 4 bytes a pixel, k 1 to 5, clipped starts): 0 pixels of
+  900 draws differ; with the clipped start's column left out of the
+  loop, thousands.
+- Under QEMU (a card of a private worktree, faf1c544 and this; the
+  up arrow held 20 s; 1024 by 768):
+
+  | mini-doom | before (2026-10-22) | after |
+  |---|---|---|
+  | `scale=1` | 13 to 14 | 13 to 14: view 35-45, show 20-23 (the device 2-3) |
+  | `scale=2`, 640 by 400 | 8 to 9 | 13 to 14: show 21-26 (the device 5-6) |
+  | `scale=3`, 960 by 600 | under 2 | 12.5 to 13: show 27-28 (the device 8-9) |
+  | `scale=4` (1280 by 800 does not fit: the screen, 960 by 600 in it) | under 2 | 13 to 13.5: show 27-30 |
+
+  mini-quake: the show 28-37 ms at scales 1 and 2, 42-46 at 3; its
+  view (27 to 118 ms, by where the eye is) the most of a frame. The
+  screens looked at: 960 by 600 centred, each 3 by 3 block one colour
+  (0 pixels of 538,560 differ). The recorded sessions draw-tetris,
+  draw-wolf, tetris-win, colors-win, win-new and menu the same.
+- Not checked: a game at k > 1 in a window of rio's (Memlayer.scale's
+  show) on the screen; the Pi 2 (the author's card to try).

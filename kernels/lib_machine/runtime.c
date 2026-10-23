@@ -788,6 +788,51 @@ value imag_rows(value ds, value a0, value bw, value len, value dy)
   return Val_unit;
 }
 
+/* An image drawn k times larger (Memdraw's scale, the draw device's
+ * 'z': docs/plans/plan_playground_framebuffer.md, F5): each pixel of
+ * src k by k in dst, no blending. a = [| da; dbw; sa; sbw; bpp; k; px;
+ * py; w; h |]: dst's w by h pixels from da, the first of them px
+ * columns and py rows into its source pixel's k by k (a clipped
+ * start), that pixel at sa. A row is made from its source row the
+ * first time, the k - 1 after it copies of it. */
+value imag_scale(value dst, value src, value a)
+{
+  unsigned char *d = (unsigned char *)String_val(dst) + Long_val(Field(a, 0));
+  unsigned char *s = (unsigned char *)String_val(src) + Long_val(Field(a, 2));
+  long dbw = Long_val(Field(a, 1)), sbw = Long_val(Field(a, 3)), bpp = Long_val(Field(a, 4));
+  long k = Long_val(Field(a, 5)), px = Long_val(Field(a, 6)), py = Long_val(Field(a, 7));
+  long w = Long_val(Field(a, 8)), h = Long_val(Field(a, 9)), n = w * bpp, i, j, c;
+  int out = (imag_unlock & 1) && imag_in(dst) && imag_in(src) && n * h >= IMAG_WORTH;
+  int aligned = (((long)d | (long)s | dbw | sbw) & (bpp - 1)) == 0;
+  if (out) out = imag_begin(dst, Long_val(Field(a, 0)), Long_val(Field(a, 0)) + (h - 1) * dbw + n);
+  /* (py: the row in the source pixel's k; c: the columns left of it;
+   * counted, not divided: the Pi 1 has no divide instruction) */
+  for (j = 0; j < h; j++) {
+    unsigned char *p = d + j * dbw, *q = s;
+    if (j > 0 && py != 0) memcpy(p, p - dbw, n);
+    else if (bpp == 2 && aligned) {
+      unsigned short *p2 = (unsigned short *)p, *q2 = (unsigned short *)q;
+      for (i = 0, c = k - px; i < w; i++) {
+        p2[i] = *q2;
+        if (--c == 0) { c = k; q2++; }
+      }
+    } else if (bpp == 4 && aligned) {
+      unsigned int *p4 = (unsigned int *)p, *q4 = (unsigned int *)q;
+      for (i = 0, c = k - px; i < w; i++) {
+        p4[i] = *q4;
+        if (--c == 0) { c = k; q4++; }
+      }
+    } else
+      for (i = 0, c = k - px; i < w; i++) {
+        memcpy(p + i * bpp, q, bpp);
+        if (--c == 0) { c = k; q += bpp; }
+      }
+    if (++py == k) { py = 0; s += sbw; }
+  }
+  if (out) imag_end();
+  return Val_unit;
+}
+
 /* A string's rows written: [row]'s bytes at [a] in [s], then every
  * [stride] bytes, [n] times: memset's kin, for mini-9pi's Memdraw, whose
  * narrow fills (a game's wall is columns of two or three pixels, two

@@ -489,3 +489,34 @@ let draw dst r src sp mask mp op =
         (* (old: ... then general dst r src sr mask mr op) *)
         if not (!fast && faster dst r src sr mask mr op) then (if not (hosted dst r src sr mask mr op) then general dst r src sr mask mr op);
         flush dst r
+
+(* ix: a picture drawn k times larger, each pixel k by k (the draw
+ * device's 'z', docs/plans/plan_playground_framebuffer.md, F5): its
+ * rows by the machine's C (Machine.Imag.scale), as a copy's. Only
+ * between two images of one chan of whole bytes a pixel, the source
+ * not repeated and not the destination's memory; else false, nothing
+ * drawn. Clipped as a draw is: dst's rectangle and clip, and where
+ * src's rectangle and clip go once scaled. *)
+let scale dst r src (spx, spy) k =
+  let d = dst.chan.Memchan.depth in
+  if k < 1 || src.repl || src.data == dst.data || d land 7 <> 0
+     || src.chan.Memchan.hi <> dst.chan.Memchan.hi || src.chan.Memchan.lo <> dst.chan.Memchan.lo then false
+  else begin
+    let (rx0, ry0, _, _) = r in
+    let ( >>= ) o f = match o with None -> None | Some v -> f v in
+    (match
+       clip r dst.r >>= fun r ->
+       clip r dst.clipr >>= fun r ->
+       clip src.r src.clipr >>= fun (a0, b0, a1, b1) ->
+       clip r (rx0 + (k * (a0 - spx)), ry0 + (k * (b0 - spy)), rx0 + (k * (a1 - spx)), ry0 + (k * (b1 - spy)))
+     with
+     | None -> ()
+     | Some ((x0, y0, x1, y1) as cr) ->
+         let ox = x0 - rx0 and oy = y0 - ry0 in
+         if dst.data.onscreen then !hwdraw cr;
+         Machine.Imag.scale dst.data.bytes src.data.bytes
+           [| byteaddr dst x0 y0; dst.bwidth; byteaddr src (spx + (ox / k)) (spy + (oy / k)); src.bwidth;
+              d asr 3; k; ox mod k; oy mod k; x1 - x0; y1 - y0 |];
+         flush dst cr);
+    true
+  end

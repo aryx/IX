@@ -111,6 +111,10 @@ end
  *   row first when up is not 0;
  * - [rows b a0 bw len dy]: the len bytes at a0 repeated in the dy - 1
  *   rows below, bw apart;
+ * - [scale dst src [| da; dbw; sa; sbw; bpp; k; px; py; w; h |]]: src's
+ *   pixels of bpp bytes each k by k in dst's w by h from da, the first
+ *   px columns and py rows into its pixel's k by k (an ix extension
+ *   of the draw device's: Memdraw.scale);
  * - [flush b [| pa; pitch; off; bw; n; rows |]]: rows of n bytes from
  *   off in b every bw, to physical memory at pa every pitch (the
  *   framebuffer).
@@ -129,6 +133,7 @@ module Imag : sig
   external size : unit -> int = "imag_size"
   external copy : Bytes.t -> Bytes.t -> int array -> unit = "imag_copy"
   external rows : Bytes.t -> int -> int -> int -> int -> unit = "imag_rows"
+  external scale : Bytes.t -> Bytes.t -> int array -> unit = "imag_scale"
   external flush : Bytes.t -> int array -> unit = "imag_flush"
   external screen : Bytes.t -> unit = "imag_screen"
   external covers : int -> int -> bool = "imag_covers"

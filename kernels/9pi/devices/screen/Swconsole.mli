@@ -13,8 +13,9 @@ val init : unit -> unit
 (* the screen's rectangle, once there is one *)
 val rect : unit -> (int * int * int * int) option
 
-(* the screen's size, asked of the firmware; and the display's own
+(* the screen's size, asked of the firmware (on a board the monitor's:
+ * init; 1024 by 768 under an emulator); and the display's own
  * (Machine.display_size's word: the monitor's mode), 0 before init *)
-val wid : int
-val ht : int
+val wid : int ref
+val ht : int ref
 val display : int ref

@@ -16,6 +16,18 @@ let draw_mask (dst : image) r (src : image) sp (mask : image) mp =
 let draw (dst : image) r src mask p =
   draw_mask dst r src p (match mask with Some m -> m | None -> opaque dst.display) p
 
+(* ix: 'z': dst, src, dst's rectangle, src's point, k *)
+let scale_message (dst : image) r (src : image) sp k b =
+  char b 'z'; long b dst.id; long b src.id; rect b r; point b sp; byte b k
+
+let scale (dst : image) r src sp k = message dst.display (scale_message dst r src sp k)
+
+(* (src's first pixel to dst's) *)
+let can_scale (dst : image) (src : image) =
+  let p = dst.r.min in
+  Display.accepted dst.display
+    (scale_message dst (Rectangle.v p.x p.y (p.x + 1) (p.y + 1)) src src.r.min 1)
+
 let fill dst r src = draw dst r src None Point.zero
 
 let border dst (r : Rectangle.t) n src =

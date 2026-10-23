@@ -237,11 +237,11 @@ let () =
    let all = if all <= him && Machine.ram_top () = hi then above 64 else all in
    let board = if all > him then Printf.sprintf "%dM memory: %dM video, " all (all - him) else Printf.sprintf "%dM memory: " him in
    Devcons.print (Printf.sprintf "%s%dM kernel data, %dM user, 0M swap\n" board (lo / mb) ((hi - lo) / mb)));
-  (* (a board's monitor: what the screen's 1024 by 768 is stretched to;
-   * not said for an emulator's 640 by 480, whose recorded consoles stay) *)
+  (* (a board's monitor, whose size the screen then is (Swconsole); not
+   * said for an emulator's 640 by 480, whose recorded consoles stay) *)
   (let d = !Swconsole.display in
    if d <> 0 && d <> (640 lsl 16) lor 480 then
-     Devcons.print (Printf.sprintf "display: %d by %d, the screen %d by %d\n" (d lsr 16) (d land 0xffff) Swconsole.wid Swconsole.ht));
+     Devcons.print (Printf.sprintf "display: %d by %d, the screen %d by %d\n" (d lsr 16) (d land 0xffff) !Swconsole.wid !Swconsole.ht));
   Proc.idle := (fun () -> Machine.wait_interrupt (); if Machine.core () = 0 then ignore (devices ()));
   Machine.timer_arm tick_us;
   Machine.uart_rx_enable ();

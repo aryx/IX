@@ -85,6 +85,15 @@ let message (d : t) fill =
 
 let flush (d : t) = message d (fun b -> char b 'v'); send d
 
+let accepted (d : t) fill =
+  send d;
+  fill d.buf;
+  let n = d.buf.at in
+  d.buf.at <- 0;
+  match Unix.write d.data d.buf.bytes 0 n with
+  | exception Unix.Unix_error _ -> false
+  | _ -> true
+
 (* /dev/draw/new read: twelve numbers of 12 characters, the connection's
  * number first, then the screen: its image's number (0), its format,
  * whether it repeats, its rectangle, its clipping rectangle *)

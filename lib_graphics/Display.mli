@@ -200,6 +200,9 @@ val byte : out -> int -> unit
 val long : out -> int -> unit
 val point : out -> Point.t -> unit
 val rect : out -> Rectangle.t -> unit
+(* a message sent alone, the others before it: did the device take it
+ * (an extension a kernel may not have) *)
+val accepted : t -> (out -> unit) -> bool
 
 (* what was said so far sent, and shown *)
 val flush : t -> unit

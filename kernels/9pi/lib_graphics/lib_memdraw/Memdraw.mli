@@ -97,3 +97,14 @@ val replxy : int -> int -> int -> int
 (* an opaque colour through a mask of a byte a pixel (a smoothed
  * letter) by a loop of its own; off: by the general loop *)
 val fast_grey : bool ref
+
+(* ix: [scale dst r src sp k]: src from sp drawn into dst's r k times
+ * larger, each pixel k by k, no blending (the draw device's 'z', an
+ * extension of Plan 9's protocol: docs/plans/plan_playground_framebuffer.md,
+ * F5). A game's 320 by 200 shown on the whole screen: the program
+ * gives its small picture, and the kernel's one loop writes the large
+ * one, where the program wrote it k times larger and sent all of it
+ * through the device's copies. Only between images of one chan of
+ * whole bytes a pixel, src not repeated nor sharing dst's memory:
+ * else false. *)
+val scale : Memimage.t -> rect -> Memimage.t -> int * int -> int -> bool

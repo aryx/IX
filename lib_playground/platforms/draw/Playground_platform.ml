@@ -47,6 +47,9 @@ type window = {
   width : int;
   height : int;
   scale : float;
+  (* ix: the program's units are pixels (the flag window), not the
+   * square's 1000 *)
+  in_pixels : bool;
   colors : (int, Display.image) Hashtbl.t;
   recent : int array;
   inks : Display.image option array;
@@ -57,6 +60,9 @@ type window = {
   (* ix: the image a Pixels' picture is loaded into each frame, and the
    * bytes made for it (pixels_image) *)
   mutable indexed : (Display.image * Bytes.t) option;
+  (* ix: does the device draw a picture k times larger (Draw.scale),
+   * asked once *)
+  mutable kernel_scale : bool option;
   (* the letters drawn so far, each an image of the kernel's (Letters) *)
   letters : (letter, (Display.image * Shape_render_software.mask) option) Hashtbl.t;
   (* what changed since the last frame (Redraw's accounting), and the
@@ -127,25 +133,37 @@ let side = ref 0
  * its letters blurred) *)
 let follows = ref false
 
+(* ix: the flag window=WxH (docs/plans/plan_playground_framebuffer.md,
+ * F4): the program's screen that size, a unit a pixel, centred, when
+ * the window has the room; else all of the window, as the flag window
+ * alone. The size it starts at, as on SDL: a
+ * window made again (another size, in rio) follows the window.
+ * mini-doom's scale=3 is 960 by 600 on a screen of 1024 by 768, where
+ * the square of 768 made it 768 by 480, blended. *)
+let sized : (int * int) option ref = ref None
+
 let window (display : Display.t) : window =
   let view = Display.screen display in
   Display.hold display !stats;
   let w = Rectangle.dx view.r and h = Rectangle.dy view.r in
   let n = max 1 (min w h) in
   let n = if !side > 0 then min n !side else n in
-  let width, height = if !follows then (max 1 w, max 1 h) else (n, n) in
-  let scale = if !follows then 1. else float n /. Playground.default_width in
+  let in_pixels, width, height =
+    match !sized with
+    | Some (sw, sh) when sw <= w && sh <= h -> sized := None; (true, sw, sh)
+    | _ -> if !follows then (true, max 1 w, max 1 h) else (false, n, n) in
+  let scale = if in_pixels then 1. else float n /. Playground.default_width in
   let x = view.r.min.x + ((w - width) / 2)
   and y = view.r.min.y + ((h - height) / 2) in
   let white = Display.color display Display.white in
   Draw.fill view view.r white;
   Display.free white;
-  { view; at = Rectangle.v x y (x + width) (y + height); width; height; scale;
+  { view; at = Rectangle.v x y (x + width) (y + height); width; height; scale; in_pixels;
     (* (the screen's format: showing it is a copy) *)
     back =
       Display.alloc display (Rectangle.v 0 0 width height) (Display.format display)
         ~repl:false Display.white;
-    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; indexed = None; letters = Hashtbl.create 512;
+    colors = Hashtbl.create 64; recent = Array.make 256 (-1); inks = Array.make 256 None; written = Hashtbl.create 16; last = None; pictures = []; indexed = None; kernel_scale = None; letters = Hashtbl.create 512;
     redraw = Redraw.create ~width ~height ~scale Shape_render_software.default_options;
     inside = None }
 
@@ -426,21 +444,27 @@ let picture (win : window) (m : Affine.t) (w : float) (h : float) (img : Rgba_im
  * k: one pass of table look-ups, one load, and a copy the device need
  * not convert (the window's back image is of the screen's format).
  * The image and its bytes are kept and loaded again each frame: a
- * game's picture is new at every frame. Only upright, at a whole
- * multiple of its size, in a format of 2 or 4 bytes a pixel known here
- * (r5g6b5, x8r8g8b8); else None, and it is shown as a Bitmap. *)
-let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Playground.pixels) : Display.image option =
+ * game's picture is new at every frame. Only upright, at the largest
+ * whole multiple of its size that fits its box (centred in it: no
+ * blending), in a format of 2 or 4 bytes a pixel known here (r5g6b5,
+ * x8r8g8b8); else None, and it is shown as a Bitmap.
+ *
+ * F5: the image at the picture's own size, and the device draws it k
+ * times larger (Draw.scale, mini-9pi's 'z'): the program's part is a
+ * 320 by 200's whatever k. The image's multiple k' and the device's
+ * k'' (k = k' k''): 1 and k, or, when the device has no 'z' (PIXEL=c)
+ * or with the flag kscale=off, k and 1 (old: always so). *)
+let kernel_scaling = ref true
+
+let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Playground.pixels) : (Display.image * int) option =
   let near0 (v : float) : bool = Float.abs v < 1e-9 in
-  let k = int_of_float (Float.round (m.a *. w /. float p.pwidth)) in
+  (* (old: the box a whole multiple, k = its width / the picture's) *)
+  let k = min (int_of_float ((m.a *. w) +. 0.5) / p.pwidth) (int_of_float ((-.m.d *. h) +. 0.5) / p.pheight) in
   let fmt = Display.format win.back.display in
   let size = match fmt with "r5g6b5" -> 2 | "x8r8g8b8" -> 4 | _ -> 0 in
-  if not (near0 m.b && near0 m.c && k >= 1 && size > 0
-          && Float.abs ((m.a *. w) -. float (k * p.pwidth)) < 0.5
-          && Float.abs ((-.m.d *. h) -. float (k * p.pheight)) < 0.5)
-  then None
+  if not (near0 m.b && near0 m.c && k >= 1 && size > 0) then None
   else begin
-    let bw = k * p.pwidth and bh = k * p.pheight in
-    let image, bytes =
+    let made (bw : int) (bh : int) : Display.image * Bytes.t =
       match win.indexed with
       | Some (i, b) when Rectangle.dx i.r = bw && Rectangle.dy i.r = bh -> (i, b)
       | old ->
@@ -450,6 +474,19 @@ let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Play
           win.indexed <- Some (i, b);
           (i, b)
     in
+    let device =
+      !kernel_scaling && k > 1
+      &&
+      match win.kernel_scale with
+      | Some yes -> yes
+      | None ->
+          let yes = Draw.can_scale win.back (fst (made p.pwidth p.pheight)) in
+          win.kernel_scale <- Some yes;
+          yes
+    in
+    let k, scaled = if device then (1, k) else (k, 1) in
+    let bw = k * p.pwidth and bh = k * p.pheight in
+    let image, bytes = made bw bh in
     (* each colour in the format, little-endian, as the device's words *)
     let table = Bytes.create (4 * 256) in
     for c = 0 to 255 do
@@ -485,7 +522,7 @@ let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Play
       for j = 1 to k - 1 do Bytes.blit bytes (y * k * row) bytes (((y * k) + j) * row) row done
     done;
     Display.load_sub image image.r bytes 0 (row * bh);
-    Some image
+    Some (image, scaled)
   end
 
 (* Letters: each letter's mask made by the software renderer, as on
@@ -593,11 +630,14 @@ let rec shape (win : window) (m : Affine.t) (s : Playground.shape) : unit =
         | None -> rectangle win m w h (ink win (0xc0, 0xc0, 0xc0) s.alpha))
     | Pixels (w, h, p) -> (
         match if s.alpha < 1. then None else pixels_image win m w h p with
-        | Some image ->
+        | Some (image, k) ->
+            let iw = k * Rectangle.dx image.r and ih = k * Rectangle.dy image.r in
             let cx, cy = Affine.apply m (0., 0.) in
-            let x0 = round (cx -. (float (Rectangle.dx image.r) /. 2.)) and y0 = round (cy -. (float (Rectangle.dy image.r) /. 2.)) in
-            let r = Rectangle.v x0 y0 (x0 + Rectangle.dx image.r) (y0 + Rectangle.dy image.r) in
-            if shown win r then Draw.draw win.back r image None (Point.v 0 0)
+            let x0 = round (cx -. (float iw /. 2.)) and y0 = round (cy -. (float ih /. 2.)) in
+            let r = Rectangle.v x0 y0 (x0 + iw) (y0 + ih) in
+            if shown win r then
+              if k > 1 then Draw.scale win.back r image Point.zero k
+              else Draw.draw win.back r image None Point.zero
         | None ->
             (* (turned, or at another size: as a Bitmap) *)
             let k = max 1 (int_of_float (Float.round (Float.abs m.a *. w /. float p.pwidth))) in
@@ -782,13 +822,14 @@ let run_app (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.draw ; Cap.mouse 
   (* (the command line's size=, else the program's: mini-doom asks the
    * size of its picture, not to have it scaled) *)
   side := (match List.assoc_opt "size" (Plan9_loop.flags caps @ flags) with Some s -> (try int_of_string s with Failure _ -> 0) | None -> 0);
-  (* (window=WxH, mini-doom's picture's size, not yet: the square, and
-   * size=, as before) *)
   follows := Session.window (Plan9_loop.flags caps @ flags) = Session.Follows None;
+  sized := (match Session.window (Plan9_loop.flags caps @ flags) with Session.Follows s -> s | Session.Square -> None);
+  follows := !follows || !sized <> None;
+  kernel_scaling := List.assoc_opt "kscale" (Plan9_loop.flags caps) <> Some "off";
   Plan9_loop.run_app
     { Plan9_loop.make = window; at = (fun (w : window) -> w.at); show;
       units =
-        (fun (w : window) -> if !follows then (w.width, w.height) else Plan9_loop.square);
+        (fun (w : window) -> if w.in_pixels then (w.width, w.height) else Plan9_loop.square);
       free = (fun (w : window) -> Hashtbl.iter (fun (_ : int) (i : Display.image) -> Display.free i) w.colors;
         List.iter (fun (p : picture) -> Option.iter Display.free p.image) w.pictures;
         Hashtbl.iter (fun (_ : letter) (i : (Display.image * Shape_render_software.mask) option) -> Option.iter (fun ((i : Display.image), _) -> Display.free i) i) w.letters;

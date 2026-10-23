@@ -7,8 +7,13 @@
  * author, of mini-drscheme's letters on his Pi1, "the text is hard to
  * read"; "1024x768 sounds right". A playground's program has the
  * square of the height: 768, where a letter's cell is the default
- * font's, 9 by 15.) *)
-let wid = 1024 and ht = 768 and depth = 16
+ * font's, 9 by 15.) On a board, the monitor's own size (init), up to
+ * 1920 by 1200: the firmware does not stretch a framebuffer to the
+ * monitor, it shows it as it is, black around it (the author's Pi 2 on
+ * a monitor of 1280 by 800, 2026-10-23: "I can actually see a black
+ * column on the left and right"), and mini-doom's 320 by 200 four
+ * times is that monitor whole. *)
+let wid = ref 1024 and ht = ref 768 and depth = 16
 
 (* the display's own size, asked before the framebuffer (Machine.display_size);
  * said at boot by Main when it is not an emulator's 640 by 480 *)
@@ -109,6 +114,10 @@ let screenwin () =
 
 let init () =
   display := Machine.display_size ();
+  (* (an emulator says 640 by 480: 1024 by 768 there, as before) *)
+  let dw = !display lsr 16 and dh = !display land 0xffff in
+  if dw > 640 && dh > 480 && dw <= 1920 && dh <= 1200 then begin wid := dw; ht := dh end;
+  let wid = !wid and ht = !ht in
   let pa = Machine.fb_init wid ht depth in
   if pa <> 0 && Kdraw.init pa wid ht then begin
     screen_r := Some (0, 0, wid, ht);

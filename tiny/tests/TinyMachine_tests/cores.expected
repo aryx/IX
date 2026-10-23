@@ -1,3 +1,6 @@
 3
 1113
 1213
+tiny-machine: core 0: 0.0 M instructions: programs 0%, kernel 3%, idle 96%
+tiny-machine: core 1: 0.0 M instructions: programs 0%, kernel 99%, idle 0%
+tiny-machine: core 2: 0.0 M instructions: programs 0%, kernel 99%, idle 0%

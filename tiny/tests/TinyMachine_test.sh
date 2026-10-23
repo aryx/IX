@@ -27,7 +27,7 @@
 #    rate.tm the speed that -rate 16 gives the machine, read from its
 #    rate register; cores.tm three cores (-cores 3): their count, the
 #    interrupt between them and who raised it, a device of core 0's
-#    reached by another, a fault.
+#    reached by another, a fault; each core's instructions at the halt.
 #
 # Usage: TinyMachine_test.sh
 

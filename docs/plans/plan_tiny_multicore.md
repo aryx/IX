@@ -245,3 +245,19 @@ where said.
   control `hartid` and `harts` are `core` and `cores`, tiny-kernel's
   `k_cores` and a process's `core`, the test `cores.tm`; the plan's
   text renamed too.
+- **Each core's instructions, at the halt** (the author: "yes add the
+  per-core busy/idle counts. I also like the -j 6 and measuring plan
+  to possibly reorganize the Buildfile and maybe even code
+  sometimes"): with several cores, a line each on the standard error,
+  its instructions and how many were a program's, the kernel's, idle
+  (the kernel's jump to itself). Counted a batch of `ticks` at a time,
+  by its first instruction: exact, as a trap, an eret and the write of
+  status before the loop of idle each end a batch. cores.expected has
+  the three lines (in turns the same at each run).
+- **Measuring, running**: the self-build with `build -j 4` on four
+  domains and the one-core one, 87 minutes in, the first nearly through
+  the first build (219 lines), the other at 161; `build -t -j 6` on
+  four domains with the counts, just started: each recipe's time (the
+  critical path: the library's one recipe, the large units) and each
+  core's use, to reorganize the Buildfile (the library a recipe a
+  module) and the code where a unit holds everything up.

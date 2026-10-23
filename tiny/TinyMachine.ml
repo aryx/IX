@@ -75,7 +75,9 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
       four cores (tiny-kernel: tiny-build -j 4 compiles four units at
       once), in turns: a slice of each in one thread, the same run each
       time; -cores-parallel: each core on a domain of its own, on the
-      host's cores, where OCaml has domains (5: tiny-machine built by it)
+      host's cores, where OCaml has domains (5: tiny-machine built by it);
+      at the halt, each core's instructions, how many were a program's,
+      the kernel's and idle (on the standard error)
 The console is this terminal; ^D ends t6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
@@ -618,8 +620,22 @@ let run caps o image =
           done
         with e -> ignore (Atomic.compare_and_set failed None (Some e))))
       others;
+  (* each core's instructions, with several: how many of them were a
+   * program's, the kernel's, idle (on the standard error) *)
+  let spent () =
+    List.iteri (fun k (h : TinyMachineDevices.machine) ->
+      let u = h.spent.(0) and s = h.spent.(1) and i = h.spent.(2) in
+      let all = max 1 (u + s + i) in
+      let pc v = 100 * v / all in
+      Console.eprint caps
+        (Printf.sprintf
+           "tiny-machine: core %d: %.1f M instructions: programs %d%%, \
+            kernel %d%%, idle %d%%\n"
+           k (float_of_int all /. 1e6) (pc u) (pc s) (pc i)))
+      (mc :: List.map fst others) in
   let halted n =
     ignore (Atomic.compare_and_set failed None (Some Exit));
+    if others <> [] then spent ();
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
     Option.iter (fun f ->
       TinyMachineDevices.speaker_hear mc;

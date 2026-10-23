@@ -115,6 +115,9 @@ type machine = {
   hear : string -> unit;
   mutable touched : bool;
   ipis : int Atomic.t array;
+  (* the instructions this core ran: in user mode, in the kernel, the
+   * kernel idle (a jump to itself), counted by [ticks] *)
+  spent : int array;
 }
 
 (* A machine with an image at 0. [put] has each byte of the console's

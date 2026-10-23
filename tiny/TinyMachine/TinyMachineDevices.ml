@@ -370,6 +370,9 @@ type machine = {
   mutable touched : bool;
   (* the senders of each core's interrupt, a bit each *)
   ipis : int Atomic.t array;
+  (* this core's instructions so far: in user mode, in the kernel, and
+   * the kernel's idle (see [ticks]) *)
+  spent : int array;
 }
 
 (* whether this core is core 0, which the devices are wired to *)
@@ -612,7 +615,7 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
             flying = [] };
     speaker = { ring_at = 0; played = 0; since = 0 }; hear;
     send = (match send with Some f -> f | None -> ignore); touched = false;
-    ipis = Array.init !cores (fun _ -> Atomic.make 0) }
+    ipis = Array.init !cores (fun _ -> Atomic.make 0); spent = [| 0; 0; 0 |] }
 
 (* core k, k > 0: its registers, its pc at 0 and its registers of
  * control, as core 0's at the start; the memory, the devices and the
@@ -626,7 +629,7 @@ let core mc k =
   let r = Array.make 16 0 in
   r.(TinyMachineISA.sp) <- devices;
   { mc with cpu = { r; pc = 0; mem = mc.cpu.mem }; csr = c; events = [];
-            touched = false }
+            touched = false; spent = [| 0; 0; 0 |] }
 
 (* the speaker's samples due, to [hear]: the host's, between two ticks *)
 let speaker_hear mc = speaker_play mc.speaker mc.cpu mc.csr.(time) mc.hear
@@ -737,15 +740,36 @@ let calm mc =
     min packet (min event (until c.(timecmp)))
   end
 
+(* What the instructions from here are, for [spent]: a program's (user
+ * mode), the kernel's, or the kernel idle, a jump to itself (tiny-kernel's
+ * k_idle1 and its other cores' wait; with the pages off). The steps
+ * that follow one look are all of one kind: a change of mode is a trap
+ * or an eret, and the kernel's way into its loop of idle writes status
+ * first, which [touched] ends the steps at. So one look a batch counts
+ * every instruction, and the count costs nothing that shows. *)
+let idle_word = TinyMachineISA.encode (TinyMachineISA.Jal (0, -1))
+let what mc =
+  let m = mc.cpu in
+  if not (supervisor mc) then 0
+  else if mc.csr.(satp) land 0x80000000 = 0
+          && TinyMachineCPU.load m TinyMachineISA.W m.pc = idle_word then 2
+  else 1
+
 let ticks mc (env : TinyMachineCPU.env) n =
-  if not !batched then for _i = 1 to n do tick mc env done
+  if not !batched then
+    for _i = 1 to n do
+      let w = what mc in
+      tick mc env; mc.spent.(w) <- mc.spent.(w) + 1
+    done
   else begin
     let m = mc.cpu and c = mc.csr in
     let left = ref n in
     while !left > 0 do
+      let w = what mc in
       tick mc env; decr left;
       mc.touched <- false;
       let k = ref (min !left (calm mc)) in
+      let k0 = !k in
       left := !left - !k;
       let pc = ref m.pc in
       (try
@@ -758,6 +782,7 @@ let ticks mc (env : TinyMachineCPU.env) n =
        with Trap (cause_v, tval_v) ->
          trap mc cause_v tval_v
            (if cause_v = c_sys then TinyMachineCPU.addr (!pc + 4) else !pc));
+      mc.spent.(w) <- mc.spent.(w) + 1 + k0 - !k;
       (* the steps not run, a device touched: they are still to do *)
       left := !left + !k
     done

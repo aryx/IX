@@ -426,3 +426,11 @@ good scale if no scale=xxx is specified").
   the screen's edges, rows 0-2 and 765-767, columns 0-2 and 1021-1023.
 - Not checked: the Pi 2 (4 expected on 1280 by 800), a game in a
   window of rio's.
+- Tried, not kept: a flag block=k for the games of shapes (the draw
+  platform's back image a k-th of the window's sides, shown by
+  Draw.scale). Under QEMU, cameltry's show 25 ms at block=1 and 24 at
+  block=2 (the device 12 and 16 ms): the shapes are the kernel's to
+  draw, and the copy to the screen is the same pixels, made slower by
+  the scaling. Reverted (the author: "let's revert those changes if
+  they are actually not taht useful for cameltry since we don't send
+  pixels to draw (like doom and quake)").

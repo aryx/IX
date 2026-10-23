@@ -1,0 +1,5 @@
+; mini-doom's fights without a window: Fight.ml
+(executable
+ (name Fight)
+ (libraries ix_doom ix_core fpath caps unix))
+(include_subdirs no)

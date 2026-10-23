@@ -29,7 +29,7 @@ BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/$DIR$BESIDE
 # (each after the ones it names)
 LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking \
- lib_networking/netcode lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+ lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 S=$TOP/languages/scheme
 SO=$B/lib_playground/scheme

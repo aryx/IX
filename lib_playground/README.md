@@ -12,11 +12,11 @@ What ix's games (`games/`), examples (`examples/`) and mini-drscheme
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
 numbers below are `scripts/playground_copies.sh lib_playground`'s,
-against the playground at `028d8abf` (2026-10-06).
+against the playground at `ff335663` (2026-10-23).
 
 ## What was copied
 
-35 files, 7,044 lines there and 6,926 here, in the playground's
+43 files, 8,796 lines there and 8,611 here, in the playground's
 folders:
 
 | here | there | what |
@@ -25,7 +25,7 @@ folders:
 | `core/` | `libs/core` | Elm's: `Basics`, `Color`, `Time`, `Cmd`, `Sub`, `Set` |
 | `random/` | `libs/random` | `Lehmer` |
 | `layers/` | `playground/layers` | what games are made of: `Camera2d`, `Scene2d`, `Sprite`, `Tilemap` |
-| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` (`lib_audio`), `Juice` (`lib_juice`), `Multiplayer` (`lib_networking/netcode`) |
+| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` and `Audio3d` (`lib_audio`), `Juice` (`lib_juice`), `Multiplayer` (`lib_networking/netcode`), `Ai` (`lib_ai`) |
 | `ways/` | `playground/ways` | `Bigbang`, How to Design Programs' world |
 | `platforms/Shape_render_software` | `playground/platforms/software` | shapes to pixels, over `lib_graphics/software` |
 | `platforms/Input_script` | `playground/platforms/native_common` | the keys and the mouse of a script, for the tests |
@@ -66,11 +66,23 @@ PC:
   computed, given to the device as a picture): 84 of its 92 lines are
   ix's.
 
-- `Audio`: less the live effects not copied (`drive`, `chorus`,
-  `flanger`, `phaser`, `rotary`, `compressed`); **a loop is rendered
-  as it is played** (`lib_audio`'s `Synth.pieces`), not whole before
-  its first sample; its optional arguments said, its constructors with
-  their module. The same samples come out (`games/tests/audio.sh`).
+- `Audio`: less the live effects not copied (`chorus`, `flanger`,
+  `phaser`, `rotary`: `lib_audio` has not their modules; `drive` and
+  `compressed` are over its `Drive` and `Dynamics`); **a loop is
+  rendered as it is played** (`lib_audio`'s `Synth.pieces`), not whole
+  before its first sample; its optional arguments said, its
+  constructors with their module. The same samples come out
+  (`games/tests/audio.sh`).
+- `Audio3d` (2026-10-23, for mini-doom): ix has no `Playground3d`, so
+  the listener is made from a camera's eye, target and up said by
+  their labels (`listener`), or from an eye and a yaw in a world whose
+  z is up (`facing`, ix's: Doom's and Quake's); `heard`'s optional
+  arguments said.
+
+- `Ai` (2026-10-23, for mini-doom's monsters): its ways through a map
+  and `aim_error` only, not its steering, its opponent, its state
+  machine nor the rest of its bots (`lib_ai/README.md`); `diagonal` and
+  `settle` said, its functions annotated.
 
 - `Multiplayer` (2026-10-13): its optional arguments said (`network`
   an option, `split`); the network's capability is one that forks too
@@ -115,9 +127,9 @@ PC:
 - **3D**: `Playground3d`, `Gpu_scene`, the layers `Camera3d`,
   `Character3d`, `Portal3d`, `Ragdoll3d`
   ([`plan_gpu.md`](../docs/plans/plan_gpu.md)).
-- **The other apis**: `Audio3d` ([`plan_audio.md`](../docs/plans/done/plan_audio.md)),
-  `Ai`, `Juice3d`, `Multiplayer`, `Multiplayer3d`,
-  `Physics3d`, and the debug views.
+- **The other apis**: `Ai`'s other families, `Juice3d`,
+  `Multiplayer`, `Multiplayer3d`, `Physics3d`, and the debug views
+  (`Ai_debug` among them).
 - **The other ways**: `Karel`, `Logo`, `Logo3d`, `Povray`,
   `Puzzlescript`, `Teletype`, `Textmode`, `Universe`.
 - **Its platforms**: native (SDL, Cairo, OpenGL), web (js_of_ocaml,

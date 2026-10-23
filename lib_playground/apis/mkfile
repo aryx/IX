@@ -1,10 +1,10 @@
 # lib_playground's apis and ways, a library of their own
-# (mkfiles/mklib): Physics, Gui, Audio, Juice, Multiplayer and Bigbang,
+# (mkfiles/mklib): Physics, Gui, Audio, Audio3d, Juice, Multiplayer, Ai and Bigbang,
 # each over a library of ix's, after them all
 TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/apis
 DIRS=. ../ways
-NEEDS=lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking/netcode
-UNITS=Audio Gui Juice Multiplayer Physics Bigbang
+NEEDS=lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking/netcode lib_ai
+UNITS=Audio Audio3d Gui Juice Multiplayer Physics Ai Bigbang
 <$TOP/mkfiles/mklib

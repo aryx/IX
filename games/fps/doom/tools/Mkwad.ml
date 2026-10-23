@@ -22,6 +22,13 @@
  *             picture (columns of posts, its transparent pixels left
  *             out), its colours the palette's nearest
  *   F_START ... F_END  the flats the sectors name, 64 by 64 bytes
+ *   S_START ... S_END  the sprites of the levels' things, and those of
+ *             the states mini-doom has (Info: the weapons, the shots'
+ *             puffs and blood, the fireballs, the barrel's blast)
+ *   DSPISTOL ...  the sounds mini-doom makes (Info.sounds), each
+ *             sounds/ds*.wav (8 bits, one channel) made DMX's lump
+ *   D_E1M1 ...  each level's music, musics/d_*.mid, as MIDI (Freedoom's
+ *             WADs keep it so; id's kept MUS)
  *
  * usage: mini-mkwad freedoom-dir out.wad E1M1 [MAP...]
  *
@@ -207,6 +214,39 @@ let uniq (l : string list) : string list =
   List.rev (List.fold_left (fun (acc : string list) (x : string) -> if List.mem x acc then acc else x :: acc) [] l)
 
 (*****************************************************************************)
+(* Sounds *)
+(*****************************************************************************)
+
+(* a WAV of 8 bits, one channel, as DMX's sound lump: 3, the rate, the
+ * length with the pads, the first sample 16 times, the samples, the
+ * last 16 times (what deutex makes of it) *)
+let dmx_of_wav (name : string) (wav : string) : string =
+  let le32 (i : int) : int = Wad.int32 wav i in
+  let rec chunks (i : int) (acc : (string * int * int) list)
+      : (string * int * int) list =
+    if i + 8 > String.length wav then acc
+    else
+      let n = le32 (i + 4) in
+      chunks (i + 8 + n + (n land 1)) ((String.sub wav i 4, i + 8, n) :: acc) in
+  let all = chunks 12 [] in
+  let find (id : string) : int * int =
+    match List.find_opt (fun ((c, _, _) : string * int * int) -> c = id) all with
+    | Some (_, at, n) -> (at, n)
+    | None -> failwith (name ^ ": no " ^ id ^ " chunk") in
+  let fmt, _ = find "fmt " and data, n = find "data" in
+  if Wad.short wav (fmt + 2) <> 1 || Wad.short wav (fmt + 14) <> 8 then
+    failwith (name ^ ": not 8 bits, one channel");
+  let samples = String.sub wav data n in
+  let b = Buffer.create (n + 40) in
+  Wad.add_short b 3;
+  Wad.add_short b (le32 (fmt + 4));
+  Wad.add_int32 b (n + 32);
+  Buffer.add_string b (String.make 16 (if n > 0 then samples.[0] else '\128'));
+  Buffer.add_string b samples;
+  Buffer.add_string b (String.make 16 (if n > 0 then samples.[n - 1] else '\128'));
+  Buffer.contents b
+
+(*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
@@ -276,7 +316,7 @@ let make (caps : < Cap.open_in ; Cap.open_out ; Cap.stdout ; .. >) (dir : string
   let kinds = List.concat_map (fun ((_, lumps) : string * Wad.lump list) ->
     let d = (List.find (fun (l : Wad.lump) -> l.name = "THINGS") lumps).data in
     List.init (String.length d / 10) (fun (k : int) -> Wad.short d ((10 * k) + 6))) levels in
-  let names = Things.sprite_names kinds in
+  let names = uniq (Things.sprite_names kinds @ Info.sprites) in
   let sprites =
     List.filter_map
       (fun ((n, x, y) : string * int * int) ->
@@ -313,18 +353,37 @@ let make (caps : < Cap.open_in ; Cap.open_out ; Cap.stdout ; .. >) (dir : string
     Wad.add_int32 b (List.length pnames);
     List.iter (Wad.add_name8 b) pnames;
     Buffer.contents b in
+  let sounds =
+    List.map
+      (fun (n : string) ->
+        let path = Printf.sprintf "sounds/ds%s.wav" n in
+        let data = dmx_of_wav path (read path) in
+        { Wad.name = String.uppercase_ascii ("ds" ^ n); data })
+      Info.sounds in
+  let musics =
+    List.filter_map
+      (fun ((m, _) : string * Wad.lump list) ->
+        let path = Printf.sprintf "musics/d_%s.mid" (String.lowercase_ascii m) in
+        try Some { Wad.name = "D_" ^ m; data = read path }
+        with Sys_error _ | Unix.Unix_error _ -> None)
+      levels in
   let lumps =
     [ { Wad.name = "PLAYPAL"; data = pal_bytes }; { Wad.name = "COLORMAP"; data = colormap pal } ]
     @ List.concat_map (fun ((m, l) : string * Wad.lump list) -> { Wad.name = m; data = "" } :: l) levels
     @ [ { Wad.name = "TEXTURE1"; data = texture1 }; { Wad.name = "PNAMES"; data = pnames_lump } ]
     @ [ { Wad.name = "P_START"; data = "" } ] @ patches @ [ { Wad.name = "P_END"; data = "" } ]
     @ [ { Wad.name = "F_START"; data = "" } ] @ flats @ [ { Wad.name = "F_END"; data = "" } ]
-    @ [ { Wad.name = "S_START"; data = "" } ] @ sprites @ [ { Wad.name = "S_END"; data = "" } ] in
+    @ [ { Wad.name = "S_START"; data = "" } ] @ sprites @ [ { Wad.name = "S_END"; data = "" } ]
+    @ sounds @ musics in
   let bytes = Wad.write "IWAD" lumps in
   FS.write caps (Fpath.v out) bytes;
   Console.print caps
-    (Printf.sprintf "%s: %d levels, %d textures of %d patches, %d flats, %d sprites' pictures, %d bytes\n" out (List.length levels)
-       (List.length textures) (List.length patches) (List.length flats) (List.length sprites) (String.length bytes))
+    (Printf.sprintf "%s: %d levels, %d textures of %d patches, %d flats\n" out
+       (List.length levels) (List.length textures) (List.length patches)
+       (List.length flats)
+     ^ Printf.sprintf "%d sprites' pictures, %d sounds, %d musics, %d bytes\n"
+         (List.length sprites) (List.length sounds) (List.length musics)
+         (String.length bytes))
 
 let () =
   Cap.main (fun caps ->

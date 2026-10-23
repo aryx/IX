@@ -2,7 +2,8 @@
 # architecture (core/: Cmd, Sub...), the shapes (Playground), the
 # random numbers and the layers (camera, sprites, tiles). Its other
 # parts are libraries of their own, after the ones they stand on:
-# apis/ (after lib_physics, lib_gui, lib_audio, lib_juice, netcode),
+# apis/ (after lib_physics, lib_gui, lib_audio, lib_juice, netcode,
+# lib_ai),
 # platforms/ and each platform (platforms/ppm...).
 TOP=..
 <$TOP/mkfiles/mkconfig

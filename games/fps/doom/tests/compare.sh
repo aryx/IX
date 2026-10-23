@@ -6,8 +6,9 @@
 # the same WAD, the same level, the eye at the same place, the frame of
 # each (id's by reference/build.sh's refdoom, mini-doom's by the ppm
 # platform at scale=1), and the pixels that differ, of 64,000. id's
-# draws the things too (no monster: -nomonsters); NOTHINGS=1, none of
-# them, to compare the walls and flats alone.
+# draws the things too (no monster: -nomonsters, and mini-doom's
+# nomonsters; no status line); NOTHINGS=1, none of them, to compare the
+# walls and flats alone.
 #   usage: compare.sh WAD [x y angle]...   (default: E1M1's views below)
 #   REFDOOM=.../refdoom (reference/build.sh's), OUT=dir: the pictures,
 #   id's, mini-doom's and the pixels that differ (red), side by side,
@@ -25,7 +26,7 @@ dune build ./games/fps/doom/Doom.exe 2> /dev/null
 while [ $# -ge 3 ]; do
   x=$1 y=$2 a=$3; shift 3
   (cd $W && REF_X=$x REF_Y=$y REF_ANGLE=$a REF_OUT=$W/ref.ppm env ${NOTHINGS:+REF_NOTHINGS=1} timeout 30 "$ref" -warp 1 1 -nomonsters > /dev/null 2>&1)
-  ./_build/default/games/fps/doom/Doom.exe -dump-frame 1 $W/mine.ppm wad=$wad x=$x y=$y angle=$a scale=1 window=320x320 ${NOTHINGS:+things=off}
+  ./_build/default/games/fps/doom/Doom.exe -dump-frame 1 $W/mine.ppm wad=$wad x=$x y=$y angle=$a scale=1 window=320x320 nomonsters status=off ${NOTHINGS:+things=off}
   python3 - $W/ref.ppm $W/mine.ppm "$x $y $a" <<'PY'
 import sys
 def ppm(f):

@@ -141,8 +141,9 @@ a second (4,748,705,754 instructions in all), not `costs.sh`'s three.
   `Polyphony`, `Sampler`, `Fm_algorithm`, `Dx_envelope`, and
   `effects/`'s `Eq`, `Leslie`, `Modulated_delay`, `Modulation`,
   `Phaser`, `Reverb`, `Rack` (so `Audio`'s `chorus`, `flanger`,
-  `phaser`, `rotary`; its `drive` and `compressed` could come back:
-  `Drive` and `Dynamics` are here now).
+  `phaser`, `rotary`: about 490 lines of modules, none a game's sound
+  needs; its `drive` and `compressed`, over `Drive` and `Dynamics`, are
+  in).
 - `Tape`, Vorbis (`Ogg`, `Vorbis`).
 - (`playground/apis/Audio`, the games' API over this library, is in
   `lib_playground/apis/`: the plan's stage 4.)

@@ -1,12 +1,28 @@
-; games/fps/doom: mini-doom (docs/plans/plan_doom.md), Doom's renderer
-; over a WAD; here with the platform that writes a frame to a file (the
+; games/fps/doom: mini-doom (docs/plans/plan_doom.md), Doom over a
+; WAD; here with the platform that writes a frame to a file (the
 ; tests'); sdl/ is the one with a window, bin/mini-doom; mini-mk's
-; mkfile builds it for mini-9pi
+; mkfile builds it for mini-9pi. Its modules in folders, by id's files
+; (one library, ix_doom):
+;   wad/      the WAD and what is read from it: Wad, Level, Textures
+;             (w_wad.c, p_setup.c, r_data.c)
+;   render/   the picture: View, Bsp, Segs, Planes, Sprites, Render
+;             (r_*.c)
+;   play/     the walk: World, Collision, Specials, Play (p_map.c,
+;             p_spec.c and its kin, p_user.c, p_tick.c)
+;   actors/   what acts and fights: Info, Things, Mobj, Inter, Enemy,
+;             Weapons, Ways (info.c, p_mobj.c, p_inter.c, p_enemy.c,
+;             p_pspr.c; Ways the playground's AI)
+;   sound/    Sound, Mus (s_sound.c, i_sound.c)
+; sdl/, tools/ and tests/ have their own stanzas.
+(include_subdirs unqualified)
+
 (library
  (name ix_doom)
  (wrapped false)
- (modules Wad Level Textures Things View Planes Segs Sprites Bsp Render World Collision Specials Play)
- (libraries ix_core))
+ (modules Wad Level Textures Info Things View Planes Segs Sprites Bsp Render
+   World Collision Specials Mobj Inter Ways Enemy Weapons Play Mus Sound)
+ ; (ix_playground: its Audio, Audio3d and Ai)
+ (libraries ix_playground ix_core))
 
 (executable
  (name Doom)

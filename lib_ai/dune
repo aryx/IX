@@ -1,0 +1,11 @@
+; lib_ai: the author's playground's game AI (its libs/ai), the part
+; mini-doom's monsters ask of the playground's Ai: movement/'s Pathfind
+; (breadth-first, Dijkstra, A*, flow fields); copied (lib_ai/README.md).
+; tests/ has its own stanzas and is not of the folders.
+(include_subdirs unqualified)
+
+(library
+ (name ix_ai)
+ (wrapped false)
+ (modules Pathfind)
+ (libraries ix_core))

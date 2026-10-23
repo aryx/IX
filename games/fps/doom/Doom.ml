@@ -10,9 +10,11 @@
  *
  *   the keys: the arrows (or w, s) walk and turn; a and d step aside
  *   (Doom's , and .); shift runs; space (or e) uses (a door, a
- *   switch, a lift)
+ *   switch, a lift); control (or f) fires; 1 to 3 the weapons (1 the
+ *   fist, or the chainsaw; 2 the pistol; 3 the shotgun)
  *
- *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=n] [x=X y=Y angle=A] [monsters] [lumps]
+ *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=n] [x=X y=Y angle=A]
+ *                    [nomonsters] [ai=ways] [sound=off|3d] [music=off] [lumps]
  *     wad=   the WAD (default: /lib/doom/freedoom.wad, else
  *            games/fps/doom/data/freedoom.wad: the card's, the
  *            repository's); an IWAD of id's works the same
@@ -26,8 +28,15 @@
  *            device makes it n times larger: mini-9pi's 'z')
  *     x= y= angle=  the player put there, looking that way (degrees):
  *            a test's camera (tests/compare.sh)
- *     monsters  the level's monsters, standing (Doom's -nomonsters is
- *            the default: none moves nor attacks here)
+ *     nomonsters  the level without its monsters (Doom's -nomonsters)
+ *     ai=ways  the monsters find their way by the playground's AI
+ *            (Ways), not id's (Enemy)
+ *     sound=  off: none; 3d: the playground's Audio3d, not id's
+ *            (Sound)
+ *     music=  off, or on: the level's music (Audio's MIDI player); off
+ *            by default on Plan 9: mini-ml's code makes a second of it
+ *            in 7 (OCaml's in 0.3), the game's frames stopped meanwhile
+ *     status=off  no status line (a test's picture: tests/compare.sh)
  *     lumps  the WAD's lumps listed, and the end
  *
  * A frame (the playground's view): Play's tics since the last frame
@@ -56,7 +65,15 @@
 module P = Playground
 
 type model = {
-  play : World.t;
+  mutable play : World.t;
+  (* the level again, from its start (the player dead, use pressed) *)
+  restart : unit -> World.t;
+  sound : Sound.t option;
+  status : bool; (* the status line shown *)
+  (* the palette reddened by the pain, 1 to 8 (id's PLAYPAL's 1 to 8),
+   * or gilded by an item, 9 to 12: each made once, the same value
+   * then *)
+  palettes : string array;
   sprites : Things.sprites;
   render : Render.t;
   (* two pictures' bytes, one a frame in turn: the platform compares a
@@ -65,8 +82,6 @@ type model = {
    * ([view]) *)
   screens : Bytes.t array;
   mutable frames : int;
-  (* the palette, r g b an index *)
-  palette : string;
   mutable last : float; (* the time of the last frame *)
   mutable pending : float; (* the time not yet made tics *)
   (* use pressed since the last tic: a frame's press between two tics
@@ -105,9 +120,51 @@ let eye (m : model) : float * float * float * float =
   if Float.abs (p.x -. x) +. Float.abs (p.y -. y) > 64. then (p.x, p.y, p.viewz, p.angle)
   else (between x p.x, between y p.y, between z p.viewz, between angle p.angle)
 
+(* ST_doPaletteStuff: red the more it hurt, gold a moment for an item *)
+let palette (m : model) : string =
+  let p = m.play.player in
+  let red = (p.damagecount + 7) lsr 3 and gold = (p.bonuscount + 7) lsr 3 in
+  if red > 0 then m.palettes.(min 8 red)
+  else if gold > 0 then m.palettes.(8 + min 4 gold)
+  else m.palettes.(0)
+
+(* the palettes of [palette]: towards red by an ninth a step, towards
+ * gold by an eighth (as Freedoom's playpal script makes PLAYPAL's) *)
+let palettes (base : string) : string array =
+  let tint ((r, g, b) : int * int * int) (k : float) : string =
+    String.init 768 (fun (i : int) ->
+        let c = Char.code base.[i] in
+        let to_ = match i mod 3 with 0 -> r | 1 -> g | _ -> b in
+        Char.chr (c + int_of_float (k *. float (to_ - c)))) in
+  Array.init 13 (fun (i : int) ->
+      if i = 0 then base
+      else if i <= 8 then tint (255, 0, 0) (float i /. 9.)
+      else tint (215, 186, 69) (float (i - 8) /. 8.))
+
+(* the status bar's numbers, as words (no STBAR here) *)
+let status (m : model) : string =
+  let p = m.play.player in
+  let ammo =
+    match (Info.weaponinfo p.readyweapon).ammo with
+    | Some Info.Clip -> string_of_int p.clips
+    | Some Info.Shell -> string_of_int p.shells
+    | None -> "-" in
+  Printf.sprintf "HEALTH %d%%  ARMOR %d%%  AMMO %s  KILLS %d" p.health p.armor
+    ammo m.play.kills
+
 let view (computer : P.computer) (m : model) : P.shape list =
   let x, y, z, angle = eye m in
+  let p = m.play.player in
+  Render.set_extralight m.render p.extralight;
   Render.frame m.render m.play.level m.play.textures m.sprites m.play.by_sector m.play.tic x y z angle;
+  (* R_DrawPlayerSprites: the weapon, then its flash *)
+  let hand =
+    List.filter_map
+      (fun (sp : World.psprite) ->
+        Option.map (fun (st : Info.state) -> (st, sp.sx, sp.sy)) sp.pstate)
+      [ p.weapon_sp; p.flash_sp ] in
+  let light = (Level.sector_at m.play.level p.x p.y).light in
+  Render.hand m.render m.play.textures m.sprites light hand;
   m.frames <- m.frames + 1;
   snapshot m;
   let screen = computer.screen in
@@ -128,8 +185,10 @@ let view (computer : P.computer) (m : model) : P.shape list =
    * the author: "I see 15fps but I can't do anything") *)
   @ [ P.pixels w h
         { pwidth = Render.width m.render; pheight = Render.height m.render; indices = m.screens.(m.frames land 1);
-          palette = m.palette } ]
+          palette = palette m } ]
+  @ (if m.status then [ text (status m) (20. -. (h /. 2.)) ] else [])
   @ (if m.play.message_tics > 0 then [ text m.play.message (h /. 2. -. 20.) ] else [])
+  @ (if p.health <= 0 then [ text "Press use to play again." 0. ] else [])
   @
   if m.play.exited then
     [ text (Printf.sprintf "%s finished: %d of %d secrets" m.play.level.name m.play.secrets (Play.secrets_total m.play)) 0. ]
@@ -144,6 +203,10 @@ let update (computer : P.computer) (m : model) : model =
   let k = computer.keyboard in
   let held (name : string) : bool = Set_.mem name k.keys in
   if k.kspace || held "e" then m.use_pressed <- true;
+  let number =
+    match List.find_opt held [ "1"; "2"; "3" ] with
+    | Some n -> int_of_string n
+    | None -> 0 in
   while m.pending >= 1. /. tics_a_second do
     m.pending <- m.pending -. (1. /. tics_a_second);
     let p = m.play.player in
@@ -152,9 +215,18 @@ let update (computer : P.computer) (m : model) : model =
       Play.tic m.play
         (Play.command m.play.player
            { up = k.kup || k.kw; down = k.kdown || k.ks; left = k.kleft; right = k.kright; run = k.kshift;
-             strafe_left = k.ka || held ","; strafe_right = k.kd || held "."; use_key = m.use_pressed });
-    m.use_pressed <- k.kspace || held "e"
+             strafe_left = k.ka || held ","; strafe_right = k.kd || held ".";
+             use_key = m.use_pressed;
+             fire = held "Control" || held "f"; number });
+    m.use_pressed <- k.kspace || held "e";
+    if m.play.reborn then begin
+      m.play <- m.restart ();
+      let p = m.play.player in
+      m.before <- (p.x, p.y, p.viewz, p.angle)
+    end
   done;
+  (* the tics' sounds, from where they were made *)
+  (match m.sound with Some s -> Sound.play s m.play | None -> m.play.sounds <- []);
   m
 
 let default_wads = [ "/lib/doom/freedoom.wad"; "games/fps/doom/data/freedoom.wad" ]
@@ -184,14 +256,18 @@ let () =
             * "-" and the first of TEXTURE1 the same) *)
            let texture (name : string) : int = let k = Textures.texture textures name in if k = 0 then -1 else k in
            let map = match flag "map" with Some m -> String.uppercase_ascii m | None -> (match Level.maps wad with m :: _ -> m | [] -> failwith "no level in the WAD") in
-           let level = Level.load wad map texture (Textures.flat textures) in
+           let level () : Level.t =
+             Level.load wad map texture (Textures.flat textures) in
            (* (None: the window's size, the platform's whole multiple) *)
            let scale = match Option.bind (flag "scale") int_of_string_opt with Some n when n >= 1 && n <= 4 -> Some n | _ -> if Sys.os_type = "Plan9" then None else Some 2 in
            let render = Render.create 320 200 in
            let palette =
              String.init 768 (fun (k : int) -> Char.chr ((textures.palette.(k / 3) lsr (8 * (2 - (k mod 3)))) land 255))
            in
-           let play = Play.create level textures (flag "monsters" <> None) in
+           let ai = if flag "ai" = Some "ways" then World.Ways else World.Id in
+           let start () : World.t =
+             Play.create (level ()) textures (flag "nomonsters" = None) ai in
+           let play = start () in
            (* (things=off: none drawn, a test's: tests/compare.sh) *)
            if flag "things" = Some "off" then List.iter (fun (m : Things.mobj) -> m.alive <- false) play.things;
            (* (x=, y=, angle=: the player put there, a test's camera) *)
@@ -200,7 +276,17 @@ let () =
                let a = match Option.bind (flag "angle") float_of_string_opt with Some a -> a | None -> 0. in
                Play.place play x y (a *. 4. *. atan 1. /. 180.)
            | _ -> ());
-           let model = { play; sprites = Things.load wad; render; screens = [| Bytes.create (320 * 200); Bytes.create (320 * 200) |]; frames = 0; palette; last = 0.; pending = 0.; use_pressed = false;
+           let sound =
+             if flag "sound" = Some "off" then None
+             else Some (Sound.create wad (flag "sound" = Some "3d")) in
+           let music =
+             match flag "music" with
+             | Some m -> m = "on"
+             | None -> Sys.os_type <> "Plan9" in
+           if music && sound <> None then Sound.music wad map;
+           let model = {
+               play; restart = start; sound; status = flag "status" <> Some "off";
+               palettes = palettes palette; sprites = Things.load wad; render; screens = [| Bytes.create (320 * 200); Bytes.create (320 * 200) |]; frames = 0; last = 0.; pending = 0.; use_pressed = false;
                before = (play.player.x, play.player.y, play.player.viewz, play.player.angle) } in
            (* the window the picture's size, a unit a pixel
             * (Session.window); the software platform's square of 320 n

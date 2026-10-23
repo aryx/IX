@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Audio.ml; less the live effects not copied (drive, chorus, flanger, phaser, rotary, compressed), a loop rendered as it is played, the platform's samples asked through Audio_source (docs/plans/plan_audio.md) *)
+(* ix: the author's playground's playground/apis/Audio.ml; less the live effects not copied (chorus, flanger, phaser, rotary), a loop rendered as it is played, the platform's samples asked through Audio_source (docs/plans/plan_audio.md) *)
 
 (* See Audio.mli *)
 
@@ -62,6 +62,36 @@ let vibrato rate depth = Synth.with_effect (Pitch_effect.Vibrato { rate; depth }
 let arpeggio semitones step = Synth.with_effect (Pitch_effect.Arpeggio { semitones; step })
 let echo delay feedback s = Synth.Echo ({ Synth.delay; feedback = (if feedback > 0.95 then 0.95 else if feedback < 0. then 0. else feedback) }, s)
 let reverb seconds s = Synth.Reverb ((if seconds < 0.01 then 0.01 else seconds), s)
+
+(* the live effects (effects/), run over the sound rendered: a fresh
+ * effect for each rendering (ix: tail was optional, 0) *)
+let processed (tail : float) (make : unit -> Signal.stereo -> unit) (s : sound) : sound =
+  Synth.Processed ({ Synth.make; tail }, s)
+
+(* [gain] dB in, [gain] dB back out: a pedal's drive knob with its level
+ * knob turned to match. Oversampled x2, not x4: a whole sound is
+ * rendered at once, and a 20 s loop took 1.2 s natively at x4 (2.1 s in
+ * a browser), a game frozen that long; x2 halves it, its aliases at -58.6
+ * dB still (Drive.mli). A sound in the middle (both sides the same, the
+ * common case) is driven once and copied, halving it again. *)
+let drive (gain : float) : sound -> sound =
+  processed 0. (fun () ->
+      let left = Drive.create ~oversampling:2 () and right = Drive.create ~oversampling:2 () in
+      let back = 1. /. Mix.of_decibels gain in
+      fun (st : Signal.stereo) ->
+        let mono = st.left = st.right in
+        Drive.process left Drive.Tanh ~drive:gain ~mix:1. st.left;
+        Array.iteri (fun (i : int) (x : float) -> st.left.(i) <- back *. x) st.left;
+        if mono then Array.blit st.left 0 st.right 0 (Array.length st.left)
+        else begin
+          Drive.process right Drive.Tanh ~drive:gain ~mix:1. st.right;
+          Array.iteri (fun (i : int) (x : float) -> st.right.(i) <- back *. x) st.right
+        end)
+
+let compressed (threshold : float) (ratio : float) : sound -> sound =
+  processed 0. (fun () ->
+      Dynamics.process ~key:None (Dynamics.create ())
+        { Dynamics.compressor with threshold; ratio = (if ratio < 1. then 1. else ratio) })
 
 (* the ready-made sounds: audio/Sfx's presets, after sfxr's categories *)
 let sfx = Sfx.to_sound

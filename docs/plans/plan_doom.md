@@ -114,6 +114,49 @@ run time are a plan of their own, after it (below, stage 6).
    the bare screen, no rio), and lib_playground's platforms chosen at
    run time on Plan 9 (`-framebuffer`, `-software`, `-draw`).
 
+7. **The game** (2026-10-23, the author: "Can we complete the game to
+   also have sound! and also to be able to shoot, and have basic
+   ennemy? We could reuse the bot/ennemy ai code from the original,
+   but would be good also to plug in the playground ai library (and
+   its apis/Ai.mli) and use that too. For the sound we also want to
+   use the apis/Audio.mli", then "and add also doom music (later on we
+   can do the same for quake, which has great sound"). id's files
+   again, a module each where it is more than a few lines:
+   - `Info` (info.c, d_items.c, sounds.c): the states and the things'
+     numbers of Doom's first levels' monsters (the zombieman, the
+     shotgun guy, the imp and its fireball, the demon), the barrel,
+     the puffs and the blood, the fist, the pistol, the shotgun and the
+     chainsaw; id's random table (m_random.c), so that a game replays.
+   - `Mobj` (p_mobj.c): a state's tics and its action, the momentum,
+     the fall, the missiles; the actions are Enemy's and Weapons', by a
+     reference filled at the start (info.c's function pointers).
+   - `Inter` (p_inter.c and p_map.c's attacks): the aim, a bullet's
+     line through the openings, the barrel's blast, the damage, the
+     pain, the death, the items picked up.
+   - `Enemy` (p_enemy.c): A_Look (the sight, and the shot heard through
+     the open lines, P_NoiseAlert), A_Chase, P_NewChaseDir, the
+     attacks. `Collision` gets the sight (p_sight.c's question, by the
+     blockmap's cells along the line) and a shot's intercepts.
+   - `Weapons` (p_pspr.c): the psprites, the weapon raised, lowered,
+     fired; `Render.hand` draws them (R_DrawPSprite), and the flash
+     lights the level (extralight).
+   - **The playground's AI, beside id's** (`ai=ways`, `Ways`): a monster
+     that does not see the player follows `Ai.flow`, a search from the
+     player's cell over a grid of the level, around the walls, where
+     id's goes as the crow flies; its aim `Ai.aim_error`, better as it
+     keeps seeing. id's stays the default: it is what Doom is.
+   - **Sound** (`Sound`, s_sound.c over `Audio`): the DS lumps (DMX's
+     8 bits) made WAVs for `Audio.wav`, id's distance and stereo
+     (S_AdjustSoundParams), or `Audio3d` with `sound=3d`; doors,
+     lifts and switches heard. **The music**: the level's D_ lump,
+     MIDI (Freedoom's) or MUS (id's: `Mus`, the ports' mus2mid), by
+     `Audio.midi`.
+   - The WAD: Mkwad adds the sounds (DMX's format, as id's, so
+     doom1.wad plays the same), the level's music, the sprites of the
+     states.
+   - The monsters are now on by default (`nomonsters`, Doom's flag,
+     takes them out).
+
 ## Status
 
 2026-10-22, the first day: stages 1 to 5 done; stage 6 proposed.
@@ -256,3 +299,45 @@ code", "just if it does not cost much, we can follow a little"):
   turns, the lift, a door, places, scale=1, things=off) the same sums
   before and after; games/tests/frames.sh's four, OCaml's and mini-ml's
   builds; mini-mk O=5 OS=plan9.
+
+2026-10-23, **the game** (stage 7): sound, music, weapons, monsters.
+- The modules above; 1,880 lines of new .ml (`Info` 409 of them, its
+  tables), 650 more in the others (`Collision`'s sight and intercepts
+  250), the WAD 2 to 3 MB. The playground's libraries **copied only as
+  far as mini-doom and mini-quake need them** (the author: "we don't
+  have to copy all of the code from the ~/playground ... unless copying
+  the whole module or lib does not add much more code"): `lib_ai/` is
+  `Pathfind` alone, `Ai` its ways and `aim_error` (8 lines of the
+  playground's Bot); `Audio3d` (a listener by an eye and a yaw, ix
+  having no 3D camera), and of the live effects `drive` and
+  `compressed` only, over modules ix had (lib_ai/README.md,
+  lib_audio/README.md).
+- **In folders, by id's files** (the author: "doom/ starts to have lots
+  files in the same folder; we should start to subdivide"): `wad/`,
+  `render/`, `play/`, `actors/`, `sound/`, one library (dune's
+  `include_subdirs`; the mkfile's `DIRS` as mklib's).
+- Seen in sessions (`tests/fight/Fight.exe`: the monsters' states, the
+  player's health, tic by tic, where the frames say nothing): in the
+  imps' room (x=700 y=1100) a player who stands still dies in 200 to
+  400 tics, id's monsters or the playground's, after two or three
+  kills; zombiemen in a pit 160 below the player see it and cannot
+  shoot it, nor it them (the aim's 100/160 up and down: id's).
+- **The music's cost**: OCaml makes 15 s of E1M1's MIDI in 4.4 s;
+  mini-ml's code in 105 s (7 times slower than it plays; the frames
+  without it 2.55 s against OCaml's 1.03). So `music=` is off by
+  default on Plan 9; Audio's MIDI under mini-ml is the next thing to
+  look at before music on the Pi (the sounds cost little: 2.29 s
+  without them, 2.55 with).
+- Checked: games/tests/frames.sh's mini-doom sessions recorded again
+  (the monsters on, the hand, the status line; `music=off` in them)
+  and two new ones, `fight` and `fight_ways` (the pistol fired at the
+  imps, by each AI), by OCaml and mini-ml's arm64 code (a private
+  mini-mk build), each twice the same; mini-ml's sounds the same bytes
+  as OCaml's; tests/compare.sh (now `nomonsters status=off`) gives
+  6,851 / 3,649 / 1,541 / 5,780 / 9,086 pixels of id's, and HEAD's
+  mini-doom the same (the rise from the table above came with an
+  earlier commit, not with this stage).
+- Not run: mini-9pi (the game, its sounds by /dev/audio, the card's
+  bigger WAD), O=5 and OS=plan9's build, the Pi; a person playing it
+  with a window (SDL) and listening. doom1.wad's music (MUS, by `Mus`)
+  plays, its samples measured, not listened to.

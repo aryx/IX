@@ -90,11 +90,3 @@ kernel_heap_limit(void)
 	limit = (ulong)HEAP_LIMIT - KERNBASE;
 	return top > limit ? top : limit;
 }
-
-/* claude: memmove and memcpy by words, libc.c's (the C library's,
- * Plan 9's, are a byte at a time): this object is linked before the
- * library, whose memmove.c is then not taken */
-#define MWORD uintptr
-#define MSIZE ulong
-#define HOST_MOVE(d, s, n)
-#include "move.c"

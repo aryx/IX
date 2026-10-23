@@ -102,3 +102,34 @@ called by the others (`frexp.c`; `asin.c`, `pow.c`). What the runtime
 could write itself it already does (`tan`, `sinh`, `cosh`, `tanh`,
 `fmod`; its `sqrt` is the processor's): goken's files for those are
 not here. Fewer would mean an OCaml function less in the stdlib.
+
+**The machines' memmove and memset** (2026-10-23, plan_pi4.md; the
+author: "on principia and plan9 most archi provides their own memmove
+in assembly", "9front probably has the arm64 assembly", and of Plan 9's
+way: "you can read both versions (and possibly switch and benchmark
+too)"). goken has only `port/`'s C, a byte at a time; as in Plan 9, a
+machine's file now takes the place of port's of the same name
+(`lib_core/mkfile`'s `LIBC_MEM5`, `LIBC_MEM7`: port's names written
+there instead switch back to the C, which stays):
+
+| file | from | lines |
+|---|---|---:|
+| `arch/arm/memmove.s`, `memset.s` | principia's (Plan 9's), as they are | 216, 63 |
+| `arch/arm64/memmove.s`, `memset.s` | 9front's (`sys/src/libc/arm64`, MIT as Plan 9's), the size read as 32 bits (a `ulong` for 7c and mini-cc; 9front's read 64, whose upper half a caller here does not write) | 56, 32 |
+
+9front's arm files are principia's but for one line (memmove returns
+at once when the two places are the same; principia's copies onto
+itself). arm64's are
+short: a pair of words loaded and stored 16 bytes a turn, at any
+alignment (arm64 allows it in memory that is not a device's), then
+bytes; arm's are long for the case where the two places are not
+aligned alike (`LDM` and `STM` want words: words read aligned and
+shifted into place). What it took of mini-asm and mini-ld: 7a's
+write-back operands (`(R1)16!`, `-16(R1)!`), `MOVP` (LDP and STP:
+goken's 7l has none, 9front's is the reference), `BIC`; on arm, 5a's
+`R(expr)` registers in a shift and in a list. Checked:
+`tests/mem_check.sh` (every alignment and overlap against a byte's
+loop, on both machines, under qemu), the arm files' bytes the same as
+goken's 5a and 5l (`linker/tests/golden.sh`). The Pi 4's kernel by
+ix's tools reached its prompt under mini-qemu in 65 s with port's
+memmove, 32 s with this one (memmove 49% of its instructions, then 2%).

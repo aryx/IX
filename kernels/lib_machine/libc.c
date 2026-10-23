@@ -93,10 +93,70 @@ int host_fill(void *d, int c, size_t n);
 #define HOST_FILL(d, c, n)
 #endif
 
-/* memmove and memcpy, by words: move.c, ix's tools' build's too */
-#define MWORD unsigned long
-#define MSIZE size_t
-#include "move.c"
+/* memmove's words: the two do not overlap, which memmove's forward
+ * copy is right for. A byte at a time, it was 27% of mini-9pi's time
+ * under mini-netscape with the mouse over a link: Memdraw's fill
+ * (imag_rows) repeats a row with it, a frame's white 1.2 MB.
+ * old: char *dd = d; const char *ss = s;
+ *      HOST_MOVE(d, s, n);
+ *      while (n--) *dd++ = *ss++;
+ *      return d; */
+void *memmove(void *d, const void *s, size_t n);
+void *memcpy(void *d, const void *s, size_t n)
+{
+  return memmove(d, s, n);
+}
+
+/* A word at a time whenever d and s share their alignment (a
+ * framebuffer's scroll moves a megabyte and a half), else a byte.
+ *
+ * old (words only when d, s and n were all aligned, else bytes):
+ *   if (((d | s | n) & (sizeof(long) - 1)) == 0) { ... words ... }
+ *   else while (n--) *dd++ = *ss++;
+ * Now words whenever d and s share their alignment: the unaligned
+ * bytes at the head, the words, the bytes at the tail. mini-9pi's OCaml
+ * pixels blit rows of 16-bit pixels (String.blit is memmove) starting
+ * at any even address and of any even length: all of them went a byte
+ * at a time, memmove was 28% of the kernel's time drawing a console
+ * (rows scrolled, the image flushed to the framebuffer) */
+void *memmove(void *d, const void *s, size_t n)
+{
+  char *dd = d; const char *ss = s;
+  unsigned long m = sizeof(long) - 1;
+  HOST_MOVE(d, s, n);
+  if ((((unsigned long)dd ^ (unsigned long)ss) & m) == 0) {
+    /* (forward too when d is after s and they do not overlap: one
+     * string's bytes to another's, which the eight words a turn are for) */
+    if (dd < ss || dd >= ss + n) {
+      while (n && ((unsigned long)dd & m)) { *dd++ = *ss++; n--; }
+      long *dw = (long *)dd; const long *sw = (const long *)ss;
+      /* (eight words a turn first: a game's frame is copied whole
+       * twice, to the window then to the framebuffer, half a megabyte
+       * each; a word a turn was four instructions a word) */
+      for (; n >= 8 * sizeof(long); n -= 8 * sizeof(long)) {
+        long a = sw[0], b = sw[1], c = sw[2], e = sw[3];
+        dw[0] = a; dw[1] = b; dw[2] = c; dw[3] = e;
+        a = sw[4]; b = sw[5]; c = sw[6]; e = sw[7];
+        dw[4] = a; dw[5] = b; dw[6] = c; dw[7] = e;
+        dw += 8; sw += 8;
+      }
+      for (; n > m; n -= sizeof(long)) *dw++ = *sw++;
+      dd = (char *)dw; ss = (const char *)sw;
+      while (n--) *dd++ = *ss++;
+    } else {
+      dd += n; ss += n;
+      while (n && ((unsigned long)dd & m)) { *--dd = *--ss; n--; }
+      long *dw = (long *)dd; const long *sw = (const long *)ss;
+      for (; n > m; n -= sizeof(long)) *--dw = *--sw;
+      dd = (char *)dw; ss = (const char *)sw;
+      while (n--) *--dd = *--ss;
+    }
+    return d;
+  }
+  if (dd < ss) while (n--) *dd++ = *ss++;
+  else { dd += n; ss += n; while (n--) *--dd = *--ss; }
+  return d;
+}
 
 void *memset(void *d, int c, size_t n)
 {

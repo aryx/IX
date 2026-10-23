@@ -10,7 +10,7 @@ type token =
   | Int of int64
   | Float of float
   | String of string
-  | Punct of string      (* ( ) [ ] , $ : + - * / % & | ^ ~ = < > << >> -> @> <> *)
+  | Punct of string      (* ( ) [ ] , $ : + - * / % & | ^ ~ = < > ! << >> -> @> <> *)
   | Eol                  (* a newline or a ; *)
 
 exception Error of int * string
@@ -143,7 +143,7 @@ let tokens (text : string) : (token * int) list =
       else begin
         let two = if i + 1 < n then String.sub text i 2 else "" in
         if List.mem two [ "<<"; ">>"; "->"; "@>"; "<>" ] then (add (Punct two); go (i + 2))
-        else if String.contains "()[],$:+-*/%&|^~=<>@" c then (add (Punct (String.make 1 c)); go (i + 1))
+        else if String.contains "()[],$:+-*/%&|^~=<>@!" c then (add (Punct (String.make 1 c)); go (i + 1))
         else raise (Error (!line, Printf.sprintf "unexpected character %C" c))
       end
   in

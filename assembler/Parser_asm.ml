@@ -19,6 +19,9 @@ type state = {
   mutable pc : int;
   mutable fixups : (int * (string * int)) list;  (* Target (-id): a label, and an offset *)
   mutable next_fix : int;
+  (* 7a's -16(R1)! and (R1)16!: the instruction's .W (pre-indexed) or
+   * .P (post-indexed), which an operand says *)
+  mutable indexed : string option;
 }
 
 let line st = match st.toks with (_, l) :: _ -> l | [] -> 0
@@ -89,7 +92,12 @@ let opens_base st =
   peek st = L.Punct "("
   && (match peek2 st with L.Ident ("SB" | "FP" | "PC" | "SP" | "R") -> true | L.Ident s -> register st.arch s <> None | _ -> false)
 
-let reg st = match next st with L.Ident s -> (match register st.arch s with Some (Reg r) -> r | _ -> error st ("not a register: " ^ s)) | _ -> error st "expected a register"
+(* R1, or R(expr): 5a's R(TMP), a register named by a constant *)
+let reg st =
+  match next st with
+  | L.Ident "R" when peek st = L.Punct "(" -> ignore (next st); let r = Int64.to_int (expr st) in expect st ")"; r
+  | L.Ident s -> (match register st.arch s with Some (Reg r) -> r | _ -> error st ("not a register: " ^ s))
+  | _ -> error st "expected a register"
 
 (* R1<<2, R1>>R2, R1->3, R1@>4 *)
 let shift_after st r =
@@ -99,6 +107,7 @@ let shift_after st r =
       let kind = match p with "<<" -> Lsl | ">>" -> Lsr | "->" -> Asr | _ -> Ror in
       let by = match peek st with
         | L.Ident s when (match register st.arch s with Some (Reg _) -> true | _ -> false) -> By_reg (reg st)
+        | L.Ident "R" when peek2 st = L.Punct "(" -> By_reg (reg st)
         | _ -> By_imm (Int64.to_int (unary st))
       in
       Some { reg = r; kind; by }
@@ -139,6 +148,16 @@ let named st s =
   if peek st = L.Punct "(" then Mem_ref { base = base st; name = Some { sym = s; static }; off; index = None }
   else Label_ref (s, off)
 
+(* a register, maybe shifted: R1, R1<<2, R1>>R2, R2<<2(R1) *)
+let shifted_reg st r =
+  match shift_after st r with
+  | Some sh when peek st = L.Punct "(" ->
+      (* R2<<2(R1): a shifted index *)
+      let b = base st in
+      Mem { base = b; name = None; off = 0L; index = Some sh }
+  | Some sh -> Shifted sh
+  | None -> Reg r
+
 let rec operand st : operand =
   match peek st with
   | L.Punct "$" -> (
@@ -175,25 +194,12 @@ let rec operand st : operand =
       let v = expr st in
       expect st ")";
       Spr v
-  (* R(expr), with a constant: 5a's R(Q) *)
-  | L.Ident "R" when peek2 st = L.Punct "(" ->
-      ignore (next st);
-      expect st "(";
-      let r = Int64.to_int (expr st) in
-      expect st ")";
-      Reg r
+  (* R(expr), with a constant: 5a's R(Q); and R1 *)
+  | L.Ident "R" when peek2 st = L.Punct "(" -> shifted_reg st (reg st)
   | L.Ident s when register st.arch s <> None -> (
-      ignore (next st);
       match register st.arch s with
-      | Some (Reg r) -> (
-          match shift_after st r with
-          | Some sh when peek st = L.Punct "(" ->
-              (* R2<<2(R1): a shifted index *)
-              let b = base st in
-              Mem { base = b; name = None; off = 0L; index = Some sh }
-          | Some sh -> Shifted sh
-          | None -> Reg r)
-      | Some o -> o
+      | Some (Reg r) -> ignore (next st); shifted_reg st r
+      | Some o -> ignore (next st); o
       | None -> assert false)
   | L.Ident s when is_condition s -> ignore (next st); Special s
   | L.Ident s when not (Hashtbl.mem st.consts s) -> (
@@ -212,6 +218,13 @@ let rec operand st : operand =
       let b = base st in
       match b with
       | PC -> Target (st.pc + Int64.to_int off)
+      | R _ when accept st "!" -> st.indexed <- Some "W"; Mem { base = b; name = None; off; index = None }
+      | R _ when off = 0L && (match peek st with L.Punct ("," | "(") | L.Eol -> false | _ -> true) ->
+          (* (R1)16!: the register's address used, then moved on *)
+          let off = expr st in
+          expect st "!";
+          st.indexed <- Some "P";
+          Mem { base = b; name = None; off; index = None }
       | _ -> let ix = index st in Mem { base = b; name = None; off; index = ix }
 
 and operands st =
@@ -240,7 +253,7 @@ let named_sym st =
 let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
   let text = try L.preprocess caps (Fpath.parent file) text with Sys_error m -> raise (Error (0, m)) in
   let toks = try L.tokens text with L.Error (l, m) -> raise (Error (l, m)) in
-  let st = { arch; toks; consts = Hashtbl.create 8; labels = Hashtbl.create 64; pc = 0; fixups = []; next_fix = 0 } in
+  let st = { arch; toks; consts = Hashtbl.create 8; labels = Hashtbl.create 64; pc = 0; fixups = []; next_fix = 0; indexed = None } in
   let items = ref [] in
   let add item l = items := (item, l) :: !items; (match item with Globl _ | Data _ -> () | _ -> st.pc <- st.pc + 1) in
   let rec lines () =
@@ -289,9 +302,11 @@ let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
         lines ()
     | L.Ident op ->
         let parts = String.split_on_char '.' op in
+        st.indexed <- None;
         let args = operands st in
         if peek st <> L.Eol then error st "junk after the operands";
-        add (Ins { op = List.hd parts; suffixes = List.tl parts; args }) l;
+        let suffixes = List.tl parts @ Option.to_list st.indexed in
+        add (Ins { op = List.hd parts; suffixes; args }) l;
         lines ()
     | _ -> error st "expected an instruction"
   in

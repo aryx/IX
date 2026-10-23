@@ -91,7 +91,7 @@ $D/usb_c.$O: $KLIB/usb.c $KH
 $D/machine_c.$O: $BD/machine.c $KLIB/machine.c $KH
 	mkdir -p $D
 	$CC $KINC $KFLAGS -o $target $BD/machine.c
-$D/shim.$O: $KLIB/shim.c $KLIB/move.c $BD/board.h
+$D/shim.$O: $KLIB/shim.c $BD/board.h
 	mkdir -p $D
 	$CC $KINC -o $target $KLIB/shim.c
 $D/l.$O: $BD/$LS $BD/l.s

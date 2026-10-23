@@ -208,7 +208,7 @@ $(B)/c/%.o: $(LIB)/%.c $(BD)/board.h | $(B)/c
 # libc.o with the collector's parameters, if CAMLRUNPARAM is given
 # (libc.c's getenv); its stamp rewritten when they change, so that
 # libc.o is rebuilt then
-$(B)/c/libc.o: $(LIB)/libc.c $(LIB)/move.c $(BD)/board.h $(B)/camlrunparam | $(B)/c
+$(B)/c/libc.o: $(LIB)/libc.c $(BD)/board.h $(B)/camlrunparam | $(B)/c
 	$(KCC) $(CFLAGS) $(if $(CAMLRUNPARAM),-DCAMLRUNPARAM='"$(CAMLRUNPARAM)"') -c $< -o $@
 
 $(B)/camlrunparam: FORCE | $(B)

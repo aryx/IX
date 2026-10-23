@@ -208,3 +208,46 @@ the Pi 4's gcc. Not run: the
 graphical checks (`check-menu`...), the Pi 1's and Pi 2's kernels by
 ix's tools with the new `memmove`, mini-oberon, mini-squeak and
 mini-singularity (their own `machine/` copies, not touched).
+
+2026-10-23, later: **memmove and memset in assembly, in the C library**
+(the author: "on principia and plan9 most archi provides their own
+memmove in assembly ... Is move.c good enough?", "9front probably has
+the arm64 assembly", and Plan 9's way, the assembly linked in the C's
+place, both kept: "you can read both versions (and possibly switch and
+benchmark too)"). `lib_core/libc/arch/arm64/memmove.s` and `memset.s`
+(9front's: 56 and 32 lines, a pair of words 16 bytes a turn, then
+bytes) and `arch/arm/` (principia's: 216 and 63), in the place of
+`port/`'s C by `lib_core/mkfile`'s `LIBC_MEM5` and `LIBC_MEM7`; every
+program by ix's tools has them, and the kernels by ix's tools through
+`libc.a`: this morning's `move.c` is gone, `libc.c` (gcc's build) as
+before. The Pi 4's boot to its prompt under mini-qemu, one command:
+
+| memmove | time | instructions (sampled) | memmove's |
+|---|---:|---:|---:|
+| port's C, a byte a turn | 65 s | 722 k | 49% |
+| move.c, words (this morning) | 46 s | 474 k | 23% |
+| 9front's assembly | 32 s | 326 k | 2.2% |
+
+Next in the profile: the runtime's `move_bytes` (9%: mini-ml's own word
+copy in C, written because the library's memmove was a byte loop; it
+could now call memmove), `phys_zero`, the Hashtbl's functions.
+What the tools took: mini-asm reads 7a's write-back operands
+(`(R1)16!`, `-16(R1)!`: its `.P`, `.W`) and 5a's `R(expr)` in a shift
+and a list; mini-ld encodes `MOVP` (LDP, STP: 9front's 7l, goken's has
+none) and `BIC`. One change to 9front's files: the size read as 32 bits
+(`MOVWU`): a `ulong` is 32 bits for mini-cc, which writes only that
+word of the argument's slot, and the kernel's heap was overwritten by a
+memmove of a size with garbage above it. Checked: `lib_core/libc/tests/
+mem_check.sh` (new, in `tests/lite.sh`: every alignment and overlap
+against a byte's loop, and a call after one that left all ones in the
+slots, on arm and arm64 under qemu); principia's arm files the same
+bytes by mini-asm and mini-ld as by goken's 5a and 5l (two golden
+cases more, `linker/tests/golden.sh`, 66); in a private copy of the
+tree (HEAD and these changes alone): the Pi 4's kernel and the Pi 1's
+by ix's tools, each booted under mini-qemu to `hello`;
+`languages/ml/tests/run.sh` 5 and 7 on `runtime/` and `tiny/`, all
+passing but two arm programs that fail with port's C as well (a
+mini-ml bug, bugs/ix.md's row). Not run: `check-ix` and the graphical
+checks. **The shared tree's Pi 4 kernel faults at its boot today with
+either memmove**: other sessions' changes not committed (mini-ml's
+runtime and code generation, the kernel's drawing), not this work.

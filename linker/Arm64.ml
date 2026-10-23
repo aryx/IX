@@ -32,6 +32,8 @@ type op =
   | Shift of A.shift_kind * size
   | Div of bool * size | Rem of bool * size | Mul of size | Mneg of size | Mull of bool | Mulh of bool
   | Mov of mov | Ext of width * size            (* MOVB ... FMOVD; SXTB ... UXTW *)
+  | Movp of size                                (* MOVP, MOVPW: a pair, LDP and STP *)
+  | Bic of size                                 (* an AND of the complement *)
   | Farith of farith * prec | Funary of funary * prec | Fcmp of prec
   | Fcvt of prec                                (* from: FCVTSD is Fcvt S *)
   | Fcvtz of bool * prec * size | Cvtf of bool * size * prec
@@ -62,6 +64,8 @@ let show op =
   | Mulh un -> u un ^ "MULH"
   | Mov (Int wd) -> "MOV" ^ bhw wd ^ (match wd with B8u | H16u | W32u -> "U" | _ -> "")
   | Mov (Float pr) -> "FMOV" ^ p pr
+  | Movp sz -> "MOVP" ^ w sz
+  | Bic sz -> "BIC" ^ w sz
   | Ext (wd, sz) -> (match wd with B8 | H16 | W32 | X64 -> "SXT" | B8u | H16u | W32u -> "UXT") ^ bhw wd ^ w sz
   | Farith (f, pr) -> (match f with Fadd -> "FADD" | Fsub -> "FSUB" | Fmul -> "FMUL" | Fnmul -> "FNMUL" | Fdiv -> "FDIV") ^ p pr
   | Funary (f, pr) -> (match f with Fabs -> "FABS" | Fneg -> "FNEG" | Fsqrt -> "FSQRT") ^ p pr
@@ -87,7 +91,7 @@ let decode =
     each both (fun b -> sizes (fun sz -> Cmp (b, sz))); each both (fun b -> sizes (fun sz -> Neg (b, sz)));
     each both (fun b -> sizes (fun sz -> Div (b, sz))); each both (fun b -> sizes (fun sz -> Rem (b, sz)));
     each both (fun b -> sizes (fun sz -> Cbz (b, sz)));
-    sizes (fun sz -> Mvn sz); sizes (fun sz -> Mul sz); sizes (fun sz -> Mneg sz); bools (fun b -> Mull b); bools (fun b -> Mulh b);
+    sizes (fun sz -> Mvn sz); sizes (fun sz -> Movp sz); sizes (fun sz -> Bic sz); sizes (fun sz -> Mul sz); sizes (fun sz -> Mneg sz); bools (fun b -> Mull b); bools (fun b -> Mulh b);
     List.map (fun wd -> Mov (Int wd)) [ B8; B8u; H16; H16u; W32; W32u; X64 ];
     each [ B8; B8u; H16; H16u ] (fun wd -> sizes (fun sz -> Ext (wd, sz))); [ Ext (W32, X); Ext (W32u, X) ];
     precs (fun pr -> Mov (Float pr)); precs (fun pr -> Fcmp pr); precs (fun pr -> Fcvt pr);
@@ -381,6 +385,7 @@ let oprrr (op : op) =
   | Mov (Int X64) -> logic X 1 false
   | Mov (Int W32u) -> logic W 1 false
   | Mvn sz -> logic sz 1 true
+  | Bic sz -> logic sz 0 true
   | Shift (k, sz) -> sf sz lor opdp2 (8 + Link.shift_bits k)
   | Div (u, sz) | Rem (u, sz) -> sf sz lor opdp2 (if u then 2 else 3)
   | Mul sz -> madd sz 0
@@ -395,7 +400,7 @@ let oprrr (op : op) =
   | Funary (f, pr) -> fpop1s (pbit pr) (match f with Fabs -> 1 | Fneg -> 2 | Fsqrt -> 3)
   | Fcvt S -> fpop1s 0 5
   | Fcvt D -> fpop1s 1 4
-  | Mov (Int (B8 | B8u | H16 | H16u | W32)) | Ext _ | Cbz _ | Ret | Return | Svc | Case | Word | Dword
+  | Mov (Int (B8 | B8u | H16 | H16u | W32)) | Movp _ | Ext _ | Cbz _ | Ret | Return | Svc | Case | Word | Dword
   | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad rrr %s" (show op)
 
 (* MSUB, for REM *)
@@ -420,7 +425,7 @@ let opirr (op : op) =
   | Logic (l, sz) -> logici sz l
   | Cbz (nz, sz) -> sf sz lor (0x1a lsl 25) lor (if nz then 1 lsl 24 else 0l)
   | Mov (Int (B8 | B8u | H16 | H16u | W32u) | Float _) | Neg _ | Mvn _ | Shift _ | Div _ | Rem _ | Mul _ | Mneg _ | Mull _ | Mulh _
-  | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword
+  | Movp _ | Bic _ | Ext _ | Farith _ | Funary _ | Fcmp _ | Fcvt _ | Fcvtz _ | Cvtf _ | Ret | Return | Svc | Case | Word | Dword
   | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _ -> error "bad irr %s" (show op)
 
 let opbra : op Program.op -> int32 = function
@@ -508,6 +513,8 @@ let select ctx (p : prog) : action =
   (* pool: the literal it loads, if any *)
   let act size pool words = { size; pool; words } in
   let one w = act 4 None (fun () -> [ w () ]) in
+  (* MOVP's memory: a register and a small offset, or pre- or post-indexed *)
+  let pair c = cmp PPOREG c || cmp NPOREG c || c = XPOST || c = XPRE in
   (* op R, [R], R; with R<<n; with a constant from the pool (7l's cases 1, 3, 13) *)
   let rrr m = one (fun () -> oprrr m lor (rf lsl 16) lor (r lsl 5) lor word rt) in
   let shifted m = one (fun () ->
@@ -629,6 +636,13 @@ let select ctx (p : prog) : action =
         | None -> error "invalid mask %Lx" x)
       else if fits LCON REG then act 8 v.from (fun () -> [ omovlit (Int X64) reg_tmp; oprrr m lor (reg_tmp lsl 16) lor (r lsl 5) lor word rt ])
       else illegal ()
+  (* BIC: no form of its own for a constant (7l's cases 1, 3 and 28):
+   * the constant from the pool *)
+  | Ins (Bic _ as m) ->
+      if fits REG REG then rrr m
+      else if fits SHIFT REG then shifted m
+      else if fits LCON REG then act 8 v.from (fun () -> [ omovlit (Int X64) reg_tmp; oprrr m lor (reg_tmp lsl 16) lor (r lsl 5) lor word rt ])
+      else illegal ()
   | Ins (Neg _ | Mvn _ as m) when none && fits REG REG -> one (fun () -> oprrr m lor (rf lsl 16) lor (reg_zero lsl 5) lor word rt)
   | Ins (Mov (Int X64) as m) -> (
       match move (Int X64) with
@@ -667,6 +681,24 @@ let select ctx (p : prog) : action =
       | Some a -> a
       | None -> if none && fits FREG FREG then one (fun () -> oprrr (Mov m) lor (rf lsl 5) lor word rt) else illegal ())
   | Ins (Ext (w, sz)) when none && fits REG REG -> extend w sz
+  (* MOVP: two registers loaded or stored, at a register's offset,
+   * pre- or post-indexed (LDP, STP: 9front's 7l, its cases 66 and 67;
+   * goken's 7l has none). MOVP (R1)16!, R5, R6 loads R5 and R6; MOVP
+   * R5, R6, (R7)16! stores them; the offset a multiple of the size *)
+  | Ins (Movp sz) when not none && ((pair c1 && cmp REG c3) || (cmp REG c1 && pair c3)) ->
+      let load = cmp REG c3 in
+      let a = if load then v.from else v.to_ in
+      one (fun () ->
+        let scale = if sz = X then 3 else 2 in
+        let x = match a with Some (A.Mem m) -> Int64.to_int m.off | _ -> 0 in
+        if x land (shl 1 scale - 1) <> 0 then error "misaligned offset";
+        let x = x asr scale in
+        if x < -64 || x > 63 then error "offset out of range: %d" x;
+        let mode = if List.mem "P" p.suffixes then 1 else if List.mem "W" p.suffixes then 3 else 2 in
+        (* the base, the first register, the second *)
+        let b, r1, r2 = if load then rf, r, rt else rt, rf, r in
+        ((if sz = X then 2 else 0) lsl 30) lor (5 lsl 27) lor (mode lsl 23) lor ((if load then 1 else 0) lsl 22)
+        lor ((x land 0x7f) lsl 15) lor (r2 lsl 10) lor (b lsl 5) lor word r1)
   | Ins (Shift (k, sz) as m) ->
       if fits REG REG then rrr m
       else if fits LCON REG then one (fun () ->
@@ -723,7 +755,7 @@ let select ctx (p : prog) : action =
   | Ins Word when fits NONE LCON || fits NONE LEXT -> one (fun () -> Int64.to_int32 (snd (aclass ctx p v.to_)))
   | Func | Nop | B | Bl | Bcond _ | Bcase
   | Ins (Neg _ | Mvn _ | Ext _ | Div _ | Mul _ | Mneg _ | Mull _ | Mulh _ | Rem _ | Farith _ | Fcmp _ | Fcvtz _ | Cvtf _ | Fcvt _ | Funary _
-        | Cbz _ | Ret | Return | Svc | Case | Dword | Word | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _) -> illegal ()
+        | Movp _ | Cbz _ | Ret | Return | Svc | Case | Dword | Word | Mrs | Msr | Eret | Sys _ | Barrier _ | Hint _) -> illegal ()
 
 (*****************************************************************************)
 (* Layout: pcs and the literal pool (7l's span, addpool, flushpool,

@@ -12,11 +12,11 @@ device.
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
 numbers below are `scripts/playground_copies.sh lib_audio`'s, against
-the playground at `028d8abf` (2026-10-06).
+the playground at `ff335663` (2026-10-23).
 
 ## What was copied
 
-90 files, 8,826 lines there and 8,883 here, in the playground's
+94 files, 9,684 lines there and 9,791 here, in the playground's
 folders:
 
 | here | there | what |
@@ -30,6 +30,7 @@ folders:
 | `formats/wav/` | `libs/audio/formats/wav` | `Wav` |
 | `formats/midi/` | `libs/audio/formats/midi` | `Midi`: a Standard MIDI File's notes |
 | `formats/mod/` | `libs/audio/formats/mod` | `Mod`, `Mod_player`, `Paula`: the Amiga's modules |
+| `formats/vorbis/` | `libs/audio/formats/vorbis` | Ogg Vorbis: `Ogg` (a file's packets), `Vorbis` (codebooks, floors, residues, the inverse MDCT): LibreQuake's music, mini-quake's |
 | `formats/mpeg_audio/` | `libs/audio/formats/mpeg_audio`, and `libs/compression`'s `Bits` and `Vlc` | MP2 and MP3: `Mpeg_audio`, its header, `Layer2`, `Layer3` and its tables, `Imdct`, `Polyphase`; `Bitstream` (the playground's `Bits`: `machine/` has a `Bits`) and `Vlc` |
 
 ## What changed
@@ -63,7 +64,11 @@ arm, or because a song is not a game's sound:
   the caller's, through its capabilities); `stereo_to_string` in their
   place, and `stereo_of_string`, which keeps a file's two channels
   (`of_string` mixes them down: a game's sound is one channel until
-  panned).
+  panned); 8-bit files read too, unsigned (mini-quake's sounds,
+  LibreQuake's).
+- `Synth.louder`: a recording (`Samples`) louder too, its samples times
+  k; the playground's leaves it as it is (`map_voices`), and mini-doom's
+  sounds were as loud far as near (docs/plans/bugs/ix.md).
 - `Mpeg_audio_header`: the header's 32 bits read as two halves (`byte
   0 lsl 24` is past an int of 31 bits: no frame was found on arm).
 - `Midi`: a track cut short is read to zeros, where an index past the
@@ -89,11 +94,26 @@ arm, or because a song is not a game's sound:
   sample (a long note was a quarter of a second of a Pi in one tick);
   `render` of a voice is all of them, the same samples.
 
+- **`Vorbis`, for ints of 31 bits and for mini-ml** (2026-10-23,
+  mini-quake's music): a float32 of a codebook read as its three parts
+  (`read_float32`: 21, 10, 1 bits), not as one number of 32 bits; the
+  codes aligned to the book's longest code, not to bit 31 (a book whose
+  codes pass 30 bits refused on arm, none of LibreQuake's); `several`
+  a function of the unit, not a local one annotated `'a.`; an array's
+  pattern (`[| Some whole |]`) written out; `Float.ldexp`, which ix's
+  stdlib has not, a power of two; `Fun.id`, `for _`. And the codes'
+  tree two slots a code, not two a bit of every code (a size the
+  playground's had too large; no other change).
+
 ## What is ix's own
 
 `Player`: a file of sound played a block at a time, by its name's end
-(`.mod`, `.mid`, `.mp3`, `.mp2`, `.wav`, `.abc`); an MP3 at another
-rate than 44,100 resampled as its frames come. And the tests:
+(`.mod`, `.mid`, `.mp3`, `.mp2`, `.wav`, `.ogg`, `.abc`); an MP3 at
+another rate than 44,100 resampled as its frames come.
+`Vorbis_player`: an `.ogg` decoded a packet at a time as it is played,
+cut at the length its last page says, looping or not (the playground
+decodes a file whole: six minutes of LibreQuake's music would be 250
+MB of floats); `Audio.play_ogg` and `Player`'s `.ogg` are it. And the tests:
 
 - `tests/play.sh`: mini-play on a file of each format (`tests/data/`),
   its samples against `play.expected`; in `make test`, and by
@@ -103,7 +123,8 @@ rate than 44,100 resampled as its frames come. And the tests:
 The files of `tests/data/` are the playground's (`tests/data/`,
 `libs/audio/formats/tests/mpeg/`); `korobeiniki.abc` is Tetris's theme
 as its `games/puzzle/Tetris.ml` has it, `korobeiniki.mid` that tune
-through its `Midi.of_tune`.
+through its `Midi.of_tune`; `stereo.ogg` is the playground's
+`formats/tests/vorbis/stereo.ogg` (14 KB).
 
 ## Checked against the playground
 
@@ -114,6 +135,11 @@ against mini-play's blocks: **the same samples, to the bit**, in the
 three builds (dune's; mini-ml's for arm64, run here; mini-ml's for arm
 under mini-5i, a second of each). So the block players add nothing
 and lose nothing. The 8 presets of `Sfx`, rendered: the same too.
+`stereo.ogg` against libvorbis's own decoding of it (the playground's
+`stereo.expected.wav`, not copied): within 1 of 32,768 everywhere, as
+many samples, silence after; the three builds the same bytes, and
+LibreQuake's `track06.ogg` (10 s of it) by mini-ml's arm the same bytes
+as OCaml's.
 
 ## What a second costs (`tests/costs.sh`)
 
@@ -129,6 +155,8 @@ are not in it, so what is past 50% is not to be trusted to hold.
 | `bell.mp2` | Layer II, 44,100, stereo | 2,699,605 | 455,174,124 | 65% |
 | `lsf_mono.mp3` | Layer III, 22,050, one channel | 17,417,917 | 533,678,292 | 76% |
 | `lame_encoded.mp3` | Layer III, 44,100, stereo | 2,801,048 | 1,381,794,996 | 197% |
+| `stereo.ogg` | Ogg Vorbis, 44,100, stereo, 1 s | 41,321,146 | 543,142,782 | 77% |
+| LibreQuake's `track06.ogg` | Ogg Vorbis, 44,100, stereo, 96 kb/s, 6 min (3 MB) | 116,819,153 | 592,620,748 | 84% |
 | `korobeiniki.abc` | the same tune rendered ahead, 12.8 s of it | about 4,700,000,000 | (its samples copied) | 7 s before the first sample |
 
 "Start" is what is paid before the first sample; "a second", twice
@@ -144,7 +172,7 @@ a second (4,748,705,754 instructions in all), not `costs.sh`'s three.
   `phaser`, `rotary`: about 490 lines of modules, none a game's sound
   needs; its `drive` and `compressed`, over `Drive` and `Dynamics`, are
   in).
-- `Tape`, Vorbis (`Ogg`, `Vorbis`).
+- `Tape`.
 - (`playground/apis/Audio`, the games' API over this library, is in
   `lib_playground/apis/`: the plan's stage 4.)
 - Its tests (`libs/audio/tests`, `formats/tests`: Testo, and golden

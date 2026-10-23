@@ -50,7 +50,20 @@ let rec map_voices (f : voice -> voice) (s : t) : t =
 
 let lasting (seconds : float) = map_voices (fun v -> { v with seconds })
 let fading = map_voices (fun v -> { v with fade = true })
-let louder (k : float) = map_voices (fun v -> { v with volume = v.volume *. k })
+(* ix: a recording louder too (its samples times k), where the
+ * playground's leaves Samples as they are: mini-doom's and mini-quake's
+ * sounds were as loud far as near (docs/plans/bugs/ix.md) *)
+let rec louder (k : float) (s : t) : t =
+  match s with
+  | Samples x -> Samples (Array.map (fun (v : float) -> v *. k) x)
+  | Voice v -> Voice { v with volume = v.volume *. k }
+  | Together l -> Together (List.map (louder k) l)
+  | After l -> After (List.map (louder k) l)
+  | Filtered (filter, s) -> Filtered (filter, louder k s)
+  | Echo (echo, s) -> Echo (echo, louder k s)
+  | Reverb (r, s) -> Reverb (r, louder k s)
+  | Panned (p, s) -> Panned (p, louder k s)
+  | Processed (p, s) -> Processed (p, louder k s)
 let sliding (target : float) = map_voices (fun v -> { v with slide = Some target })
 let with_effect (e : Pitch_effect.t) = map_voices (fun v -> { v with effects = v.effects @ [ e ] })
 

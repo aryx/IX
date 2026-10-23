@@ -16,7 +16,7 @@ against the playground at `ff335663` (2026-10-23).
 
 ## What was copied
 
-43 files, 8,796 lines there and 8,611 here, in the playground's
+43 files, 8,796 lines there and 8,634 here, in the playground's
 folders:
 
 | here | there | what |
@@ -72,7 +72,11 @@ PC:
   rendered as it is played** (`lib_audio`'s `Synth.pieces`), not whole
   before its first sample; its optional arguments said, its
   constructors with their module. The same samples come out
-  (`games/tests/audio.sh`).
+  (`games/tests/audio.sh`). And ix's `play_ogg` (2026-10-23, for
+  mini-quake's music, LibreQuake's `.ogg` tracks), `loop_from`'s
+  `.ogg`: an Ogg Vorbis file decoded a packet at a time as the mixer
+  pulls it (`lib_audio`'s `Vorbis_player`), as `play_module` plays a
+  module.
 - `Audio3d` (2026-10-23, for mini-doom): ix has no `Playground3d`, so
   the listener is made from a camera's eye, target and up said by
   their labels (`listener`), or from an eye and a yaw in a world whose

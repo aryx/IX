@@ -13,7 +13,7 @@ The trilogy: TinyWolfenstein (rays through a grid), mini-doom (a 2D BSP
 walked front to back, columns and spans), mini-quake (a 3D BSP, the
 PVS, the edge list and its spans, the surface cache, the lightmaps).
 
-**Status: done** (2026-10-22; the author: "let's move the plan to
+**Status: done** (2026-10-22, and the game since, 2026-10-23: below; the author: "let's move the plan to
 done/ and add the smaller gaps and other remaining stuff to do in it"),
 and this file kept as its record: stages 1 to 5 below (5 run by the
 author under QEMU, about 7 frames a second), the bounce and the
@@ -231,6 +231,77 @@ mini-9pi), 6 not started.
   the lightmaps are the cause, the gamma a player's remedy, as in
   1996. The frames' sums recorded again.
 
+2026-10-23, **the game** (the author: "ok now let's do the same for
+mini-quake, possibly importing more code from the ~/playground", after
+mini-doom's sound, music, weapons and monsters, plan_doom.md stage 7;
+and "we don't have to copy all of the code from the ~/playground ...
+unless copying the whole module or lib does not add much more code").
+- **In folders, by Quake's own split** of the client and the server
+  (the author's word on mini-doom: "doom/ starts to have lots files in
+  the same folder"): `model/`, `render/`, `server/`, `game/`,
+  `sound/`, one library (dune's `include_subdirs`, the mkfile's
+  `DIRS`). `game/` is what Quake wrote in QuakeC, compiled by qcc to
+  progs.dat for the engine's virtual machine; here OCaml, no VM (the
+  author: "I remember quake was embedding an lcc compiler, but we do
+  not need to do that here so we don't have to follow what quake did
+  for that").
+- **QuakeC's game in OCaml** (`game/`, the engine's part in
+  `server/`), its names: `Edict` (edict_t and defs.qc: an
+  entity's fields, its think and touch as OCaml functions, the
+  world), `Physics` (sv_phys.c's movetypes: toss, bounce, fly; sv_move.c's
+  steps and SV_NewChaseDir; world.c's traces through the entities' boxes,
+  `Trace.box`), `Monster_ai` (ai.qc, fight.qc: FindTarget, ai_run,
+  the frames' acts), `Monsters` (grunt.qc, rottweiler.qc, enforcer.qc:
+  each kind's frames as its QuakeC declares them, with what each does,
+  as data; their attacks), `Combat` (combat.qc: T_Damage, the armor,
+  the knockback, Killed, gibs, T_RadiusDamage, FireBullets), `Weapons`
+  (weapons.qc: the axe, the two shotguns, the nailgun, the grenade
+  launcher, the rocket launcher; PF_aim's vertical autoaim; the weapon
+  in hand), `Items` (items.qc: the weapons and armor, the backpacks),
+  `Game` (the frame). The player's moves stay Play's; the monsters'
+  boxes now stop it (`Play.boxes`).
+- `Particles` (r_part.c, d_part.c): blood, puffs, explosions, the
+  rockets' fire and the grenades' smoke, against the z-buffer.
+  `Alias.draw_pitched`: a rocket's flight, the weapon in hand.
+- **Sound**: `Sound` (snd_dma.c's SND_Spatialize over Audio: the
+  distance by the attenuation, the pan by the listener's right; or
+  Audio3d with sound=3d), the doors', lifts', buttons' and triggers'
+  noises chosen by their "sounds" key in Brushes; lib_audio's Wav reads
+  8-bit WAVs now (Quake's). **The music**: `Cdaudio`, the level's CD
+  track, LibreQuake's `music/track06.ogg`, by the playground's Vorbis
+  decoder copied into lib_audio (`formats/vorbis/`, 806 lines; the
+  playground decodes a whole file, ix a packet at a time as it plays:
+  `Vorbis_player`, `Audio.play_ogg`). OCaml decodes it at 2.9% of real
+  time, mini-ml's arm64 code at 11%, mini-5i counts 593 million arm
+  instructions a second of music (84% of a Pi 1): off by default on
+  Plan 9.
+- **The playground's AI beside QuakeC's** (`ai=ways`, `Ways`): Ai.flow
+  over a grid of the player's floor around it (a cell walkable where
+  hull 1 fits at the player's height over a floor), for a monster that
+  does not see the player; Ai.aim_error for the soldiers' and
+  enforcers' aim. A Quake level's floors are over each other: in the
+  soldiers' room 6 of the 8 monsters on the player's floor followed
+  it; from the start only one monster shares the floor, so the grid
+  changed nothing there (`tests/fight/Fight.exe wake=1 god=1`). A graph
+  of the BSP's leaves (their portals) would be the 3D answer.
+- **A bug found**: lib_audio's `Synth.louder` left a recording as loud
+  as it was (`map_voices` skips `Samples`): mini-doom's distances had
+  never changed its sounds' loudness (bugs/ix.md); fixed in ix, the
+  playground's still has it.
+- 2,412 lines of new .ml (the QuakeC 1,700 of them), 290 more in the
+  others (Quake.ml 136, Brushes 88); the data 2 to 9.6 MB (`progs/`
+  2.2, `sound/` 4.4, `music/` 3; data/README.md, `tools/mkdata.sh`).
+- Checked: games/tests/frames.sh's mini-quake sessions recorded again
+  (the monsters awake, the weapon in hand, the status line; music=off)
+  and three new ones (fight, fight_ways, grenades), mini-ml's arm64
+  frames OCaml's byte for byte; `tests/fight/Fight.exe` (the monsters'
+  states and the player's health a second at a time): standing in the
+  soldiers' room the player dies in about 6 s after two kills;
+  grenades bounce (weapons/bounce), burst on a soldier or after 2.5 s;
+  lib_audio's play.sh, games/tests/audio.sh, mini-doom's frames.
+- Not run: mini-9pi (the card, /dev/audio, the frames a second with
+  monsters), the Pi; a person playing with a window and listening.
+
 ## What is left
 
 - **The light as the map's authors saw it**: tools/Light.ml's bounce
@@ -258,14 +329,18 @@ mini-9pi), 6 not started.
   (health, ammunition, barrels: maps/b_*.bsp compiled by qbsp from
   LibreQuake's sources); the monsters' bounding boxes not solid (the
   player walks through them).
-- **The game**: the monsters moving and attacking (QuakeC's ai.qc,
-  fight.qc, each monster's .qc), weapons and the player's view model,
-  the items picked up (but the keys), health and the status bar, damage
-  (lava, slime, crushers), trigger_hurt, trigger_push, func_train and
-  path_corner, the changelevel's next map (lq_e0m2 compiled the same
-  way), dynamic lights (muzzle flashes, rockets: R_AddDynamicLights),
-  particles, the water's view warp (D_WarpScreen) and its tint, sound,
-  the console, the network.
+- **The game** (since 2026-10-23's): the health and ammunition boxes
+  and the exploding boxes (QuakeC's brush models of their own,
+  maps/b_*.bsp, to compile with qbsp and to draw: a second BSP's
+  models), the other monsters (their .qc), the super nailgun and the
+  lightning gun, the artifacts, damage (lava, slime, crushers),
+  trigger_hurt, trigger_push, func_train and path_corner, the
+  changelevel's next map (lq_e0m2 compiled the same way), dynamic
+  lights (muzzle flashes, rockets: R_AddDynamicLights), the ambient
+  sounds (the leaves' water and wind, ambient_comp_hum), the
+  explosion's sprite (s_explod.spr), the water's view warp
+  (D_WarpScreen) and its tint, the console, the network; the
+  playground's AI over the BSP's leaves rather than one floor's grid.
 - **The renderer's corners**: transparent `{` textures (not vanilla's),
   rotating brush models (Hipnotic's), the cache's eviction of a
   surface still to be drawn this frame (id's r_cache_thrash), the sky's

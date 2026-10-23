@@ -8,8 +8,8 @@
 ;   here        the engine: a sound as a tree rendered ahead (Synth, Sfx,
 ;               Pitch_effect), tunes (Music), stereo (Space), the sounds
 ;               playing (Mixer), what is played live (Instrument, Control)
-;   formats/    abc, wav, midi, mod, mpeg_audio: a file to its notes or
-;               its samples
+;   formats/    abc, wav, midi, mod, mpeg_audio, vorbis: a file to its
+;               notes or its samples
 ;   instruments/  what is played live: oscillators, filters, a
 ;               sequencer (mini-rebirth's)
 ;   effects/    a delay, a drive, a compressor

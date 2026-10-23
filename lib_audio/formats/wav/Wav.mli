@@ -33,10 +33,11 @@
 val to_string : Signal.t -> string
 
 (* [of_string s]: the samples of a WAV file, 16-bit PCM, as floats (x /
- * 32,767): its chunks walked for "fmt " and "data" (a file may carry
- * others), stereo mixed down to one channel, another sample rate
+ * 32,767), or 8-bit (unsigned, 128 the silence: (x - 128) / 127; ix:
+ * Quake's sounds): its chunks walked for "fmt " and "data" (a file may
+ * carry others), stereo mixed down to one channel, another sample rate
  * resampled to Signal.rate (Resample.to_rate); Error for anything else
- * (8, 24 or 32-bit, compressed) *)
+ * (24 or 32-bit, compressed) *)
 val of_string : string -> (Signal.t, string) result
 
 (* [stereo_of_string s]: the same with its two channels kept (a file of

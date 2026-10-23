@@ -27,10 +27,13 @@ fps/doom/Doom|lift_each|200 -script up:1-100 redraw=each music=off|2492c11b91cad
 fps/doom/Doom|door|60 -script space:3 x=832 y=470 angle=90 music=off|265a529abcf320990739f097659d316f07d8207ceb613ef9aa3e8f6b9cd8ba93|2428f9cf6f6f2cd8e54eb4737977b19a78d9269d72af16295c5d9e9f48fcaba1
 fps/doom/Doom|fight|260 -script Control:50-260 x=700 y=1100 angle=0 music=off|688383f4329db33c828bfa784de76714d57046c2ab8e3732ceedb6d0cac37497|0d8cc7cfc4456652090aaaddb997d125ef028b19d7b2c030903feed10b070cd8
 fps/doom/Doom|fight_ways|260 -script Control:50-260 x=700 y=1100 angle=0 ai=ways music=off|973c0a94a9a2f17ee14f6721c40cbda6752070461be5bdcf668038c12ba9be48|b959081d49ae3a35edd607e0194a65507f52b3644a087a2189c1d9ea4cca2e17
-fps/quake/Quake|start|2|63359a7834c2524b0d6627cd67f9d3f68e5ee5a6cc87e1d117b116b8b930d53b
-fps/quake/Quake|walk|200 -script up:1-600,right:150-190|4cb500486a46e0a1917a026ead5322c0a6584c75bdca92d456c7d1a501e36d9c
-fps/quake/Quake|walk_each|200 -script up:1-600,right:150-190 redraw=each|4cb500486a46e0a1917a026ead5322c0a6584c75bdca92d456c7d1a501e36d9c
-fps/quake/Quake|door|150 x=640 y=1100 z=-6 angle=270 -script up:1-200|6fe213a38919b55abb8208d7dd738dd2dda3dc768f3aebd9018f40fc77ef9c33
-fps/quake/Quake|models|2 x=440 y=-340 z=-230 angle=135|e1b1d03d658ebbd73fd114587ffcedb1eab313ee5f42758a73b56841849ff0fb
-fps/quake/Quake|lightmaps|2 x=440 y=-340 z=-230 angle=135 lightmaps|ccb95f28d903cf378be299366d7b0e1b28030704baf9c0e9a9e5af3dad8cebec
-fps/quake/Quake|water|30 x=419 y=2000 z=0 angle=90 pitch=30|78cd3534af1f2472f762b345ef7d9eb1296273326af914c3f514421a5010a863
+fps/quake/Quake|start|2 music=off|0284f2a01d154df8553446183cb3e833020b265f9c0f493069c8048c13313d16
+fps/quake/Quake|walk|200 -script up:1-600,right:150-190 music=off|117105ea3495d41d8368d97dbb92ae37a676037c4aa39cd7dd5fd798f9022efa
+fps/quake/Quake|walk_each|200 -script up:1-600,right:150-190 redraw=each music=off|117105ea3495d41d8368d97dbb92ae37a676037c4aa39cd7dd5fd798f9022efa
+fps/quake/Quake|door|150 x=640 y=1100 z=-6 angle=270 -script up:1-200 music=off|729e63db7002e91e369b83683c1b7f43daf1005b60081f89c608742425630b95
+fps/quake/Quake|models|2 x=440 y=-340 z=-230 angle=135 music=off|d0f816245c7c4c905632264fc7692d19f008009da5d2c13ccf79c9423baf0d79
+fps/quake/Quake|lightmaps|2 x=440 y=-340 z=-230 angle=135 lightmaps music=off|b69548ef03c05b62be32f05f01468add34fe9e9d3309a33404e0c49b3ac4455d
+fps/quake/Quake|water|30 x=419 y=2000 z=0 angle=90 pitch=30 music=off|0e0de14fb3c14ec5039e1118ebe80cb0d8d9d38b908ba7156ea9ef0b2cbef6b0
+fps/quake/Quake|fight|300 -script Control:20-300 x=440 y=-340 z=-230 angle=135 music=off|aaebb2f7a4e720ac4913ec8347676d705490cdeca112cb1e4de5935fb6b6b989
+fps/quake/Quake|fight_ways|300 -script Control:20-300 x=440 y=-340 z=-230 angle=135 ai=ways music=off|509ff1627d4aa9fa6b56b072302ae6463d7795093b2aa9c37777102ddd10129d
+fps/quake/Quake|grenades|150 -script 6:2-4,Control:10-60 x=440 y=-340 z=-230 angle=135 weapons=all music=off|d4a07b848f8c1a6475dd522e530b4a789f9b00e2a747419eb7dd1c23ab69838d

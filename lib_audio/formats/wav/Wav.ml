@@ -3,7 +3,7 @@
 
 (* See Wav.mli *)
 
-(* ix: the author's playground's libs/audio/formats/wav/Wav.ml; no file read or written here (write, read, write_stereo: the caller's, through its capabilities), stereo_to_string in their place, and stereo_of_string, a file's two channels kept; a sample of 16 bits read and written through the unsigned ones (docs/plans/plan_audio.md) *)
+(* ix: the author's playground's libs/audio/formats/wav/Wav.ml; no file read or written here (write, read, write_stereo: the caller's, through its capabilities), stereo_to_string in their place, and stereo_of_string, a file's two channels kept; a sample of 16 bits read and written through the unsigned ones; a WAV of 8 bits read too (mini-quake's sounds) (docs/plans/plan_audio.md) *)
 
 (* [channels] interleaved: the frames, each a sample per channel *)
 let to_string_channels (channels : Signal.t list) : string =
@@ -52,12 +52,16 @@ let stereo_of_string (s : string) : (Signal.stereo, string) result =
     | Some (_, fmt, _), Some (_, data, size) ->
         let u16 i = String.get_uint16_le s (fmt + i) in
         let channels = u16 2 and rate = Int32.to_int (String.get_int32_le s (fmt + 4)) in
-        if u16 0 <> 1 || u16 14 <> 16 || (channels <> 1 && channels <> 2) then Error "not 16-bit PCM, mono or stereo"
+        let bits = u16 14 in
+        if u16 0 <> 1 || (bits <> 16 && bits <> 8) || (channels <> 1 && channels <> 2) then Error "not 8- or 16-bit PCM, mono or stereo"
         else
           let size = min size (String.length s - data) in
-          let frames = size / (2 * channels) in
+          let bytes = bits / 8 in
+          let frames = size / (bytes * channels) in
           let s16 j = let v = String.get_uint16_le s j in if v >= 0x8000 then v - 0x10000 else v in
-          let channel c = Resample.to_rate Linear rate (Array.init frames (fun i -> float_of_int (s16 (data + (2 * ((i * channels) + c)))) /. 32767.)) in
+          (* ix: 8 bits too, unsigned, 128 the silence (Quake's sounds) *)
+          let sample j = if bytes = 1 then float_of_int (Char.code s.[j] - 128) /. 127. else float_of_int (s16 j) /. 32767. in
+          let channel c = Resample.to_rate Linear rate (Array.init frames (fun i -> sample (data + (bytes * ((i * channels) + c))))) in
           let left = channel 0 in
           Ok { Signal.left; right = (if channels = 1 then left else channel 1) }
     | _ -> Error "no fmt or no data chunk"

@@ -1,0 +1,5 @@
+; mini-quake's fights without a window: Fight.ml
+(executable
+ (name Fight)
+ (libraries ix_quake ix_core fpath caps unix))
+(include_subdirs no)

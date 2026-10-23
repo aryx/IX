@@ -11,6 +11,7 @@
  *    the file's   +-- .mid --> Music        the notes to come, those sounding
  *    bytes -------+-- .mp3 --> Mpeg_audio   a frame decoded (1,152 samples), where in it
  *                 +-- .wav --> Wav          its samples, where in them
+ *                 +-- .ogg --> Vorbis       a packet decoded (a block), where in it
  *                 +-- .abc --> Abc, Music   a tune of a page: rendered whole
  *                         |
  *                         v
@@ -45,5 +46,5 @@ type t = {
 val of_samples : Signal.stereo -> t
 
 (* [of_file name bytes]: the player of a file, by its name's end (.mod,
- * .mid or .midi, .mp3 or .mp2, .wav, .abc); Error with why not *)
+ * .mid or .midi, .mp3 or .mp2, .wav, .ogg, .abc); Error with why not *)
 val of_file : string -> string -> (t, string) result

@@ -22,6 +22,9 @@ let of_mod (song : Mod.song) : t =
   let p = Mod_player.create ~loop:false song in
   { fill = Mod_player.fill p; finished = (fun () -> Mod_player.finished p) }
 
+let of_ogg (p : Vorbis_player.t) : t =
+  { fill = Vorbis_player.fill p; finished = (fun () -> Vorbis_player.finished p) }
+
 let of_score (score : Midi.score) : t =
   let p = Music.play_score score in
   let fill (out : Signal.stereo) : unit =
@@ -104,5 +107,6 @@ let of_file (name : string) (bytes : string) : (t, string) result =
   else if ends ".mid" || ends ".midi" then Result.map of_score (Midi.parse bytes)
   else if ends ".mp3" || ends ".mp2" then Result.map of_mpeg (Mpeg_audio.create bytes)
   else if ends ".wav" then Result.map of_samples (Wav.stereo_of_string bytes)
+  else if ends ".ogg" then Result.map of_ogg (Vorbis_player.create ~loop:false bytes)
   else if ends ".abc" then Result.map (fun tune -> of_samples (Synth.render_stereo (Music.to_sound tune))) (Abc.parse bytes)
-  else Error "not a .mod, .mid, .mp3, .mp2, .wav or .abc"
+  else Error "not a .mod, .mid, .mp3, .mp2, .wav, .ogg or .abc"

@@ -36,7 +36,7 @@
    adding it all up (Mixer.mli).
 *)
 
-(* ix: the author's playground's playground/apis/Audio.mli; less the live effects not copied (chorus, flanger, phaser, rotary); a loop is rendered as it is played (docs/plans/plan_audio.md) *)
+(* ix: the author's playground's playground/apis/Audio.mli; less the live effects not copied (chorus, flanger, phaser, rotary); a loop is rendered as it is played; play_ogg, an .ogg decoded as it plays (docs/plans/plan_audio.md) *)
 
 open Playground
 
@@ -210,7 +210,8 @@ val doremi : string -> sound
 val of_tune : Abc.tune -> sound
 
 (* [wav bytes]: a recording, a WAV file's sound (its bytes, as read from
-   a .wav file: 16-bit, mono or stereo, any sample rate; audio/Wav.mli);
+   a .wav file: 16-bit or 8-bit, mono or stereo, any sample rate;
+   audio/Wav.mli);
    [pitched] then plays it higher or lower, and shorter or longer with
    it, as a tape would (Resample.mli) *)
 val wav : string -> sound
@@ -312,9 +313,21 @@ val fetch : string -> (string option -> unit) -> unit
    error output) *)
 val play_module : string -> string -> unit
 
+(* [play_ogg name bytes]: an Ogg Vorbis file's sound (its bytes, as
+   read from an .ogg: audio/formats/vorbis/Vorbis.mli), decoded as it
+   plays, a packet at a time (Vorbis_player.mli: never the whole file
+   at once, a track of minutes being hundreds of megabytes of
+   samples), looping until [stop name]; nothing if it isn't Ogg Vorbis
+   (the reason printed on the error output). A game's soundtrack, as
+   Quake's CD tracks are LibreQuake's .ogg files:
+     Audio.play_ogg "music" (read "track06.ogg")
+   (ix: not in the playground, whose Vorbis decodes a file whole) *)
+val play_ogg : string -> string -> unit
+
 (* [loop_from name source]: a tune from a file or a URL, looping once
    it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
-   a recording in .wav, a module in .mod, else solfège; a local path
+   a recording in .wav, a module in .mod, Ogg Vorbis in .ogg (ix's),
+   else solfège; a local path
    natively, a URL anywhere (natively
    downloaded, blocking the first time; in a browser fetched in the
    background, from the page's own server for a plain name). Like

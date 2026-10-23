@@ -1,12 +1,33 @@
 ; games/fps/quake: mini-quake (docs/plans/done/plan_quake.md), Quake's
 ; software renderer over a .bsp; here with the platform that writes a
 ; frame to a file (the tests'); sdl/ is the one with a window,
-; bin/mini-quake
+; bin/mini-quake. Its modules in folders, by Quake's own split of the
+; client and the server (one library, ix_quake):
+;   model/    the level and the models as read: Bspfile, Model
+;             (bspfile.h, model.c)
+;   render/   the picture: View, Bsp, Edges, Scan, Surfcache, Spans,
+;             Alias, Particles, Render (r_*.c, d_*.c)
+;   server/   the engine's world: its entities (Edict), their moves
+;             and traces (Trace, Physics), the player's walk (Play)
+;             (progs.h, world.c, sv_phys.c, sv_move.c, sv_user.c)
+;   game/     the game itself: the doors and triggers (Brushes), the
+;             monsters (Monster_ai, Monsters, and Ways, the
+;             playground's AI), the fights (Combat, Weapons), the
+;             items (Things, Items), the frame (Game). Quake wrote
+;             this part in QuakeC, compiled to progs.dat that its
+;             engine ran in a virtual machine; here it is OCaml, each
+;             file saying which .qc it was written from
+;   sound/    what is heard (snd_dma.c, cd_audio.c)
+; sdl/ and tools/ have their own stanzas.
+(include_subdirs unqualified)
+
 (library
  (name ix_quake)
  (wrapped false)
- (modules Bspfile Model View Edges Scan Surfcache Spans Bsp Trace Alias Things Render Brushes Play)
- (libraries ix_core))
+ (modules Bspfile Model View Edges Scan Surfcache Spans Bsp Trace Alias Things Render Brushes Play
+   Edict Physics Particles Items Ways Monster_ai Combat Monsters Weapons Game Sound Cdaudio)
+ ; (ix_playground: its Audio, Audio3d)
+ (libraries ix_playground ix_core))
 
 (executable
  (name Quake)

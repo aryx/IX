@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Audio.ml; less the live effects not copied (chorus, flanger, phaser, rotary), a loop rendered as it is played, the platform's samples asked through Audio_source (docs/plans/plan_audio.md) *)
+(* ix: the author's playground's playground/apis/Audio.ml; less the live effects not copied (chorus, flanger, phaser, rotary), a loop rendered as it is played, the platform's samples asked through Audio_source; play_ogg (docs/plans/plan_audio.md) *)
 
 (* See Audio.mli *)
 
@@ -283,6 +283,15 @@ let play_module (name : string) (bytes : string) : unit =
       Mixer.instrument mixer name
         { Instrument.note_on = (fun _ _ -> ()); note_off = (fun _ -> ()); set = (fun _ _ -> ()); fill = Mod_player.fill p }
 
+(* an .ogg's sound, decoded as the mixer pulls it, the same way *)
+let play_ogg (name : string) (bytes : string) : unit =
+  match Vorbis_player.create ~loop:true bytes with
+  | Error e -> prerr_endline ("Audio.play_ogg: " ^ e)
+  | Ok p ->
+      Mixer.instrument mixer name
+        { Instrument.note_on = (fun _ _ -> ()); note_off = (fun _ -> ());
+          set = (fun _ _ -> ()); fill = Vorbis_player.fill p }
+
 let loop_from (name : string) (source : string) : unit =
   if not !muted && not (Hashtbl.mem requested name) then (
     Hashtbl.replace requested name ();
@@ -294,6 +303,7 @@ let loop_from (name : string) (source : string) : unit =
       | Some bytes ->
           let ends_with = Filename.check_suffix (String.lowercase_ascii source) in
           if ends_with ".mod" then play_module name bytes
+          else if ends_with ".ogg" then play_ogg name bytes
           else
             let read =
               if ends_with ".mid" || ends_with ".midi" then midi

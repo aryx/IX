@@ -1,12 +1,12 @@
 # lib_audio, a library of ix's tools (mkfiles/mklib): the synthesizer,
-# its instruments and effects, ABC, MIDI, MOD and WAV (the playground's
-# Audio over it). Not in it: the MPEG decoders and Player, OCaml's only.
+# its instruments and effects, ABC, MIDI, MOD, WAV and Ogg Vorbis (the
+# playground's Audio over it). Not in it: the MPEG decoders and Player, OCaml's only.
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_audio
-DIRS=. signal synthesis instruments effects formats/abc formats/wav formats/midi formats/mod
+DIRS=. signal synthesis instruments effects formats/abc formats/wav formats/midi formats/mod formats/vorbis
 NEEDS=lib_playground
 UNITS=Control Pitch_effect Signal Spectrum Envelope Filter Fm Noise Oscillator Pluck Diode_ladder Modal Moog_ladder \
  Sequencer Svf Vco Voicing Effect Abc Doremi Midi Mod Delay Resample Mix Space Synth Drive Dynamics Wav Paula \
- Mod_player Sfx Music Instrument Mixer
+ Mod_player Ogg Vorbis Vorbis_player Sfx Music Instrument Mixer
 <$TOP/mkfiles/mklib

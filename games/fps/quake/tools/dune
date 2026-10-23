@@ -6,3 +6,4 @@
  (public_names mini-mkwad2 mini-light)
  (package ix)
  (libraries ix_quake ix_graphics_images ix_graphics_core ix_core fpath caps unix))
+(include_subdirs no)

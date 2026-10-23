@@ -21,13 +21,28 @@
  *     |-- what the client shows: sounds made, particles, the flash
  *
  * Here a monster's frames are data ([mclass], [seq], [act]: Monsters
- * writes them out as grunt.qc does), run by Monster_ai; the other entities'
- * think and touch are OCaml functions, as QuakeC's were.
+ * writes them out as grunt.qc does), run by Monster_ai; the other
+ * entities' think and touch are OCaml functions, as QuakeC's were.
+ *
+ * design:
+ * In Quake this record was the border between two programs. The
+ * engine's C knew the fields defs.qc declares first, the "system
+ * fields" (origin, velocity, mins, maxs, movetype, solid, think,
+ * nextthink, touch, health, frame ...): qcc wrote them out as a C
+ * header, progdefs.h, compiled into the engine, so that both agreed on
+ * where each was in an entity's memory. The fields declared after
+ * (enemy, attack_finished, pain_finished, th_run ...) were QuakeC's
+ * alone, the engine kept room for them without knowing what they were.
+ * A think was not a function pointer but a function's number in
+ * progs.dat, called by the interpreter. Here there is one program: one
+ * OCaml record, every field known to every module, a think an OCaml
+ * closure (Game.mli says why there is no VM).
  *
  * Where it stands in mini-quake: Game makes the world, spawns the
  * entities, runs them each frame; Physics moves them, Combat hurts
- * them, Monster_ai and Monsters think for the monsters, Weapons and Items for
- * the player; Quake.ml plays the sounds and Render draws the rest. *)
+ * them, Monster_ai and Monsters think for the monsters, Weapons and
+ * Items for the player; Quake.ml plays the sounds and Render draws the
+ * rest. *)
 
 (* how it moves (sv_phys.c's movetypes) *)
 type movetype =

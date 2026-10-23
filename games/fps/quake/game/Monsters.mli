@@ -20,8 +20,23 @@
  * ((3 randoms) x 8) and leaps from 80 to 150 (300 forward and 200
  * up, 10 to 20 on contact).
  *
+ * reframe:
+ * QuakeC's frame functions are Doom's state table written as code.
+ * Doom's info.c had a row a state: a sprite's frame, its tics, an
+ * action, the next state ({SPR_POSS, 0, 10, {A_Look}, S_POSS_STND2});
+ * QuakeC gave the same row a syntax of its own,
+ * [void() army_stand1 = [$stand1, army_stand2] {ai_stand();};] -- the
+ * frame, the next think, and a body of any code where Doom had one
+ * action. qcc made of it a function setting frame, think and nextthink
+ * (0.1 s), then the body. Here it is the table again (a [seq]: its
+ * frames, a list of acts a frame, its next), as mini-doom's Info is:
+ * the bodies QuakeC's monsters wrote are few (ai_run, ai_face, a
+ * sound, the attack), and named in [act]; the rest, the attacks and
+ * the pains, are OCaml functions of each kind.
+ *
  * Where it stands in mini-quake: Game spawns the map's monster_army,
- * monster_dog, monster_enforcer by [spawn]; Monster_ai runs their frames. *)
+ * monster_dog, monster_enforcer by [spawn]; Monster_ai runs their
+ * frames. *)
 
 (* [spawn w classname origin yaw]: the monster, standing, on the
  * floor (walkmonster_start); None for a kind not here *)

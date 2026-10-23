@@ -13,8 +13,15 @@
 ; result. So the kernel calls a process as a function that returns at
 ; its next trap (a hypervisor's KVM_RUN): no trap handler of ML, no
 ; kernel stack per process.
+;
+; With several harts (tiny-machine -cores n, plan_tiny_multicore.md)
+; the kernel is hart 0's alone; the others start here too and go to
+; slave, a loop that runs no ML: the process hart 0 puts in its
+; mailbox run until its trap, the trap posted back.
 
 _entry:
+	csrr	r1, hartid
+	bne	r1, zero, slave
 	la	sp, kstacktop
 	call	kmain			; runtime.c: the heap, then the ML toplevel
 spin:
@@ -41,6 +48,8 @@ k_run:
 	stw	sp, 0(r2)
 	stw	lr, 4(r2)
 	beq	r1, zero, k_idle
+; the process of frame r1 entered (a slave's too)
+k_enter:
 	csrw	scratch, r1		; while in user mode, its frame
 	ldw	r2, 64(r1)
 	csrw	epc, r2
@@ -74,7 +83,7 @@ k_idle1:
 ; k_run's caller, interrupts off, with the cause.
 trapvec:
 	csrrw	r1, scratch, r1
-	beq	r1, zero, k_back
+	beq	r1, zero, k_waited
 	stw	r2, 8(r1)
 	stw	r3, 12(r1)
 	stw	r4, 16(r1)
@@ -93,6 +102,8 @@ trapvec:
 	stw	r2, 4(r1)
 	csrr	r2, epc
 	stw	r2, 64(r1)
+	csrr	r2, hartid
+	bne	r2, zero, slave_post
 k_back:
 	csrw	scratch, zero
 	li	r1, 1			; supervisor, interrupts off
@@ -104,6 +115,61 @@ k_back:
 	shli	r13, r13, 1
 	ori	r13, r13, 1
 	ret
+
+k_waited:
+	csrr	r1, hartid
+	beq	r1, zero, k_back
+	j	slave_take
+
+; A slave (hart k > 0). Its mailbox, at 0xb41000 + 32k (TinyKernel.ml's
+; mailbox): the frame of the process to run (0: none), the window's
+; base and size, the slice (instructions until its timer), then the
+; trap's cause and value, posted. It waits for the harts' interrupt
+; (hart 0's word at -64(r0)): a frame there, it runs it; a trap of the
+; process saved in the frame (trapvec), the cause and the value
+; written, hart 0's interrupt raised, and it waits again. Its timer
+; is on only while a process runs.
+slave:
+	la	r1, trapvec
+	csrw	tvec, r1
+	li	r1, 33			; its timer, the harts' interrupt
+	csrw	ie, r1
+slave_wait:
+	li	r1, -1
+	csrw	timecmp, r1
+	csrw	scratch, zero
+	li	r1, 3			; supervisor, interrupts on
+	csrw	status, r1
+slave_spin:
+	j	slave_spin
+slave_take:
+	ldw	r1, -64(r0)		; the senders, cleared
+	csrr	r3, hartid
+	shli	r3, r3, 5
+	li	r2, 0xb41000
+	add	r3, r3, r2
+	ldw	r1, 0(r3)
+	beq	r1, zero, slave_wait	; nothing given (or a timer's)
+	stw	zero, 0(r3)
+	ldw	r2, 4(r3)
+	csrw	base, r2
+	ldw	r2, 8(r3)
+	csrw	bound, r2
+	ldw	r2, 12(r3)
+	csrr	r4, time
+	add	r2, r2, r4
+	csrw	timecmp, r2
+	j	k_enter
+slave_post:
+	shli	r3, r2, 5
+	li	r2, 0xb41000
+	add	r3, r3, r2
+	csrr	r2, cause
+	stw	r2, 16(r3)
+	csrr	r2, tval
+	stw	r2, 20(r3)
+	stw	zero, -64(r0)		; hart 0's interrupt
+	j	slave_wait
 
 ; the trap's value (a system call's number, a fault's address, the
 ; interrupts' sources)
@@ -149,6 +215,13 @@ k_clock:
 	csrr	r13, time
 	shli	r13, r13, 2
 	shri	r13, r13, 1
+	ori	r13, r13, 1
+	ret
+
+; the number of harts (an ML integer)
+k_harts:
+	csrr	r13, harts
+	shli	r13, r13, 1
 	ori	r13, r13, 1
 	ret
 

@@ -12,8 +12,8 @@
 ;             VA 0x1000 -> PA 0x1000 RX U (the user's code)
 ;             VA 0x5000 -> PA 0x200000 RW
 ;             VA 0x7000 -> PA 0x201000 R
-;   0x102000: VA 0xfffff000 -> PA 0x7fff000 RW (the devices, at the top
-;             of the machine's 128 MB: -16(r0) is VA 0xfffffff0 with
+;   0x102000: VA 0xfffff000 -> PA 0xffff000 RW (the devices, at the top
+;             of the machine's 256 MB: -16(r0) is VA 0xfffffff0 with
 ;             pages on)
 ;
 ; An entry: the physical page's number << 10, then U 16, X 8, W 4, R 2,
@@ -36,7 +36,7 @@
 	li	r2, 0x80403		; page 0x201, R V
 	stw	r2, 28(r1)
 	li	r1, 0x102000
-	li	r2, 0x1fffc07		; page 0x7fff, W R V
+	li	r2, 0x3fffc07		; page 0xffff, W R V
 	stw	r2, 4092(r1)
 	li	r1, 0x80000100		; on, the root's page 0x100
 	csrw	satp, r1

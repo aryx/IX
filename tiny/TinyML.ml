@@ -2049,8 +2049,7 @@ let rec value env e =
           List.iter (value env) (List.rev args);
           emit (Addr (exn_id c, 8));
           emit (Alloc (0, 1 + List.length args)))
-  | Tuple es ->
-      List.iter (value env) (List.rev es); emit (Alloc (0, List.length es))
+  | Tuple es -> fields_block (List.map (fun e () -> value env e) es)
   (* a record is a tuple of its fields in their declaration's order,
    * evaluated as ocamlopt does, right to left *)
   | Record (fs, order) ->
@@ -2071,12 +2070,10 @@ let rec value env e =
             emit (Set s);
             (fun () -> emit (Get s)) in
       let given = List.combine !idxs (List.map snd fs) in
-      for k = !n - 1 downto 0 do
+      fields_block (List.init !n (fun k () ->
         match List.assoc_opt k given with
         | Some v -> value env v
-        | None -> base (); emit (Field k)
-      done;
-      emit (Alloc (0, !n))
+        | None -> base (); emit (Field k)))
   | Dot (e, _, i) -> value env e; emit (Field !i)
   | SetDot (e, _, i, v) ->
       value env v; value env e; emit (SetField !i); emit (Imm (tagged 0))
@@ -2125,6 +2122,24 @@ let rec value env e =
       emit (Imm (tagged 0))
 
 (* e as a function's last: its value returned, or a call made a jump *)
+(* A block of the fields given in their order, computed right to left
+ * (ocamlopt's order): each on the stack of registers, then allocated
+ * and filled. Past 11 fields there are not the registers: the block
+ * allocated first, blank, kept in a slot, each field stored in it as
+ * it is computed (a process of tiny-kernel's, 12) *)
+and fields_block fields =
+  let n = List.length fields in
+  if n <= 11 then (List.iter (fun f -> f ()) (List.rev fields); emit (Alloc (0, n)))
+  else begin
+    emit (Blank (0, n));
+    let s = slot () in
+    emit (Set s);
+    List.iteri (fun k f ->
+      let k = n - 1 - k in
+      f (); emit (Get s); emit (SetField k)) (List.rev fields);
+    emit (Get s)
+  end
+
 and tail env e =
   match e with
   | App (f, args) -> if not (app env f args true) then emit Ret

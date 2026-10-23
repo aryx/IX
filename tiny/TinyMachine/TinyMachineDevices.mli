@@ -71,6 +71,13 @@ val date : int ref
  * 0 for none (the kernel gives its clock): tiny-machine's -seed *)
 val seed : int ref
 
+(* the number of harts, set by a host before [create] (tiny-machine's
+ * -cores): 1 by default, the machine as it was. A hart is a machine of
+ * its own ([hart]) sharing the memory and the devices; the devices are
+ * hart 0's, the others reach only -64(r0), the interrupt between harts
+ * (the .ml says how) *)
+val cores : int ref
+
 (* a trap (its cause, what goes with it), inside the machine; the halt
  * and its status, which ends [ticks] *)
 exception Trap of int * int
@@ -107,6 +114,7 @@ type machine = {
   put : char -> unit; on_open : console -> unit; send : string -> unit;
   hear : string -> unit;
   mutable touched : bool;
+  ipis : int Atomic.t array;
 }
 
 (* A machine with an image at 0. [put] has each byte of the console's
@@ -125,6 +133,10 @@ val create :
 val ring : int
 val hz : int
 val speaker_hear : machine -> unit
+
+(* hart k (0 < k < !cores) of the machine made by [create], which is
+ * hart 0: its own registers and registers of control, its pc at 0 *)
+val hart : machine -> int -> machine
 
 (* the CPU's five hooks for it, and so many instructions of its time
  * (Halt when the kernel halts it) *)

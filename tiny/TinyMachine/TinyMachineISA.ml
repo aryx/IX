@@ -53,7 +53,7 @@ let sp = 14 and lr = 15
 let csr_names =
   Array.of_list [ "status"; "epc"; "cause"; "tval"; "tvec"; "time"; "timecmp";
                   "base"; "bound"; "hartid"; "ip"; "ie"; "satp"; "scratch";
-                  "rate" ]
+                  "rate"; "harts" ]
 
 exception Error of string
 (* old: Printf.ksprintf's, a format and its values *)

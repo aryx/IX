@@ -7,7 +7,7 @@
 let usage = {|usage: tiny-machine [-l | -d disk | -window | -rate n | -date n
          | -seed n | -prof file | -screen ppm | -audio wav | -events file
          | -net dir | -net-trace | -net-lose n | -net-out | -net-forward h:m
-         | -net-pcap f | -net-loop n] image|}
+         | -net-pcap f | -net-loop n | -cores n | -cores-parallel] image|}
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -71,6 +71,11 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
   tiny-machine -net-loop 100 kernel.img
       a network whose wire comes back: each packet sent is received 100
       instructions after (a test's; -36(r0) then reads 1)
+  tiny-machine -cores 4 kernel.img
+      four harts (tiny-kernel: tiny-build -j 4 compiles four units at
+      once), in turns: a slice of each in one thread, the same run each
+      time; -cores-parallel: a hart a domain, on the host's cores, where
+      OCaml has domains (5: tiny-machine built by it)
 The console is this terminal; ^D ends t6's shell, and the machine; ^C
 is the kernel's (tiny-kernel: the program running killed); ^\ quits.
 |}
@@ -249,7 +254,8 @@ type options = {
   rate : int option; date : int option; seed : int option;
   net_loop : int option; net : string option; net_trace : bool;
   net_lose : int list; net_out : bool; net_forward : (int * int) list;
-  net_pcap : string option; prof : string option }
+  net_pcap : string option; prof : string option; cores : int;
+  parallel : bool }
 
 (* The way out (TinyMachineSocket.mli): a connection of the host's is
  * a program run beside this one, tiny-machine-socket, its bytes on two
@@ -386,6 +392,7 @@ let run caps o image =
      | Some d -> d
      | None -> int_of_float (Unix.time ()) - 946684800);
   TinyMachineDevices.seed := (match o.seed with Some s -> s | None -> 0);
+  TinyMachineDevices.cores := o.cores;
   let disk_file = o.disk_file in
   (* the disk: the file's, or a blank one of 8 MB when there is no such
    * file; each block the kernel writes, written to it at once *)
@@ -590,7 +597,29 @@ let run caps o image =
         TinyMachineCPU.profiled env profile (fun _ ->
           if TinyMachineDevices.supervisor mc then 1, 0
           else 0, TinyMachineDevices.window_base mc) in
+  (* the other harts (-cores): in turns, a slice of each after hart 0's
+   * in this loop; or, asked and where OCaml has domains, each on its
+   * own, a slice after another until one fails or hart 0 halts *)
+  let others =
+    List.init (o.cores - 1) (fun k ->
+      let h = TinyMachineDevices.hart mc (k + 1) in
+      h, TinyMachineDevices.env h) in
+  let parallel = o.parallel && others <> [] && Parallel.available in
+  if o.parallel && not Parallel.available then
+    Console.eprint caps
+      "tiny-machine: -cores-parallel: no domains in this OCaml; in turns\n";
+  let failed = Atomic.make None in
+  if parallel then
+    List.iter (fun (h, env) ->
+      Parallel.spawn (fun () ->
+        try
+          while Atomic.get failed = None do
+            TinyMachineDevices.ticks h env 1024
+          done
+        with e -> ignore (Atomic.compare_and_set failed None (Some e))))
+      others;
   let halted n =
+    ignore (Atomic.compare_and_set failed None (Some Exit));
     Option.iter (fun f -> FS.write caps (Fpath.v f) (ppm m)) o.screen_file;
     Option.iter (fun f ->
       TinyMachineDevices.speaker_hear mc;
@@ -621,7 +650,12 @@ let run caps o image =
       (* old: TinyMachineDevices.tick mc env, an instruction a turn of
        * this loop; now the instructions to the next turn that does
        * something *)
-      TinyMachineDevices.ticks mc env (1024 - (t land 1023))
+      TinyMachineDevices.ticks mc env (1024 - (t land 1023));
+      if parallel then
+        (match Atomic.get failed with Some e -> raise e | None -> ())
+      else
+        List.iter (fun (h, env) ->
+          TinyMachineDevices.ticks h env (1024 - (t land 1023))) others
     done;
     0
   with TinyMachineDevices.Halt n -> halted n
@@ -678,12 +712,19 @@ let main (caps : < Cap.stdin; Cap.stdout; Cap.stderr; Cap.argv; Cap.open_in;
                                  :: o.net_forward } rest
           | "-net-loop" :: n :: rest when int_of_string_opt n <> None ->
               options { o with net_loop = int_of_string_opt n } rest
+          | "-cores" :: n :: rest
+            when (match int_of_string_opt n with
+                  | Some n -> n >= 1 && n <= 16
+                  | None -> false) ->
+              options { o with cores = int_of_string n } rest
+          | "-cores-parallel" :: rest -> options { o with parallel = true } rest
           | files -> run caps o (image files) in
         options { disk_file = None; screen_file = None; audio_file = None;
                   events_file = None; window = false; rate = None;
                   date = None; seed = None; net_loop = None; net = None;
                   net_trace = false; net_lose = []; net_out = false;
-                  net_forward = []; net_pcap = None; prof = None } args
+                  net_forward = []; net_pcap = None; prof = None; cores = 1;
+                  parallel = false } args
   with
   | Exit -> Console.eprint caps (usage ^ "   (-h: how)\n"); 2
   | TinyMachineISA.Error e | Sys_error e ->

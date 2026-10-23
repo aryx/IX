@@ -56,14 +56,14 @@
  * since). Each addition is kept separate so that v0 still runs as it
  * did (plan_tiny_os.md, phase 2):
  *
- * - {b 128 MB} of memory (16 MB until 2026-10-15), with the devices
- *   still at the top (-16(r0) is the console).
+ * - {b 256 MB} of memory (16 MB until 2026-10-15, 128 MB until the harts),
+ *   with the devices still at the top (-16(r0) is the console).
  * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
  *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
  *   and the window off; a page fault puts the address in tval.
  * - {b amoswap d, a, (b)}, the atomic swap that spinlocks are built
- *   from, usable in either mode; {b hartid}, the core's number (always
- *   0: there is one core for now); {b scratch} and {b csrrw}, to free a
+ *   from, usable in either mode; {b hartid}, the core's number (0 but with
+ *   -cores, below); {b scratch} and {b csrrw}, to free a
  *   first register at the start of a trap.
  * - {b Interrupts by source}: ip (pending) and ie (enabled), with one
  *   bit per source. The timer is the first source, enabled at the start
@@ -131,9 +131,31 @@
  *   somebody looks (the kernel, the host), so it costs no instruction
  *   of its own. -window plays them, -audio f writes them as a WAV.
  *
- * Here is all of it as a kernel sees it. Memory is 128 MB, with the
+ * For several cores (plan_tiny_multicore.md), behind -cores n:
+ *
+ * - {b Harts}: n CPUs, each with its registers, its pc and its
+ *   registers of control (hartid its number, harts their count),
+ *   sharing the memory. All start at 0 in supervisor mode, as RISC-V's
+ *   harts start at the reset's address; a kernel parks the others by
+ *   their hartid. The devices are wired to hart 0: another hart that
+ *   reaches one faults.
+ * - {b The interrupt between harts}, the sixth source (32): a store of
+ *   k at -64(r0) raises hart k's, from anyone; a load gives the harts
+ *   that raised this one's, a bit each, and clears them. A mailbox in
+ *   memory and this interrupt are all tiny-kernel's harts need.
+ * - {b In turns or at once.} By default the harts take turns in one
+ *   thread, a slice of up to 1,024 instructions each: a run is the same
+ *   every time, and one hart is the machine as it was. With
+ *   -cores-parallel, where OCaml has domains (tiny-machine built by
+ *   OCaml 5), each hart is a domain on one of the host's cores, counting
+ *   its own time; the memory is shared without a lock (a race between
+ *   harts is the program's, as on hardware), the interrupt by an
+ *   Atomic; amoswap is then no longer atomic, which tiny-kernel does
+ *   not need.
+ *
+ * Here is all of it as a kernel sees it. Memory is 256 MB, with the
  * devices at its top. An address is taken modulo the size, so r0 minus
- * 16 is 0x7fffff0: reaching a device costs no register.
+ * 16 is 0xffffff0: reaching a device costs no register.
  *
  *     0x000000   the image: the kernel's first word, where the machine
  *                starts in supervisor mode; the programs linked after
@@ -141,17 +163,18 @@
  *                (base, bound) or by pages
  *     0xf00000   the screen: 480 rows of 640 bytes, up to 0xf4b000
  *        ...
- *     0x7ffffcc  the speaker: its ring's address, the     -52(r0)
+ *     0xfffffc0  the interrupt between harts             -64(r0)
+ *     0xfffffcc  the speaker: its ring's address, the     -52(r0)
  *                samples played
- *     0x7ffffd0  the network: an address, a length,       -48(r0) up
+ *     0xfffffd0  the network: an address, a length,       -48(r0) up
  *                a command, whether there is a wire
- *     0x7ffffe0  the disk: a block number, an address,    -32(r0) up
+ *     0xfffffe0  the disk: a block number, an address,    -32(r0) up
  *                a command, a status (the first read:
  *                the disk's size, in blocks)
- *     0x7fffff0  console output                           -16(r0)
- *     0x7fffff4  halt                                     -12(r0)
- *     0x7fffff8  console input                             -8(r0)
- *     0x7fffffc  the mouse                                 -4(r0)
+ *     0xffffff0  console output                           -16(r0)
+ *     0xffffff4  halt                                     -12(r0)
+ *     0xffffff8  console input                             -8(r0)
+ *     0xffffffc  the mouse                                 -4(r0)
  *
  * And here is the word that holds the mode, with what a trap and eret
  * do to it (see [trap] in TinyMachineDevices, and its [extra] for eret):
@@ -179,9 +202,9 @@
  *
  * Exercises. Each one is cheap, because time is counted in instructions
  * and everything else is a hook of the CPU:
- * - several cores (plan_tiny_os.md, phase 5): N CPUs share the memory
- *   and are stepped in an order drawn from a seed, so a race can be
- *   replayed from its seed, which real hardware never allows;
+ * - the harts' turns in an order drawn from a seed (-cores takes them
+ *   in a fixed one), so a race can be replayed from its seed, which
+ *   real hardware never allows;
  * - wfi: a core waits for an interrupt and time jumps to timecmp, so an
  *   idle kernel costs nothing;
  * - a slow disk: the transfer completes N instructions after the

@@ -25,7 +25,9 @@
 #    has screen.cksum's sum; net.tm a wire that comes back (-net-loop
 #    100), and, run again without one, a machine that says it has none;
 #    rate.tm the speed that -rate 16 gives the machine, read from its
-#    rate register.
+#    rate register; harts.tm three harts (-cores 3): their count, the
+#    interrupt between them and who raised it, a device of hart 0's
+#    reached by another, a fault.
 #
 # Usage: TinyMachine_test.sh
 
@@ -81,6 +83,7 @@ for t in $ROOT/tiny/tests/TinyMachine_tests/*.tm; do
   fi
   [ $b = net ] && opts="-net-loop 100"
   [ $b = rate ] && opts="-rate 16"
+  [ $b = harts ] && opts="-cores 3"
   [ -f ${t%.tm}.events ] && opts="-events ${t%.tm}.events -screen $W/$b.ppm"
   link_tm $W/$b.image $t && timeout 10 $T $opts $W/$b.image < $in > $W/$b.out 2>&1
   if cmp -s $W/$b.out ${t%.tm}.expected; then echo "ok $b: its expected output"

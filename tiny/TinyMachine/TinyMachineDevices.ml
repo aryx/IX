@@ -18,8 +18,11 @@ and satp = 12   (* scratch, 13, only read and written *)
 (* The machine's speed in instructions per second, so that a kernel can
  * turn its time, which counts instructions, into seconds. *)
 and rate_csr = 14
+(* the number of harts (-cores n), which a kernel reads at its boot *)
+and harts_csr = 15
 let csr_names = TinyMachineISA.csr_names
-let read_only k = k = time || k = hartid || k = ip || k = rate_csr
+let read_only k =
+  k = time || k = hartid || k = ip || k = rate_csr || k = harts_csr
 
 (* status: the mode, the interrupts' bit, and the two as they were
  * before the trap *)
@@ -33,14 +36,16 @@ let relocate = 16
  * ie, the timer's the first (v0's only one) *)
 let c_sys = 1 and c_illegal = 2 and c_fault = 3 and c_intr = 4
 let i_timer = 1 and i_console = 2 and i_disk = 4 and i_mouse = 8
-and i_net = 16
+and i_net = 16 and i_ipi = 32
 
 (* the devices, at the top of memory, reached from anywhere by a
  * negative offset from r0: the console's output -16(r0), the halt
  * -12(r0); v6's in the 32 bytes below the top, the network's in the
  * 16 below those, the speaker's word below them, the date's, the
- * seed's (and one free) *)
-let memsize = 1 lsl 27
+ * seed's, the harts' interrupt's *)
+(* old: 1 lsl 27, 128 MB, before the harts: four compilers of tiny-ml
+ * at once, 32 MB each, did not fit *)
+let memsize = 1 lsl 28
 (* old: devices = memsize - 32, before the network's four words *)
 (* old: devices = memsize - 48, before the speaker's word *)
 let console = memsize - 16 and halt = memsize - 12 and devices = memsize - 64
@@ -66,6 +71,21 @@ let date = ref 0
  * kernel's code) *)
 let seed_dev = memsize - 60
 let seed = ref 0
+(* The harts (plan_tiny_multicore.md): [cores] of them, set by a host
+ * before [create] (tiny-machine's -cores), 1 by default, today's
+ * machine. Each its registers, its pc and its registers of control
+ * (hartid its number), the memory and the devices shared; hart 0
+ * starts at 0 as before, and so do the others: a kernel parks them by
+ * their hartid, as RISC-V's harts all start at the reset's address.
+ * The devices are wired to hart 0: another hart reaching one faults,
+ * but for -64(r0), the interrupt between harts. Stored, the value k
+ * raises hart k's (i_ipi), saying who sent it; read, the senders since
+ * the last read, a bit each (1 lsl hartid), cleared. So a hart knows
+ * whose mailbox to look at, and what it reads there was written before
+ * the interrupt (an Atomic's, which orders the memory between
+ * domains). *)
+let cores = ref 1
+let ipi_dev = memsize - 64
 (* the screen, below the devices: a megabyte no kernel's image reaches *)
 let screen = 0xf00000 and width = 640 and height = 480
 
@@ -348,15 +368,24 @@ type machine = {
   hear : string -> unit;
   (* a device or a register of control was touched: see [ticks] *)
   mutable touched : bool;
+  (* the senders of each hart's interrupt, a bit each *)
+  ipis : int Atomic.t array;
 }
 
-(* the sources wanting an interrupt *)
+(* whether this hart is hart 0, which the devices are wired to *)
+let first mc = mc.csr.(hartid) = 0
+
+(* the sources wanting an interrupt; another hart than 0 has only its
+ * timer and the harts' *)
 let pending mc =
   (if not (TinyMachineCPU.ult mc.csr.(time) mc.csr.(timecmp)) then i_timer else 0)
-  lor (if console_waiting mc.cons then i_console else 0)
-  lor (if mc.disk.done_ then i_disk else 0)
-  lor (if mc.mouse.moved then i_mouse else 0)
-  lor (if mc.net.waiting <> [] then i_net else 0)
+  lor (if Atomic.get mc.ipis.(mc.csr.(hartid)) <> 0 then i_ipi else 0)
+  lor (if not (first mc) then 0
+       else
+         (if console_waiting mc.cons then i_console else 0)
+         lor (if mc.disk.done_ then i_disk else 0)
+         lor (if mc.mouse.moved then i_mouse else 0)
+         lor (if mc.net.waiting <> [] then i_net else 0))
 
 let supervisor mc = mc.csr.(status) land supervisor_bit <> 0
 let window_base mc = mc.csr.(base)
@@ -420,12 +449,26 @@ let translate mc (m : TinyMachineCPU.machine) access va =
     pa
   end
 
-(* a load and a store: the pages or the window, then memory or a device *)
+(* the harts' interrupt: hart k's raised, from this one *)
+let ipi_send mc k =
+  if k >= 0 && k < Array.length mc.ipis then begin
+    let bit = 1 lsl mc.csr.(hartid) in
+    let rec set () =
+      let v = Atomic.get mc.ipis.(k) in
+      if not (Atomic.compare_and_set mc.ipis.(k) v (v lor bit)) then set () in
+    set ()
+  end
+
+(* a load and a store: the pages or the window, then memory or a device
+ * (hart 0's: another faults, but on the harts' word) *)
 let load mc m s a =
   let a = translate mc m Read a in
   match TinyMachineCPU.word a with
   | w when w < devices -> TinyMachineCPU.load m s a
-  | w when (mc.touched <- true; w = console_in) ->
+  | w when (mc.touched <- true; w = ipi_dev) ->
+      Atomic.exchange mc.ipis.(mc.csr.(hartid)) 0
+  | _ when not (first mc) -> raise (Trap (c_fault, a))
+  | w when w = console_in ->
       mc.on_open mc.cons; console_read mc.cons
   | w when w = disk_status -> if mc.disk.done_ then 1 else 0
   | w when w = disk_block -> Bytes.length mc.disk.image / bsize
@@ -444,7 +487,9 @@ let store mc m s a v =
   let a = translate mc m Write a in
   match TinyMachineCPU.word a with
   | w when w < devices -> TinyMachineCPU.store m s a v
-  | w when (mc.touched <- true; w = console) -> mc.put (Char.chr (v land 0xff))
+  | w when (mc.touched <- true; w = ipi_dev) -> ipi_send mc v
+  | _ when not (first mc) -> raise (Trap (c_fault, a))
+  | w when w = console -> mc.put (Char.chr (v land 0xff))
   | w when w = halt -> raise (Halt (v land 0xff))
   | w when w = disk_block -> mc.disk.block <- v
   | w when w = disk_addr -> mc.disk.addr <- v
@@ -470,7 +515,12 @@ let store mc m s a v =
  * register's old value, the register a's: at a trap, r1 swapped with
  * scratch frees a register); 0x3d, amoswap d, a, (b), anyone's: d the
  * word at the address in b, which becomes a, in one instruction (the atomic
- * swap a spinlock is made of, RISC-V's amoswap.w, ARM's swp) *)
+ * swap a spinlock is made of, RISC-V's amoswap.w, ARM's swp). Atomic
+ * between harts in turns, a turn never ending inside an instruction;
+ * not with a hart a domain (tiny-machine's -cores-parallel), where
+ * another hart's store may come between its load and its store:
+ * tiny-kernel's harts speak by mailboxes and the interrupt, not by a
+ * lock *)
 let extra mc (m : TinyMachineCPU.machine) w =
   let op = (w lsr 24) land 0xff and d = (w lsr 20) land 15
   and a = (w lsr 16) land 15 and k = w land 0xffff in
@@ -551,6 +601,7 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
   c.(timecmp) <- 0xffffffff;
   c.(ie_csr) <- i_timer;
   c.(rate_csr) <- !rate;
+  c.(harts_csr) <- !cores;
   { cpu = m; csr = c;
     cons = { queue = ""; next = 0; eof = events = Some [];
              opened = events <> None; eof_read = false };
@@ -560,7 +611,22 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
     net = { wired = send <> None; naddr = 0; nlen = 0; waiting = [];
             flying = [] };
     speaker = { ring_at = 0; played = 0; since = 0 }; hear;
-    send = (match send with Some f -> f | None -> ignore); touched = false }
+    send = (match send with Some f -> f | None -> ignore); touched = false;
+    ipis = Array.init !cores (fun _ -> Atomic.make 0) }
+
+(* hart k, k > 0: its registers, its pc at 0 and its registers of
+ * control, as hart 0's at the start; the memory, the devices and the
+ * host's functions hart 0's *)
+let hart mc k =
+  let c = Array.copy mc.csr in
+  c.(status) <- supervisor_bit;
+  c.(timecmp) <- 0xffffffff;
+  c.(ie_csr) <- i_timer;
+  c.(hartid) <- k;
+  let r = Array.make 16 0 in
+  r.(TinyMachineISA.sp) <- devices;
+  { mc with cpu = { r; pc = 0; mem = mc.cpu.mem }; csr = c; events = [];
+            touched = false }
 
 (* the speaker's samples due, to [hear]: the host's, between two ticks *)
 let speaker_hear mc = speaker_play mc.speaker mc.cpu mc.csr.(time) mc.hear
@@ -607,7 +673,7 @@ let tick mc (env : TinyMachineCPU.env) =
        mc.events <- rest;
        if rest = [] then mc.cons.eof <- true
    | _ -> ());
-  if mc.net.flying <> [] then landed mc;
+  if mc.net.flying <> [] && first mc then landed mc;
   try
     let wanted = pending mc land c.(ie_csr) in
     if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc
@@ -666,8 +732,8 @@ let calm mc =
     (* a packet lands at its tick, which must look: one less, as [until] *)
     let packet =
       match mc.net.flying with
-      | (t, _) :: _ -> max 0 (from_now mc t - 1)
-      | [] -> 0x40000000 in
+      | (t, _) :: _ when first mc -> max 0 (from_now mc t - 1)
+      | _ -> 0x40000000 in
     min packet (min event (until c.(timecmp)))
   end
 

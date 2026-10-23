@@ -359,12 +359,17 @@ let build
   (* a node is done: its digest is its file's, or, without one, its stamp *)
   let finish n = Hashtbl.replace digests n.name
       (match digest_file caps n.name with Some d -> d | None -> stamp n) in
+  (* a node decided: done, or its recipe started; false when its
+   * recipe could not be, the system's processes all taken, while others
+   * run: it is started again when one has ended (old: its pid -1 kept
+   * as running, waited for ever: -j 3 hung on tiny-kernel) *)
+  let said = Hashtbl.create 7 in
   let decide n =
     match n.make with
-    | Source -> finish n
+    | Source -> finish n; true
     | Recipe _
       when digest_file caps n.name <> None
-           && Hashtbl.find_opt stamps n.name = Some (stamp n) -> finish n
+           && Hashtbl.find_opt stamps n.name = Some (stamp n) -> finish n; true
     | Recipe r ->
       let own =
         [ "target", [ n.name ]; "stem", [ r.stem ];
@@ -372,12 +377,23 @@ let build
       in
       let shown = Hashtbl.copy vars in
       List.iter (fun (k, v) -> Hashtbl.replace shown k v) own;
-      TinyLibSystem.print caps (expand true shown r.text ^ "\n");
-      incr ran;
-      if dry then Hashtbl.replace digests n.name ("dry " ^ n.name)
+      if not (Hashtbl.mem said n.name) then begin
+        Hashtbl.replace said n.name ();
+        TinyLibSystem.print caps (expand true shown r.text ^ "\n");
+        incr ran
+      end;
+      if dry then (Hashtbl.replace digests n.name ("dry " ^ n.name); true)
       else
-        Hashtbl.replace running (start caps (own @ env) r.text)
-          (n, TinyLibSystem.millis ())
+        match start caps (own @ env) r.text with
+        | pid when pid > 0 ->
+            Hashtbl.replace running pid (n, TinyLibSystem.millis ()); true
+        | _ when Hashtbl.length running > 0 -> false
+        | _ ->
+            TinyLibSystem.flush ();
+            TinyLibSystem.eprint caps
+              (Printf.sprintf "tiny-build: %s: no process to run it\n" n.name);
+            failed := true;
+            true
   in
   let wait () =
     match TinyLibSystem.wait_any caps with
@@ -409,7 +425,7 @@ let build
     let ready n = List.for_all (fun d -> Hashtbl.mem digests d.name) n.deps in
     let rec start_ready = function
       | n :: rest when Hashtbl.length running < jobs && not !failed && ready n ->
-          decide n; start_ready rest
+          if decide n then start_ready rest else n :: rest
       | n :: rest -> n :: start_ready rest
       | [] -> []
     in

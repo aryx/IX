@@ -1,4 +1,4 @@
-tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ forks ok
 execs ok
 pipes ok
@@ -10,9 +10,9 @@ kill ok
 preemption ok
 trace ok
 mltests: ALL OK
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ bigmem: 3000000 bytes kept
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ hi
 bin
 dev
@@ -23,7 +23,7 @@ src
       1       1       3
 cat: f: cannot open
 x
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % a b c 3 a.c b.c c.c
 % a
 b
@@ -39,7 +39,7 @@ failed: 1
 Can't cd /nowhere: cannot
 % % no
 % $ $ from a
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % /d
 e
 e/f
@@ -58,14 +58,14 @@ dir
 none
 % mv: e: a directory, which tiny-kernel cannot move
 ls: d: not there
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % bye
 bye
 % ln: b: cannot
 ln: nosuch: cannot
 ls: c: not there
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % troff
 trace
 touch
@@ -83,7 +83,7 @@ tail
 1
 % grep: no operand for `('
 1
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % /dev/audio
 /dev/console
 /dev/draw
@@ -97,11 +97,11 @@ ls: /cat: not there
 %      57     228    1411 f
      57     228    1411
      57     228    1411
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % 1|1
 % tiny-shell: try again
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % %  -. f
 hell0 w0rld
 added
@@ -116,11 +116,11 @@ added
 -   2 * /bin/editor
 -   2 * /bin/emacs
 -   2 * /bin/sam
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ $ > 0ne
 > tw0
 > three
-f0ur$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+f0ur$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ $ \box[100 100 200 86]{
 # Notes
 
@@ -135,9 +135,9 @@ Kept by **put**, read by cat.
 | =b0   |
 | =a2*2 |
 }
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ $ office ended
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % A report
 ========
 
@@ -168,11 +168,11 @@ Total  800
      63     639    2431 r.pdf
     101     787    4543 total
 usage: troff [-h | -p] file
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ play: /nosuch: no such file, or empty
 $ play: /examples/report.ixd: not a WAV file
 $ usage: play file.wav
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ 2,504 instructions: the kernel 0.0%, programs 100.0%
        count      %     function
        2,100   83.9  u  spin1
@@ -184,7 +184,7 @@ $ 2,504 instructions: the kernel 0.0%, programs 100.0%
        2,504  100.0  u  (the program)
 $ usage: tiny-prof [-n count] [-diff base] [-base hex] profile
          [-k file.map...] [-u file.map...]
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ tiny-db: t.db; help for how, ^D to end
 tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> tiny-db> range books.year >= 1985 (index) | where | sort
 tiny-db> SICP|41
@@ -203,7 +203,7 @@ tiny-db> 20|400
 tiny-db> 
 $ usage: tiny-db file.db   (-h: how)
 $ -   1    36352 t.db
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % A a.txt
 A b.txt
 % master: *
@@ -240,7 +240,7 @@ hello
 three
 % hello
 tiny-vcs: usage: tiny-vcs CMD   (-h: how)
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % % % % % % % % sort words.txt > sorted.txt
 wc -l < sorted.txt > count.txt
 % a
@@ -251,7 +251,7 @@ b
 % cp count.txt count.copy
       2
 % tiny-build: don't know how to make nosuch
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % % % % % % % ping: /bin/ping
 % % isa.tm: the host
 % isa.tmi: the host
@@ -260,36 +260,36 @@ $ % % % % % % % % % ping: /bin/ping
 -   1 * /bin/cc
 -   1 * /bin/ld
 -   1 * /bin/ml
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % % put: nosuch: cannot open
 % put: ../x: a name has no / and no . first
 % notes
 numbers
 % $ hello world
 8893
-tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % hello world
    2000    2000    8893 numbers
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ answer from 10.0.0.1 in * ms
 answer from 10.0.0.1 in * ms
 answer from 10.0.0.1 in * ms
 $ no answer from 10.0.0.9
 no answer from 10.0.0.9
 no answer from 10.0.0.9
-$ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+$ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ Hello,
 from the other end of the wire.
 $      44     374    2013
 $ get: no nothing
 $ get: nothing answers at 10.0.0.9
 $ the wire: a packet lost
-tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %     589   14363  257035
 %     589   14363  257035
 % www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs:
 no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump
 $ % -   1     8893 ./big
 d   1       68 ./d
@@ -309,7 +309,7 @@ d   1       68 ./d
 usage: get name [host [port]]
 new
 ln: d/f: cannot
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 8192 KB, 8101 KB free; 1 snapshots in /dump
 $ % /usr/glenda
 hello
@@ -317,7 +317,7 @@ hello
    2000    2000    8893 big
 /dump/1
 hello
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 8192 KB, 8098 KB free; 2 snapshots in /dump
 $ % /dump/1
 /dump/2
@@ -329,7 +329,7 @@ hello
 rm: d: cannot
 rm: /dump/1/usr/glenda/d/f: cannot
 tiny-shell: /dump/1/x: cannot create
-% $ tiny-kernel: TinyKernel.ml, 95 MB for 8 processes
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % % open("f", 0) = 5
 read(5, "hello\n", 4096) = 6
 hello
@@ -358,18 +358,18 @@ hello
 [12] fork() = 14
 [13] close(1) = 0
 [13] dup(7) = 1
+[14] close(5) = 0
 [13] close(7) = 0
 [13] close(6) = 0
-[14] close(5) = 0
+[14] exec("/bin/wc", 0xffd48) = 0
 [13] close(5) = 0
 [13] exec("/bin/cat", 0xffd78) = 0
-[14] exec("/bin/wc", 0xffd48) = 0
 [13] open("f", 0) = 5
 [13] read(5, "hello\n", 4096) = 6
 [13] write(1, "hello\n", 6) = 6
 [13] read(5, "", 4096) = 0
-[13] close(5) = 0
 [14] read(0, "hello\n", 4096) = 6
+[13] close(5) = 0
 [13] exit(0)
 [12] wait(0xffe68) = 13
 [13] exited 0
@@ -426,4 +426,5 @@ exited 0
 break
 wait:	ldw	r1, 0(r14)
 3
-% % $ 
+% 4
+% $ 

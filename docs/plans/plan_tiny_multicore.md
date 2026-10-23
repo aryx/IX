@@ -19,8 +19,10 @@ OCaml 5 behind a switch) and makes the other choice for the kernel:
 mini-9pi gets one lock around its whole kernel; tiny-kernel keeps its
 kernel on one core.
 
-**Nothing here was built or run.** What is said of the tree was read
-on 2026-10-20.
+Stages 1 to 4 built on 2026-10-23 (the author: "let's start the tiny
+multicore plan and leverage domains on ocaml 5 so can build t-ix under
+t-ix using multiple cores"): Status, at the end, says what was found
+and decided on the way.
 
 ## The short answer
 
@@ -181,3 +183,56 @@ free harts: about 100. tiny-build's fix: tens. About 350 lines of the
 ## Status
 
 2026-10-20: plan written, from reading. Nothing built, nothing run.
+
+2026-10-23: stages 1 to 4 built, the decisions taken as proposed but
+where said.
+
+- **tiny-machine's harts** (TinyMachineDevices, TinyMachine.ml):
+  `-cores n` (1 to 16) and `-cores-parallel`. A hart is a `machine`
+  record of its own made by `hart mc k` (`{ mc with ... }`: its CPU
+  registers and pc, its registers of control, the memory's bytes and
+  the devices' records shared), so nothing of the one-hart code path
+  changed. Hart 0's loop in TinyMachine.ml runs the others' slices
+  after its own, the same length; with domains each other hart loops
+  on its domain (`Parallel.spawn`, lib_core/parallel's, as mini-qemu),
+  a failure or the halt said to all by an Atomic. **Every hart starts
+  at 0** (RISC-V's way, not the plan's "slaves started by hart 0"):
+  entry.tm parks the others by hartid, two instructions. **The devices
+  are wired to hart 0**: another hart that reaches one faults (so no
+  lock around them, and the host's thread, hart 0's, is the only one
+  that touches them). New: `harts`, a register of control (15, read
+  only), the count; **-64(r0), the interrupt between harts**, source
+  32: a store of k raises hart k's, a load gives the senders, a bit
+  each, and clears them (an `Atomic.exchange`, which orders the
+  mailbox's words between domains: the receiver reads only what a
+  sender it was told of wrote before telling). Memory **256 MB**
+  (`1 lsl 28`). amoswap is not atomic between domains (said in the
+  code; tiny-kernel does not use it). Built by mini-ml too: tiny/mkfile
+  compiles lib_core/parallel's 4.14 file as Parallel.
+  Check: `TinyMachine_tests/harts.tm`, three harts (the count, the
+  interrupt and its senders, the device's fault), in turns and on
+  domains (5.5.1); TinyMachine_test.sh whole (paging.tm's page of the
+  devices moved to 256 MB's top).
+- **tiny-kernel: master and slaves** as planned. entry.tm: `slave`,
+  `slave_take`, `slave_post` (about 50 lines; `k_enter` shared with
+  k_run's register load, trapvec shared, a hartid test after the save).
+  TinyKernel.ml: a process's `hart` (-1 none, 0 hart 0's, k) and
+  `doomed`; `give`, `dispatch`, `back`, `runnable ok`; the harts'
+  interrupt read in `interrupts`. **A kill of a process on another hart
+  waits for its next trap**, which the interrupt makes now (its
+  partition is not another's before); **a trace(pid) of one waits for
+  it to come back**, and a traced process stays on hart 0. 16 slots,
+  partitions to 0xfff0000 (223 MB).
+- **tiny-ml: a record of more than 11 fields** (the process's record,
+  12, was "an expression too deep"): built in a block allocated first,
+  kept in a slot, each field stored as computed (`fields_block`);
+  `languages/ml/tests/tiny/records_wide.ml`, OCaml's output recorded.
+- **tiny-build's -j hang** (bugs/ix.md, fixed): a fork that failed
+  was kept as a recipe running, pid -1, waited for ever.
+- **make check (one core)**: the screens the same; `tetris.wav`'s sum
+  and three of check.expected's interleavings recorded again (the
+  kernel's few instructions more per trap: the time moved); the
+  pipeline that tested the slots running out has 13 cats (16 slots);
+  the background loop that debug attaches to lasts four seconds, not
+  three (debug takes three to start: on the edge, 2.9 s before, 3.1
+  now). `make self-cores` added.

@@ -79,7 +79,7 @@
  (public_name tiny-machine)
  (package ix)
  (modules TinyMachine)
- (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer))
+ (libraries ix_core fpath unix caps tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer ix_parallel))
 
 ; TinyLibDraw.ml, a program's side of it, and TinyWindows.ml, tiny-kernel's
 ; window system: tiny-ml compiles them for the machine (TinyKernel/'s

@@ -496,7 +496,7 @@ MASK = -e 's|^(%? ?[-d] +[0-9]+) +[0-9]+ ((/boot)?/bin/)|\1 * \2|' -e 's|: trap 
 # (the machine's date fixed, 2026-01-01 in seconds since 2000, so that a
 # run is the same each time: tiny-vcs's commits, the files' dates;
 # override: tiny-machine gives MACHINE on the command line)
-check check-parts self self-quick: override MACHINE := $(MACHINE) -date 820540800 -seed 1
+check check-parts self self-quick self-cores: override MACHINE := $(MACHINE) -date 820540800 -seed 1
 # its parts side by side, J at a time unless make was given -j: each
 # session's text in $(O)/check/NN.out, put together in their order, each
 # screen and sound in its own files; sessions that share a disk or files
@@ -528,7 +528,7 @@ $(O)/check/07.out: $(O)/boot.img
 $(O)/check/08.out: $(O)/boot.img
 	printf 'rc\nls /dev; ls -l /cat /bin/cat /bin/utils /bin/emacs /bin/editor /bin/ping\nls -l /bin > f; wc f; ls -l /bin | wc; cat f | grep -v zzz | wc\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/09.out: $(O)/boot.img
-	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf 'rc\nseq 30 | grep 1 | sort -rn | tail -3 | cat | wc -l\ntest -f no | cat | test -f no; echo $$status\nseq 3 | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | cat | wc -l\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/10.out: $(O)/boot.img
 	printf 'rc\necho hello world > f\ned f\n,x/o/c/0/\n$$a\nadded\n.\n,p\nw\nq\ncat f\nsam f\n,x/l+/c/L/\n,p\nq\nq\nls -l /bin/ed /bin/sam /bin/emacs /bin/editor\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/11.out: $(O)/boot.img
@@ -573,9 +573,10 @@ $(O)/check/25.out: $(O)/boot.img
 # after its image: -s), the backtrace, a step from the breakpoint, to
 # its exit; an ML program's backtrace (trace's), with its slots; a
 # loop of rc's in the background, attached to by trace (to its end) and
-# by debug (stopped in its wait, let go)
+# by debug (stopped in its wait, let go; four seconds: debug takes three
+# to start)
 $(O)/check/26.out: $(O)/boot.img
-	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } &\ntrace \$$apid\n{ for(i in 1 2 3) { sleep 1; echo \$$i } } &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }
@@ -613,8 +614,24 @@ self-quick: $(O)/boot.img
 	diff $(T)/self-quick.expected $(O)/self-quick.out
 	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
 
+# self on several harts (plan_tiny_multicore.md): tiny-machine -cores 4,
+# each build -j 4; the image of the first build compared with the host's,
+# alone (the recipes' lines are in the order they started, the harts'
+# own). In turns by default: the same run each time, as slow as one
+# hart on the host. On the host's cores, a hart a domain: tiny-machine
+# built by OCaml 5 (in _build5, as ./mini-pi -P), and
+#   make self-cores CORES='-cores 4 -cores-parallel' \
+#     MACHINE=../../_build5/default/tiny/TinyMachine.exe
+CORES = -cores 4
+self-cores: $(O)/boot.img
+	rm -f $(O)/self-cores.img; truncate -s 64M $(O)/self-cores.img
+	sed 's|^build |build -j 4 |' $(T)/self.keys | timeout 36000 $(MACHINE) $(CORES) -d $(O)/self-cores.img $(O)/boot.img > $(O)/self-cores.out
+	$(FSCAT) $(O)/self-cores.img usr/glenda/self/first.img > $(O)/self-cores.boot.img
+	cmp $(O)/boot.img $(O)/self-cores.boot.img
+	rm $(O)/self-cores.img $(O)/self-cores.out $(O)/self-cores.boot.img && echo "tiny-kernel: self-cores ok, its image the host's"
+
 clean:
 	rm -rf $(O)
 
-.PHONY: all run check check-parts self self-quick clean
+.PHONY: all run check check-parts self self-quick self-cores clean
 .SECONDARY:

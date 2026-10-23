@@ -31,7 +31,7 @@ $D/%.$O: %.ml
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineISA.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyC.$O $D/TinyML.$O: $D/TinyLibSystem.$O
-$D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml
+$D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
 # (a blank line above: a # line right under a rule's head is its recipe,
@@ -100,9 +100,17 @@ $D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 $D/tiny-cpu: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyMachineISA TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $LIBS
-	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
+	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+# (Parallel: the host's cores where OCaml has domains, -cores-parallel;
+# mini-ml has none: lib_core/parallel's file for OCaml 4.14, which dune
+# chooses by the compiler's version)
+$D/Parallel.$O: ../lib_core/parallel/host/single.ml.in ../lib_core/parallel/Parallel.mli
+	mkdir -p $D
+	cp ../lib_core/parallel/Parallel.mli $D/Parallel.mli
+	cp ../lib_core/parallel/host/single.ml.in $D/Parallel.ml
+	$ML $INCLUDES -o $target $D/Parallel.ml
 $D/TinyProfiler.$O $D/TinyLinker.$O: $D/TinyLibSymbols.$O
 $D/TinyProfiler.$O: $D/TinyLibSystem.$O TinyProfiler.ml
 $D/tiny-prof: $D/TinyLibSystem.$O $D/TinyLibSymbols.$O $D/TinyProfiler.$O $LIBS

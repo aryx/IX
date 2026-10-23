@@ -463,7 +463,7 @@ reads 0, a send is lost and nothing arrives.
 ### 5.6 The speaker
 
 The speaker is memory, as the screen is
-([plan_tiny_audio.md](../plans/plan_tiny_audio.md)): a ring of 8,192
+([plan_tiny_audio.md](../plans/done/plan_tiny_audio.md)): a ring of 8,192
 samples, a byte each, signed (0 is silence), wherever the kernel says
 by writing its address at `-52(r0)`. From then on it plays the ring,
 8,000 samples a second of the machine's time (one every `rate` / 8,000

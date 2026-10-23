@@ -883,7 +883,7 @@ endef
 #              (/lib/tls/ca.pem: this machine's, Tls_client's place on
 #              a card), for https:// in netscape, lynx and curl
 #              and doom's WAD (/lib/doom/freedoom.wad: Freedoom's
-#              E1M1, games/fps/doom/data; docs/plans/plan_doom.md)
+#              E1M1, games/fps/doom/data; docs/plans/done/plan_doom.md)
 #              and quake's level (/lib/quake/e0m1.bsp, its palette.lmp
 #              and colormap.lmp: LibreQuake's lq_e0m1,
 #              games/fps/quake/data; docs/plans/done/plan_quake.md)

@@ -327,8 +327,7 @@ unless copying the whole module or lib does not add much more code").
   out, one past the border drawn in part); id's 162 normals (anorms.h)
   if their exact shading matters; the items QuakeC made brush models
   (health, ammunition, barrels: maps/b_*.bsp compiled by qbsp from
-  LibreQuake's sources); the monsters' bounding boxes not solid (the
-  player walks through them).
+  LibreQuake's sources).
 - **The game** (since 2026-10-23's): the health and ammunition boxes
   and the exploding boxes (QuakeC's brush models of their own,
   maps/b_*.bsp, to compile with qbsp and to draw: a second BSP's
@@ -345,5 +344,11 @@ unless copying the whole module or lib does not add much more code").
   rotating brush models (Hipnotic's), the cache's eviction of a
   surface still to be drawn this frame (id's r_cache_thrash), the sky's
   layers moving a texel at a time (id's skytime).
+- **Checked where it runs** (the game of 2026-10-23): mini-9pi (the
+  card, /dev/audio, the frames a second with monsters), the author's
+  Pi 2, a person playing in a window and listening.
+- **The music on Plan 9**: off by default there; the Vorbis decoder
+  costs 11% of real time by mini-ml's arm64 code, about 84% of a Pi 1
+  by mini-5i's count: mini-5i `-prof` on Vorbis_player first.
 - **mini-9pi**: the card made again with `quake` and `/lib/quake/`
   (built, not remade by me); `-framebuffer` once it exists.

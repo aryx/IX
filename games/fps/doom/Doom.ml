@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-doom: Doom (id Software, 1993), its renderer and its data, as a
- * program of ix's playground (docs/plans/plan_doom.md). A walk through
+ * program of ix's playground (docs/plans/done/plan_doom.md). A walk through
  * a level of a WAD -- Freedoom's E1M1 by default, made from Freedoom's
  * source by tools/Mkwad.ml (data/README.md) -- its walls, floors,
  * ceilings and sky textured and lit as Doom drew them, its doors and

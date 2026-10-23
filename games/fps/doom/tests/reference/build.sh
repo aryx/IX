@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The reference for mini-doom's pictures (docs/plans/plan_doom.md): id's
+# The reference for mini-doom's pictures (docs/plans/done/plan_doom.md): id's
 # Doom as 9front has it (sys/src/games/doom: linuxdoom of 1997, 64-bit
 # clean, its platform Plan 9's), built on Linux by gcc with no window
 # (i_ref.c here: its platform; compat/: Plan 9's two headers). id's

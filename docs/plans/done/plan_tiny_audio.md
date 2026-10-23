@@ -7,8 +7,14 @@ support raw samples and have a tiny-play command that can play a wav
 file (that we can also add on the virtual disk as an example to
 test)".
 
+**Status: done** (2026-10-18; moved to done/ on 2026-10-23): steps 1,
+3 and 4 done, 2 dropped by the author (no sound in the web page), 5
+nothing to do (every program opens `/dev/audio`, the kernel mixes).
+What is left are section 3's drops (floats, 44,100 samples in 16 bits,
+filters and echo, a thread for the sound), each a choice, not a gap.
+
 m-ix has sound from one end to the other
-([plan_audio.md](done/plan_audio.md), [notes_audio.md](../notes_audio.md)):
+([plan_audio.md](plan_audio.md), [notes_audio.md](../../notes_audio.md)):
 mini-9pi's Devaudio, a ring a DMA goes around; `/dev/audio`, 16 bits in
 two channels at 44,100 Hz; lib_audio's synthesizer (Synth, Sfx, Music)
 in floats; the playground's `Audio`; and tetris with its theme and

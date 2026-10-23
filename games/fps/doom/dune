@@ -1,4 +1,4 @@
-; games/fps/doom: mini-doom (docs/plans/plan_doom.md), Doom over a
+; games/fps/doom: mini-doom (docs/plans/done/plan_doom.md), Doom over a
 ; WAD; here with the platform that writes a frame to a file (the
 ; tests'); sdl/ is the one with a window, bin/mini-doom; mini-mk's
 ; mkfile builds it for mini-9pi. Its modules in folders, by id's files

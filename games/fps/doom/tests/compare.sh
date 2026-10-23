@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-doom's pictures against id's (docs/plans/plan_doom.md, stage 2):
+# mini-doom's pictures against id's (docs/plans/done/plan_doom.md, stage 2):
 # the same WAD, the same level, the eye at the same place, the frame of
 # each (id's by reference/build.sh's refdoom, mini-doom's by the ppm
 # platform at scale=1), and the pixels that differ, of 64,000. id's

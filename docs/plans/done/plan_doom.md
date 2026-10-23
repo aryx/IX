@@ -18,6 +18,14 @@ it)".
 So this plan is the game; the framebuffer and the platform chosen at
 run time are a plan of their own, after it (below, stage 6).
 
+**Status: done** (2026-10-22 and 2026-10-23; the author: "add the
+leftover to the relevant plan document and then close"), this file
+kept as its record: stages 1 to 5 (the data, the view, the walk, the
+things, mini-9pi), stage 6 as plan_playground_framebuffer.md (done),
+stage 7 the game (sound, music, weapons, monsters). What is left, for
+plans of their own if they are wanted: the last section, "What is
+left".
+
 ## The survey (2026-10-22)
 
 | | what | lines | what it gives mini-doom |
@@ -262,7 +270,7 @@ run time are a plan of their own, after it (below, stage 6).
   WAD read, its textures made). mini-ml's frames are not OCaml's
   (arm64's fused multiply-add: 2 to 4% of the pixels, a texel apart):
   each frames' session has its second sum.
-- What follows is [`plan_playground_framebuffer.md`](done/plan_playground_framebuffer.md)
+- What follows is [`plan_playground_framebuffer.md`](plan_playground_framebuffer.md)
   (stage 6): the view is half of a frame (mini-ml's speed, 4 to 5
   times OCaml's here), the path to the screen the other half (a new
   image of the device's each frame, made, loaded) and ruinous as soon
@@ -341,3 +349,29 @@ code", "just if it does not cost much, we can follow a little"):
   bigger WAD), O=5 and OS=plan9's build, the Pi; a person playing it
   with a window (SDL) and listening. doom1.wad's music (MUS, by `Mus`)
   plays, its samples measured, not listened to.
+
+## What is left
+
+- **Checked where it runs**: the game of stage 7 under mini-9pi (its
+  sounds by /dev/audio, the card's bigger WAD, the frames a second
+  with monsters), O=5 and OS=plan9's build, the author's Pi 2; a person
+  playing in a window (SDL) and listening. The recorded mini-9pi
+  sessions (`make check-*`), mini-qemu at `-ips 200`.
+- **The music on Plan 9**: off by default there. Since 9f1766f4 a song
+  is rendered a block at a time as it plays (no longer 8 million
+  floats at the start), but Audio's MIDI under mini-ml is still about
+  7 times slower than it plays (mini-5i `-prof` on Music's synthesis:
+  the next to look at).
+- **The game's rest**: the other weapons (chaingun, rocket launcher,
+  plasma, BFG: their states are in id's info.c), the other monsters of
+  the episode (spectres, lost souls, cacodemons, barons); the menus, the intermission's tallies, the
+  automap, demos (a session already replays its keys), saving, the
+  episode's next levels (Mkwad takes E1M1 alone).
+- **The pixels**: tests/compare.sh's few thousand pixels a view of
+  id's (16.16 truncated at each product there, floats here: decision
+  3); the draw and SDL platforms read `size=` from the command line
+  only.
+- **The playground's AI**: Ways' grid of 32 by 32 cells knows walls
+  and room to stand, not ledges nor things (P_Move refuses the step,
+  id's way takes over); nothing compares the two AIs beyond Fight's
+  sessions.

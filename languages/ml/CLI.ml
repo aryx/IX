@@ -296,9 +296,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
                 Hashtbl.reset Lower.immediates;
-                if not !unsafe && !Lower.calls_whole then
-                  List.iter (fun sp -> Hashtbl.replace Lower.immediates sp ())
-                    (Typing.immediates ());
+                Hashtbl.reset Lower.string_eqs;
+                Hashtbl.reset Lower.float_cmps;
+                if not !unsafe && !Lower.calls_whole then begin
+                  let set h = List.iter (fun sp -> Hashtbl.replace h sp ()) in
+                  set Lower.immediates (Typing.immediates ());
+                  set Lower.string_eqs (Typing.strings ());
+                  set Lower.float_cmps (Typing.floats ())
+                end;
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->

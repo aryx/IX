@@ -799,6 +799,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-23 | comparisons typed (`Typing.immediates`, `Lower.immediates`: `Cmp` on ints, chars, booleans, `()`), a string's checked byte inline, `obj_block` inline and ssa's frames without the stack code's slots, parameters in registers; the runtime's strings compared a word at a time (plan_mini_toolchain_optimization.md: mini-ml compiling 22% fewer instructions, mini-doom's frame 11%) | +152 | 0 | |
 | 2026-10-23 | a generational collector: a young generation, minor collections into the half, the write barrier `ml_modify` (Gen's startup) from `SetField` and `SetIndex`, none for a fresh block in ssa's Emit; `Store_field` in the runtime's C (plan_mini_toolchain_optimization.md: mini-doom's frame 0.64, mini-ml compiling 0.96) | +270 | 0 | |
 | 2026-10-23 | the runtime's `move_bytes` the C library's memmove, now each machine's assembly (lib_core/libc/arch); its word loop an `old:` comment (plan_pi4.md) | -14 | 0 | |
+| 2026-10-23 | the stores' and comparisons' types used: no barrier for an immediate, `caml_string_equal` for strings, `Ir.FloatCmp` for floats (`Typing.places`; plan_mini_toolchain_optimization.md: mini-doom's frame 0.83, mini-quake's 0.83) | +131 | 0 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

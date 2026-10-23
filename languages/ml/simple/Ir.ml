@@ -77,9 +77,11 @@ type t =
   | Get of int | Set of int           (* a slot of the function's frame on the value stack *)
   | GetG of string | SetG of string   (* a global *)
   | Field of int                      (* a block by its field *)
-  | SetField of int                   (* the value below the block stored in its field *)
+  | SetField of int * bool            (* the value below the block stored in its field *)
   | Index                             (* a block, an index (ML) by the field; bounds checked *)
-  | SetIndex                          (* a block, an index, a value; bounds checked *)
+  | SetIndex of bool                  (* a block, an index, a value; bounds checked *)
+  (* (the stores' bool: the value an immediate, an int, a char...: no
+   * write barrier, the runtime's generations; Lower.immediates) *)
   (* a string's byte read and written in place, and its length
    * (Lower.strings_in_place; calls of the runtime otherwise); true: the
    * index checked, the safe accessors' *)
@@ -95,6 +97,7 @@ type t =
   | Float1 of string                  (* x by -x, or by its absolute value *)
   | FloatOfInt
   | IntOfFloat
+  | FloatCmp of rel                   (* x, y by x rel y, two floats (Lower.floats) *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op
   | Call of target * int list * bool  (* the slots of the closure then of the arguments; a tail call *)

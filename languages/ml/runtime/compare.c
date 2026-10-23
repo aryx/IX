@@ -104,8 +104,28 @@ relation(value a, value b)
 	return cmp(a, b);
 }
 
-value ml_equal(value a, value b) { return Val_bool(relation(a, b) == 0 && !cmp_unordered); }
-value ml_notequal(value a, value b) { return Val_bool(relation(a, b) != 0 || cmp_unordered); }
+/* OPTIMIZATION (strings): two strings compared by strings.c's
+ * string_equal, a word a turn, not cmp's walk (Lower calls it for = and
+ * <> on strings it knows; these for strings it does not, List.assoc's).
+ * old: relation's cmp for both */
+#define Both_strings(a, b) \
+	(!Is_int(a) && !Is_int(b) && Tag(a) == String_tag && Tag(b) == String_tag)
+
+value
+ml_equal(value a, value b)
+{
+	if(Both_strings(a, b))
+		return Val_bool(string_equal(a, b));
+	return Val_bool(relation(a, b) == 0 && !cmp_unordered);
+}
+
+value
+ml_notequal(value a, value b)
+{
+	if(Both_strings(a, b))
+		return Val_bool(!string_equal(a, b));
+	return Val_bool(relation(a, b) != 0 || cmp_unordered);
+}
 value ml_lessthan(value a, value b) { return Val_bool(relation(a, b) < 0 && !cmp_unordered); }
 value ml_lessequal(value a, value b) { return Val_bool(relation(a, b) <= 0 && !cmp_unordered); }
 value ml_greaterthan(value a, value b) { return Val_bool(relation(a, b) > 0 && !cmp_unordered); }

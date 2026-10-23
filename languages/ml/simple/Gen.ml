@@ -277,17 +277,17 @@ let func m out (fn : func) =
     | GetG g -> ins "%s\t%s(SB), R%d" mov g (push ())
     | SetG g -> ins "%s\tR%d, %s(SB)" mov !sp g; decr sp
     | Field k -> ins "%s\t%d(R%d), R%d" mov (w * k) !sp !sp
-    | SetField k ->
+    | SetField (k, imm) ->
         let b = !sp in
         ins "%s\tR%d, %d(R%d)" mov (b - 1) (w * k) b;
-        modify (b - 1) (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) b m.tmp);
+        if not imm then modify (b - 1) (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) b m.tmp);
         sp := b - 2
     | Index -> let b = !sp in decr sp; index b !sp; ins "%s\t0(R%d), R%d" mov !sp !sp
-    | SetIndex ->
+    | SetIndex imm ->
         let b = !sp in
         index b (b - 1);
         ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1);
-        modify (b - 2) (fun () -> ins "%s\tR%d, R%d" mov (b - 1) m.tmp);
+        if not imm then modify (b - 2) (fun () -> ins "%s\tR%d, R%d" mov (b - 1) m.tmp);
         sp := b - 3
     (* a string's byte: the index untagged and added to the string's
      * address; the byte tagged when read, untagged (in the scratch
@@ -311,6 +311,19 @@ let func m out (fn : func) =
         sp := s - 3
     (* a string's length: its words' bytes, less one, less what its last
      * byte says is not its own (the runtime's length) *)
+    (* two floats compared, the conditions those false of a number that
+     * is none (the runtime's relations', IEEE's) *)
+    | FloatCmp r ->
+        let a = !sp in
+        decr sp;
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\t0(R%d), F1" fmov !sp;
+        ins "%s\tF1, F0" (match m.arch with Arm -> "CMPD" | Arm64 -> "FCMPD");
+        let c =
+          match r with Eq -> "EQ" | Ne -> "NE" | Lt -> "MI" | Le -> "LS" | Gt -> "GT" | Ge -> "GE" in
+        (match m.arch with
+         | Arm -> ins "MOVW\t$1, R%d" !sp; ins "MOVW.%s\t$3, R%d" c !sp
+         | Arm64 -> ins "MOV\t$3, R%d" !sp; ins "B%s\t2(PC)" c; ins "MOV\t$1, R%d" !sp)
     | StrLen ->
         let s = !sp in
         ins "%s\t%d(R%d), R%d" mov (-w) s m.tmp;

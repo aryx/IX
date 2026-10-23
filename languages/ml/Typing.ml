@@ -392,12 +392,16 @@ let rec pattern (p : Scope.pattern) : t * (int * t) list =
       List.iter (fun (id, t) -> match List.assoc_opt id ba with Some t' -> unify_what "this variable" t t' | None -> ()) bb;
       t, ba
 
-(* OPTIMIZATION (immediates): each comparison's type, where it is in
- * the text; read once the unit is checked, its variables then linked *)
-let comparisons =
-  [ "%equal"; "%notequal"; "%lessthan"; "%lessequal"; "%greaterthan";
-    "%greaterequal" ]
-let compared : (Ast.span * t) list ref = ref []
+(* OPTIMIZATION (immediates, strings): the primitives whose code depends
+ * on a type, each with the argument whose type it is: a comparison's
+ * operands, the value an array's or a ref's store writes (its barrier,
+ * the runtime's generations); recorded with their type where they are
+ * in the text (a field's store too, its argument 0: the type itself),
+ * read once the unit is checked, its variables then linked *)
+let typed_prims =
+  [ "%equal", 1; "%notequal", 1; "%lessthan", 1; "%lessequal", 1; "%greaterthan", 1;
+    "%greaterequal", 1; "%array_safe_set", 3; "%array_unsafe_set", 3; "%setfield0", 2 ]
+let typed : (Ast.span * t * int) list ref = ref []
 
 let rec infer env (e : Scope.expr) : t =
   let saved = !loc in
@@ -418,7 +422,9 @@ and infer_ env (e : Scope.expr) =
       | None, None -> newvar ())
   | Evar (Prim (p, _, ty)) ->
       let t = instance ty in
-      if List.mem p comparisons then compared := (e.span, t) :: !compared;
+      (match List.assoc_opt p typed_prims with
+       | Some n -> typed := (e.span, t, n) :: !typed
+       | None -> ());
       t
   | Elet (false, bs, body) -> infer (let_ env bs) body
   | Elet (true, bs, body) -> infer (letrec env bs) body
@@ -451,6 +457,7 @@ and infer_ env (e : Scope.expr) =
       let field, res = label_types (ref []) l in
       unify t res;
       unify (infer env v) field;
+      typed := (e.span, field, 0) :: !typed;
       unit_t
   | Earray es -> let a = newvar () in List.iter (fun e -> unify (infer env e) a) es; Con (Resolve.array_d, [ a ])
   | Eif (c, a, b) ->
@@ -560,7 +567,7 @@ let rec generalize_all t =
 
 let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
-  compared := [];
+  typed := [];
   current := name;
   level := 1;
   wanted := []; found := []; failures := []; Hashtbl.reset givens;
@@ -598,20 +605,34 @@ let unit_ name (items : Scope.item list) =
                fail 0 (Printf.sprintf "the value %s: its interface's type isn't an instance of %s" x (show inferred))) decls);
   List.rev_map (fun (x, sym, prim) -> x, show (Hashtbl.find globals sym) ^ prim) !shown
 
-(* OPTIMIZATION (immediates): the comparisons whose operands are ints,
- * chars, booleans or (): no pointer to follow, so the integers'
- * comparison, not compare's (Lower). A place of the text seen at two
- * types (an expression copied) is not one, unless both are. *)
-let immediates () =
-  let imm t =
-    List.exists (fun c ->
-      match expanded t, c with
-      | Con (d, []), Con (d', []) -> d.tpath = d'.tpath
-      | _ -> false) [ int_t; char_t; bool_t; unit_t ]
-  in
+(* the places recorded whose type is one of [types]; a place seen at two
+ * types (an expression copied) is not one, unless both are *)
+let places types =
+  let is t = List.exists (fun c ->
+    match expanded t, c with
+    | Con (d, []), Con (d', []) -> d.tpath = d'.tpath
+    | _ -> false) types in
+  let rec arg t n =
+    match expanded t with
+    | Arrow (a, _) when n <= 1 -> Some a
+    | Arrow (_, r) -> arg r (n - 1)
+    | _ -> None in
   let h = Hashtbl.create 64 in
-  List.iter (fun (span, t) ->
-    let ok = match expanded t with Arrow (a, _) -> imm a | _ -> false in
+  List.iter (fun (span, t, n) ->
+    let ok = match if n = 0 then Some t else arg t n with Some a -> is a | None -> false in
     let before = match Hashtbl.find_opt h span with Some b -> b | None -> true in
-    Hashtbl.replace h span (ok && before)) !compared;
+    Hashtbl.replace h span (ok && before)) !typed;
   Hashtbl.fold (fun span ok acc -> if ok then span :: acc else acc) h []
+
+(* OPTIMIZATION (immediates): the comparisons and the stores of ints,
+ * chars, booleans or (): no pointer to follow, so the integers'
+ * comparison, not compare's, and no barrier (Lower) *)
+let immediates () = places [ int_t; char_t; bool_t; unit_t ]
+
+(* OPTIMIZATION (strings): the comparisons of strings: the strings'
+ * equality, not compare's (Lower.string_eqs) *)
+let strings () = places [ string_t ]
+
+(* OPTIMIZATION (floats): the comparisons of floats: the processor's
+ * (Lower.float_cmps) *)
+let floats () = places [ float_t ]

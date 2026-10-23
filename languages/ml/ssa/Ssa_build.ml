@@ -49,11 +49,11 @@ let arity : L.t -> int * int = function
   | Field _ -> 1, 1
   | SetField _ -> 2, 0
   | Index -> 2, 1
-  | SetIndex -> 3, 0
+  | SetIndex _ -> 3, 0
   | ByteGet _ -> 2, 1
   | ByteSet _ -> 3, 0
   | StrLen -> 1, 1
-  | Float2 _ -> 2, 1
+  | Float2 _ | FloatCmp _ -> 2, 1
   | Float1 _ | FloatOfInt | IntOfFloat -> 1, 1
   | Alloc (_, n) -> n, 1
   | Op (Neg | Not | IsInt | Tag | Size) -> 1, 1
@@ -158,13 +158,16 @@ let build (f : L.func) =
       | GetG g -> push (emit id (GetG g))
       | SetG g -> let v = pop () in ignore (emit id (SetG (g, v)))
       | Field k -> let b = pop () in push (emit id (Field (k, b)))
-      | SetField k -> let b = pop () in let v = pop () in ignore (emit id (SetField (k, b, v)))
+      | SetField (k, imm) ->
+          let b = pop () in let v = pop () in ignore (emit id (SetField (k, b, v, imm)))
       | Index -> let b = pop () in let i = pop () in push (emit id (Index (b, i)))
-      | SetIndex -> let b = pop () in let i = pop () in let v = pop () in ignore (emit id (SetIndex (b, i, v)))
+      | SetIndex imm ->
+          let b = pop () in let i = pop () in let v = pop () in
+          ignore (emit id (SetIndex (b, i, v, imm)))
       (* old: each a call of the runtime's (ml_string_get, caml_addfloat...)
        *   | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs))) *)
       | ByteSet _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
-      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat ->
+      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ ->
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
@@ -201,8 +204,8 @@ let operands = function
   | Const _ | Zero | Blk _ | Symb _ | Param _ | GetG _ | Slot _ | Caught _ | TryExit _ -> []
   | Phi ops -> List.map snd ops
   | SetG (_, v) | SetSlot (_, v) | Field (_, v) -> [ v ]
-  | SetField (_, a, b) | Index (a, b) -> [ a; b ]
-  | SetIndex (a, b, c) -> [ a; b; c ]
+  | SetField (_, a, b, _) | Index (a, b) -> [ a; b ]
+  | SetIndex (a, b, c, _) -> [ a; b; c ]
   | Alloc (_, vs) | Op (_, vs) | Call (_, vs) | CallC (_, vs) | Prim (_, vs) -> vs
 
 let map_ins f = function
@@ -210,9 +213,9 @@ let map_ins f = function
   | SetG (g, v) -> SetG (g, f v)
   | SetSlot (i, v) -> SetSlot (i, f v)
   | Field (k, v) -> Field (k, f v)
-  | SetField (k, a, b) -> SetField (k, f a, f b)
+  | SetField (k, a, b, imm) -> SetField (k, f a, f b, imm)
   | Index (a, b) -> Index (f a, f b)
-  | SetIndex (a, b, c) -> SetIndex (f a, f b, f c)
+  | SetIndex (a, b, c, imm) -> SetIndex (f a, f b, f c, imm)
   | Alloc (t, vs) -> Alloc (t, List.map f vs)
   | Op (o, vs) -> Op (o, List.map f vs)
   | Call (t, vs) -> Call (t, List.map f vs)
@@ -327,9 +330,9 @@ let show_ins = function
   | Slot i -> Printf.sprintf "slot %d" i
   | SetSlot (i, v) -> Printf.sprintf "setslot %d v%d" i v
   | Field (k, v) -> Printf.sprintf "field %d v%d" k v
-  | SetField (k, b, v) -> Printf.sprintf "setfield %d v%d v%d" k b v
+  | SetField (k, b, v, _) -> Printf.sprintf "setfield %d v%d v%d" k b v
   | Index (b, i) -> Printf.sprintf "index v%d v%d" b i
-  | SetIndex (b, i, v) -> Printf.sprintf "setindex v%d v%d v%d" b i v
+  | SetIndex (b, i, v, _) -> Printf.sprintf "setindex v%d v%d v%d" b i v
   | Alloc (t, l) -> Printf.sprintf "alloc %d %s" t (vs l)
   | Op (o, l) -> Printf.sprintf "%s %s" (show_op o) (vs l)
   | Call (t, l) -> Printf.sprintf "call %s %s" (show_target t) (vs l)
@@ -339,7 +342,8 @@ let show_ins = function
         | ByteGet c -> if c then "byte?" else "byte"
         | ByteSet c -> if c then "setbyte?" else "setbyte"
         | StrLen -> "length" | Float2 f | Float1 f -> f
-        | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat" | _ -> "prim" in
+        | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat"
+        | FloatCmp r -> "float" ^ L.show_rel r | _ -> "prim" in
       Printf.sprintf "%s %s" name (vs l)
   | Caught k -> Printf.sprintf "caught %d" k
   | TryExit k -> Printf.sprintf "untry %d" k
@@ -419,9 +423,9 @@ let out (lf : L.func) (fn : func) : L.func =
       | Slot i -> emit (L.Get i); set v
       | SetSlot (i, x) -> get x; emit (L.Set i)
       | Field (k, x) -> get x; emit (L.Field k); set v
-      | SetField (k, blk, x) -> get x; get blk; emit (L.SetField k)
+      | SetField (k, blk, x, imm) -> get x; get blk; emit (L.SetField (k, imm))
       | Index (blk, i) -> get i; get blk; emit L.Index; set v
-      | SetIndex (blk, i, x) -> get x; get i; get blk; emit L.SetIndex
+      | SetIndex (blk, i, x, imm) -> get x; get i; get blk; emit (L.SetIndex imm)
       | Alloc (t, xs) -> List.iter get (List.rev xs); emit (L.Alloc (t, List.length xs)); set v
       | Op (o, xs) -> List.iter get (List.rev xs); emit (L.Op o); set v
       | Call (t, xs) -> emit (L.Call (t, List.map slot xs, false)); set v

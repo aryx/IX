@@ -138,16 +138,32 @@ is_printable(value c)
 	return Val_bool(c >= 32 && c < 127);
 }
 
-value
-caml_string_equal(value a, value b)
+/* OPTIMIZATION (strings): two strings are equal when their words are,
+ * the padding's included: it is 0 (string_alloc, Gen's data,
+ * exceptions.c's names), and the last byte, the padding's count, is
+ * the same when the lengths are. For = and <> on strings (Lower.string_eqs)
+ * and compare.c's relations.
+ * old: the lengths compared, then memcmp, a byte a turn:
+ *   n = length(a); if(n != length(b)) return Val_false;
+ *   return Val_bool(memcmp(Bytes(a), Bytes(b), n) == 0); */
+static int
+string_equal(value a, value b)
 {
-	value n;
+	value n, i;
 
-	n = length(a);
-	if(n != length(b))
-		return Val_false;
-	return Val_bool(memcmp(Bytes(a), Bytes(b), n) == 0);
+	if(a == b)
+		return 1;
+	n = Wosize(a);
+	if(n != Wosize(b))
+		return 0;
+	for(i = 0; i < n; i++)
+		if(Field(a, i) != Field(b, i))
+			return 0;
+	return 1;
 }
+
+value caml_string_equal(value a, value b) { return Val_bool(string_equal(a, b)); }
+value caml_string_notequal(value a, value b) { return Val_bool(!string_equal(a, b)); }
 
 /* n's digits, in base b, at the end of buf; where they start */
 static int

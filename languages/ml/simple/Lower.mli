@@ -138,9 +138,15 @@ val poly_function : Ir.rel -> string
 val mangle : string -> string
 
 (* the places of the comparisons on immediates (Typing.immediates),
- * compiled as the integers' (Ir.Cmp), not compare's (Ir.Poly); set
- * before unit_ *)
+ * compiled as the integers' (Ir.Cmp), not compare's (Ir.Poly), and of
+ * the stores of immediates, without a write barrier; set before unit_ *)
 val immediates : (Ast.span, unit) Hashtbl.t
+(* the places of = and <> on strings (Typing.strings): the runtime's
+ * caml_string_equal and notequal; set before unit_ *)
+val string_eqs : (Ast.span, unit) Hashtbl.t
+(* the places of the comparisons on floats (Typing.floats): Ir.FloatCmp;
+ * set before unit_ *)
+val float_cmps : (Ast.span, unit) Hashtbl.t
 
 (* a string's byte (checked or not) and its length as
  * instructions (Ir.ByteGet, ByteSet, StrLen), not calls of the runtime:

@@ -229,9 +229,23 @@ let raise_failure exn line =
  * on ints, chars, booleans or () (Typing.immediates), by their place
  * in the text: the integers' comparison, a CMP and its branch, not
  * Poly's test of both operands then compare's call for others. fib's
- * n < 2 was 11 instructions on arm, 2 now.
- * old: every =, <... Poly (empty with mini-ml -unsafe-types) *)
+ * n < 2 was 11 instructions on arm, 2 now. And the stores of such
+ * values (a.(i) <- v, r := v, r.f <- v): no write barrier (Ir's
+ * SetField's and SetIndex's bool), as no pointer is stored.
+ * old: every =, <... Poly (empty with mini-ml -unsafe-types); every
+ * store with its barrier *)
 let immediates : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
+(* OPTIMIZATION (string_eqs): = and <> on strings (Typing.strings): the
+ * runtime's string equality, its words compared, not compare's walk
+ * (its tag tested, the lengths computed, a byte at a time).
+ * old: Poly Eq, Poly Ne *)
+let string_eqs : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
+(* OPTIMIZATION (float_cmps): a comparison of floats (Typing.floats): the
+ * processor's (Ir.FloatCmp), not compare's call, which finds what its
+ * operands are (14% of mini-doom's frame, its walls' and planes' tests).
+ * old: Poly r (simple's Gen tested for two floats at run time, ssa's
+ * Emit called the runtime) *)
+let float_cmps : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
 
 (* (off: mini-ml -calls) *)
 let strings_in_place = ref true
@@ -243,9 +257,12 @@ let ops =
     "%noteq", Cmp Ne; "%equal", Poly Eq; "%notequal", Poly Ne; "%lessthan", Poly Lt; "%lessequal", Poly Le;
     "%greaterthan", Poly Gt; "%greaterequal", Poly Ge; "%array_length", Size; "%obj_size", Size; "%obj_is_int", IsInt ]
 
-(* the operands are pushed, the first on top *)
-let prim p n =
-  let incr d = let t = slot () in emit (Set t); emit (Int d); emit (Get t); emit (Field 0); emit (Op Add); emit (Get t); emit (SetField 0); emit (Int 0) in
+(* the operands are pushed, the first on top; imm: the value a store
+ * writes is an immediate (Typing.immediates: no barrier) *)
+let prim imm p n =
+  let incr d =
+    let t = slot () in
+    emit (Set t); emit (Int d); emit (Get t); emit (Field 0); emit (Op Add); emit (Get t); emit (SetField (0, true)); emit (Int 0) in
   match p with
   | _ when List.mem_assoc p ops -> emit (Op (List.assoc p ops))
   | "%identity" -> ()
@@ -255,12 +272,13 @@ let prim p n =
   | "%makemutable" -> emit (Alloc (0, 1))
   | "%field0" -> emit (Field 0)
   | "%field1" -> emit (Field 1)
-  | "%setfield0" -> emit (SetField 0); emit (Int 0)
+  | "%setfield0" -> emit (SetField (0, imm)); emit (Int 0)
   | "%incr" -> incr 1
   | "%decr" -> incr (-1)
   | "%raise" -> emit Raise
   | "%array_safe_get" | "%array_unsafe_get" | "%obj_field" -> emit Index
-  | "%array_safe_set" | "%array_unsafe_set" | "%obj_set_field" -> emit SetIndex; emit (Int 0)
+  | "%array_safe_set" | "%array_unsafe_set" | "%obj_set_field" ->
+      emit (SetIndex imm); emit (Int 0)
   (* OPTIMIZATION (strings_in_place): a byte of a string that the program
    * said not to check, and a string's length, are instructions here, not
    * calls of the runtime (which checked the index of the unchecked ones
@@ -342,7 +360,9 @@ let rec value env (e : Scope.expr) =
           | Some (_, e) -> E e
           | None -> F (fun () -> emit (Get s); emit (Field pos))))
   | Efield (r, l) -> value env r; emit (Field l.pos)
-  | Esetfield (r, l, v) -> value env v; value env r; emit (SetField l.pos); emit (Int 0)
+  | Esetfield (r, l, v) ->
+      value env v; value env r;
+      emit (SetField (l.pos, Hashtbl.mem immediates e.span)); emit (Int 0)
   | Eapply (f, args) -> ignore (app env f args false)
   | Efunction _ -> (match closure env "fun" e with Closure_static (sym, _, _) -> emit (Block sym) | Closure_pushed _ -> ())
   | Elet _ | Ematch _ | Eif _ | Eseq _ -> control env e false
@@ -395,7 +415,7 @@ and block env tag fields =
     emit (Int n); emit (Int tag); emit (CallC ("obj_block", 2));
     let b = slot () in
     emit (Set b);
-    List.iteri (fun i f -> let pos = n - 1 - i in operands env [ f ]; emit (Get b); emit (SetField pos)) (List.rev fields);
+    List.iteri (fun i f -> let pos = n - 1 - i in operands env [ f ]; emit (Get b); emit (SetField (pos, false))) (List.rev fields);
     emit (Get b)
   end
 
@@ -516,7 +536,13 @@ and app env (f : Scope.expr) args tl =
       operands env (List.map (fun e -> E e) (List.rev (first n)));
       (match List.assoc_opt p ops with
        | Some (Poly r) when Hashtbl.mem immediates f.span -> emit (Op (Cmp r))
-       | _ -> prim p n);
+       | Some (Poly r) when Hashtbl.mem float_cmps f.span && !floats_in_place ->
+           emit (FloatCmp r)
+       | Some (Poly Eq) when Hashtbl.mem string_eqs f.span ->
+           emit (CallC ("caml_string_equal", 2))
+       | Some (Poly Ne) when Hashtbl.mem string_eqs f.span ->
+           emit (CallC ("caml_string_notequal", 2))
+       | _ -> prim (Hashtbl.mem immediates f.span) p n);
       rest ls
   | Evar _, Some (lab, n), _ when m >= n ->
       let ss = slots args in
@@ -632,7 +658,7 @@ and bind_rec env bs =
       List.iteri (fun j id ->
         let rec index k = function [] -> None | z :: l -> if z = id then Some k else index (k + 1) l in
         match index 0 ids with
-        | Some m when m >= i -> emit (Get (List.nth slots m)); emit (Get (List.nth slots i)); emit (SetField (2 + j))
+        | Some m when m >= i -> emit (Get (List.nth slots m)); emit (Get (List.nth slots i)); emit (SetField (2 + j, false))
         | _ -> ()) fvs) fvss;
     env
   end
@@ -666,7 +692,7 @@ let curry_fun n k =
     emit (Int (k + 3)); emit (Int closure_tag); emit (CallC ("obj_block", 2));
     let b = slot () in
     emit (Set b);
-    let set pos = emit (Get b); emit (SetField pos) in
+    let set pos = emit (Get b); emit (SetField (pos, false)) in
     emit (Sym (curry n (k + 1))); set 0;
     emit (Get 0); if k > 0 then emit (Field 1); set 1;
     for i = 2 to k + 1 do emit (Get 0); emit (Field i); set i done;

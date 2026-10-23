@@ -464,3 +464,49 @@ browsers, TLS, the tiny programs, mini-xv6 and a kernel's step booted
 under mini-qemu); mini-ml built by mini-ml writes the same assembly as
 by OCaml. Not run: mini-9pi (its kernel and programs with the young
 generation), the kernels' check-all, m-ix built on the card.
+
+On the Pi 2 (the author, the card built after the generations and
+mini-9pi's scaled draw, F5 of plan_playground_framebuffer.md): mini-doom
+outside rio, full screen, "I get 24fps often", where it was around 15 on
+a large area (d754454d).
+
+2026-10-23, **the types used three times more** (the author: "let's do
+the int barrier and string equality"; the float comparisons found on
+the way, in mini-doom's profile). `Typing` records, beside each
+comparison, the stores of an array, a ref and a field with the type of
+what they store (`Typing.places`); Lower then emits:
+
+- **no write barrier** for a stored int, char, bool or `()` (Ir's
+  `SetField` and `SetIndex` have a bool: `Typing.immediates`);
+- **a string's equality** for `=` and `<>` on strings: the runtime's
+  `caml_string_equal`, the words compared (a string's padding is 0),
+  not compare's walk; `ml_equal` and `ml_notequal` take the same path
+  when both operands are strings (`List.assoc` on names);
+- **a float's comparison**, `Ir.FloatCmp`, the processor's (VFP's CMPD,
+  arm64's FCMPD, the conditions false of a NaN), in both back ends:
+  ssa's Emit called the runtime's compare for two floats, 14% of
+  mini-doom's frame (its walls' and planes' tests).
+
+Against the generations' commit, arm, the same frames:
+
+| | before | after | |
+|---|---:|---:|---:|
+| mini-doom, a frame | 18,939,281 | 15,640,249 | 0.83 |
+| mini-quake, a frame | 27,818,178 | 23,216,278 | 0.83 |
+| cameltry, a frame | 2,430,548 | 2,195,076 | 0.90 |
+| mini-ml compiling simple/Lower.ml | 2,892,509,355 | 2,794,784,608 | 0.97 |
+| Typing.ml | 2,002,063,112 | 1,923,369,827 | 0.96 |
+| ssa/Ssa_build.ml | 2,018,406,147 | 1,943,874,625 | 0.96 |
+
+`bench.sh 5`: samples 14.54 million to 11.95 (0.82), limbs 16.95 to
+16.01, pixels 37.86 to 37.10 (both back to before the barrier). Since
+this morning's HEAD: mini-doom's frame 33.0 million to 15.6 (0.47),
+mini-quake's 38.6 to 23.2 (0.60), mini-ml compiling 9.22 thousand
+million to 6.66 (0.72).
+
+Checked: tests/tiny and tests/runtime (new: string_equal, every way a
+string is made; float_compare, NaN and the infinities against the
+runtime's answers) on arm and arm64, -O3 and -O0, ML_HEAP=64,
+ML_YOUNG=4096; lite.sh's "ix built by ix" job on a copy of the tree;
+the frames the same bytes; mini-ml built by mini-ml writes the same
+assembly as by OCaml. Not run: mini-9pi, the kernels' check-all.

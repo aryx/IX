@@ -131,9 +131,14 @@ val unit_ : string -> Scope.item list -> (string * string) list
  * is (no instance). Then unit_ doesn't stop at a definition's type
  * error: errors has them, their lines and messages, and a definition
  * with one has the dictionaries that were found *)
-(* the comparisons (=, <, ...) the unit just checked has on ints, chars,
- * booleans or (), where each is in the text: Lower's immediates *)
+(* the comparisons (=, <, ...) and the stores (a.(i) <- v, r := v,
+ * r.f <- v) the unit just checked has on ints, chars, booleans or (),
+ * where each is in the text: Lower's immediates *)
 val immediates : unit -> Ast.span list
+(* the comparisons on strings: Lower's string_eqs *)
+val strings : unit -> Ast.span list
+(* the comparisons on floats: Lower's float_cmps *)
+val floats : unit -> Ast.span list
 
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list
 val errors : unit -> (int * string) list

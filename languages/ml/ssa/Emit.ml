@@ -343,6 +343,18 @@ let func m out (fn : func) (lf : L.func) =
         ins "%s\t$1, R%d" (shift Lsl) d;
         ins "ORR\t$1, R%d" d;
         finish v d
+    (* two floats compared (Gen's FloatCmp) *)
+    | FloatCmp r, [ x; y ] ->
+        let a = src x r1 in let b = src y r2 in let d = dst v r3 in
+        ins "%s\t0(R%d), F0" fmov a;
+        ins "%s\t0(R%d), F1" fmov b;
+        ins "%s\tF1, F0" (match m.arch with Arm -> "CMPD" | Arm64 -> "FCMPD");
+        let c =
+          match r with L.Eq -> "EQ" | Ne -> "NE" | Lt -> "MI" | Le -> "LS" | Gt -> "GT" | Ge -> "GE" in
+        (match m.arch with
+         | Arm -> ins "MOVW\t$1, R%d" d; ins "MOVW.%s\t$3, R%d" c d
+         | Arm64 -> ins "MOV\t$3, R%d" d; ins "B%s\t2(PC)" c; ins "MOV\t$1, R%d" d);
+        finish v d
     (* old: (and without in_place) the runtime's, as before *)
     | ByteGet _, _ -> call_c "ml_string_get" xs; finish v 0
     | ByteSet _, _ -> call_c "ml_string_set" xs
@@ -439,21 +451,21 @@ let func m out (fn : func) (lf : L.func) =
       | Slot i -> let d = dst v r1 in get_slot i d; finish v d
       | SetSlot (i, x) -> let r = src x r1 in put_slot r i
       | Field (k, x) -> let a = src x r1 in let d = dst v r2 in ins "%s\t%d(R%d), R%d" mov (w * k) a d; finish v d
-      | SetField (k, blk, x) ->
+      | SetField (k, blk, x, imm) ->
           let bb = src blk r1 in
           let r = src x r2 in
           ins "%s\tR%d, %d(R%d)" mov r (w * k) bb;
-          modify blk x r (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) bb t)
+          if not imm then modify blk x r (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) bb t)
       | Index (blk, i) ->
           let bb = src blk r1 in load i r2; index bb r2;
           let d = dst v r3 in ins "%s\t0(R%d), R%d" mov r2 d; finish v d
-      | SetIndex (blk, i, x) ->
+      | SetIndex (blk, i, x, imm) ->
           let bb = src blk r1 in
           load i r2;
           index bb r2;
           let r = src x r3 in
           ins "%s\tR%d, 0(R%d)" mov r r2;
-          modify blk x r (fun () -> ins "%s\tR%d, R%d" mov r2 t)
+          if not imm then modify blk x r (fun () -> ins "%s\tR%d, R%d" mov r2 t)
       | Alloc (tag, xs) when in_place && List.length xs <= Gen.alloc_most ->
           let slow = glabel () and ok = glabel () in
           take (List.length xs) tag slow;

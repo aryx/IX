@@ -92,7 +92,7 @@ let refs (f : func) =
     | Some r -> List.iter (Hashtbl.remove owner) (Hashtbl.fold (fun t r' acc -> if r' = r then t :: acc else acc) owner [])
     | None -> () in
   let rec check = function
-    | Get _ :: (Field 0 | SetField 0) :: rest -> check rest
+    | Get _ :: (Field 0 | SetField (0, _)) :: rest -> check rest
     | Get s :: Set t :: rest when Hashtbl.find_opt owner t = Some s && t <> s -> check rest
     | Get s :: rest -> drop s; check rest
     | _ :: rest -> check rest
@@ -107,7 +107,7 @@ let refs (f : func) =
       | Alloc (0, 1) :: Set s :: rest when mine s && var s = s -> Set s :: go rest
       | Get s :: Set t :: rest when mine t && var t <> t && var t = s -> go rest
       | Get s :: Field 0 :: rest when mine s -> Get (var s) :: go rest
-      | Get s :: SetField 0 :: rest when mine s -> Set (var s) :: go rest
+      | Get s :: SetField (0, _) :: rest when mine s -> Set (var s) :: go rest
       | i :: rest -> i :: go rest
       | [] -> []
     in

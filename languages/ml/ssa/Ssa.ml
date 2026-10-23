@@ -78,9 +78,9 @@ type ins =
   | Slot of int                       (* a slot in memory (a function with a handler) *)
   | SetSlot of int * value
   | Field of int * value              (* the k-th field of a block *)
-  | SetField of int * value * value   (* k, the block, the value *)
+  | SetField of int * value * value * bool   (* k, the block, the value; Ir's bool *)
   | Index of value * value            (* the block, the index *)
-  | SetIndex of value * value * value
+  | SetIndex of value * value * value * bool
   | Alloc of int * value list         (* the tag, the fields *)
   | Op of Ir.op * value list          (* a o b is [a; b], as the stack's top first *)
   | Call of Ir.target * value list    (* the closure, then the arguments *)

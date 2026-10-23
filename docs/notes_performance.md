@@ -10,7 +10,8 @@ keeps each optimization's slow version in an `old:` comment next to
 the fast one, so that a reader can see what the optimization buys.
 The drawing's optimizations of 2026-09-22 to 2026-10-22, each with its
 gain, its switch and what it cancels, are listed in
-[notes_opti_inventory.md](notes_opti_inventory.md).
+[notes_opti_inventory.md](notes_opti_inventory.md), and in its second
+part the compiler's (mini-ml's code and runtime).
 
 The tools (`kernels/9pi/tests/perf/`):
 - `timecmd.py CMD -- EMULATOR...` times a command typed at rc's

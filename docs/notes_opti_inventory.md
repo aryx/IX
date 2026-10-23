@@ -1,4 +1,13 @@
-# The frame-time optimizations of a month, and what each one is worth
+# The optimizations, and what each one is worth
+
+Two parts. Part 1, the frame-time optimizations of a month in the
+graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C27,
+which every program of m-ix runs on (the author, 2026-10-23: "We had
+one for the graphics part of IX but maybe we can have another part
+for the compiler part").
+
+# Part 1: the frame-time optimizations of a month (the graphics)
 
 The author, 2026-10-22, after Redraw was made to compare inside groups:
 "we did lots of optimizations in lib_graphics and lib_playground and
@@ -532,7 +541,8 @@ Playground's notes_opti_ocaml.md: mini-doom's 640x400 picture 21 ms by
 
 ## Adjacent (outside the scope, but in the same frame numbers)
 
-- **mini-ml code generation** (8779dd3d; switch `mini-ml -calls`):
+- **mini-ml code generation** (8779dd3d; switch `mini-ml -calls`;
+  all of the compiler's since, in Part 2):
   - `Gen.alloc_in_place`, `Lower.floats_in_place`, `Lower.calls_whole`.
   - Per-operation costs: a float product 63 to 20 instructions; a tuple 45
     to 17; another unit's 2-argument call 137 to 56.
@@ -593,3 +603,238 @@ Playground's notes_opti_ocaml.md: mini-doom's 640x400 picture 21 ms by
 10. The LOC for O14 is mixed into eedc5644's Display.ml +20 lines; the
     other per-item LOC values are per commit and per file, not per
     optimization, where commits bundle several.
+
+# Part 2: the compiler (mini-ml's code and runtime)
+
+Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
+simple's Gen) and its runtime (languages/ml/runtime: the collector,
+strings, floats), from the first passes (2026-09-27) to 6fea098e
+(2026-10-23). The programs they serve: all of m-ix, its games on
+mini-9pi, and mini-ml itself (m-ix built under m-ix).
+
+Sources: the code's OPTIMIZATION and old: comments (each row says
+where), plans/plan_mini_toolchain_optimization.md (its Status, a
+section a step), plans/variants/opti.md and ssa.md (the -O passes and
+the SSA back end, step by step), plans/plan_playground_speed.md (the
+in-place ones), plans/plan_profiler.md, the commit messages, and the
+Playground's `notes_opti_ocaml.md` (sections 27 and 28).
+
+How it is measured: instructions, not seconds, counted on arm (the
+Pi's) by mini-5i -s: `languages/ml/tests/bench.sh` (seven loops, each
+a program's: pixels, limbs, samples, fib, tak, maps, sched),
+`tests/macro.sh` (a frame of mini-doom, mini-quake and cameltry, frames
+31 to 61; mini-ml compiling three of its units), and against
+ocaml-light's arm ocamlopt `tests/count.sh` (O=5). Where the time
+goes: mini-5i -prof and mini-prof (docs/man/1/prof.md); against OCaml
+4.14 on the arm64 host, tests/icount.c (notes_profiling_techniques.md).
+A row's numbers are the commit's, against the commit before it, the
+same frames (the pictures compared byte for byte).
+
+Switches: `mini-ml -O0` (none of opti/ and ssa/: the stack machine's
+code as Lower makes it), `-O3` (all, the mkfiles' MLOPT since
+2f68061d), `-O`, `-ssa`, `-Otails`, `-Oeqs` one at a time; `-calls`
+turns off the in-place ones and the typed ones (C4 to C9, C13 to C15,
+C19); `-unsafe-types` the typed ones (no types: no specialization);
+`ML_YOUNG=0` the young generation (C12, Linux only). The runtime's C
+has no switch: its old code is in old: comments.
+
+## Worth it?
+
+Kept, the gain large and measured:
+- The SSA back end (C3) and the in-place operations (C4 to C7): the
+  loops 0.57 to 0.91 of the simple back end's instructions, a block 9
+  instructions where the call was 40, a float's product 14 where it
+  was 65. Everything after builds on them.
+- The young generation (C12): mini-doom's frame 0.64, mini-quake's
+  0.78, cameltry's 0.58. The level's data was copied at every
+  collection.
+- The types used (C9, C13 to C15, C19): the comparisons and the
+  stores that the type checker sees on ints, floats, strings. Typed
+  float comparisons were 14% of mini-doom's frame; the int ones made
+  fib's test 2 instructions where it was 11.
+- On the Pi 2 (the only board measure): mini-doom outside rio, full
+  screen, "24fps often" after C12 and mini-9pi's scaled draw (Part 1's
+  scope), where it had been about 15 on a large area.
+
+Kept, worth less than they cost in lines, or measured once:
+- The young generation for the compiler itself: mini-ml compiling
+  0.96 only (a compiler keeps most of what it makes), and the write
+  barrier costs a loop storing ints 1.06 until C13.
+- R14 as a value register on arm (C20): 0.988 of a frame.
+- `-O`'s tails and eqs (C1, C2): measured on the loops alone; most of
+  what they did, ssa's back end does too.
+
+Tried and not kept (each in the plan's Status): the collector calling
+`copy` only for a pointer into the space collected, twice (with one
+generation and with two, about 1% more instructions each time: C's
+test costs what the call did); a young generation of 256K words,
+OCaml's (2% slower than 1M); no jump to the next block the first time (mini-ld removed it in
+fib; not in mini-doom's span loop, so C17 was done after all).
+
+## Summary table
+
+| # | Name | Where (module, commit) | Gain recorded | LOC | Switch |
+|---|---|---|---|---|---|
+| C1 | Self tail call a jump into the body | opti/Opti `tails`, b1bf3791 | `loops` 7.97 to 6.13 times ocamlopt's instructions (arm64) | (opti/: 138 in all) | `-Otails`, `-O` |
+| C2 | `x = k` (k an int) a word's comparison | opti/Opti `eqs`, b1bf3791 | with C1, tak 2.76 to 2.58 times ocamlopt's | (opti/) | `-Oeqs`, `-O` |
+| C3 | The SSA back end: values in registers by their loops' weight, constants made where read, parallel moves, a comparison fused with its branch, small constants as operands, opti's refs | ssa/ (Ssa_build, Alloc, Emit), 08a1014f's five steps (variants/ssa.md) | of simple's instructions, arm: pixels 0.67, limbs 0.64, sched 0.74, fib 0.82; with C1, C2 (`-O3` against `-O0`): mini-doom's frame 0.86, mini-quake's 0.83, mini-ml compiling 0.89 | +262 | `-ssa`, `-O3`; `-O0` |
+| C4 | A block taken from the heap in place (ml_hp, ml_limit), C only when full | Gen `alloc_in_place`, Emit; 8779dd3d | a block 40 instructions to 9; with C5, sched 36.55M to 22.15M (4.63 to 2.81 times ocamlopt's), maps 0.80 times ocamlopt's | (+272 with C5, C6) | `-calls` |
+| C5 | `f a b` in one call when f takes two (the closure's curry function compared) | Lower `calls_whole`, 8779dd3d | another unit's 2-argument call 137 instructions to 56 | (above) | `-calls` |
+| C6 | A float's arithmetic by the processor, a block in place | Lower `floats_in_place`, Gen, Emit; 8779dd3d | `x *. y` 65 instructions to 14 (arm); a float's product 63 to 20 (Part 1) | (above) | `-calls` |
+| C7 | An unchecked byte and a string's length in place | Lower `strings_in_place`, eedc5644 | a byte stored was 73 instructions on arm, 45 of them the call (taken off); a frame's shapes 144M to 115M | (eedc5644) | `-calls` |
+| C8 | A checked byte (`s.[i]`, `Bytes.set`) in place, the index compared with the length | Lower, Gen `byte_bound`, Emit; a97f54ab | `ml_string_get` and its `bound` were 6.5% of a compile | (+152 with C9-C11, C27) | `-calls` |
+| C9 | `=`, `<`... on ints, chars, booleans, `()` an integers' compare | Typing `places`, Lower `immediates`; a97f54ab | fib's `n < 2` 11 instructions to 2; with C8, C10, C11, C27: mini-ml compiling 9.22G to 7.23G (0.78), mini-doom's frame 0.89, fib 0.62 | (above) | `-calls`, `-unsafe-types` |
+| C10 | A block of 5 to 16 fields (obj_block) taken in place | Emit, a97f54ab | obj_block was 4.4% of a compile | (above) | `-calls` (in_place) |
+| C11 | ssa's frame without the stack code's slots; a parameter in a register | Emit `base`, Alloc; a97f54ab | fib's frame 9 words to 3 (7 zeroed a call to 1); mini-ml compiling Lower.ml 0.95 | (above) | none (old: kept) |
+| C12 | A young generation (1M words), minor collections into the half; the write barrier `ml_modify`; none for a block made since the last safepoint | runtime gc.c, Gen `modify` and `startup`, Emit; cae00ad4 | mini-doom's frame 0.64, mini-quake's 0.78, cameltry's 0.58, maps 0.65, mini-ml compiling 0.96; the barrier: limbs 1.06, pixels 1.02, samples 1.04 | +270 | `ML_YOUNG=0` (Linux); `-gas` none |
+| C13 | No barrier for a stored int, char, bool, `()` | Typing, Lower, Ir's `SetField`/`SetIndex` bool; 19b70c51 | limbs and pixels back to before C12 (0.94, 0.98) | (+131 with C14, C15) | `-calls`, `-unsafe-types` |
+| C14 | `=`, `<>` on strings: their words compared; the polymorphic ones too for two strings | Lower `string_eqs`, runtime strings.c `string_equal`, compare.c; 19b70c51 | with C13, C15: mini-ml compiling 0.96 | (above) | `-calls` (typed part) |
+| C15 | Float comparisons by the processor (CMPD, FCMPD; false of a NaN) | Lower `float_cmps`, Ir `FloatCmp`, Gen, Emit; 19b70c51 | with C13, C14: mini-doom's frame 0.83, mini-quake's 0.83, samples 0.82 (compare was 14% of a frame) | (above) | `-calls` |
+| C16 | `land`, `lor`, `lxor` with a small constant an immediate | Emit `op_imm`, 6fea098e | with C17: mini-doom's frame 18.30M to 17.99M | (+160 with C17-C22) | `-O0` |
+| C17 | No jump to the block written next; a branch to it negated | Emit, 6fea098e | (with C16) | (above) | `-O0` |
+| C18 | `floor`, `ceil` by the processor's conversion within an int's range | runtime floats.c `ml_floor`, 6fea098e | the C library's floor and modf, 5% of a frame, to 1.9% | (above) | none (old: comment) |
+| C19 | `min`, `max` (Pervasives', Int's, and a unit's `let min = Int.min`) inline on ints and floats | Typing `min_max_globals`, Lower `min_max`; 6fea098e | with C18: 17.99M to 17.07M | (above) | `-calls` |
+| C20 | arm: R14 a sixth value register where nothing does a BL but a call | Emit `calls_bl`, 6fea098e | 17.07M to 16.86M; the span's temporaries no longer stored and loaded | (above) | `-O0` |
+| C21 | arm: an unchecked byte at a shifted register offset (`R8->1(R1)`) | Emit, 6fea098e | with C22: 16.86M to 16.43M; the span's loop 47 instructions a pixel to 39 (with C16-C20) | (above) | `-O0` |
+| C22 | `/` and `mod` by a constant power of two by shifts | Emit `op_imm`, 6fea098e | (with C21); all of 6fea098e: mini-ml compiling 6.52G to 6.07G (0.93) | (above) | `-O0` |
+| C23 | The runtime's blit and fill a word at a time | runtime strings.c `move_bytes`, `fill_string` (Part 1, Adjacent) | a Tetris frame by the software platform 103.7M to 80.2M instructions | small | none |
+| C24 | The runtime's input copies the channel's buffer at once | runtime io.c `caml_input`, 7342e787 | mini-doom's start 651M to 568M; every program reading files | small | none |
+| C25 | mini-ml's own heap three times what is alive (space_overhead 200) | languages/ml/Main.ml, 64393712 | a compile 10% fewer instructions (45 collections to 28) | +1 | the line itself |
+| C26 | The heap's half 4 MB at the start on Plan 9 | runtime gc.c `HEAPSTART`, ab01afe9 | a compile on the card (mini-9pi, QEMU) 4.3 s to 4.05 s, with the card's cache | +1 | `ML_HEAP` (Linux) |
+| C27 | `compare` on strings a word at a time while they are the same | runtime compare.c `cmp`, a97f54ab | (in C9's 0.78) | +10 | none (old: comment) |
+
+LOC are net lines of languages/ml (comments included, tests not), by
+commit where a commit has several rows. The ledger of
+plans/done/plan_ml_bootstrap.md has them line by line.
+
+## Details
+
+**C1, C2: opti/'s passes (`-O`).** IR in, IR out, Lower's own
+instructions, so the simple back end is the same with them or without
+(the author: "those opti must be optional and not pollute the existing
+simple code path"). Measured first by `mini-5i -t` on `loops`: a self
+tail call was a whole call with its prologue, and `n = 0` tested at
+run time that both were integers. Where they stop: fib's cost was its
+calls and `n < 2` an order, which needs the types (C9, done later)
+and a back end of its own (C3).
+
+**C3: ssa/, the optimizing back end.** variants/ssa.md decided it
+(Braun et al.'s SSA from the stack code, its own registers and
+liveness, simple's ABI kept). Its five steps, each measured
+(variants/ssa.md's table): the in-place operations as simple's (+100:
+pixels 3.26 to 1.41 of simple's), opti's refs (a ref that does not
+escape a variable: ocaml-light's Simplif.eliminate_ref) and drops
+(+51), constants made where read and the values' registers, arm's
+R4-R8 (+40: 1.00), the values chosen by their loops' weight (+34:
+0.82), a comparison read only by its branch fused with it and small
+constants as operands (+37: 0.67). No value lives in a register across
+a call or an allocation: the collector finds every root on the value
+stack, which keeps the runtime unchanged.
+
+**C4 to C7: in place (plan_playground_speed.md, M1b and M4a).** What
+the games' profile on mini-9pi named first: every allocation and every
+float operation a call of C. ml_hp and ml_limit made the runtime's
+globals so the generated code bumps the pointer itself; a closure's
+first field (its curry function) says its arity, so `f a b` calls the
+code at once when f takes two (C5). Bounded: at most 16 fields (arm64's
+short offsets).
+
+**C8 to C11 and C27 (a97f54ab).** mini-prof on mini-ml compiling its
+Typing.ml (arm): the collector 30%, compare 5%, obj_block 4.4%, the
+checked byte's calls 6.5%. The types were "forgotten before Lower"
+(Ir's header said so): the type checker now records, at each
+comparison, its type by its place in the text (Ast.span), and Lower
+reads that table; a place seen at two types (an expression copied) is
+not specialized unless both are. C11: in SSA the stack code's slots are
+values, so the frame needs none of them, and fewer slots are zeroed at
+each call.
+
+**C12: generations (cae00ad4).** The young generation is where every
+block is born; a minor collection copies its survivors after the
+half's last block; Cheney's two halves are the major collection.
+`ml_modify`, in the start object (assembly: it may change only R0 and
+the scratch register, since the code around keeps values in the
+others), remembers an old field that receives a young block; Emit
+leaves it out for a constant and for a block made since the last
+safepoint. Why the compiler gains little: Typing.ml's compile had 109
+minor collections and 3 major where there had been 28; the copy fell
+from 526M to 349M instructions, but a compiler keeps its trees, types
+and code to the end of the unit, so its survivors are many, and the
+barrier's 2.7M calls cost 50M. The games keep their level and make a
+frame's floats: there it is a third of the frame.
+
+**C13 to C15 (19b70c51).** The same records as C9, extended: the
+stores (an array's, a ref's, a field's) with the type of what they
+store, and the comparisons on floats and strings. C15 was found in
+mini-doom's profile: the renderer's tests (`back.floor >=
+front.ceiling`) were each the runtime's compare, which finds what its
+operands are; ssa's Emit had no float comparison of its own (simple's
+Gen tested for two floats at run time).
+
+**C16 to C22 (6fea098e).** Item by item from mini-prof on a frame of
+mini-doom (its game commit's), each measured. The span loop
+(map_plane, 15% of a frame), its instructions read by `mini-prof -a`:
+`mov r2, #127; and r8, r8, r2` (C16), `b` to the next instruction
+(C17), two temporaries stored and loaded back for want of registers
+(C20), a byte's address untagged and added in three instructions
+(C21). C19 needed the aliases: mini-doom's renderer says
+`let min = Int.min and max = Int.max` in five modules, so its calls
+named those, not Int's; a unit's top-level alias of min or max is now
+one too (each definition has its own symbol, so a later `let min =`
+of something else is not taken for it). C22 was `fineangles / 4` at
+each of mini-doom's sines: on arm a division is a call of principia's
+`_div`, a bit a turn.
+
+**C23 to C26: the runtime.** Measured by the programs they were for
+(Part 1's Tetris for C23, mini-doom's start for C24, mini-ml for C25
+and C26). C25 is a line in mini-ml's Main (Gc.set), C26 a define.
+
+## Interactions
+
+1. C12's barrier against the loops that store ints: limbs 1.06,
+   pixels 1.02, until C13 took it off the stores the type checker sees
+   as ints. A store of a float into an array (samples) still calls
+   `ml_modify` (a new float is young).
+2. C9's record of the types is what C13, C14, C15 and C19 extend: one
+   table of places, one pass over the unit once it is checked.
+3. Most of the later rows are ssa's Emit only (C10, C11, C16, C17, C20,
+   C21, C22): with `-O0` the program has none of them. The mkfiles
+   build with `-O3`.
+4. The objects built before C12 and after must not be linked together
+   (mini-mk does not remake an object when only the compiler changes):
+   an old object stores without the barrier. The `_mk` trees were
+   rebuilt from nothing on 2026-10-23 (Part 2's commits since need no
+   rebuild: their old objects are slower, not wrong).
+5. Measures against measures: the C library's memmove, made each
+   machine's assembly by another session the same day (7001c4be,
+   b70d2add), changed mini-doom's frame too; C13 to C15 were measured
+   on a copy of the tree with the memmove of before, and C16 to C22 on
+   HEAD's, each against its own baseline.
+
+## Adjacent (outside the scope, in the same numbers)
+
+- The C library's memmove and memset in each machine's assembly, and
+  the runtime's `move_bytes` its memmove (7001c4be, b70d2add):
+  another session's, not measured here.
+- A block past the largest (9f1766f4, a fix, not an optimization):
+  mini-doom's song rendered whole was 8 million floats, past a 32-bit
+  header's size; with C12 the collector walked garbage. mini-doom's
+  music is now played a block at a time (`Audio.play_midi`).
+
+## Open questions (claims not verified)
+
+1. The board: only mini-doom on the Pi 2 after C12 (24 fps, with
+   Part 1's scaled draw). None of C1 to C27 was timed alone on a board;
+   instructions are not cycles (C18's conversion, C15's VFP compare, a
+   load from a slot against a register).
+2. Against OCaml 4.14 on the arm64 host (notes_profiling_techniques.md,
+   tests/icount.c): mini-doom's frame 2.5 times OCaml's before C15;
+   not measured again since C15 to C22.
+3. m-ix built under m-ix on the card: 176 minutes before C8; not run
+   since.
+4. Division by a variable on arm, 4.8% of mini-doom's frame and 3.4%
+   of a compile, is principia's `_div`: CLZ needs ix's assembler to
+   have it, the VFP's division would put the FPU in every C program's
+   integer division, kernels' too. Not decided.
+5. C12's young generation size (1M words) was chosen by one compile's
+   measure (Typing.ml) against 256K; not measured for the games.

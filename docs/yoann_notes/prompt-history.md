@@ -46703,3 +46703,787 @@ Claude explained that mini-mk does not rebuild objects when only the compiler or
 Claude removed `_mk/5-plan9` and rebuilt it from scratch, and `make card` passed afterward.
 Claude also rebuilt `_mk/5` and `_mk/7`, and both `mini-mk O=5` and `O=7` passed.
 Claude noted that a stale `mini-ml` in `~/.opam/4.14.2/bin` shadows `bin/` and rejects `-O3`, and suggested removing it.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:20
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found the ix collector already committed as cae00ad4, with no tracked changes of its own left to commit.
+Claude left the other sessions' modified files alone: tiny/, bugs/ix.md, plan_tiny_multicore.md, and prompt-history.md.
+Claude committed section 28 on the young generation to notes_opti_ocaml.md as a6fd655f, touching that file only.
+Claude noted that mini-mk doesn't remake stale objects after a compiler change, which broke the card and mini-pi.
+Claude asked whether to log this trap in bugs/ix.md once another session frees it, or record it elsewhere.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:18
+
+**Yoann:**
+
+> great work! let's commit
+
+**Claude (summary):**
+
+Claude committed the scaling work as f0558cf5, 22 files, committing by path so other sessions' changes stayed out.
+Claude left the uncommitted `tiny/` files, `bugs/ix.md`, `plan_tiny_multicore.md`, `prompt-history.md` and `todo.org` staged as they were.
+Claude kept the scratchpad worktree, since the Pi 2 card.img was built there.
+Claude said it would remove that worktree with `git worktree remove` once Yoann tried `doom 'scale=4'` on the board.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:24
+
+**Yoann:**
+
+> wow, I get 24fps often in doom now on the Pi2; it is good. and it is also now full screen (thx to work in my other session)
+
+**Claude (summary):**
+
+Claude asked whether the 24 fps Pi 2 Doom result came from outside rio or from a window.
+Claude proposed skipping the write barrier for integer stores as the first next optimization.
+Claude proposed a faster string equality check as the second optimization, after the barrier change.
+Claude planned to profile a Doom frame again to see what remains after the collector.
+Claude credited the jump to fewer collector instructions plus this morning's codegen work.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:15
+
+**Yoann:**
+
+> can I close the session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since all of its work is committed.
+Claude pointed to commits a75924a0, 7001c4be, and b70d2add as this session's committed work.
+Claude reported that no uncommitted changes or background processes remain from this session, and the private worktree is gone.
+Claude noted the remaining uncommitted changes in the tree belong to other sessions, so closing won't touch them.
+Claude said the Status section of plan_pi4.md shows where to start when resuming the Pi 4 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:41
+
+**Yoann:**
+
+> we recently added mini-doom (and mini-quake), taking the .wad from freedom and taking ocamldoom and other as source of insipiration. Can we complete the game to also have sound! and also to be able to shoot, and have basic ennemy? We could reuse the bot/ennemy ai code from the original, but would be good also to plug in the playground ai library (and its apis/Ai.mli) and use that too. For the sound we also want to use the apis/Audio.mli and maybe complete the one in ix/ compared to the one in ~/playground
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:27
+
+**Yoann:**
+
+> I just tried on the Pi2; it works great! what would be good now is that to detect the size of the window or screen and select automatically a good scale if no scale=xxx is specified
+
+**Claude (summary):**
+
+Claude left the changes uncommitted, waiting for Yoann's go-ahead before making any commit.
+Claude's changes touched Doom.ml, Quake.ml, Plan9_loop.ml, the doom man page, and the framebuffer plan.
+Claude also fixed the late-frame red border, which now follows the screen edges instead of a fixed 1000×1000.
+Claude checked under QEMU that both games show a centred 960×600 picture and compile with mini-ml and OCaml.
+Without a scale flag, doom and quake now pick the largest whole multiple that fits the window or screen.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:42
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the automatic scale change as 37ae21d2, with only its five files, and left other sessions' changes uncommitted.
+Claude kept the scratchpad worktree because it holds the card build you would flash to the Pi 2.
+Claude held off removing that worktree until you have tried plain `doom` and `quake` on the Pi 2.
+Claude said it would remove the worktree once you report back on those tests.
+Claude left the card build in place, so you can still flash it from that worktree later.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:43
+
+**Yoann:**
+
+> what's next? (I'll try doom and quake on the Pi2 another day)
+
+**Claude (summary):**
+
+Claude recommended looking up the palette in the kernel, in the same pass as the scaling.
+The game would send 64,000 one-byte indices plus 256 colours, removing about 18 ms of OCaml work per frame.
+Claude estimated doom would rise from about 13 to 16 frames per second under QEMU, and gain more on the Pi 1.
+Claude also suggested a half-resolution mode for shape games, closing F1 and F3, and deferring game drawing.
+Claude's order was palette lookup first, then the half-resolution mode if you wanted the shape games to fill the screen.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:58
+
+**Yoann:**
+
+> I'm a bit worried that 1 is over optimizing; also why doom does not work directly in a format that would then do not need conversion? Or maybe 64000 is also smaller than 128k so there is a gain there. What do you think? We can try 2, if it's just a few lines in the playground. I agree with 3. and yes we can investigage 4, which might involve  improving mini-ml itself (maybe we can build mini-ocaml with ocaml-light so we could compare too?)
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:41
+
+**Yoann:**
+
+> and add also doom music (later on we can do the same for quake, which has great sound, like the grenade launcher bouncing and doing nice noise)
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:02
+
+**Yoann:**
+
+> note that we don't have to copy all of the code from the ~/playground; for now we can just copy what we think we need for getting sounds in doom and quake; same for the ai lib
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:01
+
+**Yoann:**
+
+> but I thought cameltry was sending draw command of shapes to the kernel no? And the kernel was drawing those shapes. Cameltry also compute the pixels user-side and send a fully down image to the kernel?
+
+**Claude (summary):**
+
+Claude found that block=2 renders the same maze with a 384×384 corner counter but gains nothing under QEMU.
+Claude explained the screen copy still writes all 768×768 pixels, so filling a quarter less saves little.
+Claude saw block=2 might help the Pi 1, where fps fell from 22 to 11 at 1024×768.
+Claude left the roughly 30-line change in Playground_platform.ml uncommitted, off unless block=2 is passed.
+Claude also proposed comparing mini-doom frame instruction counts across ocaml-light and mini-ml, with item 3 waiting on the Pi 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:04
+
+**Yoann:**
+
+> let's revert those changes if they are actually not taht useful for cameltry since we don't send pixels to draw (like doom and quake)
+
+**Claude (summary):**
+
+Claude reverted the `block=k` change, rebuilt the Pi 2 card at f0558cf5, and logged cameltry under "Tried, not kept."
+Claude recommended step 4 next: comparing mini-doom's frame compiled by ocaml-light against mini-ml's.
+Claude planned that comparison to step through both builds instruction by instruction under mini-5i.
+Claude placed this after cameltry, with the plan's closing still waiting on the Pi 2 test.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:06
+
+**Yoann:**
+
+> yes let's do 4, compare with ocaml-light
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:02
+
+**Yoann:**
+
+> (unless copying the whole module or lib does not add much more code, in that case it's simple to copy the whole thing)
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:06
+
+**Yoann:**
+
+> and let's commit first
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:12
+
+**Yoann:**
+
+> being 2x slower for mini-ml is not bad, given mini-ml is far smaller in terms of LOC than ocaml-light (and ocaml 4.14)
+
+------------------------------------------------------------------------
+
+## 2026-10-23 09:30
+
+**Yoann:**
+
+> outside rio; let's do the int barrier and string equality
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:07
+
+**Yoann:**
+
+> doom/ starts to have lots files in the same folder; we should start to subdivide in groups and subfolders/ like we did for the browser and other projects that started to grow in number of files
+
+**Claude (summary):**
+
+Claude turned mini-doom into a playable game with shooting, monsters, sound effects and level music.
+Claude built it with OCaml and mini-ml, and both pass the recorded frames test.
+Claude copied only the playground's Pathfind, Ai and Audio3d pieces that Doom needs.
+Claude split games/fps/doom/ into wad, render, play, actors and sound subfolders using plain mv.
+Claude made music off by default on Plan 9 because mini-ml is seven times too slow; nothing was committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:21
+
+**Yoann:**
+
+> great work! let's commit
+
+**Claude (summary):**
+
+Claude noted that another session had committed 37ae21d2 meanwhile, leaving Doom.ml's diff as this work's alone.
+Claude committed the work as d2777af4, staging plan_ml_bootstrap.md as HEAD plus only its own ledger row.
+Claude kept another session's ledger row and lib_ai's one-word additions, found after inspecting compile_ix.sh, out of the commit.
+Claude added the remaining files by pathspec after checking lib_ai/ and the new doom folders for stray files.
+Claude restored the ledger's working copy, then began verifying that the other session's row still showed as a diff.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:17
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude left `tests/compile_ix.sh` out of its commit because another session had changed it.
+Claude wrapped its new long lines to the 80-column rule before committing the work.
+Claude committed only its own ledger row in `plan_ml_bootstrap.md`, leaving the other session's row uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:16
+
+**Yoann:**
+
+> I have another session improving mini-ml
+
+**Claude (summary):**
+
+Claude stopped and left mini-ml untouched, measuring doom at 2.5× slower than OCaml 4.14 on arm64.
+Claude ranked typed float comparisons first for the other session, worth up to 18% of a doom frame.
+Claude also flagged map_plane (15% versus OCaml's 9%), store_wall_range (14%, 2.3× OCaml), curried ml_curry10 calls, and floor/modf.
+Claude suspected mini-ml's polymorphic-compare cost comes from float comparisons, but has not confirmed it with a profile.
+Claude offered to append the numbers and counter script as a dated section in plan_mini_toolchain_optimization.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:26
+
+**Yoann:**
+
+> another claude sessions had those findings relevant for mini-ml work: 
+>
+> One doom frame, arm64, user-mode instructions (hardware counter, frames 31→61):
+>  
+>   ┌───────────────────────────────────────────┬─────────────┬────────────┬───────┐
+>   │                                           │ mini-ml -O3 │ OCaml 4.14 │ ratio │
+>   ├───────────────────────────────────────────┼─────────────┼────────────┼───────┤
+>   │ doom as it is                             │     17.87 M │     7.13 M │  2.5× │
+>   ├───────────────────────────────────────────┼─────────────┼────────────┼───────┤
+>   │ min/max → Int.min/Int.max in the renderer │     17.72 M │     5.07 M │  3.5× │
+>   └───────────────────────────────────────────┴─────────────┴────────────┴───────┘
+>
+>   The frames are byte-identical with and without the change, for each compiler.
+>
+>   - Your comparison was with OCaml 4.14, not ocaml-light. ocaml-light (OCaml 1.07) can't
+>     compile doom without a port: it already fails on 1_000_000 in Wad.ml, and doom's code
+>     uses labels and newer modules. The host's OCaml 4.14 compiles the same sources to arm64,
+>     so it's the reference I used.
+>   - Your "2× slower" is about right for doom as written today. But 30% of OCaml's frame was
+>     doom calling the polymorphic min/max on ints in its per-column and per-span loops. Once
+>     that's typed, OCaml is 3.5× faster.
+>   - mini-ml barely gains from the same change (1%). Its polymorphic-compare costs (cmp 12%,
+>     relation 3%, ml_lessthan/ml_greaterequal… 3%) must mostly come from elsewhere. Most
+>     likely that's comparisons on floats: mini-ml types only comparisons on ints, chars,
+>     booleans and () (Lower.immediates), while ocamlopt compiles a float < inline. I haven't
+>     confirmed this with a new profile.
+>   - For the other session: typed float comparisons look like the largest single item, worth
+>     up to about 18% of a doom frame. After that come map_plane (15%, against 9% of a frame
+>     for OCaml) and store_wall_range (14%, 2.3× OCaml's instructions), the curried calls
+>     (ml_curry10_*) and floor/modf through C.
+>
+>   Not applied anywhere: the Int.min change exists only in the scratch worktree. It would
+>   make doom about 30% faster for every OCaml build, and it's a 29-line change. But another
+>   session is moving doom's files into subdirectories in the main tree right now, so I didn't
+>   touch them. It's easy to redo once that move is committed.
+
+**Claude (summary):**
+
+Claude recommended a four-item follow-up list for mini-ml: typed min/max in Typing, direct ml_curry10 calls, FRINTM for floor, and map_plane/store_wall_range review.
+Claude said the float comparisons were already committed in 19b70c51, dropping Doom's frame from 18.94M to 15.64M instructions.
+Claude proposed starting with a fresh Doom frame profile, then typed min/max, then items 2 and 3, each measured against OCaml 4.14 on arm64.
+Claude also asked for the other session's arm64 instruction-counting method to be committed to the repo, or else it would count on arm with mini-5i.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:27
+
+**Yoann:**
+
+> I've sent your findings to the mini-ml optimization session
+
+**Claude (summary):**
+
+Claude removed the wt2 worktree, since the comparison no longer needed it, and kept icount.c.
+Claude planned to redo the Int.min/Int.max change in doom's renderer, about 30% faster per frame for OCaml builds.
+That redo was gated on the other session's doom subdirectory move being committed, which Yoann has now confirmed.
+Claude said the 30% gain also covers the SDL build on Linux, and can now proceed.
+Claude deferred the framebuffer plan closure and wt worktree removal until after the Pi 2 test.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:29
+
+**Yoann:**
+
+> let's do it; the doom move is done so you can work
+
+------------------------------------------------------------------------
+
+## 2026-10-23 08:21
+
+**Yoann:**
+
+> I wonder if those partitions for the memory are a good idea. Why we didn't do like classic kernels use virtual memory? What were the pros and cons? I don't fully understand the current TinyKernel memory design also. Just report.
+
+**Claude (summary):**
+
+Claude proposed relinking ld at a 48 MB base address and rebuilding the boot image.
+This fits the partition option, where each memory region sits at a fixed address range.
+Yoann chose that option for now, so the 48 MB relink is the approach to proceed with.
+Claude's answer did not cover the pros and cons of virtual memory or the TinyKernel memory design.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:48
+
+**Yoann:**
+
+> let's do 1 for now, but I also like 3 for its teaching value, and also 2 so we could have dynamically the 3 memory model, switchable at compile-time or runtime with some if and flags in the kernel and emulator. I like the idea of a spawn, and actually some OS do not have fork/exec but only spawn, so providing fork, exec, and also spawn seems good to me. and I also like segments which might help. We can add the code for pages but disable it for now by default.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:48
+
+**Yoann:**
+
+> hopefully the code does not get too complicated with segments and pages added in addition to partition or the code added is behind flag so it's easy to skip for the reader if needed
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:49
+
+**Yoann:**
+
+> also please add notes about OS/360 and partitions and Denning, and segments and PDP11 and 386, and pages and so on, with cs-history and so on
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:49
+
+**Yoann:**
+
+> maybe we could have different files for those different memory strategy under TinyKernel/
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:40
+
+**Yoann:**
+
+> let's close the plan then? What are you currently doing?
+
+**Claude (summary):**
+
+Claude moved the plan to docs/plans/done/, updated its path references, and left the commit to Yoann.
+Claude added `let min = Int.min and max = Int.max` at the top of each doom render/ file.
+Claude pointed the four other render files to View.ml, which holds the comment explaining why.
+Claude measured identical frames before and after, and mini-doom dropped from 7.59M to 5.52M on OCaml 4.14.
+Claude found mini-ml gained little, 16.25M to 16.10M, since its polymorphic compare is cheap.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:54
+
+**Yoann:**
+
+> btw in Rgba_image.mli we should maybe mention that games kike doom and quake used to use it but now switched to Pixel and bytes?
+
+**Claude (summary):**
+
+Claude added a paragraph to the Rgba_image.mli header, after the one about who shows pictures.
+It says mini-doom and mini-quake rebuilt a per-frame Playground Bitmap, costing 30% of a frame on the Pi 2.
+It notes they now pass palette bytes straight through as Playground.Pixels, one byte per pixel, a quarter of the memory.
+Claude took the 30% figure from Doom.ml's comment instead of "a third," and cited plan step F2.
+The Int.min/Int.max renderer change and the moved plan remained uncommitted alongside the new paragraph.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:55
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the moved plan, doom's renderer change, and the Rgba_image.mli paragraph as cfee472d.
+Claude flagged the `wt` worktree holding the Pi 2 card as the one item still open.
+Claude will remove that worktree only after you try doom and quake with automatic scale.
+Claude has not removed it yet, so the session can't be fully closed until then.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:23
+
+**Yoann:**
+
+> ok now let's do the same for mini-quake, possibly importing more code from the ~/playground
+
+**Claude (summary):**
+
+Claude reorganized mini-quake into model/, render/, server/, qc/, and sound/ folders, following Quake's own split.
+Claude put the QuakeC logic in qc/, rewritten in OCaml, covering monster frames, attacks, and weapons.
+Claude took the monsters' frame tables and attacks from LibreQuake's grunt, rottweiler, and enforcer .qc files.
+Claude renamed Quake's ai.qc module to Monster_ai, avoiding a clash with the playground's Ai.
+Claude verified the game builds with both compilers and the tests pass, with nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:57
+
+**Yoann:**
+
+> what's next? Can we close this session?
+
+**Claude (summary):**
+
+Claude said the session could close, since its work was committed or handed over.
+Claude saved a memory note on counting instructions on this machine before closing the session.
+The note records perf_event_open as the counter to use, since perf was unavailable here.
+It also notes that valgrind cannot run mini-ml's code and QEMU has no plugins on this host.
+Claude named OCaml 4.14 on this arm64 host as the mini-ml comparison reference, not ocaml-light.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 11:01
+
+**Yoann:**
+
+> great work! let's commit. I don't fully understand the qc/ directory. I remember quake was embedding an lcc compiler, but we do not need to do that here so we don't have to follow what quake did for that
+
+**Claude (summary):**
+
+Claude explained that the `qc/` folder was renamed to `game/` because QuakeC and its compiler don't apply to plain OCaml.
+Claude split the code into `server/` for engine logic, `game/` for game logic, and kept `render/`, `sound/`, and `model/` unchanged.
+Claude updated the dune comment and plan to explain the rename, then confirmed mini-ml builds and the ten mini-quake frame tests pass.
+Claude committed the mini-quake game as 9e4941ba, 175 files, with the `qc/` to `game/` rename applied first.
+Claude committed only its own section of `docs/plans/bugs/ix.md`, leaving another session's tiny-kernel line uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 11:03
+
+**Yoann:**
+
+> feel free to maybe also add a note in the notes_profiling_techniques.md instead of your memory
+
+**Claude (summary):**
+
+Claude moved the profiling method from memory into docs/notes_profiling_techniques.md, as Yoann suggested.
+Claude added a questions-table row asking how far mini-ml's code is from OCaml's.
+Claude added a section comparing mini-ml with OCaml 4.14 on the arm64 host, including per-function profiles and the 2.5× result.
+Claude deleted the memory file and its index line after confirming the disk diff held only its 37 added lines.
+Claude also wrote tests/icount.c, a user-mode instruction counter, and left both files uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 11:04
+
+**Yoann:**
+
+> commit
+
+**Claude (summary):**
+
+Claude committed `tests/icount.c` and the new section of `docs/notes_profiling_techniques.md` as commit 0413eabb.
+Claude staged them by path only, so changes from other sessions were left untouched.
+Claude noted this was the last open item in the repo and the session could be closed.
+Claude said the only thing left outside it is the `wt` worktree holding the Pi 2 card.
+Claude advised that if `/tmp` is cleared, `make card` in `kernels/9pi` at HEAD reproduces the same features.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:49
+
+**Yoann:**
+
+> we usually don't want in tiny/ to use multiple files for programs, but the kernel is special and we already did split in files for FS, audio, network, graphics, so one more for memory is fine
+
+**Claude (summary):**
+
+Claude logged the lost 109-minute run in plan_tiny_multicore.md, with its per-core counts.
+Claude traced that run to a Makefile pitfall: programs aren't relinked when their `MEM_` size changes, recorded as an open row in bugs/ix.md.
+Claude started three self-builds in the scratchpad (one core fork, four cores fork, four cores spawn) to compare their times.
+Claude's answer gave no 135-minute figure, and said the timings would go into the plans once the runs finished.
+Claude also finished the spawn change and the memory plan, and left everything uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:25
+
+**Yoann:**
+
+> so we went from how many minutes to 135 minutes?
+
+**Claude (summary):**
+
+Claude reported that the four-core `make self` now takes 135 minutes, down from about 177 on one core.
+Claude said the gain is only about 1.3 times, far short of the 3 times Yoann hoped for.
+Claude expected the still-running one-core baseline to finish around 2 h 50 to 3 h, confirming that ratio.
+Claude attributed the low gain to core 0 being 71% busy in the kernel while cores 1–3 mostly waited.
+Claude suspected fork copying build's 16 MB per recipe through core 0, to be checked by the spawn run.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 11:04
+
+**Yoann:**
+
+> you can add in some .mli of the game those discussions about quakeC and the vm, as historical notes and explain why Carmack chose this design and why we opted for something different
+
+**Claude (summary):**
+
+Claude added historical and design notes to `game/Game.mli`, `server/Edict.mli`, and `game/Monsters.mli`, as tagged paragraphs.
+Claude corrected your premise: Quake's QuakeC was compiled by id's qcc, and lcc arrived only with Quake III.
+The notes explain Carmack's VM choice: DOS could not load native mods, one `progs.dat` ran everywhere, and mods could not crash the engine.
+They contrast this with the OCaml choice: one language, type checking, and no interpreter cost on a Pi.
+The edits are uncommitted, pending your review; Claude had not yet run the build or checked line widths.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:27
+
+**Yoann:**
+
+> ok let's commit
+
+**Claude (summary):**
+
+Claude committed the notes as 7f23f731, containing comment-only changes and no code edits.
+The commit covers `game/Game.mli`, `server/Edict.mli`, and `game/Monsters.mli`, all comment-only.
+Claude left the other working-tree changes out of the commit, since they belong to another session.
+Those leftover changes are under `languages/ml` and `prompt-history.md`, which Claude did not stage.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:26
+
+**Yoann:**
+
+> ok let's commit. What about the tiny kernel memory plan? done?
+
+**Claude (summary):**
+
+Claude committed the spawn work as 2d6aa9ef, staging by pathspec to exclude other sessions' files and prompt-history.md.
+Claude noted the memory plan is unfinished, since only stage 1, spawn, is built.
+Claude recommended stage 2 next: moving the memory code into TinyKernel/TinyKernelMemory.ml with behaviour unchanged.
+Claude explained it is mechanical groundwork: the kernel would call memory functions whatever model sits behind them.
+Claude said the check should confirm nothing changed, while segments and pages stay unstarted.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:28
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended first checking mini-quake's sound and monsters under mini-9pi on Plan 9 and on a Pi 2.
+Claude proposed making music cheap enough for the Pi by profiling the Vorbis decoder with mini-5i -prof.
+Claude suggested 3D way-finding for the playground AI using the BSP leaves, so ai=ways works across floors.
+Claude listed the ogre, knight and zombie as the next monsters after the soldier, dog and enforcer.
+Claude flagged splitting over-700-line game/ modules and the many new flags in Quake.ml as housekeeping to measure first.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:49
+
+**Yoann:**
+
+> ok I think we can maybe close this session; add the leftover to the relevant plan document and then close.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 11:06
+
+**Yoann:**
+
+> I recently added mini-doom and mini-quake. Maybe we can make a mini-virtuaracing, taking TinyVirtuaRacing from the playground as inspiration. I dunno if we want to also start to important the playground3d and physics3d lib from the playground, and also whether it will be fast enough without GPU (for now) on the Pi 2.
+
+**Claude (summary):**
+
+Claude found an existing plan_gpu.md, dated 2026-10-08, that already covers TinyVirtuaRacing.
+Claude measured the playground's TinyVirtuaRacing at roughly 320 ms per frame on this host, at 320×240 in OCaml.
+Claude decided to profile where that frame time goes, since the mini-virtuaracing answer depends on it.
+The profiling was meant to judge whether a Pi 2 could run it without a GPU for now.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:50
+
+**Yoann:**
+
+> maybe we can move some plans to done/ also
+
+**Claude (summary):**
+
+Claude held off committing and offered to commit only its own files, by pathspec, once Yoann said so.
+Claude proposed leaving out the other sessions' changes under `languages/ml/` and `tiny/TinyKernel*`, keeping the commit clean.
+The commit would cover the moves into `done/`, the Status and leftovers edits in `plan_doom.md` and `plan_quake.md`, and 10 updated paths in build files and READMEs.
+Claude noted that git would show each move as a deletion plus a new file, since it used plain `mv`.
+Claude also left `plan_mini_qemu_speed.md` where it was, since its 8-item to-do list needed Yoann's call.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:49
+
+**Yoann:**
+
+> ok let's commit and then do #2.
+
+**Claude (summary):**
+
+Claude found nothing new to commit, since everything was already in 2d6aa9ef, so the stage 2 work stays uncommitted.
+Claude added TinyKernel/TinyKernelMemory.ml, with mem_-prefixed functions owning each process's memory space.
+Claude cut TinyKernel.ml from 1,818 to 1,795 lines and wrote TinyKernelMemory.mli, with the Makefile compiling the new file.
+Claude re-recorded the tetris.wav length and trace -f outputs, and checked four-core runs, but skipped the 2-hour self-build.
+Claude left system-call buffers as single addresses for later, and the four-core spawn self-build is still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 13:09
+
+**Yoann:**
+
+> I need to leave. Can we close that session?
+
+**Claude (summary):**
+
+Claude listed the stage 2 files as uncommitted: TinyKernelMemory.ml, its .mli, the kernel and Makefile changes, and two re-recorded check outputs.
+Claude also noted that the plan_tiny_memory.md and plan_tiny_multicore.md updates were uncommitted.
+Claude said the next session's commit would stage these by pathspec, since the kernel check passes.
+Claude warned that closing the session would kill the four-core spawn run and offered selfrun.sh (about two hours) to rerun it.
+Claude reported one core at 190 min, four cores with fork at 135 min (1.41×), and memory stages 1 and 2 done.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 10:28
+
+**Yoann:**
+
+> yes. You can use doom, the other session is now working on quake, so you can do work on doom.
+
+**Claude (summary):**
+
+Claude committed the Doom and compiler speedups as 6fea098e, with a plan entry and a ledger row.
+Claude wrote the plan entry as a five-row table, taking Doom's frame from 18.30M to 16.43M instructions.
+Claude listed each change with its own measured frame count, all taken on arm with identical frame bytes.
+Claude also listed what remains in the frame, such as tag handling, variable division, and allocations, as open work.
+Claude also fixed Doom's music crash in its own commit, 9f1766f4, logging it in bugs/ix.md.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 13:10
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage 2 and the one-core result as 8cb813e5, staging only those files by pathspec.
+Claude left other sessions' files, plan_gpu.md and plan_virtuaracing.md, untouched and out of the commit.
+The four-core spawn run had not finished, so spawn's speedup remains unmeasured.
+Claude suggested rerunning it via scratchpad/selfrun.sh, which takes about two hours.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:53
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as 8391b5cd.
+Claude moved `plan_doom.md` and `plan_tiny_audio.md` into `docs/plans/done/`.
+Claude added the leftover items to the doom and quake plans and updated the paths and links that pointed to the two moved plans.
+Claude ran only the dune build of mini-doom, which passed.
+Claude left the uncommitted `languages/ml/`, `tiny/TinyKernel*` and `prompt-history.md` files out, since other sessions own them.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 12:52
+
+**Yoann:**
+
+> let's do it!
+
+**Claude (summary):**
+
+Claude wrote the plan with a survey script behind its numbers, and the script also counted triangles per frame.
+Claude ran the survey under callgrind, then fixed two ragged lines the sed command had left in the plan.
+Claude linked the new plan from `plan_gpu.md` and `games/README.md`, and waited on a second callgrind run for the breakdown table.
+Claude found the playground fills 14,239 triangles a frame, not the roughly 1,500 it had guessed.
+Claude updated the plan to use that measured triangle count in place of the guess.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 13:11
+
+**Yoann:**
+
+> are all those optimizations well documented in the opti inventory document? We had one for the graphics part of IX but maybe we can have another part for the compiler part
+
+**Claude (summary):**
+
+Claude offered to commit the two changed files once Yoann gave the go-ahead.
+The two files are docs/notes_opti_inventory.md and docs/notes_performance.md, with nothing committed yet.
+Part 2 of the inventory adds 27 compiler entries, C1–C27, each with a measured gain in a summary table.
+Part 2 also covers how the gains were measured, which were kept or dropped, interactions, and open questions.
+Claude had found the inventory covered only graphics, so it added a compiler part built the same way.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 13:13
+
+**Yoann:**
+
+> ok let's commit and close this session. I need to leave
+
+**Claude (summary):**
+
+Claude committed the session as c45df3f6, staging only the four named files and leaving other sessions' changes out.
+The commit adds docs/plans/plan_virtuaracing.md, the new plan, to the repository.
+It also adds games/survey_virtua.sh, the script that produced the numbers in the plan.
+Claude linked docs/plans/plan_gpu.md and games/README.md so they point to the new plan.
+Nothing is built yet; stage 1 comes next, after Yoann reviews the plan's decisions, especially the palette.

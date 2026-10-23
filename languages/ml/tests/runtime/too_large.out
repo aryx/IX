@@ -1,0 +1,4 @@
+Array.make
+Bytes.create
+1000
+exit 0

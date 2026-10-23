@@ -324,6 +324,13 @@ val play_module : string -> string -> unit
    (ix: not in the playground, whose Vorbis decodes a file whole) *)
 val play_ogg : string -> string -> unit
 
+(* ix: [play_midi name bytes]: a MIDI file's song (its bytes), its notes
+   rendered as the mixer comes to them, looping until [stop name] (midi
+   renders a whole song before its first sample: minutes of samples).
+   Nothing if it isn't MIDI:
+     Audio.play_midi "music" (read "e1m1.mid") *)
+val play_midi : string -> string -> unit
+
 (* [loop_from name source]: a tune from a file or a URL, looping once
    it's there: a MIDI file if [source] ends in .mid, an ABC one in .abc,
    a recording in .wav, a module in .mod, Ogg Vorbis in .ogg (ix's),

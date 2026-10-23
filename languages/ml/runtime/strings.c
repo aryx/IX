@@ -70,9 +70,15 @@ caml_array_bound_error(void)
 	ml_raise(bound_exn);
 }
 
+/* (exceptions.c's) */
+extern value caml_exn_Invalid_argument[];
+static void raise_with(value*, char*);
+
 value
 create_string(value n)
 {
+	if(Long_val(n) < 0 || (uvalue)(Long_val(n) / W + 1) > Max_wosize)
+		raise_with(caml_exn_Invalid_argument, "Bytes.create");
 	return string_alloc(Long_val(n));
 }
 

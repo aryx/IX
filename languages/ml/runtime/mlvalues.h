@@ -36,6 +36,9 @@ typedef uintptr uvalue;
 #define Field(v, i) (((value*)(v))[i])
 #define Hd(v) (((value*)(v))[-1])
 #define Wosize(v) (((uvalue)Hd(v)) >> 10)
+/* the largest block, its size what the header's bits above the tag's
+ * hold: 4M words on 32 bits (OCaml's Max_wosize) */
+#define Max_wosize ((((uvalue)1) << (8 * sizeof(value) - 10)) - 1)
 #define Tag(v) (Hd(v) & 255)
 #define Closure_tag 247
 /* a string's bytes, a float's double: no value in them */

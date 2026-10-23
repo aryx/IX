@@ -292,6 +292,25 @@ let play_ogg (name : string) (bytes : string) : unit =
         { Instrument.note_on = (fun _ _ -> ()); note_off = (fun _ -> ());
           set = (fun _ _ -> ()); fill = Vorbis_player.fill p }
 
+(* ix: a MIDI song the same way, a block at a time (Music.play_score),
+ * again from its start when it ends. midi renders it whole: mini-doom's
+ * first song, 186 seconds, is 8 million floats, past the largest block
+ * on a 32-bit machine (and a hundred megabytes of heap) *)
+let play_midi (name : string) (bytes : string) : unit =
+  match Midi.parse bytes with
+  | Error e -> prerr_endline ("Audio.play_midi: " ^ e)
+  | Ok score ->
+      if not !muted then begin
+        let p = ref (Music.play_score score) in
+        let fill (out : Signal.stereo) : unit =
+          if Music.score_finished !p then p := Music.play_score score;
+          Music.fill_score !p out.left;
+          Array.blit out.left 0 out.right 0 (Array.length out.left)
+        in
+        Mixer.instrument mixer name
+          { Instrument.note_on = (fun _ _ -> ()); note_off = (fun _ -> ()); set = (fun _ _ -> ()); fill }
+      end
+
 let loop_from (name : string) (source : string) : unit =
   if not !muted && not (Hashtbl.mem requested name) then (
     Hashtbl.replace requested name ();

@@ -537,6 +537,11 @@ ml_alloc(value n, value tag)
 {
 	value *p;
 
+	/* (larger, the header would say another size: the collector then
+	 * walks garbage; Array.make and Bytes.create raise before) */
+	if((uvalue)n > Max_wosize)
+		fatal("Fatal error: a block too large\n");
+
 	if(ml_hp + n + 1 > ml_limit){
 		/* a large block in the half, the young ones moved first */
 		if(young_words && n + 1 > young_words / 2){

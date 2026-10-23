@@ -12,7 +12,7 @@ make_vect(value n, value init)
 	value a, i;
 
 	n = Long_val(n);
-	if(n < 0)
+	if(n < 0 || (uvalue)n > Max_wosize)
 		raise_with(caml_exn_Invalid_argument, "Array.make");
 	if(n == 0)
 		return (value)(caml_atom0 + 1);

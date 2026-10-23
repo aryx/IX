@@ -256,3 +256,9 @@ their SIMD and more are beyond its subset (plan_arm.md).
 | program | input | what it does | where, why |
 |---|---|---|---|
 | lib_playground's Audio (and the playground's) | `Audio.wav bytes \|> Audio.louder 0.1`, played | as loud as `Audio.wav bytes`: mini-doom's and mini-quake's sounds were as loud far as near (their distance's attenuation did nothing, only the pan) | Synth.louder is map_voices's, which leaves Samples as they are; fixed in ix (the samples times k), the playground's still has it. Found by mini-quake's master volume changing no sample of a recorded session |
+
+## mini-ml's runtime: a block past the largest (2026-10-23, mini-doom's music)
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| mini-ml's runtime (arm) | `Array.make 8_219_262 0.` (mini-doom's first song rendered whole by `Audio.midi`, `Music.render_score`: 186 s of samples) | a block whose header says another size (8,219,262 words in the 22 bits of a 32-bit header's size); with the young generation the collector then walks garbage, a fault in `copy` at mini-doom's start under qemu-arm and on the card; before, the same header, unnoticed | OCaml raises `Invalid_argument "Array.make"` past `Max_wosize` (4M words on 32 bits); mini-ml's `make_vect` checked only n < 0. Fixed: `make_vect` and `create_string` raise as OCaml's, `ml_alloc` refuses any other (a fatal error); `tests/runtime/too_large.ml`. And mini-doom's music is `Audio.play_midi`, a block at a time (`Music.play_score`), as `play_ogg` and `play_module` are. Found by a check written for it: before each minor collection, every old field pointing to a young block must be remembered (not kept) |

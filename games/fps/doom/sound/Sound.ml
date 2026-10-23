@@ -117,5 +117,5 @@ let play (s : t) (w : World.t) : unit =
 
 let music (wad : Wad.t) (map : string) : unit =
   match Wad.find wad ("D_" ^ map) with
-  | Some l -> Audio.loop "music" (Audio.midi (Mus.to_midi l.data))
+  | Some l -> Audio.play_midi "music" (Mus.to_midi l.data)
   | None -> ()

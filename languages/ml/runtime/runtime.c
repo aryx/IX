@@ -2,10 +2,12 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. */
 /* mini-ml's runtime (plan_ml.md, decision 5; the tutorial's section
  * 11), in C for mini-cc and goken's libc, on arm and arm64: the
- * allocator and Cheney's copying collector, the primitives the stdlib
- * names, the channels, the uncaught exception, and main. No assembly:
- * the code mini-ml generates calls ml_alloc and the others with 5c's
- * and 7c's convention, and main calls ml_start (the start object's).
+ * allocator and Cheney's copying collector (with a young generation:
+ * gc.c), the primitives the stdlib names, the channels, the uncaught
+ * exception, and main. No assembly: the code mini-ml generates calls
+ * ml_alloc and the others with 5c's and 7c's convention, and main calls
+ * ml_start (the start object's, which has ml_modify, the write
+ * barrier, in assembly too).
  *
  * A value is a word: an integer n as 2n+1, or the address of a block's
  * first field, the block's header the word before it (its size in
@@ -82,7 +84,7 @@ unsupported(char *what)
 /* The runtime's parts, a file each, in this order: a part may use what
  * is before it. One C file for the compiler all the same (the static
  * functions and the heap's size, a -D, are the whole runtime's). */
-#include "gc.c"          /* the heap: two halves, Cheney's collector */
+#include "gc.c"          /* the heap: two halves, Cheney's collector, a young generation */
 #include "strings.c"     /* strings and bytes */
 #include "exceptions.c"  /* the predefined exceptions, raising from C, the uncaught one */
 #include "compare.c"     /* compare and hash */
@@ -181,6 +183,27 @@ main(int ac, char *av[])
 	other = space1;
 	ml_hp = from;
 	ml_limit = from + size;
+	/* the young generation (gc.c), unless ML_YOUNG=0 or gcc's C */
+#ifdef __GNUC__
+	young_words = 0;
+#else
+	young_words = YOUNG;
+#endif
+#ifndef plan9
+	s = getenv("ML_YOUNG");
+	if(s != nil && atoi(s) < young_words)
+		young_words = atoi(s);
+#endif
+	/* (a block of 16 fields always young: Emit's fresh) */
+	if(young_words > 0 && young_words < 256)
+		young_words = 256;
+	if(young_words > 0){
+		old_hp = from;
+		ml_young_lo = young;
+		ml_young_hi = young + young_words;
+		ml_refs_end = refs + REFS;
+		young_empty();
+	}
 	ml_vsp = vstack;
 	ml_stack(0, vstack);
 	push(ml_string("index out of bounds"));

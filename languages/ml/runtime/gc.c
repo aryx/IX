@@ -3,7 +3,7 @@
 /* A part of mini-ml's runtime: runtime.c includes it. */
 
 /*****************************************************************************/
-/* The heap: two halves in the bss, Cheney's collector */
+/* The heap: two halves in the bss, Cheney's collector, and a young generation */
 /*****************************************************************************/
 
 /* a half's words, at most: 512 MB on 64 bits (a link of ix's is 200 MB
@@ -256,9 +256,52 @@ thread_free(value t)
 }
 #endif
 
-/* a value's copy in to-space: an integer or a pointer outside the space
- * collected as is; a copied block's header is 0, its first field the
+/* OPTIMIZATION (generations): the young generation, OCaml's minor heap.
+ * Every block is made here (ml_hp and ml_limit are its), and most are
+ * dead before it is full: a minor collection copies what is alive of
+ * it to the half, the old generation, where it stays until a major
+ * one (the halves' Cheney, as before, both generations at once). So a
+ * collection copies the young survivors, not everything alive: mini-ml
+ * compiling its Typing.ml spent a quarter of its instructions copying
+ * the same interfaces again at each collection.
+ *
+ *     young: [made ... ml_hp | free ]      minor: the alive to old_hp
+ *     half:  [old blocks ... old_hp | free to from + size ]
+ *
+ * The roots of a minor collection are the major's (the stacks, the
+ * globals) and the old fields that point to a young block: each store
+ * of a block in a field (Ir's SetField and SetIndex) goes through
+ * ml_modify (the start object's: Gen.startup), which remembers the
+ * field when the value is young and the field old, in refs. A block
+ * too large for the young generation is made in the half, after a
+ * minor collection (its fields then point to nothing young).
+ * Off with ML_YOUNG=0, and with gcc's C (-gas: its code has no
+ * barrier): every block in the half, as before.
+ * old: one generation, the halves; ml_hp and ml_limit the half's
+ * (young_words 0) */
+#ifndef YOUNG
+#define YOUNG (MAXHEAP / 16 < 1048576 ? MAXHEAP / 16 : 1048576)
+#endif
+static value young[YOUNG];
+static value young_words;       /* 0: no young generation */
+static value *old_hp;           /* the half's next free word (young_words) */
+value *ml_young_lo;             /* the young generation, for ml_modify */
+value *ml_young_hi;
+/* the old fields remembered; when full, the last one written again
+ * and refs_lost said: the next minor collection scans all the old */
+#define REFS (YOUNG / 16 < 4096 ? 4096 : YOUNG / 16)
+static value *refs[REFS];
+value **ml_refs;
+value **ml_refs_end;
+value ml_refs_lost;
+static value minors;            /* the minor collections */
+
+/* a value's copy in to-space: an integer or a pointer outside the
+ * spaces collected (lo..hi, and lo2..hi2: a major collection's young
+ * generation) as is; a copied block's header is 0, its first field the
  * copy's address (every block has a field: an empty array is static) */
+static value *lo2, *hi2;
+
 static value
 copy(value v)
 {
@@ -266,7 +309,7 @@ copy(value v)
 	value h, n, i;
 
 	p = (value*)v;
-	if(Is_int(v) || p < lo || p >= hi)
+	if(Is_int(v) || ((p < lo || p >= hi) && (p < lo2 || p >= hi2)))
 		return v;
 	h = p[-1];
 	if(h == 0)
@@ -282,18 +325,30 @@ copy(value v)
 	return (value)q;
 }
 
-/* the roots copied, then the copies scanned, breadth first, scan
- * chasing next; the halves swapped */
+/* the fields of the blocks from scan to next copied, next chasing scan
+ * (Cheney's breadth first) */
 static void
-collect(void)
+scan_copies(value *scan)
 {
-	value *scan, *v, *roots;
-	value n, i, u, h;
+	value n, i, h;
+
+	for(; scan < next; scan = scan + n + 1){
+		h = *scan;
+		n = ((uvalue)h) >> 10;
+		if((h & 255) < 251)
+			for(i = 1; i <= n; i++)
+				scan[i] = copy(scan[i]);
+	}
+}
+
+/* the roots copied: the stacks, C's values, the globals */
+static void
+copy_roots(void)
+{
+	value *v, *roots;
+	value i, u;
 	struct caml__roots_block *b;
 
-	lo = from;
-	hi = ml_limit;
-	next = other;
 #ifdef GUARD
 	/* The ML code does not check the value stack's end: a recursion
 	 * too deep wrote past it, over the statics that follow (stack_now,
@@ -304,14 +359,14 @@ collect(void)
 	 * fatal error, not a Stack_overflow to catch: raised from inside an
 	 * allocation. */
 	if(ml_vsp > vstack + STACK && ml_vsp <= vstack + STACK + GUARD)
-		overflowed("Fatal error: stack overflow (mini-ml's value stack)", (char*)&scan, stack_now > 0 ? nil : machine_top);
+		overflowed("Fatal error: stack overflow (mini-ml's value stack)", (char*)&v, stack_now > 0 ? nil : machine_top);
 #ifndef __GNUC__
 	/* (a thread's, into one of its guards: its machine stack's is
 	 * below, where this frame is) */
 	if(stack_now > 0 && ml_vsp > stack_base[stack_now] + thread_values[stack_now])
-		overflowed("Fatal error: stack overflow (a thread's value stack)", (char*)&scan, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
-	if(stack_now > 0 && (char*)&scan < thread_memory[stack_now] + thread_machine[stack_now])
-		overflowed("Fatal error: stack overflow (a thread's machine stack)", (char*)&scan, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
+		overflowed("Fatal error: stack overflow (a thread's value stack)", (char*)&v, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
+	if(stack_now > 0 && (char*)&v < thread_memory[stack_now] + thread_machine[stack_now])
+		overflowed("Fatal error: stack overflow (a thread's machine stack)", (char*)&v, thread_memory[stack_now] + 2 * thread_machine[stack_now]);
 #endif
 #endif
 	stack_top[stack_now] = ml_vsp;
@@ -339,17 +394,81 @@ collect(void)
 		named_names[i] = copy(named_names[i]);
 		named_values[i] = copy(named_values[i]);
 	}
-	for(scan = other; scan < next; scan = scan + n + 1){
-		h = *scan;
-		n = ((uvalue)h) >> 10;
-		if((h & 255) < 251)
-			for(i = 1; i <= n; i++)
-				scan[i] = copy(scan[i]);
-	}
+}
+
+/* the young generation empty again, nothing remembered */
+static void
+young_empty(void)
+{
+	ml_hp = young;
+	ml_limit = young + young_words;
+	ml_refs = refs;
+	ml_refs_lost = 0;
+}
+
+/* a major collection: the half's blocks and the young ones copied to
+ * the other half, the halves swapped */
+static void
+collect(void)
+{
+	lo = from;
+	hi = young_words ? old_hp : ml_hp;
+	lo2 = young_words ? young : nil;
+	hi2 = young_words ? ml_hp : nil;
+	next = other;
+	copy_roots();
+	scan_copies(other);
 	other = from;
 	from = lo == space0 ? space1 : space0;
-	ml_hp = next;
+	lo2 = hi2 = nil;
+	if(young_words){
+		old_hp = next;
+		young_empty();
+	}else
+		ml_hp = next;
 	collections++;
+}
+
+/* a minor collection: the young blocks alive copied to the half, after
+ * its last; their roots the major's and the remembered fields (or every
+ * old block's, when some were lost) */
+static void
+minor(void)
+{
+	value **r;
+	value *start;
+
+	lo = young;
+	hi = ml_hp;
+	lo2 = hi2 = nil;
+	next = old_hp;
+	start = old_hp;
+	copy_roots();
+	if(ml_refs_lost)
+		scan_copies(from);
+	else
+		for(r = refs; r < ml_refs; r++)
+			**r = copy(**r);
+	scan_copies(start);
+	old_hp = next;
+	young_empty();
+	minors++;
+}
+
+/* a store of v in a field of C's (memory.h's Store_field): ml_modify's
+ * test, for C */
+void
+ml_store(value *field, value v)
+{
+	*field = v;
+	if(!Is_int(v) && (value*)v >= ml_young_lo && (value*)v < ml_young_hi
+	&& (field < ml_young_lo || field >= ml_young_hi)){
+		if(ml_refs == ml_refs_end){
+			ml_refs--;
+			ml_refs_lost = 1;
+		}
+		*ml_refs++ = field;
+	}
 }
 
 /* Gc.set's space_overhead, OCaml's name for it: how much more than what
@@ -360,43 +479,75 @@ collect(void)
  * all that is alive. */
 static value overhead = 100;
 
-/* if less than half is free after (the overhead's share), the heap
- * grows, up to its halves
+/* a major collection; if less than half is free after (the overhead's
+ * share), the heap grows, up to its halves
  * old: while((ml_hp - from + need) * 2 > size && size < MAXHEAP)
  * (tried, and not kept: a half grown to just what is alive and its
  * overhead, where doubling leaves it up to twice that: mini-ld's link
  * of mini-rm 5% less memory, 16% longer, a collection coming sooner) */
 static void
-gc(value need)
+major(value need)
 {
+	value *hp;
+
 	collect();
-	live = ml_hp - from;
-	while((uvlong)(ml_hp - from + need) * (100 + overhead) / 100 > (uvlong)size && size < MAXHEAP)
+	hp = young_words ? old_hp : ml_hp;
+	live = hp - from;
+	while((uvlong)(hp - from + need) * (100 + overhead) / 100 > (uvlong)size && size < MAXHEAP)
 		size = size * 2;
 	if(size > MAXHEAP)
 		size = MAXHEAP;
 	if(size > top)
 		top = size;
-	ml_limit = from + size;
-	if(ml_hp + need > ml_limit)
+	if(!young_words)
+		ml_limit = from + size;
+	if(hp + need > from + size)
 		fatal("Fatal error: out of memory\n");
 }
 
+/* need words, in the young generation (a minor collection, then a major
+ * one when the half is past its size), or in the half */
+static void
+gc(value need)
+{
+	if(!young_words){
+		major(need);
+		return;
+	}
+	/* (the half holds the young survivors, at most all of it, as its
+	 * memory goes to MAXHEAP: else a major collection first) */
+	if(old_hp + (ml_hp - young) > from + MAXHEAP)
+		major(0);
+	else
+		minor();
+	if(old_hp + need > from + size)
+		major(need);
+}
+
 /* Gc's: a collection, whichever was asked */
-value gc_full_major(value u) { gc(0); return u; }
-value gc_major(value u) { gc(0); return u; }
+value gc_full_major(value u) { gc(0); if(young_words) major(0); return u; }
+value gc_major(value u) { gc(0); if(young_words) major(0); return u; }
 value gc_minor(value u) { gc(0); return u; }
-value gc_compaction(value u) { gc(0); return u; }
+value gc_compaction(value u) { gc(0); if(young_words) major(0); return u; }
 /* (Marshal's: the blocks moved, and the addresses it kept are old) */
-value gc_collections(value u) { return Val_int(collections); }
+value gc_collections(value u) { return Val_int(collections + minors); }
 
 value
 ml_alloc(value n, value tag)
 {
 	value *p;
 
-	if(ml_hp + n + 1 > ml_limit)
+	if(ml_hp + n + 1 > ml_limit){
+		/* a large block in the half, the young ones moved first */
+		if(young_words && n + 1 > young_words / 2){
+			gc(n + 1);
+			p = old_hp + 1;
+			p[-1] = (n << 10) | tag;
+			old_hp = p + n;
+			return (value)p;
+		}
 		gc(n + 1);
+	}
 	p = ml_hp + 1;
 	p[-1] = (n << 10) | tag;
 	ml_hp = p + n;

@@ -97,9 +97,15 @@
  * by copying, often, and what survives it promoted to an old heap,
  * marked and swept a slice at a time between the program's steps,
  * so that no pause is long. Most blocks die young and are never
- * copied. Here a collection copies everything alive, and the
- * program holds two heaps (gc.c has the numbers: mini-ld 267 MB
- * for a link where 54 are alive).
+ * copied. Here too since 2026-10-23 (gc.c): a young generation
+ * collected by copying, its survivors promoted to the halves, which
+ * a major collection copies whole, Cheney's still; so the program
+ * holds two heaps (gc.c has the numbers: mini-ld 267 MB for a link
+ * where 54 are alive). Generations need a write barrier: a block
+ * stored in an old one is remembered (ml_modify, from SetField and
+ * SetIndex), since the young collection does not scan the old.
+ * (David Ungar, "Generation scavenging", 1984: the idea, for
+ * Smalltalk; Henry Lieberman and Carl Hewitt, 1983, before.)
  *
  * others:
  * Exceptions. OCaml's native code keeps the handlers as records

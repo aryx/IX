@@ -27,7 +27,7 @@ sys_get_argv(value unit)
 		push(a);
 		s = ml_string(argv[i]);
 		a = pop();
-		Field(a, i) = s;
+		Store_field(a, i, s);
 	}
 	return a;
 }
@@ -275,7 +275,7 @@ sys_read_directory(value name)
 		push(a);
 		s = ml_string(d[i].name);
 		a = pop();
-		Field(a, i) = s;
+		Store_field(a, i, s);
 	}
 	free(d);
 	return a;

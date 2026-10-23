@@ -404,3 +404,63 @@ frames the same bytes as HEAD's build's; mini-ml built by mini-ml (arm)
 writes the same assembly as by OCaml (seven files, arm and arm64,
 Typing.ml among them). Not run: make test-lite, the kernels' checks,
 mini-9pi, m-ix built on the card.
+
+2026-10-23, **G: a generational collector** (the author: "let's do the
+generational collector! tiny-ml I think anyway has a copying collector
+already no? so mini-ml should do better than tiny-ml and has a bigger
+budget than tiny-ml"). The runtime's `gc.c`: a young generation
+(OCaml's minor heap, 1M words, `MAXHEAP / 16` for a kernel) where every
+block is born, `ml_hp` and `ml_limit` its; a minor collection copies
+its survivors into the half, after its last block; the halves'
+Cheney is the major collection, both generations at once, when the
+half is past its size (the growth by `space_overhead` as before). A
+block of more than half the young generation is made in the half,
+after a minor collection. The roots of a minor collection: the major's
+and the remembered old fields. The write barrier: each `SetField` and
+`SetIndex` (Gen and ssa's Emit) tests the stored value, an integer
+nothing, else calls `ml_modify` (the start object's, `Gen.startup`:
+assembly that changes only R0 and the scratch register), which
+remembers the field when the value is young and the field old; ssa's
+Emit leaves it out for a constant and for a block made since the last
+safepoint (fresh: a closure's environment, a big record's fields). The
+runtime's C stores with `Store_field` (memory.h: `ml_store`). Off:
+`ML_YOUNG=0`, and with gcc's C (`-gas`, no barrier); `old:` kept.
+
+| arm, mini-5i -s | one generation | generations | |
+|---|---:|---:|---:|
+| mini-doom, a frame | 29,389,721 | 18,939,281 | 0.64 |
+| mini-quake, a frame | 35,788,030 | 27,818,178 | 0.78 |
+| cameltry, a frame | 4,215,811 | 2,430,548 | 0.58 |
+| mini-ml compiling simple/Lower.ml | 3,016,996,053 | 2,892,509,355 | 0.96 |
+| Typing.ml | 2,062,747,401 | 2,002,063,112 | 0.97 |
+| ssa/Ssa_build.ml | 2,146,485,922 | 2,018,406,147 | 0.94 |
+
+(the frames the same bytes; with `ML_YOUNG=0` the same build's frames
+are 0.4 to 1.5% above the first column: the barrier's cost.)
+`bench.sh 5`: maps 20.23 million to 13.14 (0.65); limbs 15.96 to
+16.95 and pixels 37.09 to 37.86, the inline test of a stored integer;
+samples 13.95 to 14.54, its arrays' floats boxed, each new one
+remembered; fib, tak, sched the same.
+
+Why so little for the compiler: Typing.ml's compile has 109 minor
+collections and 3 major (28 collections before), the copy now 349
+million instructions where it was 526, but a compiler keeps most of
+what it makes (the trees, the types, the code until the unit is
+written): the survivors are many, each copied once anyway, and
+ml_modify's 2.7 million calls cost 50 million. A young generation of
+256K words (OCaml's) was 2% slower than 1M. Tried, not kept: the scan
+calling `copy` only for a young pointer (C's test costs the call).
+Next for the barrier, if wanted: the stores the type checker sees as
+integers (an `int array`, an `int ref`) without it, as the
+comparisons (`Typing.immediates`).
+
+Checked: tests/tiny and tests/runtime on arm and arm64, -O3 and -O0,
+with ML_HEAP=64, and with ML_YOUNG=256 (a minor collection every few
+allocations: the same, but for gc.ml on arm, out of time: its 200,000
+deep recursion's stack scanned at each); lite.sh's "ix built by ix"
+job on a copy of the tree (97 programs by the new compiler and
+runtime, the games', music's, office's frames and sounds, the
+browsers, TLS, the tiny programs, mini-xv6 and a kernel's step booted
+under mini-qemu); mini-ml built by mini-ml writes the same assembly as
+by OCaml. Not run: mini-9pi (its kernel and programs with the young
+generation), the kernels' check-all, m-ix built on the card.

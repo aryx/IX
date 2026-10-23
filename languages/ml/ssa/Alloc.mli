@@ -59,6 +59,10 @@ type loc = Reg of int | Mem of int | Nil
 
 (* nregs registers, numbered from 0; memory's slots from base; the
  * frame's slots then *)
+(* an instruction after which the collector may have run (an allocation,
+ * a call) *)
+val safepoint : Ssa.ins -> bool
+
 val alloc : Ssa.func -> nregs:int -> base:int -> (Ssa.value -> loc) * int
 
 (* the liveness alone: for each block, the values live at its start

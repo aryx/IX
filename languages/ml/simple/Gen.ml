@@ -243,6 +243,23 @@ let func m out (fn : func) =
     ins "BLO\t2(PC)";
     ins "BL\tcaml_array_bound_error(SB)"
   in
+  (* OPTIMIZATION (generations: the runtime's gc.c): a block stored in
+   * a field, ml_modify called (the start object's: it remembers the
+   * field if the block is young and the field old), its value in R0
+   * and the field's address, put by [field], in the scratch register;
+   * nothing when the value is an integer. Not with gcc's C (-gas), whose
+   * runtime has one generation. *)
+  let modify v field =
+    if not m.aapcs then begin
+      let skip = glabel () in
+      ins "AND\t$1, R%d, R0" v;
+      branch_zero true 0 skip;
+      ins "%s\tR%d, R0" mov v;
+      field ();
+      ins "BL\tml_modify(SB)";
+      lab skip
+    end
+  in
   List.iter (fun i ->
     match i with
     | Label l ->
@@ -260,9 +277,18 @@ let func m out (fn : func) =
     | GetG g -> ins "%s\t%s(SB), R%d" mov g (push ())
     | SetG g -> ins "%s\tR%d, %s(SB)" mov !sp g; decr sp
     | Field k -> ins "%s\t%d(R%d), R%d" mov (w * k) !sp !sp
-    | SetField k -> ins "%s\tR%d, %d(R%d)" mov (!sp - 1) (w * k) !sp; sp := !sp - 2
+    | SetField k ->
+        let b = !sp in
+        ins "%s\tR%d, %d(R%d)" mov (b - 1) (w * k) b;
+        modify (b - 1) (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) b m.tmp);
+        sp := b - 2
     | Index -> let b = !sp in decr sp; index b !sp; ins "%s\t0(R%d), R%d" mov !sp !sp
-    | SetIndex -> let b = !sp in index b (b - 1); ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1); sp := b - 3
+    | SetIndex ->
+        let b = !sp in
+        index b (b - 1);
+        ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1);
+        modify (b - 2) (fun () -> ins "%s\tR%d, R%d" mov (b - 1) m.tmp);
+        sp := b - 3
     (* a string's byte: the index untagged and added to the string's
      * address; the byte tagged when read, untagged (in the scratch
      * register) when written. Checked: the safe accessors'. *)
@@ -519,6 +545,26 @@ let startup m units =
    | Arm64 -> pr "\tTEXT\tml_swtch(SB), $-8\n\tMOV\t0(R0), R1\n\tMOV\t8(R0), R2\n\tMOV\tRSP, R%d\n\tMOV\tR%d, 0(R1)\n\tMOV\tR30, 8(R1)\n\tMOV\tR%d, 16(R1)\n\tMOV\t16(R2), R%d\n\tMOV\t8(R2), R30\n\tMOV\t0(R2), R%d\n\tMOV\tR%d, RSP\n\tRET\t(R30)\n" t t m.vsp m.vsp t t
    | Arm when m.aapcs -> ()
    | Arm -> pr "\tTEXT\tml_swtch(SB), $-4\n\tMOVW\t0(R0), R1\n\tMOVW\t4(R0), R2\n\tMOVW\tR13, 0(R1)\n\tMOVW\tR14, 4(R1)\n\tMOVW\tR%d, 8(R1)\n\tMOVW\t8(R2), R%d\n\tMOVW\t4(R2), R14\n\tMOVW\t0(R2), R13\n\tRET\n" m.vsp m.vsp);
+  (* the write barrier (generations: the runtime's gc.c, and Gen's
+   * modify): a block in R0 stored at the address in the scratch
+   * register; the address remembered, in ml_refs, when the block is
+   * young and the field not (an old block made to point to a young
+   * one). Only R0 and the scratch register changed (R1 kept on the
+   * machine's stack): the code that calls keeps its values in the
+   * others. A full table: the last entry written again, and
+   * ml_refs_lost (the next minor collection scans the old blocks). *)
+  if not m.aapcs then begin
+    let sz = if m.arch = Arm then 8 else 16 in
+    let old = glabel () and room = glabel () and fin = glabel () in
+    pr "\tTEXT\tml_modify(SB), %s\n\tSUB\t$%d, %s\n\t%s\tR1, 0(%s)\n" m.frame sz m.sp mov m.sp;
+    pr "\t%s\tml_young_lo(SB), R1\n\tCMP\tR1, R0\n\tBLO\t%s\n" mov fin;
+    pr "\t%s\tml_young_hi(SB), R1\n\tCMP\tR1, R0\n\tBHS\t%s\n" mov fin;
+    pr "\tCMP\tR1, R%d\n\tBHS\t%s\n\t%s\tml_young_lo(SB), R1\n\tCMP\tR1, R%d\n\tBHS\t%s\n" t old mov t fin;
+    pr "%s:\n\t%s\tml_refs(SB), R1\n\t%s\tml_refs_end(SB), R0\n\tCMP\tR0, R1\n\tBLO\t%s\n" old mov mov room;
+    pr "\tSUB\t$%d, R1\n\t%s\t$1, R0\n\t%s\tR0, ml_refs_lost(SB)\n" w mov mov;
+    pr "%s:\n\t%s\tR%d, 0(R1)\n\tADD\t$%d, R1\n\t%s\tR1, ml_refs(SB)\n" room mov t w mov;
+    pr "%s:\n\t%s\t0(%s), R1\n\tADD\t$%d, %s\n\t%s\n" fin mov m.sp sz m.sp (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)")
+  end;
   (* the square root: the processor's instruction on arm64, correctly
    * rounded and its own NaN, as OCaml's (the C library's is computed,
    * a bit off sometimes: bugs/ix.md); the runtime's C calls here, a

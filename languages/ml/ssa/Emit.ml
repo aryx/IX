@@ -255,6 +255,25 @@ let func m out (fn : func) (lf : L.func) =
     ins "BLO\t2(PC)";
     ins "BL\tcaml_array_bound_error(SB)"
   in
+  (* the write barrier (Gen's modify): x, in r, stored at the address
+   * [field] puts in t; nothing for a constant (never young), nor in a
+   * small block made since the last safepoint, young (fresh: a
+   * closure's environment, a big record's fields, set after obj_block;
+   * the runtime's young generation is at least 256 words) *)
+  let fresh = ref [] in
+  let modify blk x r field =
+    match def x with
+    | Const _ | Blk _ | Symb _ | Zero -> ()
+    | _ when List.mem blk !fresh -> ()
+    | _ ->
+        let skip = glabel () in
+        ins "AND\t$1, R%d, R0" r;
+        branch_zero true 0 skip;
+        ins "%s\tR%d, R0" mov r;
+        field ();
+        ins "BL\tml_modify(SB)";
+        lab skip
+  in
   let prim v (p : L.t) xs =
     match p, xs with
     (* a string's byte: the index untagged and added to its address *)
@@ -401,7 +420,15 @@ let func m out (fn : func) (lf : L.func) =
   Array.iter (fun (b : block) ->
     lab (blabel b.id);
     let fuse = fused b in
+    fresh := [];
     List.iter (fun v ->
+      (match def v with
+       | Alloc (_, xs) when List.length xs <= Gen.alloc_most -> fresh := [ v ]
+       | CallC ("obj_block", [ _; n ])
+         when (match def n with Const n -> n <= Gen.alloc_most | _ -> false) ->
+           fresh := [ v ]
+       | i when Alloc.safepoint i -> fresh := []
+       | _ -> ());
       if fuse <> None && Some v = (match b.term with Br (c, _, _) -> Some c | _ -> None) then () else
       match Hashtbl.find fn.defs v with
       | Zero | Param _ | Phi _ -> ()
@@ -412,11 +439,21 @@ let func m out (fn : func) (lf : L.func) =
       | Slot i -> let d = dst v r1 in get_slot i d; finish v d
       | SetSlot (i, x) -> let r = src x r1 in put_slot r i
       | Field (k, x) -> let a = src x r1 in let d = dst v r2 in ins "%s\t%d(R%d), R%d" mov (w * k) a d; finish v d
-      | SetField (k, blk, x) -> let bb = src blk r1 in let r = src x r2 in ins "%s\tR%d, %d(R%d)" mov r (w * k) bb
+      | SetField (k, blk, x) ->
+          let bb = src blk r1 in
+          let r = src x r2 in
+          ins "%s\tR%d, %d(R%d)" mov r (w * k) bb;
+          modify blk x r (fun () -> ins "ADD\t$%d, R%d, R%d" (w * k) bb t)
       | Index (blk, i) ->
           let bb = src blk r1 in load i r2; index bb r2;
           let d = dst v r3 in ins "%s\t0(R%d), R%d" mov r2 d; finish v d
-      | SetIndex (blk, i, x) -> let bb = src blk r1 in load i r2; index bb r2; let r = src x r3 in ins "%s\tR%d, 0(R%d)" mov r r2
+      | SetIndex (blk, i, x) ->
+          let bb = src blk r1 in
+          load i r2;
+          index bb r2;
+          let r = src x r3 in
+          ins "%s\tR%d, 0(R%d)" mov r r2;
+          modify blk x r (fun () -> ins "%s\tR%d, R%d" mov r2 t)
       | Alloc (tag, xs) when in_place && List.length xs <= Gen.alloc_most ->
           let slow = glabel () and ok = glabel () in
           take (List.length xs) tag slow;

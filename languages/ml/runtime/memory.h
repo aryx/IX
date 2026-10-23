@@ -2,8 +2,8 @@
  * a C function's own values, for a collector that moves them. A
  * function that allocates, or calls ML, while it holds values declares
  * its parameters with CAMLparam and its locals with CAMLlocal (once
- * each), and returns with CAMLreturn; a store in a block is a store
- * (no generations: nothing to remember). */
+ * each), and returns with CAMLreturn; a store of a value in a block
+ * that may be old (made before the last allocation) is Store_field. */
 struct caml__roots_block {
 	struct caml__roots_block *next;
 	value *v[3];
@@ -19,5 +19,8 @@ void ml_root(struct caml__roots_block *b, value *v0, value *v1, value *v2);
 #define CAMLreturn(x) { local_roots = caml__frame; return (x); }
 #define CAMLreturn0 { local_roots = caml__frame; return; }
 
-#define Store_field(b, i, v) (Field(b, i) = (v))
-#define modify(fp, v) (*(fp) = (v))
+/* (a store remembered when it makes an old block point to a young one:
+ * gc.c's generations) */
+void ml_store(value *field, value v);
+#define Store_field(b, i, v) ml_store(&Field(b, i), v)
+#define modify(fp, v) ml_store(fp, v)

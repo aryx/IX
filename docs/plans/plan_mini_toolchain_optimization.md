@@ -510,3 +510,40 @@ runtime's answers) on arm and arm64, -O3 and -O0, ML_HEAP=64,
 ML_YOUNG=4096; lite.sh's "ix built by ix" job on a copy of the tree;
 the frames the same bytes; mini-ml built by mini-ml writes the same
 assembly as by OCaml. Not run: mini-9pi, the kernels' check-all.
+
+2026-10-23, **mini-doom's frame, item by item** (the author: "yes. You
+can use doom"; another session's measures against OCaml 4.14 on
+arm64: doom's frame 2.5 times OCaml's instructions, 3.5 once doom's
+min and max are Int's). mini-doom built from HEAD first faulted at its
+start (its music rendered whole, a block past the largest: 9f1766f4,
+bugs/ix.md). Then mini-prof on a frame (arm, frames 31 to 61), and
+what it named, each measured:
+
+| | mini-doom, a frame | |
+|---|---:|---|
+| HEAD (19b70c51 and 9f1766f4) | 18,303,390 | |
+| `land`, `lor`, `lxor` with a small constant an immediate; no jump to the block written next | 17,990,013 | 0.983 |
+| `floor` and `ceil` by the processor's conversion within an int's range (the C library's, modf's, 5% of a frame) | | |
+| `min` and `max` (Pervasives', Int's, and a unit's `let min = Int.min`) inline on ints or floats | 17,067,865 | (both: 0.949) |
+| arm: R14 a sixth value register in a function with no BL but calls | 16,858,292 | 0.988 |
+| arm: an unchecked byte at a shifted register offset (`R8->1(R1)`), one instruction for three | | |
+| `/` and `mod` by a constant power of two by shifts, not arm's `_div` | 16,428,729 | (both: 0.975) |
+
+The frame the same bytes. 18.30 to 16.43 million, 0.90; mini-ml
+compiling Lower.ml, Typing.ml, Ssa_build.ml: 6.52 thousand million to
+6.07 (0.93). The span's loop (map_plane, 15% of a frame): 47
+instructions a pixel to 39.
+
+Left, by the profile: the span's and the column's loops are still
+twice OCaml's, mostly tags (a byte loaded then tagged, then untagged
+to index: ARM's shifted operands could fold an add and a tag) and
+their invariants reloaded (arm's 6 registers); arm's `_div` 4.8% (the
+divisions by a variable: principia's div.s a bit a turn; CLZ would
+need the assembler's, the VFP's division the FPU in every C program);
+`ml_floor` 1.9% (a call of C, a float allocated); the allocations
+(`ml_alloc`, `copy`, `make_vect`: 7%).
+
+Checked: tests/tiny and tests/runtime (new: floor, min_max, div_pow2)
+on arm and arm64, -O3 and -O0; lite.sh's "ix built by ix" job on a copy
+of the tree; mini-ml built by mini-ml writes the same assembly as by
+OCaml. Not run: mini-9pi, the kernels' check-all.

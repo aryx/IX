@@ -402,6 +402,10 @@ let typed_prims =
   [ "%equal", 1; "%notequal", 1; "%lessthan", 1; "%lessequal", 1; "%greaterthan", 1;
     "%greaterequal", 1; "%array_safe_set", 3; "%array_unsafe_set", 3; "%setfield0", 2 ]
 let typed : (Ast.span * t * int) list ref = ref []
+(* min and max, and the unit's globals that are them (let min =
+ * Int.min, mini-doom's renderer's): each with the one it is *)
+let min_max_base = [ "Pervasives.min"; "Pervasives.max"; "Int.min"; "Int.max" ]
+let min_max : (string, string) Hashtbl.t = Hashtbl.create 8
 
 let rec infer env (e : Scope.expr) : t =
   let saved = !loc in
@@ -416,10 +420,15 @@ and infer_ env (e : Scope.expr) =
   (* mlpp: implicit *)
   | Evar (Local v) -> (match List.assoc_opt v.vid env with Some t -> implicit env e (instantiate t) | None -> error "%s: no type" v.vname)
   | Evar (Global g) -> (
-      match Hashtbl.find_opt globals g.gsym, g.gtype with
-      | Some t, _ -> implicit env e (instantiate t)
-      | None, Some ty -> implicit env e (instance ty)
-      | None, None -> newvar ())
+      let t =
+        match Hashtbl.find_opt globals g.gsym, g.gtype with
+        | Some t, _ -> implicit env e (instantiate t)
+        | None, Some ty -> implicit env e (instance ty)
+        | None, None -> newvar ()
+      in
+      (* min and max: their operands' type too (Lower.min_max) *)
+      if Hashtbl.mem min_max g.gsym then typed := (e.span, t, 1) :: !typed;
+      t)
   | Evar (Prim (p, _, ty)) ->
       let t = instance ty in
       (match List.assoc_opt p typed_prims with
@@ -568,6 +577,8 @@ let rec generalize_all t =
 let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
   typed := [];
+  Hashtbl.reset min_max;
+  List.iter (fun g -> Hashtbl.replace min_max g g) min_max_base;
   current := name;
   level := 1;
   wanted := []; found := []; failures := []; Hashtbl.reset givens;
@@ -584,6 +595,13 @@ let unit_ name (items : Scope.item list) =
         Hashtbl.replace globals g.gsym t;
         shown := (g.gname, g.gsym, Printf.sprintf " = %S" p) :: !shown
     | Ivalue (r, bs, gs) ->
+        List.iter (fun ((p : Scope.pattern), (d : Scope.expr)) ->
+          match p, d.e with
+          | Pvar v, Evar (Global g) when Hashtbl.mem min_max g.gsym ->
+              List.iter (fun ((v' : Scope.var), (g' : Scope.global)) ->
+                if v'.vid = v.vid then
+                  Hashtbl.replace min_max g'.gsym (Hashtbl.find min_max g.gsym)) gs
+          | _ -> ()) bs;
         let env = if r then letrec [] bs else let_ [] bs in
         List.iter (fun ((v : Scope.var), (g : Scope.global)) ->
           let t = List.assoc v.vid env in
@@ -632,6 +650,9 @@ let immediates () = places [ int_t; char_t; bool_t; unit_t ]
 (* OPTIMIZATION (strings): the comparisons of strings: the strings'
  * equality, not compare's (Lower.string_eqs) *)
 let strings () = places [ string_t ]
+
+(* the globals that are min or max, each with the one it is *)
+let min_max_globals () = Hashtbl.fold (fun g base acc -> (g, base) :: acc) min_max []
 
 (* OPTIMIZATION (floats): the comparisons of floats: the processor's
  * (Lower.float_cmps) *)

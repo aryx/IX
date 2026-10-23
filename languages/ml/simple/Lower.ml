@@ -247,6 +247,14 @@ let string_eqs : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
  * Emit called the runtime) *)
 let float_cmps : (Ast.span, unit) Hashtbl.t = Hashtbl.create 64
 
+(* OPTIMIZATION (min_max): min and max on ints or floats (their place
+ * in immediates or float_cmps): the comparison and the choice here,
+ * not Pervasives' function, a call, and in it compare's (mini-doom's
+ * columns and spans clamped, 2% of a frame) *)
+let min_max = [ "Pervasives.min", Le; "Pervasives.max", Ge; "Int.min", Le; "Int.max", Ge ]
+(* the globals that are one of them (Typing.min_max_globals) *)
+let min_max_aliases : (string, string) Hashtbl.t = Hashtbl.create 8
+
 (* (off: mini-ml -calls) *)
 let strings_in_place = ref true
 let floats_in_place = ref true
@@ -531,6 +539,20 @@ and app env (f : Scope.expr) args tl =
   | Evar (Prim ("%sequor", _, _)), _, [ a; b ] ->
       let e = { f with e = Eif (a, { f with e = Econst (Int 1) }, Some b) } in
       if tl then (control env e true; true) else (value env e; false)
+  | Evar (Global g), _, [ a; b ]
+    when Hashtbl.mem min_max_aliases g.gsym
+         && (Hashtbl.mem immediates f.span
+             || (Hashtbl.mem float_cmps f.span && !floats_in_place)) ->
+      (* if a <= b then a else b (Pervasives'), b computed first *)
+      let sb = to_slot env b in
+      let sa = to_slot env a in
+      let r = List.assoc (Hashtbl.find min_max_aliases g.gsym) min_max in
+      emit (Get sb); emit (Get sa);
+      emit (if Hashtbl.mem immediates f.span then Op (Cmp r) else FloatCmp r);
+      let other = label () and out = label () in
+      emit (Jz other); emit (Get sa); emit (Jmp out);
+      emit (Label other); emit (Get sb); emit (Label out);
+      false
   | Evar (Prim (p, n, _)), _, _ when m >= n ->
       let ls = slots (later n) in
       operands env (List.map (fun e -> E e) (List.rev (first n)));

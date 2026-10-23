@@ -139,6 +139,9 @@ val immediates : unit -> Ast.span list
 val strings : unit -> Ast.span list
 (* the comparisons on floats: Lower's float_cmps *)
 val floats : unit -> Ast.span list
+(* min and max (Pervasives', Int's) and the unit's globals that are
+ * them, each with the one it is: Lower's min_max_aliases *)
+val min_max_globals : unit -> (string * string) list
 
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list
 val errors : unit -> (int * string) list

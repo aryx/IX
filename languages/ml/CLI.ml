@@ -302,7 +302,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   let set h = List.iter (fun sp -> Hashtbl.replace h sp ()) in
                   set Lower.immediates (Typing.immediates ());
                   set Lower.string_eqs (Typing.strings ());
-                  set Lower.float_cmps (Typing.floats ())
+                  set Lower.float_cmps (Typing.floats ());
+                  Hashtbl.reset Lower.min_max_aliases;
+                  List.iter (fun (g, base) -> Hashtbl.replace Lower.min_max_aliases g base)
+                    (Typing.min_max_globals ())
                 end;
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)

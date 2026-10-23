@@ -73,14 +73,33 @@ let func m out (fn : func) (lf : L.func) =
   let memory = List.exists (function L.TryEnter _ -> true | _ -> false) lf.code in
   let base = if memory then lf.nslots else fn.nparams + 1 in
   let def v = Hashtbl.find fn.defs v in
-  let loc, frame = Alloc.alloc fn ~nregs:(List.length m.vregs) ~base in
+  (* OPTIMIZATION (the link register): on arm, R14 a value's register
+   * too (a sixth), in a function where nothing calls with BL but a
+   * call (after which no value is in a register): no division (arm's
+   * DIV and MOD are BL _div), no store through ml_modify, no handler
+   * (ml_try). Saved at the entry, the link is reloaded at the return.
+   * A loop's invariants were reloaded at each turn (mini-doom's span:
+   * its screen, flat, colormap, bound and steps).
+   * old: m.vregs always *)
+  let calls_bl =
+    memory
+    || Hashtbl.fold (fun _ ins acc ->
+         acc
+         || match ins with
+            | Op ((L.Div | L.Mod), _) -> true
+            | SetField (_, _, x, false) | SetIndex (_, _, x, false) ->
+                (match def x with Const _ | Blk _ | Symb _ | Zero -> false | _ -> true)
+            | _ -> false) fn.defs false
+  in
+  let vregs = if m.arch = Arm && not calls_bl then m.vregs @ [ 14 ] else m.vregs in
+  let loc, frame = Alloc.alloc fn ~nregs:(List.length vregs) ~base in
   let slot_ref f i =
     let off = w * (i - f) in
     if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) vsp, "0(R19)" else "", sprintf "%d(R%d)" off vsp
   in
   let get_slot i r = line (fun f _ _ -> let pre, a = slot_ref f i in sprintf "%s\t%s\t%s, R%d\n" pre mov a r) in
   let put_slot r i = line (fun f _ _ -> let pre, a = slot_ref f i in sprintf "%s\t%s\tR%d, %s\n" pre mov r a) in
-  let vreg c = List.nth m.vregs c in
+  let vreg c = List.nth vregs c in
   (* v's register: its own, or v loaded into s *)
   let src v s =
     match loc v with
@@ -277,6 +296,20 @@ let func m out (fn : func) (lf : L.func) =
   let prim v (p : L.t) xs =
     match p, xs with
     (* a string's byte: the index untagged and added to its address *)
+    (* OPTIMIZATION: on arm, an unchecked byte's address is the
+     * instruction's, the index untagged by the shift of its register
+     * offset (5a's R2->1(R1)): one instruction for three (mini-doom's
+     * spans, three bytes a pixel) *)
+    | ByteGet false, [ s; i ] when m.arch = Arm ->
+        let a = src s r1 in let b = src i r2 in let d = dst v r3 in
+        ins "MOVBU\tR%d->1(R%d), R%d" b a d;
+        ins "%s\t$1, R%d" (shift Lsl) d;
+        ins "ORR\t$1, R%d" d;
+        finish v d
+    | ByteSet false, [ s; i; x ] when m.arch = Arm ->
+        let a = src s r1 in let b = src i r2 in let c = src x r3 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) c t;
+        ins "MOVB\tR%d, R%d->1(R%d)" t b a
     | ByteGet checked, [ s; i ] ->
         let a = src s r1 in let b = src i r2 in let d = dst v r3 in
         ins "%s\t$1, R%d, R%d" (shift Asr) b t;
@@ -421,6 +454,34 @@ let func m out (fn : func) (lf : L.func) =
     | (Add | Sub), Some n, _ -> let a = src x r1 in let d = dst v r3 in ins "%s\t$%d, R%d, R%d" (if o = Add then "ADD" else "SUB") (2 * n) a d; finish v d; true
     | Add, None, Some n -> let a = src y r1 in let d = dst v r3 in ins "ADD\t$%d, R%d, R%d" (2 * n) a d; finish v d; true
     | Cmp r, Some _, _ -> let d = dst v r3 in compare_with x y; set_bool r d; finish v d; true
+    (* OPTIMIZATION: x / 2^k and x mod 2^k by shifts, the quotient
+     * toward 0 as OCaml's (a negative x biased by 2^k - 1 first), not a
+     * division: arm's is _div's loop, 32 turns (mini-doom's
+     * fineangles / 4 at each of its sines) *)
+    | (Div | Mod), Some n, _ when n > 1 && n land (n - 1) = 0 ->
+        let k = let rec log i = if 1 lsl i = n then i else log (i + 1) in log 1 in
+        let bits = 8 * w in
+        let a = src x r1 in let d = dst v r3 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) a r2;
+        ins "%s\t$%d, R%d, R%d" (shift Asr) (bits - 1) r2 t;
+        ins "%s\t$%d, R%d" (shift Lsr) (bits - k) t;
+        ins "ADD\tR%d, R%d" r2 t;
+        ins "%s\t$%d, R%d" (shift Asr) k t;
+        (if o = Div then ins "%s\t$1, R%d, R%d" (shift Lsl) t d
+         else begin
+           ins "%s\t$%d, R%d" (shift Lsl) k t;
+           ins "SUB\tR%d, R%d, R%d" t r2 d;
+           ins "%s\t$1, R%d" (shift Lsl) d
+         end);
+        ins "ORR\t$1, R%d" d;
+        finish v d; true
+    (* tagged: 2a+1 and 2n+1 is 2(a land n)+1, the same for or; 2a+1 xor
+     * 2n keeps the tag (mini-doom's x land 63, a span's pixel) *)
+    | (And | Or | Xor), Some n, _ | (And | Or | Xor), None, Some n ->
+        let a = src (if small y <> None then x else y) r1 in let d = dst v r3 in
+        let c = if o = Xor then 2 * n else (2 * n) + 1 in
+        ins "%s\t$%d, R%d, R%d" (match o with And -> "AND" | Or -> "ORR" | _ -> "EOR") c a d;
+        finish v d; true
     | (Lsl | Lsr | Asr), Some n, _ when n < 8 * w - 1 ->
         let a = src x r1 in let d = dst v r3 in
         (match o with
@@ -429,7 +490,7 @@ let func m out (fn : func) (lf : L.func) =
         ins "ORR\t$1, R%d" d; finish v d; true
     | _ -> false
   in
-  Array.iter (fun (b : block) ->
+  Array.iteri (fun i (b : block) ->
     lab (blabel b.id);
     let fuse = fused b in
     fresh := [];
@@ -542,13 +603,27 @@ let func m out (fn : func) (lf : L.func) =
       | Prim (p, xs) -> prim v p xs
       | Caught _ -> finish v 0
       | TryExit k -> at k (3 * w) (fun o -> sprintf "%s\t%d(%s), R%d" mov o m.sp t); ins "%s\tR%d, ml_handler(SB)" mov t) b.body;
+    (* OPTIMIZATION: no jump to the block written next, and a branch to
+     * it the other way round (the condition negated): a jump a loop's
+     * turn in mini-doom's spans, which mini-ld leaves.
+     * old: ins "B\t%s" l always *)
+    let next =
+      if i + 1 < Array.length fn.blocks then blabel fn.blocks.(i + 1).id else "" in
+    let jump l = if l <> next then ins "B\t%s" l in
+    let negate = function L.Eq -> L.Ne | Ne -> Eq | Lt -> Ge | Ge -> Lt | Le -> Gt | Gt -> Le in
     match b.term with
-    | Jmp s -> let l = edge b.id s ~alone:true in ins "B\t%s" l
+    | Jmp s -> let l = edge b.id s ~alone:true in jump l
     | Br (v, tr, fl) ->
         let lt = edge b.id tr ~alone:false and lf = edge b.id fl ~alone:false in
         (match fuse with
-         | Some (r, x, y) -> compare_with x y; ins "B%s\t%s" (cond r) lt; ins "B\t%s" lf
-         | None -> let r = src v r1 in ins "CMP\t$1, R%d" r; ins "BEQ\t%s" lf; ins "B\t%s" lt)
+         | Some (r, x, y) ->
+             compare_with x y;
+             if lt = next then ins "B%s\t%s" (cond (negate r)) lf
+             else (ins "B%s\t%s" (cond r) lt; jump lf)
+         | None ->
+             let r = src v r1 in
+             ins "CMP\t$1, R%d" r;
+             if lt = next then ins "BEQ\t%s" lf else (ins "BNE\t%s" lt; jump lf))
     | Try (k, body, h) ->
         tries := max !tries (k + 1);
         ins "%s\t%s, R0" mov m.sp;

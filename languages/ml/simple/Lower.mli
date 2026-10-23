@@ -147,6 +147,12 @@ val string_eqs : (Ast.span, unit) Hashtbl.t
 (* the places of the comparisons on floats (Typing.floats): Ir.FloatCmp;
  * set before unit_ *)
 val float_cmps : (Ast.span, unit) Hashtbl.t
+(* the functions min and max inlined on ints or floats, with the
+ * relation of their test (Typing records their places too) *)
+val min_max : (string * Ir.rel) list
+(* the globals that are min or max, each with the one it is; set before
+ * unit_ *)
+val min_max_aliases : (string, string) Hashtbl.t
 
 (* a string's byte (checked or not) and its length as
  * instructions (Ir.ByteGet, ByteSet, StrLen), not calls of the runtime:

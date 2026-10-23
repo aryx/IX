@@ -87,8 +87,38 @@ signed_zero(double r, double x)
 	return r;
 }
 
-value ceil_float(value a) { return copy_double(signed_zero(ceil(Double_val(a)), Double_val(a))); }
-value floor_float(value a) { return copy_double(signed_zero(floor(Double_val(a)), Double_val(a))); }
+/* OPTIMIZATION: within an int's range, floor is the processor's
+ * conversion (it truncates toward 0) and one step down for a negative
+ * number that is not whole; the C library's floor is modf's, a bit at a
+ * time (the two, 5% of mini-doom's frame: its spans, its angles).
+ * old: floor (and ceil) of the C library always */
+static double
+ml_floor(double x)
+{
+	double r;
+	int i;
+
+	if(x > -2147483648.0 && x < 2147483647.0){
+		i = x;
+		r = i;
+		if(r > x)
+			r -= 1.0;
+		return r;
+	}
+	return floor(x);
+}
+
+value
+floor_float(value a)
+{
+	return copy_double(signed_zero(ml_floor(Double_val(a)), Double_val(a)));
+}
+
+value
+ceil_float(value a)
+{
+	return copy_double(signed_zero(-ml_floor(-Double_val(a)), Double_val(a)));
+}
 value atan2_float(value a, value b) { return copy_double(atan2(Double_val(a), Double_val(b))); }
 value power_float(value a, value b) { return copy_double(pow(Double_val(a), Double_val(b))); }
 value fmod_float(value a, value b) { return copy_double(ml_fmod(Double_val(a), Double_val(b))); }

@@ -270,3 +270,9 @@ their SIMD and more are beyond its subset (plan_arm.md).
 | program | input | what it does | where, why |
 |---|---|---|---|
 | mini-asm and mini-ld, arm64 | `MOVBU (R1)(R2), R3` and `MOVB R3, (R1)(R2)` (7a's register offset), tried for a byte at an untagged index | assembled and linked without a word: `ldrb w3, [x1]` and `strb w3, [x1]`, the index gone | mini-asm parses the index (Parser_asm's `index`), Arm64.aclass classifies a memory operand by its base and offset alone (7l's register-offset loads and stores are not there). Nothing in the tree used the form (Emit adds the index into a register first). Now an error, `a register index: not on arm64`; the encodings themselves (LDRB/STRB register, 0x38606800 and 0x38206800) not added |
+
+## mini-ml -boxed-floats (arm): float_array never ends (2026-10-26, plan_ml_speed.md)
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| mini-ml -O3 -boxed-floats, arm | `ML_FLAGS='-O3 -boxed-floats' languages/ml/tests/run.sh 5 W languages/ml/tests/runtime/float_array.ml` | the program runs until the test's timeout; arm64 passes, and arm without `-boxed-floats` | open, not looked into. Not stages 1 and 2's: HEAD before them does the same, and with `-tagged-ints`. `-boxed-floats` (Unbox off) is a switch to debug Unbox with, no build uses it |

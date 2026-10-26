@@ -233,8 +233,7 @@ the comparisons that make a boolean before branching on a float's
 (`Emit`'s fused is the integers'), stage 3's. Ledger: mini-ml +473
 (Summary 171 of them), the mkfiles +146, 74 `.depend`.
 
-2026-10-26, **stage 2 done** (the author: "let's do it"), not committed
-yet. `ssa/Untag.mli`: an integer not tagged inside a function where
+2026-10-26, **stage 2 done** (the author: "let's do it"), 683bcee7. `ssa/Untag.mli`: an integer not tagged inside a function where
 its bits are known small (no wrap where the tagged value would): a
 byte read (8 bits), `x asr k` by a constant (one shift of the tagged x
 by k + 1), `x land c` of an untagged x, sums and `lsl` of untagged
@@ -280,3 +279,42 @@ tests/tiny on arm and arm64 at -O3, with ML_HEAP=64 and ML_YOUNG=256
 writes the same assembly as by OCaml (Untag, Emit, Alloc, Lower,
 Typing, CLI, arm and arm64); `make test-lite` in a worktree, 72 jobs, 0
 failures. Ledger: mini-ml +272 (Untag 174 of them with its .mli).
+
+2026-10-26, **stage 3 begun** (the author: "let's do it", then of the
+order: rebirth's floats and xv6's boot before more registers, "yes").
+3a, a float's comparison that a branch alone reads made by the branch
+(Emit's `fused`, `Floats`): `CMPD` then `B.cond`, where the boolean was
+made, then compared with 1 (6 instructions a test on arm, now 3). A
+double's, Unbox's, from its registers; a boxed one's loaded from its
+block. The conditions are FloatCmp's of a nan (`Ne` true, the others
+false: MI, LS, GT, GE), their opposites true of it (PL, HI, LE, LT).
+
+Arm, mini-5i, against e0c26641, the frames the same bytes:
+
+| | HEAD | 3a | |
+|---|---:|---:|---:|
+| mini-doom, a frame (31 to 121) | 9,030,299 | 8,925,890 | 0.988 |
+| mini-quake, a frame | 24,304,574 | 24,169,374 | 0.994 |
+| mini-virtuaracing, a frame | 32,879,638 | 32,197,663 | 0.979 |
+| mini-ml compiling its three units | 6,799,649,193 | 6,799,670,091 | 1 |
+| bench: floats, samples | 7.52 million, 6.41 | 7.33, 6.32 | 0.976, 0.986 |
+
+Checked: tests/runtime and tests/tiny at -O3 on arm and arm64 (arm's
+arith and strings as before); mini-ml by mini-ml writes the same
+assembly for Emit as by OCaml. Ledger: mini-ml +36.
+
+Where the next items go, by two programs the author named ("rebirth
+for instance is very slow; I think xv6 was really slower with mini-ml
+than ocaml-light ocamlopt"):
+
+- mini-rebirth, a second of sound (frames 31 to 91): 5.79 thousand
+  million instructions. The collector, `ml_modify` and the allocations
+  29%: lib_audio's code from the playground keeps its state in float
+  arrays (Diode_ladder.process makes a 4 x 4 matrix and three vectors
+  a sample: `solve` 6.3%); C's `sin` (libc's `sinus`, 8.6%), `exp`,
+  `floor`, `modf`, `ldexp`, `log`, `pow` 20%; ReBirth's spectrum looks
+  at every bin for each of its 90 bars (`iteri`, `bin_frequency` 7%).
+  Mostly lib_audio's and rebirth's own, as 581e1d8d's mixer was.
+- mini-xv6 on QEMU's Pi 4 (`kernels/xv6/numbers.sh`): its session 28.0
+  s against ocaml-light's 21.1 (1.33; 4.4 on 2026-10-02), the boot to
+  `ls` 8.1 s against 3.2: the boot is what is left.

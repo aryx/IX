@@ -43,6 +43,11 @@ type place = In_reg of int | In_slot of int
 type source = At of place | Made of value
 (* a double's: a floating-point register, a slot of the machine stack *)
 type fplace = In_freg of int | In_dslot of int
+(* a branch's comparison, made by the branch (fused): two integers', or
+ * two floats' (true: doubles, Unbox's; false: blocks) *)
+type fused =
+  | Ints of Ir.rel * value * value
+  | Floats of Ir.rel * value * value * bool
 
 let tagged m n =
   let v = Int64.add (Int64.mul 2L (Int64.of_int n)) 1L in
@@ -623,10 +628,18 @@ let func m out (fn : func) (lf : L.func) =
   Array.iter (fun (b : block) ->
     List.iter (fun v -> List.iter read (Ssa_build.operands (Hashtbl.find fn.defs v))) (b.phis @ b.body);
     match b.term with Br (v, _, _) | Ret v | Raise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
+  (* (and of floats: CMPD, then B.cond, where the boolean was made then
+   * compared, 6 instructions a test on arm, 3; mini-doom's View.norm,
+   * mini-virtuaracing's faces) *)
   let fused (b : block) =
     match b.term, List.rev b.body with
     | Br (v, _, _), last :: _ when last = v && Hashtbl.find_opt reads v = Some 1 -> (
-        match Hashtbl.find fn.defs v with Op (Cmp r, [ x; y ]) -> Some (r, x, y) | _ -> None)
+        match Hashtbl.find fn.defs v with
+        | Op (Cmp r, [ x; y ]) -> Some (Ints (r, x, y))
+        | Dprim (FloatCmp r, [ x; y ]) -> Some (Floats (r, x, y, true))
+        | Prim (FloatCmp r, [ x; y ]) when in_place ->
+            Some (Floats (r, x, y, false))
+        | _ -> None)
     | _ -> None
   in
   (* OPTIMIZATION (immediates): a small constant an operand, in the
@@ -889,10 +902,33 @@ let func m out (fn : func) (lf : L.func) =
     | Br (v, tr, fl) ->
         let lt = edge b.id tr ~alone:false and lf = edge b.id fl ~alone:false in
         (match fuse with
-         | Some (r, x, y) ->
+         | Some (Ints (r, x, y)) ->
              compare_with x y;
              if lt = next then ins "B%s\t%s" (cond (negate r)) lf
              else (ins "B%s\t%s" (cond r) lt; jump lf)
+         (* (a float's conditions as FloatCmp's of a nan: Ne true, the
+          * others false; each one's opposite true of it, not (x < y)) *)
+         | Some (Floats (r, x, y, doubles)) ->
+             let fcond = function
+               | L.Eq -> "EQ" | Ne -> "NE" | Lt -> "MI"
+               | Le -> "LS" | Gt -> "GT" | Ge -> "GE" in
+             let fnot = function
+               | L.Eq -> "NE" | Ne -> "EQ" | Lt -> "PL"
+               | Le -> "HI" | Gt -> "LE" | Ge -> "LT" in
+             let fcmp = match m.arch with Arm -> "CMPD" | Arm64 -> "FCMPD" in
+             (if doubles then begin
+                let a = fsrc x 0 in
+                let b = fsrc y 1 in
+                ins "%s\tF%d, F%d" fcmp b a
+              end
+              else begin
+                let a = src x r1 in let b = src y r2 in
+                ins "%s\t0(R%d), F0" fmov a;
+                ins "%s\t0(R%d), F1" fmov b;
+                ins "%s\tF1, F0" fcmp
+              end);
+             if lt = next then ins "B%s\t%s" (fnot r) lf
+             else (ins "B%s\t%s" (fcond r) lt; jump lf)
          | None ->
              let r = src v r1 in
              ins "CMP\t$1, R%d" r;

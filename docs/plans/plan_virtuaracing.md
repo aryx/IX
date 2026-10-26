@@ -279,3 +279,39 @@ the grid, still.
   of 2,000 to 3,000.
 - Not run: mini-5i's count, mini-9pi, the board. games/mkfile builds
   it with the games (`CATEGORIES`); not on the card's image yet.
+
+2026-10-26: **stage 2, the frame measured** (arm, mini-ml -O3, mini-5i,
+the grid's view, the default 320 by 240): a frame **197 million
+instructions** (5 frames less 3, by 2), the budget's 10 to 12 about 17
+times; the start (the course built, the palette, the first frame)
+**7.5 billion**, ten seconds or more on the Pi 2. By `mini-5i -prof`
+and `mini-prof -diff` (3 frames less 1, by 2):
+
+| a frame's part | million | % | what |
+|---|---|---|---|
+| `fill` | 41.5 | 21 | the edges and the rows' setup, floats |
+| `face` | 33.6 | 17 | the frustum's test, the near plane, the projection |
+| the collector (`copy`, `ml_modify`, `ml_alloc`, `minor`, `scan_copies`) | 48 | 25 | every float boxed: each one stored in `vx`, `sx`, `lefts`... a block and a barrier |
+| `draw` | 19.5 | 10 | the corners turned |
+| `span` | 8.5 | 4 | the pixels themselves |
+| `first`, `floor`, `ceil` | 15 | 8 | `Float.ceil` a call of C |
+| the rest | 29 | 15 | `cmp`, `min`, `max`, the cars' `draw_at` |
+
+The pixels are not the cost; the faces are (10,738 a frame, a few
+thousand instructions each), and mini-ml's boxed floats in them: OCaml
+keeps a `float array` flat and a float in a register, mini-ml does
+neither (`plan_playground_speed.md`'s M4, not done). That is the 25
+times OCaml's.
+
+The start: `Track3d.project` 21% and `div` 18% (its `mod`, arm's
+division in software), `hypot` 5%: the trees placed by `Track3d.locate`
+over the whole course for each one (`Course`'s rows), and `Land.make`
+searching every road sample for each point of its grid.
+
+What is cut (the author's choice, 2026-10-26: "mini-ml floats unboxed
+(M4)", over fixed point in `Render`): mini-ml's floats not boxed, a
+`float array` flat and a float kept in a register inside a function
+(`plan_playground_speed.md`'s M4), for every float program, not this
+game's renderer alone; stage 3 waits for it. Besides, in the game:
+the faces turned away dropped, and the start's two searches (the
+trees' `Track3d.locate`, `Land.make`'s samples) made near ones.

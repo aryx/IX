@@ -242,3 +242,31 @@ against 10 to 12. The game's own cuts next: the faces turned away
 dropped, `Float.min` and `Float.max` without their `Int64` (lib_core),
 a constant unboxed in a loop at each turn (Unbox could take it out),
 the start's two searches.
+
+2026-10-26, then (the author: "let's do 1 then 2": mini-virtuaracing's
+frame profiled, then its cheap cuts):
+- **floor and ceil without a call**: Ir's `FloatRound` (Lower's for
+  `floor_float` and `ceil_float`; a call still in simple's code), a
+  double in ssa's (Unbox), Emit's `round`: a double of 2^52 or more,
+  an infinity, a nan, itself; below, x + 2^52 - 2^52 (x - 2^52 + 2^52
+  for a negative x) and one step down or up; a zero x *. 0.0, its sign
+  (the runtime's signed_zero). The same bits as the runtime's
+  (`tests/runtime/floor.ml`: halves, -0., the 32 bits' edges, beyond
+  2^52, infinities, nan). The constants the runtime's `ml_round`; a
+  third scratch register for it (F14 on arm, the values' F2 to F13;
+  F16 on arm64). The profile had ceil's call a fifth of the frame
+  (85,600 a frame, 160 instructions each with its new float).
+- **A word unboxed once**, after its definition, for all its reads;
+  a float literal at the function's entry, once a symbol: a loop's
+  constant no longer loaded at each turn. Found by its tests: an
+  Unbox put between two parameters broke Emit's prologue (it loads
+  them all at the entry, and Alloc gave the second the first's
+  register, the first dead at the Unbox): what follows a parameter
+  now goes after the last one (Unbox's `later`).
+
+Arm, mini-5i: mini-virtuaracing's frame 63.5 million to **53.3**
+(frames 3 to 23), its start to frame 3 2.91 billion to 2.85; the
+benchmarks `floats` 7.97 to 7.73, `samples` 6.61 to 6.60, the others
+the same. Checked: tests/runtime, bench, tiny on arm and arm64, -O3
+and -O0; all 123 recorded frames by mini-ml; mini-ml by mini-ml the
+same assembly (94 files); make test-lite, 70 jobs, 0 failures.

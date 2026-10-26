@@ -103,6 +103,9 @@ type t =
    * (ml_floatarray_get...) but in ssa's code on doubles (Unbox), where
    * it is a load and a store of the processor's *)
   | FloatIndex of bool                (* a float array, an index by the float there *)
+  (* x by its floor, or its ceiling (true): the runtime's floor_float and
+   * ceil_float, which ssa's Unbox makes the processor's (no call) *)
+  | FloatRound of bool
   | FloatSetIndex of bool             (* a float array, an index, a float *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op

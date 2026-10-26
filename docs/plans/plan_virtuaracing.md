@@ -393,3 +393,11 @@ the faces' cost in `face` and `fill` (each a few thousand
 instructions), the land's tiles and the trees as far as 1,300 m (a
 nearer far plane with fog, decision 9's processor later), and the
 start's `Land` and meshes.
+
+2026-10-26, last: a frame profiled (arm, frames 3 to 13): `fill` 26%,
+`face` 20%, ceil's call 22% (`first`'s, 85,600 a frame), `span` 10%,
+`draw` 8%. mini-ml's floor and ceil now without a call, and a loop's
+float constants unboxed once (`plan_ml_floats.md`): **53.3 million a
+frame** (63.5). Left: `fill` and `face`, a few thousand instructions
+a face; the far plane (1,300 m of land and trees) the author's to
+choose.

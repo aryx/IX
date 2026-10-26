@@ -87,6 +87,10 @@ signed_zero(double r, double x)
 	return r;
 }
 
+/* the compiled code's floor and ceil (ssa's Emit, its round): 2^52,
+ * -2^52, 1.0, 0.0 */
+double ml_round[4] = { 4503599627370496.0, -4503599627370496.0, 1.0, 0.0 };
+
 /* OPTIMIZATION: within an int's range, floor is the processor's
  * conversion (it truncates toward 0) and one step down for a negative
  * number that is not whole; the C library's floor is modf's, a bit at a

@@ -18,7 +18,7 @@ let func (fn : func) : func =
     let mark v = Hashtbl.replace fn.doubles v () in
     (* the doubles: the floats made, then the phis that one reaches *)
     Array.iter (fun (b : block) ->
-      List.iter (fun v -> match def v with Prim ((Ir.Float2 _ | FloatOfInt | FloatIndex _), _) -> mark v | _ -> ()) b.body) fn.blocks;
+      List.iter (fun v -> match def v with Prim ((Ir.Float2 _ | FloatOfInt | FloatIndex _ | FloatRound _), _) -> mark v | _ -> ()) b.body) fn.blocks;
     let changed = ref true in
     while !changed do
       changed := false;
@@ -32,7 +32,7 @@ let func (fn : func) : func =
      * and a comparison or a conversion with a double operand *)
     let converted v =
       match def v with
-      | Prim ((Ir.Float2 _ | FloatOfInt | FloatIndex _), _) -> double v
+      | Prim ((Ir.Float2 _ | FloatOfInt | FloatIndex _ | FloatRound _), _) -> double v
       | Prim ((FloatCmp _ | IntOfFloat), xs) -> List.exists double xs
       | Prim (FloatSetIndex _, _) -> true
       | _ -> false
@@ -49,11 +49,35 @@ let func (fn : func) : func =
     let boxes = Hashtbl.create 16 in
     let boxed x = if double x then (match Hashtbl.find_opt boxes x with Some b -> b | None -> let b = fresh (Box x) in Hashtbl.replace boxes x b; b) else x in
     let words xs = List.iter (fun x -> ignore (boxed x)) xs in
+    (* OPTIMIZATION (unbox once): a word read as a double, unboxed once,
+     * after its definition, for all its reads: a loop's constant (a
+     * float literal, a parameter, a field read before it) loaded once,
+     * not at each turn (mini-virtuaracing's draw, its eye's vectors). A
+     * literal (a static block, made where it is read: Lower) unboxed at
+     * the function's entry, once for all its reads.
+     * old: an Unbox before each Dprim that reads it *)
+    let unboxes = Hashtbl.create 16 and literals = Hashtbl.create 16 and entry = ref [] in
+    let unboxed x =
+      if double x then x
+      else
+        match def x with
+        | Blk sym -> (
+            match Hashtbl.find_opt literals sym with
+            | Some u -> u
+            | None ->
+                let u = fresh (Unbox (fresh (Blk sym))) in
+                mark u; Hashtbl.replace literals sym u; entry := u :: !entry; u)
+        | _ -> (
+            match Hashtbl.find_opt unboxes x with
+            | Some u -> u
+            | None -> let u = fresh (Unbox x) in mark u; Hashtbl.replace unboxes x u; u)
+    in
     Array.iter (fun (b : block) ->
       List.iter (fun v ->
         match def v with
         | Phi ops -> if not (double v) then words (List.map snd ops)
-        | _ when converted v -> ()
+        | Prim (p, xs) when converted v ->
+            List.iter2 (fun x f -> if f then ignore (unboxed x)) xs (floats p xs)
         | ins -> words (Ssa_build.operands ins)) (b.phis @ b.body);
       match b.term with
       | Br (x, _, _) | Ret x | Raise x -> words [ x ]
@@ -65,17 +89,27 @@ let func (fn : func) : func =
     Array.iter (fun (b : block) ->
       let body = ref [] in
       let push v = body := v :: !body in
-      let box_after v = match Hashtbl.find_opt boxes v with Some bx -> push bx | None -> () in
+      let box_after v =
+        (match Hashtbl.find_opt boxes v with Some bx -> push bx | None -> ());
+        match Hashtbl.find_opt unboxes v with Some u -> push u | None -> ()
+      in
       List.iter box_after b.phis;
+      (* (nothing between the parameters: Emit loads them all at the
+       * entry, and Alloc may give a later one a register an earlier one
+       * leaves; what follows them goes after the last) *)
+      let later = ref [] in
       List.iter (fun v ->
         (match def v with
+         | Param _ -> ()
+         | _ -> List.iter box_after (List.rev !later); later := []);
+        (match def v with
          | Prim (p, xs) when converted v ->
-             let operand x = if double x then x else (let u = fresh (Unbox x) in mark u; push u; u) in
-             let xs = List.map2 (fun x f -> if f then operand x else x) xs (floats p xs) in
+             let xs = List.map2 (fun x f -> if f then unboxed x else x) xs (floats p xs) in
              Hashtbl.replace fn.defs v (Dprim (p, xs))
          | ins -> Hashtbl.replace fn.defs v (Ssa_build.map_ins boxed ins));
         push v;
-        box_after v) b.body;
+        match def v with Param _ -> later := v :: !later | _ -> box_after v) b.body;
+      List.iter box_after (List.rev !later);
       b.body <- List.rev !body;
       b.term <- Ssa_build.map_term boxed b.term;
       (* a double phi's word operands, unboxed at their predecessors'
@@ -91,5 +125,8 @@ let func (fn : func) : func =
             Hashtbl.replace fn.defs phi (Phi ops)
         | _ -> ()) b.phis) fn.blocks;
     Array.iteri (fun i (b : block) -> b.body <- b.body @ ends.(i)) fn.blocks;
+    (* the literals' blocks and unboxes first in the entry *)
+    let lits = List.concat_map (fun u -> match def u with Unbox b -> [ b; u ] | _ -> [ u ]) (List.rev !entry) in
+    if Array.length fn.blocks > 0 then fn.blocks.(0).body <- lits @ fn.blocks.(0).body;
     fn
   end

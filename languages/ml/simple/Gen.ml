@@ -366,6 +366,7 @@ let func m out (fn : func) =
      * written (ssa's Unbox: the processor's load and store) *)
     | FloatIndex c -> spill (); call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") 2; reload (); result ()
     | FloatSetIndex c -> spill (); call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") 3; reload ()
+    | FloatRound c -> spill (); call_c (if c then "ceil_float" else "floor_float") 1; reload (); result ()
     | FloatOfInt when in_place () ->
         ins "%s\t$1, R%d, R%d" (shift Asr) !sp m.tmp;
         ins "%s\tR%d, F0" (match m.arch with Arm -> "MOVWD" | Arm64 -> "SCVTFD") m.tmp;

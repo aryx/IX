@@ -20,6 +20,7 @@ type mach = {
   regs : int list;          (* the scratch registers *)
   vregs : int list;         (* the values' (Alloc's) *)
   fregs : int list;         (* the doubles' (Unbox's), floating-point *)
+  fscratch : int;           (* a third scratch one, beside F0 and F1 (round) *)
 }
 
 (* the values' registers: no value is in one across a call (Alloc's
@@ -28,11 +29,12 @@ type mach = {
  * call of _div, which keeps R0-R3, R4-R8 untouched
  * old: arm's none, arm64's R20-R25 *)
 let arm = { arch = Arm; w = 4; mov = "MOVW"; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; nregs = 8; regs = [ 1; 2; 3 ];
-            vregs = [ 4; 5; 6; 7; 8 ]; fregs = List.init 13 (fun i -> i + 2) }
+            vregs = [ 4; 5; 6; 7; 8 ]; fregs = List.init 12 (fun i -> i + 2); fscratch = 14 }
 let arm64 = { arch = Arm64; w = 8; mov = "MOV"; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; nregs = 15; regs = [ 1; 2; 3 ];
               vregs = [ 20; 21; 22; 23; 24; 25; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15 ];
-              fregs = List.init 14 (fun i -> i + 2) }
-(* (F0 and F1 the scratch ones; arm's F15 the linker's, 5l's FREGTMP) *)
+              fregs = List.init 14 (fun i -> i + 2); fscratch = 16 }
+(* (F0, F1 and fscratch the scratch ones; arm's F15 the linker's, 5l's
+ * FREGTMP) *)
 let sprintf = Printf.sprintf
 
 (* a parallel move's: where a value goes (a register, a slot), what it
@@ -460,6 +462,7 @@ let func m out (fn : func) (lf : L.func) =
     | IntOfFloat, _ -> call_c "caml_intoffloat" xs; finish v 0
     | FloatIndex c, _ -> call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") xs; finish v 0
     | FloatSetIndex c, _ -> call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") xs
+    | FloatRound c, _ -> call_c (if c then "ceil_float" else "floor_float") xs; finish v 0
     | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
   in
   (* the same on doubles (Unbox), the operands' and the result's
@@ -502,6 +505,39 @@ let func m out (fn : func) (lf : L.func) =
     | FloatSetIndex c, [ a; i; x ] ->
         let bb = src a r1 in load i r2; findex c bb r2;
         ins "%s\tF%d, 0(R%d)" fmov (fsrc x 0) r2
+    (* floor (or ceil) without a call: a double of 2^52 or more is whole
+     * already (and an infinity, and nan: x itself); below, x + 2^52 -
+     * 2^52 (x - 2^52 + 2^52 for a negative x) is x rounded to a whole
+     * number, then one step down (up) if it went past x; a zero result
+     * x times 0.0, the zero of x's sign (the runtime's signed_zero).
+     * The constants the runtime's ml_round: 2^52, -2^52, 1.0, 0.0 *)
+    | FloatRound up, [ x ] ->
+        let xr = fsrc x m.fscratch in
+        let big = glabel () and neg = glabel () and round = glabel () and ok = glabel () and fin = glabel () in
+        let k off = ins "%s\t%d(R%d), F1" fmov off t in
+        let cmp a b = ins "%s\tF%d, F%d" (match m.arch with Arm -> "CMPD" | Arm64 -> "FCMPD") a b in
+        let op name a b d =
+          ins "%s\tF%d, F%d, F%d" (match m.arch with Arm -> name | Arm64 -> "F" ^ name) a b d in
+        ins "%s\t$ml_round(SB), R%d" mov t;
+        k 0; cmp 1 xr; ins "BPL\t%s" big;
+        k 8; cmp 1 xr; ins "BLE\t%s" big;
+        k 0;
+        ins "%s\t24(R%d), F0" fmov t;
+        cmp 0 xr; ins "BLT\t%s" neg;
+        op "ADDD" 1 xr 0; op "SUBD" 1 0 0; ins "B\t%s" round;
+        lab neg;
+        op "SUBD" 1 xr 0; op "ADDD" 1 0 0;
+        lab round;
+        k 16;
+        cmp xr 0;
+        if up then (ins "BGE\t%s" ok; op "ADDD" 1 0 0) else (ins "BLE\t%s" ok; op "SUBD" 1 0 0);
+        lab ok;
+        k 24; cmp 1 0; ins "BNE\t%s" fin;
+        op "MULD" 1 xr 0; ins "B\t%s" fin;
+        lab big;
+        ins "%s\tF%d, F0" fmov xr;
+        lab fin;
+        ffinish v 0
     | _ -> failwith (fn.name ^ ": ssa: a double's operation")
   in
   incr funcs;

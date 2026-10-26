@@ -17,7 +17,7 @@ let term_uses (b : block) = match b.term with Br (v, _, _) | Ret v | Raise v -> 
 let safepoint = function
   | Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true
   (* a new float: the runtime's when there is no room *)
-  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _), _) | Box _ -> true
+  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _), _) | Box _ -> true
   | _ -> false
 
 (* the instructions after which no double is in a register: a call of
@@ -27,7 +27,8 @@ let safepoint = function
  * ml_modify and the C library's assembly use none, so an allocation
  * keeps them) *)
 let clobbers = function
-  | Call _ | CallC _ | Op (Ir.Poly _, _) | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatSetIndex _), _) -> true
+  | Call _ | CallC _ | Op (Ir.Poly _, _)
+  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatSetIndex _ | FloatRound _), _) -> true
   | _ -> false
 
 let def (fn : func) v = Hashtbl.find fn.defs v

@@ -326,6 +326,9 @@ let prim imm p n =
   | "%floatarray_safe_set" | "%floatarray_unsafe_set" ->
       emit (FloatSetIndex (p = "%floatarray_safe_set")); emit (Int 0)
   | "%floatarray_length" -> emit (CallC ("ml_floatarray_length", 1))
+  (* floor and ceil: Ir's own, a call still in simple's code, the
+   * processor's in ssa's on doubles (Emit's round) *)
+  | "floor_float" | "ceil_float" when !floats_in_place -> emit (FloatRound (p = "ceil_float"))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p
   | _ -> emit (CallC (p, n))
 

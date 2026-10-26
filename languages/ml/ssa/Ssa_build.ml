@@ -53,6 +53,7 @@ let arity : L.t -> int * int = function
   | ByteGet _ -> 2, 1
   | ByteSet _ | FloatSetIndex _ -> 3, 0
   | FloatIndex _ -> 2, 1
+  | FloatRound _ -> 1, 1
   | StrLen -> 1, 1
   | Float2 _ | FloatCmp _ -> 2, 1
   | Float1 _ | FloatOfInt | IntOfFloat -> 1, 1
@@ -168,7 +169,7 @@ let build (f : L.func) =
       (* old: each a call of the runtime's (ml_string_get, caml_addfloat...)
        *   | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs))) *)
       | ByteSet _ | FloatSetIndex _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
-      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ | FloatIndex _ ->
+      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ | FloatIndex _ | FloatRound _ ->
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
@@ -350,6 +351,7 @@ let show_ins ins =
         | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat"
         | FloatCmp r -> "float" ^ L.show_rel r
         | FloatIndex c -> if c then "findex?" else "findex"
+        | FloatRound c -> if c then "ceil" else "floor"
         | FloatSetIndex c -> if c then "setfindex?" else "setfindex" | _ -> "prim" in
       Printf.sprintf "%s%s %s" name (match ins with Dprim _ -> "(d)" | _ -> "") (vs l)
   | Unbox v -> Printf.sprintf "unbox v%d" v

@@ -4,8 +4,8 @@
  * x *. y +. z made two, the first read once by the second then left to
  * the collector; here it is none, and one if the sum leaves as a word.
  *
- * The doubles: what Float2 and FloatOfInt make (a sum, a product, a
- * float of an int...), and a phi with a double among its operands (a
+ * The doubles: what Float2, FloatOfInt, FloatIndex and FloatRound make
+ * (a sum, a product, a float of an int, a Float.Array's, a floor...), and a phi with a double among its operands (a
  * loop's float, in a ref that Opti's refs made a slot). Each such Prim
  * is a Dprim, its float operands doubles: a double as it is, a word
  * unboxed where it is read (Unbox, its block's two words loaded); and

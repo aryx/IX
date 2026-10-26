@@ -104,7 +104,7 @@ let frame (g : t) (dt : float) (attack : bool) (impulse : int) : unit =
       let before = e.origin in
       Physics.run w e dt;
       if e.trail > 0 && not e.removed then
-        effect w (Trail (before, e.origin, e.trail));
+        burst w (Trail (before, e.origin, e.trail));
       if e.trigger && (not e.removed) && c.phealth > 0. && in_box w e then
         e.touch w e The_player)
     w.ents;
@@ -118,7 +118,7 @@ let frame (g : t) (dt : float) (attack : bool) (impulse : int) : unit =
   c.bonus_count <- Float.max 0. (c.bonus_count -. (2. *. dt));
   let now = time w in
   List.iter
-    (fun (x : effect) ->
+    (fun (x : burst) ->
       match x with
       | Blood (o, n) -> Particles.blood g.particles now o n
       | Gunshot o -> Particles.gunshot g.particles now o

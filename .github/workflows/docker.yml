@@ -18,6 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      # (both versions to the end: one failing does not hide the other's
+      # result; docs/plans/plan_tests.md)
+      fail-fast: false
       matrix:
         ocaml:
           - 4.14.2

@@ -119,7 +119,7 @@ and weapon =
 
 and sound = { sfx : string; at : vec option; attenuation : float }
 
-and effect =
+and burst =
   | Blood of vec * int
   | Gunshot of vec
   | Explosion of vec
@@ -132,7 +132,7 @@ and world = {
   mutable next_id : int;
   client : client;
   mutable sounds : sound list;
-  mutable effects : effect list;
+  mutable effects : burst list;
   mutable sight_entity : t option;
   mutable sight_time : float;
   models : string -> Alias.t option;
@@ -206,7 +206,7 @@ let sound (w : world) (at : vec option) (sfx : string) (attenuation : float) :
   if sfx <> "" then w.sounds <- { sfx; at; attenuation } :: w.sounds
 
 let say (w : world) (s : string) : unit = w.message <- Some (s, w.play.time)
-let effect (w : world) (x : effect) : unit = w.effects <- x :: w.effects
+let burst (w : world) (x : burst) : unit = w.effects <- x :: w.effects
 let time (w : world) : float = w.play.time
 
 let where (w : world) (who : who) : vec * vec * vec =

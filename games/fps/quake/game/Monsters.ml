@@ -388,9 +388,9 @@ let enforcer_layout =
 let laser_touch (w : world) (e : t) (other : who) : unit =
   sound w (Some e.origin) "enforcer/enfstop" 1.;
   (match other with
-  | Nobody -> effect w (Gunshot e.origin)
+  | Nobody -> burst w (Gunshot e.origin)
   | _ ->
-      effect w (Blood (e.origin, 15));
+      burst w (Blood (e.origin, 15));
       Combat.damage w other e.origin e.owner 15.);
   remove w e
 

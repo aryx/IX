@@ -82,9 +82,9 @@ let fire_axe (w : world) : unit =
     match t.what with
     | Nobody ->
         sound w (Some at) "player/axhit2" 1.;
-        effect w (Gunshot at)
+        burst w (Gunshot at)
     | hit ->
-        effect w (Blood (at, 20));
+        burst w (Blood (at, 20));
         Combat.damage w hit src The_player 20.
   end
 
@@ -92,7 +92,7 @@ let fire_axe (w : world) : unit =
 let spike_touch (w : world) (e : t) (other : who) : unit =
   (match other with
   | Nobody ->
-      effect w (Gunshot e.origin);
+      burst w (Gunshot e.origin);
       let r = random w in
       sound w (Some e.origin)
         (if r < 0.25 then "weapons/tink1"
@@ -101,7 +101,7 @@ let spike_touch (w : world) (e : t) (other : who) : unit =
          else "weapons/ric3")
         1.
   | _ ->
-      effect w (Blood (e.origin, 9));
+      burst w (Blood (e.origin, 9));
       Combat.damage w other e.origin e.owner 9.);
   remove w e
 
@@ -113,7 +113,7 @@ let rocket_touch (w : world) (e : t) (other : who) : unit =
     remove w e;
     Combat.radius_damage w e.origin e.owner 120. other;
     sound w (Some e.origin) "weapons/r_exp3" 1.;
-    effect w (Explosion e.origin)
+    burst w (Explosion e.origin)
   end
 
 (* GrenadeTouch: on a monster, at once; else a bounce's sound *)

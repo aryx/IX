@@ -35,8 +35,8 @@ let ramp3 = [| 0x6d; 0x6b; 6; 5; 4; 3 |]
 let add (p : t) (x : particle) : unit = p.all <- x :: p.all
 
 (* R_RunParticleEffect *)
-let effect (p : t) (time : float) (org : vec) (color : int) (count : int) : unit
-    =
+let run_effect (p : t) (time : float) (org : vec) (color : int) (count : int)
+    : unit =
   for _i = 1 to count do
     add p
       {
@@ -55,9 +55,10 @@ let effect (p : t) (time : float) (org : vec) (color : int) (count : int) : unit
   done
 
 let blood (p : t) (time : float) (org : vec) (count : int) : unit =
-  effect p time org 73 (2 * count)
+  run_effect p time org 73 (2 * count)
 
-let gunshot (p : t) (time : float) (org : vec) : unit = effect p time org 0 20
+let gunshot (p : t) (time : float) (org : vec) : unit =
+  run_effect p time org 0 20
 
 let explosion (p : t) (time : float) (org : vec) : unit =
   for i = 1 to 1024 do

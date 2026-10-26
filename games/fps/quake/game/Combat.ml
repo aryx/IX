@@ -140,7 +140,7 @@ let explode (w : world) (e : t) : unit =
     remove w e;
     radius_damage w e.origin e.owner 120. Nobody;
     sound w (Some e.origin) "weapons/r_exp3" 1.;
-    effect w (Explosion e.origin)
+    burst w (Explosion e.origin)
   end
 
 (*****************************************************************************)
@@ -168,9 +168,9 @@ let fire_bullets (w : world) (shooter : who) (src : vec) (dir : vec) (n : int)
     if t.fraction < 1. && not t.sky then begin
       let at = sub t.endpos (scale 4. d) in
       match t.what with
-      | Nobody -> effect w (Gunshot at)
+      | Nobody -> burst w (Gunshot at)
       | hit ->
-          effect w (Blood (at, 8));
+          burst w (Blood (at, 8));
           damage w hit src shooter 4.
     end
   done

@@ -176,7 +176,7 @@ and weapon =
 and sound = { sfx : string; at : Model.vec option; attenuation : float }
 
 (* a burst of particles (r_part.c's effects) *)
-and effect =
+and burst =
   | Blood of Model.vec * int (* where, how many *)
   | Gunshot of Model.vec
   | Explosion of Model.vec
@@ -190,7 +190,7 @@ and world = {
   mutable next_id : int;
   client : client;
   mutable sounds : sound list; (* the last first *)
-  mutable effects : effect list;
+  mutable effects : burst list;
   mutable sight_entity : t option; (* a monster that saw the player, and when *)
   mutable sight_time : float;
   models : string -> Alias.t option; (* progs/x.mdl, read once *)
@@ -220,8 +220,8 @@ val sound : world -> Model.vec option -> string -> float -> unit
 (* [say w s]: centerprint *)
 val say : world -> string -> unit
 
-(* [effect w x] *)
-val effect : world -> effect -> unit
+(* [burst w x] *)
+val burst : world -> burst -> unit
 
 (* the time (Play's) *)
 val time : world -> float

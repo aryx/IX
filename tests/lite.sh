@@ -159,6 +159,40 @@ tiny_kernel() {
   done
 }
 job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
+# t-ix building in itself, a small part (plan_tests.md; make self-quick
+# 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
+# by cc and as, its object the host's (read from the disk by
+# TinyKernelFS_tests' Cat); Stdlib.ml by ml -c and as, the host's; and
+# a program without libc linked by ld and run. 22 s
+tiny_self() {
+  local o=$W/tiny-self m="tiny-machine -date 820540800 -seed 1"
+  local cat=_build/default/tiny/tests/TinyKernelFS_tests/Cat.exe
+  make -s -C tiny/TinyKernel O=$o $o/boot.img || return 1
+  rm -f $o/self.img; truncate -s 64M $o/self.img
+  timeout 120 $m -d $o/self.img $o/boot.img > $o/self.out <<'END'
+rc
+mkdir q; cd q
+cc -o ping.tm /src/TinyKernel/user/ping.c
+as -o ping.o ping.tm
+ml -c -nostdlib -o Stdlib.tm /src/TinyLibCore/Stdlib.ml
+as -o Stdlib.o Stdlib.tm
+cmp Stdlib.tmi /lib/ml/Stdlib.tmi && cmp Stdlib.o /lib/ml/Stdlib.o && echo Stdlib: the host
+echo 'int main(void) { return 6 * 7; }' > m.c
+cc -o m.tm m.c; as -o m.o m.tm
+as -o start.o /src/TinyCRuntime/start.tm
+as -o udivmod.o /src/TinyCRuntime/udivmod.tm
+as -o sys.o /src/TinyKernel/libc/sys.tm
+ld -n -o m start.o udivmod.o sys.o m.o
+./m; echo m: status $status
+exit
+END
+  grep -q 'Stdlib: the host' $o/self.out &&
+    grep -q 'm: status 42' $o/self.out ||
+    { echo "tiny-kernel: not the host's Stdlib, or m not run:"; cat $o/self.out; return 1; }
+  $cat $o/self.img usr/glenda/q/ping.o | cmp - $o/user/ping.o ||
+    { echo "tiny-kernel: ping.o not the host's"; return 1; }
+}
+job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
 
 group m-ix
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000

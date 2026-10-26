@@ -279,6 +279,18 @@ And the full build faster, besides the gate:
 4. **Measured**: the self build on the host for each system; a self
    smoke test inside each; dune's build from nothing in a private copy
    (for `-index`). What fits goes in the gate.
+   Done for t-ix: TinyKernel's self-quick 167 s on one core (bin/ping
+   48 s: all of libc.c; lib/Stdlib.o 80 s: the library's 17 units, one
+   Buildfile recipe), so the gate calls the tools directly: lite.sh's
+   "t-ix built in tiny-kernel: cc, as, ml, ld, a part", on a disk of its
+   own, ping.c by cc and as (its .tm and .o the host's, read from the
+   disk by TinyKernelFS_tests' Cat), Stdlib.ml by ml -c and as (the
+   host's /lib/ml/Stdlib.o and .tmi), a C program without libc linked
+   by ld and run (status 42); 24 s alone, 32 s in make test (120 jobs,
+   0 failures, 123 s). The Buildfile itself is not run there
+   (self-quick and self do). For m-ix: self-quick needs make
+   card-self (mini-9pi by ix and a card of 1 GB with ix's sources, in
+   kernels/9pi/build/, the sessions'), principia and QEMU; to decide.
 5. **`make test` and `test-quick` gone**, their jobs placed;
    Done in part: `make test` is the gate (`test: test-lite`, the author:
    "have make test, run by default this lite.sh", "the default make

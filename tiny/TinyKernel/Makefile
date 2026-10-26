@@ -59,7 +59,9 @@
 #   make self-quick   a few of its targets, the same way (3 minutes)
 #   MEMORY=segments   any of these with the processes in segments, their
 #                     text shared (plan_tiny_memory.md; partitions by
-#                     default): /lib/memory in the image, under _make-segments
+#                     default): /lib/memory in the image, under _make-segments;
+#   MEMORY=pages      or in pages, given when touched, a fork's shared
+#                     until written, under _make-pages
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
@@ -105,7 +107,9 @@ MACHINE = tiny-machine
 
 # how the kernel gives the processes memory (TinyKernelMemory.mli)
 MEMORY = partitions
-O = $(if $(filter segments,$(MEMORY)),_make-segments,_make)
+O = $(if $(filter segments pages,$(MEMORY)),_make-$(MEMORY),_make)
+# /lib/memory, its size: the word and a newline
+MEMSIZE = $(if $(filter segments,$(MEMORY)),9,6)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
@@ -410,7 +414,7 @@ boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES
 	for(f in $$LIBFILES) { n=`{wc -c < lib/$$f}; echo lib/ml/$$f; echo $$n; cat lib/$$f } >> $$target
 	for(u in $$UTILS) { echo bin/$$u; echo link bin/utils } >> $$target
 	{ $(foreach l,$(LINKS),echo bin/$(firstword $(subst :, ,$(l))); echo link bin/$(lastword $(subst :, ,$(l)));) } >> $$target
-	$(if $(filter segments,$(MEMORY)),{ echo lib/memory; echo 9; echo segments } >> $$target)
+	$(if $(filter segments pages,$(MEMORY)),{ echo lib/memory; echo $(MEMSIZE); echo $(MEMORY) } >> $$target)
 	echo >> $$target
 
 # the library at once, each module after the ones before it
@@ -480,7 +484,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%)
 	for f in $(LIBFILES); do printf 'lib/ml/%s\n%d\n' $$f $$(wc -c < $(O)/lib/$$f) >> $@; cat $(O)/lib/$$f >> $@; done
 	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
-	$(if $(filter segments,$(MEMORY)),printf 'lib/memory\n9\nsegments\n' >> $@)
+	$(if $(filter segments pages,$(MEMORY)),printf 'lib/memory\n$(MEMSIZE)\n$(MEMORY)\n' >> $@)
 	printf '\n' >> $@
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
 

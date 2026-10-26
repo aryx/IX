@@ -381,6 +381,9 @@ type machine = {
   (* this core's instructions so far: in user mode, in the kernel, and
    * the kernel's idle (see [ticks]) *)
   spent : int array;
+  (* the pages' translations last used in user mode, by page number:
+   * the number (-1: none) and its entry (see [translate]) *)
+  tlb_tag : int array; tlb_pte : int array;
 }
 
 (* whether this core is core 0, which the devices are wired to *)
@@ -439,6 +442,16 @@ let check mc access a =
   then raise (Trap (c_fault, a))
   else a
 
+(* the translations' cache: 64 pages, a page in the slot of its
+ * number's low bits; emptied when satp is written *)
+let tlb_size = 64
+let tlb_flush mc = Array.fill mc.tlb_tag 0 tlb_size (-1)
+(* satp's bit 30 (tiny-kernel's pages, plan_tiny_memory.md): the pages
+ * for user mode only, the supervisor's addresses physical, as the
+ * PDP-11 had a set of mapping registers for its kernel and another for
+ * its user; the bit clear, both translated (v6's way) *)
+let user_only = 0x40000000
+
 (* Pages (v6's): Sv32, RISC-V's 32-bit scheme (xv6's vm.c walks Sv39,
  * the 64-bit one: three levels of 9 bits for these two). With satp's
  * top bit set, an address is 10 bits of the root table's index, 10 of
@@ -449,27 +462,52 @@ let check mc access a =
  * tables anyway). Else a fault, the address in tval. Off (satp's top
  * bit clear), the window, as v0 has it. The pc stays below the
  * memory's size (the CPU keeps it modulo), so the virtual addresses a
- * program runs at do too. *)
-let translate mc (m : TinyMachineCPU.machine) access va =
+ * program runs at do too. In user mode a page's entry is kept in the
+ * cache, a walk of two loads saved at each access but the first: a
+ * kernel that changes the tables writes satp before it runs the
+ * process again (RISC-V's sfence.vma). *)
+(* va's page's entry by the tables, from the root at satp (a fault
+ * without one) *)
+let tables (m : TinyMachineCPU.machine) sat va =
+  let entry at =
+    if not (TinyMachineCPU.ult at memsize) then raise (Trap (c_fault, va));
+    TinyMachineCPU.load m TinyMachineISA.W at in
+  let e1 = entry (((sat land 0x3fffff) lsl 12) + (4 * (va lsr 22))) in
+  if e1 land 1 = 0 || e1 land 14 <> 0 then raise (Trap (c_fault, va));
+  entry (((e1 lsr 10) lsl 12) + (4 * ((va lsr 12) land 0x3ff)))
+
+let walk mc m access va =
   let sat = mc.csr.(satp) in
-  if sat land 0x80000000 = 0 then check mc access va
+  if sat land user_only <> 0 && supervisor mc then check mc access va
   else begin
     let va = TinyMachineCPU.m32 va in
-    let fault () = raise (Trap (c_fault, va)) in
-    let entry at =
-      if not (TinyMachineCPU.ult at memsize) then fault ();
-      TinyMachineCPU.load m TinyMachineISA.W at in
-    let e1 = entry (((sat land 0x3fffff) lsl 12) + (4 * (va lsr 22))) in
-    if e1 land 1 = 0 || e1 land 14 <> 0 then fault ();
-    let e0 = entry (((e1 lsr 10) lsl 12) + (4 * ((va lsr 12) land 0x3ff))) in
+    let vpn = va lsr 12 in
+    let k = vpn land (tlb_size - 1) in
+    let e0 =
+      if supervisor mc then tables m sat va
+      else if mc.tlb_tag.(k) = vpn then mc.tlb_pte.(k)
+      else begin
+        let e = tables m sat va in
+        if e land 1 <> 0 then (mc.tlb_tag.(k) <- vpn; mc.tlb_pte.(k) <- e);
+        e
+      end in
     let needed = match access with Read -> 2 | Write -> 4 | Exec -> 8 in
     if e0 land 1 = 0 || e0 land needed = 0
        || (not (supervisor mc) && e0 land 16 = 0)
-    then fault ();
+    then raise (Trap (c_fault, va));
     let pa = ((e0 lsr 10) lsl 12) lor (va land 0xfff) in
-    if not (TinyMachineCPU.ult pa memsize) then fault ();
+    if not (TinyMachineCPU.ult pa memsize) then raise (Trap (c_fault, va));
     pa
   end
+
+(* (one test, and the pages' walk a function of its own, which looks at
+ * user_only: in the host's instructions of tiny-kernel's toolchain
+ * session, with partitions, translate with the walk and the cache in
+ * it and user_only tested here 301.2 thousand million, this 292.9, the
+ * walk in it without a cache, before the pages, 296.7) *)
+let translate mc m access va =
+  if mc.csr.(satp) land 0x80000000 = 0 then check mc access va
+  else walk mc m access va
 
 (* the cores' interrupt: core k's raised, from this one *)
 let ipi_send mc k =
@@ -565,10 +603,12 @@ let extra mc (m : TinyMachineCPU.machine) w =
     | 0x3e ->
         let old = read k and v = m.r.(a) in
         if not (read_only k) then c.(k) <- v;
+        if k = satp then tlb_flush mc;
         if d <> 0 then m.r.(d) <- old;
         next ()
     | 0x3b ->
         if not (read_only k) then c.(k) <- m.r.(a);
+        if k = satp then tlb_flush mc;
         if k = ie_csr && c.(k) land i_console <> 0 then mc.on_open mc.cons;
         next ()
     | _ ->
@@ -634,7 +674,8 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
             flying = [] };
     speaker = { ring_at = 0; played = 0; since = 0 }; hear;
     send = (match send with Some f -> f | None -> ignore); touched = false;
-    ipis = Array.init !cores (fun _ -> Atomic.make 0); spent = [| 0; 0; 0 |] }
+    ipis = Array.init !cores (fun _ -> Atomic.make 0); spent = [| 0; 0; 0 |];
+    tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
 (* core k, k > 0: its registers, its pc at 0 and its registers of
  * control, as core 0's at the start; the memory, the devices and the
@@ -648,7 +689,8 @@ let core mc k =
   let r = Array.make 16 0 in
   r.(TinyMachineISA.sp) <- devices;
   { mc with cpu = { r; pc = 0; mem = mc.cpu.mem }; csr = c; events = [];
-            touched = false; spent = [| 0; 0; 0 |] }
+            touched = false; spent = [| 0; 0; 0 |];
+            tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
 (* the speaker's samples due, to [hear]: the host's, between two ticks *)
 let speaker_hear mc = speaker_play mc.speaker mc.cpu mc.csr.(time) mc.hear
@@ -770,7 +812,8 @@ let idle_word = TinyMachineISA.encode (TinyMachineISA.Jal (0, -1))
 let what mc =
   let m = mc.cpu in
   if not (supervisor mc) then 0
-  else if mc.csr.(satp) land 0x80000000 = 0
+  else if (mc.csr.(satp) land 0x80000000 = 0   (* the kernel's pc physical *)
+           || mc.csr.(satp) land user_only <> 0)
           && TinyMachineCPU.load m TinyMachineISA.W m.pc = idle_word then 2
   else 1
 

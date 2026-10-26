@@ -28,7 +28,7 @@ external k_ie : int -> unit = "k_ie"
 external k_clock : unit -> int = "k_clock"
 external k_rate : unit -> int = "k_rate"
 external k_cores : unit -> int = "k_cores"
-external k_window : int -> int -> int -> int -> unit = "k_window"
+external k_window : int -> int -> int -> int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
 external k_end : unit -> int = "k_end"
@@ -79,7 +79,7 @@ let seed_dev = -60
  * this one's. *)
 let cores = k_cores ()
 let ipi_dev = -64
-let mailbox k = 0xb41000 + (32 * k)
+let mailbox k = 0xb41000 + (64 * k)
 (* the interrupts taken, the cores' always when there are several *)
 let k_ie sources = k_ie (if cores > 1 then sources lor 32 else sources)
 
@@ -1059,7 +1059,7 @@ let load_prog p node argv =
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
   (* the text written only when it is not shared already *)
   let stamp = if date = "" then "" else date ^ " " ^ string_of_int n in
-  let from = if mem_load p.mem key stamp tsize memory then 0 else tsize in
+  let from = if mem_load p.mem key stamp tsize size memory then 0 else tsize in
   (* Only the image is written, its statics in it (tiny-linker writes a
    * .space as zeros); the rest of the
    * partition, the stack and the heap, is left as the last process to
@@ -1762,6 +1762,8 @@ and trapped p cause tval =
   else if cause = c_illegal && traced p then
     (stop p (if tval = 0 then "break" else "illegal " ^ string_of_int tval);
      false)
+  (* (a page not touched yet, or one a fork shares: pages) *)
+  else if cause = c_fault && mem_fault p.mem tval then false
   else if cause = c_fault && traced p then
     (stop p ("fault " ^ string_of_int tval); false)
   else begin
@@ -1822,12 +1824,17 @@ let () =
   (match walk root (names [] "/lib/memory") with
    | Some node ->
        let s = contents node in
-       segments := String.length s >= 8 && String.sub s 0 8 = "segments"
+       let says w =
+         String.length s >= String.length w
+         && String.sub s 0 (String.length w) = w in
+       segments := says "segments";
+       pages := says "pages"
    | None -> ());
   puts ("tiny-kernel: TinyKernel.ml, "
         ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for "
         ^ string_of_int nslots ^ " processes"
-        ^ (if !segments then ", in segments\n" else "\n"));
+        ^ (if !segments then ", in segments\n"
+           else if !pages then ", in pages\n" else "\n"));
   (* The disk, when there is one, is the root: the top becomes a union
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that

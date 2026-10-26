@@ -118,6 +118,10 @@ type machine = {
   (* the instructions this core ran: in user mode, in the kernel, the
    * kernel idle (a jump to itself), counted by [ticks] *)
   spent : int array;
+  (* the translations' cache, user mode's pages: a page's number (-1:
+   * none) and its entry, in the slot of its number's low bits; emptied
+   * when satp is written *)
+  tlb_tag : int array; tlb_pte : int array;
 }
 
 (* A machine with an image at 0. [put] has each byte of the console's

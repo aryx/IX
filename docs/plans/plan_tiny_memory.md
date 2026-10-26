@@ -239,24 +239,57 @@ already behind on ld's 48 MB), self-cores, the four-core build.
 Left: the third segment, the stack's (an exercise); `tetris.wav`'s
 sum, which HEAD fails too.
 
-## Stage 4: pages, off by default
+## Stage 4: pages, off by default (done, 2026-10-26)
 
-- tiny-machine: Sv32 is there (v6's); a small cache of translations
-  (a TLB, flushed when satp is written), so that a program under
-  pages is not several times slower (TinyMachine.mli's exercise).
-- The kernel: a frame allocator (a free list of the 4 KB frames above
-  32 MB), a table per process, the faults: a page touched the first
-  time is given zeroed; a page written that fork shared is copied
-  then (copy-on-write); the page under the stack left unmapped (a
-  guard: an overflow faults, with a message).
-- Several cores: a process's table changes only while the process is
-  on core 0 (its trap, its fault) or not running, so no core holds a
-  stale translation of it; a core flushes its cache when given a
-  process (the mailbox gets satp). No shootdown: master and slaves
-  pay off again (plan_multicore.md's mini-9pi needed one).
-- What it costs: the frame allocator and the faults, some 200-400
-  lines in TinyKernelMemory.ml (a guess, to compare with xv6's vm.c
-  and kalloc.c); the machine's speed (to measure).
+- **tiny-machine**: satp's bit 30, user only: user mode's addresses
+  translated, the kernel's physical (the PDP-11's two sets of mapping
+  registers). Without it the kernel would need its memory in every
+  process's tables, where a process's addresses from 0 overlap the
+  kernel's 32 MB; v6's way (both translated, the bit clear) stays, the
+  machine's paging test unchanged. A cache of 64 translations, user
+  mode's, emptied when satp is written (k_window writes it at each
+  run: the kernel's sfence.vma).
+- **The kernel** (TinyKernelMemory.ml's Pages, 110 lines of code, xv6's
+  kalloc.c and vm.c's part in about as many): the frames above 32 MB a
+  free list through the free ones, those never given past `untouched`
+  (no list of 57,000 at the boot); a byte of users per frame at
+  0xb51000 (TinyKernel.mli's layout); a root per process, a table per
+  4 MB made when needed. exec: a root, then the pages the loader writes
+  (room for all of them checked first, so that a load does not fail
+  half way); a page touched the first time given zeroed (`mem_fault`
+  from the trap: the instruction run again); fork shares every page,
+  the writable ones read only and copy-on-write (Sv32's software bit)
+  in both; a write there copies, or makes it writable when its last
+  user. The text's pages read only: a store there kills, as with
+  segments. The kernel writes a page only after making it the
+  process's own (`mem_writable`, a breakpoint's `mem_store`), and
+  reaches a buffer a page at a time: read and write go through stage
+  2's bounce when one crosses a page, its first real use.
+- **Several cores**: satp in the mailbox (64 bytes a core now); a
+  process's tables change only while it is not running, and every run
+  writes satp: no shootdown.
+- `MEMORY=pages`, `_make-pages`, "in pages" on the boot line.
+- Not done: the guard page under the stack (where a stack ends is the
+  program's runtime's, mlsys.c's, not the kernel's to know), a text
+  shared between execs (a cache of a file's pages), swapping.
+
+What it costs. The host's instructions in the toolchain session
+(tests/icount.c), all three on the same machine: partitions 293.6
+thousand million (296.7 before stage 4: the translation's function
+made smaller, below), segments 300.2, pages 341.8. On the way: a
+function call for "paged" at each access cost 7% with partitions; an
+`||` in translate's test, 2.5%; the walk's closures made at each access,
+cache or not, 8% of pages'. Now translate is one test, the walk a
+function of its own (which looks at user only), its closures only on a
+miss. The machine's own time for the session (its instructions, by
+-cores 2): partitions 713.7 million, segments 709.6, pages 724.4: the
+faults' work about what the copies of fork and exec cost the others.
+
+Checked: TinyKernel's check under the three (pages: the paint
+session's cursor a few pixels away, its mouse read at another time;
+the timing lines of session 26 as in the other two); a pipeline and
+four jobs at once on four cores under each; TinyMachine's tests (the
+paging test); make test-lite.
 
 ## Status
 
@@ -265,7 +298,8 @@ stage 2, TinyKernelMemory.ml, done but for `user_iter`.
 2026-10-25: `user_iter` and the bounce (stage 2, above): stage 2
 done.
 2026-10-26: stage 3, segments, done (above), behind MEMORY=segments.
-Next: stage 4, pages. `check.expected` re-recorded with stage 3
+The same day, stage 4, pages, behind MEMORY=pages: the plan done but
+for the guard page (above). `check.expected` re-recorded with stage 3
 (its timing lines too); `tetris.wav`'s sum, which changes from run
 to run, not.
 Measuring: the self-build on four cores (`-j 6`) with spawn, beside

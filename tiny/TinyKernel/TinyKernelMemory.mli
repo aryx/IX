@@ -60,8 +60,36 @@
  * runs with the window alone: entry.tm sets the machine's split only
  * when tbound is not 0, the split's arithmetic costing 2% of the host's
  * instructions (tiny-kernel's toolchain session; 7% when every process
- * paid it). Pages are plan_tiny_memory.md's stage 4, behind the same
- * functions.
+ * paid it).
+ *
+ * Pages (/lib/memory says pages; MEMORY=pages) are plan_tiny_memory.md's
+ * stage 4, off by default: a process's memory is pages of 4 KB, each
+ * in any frame of the machine's memory, by its tables (Sv32: a root, a
+ * table for each 4 MB, an entry for each page):
+ *
+ *     a process's addresses     its tables          the frames
+ *     0      text (R X)  -----> root -> table ---> anywhere above 32 MB,
+ *            data (R W X)                          a free list through
+ *            ... untouched: no entry, no frame     the free ones (xv6's
+ *            stack, arguments                      kalloc), a byte of
+ *     memory                                       users for each
+ *
+ * exec gives a root and the pages the image and the arguments write;
+ * any other page is given at its first touch, zeroed ([mem_fault]: the
+ * fault answered, the instruction run again). fork shares every page,
+ * the writable ones made read only and copy-on-write in both: the first
+ * to write gets a copy, or the page back writable when it is the last
+ * user. The kernel writes a process's page only after it made the page
+ * the process's own ([mem_writable], a breakpoint's [mem_store]); it
+ * reaches a buffer a page at a time ([mem_pieces], TinyKernel.ml's
+ * bounce for read and write). The machine translates user mode's
+ * addresses only (satp's user-only bit), the kernel's staying
+ * physical, and keeps them in a cache emptied at each run (k_window
+ * writes satp): one core changes a process's tables, while it is not
+ * running, so no other core holds them (no shootdown). Not done: a
+ * text shared between execs (segments' texts; pages would need a cache
+ * of a file's pages), a guard page under the stack (where a program's
+ * stack ends is its runtime's: mlsys.c's), swapping.
  *
  * cs-history:
  * Partitions are how IBM's OS/360 (1966) shared a machine between
@@ -146,23 +174,32 @@ exception No_room
 val mem_empty : unit -> space
 val mem_release : space -> unit
 
-(* segments, not partitions: set once, at the boot *)
+(* segments, or pages, not partitions: set once, at the boot *)
 val segments : bool ref
+val pages : bool ref
 
-(* [mem_load sp key stamp tsize size]: sp given the memory of a program
- * of size bytes (its a.out's), its old memory let go; tsize of them the
- * text (0: none; ignored without segments), shared when one from the
- * same key and stamp runs. True when the image's text is to be
- * written, else only its data (from tsize). No_room, sp as it was *)
-val mem_load : space -> string -> string -> int -> int -> bool
+(* [mem_load sp key stamp tsize isize size]: sp given the memory of a
+ * program of size bytes (its a.out's), its image isize, its old memory
+ * let go; tsize of them the text (0: none; ignored with partitions),
+ * shared with segments when one from the same key and stamp runs. True
+ * when the image's text is to be written, else only its data (from
+ * tsize). No_room, sp as it was *)
+val mem_load : space -> string -> string -> int -> int -> int -> bool
 
 (* [mem_forget key]: the texts of that file not shared by a next exec
  * (the file is being written) *)
 val mem_forget : string -> unit
 
 (* [mem_copy dst src]: dst a block of src's data's size, src's bytes,
- * and src's text, shared (fork) *)
+ * and src's text, shared (fork); with pages, every page shared,
+ * copy-on-write *)
 val mem_copy : space -> space -> unit
+
+(* [mem_fault sp va]: a fault of the process at va that pages answer:
+ * a page not touched yet, given (zeroed), or a page a fork shares,
+ * copied; true when the process goes on, false when it is to die (and
+ * always without pages) *)
+val mem_fault : space -> int -> bool
 
 (* [mem_address sp va n]: the kernel's address of the n bytes at the
  * process's va, -1 if they are not all the process's, or (with pages)

@@ -60,7 +60,13 @@
  *   with the devices still at the top (-16(r0) is the console).
  * - {b Pages}, using Sv32 (RISC-V's 32-bit scheme with two levels; xv6
  *   on 64 bits uses Sv39's three). The top bit of satp turns paging on
- *   and the window off; a page fault puts the address in tval.
+ *   and the window off; a page fault puts the address in tval. With
+ *   bit 30 too (tiny-kernel's pages, plan_tiny_memory.md), only user
+ *   mode's addresses are translated, the kernel's physical (the
+ *   PDP-11's two sets of mapping registers, the kernel's and the
+ *   user's); user mode's translations are kept in a cache of 64 pages,
+ *   emptied when satp is written, which a kernel does after it changed
+ *   a process's tables (RISC-V's sfence.vma).
  * - {b amoswap d, a, (b)}, the atomic swap that spinlocks are built
  *   from, usable in either mode; {b core}, the core's number (0 but with
  *   -cores, below); {b scratch} and {b csrrw}, to free a

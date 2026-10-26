@@ -152,9 +152,10 @@
  *     0xb00000   the value stack: the kernel's own roots (TinyML's)
  *     0xb40000   the frames, 68 bytes per slot: r1 to r15 and the pc
  *                of each process that is not running
- *     0xb41000   the cores' mailboxes, 32 bytes each
+ *     0xb41000   the cores' mailboxes, 64 bytes each
  *     0xb50000   a packet's place, sent or received
- *     0xb51000   unused
+ *     0xb51000   with pages, a byte for each page of the processes'
+ *                memory, its users (TinyKernelMemory.ml)
  *     0xb60000   the bounce: a buffer in several pieces, read or
  *                written through it (sys_rw; none with partitions)
  *     0xc00000   the speaker's ring

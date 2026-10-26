@@ -125,12 +125,12 @@ k_waited:
 	beq	r1, zero, k_back
 	j	slave_take
 
-; A slave (core k > 0). Its mailbox, at 0xb41000 + 32k (TinyKernel.ml's
+; A slave (core k > 0). Its mailbox, at 0xb41000 + 64k (TinyKernel.ml's
 ; mailbox): the frame of the process to run (0: none), the window's
 ; base and size, the slice (instructions until its timer), then the
 ; trap's cause and value, posted; then the text's window, its base and
-; size (TinyKernelMemory's mem_post). It waits for the cores' interrupt
-; (core 0's word at -64(r0)): a frame there, it runs it; a trap of the
+; size, and satp (TinyKernelMemory's mem_post). It waits for the cores'
+; interrupt (core 0's word at -64(r0)): a frame there, it runs it; a trap of the
 ; process saved in the frame (trapvec), the cause and the value
 ; written, core 0's interrupt raised, and it waits again. Its timer
 ; is on only while a process runs.
@@ -150,7 +150,7 @@ slave_spin:
 slave_take:
 	ldw	r1, -64(r0)		; the senders, cleared
 	csrr	r3, core
-	shli	r3, r3, 5
+	shli	r3, r3, 6
 	li	r2, 0xb41000
 	add	r3, r3, r2
 	ldw	r1, 0(r3)
@@ -164,13 +164,15 @@ slave_take:
 	csrw	tbase, r2
 	ldw	r2, 28(r3)
 	csrw	tbound, r2
+	ldw	r2, 32(r3)
+	csrw	satp, r2
 	ldw	r2, 12(r3)
 	csrr	r4, time
 	add	r2, r2, r4
 	csrw	timecmp, r2
 	j	k_enter
 slave_post:
-	shli	r3, r2, 5
+	shli	r3, r2, 6
 	li	r2, 0xb41000
 	add	r3, r3, r2
 	csrr	r2, cause
@@ -243,7 +245,7 @@ k_rate:
 
 ; the windows of the next process: its data's, from base, size bytes;
 ; its text's, from tbase, tsize bytes (0 and 0: none, the data's alone,
-; a partition)
+; a partition); and satp (0: no pages; its user-only bit with them)
 k_window:
 	ldw	r1, 0(sp)
 	sari	r1, r1, 1
@@ -257,6 +259,9 @@ k_window:
 	sari	r2, r2, 1
 	csrw	tbase, r1
 	csrw	tbound, r2
+	ldw	r1, 16(sp)
+	sari	r1, r1, 1
+	csrw	satp, r1
 	li	r13, 1
 	ret
 

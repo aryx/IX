@@ -37,40 +37,90 @@ TEXT	rest<>(SB), 1, $0
  ADD	$20, R13
  B	(R14)
 
+/*
+ * N / D, unsigned, D not 0: the quotient in Q, the remainder in N.
+ * The denominator first shifted left under the numerator's highest
+ * bit, by the largest k such that D << k <= N (D compared with N >> 16,
+ * then >> 8, 4, 2 and 1: a binary search, arm's shifted operand doing
+ * the shifts), then k + 1 turns, a bit of the quotient each (the carry
+ * of N - D, by ADC), the denominator shifted back right. So a quotient
+ * of q bits costs about 20 + 6(q + 1) instructions, at most 212 for
+ * 32; mini-doom's divisions, by fixed point's 16, about a hundred.
+ * (old: 32 turns always, but for the numerator's zero bytes skipped
+ * first, 7 instructions each: about 230; principia's loop, below)
+ */
 TEXT	div<>(SB), 1, $0
- MOVW	$32, R(CC)
-/*
- * skip zeros 8-at-a-time
- */
-e1:
- AND.S	$(0xff<<24),R(Q), R(N)
- BNE	e2
- SLL	$8, R(Q)
- SUB.S	$8, R(CC)
- BNE	e1
- RET
-e2:
- MOVW	$0, R(N)
-
-loop:
-/*
- * shift R(N||Q) left one
- */
- SLL	$1, R(N)
- CMP	$0, R(Q)
- ORR.LT	$1, R(N)
- SLL	$1, R(Q)
-
-/*
- * compare numerator to denominator
- * if less, subtract and set quotent bit
- */
+ MOVW	R(Q), R(N)
+ MOVW	$0, R(Q)
+ MOVW	$0, R(CC)
+ CMP	R(N)>>16, R(D)
+ BHI	k8
+ SLL	$16, R(D)
+ ADD	$16, R(CC)
+k8:
+ CMP	R(N)>>8, R(D)
+ BHI	k4
+ SLL	$8, R(D)
+ ADD	$8, R(CC)
+k4:
+ CMP	R(N)>>4, R(D)
+ BHI	k2
+ SLL	$4, R(D)
+ ADD	$4, R(CC)
+k2:
+ CMP	R(N)>>2, R(D)
+ BHI	k1
+ SLL	$2, R(D)
+ ADD	$2, R(CC)
+k1:
+ CMP	R(N)>>1, R(D)
+ BHI	turn
+ SLL	$1, R(D)
+ ADD	$1, R(CC)
+turn:
  CMP	R(D), R(N)
- ORR.HS	$1, R(Q)
  SUB.HS	R(D), R(N)
+ ADC	R(Q), R(Q)
+ SRL	$1, R(D)
  SUB.S	$1, R(CC)
- BNE	loop
+ BGE	turn
  RET
+
+// old:
+// TEXT	div<>(SB), 1, $0
+//  MOVW	$32, R(CC)
+// /*
+//  * skip zeros 8-at-a-time
+//  */
+// e1:
+//  AND.S	$(0xff<<24),R(Q), R(N)
+//  BNE	e2
+//  SLL	$8, R(Q)
+//  SUB.S	$8, R(CC)
+//  BNE	e1
+//  RET
+// e2:
+//  MOVW	$0, R(N)
+//
+// loop:
+// /*
+//  * shift R(N||Q) left one
+//  */
+//  SLL	$1, R(N)
+//  CMP	$0, R(Q)
+//  ORR.LT	$1, R(N)
+//  SLL	$1, R(Q)
+//
+// /*
+//  * compare numerator to denominator
+//  * if less, subtract and set quotent bit
+//  */
+//  CMP	R(D), R(N)
+//  ORR.HS	$1, R(Q)
+//  SUB.HS	R(D), R(N)
+//  SUB.S	$1, R(CC)
+//  BNE	loop
+//  RET
 
 TEXT	_div(SB), 1, $16
  BL	save<>(SB)

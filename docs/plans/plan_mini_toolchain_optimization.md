@@ -547,3 +547,32 @@ Checked: tests/tiny and tests/runtime (new: floor, min_max, div_pow2)
 on arm and arm64, -O3 and -O0; lite.sh's "ix built by ix" job on a copy
 of the tree; mini-ml built by mini-ml writes the same assembly as by
 OCaml. Not run: mini-9pi, the kernels' check-all.
+
+2026-10-26, **arm's division by a variable** (the author: "let's do 1,
+2, 3", the third the leftovers above). The C library's `div<>`
+(lib_core/libc/arch/arm/div.s), behind `_div`, `_mod`, `_divu`,
+`_modu`: 32 turns always, but for the numerator's zero bytes skipped,
+7 instructions a turn. Now the denominator is first shifted under the
+numerator's highest bit, by a binary search of compares with the
+numerator shifted 16, 8, 4, 2, 1 (arm's shifted operand, no CLZ:
+neither mini-asm nor mini-ld nor the emulators have it), then a turn
+for each bit of the quotient, 6 instructions, the bit by ADC: about
+20 + 6(q + 1) for a quotient of q bits, at most 212; the old loop in
+comments beside it. Measured in a worktree of HEAD (the shared
+tree's mini-ml has another session's work in progress):
+
+| | old | new | |
+|---|---:|---:|---|
+| mini-ml (arm) compiling Typing.ml, instructions | 1,949,357,378 | 1,904,368,736 | 0.977 |
+| mini-doom's frame (frames 1 to 31) | 12,833,918 | 12,795,550 | 0.997 |
+
+The same Typing.5 and the same frame 31, byte for byte. mini-doom's
+4.8% of the 23rd was spent since: `_div` is not in its 25 first
+functions now (the frame 12.8 million, its divisions by a constant
+power of two shifts); the compiler's Hashtbl's `mod` by a variable is
+where it still pays. New: lib_core/libc/tests/div_check.c (/ and %,
+signed and unsigned, against a long division by shifts: the edges and
+a million pairs), in mem_check.sh and lite's libc job. Left of the
+23rd's list: `ml_floor`'s call and the allocations, which
+plan_ml_floats.md's unboxed floats change (another session's, in
+`ssa/` now).

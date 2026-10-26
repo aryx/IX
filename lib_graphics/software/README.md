@@ -17,6 +17,7 @@ compiles a unit from the folder that has it (`games/mkgames`):
 | `../core/` | `Framebuffer`, `Opti`, `Blit` | `libs/graphics/core` |
 | | `Rgba_image` | `libs/graphics/images/rgba` |
 | `../geometry/` | `Vec2`, `Affine`, `Curve` | `libs/graphics/2d/geometry` |
+| | `Vec3`, `Camera`, `Lighting` | `libs/graphics/3d/geometry` (mini-virtuaracing's, [`plan_virtuaracing.md`](../../docs/plans/plan_virtuaracing.md)) |
 | `../images/` | `Xpm` | `libs/graphics/images/xpm` |
 | | `Png` | `libs/graphics/images/png` |
 | | `Jpeg`, `Dct`, `Jpeg_progressive` | `libs/graphics/images/jpeg` |

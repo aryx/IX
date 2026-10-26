@@ -30,7 +30,7 @@ cd $(dirname $0)/..
 # ix's directory, then the playground's directories it comes from
 groups='lib_playground playground libs/core libs/random
 lib_graphics/core libs/graphics/core libs/graphics/images/rgba
-lib_graphics/geometry libs/graphics/2d/geometry
+lib_graphics/geometry libs/graphics/2d/geometry libs/graphics/3d/geometry
 lib_graphics/images libs/graphics/images
 lib_graphics/software libs/graphics/2d libs/graphics/font
 lib_graphics/svg libs/graphics/images/svg
@@ -49,6 +49,7 @@ languages/scheme languages/scheme languages/sexpr
 languages/pascal languages/pascal
 languages/smalltalk languages/smalltalk
 games games gamekits/shmup
+games/racing/virtua games/racing gamekits/racing/3d gamekits/heightmap
 examples examples
 editors/drscheme apps/devtools
 editors/turbopascal appkits/editor apps/devtools/tty

@@ -248,3 +248,34 @@ A guess at the frame, to be measured at stage 2:
 
 2026-10-23: plan written, after the survey
 (`games/survey_virtua.sh`). Nothing built.
+
+2026-10-25: **stage 1 done** (the author: "let's start mini virtua
+racing"; the decisions taken as proposed, the palette by a median cut).
+`games/racing/virtua/` (its `README.md`): `render/`'s `Mesh`, `Palette`,
+`Render`; `course/`'s `Track3d` and `Heightmap` (copied), `Land`,
+`Scenery`, `Course` (Big Forest); `race/Cars`; `Virtua.ml`, the
+program, its four views (`v`). `Vec3`, `Camera`, `Lighting` in
+`lib_graphics/geometry/` (`Mat4` not copied: the renderer turns a
+corner by `Camera.basis`'s three vectors). The sixteen cars stand on
+the grid, still.
+- Checked: the frames by OCaml and by mini-ml (mini-mk, in a copy of
+  the tree) the same bytes, the four views; `games/tests/frames.sh`'s
+  three sessions (`grid`, `start`, `views`) on both builds.
+- Against the playground's golden `TinyVirtuaRacing_grid.png`
+  (`games/racing/virtua/tests/compare.sh`): 884,197 pixels of 1,000,000
+  differ, 33,999 by more than a level of 64, a mean difference of 6.7.
+  The far ones are the playground's race screen (time, position,
+  tachometer, map, the countdown's 2) and the trees, placed by a hash
+  of ours (`Scenery.jitter`: OCaml's `Hashtbl.hash` is not mini-ml's);
+  the many near ones the palette's 256 colours. The road's line shows
+  here (a tie in depth goes to the face drawn last), not in the
+  playground's.
+- A first measure, for stage 2 (this host, the ppm platform, frames 3
+  to 43): **7.5 ms a frame by OCaml** (the playground's: 312), **185 ms
+  by mini-ml**, 25 times OCaml's where mini-doom's is about 3: the
+  first thing stage 2 takes apart (the floats, most likely: the corners
+  turned, the spans' setup). 10,738 faces reach the spans a frame from
+  the grid (none dropped for facing away yet), not the survey's guess
+  of 2,000 to 3,000.
+- Not run: mini-5i's count, mini-9pi, the board. games/mkfile builds
+  it with the games (`CATEGORIES`); not on the card's image yet.

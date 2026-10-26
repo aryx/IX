@@ -1,0 +1,22 @@
+; games/racing/virtua: mini-virtuaracing (docs/plans/plan_virtuaracing.md),
+; Virtua Racing by a renderer of its own; here with the platform that
+; writes a frame to a file (the tests'); mini-mk's mkfile builds it for
+; mini-9pi. Its modules in folders, by part (one library, ix_virtua):
+;   render/   the picture: Mesh (the solids, made arrays once), Palette
+;             (the course's 256 colours), Render (cull, turn, cut,
+;             project, fill by spans with a depth)
+;   course/   the courses: Track3d (the road a ribbon), Heightmap,
+;             Land, Scenery (the solids and the landmarks), Course
+;   race/     the cars: Cars
+(include_subdirs unqualified)
+
+(library
+ (name ix_virtua)
+ (wrapped false)
+ (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars)
+ (libraries ix_graphics_geometry))
+
+(executable
+ (name Virtua)
+ (modules Virtua)
+ (libraries ix_virtua ix_graphics_geometry ix_playground ix_playground_ppm ix_core caps unix))

@@ -1,0 +1,44 @@
+# mini-virtuaracing, built by ix's tools (docs/plans/plan_virtuaracing.md):
+# its units, compiled here, then the program, linked with the libraries
+# (mkfiles/mklibs): the playground and one platform of it, the
+# pictures' core. The platform is ppm's on Linux (no window: a frame
+# written to a file, the tests'), the draw device's with OS=plan9
+# (mini-9pi: a window of mini-rio, or the bare screen, as the games',
+# ../../mkgames); PLATFORM=software, the pixels given as a picture,
+# made beside (games/racing/virtua-soft).
+TOP=../../..
+<$TOP/mkfiles/mkconfig
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
+BESIDE=`{~ $PLATFORM software && echo -soft}
+D=$B/games/racing/virtua$BESIDE
+# (each after the ones it names)
+LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
+# (the folders of the modules: dune's comment says which)
+DIRS=. render course race
+# (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
+INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
+# (each before the ones that name it)
+LIB=Mesh Palette Render Track3d Heightmap Scenery Land Course Cars
+LIBOBJS=${LIB:%=$D/%.$O}
+LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+# (virtua: the name the frames' test asks for, as a game's,
+# ../../tests/frames.sh; mini-virtuaracing: the program's)
+all:V: $D/mini-virtuaracing
+
+$D/%.$O: $LOCAL
+	mkdir -p $D
+	f=()
+	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
+	$ML $INCLUDES -o $target $f
+
+$D/mini-virtuaracing: $D/virtua
+	cp $D/virtua $target
+$D/virtua: $D/Virtua.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Virtua Std_exit -o $D/Virtua.start.$O
+	$LD $LDH -nofollow -o $target $D/Virtua.start.$O $STDOBJS $LIBA $LIBOBJS $D/Virtua.$O $STDEND
+
+clean:V:
+	rm -rf $D

@@ -133,10 +133,8 @@ yes
 /bin/bc
 /bin/bind
 /bin/boot
-/bin/break-soft
 /bin/breakout
 /bin/cal
-/bin/camel-soft
 /bin/cameltry
 /bin/cat
 /bin/chmod
@@ -167,7 +165,6 @@ yes
 /bin/ls
 /bin/lynx
 /bin/man
-/bin/missile-soft
 /bin/missilecommand
 /bin/mkdir
 /bin/mount
@@ -198,7 +195,6 @@ yes
 /bin/tee
 /bin/test
 /bin/tetris
-/bin/tetris-soft
 /bin/threads
 /bin/time
 /bin/timesync
@@ -212,7 +208,6 @@ yes
 /bin/unmount
 /bin/walk
 /bin/wc
-/bin/wolf-soft
 /bin/wolfenstein
 /bin/words
 /bin/xargs

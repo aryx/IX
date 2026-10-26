@@ -61,10 +61,8 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/bc
 /bin/bind
 /bin/boot
-/bin/break-soft
 /bin/breakout
 /bin/cal
-/bin/camel-soft
 /bin/cameltry
 /bin/cat
 /bin/chmod
@@ -96,7 +94,6 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/ls
 /bin/lynx
 /bin/man
-/bin/missile-soft
 /bin/missilecommand
 /bin/mkdir
 /bin/mount
@@ -127,7 +124,6 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/tee
 /bin/test
 /bin/tetris
-/bin/tetris-soft
 /bin/threads
 /bin/time
 /bin/timesync
@@ -141,7 +137,6 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/unmount
 /bin/walk
 /bin/wc
-/bin/wolf-soft
 /bin/wolfenstein
 /bin/words
 /bin/xargs

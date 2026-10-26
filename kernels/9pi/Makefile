@@ -427,8 +427,8 @@ check-audio: ix-audio
 	tests/audio.py $(B)/mini-audio.wav
 # a game's sound (plan_audio.md, stage 4), by hand (3 minutes: not
 # check-all's): TinyMissileCommand's session "explosions" (95 frames,
-# games/tests/audio.expected's) from the card, the platform that
-# computes its pixels, its sound written a frame at a time to
+# games/tests/audio.expected's) from the card (old: missile-soft, the
+# platform that computes its pixels), its sound written a frame at a time to
 # /dev/audio; mini-qemu's WAV against the same session's -dump-audio on
 # Linux (dune's build), sample by sample. -ips 1000: at a Pi 1's 700
 # the last explosion's frames are slower than the sound, and the ring
@@ -438,7 +438,7 @@ check-audio-game: ix card
 	mkdir -p $(B)
 	rm -f $(B)/mini-game.wav
 	../../_build/default/games/shmup/TinyMissileCommand.exe -dump-frame 95 $(B)/game.ppm -dump-audio $(B)/game-linux.wav $(GAME_AUDIO) seed=1
-	printf "missile-soft -frames 95 -dump-audio /dev/audio $(GAME_AUDIO) 'seed=1'\nhello\nhello\n" > $(B)/game.cmds
+	printf "missilecommand -frames 95 -dump-audio /dev/audio $(GAME_AUDIO) 'seed=1'\nhello\nhello\n" > $(B)/game.cmds
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 600 --out $(B)/mini-game.txt --lines $(B)/game.cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) -ips 1000 -audiodev wav,path=$(B)/mini-game.wav
 	tests/audio.py $(B)/mini-game.wav --expect $(B)/game-linux.wav
 # mini-play on the card (plan_audio.md, stage 5), by hand (3 minutes):
@@ -579,7 +579,7 @@ check-ix: ix
 #             on the bare screen: a session of 400 frames played at once
 #             by a script of keys (-frames, -script), its last picture,
 #             drawn by the program and given to the draw device whole
-#             (tetris-soft: the platform that computes its pixels)
+#             (old: tetris-soft, the platform that computes its pixels)
 #   tetris-win   the same in a window of mini-rio's, which is made
 #             another size: the picture is drawn again, at that size
 #   kbd-bare  the keys held (#c/kbd: plan_playground.md, stage 4), by
@@ -835,9 +835,9 @@ endef
 #                           principia-softwarica.org: its Developer
 #                           tools): emacs, drscheme, turbopascal,
 #                           squeak, scheme, pascal, prolog
-#                games      tetris, wolfenstein, cameltry, breakout, tronscroll
-#                           (for two boards: its network), and their
-#                           -soft variants
+#                games      tetris, wolfenstein, doom, quake, virtua,
+#                           cameltry, breakout, tronscroll
+#                           (for two boards: its network)
 #                net        mini-netscape and the networking programs
 #                           ("we could have /progs/net/ and put the
 #                           mini-netscape in it at some point"):
@@ -885,7 +885,8 @@ endef
 #              and doom's WAD (/lib/doom/freedoom.wad: Freedoom's
 #              E1M1, games/fps/doom/data; docs/plans/done/plan_doom.md)
 #              and quake's level (/lib/quake/e0m1.bsp, its palette.lmp
-#              and colormap.lmp: LibreQuake's lq_e0m1,
+#              and colormap.lmp, its models and sounds in progs/ and
+#              sound/: LibreQuake's lq_e0m1,
 #              games/fps/quake/data; docs/plans/done/plan_quake.md)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
@@ -900,8 +901,11 @@ CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps fr
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
   prolog=$(IX9)/languages/prolog/mini-prolog
-CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand missile-soft=$(IX9)/games/shmup-soft/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein tetris-soft=$(IX9)/games/puzzle-soft/tetris \
-  wolf-soft=$(IX9)/games/fps-soft/tinywolfenstein doom=$(IX9)/games/fps/doom/mini-doom doom-soft=$(IX9)/games/fps/doom-soft/mini-doom quake=$(IX9)/games/fps/quake/mini-quake cameltry=$(IX9)/games/arcade/tinycameltry camel-soft=$(IX9)/games/arcade-soft/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout break-soft=$(IX9)/games/arcade-soft/tinybreakout tronscroll=$(IX9)/games/arcade/tinytronscroll
+# (old: each with its -soft variant too, the playground's software
+# platform: slower, and the games draw by software already)
+CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein \
+  doom=$(IX9)/games/fps/doom/mini-doom quake=$(IX9)/games/fps/quake/mini-quake virtua=$(IX9)/games/racing/virtua/mini-virtuaracing \
+  cameltry=$(IX9)/games/arcade/tinycameltry breakout=$(IX9)/games/arcade/tinybreakout tronscroll=$(IX9)/games/arcade/tinytronscroll
 CARD_utilities/files = pwd=$(IX9)/utilities/files/mini-pwd mkdir=$(IX9)/utilities/files/mini-mkdir rm=$(IX9)/utilities/files/mini-rm \
   cp=$(IX9)/utilities/files/mini-cp mv=$(IX9)/utilities/files/mini-mv touch=$(IX9)/utilities/files/mini-touch chmod=$(IX9)/utilities/files/mini-chmod \
   mtime=$(IX9)/utilities/files/mini-mtime walk=$(IX9)/utilities/files/mini-walk
@@ -943,6 +947,10 @@ CARD_BOOK = $(if $(wildcard $(BOOKS)/kernel/Kernel-12.pdf),lib/pdf/kernel.pdf=$(
 # as Plan 9's are; not turbopascal-tty's, of a program not on the card
 # (old: its name longer than the card's file system took, 14 letters)
 CARD_MAN = $(foreach f,$(filter-out %/turbopascal-tty.md,$(wildcard ../../docs/man/1/*.md)),lib/man/1/$(basename $(notdir $(f)))=$(f))
+# quake's models and sounds, read beside its level: without them its
+# monsters were not drawn, nor heard (its music, Vorbis, is off on Plan 9)
+QUAKE_DATA = ../../games/fps/quake/data
+CARD_QUAKE = $(foreach f,$(wildcard $(QUAKE_DATA)/progs/*.mdl $(QUAKE_DATA)/sound/*/*.wav),lib/quake/$(f:$(QUAKE_DATA)/%=%)=$(f))
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
   $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
@@ -953,7 +961,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
   lib/tls/ca.pem=$(CA_PEM) \
   lib/doom/freedoom.wad=../../games/fps/doom/data/freedoom.wad \
   lib/quake/e0m1.bsp=../../games/fps/quake/data/e0m1.bsp lib/quake/palette.lmp=../../games/fps/quake/data/palette.lmp \
-  lib/quake/colormap.lmp=../../games/fps/quake/data/colormap.lmp \
+  lib/quake/colormap.lmp=../../games/fps/quake/data/colormap.lmp $(CARD_QUAKE) \
   usr/pad/lib/documents/shapes.png=../../lib_graphics/pdf/tests/data/shapes-1.png usr/pad/lib/documents/aldrin.jpg=../../apps/office/pictures/aldrin.jpg
 # a first /src: small programs in the languages ix is written in, to
 # open with emacs for now (docs/plans/plan_self_hosting.md: ix's sources

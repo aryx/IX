@@ -19,6 +19,11 @@
  *                  0.2 | /   | /   | /   |
  *                      +---------------------- speed *)
 
+(* false: no sound made (the flag sound=off): on mini-9pi the sound of
+ * the time a frame took is made after it, so a slow frame makes a
+ * longer sound, and the sound slows the frames further *)
+val on : bool ref
+
 (* [engine rpm throttle tunnel]: the engine's two voices this frame *)
 val engine : float -> bool -> bool -> unit
 
@@ -27,6 +32,9 @@ val road : Driving.t -> unit
 
 (* an event of the race, played *)
 val event : Race.event -> unit
+
+(* [play s]: [s] played, when [on] *)
+val play : Audio.sound -> unit
 
 (* the course select's: a course changed, the race chosen *)
 val pick : Audio.sound

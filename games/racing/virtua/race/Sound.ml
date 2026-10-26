@@ -6,38 +6,45 @@
 (* ix: the author's playground's games/racing/TinyVirtuaRacing.ml, its
  * "Sound" (and its update's plays) *)
 
+let on = ref true
+
 let engine (rpm : float) (throttle : bool) (tunnel : bool) : unit =
-  let hz = 45. +. (110. *. rpm) in
-  let open_ = if throttle then 1. else 0.3 in
-  let room = if tunnel then 1.6 else 1. in
-  Audio.keep_playing "engine"
-    (Audio.sawtooth hz
-    |> Audio.low_pass ((400. +. (2400. *. rpm *. open_)) /. room)
-    |> Audio.louder ((0.05 +. (0.04 *. open_)) *. room));
-  Audio.keep_playing "engine_low"
-    (Audio.square (hz /. 2.)
-    |> Audio.low_pass 300.
-    |> Audio.louder (0.05 *. room))
+  if !on then begin
+    let hz = 45. +. (110. *. rpm) in
+    let open_ = if throttle then 1. else 0.3 in
+    let room = if tunnel then 1.6 else 1. in
+    Audio.keep_playing "engine"
+      (Audio.sawtooth hz
+      |> Audio.low_pass ((400. +. (2400. *. rpm *. open_)) /. room)
+      |> Audio.louder ((0.05 +. (0.04 *. open_)) *. room));
+    Audio.keep_playing "engine_low"
+      (Audio.square (hz /. 2.)
+      |> Audio.low_pass 300.
+      |> Audio.louder (0.05 *. room))
+  end
 
 let road (d : Driving.t) : unit =
-  let frac = Float.abs d.car.speed /. Driving.top_speed in
-  let slide = Float.abs (Driving.slip d) in
-  if
-    Float.abs d.offset > 1.15 *. Course.road_width && Float.abs d.car.speed > 3.
-  then
-    Audio.keep_playing "gravel"
-      (Audio.noise 500.
-      |> Audio.low_pass (200. +. (600. *. frac))
-      |> Audio.louder 0.15)
-  else if (slide > 4. || d.spin > 0) && Float.abs d.car.speed > 25. then
-    Audio.keep_playing "squeal"
-      (Audio.triangle 1050. |> Audio.vibrato 11. 0.5
-      |> Audio.louder
-           (if d.spin > 0 then 0.06 else Float.min 0.06 (0.006 *. slide)));
-  if frac > 0.3 then
-    Audio.keep_playing "wind"
-      (Audio.noise 6000. |> Audio.high_pass 1500.
-      |> Audio.louder (0.03 *. frac *. frac))
+  if !on then begin
+    let frac = Float.abs d.car.speed /. Driving.top_speed in
+    let slide = Float.abs (Driving.slip d) in
+    if
+      Float.abs d.offset > 1.15 *. Course.road_width
+      && Float.abs d.car.speed > 3.
+    then
+      Audio.keep_playing "gravel"
+        (Audio.noise 500.
+        |> Audio.low_pass (200. +. (600. *. frac))
+        |> Audio.louder 0.15)
+    else if (slide > 4. || d.spin > 0) && Float.abs d.car.speed > 25. then
+      Audio.keep_playing "squeal"
+        (Audio.triangle 1050. |> Audio.vibrato 11. 0.5
+        |> Audio.louder
+             (if d.spin > 0 then 0.06 else Float.min 0.06 (0.006 *. slide)));
+    if frac > 0.3 then
+      Audio.keep_playing "wind"
+        (Audio.noise 6000. |> Audio.high_pass 1500.
+        |> Audio.louder (0.03 *. frac *. frac))
+  end
 
 let beep =
   Audio.sfx { Sfx.blip with frequency = 440.; sustain = 0.15; volume = 0.3 }
@@ -82,13 +89,15 @@ let game_over =
 
 let pick = Audio.sfx { Sfx.blip with frequency = 660.; volume = 0.25 }
 
+let play (s : Audio.sound) : unit = if !on then Audio.play s
+
 let event (e : Race.event) : unit =
   match e with
-  | Beep -> Audio.play beep
-  | Go -> Audio.play go_beep
-  | Shift -> Audio.play shift
-  | Crash -> Audio.play crash
-  | Checkpoint cp -> Audio.play (List.nth jingles (cp mod List.length jingles))
-  | Final_lap -> Audio.play final_lap
-  | Goal -> Audio.play fanfare
-  | Game_over -> Audio.play game_over
+  | Beep -> play beep
+  | Go -> play go_beep
+  | Shift -> play shift
+  | Crash -> play crash
+  | Checkpoint cp -> play (List.nth jingles (cp mod List.length jingles))
+  | Final_lap -> play final_lap
+  | Goal -> play fanfare
+  | Game_over -> play game_over

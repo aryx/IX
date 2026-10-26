@@ -23,7 +23,7 @@
  *
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
- *                            [course=n]
+ *                            [course=n] [sound=off]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -34,6 +34,7 @@
  *     cull=off  the faces turned away drawn too (Render.cull)
  *     course=n  a race on the n-th course at once (0: Big Forest), not
  *               the title (the frames' sessions)
+ *     sound=off no sound made (Sound.on)
  *
  * A frame:
  *
@@ -365,9 +366,9 @@ let update (computer : P.computer) (m : model) : model =
         let n = Array.length m.catalog in
         let left = Scene2d.pressed (fun (k : P.keyboard) -> k.kleft) s
         and right = Scene2d.pressed (fun (k : P.keyboard) -> k.kright) s in
-        if left || right then Audio.play Sound.pick;
+        if left || right then Sound.play Sound.pick;
         if space then (
-          Audio.play Sound.go_beep;
+          Sound.play Sound.go_beep;
           start_race m i;
           Scene2d.go Racing s)
         else if left then Scene2d.go (Select ((i + n - 1) mod n)) s
@@ -453,6 +454,7 @@ let () =
            if flag "stats" <> None then Some (Console.eprint caps) else None
          in
          if flag "cull" = Some "off" then Render.cull := false;
+         if flag "sound" = Some "off" then Sound.on := false;
          let course = Option.bind (flag "course") int_of_string_opt in
          let model = start first width height course stats in
          (* the window the picture's size, a unit a pixel; or, without

@@ -512,5 +512,16 @@ what they stand on, as mini-quake's.
   revving at the countdown follows each platform's clock.
 - Not heard: the sound played through a speaker, here or on the board.
 
-Next: stage 5, on mini-9pi (QEMU, then the Pi 2), its frame measured
-there.
+2026-10-26, evening: **stage 5 begun.** `virtua` on the card
+(`kernels/9pi/Makefile`'s `CARD_games`: `/progs/games/virtua`, bound
+in `/bin`; the courses are code, no `/lib/` data). The author, on the
+Pi 2: 11 frames a second at the title, 3 in the race. On mini-9pi the
+loop makes the sound of the time a frame took (`Plan9_loop`), so the
+sound costs the same each second whatever the frames: by mini-5i a
+race frame is 53.3M instructions with the sound, 50.1M with the new
+`sound=off` (`Sound.on`), so 3.2M for a sixtieth of a second of sound,
+about 190M a second. With `sound=off`, the author: 6 frames a second
+in the race, 9 while the camera turns around the car.
+
+Next: the sound made cheaper (the playground's `Audio`, `lib_audio`'s
+`Synth`), then the frame taken apart on the board.

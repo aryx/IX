@@ -2,9 +2,10 @@
 # Prelude
 ###############################################################################
 
-# The usual entry points; dune does the work (make, make test). Then
-# ix built by ix (make ix, make test-ix...), and everything (make
-# test-all): see below.
+# The usual entry points; dune does the work (make, make test: before
+# each commit, two minutes; docs/plans/plan_tests.md). Then ix built by
+# ix (make ix, make test-ix...), and everything (make test-all): see
+# below.
 
 ###############################################################################
 # Main targets
@@ -14,6 +15,14 @@
 export MKSHELL = mini-rc
 all:
 	dune build
+# t-IX alone (tiny/), or m-IX (the rest), as test-tix and test-mix: a
+# no-op is 0.6 s and 3 where make's is 4 (dune checks every rule of
+# what it builds, each time)
+tix:
+	dune build ./tiny
+MIX_DIRS = $(filter-out tiny/ docs/ bin/ _%, $(wildcard */))
+mix:
+	dune build $(MIX_DIRS:%/=./%)
 
 # The mini- and tiny- programs in opam's bin, for the mkfiles (ix built
 # by ix: mini-mk, then mkfiles/check.sh) and for use anywhere.
@@ -27,7 +36,11 @@ clean:
 # (tiny-c and tiny-ml on random programs, against the host's cc and
 # OCaml, in $(TINY_W); see tiny/tests/TinyC_fuzz.py and TinyML_fuzz.py)
 TINY_W = /tmp/ix-tiny
-test: all
+# make test is the gate, make test-lite (below); this list, the long
+# forms, one after the other, is test-all's suite long
+# (docs/plans/plan_tests.md: to place each in the gate or test-all)
+test: test-lite
+test-long: all
 	./_build/default/builder/tests/Test.exe
 	./tiny/tests/TinyBuildSystem_test.sh
 	./_build/default/shell/tests/Test.exe
@@ -315,13 +328,19 @@ test-all:
 test-quick:
 	./tests/all.sh -quick
 
-# Under a minute, for a good confidence that nothing regressed: every
-# family of programs by its fastest checks that mean something, all at
-# once on the machine's cores (30 jobs): unit and differential tests,
-# the linker's recorded bytes, every file of ix compiled by mini-ml and
-# programs run, ix built by ix from nothing (under _mk/lite), then used:
-# its toolchain against dune's, a kernel's step and mini-xv6 booted.
-# tests/lite.sh says each job's seconds.
+# Under two minutes, before each commit, for a good confidence that
+# nothing regressed (docs/plans/plan_tests.md): every family of programs
+# by its fastest checks that mean something, all at once on the
+# machine's cores (about 120 jobs): unit and differential tests, the
+# linker's recorded bytes, every file of ix compiled by mini-ml and
+# programs run, tiny-kernel booted, ix built by ix from nothing (in the
+# run's own directory: runs of several sessions at once), then used:
+# its toolchain against dune's, its programs' tests, a kernel's step and
+# mini-xv6 booted. tests/lite.sh says each job's seconds, a line a group
+# and the jobs past the budget.
+# test-tix, test-mix: one system's jobs alone, for a change in it (and
+# the shared ones: OCaml 5's types, the sources as text, lib_core by
+# mini-ml); t-ix about a minute.
 #
 # What it leaves out, on purpose (make test-all has them all):
 # - what needs a reference outside the repository: goken's toolchain
@@ -336,9 +355,14 @@ test-quick:
 #   USB, usertests: test-kernels-ix): here mini-xv6 only boots to sh;
 # - the long forms of what it has: the random tests' full counts, the
 #   rest of tests/modern/, each tiny program built by ix run through
-#   its tests, mini-git's objects and network tests (make test, test-ix).
+#   its tests, mini-git's objects and network tests (make test-long,
+#   test-ix).
 test-lite:
 	./tests/lite.sh
+test-tix:
+	./tests/lite.sh tix
+test-mix:
+	./tests/lite.sh mix
 
 ###############################################################################
 # Docker
@@ -380,5 +404,5 @@ visual:
 visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
-.PHONY: all install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-quick test-lite test-github visual visual-all
+.PHONY: all tix mix install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-quick test-lite test-tix test-mix test-long test-github visual visual-all

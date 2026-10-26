@@ -25,7 +25,7 @@ QEMU64=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
 suites() {
 cat <<'END'
 build@1@q@@dune builds every program, by OCaml@make all
-test@6@q@@make test: each program's own tests, the references recorded in the repository@make test
+long@6@q@@make test-long: each program's own tests, their long forms, the references recorded in the repository@make test-long
 ml@6@q@@make test-ml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-ml
 differential@1@q@@make test-differential: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-differential
 goken@25@@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken

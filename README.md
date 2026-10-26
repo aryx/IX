@@ -292,8 +292,11 @@ screen at the end of a recorded session, `tiny/tests/TinyKernel_tests/tetris.eve
 The tests, short and whole:
 
 ```bash
-make test-lite      # under a minute, on all the cores: unit tests, mini-ml on IX,
-                    # IX built by IX from nothing, a kernel booted
+make test           # = make test-lite
+make test-lite      # before each commit, two minutes on all the cores: unit tests,
+                    # mini-ml on IX, IX built by IX from nothing, kernels booted
+make test-tix       # the same for t-IX alone (tiny/, tiny-kernel), about a minute
+make test-mix       # and for m-IX alone
 make test-all       # every test suite, one after the other, with a summary: half an
                     # hour (tests/all.sh -l lists them; -quick: the short ones)
 ```

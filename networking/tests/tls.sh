@@ -24,13 +24,22 @@ port=$((21000 + $$ % 9000))
 serve() { # the key's kind, the cipher suite; TLS 1.2: its group
   local newkey="-newkey ec -pkeyopt ec_paramgen_curve:P-256"; [ $1 = rsa ] && newkey="-newkey rsa:2048"
   [ -f $W/$1.pem ] || openssl req -x509 $newkey -nodes -keyout $W/$1.key -out $W/$1.pem -days 2 -subj /CN=localhost -addext subjectAltName=DNS:localhost 2> /dev/null
-  port=$((port + 1))
   local version="-tls1_3 -ciphersuites $2"; [ -n "$3" ] && version="-tls1_2 -cipher $2 -groups $3"
-  openssl s_server -quiet -www $version -accept $port -cert $W/$1.pem -key $W/$1.key > /dev/null 2>&1 &
-  pid=$!
-  # until it listens (5 s at most): a fixed half second was too short for
-  # the first server on a loaded machine (the CI's: "Connection refused")
-  local i; for i in $(seq 50); do (exec 3<> /dev/tcp/127.0.0.1/$port) 2> /dev/null && break; sleep 0.1; done
+  local i try
+  for try in 1 2 3 4 5; do
+    # a port no one listens on: this script runs twice at once in
+    # make test-lite, and other sessions' too; a port taken would have
+    # mini-curl ask another run's server, its certificate not this one's
+    port=$((port + 1))
+    while (exec 3<> /dev/tcp/127.0.0.1/$port) 2> /dev/null; do port=$((port + 1)); done
+    openssl s_server -quiet -www $version -accept $port -cert $W/$1.pem -key $W/$1.key > /dev/null 2>&1 &
+    pid=$!
+    # until it listens (5 s at most): a fixed half second was too short for
+    # the first server on a loaded machine (the CI's: "Connection refused")
+    for i in $(seq 50); do (exec 3<> /dev/tcp/127.0.0.1/$port) 2> /dev/null && break; sleep 0.1; done
+    # (and it is ours that listens: another may have taken the port since)
+    kill -0 $pid 2> /dev/null && return
+  done
 }
 check() { # a name, what the output must have, mini-curl's arguments
   local name=$1 want=$2; shift 2

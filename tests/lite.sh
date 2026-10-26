@@ -14,7 +14,7 @@
 #   tiny programs' tests, tiny-kernel booted, the machines' decoders;
 # - mini-ml: every file of ix compiled (a directory a job), programs of
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
-# - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
+# - ix built by ix, from nothing, each time (in its own directory: mini-mk's
 #   jobs in parallel, NPROC, and the programs side by side): then, with
 #   what was just built, mini-rc's and mini-ed's tests, the tiny
 #   programs', the games' frames, the toolchain's
@@ -36,6 +36,9 @@
 # (neither arm64 nor with qemu-aarch64 registered, binfmt_misc).
 # usage: tests/lite.sh [mix] [tix]    (none: all; shared always)
 
+# (in braces, read whole before it runs: bash reads a script as it goes,
+# and a session editing this file would change a run under way)
+{
 # (the mkfiles' recipes are rc's: mkfiles/mkconfig)
 export MKSHELL=mini-rc
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -71,12 +74,20 @@ wanted() { [ $G = shared ] || [[ "$want_groups" == *" $G "* ]]; }
 names=()
 groups=()
 jobpids=()
+# -after-ix: a check of what ix built by ix, its clock started once the
+# build is done (its own job); a skip when the build failed
 job() {
   wanted || return 0
+  local after=; [ "$1" = -after-ix ] && { after=1; shift; }
   local name=$1; shift
   names+=("$name"); groups+=($G)
   local k=$W/job${#names[@]}
-  ( t0=$(now); if true | "$@" > $k.log 2>&1; then s=ok; else s=FAIL; fi
+  ( if [ -n "$after" ]; then
+      until [ -f $W/ix.done ]; do sleep 0.5; done
+      [ "$(cat $W/ix.done)" = ok ] ||
+        { echo "skip 0" > $k.st && mv $k.st $k.status; exit; }
+    fi
+    t0=$(now); if true | "$@" > $k.log 2>&1; then s=ok; else s=FAIL; fi
     # (renamed: the loop at the end never reads it half written)
     echo "$s $(( $(now) - t0 ))" > $k.st && mv $k.st $k.status ) &
   jobpids+=($!)
@@ -131,7 +142,7 @@ job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 # tiny-kernel booted (an image of its own: TinyKernel's _make is the
 # sessions'), its tests in ML and a shell's files and pipe; its whole
-# check (81 s, 12 minutes of cores) is make test's
+# check (81 s, 12 minutes of cores) is make test-long's
 tiny_kernel() {
   local o=$W/tiny-kernel m="tiny-machine -date 820540800 -seed 1"
   make -s -C tiny/TinyKernel O=$o $o/boot.img || return 1
@@ -223,7 +234,9 @@ group m-ix
 
 # ix built by ix, from nothing: the libraries, the assembler (the others
 # read its interfaces' objects), then the programs side by side
-B=$ROOT/_mk/lite/7
+# (in this run's directory, not a shared _mk/lite: two runs at once,
+# other sessions', do not build over each other, and none waits)
+B=$W/mk/7
 K=$B
 mk() { (cd $1 && NPROC=32 mini-mk B=$B) > "$W/mk.$(echo $1 | tr / _).log" 2>&1 || { echo "mini-mk failed in $1:"; tail -3 "$W/mk.$(echo $1 | tr / _).log" | cut -c1-200; return 1; }; }
 # a kernel's image booted until its line is said, 15 seconds at most
@@ -278,39 +291,60 @@ ix() {
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"
-  # what was built, used: each check a job of its own
-  pids=()
-  if [ -n "$runs7" ]; then
-  (same || { echo "the toolchain built by ix writes other bytes than dune's"; exit 1; }) & pids+=($!)
-  (! MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh | grep '^FAIL') & pids+=($!)
-  (! MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh | grep '^FAIL') & pids+=($!)
-  (! MINIPROLOG=$K/languages/prolog/mini-prolog languages/prolog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
-  (! MINIFORTH=$K/languages/forth/mini-forth languages/forth/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
-  (! MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini | grep '^FAIL\|^skipped') & pids+=($!)
-  (! { ML=$K/languages/ml/mini-ml DATALOG=$K/languages/datalog/mini-datalog languages/ml/facts/tests/run.sh; CC=$K/languages/c/mini-cc DATALOG=$K/languages/datalog/mini-datalog languages/c/facts/tests/run.sh; } | grep '^FAIL') & pids+=($!)
-  (! games/tests/frames.sh $K/games | grep '^FAIL') & pids+=($!)
-  (! games/tests/audio.sh $K/games | grep '^FAIL') & pids+=($!)
-  (! { apps/music/tests/frames.sh $K/apps; apps/music/tests/audio.sh $K/apps; } | grep '^FAIL') & pids+=($!)
-  (! editors/drscheme/tests/frames.sh $K/editors | grep '^FAIL') & pids+=($!)
-  (! examples/tests/frames.sh $K/examples | grep '^FAIL') & pids+=($!)
-  (! apps/office/tests/frames.sh $K/apps | grep '^FAIL') & pids+=($!)
-  (! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:") & pids+=($!)
-  ($K/lib_crypto/tests/vectors | cmp -s - lib_crypto/tests/Vectors.expected || { echo "lib_crypto by mini-ml: a vector differs"; exit 1; }) & pids+=($!)
-  (! { networking/tests/served.sh $K/networking; networking/tests/tls.sh $K/networking; browsers/lynx/tests/session.sh $K; browsers/javascript/tests/scripts.sh $K/browsers/javascript; browsers/engine/tests/boxes.sh $K/browsers/engine/tests; browsers/netscape/tests/frames.sh $K/browsers; } | grep '^FAIL') & pids+=($!)
-  (! typesetting/tests/sample.sh $K | grep '^FAIL') & pids+=($!)
-  (tiny_tests > $W/tiny.log 2>&1 || { echo "a tiny program built by ix fails its tests:"; tail -5 $W/tiny.log | cut -c1-200; exit 1; }) & pids+=($!)
-  fi
-  boot $K/kernels/steps/step3/kernel8.img 'no process left to run' & pids+=($!)
-  [ -n "$xv6" ] && { boot $K/kernels/xv6/kernel8.img 'init: starting sh' & pids+=($!); }
-  for p in "${pids[@]}"; do wait $p || bad=1; done
-  [ $bad = 0 ]
 }
+# the build, then its checks' signal
+ix_build() { if ix; then echo ok > $W/ix.done; else echo FAIL > $W/ix.done; return 1; fi; }
+# what was built, used: each check a job of its own (no "FAIL" line, nor
+# "skipped" for the languages', whose reference is the program itself)
+nofail() { ! "$@" | grep '^FAIL'; }
+noskip() { ! "$@" | grep '^FAIL\|^skipped'; }
+by_ix_rc() { nofail env MINIRC=$K/shell/mini-rc RC=$ROOT/bin/mini-rc ORC= shell/tests/differential.sh; }
+by_ix_ed() { nofail env MINIED=$K/editors/ed/mini-ed ED=$ROOT/bin/mini-ed editors/ed/tests/differential.sh; }
+by_ix_facts() {
+  local D=$K/languages/datalog/mini-datalog
+  nofail env ML=$K/languages/ml/mini-ml DATALOG=$D languages/ml/facts/tests/run.sh &&
+  nofail env CC=$K/languages/c/mini-cc DATALOG=$D languages/c/facts/tests/run.sh
+}
+by_ix_net() {
+  nofail networking/tests/served.sh $K/networking && nofail networking/tests/tls.sh $K/networking &&
+  nofail browsers/lynx/tests/session.sh $K
+}
+by_ix_browsers() {
+  nofail browsers/javascript/tests/scripts.sh $K/browsers/javascript &&
+  nofail browsers/engine/tests/boxes.sh $K/browsers/engine/tests &&
+  nofail browsers/netscape/tests/frames.sh $K/browsers
+}
+by_ix_vectors() { $K/lib_crypto/tests/vectors | cmp - lib_crypto/tests/Vectors.expected; }
+by_ix_play() { ! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:"; }
 [ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-[ -n "$runs7" ] || skip "ix built by ix: its toolchain against dune's, its mini-rc and mini-ed, the tiny programs" "$no7"
-job "ix built by ix, a kernel booted" ix
+job "ix built by ix" ix_build
+if [ -n "$runs7" ]; then
+  a=-after-ix
+  job $a "the toolchain built by ix: dune's bytes" same
+  job $a "mini-rc built by ix: recorded cases" by_ix_rc
+  job $a "mini-ed built by ix: recorded cases" by_ix_ed
+  job $a "mini-prolog built by ix" noskip env MINIPROLOG=$K/languages/prolog/mini-prolog languages/prolog/tests/run.sh -mini
+  job $a "mini-forth built by ix" noskip env MINIFORTH=$K/languages/forth/mini-forth languages/forth/tests/run.sh -mini
+  job $a "mini-datalog built by ix" noskip env MINIDATALOG=$K/languages/datalog/mini-datalog languages/datalog/tests/run.sh -mini
+  job $a "mini-ml -flow, mini-cc -facts built by ix" by_ix_facts
+  job $a "games built by ix: recorded frames" nofail games/tests/frames.sh $K/games
+  job $a "games built by ix: recorded sounds" nofail games/tests/audio.sh $K/games
+  job $a "mini-music built by ix: frames, sounds" sh_ "! { apps/music/tests/frames.sh $K/apps; apps/music/tests/audio.sh $K/apps; } | grep '^FAIL'"
+  job $a "mini-drscheme built by ix: recorded frames" nofail editors/drscheme/tests/frames.sh $K/editors
+  job $a "examples built by ix: recorded frames" nofail examples/tests/frames.sh $K/examples
+  job $a "mini-office built by ix: recorded frames" nofail apps/office/tests/frames.sh $K/apps
+  job $a "mini-play built by ix" by_ix_play
+  job $a "lib_crypto built by ix: the vectors" by_ix_vectors
+  job $a "mini-curl, mini-httpd, mini-lynx built by ix" by_ix_net
+  job $a "mini-node, browsers/engine, mini-netscape built by ix" by_ix_browsers
+  job $a "mini-troff built by ix: a page" nofail typesetting/tests/sample.sh $K
+  job $a "tiny programs built by ix: their tests" tiny_tests
+else skip "ix built by ix: its programs used" "$no7"; fi
+job -after-ix "a kernel's step built by ix, booted" boot $K/kernels/steps/step3/kernel8.img 'no process left to run'
+[ -n "$xv6" ] && job -after-ix "mini-xv6 built by ix, booted" boot $K/kernels/xv6/kernel8.img 'init: starting sh'
 
 # each job's line as soon as it ends (so the order is the jobs' ends),
 # its group first; then the skips and the failures again, a line for
@@ -331,7 +365,10 @@ report() {
   g_end[$g]=$(( $(now) - begun ))
   [ $ms -gt 60000 ] &&
     slow+=("$(tag $g) $(printf '%5.1f' $(echo "$ms / 1000" | bc -l)) s  $name")
-  if [ $s = ok ]; then g_ok[$g]=$(( ${g_ok[$g]:-0} + 1 )); else
+  if [ $s = ok ]; then g_ok[$g]=$(( ${g_ok[$g]:-0} + 1 ))
+  elif [ $s = skip ]; then
+    skips+=("$(tag $g) skip           $name (ix's build failed)")
+  else
     failures=$((failures + 1)); failed+=("$(tag $g) FAIL           $name")
     g_fail[$g]=$(( ${g_fail[$g]:-0} + 1 ))
     # its lines that say a failure (Testo's are "[FAIL]", in colors: taken out;
@@ -375,3 +412,5 @@ fi
 printf "test-lite: %d jobs, %d failure(s), %d skipped, %.0f s\n" ${#names[@]} $failures ${#skips[@]} $(echo "$total / 1000" | bc -l)
 if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
 [ $failures = 0 ]
+exit
+}

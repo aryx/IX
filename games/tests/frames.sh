@@ -28,6 +28,8 @@
 # FRAMES=file: another list than the games' (editors/drscheme/tests/frames.sh,
 # examples/tests/frames.sh, apps/office/tests/frames.sh: the same test of
 # their programs).
+# The sessions run side by side, J at a time (16; J=1 one after the
+# other), their lines printed after in the list's order.
 # usage: games/tests/frames.sh [dir]
 #   dir: where the games are (default: dune's, _build/default/games, its
 #        puzzle/Tetris.exe; else mini-mk's, as _mk/7/games, its puzzle/tetris)
@@ -37,30 +39,33 @@ dir=${1:-_build/default/games}
 P=${PLAYGROUND:-$HOME/playground}
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 E=${FRAMES:-games/tests/frames.expected}
-failures=0
 program() { if [ -x $dir/$1.exe ]; then echo $dir/$1.exe; else echo $dir/$(echo $1 | tr A-Z a-z); fi; }
 in=$E
-[ -n "${RECORD:-}" ] && { cp $E $W/old; in=$W/old; : > $E; }
-while IFS='|' read -r game name args sum sum2; do
+[ -n "${RECORD:-}" ] && { cp $E $W/old; in=$W/old; }
+# a session: its lines in $W/$i.log, its line of the list (RECORD) in
+# $W/$i.rec, its files in $W/$i/
+one() {
+  local i=$1 game=$2 name=$3 args=$4 sum=$5 sum2=$6
+  local w=$W/$i
+  mkdir -p $w
   # (the arguments as a shell reads them: a script with spaces or
   # parentheses, as type((car 5)) and at(1;2), is quoted in the list)
   eval "set -- $args"; frames=$1; shift
   # (a store of documents of its own for each session, empty: mini-office's that saves and opens)
-  rm -rf $W/store
-  PLAYGROUND_STORE=$W/store $(program $game) -dump-frame $frames $W/f.ppm "$@" > /dev/null 2> $W/err || { echo "FAIL $game $name: $(head -1 $W/err)"; failures=$((failures + 1)); continue; }
-  got=$(sha256sum < $W/f.ppm | cut -d' ' -f1)
+  PLAYGROUND_STORE=$w/store $(program $game) -dump-frame $frames $w/f.ppm "$@" > /dev/null 2> $w/err || { echo "FAIL $game $name: $(head -1 $w/err)"; return; }
+  got=$(sha256sum < $w/f.ppm | cut -d' ' -f1)
   if [ "${RECORD:-}" = 2 ]; then
-    [ "$got" != "$sum" ] && sum2=$got; echo "$game|$name|$args|$sum${sum2:+|$sum2}" >> $E; continue
-  elif [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got${sum2:+|$sum2}" >> $E
-  elif [ -n "$sum2" ] && [ "$got" = "$sum2" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; continue
-  elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"; failures=$((failures + 1))
+    [ "$got" != "$sum" ] && sum2=$got; echo "$game|$name|$args|$sum${sum2:+|$sum2}" > $W/$i.rec; return
+  elif [ -n "${RECORD:-}" ]; then echo "$game|$name|$args|$got${sum2:+|$sum2}" > $W/$i.rec
+  elif [ -n "$sum2" ] && [ "$got" = "$sum2" ]; then echo "ok $game $name (mini-ml's frame: a pixel's level apart from OCaml's)"; return
+  elif [ "$got" != "$sum" ]; then echo "FAIL $game $name: another frame than the recorded one"
   else echo "ok $game $name"; fi
   # (a program the playground names TinyXxx and ix Xxx: DrScheme)
   theirs=$(basename $game); [ -f $P/tests/2d/golden/$theirs.png ] || theirs=Tiny$theirs
   golden=$P/tests/2d/golden/$theirs.png
   [ "$name" = golden ] || golden=$P/tests/2d/golden/${theirs}_$name.png
   if [ -f $golden ] && python3 -c 'import PIL' 2> /dev/null; then
-    python3 - $W/f.ppm $golden <<'PY' || failures=$((failures + 1))
+    python3 - $w/f.ppm $golden <<'PY' 2>&1
 import sys
 from PIL import Image
 a = Image.open(sys.argv[1]).convert('RGB'); b = Image.open(sys.argv[2]).convert('RGB')
@@ -76,5 +81,15 @@ print(('ok' if ok else 'FAIL') + " the playground's golden frame: %d pixels diff
 sys.exit(0 if ok else 1)
 PY
   fi
+}
+n=0
+while IFS='|' read -r game name args sum sum2; do
+  n=$((n + 1))
+  # (J at a time: wait -n for one to end; bash 3's, macOS's, waits all)
+  while [ $(jobs -rp | wc -l) -ge ${J:-16} ]; do wait -n 2> /dev/null || wait; done
+  one $n "$game" "$name" "$args" "$sum" "$sum2" > $W/$n.log 2>&1 &
 done < $in
-[ $failures = 0 ]
+wait
+for i in $(seq 1 $n); do cat $W/$i.log; done
+[ -n "${RECORD:-}" ] && for i in $(seq 1 $n); do cat $W/$i.rec 2> /dev/null; done > $E
+[ $(cat $W/*.log /dev/null | grep -c '^FAIL') = 0 ]

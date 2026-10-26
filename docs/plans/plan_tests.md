@@ -107,7 +107,7 @@ build can break is of two kinds:
 
 | tier | command | when | budget |
 |---|---|---|---|
-| gate | `make test-lite` | before every commit | 2 min |
+| gate | `make test` (`test-tix`, `test-mix`) | before every commit | 2 min |
 | touched | `make self-quick` | the toolchain, kernels, emulators changed | 5 min |
 | full | `make test-all` | CI, each push; by hand before a large change | 30 min |
 | night | `make self` | each night, CI's schedule or the author's machine | hours |
@@ -262,10 +262,29 @@ And the full build faster, besides the gate:
    m-ix 165 s); `tix` alone 75 s. Past the budget still: ix built by
    ix 160 s, mini-ml compiles games 72 s and lib_compression's group
    65 s, tiny-ml's programs 70 s: next.
+   Then: "ix built by ix" a build job (94 s) and 21 jobs of checks,
+   each waiting for the build (`job -after-ix`, its clock started then;
+   a skip if the build failed); games/tests/frames.sh's sessions 16 at
+   a time (J), their lines in the list's order (dune's 35 s to 6.5 s,
+   ix's 70 s to 13 s; examples' and office's 9 s to 1 s; RECORD=1 the
+   same list). Waiting for another session's run took longer than a
+   run: ix built in the run's own directory ($W/mk/7, 258 MB, removed
+   when it passes), no wait; lite.sh in braces, read whole before it
+   runs (sessions edit it while others run it). Two runs at once found
+   networking/tests/tls.sh's ports: two scripts on the same port, a
+   server of the other run answering (another certificate): a port
+   taken only when no one listens there, and its own server checked
+   alive. Measured: **115 s** and 113 s, 119 jobs, another session's
+   run at the same time (load 25). `make test-tix` 70 s.
 4. **Measured**: the self build on the host for each system; a self
    smoke test inside each; dune's build from nothing in a private copy
    (for `-index`). What fits goes in the gate.
 5. **`make test` and `test-quick` gone**, their jobs placed;
+   Done in part: `make test` is the gate (`test: test-lite`, the author:
+   "have make test, run by default this lite.sh", "the default make
+   test is the one we should use for most cases"); the old list is
+   `make test-long`, test-all's suite long, its jobs still to place;
+   `make test-tix`, `make test-mix`; the README says so. Left:
    `docs/testing.md`; the Makefile's header, the README.
 6. **The commit's own files tested** (`-index`) or the guard instead,
    by step 4's numbers.

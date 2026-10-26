@@ -19,7 +19,7 @@ DIRS=. render course race
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
 # (each before the ones that name it)
-LIB=Mesh Palette Render Track3d Heightmap Scenery Land Course Cars
+LIB=Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

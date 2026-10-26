@@ -13,7 +13,7 @@
 (library
  (name ix_virtua)
  (wrapped false)
- (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars)
+ (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race)
  (libraries ix_graphics_geometry))
 
 (executable

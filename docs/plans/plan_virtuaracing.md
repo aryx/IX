@@ -401,3 +401,45 @@ float constants unboxed once (`plan_ml_floats.md`): **53.3 million a
 frame** (63.5). Left: `fill` and `face`, a few thousand instructions
 a face; the far plane (1,300 m of land and trees) the author's to
 choose.
+
+**Fog at 600 m, tried and not kept** (the author: "let's try fog at
+600 m, then the race"; then, with the numbers, "drop it, start the
+race"). Seven levels of fog from 200 m to 600 m, a face by its nearest
+corner, one past 600 m not drawn, the land's tiles within 782 m, the
+sky ending at 650 m over a background of the fog's colour; each mesh's
+shades at each level (`Mesh.light_fogged`), the palette's median cut
+over the fogged colours too (then 192 entries for the clear ones and
+64 for the fogged: in one cut the sky's blue went to the fogged
+greens). Arm, mini-5i: a frame **52.75 million against 53.3** (6,485
+faces to 5,841, the far ones small and cheap, and each face paying its
+nearest corner and level), the start to frame 3 **6.7 billion against
+2.85** (seven copies of every colour counted and lit); Big Forest's
+mountains gone, the golden's mean difference 14.0 (6.7 without). The
+frame's cost is in the faces near the road (`fill`, `face`), not in
+the distance. The code discarded; this note keeps the measure.
+
+**Stage 3, its first part (3a): the race on Big Forest** (the author:
+"then the race"). `race/`: `Topdown` (the playground's kit's car,
+`drive`, `bounce`, `push`; not its waypoint track), `Driving` (the
+player's car on the road: the wheel a little at a time, the grass, the
+rail, the spins), `Rivals` (on the road, by lane, slower before a
+corner, passing; bumped as discs), `Race` (the countdown, the clock and
+its checkpoints, the laps, the goal, the car steering itself to a stop
+after it; the sounds as events, for stage 4). `Virtua`: the camera
+following the car (a wider angle at speed, the shake off the road and
+at the rail), the braking car's lights, `stats` saying the race (its
+time, clock, the car's distance, speed, place, lap). Found on the way:
+the Ferris wheel's rim, spokes and legs, one face thick, culled from
+behind since the cull (`Mesh.two_sided` now; the playground's comment
+names them, my comparison had looked from the grid only).
+- Checked: `frames.sh`'s sessions (the three again: the palette counts
+  the braking car's colours; a new one, `race`, 900 frames of the
+  throttle); by mini-ml the same bytes, and a race of 2,400 frames
+  (throttle and two turns) the same frame by frame in `stats` by OCaml
+  and by mini-ml (the floats of the car the same, no fused product
+  between them here); culling on and off along it, 4 pixels apart in
+  one of 14 frames.
+- Not yet: the race's screens and the scenes (3b), Bay Bridge and
+  Acropolis (3c), the comparison with the playground's race (by its
+  display, at 3b; a rival's speed has a part by our hash, so near, not
+  the same).

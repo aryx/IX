@@ -45,8 +45,15 @@ val verge : float
 (* degrees from [a] to [b], the short way round *)
 val angle_diff : float -> float -> float
 
+(* [turn_at ribbon i]: how much the road turns at segment i, degrees a
+ * segment (averaged over a few) *)
+val turn_at : Track3d.t -> int -> float
+
 type span_kind = Suspension | Overpass | Tunnel | Wall
 type span = { kind : span_kind; s0 : float; s1 : float }
+
+(* [in_span spans kinds s]: the span of one of [kinds] that s is in *)
+val in_span : span list -> span_kind list -> float -> span option
 
 (* a chunk of the road, or a tile of the land, and its middle (x, z) *)
 type piece = { mesh : Mesh.t; mx : float; mz : float }
@@ -71,6 +78,9 @@ type t = {
 }
 
 val big_forest : unit -> t
+
+(* a lap's length: the course's, or a stage's less its two ends *)
+val lap_length : t -> float
 
 (* [road_near c s eye]: the chunks around the car, at [s] along the
  * lap, and any near the eye (an overpass, the other side of a

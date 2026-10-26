@@ -211,15 +211,15 @@ let ferris_wheel (angle : float) : Mesh.shape =
     polygon3d (rgb 150 150 160)
       [ (x -. 0.6, 0., z); (x +. 0.6, 0., z); (0.3, hub, z); (-0.3, hub, z) ]
   in
+  (* (the rim, the spokes and the legs one face thick: seen from both
+   * sides, Mesh.two_sided) *)
   group3d
-    (rim @ spokes @ cars
-    @ [
-        leg (-9.) (-2.);
-        leg 9. (-2.);
-        leg (-9.) 2.;
-        leg 9. 2.;
-        box (rgb 90 90 100) 1.2 1.2 5. |> move_y3d hub;
-      ])
+    (List.map Mesh.two_sided rim
+    @ List.map Mesh.two_sided spokes
+    @ cars
+    @ List.map Mesh.two_sided
+        [ leg (-9.) (-2.); leg 9. (-2.); leg (-9.) 2.; leg 9. 2. ]
+    @ [ box (rgb 90 90 100) 1.2 1.2 5. |> move_y3d hub ])
 
 (* a track on stilts, a loop the loop in the middle (a ring of short
  * boxes), the cars resting at the station *)

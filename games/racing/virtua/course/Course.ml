@@ -563,6 +563,11 @@ let sky (c : t) (cam : Camera.t) : Mesh.shape =
         ];
     ]
 
+(* (the playground's course's lap_length) *)
+let lap_length (c : t) : float =
+  if c.laps = 1 then Track3d.length c.ribbon -. (2. *. Track3d.step c.ribbon)
+  else Track3d.length c.ribbon
+
 let meshes (c : t) : Mesh.t list =
   Array.fold_right
     (fun (p : piece) (l : Mesh.t list) -> p.mesh :: l)

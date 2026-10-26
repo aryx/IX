@@ -1,0 +1,6 @@
+$D/Lalr.$O: $D/Yacc.$O
+$D/Output.$O: $D/Yacc.$O
+$D/CLI.$O: $D/Lalr.$O
+$D/CLI.$O: $D/Output.$O
+$D/CLI.$O: $D/Yacc.$O
+$D/Main.$O: $D/CLI.$O

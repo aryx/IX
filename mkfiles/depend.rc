@@ -1,0 +1,38 @@
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# A directory's .depend: for each of its units, a line for each other
+# of its units whose values it names (mini-ml -uses), so that mk makes a unit after
+# those whose summaries it reads (languages/ml/simple/Summary.mli), and
+# again when one of them is made again: ocamldep's lines for ocamlopt's
+# .cmx. mk text, the objects as obj/X.$O, obj as given ('$D', '$L'):
+# mk's variables, read where the mkfile includes it. Run by a mkfile's
+# depend target (mkprog's, mklib's, lib_core's...), after a build (a
+# unit mini-yacc makes is then there); its output kept in the
+# directory, made again when units are added or moved (mini-mk depend
+# at the top: every directory's).
+# usage: $RC mkfiles/depend.rc obj dir... -- unit...   (ML and INCLUDES:
+#   the environment's; a unit's source: the first dir's that has it, then
+#   INCLUDES' -I's)
+# (a list again: from a recipe of sh's, as kernels/singularity's, one word)
+ML=`{echo $ML}
+INCLUDES=`{echo $INCLUDES}
+obj=$1
+shift
+dirs=()
+while(! ~ $1 --){ dirs=($dirs $1); shift }
+shift
+units=$*
+# (a unit's file may be elsewhere, its own rule says where: the -I
+# directories too, after those given, as mini-ml looks for a unit)
+i=$INCLUDES
+while(! ~ $#i 0){
+	if(~ $i(1) -I && ! ~ $#i 1){ dirs=($dirs $i(2)); i=$i(3-) }
+	if not i=$i(2-)
+}
+for(u in $units){
+	f=()
+	for(d in $dirs) if(~ $#f 0) if(ls $d/$u.ml >/dev/null >[2=1]) f=$d/$u.ml
+	if(! ~ $#f 0) for(n in `{$ML -uses $INCLUDES $f}) if(~ $n $units && ! ~ $n $u) echo $obj^'/'^$u^'.$O: '^$obj^'/'^$n^'.$O'
+}
+exit ''

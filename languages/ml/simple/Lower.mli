@@ -131,6 +131,16 @@ val curry_funcs : unit -> Ir.func list
  * functions *)
 val calls_whole : bool ref
 
+(* a known function whose body is this many nodes or fewer: its calls
+ * with all its arguments are its body, in its unit (0: none; -O3's) *)
+val inline_most : int ref
+(* the toplevel functions of the units this one names (their
+ * summaries'), inlined in this one too; set before unit_ *)
+val imports : Summary.entry list -> unit
+(* this unit's toplevel functions inlined where called, for its
+ * summary; after unit_ *)
+val exports : Scope.item list -> Summary.entry list
+
 (* the symbols' names: an operator's characters as $ and their code *)
 (* the runtime's function for a relation of values not both integers *)
 val poly_function : Ir.rel -> string

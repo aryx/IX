@@ -64,11 +64,20 @@ let glabel () = incr labels; sprintf "Q%d" !labels
  * nowhere (a constant, made where it is read); an instruction reads
  * its operands from there, computes into its result's register, or
  * into a scratch one then its slot *)
+(* (off: mini-ml -full-frames) *)
+let small_frames = ref true
+
 let func m out (fn : func) (lf : L.func) =
   let w = m.w and mov = m.mov and vsp = m.vsp and t = m.tmp in
   let lines = ref [] in
   let line f = lines := f :: !lines in
-  let ins fmt = Printf.ksprintf (fun s -> line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
+  (* (bl: a BL emitted, but to caml_array_bound_error, which raises:
+   * the link is then needed, below) *)
+  let bl = ref false in
+  let ins fmt =
+    Printf.ksprintf (fun s ->
+      if String.length s > 3 && String.sub s 0 3 = "BL\t" && s <> "BL\tcaml_array_bound_error(SB)" then bl := true;
+      line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
   let lab l = line (fun _ _ _ -> l ^ ":\n") in
   let tries = ref 0 and cargs = ref (if m.arch = Arm then 1 else 0) in
   (* OPTIMIZATION: the stack code's own slots (its variables and
@@ -100,6 +109,19 @@ let func m out (fn : func) (lf : L.func) =
   in
   let vregs = if m.arch = Arm && not calls_bl then m.vregs @ [ 14 ] else m.vregs in
   let loc, frame, dframe = Alloc.alloc fn ~nregs:(List.length vregs) ~nfregs:(List.length m.fregs) ~base in
+  (* OPTIMIZATION (frameless): no frame on the value stack when no value
+   * lives in memory (none live across a safepoint, no handler) and the
+   * parameters came in registers: the prologue's stores of every
+   * parameter, its loads of those with a register, its frame's ADD and
+   * the epilogue's SUB were a third of a small function's
+   * instructions (mini-doom's View.fine 35 a call, mini-quake's clamp
+   * 19); the parameters moved from where they came to their registers.
+   * old: a frame of nparams + 1 slots at least, always *)
+  let frameless =
+    !small_frames && not memory && fn.nparams <= m.nregs
+    && not (Hashtbl.fold (fun v _ acc -> acc || match loc v with Alloc.Mem _ -> true | _ -> false) fn.defs false)
+  in
+  let frame = if frameless then 0 else frame in
   let slot_ref f i =
     let off = w * (i - f) in
     if m.arch = Arm64 && off < -256 then sprintf "\tSUB\t$%d, R%d, R19\n" (-off) vsp, "0(R19)" else "", sprintf "%d(R%d)" off vsp
@@ -171,10 +193,12 @@ let func m out (fn : func) (lf : L.func) =
     if tail then List.iter (fun (k, _) -> ins "%s\t%d(R%d), R%d" mov (w * k) vsp t; put_slot t k) extra
   in
   let link = 0 in
+  (* (without a frame, without its SUB; a leaf's, with nothing of the
+   * machine stack's: msize 0, below) *)
   let epilogue () =
-    line (fun f _ _ -> sprintf "\tSUB\t$%d, R%d\n" (w * f) vsp);
-    ins "%s\t%d(%s), %s" mov link m.sp m.link;
-    line (fun _ m' _ -> sprintf "\tADD\t$%d, %s\n" m' m.sp)
+    line (fun f _ _ -> if f = 0 then "" else sprintf "\tSUB\t$%d, R%d\n" (w * f) vsp);
+    line (fun _ m' _ -> if m' = 0 then "" else sprintf "\t%s\t%d(%s), %s\n" mov link m.sp m.link);
+    line (fun _ m' _ -> if m' = 0 then "" else sprintf "\tADD\t$%d, %s\n" m' m.sp)
   in
   let record c k = c + (4 * w * k) in
   let at k d f = line (fun _ _ c -> "\t" ^ f (record c k + d) ^ "\n") in
@@ -210,6 +234,8 @@ let func m out (fn : func) (lf : L.func) =
     | Sub -> ins "SUB\tR%d, R%d, R%d" rb ra d; ins "ADD\t$1, R%d" d
     | Mul -> ins "SUB\t$1, R%d, R%d" ra r1; ins "%s\t$1, R%d, R%d" (shift Asr) rb r2; ins "MUL\tR%d, R%d, R%d" r2 r1 d; ins "ADD\t$1, R%d" d
     | Div | Mod ->
+        (* (arm's DIV and MOD: the assembler's BL _div, the link lost) *)
+        if m.arch = Arm then bl := true;
         ins "%s\t$1, R%d, R%d" (shift Asr) ra r1;
         ins "%s\t$1, R%d, R%d" (shift Asr) rb r2;
         ins "%s\tR%d, R%d, R%d" (match m.arch, o with Arm, Div -> "DIV" | Arm, _ -> "MOD" | _, Div -> "SDIV" | _ -> "REM") r2 r1 d;
@@ -636,6 +662,13 @@ let func m out (fn : func) (lf : L.func) =
         ins "ORR\t$1, R%d" d; finish v d; true
     | _ -> false
   in
+  (* (frameless: the parameters from their registers into theirs, in
+   * their order, as below) *)
+  if frameless then
+    pmove (List.sort compare (Hashtbl.fold (fun v ins acc ->
+      match ins, loc v with
+      | Param i, Alloc.Reg c -> (In_reg (vreg c), At (In_reg i)) :: acc
+      | _ -> acc) fn.defs []));
   Array.iteri (fun i (b : block) ->
     lab (blabel b.id);
     let fuse = fused b in
@@ -813,12 +846,24 @@ let func m out (fn : func) (lf : L.func) =
   let f = frame and c = round (max (w * (!cargs + 1)) (link + w)) 16 in
   (* (the doubles' slots after the records, the whole kept a multiple of
    * 16, as arm64's SP must be) *)
-  let msize = round (record c !tries + (8 * dframe)) 16 in
+  (* OPTIMIZATION (leaf): nothing on the machine stack, the link not
+   * saved, in a function that calls nothing with BL (no call but a
+   * tail one, no allocation, no C), has no handler and no double's
+   * slot, and did not take R14 for a value.
+   * old: the link saved always *)
+  let r14 =
+    m.arch = Arm
+    && Hashtbl.fold (fun v _ acc ->
+         acc || (not (Hashtbl.mem fn.doubles v) && match loc v with Alloc.Reg c -> vreg c = 14 | _ -> false)) fn.defs false
+  in
+  let leaf = !small_frames && not !bl && !tries = 0 && dframe = 0 && not r14 in
+  let msize = if leaf then 0 else round (record c !tries + (8 * dframe)) 16 in
   let pr fmt = Printf.bprintf out fmt in
   pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
-  pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
+  if msize > 0 then pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n" msize m.sp mov m.link link m.sp;
+  if f > 0 then pr "\tADD\t$%d, R%d\n" (w * f) vsp;
   let slot_at i = let pre, a = slot_ref f i in pr "%s" pre; a in
-  for i = 0 to min fn.nparams m.nregs do let a = slot_at i in pr "\t%s\tR%d, %s\n" mov i a done;
+  if f > 0 then for i = 0 to min fn.nparams m.nregs do let a = slot_at i in pr "\t%s\tR%d, %s\n" mov i a done;
   (* the parameters with a register (Alloc), from their slots, in
    * their order (not the table's: the stdlib's hash function's) *)
   let params =
@@ -827,9 +872,10 @@ let func m out (fn : func) (lf : L.func) =
       | Param i, Alloc.Reg c -> (i, vreg c) :: acc
       | _ -> acc) fn.defs []
   in
-  List.iter (fun ((i, r) : int * int) ->
-    let a = slot_at i in
-    pr "\t%s\t%s, R%d\n" mov a r) (List.sort compare params);
+  if f > 0 then
+    List.iter (fun ((i, r) : int * int) ->
+      let a = slot_at i in
+      pr "\t%s\t%s, R%d\n" mov a r) (List.sort compare params);
   (* the other slots zeroed: the collector scans them *)
   (match m.arch with
    | Arm64 -> for i = fn.nparams + 1 to f - 1 do let a = slot_at i in pr "\tMOV\tZR, %s\n" a done

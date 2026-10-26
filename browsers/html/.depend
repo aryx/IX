@@ -1,0 +1,8 @@
+$D/Entities.$O: $D/Charset.$O
+$D/Html_lexer.$O: $D/Dtd.$O
+$D/Html_lexer.$O: $D/Entities.$O
+$D/Line_mode.$O: $D/Dom.$O
+$D/Html_tree.$O: $D/Dom.$O
+$D/Html_tree.$O: $D/Dtd.$O
+$D/Html_tree.$O: $D/Html_lexer.$O
+$D/Forms.$O: $D/Dom.$O

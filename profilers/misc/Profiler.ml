@@ -8,7 +8,8 @@ let usage = {|usage: mini-prof [-n count] [-diff base.prof] [-a name] profile fi
   file.map   the link's functions: mini-ld -map's "address name" lines, or
              mini-ld -v's listing ("address: word TEXT name+0(SB), $frame")
   -diff      a profile of a shorter run taken off first (the start)
-  -n         the functions shown (default 30)
+  -n         the functions shown (default 30), each with its calls (its
+             first instruction's count) and its instructions a call
   -a         the function's instructions, each with its count, read from
              the program beside its map (doom for doom.map); name: mini-ml's
              in full (f1_to_rgba<>), or without its number and <> (to_rgba)
@@ -167,10 +168,18 @@ let main (caps : < Cap.argv ; Cap.stdout ; Cap.stderr ; Cap.open_in ; .. >) : in
            * library's) *)
           let rows = List.sort (fun ((a, n) : string * int) ((b, m) : string * int) -> if n <> m then compare m n else compare a b)
               (Hashtbl.fold (fun (f : string) (n : int) (acc : (string * int) list) -> (f, n) :: acc) by []) in
-          Console.print caps (Printf.sprintf "%s instructions\n%14s %6s  function\n" (commas total) "count" "%");
+          (* a function's calls: the count of its first instruction (a
+           * loop back to it counted too: rare in mini-ml's, whose first is
+           * the frame's) *)
+          let calls : (string, int) Hashtbl.t = Hashtbl.create 1024 in
+          Array.iter (fun ((a, name, _) : int * string * string) ->
+            match Hashtbl.find_opt counts a with Some n -> add calls name n | None -> ()) funcs;
+          Console.print caps (Printf.sprintf "%s instructions\n%14s %6s %12s %8s  function\n" (commas total) "count" "%" "calls" "a call");
           List.iteri
             (fun (i : int) ((name, n) : string * int) ->
               if i < top && n > 0 then
-                Console.print caps (Printf.sprintf "%14s %6.1f  %s\n" (commas n) (100. *. float n /. float (max 1 total)) name))
+                let c = match Hashtbl.find_opt calls name with Some c -> c | None -> 0 in
+                let per = if c > 0 then Printf.sprintf "%.1f" (float n /. float c) else "" in
+                Console.print caps (Printf.sprintf "%14s %6.1f %12s %8s  %s\n" (commas n) (100. *. float n /. float (max 1 total)) (commas c) per name))
             rows;
           0)

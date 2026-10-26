@@ -19,13 +19,26 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# the folders' units: said whole (a second rule with % for every unit,
-# mk refuses), each found by its name
-FOLDED=Conf Delta Diff Flags Hash Merge3 Object Pack Proto Loose Difftool Store Repo Refs Query Packer Log \
- Index9 Get Fs Save Send Serve Walk Commands
-${FOLDED:%=$D/%.$O}: $LOCAL
+# each folder's units, a rule each, its source the prerequisite (one %
+# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
+# so that .depend orders each: repo objects diff commands wire
+# old: the folders' units said whole, compiled by one recipe, each found
+#   by its name (*/)
+$D/%.$O: repo/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
+	$ML $INCLUDES -o $target repo/$stem.ml
+$D/%.$O: objects/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target objects/$stem.ml
+$D/%.$O: diff/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target diff/$stem.ml
+$D/%.$O: commands/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target commands/$stem.ml
+$D/%.$O: wire/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target wire/$stem.ml
 
 # the two other programs: the same units, each its main and its start
 all:V: $D/mini-diff $D/mini-merge3

@@ -1,0 +1,15 @@
+$D/Css_values.$O: $D/Css_syntax.$O
+$D/Selectors.$O: $D/Css_syntax.$O
+$D/Cascade.$O: $D/Css_syntax.$O
+$D/Cascade.$O: $D/Css_values.$O
+$D/Cascade.$O: $D/Looks.$O
+$D/Cascade.$O: $D/Selectors.$O
+$D/Css.$O: $D/Css_syntax.$O
+$D/Css.$O: $D/Selectors.$O
+$D/Css_grid.$O: $D/Css_syntax.$O
+$D/Css_grid.$O: $D/Css_values.$O
+$D/Computed.$O: $D/Cascade.$O
+$D/Computed.$O: $D/Css_grid.$O
+$D/Computed.$O: $D/Css_syntax.$O
+$D/Computed.$O: $D/Css_values.$O
+$D/Computed.$O: $D/Ua_sheet.$O

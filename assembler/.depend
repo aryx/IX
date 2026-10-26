@@ -1,0 +1,5 @@
+$D/Parser_asm.$O: $D/Asm.$O
+$D/Parser_asm.$O: $D/Lexer_asm.$O
+$D/CLI.$O: $D/Asm.$O
+$D/CLI.$O: $D/Parser_asm.$O
+$D/Main.$O: $D/CLI.$O

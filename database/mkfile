@@ -12,12 +12,20 @@ LIBOBJS=
 GEN=$B/database/Parser.ml $B/database/Lexer.ml
 <$TOP/mkfiles/mkprog
 
-# the folders' units: said whole (a second rule with % for every unit,
-# mk refuses), each found by its name
-FOLDED=Pager Record Btree Cursor Bytecode Dbm Dbmfile Ast Show_ast Sql Schema Codegen Optimizer
-${FOLDED:%=$D/%.$O}: $LOCAL $GEN
+# each folder's units, a rule each, its source the prerequisite (one %
+# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
+# so that .depend orders each: storage dbm sql
+# old: the folders' units said whole, compiled by one recipe, each found
+#   by its name (*/)
+$D/%.$O: storage/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
+	$ML $INCLUDES -o $target storage/$stem.ml
+$D/%.$O: dbm/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target dbm/$stem.ml
+$D/%.$O: sql/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target sql/$stem.ml
 
 # the lexer and the grammar, which are in sql/ (mkprog's rules are for
 # this directory's)

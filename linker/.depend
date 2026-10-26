@@ -1,0 +1,10 @@
+$D/Arm.$O: $D/Link.$O
+$D/Arm64.$O: $D/Link.$O
+$D/Exe.$O: $D/Link.$O
+$D/Follow.$O: $D/Link.$O
+$D/CLI.$O: $D/Arm.$O
+$D/CLI.$O: $D/Arm64.$O
+$D/CLI.$O: $D/Exe.$O
+$D/CLI.$O: $D/Follow.$O
+$D/CLI.$O: $D/Link.$O
+$D/Main.$O: $D/CLI.$O

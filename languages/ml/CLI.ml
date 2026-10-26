@@ -194,6 +194,49 @@ let preprocess (caps : < caps; .. >) dirs file text =
           | text, _, _ -> Ok text
           | exception Rejected m -> if Resolve.has_classes () || Pp.has_classes ~file text items then Error m else Ok text))
 
+(* OPTIMIZATION (inline, across units): the summaries (Summary.mli) of
+ * the units this one uses, those beside its object (its build's, which
+ * its directory's .depend orders: a unit of another directory, a
+ * library's or lib_core's, is not made again when that one changes,
+ * and its copies would be stale), each of the text its .ml has now
+ * (found as its interface is, in dirs); their places in the text made
+ * negative, each unit's apart, with their types' answers
+ * (Lower.immediates...): their small functions inlined here as this
+ * unit's own (Lower.imports). A summary of another text, or none,
+ * nothing inlined from that unit. (Every directory's: mini-doom's frame
+ * 0.994, mini-ml 6% larger.)
+ * old: another unit's .mli only *)
+let summary_file name = name ^ ".inline"
+let summaries (caps : < caps; .. >) objdir dirs name items =
+  let find names dirs = List.find_map (fun f -> if exists caps f then FS.read_opt caps f else None)
+      (List.concat_map (fun d -> List.map (fun n -> Fpath.(d / n)) names) dirs) in
+  let base = ref 0 in
+  List.concat_map (fun u ->
+    match Option.bind (find [ summary_file u ] [ objdir ]) Summary.of_string,
+          find [ String.uncapitalize_ascii u ^ ".ml"; u ^ ".ml" ] dirs with
+    | Some s, Some src when s.digest = Digest.to_hex (Digest.string src) ->
+        let b = !base in
+        base := b + String.length src + 1;
+        let sh ((x, y) : Ast.span) : Ast.span = (-(x + b) - 1, -(y + b) - 1) in
+        let set h = List.iter (fun sp -> Hashtbl.replace h (sh sp) ()) in
+        set Lower.immediates s.immediates;
+        set Lower.string_eqs s.strings;
+        set Lower.float_cmps s.floats;
+        List.iter (fun (g, base) -> Hashtbl.replace Lower.min_max_aliases g base) s.min_max;
+        List.map (fun (e : Summary.entry) -> { e with body = Summary.respan sh e.body }) s.entries
+    | _ -> [])
+    (List.filter (fun u -> u <> name) (Summary.uses items))
+
+(* the unit's summary, beside its object *)
+let write_summary (caps : < caps; .. >) out file name items =
+  let s : Summary.t = {
+    digest = Digest.to_hex (Digest.string (FS.read caps file));
+    entries = Lower.exports items;
+    immediates = Typing.immediates (); strings = Typing.strings (); floats = Typing.floats ();
+    min_max = Typing.min_max_globals ();
+  } in
+  FS.write caps Fpath.(parent out / summary_file name) (Summary.to_string s)
+
 (* the assembly into the object, through mini-asm's parser *)
 let gas = ref false
 
@@ -206,7 +249,7 @@ let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Uni
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and facts = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
-  let show_types = ref false and unsafe = ref false and pp = ref false in
+  let show_types = ref false and unsafe = ref false and pp = ref false and uses = ref false in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
     "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
@@ -218,17 +261,21 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-gas", Arg.Set gas, " GNU's assembly, for gcc";
     "-i", Arg.Set show_types, " the values' types, printed";
     "-M", Arg.Set deps, " the units the file names, printed";
+    "-uses", Arg.Set uses, " the units whose values it names, printed (mkfiles/depend.rc: their summaries read)";
     "-start", Arg.Set start, " the start object of the units named";
     "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
     "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes), " every pass of opti/ (-Oname: one)";
     (* the mkfiles' (mkconfig's MLOPT): what is added later comes with it *)
-    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; ssa := true), " every optimization: -O and -ssa";
+    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; ssa := true; Lower.inline_most := 16), " every optimization: -O, -ssa, -inline 16";
     "-O0", Arg.Unit (fun () -> opti := []; ssa := false), " none: the stack machine's code as Lower makes it";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
+    "-inline", Arg.Set_int Lower.inline_most, " n: -ssa: a known function of n nodes or fewer copied where it is called (0: none)";
     "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
+    "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
+    "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";
     "-boxed-floats", Arg.Clear Unbox.on, " -ssa: every float a block, none a double in a register (Unbox)";
     "-ssa-stack", Arg.Set ssa_stack, " through the SSA form and back";
     "-dast", Arg.Set dast, " dump the tree";
@@ -248,6 +295,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   (* (-O3 with -gas: opti's passes alone) *)
   if !gas && !ssa && List.mem "-O3" (Array.to_list argv) then ssa := false;
   if !gas && !ssa then failwith "-ssa: not with -gas (gcc's calls of C)";
+  (* (inlining with ssa's back end only: Lower.inline_most) *)
+  if not !ssa then Lower.inline_most := 0;
   let path s = match FS.path s with Ok p -> p | Error m -> failwith m in
   let ext = match Gen.arch !mach with _ when !gas -> ".s" | Arm -> ".5" | Arm64 -> ".7" in
   let outfile file = if !out <> "" then path !out else Fpath.set_ext ext (Fpath.base file) in
@@ -289,7 +338,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if !dast then print caps (String.concat "\n" (List.map Ast.show_item tree) ^ "\n");
               if !dscope then print caps (String.concat "\n" (List.map Scope.show_item items) ^ "\n");
               if !deps then print caps (String.concat " " (Resolve.units_named ()) ^ "\n");
-              if !dast || !dscope || !deps then 0
+              if !uses then print caps (String.concat " " (List.filter (fun u -> u <> name) (Summary.uses items)) ^ "\n");
+              if !dast || !dscope || !deps || !uses then 0
               else
                 match if !unsafe then [] else Typing.unit_ name items with
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)
@@ -306,7 +356,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                   set Lower.float_cmps (Typing.floats ());
                   Hashtbl.reset Lower.min_max_aliases;
                   List.iter (fun (g, base) -> Hashtbl.replace Lower.min_max_aliases g base)
-                    (Typing.min_max_globals ())
+                    (Typing.min_max_globals ());
+                  if !Lower.inline_most > 0 then Lower.imports (summaries caps (Fpath.parent (outfile file)) (Fpath.parent file :: incs) name items)
                 end;
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
@@ -324,6 +375,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     in
                     match text () with
                     | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
-                    | text -> if !dir || !dssa || !flow || !dflow then 0 else (output caps !mach ~listing:!listing ~out:(outfile file) ~file text; 0))))
+                    | text ->
+                        if !dir || !dssa || !flow || !dflow then 0
+                        else begin
+                          output caps !mach ~listing:!listing ~out:(outfile file) ~file text;
+                          if !Lower.inline_most > 0 && not !listing then write_summary caps (outfile file) file name items;
+                          0
+                        end)))
   | _ -> eprint caps (usage ^ "\n"); 2
   | exception Failure m -> fail ("mini-ml: " ^ m)

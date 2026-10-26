@@ -20,19 +20,19 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
-COMPAT=Multiply Acom Regs Cgen Arm Arm64 Prtree
-${COMPAT:%=$D/%.$O}: $LOCAL $GEN
+# compat/'s units (Multiply Acom Regs Cgen Arm Arm64 Prtree): one recipe each, so that .depend orders each
+$D/%.$O: compat/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t compat/^`{basename $t .$O}^.ml || exit 1
-SIMPLE=Ir Lower Gen
-${SIMPLE:%=$D/%.$O}: $LOCAL $GEN
+	$ML $INCLUDES -o $target compat/$stem.ml
+# simple/'s units (Ir Lower Gen): one recipe each, so that .depend orders each
+$D/%.$O: simple/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t simple/^`{basename $t .$O}^.ml || exit 1
-OPTI=Opti Peep
-${OPTI:%=$D/%.$O}: $LOCAL $GEN
+	$ML $INCLUDES -o $target simple/$stem.ml
+# opti/'s units (Opti Peep): one recipe each, so that .depend orders each
+$D/%.$O: opti/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t opti/^`{basename $t .$O}^.ml || exit 1
-FACTS=Facts Ir_facts
-${FACTS:%=$D/%.$O}: $LOCAL $GEN
+	$ML $INCLUDES -o $target opti/$stem.ml
+# facts/'s units (Facts Ir_facts): one recipe each, so that .depend orders each
+$D/%.$O: facts/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t facts/^`{basename $t .$O}^.ml || exit 1
+	$ML $INCLUDES -o $target facts/$stem.ml

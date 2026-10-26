@@ -45,3 +45,8 @@ $D/mini-stats: $D/Stats.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 clean:V:
 	rm -rf $D
+
+# the units' order (mkfiles/depend.rc): mini-mk depend after a build
+depend:V:
+	$RC $TOP/mkfiles/depend.rc '$D' . -- $MACH $LIB Profiler Prof Stats > .depend
+<.depend

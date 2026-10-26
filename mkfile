@@ -50,5 +50,14 @@ libs:V:
 	b=(); if(~ $B /*) b='B='^$B
 	for(d in $LIBS) @{cd $d && $MK 'O='$O 'OS='$OS $b} || exit 1
 
+# every directory's .depend (mkfiles/depend.rc), after a build: those
+# whose mkfile has a depend target, its own or mkprog's, mklib's,
+# games/mkgames'
+depend:V:
+	for(m in `{$WALK . | grep '/mkfile$' | grep -v -e '^\./_' -e '/\.claude/' | xargs grep -l -E -e '^<.*mkfiles/mk(prog|lib)$' -e '^<.*games/mkgames$' -e '^depend:V:'}) {
+		d=`{dirname $m}
+		if(! ~ $d .) @{cd $d && $MK 'O='$O depend} || exit 1
+	}
+
 clean:V:
 	rm -rf _mk

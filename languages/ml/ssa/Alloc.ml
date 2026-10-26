@@ -33,6 +33,9 @@ let clobbers = function
 
 let def (fn : func) v = Hashtbl.find fn.defs v
 
+(* (off: mini-ml -own-slots) *)
+let share_slots = ref true
+
 (* the values that need no storage: a Zero is the constant 0, and a
  * constant is made where it is read (Emit's src)
  * old: match def fn v with Zero -> false | _ -> true *)
@@ -168,11 +171,46 @@ let alloc (fn : func) ~nregs ~nfregs ~base =
     color
   in
   let color = colors word nregs memory and dcolor = colors double nfregs dmemory in
-  (* memory: the parameters their prologue slots, the others one each;
-   * a double one of its own (Dmem), from 0 *)
-  let slots = Hashtbl.create 64 and next = ref base and dnext = ref 0 in
-  (* a body's value no one reads after needs no place *)
-  let dead v = match Hashtbl.find_opt after v with Some live -> not (IS.mem v live) && not (Hashtbl.mem memory v) | None -> false in
+  (* a body's value no one reads after needs no place; nor one in no
+   * block, a phi Ssa_build's simplify took out, a value Unbox replaced
+   * (each was a slot of the frame, zeroed at each call: Float.min's 13
+   * of 15).
+   * old: | None -> false *)
+  let placed = Hashtbl.create 256 in
+  Array.iter (fun (bl : block) -> List.iter (fun v -> Hashtbl.replace placed v ()) (bl.phis @ bl.body)) fn.blocks;
+  let dead v =
+    match Hashtbl.find_opt after v with
+    | Some live -> not (IS.mem v live) && not (Hashtbl.mem memory v)
+    | None -> not (Hashtbl.mem placed v) && (match def v with Param _ | Caught _ -> false | _ -> true)
+  in
+  (* OPTIMIZATION (shared slots): a word in memory takes the lowest slot
+   * that no value live with it holds, nor its own operands, in the
+   * registers' walk: two whose lives do not meet share one. A slot then
+   * keeps a dead value until the next is written, a root the collector
+   * updates as the others, which at worst keeps a block one collection
+   * more. Every slot is zeroed at the entry, the collector scanning it:
+   * Float.min, with three copies of sign_bit inlined (each value live
+   * across a call its slot), zeroed 13 at each call where it returns
+   * at its first test.
+   * old: a slot each, the next one *)
+  let shared = Hashtbl.create 64 in
+  let in_slot v = word v && real v && (match def v with Param _ -> false | _ -> true) && not (Hashtbl.mem color v) && not (dead v) in
+  let held s = IS.fold (fun x acc -> match Hashtbl.find_opt shared x with Some c -> IS.add c acc | None -> acc) s IS.empty in
+  let pick busy = let rec go c = if IS.mem c busy then go (c + 1) else c in go 0 in
+  let rec walk b =
+    let bl = fn.blocks.(b) in
+    let busy = ref (held (IS.diff live_in.(b) (IS.of_list bl.phis))) in
+    List.iter (fun v -> if in_slot v then (let c = pick !busy in Hashtbl.replace shared v c; busy := IS.add c !busy)) bl.phis;
+    List.iter (fun v ->
+      if in_slot v then Hashtbl.replace shared v (pick (held (IS.union (IS.remove v (Hashtbl.find after v)) (IS.of_list (uses v)))))) bl.body;
+    List.iter walk (List.rev children.(b))
+  in
+  if n > 0 && !share_slots then walk 0;
+  (* memory: the parameters their prologue slots, the others theirs
+   * (shared), from base, then one each for a value the walk did not
+   * reach; a double one of its own (Dmem), from 0 *)
+  let nshared = Hashtbl.fold (fun _ c m -> max m (c + 1)) shared 0 in
+  let slots = Hashtbl.create 64 and next = ref (base + nshared) and dnext = ref 0 in
   let loc v =
     match def v with
     | Zero | Const _ | Blk _ | Symb _ -> Nil
@@ -186,7 +224,10 @@ let alloc (fn : func) ~nregs ~nfregs ~base =
     | _ -> (
         match Hashtbl.find_opt color v with
         | Some c -> Reg c
-        | None -> (match Hashtbl.find_opt slots v with Some s -> Mem s | None -> let s = !next in incr next; Hashtbl.replace slots v s; Mem s))
+        | None -> (
+            match Hashtbl.find_opt shared v with
+            | Some c -> Mem (base + c)
+            | None -> (match Hashtbl.find_opt slots v with Some s -> Mem s | None -> let s = !next in incr next; Hashtbl.replace slots v s; Mem s)))
   in
   (* every value's place now, so that the frame's size is known; in the
    * values' order, not the table's: a slot's number would depend on the

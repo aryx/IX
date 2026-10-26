@@ -1,0 +1,13 @@
+$D/Playground.$O: $D/Basics.$O
+$D/Playground.$O: $D/Cmd.$O
+$D/Playground.$O: $D/Color.$O
+$D/Playground.$O: $D/Lehmer.$O
+$D/Playground.$O: $D/Set.$O
+$D/Playground.$O: $D/Sub.$O
+$D/Playground.$O: $D/Time.$O
+$D/Camera2d.$O: $D/Basics.$O
+$D/Camera2d.$O: $D/Playground.$O
+$D/Scene2d.$O: $D/Playground.$O
+$D/Sprite.$O: $D/Playground.$O
+$D/Tilemap.$O: $D/Playground.$O
+$D/Tilemap.$O: $D/Sprite.$O

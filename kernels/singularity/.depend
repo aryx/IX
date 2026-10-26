@@ -1,0 +1,9 @@
+$D/Exchange.$O: $D/Machine.$O
+$D/Channel.$O: $D/Exchange.$O
+$D/Abi.$O: $D/Channel.$O
+$D/Abi.$O: $D/Contract.$O
+$D/Abi.$O: $D/Exchange.$O
+$D/Abi.$O: $D/Machine.$O
+$D/Abi.$O: $D/Process.$O
+$D/Main.$O: $D/Machine.$O
+$D/Main.$O: $D/Process.$O

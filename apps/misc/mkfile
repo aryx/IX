@@ -22,3 +22,8 @@ $D/mini-colors: $D/Colors.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 clean:V:
 	rm -rf $D
+
+# the units' order (mkfiles/depend.rc): mini-mk depend after a build
+depend:V:
+	$RC $TOP/mkfiles/depend.rc '$D' . -- $LIB Colors > .depend
+<.depend

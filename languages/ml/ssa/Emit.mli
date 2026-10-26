@@ -9,5 +9,10 @@
  * which the prologue zeroes, as simple's; phis copied through staging
  * slots, on an edge of their own when the predecessor branches. *)
 
+(* a function without a value in memory has no frame on the value
+ * stack, and one that calls nothing with BL leaves the machine stack
+ * and its link alone (false: every function both, as simple's) *)
+val small_frames : bool ref
+
 (* a unit's functions; the data are simple's Gen's *)
 val unit_ : Asm.arch -> Ir.unit_ -> string

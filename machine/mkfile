@@ -12,9 +12,23 @@ LIBOBJS=
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 
-# the folders' units and compat/'s: said whole (a second rule with % for
-# every unit, mk refuses), each found by its name
-FOLDED=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Host_calls Linux Plan9 Host Show_arm32 Show_arm64
-${FOLDED:%=$D/%.$O}: $LOCAL
+# each folder's units, a rule each, its source the prerequisite (one %
+# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
+# so that .depend orders each: core process arm32 arm64 compat
+# old: the folders' units said whole, compiled by one recipe, each found
+#   by its name (*/)
+$D/%.$O: core/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
+	$ML $INCLUDES -o $target core/$stem.ml
+$D/%.$O: process/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target process/$stem.ml
+$D/%.$O: arm32/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target arm32/$stem.ml
+$D/%.$O: arm64/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target arm64/$stem.ml
+$D/%.$O: compat/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target compat/$stem.ml

@@ -1,0 +1,1 @@
+mini-rc ../mkfiles/depend.rc '$D' . -- Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu P9 P9_wire P9_server Cursors Terminal Window Device Virtual_cons Virtual_mouse Dev_wm Wctl Processes_winshell Wm Fileserver Mouse_action Rio > .depend

@@ -46,6 +46,12 @@ $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
 	mkdir -p $L
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
 
+# the units' order (mkfiles/depend.rc): mini-mk depend after a build;
+# each unit's file as above (Unix, Source, Sys_plan9 first where theirs is)
+depend:V:
+	INCLUDES=$STDI $RC $TOP/mkfiles/depend.rc '$L' $UNIXDIR $P9DIR concurrency $STDDIRS -- $STD $COMMONS > .depend
+<.depend
+
 # mini-ml's runtime, on the C library
 ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory

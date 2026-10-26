@@ -122,3 +122,9 @@ $D/tiny-mkfs: $D/TinyMkfs.$O $LIBS
 
 clean:V:
 	rm -rf $D
+
+# the units' order (mkfiles/depend.rc): mini-mk depend after a build;
+# beside the lines above, those of each unit that names another here
+depend:V:
+	$RC $TOP/mkfiles/depend.rc '$D' . TinyMachine TinyKernel TinyKernel/host TinyKernel/steps/t6 $D -- `{ls *.ml TinyMachine/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'} > .depend
+<.depend

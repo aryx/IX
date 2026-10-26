@@ -1,0 +1,1 @@
+mini-rc ../../mkfiles/depend.rc '$D' . -- Bits Memory Elf Arm32_isa Arm32 Arm64_isa Arm64 Show_arm32 Show_arm64 Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu Profiler Prof Stats > .depend

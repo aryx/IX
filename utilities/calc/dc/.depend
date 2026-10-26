@@ -1,0 +1,3 @@
+$D/Dc.$O: $D/Num.$O
+$D/CLI.$O: $D/Dc.$O
+$D/Main.$O: $D/CLI.$O

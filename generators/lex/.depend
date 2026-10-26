@@ -1,0 +1,4 @@
+$D/CLI.$O: $D/Dfa.$O
+$D/CLI.$O: $D/Lex.$O
+$D/CLI.$O: $D/Output.$O
+$D/Main.$O: $D/CLI.$O

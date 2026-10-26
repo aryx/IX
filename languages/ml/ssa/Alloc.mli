@@ -63,6 +63,10 @@
  * which the collector does not scan (Emit: on the machine stack) *)
 type loc = Reg of int | Mem of int | Nil | Dmem of int
 
+(* two values in memory whose lives do not meet share a slot (false:
+ * a slot each; mini-ml -own-slots) *)
+val share_slots : bool ref
+
 (* an instruction after which the collector may have run (an allocation,
  * a call) *)
 val safepoint : Ssa.ins -> bool

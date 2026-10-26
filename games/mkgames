@@ -109,6 +109,17 @@ $D/%.linked: $D/%.$O $LIBS
 	$LD $LDH -nofollow -o $D/`{echo $stem | tr A-Z a-z} $D/$stem.start.$O $STDOBJS $LIBA $LIBOBJS $D/$stem.$O $STDEND
 	touch $target
 
+# the units' order (mkfiles/depend.rc) in the directories their objects
+# share, as this mkfile's WITH asks them: mini-mk depend after a build
+depend:V:
+	{ $RC $TOP/mkfiles/depend.rc '$QO' -- $KITS $OFFICE
+	  $RC $TOP/mkfiles/depend.rc '$XO' -- $GUI4
+	  $RC $TOP/mkfiles/depend.rc '$SO' -- $SCHEME
+	  $RC $TOP/mkfiles/depend.rc '$MO' -- $FORMULA
+	  $RC $TOP/mkfiles/depend.rc '$RBO' -- $REBIRTH
+	  $RC $TOP/mkfiles/depend.rc '$KO' -- $KIT } > .depend
+<.depend
+
 clean:V:
 	rm -rf $D
 	if(~ $DIR games) rm -rf $B/lib_playground/scheme $B/lib_playground/formula $B/lib_playground/gui4 $B/lib_playground/office $B/lib_playground/shmup $B/lib_playground/rebirth

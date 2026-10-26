@@ -32,9 +32,17 @@ $D/St_kernel.ml: $ST mkfile
 $D/St_kernel.$O: $D/St_kernel.ml $LOCAL
 	$ML $INCLUDES -o $target $D/St_kernel.ml
 
-# the folders' units: said whole (a second rule with % for every unit,
-# mk refuses), each found by its name
-FOLDED=St_ast St_chunk St_lexer St_memory St_parse St_class St_bytecode St_bitblt St_colorblt St_compile St_interp St_primitives St_image St_debug St_boot
-${FOLDED:%=$D/%.$O}: $LOCAL $GEN
+# each folder's units, a rule each, its source the prerequisite (one %
+# rule for every unit, beside mkprog's, mk refuses), one recipe a unit,
+# so that .depend orders each: compiler vm graphics
+# old: the folders' units said whole, compiled by one recipe, each found
+#   by its name (*/)
+$D/%.$O: compiler/%.ml
 	mkdir -p $D
-	for(t in $target) $ML $INCLUDES -o $t */^`{basename $t .$O}^.ml || exit 1
+	$ML $INCLUDES -o $target compiler/$stem.ml
+$D/%.$O: vm/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target vm/$stem.ml
+$D/%.$O: graphics/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target graphics/$stem.ml

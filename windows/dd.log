@@ -1,0 +1,1 @@
+mini-rc ../../mkfiles/depend.rc '$D' . -- Point Rectangle Display Draw Font_default Font Mouse Keyboard Cursor Menu Hellorio > .depend

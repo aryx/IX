@@ -45,17 +45,42 @@ let file = ref ""
 (* this unit's globals whose value is a known function *)
 let known_globals : (string, binding) Hashtbl.t = Hashtbl.create 64
 
+(* OPTIMIZATION (inline): a known function small enough that a call of
+ * it with all its arguments is its body, by its code's label: its
+ * parameters, its body, the variables its body sees (where it was
+ * defined), and the frame they are slots of (None: no slot, a function
+ * that captures nothing, which may be copied anywhere in the unit). A
+ * toplevel function names only its parameters, globals and primitives
+ * (Scope: a toplevel value is a global for the definitions after it);
+ * a local one that captures variables is copied only into its own
+ * function, where they are the same slots. The typing's tables
+ * (immediates, float_cmps...) are by the place in the text: the copy
+ * is the same text. Not a body with a handler (ssa's Unbox leaves such
+ * a function's floats boxed), nor a recursive one. Only with -ssa:
+ * Gen's stack is arm's 8 registers, and a body copied into an
+ * expression is deeper than the call was.
+ * old: every known function called *)
+let inline_most = ref 0
+type inline = { iparams : Scope.pattern list; ibody : Scope.expr; ienv : (int * binding) list; iframe : fn option; isize : int }
+let inlines : (string, inline) Hashtbl.t = Hashtbl.create 64
+(* the same of other units' toplevel functions, by their globals
+ * (imports, below) *)
+let imported : (string, inline) Hashtbl.t = Hashtbl.create 64
+
 let nfuns = ref 0
 let fun_label x = incr nfuns; Printf.sprintf "f%d_%s<>" !nfuns (String.map (function ('a' .. 'z' | 'A' .. 'Z' | '0' .. '9' | '_') as c -> c | _ -> '_') x)
 (* (the curry functions are the program's, one of each in its start
  * object (curry_funcs): a call compares a closure's first field with
  * one, below (calls_whole).
  * old: each unit's own, "ml_curry%d_%d<>", those of the arities it has)
- * (of the arities up to 7 only, arm's registers less the closure's: a
- * function of more parameters, rare, has its unit's own curry
- * functions, as before, the start object not knowing the units'
- * arities; and calls_whole is not for it) *)
-let shared_most = 7
+ * (of the arities up to 16 only: a function of more parameters, rare,
+ * has its unit's own curry functions, as before, the start object not
+ * knowing the units' arities; and calls_whole is not for it.
+ * old: 7, arm's registers less the closure's, the most a curry
+ * function's block on the stack machine holds; mini-doom's columns,
+ * drawn by a function of 10 parameters from another unit, were then a
+ * closure per argument, 7% of a frame in ml_curry10_k and ml_curry8_k) *)
+let shared_most = 16
 let curry n k = if n <= shared_most then Printf.sprintf "ml_curry%d_%d" n k else Printf.sprintf "ml_curry%d_%d<>" n k
 let entry n lab = if n = 1 then lab else (if not (List.mem n !arities) then arities := n :: !arities; curry n 0)
 
@@ -151,6 +176,56 @@ let rec params (e : Scope.expr) =
       let v = new_var "param" in
       [ Scope.Pvar v ], { e with e = Ematch ({ e with e = Evar (Local v) }, cs) }
   | _ -> [], e
+
+(* a body's size, its nodes and those of the copies it makes (a call of
+ * a function inlined, env's or a global, is that function's size), up
+ * to most + 1: a copy is never larger than most. A handler or a
+ * function in it, too big (its code would be copied with it) *)
+exception Big
+let size env most (e : Scope.expr) =
+  let n = ref 0 in
+  let copied (f : Scope.expr) =
+    let b =
+      match f.e with
+      | Evar (Local x) -> List.assoc_opt x.vid env
+      | Evar (Global g) -> Hashtbl.find_opt known_globals g.gsym
+      | _ -> None
+    in
+    match Option.bind b (fun b -> b.known), f.e with
+    | Some (lab, _), _ -> (match Hashtbl.find_opt inlines lab with Some i -> i.isize | None -> 0)
+    | None, Evar (Global g) -> (match Hashtbl.find_opt imported g.gsym with Some i -> i.isize | None -> 0)
+    | None, _ -> 0
+  in
+  let rec go (e : Scope.expr) =
+    incr n;
+    if !n > most then raise Big;
+    let cases cs = List.iter (fun (_, g, b) -> Option.iter go g; go b) cs in
+    match e.e with
+    | Evar _ | Econst _ -> ()
+    (* (an assertion's failure says the unit's file: not another's) *)
+    | Etry _ | Efunction _ | Eassert _ -> raise Big
+    | Elet (_, bs, b) -> List.iter (fun (_, e) -> go e) bs; go b
+    | Eapply (f, es) -> n := !n + copied f; go f; List.iter go es
+    | Ematch (e, cs) -> go e; cases cs
+    | Etuple es | Econs (_, es) | Earray es -> List.iter go es
+    | Erecord (_, fs) -> List.iter (fun (_, e) -> go e) fs
+    | Ewith (e, _, fs) -> go e; List.iter (fun (_, e) -> go e) fs
+    | Efield (e, _) | Econstraint (e, _) -> go e
+    | Esetfield (a, _, b) | Eseq (a, b) | Ewhile (a, b) -> go a; go b
+    | Eif (c, a, b) -> go c; go a; Option.iter go b
+    | Efor (_, a, b, _, body) -> go a; go b; go body
+  in
+  match go e with () -> !n | exception Big -> most + 1
+
+(* the function e of code lab, defined in env, inlined where it is
+ * called when small; frame: the function whose slots it captures *)
+let inline_candidate env frame lab (e : Scope.expr) =
+  if !inline_most > 0 then begin
+    let ps, body = params e in
+    let k = size env !inline_most body in
+    if k <= !inline_most then
+      Hashtbl.replace inlines lab { iparams = ps; ibody = body; ienv = env; iframe = frame; isize = k }
+  end
 
 (*****************************************************************************)
 (* Patterns *)
@@ -538,6 +613,18 @@ and app env (f : Scope.expr) args tl =
     | Evar (Global g) -> Option.bind (Hashtbl.find_opt known_globals g.gsym) (fun b -> b.known)
     | _ -> None
   in
+  (* (inline: a copy in its own function, or one that captures
+   * nothing; another unit's by its global) *)
+  let copy =
+    match known, f.e with
+    | Some (lab, _), _ -> (
+        match Hashtbl.find_opt inlines lab with
+        | Some ({ iframe = None; _ } as i) -> Some i
+        | Some ({ iframe = Some fr; _ } as i) when fr == !cur -> Some i
+        | _ -> None)
+    | None, Evar (Global g) -> Hashtbl.find_opt imported g.gsym
+    | None, _ -> None
+  in
   match f.e, known, args with
   (* a && b, a || b: an if, whose b is in tail position when the
    * whole is (OCaml's rule: is_utf_8's ok, "valid d && ok (i + n)", a
@@ -575,6 +662,16 @@ and app env (f : Scope.expr) args tl =
            emit (CallC ("caml_string_notequal", 2))
        | _ -> prim (Hashtbl.mem immediates f.span) p n);
       rest ls
+  | Evar _, _, _ when (match copy with Some i -> List.length i.iparams = m | None -> false) ->
+      let i = Option.get copy in
+      let ss = slots args in
+      let env =
+        List.fold_left2 (fun env s (p : Scope.pattern) ->
+          match p with
+          | Pvar x -> (x.vid, { loc = Slot s; known = None }) :: env
+          | p -> irrefutably s p @ env) i.ienv ss i.iparams
+      in
+      if tl then (tail env i.ibody; true) else (value env i.ibody; false)
   | Evar _, Some (lab, n), _ when m >= n ->
       let ss = slots args in
       let c = to_slot env f in
@@ -624,8 +721,12 @@ and bind env r bs =
       match p, e.e with
       | Pvar x, Efunction _ -> (
           match closure env x.vname e with
-          | Closure_static (sym, lab, n) -> [ x.vid, { loc = Static sym; known = Some (lab, n) } ]
-          | Closure_pushed (lab, n) -> let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
+          | Closure_static (sym, lab, n) ->
+              inline_candidate env None lab e;
+              [ x.vid, { loc = Static sym; known = Some (lab, n) } ]
+          | Closure_pushed (lab, n) ->
+              inline_candidate env (Some !cur) lab e;
+              let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
       | Pany, _ -> value env e; emit Drop; []
       | _ -> value env e; let s = slot () in emit (Set s); irrefutably s p) bs
     @ env
@@ -712,7 +813,9 @@ and compile_fun lab ps benv body =
  * registers hold, stored one by one (as a big block's) *)
 let curry_fun n k =
   cur := { code = []; nslots = 2; ntries = 0 };
-  if k < n - 1 && n <= shared_most then begin
+  (* (the block on the stack machine when its k + 3 fields fit arm's 8
+   * registers: every arity up to 7's) *)
+  if k < n - 1 && k + 3 <= 8 then begin
     emit (Get 1);
     for i = k downto 1 do emit (Get 0); emit (Field (1 + i)) done;
     emit (Get 0);
@@ -723,7 +826,11 @@ let curry_fun n k =
     emit (Int (k + 3)); emit (Int closure_tag); emit (CallC ("obj_block", 2));
     let b = slot () in
     emit (Set b);
-    let set pos = emit (Get b); emit (SetField (pos, false)) in
+    (* (no write barrier: the block just made is young, as ssa's Emit
+     * says of obj_block's, fresh; these are the start object's, Gen's,
+     * which had it at each field: a curry function of 8 arguments' 59
+     * instructions 109, and twice the minor collections' copies) *)
+    let set pos = emit (Get b); emit (SetField (pos, true)) in
     emit (Sym (curry n (k + 1))); set 0;
     emit (Get 0); if k > 0 then emit (Field 1); set 1;
     for i = 2 to k + 1 do emit (Get 0); emit (Field i); set i done;
@@ -748,12 +855,44 @@ let curry_funcs () =
   fs
 
 (*****************************************************************************)
+(* Other units' functions *)
+(*****************************************************************************)
+
+(* OPTIMIZATION (inline, across units): the small toplevel functions of
+ * the units this one names, from their summaries (CLI: X.inline, their
+ * places in the text made apart from this unit's), inlined where this
+ * unit calls them with all their arguments, as its own are. A
+ * toplevel function's body names its parameters, globals and
+ * primitives only, which are the same here. *)
+let imports (es : Summary.entry list) =
+  Hashtbl.reset imported;
+  List.iter (fun (e : Summary.entry) ->
+    if e.size <= !inline_most then
+      Hashtbl.replace imported e.global { iparams = e.params; ibody = e.body; ienv = []; iframe = None; isize = e.size }) es
+
+(* the unit's own toplevel functions that its calls copy, for its
+ * summary: after unit_, whose tables say which *)
+let exports (items : Scope.item list) : Summary.entry list =
+  List.concat_map (fun (it : Scope.item) ->
+    match it with
+    | Ivalue (false, _, gs) ->
+        List.filter_map (fun ((_ : Scope.var), (g : Scope.global)) ->
+          match Option.bind (Hashtbl.find_opt known_globals g.gsym) (fun b -> b.known) with
+          | Some (lab, _) -> (
+              match Hashtbl.find_opt inlines lab with
+              | Some { iframe = None; iparams; ibody; isize; _ } ->
+                  Some { Summary.global = g.gsym; params = List.map Summary.strip_pattern iparams; body = Summary.strip ibody; size = isize }
+              | _ -> None)
+          | None -> None) gs
+    | _ -> []) items
+
+(*****************************************************************************)
 (* A unit *)
 (*****************************************************************************)
 
 let unit_ name (items : Scope.item list) =
   cur := { code = []; nslots = 1; ntries = 0 };
-  funcs := []; data := []; arities := []; Hashtbl.reset strings; Hashtbl.reset known_globals;
+  funcs := []; data := []; arities := []; Hashtbl.reset strings; Hashtbl.reset known_globals; Hashtbl.reset inlines;
   file := String.uncapitalize_ascii name ^ ".ml";
   let globals = ref [] in
   List.iter (fun (it : Scope.item) ->

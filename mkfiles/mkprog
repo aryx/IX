@@ -22,9 +22,16 @@ MADE=`{mkdir -p $D}
 all:V: $D/$PROG
 
 # a unit: mini-ml reads the others' interfaces from their sources, so a
-# change in any of the directory's files remakes them all (a second each)
-$D/%.$O: %.ml $LOCAL $GEN $LIBSRC
+# change in any of the directory's files remakes them all (a second each);
+# and the summaries of those it names (their small functions inlined),
+# which .depend makes before it. The source alone the rule's prerequisite,
+# the others every unit's (below): a unit in a folder then has its
+# mkfile's rule, this one dropped (mk's vacuous arcs; with $LOCAL here,
+# two recipes for it)
+# old: $D/%.$O: %.ml $LOCAL $GEN $LIBSRC
+$D/%.$O: %.ml
 	$ML $INCLUDES -o $target $stem.ml
+$OBJS: $LOCAL $GEN $LIBSRC
 
 # a lexer and a parser: made beside the objects; the mkfile has the rule
 # that compiles each ($D/Parser.$O: $D/Parser.ml), which here would be
@@ -47,6 +54,11 @@ $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
 # then has conditional branches farther than they reach
 $D/$PROG: $D/$PROG.start.$O $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
 	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
+
+# the units' order (mkfiles/depend.rc): mini-mk depend after a build
+depend:V: $GEN
+	$RC $TOP/mkfiles/depend.rc '$D' . $D -- $SRC > .depend
+<.depend
 
 clean:V:
 	rm -rf $D

@@ -1,6 +1,6 @@
 # Testing ix
 
-Which test to run, and when (docs/plans/plan_tests.md says why it is
+Which test to run, and when (docs/plans/done/plan_tests.md says why it is
 so).
 
 | command | when | time |

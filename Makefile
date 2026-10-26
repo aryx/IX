@@ -41,7 +41,7 @@ TINY_W = /tmp/ix-tiny
 # test-all's suite long: the random tests' full counts, tiny-c's and
 # tiny-ml's fuzzers, tiny-kernel's steps and its whole check (26
 # sessions, its screens and sounds), the decoders' random words and
-# their system instructions (docs/plans/plan_tests.md)
+# their system instructions (docs/plans/done/plan_tests.md)
 test: test-lite
 test-long: all
 	./tiny/tests/TinyDatabase_test.sh 20
@@ -262,7 +262,7 @@ test-all:
 	./tests/all.sh
 
 # Under two minutes, before each commit, for a good confidence that
-# nothing regressed (docs/plans/plan_tests.md): every family of programs
+# nothing regressed (docs/plans/done/plan_tests.md): every family of programs
 # by its fastest checks that mean something, all at once on the
 # machine's cores (about 120 jobs): unit and differential tests, the
 # linker's recorded bytes, every file of ix compiled by mini-ml and

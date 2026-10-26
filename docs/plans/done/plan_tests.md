@@ -16,6 +16,16 @@ m-ix under m-ix, which long term are what we want, is too slow right
 now, but ultimately that's one of the most important thing we want to
 check regressions for".
 
+**Status: done** (2026-10-26; the author: "let's move to done/"), this
+file kept as its record: steps 1 to 7 below, each with what it found.
+docs/testing.md is what to run when. Left, for a plan of their own if
+they are wanted: make test saying "run make self-quick" when a change
+touches the toolchain, a kernel or an emulator; the gate's slowest jobs
+made faster (ix built by ix 98 s, m-ix in mini-9pi 96 s, mini-ml
+compiling games and lib_compression 71-78 s: the whole at its budget,
+116 s); the first nightly make self on GitHub, by hand, to say whether
+self-mix fits its 6 hours (mix is 3 hours on the author's machine).
+
 The short answer: **`make test-lite` is the gate, made to deserve
 it**: a budget of 2 minutes it checks itself, OCaml 5.5 in it, its
 jobs in three groups (shared, m-ix, t-ix) said apart, a check of each

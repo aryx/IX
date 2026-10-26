@@ -1,7 +1,7 @@
 # Each night, ix built by ix in its own system (make self-tix: t-ix in
 # tiny-kernel, under an hour; make self-mix: m-ix in mini-9pi under
 # QEMU, 3 hours on the author's machine), each file the host's
-# (docs/plans/plan_tests.md, step 7). Only when main has moved since
+# (docs/plans/done/plan_tests.md, step 7). Only when main has moved since
 # the last run that passed. A failure is said in an issue, "make self
 # failed", opened or commented on (GitHub's own mail of a failed
 # scheduled run goes to whoever last edited the cron line). The runs'

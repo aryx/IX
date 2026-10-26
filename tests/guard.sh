@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The commit's guard (docs/plans/plan_tests.md, step 6), git's
+# The commit's guard (docs/plans/done/plan_tests.md, step 6), git's
 # pre-commit hook (tests/hooks/pre-commit, by make hooks): the files
 # modified, deleted or new in the directories a commit touches, and not
 # in it. make test tests the working tree; a commit that needs one of

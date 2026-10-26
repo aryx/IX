@@ -246,6 +246,22 @@ And the full build faster, besides the gate:
 3. **The groups, the display, the budget**: lite.sh's jobs in shared,
    m-ix, t-ix; a job a program; `lite.sh tix|mix`; the summary by
    group; the warnings past 60 and 120 s.
+   Done: the two jobs of 400 s were games/tests/audio.sh's comparison
+   with ~/playground's own games (ix's sessions 0 to 3 s each, the
+   playground's TinyVirtuaRacing 235 s; "ix built by ix" ran it too on
+   its build): test-lite sets PLAYGROUND=/nonexistent (audio.sh 273 s
+   to 5 s, frames.sh 41 to 35), and test-all's new suite playground
+   runs them against it where it is built. The groups: `group` before
+   the jobs, `tests/lite.sh mix|tix` (shared always: OCaml 5's types,
+   the sources as text, lib_core by mini-ml; each "mini-ml compiles"
+   in its directory's group; mini-ml's programs, libc and -pp m-ix's;
+   ix built by ix m-ix's, the tiny programs it builds tested in it).
+   The bundles split, a job a program: 98 jobs where 72. The lines
+   tagged, a line a group at the end, the jobs past the budget said.
+   Measured (load 1): **165 s** where 417 (shared 16 s, t-ix 74 s,
+   m-ix 165 s); `tix` alone 75 s. Past the budget still: ix built by
+   ix 160 s, mini-ml compiles games 72 s and lib_compression's group
+   65 s, tiny-ml's programs 70 s: next.
 4. **Measured**: the self build on the host for each system; a self
    smoke test inside each; dune's build from nothing in a private copy
    (for `-index`). What fits goes in the gate.

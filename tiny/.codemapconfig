@@ -201,6 +201,26 @@ local chain(name, steps) = {
       summary: 'tiny-kernel: a kernel in ML for tiny-machine: a process called like a function until its trap, a waiting call a closure retried, files a tree of values; this file the boot, its parts in TinyKernel/.',
       related: ['TinyKernel/', 'TinyMLRuntime/core.c', '../docs/notes_tiny_kernel.md', '../kernels/9pi/'],
     },
+    // the programs of tiny-kernel's screen, their parts beside them
+    'TinyBrowser.ml': { digest: 'ece868ba6db7',
+      summary: "www: a page asked of the wire's other end, drawn as its lines come, its pictures as their rows come; links, menus, an address field. Its reading in TinyBrowser/.",
+      important: [
+        { at: 'def:browse', weight: 2 },
+        { at: 'def:load', say: 'a page asked for, read as it arrives', weight: 2 },
+        { at: 'def:next_picture', say: 'the pictures asked for one at a time, after the page', weight: 1 },
+        { at: 'def:on_mouse', weight: 1 },
+      ],
+      related: ['TinyBrowser/', 'TinyLibGUI.ml', 'tests/TinyBrowser_test.sh', '../browsers/'],
+    },
+    'TinyOffice.ml': { digest: 'a4accb5cddb5',
+      summary: "tiny-office's shell: a page of boxes, each a part of TinyOffice/; selecting, moving, resizing, the menus, undo, the view.",
+      important: [
+        { at: 'def:command', say: "what a menu's item asks, the keys the same", weight: 2 },
+        { at: 'def:page_mouse', weight: 2 },
+        { at: 'def:view', say: 'a group a box: run_canvas draws what changed', weight: 2 },
+      ],
+      related: ['TinyOffice/', 'TinyLibGUI.ml', 'TinyTroff.ml', 'tests/TinyOffice_test.sh', '../apps/office/'],
+    },
   },
   skeletons: [
     // the directory's own: what makes what, and what runs it

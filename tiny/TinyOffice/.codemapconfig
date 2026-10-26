@@ -1,0 +1,80 @@
+// tiny/TinyOffice/: what the code map says of it (the code map:
+// tinybox codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The shell,
+// tiny-office, is ../TinyOffice.ml; these are its parts: the model,
+// one module a kind of box, the file. TinyTroff reads a page with them.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-26' },
+  summary: "tiny-office's parts: the page's model, each kind of box (its data a string, its keys, its view), the file in Markdown.",
+  files: {
+    'TinyOfficeModel.ml': { digest: '3e4fa8cb3a51',
+      summary: "The page's objects, what the selected box is edited by, the office's record: the state every part changes.",
+      capitals: [
+        { at: 'type:office', say: 'the whole state; undo is the pages before, kept as they were' },
+      ],
+      important: [
+        { at: 'type:obj', say: "a box: its kind a word, its data a string", weight: 3 },
+        { at: 'type:edit', weight: 2 },
+        { at: 'def:keep', say: 'undo: the page kept before a change', weight: 1 },
+      ],
+    },
+    'TinyOfficeText.ml': { digest: '6dad833b9c4b',
+      summary: "A text box edited as it is shown: its marks decoded into characters and styles, laid out in the box's width.",
+      important: [
+        { at: 'def:lay_out', say: 'a word a line, each character in its style', weight: 2 },
+        { at: 'def:write_key', weight: 2 },
+        { at: 'def:decode', weight: 1 },
+      ],
+    },
+    'TinyOfficeSheet.ml': { digest: 'd296ea3e8d0b',
+      summary: "A sheet: a line a cell, formulas read and computed by recursive descent with no tree, each cell once (#CYCLE).",
+      important: [
+        { at: 'def:values', say: "each cell's value once, those it needs first", weight: 3 },
+        { at: 'def:factor', weight: 1 },
+        { at: 'def:cell_key', weight: 1 },
+      ],
+    },
+    'TinyOfficeDrawing.ml': { digest: '7ed04a521f1f',
+      summary: "A drawing: a line a shape, pic's idea, drawn with the mouse; boxes, arrows across then up or down, words.",
+      important: [
+        { at: 'def:figure_shapes', weight: 2 },
+      ],
+    },
+    'TinyOfficePaint.ml': { digest: '54c06fa986a1',
+      summary: "A paint: a letter a pixel, a row one word of the kernel's fat pixels; strokes thin or thick.",
+      important: [
+        { at: 'def:painted', weight: 2 },
+      ],
+    },
+    'TinyOfficeChart.ml': { digest: '239b395b3c57',
+      summary: "A chart: bars of a sheet's cells, found by the sheet's name at each view, so it follows its sheet.",
+      important: [
+        { at: 'def:chart_bars', weight: 2 },
+      ],
+    },
+    'TinyOfficeFile.ml': { digest: 'cecb06b1b8d6',
+      summary: "The file in mini-troff's format: each box a \\box[x y w h]{...}, a text Markdown, a sheet a table, the others fences.",
+      important: [
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:text', say: "the document's file, which emacs edits and tiny-troff prints", weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'tiny-office: a part a kind',
+      bones: [
+        { at: 'TinyOfficeModel.ml:type:office', role: 'the state' },
+        { at: 'TinyOfficeText.ml:def:write_key', role: 'a text edited' },
+        { at: 'TinyOfficeSheet.ml:def:values', role: "a sheet's values" },
+        { at: 'TinyOfficeChart.ml:def:chart_bars', role: "a chart of a sheet's cells" },
+        { at: 'TinyOfficeFile.ml:def:parse', role: 'the file read' },
+      ],
+      joints: [
+        { from: 'TinyOfficeText.ml:def:write_key', to: 'TinyOfficeModel.ml:type:office', say: 'a key' },
+        { from: 'TinyOfficeChart.ml:def:chart_bars', to: 'TinyOfficeSheet.ml:def:values', say: 'the cells' },
+        { from: 'TinyOfficeFile.ml:def:parse', to: 'TinyOfficeModel.ml:type:office', say: 'the objects' },
+      ],
+    },
+  ],
+}

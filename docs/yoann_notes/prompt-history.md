@@ -47487,3 +47487,296 @@ The commit adds docs/plans/plan_virtuaracing.md, the new plan, to the repository
 It also adds games/survey_virtua.sh, the script that produced the numbers in the plan.
 Claude linked docs/plans/plan_gpu.md and games/README.md so they point to the new plan.
 Nothing is built yet; stage 1 comes next, after Yoann reviews the plan's decisions, especially the palette.
+
+------------------------------------------------------------------------
+
+## 2026-10-23 13:14
+
+**Yoann:**
+
+> excellent, yes let's commit
+
+**Claude (summary):**
+
+Claude committed the work as `38ccbe17`, touching only two docs: `notes_opti_inventory.md` and `notes_performance.md`.
+Claude added the new compiler part to `notes_opti_inventory.md` in this commit.
+Claude also added a one-line pointer to that new part in `notes_performance.md`.
+The commit contains only those two documentation files, with no code changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:41
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting mini-virtuaracing at stage 1, per `plan_virtuaracing.md`, which was written but not yet built.
+Claude listed three open questions: whether a 256-colour median-cut palette per course matches the golden frames, floats or fixed point, and whether to keep the 1,300 m far plane or use fog.
+If the palette is acceptable, stage 1 copies the roughly 930 lines of Track3d, Heightmap, Road, Camera3d, Vec3 and Mat4 into `games/racing/virtua/`.
+Stage 1 then builds the `Mesh` module of arrays, so stage 2 can measure the frame against the Pi 2 budget of 10 to 12 million instructions.
+Claude also listed other threads (tiny-kernel memory, mini-ml leftovers, paused Pi 4 work, and idle older plans) as secondary options.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:41
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed finishing tiny-kernel memory stage 2 first, per plan_tiny_memory.md, since it needs no decisions from you.
+Stage 2 still lacks `user_iter`, which walks a user buffer piece by piece so stage 4 changes only the module.
+Stage 3 then splits tiny-machine's window in two, adding segments as another small, well-scoped change.
+The four-core spawn-versus-fork measurements were also meant to land in plan_tiny_multicore.md's Status section.
+Claude ranked the rest below it: virtuaracing stage 1 awaits your palette and far-plane answers, with mini-ml leftovers and the Pi 4 on hold.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:41
+
+**Yoann:**
+
+> make test-lite is failing
+
+**Claude (summary):**
+
+Claude found the mini-ml games job failing, with 46 of 60 files hitting unbound modules.
+Claude traced it to Quake's new subfolders, where Sound and Mkwad modules collide across the two games.
+Claude gave each game its own include root, its own directories first and then the shared ones.
+That per-game root also covers quake/tools (mini-light, mini-mkwad2) and doom/tools, so all 60 files now compile.
+Claude then reran `make test-lite` to confirm, and had not committed the change yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:56
+
+**Yoann:**
+
+> let's commit,
+
+**Claude (summary):**
+
+Claude committed the fix as 5876fa8f, and the commit contains only `languages/ml/tests/compile_ix.sh`.
+Claude left `prompt-history.md` staged, and the tiny-kernel, `lib_graphics`, and `games/racing` changes uncommitted.
+Claude presumed those leftover changes belong to other sessions, so it kept them out of this commit.
+Claude's commit scope was deliberately narrow, so 5876fa8f holds only the compile_ix.sh test fix.
+Claude did not commit or stage the other work, and did not run any tests.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:44
+
+**Yoann:**
+
+> let's do 2
+
+**Claude (summary):**
+
+Claude added `mem_pieces` to the module, plus `user_iter`, `user_write`, and a bounce buffer for `sys_rw` in the kernel.
+Claude ran the kernel check in a private tree copy, and only the `tetris.wav` sound failed.
+Claude ran the same check on HEAD, which failed identically, so the `tetris.wav` mismatch predates the change.
+Claude reproduced a session 09 shell pipeline hang that occurred only when every page-crossing buffer went through the bounce.
+Claude suspected the 640 KB range at 0xb60000 was not free, fixed the hang so it now takes 2 seconds, and reran both checks.
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:43
+
+**Yoann:**
+
+> let's start mini virtua racing
+
+**Claude (summary):**
+
+Claude built stage 1 of mini virtua racing in ix's `lib_graphics` and `games` directories, from geometry through the course.
+Claude wired `games/mkfile`, a frames test, a playground golden-frame comparison script, and a copies README into the repo.
+Claude confirmed stage 1's checks pass and wrote the plan's Status, with OCaml and mini-ml producing identical frames in all four views.
+Claude recorded the timing gap, 7.5 ms under OCaml versus 185 ms under mini-ml, as stage 2's first question.
+Claude was checking a stray `view=behind` file at the repo root, left by an earlier command, before removing it.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 06:03
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-26 06:01
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-25 19:56
+
+**Yoann:**
+
+> can you run make test, make test-lite, and make build-docker to make sure everything pass
+
+**Claude (summary):**
+
+Claude ruled out the host date and seed, since make check already pins -date and -seed.
+Claude rebuilt the image and confirmed it is reproducible, and HEAD's tiny-machine gives the same 2398775476.
+Claude rebuilt the image with HEAD's own tiny tools first on PATH, and the tetris output did not change.
+Claude then suspected inputs from outside the tree, such as EXAMPLES and the other image files, as the cause.
+Earlier, Claude found all three commands failing in the working tree, while a clean HEAD Docker build passed test-lite.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 06:04
+
+**Yoann:**
+
+> make sure to run make test-lite to check nothing break before committing
+
+**Claude (summary):**
+
+Claude ran make test-lite on the committed stage 1 work and found two failures.
+Claude traced the mini-ml game failure to compile_ix.sh missing virtua's folder layout, the same gap fixed for doom and quake.
+Claude added virtua's Render case to compile_ix.sh after waiting out another session's test-lite run on the shared directory.
+Claude reran the suite alone, got 70 jobs with 0 failures, and committed the compile_ix.sh fix.
+Claude then started parallel mini-5i profiles for stage 2, leaving that progress uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 06:04
+
+**Yoann:**
+
+> make sure to run make test-lite before committing to sanity check nothing break
+
+**Claude (summary):**
+
+Claude agreed to run make test-lite before every commit, after commit 48355ec0 had gone in without it.
+Claude ran make test-lite on that earlier commit to check it, then re-recorded check.expected and debug.cksum from the partitions run.
+Claude left tetris.wav alone, since it was already failing at HEAD, and confirmed no other session was running the suite.
+The final make test-lite run passed with 70 jobs and 0 failures, so the work was ready to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 06:25
+
+**Yoann:**
+
+> and now?
+
+**Claude (summary):**
+
+Claude started `make test` and `make test-lite` on commit a6048804, plus a clean Docker build, and results were still pending.
+Claude reported that test-lite inside Docker on a6048804 passed: 70 jobs, 0 failures, 2 skipped.
+Claude flagged that commit 48355ec0 changed the kernel but not the recorded tetris sound, and asked what it had checked.
+Claude also found the `trace -f` output order differs from the recording, and planned a second run to confirm before recording new values.
+Claude noted that `MEMORY.md` has two duplicate "test-lite before commit" entries, on lines 75 and 76.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 07:23
+
+**Yoann:**
+
+> but first commit the progress
+
+**Claude (summary):**
+
+Claude committed the stage 2 measurements and a docs line recording Yoann's M4 decision.
+Claude ran make test-lite before committing, warning that tiny/ failures could come from the other session's work.
+Claude started reading mini-ml's compiler to design M4, beginning with how it compiles float operations.
+So far, Claude's survey covers how mini-ml's compiler handles arrays and refs alongside floats.
+Claude planned to write the M4 design plan once that survey of the compiler was finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 07:36
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude got the stage-4 pages kernel running on the first try, then checked all three modes after changing `entry.tm`.
+Claude chased a 1.5% partitions slowdown (301.2 against 296.7) by building the stage-3 machine in a scratch worktree.
+Claude ruled out the satp TLB flush, `what`, and `translate` as the cause, so the slowdown remains unexplained.
+Claude wrote the docs and ran the three full checks, and a partitions boot that printed nothing passed on rerun.
+Claude ran `make test-lite` with 70 jobs and 0 failures, then removed the scratch worktree.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:50
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended closing the memory plan first, moving plan_tiny_memory.md to docs/plans/done/ with a status note.
+Claude recommended making the flaky check steady, with a fixed wav sample count and longer background-loop sleeps.
+Claude listed mini-ml leftovers on mini-doom's frame: arm's _div by a variable, ml_floor, and allocations.
+Claude warned that another session is editing languages/ml/ssa/ with an Unbox pass, so item 3 may collide.
+Claude committed the work as c9cbb99c and deferred the four-core multicore measurements to a background run.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 07:46
+
+**Yoann:**
+
+> yes I agree, let's do it!
+
+**Claude (summary):**
+
+Claude started stage 1 with `bench/floats.ml` and fixed a `wait` bug in `tests/bench.sh`.
+Claude moved refs into slots in `Lower`, but the binaries came out byte-identical, which it traced to Opti's `refs` pass.
+Claude kept `refs.ml` as a test for Opti's `refs` pass, passing at -O0 and -O3 on both architectures.
+Claude added an `Unbox` pass between `Ssa_build` and `Alloc`, keeping doubles in F2 to F14 on arm.
+Claude confirmed `make test-lite` passes 70 jobs, with identical assembly across 88 compilations; the frame counts were still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:53
+
+**Yoann:**
+
+> in kernels/ocaml-light-patches we locally patch ~/ocaml-light with improvements. I think we should apply those patches to the original repo in ~/ocaml-light and use directly the imporoved ~/ocaml-light/ so we can then get rid of kernels/ocaml-light-patches/. You can modify ~/ocaml-light
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:52
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude named stage 4, Float.Array, as next, since float arrays now carry the largest remaining float cost.
+Claude pinned that cost on the float arrays' blocks and write barriers, which stage 3 leaves alone.
+Claude's stage 4 comes after Unbox.ml, the stage 3 pass that is built, checked, and uncommitted.
+Claude finished stages 1 and 2, while a 15-minute virtuaracing count on arm is still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:55
+
+**Yoann:**
+
+> let's do it. I'll be back in one hour
+
+**Claude (summary):**
+
+Claude finished stage 4 with Float.Array, a collector fix, and passing checks, then listed the next cuts.
+Claude proposed committing by pathspec: the plans, mini-ml's ssa/ and simple/, CLI.ml, and the runtime.
+The commit would also add lib_core's Float and Marshal, the new tests, games/frame_count.sh, and mini-virtuaracing's render/ and README.
+It would leave out another session's kernels/, div.s and its tests, tests/lite.sh, bugs/ocaml_light.md, and the mini-toolchain plan.
+Claude warned that its earlier git add -N marks the new files in the shared index, so only named paths get committed.

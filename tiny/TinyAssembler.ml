@@ -12,7 +12,7 @@ let help = usage ^ {|
 
 tiny-machine's assembly (TinyMachineISA's instructions, li, la, call, ret...,
 the machine's csrr, csrw, eret, csrrw, amoswap, and .word .byte .ascii .asciz
-.space .align) to an object, file.o by default, for tiny-linker. In
+.space .align .text .data) to an object, file.o by default, for tiny-linker. In
 tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm                  hello.o: its words, its labels, the
                                            places a label's address goes
@@ -84,6 +84,7 @@ type item =
   | Label of string
   | Words of int * ((int -> kind -> expr -> int) -> int list)
   | Data of expr list | Bytes_ of string | Space of int | Align of int | Piece
+  | Section of string
 
 let reg s =
   match String.trim s with
@@ -217,6 +218,8 @@ let directive d args : item =
   | ".space" -> Space (int_of_string (String.trim args))
   | ".align" -> Align (int_of_string (String.trim args))
   | ".piece" -> Piece
+  | ".text" -> Section "text"
+  | ".data" -> Section "data"
   | _ -> error ("unknown directive " ^ d)
 
 (* a line: labels, then an instruction or a directive; ; starts a comment *)
@@ -301,6 +304,7 @@ let assemble name text =
       | Label l -> line ("label " ^ l)
       | Align k -> line (Printf.sprintf "align %d" k)
       | Piece -> line "piece"
+      | Section k -> line k
       | Space k -> line (Printf.sprintf "space %d" k)
       | Bytes_ s ->
           Buffer.add_string b "code ";

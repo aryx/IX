@@ -5,7 +5,8 @@
 
 open TinyMachineISA
 
-let usage = "usage: tiny-linker [-a megabytes] [-s] [-map] -o out file.o..."
+let usage =
+  "usage: tiny-linker [-a megabytes] [-n] [-s] [-map] -o out file.o..."
 
 (* -h: how, by examples, each one as it runs *)
 let help = usage ^ {|
@@ -14,7 +15,9 @@ tiny-assembler's objects to an image for tiny-cpu or tiny-machine: the files one
 after the other from address 0, their labels one name space, each place a
 label's address goes filled. With -a, an executable for tiny-kernel that asks
 for that much memory: a header (a magic number, the image's size, the memory),
-then the image. With -s, an executable too (of 1 MB unless -a says), with its
+then the image. With -n, the text first, the data from the next 4 KB, and the
+text's size in a fourth word (another magic number): tiny-kernel's segments
+share the text between the runs of a program. With -s, an executable too (of 1 MB unless -a says), with its
 labels after the image, but the compilers' local ones (what debug reads). With
 -map, out.map too: each label's address, by address (what tiny-prof reads).
 A label's line is its address in hexadecimal and its name. In
@@ -35,6 +38,7 @@ An error names the label: undefined label main
 type item =
   | Label of string | Align of int | Space of int
   | Code of string * (int * string * string) list | Piece
+  | Section of bool   (* .data (true) or .text: what follows is *)
 
 let unhex s =
   let digit c = let k = Char.code c in if c <= '9' then k - 48 else k - 87 in
@@ -52,6 +56,8 @@ let read name text =
     | [ "align"; k ], _ -> items := Align (int_of_string k) :: !items
     | [ "space"; k ], _ -> items := Space (int_of_string k) :: !items
     | [ "piece" ], _ -> items := Piece :: !items
+    | [ "text" ], _ -> items := Section false :: !items
+    | [ "data" ], _ -> items := Section true :: !items
     | [ "code"; h ], _ -> items := Code (unhex h, []) :: !items
     | [ "reloc"; off; k; t ], Code (s, rs) :: rest ->
         items := Code (s, (int_of_string off, k, t) :: rs) :: rest
@@ -68,7 +74,7 @@ let read name text =
  * labels in their order, which is their addresses') *)
 let layout (items : item list) =
   let labels = Hashtbl.create 64 and order = ref [] in
-  let pc = ref 0 and placed = ref [] in
+  let pc = ref 0 and placed = ref [] and data_at = ref 0 in
   List.iter (fun it ->
     match it with
     | Label l ->
@@ -82,8 +88,9 @@ let layout (items : item list) =
         pc := a
     | Space n -> placed := (!pc, it) :: !placed; pc := !pc + n
     | Code (s, _) -> placed := (!pc, it) :: !placed; pc := !pc + String.length s
-    | Piece -> ()) items;
-  labels, List.rev !order, List.rev !placed
+    | Section true -> data_at := !pc
+    | Piece | Section false -> ()) items;
+  labels, List.rev !order, List.rev !placed, !data_at
 
 (* a word in the code's bytes, the low first; an instruction's, which
  * fits in an int on both sides (its opcode under 0x40) *)
@@ -161,9 +168,37 @@ let sweep (objects : item list list) =
   List.concat
     (List.filteri (fun i _ -> kept.(i)) (List.map snd (Array.to_list pieces)))
 
-let link (objects : (string * string) list) =
-  let labels, order, placed =
-    layout (sweep (List.map (fun (f, text) -> read f text) objects)) in
+(* Each piece its section: an object starts in the text, and a piece
+ * goes on in the section its object was in (sweep keeps or drops it
+ * whole, with its section) *)
+let sectioned items =
+  let rec go cur l = match l with
+    | [] -> []
+    | Piece :: l -> Piece :: Section cur :: go cur l
+    | (Section d as it) :: l -> it :: go d l
+    | it :: l -> it :: go cur l in
+  Section false :: go false items
+
+(* -n: the text first, then the data from the next 4 KB (a page: the
+ * kernel's segments, plan_tiny_memory.md), Unix's 0410 (whose ld -n
+ * rounded the data to the PDP-11's 8 KB). One Section true is left
+ * between them, where layout notes the data's start *)
+let gather items =
+  let text = ref [] and data = ref [] and in_data = ref false in
+  let add it = if !in_data then data := it :: !data else text := it :: !text in
+  List.iter (fun it ->
+    match it with
+    | Section d -> in_data := d; add (Align 4)
+    | it -> add it) items;
+  List.rev !text @ [ Align 4096; Section true ] @ List.rev !data
+
+(* the image, the labels by address, and where the data starts (-n; 0
+ * otherwise, the sections then ignored) *)
+let link split (objects : (string * string) list) =
+  let items =
+    sweep (List.map (fun (f, text) -> sectioned (read f text)) objects) in
+  let labels, order, placed, data_at =
+    layout (if split then gather items else items) in
   let resolve t =
     match int_of_string_opt t, Hashtbl.find_opt labels t with
     | Some n, _ -> n
@@ -179,10 +214,10 @@ let link (objects : (string * string) list) =
           try fill s off k (a + off) (resolve t)
           with Error e -> error (e ^ " (" ^ t ^ ")")) relocs;
         Buffer.add_string b (Bytes.to_string s)
-    | Label _ | Align _ | Piece -> ()) placed;
+    | Label _ | Align _ | Piece | Section _ -> ()) placed;
   (* (old: the table's labels sorted by address, those at one address in
    * the table's order, which is OCaml's or TinyLibCore's) *)
-  Buffer.contents b, order
+  Buffer.contents b, order, data_at
 
 (* An executable for tiny-kernel: a header of three words, then the
  * image, linked at 0. The words are a magic number, the image's size,
@@ -192,11 +227,16 @@ let link (objects : (string * string) list) =
  * its file. (old: the header of tiny-os v6's executables, whose third
  * word was the address where the image was linked, 0x800000.) *)
 let aout_magic = 0x7a0ce5
+(* -n's: a fourth word, the text's size (the data's start). As Unix's
+ * 0407 and 0410, the magic number says the layout *)
+let aout_split = 0x7a0ce6
 
-let aout memory image =
-  let h = Bytes.make 12 '\000' in
-  List.iteri (fun i v -> set_word h (4 * i) v)
-    [ aout_magic; String.length image; memory ];
+let aout memory data_at image =
+  let words =
+    [ (if data_at > 0 then aout_split else aout_magic); String.length image;
+      memory ] @ (if data_at > 0 then [ data_at ] else []) in
+  let h = Bytes.make (4 * List.length words) '\000' in
+  List.iteri (fun i v -> set_word h (4 * i) v) words;
   Bytes.to_string h ^ image
 
 let main
@@ -210,32 +250,35 @@ let main
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100
     | None -> false in
-  let rec args mb syms map l = match l with
+  let rec args mb split syms map l = match l with
     | "-a" :: n :: r when megabytes n ->
-        args (Some (int_of_string n)) syms map r
-    | "-s" :: r -> args mb true map r
-    | "-map" :: r -> args mb syms true r
-    | "-o" :: out :: files when files <> [] -> Some (mb, syms, map, out, files)
+        args (Some (int_of_string n)) split syms map r
+    | "-n" :: r -> args mb true syms map r
+    | "-s" :: r -> args mb split true map r
+    | "-map" :: r -> args mb split syms true r
+    | "-o" :: out :: files when files <> [] ->
+        Some (mb, split, syms, map, out, files)
     | _ -> None in
   match List.tl (TinyLibSystem.argv caps) with
   | ("-h" | "--help") :: _ -> TinyLibSystem.print caps help; 0
   | l ->
-      match args None false false l with
+      match args None false false false l with
       | None -> TinyLibSystem.eprint caps (usage ^ "   (-h: how)\n"); 2
-      | Some (mb, syms, map, out, files) ->
+      | Some (mb, split, syms, map, out, files) ->
           try
-            let image, labels =
-              link (List.map (fun f -> f, TinyLibSystem.read_file caps f) files)
+            let image, labels, data_at =
+              link split
+                (List.map (fun f -> f, TinyLibSystem.read_file caps f) files)
             in
             let lines l =
               String.concat "" (List.map (fun (l, a) ->
                 Printf.sprintf "%x %s\n" a l) l) in
             write out
               (match mb, syms with
-               | Some n, false -> aout (n * 0x100000) image
+               | Some n, false -> aout (n * 0x100000) data_at image
                | _, true ->
                    aout ((match mb with Some n -> n | None -> 1) * 0x100000)
-                     image
+                     data_at image
                    ^ lines (List.filter (fun (l, _) ->
                        not (TinyLibSymbols.local l)) labels)
                | None, false -> image);

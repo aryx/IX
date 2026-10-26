@@ -25,7 +25,8 @@
  *
  * Where it stands: TinyKernel.ml calls it for every process's memory
  * (its [user] for a word or a byte of a system call's, [mem_address];
- * its [user_iter] for a buffer, [mem_pieces]); entry.tm
+ * its [user_iter] for a buffer, [mem_pieces]; [mem_writable] before it
+ * writes one); entry.tm
  * sets core 0's window ([mem_window]), and a core given a process gets
  * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
  * other kernels on the same machine: t6 (steps/), fixed partitions of
@@ -37,9 +38,30 @@
  * block is not zeroed (exec writes the image only: zeroing ml's 32 MB
  * cost 35 million instructions an exec); there is no swapping, so a
  * fork or an exec with no room waits (TinyKernel.ml's with_room).
- * Segments and pages, the two answers to those costs, are this
- * module's next sections (plan_tiny_memory.md's stages 3 and 4), each
- * behind the same few functions.
+ *
+ * Segments (the boot's choice: /lib/memory says segments; the
+ * Makefile's MEMORY=segments) split a process in two, its text and
+ * its data, at the address tiny-linker -n put the data at (a page past
+ * the text). The machine's second window maps the text (tbase,
+ * tbound) and faults a store there; the data is a block as above:
+ *
+ *     a process's addresses         the machine's memory
+ *     0       text  (read only) --> ml's text, one block for all the
+ *     tsize                         ml's that run (texts, users)
+ *             data, heap, stack --> this ml's block, memory - tsize
+ *     memory
+ *
+ * exec shares a text that runs already from the same file, unchanged
+ * (its key and stamp: TinyKernel.ml names them), and writes only the
+ * data then; fork shares the text and copies the data. A file written
+ * is forgotten ([mem_forget]): its next exec loads it again. A word
+ * the kernel writes in a text (a tracer's breakpoint) makes the text
+ * the process's own, a copy. A process without a text (partitions)
+ * runs with the window alone: entry.tm sets the machine's split only
+ * when tbound is not 0, the split's arithmetic costing 2% of the host's
+ * instructions (tiny-kernel's toolchain session; 7% when every process
+ * paid it). Pages are plan_tiny_memory.md's stage 4, behind the same
+ * functions.
  *
  * cs-history:
  * Partitions are how IBM's OS/360 (1966) shared a machine between
@@ -114,21 +136,32 @@ val part : int
 val mem_low : int
 val mem_high : int
 
-(* a process's memory: none at first ([mem_empty]), then a block *)
-type space = { sid : int; mutable sbase : int; mutable ssize : int }
+(* a process's memory: none at first ([mem_empty]), then a block, and
+ * with segments a text *)
+type space
 
 (* no block of the size asked for is free now *)
 exception No_room
 
 val mem_empty : unit -> space
-val mem_size : space -> int
-
-(* [mem_place sp size]: sp given a block of size bytes, its old one let
- * go (kept when it has that size already); No_room, sp as it was *)
-val mem_place : space -> int -> unit
 val mem_release : space -> unit
 
-(* [mem_copy dst src]: dst a block of src's size, src's bytes (fork) *)
+(* segments, not partitions: set once, at the boot *)
+val segments : bool ref
+
+(* [mem_load sp key stamp tsize size]: sp given the memory of a program
+ * of size bytes (its a.out's), its old memory let go; tsize of them the
+ * text (0: none; ignored without segments), shared when one from the
+ * same key and stamp runs. True when the image's text is to be
+ * written, else only its data (from tsize). No_room, sp as it was *)
+val mem_load : space -> string -> string -> int -> int -> bool
+
+(* [mem_forget key]: the texts of that file not shared by a next exec
+ * (the file is being written) *)
+val mem_forget : string -> unit
+
+(* [mem_copy dst src]: dst a block of src's data's size, src's bytes,
+ * and src's text, shared (fork) *)
 val mem_copy : space -> space -> unit
 
 (* [mem_address sp va n]: the kernel's address of the n bytes at the
@@ -140,21 +173,29 @@ val mem_address : space -> int -> int -> int
 (* [mem_pieces sp va n]: the n bytes at va as the pieces of the
  * machine's memory that hold them, in order, (the kernel's address, the
  * length) each; None if they are not all the process's. One piece for
- * a partition; with pages, a piece a page (the frames are anywhere):
+ * a partition; two with segments when they cross from the text to the
+ * data; with pages, a piece a page (the frames are anywhere):
  * for a buffer, the kernel goes by them (TinyKernel.ml's user_iter) *)
 val mem_pieces : space -> int -> int -> (int * int) list option
 
+(* [mem_writable sp va n]: whether the kernel may write those bytes for
+ * the process: not in its text *)
+val mem_writable : space -> int -> int -> bool
+
 (* a word read at va; a word, a byte, a string written at va; [mem_blit
  * sp va a n] the kernel's n bytes at a written at va. va is checked by
- * the caller ([mem_address]) *)
+ * the caller ([mem_address]). A word or a byte written in the text
+ * makes it sp's own (a copy: No_room); a string and n bytes are the
+ * loader's, written where it says, in the text too *)
 val mem_fetch : space -> int -> int
 val mem_store : space -> int -> int -> unit
 val mem_store_byte : space -> int -> int -> unit
 val mem_write : space -> int -> string -> unit
 val mem_blit : space -> int -> int -> int -> unit
 
-(* the machine set to run a process in sp: core 0's window
- * ([mem_window]), or another core's, two words of its mailbox at m
+(* the machine set to run a process in sp: core 0's windows
+ * ([mem_window]: the data's, the text's), or another core's, the
+ * mailbox's words at m, m + 4 (the data), m + 20, m + 24 (the text)
  * ([mem_post sp m]) *)
 val mem_window : space -> unit
 val mem_post : space -> int -> unit

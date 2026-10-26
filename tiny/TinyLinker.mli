@@ -12,13 +12,16 @@
  *        |             names... (tiny-ml's functions and static
  *        |             blocks are pieces: a library costs a program
  *        |             only what it calls)
+ *        | (-n gather) the text's pieces first, the data's from the
+ *        |             next 4 KB (.text and .data say which a piece is)
  *        | layout      every item its address from 0, every label its
  *        |             own (one name space: twice is an error)
  *        | fill        each reloc's place: the label's address, or
  *        |             what it makes (its half, a branch's offset)
  *     image            the memory's first bytes: the CPU starts at 0
  *     (-a n: a.out)    a header (a magic number, the image's size, the
- *                      memory asked for) then the image
+ *                      memory asked for; with -n another magic number
+ *                      and the text's size) then the image
  *     (-s: symbols)    an a.out (of 1 MB unless -a), its labels after
  *                      the image, the compilers' local ones left out
  *                      (TinyLibSymbols): debug's, Plan 9's a.out symbol
@@ -72,15 +75,17 @@
  * linker descends from Plan 9's, and moved the encoding to its
  * assembler in 2014, for speed. *)
 
-(* the objects (a name, its text), linked: the image, and each label
- * with its address, by address *)
-val link : (string * string) list -> string * (string * int) list
+(* [link split objects]: the objects (a name, its text), linked: the
+ * image, each label with its address, by address, and where the data
+ * starts (split, -n: the text first; else 0, .text and .data ignored) *)
+val link : bool -> (string * string) list -> string * (string * int) list * int
 
-(* an executable for tiny-kernel: a header of three words (a magic
- * number, the image's size, the memory the program asks for in bytes),
- * then the image, linked at 0; the memory first (old: ~memory, a
- * label, which tiny-ml does not read) *)
-val aout : int -> string -> string
+(* [aout memory data_at image]: an executable for tiny-kernel: a header
+ * of three words (a magic number, the image's size, the memory the
+ * program asks for in bytes), then the image, linked at 0; with data_at
+ * (-n), a fourth word, it, and the magic number aout_split's. The
+ * memory first (old: ~memory, a label, which tiny-ml does not read) *)
+val aout : int -> int -> string -> string
 
 (* the program: its arguments (-h: how) to its exit status *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

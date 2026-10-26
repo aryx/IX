@@ -1321,7 +1321,8 @@ let main
         locs := Array.of_list (List.map snd ts);
         while peek () <> EOF do external_decl () done;
         let text =
-          Buffer.contents out ^ (if !ir_only then "" else Buffer.contents data)
+          Buffer.contents out
+          ^ (if !ir_only then "" else "\t.data\n" ^ Buffer.contents data)
         in
         if !output = "" then TinyLibSystem.print caps text
         else begin

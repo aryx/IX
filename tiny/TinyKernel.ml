@@ -28,7 +28,7 @@ external k_ie : int -> unit = "k_ie"
 external k_clock : unit -> int = "k_clock"
 external k_rate : unit -> int = "k_rate"
 external k_cores : unit -> int = "k_cores"
-external k_window : int -> int -> unit = "k_window"
+external k_window : int -> int -> int -> int -> unit = "k_window"
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
 external k_end : unit -> int = "k_end"
@@ -417,6 +417,11 @@ let user p va n =
   let a = mem_address p.mem va n in
   if a < 0 then raise Bad else a
 
+(* the same, n bytes the kernel writes for the user (a read's, a call's
+ * result): Bad in its text too, read only with segments *)
+let user_out p va n =
+  if mem_writable p.mem va n then user p va n else raise Bad
+
 (* A user's buffer, n bytes at va, piece by piece: f a off k for each
  * piece, at the kernel's address a, off bytes into the buffer, k bytes
  * long; Bad if it leaves the process's memory. A partition gives one
@@ -429,6 +434,7 @@ let user_iter p va n f =
 
 (* a string of the kernel's written in the user's memory at va *)
 let user_write p va s =
+  if not (mem_writable p.mem va (String.length s)) then raise Bad;
   user_iter p va (String.length s) (fun a off k -> k_blit s off a k)
 
 (* a string of the user's, a path: 1024 bytes at most (old: 64, a path
@@ -844,7 +850,10 @@ let write f a n =
            (try
               command t q (String.split_on_char ' ' (String.trim (k_string a n)));
               Some n
-            with Bad -> Some (-1))
+            with
+            | Bad -> Some (-1)
+            (* (a breakpoint in a shared text, and no room for its copy) *)
+            | No_room -> Some (-1))
        | None -> Some (-1))
   | Reader _ | Peek _ -> Some (-1)
 
@@ -889,6 +898,7 @@ let bounce_size = 0xa0000
 
 let sys_rw p rw reading =
   let f = fd p (reg p 1) and va = reg p 2 and n = reg p 3 in
+  if reading && not (mem_writable p.mem va n) then raise Bad;
   let finish = function Some k -> result p k; true | None -> false in
   let a = mem_address p.mem va n in
   if a >= 0 then block p (fun () -> finish (rw f a n))
@@ -995,15 +1005,24 @@ let sys_fork p = with_room p (fun () ->
 (* A program's file is either a raw image, run in 1 MB, or an a.out: a
  * header of three words (a magic number, the image's size, the memory
  * the program asks for), then the image (tiny-linker -a), and maybe its
- * labels, for debug (-s), which are not loaded. This returns where the
- * image starts in the file, its size, and the memory. *)
+ * labels, for debug (-s), which are not loaded. With tiny-linker -n, a
+ * fourth word, the text's size, and another magic number. This returns
+ * where the image starts in the file, its size, the memory, and the
+ * text's size (0: none). *)
 let aout_magic = 0x7a0ce5
+let aout_split = 0x7a0ce6
 let header bytes =
   let word i =
     String.get_uint16_le bytes i
     + (String.get_uint16_le bytes (i + 2) lsl 16) in
-  if String.length bytes >= 12 && word 0 = aout_magic then Some (word 4, word 8)
+  let n = String.length bytes in
+  if n >= 12 && word 0 = aout_magic then Some (12, word 4, word 8, 0)
+  else if n >= 16 && word 0 = aout_split then Some (16, word 4, word 8, word 12)
   else None
+
+(* a file of the disk as a program's, to share its text (TinyKernelMemory's
+ * key; its stamp is its date and size) *)
+let disk_key r i = "disk " ^ string_of_int r ^ " " ^ string_of_int i
 
 (* Loads a file's program into p, in a partition of the size it asks for
  * (rounded up to whole megabytes), from address 0. Its arguments are put
@@ -1012,6 +1031,12 @@ let header bytes =
  * no program, or one that leaves no room for a stack, or if there is no
  * room for its partition; in that case p is left as it was. *)
 let load_prog p node argv =
+  (* (an image's file never changes; a file of memory is not shared) *)
+  let key, date =
+    match node with
+    | Some (Rom (at, _)) -> "rom " ^ string_of_int at, ""
+    | Some (Disk (r, i)) -> disk_key r i, string_of_int (fs_date r i)
+    | _ -> "", "" in
   let node =
     match node with
     | Some (Disk (r, i)) -> Some (Data (data (fs_contents r i)))
@@ -1023,15 +1048,18 @@ let load_prog p node argv =
     | _ -> raise Bad in
   let first =
     match node with
-    | Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 12)
-    | Some (Rom (at, _)) -> k_string at (min n 12)
+    | Some (Data d) -> Bytes.sub_string d.dbytes 0 (min n 16)
+    | Some (Rom (at, _)) -> k_string at (min n 16)
     | _ -> "" in
-  let skip, size, memory = match header first with
-    | Some (size, memory) when size <= n - 12 ->
-        12, size, (memory + part - 1) / part * part
-    | _ -> 0, n, part in
+  let skip, size, memory, tsize = match header first with
+    | Some (h, size, memory, tsize)
+      when size <= n - h && tsize <= size && tsize land 4095 = 0 ->
+        h, size, (memory + part - 1) / part * part, tsize
+    | _ -> 0, n, part, 0 in
   if size > memory - 0x10000 || memory > mem_high - mem_low then raise Bad;
-  mem_place p.mem memory;
+  (* the text written only when it is not shared already *)
+  let stamp = if date = "" then "" else date ^ " " ^ string_of_int n in
+  let from = if mem_load p.mem key stamp tsize memory then 0 else tsize in
   (* Only the image is written, its statics in it (tiny-linker writes a
    * .space as zeros); the rest of the
    * partition, the stack and the heap, is left as the last process to
@@ -1044,8 +1072,10 @@ let load_prog p node argv =
    * for ml, 35 million instructions an exec: a fifth of a small unit's
    * compile) *)
   (match node with
-   | Some (Data d) -> mem_write p.mem 0 (Bytes.sub_string d.dbytes skip size)
-   | Some (Rom (at, _)) -> mem_blit p.mem 0 (at + skip) size
+   | Some (Data d) ->
+       mem_write p.mem from
+         (Bytes.sub_string d.dbytes (skip + from) (size - from))
+   | Some (Rom (at, _)) -> mem_blit p.mem from (at + skip + from) (size - from)
    | _ -> ());
   let top = ref memory and ptrs = ref [] in
   List.iter (fun s ->
@@ -1099,7 +1129,7 @@ let sys_spawn p =
 (* wait(&status): a child's end, the child freed; -1 without children *)
 let sys_wait p =
   let a = reg p 1 in
-  if a <> 0 then ignore (user p a 4);
+  if a <> 0 then ignore (user_out p a 4);
   block p (fun () ->
     let kids = List.filter (fun q -> q.parent = p.pid) !procs in
     match kids,
@@ -1109,7 +1139,7 @@ let sys_wait p =
     | _, [] -> false
     | _, q :: _ ->
         (match q.state with
-         | Zombie s -> if a <> 0 then poke (user p a 4) s
+         | Zombie s -> if a <> 0 then poke (user_out p a 4) s
          | _ -> ());
         release q;
         result p q.pid;
@@ -1152,6 +1182,10 @@ let sys_open p =
           if name = last then name, made else name, old) !d;
         made
     | _ -> node in
+  (* (a file of the disk written: no exec shares the text it had) *)
+  (match node with
+   | Disk (r, i) when writes -> mem_forget (disk_key r i)
+   | _ -> ());
   (* (a snapshot is read only) *)
   (match node with
    | Dir _ when writes -> raise Bad
@@ -1175,7 +1209,7 @@ let sys_close p =
 
 (* pipe(fds) and box(fds): the two ends, a descriptor each, put in fds *)
 let ends p r w =
-  let a = user p (reg p 1) 4 and b = user p (reg p 1 + 4) 4 in
+  let a = user_out p (reg p 1) 4 and b = user_out p (reg p 1 + 4) 4 in
   let r = fdalloc p r in
   let w = fdalloc p w in
   poke a r;
@@ -1783,9 +1817,17 @@ let () =
    | _ -> ());
   k_zero ring_at ring;
   poke speaker_dev ring_at;
+  (* how the processes get memory: /lib/memory, which the Makefile's
+   * MEMORY=segments puts in the image; partitions otherwise *)
+  (match walk root (names [] "/lib/memory") with
+   | Some node ->
+       let s = contents node in
+       segments := String.length s >= 8 && String.sub s 0 8 = "segments"
+   | None -> ());
   puts ("tiny-kernel: TinyKernel.ml, "
         ^ string_of_int ((mem_high - mem_low) / part) ^ " MB for "
-        ^ string_of_int nslots ^ " processes\n");
+        ^ string_of_int nslots ^ " processes"
+        ^ (if !segments then ", in segments\n" else "\n"));
   (* The disk, when there is one, is the root: the top becomes a union
    * of the disk's root, of /boot and /dump, and of the image's files.
    * Its snapshots are in /dump, each under the number of the boot that

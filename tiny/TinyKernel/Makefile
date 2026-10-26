@@ -57,6 +57,9 @@
 #   make self         tiny-kernel builds its image from its sources,
 #                     /src, on a disk: the host's, byte for byte (hours)
 #   make self-quick   a few of its targets, the same way (3 minutes)
+#   MEMORY=segments   any of these with the processes in segments, their
+#                     text shared (plan_tiny_memory.md; partitions by
+#                     default): /lib/memory in the image, under _make-segments
 #
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
@@ -100,7 +103,9 @@ LD = tiny-linker
 CPU = tiny-cpu
 MACHINE = tiny-machine
 
-O = _make
+# how the kernel gives the processes memory (TinyKernelMemory.mli)
+MEMORY = partitions
+O = $(if $(filter segments,$(MEMORY)),_make-segments,_make)
 # make check's check.expected, sessions (.events) and screens' sums (.cksum)
 T = ../tests/TinyKernel_tests
 # tiny-ml's standard library, TinyLibCore/'s modules in their order, each
@@ -175,7 +180,7 @@ $(O)/%.tm: %.c libc/user.h
 
 $(O)/bin/%: $(ULIB) $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(LD) -map -s -o $@ $(ULIB) $(O)/user/$*.o
+	$(LD) -map -s -n -o $@ $(ULIB) $(O)/user/$*.o
 
 # a program in ML: its units, each compiled once by tiny-ml -c into
 # _make/ml/ (an object, U.tm, and its interface, U.tmi), after the
@@ -317,7 +322,7 @@ $(O)/main/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(UNITS_$$*))) $(O)/lib/St
 # program is past 384 KB; old: a program past it refused here)
 $(ML:%=$(O)/bin/%): $(O)/bin/%: $(ULIB) $(O)/libml/mlsys.o $(O)/main/%.o $$(addprefix $(U)/,$$(addsuffix .o,$$(UNITS_$$*))) $(LIB) $(O)/end.o
 	@mkdir -p $(@D)
-	$(LD) -map -s $(MEM_$*) -o $@ $(filter %.o,$^)
+	$(LD) -map -s -n $(MEM_$*) -o $@ $(filter %.o,$^)
 
 # a program that draws: with draw.c, the messages (draw.h); a demo, in
 # examples/ (not counted by make loc)
@@ -326,11 +331,11 @@ $(O)/user/paint.tm: examples/paint.c libc/user.h libc/draw.h
 	$(TC) -o $@ $<
 $(O)/bin/paint: $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 	@mkdir -p $(@D)
-	$(LD) -map -s -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
+	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/draw.o $(O)/user/paint.o
 # a program that reaches a machine by its name: with net.c
 $(O)/bin/get $(O)/bin/put: $(O)/bin/%: $(ULIB) $(O)/libc/net.o $(O)/user/%.o
 	@mkdir -p $(@D)
-	$(LD) -map -s -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
+	$(LD) -map -s -n -o $@ $(ULIB) $(O)/libc/net.o $(O)/user/$*.o
 
 BINS = $(addprefix $(O)/bin/,$(PROGS))
 
@@ -405,6 +410,7 @@ boot.img: kernel.img $(PROGS:%=bin/%) $(addprefix /examples/,$(notdir $(EXAMPLES
 	for(f in $$LIBFILES) { n=`{wc -c < lib/$$f}; echo lib/ml/$$f; echo $$n; cat lib/$$f } >> $$target
 	for(u in $$UTILS) { echo bin/$$u; echo link bin/utils } >> $$target
 	{ $(foreach l,$(LINKS),echo bin/$(firstword $(subst :, ,$(l))); echo link bin/$(lastword $(subst :, ,$(l)));) } >> $$target
+	$(if $(filter segments,$(MEMORY)),{ echo lib/memory; echo 9; echo segments } >> $$target)
 	echo >> $$target
 
 # the library at once, each module after the ones before it
@@ -442,9 +448,9 @@ user/%.tm: $(K)/user/%.c $(K)/libc/user.h
 	mkdir -p user; cc -o $$target $(K)/user/$$stem.c
 user/paint.tm: $(K)/examples/paint.c $(K)/libc/user.h $(K)/libc/draw.h
 	mkdir -p user; cc -o $$target $(K)/examples/paint.c
-$(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
-	mkdir -p bin; ld -map -s -o $$target $$prereq
-$(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -o $$target $$prereq$(nl))
+$(foreach p,$(filter-out paint get put,$(C_PROGS)),bin/$(p): $$ULIB user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))bin/paint: $$ULIB libc/draw.o user/paint.o
+	mkdir -p bin; ld -map -s -n -o $$target $$prereq
+$(foreach p,get put,bin/$(p): $$ULIB libc/net.o user/$(p).o$(nl)	mkdir -p bin; ld -map -s -n -o $$target $$prereq$(nl))
 # ML: each unit after the interfaces it reads, each program's main, and
 # the program
 ml/%.tm:
@@ -452,7 +458,7 @@ ml/%.tm:
 ml/%.tmi: ml/%.tm
 $(foreach u,$(UNITS),ml/$(u).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)))) $(call insrc,$(or $(F_$(u)),../$(u).ml) $(wildcard $(patsubst %.ml,%.mli,$(or $(F_$(u)),../$(u).ml))))$(nl))main/%.tm:
 	mkdir -p main; ml -nostdlib -o $$target $$prereq
-$(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s $(MEM_$(p)) -o $$target $$prereq$(nl))
+$(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
 endef
 $(O)/Buildfile: Makefile
 	@mkdir -p $(@D)
@@ -474,6 +480,7 @@ $(O)/boot.img: $(O)/kernel.img $(BINS) $(EXAMPLES) $(SRC:%=../%) $(GEN:%=$(O)/%)
 	for f in $(LIBFILES); do printf 'lib/ml/%s\n%d\n' $$f $$(wc -c < $(O)/lib/$$f) >> $@; cat $(O)/lib/$$f >> $@; done
 	for u in $(UTILS); do printf 'bin/%s\nlink bin/utils\n' "$$u" >> $@; done
 	for l in $(LINKS); do printf 'bin/%s\nlink bin/%s\n' $${l%%:*} $${l#*:} >> $@; done
+	$(if $(filter segments,$(MEMORY)),printf 'lib/memory\n9\nsegments\n' >> $@)
 	printf '\n' >> $@
 	@test $$(wc -c < $@) -lt 10485760 || { echo "$@: over 10 MB, where TinyKernelFS.ml has its buffers"; rm $@; exit 1; }
 

@@ -169,25 +169,75 @@ to run, 148,894 to 148,936 bytes for the same kernel) and three pairs
 of lines of `trace -f rc -c 'cat f | wc'` interleaved otherwise
 (session 26, without other load too).
 
-## Stage 3: segments
+## Stage 3: segments (done, 2026-10-26)
 
-- tiny-machine: a second window, the text's: with bit 17 of status,
-  an address below `tbound` is the text's (`tbase + a`, fetches and
-  loads only, a store faults), one at or above it the data's
-  (`base + a - tbound`, below `bound`). Two registers of control,
-  `tbase` and `tbound`. Off, the machine is as today.
-- The a.out: the text's size in the header already (the image's);
-  tiny-linker -n rounds the data's start to the next 4 KB, as Unix's
-  0410 rounded it to the PDP-11's 8 KB.
-- The kernel: a text is shared by the runs of one file (its count of
-  users), loaded once; fork copies the data only; exec of a program
-  already running loads only its data.
-- What it gives: one copy of ml's 540 KB for four ml's, code that
-  cannot be overwritten (a wild store faults instead of corrupting
-  the program). What it does not: fragmentation, sizes guessed, fork's
-  copy of the data.
-- A third segment, the stack's, growing down (the 8086's SS, the
-  PDP-11's stack segment that Unix grew on a fault), is an exercise.
+What the plan said first was wrong in one place: the a.out's header
+had the image's size, not the text's, and nothing in tiny-assembler
+or tiny-linker told text from data (an object is one stream, a
+module's code and its statics one after the other). Both compilers
+kept their statics in a buffer of their own, emitted after the code,
+so the split cost a line in each:
+
+- **tiny-assembler**: `.text` and `.data`, a line `text` or `data` in
+  the object.
+- **tiny-ml, tiny-c**: `.data` before their statics (the closures,
+  strings and exceptions that are static blocks, the globals' tables;
+  C's globals). Everything ML writes is there, so a text is code
+  alone. `end.tm`'s `_end` is in the data too (mlsys.c's stack of
+  values starts past it).
+- **tiny-linker -n**: each piece its section (an object starts in the
+  text, a piece goes on in its object's: the sweep keeps or drops it
+  with it), the text's pieces first, then the data's from the next
+  4 KB, Unix's 0410; the header a fourth word, the text's size, and a
+  magic number of its own (0x7a0ce6 beside 0x7a0ce5, as 0410 beside
+  0407). Without -n the sections are ignored, the images as before
+  byte for byte (lite's linker and compilers' recorded cases).
+- **tiny-machine**: 32 of status, split, with relocate: below `tbound`
+  (a register of control, 17) the text's, at `tbase` (16), a store a
+  fault; above it the data's, `base + (a - tbound)`, below `bound`.
+- **The kernel** (TinyKernelMemory.ml's Segments, about 120 lines):
+  a text a block of its own with its users, keyed by its file (an
+  image's file by its address; a disk's by its inode, its date and
+  size the stamp; a file of memory not shared), taken by an exec
+  while its file is unchanged (a file opened to be written:
+  `mem_forget`); fork shares it and copies the data; a word the kernel
+  writes in a text (a breakpoint) makes it the process's own, a copy;
+  a read's buffer or a call's result in a text is Bad. Every program
+  is linked with -n, under partitions too, which load the image as one
+  block: the same addresses in both, one set of binaries. The choice:
+  `MEMORY=segments`, `/lib/memory` in the image (and the Buildfile's,
+  so that self builds the same image), under `_make-segments`; the
+  boot line says "in segments".
+- entry.tm: k_window's two more words, the slave's mailbox's 24 and
+  28; k_enter sets split only when tbound is not 0, by `sltu` and no
+  branch (k_step counts its instructions to eret: 31, now 34).
+
+What it costs, the host's instructions in the toolchain session
+(tests/icount.c): every process split, partitions too, 321.7 thousand
+million against 300.5, 7%; split only with a text, partitions 296.74
+against 296.71 (a test more), segments 303.3, 2.2%.
+
+What it gives here: a text read only (a program that writes over its
+own code is killed: `*(int*)main = 0`, tried, a fault under segments,
+"after" under partitions) and one copy of it for its runs (two cats of
+a pipeline took the first's: instrumented once, `[rom 3150798]`). The
+memory saved is small beside partitions of megabytes: ml's text is
+448 KB of its 532 (as 128 of 205, cc 260 of 339; the data's 77 KB
+are mostly libc's heap), so four ml's save 1.3 MB of their 128. The
+teaching is the point, as planned: Unix's 0410 by the same few
+functions.
+
+Checked: TinyKernel's check under both, against the records
+re-recorded for the layout (a program's labels moved: libc's heap
+after the code, `main` at 0xfec where it was at 0x1100c; the debug
+window's registers; 2 KB less free on the disk, each program up to
+4 KB of padding) and for the timing (session 26's background loop);
+`toolchain.keys` links ping with -n; self-quick under both (its
+recipes' echo with -n; segments' boot line); make test-lite. Not
+run: self (hours; `self.expected`'s recipes edited the same way, and
+already behind on ld's 48 MB), self-cores, the four-core build.
+Left: the third segment, the stack's (an exercise); `tetris.wav`'s
+sum, which HEAD fails too.
 
 ## Stage 4: pages, off by default
 
@@ -213,10 +263,11 @@ of lines of `trace -f rc -c 'cat f | wc'` interleaved otherwise
 2026-10-23: plan written; stage 1's spawn built and checked (above);
 stage 2, TinyKernelMemory.ml, done but for `user_iter`.
 2026-10-25: `user_iter` and the bounce (stage 2, above): stage 2
-done. Next: stage 3, segments. Seen meanwhile: HEAD's own check
-fails on tetris.wav and session 26's trace -f order, both timing
-(above), `check.expected` and the wav's sum to re-record by the
-author's word.
+done.
+2026-10-26: stage 3, segments, done (above), behind MEMORY=segments.
+Next: stage 4, pages. `check.expected` re-recorded with stage 3
+(its timing lines too); `tetris.wav`'s sum, which changes from run
+to run, not.
 Measuring: the self-build on four cores (`-j 6`) with spawn, beside
 the same with fork and one core with fork (plan_tiny_multicore.md's
 Status will have the numbers).

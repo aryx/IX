@@ -2710,7 +2710,8 @@ let main
         if !output = "" then
           Filename.remove_extension (Filename.basename f) ^ ".tm"
         else !output in
-      write out (Buffer.contents text ^ Buffer.contents data);
+      (* (.data: tiny-linker -n's, the statics after the text) *)
+      write out (Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data);
       write (Filename.remove_extension out ^ ".tmi")
         (write_interface old exports types n)
     end else begin
@@ -2729,7 +2730,8 @@ let main
           needed @ !arities)
           (env, tenv, units, needed) mls in
       compile_main units needed;
-      let asm = start ^ Buffer.contents text ^ Buffer.contents data in
+      let asm =
+        start ^ Buffer.contents text ^ "\t.data\n" ^ Buffer.contents data in
       if !output = "" then TinyLibSystem.print caps asm else write !output asm
     end;
     0

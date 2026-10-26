@@ -20,6 +20,8 @@ and satp = 12   (* scratch, 13, only read and written *)
 and rate_csr = 14
 (* the number of cores (-cores n), which a kernel reads at its boot *)
 and cores_csr = 15
+(* the text's window, with split (below) *)
+and tbase_csr = 16 and tbound_csr = 17
 let csr_names = TinyMachineISA.csr_names
 let read_only k =
   k = time || k = core_csr || k = ip || k = rate_csr || k = cores_csr
@@ -31,6 +33,12 @@ let supervisor_bit = 1 and ie = 2 and ps = 4 and pie = 8
  * PDP-10's did: a user address a is base + a, below bound, a size.
  * Kept through traps and eret, as it is the kernel's choice *)
 let relocate = 16
+(* Segments (plan_tiny_memory.md), with relocate: the window split in
+ * two, as the PDP-11/45's text and data. A user address below tbound
+ * is the text's, tbase + a, fetched or loaded, a store a fault; one at
+ * or above it the data's, base + (a - tbound), below bound. So a
+ * program's text, linked at 0, can be one copy for all its runs *)
+let split = 32
 
 (* an interrupt's cause is 4, its sources in tval: the bits of ip and
  * ie, the timer's the first (v0's only one) *)
@@ -400,19 +408,32 @@ let trap mc cause_v tval_v epc_v =
     supervisor_bit
     lor (if st land supervisor_bit <> 0 then ps else 0)
     lor (if st land ie <> 0 then pie else 0)
-    lor (st land relocate);
+    lor (st land (relocate lor split));
   mc.cpu.pc <- TinyMachineCPU.addr c.(tvec)
 
 (*****************************************************************************)
 (* The CPU's hooks: the window, the devices, the new instructions *)
 (*****************************************************************************)
 
-let check mc a =
-  let a = TinyMachineCPU.addr a in
+type access = Read | Write | Exec
+
+(* (split tested inside relocate: a partition's access pays one test
+ * more, not the split's arithmetic, which cost 7% of the host's
+ * instructions in tiny-kernel's toolchain session) *)
+let check mc access a =
+  let a = TinyMachineCPU.addr a and c = mc.csr in
   if supervisor mc then a
-  else if mc.csr.(status) land relocate <> 0 then (
-    if not (TinyMachineCPU.ult a mc.csr.(bound)) then raise (Trap (c_fault, a));
-    TinyMachineCPU.addr (mc.csr.(base) + a))
+  else if c.(status) land relocate <> 0 then (
+    if c.(status) land split = 0 then (
+      if not (TinyMachineCPU.ult a c.(bound)) then raise (Trap (c_fault, a));
+      TinyMachineCPU.addr (c.(base) + a))
+    else if TinyMachineCPU.ult a c.(tbound_csr) then (
+      if access = Write then raise (Trap (c_fault, a));
+      TinyMachineCPU.addr (c.(tbase_csr) + a))
+    else (
+      let d = a - c.(tbound_csr) in
+      if not (TinyMachineCPU.ult d c.(bound)) then raise (Trap (c_fault, a));
+      TinyMachineCPU.addr (c.(base) + d)))
   else if TinyMachineCPU.ult a mc.csr.(base)
           || not (TinyMachineCPU.ult a mc.csr.(bound))
   then raise (Trap (c_fault, a))
@@ -429,11 +450,9 @@ let check mc a =
  * bit clear), the window, as v0 has it. The pc stays below the
  * memory's size (the CPU keeps it modulo), so the virtual addresses a
  * program runs at do too. *)
-type access = Read | Write | Exec
-
 let translate mc (m : TinyMachineCPU.machine) access va =
   let sat = mc.csr.(satp) in
-  if sat land 0x80000000 = 0 then check mc va
+  if sat land 0x80000000 = 0 then check mc access va
   else begin
     let va = TinyMachineCPU.m32 va in
     let fault () = raise (Trap (c_fault, va)) in
@@ -557,7 +576,7 @@ let extra mc (m : TinyMachineCPU.machine) w =
         c.(status) <-
           (if st land ps <> 0 then supervisor_bit else 0)
           lor (if st land pie <> 0 then ie else 0)
-          lor (st land relocate);
+          lor (st land (relocate lor split));
         m.pc <- TinyMachineCPU.addr c.(epc)
   end
 

@@ -38,12 +38,14 @@ let funcs = ref (Array.of_list [])
 let symbols file =
   let fd = u_open file 0 in
   if fd >= 0 then begin
-    let h = u_read fd 12 in
+    let h = u_read fd 16 in
     let word i =
       Char.code h.[i] + (Char.code h.[i + 1] lsl 8)
       + (Char.code h.[i + 2] lsl 16) + (Char.code h.[i + 3] lsl 24) in
-    if String.length h = 12 && word 0 = 0x7a0ce5
-       && u_seek fd (12 + word 4) 0 >= 0 then begin
+    (* (tiny-linker -n's header has a fourth word, the text's size) *)
+    let split = String.length h = 16 && word 0 = 0x7a0ce6 in
+    if String.length h >= 12 && (word 0 = 0x7a0ce5 || split)
+       && u_seek fd ((if split then 16 else 12) + word 4) 0 >= 0 then begin
       let rec rest acc =
         let s = u_read fd 4096 in
         if s = "" then String.concat "" (List.rev acc) else rest (s :: acc) in

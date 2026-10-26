@@ -78,6 +78,11 @@
  * t6 (a kernel of our own in C, in TinyKernel/steps/t6/) added one
  * more thing: bit 16 of status makes the window relocate (a user address
  * is added to base, and must stay below bound).
+ * tiny-kernel's segments (plan_tiny_memory.md) split it: with 32 of
+ * status too, an address below {b tbound} is the text's, added to
+ * {b tbase}, and a store there faults; one above, less tbound, is the
+ * data's, added to base and below bound. One copy of a program's text
+ * then serves all its runs, as the PDP-11/45's text segment did.
  *
  * For a window system (plan_tiny_windows.md) there are more additions,
  * each behind an option, so that a kernel without one runs as before:

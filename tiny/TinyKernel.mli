@@ -168,9 +168,10 @@
  *    0xfffffc0   the devices, reached as -64 to -4
  *
  * A process's memory is TinyKernelMemory's (TinyKernel/): a partition
- * today, the simplest way, with its history and what came after
- * (segments, pages: plan_tiny_memory.md). fork copies the parent's
- * partition whole; spawn, fork and exec in one, copies nothing
+ * by default, the simplest way, with its history and what came after;
+ * segments with MEMORY=segments (the program's text shared by its
+ * runs, read only; pages next: plan_tiny_memory.md). fork copies the
+ * parent's partition whole; spawn, fork and exec in one, copies nothing
  * (tiny-build starts each recipe's rc with it: its own partition is
  * 16 MB).
  *

@@ -80,6 +80,13 @@ let mem_copy dst src =
 let mem_address sp va n =
   if va < 0 || n < 0 || va + n > sp.ssize then -1 else sp.sbase + va
 
+(* The n bytes at va as the blocks of the machine that hold them, in
+ * order, each its kernel's address and its length; None if they leave
+ * the partition. A partition's n bytes are one block, so one piece. *)
+let mem_pieces sp va n =
+  if va < 0 || n < 0 || va + n > sp.ssize then None
+  else Some [ sp.sbase + va, n ]
+
 (* a word, a byte, a string, n bytes of the kernel's at a, written at va;
  * a word read. The kernel has checked va ([mem_address]). *)
 let mem_fetch sp va = peek (sp.sbase + va)

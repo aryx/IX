@@ -154,7 +154,10 @@
  *                of each process that is not running
  *     0xb41000   the cores' mailboxes, 32 bytes each
  *     0xb50000   a packet's place, sent or received
- *     0xb51000   unused (but the speaker's ring, at 0xc00000)
+ *     0xb51000   unused
+ *     0xb60000   the bounce: a buffer in several pieces, read or
+ *                written through it (sys_rw; none with partitions)
+ *     0xc00000   the speaker's ring
  *     0xd00000   pixels of images: the font, the hidden windows
  *     0xf00000   the screen, 640 by 480 bytes; more images after it
  *    0x1000000   the heap, two halves of 8 MB: every file written,

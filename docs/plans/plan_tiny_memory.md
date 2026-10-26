@@ -126,11 +126,48 @@ take `fs_` (the kernel has its own `write`, `size`). What was planned:
   stayed there, being the kernel's whole, and spawn's note, being a
   call's).
 
-Left from this stage: the kernel reaches a user's bytes as one address
-(`user p va n`), used by read, write and the strings. With pages a
-buffer crosses pages that are not together; the calls that take a
-buffer then go page by page (`user_iter`), a change to make in this
-stage already, so that stage 4 changes only the module.
+Then (2026-10-25) `user_iter`: the kernel reached a user's bytes as
+one address (`user p va n`), used by read, write and the strings. With
+pages a buffer crosses pages that are not together; so now:
+
+- `mem_pieces sp va n`, the module's: the buffer as the blocks that
+  hold it, (the kernel's address, the length) each; one for a
+  partition. `user_iter p va n f` (TinyKernel.ml) calls f on each,
+  `user_write` writes a kernel string by it (stat's entry, getcwd's
+  path).
+- `user p va n` (`mem_address`) stays for what is in one piece: a
+  word, a byte (the strings read a byte at a time). pipe's two
+  descriptors are two words now, ready's descriptors a word each, the
+  tracer's `m` a byte each.
+- read and write: a buffer in one piece goes to the device as it is,
+  every buffer with partitions. One in several goes through **the
+  bounce**, 640 KB of the kernel's at 0xb60000 (TinyKernel.mli's
+  layout), a write's bytes copied in before, a read's back after
+  (xv6's copyin and copyout, Linux's copy_from_user, do that for
+  every call), at each try of a call that waits; at most
+  640 KB a call then, a read or a write doing less than asked, as
+  Unix lets them. The devices are unchanged: several take a message
+  whole (draw, il, a box, the speaker), which a call a page at a time
+  would cut.
+- The fast path asks `mem_address`, not `mem_pieces`: a list at each
+  read and write made the kernel slow enough that the check's last
+  session ended in another order (an echo in the background before
+  rc's prompt, every run).
+
+Checked (private copies of tiny/, against HEAD's the same way): the
+check's screens and text as HEAD's. And with every buffer that
+crosses 4 KB cut there (`mem_pieces` by pages, `mem_address` -1 for
+them: pages' pieces with partitions under them), the same, but the
+order of the last session's lines (as above, the bounce costing
+time). That check found a fault of the first version, which copied
+both ways not to tell a read from a write: a read that waits is
+tried again at every turn of the scheduler, and copied its whole
+buffer in each time; `seq 30 | grep 1 | sort -rn | cat | wc -l` was
+still at it after 100 s (2 s now). Not the same as `check.expected`,
+in HEAD either, by timing: `tetris.wav` (its length changes from run
+to run, 148,894 to 148,936 bytes for the same kernel) and three pairs
+of lines of `trace -f rc -c 'cat f | wc'` interleaved otherwise
+(session 26, without other load too).
 
 ## Stage 3: segments
 
@@ -175,6 +212,11 @@ stage already, so that stage 4 changes only the module.
 
 2026-10-23: plan written; stage 1's spawn built and checked (above);
 stage 2, TinyKernelMemory.ml, done but for `user_iter`.
+2026-10-25: `user_iter` and the bounce (stage 2, above): stage 2
+done. Next: stage 3, segments. Seen meanwhile: HEAD's own check
+fails on tetris.wav and session 26's trace -f order, both timing
+(above), `check.expected` and the wav's sum to re-record by the
+author's word.
 Measuring: the self-build on four cores (`-j 6`) with spawn, beside
 the same with fork and one core with fork (plan_tiny_multicore.md's
 Status will have the numbers).

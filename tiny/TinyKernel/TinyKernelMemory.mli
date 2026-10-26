@@ -24,7 +24,8 @@
  * ([mem_release]): a zombie keeps its block until its parent's wait.
  *
  * Where it stands: TinyKernel.ml calls it for every process's memory
- * (and its [user] for a system call's buffer: [mem_address]); entry.tm
+ * (its [user] for a word or a byte of a system call's, [mem_address];
+ * its [user_iter] for a buffer, [mem_pieces]); entry.tm
  * sets core 0's window ([mem_window]), and a core given a process gets
  * its window in its mailbox ([mem_post]: plan_tiny_multicore.md). The
  * other kernels on the same machine: t6 (steps/), fixed partitions of
@@ -131,8 +132,17 @@ val mem_release : space -> unit
 val mem_copy : space -> space -> unit
 
 (* [mem_address sp va n]: the kernel's address of the n bytes at the
- * process's va, -1 if they are not all the process's *)
+ * process's va, -1 if they are not all the process's, or (with pages)
+ * not in one piece; a word or a byte is (an aligned word is in one
+ * page) *)
 val mem_address : space -> int -> int -> int
+
+(* [mem_pieces sp va n]: the n bytes at va as the pieces of the
+ * machine's memory that hold them, in order, (the kernel's address, the
+ * length) each; None if they are not all the process's. One piece for
+ * a partition; with pages, a piece a page (the frames are anywhere):
+ * for a buffer, the kernel goes by them (TinyKernel.ml's user_iter) *)
+val mem_pieces : space -> int -> int -> (int * int) list option
 
 (* a word read at va; a word, a byte, a string written at va; [mem_blit
  * sp va a n] the kernel's n bytes at a written at va. va is checked by

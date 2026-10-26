@@ -417,6 +417,20 @@ let user p va n =
   let a = mem_address p.mem va n in
   if a < 0 then raise Bad else a
 
+(* A user's buffer, n bytes at va, piece by piece: f a off k for each
+ * piece, at the kernel's address a, off bytes into the buffer, k bytes
+ * long; Bad if it leaves the process's memory. A partition gives one
+ * piece; pages would give one a page, not together in the machine
+ * (TinyKernelMemory.mli) *)
+let user_iter p va n f =
+  match mem_pieces p.mem va n with
+  | Some l -> ignore (List.fold_left (fun off (a, k) -> f a off k; off + k) 0 l)
+  | None -> raise Bad
+
+(* a string of the kernel's written in the user's memory at va *)
+let user_write p va s =
+  user_iter p va (String.length s) (fun a off k -> k_blit s off a k)
+
 (* a string of the user's, a path: 1024 bytes at most (old: 64, a path
  * of a few names, when a name had 20) *)
 let ustr p va =
@@ -736,11 +750,10 @@ let command t q words =
   | [ "m"; s; k ], _ ->
       (match int_of_string_opt s, int_of_string_opt k with
        | Some a, Some n when n > 0 && n <= 1024 ->
-           let at = user q a n in
            say (hex_bytes (List.init n (fun i ->
              match List.assoc_opt ((a + i) land lnot 3) t.stops with
              | Some w -> (w lsr (8 * ((a + i) land 3))) land 255
-             | None -> peekb (at + i))))
+             | None -> peekb (user q (a + i) 1))))
        | _ -> raise Bad)
   | [ "w"; s; v ], _ ->
       let a = addr s in
@@ -859,10 +872,38 @@ let block p attempt =
 
 let result p v = set_reg p 1 v
 
-let sys_rw p rw =
-  let f = fd p (reg p 1) and n = reg p 3 in
-  let a = user p (reg p 2) n in
-  block p (fun () -> match rw f a n with Some k -> result p k; true | None -> false)
+(* A buffer in one piece is given to the device as it is: the user's
+ * memory, at the kernel's address (every buffer, with partitions; asked
+ * by mem_address, which allocates nothing: mem_pieces's list at each
+ * read and write slowed the kernel enough to reorder the check's last
+ * lines, an echo in the background before rc's prompt). One
+ * in several pieces goes through the kernel's own, the bounce (640 KB
+ * at 0xb60000, TinyKernel.mli's layout), which a device sees as one:
+ * a write's bytes copied in before, a read's copied back after, at
+ * each try (a call that waits is tried again, and the bounce is
+ * another's meanwhile). At most the bounce's size, so a read or a
+ * write may do less than asked, as Unix lets them. Linux and xv6 copy
+ * every call's buffer that way (copy_from_user, copyin) *)
+let bounce = 0xb60000
+let bounce_size = 0xa0000
+
+let sys_rw p rw reading =
+  let f = fd p (reg p 1) and va = reg p 2 and n = reg p 3 in
+  let finish = function Some k -> result p k; true | None -> false in
+  let a = mem_address p.mem va n in
+  if a >= 0 then block p (fun () -> finish (rw f a n))
+  else begin
+    let n = min n bounce_size in
+    block p (fun () ->
+      if not reading then
+        user_iter p va n (fun a off k -> row_copy (bounce + off) a k);
+      let r = rw f bounce n in
+      (match r with
+       | Some k when reading && k > 0 ->
+           user_iter p va k (fun a off k -> row_copy a (bounce + off) k)
+       | _ -> ());
+      finish r)
+  end
 
 (* its descriptors closed, its children orphans (their zombies freed),
  * the processes it traces let go, its end said to its tracer;
@@ -1134,11 +1175,11 @@ let sys_close p =
 
 (* pipe(fds) and box(fds): the two ends, a descriptor each, put in fds *)
 let ends p r w =
-  let a = user p (reg p 1) 8 in
+  let a = user p (reg p 1) 4 and b = user p (reg p 1 + 4) 4 in
   let r = fdalloc p r in
   let w = fdalloc p w in
   poke a r;
-  poke (a + 4) w;
+  poke b w;
   result p 0
 
 let sys_pipe p =
@@ -1249,10 +1290,8 @@ let sys_getcwd p =
     if p.cwd = [] then "/"
     else List.fold_left (fun acc n -> acc ^ "/" ^ n) "" p.cwd in
   let n = String.length path in
-  let a = user p (reg p 1) (reg p 2) in
   if n + 1 > reg p 2 then raise Bad;
-  for i = 0 to n - 1 do pokeb (a + i) (Char.code path.[i]) done;
-  pokeb (a + n) 0;
+  user_write p (reg p 1) (path ^ "\000");
   result p n
 
 (* rawcons(on): the console raw for this process, while it lives (on
@@ -1349,7 +1388,7 @@ let sys_stat p =
   match walk !top ns with
   | Some node ->
       let e = entry (match List.rev ns with n :: _ -> n | [] -> "/") node in
-      k_blit e 0 (user p (reg p 2) 80) 80;
+      user_write p (reg p 2) e;
       result p 0
   | None -> raise Bad
 
@@ -1366,10 +1405,11 @@ let sys_chdir p =
 let sys_ready p =
   let n = reg p 2 and until = reg p 3 in
   if n < 0 || n > 32 then raise Bad;
-  let a = user p (reg p 1) (4 * n) in
   let rec list i =
     if i >= n then []
-    else (let k = peek (a + (4 * i)) in k, fd p k) :: list (i + 1) in
+    else
+      (let k = peek (user p (reg p 1 + (4 * i)) 4) in k, fd p k)
+      :: list (i + 1) in
   let l = list 0 in
   block p (fun () ->
     match List.filter (fun (_, f) -> readable f) l with
@@ -1388,8 +1428,8 @@ let syscall p n =
   (try
     match n with
     | 0 -> exit_proc p (reg p 1)
-    | 1 -> sys_rw p write
-    | 2 -> sys_rw p read
+    | 1 -> sys_rw p write false
+    | 2 -> sys_rw p read true
     | 3 -> sys_fork p
     | 4 -> sys_exec p
     | 5 -> sys_wait p

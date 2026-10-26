@@ -27,14 +27,18 @@ let rainbow =
 (* Shapes *)
 (*****************************************************************************)
 
-type face = { color : color; points : Vec3.t list }
+(* both: seen from both sides, never culled (two_sided) *)
+type face = { color : color; points : Vec3.t list; both : bool }
 type shape = face list
 
 let polygon3d (color : color) (points : Vec3.t list) : shape =
   if List.length points < 3 then failwith "polygon3d needs at least 3 points";
-  [ { color; points } ]
+  [ { color; points; both = false } ]
 
 let group3d (shapes : shape list) : shape = List.concat shapes
+
+let two_sided (s : shape) : shape =
+  List.map (fun (f : face) -> { f with both = true }) s
 let is_empty (s : shape) : bool = s = []
 
 (* Playground3d's box_faces: each face counterclockwise seen from
@@ -51,7 +55,7 @@ let box (color : color) (width : float) (height : float) (depth : float) : shape
   and p110 = (hx, hy, -.hz)
   and p111 = (hx, hy, hz) in
   List.map
-    (fun (points : Vec3.t list) -> { color; points })
+    (fun (points : Vec3.t list) -> { color; points; both = false })
     [
       [ p100; p110; p111; p101 ] (* +x *);
       [ p001; p011; p010; p000 ] (* -x *);
@@ -106,6 +110,7 @@ type t = {
   nys : Float.Array.t;
   nzs : Float.Array.t;
   shades : Bytes.t;
+  both : Bytes.t;
   cx : float;
   cy : float;
   cz : float;
@@ -170,6 +175,8 @@ let make (s : shape) : t =
     nys;
     nzs;
     shades = Bytes.make n '\000';
+    both =
+      Bytes.init n (fun (k : int) -> if faces.(k).both then '\001' else '\000');
     cx;
     cy;
     cz;

@@ -161,11 +161,14 @@ let across (t : t) (s : float) (offset : float) : float * float * float = across
  * computer that believes it driving in circles. *)
 let project (t : t) (i : int) (x : float) (z : float) : float * float * float =
   let n = segments t in
-  let k = ((i mod n) + n) mod n in
+  (* ix: no mod for an i that is one already (arm's division is a
+   * call: a fifth of mini-virtuaracing's start, its trees' locate)
+   * old: let k = ((i mod n) + n) mod n *)
+  let k = if i >= 0 && i < n then i else ((i mod n) + n) mod n in
   (* a circuit's last segment goes back to the first sample; a stage's
    * goes to its own last sample (it has one more than its segments),
    * not back to the start across the whole course *)
-  let a = t.points.(k) and b = t.points.(if t.closed then (k + 1) mod n else k + 1) in
+  let a = t.points.(k) and b = t.points.(if t.closed then (if k + 1 = n then 0 else k + 1) else k + 1) in
   let dx = b.px -. a.px and dz = b.pz -. a.pz in
   let len2 = (dx *. dx) +. (dz *. dz) in
   let u = if len2 = 0. then 0. else (((x -. a.px) *. dx) +. ((z -. a.pz) *. dz)) /. len2 in
@@ -192,11 +195,25 @@ let locate_near (t : t) (near : float) (x : float) (z : float) : float * float =
   in
   let best = ref (infinity, 0., 0.) in
   for i = first to last do
-    let u, offset, d = project t i x z in
     let far, _, _ = !best in
-    if d < far then
-      let s = Float.rem (float_of_int (((i mod n) + n) mod n) +. u) (float_of_int n) *. t.step in
-      best := (d, s, offset)
+    (* ix: a segment whose box is farther than the nearest found (by a
+     * millimetre, for the roundings) is no nearer: not projected. The
+     * same segment found, the first of equals still (mini-virtuaracing's
+     * trees each search the whole course) *)
+    let k = if i >= 0 && i < n then i else ((i mod n) + n) mod n in
+    let a = t.points.(k) and b = t.points.(if t.closed then (if k + 1 = n then 0 else k + 1) else k + 1) in
+    let gap (v : float) (p : float) (q : float) : float =
+      if v < p && v < q then (if p < q then p else q) -. v
+      else if v > p && v > q then v -. (if p > q then p else q)
+      else 0.
+    in
+    let gx = gap x a.px b.px and gz = gap z a.pz b.pz in
+    if far = infinity || (gx *. gx) +. (gz *. gz) <= (far +. 0.001) *. (far +. 0.001) then begin
+      let u, offset, d = project t i x z in
+      if d < far then
+        let s = Float.rem (float_of_int k +. u) (float_of_int n) *. t.step in
+        best := (d, s, offset)
+    end
   done;
   let _, s, offset = !best in
   (s, offset)
@@ -221,4 +238,7 @@ let wall (t : t) (color : Mesh.color) (i : int) (offset : float) (height : float
   let n = Array.length t.points in
   let p = t.points.(((i mod n) + n) mod n) and q = t.points.((((i mod n) + n) mod n + 1) mod n) in
   let x1, y1, z1 = across_at p offset and x2, y2, z2 = across_at q offset in
-  Mesh.polygon3d color [ (x1, y1, z1); (x2, y2, z2); (x2, y2 +. height, z2); (x1, y1 +. height, z1) ]
+  (* ix: seen from both sides (Mesh.two_sided): the same winding on
+   * both sides of the road, its height down for a bank's side *)
+  Mesh.two_sided
+    (Mesh.polygon3d color [ (x1, y1, z1); (x2, y2, z2); (x2, y2 +. height, z2); (x1, y1 +. height, z1) ])

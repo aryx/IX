@@ -111,23 +111,76 @@ let make (samples : sample array) (hills : hill list)
       (fun (k : int) ->
         List.exists (fun (w : (float * float) list) -> inside w (point k)) sea)
   in
+  (* OPTIMIZATION (buckets): the samples in squares of [size] m, and a
+   * point's nearest searched in rings of squares around its own, until
+   * none left can be nearer (before ring r, those left are more than
+   * r - 1 squares away); the first of equals, as the whole array's
+   * walk: the same sample. Every point against every sample was a
+   * sixth of mini-virtuaracing's start on arm.
+   * old: Array.iter over the samples, for each point *)
+  let size = 64. in
+  let bx0, bz0 =
+    Array.fold_left
+      (fun ((a, b) : float * float) (s : sample) ->
+        (Float.min a s.sx, Float.min b s.sz))
+      (infinity, infinity) samples
+  in
+  let col (v : float) (o : float) : int =
+    int_of_float (Float.floor ((v -. o) /. size))
+  in
+  let bnx =
+    1
+    + Array.fold_left
+        (fun (m : int) (s : sample) -> max m (col s.sx bx0))
+        0 samples
+  and bnz =
+    1
+    + Array.fold_left
+        (fun (m : int) (s : sample) -> max m (col s.sz bz0))
+        0 samples
+  in
+  let buckets = Array.make (bnx * bnz) [] in
+  for i = Array.length samples - 1 downto 0 do
+    let s = samples.(i) in
+    let b = (col s.sz bz0 * bnx) + col s.sx bx0 in
+    buckets.(b) <- i :: buckets.(b)
+  done;
   let height (k : int) : float =
     let x, z = point k in
-    let best = ref infinity and road_y = ref 0. and off = ref false in
-    Array.iter
-      (fun (s : sample) ->
-        let d = Float.hypot (x -. s.sx) (z -. s.sz) in
-        if d < !best then begin
-          best := d;
-          road_y := s.sy;
-          off := s.lifted
-        end)
-      samples;
+    let best = ref infinity and first = ref max_int in
+    let ci = col x bx0 and cj = col z bz0 in
+    let visit (i : int) (j : int) : unit =
+      if i >= 0 && i < bnx && j >= 0 && j < bnz then
+        List.iter
+          (fun (n : int) ->
+            let s = samples.(n) in
+            let d = Float.hypot (x -. s.sx) (z -. s.sz) in
+            if d < !best || (d = !best && n < !first) then begin
+              best := d;
+              first := n
+            end)
+          buckets.((j * bnx) + i)
+    in
+    let far = max (max ci (bnx - 1 - ci)) (max cj (bnz - 1 - cj)) in
+    let r = ref 0 in
+    while !r <= far && not (!best < float_of_int (!r - 1) *. size) do
+      let r' = !r in
+      for i = ci - r' to ci + r' do
+        visit i (cj - r');
+        if r' > 0 then visit i (cj + r')
+      done;
+      for j = cj - r' + 1 to cj + r' - 1 do
+        visit (ci - r') j;
+        visit (ci + r') j
+      done;
+      incr r
+    done;
+    let nearest = samples.(!first) in
     let own = if wet.(k) then -8. else natural hills x z in
-    if !off then own
+    if nearest.lifted then own
     else
       let t = smoothstep (verge +. 10.) (verge +. 60.) !best in
-      let level = !road_y +. ground in
+      let level = nearest.sy +. ground in
       level +. ((own -. level) *. t)
   in
   let heights =

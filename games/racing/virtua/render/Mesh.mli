@@ -58,6 +58,11 @@ val polygon3d : color -> Vec3.t list -> shape
 
 val group3d : shape list -> shape
 
+(* the faces seen from both sides, never culled ([Render.cull]): a
+ * face that is not a solid's side, the Ferris wheel's spokes, a wall
+ * seen from both its sides *)
+val two_sided : shape -> shape
+
 (* [box color width height depth]: centered on the origin, its six
  * faces outward *)
 val box : color -> float -> float -> float -> shape
@@ -93,6 +98,8 @@ type t = {
   nzs : Float.Array.t;
   (* each face's palette index, lit by the sun ([light]) *)
   shades : Bytes.t;
+  (* each face's two_sided: '\001' when it is *)
+  both : Bytes.t;
   (* the sphere around the corners: its center and radius *)
   cx : float;
   cy : float;

@@ -75,13 +75,33 @@ let is_integer x = x = trunc x && x -. x = 0.0
 (* nan if one is; -0.0 less than 0.0, which < doesn't say *)
 let sign_bit x = Int64.compare (Int64.bits_of_float x) 0L < 0
 
+(* OPTIMIZATION: the signs (an Int64 each, a block in mini-ml, and
+ * Int64.compare's call) looked at only where they choose, x and y equal
+ * (0.0 and -0.0) or both nan; OCaml's answers in every case
+ * (tests/runtime/float_min_max.ml, the bits). A quarter of
+ * tests/bench/floats.ml's instructions, Render.fill's rows.
+ * old:
+ *   let min x y =
+ *     if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan y then y else x)
+ *     else if is_nan x then x else y
+ *   let max x y =
+ *     if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan x then x else y)
+ *     else if is_nan y then y else x *)
 let min (x : float) (y : float) =
-  if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan y then y else x)
-  else if is_nan x then x else y
+  if y > x then x
+  else if x > y then y
+  else if is_nan x then (if is_nan y && (not (sign_bit y)) && sign_bit x then y else x)
+  else if is_nan y then y
+  else if sign_bit x then x
+  else y
 
 let max (x : float) (y : float) =
-  if y > x || (not (sign_bit y) && sign_bit x) then (if is_nan x then x else y)
-  else if is_nan y then y else x
+  if y > x then y
+  else if x > y then x
+  else if is_nan x then (if is_nan y && not ((not (sign_bit y)) && sign_bit x) then y else x)
+  else if is_nan y then y
+  else if sign_bit x then y
+  else x
 
 (* x * y + z rounded once, without the instruction (Boldo and
  * Melquiond, "Emulation of a FMA and correctly rounded sums: proved

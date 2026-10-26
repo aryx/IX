@@ -301,9 +301,26 @@ let room (r : t) (m : Mesh.t) : unit =
     r.vz <- Float.Array.make n 0.
   end
 
-let faces (r : t) (m : Mesh.t) (shades : Bytes.t) : unit =
+(* OPTIMIZATION (cull): a face turned away from the eye (ex, ey, ez,
+ * in the mesh's own space) not drawn: a solid's far side, hidden by
+ * its near one, which the depth would have kept anyway; half the
+ * faces of the grid's view (plan_virtuaracing.md, stage 2). Not a face
+ * seen from both sides (Mesh.two_sided).
+ * old: every face drawn *)
+let cull = ref true
+
+let faces (r : t) (m : Mesh.t) (shades : Bytes.t) (ex : float) (ey : float)
+    (ez : float) : unit =
   for k = 0 to Mesh.faces m - 1 do
-    face r m k (Bytes.get shades k)
+    let i = m.first.(k) in
+    if
+      (not !cull)
+      || Bytes.get m.both k <> '\000'
+      || (Float.Array.get m.nxs k *. (ex -. Float.Array.get m.xs i))
+         +. (Float.Array.get m.nys k *. (ey -. Float.Array.get m.ys i))
+         +. (Float.Array.get m.nzs k *. (ez -. Float.Array.get m.zs i))
+         > 0.
+    then face r m k (Bytes.get shades k)
   done
 
 let draw (r : t) (m : Mesh.t) : unit =
@@ -321,7 +338,7 @@ let draw (r : t) (m : Mesh.t) : unit =
       Float.Array.set r.vy i ((x *. ux) +. (y *. uy) +. (z *. uz));
       Float.Array.set r.vz i ((x *. ax) +. (y *. ay) +. (z *. az))
     done;
-    faces r m m.shades
+    faces r m m.shades ex ey ez
   end
 
 let draw_at (r : t) (m : Mesh.t) (angle : float) ((px, py, pz) : Vec3.t)
@@ -355,5 +372,7 @@ let draw_at (r : t) (m : Mesh.t) (angle : float) ((px, py, pz) : Vec3.t)
       let b = Lighting.brightness_of_normal (nx, Float.Array.get m.nys k, nz) in
       Bytes.set r.shades k (Char.chr (index m.colors.(k) b))
     done;
-    faces r m r.shades
+    (* the eye in the mesh's own space: moved back, turned back *)
+    let x = ex -. px and z = ez -. pz in
+    faces r m r.shades ((x *. c) -. (z *. s)) (ey -. py) ((x *. s) +. (z *. c))
   end

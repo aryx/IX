@@ -38,6 +38,13 @@
  * each frame, [frame] then [draw] for each, and shows [pixels] with
  * the course's Palette.
  *
+ * Steps 1 to 3 are the front, 4 the back; a face goes from one to the
+ * other in one place, the front's corners on the screen (sx, sy) and
+ * 1/z handed to [fill]. The Pi 2's 3D processor takes faces so (its
+ * vertices placed by the program: the "NV" state, plan_gpu.md): a
+ * back of its own would replace [fill], the front the same
+ * (plan_virtuaracing.md, decision 9). Keep the two apart.
+ *
  * cs-history: the z-buffer is Edwin Catmull's (his thesis, Utah,
  * 1974); a memory the size of the screen was too dear for a game until
  * the 1990s, and the arcade's Model 1 (Virtua Racing, 1992) had one
@@ -75,6 +82,11 @@ val draw : t -> Mesh.t -> unit
  * about y (as Mesh.rotate3d 0. angle 0.), then moved to [position];
  * each face lit as it is then, [index] the palette's (Palette.index) *)
 val draw_at : t -> Mesh.t -> float -> Vec3.t -> (Mesh.color -> float -> int) -> unit
+
+(* a face turned away from the eye not drawn, unless it is seen from
+ * both sides (Mesh.two_sided): true, unless mini-virtuaracing's
+ * cull=off *)
+val cull : bool ref
 
 (* the faces drawn (or a part of them) since [frame] *)
 val faces_drawn : t -> int

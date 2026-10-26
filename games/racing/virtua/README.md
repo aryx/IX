@@ -51,6 +51,13 @@ numbers are `scripts/playground_copies.sh games/racing/virtua`'s
   frame; `Track3d.strip` and `wall` give them. Its corners and normals,
   and `Render`'s corners and rows, are `Float.Array`s: each float in
   the array, not a block of its own (docs/plans/plan_ml_floats.md).
+- Faster at the start, the same answers: `Track3d.locate_near` skips
+  a segment whose box is farther than the nearest found, and takes no
+  `mod` of an index already in range; `Land.make` finds a point's
+  nearest road sample by squares of samples, not all of them.
+- Faces turned away from the eye are not drawn (`Render.cull`); the
+  playground's game draws them all. `Track3d.wall` is seen from both
+  sides (`Mesh.two_sided`).
 - No optional arguments (mini-ml has none): `Track3d.control`'s
   `~y ~width ~bank` said, `build`'s step, `locate` and `locate_near`;
   `Scenery.cone`'s seed and snow; `Camera.basis`'s `up`.

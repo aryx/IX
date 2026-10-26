@@ -16,12 +16,13 @@
  *   cockpit, close behind: V.R.'s four buttons)
  *
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
- *                            [picture=WxH] [scale=n] [stats]
+ *                            [picture=WxH] [scale=n] [stats] [cull=off]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
  *               default; on Plan 9 the window's largest whole n)
  *     stats     each frame's faces drawn, on the standard error
+ *     cull=off  the faces turned away drawn too (Render.cull)
  *
  * A frame:
  *
@@ -236,6 +237,7 @@ let () =
          let stats =
            if flag "stats" <> None then Some (Console.eprint caps) else None
          in
+         if flag "cull" = Some "off" then Render.cull := false;
          let model = start first width height stats in
          (* the window the picture's size, a unit a pixel; or, without
           * scale, the window whatever its size (mini-doom's) *)

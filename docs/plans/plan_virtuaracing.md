@@ -205,6 +205,42 @@ A guess at the frame, to be measured at stage 2:
    games; this game's renderer is not a platform of it. If the boards'
    processor is done, it can draw this game's meshes (they are what
    its decision 5's "mesh kept" asks), as a later step there.
+9. **The Pi 2's 3D processor later** (the author, 2026-10-26: "at some
+   point on the Pi2 we might leverage the GPU, so let's also plan that
+   the code later will need to adapt and use GPU features from the
+   Pi2"). The VideoCore IV takes vertices **already placed by the
+   program** (its "NV" shader state, [`plan_gpu.md`](plan_gpu.md)'s
+   survey): the program turns, cuts by the near plane and projects;
+   the processor bins the triangles by tile, fills them and keeps their
+   depth. That is where `Render` is cut already, and the cut is kept:
+   - **The front, the game's on every board**: the meshes near the
+     eye (`Course`), culled by their sphere and by the faces turned
+     away, turned, cut by the near plane, projected; a face out of it
+     as its corners on the screen (sx, sy) and 1/z (iz), a convex
+     polygon, and its colour. The NV state wants the same: X and Y on
+     the screen (12.4 fixed point), Z and 1/W, a triangle fan.
+   - **The back, the one to replace**: `Render.fill` (spans, the
+     depth for each pixel, a byte a pixel). The processor's would
+     write a fan of a face into its lists instead, and the picture
+     would be its own (`BGR565` or `RGBA8888`, four samples a pixel),
+     not `Playground.Pixels`' bytes.
+   - **What follows for the code until then**: `face`'s call of
+     `fill` stays the one place a face leaves the front (no pixel
+     work in the front, no mesh work in `fill`); a face's colour is
+     known as RGB lit (`Palette.lit`) before it is a palette's index,
+     which only the software back needs; the near plane's cut stays
+     the program's (the NV state does not cut); and nothing in the
+     game reads the picture back (the processor's is in its memory).
+     The frames of a processor's back are not the software's bytes
+     (its own edges' rules, its four samples): its own recorded
+     frames, compared by `tests/compare.sh`'s difference, not a sum.
+   - **What the budget would become**: the back is a third of the
+     frame now (`fill`, `span`, `first`, measured at stage 2); with
+     the processor, the front alone and the lists' writing, so more
+     faces a frame (a farther horizon, the faces not culled by
+     distance) become affordable. The order: the software's frame
+     first (stage 5), then the processor, as plan_gpu.md's stages 3
+     and 4 make it work on the Pi1 and the Pi 2 (same VideoCore IV).
 
 ## The stages (each checked before the next)
 
@@ -324,3 +360,36 @@ million instructions** on arm (frames 3 to 23; 201.1 before), the
 start to frame 3 5.3 billion (7.9). Still about ten times the budget:
 the game's own cuts next (the faces turned away, the start's searches,
 `Float.min` and `Float.max`).
+
+2026-10-26, then: **the game's own cuts** (the author: "yes let's
+commit and move forward"):
+- **The faces turned away** not drawn (`Render.cull`, `cull=off` to
+  compare): 6,485 faces a frame from the grid of 10,738. Open shapes
+  are marked seen from both sides (`Mesh.two_sided`): `Track3d.wall`,
+  found by comparing the four views with and without (a strip of the
+  right verge missing). What is left between the two: 1 to 22 pixels a
+  view, the hills' summits and the horizon seen at a grazing angle.
+  The frames recorded again (`frames.expected`, the three sessions);
+  OCaml's and mini-ml's still the same bytes.
+- **`Float.min` and `Float.max`** in lib_core without their `Int64`
+  but where the signs choose (`plan_ml_floats.md`); OCaml's answers,
+  the bits (`tests/runtime/float_min_max.ml`); mini-ml's `floats` bench
+  0.63, `samples` 0.60.
+- **The start's two searches**, the same answers (each checked whole
+  once, every land point and every locate against the old search):
+  `Track3d.locate_near` skips a segment whose box is farther than the
+  nearest found, no `mod` of an index in range; `Land.make` by
+  squares of samples searched in rings.
+
+Arm, mini-5i, -O3 (the other session's division of de5c01b3 in too):
+
+| | this morning | M4 | now |
+|---|---|---|---|
+| a frame (3 to 23) | 201.1 million | 111.0 | **63.5** |
+| the start to frame 3 | 7,872 | 5,327 | **2,909** |
+
+Still 5 to 6 times the frame's budget. What is next, by the profile:
+the faces' cost in `face` and `fill` (each a few thousand
+instructions), the land's tiles and the trees as far as 1,300 m (a
+nearer far plane with fog, decision 9's processor later), and the
+start's `Land` and meshes.

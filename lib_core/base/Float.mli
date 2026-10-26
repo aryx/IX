@@ -158,3 +158,31 @@ val fma : float -> float -> float -> float
  * (ocaml-light's compiler did not have them): copysign, modf,
  * ldexp, expm1, log1p, classify_float (and its type, fpclass),
  * of_string_opt. *)
+
+(* Arrays of floats, the floats in the array itself, not each in a
+ * block of its own as a [float array]'s are (mini-ml's runtime:
+ * Double_array_tag): no new float when one is stored, none when one is
+ * read where the compiled code keeps it in a register (mini-ml's
+ * Unbox), and no pointer for the collector to follow. OCaml's
+ * [floatarray], the same names. (plan_ml_floats.md, decision 3) *)
+module Array : sig
+  type t
+  external length : t -> int = "%floatarray_length"
+  external get : t -> int -> float = "%floatarray_safe_get"
+  external set : t -> int -> float -> unit = "%floatarray_safe_set"
+  external unsafe_get : t -> int -> float = "%floatarray_unsafe_get"
+  external unsafe_set : t -> int -> float -> unit = "%floatarray_unsafe_set"
+  (* its floats 0.0 here (OCaml's: anything) *)
+  external create : int -> t = "caml_floatarray_create"
+  val make : int -> float -> t
+  val init : int -> (int -> float) -> t
+  val fill : t -> int -> int -> float -> unit
+  val blit : t -> int -> t -> int -> int -> unit
+  val copy : t -> t
+  val to_list : t -> float list
+  val of_list : float list -> t
+  val iter : (float -> unit) -> t -> unit
+  val fold_left : ('a -> float -> 'a) -> 'a -> t -> 'a
+  (* ix: OCaml's others not here (append, concat, sub, iteri, map, the
+   * sorts, the sequences...): no program of ix calls them *)
+end

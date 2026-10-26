@@ -320,6 +320,12 @@ let prim imm p n =
   | "%intoffloat" when !floats_in_place -> emit IntOfFloat
   | "%negfloat" | "%absfloat" | "%floatofint" | "%intoffloat" | "%addfloat" | "%subfloat" | "%mulfloat" | "%divfloat" ->
       emit (CallC ("caml_" ^ String.sub p 1 (String.length p - 1), n))
+  (* Float.Array's: Ir's own, which ssa's Unbox makes a double's load
+   * and store; its length the runtime's (two words a float on arm) *)
+  | "%floatarray_safe_get" | "%floatarray_unsafe_get" -> emit (FloatIndex (p = "%floatarray_safe_get"))
+  | "%floatarray_safe_set" | "%floatarray_unsafe_set" ->
+      emit (FloatSetIndex (p = "%floatarray_safe_set")); emit (Int 0)
+  | "%floatarray_length" -> emit (CallC ("ml_floatarray_length", 1))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p
   | _ -> emit (CallC (p, n))
 

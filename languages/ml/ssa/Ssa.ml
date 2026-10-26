@@ -91,6 +91,13 @@ type ins =
   | Prim of Ir.t * value list
   | Caught of int                     (* at a handler's entry, the exception *)
   | TryExit of int
+  (* a float not boxed, a double in a floating-point register (Unbox):
+   * a block's double; a double's block; Prim's Float2, FloatOfInt,
+   * FloatCmp and IntOfFloat on doubles (FloatOfInt's operand a word,
+   * FloatCmp's and IntOfFloat's result one) *)
+  | Unbox of value
+  | Box of value
+  | Dprim of Ir.t * value list
 
 type term =
   | Jmp of int
@@ -108,4 +115,11 @@ type block = {
   mutable preds : int list;
 }
 
-type func = { name : string; nparams : int; blocks : block array; defs : (value, ins) Hashtbl.t }
+(* doubles: the values that are doubles, not words (Unbox's) *)
+type func = {
+  name : string;
+  nparams : int;
+  blocks : block array;
+  defs : (value, ins) Hashtbl.t;
+  doubles : (value, unit) Hashtbl.t;
+}

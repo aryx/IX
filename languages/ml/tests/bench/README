@@ -5,4 +5,6 @@ Loops, each a program's of ix's, its loop alone (bench.sh: mini-ml's
 code by itself, arm and arm64): pixels (bytes: mini-doom's to_rgba),
 limbs (integers in arrays: lib_crypto's Montgomery product), samples
 (floats in a record and arrays: lib_audio's sine instrument).
+floats (the three ways a float is boxed: mini-virtuaracing's Render,
+plan_ml_floats.md).
 marshalling: Marshal's writing and reading, timed (its seconds on stderr).

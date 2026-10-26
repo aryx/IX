@@ -98,6 +98,12 @@ type t =
   | FloatOfInt
   | IntOfFloat
   | FloatCmp of rel                   (* x, y by x rel y, two floats (Lower.floats) *)
+  (* a float of a Float.Array, its doubles in the block (the runtime's
+   * Double_array_tag); true: the index checked. A call of the runtime
+   * (ml_floatarray_get...) but in ssa's code on doubles (Unbox), where
+   * it is a load and a store of the processor's *)
+  | FloatIndex of bool                (* a float array, an index by the float there *)
+  | FloatSetIndex of bool             (* a float array, an index, a float *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op
   | Call of target * int list * bool  (* the slots of the closure then of the arguments; a tail call *)

@@ -67,6 +67,14 @@ val show : Ssa.func -> string
 val operands : Ssa.ins -> Ssa.value list
 val dominators : Ssa.func -> int array
 
+(* an instruction's operands, a block's end's, each by f (Unbox) *)
+val map_ins : (Ssa.value -> Ssa.value) -> Ssa.ins -> Ssa.ins
+val map_term : (Ssa.value -> Ssa.value) -> Ssa.term -> Ssa.term
+
+(* every use dominated by its definition (Failure if not), once more
+ * after a pass that rewrites the form *)
+val check : Ssa.func -> unit
+
 (* mini-ml -ssa, phase 2: each function through SSA and back to the
  * stack machine, every value in its own slot, for simple's Gen *)
 val unit_ : Ir.unit_ -> Ir.unit_

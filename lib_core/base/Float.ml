@@ -112,3 +112,57 @@ let fma x y z =
     in
     th +. odd
   end
+
+module Array = struct
+  type t
+  external length : t -> int = "%floatarray_length"
+  external get : t -> int -> float = "%floatarray_safe_get"
+  external set : t -> int -> float -> unit = "%floatarray_safe_set"
+  external unsafe_get : t -> int -> float = "%floatarray_unsafe_get"
+  external unsafe_set : t -> int -> float -> unit = "%floatarray_unsafe_set"
+  external create : int -> t = "caml_floatarray_create"
+
+  let fill (a : t) (ofs : int) (n : int) (x : float) : unit =
+    if ofs < 0 || n < 0 || ofs > length a - n then invalid_arg "Float.Array.fill";
+    for i = ofs to ofs + n - 1 do unsafe_set a i x done
+
+  let make (n : int) (x : float) : t =
+    let a = create n in
+    fill a 0 n x;
+    a
+
+  let init (n : int) (f : int -> float) : t =
+    let a = create n in
+    for i = 0 to n - 1 do unsafe_set a i (f i) done;
+    a
+
+  (* the overlapping part copied before it is overwritten *)
+  let blit (src : t) (sofs : int) (dst : t) (dofs : int) (n : int) : unit =
+    if n < 0 || sofs < 0 || sofs > length src - n || dofs < 0 || dofs > length dst - n
+    then invalid_arg "Float.Array.blit";
+    if dofs <= sofs then for i = 0 to n - 1 do unsafe_set dst (dofs + i) (unsafe_get src (sofs + i)) done
+    else for i = n - 1 downto 0 do unsafe_set dst (dofs + i) (unsafe_get src (sofs + i)) done
+
+  let copy (a : t) : t =
+    let b = create (length a) in
+    blit a 0 b 0 (length a);
+    b
+
+  let to_list (a : t) : float list =
+    let l = ref [] in
+    for i = length a - 1 downto 0 do l := unsafe_get a i :: !l done;
+    !l
+
+  let of_list (l : float list) : t =
+    let a = create (List.length l) in
+    List.iteri (fun (i : int) (x : float) -> unsafe_set a i x) l;
+    a
+
+  let iter (f : float -> unit) (a : t) : unit =
+    for i = 0 to length a - 1 do f (unsafe_get a i) done
+
+  let fold_left (f : 'a -> float -> 'a) (init : 'a) (a : t) : 'a =
+    let acc = ref init in
+    for i = 0 to length a - 1 do acc := f !acc (unsafe_get a i) done;
+    !acc
+end

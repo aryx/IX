@@ -193,3 +193,58 @@ float_of_string(value s)
 		failwith("float_of_string");
 	return copy_double(d);
 }
+
+/* Float.Array: a block of doubles (Double_array_tag), made zeroed;
+ * its floats read and written by the compiled code when it is ssa's
+ * (Unbox), by these otherwise (simple's Gen). Its length as the
+ * index's bound: OCaml's checks */
+value
+caml_floatarray_create(value n)
+{
+	value a, i;
+
+	n = Long_val(n);
+	if(n < 0 || (uvalue)n > Max_wosize / (sizeof(double) / W))
+		raise_with(caml_exn_Invalid_argument, "Float.Array.create");
+	if(n == 0)
+		return (value)(caml_atom0 + 1);
+	a = ml_alloc(n * (sizeof(double) / W), Double_array_tag);
+	for(i = 0; i < n; i++)
+		((double*)a)[i] = 0.0;
+	return a;
+}
+
+value
+ml_floatarray_length(value a)
+{
+	return Val_long(Double_array_length(a));
+}
+
+value
+ml_floatarray_unsafe_get(value a, value i)
+{
+	return copy_double(((double*)a)[Long_val(i)]);
+}
+
+value
+ml_floatarray_get(value a, value i)
+{
+	if((uvalue)Long_val(i) >= Double_array_length(a))
+		caml_array_bound_error();
+	return ml_floatarray_unsafe_get(a, i);
+}
+
+value
+ml_floatarray_unsafe_set(value a, value i, value x)
+{
+	((double*)a)[Long_val(i)] = Double_val(x);
+	return Val_unit;
+}
+
+value
+ml_floatarray_set(value a, value i, value x)
+{
+	if((uvalue)Long_val(i) >= Double_array_length(a))
+		caml_array_bound_error();
+	return ml_floatarray_unsafe_set(a, i, x);
+}

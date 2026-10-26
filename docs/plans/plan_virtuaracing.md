@@ -315,3 +315,12 @@ What is cut (the author's choice, 2026-10-26: "mini-ml floats unboxed
 game's renderer alone; stage 3 waits for it. Besides, in the game:
 the faces turned away dropped, and the start's two searches (the
 trees' `Track3d.locate`, `Land.make`'s samples) made near ones.
+M4's plan: [`plan_ml_floats.md`](plan_ml_floats.md).
+
+2026-10-26, later: M4 done (`plan_ml_floats.md`, its stages 3 and 4):
+mini-ml's floats in registers, `Float.Array`, the collector's table
+of old fields; `Mesh` and `Render` on `Float.Array`. A frame **111.0
+million instructions** on arm (frames 3 to 23; 201.1 before), the
+start to frame 3 5.3 billion (7.9). Still about ten times the budget:
+the game's own cuts next (the faces turned away, the start's searches,
+`Float.min` and `Float.max`).

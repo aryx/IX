@@ -362,6 +362,10 @@ let func m out (fn : func) =
         lab ok;
         result ()
     | Float1 f -> spill (); call_c f 1; reload (); result ()
+    (* a Float.Array's float: the runtime's, a new float read, none
+     * written (ssa's Unbox: the processor's load and store) *)
+    | FloatIndex c -> spill (); call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") 2; reload (); result ()
+    | FloatSetIndex c -> spill (); call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") 3; reload ()
     | FloatOfInt when in_place () ->
         ins "%s\t$1, R%d, R%d" (shift Asr) !sp m.tmp;
         ins "%s\tR%d, F0" (match m.arch with Arm -> "MOVWD" | Arm64 -> "SCVTFD") m.tmp;
@@ -564,17 +568,21 @@ let startup m units =
    * young and the field not (an old block made to point to a young
    * one). Only R0 and the scratch register changed (R1 kept on the
    * machine's stack): the code that calls keeps its values in the
-   * others. A full table: the last entry written again, and
-   * ml_refs_lost (the next minor collection scans the old blocks). *)
+   * others. At the table's soon end (ml_refs_end: gc.c's refs_soon), a
+   * minor collection asked for (ml_limit at ml_hp), the end the hard
+   * one; at that one, the last entry written again, and ml_refs_lost
+   * (the next minor collection scans the old blocks). *)
   if not m.aapcs then begin
     let sz = if m.arch = Arm then 8 else 16 in
-    let old = glabel () and room = glabel () and fin = glabel () in
+    let old = glabel () and room = glabel () and fin = glabel () and lost = glabel () in
     pr "\tTEXT\tml_modify(SB), %s\n\tSUB\t$%d, %s\n\t%s\tR1, 0(%s)\n" m.frame sz m.sp mov m.sp;
     pr "\t%s\tml_young_lo(SB), R1\n\tCMP\tR1, R0\n\tBLO\t%s\n" mov fin;
     pr "\t%s\tml_young_hi(SB), R1\n\tCMP\tR1, R0\n\tBHS\t%s\n" mov fin;
     pr "\tCMP\tR1, R%d\n\tBHS\t%s\n\t%s\tml_young_lo(SB), R1\n\tCMP\tR1, R%d\n\tBHS\t%s\n" t old mov t fin;
     pr "%s:\n\t%s\tml_refs(SB), R1\n\t%s\tml_refs_end(SB), R0\n\tCMP\tR0, R1\n\tBLO\t%s\n" old mov mov room;
-    pr "\tSUB\t$%d, R1\n\t%s\t$1, R0\n\t%s\tR0, ml_refs_lost(SB)\n" w mov mov;
+    pr "\t%s\tml_hp(SB), R0\n\t%s\tR0, ml_limit(SB)\n" mov mov;
+    pr "\t%s\tml_refs_hard(SB), R0\n\tCMP\tR0, R1\n\tBEQ\t%s\n\t%s\tR0, ml_refs_end(SB)\n\tB\t%s\n" mov lost mov room;
+    pr "%s:\n\tSUB\t$%d, R1\n\t%s\t$1, R0\n\t%s\tR0, ml_refs_lost(SB)\n" lost w mov mov;
     pr "%s:\n\t%s\tR%d, 0(R1)\n\tADD\t$%d, R1\n\t%s\tR1, ml_refs(SB)\n" room mov t w mov;
     pr "%s:\n\t%s\t0(%s), R1\n\tADD\t$%d, %s\n\t%s\n" fin mov m.sp sz m.sp (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)")
   end;

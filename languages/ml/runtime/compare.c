@@ -64,6 +64,27 @@ top:
 		}
 		return x == x ? 1 : y == y ? -1 : 0;
 	}
+	/* a Float.Array: its lengths, then its floats as two floats' */
+	if(ta == Double_array_tag){
+		n = Double_array_length(a);
+		m = Double_array_length(b);
+		if(n != m)
+			return n < m ? -1 : 1;
+		for(i = 0; i < n; i++){
+			x = ((double*)a)[i];
+			y = ((double*)b)[i];
+			if(x < y) return -1;
+			if(x > y) return 1;
+			if(x == y) continue;
+			if(!cmp_total){
+				cmp_unordered = 1;
+				return 1;
+			}
+			if(x == x) return 1;
+			if(y == y) return -1;
+		}
+		return 0;
+	}
 	if(ta == Int64_tag)
 		return Int64_val(a) < Int64_val(b) ? -1 : Int64_val(a) > Int64_val(b) ? 1 : 0;
 	if(ta == Int32_tag)

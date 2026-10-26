@@ -13,7 +13,7 @@
  *                                           a +-------+ b  counterclockwise
  *
  * and [make] turns a shape into a mesh: the corners of all its faces
- * in three float arrays (x, y, z), where face k's are [first.(k)] to
+ * in three Float.Array (x, y, z), where face k's are [first.(k)] to
  * [first.(k + 1) - 1]; each face's colour and normal; a sphere around
  * it all (the renderer's test of whether the mesh is in view at all).
  * The colour a face is drawn in, its palette's index once lit by the
@@ -80,17 +80,17 @@ val is_empty : shape -> bool
 (*****************************************************************************)
 
 type t = {
-  xs : float array;
-  ys : float array;
-  zs : float array;
+  xs : Float.Array.t;
+  ys : Float.Array.t;
+  zs : Float.Array.t;
   (* face k's corners: first.(k) to first.(k + 1) - 1; one more than
    * the faces *)
   first : int array;
   colors : color array;
   (* the faces' unit normals, x, y and z *)
-  nxs : float array;
-  nys : float array;
-  nzs : float array;
+  nxs : Float.Array.t;
+  nys : Float.Array.t;
+  nzs : Float.Array.t;
   (* each face's palette index, lit by the sun ([light]) *)
   shades : Bytes.t;
   (* the sphere around the corners: its center and radius *)

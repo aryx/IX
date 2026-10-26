@@ -17,12 +17,15 @@
  *   0x09, 0x0A                 a string: its length in 1, 4 bytes
  *   0x0B, 0x0C                 a float: its 8 bytes, the high or the
  *                              low one first
+ *   0x0E, 0x07                 a Float.Array: its length in 1, 4 bytes,
+ *                              then its floats' 8 bytes, the low first
  *   0x12, 0x18, 0x19           a custom block: its name, "_j" an int64,
  *                              "_i" an int32, then its bytes
  *
  * The same bytes as OCaml's wherever a value is the same blocks in
  * both; not a constructor's inline record (here a block of its own),
- * an array of floats (here boxed), a closure (refused).
+ * a float array (here a block of floats, but Float.Array's as OCaml's),
+ * a closure (refused).
  *
  * old: 478 lines of C in the runtime, its tables in memory of their own
  * (mmap); here they are values, which the collector moves: see [seen].
@@ -43,6 +46,13 @@ let magic = "\x84\x95\xA6\xBE"
 let closure_tag = 247
 let int32_tag = 254
 let int64_tag = 255
+let double_array_tag = 251
+
+(* Float.Array's, which is Float's, a unit after this one *)
+external floatarray_create : int -> Obj.t = "caml_floatarray_create"
+external floatarray_length : Obj.t -> int = "%floatarray_length"
+external floatarray_get : Obj.t -> int -> float = "%floatarray_unsafe_get"
+external floatarray_set : Obj.t -> int -> float -> unit = "%floatarray_unsafe_set"
 
 (* the i-th of the header's five numbers *)
 let header_int (s : string) (ofs : int) (i : int) : int =
@@ -190,6 +200,15 @@ let rec written (w : writer) (v : Obj.t) : bool =
           words w 3 2;
           true
         end
+        else if tag = double_array_tag then begin
+          let n = floatarray_length v in
+          if n < 256 then (put w 0x0E 1; put w n 1) else (put w 0x07 1; put w n 4);
+          for i = 0 to n - 1 do
+            Buffer.add_int64_le w.out (Int64.bits_of_float (floatarray_get v i))
+          done;
+          words w (1 + 2 * n) (1 + n);
+          true
+        end
         else if tag = int64_tag then (write_int64 w (Obj.obj v); true)
         else if tag = int32_tag then (write_int32 w (Obj.obj v); true)
         else if tag = closure_tag then invalid_arg "output_value: functional value"
@@ -281,6 +300,14 @@ let read_float (r : reader) (bits : int64) : Obj.t =
   r.pos <- r.pos + 8;
   numbered r (Obj.repr (Int64.float_of_bits bits))
 
+let read_floats (r : reader) (n : int) : Obj.t =
+  let a = numbered r (floatarray_create n) in
+  for i = 0 to n - 1 do
+    floatarray_set a i (Int64.float_of_bits (String.get_int64_le r.src r.pos));
+    r.pos <- r.pos + 8
+  done;
+  a
+
 (* "_j" an int64, "_i" an int32; before its bytes, 12 of sizes if the
  * code says so (0x18) *)
 let read_custom (r : reader) (sizes : int) : Obj.t =
@@ -323,6 +350,8 @@ let rec item (r : reader) : Obj.t =
     | 0x0A -> read_string r (unsigned r 4)
     | 0x0B -> read_float r (String.get_int64_be r.src r.pos)
     | 0x0C -> read_float r (String.get_int64_le r.src r.pos)
+    | 0x0E -> read_floats r (unsigned r 1)
+    | 0x07 -> read_floats r (unsigned r 4)
     | 0x12 | 0x19 -> read_custom r 0
     | 0x18 -> read_custom r 12
     | _ -> failwith "input_value: ill-formed message"

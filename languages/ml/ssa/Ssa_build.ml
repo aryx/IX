@@ -51,7 +51,8 @@ let arity : L.t -> int * int = function
   | Index -> 2, 1
   | SetIndex _ -> 3, 0
   | ByteGet _ -> 2, 1
-  | ByteSet _ -> 3, 0
+  | ByteSet _ | FloatSetIndex _ -> 3, 0
+  | FloatIndex _ -> 2, 1
   | StrLen -> 1, 1
   | Float2 _ | FloatCmp _ -> 2, 1
   | Float1 _ | FloatOfInt | IntOfFloat -> 1, 1
@@ -166,8 +167,8 @@ let build (f : L.func) =
           ignore (emit id (SetIndex (b, i, v, imm)))
       (* old: each a call of the runtime's (ml_string_get, caml_addfloat...)
        *   | ByteGet -> let vs = pops 2 in push (emit id (CallC ("ml_string_get", vs))) *)
-      | ByteSet _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
-      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ ->
+      | ByteSet _ | FloatSetIndex _ -> let vs = pops 3 in ignore (emit id (Prim (i, vs)))
+      | ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat | FloatCmp _ | FloatIndex _ ->
           let vs = pops (fst (arity i)) in push (emit id (Prim (i, vs)))
       | Alloc (tag, n) -> let vs = pops n in push (emit id (Alloc (tag, vs)))
       | Op o -> let p, _ = arity i in let vs = pops p in push (emit id (Op (o, vs)))
@@ -194,7 +195,7 @@ let build (f : L.func) =
     filled.(id) <- true;
     seal_ready ()) blocks;
   Array.iteri (fun b s -> if not s then seal b) sealed;
-  { name = f.name; nparams = f.nparams; blocks; defs }
+  { name = f.name; nparams = f.nparams; blocks; defs; doubles = Hashtbl.create 1 }
 
 (*****************************************************************************)
 (* Trivial phis out *)
@@ -203,10 +204,10 @@ let build (f : L.func) =
 let operands = function
   | Const _ | Zero | Blk _ | Symb _ | Param _ | GetG _ | Slot _ | Caught _ | TryExit _ -> []
   | Phi ops -> List.map snd ops
-  | SetG (_, v) | SetSlot (_, v) | Field (_, v) -> [ v ]
+  | SetG (_, v) | SetSlot (_, v) | Field (_, v) | Unbox v | Box v -> [ v ]
   | SetField (_, a, b, _) | Index (a, b) -> [ a; b ]
   | SetIndex (a, b, c, _) -> [ a; b; c ]
-  | Alloc (_, vs) | Op (_, vs) | Call (_, vs) | CallC (_, vs) | Prim (_, vs) -> vs
+  | Alloc (_, vs) | Op (_, vs) | Call (_, vs) | CallC (_, vs) | Prim (_, vs) | Dprim (_, vs) -> vs
 
 let map_ins f = function
   | Phi ops -> Phi (List.map (fun (b, v) -> b, f v) ops)
@@ -221,6 +222,9 @@ let map_ins f = function
   | Call (t, vs) -> Call (t, List.map f vs)
   | CallC (g, vs) -> CallC (g, List.map f vs)
   | Prim (p, vs) -> Prim (p, List.map f vs)
+  | Unbox v -> Unbox (f v)
+  | Box v -> Box (f v)
+  | Dprim (p, vs) -> Dprim (p, List.map f vs)
   | i -> i
 
 let map_term f = function
@@ -318,7 +322,8 @@ let show_op (o : L.op) = L.show_op o
 let show_target = function L.Direct f -> f | L.Code k -> Printf.sprintf "field%d" k
 let vs l = String.concat " " (List.map (Printf.sprintf "v%d") l)
 
-let show_ins = function
+let show_ins ins =
+  match ins with
   | Const n -> Printf.sprintf "int %d" n
   | Zero -> "zero"
   | Blk s -> "block " ^ s
@@ -337,14 +342,18 @@ let show_ins = function
   | Op (o, l) -> Printf.sprintf "%s %s" (show_op o) (vs l)
   | Call (t, l) -> Printf.sprintf "call %s %s" (show_target t) (vs l)
   | CallC (g, l) -> Printf.sprintf "callc %s %s" g (vs l)
-  | Prim (p, l) ->
+  | Prim (p, l) | Dprim (p, l) ->
       let name = match p with
         | ByteGet c -> if c then "byte?" else "byte"
         | ByteSet c -> if c then "setbyte?" else "setbyte"
         | StrLen -> "length" | Float2 f | Float1 f -> f
         | FloatOfInt -> "floatofint" | IntOfFloat -> "intoffloat"
-        | FloatCmp r -> "float" ^ L.show_rel r | _ -> "prim" in
-      Printf.sprintf "%s %s" name (vs l)
+        | FloatCmp r -> "float" ^ L.show_rel r
+        | FloatIndex c -> if c then "findex?" else "findex"
+        | FloatSetIndex c -> if c then "setfindex?" else "setfindex" | _ -> "prim" in
+      Printf.sprintf "%s%s %s" name (match ins with Dprim _ -> "(d)" | _ -> "") (vs l)
+  | Unbox v -> Printf.sprintf "unbox v%d" v
+  | Box v -> Printf.sprintf "box v%d" v
   | Caught k -> Printf.sprintf "caught %d" k
   | TryExit k -> Printf.sprintf "untry %d" k
 
@@ -430,11 +439,12 @@ let out (lf : L.func) (fn : func) : L.func =
       | Op (o, xs) -> List.iter get (List.rev xs); emit (L.Op o); set v
       | Call (t, xs) -> emit (L.Call (t, List.map slot xs, false)); set v
       | CallC (g, xs) -> List.iter get (List.rev xs); emit (L.CallC (g, List.length xs)); set v
-      | Prim ((L.ByteSet _ as p), xs) -> List.iter get (List.rev xs); emit p
+      | Prim ((L.ByteSet _ | L.FloatSetIndex _ as p), xs) -> List.iter get (List.rev xs); emit p
       | Prim (p, xs) -> List.iter get (List.rev xs); emit p; set v
       | Caught k -> emit (L.Catch k); set v
       | TryExit k -> emit (L.TryExit k)
-      | Phi _ -> ()) b.body;
+      | Phi _ -> ()
+      | Unbox _ | Box _ | Dprim _ -> failwith (fn.name ^ ": ssa: a double out of SSA")) b.body;
     match b.term with
     | Jmp s -> let l = edge b.id s ~alone:true in emit (L.Jmp l)
     | Br (v, t, e) ->

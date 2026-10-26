@@ -17,6 +17,10 @@
  * them live than there are registers; the others live in memory. A
  * constant lives nowhere: Emit makes it where it is read. No value in a register is live across a call, so
  * every register is the caller's to save, as simple's and C's are.
+ * A double (Unbox) is a class of its own, colored the same way with
+ * the floating-point registers: the collector never reads one, so it
+ * goes to memory only across a call (clobbers), into a slot that is
+ * not the value stack's (Dmem).
  *
  * Liveness is the analysis met three times in the tree: here over
  * SSA's values, in mini-cc's Opti (regs) over a C function's
@@ -55,15 +59,18 @@
  * Sarkar, "Linear scan register allocation" (ACM TOPLAS 21(5),
  * 1999). *)
 
-type loc = Reg of int | Mem of int | Nil
+(* a double's slot, Dmem, is not the value stack's but one of its own,
+ * which the collector does not scan (Emit: on the machine stack) *)
+type loc = Reg of int | Mem of int | Nil | Dmem of int
 
-(* nregs registers, numbered from 0; memory's slots from base; the
- * frame's slots then *)
 (* an instruction after which the collector may have run (an allocation,
  * a call) *)
 val safepoint : Ssa.ins -> bool
 
-val alloc : Ssa.func -> nregs:int -> base:int -> (Ssa.value -> loc) * int
+(* nregs registers for the words and nfregs for the doubles (Unbox),
+ * each numbered from 0; memory's slots from base; the frame's slots
+ * then, and the doubles' slots *)
+val alloc : Ssa.func -> nregs:int -> nfregs:int -> base:int -> (Ssa.value -> loc) * int * int
 
 (* the liveness alone: for each block, the values live at its start
  * and at its end (mini-ml -dflow prints it, for an analysis written

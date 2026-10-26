@@ -46,7 +46,10 @@ let add (p : t) (c : Mesh.color) (brightness : float) : unit =
 let add_mesh (p : t) (m : Mesh.t) : unit =
   for k = 0 to Mesh.faces m - 1 do
     add p m.colors.(k)
-      (Lighting.brightness_of_normal (m.nxs.(k), m.nys.(k), m.nzs.(k)))
+      (Lighting.brightness_of_normal
+         ( Float.Array.get m.nxs k,
+           Float.Array.get m.nys k,
+           Float.Array.get m.nzs k ))
   done
 
 let add_all_levels (p : t) (c : Mesh.color) : unit =

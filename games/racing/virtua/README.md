@@ -48,7 +48,9 @@ numbers are `scripts/playground_copies.sh games/racing/virtua`'s
 
 - A shape is a list of faces made into a mesh at the course's start
   (`Mesh`), not the playground's `shape3d` made triangles at each
-  frame; `Track3d.strip` and `wall` give them.
+  frame; `Track3d.strip` and `wall` give them. Its corners and normals,
+  and `Render`'s corners and rows, are `Float.Array`s: each float in
+  the array, not a block of its own (docs/plans/plan_ml_floats.md).
 - No optional arguments (mini-ml has none): `Track3d.control`'s
   `~y ~width ~bank` said, `build`'s step, `locate` and `locate_near`;
   `Scenery.cone`'s seed and snow; `Camera.basis`'s `up`.

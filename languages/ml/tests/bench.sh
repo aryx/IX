@@ -14,7 +14,7 @@ set -u
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 O=$1; W=$(realpath -m $2)
 B=$ROOT/languages/ml/tests/bench
-progs="pixels limbs samples fib tak maps sched"
+progs="pixels limbs samples floats fib tak maps sched"
 $ROOT/languages/ml/tests/run.sh $O $W $(for p in $progs; do echo $B/$p.ml; done) | grep -v "^ok"
 for p in $progs; do
   printf "%-8s %11s\n" $p "$($ROOT/_build/default/machine/Main.exe -s $W/$p 2>&1 >/dev/null | grep -o '^mini-5i: [0-9]*' | cut -d' ' -f2)"

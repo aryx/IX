@@ -288,11 +288,20 @@ static value *old_hp;           /* the half's next free word (young_words) */
 value *ml_young_lo;             /* the young generation, for ml_modify */
 value *ml_young_hi;
 /* the old fields remembered; when full, the last one written again
- * and refs_lost said: the next minor collection scans all the old */
+ * and refs_lost said: the next minor collection scans all the old.
+ * OPTIMIZATION (refs_soon): at seven eighths of it (ml_refs_end), a
+ * minor collection asked for (ml_limit at ml_hp: the next allocation
+ * makes it), the table's last eighth for the stores until then
+ * (ml_refs_hard). A loop that stores many blocks and makes few was a
+ * scan of the whole old generation at each minor collection
+ * (mini-virtuaracing's frame on arm: each float stored in an array a
+ * new block, once its arithmetic made none, plan_ml_floats.md).
+ * old: ml_refs_end the table's end, lost when reached */
 #define REFS (YOUNG / 16 < 4096 ? 4096 : YOUNG / 16)
 static value *refs[REFS];
 value **ml_refs;
 value **ml_refs_end;
+value **ml_refs_hard;
 value ml_refs_lost;
 static value minors;            /* the minor collections */
 
@@ -403,6 +412,8 @@ young_empty(void)
 	ml_hp = young;
 	ml_limit = young + young_words;
 	ml_refs = refs;
+	ml_refs_end = refs + REFS - REFS / 8;
+	ml_refs_hard = refs + REFS;
 	ml_refs_lost = 0;
 }
 
@@ -464,8 +475,12 @@ ml_store(value *field, value v)
 	if(!Is_int(v) && (value*)v >= ml_young_lo && (value*)v < ml_young_hi
 	&& (field < ml_young_lo || field >= ml_young_hi)){
 		if(ml_refs == ml_refs_end){
-			ml_refs--;
-			ml_refs_lost = 1;
+			ml_limit = ml_hp;
+			if(ml_refs_end == ml_refs_hard){
+				ml_refs--;
+				ml_refs_lost = 1;
+			}else
+				ml_refs_end = ml_refs_hard;
 		}
 		*ml_refs++ = field;
 	}

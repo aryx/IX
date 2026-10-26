@@ -6,7 +6,7 @@
 open Ssa
 module IS = Set_
 
-type loc = Reg of int | Mem of int | Nil
+type loc = Reg of int | Mem of int | Nil | Dmem of int
 
 let successors (b : block) = match b.term with Jmp s -> [ s ] | Br (_, a, c) | Try (_, a, c) -> [ a; c ] | _ -> []
 
@@ -17,7 +17,17 @@ let term_uses (b : block) = match b.term with Br (v, _, _) | Ret v | Raise v -> 
 let safepoint = function
   | Alloc _ | Call _ | CallC _ | Op (Ir.Poly _, _) -> true
   (* a new float: the runtime's when there is no room *)
-  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt), _) -> true
+  | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _), _) | Box _ -> true
+  | _ -> false
+
+(* the instructions after which no double is in a register: a call of
+ * ML's code, or of C's that computes with floats (the runtime's float
+ * functions, compare's cmp: runtime.c's functions that use the
+ * floating-point registers, by mini-cc -S; ml_alloc, the collector,
+ * ml_modify and the C library's assembly use none, so an allocation
+ * keeps them) *)
+let clobbers = function
+  | Call _ | CallC _ | Op (Ir.Poly _, _) | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatSetIndex _), _) -> true
   | _ -> false
 
 let def (fn : func) v = Hashtbl.find fn.defs v
@@ -55,23 +65,27 @@ let liveness (fn : func) : int IS.t array * int IS.t array =
   done;
   live_in, live_out
 
-let alloc (fn : func) ~nregs ~base =
+let alloc (fn : func) ~nregs ~nfregs ~base =
   let def = def fn and real = real fn and uses = uses fn in
+  let double v = Hashtbl.mem fn.doubles v and word v = not (Hashtbl.mem fn.doubles v) in
   let n = Array.length fn.blocks in
   let live_in, live_out = liveness fn in
   (* what is live after each instruction; the values that must be in
    * memory: live across a safepoint (an allocation's fields too, read
    * after it), into a handler, or a parameter *)
   let after = Hashtbl.create 256 in
-  let memory = Hashtbl.create 64 in
+  let memory = Hashtbl.create 64 and dmemory = Hashtbl.create 16 in
+  let words_in t s = IS.iter (fun x -> if word x then Hashtbl.replace t x ()) s
+  and doubles_in t s = IS.iter (fun x -> if double x then Hashtbl.replace t x ()) s in
   Array.iter (fun (bl : block) ->
     let live = ref (IS.union live_out.(bl.id) (IS.of_list (List.filter real (term_uses bl)))) in
     List.iter (fun v ->
       Hashtbl.replace after v !live;
       (match def v with
-       | Alloc (_, xs) -> IS.iter (fun x -> Hashtbl.replace memory x ()) (IS.remove v !live); List.iter (fun x -> Hashtbl.replace memory x ()) xs
-       | ins when safepoint ins -> IS.iter (fun x -> Hashtbl.replace memory x ()) (IS.remove v !live)
+       | Alloc (_, xs) -> words_in memory (IS.remove v !live); List.iter (fun x -> Hashtbl.replace memory x ()) xs
+       | ins when safepoint ins -> words_in memory (IS.remove v !live)
        | _ -> ());
+      if clobbers (def v) then doubles_in dmemory (IS.remove v !live);
       live := IS.union (IS.remove v !live) (IS.of_list (uses v))) (List.rev bl.body);
     (match bl.term with Try (_, _, h) -> IS.iter (fun x -> Hashtbl.replace memory x ()) live_in.(h) | _ -> ())) fn.blocks;
   (* OPTIMIZATION: a parameter not live across a safepoint may have a
@@ -121,40 +135,51 @@ let alloc (fn : func) ~nregs ~base =
   let points = Array.of_list (Array.to_list live_in @ Hashtbl.fold (fun _ live acc -> live :: acc) after []) in
   let at = Hashtbl.create 256 in
   Array.iteri (fun k live -> IS.iter (fun v -> Hashtbl.replace at v (k :: (match Hashtbl.find_opt at v with Some l -> l | None -> []))) live) points;
-  let count = Array.make (Array.length points) 0 and chosen = Hashtbl.create 64 in
-  let wanted = Hashtbl.fold (fun v w acc -> if not (Hashtbl.mem memory v) then (w, v) :: acc else acc) weight [] in
-  List.iter (fun (_, v) ->
-    let ks = match Hashtbl.find_opt at v with Some l -> l | None -> [] in
-    if List.for_all (fun k -> count.(k) < nregs) ks then begin
-      Hashtbl.replace chosen v ();
-      List.iter (fun k -> count.(k) <- count.(k) + 1) ks
-    end) (List.sort (fun ((w1, v1) : int * int) ((w2, v2) : int * int) -> if w1 <> w2 then compare w2 w1 else compare v1 v2) wanted);
-  let color = Hashtbl.create 64 in
-  let candidate v = real v && Hashtbl.mem chosen v && nregs > 0 in
-  let held s = IS.fold (fun x acc -> match Hashtbl.find_opt color x with Some c -> IS.add c acc | None -> acc) s IS.empty in
-  let pick busy = List.find_opt (fun c -> not (IS.mem c busy)) (List.init nregs Fun.id) in
-  (* busy at a definition: the registers of the values live after it
-   * (defined above it in the dominator tree, so colored already); an
-   * operand dying there frees its own, which the definition may take *)
-  let rec walk b =
-    let bl = fn.blocks.(b) in
-    let busy = ref (held (IS.diff live_in.(b) (IS.of_list bl.phis))) in
-    List.iter (fun v -> if candidate v then match pick !busy with Some c -> Hashtbl.replace color v c; busy := IS.add c !busy | None -> ()) bl.phis;
-    List.iter (fun v ->
-      let live = Hashtbl.find after v in
-      if candidate v && IS.mem v live then
-        match pick (held (IS.remove v live)) with Some c -> Hashtbl.replace color v c | None -> ()) bl.body;
-    List.iter walk (List.rev children.(b))
+  (* each class of values, the words and the doubles, its own registers
+   * (a double's are the floating-point ones) *)
+  let colors cls nregs memory =
+    let count = Array.make (Array.length points) 0 and chosen = Hashtbl.create 64 in
+    let wanted = Hashtbl.fold (fun v w acc -> if cls v && not (Hashtbl.mem memory v) then (w, v) :: acc else acc) weight [] in
+    List.iter (fun (_, v) ->
+      let ks = match Hashtbl.find_opt at v with Some l -> l | None -> [] in
+      if List.for_all (fun k -> count.(k) < nregs) ks then begin
+        Hashtbl.replace chosen v ();
+        List.iter (fun k -> count.(k) <- count.(k) + 1) ks
+      end) (List.sort (fun ((w1, v1) : int * int) ((w2, v2) : int * int) -> if w1 <> w2 then compare w2 w1 else compare v1 v2) wanted);
+    let color = Hashtbl.create 64 in
+    let candidate v = real v && Hashtbl.mem chosen v && nregs > 0 in
+    let held s = IS.fold (fun x acc -> match Hashtbl.find_opt color x with Some c -> IS.add c acc | None -> acc) s IS.empty in
+    let pick busy = List.find_opt (fun c -> not (IS.mem c busy)) (List.init nregs Fun.id) in
+    (* busy at a definition: the registers of the values live after it
+     * (defined above it in the dominator tree, so colored already); an
+     * operand dying there frees its own, which the definition may take *)
+    let rec walk b =
+      let bl = fn.blocks.(b) in
+      let busy = ref (held (IS.diff live_in.(b) (IS.of_list bl.phis))) in
+      List.iter (fun v -> if candidate v then match pick !busy with Some c -> Hashtbl.replace color v c; busy := IS.add c !busy | None -> ()) bl.phis;
+      List.iter (fun v ->
+        let live = Hashtbl.find after v in
+        if candidate v && IS.mem v live then
+          match pick (held (IS.remove v live)) with Some c -> Hashtbl.replace color v c | None -> ()) bl.body;
+      List.iter walk (List.rev children.(b))
+    in
+    if n > 0 then walk 0;
+    color
   in
-  if n > 0 then walk 0;
-  (* memory: the parameters their prologue slots, the others one each *)
-  let slots = Hashtbl.create 64 and next = ref base in
+  let color = colors word nregs memory and dcolor = colors double nfregs dmemory in
+  (* memory: the parameters their prologue slots, the others one each;
+   * a double one of its own (Dmem), from 0 *)
+  let slots = Hashtbl.create 64 and next = ref base and dnext = ref 0 in
   (* a body's value no one reads after needs no place *)
   let dead v = match Hashtbl.find_opt after v with Some live -> not (IS.mem v live) && not (Hashtbl.mem memory v) | None -> false in
   let loc v =
     match def v with
     | Zero | Const _ | Blk _ | Symb _ -> Nil
     | _ when dead v -> Nil
+    | _ when double v -> (
+        match Hashtbl.find_opt dcolor v with
+        | Some c -> Reg c
+        | None -> (match Hashtbl.find_opt slots v with Some s -> Dmem s | None -> let s = !dnext in incr dnext; Hashtbl.replace slots v s; Dmem s))
     | Param i ->
         (match Hashtbl.find_opt color v with Some c -> Reg c | None -> Mem i)
     | _ -> (
@@ -167,4 +192,4 @@ let alloc (fn : func) ~nregs ~base =
    * stdlib's hash function (OCaml's, or mini-ml's own when it compiles
    * itself) *)
   List.iter (fun v -> ignore (loc v)) (List.sort compare (Hashtbl.fold (fun v _ vs -> v :: vs) fn.defs []));
-  loc, !next
+  loc, !next, !dnext

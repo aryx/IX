@@ -47,6 +47,11 @@ typedef uintptr uvalue;
 #define String_val(v) ((char*)(v))
 #define Double_tag 253
 #define Double_val(v) (*(double*)(v))
+/* a Float.Array: its doubles in the block, after each other (OCaml's
+ * Double_array_tag, 254, is Int32_tag here; 251 is OCaml's Abstract_tag,
+ * which mini-ml does not have); none a value, so not scanned */
+#define Double_array_tag 251
+#define Double_array_length(v) (Wosize(v) / (sizeof(double) / W))
 /* an int32 and an int64, boxed: their bits, which the collector doesn't
  * scan (a tag of 251 and above), compared and hashed by value */
 #define Int32_tag 254

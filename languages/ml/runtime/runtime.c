@@ -201,7 +201,6 @@ main(int ac, char *av[])
 		old_hp = from;
 		ml_young_lo = young;
 		ml_young_hi = young + young_words;
-		ml_refs_end = refs + REFS;
 		young_empty();
 	}
 	ml_vsp = vstack;

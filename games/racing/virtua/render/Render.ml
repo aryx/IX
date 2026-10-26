@@ -25,22 +25,22 @@ type t = {
   mutable side : float;
   mutable top : float;
   (* a mesh's corners seen from the eye *)
-  mutable vx : float array;
-  mutable vy : float array;
-  mutable vz : float array;
+  mutable vx : Float.Array.t;
+  mutable vy : Float.Array.t;
+  mutable vz : Float.Array.t;
   (* a mesh's shades, lit as it is turned ([draw_at]) *)
   mutable shades : Bytes.t;
   (* a face's corners, cut by the near plane (cx, cy, cz), then on the
    * screen (sx, sy, and iz = 1/z) *)
-  cx : float array;
-  cy : float array;
-  cz : float array;
-  sx : float array;
-  sy : float array;
-  iz : float array;
+  cx : Float.Array.t;
+  cy : Float.Array.t;
+  cz : Float.Array.t;
+  sx : Float.Array.t;
+  sy : Float.Array.t;
+  iz : Float.Array.t;
   (* a face's left and right edges on each row *)
-  lefts : float array;
-  rights : float array;
+  lefts : Float.Array.t;
+  rights : Float.Array.t;
   mutable drawn : int;
 }
 
@@ -49,7 +49,7 @@ type t = {
 let one = 67108864.
 
 let create (width : int) (height : int) : t =
-  let corners () : float array = Array.make most 0. in
+  let corners () : Float.Array.t = Float.Array.make most 0. in
   {
     width;
     height;
@@ -64,9 +64,9 @@ let create (width : int) (height : int) : t =
     far = 1000.;
     side = 1.;
     top = 1.;
-    vx = [||];
-    vy = [||];
-    vz = [||];
+    vx = Float.Array.create 0;
+    vy = Float.Array.create 0;
+    vz = Float.Array.create 0;
     shades = Bytes.empty;
     cx = corners ();
     cy = corners ();
@@ -74,8 +74,8 @@ let create (width : int) (height : int) : t =
     sx = corners ();
     sy = corners ();
     iz = corners ();
-    lefts = Array.make height 0.;
-    rights = Array.make height 0.;
+    lefts = Float.Array.make height 0.;
+    rights = Float.Array.make height 0.;
     drawn = 0;
   }
 
@@ -129,8 +129,10 @@ let fill (r : t) (n : int) (color : char) : unit =
   let best = ref 1 and area = ref 0. in
   for i = 1 to n - 2 do
     let d =
-      ((r.sx.(i) -. r.sx.(0)) *. (r.sy.(i + 1) -. r.sy.(0)))
-      -. ((r.sx.(i + 1) -. r.sx.(0)) *. (r.sy.(i) -. r.sy.(0)))
+      (Float.Array.get r.sx i -. Float.Array.get r.sx 0)
+      *. (Float.Array.get r.sy (i + 1) -. Float.Array.get r.sy 0)
+      -. (Float.Array.get r.sx (i + 1) -. Float.Array.get r.sx 0)
+         *. (Float.Array.get r.sy i -. Float.Array.get r.sy 0)
     in
     if Float.abs d > Float.abs !area then begin
       best := i;
@@ -139,48 +141,57 @@ let fill (r : t) (n : int) (color : char) : unit =
   done;
   if Float.abs !area > 1e-6 then begin
     let i = !best in
-    let dx1 = r.sx.(i) -. r.sx.(0)
-    and dy1 = r.sy.(i) -. r.sy.(0)
-    and dz1 = r.iz.(i) -. r.iz.(0) in
-    let dx2 = r.sx.(i + 1) -. r.sx.(0)
-    and dy2 = r.sy.(i + 1) -. r.sy.(0)
-    and dz2 = r.iz.(i + 1) -. r.iz.(0) in
+    let dx1 = Float.Array.get r.sx i -. Float.Array.get r.sx 0
+    and dy1 = Float.Array.get r.sy i -. Float.Array.get r.sy 0
+    and dz1 = Float.Array.get r.iz i -. Float.Array.get r.iz 0 in
+    let dx2 = Float.Array.get r.sx (i + 1) -. Float.Array.get r.sx 0
+    and dy2 = Float.Array.get r.sy (i + 1) -. Float.Array.get r.sy 0
+    and dz2 = Float.Array.get r.iz (i + 1) -. Float.Array.get r.iz 0 in
     let a = ((dz1 *. dy2) -. (dz2 *. dy1)) /. !area in
     let b = ((dx1 *. dz2) -. (dx2 *. dz1)) /. !area in
-    let c = r.iz.(0) -. (a *. r.sx.(0)) -. (b *. r.sy.(0)) in
+    let c =
+      Float.Array.get r.iz 0
+      -. (a *. Float.Array.get r.sx 0)
+      -. (b *. Float.Array.get r.sy 0)
+    in
     (* the rows *)
-    let ymin = ref r.sy.(0) and ymax = ref r.sy.(0) in
+    let ymin = ref (Float.Array.get r.sy 0)
+    and ymax = ref (Float.Array.get r.sy 0) in
     for k = 1 to n - 1 do
-      ymin := Float.min !ymin r.sy.(k);
-      ymax := Float.max !ymax r.sy.(k)
+      ymin := Float.min !ymin (Float.Array.get r.sy k);
+      ymax := Float.max !ymax (Float.Array.get r.sy k)
     done;
     let y0 = max 0 (first !ymin)
     and y1 = min (r.height - 1) (first !ymax - 1) in
     if y0 <= y1 then begin
       for y = y0 to y1 do
-        r.lefts.(y) <- infinity;
-        r.rights.(y) <- neg_infinity
+        Float.Array.set r.lefts y infinity;
+        Float.Array.set r.rights y neg_infinity
       done;
       (* each edge's x on the rows it crosses, taken downwards so that
        * a face's edge and its neighbour's are the same numbers *)
       for k = 0 to n - 1 do
         let j = if k = n - 1 then 0 else k + 1 in
-        let top, bottom = if r.sy.(k) < r.sy.(j) then (k, j) else (j, k) in
-        let xa = r.sx.(top) and ya = r.sy.(top) in
-        let xb = r.sx.(bottom) and yb = r.sy.(bottom) in
+        let top, bottom =
+          if Float.Array.get r.sy k < Float.Array.get r.sy j then (k, j)
+          else (j, k)
+        in
+        let xa = Float.Array.get r.sx top and ya = Float.Array.get r.sy top in
+        let xb = Float.Array.get r.sx bottom
+        and yb = Float.Array.get r.sy bottom in
         if ya < yb then begin
           let slope = (xb -. xa) /. (yb -. ya) in
           for y = max y0 (first ya) to min y1 (first yb - 1) do
             let x = xa +. ((float y +. 0.5 -. ya) *. slope) in
-            if x < r.lefts.(y) then r.lefts.(y) <- x;
-            if x > r.rights.(y) then r.rights.(y) <- x
+            if x < Float.Array.get r.lefts y then Float.Array.set r.lefts y x;
+            if x > Float.Array.get r.rights y then Float.Array.set r.rights y x
           done
         end
       done;
       let step = int_of_float (a *. one) in
       for y = y0 to y1 do
-        let x0 = max 0 (first r.lefts.(y))
-        and x1 = min (r.width - 1) (first r.rights.(y) - 1) in
+        let x0 = max 0 (first (Float.Array.get r.lefts y))
+        and x1 = min (r.width - 1) (first (Float.Array.get r.rights y) - 1) in
         if x0 <= x1 then begin
           let d = (a *. (float x0 +. 0.5)) +. (b *. (float y +. 0.5)) +. c in
           span r y x0 x1 (max 1 (int_of_float (d *. one))) step color
@@ -196,10 +207,17 @@ let fill (r : t) (n : int) (color : char) : unit =
 (* corner i of the face cut by the near plane, from corners a and b of
  * the mesh on each side of it *)
 let cut (r : t) (i : int) (a : int) (b : int) : unit =
-  let f = (r.near -. r.vz.(a)) /. (r.vz.(b) -. r.vz.(a)) in
-  r.cx.(i) <- r.vx.(a) +. (f *. (r.vx.(b) -. r.vx.(a)));
-  r.cy.(i) <- r.vy.(a) +. (f *. (r.vy.(b) -. r.vy.(a)));
-  r.cz.(i) <- r.near
+  let f =
+    (r.near -. Float.Array.get r.vz a)
+    /. (Float.Array.get r.vz b -. Float.Array.get r.vz a)
+  in
+  Float.Array.set r.cx i
+    (Float.Array.get r.vx a
+    +. (f *. (Float.Array.get r.vx b -. Float.Array.get r.vx a)));
+  Float.Array.set r.cy i
+    (Float.Array.get r.vy a
+    +. (f *. (Float.Array.get r.vy b -. Float.Array.get r.vy a)));
+  Float.Array.set r.cz i r.near
 
 (* face k of m, its corners in vx, vy, vz *)
 let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
@@ -211,7 +229,9 @@ let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
   and above = ref true
   and below = ref true in
   for i = f0 to f1 - 1 do
-    let x = r.vx.(i) and y = r.vy.(i) and z = r.vz.(i) in
+    let x = Float.Array.get r.vx i
+    and y = Float.Array.get r.vy i
+    and z = Float.Array.get r.vz i in
     if z < r.near then incr behind;
     if z >= r.far then beyond := true;
     if x >= -.r.side *. z then left := false;
@@ -230,11 +250,12 @@ let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
     let m' = ref 0 in
     for i = f0 to f1 - 1 do
       let j = if i = f1 - 1 then f0 else i + 1 in
-      let front = r.vz.(i) >= r.near and front' = r.vz.(j) >= r.near in
+      let front = Float.Array.get r.vz i >= r.near
+      and front' = Float.Array.get r.vz j >= r.near in
       if front then begin
-        r.cx.(!m') <- r.vx.(i);
-        r.cy.(!m') <- r.vy.(i);
-        r.cz.(!m') <- r.vz.(i);
+        Float.Array.set r.cx !m' (Float.Array.get r.vx i);
+        Float.Array.set r.cy !m' (Float.Array.get r.vy i);
+        Float.Array.set r.cz !m' (Float.Array.get r.vz i);
         incr m'
       end;
       if front <> front' then begin
@@ -243,10 +264,12 @@ let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
       end
     done;
     for i = 0 to !m' - 1 do
-      let iz = 1. /. r.cz.(i) in
-      r.sx.(i) <- (float r.width /. 2.) +. (r.focal *. r.cx.(i) *. iz);
-      r.sy.(i) <- (float r.height /. 2.) -. (r.focal *. r.cy.(i) *. iz);
-      r.iz.(i) <- iz
+      let iz = 1. /. Float.Array.get r.cz i in
+      Float.Array.set r.sx i
+        ((float r.width /. 2.) +. (r.focal *. Float.Array.get r.cx i *. iz));
+      Float.Array.set r.sy i
+        ((float r.height /. 2.) -. (r.focal *. Float.Array.get r.cy i *. iz));
+      Float.Array.set r.iz i iz
     done;
     r.drawn <- r.drawn + 1;
     fill r !m' color
@@ -271,11 +294,11 @@ let outside (r : t) ((x, y, z) : Vec3.t) (rad : float) : bool =
   || -.y -. (r.top *. z) > rad *. kt
 
 let room (r : t) (m : Mesh.t) : unit =
-  let n = Array.length m.xs in
-  if Array.length r.vx < n then begin
-    r.vx <- Array.make n 0.;
-    r.vy <- Array.make n 0.;
-    r.vz <- Array.make n 0.
+  let n = Float.Array.length m.xs in
+  if Float.Array.length r.vx < n then begin
+    r.vx <- Float.Array.make n 0.;
+    r.vy <- Float.Array.make n 0.;
+    r.vz <- Float.Array.make n 0.
   end
 
 let faces (r : t) (m : Mesh.t) (shades : Bytes.t) : unit =
@@ -290,11 +313,13 @@ let draw (r : t) (m : Mesh.t) : unit =
     and rx, ry, rz = r.right
     and ux, uy, uz = r.up
     and ax, ay, az = r.ahead in
-    for i = 0 to Array.length m.xs - 1 do
-      let x = m.xs.(i) -. ex and y = m.ys.(i) -. ey and z = m.zs.(i) -. ez in
-      r.vx.(i) <- (x *. rx) +. (y *. ry) +. (z *. rz);
-      r.vy.(i) <- (x *. ux) +. (y *. uy) +. (z *. uz);
-      r.vz.(i) <- (x *. ax) +. (y *. ay) +. (z *. az)
+    for i = 0 to Float.Array.length m.xs - 1 do
+      let x = Float.Array.get m.xs i -. ex
+      and y = Float.Array.get m.ys i -. ey
+      and z = Float.Array.get m.zs i -. ez in
+      Float.Array.set r.vx i ((x *. rx) +. (y *. ry) +. (z *. rz));
+      Float.Array.set r.vy i ((x *. ux) +. (y *. uy) +. (z *. uz));
+      Float.Array.set r.vz i ((x *. ax) +. (y *. ay) +. (z *. az))
     done;
     faces r m m.shades
   end
@@ -314,20 +339,20 @@ let draw_at (r : t) (m : Mesh.t) (angle : float) ((px, py, pz) : Vec3.t)
     and rx, ry, rz = r.right
     and ux, uy, uz = r.up
     and ax, ay, az = r.ahead in
-    for i = 0 to Array.length m.xs - 1 do
-      let x0, z0 = turn m.xs.(i) m.zs.(i) in
+    for i = 0 to Float.Array.length m.xs - 1 do
+      let x0, z0 = turn (Float.Array.get m.xs i) (Float.Array.get m.zs i) in
       let x = x0 +. px -. ex
-      and y = m.ys.(i) +. py -. ey
+      and y = Float.Array.get m.ys i +. py -. ey
       and z = z0 +. pz -. ez in
-      r.vx.(i) <- (x *. rx) +. (y *. ry) +. (z *. rz);
-      r.vy.(i) <- (x *. ux) +. (y *. uy) +. (z *. uz);
-      r.vz.(i) <- (x *. ax) +. (y *. ay) +. (z *. az)
+      Float.Array.set r.vx i ((x *. rx) +. (y *. ry) +. (z *. rz));
+      Float.Array.set r.vy i ((x *. ux) +. (y *. uy) +. (z *. uz));
+      Float.Array.set r.vz i ((x *. ax) +. (y *. ay) +. (z *. az))
     done;
     let n = Mesh.faces m in
     if Bytes.length r.shades < n then r.shades <- Bytes.create n;
     for k = 0 to n - 1 do
-      let nx, nz = turn m.nxs.(k) m.nzs.(k) in
-      let b = Lighting.brightness_of_normal (nx, m.nys.(k), nz) in
+      let nx, nz = turn (Float.Array.get m.nxs k) (Float.Array.get m.nzs k) in
+      let b = Lighting.brightness_of_normal (nx, Float.Array.get m.nys k, nz) in
       Bytes.set r.shades k (Char.chr (index m.colors.(k) b))
     done;
     faces r m r.shades

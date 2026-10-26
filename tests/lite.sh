@@ -350,6 +350,18 @@ by_ix_browsers() {
 }
 by_ix_vectors() { $K/lib_crypto/tests/vectors | cmp - lib_crypto/tests/Vectors.expected; }
 by_ix_play() { ! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v "^play.sh:"; }
+# m-ix building in itself, a part (kernels/9pi/tests/smoke.sh: ix for
+# arm and Plan 9, a mini-9pi, a small card; on it under QEMU, a unit and
+# a C file compiled, two programs linked and run, the host's bytes;
+# about 80 s, beside "ix built by ix"); the kernel wants ocaml-light's
+# compiler for arm (kernels/ocaml-light.sh arm) and gcc's for arm
+t9="m-ix built in mini-9pi: ml, cc, ld, a part"
+if ! command -v qemu-system-arm > /dev/null; then skip "$t9" "no qemu-system-arm"
+elif [ ! -x /tmp/ix-ocaml-light-arm/bin/ocamlopt ]; then
+  skip "$t9" "no ocaml-light for arm: kernels/ocaml-light.sh arm"
+elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
+  skip "$t9" "no arm-linux-gnueabihf-gcc"
+else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 [ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6

@@ -291,6 +291,24 @@ And the full build faster, besides the gate:
    (self-quick and self do). For m-ix: self-quick needs make
    card-self (mini-9pi by ix and a card of 1 GB with ix's sources, in
    kernels/9pi/build/, the sessions'), principia and QEMU; to decide.
+   Done for m-ix (the author: "do the small card for a smoke test"):
+   kernels/9pi/tests/smoke.sh, lite.sh's "m-ix built in mini-9pi: ml,
+   cc, ld, a part". In its own directory: ix for arm and Plan 9 by
+   mini-mk B= (the libraries, rc, the toolchain, boot.rc's programs,
+   tests/self/; 29 s, where make ix's 50 directories are 190 s), a
+   mini-9pi for the Pi 2 with those in its bootdir (13 s, B= and IMAGE=
+   its own), a card of 64 MB (Mkfs, Mkcard: the toolchain, lib_core's
+   sources, the host's objects). On it under QEMU: Pervasives.ml by ml,
+   libc's pow.c by cc, hello.c and Hello.ml compiled, linked over the
+   host's libc.a and runtime, run; each object and program the host's
+   (cmp). Under QEMU the session is 15 s; under mini-qemu 90 s (a
+   tool's start alone 17 to 20 s), so QEMU. 83 s from nothing alone,
+   101 s in make test, beside ix built by ix (106 s): 121 jobs, 0
+   failures, 124 s. A skip line without qemu-system-arm, ocaml-light
+   for arm or gcc for arm (CI: all three). Seen on the way: ml -O3
+   inlines from the summaries (X.inline) beside the object it writes,
+   so Hello.ml's object depends on where Pervasives.5 was written; the
+   card keeps mk's layout (/tmp/lib, /tmp/self).
 5. **`make test` and `test-quick` gone**, their jobs placed;
    Done in part: `make test` is the gate (`test: test-lite`, the author:
    "have make test, run by default this lite.sh", "the default make

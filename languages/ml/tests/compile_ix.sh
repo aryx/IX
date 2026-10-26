@@ -88,9 +88,10 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = kernels ] && incs[$root]="${incs[$root]} -I $W"
   # (mini-usbd: with the kernel's lib_usb, which it shares)
   [ $root = kernels/9pi/buses/user/usbd ] && incs[$root]="$(dirs kernels/9pi/buses/user/usbd) $(dirs kernels/9pi/buses/lib_usb)"
-  # (mini-doom and mini-quake: their modules in folders, each game's before the games' and
-  # the other's (both have a Bsp, a View, a Sound); their tools too: mini-light, mini-mkwad2)
-  case $f in games/fps/doom/*|games/fps/quake/*) root=$(echo $f | cut -d/ -f1-3); incs[$root]="$(dirs $root) ${incs[games]}";; esac
+  # (mini-doom, mini-quake and mini-virtuaracing: their modules in folders, each game's before
+  # the games' and the others' (Bsp, View, Sound, Render twice); their tools too: mini-light,
+  # mini-mkwad2)
+  case $f in games/fps/doom/*|games/fps/quake/*|games/racing/virtua/*) root=$(echo $f | cut -d/ -f1-3); incs[$root]="$(dirs $root) ${incs[games]}";; esac
   # (mini-mkfs: with the kernel's lib_xv6fs)
   [ $root = kernels/tools ] && incs[$root]="$(dirs kernels/tools) $(dirs kernels/9pi/filesystems/lib_xv6fs)"
   # (mini-squeak: with Smalltalk, which is languages/smalltalk's; its Which is made by its mkfile)

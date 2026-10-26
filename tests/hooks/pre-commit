@@ -1,0 +1,3 @@
+#!/bin/sh
+# git's pre-commit hook (make hooks): the guard
+exec "$(git rev-parse --show-toplevel)/tests/guard.sh"

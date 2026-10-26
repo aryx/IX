@@ -337,12 +337,30 @@ And the full build faster, besides the gate:
    which test when, the gate's lines, its groups, skips and budget.
 6. **The commit's own files tested** (`-index`) or the guard instead,
    by step 4's numbers.
+   Done, the guard (the author: "let's do the guard instead; seems fast
+   and simple"): tests/guard.sh, git's pre-commit hook
+   (tests/hooks/pre-commit, `make hooks`: core.hooksPath), lists the
+   files modified, deleted or new in the directories the commit touches
+   and not in it; git commit -- paths's temporary index is the commit's
+   too. It says, it does not stop the commit (other sessions' work is
+   listed as well). Under a second.
 7. **The night**: `make self`'s time kept, a scheduled run.
+   Done (the author: "for make self let's use github in a cron, but
+   ideally we want failures to be notified in some way to us"):
+   .github/workflows/self.yml, at 2:00 UTC when main moved since the
+   last run that passed, make self-tix and self-mix in two jobs (6 hours
+   each at most: GitHub's limit; mix is 3 hours on the author's
+   machine), in the Dockerfile with SELF=tix or mix (mix: QEMU, gcc for
+   arm, ocaml-light cloned from GitHub; principia not needed, mini-9pi's
+   pixels being OCaml's). A failure opens the issue "make self failed"
+   or comments on the open one; the times are the Actions tab's. Not
+   run yet: the first run, by hand after the push, says whether mix
+   fits in 6 hours on GitHub's runners.
 
 ## To decide
 
 - the gate's name: `test-lite` kept (fewer renames: memories, docs,
   CI), or `make check`;
 - whether the gate warns or fails past its budget (warns, to start);
-- where the night runs: GitHub (what `make self` needs from outside the
-  repository) or the author's machine.
+- where the night runs: GitHub (decided: self.yml) or the author's
+  machine.

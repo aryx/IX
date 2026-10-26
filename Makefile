@@ -288,14 +288,17 @@ test-all:
 #   USB, usertests: test-kernels-ix): here mini-xv6 only boots to sh;
 # - the long forms of what it has: the random tests' full counts, the
 #   rest of tests/modern/, each tiny program built by ix run through
-#   its tests, mini-git's objects and network tests (make test-long,
-#   test-ix).
+#   its tests (make test-long, test-ix).
 test-lite:
 	./tests/lite.sh
 test-tix:
 	./tests/lite.sh tix
 test-mix:
 	./tests/lite.sh mix
+# git commit's guard (tests/guard.sh, a pre-commit hook): the files left
+# out of a commit in the directories it touches, said; once per clone
+hooks:
+	git config core.hooksPath tests/hooks
 
 ###############################################################################
 # Docker
@@ -338,4 +341,4 @@ visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
 .PHONY: all tix mix install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-lite test-tix test-mix test-long test-github visual visual-all
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-lite test-tix test-mix hooks test-long test-github visual visual-all

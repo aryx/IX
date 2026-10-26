@@ -1,0 +1,69 @@
+# Each night, ix built by ix in its own system (make self-tix: t-ix in
+# tiny-kernel, under an hour; make self-mix: m-ix in mini-9pi under
+# QEMU, 3 hours on the author's machine), each file the host's
+# (docs/plans/plan_tests.md, step 7). Only when main has moved since
+# the last run that passed. A failure is said in an issue, "make self
+# failed", opened or commented on (GitHub's own mail of a failed
+# scheduled run goes to whoever last edited the cron line). The runs'
+# times are the Actions tab's: a slower self build is a regression too.
+
+name: self
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch: null
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  changed:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.c.outputs.run }}
+    steps:
+      - id: c
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          last=$(gh run list --repo $GITHUB_REPOSITORY --workflow self.yml \
+            --branch main --status success --limit 1 --json headSha \
+            --jq '.[0].headSha')
+          if [ "$last" = "$GITHUB_SHA" ] &&
+             [ "$GITHUB_EVENT_NAME" = schedule ]; then
+            echo "main as at the last run that passed: nothing to do"
+            echo run=false >> $GITHUB_OUTPUT
+          else
+            echo run=true >> $GITHUB_OUTPUT
+          fi
+
+  self:
+    needs: changed
+    if: needs.changed.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        system: [tix, mix]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --progress=plain --build-arg SELF=${{matrix.system}} .
+      - if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          url=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          msg="make self-${{matrix.system}} failed at ${GITHUB_SHA::8}: $url"
+          n=$(gh issue list --repo $GITHUB_REPOSITORY --state open \
+            --search '"make self failed" in:title' --json number \
+            --jq '.[0].number')
+          if [ -n "$n" ]; then
+            gh issue comment $n --repo $GITHUB_REPOSITORY --body "$msg"
+          else
+            gh issue create --repo $GITHUB_REPOSITORY \
+              --title "make self failed" --body "$msg"
+          fi

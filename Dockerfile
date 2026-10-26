@@ -42,10 +42,22 @@ WORKDIR /src
 COPY dune-project ./
 RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest tsdl js_of_ocaml-compiler js_of_ocaml ppx_deriving menhir
 
+# For make self (.github/workflows/self.yml, --build-arg SELF=tix or
+# mix): mix wants QEMU's Pi 2, gcc for arm and ocaml-light, mini-9pi's
+# OCaml (built for arm by kernels/ocaml-light.sh, below)
+ARG SELF=
+RUN if [ "$SELF" = mix ]; then \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-arm \
+    gcc-arm-linux-gnueabihf && \
+  git clone -q https://github.com/aryx/ocaml-light /root/ocaml-light; fi
+
 # Build
 COPY . .
 RUN eval $(opam env) && make
 
-# Test: lite (make test-lite, the default) or all (make test-all)
+# Test: lite (make test-lite, the default) or all (make test-all); or
+# make self-tix, self-mix
 ARG TESTS=lite
-RUN eval $(opam env) && make test-${TESTS}
+RUN eval $(opam env) && \
+  if [ "$SELF" = mix ]; then kernels/ocaml-light.sh arm; fi && \
+  if [ -n "$SELF" ]; then make self-$SELF; else make test-${TESTS}; fi

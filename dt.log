@@ -1,7 +1,0 @@
-mini-rc ../mkfiles/depend.rc '$D' . TinyMachine TinyKernel TinyKernel/host TinyKernel/steps/t6 ../_mk/5/tiny -- `{ls *.ml TinyMachine/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'} > .depend
-./TinyDebugger.ml:48: unbound value u_seek
-TinyMachine/TinyMachineFetch.ml:9: unbound module Rgba_image
-TinyMachine/TinyMachineSDL.ml:105: illegal character '`'
-TinyMachine/TinyMachineWeb.ml:6: unbound module Js_of_ocaml
-TinyMachine/TinyMachineWindow.ml:24: unbound module Scanf
-./TinyTracer.ml:142: unbound value u_trace

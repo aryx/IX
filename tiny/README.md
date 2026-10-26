@@ -188,8 +188,8 @@ or an ML program is built, the kernels, tiny-kernel's drawing
 messages, tiny-windows and how a game is written.
 
 Each has its tests in `tests/`, `tests/TinyXxx_test.sh`, run by `make test`
-(TinyC's programs are `tests/TinyC_tests/`, with the host's cc's
-outputs, and `tests/TinyC_fuzz.py` writes random ones; TinyML's are
+(here, as the top's `make test-tix`; `make` here builds `tiny/` alone;
+TinyC's programs are `tests/TinyC_tests/`, with the host's cc's outputs, and `tests/TinyC_fuzz.py` writes random ones; TinyML's are
 `languages/ml/tests/tiny/`, with ocaml-light's outputs, and
 `tests/TinyML_fuzz.py`'s are compared with OCaml's);
 the plans' Status logs (`docs/plans/`) tell how each was chosen and

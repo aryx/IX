@@ -100,9 +100,9 @@ function...) can crash this way, depending on when the collector runs.
 multiple of 8 and `frame_size`'s rounding stays exact. (The arm64
 backend already has upstream's `Misc.align !ofs 16`.)
 
-**Workaround**: `kernels/ocaml-light-patches/arm-stack-align.patch`, the
-fix, applied by `kernels/ocaml-light.sh` to its clone (which rebuilds a
-`/tmp` build made without the current patches).
+**Fixed** in ~/ocaml-light (f89595a9, 2026-10-26); until then a patch
+in `kernels/ocaml-light-patches/`, applied by `kernels/ocaml-light.sh`
+to its clone.
 
 ## 6. A nan in a structure is equal to itself (a difference with OCaml)
 
@@ -143,9 +143,9 @@ stdlib (`lib_core/`, ocaml-light's f397c6bf), each fixed in the copy:
   `length` are functions calling String's, where String's are the
   primitives (found 2026-10-08, the kernels' written strings made
   bytes: `docs/plans/done/plan_kernel_ocaml4.md`; mini-9pi's pixels
-  are set with it). For the kernels' ocaml-light:
-  `kernels/ocaml-light-patches/bytes-primitives.patch`, the five as
-  `external`s; the same in ix's copy (`lib_core/base/Bytes.ml`).
+  are set with it). The five are `external`s in
+  ~/ocaml-light now (f89595a9, a patch of the kernels' before); the
+  same in ix's copy (`lib_core/base/Bytes.ml`).
 
 ## 8. The stdlib ix took from it: what differs from OCaml's when a program runs
 

@@ -2,14 +2,11 @@
 // in ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). Not dune's: each
 // kernel has its Makefile, ocaml-light's cross compiler (ocaml-light.sh
-// builds it, with ocaml-light-patches/) and ../lib_machine's C and assembly;
+// builds it from ~/ocaml-light) and ../lib_machine's C and assembly;
 // test.sh builds and boots them all under mini-qemu and QEMU.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'Kernels in OCaml on the Raspberry Pi: five steps to one, then xv6 and Plan 9 on a shared machine layer.',
-  dirs: {
-    'ocaml-light-patches': { summary: "ocaml-light's fixes the kernels found (arm's stack alignment), applied to its clone." },
-  },
   skeletons: [
     {
       name: 'From bare metal to Plan 9',

@@ -583,14 +583,17 @@ $(O)/check/25.out: $(O)/boot.img
 	printf 'rc\npwd; cat d/f g; wc big; rm g big; echo bye > d/f; ls /dump; cat /dump/1/usr/glenda/d/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 	printf 'rc\nls /dump /dump/2/usr/glenda; cat d/f /dump/2/usr/glenda/d/f /dump/1/usr/glenda/g; rm /bin/ping; ls -l /bin/ping; rm d; rm /dump/1/usr/glenda/d/f; echo no > /dump/1/x\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
 # trace and debug (plan_tiny_debugger.md): cat's calls, its output kept
-# apart, a pipeline's processes (-f); ping stopped in write (its labels
-# after its image: -s), the backtrace, a step from the breakpoint, to
-# its exit; an ML program's backtrace (trace's), with its slots; a
-# loop of rc's in the background, attached to by trace (to its end) and
-# by debug (stopped in its wait, let go; four seconds: debug takes three
-# to start)
+# apart, a pipeline's processes (-f, a process's lines after another's:
+# how they interleave moves with any change of the kernel's speed);
+# ping stopped in write (its labels after its image: -s), the
+# backtrace, a step from the breakpoint, to its exit; an ML program's
+# backtrace (trace's), with its slots; a loop of rc's in the
+# background, attached to by trace (to its end) and by debug (stopped
+# in its wait, let go; four seconds: debug takes three to start), the
+# loops' output in files (old: on the console, among the prompts at
+# times that moved too)
 $(O)/check/26.out: $(O)/boot.img
-	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc'\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
+	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc' >[2] t\ngrep '^.12. ' t; grep '^.13. ' t; grep '^.14. ' t\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } > l &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } > m &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\ncat l m\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

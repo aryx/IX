@@ -347,6 +347,7 @@ exit(0)
 exited 0
 hello
 % trace: nosuch: not found
+%       1       1       6
 % [12] getpid() = 12
 [12] dup(0) = 5
 [12] pipe(0xffec0) = 0
@@ -355,12 +356,18 @@ hello
 [12] close(0) = 0
 [12] dup(6) = 0
 [12] close(6) = 0
-[13] close(1) = 0
 [12] fork() = 14
+[12] wait(0xffe68) = 13
+[12] wait(0xffe68) = 14
+[12] close(0) = 0
+[12] dup(5) = 0
+[12] close(5) = 0
+[12] exit(0)
+[12] exited 0
+[13] close(1) = 0
 [13] dup(7) = 1
 [13] close(7) = 0
 [13] close(6) = 0
-[14] close(5) = 0
 [13] close(5) = 0
 [13] exec("/bin/cat", 0xffd78) = 0
 [13] open("f", 0) = 5
@@ -368,21 +375,14 @@ hello
 [13] write(1, "hello\n", 6) = 6
 [13] read(5, "", 4096) = 0
 [13] close(5) = 0
-[14] exec("/bin/wc", 0xffd48) = 0
 [13] exit(0)
-[12] wait(0xffe68) = 13
 [13] exited 0
+[14] close(5) = 0
+[14] exec("/bin/wc", 0xffd48) = 0
 [14] read(0, "hello\n", 4096) = 6
 [14] read(0, "", 4096) = 0
-      1       1       6
 [14] write(1, "      1       1       6\n", 24) = 24
 [14] exit(0)
-[12] wait(0xffe68) = 14
-[12] close(0) = 0
-[12] dup(5) = 0
-[12] close(5) = 0
-[12] exit(0)
-[12] exited 0
 [14] exited 0
 % exec
 _start:	jal	r15, 0xfec <main>
@@ -411,20 +411,23 @@ u_write:	addi	r14, r14, -40
 5	ml_run+0x164
 6	main+0x1ec
 7	_start
-% % fork() = 22
-1
-wait(0xffe00) = 22
-fork() = 23
-wait(0xffde0) = 23
-fork() = 24
-2
-wait(0xffe00) = 24
+% % fork() = 25
+wait(0xffe00) = 25
+fork() = 26
+wait(0xffde0) = 26
+fork() = 27
+wait(0xffe00) = 27
+close(1) = 0
+dup(5) = 1
+close(5) = 0
 exit(0)
 exited 0
+% % break
+wait:	ldw	r1, 0(r14)
 % % 1
 2
+1
+2
 3
-break
-wait:	ldw	r1, 0(r14)
 4
-% % $ 
+% $ 

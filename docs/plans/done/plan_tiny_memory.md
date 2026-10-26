@@ -19,6 +19,18 @@ Denning, and segments and PDP11 and 386, and pages and so on, with
 cs-history"; "the kernel is special and we already did split in files
 for FS, audio, network, graphics, so one more for memory is fine".
 
+**Status: done** (2026-10-23 to 2026-10-26): spawn, TinyKernelMemory.ml,
+segments (`MEMORY=segments`) and pages (`MEMORY=pages`), partitions
+the default; each stage's section says what was built and measured.
+Left: the guard page under the stack (where a stack ends is the
+program's runtime's, mlsys.c's), a text shared between execs under
+pages (a cache of a file's pages), swapping (plan_kernel_swap.md is
+mini-9pi's), the third segment (the stack's, an exercise); stage 1's
+leftovers (the a.out sizes against what programs use, a message for a
+program that outgrows its partition, the Makefile relinking on a
+`MEM_` change); the four-core self-build numbers
+(plan_tiny_multicore.md's Status).
+
 ## The short answer
 
 ```
@@ -164,10 +176,12 @@ both ways not to tell a read from a write: a read that waits is
 tried again at every turn of the scheduler, and copied its whole
 buffer in each time; `seq 30 | grep 1 | sort -rn | cat | wc -l` was
 still at it after 100 s (2 s now). Not the same as `check.expected`,
-in HEAD either, by timing: `tetris.wav` (its length changes from run
-to run, 148,894 to 148,936 bytes for the same kernel) and three pairs
-of lines of `trace -f rc -c 'cat f | wc'` interleaved otherwise
-(session 26, without other load too).
+in HEAD either, by timing: `tetris.wav` and three pairs of lines of
+`trace -f rc -c 'cat f | wc'` interleaved otherwise (session 26).
+(Thought then to change from run to run: wrong, every run is the same
+for a kernel, by `make check`'s -date and -seed; the 148,894 to
+148,936 bytes were runs without them, or other kernels. The records
+were behind the kernel; see the Status, 2026-10-26.)
 
 ## Stage 3: segments (done, 2026-10-26)
 
@@ -236,8 +250,7 @@ window's registers; 2 KB less free on the disk, each program up to
 recipes' echo with -n; segments' boot line); make test-lite. Not
 run: self (hours; `self.expected`'s recipes edited the same way, and
 already behind on ld's 48 MB), self-cores, the four-core build.
-Left: the third segment, the stack's (an exercise); `tetris.wav`'s
-sum, which HEAD fails too.
+Left: the third segment, the stack's (an exercise).
 
 ## Stage 4: pages, off by default (done, 2026-10-26)
 
@@ -300,8 +313,13 @@ done.
 2026-10-26: stage 3, segments, done (above), behind MEMORY=segments.
 The same day, stage 4, pages, behind MEMORY=pages: the plan done but
 for the guard page (above). `check.expected` re-recorded with stage 3
-(its timing lines too); `tetris.wav`'s sum, which changes from run
-to run, not.
-Measuring: the self-build on four cores (`-j 6`) with spawn, beside
-the same with fork and one core with fork (plan_tiny_multicore.md's
+(its timing lines too). Then the check steadied: nothing in it changes
+from run to run (six runs at once, the same bytes), but two parts
+moved with any change of the kernel's speed: session 26's `trace -f`,
+now a process's lines after another's (`>[2] t` and a grep for each),
+and its loops' output among the prompts, now in files shown after
+`wait`; `tetris.wav`'s sum, behind since stage 2, re-recorded.
+Not measured yet: the self-build on four cores (`-j 6`) with spawn,
+beside the same with fork and one core with fork (plan_tiny_multicore.md's
 Status will have the numbers).
+2026-10-26: done; moved to docs/plans/done/.

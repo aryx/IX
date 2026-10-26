@@ -97,6 +97,11 @@ val instrument : t -> string -> Instrument.t -> unit
 (* [pull m n]: the next [n] samples, in both channels *)
 val pull : t -> int -> Signal.stereo
 
+(* false: the mixing in float arrays, the old way (the same samples);
+ * true, the default: in flat ones, which mini-ml makes without a block
+ * for each sample *)
+val flat : bool ref
+
 (*****************************************************************************)
 (* {1 What is playing} *)
 (*****************************************************************************)

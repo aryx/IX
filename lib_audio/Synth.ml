@@ -337,5 +337,57 @@ let continue (r : running) (v : voice) (n : int) : Signal.t * running =
   in
   (out, { !r with last_volume = v.volume })
 
+(* ix: continue's samples written in a flat array, the state in
+ * variables until the end: by mini-ml, continue made for each sample a
+ * pair, a running and a block for each float in it, and Array.init
+ * stored a new block with the write barrier (plan_virtuaracing.md,
+ * stage 5). The same arithmetic as sample's and continue's, in the
+ * same order: the same samples. *)
+let continue_into (r : running) (v : voice) (out : Float.Array.t) (n : int) : running =
+  let phase = ref r.phase and modulator = ref r.modulator and register = ref r.register in
+  let clock = ref r.clock and time = ref r.time and from = r.last_volume in
+  (* (no pitch effect, the most often: a factor of 1, the frequency
+   * itself, without a fold for each sample) *)
+  let plain = v.effects = [] in
+  for i = 0 to n - 1 do
+    let frequency = if plain then v.frequency else v.frequency *. effects_factor v !time in
+    let x =
+      match v.source with
+      | Wave w | Naive w ->
+          let dt = frequency /. rate in
+          let x =
+            match v.source with
+            | Wave _ when !band_limited -> Oscillator.wave_band_limited w ~dt !phase
+            | _ -> Oscillator.wave w !phase
+          in
+          phase := wrap (!phase +. dt);
+          x
+      | Pluck ->
+          let dt = frequency /. rate in
+          let x =
+            if !band_limited then Oscillator.wave_band_limited Oscillator.Triangle ~dt !phase
+            else Oscillator.wave Oscillator.Triangle !phase
+          in
+          phase := wrap (!phase +. dt);
+          x
+      | Fm { ratio; index } ->
+          let x = Fm.wave ~index !phase !modulator in
+          phase := wrap (!phase +. (frequency /. rate));
+          modulator := wrap (!modulator +. (frequency *. ratio /. rate));
+          x
+      | Noise ->
+          let out = if !register land 1 = 1 then 1. else -1. in
+          clock := !clock +. (frequency /. rate);
+          while !clock >= 1. do
+            register := Noise.step Long !register;
+            clock := !clock -. 1.
+          done;
+          out
+    in
+    time := !time +. (1. /. rate);
+    Float.Array.set out i (x *. (from +. ((v.volume -. from) *. float_of_int (i + 1) /. float_of_int n)))
+  done;
+  { phase = !phase; modulator = !modulator; register = !register; clock = !clock; last_volume = v.volume; time = !time }
+
 let release (r : running) (v : voice) (n : int) : Signal.t =
   fst (continue r { v with volume = 0. } n)

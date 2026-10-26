@@ -91,7 +91,8 @@ let keep ~(filter : Synth.filter option) ~(pan : float) (m : t) (name : string) 
       Hashtbl.replace m.continuous name
         { voice; running = Synth.start (); kept = true; filter; memory = Filter.silence (); pan; last_pan = pan }
 
-let pull (m : t) (n : int) : Signal.stereo =
+(* old: pull, the mixing in float arrays (pull below, flat := false) *)
+let pull_boxed (m : t) (n : int) : Signal.stereo =
   let left = Array.make n 0. and right = Array.make n 0. in
   (* the one-shots' next samples *)
   m.shots
@@ -167,6 +168,82 @@ let pull (m : t) (n : int) : Signal.stereo =
   List.iter (Hashtbl.remove m.instruments) !ended;
   let out : Signal.stereo = { left = Mix.limit ~soft:true left; right = Mix.limit ~soft:true right } in
   if !stereo then out else Signal.both (Signal.mono out)
+
+(* ix: the same mixing, in the same order, in flat arrays (Float.Array):
+ * by mini-ml, each sample stored in a float array was a new block and
+ * the write barrier, and each continuous voice's a pair and a running
+ * (Synth.continue_into); the samples the same, made float arrays at
+ * the end only. mini-virtuaracing's engine, road and wind, 3.2M
+ * instructions a sixtieth of a second on arm (plan_virtuaracing.md,
+ * stage 5) *)
+let flat = ref true
+
+let pull (m : t) (n : int) : Signal.stereo =
+  if not !flat then pull_boxed m n else begin
+  let left = Float.Array.make n 0. and right = Float.Array.make n 0. in
+  let add (a : Float.Array.t) (i : int) (x : float) : unit = Float.Array.set a i (Float.Array.get a i +. x) in
+  m.shots
+  |> List.iter (fun s ->
+         let k = min n (length s.samples - s.at) in
+         for i = 0 to k - 1 do
+           add left i s.samples.left.(s.at + i);
+           add right i s.samples.right.(s.at + i)
+         done;
+         s.at <- s.at + k);
+  m.shots <- List.filter (fun s -> s.at < length s.samples) m.shots;
+  let samples = Float.Array.make n 0. and gone = ref [] in
+  m.continuous
+  |> Hashtbl.iter (fun name c ->
+         if c.kept then c.running <- Synth.continue_into c.running c.voice samples n
+         else (
+           gone := name :: !gone;
+           ignore (Synth.continue_into c.running { c.voice with volume = 0. } samples n));
+         (match c.filter with
+          | None -> ()
+          | Some f ->
+              let q = Filter.biquad f.kind ~cutoff:f.cutoff ~q:f.q in
+              for i = 0 to n - 1 do
+                Float.Array.set samples i (Filter.step q c.memory (Float.Array.get samples i))
+              done);
+         let (l0, r0) = Space.pan c.last_pan and (l1, r1) = Space.pan c.pan in
+         for i = 0 to n - 1 do
+           let x = Float.Array.get samples i and a = float_of_int (i + 1) /. float_of_int n in
+           add left i (x *. (l0 +. ((l1 -. l0) *. a)));
+           add right i (x *. (r0 +. ((r1 -. r0) *. a)))
+         done;
+         c.last_pan <- c.pan;
+         c.kept <- false);
+  List.iter (Hashtbl.remove m.continuous) !gone;
+  let stopped = ref [] in
+  m.loops
+  |> Hashtbl.iter (fun name l ->
+         let len = length l.sound in
+         l.prepare l.pos n;
+         for i = 0 to n - 1 do
+           let fade = if l.stopping then 1. -. (float_of_int i /. float_of_int n) else 1. in
+           add left i (fade *. l.sound.left.(l.pos));
+           add right i (fade *. l.sound.right.(l.pos));
+           l.pos <- (l.pos + 1) mod len
+         done;
+         l.played <- l.played + n;
+         if l.stopping then stopped := name :: !stopped);
+  List.iter (Hashtbl.remove m.loops) !stopped;
+  let ended = ref [] in
+  m.instruments
+  |> Hashtbl.iter (fun name i ->
+         let block : Signal.stereo = { left = Array.make n 0.; right = Array.make n 0. } in
+         i.live.fill block;
+         for k = 0 to n - 1 do
+           let fade = if i.ending then 1. -. (float_of_int k /. float_of_int n) else 1. in
+           add left k (fade *. block.left.(k));
+           add right k (fade *. block.right.(k))
+         done;
+         if i.ending then ended := name :: !ended);
+  List.iter (Hashtbl.remove m.instruments) !ended;
+  let limit (a : Float.Array.t) : Signal.t = Array.init n (fun i -> Mix.soft_clip (Float.Array.get a i)) in
+  let out : Signal.stereo = { left = limit left; right = limit right } in
+  if !stereo then out else Signal.both (Signal.mono out)
+  end
 
 let playing (m : t) : int * int = (List.length m.shots, Hashtbl.length m.continuous)
 let played (m : t) (name : string) : int option = Option.map (fun l -> l.played) (Hashtbl.find_opt m.loops name)

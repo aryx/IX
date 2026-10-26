@@ -252,6 +252,11 @@ val start : unit -> running
  * state for the next call *)
 val continue : running -> voice -> int -> Signal.t * running
 
+(* [continue_into running v out n]: continue's samples in [out]'s
+ * first [n] (the mixer's way: no array of pointers made), the state
+ * for the next call *)
+val continue_into : running -> voice -> Float.Array.t -> int -> running
+
 (* [release running n]: [n] samples of the voice fading from its last
  * volume to 0, when it stops *)
 val release : running -> voice -> int -> Signal.t

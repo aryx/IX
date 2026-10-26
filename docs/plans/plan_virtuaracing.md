@@ -523,5 +523,17 @@ race frame is 53.3M instructions with the sound, 50.1M with the new
 about 190M a second. With `sound=off`, the author: 6 frames a second
 in the race, 9 while the camera turns around the car.
 
-Next: the sound made cheaper (the playground's `Audio`, `lib_audio`'s
-`Synth`), then the frame taken apart on the board.
+Then the sound made cheaper, the same samples (`audio.sh`: the
+playground's bytes; mini-ml's countdown the same bytes as OCaml's):
+`Mixer.pull` mixes in `Float.Array`s (by mini-ml a sample stored in a
+`float array` was a new block and the write barrier), the filter's
+memory one too, `Synth.continue_into` a continuous voice's samples
+with its state in variables (no pair and running a sample), no fold of
+pitch effects when there are none; the old mixing kept
+(`Mixer.flat := false`). A sixtieth of a second of the race's sound:
+3.2M instructions, then about 1.8M (`ml_modify` 551k calls, then
+27k). What is left: `tanh` (the mixer's soft clip, `ml_tanh`'s two
+calls of Plan 9's `exp`: 40% of it), mini-ml's runtime and libc's,
+the other session's.
+
+Next: the frame taken apart on the board.

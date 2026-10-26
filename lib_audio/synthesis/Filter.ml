@@ -89,17 +89,25 @@ let response (f : biquad) (frequency : float) : float = response_at ~rate f freq
 
 (* the four samples of memory: the last two inputs, the last two
  * outputs *)
-type memory = { mutable x1 : float; mutable x2 : float; mutable y1 : float; mutable y2 : float }
+(* ix: x1, x2, y1, y2 in a flat array: by mini-ml, a mutable float
+ * field holds a pointer, and each sample was four new blocks stored
+ * with the write barrier (plan_virtuaracing.md, stage 5).
+ * old: type memory = { mutable x1 : float; mutable x2 : float;
+ *   mutable y1 : float; mutable y2 : float },
+ *   m.x2 <- m.x1; m.x1 <- x; m.y2 <- m.y1; m.y1 <- y *)
+type memory = Float.Array.t
 
 let step (f : biquad) (m : memory) (x : float) : float =
-  let y = (f.b0 *. x) +. (f.b1 *. m.x1) +. (f.b2 *. m.x2) -. (f.a1 *. m.y1) -. (f.a2 *. m.y2) in
-  m.x2 <- m.x1;
-  m.x1 <- x;
-  m.y2 <- m.y1;
-  m.y1 <- y;
+  let x1 = Float.Array.get m 0 and x2 = Float.Array.get m 1 in
+  let y1 = Float.Array.get m 2 and y2 = Float.Array.get m 3 in
+  let y = (f.b0 *. x) +. (f.b1 *. x1) +. (f.b2 *. x2) -. (f.a1 *. y1) -. (f.a2 *. y2) in
+  Float.Array.set m 1 x1;
+  Float.Array.set m 0 x;
+  Float.Array.set m 3 y1;
+  Float.Array.set m 2 y;
   y
 
-let silence () : memory = { x1 = 0.; x2 = 0.; y1 = 0.; y2 = 0. }
+let silence () : memory = Float.Array.make 4 0.
 
 let process (f : biquad) (m : memory) (s : Signal.t) : unit = Array.iteri (fun i x -> s.(i) <- step f m x) s
 

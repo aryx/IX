@@ -13,6 +13,7 @@ the laps, the goal; the four views (`v`); the race's display, the
 title, the course select (the course's miniature), the end's screen.
 Not yet the other two courses, the sound.
 
+    make && ./bin/mini-virtuaracing          # in a window (SDL; scale=, view=, course=0)
     dune build ./games/racing/virtua/Virtua.exe
     ./_build/default/games/racing/virtua/Virtua.exe -dump-frame 3 grid.ppm view=behind
     ./_build/default/games/racing/virtua/Virtua.exe -dump-frame 900 race.ppm -script up:1-900 stats
@@ -26,6 +27,7 @@ The folders (`dune` says which module is where):
 | `course/` | `Track3d` (the road a ribbon), `Heightmap`, `Land`, `Scenery`, `Course` (Big Forest) |
 | `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps), `Screens` (the race's display, the scenes' texts) |
 | `tests/` | `compare.sh`: the title and the grid against the playground's golden frames |
+| `sdl/` | `Virtua.ml` linked with the platform that has a window (dune's alone: `bin/mini-virtuaracing`) |
 
 Its frames are checked by `games/tests/frames.sh` (the sessions
 `racing/virtua/Virtua|...`), the same sums by OCaml's build and mini-ml's.

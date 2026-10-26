@@ -1,0 +1,12 @@
+; mini-virtuaracing in a window on Linux (SDL): ../Virtua.ml, the same
+; text, linked with the platform that has a window
+; (lib_playground/platforms/sdl). Dune's alone: SDL is outside what
+; mini-ml compiles, as mini-quake's window.
+;   dune exec games/racing/virtua/sdl/Virtua.exe     (view=, scale=...: Virtua.ml)
+(copy_files ../Virtua.ml)
+(executable
+ (name Virtua)
+ (public_name mini-virtuaracing)
+ (package ix)
+ (libraries ix_virtua ix_graphics_geometry ix_playground ix_playground_sdl ix_core caps unix))
+(include_subdirs no)

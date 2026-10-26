@@ -72,7 +72,7 @@ Each program in IX comes in two versions:
   make are the ones Plan 9's compiler and linker make. Together, the
   mini programs are **m-IX** (a nod to Knuth's MIX computer).
 - **tiny** (`tiny-build`, `tiny-shell`, `tiny-c`, ...): a free
-  variant, in a single file under [`tiny/`](tiny/) (the four largest
+  variant, in a single file under [`tiny/`](tiny/) (the largest
   with their parts in a directory beside it). It is named after
   what it does, not after the original. It keeps the idea of the
   original and redesigns the rest, now that compatibility no longer

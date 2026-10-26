@@ -1,7 +1,8 @@
 // tiny/TinyKernel/: what the code map says of it (the code map: tinybox
 // codemap, ~/github/ocaml-elm-playground; its guidelines:
 // docs/claude_notes/codemapconfig_guidelines.md there). The kernel
-// itself is ../TinyKernel.ml; entry.tm (_entry, k_run, the trap, the
+// itself is ../TinyKernel.ml, the boot, and its parts here (TinyKernelMachine.ml to
+// TinyKernelScheduler.ml); entry.tm (_entry, k_run, the trap, the
 // timer, the window) and end.tm are assembly, not sources to the map.
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
@@ -21,6 +22,49 @@
       ],
       related: ['../TinyKernel.ml', '../TinyMLRuntime/core.c', 'entry.tm', 'Makefile', 'check.expected'],
     },
+    // TinyKernel.ml's parts, in their order (TinyKernel.mli)
+    'TinyKernelMachine.ml': { digest: '40c81bff414f',
+      summary: "The kernel's machine: entry.tm's, memory.tm's and runtime.c's externals, the devices' addresses at the top of memory.",
+      important: [
+        { at: 'def:k_run', say: "entry.tm's: a process run, the trap's cause back", weight: 2 },
+      ],
+    },
+    'TinyKernelFiles.ml': { digest: '6d570c08697d',
+      summary: "The files: a tree of ML values, the image's, /dev's, the disk's, unions of them; what a descriptor's file can be.",
+      important: [
+        { at: 'type:node', say: 'the files: a tree of ML values; the disk a node too', weight: 2 },
+      ],
+    },
+    'TinyKernelProcs.ml': { digest: 'bcd8f0aed1bf',
+      summary: "Processes: a slot, a memory, descriptors; a waiting one's state the rest of its call; the user's memory reached, checked.",
+      important: [
+        { at: 'type:state', say: 'Waiting holds the rest of the call', weight: 3 },
+      ],
+    },
+    'TinyKernelCalls.ml': { digest: 'be36c555fff8',
+      summary: 'The system calls, a match on the number; a call that must wait left a closure the scheduler retries.',
+      capitals: [
+        { at: 'def:block', say: 'waiting as a closure the scheduler retries: no sleep, no wakeup' },
+      ],
+      important: [
+        { at: 'def:block', weight: 3 },
+        { at: 'def:syscall', weight: 2 },
+        { at: 'def:sys_fork', say: 'fork: a partition copied', weight: 1 },
+      ],
+    },
+    'TinyKernelScheduler.ml': { digest: 'ae0fd55d0027',
+      summary: "The scheduler: round robin, preemptive, on one core or several; the interrupts taken between two runs.",
+      capitals: [
+        { at: 'def:run', say: 'the kernel calls a process: k_run returns at its trap' },
+      ],
+      important: [
+        { at: 'def:schedule', say: 'round robin, preemptive, never returns', weight: 2 },
+        { at: 'def:run', weight: 3 },
+      ],
+      links: [
+        { from: 'def:schedule', to: 'def:run' },
+      ],
+    },
   },
   skeletons: [
     {
@@ -29,14 +73,14 @@
         { at: 'runtime.c:def:kmain', role: "called by entry.tm's _entry" },
         { at: '../TinyMLRuntime/core.c:def:ml_run', role: "TinyML's runtime: the memory set, the program run" },
         { at: '../TinyKernel.ml:section:The boot', role: "the kernel's toplevel: files, /bin/sh" },
-        { at: '../TinyKernel.ml:def:schedule', role: 'the loop' },
+        { at: 'TinyKernelScheduler.ml:def:schedule', role: 'the loop' },
         { at: 'runtime.c:def:peek', role: 'the memory, as externals' },
       ],
       joints: [
         { from: 'runtime.c:def:kmain', to: '../TinyMLRuntime/core.c:def:ml_run', say: 'the heap, the value stack' },
         { from: '../TinyMLRuntime/core.c:def:ml_run', to: '../TinyKernel.ml:section:The boot', say: 'ml_init' },
-        { from: '../TinyKernel.ml:section:The boot', to: '../TinyKernel.ml:def:schedule', say: '/bin/sh' },
-        { from: '../TinyKernel.ml:def:schedule', to: 'runtime.c:def:peek', say: 'registers, frames' },
+        { from: '../TinyKernel.ml:section:The boot', to: 'TinyKernelScheduler.ml:def:schedule', say: '/bin/sh' },
+        { from: 'TinyKernelScheduler.ml:def:schedule', to: 'runtime.c:def:peek', say: 'registers, frames' },
       ],
     },
   ],

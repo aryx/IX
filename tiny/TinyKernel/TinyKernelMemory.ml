@@ -45,7 +45,7 @@ and text = {
 let used = ref []
 let next_sid = ref 1
 
-(* no partition free now (TinyKernel.ml's with_room waits for one) *)
+(* no partition free now (TinyKernelCalls's with_room waits for one) *)
 exception No_room
 
 let mem_empty () =

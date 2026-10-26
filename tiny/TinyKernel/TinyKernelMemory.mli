@@ -37,7 +37,7 @@
  * linked (ld's 32 MB was too small for bin/ml's link: 48 now); the
  * block is not zeroed (exec writes the image only: zeroing ml's 32 MB
  * cost 35 million instructions an exec); there is no swapping, so a
- * fork or an exec with no room waits (TinyKernel.ml's with_room).
+ * fork or an exec with no room waits (TinyKernelCalls's with_room).
  *
  * Segments (the boot's choice: /lib/memory says segments; the
  * Makefile's MEMORY=segments) split a process in two, its text and
@@ -81,7 +81,7 @@
  * to write gets a copy, or the page back writable when it is the last
  * user. The kernel writes a process's page only after it made the page
  * the process's own ([mem_writable], a breakpoint's [mem_store]); it
- * reaches a buffer a page at a time ([mem_pieces], TinyKernel.ml's
+ * reaches a buffer a page at a time ([mem_pieces], TinyKernelCalls's
  * bounce for read and write). The machine translates user mode's
  * addresses only (satp's user-only bit), the kernel's staying
  * physical, and keeps them in a cache emptied at each run (k_window
@@ -212,7 +212,7 @@ val mem_address : space -> int -> int -> int
  * length) each; None if they are not all the process's. One piece for
  * a partition; two with segments when they cross from the text to the
  * data; with pages, a piece a page (the frames are anywhere):
- * for a buffer, the kernel goes by them (TinyKernel.ml's user_iter) *)
+ * for a buffer, the kernel goes by them (TinyKernelProcs's user_iter) *)
 val mem_pieces : space -> int -> int -> (int * int) list option
 
 (* [mem_writable sp va n]: whether the kernel may write those bytes for

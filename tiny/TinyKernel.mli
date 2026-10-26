@@ -140,11 +140,22 @@
  *     core 0's interrupt; waits               P or another given to k
  *                               <── k's interrupt (frame, window, slice)
  *
+ * The kernel is several files, one program for tiny-ml, in this order
+ * (TinyKernel/Makefile's KML). First what it stands on: TinyMemory (the
+ * machine's bytes), TinyKernelGraphics, TinyKernelNetwork,
+ * TinyKernelAudio, TinyKernelFS, TinyKernelMemory. Then its own parts,
+ * once this file's sections: TinyKernelMachine (the externals, the
+ * devices' addresses), TinyKernelFiles (the tree of files, what a
+ * descriptor is), TinyKernelProcs, TinyKernelDevices (the screen, the
+ * mouse, the clock, the speaker), TinyKernelIO (reads and writes),
+ * TinyKernelCalls (the system calls), TinyKernelScheduler. This file is
+ * the boot.
+ *
  * Here is how the kernel divides the machine's 256 MB (runtime.c has
  * the numbers; a process sees only its own partition, starting at 0,
  * thanks to the machine's relocating window):
  *
- *     0x000000   the image: entry.tm, the runtime, this file; then the
+ *     0x000000   the image: entry.tm, the runtime, the kernel; then the
  *                files it carries, each a name, a size, the bytes
  *                (10 MB at most: /src, the sources, are among them)
  *     0xa00000   the file system's buffers and its map of the

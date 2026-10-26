@@ -12,7 +12,7 @@ written after its faithful twin and from what that one taught. The
 files, children and pipes they share with the twins come from
 `lib_core/` (`FS`, `Procs`), not copied into each.
 
-The four largest are a file and a directory of its parts, as a
+The largest are a file and a directory of its parts, as a
 module past some 700 lines is elsewhere in ix: `TinyC.ml` and
 `TinyC/` (the types, the tokens, the typed tree, the stack machine,
 the parser, TinyCPU's code), `TinyML.ml` and `TinyML/` (the tokens,
@@ -23,7 +23,11 @@ and `TinyBrowser/` (the reading of a page: the characters, the
 tokens, the lines, the tags; the addresses). The file is the program
 and its `.mli` the place to start; the parts are its units, compiled
 before it by OCaml (a library of their own in the directory's `dune`)
-and by tiny-ml (`TinyKernel/Makefile`'s units, in their order).
+and by tiny-ml (`TinyKernel/Makefile`'s units, in their order). The
+kernel is the same: `TinyKernel.ml` the boot, its parts in
+`TinyKernel/` beside those it had already (the machine, the files,
+the processes, the devices, the reads and writes, the system calls,
+the scheduler), one program for tiny-ml (`KML`), never OCaml's.
 
 A program's `.mli` is where to start: its header comment (the idea,
 a diagram, the history, the references: `docs/tags.md`), then `main`

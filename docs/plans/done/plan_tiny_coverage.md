@@ -5,6 +5,14 @@ m-ix ?"; of plan_tiny_gaps.md, which looks inside each tiny program for
 what a person misses: "I don't think this plan document address my
 question"; then "yes, write plan_tiny_coverage.md".
 
+**Status: done** (moved to done/ on 2026-10-26): section 4's order
+followed to its end. 1, grep and sort (tr and sed dropped); 2,
+tiny-yacc and tiny-lex, dropped; 3, tiny-troff (`tiny/TinyTroff.ml`);
+4, the spreadsheet, as a part of tiny-office (plan_tiny_office.md);
+5, sound, a plan of its own (plan_tiny_audio.md). Left: uniq (never
+written, 10 to 20 lines), and date, ps and kill, which need calls of
+tiny-kernel (3.1).
+
 **Step 1 started (2026-10-16)**: grep and sort are in tiny-utils (the
 author: "let's start with the filter: grep, sort, and later on an app
 like a spreadsheet and word document; ideally we could do a

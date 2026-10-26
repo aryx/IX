@@ -8,6 +8,12 @@ diagram, etc with very few LOC?"; then "let's commit the plan"; then "yes but a 
 do with the produced document?" (section 4), and "yes add it to the
 plan and commit".
 
+**Status: done** (2026-10-17; moved to done/ on 2026-10-26): steps 0
+to 6 done, `tiny/TinyOffice.ml` and `tiny/TinyTroff.ml`, documented in
+docs/manuals/t-ix.md §7.7 to §7.10. What is left are section 4's and
+5's choices: other people's documents (.docx, .xlsx), ovals and
+slanted lines in the drawing, fonts and sizes, spelling.
+
 m-ix has mini-office (`apps/office/`, about 5,200 lines): a document of
 parts (text, sheet, picture, drawing, chart), each "a record of
 functions" (Office.ml's header), on lib_gui and the playground. t-ix

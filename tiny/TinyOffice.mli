@@ -1,5 +1,5 @@
 (* tiny-office: a page of objects, each a kind of document in a box,
- * in one program (docs/plans/plan_tiny_office.md).
+ * in one program (docs/plans/done/plan_tiny_office.md).
  *
  * Its full-size counterpart in m-ix is mini-office (apps/office/,
  * about 5,200 lines): a document of parts (text, sheet, picture,

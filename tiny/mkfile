@@ -151,6 +151,8 @@ clean:V:
 
 # the units' order (mkfiles/depend.rc): mini-mk depend after a build;
 # beside the lines above, those of each unit that names another here
+# (TinyBrowser, TinyOffice, TinyTroff, TinyKernel are tiny-ml's: no
+# lines)
 depend:V:
-	$RC $TOP/mkfiles/depend.rc '$D' . TinyMachine TinyKernel TinyKernel/host TinyKernel/steps/t6 $D -- `{ls *.ml TinyMachine/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'} > .depend
+	$RC $TOP/mkfiles/depend.rc '$D' . TinyMachine TinyML TinyC TinyKernel TinyKernel/host TinyKernel/steps/t6 $D -- `{ls *.ml TinyMachine/*.ml TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'} > .depend
 <.depend

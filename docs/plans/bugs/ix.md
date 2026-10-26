@@ -264,3 +264,9 @@ their SIMD and more are beyond its subset (plan_arm.md).
 | program | input | what it does | where, why |
 |---|---|---|---|
 | mini-ml's runtime (arm) | `Array.make 8_219_262 0.` (mini-doom's first song rendered whole by `Audio.midi`, `Music.render_score`: 186 s of samples) | a block whose header says another size (8,219,262 words in the 22 bits of a 32-bit header's size); with the young generation the collector then walks garbage, a fault in `copy` at mini-doom's start under qemu-arm and on the card; before, the same header, unnoticed | OCaml raises `Invalid_argument "Array.make"` past `Max_wosize` (4M words on 32 bits); mini-ml's `make_vect` checked only n < 0. Fixed: `make_vect` and `create_string` raise as OCaml's, `ml_alloc` refuses any other (a fatal error); `tests/runtime/too_large.ml`. And mini-doom's music is `Audio.play_midi`, a block at a time (`Music.play_score`), as `play_ogg` and `play_module` are. Found by a check written for it: before each minor collection, every old field pointing to a young block must be remembered (not kept) |
+
+## mini-ld (arm64): a register index dropped (2026-10-26, plan_ml_speed.md's stage 2)
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| mini-asm and mini-ld, arm64 | `MOVBU (R1)(R2), R3` and `MOVB R3, (R1)(R2)` (7a's register offset), tried for a byte at an untagged index | assembled and linked without a word: `ldrb w3, [x1]` and `strb w3, [x1]`, the index gone | mini-asm parses the index (Parser_asm's `index`), Arm64.aclass classifies a memory operand by its base and offset alone (7l's register-offset loads and stores are not there). Nothing in the tree used the form (Emit adds the index into a register first). Now an error, `a register index: not on arm64`; the encodings themselves (LDRB/STRB register, 0x38606800 and 0x38206800) not added |

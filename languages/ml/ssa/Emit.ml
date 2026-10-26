@@ -48,6 +48,9 @@ let tagged m n =
   let v = Int64.add (Int64.mul 2L (Int64.of_int n)) 1L in
   if m.w = 4 then Int64.of_int32 (Int64.to_int32 v) else v
 
+(* an untagged integer's constant (Untag), as tagged's: the target's word *)
+let untagged m n = Int64.shift_right (tagged m n) 1
+
 let round n a = (n + a - 1) / a * a
 let labels = ref 0 and funcs = ref 0
 let glabel () = incr labels; sprintf "Q%d" !labels
@@ -129,6 +132,11 @@ let func m out (fn : func) (lf : L.func) =
   let get_slot i r = line (fun f _ _ -> let pre, a = slot_ref f i in sprintf "%s\t%s\t%s, R%d\n" pre mov a r) in
   let put_slot r i = line (fun f _ _ -> let pre, a = slot_ref f i in sprintf "%s\t%s\tR%d, %s\n" pre mov r a) in
   let vreg c = List.nth vregs c in
+  (* an untagged integer (Untag): a word the collector must not read, in
+   * memory a slot of the machine stack, a double's (Alloc's Dmem) *)
+  let raw v = Hashtbl.mem fn.raws v in
+  let wget k r = line (fun _ _ c -> sprintf "\t%s\t%d(%s), R%d\n" mov (c + (4 * w * !tries) + (8 * k)) m.sp r) in
+  let wput r k = line (fun _ _ c -> sprintf "\t%s\tR%d, %d(%s)\n" mov r (c + (4 * w * !tries) + (8 * k)) m.sp) in
   (* v's register: its own, or v loaded into s *)
   let src v s =
     match loc v with
@@ -141,6 +149,7 @@ let func m out (fn : func) (lf : L.func) =
          | Symb y -> ins "%s\t$%s(SB), R%d" mov y s
          | _ -> ins "%s\t$0, R%d" mov s);
         s
+    | Dmem k when raw v -> wget k s; s
     | Dmem _ -> failwith (fn.name ^ ": ssa: a word in a double's slot")
   in
   (* into register d: v, wherever it is *)
@@ -148,7 +157,11 @@ let func m out (fn : func) (lf : L.func) =
   (* the register to compute v in; then v put where it lives *)
   let dst v s = match loc v with Alloc.Reg c -> vreg c | _ -> s in
   let finish v r = match loc v with Alloc.Reg c -> if vreg c <> r then ins "%s\tR%d, R%d" mov r (vreg c) | Mem i -> put_slot r i | Nil -> ()
+    | Dmem k when raw v -> wput r k
     | Dmem _ -> failwith (fn.name ^ ": ssa: a word in a double's slot") in
+  (* an operand of an untagged operation: its register, or its constant
+   * untagged *)
+  let rsrc v s = match Hashtbl.find fn.defs v with Const n -> ins "%s\t$%Ld, R%d" mov (untagged m n) s; s | _ -> src v s in
   (* a call's arguments: in R0.., those past the registers in the
    * callee's slots, above the top, and for a tail call copied down
    * into this frame's (simple's Gen, its Call) *)
@@ -386,6 +399,19 @@ let func m out (fn : func) (lf : L.func) =
   in
   let prim v (p : L.t) xs =
     match p, xs with
+    (* an untagged byte (Untag): as below, its result not tagged, its index
+     * as it is when untagged *)
+    | ByteGet checked, [ s; i ] when raw v ->
+        let a = src s r1 in let b = src i r2 in let d = dst v r3 in
+        if (not checked) && m.arch = Arm then
+          ins "MOVBU\tR%d%s(R%d), R%d" b (if raw i then "<<0" else "->1") a d
+        else begin
+          if raw i then ins "%s\tR%d, R%d" mov b t else ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+          if checked then byte_bound a;
+          ins "ADD\tR%d, R%d" a t;
+          ins "MOVBU\t0(R%d), R%d" t d
+        end;
+        finish v d
     (* a string's byte: the index untagged and added to its address *)
     (* OPTIMIZATION: on arm, an unchecked byte's address is the
      * instruction's, the index untagged by the shift of its register
@@ -397,10 +423,12 @@ let func m out (fn : func) (lf : L.func) =
         ins "%s\t$1, R%d" (shift Lsl) d;
         ins "ORR\t$1, R%d" d;
         finish v d
+    (* (an untagged index or byte, Untag's, as it is: R2<<0(R1), the
+     * byte's register stored) *)
     | ByteSet false, [ s; i; x ] when m.arch = Arm ->
         let a = src s r1 in let b = src i r2 in let c = src x r3 in
-        ins "%s\t$1, R%d, R%d" (shift Asr) c t;
-        ins "MOVB\tR%d, R%d->1(R%d)" t b a
+        let c = if raw x then c else (ins "%s\t$1, R%d, R%d" (shift Asr) c t; t) in
+        if raw i then ins "MOVB\tR%d, R%d<<0(R%d)" c b a else ins "MOVB\tR%d, R%d->1(R%d)" c b a
     | ByteGet checked, [ s; i ] ->
         let a = src s r1 in let b = src i r2 in let d = dst v r3 in
         ins "%s\t$1, R%d, R%d" (shift Asr) b t;
@@ -412,12 +440,12 @@ let func m out (fn : func) (lf : L.func) =
         finish v d
     | ByteSet checked, [ s; i; x ] ->
         let a = src s r1 in let b = src i r2 in
-        ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        if raw i then ins "%s\tR%d, R%d" mov b t else ins "%s\t$1, R%d, R%d" (shift Asr) b t;
         if checked then byte_bound a;
         let c = src x r3 in
         ins "ADD\tR%d, R%d" a t;
-        ins "%s\t$1, R%d, R%d" (shift Asr) c r3;
-        ins "MOVB\tR%d, 0(R%d)" r3 t
+        let c = if raw x then c else (ins "%s\t$1, R%d, R%d" (shift Asr) c r3; r3) in
+        ins "MOVB\tR%d, 0(R%d)" c t
     (* its words' bytes, less one, less what its last byte says *)
     | StrLen, [ s ] ->
         let a = src s r1 in let d = dst v r2 in
@@ -753,6 +781,46 @@ let func m out (fn : func) (lf : L.func) =
           ins "BL\tml_alloc(SB)";
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
           finish v 0
+      (* the untagged integers (Untag): tagged where read as a word; an
+       * operation on them as on machine words; a tagged value plus or minus
+       * one, the register shifted, t + 2n *)
+      | Tag x -> let a = src x r1 in let d = dst v r2 in ins "ADD\tR%d, R%d, R%d" a a d; ins "ORR\t$1, R%d" d; finish v d
+      | Op (Asr, [ x; y ]) when raw v ->
+          let k = match Hashtbl.find fn.defs y with Const k -> k | _ -> failwith (fn.name ^ ": ssa: an untagged shift") in
+          let a = src x r1 in let d = dst v r3 in
+          ins "%s\t$%d, R%d, R%d" (shift Asr) (min ((8 * w) - 1) (if raw x then k else k + 1)) a d;
+          finish v d
+      | Op (Lsl, [ x; y ]) when raw v ->
+          let k = match Hashtbl.find fn.defs y with Const k -> k | _ -> failwith (fn.name ^ ": ssa: an untagged shift") in
+          let a = src x r1 in let d = dst v r3 in
+          ins "%s\t$%d, R%d, R%d" (shift Lsl) k a d;
+          finish v d
+      | Op (And, [ x; y ]) when raw v ->
+          let c, x =
+            match Hashtbl.find fn.defs y, Hashtbl.find fn.defs x with
+            | Const c, _ -> c, x
+            | _, Const c -> c, y
+            | _ -> failwith (fn.name ^ ": ssa: an untagged and")
+          in
+          let a = src x r1 in let d = dst v r3 in
+          ins "AND\t$%Ld, R%d, R%d" (untagged m c) a d;
+          finish v d
+      | Op ((Add | Sub) as o, [ x; y ]) when raw v ->
+          let name = if o = Add then "ADD" else "SUB" in
+          let d = dst v r3 in
+          (match Hashtbl.find fn.defs y, Hashtbl.find fn.defs x with
+           | Const c, _ -> let a = src x r1 in ins "%s\t$%Ld, R%d, R%d" name (untagged m c) a d
+           | _, Const c when o = Add -> let b = src y r2 in ins "ADD\t$%Ld, R%d, R%d" (untagged m c) b d
+           | _ -> let a = rsrc x r1 in let b = rsrc y r2 in ins "%s\tR%d, R%d, R%d" name b a d);
+          finish v d
+      | Op ((Add | Sub) as o, [ x; y ]) when raw y ->
+          let a = src x r1 in let b = src y r2 in let d = dst v r3 in
+          ins "%s\tR%d<<1, R%d, R%d" (if o = Add then "ADD" else "SUB") b a d;
+          finish v d
+      | Op (Add, [ x; y ]) when raw x ->
+          let a = src x r1 in let b = src y r2 in let d = dst v r3 in
+          ins "ADD\tR%d<<1, R%d, R%d" a b d;
+          finish v d
       | Op (Poly r, [ x; y ]) ->
           (* integers compared here, the others by the runtime *)
           let slow = glabel () and ok = glabel () in
@@ -882,11 +950,17 @@ let func m out (fn : func) (lf : L.func) =
    | Arm -> if f > fn.nparams + 1 then pr "\tMOVW\t$0, R%d\n" t; for i = fn.nparams + 1 to f - 1 do pr "\tMOVW\tR%d, %s\n" t (snd (slot_ref f i)) done);
   List.iter (fun l -> Buffer.add_string out (l f msize c)) (List.rev !lines)
 
+(* the SSA form Emit compiles: built, its floats unboxed, its integers
+ * untagged where they can be *)
+let ssa (arch : Asm.arch) (lf : L.func) =
+  let m = match arch with Arm -> arm | Arm64 -> arm64 in
+  Untag.func ~bits:((8 * m.w) - 1) (Unbox.func (Ssa_build.func lf))
+
 let unit_ (arch : Asm.arch) (u : L.unit_) =
   let m = match arch with Arm -> arm | Arm64 -> arm64 in
   let out = Buffer.create 65536 in
   List.iter (fun (lf : L.func) ->
-    let fn = Unbox.func (Ssa_build.func lf) in
+    let fn = ssa arch lf in
     Ssa_build.check fn;
     func m out fn lf) u.funcs;
   Buffer.contents out

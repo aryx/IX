@@ -14,5 +14,9 @@
  * and its link alone (false: every function both, as simple's) *)
 val small_frames : bool ref
 
+(* a function's SSA form as compiled: built (Ssa_build), its floats
+ * unboxed (Unbox), its integers untagged (Untag); mini-ml -dssa's *)
+val ssa : Asm.arch -> Ir.func -> Ssa.func
+
 (* a unit's functions; the data are simple's Gen's *)
 val unit_ : Asm.arch -> Ir.unit_ -> string

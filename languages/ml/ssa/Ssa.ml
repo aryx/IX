@@ -98,6 +98,9 @@ type ins =
   | Unbox of value
   | Box of value
   | Dprim of Ir.t * value list
+  (* an integer not tagged (Untag): its tagged word, 2n+1, where a word
+   * is read *)
+  | Tag of value
 
 type term =
   | Jmp of int
@@ -115,11 +118,13 @@ type block = {
   mutable preds : int list;
 }
 
-(* doubles: the values that are doubles, not words (Unbox's) *)
+(* doubles: the values that are doubles, not words (Unbox's); raws:
+ * the integers not tagged, each with a bound on its bits (Untag's) *)
 type func = {
   name : string;
   nparams : int;
   blocks : block array;
   defs : (value, ins) Hashtbl.t;
   doubles : (value, unit) Hashtbl.t;
+  raws : (value, int) Hashtbl.t;
 }

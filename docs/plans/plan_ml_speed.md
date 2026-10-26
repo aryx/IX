@@ -232,3 +232,51 @@ Left of the stage: the build's time (inlining's code, 12 s of 15);
 the comparisons that make a boolean before branching on a float's
 (`Emit`'s fused is the integers'), stage 3's. Ledger: mini-ml +473
 (Summary 171 of them), the mkfiles +146, 74 `.depend`.
+
+2026-10-26, **stage 2 done** (the author: "let's do it"), not committed
+yet. `ssa/Untag.mli`: an integer not tagged inside a function where
+its bits are known small (no wrap where the tagged value would): a
+byte read (8 bits), `x asr k` by a constant (one shift of the tagged x
+by k + 1), `x land c` of an untagged x, sums and `lsl` of untagged
+values while within 30 bits (arm) or 62 (arm64); read as it is by an
+untagged operation, as a byte's index or the byte stored, and by a
+tagged value plus or minus it (`ADD R2<<1, R1, R3`); tagged once after
+its definition wherever else (`Ssa.Tag`). A value kept only while
+something reads it untagged (but a byte read). In memory, a slot of
+the machine stack (Alloc's Dmem): the collector does not scan it.
+`-tagged-ints` off; `-dssa` says each value's bits. The full version,
+every int untagged, was weighed and not done: a sum that may pass 31
+bits must be brought back (two instructions) before a comparison, a
+shift or a division, and mini-doom's `xfrac`, a sum shifted, gained
+nothing.
+
+mini-doom's span: 35 instructions a pixel to 25 (`SRA $17`, `AND $63`,
+`SRA $11`, `AND $4032`, an `ADD`, the flat's byte at its untagged
+index, `ADD R8<<1` for `cmap +`, the colormap's byte stored as it is);
+the column 29 to 21. What is left in both: the slots reloaded at each
+turn (6 of 25: stage 3).
+
+Found on the way: mini-asm and mini-ld for arm64 took `MOVBU (R1)(R2)`,
+a register index, for `0(R1)`, the index dropped without a word; now
+an error (docs/plans/bugs/ix.md). Nothing used the form.
+
+Arm, mini-5i, against 88b5dda9 (stage 1), the frames the same bytes:
+
+| | stage 1 | stage 2 | |
+|---|---:|---:|---:|
+| mini-doom, a frame (31 to 121) | 10,047,326 | 9,458,531 | 0.941 |
+| mini-quake, a frame | 24,827,561 | 24,329,146 | 0.980 |
+| mini-virtuaracing, a frame | 32,987,537 | 32,987,537 | 1 (its floats) |
+| mini-ml compiling its three units | 6,910,466,819 | 6,799,674,655 | 0.984 |
+| bench: pixels | 28.95 million | 26.65 | 0.920 |
+| bench: the others | | the same | |
+
+Checked: tests/runtime (new: `untagged.ml`, shifts of negative values,
+masks a constant the instruction cannot hold, sums near and past an
+int's bound, a value across a call and an allocation, checked bytes at
+untagged indexes: the same at -O0 and -O3 on arm and arm64) and
+tests/tiny on arm and arm64 at -O3, with ML_HEAP=64 and ML_YOUNG=256
+(arm's arith, strings and gc's timeout as before); mini-ml by mini-ml
+writes the same assembly as by OCaml (Untag, Emit, Alloc, Lower,
+Typing, CLI, arm and arm64); `make test-lite` in a worktree, 72 jobs, 0
+failures. Ledger: mini-ml +272 (Untag 174 of them with its .mli).

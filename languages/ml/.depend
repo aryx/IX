@@ -8,6 +8,7 @@ $D/Lower.$O: $D/Resolve.$O
 $D/Lower.$O: $D/Summary.$O
 $D/Ssa_build.$O: $D/Ir.$O
 $D/Unbox.$O: $D/Ssa_build.$O
+$D/Untag.$O: $D/Ssa_build.$O
 $D/Alloc.$O: $D/Ssa_build.$O
 $D/Gen.$O: $D/Lower.$O
 $D/Emit.$O: $D/Alloc.$O
@@ -15,6 +16,7 @@ $D/Emit.$O: $D/Gen.$O
 $D/Emit.$O: $D/Lower.$O
 $D/Emit.$O: $D/Ssa_build.$O
 $D/Emit.$O: $D/Unbox.$O
+$D/Emit.$O: $D/Untag.$O
 $D/Ssa_facts.$O: $D/Alloc.$O
 $D/Ssa_facts.$O: $D/Ssa_build.$O
 $D/CLI.$O: $D/Alloc.$O
@@ -36,4 +38,5 @@ $D/CLI.$O: $D/Ssa_facts.$O
 $D/CLI.$O: $D/Summary.$O
 $D/CLI.$O: $D/Typing.$O
 $D/CLI.$O: $D/Unbox.$O
+$D/CLI.$O: $D/Untag.$O
 $D/Main.$O: $D/CLI.$O

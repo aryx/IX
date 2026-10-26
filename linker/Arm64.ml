@@ -250,6 +250,9 @@ let aclass ctx (p : prog) (a : A.operand option) : cls * int64 =
         else LCON
       in
       c, v
+  (* (a register index, (R1)(R2): not 7l's here; it was taken for 0(R1),
+   * the index dropped, docs/plans/bugs/ix.md) *)
+  | Some (A.Mem { index = Some _; _ }) -> let f, l = p.where in error "%s:%d: a register index: not on arm64" f l
   (* MOV.W and MOV.P: pre- and post-indexed *)
   | Some (A.Mem { base = R _; off; _ }) when List.mem "W" p.suffixes -> XPRE, off
   | Some (A.Mem { base = R _; off; _ }) when List.mem "P" p.suffixes -> XPOST, off

@@ -194,7 +194,10 @@ let alloc (fn : func) ~nregs ~nfregs ~base =
    * at its first test.
    * old: a slot each, the next one *)
   let shared = Hashtbl.create 64 in
-  let in_slot v = word v && real v && (match def v with Param _ -> false | _ -> true) && not (Hashtbl.mem color v) && not (dead v) in
+  let in_slot v =
+    word v && real v && (match def v with Param _ -> false | _ -> true) && not (Hashtbl.mem color v) && not (dead v)
+    && not (Hashtbl.mem fn.raws v)
+  in
   let held s = IS.fold (fun x acc -> match Hashtbl.find_opt shared x with Some c -> IS.add c acc | None -> acc) s IS.empty in
   let pick busy = let rec go c = if IS.mem c busy then go (c + 1) else c in go 0 in
   let rec walk b =
@@ -221,6 +224,12 @@ let alloc (fn : func) ~nregs ~nfregs ~base =
         | None -> (match Hashtbl.find_opt slots v with Some s -> Dmem s | None -> let s = !dnext in incr dnext; Hashtbl.replace slots v s; Dmem s))
     | Param i ->
         (match Hashtbl.find_opt color v with Some c -> Reg c | None -> Mem i)
+    (* an untagged integer (Untag) without a register: a slot the
+     * collector does not scan, a double's *)
+    | _ when Hashtbl.mem fn.raws v -> (
+        match Hashtbl.find_opt color v with
+        | Some c -> Reg c
+        | None -> (match Hashtbl.find_opt slots v with Some s -> Dmem s | None -> let s = !dnext in incr dnext; Hashtbl.replace slots v s; Dmem s))
     | _ -> (
         match Hashtbl.find_opt color v with
         | Some c -> Reg c

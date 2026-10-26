@@ -276,6 +276,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
     "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
     "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";
+    "-tagged-ints", Arg.Clear Untag.on, " -ssa: every integer tagged, none untagged in a register (Untag)";
     "-boxed-floats", Arg.Clear Unbox.on, " -ssa: every float a block, none a double in a register (Unbox)";
     "-ssa-stack", Arg.Set ssa_stack, " through the SSA form and back";
     "-dast", Arg.Set dast, " dump the tree";
@@ -362,7 +363,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->
-                    if !dssa then List.iter (fun fn -> print caps (Ssa_build.show (Unbox.func (Ssa_build.func fn)))) u.funcs;
+                    if !dssa then List.iter (fun fn -> print caps (Ssa_build.show (Emit.ssa (Gen.arch !mach) fn))) u.funcs;
                     if !flow then List.iter (fun fn -> print caps (Ssa_facts.func (Ssa_build.func fn))) u.funcs;
                     if !dflow then List.iter (fun fn -> print caps (Ssa_facts.own (Ssa_build.func fn))) u.funcs;
                     if !dir then

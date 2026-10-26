@@ -196,7 +196,7 @@ let build (f : L.func) =
     filled.(id) <- true;
     seal_ready ()) blocks;
   Array.iteri (fun b s -> if not s then seal b) sealed;
-  { name = f.name; nparams = f.nparams; blocks; defs; doubles = Hashtbl.create 1 }
+  { name = f.name; nparams = f.nparams; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1 }
 
 (*****************************************************************************)
 (* Trivial phis out *)
@@ -205,7 +205,7 @@ let build (f : L.func) =
 let operands = function
   | Const _ | Zero | Blk _ | Symb _ | Param _ | GetG _ | Slot _ | Caught _ | TryExit _ -> []
   | Phi ops -> List.map snd ops
-  | SetG (_, v) | SetSlot (_, v) | Field (_, v) | Unbox v | Box v -> [ v ]
+  | SetG (_, v) | SetSlot (_, v) | Field (_, v) | Unbox v | Box v | Tag v -> [ v ]
   | SetField (_, a, b, _) | Index (a, b) -> [ a; b ]
   | SetIndex (a, b, c, _) -> [ a; b; c ]
   | Alloc (_, vs) | Op (_, vs) | Call (_, vs) | CallC (_, vs) | Prim (_, vs) | Dprim (_, vs) -> vs
@@ -225,6 +225,7 @@ let map_ins f = function
   | Prim (p, vs) -> Prim (p, List.map f vs)
   | Unbox v -> Unbox (f v)
   | Box v -> Box (f v)
+  | Tag v -> Tag (f v)
   | Dprim (p, vs) -> Dprim (p, List.map f vs)
   | i -> i
 
@@ -356,6 +357,7 @@ let show_ins ins =
       Printf.sprintf "%s%s %s" name (match ins with Dprim _ -> "(d)" | _ -> "") (vs l)
   | Unbox v -> Printf.sprintf "unbox v%d" v
   | Box v -> Printf.sprintf "box v%d" v
+  | Tag v -> Printf.sprintf "tag v%d" v
   | Caught k -> Printf.sprintf "caught %d" k
   | TryExit k -> Printf.sprintf "untry %d" k
 
@@ -372,7 +374,9 @@ let show (fn : func) =
   Printf.bprintf b "%s:\n" fn.name;
   Array.iter (fun (bl : block) ->
     Printf.bprintf b "b%d:%s\n" bl.id (if bl.preds = [] then "" else "\t\t; from " ^ String.concat " " (List.map (Printf.sprintf "b%d") bl.preds));
-    List.iter (fun v -> Printf.bprintf b "\tv%d = %s\n" v (show_ins (Hashtbl.find fn.defs v))) (bl.phis @ bl.body);
+    List.iter (fun v ->
+      Printf.bprintf b "\tv%d = %s%s\n" v (show_ins (Hashtbl.find fn.defs v))
+        (match Hashtbl.find_opt fn.raws v with Some n -> Printf.sprintf "\t; untagged, %d bits" n | None -> "")) (bl.phis @ bl.body);
     Printf.bprintf b "\t%s\n" (show_term bl.term)) fn.blocks;
   Buffer.contents b
 
@@ -446,7 +450,8 @@ let out (lf : L.func) (fn : func) : L.func =
       | Caught k -> emit (L.Catch k); set v
       | TryExit k -> emit (L.TryExit k)
       | Phi _ -> ()
-      | Unbox _ | Box _ | Dprim _ -> failwith (fn.name ^ ": ssa: a double out of SSA")) b.body;
+      | Unbox _ | Box _ | Dprim _ -> failwith (fn.name ^ ": ssa: a double out of SSA")
+      | Tag _ -> failwith (fn.name ^ ": ssa: an untagged integer out of SSA")) b.body;
     match b.term with
     | Jmp s -> let l = edge b.id s ~alone:true in emit (L.Jmp l)
     | Br (v, t, e) ->

@@ -109,7 +109,8 @@ let play (s : t) (w : World.t) : unit =
             else
               match adjust p x y with
               | Some (vol, pan) ->
-                  Audio.play (snd |> Audio.louder vol |> Audio.pan pan)
+                  (* old: Audio.play (snd |> Audio.louder vol |> Audio.pan pan) *)
+                  Audio.play_at ~volume:vol ~pan snd
               | None -> ())
       end)
     (List.rev w.sounds);

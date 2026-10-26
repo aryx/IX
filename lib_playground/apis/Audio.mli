@@ -266,6 +266,11 @@ val sfx : Sfx.t -> sound
 (* [play s]: from now until its end (see the top) *)
 val play : sound -> unit
 
+(* [play_at ~volume ~pan s]: play (s |> louder volume |> pan pan), the
+ * same sound, but a recording (wav) is mixed from its own samples: no
+ * copy of it made at each play (a game's sounds where they are heard) *)
+val play_at : volume:number -> pan:number -> sound -> unit
+
 (* claude: [silently f]: [f ()], the sounds it starts (play, loop,
  * keep_playing, instruments) not played -- tinybox runs a program's
  * update in its menu to preview it, and the preview is not heard *)

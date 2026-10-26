@@ -61,7 +61,9 @@ let play (s : t) (sounds : Edict.sound list) (eye : vec) (yaw : float) : unit =
                 let pan =
                   if length d < 1. then 0. else dot right (normalize d)
                 in
-                Audio.play (snd |> Audio.louder (volume *. vol) |> Audio.pan pan)
+                (* old: Audio.play (snd |> Audio.louder (volume *. vol)
+                 *   |> Audio.pan pan) *)
+                Audio.play_at ~volume:(volume *. vol) ~pan snd
               end
             end
       end)

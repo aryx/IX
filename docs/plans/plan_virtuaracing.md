@@ -536,4 +536,16 @@ pitch effects when there are none; the old mixing kept
 calls of Plan 9's `exp`: 40% of it), mini-ml's runtime and libc's,
 the other session's.
 
+Then mini-doom's and mini-quake's sounds where they are heard
+(`Audio.play_at`: a recording mixed from its own samples, its volume,
+pan and far ear's delay applied in the mixer, where each play was the
+sound rendered again into new arrays), the same bytes (doom's fight,
+quake's firing, `audio.sh`'s seven). Doom's fight on arm, a frame:
+17.6M instructions, then 17.0M; 14.1M without the sound; 9.8M with
+the new `graphics=only` (doom's and quake's: `nomonsters`,
+`things=off`, `sound=off`, `music=off`, the renderer alone, as the
+author asked: "an xxx=false flag that turns off everything except
+graphics"). So a fight's frame is the drawing (9.8M), the monsters,
+things and their sprites (4.3M) and the sound (2.9M).
+
 Next: the frame taken apart on the board.

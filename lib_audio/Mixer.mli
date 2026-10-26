@@ -53,6 +53,11 @@ val stereo : bool ref
 (* [play m s]: [s] from the next sample pulled *)
 val play : t -> Signal.stereo -> unit
 
+(* [play_at m x ~volume ~pan]: the recording [x] made louder and panned
+ * (Synth.louder, Synth.Panned), the same samples, but mixed from [x]
+ * itself as it is pulled: no new arrays at each play *)
+val play_at : t -> Signal.t -> volume:float -> pan:float -> unit
+
 (* [loop m name s]: [s] played over and over, from the next sample,
  * unless a loop [name] is already playing (so calling it every frame
  * is harmless): background music *)

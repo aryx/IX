@@ -342,6 +342,17 @@ let change_loop (name : string) (s : sound) : unit =
 let pan (p : float) (s : sound) : sound = Synth.Panned (p, s)
 let pitched = Synth.pitched
 
+(* ix: a recording mixed from its own samples, its volume and pan
+ * applied as the mixer pulls it (Mixer.play_at): a sound made louder
+ * and panned at each play was rendered whole, new arrays each time
+ * (mini-doom's and mini-quake's monsters, plan_virtuaracing.md,
+ * stage 5); any other sound the old way *)
+let play_at ~(volume : float) ~(pan : float) (s : sound) : unit =
+  if not !muted then
+    match s with
+    | Synth.Samples x -> Mixer.play_at mixer x ~volume ~pan
+    | _ -> play (Synth.Panned (pan, louder volume s))
+
 (* the screen's centre the listener; half the width (500) the side *)
 let from (x : float) (y : float) (s : sound) : sound =
   let d = Float.hypot x y in

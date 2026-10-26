@@ -14,7 +14,8 @@
  *   fist, or the chainsaw; 2 the pistol; 3 the shotgun)
  *
  *   usage: mini-doom [wad=file.wad] [map=E1M1] [scale=n] [x=X y=Y angle=A]
- *                    [nomonsters] [ai=ways] [sound=off|3d] [music=off] [lumps]
+ *                    [nomonsters] [things=off] [ai=ways] [sound=off|3d]
+ *                    [music=off] [graphics=only] [lumps]
  *     wad=   the WAD (default: /lib/doom/freedoom.wad, else
  *            games/fps/doom/data/freedoom.wad: the card's, the
  *            repository's); an IWAD of id's works the same
@@ -29,6 +30,8 @@
  *     x= y= angle=  the player put there, looking that way (degrees):
  *            a test's camera (tests/compare.sh)
  *     nomonsters  the level without its monsters (Doom's -nomonsters)
+ *     things=off  the level without its things: no item, decoration
+ *            nor monster drawn or moved
  *     ai=ways  the monsters find their way by the playground's AI
  *            (Ways), not id's (Enemy)
  *     sound=  off: none; 3d: the playground's Audio3d, not id's
@@ -36,6 +39,9 @@
  *     music=  off, or on: the level's music (Audio's MIDI player); off
  *            by default on Plan 9: mini-ml's code makes a second of it
  *            in 7 (OCaml's in 0.3), the game's frames stopped meanwhile
+ *     graphics=only  nomonsters things=off sound=off music=off: the
+ *            renderer alone, the walls, floors and ceilings (its frames
+ *            a second, the monsters' cost and the sound's apart)
  *     status=off  no status line (a test's picture: tests/compare.sh)
  *     lumps  the WAD's lumps listed, and the end
  *
@@ -236,6 +242,15 @@ let () =
       Exit.exit caps @@ Exit.catch @@ fun () ->
       (try
          let flags = Playground_platform.flags caps in
+         (* graphics=only: the renderer alone, as the game was before its
+          * things, monsters and sound: a frame rate of the drawing only *)
+         let flags =
+           if List.assoc_opt "graphics" flags = Some "only" then
+             [ ("nomonsters", ""); ("things", "off"); ("sound", "off");
+               ("music", "off") ]
+             @ flags
+           else flags
+         in
          let flag (name : string) : string option = List.assoc_opt name flags in
          let path =
            match flag "wad" with

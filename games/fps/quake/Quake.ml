@@ -20,7 +20,7 @@
  *   usage: mini-quake [bsp=file.bsp] [scale=n]
  *            [x=X y=Y z=Z angle=A pitch=P] [lightmaps] [things=off]
  *            [gamma=g] [nomonsters] [ai=ways] [weapons=all] [sound=off|3d]
- *            [music=off|on] [entities]
+ *            [music=off|on] [graphics=only] [entities]
  *     bsp=   the level (default: /lib/quake/e0m1.bsp, else
  *            games/fps/quake/data/e0m1.bsp); the palette and the
  *            colormap beside it
@@ -41,6 +41,9 @@
  *     music= the level's CD track, music/trackNN.ogg (worldspawn's
  *            "sounds"); off by default on Plan 9 (Vorbis's decoding by
  *            mini-ml's code)
+ *     graphics=only  nomonsters things=off sound=off music=off: the
+ *            renderer alone (its frames a second, the monsters' cost
+ *            and the sound's apart)
  *     entities   the level's entities listed, and the end
  *     precache   the models, sounds and music the game reads, listed
  *
@@ -242,6 +245,15 @@ let () =
       @@ fun () ->
       (try
          let flags = Playground_platform.flags caps in
+         (* graphics=only: the renderer alone, as the game was before its
+          * things, monsters and sound: a frame rate of the drawing only *)
+         let flags =
+           if List.assoc_opt "graphics" flags = Some "only" then
+             [ ("nomonsters", ""); ("things", "off"); ("sound", "off");
+               ("music", "off") ]
+             @ flags
+           else flags
+         in
          let flag (name : string) : string option = List.assoc_opt name flags in
          let path =
            match flag "bsp" with

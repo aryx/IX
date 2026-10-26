@@ -11,8 +11,9 @@ Bridge and its suspension bridge, Acropolis), their roads, land and
 landmarks, and the race: the countdown, the player's car by the
 arrows, the fifteen rivals, the clock and its checkpoints, the laps,
 the goal; the four views (`v`); the race's display, the title, the
-course select (the course's miniature), the end's screen. Not yet the
-sound (stage 4).
+course select (the course's miniature), the end's screen; and the
+sound (stage 4): the engine through its gears, the tyres, the wind,
+the countdown, the checkpoints' jingles, the fanfare.
 
     make && ./bin/mini-virtuaracing          # in a window (SDL; scale=, view=, course=0)
     dune build ./games/racing/virtua/Virtua.exe
@@ -26,12 +27,15 @@ The folders (`dune` says which module is where):
 |---|---|
 | `render/` | `Mesh` (the playground's shape functions, made arrays once), `Palette` (median cut), `Render` (cull, turn, cut, project, spans) |
 | `course/` | `Track3d` (the road a ribbon), `Heightmap`, `Land`, `Scenery`, `Course` (the three courses) |
-| `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps), `Screens` (the race's display, the scenes' texts) |
+| `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps), `Screens` (the race's display, the scenes' texts), `Sound` |
 | `tests/` | `compare.sh`: the title, the grid and the course select against the playground's golden frames |
 | `sdl/` | `Virtua.ml` linked with the platform that has a window (dune's alone: `bin/mini-virtuaracing`) |
 
 Its frames are checked by `games/tests/frames.sh` (the sessions
-`racing/virtua/Virtua|...`), the same sums by OCaml's build and mini-ml's.
+`racing/virtua/Virtua|...`), the same sums by OCaml's build and mini-ml's;
+its sound by `games/tests/audio.sh`, the same bytes as the playground's
+own `-dump-audio` (the countdown, and the start to 6 seconds: after,
+the rivals, whose speeds have a part by our hash, part the races).
 
 ## From the author's playground
 
@@ -59,8 +63,9 @@ numbers are `scripts/playground_copies.sh games/racing/virtua`'s
 
 ### What changed
 
-- The race's sounds are events (`Race.event`), for stage 4 to play;
-  its scenes (title, select, goal) are the game's, at 3b. A rival's
+- The race's sounds are events (`Race.event`), played by `Sound`
+  (the playground's, in its order within a frame); its scenes (title,
+  select, goal) are the game's. A rival's
   top speed has a part by `Scenery.jitter`, not `Hashtbl.hash`: a race
   is not the playground's to the hundredth.
 - The player's car is not drawn from its cockpit (the playground draws
@@ -102,8 +107,8 @@ and `race/`, `Virtua.ml`'s program, `tests/compare.sh`, `dune`,
 
 ### What remains there
 
-The sound (stage 4), TinyOutRun's coast (`Road`; decision 7), its
-`tree`, `mesa` and `flat`.
+TinyOutRun's coast (`Road`; decision 7), its `tree`, `mesa` and
+`flat`.
 `Topdown`'s waypoint track and its computer driver.
 `Mat4`, `Material`, `Ray` of `libs/graphics/3d/geometry` (the GPU's and
 the ray tracer's), and Playground3d and its rasterizer, which this game

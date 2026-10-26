@@ -15,8 +15,8 @@
 (library
  (name ix_virtua)
  (wrapped false)
- (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race Screens)
- (libraries ix_graphics_geometry ix_playground))
+ (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race Screens Sound)
+ (libraries ix_graphics_geometry ix_playground ix_audio))
 
 (executable
  (name Virtua)

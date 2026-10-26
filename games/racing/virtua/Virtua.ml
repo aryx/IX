@@ -12,8 +12,9 @@
  * round the player's car), the course select (the course's miniature
  * turning on a table), the race on Big Forest (the countdown, fifteen
  * rivals, the clock and its checkpoints, five laps, the race's display)
- * and its end (GOAL!, or GAME OVER when the clock runs out). Not yet
- * the other two courses, nor the sound.
+ * and its end (GOAL!, or GAME OVER when the clock runs out); the
+ * sound (Sound: the V12 through its gears, the tyres, the countdown,
+ * the checkpoints' jingles). Not yet the coast.
  *
  *   the keys: space (from the title, to race, after it), left and right
  *   (the course; the wheel), up (the gas), down (the brake), v the view
@@ -326,11 +327,34 @@ let update (computer : P.computer) (m : model) : model =
   let keys : Race.keys =
     { up = k.kup; down = k.kdown; left = k.kleft; right = k.kright }
   in
-  (* (the race's events are the sound's, stage 4) *)
+  (* a frame of the race, and its sound in the playground's order: a
+   * gear's change and a crash, the engine and the road, the countdown
+   * and the checkpoints' (before the start, the engine revs with the
+   * pedal, the car held) *)
   let drive () =
     if Scene2d.pressed (fun (k : P.keyboard) -> Set_.mem "v" k.keys) s then
       m.view <- next_view m.view;
-    let race, _ = Race.step (load m m.current).course keys m.race in
+    let c = (load m m.current).course and before = m.race in
+    let race, events = Race.step c keys before in
+    let first, rest =
+      List.partition
+        (fun (e : Race.event) ->
+          match e with
+          | Shift | Crash -> true
+          | _ -> false)
+        events
+    in
+    List.iter Sound.event first;
+    let rpm =
+      if before.time < 0 then
+        if k.kup then 0.7 +. (0.2 *. P.wave 0. 1. 0.3 computer.time) else 0.2
+      else Race.revs race.drive
+    in
+    Sound.engine rpm
+      (k.kup && not before.finished)
+      (Course.in_span c.spans [ Tunnel ] (Driving.wrap c race.drive.s) <> None);
+    Sound.road race.drive;
+    List.iter Sound.event rest;
     m.race <- race;
     m.braking <- k.kdown || race.finished
   in
@@ -341,7 +365,9 @@ let update (computer : P.computer) (m : model) : model =
         let n = Array.length m.catalog in
         let left = Scene2d.pressed (fun (k : P.keyboard) -> k.kleft) s
         and right = Scene2d.pressed (fun (k : P.keyboard) -> k.kright) s in
+        if left || right then Audio.play Sound.pick;
         if space then (
+          Audio.play Sound.go_beep;
           start_race m i;
           Scene2d.go Racing s)
         else if left then Scene2d.go (Select ((i + n - 1) mod n)) s

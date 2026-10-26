@@ -12,14 +12,16 @@ PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 BESIDE=`{~ $PLATFORM software && echo -soft}
 D=$B/games/racing/virtua$BESIDE
 # (each after the ones it names)
-LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/platforms lib_playground/platforms/$PLATFORM
+# (the playground's apis: Audio, with what it stands on, as mini-quake's)
+LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking \
+ lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the folders of the modules: dune's comment says which)
 DIRS=. render course race
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
 # (each before the ones that name it)
-LIB=Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race Screens
+LIB=Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race Screens Sound
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

@@ -489,3 +489,28 @@ course select goes round the three, each built when first shown.
   left out with the coast.
 
 Stage 3 done but the coast. Next: stage 4, the sound.
+
+**Stage 4 done: the sound** (the author: "let's do it"). `race/Sound`:
+the playground's V12 (two voices through seven gears, a tunnel's
+room), the road (the grass, the tyres' squeal, the wind), and the
+race's events played (the countdown's beeps, GO, a gear up, a crash,
+the checkpoints' three jingles in turn, the final lap, the fanfare,
+game over), the course select's pick; `Virtua.update` plays them in
+the playground's order within a frame (a gear and a crash, the engine
+and the road, the rest), the engine revving with the pedal during the
+countdown. The game's mkfile links the playground's apis (Audio) and
+what they stand on, as mini-quake's.
+- Checked by `games/tests/audio.sh`, two sessions: `countdown` (300
+  frames from the title) and `start` (370 frames, the clock held, the
+  throttle from frame 100: GO and the climb through the gears), the
+  **same bytes as the playground's own `-dump-audio`**
+  (`games/racing/software/TinyVirtuaRacing.exe`, which `audio.sh` now
+  finds in the playground's software folder), by OCaml's build and by
+  mini-ml's. Past 6.3 s the two races part (a rival's speed, a part of
+  it by our hash: a bump at another frame), so no longer session is
+  compared with the playground's; without the clock held, the engine's
+  revving at the countdown follows each platform's clock.
+- Not heard: the sound played through a speaker, here or on the board.
+
+Next: stage 5, on mini-9pi (QEMU, then the Pi 2), its frame measured
+there.

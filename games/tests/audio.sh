@@ -40,6 +40,10 @@ while IFS='|' read -r game name args sum; do
   theirs=$P/_build/default/$R/$game.exe
   # (a program the playground names TinyXxx, in the folder above ix's: mini-rebirth)
   [ -x $theirs ] || theirs=$P/_build/default/$R/$(dirname $(dirname $game))/Tiny$(basename $game).exe
+  # (and in its software/ folder, by its name's start, the one whose
+  # -dump-audio runs without OpenGL: mini-virtuaracing's TinyVirtuaRacing)
+  [ -x $theirs ] || theirs=$(ls $P/_build/default/$R/$(dirname $(dirname $game))/software/Tiny$(basename $game)*.exe 2> /dev/null | head -1)
+  [ -n "$theirs" ] || theirs=/nonexistent
   if [ -x $theirs ]; then
     SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy $theirs -dump-frame $frames $W/p.png -dump-audio $W/p.wav "$@" > /dev/null 2>&1
     if cmp -s $W/a.wav $W/p.wav; then echo "ok the playground's own -dump-audio: the same bytes"

@@ -229,6 +229,20 @@ And the full build faster, besides the gate:
    library the local switch lacks); `fail-fast: false`. tetris.wav:
    re-recorded by 19414457 already, test-all green since.
 2. **OCaml 5.5 in the gate**, and tiny-kernel's boot.
+   Done: lite.sh's "ix by OCaml 5.5.1, its types" (`dune build
+   @check` in _build5 by the switch, js_of_ocaml installed in it: 3 s
+   when built, a skip line without the switch or when dune's build is
+   already 5's, as in CI's 5.5 image); "tiny-kernel: booted, mltests,
+   a shell's files" (an image of its own, 1.6 s, in the job's
+   directory, not TinyKernel's _make the sessions share; mltests' ALL
+   OK, then a shell's file, pipe and wc, its lines and not its banner;
+   12 s). TinyKernel's whole check: 81 s, 12 minutes of cores, too
+   much for the gate. Seen on the way: its tetris.wav changes with
+   what is on the disk image (another session's TinyBrowser split in
+   the working tree: a byte shorter, the same bytes each run): a
+   recording that moves with unrelated changes, not one for the gate;
+   to make independent of the image (the events timed by the game's
+   own clock?) or left to test-all.
 3. **The groups, the display, the budget**: lite.sh's jobs in shared,
    m-ix, t-ix; a job a program; `lite.sh tix|mix`; the summary by
    group; the warnings past 60 and 120 s.

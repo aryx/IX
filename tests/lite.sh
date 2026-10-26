@@ -7,10 +7,11 @@
 # family of programs by its fastest checks that mean something, nothing
 # that needs a reference outside the repository, and all of them at
 # once: the machine's cores are what makes it short.
-# - dune's build (first, alone);
+# - dune's build (first, alone), and ix's types by OCaml 5.5 when its
+#   opam switch is there;
 # - each program's unit tests and differential tests, the linker's
 #   recorded bytes, the generators against ocamllex and ocamlyacc, the
-#   tiny programs' tests, the machines' decoders;
+#   tiny programs' tests, tiny-kernel booted, the machines' decoders;
 # - mini-ml: every file of ix compiled (a directory a job), programs of
 #   today's OCaml compiled, linked and run against OCaml (four jobs);
 # - ix built by ix, from nothing, each time (under _mk/lite: mini-mk's
@@ -66,6 +67,20 @@ no7="arm64's programs do not run here"
 # directories first: each of the four makes them if they are not there,
 # and two at once in a fresh checkout is "mkdir: EEXIST" for one)
 mkdir -p tests/snapshots _build/testo/status
+# ix by the other OCaml too, its types (@check, in _build5): CI builds
+# with 4.14 and 5.5, a keyword of 5's (effect) once broke the second
+# unseen (plan_tests.md); here when the switch is there and dune's
+# build above was 4's
+ocaml5=5.5.1
+t5="ix by OCaml $ocaml5, its types"
+has5() { command -v opam > /dev/null &&
+  opam switch list -s 2> /dev/null | grep -qx $ocaml5; }
+case $(ocamlfind ocamlopt -version) in
+  5.*) skip "$t5" "dune's build is OCaml 5's already";;
+  *) if has5; then
+       job "$t5" opam exec --switch=$ocaml5 -- dune build @check --build-dir _build5
+     else skip "$t5" "no opam switch $ocaml5"; fi;;
+esac
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
@@ -106,6 +121,25 @@ job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
 job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'
 job "tiny: shell, editor, db, vcs" sh_ 'tiny/tests/TinyShell_test.sh && tiny/tests/TinyEditorLine_test.sh && tiny/tests/TinyDatabase_test.sh 5 && tiny/tests/TinyVCS_test.sh 3'
 job "tiny: cpu, c, ml, machine, graphics, pi" sh_ 'tiny/tests/TinyCPU_test.sh 50 && tiny/tests/TinyMachine_test.sh && tiny/tests/TinyKernelGraphics_test.sh && tiny/tests/TinyLibPlayground_test.sh && tiny/tests/TinyAppTetris_test.sh && tiny/tests/TinyLibGUI_test.sh && tiny/tests/TinyLibCore_test.sh && tiny/tests/TinyEditorScreen_test.sh && tiny/tests/TinyBrowser_test.sh && tiny/tests/TinyProfiler_test.sh && tiny/tests/TinyC_test.sh && tiny/tests/TinyML_test.sh'
+# tiny-kernel booted (an image of its own: TinyKernel's _make is the
+# sessions'), its tests in ML and a shell's files and pipe; its whole
+# check (81 s, 12 minutes of cores) is make test's
+tiny_kernel() {
+  local o=$W/tiny-kernel m="tiny-machine -date 820540800 -seed 1"
+  make -s -C tiny/TinyKernel O=$o $o/boot.img || return 1
+  echo mltests | timeout 60 $m $o/boot.img > $o/mltests.out
+  grep -q 'mltests: ALL OK' $o/mltests.out ||
+    { tail -5 $o/mltests.out; return 1; }
+  printf 'echo hi | cat > f; cat f; wc < f; rm f; cat f\n' |
+    timeout 60 $m $o/boot.img > $o/sh.out
+  # (its lines, not its banner, which says the memory's size)
+  local l
+  for l in '$ hi' '      1       1       3' 'cat: f: cannot open'; do
+    grep -qxF "$l" $o/sh.out ||
+      { echo "tiny-kernel: no \"$l\" in:"; cat $o/sh.out; return 1; }
+  done
+}
+job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 job "mini-ml -pp" languages/ml/tests/pp.sh
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000

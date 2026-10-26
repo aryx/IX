@@ -3,7 +3,7 @@
 ###############################################################################
 
 # The usual entry points; dune does the work (make, make test: before
-# each commit, two minutes; docs/plans/plan_tests.md). Then ix built by
+# each commit, two minutes; docs/testing.md). Then ix built by
 # ix (make ix, make test-ix...), and everything (make test-all): see
 # below.
 
@@ -36,89 +36,25 @@ clean:
 # (tiny-c and tiny-ml on random programs, against the host's cc and
 # OCaml, in $(TINY_W); see tiny/tests/TinyC_fuzz.py and TinyML_fuzz.py)
 TINY_W = /tmp/ix-tiny
-# make test is the gate, make test-lite (below); this list, the long
-# forms, one after the other, is test-all's suite long
-# (docs/plans/plan_tests.md: to place each in the gate or test-all)
+# make test is the gate, make test-lite (below). make test-long: the
+# long forms of what the gate runs short, one after the other,
+# test-all's suite long: the random tests' full counts, tiny-c's and
+# tiny-ml's fuzzers, tiny-kernel's steps and its whole check (26
+# sessions, its screens and sounds), the decoders' random words and
+# their system instructions (docs/plans/plan_tests.md)
 test: test-lite
 test-long: all
-	./_build/default/builder/tests/Test.exe
-	./tiny/tests/TinyBuildSystem_test.sh
-	./_build/default/shell/tests/Test.exe
-	./tiny/tests/TinyShell_test.sh
-	./_build/default/editors/ed/tests/Test.exe
-	./tiny/tests/TinyEditorLine_test.sh
-	./linker/tests/golden.sh
-	./generators/tests/tokens.sh
-	./generators/tests/trees.sh
-	./_build/default/database/tests/Test.exe
 	./tiny/tests/TinyDatabase_test.sh 20
-	./_build/default/languages/smalltalk/tests/Test.exe
-	./_build/default/languages/scheme/tests/Test.exe
-	./_build/default/languages/pascal/tests/Test.exe
-	./_build/default/languages/prolog/tests/Test.exe
-	./languages/prolog/tests/run.sh
-	./languages/forth/tests/run.sh
-	./languages/datalog/tests/run.sh
-	./languages/c/facts/tests/run.sh
-	./languages/ml/facts/tests/run.sh
-	./editors/turbopascal/tests/keys.sh
-	./_build/default/editors/emacs/tests/Test.exe
-	./editors/emacs/tests/keys.sh
-	./editors/emacs/tests/terminal.py
-	./_build/default/examples/gui4/tests/Test.exe
-	./_build/default/apps/office/tests/Test.exe
-	./_build/default/lib_graphics/pdf/tests/Test.exe
-	./apps/page/tests/frames.sh
-	./_build/default/lib_graphics/images/tests/Test.exe
-	./_build/default/lib_graphics/svg/tests/Test.exe
-	./apps/office/tests/image.sh
-	./lib_compression/tests/check.py 50
-	./_build/default/lib_crypto/tests/Test.exe
-	./_build/default/lib_networking/tests/Test.exe
-	./networking/tests/served.sh
-	./networking/tests/tls.sh
-	./_build/default/browsers/html/tests/Test.exe
-	./browsers/lynx/tests/session.sh
-	./typesetting/tests/sample.sh
-	./browsers/javascript/tests/modes.sh
-	./_build/default/browsers/webapi/tests/Test.exe
-	./browsers/javascript/tests/scripts.sh
-	./_build/default/browsers/css/tests/Test.exe
-	./_build/default/browsers/engine/tests/Test.exe
-	./browsers/engine/tests/boxes.sh
-	./browsers/netscape/tests/frames.sh
-	./_build/default/lib_crypto/tests/Vectors.exe | cmp - lib_crypto/tests/Vectors.expected
-	./lib_audio/tests/play.sh
-	./version_control/tests/objects.sh
 	./version_control/tests/query.py 10
 	./version_control/tests/session.py 10
-	./version_control/tests/git9_tests.sh
-	./version_control/tests/net.sh
 	./tiny/tests/TinyVCS_test.sh 10
-	./tiny/tests/TinyC_test.sh
-	./tiny/tests/TinyML_test.sh
+	./tiny/tests/TinyCPU_test.sh
 	mkdir -p $(TINY_W)/c && ./tiny/tests/TinyC_fuzz.py --32 $(TINY_W)/c 30 && RECORD=1 ./tiny/tests/TinyC_test.sh $(TINY_W)/c/*.c
 	mkdir -p $(TINY_W)/ml && ./tiny/tests/TinyML_fuzz.py --31 $(TINY_W)/ml 30 && RECORD=1 ./tiny/tests/TinyML_test.sh $(TINY_W)/ml/*.ml
-	./tiny/tests/TinyCPU_test.sh
-	./tiny/tests/TinyMachine_test.sh
-	./tiny/tests/TinyKernelGraphics_test.sh
-	./tiny/tests/TinyKernelNetwork_test.sh
-	./tiny/tests/TinyKernelAudio_test.sh
-	./tiny/tests/TinyKernelFS_test.sh
-	./tiny/tests/TinyPlay_test.sh
-	./tiny/tests/TinyLibPlayground_test.sh
-	./tiny/tests/TinyAppTetris_test.sh
-	./tiny/tests/TinyLibGUI_test.sh
-	./tiny/tests/TinyLibCore_test.sh
-	./tiny/tests/TinyEditorScreen_test.sh
-	./tiny/tests/TinyBrowser_test.sh
-	./tiny/tests/TinyProfiler_test.sh
 	$(MAKE) -C tiny/TinyKernel/steps clean all
 	$(MAKE) -C tiny/TinyKernel/steps/t6 check
 	$(MAKE) -C tiny/TinyKernel check
-	./machine/tests/decode_check.py
 	./machine/tests/decode_check.py --random 5000
-	./machine/tests/decode_check.py -64
 	./machine/tests/decode_check.py -64 --random 5000
 	./machine/tests/decode_check.py -64fp --random 5000
 	./machine/tests/decode_check.py machine/tests/words_arm_system.txt
@@ -324,9 +260,6 @@ self-mix self-quick-mix: all
 # tests/all.sh -l lists them; tests/all.sh ix arm runs those two.
 test-all:
 	./tests/all.sh
-# (the suites of a few minutes)
-test-quick:
-	./tests/all.sh -quick
 
 # Under two minutes, before each commit, for a good confidence that
 # nothing regressed (docs/plans/plan_tests.md): every family of programs
@@ -405,4 +338,4 @@ visual-all:
 	codemap -screen_size 3                 -efuns_client efuns_client -emacs_client /dev/null .
 
 .PHONY: all tix mix install website website-mini website-mini-js test test-differential test-goken test-ocaml test-chidb test-pi clean loc loc-v build-docker build-docker-ocaml5 build-docker-test-all \
-  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-quick test-lite test-tix test-mix test-long test-github visual visual-all
+  test-ml ix ix-arm kernels-ix test-ix test-fixpoint test-arm test-fixpoint-arm test-kernels-ix self self-quick self-tix self-quick-tix self-mix self-quick-mix test-all test-lite test-tix test-mix test-long test-github visual visual-all

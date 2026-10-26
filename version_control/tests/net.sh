@@ -21,7 +21,11 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 T=${T:-$ROOT/_build/default/version_control/Main.exe}
 W=$(mktemp -d)
 SRC=${1:-$W/made}
+# two ports no one listens on (git daemon's, http_backend.py's): make
+# test runs while other sessions' runs do
 PORT=$((20000 + RANDOM % 10000))
+free() { ! (exec 3<> /dev/tcp/127.0.0.1/$1) 2> /dev/null; }
+until free $PORT && free $((PORT + 1)); do PORT=$((20000 + RANDOM % 10000)); done
 failures=0
 fail() { echo "FAIL $*"; failures=$((failures + 1)); }
 ok() { echo "ok $*"; }

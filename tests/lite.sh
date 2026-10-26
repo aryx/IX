@@ -140,6 +140,18 @@ job "tiny-browser: pages" tiny/tests/TinyBrowser_test.sh
 job "tiny-profiler: profiles" tiny/tests/TinyProfiler_test.sh
 job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
+job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
+job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
+# (on an image of its own: TinyKernel's _make is the sessions', rebuilt
+# under a run)
+tiny_network() {
+  local o=$W/tiny-network
+  make -s -C tiny/TinyKernel O=$o $o/boot.img &&
+    IMAGE=$o/boot.img tiny/tests/TinyKernelNetwork_test.sh
+}
+job "tiny-kernel: its network" tiny_network
+job "tiny-kernel: its sound" tiny/tests/TinyKernelAudio_test.sh
+job "tiny-kernel: its file system" tiny/tests/TinyKernelFS_test.sh
 # tiny-kernel booted (an image of its own: TinyKernel's _make is the
 # sessions'), its tests in ML and a shell's files and pipe; its whole
 # check (81 s, 12 minutes of cores) is make test-long's
@@ -246,6 +258,15 @@ job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
 job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
 job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'
+job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
+job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
+job "mini-page: recorded frames" apps/page/tests/frames.sh
+job "mini-office: pictures" apps/office/tests/image.sh
+job "lib_compression, lib_crypto: zlib, SHA-1 against Python's" lib_compression/tests/check.py 50
+job "lib_crypto: the vectors, by OCaml" sh_ '_build/default/lib_crypto/tests/Vectors.exe | cmp - lib_crypto/tests/Vectors.expected'
+job "mini-git: objects against git's" version_control/tests/objects.sh
+job "mini-git: git9's tests" version_control/tests/git9_tests.sh
+job "mini-git: clone, fetch, push against git's servers" version_control/tests/net.sh
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 
 # mini-ml, m-ix's compiler: programs of today's OCaml, in four jobs

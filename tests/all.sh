@@ -12,7 +12,6 @@
 #   tests/all.sh             every suite (half an hour: -l says about how long)
 #   tests/all.sh -l          the suites, what each is, what it needs
 #   tests/all.sh ix arm      those suites only
-#   tests/all.sh -quick      those of a few minutes each
 # The logs: $IX_TEST_LOGS, or /tmp/ix-test-all.
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -21,42 +20,41 @@ export PATH=$ROOT/bin:$PATH
 LOGS=${IX_TEST_LOGS:-/tmp/ix-test-all}
 QEMU64=/home/pad/work/TOOLCHAINS/qemu/build/qemu-system-aarch64
 
-# name @ minutes @ quick @ what it needs (a test, or empty) @ what it is @ the command
+# name @ minutes @ what it needs (a test, or empty) @ what it is @ the command
 suites() {
 cat <<'END'
-build@1@q@@dune builds every program, by OCaml@make all
-long@6@q@@make test-long: each program's own tests, their long forms, the references recorded in the repository@make test-long
-ml@6@q@@make test-ml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-ml
-differential@1@q@@make test-differential: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-differential
-goken@25@@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken
-ocaml@30@@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: mini-ml against ocaml-light's ocamlopt (built first: kernels/ocaml-light.sh)@kernels/ocaml-light.sh arm64 && kernels/ocaml-light.sh arm && make test-ocaml
-playground@6@@[ -d ${PLAYGROUND:-$HOME/playground}/_build/default/games ]@the games' and mini-music's frames and sounds against the playground's own programs (test-lite has them without)@games/tests/frames.sh && games/tests/audio.sh && apps/music/tests/frames.sh && apps/music/tests/audio.sh
-chidb@3@q@[ -d $HOME/github/chidb ]@make test-chidb: mini-chidb against chidb@make test-chidb
-ix@5@@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
-fixpoint@2@@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint
-arm@2@@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
-fixpoint-arm@2@@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-fixpoint-arm: ix for arm built by its arm programs, twice: the same files@make test-fixpoint-arm
-pi@3@@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-pi: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-pi
-kernels-ix@6@@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
-speed@2@@[ -d $HOME/principia ] && [ -d $HOME/ocaml-light ] && command -v qemu-system-arm > /dev/null@make test-speed: the build when nothing changed and TinyCameltry's frames a second under QEMU, against the author's machine's numbers@make test-speed
-github@2@@[ -n "$IX_TEST_NET" ]@make test-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-github
+build@1@@dune builds every program, by OCaml@make all
+test@2@@make test: the gate, every program's fast checks at once (tests/lite.sh)@make test
+long@3@@make test-long: the long forms of make test's checks (the random tests' full counts, the fuzzers, tiny-kernel's whole check)@make test-long
+ml@6@@make test-ml: mini-ml on today's OCaml (tests/modern/ against OCaml), every file of ix compiled, the preprocessor@make test-ml
+differential@1@@make test-differential: mini-mk against plan9port's mk and xix's omk, when they are installed@make test-differential
+goken@25@[ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-goken: the toolchain against goken's (5a 5l -f 5c, 7a 7l 7c), byte for byte@make test-goken
+ocaml@30@[ -d $HOME/ocaml-light ] && [ -x $HOME/goken/ROOT/arch/boot-gcc/bin/5c ]@make test-ocaml: mini-ml against ocaml-light's ocamlopt (built first: kernels/ocaml-light.sh)@kernels/ocaml-light.sh arm64 && kernels/ocaml-light.sh arm && make test-ocaml
+playground@6@[ -d ${PLAYGROUND:-$HOME/playground}/_build/default/games ]@the games' and mini-music's frames and sounds against the playground's own programs (test-lite has them without)@games/tests/frames.sh && games/tests/audio.sh && apps/music/tests/frames.sh && apps/music/tests/audio.sh
+chidb@3@[ -d $HOME/github/chidb ]@make test-chidb: mini-chidb against chidb@make test-chidb
+ix@5@@make test-ix: ix built by ix (mini-mk over the mkfiles), each program against dune's, the tiny programs' tests, the kernels' steps and mini-xv6 booted@make test-ix
+fixpoint@2@@make test-fixpoint: ix built by its own build, the same files@make test-fixpoint
+arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-arm: ix for arm built by ix, its programs run under qemu-arm@make test-arm
+fixpoint-arm@2@command -v qemu-arm > /dev/null && mkfiles/runs_arm.sh@make test-fixpoint-arm: ix for arm built by its arm programs, twice: the same files@make test-fixpoint-arm
+pi@3@[ -d $HOME/principia ] && [ -d $HOME/xv6 ] && command -v qemu-system-arm > /dev/null@make test-pi: mini-qemu against QEMU, the kernels by ocaml-light and gcc (their steps, mini-xv6 on both boards, mini-9pi)@make test-pi
+kernels-ix@6@[ -d $HOME/principia ] && [ -f $HOME/xv6/forks/arm64-pi4/fs.img ] && [ -x $QEMU64 ]@make test-kernels-ix: the kernels built by ix, on the Pi 4: mini-xv6's and mini-9pi's checks, the Makefiles' own@make test-kernels-ix
+speed@2@[ -d $HOME/principia ] && [ -d $HOME/ocaml-light ] && command -v qemu-system-arm > /dev/null@make test-speed: the build when nothing changed and TinyCameltry's frames a second under QEMU, against the author's machine's numbers@make test-speed
+github@2@[ -n "$IX_TEST_NET" ]@make test-github: ix cloned from GitHub by mini-git (set IX_TEST_NET=1: it needs the network)@make test-github
 END
 }
 
 if [ "${1:-}" = -l ]; then
-  suites | while IFS='@' read -r name minutes quick needs what cmd; do
+  suites | while IFS='@' read -r name minutes needs what cmd; do
     printf "%-13s %3s min  %s\n" "$name" "$minutes" "$what"
     [ -n "$needs" ] && { eval "$needs" 2> /dev/null && printf "%24s(has what it needs)\n" "" || printf "%24s(would be skipped here: %s)\n" "" "$needs"; }
   done
   exit 0
 fi
-quick=; [ "${1:-}" = -quick ] && { quick=1; shift; }
 mkdir -p $LOGS
 summary=$LOGS/summary.txt; : > $summary
 failed=0
-while IFS='@' read -r name minutes q needs what cmd <&3; do
-  if [ $# -gt 0 ]; then case " $* " in *" $name "*) ;; *) continue;; esac
-  elif [ -n "$quick" ] && [ -z "$q" ]; then continue; fi
+while IFS='@' read -r name minutes needs what cmd <&3; do
+  if [ $# -gt 0 ]; then case " $* " in *" $name "*) ;; *) continue;; esac; fi
   if [ -n "$needs" ] && ! eval "$needs" 2> /dev/null; then
     line=$(printf "skipped %-13s (not here: %s)" "$name" "$needs")
   else

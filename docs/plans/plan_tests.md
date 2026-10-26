@@ -314,8 +314,27 @@ And the full build faster, besides the gate:
    "have make test, run by default this lite.sh", "the default make
    test is the one we should use for most cases"); the old list is
    `make test-long`, test-all's suite long, its jobs still to place;
-   `make test-tix`, `make test-mix`; the README says so. Left:
-   `docs/testing.md`; the Makefile's header, the README.
+   `make test-tix`, `make test-mix`; the README says so.
+   Then (the author: "let's do step 5"): of test-long's 84 lines, what
+   the gate did not run went to it, each a job (14: tiny-build,
+   tiny-play, tiny-kernel's network, sound and file system, mini-
+   turbopascal's screens, lib_graphics/pdf, mini-page, mini-office's
+   pictures, lib_compression's check.py, lib_crypto's vectors by OCaml,
+   mini-git's objects, git9's tests and net.sh; each under 8 s but the
+   network's, 37); the prolog, forth and datalog scripts without -dune
+   were dune's and _mk's builds, both the gate's already (-dune, and
+   -mini on its own build). test-long is now the long forms alone: the
+   random tests' full counts, tiny-c's and tiny-ml's fuzzers, tiny-
+   kernel's steps and whole check, the decoders' random words and
+   system instructions; 135 s, test-all's suite long. test-all's first
+   suite is now make test (CI's test-all runs on arm64: the gate's arm64
+   checks run there, skipped on the x86 build). test-quick and
+   all.sh -quick gone. Two runs at once found two more shared
+   resources: version_control/tests/net.sh's random ports (now two
+   free ones, checked) and TinyKernelNetwork_test.sh's image, the
+   sessions' TinyKernel/_make/boot.img, rebuilt under a run (IMAGE=, the
+   gate's own). make test: 135 jobs, 0 failures, 117 s. docs/testing.md:
+   which test when, the gate's lines, its groups, skips and budget.
 6. **The commit's own files tested** (`-index`) or the guard instead,
    by step 4's numbers.
 7. **The night**: `make self`'s time kept, a scheduled run.

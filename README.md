@@ -289,7 +289,7 @@ screen at the end of a recorded session, `tiny/tests/TinyKernel_tests/tetris.eve
 
 ![tiny-kernel on tiny-machine: a window of tiny-windows, Tetris played in it](docs/pics/tiny-tetris.png)
 
-The tests, short and whole:
+The tests, short and whole ([docs/testing.md](docs/testing.md): which one when):
 
 ```bash
 make test           # = make test-lite
@@ -298,7 +298,7 @@ make test-lite      # before each commit, two minutes on all the cores: unit tes
 make test-tix       # the same for t-IX alone (tiny/, tiny-kernel), about a minute
 make test-mix       # and for m-IX alone
 make test-all       # every test suite, one after the other, with a summary: half an
-                    # hour (tests/all.sh -l lists them; -quick: the short ones)
+                    # hour (tests/all.sh -l lists them)
 ```
 
 `dune install` installs both the mini and the tiny executables.

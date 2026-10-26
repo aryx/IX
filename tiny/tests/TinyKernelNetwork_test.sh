@@ -49,7 +49,8 @@ else echo "-- tcpdump: not here, not checked"; fi
 #    -net-out, and its httpd read through -net-forward; when
 #    tiny-kernel's image is built (make -C tiny/TinyKernel) and Python
 #    is there. No Internet, no root.
-IMAGE=$ROOT/tiny/TinyKernel/_make/boot.img
+# (IMAGE: another, as make test's own: the sessions rebuild this one)
+IMAGE=${IMAGE:-$ROOT/tiny/TinyKernel/_make/boot.img}
 MACHINE=${MACHINE:-$ROOT/_build/default/tiny/TinyMachine.exe}
 if [ -f $IMAGE ] && [ -x $MACHINE ] && command -v python3 > /dev/null; then
   if timeout 200 python3 $ROOT/tiny/tests/TinyKernelNetwork_tests/linux.py $MACHINE $IMAGE $ROOT/tiny/tests/www > $W/linux.out 2>&1; then

@@ -23,10 +23,13 @@ playground at `028d8abf`, 2026-10-06), which gives mini-ml's **first**
 refusal of a file: a file has others behind it, found when the first
 is gone.
 
-**Status: stages 1 to 4 of 6 done, stage 5 begun** (the kits; what
-draws and the parts; a document saved; mini-office on Linux; on
-mini-9pi it starts, a document is typed in, its menus do not open yet;
-see Status at the end). **Stage 7, a picture from a file (PNG, JPEG):
+**Status: done** (2026-10-26, moved to done/; see Status at the
+end): stages 1 to 6 (the kits; what draws and the parts; a document
+saved; mini-office on Linux; on mini-9pi, on the bare screen and in a
+window of mini-rio's; the docs, `apps/office/README.md`). Left: a
+recorded session of it in a mini-rio window (`check-office` is the
+bare screen's); 7d below; the speed of a page of text, in
+[`plan_playground_speed.md`](../plan_playground_speed.md). **Stage 7, a picture from a file (PNG, JPEG):
 done on Linux** (Insert > Image..., turned by quarters, saved,
 exported), **not run on mini-9pi**: its own section, after the stages.
 
@@ -822,5 +825,20 @@ target", "let's try to optimize the right thing").
 
 Paused (the author: "let's pause this"): what is left of the speed,
 the letters' ways with it, is in
-[`plan_playground_speed.md`](plan_playground_speed.md), "A page of
+[`plan_playground_speed.md`](../plan_playground_speed.md), "A page of
 text". Next here: the window of mini-rio's, and stage 6.
+
+2026-10-26, **stages 5 and 6 done**. mini-office runs in a window of
+mini-rio's (the author: "mini-office is running in a mini-rio window
+already"), not recorded: `make check-office` is the bare screen's
+session, and `check-windows` has none of it. The frame's time, stage
+5's first question, is measured above; what is left of it is
+`plan_playground_speed.md`'s. The office's rows of `bugs/ix.md` (the
+menus, the Enter lost, the strokes missing, `Redraw`'s picture and
+its 4 s a frame) are fixed. Stage 6: `apps/office/README.md` (copied,
+changed, ix's own, what remains; `playground_copies.sh`'s group was
+there, its numbers against the playground at `ff335663`); the ledger
+has stages 1 to 4, `make loc` counts `apps/` since 2026-10-09
+(`docs/loc.md`'s row of that day), and `apps/kits/` is gone. Not run:
+7d, Insert > Image... on mini-9pi (the card's two pictures are in its
+store), nor a frame's time with a picture there.

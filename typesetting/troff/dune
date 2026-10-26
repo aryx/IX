@@ -1,5 +1,5 @@
 ; typesetting/troff: mini-troff, a document typeset
-; (docs/plans/plan_typesetting.md). Its parts in folders (folders
+; (docs/plans/done/plan_typesetting.md). Its parts in folders (folders
 ; only: one library, ix_troff):
 ;   doc/    Doc: a document, whatever it was written in (Doc_image: a
 ;           picture from a file, as a block of one); Layout: its

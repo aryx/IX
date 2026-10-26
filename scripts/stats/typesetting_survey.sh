@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_typesetting.md: principia's troff
+# The numbers behind docs/plans/done/plan_typesetting.md: principia's troff
 # and the programs round it, counted; what its manual pages, its
 # papers (.ms) and its books (LaTeX in .nw) really ask of a formatter
 # (the requests, the escapes, the tables, the pictures, the equations,

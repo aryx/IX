@@ -36,7 +36,7 @@
 #     8/mouse (.SH alone, its words on the next line: tmac.an's own
 #     line for the HTML manual is taken for them, and the heading is in
 #     the paragraph)
-# (docs/plans/plan_typesetting.md, stage 1)
+# (docs/plans/done/plan_typesetting.md, stage 1)
 #
 # usage: man.sh [-k dir] [page ...]
 #   -k dir  what each made is kept there (dir/ref, dir/out) to be looked at

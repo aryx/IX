@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); export, ix's (the bytes are the application's); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/file_menu/File_menu.ml; its capabilities have Cap.env too (the store's directory is read in the environment) and Cap.exit (Exit, ix's item), menu_in's items are said, where they were optional (items); export, ix's (the bytes are the application's); the store is Store, every platform's here, where it was Playground_platform's (docs/plans/done/plan_office.md) *)
 open Playground
 
 (* See File_menu.mli *)

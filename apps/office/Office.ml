@@ -221,7 +221,7 @@
  * it gives up is this program's subject, seeing the page while
  * changing it.
  *
- * References: docs/plans/plan_office.md (what was copied, what
+ * References: docs/plans/done/plan_office.md (what was copied, what
  * changed, what runs where); the playground's apps/office, whose
  * other programs (TinyVisiCalc, TinyLotus123, TinyExcel, TinyBravo,
  * TinyWord, TinyOpenDoc...) are the history above, one program each.
@@ -229,7 +229,7 @@
  * PARC, 1976; revised 1979). Brian Kernighan, "PIC -- A Language
  * for Typesetting Graphics" (1982), for the other road.
  *)
-(* ix: the author's playground's apps/office/TinyOffice.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/TinyOffice.ml (docs/plans/done/plan_office.md) *)
 let app caps = Playground.game Office_view.view (Office_update.update caps ~exported:Office_export.pdf) Office_model.initial
 let () =
   Cap.main (fun caps ->

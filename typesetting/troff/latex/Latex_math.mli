@@ -3,7 +3,7 @@
  * fonts have and a word for the others (Latex_names.symbols). No
  * fraction, no root's bar, nothing built in two dimensions: the
  * books have 352 lines with a $ and none of these
- * (docs/plans/plan_typesetting.md, stage 6, is the real thing). *)
+ * (docs/plans/done/plan_typesetting.md, stage 6, is the real thing). *)
 
 (* what is between two $, in the paragraph *)
 val math : Latex_state.t -> string -> unit

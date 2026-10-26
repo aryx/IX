@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: the author's playground's libs/graphics/tests/Unit_png.ml; its three pictures of the playground are in ours/, the files read by the tests' reader, the CRC Zlib's halves, a pixel a byte of Bytes, Png.encode's arguments said (docs/plans/plan_office.md, stage 7) *)
+(* ix: the author's playground's libs/graphics/tests/Unit_png.ml; its three pictures of the playground are in ours/, the files read by the tests' reader, the CRC Zlib's halves, a pixel a byte of Bytes, Png.encode's arguments said (docs/plans/done/plan_office.md, stage 7) *)
 
 (* graphics/images/png: Png.mli's worked example, PngSuite (Willem van
  * Schaik's test pictures, a subset in pngsuite/, see its LICENSE), and

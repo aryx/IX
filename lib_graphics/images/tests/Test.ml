@@ -3,7 +3,7 @@
  *)
 
 (* The tests of the pictures' readers and of what draws a picture
- * (docs/plans/plan_office.md, stage 7): the playground's of Png (over
+ * (docs/plans/done/plan_office.md, stage 7): the playground's of Png (over
  * PngSuite), of Jpeg (over JPEGs of its own and the pixels libjpeg
  * decodes them to) and of Blit. The files are found from the tree's
  * top, where make test runs this, or in IMAGES_TESTS_DATA. *)

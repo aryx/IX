@@ -321,7 +321,7 @@ writes the symbol table) needs no board.
 ## A page of text: mini-office (2026-10-09; a redesign agreed, not begun)
 
 The plan above is of a game, few shapes and every pixel theirs. A
-page of mini-office's ([`plan_office.md`](plan_office.md)) is the
+page of mini-office's ([`plan_office.md`](done/plan_office.md)) is the
 other case: 7,941 shapes that change little, most of them a letter's
 strokes. The author, of it on Linux: "the graphics are pretty slow;
 moving around a sheet inside a Word document is really slow"; Cairo

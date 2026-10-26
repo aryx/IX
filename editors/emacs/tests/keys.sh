@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-emacs with no screen (docs/plans/plan_emacs.md, stages 2 to 6): a
+# mini-emacs with no screen (docs/plans/done/plan_emacs.md, stages 2 to 6): a
 # session is a file and a line of keys (mini-emacs-tty -keys), what it
 # leaves the screen as text, and the file if it was saved. Each by
 # dune's build must be keys.expected's (read by a person once: efuns

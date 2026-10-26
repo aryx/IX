@@ -26,7 +26,7 @@
 # (not looked into), in bootpc.ms a letter lost by goken's troff next
 # to a line drawn with a character that is not ASCII, in lp.ms \(en
 # written "en" (Plan 9's table for a terminal has no dash of that name).
-# (docs/plans/plan_typesetting.md, stage 3)
+# (docs/plans/done/plan_typesetting.md, stage 3)
 #
 # usage: ms.sh [-k dir] [file.ms ...]
 #   -k dir  what each made is kept there (dir/ref, dir/out)

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# A picture from a file in mini-office (docs/plans/plan_office.md,
+# A picture from a file in mini-office (docs/plans/done/plan_office.md,
 # stage 7): the program run without a window, as frames.sh, but with a
 # store that has a picture in it (picture.png: frames.sh's stores are
 # empty). Two sessions, each its last frame's sum against

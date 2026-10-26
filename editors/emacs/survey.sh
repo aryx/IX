@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_emacs.md: efuns' files (the
+# The numbers behind docs/plans/done/plan_emacs.md: efuns' files (the
 # author's Emacs in OCaml, ~/efuns), their lines, the constructs
 # mini-ml has not, counted, the modules they name that are not efuns'
 # own; and the playground's highlighters. (Not mini-ml's refusal of

@@ -6,7 +6,7 @@
  * It saves the file's bytes, not its pixels: a document carries a
  * photograph at its JPEG's size, where its pixels are four bytes
  * each. Nothing is painted on it: Part_picture is the picture one
- * draws. (docs/plans/plan_office.md, stage 7)
+ * draws. (docs/plans/done/plan_office.md, stage 7)
  *
  * What is saved is a digit, the quarter turns, then the file as it
  * was read. Keeping the file has a second reason for a JPEG: its

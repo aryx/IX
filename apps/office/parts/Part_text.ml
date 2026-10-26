@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/office/Part_text.ml; load reads a look's line by hand, where it was Scanf's; Page.layout's options and Rich.of_string's style are said (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/Part_text.ml; load reads a look's line by hand, where it was Scanf's; Page.layout's options and Rich.of_string's style are said (docs/plans/done/plan_office.md) *)
 open Playground
 
 let kind = "text"

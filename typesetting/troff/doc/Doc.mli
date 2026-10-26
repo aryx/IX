@@ -30,7 +30,7 @@
  * (where an em, a letter's height, is taken to be the same). A
  * [Space] is in lines.
  *
- * (docs/plans/plan_typesetting.md; its other blocks, a table, a
+ * (docs/plans/done/plan_typesetting.md; its other blocks, a table, a
  * figure, a footnote, come with the readers that need them) *)
 
 (* Mono is the font of what is typed: Plan 9's manual sets a command's

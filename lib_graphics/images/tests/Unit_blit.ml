@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: the author's playground's libs/graphics/tests/Unit_blit.ml; an image is Rgba_image.t, its pixels Bytes (docs/plans/plan_office.md, stage 7) *)
+(* ix: the author's playground's libs/graphics/tests/Unit_blit.ml; an image is Rgba_image.t, its pixels Bytes (docs/plans/done/plan_office.md, stage 7) *)
 
 let t = Testo.create
 

@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/draw/Figure.ml; an option's value is a match, where it was Option.value's ~default (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/draw/Figure.ml; an option's value is a match, where it was Option.value's ~default (docs/plans/done/plan_office.md) *)
 
 type point = float * float
 type box = { x0 : float; y0 : float; x1 : float; y1 : float }

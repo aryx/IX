@@ -47,7 +47,7 @@
  * set of parameters (.ev), a macro added to (.am). The packages are
  * written with those -- tmac.an's .TP sets its tag aside to measure
  * it -- which is why the packages are not run here but read as cases
- * (docs/plans/plan_typesetting.md).
+ * (docs/plans/done/plan_typesetting.md).
  *
  * cs-history:
  * The dot at the start of a line is older than Unix: RUNOFF, Jerome

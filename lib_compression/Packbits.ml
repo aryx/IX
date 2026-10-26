@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/compression/Packbits.ml; a loop's index has a name (docs/plans/plan_office.md) *)
+(* ix: the author's playground's libs/compression/Packbits.ml; a loop's index has a name (docs/plans/done/plan_office.md) *)
 
 (* how many times s.[i] repeats from i on, at most 128 *)
 let run_length s i =

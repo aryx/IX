@@ -1,5 +1,5 @@
 ; apps/office: mini-office, the author's playground's
-; apps/office/TinyOffice (docs/plans/plan_office.md), and what it
+; apps/office/TinyOffice (docs/plans/done/plan_office.md), and what it
 ; stands on that no other program here uses, in folders (folders only:
 ; one library, ix_office):
 ;   document/  Saved: a document's bytes, and Undo: a history of states,

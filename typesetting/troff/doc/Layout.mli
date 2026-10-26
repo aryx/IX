@@ -14,7 +14,7 @@
  * Lines are filled greedily, as troff's: a word goes on the line if it
  * fits, else it starts the next, and a line once left is not looked at
  * again. (TeX's way, the paragraph broken as a whole, is for later and
- * beside this one: docs/plans/plan_typesetting.md.) A word too long
+ * beside this one: docs/plans/done/plan_typesetting.md.) A word too long
  * for a line has the line to itself and goes past the edge.
  *
  * A line may also end inside a word, after a hyphen of its own

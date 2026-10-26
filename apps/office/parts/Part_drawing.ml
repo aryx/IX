@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/office/Part_drawing.ml; make's greatest height is said, where it was optional (220.); a style's type is said where a field of it is named (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/Part_drawing.ml; make's greatest height is said, where it was optional (220.); a style's type is said where a field of it is named (docs/plans/done/plan_office.md) *)
 open Playground
 
 let kind = "drawing"

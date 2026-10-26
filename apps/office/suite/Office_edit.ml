@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: a part of the author's playground's apps/office/TinyOffice.ml, its section Editing; what changed there is said in Office (docs/plans/plan_office.md) *)
+(* ix: a part of the author's playground's apps/office/TinyOffice.ml, its section Editing; what changed there is said in Office (docs/plans/done/plan_office.md) *)
 
 (* See Office_edit.mli *)
 

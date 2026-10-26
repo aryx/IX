@@ -923,7 +923,7 @@ The Page menu, last in the bar, shows the next page or the one before
 (C-x ], C-x [), makes a page after the one shown, or deletes it; the
 status line says which page is shown.
 
-The file is in mini-troff's format (`docs/plans/plan_typesetting.md`):
+The file is in mini-troff's format (`docs/plans/done/plan_typesetting.md`):
 Markdown's lines, and `\name[options]{text}` for the rest. Each box is
 a `\box[x y w h]{` line, its content and a line `}`; a sheet's name
 follows its numbers. A text is Markdown (`**bold**`, `*italic*`, a

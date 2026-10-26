@@ -871,7 +871,7 @@ endef
 #              place when there is no /sys/man; ix's own pages,
 #              docs/man, written in the new format), with troff's
 #              page as a PDF file too (/lib/pdf/troff.pdf;
-#              docs/plans/plan_typesetting.md, stage 8)
+#              docs/plans/done/plan_typesetting.md, stage 8)
 #              and a book of principia's, when it is there: its
 #              Kernel, 1083 pages, 3 MB (page /lib/pdf/kernel.pdf:
 #              what mini-page is most used for; BOOKS=, its clone)
@@ -889,7 +889,7 @@ endef
 #              games/fps/quake/data; docs/plans/done/plan_quake.md)
 #   usr/pad/lib/documents  the store of documents (mini-office's Open and
 #              Save), with two pictures for its Insert > Image...
-#              (a PNG, a JPEG: docs/plans/plan_office.md, stage 7)
+#              (a PNG, a JPEG: docs/plans/done/plan_office.md, stage 7)
 #   src        sources: for now five small programs, OCaml's hello.ml,
 #              hellodraw.ml and hellorio.ml (three programs of the
 #              card), C's hello.c, the assembler's hello.s: texts to
@@ -915,7 +915,7 @@ CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
 CARD_examples = hellorio=$(IX9)/windows/tests/hellorio hellokbd=$(IX9)/lib_graphics/tests/hellokbd hello=$(IX9)/kernels/9pi/tests/hello/hello tone=$(IX9)/kernels/9pi/tests/tone/tone
-# the typesetter and the manual (docs/plans/plan_typesetting.md, stage 8)
+# the typesetter and the manual (docs/plans/done/plan_typesetting.md, stage 8)
 CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesetting/man/mini-man
 # the assembler and the linker, for ix built on the card
 # (docs/plans/plan_self_hosting.md, stage 1)

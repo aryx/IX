@@ -42,7 +42,7 @@ Its numbers are `editors/emacs/survey.sh`'s (run 2026-10-09, against
 efuns at `9a58b65`, 2026-07-02, and the playground at `028d8abf`,
 2026-10-06).
 
-**Status: stages 1 to 6 of 7 done** (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; dired, the buffers' menu, macros; the author's configuration; the windows and the mouse; see Status, at the end).
+**Status: done** (2026-10-26, moved to done/; see Status, at the end): the 7 stages (the text; a file on the screen; the minibuffer, buffers, windows, the kill ring, searches; Unicode's wide and combining characters; the languages' colors; dired, the buffers' menu, macros; the author's configuration; the windows and the mouse; the docs).
 
 ## What efuns is
 
@@ -579,6 +579,18 @@ resized while the program runs; the status line's line number still
 counts from the text's start (0.7 ms in 83,000 bytes); the rest of ix
 rebuilt by mini-ml after `Filename`'s change; `docs/loc.md` (stage 7);
 the whole of `make test`.
+
+2026-10-26, **stage 7, the docs**: `editors/emacs/README.md` (what is
+efuns' idea and what is not, the directories and their lines, the
+three programs, the keys, what is not there, the tests). The
+highlighters were already in `scripts/playground_copies.sh`'s table
+(`lib_code/README.md`), mini-ml's change for mini-emacs (`pspan`) in
+plan_ml_bootstrap.md's ledger, and `make loc` counts
+`editors/` in m-ix: no row of its own in `docs/loc.md`. Left, each
+small: a redo; the status line's line number counted from the text's
+start; a key that changes the text makes the rows shown again; the
+types of OCaml's names; `M-x compile` and a shell, a plan of their
+own; mini-emacs's times under mini-9pi, not measured.
 
 Before it, 2026-10-09: the survey (`editors/emacs/survey.sh`) and
 this plan; first as a copy of efuns' files trimmed, then, the author

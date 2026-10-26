@@ -1,5 +1,5 @@
 ; languages/ml/highlight: OCaml read to be coloured, not compiled (the
-; author's playground's languages/ocaml, docs/plans/plan_emacs.md):
+; author's playground's languages/ocaml, docs/plans/done/plan_emacs.md):
 ; Token_ml (every token kept, comments too), Lexer_ml (one that never
 ; fails, on a text half typed) and Highlight_ml (each token's
 ; category, from its neighbours); and Names_ml, ix's own: what

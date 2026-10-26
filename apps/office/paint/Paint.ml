@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/paint/Paint.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/paint/Paint.ml (docs/plans/done/plan_office.md) *)
 
 let dot b p x y = Bitmap.set b x y (Pattern.black p x y)
 

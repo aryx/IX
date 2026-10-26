@@ -25,7 +25,7 @@
  *              --To_pdf---> the file's pages
  *   Doc.t --Ixdoc--> the document in Markdown's lines
  *
- * To come (docs/plans/plan_typesetting.md): the papers'
+ * To come (docs/plans/done/plan_typesetting.md): the papers'
  * equations.
  *
  * cs-history:

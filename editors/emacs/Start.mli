@@ -102,6 +102,6 @@
  * the gap buffer and redisplay. Bernard Greenberg, "Multics Emacs:
  * The History, Design and Implementation" (1979, multicians.org).
  * The author's efuns and its book (docs/efuns.nw there), whose
- * chapters are these modules; docs/plans/plan_emacs.md, what was
+ * chapters are these modules; docs/plans/done/plan_emacs.md, what was
  * kept of efuns and what was not. *)
 val editor : Efuns.caps -> pad:bool -> string option -> Top_window.model Tui.program

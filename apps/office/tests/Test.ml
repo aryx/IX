@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: as the author's playground's appkits/tests/Test.ml and apps/office/tests/Test.ml, for what is here (docs/plans/plan_office.md) *)
+(* ix: as the author's playground's appkits/tests/Test.ml and apps/office/tests/Test.ml, for what is here (docs/plans/done/plan_office.md) *)
 
 let () =
   Cap.main (fun caps ->

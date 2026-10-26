@@ -1,5 +1,5 @@
 ; assembler/highlight: an assembly file's colours (the author's
-; playground's languages/asm, docs/plans/plan_emacs.md). For mini-emacs.
+; playground's languages/asm, docs/plans/done/plan_emacs.md). For mini-emacs.
 (library
  (name ix_highlight_asm)
  (wrapped false)

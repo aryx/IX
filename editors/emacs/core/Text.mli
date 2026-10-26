@@ -1,6 +1,6 @@
 (* The text of a buffer: its bytes with a gap where one types, the
  * points that move with it, what was done to undo it, a regexp
- * searched (docs/plans/plan_emacs.md, stage 1). The idea and the names
+ * searched (docs/plans/done/plan_emacs.md, stage 1). The idea and the names
  * are efuns' Text (Fabrice Le Fessant, INRIA, 1998), which also keeps
  * a table of the lines and a color for each character; here a line is
  * found by scanning and the colors are a highlighter's.

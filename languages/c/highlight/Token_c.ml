@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's languages/c/Token_c.ml (docs/plans/plan_emacs.md) *)
+(* ix: the author's playground's languages/c/Token_c.ml (docs/plans/done/plan_emacs.md) *)
 
 (* See Token_c.mli *)
 

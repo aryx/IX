@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-office's frames (docs/plans/plan_office.md), as the games' are
+# mini-office's frames (docs/plans/done/plan_office.md), as the games' are
 # (games/tests/frames.sh, which says how): the program run without a
 # window, a session a line of frames.expected here (the playground's
 # sixteen scenes of TinyOffice, its tests/common/scenes/Scenes_2d.ml's

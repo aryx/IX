@@ -15,7 +15,7 @@
 # does not give what is off the sheet.
 # At the end: the pages, the sheets, the characters that the fonts
 # have not and how often, and the pages whose words differ.
-# (docs/plans/plan_typesetting.md, stage 2)
+# (docs/plans/done/plan_typesetting.md, stage 2)
 #
 # usage: pdf.sh [-k dir] [page ...]
 #   -k dir  the files are kept there

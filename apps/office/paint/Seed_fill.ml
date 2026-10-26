@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/paint/Seed_fill.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/paint/Seed_fill.ml (docs/plans/done/plan_office.md) *)
 
 let area b x y =
   let w = Bitmap.width b and h = Bitmap.height b in

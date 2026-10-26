@@ -12,7 +12,7 @@
 # a line that looks like an item's start; an assembly file's labels, a
 # Smalltalk class's variables, said far from their uses). And the time
 # of 100 characters typed in the largest OCaml source, by each way.
-# The numbers of docs/plans/plan_emacs.md and of Ebuffer.ml's comment.
+# The numbers of docs/plans/done/plan_emacs.md and of Ebuffer.ml's comment.
 # usage: editors/emacs/tests/colors.sh [-v]   (some minutes; -v: each screen that differs)
 cd "$(dirname "$0")/../../.."
 E=$PWD/_build/default/editors/emacs/tty/Main.exe

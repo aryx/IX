@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/tests/Unit_page.ml; Rich.of_string's style and Page.layout's options are said (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/tests/Unit_page.ml; Rich.of_string's style and Page.layout's options are said (docs/plans/done/plan_office.md) *)
 
 (* appkits/richtext/Page: where every character sits, and the way back
  * from a point to a place in the text -- with every character ten

@@ -1,4 +1,4 @@
-; editors/emacs: mini-emacs (docs/plans/plan_emacs.md), an Emacs
+; editors/emacs: mini-emacs (docs/plans/done/plan_emacs.md), an Emacs
 ; written after efuns: core/ and features/ as efuns' src/, here its
 ; configuration (Config: the keys and the modes; Config_pad: the
 ; author's own, over it; Start: the editor made, for a host), and

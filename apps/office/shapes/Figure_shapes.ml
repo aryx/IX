@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/graphics/draw_view/Figure_shapes.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/graphics/draw_view/Figure_shapes.ml (docs/plans/done/plan_office.md) *)
 open Playground
 
 let grey g =

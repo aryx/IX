@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal; pieces, take and same, the one-byte glyphs made once: a screen made and compared in less time (docs/plans/plan_pascal.md); wide and combining characters (lay: docs/plans/plan_emacs.md) *)
+(* ix: the author's playground's libs/terminal/Curses.ml; put's and box's attrs are said, where they were optional (Vt.plain); cursor_at, for a host that is no terminal; pieces, take and same, the one-byte glyphs made once: a screen made and compared in less time (docs/plans/plan_pascal.md); wide and combining characters (lay: docs/plans/done/plan_emacs.md) *)
 
 (* See Curses.mli *)
 

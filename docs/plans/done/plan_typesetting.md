@@ -64,7 +64,14 @@ no paper uses it.
 Its numbers are `scripts/stats/typesetting_survey.sh`'s (run
 2026-10-13, against principia at `6f2ea33f`, 2026-10-03).
 
-**Status: stage 1 done on Linux** (2026-10-13): mini-troff and mini-man
+**Status: done** (2026-10-17; moved to done/ on 2026-10-26): stages
+1 to 5, 7 and 8 done (see Status at the end). Left: stage 6, eqn's
+equations, postponed by the author (`Latex_math` is a stand-in); and
+what is the author's to choose, a plan of its own if wanted:
+hyphenation, fonts for what WinAnsi has not, the pages of the 51
+programs that Plan 9's manual has.
+
+**Stage 1 done on Linux** (2026-10-13): mini-troff and mini-man
 write a manual page for a terminal, and principia's 553 pages come out
 with troff's own lines, but 18 said by name. **Stage 2 done on Linux**
 (2026-10-13): `-T pdf`, the 553 pages as 1,006 sheets, read back by

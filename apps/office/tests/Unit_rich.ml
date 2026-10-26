@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/tests/Unit_rich.ml; Rich.of_string's style, Undo.start's limit and record's name are said (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/tests/Unit_rich.ml; Rich.of_string's style, Undo.start's limit and record's name are said (docs/plans/done/plan_office.md) *)
 
 (* appkits/richtext/Rich: the .mli's worked example run by run, the two
  * rules every word processor has about what typing looks like, and a

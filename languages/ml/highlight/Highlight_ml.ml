@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's languages/ocaml/Highlight_ml.ml (docs/plans/plan_emacs.md), its pass over the tokens; without the pass over the tree (Parse_ml, 1,184 lines, and Ast_ml: a name's scope: here Names_ml, over mini-ml's parser) and analyze *)
+(* ix: the author's playground's languages/ocaml/Highlight_ml.ml (docs/plans/done/plan_emacs.md), its pass over the tokens; without the pass over the tree (Parse_ml, 1,184 lines, and Ast_ml: a name's scope: here Names_ml, over mini-ml's parser) and analyze *)
 
 (* See Highlight_ml.mli.
  *

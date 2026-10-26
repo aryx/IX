@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: after the author's playground's playground/platforms/native_common/Store.ml; written again over the capabilities (docs/plans/plan_office.md) *)
+(* ix: after the author's playground's playground/platforms/native_common/Store.ml; written again over the capabilities (docs/plans/done/plan_office.md) *)
 
 (* See Store.mli *)
 

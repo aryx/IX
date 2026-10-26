@@ -69,7 +69,7 @@
  * record's idea with a container round it: each part's bytes behind
  * its kind's name, read back by whoever knows the kind.
  *
- * References: docs/plans/plan_office.md; Component.mli for a part and
+ * References: docs/plans/done/plan_office.md; Component.mli for a part and
  * the registry; the playground's TinyOffice, which this was a
  * section of. *)
 

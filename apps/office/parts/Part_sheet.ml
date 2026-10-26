@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's apps/office/Part_sheet.ml; make's columns and rows are said, where they were optional (3, 5); an option's value is a match (docs/plans/plan_office.md) *)
+(* ix: the author's playground's apps/office/Part_sheet.ml; make's columns and rows are said, where they were optional (3, 5); an option's value is a match (docs/plans/done/plan_office.md) *)
 open Playground
 
 let kind = "sheet"

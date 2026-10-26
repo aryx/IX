@@ -2,7 +2,7 @@
 ; playground's libs/code): Highlight_code, the categories a
 ; highlighter gives a file's tokens and a file as lines of spans. A
 ; language's highlighter is beside it (languages/ml/highlight...);
-; mini-emacs draws what they give (docs/plans/plan_emacs.md).
+; mini-emacs draws what they give (docs/plans/done/plan_emacs.md).
 (library
  (name ix_code)
  (wrapped false))

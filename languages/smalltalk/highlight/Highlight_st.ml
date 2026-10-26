@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's languages/smalltalk/Highlight_st.ml (docs/plans/plan_emacs.md); without analyze and the definitions a code map asks (the bindings it follows for them stay) *)
+(* ix: the author's playground's languages/smalltalk/Highlight_st.ml (docs/plans/done/plan_emacs.md); without analyze and the definitions a code map asks (the bindings it follows for them stay) *)
 
 (* See Highlight_st.mli *)
 

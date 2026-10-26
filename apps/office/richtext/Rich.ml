@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/richtext/Rich.ml; of_string's style is said, where it was optional (Style.plain) (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/richtext/Rich.ml; of_string's style is said, where it was optional (Style.plain) (docs/plans/done/plan_office.md) *)
 
 (* See Rich.mli *)
 

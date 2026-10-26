@@ -53,7 +53,7 @@ memory: SDL's, and a file's), `sdl/Window_sdl` (a window on Linux:
 dune's alone) and `draw/Window_draw` (one of mini-rio's, under
 mini-9pi). Written for mini-turbopascal (`plan_pascal.md`, "The
 window"), here since mini-emacs has the same hosts
-([`plan_emacs.md`](../docs/plans/plan_emacs.md), stage 6): with
+([`plan_emacs.md`](../docs/plans/done/plan_emacs.md), stage 6): with
 `mouse`, a host says a click and the wheel as xterm's bytes for them.
 
 ## What remains in the playground

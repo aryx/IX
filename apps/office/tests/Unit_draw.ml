@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/tests/Unit_draw.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/tests/Unit_draw.ml (docs/plans/done/plan_office.md) *)
 
 (* appkits/draw: a drawing as objects -- a hollow shape hit on its
  * outline only, the one in front hit first, a marquee taking what is

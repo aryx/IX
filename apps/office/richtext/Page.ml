@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/richtext/Page.ml; layout's options are a record, where they were three optional arguments (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/richtext/Page.ml; layout's options are a record, where they were three optional arguments (docs/plans/done/plan_office.md) *)
 
 (* See Page.mli *)
 

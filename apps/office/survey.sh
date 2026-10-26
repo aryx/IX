@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers behind docs/plans/plan_office.md: the files of the
+# The numbers behind docs/plans/done/plan_office.md: the files of the
 # author's playground that TinyOffice stands on and ix has not yet,
 # their lines, what mini-ml says of each (its first refusal only: a
 # file has others behind it), the constructs mini-ml has not, counted,

@@ -16,7 +16,7 @@ highlighter is beside the language, and gives these:
 
 What draws them is mini-emacs (`editors/emacs/`): a mode a language,
 its colors `Highlight`'s. The plan:
-[`plan_emacs.md`](../docs/plans/plan_emacs.md).
+[`plan_emacs.md`](../docs/plans/done/plan_emacs.md).
 
 Each copied file says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The numbers

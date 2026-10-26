@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/tests/Unit_paint.ml (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/tests/Unit_paint.ml (docs/plans/done/plan_office.md) *)
 
 (* appkits/paint: the .mli's worked examples -- the bits of a row,
  * Apple's own PackBits example, Bresenham's line, the rectangles a

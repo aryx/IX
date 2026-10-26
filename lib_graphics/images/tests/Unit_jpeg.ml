@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
  *)
-(* ix: the author's playground's libs/graphics/tests/Unit_jpeg.ml; the files read by the tests' reader, a decoding's arguments said (Jpeg.decode_with), a pixel a byte of Bytes (docs/plans/plan_office.md, stage 7) *)
+(* ix: the author's playground's libs/graphics/tests/Unit_jpeg.ml; the files read by the tests' reader, a decoding's arguments said (Jpeg.decode_with), a pixel a byte of Bytes (docs/plans/done/plan_office.md, stage 7) *)
 
 (* graphics/images/jpeg: the worked examples of Dct.mli and Jpeg.mli,
  * and JPEGs of our own (jpegs/, see make_jpegs.py there) compared with

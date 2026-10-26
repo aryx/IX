@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's appkits/paint/Bitmap.ml; of_string reads its first line by hand, where it was Scanf's (lib_core has none) (docs/plans/plan_office.md) *)
+(* ix: the author's playground's appkits/paint/Bitmap.ml; of_string reads its first line by hand, where it was Scanf's (lib_core has none) (docs/plans/done/plan_office.md) *)
 
 type t = { width : int; height : int; rowbytes : int; bits : Bytes.t }
 

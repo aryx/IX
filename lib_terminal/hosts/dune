@@ -3,7 +3,7 @@
 ; with Plan 9's default font, a cell a character, the window's size the
 ; number of rows and columns. ix's own (written for mini-turbopascal,
 ; docs/plans/plan_pascal.md, "The window"; here since mini-emacs has
-; the same hosts, docs/plans/plan_emacs.md). What the hosts share:
+; the same hosts, docs/plans/done/plan_emacs.md). What the hosts share:
 ; Cells (what changed between two screens, the colours, the PC's box
 ; characters, painted on a surface; a key and a click as a terminal's
 ; bytes) and Picture (a surface in memory, with the font's bits:

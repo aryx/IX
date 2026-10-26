@@ -1,0 +1,8 @@
+; TinyBrowser.ml's parts (tiny-ml compiles them before it, for www on
+; tiny-kernel): the reading of a page into lines, its test's on the
+; host (../tests/TinyBrowser_tests/), and the addresses
+(library
+ (name tiny_browser_parts)
+ (wrapped false)
+ (modules TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserPage
+  TinyBrowserAddress))

@@ -1,6 +1,6 @@
 // Claude Code, Copyright (C) 2026 Yoann Padioleau, LGPL (see TinyC.ml)
 //
-// The C side of TinyBrowser.ml on tiny-cpu (TinyBrowser_test.sh): it
+// The C side of TinyBrowser's reading on tiny-cpu (TinyBrowser_test.sh): it
 // gives ML's runtime its memory, and defines the two externals that
 // Tm.ml uses: the width (the first argument) and reading a message
 // from the standard input. The memory itself is in heap.c, which is
@@ -13,16 +13,6 @@ extern value vstack[], space0[], space1[];
 
 static char buf[4096];
 static int width = 80;
-
-// tiny-kernel's calls, which the browser's screen part names
-// (TinyBrowser.browse, TinyCalls.ml's externals). The test does not draw, so
-// here they do nothing: no screen, no keys, no network.
-value u_write(value fd, value s) { return 1; }
-value u_read(value fd, value n) { return string_alloc(0); }
-value u_ready(value fds, value n, value until) { return -1 * 2 + 1; }
-value u_ticks(value unit) { return 1; }
-value u_dial(value address, value port) { return -1 * 2 + 1; }
-value u_close(value fd) { return 1; }
 
 value
 www_width(value unit)

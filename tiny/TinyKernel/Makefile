@@ -210,10 +210,25 @@ I_TinyAppCalculator = $(I_TinyLibGUI) TinyLibGUI
 I_TinyAppTemperature = $(I_TinyAppCalculator)
 GUI = TinyCalls TinyLibDraw TinyLibPlayground TinyLibGUI
 I_TinyEditorScreen = $(GUI)
-I_TinyOffice = $(GUI)
-I_TinyTroff = $(GUI) TinyOffice
+# (TinyOffice.ml on its parts, TinyOffice/, which TinyTroff.ml reads a
+# page with)
+OFFICE = TinyOfficeModel TinyOfficeText TinyOfficeSheet TinyOfficeDrawing TinyOfficePaint TinyOfficeChart TinyOfficeFile
+I_TinyOfficeModel = $(GUI)
+I_TinyOfficeText = $(GUI) TinyOfficeModel
+I_TinyOfficeSheet = $(GUI) TinyOfficeModel
+I_TinyOfficeDrawing = $(GUI) TinyOfficeModel
+I_TinyOfficePaint = $(GUI) TinyOfficeModel
+I_TinyOfficeChart = $(GUI) TinyOfficeModel TinyOfficeSheet
+I_TinyOfficeFile = $(GUI) TinyOfficeModel TinyOfficeText TinyOfficeSheet
+I_TinyOffice = $(GUI) $(OFFICE)
+I_TinyTroff = $(GUI) $(OFFICE)
 I_TinyPlay = $(GUI)
-I_TinyBrowser = $(GUI)
+# (TinyBrowser.ml on its parts, TinyBrowser/)
+BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserPage TinyBrowserAddress
+I_TinyBrowserTokens = TinyBrowserText
+I_TinyBrowserPage = TinyBrowserText TinyBrowserTokens TinyBrowserLines
+I_TinyBrowserAddress = TinyBrowserText
+I_TinyBrowser = $(GUI) $(BROWSER)
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
@@ -223,18 +238,35 @@ I_TinyVCS = TinyCalls TinyLibSystem
 I_TinyBuildSystem = TinyCalls TinyLibSystem
 I_TinyAssembler = TinyCalls TinyLibSystem TinyMachineISA
 I_TinyLinker = $(I_TinyAssembler) TinyLibSymbols
-I_TinyC = TinyCalls TinyLibSystem
-I_TinyML = TinyCalls TinyLibSystem
+# (TinyC.ml on its parts, TinyC/, the compiler's passes; each part after
+# the ones before it)
+CC_PARTS = TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
+I_TinyCLexer = TinyCTypes
+I_TinyCTree = $(I_TinyCLexer) TinyCLexer
+I_TinyCLower = $(I_TinyCTree) TinyCTree
+I_TinyCParser = $(I_TinyCLower) TinyCLower
+I_TinyCMachine = $(I_TinyCParser) TinyCParser
+I_TinyC = TinyCalls TinyLibSystem $(CC_PARTS)
+# (TinyML.ml on its parts, TinyML/, the compiler's passes; each part
+# after the ones before it)
+MLC = TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
+I_TinyMLTree = TinyMLLexer
+I_TinyMLPrintf = $(I_TinyMLTree) TinyMLTree
+I_TinyMLParser = $(I_TinyMLPrintf) TinyMLPrintf
+I_TinyMLTypes = $(I_TinyMLParser) TinyMLParser
+I_TinyMLMachine = $(I_TinyMLTypes) TinyMLTypes
+I_TinyMLCompile = $(I_TinyMLMachine) TinyMLMachine
+I_TinyML = TinyCalls TinyLibSystem $(MLC)
 I_Square = $(I_TinyLibGUI)
 I_Machine = $(I_TinyLibGUI) Square
 I_Tetris = $(I_TinyAppTetris) TinyAppTetris
 I_Calc = $(I_TinyAppCalculator) TinyAppCalculator
 I_Temp = $(I_TinyAppTemperature) TinyAppTemperature
 I_Emacs = $(GUI) TinyEditorScreen
-I_Office = $(GUI) TinyOffice
-I_Troff = $(GUI) TinyOffice TinyTroff
+I_Office = $(I_TinyOffice) TinyOffice
+I_Troff = $(I_TinyTroff) TinyTroff
 I_Play = $(GUI) TinyPlay
-I_Www = $(GUI) TinyBrowser
+I_Www = $(I_TinyBrowser) TinyBrowser
 I_TinyTracer = TinyCalls
 I_TinyDebugger = $(GUI) TinyMachineISA TinyLibSymbols
 I_Trace = TinyCalls TinyTracer
@@ -256,10 +288,35 @@ F_Bigmem = user/bigmem.ml
 F_Trace = user/trace.ml
 F_Debug = user/debug.ml
 F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
+F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
+F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
+F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
+F_TinyBrowserPage = ../TinyBrowser/TinyBrowserPage.ml
+F_TinyBrowserAddress = ../TinyBrowser/TinyBrowserAddress.ml
+F_TinyOfficeModel = ../TinyOffice/TinyOfficeModel.ml
+F_TinyOfficeText = ../TinyOffice/TinyOfficeText.ml
+F_TinyOfficeSheet = ../TinyOffice/TinyOfficeSheet.ml
+F_TinyOfficeDrawing = ../TinyOffice/TinyOfficeDrawing.ml
+F_TinyOfficePaint = ../TinyOffice/TinyOfficePaint.ml
+F_TinyOfficeChart = ../TinyOffice/TinyOfficeChart.ml
+F_TinyOfficeFile = ../TinyOffice/TinyOfficeFile.ml
+F_TinyMLLexer = ../TinyML/TinyMLLexer.ml
+F_TinyMLTree = ../TinyML/TinyMLTree.ml
+F_TinyMLPrintf = ../TinyML/TinyMLPrintf.ml
+F_TinyMLParser = ../TinyML/TinyMLParser.ml
+F_TinyMLTypes = ../TinyML/TinyMLTypes.ml
+F_TinyMLMachine = ../TinyML/TinyMLMachine.ml
+F_TinyMLCompile = ../TinyML/TinyMLCompile.ml
+F_TinyCTypes = ../TinyC/TinyCTypes.ml
+F_TinyCLexer = ../TinyC/TinyCLexer.ml
+F_TinyCTree = ../TinyC/TinyCTree.ml
+F_TinyCLower = ../TinyC/TinyCLower.ml
+F_TinyCParser = ../TinyC/TinyCParser.ml
+F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
-UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker TinyC TinyML \
-  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen TinyOffice TinyTroff TinyPlay TinyBrowser TinyTracer TinyDebugger \
+UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
+  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
 $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(O)/lib/Stdlib.tm $(TMLBIN)

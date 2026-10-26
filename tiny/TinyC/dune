@@ -1,0 +1,8 @@
+; TinyC.ml's parts, the compiler's passes (tiny-ml compiles them before
+; it, for cc on tiny-kernel)
+(library
+ (name tiny_c_parts)
+ (wrapped false)
+ (modules TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser
+  TinyCMachine)
+ (libraries ix_core))

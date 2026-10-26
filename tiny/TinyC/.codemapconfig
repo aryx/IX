@@ -1,0 +1,72 @@
+// tiny/TinyC/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The program
+// is ../TinyC.ml; these are its passes, in their order.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-26' },
+  summary: "tiny-c's passes: C's types, the tokens, the tree typed as it is built, the stack machine, the parser, TinyCPU's code.",
+  files: {
+    'TinyCTypes.ml': { digest: '87b5064659c4',
+      summary: "C's types on a 32-bit machine: sizes, alignments, a structure itself (same), no long long.",
+    },
+    'TinyCLexer.ml': { digest: '07e0ace90821',
+      summary: "The tokens of a file, the preprocessor's job done as they are made: #include of a file, #define of a name, the other directives skipped.",
+      important: [
+        { at: 'def:tokens', say: 'the preprocessor: #include and #define of a name', weight: 1 },
+      ],
+    },
+    'TinyCTree.ml': { digest: 'a2e97cf586cb',
+      summary: "The tree, typed as it is built: each expression with its type, C's conversions made nodes; the statements.",
+      capitals: [
+        { at: 'type:expr', say: 'built typed, its conversions explicit (Conv)' },
+      ],
+      important: [
+        { at: 'type:expr', weight: 2 },
+        { at: 'def:conv', say: "C's conversions, made nodes as the tree is built", weight: 2 },
+        { at: 'type:stmt', weight: 1 },
+      ],
+    },
+    'TinyCLower.ml': { digest: 'a16e123a66ff',
+      summary: 'The stack machine, and the tree lowered to it: labels and jumps, the front end knowing no register.',
+      capitals: [
+        { at: 'type:ir', say: 'the stack machine: the front end knows no register, the back end no C' },
+        { at: 'def:lower', say: 'statements to the stack machine: labels and jumps' },
+      ],
+      important: [
+        { at: 'type:ir', weight: 3 },
+        { at: 'def:lower', weight: 3 },
+      ],
+    },
+    'TinyCParser.ml': { digest: '5f6abb9d3f63',
+      summary: 'Declarations, expressions and statements by recursive descent, the scopes and the data of the globals.',
+      important: [
+        { at: 'def:block', say: "a function's body: the tree of statements", weight: 2 },
+        { at: 'def:base_type', weight: 1 },
+      ],
+    },
+    'TinyCMachine.ml': { digest: 'b0df47f726e4',
+      summary: "The stack machine to TinyCPU's assembly: the stack in r1..r12, a frame's sizes known at its end.",
+      important: [
+        { at: 'def:machine', say: 'the back end, for TinyCPU: the stack in r1..r12, 100 lines', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'tiny-c: its passes',
+      bones: [
+        { at: 'TinyCLexer.ml:def:tokens', role: 'the tokens, #include and #define done' },
+        { at: 'TinyCParser.ml:def:block', role: 'the tree of statements, typed as built' },
+        { at: 'TinyCTree.ml:def:conv', role: "C's conversions, nodes of the tree" },
+        { at: 'TinyCLower.ml:def:lower', role: 'the tree to the stack machine' },
+        { at: 'TinyCMachine.ml:def:machine', role: 'the stack machine to TinyCPU' },
+      ],
+      joints: [
+        { from: 'TinyCLexer.ml:def:tokens', to: 'TinyCParser.ml:def:block', say: 'tokens' },
+        { from: 'TinyCParser.ml:def:block', to: 'TinyCTree.ml:def:conv', say: 'expressions' },
+        { from: 'TinyCParser.ml:def:block', to: 'TinyCLower.ml:def:lower', say: 'statements' },
+        { from: 'TinyCLower.ml:def:lower', to: 'TinyCMachine.ml:def:machine', say: 'IR' },
+      ],
+    },
+  ],
+}

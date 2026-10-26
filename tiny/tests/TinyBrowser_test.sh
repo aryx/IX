@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# Tests the part of TinyBrowser.ml that reads a page and turns it into
+# Tests the part of TinyBrowser that reads a page and turns it into
 # lines, printed as text by TinyBrowser_tests/Testutil_browser.ml.
 # - On the host, built by OCaml (TinyBrowser_tests/Host.ml): the lines of
 #   each page are compared with its .expected file. tags.html and
@@ -25,6 +25,7 @@ TC=${TC:-$ROOT/_build/default/tiny/TinyC.exe}
 CPU=${CPU:-$ROOT/_build/default/tiny/TinyCPU.exe}
 . $ROOT/tiny/tests/link.sh
 T=$ROOT/tiny/tests/TinyBrowser_tests
+B=$ROOT/tiny/TinyBrowser
 L=$ROOT/tiny/TinyCRuntime
 W=${W:-$(mktemp -d)}
 [ -n "${KEEP:-}" ] || trap 'rm -rf $W' EXIT
@@ -48,7 +49,7 @@ done
 # On tiny-cpu. The runtime and main are linked first, then the program,
 # then the heap's arrays. In the other order, main would be too far
 # for the start's call to reach it (a jump reaches 32K words).
-if ml_lib $W/lib && $TML -L $W/lib -o $W/b.tm $ROOT/tiny/TinyKernel/libml/TinyCalls.ml $ROOT/tiny/TinyLibDraw.ml $ROOT/tiny/TinyLibPlayground.ml $ROOT/tiny/TinyLibGUI.ml $ROOT/tiny/TinyBrowser.ml $T/Testutil_browser.ml $T/Tm.ml \
+if ml_lib $W/lib && $TML -L $W/lib -o $W/b.tm $B/TinyBrowserText.ml $B/TinyBrowserTokens.ml $B/TinyBrowserLines.ml $B/TinyBrowserPage.ml $T/Testutil_browser.ml $T/Tm.ml \
    && $TC -o $W/tm.tm $T/tm.c && $TC -o $W/heap.tm $T/heap.c && $TC -o $W/libc.tm $L/libc.c \
    && link_tm $W/b.img $L/start.tm $L/udivmod.tm $T/read.tm $W/libc.tm $W/tm.tm $W/b.tm $W/heap.tm $LIB_O; then
   for p in $PAGES; do

@@ -14,7 +14,7 @@ D=$B/tiny
 LIBDIRS=lib_crypto
 <$TOP/mkfiles/mklibs
 # (the host's TinyLibSystem first: TinyKernel/libml/'s is tiny-ml's)
-INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I ../lib_crypto $STDI
+INCLUDES=-I TinyKernel/host -I . -I $D -I TinyMachine -I TinyKernel -I TinyML -I TinyC -I ../lib_crypto $STDI
 START=$ML -start $STD $COMMONS
 LINK=$LD -H7 -nofollow
 LIBS=$STDOBJS $STDEND $TOP/mkfiles/mkconfig
@@ -31,6 +31,26 @@ $D/%.$O: %.ml
 $D/TinyMachineCPU.$O $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineISA.ml
 $D/TinyCPU.$O $D/TinyMachineDevices.$O $D/TinyMachine.$O: TinyMachine/TinyMachineCPU.ml
 $D/TinyAssembler.$O $D/TinyLinker.$O $D/TinyC.$O $D/TinyML.$O: $D/TinyLibSystem.$O
+# (tiny-ml's passes, TinyML/, each after the ones before it)
+MLC=TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes TinyMLMachine TinyMLCompile
+MLCO=${MLC:%=$D/%.$O}
+$D/TinyMLTree.$O: $D/TinyMLLexer.$O
+$D/TinyMLPrintf.$O: $D/TinyMLTree.$O
+$D/TinyMLParser.$O: $D/TinyMLPrintf.$O
+$D/TinyMLTypes.$O: $D/TinyMLParser.$O
+$D/TinyMLMachine.$O: $D/TinyMLTypes.$O
+$D/TinyMLCompile.$O: $D/TinyMLMachine.$O
+$D/TinyML.$O: $D/TinyMLCompile.$O
+
+# (tiny-c's passes, TinyC/, the same way)
+CCP=TinyCTypes TinyCLexer TinyCTree TinyCLower TinyCParser TinyCMachine
+CCPO=${CCP:%=$D/%.$O}
+$D/TinyCLexer.$O: $D/TinyCTypes.$O
+$D/TinyCTree.$O: $D/TinyCLexer.$O
+$D/TinyCLower.$O: $D/TinyCTree.$O
+$D/TinyCParser.$O: $D/TinyCLower.$O
+$D/TinyCMachine.$O: $D/TinyCParser.$O
+$D/TinyC.$O: $D/TinyCMachine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
 $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 
@@ -41,6 +61,12 @@ $D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml
 $D/TinyMachine%.$O: TinyMachine/TinyMachine%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyMachine/TinyMachine$stem.ml
+$D/TinyML%.$O: TinyML/TinyML%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyML/TinyML$stem.ml
+$D/TinyC%.$O: TinyC/TinyC%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target TinyC/TinyC$stem.ml
 $D/TinyKernelNetwork.$O: TinyKernel/TinyKernelNetwork.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target TinyKernel/TinyKernelNetwork.ml
@@ -77,12 +103,12 @@ $D/TinyEditorLine.$O: $D/TinyLibSystem.$O $D/TinyLibRegex.$O TinyEditorLine.ml
 $D/tiny-editor: $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $LIBS
 	$START TinyLibSystem TinyLibRegex TinyEditorLine Std_exit -o $D/TinyEditorLine.start.$O
 	$LINK -o $target $D/TinyEditorLine.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyLibRegex.$O $D/TinyEditorLine.$O $STDEND
-$D/tiny-c: $D/TinyLibSystem.$O $D/TinyC.$O $LIBS
-	$START TinyLibSystem TinyC Std_exit -o $D/TinyC.start.$O
-	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyC.$O $STDEND
-$D/tiny-ml: $D/TinyLibSystem.$O $D/TinyML.$O $LIBS
-	$START TinyLibSystem TinyML Std_exit -o $D/TinyML.start.$O
-	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyML.$O $STDEND
+$D/tiny-c: $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $LIBS
+	$START TinyLibSystem $CCP TinyC Std_exit -o $D/TinyC.start.$O
+	$LINK -o $target $D/TinyC.start.$O $STDOBJS $D/TinyLibSystem.$O $CCPO $D/TinyC.$O $STDEND
+$D/tiny-ml: $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $LIBS
+	$START TinyLibSystem $MLC TinyML Std_exit -o $D/TinyML.start.$O
+	$LINK -o $target $D/TinyML.start.$O $STDOBJS $D/TinyLibSystem.$O $MLCO $D/TinyML.$O $STDEND
 $D/tiny-assembler: $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $LIBS
 	$START TinyLibSystem TinyMachineISA TinyAssembler Std_exit -o $D/TinyAssembler.start.$O
 	$LINK -o $target $D/TinyAssembler.start.$O $STDOBJS $D/TinyLibSystem.$O $D/TinyMachineISA.$O $D/TinyAssembler.$O $STDEND

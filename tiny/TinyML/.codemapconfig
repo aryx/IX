@@ -1,0 +1,78 @@
+// tiny/TinyML/: what the code map says of it (the code map: tinybox
+// codemap, ~/github/ocaml-elm-playground; its guidelines:
+// docs/claude_notes/codemapconfig_guidelines.md there). The program
+// is ../TinyML.ml; these are its passes, in their order.
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-26' },
+  summary: "tiny-ml's passes: the tokens, the tree, Printf's formats, the parser, Hindley-Milner, the stack machine and its assembly, the tree compiled.",
+  files: {
+    'TinyMLLexer.ml': { digest: 'cc5f215759c5',
+      summary: 'The tokens of a file, each with its line; keywords and symbols looked up in tables.',
+    },
+    'TinyMLTree.ml': { digest: '58e7aba70c34',
+      summary: "The tree and the types' terms, the constructors' and the labels' tables: one name space for the program.",
+      important: [
+        { at: 'type:expr', weight: 2 },
+        { at: 'type:ty', say: 'a type variable a cell: unbound with its level, or linked', weight: 2 },
+      ],
+    },
+    'TinyMLPrintf.ml': { digest: '22fbc96e87ec',
+      summary: "Printf's sprintf, ksprintf and bprintf read as the concatenations they make: the type checker sees no format.",
+    },
+    'TinyMLParser.ml': { digest: 'ba1ff67e0a0e',
+      summary: 'The tokens to the tree by recursive descent, operators by precedence climbing; type declarations, abbreviations.',
+      important: [
+        { at: 'def:items', say: 'the toplevel items: the tree', weight: 2 },
+      ],
+    },
+    'TinyMLTypes.ml': { digest: '0aff484cc4c0',
+      summary: "Hindley-Milner with Rémy's levels, the value restriction; a unit's scope, its names M.x for the units after it.",
+      capitals: [
+        { at: 'def:infer', say: "Hindley-Milner, with Rémy's levels" },
+      ],
+      important: [
+        { at: 'def:infer', weight: 3 },
+        { at: 'def:unify', weight: 2 },
+        { at: 'def:generalize', say: 'levels: generalize what the let made', weight: 2 },
+      ],
+    },
+    'TinyMLMachine.ml': { digest: '305aa089e5a1',
+      summary: 'The stack machine, its code to assembly on the value stack at r12, and the static data: strings, closures, exceptions.',
+      important: [
+        { at: 'type:ir', say: "TinyC's stack machine, with blocks and handlers", weight: 2 },
+        { at: 'def:machine', say: 'the value stack at r12: every root where the GC sees it', weight: 2 },
+      ],
+    },
+    'TinyMLCompile.ml': { digest: '361d5524bfd6',
+      summary: "The tree to the stack machine: each function's free variables, patterns as tests, tail calls as jumps.",
+      capitals: [
+        { at: 'def:value', say: 'an expression to the stack machine: closures, matches, tail calls' },
+      ],
+      important: [
+        { at: 'def:value', weight: 3 },
+        { at: 'def:tail', say: 'a call in tail position is a jump', weight: 2 },
+      ],
+      links: [
+        { from: 'def:value', to: 'def:tail' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'tiny-ml: its passes',
+      bones: [
+        { at: 'TinyMLLexer.ml:def:lex', role: 'the tokens' },
+        { at: 'TinyMLParser.ml:def:items', role: 'the tree' },
+        { at: 'TinyMLTypes.ml:def:infer', role: 'the types' },
+        { at: 'TinyMLCompile.ml:def:value', role: 'the stack machine' },
+        { at: 'TinyMLMachine.ml:def:machine', role: 'the assembly' },
+      ],
+      joints: [
+        { from: 'TinyMLLexer.ml:def:lex', to: 'TinyMLParser.ml:def:items', say: 'tokens' },
+        { from: 'TinyMLParser.ml:def:items', to: 'TinyMLTypes.ml:def:infer', say: 'the tree' },
+        { from: 'TinyMLTypes.ml:def:infer', to: 'TinyMLCompile.ml:def:value', say: 'the typed tree' },
+        { from: 'TinyMLCompile.ml:def:value', to: 'TinyMLMachine.ml:def:machine', say: 'IR' },
+      ],
+    },
+  ],
+}

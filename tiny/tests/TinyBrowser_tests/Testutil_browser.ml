@@ -5,18 +5,18 @@
 
 (* A picture's first row shows as [its alternative text, w x h]; its
  * other rows as nothing. *)
-let show_line p width (l : TinyBrowser.line) =
+let show_line p width (l : TinyBrowserLines.line) =
   if l.rule then String.make width '-'
   else begin
     let at = ref 0 in
-    String.concat "" (List.map (fun (r : TinyBrowser.run) ->
+    String.concat "" (List.map (fun (r : TinyBrowserLines.run) ->
       let pad =
         if r.pic = -2 then ""
         else if r.col > !at then String.make (r.col - !at) ' '
         else "" in
       let text =
         if r.pic >= 0 && r.pic mod 256 = 0 then
-          let pc = TinyBrowser.picture_of p (r.pic / 256) in
+          let pc = TinyBrowserPage.picture_of p (r.pic / 256) in
           "[" ^ (if pc.pc_alt = "" then "picture" else pc.pc_alt) ^ ", "
           ^ string_of_int pc.pc_w ^ "x" ^ string_of_int pc.pc_h ^ "]"
         else if r.pic = -2 then ""
@@ -28,4 +28,4 @@ let show_line p width (l : TinyBrowser.line) =
 let dump p width =
   String.concat ""
     (List.map (fun l -> show_line p width l ^ "\n")
-       (TinyBrowser.lines_between p 0 (TinyBrowser.count p)))
+       (TinyBrowserPage.lines_between p 0 (TinyBrowserPage.count p)))

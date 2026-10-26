@@ -1,0 +1,8 @@
+; TinyML.ml's parts, the compiler's passes (tiny-ml compiles them before
+; it, for ml on tiny-kernel)
+(library
+ (name tiny_ml_parts)
+ (wrapped false)
+ (modules TinyMLLexer TinyMLTree TinyMLPrintf TinyMLParser TinyMLTypes
+  TinyMLMachine TinyMLCompile)
+ (libraries ix_core))

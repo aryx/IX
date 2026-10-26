@@ -30,6 +30,14 @@
  *        |                   static blocks into .word
  *     file.tm, for tiny-assembler (with M.tmi when alone, -c)
  *
+ * The passes are TinyML/'s modules: TinyMLLexer, then TinyMLParser,
+ * which makes the tree of TinyMLTree (and reads Printf's formats as the
+ * concatenations they make, TinyMLPrintf), TinyMLTypes, the type
+ * checker, then TinyMLCompile, the tree to the stack machine, whose
+ * [ir] and assembly are TinyMLMachine's. This file is the program
+ * around them: a unit compiled, the program's main, the interfaces
+ * (M.tmi) a unit leaves for the next ones.
+ *
  * What a value looks like at run time (TinyMLRuntime/core.c has the
  * same picture, from the other side):
  *
@@ -271,17 +279,14 @@
  *    values
  *)
 
-(* a toplevel phrase, parsed and typed; where a name's value is *)
-type item
-type binding
-
 (* a unit's phrases (each with its line), with the names of the units
  * before it, to assembly added to the output: every function's code,
  * and <unit>.init, its toplevel; the names then, those it defined, and
  * its globals' count *)
 val compile_unit :
-  (string * binding) list -> (item * int) list ->
-  (string * binding) list * (string * binding) list * int
+  (string * TinyMLCompile.binding) list -> (TinyMLTree.item * int) list ->
+  (string * TinyMLCompile.binding) list * (string * TinyMLCompile.binding) list
+  * int
 
 (* the program: files of ML to a file of assembly (-h: how) *)
 val main : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. > -> int

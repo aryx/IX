@@ -5,4 +5,4 @@
  * tests' and not the browser's (old: TinyBrowser.dump). *)
 
 (* [dump page width]: the page's lines so far, [width] its columns *)
-val dump : TinyBrowser.page -> int -> string
+val dump : TinyBrowserPage.page -> int -> string

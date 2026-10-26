@@ -1,5 +1,5 @@
-; TinyBrowser.ml's test on the host (TinyBrowser_test.sh)
+; TinyBrowser's reading, its test on the host (TinyBrowser_test.sh)
 (executable
  (name Host)
  (modules Host Testutil_browser)
- (libraries tiny_browser))
+ (libraries tiny_browser_parts))

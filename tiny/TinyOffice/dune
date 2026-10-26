@@ -1,0 +1,9 @@
+; TinyOffice.ml's parts (tiny-ml compiles them before it, for office on
+; tiny-kernel): the page's model, and each kind of box (its data, how it
+; is edited, how it is shown), and the file; tiny-troff's too
+(library
+ (name tiny_office_parts)
+ (wrapped false)
+ (modules TinyOfficeModel TinyOfficeText TinyOfficeSheet TinyOfficeDrawing
+  TinyOfficePaint TinyOfficeChart TinyOfficeFile)
+ (libraries tiny_lib_gui))

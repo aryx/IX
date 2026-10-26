@@ -13,6 +13,12 @@
  *         |              drawing)
  *     its data           a string, whatever the kind
  *
+ * The shell is this file; the parts are TinyOffice/'s modules, a kind
+ * each: TinyOfficeText, TinyOfficeSheet, TinyOfficeDrawing,
+ * TinyOfficePaint and TinyOfficeChart (its data read, its keys, its
+ * view), on TinyOfficeModel (the page's objects, what is being edited,
+ * the office's record); TinyOfficeFile reads and writes the file.
+ *
  * {b Every object's data is text}, and undo is the earlier pages, kept
  * in a list (an edit makes a new page, the old one is not changed).
  *
@@ -140,12 +146,10 @@
  * takes the document back to before the box was edited).
  *)
 
-type office
-
 (* [create width height file text]: the office on a page of that size
  * in pixels, file the page's name, text the file's text ("" for a new
  * page) *)
-val create : int -> int -> string -> string -> office
+val create : int -> int -> string -> string -> TinyOfficeModel.office
 
 (* what a key or the mouse asks of the program around: nothing, to save
  * the file, to quit *)
@@ -153,46 +157,18 @@ type request = Continue | Save | Quit
 
 (* a key (a byte, as the console gives it: the arrows 128 to 131), and
  * what it asks *)
-val key : office -> int -> request
+val key : TinyOfficeModel.office -> int -> request
 
 (* the mouse: where it is, its buttons (1 left, 2 middle, 4 right); and
  * what it asks of the program around (the File menu's) *)
-val mouse : office -> int -> int -> int -> request
+val mouse : TinyOfficeModel.office -> int -> int -> int -> request
 
 (* the page as shapes: the ground (white), each object's group (its
  * frame, its content), the status line's, the menus' bar and the open
  * menu *)
-val view : office -> TinyLibPlayground.shape list
+val view : TinyOfficeModel.office -> TinyLibPlayground.shape list
 
 (* the page as its file's text; and the program around saying it wrote it *)
-val text : office -> string
-val saved : office -> unit
-val say : office -> string -> unit
-
-(* What tiny-troff (TinyTroff.ml) reads of a page, to print it as text
- * or HTML: its objects, from its file's text (a page of that width and
- * height, for a Markdown file's one box); a text box's characters and
- * their styles (a byte each: bold 1, italic 2, underlined 4, large 8);
- * a sheet's cells (each its name and what was typed), each cell's
- * value, a cell's name (its column and row, from 0); a drawing's shapes
- * (each its kind, box, arrow or text, its numbers, its label); a
- * chart's bars, each its label and value, from its sheet on the page,
- * or none and why. An object's called is a sheet's name ("" for the
- * other kinds), its page_no the page it is on (from 0). *)
-type obj = {
-  kind : string; x : int; y : int; w : int; h : int; data : string;
-  called : string; page_no : int }
-val parse : int -> int -> string -> obj list
-val decode : string -> string * string
-type value = Num of int | Str of string | Err of string
-val cells : string -> (string * string) list
-val values : string -> string -> value
-val name : int -> int -> string
-val figures : string -> (string * int list * string) list
-val chart_bars : obj list -> obj -> (string * int) list * string
-
-(* A text laid out as the office shows it, in a width in pixels, from its
- * characters and their styles: each character's place (and the end's),
- * its x and its line; each line's top and height *)
-type laid = { px : int array; ln : int array; top : int array; tall : int array }
-val lay_out : int -> string -> string -> laid
+val text : TinyOfficeModel.office -> string
+val saved : TinyOfficeModel.office -> unit
+val say : TinyOfficeModel.office -> string -> unit

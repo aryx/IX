@@ -85,7 +85,8 @@ one of them: OCaml never compiles it, tiny-ml does.
 
 ### 2.2 What a host program needs outside `tiny/`
 
-Each is one file, but not all stand alone. From `tiny/dune` (and
+Each is one file (tiny-c and tiny-ml with their parts, `TinyC/` and
+`TinyML/`), but not all stand alone. From `tiny/dune` (and
 `tiny/TinyKernel/steps/t6/dune`, tiny-mkfs's):
 
 | program | outside `tiny/` |
@@ -1018,7 +1019,7 @@ fetch them. `make loc` does not count `tiny/sdl/`.
 | TinyLibGUI.ml, TinyAppCalculator.ml and TinyAppTemperature.ml, the arithmetic by keys, the buttons by a mouse, the fields by clicks and keys, the picture, on the host | `tiny/tests/TinyLibGUI_test.sh` |
 | TinyOffice.ml, a document worked at by keys and the mouse (each part, the menus, the styles, the pages, the file), on the host and on tiny-cpu | `tiny/tests/TinyOffice_test.sh` |
 | TinyTroff.ml, a document as text, HTML and PDF, on the host and on tiny-cpu | `tiny/tests/TinyTroff_test.sh` |
-| TinyBrowser.ml, pages read into lines, however they are cut, on the host and on tiny-cpu | `tiny/tests/TinyBrowser_test.sh` |
+| TinyBrowser/, pages read into lines, however they are cut, on the host and on tiny-cpu | `tiny/tests/TinyBrowser_test.sh` |
 | TinyKernel.ml; paint, tiny-windows, tiny-windows in a window, square, tetris, calc and temp in a window, emacs, the office (a page, a sheet and its chart, a drawing, a paint), www (the OCaml article, its links and pictures), each with a recorded mouse and keys; tetris's sounds and play's, a WAV's sum each; troff's text, HTML and PDF | `make -C tiny/TinyKernel check` (a few minutes) |
 
 On macOS they need GNU's coreutils first in the `PATH` (`stat -c`,

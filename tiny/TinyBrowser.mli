@@ -3,12 +3,13 @@
  * mini-lynx, built on the mini-chrome engine); this one keeps only the
  * essentials. The design is in docs/plans/done/plan_tiny_browser.md.
  *
- * The file has two parts. The reading turns the bytes of a page, as
+ * The program has two parts. The reading turns the bytes of a page, as
  * they arrive, into the lines shown on the screen; it is most of what
- * follows. The browser around it, www, asks the wire's other end
- * (TinyMachinePeer, which speaks HTTPS for it) for the page and then
- * its pictures, draws the lines as they come, follows links, and has
- * TinyLibGUI's menus and an address field.
+ * follows, and the modules of TinyBrowser/. The browser around it, www,
+ * this file, asks the wire's other end (TinyMachinePeer, which speaks
+ * HTTPS for it) for the page and then its pictures, draws the lines as
+ * they come, follows links (TinyBrowserAddress finds where they go),
+ * and has TinyLibGUI's menus and an address field.
  *
  * The main idea: {b a page is read only once, as it arrives, and turned
  * directly into lines}. There is no document tree and no style sheet.
@@ -28,6 +29,10 @@
  *                                          inside a table: the cells'
  *                                          words are kept and laid out
  *                                          at </table>
+ *
+ *     (the tokens: TinyBrowserTokens; the open tags: TinyBrowserPage;
+ *     the words, the lines and the tables: TinyBrowserLines; and
+ *     TinyBrowserText under them all, the entities and UTF-8 to ASCII)
  *
  * A message can end anywhere, even in the middle of a tag, of an
  * entity like &amp;, or of a multi-byte UTF-8 character. The reader
@@ -84,54 +89,6 @@
  *    tokenizer must accept; we handle only the part that well-formed
  *    pages use
  *)
-
-(* The look of a run is a combination of these bits. *)
-val bold : int
-val emph : int
-val code : int
-
-(* A run is a piece of text at a column, with a look and the address it
- * links to ("" if it is not a link); or, when [pic] is not -1, a slice
- * of a picture 16 pixels high: the picture's number times 256, plus
- * which slice. A line is a list of runs, from left to right. A rule is
- * a line drawn across the screen, under a heading or for an <hr>. *)
-type run = { col : int; text : string; look : int; link : string; pic : int }
-type line = { runs : run list; rule : bool }
-
-(* A page being read and turned into lines of [width] columns. *)
-type page
-val create : int -> page
-
-(* [feed page bytes] gives the next message of the page; [finish page]
- * says that the page has ended. *)
-val feed : page -> string -> unit
-val finish : page -> unit
-
-(* The page's <title>; the address in its <base>. *)
-val title : page -> string
-val base : page -> string
-
-(* how many lines there are so far; the lines from the a-th to before
- * the b-th, from the top (what the screen shows) *)
-val count : page -> int
-val lines_between : page -> int -> int -> line list
-
-(* the line where the element with that id starts, if it came *)
-val anchor : page -> string -> int option
-
-(* The page's pictures: how many, and one by its number. A picture's
- * pc_got is -1 before it is asked for, -3 once asked, -2 when there is
- * none to be had, and the rows received so far after that. *)
-type picture = {
-  pc_src : string; pc_w : int; pc_h : int; pc_alt : string;
-  mutable pc_got : int
-}
-val pictures : page -> int
-val picture_of : page -> int -> picture
-
-(* Converts a text to ASCII: entities and UTF-8 characters become what
- * the font can show. *)
-val ascii : string -> string
 
 (* The program www: the page at [address] asked of the wire's other end
  * (the line "www address" on port 70: TinyMachinePeer.www_address says

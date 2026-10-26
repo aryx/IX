@@ -359,7 +359,7 @@ let update (computer : P.computer) (m : model) : model =
  * a race on it at once, not the title, for the frames' sessions) *)
 let start (view : view) (width : int) (height : int) (course : int option)
     (stats : (string -> unit) option) : model =
-  let catalog = [| Course.big_forest |] in
+  let catalog = [| Course.big_forest; Course.bay_bridge; Course.acropolis |] in
   let red = Mesh.rgb 220 30 40 in
   let player_car =
     (Mesh.make (Cars.model red false), Mesh.make (Cars.model red true))

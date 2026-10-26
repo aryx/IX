@@ -41,6 +41,9 @@ type palette = {
 
 val green : palette
 
+(* the dry land's, Acropolis': yellows and browns, no snow *)
+val dry : palette
+
 type t = {
   x0 : float;
   z0 : float;

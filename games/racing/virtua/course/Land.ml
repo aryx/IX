@@ -39,6 +39,22 @@ let green : palette =
     snow = true;
   }
 
+let dry : palette =
+  {
+    low =
+      [
+        rgb 160 150 88;
+        rgb 150 140 80;
+        rgb 170 158 96;
+        rgb 144 138 86;
+        rgb 164 146 84;
+      ];
+    mid = [ rgb 150 126 80; rgb 138 118 76; rgb 160 134 86; rgb 128 120 80 ];
+    rock =
+      [ rgb 176 150 116; rgb 160 138 108; rgb 186 162 124; rgb 150 130 104 ];
+    snow = false;
+  }
+
 type t = {
   x0 : float;
   z0 : float;

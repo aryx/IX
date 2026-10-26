@@ -462,3 +462,30 @@ the window (at 640 by 480 the title's were off it).
 - `frames.sh`: seven sessions (the four with `course=0`; title,
   golden_grid, select as the goldens' sessions), the same bytes by
   mini-ml.
+
+**Stage 3, its third part (3c): Bay Bridge and Acropolis** (the
+author: "let's do it"). `Course.bay_bridge` (the suspension bridge,
+`Course.bridge`: towers, cables and hangers; piers under it and under
+the overpass; the tunnel's portals; palms, a lighthouse, two
+windmills turning) and `Course.acropolis` (the dry land, `Land.dry`;
+the temple, twelve houses, cypresses and rocks, three sailboats on its
+sea), from the playground's; `Scenery`'s `column`, `roof`, `palm`,
+`cypress`, `rock`, `windmill`, `sailboat`, `lighthouse`, `temple`,
+`house`. One face thick, so seen from both sides (`Mesh.two_sided`):
+the palms' fronds, the sail, the bridge's cables and hangers. The
+course select goes round the three, each built when first shown.
+- The select's golden (Bay Bridge): a mean difference of **6.8**
+  (`compare.sh select`); the title 5.1, the grid 5.2 as before.
+- `frames.sh`: `select` by the golden's keys, `race_bay` and
+  `race_acropolis` new (900 frames of throttle); by mini-ml the same
+  bytes but one pixel of `select`, a level of blue apart in the
+  platform's meter's text (a second sum, `RECORD=2`).
+- A course built in 0.2 s by OCaml here, each of the three: on the Pi
+  2, a few seconds the first time it is selected (Big Forest's start
+  was 2.85 billion instructions on arm).
+- Not checked by a picture: the bridge and the tunnel from the road
+  (the scripted car does not reach them); culling on and off on both
+  miniatures, no pixel apart. The curve's golden (on the coast) is
+  left out with the coast.
+
+Stage 3 done but the coast. Next: stage 4, the sound.

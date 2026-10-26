@@ -32,7 +32,7 @@ $D/%.$O: $LOCAL
 	mkdir -p $D
 	f=()
 	for(d in $DIRS) if(~ $d/$stem.ml $LOCAL) f=$d/$stem.ml
-	$ML $INCLUDES -o $target $f
+	$ML -siblings $INCLUDES -o $target $f
 
 $D/mini-virtuaracing: $D/virtua
 	cp $D/virtua $target

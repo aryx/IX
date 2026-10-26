@@ -81,6 +81,27 @@ let cone (seed : int) (snow : float) (color : Mesh.color) (sides : int)
                 polygon3d (rgb 245 245 250) [ m0; apex; m1 ];
               ])))
 
+let column (color : Mesh.color) (sides : int) (r : float) (h : float) :
+    Mesh.shape =
+  let base =
+    Array.of_list
+      (List.map (fun ((x, z) : float * float) -> (x, 0., z)) (ring sides r))
+  in
+  group3d
+    (polygon3d color
+       (List.rev_map
+          (fun ((x, _, z) : Vec3.t) -> (x, h, z))
+          (Array.to_list base))
+    :: List.init sides (fun (k : int) ->
+        let x0, _, z0 = base.(k) and x1, _, z1 = base.((k + 1) mod sides) in
+        polygon3d color [ (x0, 0., z0); (x0, h, z0); (x1, h, z1); (x1, 0., z1) ])
+    )
+
+(* a roof over a house, the triangle of its gable lofted along its depth *)
+let roof (color : Mesh.color) (w : float) (h : float) (d : float) : Mesh.shape =
+  let gable = [ (-.w /. 2., 0.); (w /. 2., 0.); (0., h) ] in
+  loft color gable gable (-.d /. 2.) (d /. 2.)
+
 (*****************************************************************************)
 (* The scenery *)
 (*****************************************************************************)
@@ -93,6 +114,32 @@ let pine (k : int) : Mesh.shape =
       cone k 0. green 6 2.2 4. |> move_y3d 1.4;
       cone (k + 7) 0. green 5 1.6 3.4 |> move_y3d 3.6;
     ]
+
+(* a palm: its trunk leaning, six fronds drooping from the top (one
+ * face thick: seen from both sides) *)
+let palm (k : int) : Mesh.shape =
+  let lean = 8. +. (10. *. jitter k 3) in
+  let frond (a : float) : Mesh.shape =
+    let r = a *. Float.pi /. 180. in
+    let c = cos r and s = sin r in
+    Mesh.two_sided
+      (polygon3d (rgb 60 150 60)
+         [
+           (0., 7., 0.);
+           ((3.2 *. c) -. (0.6 *. s), 6.2, (3.2 *. s) +. (0.6 *. c));
+           (4. *. c, 5.2, 4. *. s);
+         ])
+  in
+  group3d
+    (column (rgb 140 100 60) 5 0.3 7.
+    :: List.init 6 (fun (i : int) ->
+        frond ((60. *. float_of_int i) +. (30. *. jitter k i))))
+  |> rotate3d lean (360. *. jitter k 4) 0.
+
+let cypress (k : int) : Mesh.shape =
+  group3d [ cone k 0. (rgb 55 115 55) 5 1.1 7. ]
+
+let rock (k : int) : Mesh.shape = cone k 0. (rgb 150 130 105) 5 2.2 1.8
 
 let sign : Mesh.shape =
   group3d
@@ -246,3 +293,80 @@ let roller_coaster : Mesh.shape =
     @ List.init 3 (fun (k : int) ->
         box (rgb 220 40 40) 1.4 1. 1.8
         |> move3d 0. 4.9 (-20. +. (2. *. float_of_int k))))
+
+(* a windmill (Bay Bridge's pair by the big right): a white tower, its
+ * four sails turning *)
+let windmill (angle : float) : Mesh.shape =
+  let sail (k : int) : Mesh.shape =
+    let a = angle +. (90. *. float_of_int k) in
+    box (rgb 245 245 240) 1.4 9. 0.3 |> move_y3d 4.8 |> rotate3d 0. 0. a
+  in
+  group3d
+    ([
+       column (rgb 240 240 235) 8 3. 14.;
+       cone 0 0. (rgb 170 60 50) 8 3.4 3. |> move_y3d 14.;
+     ]
+    @ List.map
+        (fun (sh : Mesh.shape) -> sh |> move3d 0. 13. 3.4)
+        (List.init 4 sail))
+
+(* a sailing boat, for Acropolis' sea (its sail one face thick) *)
+let sailboat : Mesh.shape =
+  group3d
+    [
+      loft Mesh.white
+        [ (-1.2, 0.); (1.2, 0.); (1.6, 1.2); (-1.6, 1.2) ]
+        [ (-0.2, 0.3); (0.2, 0.3); (0.4, 1.2); (-0.4, 1.2) ]
+        (-4.) 4.;
+      Mesh.two_sided
+        (polygon3d Mesh.white
+           [ (0., 1.2, 2.); (0., 10., 0.5); (0., 1.2, -2.5) ]);
+    ]
+
+let lighthouse : Mesh.shape =
+  group3d
+    ([
+       column Mesh.white 8 2.4 16.;
+       column (rgb 60 60 60) 8 1.8 3. |> move_y3d 16.;
+       cone 0 0. (rgb 200 40 40) 8 2.4 2. |> move_y3d 19.;
+     ]
+    @ List.init 3 (fun (k : int) ->
+        column (rgb 210 40 40) 8 2.45 1.6
+        |> move_y3d (2. +. (5. *. float_of_int k))))
+
+(* The ruins of Acropolis: three steps, a peristyle of columns (some
+ * fallen short), the beam over part of it, the pediment's triangle,
+ * built along x *)
+let temple : Mesh.shape =
+  let marble = rgb 235 230 210 in
+  let steps =
+    List.init 3 (fun (k : int) ->
+        box marble (20. -. float_of_int k) 0.6 (12. -. float_of_int k)
+        |> move_y3d (0.3 +. (0.6 *. float_of_int k)))
+  in
+  let columns =
+    List.concat
+      (List.init 7 (fun (k : int) ->
+           let x = -8. +. (float_of_int k *. 8. /. 3.) in
+           let h = if k = 5 then 2.5 else 6. in
+           [
+             column marble 8 0.6 h |> move3d x 1.8 (-4.);
+             column marble 8 0.6 (if k = 1 then 3.5 else 6.) |> move3d x 1.8 4.;
+           ]))
+  in
+  group3d
+    (steps @ columns
+    @ [
+        box marble 11. 1. 10. |> move3d (-3.3) 8.3 0.;
+        roof marble 10.5 2.2 11. |> rotate3d 0. 90. 0. |> move3d (-3.3) 8.8 0.;
+      ])
+
+let house (k : int) : Mesh.shape =
+  let w = 5. +. (2. *. jitter k 1)
+  and d = 5. +. (2. *. jitter k 2)
+  and h = 3. +. (2. *. jitter k 3) in
+  group3d
+    [
+      box (rgb 240 235 225) w (h +. 2.) d |> move_y3d ((h /. 2.) -. 1.);
+      roof (rgb 200 90 50) (w +. 0.6) 1.8 (d +. 0.4) |> move_y3d h;
+    ]

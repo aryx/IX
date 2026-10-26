@@ -54,6 +54,17 @@ val cone : int -> float -> Mesh.color -> int -> float -> float -> Mesh.shape
 (* a pine, the k-th: a trunk and two cones *)
 val pine : int -> Mesh.shape
 
+(* [column color sides r h]: a column of [sides] faces round, its top
+ * capped; [roof color w h d]: a gable roof lofted along its depth *)
+val column : Mesh.color -> int -> float -> float -> Mesh.shape
+val roof : Mesh.color -> float -> float -> float -> Mesh.shape
+
+(* Bay Bridge's palms (by the sea), Acropolis' cypresses and rocks; [k]
+ * their seed (Scenery.jitter) *)
+val palm : int -> Mesh.shape
+val cypress : int -> Mesh.shape
+val rock : int -> Mesh.shape
+
 (* a sign by the road, every 150 segments *)
 val sign : Mesh.shape
 
@@ -73,3 +84,13 @@ val gantry : Mesh.color -> float -> Mesh.shape
 val ferris_wheel : float -> Mesh.shape
 
 val roller_coaster : Mesh.shape
+
+(* Bay Bridge's windmills, their sails at [angle]; its lighthouse *)
+val windmill : float -> Mesh.shape
+val lighthouse : Mesh.shape
+
+(* Acropolis': a sailing boat in its sea, the ruins on their hill, a
+ * house of the mountainside ([k] its seed) *)
+val sailboat : Mesh.shape
+val temple : Mesh.shape
+val house : int -> Mesh.shape

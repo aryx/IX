@@ -43,4 +43,6 @@ racing/virtua/Virtua|views|40 -script v:5,v:20 course=0|146861eb17d61552d4e60acd
 racing/virtua/Virtua|race|900 -script up:1-900 view=behind course=0|975e4d61b165dc0e7f58d079c172fc780768713fabceaee6cfa82a8dbf82c11a
 racing/virtua/Virtua|title|5 -fixed-time 1000 seed=1|336d865c65a2bbcff104cee7370e2eee57334626095cb0d5d403260399f61ff4
 racing/virtua/Virtua|golden_grid|120 -fixed-time 1000 -script space:1,space:3,v:10 seed=1|d104f00d30ec3a82e849c5b7e92c70ca4b2844d8959d5d0092f839b896194903
-racing/virtua/Virtua|select|40 -fixed-time 1000 -script space:1 seed=1|c708628d6b3df27b0b1a89f9971525995b61febd53a9c8d187bae801d749ed1e
+racing/virtua/Virtua|select|40 -fixed-time 1000 -script space:1,right:3 seed=1|d751afa7847e4f2f17ae2c42aa9a3143ba3f3643ec57c85e8598feb6950ba3ea|0404a2fa8eb34d88dfee90f258ea093ec0f8672135c42945839e85e01454bfbb
+racing/virtua/Virtua|race_bay|900 -script up:1-900 view=behind course=1|3afdd42636635ad4a8d6c63f1bafaf46f8e12b23bb3ae75c594112e62b3dc453
+racing/virtua/Virtua|race_acropolis|900 -script up:1-900 view=behind course=2|d9be5b5515acee446a9906253bd623d72ad285e40987ca7a304eb1c92d481e88

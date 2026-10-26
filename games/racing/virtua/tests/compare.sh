@@ -10,17 +10,18 @@
 # passes or fails: the trees are elsewhere (OCaml's Hashtbl.hash places
 # them there, Scenery.jitter here), the colours are a palette's, the
 # words are drawn by another font; the numbers say how near.
-#   usage: compare.sh [title|grid] [out.png]   (default grid; out.png:
+#   usage: compare.sh [title|grid|select] [out.png]   (default grid; out.png:
 #   the two side by side, and where they differ in red, with PIL)
 #   PLAYGROUND=...: the playground (default: ~/playground)
-# Not yet: select (its golden is Bay Bridge's, stage 3c), curve (on
-# TinyOutRun's coast, left out: plan_virtuaracing.md, decision 7).
+# Not the curve's: on TinyOutRun's coast, left out
+# (plan_virtuaracing.md, decision 7).
 cd "$(dirname "$0")/../../../.."
 P=${PLAYGROUND:-$HOME/playground}
 case ${1:-grid} in
   title) golden=TinyVirtuaRacing.png; frame=5; script="" ;;
   grid) golden=TinyVirtuaRacing_grid.png; frame=120; script="-script space:1,space:3,v:10" ;;
-  *) echo "usage: compare.sh [title|grid] [out.png]"; exit 2 ;;
+  select) golden=TinyVirtuaRacing_select.png; frame=40; script="-script space:1,right:3" ;;
+  *) echo "usage: compare.sh [title|grid|select] [out.png]"; exit 2 ;;
 esac
 golden=$P/tests/3d/golden/$golden
 [ -f $golden ] || { echo "no $golden"; exit 1; }

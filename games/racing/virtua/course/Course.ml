@@ -11,6 +11,7 @@ let rgb = Mesh.rgb
 let polygon3d = Mesh.polygon3d
 let rotate3d = Mesh.rotate3d
 let move3d = Mesh.move3d
+let box = Mesh.box
 let road_width = 6. (* half of it *)
 
 (* The land next to the road is this far below it, the road standing on
@@ -201,6 +202,121 @@ let start (ribbon : Track3d.t) (checkpoints : int) : Mesh.shape list =
         *. Track3d.length ribbon /. float_of_int checkpoints)
         0.
         (Scenery.gantry (rgb 240 200 30) w))
+
+(* The suspension bridge, along the ribbon from [s0] to [s1]: two
+ * towers standing in the sea, the two main cables hanging between
+ * them (a parabola, the shape a cable takes under an evenly spread
+ * deck) and running down to the ends, a hanger every few metres from
+ * cable to deck. The deck itself is in the road's chunks ([segment]).
+ * Its hundreds of polygons are what made Model 1 famous. The cables
+ * and the hangers one face thick: seen from both sides. *)
+let bridge (ribbon : Track3d.t) (s0 : float) (s1 : float) : Mesh.shape list =
+  let w = road_width in
+  let side_off = 1.55 *. w in
+  let len = s1 -. s0 in
+  let t1 = s0 +. (0.22 *. len) and t2 = s1 -. (0.22 *. len) in
+  let top = 26. and bed = -8. in
+  let deck (s : float) (side : float) : float =
+    let _, y, _ = Track3d.across ribbon s (side *. side_off) in
+    y
+  in
+  let cable (s : float) (side : float) : float =
+    let d = deck s side in
+    if s < t1 then d +. 1.5 +. ((top -. 1.5) *. (s -. s0) /. (t1 -. s0))
+    else if s > t2 then d +. 1.5 +. ((top -. 1.5) *. (s1 -. s) /. (s1 -. t2))
+    else
+      let u = (2. *. (s -. t1) /. (t2 -. t1)) -. 1. in
+      d +. 2. +. ((top -. 2.) *. u *. u)
+  in
+  let red = rgb 235 85 55 and steel = rgb 190 60 40 in
+  let tower (s : float) : Mesh.shape =
+    let _, y, _ = Track3d.across ribbon s 0. in
+    let h = y -. bed +. top +. 1. in
+    let leg (side : float) : Mesh.shape =
+      box red 1.6 h 1.6 |> move3d (side *. side_off) (h /. 2.) 0.
+    in
+    let beam (y : float) : Mesh.shape =
+      box red ((2. *. side_off) +. 1.6) 1.2 1.2 |> Mesh.move_y3d y
+    in
+    let at = Track3d.at ribbon s in
+    Mesh.group3d
+      [
+        leg (-1.);
+        leg 1.;
+        beam (h -. 0.6);
+        beam (y -. bed +. (top *. 0.55));
+        beam (y -. bed -. 1.8);
+      ]
+    |> rotate3d 0. (-.at.heading) 0.
+    |> move3d at.px bed at.pz
+  in
+  let ds = 2. in
+  let pieces = int_of_float (len /. ds) in
+  let cables =
+    List.concat_map
+      (fun (side : float) ->
+        List.init pieces (fun (k : int) ->
+            let sa = s0 +. (float_of_int k *. ds)
+            and sb = s0 +. (float_of_int (k + 1) *. ds) in
+            let xa, _, za = Track3d.across ribbon sa (side *. side_off)
+            and xb, _, zb = Track3d.across ribbon sb (side *. side_off) in
+            let ya = cable sa side and yb = cable sb side in
+            Mesh.two_sided
+              (polygon3d steel
+                 [
+                   (xa, ya, za);
+                   (xb, yb, zb);
+                   (xb, yb +. 0.5, zb);
+                   (xa, ya +. 0.5, za);
+                 ])))
+      [ -1.; 1. ]
+  in
+  let hangers =
+    List.concat_map
+      (fun (side : float) ->
+        List.init (pieces / 2) (fun (k : int) ->
+            let s = s0 +. (float_of_int (2 * k) *. ds) in
+            let x, y, z = Track3d.across ribbon s (side *. side_off)
+            and fx, fz = Track3d.forward ribbon s in
+            let yc = cable s side in
+            Mesh.two_sided
+              (polygon3d (rgb 220 220 220)
+                 [
+                   (x, y, z);
+                   (x +. (fx *. 0.25), y, z +. (fz *. 0.25));
+                   (x +. (fx *. 0.25), yc, z +. (fz *. 0.25));
+                   (x, yc, z);
+                 ])))
+      [ -1.; 1. ]
+  in
+  [ tower t1; tower t2 ] @ cables @ hangers
+
+(* piers under a raised road, every 30 m, down to [bed] *)
+let piers (ribbon : Track3d.t) (bed : float) (s0 : float) (s1 : float) :
+    Mesh.shape list =
+  List.init
+    (int_of_float ((s1 -. s0) /. 30.) + 1)
+    (fun (k : int) ->
+      let s = s0 +. (float_of_int k *. 30.) in
+      let at = Track3d.at ribbon s in
+      let h = at.py -. 1.8 -. bed in
+      box (rgb 170 170 165) (2.6 *. road_width) h 2.5
+      |> Mesh.move_y3d (bed +. (h /. 2.))
+      |> rotate3d 0. (-.at.heading) 0.
+      |> move3d at.px 0. at.pz)
+
+(* the mouths of a tunnel: a concrete face around the road at each end *)
+let portals (ribbon : Track3d.t) (s0 : float) (s1 : float) : Mesh.shape list =
+  let concrete = rgb 150 150 145 in
+  let face =
+    Mesh.group3d
+      [
+        box concrete (2. *. verge) 4. 1.5 |> Mesh.move_y3d 8.;
+        box concrete 4. 8. 1.5 |> move3d (-.verge +. 2.) 4. 0.;
+        box concrete 4. 8. 1.5 |> move3d (verge -. 2.) 4. 0.;
+      ]
+  in
+  [ place ribbon s0 0. face; place ribbon s1 0. face ]
 
 (*****************************************************************************)
 (* The road, cut in chunks *)
@@ -481,6 +597,229 @@ let big_forest () : t =
           ]);
     }
 
+(* Bay Bridge, medium: the straight, a right and its right-left-right
+ * kink, the suspension bridge across the inlet, a left that loops over
+ * the road it will come back along (the overpass), the tunnel through
+ * the hill, the big right by the windmills, the climb beside the grey
+ * retaining wall, under the overpass, and the final long right at the
+ * tail onto the straight. Narrow, walled, palms by the sea. *)
+let bay_bridge () : t =
+  make
+    {
+      d_name = "BAY BRIDGE";
+      d_level = "MEDIUM";
+      points =
+        [
+          (6., 11., 0.);
+          (10., 8.9, 1.);
+          (14., 6.8, 2.);
+          (18., 4.6, 3.);
+          (21., 2.8, 4.);
+          (23.5, 2.2, 5.);
+          (25.3, 3.4, 6.);
+          (24.8, 5.3, 8.);
+          (22.8, 6.8, 10.);
+          (21.2, 8.5, 12.);
+          (21., 10.4, 14.);
+          (21.6, 12.2, 16.);
+          (19.4, 13.7, 16.);
+          (17.1, 15.3, 16.);
+          (14.8, 16.9, 15.);
+          (13.6, 18.5, 13.);
+          (13.2, 20.3, 11.);
+          (14., 21.6, 10.);
+          (15.8, 22., 9.);
+          (17.8, 21.4, 8.);
+          (19.6, 20.2, 7.);
+          (21.2, 19., 6.);
+          (22.8, 18.4, 5.);
+          (24.5, 19., 4.);
+          (25.2, 20.9, 3.);
+          (24., 22.7, 2.);
+          (21.5, 23.6, 1.);
+          (18.5, 24., 0.);
+          (16., 23.6, 0.);
+          (13.6, 21., 0.);
+          (12.3, 19., 2.);
+          (11.9, 16.8, 5.);
+          (11.8, 14.5, 6.);
+          (11., 12.6, 4.);
+          (9., 12.2, 2.);
+          (6.5, 13.3, 1.);
+          (3.8, 14.2, 0.);
+          (2.2, 13.4, 0.);
+          (3., 12.1, 0.);
+        ];
+      d_laps = 5;
+      d_checkpoints = 2;
+      d_start_time = 45;
+      d_bonus = 24;
+      d_rivals = 15;
+      d_spans =
+        [
+          (Suspension, (21.2, 12.5), (15.3, 16.5));
+          (Overpass, (13.3, 19.5), (15.2, 22.));
+          (Tunnel, (20.2, 19.8), (23.6, 18.5));
+          (Wall, (18.5, 24.), (13.9, 21.4));
+          (Wall, (24.8, 5.3), (21.1, 9.4));
+        ];
+      palette = Land.green;
+      d_grass = (rgb 70 160 60, rgb 60 140 50);
+      hills =
+        [
+          hill 0. 22.2 18.8 3.5 30.;
+          hill 0. 31. 27. 8. 150.;
+          hill 0. 8. 29. 8. 130.;
+          hill 0. (-6.) 20. 7. 120.;
+          hill 0. (-5.) 3. 7. 110.;
+          hill 0. 14. (-6.) 8. 140.;
+          hill 0. 33. 2. 7. 120.;
+        ];
+      sea =
+        [
+          [
+            (16.2, 14.4);
+            (19.4, 12.4);
+            (23., 13.3);
+            (29., 13.4);
+            (40., 13.);
+            (40., 17.5);
+            (25., 16.8);
+            (21.5, 16.8);
+            (18.5, 17.6);
+            (16.8, 17.4);
+          ];
+        ];
+      scenery =
+        (fun (site : site) (i : int) ->
+          trees Scenery.palm 7 1 site i @ signs site i);
+      landscape =
+        (fun (site : site) ->
+          start site.ribbon 2
+          @ List.concat_map
+              (fun (sp : span) ->
+                match sp.kind with
+                | Suspension ->
+                    bridge site.ribbon sp.s0 sp.s1
+                    @ piers site.ribbon (-8.) sp.s0 sp.s1
+                | Overpass -> piers site.ribbon ground sp.s0 sp.s1
+                | Tunnel -> portals site.ribbon sp.s0 sp.s1
+                | Wall -> [])
+              site.spans
+          @ [ Scenery.lighthouse |> on_land site 30. 12.4 ]);
+      moving =
+        (fun (site : site) (time : float) ->
+          [
+            Scenery.windmill (spin 20. time)
+            |> rotate3d 0. 200. 0. |> on_land site 27.2 20.4;
+            Scenery.windmill (spin 17. time +. 40.)
+            |> rotate3d 0. 200. 0. |> on_land site 26.8 23.2;
+          ]);
+    }
+
+(* Acropolis, the expert's: the blob of the map -- the long straight up
+ * the left, round the top, the bends down the right with the sea
+ * beyond, back along the bottom -- and the finger up its middle: a
+ * long straight to the keyhole hairpin, a hard long left, and a long
+ * straight back; the zigzag, the canyon's twisty bends to the line.
+ * The ruins on their hill, houses on the mountainside. *)
+let acropolis () : t =
+  make
+    {
+      d_name = "ACROPOLIS";
+      d_level = "EXPERT";
+      points =
+        [
+          (1.6, 13., 0.);
+          (2., 10.8, 2.);
+          (3.3, 8.6, 5.);
+          (4.6, 6.8, 8.);
+          (7., 5.1, 11.);
+          (10., 3.6, 14.);
+          (13., 2.7, 16.);
+          (15.5, 2.4, 17.);
+          (17.3, 2.9, 17.);
+          (18.2, 4.3, 16.);
+          (19., 5.8, 15.);
+          (20.6, 6.6, 14.);
+          (22.2, 8.4, 12.);
+          (24., 10., 9.);
+          (25., 11.8, 7.);
+          (24.3, 13.2, 6.);
+          (21.5, 13.9, 5.);
+          (19.5, 14.8, 4.);
+          (17., 15.4, 3.);
+          (15.2, 15.3, 3.);
+          (14.3, 14.2, 3.);
+          (14.4, 12., 5.);
+          (14.7, 9.2, 8.);
+          (15., 6.9, 10.);
+          (15.7, 5.6, 11.);
+          (15.1, 4.5, 12.);
+          (13.9, 4.7, 12.);
+          (13.4, 6.1, 11.);
+          (13.2, 9., 8.);
+          (12.9, 12., 5.);
+          (12.6, 14.3, 3.);
+          (11.7, 15.6, 2.);
+          (10., 15.2, 2.);
+          (8.3, 15.9, 1.);
+          (6.8, 17.2, 1.);
+          (5., 17.8, 0.);
+          (3.2, 17.1, 0.);
+          (2., 15.3, 0.);
+        ];
+      d_laps = 5;
+      d_checkpoints = 2;
+      d_start_time = 45;
+      d_bonus = 25;
+      d_rivals = 15;
+      d_spans = [ (Wall, (15.6, 5.8), (13.5, 5.8)) ];
+      palette = Land.dry;
+      d_grass = (rgb 165 160 90, rgb 150 145 80);
+      hills =
+        [
+          hill 0.6 8. 10. 3.2 34.;
+          hill 0. 9. 3.5 4. 30.;
+          hill 0. 4. 20.5 3. 45.;
+          hill 0. 8.5 19.5 2.5 38.;
+          hill 0. (-7.) 6. 8. 140.;
+          hill 0. 6. (-7.) 8. 130.;
+          hill 0. 20. (-6.) 8. 150.;
+          hill 0. 9. 28. 8. 110.;
+          hill 0. (-6.) 24. 7. 100.;
+        ];
+      sea =
+        [ [ (27., -10.); (45., -10.); (45., 30.); (27., 30.); (27.5, 12.) ] ];
+      scenery =
+        (fun (site : site) (i : int) ->
+          trees Scenery.cypress 7 1 site i
+          @ (if i mod 11 = 5 then trees Scenery.rock 1 1 site i else [])
+          @ signs site i);
+      landscape =
+        (fun (site : site) ->
+          start site.ribbon 2
+          @ [ Scenery.temple |> rotate3d 0. 20. 0. |> on_land site 8. 10. ]
+          @ List.init 12 (fun (k : int) ->
+              Scenery.house k
+              |> rotate3d 0. (40. *. Scenery.jitter k 4) 0.
+              |> on_land site
+                   (7.5 +. (1.1 *. float_of_int (k mod 4)) +. Scenery.jitter k 5)
+                   (6.2 +. (0.9 *. float_of_int (k / 4)))));
+      moving =
+        (fun (_ : site) (time : float) ->
+          List.init 3 (fun (k : int) ->
+              Scenery.sailboat
+              |> rotate3d 0. (20. +. (70. *. float_of_int k)) 0.
+              |> move3d
+                   (((30. +. (3. *. float_of_int k)) *. map_unit)
+                   +. Playground.wave (-20.) 20.
+                        (14. +. float_of_int k)
+                        (Playground.Time time))
+                   water_level
+                   ((2. +. (8. *. float_of_int k)) *. map_unit)));
+    }
+
 (*****************************************************************************)
 (* What is drawn *)
 (*****************************************************************************)
@@ -523,8 +862,8 @@ let land_near (c : t) ((ex, _, ez) : Vec3.t) : Mesh.t list =
  *       eye                           ___/
  *     floor ___________________________/  haze
  *                                  1400  1560 ahead *)
-let sky_over (cam : Camera.t) (ground : float) (floor : Mesh.color) :
-    Mesh.shape =
+let sky_over (cam : Camera.t) (ground : float) (floor : Mesh.color) : Mesh.shape
+    =
   let ex, ey, ez = cam.eye and tx, _, tz = cam.target in
   let d = Float.max 1e-9 (Float.hypot (tx -. ex) (tz -. ez)) in
   let fx = (tx -. ex) /. d and fz = (tz -. ez) /. d in
@@ -566,7 +905,8 @@ let sky_over (cam : Camera.t) (ground : float) (floor : Mesh.color) :
         ];
     ]
 
-let sky (c : t) (cam : Camera.t) : Mesh.shape = sky_over cam ground (snd c.grass)
+let sky (c : t) (cam : Camera.t) : Mesh.shape =
+  sky_over cam ground (snd c.grass)
 
 (*****************************************************************************)
 (* The course select's miniature *)
@@ -580,7 +920,10 @@ let bounds (c : t) : float * float * float * float =
   List.fold_left
     (fun ((x0, x1, z0, z1) : float * float * float * float) (k : int) ->
       let p = Track3d.at c.ribbon (float_of_int k *. Track3d.step c.ribbon) in
-      (Float.min x0 p.px, Float.max x1 p.px, Float.min z0 p.pz, Float.max z1 p.pz))
+      ( Float.min x0 p.px,
+        Float.max x1 p.px,
+        Float.min z0 p.pz,
+        Float.max z1 p.pz ))
     (infinity, neg_infinity, infinity, neg_infinity)
     (List.init n (fun (k : int) -> k))
 

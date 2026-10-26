@@ -84,6 +84,13 @@ type t = {
 
 val big_forest : unit -> t
 
+(* Bay Bridge, medium: its suspension bridge across the inlet, an
+ * overpass, a tunnel, windmills, palms by the sea; Acropolis, the
+ * expert's: the ruins on their hill, houses on the mountainside, the
+ * dry land, sailing boats in its sea *)
+val bay_bridge : unit -> t
+val acropolis : unit -> t
+
 (* a lap's length: the course's, or a stage's less its two ends *)
 val lap_length : t -> float
 

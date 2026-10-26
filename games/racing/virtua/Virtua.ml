@@ -8,15 +8,21 @@
  * playground's TinyVirtuaRacing is its inspiration: its courses, its
  * cars, its rules.
  *
- * Stage 1 of the plan, the course still: Big Forest, its road, land and
- * landmarks, the sixteen cars on the grid, seen from the player's car
- * as the countdown would show it. No race yet.
+ * Stage 3 of the plan, under way: the title (the grid, a camera going
+ * round the player's car), the course select (the course's miniature
+ * turning on a table), the race on Big Forest (the countdown, fifteen
+ * rivals, the clock and its checkpoints, five laps, the race's display)
+ * and its end (GOAL!, or GAME OVER when the clock runs out). Not yet
+ * the other two courses, nor the sound.
  *
- *   the keys: v the view (behind and above, high overhead, in the
- *   cockpit, close behind: V.R.'s four buttons)
+ *   the keys: space (from the title, to race, after it), left and right
+ *   (the course; the wheel), up (the gas), down (the brake), v the view
+ *   (close behind, behind and above, high overhead, in the cockpit:
+ *   V.R.'s four buttons)
  *
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
+ *                            [course=n]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -25,6 +31,8 @@
  *               clock, the car's distance, speed, place, lap), on the
  *               standard error
  *     cull=off  the faces turned away drawn too (Render.cull)
+ *     course=n  a race on the n-th course at once (0: Big Forest), not
+ *               the title (the frames' sessions)
  *
  * A frame:
  *
@@ -54,26 +62,41 @@ let next_view (v : view) : view =
   | Overhead -> Cockpit
   | Cockpit -> Close
 
-type model = {
+type scene = Title | Select of int | Racing | Finished
+
+(* a course built, its palette made and its meshes lit; its miniature
+ * once the course select asks for it *)
+type loaded = {
   course : Course.t;
   palette : Palette.t;
+  mutable miniature : Mesh.t option;
+}
+
+type model = {
+  (* the courses, each built the first time it is needed *)
+  catalog : (unit -> Course.t) array;
+  loaded : loaded option array;
+  mutable current : int;
   render : Render.t;
-  (* the player's car, and braking; each rival's, as Rivals.grid *)
+  (* the player's car, and braking; the rivals', by the grid's order *)
   player_car : Mesh.t * Mesh.t;
   rival_cars : Mesh.t array;
   mutable race : Race.t;
   mutable braking : bool;
+  mutable scenes : scene Scene2d.t;
   (* two pictures' bytes, one a frame in turn (mini-doom's screens: the
    * platform keeps a picture it has shown by the value) *)
   screens : Bytes.t array;
   mutable frames : int;
   mutable view : view;
-  mutable v_held : bool;
-  (* stats: each frame's faces said there *)
+  (* stats: each frame's faces and the race said there *)
   stats : (string -> unit) option;
 }
 
 let radians (d : float) : float = d *. Float.pi /. 180.
+
+let lens (eye : Vec3.t) (target : Vec3.t) (fov : float) : Camera.t =
+  { eye; target; up = Camera.up_hint; fov; ortho = 0.; near = 0.1; far = 2000. }
 
 (* Camera3d.behind: [back] behind the car and [height] above it,
  * looking at [look] above the road [ahead] of it; a wider angle at
@@ -89,59 +112,85 @@ let camera (view : view) (speed : float) (((x, y, z), heading) : Vec3.t * float)
     | Overhead -> (22., 34., 16., 0.)
   in
   let fx = sin (radians heading) and fz = -.cos (radians heading) in
-  {
-    eye = (x -. (back *. fx), y +. height, z -. (back *. fz));
-    target = (x +. (ahead *. fx), y +. look, z +. (ahead *. fz));
-    up = Camera.up_hint;
-    fov = 60. +. (10. *. speed);
-    ortho = 0.;
-    near = 0.1;
-    far = 2000.;
-  }
+  lens
+    (x -. (back *. fx), y +. height, z -. (back *. fz))
+    (x +. (ahead *. fx), y +. look, z +. (ahead *. fz))
+    (60. +. (10. *. speed))
 
-let lit (m : model) (shape : Mesh.shape) : Mesh.t =
+(* Camera3d.orbit: [distance] from (x, y, z) at [angle] round it,
+ * [height] above, looking at [look] above it *)
+let orbit (distance : float) (height : float) (look : float) (angle : float)
+    ((x, y, z) : Vec3.t) : Camera.t =
+  let a = radians angle in
+  lens
+    (x +. (distance *. sin a), y +. height, z +. (distance *. cos a))
+    (x, y +. look, z)
+    60.
+
+(* the course select's table, under the miniature *)
+let table = Mesh.rgb 40 80 50
+
+(* the course's palette: its faces, what moves, the sky (over the land
+ * and over the course select's table), the miniature's road, the cars
+ * at every brightness; its meshes lit *)
+let build (course : Course.t) (cars : Mesh.t list) (sky : Camera.t) : loaded =
+  let palette = Palette.create () in
+  let statics = Course.meshes course in
+  List.iter (Palette.add_mesh palette) statics;
+  List.iter
+    (fun (s : Mesh.shape) -> Palette.add_mesh palette (Mesh.make s))
+    (course.animated 0.);
+  Palette.add_mesh palette (Mesh.make (Course.sky course sky));
+  Palette.add_mesh palette (Mesh.make (Course.sky_over sky (-40.) table));
+  List.iter
+    (fun (c : Mesh.color) -> Palette.add_all_levels palette c)
+    [ Mesh.white; Mesh.rgb 90 90 95; table ];
+  List.iter
+    (fun (mesh : Mesh.t) ->
+      Array.iter (Palette.add_all_levels palette) mesh.colors)
+    cars;
+  Palette.make palette;
+  List.iter
+    (fun (mesh : Mesh.t) -> Mesh.light mesh (Palette.index palette))
+    statics;
+  { course; palette; miniature = None }
+
+let load (m : model) (i : int) : loaded =
+  match m.loaded.(i) with
+  | Some l -> l
+  | None ->
+      let course = m.catalog.(i) () in
+      let race = Race.start course in
+      let l =
+        build course
+          (fst m.player_car :: snd m.player_car :: Array.to_list m.rival_cars)
+          (camera m.view 0. (Driving.world course race.drive))
+      in
+      m.loaded.(i) <- Some l;
+      l
+
+let lit (l : loaded) (shape : Mesh.shape) : Mesh.t =
   let mesh = Mesh.make shape in
-  Mesh.light mesh (Palette.index m.palette);
+  Mesh.light mesh (Palette.index l.palette);
   mesh
 
-let draw_scene (m : model) (time : float) : unit =
-  let c = m.course and race = m.race in
+(* the course round the eye: its sky, land, road near [s], landmarks,
+ * what moves; the cars of [race] (the player's but from its cockpit) *)
+let draw_course (m : model) (l : loaded) (cam : Camera.t) (time : float)
+    (race : Race.t) : unit =
+  let c = l.course and r = m.render in
   let d = race.drive in
-  let (x, y, z), heading = Driving.world c d in
-  (* the camera follows the car's heading, not its spin; off the road,
-   * and against the rail, it shakes with the car *)
-  let follow = if d.spin > 0 then 90. -. d.car.heading else heading in
-  let cam =
-    camera m.view
-      (Float.abs d.car.speed /. Driving.top_speed)
-      ((x, y, z), follow)
-  in
-  let shake =
-    (if Float.abs d.offset > 1.15 *. Course.road_width then
-       0.12 *. Float.abs d.car.speed /. Driving.top_speed
-     else 0.)
-    +. if d.bump < 12 then 0.3 *. float_of_int (12 - d.bump) /. 12. else 0.
-  in
-  let cam : Camera.t =
-    let ex, ey, ez = cam.eye in
-    {
-      cam with
-      eye = (ex, ey +. (shake *. sin (float_of_int race.time *. 2.1)), ez);
-    }
-  in
-  let r = m.render in
-  let sky = lit m (Course.sky m.course cam) in
+  let sky = lit l (Course.sky c cam) in
   Render.frame r cam (Char.code (Bytes.get sky.shades 1));
   Render.draw r sky;
-  List.iter (Render.draw r) (Course.land_near m.course cam.eye);
-  List.iter (Render.draw r) (Course.road_near m.course d.s cam.eye);
-  List.iter (Render.draw r) m.course.landmarks;
-  List.iter
-    (fun (s : Mesh.shape) -> Render.draw r (lit m s))
-    (m.course.animated time);
-  let index = Palette.index m.palette in
+  List.iter (Render.draw r) (Course.land_near c cam.eye);
+  List.iter (Render.draw r) (Course.road_near c d.s cam.eye);
+  List.iter (Render.draw r) c.landmarks;
+  List.iter (fun (s : Mesh.shape) -> Render.draw r (lit l s)) (c.animated time);
+  let index = Palette.index l.palette in
+  let (x, y, z), heading = Driving.world c d in
   (* (the player's own car not drawn from its cockpit) *)
-  if m.view <> Cockpit then
+  if m.view <> Cockpit || m.scenes.scene = Title then
     Render.draw_at r
       (if m.braking then snd m.player_car else fst m.player_car)
       (-.heading) (x, y, z) index;
@@ -153,9 +202,81 @@ let draw_scene (m : model) (time : float) : unit =
         Render.draw_at r m.rival_cars.(k) (-.h) at index)
     race.rivals
 
+(* the race's camera: following the car's heading, not its spin; off
+ * the road, and against the rail, shaking with the car *)
+let race_camera (m : model) (c : Course.t) (race : Race.t) : Camera.t =
+  let d = race.drive in
+  let at, heading = Driving.world c d in
+  let follow = if d.spin > 0 then 90. -. d.car.heading else heading in
+  let cam =
+    camera m.view (Float.abs d.car.speed /. Driving.top_speed) (at, follow)
+  in
+  let shake =
+    (if Float.abs d.offset > 1.15 *. Course.road_width then
+       0.12 *. Float.abs d.car.speed /. Driving.top_speed
+     else 0.)
+    +. if d.bump < 12 then 0.3 *. float_of_int (12 - d.bump) /. 12. else 0.
+  in
+  let ex, ey, ez = cam.eye in
+  {
+    cam with
+    eye = (ex, ey +. (shake *. sin (float_of_int race.time *. 2.1)), ez);
+  }
+
+(* the scene's picture drawn, and what goes over it *)
+let draw (computer : P.computer) (m : model) (time : float) :
+    loaded * P.shape list =
+  (* the playground's texts are placed for a screen 1000 high: drawn on
+   * one (as wide as the window's proportions), then scaled to the
+   * window ([view]) *)
+  let s = m.scenes in
+  let screen =
+    P.to_screen (computer.screen.width *. 1000. /. computer.screen.height) 1000.
+  in
+  let blink (period : float) : P.shape list -> P.shape list =
+    Scene2d.blink period s
+  in
+  match s.scene with
+  | Title ->
+      let l = load m 0 in
+      let r = Race.start l.course in
+      let at, _ = Driving.world l.course r.drive in
+      draw_course m l (orbit 11. 3.5 0.8 (Course.spin 12. time) at) time r;
+      (l, Screens.title (blink 1.))
+  | Select i ->
+      (* the course on a table, turning, seen from above and aside *)
+      let l = load m i in
+      let cam = orbit 110. 105. 0. (Course.spin 10. time) (0., 0., 0.) in
+      let mini =
+        match l.miniature with
+        | Some mesh -> mesh
+        | None ->
+            let mesh = lit l (Course.miniature l.course) in
+            l.miniature <- Some mesh;
+            mesh
+      in
+      let r = m.render in
+      let sky = lit l (Course.sky_over cam (-40.) table) in
+      Render.frame r cam (Char.code (Bytes.get sky.shades 1));
+      Render.draw r sky;
+      Render.draw r mini;
+      List.iter
+        (fun (sh : Mesh.shape) ->
+          Render.draw r (lit l (Course.shrink l.course sh)))
+        (l.course.animated time);
+      (l, Screens.select screen (blink 1.) l.course)
+  | Racing ->
+      let l = load m m.current in
+      draw_course m l (race_camera m l.course m.race) time m.race;
+      (l, Screens.race screen (blink 0.3) l.course m.race)
+  | Finished ->
+      let l = load m m.current in
+      draw_course m l (race_camera m l.course m.race) time m.race;
+      (l, Screens.finished (blink 1.) l.course m.race)
+
 let view (computer : P.computer) (m : model) : P.shape list =
   let (P.Time now) = computer.time in
-  draw_scene m now;
+  let l, over = draw computer m now in
   Option.iter
     (fun (say : string -> unit) ->
       say
@@ -168,7 +289,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
            r.time r.clock r.drive.s
            (Driving.kmh r.drive.car.speed)
            (Rivals.ordinal (Rivals.position r.drive r.rivals))
-           (Race.lap m.course r.drive + 1)
+           (Race.lap l.course r.drive + 1)
            (if r.over then ", over" else if r.finished then ", goal" else "")))
     m.stats;
   m.frames <- m.frames + 1;
@@ -188,69 +309,91 @@ let view (computer : P.computer) (m : model) : P.shape list =
           pwidth = Render.width m.render;
           pheight = Render.height m.render;
           indices = dst;
-          palette = Palette.colors m.palette;
+          palette = Palette.colors l.palette;
         };
     ]
+  @ [ P.group over |> P.scale (screen.height /. 1000.) ]
+
+let start_race (m : model) (i : int) : unit =
+  m.current <- i;
+  m.race <- Race.start (load m i).course;
+  m.braking <- false
 
 let update (computer : P.computer) (m : model) : model =
+  let s = Scene2d.update computer m.scenes in
   let k = computer.keyboard in
-  let v = Set_.mem "v" k.keys in
-  if v && not m.v_held then m.view <- next_view m.view;
-  m.v_held <- v;
+  let space = Scene2d.pressed (fun (k : P.keyboard) -> k.kspace) s in
   let keys : Race.keys =
     { up = k.kup; down = k.kdown; left = k.kleft; right = k.kright }
   in
   (* (the race's events are the sound's, stage 4) *)
-  let race, _ = Race.step m.course keys m.race in
-  m.race <- race;
-  m.braking <- k.kdown || race.finished;
+  let drive () =
+    if Scene2d.pressed (fun (k : P.keyboard) -> Set_.mem "v" k.keys) s then
+      m.view <- next_view m.view;
+    let race, _ = Race.step (load m m.current).course keys m.race in
+    m.race <- race;
+    m.braking <- k.kdown || race.finished
+  in
+  m.scenes <-
+    (match s.scene with
+    | Title -> if space then Scene2d.go (Select 0) s else s
+    | Select i ->
+        let n = Array.length m.catalog in
+        let left = Scene2d.pressed (fun (k : P.keyboard) -> k.kleft) s
+        and right = Scene2d.pressed (fun (k : P.keyboard) -> k.kright) s in
+        if space then (
+          start_race m i;
+          Scene2d.go Racing s)
+        else if left then Scene2d.go (Select ((i + n - 1) mod n)) s
+        else if right then Scene2d.go (Select ((i + 1) mod n)) s
+        else s
+    | Racing ->
+        drive ();
+        if m.race.finished then Scene2d.go Finished s else s
+    | Finished ->
+        drive ();
+        if space then Scene2d.go (Select m.current) s else s);
   m
 
-(* the course, its palette made from its faces and the cars', its
- * meshes lit *)
-let start (view : view) (width : int) (height : int)
+(* the cars' meshes; the first course built (the title's, or [course]'s:
+ * a race on it at once, not the title, for the frames' sessions) *)
+let start (view : view) (width : int) (height : int) (course : int option)
     (stats : (string -> unit) option) : model =
-  let course = Course.big_forest () in
-  let race = Race.start course in
+  let catalog = [| Course.big_forest |] in
   let red = Mesh.rgb 220 30 40 in
   let player_car =
     (Mesh.make (Cars.model red false), Mesh.make (Cars.model red true))
+  and rival_cars =
+    Array.init (Array.length Cars.liveries) (fun (k : int) ->
+        Mesh.make (Cars.model Cars.liveries.(k) false))
   in
-  let rival_cars =
-    Array.of_list
-      (List.map
-         (fun (rv : Rivals.t) -> Mesh.make (Cars.model rv.livery false))
-         race.rivals)
+  let first =
+    match course with
+    | None -> 0
+    | Some i when i >= 0 && i < Array.length catalog -> i
+    | Some i -> failwith (Printf.sprintf "no course %d" i)
   in
-  let palette = Palette.create () in
-  let statics = Course.meshes course in
-  List.iter (Palette.add_mesh palette) statics;
-  List.iter
-    (fun (s : Mesh.shape) -> Palette.add_mesh palette (Mesh.make s))
-    (course.animated 0.);
-  Palette.add_mesh palette
-    (Mesh.make
-       (Course.sky course (camera view 0. (Driving.world course race.drive))));
-  List.iter
-    (fun (mesh : Mesh.t) ->
-      Array.iter (Palette.add_all_levels palette) mesh.colors)
-    (fst player_car :: snd player_car :: Array.to_list rival_cars);
-  Palette.make palette;
-  List.iter
-    (fun (mesh : Mesh.t) -> Mesh.light mesh (Palette.index palette))
-    statics;
+  let c = catalog.(first) () in
+  let race = Race.start c in
+  let loaded = Array.make (Array.length catalog) None in
+  loaded.(first) <-
+    Some
+      (build c
+         (fst player_car :: snd player_car :: Array.to_list rival_cars)
+         (camera view 0. (Driving.world c race.drive)));
   {
-    course;
-    palette;
+    catalog;
+    loaded;
+    current = first;
     render = Render.create width height;
     player_car;
     rival_cars;
     race;
     braking = false;
+    scenes = Scene2d.start (if course = None then Title else Racing);
     screens = [| Bytes.create (width * height); Bytes.create (width * height) |];
     frames = 0;
     view;
-    v_held = false;
     stats;
   }
 
@@ -284,7 +427,8 @@ let () =
            if flag "stats" <> None then Some (Console.eprint caps) else None
          in
          if flag "cull" = Some "off" then Render.cull := false;
-         let model = start first width height stats in
+         let course = Option.bind (flag "course") int_of_string_opt in
+         let model = start first width height course stats in
          (* the window the picture's size, a unit a pixel; or, without
           * scale, the window whatever its size (mini-doom's) *)
          let flags =

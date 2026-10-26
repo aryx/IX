@@ -67,9 +67,10 @@ val make :
 (* [height l x z]: the land at (x, z), its cell's four corners mixed *)
 val height : t -> float -> float -> float
 
-(* [tiles l water]: the land's tiles of 8 by 8 cells, each with its
- * middle (x, z); the sea at [water] over the wet cells *)
-val tiles : t -> float -> ((float * float) * Mesh.shape) list
+(* [tiles l water stride]: the land's tiles of 8 by 8 quads, each with
+ * its middle (x, z); a quad [stride] cells wide (1; 2 for the course
+ * select's miniature); the sea at [water] over the wet cells *)
+val tiles : t -> float -> int -> ((float * float) * Mesh.shape) list
 
 (* a point in a polygon (crossing number): the sea *)
 val inside : (float * float) list -> float * float -> bool

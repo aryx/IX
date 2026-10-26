@@ -6,12 +6,12 @@ plane, projected, filled by spans with a depth for each pixel, a byte a
 pixel and a palette for each course. The plan, its survey and its
 stages: [`plan_virtuaracing.md`](../../../docs/plans/plan_virtuaracing.md).
 
-Stages 1 and 2 and stage 3's first part are here: Big Forest, its
+Stages 1 and 2 and stage 3's first two parts are here: Big Forest, its
 road, land and landmarks, and its race: the countdown, the player's
 car by the arrows, the fifteen rivals, the clock and its checkpoints,
-the laps, the goal; the four views (`v`). Not yet its screens (the
-race's display, the title, the course select, the goal's), the other
-two courses, the sound.
+the laps, the goal; the four views (`v`); the race's display, the
+title, the course select (the course's miniature), the end's screen.
+Not yet the other two courses, the sound.
 
     dune build ./games/racing/virtua/Virtua.exe
     ./_build/default/games/racing/virtua/Virtua.exe -dump-frame 3 grid.ppm view=behind
@@ -24,8 +24,8 @@ The folders (`dune` says which module is where):
 |---|---|
 | `render/` | `Mesh` (the playground's shape functions, made arrays once), `Palette` (median cut), `Render` (cull, turn, cut, project, spans) |
 | `course/` | `Track3d` (the road a ribbon), `Heightmap`, `Land`, `Scenery`, `Course` (Big Forest) |
-| `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps) |
-| `tests/` | `compare.sh`: the grid against the playground's golden frame |
+| `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps), `Screens` (the race's display, the scenes' texts) |
+| `tests/` | `compare.sh`: the title and the grid against the playground's golden frames |
 
 Its frames are checked by `games/tests/frames.sh` (the sessions
 `racing/virtua/Virtua|...`), the same sums by OCaml's build and mini-ml's.
@@ -61,6 +61,12 @@ numbers are `scripts/playground_copies.sh games/racing/virtua`'s
   is not the playground's to the hundredth.
 - The player's car is not drawn from its cockpit (the playground draws
   it without its shadow, which is part of our car's mesh).
+- The texts over the picture are the playground's, placed for a screen
+  1000 high: drawn on one, then scaled to the window. The course
+  select's miniature (its land a quad of two cells) is made when asked
+  for, and its colours, not counted in the palette, are the nearest.
+- A course is built when it is first needed (the title's, the one
+  raced), its palette with it; `course=n` races on it at once.
 - A shape is a list of faces made into a mesh at the course's start
   (`Mesh`), not the playground's `shape3d` made triangles at each
   frame; `Track3d.strip` and `wall` give them. Its corners and normals,
@@ -92,9 +98,8 @@ and `race/`, `Virtua.ml`'s program, `tests/compare.sh`, `dune`,
 
 ### What remains there
 
-The race's screens (`Scene2d`: the display, the title, the course
-select and its miniature, the goal's), the sound, the other two
-courses, TinyOutRun's coast (`Road`): stages 3 and 4 of the plan.
+The sound, the other two courses, TinyOutRun's coast (`Road`):
+stages 3 and 4 of the plan.
 `Topdown`'s waypoint track and its computer driver.
 `Mat4`, `Material`, `Ray` of `libs/graphics/3d/geometry` (the GPU's and
 the ray tracer's), and Playground3d and its rasterizer, which this game

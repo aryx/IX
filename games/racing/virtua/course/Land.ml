@@ -228,14 +228,15 @@ let hash (i : int) (j : int) (k : int) : int =
 
 (* the sea over the wet cells, a quad each, flat (its shore is where the
  * land's facets come out of it) *)
-let tiles (l : t) (water : float) : ((float * float) * Mesh.shape) list =
+let tiles (l : t) (water : float) (stride : int) :
+    ((float * float) * Mesh.shape) list =
   let p (i : int) (j : int) : Vec3.t =
     ( l.x0 +. (float_of_int i *. l.cell),
       at l i j,
       l.z0 +. (float_of_int j *. l.cell) )
   in
   let quad (i : int) (j : int) : Mesh.shape list =
-    let i' = i + 1 and j' = j + 1 in
+    let i' = i + stride and j' = j + stride in
     let wet =
       List.exists
         (fun ((i, j) : int * int) -> l.wet.(clamp_index l i j))
@@ -257,7 +258,7 @@ let tiles (l : t) (water : float) : ((float * float) * Mesh.shape) list =
       [ Mesh.polygon3d (rgb 50 110 190) [ flat a; flat d; flat b; flat c ] ]
     else []
   in
-  let tile = 8 in
+  let tile = 8 * stride in
   List.concat
     (List.init
        ((l.nz / tile) + 1)
@@ -269,8 +270,10 @@ let tiles (l : t) (water : float) : ((float * float) * Mesh.shape) list =
                  (List.init 8 (fun (a : int) ->
                       List.concat
                         (List.init 8 (fun (b : int) ->
-                             let i = (ti * tile) + b and j = (tj * tile) + a in
-                             if i + 1 <= l.nx && j + 1 <= l.nz then quad i j
+                             let i = (ti * tile) + (b * stride)
+                             and j = (tj * tile) + (a * stride) in
+                             if i + stride <= l.nx && j + stride <= l.nz then
+                               quad i j
                              else []))))
              in
              if quads = [] then None

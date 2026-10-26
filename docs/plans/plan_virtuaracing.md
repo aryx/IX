@@ -443,3 +443,22 @@ names them, my comparison had looked from the grid only).
   Acropolis (3c), the comparison with the playground's race (by its
   display, at 3b; a rival's speed has a part by our hash, so near, not
   the same).
+
+**Stage 3, its second part (3b): the screens.** `race/Screens` (the
+playground's `time_text`, `minimap`, `tachometer`, `hud_race` and its
+scenes' texts); `Virtua`'s scenes by `Scene2d` (the title, a camera
+round the player's car on the grid; the course select, the course's
+miniature on a table, `Course.miniature`, the land of `Land.tiles`
+with its stride again; the race; its end), a course built when first
+needed with its palette (`course=n` to race at once: the sessions).
+The texts placed for a screen 1000 high, drawn on one and scaled to
+the window (at 640 by 480 the title's were off it).
+- Against the playground's golden frames, by its own sessions
+  (`-fixed-time 1000`, `seed=1`; `tests/compare.sh title|grid`): the
+  title a mean difference of **5.1**, the grid (its display, the
+  countdown's 2) **5.2** (stage 1's grid, without the display: 6.7).
+  The select's golden is Bay Bridge (3c); the curve's is on TinyOutRun's
+  coast (decision 7: left out).
+- `frames.sh`: seven sessions (the four with `course=0`; title,
+  golden_grid, select as the goldens' sessions), the same bytes by
+  mini-ml.

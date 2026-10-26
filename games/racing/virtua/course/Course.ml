@@ -97,6 +97,7 @@ type t = {
   chunks : piece array;
   tiles : piece array;
   landmarks : Mesh.t list;
+  landscape : Mesh.shape list;
   animated : float -> Mesh.shape list;
 }
 
@@ -382,7 +383,7 @@ let make (d : description) : t =
       (List.map
          (fun (((x, z), shape) : (float * float) * Mesh.shape) ->
            { mesh = Mesh.make shape; mx = x; mz = z })
-         (Land.tiles terrain water_level))
+         (Land.tiles terrain water_level 1))
   in
   {
     name = d.d_name;
@@ -399,6 +400,7 @@ let make (d : description) : t =
     chunks;
     tiles;
     landmarks = List.map Mesh.make (d.landscape site);
+    landscape = d.landscape site;
     animated = d.moving site;
   }
 
@@ -521,7 +523,8 @@ let land_near (c : t) ((ex, _, ez) : Vec3.t) : Mesh.t list =
  *       eye                           ___/
  *     floor ___________________________/  haze
  *                                  1400  1560 ahead *)
-let sky (c : t) (cam : Camera.t) : Mesh.shape =
+let sky_over (cam : Camera.t) (ground : float) (floor : Mesh.color) :
+    Mesh.shape =
   let ex, ey, ez = cam.eye and tx, _, tz = cam.target in
   let d = Float.max 1e-9 (Float.hypot (tx -. ex) (tz -. ez)) in
   let fx = (tx -. ex) /. d and fz = (tz -. ez) /. d in
@@ -535,7 +538,7 @@ let sky (c : t) (cam : Camera.t) : Mesh.shape =
   and bend = 1000.
   and far = 1400.
   and edge = 1560. in
-  let blue = rgb 150 205 250 and floor = snd c.grass in
+  let blue = rgb 150 205 250 in
   Mesh.group3d
     [
       polygon3d floor
@@ -562,6 +565,56 @@ let sky (c : t) (cam : Camera.t) : Mesh.shape =
           at edge (-1.) low;
         ];
     ]
+
+let sky (c : t) (cam : Camera.t) : Mesh.shape = sky_over cam ground (snd c.grass)
+
+(*****************************************************************************)
+(* The course select's miniature *)
+(*****************************************************************************)
+
+let miniature_scale = 0.1
+
+(* the course's box, x0, x1, z0, z1 *)
+let bounds (c : t) : float * float * float * float =
+  let n = Track3d.segments c.ribbon in
+  List.fold_left
+    (fun ((x0, x1, z0, z1) : float * float * float * float) (k : int) ->
+      let p = Track3d.at c.ribbon (float_of_int k *. Track3d.step c.ribbon) in
+      (Float.min x0 p.px, Float.max x1 p.px, Float.min z0 p.pz, Float.max z1 p.pz))
+    (infinity, neg_infinity, infinity, neg_infinity)
+    (List.init n (fun (k : int) -> k))
+
+let miniature_center (c : t) : float * float =
+  let x0, x1, z0, z1 = bounds c in
+  ((x0 +. x1) /. 2., (z0 +. z1) /. 2.)
+
+let shrink (c : t) (s : Mesh.shape) : Mesh.shape =
+  let cx, cz = miniature_center c in
+  s |> Mesh.move3d (-.cx) 0. (-.cz) |> Mesh.scale3d miniature_scale
+
+(* the land a quad of two cells, the road a band of three segments (the
+ * line's white), the landmarks *)
+let miniature (c : t) : Mesh.shape =
+  let n = Track3d.segments c.ribbon in
+  let band =
+    List.init (n / 3) (fun (k : int) ->
+        let at (j : int) = float_of_int j *. Track3d.step c.ribbon in
+        let sa = at (3 * k) and sb = at (min n ((3 * k) + 3)) in
+        let a (o : float) = Track3d.across c.ribbon sa o
+        and b (o : float) = Track3d.across c.ribbon sb o in
+        let lift ((x, y, z) : Vec3.t) : Vec3.t = (x, y +. 1.5, z) in
+        polygon3d
+          (if k = 0 then Mesh.white else rgb 90 90 95)
+          (List.map lift
+             [
+               a (-2. *. road_width);
+               a (2. *. road_width);
+               b (2. *. road_width);
+               b (-2. *. road_width);
+             ]))
+  in
+  let tiles = List.map snd (Land.tiles c.terrain water_level 2) in
+  shrink c (Mesh.group3d (tiles @ band @ c.landscape))
 
 (* (the playground's course's lap_length) *)
 let lap_length (c : t) : float =

@@ -7,14 +7,16 @@
 ;             project, fill by spans with a depth)
 ;   course/   the courses: Track3d (the road a ribbon), Heightmap,
 ;             Land, Scenery (the solids and the landmarks), Course
-;   race/     the cars: Cars
+;   race/     the race: Cars (the car, the grid), Topdown (a car on a
+;             plane), Driving, Rivals, Race (the clock, the laps),
+;             Screens (its display, the scenes' texts)
 (include_subdirs unqualified)
 
 (library
  (name ix_virtua)
  (wrapped false)
- (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race)
- (libraries ix_graphics_geometry))
+ (modules Mesh Palette Render Track3d Heightmap Scenery Land Course Cars Topdown Driving Rivals Race Screens)
+ (libraries ix_graphics_geometry ix_playground))
 
 (executable
  (name Virtua)

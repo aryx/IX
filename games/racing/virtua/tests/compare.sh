@@ -2,25 +2,32 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-virtuaracing's grid against the playground's golden frame of it
-# (docs/plans/plan_virtuaracing.md, stage 1): the same view (behind and
-# above, the player 9th on Big Forest's grid) at the same size, 1000 by
-# 1000 (a picture of 500 by 500, each pixel 2 by 2), and the pixels that
-# differ. Not a test that passes or fails: the playground's frame has
-# its race's screen over it (the time, the position, the tachometer,
-# the map), its trees elsewhere (OCaml's Hashtbl.hash places them,
-# Scenery.jitter here) and its countdown's 2; the numbers say how near.
-#   usage: compare.sh [out.png]   (the two side by side, and where they
-#   differ in red, with python3's PIL)
+# mini-virtuaracing against the playground's golden frames, its
+# sessions (its tests/common/scenes/Scenes_3d.ml, Testutil_golden.ml: the
+# clock held at a second, -fixed-time 1000; the same frame, the
+# same keys), at the same size, 1000 by 1000 (a picture of 500 by 500,
+# each pixel 2 by 2), and the pixels that differ. Not a test that
+# passes or fails: the trees are elsewhere (OCaml's Hashtbl.hash places
+# them there, Scenery.jitter here), the colours are a palette's, the
+# words are drawn by another font; the numbers say how near.
+#   usage: compare.sh [title|grid] [out.png]   (default grid; out.png:
+#   the two side by side, and where they differ in red, with PIL)
 #   PLAYGROUND=...: the playground (default: ~/playground)
+# Not yet: select (its golden is Bay Bridge's, stage 3c), curve (on
+# TinyOutRun's coast, left out: plan_virtuaracing.md, decision 7).
 cd "$(dirname "$0")/../../../.."
 P=${PLAYGROUND:-$HOME/playground}
-golden=$P/tests/3d/golden/TinyVirtuaRacing_grid.png
+case ${1:-grid} in
+  title) golden=TinyVirtuaRacing.png; frame=5; script="" ;;
+  grid) golden=TinyVirtuaRacing_grid.png; frame=120; script="-script space:1,space:3,v:10" ;;
+  *) echo "usage: compare.sh [title|grid] [out.png]"; exit 2 ;;
+esac
+golden=$P/tests/3d/golden/$golden
 [ -f $golden ] || { echo "no $golden"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 dune build ./games/racing/virtua/Virtua.exe 2> /dev/null
-./_build/default/games/racing/virtua/Virtua.exe -dump-frame 3 $W/mine.ppm view=behind picture=500x500 scale=2 > /dev/null
-python3 - $W/mine.ppm $golden "${1:-}" <<'PY'
+./_build/default/games/racing/virtua/Virtua.exe -fixed-time 1000 -dump-frame $frame $W/mine.ppm $script picture=500x500 scale=2 seed=1 > /dev/null
+python3 - $W/mine.ppm $golden "${2:-}" <<'PY'
 import sys
 from PIL import Image
 a = Image.open(sys.argv[1]).convert('RGB'); b = Image.open(sys.argv[2]).convert('RGB')

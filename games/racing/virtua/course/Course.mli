@@ -45,6 +45,10 @@ val verge : float
 (* degrees from [a] to [b], the short way round *)
 val angle_diff : float -> float -> float
 
+(* [spin period time]: a turn of [period] seconds, in degrees, at [time]
+ * (Playground.spin) *)
+val spin : float -> float -> float
+
 (* [turn_at ribbon i]: how much the road turns at segment i, degrees a
  * segment (averaged over a few) *)
 val turn_at : Track3d.t -> int -> float
@@ -73,6 +77,7 @@ type t = {
   chunks : piece array;
   tiles : piece array;
   landmarks : Mesh.t list;
+  landscape : Mesh.shape list; (* the landmarks' shapes (the miniature) *)
   (* what moves, at a time in seconds *)
   animated : float -> Mesh.shape list;
 }
@@ -90,8 +95,19 @@ val road_near : t -> float -> Vec3.t -> Mesh.t list
 (* [land_near c eye]: the land's tiles within sight of the eye *)
 val land_near : t -> Vec3.t -> Mesh.t list
 
-(* [sky c camera]: the sky, the haze and the floor, around the eye *)
+(* [sky c camera]: the sky, the haze and the floor, around the eye;
+ * [sky_over camera ground floor]: over a floor of another height and
+ * colour (the course select's table) *)
 val sky : t -> Camera.t -> Mesh.shape
+val sky_over : Camera.t -> float -> Mesh.color -> Mesh.shape
+
+(* The course select's: the course on a table, a tenth of its size,
+ * around (0, 0, 0): [miniature c] its land (a quad of two cells), its
+ * road a band, its landmarks; [shrink c s] what moves, the same way.
+ * [bounds c]: the course's box, x0 x1 z0 z1 (the race's map) *)
+val miniature : t -> Mesh.shape
+val shrink : t -> Mesh.shape -> Mesh.shape
+val bounds : t -> float * float * float * float
 
 (* every mesh that does not move, for the palette (Palette.add_mesh) *)
 val meshes : t -> Mesh.t list

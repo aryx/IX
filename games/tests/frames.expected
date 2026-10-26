@@ -37,7 +37,10 @@ fps/quake/Quake|water|30 x=419 y=2000 z=0 angle=90 pitch=30 music=off|0e0de14fb3
 fps/quake/Quake|fight|300 -script Control:20-300 x=440 y=-340 z=-230 angle=135 music=off|aaebb2f7a4e720ac4913ec8347676d705490cdeca112cb1e4de5935fb6b6b989
 fps/quake/Quake|fight_ways|300 -script Control:20-300 x=440 y=-340 z=-230 angle=135 ai=ways music=off|509ff1627d4aa9fa6b56b072302ae6463d7795093b2aa9c37777102ddd10129d
 fps/quake/Quake|grenades|150 -script 6:2-4,Control:10-60 x=440 y=-340 z=-230 angle=135 weapons=all music=off|d4a07b848f8c1a6475dd522e530b4a789f9b00e2a747419eb7dd1c23ab69838d
-racing/virtua/Virtua|grid|3 view=behind picture=500x500|0e87bff8b803cbd442338b3f2178e8eafc45d9b16936c8a760fafc59432c801d
-racing/virtua/Virtua|start|3|805da76e405ccb0a8e3704ddb7e43c85495aa886f208a2ff51b2a67227fc29d3
-racing/virtua/Virtua|views|40 -script v:5,v:20|b337a830cabceede824ab9de280a67d08c2e84018b3aee56445ed1a1d54ebd9b
-racing/virtua/Virtua|race|900 -script up:1-900 view=behind|e0f6ab35a4b38ac9ae7062e842b98ef8f531b039f35ab133a76f3f205c7df8d0
+racing/virtua/Virtua|grid|3 view=behind picture=500x500 course=0|06cc7ee1d691d014099f7a2f126967e113047c76fec7166999f5d4382bfcb00c
+racing/virtua/Virtua|start|3 course=0|116fb30e32774fed12e9a100845e233e0354bd72a1ce454658d4a9d1cdb3b252
+racing/virtua/Virtua|views|40 -script v:5,v:20 course=0|146861eb17d61552d4e60acd90f519663367c1e8499c6f7cbe6b090d21489e42
+racing/virtua/Virtua|race|900 -script up:1-900 view=behind course=0|975e4d61b165dc0e7f58d079c172fc780768713fabceaee6cfa82a8dbf82c11a
+racing/virtua/Virtua|title|5 -fixed-time 1000 seed=1|336d865c65a2bbcff104cee7370e2eee57334626095cb0d5d403260399f61ff4
+racing/virtua/Virtua|golden_grid|120 -fixed-time 1000 -script space:1,space:3,v:10 seed=1|d104f00d30ec3a82e849c5b7e92c70ca4b2844d8959d5d0092f839b896194903
+racing/virtua/Virtua|select|40 -fixed-time 1000 -script space:1 seed=1|c708628d6b3df27b0b1a89f9971525995b61febd53a9c8d187bae801d749ed1e

@@ -75,7 +75,7 @@ mkdir -p "$build/bin"
 for t in ml cc asm ar ld lex yacc walk rc mk; do
   ln -sf "$ix/bin/mini-$t" "$build/bin/$t"
 done
-(cd "$build/src" && PATH=$build/bin:$PATH MKSHELL=mini-rc objtype=arm NPROC=4 \
+(cd "$build/src" && PATH=$build/bin:$ix/bin:$PATH MKSHELL=mini-rc objtype=arm NPROC=4 \
   mini-rc kernels/9pi/tests/self.rc $q > "$build/linux.log" 2>&1)
 
 # 4. the two compared

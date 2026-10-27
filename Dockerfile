@@ -44,11 +44,13 @@ RUN eval $(opam env) && opam install -y dune caps fpath logs fmt testo alcotest 
 
 # For make self (.github/workflows/self.yml, --build-arg SELF=tix or
 # mix): mix wants QEMU's Pi 2, gcc for arm and ocaml-light, mini-9pi's
-# OCaml (built for arm by kernels/ocaml-light.sh, below)
+# OCaml (built for arm by kernels/ocaml-light.sh, below), and sfdisk
+# (kernels/9pi/tests/self.sh reads the card's partitions)
 ARG SELF=
-RUN if [ "$SELF" = mix ]; then \
+# (apt-get update again: the first layer's lists may be an old cache's)
+RUN if [ "$SELF" = mix ]; then apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system-arm \
-    gcc-arm-linux-gnueabihf && \
+    gcc-arm-linux-gnueabihf fdisk && \
   git clone -q https://github.com/aryx/ocaml-light /root/ocaml-light; fi
 
 # Build

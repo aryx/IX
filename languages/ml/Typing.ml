@@ -640,7 +640,10 @@ let places types =
     let ok = match if n = 0 then Some t else arg t n with Some a -> is a | None -> false in
     let before = match Hashtbl.find_opt h span with Some b -> b | None -> true in
     Hashtbl.replace h span (ok && before)) !typed;
+  (* sorted: the table's order is its hash's, OCaml's runtime's or
+   * lib_core's, and the summary (X.inline) is the same bytes by both *)
   Hashtbl.fold (fun span ok acc -> if ok then span :: acc else acc) h []
+  |> List.sort compare
 
 (* OPTIMIZATION (immediates): the comparisons and the stores of ints,
  * chars, booleans or (): no pointer to follow, so the integers'
@@ -652,7 +655,9 @@ let immediates () = places [ int_t; char_t; bool_t; unit_t ]
 let strings () = places [ string_t ]
 
 (* the globals that are min or max, each with the one it is *)
-let min_max_globals () = Hashtbl.fold (fun g base acc -> (g, base) :: acc) min_max []
+let min_max_globals () =
+  (* (sorted, as places) *)
+  Hashtbl.fold (fun g base acc -> (g, base) :: acc) min_max [] |> List.sort compare
 
 (* OPTIMIZATION (floats): the comparisons of floats: the processor's
  * (Lower.float_cmps) *)

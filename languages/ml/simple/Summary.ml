@@ -102,7 +102,11 @@ let uses (items : Scope.item list) : string list =
  * not taken for one) *)
 let magic = "mini-ml summary 1\n"
 
-let to_string (s : t) = magic ^ Marshal.to_string s []
+(* No_sharing: the bytes the value's alone, not which of its parts are
+ * one block, which depends on the compiler that built mini-ml (as
+ * Asm.save's objects; make self compares the card's with Linux's)
+ * old: magic ^ Marshal.to_string s [] *)
+let to_string (s : t) = magic ^ Marshal.to_string s [ Marshal.No_sharing ]
 
 let of_string (text : string) : t option =
   let n = String.length magic in

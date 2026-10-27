@@ -980,8 +980,10 @@ CARD_toolchain += ml=$(IX9)/languages/ml/mini-ml cc=$(IX9)/languages/c/mini-cc m
 # expected-%; card-self makes its file system again each time)
 # (files: the symbolic links in git are copied, but bin, a directory;
 # /src is the repository, as tiny-kernel's image's: not the everyday
-# card's five small examples)
-CARD_IX := $(foreach f,$(shell cd ../.. && git ls-files -co --exclude-standard | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/$(f)=../../$(f))
+# card's five small examples; without git, Docker's image, the files
+# tests/ix_files.sh finds)
+IX_FILES = git ls-files -co --exclude-standard 2>/dev/null || tests/ix_files.sh
+CARD_IX := $(foreach f,$(shell cd ../.. && { $(IX_FILES); } | grep -v '^docs/\|^_' | while read f; do [ -f "$$f" ] && echo "$$f"; done),src/$(f)=../../$(f))
 CARD_SRC =
 endif
 # the binds that make /bin of them, one for each directory: the card's

@@ -13,7 +13,8 @@
 # Then under QEMU, on the card: Pervasives.ml by ml and libc's pow.c by
 # cc, as lib_core's mkfile compiles them; hello.c and Hello.ml as
 # tests/self/mkfile, compiled, linked over the host's libc.a and runtime,
-# and run. Each object and program the host's, byte for byte (cmp).
+# and run. Each object and program the host's, byte for byte (cmp), and
+# Pervasives' summary (X.inline, what ml -O3 inlines from).
 # QEMU's Pi 2: mini-qemu's is 6 times slower here, a minute and a half,
 # and its own checks are the kernels' (make check-ix).
 # usage: kernels/9pi/tests/smoke.sh dir
@@ -59,7 +60,8 @@ files=(progs/toolchain/ml=$X/languages/ml/mini-ml progs/toolchain/cc=$X/language
   progs/misc/cmp=$U/compare/mini-cmp lib/namespace=$D/namespace
   src/self/hello.c=kernels/9pi/tests/self/hello.c
   src/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
-  host/Pervasives.5=$L/Pervasives.5 host/pow.5=$L/libc/port/pow.5
+  host/Pervasives.5=$L/Pervasives.5 host/Pervasives.inline=$L/Pervasives.inline
+  host/pow.5=$L/libc/port/pow.5
   host/libc.a=$L/libc.a host/runtime.5=$L/runtime.5 host/std_exit.5=$L/std_exit.5
   host/start.5=$S/hello-ml.start.5 host/Hello.5=$S/Hello.5
   host/hello-c=$S/hello-c host/hello-ml=$S/hello-ml
@@ -80,6 +82,7 @@ C=(-I$L/libc/include -I$L/libc/include/utf -I$L/libc -I$L/libc/include/arch/arm 
 cd $L
 ml -m 5 -O3 $I -o $l/Pervasives.5 core/Pervasives.ml
 cmp $l/Pervasives.5 $h/Pervasives.5 && echo Pervasives: the host
+cmp $l/Pervasives.inline $h/Pervasives.inline && echo Pervasives.inline: the host
 cc -m 5 $C -o $l/pow.5 libc/port/pow.c
 cmp $l/pow.5 $h/pow.5 && echo pow: the host
 cd /src/self
@@ -101,7 +104,8 @@ kernels/lib_machine/session.py --prompt "% " --timeout 120 --out $D/session.txt 
   --lines $D/session.cmds -- qemu-system-arm $B -nographic \
   -drive file=$D/card.img,if=sd,format=raw,snapshot=on > /dev/null ||
   { echo "the session did not end:"; tail -5 $D/session.txt; exit 1; }
-for l in 'Pervasives: the host' 'pow: the host' 'hello from C' 'hello-c: the host' \
+for l in 'Pervasives: the host' 'Pervasives.inline: the host' 'pow: the host' \
+    'hello from C' 'hello-c: the host' \
     'start: the host' 'Hello: the host' 'hello from OCaml' 'hello-ml: the host'; do
   grep -q "^$l" $D/session.txt || { echo "no \"$l\":"; tail -20 $D/session.txt; exit 1; }
 done

@@ -46,3 +46,4 @@ racing/virtua/Virtua|golden_grid|120 -fixed-time 1000 -script space:1,space:3,v:
 racing/virtua/Virtua|select|40 -fixed-time 1000 -script space:1,right:3 seed=1|d751afa7847e4f2f17ae2c42aa9a3143ba3f3643ec57c85e8598feb6950ba3ea|0404a2fa8eb34d88dfee90f258ea093ec0f8672135c42945839e85e01454bfbb
 racing/virtua/Virtua|race_bay|900 -script up:1-900 view=behind course=1|3afdd42636635ad4a8d6c63f1bafaf46f8e12b23bb3ae75c594112e62b3dc453
 racing/virtua/Virtua|race_acropolis|900 -script up:1-900 view=behind course=2|d9be5b5515acee446a9906253bd623d72ad285e40987ca7a304eb1c92d481e88
+racing/virtua/Virtua|painter|250 -script up:1-400 view=behind course=0 render=painter|038c3ad5f1c5691575d42c8810e4107278d1750b9f7dd82f5a7892858d18d2ae

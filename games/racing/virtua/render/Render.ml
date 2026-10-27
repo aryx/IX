@@ -6,6 +6,12 @@
 (* the most corners of a face, cut by the near plane *)
 let most = 64
 
+(* how the hidden faces are hidden: a depth for each pixel, or the
+ * faces drawn far to near (the painter's algorithm, below) *)
+type algorithm = Depth | Painter
+
+let algorithm = ref Depth
+
 type t = {
   width : int;
   height : int;
@@ -42,6 +48,16 @@ type t = {
   lefts : Float.Array.t;
   rights : Float.Array.t;
   mutable drawn : int;
+  (* the painter's: the frame's faces kept, [kept] of them; face k's
+   * corners on the screen from kfirst.(k) to kfirst.(k + 1) - 1 in
+   * kxs, kys, kzs (1/z), its distance and its colour *)
+  mutable kept : int;
+  mutable kxs : Float.Array.t;
+  mutable kys : Float.Array.t;
+  mutable kzs : Float.Array.t;
+  mutable kfirst : int array;
+  mutable kdistance : int array;
+  mutable kcolor : Bytes.t;
 }
 
 (* 1/z in whole numbers: the near plane's 1/0.1 times this is 6.7e8,
@@ -77,6 +93,13 @@ let create (width : int) (height : int) : t =
     lefts = Float.Array.make height 0.;
     rights = Float.Array.make height 0.;
     drawn = 0;
+    kept = 0;
+    kxs = Float.Array.create 0;
+    kys = Float.Array.create 0;
+    kzs = Float.Array.create 0;
+    kfirst = [| 0 |];
+    kdistance = [||];
+    kcolor = Bytes.empty;
   }
 
 let width (r : t) : int = r.width
@@ -96,7 +119,8 @@ let frame (r : t) (c : Camera.t) (background : int) : unit =
   r.side <- float r.width /. 2. /. r.focal;
   r.top <- float r.height /. 2. /. r.focal;
   Bytes.fill r.pixels 0 (Bytes.length r.pixels) (Char.chr background);
-  Array.fill r.depth 0 (Array.length r.depth) 0;
+  if !algorithm = Depth then Array.fill r.depth 0 (Array.length r.depth) 0;
+  r.kept <- 0;
   r.drawn <- 0
 
 (*****************************************************************************)
@@ -211,8 +235,12 @@ let fill_rows (r : t) (n : int) (color : char) (y0 : int) (y1 : int) : unit =
       let x0 = imax 0 (first (get lefts y))
       and x1 = imin (r.width - 1) (first (get rights y) - 1) in
       if x0 <= x1 then begin
-        let d = (a *. (float x0 +. 0.5)) +. (b *. (float y +. 0.5)) +. c in
-        span r y x0 x1 (imax 1 (int_of_float (d *. one))) step color
+        match !algorithm with
+        | Depth ->
+            let d = (a *. (float x0 +. 0.5)) +. (b *. (float y +. 0.5)) +. c in
+            span r y x0 x1 (imax 1 (int_of_float (d *. one))) step color
+        | Painter ->
+            Bytes.fill r.pixels ((y * r.width) + x0) (x1 - x0 + 1) color
       end
     done
   end
@@ -229,6 +257,83 @@ let fill (r : t) (n : int) (color : char) : unit =
   let y0 = imax 0 (first (get sy !top))
   and y1 = imin (r.height - 1) (first (get sy !bottom) - 1) in
   if y0 <= y1 then fill_rows r n color y0 y1
+
+(*****************************************************************************)
+(* The painter's algorithm *)
+(*****************************************************************************)
+
+(* The faces of a frame kept, then drawn from the farthest to the
+ * nearest (finish), each over what is there: no depth for each pixel,
+ * none to clear or to test, but a sort; a face's distance is one
+ * number, its corners' mean, so two faces that cross, or a long one
+ * beside a short one, may be drawn in the wrong order (the road's
+ * line under its tarmac). render=painter, to compare (Virtua). *)
+
+let grow_floats (a : Float.Array.t) (n : int) : Float.Array.t =
+  if Float.Array.length a >= n then a
+  else begin
+    let b = Float.Array.make (imax n (2 * Float.Array.length a)) 0. in
+    Float.Array.blit a 0 b 0 (Float.Array.length a);
+    b
+  end
+
+let grow_ints (a : int array) (n : int) : int array =
+  if Array.length a >= n then a
+  else begin
+    let b = Array.make (imax n (2 * Array.length a)) 0 in
+    Array.blit a 0 b 0 (Array.length a);
+    b
+  end
+
+(* the n corners in sx, sy, iz kept, at the mean of their z, in whole
+ * centimetres: OCaml on arm64 computes a * b + c in one instruction,
+ * mini-ml in two, so a corner's z may be a last bit apart; two faces
+ * so near the same distance are a tie, kept in the order they came,
+ * by both (and the sort compares ints) *)
+let keep (r : t) (n : int) (color : char) : unit =
+  let k = r.kept in
+  let at = r.kfirst.(k) in
+  r.kxs <- grow_floats r.kxs (at + n);
+  r.kys <- grow_floats r.kys (at + n);
+  r.kzs <- grow_floats r.kzs (at + n);
+  r.kfirst <- grow_ints r.kfirst (k + 2);
+  r.kdistance <- grow_ints r.kdistance (k + 1);
+  if Bytes.length r.kcolor < k + 1 then begin
+    let b = Bytes.make (2 * (k + 1)) '\000' in
+    Bytes.blit r.kcolor 0 b 0 k;
+    r.kcolor <- b
+  end;
+  let z = ref 0. in
+  for i = 0 to n - 1 do
+    set r.kxs (at + i) (get r.sx i);
+    set r.kys (at + i) (get r.sy i);
+    set r.kzs (at + i) (get r.iz i);
+    z := !z +. (1. /. get r.iz i)
+  done;
+  r.kdistance.(k) <- int_of_float (!z /. float n *. 100.);
+  Bytes.set r.kcolor k color;
+  r.kfirst.(k + 1) <- at + n;
+  r.kept <- k + 1
+
+let finish (r : t) : unit =
+  if r.kept > 0 then begin
+    (* the farthest first; a tie in the order the faces came *)
+    let order = Array.init r.kept (fun (k : int) -> k) in
+    Array.stable_sort
+      (fun (a : int) (b : int) -> r.kdistance.(b) - r.kdistance.(a))
+      order;
+    Array.iter
+      (fun (k : int) ->
+        let at = r.kfirst.(k) and n = r.kfirst.(k + 1) - r.kfirst.(k) in
+        for i = 0 to n - 1 do
+          set r.sx i (get r.kxs (at + i));
+          set r.sy i (get r.kys (at + i));
+          set r.iz i (get r.kzs (at + i))
+        done;
+        fill r n (Bytes.get r.kcolor k))
+      order;
+    r.kept <- 0
+  end
 
 (*****************************************************************************)
 (* A mesh's faces *)
@@ -302,7 +407,9 @@ let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
       set r.iz i iz
     done;
     r.drawn <- r.drawn + 1;
-    fill r !m' color
+    match !algorithm with
+    | Depth -> fill r !m' color
+    | Painter -> keep r !m' color
   end
 
 (* the sphere (x, y, z) of radius rad, seen from the eye, outside the

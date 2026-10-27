@@ -75,6 +75,7 @@ afcb6f03:
 | the corner and row arrays read without their bounds' test, `fill`'s taken from the record once (8 instructions a read, then 1 or 2) | `Render.get`, OPTIMIZATION (get) | | `old:` |
 | (the two together) | | **37.0M** (-24.5%) | |
 | far chunks (more than 150 m away) drawn with their pines a cone each, 5 faces where a pine has 17 (a level of detail): 6,818 faces a frame to 5,546, 476 pixels apart at frame 250; the trees' places found once for the two meshes; the start 2.31 billion to 2.60 (Bay Bridge's, without far trees, 1.82 to 1.84) | `Course.lod`, `Scenery.pine_far` | **33.9M** (-8.3%) | `lod=off` |
+| the painter's algorithm instead of the depth, to compare: the faces kept, sorted by their mean distance in whole centimetres (the same order by OCaml and mini-ml), drawn from the farthest with no depth to test or clear; its errors where long faces meet (12,182 pixels apart at frame 250: a kerb under its verge) | `Render.algorithm`, `finish` | 41.4M (+22% against 34.0M by the same build): the sort about 6M (`Array.stable_sort`, a million comparisons), the faces kept 2.2M; the depth's `span` 6.3M became a `Bytes.fill` 1.6M | `render=painter` |
 
 What is left in a race frame (37.0M before the level of detail):
 `fill_rows` 21%, `face` 20%, `span` (the pixels) 17%, `draw` 8%. About

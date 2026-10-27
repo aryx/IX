@@ -595,5 +595,24 @@ found once for the two (`site.places`), and no far mesh where no tree
 has a far kind (Bay Bridge, Acropolis): 2.60 (Bay Bridge 1.82 to
 1.84).
 
-Next: the painter's algorithm beside the depth (`render=`), for
-teaching; then the card on the Pi 2.
+Then **the painter's algorithm** beside the depth, for teaching (the
+author: "ideally we can have the different algorithms available at
+run time so it's good teaching value"): `Render.algorithm`,
+`render=painter`; a face kept (its corners on the screen, its colour,
+its mean distance), `Render.finish` sorting the frame's faces from the
+farthest (stable) and filling them by `Bytes.fill`, no depth to test
+or clear. Its errors seen: 12,182 pixels apart at frame 250, a kerb
+under its verge, a wedge of white. The distance in whole centimetres:
+by a float the order of two faces nearly as far differed between
+OCaml's build (arm64's fused a * b + c) and mini-ml's, 268 pixels;
+now the same bytes (`frames.expected`'s new session `painter`). Arm,
+the same build: **41.4M a frame against 34.0M** with the depth: the
+sort about 6M (lib_core's `Array.stable_sort` through lists, a
+million comparisons), the faces kept 2.2M, where the depth's `span`
+6.3M became a `Bytes.fill` 1.6M: with 5,500 small faces, sorting them
+costs more than testing their pixels. An ordering table (the
+PlayStation's: a bucket for each step of distance, no comparison)
+would be the third, if wanted.
+
+Next: the card on the Pi 2; then the front's floats (`face`, `draw`)
+or the land's tiles.

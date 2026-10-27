@@ -24,6 +24,7 @@
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
  *                            [course=n] [sound=off] [lod=off]
+ *                            [render=depth|painter]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -36,6 +37,9 @@
  *               the title (the frames' sessions)
  *     sound=off no sound made (Sound.on)
  *     lod=off   the far road chunks drawn whole too (Course.lod)
+ *     render=   how the hidden faces are hidden: depth, a depth for
+ *               each pixel (the default), or painter, the faces sorted
+ *               and drawn from the farthest (Render.algorithm)
  *
  * A frame:
  *
@@ -280,6 +284,7 @@ let draw (computer : P.computer) (m : model) (time : float) :
 let view (computer : P.computer) (m : model) : P.shape list =
   let (P.Time now) = computer.time in
   let l, over = draw computer m now in
+  Render.finish m.render;
   Option.iter
     (fun (say : string -> unit) ->
       say
@@ -457,6 +462,8 @@ let () =
          if flag "cull" = Some "off" then Render.cull := false;
          if flag "sound" = Some "off" then Sound.on := false;
          if flag "lod" = Some "off" then Course.lod := false;
+         if flag "render" = Some "painter" then
+           Render.algorithm := Render.Painter;
          let course = Option.bind (flag "course") int_of_string_opt in
          let model = start first width height course stats in
          (* the window the picture's size, a unit a pixel; or, without

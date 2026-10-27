@@ -78,6 +78,18 @@ val frame : t -> Camera.t -> int -> unit
 (* [draw r m]: a mesh that does not move, its faces' shades its own *)
 val draw : t -> Mesh.t -> unit
 
+(* how the faces hidden by nearer ones are hidden: [Depth], a depth for
+ * each pixel (the default), or [Painter], the painter's algorithm: the
+ * frame's faces kept, sorted by their distance and drawn from the
+ * farthest (mini-virtuaracing's render=painter) *)
+type algorithm = Depth | Painter
+
+val algorithm : algorithm ref
+
+(* [finish r]: the frame drawn, before [pixels] is shown: the
+ * painter's faces filled (nothing to do with the depth) *)
+val finish : t -> unit
+
 (* [draw_at r m angle position index]: a mesh turned [angle] degrees
  * about y (as Mesh.rotate3d 0. angle 0.), then moved to [position];
  * each face lit as it is then, [index] the palette's (Palette.index) *)

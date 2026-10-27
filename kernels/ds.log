@@ -1,7 +1,0 @@
-INCLUDES=-I . -I lib -I machine -I ../../_mk/5/kernels/singularity -I ../../lib_core/system -I ../../lib_core/core -I ../../lib_core/base -I ../../lib_core/collections -I ../../lib_core/printing -I ../../lib_core/parsing -I ../../lib_core/concurrency mini-rc ../../mkfiles/depend.rc '$D' . machine ../../_mk/5/kernels/singularity -- Machine Contract Programs Exchange Channel Process Abi Main > .depend
-mini-ml -m 5 -O3: No such file or directory
-mini-ml -m 5 -O3: No such file or directory
-mini-ml -m 5 -O3: No such file or directory
-mini-ml -m 5 -O3: No such file or directory
-mini-ml -m 5 -O3: No such file or directory
-mini-ml -m 5 -O3: No such file or directory

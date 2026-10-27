@@ -6,7 +6,11 @@
 open Types
 open Errors
 
-let maxenvsize = 16300
+(* a variable's largest value: a mkfile's list of files, the games'
+ * LOCAL with every library's sources, is 20 KB (make self's games on
+ * the card, bugs/ix.md); a value takes only its own size.
+ * old: 16300, Plan 9's Maxenvsize *)
+let maxenvsize = 1 lsl 20
 
 (* the configuration, '#ec': devno 1 *)
 let conf = { vars = []; last_path = 0 }

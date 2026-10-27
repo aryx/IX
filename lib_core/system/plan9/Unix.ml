@@ -265,7 +265,11 @@ let execve prog args env =
     match String.index_opt kv '=' with
     | Some k -> Some (String.sub kv 0 k, String.sub kv (k + 1) (String.length kv - k - 1))
     | None -> None) in
-  let set name v = try put [ O_CREAT; O_TRUNC ] ("/env/" ^ name) v with Unix_error _ -> () in
+  (* (a variable not written said: the program would start without it,
+   * a mkfile's recipe with an empty list; old: nothing said) *)
+  let set name v =
+    try put [ O_CREAT; O_TRUNC ] ("/env/" ^ name) v
+    with Unix_error (e, _, _) -> prerr_endline ("execve: $" ^ name ^ " not passed: " ^ error_message e) in
   List.iter (fun (name, v) -> set name (if is_fn name then v else String.map (fun c -> if c = '\001' then '\000' else c) v ^ "\000")) given;
   List.iter (fun name -> if not (List.mem_assoc name given) then set name "") !found;
   exec_as "execve" prog args

@@ -90,9 +90,15 @@ for l in card linux; do
   f=$(grep '^FAILED ' "$build/$l.log" | sed 's/^FAILED //' | tr '\n' ' ')
   if [ -z "$f" ]; then echo "ok self: $n directories built on $l"
   else echo "FAIL self: on $l, of $n directories: $f"; status=1
-    # (each failed one's last lines: on GitHub, BUILD is in the image)
-    awk '/^=== /{n=0} {s[n++%10]=$0} /^FAILED /{print "  " $2 ":"
-      for(i=n-10;i<n;i++) if(i>=0) print "    " s[i%10]}' "$build/$l.log"
+    # (each failed one's errors, at most 20, and its last 5 lines: on
+    # GitHub, BUILD is in the image; old: its last 10 lines, mk's
+    # stops, the error above them)
+    awk '/^=== /{n=0; e=0} {s[n++%5]=$0}
+      /[Ee]rror|[Ff]atal|[Ee]xception|not found|cannot|[Ff]ailure|trap|[Ss]tack/ &&
+        e < 20 {err[e++]=$0}
+      /^FAILED /{print "  " $2 ":"; for(i=0;i<e;i++) print "    " err[i]
+        print "    ..."; for(i=n-5;i<n;i++) if(i>=0) print "    " s[i%5]}' \
+      "$build/$l.log"
   fi
 done
 (cd "$build/card-mk" && find . -type f | sort) > "$build/card.files"

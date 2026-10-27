@@ -15,6 +15,8 @@ so).
 `test-tix` and `test-mix` are its jobs of one system (and the shared
 ones). `self-quick`: t-ix in tiny-kernel and m-ix in mini-9pi build a
 part of themselves (t-ix's ld links the kernel too, its biggest link).
+`make test` says when to run it: its last line names `self-quick`
+(or `-tix`, `-mix`) when the tree changes the toolchain or a kernel.
 `test-all`: every suite one after the other
 (`tests/all.sh -l` lists them).
 

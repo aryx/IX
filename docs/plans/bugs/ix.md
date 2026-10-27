@@ -283,3 +283,15 @@ their SIMD and more are beyond its subset (plan_arm.md).
 | program | input | what it does | where, why |
 |---|---|---|---|
 | mini-ml -O3's summaries (X.inline) | `make -C kernels/9pi self-quick` (the card's mini-ml, built by mini-ml, against Linux's, built by OCaml) | the objects the same, 13 summaries not (lib_core's, Hello.inline) | three causes, each found when the one before was fixed: Typing.places's spans and Typing.min_max_globals's names came out of a Hashtbl.fold, in the order of the table's hash, OCaml's runtime's or lib_core's (now sorted); and Summary.to_string marshalled with sharing, which blocks are one depending on the compiler that built mini-ml (now No_sharing, as Asm.save's objects: 18% larger, 25 KB for self-quick's). Since the summaries came (88b5dda9, 2026-10-26); make test's smoke test compares objects and programs only |
+
+## CI red since 2026-10-23: what passed here only (2026-10-27)
+
+docker.yml's make test on GitHub (x86-64, four cores, OCaml 4.14.2 and
+5.5.1) against make test here (arm64, 64 cores, OCaml 4.14).
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| tiny-ml built by OCaml 5 | `TinyML.exe -c -nostdlib -o Stdlib.tm tiny/TinyLibCore/Stdlib.ml`, by `_build` and by `_build5` (make test's "t-ix built in tiny-kernel" on 5.5.1) | `Stdlib.tmi` one byte apart (byte 24: 0x23, 0x20), so the host's library is not the one tiny-kernel builds | OCaml 5's Marshal writes a block of 8 fields or more with two bits of its header set (its color), 4.14's and TinyLibCore's do not (checked: a tuple of 8, an array of 9); the interface record had 8. Its name, globals and curry functions in one triple: 6 fields. make test's OCaml 5 job now compiles TinyLibCore by both tiny-mls and compares (m-ix's same() skips its comparison under OCaml 5 for the same reason) |
+| mini-page | `apps/page/tests/frames.sh` on x86 (picture-turned: a PNG turned a quarter) | another frame than both recorded (OCaml's on arm64, mini-ml's) | the picture turned by Affine.rotate (cos (pi/2) is 6e-17, not 0), its products summed by Affine.compose, invert, apply: fused (fmadd) by OCaml on arm64, not on x86 nor by mini-ml, a pixel at an edge on either side. Affine.rotate_degrees: a quarter turn exactly 0 and 1, each product exact; the arm64 frame is then mini-ml's, the line one sum |
+| tiny-ml's test tail_andor | `tiny/tests/TinyML_test.sh languages/ml/tests/tiny/tail_andor.ml` under make test on four cores | exit 124: over its 60 s | ten million calls, 34 s a run under tiny-cpu here; a million (3.5 s) is still deeper than both stacks |
+| tiny-kernel's network test | make test with two long emulations running (load 18 to 27) | linux.py's `GET /bin/ping` (60 KB over the emulated wire): a timeout, `(0, '', 59)` (59: the exception's text) | its 60 s, near the edge under load; alone it passes. Not fixed yet: the timeouts to make 5 to 10 times a test's time, and make test run on four cores now and then (`taskset -c 0-3`) |

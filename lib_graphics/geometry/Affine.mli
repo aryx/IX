@@ -65,6 +65,10 @@ val translate : float -> float -> t
  * like Elm's; e.g. rotate (pi/2) maps (1, 0) to (0, 1) *)
 val rotate : float -> t
 
+(* [rotate_degrees deg]: rotate in degrees, a multiple of 90 exactly
+ * (its cos and sin 0 or 1: the same bits on every machine) *)
+val rotate_degrees : float -> t
+
 (* [scale sx sy]: (x, y) -> (sx * x, sy * y); e.g. scale 1. (-1.)
  * flips upside down *)
 val scale : float -> float -> t

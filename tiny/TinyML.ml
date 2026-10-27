@@ -148,10 +148,12 @@ let compile_main (units : (string * int) list) needed =
  * was.
  * (old: a line each, printed and parsed again: half of a small unit's
  * compile was reading the interfaces) *)
+(* (at most 7 fields, as each block in it: OCaml 5's Marshal writes a
+ * block of 8 or more with two bits of its header set, 4.14's and
+ * TinyLibCore's do not, and the host's interface was not tiny-kernel's
+ * (bugs/ix.md). old: iname, iglobals, icurry, three fields of eight) *)
 type interface = {
-  iname : string;
-  iglobals : int;
-  icurry : int list;
+  iunit : string * int * int list;  (* its name, globals, curry functions *)
   icons : (string * kind * int * int * int * texpr) list;
   ilabels : (string * string * int * bool * string list * texpr) list;
   iabbrevs : (string * (string list * texpr)) list;
@@ -205,8 +207,7 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
         Some (qualify !unit_name x, bd, texpr_of_ty t)
     | _ -> None) exports in
   Marshal.to_string
-    { iname = !unit_name; iglobals = nglobals; icurry = !arities; icons = icons;
-      ilabels = ilabels;
+    { iunit = !unit_name, nglobals, !arities; icons = icons; ilabels = ilabels;
       iabbrevs =
         List.filter (fun a -> not (old_abbrev a)) (List.rev !abbreviations);
       iforgotten = List.filter (fun t -> not (old_forgotten t)) !forgotten;
@@ -222,8 +223,9 @@ let read_interface text env tenv =
   if String.length text < 4 || String.sub text 0 4 <> "\132\149\166\190" then
     error "not an interface of tiny-ml's";
   let (i : interface) = Marshal.from_string text 0 in
+  let iname, iglobals, icurry = i.iunit in
   let ty te = of_texpr (ref []) te in
-  known_units := i.iname :: !known_units;
+  known_units := iname :: !known_units;
   List.iter (fun (c, kind, arity, nconst, nblock, te) ->
       Hashtbl.replace cons c
         { kind = kind; arity = arity; nconst = nconst; nblock = nblock;
@@ -248,15 +250,15 @@ let read_interface text env tenv =
       if not (List.mem t !forgotten) then forgotten := t :: !forgotten)
     i.iforgotten;
   (* (a val's name is M.x already; Stdlib's x too) *)
-  let n = String.length i.iname in
+  let n = String.length iname in
   List.iter (fun (x, b, te) ->
     let t = ty te in
     List.iter (fun x -> Hashtbl.replace globals x b; Hashtbl.replace tglobals x t)
-      (if implicit i.iname then
+      (if implicit iname then
          [ x; String.sub x (n + 1) (String.length x - n - 1) ]
        else [ x ]))
     i.ivals;
-  env, tenv, (i.iname, i.iglobals), i.icurry
+  env, tenv, (iname, iglobals), icurry
 
 (* M.mli's vals, their types in place of what M.ml's inferred: its
  * types and exceptions are M.ml's too, and skipped *)

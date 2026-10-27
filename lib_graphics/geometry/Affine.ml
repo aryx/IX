@@ -18,6 +18,22 @@ let rotate r =
 
 let scale sx sy = { identity with a = sx; d = sy }
 
+(* A quarter turn's cos and sin exactly 0 and 1, not cos (pi/2)'s 6e-17:
+ * each product then exact, a*b+c is the same bits fused (OCaml on
+ * arm64) or not (on x86, mini-ml): mini-page's turned picture was
+ * another frame on GitHub (bugs/ix.md) *)
+let rotate_degrees deg =
+  if Float.rem deg 90. <> 0. then rotate (deg *. Float.pi /. 180.)
+  else
+    let c, s =
+      match (int_of_float (deg /. 90.) mod 4 + 4) mod 4 with
+      | 0 -> 1., 0.
+      | 1 -> 0., 1.
+      | 2 -> -1., 0.
+      | _ -> 0., -1.
+    in
+    { a = c; b = s; c = -.s; d = c; tx = 0.; ty = 0. }
+
 (* The 3x3 matrix product m * n, written out for the 6 entries that
  * aren't always 0 or 1 *)
 let compose (m : t) (n : t) : t =

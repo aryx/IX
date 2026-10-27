@@ -75,10 +75,9 @@ let screen_transform (fb : Framebuffer.t) : Affine.t =
  * scale or rotate the shape's position around the window's center too.
  * Playground angles are in degrees, counterclockwise. *)
 let shape_transform (shape : Playground.shape) : Affine.t =
-  let radians = shape.angle *. Float.pi /. 180. in
   Affine.compose
     (Affine.translate shape.x shape.y)
-    (Affine.compose (Affine.rotate radians) (Affine.scale shape.scale shape.scale))
+    (Affine.compose (Affine.rotate_degrees shape.angle) (Affine.scale shape.scale shape.scale))
 
 (*****************************************************************************)
 (* Forms as polygons, circles, and boxes *)

@@ -115,10 +115,20 @@ ocaml5=5.5.1
 t5="ix by OCaml $ocaml5, its types"
 has5() { command -v opam > /dev/null &&
   opam switch list -s 2> /dev/null | grep -qx $ocaml5; }
+# Then tiny-ml by each OCaml: TinyLibCore compiled by both, the same
+# bytes (t-ix in tiny-kernel compares its library with the host's, by
+# either: OCaml 5's Marshal once made another .tmi, found on GitHub
+# only, bugs/ix.md)
+by5() {
+  local w=$W/by5
+  opam exec --switch=$ocaml5 -- dune build @check ./tiny/TinyML.exe --build-dir _build5 &&
+    make -s -C tiny/TinyKernel O=$w/4 $w/4/lib/Stdlib.tm &&
+    make -s -C tiny/TinyKernel O=$w/5 TML=$ROOT/_build5/default/tiny/TinyML.exe $w/5/lib/Stdlib.tm &&
+    diff -r $w/4/lib $w/5/lib
+}
 case $(ocamlfind ocamlopt -version) in
   5.*) skip "$t5" "dune's build is OCaml 5's already";;
-  *) if has5; then
-       job "$t5" opam exec --switch=$ocaml5 -- dune build @check --build-dir _build5
+  *) if has5; then job "$t5, tiny-ml's bytes" by5
      else skip "$t5" "no opam switch $ocaml5"; fi;;
 esac
 job "every source is text" tests/text_files.sh
@@ -477,6 +487,20 @@ if [ $total -gt 120000 ] || [ ${#slow[@]} != 0 ]; then
   for k in "${slow[@]}"; do echo "  $k"; done
 fi
 printf "test-lite: %d jobs, %d failure(s), %d skipped, %.0f s\n" ${#names[@]} $failures ${#skips[@]} $(echo "$total / 1000" | bc -l)
+# the tree's changes to what ix builds itself with in its own system
+# (the toolchain, the kernel, the machine): this runs them on the host
+# only, make self-quick (6 min) in the system, where make self's first
+# night found two bugs (bugs/ix.md). Said, not run
+changed=$(git diff --name-only HEAD 2> /dev/null)
+self=
+grep -qE '^(languages/(ml|c)|assembler|linker|builder|shell|lib_core|kernels/(9pi|lib_machine|tools))/' <<< "$changed" &&
+  self="$self mix"
+grep -qE '^tiny/(TinyML|TinyC|TinyAssembler|TinyLinker|TinyMachine|TinyKernel|TinyBuildSystem)(\.|/|Runtime)' <<< "$changed" &&
+  self="$self tix"
+case $self in
+  " mix tix") echo "test-lite: the toolchain or a kernel changed: run make self-quick (6 min)";;
+  " "*) echo "test-lite: the toolchain or a kernel changed: run make self-quick-${self# } (6 min)";;
+esac
 if [ $failures = 0 ]; then rm -rf $W; else echo "the logs: $W"; fi
 [ $failures = 0 ]
 exit

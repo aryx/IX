@@ -244,8 +244,7 @@ let shown_points (win : window) (ps : Point.t list) (n : int) : bool =
 
 (* a shape's own scale, then its turn, then its move (Shape_render_software's) *)
 let shape_transform (shape : Playground.shape) : Affine.t =
-  let radians = shape.angle *. Float.pi /. 180. in
-  Affine.compose (Affine.translate shape.x shape.y) (Affine.compose (Affine.rotate radians) (Affine.scale shape.scale shape.scale))
+  Affine.compose (Affine.translate shape.x shape.y) (Affine.compose (Affine.rotate_degrees shape.angle) (Affine.scale shape.scale shape.scale))
 
 (* is m only moves and scales along the axes: a rectangle stays one *)
 let upright (m : Affine.t) : bool = Float.abs m.b < 1e-9 && Float.abs m.c < 1e-9

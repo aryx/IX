@@ -28,7 +28,7 @@ The folders (`dune` says which module is where):
 | `render/` | `Mesh` (the playground's shape functions, made arrays once), `Palette` (median cut), `Render` (cull, turn, cut, project, spans) |
 | `course/` | `Track3d` (the road a ribbon), `Heightmap`, `Land`, `Scenery`, `Course` (the three courses) |
 | `race/` | `Cars` (the car's model, the grid), `Topdown` (a car on a plane), `Driving` (the player's car on the road), `Rivals`, `Race` (the countdown, the clock, the laps), `Screens` (the race's display, the scenes' texts), `Sound` |
-| `tests/` | `compare.sh`: the title, the grid and the course select against the playground's golden frames |
+| `tests/` | `compare.sh`: the title, the grid and the course select against the playground's golden frames; `perf.sh`: a race frame's instructions on arm (Speed, below) |
 | `sdl/` | `Virtua.ml` linked with the platform that has a window (dune's alone: `bin/mini-virtuaracing`) |
 
 Its frames are checked by `games/tests/frames.sh` (the sessions
@@ -36,6 +36,64 @@ Its frames are checked by `games/tests/frames.sh` (the sessions
 its sound by `games/tests/audio.sh`, the same bytes as the playground's
 own `-dump-audio` (the countdown, and the start to 6 seconds: after,
 the rivals, whose speeds have a part by our hash, part the races).
+
+## Speed
+
+The game is made for the Pi 2 (mini-9pi): about 280 million arm
+instructions a second there (6 frames of 46M in the race), so 60 frames
+a second would be 4.7 million a frame, and 20 frames 14 million. The
+optimizations so far, each with its number, in the order they were made.
+A frame's numbers are arm instructions by mini-5i, at -O3; the same
+pictures before and after unless the line says otherwise. The measures
+and their history are in
+[`plan_virtuaracing.md`](../../../docs/plans/plan_virtuaracing.md)'s
+Status. Each one can be read or turned off as the last column says
+(`old:` comments in the code give the code before).
+
+The grid's frame (frames 3 to 23, the camera turning around the car),
+2026-10-26:
+
+| what | where | a frame | off |
+|---|---|---|---|
+| the start: a frame by the first renderer | | 201.1M | |
+| corners, normals and rows in `Float.Array`s, mini-ml's floats in registers | `Mesh`, `Render`; mini-ml (`plan_ml_floats.md`) | 111.0M | `old:` |
+| the faces turned away not drawn: 6,485 faces of 10,738 | `Render.cull` | | `cull=off` |
+| `Float.min` and `Float.max` without their `Int64` | lib_core's `Float` | | |
+| the start's two searches (`Track3d.locate_near`, `Land.make`): the start to frame 3 5.3 billion to 2.9 | `Track3d`, `Land` | | `old:` |
+| (the three above together) | | 63.5M | |
+| mini-ml's `floor` and `ceil` without a call | mini-ml | 53.3M | |
+| fog at 600 m: tried, not kept (the hills cut) | | | |
+
+The race (frames 250 to 270 of `course=0`, the throttle held,
+`sound=off`; `tests/perf.sh`), 2026-10-27, both by mini-ml at
+afcb6f03:
+
+| what | where | a frame | off |
+|---|---|---|---|
+| before | | 49.0M | |
+| a face's rows found first, a face with none (a third of them) left before its plane; the ints' `min` and `max` inlined, not Stdlib's polymorphic calls; no float ref (a block each) | `Render.fill`, OPTIMIZATION (setup) | -6.5% (46.7M to 43.6M by the mini-ml before) | `old:` |
+| the corner and row arrays read without their bounds' test, `fill`'s taken from the record once (8 instructions a read, then 1 or 2) | `Render.get`, OPTIMIZATION (get) | | `old:` |
+| (the two together) | | **37.0M** (-24.5%) | |
+
+What is left in a race frame (37.0M): `fill_rows` 21%, `face` 20%,
+`span` (the pixels) 17%, `draw` 8%. About 7,000 faces a frame, most a
+row or two: a face costs more than its pixels. Two-thirds of them
+are the five road chunks ahead, each drawn whole (about 830 faces,
+near or far): a far chunk made simpler is next.
+
+The sound, a sixtieth of a second of the race's (the loop makes the
+sound of the time a frame took, so it costs the same each second
+whatever the frames):
+
+| what | where | instructions | off |
+|---|---|---|---|
+| before | | 3.2M | `sound=off` (`Sound.on`) |
+| mixed in `Float.Array`s, a continuous voice without a block a sample, the filter's memory flat | lib_audio's `Mixer`, `Synth`, `Filter` | 1.8M | `Mixer.flat := false` |
+| libc's `exp` without its calls of `floor` and `ldexp` (`tanh`'s two calls a sample) | `lib_core/libc/port/exp.c` | 1.6M | `old:` |
+
+On the Pi 2 (the author): 11 frames a second at the title, 3 in the
+race with the sound, 6 without (`sound=off`), 9 while the camera
+turns around the car (2026-10-26, before the race's -24.5%).
 
 ## From the author's playground
 

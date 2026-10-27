@@ -562,4 +562,25 @@ call still boxes its float, and the flat array's checks cost more. Left
 to `plan_ml_speed.md`'s item 6 (the doubles passed in registers to a
 known function); the change not kept.
 
-Next: the frame taken apart on the board.
+2026-10-27: **a race frame taken apart** (the author: "ok let's
+profile virtua's race frame", then "I like this plan. Let's do it"):
+arm, frames 250 to 270 of `course=0` with the throttle held,
+`sound=off` (`tests/perf.sh`). About 7,000 faces a frame, most a row
+or two, a third none: `fill` 29%, `face` 20%, `span` (the pixels) 13%,
+so a face's setup costs four times its pixels, and the painter's
+algorithm (no depth test, a sort) would not win here. In `Render`:
+a face's rows found first, one with none left before its plane; the
+ints' `min` and `max` inlined (Stdlib's are polymorphic calls), no
+float ref; the arrays read without their bounds' test, `fill`'s taken
+from the record once. **49.0M to 37.0M a frame** (-24.5%), both by
+mini-ml at afcb6f03 built in a copy, the same pictures (frames 250 and
+270; the nine sessions of `frames.sh`). The optimizations and their
+numbers gathered in the README's "Speed" (the author: "record all
+those opti and their benefits somewhere"). Faces by group at frame
+250: the road's chunks 4,000 to 4,800 (five ahead, about 830 each,
+near or far), the land 1,400, the cars about 600. The shared
+`_mk/5` then linked virtua no more (`undefined: ml_tan`,
+`ml_cosh`; built from nothing it does): a stale object of afcb6f03's.
+
+Next: the far road chunks made simpler (a level of detail), then the
+painter's algorithm beside the depth (`render=`), for teaching.

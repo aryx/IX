@@ -62,6 +62,11 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
           let dt = Unix.gettimeofday () -. t0 in
           Console.eprint caps (Printf.sprintf "mini-5i: %d instructions, %.3f s, %.1f MIPS\n" stats.instructions dt
                                  (float stats.instructions /. dt /. 1e6)) in
+      (* -prof, -s: a run stopped by SIGTERM (a program that never ends,
+       * or one too long) still writes its profile and its count; a
+       * handler the program sets later is Host's *)
+      if !prof <> None || stats_on then
+        Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> report (); exit 143));
       let tr =
         match (trace, !prof) with
         | true, _ -> Some (fun a i -> count a; Console.eprint caps (Printf.sprintf "%8x\t%s\n" a (Show_arm32.print ~addr:a i)))

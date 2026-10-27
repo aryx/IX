@@ -49565,3 +49565,165 @@ The bug broke the card build last night (`ml_curry9_0`) and had been skewing the
 Claude proposed rebuilding the card afterward and checking whether virtua's race sound got closer to 6 fps.
 Next, Claude would profile a virtua race frame (painter's algorithm, transforms, fill) to choose between cheaper fixes and the GPU.
 Smaller items were also listed: re-recording stale card listings, adding REJECT to `check_sight`, and parked doom sprite fixes.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 05:50
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude fixed the stale-object bug by making mini-ml-compiled objects depend on the compiler's file.
+Claude found the compiler path with rc's whatis in mkfiles/config.rc, setting MLEXE, and added it to LIBSRC in mkfiles/mklibs.
+Claude also wired MLEXE into mklib, lib_core/mkfile and mkprog, six files and 19 lines in total.
+In a private copy, a touch remade 466 objects, and a second build remade none, after the fix.
+Claude rebuilt the card at 07:05 and left the fix uncommitted, offering to commit it next.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:06
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the six mkfiles as 6020ad2f, staging them by pathspec.
+Claude noted that future mini-ml changes will make the next mini-mk build remake all of ix for that target, which is slower.
+Claude pointed out that kernels/9pi/build/card.img already contains the faster exp, ready to test on the Pi 2.
+Claude said the next step, as planned, is profiling virtua's race frame.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 05:48
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude ran `make test` on HEAD after two overnight commits landed, getting one failure in tiny-kernel's network test. Claude reran that test alone, found it passed, and treated the failure as a flake. Claude committed the rebirth work as 694a7ba6, 29 files including the new `mul_neg` test. The staged `prompt-history.md` from another session was left out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:08
+
+**Yoann:**
+
+> ok let's profile virtua's race frame
+
+**Claude (summary):**
+
+Claude reported that the Virtua race frame profile was still running, so no results yet.
+Claude said the arm emulator needs a few minutes for 300 frames, since course building takes about 3 billion instructions.
+Claude picked frame 300 as the test frame, with cars ahead, trees, and mountains, and checked it with the native build.
+Claude noted that Virtua's renderer is a z-buffer filled by spans, not a painter's algorithm.
+Claude would wait for the profile to finish before drawing conclusions about the renderer.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:09
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended doing item 6 next: returning floats unboxed from known functions, since it is the largest remaining compiler item.
+Part 1 removes boxing for C math calls like `exp`, `log`, `pow` and `tanh` by reading the float register directly in Unbox and Emit.
+Part 2 adds a register-returning entry point for ML functions known to return floats, touching Lower, Unbox and Emit.
+Claude proposed measuring part 1 first, then deciding on part 2, after a fresh rebirth baseline with the new `exp` commit.
+Smaller items were noted: `Diode_ladder.solve`, `caml_floatarray_create` reuse, and the 909's unused metal oscillators.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:23
+
+**Yoann:**
+
+> ideally we can have the different algorithms available at run time so it's good teaching value, so we can try the painter's algorithm or other one and see which one is faster but keep the code of the other too (especially if it's not too much code to alternate between different algo)
+
+**Claude (summary):**
+
+Claude recorded a project rule to keep competing classic algorithms in the code and choose between them at run time.
+Claude noted that `Render` splits into a front that culls and projects faces and a back (`fill` and `span`) that z-buffers each pixel.
+Claude proposed a painter's mode that keeps the front, queues faces with their depths, sorts them far to near, and fills without a depth test.
+Claude estimated about 60 lines behind a `render=zbuffer|painter` flag, costing a sort and overdraw, and suggested Quake's span method as a later third mode.
+Claude is waiting on the profile of race frames 280 to 300 on arm to decide where the painter's work pays off.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 07:45
+
+**Yoann:**
+
+> how much work it would be to now get t-ix working also on the Raspberry Pi?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:24
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude reported that part 1 is done: mini-ml now calls C math functions like `exp`, `log`, `pow` and `tanh` on unboxed floats.
+Claude built and tested it in a private worktree, with `make test` passing 135 jobs and no failures.
+Measured on arm, mini-rebirth went from 1.82 to 1.69 billion instructions a second, a 0.927 ratio.
+Claude also logged a `log 0` libc bug as entry 39 in `docs/plans/bugs/goken.md`, then asked whether to commit part 1 or start part 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 06:25
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude recommended starting with step 1: cheaper per-face setup in `fill`, which it estimated at 15–25% of the frame.
+Claude proposed finding each face's rows first and returning early when it has none, since about 30% of faces cover no pixel.
+It also suggested integer `min`/`max` in place of the generic functions and keeping `fill`'s two float refs unboxed, with byte-identical output required.
+Claude's frame breakdown showed setup at 29% and per-pixel work at 13%, so a painter's mode would not be faster here.
+Claude planned to count faces by mesh afterward to guide a level-of-detail change for distant scenery, and asked which to start with.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 07:55
+
+**Yoann:**
+
+> I like this plan. Let's do it.
+
+**Claude (summary):**
+
+Claude started step 1 by finding a way to drop straight into the race, skipping the 300-frame emulation per measurement.
+Claude fixed the `fill` edit by reordering it so `fill_rows` is defined first, then rebuilt with dune and mini-mk.
+Claude's main finding was that road chunks produce about 4,000–4,800 of roughly 6,800 faces per frame, versus 1,400 for land and 600 for cars.
+Claude renamed `land` to avoid the OCaml keyword and noted that each road chunk bundles the road with trees, rocks, and signs.
+Claude proposed a level of detail for distant chunks, to be split by object kind after the measurement.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 07:55
+
+**Yoann:**
+
+> let's commit and move forward. Also did you add those opti to the opti inventory document?
+
+**Claude (summary):**
+
+Claude admitted it had not added those optimizations to the opti inventory document yet.
+Claude found seven missing mini-ml commits since the last inventory row, 6fea098e, dated 2026-10-23.
+Claude wrote new rows C28 to C40 in the inventory, each group with a short Details paragraph.
+Claude added a floats section 29 to notes_opti_ocaml.md, written for general OCaml programmers.
+Claude then moved the float boxing into exit blocks, checked Svf's solved, and added a test.

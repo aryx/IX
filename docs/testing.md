@@ -48,6 +48,11 @@ test-lite: 135 jobs, 0 failure(s), 0 skipped, 117 s
 - **Past the budget**: the jobs over a minute, and the whole over two,
   are said at the end. Not a failure, but the next thing to make
   faster.
+- **A job a core**: as many jobs at once as the machine has cores
+  (`JOBS=n` another count), so that a test's timeout is about its own
+  time, here as on GitHub's four cores (all 135 at once, a program of
+  3.5 s went over its 60 there). `taskset -c 0-3 make test` runs it as
+  GitHub does.
 - **Several sessions at once** run it without waiting for each other:
   each run builds in a directory of its own, and tests/lite.sh is
   read whole before it runs. What it tests is the working tree: another

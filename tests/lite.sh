@@ -74,6 +74,14 @@ wanted() { [ $G = shared ] || [[ "$want_groups" == *" $G "* ]]; }
 names=()
 groups=()
 jobpids=()
+# as many jobs at once as the machine has cores (JOBS=n: another
+# count), each taking a token of a pipe before it starts and giving it
+# back after: a job has a core, here or on GitHub's four, and a
+# timeout is its own time. Its clock starts with its token.
+# (old: all of them at once, 135 on four cores: a program of 3.5 s
+# alone over its 60, six jobs failing there only)
+mkfifo $W/slots; exec 3<> $W/slots
+for i in $(seq ${JOBS:-$(nproc)}); do echo >&3; done
 # -after-ix: a check of what ix built by ix, its clock started once the
 # build is done (its own job); a skip when the build failed
 job() {
@@ -87,7 +95,9 @@ job() {
       [ "$(cat $W/ix.done)" = ok ] ||
         { echo "skip 0" > $k.st && mv $k.st $k.status; exit; }
     fi
-    t0=$(now); if true | "$@" > $k.log 2>&1; then s=ok; else s=FAIL; fi
+    read -r -u 3
+    t0=$(now); if true | "$@" > $k.log 2>&1 3>&-; then s=ok; else s=FAIL; fi
+    echo >&3
     # (renamed: the loop at the end never reads it half written)
     echo "$s $(( $(now) - t0 ))" > $k.st && mv $k.st $k.status ) &
   jobpids+=($!)
@@ -304,12 +314,14 @@ group m-ix
 B=$W/mk/7
 K=$B
 mk() { (cd $1 && NPROC=32 mini-mk B=$B) > "$W/mk.$(echo $1 | tr / _).log" 2>&1 || { echo "mini-mk failed in $1:"; tail -3 "$W/mk.$(echo $1 | tr / _).log" | cut -c1-200; return 1; }; }
-# a kernel's image booted until its line is said, 15 seconds at most
+# a kernel's image booted until its line is said, 30 seconds at most
+# (5 times its boot alone, mini-xv6's 5.3 s, the step's 6.2; old: 15,
+# over on GitHub's four cores)
 boot() {
   local out=$W/boot.$RANDOM$RANDOM.txt n=0 pid
   mini-qemu -cpu cortex-a72 -M raspi4b -m 2G -kernel $1 -nographic < /dev/null > $out 2> /dev/null &
   pid=$!
-  until grep -aq "$2" $out || [ $n -ge 150 ]; do sleep 0.1; n=$((n + 1)); done
+  until grep -aq "$2" $out || [ $n -ge 300 ]; do sleep 0.1; n=$((n + 1)); done
   kill $pid 2> /dev/null; wait $pid 2> /dev/null
   grep -aq "$2" $out || { echo "$1: no \"$2\" in:"; head -5 $out; return 1; }
 }

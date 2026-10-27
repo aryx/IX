@@ -103,7 +103,8 @@ val messages : string -> string list
  * fetch), but where to fetch is decided here, the same for both:
  * [www_address] turns what was typed into a URL. A bare title (OCaml,
  * Plan 9 from Bell Labs) is an English Wikipedia article; a name with a
- * dot and no scheme (example.com) is https://. A Wikipedia article's
+ * dot and no scheme (example.com) is https://; ?words a search
+ * (TinyBrowserAddress.absolute, www's own rules). A Wikipedia article's
  * address (/wiki/X) becomes its REST HTML (/api/rest_v1/page/html/X):
  * the article without the site's menus, and the one a web page is
  * allowed to fetch. A #fragment is dropped. [www_kept] is the name of

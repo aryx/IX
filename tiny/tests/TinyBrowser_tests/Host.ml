@@ -4,11 +4,14 @@
 (* Runs TinyBrowser's reading (TinyBrowserPage) on the host, built by
  * OCaml. It reads a page from a file, gives it to the reading in
  * messages of [size] bytes (the whole page at once if no size is
- * given), and prints the lines as text.
- * usage: Host.exe width page.html [size] *)
+ * given), and prints the lines as text. With -address, it prints
+ * what was typed as a full address instead (TinyBrowserAddress).
+ * usage: Host.exe width page.html [size] | -address typed *)
 
 let () =
   match Array.to_list Sys.argv with
+  | [ _; "-address"; typed ] ->
+      print_endline (TinyBrowserAddress.absolute typed)
   | [ _; width; file ] | [ _; width; file; _ ] ->
       let ic = open_in_bin file in
       let s = really_input_string ic (in_channel_length ic) in
@@ -26,4 +29,6 @@ let () =
       go 0;
       TinyBrowserPage.finish p;
       print_string (Testutil_browser.dump p (int_of_string width))
-  | _ -> prerr_endline "usage: Host.exe width page.html [size]"; exit 2
+  | _ ->
+      prerr_endline "usage: Host.exe width page.html [size] | -address typed";
+      exit 2

@@ -39,6 +39,7 @@ type page = {
   mutable space : bool;         (* whether a space was read since the last word *)
   mutable page_title : string;
   mutable page_base : string;
+  mutable page_refresh : string;          (* where a <meta> refresh sends us *)
   mutable anchors : (string * int) list;  (* an element's id, and the line it
                                            * starts at *)
   mutable pictures : picture list;        (* the page's pictures, the last first *)
@@ -56,7 +57,8 @@ let root =
 let create width =
   let reader = { tail = ""; raw = "" } and page_flow = flow width in
   { reader = reader; page_flow = page_flow; stack = [ root ]; tables = [];
-    space = false; page_title = ""; page_base = ""; anchors = [];
+    space = false; page_title = ""; page_base = ""; page_refresh = "";
+    anchors = [];
     pictures = []; npictures = 0; heading = [] }
 
 let top p = match p.stack with e :: _ -> e | [] -> root
@@ -128,6 +130,10 @@ let hides k attrs =
   || (let st = attr attrs "style" in
       find st "display:none" 0 >= 0 || find st "display: none" 0 >= 0)
 
+(* the line's end a table's cell waits for, put in before what comes *)
+let unbreak (t : table) c =
+  if t.broken > 0 then begin c.items <- Break :: c.items; t.broken <- 0 end
+
 (* Sends a word to the current cell if a table is open (large text is
  * not, there), to the large heading being made, or to the page's flow. *)
 let emit p text =
@@ -137,6 +143,7 @@ let emit p text =
      | t :: _ ->
        (match t.cell with
         | Some c ->
+          unbreak t c;
           c.items <-
             Word (text, e.face land lnot big, e.href, p.space) :: c.items
         | None -> ())
@@ -155,7 +162,7 @@ let break p =
       | Some c ->
         (match c.items with
          | Break :: _ | [] -> ()
-         | _ -> c.items <- Break :: c.items)
+         | _ -> t.broken <- max t.broken 1)
       | None -> ())
    | [] -> end_line p.page_flow);
   p.space <- false
@@ -259,7 +266,9 @@ let picture p attrs =
       match p.tables with
       | t :: _ ->
         (match t.cell with
-         | Some c -> c.items <- Pic (id, cols, rows, link) :: Break :: c.items
+         | Some c ->
+           unbreak t c;
+           c.items <- Pic (id, cols, rows, link) :: Break :: c.items
          | None -> ())
       | [] -> picture_block f id rows link
     end
@@ -294,10 +303,42 @@ let implied p tag k =
       p.stack <- (match p.stack with _ :: rest -> rest | [] -> [])
   end
 
+(* Where <meta http-equiv="refresh" content="0; url=x"> sends us: x,
+ * when the wait is 0 (a page that reloads itself every few minutes is
+ * not followed). A search's results link through such a page. *)
+let meta_refresh attrs =
+  (* (not refresh, the page's below: tiny-ml exports both names) *)
+  let c = attr attrs "content" in
+  match String.index_opt c ';' with
+  | Some i
+    when String.lowercase_ascii (attr attrs "http-equiv") = "refresh"
+         && number (String.trim (String.sub c 0 i)) = 0 ->
+      let u = String.trim (String.sub c (i + 1) (String.length c - i - 1)) in
+      let u =
+        if String.length u > 4
+           && String.lowercase_ascii (String.sub u 0 4) = "url="
+        then String.sub u 4 (String.length u - 4) else u in
+      let n = String.length u in
+      if n >= 2 && (u.[0] = '\'' || u.[0] = '"') then String.sub u 1 (n - 2)
+      else u
+  | _ -> ""
+
+(* A cell of a table inside a cell: the outer table lays out its cells,
+ * the inner one's are a space and its rows lines. An empty block in
+ * such a cell (Hacker News' vote arrow) is no line's end. *)
+let inner_cell p tag =
+  (tag = "td" || tag = "th")
+  && (match p.tables with t :: _ -> t.depth > 0 | [] -> false)
+let cell_space p =
+  (match p.tables with t :: _ when t.broken = 1 -> t.broken <- 0 | _ -> ());
+  p.space <- true
+
 let open_tag p tag k attrs =
   implied p tag k;
   let e = top p in
   let hide = e.hide || hides k attrs in
+  (* (in the <head>, or a <noscript>, which are hidden) *)
+  if tag = "meta" && p.page_refresh = "" then p.page_refresh <- meta_refresh attrs;
   (* An element with an id is a place a link can go to (#History,
    * #cite_note-2): the line it starts at is kept. Parsoid gives nearly
    * every element an id of its own, which starts with mw, and no link
@@ -315,11 +356,12 @@ let open_tag p tag k attrs =
     (match p.tables, tag with
      | [], "table" when not hide ->
          end_line p.page_flow;
-         p.tables <- [ { rows = []; row = []; cell = None; depth = 0 } ]
+         p.tables <-
+           [ { rows = []; row = []; cell = None; depth = 0; broken = 0 } ]
      | t :: _, "table" when not hide -> t.depth <- t.depth + 1; break p
      | t :: _, "tr" when t.depth = 0 && not hide ->
          if t.row <> [] then t.rows <- t.row :: t.rows;
-         t.row <- []; t.cell <- None
+         t.row <- []; t.cell <- None; t.broken <- 0
      | t :: _, ("td" | "th" | "caption") when t.depth = 0 && not hide ->
          let span =
            if tag = "caption" then 1000
@@ -330,13 +372,16 @@ let open_tag p tag k attrs =
            t.rows <- [ c ] :: t.rows; t.cell <- Some c
          end
          else begin t.row <- c :: t.row; t.cell <- Some c end;
-         p.space <- false
-     | _ :: _, ("tr" | "td" | "th") when not hide ->
-         if tag = "tr" then break p else p.space <- true
+         t.broken <- 0; p.space <- false
+     | t :: _, ("tr" | "td" | "th") when not hide ->
+         if tag = "tr" then begin
+           break p; if t.broken = 1 then t.broken <- 2
+         end
+         else cell_space p
      | _ -> ());
   if not hide then begin
     if is k spaced then paragraph p
-    else if is k block then break p;
+    else if is k block && not (inner_cell p tag) then break p;
     if is k void then
       match tag with
       | "br" ->
@@ -411,9 +456,11 @@ let close_tag p tag k =
            | t :: _, ("td" | "th" | "caption") when t.depth = 0 ->
                t.cell <- None
            | _ -> ());
-        if p.heading <> [] then lay_heading p;
+        (* (a heading is laid out at its end, not at a <span>'s in it) *)
+        if p.heading <> [] && e.face land big = 0 then lay_heading p;
         if is k spaced && tag = "h2" && p.tables = [] then rule p;
         if is k spaced then paragraph p
+        else if inner_cell p tag then cell_space p
         else if is k block then break p
       end
 
@@ -437,6 +484,7 @@ let finish p =
 
 let title p = p.page_title
 let base p = p.page_base
+let refresh p = p.page_refresh
 let anchor p id = List.assoc_opt id p.anchors
 let pictures p = p.npictures
 let picture_of p id = List.nth p.pictures (p.npictures - 1 - id)

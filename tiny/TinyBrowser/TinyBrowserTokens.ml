@@ -17,7 +17,7 @@ type token =
  * data-mw, or ids) are skipped without being copied. *)
 let wanted =
   [ "href"; "class"; "style"; "src"; "alt"; "width"; "height"; "colspan";
-    "start"; "id" ]
+    "start"; "id"; "http-equiv"; "content" ]
 
 (* Parses the inside of a tag, the text between its < and its >. *)
 let tag s =

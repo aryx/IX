@@ -22,6 +22,13 @@ A table inside a cell:
 outer  inner 1
        inner 2
 
+Its cells side by side, an empty block
+in one (Hacker News' rows):
+
+1. a title
+points
+by me
+
 Wider than the screen: a word longer
 than its column.
 

@@ -159,6 +159,9 @@ type table = {
   mutable cell : cell option;
   mutable depth : int;            (* how many tables are open inside it; their
                                    * cells just become text of the current cell *)
+  mutable broken : int;           (* a line's end not yet in the cell, put
+                                   * there before the next word: 1 a block's,
+                                   * 2 an inner table's row's *)
 }
 
 let cell_words (c : cell) = List.rev c.items

@@ -20,7 +20,7 @@
  (name tiny_machine_peer)
  (wrapped false)
  (modules TinyMachinePeer)
- (libraries tiny_kernel_network tiny_machine_devices))
+ (libraries tiny_kernel_network tiny_machine_devices tiny_browser_parts))
 
 ; tiny-machine's way out to other programs: a connection of the host's
 ; on its standard input and output (TinyMachine's -net-out and

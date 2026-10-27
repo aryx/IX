@@ -11,6 +11,7 @@
 #   columns (www/OCaml.html, its REST HTML fetched on 2026-10-15; see
 #   plan_tiny_browser.md). Then each page is read again in messages of
 #   1, 7 and 1000 bytes, and must give the same lines however it is cut.
+#   And a few typed addresses (Host.exe -address), a search's too.
 # - On tiny-cpu, built by tiny-ml (TinyBrowser_tests/Tm.ml, with
 #   tm.c, heap.c and read.tm): the lines must be the same as OCaml's.
 #   This runs in tiny-cpu's 1 MB of memory, with heap halves of 352 KB,
@@ -45,6 +46,19 @@ for p in $PAGES; do
     if cmp -s $W/$name.out $W/$name.$size.out; then echo "ok $name: in messages of $size"; else fail "$name: in messages of $size"; diff $W/$name.out $W/$name.$size.out | head -6; fi
   done
 done
+
+# What was typed, as the address www asks for
+while IFS='|' read -r typed want; do
+  got=$($HOST -address "$typed")
+  if [ "$got" = "$want" ]; then echo "ok address: $typed"; else fail "address: $typed: $got"; fi
+done <<'EOF'
+OCaml|https://en.wikipedia.org/wiki/OCaml
+Plan 9 from Bell Labs|https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs
+ocaml.org/install|https://ocaml.org/install
+http://example.org|http://example.org
+?plan 9 rio|https://lite.duckduckgo.com/lite/?q=plan+9+rio
+? C++ & "x"|https://lite.duckduckgo.com/lite/?q=C%2B%2B+%26+%22x%22
+EOF
 
 # On tiny-cpu. The runtime and main are linked first, then the program,
 # then the heap's arrays. In the other order, main would be too far

@@ -4,5 +4,6 @@
  * on its first row. www itself never prints a page, so this is the
  * tests' and not the browser's (old: TinyBrowser.dump). *)
 
-(* [dump page width]: the page's lines so far, [width] its columns *)
+(* [dump page width]: the page's lines so far, [width] its columns, and
+ * where its <meta> refresh sends us, if anywhere *)
 val dump : TinyBrowserPage.page -> int -> string

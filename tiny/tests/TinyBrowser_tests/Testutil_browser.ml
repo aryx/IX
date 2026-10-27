@@ -29,3 +29,6 @@ let dump p width =
   String.concat ""
     (List.map (fun l -> show_line p width l ^ "\n")
        (TinyBrowserPage.lines_between p 0 (TinyBrowserPage.count p)))
+  ^ (match TinyBrowserPage.refresh p with
+     | "" -> ""
+     | u -> "(refresh: " ^ u ^ ")\n")

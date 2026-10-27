@@ -101,6 +101,9 @@ type table = {
   mutable cell : cell option;
   mutable depth : int;            (* how many tables are open inside it; their
                                    * cells just become text of the current cell *)
+  mutable broken : int;           (* a line's end not yet in the cell, put
+                                   * there before the next word: 1 a block's,
+                                   * 2 an inner table's row's *)
 }
 
 (* Lays out a finished table into the flow: each cell is wrapped in its

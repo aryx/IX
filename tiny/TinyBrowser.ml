@@ -89,7 +89,8 @@ let put sc m = sc.sc_msgs <- m :: sc.sc_msgs
 (* What a menu's item or a button of the toolbar does ([act] below):
  * Typed is the toolbar's field, its text after a key *)
 type act =
-  | Back | Top | Reload | Quit | Address | Go_to of string | Go_typed
+  | Back | Top | Reload | Quit | Address | Search | Go_to of string
+  | Go_typed
   | Typed of string
 
 (* The menus (TinyLibGUI's): the page, a few articles to go to, and the
@@ -101,7 +102,8 @@ let menus sc =
   let short a = if String.length a > 56 then String.sub a 0 56 else a in
   [ "Page", [ "Back       b", Back; "Top", Top; "Reload", Reload;
               "Quit       q", Quit ];
-    "Go", ("Address... g", Address) :: List.map (fun t -> t, Go_to t) bookmarks;
+    "Go", ("Address... g", Address) :: ("Search...  s", Search)
+          :: List.map (fun t -> t, Go_to t) bookmarks;
     "History",
     List.map (fun (a, _) -> short a, Go_to a) (first 10 sc.sc_nav.nv_history) ]
 
@@ -536,6 +538,7 @@ let act sc a =
    | Reload -> load sc sc.sc_nav.nv_address
    | Quit -> ()
    | Address -> sc.sc_tools.tb_field <- ""; focus sc true; draw_tools sc
+   | Search -> sc.sc_tools.tb_field <- "?"; focus sc true; draw_tools sc
    | Go_to t -> go sc (absolute t)
    | Go_typed ->
      if sc.sc_tools.tb_field = "" then
@@ -587,7 +590,7 @@ let on_mouse sc x y buttons =
       true
 
 (* What a key does; false for q, which quits. While the field has the
- * keys (a click in it, or g), they are TinyLibGUI's: its characters,
+ * keys (a click in it, g, or s), they are TinyLibGUI's: its characters,
  * Backspace; Enter goes, Escape gives up. Otherwise the arrows are 128
  * to 131 (up, down, left, right): up and down scroll a line (the wheel
  * and the trackpad come as these: tiny-machine's window and page send
@@ -615,7 +618,8 @@ let on_key sc k =
      else if k = 129 then scroll_by sc 16
      else if k = 128 then scroll_by sc (-16)
      else if k = Char.code 'b' || k = 8 || k = 127 then back sc
-     else if k = Char.code 'g' then ignore (act sc Address));
+     else if k = Char.code 'g' then ignore (act sc Address)
+     else if k = Char.code 's' then ignore (act sc Search));
     k <> Char.code 'q'
   end
 
@@ -674,8 +678,16 @@ let browse typed =
           ignore (u_close sc.sc_nav.nv_wire);
           sc.sc_nav.nv_wire <- -1;
           sc.sc_state <- "done";
-          show_new sc; draw_bar sc; draw_status sc;
-          next_picture sc
+          (* a page that sends us on (a search's result), not to itself *)
+          let on =
+            resolve sc.sc_nav.nv_address (base sc.sc_page)
+              (refresh sc.sc_page) in
+          if refresh sc.sc_page <> "" && on <> sc.sc_nav.nv_address then
+            load sc on
+          else begin
+            show_new sc; draw_bar sc; draw_status sc;
+            next_picture sc
+          end
         end
         else begin
           let before = sc.sc_got / 16384 in

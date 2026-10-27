@@ -36,9 +36,11 @@ val create : int -> page
 val feed : page -> string -> unit
 val finish : page -> unit
 
-(* The page's <title>; the address in its <base>. *)
+(* The page's <title>; the address in its <base>; where its <meta>
+ * refresh sends us at once ("" when it does not). *)
 val title : page -> string
 val base : page -> string
+val refresh : page -> string
 
 (* how many lines there are so far; the lines from the a-th to before
  * the b-th, from the top (what the screen shows) *)

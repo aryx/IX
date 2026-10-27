@@ -94,9 +94,13 @@
  * (the line "www address" on port 70: TinyMachinePeer.www_address says
  * what an address can be), and drawn as it arrives on the screen, or in
  * the window, the program's descriptor 3. At the top, TinyLibGUI's
- * menus (the page: back, top, reload, quit; a few articles to go to;
- * the pages seen before) and a toolbar: Back, the address in a field
- * (a click in it, or g, gives it the keys; Enter goes there), Go.
+ * menus (the page: back, top, reload, quit; a search, a few articles
+ * to go to; the pages seen before) and a toolbar: Back, the address in
+ * a field (a click in it, or g, gives it the keys; Enter goes there),
+ * Go. s gives the field a ?: what is typed after it is searched for
+ * (TinyBrowserAddress.absolute). A page whose <meta> refresh sends us
+ * on at once, as a search's results do, is followed when it is all
+ * there.
  * Space and - show the next and the previous screenful, the arrows a
  * line; q quits and clears. When
  * the keys end (a recorded session's) and the page is all there, the

@@ -167,25 +167,10 @@ let wikipedia url =
        | None -> None)
   | _ -> None
 
+(* (what was typed as www has it: TinyBrowserAddress.absolute) *)
 let www_address typed =
-  let s = String.trim typed in
-  let s =
-    match String.index_opt s '#' with
-    | Some i -> String.sub s 0 i
-    | None -> s in
   let url =
-    if String.starts_with "https://" s || String.starts_with "http://" s
-    then s
-    else
-      let first =
-        match String.index_opt s '/' with
-        | Some i -> String.sub s 0 i
-        | None -> s in
-      if String.contains first '.' && not (String.contains first ' ') then
-        "https://" ^ s
-      else
-        "https://en.wikipedia.org/wiki/"
-        ^ String.map (fun c -> if c = ' ' then '_' else c) s in
+    TinyBrowserAddress.absolute (fst (TinyBrowserAddress.fragment typed)) in
   match wikipedia url with
   | Some (host, title) -> "https://" ^ host ^ rest_prefix ^ title
   | None -> url

@@ -869,3 +869,61 @@ The website has `www` (assets 4d2edbd, ix bf1e41ec, the page's `?v=`
 10): built from a clean worktree, and `TinyMachineWeb_test.py -url
 https://aryx.github.io/IX/t-ix.html` passes on the live page, `www
 OCaml` included.
+
+### The survey's sites, and a search (2026-10-27)
+
+The author: "for tiny-www, can we use the mini-netscape survey to check
+whether tiny-www can display popular websites mentioned in the survey?
+Also it might be good to have a key that go to a search engine (maybe
+not google as it seems complicated and may require some JS, but maybe a
+free popular search engine that would fit well tiny-www)".
+
+`tiny/tests/TinyBrowser_sites.sh DIR` reads the sites that
+mini-netscape's coverage loads (`browsers/survey/coverage_ix.sh`) and a
+search: each page's lines at 80 columns (`Host.exe`), and the native
+tiny-www's screen after 40 s. On 2026-10-27:
+
+| site | KB | lines | what www shows |
+|---|---|---|---|
+| Wikipedia, OCaml | 257 | 597 | as before (its REST HTML) |
+| Wikipedia, Plan 9 from Bell Labs | 497 | 770 | the same, Glenda and rio's pictures |
+| news.ycombinator.com | 35 | 77 | each story a line, its points the next; was 105, the rank alone above each title |
+| lwn.net | 29 | 327 | the menus, then the articles; its `[$]` headlines were cut in two |
+| ocaml.org | 76 | 187 | its menus twice (the phone's and the desktop's, which a sheet chooses), empty bullets (icons), then the page |
+| docs.python.org's tutorial | 37 | 225 | the sidebar first, then the contents; fine |
+| old.reddit.com | 340 | 1 | "Skip to main content": Reddit sends a login page of scripts to our fetcher |
+| craigslist.org/about/sites | 0 | | no answer in 30 s to tiny-machine-fetch |
+| `?ocaml` (DuckDuckGo Lite) | 25 | 68 | the results, numbered, each with its text and site |
+
+Fixed by it, in TinyBrowserPage: a large heading was laid out at the end
+of any element in it, so `<h2>[<span>$</span>] Title</h2>` gave two
+headings; a cell of a table inside a cell ended its line (the code just
+before had made it a space); and an empty block in such a cell (Hacker
+News' vote arrow, `<center><div></div></center>`) ended one too. A line's
+end in a table's cell now waits for the next word (`broken`), as a
+browser collapses an empty block. Wikipedia's OCaml article gives the
+same lines as before, and the nine recorded sessions the same screens.
+
+The search: the search engines that answer a program without scripts
+(fetched once each by tiny-machine-fetch): DuckDuckGo's html and lite
+pages, Marginalia, wiby and Bing; Mojeek asks for JavaScript ("a
+challenge"), Startpage for a check, Brave's page is all scripts.
+DuckDuckGo Lite is the one made for text browsers: a table of numbered
+results, 25 KB, read well at 80 columns. `?words` typed as an address
+is a search of it (`TinyBrowserAddress.absolute`, which the peer's
+`www_address` now calls instead of its own copy of the rules), `s`
+opens the field with a `?`, and the Go menu has "Search...". Its
+result links go through `duckduckgo.com/l/?uddg=...`, a page with a
+`<meta http-equiv="refresh" content="0;URL=...">` in a `<noscript>`:
+www follows a refresh of no wait once the page is all there (Netscape's
+"client pull", 1995), not one to the page itself.
+
+Found on the way: tiny-ml exports the first of two toplevel names of a
+unit (OCaml's is the last): TinyBrowserPage's `refresh attrs`, the
+parser, and `refresh p`, the page's, made www call the parser on the
+page (trap 3 at the end of each page). The parser is `meta_refresh`.
+
+Left: ocaml.org's doubled menus and empty bullets (hiding the menus
+would need the classes of a CSS framework); Reddit and Craigslist,
+which refuse our fetcher; DuckDuckGo Lite's next page is a form's
+button, which www has no forms for.

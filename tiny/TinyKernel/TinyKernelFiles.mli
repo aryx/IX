@@ -66,7 +66,10 @@ type file =
   | Call of call
   | Voice of voice
   | Trace of trace
-and opened = { node : node; mutable off : int; writes : bool }
+(* (listing: a directory's entries, made at its read from the start,
+ * and the reads after take theirs from it) *)
+and opened = { node : node; mutable off : int; writes : bool;
+               mutable listing : string option }
 and drawing = { conn : TinyKernelGraphics.conn; mutable refs : int }
 
 (* a box: a pipe that keeps only what was last written, and whether it

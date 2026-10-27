@@ -342,7 +342,7 @@ let sys_open p =
     | Screen -> Draw { conn = connect screen font; refs = 1 }
     | Pointer -> Peek mouse
     | Speaker -> Voice { ahead = (played () + lead) land 0x3fffffff }
-    | _ -> Open { node = node; off = 0; writes = writes }))
+    | _ -> Open { node = node; off = 0; writes = writes; listing = None }))
 
 let sys_close p =
   let k = reg p 1 in

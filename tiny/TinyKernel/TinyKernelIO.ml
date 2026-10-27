@@ -107,8 +107,14 @@ let read f a n =
           k_blit (Bytes.sub_string d.dbytes o.off k) 0 a k;
           o.off <- o.off + k;
           Some k
+      (* (a directory's listing made once, not at each entry's read:
+       * httpd read /bin's 55 entries one at a time, each making all
+       * of them, 25.6 s; bugs/ix.md. old: let s = contents o.node) *)
       | _ ->
-          let s = contents o.node in
+          let s =
+            match o.listing with
+            | Some s when o.off > 0 -> s
+            | _ -> let s = contents o.node in o.listing <- Some s; s in
           let k = max 0 (min n (String.length s - o.off)) in
           k_blit s o.off a k;
           o.off <- o.off + k;

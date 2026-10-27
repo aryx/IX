@@ -77,28 +77,76 @@ let func (fn : func) : func =
             | Some u -> u
             | None -> let u = fresh (Unbox x) in mark u; Hashtbl.replace unboxes x u; u)
     in
+    (* where each double is read as a word: a block, and whether in its
+     * body (else by its end); a phi a double reaches is one, so none *)
+    let reads = Hashtbl.create 16 in
+    let read_at (b : block) in_body xs =
+      words xs;
+      List.iter (fun x ->
+        if double x then
+          let l = match Hashtbl.find_opt reads x with Some l -> l | None -> [] in
+          Hashtbl.replace reads x ((b.id, in_body) :: l)) xs
+    in
     Array.iter (fun (b : block) ->
       List.iter (fun v ->
         match def v with
         | Phi ops -> if not (double v) then words (List.map snd ops)
         | Prim (p, xs) when converted v ->
             List.iter2 (fun x f -> if f then ignore (unboxed x)) xs (floats p xs)
-        | ins -> words (Ssa_build.operands ins)) (b.phis @ b.body);
+        | ins -> read_at b true (Ssa_build.operands ins)) (b.phis @ b.body);
       match b.term with
-      | Br (x, _, _) | Ret x | Raise x -> words [ x ]
-      | Tail (_, xs) -> words xs
+      | Br (x, _, _) | Ret x | Raise x -> read_at b false [ x ]
+      | Tail (_, xs) -> read_at b false xs
       | Jmp _ | Try _ -> ()) fn.blocks;
+    (* OPTIMIZATION (box where read): a double read as a word in one
+     * block only, which cannot run again but through the double's own,
+     * boxed there: a loop's float that leaves it by its return is boxed
+     * once, not at each turn (lib_audio's Filter.chain, 4 of its 5
+     * boxes a call).
+     * old: always after the definition (box_after) *)
+    let home = Hashtbl.create 64 in
+    Array.iter (fun (b : block) ->
+      List.iter (fun v -> Hashtbl.replace home v b.id) (b.phis @ b.body)) fn.blocks;
+    let succs (b : block) =
+      match b.term with
+      | Jmp s -> [ s ]
+      | Br (_, s, t) | Try (_, s, t) -> [ s; t ]
+      | _ -> []
+    in
+    (* b reached from itself without going through d *)
+    let again b d =
+      let seen = Hashtbl.create 16 in
+      let rec go s =
+        s = b
+        || (s <> d && not (Hashtbl.mem seen s)
+            && (Hashtbl.replace seen s (); List.exists go (succs fn.blocks.(s))))
+      in
+      List.exists go (succs fn.blocks.(b))
+    in
+    let sunk = Hashtbl.create 16 in
+    let starts = Array.make (Array.length fn.blocks) [] in
+    let ends = Array.make (Array.length fn.blocks) [] in
+    Hashtbl.iter (fun x sites ->
+      let blocks = List.sort_uniq compare (List.map fst sites) in
+      match blocks, Hashtbl.find_opt home x, Hashtbl.find_opt boxes x with
+      | [ b ], Some d, Some bx when b <> d && b <> 0 && not (again b d) ->
+          Hashtbl.replace sunk x ();
+          if List.exists snd sites then starts.(b) <- bx :: starts.(b)
+          else ends.(b) <- bx :: ends.(b)
+      | _ -> ()) reads;
     (* each block rewritten: a double's box after it, a word unboxed
      * before the Dprim that reads it *)
-    let ends = Array.make (Array.length fn.blocks) [] in
     Array.iter (fun (b : block) ->
       let body = ref [] in
       let push v = body := v :: !body in
       let box_after v =
-        (match Hashtbl.find_opt boxes v with Some bx -> push bx | None -> ());
+        (match Hashtbl.find_opt boxes v with
+         | Some bx when not (Hashtbl.mem sunk v) -> push bx
+         | _ -> ());
         match Hashtbl.find_opt unboxes v with Some u -> push u | None -> ()
       in
       List.iter box_after b.phis;
+      List.iter push starts.(b.id);
       (* (nothing between the parameters: Emit loads them all at the
        * entry, and Alloc may give a later one a register an earlier one
        * leaves; what follows them goes after the last) *)

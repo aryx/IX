@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C40,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C41,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-27, C28 to C40. The programs they
+plans/plan_ml_speed.md, to 2026-10-27, C28 to C41. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -724,6 +724,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C38 | A product by a small constant without MUL; `-.x` and `abs x` on doubles; on arm a Float.Array's address in one ADD | Emit `op_imm`, `findex`, Unbox's Float1; 694a7ba6 | with lib_audio's own (Adjacent): mini-virtuaracing's frame 0.907, mini-quake's 0.939, mini-doom's 0.990 | +58 | `-O0`, `-boxed-floats` |
 | C39 | The C library's exp without its calls of floor and ldexp (the same bits) | lib_core/libc/port/exp.c, ffe3c8b9 | exp 202 instructions a call on arm to 130; mini-rebirth's second 1.94G to 1.82G (two builds from nothing, 694a7ba6's tree and 6020ad2f's) | +16 | none (old: comment) |
 | C40 | C's math functions (exp, log, pow, tanh...) called on doubles: no block for the argument nor the result | Lower `float_calls`, Ir `FloatCall`, Emit; plan_ml_speed.md's 3c | mini-rebirth's second 0.927, mini-quake's frame 0.973, mini-doom's 0.992, samples 0.822 | +44 | `-calls`, `-boxed-floats` |
+| C41 | A double boxed in the one block that reads it as a word, when that block cannot run again but through the double's | Unbox (box where read), plan_ml_speed.md's 3d | mini-rebirth's second 0.956 (Svf.solved boxed three floats a call, Filter.chain its sum at each turn), mini-doom's frame 0.988, floats bench 0.954 | +48 | `-boxed-floats` |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of
@@ -842,7 +843,10 @@ block each (arm's 5a has no ABSD nor NEGD: the sign bit is changed in
 memory). C40: `exp` was the runtime's exp_float, which reads a block
 and makes one with copy_double; now the doubles are stored where 5c
 and 7c put a double argument and C's own function is called, its
-result in F0.
+result in F0. C41 was found by counting the boxes rebirth makes
+(`mini-prof -a`, each `vstr dN, [r0]` after a block taken): 7.5
+million a second, the first two made after a definition for a read
+much later, or never on that path.
 
 **C23 to C26: the runtime.** Measured by the programs they were for
 (Part 1's Tetris for C23, mini-doom's start for C24, mini-ml for C25

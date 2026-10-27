@@ -417,3 +417,32 @@ copy_double are gone from rebirth's top; what is left of its boxes
 (the collector's copy, 1.5 million a second, and ml_modify's 2.1
 million) is the floats ML's functions return and the mutable fields'
 (the floats plan's item 6, next).
+
+## 2026-10-27, 3d: a double boxed where it is read
+
+Counted for 3c (each `vstr dN, [r0]` after a block taken, by `mini-prof
+-a` over rebirth's 150 first functions): 7.5 million floats boxed a
+second. The first, Svf.solved, boxed low, band and high, of which it
+returns one; Filter.chain its loop's sum at each turn, for the return
+after the loop. Unbox boxed a double right after its definition; now,
+when every read of it as a word is in one block, and that block cannot
+run again but through the double's (no cycle avoiding it), the box is
+there: at the block's start for a read in its body, at its end for its
+terminator's. A double made before a loop and read in it stays boxed
+before the loop. tests/runtime/box_where_read.ml.
+
+Arm, mini-5i, from nothing, against afcb6f03 (3c):
+
+| | 3c | 3d | |
+|---|---:|---:|---:|
+| mini-rebirth, a second | 1,687,426,190 | 1,613,983,459 | 0.956 |
+| mini-doom, a frame | 8,547,775 | 8,444,770 | 0.988 |
+| mini-quake, a frame | 21,875,894 | 21,874,980 | 1 |
+| mini-virtuaracing, a frame | 29,056,330 | 29,056,324 | 1 |
+| mini-ml compiling its three units | 6,775,085,883 | 6,775,085,883 | 1 |
+| bench: floats | 7.33 million | 6.99 | 0.954 |
+
+The frames and rebirth's sound the same bytes; mini-ml by mini-ml the
+same assembly (Unbox, Emit, Lower). Found on the way: mini-ml refuses
+`Option.value x ~default:[]` where OCaml takes it (a labelled function
+of another unit not annotated): written as a match.

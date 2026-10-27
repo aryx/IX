@@ -272,7 +272,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-O0", Arg.Unit (fun () -> opti := []; ssa := false), " none: the stack machine's code as Lower makes it";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
     "-inline", Arg.Set_int Lower.inline_most, " n: -ssa: a known function of n nodes or fewer copied where it is called (0: none)";
-    "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Lower.ints_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
+    "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Lower.ints_in_place := false; Emit.alloc_in_place := false; Lower.calls_whole := false),
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
     "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
     "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";
@@ -315,7 +315,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   match List.rev !files, List.map path (List.rev !incs @ List.concat_map lib (List.rev !libs)) with
   | units, _ when !start ->
       let file = path "start.s" in
-      (match output caps !mach ~listing:!listing ~out:(outfile file) ~file (Gen.startup !mach units) with
+      (* (its functions ssa's with -ssa, as a unit's) *)
+      let compile fns =
+        let u : Ir.unit_ = { funcs = fns; data = [] } in
+        if !ssa then Emit.unit_ (Gen.arch !mach) u else Gen.unit_ !mach u
+      in
+      (match output caps !mach ~listing:!listing ~out:(outfile file) ~file (Gen.startup !mach compile units) with
        | () -> 0
        | exception Failure m -> fail ("mini-ml: " ^ m))
   (* mlpp: *)

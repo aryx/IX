@@ -57,6 +57,18 @@ let tagged m n =
 let untagged m n = Int64.shift_right (tagged m n) 1
 
 let round n a = (n + a - 1) / a * a
+
+(* OPTIMIZATION (alloc_in_place): a block is taken from the heap here,
+ * the runtime's ml_alloc written out (its two words, ml_hp and
+ * ml_limit: the heap's next free word and its end), and the runtime
+ * called only when there is no room, for its collector: 9 instructions
+ * where the call was 40, and no value put in its slot and read back.
+ * (off: mini-ml -calls; simple's Gen calls ml_alloc always)
+ * old: Gen's, which took them in place too until 2026-10-27 *)
+let alloc_in_place = ref true
+(* (a block's fields are stored below the new top: few enough for the
+ * offset to be a small one, arm64's) *)
+let alloc_most = 16
 let labels = ref 0 and funcs = ref 0
 let glabel () = incr labels; sprintf "Q%d" !labels
 
@@ -321,13 +333,13 @@ let func m out (fn : func) (lf : L.func) =
     0
     end
   in
-  (* OPTIMIZATION (Gen.alloc_in_place, its switch): a block taken from
+  (* OPTIMIZATION (alloc_in_place, its switch): a block taken from
    * the heap here, simple's Gen's way (ml_alloc's two words, the
    * runtime called only when there is no room); so a new float, its
    * arithmetic the processor's, and a string's byte and length read in
    * place: Prim. Without them a call of the runtime each, 3 times
    * simple's instructions on a loop over bytes (tests/bench/pixels.ml) *)
-  let in_place = !Gen.alloc_in_place in
+  let in_place = !alloc_in_place in
   let fmov = match m.arch with Arm -> "MOVD" | Arm64 -> "FMOVD" in
   let float_words = 8 / w and float_tag = 253 in
   (* n words taken, the block in R0; to [slow] when there is no room *)
@@ -856,9 +868,9 @@ let func m out (fn : func) (lf : L.func) =
     fresh := [];
     List.iter (fun v ->
       (match def v with
-       | Alloc (_, xs) when List.length xs <= Gen.alloc_most -> fresh := [ v ]
+       | Alloc (_, xs) when List.length xs <= alloc_most -> fresh := [ v ]
        | CallC ("obj_block", [ _; n ])
-         when (match def n with Const n -> n <= Gen.alloc_most | _ -> false) ->
+         when (match def n with Const n -> n <= alloc_most | _ -> false) ->
            fresh := [ v ]
        | i when Alloc.safepoint i -> fresh := []
        | _ -> ());
@@ -887,7 +899,7 @@ let func m out (fn : func) (lf : L.func) =
           let r = src x r3 in
           ins "%s\tR%d, 0(R%d)" mov r r2;
           if not imm then modify blk x r (fun () -> ins "%s\tR%d, R%d" mov r2 t)
-      | Alloc (tag, xs) when in_place && List.length xs <= Gen.alloc_most ->
+      | Alloc (tag, xs) when in_place && List.length xs <= alloc_most ->
           let slow = glabel () and ok = glabel () in
           take (List.length xs) tag slow;
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
@@ -910,7 +922,7 @@ let func m out (fn : func) (lf : L.func) =
       | CallC ("obj_block", [ x; y ])
         when in_place
              && (match def x, def y with
-                 | Const _, Const n -> n > 0 && n <= Gen.alloc_most
+                 | Const _, Const n -> n > 0 && n <= alloc_most
                  | _ -> false) ->
           let tag, n =
             match def x, def y with Const t, Const n -> t, n | _ -> assert false

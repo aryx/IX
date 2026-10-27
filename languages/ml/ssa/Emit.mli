@@ -20,3 +20,8 @@ val ssa : Asm.arch -> Ir.func -> Ssa.func
 
 (* a unit's functions; the data are simple's Gen's *)
 val unit_ : Asm.arch -> Ir.unit_ -> string
+
+(* a block taken from the heap by the code itself, the runtime called
+ * only when there is no room; and so the open-coded primitives'
+ * results (off: mini-ml -calls) *)
+val alloc_in_place : bool ref

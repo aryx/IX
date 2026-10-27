@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C42,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C43,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-27, C28 to C42. The programs they
+plans/plan_ml_speed.md, to 2026-10-27, C28 to C43. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -687,7 +687,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C1 | Self tail call a jump into the body | opti/Opti `tails`, b1bf3791 | `loops` 7.97 to 6.13 times ocamlopt's instructions (arm64) | (opti/: 138 in all) | `-Otails`, `-O` |
 | C2 | `x = k` (k an int) a word's comparison | opti/Opti `eqs`, b1bf3791 | with C1, tak 2.76 to 2.58 times ocamlopt's | (opti/) | `-Oeqs`, `-O` |
 | C3 | The SSA back end: values in registers by their loops' weight, constants made where read, parallel moves, a comparison fused with its branch, small constants as operands, opti's refs | ssa/ (Ssa_build, Alloc, Emit), 08a1014f's five steps (variants/ssa.md) | of simple's instructions, arm: pixels 0.67, limbs 0.64, sched 0.74, fib 0.82; with C1, C2 (`-O3` against `-O0`): mini-doom's frame 0.86, mini-quake's 0.83, mini-ml compiling 0.89 | +262 | `-ssa`, `-O3`; `-O0` |
-| C4 | A block taken from the heap in place (ml_hp, ml_limit), C only when full | Gen `alloc_in_place`, Emit; 8779dd3d | a block 40 instructions to 9; with C5, sched 36.55M to 22.15M (4.63 to 2.81 times ocamlopt's), maps 0.80 times ocamlopt's | (+272 with C5, C6) | `-calls` |
+| C4 | A block taken from the heap in place (ml_hp, ml_limit), C only when full | Emit `alloc_in_place` (Gen's until 2026-10-27); 8779dd3d | a block 40 instructions to 9; with C5, sched 36.55M to 22.15M (4.63 to 2.81 times ocamlopt's), maps 0.80 times ocamlopt's | (+272 with C5, C6) | `-calls` |
 | C5 | `f a b` in one call when f takes two (the closure's curry function compared) | Lower `calls_whole`, 8779dd3d | another unit's 2-argument call 137 instructions to 56 | (above) | `-calls` |
 | C6 | A float's arithmetic by the processor, a block in place | Lower `floats_in_place`, Gen, Emit; 8779dd3d | `x *. y` 65 instructions to 14 (arm); a float's product 63 to 20 (Part 1) | (above) | `-calls` |
 | C7 | An unchecked byte and a string's length in place | Lower `strings_in_place`, eedc5644 | a byte stored was 73 instructions on arm, 45 of them the call (taken off); a frame's shapes 144M to 115M | (eedc5644) | `-calls` |
@@ -725,7 +725,8 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C39 | The C library's exp without its calls of floor and ldexp (the same bits) | lib_core/libc/port/exp.c, ffe3c8b9 | exp 202 instructions a call on arm to 130; mini-rebirth's second 1.94G to 1.82G (two builds from nothing, 694a7ba6's tree and 6020ad2f's) | +16 | none (old: comment) |
 | C40 | C's math functions (exp, log, pow, tanh...) called on doubles: no block for the argument nor the result | Lower `float_calls`, Ir `FloatCall`, Emit; plan_ml_speed.md's 3c | mini-rebirth's second 0.927, mini-quake's frame 0.973, mini-doom's 0.992, samples 0.822 | +44 | `-calls`, `-boxed-floats` |
 | C41 | A double boxed in the one block that reads it as a word, when that block cannot run again but through the double's | Unbox (box where read), plan_ml_speed.md's 3d | mini-rebirth's second 0.956 (Svf.solved boxed three floats a call, Filter.chain its sum at each turn), mini-doom's frame 0.988, floats bench 0.954 | +48 | `-boxed-floats` |
-| C42 | An int32's add, xor, shifts... by the processor, its result's block taken in place (on arm an int32 is a block) | Lower `ints_in_place`, Ir `Int32`, Prims; plan_ml_speed.md's 4a | the sha bench (lib_crypto's Sha256) 17.89M instructions to 6.95M on arm (0.388) | +77 | `-calls` |
+| C42 | An int32's add, xor, shifts... by the processor, its result's block taken in place (on arm an int32 is a block) | Lower `ints_in_place`, Ir `Int32`, Emit; plan_ml_speed.md's 4a | the sha bench (lib_crypto's Sha256) 17.89M instructions to 6.95M on arm (0.388) | +77 | `-calls` |
+| C43 | The start object's functions (the curry functions, ml_program) compiled by ssa with -ssa, as a unit's, not by simple's stack machine | Gen `startup`'s compile, CLI; 2026-10-27 (with the open coding out of Gen) | mini-ml compiling its three units 0.861, mini-doom's frame 0.976 | (in -249) | `-O0` |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of
@@ -761,8 +762,9 @@ by the compiler as the processor's instructions where it is used, not
 called; the runtime's function only on the rare path (no room in the
 heap). Not inlining, which copies an ML function's body (C35): here
 the compiler knows each primitive's meaning, one by one (Lower.mli).
-ssa's sequences are in ssa/Prims.ml (Emit's until 2026-10-27), simple's
-in Gen. What
+ssa's sequences are Emit's (a section of them); simple's Gen calls the
+runtime for each since 2026-10-27 (it was in place there too), the
+start object's functions ssa's with -ssa. What
 the games' profile on mini-9pi named first: every allocation and every
 float operation a call of C. ml_hp and ml_limit made the runtime's
 globals so the generated code bumps the pointer itself; a closure's

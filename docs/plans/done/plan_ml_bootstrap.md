@@ -821,6 +821,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-27 | plan_ml_speed.md, 3d: a double boxed in the one block that reads it as a word when that block cannot run again but through the double's (Unbox; tests/runtime/box_where_read.ml); mini-rebirth's second 0.956, mini-doom's frame 0.988 | +48 | +53 (the test) | |
 | 2026-10-27 | plan_ml_speed.md, 4a: int32's operations in place, Ir's Int32 (tests/runtime/int32_ops.ml, tests/bench/sha.ml); the sha bench 0.388 on arm; CLI.mli's design and others on one word a value (+45, comments) | +77 | +115 (the test, the bench) | |
 | 2026-10-27 | Emit's open-coded primitives moved to ssa/Prims.ml (Emit 1,109 lines to 790), the same assembly | +134 | | |
+| 2026-10-27 | Prims back into Emit (its section, its explanation at the head); simple's Gen without open coding (621 lines to 452), the start object's functions ssa's with -ssa | -249 (Prims -453, Emit +364, Gen -169, the rest +9) | | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

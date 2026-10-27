@@ -166,13 +166,14 @@ val min_max_aliases : (string, string) Hashtbl.t
 
 (* In place: a primitive of the runtime (a C function: ml_string_get,
  * caml_addfloat, int32_add) written as the processor's instructions
- * where it is used, its own Ir instruction that Gen and Emit each
- * spell out, the runtime's function called only on the rare path (no
- * room in the heap for the result's block). The classic name is open
+ * where it is used, its own Ir instruction that ssa's Emit spells
+ * out (simple's Gen calls the runtime for each), the runtime's function
+ * called only on the rare path (no room in the heap for the result's
+ * block). The classic name is open
  * coding (MacLisp's compiler open-coded car and the arithmetic; a C
  * compiler's intrinsics, gcc's memcpy of 8 bytes as two moves). Not
  * inlining: that copies an ML function's body, here the compiler
- * knows what the primitive means, one by one. Gen.alloc_in_place is
+ * knows what the primitive means, one by one. Emit.alloc_in_place is
  * the allocation's. All on, unless mini-ml -calls. *)
 
 (* a string's byte (checked or not) and its length as

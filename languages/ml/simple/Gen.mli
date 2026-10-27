@@ -48,10 +48,15 @@
  *     MOVW $0, R9              and the seven others zeroed: a slot is
  *     MOVW R9, -28(R10) ...    a value at all times, or 0
  *
- * A pair made, in place: ml_hp is moved up by three words and
- * compared with ml_limit; if there is room the header ($2048, two
- * fields of tag 0) and the fields are stored; if not, the registers
- * go to their slots, ml_vsp is set and ml_alloc, C, collects.
+ * A pair made: the registers go to their slots, ml_vsp is set, and
+ * ml_alloc (C) returns the block, after a collection when the heap is
+ * full; the fields are stored from their slots. Every primitive of
+ * the runtime is a call here (a string's byte, a float's sum, an
+ * int32's): ssa's Emit writes them as instructions where they are
+ * used (open coding: its section of them), and so the block taken
+ * from the heap in place, ml_hp moved up and compared with ml_limit.
+ * This module stays the simple path, -O0's; ssa's the -O3 one, the
+ * start object's functions included (startup's compile).
  *
  * The collector is the runtime's (gc.c), but its contract is this
  * module's: its roots are the value stack from its base to ml_vsp,
@@ -143,13 +148,7 @@ val unit_ : mach -> Ir.unit_ -> string
 (* the program's start, from the units in their order: ml_start (C
  * calls it with the value stack's base), ml_try, ml_raise, the table
  * of the units' globals, each unit's Init in a handler that prints an
- * uncaught exception *)
-val startup : mach -> string list -> string
+ * uncaught exception; that handler's function and the curry functions
+ * compiled by the function given (unit_'s, or ssa's Emit) *)
+val startup : mach -> (Ir.func list -> string) -> string list -> string
 
-(* a block taken from the heap by the code itself, the runtime called
- * only when there is no room; and so a float's arithmetic, a new float
- * each (off: mini-ml -calls; never with gcc's C) *)
-val alloc_in_place : bool ref
-
-(* the most fields of a block taken so (arm64's small offsets) *)
-val alloc_most : int

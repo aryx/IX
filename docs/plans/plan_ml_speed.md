@@ -483,3 +483,22 @@ lines to 790, Prims 374 and its .mli 79, a record of what of
 Emit.func they read (Prims.ctx). The same assembly from the compiler
 before and after, on mini-ml's, lib_core's and the tests' units.
 
+Then undone (the author: "I really don't think such a big record is
+readable and improve the readability of the code that was before"):
+Emit as before the move, its open-coded primitives a section with
+Prims.mli's explanation at its head. Instead the open coding is out
+of simple's Gen, the simple path: every primitive a call of the
+runtime there (a string's byte, a float's arithmetic and comparison,
+an allocation; -O0 slower, the reference), Gen 621 lines to 452; the
+start object's functions (ml_program, the curry functions) compiled
+by ssa's Emit with -ssa, as a unit's (Gen.startup's compile), so that
+no -O3 code is Gen's: the start object 9,209 lines to 8,866 (arm), the
+units' assembly the same. Emit.alloc_in_place and alloc_most, Gen's
+before. Arm, mini-5i, both from nothing, against 7dd029cc: mini-ml
+compiling its three units 6,799,634,141 instructions to 5,856,092,556
+(0.861: the curry functions, at every partial application and every
+call of a closure of several arguments, were the stack machine's),
+mini-doom's frame 8,444,780 to 8,243,646 (0.976), mini-quake's,
+mini-virtuaracing's, mini-rebirth's and the benches the same; the
+frames and the sound the same bytes.
+

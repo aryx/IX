@@ -39,6 +39,76 @@ Its numbers are `games/survey3d.sh`'s (run 2026-10-08). What is said
 of the processors was read in Linux's driver and the firmware's list
 (below, each with where); **nothing here was run on a board.**
 
+## 2026-10-27: the goal moved, mini-virtuaracing's back on the Pi 2
+
+The author, after a day of making mini-virtuaracing's software
+renderer faster (49.0M arm instructions a race frame to 34.0M, `Render`
+39% more code): "maybe we should use the GPU of the Pi2 instead and
+the code would be simpler again (or maybe we can add a variant with
+that to compare, great teaching value too)", then "yes" to this
+section and to a card and a photo for each step. The game is now
+[`plan_virtuaracing.md`](plan_virtuaracing.md)'s, its decision 9 the
+cut kept for this: **the front the program's** (turned, cut by the
+near plane, projected: a face out of it as a convex polygon, its
+corners on the screen and 1/z, and its colour), **the back the
+processor's** (the tiles binned, the faces filled, the depth kept).
+So the "NV" state first (vertices already placed), not the three
+shaders and the kept meshes of decision 5: this game's front exists.
+Stages 1 to 3 (the playground's 3D) are not on this way any more.
+
+What the processor takes, by a race frame's profile (34.0M):
+`fill_rows`, `span` and the clear, 14M; what stays: the front (`face`,
+`draw`, `faces`) 10M and the game 10M; new, the lists written, a
+guess of 1 to 2M. **About 20M a frame, 12 to 14 a second on the Pi
+2** (6 by the software renderer before that day, 8 or so after it:
+the board to say). The front by the processor's shaders (the GL
+state, kept meshes: decision 5) is the step after.
+
+The way, a card each, the author's board saying (a photo, the
+console's lines):
+
+- **G0, the firmware that has the 3D.** The card's is the cut-down
+  one (`start_cd.elf`, `fixup_cd.dat`: `gpu_mem=16` chooses it), which
+  has no 3D; the full one of the same tag
+  (`kernels/firmware/pi1-pi2/`, `1.20260915`: `start.elf`,
+  `fixup.dat`) and the `gpu_mem` it needs (to find: the processor
+  reads and writes the ARM's memory, its lists and tiles can be ours;
+  the firmware's own share is what `gpu_mem` says). Check: the card
+  boots on the Pi 2 (and the Pi 1) as before, the banner's firmware,
+  a game.
+- **G1, one triangle at the kernel's start, by a flag** (stage 4,
+  for the Pi 2: the registers at 0x3FC00000): the processor turned on
+  (the mailbox's 0x00030012), the binner's and the renderer's lists
+  for one triangle of three colours in the NV state, a flat colour's
+  pixel shader by hand (decision 10; read in PeterLemon's and
+  kumaashi's programs), run, the picture drawn on the screen. Check:
+  a photo. What our reading of the guide got wrong in
+  `docs/plans/bugs/ix.md`.
+- **G2, a frame's faces from a program.** The device of decision 5,
+  smaller: a frame is the picture's colour and a list of faces, each
+  its corners on the screen (x, y in 12.4 fixed point, z and 1/w) and
+  its colour (RGB, `Palette.lit`'s: the processor has no palette);
+  the kernel writes the lists from them (a program writes no list: the
+  processor has no table of pages, decision 5's reason), runs them,
+  and shows the picture (decision 6: the window's image, a copy a
+  frame). Check: a test program's faces, a photo.
+- **G3, `render=gpu`**: `Render`'s back a third time (beside the
+  depth's spans and the painter's table): a face's fan to the
+  device's buffer, `finish` sends the frame. Check: the race on the
+  Pi 2, its frames a second against `render=depth`, the picture
+  beside the software's (not the same bytes: the processor's edges'
+  rules and its four samples, decision 9 of the game's plan).
+- **Then, the author's to ask**: the software back made simple again
+  (the speed of that day's micro-optimizations being the processor's
+  now: an `old:` each to take back, said in the game's README); the
+  GL state (the front by shaders, the course's meshes kept in the
+  processor's memory); D, the processor in mini-qemu (decision 11),
+  which would make G1 to G3 checkable here.
+
+Until D, nothing of this runs under QEMU or mini-qemu (QEMU has the
+device's name and reads of zero): `render=gpu` there says so and
+draws by the depth.
+
 ## The survey (2026-10-08, checked)
 
 ### The playground's 3D
@@ -427,3 +497,7 @@ processor in mini-pi left for later (the author).
 [`plan_virtuaracing.md`](plan_virtuaracing.md): a renderer of the
 game's own, not Playground3d, measured against the Pi 2's frame; the
 game is no longer what waits for this plan's processor.
+
+2026-10-27: the goal moved to mini-virtuaracing's back on the Pi 2
+("2026-10-27: the goal moved", above): the NV state first, the stages
+G0 to G3, a card and a photo each (the author: "yes"). Nothing built.

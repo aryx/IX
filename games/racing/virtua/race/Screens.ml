@@ -18,6 +18,11 @@ let time_text (frames : int) : string =
     (frames / 60 mod 60)
     (frames mod 60 * 100 / 60)
 
+(* the map's dots, made for a course and a screen (Course's
+ * OPTIMIZATION (once): a Track3d.at each, at each frame); old: made at
+ * each frame *)
+let outline : (Course.t * float * float * P.shape list) option ref = ref None
+
 (* the course's map, bottom right, its level under it; the rivals dots,
  * the player a red marker *)
 let minimap (screen : P.screen) (c : Course.t) (d : Driving.t)
@@ -31,12 +36,22 @@ let minimap (screen : P.screen) (c : Course.t) (d : Driving.t)
   in
   let n = Track3d.segments c.ribbon in
   let dots =
-    List.init (n / 6) (fun (j : int) ->
-        let p =
-          Track3d.at c.ribbon (float_of_int (6 * j) *. Track3d.step c.ribbon)
+    match !outline with
+    | Some (c', right, bottom, dots)
+      when c' == c && right = screen.right && bottom = screen.bottom ->
+        dots
+    | _ ->
+        let dots =
+          List.init (n / 6) (fun (j : int) ->
+              let p =
+                Track3d.at c.ribbon
+                  (float_of_int (6 * j) *. Track3d.step c.ribbon)
+              in
+              let x, y = at p.px p.pz in
+              P.square (P.rgb 230 230 230) 3. |> P.move x y)
         in
-        let x, y = at p.px p.pz in
-        P.square (P.rgb 230 230 230) 3. |> P.move x y)
+        outline := Some (c, screen.right, screen.bottom, dots);
+        dots
   in
   let others =
     List.map

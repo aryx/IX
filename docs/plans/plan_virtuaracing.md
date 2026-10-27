@@ -627,5 +627,29 @@ drawn opposite to their order (the road's line under its tarmac),
 11,544 pixels apart from the depth's at frame 250. `frames.expected`'s
 session `table`; OCaml's and mini-ml's the same bytes.
 
-Next: the card on the Pi 2; then the front's floats (`face`, `draw`)
-or the land's tiles.
+Then **what the race's display and the rivals asked of the road at
+each frame, made once** (a profile of the default frame: 2,800
+`Track3d.at` a frame, 10% of it): the course's box (`Course.bounds`
+walked every segment for the map), a segment's turn (41 for each
+rival, its braking: `Course.turn`, kept once asked, the same
+answers), the map's dots (`Screens.outline`). The eleven sessions the
+same bytes by both builds. A fast path in `face` (no copy when no
+corner is behind the eye, the view's numbers taken once) written and
+**not kept**: the author, "It looks like we're doing lots of
+optimizations ... I'm wondering whether this will end and whether we
+have seriously complicated the code". That day `Render.ml` grew from
+307 lines of code to 426 (+39%), virtua from 4,181 lines to 4,485:
+the algorithms (the painter's, the ordering table, the level of
+detail) are kept for their lesson, the waste removed (the caches),
+and **the micro-optimizations stop here**: 34M a frame against a
+budget of 14M for 20 a second, which is the 3D processor's to give,
+not the software's. The way: [`plan_gpu.md`](plan_gpu.md)'s
+"2026-10-27" section, G0 to G3 (the author: "maybe we should use the
+GPU of the Pi2 instead and the code would be simpler again (or maybe
+we can add a variant with that to compare, great teaching value
+too)", then "yes"); the arcade's hardware against the Pi 2 in the
+README (the author's question: "how could it run smoothly on those
+old machines far less powerful than our Pi2?").
+
+Next: the card on the Pi 2 (the author's frames a second); then
+`plan_gpu.md`'s G0, the full firmware.

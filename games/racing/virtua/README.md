@@ -37,6 +37,47 @@ its sound by `games/tests/audio.sh`, the same bytes as the playground's
 own `-dump-audio` (the countdown, and the start to 6 seconds: after,
 the rivals, whose speeds have a part by our hash, part the races).
 
+## The arcade's hardware, and the Pi 2
+
+How did a 1992 game run smoothly on machines far less powerful than a
+Pi 2 (the author's question)? The arcade did not draw it with its
+processor either. Sega's Model 1 was a board of chips, each made for
+its part:
+
+- **the game**: its processor, an NEC V60 at about 16 MHz, ran the
+  cars, the race, the rules, and nothing of the picture;
+- **the geometry**: Fujitsu's geometry processors (the TGP, a DSP:
+  floats fast) turned, lit, cut and projected the vertices;
+- **the pixels**: Sega's own drawing chips filled the polygons and hid
+  the hidden ones (`render/Render.mli`'s cs-history).
+
+It is usually quoted at about 180,000 polygons a second, a few
+thousand a frame. The Mega Drive's version (1994) needed a chip in its
+cartridge, Sega's SVP (a DSP of Samsung's), and still drew fewer
+polygons, smaller and slower. (These numbers as they are usually told,
+from memory, not checked against a source here.)
+
+mini-virtuaracing on the Pi 2 does all three parts on one of its four
+cores (a Cortex-A7 at 900 MHz, about 280 million instructions a second
+under mini-9pi):
+
+| the arcade's part | Model 1 | here |
+|---|---|---|
+| the game | the V60 | the program (`race/`), about 10M instructions a frame |
+| the geometry | the TGP | `Render`'s front (`draw`, `faces`, `face`), about 10M |
+| the pixels | Sega's drawing chips | `Render`'s back (`fill`, `span`), about 14M; the Pi 2's own 3D processor unused |
+
+and by mini-ml's code (a teaching compiler: floats in blocks, calls by
+closures, the bounds tested), on a scene made for a PC (the
+playground's: 7,000 faces a frame, the land and the trees to 1,300 m,
+where the arcade's designers counted each polygon). So the Pi 2 is not
+too slow for the game: the part of it made for this, its VideoCore IV's
+3D processor, far more than Model 1's drawing chips, is not used yet.
+That is [`plan_gpu.md`](../../../docs/plans/plan_gpu.md)'s way (its
+"2026-10-27" section): the arcade's own division, the processor for the
+game and the geometry, the 3D processor for the pixels (`render=gpu`,
+beside the software's three ways).
+
 ## Speed
 
 The game is made for the Pi 2 (mini-9pi): about 280 million arm

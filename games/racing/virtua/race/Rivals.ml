@@ -38,7 +38,7 @@ let corner_speed (c : Course.t) (s : float) : float =
   let sharpest = ref 0. in
   for k = 10 to 50 do
     sharpest :=
-      Float.max !sharpest (Float.abs (Course.turn_at c.ribbon (k0 + k)))
+      Float.max !sharpest (Float.abs (Course.turn c (k0 + k)))
   done;
   if !sharpest < 0.05 then infinity
   else

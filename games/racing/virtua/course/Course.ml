@@ -66,6 +66,19 @@ let turn_at (ribbon : Track3d.t) (i : int) : float =
   in
   angle_diff (at (i - 3)).heading (at (i + 4)).heading /. 7.
 
+(* the road's box, x0 x1 z0 z1 (bounds) *)
+let box_of (ribbon : Track3d.t) : float * float * float * float =
+  let n = Track3d.segments ribbon in
+  List.fold_left
+    (fun ((x0, x1, z0, z1) : float * float * float * float) (k : int) ->
+      let p = Track3d.at ribbon (float_of_int k *. Track3d.step ribbon) in
+      ( Float.min x0 p.px,
+        Float.max x1 p.px,
+        Float.min z0 p.pz,
+        Float.max z1 p.pz ))
+    (infinity, neg_infinity, infinity, neg_infinity)
+    (List.init n (fun (k : int) -> k))
+
 (* Stretches of road that are more than a road: a suspension bridge, an
  * overpass (the road crossing over itself), a tunnel, and the grey
  * concrete walls that stand instead of the rails in places. *)
@@ -100,6 +113,8 @@ type t = {
   landmarks : Mesh.t list;
   landscape : Mesh.shape list;
   animated : float -> Mesh.shape list;
+  box : float * float * float * float;
+  turns : Float.Array.t;
 }
 
 (*****************************************************************************)
@@ -556,6 +571,8 @@ let make (d : description) : t =
     landmarks = List.map Mesh.make (d.landscape site);
     landscape = d.landscape site;
     animated = d.moving site;
+    box = box_of ribbon;
+    turns = Float.Array.make (Track3d.segments ribbon + 64) nan;
   }
 
 (* Big Forest, the beginner's: a long pit straight up the diagonal, the
@@ -957,18 +974,25 @@ let sky (c : t) (cam : Camera.t) : Mesh.shape =
 
 let miniature_scale = 0.1
 
-(* the course's box, x0, x1, z0, z1 *)
-let bounds (c : t) : float * float * float * float =
-  let n = Track3d.segments c.ribbon in
-  List.fold_left
-    (fun ((x0, x1, z0, z1) : float * float * float * float) (k : int) ->
-      let p = Track3d.at c.ribbon (float_of_int k *. Track3d.step c.ribbon) in
-      ( Float.min x0 p.px,
-        Float.max x1 p.px,
-        Float.min z0 p.pz,
-        Float.max z1 p.pz ))
-    (infinity, neg_infinity, infinity, neg_infinity)
-    (List.init n (fun (k : int) -> k))
+(* OPTIMIZATION (once): what the race's display and the rivals asked of
+ * the road at each frame, the same answers, made once: the course's
+ * box (a Track3d.at for each segment, at each frame: the map), a
+ * segment's turn (41 for each rival at each frame: its braking); with
+ * the map's dots (Screens), 2,800 Track3d.at a frame, 10% of it.
+ * old: bounds walked the road, Rivals called turn_at *)
+let bounds (c : t) : float * float * float * float = c.box
+
+let turn (c : t) (i : int) : float =
+  if i < 0 || i >= Float.Array.length c.turns then turn_at c.ribbon i
+  else begin
+    let v = Float.Array.get c.turns i in
+    if Float.is_nan v then begin
+      let v = turn_at c.ribbon i in
+      Float.Array.set c.turns i v;
+      v
+    end
+    else v
+  end
 
 let miniature_center (c : t) : float * float =
   let x0, x1, z0, z1 = bounds c in

@@ -82,6 +82,10 @@ type t = {
   landscape : Mesh.shape list; (* the landmarks' shapes (the miniature) *)
   (* what moves, at a time in seconds *)
   animated : float -> Mesh.shape list;
+  (* the course's box, x0 x1 z0 z1 (bounds); each segment's turn, nan
+   * until asked (turn) *)
+  box : float * float * float * float;
+  turns : Float.Array.t;
 }
 
 val big_forest : unit -> t
@@ -123,6 +127,10 @@ val sky_over : Camera.t -> float -> Mesh.color -> Mesh.shape
 val miniature : t -> Mesh.shape
 val shrink : t -> Mesh.shape -> Mesh.shape
 val bounds : t -> float * float * float * float
+
+(* [turn c i]: turn_at c.ribbon i, kept once asked (the rivals' braking,
+ * at each frame) *)
+val turn : t -> int -> float
 
 (* every mesh that does not move, for the palette (Palette.add_mesh) *)
 val meshes : t -> Mesh.t list

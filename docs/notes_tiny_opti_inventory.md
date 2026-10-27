@@ -44,7 +44,7 @@ host.
 | T9 | Marshal in C, interfaces marshalled; a function's text into one buffer | core.c, TinyML; 8885624d | Troff's unit 16.7M to 7.7M instructions (host); a unit of one line 3.2 s to 2.2 s on tiny-kernel | +550 -135 | none |
 | T10 | `read_file`: pieces read, then copied once | TinyLibGUI, 3e5c8a7f | a WAV of 141 KB was 85M instructions (600 a byte) | small | none (old: comment) |
 | T11 | The machine's speed a setting, 20 M with a window | TinyMachine, entry.tm; 29662089 | not a saving: the machine 2.5 times faster for a person watching, the programs' pace by ticks kept | +157 -54 | `-rate n` |
-| T12 | The kernel's idle loop not stepped: the time added at once | TinyMachineDevices `ticks`, `idle_skipped` (2026-10-27) | play's run (boot, the 6.4 s WAV, sleep 2: 9.6 s of machine time) at -rate 20: 11.0 s of the host to 8.7 | +17 | `idle_skipped` |
+| T12 | `wfi`: the kernel idle asleep, the time added at once | TinyMachineDevices `extra`, `tick`, `ticks`; entry.tm's k_idle1 (2026-10-27; first as a guess from a jump to itself, `idle_skipped`, 51096869) | play's run (boot, the 6.4 s WAV, sleep 2: 9.6 s of machine time) at -rate 20: 11.0 s of the host to 8.7 | +45 | `batched` (false: each tick, asleep or not) |
 | T13 | A sound's write that waits woken when the ring has room, not every 10 ms | TinyKernelIO `Voice`, TinyKernelDevices `speak` (2026-10-27) | the same run: 135M busy instructions to 88M; with T12 6.1 s of the host | +18 -10 | none (old: comment) |
 
 ## Worth it?
@@ -59,23 +59,28 @@ To measure again:
 - T12 on the recorded sessions: their machine is the same (the
   screens and sounds are byte for byte), but their host time was not
   timed. It saves what a machine idles, so a busy program gains
-  nothing; play gains its ~13% of idle and the sleep after.
+  nothing; play gains its ~13% of idle and the sleep after. Worth it
+  apart from speed: the kernel says it idles, as on a real machine.
 - T2 and T3 natively on today's tree: their numbers are node's.
 
 ## Details
 
-**T12. The idle loop not stepped.** tiny-kernel waits in `k_idle1: j
-k_idle1`, interrupts on. tiny-machine stepped it, a jump at a time, 20
-million a second with a window: the host's speed spent on nothing. In
-a calm stretch of [ticks] (no event, no interrupt, no device until
-the next look) nothing but the time changes in that loop, so the time
-is added at once; the machine after it is the same as after the steps.
-`what mc = 2` (already used to count `spent`) says the pc is on the
-jump to itself, in the kernel, with the pages off. Measured: play's
-run as above, korobeiniki.wav's sound the same bytes, 11.0 s to 8.7 s
-(the host at load 10). A profile (-prof) no longer counts the idle
-loop's instructions; `spent` (each core's busy and idle, with -cores)
-still does.
+**T12. wfi, the kernel idle asleep.** tiny-kernel waited in `k_idle1:
+j k_idle1`, interrupts on, and tiny-machine stepped it, a jump at a
+time, 20 million a second with a window: the host's speed spent on
+nothing. 51096869 skipped such a stretch by recognizing the pattern (a
+jump to itself, in the kernel): exact, but a guess from the kernel's
+code that another shape of idle loop would silently lose. Now the
+machine has `wfi` (0x37, the supervisor's), ARM's and RISC-V's
+instruction, x86's `hlt`: the core sleeps until an interrupt enabled
+in `ie` is pending, and a calm stretch asleep is only time, added at
+once. k_idle1 and the other cores' wait are `wfi` then a jump back.
+`spent`'s idle is now the time asleep (TinyMachine_tests/cores.tm's
+wait0 a `wfi` too). The machine after a sleep is the one the loop of
+jumps left: korobeiniki.wav's sound and every recorded session the
+same bytes. Measured: 11.0 s to 8.7 s of the host, then 6.45 s with
+T13 and the wfi. A profile (-prof) counts no instruction while asleep.
+v0 and t6 (TinyKernel/steps/) still idle in a jump to itself, stepped.
 
 **T13. The sound's write woken when it fits.** play writes its WAV
 2,048 samples a write; the kernel takes a write whole when it fits in

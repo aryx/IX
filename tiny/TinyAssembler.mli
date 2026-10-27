@@ -60,7 +60,7 @@
  *   the kind of place; a number resolves at once, a label to 0 and a
  *   reloc line.
  * - {b The machine's own instructions} (csrr, csrw, eret, csrrw,
- *   amoswap: TinyMachineDevices runs them) are assembled for any
+ *   amoswap, wfi: TinyMachineDevices runs them) are assembled for any
  *   program; on tiny-cpu, or in a program of tiny-kernel's, they are
  *   illegal words, as on a real machine in user mode.
  *

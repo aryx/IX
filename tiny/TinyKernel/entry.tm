@@ -80,7 +80,8 @@ k_idle:
 	li	r1, 3			; supervisor, interrupts on
 	csrw	status, r1
 k_idle1:
-	j	k_idle1
+	wfi				; asleep until an interrupt (TinyMachineDevices's
+	j	k_idle1			; wfi: old, a jump to itself, a host's work)
 
 ; Every trap. From user mode scratch is the process's frame (r1 swapped
 ; with it frees a register), from the idle loop 0; either way back to
@@ -146,6 +147,7 @@ slave_wait:
 	li	r1, 3			; supervisor, interrupts on
 	csrw	status, r1
 slave_spin:
+	wfi
 	j	slave_spin
 slave_take:
 	ldw	r1, -64(r0)		; the senders, cleared

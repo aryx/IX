@@ -28,6 +28,7 @@
 	li	r1, 3			; supervisor, interrupts on
 	csrw	status, r1
 wait0:
+	wfi				; asleep until an interrupt (idle at the halt)
 	j	wait0
 
 ; core 0's: the senders added to those seen; both: the rows

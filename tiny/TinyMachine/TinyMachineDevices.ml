@@ -376,6 +376,8 @@ type machine = {
   hear : string -> unit;
   (* a device or a register of control was touched: see [ticks] *)
   mutable touched : bool;
+  (* asleep since a wfi, until an interrupt of ie's is pending *)
+  mutable waiting : bool;
   (* the senders of each core's interrupt, a bit each *)
   ipis : int Atomic.t array;
   (* this core's instructions so far: in user mode, in the kernel, and
@@ -570,6 +572,34 @@ let store mc m s a v =
   | w when w >= devices -> ()
   | _ -> TinyMachineCPU.store m s a v
 
+(* Waiting for an interrupt: wfi (0x37, the supervisor's).
+ *
+ * The machine's time is the count of the instructions it ran, and a
+ * window holds that count to the host's clock (20 million a second);
+ * a host that cannot run so many falls behind, and the speaker's
+ * samples come in gaps. A kernel with nothing to run used to wait in
+ * a jump to itself (k_idle1: j k_idle1) until the timer's interrupt:
+ * the host emulated thousands of jumps a tick that changed nothing but
+ * the time (play's WAV and a sleep: 57 of its 192 million). A processor
+ * spins the same way, burning power, so each has an instruction for
+ * it: ARM's and RISC-V's wfi, x86's hlt (the 8086's already). The core
+ * stops until an interrupt comes, and an emulator (QEMU) jumps its
+ * clock to the next event. So here: wfi puts the core to sleep, and the
+ * next ticks only count the time, at once in [ticks]'s calm stretch
+ * (nothing can happen in it, by [calm]'s definition), until an
+ * interrupt among ie's sources is pending; then the core goes on after
+ * the wfi, taking the interrupt when status's ie is on (RISC-V's
+ * rule: a source enabled in ie wakes it even when ie is off in
+ * status). The machine after the sleep is the one a loop of jumps
+ * leaves: the registers, the memory and the time the same.
+ *
+ * (old: a calm stretch that started on a jump to itself, in the
+ * kernel, was not stepped either, the time added: the same speed, but
+ * the machine guessed the kernel idle from a pattern of its code, a
+ * guess another shape of idle loop would silently lose. wfi says it.
+ * On play's WAV at -rate 20, 9.6 s of the machine: 11.0 s of the host
+ * when every jump was stepped, 8.7 without.) *)
+
 (* the words the CPU does not know: 0x3a-0x3c, csrr, csrw and eret,
  * the supervisor's, and 0x3e, csrrw d, csr, a (both at once: d the
  * register's old value, the register a's: at a trap, r1 swapped with
@@ -586,7 +616,12 @@ let extra mc (m : TinyMachineCPU.machine) w =
   and a = (w lsr 16) land 15 and k = w land 0xffff in
   let c = mc.csr and next () = m.pc <- TinyMachineCPU.addr (m.pc + 4) in
   mc.touched <- true;
-  if op = 0x3d then begin
+  if op = 0x37 then begin
+    if not (supervisor mc) then raise (Trap (c_illegal, w));
+    mc.waiting <- true;
+    next ()
+  end
+  else if op = 0x3d then begin
     let at = m.r.(k land 15) in
     let old = load mc m TinyMachineISA.W at in
     store mc m TinyMachineISA.W at m.r.(a);
@@ -639,6 +674,7 @@ let show w =
   | 0x3b when k < Array.length csr_names ->
       Some (Printf.sprintf "csrw\t%s, r%d" csr_names.(k) a)
   | 0x3c -> Some "eret"
+  | 0x37 -> Some "wfi"
   | 0x3e when k < Array.length csr_names ->
       Some (Printf.sprintf "csrrw\tr%d, %s, r%d" d csr_names.(k) a)
   | 0x3d -> Some (Printf.sprintf "amoswap\tr%d, r%d, (r%d)" d a (k land 15))
@@ -674,6 +710,7 @@ let create ~put ~on_open ~send ~hear ~disk ~events image =
             flying = [] };
     speaker = { ring_at = 0; played = 0; since = 0 }; hear;
     send = (match send with Some f -> f | None -> ignore); touched = false;
+    waiting = false;
     ipis = Array.init !cores (fun _ -> Atomic.make 0); spent = [| 0; 0; 0 |];
     tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
@@ -689,7 +726,7 @@ let core mc k =
   let r = Array.make 16 0 in
   r.(TinyMachineISA.sp) <- devices;
   { mc with cpu = { r; pc = 0; mem = mc.cpu.mem }; csr = c; events = [];
-            touched = false; spent = [| 0; 0; 0 |];
+            touched = false; waiting = false; spent = [| 0; 0; 0 |];
             tlb_tag = Array.make tlb_size (-1); tlb_pte = Array.make tlb_size 0 }
 
 (* the speaker's samples due, to [hear]: the host's, between two ticks *)
@@ -740,8 +777,9 @@ let tick mc (env : TinyMachineCPU.env) =
   if mc.net.flying <> [] && first mc then landed mc;
   try
     let wanted = pending mc land c.(ie_csr) in
+    if wanted <> 0 then mc.waiting <- false;
     if c.(status) land ie <> 0 && wanted <> 0 then trap mc c_intr wanted pc
-    else TinyMachineCPU.step env m
+    else if not mc.waiting then TinyMachineCPU.step env m
   with Trap (cause_v, tval_v) ->
     trap mc cause_v tval_v
       (if cause_v = c_sys then TinyMachineCPU.addr (pc + 4) else pc)
@@ -802,30 +840,14 @@ let calm mc =
   end
 
 (* What the instructions from here are, for [spent]: a program's (user
- * mode), the kernel's, or the kernel idle, a jump to itself (tiny-kernel's
- * k_idle1 and its other cores' wait; with the pages off). The steps
- * that follow one look are all of one kind: a change of mode is a trap
- * or an eret, and the kernel's way into its loop of idle writes status
- * first, which [touched] ends the steps at. So one look a batch counts
- * every instruction, and the count costs nothing that shows. *)
-let idle_word = TinyMachineISA.encode (TinyMachineISA.Jal (0, -1))
+ * mode), the kernel's, or idle, asleep after a wfi. The steps that
+ * follow one look are all of one kind: a change of mode is a trap or
+ * an eret, and a wfi or a wake ends the stretch ([touched], the next
+ * tick). So one look a batch counts every instruction's time, and the
+ * count costs nothing that shows. (old: idle was the kernel on a jump
+ * to itself, its pc's word read at each look.) *)
 let what mc =
-  let m = mc.cpu in
-  if not (supervisor mc) then 0
-  else if (mc.csr.(satp) land 0x80000000 = 0   (* the kernel's pc physical *)
-           || mc.csr.(satp) land user_only <> 0)
-          && TinyMachineCPU.load m TinyMachineISA.W m.pc = idle_word then 2
-  else 1
-
-(* With [idle_skipped], a calm stretch that starts on the kernel's idle
- * loop is not stepped: nothing but the time changes in it (no device,
- * no trap, the pc the same), so the time is added, the same machine
- * after it as after the steps. The host's speed then goes to the
- * instructions that do something, what a window held at 20 million a
- * second needs (play's WAV and a sleep after: 11.0 s of the host for
- * 9.6 of the machine, 8.7 without the idle's steps). A profile (-prof)
- * no longer counts the idle loop's instructions; [spent] still does. *)
-let idle_skipped = ref true
+  if not (supervisor mc) then 0 else if mc.waiting then 2 else 1
 
 let ticks mc (env : TinyMachineCPU.env) n =
   if not !batched then
@@ -839,13 +861,17 @@ let ticks mc (env : TinyMachineCPU.env) n =
     while !left > 0 do
       let w = what mc in
       tick mc env; decr left;
+      mc.spent.(w) <- mc.spent.(w) + 1;
       mc.touched <- false;
+      (* the stretch's kind is the one after the tick, which may have
+       * trapped or run a wfi *)
+      let w = what mc in
       let k = ref (min !left (calm mc)) in
       let k0 = !k in
       left := !left - !k;
-      (* the kernel idle, a jump to itself, until the next look: only
-       * the time moves, so it moves at once (see [idle_skipped]) *)
-      if !idle_skipped && !k > 0 && what mc = 2 then begin
+      (* asleep (wfi) until the next look: only the time moves, so it
+       * moves at once *)
+      if mc.waiting && !k > 0 then begin
         c.(time) <- TinyMachineCPU.m32 (c.(time) + !k);
         k := 0
       end;
@@ -860,7 +886,7 @@ let ticks mc (env : TinyMachineCPU.env) n =
        with Trap (cause_v, tval_v) ->
          trap mc cause_v tval_v
            (if cause_v = c_sys then TinyMachineCPU.addr (!pc + 4) else !pc));
-      mc.spent.(w) <- mc.spent.(w) + 1 + k0 - !k;
+      mc.spent.(w) <- mc.spent.(w) + k0 - !k;
       (* the steps not run, a device touched: they are still to do *)
       left := !left + !k
     done

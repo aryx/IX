@@ -222,7 +222,16 @@ mode with interrupts off, and jumps to `tvec`. One way out: `eret`.
 ### 4.2 The registers of control
 
 Read by `csrr d, name`, written by `csrw name, a`, both at once by
-`csrrw d, name, a`. All three, and `eret`, are illegal in user mode.
+`csrrw d, name, a`. All three, `eret` and `wfi`, are illegal in user
+mode.
+
+`wfi` waits for an interrupt: the core sleeps from the next
+instruction until a source enabled in `ie` is pending, then goes on
+(taking the interrupt when `status` has interrupts on). An idle
+kernel's loop is `wfi` then a jump back to it; the machine then
+counts the time asleep without running anything, so a host holding
+the machine to 20 million instructions a second spends nothing on it
+(ARM's and RISC-V's `wfi`, x86's `hlt`).
 
 | name | what |
 |---|---|

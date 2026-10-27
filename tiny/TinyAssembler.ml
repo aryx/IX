@@ -11,9 +11,9 @@ let usage = "usage: tiny-assembler [-o file.o] file.tm"
 let help = usage ^ {|
 
 tiny-machine's assembly (TinyMachineISA's instructions, li, la, call, ret...,
-the machine's csrr, csrw, eret, csrrw, amoswap, and .word .byte .ascii .asciz
-.space .align .text .data) to an object, file.o by default, for tiny-linker. In
-tiny/tests/TinyCPU_tests/, for example:
+the machine's csrr, csrw, eret, csrrw, amoswap, wfi, and .word .byte .ascii
+.asciz .space .align .text .data) to an object, file.o by default, for
+tiny-linker. In tiny/tests/TinyCPU_tests/, for example:
   tiny-assembler hello.tm                  hello.o: its words, its labels, the
                                            places a label's address goes
   tiny-linker -o hello hello.o && tiny-cpu hello        Hello, world
@@ -126,6 +126,7 @@ let machine name args =
   | "csrr", [ d; c ] -> w 0x3a (reg d) 0 (csr c)
   | "csrw", [ c; a ] -> w 0x3b 0 (reg a) (csr c)
   | "eret", [] -> w 0x3c 0 0 0
+  | "wfi", [] -> w 0x37 0 0 0
   | "csrrw", [ d; c; a ] -> w 0x3e (reg d) (reg a) (csr c)
   | "amoswap", [ d; a; b ] ->
       let b = String.trim b in

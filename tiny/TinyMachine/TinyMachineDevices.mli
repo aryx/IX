@@ -16,7 +16,7 @@
  *                            |
  *     this file: the registers of control and [trap]; the window and
  *     the pages ([check], [translate]); the devices behind [load] and
- *     [store]; csrr, csrw, eret, csrrw, amoswap ([extra]); the
+ *     [store]; csrr, csrw, eret, csrrw, amoswap, wfi ([extra]); the
  *     interrupts between two instructions
  *                            |
  *             an env of five functions ([env]); step
@@ -114,9 +114,11 @@ type machine = {
   put : char -> unit; on_open : console -> unit; send : string -> unit;
   hear : string -> unit;
   mutable touched : bool;
+  (* asleep since a wfi, until an interrupt of ie's is pending *)
+  mutable waiting : bool;
   ipis : int Atomic.t array;
   (* the instructions this core ran: in user mode, in the kernel, the
-   * kernel idle (a jump to itself), counted by [ticks] *)
+   * kernel idle (asleep after a wfi), counted by [ticks] *)
   spent : int array;
   (* the translations' cache, user mode's pages: a page's number (-1:
    * none) and its entry, in the slot of its number's low bits; emptied
@@ -169,6 +171,6 @@ val timed_events : string -> (int * string) list
 val event : mouse -> console -> string -> unit
 
 (* the listing of the machine's own instructions, csrr, csrw, eret,
- * csrrw, amoswap (tiny-assembler makes them; the registers of control
+ * csrrw, amoswap, wfi (tiny-assembler makes them; the registers of control
  * by their names, TinyMachineISA.csr_names) *)
 val show : int -> string option

@@ -37,8 +37,10 @@
  *   [csrw name, a]: status epc cause tval tvec time timecmp base
  *   bound. time counts executed instructions (so time belongs to the
  *   program alone, and every run is the same). The timer interrupts when
- *   time reaches timecmp and interrupts are on. csrr, csrw and eret are
- *   illegal in user mode.
+ *   time reaches timecmp and interrupts are on. [wfi] sleeps until an
+ *   interrupt comes: an idle kernel's loop, which the host then does
+ *   not run a jump at a time. csrr, csrw, eret and wfi are illegal in
+ *   user mode.
  * - {b Protection by a window.} In user mode every address, including
  *   instruction fetches, must be in [base, bound), otherwise it is a
  *   fault. There is no relocation at run time: a user program is
@@ -215,8 +217,8 @@
  * The CPU's hooks (the [env] of TinyMachineCPU) carry all of this. The
  * fetch, the load and the store go through the pages or the window and
  * find the devices; sys raises a trap; a word the CPU does not know is
- * decoded here as csrr, csrw or eret (in supervisor mode), or amoswap,
- * or else it traps. The loop around [step] adds the rest: the time and
+ * decoded here as csrr, csrw, eret or wfi (in supervisor mode), or
+ * amoswap, or else it traps. The loop around [step] adds the rest: the time and
  * the interrupts.
  *
  * Exercises. Each one is cheap, because time is counted in instructions
@@ -224,8 +226,6 @@
  * - the cores' turns in an order drawn from a seed (-cores takes them
  *   in a fixed one), so a race can be replayed from its seed, which
  *   real hardware never allows;
- * - wfi: a core waits for an interrupt and time jumps to timecmp, so an
- *   idle kernel costs nothing;
  * - a slow disk: the transfer completes N instructions after the
  *   command, so a kernel must sleep while waiting (v6's diskrw becomes
  *   xv6's);
@@ -261,6 +261,7 @@
  *     cause, tval          ESR_EL1, FAR_EL1
  *     tvec                 VBAR_EL1, a table of sixteen entries
  *     eret                 eret
+ *     wfi                  wfi
  *     sys                  svc
  *     time, timecmp        CNTVCT_EL0, CNTV_TVAL_EL0 and CNTV_CTL_EL0
  *     ip, ie               the GIC, a separate device

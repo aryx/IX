@@ -817,6 +817,16 @@ let what mc =
           && TinyMachineCPU.load m TinyMachineISA.W m.pc = idle_word then 2
   else 1
 
+(* With [idle_skipped], a calm stretch that starts on the kernel's idle
+ * loop is not stepped: nothing but the time changes in it (no device,
+ * no trap, the pc the same), so the time is added, the same machine
+ * after it as after the steps. The host's speed then goes to the
+ * instructions that do something, what a window held at 20 million a
+ * second needs (play's WAV and a sleep after: 11.0 s of the host for
+ * 9.6 of the machine, 8.7 without the idle's steps). A profile (-prof)
+ * no longer counts the idle loop's instructions; [spent] still does. *)
+let idle_skipped = ref true
+
 let ticks mc (env : TinyMachineCPU.env) n =
   if not !batched then
     for _i = 1 to n do
@@ -833,6 +843,12 @@ let ticks mc (env : TinyMachineCPU.env) n =
       let k = ref (min !left (calm mc)) in
       let k0 = !k in
       left := !left - !k;
+      (* the kernel idle, a jump to itself, until the next look: only
+       * the time moves, so it moves at once (see [idle_skipped]) *)
+      if !idle_skipped && !k > 0 && what mc = 2 then begin
+        c.(time) <- TinyMachineCPU.m32 (c.(time) + !k);
+        k := 0
+      end;
       let pc = ref m.pc in
       (try
          while !k > 0 && not mc.touched do

@@ -50178,3 +50178,255 @@ Claude also added the Lower.mli comment and inventory paragraph, with the stage 
 **Yoann:**
 
 > yes let's try to move this optimization code under opti/ or ssa/ if possible
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:31
+
+**Yoann:**
+
+> what is kernels/ds.log? can we delete it and remove it?
+
+**Claude (summary):**
+
+Claude explained that kernels/ds.log is stderr from a failed build, committed by mistake in 88b5dda9.
+Claude found it holds a mini-rc depend command plus six "mini-ml -m 5 -O3: No such file or directory" errors.
+Claude noted nothing in the repo uses it and no .gitignore rule covers it.
+Claude ran git rm kernels/ds.log to stage the deletion, without committing it.
+Claude suggested git commit -- kernels/ds.log to commit it alone, avoiding other staged changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:34
+
+**Yoann:**
+
+> also profilers/dd.log ?
+
+**Claude (summary):**
+
+Claude proposed checking the commit for other stray logs, since Yoann asked about profilers/dd.log.
+Claude said it would search the history of that commit for similar leftover log files.
+Yoann's follow-up asked to commit, so the focus is on the pending commit.
+Claude's answer was only a one-line statement of intent, with no search results yet reported.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:34
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the removal of four log files as d716a3db, touching only those paths.
+Claude listed the logs as kernels/ds.log, lib_graphics/dd.log, profilers/dd.log, and windows/dd.log.
+Claude left Yoann's other uncommitted changes, including the virtua and TinyKernel files, in the working tree.
+Claude skipped running make test, reasoning that deleting unread log files cannot change a build.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:05
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude proposed committing Render.ml(i), Virtua.ml, virtua's README, frames.expected and plan_virtuaracing.md.
+Claude proposed leaving the tiny/ files out of that commit, since another session owns them.
+Claude proposed rebuilding the Pi 2 card with today's −24.5% setup work and the detail level.
+Claude offered to let Yoann switch the card between depth, painter and table render modes.
+Claude also reported all 11 virtua sessions and 135 make test jobs passing, with one load-flaky tiny-kernel test.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:36
+
+**Yoann:**
+
+> in browsers/ I noticed a few script that look test related. why not move them under browsers/tests/ like we do for the other m-ix programs?
+
+**Claude (summary):**
+
+Claude explained that the seven scripts in `browsers/` produce the data behind `docs/plans/plan_browser.md` rather than pass or fail, so they don't belong in `tests/`.
+Claude recommended keeping `survey.sh` at the top of `browsers/`, matching the other program survey scripts.
+Claude proposed moving the other six (`first_version.sh`, `coverage*.sh`, `coverage*.py`) into `browsers/survey/`, following `languages/dotnet/survey/`.
+That move would also require updating their `usage:` lines, `$HERE` paths, and the READMEs in `browsers/`, `browsers/html/`, and `browsers/javascript/`.
+Claude asked whether to proceed, and Yoann approved moving those scripts to `browsers/survey/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:37
+
+**Yoann:**
+
+> ok, let's commit and let's make the card
+
+**Claude (summary):**
+
+Claude committed the ordering table as 4c040c68 and built the SD card image at kernels/9pi/build/card.img.
+Claude noted that virtua was recompiled for the card in 23 s, since the other libraries were already up to date.
+Claude gave a dd command to write the image to an SD card and listed five race runs to try on the Pi 2.
+Claude predicted about 8 fps for `virtua sound=off` from arm instruction counts, but said these were untested on the board.
+Claude said Yoann's numbers would decide whether the next step is front float work or something else.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:39
+
+**Yoann:**
+
+> yes let's move those scripts to browsers/survey/
+
+**Claude (summary):**
+
+Claude moved six coverage and survey scripts into `browsers/survey/` with `git mv`, keeping `browsers/survey.sh` at the top level.
+Claude rewrote the paths inside `coverage.sh`, `first_version.sh`, `coverage_ix.sh` and `coverage.py` to point at the new locations.
+Claude updated `browsers/README.md`, the html and javascript READMEs, and seven references in `docs/plans/plan_browser.md`.
+Claude checked the shell scripts with `bash -n` and the Python files compile, but did not run the coverage jobs.
+Claude suggested committing only the move with `git commit -- browsers docs/plans/plan_browser.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:40
+
+**Yoann:**
+
+> are doom and quake will also be faster on this new card?
+
+**Claude (summary):**
+
+Claude estimated doom and quake would gain only about 2–3% on the new card, since virtua's renderer skips them.
+Claude recommended giving doom and quake virtua's treatment: a profile, per-face or per-column setup, unchecked reads.
+Claude named doom's walls in store_wall_range and its monster sprite drawing as the remaining big costs.
+Claude traced the wall cost to mini-ml boxing float arguments, with the fix being plan_ml_speed item 6.
+Claude offered doom's sprite fixes from last night, worth about −1.2M per frame, as another option.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:40
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the directory move as 29068bc4, recording six files as renames into `browsers/survey/`.
+The commit also includes path fixes in the scripts, the three READMEs, and `plan_browser.md`, totaling 11 files.
+Claude skipped `make test` beforehand, since nothing it builds or checks depends on these scripts.
+The coverage runs were not executed after the move; Claude only confirmed the scripts parse.
+Claude also verified that `coverage_ix.sh` prints its usage correctly from its new location.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:16
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude recommended committing the Stage 4a int32 work and the Prims move together, since both edit Emit.ml.
+Claude moved ssa's open-coded primitives into a new ssa/Prims.ml, shrinking Emit from 1,109 to 790 lines.
+Prims.mli documents open coding with the Int32.add example, and Emit passes Prims a record of 27 fields.
+Verification: identical assembly across 15 units, make test passing with 135 jobs and 0 failures; make self-quick-mix and boards not run.
+Claude also noted the simple back end's in-place code in simple/Gen.ml remains unmoved, and asked before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:43
+
+**Yoann:**
+
+> can we commit and then merge the worktree in the main branch?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:43
+
+**Yoann:**
+
+> I want separate commits for each feature, like you did in your worktree
+
+**Claude (summary):**
+
+Claude explained that worktrees are detached checkouts, so "merging" meant copying its 23 changed files onto `main` by pathspec.
+Claude confirmed six unrelated commits had landed on `main` and none touched its files, so the copy was safe.
+Claude committed those 23 files on `main` as e1409546, leaving out the other sessions' tiny/, prompt-history.md, and notes changes.
+Claude flagged one change still only in worktree s5: the `gettimeofday` syscall support for mini-5i in `machine/process/Linux.ml`.
+Claude proposed committing that change separately, alongside the SIGTERM profile-writing change, when profiling tiny-machine.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:44
+
+**Yoann:**
+
+> nah it's fine
+
+**Claude (summary):**
+
+Claude kept commit e1409546 as a single commit and left the working tree unchanged.
+Claude saved a memory: one commit per feature, to avoid bundling features that touch the same files.
+The rule says that when a new feature would edit files an uncommitted feature already touches, Claude asks to commit the first.
+The reason given is that two features mixed in one file cannot be separated afterwards by pathspec.
+Yoann's reply pushes back on this, since he runs parallel sessions on separate worktrees and expects low conflict risk.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:45
+
+**Yoann:**
+
+> not a huge fan also on working on different worktree; I know I have a few sessions in parallel, and this might cause conflicts, but in general they work on different parts of the codebase so should have low conflicts
+
+**Claude (summary):**
+
+Claude recommended working in the main checkout instead of separate worktrees, using scratch copies only for baseline builds.
+Claude made the `gettimeofday` change for mini-5i in `machine/process/Linux.ml`, using syscall 78 on arm and 169 on arm64.
+Claude left that change uncommitted in the main checkout, since it is a separate feature for the tiny-machine work and needs its own commit.
+Claude removed its scratch worktrees (s4, s5, s6, b4, D, A, B, C), leaving `main` and another session's agent worktree untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:56
+
+**Yoann:**
+
+> maybe we can start a notes_tiny_opti_inventory.md like we did for mix
+
+**Claude (summary):**
+
+Claude re-ran tiny-kernel's network test alone and began docs/notes_tiny_opti_inventory.md, seeded with past optimizations.
+Claude corrected the idle_skipped comment it wrote earlier, which had credited idle skipping alone for fixing play.
+Claude's correction says most of the play gain came from the audio change, not from idle skipping.
+Claude did not classify idle_skipped as a hack or a legitimate fix in that answer.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:52
+
+**Yoann:**
+
+> ok let's commit the progress. Is the idle_skipped a hacky optimisation or a legitimate one? Did we address the core issue or added hacks to optimize things?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:41
+
+**Yoann:**
+
+> no let's continue a bit the focus on virtua for now
+
+**Claude (summary):**
+
+Claude proposed a fresh profile of virtua's default mode, depth buffer and level of detail enabled, to find the biggest cost.
+Claude identified two likely speedups in `face`: reading `r.near`, `r.far`, `r.side` and `r.top` into locals once per face, since each mutable float read costs two loads in mini-ml.
+Claude also suggested skipping the per-face copy into `cx/cy/cz` when no corner is behind the eye, and computing `float r.width /. 2.` once.
+Claude judged the land tiles (1,400 faces) the next level-of-detail target, but harder, because coarser far tiles would leave cracks at the near boundary.
+Claude planned to keep the land tile work for later and let the profile confirm the `face` changes first.

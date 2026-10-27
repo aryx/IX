@@ -136,6 +136,7 @@ whatever the frames):
 | before | | 3.2M | `sound=off` (`Sound.on`) |
 | mixed in `Float.Array`s, a continuous voice without a block a sample, the filter's memory flat | lib_audio's `Mixer`, `Synth`, `Filter` | 1.8M | `Mixer.flat := false` |
 | libc's `exp` without its calls of `floor` and `ldexp` (`tanh`'s two calls a sample) | `lib_core/libc/port/exp.c` | 1.6M | `old:` |
+| the mixer's `tanh` by a rational function, no `exp` (2026-10-27, by today's mini-ml: 30.5M a frame without the sound, 31.7M with) | lib_audio's `Mix.soft_clip` (the playground's too) | 1.1M | `Mix.exact_tanh` |
 
 On the Pi 2 (the author): 11 frames a second at the title, 3 in the
 race with the sound, 6 without (`sound=off`), 9 while the camera

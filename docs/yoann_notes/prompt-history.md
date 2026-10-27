@@ -49840,3 +49840,102 @@ Claude recorded the optimizations in a new "Speed" section of games/racing/virtu
 Claude added tests/perf.sh as the measuring script, which reproduced 36,991,257 instructions per frame under the emulator.
 Claude noted that the shared _mk/5 tree fails to link virtua (undefined: ml_tan) because of stale objects from afcb6f03.
 Claude suggested clearing _mk/5/lib_core (and _mk/5-plan9/lib_core for the card) before rebuilding, and left the shared tree untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:12
+
+**Yoann:**
+
+> as you want
+
+**Claude (summary):**
+
+Claude wrote part 2's first half: float-returning functions get a copy that returns the double in a register.
+Claude added tests/runtime/double_returns.ml, which passes at -O3 and -O0 on arm and arm64, with other suites unchanged.
+Claude ran a rebirth breakdown with four rebuilds, each undoing one group of the night's changes, after fixing wrong library paths.
+Claude measured D: 3b's compiler part is worth 0.969 on rebirth, about 63 million instructions a second.
+Claude left runs A, B, C and part 2's measurement running in the background, still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:25
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended finishing the two running measurements: float returns in registers, and the rebirth breakdown.
+Claude planned float arguments in registers next, to stop boxing samples passed to `solved` in Svf's `process_fixed`.
+Claude then listed the ladder's repeated `solve` index computation, reusable buffers for `caml_floatarray_create`, and the 909's unused oscillators.
+Claude expected doom, quake, and virtua to gain less, since they make fewer float-returning calls.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:29
+
+**Yoann:**
+
+> in the mean time, looking at the code of ~/ocaml-light/, (especially asmrun/ and asmcomp/), are there big opti we should add to mini-ml?
+
+**Claude (summary):**
+
+Claude recommended five optimizations from ocaml-light's asmcomp and asmrun, none yet measured.
+Claude ranked keeping values in registers across allocations first, then decision-tree match compilation with jump tables.
+Claude also listed flat float records, direct calls to known functions across units, and a cheaper try block.
+Claude suggested measuring the first two on mini-ml compiling itself and on doom before building them.
+Claude reported the night's gain was mostly the sound code and spectrum, about 3.3 of 3.6 billion instructions.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:37
+
+**Yoann:**
+
+> ok
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:16
+
+**Yoann:**
+
+> ok, let's commit and move forward and possibly cleanup stale objects if needed
+
+**Claude (summary):**
+
+Yoann's follow-up "what's next?" points at the last stretch: the pending arm counts and the start-up measurement. Claude's answer focused on the far-mesh change and its build-time cost. Claude committed nothing new, since everything was already committed at a2bd7881. Claude found the stale-archive link failure resolved by a clean rebuild, then edited Scenery, Course (.ml and .mli), and Virtua's flag. Claude re-recorded the five Big Forest sums with lod=off, which matched the recorded bytes except for far pines. Claude flagged that far-mesh builds re-run tree placement via Track3d.locate, and that Bay Bridge and Acropolis get identical far meshes. Claude proposed computing tree positions once if the start-up measurement shows a cost, and noted `make test-lite` passed with 135 jobs and 0 failures while the arm counts were still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:37
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended dropping part 2's float-returns-in-registers change, since it gained only about 2% on rebirth.
+Claude proposed adding float arguments on top first, or dropping both if they together didn't reach a few percent.
+Claude advised against committing the change alone, since it cost about 95 lines plus a second copy of each function.
+Claude suggested moving to the ocaml-light candidates: values kept in registers across allocations, and jump tables for matches.
+Claude said it would pick option 2, dropping part 2 and moving on, and asked Yoann to confirm.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:38
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended finishing the level of detail first, then adding a `render=painter` mode as a teaching aid.
+Far road chunks now draw each pine as one five-face cone, cutting the race frame from 37.0M to 33.9M arms.
+The change drops faces at frame 250 from 6,818 to 5,546, with 476 pixels differing, all far pines.
+Start-up on Big Forest rose from 2.31 to 2.60 billion, after Claude fixed a duplicate tree placement.
+`make test-lite` passed with 135 jobs and no failures, and Claude asked before committing.

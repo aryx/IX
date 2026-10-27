@@ -47780,3 +47780,1788 @@ Claude proposed committing by pathspec: the plans, mini-ml's ssa/ and simple/, C
 The commit would also add lib_core's Float and Marshal, the new tests, games/frame_count.sh, and mini-virtuaracing's render/ and README.
 It would leave out another session's kernels/, div.s and its tests, tests/lite.sh, bugs/ocaml_light.md, and the mini-toolchain plan.
 Claude warned that its earlier git add -N marks the new files in the shared index, so only named paths get committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:51
+
+**Yoann:**
+
+> let's do 1, 2, 3. I'll be back in one hour
+
+**Claude (summary):**
+
+Claude recommended moving the finished memory plan into `done/`, since `plan_tiny_multicore.md` only names it in plain text.
+Claude fixed the flaky session 26 check by routing `trace` output into file `t` via `>[2] t` and grepping each process's lines.
+Claude corrected the `tetris.wav` checksum, which went stale from its own kernel timing commits, and re-recorded `check.expected`.
+Claude replaced `div<>` with a faster routine, verified by `div_check`, `mem_check.sh`, and mini-ml, and the mini-doom frame stayed nearly unchanged at 0.3%.
+Claude committed items 1 and 2 after `test-lite` passed 70 jobs with 0 failures in a clean worktree.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:24
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude reported that all of its work this round was committed, in `19414457` and `de5c01b3`.
+Claude recommended running the four-core self-build numbers in the background, adding a pages run for `build -j 6`.
+Claude suggested doing Stage 1 leftovers alongside: the Makefile relink on `MEM_` changes, out-of-memory messages, and `MEM_` size checks.
+Claude noted both tasks would close out the tiny-kernel work without needing any input from Yoann.
+Claude left the older-plan decisions and mini-ml frame costs out, since they wait on Yoann or the float session.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:25
+
+**Yoann:**
+
+> so we can close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed, since all of its work is committed across five commits.
+Claude listed the commits: user buffers, segments, pages, the memory plan moved to done, and arm's faster division.
+Claude confirmed no background jobs were running and removed the scratch worktrees it had created.
+Claude left the other sessions' uncommitted changes alone, including the mini-ml float work and the staged prompt-history.md.
+Claude flagged two leftovers: a stale 32-turn division comment in ssa/Emit.ml and the four-core self-build numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:28
+
+**Yoann:**
+
+> another session is improving mini-ml float support. What are other big opti worth adding to mini-ml to improve the speed of games and apps?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:23
+
+**Yoann:**
+
+> yes let's commit and move forward
+
+**Claude (summary):**
+
+Claude confirmed `make test-lite` passed after the last code change, then committed the files by pathspec as 6b76f50d.
+Claude checked that the other session's files had gone into their own commit, not this one.
+Claude rewrote a function with the old form kept as `old:`, and it matched OCaml's bits on both architectures at -O3 and -O0.
+Frame culling was then compared against no culling, leaving 4 to 88 differing pixels per view, which Claude is checking for missing objects.
+Claude started three background mini-5i profiles and analysed `Land.make` and the tree search, judging the first exactly bucketable and the second harder to cut.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:28
+
+**Yoann:**
+
+> analyze and report
+
+**Claude (summary):**
+
+Claude proposed reading the existing optimization plans first, to see which items were already done.
+Claude then planned to check what the compiler does today for known calls.
+Claude also planned to examine the compiler's inlining and tagging behavior before proposing any changes.
+Claude's plan was to ground the optimization work in those findings rather than in assumptions.
+Claude's answer reported no concrete findings yet, only the investigation steps it would take.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:37
+
+**Yoann:**
+
+> note that at some point on the Pi2 we might leverage the GPU, so let's also plan that the code later will need to adapt and use GPU features from the Pi2
+
+**Claude (summary):**
+
+Claude left the culling, library, and search changes uncommitted, offering to commit them by pathspec.
+Claude's culling change marks the road's open walls double-sided, cutting frames from 10,738 to 6,485 faces.
+Claude changed lib_core's Float.min and Float.max to match OCaml's exact bits, with a new test.
+Claude made the tree and land searches faster, using bounding boxes for trees and square buckets for road samples.
+Claude re-recorded three mini-virtuaracing frames and ran make test-lite, with 70 jobs and 0 failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:57
+
+**Yoann:**
+
+> let's commit.
+
+**Claude (summary):**
+
+Claude committed 19e43da3 with the culling, Float.min/max, faster searches, and GPU plan, leaving others' files alone.
+Claude measured mini-virtuaracing's arm frame at 63.5 million instructions, five to six times budget.
+Claude then proposed profiling one frame before choosing between two cuts to close the gap.
+Claude's first cut was a nearer far plane with fog, drawing fewer land tiles and trees.
+Claude's second cut was cheaper per-face work in `face` and `fill`, keeping the picture identical but more work.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:58
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended profiling mini-virtuaracing's 63.5-million-instruction frame first, since the last profile predates culling and Float.Array.
+Claude proposed replacing the `Float.ceil` call in `first`, about 8% of the frame, with a float-to-int conversion in mini-ml.
+Claude proposed hoisting the constants that `Unbox` reloads on every loop turn so they load once before each loop.
+Claude deferred the nearer far plane with fog, which changes the horizon's look, until the profile is in.
+Claude also listed the race stage, the audio's Float.Array rows, and the tiny-kernel items as alternative threads.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:59
+
+**Yoann:**
+
+> let's do 1 then 2
+
+**Claude (summary):**
+
+Claude reported mini-virtuaracing's arm frame dropped from 63.5 to 53.3 million instructions, with nothing committed yet.
+Claude noted that this is still about five times the 10–12 million budget, so the frame question stays open.
+Claude's mini-ml cuts compute floor and ceil inline and unbox loop floats once, with the prologue bug fixed.
+Claude checked the change with runtime, bench and tiny tests, byte-identical 123 frames, and test-lite passing 70 jobs.
+Claude asked whether to commit this round, and whether to pursue a nearer far plane with fog.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 11:35
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended the far plane as the biggest lever for mini-virtuaracing, since land and trees draw out to 1,300 m.
+Claude suggested fog at roughly 500 to 700 m, as arcade games did, which would cull many faces and change the horizon.
+Claude noted the alternative of keeping the view and cutting per-face cost in `fill` and `face`, a smaller gain for more work.
+Claude expected that choice to come first, with the race stage after it and sound and Pi 2 measurements later.
+Claude committed its float work as 5325d485 and left another session's `profilers/misc/Profiler.ml` and `plan_ml_speed.md` out.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 11:38
+
+**Yoann:**
+
+> let's try fog at 600 m, then the race
+
+**Claude (summary):**
+
+Claude dropped the fog attempt, restoring its nine files under `games/racing/virtua/` and recording it as tried in the plan.
+Claude built stage 3a, the Big Forest race: a countdown, the player's car, fifteen rivals, a clock, five laps, and a following camera.
+Claude put the race code in `games/racing/virtua/race/`, porting the playground's `drive`, `bounce` and `push` from `Topdown`.
+Claude checked 3a without committing: `make test-lite` passed with 70 jobs, and mini-ml produced identical frames.
+Claude proposed committing 3a by pathspec, then moving on to 3b: the race display, title, course select and goal screens.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 12:28
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude finished stage 3b of mini-virtuaracing, the race display and four scenes, but had not committed it yet.
+Claude built the title, course select, race and end scenes, with courses loading on demand and text scaled to the window.
+Against the playground's golden frames, Claude measured the title at 5.1 and the grid at 5.2 mean pixel difference.
+Claude got `make test-lite` passing with 70 jobs, plus seven recorded sessions that give identical bytes under mini-ml.
+Claude left Bay Bridge for 3c and asked whether to commit 3b, which Yoann then approved.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 10:55
+
+**Yoann:**
+
+> excellent plan! I like it. Let's start
+
+**Claude (summary):**
+
+Claude built a private arm baseline and measured doom, quake, and mini-ml workloads.
+Claude implemented stage 1a, sharing curry functions past seven arguments, and stage 1b, inlining small functions in Lower.
+Claude added no-frame and no-link-saved shortcuts in Emit, after marking arm DIV and MOD as link-clobbering.
+Claude fixed a Dct.ml nth failure by skipping doubles, leaving only the two known arith and strings failures.
+Claude started a threshold sweep at 8, 12, 16 and 20 nodes, with cross-unit inlining queued next.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 12:56
+
+**Yoann:**
+
+> let's commit. When will I be able to run mini-virtuaracing also from this Linux host?
+
+**Claude (summary):**
+
+Claude added `(include_subdirs no)` to mini-virtuaracing's dune file, matching how `sdl/` is kept apart.
+Claude confirmed the mini-virtuaracing build succeeds on this Linux host after that change.
+Claude's answer did not yet touch whether mini-virtuaracing is built by default from `./bin/`.
+Before that, Claude committed the 3b change and ran the game under SDL's dummy driver, seeing no frames.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 12:58
+
+**Yoann:**
+
+> let's commit and let's make it available by default when building from ./bin/
+
+**Claude (summary):**
+
+Claude named step 3c as the next item on the plan, covering the Bay Bridge and Acropolis courses.
+Claude said 3c would bring the course-select golden frame into the existing frame comparison.
+Claude did not start 3c, stopping once the commit and the bin/ build were in place.
+Claude committed the work as 1faa3baa after make test-lite passed with 70 jobs and no failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 08:53
+
+**Yoann:**
+
+> I'll be back in one hour
+
+**Claude (summary):**
+
+Claude kept working during Yoann's absence by applying the patches to ~/ocaml-light.
+Claude verified the native build and tests in a scratch clone, leaving ~/ocaml-light's build state untouched.
+Claude found the testasmcomp failure also occurs at HEAD, from a stale ocamlrun path in codegen.
+Claude compared the ix kernels/ocaml-light.sh cross-builds with the patched /tmp builds, finding only path and timestamp differences.
+Claude amended its commit to add the arm entry, then removed the ix patches directory and updated references.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:27
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude built stage 3c of the ix series, adding Bay Bridge and Acropolis courses alongside Big Forest, all of it uncommitted. Claude marked the palm fronds, sailboat sail, and bridge cables as two-sided polygons, so culling on and off gives identical pixels. Claude checked the course select screen against the playground's golden for Bay Bridge, with a mean difference of 6.8. Claude added the `race_bay` and `race_acropolis` recorded sessions and a second `select` sum for mini-ml's one-pixel fused multiply-add difference. Claude also restored the 40 `frames.expected` lines its scratch-copy recording had dropped, leaving only this game's three-line diff, and asked whether to commit 3c.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:39
+
+**Yoann:**
+
+> are there any plans, especially plans for tiny programs, that we can move to done/ ?
+
+**Claude (summary):**
+
+Claude recommended moving `plan_tiny_office.md` to `done/`, since all seven steps were marked done as of 2026-10-17.
+Claude noted its leftovers were deliberate exclusions: .docx/.xlsx files, ovals, slanted lines, and multiple fonts.
+Claude recommended moving `plan_tiny_coverage.md` to `done/`, since every item in its section 4 order is finished or dropped.
+Claude noted that uniq, date, ps and kill remain unwritten, so the coverage status must say what's left.
+Claude held back the multicore and web plans, since both still have open work.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:47
+
+**Yoann:**
+
+> yes lets move 1 and 2
+
+**Claude (summary):**
+
+Claude moved `plan_tiny_office.md` and `plan_tiny_coverage.md` into `docs/plans/done/` with `git mv` and added Status paragraphs to each.
+Claude left the two moves staged while the Status paragraphs and the `tiny/TinyOffice.mli` path fix stayed unstaged.
+Claude proposed committing by pathspec: the two old paths, the two new paths, and `tiny/TinyOffice.mli`.
+Claude advised a pathspec commit rather than a plain `git commit`, because the git index is shared.
+Claude confirmed nothing had been committed yet, so the commit was still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 12:57
+
+**Yoann:**
+
+> do what you think is the best
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:45
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed stage 3c as 4e4b7f4d, then restored HEAD's virtua mkfile in the one-file fix 4073913c.
+Claude left the other session's uncommitted `-siblings` mini-ml flag in the working tree for them to commit.
+Claude proposed stage 4, sound, as the next step on the ix plan.
+Claude's plan for stage 4 is a sound backend that plays the race events the virtua game already emits.
+Claude noted that stage 3 is otherwise done, with TinyOutRun's coast left out by decision 7.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:57
+
+**Yoann:**
+
+> what is this -siblings new flag?
+
+**Claude (summary):**
+
+Claude confirmed that under `-siblings`, mini-ml also reads the `.ml` of same-directory units, not only their `.mli`.
+Claude explained it type-checks those bodies, then copies functions of 16 nodes or fewer into the caller.
+Claude noted this re-reading costs compile time, with `Bsp` rising from 0.05 s to 0.28 s on the host.
+Claude said the flag stays opt-in because editing `View.ml` must rebuild `Bsp`, or the stale copy goes unnoticed.
+Claude listed `mkprog`, `mklib`, and the doom, quake, and virtua rules as passing the flag, while `lib_core` does not.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:00
+
+**Yoann:**
+
+> what does OCaml? it also read the .ml again for inlining?
+
+**Claude (summary):**
+
+Claude explained that ocamlopt reads a sibling's `.cmx` for cross-module inlining, which forces build ordering and rebuilds.
+Claude recommended keeping `-siblings` for mini-ml, since each unit re-types named siblings from their fresh `.ml` sources.
+Claude rejected a `.cmx`-style scheme because mk would run a `mini-ml -M` dependency step on every mkfile read.
+Claude argued that step would be slow on mini-9pi, cut parallelism within a directory, and risk stale copies if a rule lacks the dependency.
+Claude said the `.cmx` route would be the switch if compile cost mattered, and would note the comparison in the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:02
+
+**Yoann:**
+
+> I think what OCaml does make more sense long term no? running mini-ml -M and have .depend is quite classic and in any case must be done only once (or when code gets significantly reorganized)
+
+**Claude (summary):**
+
+Claude recommended replacing `-siblings` with a `.cmx`-style summary file, `View.5i`, written beside each object.
+The summary holds each unit's small toplevel functions, already resolved and typed, plus a digest of its source.
+Units are found through `-I` directories, and a stale digest is ignored, so mistakes only cost speed.
+A `.depend` generated by `mini-ml -M`, committed beside each mkfile, lets mk order builds and rebuild dependents.
+Claude also reported the zeroed-slot fix, cutting doom's frame cost 15.6%, still uncommitted in the shared tree.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:55
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude ran `make test-lite` before committing, as it does before every commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:22
+
+**Yoann:**
+
+> what's next? other plans to move (not just the tiny one)
+
+**Claude (summary):**
+
+Claude judged the typesetting plan close to finished, making it a candidate for the done/ folder.
+Claude's reply gave no stage-by-stage verdict on typesetting yet, only that it looked close.
+Claude said it was still checking the stage lists of a few other ix plans.
+Claude made no file moves or edits in this exchange, only reported the status check underway.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:34
+
+**Yoann:**
+
+> yes let's move the typesetting and emacs to done/ and do the docs part and other small things
+
+**Claude (summary):**
+
+Claude flagged the mini-office plan's out-of-date top line as its next fix in the pass.
+Claude announced that office correction, but had not yet made it when its answer ended.
+Claude grouped the office fix with the typesetting README and the top README's mini-emacs row changes.
+Earlier, Claude wrote mini-emacs's README and moved the emacs and typesetting plans into done/.
+Claude also reverted accidental path edits in an agent worktree, restoring its git status.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:40
+
+**Yoann:**
+
+> actually mini-office is running in a mini-rio window already; what is missing then?
+
+**Claude (summary):**
+
+Claude recommended writing apps/office/README.md in the copied, changed, remains form, using numbers from scripts/playground_copies.sh.
+Claude proposed updating the two Status places in the plan and then moving it to done/.
+Claude suggested listing stage 7d as not run on mini-9pi unless Insert > Image is tried there first.
+Claude offered to commit the result alone or together with the emacs and typesetting batch.
+Claude found stage 5 done apart from bookkeeping, and stage 6 otherwise already covered or obsolete.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:44
+
+**Yoann:**
+
+> we currently don't have a fast and reliable way to test for regressions; the different tests (test-speed, test-all, test-lite, self-quick, etc.) are slow, often broken, and spread in different Makefiles. We need to reorganize a bit things so it's clearer what tests to run before a commit so we break less CI. What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:45
+
+**Yoann:**
+
+> ideally each time we modify some code we can run a test command and have good confidence it would catch regression and ideally would take less than a min, 2min max
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:46
+
+**Yoann:**
+
+> actually GHA CI is currently broken, and looking at the history has been broken many times across the commits
+
+**Claude (summary):**
+
+Claude reported that the GitHub Actions CI fix was nearly done.
+Claude was checking whether a local OCaml 5 build was available to reproduce the failure.
+Claude judged the main CI break to be specific to OCaml 5.5, not the general build.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:51
+
+**Yoann:**
+
+> another thing might be to separate tests for m-ix and t-ix, so we could even run those in parallel, and get them clearly separated (make test-lite right now display tests for both m-ix and t-ix interleaved which is a bit confusing; it's nice to be give incremental display test results, but it's also confusing and harder to parse)
+
+**Claude (summary):**
+
+Claude recommended splitting the test run into shared, m-ix, and t-ix groups, with per-group tags and summaries.
+Claude suggested `tests/lite.sh tix` and `tests/lite.sh mix` so a change under `tiny/` runs only shared plus t-ix.
+Claude noted that running the two halves in parallel gains little, since `lite.sh` already saturates the cores.
+Claude proposed a shared group for dune, the type check, mini-ml, lib_core, and generators, since some jobs span both halves.
+Claude asked whether to write `docs/plans/plan_tests.md` or start with the `effect` keyword CI fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:52
+
+**Yoann:**
+
+> one big issue is that the build t-ix under t-ix, or m-ix under m-ix, which long term are what we want, is too slow right now, but ultimtately that's one of the most important thing we want to check regressions for
+
+**Claude (summary):**
+
+Claude said it would first check what the `self` and `self-quick` targets do today and how long they take.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:54
+
+**Yoann:**
+
+> yes let's write a plan document. also I like your [m-ix] display you suggeste before, but one one of them was [t-ix] tiny: db, editor, vcs,      but what does this line mean?
+
+**Claude (summary):**
+
+Claude said it would first look at how the existing plans are laid out and at the tiny-variant tests before writing.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:42
+
+**Yoann:**
+
+> yes let's do it
+
+**Claude (summary):**
+
+Claude committed the three finished plans (typesetting, emacs, office) into `docs/plans/done/` with updated paths and Status notes. It wrote `apps/office/README.md` for mini-office, listing 50 copied files and 548 lines staying in the playground. The first `make test-lite` run had one TLS test failure that passed on reruns, so Claude suspected a port collision in `networking/tests/tls.sh`. Claude proposed a fix to `serve` (check the server is alive, retry another port) and asked whether to record it in `docs/plans/bugs/ix.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:03
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude reported that the three requested plans were finished and needed no further work.
+Claude pointed to plan_tiny_multicore.md as the nearest open item, needing only its four-domain measurement written in.
+Claude identified the flaky tls.sh port clash as the other nearby item, a few-line fix.
+Claude said either remaining job is short and could be picked up whenever Yoann wants.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:03
+
+**Yoann:**
+
+> can I close this ession?
+
+**Claude (summary):**
+
+Claude said the session could be closed, since all its work is in commits `aba49117` and `8dca9a99`.
+Claude noted that the only matching uncommitted file is `games/racing/virtua/README.md`.
+Claude judged that README to be another session's mini-virtuaracing work, not this session's.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:07
+
+**Yoann:**
+
+> a few files under tiny/ are big and probably we can split them and introduce extra dirs. For instance TinyBrowser.ml in a TinyBrowser.ml adn TinyBrowser/ dir with modules and good separation of concerns. Same for TinyOffice.ml and maybe TinyML.ml
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:00
+
+**Yoann:**
+
+> let's start!
+
+**Claude (summary):**
+
+Claude renamed mini-quake's `effect` identifiers to `burst` and `run_effect`, since OCaml 5.5 rejects `effect` as a keyword.
+Claude set `fail-fast: false` in `docker.yml` so the 4.14 and 5.5 CI jobs each report their own result.
+Claude listed the five paths to commit, leaving out another session's `games/fps/quake/mkfile` change, and marked step 1 done in `plan_tests.md`.
+Claude reported `make test-lite` passing with 70 jobs and 0 failures, but noted it took 402 seconds against the promised minute.
+Claude asked permission to install js_of_ocaml on the 5.5.1 switch before starting step 2 of the plan.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:13
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-26 13:57
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude committed the stage 4 sound work as 00afe618, ten files, all of them its own.
+For that commit, Claude staged only its two mkfile changes, the libraries and `Sound`.
+The other session's `-siblings` line was restored in the working tree, left for that session to keep.
+Claude also made `audio.sh` find the playground's `software/` builds, since the OpenGL build can't record sound headless.
+The rest: stage 4's sound matches the playground byte for byte, and stage 5 is running on mini-9pi.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:15
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended stage 5: putting mini-virtuaracing on the mini-9pi card image beside mini-doom and mini-quake.
+Claude proposed building it with mini-mk, checking that it starts under rio, and running it in QEMU.
+Claude planned to match its QEMU screens against the ppm frames before trusting any frames-per-second claim.
+Claude planned to time the frame with stage 2's breakdown, then have the user run it on a Pi 2.
+Claude noted that stage 4 is committed as 00afe618 and offered the coast, audio, and other threads instead.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:19
+
+**Yoann:**
+
+> how different is the game here compared to TinyVirtuaRacing in the ~/playground?
+
+**Claude (summary):**
+
+Claude compared the ix mini-virtuaracing with the playground's TinyVirtuaRacing and found the same courses, rules, screens and sound.
+Claude said the main difference is the renderer, using array meshes, bounding-sphere culling, span-filled faces and 256-colour median-cut palettes.
+Claude reported about 7.5 ms per frame here against 312 ms in the playground under OCaml, which is why it may run on a Pi 2.
+Claude listed smaller gaps: hashed tree and rival speeds, palette drift, no drawn player car in cockpit view, and TinyOutRun's coast left out.
+Claude split the code into render, course and race folders, about 4,170 lines of `.ml` plus 1,152 of `.mli`.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:14
+
+**Yoann:**
+
+> (I'm running the opam install)
+
+**Claude (summary):**
+
+Claude built a tiny-kernel image in a private directory in 1.6 s, then timed the full check, which took 72 s in an older note.
+Claude found the whole check deterministic, with both runs giving the same bytes, and suspected other sessions' uncommitted `tiny/` changes.
+Claude ran `mltests` (ALL OK) and a short shell session with files and a pipe, with the gate job passing in 11.5 s.
+Claude checked only its own long lines in `lite.sh`, since the others were already there as job lines.
+Claude then confirmed ix type-checks under OCaml 5.5.1 after the js_of_ocaml install, and started the full test-lite run.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 14:05
+
+**Yoann:**
+
+> yes go ahead with the .cmx-like file and .depend. Let's get rid of this -siblings which looks "hacky"
+
+**Claude (summary):**
+
+Claude replaced `-siblings` with per-object `.inline` summary files, plus a `.depend` file per directory generated by `mini-mk depend`.
+Claude checked that two clean builds match byte for byte, and that tests pass on arm and arm64.
+Results against HEAD: doom's frames dropped 15.6%, quake 6.8%, virtua 10.3%, and mini-ml's self-compile 3.0%.
+Claude changed six mkfiles to one rule per folder so mk builds dependencies in order, which fixed a race between recipes.
+Claude left the work uncommitted in the shared tree and asked whether to commit, since `plan_ml_bootstrap.md` has another session's edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:07
+
+**Yoann:**
+
+> maybe also for TinyC.ml
+
+**Claude (summary):**
+
+Claude split TinyBrowser, TinyOffice, TinyML and TinyC into parts, checking each with tests and screens.
+Claude's test-lite run failed in tiny/, where ix's own tools linked tiny-ml without TinyML.7.
+Claude found TinyML.7 was never compiled while TinyC.7 was, and reproduced it privately.
+Claude then made both objects build, confirmed no rule had a trailing comment, and reran test-lite.
+Claude said it would report once the rerun finishes, since the gate was still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:47
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing of its own left to commit, since the other session owns the remaining changes.
+Claude named stage 5 as the next step after its last commit, 00afe618, which was stage 4.
+Stage 5 means running mini-virtuaracing under mini-9pi, then on Yoann's Pi 2 hardware.
+The Pi 2 run depends on Yoann's hardware, so Claude is waiting for his go-ahead.
+Claude left stage 5 open, ready to start whenever Yoann gives the word.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:29
+
+**Yoann:**
+
+> check the test-lite run (task b2x7md061) and report on the tiny/ split
+
+**Claude (summary):**
+
+Claude split the four large tiny/ programs into parts: TinyBrowser, TinyOffice, TinyML and TinyC.
+Claude's first make test-lite run failed because a comment sat under a mkfile rule, and Claude fixed it.
+Claude reran make test-lite, and it passed on the second run with 98 jobs, 0 failures, in 164 seconds.
+Claude confirmed tiny-kernel's objects match HEAD byte for byte, and self-quick passes on the split tools.
+Claude left everything uncommitted, since another session edits tiny/mkfile, and updated the docs and codemap configs.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:46
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+1. Claude laid out stage 5 of `plan_virtuaracing.md`: build, add to the card, run under QEMU, profile on arm, then Pi 2.
+2. Claude proposed adding a `virtua` program and its course data to `kernels/9pi/Makefile`, as was done for quake.
+3. Claude said the card needed these entries, modeled on how `quake` and `/lib/quake/` were added, but did not confirm that virtua is absent.
+4. Claude did not check whether virtua is already built by default or present under `/progs` on mini-9pi.
+5. Claude ended by asking whether to start stage 5.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:51
+
+**Yoann:**
+
+> cdlet's commit and move forward
+
+**Claude (summary):**
+
+Claude found `plan_ml_bootstrap.md` held other sessions' uncommitted hunks, so it committed only its own row.
+Claude's `make test-lite` run hung over 30 minutes in `dune build`, while a clean HEAD built in 25 seconds.
+Claude built its patch in a private copy in 6 seconds, so the hang came from the shared tree's state.
+Claude traced a `.depend` reference to `TinyCTypes.$O`, which no rule in `tiny/mkfile` produces.
+Claude committed the work as `88b5dda9` (120 files), reran `make test-lite`, and removed its private worktree.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 15:51
+
+**Yoann:**
+
+> yes let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the work as b29cfea1 and started step 3 on the two 400 s jobs.
+Claude timed the frames job: games/tests/audio.sh alone takes 273 s, while the rest totals about 78 s.
+Claude rewrote the tests/lite.sh job list as one block, tagging each job with its group.
+Claude also reworked the report to tag failures and skips, add per-group summaries, and warn on budgets.
+Claude checked the other session's lite.sh edits, ran the tix half, and flagged a 67 s tiny-ml run for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:58
+
+**Yoann:**
+
+> is virtua racing part of the card? is it build by default and available under /progs under mini-9pi?
+
+**Claude (summary):**
+
+Claude confirmed virtua is already built by default for mini-9pi, with the binary under _mk/5-plan9/games/racing/virtua.
+Claude found that the CARD_games list in kernels/9pi/Makefile:903 omits virtua, so /progs/games lacks it.
+Claude recommended a one-line change: add virtuaracing=$(IX9)/games/racing/virtua/mini-virtuaracing to CARD_games.
+Claude noted it needs no /lib data, since the three courses are built into the code, unlike doom and quake.
+Claude proposed booting it under QEMU afterward and counting frames per second as the first step of stage 5.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:00
+
+**Yoann:**
+
+> let's add it to the card
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:50
+
+**Yoann:**
+
+> check the test-lite run (task b2x7md061) and report on the tiny/ split
+
+**Claude (summary):**
+
+Claude reported the four tiny/ splits done, with make test-lite passing 98 jobs and 0 failures.
+Claude said nothing is committed yet, and another session's depend edits also sit in tiny/mkfile.
+Claude advised committing its own mkfile and code hunks by pathspec, leaving the other session's depend lines alone.
+Claude noted that the other session's .depend generation must add TinyML/ and TinyC/, since explicit order lines cover for now.
+Claude left the hours-long full self run unexecuted, so self.expected will differ for five programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:03
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended reviewing and committing the uncommitted tiny/ split first, since test-lite already passes.
+Claude advised committing by pathspec so the other session's depend lines in tiny/mkfile stay out of it.
+Claude noted the split is ready to commit once Yoann has looked over the changes himself.
+Claude suggested running the full overnight self check next, re-recording self.expected for www, office, troff, ml and cc.
+Claude put splitting TinyKernel.ml next, with the seven files between 750 and 930 lines as an optional follow-up.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:04
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the pending ix changes by pathspec, after checking the shared files for other sessions' hunks.
+Claude found the ledger file clean and HEAD already holding its own changes, since another session had committed in between.
+Claude reran test-lite on the current tree, because two commits from the other session landed after its earlier run.
+Claude then drafted the commit message in the repo's existing style, and it was still in progress when the turn ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:06
+
+**Yoann:**
+
+> let's do TinyKernel.ml next
+
+**Claude (summary):**
+
+Claude planned to split TinyKernel.ml along its eight section banners, after test-lite passes.
+Claude proposed TinyKernelMachine for the externals and devices, and TinyKernelFiles for the file tree, with the disk part as TinyKernelFS.
+Claude mapped TinyKernelProcs, TinyKernelScreen, TinyKernelIO, TinyKernelCalls (about 660 lines), and TinyKernelScheduler as the other modules.
+Claude kept TinyKernel.ml as the boot file and put the new modules in TinyKernel/ beside the existing parts.
+Claude intended to commit the first split once test-lite passed, then start on the remaining sections.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:59
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude committed the earlier work as e14a5644 and moved on to the 160-second "ix built by ix" job.
+Claude planned to turn the checks into ordinary jobs marked `-after-ix`, so their clocks start only after the build finishes.
+Claude reasoned that if the build fails, those checks should report a skip instead of cascading failures.
+Claude was about to add a new "skip" status to `report`, and had started reading the function to see where its time goes.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:00
+
+**Yoann:**
+
+> and let's build the card
+
+**Claude (summary):**
+
+Claude added `virtua` to the card's games in `kernels/9pi/Makefile` and built `card.img` (128 MB), with `virtua` at `/progs/games/virtua`.
+Two early link failures (`undefined: ml_curry9_0`) came from stale start objects left by another session's mini-ml commit.
+Claude deleted the stale `*.start.5` files in `_mk/5-plan9`, and the next build passed.
+The real fix, making the `mkprog` start object depend on the mini-ml binary, was left alone because another session is editing that file.
+Claude asked whether to commit the Makefile change and boot the card under QEMU to count frames.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:24
+
+**Yoann:**
+
+> virtua is at 3fps during the game but I think because of the sound. is there a way to disable the sound and saves cpu? Same for doom, it starts at 24fps but as soon as you enter a room with lots of monsters and sounds, it goes to 4 fps
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:24
+
+**Yoann:**
+
+> also for quake I could not see the monsters
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:24
+
+**Yoann:**
+
+> but they were shooting because I got killed
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:24
+
+**Yoann:**
+
+> virtual was a 11fps at the beginning, outside the game
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:24
+
+**Yoann:**
+
+> virtuaracing
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:10
+
+**Yoann:**
+
+> what is this big speedup? Why?
+
+**Claude (summary):**
+
+Claude identified the critical path as "games built by ix: recorded frames," which takes 70 s after a 94 s build.
+Claude expected that 168 s chain to drop to roughly 15 s once its frames run in parallel.
+Claude noted that test-lite gains less because the cores are shared with about 100 other jobs.
+Claude started the full run, which waits for any other session's test-lite to finish before it begins.
+Claude had parallelized frames.sh to run up to 16 sessions at once, cutting its real time to 6.5 s.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:07
+
+**Yoann:**
+
+> excellent, let's commit
+
+**Claude (summary):**
+
+Claude held the split uncommitted and asked whether to commit it, since the checks had passed.
+Claude ran HEAD's test-lite script because another session's edit left the working tree's tests/lite.sh with a syntax error.
+That run passed 98 jobs with 0 failures, and tiny-kernel's make check and self-quick passed as well.
+The pending commit splits TinyKernel.ml from 1,884 lines down to 99, with seven parts under TinyKernel/.
+Claude also added .mli interfaces, a shared KML list in the Makefile, updated READMEs, ledger, and codemap config.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:35
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude checked the shared files to confirm they held only its own hunks.
+Claude committed its changes as 89ff0724, covering 25 files, limited to its own paths.
+Claude left the other session's staged prompt-history.md staged and untouched.
+Claude flagged the other session's unfinished tests/lite.sh edit, which blocks test-lite until line 391 is fixed.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:39
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended doing the codemap configs for TinyBrowser/ and TinyOffice/ now, since they take only minutes.
+Claude pointed out that neither program was ever described in codemap, before or after the split.
+Claude said these two configs would complete the split that had already been started in tiny/.
+Claude also listed an overnight full `self` run, removing build-order lines from tiny/mkfile, and leaving the 750–930 line files alone.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:28
+
+**Yoann:**
+
+> still not done? make test-lite should be fast no?
+
+**Claude (summary):**
+
+Claude moved the lite.sh build into the run's temporary directory, removed after passing runs.
+Claude found four concurrent runs all passed, where PIDs one apart could previously overlap ports.
+Claude noted that served.sh and the lynx session pick their own ports, and net.sh is not in test-lite.
+Claude reran the full gate with no waiting, and Yoann accepted the roughly two-minute runtime as fine.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:41
+
+**Yoann:**
+
+> 2min is ok. can we add a make test-tix and test-mix that run the appropriate lite tests?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:41
+
+**Yoann:**
+
+> and have make test, run by default this lite.sh
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:40
+
+**Yoann:**
+
+> good news is that make loc gives roughly the same number for t-ix after the split. Let's do the codemap configs.
+
+**Claude (summary):**
+
+Claude wrote `tiny/TinyBrowser/.codemapconfig` with five part summaries, key types, and a page-arrival skeleton.
+Claude wrote `tiny/TinyOffice/.codemapconfig` covering seven parts, with `office` as the capital and `values` for the sheet.
+Claude added entries for `TinyBrowser.ml` and `TinyOffice.ml` to tiny/'s config, which had none before.
+Claude left all of it uncommitted and asked whether to commit, since the check still reports 82 mistakes, none from the new entries.
+Claude left out `.mli` entries and per-module skeletons, following the existing configs, and did not open the map to view the new cards.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:42
+
+**Yoann:**
+
+> let's commit and we can then close this session right?
+
+**Claude (summary):**
+
+Claude committed the pending changes as `1212fc6d` and confirmed nothing else in `tiny/` is left uncommitted, so the session can close.
+Claude listed this session's three commits: `21da776f` splitting TinyBrowser, TinyOffice, TinyML and TinyC, `89ff0724` splitting TinyKernel, and `1212fc6d` adding codemap configs.
+Claude flagged follow-ups for a later session: a full `self` run needing `self.expected` re-recorded, and a syntax error at line 391 of `tests/lite.sh` breaking `make test-lite`.
+Claude also noted a staged `prompt-history.md` from another session and explicit order lines in `tiny/mkfile` that can be removed later.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:26
+
+**Yoann:**
+
+> also let's remove the xxx-soft variant of the games; they are too slow and actually the real games without the -soft variant are also rendering using software
+
+**Claude (summary):**
+
+Claude proposed committing the card rebuild and virtua's `sound=off` after running `make test-lite`, since nothing was committed or booted yet.
+Claude measured virtua's race frame at 53.3M instructions with sound and 50.1M without, about 3.2M per audio frame.
+On mini-9pi that works out to roughly 190M instructions per second of audio, about half the game's budget at 3 fps.
+Claude named the real fix as making the mixer cheaper, since about 4,400 instructions per sample for four or five voices is too high.
+Claude also removed the `-soft` games from the card, added quake's 26 models and 72 sounds, and rebuilt `card.img` without committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:46
+
+**Yoann:**
+
+> let's commit and then make the sound cheaper
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:46
+
+**Yoann:**
+
+> note that I have another session improving mini-ml
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:51
+
+**Yoann:**
+
+> hmm looks indeed like the monsters and AI are also taking lots of the cpu
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:51
+
+**Yoann:**
+
+> maybe we could add an option to get just the graphics part, no sound, no ennemy, no sound, so it's easy to see whether we can go back to 25fps with the raw game
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:53
+
+**Yoann:**
+
+> I get indeed 6fps during the game with sound=off for virtua
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:44
+
+**Yoann:**
+
+> running a second make after having built already everything still takes 4s. Why? Analyze and report.
+
+**Claude (summary):**
+
+Claude measured a no-op `dune build` at 3.7 seconds with nothing rebuilt, and ruled out the 63 ms tree walk.
+Claude traced most of the time to a roughly 0.2 s startup floor, with `lib_networking` and `lib_playground` standing out.
+Claude found that GC tuning would save only about 0.9 seconds, so it is not the main cause.
+Claude then started comparing what each build target costs, to see which one dominates the 3.7 seconds.
+The per-target comparison was still in progress when the answer ended, so no per-target numbers were reported.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:55
+
+**Yoann:**
+
+> ok let's add a make tiny, that just builds tiny
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:55
+
+**Yoann:**
+
+> or make tix
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:56
+
+**Yoann:**
+
+> and make mix
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:56
+
+**Yoann:**
+
+> (similar to make test-mix and test-tix)
+
+**Claude (summary):**
+
+Claude added `make tix` and `make mix` to the root Makefile, mirroring `test-tix` and `test-mix`.
+Claude made `make tix` run `dune build ./tiny`, bringing a rerun down to 0.64 s from about 3.7 s.
+Claude made `make mix` build every top-level directory except `tiny`, `docs`, `bin`, and the `_*` build directories.
+Claude computed the `make mix` directory list at make time, so new directories need no Makefile edit.
+Claude added both targets to `.PHONY` and left the changes uncommitted, since the Makefile held another session's edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:41
+
+**Yoann:**
+
+> so the default make test  is the one we should use for most cases
+
+**Claude (summary):**
+
+Claude recommended that the default `make test` be the gate for most cases, per Yoann's point.
+Claude checked that the Makefile and README hold only its own changes, since another session had modified README.
+Claude updated the progress notes under steps 3 and 5 and set the gate command in the tiers table.
+Claude also found one stale comment above `test-lite` that still pointed to `make test-ix` and needed renaming to `make test-long`.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:56
+
+**Yoann:**
+
+> and maybe add a proper tiny/Makefile so one can run those commands also from tiny/
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:57
+
+**Yoann:**
+
+> ok let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the work as 2bf0a0f0, noting nothing is pushed yet, and listed the remaining steps briefly.
+Claude recommended making step 4, self-hosting in the gate, the next priority, since it currently runs only by hand.
+Claude proposed comparing t-ix's self build under tiny-build with the host's build, file by file.
+Claude proposed a smoke test per system: boot, compile OCaml and C, link, run, and cmp the result.
+Claude asked whether to start with t-ix on tiny-kernel, since it is fast and needs nothing external.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:58
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude planned to commit the work, noting the top-level `Makefile` also held another session's uncommitted edits.
+Claude decided to commit only its own hunks, building the commit from HEAD's version of that `Makefile` plus its own lines.
+Before committing, Claude said it would first compare the two versions to see what else differed.
+Claude's reply stopped there, with no commit made and no verification shown yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:59
+
+**Yoann:**
+
+> can we close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can be closed because all of its own work is committed.
+Claude said the tix and mix entries in the top Makefile went in with commit 2bf0a0f0.
+Claude said the tiny/Makefile and one tiny/README.md line landed in commit 8d30d4f8.
+Claude reported that nothing of its own is left uncommitted or still running.
+Claude noted that the remaining modified files in the tree belong to other sessions.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 16:58
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude finished stage 2 of the untagged-integer pass, leaving it uncommitted in the shared tree with benchmarks measured.
+Claude proposed committing it only after regenerating tiny/.depend on a fresh worktree of HEAD.
+Claude traced the stale tiny/.depend to another session's split, commits 21da776f and 89ff0724.
+Claude planned the stage 2 commit to include the untagged test and the mini-ld arm64 refusal.
+Claude named stage 3 as next, aimed at six loop-invariant reloads among the remaining 25 instructions.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:59
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude timed t-ix `self-quick` at 167 seconds on one core, too slow for the gate.
+Claude isolated the cost by timing `ping` alone at 16.6 seconds, and `lib/Stdlib.o` matched the host byte for byte.
+Claude confirmed the `ping.o` job passes on its own in 24 seconds, a candidate for the small smoke card.
+Claude read `kernels/9pi`'s `self-quick` for the m-ix side, which runs real QEMU from an included file.
+Claude also fixed a plan-file edit that had landed mid-line in step 4 after the file changed on disk.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:02
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude confirmed every hunk in the shared files was its own, then set up a fresh worktree at HEAD.
+Claude regenerated every `.depend` and found tiny's lost the TinyBrowser, TinyOffice, TinyKernel and TinyTroff lines instead of gaining the split's.
+Claude traced tiny's INCLUDES and split units, then got two identical clean builds, so the `.depend` concern stayed open.
+Claude ran `make test-lite` on the worktree: 119 jobs, 0 failures, 1 skipped, which gated the commit.
+Claude then committed with a pathspec commit limited to its own files.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 17:53
+
+**Yoann:**
+
+> and 9fps at the beginning when the camera turn around the car
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:20
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found nothing to commit, since stage 2 is already in as 683bcee7 and 37a6fa07 sits above it.
+Claude proposed starting stage 3 with float compares that branch directly, before any other change.
+Claude then proposed adding more registers on arm as the second step of stage 3.
+Claude proposed common subexpressions and loop invariants as the final stage 3 steps.
+Claude asked whether to begin stage 3 in that exact order.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:27
+
+**Yoann:**
+
+> let's do it. What is the current progress on the different games and apps and music?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:27
+
+**Yoann:**
+
+> wow that's a good reduction, what did you do?
+
+**Claude (summary):**
+
+Claude cut the sound's cost per frame from 3.2M to 1.8M instructions, keeping identical sample bytes.
+Claude identified monster sounds in doom and quake as the likely main cost, rendered whole each tic.
+Claude proposed mixing recorded sounds directly, applying volume and pan during mixing instead of rendering copies.
+Claude expected the same bytes, since the arithmetic is unchanged, so only the speed should move.
+Claude asked whether to commit this step after `make test-lite`, then do the monster sounds.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:19
+
+**Yoann:**
+
+> let's commit and do the small card for a smoke test
+
+**Claude (summary):**
+
+Claude wrote the m-ix smoke test as `kernels/9pi/tests/smoke.sh`, running ix under QEMU in mini-9pi.
+Claude's script builds ix with mini-mk, a mini-9pi Pi 2 kernel, and a 64 MB card.
+On the card, it compiles, links and runs `hello.c` and `Hello.ml`, plus `Pervasives.ml` and `pow.c`, comparing outputs byte for byte with the host.
+It passed from nothing in 83 s, and `make test` passed 121 jobs with 0 failures in 124 s.
+Claude wired it into `tests/lite.sh` with skip lines, left the three files uncommitted, and asked before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 19:04
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 42735af8 with the kernel smoke test, `tests/lite.sh`, and the plan, unpushed.
+Claude listed Step 5 as open: sorting the old serial make test-long list into the gate or test-all.
+Claude tied that same step to removing the test-quick target as well.
+Claude framed Step 5 as not yet run or changed, so the sort is still undecided.
+Claude's other remaining items were the lite.sh reminder, testing committed content, and a nightly full make self.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 19:03
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude measured doom's sound cost on arm using the fight session, firing from tic 50 near monsters.
+Claude rebuilt doom for arm and counted tics 150 to 170, with and without sound.
+Claude confirmed doom's fight session and Quake give identical bytes, then started doom's arm count with play_at.
+Claude ran test-lite on the monster-sound step: 135 jobs, 0 failures, in 148 seconds.
+Claude committed the change as 581e1d8d after wrapping long lines and resetting six stale index entries to HEAD.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 19:24
+
+**Yoann:**
+
+> yes I think a lot of the fps drop is due to monsters animation and AI and shoots from monsters
+
+------------------------------------------------------------------------
+
+## 2026-10-26 19:31
+
+**Yoann:**
+
+> that's why I asked for an xxx=false flag that turns off everything except graphics, as it was a week ago where there was no ennemy and no sound and no AI and no sprites
+
+**Claude (summary):**
+
+Claude asked whether to commit the uncommitted monster-sound step, covering `Audio.play_at`, the shot-mixing loop, and the `lib_audio` line wrapping.
+Claude noted the same uncommitted set also includes the `graphics=only` flag and `things=off` documented in doom's usage.
+Claude reported that the monster-sound step cut doom's sound from 3.5M to 2.9M instructions per frame, about 17%.
+Claude confirmed `make test-lite` passed on all of it, 135 jobs with 0 failures in 145 seconds.
+Claude had also added `graphics=only` to doom and quake, dropping doom's fight from 17.0M to 9.8M instructions per frame.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 19:06
+
+**Yoann:**
+
+> let's do step 5
+
+**Claude (summary):**
+
+Claude moved the serial test-long items into the gate or test-all and removed test-quick.
+Claude gave net.sh the same random-port fix as tls.sh, then added 14 gate jobs: five for t-ix, nine for m-ix.
+Claude removed test-quick from the Makefile, the README, and the -quick option in tests/all.sh.
+Claude confirmed make test passes with 135 jobs and 0 failures in 117 seconds, and test-long passes in 135 seconds.
+Claude wrote docs/testing.md on which test to run when, then linked it from the README and Makefile.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:22
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended profiling doom's monsters next, since they are the largest cost left in a fight after drawing.
+Claude estimated the monsters at about 4.3M of the 17M-per-frame total, so they are worth measuring first.
+Claude proposed splitting that monster cost between the AI, the animation, and the sprites to see which dominates.
+Claude noted that the result would show which of the three to optimize first.
+Claude committed 834d0920 with the monster sound, faster shot loop, and graphics-only flags after test-lite passed.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:31
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended a guard over copying the tree, to skip the unmeasured few-minute rebuild.
+The guard lists edited-but-uncommitted files in the touched directories before each commit, catching commits that depend on unstaged changes.
+Claude also proposed a nightly `make self` on the user's machine, which needs external files and takes three hours.
+Yoann chose the guard for step 6 and GitHub cron for `make self`, wanting failure notifications.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 18:28
+
+**Yoann:**
+
+> (rebirth for instance is very slow; I think xv6 was really slower with mini-ml than ocaml-light ocamlopt)
+
+**Claude (summary):**
+
+Claude measured mini-xv6 at 1.33× ocaml-light's time and mini-rebirth at 5.8 billion instructions per second of sound.
+Claude recommended reordering stage 3 so the float-compare change is measured and finished first.
+Claude proposed moving lib_audio's sample arrays to Float.Array for mini-rebirth, since boxed-float stores drive most of its cost.
+Claude suggested profiling mini-xv6's boot next, suspecting 75 MB heap zeroing and stdlib init at startup.
+Claude asked for confirmation of that order before starting the stage 3 work.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:55
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed five next steps, starting with finishing the float-compare change: branching directly on float comparisons before `if`. Claude planned to rebase that change onto HEAD from the older 37a6fa07 copy, then measure doom, quake, virtua and mini-ml. Claude would then run `make test` and investigate the "FAIL dune build" in the old log. The other steps were mini-rebirth's `float array` samples moved to `Float.Array`, mini-xv6 boot profiling, more arm registers in Alloc, and logging the `-boxed-floats` hang. Nothing gets committed until Yoann asks.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:50
+
+**Yoann:**
+
+> let's profile doom's monsters
+
+**Claude (summary):**
+
+Claude profiled the arm Doom fight over frames 150 to 170 and found monsters add about 4.3M instructions a frame.
+Claude traced that cost to drawing sprites in `render/Sprites.ml`, not to monster AI.
+Claude proposed three fixes: reusing the clip arrays (about −0.6M), a plain recursive wall-segment scan (about −0.5M), and `Float.compare` in the sort (−0.15M).
+Claude estimated those together save only about 1.2M a frame, taking a fight frame from roughly 17M to 16M instructions.
+Claude noted that drawing (9.9M) and sound (2.9M) remain the bigger costs, then asked whether to make the fixes.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:06
+
+**Yoann:**
+
+> it's not a huge win
+
+**Claude (summary):**
+
+Claude agreed the monsters are only about 7% of a fight frame, so removing them is a small win.
+Claude pointed to the renderer instead, which costs 9.9M per frame even with `graphics=only`.
+Claude's profile put `store_wall_range` at 23% of a frame, with `map_plane`, `draw_column`, and `norm` following.
+Claude recommended a per-instruction profile of `store_wall_range` and `norm` to check for float boxing in their loops.
+Claude asked for the Pi 2 fps number with monsters to decide whether the renderer or the monsters come first.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:08
+
+**Yoann:**
+
+> but do we do the classic doom opti and use BSP to elimiate things?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:53
+
+**Yoann:**
+
+> let's do the guard instead; seems fast and simple. for make self let's use github in a cron, but ideally we want failures to be notified in some way to us
+
+**Claude (summary):**
+
+Claude checked whether `make self` could run on GitHub within the six-hour job limit.
+Claude chose the guard and wrote a pre-commit hook that lists files left out of a commit in touched directories.
+Claude tested it: the first run changed nothing, and a commit of `kernels/ocaml-light.sh` alone triggered the expected warning.
+Claude installed the hook and verified it end to end in a throwaway repo using a real `git commit -- path`.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:17
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:10
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude recommended moving `plan_tests.md` into `docs/plans/done/` now, since all seven of its steps are complete.
+Claude proposed that the plan's status note list what is still left, so the open items stay visible after the move.
+The remaining items were a `make self-quick` reminder in `make test` and speedups for three slow jobs.
+Claude advised doing the reminder and the move now, and leaving the speedups until the 2-minute budget is exceeded.
+Claude also committed steps 6 and 7 as 73105e5c after `make test` passed, and listed post-push steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:17
+
+**Yoann:**
+
+> let's move to done/
+
+**Claude (summary):**
+
+Claude moved the plan into `done/` and added its status paragraph.
+Claude updated the six references to the plan's old path.
+Claude checked that every line of the edited plan stays within 80 columns.
+Claude then said it was committing the change.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:18
+
+**Yoann:**
+
+> done, I ran self.yml from GHA
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:18
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude said Yoann can close the session, because the run keeps going on GitHub's machines without it.
+Claude explained that only its background watcher stops, and that watcher isn't needed for the run to finish.
+Claude said a failed job opens an issue called "make self failed" with a run link, and GitHub emails about it.
+Claude said a fully passing run shows green in the Actions tab, with each job's time and whether mix fits in 6 hours.
+Claude suggested checking later with `gh run list --workflow self.yml` from a terminal, or by opening the Actions tab.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:08
+
+**Yoann:**
+
+> what does culling mean?
+
+**Claude (summary):**
+
+Claude explained culling as skipping work on invisible things before any drawing starts.
+Claude listed frustum, occlusion, back-face, and sector culling, citing doom's check_box, solidsegs, and virtua's Render.cull.
+Claude tied the REJECT table to culling, as a precomputed answer on whether sectors see each other.
+Claude noted culling never speeds up drawing visible things, which is why doom's monster fight stays slow.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:19
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended optimizing doom's renderer, `store_wall_range` and `norm`, as the next step.
+Claude proposed profiling both per instruction, since they take about 30% of every doom frame.
+The plan was flat arrays and direct loops with no boxed floats, checked against `frames.sh`'s recorded frames.
+Claude flagged `tanh` in mini-ml's runtime as about 40% of the remaining sound cost, to hand to the other session.
+The rest, virtua's painter's algorithm, fixed point, and the small leftovers, was listed as lower priority.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:17
+
+**Yoann:**
+
+> I mean in the ix repo
+
+**Claude (summary):**
+
+Claude committed the ix changes as 0f3ab1d4 after `make test` passed with 135 jobs and no failures.
+That commit deletes kernels/ocaml-light-patches/, kernels/ocaml-light.sh, kernels/.codemapconfig and docs/plans/bugs/ocaml_light.md.
+Claude left the modified docs/plans/bugs/ix.md out of the commit, since it looked like another session's edit.
+The ocaml-light patches were already committed earlier as f89595a9, because the ix script clones only committed state.
+Claude offered to let you review that unpushed ocaml-light commit before keeping it.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:20
+
+**Yoann:**
+
+> ok let's do 1, and the tanh opti
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:21
+
+**Yoann:**
+
+> what were the dd.log and dt.log ?
+
+**Claude (summary):**
+
+Claude explained that dd.log and dt.log were stray depend-debugging logs accidentally committed in 88b5dda9.
+Claude noted that the working tree already deletes both files, and that nothing in the build references them.
+Claude flagged a third leftover, apps/dd.log, which is still tracked in HEAD and present on disk.
+Claude described apps/dd.log as a one-line depend command for the apps/ Colors and Menu modules, the same kind of artifact.
+Claude suggested deleting apps/dd.log along with the other two, since it is the same accidental leftover.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:23
+
+**Yoann:**
+
+> ok delete them fully then
+
+**Claude (summary):**
+
+Claude deleted `dd.log`, `dt.log` and `apps/dd.log` from the working tree.
+Claude left the deletions uncommitted, so nothing has been recorded yet.
+Claude suggested committing only those three paths with `git commit -- dd.log dt.log apps/dd.log`.
+That form commits just the named paths, so other staged changes stay out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:22
+
+**Yoann:**
+
+> I remember doom had also some precomputed table for square root; can this help too? or it's not the bottleneck and would be a too specialized opti?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:23
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the deletion of the three log files as commit 34c9ce73.
+Claude used a pathspec so the commit contained only those three deleted files.
+Claude skipped running `make test` because no code had changed.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:24
+
+**Yoann:**
+
+> I remember doom had also some precomputed table for square root; can this help too? or it's not the bottleneck and would be a too specialized opti?
+
+------------------------------------------------------------------------
+
+## 2026-10-26 20:56
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude measured the float-compare branch change on arm, trimming mini-doom's frame by about 1.2 percent.
+Claude found that rebirth's cost is mostly in lib_audio code copied from Yoann's playground, not rebirth itself.
+Claude recommended rewriting Diode_ladder.process to reuse Float.Array buffers across samples, keeping the arithmetic order unchanged.
+Claude proposed turning rebirth's spectrum view into one pass over the bins instead of a scan per bar.
+Claude asked whether to commit stage 3a first, then start the rebirth optimizations.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:30
+
+**Yoann:**
+
+> let's commit. and switch to rebirth opti (Float.Array and so on)
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:29
+
+**Yoann:**
+
+> I got to sleep and will review tomorrow morning; hopefully we optimized a bit the games and mini-ml
+
+**Claude (summary):**
+
+Claude recommended committing the faster libc `exp` change and the plan Status note together, pending Yoann's approval.
+Claude rewrote `lib_core/libc/port/exp.c` to compute `floor` and `ldexp` inline in the common case.
+Claude checked that the new `exp` gives identical bits on 20 million arguments and unchanged countdown bytes.
+Claude measured `exp` at 130 instructions a call on arm, down from 202, cutting virtua's sound to about 1.6M.
+Claude backed out the doom `store_wall_range` change, which ran slower, and noted `make test-lite` passing with 135 jobs.
+
+------------------------------------------------------------------------
+
+## 2026-10-26 21:31
+
+**Yoann:**
+
+> I'll be back tomorrow morning; hopefully by then the perf of rebirth improved significantly
+
+**Claude (summary):**
+
+Claude recommended leaving the rebirth optimizations uncommitted, with a report for Yoann's return.
+Claude moved rebirth and lib_audio onto Float.Array, cutting its arm sound cost from 5.54 to 1.94 billion instructions per second.
+Claude also made the spectrum FFT flat-array, rewrote Basics operators as externals, and added mini-ml fixes for multiply and unboxed negate/abs.
+Claude verified make test passed with 135 jobs and zero failures, and that rebirth's frames and sound match HEAD's arm build.
+Claude drafted a commit message at the scratchpad path and left committing for Yoann to approve.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 05:44
+
+**Yoann:**
+
+> let's commit!
+
+**Claude (summary):**
+
+Claude committed the faster `exp` change in `lib_core/libc/port/exp.c` as ffe3c8b9, with the night's note in `plan_virtuaracing.md`.
+Claude committed by pathspec after `make test-lite` passed (135 jobs, 0 failures).
+Claude left `docs/plans/plan_ml_speed.md` out of the commit, since it holds uncommitted mini-ml session work.
+The card image predates this commit, so the Pi 2 does not yet have the faster `exp`.
+Claude offered to rebuild the card whenever Yoann wants to test it on hardware.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 05:48
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended fixing the stale-object bug in `mkfiles/mkprog` first, so objects depend on the compiler.
+The bug broke the card build last night (`ml_curry9_0`) and had been skewing the compiler measurements.
+Claude proposed rebuilding the card afterward and checking whether virtua's race sound got closer to 6 fps.
+Next, Claude would profile a virtua race frame (painter's algorithm, transforms, fill) to choose between cheaper fixes and the GPU.
+Smaller items were also listed: re-recording stale card listings, adding REJECT to `check_sight`, and parked doom sprite fixes.

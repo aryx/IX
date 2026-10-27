@@ -32,11 +32,15 @@ let width = 640
 let height = 480
 let screen_at = 0xf00000
 (* the connection to the drawing, as tiny-kernel makes it: the font at
- * 0x1000, the images' memory after the screen *)
+ * 0x1000, the images' memory its 2 MB below the screen and what is
+ * after it (TinyKernelDevices' font; a page of www's may have 1 MB of
+ * pictures: old: only after the screen, 720 KB, and Mars' article
+ * ended www) *)
 let conn = lazy (
   Bytes.blit_string TinyFont.bits 0 TinyMemory.mem 0x1000
     (String.length TinyFont.bits);
-  TinyKernelGraphics.arena 0xf4b000 0xb4000;
+  TinyKernelGraphics.arena 0xd00000 0x200000;
+  TinyKernelGraphics.free 0xf4b000 0xb4000;
   let screen =
     { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 width height;
       at = screen_at; repl = false } in
@@ -297,24 +301,34 @@ let u_read (fd : int) (n : int) : string =
           String.sub m 0 n)
     | _ -> ""
 
+(* the drawing's messages; one refused is said, and the write is -1, as
+ * tiny-kernel's write of /dev/draw does (old: the program ended) *)
+let draw s =
+  match TinyKernelGraphics.messages (Lazy.force conn) s with
+  | () -> dirty := true; 0
+  | exception TinyKernelGraphics.Graphics why ->
+      prerr_string ("draw: " ^ why ^ "\n"); dirty := true; -1
+
 let u_write (fd : int) (s : string) : int =
-  if fd = 3 then (TinyKernelGraphics.messages (Lazy.force conn) s; dirty := true)
-  else if fd = 1 && s = "\005" then enq := true
-  else if fd = 1 then (print_string s; flush stdout)
-  else if fd = 2 then (prerr_string s; flush stderr)
-  else (match Hashtbl.find_opt files fd with
-        | Some (Writing (_, b)) -> Buffer.add_string b s
-        | Some (Speaker ahead) -> speak ahead s
-        | Some (Asking b) ->
-            Buffer.add_string b s;
-            let asked = Buffer.contents b in
-            (match String.index_opt asked '\n' with
-             | Some i ->
-                 Hashtbl.replace files fd
-                   (Answer (ref (answer (String.sub asked 0 i))))
-             | None -> ())
-        | _ -> ());
-  0
+  if fd = 3 then draw s
+  else begin
+    if fd = 1 && s = "\005" then enq := true
+    else if fd = 1 then (print_string s; flush stdout)
+    else if fd = 2 then (prerr_string s; flush stderr)
+    else (match Hashtbl.find_opt files fd with
+          | Some (Writing (_, b)) -> Buffer.add_string b s
+          | Some (Speaker ahead) -> speak ahead s
+          | Some (Asking b) ->
+              Buffer.add_string b s;
+              let asked = Buffer.contents b in
+              (match String.index_opt asked '\n' with
+               | Some i ->
+                   Hashtbl.replace files fd
+                     (Answer (ref (answer (String.sub asked 0 i))))
+               | None -> ())
+          | _ -> ());
+    0
+  end
 
 let u_open (name : string) (flags : int) : int =
   let fd = !next in

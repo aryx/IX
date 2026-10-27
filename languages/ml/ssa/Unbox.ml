@@ -126,14 +126,18 @@ let func (fn : func) : func =
     let sunk = Hashtbl.create 16 in
     let starts = Array.make (Array.length fn.blocks) [] in
     let ends = Array.make (Array.length fn.blocks) [] in
-    Hashtbl.iter (fun x sites ->
+    (* the values in their order, not the table's (the hash function of
+     * the stdlib that built mini-ml: a block's boxes in another order,
+     * the fixed point's programs not the same, bugs/ix.md) *)
+    List.iter (fun ((x, sites) : int * (int * bool) list) ->
       let blocks = List.sort_uniq compare (List.map fst sites) in
       match blocks, Hashtbl.find_opt home x, Hashtbl.find_opt boxes x with
       | [ b ], Some d, Some bx when b <> d && b <> 0 && not (again b d) ->
           Hashtbl.replace sunk x ();
           if List.exists snd sites then starts.(b) <- bx :: starts.(b)
           else ends.(b) <- bx :: ends.(b)
-      | _ -> ()) reads;
+      | _ -> ())
+      (List.sort compare (Hashtbl.fold (fun x sites acc -> (x, sites) :: acc) reads []));
     (* each block rewritten: a double's box after it, a word unboxed
      * before the Dprim that reads it *)
     Array.iter (fun (b : block) ->

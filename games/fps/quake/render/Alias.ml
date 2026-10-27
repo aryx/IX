@@ -229,8 +229,10 @@ type screen_vert = {
 
 (* one triangle, its pixels nearer than the z-buffer's drawn: rows
  * top to bottom, the left and right edges' values interpolated, then
- * stepped across (D_PolysetDraw's work, without its edge tables) *)
-let triangle (v : View.t) (skin : string) (sw : int) (a : screen_vert)
+ * stepped across (D_PolysetDraw's work, without its edge tables); the
+ * first way, models=simple's: each row's values by closures along its
+ * edges, 1,400 instructions a triangle where most are a few pixels *)
+let triangle_simple (v : View.t) (skin : string) (sw : int) (a : screen_vert)
     (b : screen_vert) (c : screen_vert) : unit =
   let sorted =
     List.sort
@@ -308,6 +310,94 @@ let triangle (v : View.t) (skin : string) (sw : int) (a : screen_vert)
       done
   | _ -> ()
 
+(* OPTIMIZATION (gradients): the same pixels, as id's
+ * D_PolysetCalcGradients: s, t, light and 1/z are a plane over the
+ * triangle, so their steps along x and y are computed once, and a
+ * row's start is p0's value plus the steps to it; only the edges' x
+ * are found a row at a time. No list sorted, no closure, no tuple:
+ * the fight's frame (games/tests/frames.expected's, arm instructions
+ * by mini-5i) 29.0M to 21.8M, the same pixels (the vertices' nine
+ * products, in draw_pitched, 34.7M to 29.0M before) *)
+let gradients = ref true
+
+let triangle (v : View.t) (skin : string) (sw : int) (a : screen_vert)
+    (b : screen_vert) (c : screen_vert) : unit =
+  (* the three by their row, top first *)
+  let a, b = if b.sv < a.sv then (b, a) else (a, b) in
+  let b, c = if c.sv < b.sv then (c, b) else (b, c) in
+  let p0, p1 = if b.sv < a.sv then (b, a) else (a, b) in
+  let p2 = c in
+  let du1 = p1.su -. p0.su and dv1 = p1.sv -. p0.sv
+  and du2 = p2.su -. p0.su and dv2 = p2.sv -. p0.sv in
+  let d = (du1 *. dv2) -. (du2 *. dv1) in
+  if p2.sv > p0.sv && d <> 0. then begin
+    let screen = v.screen
+    and zbuf = v.zbuffer
+    and colormap = v.colormap
+    and width = v.width in
+    (* a value's steps along x and along y *)
+    let gx1 = dv2 /. d and gx2 = dv1 /. d in
+    let gy1 = du2 /. d and gy2 = du1 /. d in
+    let zx = ((p1.zi -. p0.zi) *. gx1) -. ((p2.zi -. p0.zi) *. gx2)
+    and zy = ((p2.zi -. p0.zi) *. gy2) -. ((p1.zi -. p0.zi) *. gy1) in
+    let sx = ((p1.ss -. p0.ss) *. gx1) -. ((p2.ss -. p0.ss) *. gx2)
+    and sy = ((p2.ss -. p0.ss) *. gy2) -. ((p1.ss -. p0.ss) *. gy1) in
+    let tx = ((p1.st -. p0.st) *. gx1) -. ((p2.st -. p0.st) *. gx2)
+    and ty = ((p2.st -. p0.st) *. gy2) -. ((p1.st -. p0.st) *. gy1) in
+    let lx = ((p1.light -. p0.light) *. gx1) -. ((p2.light -. p0.light) *. gx2)
+    and ly = ((p2.light -. p0.light) *. gy2) -. ((p1.light -. p0.light) *. gy1) in
+    (* the edges' x along y: the long one p0 p2, the short ones p0 p1
+     * and p1 p2 *)
+    let k02 = du2 /. dv2 in
+    let k01 = if dv1 > 0. then du1 /. dv1 else 0. in
+    let k12 =
+      if p2.sv > p1.sv then (p2.su -. p1.su) /. (p2.sv -. p1.sv) else 0.
+    in
+    let sstep = int_of_float (sx *. 65536.)
+    and tstep = int_of_float (tx *. 65536.)
+    and listep = int_of_float (lx *. 65536.)
+    and zistep = int_of_float zx in
+    let y0 = max 0 (int_of_float (Float.ceil p0.sv))
+    and y1 = min (v.height - 1) (int_of_float (Float.ceil p2.sv) - 1) in
+    for y = y0 to y1 do
+      let fy = float y in
+      let xa = p0.su +. ((fy -. p0.sv) *. k02) in
+      let xb =
+        if fy < p1.sv then p0.su +. ((fy -. p0.sv) *. k01)
+        else p1.su +. ((fy -. p1.sv) *. k12)
+      in
+      let l = if xa <= xb then xa else xb
+      and r = if xa <= xb then xb else xa in
+      let x0 = max 0 (int_of_float (Float.ceil l))
+      and x1 = min (width - 1) (int_of_float (Float.ceil r) - 1) in
+      if x1 >= x0 then begin
+        let ux = float x0 -. p0.su and uy = fy -. p0.sv in
+        let zi = ref (int_of_float (p0.zi +. (ux *. zx) +. (uy *. zy)))
+        and s = ref (int_of_float ((p0.ss +. (ux *. sx) +. (uy *. sy)) *. 65536.))
+        and t = ref (int_of_float ((p0.st +. (ux *. tx) +. (uy *. ty)) *. 65536.))
+        and li =
+          ref (int_of_float ((p0.light +. (ux *. lx) +. (uy *. ly)) *. 65536.))
+        in
+        let o = y * width in
+        for x = x0 to x1 do
+          if !zi >= zbuf.(o + x) then begin
+            zbuf.(o + x) <- !zi;
+            let texel =
+              Char.code
+                (String.unsafe_get skin (((!t asr 16) * sw) + (!s asr 16)))
+            in
+            Bytes.unsafe_set screen (o + x)
+              (String.unsafe_get colormap (((!li asr 16) land 0xFF00) + texel))
+          end;
+          zi := !zi + zistep;
+          s := !s + sstep;
+          t := !t + tstep;
+          li := !li + listep
+        done
+      end
+    done
+  end
+
 let rec draw (v : View.t) (m : t) (origin : vec) (yaw : float) (frame : int)
     (skin : int) (light : int) : unit =
   draw_pitched v m origin 0. yaw frame skin light
@@ -329,24 +419,35 @@ and draw_pitched (v : View.t) (m : t) (origin : vec) (pitch : float)
   let lv = { x = -1.; y = 0.; z = 0. } in
   let plv = { x = dot lv forward; y = -.dot lv right; z = dot lv up } in
   let n = Array.length m.onseam in
+  (* the model's axes and origin in the eye's, once: a vertex is then
+   * nine products away *)
+  let f = View.transform v forward
+  and r = View.transform v right
+  and u = View.transform v up
+  and o = View.transform v (sub origin v.origin) in
+  (* the skin's texels kept inside it *)
+  let sw = float m.skinwidth -. 1. and sh = float m.skinheight -. 1. in
+  let clamp_s (s : float) : float = Float.max 0. (Float.min sw s) in
+  let clamp_t (t : float) : float = Float.max 0. (Float.min sh t) in
   let verts =
     Array.init n (fun (i : int) ->
         let c (k : int) : float =
           float (Char.code (Bytes.get fr.verts ((4 * i) + k)))
         in
-        let p =
+        let px = (c 0 *. m.scale.x) +. m.scale_origin.x
+        and py = (c 1 *. m.scale.y) +. m.scale_origin.y
+        and pz = (c 2 *. m.scale.z) +. m.scale_origin.z in
+        (* the model's x forward, y left, z up
+         * old: add origin (add (scale p.x forward) (add (scale (-.p.y)
+         * right) (scale p.z up))), less v.origin, then View.transform:
+         * six vectors made a vertex *)
+        let t =
           {
-            x = (c 0 *. m.scale.x) +. m.scale_origin.x;
-            y = (c 1 *. m.scale.y) +. m.scale_origin.y;
-            z = (c 2 *. m.scale.z) +. m.scale_origin.z;
+            x = o.x +. (px *. f.x) -. (py *. r.x) +. (pz *. u.x);
+            y = o.y +. (px *. f.y) -. (py *. r.y) +. (pz *. u.y);
+            z = o.z +. (px *. f.z) -. (py *. r.z) +. (pz *. u.z);
           }
         in
-        (* the model's x forward, y left, z up *)
-        let w =
-          add origin
-            (add (scale p.x forward) (add (scale (-.p.y) right) (scale p.z up)))
-        in
-        let t = View.transform v (sub w v.origin) in
         let z = Float.max t.z 0.01 in
         let lightcos =
           (fr.normals.(3 * i) *. plv.x)
@@ -362,10 +463,21 @@ and draw_pitched (v : View.t) (m : t) (origin : vec) (pitch : float)
             su = v.xcenter +. (v.xscale *. t.x /. z);
             sv = v.ycenter -. (v.yscale *. t.y /. z);
             zi = 16777216. /. z;
-            ss = float m.s.(i);
-            st = float m.t.(i);
+            ss = clamp_s (float m.s.(i));
+            st = clamp_t (float m.t.(i));
             light = l;
           } ))
+  in
+  (* a vertex on the seam, in a triangle facing back: the skin's back
+   * half's texel *)
+  let seams =
+    Array.mapi
+      (fun (i : int) ((z, p) : float * screen_vert) ->
+        if m.onseam.(i) then
+          ( z,
+            { p with ss = clamp_s (float (m.s.(i) + (m.skinwidth / 2))) } )
+        else (z, p))
+      verts
   in
   for k = 0 to Array.length m.facesfront - 1 do
     let ia = m.tris.(3 * k)
@@ -380,23 +492,11 @@ and draw_pitched (v : View.t) (m : t) (origin : vec) (pitch : float)
         ((a.sv -. b.sv) *. (a.su -. c.su)) -. ((a.su -. b.su) *. (a.sv -. c.sv))
       in
       if denom < 0. then begin
-        (* the back half of the skin for a back triangle's seam vertices *)
-        let seam (i : int) (p : screen_vert) : screen_vert =
-          if (not m.facesfront.(k)) && m.onseam.(i) then
-            { p with ss = p.ss +. float (m.skinwidth / 2) }
-          else p
+        let corner (i : int) (p : screen_vert) : screen_vert =
+          if (not m.facesfront.(k)) && m.onseam.(i) then snd seams.(i) else p
         in
-        let clamp (p : screen_vert) : screen_vert =
-          {
-            p with
-            ss = Float.max 0. (Float.min (float m.skinwidth -. 1.) p.ss);
-            st = Float.max 0. (Float.min (float m.skinheight -. 1.) p.st);
-          }
-        in
-        triangle v skin m.skinwidth
-          (clamp (seam ia a))
-          (clamp (seam ib b))
-          (clamp (seam ic c))
+        (if !gradients then triangle else triangle_simple)
+          v skin m.skinwidth (corner ia a) (corner ib b) (corner ic c)
       end
     end
   done

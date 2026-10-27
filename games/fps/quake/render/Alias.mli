@@ -70,6 +70,11 @@ val frames_named : t -> string -> int list
  * (R_LightPoint) *)
 val light_point : Model.t -> View.t -> Model.vec -> int
 
+(* the triangles' values by their steps along x and y, computed once a
+ * triangle (id's D_PolysetCalcGradients); false: along each row's
+ * edges, the first way (mini-quake's models=simple) *)
+val gradients : bool ref
+
 (* [draw v m model origin yaw frame skin light]: the model's triangles
  * into v.screen, against v.zbuffer *)
 val draw : View.t -> t -> Model.vec -> float -> int -> int -> int -> unit

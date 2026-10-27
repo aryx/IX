@@ -20,7 +20,7 @@
  *   usage: mini-quake [bsp=file.bsp] [scale=n]
  *            [x=X y=Y z=Z angle=A pitch=P] [lightmaps] [things=off]
  *            [gamma=g] [nomonsters] [ai=ways] [weapons=all] [sound=off|3d]
- *            [music=off|on] [graphics=only] [entities]
+ *            [music=off|on] [graphics=only] [entities] [models=simple]
  *     bsp=   the level (default: /lib/quake/e0m1.bsp, else
  *            games/fps/quake/data/e0m1.bsp); the palette and the
  *            colormap beside it
@@ -45,6 +45,8 @@
  *            renderer alone (its frames a second, the monsters' cost
  *            and the sound's apart)
  *     entities   the level's entities listed, and the end
+ *     models=simple  the models' triangles by the first way, not by
+ *            their gradients (Alias.gradients)
  *     precache   the models, sounds and music the game reads, listed
  *
  * A frame (the playground's view): Play's move for the time since the
@@ -313,6 +315,7 @@ let () =
                palette
            in
            if flag "lightmaps" <> None then Surfcache.grey := true;
+           if flag "models" = Some "simple" then Alias.gradients := false;
            let place (play : Play.t) : unit =
              match
                ( Option.bind (flag "x") float_of_string_opt,

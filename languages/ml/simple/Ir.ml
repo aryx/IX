@@ -67,6 +67,9 @@ type op =
   | Neg | Not | IsInt | Tag | Size
 [@@deriving show]
 
+(* a float's -x and abs x (Float1) *)
+type float1 = Fneg | Fabs [@@deriving show]
+
 type target = Direct of string | Code of int
 [@@deriving show]
 
@@ -90,11 +93,12 @@ type t =
   | StrLen                            (* a string by its length *)
   (* two floats by a new one, their sum, difference, product or
    * quotient; an integer by its float; a float by its integer: the
-   * processor's instructions (Lower.floats_in_place), by the name of
-   * the runtime's function that does the same (caml_addfloat...: called
-   * otherwise, and when there is no room for the new float) *)
-  | Float2 of string                  (* x, y by x op y *)
-  | Float1 of string                  (* x by -x, or by its absolute value *)
+   * processor's instructions (Lower.floats_in_place); the runtime's
+   * function that does the same (Lower.runtime_function: caml_addfloat...)
+   * called otherwise, and when there is no room for the new float.
+   * old: Float2 "caml_addfloat"..., the runtime's name for the operation *)
+  | Float2 of op                      (* x, y by x op y: Add, Sub, Mul, Div *)
+  | Float1 of float1                  (* x by -x, or by its absolute value *)
   | FloatOfInt
   | IntOfFloat
   | FloatCmp of rel                   (* x, y by x rel y, two floats (Lower.floats) *)
@@ -111,10 +115,13 @@ type t =
    * doubles (exp), which ssa's Unbox calls; its arity *)
   | FloatCall of string * string * int
   (* an int32's operation by the processor's, a block taken from the
-   * heap for its result (Lower.ints_in_place): the runtime's function
-   * that does the same (int32_add...: called in simple's code, and
-   * when there is no room), its arity; int32_to_int's an int, no block *)
-  | Int32 of string * int
+   * heap for its result (Lower.ints_in_place); the runtime's function
+   * that does the same (int32_add...) called in simple's code, and when
+   * there is no room. Int32ToInt's an int, no block.
+   * old: Int32 ("int32_add", 2)..., the runtime's name and the arity *)
+  | Int32 of op                       (* Add Sub Mul And Or Xor Lsl Asr Lsr Neg *)
+  | Int32OfInt
+  | Int32ToInt
   (* a string's (or bytes') little-endian integer of n bytes (2 or 4) at
    * an index, checked: the 16 bits an int, the 32 an int32's block;
    * read, or written (the value below the index). Ir's own, a load or

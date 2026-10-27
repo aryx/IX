@@ -12,6 +12,35 @@ let poly_function = function
   | Eq -> "ml_equal" | Ne -> "ml_notequal" | Lt -> "ml_lessthan" | Le -> "ml_lessequal"
   | Gt -> "ml_greaterthan" | Ge -> "ml_greaterequal"
 
+(* the runtime's function that does what a primitive of Ir does, the
+ * one simple's code calls, and ssa's when not in place or no room *)
+let runtime_function (p : Ir.t) =
+  match p with
+  | ByteGet _ -> "ml_string_get"
+  | ByteSet _ -> "ml_string_set"
+  | StrLen -> "ml_string_length"
+  | Float2 Add -> "caml_addfloat" | Float2 Sub -> "caml_subfloat"
+  | Float2 Mul -> "caml_mulfloat" | Float2 _ -> "caml_divfloat"
+  | Float1 Fneg -> "caml_negfloat" | Float1 Fabs -> "caml_absfloat"
+  | FloatOfInt -> "caml_floatofint"
+  | IntOfFloat -> "caml_intoffloat"
+  | FloatCmp r -> poly_function r
+  | FloatIndex c -> if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get"
+  | FloatSetIndex c ->
+      if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set"
+  | FloatRound c -> if c then "ceil_float" else "floor_float"
+  | FloatCall (f, _, _) -> f
+  | Int32 o ->
+      "int32_" ^ (match o with
+        | Add -> "add" | Sub -> "sub" | Mul -> "mul" | And -> "and" | Or -> "or"
+        | Xor -> "xor" | Lsl -> "shift_left" | Asr -> "shift_right"
+        | Lsr -> "shift_right_unsigned" | _ -> "neg")
+  | Int32OfInt -> "int32_of_int"
+  | Int32ToInt -> "int32_to_int"
+  | BytesGet n -> Printf.sprintf "caml_bytes_get%d" (8 * n)
+  | BytesSet n -> Printf.sprintf "caml_bytes_set%d" (8 * n)
+  | _ -> failwith "runtime_function: not a primitive"
+
 let error fmt = Printf.ksprintf failwith fmt
 let closure_tag = 247
 
@@ -353,10 +382,12 @@ let float_calls =
 
 (* the runtime's int32 functions done in place (Ir's Int32) *)
 let ints_in_place = ref true
-let int32_ops =
-  [ "int32_neg"; "int32_add"; "int32_sub"; "int32_mul"; "int32_and"; "int32_or";
-    "int32_xor"; "int32_shift_left"; "int32_shift_right";
-    "int32_shift_right_unsigned"; "int32_of_int"; "int32_to_int" ]
+let int32_ops : (string * Ir.t) list =
+  [ "int32_neg", Int32 Neg; "int32_add", Int32 Add; "int32_sub", Int32 Sub;
+    "int32_mul", Int32 Mul; "int32_and", Int32 And; "int32_or", Int32 Or;
+    "int32_xor", Int32 Xor; "int32_shift_left", Int32 Lsl;
+    "int32_shift_right", Int32 Asr; "int32_shift_right_unsigned", Int32 Lsr;
+    "int32_of_int", Int32OfInt; "int32_to_int", Int32ToInt ]
 
 (* the operands are pushed, the first on top; imm: the value a store
  * writes is an immediate (Typing.immediates: no barrier) *)
@@ -407,8 +438,12 @@ let prim imm p n =
    * now (docs/plans/plan_playground_speed.md, M4a: a shape's place is
    * forty of them, a wall's column of a game as many).
    * old: every one a CallC *)
-  | "%addfloat" | "%subfloat" | "%mulfloat" | "%divfloat" when !floats_in_place -> emit (Float2 ("caml_" ^ String.sub p 1 (String.length p - 1)))
-  | "%negfloat" | "%absfloat" when !floats_in_place -> emit (Float1 ("caml_" ^ String.sub p 1 (String.length p - 1)))
+  | "%addfloat" when !floats_in_place -> emit (Float2 Add)
+  | "%subfloat" when !floats_in_place -> emit (Float2 Sub)
+  | "%mulfloat" when !floats_in_place -> emit (Float2 Mul)
+  | "%divfloat" when !floats_in_place -> emit (Float2 Div)
+  | "%negfloat" when !floats_in_place -> emit (Float1 Fneg)
+  | "%absfloat" when !floats_in_place -> emit (Float1 Fabs)
   | "%floatofint" when !floats_in_place -> emit FloatOfInt
   | "%intoffloat" when !floats_in_place -> emit IntOfFloat
   | "%negfloat" | "%absfloat" | "%floatofint" | "%intoffloat" | "%addfloat" | "%subfloat" | "%mulfloat" | "%divfloat" ->
@@ -433,7 +468,8 @@ let prim imm p n =
    * Sha256 was a call of the runtime and its ml_alloc at each of a
    * round's operations, some 170 instructions each on arm.
    * old: a CallC of int32_add... *)
-  | _ when !ints_in_place && List.mem p int32_ops -> emit (Int32 (p, n))
+  | _ when !ints_in_place && List.mem_assoc p int32_ops ->
+      emit (List.assoc p int32_ops)
   (* a binary format's field, little-endian (Bytes.get_int32_le...):
    * Ir's own, its bytes loaded in place in ssa's code (the int32 a block
    * taken in place). OCaml's names; ix's machines are little-endian.
@@ -444,7 +480,7 @@ let prim imm p n =
   | "%caml_bytes_set16" when !strings_in_place -> emit (BytesSet 2); emit (Int 0)
   | "%caml_bytes_set32" when !ints_in_place -> emit (BytesSet 4); emit (Int 0)
   | "%caml_bytes_get16" | "%caml_bytes_get32" | "%caml_bytes_set16" | "%caml_bytes_set32" ->
-      emit (CallC ("caml_" ^ String.sub p 6 (String.length p - 6), n))
+      emit (CallC (String.sub p 1 (String.length p - 1), n))
   | _ when !floats_in_place && List.mem_assoc p float_calls ->
       emit (FloatCall (p, List.assoc p float_calls, n))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p

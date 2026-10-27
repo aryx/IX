@@ -217,23 +217,18 @@ let func m out (fn : func) =
         ins "%s\tR%d, 0(R%d)" mov (b - 2) (b - 1);
         if not imm then modify (b - 2) (fun () -> ins "%s\tR%d, R%d" mov (b - 1) m.tmp);
         sp := b - 3
-    | ByteGet _ -> spill (); call_c "ml_string_get" 2; reload (); result ()
-    | ByteSet _ -> spill (); call_c "ml_string_set" 3; reload ()
-    | StrLen -> spill (); call_c "ml_string_length" 1; reload (); result ()
-    | FloatCmp r -> spill (); call_c (Lower.poly_function r) 2; reload (); result ()
-    | Float1 f -> spill (); call_c f 1; reload (); result ()
-    (* a Float.Array's float: the runtime's, a new float read, none
-     * written (ssa's Unbox: the processor's load and store) *)
-    | FloatIndex c -> spill (); call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") 2; reload (); result ()
-    | FloatSetIndex c -> spill (); call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") 3; reload ()
-    | FloatRound c -> spill (); call_c (if c then "ceil_float" else "floor_float") 1; reload (); result ()
-    | FloatCall (f, _, n) -> spill (); call_c f n; reload (); result ()
-    | Int32 (f, n) -> spill (); call_c f n; reload (); result ()
-    | BytesGet n -> spill (); call_c (Printf.sprintf "caml_bytes_get%d" (8 * n)) 2; reload (); result ()
-    | BytesSet n -> spill (); call_c (Printf.sprintf "caml_bytes_set%d" (8 * n)) 3; reload ()
-    | Float2 f -> spill (); call_c f 2; reload (); result ()
-    | FloatOfInt -> spill (); call_c "caml_floatofint" 1; reload (); result ()
-    | IntOfFloat -> spill (); call_c "caml_intoffloat" 1; reload (); result ()
+    (* the runtime's function, by the operands' count (a Float.Array's
+     * float: a new float read, none written; ssa's Unbox: the
+     * processor's load and store) *)
+    | StrLen | Float1 _ | FloatOfInt | IntOfFloat | FloatRound _
+    | Int32 Neg | Int32OfInt | Int32ToInt ->
+        spill (); call_c (Lower.runtime_function i) 1; reload (); result ()
+    | ByteGet _ | FloatCmp _ | Float2 _ | FloatIndex _ | Int32 _ | BytesGet _ ->
+        spill (); call_c (Lower.runtime_function i) 2; reload (); result ()
+    | FloatCall (_, _, n) ->
+        spill (); call_c (Lower.runtime_function i) n; reload (); result ()
+    | ByteSet _ | FloatSetIndex _ | BytesSet _ ->
+        spill (); call_c (Lower.runtime_function i) 3; reload ()
     | Alloc (tag, n) ->
         (* the collector may run: every value in a slot, the fields read back *)
         spill ();

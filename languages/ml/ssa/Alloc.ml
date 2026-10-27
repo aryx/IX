@@ -20,7 +20,7 @@ let safepoint = function
   | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _
           | FloatCall _), _) | Box _ -> true
   (* an int32's block; to_int's, none *)
-  | Prim (Ir.Int32 (f, _), _) -> f <> "int32_to_int"
+  | Prim ((Ir.Int32 _ | Int32OfInt), _) -> true
   | Prim (Ir.BytesGet 4, _) -> true
   (* C's exp on doubles: no allocation, but C's code uses the values'
    * registers *)

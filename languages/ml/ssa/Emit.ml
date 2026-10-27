@@ -588,52 +588,51 @@ let func m out (fn : func) (lf : L.func) =
      * right), computed in a word, the low 32 stored in a new block; the
      * runtime's when there is no room (arm64's word holds an int32's
      * wrap: the low 32 bits of a sum or a product are the same) *)
-    | Int32 ("int32_to_int", _), [ x ] when in_place ->
+    | Int32ToInt, [ x ] when in_place ->
         let a = src x r1 in let d = dst v r2 in
         ins "MOVW\t0(R%d), R%d" a d;
         ins "%s\t$1, R%d" (shift Lsl) d;
         ins "ORR\t$1, R%d" d;
         finish v d
-    | Int32 (f, _), x :: rest when in_place ->
+    | (Int32 _ | Int32OfInt), x :: rest when in_place ->
         let slow = glabel () and ok = glabel () in
         let a = src x r1 in
-        let load32 r = ins "%s\t0(R%d), R%d" (if f = "int32_shift_right_unsigned" && m.arch = Arm64 then "MOVWU" else "MOVW") r r3 in
-        (match f, rest with
-         | "int32_of_int", [] -> ins "%s\t$1, R%d, R%d" (shift Asr) a r3
-         | "int32_neg", [] ->
+        let load32 r = ins "%s\t0(R%d), R%d" (if p = L.Int32 Lsr && m.arch = Arm64 then "MOVWU" else "MOVW") r r3 in
+        (match p, rest with
+         | Int32OfInt, [] -> ins "%s\t$1, R%d, R%d" (shift Asr) a r3
+         | Int32 Neg, [] ->
              load32 a;
              (match m.arch with Arm -> ins "RSB\t$0, R%d, R%d" r3 r3 | Arm64 -> ins "NEG\tR%d, R%d" r3 r3)
-         | ("int32_shift_left" | "int32_shift_right" | "int32_shift_right_unsigned"), [ y ] ->
+         | Int32 ((Lsl | Asr | Lsr) as o), [ y ] ->
              load32 a;
              let b = src y r2 in
              ins "%s\t$1, R%d, R%d" (shift Asr) b r2;
-             let o = match f with "int32_shift_left" -> L.Lsl | "int32_shift_right" -> L.Asr | _ -> L.Lsr in
              ins "%s\tR%d, R%d, R%d" (shift o) r2 r3 r3
-         | _, [ y ] ->
+         | Int32 o, [ y ] ->
              load32 a;
              let b = src y r2 in
              ins "MOVW\t0(R%d), R%d" b r2;
-             let o = match f with
-               | "int32_add" -> "ADD" | "int32_sub" -> "SUB" | "int32_mul" -> "MUL"
-               | "int32_and" -> "AND" | "int32_or" -> "ORR" | _ -> "EOR" in
+             let o = match o with
+               | Add -> "ADD" | Sub -> "SUB" | Mul -> "MUL"
+               | And -> "AND" | Or -> "ORR" | _ -> "EOR" in
              ins "%s\tR%d, R%d, R%d" o r2 r3 r3
          | _ -> failwith (fn.name ^ ": ssa: an int32's operands"));
         take 1 254 slow;
         ins "MOVW\tR%d, 0(R0)" r3;
         ins "B\t%s" ok;
         lab slow;
-        call_c f xs;
+        call_c (Lower.runtime_function p) xs;
         lab ok;
         finish v 0
-    | Float2 f, [ x; y ] when in_place ->
+    | Float2 o, [ x; y ] when in_place ->
         let a = src x r1 in let b = src y r2 in
         ins "%s\t0(R%d), F0" fmov a;
         ins "%s\t0(R%d), F1" fmov b;
         ins "%s\tF1, F0"
-          (match m.arch, f with
-           | Arm, "caml_addfloat" -> "ADDD" | Arm, "caml_subfloat" -> "SUBD" | Arm, "caml_mulfloat" -> "MULD" | Arm, _ -> "DIVD"
-           | Arm64, "caml_addfloat" -> "FADDD" | Arm64, "caml_subfloat" -> "FSUBD" | Arm64, "caml_mulfloat" -> "FMULD" | Arm64, _ -> "FDIVD");
-        float_result v f xs
+          (match m.arch, o with
+           | Arm, L.Add -> "ADDD" | Arm, Sub -> "SUBD" | Arm, Mul -> "MULD" | Arm, _ -> "DIVD"
+           | Arm64, Add -> "FADDD" | Arm64, Sub -> "FSUBD" | Arm64, Mul -> "FMULD" | Arm64, _ -> "FDIVD");
+        float_result v (Lower.runtime_function p) xs
     (* the sign's bit of the high word changed, as the runtime does *)
     | Float1 f, [ x ] when in_place && m.arch = Arm ->
         let slow = glabel () and ok = glabel () in
@@ -642,18 +641,18 @@ let func m out (fn : func) (lf : L.func) =
         ins "MOVW\t0(R%d), R%d" a t;
         ins "MOVW\tR%d, 0(R0)" t;
         ins "MOVW\t4(R%d), R%d" a t;
-        ins "%s\t$0x80000000, R%d" (if f = "caml_negfloat" then "EOR" else "BIC") t;
+        ins "%s\t$0x80000000, R%d" (if f = L.Fneg then "EOR" else "BIC") t;
         ins "MOVW\tR%d, 4(R0)" t;
         ins "B\t%s" ok;
         lab slow;
-        call_c f xs;
+        call_c (Lower.runtime_function p) xs;
         lab ok;
         finish v 0
     | FloatOfInt, [ x ] when in_place ->
         let a = src x r1 in
         ins "%s\t$1, R%d, R%d" (shift Asr) a t;
         ins "%s\tR%d, F0" (match m.arch with Arm -> "MOVWD" | Arm64 -> "SCVTFD") t;
-        float_result v "caml_floatofint" xs
+        float_result v (Lower.runtime_function p) xs
     | IntOfFloat, [ x ] when in_place ->
         let a = src x r1 in let d = dst v r2 in
         ins "%s\t0(R%d), F0" fmov a;
@@ -674,31 +673,24 @@ let func m out (fn : func) (lf : L.func) =
          | Arm64 -> ins "MOV\t$3, R%d" d; ins "B%s\t2(PC)" c; ins "MOV\t$1, R%d" d);
         finish v d
     (* old: (and without in_place) the runtime's, as before *)
-    | ByteGet _, _ -> call_c "ml_string_get" xs; finish v 0
-    | ByteSet _, _ -> call_c "ml_string_set" xs
-    | StrLen, _ -> call_c "ml_string_length" xs; finish v 0
-    | (Float2 f | Float1 f), _ -> call_c f xs; finish v 0
-    | FloatOfInt, _ -> call_c "caml_floatofint" xs; finish v 0
-    | IntOfFloat, _ -> call_c "caml_intoffloat" xs; finish v 0
-    | FloatIndex c, _ -> call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") xs; finish v 0
-    | FloatSetIndex c, _ -> call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") xs
-    | FloatRound c, _ -> call_c (if c then "ceil_float" else "floor_float") xs; finish v 0
-    | FloatCall (f, _, _), _ -> call_c f xs; finish v 0
-    | Int32 (f, _), _ -> call_c f xs; finish v 0
-    | BytesGet n, _ -> call_c (sprintf "caml_bytes_get%d" (8 * n)) xs; finish v 0
-    | BytesSet n, _ -> call_c (sprintf "caml_bytes_set%d" (8 * n)) xs
+    | (ByteSet _ | FloatSetIndex _ | BytesSet _), _ ->
+        call_c (Lower.runtime_function p) xs
+    | (ByteGet _ | StrLen | Float2 _ | Float1 _ | FloatOfInt | IntOfFloat
+      | FloatIndex _ | FloatRound _ | FloatCall _ | Int32 _ | Int32OfInt
+      | Int32ToInt | BytesGet _), _ ->
+        call_c (Lower.runtime_function p) xs; finish v 0
     | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
   in
   (* the same on doubles (Unbox), the operands' and the result's
    * registers the instruction's: no block loaded, none made *)
   let dprim v (p : L.t) xs =
     match p, xs with
-    | Float2 f, [ x; y ] ->
+    | Float2 o, [ x; y ] ->
         let a = fsrc x 0 in let b = fsrc y 1 in let d = fdst v 0 in
         ins "%s\tF%d, F%d, F%d"
-          (match m.arch, f with
-           | Arm, "caml_addfloat" -> "ADDD" | Arm, "caml_subfloat" -> "SUBD" | Arm, "caml_mulfloat" -> "MULD" | Arm, _ -> "DIVD"
-           | Arm64, "caml_addfloat" -> "FADDD" | Arm64, "caml_subfloat" -> "FSUBD" | Arm64, "caml_mulfloat" -> "FMULD" | Arm64, _ -> "FDIVD")
+          (match m.arch, o with
+           | Arm, L.Add -> "ADDD" | Arm, Sub -> "SUBD" | Arm, Mul -> "MULD" | Arm, _ -> "DIVD"
+           | Arm64, Add -> "FADDD" | Arm64, Sub -> "FSUBD" | Arm64, Mul -> "FMULD" | Arm64, _ -> "FDIVD")
           b a d;
         ffinish v d
     (* -x and abs x: arm64's FNEGD and FABSD; arm's 5a has neither, the
@@ -707,7 +699,7 @@ let func m out (fn : func) (lf : L.func) =
      * old: a new block, the sign bit of its high word *)
     | Float1 f, [ x ] ->
         let a = fsrc x 0 in let d = fdst v 0 in
-        let neg = f = "caml_negfloat" in
+        let neg = f = L.Fneg in
         (match m.arch with
          | Arm64 -> ins "%s\tF%d, F%d" (if neg then "FNEGD" else "FABSD") a d
          | Arm ->

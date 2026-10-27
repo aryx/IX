@@ -144,6 +144,10 @@ val exports : Scope.item list -> Summary.entry list
 (* the symbols' names: an operator's characters as $ and their code *)
 (* the runtime's function for a relation of values not both integers *)
 val poly_function : Ir.rel -> string
+(* the runtime's function that does what a primitive of Ir does
+ * (Float2 Add: caml_addfloat...): simple's code calls it, ssa's when
+ * not in place or when there is no room *)
+val runtime_function : Ir.t -> string
 
 val mangle : string -> string
 
@@ -179,7 +183,7 @@ val min_max_aliases : (string, string) Hashtbl.t
 (* a string's byte (checked or not) and its length as
  * instructions (Ir.ByteGet, ByteSet, StrLen) *)
 val strings_in_place : bool ref
-(* a float's arithmetic as the processor's instructions (Ir.Float2,
+(* a float's arithmetic as the processor's instructions (Ir.Float2, Float1,
  * FloatOfInt, IntOfFloat) *)
 val floats_in_place : bool ref
 (* an int32's arithmetic, logic and shifts as the processor's

@@ -59,8 +59,10 @@ type span = { kind : span_kind; s0 : float; s1 : float }
 (* [in_span spans kinds s]: the span of one of [kinds] that s is in *)
 val in_span : span list -> span_kind list -> float -> span option
 
-(* a chunk of the road, or a tile of the land, and its middle (x, z) *)
-type piece = { mesh : Mesh.t; mx : float; mz : float }
+(* a chunk of the road, or a tile of the land, and its middle (x, z);
+ * far: the chunk seen from far, its scenery simpler (a tile's the
+ * same mesh) *)
+type piece = { mesh : Mesh.t; far : Mesh.t; mx : float; mz : float }
 
 type t = {
   name : string;
@@ -99,6 +101,12 @@ val lap_length : t -> float
  * hairpin) *)
 val road_near : t -> float -> Vec3.t -> Mesh.t list
 
+(* OPTIMIZATION (lod): a chunk whose middle is farther than [far_away]
+ * from the eye drawn by its far mesh (a level of detail: its pines a
+ * cone each); old: each chunk whole (lod := false, Virtua's lod=off) *)
+val lod : bool ref
+val far_away : float
+
 (* [land_near c eye]: the land's tiles within sight of the eye *)
 val land_near : t -> Vec3.t -> Mesh.t list
 
@@ -118,3 +126,7 @@ val bounds : t -> float * float * float * float
 
 (* every mesh that does not move, for the palette (Palette.add_mesh) *)
 val meshes : t -> Mesh.t list
+
+(* the far chunks' meshes (lod): lit by the palette, not counted in it,
+ * which is then the same with lod or without *)
+val far_meshes : t -> Mesh.t list

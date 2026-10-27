@@ -115,6 +115,10 @@ let pine (k : int) : Mesh.shape =
       cone (k + 7) 0. green 5 1.6 3.4 |> move_y3d 3.6;
     ]
 
+let pine_far (k : int) : Mesh.shape =
+  let green = if k mod 2 = 0 then rgb 30 100 45 else rgb 40 115 50 in
+  cone k 0. green 5 2.2 5.6 |> move_y3d 1.4
+
 (* a palm: its trunk leaning, six fronds drooping from the top (one
  * face thick: seen from both sides) *)
 let palm (k : int) : Mesh.shape =

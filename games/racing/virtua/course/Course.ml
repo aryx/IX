@@ -81,7 +81,7 @@ let in_span (spans : span list) (kinds : span_kind list) (s : float) :
 (* the road off the land: the land under it is left as it is *)
 let lifted = [ Suspension; Overpass; Tunnel ]
 
-type piece = { mesh : Mesh.t; mx : float; mz : float }
+type piece = { mesh : Mesh.t; far : Mesh.t; mx : float; mz : float }
 
 type t = {
   name : string;
@@ -113,6 +113,12 @@ type site = {
   spans : span list;
   terrain : Land.t;
   taken : float * float -> bool;
+  (* the scenery for a far chunk (road_near): its simpler trees; the
+   * trees' places, found once for the two ([trees]); whether a tree
+   * has a far kind of its own (else the far chunk is the near one) *)
+  far : bool;
+  places : (int * int, (int * float * float * float) list) Hashtbl.t;
+  far_kinds : bool ref;
 }
 
 let place (ribbon : Track3d.t) (s : float) (offset : float) (shape : Mesh.shape)
@@ -129,37 +135,56 @@ let on_land (site : site) (x : float) (y : float) (shape : Mesh.shape) :
   let x = x *. map_unit and z = y *. map_unit in
   shape |> move3d x (Land.height site.terrain x z -. 0.4) z
 
-(* [trees kind every rows site i]: a tree each side of segment [i],
- * beyond the rail, every [every] segments: on the land, clear of the
- * road (of *another* part of it too, since a circuit comes back near
- * itself), not in the sea, not on the rock *)
-let trees (kind : int -> Mesh.shape) (every : int) (rows : int) (site : site)
-    (i : int) : Mesh.shape list =
+(* [trees (kind, far) every rows site i]: a tree each side of segment
+ * [i], beyond the rail, every [every] segments: on the land, clear of
+ * the road (of *another* part of it too, since a circuit comes back
+ * near itself), not in the sea, not on the rock; [far]'s for a far
+ * chunk. Its places found once, for the near chunk and the far one
+ * (a Track3d.locate each: the course's start 45% longer when found
+ * twice) *)
+let trees ((near, far) : (int -> Mesh.shape) * (int -> Mesh.shape))
+    (every : int) (rows : int) (site : site) (i : int) : Mesh.shape list =
+  if near != far then site.far_kinds := true;
+  let kind = if site.far then far else near in
   if i mod every <> 0 then []
   else
-    let s = float_of_int i *. Track3d.step site.ribbon in
-    let _, road_y, _ = Track3d.across site.ribbon s 0. in
-    List.concat_map
-      (fun (row : int) ->
-        List.filter_map
-          (fun (side : float) ->
-            let off =
-              side
-              *. (verge +. 4.
-                 +. (float_of_int row *. 9.)
-                 +. (5. *. Scenery.jitter i (row + int_of_float side)))
-            in
-            let x, _, z = Track3d.across site.ribbon s off in
-            let _, nearest = Track3d.locate site.ribbon x z in
-            let h = Land.height site.terrain x z in
-            if
-              Float.abs nearest >= verge +. 2.
-              && (not (site.taken (x, z)))
-              && h < road_y +. 30.
-            then Some (kind (i + row) |> move3d x (h -. 0.4) z)
-            else None)
-          [ -1.; 1. ])
-      (List.init rows (fun (r : int) -> r))
+    let found () : (int * float * float * float) list =
+      let s = float_of_int i *. Track3d.step site.ribbon in
+      let _, road_y, _ = Track3d.across site.ribbon s 0. in
+      List.concat_map
+        (fun (row : int) ->
+          List.filter_map
+            (fun (side : float) ->
+              let off =
+                side
+                *. (verge +. 4.
+                   +. (float_of_int row *. 9.)
+                   +. (5. *. Scenery.jitter i (row + int_of_float side)))
+              in
+              let x, _, z = Track3d.across site.ribbon s off in
+              let _, nearest = Track3d.locate site.ribbon x z in
+              let h = Land.height site.terrain x z in
+              if
+                Float.abs nearest >= verge +. 2.
+                && (not (site.taken (x, z)))
+                && h < road_y +. 30.
+              then Some (i + row, x, h -. 0.4, z)
+              else None)
+            [ -1.; 1. ])
+        (List.init rows (fun (r : int) -> r))
+    in
+    let places =
+      match Hashtbl.find_opt site.places (i, every) with
+      | Some l -> l
+      | None ->
+          let l = found () in
+          Hashtbl.replace site.places (i, every) l;
+          l
+    in
+    List.map
+      (fun ((k, x, y, z) : int * float * float * float) ->
+        kind k |> move3d x y z)
+      places
 
 (* signs every 150 segments, chevrons outside the sharp curves *)
 let signs (site : site) (i : int) : Mesh.shape list =
@@ -472,8 +497,12 @@ let make (d : description) : t =
       taken =
         (fun (p : float * float) ->
           List.exists (fun (w : (float * float) list) -> Land.inside w p) sea);
+      far = false;
+      places = Hashtbl.create 1024;
+      far_kinds = ref false;
     }
   in
+  let far_site = { site with far = true } in
   let segments = Track3d.segments ribbon in
   let chunks =
     Array.init
@@ -484,7 +513,7 @@ let make (d : description) : t =
         let mid =
           Track3d.at ribbon (float_of_int ((first + last) / 2) *. step)
         in
-        let shapes =
+        let shapes (site : site) : Mesh.shape list =
           List.concat
             (List.init
                (last - first + 1)
@@ -492,13 +521,22 @@ let make (d : description) : t =
                  segment ribbon spans d.d_grass (first + j)
                  @ d.scenery site (first + j)))
         in
-        { mesh = Mesh.make (Mesh.group3d shapes); mx = mid.px; mz = mid.pz })
+        let mesh = Mesh.make (Mesh.group3d (shapes site)) in
+        let far =
+          if !(site.far_kinds) then Mesh.make (Mesh.group3d (shapes far_site))
+          else mesh
+        in
+        { mesh; far; mx = mid.px; mz = mid.pz })
   in
+  (* (the places no more needed: site is kept, by the landscape's
+   * closures) *)
+  Hashtbl.reset site.places;
   let tiles =
     Array.of_list
       (List.map
          (fun (((x, z), shape) : (float * float) * Mesh.shape) ->
-           { mesh = Mesh.make shape; mx = x; mz = z })
+           let mesh = Mesh.make shape in
+           { mesh; far = mesh; mx = x; mz = z })
          (Land.tiles terrain water_level 1))
   in
   {
@@ -581,7 +619,7 @@ let big_forest () : t =
       sea = [];
       scenery =
         (fun (site : site) (i : int) ->
-          trees Scenery.pine 3 2 site i @ signs site i);
+          trees (Scenery.pine, Scenery.pine_far) 3 2 site i @ signs site i);
       landscape =
         (fun (site : site) ->
           start site.ribbon 2
@@ -692,7 +730,7 @@ let bay_bridge () : t =
         ];
       scenery =
         (fun (site : site) (i : int) ->
-          trees Scenery.palm 7 1 site i @ signs site i);
+          trees (Scenery.palm, Scenery.palm) 7 1 site i @ signs site i);
       landscape =
         (fun (site : site) ->
           start site.ribbon 2
@@ -793,8 +831,9 @@ let acropolis () : t =
         [ [ (27., -10.); (45., -10.); (45., 30.); (27., 30.); (27.5, 12.) ] ];
       scenery =
         (fun (site : site) (i : int) ->
-          trees Scenery.cypress 7 1 site i
-          @ (if i mod 11 = 5 then trees Scenery.rock 1 1 site i else [])
+          trees (Scenery.cypress, Scenery.cypress) 7 1 site i
+          @ (if i mod 11 = 5 then trees (Scenery.rock, Scenery.rock) 1 1 site i
+             else [])
           @ signs site i);
       landscape =
         (fun (site : site) ->
@@ -824,6 +863,9 @@ let acropolis () : t =
 (* What is drawn *)
 (*****************************************************************************)
 
+let lod = ref true
+let far_away = 150.
+
 let road_near (c : t) (s : float) ((ex, _, ez) : Vec3.t) : Mesh.t list =
   let len = Track3d.length c.ribbon in
   let wrapped = Float.rem (Float.rem s len +. len) len in
@@ -836,8 +878,9 @@ let road_near (c : t) (s : float) ((ex, _, ez) : Vec3.t) : Mesh.t list =
       if closed then (((k - chunk + 1) mod n) + n) mod n else k - chunk + 1
     in
     let p = c.chunks.(k) in
-    if (ahead >= 0 && ahead < 7) || Float.hypot (p.mx -. ex) (p.mz -. ez) < 160.
-    then near := p.mesh :: !near
+    let d = Float.hypot (p.mx -. ex) (p.mz -. ez) in
+    if (ahead >= 0 && ahead < 7) || d < 160. then
+      near := (if !lod && d > far_away then p.far else p.mesh) :: !near
   done;
   !near
 
@@ -963,6 +1006,9 @@ let miniature (c : t) : Mesh.shape =
 let lap_length (c : t) : float =
   if c.laps = 1 then Track3d.length c.ribbon -. (2. *. Track3d.step c.ribbon)
   else Track3d.length c.ribbon
+
+let far_meshes (c : t) : Mesh.t list =
+  Array.fold_right (fun (p : piece) (l : Mesh.t list) -> p.far :: l) c.chunks []
 
 let meshes (c : t) : Mesh.t list =
   Array.fold_right

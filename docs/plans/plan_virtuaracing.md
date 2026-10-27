@@ -582,5 +582,18 @@ near or far), the land 1,400, the cars about 600. The shared
 `_mk/5` then linked virtua no more (`undefined: ml_tan`,
 `ml_cosh`; built from nothing it does): a stale object of afcb6f03's.
 
-Next: the far road chunks made simpler (a level of detail), then the
-painter's algorithm beside the depth (`render=`), for teaching.
+Then **a level of detail** (the author: "ok, let's commit and move
+forward"): a road chunk is built twice, its far mesh with each pine a
+cone of 5 faces (`Scenery.pine_far`; a pine is 17), drawn when the
+chunk's middle is more than 150 m from the eye (`Course.lod`,
+`lod=off`). Frame 250: 6,818 faces to 5,546, 476 pixels apart, the
+far trees one cone; with `lod=off` the nine sessions the same bytes
+as before, with it five of Big Forest's recorded again. **37.0M to
+33.9M a frame** (-8.3%). Built twice, the trees' places were found
+twice too (a `Track3d.locate` each): the start 2.31 billion to 3.35;
+found once for the two (`site.places`), and no far mesh where no tree
+has a far kind (Bay Bridge, Acropolis): 2.60 (Bay Bridge 1.82 to
+1.84).
+
+Next: the painter's algorithm beside the depth (`render=`), for
+teaching; then the card on the Pi 2.

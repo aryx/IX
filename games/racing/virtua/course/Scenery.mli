@@ -54,6 +54,10 @@ val cone : int -> float -> Mesh.color -> int -> float -> float -> Mesh.shape
 (* a pine, the k-th: a trunk and two cones *)
 val pine : int -> Mesh.shape
 
+(* the k-th pine seen from far (Course's far chunks): one cone of five
+ * faces, as tall, where the pine has seventeen *)
+val pine_far : int -> Mesh.shape
+
 (* [column color sides r h]: a column of [sides] faces round, its top
  * capped; [roof color w h d]: a gable roof lofted along its depth *)
 val column : Mesh.color -> int -> float -> float -> Mesh.shape

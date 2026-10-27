@@ -23,7 +23,7 @@
  *
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
- *                            [course=n] [sound=off]
+ *                            [course=n] [sound=off] [lod=off]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -35,6 +35,7 @@
  *     course=n  a race on the n-th course at once (0: Big Forest), not
  *               the title (the frames' sessions)
  *     sound=off no sound made (Sound.on)
+ *     lod=off   the far road chunks drawn whole too (Course.lod)
  *
  * A frame:
  *
@@ -154,7 +155,7 @@ let build (course : Course.t) (cars : Mesh.t list) (sky : Camera.t) : loaded =
   Palette.make palette;
   List.iter
     (fun (mesh : Mesh.t) -> Mesh.light mesh (Palette.index palette))
-    statics;
+    (statics @ Course.far_meshes course);
   { course; palette; miniature = None }
 
 let load (m : model) (i : int) : loaded =
@@ -455,6 +456,7 @@ let () =
          in
          if flag "cull" = Some "off" then Render.cull := false;
          if flag "sound" = Some "off" then Sound.on := false;
+         if flag "lod" = Some "off" then Course.lod := false;
          let course = Option.bind (flag "course") int_of_string_opt in
          let model = start first width height course stats in
          (* the window the picture's size, a unit a pixel; or, without

@@ -74,12 +74,13 @@ afcb6f03:
 | a face's rows found first, a face with none (a third of them) left before its plane; the ints' `min` and `max` inlined, not Stdlib's polymorphic calls; no float ref (a block each) | `Render.fill`, OPTIMIZATION (setup) | -6.5% (46.7M to 43.6M by the mini-ml before) | `old:` |
 | the corner and row arrays read without their bounds' test, `fill`'s taken from the record once (8 instructions a read, then 1 or 2) | `Render.get`, OPTIMIZATION (get) | | `old:` |
 | (the two together) | | **37.0M** (-24.5%) | |
+| far chunks (more than 150 m away) drawn with their pines a cone each, 5 faces where a pine has 17 (a level of detail): 6,818 faces a frame to 5,546, 476 pixels apart at frame 250; the trees' places found once for the two meshes; the start 2.31 billion to 2.60 (Bay Bridge's, without far trees, 1.82 to 1.84) | `Course.lod`, `Scenery.pine_far` | **33.9M** (-8.3%) | `lod=off` |
 
-What is left in a race frame (37.0M): `fill_rows` 21%, `face` 20%,
-`span` (the pixels) 17%, `draw` 8%. About 7,000 faces a frame, most a
-row or two: a face costs more than its pixels. Two-thirds of them
-are the five road chunks ahead, each drawn whole (about 830 faces,
-near or far): a far chunk made simpler is next.
+What is left in a race frame (37.0M before the level of detail):
+`fill_rows` 21%, `face` 20%, `span` (the pixels) 17%, `draw` 8%. About
+7,000 faces a frame, most a row or two: a face costs more than its
+pixels. Two-thirds of them were the five road chunks ahead, each drawn
+whole (about 830 faces, near or far): hence the far chunks' pines.
 
 The sound, a sixtieth of a second of the race's (the loop makes the
 sound of the time a frame took, so it costs the same each second

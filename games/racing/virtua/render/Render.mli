@@ -93,6 +93,15 @@ val algorithm : algorithm ref
  * depth) *)
 val finish : t -> unit
 
+(* [next_layer r]: the painter's or the table's faces given since the
+ * last layer (or [frame]) drawn under the ones that come, whatever their
+ * distance: the ground first, the road and what stands on it after
+ * (Virtua). Nothing with the depth, nor when [layers] is false
+ * (mini-virtuaracing's layers=off) *)
+val next_layer : t -> unit
+
+val layers : bool ref
+
 (* [draw_at r m angle position index]: a mesh turned [angle] degrees
  * about y (as Mesh.rotate3d 0. angle 0.), then moved to [position];
  * each face lit as it is then, [index] the palette's (Palette.index) *)

@@ -118,6 +118,7 @@ afcb6f03:
 | far chunks (more than 150 m away) drawn with their pines a cone each, 5 faces where a pine has 17 (a level of detail): 6,818 faces a frame to 5,546, 476 pixels apart at frame 250; the trees' places found once for the two meshes; the start 2.31 billion to 2.60 (Bay Bridge's, without far trees, 1.82 to 1.84) | `Course.lod`, `Scenery.pine_far` | **33.9M** (-8.3%) | `lod=off` |
 | the painter's algorithm instead of the depth, to compare: the faces kept, sorted by their mean distance in whole centimetres (the same order by OCaml and mini-ml), drawn from the farthest with no depth to test or clear; its errors where long faces meet (12,182 pixels apart at frame 250: a kerb under its verge) | `Render.algorithm`, `finish` | 41.4M (+22% against 34.0M by the same build): the sort about 6M (`Array.stable_sort`, a million comparisons), the faces kept 2.2M; the depth's `span` 6.3M became a `Bytes.fill` 1.6M | `render=painter` |
 | the painter's faces by an ordering table, the PlayStation's: 4,096 slots of 64 cm (a face's distance shifted, as the PS1 shifted its z), a face put at the head of its slot's list, the slots walked from the farthest; no sort; the faces of a slot drawn in the order opposite to their coming (the road's line under its tarmac: 11,544 pixels apart from the depth's at frame 250) | `Render.Table`, `finish` | **33.1M** (-2.6% against the depth's 34.0M; by `/ 50`, a call on arm, 33.7M) | `render=table` |
+| the painter's and the table's ground first: the sky and the land's tiles a layer of their own, drawn under the road, the trees and the cars whatever their distance, as PS1 games kept their ground apart; a field nearer than the road beside it covered it (green where the road was, on the board too). Left: the cars' shadows under the road (a layer for the cars would draw them over the gantry they pass under), and a hill no longer hides what is behind it | `Render.next_layer`, `layers` | the same (a second table, its 4,096 slots walked); at frame 250 of the frames' session, against the depth's picture, 47,929 pixels of the 640 by 480 apart to 7,352 (painter), 50,493 to 7,322 (table) | `layers=off` |
 | what the display and the rivals asked of the road at each frame made once, the same answers: the course's box (the map walked every segment), a segment's turn (41 for each rival, its braking), the map's dots; 2,800 `Track3d.at` a frame | `Course` OPTIMIZATION (once), `Screens.outline` | **30.3M** (-10.8% against 34.0M) | `old:` |
 
 What is left in a race frame (37.0M before the level of detail):
@@ -138,7 +139,11 @@ whatever the frames):
 
 On the Pi 2 (the author): 11 frames a second at the title, 3 in the
 race with the sound, 6 without (`sound=off`), 9 while the camera
-turns around the car (2026-10-26, before the race's -24.5%).
+turns around the car (2026-10-26, before the race's -24.5%). On
+2026-10-27's card (the race 30.3M): 8 in the race with the sound, 11
+(13 at times) without, the table's 11, the painter's 9: the ratios of
+the frames' counts (34.0M, 33.1M, 41.4M); the sound's 1.6M a sixtieth
+is 96M a second, a third of the processor.
 
 ## From the author's playground
 

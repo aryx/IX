@@ -59,6 +59,9 @@ type t = {
   mutable kfirst : int array;
   mutable kdistance : int array;
   mutable kcolor : Bytes.t;
+  (* where each layer after the first starts in the kept faces, the
+   * last first (next_layer) *)
+  mutable layers : int list;
 }
 
 (* 1/z in whole numbers: the near plane's 1/0.1 times this is 6.7e8,
@@ -101,6 +104,7 @@ let create (width : int) (height : int) : t =
     kfirst = [| 0 |];
     kdistance = [||];
     kcolor = Bytes.empty;
+    layers = [];
   }
 
 let width (r : t) : int = r.width
@@ -122,6 +126,7 @@ let frame (r : t) (c : Camera.t) (background : int) : unit =
   Bytes.fill r.pixels 0 (Bytes.length r.pixels) (Char.chr background);
   if !algorithm = Depth then Array.fill r.depth 0 (Array.length r.depth) 0;
   r.kept <- 0;
+  r.layers <- [];
   r.drawn <- 0
 
 (*****************************************************************************)
@@ -342,32 +347,54 @@ let fill_kept (r : t) (k : int) : unit =
 let slots = 4096
 let slot_shift = 6
 
+(* the kept faces lo to hi - 1 filled, the farthest first *)
+let fill_layer (r : t) (lo : int) (hi : int) : unit =
+  match !algorithm with
+  | Depth -> ()
+  | Painter ->
+      (* the farthest first; a tie in the order the faces came *)
+      let order = Array.init (hi - lo) (fun (k : int) -> lo + k) in
+      Array.stable_sort
+        (fun (a : int) (b : int) -> r.kdistance.(b) - r.kdistance.(a))
+        order;
+      Array.iter (fill_kept r) order
+  | Table ->
+      let head = Array.make slots (-1) and next = Array.make hi (-1) in
+      for k = lo to hi - 1 do
+        let s = imin (slots - 1) (r.kdistance.(k) lsr slot_shift) in
+        next.(k) <- head.(s);
+        head.(s) <- k
+      done;
+      for s = slots - 1 downto 0 do
+        let k = ref head.(s) in
+        while !k >= 0 do
+          fill_kept r !k;
+          k := next.(!k)
+        done
+      done
+
+(* The layers: the faces of a layer drawn over the ones before, whatever
+ * their distance. The ground's faces are long, and lie under the road's
+ * and the trees': one distance a face puts a field nearer than the road
+ * on it, and drawn after (green where the road was). The PlayStation's
+ * games drew so: their ground in a table of its own, first. *)
+let layers = ref true
+
+let next_layer (r : t) : unit =
+  if !layers && r.kept > 0 then r.layers <- r.kept :: r.layers
+
 let finish (r : t) : unit =
   if r.kept > 0 then begin
-    (match !algorithm with
-    | Depth -> ()
-    | Painter ->
-        (* the farthest first; a tie in the order the faces came *)
-        let order = Array.init r.kept (fun (k : int) -> k) in
-        Array.stable_sort
-          (fun (a : int) (b : int) -> r.kdistance.(b) - r.kdistance.(a))
-          order;
-        Array.iter (fill_kept r) order
-    | Table ->
-        let head = Array.make slots (-1) and next = Array.make r.kept (-1) in
-        for k = 0 to r.kept - 1 do
-          let s = imin (slots - 1) (r.kdistance.(k) lsr slot_shift) in
-          next.(k) <- head.(s);
-          head.(s) <- k
-        done;
-        for s = slots - 1 downto 0 do
-          let k = ref head.(s) in
-          while !k >= 0 do
-            fill_kept r !k;
-            k := next.(!k)
-          done
-        done);
-    r.kept <- 0
+    (* old: fill_layer r 0 r.kept, the frame's faces in one *)
+    ignore
+      (List.fold_left
+         (fun (lo : int) (hi : int) ->
+           fill_layer r lo hi;
+           hi)
+         0
+         (List.rev (r.kept :: r.layers)));
+    r.kept <- 0;
+    r.layers <- []
   end
 
 (*****************************************************************************)

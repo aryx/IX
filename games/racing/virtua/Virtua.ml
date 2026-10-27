@@ -24,7 +24,7 @@
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
  *                            [course=n] [sound=off] [lod=off]
- *                            [render=depth|painter|table]
+ *                            [render=depth|painter|table] [layers=off]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -41,6 +41,9 @@
  *               each pixel (the default), painter, the faces sorted
  *               and drawn from the farthest, or table, the same by an
  *               ordering table, the PlayStation's (Render.algorithm)
+ *     layers=off  painter and table: the ground sorted with the rest,
+ *               not drawn first (Render.layers): green where the road
+ *               was
  *
  * A frame:
  *
@@ -192,6 +195,8 @@ let draw_course (m : model) (l : loaded) (cam : Camera.t) (time : float)
   Render.frame r cam (Char.code (Bytes.get sky.shades 1));
   Render.draw r sky;
   List.iter (Render.draw r) (Course.land_near c cam.eye);
+  (* (the ground under the rest, for the painter's and the table) *)
+  Render.next_layer r;
   List.iter (Render.draw r) (Course.road_near c d.s cam.eye);
   List.iter (Render.draw r) c.landmarks;
   List.iter (fun (s : Mesh.shape) -> Render.draw r (lit l s)) (c.animated time);
@@ -463,6 +468,7 @@ let () =
          if flag "cull" = Some "off" then Render.cull := false;
          if flag "sound" = Some "off" then Sound.on := false;
          if flag "lod" = Some "off" then Course.lod := false;
+         if flag "layers" = Some "off" then Render.layers := false;
          (match flag "render" with
          | Some "painter" -> Render.algorithm := Render.Painter
          | Some "table" -> Render.algorithm := Render.Table

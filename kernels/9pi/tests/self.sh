@@ -89,7 +89,11 @@ for l in card linux; do
   n=$(grep -c '^=== ' "$build/$l.log")
   f=$(grep '^FAILED ' "$build/$l.log" | sed 's/^FAILED //' | tr '\n' ' ')
   if [ -z "$f" ]; then echo "ok self: $n directories built on $l"
-  else echo "FAIL self: on $l, of $n directories: $f"; status=1; fi
+  else echo "FAIL self: on $l, of $n directories: $f"; status=1
+    # (each failed one's last lines: on GitHub, BUILD is in the image)
+    awk '/^=== /{n=0} {s[n++%10]=$0} /^FAILED /{print "  " $2 ":"
+      for(i=n-10;i<n;i++) if(i>=0) print "    " s[i%10]}' "$build/$l.log"
+  fi
 done
 (cd "$build/card-mk" && find . -type f | sort) > "$build/card.files"
 (cd "$build/src/_mk" && find . -type f | sort) > "$build/linux.files"

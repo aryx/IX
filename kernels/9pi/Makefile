@@ -1009,7 +1009,7 @@ $(CARD_FS): Makefile $(MKFS) $(CARD_NS) tests/card-motd.txt ../../utilities/proc
 # program, the firmware or config.txt last changed
 CARD_VERSION = build/card-version.txt
 $(CARD): $(MKCARD) $(CARD_FS) conf/config.txt kernel-pi1-ix.img kernel-pi2-ix.img $(wildcard $(FIRMWARE)/*)
-	echo "mini-9pi $$(sed -n 's/^\* \([0-9.]*\) .*/\1/p' ../../changes.txt | head -1) ($$(git rev-parse --short=8 HEAD)$$(git diff --quiet HEAD || echo +)), card of $$(date '+%Y-%m-%d %H:%M')" > $(CARD_VERSION)
+	echo "mini-9pi $$(sed -n 's/^\* \([0-9.]*\) .*/\1/p' ../../changes.txt | head -1) ($$(git rev-parse --short=8 HEAD 2>/dev/null || echo no git)$$(git diff --quiet HEAD 2>/dev/null; [ $$? = 1 ] && echo +)), card of $$(date '+%Y-%m-%d %H:%M')" > $(CARD_VERSION)
 	$(MKCARD) -m $(CARD_MB) -date $(KERNDATE_IX) -fs $(CARD_FS) $@ bootcode.bin=$(FIRMWARE)/bootcode.bin start_cd.elf=$(FIRMWARE)/start_cd.elf \
 	  fixup_cd.dat=$(FIRMWARE)/fixup_cd.dat config.txt=conf/config.txt version.txt=$(CARD_VERSION) mini9pi1.img=kernel-pi1-ix.img mini9pi2.img=kernel-pi2-ix.img
 IMAGE_CARD = $(basename $(IMAGE))-card$(suffix $(IMAGE))

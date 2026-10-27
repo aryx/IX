@@ -687,12 +687,24 @@ self: $(O)/boot.img
 
 # self in minutes: a few of the Buildfile's targets, ping (cc, as, ld)
 # and the library (ml, as), each compared with the host's in the image
-# (self-quick.keys: cmp); what the shell printed is self-quick.expected
-self-quick: $(O)/boot.img
+# (self-quick.keys: cmp); what the shell printed is self-quick.expected.
+# Then the kernel linked by ld, from the host's objects, the biggest
+# link, where ld's memory runs out first (bugs/ix.md: make self's first
+# night); 3 minutes. On an image of its own: boot.img and the objects
+# are over its 10 MB, and the objects in one directory keep ld's line
+# under the console's 256 characters
+self-quick: $(O)/boot.img $(O)/self-ld.img
 	rm -f $(O)/self-quick.img; truncate -s 64M $(O)/self-quick.img
 	timeout 1800 $(MACHINE) -d $(O)/self-quick.img $(O)/boot.img < $(T)/self-quick.keys > $(O)/self-quick.out
 	diff $(T)/self-quick.expected $(O)/self-quick.out
-	rm $(O)/self-quick.img $(O)/self-quick.out && echo "tiny-kernel: self-quick ok, ping and the library the host's"
+	printf 'rc\ncd /k\nld -map -o k.img $(notdir $(KERNEL))\ncmp k.img kernel.img && echo kernel.img: the host\nexit\n' | timeout 600 $(MACHINE) $(O)/self-ld.img > $(O)/self-ld.out
+	grep -q 'kernel.img: the host' $(O)/self-ld.out || { cat $(O)/self-ld.out; exit 1; }
+	rm $(O)/self-quick.img $(O)/self-quick.out $(O)/self-ld.out && echo "tiny-kernel: self-quick ok, ping, the library and the kernel's link the host's"
+$(O)/self-ld.img: $(O)/kernel.img $(O)/bin/sh $(O)/bin/rc $(O)/bin/ld $(O)/bin/utils
+	cp $(O)/kernel.img $@
+	for f in sh rc ld utils; do printf 'bin/%s\n%d\n' $$f $$(wc -c < $(O)/bin/$$f) >> $@; cat $(O)/bin/$$f >> $@; done
+	for f in $(KERNEL) $(O)/kernel.img; do printf 'k/%s\n%d\n' $$(basename $$f) $$(wc -c < $$f) >> $@; cat $$f >> $@; done
+	printf 'bin/cmp\nlink bin/utils\nbin/echo\nlink bin/utils\n\n' >> $@
 
 # self on several cores (plan_tiny_multicore.md): tiny-machine -cores 4,
 # each build -j 4; the image of the first build compared with the host's,

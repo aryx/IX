@@ -7,14 +7,15 @@ so).
 |---|---|---|
 | `make test` | before every commit (`tests/lite.sh`) | 2 min |
 | `make test-tix`, `test-mix` | a change in one system | 1-2 min |
-| `make self-quick` | a change to the toolchain, a kernel, an emulator | 5 min |
+| `make self-quick` | a change to the toolchain, a kernel, an emulator | 6 min |
 | `make test-all` | CI on each push; by hand before a large change | 30 min |
 | `make self` | each night on GitHub (self.yml): both systems, all of themselves | hours |
 
 `make test` is the gate: every program's fast checks at once.
 `test-tix` and `test-mix` are its jobs of one system (and the shared
 ones). `self-quick`: t-ix in tiny-kernel and m-ix in mini-9pi build a
-part of themselves. `test-all`: every suite one after the other
+part of themselves (t-ix's ld links the kernel too, its biggest link).
+`test-all`: every suite one after the other
 (`tests/all.sh -l` lists them).
 
 ## make test

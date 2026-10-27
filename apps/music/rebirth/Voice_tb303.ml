@@ -259,38 +259,69 @@ let note_on ~(p : patch option) (t : t) (note : int) ~(accent : bool) ~(glide : 
   end
 
 (* [n] samples of the voice into [out] from [from] *)
+(* ix: the pieces in flat arrays (Float.Array), the envelopes in
+ * variables while the samples are made: by mini-ml a float stored in a
+ * float array or a mutable float field is a new block and the write
+ * barrier, about ten a sample (old: pitch, wave, cutoff, gains and the
+ * frequencies float arrays; t.meg, t.sweep, t.hold, t.level written
+ * each sample) *)
+(* Signal.at_most's, here: lib_audio's units are another directory's,
+ * not inlined (Float.min 18000. x the same, without a call) *)
+let at_most (hi : float) (x : float) : float = if x > hi then hi else x
+
 let render (t : t) (out : Signal.t) (from : int) (n : int) : unit =
   if n > 0 then begin
     let p = locked t from in
-    let pitch = Array.make n 0. and wave = Array.make n 0. and cutoff = Array.make n 0. in
-    Voicing.fill_pitch t.glide ~seconds:(if t.sliding then slide_seconds else 0.) pitch;
-    let frequency = Array.map (fun m -> Voicing.frequency (m +. (12. *. p.tuning))) pitch in
-    Vco.fill ~band_limited:true ~width:None ~sync:None t.vco (if p.square then Vco.Pulse else Vco.Sawtooth) ~frequency wave;
+    let pitch = Float.Array.make n 0. and wave = Float.Array.make n 0. in
+    let cutoff = Float.Array.make n 0. in
+    Voicing.fill_pitch t.glide
+      ~seconds:(if t.sliding then slide_seconds else 0.) pitch;
+    let frequency = Float.Array.make n 0. in
+    for i = 0 to n - 1 do
+      Float.Array.set frequency i
+        (Voicing.frequency (Float.Array.get pitch i +. (12. *. p.tuning)))
+    done;
+    Vco.fill ~band_limited:true ~width:None ~sync:None t.vco
+      (if p.square then Vco.Pulse else Vco.Sawtooth) ~frequency wave;
     let meg_k = exp (-.log 1000. /. (t.meg_seconds *. rate)) in
     let charge = per_sample sweep_charge and drain = per_sample sweep_drain in
-    let attack = per_sample attack_seconds and hold_k = exp (-1. /. (hold_seconds *. rate)) and close = per_sample close_seconds in
-    let gains = Array.make n 0. in
+    let attack = per_sample attack_seconds in
+    let hold_k = exp (-1. /. (hold_seconds *. rate)) in
+    let close = per_sample close_seconds in
+    let gains = Float.Array.make n 0. in
+    let meg = ref t.meg and sweep = ref t.sweep in
+    let hold = ref t.hold and level = ref t.level in
+    let env_octaves = env_octaves p.env_mod in
+    let cutoff_hz = cutoff_hz p.cutoff in
     for i = 0 to n - 1 do
-      t.meg <- t.meg *. meg_k;
+      meg := !meg *. meg_k;
       (* the sweep: charged by an accented note's envelope through the
        * diode, drained all the time *)
-      let a = if t.accented then t.meg else 0. in
-      if a > t.sweep then t.sweep <- t.sweep +. ((a -. t.sweep) *. charge) else t.sweep <- t.sweep -. (t.sweep *. drain);
-      (* the volume: towards the long decay while the gate is open, closed
-       * fast after *)
+      let a = if t.accented then !meg else 0. in
+      if a > !sweep then sweep := !sweep +. ((a -. !sweep) *. charge)
+      else sweep := !sweep -. (!sweep *. drain);
+      (* the volume: towards the long decay while the gate is open,
+       * closed fast after *)
       if t.gate then begin
-        t.hold <- t.hold *. hold_k;
-        t.level <- t.level +. ((t.hold -. t.level) *. attack)
+        hold := !hold *. hold_k;
+        level := !level +. ((!hold -. !level) *. attack)
       end
-      else t.level <- t.level -. (t.level *. close);
-      let octaves = (env_octaves p.env_mod *. t.meg) +. (2. *. p.accent *. t.sweep) in
-      cutoff.(i) <- Float.min 18000. (cutoff_hz p.cutoff *. Float.pow 2. octaves);
-      gains.(i) <- t.level *. (1. +. (p.accent *. t.sweep))
+      else level := !level -. (!level *. close);
+      let octaves = (env_octaves *. !meg) +. (2. *. p.accent *. !sweep) in
+      Float.Array.set cutoff i
+        (at_most 18000. (cutoff_hz *. Float.pow 2. octaves));
+      Float.Array.set gains i (!level *. (1. +. (p.accent *. !sweep)))
     done;
-    t.cutoff_now <- cutoff.(n - 1);
-    Diode_ladder.process t.ladder ~cutoff ~resonance:(resonance_k p.resonance) wave;
+    t.meg <- !meg;
+    t.sweep <- !sweep;
+    t.hold <- !hold;
+    t.level <- !level;
+    t.cutoff_now <- Float.Array.get cutoff (n - 1);
+    Diode_ladder.process t.ladder ~cutoff
+      ~resonance:(resonance_k p.resonance) wave;
     for i = 0 to n - 1 do
-      let x = 4. *. p.volume *. gains.(i) *. wave.(i) in
+      let x =
+        4. *. p.volume *. Float.Array.get gains i *. Float.Array.get wave i in
       out.(from + i) <- x;
       t.ring.(t.at) <- x;
       t.at <- (t.at + 1) mod 2048

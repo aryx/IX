@@ -322,15 +322,25 @@ let spectrum_view (samples : Signal.t) : shape list =
   let n = 2 *.. (Array.length mags -.. 1) in
   let bars = 90 in
   let freq b = 20. * (1000. ** (float_of_int b / float_of_int bars)) in
+  (* ix: each bin looked at once, its bar the one whose bounds hold it
+   * (the bins and the bounds both rising), where each bar looked at
+   * every bin: 90 times 2,049 a frame (old: in bar, Array.iteri over
+   * mags, the bin taken if f >= lo && f < hi && v > !top) *)
+  let bounds = Float.Array.init (bars +.. 1) freq in
+  let tops = Float.Array.make bars 0. in
+  let b = ref 0 in
+  for k = 0 to Array.length mags -.. 1 do
+    let f = Spectrum.bin_frequency ~n k and v = mags.(k) in
+    while !b < bars && not (f < Float.Array.get bounds (!b +.. 1)) do
+      incr b
+    done;
+    if !b < bars && f >= Float.Array.get bounds !b
+       && v > Float.Array.get tops !b
+    then Float.Array.set tops !b v
+  done;
   let bar b =
-    let lo = freq b and hi = freq (b +.. 1) in
-    let top = ref 0. in
-    Array.iteri
-      (fun k v ->
-        let f = Spectrum.bin_frequency ~n k in
-        if f >= lo && f < hi && v > !top then top := v)
-      mags;
-    let db = if !top <= 0. then -80. else Float.max (-80.) (20. * log10 !top) in
+    let top = Float.Array.get tops b in
+    let db = if top <= 0. then -80. else Float.max (-80.) (20. * log10 top) in
     let bh = (db + 80.) / 80. * h in
     let bw = w / float_of_int bars in
     rectangle green (bw - 1.) (Float.max 1. bh) |> move (cx - (w / 2.) + ((float_of_int b + 0.5) * bw)) (cy - (h / 2.) + (bh / 2.))

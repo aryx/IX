@@ -149,14 +149,24 @@ let fill (t : t) (out : Signal.stereo) : unit =
   let level k = if p.mutes.(k) then 0. else p.levels.(k) in
   let bass = Array.init n (fun i -> (level 0 *. t.buffers.(0).left.(i)) +. (level 1 *. t.buffers.(1).left.(i))) in
   if p.distortion > 0. then Drive.process t.drive Tanh ~drive:(1. +. (20. *. p.distortion)) ~mix:1. bass;
-  let drums = Array.init n (fun i -> (level 2 *. t.buffers.(2).left.(i)) +. (level 3 *. t.buffers.(3).left.(i))) in
+  (* ix: the drums in a flat array (Float.Array), the PCF's cutoff
+   * one number: by mini-ml a float stored in a float array is a new
+   * block and the write barrier (old: Array.init, an Array.make of the
+   * cutoff) *)
+  let drums = Float.Array.make n 0. in
+  for i = 0 to n - 1 do
+    Float.Array.set drums i
+      ((level 2 *. t.buffers.(2).left.(i))
+       +. (level 3 *. t.buffers.(3).left.(i)))
+  done;
   (* the PCF: the drums' low-pass, its cutoff the step's *)
   if p.pcf_on then begin
     let step = Voice_tr808.step t.drums.(0) in
-    Svf.process t.pcf_filter Zero_delay Low_pass ~cutoff:(Array.make n (pcf_hz p.pcf.(step))) ~q:1.2 drums
+    Svf.process_fixed t.pcf_filter Zero_delay Low_pass
+      ~cutoff:(pcf_hz p.pcf.(step)) ~q:1.2 drums
   end;
   for i = 0 to n - 1 do
-    let x = bass.(i) +. drums.(i) in
+    let x = bass.(i) +. Float.Array.get drums i in
     out.left.(i) <- x;
     out.right.(i) <- x
   done;

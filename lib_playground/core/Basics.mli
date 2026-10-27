@@ -6,15 +6,15 @@
 
 val log : string -> unit
 
-val ( /.. ) : int -> int -> int
-val ( +.. ) : int -> int -> int
-val ( -.. ) : int -> int -> int
-val ( *.. ) : int -> int -> int
+external ( /.. ) : int -> int -> int = "%divint"
+external ( +.. ) : int -> int -> int = "%addint"
+external ( -.. ) : int -> int -> int = "%subint"
+external ( *.. ) : int -> int -> int = "%mulint"
 
-val ( / ) : float -> float -> float
-val ( + ) : float -> float -> float
-val ( - ) : float -> float -> float
-val ( * ) : float -> float -> float
+external ( / ) : float -> float -> float = "%divfloat"
+external ( + ) : float -> float -> float = "%addfloat"
+external ( - ) : float -> float -> float = "%subfloat"
+external ( * ) : float -> float -> float = "%mulfloat"
 
 (* to the nearest int, a half up *)
 val round : float -> int

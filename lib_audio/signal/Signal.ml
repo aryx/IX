@@ -35,3 +35,11 @@ let of_function (seconds : float) (f : float -> float) : t =
 let to_int16 (x : float) : int =
   let v = int_of_float (Float.round (x *. 32767.)) in
   if v < -32768 then -32768 else if v > 32767 then 32767 else v
+
+(* ix: Float.min hi x and Float.max lo x for a bound that is not nan,
+ * the same answers (a nan x kept), without a call: lib_core's Float is
+ * another directory's unit, its min and max called through their
+ * closures, their floats boxed; these two inlined in lib_audio's units
+ * (the filters' and oscillators' clamps, each sample) *)
+let at_most (hi : float) (x : float) : float = if x > hi then hi else x
+let at_least (lo : float) (x : float) : float = if lo > x then lo else x

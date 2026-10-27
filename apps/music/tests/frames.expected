@@ -1,6 +1,6 @@
 music/rebirth/ReBirth|golden|5 -fixed-time 1000 seed=1 skin=plain|d7da5503f7b436f5a0dd9b88118a8c7945167b6f0d07f5de1014324528fb4fa5|f50475b91c1fbdc65c0b32e93eb98c890e64301612f3c6811f0b8e8af3baecfe
-music/rebirth/ReBirth|running|40 -fixed-time 1000 -script space:3 seed=1 skin=plain|27a6122be9a1e7dd31aa23c90f2cf934161ab5df602f9487656bd32b715d7576|1de24726f9d08a9c833461fb27f9128b31a69a6f00af5ddbecc6d83ac29f5b19
+music/rebirth/ReBirth|running|40 -fixed-time 1000 -script space:3 seed=1 skin=plain|842ed9fb39cd59dd38bf9905d713401bba874015c3c6042fc45ed006a1ef018c|1de24726f9d08a9c833461fb27f9128b31a69a6f00af5ddbecc6d83ac29f5b19
 music/rebirth/ReBirth|edited|22 -fixed-time 1000 -script 'at(80;375):1-4,click:2,at(-410;156):5-12,click:6,click:10,at(-10;180):13-16,click:14,at(20;180):17-20,click:18' seed=1 skin=plain|35876b5c83e2f357823e12c2cca1e7075a3ace75e848b11e469d07a46d6f8d9b|8f32756b710ddc2c5a3ea10495950b6ab0066f9d989deefba213f941779e5b75
-music/rebirth/ReBirth|rb338|40 -fixed-time 1000 -script space:3 seed=1|a621355a9ce96bbae4b8ee768ad9d5ae866f681efb22b5d2f2e42559a2811301|8c475fb03b92d75fa67591780b47b369af996f8d699b2842dfee83a85fee5e29
-music/rebirth/ReBirth|night|40 -fixed-time 1000 -script space:3 seed=1 skin=night|79bb462bee6f60fb3c1b48816c4936b30fcfd9e5b3994e040f6b8d777e916ac1
+music/rebirth/ReBirth|rb338|40 -fixed-time 1000 -script space:3 seed=1|d3f855b82a590c5ad1e85b06a27672a39977f42e6d2065afd7fdb9b0ba88a22a|8c475fb03b92d75fa67591780b47b369af996f8d699b2842dfee83a85fee5e29
+music/rebirth/ReBirth|night|40 -fixed-time 1000 -script space:3 seed=1 skin=night|db5ac23c09adb78e789ec8967d9471bb3f357b47b55621fabc3d0b6f33f68712|79bb462bee6f60fb3c1b48816c4936b30fcfd9e5b3994e040f6b8d777e916ac1
 music/rebirth/ReBirth|skin_key|12 -fixed-time 1000 -script k:3,k:7 seed=1|d7da5503f7b436f5a0dd9b88118a8c7945167b6f0d07f5de1014324528fb4fa5|f50475b91c1fbdc65c0b32e93eb98c890e64301612f3c6811f0b8e8af3baecfe

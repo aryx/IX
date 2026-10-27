@@ -7,40 +7,45 @@
 
 let rate = float_of_int Signal.rate
 
-type t = {
-  w : float;
-  mutable r : float;
-  mutable a1 : float; (* 2 r cos w *)
-  mutable a2 : float; (* r^2 *)
-  mutable y1 : float;
-  mutable y2 : float;
-  mutable pending : float; (* the next strike's impulse *)
-  mutable level : float; (* the amplitude's bound, decayed each sample *)
-}
+(* ix: w, r, a1 (2 r cos w), a2 (r^2), y1, y2, the next strike's
+ * impulse, the amplitude's bound (decayed each sample), in a flat
+ * array: by mini-ml a mutable float field stored is a new block and
+ * the write barrier, four each sample (old: a record of them, mutable
+ * but w) *)
+type t = Float.Array.t
+
+let w = 0 and r = 1 and a1 = 2 and a2 = 3
+let y1 = 4 and y2 = 5 and pending = 6 and level_ = 7
 
 let coefficients (t : t) (t60 : float) : unit =
-  t.r <- Float.pow 10. (-3. /. (Float.max 1e-4 t60 *. rate));
-  t.a1 <- 2. *. t.r *. cos t.w;
-  t.a2 <- t.r *. t.r
+  Float.Array.set t r (Float.pow 10. (-3. /. (Float.max 1e-4 t60 *. rate)));
+  Float.Array.set t a1 (2. *. Float.Array.get t r *. cos (Float.Array.get t w));
+  Float.Array.set t a2 (Float.Array.get t r *. Float.Array.get t r)
 
 let create ~(frequency : float) ~(t60 : float) : t =
-  let w = 2. *. Float.pi *. Float.min frequency (0.49 *. rate) /. rate in
-  let t = { w; r = 0.; a1 = 0.; a2 = 0.; y1 = 0.; y2 = 0.; pending = 0.; level = 0. } in
+  let t = Float.Array.make 8 0. in
+  Float.Array.set t w
+    (2. *. Float.pi *. Float.min frequency (0.49 *. rate) /. rate);
   coefficients t t60;
   t
 
 let strike (t : t) (a : float) : unit =
-  t.pending <- t.pending +. (a *. sin t.w);
-  t.level <- t.level +. Float.abs a
+  Float.Array.set t pending
+    (Float.Array.get t pending +. (a *. sin (Float.Array.get t w)));
+  Float.Array.set t level_ (Float.Array.get t level_ +. Float.abs a)
 
 let damp (t : t) ~(t60 : float) : unit = coefficients t t60
 
 let next (t : t) : float =
-  let y = (t.a1 *. t.y1) -. (t.a2 *. t.y2) +. t.pending in
-  t.pending <- 0.;
-  t.y2 <- t.y1;
-  t.y1 <- y;
-  t.level <- t.level *. t.r;
+  let y =
+    (Float.Array.get t a1 *. Float.Array.get t y1)
+    -. (Float.Array.get t a2 *. Float.Array.get t y2)
+    +. Float.Array.get t pending
+  in
+  Float.Array.set t pending 0.;
+  Float.Array.set t y2 (Float.Array.get t y1);
+  Float.Array.set t y1 y;
+  Float.Array.set t level_ (Float.Array.get t level_ *. Float.Array.get t r);
   y
 
-let level (t : t) : float = t.level
+let level (t : t) : float = Float.Array.get t level_

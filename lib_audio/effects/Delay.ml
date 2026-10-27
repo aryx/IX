@@ -9,7 +9,16 @@ let beats ~(bpm : float) (b : float) : float = b *. 60. /. bpm
 let longest = 2.
 
 (* a line of the last [size] samples written, [at] the next to write *)
-type line = { samples : float array; mutable at : int; mutable tone : float (* the low-pass's state *) }
+(* ix: the samples in a flat array, the delay and the tones in
+ * variables while a block is made: by mini-ml a float stored in a
+ * float array or a mutable float field is a new block and the write
+ * barrier, five a sample (old: samples : float array; t.delay and
+ * l.tone written each sample) *)
+type line = {
+  samples : Float.Array.t;
+  mutable at : int;
+  mutable tone : float; (* the low-pass's state *)
+}
 
 type t = {
   left : line;
@@ -23,17 +32,17 @@ type t = {
 type settings = { time : float; feedback : float; tone : float; ping_pong : bool; mix : float }
 
 let size = Signal.samples longest + 2
-let line () = { samples = Array.make size 0.; at = 0; tone = 0. }
+let line () = { samples = Float.Array.make size 0.; at = 0; tone = 0. }
 let create () : t = { left = line (); right = line (); delay = -1.; last_feedback = nan; last_mix = nan }
 
 (* [d] samples ago, between two samples: linear *)
 let read (l : line) (d : float) : float =
   let back = Float.to_int d and frac = d -. Float.of_int (Float.to_int d) in
-  let at k = l.samples.((l.at - k + (2 * size)) mod size) in
+  let at k = Float.Array.get l.samples ((l.at - k + (2 * size)) mod size) in
   ((1. -. frac) *. at back) +. (frac *. at (back + 1))
 
 let write (l : line) (x : float) : unit =
-  l.samples.(l.at) <- x;
+  Float.Array.set l.samples l.at x;
   l.at <- (l.at + 1) mod size
 
 (* the glide to a new time: 1/2205 of the way each sample, 63% in 50 ms *)
@@ -46,26 +55,30 @@ let process (t : t) (s : settings) (out : Signal.stereo) : unit =
   let n = Array.length out.left in
   let from_feedback = if Float.is_nan t.last_feedback then feedback else t.last_feedback
   and from_mix = if Float.is_nan t.last_mix then s.mix else t.last_mix in
-  let darker (l : line) (x : float) =
-    l.tone <- l.tone +. (a *. (x -. l.tone));
-    l.tone
-  in
-  Array.iteri
-    (fun i x_left ->
-      let x_right = out.right.(i) in
-      let feedback = Effect.ramp from_feedback feedback i n and mix = Effect.ramp from_mix s.mix i n in
-      t.delay <- t.delay +. (glide *. (target -. t.delay));
-      let wet_left = read t.left t.delay and wet_right = read t.right t.delay in
-      let back_left = darker t.left wet_left and back_right = darker t.right wet_right in
-      if s.ping_pong then (
-        write t.left (((x_left +. x_right) /. 2.) +. (feedback *. back_right));
-        write t.right (feedback *. back_left))
-      else (
-        write t.left (x_left +. (feedback *. back_left));
-        write t.right (x_right +. (feedback *. back_right)));
-      out.left.(i) <- x_left +. (mix *. wet_left);
-      out.right.(i) <- x_right +. (mix *. wet_right))
-    out.left;
+  let delay = ref t.delay in
+  let tone_left = ref t.left.tone and tone_right = ref t.right.tone in
+  for i = 0 to n - 1 do
+    let x_left = out.left.(i) and x_right = out.right.(i) in
+    let feedback = Effect.ramp from_feedback feedback i n
+    and mix = Effect.ramp from_mix s.mix i n in
+    delay := !delay +. (glide *. (target -. !delay));
+    let wet_left = read t.left !delay and wet_right = read t.right !delay in
+    (* the echoes darker: each line's one-pole low-pass *)
+    tone_left := !tone_left +. (a *. (wet_left -. !tone_left));
+    tone_right := !tone_right +. (a *. (wet_right -. !tone_right));
+    let back_left = !tone_left and back_right = !tone_right in
+    if s.ping_pong then (
+      write t.left (((x_left +. x_right) /. 2.) +. (feedback *. back_right));
+      write t.right (feedback *. back_left))
+    else (
+      write t.left (x_left +. (feedback *. back_left));
+      write t.right (x_right +. (feedback *. back_right)));
+    out.left.(i) <- x_left +. (mix *. wet_left);
+    out.right.(i) <- x_right +. (mix *. wet_right)
+  done;
+  t.delay <- !delay;
+  t.left.tone <- !tone_left;
+  t.right.tone <- !tone_right;
   t.last_feedback <- feedback;
   t.last_mix <- s.mix
 

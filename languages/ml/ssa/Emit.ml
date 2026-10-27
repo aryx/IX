@@ -288,8 +288,26 @@ let func m out (fn : func) (lf : L.func) =
     ins "ADD\tR%d, R%d" b i
   in
   (* float array b's i-th double's address into i's register, checked
-   * when [checked] against its length: its words, by two on arm *)
+   * when [checked] against its length: its words, by two on arm; the
+   * offset to add, returned.
+   * OPTIMIZATION (arm): from i tagged, 2k+1, b + 8k is b + 4i - 4: one
+   * ADD of i shifted, the -4 in the load's offset; and 0 <= k < n is
+   * i < 2n unsigned, 2n the header's size shifted by 10 (n doubles are
+   * 2n words). A Float.Array's loop, 3 instructions an access less
+   * (mini-rebirth's ladder, mini-virtuaracing's rows).
+   * old: the arm64 way below, on both *)
   let findex checked b i =
+    if m.arch = Arm then begin
+      if checked then begin
+        ins "MOVW\t-4(R%d), R%d" b t;
+        ins "SRL\t$10, R%d" t;
+        ins "CMP\tR%d, R%d" t i;
+        ins "BLO\t2(PC)";
+        ins "BL\tcaml_array_bound_error(SB)"
+      end;
+      ins "ADD\tR%d<<2, R%d, R%d" i b i;
+      -4
+    end else begin
     ins "%s\t$1, R%d" (shift Asr) i;
     if checked then begin
       ins "%s\t%d(R%d), R%d" mov (-w) b t;
@@ -299,7 +317,9 @@ let func m out (fn : func) (lf : L.func) =
       ins "BL\tcaml_array_bound_error(SB)"
     end;
     ins "%s\t$3, R%d" (shift Lsl) i;
-    ins "ADD\tR%d, R%d" b i
+    ins "ADD\tR%d, R%d" b i;
+    0
+    end
   in
   (* OPTIMIZATION (Gen.alloc_in_place, its switch): a block taken from
    * the heap here, simple's Gen's way (ml_alloc's two words, the
@@ -536,6 +556,24 @@ let func m out (fn : func) (lf : L.func) =
            | Arm64, "caml_addfloat" -> "FADDD" | Arm64, "caml_subfloat" -> "FSUBD" | Arm64, "caml_mulfloat" -> "FMULD" | Arm64, _ -> "FDIVD")
           b a d;
         ffinish v d
+    (* -x and abs x: arm64's FNEGD and FABSD; arm's 5a has neither, the
+     * double's sign bit flipped or cleared in memory, the C arguments'
+     * place on the machine stack (a frame: bl).
+     * old: a new block, the sign bit of its high word *)
+    | Float1 f, [ x ] ->
+        let a = fsrc x 0 in let d = fdst v 0 in
+        let neg = f = "caml_negfloat" in
+        (match m.arch with
+         | Arm64 -> ins "%s\tF%d, F%d" (if neg then "FNEGD" else "FABSD") a d
+         | Arm ->
+             bl := true;
+             cargs := max !cargs 2;
+             ins "MOVD\tF%d, 4(%s)" a m.sp;
+             ins "MOVW\t8(%s), R%d" m.sp t;
+             ins "%s\t$0x80000000, R%d" (if neg then "EOR" else "BIC") t;
+             ins "MOVW\tR%d, 8(%s)" t m.sp;
+             ins "MOVD\t4(%s), F%d" m.sp d);
+        ffinish v d
     | FloatOfInt, [ x ] ->
         let a = src x r1 in let d = fdst v 0 in
         ins "%s\t$1, R%d, R%d" (shift Asr) a t;
@@ -559,11 +597,11 @@ let func m out (fn : func) (lf : L.func) =
     (* a Float.Array's double, loaded and stored: no new float, and no
      * write barrier (no pointer stored) *)
     | FloatIndex c, [ a; i ] ->
-        let bb = src a r1 in load i r2; findex c bb r2;
-        let d = fdst v 0 in ins "%s\t0(R%d), F%d" fmov r2 d; ffinish v d
+        let bb = src a r1 in load i r2; let k = findex c bb r2 in
+        let d = fdst v 0 in ins "%s\t%d(R%d), F%d" fmov k r2 d; ffinish v d
     | FloatSetIndex c, [ a; i; x ] ->
-        let bb = src a r1 in load i r2; findex c bb r2;
-        ins "%s\tF%d, 0(R%d)" fmov (fsrc x 0) r2
+        let bb = src a r1 in load i r2; let k = findex c bb r2 in
+        ins "%s\tF%d, %d(R%d)" fmov (fsrc x 0) k r2
     (* floor (or ceil) without a call: a double of 2^52 or more is whole
      * already (and an infinity, and nan: x itself); below, x + 2^52 -
      * 2^52 (x - 2^52 + 2^52 for a negative x) is x rounded to a whole
@@ -700,6 +738,23 @@ let func m out (fn : func) (lf : L.func) =
         (match o with
          | Lsl -> ins "SUB\t$1, R%d, R%d" a d; ins "%s\t$%d, R%d" (shift Lsl) n d
          | _ -> ins "%s\t$%d, R%d, R%d" (shift o) n a d);
+        ins "ORR\t$1, R%d" d; finish v d; true
+    (* OPTIMIZATION: x * 2^k a shift of x's word without its tag, its
+     * bits wrapped as the product's (mini-rebirth's 4 * r + c, a 4 x 4
+     * matrix's place); x * n the constant untagged by the assembler.
+     * old: n made, untagged, then MUL, 5 instructions *)
+    | Mul, Some n, _ | Mul, None, Some n ->
+        let a = src (if small y <> None then x else y) r1 in let d = dst v r3 in
+        if n > 0 && n land (n - 1) = 0 then begin
+          let k = let rec log i = if 1 lsl i = n then i else log (i + 1) in log 0 in
+          ins "SUB\t$1, R%d, R%d" a d;
+          if k > 0 then ins "%s\t$%d, R%d" (shift Lsl) k d
+        end
+        else begin
+          ins "SUB\t$1, R%d, R%d" a r1;
+          ins "%s\t$%d, R%d" mov n r2;
+          ins "MUL\tR%d, R%d, R%d" r2 r1 d
+        end;
         ins "ORR\t$1, R%d" d; finish v d; true
     | _ -> false
   in

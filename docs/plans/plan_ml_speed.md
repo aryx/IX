@@ -318,3 +318,71 @@ than ocaml-light ocamlopt"):
 - mini-xv6 on QEMU's Pi 4 (`kernels/xv6/numbers.sh`): its session 28.0
   s against ocaml-light's 21.1 (1.33; 4.4 on 2026-10-02), the boot to
   `ls` 8.1 s against 3.2: the boot is what is left.
+
+2026-10-26 and 27, **mini-rebirth** (the author: "let's commit. and
+switch to rebirth opti (Float.Array and so on)", then "I'll be back
+tomorrow morning; hopefully by then the perf of rebirth improved
+significantly"). A second of sound with its panel (frames 31 to 91,
+arm, mini-5i): 5,541,729,282 instructions, then 1,941,710,580 (0.35);
+the frame and the sound the same bytes as HEAD's, and OCaml's build's
+sound the same bytes (apps/music/tests). The profile's `sinus` above
+was mostly the spectrum's FFT, not the sound's sines. By mini-ml a
+float stored in a float array or a mutable float field is a new block
+and the write barrier, and a float a function returns a new block;
+what was done, each with its `ix:` comment and its `old:`:
+
+- lib_audio on `Float.Array` where rebirth's sound is made: the diode
+  ladder's state, matrix and vectors made once (25 arrays a sample
+  before), Svf's two states, Vco's wraps, Modal's eight floats,
+  Voicing's pitch, Delay's lines; the TB-303's and the drums' pieces,
+  the drums' hits' out, the studio's drums. The state in variables
+  while a block is made (Vco's phase, Drive's high-pass, Delay's
+  delay and tones, the TB-303's envelopes).
+- Calls not made, the same values: Svf.process_fixed, a cutoff that
+  does not move, its tan once; Drive's gain once when its knob stays
+  (a ramp from a value to itself is that value); Filter.chain, the
+  four biquads in one function; the drums' envelopes once an age (the
+  silence test read the next sample's); Vco.run_plain, the
+  band-limited pulse and sawtooth in one loop (Oscillator's formulas
+  in it); Signal.at_most and at_least, lib_core's Float.min and max
+  for a bound not nan without a call.
+- The spectrum (a third of the time): Spectrum.of_signal's FFT in two
+  flat arrays, iterative, each size's w^k, window and bit reversal
+  made once (the same butterflies as the recursion's); ReBirth's bars
+  in one pass over the bins (90 passes before).
+- lib_playground's Basics: + - * / and the ints' as externals (a
+  value of another directory's unit is not inlined: each + of a
+  program that opens Basics, Playground.ml among them, was a closure's
+  call, its floats boxed). On arm64 OCaml now fuses a * b + c in
+  rebirth's drawing (the memory's two compilers): three of its frames'
+  OCaml sums recorded again, mini-ml's the old ones.
+- **3b**, mini-ml (Emit, Unbox): a product by a small constant without
+  MUL (a power of 2 a shift of the word without its tag); -x and abs x
+  on doubles (Unbox's Float1; arm64's FNEGD and FABSD, arm's sign bit
+  in memory, 5a having neither), where each was a new block; on arm a
+  Float.Array's address in one ADD (b + 4i - 4 from the tagged i, the
+  bound checked against 2n). tests/runtime/mul_neg.ml.
+
+Arm, mini-5i, the same frames, against 076a65b1 (3a), each from
+nothing:
+
+| | 3a | now | |
+|---|---:|---:|---:|
+| mini-rebirth, a second | 5,541,729,282 | 1,941,710,580 | 0.350 |
+| mini-virtuaracing, a frame | 32,197,663 | 29,212,213 | 0.907 |
+| mini-quake, a frame | 24,169,374 | 22,689,731 | 0.939 |
+| mini-doom, a frame | 8,925,890 | 8,832,450 | 0.990 |
+| mini-ml compiling its three units | 6,799,670,091 | 6,788,853,190 | 0.998 |
+| bench: pixels, floats, samples | 26.65 million, 7.33, 6.32 | 25.81, 7.33, 6.31 | 0.969, 1, 1 |
+
+What is left of rebirth's (2.03 thousand million by the profiler): the
+C library's exp and what it calls (modf, ldexp, floor), pow, log, 20%
+(another session's exp.c without floor's and ldexp's calls, in the
+working tree); the ladder's solve 6.4% (the index arithmetic made
+again at each access: no common subexpressions); the floats C's
+functions return, a new block each (copy_double, 1.8 million a
+second); a float a known function returns, boxed (the floats plan's
+item 6: a second entry returning the double).
+
+Found on the way: mini-mk does not make an object again when mini-ml
+changes; a compiler's measure is from nothing.

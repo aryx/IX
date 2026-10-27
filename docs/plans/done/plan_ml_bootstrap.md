@@ -816,6 +816,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-26 | TinyKernel.ml split as the four were: the boot (99 lines of 1,884), its parts in TinyKernel/ (Machine, Files, Procs, Devices, IO, Calls, Scheduler), one program for tiny-ml (the Makefile's `KML`); the code moved as it was | 0 | +601 (the `.ml` +75: headers and opens; the `.mli` +520; the Makefile +6) | |
 | 2026-10-26 | mini-ml's integers untagged inside a function where their bits are known small (plan_ml_speed.md, stage 2: `ssa/Untag`, `Ssa.Tag`, Emit's shifted operands, Alloc's unscanned slots); mini-ld for arm64 refuses a register index it dropped; mini-doom's frame 0.94, mini-quake's 0.98 | +272 | +1 | |
 | 2026-10-26 | plan_ml_speed.md, stage 3a: a float's comparison that a branch alone reads made by the branch (Emit's fused: `CMPD`, then `B.cond`); mini-virtuaracing's frame 0.98, mini-doom's 0.99 | +36 | 0 | |
+| 2026-10-27 | plan_ml_speed.md, 3b: a product by a small constant without MUL, -x and abs x of doubles unboxed, on arm a Float.Array's address in one ADD (tests/runtime/mul_neg.ml); mini-rebirth's sound and spectrum on Float.Array (lib_audio, rebirth), lib_playground's Basics operators externals; mini-rebirth's second 0.35, mini-virtuaracing's frame 0.91, mini-quake's 0.94 | +58 | +61 (the test), lib_audio +326, rebirth +128, lib_playground +4 | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

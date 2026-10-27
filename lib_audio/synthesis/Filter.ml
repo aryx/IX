@@ -107,6 +107,27 @@ let step (f : biquad) (m : memory) (x : float) : float =
   Float.Array.set m 2 y;
   y
 
+(* ix: step's for each of fs in turn, y kept in a variable between them:
+ * by mini-ml a float a function returns is a new block (Drive's eight
+ * steps a sample were Filter.step's) *)
+let chain (fs : biquad array) (ms : memory array) (x : float) : float =
+  let y = ref x in
+  for k = 0 to Array.length fs - 1 do
+    let f = fs.(k) and m = ms.(k) and x = !y in
+    let x1 = Float.Array.get m 0 and x2 = Float.Array.get m 1 in
+    let y1 = Float.Array.get m 2 and y2 = Float.Array.get m 3 in
+    let out =
+      (f.b0 *. x) +. (f.b1 *. x1) +. (f.b2 *. x2) -. (f.a1 *. y1)
+      -. (f.a2 *. y2)
+    in
+    Float.Array.set m 1 x1;
+    Float.Array.set m 0 x;
+    Float.Array.set m 3 y1;
+    Float.Array.set m 2 out;
+    y := out
+  done;
+  !y
+
 let silence () : memory = Float.Array.make 4 0.
 
 let process (f : biquad) (m : memory) (s : Signal.t) : unit = Array.iteri (fun i x -> s.(i) <- step f m x) s

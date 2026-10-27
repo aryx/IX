@@ -2,16 +2,20 @@
 let log s =
   Printf.printf "%s" s
 
-let (/..) = (/)
-let (+..) = (+)
-let (-..) = (-)
-let ( *.. ) = ( * )
+(* ix: externals, where they were let (/..) = (/) and so on: by mini-ml,
+ * a value of another directory's unit is not inlined (its summary not
+ * read), so each + of a program that opens Basics was a call of a
+ * closure, its floats boxed; an external is the operation itself *)
+external (/..) : int -> int -> int = "%divint"
+external (+..) : int -> int -> int = "%addint"
+external (-..) : int -> int -> int = "%subint"
+external ( *.. ) : int -> int -> int = "%mulint"
 
 (* prefer float operators as default *)
-let (/) = (/.)
-let (+) = (+.)
-let (-) = (-.)
-let ( * ) = ( *. )
+external (/) : float -> float -> float = "%divfloat"
+external (+) : float -> float -> float = "%addfloat"
+external (-) : float -> float -> float = "%subfloat"
+external ( * ) : float -> float -> float = "%mulfloat"
 
 let (round: float -> int) = fun f ->
     int_of_float (floor (f +. 0.5))

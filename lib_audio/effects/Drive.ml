@@ -48,12 +48,10 @@ let create ~(oversampling : int) () : t =
     last_mix = nan;
   }
 
+(* ix: Filter.chain, the four steps in one function (old: a loop of
+ * Filter.step, each step's float a new block by mini-ml) *)
 let chain (t : t) (memories : Filter.memory array) (x : float) : float =
-  let y = ref x in
-  for k = 0 to 3 do
-    y := Filter.step t.filter.(k) memories.(k) !y
-  done;
-  !y
+  Filter.chain t.filter memories x
 
 let dc_coefficient = Filter.one_pole_coefficient 10.
 
@@ -61,27 +59,37 @@ let process (t : t) (shape : shape) ~(drive : float) ~(mix : float) (s : Signal.
   let l = t.oversampling and n = Array.length s in
   let from_drive = if Float.is_nan t.last_drive then drive else t.last_drive
   and from_mix = if Float.is_nan t.last_mix then mix else t.last_mix in
-  Array.iteri
-    (fun i x ->
-      (* the knobs ramped over the block, the drive in dB *)
-      let g = Mix.of_decibels (Effect.ramp from_drive drive i n) and mix = Effect.ramp from_mix mix i n in
-      let wet =
-        if l = 1 then curve shape (g *. x)
-        else begin
-          (* the sample, then L - 1 zeros, each through the chain; the
-           * zeros make the level L times smaller, hence the L *)
-          let out = ref 0. in
-          for k = 0 to l - 1 do
-            let up = chain t t.up (if k = 0 then float_of_int l *. x else 0.) in
-            let y = chain t t.down (curve shape (g *. up)) in
-            if k = 0 then out := y
-          done;
-          !out
-        end
-      in
-      t.dc <- t.dc +. (dc_coefficient *. (wet -. t.dc));
-      s.(i) <- ((1. -. mix) *. x) +. (mix *. (wet -. t.dc)))
-    s;
+  (* ix: a loop, the high-pass's state in a variable while the block is
+   * made, the gain once when the drive stays (the ramp from a value to
+   * itself is that value): by mini-ml a mutable float field stored is a
+   * new block and the write barrier, and of_decibels a pow each sample
+   * (old: Array.iteri, t.dc written each sample) *)
+  let steady = from_drive = drive and g0 = Mix.of_decibels drive in
+  let dc = ref t.dc in
+  for i = 0 to n - 1 do
+    let x = s.(i) in
+    (* the knobs ramped over the block, the drive in dB *)
+    let g =
+      if steady then g0 else Mix.of_decibels (Effect.ramp from_drive drive i n)
+    and mix = Effect.ramp from_mix mix i n in
+    let wet =
+      if l = 1 then curve shape (g *. x)
+      else begin
+        (* the sample, then L - 1 zeros, each through the chain; the
+         * zeros make the level L times smaller, hence the L *)
+        let out = ref 0. in
+        for k = 0 to l - 1 do
+          let up = chain t t.up (if k = 0 then float_of_int l *. x else 0.) in
+          let y = chain t t.down (curve shape (g *. up)) in
+          if k = 0 then out := y
+        done;
+        !out
+      end
+    in
+    dc := !dc +. (dc_coefficient *. (wet -. !dc));
+    s.(i) <- ((1. -. mix) *. x) +. (mix *. (wet -. !dc))
+  done;
+  t.dc <- !dc;
   t.last_drive <- drive;
   t.last_mix <- mix
 

@@ -66,4 +66,5 @@ val reset : t -> unit
 (* [process t ~cutoff ~resonance samples]: [samples] filtered in place,
  * [cutoff] in Hz one per sample (kept within 10 Hz and 20 kHz),
  * [resonance] the feedback k *)
-val process : t -> cutoff:Signal.t -> resonance:float -> Signal.t -> unit
+val process :
+  t -> cutoff:Float.Array.t -> resonance:float -> Float.Array.t -> unit

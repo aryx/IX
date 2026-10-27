@@ -47,13 +47,21 @@ let glide_to (g : glide) (note : int) : unit = g.target <- float_of_int note
 let pitch (g : glide) : float = g.pitch
 let frequency (pitch : float) : float = 440. *. Float.pow 2. ((pitch -. 69.) /. 12.)
 
-let fill_pitch (g : glide) ~(seconds : float) (out : Signal.t) : unit =
+(* ix: out a flat array, the pitch in a variable while it is filled: by
+ * mini-ml a float stored in a float array or a mutable float field is
+ * a new block and the write barrier (old: out a Signal.t, g.pitch
+ * written each sample) *)
+let fill_pitch (g : glide) ~(seconds : float) (out : Float.Array.t) : unit =
   let c = if seconds <= 0. then 1. else 1. -. exp (-1. /. (seconds *. float_of_int Signal.rate)) in
-  for i = 0 to Array.length out - 1 do
-    g.pitch <- g.pitch +. ((g.target -. g.pitch) *. c);
-    out.(i) <- g.pitch
-  done
+  let pitch = ref g.pitch and target = g.target in
+  for i = 0 to Float.Array.length out - 1 do
+    pitch := !pitch +. ((target -. !pitch) *. c);
+    Float.Array.set out i !pitch
+  done;
+  g.pitch <- !pitch
 
-let fill_frequency (g : glide) ~(seconds : float) (out : Signal.t) : unit =
+let fill_frequency (g : glide) ~(seconds : float) (out : Float.Array.t) : unit =
   fill_pitch g ~seconds out;
-  Array.iteri (fun i p -> out.(i) <- frequency p) out
+  for i = 0 to Float.Array.length out - 1 do
+    Float.Array.set out i (frequency (Float.Array.get out i))
+  done

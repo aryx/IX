@@ -74,8 +74,11 @@ val create : unit -> t
  * before; band-limited unless [band_limited] is false (true is the
  * usual) *)
 val fill :
-  band_limited:bool -> width:Signal.t option -> sync:t option -> t -> shape -> frequency:Signal.t -> Signal.t -> unit
+  band_limited:bool -> width:Float.Array.t option -> sync:t option -> t ->
+  shape -> frequency:Float.Array.t -> Float.Array.t -> unit
 
 (* [fill_sync_at_sample]: the same, the restarts' jumps corrected as if
  * they fell on the sample (Unit_vco's comparison) *)
-val fill_sync_at_sample : width:Signal.t option -> sync:t -> t -> shape -> frequency:Signal.t -> Signal.t -> unit
+val fill_sync_at_sample :
+  width:Float.Array.t option -> sync:t -> t -> shape ->
+  frequency:Float.Array.t -> Float.Array.t -> unit

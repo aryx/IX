@@ -191,14 +191,27 @@ let decay_env (t60 : float) (age : int) : float = exp (-6.9 *. float_of_int age 
 
 (* the metal's buffers for the segment being rendered: the upper and
  * lower band-passes of the six squares, and the cowbell's two squares *)
-type metal = { mutable low : Signal.t; mutable high : Signal.t; mutable bell : Signal.t }
+(* ix: the buffers, the hits' out and the filters' samples in flat
+ * arrays (Float.Array): by mini-ml a float stored in a float array is a
+ * new block and the write barrier, each sample of each square, filter
+ * and hit (old: Signal.t's) *)
+type metal = {
+  mutable low : Float.Array.t;
+  mutable high : Float.Array.t;
+  mutable bell : Float.Array.t;
+}
 
 (* a hit: it adds [m] samples of itself into [out] from [at], reading
  * the metal's buffers from 0; alive until silent *)
 (* ix: a hit's add names the hit (it ends itself): a recursive value
  * there (let rec h = { ...; add } and add ...), here the hit kept in a
  * reference its add reads, which mini-ml takes *)
-type hit = { who : instrument; add : metal -> Signal.t -> int -> int -> unit; mutable alive : bool; mutable choked : bool }
+type hit = {
+  who : instrument;
+  add : metal -> Float.Array.t -> int -> int -> unit;
+  mutable alive : bool;
+  mutable choked : bool;
+}
 
 let drum_frequency ~(f0 : float) ~(sigh : float) ~(punch : float) ~(age : float) (level : float) : float =
   if age < 0.006 then punch *. f0 else f0 *. (1. +. (sigh *. level))
@@ -219,7 +232,7 @@ let sine_drum ~(f0 : float) ~(t60 : float) ~(sigh : float) ~(punch : float) ~(to
       (* the trigger pulse, 1 ms, clicking through the tone's low-pass *)
       let click = if float_of_int !age < 0.001 *. rate then 0.5 else 0. in
       lp := !lp +. (a *. ((env *. sin (2. *. Float.pi *. !phase)) +. click -. !lp));
-      out.(i) <- out.(i) +. (amp *. !lp);
+      Float.Array.set out i (Float.Array.get out i +. (amp *. !lp));
       incr age;
       if env < 1e-4 then h.alive <- false
       end
@@ -233,21 +246,45 @@ let sine_drum ~(f0 : float) ~(t60 : float) ~(sigh : float) ~(punch : float) ~(to
  * voices don't disturb each other's) through [filter] under [envelope] *)
 let tones_and_noise ~(noise : unit -> float) ~(tones : (float * float * float) list) ~(noise_level : float)
     ~(filter : Svf.mode * float * float) ~(envelope : int -> float) (amp : float) (who : instrument) : hit =
-  let modes = List.map (fun (f, t60, a) -> let m = Modal.create ~frequency:f ~t60 in Modal.strike m a; m) tones in
+  (* ix: the modes an array, summed by a loop: by mini-ml the fold's
+   * closure took and gave its float in a block, each mode each sample
+   * (old: a list, List.fold_left (fun s md -> s +. Modal.next md) 0.) *)
+  let modes =
+    tones
+    |> List.map (fun (f, t60, a) ->
+           let m = Modal.create ~frequency:f ~t60 in
+           Modal.strike m a;
+           m)
+    |> Array.of_list
+  in
   let svf = Svf.create () and age = ref 0 in
   let mode, cutoff, q = filter in
   let self : hit option ref = ref None in
   let add out at m =
     let h : hit = (match !self with Some h -> h | None -> failwith "hit") in
-    let n = Array.init m (fun _ -> noise ()) in
-    Svf.process svf Zero_delay mode ~cutoff:(Array.make m cutoff) ~q n;
+    let n = Float.Array.make m 0. in
+    for i = 0 to m - 1 do
+      Float.Array.set n i (noise ())
+    done;
+    Svf.process_fixed svf Zero_delay mode ~cutoff ~q n;
+    (* ix: the envelope at each age once, the silence test's the next
+     * sample's (old: envelope !age called again after incr age) *)
+    let e = ref (envelope !age) in
     for i = 0 to m - 1 do
       if h.alive then begin
-        let x = List.fold_left (fun s md -> s +. Modal.next md) 0. modes in
-        out.(at + i) <- out.(at + i) +. (amp *. (x +. (noise_level *. envelope !age *. n.(i))));
+        let x = ref 0. in
+        for k = 0 to Array.length modes - 1 do
+          x := !x +. Modal.next modes.(k)
+        done;
+        let x = !x in
+        Float.Array.set out (at + i)
+          (Float.Array.get out (at + i)
+           +. (amp *. (x +. (noise_level *. !e *. Float.Array.get n i))));
         incr age;
+        e := envelope !age;
         (* silent, decided at the sample: the same whatever the blocks *)
-        if envelope !age < 1e-4 && List.for_all (fun md -> Modal.level md < 1e-4) modes then h.alive <- false
+        if !e < 1e-4 && Array.for_all (fun md -> Modal.level md < 1e-4) modes
+        then h.alive <- false
       end
     done
   in
@@ -257,26 +294,50 @@ let tones_and_noise ~(noise : unit -> float) ~(tones : (float * float * float) l
 
 (* the metal: a band of the squares (a buffer of [metal]) through a
  * high-pass, under an envelope; choked, gone in 10 ms *)
-let metal_hit ~(bands : ((metal -> Signal.t) * float * float * (int -> float)) list) (amp : float) (who : instrument) : hit =
+let metal_hit
+    ~(bands : ((metal -> Float.Array.t) * float * float * (int -> float)) list)
+    (amp : float) (who : instrument) : hit =
   let filters = List.map (fun _ -> Svf.create ()) bands and age = ref 0 and choke = ref 1. in
   let self : hit option ref = ref None in
   let add metal out at m =
     let h : hit = (match !self with Some h -> h | None -> failwith "hit") in
     if h.alive then begin
-      let mix = Array.make m 0. in
-      List.iter2
-        (fun (band, hp, q, envelope) svf ->
-          let x = Array.sub (band metal) 0 m in
-          if hp > 0. then Svf.process svf Zero_delay High_pass ~cutoff:(Array.make m hp) ~q x;
-          Array.iteri (fun i v -> mix.(i) <- mix.(i) +. (envelope (!age + i) *. v)) x)
-        bands filters;
+      (* ix: each band's envelope at each age once, kept for the
+       * silence test, which reads the next sample's (old: e !age
+       * called again after incr age); the choke's factor once *)
+      let mix = Float.Array.make m 0. in
+      let envelopes =
+        List.map2
+          (fun (band, hp, q, envelope) svf ->
+            let x = Float.Array.create m in
+            Float.Array.blit (band metal) 0 x 0 m;
+            if hp > 0. then
+              Svf.process_fixed svf Zero_delay High_pass ~cutoff:hp ~q x;
+            let e = Float.Array.make (m + 1) 0. in
+            for i = 0 to m do
+              Float.Array.set e i (envelope (!age + i))
+            done;
+            for i = 0 to m - 1 do
+              Float.Array.set mix i
+                (Float.Array.get mix i
+                 +. (Float.Array.get e i *. Float.Array.get x i))
+            done;
+            e)
+          bands filters
+      in
+      let choke_k = exp (-6.9 /. (0.01 *. rate)) in
       for i = 0 to m - 1 do
         if h.alive then begin
-          if h.choked then choke := !choke *. exp (-6.9 /. (0.01 *. rate));
-          out.(at + i) <- out.(at + i) +. (amp *. !choke *. mix.(i));
+          if h.choked then choke := !choke *. choke_k;
+          Float.Array.set out (at + i)
+            (Float.Array.get out (at + i)
+             +. (amp *. !choke *. Float.Array.get mix i));
           incr age;
           (* silent, decided at the sample: the same whatever the blocks *)
-          if !choke < 1e-4 || List.for_all (fun (_, _, _, e) -> e !age < 1e-4) bands then h.alive <- false
+          if !choke < 1e-4
+             || List.for_all
+                  (fun e -> Float.Array.get e (i + 1) < 1e-4) envelopes
+          then h.alive <- false
         end
       done
     end
@@ -310,7 +371,9 @@ let sweep_drum ~(noise : unit -> float) ~(sweep : float * float * float) ~(t60 :
         let env = decay_env t60 !age in
         phase := Float.rem (!phase +. (sweep_frequency ~f_end ~start ~tau ~age:s /. rate)) 1.;
         let c = if s < 0.001 then click else if s < 0.004 then 0.5 *. click *. noise () else 0. in
-        out.(i) <- out.(i) +. (amp *. ((env *. sin (2. *. Float.pi *. !phase)) +. c));
+        Float.Array.set out i
+          (Float.Array.get out i
+           +. (amp *. ((env *. sin (2. *. Float.pi *. !phase)) +. c)));
         incr age;
         if env < 1e-4 then h.alive <- false
       end
@@ -364,12 +427,14 @@ let sample_hit ~(rom : unit -> Signal.t) ~(speed : float) ~(t60 : float) (amp : 
   let self : hit option ref = ref None in
   let add out at m =
     let h : hit = (match !self with Some h -> h | None -> failwith "hit") in
-    let rom = rom () in
+    let rom = rom () and choke_k = exp (-6.9 /. (0.01 *. rate)) in
     for i = at to at + m - 1 do
       if h.alive then begin
-        if h.choked then choke := !choke *. exp (-6.9 /. (0.01 *. rate));
+        if h.choked then choke := !choke *. choke_k;
         let env = decay_env t60 !age in
-        out.(i) <- out.(i) +. (amp *. !choke *. env *. Resample.read Linear rom !pos);
+        Float.Array.set out i
+          (Float.Array.get out i
+           +. (amp *. !choke *. env *. Resample.read Linear rom !pos));
         pos := !pos +. speed;
         incr age;
         if !pos >= float_of_int (Array.length rom - 1) || !choke < 1e-4 || env < 1e-4 then h.alive <- false
@@ -488,7 +553,9 @@ let create (patch : patch) : t =
     bp_low = Svf.create ();
     bp_high = Svf.create ();
     bp_bell = Svf.create ();
-    metal = { low = [||]; high = [||]; bell = [||] };
+    metal =
+      { low = Float.Array.make 0 0.; high = Float.Array.make 0 0.;
+        bell = Float.Array.make 0 0. };
     random = 1;
     ring = Array.make 2048 0.;
     at = 0;
@@ -531,22 +598,31 @@ let is_metal = function CB | CY | OH | CH -> true | _ -> false
  * are -- stopped between hits, where they'd be would depend on how the
  * blocks fell *)
 let render_metal (t : t) (m : int) : unit =
-  let sum = Array.make m 0. and bell = Array.make m 0. and buf = Array.make m 0. in
+  let sum = Float.Array.make m 0. and bell = Float.Array.make m 0. in
+  let buf = Float.Array.make m 0. in
+  let width = Some (Float.Array.make m 0.4798) in
   Array.iteri
     (fun k osc ->
-      Vco.fill ~band_limited:true ~width:(Some (Array.make m 0.4798)) ~sync:None osc Vco.Pulse ~frequency:(Array.make m square_hz.(k)) buf;
-      Array.iteri (fun i x -> sum.(i) <- sum.(i) +. x) buf;
-      if k >= 4 then Array.iteri (fun i x -> bell.(i) <- bell.(i) +. x) buf)
+      Vco.fill ~band_limited:true ~width ~sync:None osc Vco.Pulse
+        ~frequency:(Float.Array.make m square_hz.(k)) buf;
+      for i = 0 to m - 1 do
+        Float.Array.set sum i (Float.Array.get sum i +. Float.Array.get buf i)
+      done;
+      if k >= 4 then
+        for i = 0 to m - 1 do
+          Float.Array.set bell i
+            (Float.Array.get bell i +. Float.Array.get buf i)
+        done)
     t.squares;
-  let low = Array.copy sum and high = Array.copy sum in
-  Svf.process t.bp_low Zero_delay Band_pass ~cutoff:(Array.make m 3440.) ~q:1.5 low;
-  Svf.process t.bp_high Zero_delay Band_pass ~cutoff:(Array.make m 7100.) ~q:1.5 high;
-  Svf.process t.bp_bell Zero_delay Band_pass ~cutoff:(Array.make m 800.) ~q:0.7 bell;
+  let low = Float.Array.copy sum and high = Float.Array.copy sum in
+  Svf.process_fixed t.bp_low Zero_delay Band_pass ~cutoff:3440. ~q:1.5 low;
+  Svf.process_fixed t.bp_high Zero_delay Band_pass ~cutoff:7100. ~q:1.5 high;
+  Svf.process_fixed t.bp_bell Zero_delay Band_pass ~cutoff:800. ~q:0.7 bell;
   t.metal.low <- low;
   t.metal.high <- high;
   t.metal.bell <- bell
 
-let render (t : t) (mono : Signal.t) (at : int) (m : int) : unit =
+let render (t : t) (mono : Float.Array.t) (at : int) (m : int) : unit =
   if m > 0 then begin
     render_metal t m;
     List.iter (fun h -> h.add t.metal mono at m) t.hits;
@@ -565,7 +641,7 @@ let flam_samples (p : patch) : int = Signal.samples (0.01 +. (0.03 *. p.flam))
 let fill (t : t) (out : Signal.stereo) : unit =
   let n = Array.length out.left in
   let p = t.patch in
-  let mono = Array.make n 0. in
+  let mono = Float.Array.make n 0. in
   (* this block's hits: the live ones now, the steps' at their samples,
    * shuffled and flammed, and those scheduled by earlier blocks *)
   let hits = ref (t.scheduled @ List.map (fun (who, accent) -> (0, who, accent, 1.)) t.pending) in
@@ -593,13 +669,14 @@ let fill (t : t) (out : Signal.stereo) : unit =
     now;
   render t mono !pos (n - !pos);
   let g = gain *. t.patch.volume in
-  Array.iteri
-    (fun i x ->
-      out.left.(i) <- g *. x;
-      out.right.(i) <- g *. x;
-      t.ring.(t.at) <- g *. x;
-      t.at <- (t.at + 1) mod 2048)
-    mono
+  for i = 0 to n - 1 do
+    (* (one float for the three: by mini-ml each g *. x a new block) *)
+    let x = g *. Float.Array.get mono i in
+    out.left.(i) <- x;
+    out.right.(i) <- x;
+    t.ring.(t.at) <- x;
+    t.at <- (t.at + 1) mod 2048
+  done
 
 let instrument (t : t) : Instrument.t =
   {

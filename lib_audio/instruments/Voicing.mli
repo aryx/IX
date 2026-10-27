@@ -81,12 +81,12 @@ val glide_to : glide -> int -> unit
 (* [fill_frequency g ~seconds out]: the next [Array.length out]
  * frequencies, in Hz, the pitch gliding with the time constant
  * [seconds] (0: at once) *)
-val fill_frequency : glide -> seconds:float -> Signal.t -> unit
+val fill_frequency : glide -> seconds:float -> Float.Array.t -> unit
 
 (* [fill_pitch]: the same, the pitch in semitones (a MIDI number,
  * fractional), for a voice adding more to it -- a wheel, a vibrato --
  * before turning it into hertz *)
-val fill_pitch : glide -> seconds:float -> Signal.t -> unit
+val fill_pitch : glide -> seconds:float -> Float.Array.t -> unit
 
 (* the pitch now, in semitones (a MIDI number, fractional) *)
 val pitch : glide -> float

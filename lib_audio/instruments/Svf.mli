@@ -70,4 +70,10 @@ val create : unit -> t
 
 (* [process t model mode ~cutoff ~q samples]: [samples] filtered in
  * place, [cutoff] in Hz one per sample (kept within 10 Hz and 20 kHz) *)
-val process : t -> model -> mode -> cutoff:Signal.t -> q:float -> Signal.t -> unit
+val process :
+  t -> model -> mode -> cutoff:Float.Array.t -> q:float -> Float.Array.t ->
+  unit
+
+(* [process_fixed]: the same, one cutoff for every sample *)
+val process_fixed :
+  t -> model -> mode -> cutoff:float -> q:float -> Float.Array.t -> unit

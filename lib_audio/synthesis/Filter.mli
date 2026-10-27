@@ -143,6 +143,10 @@ val silence : unit -> memory
 (* [step f m x]: one sample through [f], [m] updated *)
 val step : biquad -> memory -> float -> float
 
+(* [chain fs ms x]: x through each of [fs] in turn, [ms] their
+ * memories: step's, one after the other *)
+val chain : biquad array -> memory array -> float -> float
+
 (* [process f m s]: a block through [f], in place *)
 val process : biquad -> memory -> Signal.t -> unit
 

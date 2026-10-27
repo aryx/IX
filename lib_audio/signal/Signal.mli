@@ -60,3 +60,8 @@ val of_function : float -> (float -> float) -> t
 (* [to_int16 x]: a sample as a 16-bit integer, what files and sound
  * cards want: x times 32,767, rounded, clipped to [-32768, 32767] *)
 val to_int16 : float -> int
+
+(* [at_most hi x], [at_least lo x]: Float.min hi x and Float.max lo x
+ * when the bound is not nan (a nan x kept), without a call *)
+val at_most : float -> float -> float
+val at_least : float -> float -> float

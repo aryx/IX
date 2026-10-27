@@ -351,6 +351,13 @@ let float_calls =
     "tanh_float", "ml_tanh"; "atan2_float", "atan2"; "power_float", "pow";
     "fmod_float", "ml_fmod" ]
 
+(* the runtime's int32 functions done in place (Ir's Int32) *)
+let ints_in_place = ref true
+let int32_ops =
+  [ "int32_neg"; "int32_add"; "int32_sub"; "int32_mul"; "int32_and"; "int32_or";
+    "int32_xor"; "int32_shift_left"; "int32_shift_right";
+    "int32_shift_right_unsigned"; "int32_of_int"; "int32_to_int" ]
+
 (* the operands are pushed, the first on top; imm: the value a store
  * writes is an immediate (Typing.immediates: no barrier) *)
 let prim imm p n =
@@ -420,6 +427,13 @@ let prim imm p n =
    * nor the result, each a call of ml_alloc (mini-rebirth's envelopes
    * and filters, 1.8 million a second).
    * old: a CallC of exp_float, which reads a block and makes one *)
+  (* OPTIMIZATION (ints_in_place): an int32's add, xor, shift... by the
+   * processor's instruction and a block taken in place, as the floats'
+   * (on arm an int32 is a block: an int has 31 bits). lib_crypto's
+   * Sha256 was a call of the runtime and its ml_alloc at each of a
+   * round's operations, some 170 instructions each on arm.
+   * old: a CallC of int32_add... *)
+  | _ when !ints_in_place && List.mem p int32_ops -> emit (Int32 (p, n))
   | _ when !floats_in_place && List.mem_assoc p float_calls ->
       emit (FloatCall (p, List.assoc p float_calls, n))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p

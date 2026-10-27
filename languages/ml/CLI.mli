@@ -101,6 +101,45 @@
  * no type checker on the same observation: ML's types say whether a
  * program is right, and not what it means.
  *
+ * design:
+ * One word a value. An int is 2n+1, its low bit set; anything else
+ * (a float, an int32, a string, a tuple, a closure) is the address of
+ * a block whose header says its size and tag. OCaml's choice, and the
+ * reasons are the same. Polymorphism costs nothing: List.map, a
+ * Hashtbl, compare and every closure are one compiled code for all
+ * types, and nothing of a type is kept at run time (Typing is the
+ * last to read one). The collector is exact for free: a word with its
+ * low bit set is not a pointer, so it may move every block (Cheney's
+ * copy, the young generation: gc.c) and find each root on the value
+ * stack. The price is paid by numbers: a float is a block (a new one
+ * at each operation), an int has a bit less than the machine's word
+ * (31 on arm: an int32 cannot be one), and arithmetic undoes and
+ * redoes the tag. The simple path pays it; the optimizations take it
+ * back locally, where a function's code shows the type: Untag keeps
+ * an int without its tag, and Unbox a float out of its block, inside
+ * a function, a block or a tag made only where the value leaves (a
+ * call, a store, a return), each pass switched off by a flag.
+ *
+ * others:
+ * The other ways. MLton (Stephen Weeks, 2006) compiles the whole
+ * program at once and copies each polymorphic function for each type
+ * it is used at, so that no int is tagged and no float boxed; but no
+ * unit is compiled alone, and the compiler is several times larger.
+ * JavaScript's engines box numbers too: V8 tags small ints (its Smi,
+ * 31 bits on a 32-bit machine, as here) and makes any other number a
+ * heap block, then unboxes them in its optimizing tier, as Unbox does;
+ * JavaScriptCore and LuaJIT put a double in the word itself
+ * (NaN-boxing: a pointer or an int hidden in a NaN's spare bits),
+ * which needs 64-bit words, not the Pi's arm. A conservative
+ * collector (Boehm and Weiser, 1988) needs no tag at all, taking any
+ * word that looks like an address for one, but then no block may
+ * move: no copying, no generation, a heap that fragments. ocamlopt
+ * itself unboxes the floats a function's code keeps (Cmmgen) and
+ * flambda more; GHC's unboxed types (Int#, Double#) let the program
+ * say where. mini-ml's int32 is the case where this design costs
+ * most: on arm a block each, and each operation a call of the
+ * runtime (ints.c) until Lower and Emit do it in place.
+ *
  * The command line: [help] in CLI.ml, what mini-ml -h prints. A
  * .mli is only parsed; an error on stderr, and the exit status 1.
  *
@@ -112,7 +151,11 @@
  * (INRIA technical report 117, 1990), Caml Light's design, and still
  * the best account of how an ML is compiled and why; Andrew Appel,
  * "Compiling with Continuations" (1992), Standard ML of New Jersey's
- * way, the other school; N. Courant, J. Lepiller and G. Scherer,
+ * way, the other school; Xavier Leroy, "Unboxed objects and
+ * polymorphic typing" (POPL 1992); Stephen Weeks, "Whole-Program
+ * Compilation in MLton" (ML Workshop 2006); Hans-J. Boehm and Mark
+ * Weiser, "Garbage collection in an uncooperative environment"
+ * (Software: Practice and Experience 18(9), 1988); N. Courant, J. Lepiller and G. Scherer,
  * "Debootstrapping without Archeology: Stacked Implementations in
  * Camlboot" (The Art, Science, and Engineering of Programming 6(3),
  * 2022). *)

@@ -819,6 +819,8 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-27 | plan_ml_speed.md, 3b: a product by a small constant without MUL, -x and abs x of doubles unboxed, on arm a Float.Array's address in one ADD (tests/runtime/mul_neg.ml); mini-rebirth's sound and spectrum on Float.Array (lib_audio, rebirth), lib_playground's Basics operators externals; mini-rebirth's second 0.35, mini-virtuaracing's frame 0.91, mini-quake's 0.94 | +58 | +61 (the test), lib_audio +326, rebirth +128, lib_playground +4 | |
 | 2026-10-27 | plan_ml_speed.md, 3c: C's math functions (exp, log, pow, tanh...) called on doubles, Ir's FloatCall, no block for the argument nor the result (tests/runtime/float_calls.ml); mini-rebirth's second 0.927, mini-quake's frame 0.973 | +44 | +47 (the test) | |
 | 2026-10-27 | plan_ml_speed.md, 3d: a double boxed in the one block that reads it as a word when that block cannot run again but through the double's (Unbox; tests/runtime/box_where_read.ml); mini-rebirth's second 0.956, mini-doom's frame 0.988 | +48 | +53 (the test) | |
+| 2026-10-27 | plan_ml_speed.md, 4a: int32's operations in place, Ir's Int32 (tests/runtime/int32_ops.ml, tests/bench/sha.ml); the sha bench 0.388 on arm; CLI.mli's design and others on one word a value (+45, comments) | +77 | +115 (the test, the bench) | |
+| 2026-10-27 | Emit's open-coded primitives moved to ssa/Prims.ml (Emit 1,109 lines to 790), the same assembly | +134 | | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

@@ -110,6 +110,11 @@ type t =
    * runtime's on blocks (exp_float), called in simple's code; C's on
    * doubles (exp), which ssa's Unbox calls; its arity *)
   | FloatCall of string * string * int
+  (* an int32's operation by the processor's, a block taken from the
+   * heap for its result (Lower.ints_in_place): the runtime's function
+   * that does the same (int32_add...: called in simple's code, and
+   * when there is no room), its arity; int32_to_int's an int, no block *)
+  | Int32 of string * int
   | FloatSetIndex of bool             (* a float array, an index, a float *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op

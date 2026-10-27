@@ -272,7 +272,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-O0", Arg.Unit (fun () -> opti := []; ssa := false), " none: the stack machine's code as Lower makes it";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
     "-inline", Arg.Set_int Lower.inline_most, " n: -ssa: a known function of n nodes or fewer copied where it is called (0: none)";
-    "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
+    "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Lower.ints_in_place := false; Gen.alloc_in_place := false; Lower.calls_whole := false),
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
     "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
     "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";

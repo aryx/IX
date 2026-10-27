@@ -14,6 +14,7 @@ $D/Gen.$O: $D/Lower.$O
 $D/Emit.$O: $D/Alloc.$O
 $D/Emit.$O: $D/Gen.$O
 $D/Emit.$O: $D/Lower.$O
+$D/Emit.$O: $D/Prims.$O
 $D/Emit.$O: $D/Ssa_build.$O
 $D/Emit.$O: $D/Unbox.$O
 $D/Emit.$O: $D/Untag.$O

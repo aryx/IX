@@ -7,4 +7,6 @@ limbs (integers in arrays: lib_crypto's Montgomery product), samples
 (floats in a record and arrays: lib_audio's sine instrument).
 floats (the three ways a float is boxed: mini-virtuaracing's Render,
 plan_ml_floats.md).
+sha (int32s: lib_crypto's Sha256, the hash of TLS's handshakes; on arm
+an int32 is a block, plan_ml_speed.md's stage 4).
 marshalling: Marshal's writing and reading, timed (its seconds on stderr).

@@ -446,3 +446,40 @@ The frames and rebirth's sound the same bytes; mini-ml by mini-ml the
 same assembly (Unbox, Emit, Lower). Found on the way: mini-ml refuses
 `Option.value x ~default:[]` where OCaml takes it (a labelled function
 of another unit not annotated): written as a match.
+
+## 2026-10-27, 4a: int32's operations in place
+
+The author: "ideally we want the int32 to be optimized especially for
+the Pi where they are currently costly", then of the steps (the
+operations in place first, unboxing after only if the boxes still
+dominate): "let's do 1 and then 2". On arm an int has 31 bits, so an
+int32 is a block, and each Int32 operation was a call of the runtime
+(ints.c's int32_add...: the operands read, the result's block by
+ml_alloc), some 170 instructions. lib_crypto's Sha256 (TLS's
+handshakes, mini-curl and mini-netscape) is all of them; mini-9pi's
+Tcp its sequence numbers.
+
+Lower makes int32_neg, add, sub, mul, and, or, xor, the three shifts,
+of_int and to_int Ir's Int32 (the runtime's name, the arity:
+Lower.ints_in_place, off with -calls), which simple's Gen still calls;
+ssa's Emit (Prims) loads the operands' 32 bits, computes in a word,
+takes the result's block in place and stores its low 32 bits (arm64:
+sign-extended loads, zero-extended for a logical shift right), the
+runtime's call only when there is no room; to_int a tag, no block.
+Division and remainder stay calls (Division_by_zero). tests/bench/sha.ml
+(Sha256 as it is, 4 KB), tests/runtime/int32_ops.ml (the bounds, the
+sign, a logical shift of a negative, a hash's loop).
+
+Arm, mini-5i, from nothing, against d22c56e4: the sha bench 17,888,940
+instructions to 6,946,210 (0.388; arm64 17,842,180 to 6,810,778); the
+other programs the same (they use no Int32). Each result is still a
+block: unboxing int32s in ssa, as Unbox's floats, is the next step if
+they dominate.
+
+Then Emit's open-coded primitives (prim, dprim and their helpers, a
+third of it) moved to ssa/Prims.ml (the author: "yes let's try to move
+this optimization code under opti/ or ssa/ if possible"): Emit 1,109
+lines to 790, Prims 374 and its .mli 79, a record of what of
+Emit.func they read (Prims.ctx). The same assembly from the compiler
+before and after, on mini-ml's, lib_core's and the tests' units.
+

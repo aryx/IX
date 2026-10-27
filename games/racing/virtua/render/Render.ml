@@ -7,8 +7,9 @@
 let most = 64
 
 (* how the hidden faces are hidden: a depth for each pixel, or the
- * faces drawn far to near (the painter's algorithm, below) *)
-type algorithm = Depth | Painter
+ * faces drawn far to near (the painter's algorithm, below), sorted or
+ * by an ordering table *)
+type algorithm = Depth | Painter | Table
 
 let algorithm = ref Depth
 
@@ -239,7 +240,7 @@ let fill_rows (r : t) (n : int) (color : char) (y0 : int) (y1 : int) : unit =
         | Depth ->
             let d = (a *. (float x0 +. 0.5)) +. (b *. (float y +. 0.5)) +. c in
             span r y x0 x1 (imax 1 (int_of_float (d *. one))) step color
-        | Painter ->
+        | Painter | Table ->
             Bytes.fill r.pixels ((y * r.width) + x0) (x1 - x0 + 1) color
       end
     done
@@ -315,23 +316,57 @@ let keep (r : t) (n : int) (color : char) : unit =
   r.kfirst.(k + 1) <- at + n;
   r.kept <- k + 1
 
+(* the kept face k filled *)
+let fill_kept (r : t) (k : int) : unit =
+  let at = r.kfirst.(k) and n = r.kfirst.(k + 1) - r.kfirst.(k) in
+  for i = 0 to n - 1 do
+    set r.sx i (get r.kxs (at + i));
+    set r.sy i (get r.kys (at + i));
+    set r.iz i (get r.kzs (at + i))
+  done;
+  fill r n (Bytes.get r.kcolor k)
+
+(* The ordering table (render=table), the PlayStation's (1994): its
+ * processor had no depth for each pixel, and its CPU no time to sort a
+ * frame's polygons by comparing them. A table of slots, one for each
+ * step of distance, each a list: a polygon is put at the head of its
+ * slot's list (one write, no comparison; the PS1's AddPrim), and the
+ * graphics processor walks the slots from the farthest, each list in
+ * its order. n faces in n steps, not n log n; but the faces of a slot
+ * are drawn in the order opposite to the one they came in, and the
+ * slot's step is the order's precision. Here 4,096 slots of 64 cm
+ * (2.6 km, past the far plane), a face's slot its distance in
+ * centimetres shifted by 6, as the PS1 shifted its z: a division by 50
+ * was a call on arm (no divide instruction), 0.66M instructions a
+ * frame. *)
+let slots = 4096
+let slot_shift = 6
+
 let finish (r : t) : unit =
   if r.kept > 0 then begin
-    (* the farthest first; a tie in the order the faces came *)
-    let order = Array.init r.kept (fun (k : int) -> k) in
-    Array.stable_sort
-      (fun (a : int) (b : int) -> r.kdistance.(b) - r.kdistance.(a))
-      order;
-    Array.iter
-      (fun (k : int) ->
-        let at = r.kfirst.(k) and n = r.kfirst.(k + 1) - r.kfirst.(k) in
-        for i = 0 to n - 1 do
-          set r.sx i (get r.kxs (at + i));
-          set r.sy i (get r.kys (at + i));
-          set r.iz i (get r.kzs (at + i))
+    (match !algorithm with
+    | Depth -> ()
+    | Painter ->
+        (* the farthest first; a tie in the order the faces came *)
+        let order = Array.init r.kept (fun (k : int) -> k) in
+        Array.stable_sort
+          (fun (a : int) (b : int) -> r.kdistance.(b) - r.kdistance.(a))
+          order;
+        Array.iter (fill_kept r) order
+    | Table ->
+        let head = Array.make slots (-1) and next = Array.make r.kept (-1) in
+        for k = 0 to r.kept - 1 do
+          let s = imin (slots - 1) (r.kdistance.(k) lsr slot_shift) in
+          next.(k) <- head.(s);
+          head.(s) <- k
         done;
-        fill r n (Bytes.get r.kcolor k))
-      order;
+        for s = slots - 1 downto 0 do
+          let k = ref head.(s) in
+          while !k >= 0 do
+            fill_kept r !k;
+            k := next.(!k)
+          done
+        done);
     r.kept <- 0
   end
 
@@ -409,7 +444,7 @@ let face (r : t) (m : Mesh.t) (k : int) (color : char) : unit =
     r.drawn <- r.drawn + 1;
     match !algorithm with
     | Depth -> fill r !m' color
-    | Painter -> keep r !m' color
+    | Painter | Table -> keep r !m' color
   end
 
 (* the sphere (x, y, z) of radius rad, seen from the eye, outside the

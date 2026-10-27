@@ -24,7 +24,7 @@
  *   usage: mini-virtuaracing [view=close|behind|overhead|cockpit]
  *                            [picture=WxH] [scale=n] [stats] [cull=off]
  *                            [course=n] [sound=off] [lod=off]
- *                            [render=depth|painter]
+ *                            [render=depth|painter|table]
  *     view=     the view at the start (default: close)
  *     picture=  the picture's size in pixels (default: 320x240), each
  *               made n by n on the screen (scale=, 1 to 4; 2 by
@@ -38,8 +38,9 @@
  *     sound=off no sound made (Sound.on)
  *     lod=off   the far road chunks drawn whole too (Course.lod)
  *     render=   how the hidden faces are hidden: depth, a depth for
- *               each pixel (the default), or painter, the faces sorted
- *               and drawn from the farthest (Render.algorithm)
+ *               each pixel (the default), painter, the faces sorted
+ *               and drawn from the farthest, or table, the same by an
+ *               ordering table, the PlayStation's (Render.algorithm)
  *
  * A frame:
  *
@@ -462,8 +463,10 @@ let () =
          if flag "cull" = Some "off" then Render.cull := false;
          if flag "sound" = Some "off" then Sound.on := false;
          if flag "lod" = Some "off" then Course.lod := false;
-         if flag "render" = Some "painter" then
-           Render.algorithm := Render.Painter;
+         (match flag "render" with
+         | Some "painter" -> Render.algorithm := Render.Painter
+         | Some "table" -> Render.algorithm := Render.Table
+         | _ -> ());
          let course = Option.bind (flag "course") int_of_string_opt in
          let model = start first width height course stats in
          (* the window the picture's size, a unit a pixel; or, without

@@ -81,13 +81,16 @@ val draw : t -> Mesh.t -> unit
 (* how the faces hidden by nearer ones are hidden: [Depth], a depth for
  * each pixel (the default), or [Painter], the painter's algorithm: the
  * frame's faces kept, sorted by their distance and drawn from the
- * farthest (mini-virtuaracing's render=painter) *)
-type algorithm = Depth | Painter
+ * farthest (mini-virtuaracing's render=painter); or [Table], the
+ * same faces put in an ordering table, the PlayStation's, slots of
+ * distance walked from the farthest, no sort (render=table) *)
+type algorithm = Depth | Painter | Table
 
 val algorithm : algorithm ref
 
 (* [finish r]: the frame drawn, before [pixels] is shown: the
- * painter's faces filled (nothing to do with the depth) *)
+ * painter's or the table's faces filled (nothing to do with the
+ * depth) *)
 val finish : t -> unit
 
 (* [draw_at r m angle position index]: a mesh turned [angle] degrees

@@ -614,5 +614,18 @@ costs more than testing their pixels. An ordering table (the
 PlayStation's: a bucket for each step of distance, no comparison)
 would be the third, if wanted.
 
+Then **the ordering table**, the third (the author: "I dunno this
+PlayStation algo but yes! it looks interesting to add!"):
+`Render.Table`, `render=table`. The painter's kept faces put in 4,096
+slots of 64 cm, each a list, a face at the head of its slot's (the
+PS1's AddPrim: one write, no comparison), the slots walked from the
+farthest. A slot by a shift of the distance in centimetres (the PS1
+shifted its z): by `/ 50` a call on arm, 203,000 a frame's twenty,
+33.7M a frame; by `lsr 6` **33.1M**, against 34.0M by the depth and
+41.4M by the sort (the same build). Its errors: the faces of a slot
+drawn opposite to their order (the road's line under its tarmac),
+11,544 pixels apart from the depth's at frame 250. `frames.expected`'s
+session `table`; OCaml's and mini-ml's the same bytes.
+
 Next: the card on the Pi 2; then the front's floats (`face`, `draw`)
 or the land's tiles.

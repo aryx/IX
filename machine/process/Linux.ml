@@ -269,6 +269,13 @@ let syscall32 p (st : Arm32_isa.state) =
         put64 m r.(1) (int_of_float t);
         put64 m (r.(1) + 8) (nsecs t);
         0
+    | 78 ->                                                            (* gettimeofday: two words *)
+        let t = h.now () in
+        if r.(0) <> 0 then begin
+          Memory.store32 m r.(0) (Bits.mask32 (int_of_float t));
+          Memory.store32 m (r.(0) + 4) (nsecs t / 1000)
+        end;
+        0
     | 407 ->                                                           (* clock_nanosleep_time64 *)
         let t = Float.of_int (Memory.load32 m r.(2)) +. (Float.of_int (Memory.load32 m (r.(2) + 8)) /. 1e9) in
         let d = if r.(1) land 1 <> 0 then t -. h.now () else t in
@@ -392,6 +399,10 @@ let syscall64 p (st : Arm64_isa.state) =
     | 291 -> statx h m (int 0) (str 1) (int 2) (ptr 4)
     | 61 -> getdents p (int 0) (ptr 1) (long 2)
     | 38 | 276 -> unit (h.rename (str 1) (str 3))                        (* renameat, renameat2 *)
+    | 169 ->                                                           (* gettimeofday *)
+        let t = h.now () in
+        if ptr 0 <> 0 then (put64 m (ptr 0) (int_of_float t); put64 m (ptr 0 + 8) (nsecs t / 1000));
+        0
     | 113 ->                                                           (* clock_gettime *)
         let t = h.now () in
         put64w m (ptr 1) (int_of_float t);

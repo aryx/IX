@@ -46,6 +46,9 @@ $L/Sys_plan9.$O: $P9DIR/Sys_plan9.ml
 	mkdir -p $L
 	$ML $STDI -o $target $P9DIR/Sys_plan9.ml
 
+# each one an older compiler's remade (MLEXE: mkconfig)
+$STDUNITS: $MLEXE
+
 # the units' order (mkfiles/depend.rc): mini-mk depend after a build;
 # each unit's file as above (Unix, Source, Sys_plan9 first where theirs is)
 depend:V:

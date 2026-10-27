@@ -24,6 +24,12 @@ case machine
 O='^$o^'
 OS='^$os^'
 MLOPT='^$"MLOPT
+	# MLEXE, the compiler's file (rc's whatis, a lookup in $path; none
+	# when not found): the objects depend on it, an older mini-ml's
+	# remade (its start objects named curry functions that a newer one
+	# put elsewhere: mini-ld's "undefined: ml_curry9_0", 2026-10-26)
+	echo -n 'MLEXE='
+	whatis $p^ml >[2]/dev/null
 case system
 	ldh=-H7
 	b=$TOP/_mk/$O-$OS

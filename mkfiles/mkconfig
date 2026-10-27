@@ -16,6 +16,7 @@
 <|. $TOP/mkfiles/config.rc machine
 # (MLOPT: mini-ml's optimizations, config.rc's: -O3 unless MLOPT is set)
 ML=${TOOLPRE}ml -m $O $MLOPT
+# (MLEXE, the compiler's file, config.rc's: what the objects depend on)
 CC=${TOOLPRE}cc -m $O
 AS=${TOOLPRE}asm -m $O
 AR=${TOOLPRE}ar

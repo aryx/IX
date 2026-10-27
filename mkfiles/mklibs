@@ -22,6 +22,10 @@
 #      LIBSRC=`{for(d in $LIBDIRS) $WALK $TOP/$d | awk ...}
 #      LIBI=`{$RC $TOP/mkfiles/dirs.rc $B $LIBDIRS}
 <|. $TOP/mkfiles/libs.rc libs
+# (and the compiler, MLEXE, mkconfig's: the program's units an older
+# mini-ml's remade, in mkfiles/mkprog, the games' and every mkfile that
+# makes its own; the libraries' by mklib, the stdlib's by lib_core's)
+LIBSRC=$LIBSRC $MLEXE
 
 $B/%/lib.a:
 	echo 'mklibs: '^$target^' not built: the libraries first, in their order (mini-mk O='^$O^' OS='^$OS^' libs at the top)' >[1=2]

@@ -45,7 +45,8 @@ $D/%.ml: %.mly
 # claude: named after the program, not start.$O: where the file names'
 # case does not count (macOS), that is a unit Start's object too
 # (editors/emacs's Start.ml)
-$D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
+# old: $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig
+$D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig $MLEXE
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIBUNITS $SRC Std_exit -o $target
 
 # (the libraries too: a program is linked again when one of them is remade)

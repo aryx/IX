@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C27,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C40,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -609,8 +609,10 @@ Playground's notes_opti_ocaml.md: mini-doom's 640x400 picture 21 ms by
 Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
-(2026-10-23). The programs they serve: all of m-ix, its games on
-mini-9pi, and mini-ml itself (m-ix built under m-ix).
+(2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
+plans/plan_ml_speed.md, to 2026-10-27, C28 to C40. The programs they
+serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
+built under m-ix).
 
 Sources: the code's OPTIMIZATION and old: comments (each row says
 where), plans/plan_mini_toolchain_optimization.md (its Status, a
@@ -652,6 +654,13 @@ Kept, the gain large and measured:
   stores that the type checker sees on ints, floats, strings. Typed
   float comparisons were 14% of mini-doom's frame; the int ones made
   fib's test 2 instructions where it was 11.
+- The floats not boxed (C28 to C30, C38 to C40): mini-virtuaracing's
+  frame 0.55 and then 53.3 million where it was 63.5, mini-quake's 0.80;
+  a float's arithmetic, comparison, floor, sign and C's exp in the
+  processor's registers, a block only where the float leaves as a
+  word.
+- Stage 1's calls (C31 to C35): mini-doom's frame 0.843, mini-virtuaracing's
+  0.897; the code 3% larger (mini-ml's 8%), the build slower (inlining).
 - On the Pi 2 (the only board measure): mini-doom outside rio, full
   screen, "24fps often" after C12 and mini-9pi's scaled draw (Part 1's
   scope), where it had been about 15 on a large area.
@@ -702,6 +711,19 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C25 | mini-ml's own heap three times what is alive (space_overhead 200) | languages/ml/Main.ml, 64393712 | a compile 10% fewer instructions (45 collections to 28) | +1 | the line itself |
 | C26 | The heap's half 4 MB at the start on Plan 9 | runtime gc.c `HEAPSTART`, ab01afe9 | a compile on the card (mini-9pi, QEMU) 4.3 s to 4.05 s, with the card's cache | +1 | `ML_HEAP` (Linux) |
 | C27 | `compare` on strings a word at a time while they are the same | runtime compare.c `cmp`, a97f54ab | (in C9's 0.78) | +10 | none (old: comment) |
+| C28 | Floats not boxed in a function: a double in a floating-point register, boxed where it leaves as a word; `Float.Array` flat (Double_array_tag) | ssa/Unbox, Alloc's doubles and Dmem, Ir's FloatIndex, lib_core Float.Array; 6b76f50d (plan_ml_floats.md) | mini-virtuaracing's frame 201.1M to 111.0M (0.55), mini-quake's 0.80, mini-doom's 0.92, floats bench 0.69 | +306, C +95, lib_core +83 | `-boxed-floats` |
+| C29 | `floor`, `ceil` by the processor in ssa's code (2^52 added and taken off, a step) | Ir `FloatRound`, Emit `round`; 5325d485 | with C30: mini-virtuaracing's frame 63.5M to 53.3M (ceil's call was 22%) | (+87 with C30) | `-calls`, `-boxed-floats` |
+| C30 | A word read as a double unboxed once after its definition; a float literal once at the entry | Unbox `unboxed`, 5325d485 | (with C29) | (above) | `-boxed-floats` |
+| C31 | Curry functions shared up to 16 arguments (7 before); their block stored without the barrier | Lower `shared_most`, the start object; 88b5dda9 | mini-doom's frame 0.94, mini-quake's 0.92 (a copy of HEAD); 33 KB a program | (+473 with C32-C35) | none |
+| C32 | Small frames: no value-stack frame for a function with no value in memory; no machine frame for one that calls nothing by BL | Emit, 88b5dda9 | after C31: 0.99, 0.97; `sq x = x * x + 1` 15 instructions to 9 | (above) | `-full-frames` |
+| C33 | A value in no block has no slot (the phis taken out, the values Unbox replaced) | Alloc, 88b5dda9 | the largest of stage 1 (Float.min's 13 slots of 15 zeroed a call) | (above) | none |
+| C34 | Two values in memory whose lives do not meet share a slot | Alloc, 88b5dda9 | mini-doom 0.995, mini-ml compiling 0.989, 1% less code | (above) | `-own-slots` |
+| C35 | Inlining of small functions (16 nodes), in the unit and from the summaries of the build directory's units (X.inline, OCaml's .cmx), with a `.depend` | Lower, simple/Summary, mkfiles/depend.rc; 88b5dda9 | all of stage 1: mini-doom's frame 0.843, mini-quake's 0.932, mini-virtuaracing's 0.897, mini-ml compiling 0.970; mini-doom 1.029 larger, mini-ml 1.078 | (above; mkfiles +146) | `-inline n`, `-O3` |
+| C36 | Integers untagged inside a function where their bits are known small (bytes, shifts, masks, sums) | ssa/Untag, 683bcee7 | mini-doom's frame 0.941 (its span 35 instructions a pixel to 25), mini-quake's 0.980, mini-ml compiling 0.984, pixels 0.920 | +272 | `-tagged-ints` |
+| C37 | A float's comparison read only by its branch made by the branch (CMPD then B.cond) | Emit `fused` `Floats`, 076a65b1 | mini-virtuaracing's frame 0.979, mini-doom's 0.988, mini-quake's 0.994 | +36 | `-O0` |
+| C38 | A product by a small constant without MUL; `-.x` and `abs x` on doubles; on arm a Float.Array's address in one ADD | Emit `op_imm`, `findex`, Unbox's Float1; 694a7ba6 | with lib_audio's own (Adjacent): mini-virtuaracing's frame 0.907, mini-quake's 0.939, mini-doom's 0.990 | +58 | `-O0`, `-boxed-floats` |
+| C39 | The C library's exp without its calls of floor and ldexp (the same bits) | lib_core/libc/port/exp.c, ffe3c8b9 | exp 202 instructions a call on arm to 130; mini-rebirth's second 1.94G to 1.82G (two builds from nothing, 694a7ba6's tree and 6020ad2f's) | +16 | none (old: comment) |
+| C40 | C's math functions (exp, log, pow, tanh...) called on doubles: no block for the argument nor the result | Lower `float_calls`, Ir `FloatCall`, Emit; plan_ml_speed.md's 3c | mini-rebirth's second 0.927, mini-quake's frame 0.973, mini-doom's 0.992, samples 0.822 | +44 | `-calls`, `-boxed-floats` |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of
@@ -785,6 +807,43 @@ of something else is not taken for it). C22 was `fineangles / 4` at
 each of mini-doom's sines: on arm a division is a call of principia's
 `_div`, a bit a turn.
 
+**C28 to C30: the floats (plan_ml_floats.md).** mini-virtuaracing's
+frame was a float's block at every operation. Unbox finds the values
+that are doubles (what an arithmetic, a conversion, a Float.Array's
+read make, and the phis they reach) and gives them floating-point
+registers; a box is made only where one leaves as a word (a call's
+argument, a store, a return). A double never stays in a register
+across a call (C's and ML's code use them all); in memory it has a
+slot of the machine stack, which the collector does not scan. Not in a
+function with a handler. The same commit fixed C12's table of old
+fields, which made the collector scan the whole old generation at
+each minor collection once float arrays were stored into (Interactions,
+6).
+
+**C31 to C35: stage 1, calls (plan_ml_speed.md).** A frame of mini-doom
+made 114 thousand ML calls, a fifth of them under 60 instructions, and
+7% of its time was the curry functions of 8 and 10 arguments. C33 was
+found because inlining made it show: values that were gone (the phis
+Ssa_build.simplify took out, those Unbox replaced) each kept a slot,
+zeroed at each call. C35 reads only the
+summaries in the unit's own build directory (another directory's, such
+as lib_core's Float.min in a game, would be stale when that library
+changes, since mini-mk does not remake the program's unit).
+
+**C36: stage 2.** Unbox's idea for the integers: a value whose bits
+are known small keeps no tag inside the function, and is tagged once
+where it leaves. Every int untagged was weighed and not done: a sum
+that may pass 31 bits needs two instructions before a comparison, a
+shift or a division.
+
+**C37 to C40: stage 3 and the floats' calls.** Found in
+mini-virtuaracing's and mini-rebirth's profiles. C38's `-.x` was a new
+block each (arm's 5a has no ABSD nor NEGD: the sign bit is changed in
+memory). C40: `exp` was the runtime's exp_float, which reads a block
+and makes one with copy_double; now the doubles are stored where 5c
+and 7c put a double argument and C's own function is called, its
+result in F0.
+
 **C23 to C26: the runtime.** Measured by the programs they were for
 (Part 1's Tetris for C23, mini-doom's start for C24, mini-ml for C25
 and C26). C25 is a line in mini-ml's Main (Gc.set), C26 a define.
@@ -804,15 +863,34 @@ and C26). C25 is a line in mini-ml's Main (Gc.set), C26 a define.
    (mini-mk does not remake an object when only the compiler changes):
    an old object stores without the barrier. The `_mk` trees were
    rebuilt from nothing on 2026-10-23 (Part 2's commits since need no
-   rebuild: their old objects are slower, not wrong).
+   rebuild: their old objects are slower, not wrong). Not so after C31:
+   an object of before calls start objects the new mini-ml no longer
+   makes (the card's build: "undefined: ml_curry9_0"), and a measure
+   of a compiler compared the old one with itself; since 6020ad2f the
+   objects depend on the compiler's file.
 5. Measures against measures: the C library's memmove, made each
    machine's assembly by another session the same day (7001c4be,
    b70d2add), changed mini-doom's frame too; C13 to C15 were measured
    on a copy of the tree with the memmove of before, and C16 to C22 on
    HEAD's, each against its own baseline.
+6. C28's float arrays against C12's write barrier: storing floats
+   into an old array filled the table of old fields, and the full
+   table made the collector scan the whole old generation at each
+   minor collection (mini-virtuaracing's frame 1.56 times HEAD's).
+   The table now asks for a minor collection at seven eighths
+   (gc.c's refs_soon).
+7. C40 against C39: both make exp cheaper. C39's 130 instructions a
+   call are the C library's; C40 takes off the blocks around the
+   call, so each counts whatever the other does.
 
 ## Adjacent (outside the scope, in the same numbers)
 
+- mini-rebirth's own (694a7ba6, with C38): lib_audio and rebirth on
+  Float.Array, calls not made (a filter's tan once, the biquads in one
+  function), an iterative FFT for the spectrum, lib_playground's
+  Basics operators as externals (a value of another directory's unit
+  is not inlined: each + was a closure's call). Its second of sound
+  5.54 thousand million instructions to 1.94 (0.35), most of it these.
 - The C library's memmove and memset in each machine's assembly, and
   the runtime's `move_bytes` its memmove (7001c4be, b70d2add):
   another session's, not measured here.

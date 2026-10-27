@@ -20,7 +20,8 @@ let func (fn : func) : func =
     Array.iter (fun (b : block) ->
       List.iter (fun v ->
         match def v with
-        | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _), _) -> mark v
+        | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _
+                | FloatCall _), _) -> mark v
         | _ -> ()) b.body) fn.blocks;
     let changed = ref true in
     while !changed do
@@ -35,7 +36,8 @@ let func (fn : func) : func =
      * and a comparison or a conversion with a double operand *)
     let converted v =
       match def v with
-      | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _), _) -> double v
+      | Prim ((Ir.Float2 _ | Float1 _ | FloatOfInt | FloatIndex _ | FloatRound _
+              | FloatCall _), _) -> double v
       | Prim ((FloatCmp _ | IntOfFloat), xs) -> List.exists double xs
       | Prim (FloatSetIndex _, _) -> true
       | _ -> false

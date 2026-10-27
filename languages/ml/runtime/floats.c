@@ -8,17 +8,18 @@
 /*****************************************************************************/
 
 /* what goken's libc lacks, from what it has (not glibc's to the last
- * bit) */
-static double ml_tan(double x) { return sin(x) / cos(x); }
-static double ml_sinh(double x) { return (exp(x) - exp(-x)) / 2; }
-static double ml_cosh(double x) { return (exp(x) + exp(-x)) / 2; }
+ * bit); not static: the compiled code calls them on doubles (Lower's
+ * float_calls) */
+double ml_tan(double x) { return sin(x) / cos(x); }
+double ml_sinh(double x) { return (exp(x) - exp(-x)) / 2; }
+double ml_cosh(double x) { return (exp(x) + exp(-x)) / 2; }
 /* (past 21 the two are infinities, their quotient a NaN: libc's tanh.c's bound) */
 /* old: return ml_sinh(x) / ml_cosh(x): four calls of exp for two values.
  * The same operations on them, so the same bits; and 0 for 0 at once
  * (the quotient's value there): the mixer's soft limit is a tanh for
  * each sample, silence included, a tenth of a game's instructions on
  * mini-9pi (docs/notes_profiling_techniques.md) */
-static double
+double
 ml_tanh(double x)
 {
 	double e, f;
@@ -30,7 +31,7 @@ ml_tanh(double x)
 	f = exp(-x);
 	return ((e - f) / 2) / ((e + f) / 2);
 }
-static double ml_fmod(double a, double b) { double i; modf(a / b, &i); return a - i * b; }
+double ml_fmod(double a, double b) { double i; modf(a / b, &i); return a - i * b; }
 
 static value
 copy_double(double d)

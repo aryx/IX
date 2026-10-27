@@ -420,6 +420,16 @@ number 1.2 then `.3`, so `awk 'BEGIN { print 1.2.3 }'` prints
 `1.20.3`. ix: mini-awk prints `1.20.3` for both; the case is not in its
 corpus. Not fixed in goken.
 
+### 39. libc's log and log10 of 0 are NaN, not minus infinity
+
+`log(0.0)` and `log10(0.0)` return `NaN()`, as for a negative
+argument (`lib_core/libc/port/log.c`: `if(arg <= 0)`); C99 and glibc
+give minus infinity, and OCaml's `log 0.0` is `neg_infinity`. Found
+2026-10-27 by mini-ml's `tests/runtime/float_calls.ml`: `Printf.printf
+"%g\n" (log 0.0)` prints `nan` by mini-ml (ix's libc), `-inf` by
+ocamlopt, at -O0 as at -O3. ix: the test leaves 0 out. Fix: `if(arg ==
+0) return Inf(-1);` before the NaN (the same in principia's).
+
 ## The archiver
 
 ### 26. iar writes a byte past a member of odd size

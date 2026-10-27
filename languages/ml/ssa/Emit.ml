@@ -542,6 +542,7 @@ let func m out (fn : func) (lf : L.func) =
     | FloatIndex c, _ -> call_c (if c then "ml_floatarray_get" else "ml_floatarray_unsafe_get") xs; finish v 0
     | FloatSetIndex c, _ -> call_c (if c then "ml_floatarray_set" else "ml_floatarray_unsafe_set") xs
     | FloatRound c, _ -> call_c (if c then "ceil_float" else "floor_float") xs; finish v 0
+    | FloatCall (f, _, _), _ -> call_c f xs; finish v 0
     | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
   in
   (* the same on doubles (Unbox), the operands' and the result's
@@ -634,6 +635,14 @@ let func m out (fn : func) (lf : L.func) =
         lab big;
         ins "%s\tF%d, F0" fmov xr;
         lab fin;
+        ffinish v 0
+    (* C's exp on doubles: the arguments at w(SP), w+8(SP) (5c's and
+     * 7c's), the result in F0 *)
+    | FloatCall (_, f, n), _ ->
+        cargs := max !cargs (8 * n / w);
+        List.iteri (fun k x ->
+          ins "%s\tF%d, %d(%s)" fmov (fsrc x 0) (w + (8 * k)) m.sp) xs;
+        ins "BL\t%s(SB)" f;
         ffinish v 0
     | _ -> failwith (fn.name ^ ": ssa: a double's operation")
   in

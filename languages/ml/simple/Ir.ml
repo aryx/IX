@@ -106,6 +106,10 @@ type t =
   (* x by its floor, or its ceiling (true): the runtime's floor_float and
    * ceil_float, which ssa's Unbox makes the processor's (no call) *)
   | FloatRound of bool
+  (* a function of C's math library on floats (exp, pow...): the
+   * runtime's on blocks (exp_float), called in simple's code; C's on
+   * doubles (exp), which ssa's Unbox calls; its arity *)
+  | FloatCall of string * string * int
   | FloatSetIndex of bool             (* a float array, an index, a float *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op

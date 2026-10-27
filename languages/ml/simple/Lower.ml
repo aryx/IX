@@ -340,6 +340,17 @@ let ops =
     "%noteq", Cmp Ne; "%equal", Poly Eq; "%notequal", Poly Ne; "%lessthan", Poly Lt; "%lessequal", Poly Le;
     "%greaterthan", Poly Gt; "%greaterequal", Poly Ge; "%array_length", Size; "%obj_size", Size; "%obj_is_int", IsInt ]
 
+(* the runtime's functions on floats that are C's on doubles, by
+ * their names (floats.c: exp_float is copy_double(exp(Double_val(a))))
+ *)
+let float_calls =
+  [ "exp_float", "exp"; "log_float", "log"; "log10_float", "log10";
+    "sqrt_float", "ml_fsqrt"; "sin_float", "sin"; "cos_float", "cos";
+    "tan_float", "ml_tan"; "asin_float", "asin"; "acos_float", "acos";
+    "atan_float", "atan"; "sinh_float", "ml_sinh"; "cosh_float", "ml_cosh";
+    "tanh_float", "ml_tanh"; "atan2_float", "atan2"; "power_float", "pow";
+    "fmod_float", "ml_fmod" ]
+
 (* the operands are pushed, the first on top; imm: the value a store
  * writes is an immediate (Typing.immediates: no barrier) *)
 let prim imm p n =
@@ -404,6 +415,13 @@ let prim imm p n =
   (* floor and ceil: Ir's own, a call still in simple's code, the
    * processor's in ssa's on doubles (Emit's round) *)
   | "floor_float" | "ceil_float" when !floats_in_place -> emit (FloatRound (p = "ceil_float"))
+  (* OPTIMIZATION (floats_in_place): exp, pow... Ir's own, C's function
+   * called on doubles in ssa's code (Unbox): no block for the argument
+   * nor the result, each a call of ml_alloc (mini-rebirth's envelopes
+   * and filters, 1.8 million a second).
+   * old: a CallC of exp_float, which reads a block and makes one *)
+  | _ when !floats_in_place && List.mem_assoc p float_calls ->
+      emit (FloatCall (p, List.assoc p float_calls, n))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p
   | _ -> emit (CallC (p, n))
 

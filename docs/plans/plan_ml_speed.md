@@ -386,3 +386,34 @@ item 6: a second entry returning the double).
 
 Found on the way: mini-mk does not make an object again when mini-ml
 changes; a compiler's measure is from nothing.
+
+## 2026-10-27, 3c: C's math functions on doubles
+
+exp, log, pow, tanh and the others were CallCs of the runtime's
+exp_float: the argument boxed for it, copy_double's block for the
+result, then unboxed. Lower makes them Ir's FloatCall (the runtime's
+name, C's, the arity: Lower.float_calls), which simple's code still
+calls as before; in ssa's (Unbox) a Dprim that stores the doubles at
+w(SP), w+8(SP) and calls C's own, its result in F0, as 5c and 7c do.
+A safepoint and a clobber for Alloc (C's code uses all the registers),
+no allocation. The runtime's ml_tan, ml_sinh, ml_cosh, ml_tanh and
+ml_fmod are no longer static. tests/runtime/float_calls.ml; the same
+bits as before at %.17g, on arm and arm64.
+
+Arm, mini-5i, from nothing, against 6020ad2f (which has the libc's exp
+without floor and ldexp, ffe3c8b9):
+
+| | 6020ad2f | 3c | |
+|---|---:|---:|---:|
+| mini-rebirth, a second | 1,820,194,302 | 1,687,426,190 | 0.927 |
+| mini-virtuaracing, a frame | 29,212,213 | 29,056,330 | 0.995 |
+| mini-quake, a frame | 22,476,581 | 21,875,894 | 0.973 |
+| mini-doom, a frame | 8,619,294 | 8,547,775 | 0.992 |
+| mini-ml compiling its three units | 6,791,818,340 | 6,775,085,883 | 0.998 |
+| bench: samples | 6.31 million | 5.19 | 0.822 |
+
+The frames and rebirth's sound the same bytes. ml_alloc and
+copy_double are gone from rebirth's top; what is left of its boxes
+(the collector's copy, 1.5 million a second, and ml_modify's 2.1
+million) is the floats ML's functions return and the mutable fields'
+(the floats plan's item 6, next).

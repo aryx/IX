@@ -22,7 +22,8 @@ double
 exp(double arg)
 {
     double fract, temp1, temp2, xsq;
-    int ent;
+    int ent, e;
+    FPdbleword r;
 
     if(arg == 0)
         return 1;
@@ -32,10 +33,25 @@ exp(double arg)
         return Inf(1);
 
     arg *= log2e;
-    ent = floor(arg);
+    /* ix: floor and ldexp without their calls, the same bits: arg is
+     * within 14,427 of 0 here, so the cast and one step down are floor;
+     * and the result's exponent moved by ent in its bits is ldexp's own
+     * way when the result is a normal number (ldexp then for the rest).
+     * exp is 200 instructions a call on arm, half of them in floor,
+     * modf and ldexp; the mixer's tanh calls it twice a sample
+     * (plan_virtuaracing.md, stage 5).
+     * old: ent = floor(arg); ...; return ldexp(r, ent); */
+    ent = arg;
+    if(ent > arg)
+        ent--;
     fract = (arg-ent) - 0.5;
     xsq = fract*fract;
     temp1 = ((p2*xsq+p1)*xsq+p0)*fract;
     temp2 = ((xsq+q2)*xsq+q1)*xsq + q0;
-    return ldexp(sqrt2*(temp2+temp1)/(temp2-temp1), ent);
+    r.x = sqrt2*(temp2+temp1)/(temp2-temp1);
+    e = ((r.hi >> 20) & 0x7ff) + ent;
+    if(e < 1 || e >= 0x7ff)
+        return ldexp(r.x, ent);
+    r.hi = (r.hi & ~(0x7ffL << 20)) | ((long)e << 20);
+    return r.x;
 }

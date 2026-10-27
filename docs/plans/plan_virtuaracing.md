@@ -548,4 +548,18 @@ author asked: "an xxx=false flag that turns off everything except
 graphics"). So a fight's frame is the drawing (9.8M), the monsters,
 things and their sprites (4.3M) and the sound (2.9M).
 
+2026-10-26, night (the author: "let's do 1, and the tanh opti"):
+libc's `exp` without its calls of `floor` and `ldexp` (the cast and a
+step down; the result's exponent moved in its bits when normal): the
+same bits as before on 20 million arguments (the host, both formulas),
+mini-ml's countdown the same bytes as OCaml's; 130 instructions a call
+on arm, where `exp`, `floor`, `modf` and `ldexp` were 202; the race's
+sound about 1.6M a sixtieth of a second. mini-doom's `store_wall_range`
+(a quarter of a frame): its loop's five float refs in a `Float.Array`
+and the unit's own `ifloor` and `iceil` made it slower (9.91M a frame
+against HEAD's 9.57M, both by mini-ml at 076a65b1 from scratch): a
+call still boxes its float, and the flat array's checks cost more. Left
+to `plan_ml_speed.md`'s item 6 (the doubles passed in registers to a
+known function); the change not kept.
+
 Next: the frame taken apart on the board.

@@ -49727,3 +49727,116 @@ Claude found seven missing mini-ml commits since the last inventory row, 6fea098
 Claude wrote new rows C28 to C40 in the inventory, each group with a short Details paragraph.
 Claude added a floats section 29 to notes_opti_ocaml.md, written for general OCaml programmers.
 Claude then moved the float boxing into exit blocks, checked Svf's solved, and added a test.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 08:27
+
+**Yoann:**
+
+> any progress?
+
+**Claude (summary):**
+
+Yoann's follow-up asks about the biggest wins and whether they're in the optimization inventory, so I focus on the float-box change.
+Claude explained that boxes now go where a float is read, not right after it is computed.
+This fixes Filter.chain, which boxed its loop sum every turn when only the final return needs it.
+Svf's `solved` also stopped boxing low, band and high on every call, when only one is returned.
+Rebirth dropped from 1,687,426,190 to 1,613,983,459 instructions per second (0.956) versus afcb6f03, with the change still uncommitted.
+Claude also noted a mini-ml self-build failure from `Option.value ~default:`, fixed with a `match`, and that the change is still unverified.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 08:24
+
+**Yoann:**
+
+> any progress?
+
+**Claude (summary):**
+
+Claude measured the render change at 49.0M to 37.0M instructions a frame, a 24.5% cut, over frames 250 to 270.
+Claude's gains came mainly from `fill` and `fill_rows` dropping from 13.8M to 9.0M, with early exit and unchecked reads.
+Claude also removed the GC copying, down from 3.0M to nearly zero, by dropping the boxed `ymin`/`ymax` float refs.
+Claude's list of gains covers the generic `min`/`max` calls going to zero, with the nine virtua frames still passing.
+Claude also reported a stale `_mk/5` link failure on `ml_tan`/`ml_cosh` and asked whether to run test-lite and commit first.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 08:30
+
+**Yoann:**
+
+> wow, rebirth went from 5.54 billion to 0.29 billion instructions in 2 days? What were the biggest win? Are they captured in the opti inventory document?
+
+**Claude (summary):**
+
+Claude corrected the 0.29 as a ratio: rebirth fell from 5.54 billion to 1.61 billion instructions.
+Claude said the night's rebirth and lib_audio work was the biggest win, a 2.85 factor from 5.54 to 1.94 billion.
+Claude listed the spectrum display FFT rewrite, Float.Array and local-ref allocation cuts, and removed needless calls as the main parts.
+Claude said the 2.85 can't be split per part without about 10-minute reverted-build measurements for each.
+Claude said the inventory has rows C38 to C40 and one Adjacent entry for the night's changes, with C41 pending commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:03
+
+**Yoann:**
+
+> yes let's commit. You didn't answer my rebirth opti question (5.5 to 0.29)
+
+**Claude (summary):**
+
+Claude clarified that rebirth went from 5.54 to 1.61 billion instructions a second, 0.29 of the start.
+Claude said the night's work was the biggest win, a 2.85 factor, mostly from rebirth and lib_audio code.
+Claude traced the profile to the spectrum display, allocation at 29%, needless calls, and lib_playground operators.
+Claude said it couldn't split the 2.85 per part, since earlier checkpoints mixed changes and measured stale objects.
+Claude committed b0d4877c and offered a per-part rebuild of rebirth, about ten minutes per run, before part 2.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:04
+
+**Yoann:**
+
+> also how many more lines we added to mini-ml with all those recent opti?
+
+**Claude (summary):**
+
+Claude tallied the mini-ml growth since commit 6fea098e: +1,541 net lines, from about 13,070 to 14,610.
+Claude traced the largest contributions to float unboxing (6b76f50d, +472) and stage 1 calls and inlining (88b5dda9, +512).
+Claude also broke out the later float steps (3a through 3d), which together added 186 lines, and the self-fix at 9 lines.
+Claude attributed 973 lines to plan_ml_speed's stages, 559 to the other session's float work, and 9 to the self-fix.
+Claude listed the speed results per stage and noted the ledger in plan_ml_bootstrap.md has the row-by-row counts.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 09:10
+
+**Yoann:**
+
+> excellent work!
+
+**Claude (summary):**
+
+Claude listed two open items: part 2, returning floats in registers from known functions to avoid unboxing.
+Claude proposed rebuilding rebirth from scratch with one night's change undone at a time.
+Each of the four changes would be reverted separately: spectrum, Float.Array state, the calls, and Basics.
+About ten minutes per run, and the four can run in parallel to rank them.
+Claude asked Yoann which one to start.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 08:59
+
+**Yoann:**
+
+> let's commit this first and maybe let's record all those opti and their benefits somewhere, to remember, maybe in the README.md ? or a new opti.md under virtua/'s folder ?
+
+**Claude (summary):**
+
+Claude committed the speed-up as a2bd7881, cutting a race frame from 49.0M to 37.0M instructions on arm (−24.5%).
+Claude recorded the optimizations in a new "Speed" section of games/racing/virtua/README.md, with three tables and switch-off instructions.
+Claude added tests/perf.sh as the measuring script, which reproduced 36,991,257 instructions per frame under the emulator.
+Claude noted that the shared _mk/5 tree fails to link virtua (undefined: ml_tan) because of stale objects from afcb6f03.
+Claude suggested clearing _mk/5/lib_core (and _mk/5-plan9/lib_core for the card) before rebuilding, and left the shared tree untouched.

@@ -540,3 +540,24 @@ one Bytes, is past a 32-bit block's size (tiny-machine, mini-5i:
 Bytes.create), and mini-5i for arm64 is out of mini-ml's heap at its
 start.
 
+
+## 2026-10-27, found by mini-virtuaracing's sound: a loop's floats boxed at each turn
+
+Not done; for whoever takes Unbox next. Synth.continue_into (lib_audio,
+virtua's engine and wind: 8.5M of the race's 22.7M instructions of
+sound in 20 frames, mini-5i -prof, arm, by mini-ml at 1c73082b) is a
+loop over a voice's samples whose state is float refs (phase, time:
+slots by Opti's refs, decision 1 of plan_ml_floats.md). phase is also
+passed to a call each turn (Oscillator.wave_band_limited, a closure of
+another unit), so it leaves as a word, and the loop's phi is a word: at
+the head of each turn three blocks are taken and their doubles stored
+(mini-prof -a continue_into: 44,160 turns, three allocations of 12
+bytes each at its start), about 190 instructions a voice and a sample
+where the arithmetic is some 40. The same shape is in every synthesis
+loop of lib_audio (the filters' memory, the oscillators' phase): a
+float carried by a loop and given to a function in it. What would
+remove it: the phi a double, the box made at the call that needs a
+word (3d's "where it is read", for a read inside a loop of a value the
+loop carries). Asked of the author, 2026-10-27: done in mini-ml rather
+than lib_audio's loops rewritten around it (a one-cell Float.Array),
+which the playground's copy would need too.

@@ -90,13 +90,15 @@ for l in card linux; do
   f=$(grep '^FAILED ' "$build/$l.log" | sed 's/^FAILED //' | tr '\n' ' ')
   if [ -z "$f" ]; then echo "ok self: $n directories built on $l"
   else echo "FAIL self: on $l, of $n directories: $f"; status=1
-    # (each failed one's lines that are not mk's recipes, what the
-    # programs said, at most 40, and its last 5 lines: on GitHub, BUILD
-    # is in the image. old: its last 10 lines, mk's stops, the error
-    # above them; then the lines of words like "error", which missed
-    # doom's and quake's and kept the links' -start ... Stack ...)
+    # (each failed one's lines but its recipes, what the programs and mk
+    # said (a killed program's "ml 12: suicide", mk's "exit status"), at
+    # most 40, and its last 5 lines: on GitHub, BUILD is in the image.
+    # old: its last 10 lines, mk's stops, the error above them; then the
+    # lines of words like "error", which missed doom's and quake's and
+    # kept the links' -start ... Stack ...; then recipes as lines
+    # starting with ml or mk, which hid "ml 12:" and "mk:")
     awk '/^=== /{n=0; e=0} {s[n++%5]=$0}
-      !/^(ml|ld|cc|asm|ar|mk|mkdir|cp|mv|rm|touch|for\(|f=|b=|a=|if\(|echo|=== |[0-9.]+u )/ &&
+      !/^((time )?(ml|ld|cc|asm|ar|mk) [^0-9]|mkdir|cp|mv|rm|touch|for\(|f=|b=|a=|if\(|echo|=== |[0-9.]+u )/ &&
         e < 40 {err[e++]=substr($0, 1, 200)}
       /^FAILED /{print "  " $2 ":"; for(i=0;i<e;i++) print "    " err[i]
         print "    ..."; for(i=n-5;i<n;i++) if(i>=0) print "    " substr(s[i%5], 1, 200)}' \

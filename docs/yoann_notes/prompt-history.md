@@ -49939,3 +49939,242 @@ Far road chunks now draw each pine as one five-face cone, cutting the race frame
 The change drops faces at frame 250 from 6,818 to 5,546, with 476 pixels differing, all far pines.
 Start-up on Big Forest rose from 2.31 to 2.60 billion, after Claude fixed a duplicate tree placement.
 `make test-lite` passed with 135 jobs and no failures, and Claude asked before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:05
+
+**Yoann:**
+
+> ok let's pick 2
+
+------------------------------------------------------------------------
+
+## 2026-10-27 07:45
+
+**Yoann:**
+
+> possibly compiled by mini-ml
+
+**Claude (summary):**
+
+Claude proposed running tiny-machine, built by mini-ml, as an ordinary m-ix program under mini-9pi on the Pi.
+Claude found tiny-machine already in tiny/mkfile's mini-ml build, but unverified on the card or under mini-9pi.
+Claude ran both builds' benchmarks on the host, rebuilding into scratch space to avoid touching the shared `_mk/`.
+Claude found the PATH mini-ml is older than the mkfile's, lacking `-O3`, and checked its arm32 integer width.
+Claude confirmed in `languages/ml/simple/Gen.mli:31` that ints are 31 bits on arm, and was checking how mini-5i handles 32-bit words.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:09
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude added a painter session to frames.expected and confirmed all 10 virtua sessions pass with both builds.
+Claude ran make test-lite on this version, and it passed with 135 jobs and 0 failures.
+Claude noted the test-lite build directory is temporary, so it built virtua for arm64 separately in its own copy.
+Claude queued a final make test-lite run on the final version, alongside the depth and painter arm counts.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:40
+
+**Yoann:**
+
+> running play on the tiny-machine examples/ .wav under the tiny-machine -window tiny-kernel is too slow; the sound is sluggish
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:40
+
+**Yoann:**
+
+> with -window it should run at 20MIPS
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:14
+
+**Yoann:**
+
+> another good whole-program we could add to the bench (in addition to doom, quake, rebirth, etc.) could be tiny-machine itself; it is apaprently 3x slower when built by mini-ml than OCaml native
+
+**Claude (summary):**
+
+Claude tried a bounded mini-5i run of tiny-machine's paint session, but the session kept booting past its end.
+Claude traced the 3.2x slowdown to Bytes.get_int32_le, which boxes an int32 on every instruction fetch.
+Claude proposed fixing it in mini-ml, turning get_int32_le and set_int32_le into single loads and stores.
+Claude noted the change would unbox int32 and touch item 5 of plan_ml_speed.md, benefiting WADs and crypto.
+Claude had also offered a smaller tiny-machine-only fix, leaving the choice open until the boot profile finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:47
+
+**Yoann:**
+
+> I'd rather do the bigger change that has a wider scope and benefit more programs. Otherwise what about the jump table work inspired by ocaml-light ocamlopt?
+
+**Claude (summary):**
+
+Claude kept jump tables for later, to measure on tiny-machine, which runs three matches per instruction.
+Claude planned a new stage 4 for the int32 work, to be written into plan_ml_speed.md before any coding starts.
+Claude split stage 4 into 4a Lower primitives, 4b an Unbox-style pass with raw phis, and 4c Emit instructions.
+Claude noted arm64 needs sign-extension after each int32 operation, because registers are 64 bits wide.
+Claude planned int32 tests against OCaml output at -O0 and -O3 on both arches, then tiny-machine measurements.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:49
+
+**Yoann:**
+
+> ideally we want the int32 to be optimized especially for the Pi where they are currently costly I think
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:50
+
+**Yoann:**
+
+> note that it's a lot of work to unbox, untag those integers; were the original design for them a good idea?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:18
+
+**Yoann:**
+
+> (make test-lite is also now simply 'make test')
+
+**Claude (summary):**
+
+Claude recommended that `make test` is the same as `make test-lite`, and noted it in memory.
+Claude reported the painter's mode (`render=painter`) is ready but not yet committed, with `make test` passing (135 jobs, 0 failures).
+Claude explained the painter mode sorts faces by a whole-number centimetre key so OCaml and mini-ml produce identical frames.
+Claude measured the painter at 41.4M per frame against 34.0M for the depth buffer, and added a Speed table row.
+Claude offered a third ordering-table mode (`render=ot`, PlayStation-style bucket sort) for teaching, which Yoann now wants added.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:50
+
+**Yoann:**
+
+> good idea about the sha bench
+
+**Claude (summary):**
+
+Claude recommended keeping the uniform tagged-int and boxed representation for mini-ml, since it gives polymorphism and a simple exact collector.
+Claude said the one real wart is on arm, where a 31-bit int cannot hold int32, which makes SHA-256 slow on the Pi.
+Claude proposed a cheaper first step: lower int32 operations inline in Lower, Gen and Emit, as was done for floats before Unbox.
+Claude's plan was to benchmark SHA-256 first for a baseline, then do the inline int32 work (about 60 to 80 lines), then measure.
+Claude also asked whether to proceed with steps 1 and 2 before any ssa-level int32 unboxing.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:41
+
+**Yoann:**
+
+> why is it still to slow to play a simple .wav?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:56
+
+**Yoann:**
+
+> what did you do to save so much time?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:51
+
+**Yoann:**
+
+> I dunno this PlayStation algo but yes! it looks interesting to add! let's commit and move forward
+
+**Claude (summary):**
+
+Claude confirmed the build works and compared the three modes' pictures at frame 250.
+Claude verified all 11 sessions pass with both builds, with `make test` running alongside.
+Claude started the arm speed table measurement with a profile, plus the README row and plan note.
+Claude reran tiny-kernel's flaky network test alone after emulator load; it passed, so all 135 jobs pass.
+Claude left `docs/plans/bugs/ix.md` alone since another session has uncommitted edits, and awaits the table count.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 10:54
+
+**Yoann:**
+
+> I like this design discussion and comparison to JS and MLton and so on. maybe we can add this discussion somewhere in the .mli of mini-ml or an existing or new note document. And yes let's do 1 and then 2
+
+**Claude (summary):**
+
+Claude picked up the design discussion and proposed a `design:` and an `others:` section in `CLI.mli`, with references.
+Claude ran a stage 4a change in worktree s6 that keeps `int32` operations in place, skipping boxing.
+The `sha` benchmark dropped from 17.9 to 6.95 million instructions on arm, and 17.8 to 6.81 million on arm64.
+A new `tests/runtime/int32_ops.ml` test passed at -O3 and -O0 on both arches, with frequent forced collections.
+Claude also ran the runtime and tiny suites, which matched HEAD, and planned a `Bytes` int32 primitives follow-up.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:06
+
+**Yoann:**
+
+> what does int32 operations in place mean?
+
+**Claude (summary):**
+
+Claude explained "in place" as compiled code doing the operation at the use site, not calling the C runtime.
+Claude showed `Int32.add` on arm as about 14 inline instructions: load both 32-bit payloads, one ADD, then allocate.
+The allocation bumps `ml_hp` by 8 bytes after checking it against `ml_limit`, then writes a tag-254 header and stores the sum.
+The `BL int32_add` call remains only as the fallback branch, taken when the young generation is full.
+Claude noted results stay boxed, with unboxing as a separate step 3, and `sha` dropped from 17.9 to 6.95 million instructions.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:11
+
+**Yoann:**
+
+> so it's a form of inlining? Or it's inlining specialized for numbers?
+
+**Claude (summary):**
+
+Claude explained that the technique is open coding, not inlining: the compiler emits hand-written instructions for a primitive.
+Claude contrasted it with mini-ml's inlining, which copies ML function bodies, while open coding replaces calls to C runtime functions.
+Claude stressed it is not specific to numbers, covering alloc_in_place, strings_in_place, floats_in_place and ints_in_place.
+Claude offered to add a line on open coding to the inventory and to Lower's comment on these switches.
+Each family has a switch, `-calls` disables them all, and the name dates back to MacLisp.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:15
+
+**Yoann:**
+
+> yes please add line in inventory and comments. Also are all those related opti together in the code? Are there inside an opti/ directory?
+
+**Claude (summary):**
+
+Claude said the optimizations are not gathered, since opti/ holds only the tails and eqs IR passes.
+Claude said open-coded primitives are split across Lower, Gen, Emit, and the runtime's slow path.
+Claude noted this split pushed ssa/Emit.ml past 1,100 lines, breaking the 700-line rule.
+Claude proposed moving Emit's open-coded primitives, about 400 lines, into ssa/Emit_prims.ml after stage 4.
+Claude also added the Lower.mli comment and inventory paragraph, with the stage 4a build still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:16
+
+**Yoann:**
+
+> yes let's try to move this optimization code under opti/ or ssa/ if possible

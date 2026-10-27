@@ -50,6 +50,15 @@ let child t (f : unit -> unit) : int =
   | Exit s -> Process.code s
   | Error m | Word.Error m -> if m <> "" then eprint (Printf.sprintf "rc (%s): %s\n" t.argv0 m); 1
 
+(* a fork that failed is an error said, as Plan 9's rc (Xerror's "try
+ * again"). old: Process.fork's exception, in a child (a pipe's command,
+ * a backquote's) ended it in silence: mini-9pi's full table of
+ * processes cut a backquote's list, no word said *)
+let fork t f =
+  try Process.fork t.caps f
+  with Unix.Unix_error (e, _, _) ->
+    raise (Error ("fork: " ^ Unix.error_message e))
+
 (*****************************************************************************)
 (* Words *)
 (*****************************************************************************)
@@ -65,7 +74,7 @@ let rec ctx t : Word.ctx = {
   var = Env.get t.env;
   backquote = (fun _seps c ->
     let r, w = Process.pipe () in
-    let pid = Process.fork t.caps (fun () ->
+    let pid = fork t (fun () ->
       Process.close r; Process.dup2 w 1; Process.close w; child t (fun () -> run t c)) in
     Process.close w;
     let out = Process.read_all r in
@@ -78,7 +87,7 @@ let rec ctx t : Word.ctx = {
      * its name is the word *)
     let r, w = Process.pipe () in
     let mine, theirs, fd = match side with Reads -> r, w, 1 | Writes -> w, r, 0 in
-    let _pid = Process.fork t.caps (fun () ->
+    let _pid = fork t (fun () ->
       Process.close mine; Process.dup2 theirs fd; Process.close theirs; child t (fun () -> run t c)) in
     Process.close theirs;
     Printf.sprintf "/dev/fd/%d" mine);
@@ -118,7 +127,7 @@ and run_e t ~e (c : cmd) : unit =
   | Redirect (r, c) -> redirect t r ~keep:false (fun () -> run_e t ~e c)
   | Seq (a, b) -> run_e t ~e a; run_e t ~e b
   | Async c ->
-      let pid = Process.fork t.caps (fun () ->
+      let pid = fork t (fun () ->
         let null = Process.open_file t.caps Read "/dev/null" in
         Process.dup2 null 0; Process.close null;
         child t (fun () -> run_e t ~e c)) in
@@ -129,7 +138,7 @@ and run_e t ~e (c : cmd) : unit =
   | Not c -> run_e t ~e:false c; set_status t (if ok t then "false" else "")
   | Pipe (l, r, a, b) ->
       let rd, wr = Process.pipe () in
-      let pid = Process.fork t.caps (fun () ->
+      let pid = fork t (fun () ->
         Process.close rd; Process.dup2 wr l; Process.close wr; child t (fun () -> run_e t ~e a)) in
       Process.close wr;
       let right =
@@ -140,7 +149,7 @@ and run_e t ~e (c : cmd) : unit =
       set_status t (left ^ "|" ^ right)
   | Brace c -> run_e t ~e c
   | Subshell c ->
-      let pid = Process.fork t.caps (fun () -> child t (fun () -> run_e t ~e c)) in
+      let pid = fork t (fun () -> child t (fun () -> run_e t ~e c)) in
       set_status t (Process.wait t.caps pid);
       check t ~e
   | If (cond, body) ->
@@ -200,7 +209,7 @@ and command t name rest =
       | Some f -> f t rest
       | None ->
           let path = Env.get t.env "path" and env = Env.export t.env in
-          let pid = Process.fork t.caps (fun () -> Process.exec t.caps ~path ~env (name :: rest)) in
+          let pid = fork t (fun () -> Process.exec t.caps ~path ~env (name :: rest)) in
           set_status t (Process.wait t.caps pid))
 
 (* a redirection around [f]; with [~keep], for exec, not undone *)
@@ -235,7 +244,7 @@ and redirect t (r : redir) ~keep (f : unit -> unit) : unit =
         (* the body through a pipe, from a child *)
         let body = if h.expand then heredoc t h.body else h.body in
         let rd, wr = Process.pipe () in
-        let pid = Process.fork t.caps (fun () -> Process.close rd; Process.write wr body; 0) in
+        let pid = fork t (fun () -> Process.close rd; Process.write wr body; 0) in
         ignore pid;
         Process.close wr;
         Process.dup2 rd fd;

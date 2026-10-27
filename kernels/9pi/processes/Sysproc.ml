@@ -73,7 +73,13 @@ let sysrfork (p : proc) flag =
     if flag land rfnoteg <> 0 then begin incr noteids; p.noteid <- !noteids end;
     0
   end else begin
-    let slot = match Proc.free_slot () with Some s -> s | None -> raise (Error "no free processes") in
+    (* a full table: the fork waits for a process to end, as Plan 9's
+     * newproc (resrcwait("no procs")), a note ending the wait. old:
+     * failed, "no free processes": seven games' mk at once on the card
+     * (self-mix), a pipe's rc ended by it, its list cut, no word said *)
+    let rec slot () =
+      match Proc.free_slot () with Some s -> s | None -> Proc.tsleep 300; slot () in
+    let slot = slot () in
     let pgdir = match Mmu.create () with Some d -> d | None -> raise (Error enovmem) in
     (* the memory (dupseg): text shared, data and bss too with RFMEM, else
      * shared until written (Fault's copy on write), the stack copied *)

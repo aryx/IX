@@ -51,8 +51,10 @@ outside rio; 2026-10-27, 18 with `graphics=only`, and under 7 when
 the dogs came, with the sound: their models were 20M of the fight's
 34.7M (each triangle's rows by closures along its edges, a list sorted
 a triangle, six vectors made a vertex), now 7M (id's gradients). The
-sound is 2.1M a sixtieth of a second, 126M a second: near half the
-processor. Why it needs more than a Pentium's instructions:
+sound was 2.1M a sixtieth of a second, 126M a second, near half the
+processor: now 0.52M (lib_audio's mixer, its tanh rational and its
+shots' loops without a test), the fight 20.8M a frame, 20.2M with
+`sound=off`. Why it needs more than a Pentium's instructions:
 
 - **Floats in mini-ml's code**: a float given to a function, or put in
   a `float array`, a block of its own (`plan_ml_floats.md`,

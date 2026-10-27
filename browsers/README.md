@@ -92,9 +92,10 @@ by dune's build, 16.6 s by mini-ml's (2026-10-11).
 
 The numbers behind the plan: `survey.sh` (what each of mini-chrome's
 programs stands on, what mini-ml says of each file, a file's history),
-`coverage.sh` and `coverage.py` (what of mini-chrome a Wikipedia
-article runs), `first_version.sh` (mini-chrome's first commit built
-and run).
+and in `survey/`: `coverage.sh` and `coverage.py` (what of mini-chrome
+a Wikipedia article runs), `coverage_ix.sh` with `coverage_sites.py`
+and `coverage_lines.py` (what of browsers/ the sites run),
+`first_version.sh` (mini-chrome's first commit built and run).
 
 ## The gaps with mini-chrome (2026-10-11)
 

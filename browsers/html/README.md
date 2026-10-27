@@ -3,7 +3,7 @@
 The author's mini-chrome's `languages/html` (`~/github/mini-chrome`),
 **its first version** (`475a979`, 2026-09-30), the base of
 [`plan_browser.md`](../../docs/plans/plan_browser.md) (stage 4):
-`browsers/first_version.sh` takes that tree out of its history.
+`browsers/survey/first_version.sh` takes that tree out of its history.
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's mini-chrome's <path>, its first version; ...`).

@@ -13,7 +13,7 @@
 # run, without scripts and with them; coverage_sites.py, what each site's
 # scripts reach beyond what a page of one line of script does.
 #
-# usage: browsers/coverage_ix.sh [-v] DIR [site...]
+# usage: browsers/survey/coverage_ix.sh [-v] DIR [site...]
 #   DIR:  the copy, its build and the runs (kept; again: the runs only,
 #         after the copy refreshed)
 #   site: an address (default: the list below)
@@ -23,7 +23,7 @@
 set -u
 V=; [ "${1:-}" = -v ] && { V=-v; shift; }
 [ $# -ge 1 ] || { sed -n '5,22p' "$0"; exit 2; }
-HERE=$(cd "$(dirname "$0")/.." && pwd)
+HERE=$(cd "$(dirname "$0")/../.." && pwd)
 D=$(realpath -m $1); shift
 SITES=${*:-"https://en.wikipedia.org/wiki/OCaml https://en.wikipedia.org/wiki/Plan_9_from_Bell_Labs
   https://news.ycombinator.com https://ocaml.org https://lwn.net https://old.reddit.com
@@ -75,8 +75,8 @@ bisect-ppx-report coveralls ../on.json $off $on
 for f in $(find browsers -name '*.ml' -not -path '*/tests/*' -not -path '*/sdl/*' | sort); do
   echo "$(dirname $f) $f"
 done > ../sets.txt
-python3 $HERE/browsers/coverage.py $V ../sets.txt ../off.json ../on.json
+python3 $HERE/browsers/survey/coverage.py $V ../sets.txt ../off.json ../on.json
 for n in $(seq 0 $(wc -l < ../runs/sites.txt)); do
   bisect-ppx-report coveralls ../on$n.json $(for r in ../runs/$n-on-*; do printf -- '--coverage-path %s ' $r; done)
 done
-python3 $HERE/browsers/coverage_sites.py ..
+python3 $HERE/browsers/survey/coverage_sites.py ..

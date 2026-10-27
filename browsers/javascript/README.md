@@ -99,7 +99,7 @@ cooperative.
   body of bytes). Its test.
 - **Cut** (2026-10-19): ES modules, `Js_module` and the parser's
   `import` and `export`, `import()` and `import.meta` (of the eight
-  sites of `coverage_ix.sh` only old.reddit.com's scripts are modules,
+  sites of `survey/coverage_ix.sh` only old.reddit.com's scripts are modules,
   and its page is blank anyway); mini-node runs a file as a script.
   With them `Js_parse`'s `aside` and `Js_eval.read_ahead`, the parse
   memo of mini-chrome's worker pool. Their test, `Unit_js_module`.

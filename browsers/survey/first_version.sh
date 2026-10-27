@@ -11,7 +11,7 @@
 # without a screen (SDL's dummy driver; Cairo's platform: the software
 # one came two commits later), their frames written for a look.
 #
-# usage: browsers/first_version.sh DIR [mini-chrome [playground]]
+# usage: browsers/survey/first_version.sh DIR [mini-chrome [playground]]
 #   DIR/mini-chrome, DIR/playground: the two trees, to read and copy from
 #   DIR/*.png: the frames; DIR/survey.txt: the lines, by where they go
 
@@ -26,7 +26,7 @@ git -C $P archive $PC | tar -x -C playground
 rm -rf mini-chrome/bin; mkdir -p mini-chrome/tools   # survey.sh looks there
 echo '(lang dune 3.0)' > dune-workspace
 dune build mini-chrome/src/main 2>&1 | head -20
-$HERE/survey.sh $D/mini-chrome $D/playground 2> /dev/null > survey.txt
+$HERE/../survey.sh $D/mini-chrome $D/playground 2> /dev/null > survey.txt
 grep -A1 '^== .*\(lib_\|browsers/\)' survey.txt | grep -v '^--' > /dev/null
 awk '/^== (lib_|browsers\/)/ { t = $2 } /^ +[0-9]+ +[0-9]+ +all/ && t != "" { printf "  %-26s %6d .ml %6d .mli\n", t, $1, $2; t = "" }' survey.txt
 export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy

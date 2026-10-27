@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # What of each file of docs/plans/plan_browser.md's tables a Wikipedia
-# article runs: browsers/coverage.sh's report, from bisect_ppx's
+# article runs: browsers/survey/coverage.sh's report, from bisect_ppx's
 # per-line counts (bisect-ppx-report coveralls) of the runs without
 # scripts and with them.
 #

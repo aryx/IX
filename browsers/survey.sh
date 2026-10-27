@@ -17,7 +17,7 @@
 #         now; the commits that changed it): what was added since, and
 #         its commits say for which site, is the first place to cut
 #   -files F: also each set's files written to F, a line "where file"
-#         (browsers/coverage.sh's, which says what of each the article runs)
+#         (browsers/survey/coverage.sh's, which says what of each the article runs)
 
 cd "$(dirname "$0")"
 ML=; NET=; LOG=; FILES=

@@ -75,7 +75,7 @@ images, so we will also need to add that".
 
 So the base is **mini-chrome's first commit, `475a979` (2026-09-30:
 the playground's TinyChrome moved), on the playground of that hour,
-`6154076a`**, and not today's files cut down. `browsers/first_version.sh`
+`6154076a`**, and not today's files cut down. `browsers/survey/first_version.sh`
 takes both out of their histories, builds them and counts them (run
 2026-10-09):
 
@@ -284,13 +284,13 @@ can come back.
 
 ## Stage 1: what the article runs, and the cuts proposed
 
-`browsers/coverage.sh` (run 2026-10-09; a minute and a half once
+`browsers/survey/coverage.sh` (run 2026-10-09; a minute and a half once
 built): mini-chrome and the playground copied, built with bisect_ppx
 (the 4.14.2 switch has it), and the article loaded eight times by
 mini-chrome-software without a screen (the first screen, scrolled to
 its end, 1400 wide for its three columns, a link clicked; each
 without scripts and with them; `threads=off cache=off`), once by
-mini-curl and once by mini-lynx. `browsers/coverage.py` cuts each file
+mini-curl and once by mini-lynx. `browsers/survey/coverage.py` cuts each file
 in its top-level definitions and says which were never run; `-v` names
 them. The frames were looked at: the article reads as one at 1400.
 
@@ -1096,7 +1096,7 @@ by mini-ml for arm64 say OCaml's 24 lines. **For arm they do not**
 jobs added to it were run by hand).
 
 The base (2026-10-09): mini-chrome's first version, the author's
-choice; `browsers/first_version.sh`, its table and the two frames
+choice; `browsers/survey/first_version.sh`, its table and the two frames
 looked at (above). mini-ml on the first version's files (`survey.sh
 -ml` with the two trees): 25 of the 77 compile as they are (crypto 10
 of 13, the network 5 of 16, the pictures 2 of 7, HTML 1 of 8, CSS 1
@@ -1106,7 +1106,7 @@ arguments first, then `a.{i}`, `for _`, a label through a function
 value, polymorphic variants (`Svg`, `Js_regexp`), a local exception
 (`Js_value`).
 
-Stage 1 (2026-10-09): `browsers/coverage.sh` and `coverage.py`, the
+Stage 1 (2026-10-09): `browsers/survey/coverage.sh` and `coverage.py`, the
 table of what the article runs and the cuts proposed (above);
 `survey.sh -files`. Run: the ten loads, twice (the second by the
 script whole: the same numbers but `lib_networking/`'s with scripts,
@@ -1165,7 +1165,7 @@ goes is said in the directory's README ("remains"). What gets worse:
 the sites the cut things came for (GitHub, Gmail, YouTube), not the
 aim.
 
-`browsers/coverage.sh` first, run again on today's files (it measured
+`browsers/survey/coverage.sh` first, run again on today's files (it measured
 mini-chrome's, before the copy) and on more than the article: HN,
 ocaml.org, LWN, a second article. Its `-v` is the list of A's cuts,
 checked.
@@ -1276,7 +1276,7 @@ mini-chrome's `Unit_browser_devtools`.
 
 ### The coverage of 2026-10-19: ix's own files, eight sites
 
-`browsers/coverage_ix.sh` (new: `coverage.sh` measured mini-chrome's
+`browsers/survey/coverage_ix.sh` (new: `coverage.sh` measured mini-chrome's
 tree, before the copy): `browsers/` and the libraries under it copied
 to a directory, `browsers/`'s libraries instrumented (bisect_ppx),
 each site loaded by mini-netscape without a window, 1400 by 900,

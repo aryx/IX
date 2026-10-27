@@ -22,7 +22,7 @@
 # submission, Browser_forms), Back and Forward (the window's, not
 # copied), a page of http:// (Http_request).
 #
-# usage: browsers/coverage.sh [-v] DIR [mini-chrome [playground]]
+# usage: browsers/survey/coverage.sh [-v] DIR [mini-chrome [playground]]
 #   DIR: where the copy, its build and the runs go (kept: 700 MB);
 #        with a build there already, only the runs and the report
 #   -v:  each definition never run, by file
@@ -76,5 +76,5 @@ off=$(for r in first-off scroll-off wide-off act-off curl lynx; do printf -- '--
 on=$(for r in first-on scroll-on wide-on act-on; do printf -- '--coverage-path runs/%s ' $r; done)
 bisect-ppx-report coveralls off.json $off $src
 bisect-ppx-report coveralls on.json $off $on $src
-$HERE/survey.sh -files $D/sets.txt $M $P > /dev/null
+$HERE/../survey.sh -files $D/sets.txt $M $P > /dev/null
 python3 $HERE/coverage.py $V sets.txt off.json on.json

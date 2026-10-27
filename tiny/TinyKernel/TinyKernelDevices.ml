@@ -65,10 +65,11 @@ let speak v sounds =
     v.ahead <- (now + lead) land 0x3fffffff;
   let total =
     List.fold_left (fun acc snd -> acc + sound_length snd) 0 sounds in
-  if total > ring - ((v.ahead - now) land 0x3fffffff) then false
+  let missing = total - (ring - ((v.ahead - now) land 0x3fffffff)) in
+  if missing > 0 then missing
   else begin
     List.iter (fun snd ->
       mix_sound ring_at ring v.ahead snd;
       v.ahead <- (v.ahead + sound_length snd) land 0x3fffffff) sounds;
-    true
+    0
   end

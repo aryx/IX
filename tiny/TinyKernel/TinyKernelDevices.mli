@@ -45,5 +45,6 @@ val lead : int
 val played : unit -> int
 
 (* a voice's sounds mixed into the ring after its last one, if they all
- * fit (a second ahead of the speaker at most): false, the write waits *)
-val speak : TinyKernelFiles.voice -> TinyKernelAudio.sound list -> bool
+ * fit (a second ahead of the speaker at most): 0; else the samples
+ * missing, the write waits until the speaker played them *)
+val speak : TinyKernelFiles.voice -> TinyKernelAudio.sound list -> int

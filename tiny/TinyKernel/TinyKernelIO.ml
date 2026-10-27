@@ -253,17 +253,23 @@ let write f a n =
       (try messages d.conn (k_string a n); Some n
        with Graphics why -> puts ("draw: " ^ why ^ "\n"); Some (-1))
   | Post b -> b.last <- k_string a n; b.fresh <- true; Some n
-  (* sounds, whole, when they fit in the ring (else a look again in 10
-   * ms); a bad one, or more than a ring, -1 *)
+  (* sounds, whole, when they fit in the ring, else a look again when
+   * the speaker played what is missing, 20 samples a tick (old: in 10
+   * ms, each look a copy of the write: play's blocks of 2,048 samples
+   * copied 25 times, half the machine's instructions); a bad one, or
+   * more than a ring, -1 *)
   | Voice v ->
       (match (try Some (sounds (k_string a n)) with Bad_sound -> None) with
        | Some l
          when List.fold_left (fun acc snd -> acc + sound_length snd) 0 l <= ring
          ->
-           if speak v l then Some n
-           else
-             (if !alarm = 0 || !ticks + 4 < !alarm then alarm := !ticks + 4;
-              None)
+           let missing = speak v l in
+           if missing = 0 then Some n
+           else begin
+             let at = !ticks + 1 + (missing / 20) in
+             if !alarm = 0 || at < !alarm then alarm := at;
+             None
+           end
        | _ -> Some (-1))
   (* a command to the traced process, each answered by a line but c,
    * which its next stop answers *)

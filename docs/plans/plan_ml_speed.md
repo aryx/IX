@@ -502,3 +502,41 @@ mini-doom's frame 8,444,780 to 8,243,646 (0.976), mini-quake's,
 mini-virtuaracing's, mini-rebirth's and the benches the same; the
 frames and the sound the same bytes.
 
+## 2026-10-27, 4b: a string's little-endian integers in place
+
+The author: "ok let's follow your plan, 1, 2, 3", then of 3 (int32s
+unboxed in ssa): not done, as the open coding already goes past
+ocaml-light's ocamlopt (its Int32 calls of the runtime; no
+Bytes.get_int32_le in OCaml 1.07). lib_core's Bytes.get_uint16_le,
+get_int32_le, set_uint16_le and set_int32_le, and String's two getters,
+were ML: through String's, two 16-bit halves of bytes and four int32s.
+Now externals of OCaml's names (%caml_bytes_get16, get32, set16,
+set32; only mini-ml compiles lib_core's base/, little-endian as ix's
+machines), Ir's BytesGet and BytesSet (Lower: with strings_in_place,
+ints_in_place for the 32 bits): in ssa's code the index checked twice
+(0 <= i < the length, then i + n - 1), then on arm a byte at a time (a
+word's load needs an address of 4, the Pi 1 traps or rotates), on
+arm64 one load or store; the int32 a block taken in place. Simple's
+Gen calls the runtime's caml_bytes_get16... (ints.c). The _be ones and
+the int64s stay ML. tests/runtime/bytes_ints.ml (each offset, the sign,
+the bounds at both ends, a short string).
+
+tiny-machine's profile first (mini-5i -prof of the arm64 build, the
+paint session, 17.5 thousand million instructions, mini-5i now writing
+its profile at a SIGTERM): String.get_int32_le 11.8%, get_uint16_le
+10.7%, Bytes.get_int32_le 3.0%, int32_to_int 1.0%, a quarter of it the
+reads of the machine's memory (each 190 instructions in three calls;
+now 37 in place). Then, natively on the host (arm64), the paint session:
+3.28 s to 2.67 (0.81), OCaml's build 1.48 (2.2 times to 1.8). Arm,
+mini-5i, from nothing, against b0ef73ed: mini-ml compiling its three
+units 0.988, mini-doom's frame 0.999, the others the same. The rest of
+tiny-machine's profile: TinyMachineCPU.step 15%, the devices' ticks 8.4%
+and check 6.7%, Pervasives.lnot 1.2% (35.8 million calls: lib_core's
+small functions are not inlined into another directory's units), the
+curry functions 4.6% (the env record's closures).
+
+Found: the emulators built by mini-ml do not run: on arm their memory,
+one Bytes, is past a 32-bit block's size (tiny-machine, mini-5i:
+Bytes.create), and mini-5i for arm64 is out of mini-ml's heap at its
+start.
+

@@ -368,7 +368,7 @@ val get_uint16_be : bytes -> int -> int
     @since 4.08
 *)
 
-val get_uint16_le : bytes -> int -> int
+external get_uint16_le : bytes -> int -> int = "%caml_bytes_get16"
 (** [get_uint16_le b i] is [b]'s little-endian unsigned 16-bit integer
     starting at byte index [i].
     @since 4.08
@@ -386,7 +386,7 @@ val get_int32_be : bytes -> int -> int32
     @since 4.08
 *)
 
-val get_int32_le : bytes -> int -> int32
+external get_int32_le : bytes -> int -> int32 = "%caml_bytes_get32"
 (** [get_int32_le b i] is [b]'s little-endian 32-bit integer
     starting at byte index [i].
     @since 4.08
@@ -416,7 +416,7 @@ val set_uint16_be : bytes -> int -> int -> unit
     @since 4.08
 *)
 
-val set_uint16_le : bytes -> int -> int -> unit
+external set_uint16_le : bytes -> int -> int -> unit = "%caml_bytes_set16"
 (** [set_uint16_le b i v] sets [b]'s little-endian unsigned 16-bit integer
     starting at byte index [i] to [v].
     @since 4.08
@@ -428,7 +428,7 @@ val set_int32_be : bytes -> int -> int32 -> unit
     @since 4.08
 *)
 
-val set_int32_le : bytes -> int -> int32 -> unit
+external set_int32_le : bytes -> int -> int32 -> unit = "%caml_bytes_set32"
 (** [set_int32_le b i v] sets [b]'s little-endian 32-bit integer
     starting at byte index [i] to [v].
     @since 4.08

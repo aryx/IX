@@ -434,6 +434,17 @@ let prim imm p n =
    * round's operations, some 170 instructions each on arm.
    * old: a CallC of int32_add... *)
   | _ when !ints_in_place && List.mem p int32_ops -> emit (Int32 (p, n))
+  (* a binary format's field, little-endian (Bytes.get_int32_le...):
+   * Ir's own, its bytes loaded in place in ssa's code (the int32 a block
+   * taken in place). OCaml's names; ix's machines are little-endian.
+   * old: lib_core's Bytes through String's, two 16-bit halves of bytes
+   * and four int32s, each a block *)
+  | "%caml_bytes_get16" when !strings_in_place -> emit (BytesGet 2)
+  | "%caml_bytes_get32" when !ints_in_place -> emit (BytesGet 4)
+  | "%caml_bytes_set16" when !strings_in_place -> emit (BytesSet 2); emit (Int 0)
+  | "%caml_bytes_set32" when !ints_in_place -> emit (BytesSet 4); emit (Int 0)
+  | "%caml_bytes_get16" | "%caml_bytes_get32" | "%caml_bytes_set16" | "%caml_bytes_set32" ->
+      emit (CallC ("caml_" ^ String.sub p 6 (String.length p - 6), n))
   | _ when !floats_in_place && List.mem_assoc p float_calls ->
       emit (FloatCall (p, List.assoc p float_calls, n))
   | _ when p.[0] = '%' -> error "unknown primitive %s" p

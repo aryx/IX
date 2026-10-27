@@ -115,6 +115,13 @@ type t =
    * that does the same (int32_add...: called in simple's code, and
    * when there is no room), its arity; int32_to_int's an int, no block *)
   | Int32 of string * int
+  (* a string's (or bytes') little-endian integer of n bytes (2 or 4) at
+   * an index, checked: the 16 bits an int, the 32 an int32's block;
+   * read, or written (the value below the index). Ir's own, a load or
+   * a store in place in ssa's code, the runtime's caml_bytes_get16...
+   * in simple's *)
+  | BytesGet of int
+  | BytesSet of int
   | FloatSetIndex of bool             (* a float array, an index, a float *)
   | Alloc of int * int                (* a tag, n values by the block, the top its field 0 *)
   | Op of op

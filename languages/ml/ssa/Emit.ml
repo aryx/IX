@@ -529,6 +529,60 @@ let func m out (fn : func) (lf : L.func) =
         ins "%s\t$1, R%d" (shift Lsl) d;
         ins "ORR\t$1, R%d" d;
         finish v d
+    (* a string's little-endian integer of n bytes at index i: i
+     * checked as a byte's (0 <= i < its length, the length then in R0),
+     * then i + n - 1 too; its address in t. On arm a byte at a time (a
+     * word's load needs an address of 4: the Pi 1 traps or rotates),
+     * on arm64 one load or store. The 16 bits an int, the 32 an int32's
+     * block taken in place (the runtime's caml_bytes_get32 when there is
+     * no room) *)
+    | (BytesGet n | BytesSet n), s :: i :: _ when in_place ->
+        let a = src s r1 in let b = src i r2 in
+        ins "%s\t$1, R%d, R%d" (shift Asr) b t;
+        byte_bound a;
+        ins "ADD\t$%d, R%d, R%d" (n - 1) t r3;
+        ins "CMP\tR0, R%d" r3;
+        ins "BLO\t2(PC)";
+        ins "BL\tcaml_array_bound_error(SB)";
+        ins "ADD\tR%d, R%d" a t;
+        let ld, st = match n with 2 -> "MOVHU", "MOVH" | _ -> "MOVWU", "MOVW" in
+        (match p, xs with
+         | BytesGet _, _ ->
+             (match m.arch with
+              | Arm64 -> ins "%s\t0(R%d), R%d" ld t r3
+              | Arm ->
+                  ins "MOVBU\t0(R%d), R%d" t r3;
+                  for k = 1 to n - 1 do
+                    ins "MOVBU\t%d(R%d), R%d" k t r2;
+                    ins "ORR\tR%d<<%d, R%d" r2 (8 * k) r3
+                  done);
+             if n = 2 then begin
+               let d = dst v r2 in
+               ins "%s\t$1, R%d, R%d" (shift Lsl) r3 d;
+               ins "ORR\t$1, R%d" d;
+               finish v d
+             end else begin
+               let slow = glabel () and ok = glabel () in
+               take 1 254 slow;
+               ins "MOVW\tR%d, 0(R0)" r3;
+               ins "B\t%s" ok;
+               lab slow;
+               call_c "caml_bytes_get32" xs;
+               lab ok;
+               finish v 0
+             end
+         | _, [ _; _; x ] ->
+             let c = src x r3 in
+             if n = 2 then ins "%s\t$1, R%d, R%d" (shift Asr) c r3 else ins "MOVW\t0(R%d), R%d" c r3;
+             (match m.arch with
+              | Arm64 -> ins "%s\tR%d, 0(R%d)" st r3 t
+              | Arm ->
+                  ins "MOVB\tR%d, 0(R%d)" r3 t;
+                  for k = 1 to n - 1 do
+                    ins "SRL\t$8, R%d" r3;
+                    ins "MOVB\tR%d, %d(R%d)" r3 k t
+                  done)
+         | _ -> failwith (fn.name ^ ": ssa: a string's integer's operands"))
     (* an int32's operation: its 32 bits loaded from the operands'
      * blocks (arm64's sign-extended, zero-extended for a logical shift
      * right), computed in a word, the low 32 stored in a new block; the
@@ -631,6 +685,8 @@ let func m out (fn : func) (lf : L.func) =
     | FloatRound c, _ -> call_c (if c then "ceil_float" else "floor_float") xs; finish v 0
     | FloatCall (f, _, _), _ -> call_c f xs; finish v 0
     | Int32 (f, _), _ -> call_c f xs; finish v 0
+    | BytesGet n, _ -> call_c (sprintf "caml_bytes_get%d" (8 * n)) xs; finish v 0
+    | BytesSet n, _ -> call_c (sprintf "caml_bytes_set%d" (8 * n)) xs
     | _ -> failwith (fn.name ^ ": ssa: a primitive's operands")
   in
   (* the same on doubles (Unbox), the operands' and the result's

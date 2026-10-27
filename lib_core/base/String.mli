@@ -159,9 +159,9 @@ val init : int -> (int -> char) -> string
 
 (* an integer in s at i, of 16, 32 or 64 bits, its low byte first (le)
  * or last (be): a binary format's field *)
-val get_uint16_le : string -> int -> int
+external get_uint16_le : string -> int -> int = "%caml_bytes_get16"
 val get_uint16_be : string -> int -> int
-val get_int32_le : string -> int -> int32
+external get_int32_le : string -> int -> int32 = "%caml_bytes_get32"
 val get_int32_be : string -> int -> int32
 val get_int64_le : string -> int -> int64
 val get_int64_be : string -> int -> int64

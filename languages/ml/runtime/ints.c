@@ -17,6 +17,64 @@ copy_int32(int n)
 	return b;
 }
 
+/* a string's (or bytes') little-endian integer of 2 or 4 bytes at i:
+ * the compiled code's when it is not in place (simple's, and ssa's
+ * when there is no room for an int32's block); i to i+n-1 checked */
+static uchar*
+bytes_at(value s, value i, int n)
+{
+	value k;
+
+	k = Long_val(i);
+	if(k < 0 || k + n > length(s))
+		ml_raise(bound_exn);
+	return (uchar*)Bytes(s) + k;
+}
+
+value
+caml_bytes_get16(value s, value i)
+{
+	uchar *p;
+
+	p = bytes_at(s, i, 2);
+	return Val_int(p[0] | (p[1] << 8));
+}
+
+value
+caml_bytes_get32(value s, value i)
+{
+	uchar *p;
+
+	p = bytes_at(s, i, 4);
+	return copy_int32(p[0] | (p[1] << 8) | (p[2] << 16) | ((uint)p[3] << 24));
+}
+
+value
+caml_bytes_set16(value s, value i, value v)
+{
+	uchar *p;
+
+	p = bytes_at(s, i, 2);
+	p[0] = Long_val(v);
+	p[1] = Long_val(v) >> 8;
+	return Val_unit;
+}
+
+value
+caml_bytes_set32(value s, value i, value v)
+{
+	uchar *p;
+	uint n;
+
+	p = bytes_at(s, i, 4);
+	n = Int32_val(v);
+	p[0] = n;
+	p[1] = n >> 8;
+	p[2] = n >> 16;
+	p[3] = n >> 24;
+	return Val_unit;
+}
+
 static value
 copy_int64(vlong n)
 {

@@ -280,11 +280,14 @@ let init n f =
 
 (* from bytes, each read by get: its bounds checked *)
 let byte s i = Char.code (get s i)
-let get_uint16_le s i = byte s i lor (byte s (i + 1) lsl 8)
+(* ix: the little-endian ones primitives (Bytes')
+ * old: let get_uint16_le s i = byte s i lor (byte s (i + 1) lsl 8)
+ *   let get_int32_le s i = Int32.logor (Int32.of_int (get_uint16_le s i))
+ *     (Int32.shift_left (Int32.of_int (get_uint16_le s (i + 2))) 16) *)
+external get_uint16_le : string -> int -> int = "%caml_bytes_get16"
 let get_uint16_be s i = (byte s i lsl 8) lor byte s (i + 1)
 
-let get_int32_le s i =
-  Int32.logor (Int32.of_int (get_uint16_le s i)) (Int32.shift_left (Int32.of_int (get_uint16_le s (i + 2))) 16)
+external get_int32_le : string -> int -> int32 = "%caml_bytes_get32"
 
 let get_int32_be s i =
   Int32.logor (Int32.shift_left (Int32.of_int (get_uint16_be s i)) 16) (Int32.of_int (get_uint16_be s (i + 2)))

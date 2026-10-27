@@ -21,6 +21,7 @@ let safepoint = function
           | FloatCall _), _) | Box _ -> true
   (* an int32's block; to_int's, none *)
   | Prim (Ir.Int32 (f, _), _) -> f <> "int32_to_int"
+  | Prim (Ir.BytesGet 4, _) -> true
   (* C's exp on doubles: no allocation, but C's code uses the values'
    * registers *)
   | Dprim (Ir.FloatCall _, _) -> true

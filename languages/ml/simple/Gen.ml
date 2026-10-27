@@ -229,6 +229,8 @@ let func m out (fn : func) =
     | FloatRound c -> spill (); call_c (if c then "ceil_float" else "floor_float") 1; reload (); result ()
     | FloatCall (f, _, n) -> spill (); call_c f n; reload (); result ()
     | Int32 (f, n) -> spill (); call_c f n; reload (); result ()
+    | BytesGet n -> spill (); call_c (Printf.sprintf "caml_bytes_get%d" (8 * n)) 2; reload (); result ()
+    | BytesSet n -> spill (); call_c (Printf.sprintf "caml_bytes_set%d" (8 * n)) 3; reload ()
     | Float2 f -> spill (); call_c f 2; reload (); result ()
     | FloatOfInt -> spill (); call_c "caml_floatofint" 1; reload (); result ()
     | IntOfFloat -> spill (); call_c "caml_intoffloat" 1; reload (); result ()

@@ -89,22 +89,25 @@ let index_from_opt b i c = String.index_from_opt (uts b) i c
 (* the binary fields: the readers are String's *)
 let get_uint8 s i = Char.code (get s i)
 let get_int8 s i = let n = get_uint8 s i in if n >= 128 then n - 256 else n
-let get_uint16_le s i = String.get_uint16_le (uts s) i
+(* ix: the little-endian ones primitives (mini-ml's Lower: a load in
+ * place; a string's representation is a bytes')
+ * old: through String's, two 16-bit halves and four int32s *)
+external get_uint16_le : bytes -> int -> int = "%caml_bytes_get16"
 let get_uint16_be s i = String.get_uint16_be (uts s) i
 let get_int16_be s i = let n = get_uint16_be s i in if n >= 32768 then n - 65536 else n
-let get_int32_le s i = String.get_int32_le (uts s) i
+external get_int32_le : bytes -> int -> int32 = "%caml_bytes_get32"
 let get_int32_be s i = String.get_int32_be (uts s) i
 let get_int64_le s i = String.get_int64_le (uts s) i
 let get_int64_be s i = String.get_int64_be (uts s) i
 
 let set_uint8 s i n = set s i (Char.unsafe_chr (n land 0xff))
-let set_uint16_le s i n = set_uint8 s i n; set_uint8 s (i + 1) (n lsr 8)
+external set_uint16_le : bytes -> int -> int -> unit = "%caml_bytes_set16"
 let set_uint16_be s i n = set_uint8 s i (n lsr 8); set_uint8 s (i + 1) n
 
 (* a 32-bit integer's two halves *)
 let low16 n = Int32.to_int n land 0xffff
 let high16 n = Int32.to_int (Int32.shift_right_logical n 16) land 0xffff
-let set_int32_le s i n = set_uint16_le s i (low16 n); set_uint16_le s (i + 2) (high16 n)
+external set_int32_le : bytes -> int -> int32 -> unit = "%caml_bytes_set32"
 let set_int32_be s i n = set_uint16_be s i (high16 n); set_uint16_be s (i + 2) (low16 n)
 
 let high32 n = Int64.to_int32 (Int64.shift_right_logical n 32)

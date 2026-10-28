@@ -225,6 +225,7 @@ let summaries (caps : < caps; .. >) objdir dirs name items =
         set Lower.string_eqs s.strings;
         set Lower.float_cmps s.floats;
         List.iter (fun (g, base) -> Hashtbl.replace Lower.min_max_aliases g base) s.min_max;
+        Fold.import s.constants;
         List.map (fun (e : Summary.entry) -> { e with body = Summary.respan sh e.body }) s.entries
     | _ -> [])
     (List.filter (fun u -> u <> name) (Summary.uses items))
@@ -236,6 +237,7 @@ let write_summary (caps : < caps; .. >) out file name items =
     entries = Lower.exports items;
     immediates = Typing.immediates (); strings = Typing.strings (); floats = Typing.floats ();
     min_max = Typing.min_max_globals ();
+    constants = Fold.exports ();
   } in
   FS.write caps Fpath.(parent out / summary_file name) (Summary.to_string s)
 
@@ -346,10 +348,11 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
-    "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes), " every pass of opti/ (-Oname: one)";
+    "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes; Fold.on := true), " every pass of opti/ (-Oname: one), and Fold's";
     (* the mkfiles' (mkconfig's MLOPT): what is added later comes with it *)
-    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; ssa := true; Lower.inline_most := 16), " every optimization: -O, -ssa, -inline 16";
-    "-O0", Arg.Unit (fun () -> opti := []; ssa := false), " none: the stack machine's code as Lower makes it";
+    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; Fold.on := true; ssa := true; Lower.inline_most := 16), " every optimization: -O, -ssa, -inline 16";
+    "-O0", Arg.Unit (fun () -> opti := []; Fold.on := false; ssa := false), " none: the stack machine's code as Lower makes it";
+    "-no-fold", Arg.Clear Fold.on, " no constant folded (Fold): a toplevel constant read from its global";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";
     "-inline", Arg.Set_int Lower.inline_most, " n: -ssa: a known function of n nodes or fewer copied where it is called (0: none)";
     "-calls", Arg.Unit (fun () -> Lower.strings_in_place := false; Lower.floats_in_place := false; Lower.ints_in_place := false; Emit.alloc_in_place := false; Lower.calls_whole := false),
@@ -433,6 +436,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                 | _ when !facts -> print caps (Closure_facts.unit_ name items); 0
                 | types when !show_types -> List.iter (fun (x, t) -> print caps (Printf.sprintf "val %s : %s\n" x t)) types; 0
                 | _ ->
+                Fold.reset ();
+                Fold.bits := (match Gen.arch !mach with Arm -> 31 | Arm64 -> 63);
                 Hashtbl.reset Lower.immediates;
                 Hashtbl.reset Lower.string_eqs;
                 Hashtbl.reset Lower.float_cmps;
@@ -446,6 +451,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     (Typing.min_max_globals ());
                   if !Lower.inline_most > 0 then Lower.imports (summaries caps (Fpath.parent (outfile file)) (Fpath.parent file :: incs) name items)
                 end;
+                let items = if !Fold.on then Fold.items items else items in
                 match (fun u -> if !ssa_stack then Ssa_build.unit_ u else u) (Opti.run !opti (Lower.unit_ name items)) with
                 | exception Failure m -> fail (Printf.sprintf "%s: %s" (Fpath.to_string file) m)
                 | u ->

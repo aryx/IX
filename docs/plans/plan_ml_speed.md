@@ -756,3 +756,36 @@ lines (ocaml-light's major_gc, freelist, memory, compact); the majors
 are 1% of the Pi 2's link and 7% of mini-ml compiling. Kept copying;
 if memory stops self-m-ix on the Pi 2 (the link of mini-ml takes 511
 MB), this space is the first piece of such a heap.
+
+## 2026-10-28, constants folded (simple/Fold), as ocamlopt's Closure
+
+Found profiling mini-5i built by mini-ml (the author: "let's do it",
+then "yes" to constant folding): Bits.ult32 is 26 nodes, past
+-inline 16, for an `if native then ... else ...` whose native is
+`Sys.int_size > 32`, known when compiling. ocamlopt's Closure keeps a
+toplevel constant's value in the .cmx (Value_const) and computes its
+uses; flambda more. The author: "I'd rather have the general opti
+that hardcoding Sys.word_size thing in Lower, and have general
+constant folding", "first the general one and check if it works in
+practice". Fold, a pass on the Scope tree before Lower (-O and -O3;
+-no-fold, -O0 without): a toplevel value whose definition folds to an
+int, a char or a constructor of no arguments is that constant where it
+is used; a primitive of constants (the integer operations, wrapped to
+the target's 31 or 63 bits; a shift by the width or more, a division
+by zero left to run) computed, a comparison of two a bool, && || not,
+an if on a constant its branch. Not strings nor floats: a copy would
+be another block. A unit's constants in its summary (format 2), read
+by the units of its directory as its functions are.
+
+Measured from nothing on arm (two trees, mini-mk O=5, -O3 against
+-O3 -no-fold): mini-doom's frame 0.984 (its start 0.998), mini-quake's
+0.998, mini-ml compiling Ssa_build.ml under mini-5i 0.999 (the same
+object); sizes equal or smaller (quake and mini-5i 4 KB less, mini-ml
+and mini-ld 224 bytes). tests/runtime/fold.ml, each folded value
+checked against the same arithmetic on values known only when running,
+on arm and arm64. Not yet: mini-5i, whose Bits.native reads lib_core's
+Sys.int_size, another directory, whose summaries are not read (stage
+1: a .depend of the directory only, a change of lib_core would leave
+stale copies). Next: a .depend across directories, as ocamldep -I,
+and Sys's word_size and int_size the externals %word_size and
+%int_size, as OCaml's.

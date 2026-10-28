@@ -835,6 +835,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | .depend made by the build (mkfiles/mkdepend, depend.rc when older than a source), not in the repository; -depend's scan of a .mly/.mll also after open | +7 | +40 (mkdepend, depend.rc), the 78 files gone | |
 | 2026-10-28 | .depend beside the objects ($B/<dir>/), not the sources, so make test's build from nothing makes them; depend.rc -f for mini-mk depend | +2 | | |
 | 2026-10-28 | the top mkfile's libs in waves, each library after its NEEDS, side by side (25 s to 15 for make test's) | +20 | | |
+| 2026-10-28 | Constants folded before Lower (simple/Fold, ocamlopt's Closure), in the summaries for the directory's units; mini-doom's frame 0.984 | +216 | | across directories: the .depend first |
 
 Since `92c9b4e`: +761 in ix (edits +131, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

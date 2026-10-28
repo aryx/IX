@@ -1,0 +1,13 @@
+wide true
+top true
+sum true
+neg true
+ones true
+shifted true
+quot true
+rem true
+masked true
+mixed true
+true true true 3
+-3 -1 -4
+exit 0

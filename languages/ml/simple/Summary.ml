@@ -12,6 +12,7 @@ type t = {
   strings : Ast.span list;
   floats : Ast.span list;
   min_max : (string * string) list;
+  constants : (string * Scope.expr) list;
 }
 
 (*****************************************************************************)
@@ -100,7 +101,8 @@ let uses (items : Scope.item list) : string list =
 
 (* (a word first, so that another file, or one of an older format, is
  * not taken for one) *)
-let magic = "mini-ml summary 1\n"
+(* (2: with Fold's constants) *)
+let magic = "mini-ml summary 2\n"
 
 (* No_sharing: the bytes the value's alone, not which of its parts are
  * one block, which depends on the compiler that built mini-ml (as

@@ -43,6 +43,7 @@ type t = {
   strings : Ast.span list;
   floats : Ast.span list;
   min_max : (string * string) list;
+  constants : (string * Scope.expr) list;   (* Fold's: a global's symbol, its constant *)
 }
 
 (* the tree without its types: a constructor's, a label's, a

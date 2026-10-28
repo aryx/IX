@@ -232,16 +232,15 @@ let answer line =
                 TinyMachinePeer.www_kept_response f
                   (In_channel.with_open_bin f In_channel.input_all)
             | None -> TinyMachinePeer.www_failed why))
-  | "img" :: w :: h :: address
-    when int_of_string_opt w <> None && int_of_string_opt h <> None ->
-      let w = int_of_string w and h = int_of_string h
-      and url = String.concat " " address in
+  | "img" :: _ ->
+      let w, h, url =
+        Option.get (TinyMachinePeer.www_picture_request (String.trim line)) in
       let decode source =
         match fetch [ "-picture"; string_of_int w; string_of_int h; source ] with
         | Ok pixels when String.length pixels = w * h ->
             Some (TinyMachinePeer.picture "" w h pixels)
         | _ -> None in
-      (match decode url with
+      (match if w = 0 then None else decode url with
        | Some l -> l
        | None -> (
            match

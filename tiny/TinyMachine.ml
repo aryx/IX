@@ -470,33 +470,27 @@ let run caps o image =
     (* "img w h address": a picture of a page, w by h, in the machine's
      * colours: the helper decodes it, the address's (with -net-out) or
      * a kept copy in dir *)
-    if String.length line > 4 && String.sub line 0 4 = "img " then begin
+    match TinyMachinePeer.www_picture_request line with
+    | Some (w, h, url) ->
       let none = TinyMachinePeer.picture "" 0 0 "" in
-      messages (match String.split_on_char ' '
-                        (String.sub line 4 (String.length line - 4)) with
-        | w :: h :: address
-          when int_of_string_opt w <> None && int_of_string_opt h <> None ->
-            let w = int_of_string w and h = int_of_string h
-            and url = String.concat " " address in
-            let decode source =
-              match fetch caps [ "-picture"; string_of_int w;
-                                 string_of_int h; source ] with
-              | Ok pixels when String.length pixels = w * h ->
-                  Some (TinyMachinePeer.picture "" w h pixels)
-              | _ -> None in
-            let kept () = match TinyMachinePeer.www_picture_kept url with
-              | Some name when Sys.file_exists (Filename.concat dir name) ->
-                  decode (Filename.concat dir name)
-              | _ -> None in
-            if w <= 0 || h <= 0 || w > TinyKernelNetwork.il_max then none
-            else (match (if o.net_out then decode url else None) with
-                  | Some l -> l
-                  | None ->
-                      (match kept () with Some l -> l | None -> none))
-        | _ -> none)
-    end
+      let decode source =
+        match fetch caps [ "-picture"; string_of_int w;
+                           string_of_int h; source ] with
+        | Ok pixels when String.length pixels = w * h ->
+            Some (TinyMachinePeer.picture "" w h pixels)
+        | _ -> None in
+      let kept () = match TinyMachinePeer.www_picture_kept url with
+        | Some name when Sys.file_exists (Filename.concat dir name) ->
+            decode (Filename.concat dir name)
+        | _ -> None in
+      messages
+        (if w = 0 then none
+         else match (if o.net_out then decode url else None) with
+           | Some l -> l
+           | None -> (match kept () with Some l -> l | None -> none))
+    | None ->
     (* the empty line, Gopher's menu: dir's files, a name a line *)
-    else if line = "" then
+    if line = "" then
       messages (TinyMachinePeer.messages
         (String.concat "" (List.map (fun n -> n ^ "\n")
           (List.filter (fun n ->

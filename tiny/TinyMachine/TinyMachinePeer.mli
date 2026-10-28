@@ -129,9 +129,12 @@ val www_failed : string -> string
 (* The line "img w h address" asks for a picture of the page, w by h
  * pixels: the answer is [picture "" w h pixels] (below), with w and h 0
  * when there is none. The host decodes it and makes it that size, in
- * the machine's colours. [www_picture_kept] is the name of the file that
- * holds a kept copy: the address's last part, without its ?query
- * (250px-OCaml_Logo.svg.png). *)
+ * the machine's colours. [www_picture_request] gives what such a line
+ * asks for, w, h and the address, w and h 0 for a size no answer can
+ * carry (0, or w past a message's bytes). [www_picture_kept] is the
+ * name of the file that holds a kept copy: the address's last part,
+ * without its ?query (250px-OCaml_Logo.svg.png). *)
+val www_picture_request : string -> (int * int * string) option
 val www_picture_kept : string -> string option
 
 (* What "img w h address" is answered: a first message "t w h", then t

@@ -361,31 +361,25 @@ let peer_document www line messages =
   let name ok =
     if line = "" || line.[0] = '.' || String.contains line '/' then None
     else Some ok in
-  if String.length line > 4 && String.sub line 0 4 = "img " then begin
+  match TinyMachinePeer.www_picture_request line with
+  | Some (w, h, url) ->
     (* a page's picture at the size asked; a kept copy beside the page
      * when the site does not allow this page to read its pictures *)
-    let none = TinyMachinePeer.picture "" 0 0 "" in
-    match
-      String.split_on_char ' ' (String.sub line 4 (String.length line - 4))
-    with
-    | w :: h :: address
-      when int_of_string_opt w <> None && int_of_string_opt h <> None ->
-        let w = int_of_string w and h = int_of_string h
-        and url = String.concat " " address in
-        let answer = function
-          | Some (w, h, pixels) ->
-              messages (TinyMachinePeer.picture "" w h pixels)
-          | None -> messages none in
-        picture_sized url (fun _ _ -> w, h) (function
-          | Some p -> answer (Some p)
-          | None ->
-              match TinyMachinePeer.www_picture_kept url with
-              | Some name ->
-                  picture_sized (www ^ name) (fun _ _ -> w, h) answer
-              | None -> answer None)
-    | _ -> messages none
-  end
-  else if TinyMachinePeer.www_request line <> None then begin
+    let answer = function
+      | Some (w, h, pixels) ->
+          messages (TinyMachinePeer.picture "" w h pixels)
+      | None -> messages (TinyMachinePeer.picture "" 0 0 "") in
+    if w = 0 then answer None
+    else
+      picture_sized url (fun _ _ -> w, h) (function
+        | Some p -> answer (Some p)
+        | None ->
+            match TinyMachinePeer.www_picture_kept url with
+            | Some name ->
+                picture_sized (www ^ name) (fun _ _ -> w, h) answer
+            | None -> answer None)
+  | None ->
+  if TinyMachinePeer.www_request line <> None then begin
     let url = Option.get (TinyMachinePeer.www_request line) in
     let failed () =
       messages

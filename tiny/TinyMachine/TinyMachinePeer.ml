@@ -175,6 +175,16 @@ let www_address typed =
   | Some (host, title) -> "https://" ^ host ^ rest_prefix ^ title
   | None -> url
 
+let www_picture_request line =
+  match String.split_on_char ' ' line with
+  | "img" :: w :: h :: address ->
+      Some (match int_of_string_opt w, int_of_string_opt h with
+        | Some w, Some h when w > 0 && h > 0 && w <= TinyKernelNetwork.il_max ->
+            (w, h, String.concat " " address)
+        | _ -> (0, 0, ""))
+  | "img" :: _ -> Some (0, 0, "")
+  | _ -> None
+
 let www_picture_kept url =
   let path =
     match String.index_opt url '?' with

@@ -301,11 +301,35 @@ else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's)
 compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in lib_core tiny assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels "lib_compression lib_crypto lib_networking networking browsers" "games lib_playground lib_juice lib_ai lib_graphics lib_gui examples apps languages/formula"; do
-  case $d in lib_core) group shared;; tiny) group t-ix;; *) group m-ix;; esac
+for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
+  case $d in lib_core) group shared;; *) group m-ix;; esac
   job "mini-ml compiles ${d%% *}" compiles $d
 done
+# the longer ones, a job each of their parts (each 15-30 s here) and
+# one of the rest of the directories, whatever it holds: a folder added
+# later is compiled too. old: a job each, 66, 78 and 85 s, past the 60
+# (mini-ml compiles a file after the other)
+compiles_parts() {
+  local dirs=$1 p n rest; shift
+  # (a part of several directories named by its first: a line in 80)
+  for p in "$@"; do
+    n=${p%% *}; [ "$n" = "$p" ] || n="$n..."
+    job "mini-ml compiles $n" compiles $p
+  done
+  rest=$(tests/ix_files.sh $dirs | grep '\.ml$' |
+    grep -vE "^($(echo $* | tr ' ' '|'))/")
+  job "mini-ml compiles ${dirs%% *}..., the rest" compiles $rest
+}
+group t-ix
+compiles_parts tiny tiny/TinyKernel \
+  "tiny/TinyML tiny/TinyOffice tiny/TinyBrowser tiny/TinyMachine tiny/TinyC"
 group m-ix
+compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
+  browsers/javascript "browsers/engine browsers/webapi" \
+  "browsers/netscape browsers/css browsers/html"
+compiles_parts \
+  "games lib_playground lib_juice lib_ai lib_graphics lib_gui examples apps" \
+  games/fps "games/racing apps" "lib_graphics lib_playground"
 
 # ix built by ix, from nothing: the libraries, the assembler (the others
 # read its interfaces' objects), then the programs side by side

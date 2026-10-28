@@ -74,4 +74,6 @@ dossrv: serving #s/dos
 % unmount /tmp/u
 unmount: /tmp/u: not mounted
 % rm -r d /tmp/u
+% echo hi >[1=1] | wc
+      1       1       3
 % 

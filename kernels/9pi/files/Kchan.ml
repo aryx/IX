@@ -264,7 +264,11 @@ let fdalloc_at (p : proc) fd c =
   if fd < 0 || fd >= Array.length fds then raise (Error ebadfd);
   let old = fds.(fd) in
   fds.(fd) <- Some c;
-  match old with Some o when o != c -> close o | _ -> ()
+  (* closed whatever it is, as Plan 9's dup (if(oc) cclose(oc)): the
+   * same chan (dup(1, 1)) has the caller's incref to undo. old: `Some o
+   * when o != c`, its count one too many: `echo hi >[1=1] | wc` waited
+   * for ever, the pipe's writer never closed *)
+  Option.iter close old
 
 let fdtochan (p : proc) fd access =
   let fds = p.fgrp.fds in

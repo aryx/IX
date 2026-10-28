@@ -18,3 +18,4 @@ unmount /tmp/u
 ls /tmp/u
 unmount /tmp/u
 rm -r d /tmp/u
+echo hi >[1=1] | wc

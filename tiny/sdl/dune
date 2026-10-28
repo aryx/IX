@@ -16,11 +16,11 @@
 ; grey.font for a delimiter, its name not UTF-8, and stopped)
 (rule
  (targets TinyFont.ml)
- (deps (:font ../TinyKernel/fonts/grey.font))
+ (deps (:font ../TinyKernel/fonts/plan9.font))
  (action
   (with-stdout-to %{targets}
    (progn
-    (echo "(* TinyKernel/fonts/grey.font *)\nlet bits = \"")
+    (echo "(* TinyKernel/fonts/plan9.font *)\nlet bits = \"")
     (system "od -An -v -tx1 %{font} | tr -d '\\n' | sed 's/ /\\\\x/g'")
     (echo "\"\n")))))
 

@@ -35,20 +35,29 @@
  * A pixel is then set where [enough] of it is covered; in grey.font the
  * others are grey by how much of them is.
  *
- * Run by hand; tiny.font and grey.font are kept in the repository, so
- * the build needs neither this nor the TrueType files. *)
+ * And plan9.font, Plan 9's default font (-plan9), a face of 1 bit a
+ * pixel from its subfont.
+ *
+ * Run by hand; tiny.font, grey.font and plan9.font are kept in the
+ * repository, so the build needs neither this nor the fonts' sources. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let help = {|usage: Mkfont.exe [-grey] regular.ttf bold.ttf out.font
-       Mkfont.exe -coverage c file.ttf
+let help = {|usage: Mkfont.exe [-cell w h] [-grey] regular.ttf bold.ttf out.font
+       Mkfont.exe [-cell w h] -coverage c file.ttf
+       Mkfont.exe -plan9 subfont out.font
 tiny-kernel's font of a TrueType font's regular and bold: 128 characters
 of 8 by 16 each, then 16 by 32, a pixel set or not (fonts/README.md);
-with -grey, a pixel one of 4 levels, grey at the letters' edges.
+with -grey, a pixel one of 4 levels, grey at the letters' edges; with
+-cell, w by h and 2w by 2h, to look at another cell (tiny-kernel reads
+8 by 16 alone). With -plan9, a Plan 9 subfont as font1.bin is, one
+face of 8 by 16.
   dune exec tiny/TinyKernel/fonts/Mkfont.exe -- \
     UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf tiny.font
   dune exec tiny/TinyKernel/fonts/Mkfont.exe -- -grey \
     UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf grey.font
+  dune exec tiny/TinyKernel/fonts/Mkfont.exe -- -plan9 \
+    lucm.latin1.9 plan9.font
 With -coverage, the character c at 8 by 16 as it is made: its pixels'
 parts covered, in tenths (9 a whole one), the face's shift, and the
 pixels set beside them.
@@ -208,9 +217,14 @@ let pixels (face : face) (cov : float array) : bool array =
 (* the level of a pixel of grey.font, 0 (none) to 3 (the ink): 3 where
  * tiny.font's pixel is set, else the part covered, rounded to thirds
  * (old: tiny.font's alone, a pixel set or not): the same letters, with
- * grey around them where the outline passes *)
+ * grey around them where the outline passes. The part is raised to
+ * 0.6 first, the edges darker, as a gamma: at 1024 by 768, shown twice
+ * as large, a stroke of one pixel and a light third looked thin (old:
+ * the part itself, v *. 3.) *)
+let darken = 0.6
 let level (set : bool) (v : float) : int =
-  if set then 3 else min 2 (int_of_float (Float.round (v *. 3.)))
+  if set then 3
+  else min 2 (int_of_float (Float.round (Float.pow v darken *. 3.)))
 
 (* a face's 128 characters as tiny.font has them, depth 1: a row
  * (w + 7) / 8 bytes, its left pixel the low bit of its first; or as
@@ -257,13 +271,79 @@ let face (font : Truetype.t) (w : int) (h : int) : face =
     under = max 0. (-. fst (bounds 'o')); over = max 0. (top 'o' -. xh);
     capover = max 0. (top 'O' -. cap) }
 
+(* Plan 9's default font (lucm.latin1.9, a subfont: an image of every
+ * character side by side, ldepth 0, its rows from the high bit; then
+ * the count, the height, the ascent, and 6 bytes a character: its x
+ * in the image (2 bytes), its top and bottom rows, its left, its
+ * width) as font1.bin is, a face of 8 by 16: its baseline on
+ * tiny.font's, row 12; a character's ink moved left into 8 columns
+ * when it is past them (its cell is 9 wide: @ and _ lose a column) *)
+let plan9 (s : string) : string =
+  let field o = int_of_string (String.trim (String.sub s o 12)) in
+  let minx = field 12 and maxx = field 36 and h = field 48 - field 24 in
+  if field 0 <> 0 then failwith "not 1 bit a pixel";
+  let bw = 4 * (((maxx + 31) / 32) - (minx / 32)) in
+  let info = 60 + (h * bw) + 36 and ascent = field (60 + (h * bw) + 24) in
+  let byte o = Char.code s.[o] in
+  let x c = byte (info + (6 * c)) lor (byte (info + (6 * c) + 1) lsl 8) in
+  let ink r col = byte (60 + (r * bw) + (col / 8)) land (0x80 lsr (col mod 8)) <> 0 in
+  let out = Bytes.make 2048 '\000' in
+  for c = 32 to 126 do
+    let top = byte (info + (6 * c) + 2) and bottom = byte (info + (6 * c) + 3) in
+    let left = (byte (info + (6 * c) + 4) lxor 128) - 128 in
+    let cols = ref [] in
+    for r = top to bottom - 1 do
+      for col = x c to x (c + 1) - 1 do
+        if ink r col then cols := (col - x c + left) :: !cols
+      done
+    done;
+    let off = List.fold_left max 0 (List.map (fun p -> p - 7) !cols) in
+    for r = top to bottom - 1 do
+      let row = r + 12 - (ascent - 1) in
+      for col = x c to x (c + 1) - 1 do
+        let p = col - x c + left - off in
+        if ink r col && p >= 0 && p < 8 && row >= 0 && row < 16 then
+          Bytes.set out ((c * 16) + row)
+            (Char.chr (Char.code (Bytes.get out ((c * 16) + row)) lor (1 lsl p)))
+      done
+    done
+  done;
+  Bytes.to_string out
+
+(* the four faces of tiny.font's format from font1.bin's one, as the
+ * kernel makes them (TinyKernelGraphics' make): bold each stroke a
+ * pixel wider but for a gap of one; large each pixel 2 by 2. Made here,
+ * not by the kernel when first asked for: its time, in the middle of a
+ * session, made the recorded office session's click at (300, 300)
+ * missed (old: plan9.font of 2,048 bytes, the faces the kernel's) *)
+let four (face : string) : string =
+  let bold =
+    String.map (fun c ->
+      let r = Char.code c in
+      Char.chr ((r lor ((r lsl 1) land lnot (r lsr 1))) land 255)) face in
+  let large f =
+    String.init 8192 (fun i ->
+      let c = i / 64 and row = i mod 64 / 4 and half = i mod 2 in
+      let r = Char.code f.[(c * 16) + row] lsr (4 * half) in
+      Char.chr (List.fold_left (fun acc k ->
+        if (r lsr k) land 1 = 1 then acc lor (3 lsl (2 * k)) else acc)
+        0 [ 0; 1; 2; 3 ])) in
+  String.concat "" [ face; bold; large face; large bold ]
+
 let main (caps : < caps; .. >) (argv : string array) : int =
-  try
+  (* -cell w h: a cell other than 8 by 16 (a preview's; tiny-kernel
+   * reads 8 by 16 alone) *)
+  let w, h, args =
     match Array.to_list argv |> List.tl with
+    | "-cell" :: w :: h :: rest -> (int_of_string w, int_of_string h, rest)
+    | args -> (8, 16, args)
+  in
+  try
+    match args with
     | args when List.mem "-h" args || List.mem "--help" args ->
         Console.print caps help; 0
     | [ "-coverage"; c; file ] when String.length c = 1 ->
-        let f = face (Truetype.of_string (FS.read caps (Fpath.v file))) 8 16 in
+        let f = face (Truetype.of_string (FS.read caps (Fpath.v file))) w h in
         let dx = shift f in
         let cov = placed f dx (Char.code c.[0]) in
         let set = pixels f cov in
@@ -280,14 +360,19 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              ^ String.init f.w (fun x -> if set.(i x) then '#' else '.') ^ "\n")
         done;
         0
+    | [ "-plan9"; subfont; out ] ->
+        FS.write caps (Fpath.v out)
+          (four (plan9 (FS.read caps (Fpath.v subfont))));
+        0
     | ([ regular; bold; out ] | [ "-grey"; regular; bold; out ]) as args ->
         let read f = Truetype.of_string (FS.read caps (Fpath.v f)) in
         let r = read regular and b = read bold in
         let depth = if List.hd args = "-grey" then 2 else 1 in
         FS.write caps (Fpath.v out)
           (String.concat ""
-             [ bits (face r 8 16) depth; bits (face b 8 16) depth;
-               bits (face r 16 32) depth; bits (face b 16 32) depth ]);
+             [ bits (face r w h) depth; bits (face b w h) depth;
+               bits (face r (2 * w) (2 * h)) depth;
+               bits (face b (2 * w) (2 * h)) depth ]);
         0
     | _ ->
         Console.eprint caps

@@ -442,3 +442,22 @@ screen_w and screen_h (tiny-windows' whole screen, TinyLibGUI's window
 when no tiny-windows answers), paint.c, and the tests' pictures. The
 windows are swept by the mouse, so the recorded sessions click the
 same places: every screen larger, the same windows in it.
+
+The author then: "it looks better!", and for the cheap fix of thin
+strokes, darker greys: Mkfont's level raises the part covered to 0.6
+before rounding it to thirds (a gamma), so that more of the edge is a
+level and more of it two thirds (a third from 8% covered, old 17%; two
+thirds from 37%, old 50%). Only grey.font changes; 0.75 was barely
+darker, 0.5 heavy.
+
+Then Plan 9's own font, tried by TINY_FONT, and the author: "let's
+make the plan9 font the default one for now, and keep the other fonts
+as well". plan9.font is Mkfont -plan9's, from the subfont copied beside
+it (fonts/README.md: lucm.latin1.9, B&H's Lucida, mini-9pi's console's
+and Memdata.ml's): 9 by 15 put in 8 by 16, the bold and the large made
+of it as the kernel makes font1.bin's (so smeared and in blocks again;
+Plan 9 has its own bold and larger sizes of Lucida, a next step if
+those look poor), but by Mkfont: one face alone, the kernel made them
+in the middle of the recorded office session, and its click at (300,
+300) was missed, the sheet put at (100, 100). grey.font, tiny.font and terminus.font stay, by
+FONT= and TINY_FONT=.

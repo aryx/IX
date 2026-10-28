@@ -756,17 +756,19 @@ bold, 8 by 16 and 16 by 32; italic is the upright one slanted).
 
 | font | what |
 |---|---|
-| `fonts/grey.font` (the default) | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`draw.tm`'s `mix_table`) |
+| `fonts/plan9.font` (the default) | Plan 9's default font (mini-9pi's console's: Bigelow & Holmes' Lucida, `lucm/latin1.9`), its bold and large made of it as the kernel would |
+| `fonts/grey.font` | Ubuntu Mono with grey edges: a pixel one of 4 levels, mixed with the colour under it by a table made for each ink (`draw.tm`'s `mix_table`) |
 | `fonts/tiny.font` | the same letters, a pixel set or not |
 | `fonts/terminus.font` | Terminus Font, a bitmap font |
 | `kernels/lib_machine/font1.bin` | xv6's 8 by 16, one face: the kernel makes the bold and the large of it |
 
-    make FONT=fonts/tiny.font      # in tiny/TinyKernel: another font in the image
+    make FONT=fonts/grey.font      # in tiny/TinyKernel: another font in the image
 
 The kernel knows which by its size (2,048 bytes one face, 20,480 four,
 40,960 four with levels). `fonts/Mkfont.ml` makes `tiny.font` and,
 with `-grey`, `grey.font` from Ubuntu Mono's TrueType files (ix's own
-reader, no FreeType); `fonts/preview.py` draws them side by side.
+reader, no FreeType), and with `-plan9` `plan9.font` from Plan 9's
+subfont; `fonts/preview.py` draws them side by side.
 
 **The kernel has the samples too.** A program does not write samples
 to `/dev/audio`: it writes sounds, each a message `s wave hz to_hz ms
@@ -1029,8 +1031,8 @@ and the program's end until all is heard). The programs' own few lines in
 `TINY_SCREEN=f` writes the window's screen to `f` (a PPM) when the
 program ends, and `SDL_VIDEODRIVER=dummy` runs one with no window;
 `TINY_FONT=file` draws with another font than the kernel's (7.3), read
-at the start: `TINY_FONT=tiny/TinyKernel/fonts/tiny.font tiny-emacs f`,
-no grey edges;
+at the start: `TINY_FONT=tiny/TinyKernel/fonts/grey.font tiny-emacs f`,
+Ubuntu Mono with grey edges;
 `TINY_WWW=dir` gives `tiny-www` pages kept in `dir` when it cannot
 fetch them. `make loc` does not count `tiny/sdl/`.
 

@@ -35,9 +35,9 @@ let screen_at = 0xf00000
  * 0x1000, the images' memory its 2 MB below the screen and what is
  * after it (TinyKernelDevices' font; a page of www's may have 1 MB of
  * pictures: old: only after the screen, 720 KB then, and Mars' article
- * ended www). The font is tiny-kernel's (grey.font, grey edges), or
- * the file TINY_FONT names (TINY_FONT=tiny/TinyKernel/fonts/tiny.font:
- * the same letters, a pixel set or not;
+ * ended www). The font is tiny-kernel's (plan9.font, Plan 9's), or
+ * the file TINY_FONT names (TINY_FONT=tiny/TinyKernel/fonts/grey.font:
+ * Ubuntu Mono with grey edges; tiny.font, the same a pixel set or not;
  * TINY_FONT=kernels/lib_machine/font1.bin: the bold and the large made
  * of its one face, as before tiny.font) *)
 let conn = lazy (

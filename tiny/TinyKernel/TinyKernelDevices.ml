@@ -18,7 +18,7 @@ open TinyKernelFiles
  * screen, which was taken for a bug: it was paint's ball, which moves
  * with the clock, ending elsewhere because the kernel's work took
  * another time.) The font is the machine's
- * (font.tm, in the image: fonts/grey.font), its first face made a mask
+ * (font.tm, in the image: fonts/plan9.font), its first face made a mask
  * at the boot. A program opens
  * /dev/draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)

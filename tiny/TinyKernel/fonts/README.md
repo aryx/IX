@@ -8,7 +8,9 @@ a character is a draw through it.
 
 | file | what |
 |---|---|
-| `grey.font` | the font used: Ubuntu Mono, grey edges (`Mkfont.ml -grey`) |
+| `plan9.font` | the font used: Plan 9's default font, mini-9pi's console's (`Mkfont.ml -plan9`) |
+| `lucm.latin1.9` | Plan 9's default font, its subfont (a copy) |
+| `grey.font` | Ubuntu Mono, grey edges (`Mkfont.ml -grey`) |
 | `tiny.font` | the same letters, a pixel set or not, made by `Mkfont.ml` |
 | `terminus.font` | the one before it: Terminus Font, made by `mkfont.sh` |
 | `UbuntuMono-Regular.ttf`, `UbuntuMono-Bold.ttf` | Ubuntu Mono (copies) |
@@ -25,11 +27,10 @@ a character is a draw through it.
 Another font is chosen when the image is made, or when a program on
 the host starts; tiny-kernel reads none from a file:
 
-    make FONT=fonts/tiny.font                        # tiny-kernel's image
-    TINY_FONT=tiny/TinyKernel/fonts/tiny.font tiny-office   # the host's
+    make FONT=fonts/grey.font                        # tiny-kernel's image
+    TINY_FONT=tiny/TinyKernel/fonts/grey.font tiny-office   # the host's
 
-(`tiny.font`, no grey; `terminus.font` and `font1.bin`, below, the
-same way.)
+(`tiny.font`, `terminus.font` and `font1.bin`, below, the same way.)
 
 ## The format
 
@@ -62,6 +63,25 @@ The kernel mixes a level with the colour under it by a table made for
 each ink (TinyKernelGraphics' `mix`, draw.tm's `mix_table`): a pixel
 is a colour of Plan 9's table, so a mix is the nearest of its 256.
 
+## plan9.font: Plan 9's default font
+
+The font of mini-9pi's console, and of Plan 9's when no other is
+chosen (libdraw's `defont.c`, `lucm/latin1.9`): Bigelow & Holmes'
+Lucida, drawn by hand for the screen, 9 by 15, strokes of two pixels.
+At 1024 by 768 it looked best of all (the author, after comparing it
+with mini-9pi's console: "let's make the plan9 font the default one
+for now"). `Mkfont.ml -plan9` makes it in `tiny.font`'s format, 1 bit
+a pixel: each character's rows with its baseline on row 12
+(tiny.font's), its 15 rows in 16; its ink moved left into 8 columns
+when past them (`@` and `_` are 9 wide and lose a column; `m` and `w`
+are tight). Its bold (smeared) and large (doubled) are made as the
+kernel makes `font1.bin`'s, but by Mkfont: made by the kernel when
+first asked for, in the middle of the recorded office session, they
+took the time of a click, which was missed.
+
+    ../../../_build/default/tiny/TinyKernel/fonts/Mkfont.exe -plan9 \
+      lucm.latin1.9 plan9.font
+
 ## grey.font and tiny.font: Ubuntu Mono
 
 The author's Emacs font. A narrow monospaced font: at 16 pixels its
@@ -79,8 +99,10 @@ on one. `Mkfont.ml`'s header says how; `Mkfont.exe -coverage c
 file.ttf` shows a character as it is made.
 
 `grey.font` then has, besides `tiny.font`'s pixels, those it leaves out
-grey by how much of them is covered (a third or two thirds, rounded):
-the same letters, the grey around them where the outline passes.
+grey by how much of them is covered (a third or two thirds, rounded,
+the part raised to 0.6 first: darker edges, the strokes less thin at
+1024 by 768): the same letters, the grey around them where the outline
+passes.
 
     dune build ./tiny/TinyKernel/fonts/Mkfont.exe
     cd tiny/TinyKernel/fonts
@@ -107,6 +129,23 @@ when unchanged. It was tiny.font from 95995739 until Ubuntu Mono
 took its place, the same day (2026-10-28).
 
 ## Where the fonts come from
+
+**Plan 9's default font**: `lucm.latin1.9` is `defontdata`'s 5,958
+bytes, of principia-softwarica's `lib_graphics/libdraw/defont.c` (the
+same as Plan 9's 4th edition's), as ix already had them in
+`kernels/9pi/lib_graphics/Memdata.ml`, the bytes checked equal on
+2026-10-28. SHA-256:
+
+    lucm.latin1.9
+        5f522259d5e17cd61120a49ffc8c780c3f14cb998106c8b6990b4feb8376d0c8
+
+Plan 9's own notice for its Lucida fonts (`/lib/font/bit/lucm/NOTICE`)
+says "These fonts are Copyright © 1985 Bigelow & Holmes Inc."; they
+came with Plan 9 and its default font is in its `libdraw`, which the
+Plan 9 Foundation released under the MIT licence in 2021
+(principia's `copyright.txt`). That the MIT licence covers the font,
+B&H's, is not said in so many words: to be checked before `plan9.font`
+goes beyond ix (as `Memdata.ml` already does).
 
 **Ubuntu Mono**, version 0.80, by Dalton Maag for Canonical (2011),
 the Ubuntu font family's monospaced one
@@ -170,4 +209,4 @@ The host tests of `TinyKernelGraphics`, `TinyLibGUI`, `TinyAppTetris`
 and `TinyLibPlayground` draw with `font1.bin` (their recorded screens
 are of it; `TinyKernelGraphics`' also with `grey.font`, on the host
 and on tiny-machine); tiny-kernel's sessions (`make check`) with
-`grey.font`.
+`plan9.font`.

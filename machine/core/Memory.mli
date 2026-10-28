@@ -70,6 +70,9 @@ val map_device : t -> base:int -> size:int -> string -> device -> unit
 val resize : t -> string -> size:int -> unit
 val segment_end : t -> string -> int
 
+(* the RAM segment at [base] taken out (munmap) *)
+val unmap : t -> base:int -> unit
+
 val load8 : t -> int -> int
 val load16 : t -> int -> int
 val load32 : t -> int -> int

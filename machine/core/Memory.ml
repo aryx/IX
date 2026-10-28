@@ -51,6 +51,11 @@ let resize m name ~size =
 
 let segment_end m name = let s = find_named m name in Bits.mask32 (s.base + s.size)
 
+let unmap m ~base =
+  m.segs <- List.filter (fun (s : segment) -> s.base <> base || s.dev <> None)
+    m.segs;
+  forget m
+
 (* [addr .. addr+n-1] inside a segment of [base], [size]; both tests,
  * as under js_of_ocaml off + n may wrap *)
 let fits ~base ~size addr n =

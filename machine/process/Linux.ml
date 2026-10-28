@@ -16,6 +16,7 @@ type proc = {
   dir_pending : (int, Host_calls.dirent) Hashtbl.t;     (* an entry getdents had no room for *)
   dir_offset : (int, int) Hashtbl.t;
   mutable in_handler : int list;             (* signals being handled: masked *)
+  mutable maps : (int * int) list;           (* mmap's: base, size; highest first *)
 }
 
 (* 0xbf000000 and the trampoline's page, computed: a literal with bit
@@ -66,14 +67,14 @@ let load host mem (elf : Elf.t) file argv envp =
     let a = Bits.mask32 (!sp + (size * i)) in
     if wide then Memory.store64 mem a (Int64.logand (Int64.of_int w) 0xffffffffL) else Memory.store32 mem a w) words;
   let proc = { host; mem; heap_base = heap; handlers = Hashtbl.create 8; dir_pending = Hashtbl.create 4;
-               dir_offset = Hashtbl.create 4; in_handler = [] } in
+               dir_offset = Hashtbl.create 4; in_handler = []; maps = [] } in
   proc, elf.entry, !sp
 
 (*****************************************************************************)
 (* The guest's structures *)
 (*****************************************************************************)
 
-let enosys = 38 and enotty = 25
+let enosys = 38 and enotty = 25 and enomem = 12 and einval = 22
 
 let put32 mem a v = Memory.store32 mem (Bits.mask32 a) (Bits.mask32 v)
 let put64 mem a v = put32 mem a v; put32 mem (a + 4) (if v < 0 then -1 else 0)
@@ -188,6 +189,35 @@ let brk p a =
   if a = 0 || Bits.ult32 a p.heap_base then cur
   else (Memory.resize p.mem "heap" ~size:(a - p.heap_base); a)
 
+(* mmap: anonymous memory only (mini-ml's runtime's large blocks, a
+ * thread's stacks), put in the highest hole below map_top, as Linux's
+ * below its mmap_base; munmap: a whole mapping *)
+let map_top = Bits.mask32 (stack_top - stack_size - (128 * 1024 * 1024))
+
+let mmap p len flags =
+  let size = Bits.mask32 ((len + page - 1) / page * page) in
+  if flags land 0x20 = 0 || flags land 0x10 <> 0 || size = 0 then - einval
+  else
+    let rec place top = function
+      | (b, s) :: rest when Bits.ult32 (Bits.mask32 (top - b - s)) size -> place b rest
+      | _ -> Bits.mask32 (top - size) in
+    let a = place map_top p.maps in
+    let heap = Memory.segment_end p.mem "heap" in
+    if Bits.ult32 a heap || Bits.ult32 map_top size then - enomem
+    else begin
+      Memory.map p.mem ~base:a ~size "mmap";
+      let higher (x, _) (y, _) = if x = y then 0 else if Bits.ult32 x y then 1 else -1 in
+      p.maps <- List.sort higher ((a, size) :: p.maps);
+      a
+    end
+
+let munmap p a =
+  if List.mem_assoc a p.maps then begin
+    Memory.unmap p.mem ~base:a;
+    p.maps <- List.remove_assoc a p.maps;
+    0
+  end
+  else - einval
 
 let syscall32 p (st : Arm32_isa.state) =
   let r = st.r and m = p.mem and h = p.host in
@@ -218,6 +248,8 @@ let syscall32 p (st : Arm32_isa.state) =
     | 41 -> int (h.dup r.(0))
     | 42 -> (match h.pipe () with Ok (a, b) -> put32 m r.(0) a; put32 m (r.(0) + 4) b; 0 | Error e -> - e)
     | 45 -> brk p r.(0)
+    | 192 -> mmap p r.(1) r.(3)                                         (* mmap2 *)
+    | 91 -> munmap p r.(0)
     | 54 -> if h.isatty r.(0) then 0 else - enotty                       (* ioctl: isatty's TCGETS *)
     | 63 -> int (h.dup2 r.(0) r.(1))
     | 94 -> unit (h.fchmod r.(0) r.(1))
@@ -354,6 +386,8 @@ let syscall64 p (st : Arm64_isa.state) =
     | 24 -> res (h.dup2 (int 0) (int 1))                                (* dup3 *)
     | 59 -> (match h.pipe () with Ok (a, b) -> put32 m (ptr 0) a; put32 m (ptr 0 + 4) b; 0 | Error e -> - e)  (* pipe2 *)
     | 214 -> brk p (ptr 0)
+    | 222 -> mmap p (long 1) (int 3)
+    | 215 -> munmap p (ptr 0)
     | 29 -> if h.isatty (int 0) then 0 else - enotty                   (* ioctl *)
     | 52 -> unit (h.fchmod (int 0) (int 1))
     | 103 ->                                                           (* setitimer *)

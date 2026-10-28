@@ -88,3 +88,20 @@ m_alloc(value n)
 	return (void*)p;
 #endif
 }
+
+/* and given back (gc.c's large blocks); not on Plan 9, whose break
+ * only moves up */
+static void
+m_free(void *p, value n)
+{
+#ifdef __GNUC__
+	free(p);
+#else
+#ifdef plan9
+	USED(p);
+	USED(n);
+#else
+	ux(W == 8 ? 215 : 91, (value)p, n, 0, 0, 0, 0);
+#endif
+#endif
+}

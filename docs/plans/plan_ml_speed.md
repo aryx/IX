@@ -714,3 +714,45 @@ remembered. Measured: mini-cat's link on arm by mini-5i (mini-ld built
 by mini-ml) 3.19 to 2.91 thousand million (0.911), the same executable
 and map; bench/marshalling.ml's reading natively on arm64 1.30 s to
 0.85 (0.65). mini-ml's link, the long count, not waited for.
+
+## 2026-10-28, large blocks of no pointers outside the halves
+
+Found improving mini-5i (the author: "let's improve mini-5i", "and in
+the process hopefully possibly improve mini-ml and other programs"):
+mini-5i built by mini-ml for arm64 died at once, "Fatal error: out of
+memory". An arm program's data (mini-ml's runtime: the halves are its
+bss) is 642 MB, which mini-5i holds as one Bytes of 80M words, more
+than a half (64M words). OCaml makes a block past Max_young_wosize
+(256 words) in its major heap, which does not move it. Here (the
+author: "yes. is it what OCaml does too?") a block of no pointers (a
+tag from 251: bytes, strings, float arrays) of YOUNG / 2 words or more
+has its own memory from the system (m_alloc, as a thread's), three
+words before its header: the chain, its size, a mark. A major
+collection marks those it reaches (copy, for a pointer between
+large_lo and large_hi, checked against the chain), then frees the
+others (munmap); a minor one has nothing to do with them. A major
+collection is asked for when as much again as was kept, and a half
+besides, was made since the last one, so dead ones do not pile up
+while the half does not fill. Nothing is reserved (the author: "does
+that mean mini-ml need to reserve a space for those large objects"):
+a program that makes none has the memory it had. Plan 9 gives no
+memory back (sbrk): a dead block is kept, for the next one it fits. A
+kernel's runtime (MAXHEAP its own) has no system to ask: its large
+blocks stay in the half. mini-5i's Linux had no mmap: now anonymous
+mmap and munmap (arm's 192 and 91, arm64's 222 and 215), each a
+segment in the highest hole below the stack's, as Linux's mmap_base.
+
+Measured: tests/runtime/large.ml (300 MB of 5 MB blocks made and
+dropped, a kept one and a float array read after collections) 31 MB at
+most on arm64, 39 under qemu-arm; as a Plan 9 program under mini-5i
+the break moved 6 times for 61 blocks. mini-5i built by mini-ml runs
+interp's arm executable: 9.0 million instructions a second, the OCaml
+build (dune's dev profile) 14.8, 1.64 times slower. A mark and sweep
+for the whole old generation, as OCaml's, was weighed (the author:
+"Should we move away from the copying collector long term to the mark
+sweep of ocaml?"): its memory about 1.5 times what is alive against up
+to 4 here, but free lists, fragmentation and about four times gc.c's
+lines (ocaml-light's major_gc, freelist, memory, compact); the majors
+are 1% of the Pi 2's link and 7% of mini-ml compiling. Kept copying;
+if memory stops self-m-ix on the Pi 2 (the link of mini-ml takes 511
+MB), this space is the first piece of such a heap.

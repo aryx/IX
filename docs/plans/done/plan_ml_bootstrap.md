@@ -830,6 +830,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | mini-ld's arm64 pool indexed by a Hashtbl, not List.assoc_opt (quadratic); mini-ml's link 0.38 | +9 (linker) | | |
 | 2026-10-28 | mini-ld's -map from the TEXTs' operands, not the program printed; the Pi 2's link of mini-ml 0.741 | +4 (linker) | | |
 | 2026-10-28 | Marshal's reading in the old generation (gc.c's ml_old_begin, ml_old_end); a link on arm 0.911 | +60 (runtime +50, lib_core +10) | | |
+| 2026-10-28 | Large blocks of no pointers outside the halves, the system's memory, marked and given back (gc.c's large, unix.c's m_free; tests/runtime/large.ml); mini-5i's mmap and munmap; mini-5i built by mini-ml runs | +159 (runtime) | +39 (machine) | a mark and sweep old generation, as OCaml's |
 | 2026-10-28 | mini-ml -depend: a directory's .depend in one run, its units' names resolved as -uses did (its tokens when they do not resolve); depend.rc a call, not an ls a unit and dir and a mini-ml a file: the tree's 66 s to 20 | +72 | -10 (depend.rc) | |
 | 2026-10-28 | .depend made by the build (mkfiles/mkdepend, depend.rc when older than a source), not in the repository; -depend's scan of a .mly/.mll also after open | +7 | +40 (mkdepend, depend.rc), the 78 files gone | |
 | 2026-10-28 | .depend beside the objects ($B/<dir>/), not the sources, so make test's build from nothing makes them; depend.rc -f for mini-mk depend | +2 | | |

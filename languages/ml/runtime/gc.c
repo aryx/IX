@@ -28,6 +28,9 @@
 /* and as much again past its end, pages no one touches but a recursion
  * too deep, seen at the next collection (collect); a kernel's has none */
 #define GUARD STACK
+/* large blocks of no pointers outside the halves, the system's memory
+ * (a kernel has none: they stay in the half) */
+#define LARGE
 #endif
 /* a half's words at the start (ML_HEAP says another); it doubles when
  * less than half is free after a collection */
@@ -311,6 +314,84 @@ static value minors;            /* the minor collections */
  * copy's address (every block has a field: an empty array is static) */
 static value *lo2, *hi2;
 
+/* OPTIMIZATION (large): a large block of no pointers (bytes, a string,
+ * a float array: a tag from 251, YOUNG / 2 words or more) is
+ * not in the halves: its memory is the system's (m_alloc), taken when
+ * it is made, given back when a major collection did not reach it. So
+ * it is not copied at each major collection, and may be larger than a
+ * half: mini-5i built by mini-ml for arm64 holds the arm program's
+ * data, 642 MB, as one Bytes ("out of memory" when in the half). A
+ * major collection marks those it reaches (copy), then frees the others
+ * (large_sweep); a minor one has nothing to do with them, no field of
+ * theirs points to a block. Nothing is reserved for them: a program
+ * that makes none has no more memory. Plan 9 takes no memory back
+ * (sbrk): a dead block is kept, for the next one it fits. OCaml makes
+ * blocks past Max_young_wosize (256 words) in its major heap, which
+ * does not move them: mark and sweep for all of them, here for these.
+ * A large block, its three words before the header:
+ *
+ *   | next | words | mark | header | fields ...
+ *
+ * old: in the half, after a minor collection, as a large block of
+ * pointers (ml_alloc) */
+#ifdef LARGE
+static value *large;            /* the large blocks, chained by next */
+static value *large_lo;         /* their fields between these */
+static value *large_hi;
+static value large_words;       /* their words, */
+static value large_kept;        /* and after the last major collection */
+static value marking;           /* in a major collection */
+#ifdef plan9
+static value *large_free;       /* the dead ones, to make others in */
+#endif
+static void m_free(void*, value);
+
+static void
+large_mark(value *p)
+{
+	value *b;
+
+	/* (between large_lo and large_hi there may be other memory: a
+	 * thread's, or C's) */
+	for(b = large; b != nil; b = (value*)b[0])
+		if(b + 4 == p){
+			b[2] = 1;
+			return;
+		}
+}
+
+/* after a major collection: the large blocks not marked freed */
+static void
+large_sweep(void)
+{
+	value *b, **l;
+
+	large_words = 0;
+	large_lo = large_hi = nil;
+	l = &large;
+	while((b = *l) != nil){
+		if(b[2]){
+			b[2] = 0;
+			large_words += b[1];
+			if(large_lo == nil || b + 4 < large_lo)
+				large_lo = b + 4;
+			if(b + b[1] > large_hi)
+				large_hi = b + b[1];
+			l = (value**)b;
+			continue;
+		}
+		*l = (value*)b[0];
+#ifdef plan9
+		b[0] = (value)large_free;
+		large_free = b;
+#else
+		m_free(b, b[1] * sizeof(value));
+#endif
+	}
+	large_kept = large_words;
+}
+#endif
+
 static value
 copy(value v)
 {
@@ -318,8 +399,15 @@ copy(value v)
 	value h, n, i;
 
 	p = (value*)v;
-	if(Is_int(v) || ((p < lo || p >= hi) && (p < lo2 || p >= hi2)))
+	if(Is_int(v))
 		return v;
+	if((p < lo || p >= hi) && (p < lo2 || p >= hi2)){
+#ifdef LARGE
+		if(p >= large_lo && p < large_hi && marking)
+			large_mark(p);
+#endif
+		return v;
+	}
 	h = p[-1];
 	if(h == 0)
 		return p[0];
@@ -427,8 +515,15 @@ collect(void)
 	lo2 = young_words ? young : nil;
 	hi2 = young_words ? ml_hp : nil;
 	next = other;
+#ifdef LARGE
+	marking = 1;
+#endif
 	copy_roots();
 	scan_copies(other);
+#ifdef LARGE
+	marking = 0;
+	large_sweep();
+#endif
 	other = from;
 	from = lo == space0 ? space1 : space0;
 	lo2 = hi2 = nil;
@@ -597,6 +692,50 @@ value gc_compaction(value u) { gc(0); if(young_words) major(0); return u; }
 /* (Marshal's: the blocks moved, and the addresses it kept are old) */
 value gc_collections(value u) { return Val_int(collections + minors); }
 
+#ifdef LARGE
+static value
+large_alloc(value n, value tag)
+{
+	value *b, words;
+#ifdef plan9
+	value **l;
+#endif
+
+	/* (a major collection when as much again as it kept was made since
+	 * the last one, and a half besides: else dead ones pile up while
+	 * the half does not fill) */
+	if(large_words + n > 2 * large_kept + size){
+		gc(0);
+		if(young_words)
+			major(0);
+	}
+	words = n + 4;
+	b = nil;
+#ifdef plan9
+	for(l = &large_free; *l != nil; l = (value**)*l)
+		if((*l)[1] >= words){
+			b = *l;
+			*l = (value*)b[0];
+			break;
+		}
+#endif
+	if(b == nil){
+		b = m_alloc(words * sizeof(value));
+		b[1] = words;
+	}
+	b[0] = (value)large;
+	large = b;
+	b[2] = 0;
+	b[3] = (n << 10) | tag;
+	large_words += b[1];
+	if(large_lo == nil || b + 4 < large_lo)
+		large_lo = b + 4;
+	if(b + b[1] > large_hi)
+		large_hi = b + b[1];
+	return (value)(b + 4);
+}
+#endif
+
 value
 ml_alloc(value n, value tag)
 {
@@ -606,6 +745,10 @@ ml_alloc(value n, value tag)
 	 * walks garbage; Array.make and Bytes.create raise before) */
 	if((uvalue)n > Max_wosize)
 		fatal("Fatal error: a block too large\n");
+#ifdef LARGE
+	if(tag >= 251 && n + 1 > YOUNG / 2)
+		return large_alloc(n, tag);
+#endif
 
 	if(ml_hp + n + 1 > ml_limit){
 		/* a large block in the half, the young ones moved first */

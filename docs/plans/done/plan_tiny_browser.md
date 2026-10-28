@@ -994,7 +994,16 @@ tiny-www code looks a bit more like a real browser on that aspect",
   it"), RFC 1945 as text, the Unix article; the native tiny-www: the
   kept WAV to tiny-play, a live PDF to bin/mini-page.
 
-Left: a program www started is not waited for, so on tiny-kernel it is
-a zombie until www ends (16 processes; there is no wait that does not
-block); no tiny-page; TinyBrowser.ml is now over 700 lines, a split to
+Left: no tiny-page; TinyBrowser.ml is now over 700 lines, a split to
 do.
+
+Then (the author: "Let's simplify tiny-kernel by using better design
+(here plan 9 > Unix)"): a program www started was never waited for, so
+on tiny-kernel it stayed a zombie, its slot and its 4 MB, until www
+ended. tiny-kernel now has no zombies, as Plan 9: a process is freed
+whole when it ends, and its status is a record (parent, pid, status)
+in TinyKernelProcs.ended that wait takes (TinyKernelProcs.mli says why,
+plan9-is-cleaner). www needs no wait. Seen in make check: rc's pipe of
+15 stages, which said "try again" (the ended stages' zombies held
+their slots), now runs; a fork finds no slot only when no other
+process can end, which no session reaches now.

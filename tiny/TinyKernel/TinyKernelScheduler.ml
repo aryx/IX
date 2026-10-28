@@ -154,7 +154,6 @@ let rec runnable ok l =
               else if ok p then Some p
               else runnable ok rest)
            else (if p.since >= 0 then p.since <- !deaths; runnable ok rest)
-       | Zombie _ -> runnable ok rest
        | Stopped -> runnable ok rest)
 
 (* what core 0 may run: a process on no core; what another may: one

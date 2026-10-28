@@ -100,7 +100,7 @@ ls: /cat: not there
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % 1|1
-% tiny-shell: try again
+%       3
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ % %  -. f
 hell0 w0rld

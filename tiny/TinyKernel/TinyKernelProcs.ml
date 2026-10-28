@@ -14,9 +14,8 @@ open TinyKernelFiles
 (*****************************************************************************)
 
 (* ready to run; waiting, the rest of its system call (true when it
- * could finish); ended, its status kept for its parent's wait; stopped
- * for its tracer, until the tracer resumes it *)
-type state = Ready | Waiting of (unit -> bool) | Zombie of int | Stopped
+ * could finish); stopped for its tracer, until the tracer resumes it *)
+type state = Ready | Waiting of (unit -> bool) | Stopped
 
 (* A process: its slot (where its frame is), its memory, its pid, its
  * state, its parent's pid (0: none), its
@@ -38,6 +37,9 @@ type proc = {
 let procs = ref []
 let next_pid = ref 1
 let deaths = ref 0
+
+(* the children ended, not waited for: parent, pid, status *)
+let ended = ref []
 
 (* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)
 let reg p k = peek (frame p.slot + (4 * k))
@@ -126,7 +128,7 @@ let net = net_stack net_machine 1000
 (* the process a trace is of, while it has not ended *)
 let traced_proc t =
   match List.filter (fun q -> q.pid = t.tpid) !procs with
-  | [ q ] -> (match q.state with Zombie _ -> None | _ -> Some q)
+  | [ q ] -> Some q
   | _ -> None
 
 (* the trace ended (its tracer's last descriptor closed, or the tracer

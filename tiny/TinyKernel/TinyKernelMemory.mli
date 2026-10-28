@@ -21,7 +21,8 @@
  * same block when the size is the same) and writes the program's
  * image at its 0 and the arguments at its top; spawn does exec's in a
  * new process. A block is let go when the kernel lets the process go
- * ([mem_release]): a zombie keeps its block until its parent's wait.
+ * ([mem_release]), when it ends (its parent's wait reads only a record
+ * of its status: TinyKernelProcs.ended).
  *
  * Where it stands: TinyKernel.ml calls it for every process's memory
  * (its [user] for a word or a byte of a system call's, [mem_address];

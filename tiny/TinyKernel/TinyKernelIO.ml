@@ -25,8 +25,7 @@ let typed_end = ref false
  * byte typed, not the kill of every process *)
 let raw = ref 0
 let raw_on () =
-  List.exists (fun q ->
-    q.pid = !raw && (match q.state with Zombie _ -> false | _ -> true)) !procs
+  List.exists (fun q -> q.pid = !raw) !procs
 
 let read f a n =
   match f with

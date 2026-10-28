@@ -58,10 +58,11 @@ let sys_rw p rw reading =
       finish r)
   end
 
-(* its descriptors closed, its children orphans (their zombies freed),
- * the processes it traces let go, its end said to its tracer;
- * its status for its parent, or its slot free. The first process's
- * end is the machine's *)
+(* its descriptors closed, its children orphans (the records of those
+ * that ended dropped), the processes it traces let go, its end said to
+ * its tracer; its slot and its memory free, its status a record for
+ * its parent's wait (Procs.ended). The first process's end is the
+ * machine's *)
 let rec exit_proc p status =
   incr deaths;
   List.iter (fun (_, f) -> drop f) p.fds;
@@ -73,13 +74,11 @@ let rec exit_proc p status =
   (match p.traced with
    | Some t -> t.said <- t.said @ [ "exited " ^ string_of_int status ^ "\n" ]
    | None -> ());
-  List.iter (fun q ->
-    if q.parent = p.pid then begin
-      q.parent <- 0;
-      match q.state with Zombie _ -> release q | _ -> ()
-    end) !procs;
+  List.iter (fun q -> if q.parent = p.pid then q.parent <- 0) !procs;
+  ended := List.filter (fun (parent, _, _) -> parent <> p.pid) !ended;
   if p.pid = 1 then halt status;
-  if p.parent = 0 then release p else p.state <- Zombie status
+  if p.parent <> 0 then ended := !ended @ [ (p.parent, p.pid, status) ];
+  release p
 
 and release q =
   mem_release q.mem;
@@ -269,24 +268,21 @@ let sys_spawn p =
     load_prog q node argv;
     adopt p q)
 
-(* wait(&status): a child's end, the child freed; -1 without children *)
+(* wait(&status): a child's end, its record taken (the child itself
+ * was freed when it ended); -1 without children, ended or not *)
 let sys_wait p =
   let a = reg p 1 in
   if a <> 0 then ignore (user_out p a 4);
   block p (fun () ->
-    let kids = List.filter (fun q -> q.parent = p.pid) !procs in
-    match kids,
-          List.filter (fun q ->
-            match q.state with Zombie _ -> true | _ -> false) kids with
-    | [], _ -> result p (-1); true
-    | _, [] -> false
-    | _, q :: _ ->
-        (match q.state with
-         | Zombie s -> if a <> 0 then poke (user_out p a 4) s
-         | _ -> ());
-        release q;
-        result p q.pid;
-        true);
+    match List.filter (fun (parent, _, _) -> parent = p.pid) !ended with
+    | (_, pid, s) :: _ ->
+        if a <> 0 then poke (user_out p a 4) s;
+        ended := List.filter (fun (_, q, _) -> q <> pid) !ended;
+        result p pid;
+        true
+    | [] ->
+        if List.exists (fun q -> q.parent = p.pid) !procs then false
+        else (result p (-1); true));
   (* (a shell waits most of its life: its call is retried when a process
    * ended, not at each turn) *)
   (match p.state with Waiting _ -> p.since <- !deaths | _ -> ())
@@ -481,10 +477,8 @@ let sys_rawcons p = raw := (if reg p 1 <> 0 then p.pid else 0); result p 0
  * another core, at its next trap, which the cores' interrupt makes
  * now (its partition is not another's before) *)
 let kill q =
-  match q.state with
-  | Zombie _ -> ()
-  | _ when q.core > 0 -> q.doomed <- true; poke ipi_dev q.core
-  | _ -> exit_proc q (-1)
+  if q.core > 0 then (q.doomed <- true; poke ipi_dev q.core)
+  else exit_proc q (-1)
 let sys_kill p =
   match List.filter (fun q -> q.pid = reg p 1) !procs with
   | [ q ] -> kill q; result p 0
@@ -515,7 +509,6 @@ let sys_trace p =
     match List.filter (fun q ->
       q.pid = reg p 1 && q.pid <> p.pid && q.pid <> 1) !procs with
     | [ q ] ->
-        (match q.state with Zombie _ -> raise Bad | _ -> ());
         let t =
           match q.traced with
           | Some t when t.tracer = p.pid -> t

@@ -118,6 +118,11 @@ let run (caps : < caps; .. >) (argv : string array) : int =
   Env.import env (CapUnix.environment caps ());
   let argv0 = if Array.length argv > 0 then argv.(0) else "rc" in
   let main_file = ref None in
+  (* cflag set always, -c's command or none: a child rc imports its
+   * parent's variables, and with -c's its rcmain ran it again, not its
+   * file. old: set with -c only: `<|rc file` in a mkfile (mk's rc -c)
+   * started rcs without end *)
+  Env.set env "cflag" [];
   let rec flags = function
     | "-c" :: cmd :: rest -> Env.set env "cflag" [ cmd ]; flags rest
     | "-m" :: file :: rest -> main_file := Some file; flags rest

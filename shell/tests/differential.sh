@@ -43,7 +43,11 @@ TIMEOUT=$(command -v timeout || command -v gtimeout)
 run_case() {
   prog=$1 case=$2
   # resolved: macOS's /var is /private/var, the path the program prints
-  dir=$(cd "$(mktemp -d)" && pwd -P)
+  # (old: dir=$(cd "$(mktemp -d)" && pwd -P): a mktemp that failed gave
+  # cd "", which stays where it is: the case ran in the current
+  # directory, and the rm -rf "$dir" below removed it)
+  tmp=$(mktemp -d) && [ -n "$tmp" ] || { echo "no temporary directory"; return 1; }
+  dir=$(cd "$tmp" && pwd -P)
   cp "$case" "$dir/case.rc"
   (
     cd "$dir" || exit 1

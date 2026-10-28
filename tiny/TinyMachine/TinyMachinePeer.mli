@@ -108,8 +108,9 @@ val messages : string -> string list
  * address (/wiki/X) becomes its REST HTML (/api/rest_v1/page/html/X):
  * the article without the site's menus, and the one a web page is
  * allowed to fetch. A #fragment is dropped. [www_kept] is the name of
- * the file that holds a kept copy of a Wikipedia article (X.html), for
- * the tests and for a machine with no way out. *)
+ * the file that holds a kept copy of a Wikipedia article (X.html), or
+ * of a search's results (search-words.html, the words as the query
+ * has them), for the tests and for a machine with no way out. *)
 val www_address : string -> string
 val www_kept : string -> string option
 

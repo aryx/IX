@@ -22,6 +22,9 @@ val fragment : string -> string * string
  * DuckDuckGo's page for text browsers (lite.duckduckgo.com). *)
 val absolute : string -> string
 
+(* the search's address, its words after it *)
+val search_engine : string
+
 (* "https://host" of an address *)
 val site : string -> string
 

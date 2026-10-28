@@ -185,12 +185,21 @@ let www_picture_kept url =
   else Some name
 
 let www_kept url =
+  let engine = TinyBrowserAddress.search_engine in
+  let n = String.length engine in
   match wikipedia url with
   | Some (_, title)
     when title <> "" && not (String.contains title '/')
          && title.[0] <> '.' ->
       Some (title ^ ".html")
-  | _ -> None
+  | _ ->
+      (* a search's results, search-words.html *)
+      let words =
+        if String.starts_with engine url then
+          String.sub url n (String.length url - n)
+        else "" in
+      if words = "" || String.contains words '/' then None
+      else Some ("search-" ^ words ^ ".html")
 
 let out p packets =
   List.iter (fun packet ->

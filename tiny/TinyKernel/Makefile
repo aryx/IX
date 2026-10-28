@@ -44,10 +44,11 @@
 #                     drawing, a paint, in a window); and with the
 #                     network, ../tests/www's pages, the browser's (www,
 #                     wwwlink, wwwback, wwwgo, wwwpicture, wwwwin,
-#                     wwwscroll, wwwmenu, wwwhistory: the OCaml article,
-#                     a link followed and back, a section gone to, its
-#                     pictures, in a window, scrolled, the History menu
-#                     open, the page before chosen in it); and the disk
+#                     wwwscroll, wwwmenu, wwwhistory, wwwsearch: the
+#                     OCaml article, a link followed and back, a section
+#                     gone to, its pictures, in a window, scrolled, the
+#                     History menu open, the page before chosen in it,
+#                     a search's results (s)); and the disk
 #                     (../TinyKernelFS.ml), the root, three boots on a blank one:
 #                     files and a directory made in /usr/glenda, a link, a program
 #                     copied to /bin and run from there, a file of /boot/bin
@@ -557,7 +558,7 @@ run: $(O)/boot.img
 # the recorded sessions, each against its screen's sum; the browser's
 # read ../tests/www's pages
 SCREENS = paint windows nested play tetris calc temp debug emacs emacsmx emacscolors office officesheet officedraw officepaint \
-	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory
+	www wwwlink wwwback wwwgo wwwpicture wwwwin wwwscroll wwwmenu wwwhistory wwwsearch
 # What changes with the programs' code and the kernel's timing, masked in
 # check.out before it is compared: a program's size in /bin (ls -l is
 # checked for its names and links), where a program died (the trap's

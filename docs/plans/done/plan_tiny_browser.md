@@ -892,7 +892,7 @@ tiny-www's screen after 40 s. On 2026-10-27:
 | ocaml.org | 76 | 187 | its menus twice (the phone's and the desktop's, which a sheet chooses), empty bullets (icons), then the page |
 | docs.python.org's tutorial | 37 | 225 | the sidebar first, then the contents; fine |
 | old.reddit.com | 340 | 1 | "Skip to main content": Reddit sends a login page of scripts to our fetcher |
-| craigslist.org/about/sites | 0 | | no answer in 30 s to tiny-machine-fetch |
+| craigslist.org/about/sites | 0 | | no answer in 30 s to tiny-machine-fetch (2026-10-28: 90 KB, 1,170 lines, below) |
 | `?ocaml` (DuckDuckGo Lite) | 25 | 68 | the results, numbered, each with its text and site |
 
 Fixed by it, in TinyBrowserPage: a large heading was laid out at the end
@@ -927,3 +927,28 @@ Left: ocaml.org's doubled menus and empty bullets (hiding the menus
 would need the classes of a CSS framework); Reddit and Craigslist,
 which refuse our fetcher; DuckDuckGo Lite's next page is a form's
 button, which www has no forms for.
+
+After (2026-10-28):
+- the tiny-ml bug: a unit compiled apart (`tiny-ml -c`) wrote both
+  names in its interface and the units after it read the earlier;
+  compiled whole, the later, as OCaml. Fixed (bugs/ix.md, a test in
+  TinyML_test.sh).
+- Craigslist did answer: all its page (12 KB, gzip), then the
+  connection kept open despite `Connection: close`, and the one-shot
+  fetch read up to the connection's end, so after 30 s of silence an
+  error. Now an answer ends where its head says (`Keep_alive.once`,
+  as the kept connections did): Craigslist in 1.1 s, 1,170 lines (its
+  regions, each city a bullet); `&reg;` added to the entities.
+  Reddit sends our fetcher its login page: left (other requests not
+  tried).
+- ocaml.org: the second menu is the phone's drawer, shown by Alpine.js
+  (`x-show`), the first one's `hidden lg:flex` Tailwind's classes;
+  Netscape and Lynx show both. No CSS or script for it in www.
+- tiny-kernel: a write of drawing messages with a bad one (a picture
+  with no room left) did the ones before it and dropped the rest (its
+  pixels, the texts after); now the bad ones are skipped, the others
+  done, and the write still -1 (TinyKernelGraphics.messages, a case in
+  TinyKernelGraphics_test.sh).
+- a recorded session of the search, wwwsearch (`s`, ocaml, Enter):
+  the results page kept in tests/www (search-ocaml.html, which
+  `www_kept` names for a search).

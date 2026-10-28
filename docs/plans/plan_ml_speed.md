@@ -194,7 +194,10 @@ yet. In the shared tree:
   mkfile's own) or games/mkgames, which writes it again when it is older
   than the mkfile or a source. Not in the repository since 2026-10-28
   (old: 78 files, made by `mini-mk depend` after a build, when one
-  thought to: four directories had none, self-mix's 27 files).
+  thought to: four directories had none, self-mix's 27 files), and
+  beside the objects, `$B/<dir>/.depend`, not the sources: a build from
+  nothing (make test's, CI's) makes each anew, where make test's found
+  the source tree's made.
   mkprog's rule for a unit now takes its source alone, the directory's
   others by `$OBJS: $LOCAL $GEN $LIBSRC` (mk drops a metarule's arc to a
   missing file only when no other arc of it stays: a unit in a folder

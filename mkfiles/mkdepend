@@ -1,11 +1,11 @@
 # A directory's .depend, the order of its units (mkfiles/depend.rc),
-# made when it is older than the mkfile or a source, and included;
+# beside its objects (a build from nothing makes it), made when it is
+# older than the mkfile or a source, and included;
 # mkprog's, mklib's, and a mkfile's of its own after it sets DEPOBJ
 # (its objects' variable's name: D), DEPDIRS (the units' directories,
 # before INCLUDES' -I's) and DEPUNITS. mini-mk depend: made again.
 # (cflag=(): an rc before 1d2e41c8's ran its parent's -c command, not
 # the file, without end: mk runs an include by rc -c)
 depend:V:
-	rm -f .depend
-	cflag=() $RC $TOP/mkfiles/depend.rc .depend $DEPOBJ $DEPDIRS -- $DEPUNITS > /dev/null
+	cflag=() $RC $TOP/mkfiles/depend.rc -f .depend $DEPOBJ $DEPDIRS -- $DEPUNITS > /dev/null
 <|cflag=() $RC $TOP/mkfiles/depend.rc .depend $DEPOBJ $DEPDIRS -- $DEPUNITS

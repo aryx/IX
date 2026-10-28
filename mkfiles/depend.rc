@@ -8,19 +8,25 @@
 # .cmx. mk text, the objects as $obj/X.$O, obj a variable's name (D,
 # L): mk's, read where the mkfile includes it. Included by the mkfiles
 # (mkfiles/mkdepend, mkgames'), file made again when it is older than
-# the mkfile or a source of the units' directories, then printed; a
-# unit mini-yacc makes read from its grammar until it is there.
+# the mkfile or a source of the units' directories (or with -f), then
+# printed; a unit mini-yacc makes read from its grammar until it is
+# there. file, a name alone: in $obj's directory, beside the objects,
+# so a build from nothing (a new B: make test's, CI's) makes it anew.
 # old: .depend kept in the repository, made by mini-mk depend after a
-# build, when one thought to: four directories had none (self-mix)
-# usage: $RC mkfiles/depend.rc file obj dir... -- unit...   (ML and
-#   INCLUDES: the environment's; a unit's source: the first dir's that
-#   has it, then INCLUDES' -I's)
+# build, when one thought to: four directories had none (self-mix);
+# then in the source directory, where make test's build found it made
+# usage: $RC mkfiles/depend.rc [-f] file obj dir... -- unit...   (ML
+#   and INCLUDES: the environment's; a unit's source: the first dir's
+#   that has it, then INCLUDES' -I's)
 # (a list again: from a recipe of sh's, as kernels/singularity's, one word)
 ML=`{echo $ML}
 INCLUDES=`{echo $INCLUDES}
+force=()
+if(~ $1 -f){ force=1; shift }
 file=$1
 obj=$2
 shift 2
+if(! ~ $file */*) file=$$obj/$file
 if(! ~ $obj '$'*) obj='$'^$obj
 dirs=()
 idirs=()
@@ -37,10 +43,10 @@ while(! ~ $#i 0){
 # (one ls: the newest of the file, the mkfile, the sources; the file
 # first among those of the same second, by its name)
 newest=`{ls -t $file mkfile $all^/*.ml $all^/*.mly $all^/*.mll >[2]/dev/null | sed 1q}
-if(! ~ $newest $file){
+if(! ~ $#force 0 || ! ~ $newest $file){
 	# (through another file, in /tmp: two mk may read the mkfile at
-	# once, and dune, building the tree meanwhile, lists the directory:
-	# a file there that goes away fails it)
+	# once)
+	mkdir -p `{dirname $file}
 	$ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid || exit 1
 	cat /tmp/depend.$pid > $file
 	rm -f /tmp/depend.$pid

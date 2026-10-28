@@ -1198,10 +1198,11 @@ let func m out (fn : func) (lf : L.func) =
   List.iter (fun l -> Buffer.add_string out (l f msize c)) (List.rev !lines)
 
 (* the SSA form Emit compiles: built, its floats unboxed, its integers
- * untagged where they can be *)
+ * untagged where they can be, its loops' invariants out of them, its
+ * computations made twice made once *)
 let ssa (arch : Asm.arch) (lf : L.func) =
   let m = match arch with Arm -> arm | Arm64 -> arm64 in
-  Untag.func ~bits:((8 * m.w) - 1) (Unbox.func (Ssa_build.func lf))
+  Cse.func (Licm.func (Untag.func ~bits:((8 * m.w) - 1) (Unbox.func (Ssa_build.func lf))))
 
 let unit_ (arch : Asm.arch) (u : L.unit_) =
   let m = match arch with Arm -> arm | Arm64 -> arm64 in

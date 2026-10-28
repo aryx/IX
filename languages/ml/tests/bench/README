@@ -14,3 +14,6 @@ constructors, an expression tree evaluated and simplified, as tiny-ml's
 machine and mini-ml's passes; Lower's jump tables, plan_ml_speed.md's
 4d).
 marshalling: Marshal's writing and reading, timed (its seconds on stderr).
+matrix (a loop's index arithmetic: a product of flat matrices, i * n
+the same at each turn, c's index for its read and its write; ssa/Licm
+and ssa/Cse, plan_ml_speed.md's stage 3).

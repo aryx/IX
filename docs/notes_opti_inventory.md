@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C53,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C54,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-28, C28 to C53. The programs they
+plans/plan_ml_speed.md, to 2026-10-28, C28 to C54. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -737,6 +737,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C51 | A large block of no pointers (bytes, strings, float arrays of YOUNG / 2 words or more) in memory of its own from the system, marked by a major collection and given back when dead, not copied in the half (OCaml's major heap does not move a block past Max_young_wosize) | the runtime's gc.c (large_alloc, large_mark, large_sweep), unix.c's m_free; mini-5i's mmap and munmap; plan_ml_speed.md's 2026-10-28 | mini-5i built by mini-ml runs (its arm program's data, 642 MB, was past a half: out of memory), 1.64 times the OCaml build's time; large.ml 31 MB at most for 300 MB made | +159 (runtime), +39 (machine) | none (old: comment) |
 | C52 | Constants folded: a toplevel int, char or constant constructor where it is used, a primitive or comparison of constants computed (the target's 31 or 63 bits), an if on a constant its branch; a unit's constants in its summary (ocamlopt's Closure, Value_const) | simple/Fold, Summary's constants, CLI's -no-fold; plan_ml_speed.md's 2026-10-28 | mini-doom's frame 0.984, mini-quake's 0.998, mini-ml compiling 0.999; sizes equal or smaller | +216 (Fold 209, CLI and Summary 7) | -no-fold |
 | C53 | Constants of another directory's summaries (lib_core's), found by -I as ocamlopt's .cmx, their functions not taken; -depend's lines on those summaries (ocamldep -native's); Sys.word_size and int_size the externals %word_size and %int_size | CLI's summaries and depend, mkconfig's STDSUM (mkprog, mklib), lib_core's Sys, Fold, Lower; plan_ml_speed.md's 2026-10-28 | mini-5i on arm64 0.855 (Bits.native folded, ult32 and ule32 inlined), 8 KB smaller | +27, lib_core +6, mkfiles +5 | none (old: comment) |
+| C54 | ssa/'s classic passes: a computation made twice made once (Cse, dominator-based value numbering, constants numbered) and a loop's invariants before it (Licm), the pure instructions only; not great in practice for now | ssa/Cse, ssa/Licm, Emit's ssa; bench/matrix.ml; plan_ml_speed.md's 2026-10-28 stage 3 | mini-doom's frame 0.990, mini-quake's 0.991, virtua's 0.994, mini-ml compiling 0.9995; bench/matrix 0.793 | +268 | -no-cse, -no-licm |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of

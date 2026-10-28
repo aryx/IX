@@ -381,6 +381,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
     "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";
     "-tagged-ints", Arg.Clear Untag.on, " -ssa: every integer tagged, none untagged in a register (Untag)";
+    "-no-cse", Arg.Clear Cse.on, " -ssa: a computation made twice made twice (Cse)";
+    "-no-licm", Arg.Clear Licm.on, " -ssa: a loop's invariants made at each turn (Licm)";
     "-boxed-floats", Arg.Clear Unbox.on, " -ssa: every float a block, none a double in a register (Unbox)";
     "-ssa-stack", Arg.Set ssa_stack, " through the SSA form and back";
     "-dast", Arg.Set dast, " dump the tree";

@@ -828,3 +828,64 @@ ult32 and ule32 inlined into fits; mini-5i 8 KB smaller. A change to
 Sys.ml made Bits and the units after it in machine/ again; nothing
 else. Not yet: fits inlined into load8... (its body still past 16
 nodes); arm's Bits.top (1 lsl 31: the width on arm, left to run).
+
+## 2026-10-28, stage 3: Cse and Licm, the classic passes
+
+The author: "let's do the SSA opti", then, once Cse alone had measured
+0.996: "CSE and SSA are classic opti so for their teaching value let's
+add them; maybe later other opti can come in that could enable/trigger
+those CSE opti", "but let's comment them saying they were for now not
+great optimizers in practice", "maybe you can add some synthetic bench
+where they show their value". Two passes in ssa/, after Untag, each
+switchable (-no-cse, -no-licm):
+
+- Cse: a pure instruction of the same text as one in a dominating
+  block is that one's value (dominator-based value numbering, Briggs,
+  Cooper and Simpson). Constants numbered too: each 4 of i * 4 is a
+  value of its own, and without it the two products differed. The key
+  is the text and what the value is (a word, an untagged integer, a
+  double): Untag's Add of a tagged and an untagged has the text of a
+  tagged Add.
+- Licm: a pure instruction in a loop whose operands are made outside
+  it, moved to the end of the header's immediate dominator; not a
+  division (the loop may run no turn); constants moved too, for what
+  reads them (i * 48's 48 was in the loop).
+- Pure (Cse.pure, both's): the integers' operations but compare's, a
+  tag, a float's double, the doubles' arithmetic, a constant, a global
+  the function does not set (only Init sets one). Not Field, Index, a
+  byte, nor a Dprim that reads, stores or calls: FloatIndex,
+  FloatSetIndex, FloatCall. A function with a handler is left as it is,
+  as Untag leaves it: its handler is the try's end's successor, so the
+  body seems to dominate it, but it is entered from wherever the body
+  raised.
+
+Found by the tests on the way: Inline's Init (a handler) crashed at
+once; make test's mini-rebirth drew and played otherwise (Licm had
+moved its Float.Array stores out of their loops, Dprim taken as pure
+whatever it was). tests/runtime/invariants.ml has both, a division in
+a loop that runs no turn, a field read again after a store, nested
+loops' invariants.
+
+Measured on arm from nothing, the same sources, -O3 against -O3
+-no-cse -no-licm, the same pixels:
+
+| | without | with | |
+|---|---:|---:|---:|
+| mini-doom, a frame | 8,284,828 | 8,203,786 | 0.990 |
+| mini-quake, a frame | 19,555,823 | 19,383,989 | 0.991 |
+| mini-virtuaracing, a frame | 24,311,518 | 24,170,578 | 0.994 |
+| cameltry, a frame | 1,435,033 | 1,433,998 | 0.999 |
+| mini-ml compiling its three units | 6,102.9 M | 6,100.0 M | 0.9995 |
+| bench/matrix.ml (new) | 34,048,974 | 26,991,086 | 0.793 |
+
+Cse alone was 0.996 and 0.995 on doom and quake; on matrix 0.870
+alone, Licm 0.807 alone, both 0.793 (arm64 the same). The programs
+0.2 to 0.6% smaller. Not great optimizers in practice, for now, as
+their .mli say: ix's loops mostly have their invariants computed
+before them by their authors, and what they do again at each turn is
+memory's (a field, an element, not taken) or the registers': mini-
+doom's span loop reloads 7 of its 25 instructions' values from their
+slots, 11 values live and arm's five registers. Kept for the classic
+passes they are, and for what later passes (inlining, loads no store
+changes) may give them.
+

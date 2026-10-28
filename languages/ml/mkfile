@@ -5,7 +5,7 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Ssa Ssa_build Unbox Untag Alloc Gen Emit Ssa_facts Closure_facts CLI Main
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Ssa Ssa_build Unbox Untag Cse Licm Alloc Gen Emit Ssa_facts Closure_facts CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli}
 LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts
 LIBUNITS=Asm Lexer_asm Parser_asm
@@ -32,7 +32,7 @@ $D/Gas.$O: compat/Gas.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target compat/Gas.ml
 $D/Opti.$O: opti/Opti.ml $LOCAL $GEN
 	$ML $INCLUDES -o $target opti/Opti.ml
-# ssa/'s units (Ssa Ssa_build Unbox Untag Alloc Emit): one recipe each, so that .depend orders each
+# ssa/'s units (Ssa Ssa_build Unbox Untag Cse Licm Alloc Emit): one recipe each, so that .depend orders each
 $D/%.$O: ssa/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target ssa/$stem.ml

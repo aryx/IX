@@ -15,30 +15,30 @@
 # old: .depend kept in the repository, made by mini-mk depend after a
 # build, when one thought to: four directories had none (self-mix);
 # then in the source directory, where make test's build found it made
-# usage: $RC mkfiles/depend.rc [-f] file obj dir... -- unit...
-#   [++ obj dir... -- unit...]...   (ML and INCLUDES: the environment's;
-#   a unit's source: the first dir's that has it, then INCLUDES' -I's;
-#   each group its objects' variable, the file theirs: mkgames' kits,
-#   one ls and one file for the six. old: a file and a run each, six
-#   mini-rc's and 30 processes a directory of games when nothing changed)
+# usage: $RC mkfiles/depend.rc [-f] file obj dir... -- unit...   (ML
+#   and INCLUDES: the environment's; a unit's source: the first dir's
+#   that has it, then INCLUDES' -I's)
+# (no unit, a kit the game's WITH does not ask, mkgames': no file and
+# nothing printed, before the processes below. old: their six each,
+# 2.4 s of games' 0.9 when nothing changed, ix's walk)
+if(~ $*($#*) --) exit
 # (a list again: from a recipe of sh's, as kernels/singularity's, one word)
 ML=`{echo $ML}
 INCLUDES=`{echo $INCLUDES}
 force=()
 if(~ $1 -f){ force=1; shift }
 file=$1
+obj=$2
+shift 2
+if(! ~ $file */*) file=$$obj/$file
+if(! ~ $obj '$'*) obj='$'^$obj
+dirs=()
+idirs=()
+while(! ~ $1 --){ dirs=($dirs $1); idirs=($idirs -I $1); shift }
 shift
-if(! ~ $file */*) file=$$1/$file
 # (a unit's file may be elsewhere, its own rule says where: the -I
 # directories too, after those given, as mini-ml looks for a unit)
-all=()
-a=($*)
-while(! ~ $#a 0){
-	a=$a(2-)
-	while(! ~ $#a 0 && ! ~ $a(1) --){ all=($all $a(1)); a=$a(2-) }
-	while(! ~ $#a 0 && ! ~ $a(1) ++) a=$a(2-)
-	a=$a(2-)
-}
+all=$dirs
 i=$INCLUDES
 while(! ~ $#i 0){
 	if(~ $i(1) -I && ! ~ $#i 1){ all=($all $i(2)); i=$i(3-) }
@@ -53,20 +53,7 @@ if(! ~ $#force 0 || ! ~ $newest $file){
 	# (its directory by sed: Plan 9 has no dirname, Linux's basename no
 	# -d; old: `{dirname $file}, every build on the card failed)
 	mkdir -p `{echo $file | sed 's,/[^/]*$,,'}
-	a=($*)
-	{ while(! ~ $#a 0){
-		obj=$a(1)
-		a=$a(2-)
-		if(! ~ $obj '$'*) obj='$'^$obj
-		idirs=()
-		while(! ~ $#a 0 && ! ~ $a(1) --){ idirs=($idirs -I $a(1)); a=$a(2-) }
-		a=$a(2-)
-		units=()
-		while(! ~ $#a 0 && ! ~ $a(1) ++){ units=($units $a(1)); a=$a(2-) }
-		a=$a(2-)
-		# (a group of no units, a kit the game's WITH does not ask: none)
-		if(! ~ $#units 0) $ML -depend $obj $idirs $INCLUDES $units || exit 1
-	  } } > /tmp/depend.$pid
+	$ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid || exit 1
 	cat /tmp/depend.$pid > $file
 	rm -f /tmp/depend.$pid
 }

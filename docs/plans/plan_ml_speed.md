@@ -187,7 +187,7 @@ yet. In the shared tree:
   (lib_core's `Float.min` in a game) bought mini-doom 0.994 and mini-ml
   6% larger, and a program's unit is not made again when a library's
   source changes: its copy would be stale.
-- **`.depend`**, a directory's, by `mkfiles/depend.rc` (`mini-ml -uses`:
+- **`.depend`**, a directory's, by `mkfiles/depend.rc` (`mini-ml -depend`:
   the units whose values a unit names, not `-M`'s, which are every
   interface read, and make cycles in lib_core): `mini-mk depend` at the
   top, after a build, for every mkfile that includes mkprog, mklib or

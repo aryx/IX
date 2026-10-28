@@ -54,7 +54,7 @@ val strip_pattern : Scope.pattern -> Scope.pattern
 val respan : (Ast.span -> Ast.span) -> Scope.expr -> Scope.expr
 
 (* the units whose values (or exceptions) the items name: those whose
- * summaries a unit reads, and so its .depend's (mini-ml -uses) *)
+ * summaries a unit reads, and so its .depend's (mini-ml -depend) *)
 val uses : Scope.item list -> string list
 
 val to_string : t -> string

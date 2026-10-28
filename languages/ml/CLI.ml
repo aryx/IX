@@ -247,11 +247,83 @@ let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   else if !gas then FS.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
   else Asm.save caps out (Parser_asm.parse caps (Gen.arch mach) file text)
 
+(* -depend's way when a unit's names do not resolve: those it names
+ * from its tokens, as ocamldep, a capitalized name before a dot
+ * (Unit.x, Unit.(e)), after open, a module's alias (module M = Unit),
+ * and Pervasives, opened in every unit: the types' too, more than the
+ * values whose summaries it reads (a lexer's error: the names before) *)
+let named_units text =
+  let lexbuf = Lexing.from_string text in
+  let us = ref [ "Pervasives" ] in
+  let add u = if not (List.mem u !us) then us := u :: !us in
+  let rec go (p3 : Parser.token) (p2 : Parser.token) (p1 : Parser.token) =
+    match Lexer.token lexbuf with
+    | Parser.EOF -> ()
+    | t ->
+        (match p3, p2, p1, t with
+         | _, _, Parser.UIDENT u, Parser.DOT
+         | _, _, Parser.OPEN, Parser.UIDENT u
+         | Parser.MODULE, Parser.UIDENT _, Parser.EQUAL, Parser.UIDENT u -> add u
+         | _ -> ());
+        go p2 p1 t in
+  (try go Parser.EOF Parser.EOF Parser.EOF with _ -> ());
+  !us
+
+(* the same from a grammar's or a lexer's text (a unit mini-yacc or
+ * mini-lex makes, not there before the build): its capitalized words
+ * before a dot, comments' too *)
+let named_words text =
+  let n = String.length text in
+  let ident c = c = '_' || c = '\'' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') in
+  let rec go i acc =
+    if i >= n then acc
+    else if text.[i] >= 'A' && text.[i] <= 'Z' && (i = 0 || not (ident text.[i - 1])) then begin
+      let j = ref i in
+      while !j < n && ident text.[!j] do incr j done;
+      go !j (if !j < n && text.[!j] = '.' then String.sub text i (!j - i) :: acc else acc)
+    end else go (i + 1) acc in
+  go 0 [ "Pervasives" ]
+
+(* -depend obj Unit...: a directory's .depend (mkfiles/depend.rc), mk's
+ * line for each unit and each other of those given whose values it
+ * names (Summary.uses, its names resolved), so that mk makes a unit
+ * after those whose summaries it reads; each unit's file the first
+ * dir's (-I's order) .ml, else .mly or .mll. One run for all of them.
+ * old: depend.rc's loops, an ls for each unit and dir, then mini-ml
+ * -uses for each file: 2 s for play's 39 units, 1.6 of them the
+ * processes; a unit whose names did not resolve, no line *)
+let depend (caps : < caps; .. >) obj dirs units =
+  let find ext u =
+    List.find_map (fun d ->
+      let f = Fpath.(d / (u ^ ext)) in
+      Option.map (fun text -> f, text) (FS.read_opt caps f)) dirs in
+  List.iter (fun u ->
+    let names =
+      match find ".ml" u with
+      | Some (f, text) -> (
+          let file = Fpath.to_string f in
+          match parse caps f with
+          | Ok (text', Ast.Structure items) -> (
+              match classes caps (Fpath.parent f :: dirs) ~lenient:false file text' items with
+              | _, _, scoped -> Summary.uses scoped
+              | exception _ -> named_units text)
+          | _ -> named_units text
+          | exception _ -> named_units text)
+      | None -> (
+          match find ".mly" u, find ".mll" u with
+          | Some (_, text), _ | None, Some (_, text) -> named_words text
+          | None, None -> []) in
+    List.iter (fun n ->
+      if n <> u && List.mem n units then
+        print caps (Printf.sprintf "%s/%s.$O: %s/%s.$O\n" obj u obj n))
+      (List.sort_uniq compare names))
+    units
+
 let usage = "usage: mini-ml [-m 5|7] [-S] [-o out] [-I dir] file.ml | -start Unit...   (-h: how)"
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let dast = ref false and dscope = ref false and dir = ref false and listing = ref false and start = ref false and deps = ref false and opti = ref [] and dssa = ref false and facts = ref false and flow = ref false and dflow = ref false and ssa = ref false and ssa_stack = ref false in
-  let show_types = ref false and unsafe = ref false and pp = ref false and uses = ref false in
+  let show_types = ref false and unsafe = ref false and pp = ref false and depends = ref "" in
   let mach = ref Gen.arm and out = ref "" and incs = ref [] and libs = ref [] and files = ref [] in
   let options = [
     "-m", Arg.String (function "5" -> mach := Gen.arm | "7" -> mach := Gen.arm64 | m -> raise (Arg.Bad ("-m " ^ m ^ ": 5 or 7"))), " 5|7: arm or arm64";
@@ -263,7 +335,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-gas", Arg.Set gas, " GNU's assembly, for gcc";
     "-i", Arg.Set show_types, " the values' types, printed";
     "-M", Arg.Set deps, " the units the file names, printed";
-    "-uses", Arg.Set uses, " the units whose values it names, printed (mkfiles/depend.rc: their summaries read)";
+    "-depend", Arg.Set_string depends, " obj: the Units given, mk's order of their objects, printed (mkfiles/depend.rc)";
     "-start", Arg.Set start, " the start object of the units named";
     "-unsafe-types", Arg.Set unsafe, " no type checking";
     (* mlpp: *)
@@ -316,6 +388,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     List.map (Filename.concat d) (List.sort_uniq compare dirs @ [ "commons" ])
   in
   match List.rev !files, List.map path (List.rev !incs @ List.concat_map lib (List.rev !libs)) with
+  | units, dirs when !depends <> "" -> depend caps !depends dirs units; 0
   | units, _ when !start ->
       let file = path "start.s" in
       (* (its functions ssa's with -ssa, as a unit's) *)
@@ -347,8 +420,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
               if !dast then print caps (String.concat "\n" (List.map Ast.show_item tree) ^ "\n");
               if !dscope then print caps (String.concat "\n" (List.map Scope.show_item items) ^ "\n");
               if !deps then print caps (String.concat " " (Resolve.units_named ()) ^ "\n");
-              if !uses then print caps (String.concat " " (List.filter (fun u -> u <> name) (Summary.uses items)) ^ "\n");
-              if !dast || !dscope || !deps || !uses then 0
+              if !dast || !dscope || !deps then 0
               else
                 match if !unsafe then [] else Typing.unit_ name items with
                 | exception Typing.Error (l, m) -> fail (Printf.sprintf "%s:%d: %s" (Fpath.to_string file) l m)

@@ -693,3 +693,20 @@ intern.c reserves a value's whole size in the major heap, so what is
 read is never promoted), after a profile of what is promoted (the
 objects read, or the linker's progs made from them). Weighed and not
 done: select's choice kept in the instruction (5l's p->optab), 2.5%.
+
+## 2026-10-28, what Marshal reads made in the old generation
+
+The author: "yes let's do the intern into the old generation". The
+Pi 2's link spent its collector's 31% promoting what it keeps (a heap
+of 8M words: 0.991, so not the majors). A program reading what the
+link reads and keeping it (all of lib_core.a's members, more than a
+link takes): 4.80 thousand million instructions, 2.19 of them copy and
+scan_copies. OCaml's intern.c reserves the whole value read in the
+major heap (intern_alloc). Here gc.c's ml_old_begin and ml_old_end
+around Marshal.from_string's read: ml_hp and ml_limit the half's
+meanwhile, the young generation's kept aside and put back for a
+collection (gc). The blocks read point only to blocks read: none
+remembered. Measured: mini-cat's link on arm by mini-5i (mini-ld built
+by mini-ml) 3.19 to 2.91 thousand million (0.911), the same executable
+and map; bench/marshalling.ml's reading natively on arm64 1.30 s to
+0.85 (0.65). mini-ml's link, the long count, not waited for.

@@ -520,6 +520,52 @@ major(value need)
 		fatal("Fatal error: out of memory\n");
 }
 
+/* OPTIMIZATION (old_reads): what Marshal reads made in the half
+ * itself, not in the young generation: ml_hp and ml_limit the half's
+ * between ml_old_begin and ml_old_end (Marshal.from_string's), the
+ * young generation's kept aside. What is read is kept, most of it (a
+ * link's objects, a unit's interfaces): made young, it was copied at
+ * the next minor collection and scanned again, a block at a time
+ * (OCaml's intern.c reserves the whole value in the major heap, its
+ * intern_alloc). A collection meanwhile is made as without, the young
+ * generation's pointers back (gc). The blocks read point only to
+ * blocks read: none is remembered. */
+static value old_reading;       /* how deep in Marshal's reading */
+static value *young_hp, *young_limit;
+
+static void
+old_leave(void)
+{
+	old_hp = ml_hp;
+	ml_hp = young_hp;
+	ml_limit = young_limit;
+}
+
+static void
+old_enter(void)
+{
+	young_hp = ml_hp;
+	young_limit = ml_limit;
+	ml_hp = old_hp;
+	ml_limit = from + size;
+}
+
+value
+ml_old_begin(value u)
+{
+	if(young_words && old_reading++ == 0)
+		old_enter();
+	return u;
+}
+
+value
+ml_old_end(value u)
+{
+	if(young_words && --old_reading == 0)
+		old_leave();
+	return u;
+}
+
 /* need words, in the young generation (a minor collection, then a major
  * one when the half is past its size), or in the half */
 static void
@@ -529,6 +575,8 @@ gc(value need)
 		major(need);
 		return;
 	}
+	if(old_reading)
+		old_leave();
 	/* (the half holds the young survivors, at most all of it, as its
 	 * memory goes to MAXHEAP: else a major collection first) */
 	if(old_hp + (ml_hp - young) > from + MAXHEAP)
@@ -537,6 +585,8 @@ gc(value need)
 		minor();
 	if(old_hp + need > from + size)
 		major(need);
+	if(old_reading)
+		old_enter();
 }
 
 /* Gc's: a collection, whichever was asked */
@@ -559,7 +609,7 @@ ml_alloc(value n, value tag)
 
 	if(ml_hp + n + 1 > ml_limit){
 		/* a large block in the half, the young ones moved first */
-		if(young_words && n + 1 > young_words / 2){
+		if(young_words && !old_reading && n + 1 > young_words / 2){
 			gc(n + 1);
 			p = old_hp + 1;
 			p[-1] = (n << 10) | tag;

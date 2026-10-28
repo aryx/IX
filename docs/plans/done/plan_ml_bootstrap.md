@@ -829,6 +829,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | plan_ml_speed.md, 4d: a match's jump table, Ir's Switch, CASE and BCASE; the arm linker's pool never inside a table (tests/runtime/switch.ml, tests/bench/interp.ml); interp 0.722, tiny-machine 0.99 | +135 (linker +7) | +139 (the test, the bench) | |
 | 2026-10-28 | mini-ld's arm64 pool indexed by a Hashtbl, not List.assoc_opt (quadratic); mini-ml's link 0.38 | +9 (linker) | | |
 | 2026-10-28 | mini-ld's -map from the TEXTs' operands, not the program printed; the Pi 2's link of mini-ml 0.741 | +4 (linker) | | |
+| 2026-10-28 | Marshal's reading in the old generation (gc.c's ml_old_begin, ml_old_end); a link on arm 0.911 | +60 (runtime +50, lib_core +10) | | |
 | 2026-10-28 | mini-ml -depend: a directory's .depend in one run, its units' names resolved as -uses did (its tokens when they do not resolve); depend.rc a call, not an ls a unit and dir and a mini-ml a file: the tree's 66 s to 20 | +72 | -10 (depend.rc) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in

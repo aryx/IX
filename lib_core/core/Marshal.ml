@@ -74,6 +74,10 @@ type seen = {
 }
 
 external collections : unit -> int = "gc_collections"
+(* the blocks made between the two in the old generation (gc.c's
+ * old_reads: what is read is kept, most of it) *)
+external old_begin : unit -> unit = "ml_old_begin"
+external old_end : unit -> unit = "ml_old_end"
 
 (* (an address's bits mixed: blocks made together are neighbours, and
  * two runs of them over the same slots are long searches; the C's
@@ -393,7 +397,13 @@ let from_string (buff : string) (ofs : int) : 'a =
   if ofs + header_size + header_int buff ofs 1 > String.length buff
   then invalid_arg "Marshal.from_string";
   let blocks = Array.make (header_int buff ofs 2 + 1) (Obj.repr 0) in
-  Obj.obj (read { src = buff; pos = ofs + header_size; blocks; count = 0; unfinished = false })
+  let r = { src = buff; pos = ofs + header_size; blocks; count = 0; unfinished = false } in
+  (* the value made in the old generation (the runtime's old_reads);
+   * old: Obj.obj (read r) *)
+  old_begin ();
+  match read r with
+  | v -> old_end (); Obj.obj v
+  | exception e -> old_end (); raise e
 
 let from_channel (chan : in_channel) : 'a =
   let header = really_input_string chan header_size in

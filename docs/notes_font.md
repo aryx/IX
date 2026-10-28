@@ -331,5 +331,45 @@ the same text, every screen another (recorded again); the host tests
 of TinyKernelGraphics, TinyLibGUI, TinyAppTetris and TinyLibPlayground
 still with font1.bin, unchanged.
 
-Left: grey edges (2), if the real faces are not smooth enough; the
-characters beyond ASCII (Terminus has them, the kernel's font 128).
+
+**Then Ubuntu Mono, from its outlines.** The author, the same day:
+"The text looks less pixelated, especially biggest text in www and
+office, but I still don't like that much the font. Is it possible to
+use the font used in this terminal or in the emacs I'm currently
+running on this machine?" The terminal's is Ubuntu Sans Mono 13
+(GNOME's monospace), the Emacs's Ubuntu Mono Bold at 43 pixels; both
+outline fonts. `fonts/preview.py` drew them in t-IX's cells: Ubuntu
+Sans Mono, wider, must be 13 pixels tall to be 8 wide, small and thin
+in a cell of 16; Ubuntu Mono, narrow, is 8 wide at 16, the cell, and
+looks right even 1 bit a pixel. Neither can look as the Emacs does:
+there 43 pixels with grey edges on a dense screen, here 16 pixels on
+640 by 480 magnified.
+
+So tiny.font is Ubuntu Mono's (fonts/README.md), drawn once by
+`fonts/Mkfont.ml` with ix's own TrueType reader and filler, the same
+that draw a PDF's fonts (section 2's third path): no FreeType. What
+FreeType does and ix does not is hinting, the font's programs that
+move its points onto the pixels: unhinted, a stem a pixel and a little
+wide is one pixel or two by where it falls. Two cheap stand-ins:
+
+- one shift of a whole face, by eighths of a pixel, chosen for the
+  least sum of c (1 - c) over its pixels (c each one's part covered):
+  in a monospaced font most stems are at the same places of their
+  cells, so the shift that puts the most pixels all in or all out puts
+  most stems on whole pixels;
+- a pixel set where 0.6 of it is covered, not a half: at a half, the
+  stems that straddled two pixels were two wide (E, F, L, T heavy); at
+  0.7 strokes broke; at 0.6 nearly all stems are one pixel, close to
+  FreeType's hinted letters.
+
+A dropout control (TrueType's: a thin stroke's best pixel set even
+under the threshold) was tried for the m, whose middle stem looked
+lost: it is short by design, FreeType draws it so too, and the control
+changed six bytes, so it went. The Ubuntu font package has only a
+variable font (one file, its weights by variation tables), which ix's
+reader does not read: the static regular and bold were copied from
+Google Fonts. Terminus Font stays beside it, `terminus.font`
+(`make FONT=fonts/terminus.font`), and font1.bin.
+
+Left: grey edges (2), if the 1-bit faces are not smooth enough; the
+characters beyond ASCII (both fonts have them, the kernel's font 128).

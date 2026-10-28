@@ -2,15 +2,16 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# Makes tiny.font from the four Terminus Font files beside it
+# Makes terminus.font from the four Terminus Font files beside it
 # (README.md): the first 128 characters of each face, one face after
 # the other, regular 8 by 16, bold 8 by 16, large 16 by 32, large bold
 # 16 by 32. Each row's bits are reversed into font1.bin's order, where
 # the left pixel is the low bit of the row's first byte (a PSF font's
-# is the high bit). Run by hand after a font is changed; tiny.font is
-# kept in the repository, so the build needs neither gzip nor this.
+# is the high bit): tiny.font's format (tiny.font is now Ubuntu Mono's:
+# README.md). Run by hand after a font is changed; terminus.font
+# is kept in the repository, so the build needs neither gzip nor this.
 #
-# usage: ./mkfont.sh   (then git diff tiny.font: nothing when unchanged)
+# usage: ./mkfont.sh   (then git diff terminus.font: nothing when unchanged)
 set -e
 export LC_ALL=C
 cd "$(dirname "$0")"
@@ -30,4 +31,4 @@ face() {
   face Uni2-TerminusBold16.psf.gz 4 2048
   face Uni2-Terminus32x16.psf.gz 32 8192
   face Uni2-TerminusBold32x16.psf.gz 32 8192
-} > tiny.font
+} > terminus.font

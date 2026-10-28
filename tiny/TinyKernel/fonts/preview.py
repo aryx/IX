@@ -9,16 +9,19 @@
 # screen. Rows:
 # - font1.bin and what the kernel makes of it (bold smeared, italic
 #   slanted, large doubled);
+# - each font file in tiny.font's format given (tiny.font, a
+#   Mkfont.exe's), its four faces as the kernel draws them;
 # - Terminus Font, the four faces copied beside this script;
-# - TrueType fonts of this machine (Ubuntu Mono: the author's Emacs;
-#   Ubuntu Sans Mono: the terminal's; DejaVu Sans Mono: fc-match's
+# - TrueType fonts drawn by FreeType (Ubuntu Mono, the author's Emacs
+#   font, from the copies beside this script; this machine's Ubuntu
+#   Sans Mono, the terminal's, and DejaVu Sans Mono, fc-match's
 #   monospace), each twice: 1 bit a pixel (what TinyKernelGraphics
 #   draws) and with grey edges (what a mask of levels would). A font
 #   not installed is said and skipped.
-# A tool to look with, not the build's (tiny.font is mkfont.sh's);
+# A tool to look with, not the build's (tiny.font is Mkfont.ml's);
 # needs Pillow.
-# usage: preview.py [out.png]   (default: preview.png, in the current
-# directory)
+# usage: preview.py [out.png [file.font...]]   (default: preview.png, in
+# the current directory)
 import gzip, os, sys
 from PIL import Image, ImageDraw, ImageFont
 
@@ -59,6 +62,14 @@ def font1():
     d = open(FONT1, "rb").read()
     return lambda c, r, x: (d[(c * 16) + r] >> x) & 1
 
+# a face of a font in tiny.font's format, its bytes from off: a row
+# (w + 7) / 8 bytes, the left pixel the low bit of the first
+def tiny(d, off, w, h):
+    b = (w + 7) // 8
+    def glyph(c, r, x):
+        return (d[off + (((c * h) + r) * b) + (x // 8)] >> (x % 8)) & 1
+    return glyph
+
 # the first 128 characters of a .psf.gz (header 4 bytes in PSF 1, 32 in
 # PSF 2; there a character's place is its code), the left pixel the
 # high bit
@@ -87,7 +98,19 @@ rows += [label("font1.bin, and the kernel's bold, italic and large of it"),
          bitmap(font1(), LINE, 8, 16), bitmap(font1(), BOLD, 8, 16, bold=True),
          bitmap(font1(), "italic: Hello world", 8, 16, slant=3),
          bitmap(font1(), LARGE, 8, 16, scale=2)]
-rows += [label("Terminus Font (tiny.font): 8x16, bold, 16x32, italic slanted"),
+for f in sys.argv[2:]:
+    d = open(f, "rb").read()
+    name = os.path.basename(f)
+    rows += [label(name + ": 8x16, bold, italic slanted, 16x32, bold")]
+    if len(d) == 2048:
+        rows.append(label("(one face: font1.bin's format)"))
+        continue
+    rows += [bitmap(tiny(d, 0, 8, 16), LINE, 8, 16),
+             bitmap(tiny(d, 2048, 8, 16), BOLD, 8, 16),
+             bitmap(tiny(d, 0, 8, 16), "italic: Hello world", 8, 16, slant=3),
+             bitmap(tiny(d, 4096, 16, 32), LARGE, 16, 32),
+             bitmap(tiny(d, 12288, 16, 32), "Bold large", 16, 32)]
+rows += [label("Terminus Font (mkfont.sh): 8x16, bold, 16x32, italic slanted"),
          bitmap(psf("Uni2-Terminus16.psf.gz", 4, 8, 16), LINE, 8, 16),
          bitmap(psf("Uni2-TerminusBold16.psf.gz", 4, 8, 16), BOLD, 8, 16),
          bitmap(psf("Uni2-Terminus16.psf.gz", 4, 8, 16), "italic: Hello world",
@@ -95,8 +118,9 @@ rows += [label("Terminus Font (tiny.font): 8x16, bold, 16x32, italic slanted"),
          bitmap(psf("Uni2-Terminus32x16.psf.gz", 32, 16, 32), LARGE, 16, 32)]
 # (name, regular, bold, the size whose characters are 8 wide)
 for name, regular, bold, size in [
-        ("Ubuntu Mono (the author's Emacs)",
-         TTF + "/ubuntu/UbuntuMono[wght].ttf", None, 16),
+        ("Ubuntu Mono (the author's Emacs; tiny.font's)",
+         os.path.join(HERE, "UbuntuMono-Regular.ttf"),
+         os.path.join(HERE, "UbuntuMono-Bold.ttf"), 16),
         ("Ubuntu Sans Mono (the terminal's)",
          TTF + "/ubuntu/UbuntuSansMono[wght].ttf", None, 13),
         ("DejaVu Sans Mono (fc-match monospace)",
@@ -105,8 +129,9 @@ for name, regular, bold, size in [
     if not os.path.exists(regular):
         rows.append(label(name + ": not installed (" + regular + ")"))
         continue
-    # a variable font's bold is a variation of its one file (Ubuntu's:
-    # UbuntuMono-R.ttf and -B.ttf are links to UbuntuMono[wght].ttf)
+    # a variable font's bold is a variation of its one file (Ubuntu's
+    # package's: its UbuntuMono-R.ttf and -B.ttf are links to
+    # UbuntuMono[wght].ttf; the static ones are beside this script)
     b, v = (bold, None) if bold else (regular, "Bold")
     for grey in (False, True):
         rows += [label(name + (": grey edges" if grey else ": 1 bit a pixel")),

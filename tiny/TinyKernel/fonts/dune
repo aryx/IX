@@ -1,0 +1,6 @@
+; Mkfont: tiny.font from a TrueType font, by ix's own reader and filler
+; (lib_graphics); run by hand, its output kept in the repository
+(executable
+ (name Mkfont)
+ (modules Mkfont)
+ (libraries ix_graphics_fonts ix_graphics_software ix_core fpath caps))

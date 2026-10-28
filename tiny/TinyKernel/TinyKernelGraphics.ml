@@ -116,7 +116,7 @@ let line (dst : image) xa ya xb yb (src : image) =
  * the other, a row's left pixel the low bit of its first byte. The
  * first face is 8 by 16, a row a byte, and may be all the font has
  * (xv6's font1.bin, which mini-9pi's console has too). tiny.font
- * (fonts/README.md, made of Terminus Font) has three more after it:
+ * (fonts/README.md, made of Ubuntu Mono) has three more after it:
  * bold 8 by 16, large 16 by 32 (a row two bytes), and large bold.
  * A face is made a mask: a byte a pixel (255 where it is set, so that
  * a character's row is two words of mask for draw.tm's glyphs), the

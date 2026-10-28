@@ -1,0 +1,6 @@
+# a child rc runs its own file, not its parent's -c command again
+# (mini-rc's cflag was exported: run again without end; the marker m
+# stops it here at one)
+echo 'echo child runs its file' > s.rc
+$rcname -c 'if(! test -f m){ touch m; $rcname ./s.rc }'
+echo done

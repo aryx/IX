@@ -46,5 +46,10 @@ val temp_file: string -> string -> string
 (* the name without its extension, or as it is *)
 val remove_extension : string -> string
 
+(* the extension of the name's last part, its dot first (".wav"), or ""
+ * when it has none; a dot at the part's start is no extension
+ * (".profile") *)
+val extension : string -> string
+
 (* the name as one word of a shell's command *)
 val quote : string -> string

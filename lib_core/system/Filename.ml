@@ -97,5 +97,11 @@ let temp_file prefix suffix =
 
 let remove_extension name = try chop_extension name with Invalid_argument _ -> name
 
+let extension name =
+  let base = basename name in
+  match String.rindex_opt base '.' with
+  | Some i when i > 0 -> String.sub base i (String.length base - i)
+  | _ -> ""
+
 (* between quotes for the shell, a quote in it as '\'' *)
 let quote s = "'" ^ String.concat "'\\''" (String.split_on_char '\'' s) ^ "'"

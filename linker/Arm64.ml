@@ -770,6 +770,13 @@ let ispcdisp v = v >= -0xfffff && v <= 0xfffff && v land 3 = 0
 let layout (t : op Program.t) =
   let ctx = { t; autosize = 0; lastcase = 0 } in
   let pool = ref [] (* (key, word), newest first *) and pool_start = ref 0 and pool_size = ref 0 in
+  (* OPTIMIZATION: the pool's words by their key too, where each was
+   * looked up in the list: arm64's pool is flushed only when its reach
+   * (1 MB) runs out, so it holds thousands, and a link was mostly that
+   * search (mini-ml's 8.2 s, 70% of it compare's; arm's is flushed
+   * every 4 KB).
+   * old: List.assoc_opt key !pool *)
+  let index = Hashtbl.create 1024 in
   let out = ref [] in
   (* the pool after p: behind a B around it when [skip] (to itself at
    * the very end) *)
@@ -779,6 +786,7 @@ let layout (t : op Program.t) =
     else begin
       let words = List.rev_map snd !pool in
       pool := [];
+      Hashtbl.reset index;
       pool_start := 0;
       pool_size := 0;
       if skip then begin
@@ -805,12 +813,13 @@ let layout (t : op Program.t) =
     let key = operand, (match operand with
       | _ when built -> -1   (* an offset made a constant: never the same record as an operand's *)
       | A.Mem { name = Some { static = true; _ }; _ } | A.Addr { name = Some { static = true; _ }; _ } -> p.version | _ -> 0) in
-    match List.assoc_opt key !pool with
+    match Hashtbl.find_opt index key with
     | Some w -> p.target <- Some w
     | None ->
         let w = prog_like p (Ins (if dword then Dword else Word)) [] [ operand ] in
         if !pool = [] then pool_start := p.pc;
         pool := (key, w) :: !pool;
+        Hashtbl.replace index key w;
         pool_size := rnd !pool_size sz + sz;
         p.target <- Some w
   in

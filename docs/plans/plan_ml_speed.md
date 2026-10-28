@@ -649,3 +649,21 @@ aliases, a wildcard between, a clause failing on, Match_failure. Not
 done: a decision tree (OCaml's Matching: a constructor's clauses
 together, the fields tested once), integer and character constants
 by a table (decode's opcodes).
+
+## 2026-10-28, found profiling m-ix's build: mini-ld's arm64 pool searched
+
+The author, of what to measure: the real programs and m-ix built under
+m-ix, the Pi 1 and Pi 2 first; then "let's fix the arm64 pool now".
+ix built from nothing for arm64 by the programs of a first build
+(mkfiles/fixpoint.sh's second build: m-ix's tools, natively): 128 s,
+80 by dune's; each tool's calls timed: mini-ld 644 s of user time in
+123 links (4.6 s each), mini-ml 274 in 1,130 compilations. mini-ld
+built by OCaml linked mini-ml in 8.2 s too (11.6 by mini-ml's build):
+the algorithm. callgrind: 70% compare, under Arm64.layout's
+List.assoc_opt of a constant in the literal pool, which on arm64 is
+flushed only when its reach (1 MB) runs out: thousands of entries, each
+new one searched in all (5l's addpool does the same, on arm's pool of
+a few). Now a Hashtbl by the same key beside the list: the link 8.14 s
+to 3.06 (0.38), the same bytes. arm's link (3.4 s by OCaml's build)
+has no such search high; its profile under mini-5i, mini-ml's build,
+is the Pi 2's next measure.

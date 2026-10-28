@@ -1,6 +1,0 @@
-$D/Session.$O: $D/Input_script.$O
-$D/Shape_render_software.$O: $D/Letter_strokes.$O
-$D/Shape_render_pdf.$O: $D/Letter_strokes.$O
-$D/Shape_render_pdf.$O: $D/Shape_render_software.$O
-$D/Redraw.$O: $D/Shape_render_software.$O
-$D/Plan9_loop.$O: $D/Session.$O

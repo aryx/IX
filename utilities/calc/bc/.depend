@@ -1,7 +1,0 @@
-$D/Parser.$O: $D/State.$O
-$D/Lexer.$O: $D/State.$O
-$D/CLI.$O: $D/Bclib.$O
-$D/CLI.$O: $D/Lexer.$O
-$D/CLI.$O: $D/Parser.$O
-$D/CLI.$O: $D/State.$O
-$D/Main.$O: $D/CLI.$O

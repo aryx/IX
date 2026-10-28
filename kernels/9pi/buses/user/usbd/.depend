@@ -1,7 +1,0 @@
-$D/Hid.$O: $D/Usbdesc.$O
-$D/Usbbus.$O: $D/Hid.$O
-$D/Usbbus.$O: $D/Usbdesc.$O
-$D/Usbdev.$O: $D/Usbdesc.$O
-$D/Usbd.$O: $D/Hid.$O
-$D/Usbd.$O: $D/Usbbus.$O
-$D/Usbd.$O: $D/Usbdev.$O

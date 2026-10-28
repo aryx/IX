@@ -1,6 +1,0 @@
-$D/Resolve.$O: $D/Body.$O
-$D/Joint2d.$O: $D/Resolve.$O
-$D/Collide.$O: $D/Shape.$O
-$D/Broadphase.$O: $D/Collide.$O
-$D/Solver.$O: $D/Joint2d.$O
-$D/Solver.$O: $D/Resolve.$O

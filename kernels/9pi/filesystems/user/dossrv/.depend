@@ -1,5 +1,0 @@
-$D/P9_wire.$O: $D/P9.$O
-$D/P9_server.$O: $D/P9.$O
-$D/P9_server.$O: $D/P9_wire.$O
-$D/Dossrv.$O: $D/Fat.$O
-$D/Dossrv.$O: $D/P9_server.$O

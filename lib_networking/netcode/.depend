@@ -1,3 +1,0 @@
-$D/Inputs.$O: $D/Wire.$O
-$D/Lockstep.$O: $D/Inputs.$O
-$D/Rollback.$O: $D/Inputs.$O

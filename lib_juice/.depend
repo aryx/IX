@@ -1,7 +1,0 @@
-$D/Trauma.$O: $D/Ease.$O
-$D/Trauma.$O: $D/Hash.$O
-$D/Trauma.$O: $D/Tween.$O
-$D/Squash.$O: $D/Ease.$O
-$D/Squash.$O: $D/Tween.$O
-$D/Emitter.$O: $D/Hash.$O
-$D/Emitter.$O: $D/Tween.$O

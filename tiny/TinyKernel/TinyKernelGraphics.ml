@@ -308,10 +308,48 @@ let disconnect (c : conn) =
  * writes it to the machine's mouse word; nothing on the host. *)
 let cursor_hook = ref (fun (_ : int) -> ())
 
+(* the message at s.[i], its numbers by arg: whole, its size
+ * checked by messages *)
+let message (c : conn) s i arg =
+  let len k =
+    if arg k < 0 then raise (Graphics "a negative length") else arg k in
+  match s.[i] with
+  | 'a' ->
+      let w = arg 3 - arg 1 and h = arg 4 - arg 2 in
+      if w <= 0 || h <= 0 || w > 2048 || h > 2048 then
+        raise (Graphics "an image of no size, or too large");
+      if List.exists (fun (k, _) -> k = arg 0) c.images then release c (arg 0);
+      let made =
+        { r = rect (arg 1) (arg 2) (arg 3) (arg 4);
+          at = alloc (w * h); repl = arg 5 <> 0 }
+      in
+      row_fill made.at (arg 6 land 255) (w * h);
+      c.images <- (arg 0, made) :: c.images
+  | 'f' -> release c (arg 0)
+  | 'c' -> !cursor_hook (arg 0)
+  | 'd' ->
+      let mask = if arg 2 < 0 then None else Some (find c (arg 2)) in
+      draw (find c (arg 0)) (rect (arg 3) (arg 4) (arg 5) (arg 6))
+        (find c (arg 1)) mask (arg 7) (arg 8)
+  | 'l' ->
+      line (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5) (find c (arg 1))
+  | 's' ->
+      text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font
+        (String.sub s (i + 11) (len 4))
+  | 't' ->
+      styled (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font (arg 5)
+        (String.sub s (i + 13) (len 4))
+  | _ (* 'p' *) -> pixels (find c (arg 0)) (arg 1) (arg 2) s (i + 9) (len 3)
+
 (* a write's bytes: whole messages (the header says which), each done
- * in turn; a bad one raises Graphics, the ones before it done *)
+ * in turn; a bad one skipped, the ones after it done, then Graphics
+ * raised with the first's why. A message cut short, or unknown, ends
+ * them: where the next starts is not known. (old: a bad one raised at
+ * once, the rest of the write not done: a page's picture with no room
+ * left, its pixels' messages after it, and the texts after those) *)
 let messages (c : conn) s =
   let n = String.length s in
+  let first = ref "" in
   let rec next i =
     if i < n then begin
       let arg k =
@@ -320,48 +358,18 @@ let messages (c : conn) s =
         let v = Char.code s.[at] + (256 * Char.code s.[at + 1]) in
         if v >= 32768 then v - 65536 else v
       in
-      match s.[i] with
-      | 'a' ->
-          let w = arg 3 - arg 1 and h = arg 4 - arg 2 in
-          if w <= 0 || h <= 0 || w > 2048 || h > 2048 then
-            raise (Graphics "an image of no size, or too large");
-          if List.exists (fun (k, _) -> k = arg 0) c.images then release c (arg 0);
-          let made =
-            { r = rect (arg 1) (arg 2) (arg 3) (arg 4);
-              at = alloc (w * h); repl = arg 5 <> 0 }
-          in
-          row_fill made.at (arg 6 land 255) (w * h);
-          c.images <- (arg 0, made) :: c.images;
-          next (i + 15)
-      | 'f' -> release c (arg 0); next (i + 3)
-      | 'c' -> !cursor_hook (arg 0); next (i + 3)
-      | 'd' ->
-          let mask = if arg 2 < 0 then None else Some (find c (arg 2)) in
-          draw (find c (arg 0)) (rect (arg 3) (arg 4) (arg 5) (arg 6))
-            (find c (arg 1)) mask (arg 7) (arg 8);
-          next (i + 19)
-      | 'l' ->
-          line (find c (arg 0)) (arg 2) (arg 3) (arg 4) (arg 5) (find c (arg 1));
-          next (i + 13)
-      | 's' ->
-          let len = arg 4 in
-          if len < 0 || i + 11 + len > n then raise (Graphics "a message cut short");
-          text (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font
-            (String.sub s (i + 11) len);
-          next (i + 11 + len)
-      | 't' ->
-          let len = arg 4 in
-          if len < 0 || i + 13 + len > n then raise (Graphics "a message cut short");
-          styled (find c (arg 0)) (arg 2) (arg 3) (find c (arg 1)) c.font (arg 5)
-            (String.sub s (i + 13) len);
-
-          next (i + 13 + len)
-      | 'p' ->
-          let len = arg 3 in
-          if len < 0 || i + 9 + len > n then raise (Graphics "a message cut short");
-          pixels (find c (arg 0)) (arg 1) (arg 2) s (i + 9) len;
-          next (i + 9 + len)
-      | _ -> raise (Graphics "an unknown message")
+      let size =
+        match s.[i] with
+        | 'a' -> 15 | 'f' | 'c' -> 3 | 'd' -> 19 | 'l' -> 13
+        | 's' -> 11 + max 0 (arg 4) | 't' -> 13 + max 0 (arg 4)
+        | 'p' -> 9 + max 0 (arg 3)
+        | _ -> raise (Graphics "an unknown message")
+      in
+      if i + size > n then raise (Graphics "a message cut short");
+      (try message c s i arg
+       with Graphics why -> if !first = "" then first := why);
+      next (i + size)
     end
   in
-  next 0
+  next 0;
+  if !first <> "" then raise (Graphics !first)

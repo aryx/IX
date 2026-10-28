@@ -90,7 +90,7 @@ let picture bits =
   (* an image freed, its memory another's *)
   send (msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
         text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
-  (* the bad messages, each said; the ones before it in its write are done
+  (* the bad messages, each said; the others in its write are done
    * (the lists are short and a write is messages joined: tiny-ml has
    * 11 registers for an expression, and a list's elements are one) *)
   let bad s =
@@ -108,6 +108,9 @@ let picture bits =
   bad (image 15 0 0 0 10 0);
   bad (image 15 0 0 3000 10 0);
   bad (image 15 0 0 1024 1024 0);
+  (* an image with no room, a draw of it, skipped; the fill after done *)
+  bad (image 15 0 0 1024 1024 0 ^ draw_ 0 15 (-1) 0 0 10 10 0 0 ^
+       fill 0 green 20 470 30 480);
   bad (text_ 0 white 0 0 "cut" ^ "\005");
   bad (msg 's' [ 0; white; 0; 0; 9 ] ^ "short");
   bad (msg 'p' [ 0; 0; 0; 9 ] ^ "short");

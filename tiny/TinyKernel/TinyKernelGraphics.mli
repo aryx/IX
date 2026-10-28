@@ -168,8 +168,9 @@ val font_mask : int -> int -> image
 
 (* a program's connection: its images by its own numbers, 0 the one it
  * was given to draw on; [connect screen font]. [messages] does a
- * string of them (Graphics when one is bad); [disconnect] frees what
- * the program left *)
+ * string of them (Graphics after them when one was bad, the bad ones
+ * skipped; at once when one is cut short or unknown); [disconnect]
+ * frees what the program left *)
 type conn
 val connect : image -> image -> conn
 val disconnect : conn -> unit

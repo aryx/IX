@@ -667,3 +667,29 @@ a few). Now a Hashtbl by the same key beside the list: the link 8.14 s
 to 3.06 (0.38), the same bytes. arm's link (3.4 s by OCaml's build)
 has no such search high; its profile under mini-5i, mini-ml's build,
 is the Pi 2's next measure.
+
+## 2026-10-28, the Pi 2's link: mini-ld's map without printing the program
+
+The author: "our main focus is the Pi1 and especially Pi2", then on
+the link's profile "let's do 1 if it's just a few lines". mini-ld
+built by mini-ml for arm, linking mini-ml (under mini-5i -prof): 21.19
+thousand million instructions, 30 s or more on the board. The
+collector 31% (copy 15.5, scan_copies 8.2, ml_alloc, ml_modify), the
+polymorphic compare and hash 8.5, Marshal's reading 6, select 5.1
+(1 million calls: layout's, then encode's again), Printf 4.6 (2.7
+million doprn calls). A heap of 8M words: 20.99 (0.991): the majors
+are not it, the minor collections' promotion of what the link keeps
+is.
+
+The Printf calls were -map's (every link of m-ix's mkfiles writes
+one): each instruction printed (Link.show), 650 thousand lines, to
+find the TEXTs by their text. Now a TEXT found by its op, its name
+from its operand: 21.19 to 15.70 (0.741), the same executable and
+map (on arm64 too); natively, OCaml's build of the link 3.16 s to
+2.65. The printing's strings had been the collector's too.
+
+Next, not done: Marshal's reading into the old generation (OCaml's
+intern.c reserves a value's whole size in the major heap, so what is
+read is never promoted), after a profile of what is promoted (the
+objects read, or the linker's progs made from them). Weighed and not
+done: select's choice kept in the instruction (5l's p->optab), 2.5%.

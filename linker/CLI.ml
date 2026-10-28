@@ -94,13 +94,17 @@ let link (m : _ machine) caps arch format entry out files =
       print caps @@ Printf.sprintf "%08x: %08lx\t%s\n" p.pc w (Link.show m.show p)) t.progs;
   if !map then begin
     let b = Buffer.create 65536 in
+    (* OPTIMIZATION: a TEXT's name from its operand, where each
+     * instruction was printed to find the TEXTs (the Pi 2's link of
+     * mini-ml, mini-ld built by mini-ml: 0.741, the strings' collection
+     * with the printing).
+     * old: let line = Link.show m.show p in, a line "TEXT name+0(SB)..."
+     * cut at its + *)
     List.iter (fun (p : _ Program.prog) ->
-      let line = Link.show m.show p in
-      if String.length line > 5 && String.sub line 0 5 = "TEXT " then begin
-        let name = String.sub line 5 (String.length line - 5) in
-        let name = match String.index_opt name '+' with Some i -> String.sub name 0 i | None -> name in
-        Buffer.add_string b (Printf.sprintf "%08x %s\n" p.pc name)
-      end) t.progs;
+      match p.op, p.args with
+      | Program.Func, Asm.Mem { name = Some n; _ } :: _ ->
+          Buffer.add_string b (Printf.sprintf "%08x %s%s\n" p.pc n.sym (if n.static then "<>" else ""))
+      | _ -> ()) t.progs;
     FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)
   end;
   let data = Link.data_bytes t in

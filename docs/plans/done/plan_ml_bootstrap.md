@@ -828,6 +828,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | Parser_asm's fixups by an array, not List.assoc (quadratic); mini-ml compiling 0.980 | +4 (assembler) | | |
 | 2026-10-28 | plan_ml_speed.md, 4d: a match's jump table, Ir's Switch, CASE and BCASE; the arm linker's pool never inside a table (tests/runtime/switch.ml, tests/bench/interp.ml); interp 0.722, tiny-machine 0.99 | +135 (linker +7) | +139 (the test, the bench) | |
 | 2026-10-28 | mini-ld's arm64 pool indexed by a Hashtbl, not List.assoc_opt (quadratic); mini-ml's link 0.38 | +9 (linker) | | |
+| 2026-10-28 | mini-ld's -map from the TEXTs' operands, not the program printed; the Pi 2's link of mini-ml 0.741 | +4 (linker) | | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

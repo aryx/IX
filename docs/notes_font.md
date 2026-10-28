@@ -371,5 +371,20 @@ reader does not read: the static regular and bold were copied from
 Google Fonts. Terminus Font stays beside it, `terminus.font`
 (`make FONT=fonts/terminus.font`), and font1.bin.
 
+The author on tiny-emacs: "the font looks worse with tiny-emacs (at
+least on this host), the top of e is missing. Bad." The e's top was a
+third of one row and half of the next, set in neither. What FreeType's
+autohinter does, done in Mkfont: the heights every letter shares (the
+baseline, the x's top, the H's) made whole rows, the heights between
+stretched; then each character's own shift, an eighth of a pixel at a
+time, across up to 3/8 from the face's, and down for what is no letter
+(the +'s bar, between two rows), what it loses outside its cell counted
+against it (else the m moved its stem out); and a bar a pixel thick on
+two rows kept on its upper one (the A's crossbar). tiny-emacs in bold,
+as the author's Emacs, was tried and taken back ("it does not read as
+good"); bold and underlined text kept the fast path, the plain text's
+(draw.tm's glyphs: 8 by 16 cells either way), where it was a draw a
+character.
+
 Left: grey edges (2), if the 1-bit faces are not smooth enough; the
 characters beyond ASCII (both fonts have them, the kernel's font 128).

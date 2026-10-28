@@ -51,9 +51,12 @@ characters are 8 wide, the cell. `Mkfont.ml` draws each of its first
 (lib_graphics's `Truetype`, `Outline`, `Fill.scan`), regular and bold,
 at 8 by 16 and 16 by 32, a pixel set where 0.6 of it is covered. ix
 runs no hinting (the font's programs that move a letter onto the
-pixels): one shift of the whole face, by eighths of a pixel, puts most
-stems on whole pixels instead. `Mkfont.ml`'s header says how;
-`Mkfont.exe -coverage c file.ttf` shows a character as it is made.
+pixels); instead, as FreeType's autohinter: the baseline, the x's
+height and the H's made whole rows, a shift of the face and of each
+character across (and down for what is no letter) by eighths of a
+pixel to put stems on whole pixels, and a bar split on two rows kept
+on one. `Mkfont.ml`'s header says how; `Mkfont.exe -coverage c
+file.ttf` shows a character as it is made.
 
     dune build ./tiny/TinyKernel/fonts/Mkfont.exe
     ./_build/default/tiny/TinyKernel/fonts/Mkfont.exe \
@@ -63,9 +66,8 @@ stems on whole pixels instead. `Mkfont.ml`'s header says how;
 `tiny.font` is kept in the repository, so a build needs neither the
 `.ttf` files nor `Mkfont`.
 
-What 8 by 16 does to it: some horizontal bars fall between two rows
-(E, F a little heavy); its m's middle stem is short by design, and at
-8 pixels the m reads nearly as an n.
+What 8 by 16 does to it: the wide capitals of the bold (M, N, W) are
+tight; the m's middle stem is short by design.
 
 ## terminus.font: Terminus Font
 

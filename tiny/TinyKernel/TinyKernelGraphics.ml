@@ -302,6 +302,11 @@ let styled (dst : image) x y (src : image) (font : image) style s =
   let f = if kind = 0 then font else derive font kind in
   let scale = if style land 8 <> 0 then 2 else 1 in
   let cw = 8 * scale and fw = width f / 128 and n = String.length s in
+  (* bold, underlined or neither: 8 by 16 cells, the plain text's, so
+   * text and its word at a time (old: a draw a character, some 13,000
+   * instructions: tiny-emacs in bold, a screen of 2,400, was 30 million) *)
+  if kind land 3 = 0 then text dst x y src f s
+  else
   for i = 0 to n - 1 do
     let c = Char.code s.[i] in
     let x0 = x + (cw * i) in

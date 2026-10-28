@@ -25,7 +25,7 @@ INCLUDES=${DIRS:%=-I ./%} $LIBI $STDI
 LIB=Bspfile Model View Edges Scan Surfcache Spans Bsp Trace Alias Things Render Brushes Play \
  Edict Physics Particles Items Ways Monster_ai Combat Monsters Weapons Game Sound Cdaudio
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli} $LIBSRC
+LOCAL=`{for(d in $DIRS) ls $d/*.ml $d/*.mli >[2]/dev/null} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 # (quake: the name the frames' test asks for, as a game's,

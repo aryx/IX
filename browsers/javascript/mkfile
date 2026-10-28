@@ -12,6 +12,8 @@ NEEDS=lib_playground
 # nobody names them, a program links their objects, as dune's -linkall)
 UNITS=Js_prelude Js_ast Per_domain Mini_opti Js_string Js_lexer Js_parse Js_coroutine Js_regexp Js_value Js_operators \
  Js_scope Js_json Js_promise Js_builtins Js_frame Js_props Js_globals Js_eval Js_quicken Js_compile
+# (mini-node's two, below, after the library's units they name)
+DEPMORE=CLI Main
 <$TOP/mkfiles/mklib
 
 LIBDIRS=lib_playground

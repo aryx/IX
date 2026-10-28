@@ -13,6 +13,8 @@ DIRS=. doc roff pic ixdoc latex
 NEEDS=lib_compression lib_graphics
 # (each before the ones that name it)
 UNITS=Doc Doc_image Roff Fill Tbl Pic_ast Pic_parser Pic_lexer Pic Man Ms Ixdoc_syntax Ixdoc To_ixdoc Bib Latex_state Latex_input Latex_output Latex_names Noweb Latex_math Latex_table Latex Layout To_text To_pdf CLI
+# (mini-troff's Main, after the CLI it names)
+DEPMORE=Main
 <$TOP/mkfiles/mklib
 
 LIBDIRS=lib_compression lib_graphics

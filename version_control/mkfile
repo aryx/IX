@@ -16,6 +16,8 @@ LIBI=-I objects -I repo -I diff -I wire -I commands
 LIBDIRS=lib_crypto lib_compression
 LIBUNITS=
 LIBOBJS=
+# (the two other programs' mains, below, after the units they name)
+DEPMORE=Diffmain Merge3main
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 

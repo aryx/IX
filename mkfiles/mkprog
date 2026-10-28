@@ -56,10 +56,11 @@ $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig $MLEXE
 $D/$PROG: $D/$PROG.start.$O $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
 	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
 
-# the units' order (mkfiles/mkdepend)
+# the units' order (mkfiles/mkdepend); DEPMORE, the mkfile's: units
+# compiled here that are not the program's, other programs' mains
 DEPOBJ=D
 DEPDIRS=. $D
-DEPUNITS=$SRC
+DEPUNITS=$SRC $DEPMORE
 <$TOP/mkfiles/mkdepend
 
 clean:V:

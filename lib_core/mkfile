@@ -53,7 +53,9 @@ $STDUNITS: $MLEXE
 INCLUDES=$STDI
 DEPOBJ=L
 DEPDIRS=$UNIXDIR $P9DIR concurrency $STDDIRS
-DEPUNITS=$STD $COMMONS
+# (std_exit too: Pervasives' do_at_exit inlined. old: not, compiled
+# beside Pervasives)
+DEPUNITS=$STD $COMMONS std_exit
 <$TOP/mkfiles/mkdepend
 
 # mini-ml's runtime, on the C library

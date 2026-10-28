@@ -52,7 +52,11 @@ W=$(mktemp -d)
 if [ "$(date +%3N)" = 3N ]; then now() { perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'; }
 else now() { date +%s%3N; }; fi
 begun=$(now)
-dune build 2> $W/dune.log || { echo "FAIL dune build"; head -20 $W/dune.log; exit 1; }
+# (on a terminal, said while it runs: it waits for dune's lock when
+# another build holds it, without a word)
+[ -t 1 ] && printf 'dune build (waiting for its lock, if another dune runs)...'
+dune build 2> $W/dune.log || { echo; echo "FAIL dune build"; head -20 $W/dune.log; exit 1; }
+[ -t 1 ] && printf '\r\033[K'
 
 # the groups (plan_tests.md): shared, what both systems stand on (OCaml
 # 5's types, the sources as text, lib_core compiled by mini-ml); t-ix,
@@ -522,7 +526,9 @@ report() {
   local n=$1 k=$W/job$1 s ms g=${groups[$1-1]} name=${names[$1-1]} key=${fkey[$1]}
   # no status: the job's shell itself died, a failure too
   read -r s ms < $k.status 2> /dev/null || { s=FAIL; ms=0; echo "(no status: the job's shell died)" >> $k.log; }
-  # (a terminal: a job's line only when it fails, the tree says the others)
+  # (a terminal: a job's line only when it fails, above the tree, which
+  # is taken out first; the tree says the others)
+  [ -n "$tty" ] && [ $s = FAIL ] && erase
   [ -z "$tty" ] || [ $s = FAIL ] && line $g $s $ms "$name"
   g_end[$g]=$(( $(now) - begun )); g_done[$g]=$(( ${g_done[$g]:-0} + 1 ))
   # (a family's time: its first job's start to its last's end)
@@ -547,10 +553,8 @@ report() {
     grep -av '^\[RUN\]\|^\[PASS\]\|^$\|Path to captured log' $k.txt | tail -20 | cut -c1-160 | sed "s/^/$pad| /"
   fi
 }
-# the tree; its lines counted, so a terminal's is taken out before a line
-# is said above it
-lines=0
-erase() { [ $lines -gt 0 ] && printf '\033[%dA\033[J' $lines; lines=0; }
+# the tree, each line within 80 columns (a longer one wrapped would make
+# more lines than drawn counts)
 tree() {
   local g k n t st el run long longn nskip x
   t=$(now)
@@ -562,10 +566,10 @@ tree() {
     [ -n "${g_fail[$g]}" ] && printf "  %s %d" "$(word FAIL)" ${g_fail[$g]}
     [ $nskip != 0 ] && printf "  %d skipped" $nskip
     [ "${g_done[$g]:-0}" = "${g_jobs[$g]:-0}" ] && printf "  %5.1f s" $(secs ${g_end[$g]:-0})
-    echo; lines=$((lines + 1))
+    echo
     for k in "${fkeys[@]}"; do
       [[ $k == $g/* ]] || continue
-      printf "   %s %3d/%-3d %-34s " "$(bar 10 ${f_done[$k]:-0} ${f_parts[$k]} "${f_fail[$k]}")" ${f_done[$k]:-0} ${f_parts[$k]} "$(echo "${k#*/}" | cut -c1-34)"
+      printf "   %s %3d/%-3d %-30.30s " "$(bar 10 ${f_done[$k]:-0} ${f_parts[$k]} "${f_fail[$k]}")" ${f_done[$k]:-0} ${f_parts[$k]} "${k#*/}"
       if [ "${f_done[$k]:-0}" = ${f_parts[$k]} ]; then
         if [ -n "${f_fail[$k]}" ]; then word FAIL; else word ok; fi
         printf " %5.1f s" $(secs $(( ${f_end[$k]} - ${f_start[$k]:-${f_end[$k]}} )))
@@ -579,23 +583,40 @@ tree() {
         done
         # (a family of one: its time alone)
         [ ${f_parts[$k]} = 1 ] && longn=
-        [ $run -gt 0 ] && printf "%3d s %s" $((long / 1000)) "$(echo "$longn" | cut -c1-18)"
+        [ $run -gt 0 ] && printf "%3d s %.14s" $((long / 1000)) "$longn"
       fi
-      echo; lines=$((lines + 1))
+      echo
     done
   done
 }
+# a terminal's: the tree made first, then written over the one drawn
+# before in one go, each line's end cleared, then what is below: nothing
+# taken out between (old: erased, then drawn line by line, its commands
+# slow enough to see it come and go). erase: before a line said above it
+drawn=0
+draw() {
+  local out nl
+  out=$(tree)
+  nl=${out//[^$'\n']/}
+  [ $drawn -gt 0 ] && printf '\033[%dA' $drawn
+  printf '%s\033[K\n\033[J' "${out//$'\n'/$'\033[K\n'}"
+  drawn=$(( ${#nl} + 1 ))
+}
+erase() { [ $drawn -gt 0 ] && printf '\033[%dA\033[J' $drawn; drawn=0; }
 left=${#names[@]}
 done_=()
+changed=1; last=0
 while [ $left -gt 0 ]; do
   for n in $(seq 1 ${#names[@]}); do
     [ -n "${done_[n]}" ] && continue
     # ended: its status written, or its shell gone (then its status looked at again)
     [ -f $W/job$n.status ] || ! kill -0 ${jobpids[n-1]} 2> /dev/null || continue
-    [ -n "$tty" ] && erase
-    report $n; done_[n]=1; left=$((left - 1))
+    report $n; done_[n]=1; left=$((left - 1)); changed=1
   done
-  [ -n "$tty" ] && { erase; tree; }
+  # (drawn again when a job ended, else each second: the running times)
+  if [ -n "$tty" ] && { [ -n "$changed" ] || [ $(( $(now) - last )) -ge 1000 ]; }; then
+    draw; changed=; last=$(now)
+  fi
   [ $left -gt 0 ] && sleep 0.2
 done
 wait

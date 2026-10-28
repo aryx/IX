@@ -33,7 +33,7 @@ external k_clock : unit -> int = "k_clock"
 
 (* memory.tm's and runtime.c's: n bytes copied, zeroed; where the image
  * ends; a word read, written; bytes as a string, a string into memory;
- * a character on the console; the font's address *)
+ * a character on the console; the font's address, its size *)
 external k_copy : int -> int -> int -> unit = "k_copy"
 external k_zero : int -> int -> unit = "k_zero"
 external k_end : unit -> int = "k_end"
@@ -43,6 +43,7 @@ external k_string : int -> int -> string = "k_string"
 external k_blit : string -> int -> int -> int -> unit = "k_blit"
 external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
+external k_font_size : unit -> int = "k_font_size"
 
 (* how many processes at most, and a slot's frame, where entry.tm saves
  * its registers *)

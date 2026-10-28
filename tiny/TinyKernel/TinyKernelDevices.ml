@@ -18,7 +18,8 @@ open TinyKernelFiles
  * screen, which was taken for a bug: it was paint's ball, which moves
  * with the clock, ending elsewhere because the kernel's work took
  * another time.) The font is the machine's
- * (font.tm, in the image), made a mask at the boot. A program opens
+ * (font.tm, in the image: fonts/tiny.font), its first face made a mask
+ * at the boot. A program opens
  * /dev/draw for a connection, whose image 0 is the screen, and writes
  * messages; no pixel is in its partition. *)
 let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false }
@@ -28,7 +29,7 @@ let () = cursor_hook := (fun kind -> poke mouse_dev kind)
 let font =
   arena 0xd00000 0x200000;
   free 0xf4b000 0xb4000;
-  font_mask (k_font ()) (alloc 16384)
+  font_mask (k_font ()) (k_font_size ()) (alloc 16384)
 
 (* the mouse: a box the kernel writes (x, y, the buttons, a word each)
  * when the machine's word changed; the clock: the timer's interrupts

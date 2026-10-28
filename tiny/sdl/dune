@@ -10,14 +10,15 @@
  (modules TinyCalls TinyFont)
  (libraries tiny_kernel_graphics tiny_kernel_audio tiny_host_memory tiny_machine_sdl tiny_machine_devices tiny_machine_peer unix))
 
-; the machine's font, 128 characters of 8 by 16, in the program
+; the machine's font, tiny-kernel's (../TinyKernel/fonts/README.md), in
+; the program
 (rule
  (targets TinyFont.ml)
- (deps (:font ../../kernels/lib_machine/font1.bin))
+ (deps (:font ../TinyKernel/fonts/tiny.font))
  (action
   (with-stdout-to %{targets}
    (progn
-    (echo "(* the machine's font (kernels/lib_machine/font1.bin) *)\nlet bits = {font|")
+    (echo "(* TinyKernel/fonts/tiny.font *)\nlet bits = {font|")
     (cat %{font})
     (echo "|font}\n")))))
 

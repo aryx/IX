@@ -38,9 +38,8 @@
  * {b A text box is edited as it is shown} (WYSIWYG, the Alto's Bravo,
  * then MacWrite and Word): its text filled to the box's width, a word
  * that does not fit on the next line, each character in its style (the
- * kernel's fonts: italic slanted, large 16 by 32, bold its strokes
- * wider); a
- * line as tall as its largest character. A click puts the cursor, a
+ * kernel's fonts: bold, large 16 by 32, italic any of them slanted);
+ * a line as tall as its largest character. A click puts the cursor, a
  * drag selects; the Format menu (or C-b, Tab, C-u, C-l) sets or takes
  * off a style, of the selection, or of what is typed next; Edit's Cut,
  * Copy, Paste (C-w, C-y). The box grows to show all of its text.
@@ -140,7 +139,7 @@
  * moving a drawing's shapes once drawn, a sheet's floating point, its
  * other functions than sum, and formulas that follow a cell moved, a
  * paint's fill and its colours other than ten, other fonts and sizes
- * (one font, 8 by 16, its italic and its double), colours of text,
+ * (one font, 8 by 16, its bold, italic and large), colours of text,
  * paragraphs centred or justified, a text that flows from a box to the
  * next or onto the next page, and undo of the typing inside a box (undo
  * takes the document back to before the box was edited).

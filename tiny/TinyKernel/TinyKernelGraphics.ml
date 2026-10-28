@@ -112,22 +112,37 @@ let line (dst : image) xa ya xb yb (src : image) =
 (* The font *)
 (*****************************************************************************)
 
-(* The machine's font: 128 characters of 8 by 16, a row a byte, its
- * left pixel the low bit (xv6's font1.bin, which mini-9pi's console
- * has too). Made a mask once: a byte a pixel (255 where it is set, so
- * that a character's row is two words of mask for draw.tm's glyphs), the
- * characters side by side in an image of 1024 by 16, so that a
- * character is a draw. *)
-let font_mask bits at =
+(* The machine's font: faces of 128 characters, a face's rows one after
+ * the other, a row's left pixel the low bit of its first byte. The
+ * first face is 8 by 16, a row a byte, and may be all the font has
+ * (xv6's font1.bin, which mini-9pi's console has too). tiny.font
+ * (fonts/README.md, made of Terminus Font) has three more after it:
+ * bold 8 by 16, large 16 by 32 (a row two bytes), and large bold.
+ * A face is made a mask: a byte a pixel (255 where it is set, so that
+ * a character's row is two words of mask for draw.tm's glyphs), the
+ * characters side by side in an image of 128 characters' width, so
+ * that a character is a draw. *)
+let mask bits w h at =
+  let bytes = (w + 7) lsr 3 in
   for c = 0 to 127 do
-    for row = 0 to 15 do
-      for col = 0 to 7 do
-        pokeb (at + (row * 1024) + (c * 8) + col)
-          (255 * ((peekb (bits + (c * 16) + row) lsr col) land 1))
+    for row = 0 to h - 1 do
+      for col = 0 to w - 1 do
+        pokeb (at + (row * 128 * w) + (c * w) + col)
+          (255 * ((peekb (bits + (((c * h) + row) * bytes) + (col lsr 3))
+                   lsr (col land 7)) land 1))
       done
     done
   done;
-  { r = rect 0 0 1024 16; at = at; repl = false }
+  { r = rect 0 0 (128 * w) h; at = at; repl = false }
+
+(* where the font's faces after the first are (0: it has none) *)
+let faces = ref 0
+
+(* [font_mask bits size at]: the font of size bytes at bits, its first
+ * face made a mask at at (16 KB), the others' place kept for styled *)
+let font_mask bits size at =
+  faces := if size > 2048 then bits + 2048 else 0;
+  mask bits 8 16 at
 
 (* a text, its top left corner at (x, y): each character the ink src
  * through the font's mask (a byte beyond the font's 128 is a ?) *)
@@ -207,38 +222,54 @@ let free at n =
 (* Styled text *)
 (*****************************************************************************)
 
-(* The fonts made from the machine's when first asked for (a word
- * processor's styles): bold, each stroke one pixel wider, but for a gap
- * of one pixel, which stays (drawn twice, a pixel apart, an m was a
- * block); italic, its rows slanted, the top ones 3 pixels right (its
- * cells 11 wide, so that a character's slant is in its own cell);
- * large, each pixel 2 by 2; and those together. Made once, at the
- * first text that needs one: a large one is some 65,000 pixels. *)
+(* The faces of a word processor's styles, a mask each, made when first
+ * asked for: bold, large, and those two, the font's own when it has
+ * them (tiny.font), else made from its first face (font1.bin): bold,
+ * each stroke one pixel wider, but for a gap of one pixel, which stays
+ * (drawn twice, a pixel apart, an m was a block); large, each pixel 2
+ * by 2. Italic is made from the upright face, real or made, its rows
+ * slanted, the top ones 3 pixels right, 6 when large (its cells 11
+ * wide, 22, so that a character's slant is in its own cell). Made once,
+ * at the first text that needs one: a large one is some 65,000 pixels. *)
 let derived = Array.make 8 None
 
-let derive (font : image) kind =
+(* src's characters, each pixel scale by scale, bold, slanted *)
+let make (src : image) scale bold slant =
+  let sw = width src / 128 in
+  let cw = (sw * scale) + slant and ch = height src * scale in
+  let w = 128 * cw in
+  let at = alloc (w * ch) in
+  row_fill at 0 (w * ch);
+  for c = 0 to 127 do
+    for row = 0 to ch - 1 do
+      let shift = slant * (ch - 1 - row) / ch
+      and line = src.at + (row / scale * width src) + (c * sw) in
+      let set col = col >= 0 && col < sw && peekb (line + col) <> 0 in
+      for col = 0 to (sw * scale) - 1 do
+        let k = col / scale in
+        if set k || (bold && set (k - 1) && not (set (k + 1))) then
+          pokeb (at + (row * w) + (c * cw) + col + shift) 255
+      done
+    done
+  done;
+  { r = rect 0 0 w ch; at = at; repl = false }
+
+(* kind: italic 1, large 2, bold 4 *)
+let rec derive (font : image) kind =
   match derived.(kind) with
   | Some f -> f
   | None ->
-      let scale = if kind land 2 <> 0 then 2 else 1 in
-      let slant = if kind land 1 <> 0 then 3 * scale else 0 in
-      let cw = (8 * scale) + slant and ch = 16 * scale in
-      let w = 128 * cw in
-      let at = alloc (w * ch) in
-      row_fill at 0 (w * ch);
-      for c = 0 to 127 do
-        for row = 0 to ch - 1 do
-          let shift = slant * (ch - 1 - row) / ch
-          and line = font.at + (row / scale * 1024) + (c * 8) in
-          let set col = col >= 0 && col < 8 && peekb (line + col) <> 0 in
-          for col = 0 to (8 * scale) - 1 do
-            let k = col / scale in
-            if set k || (kind land 4 <> 0 && set (k - 1) && not (set (k + 1))) then
-              pokeb (at + (row * w) + (c * cw) + col + shift) 255
-          done
-        done
-      done;
-      let f = { r = rect 0 0 w ch; at = at; repl = false } in
+      let large = kind land 2 <> 0 in
+      let f =
+        if kind land 1 <> 0 then
+          make (if kind = 1 then font else derive font (kind land 6)) 1 false
+            (if large then 6 else 3)
+        else if !faces <> 0 then
+          let w = if large then 16 else 8
+          and at = if kind = 4 then 0 else if kind = 2 then 2048 else 10240 in
+          mask (!faces + at) w (2 * w) (alloc (256 * w * w))
+        else make font (if large then 2 else 1) (kind land 4 <> 0) 0
+      in
       derived.(kind) <- Some f;
       f
 

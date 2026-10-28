@@ -23,7 +23,8 @@ so that the second "e" costs less than the first.
 
 The headers of `Font.mli` and `Hershey.mli` tell each in full. The
 small systems have their own: the kernels' consoles a bitmap
-(`font1.bin`), tiny-kernel's a bitmap of its own (`font.tm`).
+(`font1.bin`), tiny-kernel's a bitmap of its own (`font.tm`, made
+of `tiny.font`: section 7).
 
 A real system has the third kind for everything, and keeps the first
 for terminals and boot screens. ix uses strokes where others use
@@ -265,3 +266,70 @@ page with a character typed and a sheet dragged. The plan's stages
 say the order: the shape and the software renderer first, the golden
 frames unchanged; then the draw platform's font images, mini-9pi's
 recorded screens looked at, since letters on whole pixels will move.
+
+## 7. t-IX's font: a bitmap, four faces
+
+The author, 2026-10-28: "the font displayed in tiny-emacs,
+tiny-office, and tiny-www is not great and very pixelized; on both
+Linux and under the tiny-machine. Anything we can improve?"
+
+**One path for both.** On tiny-machine, tiny-kernel draws a program's
+text with `TinyKernelGraphics`; on the host, the tiny programs in an
+SDL window (`tiny/sdl/TinyCalls.ml`) call the same module on an array.
+So a font changed there changes both. A face is made a mask, a byte a
+pixel, the characters side by side, and a character is a draw of the
+ink through it (draw.tm's `glyphs` for a whole text of the regular
+face).
+
+**Why it looked pixelized.** Three things, the first two the font's:
+
+- one face, 1 bit a pixel: `font1.bin`, xv6's Raspberry Pi ports'
+  8 by 16, 128 characters;
+- the other styles made from it when first asked for: bold each
+  stroke a pixel wider (smeared), large each pixel 2 by 2 (blocks:
+  tiny-office's headings, tiny-www's titles), italic the rows slanted;
+- the screen, 640 by 480, shown by `TinyMachineSDL` at the largest
+  whole number of times that fits (2 or 3 on today's screens), each
+  pixel a block.
+
+**What could be done**, from the cheapest:
+
+1. Real faces in place of the made ones: a bold and a 16 by 32 drawn
+   by hand, the same cells, so no program and no message changes.
+   Terminus Font has exactly those sizes (and an 8 by 16 regular,
+   thinner and more even than font1.bin), under the SIL OFL. The
+   chosen one.
+2. Grey edges: a mask of levels, 0 to 255, TinyKernelGraphics.mli's
+   exercise. But a pixel is an index into Plan 9's table of 256
+   colours, so each mix of ink and background is a colour looked up,
+   and draw.tm's `glyphs`, a word of 4 pixels at a time, would mix a
+   pixel at a time: smoother, slower on tiny-machine, with fonts made
+   from outlines at the build.
+3. A larger screen (1280 by 960, 16 by 32 the regular face): the one
+   cure for the blocks, but 640 by 480 is in tiny-machine's memory map
+   (the screen at 0xf00000, 300 KB; four times that passes 16 MB), in
+   the PPM frames the window reads, in what the CPU fills, and in every
+   program's layout. Not for fonts alone.
+4. SDL's linear filtering when scaled: one line, the host only; blur
+   for blocks.
+
+**What was done (1).** `tiny/TinyKernel/fonts/`: Terminus Font's four
+console fonts copied (regular and bold, 8 by 16 and 16 by 32), its
+licence, and `tiny.font`, their first 128 characters in font1.bin's
+format, the faces one after the other (its README.md: the format, the
+origin, the licence; `mkfont.sh` makes it). The kernel's
+`font_mask` is given the font's size: with 2,048 bytes (font1.bin)
+the bold and the large are made as before; with more, they are the
+font's own. Italic stays a slant of the upright face, real or made.
+
+font1.bin is kept as the simpler one to read, a face and what is
+made of it: `make FONT=../../kernels/lib_machine/font1.bin` in
+tiny/TinyKernel, `TINY_FONT=kernels/lib_machine/font1.bin` on the
+host. Checked: tiny-kernel's 26 recorded sessions with font1.bin, the
+same screens as before (the derivation unchanged); with tiny.font,
+the same text, every screen another (recorded again); the host tests
+of TinyKernelGraphics, TinyLibGUI, TinyAppTetris and TinyLibPlayground
+still with font1.bin, unchanged.
+
+Left: grey edges (2), if the real faces are not smooth enough; the
+characters beyond ASCII (Terminus has them, the kernel's font 128).

@@ -62,8 +62,9 @@
  * index), alpha and Porter and Duff's operators (a mask is set or not),
  * a clipping rectangle apart from an image's own, a mask's own point
  * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
- * thick lines, fonts (one, the machine's 8 by 16, and what is made of
- * it: italic, slanted, and large, its pixels doubled) and their cache,
+ * thick lines, fonts (one, the machine's 8 by 16, its bold and its
+ * large 16 by 32, and italic made of them, slanted; or font1.bin alone,
+ * the bold and the large made of it too) and their cache,
  * layers and windows (TinyWindows.ml composes whole images), the
  * screen's refresh.
  *
@@ -163,8 +164,10 @@ val free : int -> int -> unit
 val alloc : int -> int
 val blocks : (int * int) list ref
 
-(* the font as a mask: its bits, at an address, made bytes at another *)
-val font_mask : int -> int -> image
+(* [font_mask bits size at]: the font of size bytes at bits (font1.bin
+ * or tiny.font: fonts/README.md), its first face made a mask at at (16
+ * KB); its other faces, when it has them, kept for the styled texts *)
+val font_mask : int -> int -> int -> image
 
 (* a program's connection: its images by its own numbers, 0 the one it
  * was given to draw on; [connect screen font]. [messages] does a

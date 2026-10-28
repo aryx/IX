@@ -35,17 +35,24 @@ let screen_at = 0xf00000
  * 0x1000, the images' memory its 2 MB below the screen and what is
  * after it (TinyKernelDevices' font; a page of www's may have 1 MB of
  * pictures: old: only after the screen, 720 KB, and Mars' article
- * ended www) *)
+ * ended www). The font is tiny-kernel's, or the file TINY_FONT names
+ * (TINY_FONT=kernels/lib_machine/font1.bin: the bold and the large made
+ * of its one face, as before tiny.font) *)
 let conn = lazy (
-  Bytes.blit_string TinyFont.bits 0 TinyMemory.mem 0x1000
-    (String.length TinyFont.bits);
+  let font =
+    match Sys.getenv_opt "TINY_FONT" with
+    | Some file -> In_channel.with_open_bin file In_channel.input_all
+    | None -> TinyFont.bits
+  in
+  Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
   TinyKernelGraphics.arena 0xd00000 0x200000;
   TinyKernelGraphics.free 0xf4b000 0xb4000;
   let screen =
     { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 width height;
       at = screen_at; repl = false } in
   TinyKernelGraphics.connect screen
-    (TinyKernelGraphics.font_mask 0x1000 (TinyKernelGraphics.alloc 16384)))
+    (TinyKernelGraphics.font_mask 0x1000 (String.length font)
+       (TinyKernelGraphics.alloc 16384)))
 
 let display =
   lazy (TinyMachineSDL.create ~title:(Filename.basename Sys.argv.(0)))

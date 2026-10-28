@@ -28,6 +28,7 @@ external k_string : int -> int -> string = "k_string"
 external k_blit : string -> int -> int -> int -> unit = "k_blit"
 external k_console : int -> int -> unit = "k_console"
 external k_font : unit -> int = "k_font"
+external k_font_size : unit -> int = "k_font_size"
 
 (* The memory. The first 32 MB are the kernel's (runtime.c says how they
  * are used): its image, the processes' frames, the images it draws, the

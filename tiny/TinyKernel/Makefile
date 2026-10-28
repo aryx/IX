@@ -68,10 +68,12 @@
 # The kernel: entry.tm first (the machine starts at 0), the runtime
 # (TinyML's, by tiny-c), the rows TinyKernelGraphics.ml draws by (draw.tm),
 # the loops that copy and zero a partition (memory.tm),
-# the machine's font (font.tm, made of mini-9pi's console's: 128
-# characters of 8 by 16 bits), the kernel (tiny-ml: TinyMemory.ml,
-# TinyKernelGraphics.ml, TinyKernelNetwork.ml, TinyKernelAudio.ml,
-# TinyKernelFS.ml, TinyKernelMemory.ml and ../TinyKernel.ml, one
+# the machine's font (font.tm, made of fonts/tiny.font: 128
+# characters of 8 by 16 bits, bold, then 16 by 32, and bold; FONT=
+# ../../kernels/lib_machine/font1.bin, mini-9pi's console's, the first
+# face alone, the others made of it: fonts/README.md), the kernel
+# (tiny-ml: TinyMemory.ml, TinyKernelGraphics.ml, TinyKernelNetwork.ml,
+# TinyKernelAudio.ml, TinyKernelFS.ml, TinyKernelMemory.ml and ../TinyKernel.ml, one
 # program), end.tm last. Its
 # files come after it in boot.img: for each program a name, a line, its
 # size, a line, its bytes; an empty line at the end (no disk). The
@@ -121,7 +123,7 @@ T = ../tests/TinyKernel_tests
 CORE = Stdlib Char Seq List String Bytes Array Option Int64 Filename Buffer Printf Marshal Hashtbl Common Sha1
 LIB = $(CORE:%=$(O)/lib/%.o)
 KERNEL = $(O)/entry.o $(O)/udivmod.o $(O)/runtime.o $(O)/draw.o $(O)/memory.o $(O)/font.o $(O)/kernel.o $(LIB) $(O)/end.o
-FONT = ../../kernels/lib_machine/font1.bin
+FONT = fonts/tiny.font
 PROGS = sh rc emacs office troff play mltests paint windows square tetris calc temp ping get put httpd utils ed bigmem www prof db vcs build as ld cc ml trace debug
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
@@ -167,12 +169,15 @@ $(O)/kernel.tm: $(KML) $(O)/lib/Stdlib.tm $(TMLBIN)
 	@mkdir -p $(@D)
 	$(TML_L) -o $@ $(filter %.ml,$^)
 
-# the font's bytes, and k_font(), where they are (an ML integer)
+# the font's bytes, k_font(), where they are, and k_font_size(), how
+# many (ML integers)
 $(O)/font.tm: $(FONT)
 	@mkdir -p $(@D)
-	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' > $@
+	printf 'k_font:\n\tla\tr13, font\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\n' > $@
+	printf 'k_font_size:\n\tla\tr13, font_end\n\tla\tr12, font\n' >> $@
+	printf '\tsub\tr13, r13, r12\n\tshli\tr13, r13, 1\n\tori\tr13, r13, 1\n\tret\nfont:\n' >> $@
 	od -An -v -tu1 $(FONT) | awk 'NF { printf "\t.byte\t%s", $$1; for (i = 2; i <= NF; i++) printf ", %s", $$i; print "" }' >> $@
-	printf '\t.align\t4\n' >> $@
+	printf 'font_end:\n\t.align\t4\n' >> $@
 
 $(O)/runtime.tm: ../TinyMLRuntime/core.c
 

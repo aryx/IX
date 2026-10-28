@@ -37,7 +37,8 @@ let () =
                  at = 0xf00000; repl = false } in
   let c =
     TinyKernelGraphics.connect screen
-      (TinyKernelGraphics.font_mask 0x1000 (TinyKernelGraphics.alloc 16384)) in
+      (TinyKernelGraphics.font_mask 0x1000 (String.length font)
+         (TinyKernelGraphics.alloc 16384)) in
   TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
     output_string oc (TinyMemory.ppm ()))

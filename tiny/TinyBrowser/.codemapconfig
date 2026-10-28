@@ -33,7 +33,7 @@
         { at: 'def:lay_table', weight: 1 },
       ],
     },
-    'TinyBrowserPage.ml': { digest: 'ac343d06c531',
+    'TinyBrowserHtml.ml': { digest: 'ac343d06c531',
       summary: "A page read: each tag a row of a table (block, bold, hidden...), a stack of open elements giving the next word its look.",
       capitals: [
         { at: 'def:open_tag', say: "a tag's meaning a row of [kinds], combined with its parents'" },
@@ -56,17 +56,17 @@
     {
       name: 'www: a page read as it arrives',
       bones: [
-        { at: 'TinyBrowserPage.ml:def:feed', role: 'a message of the page' },
+        { at: 'TinyBrowserHtml.ml:def:feed', role: 'a message of the page' },
         { at: 'TinyBrowserTokens.ml:def:tokens', role: 'its tags and texts' },
-        { at: 'TinyBrowserPage.ml:def:open_tag', role: 'the stack of open elements' },
+        { at: 'TinyBrowserHtml.ml:def:open_tag', role: 'the stack of open elements' },
         { at: 'TinyBrowserLines.ml:def:word', role: 'a word into a line' },
         { at: 'TinyBrowserLines.ml:def:lay_table', role: 'a table, at its end' },
       ],
       joints: [
-        { from: 'TinyBrowserPage.ml:def:feed', to: 'TinyBrowserTokens.ml:def:tokens', say: 'bytes' },
-        { from: 'TinyBrowserTokens.ml:def:tokens', to: 'TinyBrowserPage.ml:def:open_tag', say: 'tokens' },
-        { from: 'TinyBrowserPage.ml:def:open_tag', to: 'TinyBrowserLines.ml:def:word', say: 'words' },
-        { from: 'TinyBrowserPage.ml:def:open_tag', to: 'TinyBrowserLines.ml:def:lay_table', say: "cells' words" },
+        { from: 'TinyBrowserHtml.ml:def:feed', to: 'TinyBrowserTokens.ml:def:tokens', say: 'bytes' },
+        { from: 'TinyBrowserTokens.ml:def:tokens', to: 'TinyBrowserHtml.ml:def:open_tag', say: 'tokens' },
+        { from: 'TinyBrowserHtml.ml:def:open_tag', to: 'TinyBrowserLines.ml:def:word', say: 'words' },
+        { from: 'TinyBrowserHtml.ml:def:open_tag', to: 'TinyBrowserLines.ml:def:lay_table', say: "cells' words" },
       ],
     },
   ],

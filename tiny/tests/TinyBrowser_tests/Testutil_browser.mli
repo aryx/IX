@@ -6,4 +6,4 @@
 
 (* [dump page width]: the page's lines so far, [width] its columns, and
  * where its <meta> refresh sends us, if anywhere *)
-val dump : TinyBrowserPage.page -> int -> string
+val dump : TinyBrowserHtml.page -> int -> string

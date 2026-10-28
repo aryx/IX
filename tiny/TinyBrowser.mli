@@ -7,9 +7,10 @@
  * they arrive, into the lines shown on the screen; it is most of what
  * follows, and the modules of TinyBrowser/. The browser around it, www,
  * this file, asks the wire's other end (TinyMachinePeer, which speaks
- * HTTPS for it) for the page and then its pictures, draws the lines as
- * they come, follows links (TinyBrowserAddress finds where they go),
- * and has TinyLibGUI's menus and an address field.
+ * HTTPS for it) for the page in HTTP (TinyBrowserHttp) and then its
+ * pictures, draws the lines as they come (TinyBrowserScreen, with
+ * TinyLibGUI's menus and an address field), and follows links
+ * (TinyBrowserAddress finds where they go).
  *
  * The main idea: {b a page is read only once, as it arrives, and turned
  * directly into lines}. There is no document tree and no style sheet.
@@ -30,7 +31,7 @@
  *                                          words are kept and laid out
  *                                          at </table>
  *
- *     (the tokens: TinyBrowserTokens; the open tags: TinyBrowserPage;
+ *     (the tokens: TinyBrowserTokens; the open tags: TinyBrowserHtml;
  *     the words, the lines and the tables: TinyBrowserLines; and
  *     TinyBrowserText under them all, the entities and UTF-8 to ASCII)
  *

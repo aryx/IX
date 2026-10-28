@@ -1,7 +1,7 @@
 (* The text of a page as tiny-machine's font can show it, and the few
  * string functions the reading needs: TinyBrowser's lowest part, under
  * TinyBrowserTokens (a tag's attributes, a page's text) and
- * TinyBrowserPage (classes, styles, numbers).
+ * TinyBrowserHtml (classes, styles, numbers).
  *
  * The font has only 128 characters, so UTF-8 and HTML entities become
  * ASCII here: a dash becomes -, a curly quote a straight one, an

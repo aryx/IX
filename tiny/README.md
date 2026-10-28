@@ -20,7 +20,8 @@ the tree, Printf's formats, the parser, the types, the stack machine,
 the tree compiled), `TinyOffice.ml` and `TinyOffice/` (the page's
 model, a module for each kind of box, the file), `TinyBrowser.ml`
 and `TinyBrowser/` (the reading of a page: the characters, the
-tokens, the lines, the tags; the addresses). The file is the program
+tokens, the lines, HTML's tags; the addresses, HTTP, the screen). The
+file is the program
 and its `.mli` the place to start; the parts are its units, compiled
 before it by OCaml (a library of their own in the directory's `dune`)
 and by tiny-ml (`TinyKernel/Makefile`'s units, in their order). The

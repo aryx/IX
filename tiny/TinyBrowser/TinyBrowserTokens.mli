@@ -1,5 +1,5 @@
 (* The HTML tokenizer of TinyBrowser: a page's messages, as they come,
- * to its tags and its texts, which TinyBrowserPage turns into lines.
+ * to its tags and its texts, which TinyBrowserHtml turns into lines.
  *
  * A message can end anywhere, even in the middle of a tag, of an
  * entity like &amp;, or of a multi-byte UTF-8 character. The reader

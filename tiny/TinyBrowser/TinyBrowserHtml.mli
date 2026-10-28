@@ -1,7 +1,9 @@
-(* A page being read, TinyBrowser's reading as a whole: the tokens of
- * TinyBrowserTokens given, one after the other, to a stack of open
- * elements, and each word of a text sent to TinyBrowserLines' flow
- * (or to a table's cell, or to a large heading). What the browser
+(* HTML, as TinyBrowser reads it: a page being read, the reading as a
+ * whole (named after the language, as a browser's HTML parser is: what
+ * each tag means is here). The tokens of TinyBrowserTokens given, one
+ * after the other, to a stack of open elements, and each word of a text
+ * sent to TinyBrowserLines' flow (or to a table's cell, or to a large
+ * heading). What the browser
  * keeps of a page is its lines, its title, its anchors and its
  * pictures; there is no tree.
  *

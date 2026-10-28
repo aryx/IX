@@ -1,6 +1,6 @@
 (* What TinyBrowser keeps of a page, its lines, and how words become
  * lines: a flow wraps them at the screen's width, and a table's cells,
- * kept until </table>, are laid out side by side. TinyBrowserPage says
+ * kept until </table>, are laid out side by side. TinyBrowserHtml says
  * which words go where; TinyBrowser draws the lines.
  *
  * A line is a few runs, each a text at a column with a look and a

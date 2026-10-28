@@ -232,12 +232,13 @@ I_TinyOffice = $(GUI) $(OFFICE)
 I_TinyTroff = $(GUI) $(OFFICE)
 I_TinyPlay = $(GUI)
 # (TinyBrowser.ml on its parts, TinyBrowser/)
-BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserPage TinyBrowserAddress TinyBrowserHttp
+BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserHtml TinyBrowserAddress TinyBrowserHttp
 I_TinyBrowserTokens = TinyBrowserText
-I_TinyBrowserPage = TinyBrowserText TinyBrowserTokens TinyBrowserLines
+I_TinyBrowserHtml = TinyBrowserText TinyBrowserTokens TinyBrowserLines
 I_TinyBrowserAddress = TinyBrowserText
 I_TinyBrowserHttp = TinyBrowserText
-I_TinyBrowser = $(GUI) $(BROWSER)
+I_TinyBrowserScreen = $(GUI) $(BROWSER)
+I_TinyBrowser = $(GUI) $(BROWSER) TinyBrowserScreen
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
 I_TinyEditorLine = $(I_TinyUtilities)
@@ -300,9 +301,10 @@ F_TinyMachineISA = ../TinyMachine/TinyMachineISA.ml
 F_TinyBrowserText = ../TinyBrowser/TinyBrowserText.ml
 F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
 F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
-F_TinyBrowserPage = ../TinyBrowser/TinyBrowserPage.ml
+F_TinyBrowserHtml = ../TinyBrowser/TinyBrowserHtml.ml
 F_TinyBrowserAddress = ../TinyBrowser/TinyBrowserAddress.ml
 F_TinyBrowserHttp = ../TinyBrowser/TinyBrowserHttp.ml
+F_TinyBrowserScreen = ../TinyBrowser/TinyBrowserScreen.ml
 F_TinyOfficeModel = ../TinyOffice/TinyOfficeModel.ml
 F_TinyOfficeText = ../TinyOffice/TinyOfficeText.ml
 F_TinyOfficeSheet = ../TinyOffice/TinyOfficeSheet.ml
@@ -326,7 +328,7 @@ F_TinyCMachine = ../TinyC/TinyCMachine.ml
 # (a static pattern's targets: make uses an implicit rule once in a
 # chain, and a unit's interface is another unit's prerequisite)
 UNITS = TinyCalls TinyLibSystem TinyLibSymbols TinyLibRegex TinyLibDraw TinyLibPlayground TinyLibGUI TinyProfiler TinyDatabase TinyVCS TinyBuildSystem TinyMachineISA TinyAssembler TinyLinker $(CC_PARTS) TinyC $(MLC) TinyML \
-  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowser TinyTracer TinyDebugger \
+  TinyWindows TinyAppTetris TinyAppCalculator TinyAppTemperature TinyEditorScreen $(OFFICE) TinyOffice TinyTroff TinyPlay $(BROWSER) TinyBrowserScreen TinyBrowser TinyTracer TinyDebugger \
   TinyShell TinyUtilities TinyEditorLine Square Machine Tetris Calc Temp Emacs Office Troff Play Www Bigmem Trace Debug
 .SECONDEXPANSION:
 $(UNITS:%=$(U)/%.tm): $(U)/%.tm: $$(addprefix $(U)/,$$(addsuffix .tmi,$$(I_$$*))) $$(or $$(F_$$*),../$$*.ml) $(O)/lib/Stdlib.tm $(TMLBIN)

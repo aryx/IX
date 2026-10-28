@@ -170,7 +170,7 @@
  (name tiny_browser)
  (wrapped false)
  (modules TinyBrowser)
- (libraries tiny_lib_gui tiny_browser_parts))
+ (libraries tiny_lib_gui tiny_browser_parts tiny_browser_screen))
 
 (executable
  (name TinyML)

@@ -50430,3 +50430,1036 @@ Claude identified two likely speedups in `face`: reading `r.near`, `r.far`, `r.s
 Claude also suggested skipping the per-face copy into `cx/cy/cz` when no corner is behind the eye, and computing `float r.width /. 2.` once.
 Claude judged the land tiles (1,400 faces) the next level-of-detail target, but harder, because coarser far tiles would leave cracks at the near boundary.
 Claude planned to keep the land tile work for later and let the profile confirm the `face` changes first.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:48
+
+**Yoann:**
+
+> perfect, let's commit
+
+**Claude (summary):**
+
+Claude ran `make test` in the main checkout before committing, and the suite passed on rerun.
+Claude committed the `gettimeofday` change as 7dd029cc, adding it to mini-5i for arm and arm64.
+The commit touches one file and adds 11 lines.
+The single `make test` failure came from the OCaml 5.5 job colliding with another session's running dune instance.
+Claude said the other 134 jobs passed and that it would rerun collided jobs when this happens again.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:53
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude reported that the projected build compiles and keeps the same arithmetic order.
+Claude checked all 11 sessions against both builds, and every one passed.
+Claude said the rivals still drive exactly as before, so behavior is unchanged.
+Claude planned to measure everything together on arm once the face measurement was in.
+Claude's answer otherwise stayed on the optimization work and its verification.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:05
+
+**Yoann:**
+
+> It looks like we're doing lots of optimizations ... I'm wondering whether this will end and whether we have seriously complicated the code ... for sure there is teaching value but as the code gets bigger, it also decrease potentially
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:06
+
+**Yoann:**
+
+> maybe we should use the GPU of the Pi2 instead and the coude would be simpler again (or maybe we can add a variant with that to compare, great teaching value too)
+
+**Claude (summary):**
+
+Claude recommended the Pi 2 GPU as a third render back end, `render=gpu`, already planned in `plan_gpu.md` (decision 9).
+Claude estimated the GPU would take over fill, span and clear, roughly 14M of the 34M per frame, reaching 12–14 fps.
+The main cost is testing: no emulator runs the GPU, so each step needs a card build, a flash, and a photo or console output.
+Claude proposed closing today's software work first, then retargeting `plan_gpu.md` to the Pi 2 with stage 4, one triangle on the board, first.
+Claude said it would write the `plan_gpu.md` update for review before any kernel code, pending Yoann's approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:10
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:11
+
+**Yoann:**
+
+> but virtua racing is a very old game; how could it run smoothly on those old machines far less powerful than our Pi2 ?
+
+**Claude (summary):**
+
+Claude explained that Virtua Racing's arcade Model 1 split the work across a V60 CPU, Fujitsu DSPs, and Sega's custom pixel hardware.
+Claude contrasted that with mini-9pi, which runs everything on one Cortex-A7 core, and mini-ml's slow float code.
+Claude argued the Pi 2 has spare power, and the planned GPU step (plan_gpu.md, G0 to G3) would use the chip's dedicated drawing unit.
+Claude reported that make test passes with the caches (135 jobs, 0 failures) and the arm measurement is still running.
+Claude left the plan section uncommitted for Yoann to review, and will propose the commit once the caches' numbers are in.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:17
+
+**Yoann:**
+
+> I like this discussion about the original hardware and how it compares; let's add it in one of the .mli or in the README of the game
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:17
+
+**Yoann:**
+
+> and let's commit
+
+**Claude (summary):**
+
+Claude committed the work as 39730804: per-frame caches for the course, braking turns, and minimap dots, with 11 sessions byte-identical and `make test` passing.
+Claude added a README section on the arcade's Model 1 hardware and how it maps to the code, with figures flagged as unverified from memory.
+Claude also retargeted `plan_gpu.md` to virtua's renderer on the Pi 2, in four steps G0 through G3, each ending with a card to try.
+Claude noted that `Render.ml` grew from 307 to 426 lines and the GPU is now the way forward.
+The caches' instruction count on arm is still pending, and Claude offered to add it to the Speed table later.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:18
+
+**Yoann:**
+
+> maybe we could add a simialr discussion for the quake and doom README.md, comparing to a 486dx2 66 or pentium, the typical machine of the time of the game
+
+**Claude (summary):**
+
+Claude proposed the Doom and Quake READMEs as a hardware-free comparison, with a "The PC of 1993/1996, and the Pi 2" section for each. Claude wrote `games/fps/doom/README.md` and `games/fps/quake/README.md`, each with an introduction and that hardware section. The Doom section covers the 486DX2-66 technique and the cost of 150 ARM instructions per pixel versus 265 in a fight. The Quake section covers the Pentium's FPU, the PVS, the edge list, the surface cache, and 360 instructions per pixel. Claude asked whether to commit the two new, uncommitted files.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:20
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that every change from today is committed, listing virtua, level of detail, painter's algorithm, ordering table, caches, and doom/quake READMEs.
+Claude said the caches' instructions-per-frame measurement on arm is still pending and would be added to virtua's Speed table when it lands.
+Claude asked Yoann to run race fps with sound=off, render=table and render=painter on the 12:38 Pi 2 card.
+Claude noted those fps numbers would show how far the emulator's counts are from the real board.
+Claude said the GPU plan's first step, G0 (full firmware on the card), is ready to start after that.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:02
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude proposed four next steps, with open-coding `Bytes.get_int32_le`-style reads as the first priority.
+Claude also suggested profiling tiny-machine to explain its 3.2× slowdown, with the full `paint` session run in the background.
+Claude ranked unboxing `int32` in ssa (Stage 4b) third, conditional on `sha` still being dominated by boxes after step 1.
+Claude listed moving the simple back end's in-place code out of `simple/Gen.ml` as a readability-only refactor, fourth.
+Claude proposed starting with item 1 while item 2 runs in the background, since it is mostly waiting.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:23
+
+**Yoann:**
+
+> I like this plan, but let's do 4 first, cleaning up code. note a huge fan though of this huge ssa/Prims.ctx record ... any simpler alternative that keep those opti out of the simple code path and does not require this huge ctx to be passed?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:21
+
+**Yoann:**
+
+> mini-ml opti got merged in main so maybe we should regenerate the card
+
+**Claude (summary):**
+
+Claude checked that `bin/mini-ml` was built from the merged HEAD, after compiler commit e1409546.
+Claude then ran `make card`, rebuilding `kernels/9pi/build/card.img` at 13:25 with the merged mini-ml.
+Claude added a caches row to virtua's README Speed table, showing 30.3M (−10.8%), uncommitted.
+Claude offered to commit the README change, waiting for Yoann's word before doing so.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:23
+
+**Yoann:**
+
+> I really don't think such a big record is readable and improve the readability of the code that was before
+
+**Claude (summary):**
+
+Yoann's follow-up "let's do both" points at the whole plan, so I'll focus on it.
+Claude recommended dropping the 27-field record from Emit and restoring Emit's earlier form, since `ssa/` already separates the optimizing path.
+Claude proposed putting the open-coded primitives under a single banner in Emit, moving the `Prims.mli` explanation to its head, and accepting about 1,100 lines.
+Claude also proposed removing the open-coding from `simple/Gen.ml`, so `-O0` calls the runtime for every primitive, saving about 100 lines.
+Claude noted the cost is slower `-O0` code, which is only the reference path, while mkfiles build with `-O3`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 11:53
+
+**Yoann:**
+
+> (it might be legit, but I don't fully understand them, which is why I'm asking more info)
+
+**Claude (summary):**
+
+Claude explained that tiny-machine's time is its instruction count, so host slowness made the audio run at about 87% speed.
+Claude traced the real bug to the kernel's audio write, which copied and parsed the 2 KB block on every 10 ms retry, and proposed sleeping until the exact tick when room would exist.
+Claude proposed replacing the pattern-matched idle shortcut (a `j` to itself in `k_idle1`) with an explicit `wfi`/`hlt` instruction that the kernel executes when idle.
+Claude said the explicit instruction would keep identical machine state and output, while making the idle behaviour defined by the ISA instead of inferred.
+Claude reported the run going from 11.0 s to 6.1 s on the host, with the kernel change cutting instructions from 135M to 88M.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:45
+
+**Yoann:**
+
+> let's add this wfi/hlt instruction (and the discussion above next to it in comment)
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:38
+
+**Yoann:**
+
+> let's do both
+
+**Claude (summary):**
+
+Claude planned two commits, with Prims restored into Emit first and simple's Gen trimmed second.
+Commit be4b63ee put the open-coded primitives back into Emit under one explanatory section, removing the `ctx` record.
+Commit b0ef73ed made simple's -O0 Gen call the runtime for every primitive, dropping it from 621 to 452 lines.
+To keep -O3 working, Emit now compiles the start object's curry functions when -ssa is on, giving mini-ml a 0.861 ratio.
+Claude also reset three stale shared-index entries to HEAD, and reported the test suites passing, with two flaky mini-lex and mini-yacc comparisons.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:41
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that both pending changes were already committed: be4b63ee moved `ssa/Prims.ml` back into Emit.
+Claude reported that commit b0ef73ed moved the open coding out of Gen, with mini-ml compiling itself at 0.861.
+Claude noted that `git status` shows only `docs/plans/bugs/ix.md`, a change from another session, which it left untouched.
+Claude explained that neither commit is pushed, so `main` is ahead of `origin/main`.
+Claude had listed its plan steps 1 through 3 for the user to choose from, but the reply itself did not spell them out.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:46
+
+**Yoann:**
+
+> what do you think? Worth adding the instr to the ISA?
+
+**Claude (summary):**
+
+Claude recommended wiring the `wfi` instruction into the ix machine and assembler, then reflowing a help line.
+Claude switched the kernel's cores test idle loop from `wait0: j wait0` to `wfi`, which also exercises the new instruction.
+The cores test's core 0 idle share dropped from 96% to 48%, so Claude traced it and found the `wfi` wake now counts as kernel time.
+After recording that rounding change, all 135 jobs passed, including tiny-kernel's recorded screens and sounds.
+Claude then noticed other sessions editing TinyKernelIO, TinyKernelCalls and TinyKernelFiles, and began checking which changes were its own.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:44
+
+**Yoann:**
+
+> ok let's follow your plan, 1, 2, 3
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:49
+
+**Yoann:**
+
+> I'll be back in 3 hours
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:51
+
+**Yoann:**
+
+> are we over optimizing those open coding numbers? Does ocaml-light ocamlopt do the same? for all those Int32 and float and int and so on?
+
+**Claude (summary):**
+
+Claude explained that each open-coded primitive costs code in Lower, Emit, and the runtime's C slow path.
+Claude noted that the table's Pxxx names, like Paddfloat and Pintcomp, come from ocaml-light's primitive enumeration.
+Claude argued that a primitive is worth open-coding only where a measured program spends time in it.
+Claude judged each int32 and byte-reader entry against that cost, leaving int64 as C calls.
+Claude recommended keeping in-place int32, dropping unboxed int32, and deciding the byte readers by measurement.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:59
+
+**Yoann:**
+
+> ok. Also I can see in Emit.ml we directly output assembly whereas in the table above you use Pxxx intermediate enums. Should we do the same for mini-ml?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:59
+
+**Yoann:**
+
+> Is it Cmm?
+
+**Claude (summary):**
+
+Claude explained that `Pxxx` constructors belong to Lambda, not Cmm, with Cmm using `Caddf` and `Calloc`.
+Claude mapped mini-ml's Ir to Lambda-level primitives, while Ssa after Unbox and Untag sits roughly where Cmm is.
+Claude noted that mini-ml has no Mach stage, since Alloc assigns registers and Emit prints instructions directly.
+Claude said the proposed Ir cleanup, replacing strings like `Float2 "caml_addfloat"` with variants, works at the Lambda level.
+Claude's point: the cleanup adds no Cmm or Mach stage, and it would make Ir's primitives resemble `Paddfloat`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 12:35
+
+**Yoann:**
+
+> ok great! What's next?
+
+**Claude (summary):**
+
+Claude recommended flashing the 13:25 card to measure the real frame rate on the board.
+Claude predicted that `virtua sound=off` would reach roughly 9–10 fps, up from this morning's 6 fps.
+Claude suggested also comparing `render=table`, `render=painter`, `virtua` with sound, and doom and quake on the board.
+Claude explained that these board numbers would show how well the emulator's instruction counts predict real speed.
+Claude also committed the README row as acc67c3c and proposed GPU step G0 as the next step.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:17
+
+**Yoann:**
+
+> ok doom 'graphics=only' is around 30fps so it feels better than before! probably the work on mini-ml
+
+**Claude (summary):**
+
+Claude said the doom `graphics=only` result of about 30 fps matches its 9.6M-instructions-per-frame prediction at 280 MIPS.
+Claude was unsure mini-ml explains much of the gain, since the merge alone cut doom's frame cost only about 2.4% (b0ef73ed).
+Claude attributed most of the difference to the mode itself, plus the floats and sound work from 2026-10-26, rather than the merge.
+Claude proposed updating doom's README "On the board" line to record about 30 fps with `graphics=only` on 2026-10-27.
+Claude asked for virtua measurements with `sound=off`, `render=table`, `render=painter`, and `lod=off` before starting G0.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:19
+
+**Yoann:**
+
+> quake graphics only is around 18fps, also might be slightly better than my last try
+
+**Claude (summary):**
+
+Claude proposed counting quake's `graphics=only` frame at the same spot with the current mini-ml, using mini-5i and the `perf.sh` method. Claude said that a count near 15.5M would confirm the 280M-a-second estimate and credit the gain to compiler work, while a lower count would point to `graphics=only`. Claude asked whether to run the count and then update both READMEs' "On the board" lines (doom about 30, quake about 18), leaving the edits uncommitted. Claude also noted the quake figure of 23.2M a frame from the level start, which was a whole-game count rather than `graphics=only`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:21
+
+**Yoann:**
+
+> doom (sounds and sprite and all) is indeed around 24 fps at the beginning but entering the big room slow down things signficantly
+
+**Claude (summary):**
+
+Claude said the start runs at 24 fps, and the big room was the worst case at 4 fps.
+Claude recommended profiling the big room with mini-5i, comparing frame counts with everything on and with `graphics=only`.
+Claude planned to check whether the frame count reached 10 or more, which would mean the sound fix worked.
+Claude proposed fixing whatever the profile pointed to, keeping the old path switchable with an `(* old: *)` comment.
+Claude asked how many fps Yoann sees in the big room before starting the profile.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:23
+
+**Yoann:**
+
+> actually doom is playable with sounds and sprites and all on the Pi2. it slows down but remain playable in the big room, very good news and I think some progress. maybe the improvements in mini-ml and lib_audio paid
+
+**Claude (summary):**
+
+Claude credited lib_audio for most of the doom gain, with mini-ml adding only a few percent.
+Claude proposed a quake README line of about 18 fps with graphics=only, measured 2026-10-27.
+Claude set that against the earlier quake measurement of about 15 fps from 2026-10-22.
+Claude's 18 fps figure came from graphics=only runs, so it did not cover sound at all.
+Claude asked before writing the README edits, leaving them uncommitted pending Yoann's approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:26
+
+**Yoann:**
+
+> quake is not playable with sound and all; it starts at 18fps but quickly goes down under 7 and even less
+
+**Claude (summary):**
+
+Claude said Quake's slowdown looks like a growing leak, not a harder level, since it drops from 18fps to under 7.
+Claude proposed a test: stand still at the start and see whether the slowdown still happens.
+Claude suggested suspects: never-ending sound channels, a heap that never evicts particles or surface cache, and monsters that stay awake.
+Claude offered to run quake under mini-5i at frames 100, 500, 1000 and 2000, then diff early and late profiles with mini-prof -diff.
+Claude asked whether to start that run.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:27
+
+**Yoann:**
+
+> virtua is at 8fps
+
+**Claude (summary):**
+
+Claude reported virtua at 8 fps, up from 6, and estimated about 9 fps from the instruction count.
+Claude found the board gained less than predicted, because the frame's copy through the draw device goes uncounted by mini-5i.
+Claude said that fixed copy cost also limits the GPU plan, since G3 would not reach 20 fps unless the copy shrinks.
+Claude recommended starting with Quake's slowdown, counting frames over time under mini-5i, before the GPU work.
+Claude asked whether to start with Quake, which Yoann's reply, "quake falls when there are monsters like the dogs", points toward.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:28
+
+**Yoann:**
+
+> quake falls when there are monsters like the dogs
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:28
+
+**Yoann:**
+
+> let me test virtual graphics=only
+
+**Claude (summary):**
+
+Claude reran the failed benchmark runs from the repository root, where the data could be found.
+Claude started a profile of six side-by-side runs, to find which per-step cost slows the monsters.
+Claude named two candidates: `Physics.trace_with` tests every entity's box, not only nearby ones.
+Claude flagged `Brushes.solids` rebuilding the door, lift and wall list on every trace, which grows with awake monsters.
+Claude said model drawing or sounds might be the real cost instead, to be settled when the counts return.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:31
+
+**Yoann:**
+
+> virtua sound=off is around 11fps, sometimes 13, starting to be playable
+
+**Claude (summary):**
+
+Claude said the earlier estimate was wrong: `perf.sh` runs virtua with `sound=off`, so its 30.3M should be compared with the 11–13 fps.
+Claude found the drawing is cheaper than predicted, about 9 fps at 280M instructions a second, so the hidden-copy guess was dropped.
+Claude concluded the sound is the cost: 8 fps against 11–13 is roughly 30–40 ms a frame, or 10M+ instructions.
+Claude recommended profiling virtua with sound on, on the same frames, and diffing against `sound=off` to find synthesis, mixing, or format conversion.
+Claude planned this after quake's profile finishes, since the sound fix looks like the cheapest win, similar to doom's lib_audio.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:32
+
+**Yoann:**
+
+> ok let's profile virtua's sound then
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:32
+
+**Yoann:**
+
+> in the mean time what should i also test on the board?
+
+**Claude (summary):**
+
+Claude recommended running virtua's board tests with sound off, comparing render=table, render=painter, and lod=off for the README.
+Claude also suggested a Doom big-room fps check with and without sound, to isolate how much slowdown is sound.
+Claude proposed testing Quake near the dogs with sound=off, which would show whether the dogs' sounds cause the slowdown.
+Claude placed a Quake standing-still soak test and a Pi 1 boot check lower on the list.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:34
+
+**Yoann:**
+
+> doom is also playable under rio in a windows
+
+**Claude (summary):**
+
+Claude recommended noting that rio's extra frame copy doesn't spoil doom's playability in the README.
+Claude suggested sending an fps figure for rio so the gap from full screen shows what rio costs.
+Claude said the two profiles were still running and would be reported once they finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:36
+
+**Yoann:**
+
+> with render=table and sound off we get 11fps too but the graphics are not as good and the road for instance often disappears and shows green instead
+
+**Claude (summary):**
+
+Claude explained that the green road holes come from sorting whole faces by one distance to their middle.
+Claude noted that the painter's algorithm has the same flaw, since it also orders whole faces by a single distance.
+Claude said a grass face whose middle is nearer than the road's can be drawn after the road and cover it.
+Claude proposed a PlayStation-style fix: draw ground faces in a layer first, leaving depth untouched and asking to proceed after profiling.
+Claude also pointed to render=depth as flaw-free at the same speed, 11 fps.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:38
+
+**Yoann:**
+
+> same with render=painter, 9fps and graphics bugs
+
+**Claude (summary):**
+
+Claude confirmed 9 fps matches the count prediction: 11 × 34.0 / 41.4 ≈ 9, agreeing with depth and table measurements.
+Claude noted the painter's glitches share the table's cause, one distance per face, so the ground-first fix would apply to both.
+Claude explained the painter is slower because sorting about 5,500 faces costs more than the table's 4,096 slots.
+Claude said it would record the three measured numbers in virtua's README "Speed" section once profiles return.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:38
+
+**Yoann:**
+
+> yes let's try the ground first fix
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:38
+
+**Yoann:**
+
+> in the mean time anything I should test on the board?
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:39
+
+**Yoann:**
+
+> also rebirth is still extremely slow, under 1fps
+
+------------------------------------------------------------------------
+
+## 2026-10-27 14:01
+
+**Yoann:**
+
+> ok let's do the Ir variants cleanup after part 1
+
+**Claude (summary):**
+
+Claude proposed committing the two ready changes separately, since you want one commit per feature.
+Claude prepared the SIGTERM commit in machine/CLI.ml, where mini-5i now writes its profile and count when stopped.
+Claude prepared the stage 4b commit, open-coding little-endian 16 and 32-bit Bytes and String accessors, with a new test.
+Claude reported tiny-machine's paint session dropping from 3.28 s to 2.67 natively, and mini-ml self-compiling at 0.988.
+Claude held the Ir variants cleanup until both commits landed, since it edits the same files as stage 4b.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 13:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude said all the changes were its own and that it would commit ten files, listing them by name.
+Yoann's follow-up, about a .wav file playing silently and whether `-window` is needed for audio, is not a reaction to that commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:52
+
+**Yoann:**
+
+> why play the .wav does not make sound? I need -window to have the audio device working?
+
+**Claude (summary):**
+
+Claude explained that sound needs `-window`, because tiny-machine only sends samples to the host speakers through the window.
+Claude described three modes: `-window` plays through SDL, `-audio a.wav` writes samples to a file at halt, and neither discards them.
+Claude gave the commands to hear playback with `-window` and to verify output with `-audio out.wav`, which `make check` uses.
+Claude noted that live playback without a window would need a new feature such as `-audio-live` or piping to `aplay`.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:39
+
+**Yoann:**
+
+> even with the lib_audio improvements
+
+**Claude (summary):**
+
+Claude proposed Alias.triangle as the first commit, keeping the old code as an `(* old: *)` comment.
+Claude found Quake's monsters cost about 20M instructions a frame, mostly in drawing their models.
+Claude estimated that stepping triangle edges once, as id's renderer does, would cut that to 5–7M.
+Claude proposed a rational `tanh` in `lib_audio`'s `soft_clip`, saving about a quarter of virtua's sound.
+Claude left the virtua ground-first fix uncommitted, waiting for Yoann's go-ahead before committing it.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:55
+
+**Yoann:**
+
+> ok it worked and it plays better now! It sometimes lag a bit, but it's mostly good now
+
+**Claude (summary):**
+
+Claude suggested the remaining lag may come from host load, kernel work, or the upfront read of the 141 KB WAV.
+Claude proposed running with `-rate 12` to test whether the host was falling behind the 20M-instruction window.
+Claude recommended trying a larger lead in the SDL audio queue first, since it is smaller and targets the stalls directly.
+An adaptive window rate in tiny-machine was offered as the second, larger fix.
+Neither fix was started; Claude asked whether Yoann wants one.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:57
+
+**Yoann:**
+
+> let's commit the ground fix and then do Alias.triangle and do 1 and 2
+
+**Claude (summary):**
+
+Claude committed the ground fix as 4f256446 after the test passed alone with zero failures.
+Claude confirmed all ten recorded quake frames stayed byte-identical with the Alias.triangle change, fight included.
+Claude wrote soft_clip in both the playground and the other game, with Mix.exact_tanh as the switch back to libc tanh.
+Claude checked how far the soft_clip approximation drifts from tanh before building.
+Claude left the two builds, audio tests, and quake triangle count running in the background, with no results yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 17:51
+
+**Yoann:**
+
+> let's commit and then do the Ir variants cleanup
+
+**Claude (summary):**
+
+Claude reported committing stage 4b and the SIGTERM change as a0a5ac49 and c6b1df3f.
+Claude then refactored Ir's string-named constructors into typed ones: Float2, Float1, Int32, Int32OfInt and Int32ToInt.
+It added Lower.runtime_function to hold the C primitive names that Gen and Emit previously duplicated, and switched Emit to constructor matching.
+Claude verified the change emits identical assembly to HEAD across 624 compilations, and `make test` passed (135 jobs, 0 failures).
+Claude left the Ir cleanup uncommitted and asked whether to commit languages/ml/{simple,ssa} and the ledger.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 19:36
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude committed the Virtua ground fix as 4f256446, with tiny-kernel's network test failing under load.
+Claude finished Alias.triangle for Quake, cutting the fight frame from 29.0M to 21.8M, left uncommitted.
+Claude added a rational soft_clip tanh to ix's lib_audio and the playground, matching seven audio sessions byte for byte.
+Claude restarted a 20-minute arm race measuring sound cost after the first run used stale lib_audio.
+Claude asked whether to commit the playground change, and proposed three commits once the count finished.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 19:36
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the work as e261f3aa, including the ledger row, leaving nothing uncommitted.
+Claude proposed three next steps, with getting the mini-ml emulators running as its first pick.
+Claude's suggestion was to fix mini-ml's memory limits, since tiny-machine and mini-5i store machine memory in one large Bytes.
+Claude also flagged that small lib_core functions like Pervasives.lnot aren't inlined across directories, costing about 1.2% of tiny-machine's profile.
+Claude's third option was jump tables for match, measured on tiny-machine's step function at 15% of its profile.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 18:00
+
+**Yoann:**
+
+> ok let's close this session now I think, we reached a goal
+
+**Claude (summary):**
+
+Claude listed the session's commits, starting with f8cc6e5a, which woke blocked audio writes instead of polling.
+Claude noted that idle_skipped in 51096869 was a guessing fix that f586eed1 replaced with wfi.
+Claude reported that wfi cut play's host time from 11.0 s to 6.45 s.
+Claude flagged that make self-quick was not rerun, and v0 and t6 still idle in a self-jump.
+Claude confirmed nothing was left uncommitted and listed two options for the remaining audio lag.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:18
+
+**Yoann:**
+
+> progress?
+
+**Claude (summary):**
+
+Claude readied Quake's `Alias.triangle` change, dropping the fight frame from 29.0M to 21.8M without committing it.
+Claude noted that `models=simple` restores the old behavior if the new path causes trouble.
+Claude readied `soft_clip` in ix and `~/playground`, with audio tests passing and matching the playground byte for byte.
+Claude re-recorded one sum, `TinyMissileCommand war`, to match the playground output.
+Claude left the soft_clip profile check and the 1.66M vs 2.18M puzzle still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:28
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude had committed 7ea07f2a, 1c73082b and 90c4b4b6 after make test passed, with the board card still pending.
+Claude traced the remaining sound cost to mini-ml's code, where float phi values get boxed every sample.
+Claude rejected a lib_audio workaround, since it bends ix's code around a compiler weakness.
+Claude proposed recording the float-box fix in plan_ml_speed.md for the mini-ml session, with the 190-instruction measurement.
+Claude then planned to profile quake's sound first, in games/fps/quake/sound/, for a possible algorithmic cost.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:27
+
+**Yoann:**
+
+> for tiny-www, can we use the mini-netscape survey to check whether tiny-www can display popular websites mentioned in the survey? Also it might be good to have a key that go to a search engine (maybe not google as it seems complicated and may require some JS, but maybe a free popular search engine that would fit well tiny-www)
+
+**Claude (summary):**
+
+Claude ran the mini-netscape survey sites through tiny-www and found HN's rank numbers and LWN's `[$]` headlines breaking apart.
+Claude fixed both layout bugs by adding heading and nested-cell handling, so HN now reads like a text browser.
+Claude added an `s` search key and a Search item in the Go menu, sharing address rules through TinyBrowserAddress.absolute.
+Claude wrote the survey as a repeatable script, ran it on all sites, and recorded the results in the browser plan.
+Claude also added tags.html host tests, a tiny-machine dependency in the mkfile, and a README www row update.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:19
+
+**Yoann:**
+
+> let's do 2 first and then 3
+
+**Claude (summary):**
+
+Claude made `|>`, `@@` and `ignore` externals under OCaml's `%revapply`, `%apply` and `%ignore` names.
+Lower now rewrites `x |> f` and `f @@ x` into direct calls, and `lnot` became mini-ml's own `%lnot` primitive.
+Claude measured tiny-machine's paint session at 0.925 of HEAD's time, with the same screen.
+Claude added `tests/runtime/apply.ml`, matched against OCaml's output on arm and arm64, and `make test` passed.
+Claude dropped the lib_core summaries experiment, which slowed mini-ml and virtua, and asked to commit before part 3.
+
+------------------------------------------------------------------------
+
+## 2026-10-27 20:58
+
+**Yoann:**
+
+> let's commit and let's fix 
+>
+> ./bin/tiny-www news.ycombinator.com
+> Fatal error: exception TinyKernelGraphics.Graphics("no memory for an image")
+> Raised at TinyKernelGraphics.alloc.take in file "tiny/TinyKernel/TinyKernelGraphics.ml", line 183, characters 12-53
+> Called from TinyKernelGraphics.alloc.take in file "tiny/TinyKernel/TinyKernelGraphics.ml", line 186, characters 33-42
+> Called from TinyKernelGraphics.alloc in file "tiny/TinyKernel/TinyKernelGraphics.ml", line 188, characters 16-28
+> Called from TinyKernelGraphics.messages.next in file "tiny/TinyKernel/TinyKernelGraphics.ml", line 331, characters 19-32
+> Called from TinyCalls.u_write in file "tiny/sdl/TinyCalls.ml", line 301, characters 18-65
+> Called from TinyBrowser.send in file "tiny/TinyBrowser.ml", line 114, characters 11-63
+> Called from TinyBrowser.browse.loop in file "tiny/TinyBrowser.ml", line 671, characters 8-15
+> Called from Dune__exe__Www in file "tiny/TinyKernel/user/www.ml", line 22, characters 2-21
+
+**Claude (summary):**
+
+Claude committed only its own hunks by pathspec, leaving the other session's uncommitted changes alone.
+Claude traced the crash to native tiny-www giving images 720 KB while `picture_room` budgets 1 MB, sized for tiny-kernel's 2 MB.
+Claude fixed the failing allocation path by returning -1 properly instead of ignoring the result, and tidied the function's indentation.
+Claude checked the fix on three articles, including Mars with its picture, and both now render without the "no memory for an image" error.
+Claude ran `make test` before committing; it showed only two failures, which came from the other session's uncommitted `Pervasives.ignore` change.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 05:41
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that there was nothing left to commit, since both changes were already committed last session.
+Claude listed commit 5a0d5c15, covering the survey check, three layout fixes, DuckDuckGo Lite search on the `s` key, and meta refresh redirects.
+Claude listed commit 3471d975, which fixes the native `tiny-www` crash ("no memory for an image").
+Claude said the remaining modified files (`games/mkfile`, `kernels/9pi/processes/Sysproc.ml`, `shell/Process.ml`, and staged `prompt-history.md`) belong to other sessions.
+Claude left those other-session files alone rather than committing them.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 05:42
+
+**Yoann:**
+
+> What's next?
+
+**Claude (summary):**
+
+Claude recommended starting with the tiny-ml bug where duplicate toplevel definitions export the first but OCaml uses the last.
+Claude said it would write a two-line reproduction first, then either fix tiny-ml or make it fail at compile time.
+Claude noted this bug can hit any t-ix program silently, and it is the likely cause of www trapping on every page.
+Claude also listed the ocaml.org menu duplication, Reddit and Craigslist header rejections, tiny-kernel arena overflow, and unrun checks as remaining work.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 05:39
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude built jump tables for `match`, sending matches with four or more constructors through Plan 9's CASE/BCASE dispatch.
+Claude found the tables save about 1% at runtime but add about 2% to mini-ml's compile time.
+Claude traced most of that compile cost to Lower.ml, which the tables make bigger, not to the SSA passes.
+Claude recommended keeping the tables out and recording the attempt and its numbers in the plan.
+Claude also fixed a quadratic label lookup in Parser_asm and an arm literal-pool bug in the linker, both uncommitted pending approval.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:11
+
+**Yoann:**
+
+> Read task bobq2m64x's per-file counts and continue the jump-table investigation.
+
+**Claude (summary):**
+
+Claude traced the jump-table cost per file, finding Lower.ml took the whole overhead, about +150M instructions.
+Claude then found a single extra major collection at the default heap added about 100M instructions.
+With a larger heap, Claude measured the tables costing 0.6% and saving about the same in mini-ml's own code.
+Claude recommended keeping jump tables out, since tiny-machine's paint session only moved from 2.48 s to 2.46 s.
+Claude proposed committing the Parser_asm label-lookup fix alone, cutting mini-ml's compile count from 5903M to 5788M.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:32
+
+**Yoann:**
+
+> Read task bobq2m64x's per-file counts and continue the jump-table investigation.
+
+**Claude (summary):**
+
+Claude recommended keeping the jump tables out, since they gained only about 1% on tiny-machine and the sample programs.
+Claude found the tables cost about 0.6% of mini-ml compiling, and the earlier 5% loss came from one extra major collection.
+Claude measured doom, quake and virtua frames at 0.998 to 1.000 of HEAD, so pattern matching gained little in those programs.
+Claude offered to commit the tables anyway, with `-linear-matches` to turn them off, while still recommending the arm linker pool fix separately.
+Claude also found a quadratic label lookup in `Parser_asm` and offered it as a separate commit, bringing mini-ml compiling to 0.980.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:52
+
+**Yoann:**
+
+> This is an optimization done by ocaml-light and compiling efficiently pattern matches is one of the most important thing for languages like OCaml so we should keep the optimisation. Maybe we need a benchmark showing more the need for this opti; maybe games like doom or quake are more about numeric calculation and less about ADTs and pattern matching.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:52
+
+**Yoann:**
+
+> you can look at the benchmark in ~/ocaml-light/
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:52
+
+**Yoann:**
+
+> but I like too your bench/interp.ml, good idea
+
+**Claude (summary):**
+
+Claude recommended adding `tests/bench/interp.ml`, a stack-machine benchmark with 14- and 9-constructor matches, over ocaml-light's boyer and similar suites.
+Claude measured the jump tables at 0.722 of the instructions on arm at -O3 (27.2M to 19.6M) and 0.776 at -O0.
+Claude added interp.ml to `bench.sh`, the bench README, and the plan's section 4d, with the assembler fix in its own section.
+Claude ran `make test` (135 jobs, 0 failures) but skipped `make self-quick`, and nothing is committed yet.
+Claude proposed two commits, the assembler fix and the jump tables with their tests and bench, and asked whether to commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:58
+
+**Yoann:**
+
+> I don't fully understand the number. from 0.722 to 0.776s at -O0, so the win is not that big right
+
+**Claude (summary):**
+
+Claude explained that the two numbers are instruction-count ratios, not times, comparing programs with and without jump tables.
+Claude reported that at -O3 the jump tables cut interp.ml to 0.722 of its instructions, a 28% saving.
+Claude noted that at -O0 the saving is smaller, 0.776 or 22%, because other unoptimized code dominates the total.
+Claude pointed out that doom, quake and tiny-machine gain only 0 to 1%, since their time goes to arithmetic, memory and calls.
+Claude did not commit anything, since the reply only explained the figures.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 07:58
+
+**Yoann:**
+
+> ok let's commit both
+
+**Claude (summary):**
+
+Claude committed the assembler fix as 7050542d, with branch labels found through an array instead of `List.assoc`.
+Claude committed the stage 4d jump tables as 57bac6df, with the arm linker's literal-pool fix and two test files.
+Each commit carries its own plan, inventory, ledger, and `bugs/ix.md` entries, and `plan_tiny_browser.md` was left out as another session's file.
+`make test` passed with both changes (135 jobs, 0 failures); `make self-quick` was not run, since it takes about 6 minutes.
+Claude also noted that mini-ml's emulators still fail to run, and the GAS route is broken by `USED` under gcc.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:08
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude laid out three remaining plan items: SSA classic passes, bounds-check elimination, and the collector.
+Claude recommended the collector next, since it accounts for 24% of mini-ml compile time, mostly copying.
+The first step proposed was profiling where major collections happen, then tuning heap growth, with large blocks left uncopied later.
+Claude also noted that SSA passes would help the game inner loops more, and bounds-check removal would benefit from them.
+Claude flagged the emulator bug (Bytes too large on arm, heap exhaustion on arm64) as a separate, off-plan correctness issue.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 05:43
+
+**Yoann:**
+
+> let's do 1. for 2 does it mean adding CSS? we can't afforce adding CSS or JS for tiny right? for 3, let's try. let's do 4. and 5.
+
+**Claude (summary):**
+
+Claude fixed the tiny-ml separate-compilation bug, where the earlier `f` in the `.tmi` interface won, and added a test case.
+Claude traced the Craigslist failure to ix's TLS hello and added `Keep_alive.once` to `Http_client`'s one-shot HTTPS path.
+Claude added the missing `&reg;` entity to www's table and rewrote the `one` loop as `message`, with a picture-with-no-room test.
+Claude added a `wwwsearch` session to tiny-kernel, with `search_engine` exported in `TinyBrowserAddress.mli` and a saved DuckDuckGo results page.
+Claude also updated the Makefile sessions and the survey results in `plan_tiny_browser.md`, with the whole-repo build still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:19
+
+**Yoann:**
+
+> ok let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:20
+
+**Yoann:**
+
+> it's been a long time, it should have finished to build faster
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:11
+
+**Yoann:**
+
+> sure. Also what does ocaml-light ocamlopt and its gc do differently than us that we maybe should also imitate?
+
+**Claude (summary):**
+
+Claude contrasted mini-ml's copying old generation with ocaml-light's non-moving mark-and-sweep, which uses about a quarter of the memory.
+Claude recommended a large-object space first, about 100 lines, so big buffers are marked rather than copied at each major.
+Claude noted that a full OCaml-style mark-and-sweep old generation would be the cleanest imitation, though it is a bigger change.
+Claude listed the costs: slower free-list promotion, fragmentation without compaction, and roughly 500 to 800 lines of C.
+Claude also listed ocamlopt's decision-tree matching, inline try frames, and graph-colouring register allocation, then proposed measuring first.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:27
+
+**Yoann:**
+
+> let's think long term for mini-ml; maybe we should imitate more what other programmers did, for ocaml-light, ocaml 4.14, and even other functional languages that proved to be worth adding for speeding up things. How much slower is mini-ml compared to say ocaml-light of ocaml 4.14?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:23
+
+**Yoann:**
+
+> it has been 3min now! make test should take less than 2min
+
+**Claude (summary):**
+
+Claude found `dune` hung for about seven minutes, holding `_build`'s lock, and stopped that background task.
+Claude rebuilt the image in 15 seconds, then recorded the `wwwsearch` sum after its screen matched the nine existing www sessions.
+Claude confirmed `make test` passed with 135 jobs and 0 failures in 111 seconds.
+Claude made four commits by pathspec, leaving out another session's `TinyMachine.ml` and `TinyMachineSocket.ml` edits.
+Claude corrected an unverified Reddit claim in the plan, then started `make self-quick-tix`, which takes about six minutes.

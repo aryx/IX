@@ -310,3 +310,9 @@ docker.yml's make test on GitHub (x86-64, four cores, OCaml 4.14.2 and
 | program | input | what it does | where, why |
 |---|---|---|---|
 | tiny-ml | TinyBrowserPage.ml with `let refresh attrs = ...` (a `<meta>`'s parser, `(string * string) list -> string`) and later `let refresh p = p.page_refresh` (`page -> string`, the one its .mli gives); TinyBrowser.ml calls `refresh sc.sc_page`; `tiny/TinyKernel`'s www.events session (`make O=... check/www.sum`) | www is killed at the end of each page: `trap 3 at 11368, 21954532` (in mlsys, the runtime); OCaml's build (`tiny/sdl`'s tiny-www, Host.exe) is right | under OCaml the later definition shadows the earlier one, and that is what the unit exports; tiny-ml seems to export the first one (the list parser, called on the page record). The parser was renamed `meta_refresh`. Cause (2026-10-28): a unit compiled apart (`tiny-ml -c`) wrote both names in its interface, the later first (compile_unit's defs, the latest first), and read_interface's Hashtbl.replace kept the last read: the earlier definition, with the later's type (the .mli's or inferred). Compiled whole, `export` reverses the list, so the same two units printed OCaml's 30, which hid it. Reproduction: `let f x = x + 1` then `let f x = x * 10` in Twice.ml, `print_int (Twice.f 3)` in another unit, each by `tiny-ml -c`: 4, not 30. Fixed: write_interface keeps a name's first entry, the later definition; TinyML_test.sh's "a name defined twice" |
+
+## mini-ml's toolchain: found by plan_ml_speed.md's measures (2026-10-28)
+
+| program | input | what it does | where, why |
+|---|---|---|---|
+| mini-asm (Parser_asm) | any unit, mini-ml's own output most | each branch to a label looked up by List.assoc in the list of all: quadratic in a unit's branches (2% of mini-ml compiling its Lower, Typing, Ssa_build) | fixed: an array by the fixup's number |

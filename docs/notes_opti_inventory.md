@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C45,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C46,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-27, C28 to C45. The programs they
+plans/plan_ml_speed.md, to 2026-10-28, C28 to C46. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -729,6 +729,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C43 | The start object's functions (the curry functions, ml_program) compiled by ssa with -ssa, as a unit's, not by simple's stack machine | Gen `startup`'s compile, CLI; 2026-10-27 (with the open coding out of Gen) | mini-ml compiling its three units 0.861, mini-doom's frame 0.976 | (in -249) | `-O0` |
 | C44 | Bytes' and String's little-endian 16 and 32 bits read and written in place (arm: a byte at a time), the index checked | Lower, Ir `BytesGet`/`BytesSet`, Emit, lib_core's Bytes; plan_ml_speed.md's 4b | tiny-machine's paint session natively 3.28 s to 2.67 (its memory's reads were a quarter of it), mini-ml compiling 0.988 | +80, C +58 | `-calls` |
 | C45 | x \|> f, f @@ x and ignore as OCaml's externals, x \|> g a the call g a x; lnot an xor in place: no call of Pervasives' in another directory's unit | Lower's app (%revapply, %apply), prim (%lnot); lib_core's Pervasives; plan_ml_speed.md's 4c | tiny-machine's paint session 0.925, mini-ml compiling 0.986 | +11, lib_core +11 | none (old: kept) |
+| C46 | The assembler's branches to labels by an array, not List.assoc in the list of all (quadratic in a unit's branches) | assembler's Parser_asm, which mini-ml runs on its output; plan_ml_speed.md's 2026-10-28 | mini-ml compiling 0.980 | +6 (assembler) | none (old: kept) |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of

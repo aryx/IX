@@ -593,3 +593,14 @@ function, a closure, a primitive, more arguments, a chain, each as a
 value, the effects' order, lnot). Not done: abs (a branch, as min's),
 left a call.
 
+
+## 2026-10-28, found by 4d's measure: the assembler's labels in quadratic time
+
+Parser_asm resolved each branch to a label (Target (-k)) by List.assoc
+in the list of all of the unit's, a polymorphic compare for each one
+passed: quadratic in a unit's branches. mini-ml assembles its own
+output, so every compilation paid it; the jump tables' BCASEs, more
+branches, made it show. Now an array by the number. mini-ml compiling
+its Lower, Typing and Ssa_build (macro.sh's), on arm by mini-5i:
+5903M instructions to 5788M (0.980); natively 4.5% of Lower's. The
+same objects.

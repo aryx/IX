@@ -316,11 +316,17 @@ let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
   let of_pc = Hashtbl.create 64 in
   let pc = ref 0 in
   Array.iteri (fun i (it, _) -> match it with Globl _ | Data _ -> () | _ -> Hashtbl.replace of_pc !pc i; incr pc) items;
+  (* OPTIMIZATION: the fixups by their number, Target (-k) the k-th,
+   * where each was looked up in the list of all, a unit's every branch
+   * to a label: mini-ml compiling its Lower, Typing and Ssa_build
+   * 0.980 (it assembles its own output).
+   * old: List.assoc (- n) st.fixups *)
+  let fixes = Array.of_list (List.rev_map snd st.fixups) in
   let target l n =
     let p =
       if n >= 0 then n
       else begin
-        let name, off = List.assoc (- n) st.fixups in
+        let name, off = fixes.(- n - 1) in
         match Hashtbl.find_opt st.labels name with
         | Some p -> p + off
         | None -> raise (Error (l, "undefined label " ^ name))

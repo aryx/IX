@@ -8,7 +8,8 @@ a character is a draw through it.
 
 | file | what |
 |---|---|
-| `tiny.font` | the font used: Ubuntu Mono, made by `Mkfont.ml` |
+| `grey.font` | the font used: Ubuntu Mono, grey edges (`Mkfont.ml -grey`) |
+| `tiny.font` | the same letters, a pixel set or not, made by `Mkfont.ml` |
 | `terminus.font` | the one before it: Terminus Font, made by `mkfont.sh` |
 | `UbuntuMono-Regular.ttf`, `UbuntuMono-Bold.ttf` | Ubuntu Mono (copies) |
 | `UFL.txt` | Ubuntu Mono's licence |
@@ -24,8 +25,11 @@ a character is a draw through it.
 Another font is chosen when the image is made, or when a program on
 the host starts; tiny-kernel reads none from a file:
 
-    make FONT=fonts/terminus.font                    # tiny-kernel's image
-    TINY_FONT=tiny/TinyKernel/fonts/terminus.font tiny-office   # the host's
+    make FONT=fonts/tiny.font                        # tiny-kernel's image
+    TINY_FONT=tiny/TinyKernel/fonts/tiny.font tiny-office   # the host's
+
+(`tiny.font`, no grey; `terminus.font` and `font1.bin`, below, the
+same way.)
 
 ## The format
 
@@ -43,7 +47,22 @@ A row's left pixel is the low bit of its first byte, as in `font1.bin`
 first face alone. Italic is no face of its own: the kernel slants the
 upright face, its top rows 3 pixels right (6 when large).
 
-## tiny.font: Ubuntu Mono
+`grey.font` has the same faces with two bits a pixel, its level: 0 none,
+3 the ink, 1 and 2 a third and two thirds of it (the letters' edges); a
+row's left pixel the two low bits of its first byte. Each face is twice
+as large, 40,960 bytes in all, which is how the kernel knows it:
+
+    offset   face                  a character
+    0        regular, 8 by 16      16 rows of two bytes
+    4096     bold, 8 by 16         16 rows of two bytes
+    8192     large, 16 by 32       32 rows of four bytes
+    24576    large bold, 16 by 32  32 rows of four bytes
+
+The kernel mixes a level with the colour under it by a table made for
+each ink (TinyKernelGraphics' `mix`, draw.tm's `mix_table`): a pixel
+is a colour of Plan 9's table, so a mix is the nearest of its 256.
+
+## grey.font and tiny.font: Ubuntu Mono
 
 The author's Emacs font. A narrow monospaced font: at 16 pixels its
 characters are 8 wide, the cell. `Mkfont.ml` draws each of its first
@@ -58,12 +77,18 @@ pixel to put stems on whole pixels, and a bar split on two rows kept
 on one. `Mkfont.ml`'s header says how; `Mkfont.exe -coverage c
 file.ttf` shows a character as it is made.
 
-    dune build ./tiny/TinyKernel/fonts/Mkfont.exe
-    ./_build/default/tiny/TinyKernel/fonts/Mkfont.exe \
-      tiny/TinyKernel/fonts/UbuntuMono-Regular.ttf \
-      tiny/TinyKernel/fonts/UbuntuMono-Bold.ttf tiny/TinyKernel/fonts/tiny.font
+`grey.font` then has, besides `tiny.font`'s pixels, those it leaves out
+grey by how much of them is covered (a third or two thirds, rounded):
+the same letters, the grey around them where the outline passes.
 
-`tiny.font` is kept in the repository, so a build needs neither the
+    dune build ./tiny/TinyKernel/fonts/Mkfont.exe
+    cd tiny/TinyKernel/fonts
+    ../../../_build/default/tiny/TinyKernel/fonts/Mkfont.exe \
+      UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf tiny.font
+    ../../../_build/default/tiny/TinyKernel/fonts/Mkfont.exe -grey \
+      UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf grey.font
+
+The two are kept in the repository, so a build needs neither the
 `.ttf` files nor `Mkfont`.
 
 What 8 by 16 does to it: the wide capitals of the bold (M, N, W) are
@@ -98,10 +123,11 @@ cannot make. SHA-256:
         11f15c3a6bbd998a8695fdefb3475931c3789aa035d7546f2efe78e83b352f6b
 
 Copyright 2011 Canonical Ltd., under the Ubuntu Font Licence 1.0, not
-ix's LGPL: `UFL.txt`. `tiny.font` is a Modified Version in the
-licence's sense (a format changed), not Substantially Changed (it
-looks like the font), so it is under the same licence and its name is
-"Ubuntu Mono derivative tiny" (the licence's 2c). Ubuntu and Canonical
+ix's LGPL: `UFL.txt`. `tiny.font` and `grey.font` are Modified
+Versions in the licence's sense (a format changed), not Substantially
+Changed (they look like the font), so they are under the same licence
+and their names are "Ubuntu Mono derivative tiny" and "Ubuntu Mono
+derivative tiny grey" (the licence's 2c). Ubuntu and Canonical
 are trademarks of Canonical Ltd.
 
 **Terminus Font**, by Dimitar Toshkov Zhekov, a bitmap font designed
@@ -141,4 +167,6 @@ read than four faces, and kept for that:
 
 The host tests of `TinyKernelGraphics`, `TinyLibGUI`, `TinyAppTetris`
 and `TinyLibPlayground` draw with `font1.bin` (their recorded screens
-are of it); tiny-kernel's sessions (`make check`) with `tiny.font`.
+are of it; `TinyKernelGraphics`' also with `grey.font`, on the host
+and on tiny-machine); tiny-kernel's sessions (`make check`) with
+`grey.font`.

@@ -10,15 +10,17 @@
 # - font1.bin and what the kernel makes of it (bold smeared, italic
 #   slanted, large doubled);
 # - each font file in tiny.font's format given (tiny.font, a
-#   Mkfont.exe's), its four faces as the kernel draws them;
+#   Mkfont.exe's; grey.font, its pixels' levels as greys), its four
+#   faces as the kernel draws them;
 # - Terminus Font, the four faces copied beside this script;
 # - TrueType fonts drawn by FreeType (Ubuntu Mono, the author's Emacs
 #   font, from the copies beside this script; this machine's Ubuntu
 #   Sans Mono, the terminal's, and DejaVu Sans Mono, fc-match's
 #   monospace), each twice: 1 bit a pixel (what TinyKernelGraphics
-#   draws) and with grey edges (what a mask of levels would). A font
+#   draws with tiny.font) and with grey edges (grey.font's 4 levels are
+#   between the two). A font
 #   not installed is said and skipped.
-# A tool to look with, not the build's (tiny.font is Mkfont.ml's);
+# A tool to look with, not the build's (the .font files are Mkfont.ml's);
 # needs Pillow.
 # usage: preview.py [out.png [file.font...]]   (default: preview.png, in
 # the current directory)
@@ -41,8 +43,9 @@ def label(s):
     ImageDraw.Draw(im).text((4, 2), s, fill=0)
     return im
 
-# [bitmap glyph s w h]: s in cells of w by h, glyph c (row, col) a pixel
-# set or not; bold smeared and slanted as TinyKernelGraphics' make
+# [bitmap glyph s w h]: s in cells of w by h, glyph c (row, col) a
+# pixel's part of ink, 0 or 1 (a grey font's thirds between); bold
+# smeared and slanted as TinyKernelGraphics' make
 def bitmap(glyph, s, w, h, scale=1, bold=False, slant=0):
     im = blank(h * scale)
     ch = h * scale
@@ -51,10 +54,11 @@ def bitmap(glyph, s, w, h, scale=1, bold=False, slant=0):
             shift = slant * (ch - 1 - row) // ch
             for col in range(w * scale):
                 k = col // scale
-                def on(k): return 0 <= k < w and glyph(ord(c), row // scale, k)
-                if on(k) or (bold and on(k - 1) and not on(k + 1)):
-                    x = 4 + (i * w * scale) + col + shift
-                    if x < W: im.putpixel((x, row), 0)
+                def ink(k):
+                    return glyph(ord(c), row // scale, k) if 0 <= k < w else 0
+                v = ink(k) or (ink(k - 1) if bold and not ink(k + 1) else 0)
+                x = 4 + (i * w * scale) + col + shift
+                if v and x < W: im.putpixel((x, row), round(255 * (1 - v)))
     return im
 
 # font1.bin: 16 bytes a character, a row's left pixel its low bit
@@ -63,11 +67,14 @@ def font1():
     return lambda c, r, x: (d[(c * 16) + r] >> x) & 1
 
 # a face of a font in tiny.font's format, its bytes from off: a row
-# (w + 7) / 8 bytes, the left pixel the low bit of the first
-def tiny(d, off, w, h):
-    b = (w + 7) // 8
+# (w + 7) / 8 bytes, the left pixel the low bit of the first; or in
+# grey.font's, depth 2: a pixel two bits, its level, 0 to 3
+def tiny(d, off, w, h, depth=1):
+    b = ((w * depth) + 7) // 8
+    top = (1 << depth) - 1
     def glyph(c, r, x):
-        return (d[off + (((c * h) + r) * b) + (x // 8)] >> (x % 8)) & 1
+        byte = d[off + (((c * h) + r) * b) + (x * depth // 8)]
+        return ((byte >> (x * depth % 8)) & top) / top
     return glyph
 
 # the first 128 characters of a .psf.gz (header 4 bytes in PSF 1, 32 in
@@ -105,11 +112,12 @@ for f in sys.argv[2:]:
     if len(d) == 2048:
         rows.append(label("(one face: font1.bin's format)"))
         continue
-    rows += [bitmap(tiny(d, 0, 8, 16), LINE, 8, 16),
-             bitmap(tiny(d, 2048, 8, 16), BOLD, 8, 16),
-             bitmap(tiny(d, 0, 8, 16), "italic: Hello world", 8, 16, slant=3),
-             bitmap(tiny(d, 4096, 16, 32), LARGE, 16, 32),
-             bitmap(tiny(d, 12288, 16, 32), "Bold large", 16, 32)]
+    k = 2 if len(d) == 40960 else 1     # grey.font's depth, as the kernel's
+    rows += [bitmap(tiny(d, 0, 8, 16, k), LINE, 8, 16),
+             bitmap(tiny(d, 2048 * k, 8, 16, k), BOLD, 8, 16),
+             bitmap(tiny(d, 0, 8, 16, k), "italic: Hello world", 8, 16, slant=3),
+             bitmap(tiny(d, 4096 * k, 16, 32, k), LARGE, 16, 32),
+             bitmap(tiny(d, 12288 * k, 16, 32, k), "Bold large", 16, 32)]
 rows += [label("Terminus Font (mkfont.sh): 8x16, bold, 16x32, italic slanted"),
          bitmap(psf("Uni2-Terminus16.psf.gz", 4, 8, 16), LINE, 8, 16),
          bitmap(psf("Uni2-TerminusBold16.psf.gz", 4, 8, 16), BOLD, 8, 16),

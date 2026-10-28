@@ -8,4 +8,5 @@
 open Picture
 
 external font_bits : unit -> int = "font_bits"
-let () = picture (font_bits ()); exit 0
+external font_size : unit -> int = "font_size"
+let () = picture (font_bits ()) (font_size ()); exit 0

@@ -25,15 +25,62 @@ let row_mask dst colour mask n =
     if peekb (mask + i) <> 0 then pokeb (dst + i) colour
   done
 
+(* a row's n bytes mixed by a mask's levels: where the mask's byte is
+ * not 0, the byte of the table's row of its level (its two high bits)
+ * that the pixel's colour is *)
+let row_mix dst table mask n =
+  for i = 0 to n - 1 do
+    let m = peekb (mask + i) in
+    if m <> 0 then
+      pokeb (dst + i) (peekb (table + ((m lsr 6) * 256) + peekb (dst + i)))
+  done
+
 (* a text's n characters from dst, in an image [width] wide, through the
- * font's mask (1024 wide, character c at column 8c), as draw.tm's *)
-let glyphs dst width colour font s n =
+ * font's mask (1024 wide, character c at column 8c), as draw.tm's: in a
+ * colour, or mixed by a table (glyphs_mixed) *)
+let each_glyph row dst width font s n =
   for i = 0 to n - 1 do
     let c = Char.code s.[i] in
     let c = if c > 127 then 63 else c in
-    for row = 0 to 15 do
-      row_mask (dst + (8 * i) + (row * width)) colour
-        (font + (row * 1024) + (8 * c)) 8
+    for k = 0 to 15 do
+      row (dst + (8 * i) + (k * width)) (font + (k * 1024) + (8 * c))
+    done
+  done
+let glyphs dst width colour font s n =
+  each_glyph (fun d m -> row_mask d colour m 8) dst width font s n
+let glyphs_mixed dst width table font s n =
+  each_glyph (fun d m -> row_mix d table m 8) dst width font s n
+
+(* A colour's mixes, at at: 4 rows of 256 bytes, row l's byte k the
+ * colour nearest to l thirds of the ink and the rest of colour k (row
+ * 0 k, row 3 the ink), the palette's red, green and blue (3 bytes a
+ * colour) at palette. Nearest by the squares of the differences, among
+ * the 16 a colour can be near: for each q = 4 den + v (den the largest
+ * of a colour's two-bit red, green and blue, v how bright), the one
+ * whose parts are the mix's rounded, its largest 17 q; q below 4, the
+ * grey 17 q. The same as a search of the 256 but for ties (the first q
+ * of the least kept), in a sixteenth of the time. *)
+let mix_table at ink palette =
+  let c k i = peekb (palette + (3 * k) + i) in
+  let nearest r g b =
+    let best = ref 0 and dist = ref max_int in
+    for q = 0 to 15 do
+      let den = q lsr 2 and v = q land 3 and top = 17 * q in
+      let part x = if den = 0 then 0 else min den (((x * den) + (top / 2)) / top) in
+      let pr = part r and pg = part g and pb = part b in
+      let i = (pr * 64) + (v * 16) + (((pg * 4) + pb + v - pr) land 15) in
+      let d = ((c i 0 - r) * (c i 0 - r)) + ((c i 1 - g) * (c i 1 - g))
+              + ((c i 2 - b) * (c i 2 - b)) in
+      if d < !dist then (best := i; dist := d)
+    done;
+    !best
+  in
+  for l = 0 to 3 do
+    for k = 0 to 255 do
+      let part i = ((l * c ink i) + ((3 - l) * c k i) + 1) / 3 in
+      pokeb (at + (l * 256) + k)
+        (if l = 0 then k else if l = 3 then ink
+         else nearest (part 0) (part 1) (part 2))
     done
   done
 

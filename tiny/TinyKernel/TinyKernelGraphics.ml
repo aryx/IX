@@ -47,7 +47,10 @@ let within (r : rect) (s : image) dx dy =
   else inter r (rect (s.r.x0 - dx) (s.r.y0 - dy) (s.r.x1 - dx) (s.r.y1 - dy))
 
 (* dst's rectangle r: src's pixels from (px, py) on, where the mask's
- * (from the same point) are not 0. Clipped to the three images. A row
+ * (from the same point) are not 0; with a colour's table of mixes
+ * (mix, below; 0: none), a colour mixed by the mask's level, a grey
+ * font's edges (old: none, a mask set or not; a source of more than a
+ * colour still is). Clipped to the three images. A row
  * is one of TinyMemory's three loops where it can be: a copy, a colour
  * (a source of one pixel that repeats, read once), a colour through a
  * mask (a character); a pixel at a time otherwise. A row's address is
@@ -55,7 +58,8 @@ let within (r : rect) (s : image) dx dy =
  * An image drawn on itself is read before it is written: its rows from
  * the last when it moves down, a row from its last pixel when it moves
  * right. *)
-let draw (dst : image) (r : rect) (src : image) (mask : image option) px py =
+let draw_mixed mix (dst : image) (r : rect) (src : image) (mask : image option)
+    px py =
   let dx = px - r.x0 and dy = py - r.y0 in
   let r = within (inter r dst.r) src dx dy in
   let r = match mask with Some m -> within r m dx dy | None -> r in
@@ -74,6 +78,8 @@ let draw (dst : image) (r : rect) (src : image) (mask : image option) px py =
       | None when colour -> row_fill d ink n
       | None when not src.repl && not (backwards && dy = 0) ->
           row_copy d (s0 + (k * sw)) n
+      | Some m when colour && not m.repl && mix <> 0 ->
+          row_mix d mix (pixel m (r.x0 + dx) (y + dy)) n
       | Some m when colour && not m.repl ->
           row_mask d ink (pixel m (r.x0 + dx) (y + dy)) n
       | _ ->
@@ -86,6 +92,8 @@ let draw (dst : image) (r : rect) (src : image) (mask : image option) px py =
           done
     done
   end
+
+let draw dst r src mask px py = draw_mixed 0 dst r src mask px py
 
 (* a line from (xa, ya) to (xb, yb), both drawn, a pixel thick:
  * Bresenham's, each of its points a draw (clipped there) *)
@@ -107,75 +115,6 @@ let line (dst : image) xa ya xb yb (src : image) =
     end
   in
   from xa ya (dx - dy)
-
-(*****************************************************************************)
-(* The font *)
-(*****************************************************************************)
-
-(* The machine's font: faces of 128 characters, a face's rows one after
- * the other, a row's left pixel the low bit of its first byte. The
- * first face is 8 by 16, a row a byte, and may be all the font has
- * (xv6's font1.bin, which mini-9pi's console has too). tiny.font
- * (fonts/README.md, made of Ubuntu Mono) has three more after it:
- * bold 8 by 16, large 16 by 32 (a row two bytes), and large bold.
- * A face is made a mask: a byte a pixel (255 where it is set, so that
- * a character's row is two words of mask for draw.tm's glyphs), the
- * characters side by side in an image of 128 characters' width, so
- * that a character is a draw. *)
-let mask bits w h at =
-  let bytes = (w + 7) lsr 3 in
-  for c = 0 to 127 do
-    for row = 0 to h - 1 do
-      for col = 0 to w - 1 do
-        pokeb (at + (row * 128 * w) + (c * w) + col)
-          (255 * ((peekb (bits + (((c * h) + row) * bytes) + (col lsr 3))
-                   lsr (col land 7)) land 1))
-      done
-    done
-  done;
-  { r = rect 0 0 (128 * w) h; at = at; repl = false }
-
-(* where the font's faces after the first are (0: it has none) *)
-let faces = ref 0
-
-(* [font_mask bits size at]: the font of size bytes at bits, its first
- * face made a mask at at (16 KB), the others' place kept for styled *)
-let font_mask bits size at =
-  faces := if size > 2048 then bits + 2048 else 0;
-  mask bits 8 16 at
-
-(* a text, its top left corner at (x, y): each character the ink src
- * through the font's mask (a byte beyond the font's 128 is a ?) *)
-let text (dst : image) x y (src : image) (font : image) s =
-  let n = String.length s in
-  (* A text all inside dst, in a colour, at a whole word (what a program
-   * draws nearly always): all its characters by one call of draw.tm's
-   * glyphs, which works a word at a time. *)
-  if n > 0 && not dst.repl && src.repl && width src = 1 && height src = 1
-     && x >= dst.r.x0 && y >= dst.r.y0
-     && x + (8 * n) <= dst.r.x1 && y + 16 <= dst.r.y1
-     && (pixel dst x y) land 3 = 0 && (width dst) land 3 = 0
-  then glyphs (pixel dst x y) (width dst) (peekb src.at) font.at s n
-  else
-    for i = 0 to n - 1 do
-      let c = Char.code s.[i] in
-      draw dst (rect (x + (8 * i)) y (x + (8 * i) + 8) (y + 16)) src (Some font)
-        (8 * if c > 127 then 63 else c) 0
-    done
-
-(* a row of pixels given as they are, its left end at (x, y): the n
- * bytes of s from off, those that fall in dst. What a picture that
- * comes from elsewhere is drawn by, a row a message (Plan 9's load) *)
-let pixels (dst : image) x y s off n =
-  if y >= dst.r.y0 && y < dst.r.y1 then begin
-    let row = dst.at + ((y - dst.r.y0) * width dst) - dst.r.x0 + x in
-    let first = max 0 (dst.r.x0 - x) and last = min n (dst.r.x1 - x) in
-    (* old: for k = first to last - 1 do
-     *   pokeb (row + k) (Char.code s.[off + k]) done:
-     * two calls of C a pixel, 300 instructions; a picture's row of 320
-     * was 12 ms of the machine's time *)
-    if last > first then row_bytes s (off + first) (row + first) (last - first)
-  end
 
 (*****************************************************************************)
 (* The images' memory *)
@@ -219,6 +158,144 @@ let free at n =
   blocks := join (put !blocks)
 
 (*****************************************************************************)
+(* Mixes *)
+(*****************************************************************************)
+
+(* A pixel's byte is a colour of Plan 9's table (rgbv: TinyMachineDevices
+ * says how it is made): two bits of red, two of how bright (v), four of
+ * green and blue, turned by the first two so that a row of 16 is a
+ * ramp. Its red, green and blue: *)
+let rgb i =
+  let r = i lsr 6 and v = (i lsr 4) land 3 in
+  let j = (i - v + r) land 15 in
+  let g = j lsr 2 and b = j land 3 in
+  let den = max r (max g b) in
+  if den = 0 then (17 * v, 17 * v, 17 * v)
+  else
+    let num = 17 * ((4 * den) + v) in
+    (r * num / den, g * num / den, b * num / den)
+
+(* A colour's mixes, for a mask of levels (a grey font's): 1,024 bytes,
+ * four rows of 256, a row a level of the mask's (its byte's two high
+ * bits: 0, 85, 170, 255 are 0 to 3), its byte k what a pixel of colour
+ * k becomes: as it was, a third of the ink, two thirds, the ink; each
+ * the colour of the table nearest to the mix. Made by TinyMemory's
+ * mix_table when the colour is first drawn with, from [palette] (each
+ * colour's red, green and blue, 768 bytes, made at the first), and kept
+ * for good: an address in [mixes] (0: not made). (old: made here, by
+ * the 16 colours a mix can be near: tiny-ml's array reads, some 35
+ * instructions each, were 3.5 million instructions a colour, half a
+ * second of the machine's; tiny-windows' first menu, its colours made,
+ * drawn so late that the click on it was taken for its last item,
+ * exit) *)
+let mixes = Array.make 256 0
+let palette = ref 0
+
+let mix ink =
+  if !palette = 0 then begin
+    palette := alloc 768;
+    for i = 0 to 255 do
+      let r, g, b = rgb i in
+      pokeb (!palette + (3 * i)) r;
+      pokeb (!palette + (3 * i) + 1) g;
+      pokeb (!palette + (3 * i) + 2) b
+    done
+  end;
+  if mixes.(ink) = 0 then begin
+    let at = alloc 1024 in
+    mix_table at ink !palette;
+    mixes.(ink) <- at
+  end;
+  mixes.(ink)
+
+(*****************************************************************************)
+(* The font *)
+(*****************************************************************************)
+
+(* The machine's font: faces of 128 characters, a face's rows one after
+ * the other, a row's left pixel the low bit of its first byte. The
+ * first face is 8 by 16, a row a byte, and may be all the font has
+ * (xv6's font1.bin, which mini-9pi's console has too). tiny.font
+ * (fonts/README.md, made of Ubuntu Mono) has three more after it:
+ * bold 8 by 16, large 16 by 32 (a row two bytes), and large bold.
+ * grey.font has the same faces, a pixel two bits (the depth, 2), its
+ * level: 0 none, 3 the ink, 1 and 2 a third and two of it, the
+ * letters' edges (a row then w / 4 bytes, each face twice as large).
+ * A face is made a mask: a byte a pixel (255 where it is set, so that
+ * a character's row is two words of mask for draw.tm's glyphs; 85 and
+ * 170 the two greys), the characters side by side in an image of 128
+ * characters' width, so that a character is a draw. *)
+let mask bits depth w h at =
+  let bytes = ((w * depth) + 7) lsr 3 and top = (1 lsl depth) - 1 in
+  for c = 0 to 127 do
+    for row = 0 to h - 1 do
+      for col = 0 to w - 1 do
+        let b = col * depth in
+        pokeb (at + (row * 128 * w) + (c * w) + col)
+          (255 / top * ((peekb (bits + (((c * h) + row) * bytes) + (b lsr 3))
+                         lsr (b land 7)) land top))
+      done
+    done
+  done;
+  { r = rect 0 0 (128 * w) h; at = at; repl = false }
+
+(* where the font's faces after the first are (0: it has none), and its
+ * depth, a pixel's bits: 1, or 2 for grey.font *)
+let faces = ref 0
+let depth = ref 1
+
+(* [font_mask bits size at]: the font of size bytes at bits, its first
+ * face made a mask at at (16 KB), the others' place kept for styled; a
+ * font of 40,960 bytes has levels (grey.font, twice tiny.font's) *)
+let font_mask bits size at =
+  depth := if size = 40960 then 2 else 1;
+  faces := if size > 2048 then bits + (2048 * !depth) else 0;
+  mask bits !depth 8 16 at
+
+(* the mixes of src when it is a colour and the font has levels: what a
+ * text is drawn with (0: none, its mask set or not) *)
+let mixing (src : image) =
+  if !depth = 2 && src.repl && width src = 1 && height src = 1
+  then mix (peekb src.at) else 0
+
+(* a text, its top left corner at (x, y): each character the ink src
+ * through the font's mask (a byte beyond the font's 128 is a ?) *)
+let text (dst : image) x y (src : image) (font : image) s =
+  let n = String.length s in
+  let mix = mixing src in
+  (* A text all inside dst, in a colour, at a whole word (what a program
+   * draws nearly always): all its characters by one call of draw.tm's
+   * glyphs, which works a word at a time; with levels its glyphs_mixed,
+   * a byte at a time where a row is not blank. *)
+  if n > 0 && not dst.repl && src.repl && width src = 1 && height src = 1
+     && x >= dst.r.x0 && y >= dst.r.y0
+     && x + (8 * n) <= dst.r.x1 && y + 16 <= dst.r.y1
+     && (pixel dst x y) land 3 = 0 && (width dst) land 3 = 0
+  then
+    if mix <> 0 then glyphs_mixed (pixel dst x y) (width dst) mix font.at s n
+    else glyphs (pixel dst x y) (width dst) (peekb src.at) font.at s n
+  else
+    for i = 0 to n - 1 do
+      let c = Char.code s.[i] in
+      draw_mixed mix dst (rect (x + (8 * i)) y (x + (8 * i) + 8) (y + 16)) src
+        (Some font) (8 * if c > 127 then 63 else c) 0
+    done
+
+(* a row of pixels given as they are, its left end at (x, y): the n
+ * bytes of s from off, those that fall in dst. What a picture that
+ * comes from elsewhere is drawn by, a row a message (Plan 9's load) *)
+let pixels (dst : image) x y s off n =
+  if y >= dst.r.y0 && y < dst.r.y1 then begin
+    let row = dst.at + ((y - dst.r.y0) * width dst) - dst.r.x0 + x in
+    let first = max 0 (dst.r.x0 - x) and last = min n (dst.r.x1 - x) in
+    (* old: for k = first to last - 1 do
+     *   pokeb (row + k) (Char.code s.[off + k]) done:
+     * two calls of C a pixel, 300 instructions; a picture's row of 320
+     * was 12 ms of the machine's time *)
+    if last > first then row_bytes s (off + first) (row + first) (last - first)
+  end
+
+(*****************************************************************************)
 (* Styled text *)
 (*****************************************************************************)
 
@@ -233,7 +310,8 @@ let free at n =
  * at the first text that needs one: a large one is some 65,000 pixels. *)
 let derived = Array.make 8 None
 
-(* src's characters, each pixel scale by scale, bold, slanted *)
+(* src's characters, each pixel scale by scale, bold, slanted; a
+ * pixel's level kept (a grey font's) *)
 let make (src : image) scale bold slant =
   let sw = width src / 128 in
   let cw = (sw * scale) + slant and ch = height src * scale in
@@ -244,11 +322,13 @@ let make (src : image) scale bold slant =
     for row = 0 to ch - 1 do
       let shift = slant * (ch - 1 - row) / ch
       and line = src.at + (row / scale * width src) + (c * sw) in
-      let set col = col >= 0 && col < sw && peekb (line + col) <> 0 in
+      let level col = if col >= 0 && col < sw then peekb (line + col) else 0 in
+      let set col = level col <> 0 in
       for col = 0 to (sw * scale) - 1 do
         let k = col / scale in
-        if set k || (bold && set (k - 1) && not (set (k + 1))) then
-          pokeb (at + (row * w) + (c * cw) + col + shift) 255
+        if set k then pokeb (at + (row * w) + (c * cw) + col + shift) (level k)
+        else if bold && set (k - 1) && not (set (k + 1)) then
+          pokeb (at + (row * w) + (c * cw) + col + shift) (level (k - 1))
       done
     done
   done;
@@ -267,7 +347,7 @@ let rec derive (font : image) kind =
         else if !faces <> 0 then
           let w = if large then 16 else 8
           and at = if kind = 4 then 0 else if kind = 2 then 2048 else 10240 in
-          mask (!faces + at) w (2 * w) (alloc (256 * w * w))
+          mask (!faces + (at * !depth)) !depth w (2 * w) (alloc (256 * w * w))
         else make font (if large then 2 else 1) (kind land 4 <> 0) 0
       in
       derived.(kind) <- Some f;
@@ -302,6 +382,7 @@ let styled (dst : image) x y (src : image) (font : image) style s =
   let f = if kind = 0 then font else derive font kind in
   let scale = if style land 8 <> 0 then 2 else 1 in
   let cw = 8 * scale and fw = width f / 128 and n = String.length s in
+  let mix = mixing src in
   (* bold, underlined or neither: 8 by 16 cells, the plain text's, so
    * text and its word at a time (old: a draw a character, some 13,000
    * instructions: tiny-emacs in bold, a screen of 2,400, was 30 million) *)
@@ -310,7 +391,7 @@ let styled (dst : image) x y (src : image) (font : image) style s =
   for i = 0 to n - 1 do
     let c = Char.code s.[i] in
     let x0 = x + (cw * i) in
-    draw dst (rect x0 y (x0 + fw) (y + height f)) src (Some f)
+    draw_mixed mix dst (rect x0 y (x0 + fw) (y + height f)) src (Some f)
       (fw * if c > 127 then 63 else c) 0
   done;
   if style land 4 <> 0 then

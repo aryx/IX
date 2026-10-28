@@ -4,10 +4,10 @@
  * each, a colour of Plan 9's table. Not a program: TinyKernel.ml's part
  * that draws (plan_tiny_windows.md).
  *
- * It asks five functions of bytes of its machine, TinyMemory's: peekb
- * and pokeb, and a row's three loops (copied, filled, a colour where a
- * mask is set), which are assembly on tiny-machine and an array's on
- * the host.
+ * It asks a few functions of bytes of its machine, TinyMemory's: peekb
+ * and pokeb, and a row's loops (copied, filled, a colour where a mask
+ * is set, a colour mixed by a mask's levels; a text's characters),
+ * which are assembly on tiny-machine and an array's on the host.
  *
  * What is kept of Plan 9's:
  *
@@ -59,7 +59,9 @@
  *         dst 0   src 1   no mask the rectangle             p
  *
  * Dropped: pixels of other depths and channels (one byte, the table's
- * index), alpha and Porter and Duff's operators (a mask is set or not),
+ * index), alpha and Porter and Duff's operators (a mask is set or not,
+ * but for a colour through a font of levels, grey.font: mixed by a
+ * table made for the colour),
  * a clipping rectangle apart from an image's own, a mask's own point
  * (it is the source's, as libdraw's draw), ellipses, arcs, polygons and
  * thick lines, fonts (one, the machine's 8 by 16, its bold and its
@@ -91,8 +93,8 @@
  * Exercises:
  * - a row copied a word at a time where it can (draw.tm's row_copy);
  * - ellipses and filled polygons, for the playground's shapes;
- * - a mask of levels, 0 to 255: a pixel mixed, and a font with grey
- *   edges;
+ * - a mask of any level, 0 to 255, and a source of more than a colour
+ *   mixed through it (here four levels, a colour's, the font's);
  * - a clipping rectangle per image, set by a message (a window's part
  *   that shows).
  *
@@ -164,9 +166,10 @@ val free : int -> int -> unit
 val alloc : int -> int
 val blocks : (int * int) list ref
 
-(* [font_mask bits size at]: the font of size bytes at bits (font1.bin
- * or tiny.font: fonts/README.md), its first face made a mask at at (16
- * KB); its other faces, when it has them, kept for the styled texts *)
+(* [font_mask bits size at]: the font of size bytes at bits (font1.bin,
+ * tiny.font or grey.font, whose pixels have levels: fonts/README.md),
+ * its first face made a mask at at (16 KB); its other faces, when it
+ * has them, kept for the styled texts *)
 val font_mask : int -> int -> int -> image
 
 (* a program's connection: its images by its own numbers, 0 the one it

@@ -14,11 +14,11 @@
 ; the program
 (rule
  (targets TinyFont.ml)
- (deps (:font ../TinyKernel/fonts/tiny.font))
+ (deps (:font ../TinyKernel/fonts/grey.font))
  (action
   (with-stdout-to %{targets}
    (progn
-    (echo "(* TinyKernel/fonts/tiny.font *)\nlet bits = {font|")
+    (echo "(* TinyKernel/fonts/grey.font *)\nlet bits = {font|")
     (cat %{font})
     (echo "|font}\n")))))
 

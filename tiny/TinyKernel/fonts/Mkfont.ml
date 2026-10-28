@@ -3,7 +3,8 @@
 
 (* Makes tiny.font (README.md) from a TrueType font: its regular and its
  * bold, each at 8 by 16 and 16 by 32, the first 128 characters, a pixel
- * set or not. ix's own reader and filler draw the letters (Truetype,
+ * set or not; or grey.font, the same with grey edges, a pixel one of
+ * four levels. ix's own reader and filler draw the letters (Truetype,
  * Outline, Fill.scan), as a PDF's are drawn; FreeType is not needed.
  *
  * Neither runs the font's hinting, the programs that move a letter's
@@ -30,19 +31,23 @@
  *   E's and an L's stem straddled two pixels, two wide, and the +'s
  *   bar two rows, in neither.
  *
- * A pixel is then set where [enough] of it is covered.
+ * A pixel is then set where [enough] of it is covered; in grey.font the
+ * others are grey by how much of them is.
  *
- * Run by hand; tiny.font is kept in the repository, so the build
- * needs neither this nor the TrueType files. *)
+ * Run by hand; tiny.font and grey.font are kept in the repository, so
+ * the build needs neither this nor the TrueType files. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
-let help = {|usage: Mkfont.exe regular.ttf bold.ttf out.font
+let help = {|usage: Mkfont.exe [-grey] regular.ttf bold.ttf out.font
        Mkfont.exe -coverage c file.ttf
 tiny-kernel's font of a TrueType font's regular and bold: 128 characters
-of 8 by 16 each, then 16 by 32, a pixel set or not (fonts/README.md).
+of 8 by 16 each, then 16 by 32, a pixel set or not (fonts/README.md);
+with -grey, a pixel one of 4 levels, grey at the letters' edges.
   dune exec tiny/TinyKernel/fonts/Mkfont.exe -- \
     UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf tiny.font
+  dune exec tiny/TinyKernel/fonts/Mkfont.exe -- -grey \
+    UbuntuMono-Regular.ttf UbuntuMono-Bold.ttf grey.font
 With -coverage, the character c at 8 by 16 as it is made: its pixels'
 parts covered, in tenths (9 a whole one), the face's shift, and the
 pixels set beside them.
@@ -186,21 +191,30 @@ let pixels (face : face) (cov : float array) : bool array =
   List.iter (fun i -> set.(i) <- true) !bars;
   set
 
-(* a face's 128 characters as tiny.font has them: a row (w + 7) / 8
- * bytes, its left pixel the low bit of its first *)
-let bits (face : face) : string =
+(* the level of a pixel of grey.font, 0 (none) to 3 (the ink): 3 where
+ * tiny.font's pixel is set, else the part covered, rounded to thirds
+ * (old: tiny.font's alone, a pixel set or not): the same letters, with
+ * grey around them where the outline passes *)
+let level (set : bool) (v : float) : int =
+  if set then 3 else min 2 (int_of_float (Float.round (v *. 3.)))
+
+(* a face's 128 characters as tiny.font has them, depth 1: a row
+ * (w + 7) / 8 bytes, its left pixel the low bit of its first; or as
+ * grey.font, depth 2: a pixel two bits, its level, a row w / 4 bytes *)
+let bits (face : face) (depth : int) : string =
   let dx = shift face in
-  let bytes = (face.w + 7) / 8 in
+  let bytes = ((face.w * depth) + 7) / 8 in
   let b = Bytes.make (128 * face.h * bytes) '\000' in
   for c = 32 to 126 do
-    let set = pixels face (placed face dx c) in
+    let cov = placed face dx c in
+    let set = pixels face cov in
     for row = 0 to face.h - 1 do
       for x = 0 to face.w - 1 do
-        if set.((row * face.w) + x) then begin
-          let i = (((c * face.h) + row) * bytes) + (x / 8) in
-          Bytes.set b i
-            (Char.chr (Char.code (Bytes.get b i) lor (1 lsl (x mod 8))))
-        end
+        let p = (row * face.w) + x in
+        let v = if depth = 1 then Bool.to_int set.(p) else level set.(p) cov.(p) in
+        let i = (((c * face.h) + row) * bytes) + (x * depth / 8) in
+        Bytes.set b i
+          (Char.chr (Char.code (Bytes.get b i) lor (v lsl (x * depth mod 8))))
       done
     done
   done;
@@ -249,13 +263,14 @@ let main (caps : < caps; .. >) (argv : string array) : int =
              ^ String.init f.w (fun x -> if set.(i x) then '#' else '.') ^ "\n")
         done;
         0
-    | [ regular; bold; out ] ->
+    | ([ regular; bold; out ] | [ "-grey"; regular; bold; out ]) as args ->
         let read f = Truetype.of_string (FS.read caps (Fpath.v f)) in
         let r = read regular and b = read bold in
+        let depth = if List.hd args = "-grey" then 2 else 1 in
         FS.write caps (Fpath.v out)
           (String.concat ""
-             [ bits (face r 8 16); bits (face b 8 16);
-               bits (face r 16 32); bits (face b 16 32) ]);
+             [ bits (face r 8 16) depth; bits (face b 8 16) depth;
+               bits (face r 16 32) depth; bits (face b 16 32) depth ]);
         0
     | _ ->
         Console.eprint caps

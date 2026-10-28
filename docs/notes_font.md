@@ -386,5 +386,31 @@ good"); bold and underlined text kept the fast path, the plain text's
 (draw.tm's glyphs: 8 by 16 cells either way), where it was a draw a
 character.
 
-Left: grey edges (2), if the 1-bit faces are not smooth enough; the
-characters beyond ASCII (both fonts have them, the kernel's font 128).
+**Then grey edges (2).** The author: "What's next to get a font that
+looks more like what I currently see in my terminal and emacs on this
+host?", then "let's make the code configurable so one can easily switch
+to the bitmap font vs grey fonts". `grey.font`: Mkfont -grey, the
+same letters (tiny.font's pixels, its fitting kept: the stems on whole
+pixels), each pixel one of four levels, two bits, the pixels tiny.font
+leaves out grey by the part covered, a third or two; 40,960 bytes, the
+same four faces. The kernel knows it by its size: a mask byte 0, 85,
+170 or 255. A colour through such a mask is mixed by a table made for
+the colour when first drawn with (1 KB: for each level and each
+colour under it, the colour of Plan 9's table nearest to the mix),
+draw.tm's mix_table: the nearest among the 16 a mix can be near, one
+for each (den, v) of the table's formula, the same as a search of the
+256 but for ties. In tiny-ml's ML it was 3.5 million instructions a
+colour, half a second of the machine's: tiny-windows' first menu drew
+so late that the recorded click on it was taken for its item exit;
+in assembly some 230,000. Texts by draw.tm's glyphs_mixed (a byte at a
+time where a row is not blank), the others by row_mix. A whole session
+costs 0.3% (www) to 5% (emacs) more instructions than with tiny.font.
+
+grey.font is the default (tiny-kernel's Makefile, tiny/sdl's dune);
+the bitmap one switch away: `make FONT=fonts/tiny.font`,
+`TINY_FONT=tiny/TinyKernel/fonts/tiny.font` on the host. A source of
+more than a colour through a font of levels, and a program's own mask,
+are still set or not (a level not 0 is set).
+
+Left: the characters beyond ASCII (both fonts have them, the kernel's
+font 128); a larger screen (3), the one way to the Emacs's 43 pixels.

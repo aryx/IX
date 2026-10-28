@@ -18,12 +18,12 @@ let fill = d_fill
 let line_ = d_line
 let text_ = d_text
 
-(* the font's bits are at [bits]; the screen at its address, the
+(* the font's size bytes are at [bits]; the screen at its address, the
  * images' memory after it, to the last page *)
-let picture bits =
+let picture bits size =
   arena 0xf4b000 0xb4000;
   let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false } in
-  let c = connect screen (font_mask bits 2048 (alloc 16384)) in
+  let c = connect screen (font_mask bits size (alloc 16384)) in
   let send s = messages c s in
   let grey = 1 and blue = 2 and white = 3 and black = 4 and red = 5
   and yellow = 6 and green = 7 in

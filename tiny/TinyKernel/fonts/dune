@@ -1,5 +1,6 @@
-; Mkfont: tiny.font from a TrueType font, by ix's own reader and filler
-; (lib_graphics); run by hand, its output kept in the repository
+; Mkfont: tiny.font and grey.font from a TrueType font, by ix's own
+; reader and filler (lib_graphics); run by hand, its output kept in the
+; repository
 (executable
  (name Mkfont)
  (modules Mkfont)

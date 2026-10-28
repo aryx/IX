@@ -1,0 +1,14 @@
+$D/Browser_profile.$O: $D/Browser_helpers.$O
+$D/Browser_profile.$O: $D/Browser_zoom.$O
+$D/Browser_profile.$O: $D/Places.$O
+$D/Tab.$O: $D/Browser_helpers.$O
+$D/Tab_worker.$O: $D/Tab.$O
+$D/Tab_worker.$O: $D/Worker_spawn.$O
+$D/Netscape.$O: $D/Browser_helpers.$O
+$D/Netscape.$O: $D/Browser_profile.$O
+$D/Netscape.$O: $D/Browser_zoom.$O
+$D/Netscape.$O: $D/Places.$O
+$D/Netscape.$O: $D/Scrollbar.$O
+$D/Netscape.$O: $D/Tab.$O
+$D/Netscape.$O: $D/Tab_worker.$O
+$D/Netscape.$O: $D/Worker_spawn.$O

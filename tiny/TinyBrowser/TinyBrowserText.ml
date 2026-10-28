@@ -76,6 +76,7 @@ let entity name =
   | "lsquo" -> 0x2018 | "rsquo" -> 0x2019 | "ldquo" -> 0x201c
   | "rdquo" -> 0x201d
   | "middot" -> 0xb7 | "bull" -> 0x2022 | "times" -> 0xd7 | "copy" -> 0xa9
+  | "reg" -> 0xae
   | "shy" -> 0xad
   | "rarr" -> 0x2192 | "larr" -> 0x2190 | "laquo" -> 0xab | "raquo" -> 0xbb
   | "deg" -> 0xb0

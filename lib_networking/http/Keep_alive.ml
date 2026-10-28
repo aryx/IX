@@ -66,6 +66,19 @@ let ask (c : Tls_client.t) ~(host : string) (request : string) : outcome =
   in
   wait 0.
 
+(* a request on a new connection, closed after its answer: the answer
+ * ends where its head says, not only when the server closes
+ * (www.craigslist.org keeps it open despite Connection: close, so all
+ * its 12 KB came and Tcp.timeout's 30 s later an error. old:
+ * Tls_client.exchange, which reads up to the connection's end) *)
+let once (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) (request : string) : (string, string) result =
+  match Tls_client.connect caps ~trust ~host ~port with
+  | Error e -> Error e
+  | Ok c -> (
+      let o = ask c ~host request in
+      Tls_client.close c;
+      match o with Whole (answer, _) | Ended answer -> Ok answer | Failed (why, _) -> Error why)
+
 let exchange (caps : < Cap.network; Cap.open_in; .. >) ~(trust : X509.roots) ~(host : string) ~(port : int) (request : string) : (string, string) result =
   let finish (c : Tls_client.t) (o : outcome) : (string, string) result =
     match o with

@@ -45,8 +45,9 @@ let once_with (o : options) (caps : < Cap.network; Cap.open_in; .. >) ~(post : (
   let* (response : Http.response) =
     if url.scheme = Some "https" then
       let trust = Tls_client.system_roots caps in
-      (* old: Tls_client.exchange alone, a connection and its handshake a request *)
-      let* answer = if o.keep then Keep_alive.exchange caps ~trust ~host ~port request else Tls_client.exchange caps ~trust ~host ~port request in
+      (* old: Tls_client.exchange alone, a connection and its handshake a
+       * request; then Tls_client.exchange when not kept *)
+      let* answer = if o.keep then Keep_alive.exchange caps ~trust ~host ~port request else Keep_alive.once caps ~trust ~host ~port request in
       Http.parse_response answer
     else
       match Tcp.exchange caps ~host ~port request with

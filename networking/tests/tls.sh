@@ -55,6 +55,7 @@ check "AES-128-GCM, RSA" 'TLS_AES_128_GCM_SHA256' --cacert $W/rsa.pem https://lo
 kill $pid; wait $pid 2> /dev/null
 serve ec TLS_AES_128_GCM_SHA256
 check "AES-128-GCM, ECDSA" 'TLS_AES_128_GCM_SHA256' --cacert $W/ec.pem https://localhost:$port/
+kill $pid; wait $pid 2> /dev/null
 for group in X25519 P-256 P-384; do
   serve ec ECDHE-ECDSA-AES128-GCM-SHA256 $group
   check "TLS 1.2, $group, AES-128-GCM, ECDSA" 'ECDHE-ECDSA-AES128-GCM-SHA256' --cacert $W/ec.pem https://localhost:$port/

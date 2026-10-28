@@ -5,7 +5,7 @@
 # m-ix building in itself, a small part, for make test (plan_tests.md;
 # make self-quick takes 4 minutes, make self 3 hours). In a directory of
 # its own:
-#  - ix for arm and Plan 9 by mini-mk: the libraries, rc, the toolchain,
+#  - ix for arm and Plan 9 by mini-mk: lib_core, rc, the toolchain,
 #    what boot.rc runs, self-quick's two programs (tests/self/);
 #  - a mini-9pi for the Pi 2 with those in its bootdir;
 #  - a small card: the toolchain (ml, cc, asm, ld) and cmp, lib_core's
@@ -28,7 +28,9 @@ X=$D/mk/5-plan9
 log() { echo $D/mk.$(echo $1 | tr / _).log; }
 mk() { (cd $1 && NPROC=32 mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log $1) 2>&1 ||
   { echo "mini-mk failed in $1:"; tail -3 $(log $1); return 1; }; }
-mk . libs
+# (lib_core alone: these programs name no other library, LIBDIRS; old:
+# mk . libs, the 20 of the top mkfile, 31 s of which 27 for nothing)
+mk lib_core
 mk assembler
 pids=()
 for d in shell linker languages/ml languages/c utilities/files utilities/misc \

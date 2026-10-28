@@ -588,7 +588,7 @@ check: $(O)/boot.img
 	cat $(NCHECK:%=$(O)/check/%.out) | sed -E $(MASK) > $(O)/check/check.out
 	diff $(T)/check.expected $(O)/check/check.out
 	rm -rf $(O)/check && echo "tiny-kernel: check ok"
-check-parts: $(NCHECK:%=$(O)/check/%.out) $(SCREENS:%=$(O)/check/%.sum) $(O)/check/tetris.wav.sum $(O)/check/korobeiniki.wav.sum
+check-parts: $(NCHECK:%=$(O)/check/%.out) $(SCREENS:%=$(O)/check/%.sum) $(O)/check/tetris.wav.heard $(O)/check/korobeiniki.wav.sum
 $(O)/check/01.out: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/02.out: $(O)/boot.img
@@ -661,9 +661,17 @@ $(O)/check/26.out: $(O)/boot.img
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }
-$(O)/check/tetris.wav.sum: $(O)/boot.img
+# tetris's music heard: 8-bit samples at 8000 a second, over 100,000
+# bytes (12 s), more than half not the silence's 128. old: the WAV's
+# sum, which moved with any change of the image (the music's notes in
+# other places among the keys): re-recorded 12 times in a week
+$(O)/check/tetris.wav.heard: $(O)/boot.img
 	timeout 300 $(MACHINE) -events $(T)/tetris.events -audio $(O)/check/tetris.wav $(O)/boot.img > /dev/null
-	cksum < $(O)/check/tetris.wav > $@; diff $(T)/tetris.wav.cksum $@ || { echo "tiny-kernel: tetris.events: other sounds ($(O)/check/tetris.wav)"; exit 1; }
+	n=$$(wc -c < $(O)/check/tetris.wav); \
+	  s=$$(tail -c +45 $(O)/check/tetris.wav | tr -d '\200' | wc -c); \
+	  echo "$$n bytes, $$s samples not silent" > $@; \
+	  [ $$n -gt 100000 ] && [ $$((s * 2)) -gt $$n ] || \
+	  { echo "tiny-kernel: tetris.events: no music ($(O)/check/tetris.wav: $$n bytes, $$s not silent)"; exit 1; }
 $(O)/check/korobeiniki.wav.sum: $(O)/boot.img
 	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check/korobeiniki.wav $(O)/boot.img > /dev/null
 	cksum < $(O)/check/korobeiniki.wav > $@; diff $(T)/korobeiniki.wav.cksum $@ || { echo "tiny-kernel: play: other sounds ($(O)/check/korobeiniki.wav)"; exit 1; }

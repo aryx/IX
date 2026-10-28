@@ -8,7 +8,8 @@
 # largest sample, the last, the one after), two sounds at one place,
 # the ring going round, messages read and bad ones; against
 # sounds.expected. The kernel's own, on tiny-machine, is TinyKernel's
-# check (tetris.events' sounds, a WAV's sum). RECORD=1 records.
+# check (tetris.events' music heard, korobeiniki.wav's sum). RECORD=1
+# records.
 # usage: TinyKernelAudio_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)

@@ -35,7 +35,7 @@ test-lite: 135 jobs, 0 failure(s), 0 skipped, 117 s
 ```
 
 - **The groups.** shared: what both systems stand on (ix's types by
-  OCaml 5.5, the sources as text, lib_core by mini-ml); t-ix: the tiny
+  OCaml 5.5, sources git can diff, lib_core by mini-ml); t-ix: the tiny
   programs, tiny-kernel booted, t-ix compiling in tiny-kernel; m-ix:
   the mini programs, ix built by ix and its programs used, m-ix
   compiling in mini-9pi. `grep '^\[t-ix\]'` keeps one.

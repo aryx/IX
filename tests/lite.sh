@@ -59,7 +59,7 @@ dune build 2> $W/dune.log || { echo; echo "FAIL dune build"; head -20 $W/dune.lo
 [ -t 1 ] && printf '\r\033[K'
 
 # the groups (plan_tests.md): shared, what both systems stand on (OCaml
-# 5's types, the sources as text, lib_core compiled by mini-ml); t-ix,
+# 5, sources git can diff, lib_core compiled by mini-ml); t-ix,
 # the tiny programs and tiny-kernel; m-ix, the mini programs, mini-ml,
 # and ix built by ix. The arguments choose (mix, tix; shared always), none all.
 want_groups=" "
@@ -132,7 +132,7 @@ no7="arm64's programs do not run here"
 mkdir -p tests/snapshots _build/testo/status
 
 group shared
-family "sources as text, by OCaml 5" build
+family "builds with OCaml 5 too" build
 # ix by the other OCaml too, its types (@check, in _build5): CI builds
 # with 4.14 and 5.5, a keyword of 5's (effect) once broke the second
 # unseen (plan_tests.md); here when the switch is there and dune's
@@ -157,10 +157,11 @@ case $(ocamlfind ocamlopt -version) in
   *) if has5; then job "$t5, tiny-ml's bytes" by5
      else skip "$t5" "no opam switch $ocaml5"; fi;;
 esac
-job "every source is text" tests/text_files.sh
+family "git can diff every source"
+job "no control byte in a source (git takes it for binary)" tests/text_files.sh
 
 group t-ix
-family "tiny programs' tests"
+family "each tiny program's tests"
 job "tiny-shell: scripts against 9base's rc" tiny/tests/TinyShell_test.sh
 job "tiny-editor: sam's commands against 9base's sam" tiny/tests/TinyEditorLine_test.sh
 job "tiny-db: random sessions against SQLite" tiny/tests/TinyDatabase_test.sh 5
@@ -179,7 +180,7 @@ job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
-family "tiny-kernel run: net, fs, sound" system
+family "tiny-kernel on tiny-machine" system
 # (on an image of its own: TinyKernel's _make is the sessions', rebuilt
 # under a run)
 tiny_network() {
@@ -209,7 +210,7 @@ tiny_kernel() {
   done
 }
 job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
-family "" system
+family "t-ix builds part of itself" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc and as, its object the host's (read from the disk by
@@ -246,7 +247,7 @@ END
 job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
 
 group m-ix
-family "programs' unit tests"
+family "each program's unit tests"
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
@@ -267,7 +268,7 @@ job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
 job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
 job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
-family "against recorded outputs" reference
+family "same output as recorded" reference
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games: recorded frames" games/tests/frames.sh
 job "games: recorded sounds" games/tests/audio.sh
@@ -288,7 +289,7 @@ job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh
-family "against other programs, laws" reference
+family "vs real tools (gcc, git...)" reference
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
 job "libc: memmove, memset and arm's division, the machines' assembly" lib_core/libc/tests/mem_check.sh
 job "mini-ml -pp" languages/ml/tests/pp.sh
@@ -311,7 +312,7 @@ job "mini-git: git9's tests" version_control/tests/git9_tests.sh
 job "mini-git: clone, fetch, push against git's servers" version_control/tests/net.sh
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 
-family "mini-ml's output vs OCaml's" reference
+family "mini-ml code runs as OCaml's" reference
 # mini-ml, m-ix's compiler: programs of today's OCaml, in four jobs
 # (each builds the stdlib first)
 M=languages/ml/tests/modern
@@ -328,8 +329,8 @@ else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 compiles() { languages/ml/tests/compile_ix.sh -v "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
 for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
   case $d in
-    lib_core) group shared; family "lib_core compiled by mini-ml" build;;
-    *) group m-ix; family "m-ix compiled by mini-ml" build;;
+    lib_core) group shared; family "mini-ml compiles lib_core" build;;
+    *) group m-ix; family "mini-ml compiles m-ix" build;;
   esac
   job "mini-ml compiles ${d%% *}" compiles $d
 done
@@ -349,18 +350,18 @@ compiles_parts() {
   job "mini-ml compiles ${dirs%% *}..., the rest" compiles $rest
 }
 group t-ix
-family "tiny/ compiled by mini-ml" build
+family "mini-ml compiles tiny/" build
 compiles_parts tiny tiny/TinyKernel \
   "tiny/TinyML tiny/TinyOffice tiny/TinyBrowser tiny/TinyMachine tiny/TinyC"
 group m-ix
-family "m-ix compiled by mini-ml" build
+family "mini-ml compiles m-ix" build
 compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
   browsers/javascript "browsers/engine browsers/webapi" \
   "browsers/netscape browsers/css browsers/html"
 compiles_parts \
   "games lib_playground lib_juice lib_ai lib_graphics lib_gui examples apps" \
   games/fps "games/racing apps" "lib_graphics lib_playground"
-family "" system
+family "m-ix builds part of itself" system
 
 # ix built by ix, from nothing: the libraries, the assembler (the others
 # read its interfaces' objects), then the programs side by side
@@ -464,7 +465,7 @@ else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-family "ix built by ix, then used" build
+family "ix built by its own tools" build
 job "ix built by ix" ix_build
 if [ -n "$runs7" ]; then
   a=-after-ix
@@ -621,9 +622,9 @@ tree() {
     done
   done
   # (the colors' legend)
-  [ -n "$color" ] && printf "%s: %s %s %s test;  %s: %s, %s, %s\n" names \
-    "$(kpaint build build)" "$(kpaint system system)" "$(kpaint reference reference)" \
-    "times, of the budget" "$(tpaint 0 1 'within half')" "$(tpaint 1 1 within)" "$(tpaint 2 1 past)"
+  [ -n "$color" ] && printf "%s: %s %s %s test;  %s: %s, %s, %s\n" kinds \
+    "$(kpaint build compile)" "$(kpaint system boot)" "$(kpaint reference compare)" \
+    "time" "$(tpaint 0 1 'under half the budget')" "$(tpaint 1 1 under)" "$(tpaint 2 1 over)"
 }
 # a terminal's: the tree made first, then written over the one drawn
 # before in one go, each line's end cleared, then what is below: nothing

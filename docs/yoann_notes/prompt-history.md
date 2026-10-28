@@ -51910,3 +51910,1553 @@ Claude stated that both of its changes were already committed, rather than left 
 Claude said the new modules were assembled and the order of www's lines was checked before committing.
 Claude then planned to clean up its private build directory once the background run using that image finished.
 Yoann's reply suggests he wanted the commit done explicitly rather than taken as already complete.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:45
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude reported that all of this session's work already sits in five commits, so nothing of its own was left to commit.
+Claude listed those commits as b09a56e4 (Filename.extension in lib_core), c1c443bd (tiny-www speaks HTTP and dispatches WAV or PDF by Content-Type), and 15f1a021 (tiny-kernel without zombies).
+Claude also listed 89a5ff7a (missing TinyBrowserHttp lines in self.expected) and 36fd69cf (TinyBrowserPage renamed to TinyBrowserHtml, drawing moved to TinyBrowserScreen).
+Claude noted the finished 19-minute tiny-kernel build confirmed the last commit, since its bin/www matched the host's.
+Claude pointed out that the leftover changes (staged prompt-history.md, CLI.ml, depend.rc) weren't its own, and asked whether to commit them.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:45
+
+**Yoann:**
+
+> and should be added probably in the notes opti inventory
+
+**Claude (summary):**
+
+Claude made Marshal read into the old generation, and `make test` passed on HEAD plus this change.
+Claude left the Pi 2 count running under mini-5i, expected to take about 25 minutes.
+Claude planned to write the plan section once that count came in.
+Claude named inventory row C50 and a ledger row to add after the count.
+Claude proposed asking Yoann about the commit once those rows were written.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:54
+
+**Yoann:**
+
+> ok, let's commit when the count is in
+
+**Claude (summary):**
+
+Claude said the count was still running under mini-5i and should finish around 12:20.
+Claude planned to add the count's number to the plan, inventory row C50, and the ledger once it finished.
+Claude then intended to commit gc.c, Marshal.ml, and the docs together in one commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:56
+
+**Yoann:**
+
+> why it takes so much time to test this optimization?
+
+**Claude (summary):**
+
+Claude explained that the slowness comes from the workload, not the test: linking mini-ml is about 16 billion ARM instructions.
+Claude said mini-5i, the OCaml ARM emulator, runs roughly 10 to 15 million instructions per second, making a link take 25 to 35 minutes.
+Claude's main proposal was to iterate on a small link, such as one of the mini-utils, which shows the same per-object costs in under a minute.
+Claude suggested keeping mini-ml's full link only for the final number, and using native arm64 timing (for example the Marshal bench) as a quick check.
+Claude also noted that the 64-core host can run more variants in parallel, and committed to measuring small links first from the next change on.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:57
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude saved a memory so it will follow the new working approach from now on.
+Claude said the count for this change is still running and should finish around 12:20.
+Claude promised to commit the change right after the count completes.
+Yoann's reply, "we can't wait so much," points at the delay: the 12:20 wait is too long for him.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:59
+
+**Yoann:**
+
+> we can't wait so much
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:00
+
+**Yoann:**
+
+> we should wait maximum 5min when testing hypothesis
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:46
+
+**Yoann:**
+
+> ok can I close this session?
+
+**Claude (summary):**
+
+Claude said Yoann can close the session, since everything is committed and nothing is still running.
+Claude flagged that the seven commits are local only on main and have not been pushed.
+Claude noted that `make self` never ran (3½ hours), so the self.expected lines are unverified until tonight's GitHub nightly.
+Claude matched the derived self.expected lines against a real build of `bin/www` on tiny-kernel, but only the nightly checks the full file.
+Claude warned that the script deriving self.expected lives only in this session's scratchpad and will be lost when it closes.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:00
+
+**Yoann:**
+
+> maybe you can use qemu instead of mini-5i if it's too slow, or improve mini-5i
+
+**Claude (summary):**
+
+Claude recommended a quick profile of mini-5i before building qemu with TCG plugins.
+Claude noted mini-5i runs 10 to 15 million instructions per second, so callgrind could reveal a cheap 2 to 3 times speedup.
+Claude argued that a faster mini-5i also benefits every other m-ix twin that depends on it.
+Claude also flagged that qemu-arm is fast but Ubuntu's build lacks `-plugin`, so counting is slow.
+Claude committed a corrected diff as 8fdcb9bb and left the mini-ml link counting in the background.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:06
+
+**Yoann:**
+
+> ok let's have a look at optimizing mini-5i. we could indeed build qemu but it's also nice to dogfood mini-5i and dogfood possibly optimizations on mini-5i that could benefit also other m-ix programs
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:06
+
+**Yoann:**
+
+> also how much this old generation think improved the speed of mini-ld?
+
+**Claude (summary):**
+
+Claude reported that mini-ml's link on the Pi 2 fell from 15.70 to 14.94 billion instructions.
+Claude found the machine at 121 of 125 GB of memory used, partly from other sessions.
+Claude said its callgrind profile of mini-5i was killed, since its memory use did not fit.
+Claude planned to retry callgrind once memory frees up, or with a shorter run.
+Claude also noted that mini-5i itself runs at 13.8 million instructions per second on interp.ml.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:11
+
+**Yoann:**
+
+> wow the machine is under heavy load, why?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:12
+
+**Yoann:**
+
+> let's kill them
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:13
+
+**Yoann:**
+
+> I can't even run the system monitoring tool
+
+**Claude (summary):**
+
+Claude diagnosed the memory pressure as a runaway chain of 46,880 `rc` processes, all forked from another session's `depend.rc` run.
+Claude said that chain runs from a deleted `rc` binary, so it will never stop without intervention.
+Claude gave a targeted kill command that only stops processes whose executable is that deleted `rc`, and suggested asking the other session to stop.
+Claude also killed its own two stale `qemu-arm` processes and offered to record the `depend.rc` self-recursion bug in `docs/plans/bugs/ix.md`.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:18
+
+**Yoann:**
+
+> there are also lots of openssl command in ps aux
+
+**Claude (summary):**
+
+Claude fixed the `networking/tests/tls.sh` leak: the test now passes and leaves no server behind.
+Claude found 272 orphaned `s_server` processes left by earlier `make test` runs, and left their cleanup to Yoann.
+Claude gave a one-liner that kills only `openssl` servers whose `/tmp/tmp.*` test directory no longer exists.
+The `tls.sh` fix (one added `kill $pid; wait $pid` after the third server) was not yet committed, pending Yoann's approval.
+Claude also flagged the runaway `rc` chain using 171 GB, whose command was in its previous message.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:19
+
+**Yoann:**
+
+> yes let's commit the tls.sh fix
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:20
+
+**Yoann:**
+
+> 20000 process again ...
+
+**Claude (summary):**
+
+Claude reported a second runaway chain of 22,903 `rc` processes, started by a session's `depend.rc` runs, and gave a `kill` command to stop them.
+Claude guessed the cause: `$ML -depend` in `mkfiles/depend.rc` re-runs the script itself, not mini-ml, but did not confirm it.
+Claude said it could not stop another session's processes and suggested that session check `$ML` and run under `ulimit -u`.
+Claude noted that the 272 leaked openssl servers and the uncommitted one-line `tls.sh` fix were still pending.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:21
+
+**Yoann:**
+
+> kill those openssl servers
+
+**Claude (summary):**
+
+Claude reported that all 272 leaked openssl servers were killed, leaving none running.
+Claude recommended a one-line fix to networking/tests/tls.sh, since each make test was leaking two openssl servers.
+The fix is uncommitted, and Claude asked whether Yoann wants it committed.
+The leftover rc chain belongs to another session, so Claude left it alone.
+Clearing that rc chain was described in Claude's previous message.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:23
+
+**Yoann:**
+
+> ok looks like we have a better load now
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:23
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended committing the one-line `tls.sh` fix so `make test` stops leaving TLS servers running.
+Claude proposed recording both of today's leaks in `docs/plans/bugs/ix.md`, the TLS servers as fixed and the `depend.rc` chain as unexplained.
+Claude asked whether those two leak notes belong in the same commit as the `tls.sh` fix.
+Claude then planned to profile mini-5i with callgrind, now that memory is free, aiming for faster arm counts.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:25
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude proposed profiling mini-5i with callgrind next, since memory now allows it to run.
+Claude suggested taking the largest cost callgrind reports in mini-5i as the next target to improve.
+Claude asked Yoann to agree before starting, rather than beginning the mini-5i profiling immediately.
+Before that, Claude committed a847f22b with the one-line tls.sh fix and both bugs in docs/plans/bugs/ix.md.
+Claude ran make test first, which passed with 135 jobs, 0 failures, and no leftover openssl server.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:29
+
+**Yoann:**
+
+> let's improve mini-5i, but before you didn't answer my question on the improvement to mini-ld perf and how much time it was and is now? (I think as part of the self m-ix thing)
+
+**Claude (summary):**
+
+Claude explained the earlier question was answered only with instruction counts, so it re-measured the self-hosted ix build on HEAD.
+Claude reported the whole ix build dropped from 128 s to 105 s, with the links nearly all of the gain.
+Claude found mini-ld's user time over 123 links fell from 644 s to 328 s, about half.
+Claude listed the drivers as a hash-table literal pool, the map fix without printing, and Marshal reading into the old generation.
+Claude also gave the Pi 2 link of mini-ml as 21.19 to 14.94 billion instructions, roughly 30 s down to 21 s.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:38
+
+**Yoann:**
+
+> yes, let's improve mini-5i
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:31
+
+**Yoann:**
+
+> let's improve the fonts for the tiny programs. Currently the font displayed in tiny-emacs, tiny-office, and tiny-www is not great and very pixelized; on both Linux and under the tiny-machine. Anything we can improve?
+
+**Claude (summary):**
+
+Claude decided to render a comparison sheet of the current font against candidate replacements.
+Claude's plan was to look at those candidates side by side before changing any font.
+Claude had not yet changed any font in the tiny programs when this answer ended.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:42
+
+**Yoann:**
+
+> note that I'm talking about tiny-kernel and tiny-machine here and the tiny- under the host
+
+**Claude (summary):**
+
+Claude recommended switching fonts in TinyKernelGraphics, so tiny-kernel, tiny-machine, and the host tiny apps all change together.
+Claude said the host tiny-emacs, tiny-office, and tiny-www embed font1.bin via tiny/sdl/dune, which is the same font source.
+Claude proposed step 1: real Terminus bold and 16×32 large replacing the made-up fonts, keeping italic as a slant.
+Claude noted the change touches tiny-kernel's image and tiny/sdl, leaves kernels/lib_machine/font1.bin and m-ix untouched, and changes expected screens in Host.ml tests.
+Claude asked whether the regular 8×16 should also switch to Terminus or stay as font1.bin.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:44
+
+**Yoann:**
+
+> ok let's do 1, but keep font1.bin as an option maybe somewhere, just for its teaching value as it was simpler
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:44
+
+**Yoann:**
+
+> and let's copy the fonts in the repo so it's self contained
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:44
+
+**Yoann:**
+
+> (not sure where, maybe tiny/TinyKernel/fonts/ or something
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:45
+
+**Yoann:**
+
+> with a clear README tracing the origin of the font
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:45
+
+**Yoann:**
+
+> (and possibly copyright notice)
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:47
+
+**Yoann:**
+
+> note that we have a notes_font.md document you might want to update
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:38
+
+**Yoann:**
+
+> and in the process hopefully possibly improve mini-ml and other programs
+
+**Claude (summary):**
+
+Claude recommended fixing mini-ml's runtime with large blocks outside the two copying halves, as the dogfood fix.
+Claude explained that such blocks would be marked and freed in place, never copied, with no write barrier needed for pointer-free data.
+Claude estimated this at 60 to 100 lines of C in `gc.c`, enough to let mini-ml's mini-5i run its 642 MB guest segment.
+Claude noted the segment exceeds the 64M-word (512 MB) per-half limit, so raising it alone would not help.
+Claude had found the 1.4x release-build speedup and the 2% `Arm32_fast` gain earlier, and offered to start on the GC fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:49
+
+**Yoann:**
+
+> yes. is it what OCaml does too?
+
+**Claude (summary):**
+
+Claude explained that OCaml never copies large blocks, since they go straight to the mark-and-sweep major heap.
+Claude proposed a large object space in `gc.c` for mini-ml, where big pointer-free blocks (`Bytes`, strings, float arrays) are marked and freed but never moved.
+Claude noted this trades a reserved region that could sit unused against the copying collector's need to move large blocks.
+Claude then planned to test a program that allocates several large `Bytes` and mini-5i built by mini-ml running interp.ml, then run `make test`.
+Claude did not yet answer Yoann's question about reserving space or moving to a mark-and-sweep collector long term.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:47
+
+**Yoann:**
+
+> based on the discussion in this session
+
+**Claude (summary):**
+
+Claude added `tiny.font`, a `TINY_FONT` override in `tiny/sdl`, a fonts README, and `docs/notes_font.md`.
+Claude recorded new screen checksums after confirming that every session's text output matched as expected.
+Claude reran dune, tiny-kernel's private check (now passing with `tiny.font`), and the t-IX tests.
+Claude fixed the few lines over 85 columns and checked that the diff matched the intended changes.
+Claude reported the fast checks passing, with `make self-quick-tix` (about six minutes) still running.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:24
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-28 11:53
+
+**Yoann:**
+
+> hmm but does that mean mini-ml need to reserve a space for those large objects and so lose potentially space for other that is then wasted if those big objects are never allocated? Should we move away from the copying collector long term to the mark sweep of ocaml?
+
+**Claude (summary):**
+
+Claude recommended keeping the copying collector and adding a large-block space now, since that removes the worst case cheaply.
+Claude explained that no space is reserved, since large blocks come from the system and go back when dead.
+On Plan 9 (m-ix under mini-9pi), freed large blocks would be kept in a list for reuse, because sbrk cannot return memory.
+Claude proposed revisiting an OCaml-style mark-and-sweep heap only if peak memory on a Pi 2-sized machine blocks self-m-ix.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:25
+
+**Yoann:**
+
+> what are the toplevel a.c, b.c d1/ d2/ .hidden?
+
+**Claude (summary):**
+
+Claude explained that the toplevel a.c, b.c, d1/, d2/, and .hidden are leftovers from another session's shell tests.
+Claude said they were not part of this change, and it pointed to the summary for details.
+Claude then announced it would commit only this change's files, using pathspec-based staging.
+Yoann replied "yes let's delete and fix," so he approved removing the leftover files and fixing the problem.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:31
+
+**Yoann:**
+
+> yes let's delete and fix
+
+**Claude (summary):**
+
+Claude pointed out that the existing check would not catch the bug, since `cd ""` succeeds and `pwd -P` still prints a directory.
+Claude said the fix must test the result of `mktemp` itself instead of the directory afterward.
+Claude also noted that the script's comment repeats the same wrong claim, and planned to correct it too.
+Claude delivered the fix and the comment correction together as one change to the script.
+Yoann then asked to commit, which is the step Claude had not yet taken.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:35
+
+**Yoann:**
+
+> yes let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:36
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude committed the font fix as `91b1c185`, touching the script and `docs/plans/bugs/ix.md`, with `make test` passing.
+Claude recommended first looking at tiny-office and tiny-www on the host, comparing the new font against the current one.
+Claude then proposed extending the font to 256 characters so UTF-8 text stops rendering as `?`, as a second step.
+Claude listed grey-edged anti-aliased text as the costly option, to revisit only if the real faces still look rough.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:40
+
+**Yoann:**
+
+> The text looks less pixelated, especially biggest text in www and office, but I still don't like that much the font. Is it possible to use the font used in this terminal or in the emacs I'm currently running on this machine?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:41
+
+**Yoann:**
+
+> also where is the font located when running tiny-machine -window tiny-kernel? Do the program read the font dynamically?
+
+**Claude (summary):**
+
+Claude favored Ubuntu Mono over Terminus, and noted the font is baked into kernel.img, not read at runtime.
+Claude proposed replacing mkfont.sh with a small OCaml generator built on ix's own Truetype and Outline rasterizer.
+Claude specified the generator would read the .ttf files in tiny/TinyKernel/fonts and write tiny.font.
+Claude noted the Ubuntu Font Licence permits modified fonts, so the output keeps the name tiny.font.
+Claude asked whether to keep the Terminus files and font1.bin as alternatives alongside the generated font.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:41
+
+**Yoann:**
+
+> save the script to generate those previews and fonts
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:41
+
+**Yoann:**
+
+> in this repo in fonts/
+
+**Claude (summary):**
+
+Claude checked the Ubuntu Mono "Bold" row against `UbuntuMono-B.ttf` and found it was rendering non-bold.
+Claude confirmed the bold rendering was correct after that check.
+Claude changed the sheet output to default to the current directory, so it stays out of the repo.
+Claude also added the script to the fonts README so it is listed with the other files.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:43
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:28
+
+**Yoann:**
+
+> yes let's go ahead
+
+**Claude (summary):**
+
+Claude recommended two commits, with mini-5i's mmap, munmap, and Memory.unmap support going in first.
+The second commit would hold the large-block space in gc.c and unix.c, plus tests/runtime/large.ml and the docs.
+Claude noted that make self-quick-mix (about 6 minutes) had not been run, though make test passes with 135 jobs.
+The rewrapped long lines in Linux.ml and Memory.ml were checked only by a build and a small mmap run.
+Nothing was committed yet, and Claude asked Yoann to confirm before making either commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:57
+
+**Yoann:**
+
+> yes, let's do the two commits
+
+**Claude (summary):**
+
+Claude reported two commits: 01ada90d adding anonymous mmap/munmap and Memory.unmap to mini-5i's Linux layer, and 2a011cf9 adding the large pointer-free block space, large.ml test, plan section, and inventory and ledger rows.
+Claude left out an unrelated uncommitted docs/notes_font.md change belonging to another session, and the commit still went through.
+Claude noted that make self-quick-mix has not been run and would take about six minutes.
+Claude proposed next profiling mini-ml's own build of mini-5i, since it runs 1.64x slower than the OCaml build.
+Claude argued the profile should expose slow spots in mini-ml's code itself, benefiting every m-ix program, not just the emulator.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 14:44
+
+**Yoann:**
+
+> and move forward
+
+**Claude (summary):**
+
+Claude had already committed 9f108d18, with make test passing all 135 jobs.
+Claude copied the two Ubuntu Mono files into fonts/ and checked ix's rendering against FreeType's at 4×.
+Claude wrote the README for the three fonts, pinning Ubuntu Mono 0.80 to Google Fonts commit 90abd17b.
+Claude found the m's middle stem drawn only for its top four rows, so the fix was lost.
+Claude added a -coverage option to print a character's coverage at the chosen shift, for tuning.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:04
+
+**Yoann:**
+
+> yes let's commit
+
+**Claude (summary):**
+
+Claude committed the Ubuntu Mono font switch as `bbe501d5`, covering 38 files including `Mkfont.ml`, `tiny.font`, and the 26 screen checksums.
+Claude left out another session's uncommitted `tests/lite.sh` and `prompt-history.md` from the commit.
+Claude recommended rebuilding tiny-kernel's image and host programs to check the new font in a real window.
+Claude had not yet checked the rendering in a real window, and noted grey-edge anti-aliasing as the costlier fallback.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:05
+
+**Yoann:**
+
+> no the font looks worse with tiny-emacs (at least on this host), the top of e is missing. Bad.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:02
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended folding toplevel constants across units in mini-ml, as ocamlopt's Closure does, as the first step.
+Claude proposed recording `let native = Sys.int_size > 32` in the unit summary as constant true, so its `if` folds away.
+Claude explained that this would bring ult32, ule32 and fits under the 16-node inline limit, cutting about 17% of the profile.
+Claude estimated the change at roughly 80 lines in Lower and Summary, also benefiting all of machine/ and mini-qemu.
+Claude had profiled mini-5i via arm64 at about 497 instructions per guest instruction, and listed a second memory cache and prologue fixes as later steps.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:20
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:21
+
+**Yoann:**
+
+> why summaries aren't valud across directories?? That's the case with ocamlopt? One should be able to read the .cmx in another dir no?
+
+**Claude (summary):**
+
+Claude explained that summaries are valid across directories, since ocamlopt reads any `-I` directory's `.cmx`.
+Claude found the gap: `mini-ml -depend` writes `.depend` lines only between units of the same directory.
+Claude proposed that `-depend` also write lines for `-I` directory units, such as `$B/lib_core/Sys.$O`, as ocamldep does.
+Claude noted this means a lib_core change rebuilds every program unit that uses it, as ocamlopt and dune do.
+Claude asked whether to adopt this plus constant folding in `Sys`, rather than hard-wiring `Sys.word_size` in Lower.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:36
+
+**Yoann:**
+
+> I'm not sure about .depend across directories because I assumed we were using a recursive mk with a specific order to satisfy the macrolevel dependency (e.g., compile lib_core/ before the programs). We can imitate for sure ocamldepend -I but I'm not entirely sure this is the issue here. Hmm but yes if lib_core cmx summary change, yes we should recompile the program so yes we probably need an accurate .depend across dirs.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:36
+
+**Yoann:**
+
+> and yes I'd rather have the general opti that hardcoding Sys.word_size thing in Lower, and have general constant folding
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:06
+
+**Yoann:**
+
+> can you also use the bold variant for tiny-emacs, like I already do I think for my own emacs right now
+
+**Claude (summary):**
+
+Claude applied the bold variant to tiny-emacs, as Yoann asked, editing the file's text.
+Claude found the file had changed on disk, and confirmed the only change there was its own edit.
+Claude's dune build stalled waiting on a lock, likely held by another session's dune build.
+Claude said it would keep waiting for the lock and continue the build once it cleared.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:37
+
+**Yoann:**
+
+> progress?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:43
+
+**Yoann:**
+
+> ok let's remove the bold weight for emacs by default; it does not read as good
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:43
+
+**Yoann:**
+
+> but the font overall is better
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:44
+
+**Yoann:**
+
+> let's commit the progress. What's next to get a font that looks more like what I currently see in my terminal and emacs on this host?
+
+**Claude (summary):**
+
+Claude re-recorded the two tiny-emacs screens that revert to the bitmap font.
+Claude then ran the full check and `make test`, which passed with 143 jobs and zero failures.
+Claude began updating the README and notes_font.md, which still described the old font generation method.
+Claude held off on committing until those doc updates were finished, so the switch is not yet in git.
+Claude's answer ended before any commit was made, so nothing was committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 15:37
+
+**Yoann:**
+
+> we can always also do further opti for Sys.word_size, but first the general one and check if it works in practice
+
+**Claude (summary):**
+
+Claude built a constant-folding pass, `simple/Fold`, that runs before Lower under `-O`, with `-no-fold` to disable it.
+Constants fold across units of one directory through summaries, which moved to version 2, but mini-5i gets no benefit yet.
+The cause, per Claude, is that `Bits.native` tests `Sys.int_size`, which comes from lib_core, whose summaries aren't read from other directories.
+Claude proposed next making `Sys.word_size` and `Sys.int_size` cross-directory constants, with `.depend` lines so lib_core changes rebuild dependents.
+Docs and the commit are still pending, and Claude asked whether to commit this first step before the cross-directory work.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:09
+
+**Yoann:**
+
+> why lib_core summaries are not read from other directories???
+
+**Claude (summary):**
+
+Claude recommended importing only constants from other directories' summaries, keeping function bodies local as decided on 10-27.
+Claude proposed the precise fix: mini-ml -depend writes ocamldep-style lines for the units used, like Bits.o on Sys.inline.
+Claude preferred that over making every program depend on lib_core's summaries, which would rebuild everything on any edit.
+Claude also proposed turning Sys.word_size and int_size into %word_size and %int_size externals so they fold.
+Claude had explained the stale-code risk and the 10-27 measurements showing body inlining slows compilation.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:33
+
+**Yoann:**
+
+> what important program or library is missing in t-ix or m-ix?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:33
+
+**Yoann:**
+
+> are we done?
+
+**Claude (summary):**
+
+Claude said it hadn't answered yet and had only listed the top of the repo, `tiny/`, and the README start.
+Claude noted that `tiny/` alone already covers a kernel, compilers, assembler, linker, editors, and build system.
+Claude said it still needed to check which m-ix directories exist and what the plans and `todo.org` list as not done.
+Claude proposed continuing with read-only `ls` and `grep` listings, with no edits, before naming any gap.
+Claude asked whether Yoann wanted it to carry on or stop here.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:36
+
+**Yoann:**
+
+> I mean are we done adding code and programs to m-ix and t-ix (in the context of our principia softwarica books)
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:37
+
+**Yoann:**
+
+> and more generally the goal of this project which is to teach a student to have the whole picture of a "computer system"
+
+**Claude (summary):**
+
+Claude said the ix projects do not yet cover everything the principia books teach.
+Claude found a missing debugger in m-ix, missing lex/yacc in t-ix, no Scheme, and no network server.
+Claude flagged security, disk file systems, virtual memory, cores and compression as whole-system gaps.
+Claude recommended security in both systems first: users, file permissions in tiny-kernel, and a login.
+Claude then suggested a t-ix disk file system and the m-ix debugger, then offered to check unverified points.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:38
+
+**Yoann:**
+
+> also are you sure 'make loc' is correct for the tiny removing the header comments? It says t-ix less 404 lines but looking just at TinyKernelMemory.mli there is a 161 hearer comment so I'm sure those header comments are more than 404 lines for the whole tiny/ code
+
+**Claude (summary):**
+
+Claude suspected the `make loc` discrepancy came from the script's file list, since no `.mli` under `tiny/` was included.
+Claude began checking the header sizes file by file to locate where the line counts went wrong.
+Claude pointed to the `files()` function as the likely place the `.mli` files get dropped.
+Yoann's follow-up confirms that `tiny-ml/` now has a real module system, so its `.mli` files must be counted.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:43
+
+**Yoann:**
+
+> hmm I think we need to count the .mli for tiny/ now. tiny-ml/ used to not have a module system and was just doing some open and concatenating files, but now we have a proper module systme
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:43
+
+**Yoann:**
+
+> what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:44
+
+**Yoann:**
+
+> was it the reason those .mli used to be skipped?
+
+**Claude (summary):**
+
+Claude explained that the `.mli` files were skipped because the 13 `tiny/` interfaces were nearly empty, not because of tiny-ml's module system.
+Claude corrected the two comments it had added, which had wrongly cited that module-system reason.
+Claude changed `scripts/stats/loc.py` to count the tiny interfaces and updated `docs/loc.md`, which now puts t-ix at about 32,070 lines.
+Yoann asked to commit and update the README while keeping the 30,000-line budget, so the README's t-IX figure of about 26,300 is the part still to change.
+Nothing has been committed yet, and the README still says the `.mli` files aren't counted.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:11
+
+**Yoann:**
+
+> yes, commit Fold first, then do the precise .depend
+
+**Claude (summary):**
+
+Claude made lib_core's `Sys` read `word_size` and `int_size` from externals `%word_size` and `%int_size`, which Fold and Lower compute.
+Claude let mini-ml import constants from other directories' summaries through `-I`, and `-depend` writes rebuild lines for them.
+Claude added `STDSUM=-I $L` to mkconfig, mkprog and mklib, so a `Sys` edit rebuilds only the units that depend on it.
+Claude measured arm64 mini-5i at 0.855 of host instructions (626.0 M vs 732.1 M) and 8 KB smaller.
+Claude had already committed Fold, and left the constants work uncommitted, with the doc hunks checked.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:08
+
+**Yoann:**
+
+> yes let's start, but let's make the code configurable so one can easily switch to the bitmap font vs grey fonts
+
+**Claude (summary):**
+
+Claude rewrote the font drawing to switch between the bitmap and grey fonts through a single setting. Grey became the default, and the bitmap font is one `make FONT=` or `TINY_FONT` switch away. The drawing changed to use a per-colour blend table, built in a new assembly routine in `draw.tm`. Claude's first OCaml version of that table build slowed the window system enough to break every graphical session, and the assembly version fixed it. Nothing has been committed yet; Claude offered to run `make self-quick` first and commit when asked.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:51
+
+**Yoann:**
+
+> let's commit! and maybe let's update t-ix.md with those new TINY_FONT env var and font stuff
+
+**Claude (summary):**
+
+Claude proposed adding the new TINY_FONT environment variable and font details to t-ix.md, covering the kernel text section and host program variables.
+Claude then planned to commit the changes once the t-ix.md update was in place.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:53
+
+**Yoann:**
+
+> it looks better. I wonder if we could still improve things; the font is not super "smooth", I can see some pixels on the e above isolated a bit.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:54
+
+**Yoann:**
+
+> scrolling is also fast on Linux and under tiny-machine
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:54
+
+**Yoann:**
+
+> so this is good news
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:54
+
+**Yoann:**
+
+> www is also nice, with blue text with some light blue for some of the background letter
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:49
+
+**Yoann:**
+
+> let's commit and update the README but keep 30000 for now
+
+**Claude (summary):**
+
+Claude said it would add the day's line to the `docs/loc.md` log, since t-ix's count jumps there.
+Claude noted that the user's rule requires `make test` to pass before every commit.
+Claude started running `make test` now, even though nothing it builds was touched.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:50
+
+**Yoann:**
+
+> excellent! let's commit this
+
+**Claude (summary):**
+
+Claude committed the 11 files by pathspec and left out the unrelated `docs/loc.md` and `docs/notes_font.md` changes. The arm64 mini-5i run now takes 0.855 of its earlier instruction count. Claude listed three follow-up optimizations for the mini-5i path: inlining `fits` into loads and stores, a two-segment Memory cache, and fewer prologue zeroings. Claude proposed starting with `fits` and noted that `make test` passed in a clean HEAD copy, but `make self-quick` has not been run.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:07
+
+**Yoann:**
+
+> in the new make test visual output, I don't understand the "source as text, OCaml5" label; let's use clearer language
+
+**Claude (summary):**
+
+Claude renamed the make test label to "OCaml 5 build, text-only files" and reworded "the sources as text" in tests/lite.sh and docs/testing.md.
+Claude explained that the single line covers two unrelated checks: the OCaml 5.5 build and tests/text_files.sh.
+Claude offered to split them into two lines, "builds with OCaml 5" and "every source a text file", since you flagged the grouping as wrong.
+Claude only ran bash -n on the script, did not run make test, and committed nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:09
+
+**Yoann:**
+
+> the grouping on the same line is weird with OCaml 5 build; they are completely different tests
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:10
+
+**Yoann:**
+
+> "every source a text file" is still not clear.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:11
+
+**Yoann:**
+
+> what are we checking?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:11
+
+**Yoann:**
+
+> I know every source is a text file ... so this line does not really say what we check
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:11
+
+**Yoann:**
+
+> or what can possibly be wrong
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:11
+
+**Yoann:**
+
+> and what this check prevent
+
+**Claude (summary):**
+
+Claude split the shared check into two lines: "ix built by OCaml 5" and "no control bytes in sources".
+Claude's rewording of the labels was wrong: "every source a text file" said nothing, so it was replaced.
+The control-byte check finds raw NUL or other control characters in sources, which git and editors treat as binary.
+Claude kept the "lib_core compiled by mini-ml" line under shared, and the ran 117 jobs with 0 failures.
+Claude did not commit anything and has not rerun the script since the last rename.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:12
+
+**Yoann:**
+
+> why lib_core compiled by mini-ml is in the shared? it's not used by t-ix, or is it?
+
+**Claude (summary):**
+
+Claude confirmed that t-ix uses lib_core, since the host tools (tiny-ml, TinyC, tiny-machine, tiny-kernel host tools, Mkfont) link `ix_core`.
+Claude explained that mini-ml compiles tiny/ against lib_core via tiny/mkfile, so the "tiny/ compiled by mini-ml" line depends on lib_core.
+Claude pointed out that programs running inside tiny-kernel are linked against their own TinyLibCore instead, so lib_core bugs break the build and emulator but not those programs.
+Claude proposed relabeling the entry as "lib_core (both systems' host side)" and left it unchanged, with the earlier label renames still uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:13
+
+**Yoann:**
+
+> let's go throught all those 'make test' category and label and try to improve them. your new sentence "(both systems host side)" is still not clear, partly because the use of "host" is also not super clear
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:08
+
+**Yoann:**
+
+> I'm not convinced those opti significantly improve mini-5i
+
+**Claude (summary):**
+
+Claude profiled the new mini-5i and found the cost is now flat, with no single item worth more than about 10%.
+Claude judged the three proposed optimizations (inlining `fits`, prologue zeroing, the two-segment cache) too small or too narrow to close the 1.64x gap with ocamlopt.
+The two-segment cache is the one real item, about 13%, but it is mini-5i's own algorithm and would not narrow that gap.
+The remaining cost is general to mini-ml: no callee-saved registers, and calls through closures instead of direct `bl`.
+Claude recommended stopping the mini-5i work and measuring how many closure calls to other-unit functions mini-ml's compile and doom/quake make.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 17:55
+
+**Yoann:**
+
+> what is the base font we're using now? terminus? ubumtu-mono?
+
+**Claude (summary):**
+
+Claude confirmed the base font is Ubuntu Mono, with Terminus kept as an alternative at `fonts/terminus.font`.
+Claude changed mkfont to snap the rounded-letter slivers above the `e` onto the baseline, lowercase height, and capital height.
+Claude found that OCaml 5.5.1 rejected the raw font bytes in `{font|...|font}` strings, so the bytes now use `\xNN` escapes.
+Claude recorded that OCaml quirk in `docs/plans/bugs/ocaml.md` and re-recorded the kernel-graphics and tiny-kernel screens.
+Claude reported `make test` passing with 143 jobs and no failures, leaving nothing committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:18
+
+**Yoann:**
+
+> let's commit. I think the text is far more readable now. Great work.
+
+**Claude (summary):**
+
+Claude committed the work as `2fac54ca`, covering the overshoot fix, the re-made fonts, and re-recorded screens.
+Claude embedded the font as `\xNN` escapes so OCaml 5 can build it, and added the OCaml bug note.
+The pre-commit check flagged `docs/testing.md`, but Claude left it out since it belongs to another session's uncommitted changes.
+Claude noted that `make self-quick-tix` (about 6 minutes) has not been run, though `make test` asks for it because the kernel changed.
+Claude offered to run that check if Yoann wants it.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:14
+
+**Yoann:**
+
+> in 1 month I would have forgotten things so we want 'make test' to be clear
+
+**Claude (summary):**
+
+Claude rewrote every `make test` label so it states what is checked, not internal jargon.
+Claude also reworded the cryptic color legend at the bottom, which read "names: build system reference test; times, of the budget".
+Claude then ran `make test` to view the full report with the new labels.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:23
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude said every pending change was its own and began committing.
+Claude chose to commit by pathspec, staging only the files it had edited rather than the whole tree.
+No further detail appears in the answer, so the summary is limited to this single step.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:16
+
+**Yoann:**
+
+> ok let's move on and stop mini-5i. What's next then?
+
+**Claude (summary):**
+
+Claude laid out the status of the seven-item plan, noting items 1, 2, 5 and 7 are done.
+Claude recommended item 3 (loop invariants and common subexpressions in ssa/) as the next stage, since it targets the games' inner loops.
+Claude flagged three costs: reloads of slots each loop turn, stack saves around calls, and the mini-ml collector at 24%.
+Claude proposed first re-profiling doom, quake, virtua and mini-ml at HEAD on arm, about five minutes, since the 10-26 profiles are stale.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:20
+
+**Yoann:**
+
+> can we close the session?
+
+**Claude (summary):**
+
+Claude confirmed that everything from the session is committed, in commits `ad712daa` and `2fac54ca`.
+Claude listed the font work: grey edges, `grey.font` made the default, and the font section in `t-ix.md`.
+Claude also covered the overshoot fix and the font built in as escapes so OCaml 5 can compile it.
+Claude noted the only uncommitted files belong to other sessions and were left alone.
+Claude flagged that `make self-quick-tix` (about 6 minutes) was not run and suggested running it before the next push.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:29
+
+**Yoann:**
+
+> still, mini-pi -g -q mini-9pi shows a console with still a better looking font, even though I think it's using font1.bin no?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:30
+
+**Yoann:**
+
+> so why the gap font-wise between t-ix and m-ix?
+
+**Claude (summary):**
+
+Claude attributed the gap mainly to Plan 9's hand-drawn Lucida font, not smoothing or the font file itself.
+Claude said the 9-pixel Plan 9 cell versus 8×16 lets 2-pixel stems fit, which explains the cramped bold.
+Claude recommended first using Plan 9's default font in t-ix via Mkfont, which means making the cell width a parameter.
+Claude flagged that the 71-column layout change and the Lucida font licence both need checking before committing.
+Claude offered a preview sheet comparing Plan 9's font and Ubuntu Mono at 9×16 with the current font, and you agreed.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:33
+
+**Yoann:**
+
+> running mini-pi -g -q mini-9pi seems slower (and with some weird ls errors) than it used to be. Do we still have the test-speed also measuring this?
+
+**Claude (summary):**
+
+Claude confirmed `make test-speed` still has `build-9pi`, but its last run was six days ago, and the `ls` errors come from the build.
+Claude traced the `games` directory's 2.2 s rebuild to its bootdir, which is remade whenever one of its programs is newer.
+Claude found 627 files under `_mk/5-plan9` newer than 19:38, possibly from a second session sharing `_mk`.
+Claude found that `card` does two walks of about 11 s each, one for the Pi1 and one for the Pi2.
+Claude asked when `card` started the Pi2 walk, since all of `build-9pi` took 12 s on 2026-10-22.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:36
+
+**Yoann:**
+
+> let's do 1 and 2
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:34
+
+**Yoann:**
+
+> yes!
+
+**Claude (summary):**
+
+Claude proposed a comparison sheet of font candidates at 3× magnification: current grey.font and tiny.font (8×16), Plan 9's 9×15 font, and Ubuntu Mono at 9 pixels wide.
+Claude planned to add a `-cell` option to Mkfont so the Ubuntu Mono candidates could be generated in bitmap and grey, regular and bold.
+Claude noted a dune build from another session held the lock, so Mkfont would wait while the comparison sheet was written.
+Claude's own dune build hung on the futex issue seen earlier, so Claude was killing it and rebuilding.
+Yoann's reply points to the current font, so the Ubuntu Mono candidates are likely secondary to keeping grey.font and tiny.font at higher resolution.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:37
+
+**Yoann:**
+
+> hmmm test-all is now failing in GHA ... it used to be 6/6/ and green in CI so what happened? How could we have caught the regression in make test?
+
+**Claude (summary):**
+
+Claude noted test-all failed at 17:29, passed at 17:44, then failed again at 18:22 and 18:46.
+Claude checked the failing run and found that TinyBrowserHttp never writes any TinyBrowserText output.
+Claude then looked at what TinyBrowserHttp actually uses in place of TinyBrowserText.
+Claude said it had found the cause of the failure, but did not yet explain the regression or how make test could catch it.
+Before answering, Claude asked whether mini-mk has anything like GNU make's --shuffle option.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 18:27
+
+**Yoann:**
+
+> let's do the SSA opti
+
+**Claude (summary):**
+
+Claude measured the new `ssa/Cse` pass, value numbering over the dominator tree, at 0.4–0.6% smaller programs and about 0.5% fewer instructions per frame. Claude recommended dropping it, since Fold's 1.6% on doom was worth more for less code. It proposed looking at arm register pressure instead, since doom's span loop reloads 7 of 25 instructions from slots. Yoann wants Cse kept for its teaching value, so the pass stays in the pipeline after Untag.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:44
+
+**Yoann:**
+
+> CSE and SSA are classic opti so for their teaching value let's add them; maybe later other opti can come in that could enable/trigger those CSE opti
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:44
+
+**Yoann:**
+
+> but let's comment them saying they were for now not great optimizers in practice
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:40
+
+**Yoann:**
+
+> maybe let's use the higher resolution with the current font
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:52
+
+**Yoann:**
+
+> does the assembler support #define? it could be worth defining those constants?
+
+**Claude (summary):**
+
+Claude found that tiny-assembler has no named constants, only .word, .byte, .ascii, .space, .align, and .data.
+Claude proposed a six-line .equ NAME, value directive in TinyAssembler.ml so screen.tm could use WIDTH and HEIGHT.
+Claude recommended skipping the .equ directive for now, since only that one test file would use it.
+Claude noted that the kernel's draw.tm reads row width from the image record, so it never hardcoded 640.
+Claude also resized tiny-machine's screen to 1024×768 with one make test failure in m-ix, and left nothing committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:57
+
+**Yoann:**
+
+> nah let's skip it for now but let's remember it if we need similar things in the futur
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:57
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the 1024×768 screen change as 01cf8b76, staging each file by name.
+Claude kept other sessions' uncommitted work out of the commit by staging only the screen files.
+Claude's commit message records the 143-job test run and that the six-minute make self-quick-tix was skipped.
+Claude saved a memory note to suggest shared `.equ` constants in tiny-assembler if other files need the same numbers.
+Claude reported one mini-music ReBirth test failure in m-ix and left Mkfont's -cell option uncommitted.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:01
+
+**Yoann:**
+
+> it looks better!
+
+**Claude (summary):**
+
+Claude recommended keeping the 2× magnification, since it already makes t-ix text resemble mini-9pi's console.
+Claude suggested Ubuntu Mono 9×18 as a later upgrade, giving 113×42 characters at 1024×768, if more letter room is wanted.
+Claude proposed bold as the default face for darker, even 2-pixel strokes closer to Emacs, a font-only change.
+Claude noted mkfont's uncommitted `-cell` option only serves previews like the comparison sheet, so it can be committed alone or dropped.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:02
+
+**Yoann:**
+
+> what do you think we should use for the default font? (when running locally or under tiny-machine tiny-emacs, tiny-office, tiny-www)
+
+**Claude (summary):**
+
+Claude recommended keeping grey.font, the Ubuntu Mono 8×16 default, everywhere: locally and under tiny-machine.
+Claude argued regular should stay the base face, since bold at 8 pixels wide cramps letters like m and w.
+Claude suggested darkening the two grey levels in Mkfont as the cheap fix if text looks faint at 2×.
+Claude noted the bitmap tiny.font remains a fallback via FONT= or TINY_FONT=, trading crispness for 0.3% to 5% fewer instructions.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:43
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude fixed `tiny/mkfile`'s `.depend` so it lists the three units mini-ml compiles from `TinyBrowser/`.
+Claude committed the race fix as 7295627f, after confirming Http's object size changes with Text's summary present.
+Claude extended `mklib` with `DEPMORE` and a `DIRS` search fallback, fixing four of six races, then reran checks to confirm stability.
+Claude added a `make test` job that runs a parallel `-depend` edge check, now also failing on a "0 of 0" result.
+Claude is about to split the work into commit A (`DEPMORE` fixes plus `bugs/ix.md` rows) and commit B (the check).
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:04
+
+**Yoann:**
+
+> ok let's do this cheap fix. Also is there a way to test with a TINY_FONT=... the plan9 lucida font?
+
+**Claude (summary):**
+
+Claude converted Plan 9's Lucida font into the one-face, 2048-byte format of `font1.bin`, so the kernel makes the bold and large faces itself.
+Fitting Plan 9's 9-pixel characters into 8 columns costs `@` and `_` a column and cramps `m` and `w`.
+Claude gave local test commands: `TINY_FONT=...` for `tiny-emacs`, and `make FONT=...` from `tiny/TinyKernel` for the image.
+Claude kept the converter as a throwaway scratchpad script, `p9.py`, and left the font file out of the repo, since that needs a Lucida licence check.
+Claude also darkened Mkfont's edges with gamma 0.6, passed the tests, and asked whether to commit with the `-cell` option.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 19:44
+
+**Yoann:**
+
+> maybe you can add some synthetic bench where they show their value
+
+**Claude (summary):**
+
+Claude recommended committing the Cse and Licm passes, with the matrix bench and invariant tests, by explicit pathspec.
+Claude found that Cse alone gives matrix 0.870, Licm alone 0.807, and both 0.793 on arm and arm64.
+Claude fixed a Licm bug that moved Float.Array stores out of loops, and added invariants.ml regression tests for it.
+Claude listed the files to commit and excluded another session's uncommitted lib_core/mkfile, mkprog and mklib changes.
+Claude asked whether to commit, since nothing had been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:09
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended pushing first and watching GitHub's test-all, since the fixpoint race was never run locally.
+Claude proposed fixing the mini-pi build time by making `mkgames` generate all six `.depend` files in one `depend.rc` run.
+That should recover about 4 of the 5.3 s lost per walk, bringing `build-9pi` back under its 15 s limit from 22.5 s.
+Claude suggested measuring on clean copies because the shared machine is noisy, and it asked Yoann before touching the stale `.depend` in `bugs/ix.md`.
+Claude's answer ended by asking whether to start on item 2, which Yoann has now confirmed.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:32
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed 17 files by pathspec, leaving out `docs/notes_font.md` because another session is editing it.
+Claude reported stage 3 with Cse and Licm in, scoring mini-doom 0.990, mini-quake 0.991, and bench/matrix.ml 0.793.
+Claude's main finding was that register pressure on arm limits real loops: 7 of 25 instructions in mini-doom's span loop reload stack slots.
+Claude noted that 11 values are live while arm has only 5 registers, and that make self-quick was not run for the last three commits.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:36
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude laid out three next directions: the collector, bounds-check elimination, and arm register allocation.
+Claude recommended first re-running the 10-26 profiles at HEAD on arm for doom, quake, virtua, and mini-ml compiling.
+Claude estimated that profiling run at about five minutes, since much had changed since the 10-26 profiles.
+Claude said that if the collector still takes about a quarter of mini-ml compiling, it should come next.
+Claude then asked whether to run the profiles, noting the collector matters most for the Pi 2 self-build.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:36
+
+**Yoann:**
+
+> I did 1. let's start 2
+
+**Claude (summary):**
+
+Claude rewrote the `depend.rc` section from the usage line on, keeping the single-group form intact. Claude then wrote a `{ }` block in place of rc's missing `:` syntax. Claude had `mkgames` generate one `.depend-kits` file from a variable holding six groups. Claude checked the new output against the Plan 9 build's existing files, and they matched line for line. Claude ran `make test` (144 jobs, 0 failures), then planned the `build-9pi` and `build-top` runs.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:01
+
+**Yoann:**
+
+> not a fan of complexify depend.rc and this weird arguments parsing
+
+**Claude (summary):**
+
+Claude recommended dropping the `++` argument grouping and restoring `depend.rc` and `mkgames` to their original form.
+Claude added an early exit to `depend.rc` for when it gets no units, since most of `mkgames`' six runs are empty kits.
+Claude measured `games` at 1.2 s, matching the `++` version, and `make test` passed with 144 jobs and 0 failures.
+Claude admitted the earlier 16.3 s figure came from the `++` version, and the new walk runs about 0.35 s slower.
+Claude then began re-measuring `build-9pi` to get a current number.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:11
+
+**Yoann:**
+
+> let's commit and remove the echo only used by singularity
+
+**Claude (summary):**
+
+Claude committed the removal of the echo helper that only singularity used, cutting the walk from 8.45 s to 8.05 s.
+Claude ran `make test` on a copy of HEAD with the change, and all 144 jobs passed with zero failures.
+Claude timed `build-9pi` at 16.4 s, but only right after `make test`, with a load average of 25.
+That load-average-25 figure means the 16.4 s timing reflects a busy machine, not a clean measurement.
+Claude added the 16.4 s `build-9pi` timing to the history note and committed it.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:18
+
+**Yoann:**
+
+> ok let's make the plan9 font the default one for now, and keep the other fonts as well under tiny/TinyKernel/fonts/
+
+**Claude (summary):**
+
+Claude made Plan 9's font the default, with `plan9.font` built by `Mkfont -plan9` from `fonts/lucm.latin1.9`.
+Claude kept the other fonts (`grey.font`, `tiny.font`, `terminus.font`, `font1.bin`) in `tiny/TinyKernel/fonts/`.
+Claude had `Mkfont -plan9` write all four faces, so bold and large are not derived at run time.
+This fixed a recorded office session that saved at (100, 100) instead of (300, 300) when the kernel built the faces mid-session.
+`make check` passes with the 26 screens re-recorded, and nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 20:38
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude proposed starting with the major-collection policy in gc.c, growing the heap further ahead of live data.
+Claude's measurements put mini-ml's three major collections at 11.6%, and a large enough starting heap cut compile cost from 1.92 G to 1.69 G instructions.
+The fix would be a few lines in gc.c, but it trades memory, which must be checked against the Pi 2's 1 GB while the self-link already uses 511 MB.
+Claude also listed a second option: tightening `copy` and `scan_copies`, where minor collections cost about 65 instructions per promoted block.
+Claude then asked whether to start with the major policy.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:17
+
+**Yoann:**
+
+> let's raise the limit
+
+**Claude (summary):**
+
+Claude reported that `build-9pi` passes at 16.4 s against the new 18 s limit.
+Claude noted that `make test` does not run `speed.sh`, though it does pass before every commit.
+Claude ran the speed check on a copy of the tree to confirm the timing.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:21
+
+**Yoann:**
+
+> ok can I close this session?
+
+**Claude (summary):**
+
+Claude asked whether anything it wrote was still uncommitted before Yoann closed the session.
+Claude also asked whether anything from the session was worth saving to memory.
+Yoann's reply, "delete the scratchpad," picks up the scratchpad question, which Claude's answer did not explicitly raise.

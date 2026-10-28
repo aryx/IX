@@ -834,8 +834,9 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | mini-ml -depend: a directory's .depend in one run, its units' names resolved as -uses did (its tokens when they do not resolve); depend.rc a call, not an ls a unit and dir and a mini-ml a file: the tree's 66 s to 20 | +72 | -10 (depend.rc) | |
 | 2026-10-28 | .depend made by the build (mkfiles/mkdepend, depend.rc when older than a source), not in the repository; -depend's scan of a .mly/.mll also after open | +7 | +40 (mkdepend, depend.rc), the 78 files gone | |
 | 2026-10-28 | .depend beside the objects ($B/<dir>/), not the sources, so make test's build from nothing makes them; depend.rc -f for mini-mk depend | +2 | | |
+| 2026-10-28 | the top mkfile's libs in waves, each library after its NEEDS, side by side (25 s to 15 for make test's) | +20 | | |
 
-Since `92c9b4e`: +741 in ix (edits +111, new files +630) and +133 in
+Since `92c9b4e`: +761 in ix (edits +131, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the
 stdlib mini-ml needs to compile ix (decision 9: OCaml's `Set` is a
 functor).

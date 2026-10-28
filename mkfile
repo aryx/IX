@@ -11,7 +11,7 @@ DIRS=lib_core assembler linker linker/tools languages/c database builder shell e
  typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
-# The libraries first, one after the other in their order, each after
+# The libraries first, side by side in waves (libs: below), each after
 # the ones it needs (xix's and principia's top mkfiles: a directory
 # then takes the libraries as they are, a stale one built again from
 # here; mini-mk libs: the libraries alone), and the assembler (the others read its
@@ -46,9 +46,35 @@ all:V: libs
 
 # (B given on when it was said, as games/mkfile does: tests/lite.sh's
 # _mk/lite, where each library's own mkconfig would say _mk/$O)
+# lib_core, then in waves: each library whose NEEDS (its mkfile's) are
+# made, side by side, then the next (troff beside the browser's chain;
+# 25 s to 13 for tests/lite.sh's). A library its NEEDS name not in LIBS,
+# or a cycle: no wave, said, not a loop.
+# old: one after the other, in LIBS's order:
+#   for(d in $LIBS) @{cd $d && $MK 'O='$O 'OS='$OS $b} || exit 1
 libs:V:
 	b=(); if(~ $B /*) b='B='^$B
-	for(d in $LIBS) @{cd $d && $MK 'O='$O 'OS='$OS $b} || exit 1
+	@{cd lib_core && $MK 'O='$O 'OS='$OS $b} || exit 1
+	made=lib_core
+	todo=()
+	for(d in $LIBS) if(! ~ $d lib_core) todo=($todo $d)
+	while(! ~ $#todo 0){
+		wave=()
+		rest=()
+		for(d in $todo){
+			ok=1
+			for(n in `{sed -n 's/^NEEDS=//p' $d/mkfile}) if(! ~ $n $made) ok=()
+			if(~ $#ok 1) wave=($wave $d)
+			if not rest=($rest $d)
+		}
+		if(~ $#wave 0){ echo 'libs: NEEDS not in LIBS, or a cycle:' $rest >[1=2]; exit 1 }
+		pids=()
+		for(d in $wave){ @{cd $d && $MK 'O='$O 'OS='$OS $b} & pids=($pids $apid) }
+		for(p in $pids){ wait $p; ~ $status '' || exit 1 }
+		made=($made $wave)
+		todo=$rest
+	}
+	status=''
 
 # every directory's .depend (mkfiles/mkdepend) made again, those
 # whose mkfile includes mkprog, mklib, mkdepend or games/mkgames (each

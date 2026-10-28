@@ -22,9 +22,11 @@
 # nothing printed, before the processes below. old: their six each,
 # 2.4 s of games' 0.9 when nothing changed, ix's walk)
 if(~ $*($#*) --) exit
-# (a list again: from a recipe of sh's, as kernels/singularity's, one word)
-ML=`{echo $ML}
-INCLUDES=`{echo $INCLUDES}
+# (a list again when one word: from a recipe of sh's, as
+# kernels/singularity's; from rc's a list already, no process. old:
+# both split by an echo for every mkfile, two processes each)
+if(~ $#ML 1) ML=`{echo $ML}
+if(~ $#INCLUDES 1) INCLUDES=`{echo $INCLUDES}
 force=()
 if(~ $1 -f){ force=1; shift }
 file=$1

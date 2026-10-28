@@ -89,15 +89,19 @@ for i in $(seq ${JOBS:-$(nproc)}); do echo >&3; done
 # -after-ix: a check of what ix built by ix, its clock started once the
 # build is done (its own job); a skip when the build failed. Its family:
 # the last `family`'s, a line of the report with the others' (below; a
-# job of none, a line of its own)
+# job of none, a line of its own), and its kind, the color of its name:
+# build (compiles), system (boots one, in an emulator), reference
+# (against another program or a recorded output), test (none: its own)
 families=()
+kinds=()
 F=
-family() { F=$1; }
+KD=
+family() { F=$1; KD=$2; }
 job() {
   wanted || return 0
   local after=; [ "$1" = -after-ix ] && { after=1; shift; }
   local name=$1; shift
-  names+=("$name"); groups+=($G); families+=("$F")
+  names+=("$name"); groups+=($G); families+=("$F"); kinds+=("$KD")
   local k=$W/job${#names[@]}
   ( if [ -n "$after" ]; then
       until [ -f $W/ix.done ]; do sleep 0.5; done
@@ -128,7 +132,7 @@ no7="arm64's programs do not run here"
 mkdir -p tests/snapshots _build/testo/status
 
 group shared
-family "the sources, by both OCamls"
+family "the sources, by both OCamls" build
 # ix by the other OCaml too, its types (@check, in _build5): CI builds
 # with 4.14 and 5.5, a keyword of 5's (effect) once broke the second
 # unseen (plan_tests.md); here when the switch is there and dune's
@@ -175,7 +179,7 @@ job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
-family tiny-kernel
+family tiny-kernel system
 # (on an image of its own: TinyKernel's _make is the sessions', rebuilt
 # under a run)
 tiny_network() {
@@ -205,7 +209,7 @@ tiny_kernel() {
   done
 }
 job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
-family ""
+family "" system
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc and as, its object the host's (read from the disk by
@@ -263,7 +267,7 @@ job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
 job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
 job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
-family "recorded outputs"
+family "recorded outputs" reference
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games: recorded frames" games/tests/frames.sh
 job "games: recorded sounds" games/tests/audio.sh
@@ -284,7 +288,7 @@ job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh
-family "against references, laws"
+family "against references, laws" reference
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
 job "libc: memmove, memset and arm's division, the machines' assembly" lib_core/libc/tests/mem_check.sh
 job "mini-ml -pp" languages/ml/tests/pp.sh
@@ -307,7 +311,7 @@ job "mini-git: git9's tests" version_control/tests/git9_tests.sh
 job "mini-git: clone, fetch, push against git's servers" version_control/tests/net.sh
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 
-family "mini-ml runs OCaml's programs"
+family "mini-ml runs OCaml's programs" reference
 # mini-ml, m-ix's compiler: programs of today's OCaml, in four jobs
 # (each builds the stdlib first)
 M=languages/ml/tests/modern
@@ -320,7 +324,7 @@ else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's), one family:
 # a line a group (-v: a failing file's error in the log, the part's lines)
-family "mini-ml compiles"
+family "mini-ml compiles" build
 compiles() { languages/ml/tests/compile_ix.sh -v "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
 for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
   case $d in lib_core) group shared;; *) group m-ix;; esac
@@ -351,7 +355,7 @@ compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
 compiles_parts \
   "games lib_playground lib_juice lib_ai lib_graphics lib_gui examples apps" \
   games/fps "games/racing apps" "lib_graphics lib_playground"
-family ""
+family "" system
 
 # ix built by ix, from nothing: the libraries, the assembler (the others
 # read its interfaces' objects), then the programs side by side
@@ -455,7 +459,7 @@ else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
-family "ix built by ix, then used"
+family "ix built by ix, then used" build
 job "ix built by ix" ix_build
 if [ -n "$runs7" ]; then
   a=-after-ix
@@ -501,8 +505,20 @@ word() {
   case $1 in ok) paint 32 "$w";; FAIL) paint '1;31' "$w";; *) paint 33 "$w";; esac
 }
 gtag() { case $1 in shared) paint 90 "$(tag $1)";; t-ix) paint '1;36' "$(tag $1)";; *) paint '1;35' "$(tag $1)";; esac; }
+# a family's name in its kind's color; a time in its budget's (green
+# within half, yellow within, red past: $2, a job's 60 s, the whole's 120)
+kpaint() {
+  case $1 in build) paint '38;5;69' "$2";; system) paint '38;5;208' "$2";;
+    reference) paint '38;5;139' "$2";; *) echo -n "$2";; esac
+}
+tpaint() {
+  local c=32; [ $(( $1 * 2 )) -ge $2 ] && c=33; [ $1 -gt $2 ] && c=31
+  paint $c "$3"
+}
 secs() { echo "$1 / 1000" | bc -l; }
-line() { printf "%s %s %5.1f s  %s\n" "$(gtag $1)" "$(word $2)" $(secs $3) "$4"; }
+line() {
+  printf "%s %s %s  %s\n" "$(gtag $1)" "$(word $2)" "$(tpaint $3 60000 "$(printf '%5.1f s' $(secs $3))")" "$4"
+}
 # a bar of width $1, $2 of $3, red with a failure ($4)
 bar() {
   local i f=$(( $2 * $1 / $3 )) c=32; [ -n "$4" ] && c=31
@@ -513,13 +529,13 @@ failures=0
 failed=()
 slow=()
 # a job's family: its group's, or itself alone; their order, the jobs'
-declare -A g_ok g_fail g_end g_jobs g_done f_parts f_done f_fail f_end f_start
+declare -A g_ok g_fail g_end g_jobs g_done f_parts f_done f_fail f_end f_start f_kind f_max
 fkeys=()
 fkey=()
 for n in $(seq 1 ${#names[@]}); do
   g=${groups[n-1]}; g_jobs[$g]=$(( ${g_jobs[$g]:-0} + 1 ))
   k="$g/${families[n-1]:-${names[n-1]}}"; fkey[n]=$k
-  [ -z "${f_parts[$k]}" ] && fkeys+=("$k")
+  [ -z "${f_parts[$k]}" ] && { fkeys+=("$k"); f_kind[$k]=${kinds[n-1]}; }
   f_parts[$k]=$(( ${f_parts[$k]:-0} + 1 ))
 done
 report() {
@@ -535,6 +551,7 @@ report() {
   local st=; read -r st < $k.run 2> /dev/null
   [ -n "$st" ] && { [ -z "${f_start[$key]}" ] || [ $st -lt ${f_start[$key]} ]; } && f_start[$key]=$st
   f_done[$key]=$(( ${f_done[$key]:-0} + 1 )); f_end[$key]=$(now)
+  [ $ms -gt ${f_max[$key]:-0} ] && f_max[$key]=$ms
   [ $ms -gt 60000 ] &&
     slow+=("$(tag $g) $(printf '%5.1f' $(secs $ms)) s  $name")
   if [ $s = ok ]; then g_ok[$g]=$(( ${g_ok[$g]:-0} + 1 ))
@@ -553,10 +570,18 @@ report() {
     grep -av '^\[RUN\]\|^\[PASS\]\|^$\|Path to captured log' $k.txt | tail -20 | cut -c1-160 | sed "s/^/$pad| /"
   fi
 }
-# the tree, each line within 80 columns (a longer one wrapped would make
-# more lines than drawn counts)
+# the tree, each line within the terminal's columns, 80 elsewhere (a
+# longer one wrapped would make more lines than drawn counts): past 80, a
+# family's name whole, then the running job's longer (read at each
+# drawing: the terminal may change)
+maxname=30
+for k in "${fkeys[@]}"; do x=${k#*/}; [ ${#x} -gt $maxname ] && maxname=${#x}; done
 tree() {
-  local g k n t st el run long longn nskip x
+  local g k n t st el run long longn nskip x c=80 nw lw
+  [ -n "$tty" ] && read -r x c < <(stty size < /dev/tty 2> /dev/null)
+  [ "${c:-0}" -gt 80 ] 2> /dev/null || c=80
+  nw=$(( 30 + c - 80 )); [ $nw -gt $maxname ] && nw=$maxname
+  lw=$(( 14 + c - 80 - (nw - 30) ))
   t=$(now)
   for g in shared t-ix m-ix; do
     nskip=0
@@ -565,14 +590,16 @@ tree() {
     printf "%s %s %3d/%-3d" "$(gtag $g)" "$(bar 20 ${g_done[$g]:-0} ${g_jobs[$g]:-1} "${g_fail[$g]}")" ${g_done[$g]:-0} ${g_jobs[$g]:-0}
     [ -n "${g_fail[$g]}" ] && printf "  %s %d" "$(word FAIL)" ${g_fail[$g]}
     [ $nskip != 0 ] && printf "  %d skipped" $nskip
-    [ "${g_done[$g]:-0}" = "${g_jobs[$g]:-0}" ] && printf "  %5.1f s" $(secs ${g_end[$g]:-0})
+    [ "${g_done[$g]:-0}" = "${g_jobs[$g]:-0}" ] &&
+      printf "  %s" "$(tpaint ${g_end[$g]:-0} 120000 "$(printf '%5.1f s' $(secs ${g_end[$g]:-0}))")"
     echo
     for k in "${fkeys[@]}"; do
       [[ $k == $g/* ]] || continue
-      printf "   %s %3d/%-3d %-30.30s " "$(bar 10 ${f_done[$k]:-0} ${f_parts[$k]} "${f_fail[$k]}")" ${f_done[$k]:-0} ${f_parts[$k]} "${k#*/}"
+      printf "   %s %3d/%-3d %s " "$(bar 10 ${f_done[$k]:-0} ${f_parts[$k]} "${f_fail[$k]}")" ${f_done[$k]:-0} ${f_parts[$k]} "$(kpaint "${f_kind[$k]}" "$(printf '%-*.*s' $nw $nw "${k#*/}")")"
       if [ "${f_done[$k]:-0}" = ${f_parts[$k]} ]; then
         if [ -n "${f_fail[$k]}" ]; then word FAIL; else word ok; fi
-        printf " %5.1f s" $(secs $(( ${f_end[$k]} - ${f_start[$k]:-${f_end[$k]}} )))
+        # (its time, colored by its longest job's: the budget is a job's)
+        printf " %s" "$(tpaint ${f_max[$k]:-0} 60000 "$(printf '%5.1f s' $(secs $(( ${f_end[$k]} - ${f_start[$k]:-${f_end[$k]}} ))))")"
       else
         # its longest running job, how long so far
         long=-1; longn=; run=0
@@ -583,11 +610,15 @@ tree() {
         done
         # (a family of one: its time alone)
         [ ${f_parts[$k]} = 1 ] && longn=
-        [ $run -gt 0 ] && printf "%3d s %.14s" $((long / 1000)) "$longn"
+        [ $run -gt 0 ] && printf "%s %.*s" "$(tpaint $long 60000 "$(printf '%3d s' $((long / 1000)))")" $lw "$longn"
       fi
       echo
     done
   done
+  # (the colors' legend)
+  [ -n "$color" ] && printf "%s: %s %s %s test;  %s: %s, %s, %s\n" names \
+    "$(kpaint build build)" "$(kpaint system system)" "$(kpaint reference reference)" \
+    "times, of the budget" "$(tpaint 0 1 'within half')" "$(tpaint 1 1 within)" "$(tpaint 2 1 past)"
 }
 # a terminal's: the tree made first, then written over the one drawn
 # before in one go, each line's end cleared, then what is below: nothing

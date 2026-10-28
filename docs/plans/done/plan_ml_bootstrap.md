@@ -836,6 +836,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | .depend beside the objects ($B/<dir>/), not the sources, so make test's build from nothing makes them; depend.rc -f for mini-mk depend | +2 | | |
 | 2026-10-28 | the top mkfile's libs in waves, each library after its NEEDS, side by side (25 s to 15 for make test's) | +20 | | |
 | 2026-10-28 | Constants folded before Lower (simple/Fold, ocamlopt's Closure), in the summaries for the directory's units; mini-doom's frame 0.984 | +216 | | across directories: the .depend first |
+| 2026-10-28 | Constants of lib_core's summaries read by -I (mkconfig's STDSUM, mkprog's and mklib's), -depend's lines on them; Sys.word_size and int_size by %word_size and %int_size; mini-5i 0.855 | +27 | +6 (lib_core), +5 (mkfiles) | other directories' functions (4c: mini-ml compiling 1.03) |
 | 2026-10-28 | lib_crypto's Sha1 in Int32: an int is 31 bits on arm, its hashes were wrong there and its .inline the card's another (self-mix) | +9 | | |
 
 Since `92c9b4e`: +770 in ix (edits +140, new files +630) and +133 in

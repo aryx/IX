@@ -12,7 +12,8 @@
  * makes mask's body w land 0xff, small enough to be inlined
  * (Lower.inline_most), with no test left in the copies. A unit's
  * constants go in its summary (Summary.t's constants), so that the
- * units after it in the directory fold them too.
+ * units after it fold them too: its directory's, and another's that
+ * finds it by an -I (lib_core's Sys.word_size, %word_size).
  *
  * others:
  * ocamlopt's Closure (since 1996) gives each value an approximation,
@@ -26,7 +27,8 @@
 (* on: -O and -O3 (mkconfig's MLOPT); off: -O0, -no-fold *)
 val on : bool ref
 
-(* the target's int, in bits: 31 (arm) or 63 (arm64) *)
+(* the target's int, in bits: 31 (arm) or 63 (arm64); %int_size's,
+ * and %word_size's one more, folded or not (Lower) *)
 val bits : int ref
 
 (* a new unit: no constant known *)

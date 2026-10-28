@@ -24,7 +24,7 @@ D=$B/$LIB
 # (./%: mk makes ${DIRS:%=-I %} -Icore, goken's mk too; $D: a unit
 # made there, by mini-yacc or mini-lex, the mkfile saying how, as
 # typesetting/troff's pic grammar)
-INCLUDES=${DIRS:%=-I ./%} -I $D $NEEDI $STDI
+INCLUDES=${DIRS:%=-I ./%} -I $D $NEEDI $STDI $STDSUM
 OBJS=${UNITS:%=$D/%.$O}
 # $D made once, as the mkfile is read: on mini-9pi a process is a tenth
 # of a second, and each unit's recipe made it, then looked for its

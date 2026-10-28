@@ -14,9 +14,15 @@
 
 external get_config: unit -> string * int = "sys_get_config"
 external get_argv: unit -> string array = "sys_get_argv"
+(* ix: OCaml's since 4.03, a constant mini-ml folds (simple/Fold), as
+ * ocamlopt does: Bits.native's test gone from mini-5i's loads
+ * old: let (os_type, word_size) = get_config() *)
+external word_size : unit -> int = "%word_size"
+external int_size : unit -> int = "%int_size"
 
 let argv = get_argv()
-let (os_type, word_size) = get_config()
+let (os_type, _) = get_config()
+let word_size = word_size ()
 let max_array_length = (1 lsl (word_size - 10)) - 1;;
 let max_string_length = word_size / 8 * max_array_length - 1;;
 
@@ -99,7 +105,7 @@ let catch_break on =
 
 (* ix: OCaml's later functions, those ix's programs use *)
 
-let int_size = word_size - 1
+let int_size = int_size ()
 
 external readdir : string -> string array = "sys_read_directory"
 external mkdir : string -> int -> unit = "sys_mkdir"

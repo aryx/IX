@@ -53,6 +53,11 @@ STDDIRS=core base collections printing parsing system concurrency commons
 # with an interface of its own, found first: UNIXDIR; and Sys_plan9,
 # Plan 9's own for ix's programs, nothing elsewhere: P9DIR)
 STDI=-I $TOP/lib_core/$UNIXDIR ${STDDIRS:%=-I $TOP/lib_core/%}
+# and their summaries (X.inline: mini-ml's .cmx), for their constants
+# (Sys.word_size): in a mkfile's INCLUDES only if it has a .depend
+# (mkfiles/mkdepend: mkprog's, mklib's), whose lines on them make a
+# unit again when lib_core's is
+STDSUM=-I $L
 # their objects (a recipe is the shell's: ${X:%=...} is mk's, done here),
 # kept in a library: a program links the units it uses (mini-ml -start
 # names them all, weakly: Link.weak), not the 69

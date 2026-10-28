@@ -472,6 +472,8 @@ let prim imm p n =
   | "%identity" -> ()
   | "%ignore" -> emit Drop; emit (Int 0)
   | "%lnot" -> emit (Int (-1)); emit (Op Xor)
+  | "%word_size" -> emit Drop; emit (Int (!Fold.bits + 1))
+  | "%int_size" -> emit Drop; emit (Int !Fold.bits)
   | "%succint" -> emit (Int 1); emit (Op Add)
   | "%predint" -> emit (Int (-1)); emit (Op Add)
   | "%makemutable" -> emit (Alloc (0, 1))

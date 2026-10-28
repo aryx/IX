@@ -789,3 +789,42 @@ Sys.int_size, another directory, whose summaries are not read (stage
 stale copies). Next: a .depend across directories, as ocamldep -I,
 and Sys's word_size and int_size the externals %word_size and
 %int_size, as OCaml's.
+
+## 2026-10-28, constants across directories: lib_core's Sys.word_size
+
+The author: "why lib_core summaries are not read from other
+directories???", then "commit Fold first, then do the precise
+.depend". Stage 1 read a summary only beside the unit's object: a
+directory's .depend orders its own units, and a program's units were
+not made again at a change of lib_core (mkprog's $LIBSRC is the
+libraries', not lib_core's), so a copy of lib_core's code would have
+been stale. ocamlopt finds a .cmx in the -I directories, and
+ocamldep -native writes lines on them. Here likewise:
+
+- mini-ml's summaries: one not beside the object is looked for in the
+  -I directories (mkconfig's STDSUM, -I $L: lib_core's build), and
+  only its constants are taken (Fold's), not its functions. Their
+  bodies across directories were measured on 2026-10-27 (4c), mini-ml
+  compiling 1.03, and are not taken.
+- mini-ml -depend: for a unit of another directory whose summary an
+  -I has, with constants, a line on that file (`$D/Bits.$O:
+  ../_mk/7/lib_core/Sys.inline`). When lib_core's Sys is made again,
+  Bits is, then what names Bits, by the directory's own lines.
+- STDSUM is in the INCLUDES of mkprog and mklib only, which have a
+  .depend (mkfiles/mkdepend). The mkfiles that compile with STDI and
+  no .depend (utilities/, kernels/...) do not read them, and so cannot
+  keep a stale constant.
+- lib_core's Sys: word_size and int_size the externals %word_size and
+  %int_size, as OCaml's stdlib since 4.03 (old: get_config's word).
+  Fold computes them from the target's bits; Lower too, when not
+  folded.
+
+Measured on arm64, mini-5i built by mini-ml with and without (HEAD's
+Sys and mkfiles), running the same Plan 9 qsort (qst.exe 5000, 1.4
+million instructions, the same output) under the host's mini-5i:
+732.1 million instructions to 626.0 (0.855), 53.8 s to 46.2. In
+Memory: Bits.native and m32 no longer read (17 times each),
+ult32 and ule32 inlined into fits; mini-5i 8 KB smaller. A change to
+Sys.ml made Bits and the units after it in machine/ again; nothing
+else. Not yet: fits inlined into load8... (its body still past 16
+nodes); arm's Bits.top (1 lsl 31: the width on arm, left to run).

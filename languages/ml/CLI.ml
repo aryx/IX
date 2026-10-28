@@ -206,17 +206,25 @@ let preprocess (caps : < caps; .. >) dirs file text =
  * nothing inlined from that unit. (Every directory's: mini-doom's frame
  * 0.994, mini-ml 6% larger. lib_core's read too, tried 2026-10-27:
  * tiny-machine 0.93 but mini-ml compiling 1.03; Pervasives' few small
- * functions externals instead, plan_ml_speed.md's 4c.)
+ * functions externals instead, plan_ml_speed.md's 4c.) A summary of
+ * another directory, found in an -I's (mkconfig's STDSUM: lib_core's
+ * build), its constants alone (Fold's), as ocamlopt's .cmx found by
+ * -I; -depend's lines make the unit again when that one is made.
  * old: another unit's .mli only *)
 let summary_file name = name ^ ".inline"
 let summaries (caps : < caps; .. >) objdir dirs name items =
   let find names dirs = List.find_map (fun f -> if exists caps f then FS.read_opt caps f else None)
       (List.concat_map (fun d -> List.map (fun n -> Fpath.(d / n)) names) dirs) in
+  let source u = find [ String.uncapitalize_ascii u ^ ".ml"; u ^ ".ml" ] dirs in
+  let current (s : Summary.t) src = s.digest = Digest.to_hex (Digest.string src) in
   let base = ref 0 in
   List.concat_map (fun u ->
-    match Option.bind (find [ summary_file u ] [ objdir ]) Summary.of_string,
-          find [ String.uncapitalize_ascii u ^ ".ml"; u ^ ".ml" ] dirs with
-    | Some s, Some src when s.digest = Digest.to_hex (Digest.string src) ->
+    match Option.bind (find [ summary_file u ] [ objdir ]) Summary.of_string, source u with
+    | None, Some src -> (
+        match Option.bind (find [ summary_file u ] dirs) Summary.of_string with
+        | Some s when current s src -> Fold.import s.constants; []
+        | _ -> [])
+    | Some s, Some src when current s src ->
         let b = !base in
         base := b + String.length src + 1;
         let sh ((x, y) : Ast.span) : Ast.span = (-(x + b) - 1, -(y + b) - 1) in
@@ -297,6 +305,9 @@ let named_words text =
  * names (Summary.uses, its names resolved), so that mk makes a unit
  * after those whose summaries it reads; each unit's file the first
  * dir's (-I's order) .ml, else .mly or .mll. One run for all of them.
+ * A unit of another directory whose summary an -I has, with constants:
+ * a line on that file, ocamldep -native's on a .cmx (a lib_core unit's
+ * made again, the unit too).
  * old: depend.rc's loops, an ls for each unit and dir, then mini-ml
  * -uses for each file: 2 s for play's 39 units, 1.6 of them the
  * processes; a unit whose names did not resolve, no line *)
@@ -323,7 +334,16 @@ let depend (caps : < caps; .. >) obj dirs units =
           | None, None -> []) in
     List.iter (fun n ->
       if n <> u && List.mem n units then
-        print caps (Printf.sprintf "%s/%s.$O: %s/%s.$O\n" obj u obj n))
+        print caps (Printf.sprintf "%s/%s.$O: %s/%s.$O\n" obj u obj n)
+      else if n <> u then
+        match List.find_opt (fun d -> exists caps Fpath.(d / summary_file n)) dirs with
+        | Some d -> (
+            let f = Fpath.(d / summary_file n) in
+            match Option.bind (FS.read_opt caps f) Summary.of_string with
+            | Some s when s.constants <> [] ->
+                print caps (Printf.sprintf "%s/%s.$O: %s\n" obj u (Fpath.to_string f))
+            | _ -> ())
+        | None -> ())
       (List.sort_uniq compare names))
     units
 

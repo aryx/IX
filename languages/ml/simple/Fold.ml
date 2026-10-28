@@ -135,6 +135,9 @@ and apply (e : Scope.expr) (f : Scope.expr) (es : Scope.expr list) =
         | "%sequand", Some false | "%sequor", Some true -> Some a
         | _ -> None)
     | Evar (Prim ("%boolnot", 1, _)), [ a ] -> Option.map (fun t -> bool e (not t)) (truth a)
+    (* (Sys's, known when compiling: OCaml's) *)
+    | Evar (Prim ("%word_size", 1, _)), [ { e = Econs (_, []); _ } ] -> Some (int e (!bits + 1))
+    | Evar (Prim ("%int_size", 1, _)), [ { e = Econs (_, []); _ } ] -> Some (int e !bits)
     | Evar (Prim (p, 2, _)), [ a; b ] -> (
         match key a, key b with
         | Some x, Some y -> (

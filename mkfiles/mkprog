@@ -14,7 +14,7 @@ OBJS=${SRC:%=$D/%.$O}
 # (the program's LIBI kept: mklibs sets LIBI, its libraries')
 PROGI=$LIBI
 <$TOP/mkfiles/mklibs
-INCLUDES=-I . -I $D $PROGI $LIBI $STDI
+INCLUDES=-I . -I $D $PROGI $LIBI $STDI $STDSUM
 # $D made once, as the mkfile is read, not by each recipe (a process
 # each on mini-9pi: mkfiles/mklib)
 MADE=`{mkdir -p $D}

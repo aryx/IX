@@ -6,15 +6,23 @@
  * each connection, with two pipes.
  *
  *     tiny-machine-socket dial example.com 80     a connection there
- *     tiny-machine-socket listen 8080             the first one made to
- *                                                 this machine's port 8080
+ *     tiny-machine-socket listen 8080             each one made to this
+ *                                                 machine's port 8080
  *                                                 (127.0.0.1's)
  *     tiny-machine-socket name example.com        its address, a line
  *
- * dial and listen first write one byte, + when the connection is
- * there (dial: within five seconds), - when it cannot be; then what
- * is read on the standard input is written to the connection and what
- * comes from it to the standard output, until either ends.
+ * dial first writes one byte, + when the connection is there (within
+ * five seconds), - when it cannot be; then what is read on the
+ * standard input is written to the connection and what comes from it
+ * to the standard output, until either ends.
+ *
+ * listen writes a line, + when it listens, - when it cannot; then,
+ * until its standard input ends, a line for each connection, two
+ * named pipes' names: a child of its own relays the connection with
+ * them, the first written to it, the second read from it, as dial's
+ * input and output. (old: as dial, the first connection alone; the
+ * next one's listen came later, and a connection between was refused:
+ * the socket now stays, connections wait in its queue.)
  *
  *     tiny-kernel         tiny-machine                this program   the world
  *

@@ -141,6 +141,7 @@ val out_channel_of_descr : file_descr -> out_channel
 (* directories *)
 
 val mkdir : string -> file_perm -> unit
+val mkfifo : string -> file_perm -> unit
 val rmdir : string -> unit
 val chdir : string -> unit
 val getcwd : unit -> string

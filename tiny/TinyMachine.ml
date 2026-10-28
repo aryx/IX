@@ -533,27 +533,40 @@ let run caps o image =
     | Some after, _ -> Some (give after)
     | None, Some peer -> Some (TinyMachinePeer.send peer)
     | None, None -> None in
-  (* -net-forward 8080:80: a helper waits for a connection to the
-   * host's port 8080; when it says one is there, the peer dials the
-   * machine's port 80 with it as the other side, and another helper
-   * waits for the next. One that cannot listen is said and dropped *)
+  (* -net-forward 8080:80: a helper listens on the host's port 8080
+   * for the whole run; for each connection it says two named pipes, a
+   * line, and the peer dials the machine's port 80 with them as the
+   * other side. One that cannot listen is said and dropped. old: a
+   * helper a connection, another started when its was seen: one made
+   * in between refused *)
   let waiting =
     ref (List.map (fun (host, port) ->
-             host, port, helper caps [ "listen"; string_of_int host ])
+             host, port, helper caps [ "listen"; string_of_int host ], ref "")
            o.net_forward) in
   let forwards peer =
-    waiting := List.filter_map (fun (host, port, pipes) ->
-      match helper_said pipes 0. with
-      | None -> Some (host, port, pipes)
-      | Some (Some relay) ->
-          TinyMachinePeer.dial peer port relay;
-          Some (host, port, helper caps [ "listen"; string_of_int host ])
-      | Some None ->
-          Console.eprint caps
-            (Printf.sprintf
-               "tiny-machine: -net-forward: cannot listen on the host's port %d\n"
-               host);
-          None)
+    waiting := List.filter_map (fun ((host, port, pipes, part) as w) ->
+      let rec lines = function
+        | [] -> Some w
+        | [ rest ] -> part := rest; Some w
+        | line :: more ->
+            match String.split_on_char ' ' line with
+            | [ "+" ] -> lines more
+            | [ inp; out ] ->
+                let opened f how = Unix.openfile f [ how; Unix.O_CLOEXEC ] 0 in
+                let to_ = opened inp Unix.O_WRONLY in
+                let from = opened out Unix.O_RDONLY in
+                TinyMachinePeer.dial peer port (helper_relay (to_, from) "");
+                lines more
+            | _ ->
+                Console.eprint caps
+                  (Printf.sprintf "tiny-machine: -net-forward: %s %d\n"
+                     "cannot listen on the host's port" host);
+                (helper_relay pipes "").shut ();
+                None in
+      match helper_read (snd pipes) 0. with
+      | None -> Some w
+      | Some "" -> lines [ "-"; "" ]
+      | Some bytes -> lines (String.split_on_char '\n' (!part ^ bytes)))
       !waiting in
   (* the speaker's samples: to the window, and kept for -audio *)
   let window = if o.window then Some (window_open caps) else None in
@@ -650,7 +663,7 @@ let run caps o image =
       o.net_pcap;
     (* (the helpers that wait for a connection: their input's end is
      * theirs) *)
-    List.iter (fun (_, _, pipes) -> (helper_relay pipes "").shut ()) !waiting;
+    List.iter (fun (_, _, pipes, _) -> (helper_relay pipes "").shut ()) !waiting;
     n in
   try
     while true do

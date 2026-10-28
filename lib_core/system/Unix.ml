@@ -267,6 +267,9 @@ external out_channel_of_descr : file_descr -> out_channel = "caml_open_descripto
 (*****************************************************************************)
 
 let mkdir path perm = unit "mkdir" path (sys (323, 34) cwd (s path) (i perm) z z z)
+(* mknodat, a named pipe (S_IFIFO) *)
+let mkfifo path perm =
+  unit "mkfifo" path (sys (324, 33) cwd (s path) (i (0o10000 lor perm)) z z z)
 let rmdir path = unit "rmdir" path (sys (328, 35) cwd (s path) (i 0x200) z z z)
 let chdir path = unit "chdir" path (sys (12, 49) (s path) z z z z z)
 let getcwd () = let b = Bytes.create 4096 in unit "getcwd" "" (sys (183, 17) (by b) (i 4096) z z z z); cstring b 0

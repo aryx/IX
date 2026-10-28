@@ -40,57 +40,94 @@ let dial (caps : < Cap.network; .. >) host port =
         | Unix.Unix_error _ -> false in
       if made then (Unix.clear_nonblock fd; Some fd) else (Unix.close fd; None)
 
-(* the first connection made to this machine's port *)
-let listen (_caps : < Cap.network; .. >) port =
-  let l = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-  try
-    Unix.setsockopt l Unix.SO_REUSEADDR true;
-    Unix.bind l (Unix.ADDR_INET (Unix.inet_addr_loopback, port));
-    Unix.listen l 16;
-    (* (or the standard input's end: who ran this is gone) *)
-    let rec wait () =
-      match Unix.select [ Unix.stdin; l ] [] [] (-1.) with
-      | ready, _, _ ->
-          if List.mem Unix.stdin ready then exit 0
-          else if not (List.mem l ready) then wait () in
-    wait ();
-    let fd, _ = Unix.accept l in
-    Unix.close l;
-    Some fd
-  with Unix.Unix_error _ -> Unix.close l; None
-
-(* the bytes both ways, until one side ends *)
-let relay fd =
+(* the bytes both ways, until one side ends: what is read on inp to
+ * the connection, what comes from it to out *)
+let relay inp out fd =
   let b = Bytes.create 4096 in
   let rec all to_ n at =
     if at < n then all to_ n (at + Unix.write to_ b at (n - at)) in
   let rec go () =
-    let ready, _, _ = Unix.select [ Unix.stdin; fd ] [] [] (-1.) in
+    let ready, _, _ = Unix.select [ inp; fd ] [] [] (-1.) in
     let pass from to_ =
       if List.mem from ready then (
         let n = Unix.read from b 0 4096 in
         if n = 0 then raise Exit;
         all to_ n 0) in
-    pass Unix.stdin fd;
-    pass fd Unix.stdout;
+    pass inp fd;
+    pass fd out;
     go () in
   try go () with Exit | Unix.Unix_error _ -> ()
+
+let say s = ignore (Unix.write_substring Unix.stdout s 0 (String.length s))
+
+(* SIGALRM's, which ends this, in s seconds (0.: none) *)
+let timer s =
+  ignore
+    (Unix.setitimer Unix.ITIMER_REAL { it_interval = 0.; it_value = s })
+
+(* a named pipe of its own *)
+let fifo () =
+  let f = Filename.temp_file "tiny-machine-socket" "" in
+  Sys.remove f;
+  Unix.mkfifo f 0o600;
+  f
+
+(* this machine's port (127.0.0.1's), listened on until the standard
+ * input's end (who ran this is gone); each connection relayed by a
+ * child on two named pipes, opened by the one who ran this (the child
+ * waits ten seconds for it), their names said. old: the first
+ * connection alone, its socket then closed, the next one's helper
+ * started when this one's was seen: a connection between the two was
+ * refused (make test on GitHub's runner, linux.py's GET /bin/ping) *)
+let listen (_caps : < Cap.network; .. >) port =
+  let l = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+  match
+    Unix.setsockopt l Unix.SO_REUSEADDR true;
+    Unix.bind l (Unix.ADDR_INET (Unix.inet_addr_loopback, port));
+    Unix.listen l 16
+  with
+  | exception Unix.Unix_error _ -> Unix.close l; say "-\n"
+  | () ->
+      say "+\n";
+      Sys.set_signal Sys.sigchld Sys.Signal_ignore;
+      let rec wait () =
+        let ready, _, _ = Unix.select [ Unix.stdin; l ] [] [] (-1.) in
+        if not (List.mem Unix.stdin ready) then begin
+          (match Unix.accept l with
+           | fd, _ ->
+               let inp = fifo () and out = fifo () in
+               (match Unix.fork () with
+                | 0 ->
+                    Unix.close l;
+                    Unix.close Unix.stdout;
+                    timer 10.;
+                    let i = Unix.openfile inp [ Unix.O_RDONLY ] 0 in
+                    let o = Unix.openfile out [ Unix.O_WRONLY ] 0 in
+                    timer 0.;
+                    Sys.remove inp;
+                    Sys.remove out;
+                    relay i o fd;
+                    Unix._exit 0
+                | _ -> Unix.close fd; say (inp ^ " " ^ out ^ "\n"))
+           | exception Unix.Unix_error _ -> ());
+          wait ()
+        end in
+      wait ()
 
 let main (caps : < Cap.network; Cap.argv; Cap.stdout; .. >) =
   Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   (* (a terminal's ^C is for the kernel in the machine, which the one that
    * ran this gives it) *)
   Sys.set_signal Sys.sigint Sys.Signal_ignore;
-  let said fd =
-    ignore
-      (Unix.write_substring Unix.stdout (if fd = None then "-" else "+") 0 1);
-    Option.iter relay fd;
-    0 in
   match List.tl (Array.to_list (CapSys.argv caps)) with
   | [ "dial"; host; port ] when int_of_string_opt port <> None ->
-      said (dial caps host (int_of_string port))
+      let fd = dial caps host (int_of_string port) in
+      say (if fd = None then "-" else "+");
+      Option.iter (relay Unix.stdin Unix.stdout) fd;
+      0
   | [ "listen"; port ] when int_of_string_opt port <> None ->
-      said (listen caps (int_of_string port))
+      listen caps (int_of_string port);
+      0
   | [ "name"; host ] ->
       Option.iter
         (fun a -> Console.print caps (Unix.string_of_inet_addr a ^ "\n"))

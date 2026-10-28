@@ -52,8 +52,6 @@ $D/TinyCParser.$O: $D/TinyCLower.$O
 $D/TinyCMachine.$O: $D/TinyCParser.$O
 $D/TinyC.$O: $D/TinyCMachine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
-$D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml TinyBrowser/TinyBrowserAddress.ml TinyBrowser/TinyBrowserHttp.ml
-$D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O: TinyBrowser/TinyBrowserText.ml
 
 # (a blank line above: a # line right under a rule's head is its recipe,
 # and TinyMachinePeer's object was never compiled)
@@ -155,9 +153,14 @@ clean:V:
 	rm -rf $D
 
 # the units' order (mkfiles/mkdepend); beside the lines above, those
-# of each unit that names another here (TinyBrowser, TinyOffice,
-# TinyTroff, TinyKernel are tiny-ml's: no lines)
+# of each unit that names another here (TinyOffice, TinyTroff,
+# TinyKernel are tiny-ml's: no lines; of TinyBrowser, tiny-machine's
+# three. old: none of TinyBrowser's, and TinyBrowserHttp compiled
+# beside TinyBrowserText, inlining its functions or not by which ended
+# first: test-fixpoint's builds differed, one in two or three)
 DEPOBJ=D
-DEPDIRS=. TinyMachine TinyML TinyC TinyKernel TinyKernel/host TinyKernel/steps/t6 $D
-DEPUNITS=`{ls *.ml TinyMachine/*.ml TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'}
+DEPDIRS=. TinyMachine TinyBrowser TinyML TinyC TinyKernel TinyKernel/host TinyKernel/steps/t6 $D
+DEPBROWSER=TinyBrowser/TinyBrowserText.ml TinyBrowser/TinyBrowserAddress.ml \
+  TinyBrowser/TinyBrowserHttp.ml
+DEPUNITS=`{ls *.ml TinyMachine/*.ml $DEPBROWSER TinyML/*.ml TinyC/*.ml TinyKernel/TinyKernelNetwork.ml TinyKernel/host/*.ml TinyKernel/steps/t6/TinyMkfs.ml | sed 's,.*/,,; s,\.ml$,,'}
 <$TOP/mkfiles/mkdepend

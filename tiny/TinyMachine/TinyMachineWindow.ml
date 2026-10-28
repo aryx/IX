@@ -27,12 +27,9 @@ let read_ppm ic =
 
 let () =
   let display = TinyMachineSDL.create ~title:"tiny-machine" in
-  let x = ref 0 and y = ref 0 and buttons = ref 0
-  and shift = ref false and ctrl = ref false and alt = ref false in
-  (* the key held (its usage, its byte), and when it is typed again: a
-   * keyboard's repeat, done here (the display says a key's press once,
-   * what a kernel's USB driver wants; a game wants its arrows held) *)
-  let held = ref None and again = ref 0. in
+  let x = ref 0 and y = ref 0 and buttons = ref 0 in
+  let keys = TinyMachineSDL.keyboard () in
+  let key byte = Printf.printf "k \\%03d\n" byte in
   set_binary_mode_in stdin true;
   try
     while true do
@@ -47,41 +44,15 @@ let () =
            | Some (Screen (width, height, pixels)) ->
                display.present width height pixels)
        | exception Unix.Unix_error (Unix.EINTR, _, _) -> ());
-      let mouse = !x, !y, !buttons in
+      let mouse = !x, !y, !buttons and now = Unix.gettimeofday () in
       List.iter (function
         | TinyMachineSDL.Quit -> exit 0
         | TinyMachineSDL.At (ax, ay) -> x := ax; y := ay
         | TinyMachineSDL.Button (b, down) ->
             buttons := if down then !buttons lor b else !buttons land lnot b
-        | TinyMachineSDL.Key ((225 | 229), down) -> shift := down
-        | TinyMachineSDL.Key ((224 | 228), down) -> ctrl := down
-        | TinyMachineSDL.Key ((226 | 230), down) -> alt := down
-        | TinyMachineSDL.Key (usage, true) ->
-            Option.iter (fun byte ->
-              (* Alt with a key is Escape then the key: Emacs's Meta, M-x *)
-              if !alt then Printf.printf "k \\%03d\n" 27;
-              Printf.printf "k \\%03d\n" byte;
-              held := Some (usage, byte);
-              again := Unix.gettimeofday () +. 0.3)
-              (TinyMachineSDL.key_byte usage ~shift:!shift ~ctrl:!ctrl)
-        | TinyMachineSDL.Key (usage, false) -> (
-            match !held with
-            | Some (u, _) when u = usage -> held := None
-            | _ -> ())
-        (* A step of the wheel (or of two fingers on a trackpad) is an
-         * arrow key, up or down, a step each: a key is queued, where a
-         * button pressed and let go between two reads of the mouse could
-         * be missed. A program scrolls by its arrows (www, emacs). *)
-        | TinyMachineSDL.Wheel v when v <> 0 ->
-            for _i = 1 to min 8 (abs v) do
-              Printf.printf "k \\%03d\n" (if v < 0 then 128 else 129)
-            done
-        | _ -> ()) (display.poll ());
-      (match !held with
-       | Some (_, byte) when Unix.gettimeofday () >= !again ->
-           Printf.printf "k \\%03d\n" byte;
-           again := Unix.gettimeofday () +. 0.05
-       | _ -> ());
+        | e -> List.iter key (TinyMachineSDL.typed keys now e))
+        (display.poll ());
+      Option.iter key (TinyMachineSDL.repeated keys now);
       if (!x, !y, !buttons) <> mouse then
         Printf.printf "m %d %d %d\n" !x !y !buttons;
       flush stdout

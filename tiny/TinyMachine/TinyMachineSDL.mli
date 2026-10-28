@@ -45,7 +45,24 @@ type t = {
 
 val create : title:string -> t
 
-(* a key's byte, by its USB usage (a US keyboard's, SDL's scancode),
- * with shift and control; the arrows 128 to 131 (up, down, left,
- * right), tiny-machine's choice; None for a key that is no byte *)
-val key_byte : int -> shift:bool -> ctrl:bool -> int option
+(* The keyboard, what tiny-machine-window and tiny/sdl/ type from the
+ * window's events. A key's byte is by its USB usage (a US keyboard's,
+ * SDL's scancode), with shift and control; the arrows 128 to 131 (up,
+ * down, left, right), tiny-machine's choice; a key that is no byte
+ * types nothing. Alt with a key is Escape then the key: Emacs's Meta,
+ * M-x. A step of the wheel (or of two fingers on a trackpad) is an
+ * arrow key, up or down, a step each: a key is queued, where a button
+ * pressed and let go between two reads of the mouse could be missed. A
+ * program scrolls by its arrows (www, emacs).
+ *
+ * The key held is typed again, a keyboard's repeat, done here (the
+ * display says a key's press once, what a kernel's USB driver wants; a
+ * game wants its arrows held): after 0.3 s, then every 0.05 s.
+ *
+ * [typed k now e]: the bytes the event e types (none for a modifier, the
+ * mouse, Quit), now the time in seconds. [repeated k now]: the key held,
+ * when it is typed again. *)
+type keyboard
+val keyboard : unit -> keyboard
+val typed : keyboard -> float -> event -> int list
+val repeated : keyboard -> float -> int option

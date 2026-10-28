@@ -35,6 +35,40 @@ let key_byte usage ~shift ~ctrl =
     | 76 -> Some 127
     | _ -> None
 
+(* the modifiers down; the key held (its usage, its byte), and when it
+ * is typed again *)
+type keyboard = {
+  mutable shift : bool; mutable ctrl : bool; mutable alt : bool;
+  mutable held : (int * int) option; mutable again : float;
+}
+
+let keyboard () =
+  { shift = false; ctrl = false; alt = false; held = None; again = 0. }
+
+let typed k now = function
+  | Key ((225 | 229), down) -> k.shift <- down; []
+  | Key ((224 | 228), down) -> k.ctrl <- down; []
+  | Key ((226 | 230), down) -> k.alt <- down; []
+  | Key (usage, true) -> (
+      match key_byte usage ~shift:k.shift ~ctrl:k.ctrl with
+      | Some byte ->
+          k.held <- Some (usage, byte);
+          k.again <- now +. 0.3;
+          if k.alt then [ 27; byte ] else [ byte ]
+      | None -> [])
+  | Key (usage, false) ->
+      (match k.held with
+       | Some (u, _) when u = usage -> k.held <- None
+       | _ -> ());
+      []
+  | Wheel v -> List.init (min 8 (abs v)) (fun _ -> if v < 0 then 128 else 129)
+  | Quit | At _ | Button _ -> []
+
+let repeated k now =
+  match k.held with
+  | Some (_, byte) when now >= k.again -> k.again <- now +. 0.05; Some byte
+  | _ -> None
+
 let ok = function Ok v -> v | Error _ -> failwith ("SDL: " ^ Sdl.get_error ())
 
 let create ~title =

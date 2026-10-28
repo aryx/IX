@@ -162,13 +162,13 @@ let typed = ref ""
 let mouse = ref (0, 0, 0)
 let fresh = ref false
 let enq = ref false
-let shift = ref false and ctrl = ref false and alt = ref false
-let held = ref None and again = ref 0.
+let keys = TinyMachineSDL.keyboard ()
 
 (* the window's events, made keys and the mouse *)
 let pump () =
   if Lazy.is_val display then begin
     let key byte = typed := !typed ^ String.make 1 (Char.chr byte) in
+    let now = Unix.gettimeofday () in
     List.iter (function
       | TinyMachineSDL.Quit -> exit 0
       | TinyMachineSDL.At (x, y) ->
@@ -179,30 +179,9 @@ let pump () =
           let (x, y, bs) = !mouse in
           mouse := (x, y, if down then bs lor b else bs land lnot b);
           fresh := true
-      | TinyMachineSDL.Key ((225 | 229), down) -> shift := down
-      | TinyMachineSDL.Key ((224 | 228), down) -> ctrl := down
-      | TinyMachineSDL.Key ((226 | 230), down) -> alt := down
-      | TinyMachineSDL.Key (usage, true) ->
-          Option.iter (fun byte ->
-            if !alt then key 27;
-            key byte;
-            held := Some (usage, byte);
-            again := Unix.gettimeofday () +. 0.3)
-            (TinyMachineSDL.key_byte usage ~shift:!shift ~ctrl:!ctrl)
-      | TinyMachineSDL.Key (usage, false) -> (
-          match !held with
-          | Some (u, _) when u = usage -> held := None
-          | _ -> ())
-      | TinyMachineSDL.Wheel v ->
-          for _i = 1 to min 8 (abs v) do
-            key (if v < 0 then 128 else 129)
-          done)
+      | e -> List.iter key (TinyMachineSDL.typed keys now e))
       ((Lazy.force display).poll ());
-    match !held with
-    | Some (_, byte) when Unix.gettimeofday () >= !again ->
-        key byte;
-        again := Unix.gettimeofday () +. 0.05
-    | _ -> ()
+    Option.iter key (TinyMachineSDL.repeated keys now)
   end
 
 (* the files open: their descriptor, what is left to read of one, what

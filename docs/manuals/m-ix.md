@@ -1,8 +1,9 @@
 # m-ix: the switches of its programs
 
 m-ix is the mini half of ix: the programs that are twins of real ones
-(mini-netscape, mini-office, mini-doom, mini-emacs, DrScheme, the
-games), run on Linux in a window or under mini-9pi on the Pi. This
+(mini-netscape, mini-office, mini-doom, mini-quake,
+mini-virtuaracing, mini-emacs, DrScheme, the games), run on Linux in
+a window or under mini-9pi on the Pi. This
 manual gathers what can be changed when one is started, without
 editing a source: the `name=value` flags, the options, the
 environment, and the device files of mini-9pi that switch a
@@ -54,9 +55,9 @@ Flags of the platforms:
 | flag | default | what | where |
 |---|---|---|---|
 | `size=n` | SDL: the screen's height less 40, at most 1000; ppm: 1000; draw: the window's | the picture's side in pixels (draw: at most) | SDL, ppm, draw |
-| `window=WxH`, `window` | the 1000-unit square | the program's screen is the window's, a unit a pixel, following its size | SDL, ppm |
+| `window=WxH`, `window` | the 1000-unit square | the program's screen is the window's, a unit a pixel, following its size (draw: the window's starting size when it fits, F4) | SDL, ppm, draw |
 | `pace=n` | as fast as computed | n frames a second by the clock (two programs over a network) | ppm |
-| `heap=modest` | the games' collector (`space_overhead` 700, eight times what is alive) | the collector's default: a program that keeps much (office, page, netscape and doom pass it themselves) | mini-9pi |
+| `heap=modest` | the games' collector (`space_overhead` 700, eight times what is alive) | the collector's default: a program that keeps much (office, page, netscape, doom, quake and virtuaracing pass it themselves) | mini-9pi |
 | `heap=game` | the collector's default | the games' setting, as on mini-9pi, to count a board's instructions | ppm |
 | `keys=on` | off | the keys down at each of /dev/kbd's messages, on the standard error | mini-9pi |
 
@@ -73,6 +74,7 @@ Flags of the platforms:
 | `font=hershey` | Plan 9's font for an upright word of 11 to 16 pixels | a word always in Hershey's strokes | draw |
 | `letters=strokes` | a letter loaded once into the kernel, then one message | each letter's strokes sent as lines and polygons | draw |
 | `letters=bits` | smoothed letters, a byte a pixel | a bit a pixel, ragged | draw |
+| `kscale=off` | the device scales | a picture at its own size made larger by the program, k by k, not by the draw device's 'z' (F5: the largest whole multiple that fits, centred) | draw |
 
 "draw" is the draw platform, mini-9pi's default (the kernel draws);
 "mini-9pi" is it and the software platform (the program draws, the
@@ -111,11 +113,42 @@ apply.
 |---|---|---|
 | `wad=file` | /lib/doom/freedoom.wad, else games/fps/doom/data/ | the WAD |
 | `map=E1M1` | the WAD's first | the level |
-| `scale=n` | 2 (1 to 4) | each of Doom's 320 by 200 pixels n by n |
+| `scale=n` | 2 (1 to 4); on mini-9pi the largest whole n the window holds | each of Doom's 320 by 200 pixels n by n |
 | `x=`, `y=`, `angle=` | the level's start | the player placed there (a test's camera) |
-| `monsters` | none | the level's monsters, standing |
-| `things=off` | on | no thing drawn (tests/compare.sh) |
+| `nomonsters` | the monsters | the level without them (Doom's -nomonsters) |
+| `ai=ways` | id's (Enemy) | the monsters find their way by the playground's AI (Ways) |
+| `things=off` | on | no item, decoration nor monster drawn or moved (tests/compare.sh) |
+| `sound=off`, `sound=3d` | id's | no sound; the playground's Audio3d |
+| `music=on`, `music=off` | on; off on mini-9pi (mini-ml's MIDI too slow) | the level's music |
+| `graphics=only` | | `nomonsters things=off sound=off music=off`: the renderer alone |
+| `status=off` | on | no status line (tests/compare.sh) |
 | `lumps` | | the WAD's lumps listed, then the end |
+
+**mini-quake** (its header's usage):
+
+| flag | default | what |
+|---|---|---|
+| `bsp=file` | /lib/quake/e0m1.bsp, else games/fps/quake/data/e0m1.bsp | the level; its palette and colormap beside it |
+| `scale=n` | 2 (1 to 4); on mini-9pi the largest whole n | each pixel n by n |
+| `x=`, `y=`, `z=`, `angle=`, `pitch=` | the level's start | the eye placed there (a test's camera) |
+| `gamma=g` | 0.7 (0.3 to 1) | the brightness; 1 the palette as it is |
+| `lightmaps` | | the textures grey: the lightmaps alone |
+| `models=simple` | by gradients | the models' triangles the first way (Alias.gradients) |
+| `nomonsters`, `things=off`, `ai=ways`, `sound=off\|3d`, `music=on\|off`, `graphics=only` | | as mini-doom's (music: the level's Ogg track, off on mini-9pi) |
+| `weapons=all` | | every weapon and its ammunition (Quake's impulse 9) |
+| `entities`, `precache` | | the level's entities, or what the game reads beside it, listed, then the end |
+
+**mini-virtuaracing** (its header's usage):
+
+| flag | default | what |
+|---|---|---|
+| `view=` | close | `behind`, `overhead`, `cockpit`: the view at the start |
+| `picture=WxH` | 320x240 | the picture's size, each pixel `scale=n` by n (2; on mini-9pi the largest whole n) |
+| `course=n` | the title | a race on the n-th course at once (0: Big Forest) |
+| `stats` | | each frame's faces and the race on the standard error |
+| `sound=off` | on | no sound |
+| `render=` | depth | `painter`, `table` (the PlayStation's ordering table): how hidden faces are hidden |
+| `cull=off`, `lod=off`, `layers=off` | on | the faces turned away drawn; the far road whole; the ground sorted with the rest (painter, table) |
 
 **The games**:
 

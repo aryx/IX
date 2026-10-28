@@ -1,7 +1,8 @@
 # mini-qemu: a user's manual
 
 mini-qemu (`raspberry/`, `machine/`) emulates a Raspberry Pi 1 (ARMv6,
-32-bit) and a Raspberry Pi 4 (ARMv8, 64-bit, one to four cores). It
+32-bit), a Raspberry Pi 2 (ARMv7, 32-bit, four cores) and a Raspberry
+Pi 4 (ARMv8, 64-bit, one to four cores). It
 understands the part of QEMU's command line that the Pi kernels'
 Makefiles use, so it can stand in for `qemu-system-arm` or
 `qemu-system-aarch64`. Everything in it is OCaml you can read: every
@@ -19,11 +20,17 @@ without the long command line:
     ./mini-pi mini-9pi          # ix's Plan 9 kernel in OCaml, Pi1, alone: ix's own
                                 # programs in its image (mini-rc, ed, ls...), no SD card
     ./mini-pi mini-9pi4         # the same on the Pi4 (arm64)
+    ./mini-pi mini-9pi2         # the same on the Pi2: its four cores, the Pi1's card
     ./mini-pi mini-9pi-principia      # with principia's programs and SD card, to rc's prompt
     ./mini-pi -g mini-9pi-principia   # the same, in a window: type rio there
     ./mini-pi -g -p c mini-9pi-principia  # with principia's C pixels instead of the OCaml ones
     ./mini-pi mini-9pi4-principia     # the same kernel on the Pi4 (arm64)
     ./mini-pi mini-xv6-pi1      # ix's xv6 in OCaml; mini-xv6-pi4 on the Pi4
+    ./mini-pi -g mini-oberon    # the Oberon system in OCaml (kernels/oberon/);
+                                # mini-oberon4 on the Pi4
+    ./mini-pi mini-singularity  # Singularity in OCaml (kernels/singularity/);
+                                # mini-singularity4 on the Pi4
+    ./mini-pi -g mini-squeak    # Squeak on the bare Pi4 (kernels/squeak/)
     ./mini-pi 9pi               # principia's own C 9pi
     ./mini-pi xv6 | xv6-pi1 | xv6-pi4   # xv6-multiarch's C kernels
 
@@ -56,12 +63,12 @@ QEMU's options that mini-qemu takes:
 
 | option | meaning |
 |---|---|
-| `-M raspi1ap` / `raspi4b` | the board |
+| `-M raspi1ap` / `raspi2b` / `raspi4b` (or `-machine`) | the board (a `,` and what follows it ignored) |
 | `-kernel F` | the kernel: a raw image at 0x8000 (Pi1), an ELF (Pi4) |
 | `-device loader,file=F,addr=A` / `-bios F` | a raw image at an address |
 | `-drive file=F,if=sd[,snapshot=on]` | the SD card; with `snapshot=on` the writes stay in memory |
 | `-device usb-kbd`, `usb-mouse`, `usb-net` | USB devices behind the DWC2 controller |
-| `-m SIZE` | the Pi4's RAM (default 2G; the Pi1 always has 512MB) |
+| `-m SIZE` | the Pi4's RAM (default 2G; the Pi1 always has 512MB, the Pi2 1GB) |
 | `-smp N` | the Pi4's cores, 1 to 4 (default 1, the fastest: the cores take turns) |
 | `-nographic`, `-display none` | no window |
 | `-serial stdio\|mon:stdio\|null` | the UARTs, in order |
@@ -83,7 +90,8 @@ http://example.com/`. A connection is waited for with the board
 stopped (10 s at most). No ping beyond the gateway, no connection
 from the host.
 
-Options only mini-qemu has:
+Options only mini-qemu has (`-h`, `-help`, `--help`: the usage and
+examples):
 
 | option | meaning |
 |---|---|

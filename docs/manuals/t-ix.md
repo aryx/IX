@@ -85,8 +85,9 @@ one of them: OCaml never compiles it, tiny-ml does.
 
 ### 2.2 What a host program needs outside `tiny/`
 
-Each is one file (tiny-c and tiny-ml with their parts, `TinyC/` and
-`TinyML/`), but not all stand alone. From `tiny/dune` (and
+Each is one file, or a file and its parts in a folder of its name
+(`TinyC/`, `TinyML/`, `TinyMachine/`, `TinyBrowser/`, `TinyOffice/`),
+but not all stand alone. From `tiny/dune` (and
 `tiny/TinyKernel/steps/t6/dune`, tiny-mkfs's):
 
 | program | outside `tiny/` |

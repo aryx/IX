@@ -32,6 +32,10 @@ let pc = ref (-1)
 let started = ref false
 let stops = ref []
 
+(* the word at i in s, its low byte first (under 2^30: ML's ints) *)
+let word_of s i =
+  String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16)
+
 (* the program's labels, by address, from its file: after the image,
  * whose size the header says *)
 let funcs = ref (Array.of_list [])
@@ -39,9 +43,7 @@ let symbols file =
   let fd = u_open file 0 in
   if fd >= 0 then begin
     let h = u_read fd 16 in
-    let word i =
-      Char.code h.[i] + (Char.code h.[i + 1] lsl 8)
-      + (Char.code h.[i + 2] lsl 16) + (Char.code h.[i + 3] lsl 24) in
+    let word i = word_of h i in
     (* (tiny-linker -n's header has a fourth word, the text's size) *)
     let split = String.length h = 16 && word 0 = 0x7a0ce6 in
     if String.length h >= 12 && (word 0 = 0x7a0ce5 || split)
@@ -92,9 +94,7 @@ let digits s i =
 let instr s i =
   if Char.code s.[i + 3] >= 0x40 then None
   else
-    decode
-      (Char.code s.[i] + (Char.code s.[i + 1] lsl 8)
-       + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24))
+    decode (word_of s i)
 
 (* an address by its function, main+0x14 (in hexadecimal when there is
  * none) *)
@@ -215,8 +215,7 @@ let word a =
   let s = bytes a 4 in
   if String.length s < 4 || Char.code s.[3] >= 0x40 then None
   else
-    Some (Char.code s.[0] + (Char.code s.[1] lsl 8)
-          + (Char.code s.[2] lsl 16) + (Char.code s.[3] lsl 24))
+    Some (word_of s 0)
 
 (* a slot of the value stack, at i in s: an integer (odd: n is 2n+1)
  * in decimal, a pointer in hexadecimal, _ for 0 (a slot not set yet:
@@ -230,7 +229,7 @@ let value s i =
   end
   else if b 0 + b 1 + b 2 + b 3 = 0 then "_"
   else if b 3 < 0x40 then
-    hex (b 0 + (b 1 lsl 8) + (b 2 lsl 16) + (b 3 lsl 24))
+    hex (word_of s i)
   else "0x" ^ digits s i
 
 (* an ML function's slots, the f bytes from v: its closure's (slot 0)

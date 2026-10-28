@@ -324,9 +324,8 @@ let fs_entries r d =
     else begin
       let rec len k = if k < 64 && s.[i + k] <> '\000' then len (k + 1) else k in
       let n =
-        Char.code s.[i + 64] lor (Char.code s.[i + 65] lsl 8)
-        lor (Char.code s.[i + 66] lsl 16) lor (Char.code s.[i + 67] lsl 24)
-      in
+        String.get_uint16_le s (i + 64)
+        + (String.get_uint16_le s (i + 66) lsl 16) in
       go (i + 68) ((String.sub s i (len 0), n) :: acc)
     end in
   go 0 []

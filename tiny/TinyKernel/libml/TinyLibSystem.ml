@@ -146,9 +146,7 @@ let entries dir =
          - i)
     in
     let word i =
-      Char.code s.[i] + (Char.code s.[i + 1] lsl 8)
-      + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24)
-    in
+      String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
     List.init (String.length s / 80) (fun k ->
       name (k * 80),
       (Char.code s.[k * 80 + 64] = 1, word (k * 80 + 72), word (k * 80 + 68),
@@ -174,9 +172,7 @@ let entry file =
   if s = "" then failwith "not there"
   else
     let word i =
-      Char.code s.[i] + (Char.code s.[i + 1] lsl 8)
-      + (Char.code s.[i + 2] lsl 16) + (Char.code s.[i + 3] lsl 24)
-    in
+      String.get_uint16_le s i + (String.get_uint16_le s (i + 2) lsl 16) in
     Char.code s.[64] = 1, word 72, word 68, word 76
 
 let stat file = let is_dir, size, _, _ = entry file in is_dir, size

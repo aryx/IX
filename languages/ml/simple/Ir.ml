@@ -136,6 +136,9 @@ type t =
   | CallC of string * int             (* the runtime's function of n arguments *)
   | Label of int | Jmp of int
   | Jz of int | Jnz of int            (* false is the ML 0 *)
+  (* the top, an integer k from 0, by a jump to the k-th label: a jump
+   * table (Lower.switches), CASE and BCASE as 5c's switch *)
+  | Switch of int list
   | Drop
   | Ret
   | Raise                             (* the top raised; its place taken by the result, never seen *)

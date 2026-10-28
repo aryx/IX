@@ -9,4 +9,8 @@ floats (the three ways a float is boxed: mini-virtuaracing's Render,
 plan_ml_floats.md).
 sha (int32s: lib_crypto's Sha256, the hash of TLS's handshakes; on arm
 an int32 is a block, plan_ml_speed.md's stage 4).
+interp (matches: a stack machine's step on a variant of 14
+constructors, an expression tree evaluated and simplified, as tiny-ml's
+machine and mini-ml's passes; Lower's jump tables, plan_ml_speed.md's
+4d).
 marshalling: Marshal's writing and reading, timed (its seconds on stderr).

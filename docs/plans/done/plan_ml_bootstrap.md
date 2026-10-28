@@ -826,6 +826,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-27 | Ir's Float2, Float1 and Int32 variants (Float2 Add, Int32 Lsr...), not the runtime's names in strings; Lower.runtime_function names every primitive's C function, once for Gen and Emit; the same objects | +37 | | |
 | 2026-10-27 | plan_ml_speed.md, 4c: Pervasives' \|>, @@, ignore and lnot externals, Lower's %revapply and %apply the call f x (tests/runtime/apply.ml); tiny-machine 0.925, mini-ml compiling 0.986 | +11 (lib_core +11) | +33 (the test) | |
 | 2026-10-28 | Parser_asm's fixups by an array, not List.assoc (quadratic); mini-ml compiling 0.980 | +4 (assembler) | | |
+| 2026-10-28 | plan_ml_speed.md, 4d: a match's jump table, Ir's Switch, CASE and BCASE; the arm linker's pool never inside a table (tests/runtime/switch.ml, tests/bench/interp.ml); interp 0.722, tiny-machine 0.99 | +135 (linker +7) | +139 (the test, the bench) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

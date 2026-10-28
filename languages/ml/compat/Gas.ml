@@ -104,6 +104,8 @@ let ins out labels (i : A.instr) =
   | "BL", [ A.Mem { base = R r; name = None; _ } ] -> pr "blx\t%s" (reg r)
   | "BL", [ t ] -> pr "bl\t%s" (target t)
   | "RET", [] -> pr "bx\tlr"
+  | "CASE", [ A.Reg r ] -> pr "ldr%s\tpc, [pc, %s, lsl #2]" c (reg r)
+  | "BCASE", [ t ] -> pr ".word\t%s" (target t)
   | op, [ t ] when op.[0] = 'B' -> pr "%s\t%s" (String.lowercase_ascii op) (target t)
   | _ -> error "%s: not in Gas's subset" i.op
 
@@ -130,7 +132,7 @@ let obj (o : A.obj) =
          * run, and always near its loads *)
         incr since;
         if (i.op = "B" || i.op = "RET") && cond i.suffixes = "" then (Buffer.add_string code "\t.ltorg\n"; since := 0)
-        else if !since > 200 then begin
+        else if !since > 200 && i.op <> "CASE" && i.op <> "BCASE" then begin
           (* none for long: one here, jumped over *)
           incr pools;
           Buffer.add_string code (sprintf "\tb\t.Lpool%d\n\t.ltorg\n.Lpool%d:\n" !pools !pools);

@@ -810,7 +810,7 @@ let func m out (fn : func) (lf : L.func) =
   let read v = Hashtbl.replace reads v (1 + match Hashtbl.find_opt reads v with Some k -> k | None -> 0) in
   Array.iter (fun (b : block) ->
     List.iter (fun v -> List.iter read (Ssa_build.operands (Hashtbl.find fn.defs v))) (b.phis @ b.body);
-    match b.term with Br (v, _, _) | Ret v | Raise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
+    match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> read v | Tail (_, vs) -> List.iter read vs | _ -> ()) fn.blocks;
   (* (and of floats: CMPD, then B.cond, where the boolean was made then
    * compared, 6 instructions a test on arm, 3; mini-doom's View.norm,
    * mini-virtuaracing's faces) *)
@@ -1133,6 +1133,17 @@ let func m out (fn : func) (lf : L.func) =
              let r = src v r1 in
              ins "CMP\t$1, R%d" r;
              if lt = next then ins "BEQ\t%s" lf else (ins "BNE\t%s" lt; jump lf))
+    (* the index untagged; arm's CASE loads the pc from the table 8
+     * bytes on, a word never read between; arm64's adds the table's
+     * offset to its own address (the linker's) *)
+    | Switch (v, bs) ->
+        let ls = List.map (fun s -> s, edge b.id s ~alone:false) (List.sort_uniq compare bs) in
+        let a = src v r1 in
+        ins "%s	$1, R%d, R%d" (shift Asr) a t;
+        (match m.arch with
+         | Arm -> ins "CASE	R%d" t; ins "BCASE	%s" (snd (List.hd ls))
+         | Arm64 -> ins "CASE	R%d, R%d" t r1);
+        List.iter (fun s -> ins "BCASE	%s" (List.assoc s ls)) bs
     | Try (k, body, h) ->
         tries := max !tries (k + 1);
         ins "%s\t%s, R0" mov m.sp;

@@ -62,9 +62,10 @@ val func : Ir.func -> Ssa.func
 (* -dssa *)
 val show : Ssa.func -> string
 
-(* an instruction's operands; each block's immediate dominator (the
- * entry its own) *)
+(* an instruction's operands; a block's successors, each once; each
+ * block's immediate dominator (the entry its own) *)
 val operands : Ssa.ins -> Ssa.value list
+val successors_of : Ssa.block -> int list
 val dominators : Ssa.func -> int array
 
 (* an instruction's operands, a block's end's, each by f (Unbox) *)

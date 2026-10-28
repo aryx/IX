@@ -95,7 +95,7 @@ let func (fn : func) : func =
             List.iter2 (fun x f -> if f then ignore (unboxed x)) xs (floats p xs)
         | ins -> read_at b true (Ssa_build.operands ins)) (b.phis @ b.body);
       match b.term with
-      | Br (x, _, _) | Ret x | Raise x -> read_at b false [ x ]
+      | Br (x, _, _) | Switch (x, _) | Ret x | Raise x -> read_at b false [ x ]
       | Tail (_, xs) -> read_at b false xs
       | Jmp _ | Try _ -> ()) fn.blocks;
     (* OPTIMIZATION (box where read): a double read as a word in one
@@ -111,6 +111,7 @@ let func (fn : func) : func =
       match b.term with
       | Jmp s -> [ s ]
       | Br (_, s, t) | Try (_, s, t) -> [ s; t ]
+      | Switch _ -> Ssa_build.successors_of b
       | _ -> []
     in
     (* b reached from itself without going through d *)

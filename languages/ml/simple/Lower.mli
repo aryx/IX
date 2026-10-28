@@ -189,3 +189,6 @@ val floats_in_place : bool ref
 (* an int32's arithmetic, logic and shifts as the processor's
  * instructions, a block taken in place for the result (Ir.Int32) *)
 val ints_in_place : bool ref
+
+(* a match of four constructors or more by a jump table (Ir.Switch) *)
+val switches : bool ref

@@ -15,7 +15,7 @@ open Ssa
 type raw = { label : int option; code : L.t list; last : L.t option }
 
 let ends : L.t -> bool = function
-  | Jmp _ | Jz _ | Jnz _ | Ret | Raise | TryEnter _ | Call (_, _, true) -> true
+  | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | TryEnter _ | Call (_, _, true) -> true
   | _ -> false
 
 let split (code : L.t list) =
@@ -29,23 +29,29 @@ let split (code : L.t list) =
   if !cur <> [] || !label <> None then close None;
   Array.of_list (List.rev !out)
 
-(* each run's successors: the next run, a label's *)
-let successors (raws : raw array) =
+(* the run of each label *)
+let runs (raws : raw array) =
   let at = Hashtbl.create 16 in
   Array.iteri (fun i r -> Option.iter (fun l -> Hashtbl.replace at l i) r.label) raws;
-  let lbl l = Hashtbl.find at l in
+  Hashtbl.find at
+
+(* each run's successors: the next run, a label's (a switch's each
+ * once) *)
+let successors (raws : raw array) =
+  let lbl = runs raws in
   Array.mapi (fun i r ->
     let next = if i + 1 < Array.length raws then [ i + 1 ] else [] in
     match r.last with
     | None -> next
     | Some (Jmp l) -> [ lbl l ]
     | Some (Jz l | Jnz l | TryEnter (_, l)) -> next @ [ lbl l ]
+    | Some (Switch ls) -> List.sort_uniq compare (List.map lbl ls)
     | Some _ -> []) raws
 
 (* the slots an instruction pops, and pushes *)
 let arity : L.t -> int * int = function
   | Int _ | Block _ | Sym _ | Get _ | GetG _ | Catch _ -> 0, 1
-  | Set _ | SetG _ | Drop | Ret | Raise | Jz _ | Jnz _ -> 1, 0
+  | Set _ | SetG _ | Drop | Ret | Raise | Jz _ | Jnz _ | Switch _ -> 1, 0
   | Field _ -> 1, 1
   | SetField _ -> 2, 0
   | Index -> 2, 1
@@ -82,7 +88,7 @@ let build (f : L.func) =
    * which a jump may target (opti's tails) *)
   let raws = split f.code in
   let raws = if Array.length raws > 0 && raws.(0).label <> None then Array.append [| { label = None; code = []; last = None } |] raws else raws in
-  let succ = successors raws in
+  let succ = successors raws and run = runs raws in
   (* the runs the entry reaches, numbered in order *)
   let n = Array.length raws in
   let reach = Array.make n false in
@@ -102,7 +108,7 @@ let build (f : L.func) =
       depth.(b) <- d;
       let r = raws.(raw_of.(b)) in
       let d = List.fold_left (fun d i -> let p, q = arity i in d - p + q) d r.code in
-      let d = match r.last with Some (Jz _ | Jnz _) -> d - 1 | _ -> d in
+      let d = match r.last with Some (Jz _ | Jnz _ | Switch _) -> d - 1 | _ -> d in
       List.iter (fun s -> flow s d) (bsucc b)
     end
   in
@@ -184,7 +190,7 @@ let build (f : L.func) =
       | Drop -> ignore (pop ())
       | TryExit k -> ignore (emit id (TryExit k))
       | Catch k -> push (emit id (Caught k))
-      | Label _ | Jmp _ | Jz _ | Jnz _ | Ret | Raise | TryEnter _ -> ()) r.code;
+      | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | TryEnter _ -> ()) r.code;
     let succs = bsucc id in
     (b.term <-
        match r.last, succs with
@@ -192,6 +198,7 @@ let build (f : L.func) =
        | Some (Jz _), [ nx; l ] -> Br (pop (), nx, l)
        | Some (Jnz _), [ nx; l ] -> Br (pop (), l, nx)
        | Some (TryEnter (k, _)), [ nx; h ] -> Try (k, nx, h)
+       | Some (Switch ls), _ -> Switch (pop (), List.map (fun l -> ids.(run l)) ls)
        | Some Ret, _ -> Ret (pop ())
        | Some Raise, _ -> Raise (pop ())
        | Some (Call (t, slots, true)), _ -> Tail (t, List.map get slots)
@@ -237,6 +244,7 @@ let map_ins f = function
 
 let map_term f = function
   | Br (v, a, b) -> Br (f v, a, b)
+  | Switch (v, bs) -> Switch (f v, bs)
   | Ret v -> Ret (f v)
   | Raise v -> Raise (f v)
   | Tail (t, vs) -> Tail (t, List.map f vs)
@@ -268,7 +276,12 @@ let simplify (fn : func) =
 (* The check: every use dominated by its definition *)
 (*****************************************************************************)
 
-let successors_of (b : block) = match b.term with Jmp s -> [ s ] | Br (_, a, b) -> [ a; b ] | Try (_, a, b) -> [ a; b ] | _ -> []
+let successors_of (b : block) =
+  match b.term with
+  | Jmp s -> [ s ]
+  | Br (_, a, b) | Try (_, a, b) -> [ a; b ]
+  | Switch (_, bs) -> List.sort_uniq compare bs
+  | _ -> []
 
 (* the immediate dominators (Cooper, Harvey and Kennedy, "A Simple, Fast
  * Dominance Algorithm", 2001), the blocks in reverse postorder *)
@@ -319,7 +332,7 @@ let check (fn : func) =
           List.iter (fun (p, v) -> before v p max_int) ops
       | _ -> fail "v%d: a phi that is not" phi) b.phis;
     List.iteri (fun i v -> List.iter (fun u -> before u b.id i) (operands (Hashtbl.find fn.defs v))) b.body;
-    let term_uses = match b.term with Br (v, _, _) | Ret v | Raise v -> [ v ] | Tail (_, vs) -> vs | _ -> [] in
+    let term_uses = match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> [ v ] | Tail (_, vs) -> vs | _ -> [] in
     List.iter (fun u -> before u b.id max_int) term_uses) fn.blocks
 
 (*****************************************************************************)
@@ -375,6 +388,7 @@ let show_ins ins =
 let show_term = function
   | Jmp s -> Printf.sprintf "jmp b%d" s
   | Br (v, a, b) -> Printf.sprintf "br v%d b%d b%d" v a b
+  | Switch (v, bs) -> Printf.sprintf "switch v%d %s" v (String.concat " " (List.map (Printf.sprintf "b%d") bs))
   | Try (k, a, h) -> Printf.sprintf "try %d b%d, handler b%d" k a h
   | Ret v -> Printf.sprintf "ret v%d" v
   | Raise v -> Printf.sprintf "raise v%d" v
@@ -468,6 +482,9 @@ let out (lf : L.func) (fn : func) : L.func =
     | Br (v, t, e) ->
         let lt = edge b.id t ~alone:false and le = edge b.id e ~alone:false in
         get v; emit (L.Jz le); emit (L.Jmp lt)
+    | Switch (v, bs) ->
+        let ls = List.map (fun s -> s, edge b.id s ~alone:false) (List.sort_uniq compare bs) in
+        get v; emit (L.Switch (List.map (fun s -> List.assoc s ls) bs))
     | Try (k, body, h) -> emit (L.TryEnter (k, lbl.(h))); emit (L.Jmp (edge b.id body ~alone:false))
     | Ret v -> get v; emit L.Ret
     | Raise v -> get v; emit L.Raise

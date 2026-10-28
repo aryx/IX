@@ -769,8 +769,15 @@ let layout (t : op Program.t) =
           let rest =
             if v.op = Ins (Mov W32) && v.to_ = Some (A.Reg reg_pc) && v.sc land 15 = always then flush p rest false else rest
           in
+          (* never inside a CASE's table (its BCASEs), and before one
+           * as at the table's end (Go's 5l's casesz; 5l's own checks
+           * the next instruction only) *)
+          let rec bcases = function (q : prog) :: more when q.op = Bcase -> 1 + bcases more | _ -> 0 in
+          let table = match rest with (q : prog) :: more when q.op = Ins Case -> 4 * (1 + bcases more) | _ -> 0 in
+          let inside = match rest with (q : prog) :: _ -> q.op = Bcase | [] -> false in
           let rest =
-            if !pool <> [] && (rest = [] || pool_size () >= 0xffc || immaddr (p.pc + 4 + 4 + pool_size () - !pool_start + 8) = 0)
+            if !pool <> [] && (not inside)
+               && (rest = [] || pool_size () >= 0xffc || immaddr (p.pc + 4 + table + 4 + pool_size () - !pool_start + 8) = 0)
             then flush p rest true
             else rest
           in

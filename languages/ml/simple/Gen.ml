@@ -263,6 +263,17 @@ let func m out (fn : func) =
     | Jmp l -> jump l; ins "B\tL%d" l; dead := true
     | Jz l -> let r = !sp in decr sp; jump l; ins "CMP\t$1, R%d" r; ins "BEQ\tL%d" l
     | Jnz l -> let r = !sp in decr sp; jump l; ins "CMP\t$1, R%d" r; ins "BNE\tL%d" l
+    (* as Emit's *)
+    | Switch ls ->
+        let r = !sp in
+        decr sp;
+        List.iter jump ls;
+        ins "%s\t$1, R%d, R%d" (shift Asr) r m.tmp;
+        (match m.arch with
+         | Arm -> ins "CASE\tR%d" m.tmp; ins "BCASE\tL%d" (List.hd ls)
+         | Arm64 -> ins "CASE\tR%d, R%d" m.tmp r);
+        List.iter (fun l -> ins "BCASE\tL%d" l) ls;
+        dead := true
     | Drop -> decr sp
     | Ret ->
         ins "%s\tR%d, R0" mov !sp;

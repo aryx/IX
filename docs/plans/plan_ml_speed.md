@@ -604,3 +604,48 @@ branches, made it show. Now an array by the number. mini-ml compiling
 its Lower, Typing and Ssa_build (macro.sh's), on arm by mini-5i:
 5903M instructions to 5788M (0.980); natively 4.5% of Lower's. The
 same objects.
+
+## 2026-10-28, 4d: a match's jump table
+
+The author: "let's do 2 first and then 3" (3: jump tables, measured on
+tiny-machine's step), then on the first numbers: "compiling efficiently
+pattern matches is one of the most important thing for languages like
+OCaml so we should keep the optimisation", and a benchmark of ADTs and
+matches wanted, doom and quake being numeric.
+
+Lower's match_cases tested the clauses in turn, each its constructor
+(the tag loaded and compared: 6 instructions a clause on arm64). Now a
+match naming four constructors or more jumps by a table (Ir.Switch, an
+SSA terminator, the CASE and BCASE of 5c's switch, which ix's linker
+had for mini-cc) to the first clause that may match the constructor,
+past its own test of it; a type of constants and blocks tests which
+first (ocamlopt's Uswitch, two tables). A clause that fails after goes
+on to the next one's tests as before: no decision tree, only the first
+constructor looked at. mini-ml -linear-matches: the old code, the same
+assembly as HEAD's (636 compilations). Found: 5l (and ix's linker after
+it) could flush a literal pool inside a CASE's table, which breaks the
+jumps silently; never inside now, and before a CASE as at its table's
+end (Go's 5l's casesz).
+
+Against HEAD, both from nothing on arm:
+
+- tests/bench/interp.ml (new: a stack machine's step on 14 constructors,
+  an expression tree evaluated and simplified): 27.2M instructions to
+  19.6M (0.722), and 0.776 at -O0.
+- tiny-machine's paint session natively on arm64: 2.48 s to 2.46
+  (0.99, the same screen); step's dispatch from 48 instructions at its
+  last constructor to 8, but the step's time is mostly its fetch's
+  closure, decode_kept and alu's call.
+- doom 0.998, quake and virtua 1.000, the programs' sizes 0.993 to
+  0.999; the other benches the same.
+- mini-ml compiling: its tables made 0.6% more, its code with tables
+  0.6% less, 1.000 measured with a heap large enough for few majors
+  (ML_HEAP 4M to 16M words). At the default heap 1.023: one more
+  major collection, the copy of all that is alive, in Lower's unit (at
+  ML_YOUNG=300000 the two the same, at 600000 1.10).
+
+tests/runtime/switch.ml: constants, blocks, both; or-patterns, guards,
+aliases, a wildcard between, a clause failing on, Match_failure. Not
+done: a decision tree (OCaml's Matching: a constructor's clauses
+together, the fields tested once), integer and character constants
+by a table (decode's opcodes).

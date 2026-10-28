@@ -105,6 +105,7 @@ type ins =
 type term =
   | Jmp of int
   | Br of value * int * int           (* to the first block if true, else the second *)
+  | Switch of value * int list        (* to the k-th block, the value k (Ir.Switch) *)
   | Try of int * int * int            (* the k-th handler: the body, the handler *)
   | Ret of value
   | Raise of value

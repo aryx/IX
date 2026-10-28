@@ -320,6 +320,78 @@ let rec test (acc : (int * binding) list) own s (p : Scope.pattern) fail =
       emit (Label ok);
       acc'
 
+(* OPTIMIZATION (switches): a match of four constructors or more by a
+ * jump table, on the constant's number, on the block's tag, or on each
+ * after a test of which (OCaml's Lswitch, ocamlopt's table of labels,
+ * ocaml-light's too; 5c's switch): one jump where each clause tested
+ * the constructor in turn. tiny-machine's step, on nine instructions'
+ * constructors: the last found in 48 instructions, now 8; the
+ * interpreter of tests/bench/interp.ml 0.72. Only a clause's first
+ * constructor is looked at: one inside, or two clauses of one
+ * constructor, are tested as without. (off: mini-ml -linear-matches) *)
+let switches = ref true
+
+(* a variant's constructor at the top of p, and p's tests after that
+ * one: its fields' as a tuple's, from field 0 *)
+let rec split_head (p : Scope.pattern) =
+  match p with
+  | Pcons (({ kind = Const _ | Block _; _ } as c), ps) -> Some (c, Scope.Ptuple ps)
+  | Palias (p, v) -> Option.map (fun (c, q) -> c, Scope.Palias (q, v)) (split_head p)
+  | Pconstraint (p, _) -> split_head p
+  | _ -> None
+
+(* the constructors p may match: (a block's, the number or the tag);
+ * None: any value *)
+let rec heads (p : Scope.pattern) =
+  match p with
+  | Pcons ({ kind = Const k; _ }, _) -> Some [ false, k ]
+  | Pcons ({ kind = Block t; _ }, _) -> Some [ true, t ]
+  | Palias (p, _) | Pconstraint (p, _) -> heads p
+  | Por (a, b) -> (match heads a, heads b with Some x, Some y -> Some (x @ y) | _ -> None)
+  | _ -> None
+
+(* the jump table of a match's clauses on slot s, if worth one: each
+ * constructor to the first clause that may match it, past its test of
+ * the constructor when it names that one alone; the clauses' labels,
+ * entry.(i) clause i's tests, the one before failed (entry.(n): none
+ * matched), after.(i) past its constructor's *)
+let switch s ps =
+  let named = List.sort_uniq compare (List.concat_map (fun p -> match heads p with Some hs -> hs | None -> []) ps) in
+  match List.find_map split_head ps with
+  | Some ((c : Scope.cons), _) when List.length named >= 4 ->
+      let n = List.length ps in
+      let entry = Array.init (n + 1) (fun _ -> label ()) and after = Array.init n (fun _ -> label ()) in
+      let target block k =
+        let rec go i = function
+          | [] -> entry.(i)
+          | p :: rest ->
+              match heads p with
+              | None -> entry.(i)
+              | Some [ h ] when h = (block, k) && split_head p <> None -> after.(i)
+              | Some hs when List.mem (block, k) hs -> entry.(i)
+              | Some _ -> go (i + 1) rest
+        in
+        go 0 ps
+      in
+      (* one part: a jump when all go to one clause *)
+      let part block n =
+        let ls = List.init n (target block) in
+        if List.for_all (( = ) (List.hd ls)) ls then emit (Jmp (List.hd ls))
+        else (emit (Get s); if block then emit (Op Tag); emit (Switch ls))
+      in
+      if c.nconst > 0 && c.nblock > 0 then begin
+        let blocks = label () in
+        emit (Get s); emit (Op IsInt); emit (Jz blocks);
+        part false c.nconst;
+        emit (Label blocks);
+        part true c.nblock
+      end
+      else if c.nconst > 0 then part false c.nconst
+      else part true c.nblock;
+      emit (Label entry.(0));
+      Some (entry, after)
+  | _ -> None
+
 let raise_failure exn line =
   (* Match_failure and Assert_failure: (file, line, column) *)
   emit (Int 0); emit (Int line); emit (Block (string_block !file)); emit (Alloc (0, 3));
@@ -640,19 +712,30 @@ and control env (e : Scope.expr) tl =
   | _ -> assert false
 
 (* the clauses in order, each tests then its body; after an irrefutable
- * one, nothing *)
+ * one, nothing. With a jump table (switches), each constructor's
+ * first clause that may match it is jumped to, past its own test of
+ * the constructor (after.(i)), a clause that fails going on to the
+ * next one's tests as without *)
 and match_cases env s cases tl _loc on_fail =
   let out = label () in
-  let rec go = function
+  let table = if !switches then switch s (List.map (fun (p, _, _) -> p) cases) else None in
+  let rec go i = function
     | [] -> on_fail ()
     | ((p : Scope.pattern), g, body) :: rest ->
-        let fail = label () in
-        let env = test env [] s p fail in
+        let fail = match table with Some (entry, _) -> entry.(i + 1) | None -> label () in
+        let env =
+          match split_head p, table with
+          | Some (c, fields), Some (_, after) ->
+              ignore (test env [] s (Pcons (c, [])) fail);
+              emit (Label after.(i));
+              test env [] s fields fail
+          | _ -> test env [] s p fail
+        in
         Option.iter (fun g -> value env g; emit (Jz fail)) g;
         if tl then tail env body else (value env body; emit (Jmp out));
-        if refutable p || Option.is_some g then (emit (Label fail); go rest)
+        if refutable p || Option.is_some g then (emit (Label fail); go (i + 1) rest)
   in
-  go cases;
+  go 0 cases;
   if not tl then emit (Label out)
 
 and var env (v : Scope.value) =

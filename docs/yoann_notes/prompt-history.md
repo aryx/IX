@@ -51463,3 +51463,330 @@ Claude rebuilt the image in 15 seconds, then recorded the `wwwsearch` sum after 
 Claude confirmed `make test` passed with 135 jobs and 0 failures in 111 seconds.
 Claude made four commits by pathspec, leaving out another session's `TinyMachine.ml` and `TinyMachineSocket.ml` edits.
 Claude corrected an unverified Reddit claim in the plan, then started `make self-quick-tix`, which takes about six minutes.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:29
+
+**Yoann:**
+
+> ok
+
+**Claude (summary):**
+
+Claude reported that `make self-quick-tix` had been running for about six minutes.
+Claude said it would report the outcome once the build finished.
+Yoann's follow-up asks whether the session is finished, so the wait is the open point.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:39
+
+**Yoann:**
+
+> ok so looks like we're done for this session then?
+
+**Claude (summary):**
+
+Claude confirmed the session is finished, with everything from this round committed and checked.
+Claude noted that the modified files still in the tree (bugs/ix.md, TinyMachine.ml, TinyMachineSocket.ml, prompt-history.md) belong to other sessions, not to its work.
+Claude listed two items deferred to another time, both outside tiny's scope.
+Reddit's fetcher gets served a login page, and getting past it means presenting as another browser, which Claude left as Yoann's call.
+ocaml.org's double menu needs CSS or JavaScript, which tiny does not have.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:41
+
+**Yoann:**
+
+> for tiny-www, maybe we could add the ability to have external viewers, like in mini-netscape, so when following a link to a pdf, we could call the external program 'page', or for a wave 'play'
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:42
+
+**Yoann:**
+
+> there is tiny-page
+
+**Claude (summary):**
+
+Claude said it would check how tiny-www gets its documents.
+Claude also planned to see whether tiny-kernel has a `page` and a way to start another program.
+Yoann's follow-up points to the tiny-page name, which Claude's answer did not yet address.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:42
+
+**Yoann:**
+
+> and it's called page when running under tiny-kernel
+
+**Claude (summary):**
+
+Claude searched the tree, git history, worktrees, built programs, and prompt history and found no tiny-page anywhere.
+Claude suggested either another session was still writing tiny-page, or Yoann meant mini-page, which belongs to m-ix and doesn't run on tiny-kernel.
+Claude offered to add `"%PDF-", "page"` to www's table now, so the PDF link would work once the program exists.
+Claude also noted the WAV half (signature check, file write, `play` spawn, native `u_spawn`) doesn't depend on the page question.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:45
+
+**Yoann:**
+
+> yes I was wrong, there are no tiny-page.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:45
+
+**Yoann:**
+
+> but the peer should return the conten-type and other headers
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:46
+
+**Yoann:**
+
+> so tiny-www code looks a bit more like a real browser on that aspect
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:28
+
+**Yoann:**
+
+> currently how many LOC is ocamlopt and dependent code in ocaml-light vs mini-ml?
+
+**Claude (summary):**
+
+Claude reported that mini-ml built by itself ran about 1.6 times slower than the OCaml 4.14 build, using 1.6 times the memory.
+Claude measured bdd at about 1.7 times and kb at about 1.8 times OCaml 4.14's run time, all natively on arm64.
+Claude flagged fft at about 9 times slower and attributed it to OCaml fusing `a*b+c` on arm64, which mini-ml does not do.
+Claude noted most of ocaml-light's eleven benchmarks run too briefly to time, so it queued qemu instruction counts instead.
+Claude also compared line counts in one table: ocaml-light's compiler and runtime about 20.9k, mini-ml's about 8.1k.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:53
+
+**Yoann:**
+
+> it's fine for mini-ml to produce code that is 2x slower than what ocamlopt (from ocaml-light and OCaml 4.14) would do. We are not aiming to be faster; we are aiming to have simpler code (it's a mini-ml, not a "full" ml). So for bdd and kb I'm pretty happy about the numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:53
+
+**Yoann:**
+
+> for simpler code I mean less LOC for the mini-ml compiler than the ocaml-light compiler
+
+**Claude (summary):**
+
+Claude confirmed the goal of fewer lines than ocaml-light, citing 5,618 against 13,608 compiler lines.
+Claude recommended optimizing only programs well past 2x, naming fft at about 9x as the clearest target.
+Claude judged bdd at 1.7x and kb at 1.8x not worth optimizing, since they are already close enough.
+Claude weighed each optimization's added lines against its gain, and ruled out big ocamlopt imitations like graph-colouring register allocation.
+Claude planned to list programs past 2.5x with likely causes once the eleven qemu runs finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:56
+
+**Yoann:**
+
+> also the real important things to optimize for are not necessarily benchmark artifiical program but more real programs like the games (doom, quake, etc.), apps (mini-office, mini-netscape, mini-rebirth, etc.), and also getting the whole self-m-ix time reduced to compile m-ix under m-ix
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:56
+
+**Yoann:**
+
+> but the benchmark are good intermediate steps to focus on
+
+**Claude (summary):**
+
+Claude recommended profiling a whole m-ix build from nothing, under mini-5i on arm or natively on arm64.
+Claude noted that mini-ml built by itself is 1.6 times slower than OCaml-built mini-ml, with its collector near 25% of a compile.
+The profile would show which tool and runtime functions take build time, before turning to the games and apps.
+Claude proposed then measuring mini-netscape page loads and mini-office document opens, which no stage tracks yet.
+Claude asked whether to start with the m-ix build profile.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:56
+
+**Yoann:**
+
+> with the larger picture (the real programs) in mind
+
+**Claude (summary):**
+
+Claude recommended a loop: profile a real program, isolate the cost with a small benchmark, then measure the fix.
+Claude pointed to the 4d case, where interp.ml's matches cost showed 0.722 and the real programs showed 0.99 to 1.000.
+Claude suggested mining ocaml-light's suite, such as fft at about 9x, to isolate float costs.
+Claude said outliers past about 2.5x in the pending qemu counts of ocaml-light's programs become benchmark candidates.
+Claude asked whether to start by profiling a whole m-ix build from scratch while the counts finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:58
+
+**Yoann:**
+
+> Also I would say to maybe imitate more what ocamlopt does when we find a new bottleneck somewhere; the larger literature is also useful of course, but ocaml-light (and ocaml 4.14) often already explored those bottleneck in the past so we can imitate (and even simplify when we can)
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:46
+
+**Yoann:**
+
+> and would implement a bit more what HTTP is
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:11
+
+**Yoann:**
+
+> look for page or mini-page (so on Linux it works and find mini-page in the same bin/ than tiny-www)
+
+------------------------------------------------------------------------
+
+## 2026-10-28 08:58
+
+**Yoann:**
+
+> also right now our main focus is the Pi1 and especially Pi2, and only later Pi4
+
+**Claude (summary):**
+
+Claude reported arm64 builds taking 128 s, with mini-ld linking dominating and the Pi 2 profile still pending.
+Claude traced the slow arm64 links to the literal pool lookup at Arm64.ml:808, which uses List.assoc_opt.
+Callgrind showed about 70% of arm64 link time going to polymorphic compare inside that pool search.
+Claude explained the pool flushes only at its 1 MB reach, leaving thousands of entries pending and the search quadratic.
+Claude proposed a few-line hash table beside the list to fix every arm64 build, and held it until now.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:11
+
+**Yoann:**
+
+> or tiny-play too
+
+**Claude (summary):**
+
+Claude ran `mini-page file.pdf` and built the native `u_spawn`, then tested `tiny-www` against the live PDF.
+Claude stopped the headless viewer (pid 1045621) left running from `bin/`, then updated TinyBrowser.mli's description of www.
+Claude added a few words to tiny/README.md's www row, and `make test` passed with 135 jobs and 0 failures.
+Claude found mini-ml's Filename has no `extension`, so the peer computes the extension itself rather than touching lib_core.
+Claude then ran tiny-kernel's full check in its own build directory, since test-lite skips it.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:36
+
+**Yoann:**
+
+> excellent! I like this proxy analogy, and hopefully tiny-www has code similar to what a real browser or mini-netscape would do for a proxy too. Regarding zombies maybe tiny-www can wait for the external program to finish. we should add wait to tiny-kernel, it's a pretty fundamental syscall I think (unless we can design a free variant with a simple design). Regarding the size of TinyBrowser, we now have a TinyBrowserHTTP and TinyBrowserAddress so maybe it would be natural to see a TinyBrowserHTML as it match a famous concept from the browser world. And we can add Filename.extension if it's a standard OCaml function and is needed
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:31
+
+**Yoann:**
+
+> let's fix the arm64 pool now. This use of callgrind is also interesting, I hope there is an entry or tutorial about in the notes_debugging_techniques.txt or maybe even better in notes_profiling_techniques.txt.
+
+**Claude (summary):**
+
+Claude swapped the arm64 pool's list lookup in `linker/Arm64.ml` for a hash table on the same keys.
+Linking mini-ml dropped from 8.14 s to 3.06 s, with the same 2,647,022-byte output.
+Claude recorded the fix in the plan, inventory C48, the ledger, and `bugs/ix.md`.
+`make test` passed with 135 jobs and 0 failures in 105 s, and nothing was committed yet.
+Claude also added a callgrind how-to to `notes_profiling_techniques.md`, kept separate from the fix.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:44
+
+**Yoann:**
+
+> yes let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:44
+
+**Yoann:**
+
+> separately
+
+**Claude (summary):**
+
+Claude committed the arm64 pool fix as 15b1741d, cutting mini-ml's link from 8.14 s to 3.06 s.
+That commit also carried the plan, inventory C48, the ledger (+9) and bugs/ix.md, with another session's uncommitted row kept out.
+Claude committed the callgrind profiling notes separately as 6ecb7494 in notes_profiling_techniques.md.
+Claude reported that make test passed with 135 jobs and 0 failures, while make self-quick was not run.
+Claude said the Pi 2 arm link profile (task bxlp6njty) is still running and would be reported when it finishes.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:41
+
+**Yoann:**
+
+> actually what is the issue? why we get zombie processes? when we quit the external program, why it remains zombie? does it have? Tiny-kernel is a free variant, we can rethink things
+
+**Claude (summary):**
+
+Claude said it would first check how tiny-kernel handles a process's exit before answering.
+Claude's reply contained no findings yet, only a statement of intent to inspect the tiny-kernel exit path.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:46
+
+**Yoann:**
+
+> yes! Let's simplify tiny-kernel by using better design (here plan 9 > Unix)
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:46
+
+**Yoann:**
+
+> Read task bxlp6njty (mini-5i profile of the mini-ml-built arm mini-ld linking mini-ml) and report what dominates the Pi 2's link, with ocaml-light/OCaml's approach for it.
+
+**Claude (summary):**
+
+Claude committed the arm64 pool fix as 15b1741d, cutting mini-ml's link from 8.14 s to 3.06 s with the same bytes.
+Claude's profile found the Pi 2 link dominated by the collector at about 31%, with Printf at 4.6% and select at 5.1%.
+Claude proposed fix 1: replace the -map writer's per-instruction sprintf with a check on `p.op = Func`, about 5%, a few lines.
+Claude also suggested reading Marshal objects straight into the major heap, as OCaml's intern.c does, which may be the largest collector cost.
+Claude asked whether to start on fixes 1 and 2 while the heap-size counts run.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 09:47
+
+**Yoann:**
+
+> and add in comment this design decision and how it's simpler than Unix zombie alternative
+
+**Claude (summary):**
+
+Claude expanded the `ended` comment with a `plan9-is-cleaner:` paragraph explaining the decision and its simplicity over Unix zombies.
+Claude checked tiny-kernel's wait behavior: sh, rc, trace, debug and build all wait for children, and -1 now only signals nothing can end.
+Claude restored the `\r` line endings in check.expected, and the whole check passes.
+Claude updated the tiny-browser plan's "Left" note and then ran `make test`.

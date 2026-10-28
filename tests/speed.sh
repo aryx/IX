@@ -110,7 +110,9 @@ doom() {
 
 for t in ${@:-build-9pi build-top cameltry page-linux doom-linux}; do
   case $t in
-    build-9pi) nothing_changed build-9pi 15 build_9pi;;
+    # (18 s: a .depend checked in each directory, about 1.2 s a walk
+    # and two walks, since e1b8675a. old: 15)
+    build-9pi) nothing_changed build-9pi 18 build_9pi;;
     build-top) nothing_changed build-top 10 build_top;;
     # (after build-9pi, which makes the card it runs from)
     cameltry) cameltry;;

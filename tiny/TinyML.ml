@@ -201,11 +201,19 @@ let write_interface (old_con, old_label, old_abbrev, old_forgotten)
     else
       Some (l, li.lrec, li.idx, li.mut, li.lnames, texpr_of_ty li.lscheme))
     (Hashtbl.find_all record_labels l)) (names record_labels) in
+  (* a name defined twice: the later, first in exports, as OCaml's
+   * shadowing (old: both, the earlier read last, so the one the units
+   * after saw, with the later's type: www's trap, bugs/ix.md) *)
+  let seen = Hashtbl.create 64 in
   let ivals = List.filter_map (fun (x, bd) ->
-    match List.assoc_opt x types, bd with
-    | Some t, (Loc ((Static _ | Glob _), _) | Ext _) ->
-        Some (qualify !unit_name x, bd, texpr_of_ty t)
-    | _ -> None) exports in
+    if Hashtbl.mem seen x then None
+    else begin
+      Hashtbl.add seen x ();
+      match List.assoc_opt x types, bd with
+      | Some t, (Loc ((Static _ | Glob _), _) | Ext _) ->
+          Some (qualify !unit_name x, bd, texpr_of_ty t)
+      | _ -> None
+    end) exports in
   Marshal.to_string
     { iunit = !unit_name, nglobals, !arities; icons = icons; ilabels = ilabels;
       iabbrevs =

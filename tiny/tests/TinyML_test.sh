@@ -101,6 +101,13 @@ then echo "ok units: Shapes and Main compiled apart, and whole, Main.out's outpu
 printf 'let () = print_int (Shapes.area Dot)\n' > $W/units/Q.ml; printf 'let () = print_int (area Dot)\n' > $W/units/U.ml
 if $TML -L $W/lib -c -o $W/units/Q.tm $W/units/Shapes.tmi $W/units/Q.ml && [ "$($TML -L $W/lib -c -o $W/units/U.tm $W/units/Shapes.tmi $W/units/U.ml 2>&1)" = "$W/units/U.ml: line 1: unbound area" ]
 then echo "ok units: Shapes.area, and area unbound without open Shapes"; else echo "FAIL units: the scopes"; failures=$((failures + 1)); fi
+# a name defined twice, the later is the one the units after see
+printf 'let f x = x + 1\nlet f x = x * 10\n' > $W/units/Twice.ml; printf 'let () = print_int (Twice.f 3)\n' > $W/units/R.ml
+if $TML -L $W/lib -c -o $W/units/Twice.tm $W/units/Twice.ml && $TML -L $W/lib -c -o $W/units/R.tm $W/units/Twice.tmi $W/units/R.ml \
+   && $TML -L $W/lib -o $W/units/rmain.tm $W/units/Twice.tmi $W/units/R.tmi \
+   && link_tm $W/units/twice $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/rmain.tm $W/units/Twice.tm $W/units/R.tm $W/main4096.tm $LIB_O \
+   && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
+then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
 TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi

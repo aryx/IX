@@ -11,16 +11,18 @@
  (libraries tiny_kernel_graphics tiny_kernel_audio tiny_host_memory tiny_machine_sdl tiny_machine_devices tiny_machine_peer unix))
 
 ; the machine's font, tiny-kernel's (../TinyKernel/fonts/README.md), in
-; the program
+; the program, a byte a \xNN (old: its bytes as they are in a {font|
+; ... |font}: OCaml 5 took a | then bytes beyond ASCII then } in
+; grey.font for a delimiter, its name not UTF-8, and stopped)
 (rule
  (targets TinyFont.ml)
  (deps (:font ../TinyKernel/fonts/grey.font))
  (action
   (with-stdout-to %{targets}
    (progn
-    (echo "(* TinyKernel/fonts/grey.font *)\nlet bits = {font|")
-    (cat %{font})
-    (echo "|font}\n")))))
+    (echo "(* TinyKernel/fonts/grey.font *)\nlet bits = \"")
+    (system "od -An -v -tx1 %{font} | tr -d '\\n' | sed 's/ /\\\\x/g'")
+    (echo "\"\n")))))
 
 (copy_files# ../TinyKernel/user/office.ml)
 (copy_files# ../TinyKernel/user/emacs.ml)

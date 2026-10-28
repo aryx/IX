@@ -71,7 +71,8 @@ characters are 8 wide, the cell. `Mkfont.ml` draws each of its first
 at 8 by 16 and 16 by 32, a pixel set where 0.6 of it is covered. ix
 runs no hinting (the font's programs that move a letter onto the
 pixels); instead, as FreeType's autohinter: the baseline, the x's
-height and the H's made whole rows, a shift of the face and of each
+height and the H's made whole rows, the round letters' overshoot past
+them flattened onto them, a shift of the face and of each
 character across (and down for what is no letter) by eighths of a
 pixel to put stems on whole pixels, and a bar split on two rows kept
 on one. `Mkfont.ml`'s header says how; `Mkfont.exe -coverage c

@@ -69,3 +69,25 @@ option).
 
 **Status**: not found in OCaml's issue tracker by a web search
 (2026-09-24); not reported.
+
+## OCaml 5: a quoted string's | then bytes not UTF-8 then } refused
+
+**What**: a quoted string `{id|...|id}` holds any bytes in OCaml
+4.14. In 5.5.1 (5.x's lexer reads a closing delimiter's name as a
+UTF-8 identifier), a `|` followed by bytes that are not UTF-8 and a
+`}` inside it is taken for a delimiter, and its name refused: the
+whole file is an error. Valid UTF-8 there (`|é}`) is accepted.
+Found 2026-10-28: tiny/sdl's TinyFont.ml, grey.font's bytes in a
+`{font|...|font}`, the bytes `|\xf4}` among them (make test's "ix by
+OCaml 5.5.1"); the font is now written as `\xNN` escapes.
+
+**Reproduction**:
+
+```
+$ printf 'let s = {x|a|\xf4}b|x}\nlet () = print_int (String.length s)\n' > q.ml
+$ ocamlfind ocamlopt q.ml -o q && ./q          # 4.14.2
+5
+$ opam exec --switch=5.5.1 -- ocamlfind ocamlopt q.ml -o q
+File "q.ml", line 1, characters 12-15:
+Error: Invalid encoding of identifier �.
+```

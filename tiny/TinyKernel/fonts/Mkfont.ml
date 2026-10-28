@@ -18,7 +18,8 @@
  *   H's), the heights between stretched to fit (old: one shift down
  *   of the whole face, as across: the e's top, a third of a row and
  *   half of the next, was lost, the author's "the top of e is
- *   missing");
+ *   missing"); a round letter's overshoot past the three (the o's
+ *   top, a fifth of a pixel) on them, not in the row beyond;
  * - across, one shift of the whole face, an eighth of a pixel at a
  *   time, the one whose pixels are most nearly all in or all out (the
  *   least sum of c (1 - c), c a pixel's part covered): in a monospaced
@@ -66,20 +67,33 @@ let enough = 0.6
 
 (* a face: the font, its scale (pixels a unit), the cell's size, the
  * baseline's row; the x's height and the H's, in the font's units, and
- * the whole rows they are made *)
+ * the whole rows they are made; how far the round letters go past the
+ * baseline (the o's bottom), the x's height (the o's top) and the H's
+ * (the O's top), in the font's units *)
 type face = {
   font : Truetype.t; scale : float; w : int; h : int; base : float;
   xh : float; xrows : float; cap : float; caprows : float;
+  under : float; over : float; capover : float;
 }
 
 (* the pixels above the baseline of a height of the font's: up to the
  * x's, to the H's, above it (the accents, an f's top), each part
- * scaled to its rows, and the descenders as the lower case *)
+ * scaled to its rows, and the descenders as the lower case. What a
+ * round letter has past the three, its overshoot (a fifth of a pixel
+ * at 16), is on them, as FreeType's autohinter does at small sizes
+ * (its blue zones): old: the e's, a's, o's tops a fifth of the row
+ * above, in grey.font a lone grey pixel over each (the author: "I can
+ * see some pixels on the e above isolated a bit") *)
 let height (face : face) (y : float) : float =
-  if y <= face.xh then y *. face.xrows /. face.xh
+  if y < 0. then
+    if y >= -. face.under then 0. else (y +. face.under) *. face.scale
+  else if y <= face.xh then y *. face.xrows /. face.xh
+  else if y <= face.xh +. face.over then face.xrows
   else if y <= face.cap then
-    face.xrows +. ((y -. face.xh) *. (face.caprows -. face.xrows) /. (face.cap -. face.xh))
-  else face.caprows +. ((y -. face.cap) *. face.scale)
+    let from = face.xh +. face.over in
+    face.xrows +. ((y -. from) *. (face.caprows -. face.xrows) /. (face.cap -. from))
+  else if y <= face.cap +. face.capover then face.caprows
+  else face.caprows +. ((y -. face.cap -. face.capover) *. face.scale)
 
 (* [coverage face c dx dy]: each pixel's part covered of character c in
  * its cell, w by h, row after row, shifted by (dx, dy); and how much of
@@ -230,15 +244,18 @@ let face (font : Truetype.t) (w : int) (h : int) : face =
     | Some f -> f (Char.code c)
     | None -> failwith "no Unicode cmap"
   in
-  let top c =
+  let bounds c =
     match Outline.bounds (Truetype.outline font (glyph c)) with
-    | Some (_, _, _, y1) -> y1
+    | Some (_, y0, _, y1) -> (y0, y1)
     | None -> failwith "no outline"
   in
+  let top c = snd (bounds c) in
   let scale = float_of_int w /. float_of_int (Truetype.advance font (glyph 'M')) in
   let xh = top 'x' and cap = top 'H' in
   { font; scale; w; h; base = float_of_int (h * 13 / 16);
-    xh; xrows = Float.round (xh *. scale); cap; caprows = Float.round (cap *. scale) }
+    xh; xrows = Float.round (xh *. scale); cap; caprows = Float.round (cap *. scale);
+    under = max 0. (-. fst (bounds 'o')); over = max 0. (top 'o' -. xh);
+    capover = max 0. (top 'O' -. cap) }
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   try

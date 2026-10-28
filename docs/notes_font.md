@@ -412,5 +412,16 @@ the bitmap one switch away: `make FONT=fonts/tiny.font`,
 more than a colour through a font of levels, and a program's own mask,
 are still set or not (a level not 0 is set).
 
+The author then: "I can see some pixels on the e above isolated a
+bit". The e's, o's, a's tops go past the x's height by a fifth of a
+pixel (a round letter's overshoot, so that it looks as tall as an x),
+a fifth of the row above covered: in grey.font a lone light pixel over
+each, and over the digits, the C, the O. Mkfont now puts what is within
+the overshoot of the baseline, the x's height and the H's on them (the
+o's and the O's, measured), as FreeType's autohinter's blue zones do at
+small sizes; what is above the H's (brackets, accents) moved down by
+the same fifth. tiny.font changed little (its 0.6 threshold had left
+those slivers out).
+
 Left: the characters beyond ASCII (both fonts have them, the kernel's
 font 128); a larger screen (3), the one way to the Emacs's 43 pixels.

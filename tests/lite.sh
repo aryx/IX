@@ -490,6 +490,8 @@ if [ -n "$runs7" ]; then
   job $a "tiny programs built by ix: their tests" tiny_tests
 else skip "ix built by ix: its programs used" "$no7"; fi
 job -after-ix "a kernel's step built by ix, booted" boot $K/kernels/steps/step3/kernel8.img 'no process left to run'
+# (mk's graph read, the build's own B: tests/depend_edges.sh says why)
+job -after-ix "each unit compiled after those it inlines (else builds differ)" env B=$B tests/depend_edges.sh
 [ -n "$xv6" ] && job -after-ix "mini-xv6 built by ix, booted" boot $K/kernels/xv6/kernel8.img 'init: starting sh'
 
 # The report, a tree: a line a group (shared, t-ix, m-ix), and under it

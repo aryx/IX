@@ -83,12 +83,17 @@ jobpids=()
 mkfifo $W/slots; exec 3<> $W/slots
 for i in $(seq ${JOBS:-$(nproc)}); do echo >&3; done
 # -after-ix: a check of what ix built by ix, its clock started once the
-# build is done (its own job); a skip when the build failed
+# build is done (its own job); a skip when the build failed. Its family:
+# the last `family`'s, a line of the report with the others' (below; a
+# job of none, a line of its own)
+families=()
+F=
+family() { F=$1; }
 job() {
   wanted || return 0
   local after=; [ "$1" = -after-ix ] && { after=1; shift; }
   local name=$1; shift
-  names+=("$name"); groups+=($G)
+  names+=("$name"); groups+=($G); families+=("$F")
   local k=$W/job${#names[@]}
   ( if [ -n "$after" ]; then
       until [ -f $W/ix.done ]; do sleep 0.5; done
@@ -96,6 +101,8 @@ job() {
         { echo "skip 0" > $k.st && mv $k.st $k.status; exit; }
     fi
     read -r -u 3
+    # (its start, for the progress lines: the running ones)
+    now > $k.run
     t0=$(now); if true | "$@" > $k.log 2>&1 3>&-; then s=ok; else s=FAIL; fi
     echo >&3
     # (renamed: the loop at the end never reads it half written)
@@ -117,6 +124,7 @@ no7="arm64's programs do not run here"
 mkdir -p tests/snapshots _build/testo/status
 
 group shared
+family "the sources, by both OCamls"
 # ix by the other OCaml too, its types (@check, in _build5): CI builds
 # with 4.14 and 5.5, a keyword of 5's (effect) once broke the second
 # unseen (plan_tests.md); here when the switch is there and dune's
@@ -144,6 +152,7 @@ esac
 job "every source is text" tests/text_files.sh
 
 group t-ix
+family "the tiny programs' tests"
 job "tiny-shell: scripts against 9base's rc" tiny/tests/TinyShell_test.sh
 job "tiny-editor: sam's commands against 9base's sam" tiny/tests/TinyEditorLine_test.sh
 job "tiny-db: random sessions against SQLite" tiny/tests/TinyDatabase_test.sh 5
@@ -162,6 +171,7 @@ job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
+family tiny-kernel
 # (on an image of its own: TinyKernel's _make is the sessions', rebuilt
 # under a run)
 tiny_network() {
@@ -191,6 +201,7 @@ tiny_kernel() {
   done
 }
 job "tiny-kernel: booted, mltests, a shell's files" tiny_kernel
+family ""
 # t-ix building in itself, a small part (plan_tests.md; make self-quick
 # 167 s, make self hours): in tiny-kernel, on a disk of its own, ping.c
 # by cc and as, its object the host's (read from the disk by
@@ -227,9 +238,7 @@ END
 job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
 
 group m-ix
-job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
-job "libc: memmove, memset and arm's division, the machines' assembly" lib_core/libc/tests/mem_check.sh
-job "mini-ml -pp" languages/ml/tests/pp.sh
+family "unit tests"
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
@@ -238,12 +247,19 @@ job "mini-smalltalk: unit tests" _build/default/languages/smalltalk/tests/Test.e
 job "mini-scheme: unit tests" _build/default/languages/scheme/tests/Test.exe
 job "mini-pascal: unit tests" _build/default/languages/pascal/tests/Test.exe
 job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
-job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
-job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
-job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
-job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
-job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
+job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
+job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
+job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
+job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
+job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
+job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
+job "browsers/javascript: unit tests, three ways" browsers/javascript/tests/modes.sh
+job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
+job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
+job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
+job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
+family "recorded outputs"
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games: recorded frames" games/tests/frames.sh
 job "games: recorded sounds" games/tests/audio.sh
@@ -251,22 +267,8 @@ job "mini-music: recorded frames and sounds" sh_ 'apps/music/tests/frames.sh && 
 job "mini-drscheme: recorded frames" editors/drscheme/tests/frames.sh
 job "examples: recorded frames" examples/tests/frames.sh
 job "mini-office: recorded frames" apps/office/tests/frames.sh
-job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
-job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
-job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
-job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
-job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
-job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
-job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
-job "browsers/html: unit tests" _build/default/browsers/html/tests/Test.exe
 job "mini-lynx: a recorded session" browsers/lynx/tests/session.sh
-job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh
-job "browsers/javascript: unit tests, three ways" browsers/javascript/tests/modes.sh
-job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
-job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
-job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
 job "mini-netscape: recorded frames, the profile, the helpers" sh_ 'browsers/netscape/tests/frames.sh && browsers/netscape/tests/profile.sh && browsers/netscape/tests/helpers.sh'
-job "mini-node: its scripts" browsers/javascript/tests/scripts.sh
 job "mini-rc: recorded cases" shell/tests/differential.sh
 job "mini-ed: recorded cases" editors/ed/tests/differential.sh
 job "mini-mk: recorded cases" builder/tests/differential.sh
@@ -275,13 +277,25 @@ job "mini-awk: recorded cases" utilities/text/awk/tests/differential.sh
 job "mini-dc: recorded cases" utilities/calc/dc/tests/differential.sh
 job "mini-bc: recorded cases" utilities/calc/bc/tests/differential.sh
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
+job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
+job "mini-page: recorded frames" apps/page/tests/frames.sh
+job "mini-office: pictures" apps/office/tests/image.sh
+family "against references, laws"
+job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
+job "libc: memmove, memset and arm's division, the machines' assembly" lib_core/libc/tests/mem_check.sh
+job "mini-ml -pp" languages/ml/tests/pp.sh
+job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
+job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
+job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
+job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
+job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
+job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
+job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
+job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh
+job "mini-node: its scripts" browsers/javascript/tests/scripts.sh
 job "mini-lex: ocamllex's tokens" generators/tests/tokens.sh
 job "mini-yacc: ocamlyacc's trees" generators/tests/trees.sh
 job "mini-git: sessions, queries" sh_ 'version_control/tests/session.py 3 && version_control/tests/query.py 3'
-job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
-job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
-job "mini-page: recorded frames" apps/page/tests/frames.sh
-job "mini-office: pictures" apps/office/tests/image.sh
 job "lib_compression, lib_crypto: zlib, SHA-1 against Python's" lib_compression/tests/check.py 50
 job "lib_crypto: the vectors, by OCaml" sh_ '_build/default/lib_crypto/tests/Vectors.exe | cmp - lib_crypto/tests/Vectors.expected'
 job "mini-git: objects against git's" version_control/tests/objects.sh
@@ -289,6 +303,7 @@ job "mini-git: git9's tests" version_control/tests/git9_tests.sh
 job "mini-git: clone, fetch, push against git's servers" version_control/tests/net.sh
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 
+family "mini-ml runs OCaml's programs"
 # mini-ml, m-ix's compiler: programs of today's OCaml, in four jobs
 # (each builds the stdlib first)
 M=languages/ml/tests/modern
@@ -299,8 +314,10 @@ job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
-# of what it holds (lib_core both systems', tiny t-ix's)
-compiles() { languages/ml/tests/compile_ix.sh "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
+# of what it holds (lib_core both systems', tiny t-ix's), one family:
+# a line a group (-v: a failing file's error in the log, the part's lines)
+family "mini-ml compiles"
+compiles() { languages/ml/tests/compile_ix.sh -v "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
 for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
   case $d in lib_core) group shared;; *) group m-ix;; esac
   job "mini-ml compiles ${d%% *}" compiles $d
@@ -330,6 +347,7 @@ compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
 compiles_parts \
   "games lib_playground lib_juice lib_ai lib_graphics lib_gui examples apps" \
   games/fps "games/racing apps" "lib_graphics lib_playground"
+family ""
 
 # ix built by ix, from nothing: the libraries, the assembler (the others
 # read its interfaces' objects), then the programs side by side
@@ -433,6 +451,7 @@ else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6
 else skip "mini-xv6 built by ix and booted" "no xv6 disk image: ~/xv6/forks/arm64-pi4/fs.img"; fi
+family "ix built by ix, then used"
 job "ix built by ix" ix_build
 if [ -n "$runs7" ]; then
   a=-after-ix
@@ -459,39 +478,112 @@ else skip "ix built by ix: its programs used" "$no7"; fi
 job -after-ix "a kernel's step built by ix, booted" boot $K/kernels/steps/step3/kernel8.img 'no process left to run'
 [ -n "$xv6" ] && job -after-ix "mini-xv6 built by ix, booted" boot $K/kernels/xv6/kernel8.img 'init: starting sh'
 
-# each job's line as soon as it ends (so the order is the jobs' ends),
-# its group first; then the skips and the failures again, a line for
-# each group (its jobs, and when its last one ended), and the jobs past
-# the budget (plan_tests.md: the whole 120 s, a job 60 s; said, not a
-# failure)
+# The report, a tree: a line a group (shared, t-ix, m-ix), and under it
+# a line a family, each with its bar, its jobs ended and its failures,
+# then its time when done, or its longest running job. On a terminal it
+# is drawn again as jobs end, a failure said above it at once (its job,
+# its errors), colors (not with NO_COLOR); elsewhere (GitHub, a pipe)
+# each job's line as it ends, the tree at the end. Then the skips, the
+# failures again, the jobs past the budget (plan_tests.md: the whole
+# 120 s, a job 60 s; said, not a failure).
+# old: only each job's line, 143 of them, and a line a group
 tag() { printf '%-8s' "[$1]"; }
 pad='                       '
+tty=; [ -t 1 ] && tty=1
+color=; [ -n "$tty" ] && [ -z "${NO_COLOR:-}" ] && color=1
+paint() { if [ -n "$color" ]; then printf '\033[%sm%s\033[0m' $1 "$2"; else echo -n "$2"; fi; }
+word() {
+  local w; w=$(printf '%-4s' $1)
+  case $1 in ok) paint 32 "$w";; FAIL) paint '1;31' "$w";; *) paint 33 "$w";; esac
+}
+gtag() { case $1 in shared) paint 90 "$(tag $1)";; t-ix) paint '1;36' "$(tag $1)";; *) paint '1;35' "$(tag $1)";; esac; }
+secs() { echo "$1 / 1000" | bc -l; }
+line() { printf "%s %s %5.1f s  %s\n" "$(gtag $1)" "$(word $2)" $(secs $3) "$4"; }
+# a bar of width $1, $2 of $3, red with a failure ($4)
+bar() {
+  local i f=$(( $2 * $1 / $3 )) c=32; [ -n "$4" ] && c=31
+  paint $c "$(for i in $(seq 1 $f); do echo -n '#'; done)"
+  paint 90 "$(for i in $(seq $((f + 1)) $1); do echo -n '.'; done)"
+}
 failures=0
 failed=()
 slow=()
-declare -A g_ok g_fail g_end
+# a job's family: its group's, or itself alone; their order, the jobs'
+declare -A g_ok g_fail g_end g_jobs g_done f_parts f_done f_fail f_end f_start
+fkeys=()
+fkey=()
+for n in $(seq 1 ${#names[@]}); do
+  g=${groups[n-1]}; g_jobs[$g]=$(( ${g_jobs[$g]:-0} + 1 ))
+  k="$g/${families[n-1]:-${names[n-1]}}"; fkey[n]=$k
+  [ -z "${f_parts[$k]}" ] && fkeys+=("$k")
+  f_parts[$k]=$(( ${f_parts[$k]:-0} + 1 ))
+done
 report() {
-  local n=$1 k=$W/job$1 s ms g=${groups[$1-1]} name=${names[$1-1]}
+  local n=$1 k=$W/job$1 s ms g=${groups[$1-1]} name=${names[$1-1]} key=${fkey[$1]}
   # no status: the job's shell itself died, a failure too
   read -r s ms < $k.status 2> /dev/null || { s=FAIL; ms=0; echo "(no status: the job's shell died)" >> $k.log; }
-  printf "%s %-4s %5.1f s  %s\n" "$(tag $g)" $s $(echo "$ms / 1000" | bc -l) "$name"
-  g_end[$g]=$(( $(now) - begun ))
+  # (a terminal: a job's line only when it fails, the tree says the others)
+  [ -z "$tty" ] || [ $s = FAIL ] && line $g $s $ms "$name"
+  g_end[$g]=$(( $(now) - begun )); g_done[$g]=$(( ${g_done[$g]:-0} + 1 ))
+  # (a family's time: its first job's start to its last's end)
+  local st=; read -r st < $k.run 2> /dev/null
+  [ -n "$st" ] && { [ -z "${f_start[$key]}" ] || [ $st -lt ${f_start[$key]} ]; } && f_start[$key]=$st
+  f_done[$key]=$(( ${f_done[$key]:-0} + 1 )); f_end[$key]=$(now)
   [ $ms -gt 60000 ] &&
-    slow+=("$(tag $g) $(printf '%5.1f' $(echo "$ms / 1000" | bc -l)) s  $name")
+    slow+=("$(tag $g) $(printf '%5.1f' $(secs $ms)) s  $name")
   if [ $s = ok ]; then g_ok[$g]=$(( ${g_ok[$g]:-0} + 1 ))
   elif [ $s = skip ]; then
     skips+=("$(tag $g) skip           $name (ix's build failed)")
   else
     failures=$((failures + 1)); failed+=("$(tag $g) FAIL           $name")
-    g_fail[$g]=$(( ${g_fail[$g]:-0} + 1 ))
+    g_fail[$g]=$(( ${g_fail[$g]:-0} + 1 )); f_fail[$key]=$(( ${f_fail[$key]:-0} + 1 ))
     # its lines that say a failure (Testo's are "[FAIL]", in colors: taken out;
-    # not its legend, nor a test's name with "error" in it), then the log's
-    # end: in Docker the log itself is gone with the build
+    # not its legend, nor a test's name with "error" in it; compile_ix -v's
+    # "file.ml: line: error"), then the log's end: in Docker the log itself
+    # is gone with the build
     sed 's/\x1b\[[0-9;]*m//g' $k.log > $k.txt
-    grep -a '^FAIL\|^\[FAIL\]\|[Ee]rror:\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$' $k.txt | grep -v ' 0 fail\|^\[RUN\]\|^\[PASS\]' | head -8 | cut -c1-160 | sed "s/^/$pad/"
+    grep -a '^FAIL\|^\[FAIL\]\|[Ee]rror:\| differ\|!=\|[1-9][0-9]* failure\|failed\|fail$\|\.ml: [0-9][0-9]*: ' $k.txt | grep -v ' 0 fail\|^\[RUN\]\|^\[PASS\]' | head -8 | cut -c1-160 | sed "s/^/$pad/"
     echo "$pad... the log's end:"
     grep -av '^\[RUN\]\|^\[PASS\]\|^$\|Path to captured log' $k.txt | tail -20 | cut -c1-160 | sed "s/^/$pad| /"
   fi
+}
+# the tree; its lines counted, so a terminal's is taken out before a line
+# is said above it
+lines=0
+erase() { [ $lines -gt 0 ] && printf '\033[%dA\033[J' $lines; lines=0; }
+tree() {
+  local g k n t st el run long longn nskip x
+  t=$(now)
+  for g in shared t-ix m-ix; do
+    nskip=0
+    for x in "${skips[@]}"; do [[ "$x" == "[$g]"* ]] && nskip=$((nskip + 1)); done
+    [ -n "${g_jobs[$g]}" ] || [ $nskip != 0 ] || continue
+    printf "%s %s %3d/%-3d" "$(gtag $g)" "$(bar 20 ${g_done[$g]:-0} ${g_jobs[$g]:-1} "${g_fail[$g]}")" ${g_done[$g]:-0} ${g_jobs[$g]:-0}
+    [ -n "${g_fail[$g]}" ] && printf "  %s %d" "$(word FAIL)" ${g_fail[$g]}
+    [ $nskip != 0 ] && printf "  %d skipped" $nskip
+    [ "${g_done[$g]:-0}" = "${g_jobs[$g]:-0}" ] && printf "  %5.1f s" $(secs ${g_end[$g]:-0})
+    echo; lines=$((lines + 1))
+    for k in "${fkeys[@]}"; do
+      [[ $k == $g/* ]] || continue
+      printf "   %s %3d/%-3d %-34s " "$(bar 10 ${f_done[$k]:-0} ${f_parts[$k]} "${f_fail[$k]}")" ${f_done[$k]:-0} ${f_parts[$k]} "$(echo "${k#*/}" | cut -c1-34)"
+      if [ "${f_done[$k]:-0}" = ${f_parts[$k]} ]; then
+        if [ -n "${f_fail[$k]}" ]; then word FAIL; else word ok; fi
+        printf " %5.1f s" $(secs $(( ${f_end[$k]} - ${f_start[$k]:-${f_end[$k]}} )))
+      else
+        # its longest running job, how long so far
+        long=-1; longn=; run=0
+        for n in $(seq 1 ${#names[@]}); do
+          [ "${fkey[n]}" = "$k" ] && [ -z "${done_[n]}" ] && [ -f $W/job$n.run ] || continue
+          run=$((run + 1)); read -r st < $W/job$n.run; el=$((t - st))
+          [ $el -gt $long ] && { long=$el; longn=${names[n-1]}; }
+        done
+        # (a family of one: its time alone)
+        [ ${f_parts[$k]} = 1 ] && longn=
+        [ $run -gt 0 ] && printf "%3d s %s" $((long / 1000)) "$(echo "$longn" | cut -c1-18)"
+      fi
+      echo; lines=$((lines + 1))
+    done
+  done
 }
 left=${#names[@]}
 done_=()
@@ -500,24 +592,18 @@ while [ $left -gt 0 ]; do
     [ -n "${done_[n]}" ] && continue
     # ended: its status written, or its shell gone (then its status looked at again)
     [ -f $W/job$n.status ] || ! kill -0 ${jobpids[n-1]} 2> /dev/null || continue
+    [ -n "$tty" ] && erase
     report $n; done_[n]=1; left=$((left - 1))
   done
+  [ -n "$tty" ] && { erase; tree; }
   [ $left -gt 0 ] && sleep 0.2
 done
 wait
 total=$(( $(now) - begun ))
+[ -n "$tty" ] && erase
+tree
 for k in "${skips[@]}"; do echo "$k"; done
 for k in "${failed[@]}"; do echo "$k"; done
-for g in shared t-ix m-ix; do
-  nskip=0
-  for k in "${skips[@]}"; do [[ "$k" == "[$g]"* ]] && nskip=$((nskip + 1)); done
-  [ -z "${g_end[$g]}" ] && [ $nskip = 0 ] && continue
-  line="${g_ok[$g]:-0} ok"
-  [ -n "${g_fail[$g]}" ] && line="$line, ${g_fail[$g]} FAIL"
-  [ $nskip != 0 ] && line="$line, $nskip skipped"
-  printf "== %-6s %-36s %4.0f s\n" $g "$line" \
-    $(echo "${g_end[$g]:-0} / 1000" | bc -l)
-done
 if [ $total -gt 120000 ] || [ ${#slow[@]} != 0 ]; then
   echo "past the budget (plan_tests.md: 120 s, a job 60 s):"
   for k in "${slow[@]}"; do echo "  $k"; done

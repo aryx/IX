@@ -836,8 +836,9 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | .depend beside the objects ($B/<dir>/), not the sources, so make test's build from nothing makes them; depend.rc -f for mini-mk depend | +2 | | |
 | 2026-10-28 | the top mkfile's libs in waves, each library after its NEEDS, side by side (25 s to 15 for make test's) | +20 | | |
 | 2026-10-28 | Constants folded before Lower (simple/Fold, ocamlopt's Closure), in the summaries for the directory's units; mini-doom's frame 0.984 | +216 | | across directories: the .depend first |
+| 2026-10-28 | lib_crypto's Sha1 in Int32: an int is 31 bits on arm, its hashes were wrong there and its .inline the card's another (self-mix) | +9 | | |
 
-Since `92c9b4e`: +761 in ix (edits +131, new files +630) and +133 in
+Since `92c9b4e`: +770 in ix (edits +140, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the
 stdlib mini-ml needs to compile ix (decision 9: OCaml's `Set` is a
 functor).

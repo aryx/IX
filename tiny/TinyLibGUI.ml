@@ -641,21 +641,17 @@ let read_file file =
   let fd = u_open file 0 in
   if fd < 0 then ""
   else begin
-    (* the pieces read, the last first, then each copied once into
-     * bytes of their size (old: each added to the text so far, a copy
-     * of all of it a piece: a WAV of 141 KB was 85 million
-     * instructions, 600 a byte) *)
-    let rec go acc n =
+    (* the pieces read, the last first, then joined once by String.concat
+     * (old: each copied by hand into bytes of their size, when concat
+     * joined by pairs; older: each added to the text so far, a copy of
+     * all of it a piece: a WAV of 141 KB was 85 million instructions,
+     * 600 a byte) *)
+    let rec go acc =
       let s = u_read fd 4096 in
-      if s = "" then (acc, n) else go (s :: acc) (n + String.length s) in
-    let pieces, n = go [] 0 in
+      if s = "" then acc else go (s :: acc) in
+    let pieces = go [] in
     ignore (u_close fd);
-    let b = Bytes.make n '\000' in
-    ignore (List.fold_left (fun at s ->
-      let at = at - String.length s in
-      Bytes.blit_string s 0 b at (String.length s);
-      at) n pieces);
-    Bytes.to_string b
+    String.concat "" (List.rev pieces)
   end
 
 let write_file file text =

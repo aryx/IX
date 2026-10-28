@@ -1,5 +1,5 @@
-(* String, OCaml's subset (see Stdlib.mli); concat joins by pairs, so a
- * long list is copied log n times *)
+(* String, OCaml's subset (see Stdlib.mli); concat makes its result
+ * once, by the runtime *)
 val length : string -> int
 val get : string -> int -> char
 val make : int -> char -> string

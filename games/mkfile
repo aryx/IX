@@ -10,11 +10,20 @@ GAMES=
 CATEGORIES=puzzle fps fps/doom fps/quake racing/virtua arcade shmup
 # (B, where what is made goes, is given on when it was said, as
 # tests/lite.sh does: the default is a path from each directory)
+# (NPROC directories at once, each mk its share of the jobs, NPROC
+# among the seven, at least one: NPROC compiles at once in all, as in
+# another directory. old: the seven at once, NPROC jobs each: on the
+# card (NPROC 1 under QEMU, 864 MB) seven of the games' compiles at
+# once, ml killed out of memory: self-mix's games)
 all:V: directories
 directories:V: libs
 	b=(); if(~ $B /*) b='B='^$B
+	j=`{echo $#CATEGORIES $NPROC | awk '{j = int($2 / $1); if(j < 1) j = 1; print j}'}
 	pids=()
-	for(d in $CATEGORIES){ @{cd $d && $MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM $b} & pids=($pids $apid) }
+	for(d in $CATEGORIES){
+		@{cd $d && $MK 'O='$O 'OS='$OS 'PLATFORM='$PLATFORM 'NPROC='$j $b} & pids=($pids $apid)
+		if(~ $#pids $NPROC){ for(p in $pids){ wait $p; ~ $status '' || exit 1 }; pids=() }
+	}
 	for(p in $pids){ wait $p; ~ $status '' || exit 1 }
 <mkgames
 

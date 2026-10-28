@@ -15,11 +15,11 @@ enum { Grey = 1, Black, Red, White, Blue, Yellow, Period = 50 };
 void
 clear(void)
 {
-	d_fill(SCREEN, Grey, 0, 0, 640, 480);
-	d_fill(SCREEN, Blue, 0, 0, 640, 20);
+	d_fill(SCREEN, Grey, 0, 0, 1024, 768);
+	d_fill(SCREEN, Blue, 0, 0, 1024, 20);
 	d_text(SCREEN, White, 8, 2,
 		"paint: the mouse paints with a button down; c clears, q quits");
-	d_line(SCREEN, Black, 0, 60, 639, 60);
+	d_line(SCREEN, Black, 0, 60, 1023, 60);
 }
 
 void
@@ -57,7 +57,7 @@ main(void)
 		} else {
 			// the ball: a square of 16, between the title and the line
 			d_fill(SCREEN, Grey, x, 32, x + 16, 48);
-			if(x + dx < 0 || x + dx > 624)
+			if(x + dx < 0 || x + dx > 1008)
 				dx = -dx;
 			x += dx;
 			d_fill(SCREEN, Yellow, x, 32, x + 16, 48);

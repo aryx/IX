@@ -39,7 +39,7 @@
  *   no buffer of the library's; the program concatenates them and
  *   writes them when it wants them shown.
  * - {b Numbers of two bytes}, where libdraw's are four: a screen of
- *   640 by 480 needs no more.
+ *   1024 by 768 needs no more.
  * - {b Eight letters} (a f d l s t p c), the operations
  *   TinyKernelGraphics keeps.
  * - {b The messages are parsed too} ([d_shape]), which libdraw has no
@@ -60,6 +60,10 @@
 
 (* a number's two bytes, the low one first, and the number at i of a
  * string; a message, its letter then its numbers *)
+(* tiny-machine's screen, 1024 by 768 pixels *)
+val screen_w : int
+val screen_h : int
+
 val i16 : int -> string
 val int16 : string -> int -> int
 val msg : char -> int list -> string

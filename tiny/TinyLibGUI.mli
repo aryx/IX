@@ -260,7 +260,7 @@ type 'm canvas = {
 val run_canvas : 'm canvas -> unit
 
 (* the window's size in pixels: tiny-windows' answer to an ENQ, or
- * the console's 640 by 480 *)
+ * the console's whole screen *)
 val window_size : unit -> int * int
 
 (* the file such a program edits: its text ("" when it is not there);

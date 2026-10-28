@@ -94,8 +94,10 @@ let seed = ref 0
  * memory between domains). *)
 let cores = ref 1
 let ipi_dev = memsize - 64
-(* the screen, below the devices: a megabyte no kernel's image reaches *)
-let screen = 0xf00000 and width = 640 and height = 480
+(* the screen, below the devices: a megabyte no kernel's image reaches
+ * (old: 640 by 480, Plan 9's 1024 by 768 since its text at three
+ * times in the host's window was coarse beside mini-9pi's at two) *)
+let screen = 0xf00000 and width = 1024 and height = 768
 
 exception Trap of int * int                (* cause, tval *)
 

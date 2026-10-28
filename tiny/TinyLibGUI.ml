@@ -281,7 +281,7 @@ let run (g : ('m, 'msg) gui) =
       loop model' m' (if model' != model then laid g model' else view) now is
     end
   in
-  draw 0 0 0 (Rect (face, 640, 480));
+  draw 0 0 0 (Rect (face, screen_w, screen_h));
   loop g.init up (laid g g.init) [] []
 
 (*****************************************************************************)
@@ -415,12 +415,12 @@ type 'm canvas = {
 (* The window's size in pixels: an ENQ printed (ASCII's enquiry, 5),
  * which tiny-windows answers in the window's mouse box as a mouse at
  * (width, height) with the buttons -1; on the console no one answers in
- * half a second, and the screen is 640 by 480 *)
+ * half a second, and the window is the screen *)
 let window_size () =
   ignore (u_write 1 "\005");
   let fds = Array.make 1 4 and until = u_ticks () + 200 in
   let rec answer () =
-    if u_ready fds 1 until <> 4 then 640, 480
+    if u_ready fds 1 until <> 4 then screen_w, screen_h
     else
       (let s = u_read 4 12 in
        if String.length s = 12 && int16 s 8 = -1 then int16 s 0, int16 s 4

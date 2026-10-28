@@ -8,7 +8,7 @@
  * functions of C (TinyKernel/runtime.c's peekb and pokeb) and of
  * assembly (TinyKernel/draw.tm's rows); tiny-ml reads `open TinyMemory`
  * and leaves it. Here they are an array's, of the machine's 16 MB, an
- * address the same number in both: the screen's 640 by 480 bytes are at
+ * address the same number in both: the screen's 1024 by 768 bytes are at
  * 0xf00000, and [ppm] writes them as tiny-machine -screen does. *)
 
 let mem = Bytes.make 0x1000000 '\000'
@@ -101,11 +101,11 @@ let colour i =
     let num = 17 * ((4 * den) + v) in
     [ r * num / den; g * num / den; b * num / den ]
 
-(* the screen as a PPM, the bytes tiny-machine -screen writes *)
-let ppm () =
+(* the screen, w by h, as a PPM: the bytes tiny-machine -screen writes *)
+let ppm w h =
   let b = Buffer.create 1000000 in
-  Buffer.add_string b "P6\n640 480\n255\n";
-  for i = 0 to (640 * 480) - 1 do
+  Buffer.add_string b (Printf.sprintf "P6\n%d %d\n255\n" w h);
+  for i = 0 to (w * h) - 1 do
     List.iter (fun c -> Buffer.add_char b (Char.chr c))
       (colour (peekb (0xf00000 + i)))
   done;

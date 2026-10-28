@@ -57,7 +57,7 @@ let inside (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 let fill dst colour r =
   if not (empty r) then
     (let x0, y0, x1, y1 = r in send (d_fill dst colour x0 y0 x1 y1))
-let everything = 0, 0, 640, 480
+let everything = 0, 0, screen_w, screen_h
 
 (*****************************************************************************)
 (* Windows *)

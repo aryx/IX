@@ -10,8 +10,8 @@
 
 	la	r1, trap
 	csrw	tvec, r1
-	li	r1, 0xf00000		; the screen: 640 by 480 bytes
-	li	r2, 307200
+	li	r1, 0xf00000		; the screen: 1024 by 768 bytes
+	li	r2, 786432
 	li	r3, 0xaa		; grey
 grey:
 	stb	r3, 0(r1)
@@ -20,7 +20,7 @@ grey:
 	bne	r2, r0, grey
 	li	r4, 100			; rows 100 to 199, columns 200 to 399
 row:
-	li	r5, 640
+	li	r5, 1024
 	mul	r1, r4, r5
 	li	r5, 0xf000c8		; the screen's column 200
 	add	r1, r1, r5
@@ -54,7 +54,7 @@ trap:
 	beq	r4, r0, square
 	li	r5, 0xf0		; red
 square:
-	li	r6, 640
+	li	r6, 1024
 	mul	r3, r3, r6
 	add	r3, r3, r2
 	li	r6, 0xf00000
@@ -67,7 +67,7 @@ square_column:
 	addi	r3, r3, 1
 	addi	r9, r9, -1
 	bne	r9, r0, square_column
-	addi	r3, r3, 624
+	addi	r3, r3, 1008
 	addi	r8, r8, -1
 	bne	r8, r0, square_row
 	li	r5, 109			; m

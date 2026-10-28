@@ -5,8 +5,8 @@
  * OCaml and js_of_ocaml build it (./tiny-machine -web dir tiny-kernel
  * builds the page's directory; TinyMachineWeb.html is the page).
  *
- * The page gives three elements, by their ids: screen (a canvas, 640
- * by 480), console (the text), status (a line). The kernel's image is
+ * The page gives three elements, by their ids: screen (a canvas, 1024
+ * by 768), console (the text), status (a line). The kernel's image is
  * fetched: boot.img beside the page, or what the address says
  * (?image=kernel.img&disk=fs.img: t6, whose disk's writes last
  * as long as the page), or, before both, what the page says in a

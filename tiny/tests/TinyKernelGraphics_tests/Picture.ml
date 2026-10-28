@@ -21,8 +21,8 @@ let text_ = d_text
 (* the font's size bytes are at [bits]; the screen at its address, the
  * images' memory after it, to the last page *)
 let picture bits size =
-  arena 0xf4b000 0xb4000;
-  let screen = { r = rect 0 0 640 480; at = 0xf00000; repl = false } in
+  arena 0xfc0000 0x3f000;
+  let screen = { r = rect 0 0 1024 768; at = 0xf00000; repl = false } in
   let c = connect screen (font_mask bits size (alloc 16384)) in
   let send s = messages c s in
   let grey = 1 and blue = 2 and white = 3 and black = 4 and red = 5
@@ -31,20 +31,20 @@ let picture bits size =
         colour black 0 ^ colour red 0xf0 ^ colour yellow 0xfc ^
         colour green 0x3f);
   (* rectangles: whole, off the screen's corners, of no pixel *)
-  send (fill 0 grey 0 0 640 480 ^ fill 0 blue 40 40 200 120 ^
-        fill 0 red (-30) (-20) 60 30 ^ fill 0 yellow 600 440 700 500 ^
+  send (fill 0 grey 0 0 1024 768 ^ fill 0 blue 40 40 200 120 ^
+        fill 0 red (-30) (-20) 60 30 ^ fill 0 yellow 984 728 1084 788 ^
         fill 0 red 300 300 290 310);
   (* texts: whole, cut by the screen's right side and its top, a byte that
    * is no character *)
   send (text_ 0 white 48 48 "TinyKernelGraphics" ^
         text_ 0 black 48 72 "one operation: draw" ^
-        text_ 0 black 540 200 "cut by the side" ^
+        text_ 0 black 924 200 "cut by the side" ^
         text_ 0 yellow 300 (-8) "cut by the top" ^
         text_ 0 red 48 96 "caf\233!");
   (* lines from the middle: each way, to the corners, off the screen, a
    * point *)
   List.iter (fun (x, y) -> send (line_ 0 black 320 240 x y))
-    [ 20, 140; 120, 470; 639, 479; 700, 300; 320, 130 ];
+    [ 20, 140; 120, 470; 1023, 767; 1084, 300; 320, 130 ];
   List.iter (fun (x, y) -> send (line_ 0 black 320 240 x y))
     [ 520, 240; 0, 0; 400, 200; 330, 470; 320, 240 ];
   (* an image off the screen (a window): drawn in, then on the screen,
@@ -54,7 +54,7 @@ let picture bits size =
         line_ 10 black 0 59 0 0 ^ text_ 10 black 8 8 "a window" ^
         fill 10 blue 20 34 100 50 ^ text_ 10 white 24 34 "of ML" ^
         draw_ 0 10 (-1) 240 20 360 80 0 0 ^
-        draw_ 0 10 (-1) 580 20 700 80 0 0 ^
+        draw_ 0 10 (-1) 964 20 1084 80 0 0 ^
         draw_ 0 10 (-1) 400 300 600 400 30 10);
   (* an image whose corner is not the origin *)
   send (image 11 100 100 140 130 0xfc ^ line_ 11 red 100 100 139 129 ^
@@ -84,9 +84,9 @@ let picture bits size =
   for y = 0 to 15 do
     send (msg 'p' [ 0; 40; 452 + y; 256 ] ^ ramp ^
           msg 'p' [ 0; -200; 130 + y; 256 ] ^ ramp ^
-          msg 'p' [ 0; 600; 130 + y; 256 ] ^ ramp)
+          msg 'p' [ 0; 984; 130 + y; 256 ] ^ ramp)
   done;
-  send (msg 'p' [ 0; 0; 480; 256 ] ^ ramp ^ msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
+  send (msg 'p' [ 0; 0; 768; 256 ] ^ ramp ^ msg 'p' [ 0; 0; -1; 256 ] ^ ramp);
   (* an image freed, its memory another's *)
   send (msg 'f' [ 10 ] ^ image 14 0 0 60 120 0xf0 ^
         text_ 14 white 6 50 "again" ^ draw_ 0 14 (-1) 570 350 630 470 0 0);
@@ -120,6 +120,6 @@ let picture bits size =
   disconnect c;
   List.iter (fun (a, n) ->
       print_string ("free: " ^ string_of_int n ^ " bytes at "
-                    ^ string_of_int (a - 0xf4b000) ^ "\n"))
+                    ^ string_of_int (a - 0xfc0000) ^ "\n"))
     !blocks
 

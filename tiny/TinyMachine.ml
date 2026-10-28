@@ -24,7 +24,7 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
   tiny-machine -d fs.img kernel.img
       t6 (in TinyKernel/steps/t6/), fs.img its disk, written back at the halt
   tiny-machine -window kernel.img
-      its screen (640 by 480, at 0xf00000) in a window, whose keys and mouse
+      its screen (1024 by 768, at 0xf00000) in a window, whose keys and mouse
       are its
   tiny-machine -window -rate 40 kernel.img
       the machine at 40 million instructions a second (with a window, 20 by

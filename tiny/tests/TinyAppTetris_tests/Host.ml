@@ -99,4 +99,4 @@ let () =
          (TinyKernelGraphics.alloc 16384)) in
   TinyKernelGraphics.messages c (Buffer.contents TinyCalls.drawn);
   Out_channel.with_open_bin Sys.argv.(2) (fun oc ->
-    output_string oc (TinyMemory.ppm ()))
+    output_string oc (TinyMemory.ppm 640 480))

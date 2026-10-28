@@ -10,7 +10,7 @@
 // checks); the file system's buffers and map (TinyKernelFS.ml), 80 KB
 // at 10 MB; the value stack at 11 MB; the processes' frames, and a
 // packet's place; the rest unused but the speaker's ring; 2 MB of
-// images, and the screen's megabyte (its 640 by 480 bytes, then images
+// images, and the screen's megabyte (its 1024 by 768 bytes, then images
 // again); the heap's two halves of 8 MB from 16 MB to 32 MB, where a
 // file written lives (a compiler's output: TinyML.ml's object is 1.3
 // MB). (old: the image's limit was 2.5 MB, with the stack, the frames

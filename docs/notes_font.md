@@ -425,3 +425,20 @@ those slivers out).
 
 Left: the characters beyond ASCII (both fonts have them, the kernel's
 font 128); a larger screen (3), the one way to the Emacs's 43 pixels.
+
+**Then 1024 by 768.** The author: "mini-pi -g -q mini-9pi shows a
+console with still a better looking font", then "maybe let's use the
+higher resolution with the current font". mini-9pi's screen is 1024 by
+768, its font (Plan 9's, Lucida Sans Typewriter's 9 by 15) magnified
+twice in the host's window; t-IX's 640 by 480 three times, each pixel
+a block of 9. So tiny-machine's screen is now 1024 by 768 too, the font
+unchanged: the window two times on the same display, the letters a
+third smaller, 128 columns by 48 rows of text where there were 80 by
+30. It still fits (3)'s megabyte: 768 KB at 0xf00000, up to 0xfc0000,
+the images after it 252 KB to the last page (old: 720 KB). The places
+that knew 640 by 480: TinyMachineDevices (the machine), TinyKernelDevices
+(the kernel), tiny/sdl's TinyCalls (the host's stand-in), TinyLibDraw's
+screen_w and screen_h (tiny-windows' whole screen, TinyLibGUI's window
+when no tiny-windows answers), paint.c, and the tests' pictures. The
+windows are swept by the mouse, so the recorded sessions click the
+same places: every screen larger, the same windows in it.

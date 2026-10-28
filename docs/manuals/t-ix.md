@@ -317,7 +317,7 @@ done at once, and the file is written back when the machine halts.
 
 ### 5.1 The screen
 
-640 by 480 pixels, one byte each, row after row from `0xf00000`. It
+1024 by 768 pixels, one byte each, row after row from `0xf00000`. It
 is memory like any other: `stb` stores a pixel, and a kernel that has
 no use for a screen may use that megabyte as memory.
 
@@ -576,7 +576,7 @@ What the numbers mean is up to who answers:
 | `0xb50000` | a packet's place, on its way to or from the network's device |
 | `0xc00000` | the speaker's ring |
 | `0xd00000` to `0xf00000` | the images a program made (`TinyKernelGraphics.ml`'s free blocks) |
-| `0xf00000` | the screen, 640 by 480 bytes; then images again |
+| `0xf00000` | the screen, 1024 by 768 bytes; then images again |
 | `0x1000000` to `0x2000000` | the ML heap, two halves of 8 MB: the files written live there |
 | `0x2000000` to `0x7ff0000` | the processes' partitions, found first-fit when a program starts |
 | the last 48 bytes | the devices, which the kernel reaches by negative addresses (-16 is the console) |

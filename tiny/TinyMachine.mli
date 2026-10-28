@@ -95,7 +95,7 @@
  * For a window system (plan_tiny_windows.md) there are more additions,
  * each behind an option, so that a kernel without one runs as before:
  *
- * - {b A screen} of 640 by 480 pixels, one byte each, at 0xf00000. It
+ * - {b A screen} of 1024 by 768 pixels, one byte each, at 0xf00000. It
  *   is ordinary memory (a kernel draws a pixel with stb), and each byte
  *   is a colour in Plan 9's table of 256. -window shows it in a window
  *   on the host, and -screen f writes it as a PPM file at the halt.
@@ -182,7 +182,7 @@
  *                starts in supervisor mode; the programs linked after
  *        ...     free memory, which the kernel hands out by a window
  *                (base, bound) or by pages
- *     0xf00000   the screen: 480 rows of 640 bytes, up to 0xf4b000
+ *     0xf00000   the screen: 768 rows of 1024 bytes, up to 0xfc0000
  *        ...
  *     0xfffffc0  the interrupt between cores             -64(r0)
  *     0xfffffcc  the speaker: its ring's address, the     -52(r0)

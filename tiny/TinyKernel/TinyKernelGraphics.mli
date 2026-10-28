@@ -1,6 +1,6 @@
 (* Tiny graphics: the essential of Plan 9's draw library (libdraw and
  * libmemdraw; ix's twins are lib_graphics/ and mini-9pi's
- * lib_memdraw), for tiny-machine's screen: 640 by 480 pixels, a byte
+ * lib_memdraw), for tiny-machine's screen: 1024 by 768 pixels, a byte
  * each, a colour of Plan 9's table. Not a program: TinyKernel.ml's part
  * that draws (plan_tiny_windows.md).
  *

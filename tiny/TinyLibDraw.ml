@@ -8,20 +8,25 @@
  * making messages); the number at i of s *)
 let bytes = Array.make 256 ""
 let () = for c = 0 to 255 do bytes.(c) <- String.make 1 (Char.chr c) done
-(* (and the two bytes of each number from 0 to 1023, a coordinate or an
+(* (and the two bytes of each number from 0 to 1024, a coordinate or an
  * image's number, made once: a message was two concatenations a
  * number, half of what a browser's page down cost in the program) *)
-let small = Array.make 1024 ""
+let small = Array.make 1025 ""
 let () =
-  for v = 0 to 1023 do
+  for v = 0 to 1024 do
     small.(v) <- bytes.(v land 255) ^ bytes.((v asr 8) land 255)
   done
 let i16 v =
-  if v >= 0 && v < 1024 then small.(v)
+  if v >= 0 && v <= 1024 then small.(v)
   else bytes.(v land 255) ^ bytes.((v asr 8) land 255)
 let int16 s i =
   let v = Char.code s.[i] + (256 * Char.code s.[i + 1]) in
   if v >= 32768 then v - 65536 else v
+
+(* tiny-machine's screen (TinyMachineDevices'), in pixels (old: 640 by
+ * 480, text at 80 by 30; now 128 by 48, a pixel smaller in the window) *)
+let screen_w = 1024
+let screen_h = 768
 
 (* a message: its letter, its numbers *)
 let msg letter args =

@@ -171,7 +171,7 @@
  *                written through it (sys_rw; none with partitions)
  *     0xc00000   the speaker's ring
  *     0xd00000   pixels of images: the font, the hidden windows
- *     0xf00000   the screen, 640 by 480 bytes; more images after it
+ *     0xf00000   the screen, 1024 by 768 bytes; more images after it
  *    0x1000000   the heap, two halves of 8 MB: every file written,
  *                every pipe, descriptor table and closure
  *    0x2000000   the processes' partitions: 1 MB each, or what an

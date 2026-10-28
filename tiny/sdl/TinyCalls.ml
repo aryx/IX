@@ -28,13 +28,13 @@
  * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
  * answer's messages read one at a time, as a link's are. *)
 
-let width = 640
-let height = 480
+let width = 1024
+let height = 768
 let screen_at = 0xf00000
 (* the connection to the drawing, as tiny-kernel makes it: the font at
  * 0x1000, the images' memory its 2 MB below the screen and what is
  * after it (TinyKernelDevices' font; a page of www's may have 1 MB of
- * pictures: old: only after the screen, 720 KB, and Mars' article
+ * pictures: old: only after the screen, 720 KB then, and Mars' article
  * ended www). The font is tiny-kernel's (grey.font, grey edges), or
  * the file TINY_FONT names (TINY_FONT=tiny/TinyKernel/fonts/tiny.font:
  * the same letters, a pixel set or not;
@@ -48,7 +48,7 @@ let conn = lazy (
   in
   Bytes.blit_string font 0 TinyMemory.mem 0x1000 (String.length font);
   TinyKernelGraphics.arena 0xd00000 0x200000;
-  TinyKernelGraphics.free 0xf4b000 0xb4000;
+  TinyKernelGraphics.free 0xfc0000 0x3f000;
   let screen =
     { TinyKernelGraphics.r = TinyKernelGraphics.rect 0 0 width height;
       at = screen_at; repl = false } in
@@ -117,7 +117,7 @@ let () =
       Sys.set_signal Sys.sigterm (Sys.Signal_handle (fun _ -> exit 0));
       at_exit (fun () ->
         Out_channel.with_open_bin file (fun oc ->
-          output_string oc (TinyMemory.ppm ())))
+          output_string oc (TinyMemory.ppm width height)))
   | None -> ()
 let dirty = ref false
 let drawn = Buffer.create 0

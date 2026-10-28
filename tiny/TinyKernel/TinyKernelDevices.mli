@@ -3,7 +3,7 @@
  * timer's ticks, the date, an alarm), the speaker (its ring of
  * samples, each voice's sounds mixed in).
  *
- * The screen is tiny-machine's 640 by 480 bytes; TinyKernelGraphics
+ * The screen is tiny-machine's 1024 by 768 bytes; TinyKernelGraphics
  * draws in it and in the images below it, a program's /dev/draw
  * connection asking by messages: no pixel is in its partition. The
  * speaker plays the ring, 8,192 samples, 8,000 a second; each open of

@@ -4,7 +4,7 @@
  *
  * The window opens at the first frame, at the largest whole number of
  * times the frame that three quarters of the screen's height hold (the
- * machine's 640 by 480 is small on a large screen). It can be resized:
+ * machine's 1024 by 768 is small on a large screen). It can be resized:
  * the frame is drawn as large as fits, its proportions kept, and the
  * mouse's place is still given in the frame's pixels.
  *

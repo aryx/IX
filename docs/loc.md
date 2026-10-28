@@ -16,10 +16,13 @@ is to be weighed.
   references are told (`docs/tags.md`). `make loc` prints m-ix and
   t-ix with them and without them; the log's numbers are without. A
   number to keep small must not be a reason to teach less.
-- **Not in t-ix, nor in a row of `tiny/`**: a tiny program's interface
-  (`tiny/TinyShell.mli`), which is that header comment and the types
-  of `main` and of one function, to read first: the program is its
-  `.ml`. (`tiny/TinyLib/`'s interfaces are a library's, and counted.)
+- **A tiny program's interface** (`tiny/TinyShell.mli`) counted in
+  t-ix since 2026-10-28, as any other, its header comment taken off:
+  `tiny/` has modules with real signatures now (78 interfaces). From
+  2026-10-10 to then it was in no number, when the thirteen interfaces
+  were a header comment and the types of `main` and of one function
+  (the program its `.ml`), so t-ix's lines before that day are about
+  2,600 lower.
 - **Not in m-ix's lines**: the alternatives and the optional, which ix
   builds and runs the same without (`make loc` lists them last, each
   with its lines and its reason):
@@ -86,3 +89,4 @@ with what moved them.
 | 2026-10-19 | after `d1799d6` | 153,554 | 3,066 | 1,762 | 6,359 | 18,527 | t-ix: plan_tiny_self_hosting.md's steps 1 and 2: arm64 out (`TinyAssembler.ml`, `TinyCPUArm.ml`, `TinyLinker.ml`, tiny-c's and tiny-ml's arm64 back ends: about 1,300 lines), then `tiny/TinyLibHost/` (7,100: its copy of `lib_core/`, runtime and C library; mini-mk builds the tools on `lib_core/` itself, dune on OCaml's stdlib). m-ix's number is the day's, what moved it since the last row not logged |
 | 2026-10-21 | `6ef649ce` | 150,986 | 3,066 | 2,464 | 7,946 | 26,302 | t-ix at 80 columns, 85 now and then (`21ded260`, layout only: about 2,800 lines past 85 columns, up to 381, rewrapped; t-ix 21,034 to 26,311), and what it prints within 80 too (`6ef649ce`); its budget 30,000, where it was 25,000 |
 | 2026-10-22 | after `e833ae2a` | 155,246 | 3,066 | 2,464 | 7,338 | 27,304 | counted from `e833ae2a`: lib_graphics' `software/`, `core/`, `geometry/` and `images/` (+3,200; the author: "yes the decoders should count, and as we currently optimize the playground, we might need more of lib_graphics to be counted"): every module of them is named by counted code, the decoders by the browser and the office, the rasterizers by `Shape_render_software`; "the software platform" apart is its own directory alone, 98 lines. Not counted: TLS 1.2 (`Tls12`, 386). The kernel's column is the steps, the reference build and the pixels in C, as its title says: since 2026-10-10 `-l` had taken web/ for the pixels in C (7,946 on 2026-10-21 was that). `tiny/TinyKernel/examples/` back in t-ix (70). The other 1,060 lines of m-ix since the last entry are the day's: mini-netscape's selection, clipboard and scrollbar, the page's fields edited, TLS 1.2's branches in `Tls13`, other sessions' |
+| 2026-10-28 | after `fb1f36cd` | 162,192 | 3,068 | 4,175 | 7,355 | 32,070 | counted from this day: the tiny programs' interfaces (78 `.mli`, 7,891 lines, 5,255 of them header comments, taken off), `tiny/` having modules with real signatures since `21da776f`; without them t-ix is 29,434 (the author: "I think we need to count the .mli for tiny/ now"); past its budget of 30,000, kept for now. m-ix 6,946 lines over the last entry, the days between |

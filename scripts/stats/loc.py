@@ -338,13 +338,12 @@ def files():
          "--", "*.ml", "*.mli", "*.mll", "*.mly", "*.c", "*.h", "*.s"],
         check=True, capture_output=True, text=True).stdout
     # (not a link: a file that several directories use is counted where it is)
-    # (not a tiny program's interface, tiny/TinyShell.mli: its header
-    # comment, and main and one function's types, to read first; the
-    # program is its .ml. In no row and no number. TinyMachine/'s, TinyKernel/'s
-    # and those of a program's parts in its directory (TinyBrowser/) are
-    # such interfaces too)
-    return [f for f in out.splitlines() if f and not os.path.islink(f)
-            and not re.fullmatch(r"tiny/((TinyMachine|TinyKernel|TinyBrowser|TinyOffice|TinyML|TinyC)/)?[^/]+\.mli", f)]
+    # (a tiny program's interface, tiny/TinyShell.mli, counted as any
+    # other since 2026-10-28, its header comment taken off t-ix as an
+    # .ml's: tiny/ has modules with real signatures now. old: not
+    # counted from 137d4826, 2026-10-10, when the thirteen interfaces
+    # were a header comment and the types of main and of one function)
+    return [f for f in out.splitlines() if f and not os.path.islink(f)]
 
 
 # the entries said on a line of their own, after a name and their sum

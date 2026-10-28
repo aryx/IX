@@ -248,10 +248,11 @@ over the kernel's calls), `TinyCalls` for the graphical programs
 | on the host, for the tests | OCaml and dune | OCaml's own, and [`lib_core/commons/`](lib_core/commons/) |
 | on the host, by IX (a test of m-IX's compiler) | mini-ml, by `mini-mk` | IX's own, in `lib_core/` |
 
-The programs are about 24,100 lines of OCaml and ML; with their C
-(tiny-c's and tiny-ml's runtimes, tiny-kernel's programs in C)
-t-IX is **about 26,300 lines** in all (the header comments are in
-the `.mli` files, which are not counted), of a budget of 30,000. tiny-cpu and tiny-machine also
+The programs are about 29,500 lines of OCaml and ML, their `.mli`
+files included; with their C (tiny-c's and tiny-ml's runtimes,
+tiny-kernel's programs in C) t-IX is **about 32,100 lines** in all
+(`make loc`, 2026-10-28, without the header comments), past its
+budget of 30,000. tiny-cpu and tiny-machine also
 run [`tiny/TinyKernel/steps/`](tiny/TinyKernel/steps/), the steps before tiny-kernel, written for
 them in their assembly and in C for `tiny-c`: a page-long kernel (v0)
 and a kernel in C with a disk and a shell (t6). Their 2,000 lines are not counted in t-IX: t-IX's kernel is

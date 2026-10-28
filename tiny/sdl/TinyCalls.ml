@@ -22,11 +22,11 @@
  *
  * A dial to the wire's other end, its port 70 (10.0.0.1, tiny-machine's
  * peer, TinyMachinePeer.ml), is answered here as tiny-machine answers
- * it: a line "www address" a web page, "img w h address" a picture in
- * the machine's colours, both fetched by tiny-machine-fetch (ix's own
- * HTTP and TLS), or, with TINY_WWW=dir, a copy kept in dir when the
- * fetch fails (as tiny-machine -net dir); the answer's messages read
- * one at a time, as a link's are. *)
+ * it: a request "GET address HTTP/1.0" a web page, as HTTP's response,
+ * "img w h address" a picture in the machine's colours, both fetched by
+ * tiny-machine-fetch (ix's own HTTP and TLS), or, with TINY_WWW=dir, a
+ * copy kept in dir when the fetch fails (as tiny-machine -net dir); the
+ * answer's messages read one at a time, as a link's are. *)
 
 let width = 640
 let height = 480
@@ -234,14 +234,16 @@ let kept name = match Sys.getenv_opt "TINY_WWW", name with
 (* the answer to a line asked of port 70, its messages *)
 let answer line =
   match String.split_on_char ' ' (String.trim line) with
-  | "www" :: words ->
-      let url = TinyMachinePeer.www_address (String.concat " " words) in
+  | "GET" :: _ when TinyMachinePeer.www_request line <> None ->
+      let url = Option.get (TinyMachinePeer.www_request line) in
       TinyMachinePeer.messages (match fetch [ url ] with
-        | Ok page -> page
+        | Ok answer -> answer
         | Error why -> (
             match kept (TinyMachinePeer.www_kept url) with
-            | Some f -> In_channel.with_open_bin f In_channel.input_all
-            | None -> why))
+            | Some f ->
+                TinyMachinePeer.www_kept_response f
+                  (In_channel.with_open_bin f In_channel.input_all)
+            | None -> TinyMachinePeer.www_failed why))
   | "img" :: w :: h :: address
     when int_of_string_opt w <> None && int_of_string_opt h <> None ->
       let w = int_of_string w and h = int_of_string h
@@ -375,5 +377,32 @@ let u_dial (address : string) (port : int) =
     incr next;
     fd)
   else -1
+(* /bin/play is tiny-play, else m-ix's mini-play (/bin/page: mini-page,
+ * there is no tiny-page): in the bin/ this program was run from, beside
+ * its executable (dune's _build, where tiny-play is play.exe), or on the
+ * PATH *)
+let u_spawn (path : string) (args : string list) : int =
+  let name = Filename.basename path
+  and exe = Sys.executable_name and argv0 = Sys.argv.(0) in
+  let dirs =
+    (if String.contains argv0 '/' then [ Filename.dirname argv0 ] else [])
+    @ [ Filename.dirname exe ]
+    @ String.split_on_char ':'
+        (Option.value (Sys.getenv_opt "PATH") ~default:"") in
+  let names = [ "tiny-" ^ name; "mini-" ^ name ] in
+  let found =
+    List.find_opt Sys.file_exists
+      (Filename.concat (Filename.dirname exe) (name ^ ".exe")
+       :: List.concat_map
+            (fun d -> List.map (Filename.concat d) names)
+            (List.filter (( <> ) "") dirs)) in
+  match found with
+  | None -> -1
+  | Some prog -> (
+      let args = match args with _ :: rest -> rest | [] -> [] in
+      try
+        Unix.create_process prog (Array.of_list (prog :: args))
+          Unix.stdin Unix.stdout Unix.stderr
+      with Unix.Unix_error _ -> -1)
 let u_argc () = Array.length Sys.argv
 let u_arg (i : int) = Sys.argv.(i)

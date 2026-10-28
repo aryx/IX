@@ -11,7 +11,9 @@
 #   columns (www/OCaml.html, its REST HTML fetched on 2026-10-15; see
 #   plan_tiny_browser.md). Then each page is read again in messages of
 #   1, 7 and 1000 bytes, and must give the same lines however it is cut.
-#   And a few typed addresses (Host.exe -address), a search's too.
+#   And a few typed addresses (Host.exe -address), a search's too, the
+#   request for one, and a few answers as www reads their heads
+#   (Host.exe -http).
 # - On tiny-cpu, built by tiny-ml (TinyBrowser_tests/Tm.ml, with
 #   tm.c, heap.c and read.tm): the lines must be the same as OCaml's.
 #   This runs in tiny-cpu's 1 MB of memory, with heap halves of 352 KB,
@@ -58,6 +60,20 @@ ocaml.org/install|https://ocaml.org/install
 http://example.org|http://example.org
 ?plan 9 rio|https://lite.duckduckgo.com/lite/?q=plan+9+rio
 ? C++ & "x"|https://lite.duckduckgo.com/lite/?q=C%2B%2B+%26+%22x%22
+EOF
+got=$($HOST -request '?plan 9')
+if [ "$got" = "https://lite.duckduckgo.com/lite/?q=plan+9" ]; then echo "ok request: ?plan 9"; else fail "request: ?plan 9: $got"; fi
+
+# An answer (printf's text) and what www reads of it: status|type|body
+while IFS='|' read -r answer want; do
+  got=$(printf "$answer" | $HOST -http)
+  if [ "$got" = "$want" ]; then echo "ok http: $answer"; else fail "http: $answer: $got"; fi
+done <<'EOF'
+HTTP/1.0 200 OK\r\nContent-Type: Text/HTML; charset=utf-8\r\n\r\n<p>hi|200|text/html|<p>hi
+HTTP/1.1 404 Not Found\nserver: x\ncontent-type: text/plain\n\nno|404|text/plain|no
+HTTP/1.0 200 OK\r\nContent-Type: audio/wav\r\nContent-Length: 4\r\n\r\nRIFF|200|audio/wav|RIFF
+HTTP/1.0 200 OK\r\nContent-Type: audio/wav\r\n|200|audio/wav|-
+HTTP/1.0 502 Bad Gateway\r\n\r\n|502||
 EOF
 
 # On tiny-cpu. The runtime and main are linked first, then the program,

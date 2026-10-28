@@ -39,7 +39,7 @@
  (public_name tiny-machine-fetch)
  (package ix)
  (modules TinyMachineFetch)
- (libraries tiny_machine_devices ix_graphics_images ix_http ix_tls ix_tcp ix_core caps unix))
+ (libraries tiny_machine_devices tiny_browser_parts ix_graphics_images ix_http ix_tls ix_tcp ix_core caps unix))
 
 ; an SDL window (tsdl), the C library tiny programs link: tiny-machine's
 ; window, and the tiny programs on the host (../sdl/)
@@ -65,4 +65,5 @@
  (modules TinyMachineWeb)
  (modes js)
  (optional)
- (libraries tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer js_of_ocaml))
+ (libraries tiny_machine_cpu tiny_machine_devices tiny_kernel_network tiny_machine_peer
+  tiny_browser_parts js_of_ocaml))

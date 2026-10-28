@@ -198,8 +198,28 @@ let www_kept url =
         if String.starts_with engine url then
           String.sub url n (String.length url - n)
         else "" in
-      if words = "" || String.contains words '/' then None
+      if words = "" then www_picture_kept url
+      else if String.contains words '/' then None
       else Some ("search-" ^ words ^ ".html")
+
+let www_request line =
+  Option.map www_address (TinyBrowserHttp.asked line)
+
+let www_type name =
+  match String.lowercase_ascii (Filename.extension name) with
+  | ".html" | ".htm" -> "text/html; charset=utf-8"
+  | ".txt" -> "text/plain"
+  | ".wav" -> "audio/wav"
+  | ".pdf" -> "application/pdf"
+  | ".png" -> "image/png"
+  | ".jpg" | ".jpeg" -> "image/jpeg"
+  | _ -> "application/octet-stream"
+
+let www_kept_response name body =
+  TinyBrowserHttp.response 200 [ "Content-Type", www_type name ] body
+
+let www_failed why =
+  TinyBrowserHttp.response 502 [ "Content-Type", "text/plain" ] why
 
 let out p packets =
   List.iter (fun packet ->

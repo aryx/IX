@@ -52,8 +52,8 @@ $D/TinyCParser.$O: $D/TinyCLower.$O
 $D/TinyCMachine.$O: $D/TinyCParser.$O
 $D/TinyC.$O: $D/TinyCMachine.$O
 $D/TinyMachine.$O: TinyMachine/TinyMachineDevices.ml TinyKernel/TinyKernelNetwork.ml TinyMachine/TinyMachinePeer.ml $D/Parallel.$O
-$D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml TinyBrowser/TinyBrowserAddress.ml
-$D/TinyBrowserAddress.$O: TinyBrowser/TinyBrowserText.ml
+$D/TinyMachinePeer.$O: TinyKernel/TinyKernelNetwork.ml TinyBrowser/TinyBrowserAddress.ml TinyBrowser/TinyBrowserHttp.ml
+$D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O: TinyBrowser/TinyBrowserText.ml
 
 # (a blank line above: a # line right under a rule's head is its recipe,
 # and TinyMachinePeer's object was never compiled)
@@ -131,9 +131,9 @@ $D/tiny-vcs: $LIBA $D/TinyLibSystem.$O $D/TinyVCS.$O $LIBS
 $D/tiny-cpu: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $LIBS
 	$START TinyMachineISA TinyMachineCPU TinyCPU Std_exit -o $D/TinyCPU.start.$O
 	$LINK -o $target $D/TinyCPU.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyCPU.$O $STDEND
-$D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
-	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyBrowserText TinyBrowserAddress TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
-	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
+$D/tiny-machine: $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $LIBS
+	$START TinyMachineISA TinyMachineCPU TinyMachineDevices TinyKernelNetwork TinyBrowserText TinyBrowserAddress TinyBrowserHttp TinyMachinePeer Parallel TinyMachine Std_exit -o $D/TinyMachine.start.$O
+	$LINK -o $target $D/TinyMachine.start.$O $STDOBJS $D/TinyMachineISA.$O $D/TinyMachineCPU.$O $D/TinyMachineDevices.$O $D/TinyKernelNetwork.$O $D/TinyBrowserText.$O $D/TinyBrowserAddress.$O $D/TinyBrowserHttp.$O $D/TinyMachinePeer.$O $D/Parallel.$O $D/TinyMachine.$O $STDEND
 # (Parallel: the host's cores where OCaml has domains, -cores-parallel;
 # mini-ml has none: lib_core/parallel's file for OCaml 4.14, which dune
 # chooses by the compiler's version)

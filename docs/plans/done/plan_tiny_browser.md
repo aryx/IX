@@ -952,3 +952,49 @@ After (2026-10-28):
 - a recorded session of the search, wwwsearch (`s`, ocaml, Enter):
   the results page kept in tests/www (search-ocaml.html, which
   `www_kept` names for a search).
+
+### HTTP on the wire, and helpers (2026-10-28)
+
+The author: "for tiny-www, maybe we could add the ability to have
+external viewers, like in mini-netscape, so when following a link to a
+pdf, we could call the external program 'page', or for a wave 'play'",
+then "the peer should return the content-type and other headers", "so
+tiny-www code looks a bit more like a real browser on that aspect",
+"and would implement a bit more what HTTP is".
+
+- **The wire speaks HTTP/1.0**, as a proxy: www asks
+  `GET https://... HTTP/1.0` (the whole address on the line, as
+  browsers asked CERN's proxy), and the other end answers with a
+  status line, the site's headers (but the framing ones: its chunks,
+  gzip and length are undone, so a Content-Length of the bytes sent is
+  said instead), an empty line, the bytes. `TinyBrowserHttp` (new,
+  in tiny_browser_parts: both ends use it) makes and reads them;
+  `TinyMachinePeer.www_request`, `www_kept_response` (a kept copy's
+  type by its extension) and `www_failed` (a 502 whose text says why)
+  are the peer's. The four hosts changed alike: tiny-machine,
+  tiny-machine-fetch (prints the response), the web page (fetch's
+  status and Content-Type: CORS lets a page read that header), the
+  native tiny-www.
+- **www goes by Content-Type**: HTML read as before; text/* shown as
+  it is, in a `<pre>` (RFC 1945 itself, 3,363 lines); audio/wav and
+  application/pdf kept in the current directory (www.wav, www.pdf,
+  there is no /tmp) and given to /bin/play or /bin/page, spawned and
+  not waited for, the page saying so; any other type said not shown;
+  a status other than 200 in the last row.
+- **The native tiny-www** gets `u_spawn` (TinyCalls.mli; the stub's
+  -1): /bin/x is tiny-x, else mini-x, in the bin/ it was run from,
+  beside its executable, or on the PATH. So on Linux a PDF opens in
+  mini-page, which tiny-kernel has no twin of yet.
+- Checked: the ten www sessions the same screens; a new one,
+  wwwplay (korobeiniki.wav kept in tests/www, a link to it), its
+  screen and its sound, which is play's own (korobeiniki.wav.cksum);
+  `get 'GET OCaml HTTP/1.0'` in check.expected, its head the 4 lines
+  more; TinyBrowser_test.sh's new cases (a request, five answers'
+  heads, on the host); live with -net-out: a PDF ("no page to show
+  it"), RFC 1945 as text, the Unix article; the native tiny-www: the
+  kept WAV to tiny-play, a live PDF to bin/mini-page.
+
+Left: a program www started is not waited for, so on tiny-kernel it is
+a zombie until www ends (16 processes; there is no wait that does not
+block); no tiny-page; TinyBrowser.ml is now over 700 lines, a split to
+do.

@@ -44,11 +44,12 @@
 #                     drawing, a paint, in a window); and with the
 #                     network, ../tests/www's pages, the browser's (www,
 #                     wwwlink, wwwback, wwwgo, wwwpicture, wwwwin,
-#                     wwwscroll, wwwmenu, wwwhistory, wwwsearch: the
-#                     OCaml article, a link followed and back, a section
-#                     gone to, its pictures, in a window, scrolled, the
-#                     History menu open, the page before chosen in it,
-#                     a search's results (s)); and the disk
+#                     wwwscroll, wwwmenu, wwwhistory, wwwsearch, wwwplay:
+#                     the OCaml article, a link followed and back, a
+#                     section gone to, its pictures, in a window,
+#                     scrolled, the History menu open, the page before
+#                     chosen in it, a search's results (s), a WAV file
+#                     given to play, its sound play's own); and the disk
 #                     (../TinyKernelFS.ml), the root, three boots on a blank one:
 #                     files and a directory made in /usr/glenda, a link, a program
 #                     copied to /bin and run from there, a file of /boot/bin
@@ -231,10 +232,11 @@ I_TinyOffice = $(GUI) $(OFFICE)
 I_TinyTroff = $(GUI) $(OFFICE)
 I_TinyPlay = $(GUI)
 # (TinyBrowser.ml on its parts, TinyBrowser/)
-BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserPage TinyBrowserAddress
+BROWSER = TinyBrowserText TinyBrowserTokens TinyBrowserLines TinyBrowserPage TinyBrowserAddress TinyBrowserHttp
 I_TinyBrowserTokens = TinyBrowserText
 I_TinyBrowserPage = TinyBrowserText TinyBrowserTokens TinyBrowserLines
 I_TinyBrowserAddress = TinyBrowserText
+I_TinyBrowserHttp = TinyBrowserText
 I_TinyBrowser = $(GUI) $(BROWSER)
 I_TinyShell = $(I_TinyLibRegex)
 I_TinyUtilities = $(I_TinyLibRegex) TinyLibRegex
@@ -300,6 +302,7 @@ F_TinyBrowserTokens = ../TinyBrowser/TinyBrowserTokens.ml
 F_TinyBrowserLines = ../TinyBrowser/TinyBrowserLines.ml
 F_TinyBrowserPage = ../TinyBrowser/TinyBrowserPage.ml
 F_TinyBrowserAddress = ../TinyBrowser/TinyBrowserAddress.ml
+F_TinyBrowserHttp = ../TinyBrowser/TinyBrowserHttp.ml
 F_TinyOfficeModel = ../TinyOffice/TinyOfficeModel.ml
 F_TinyOfficeText = ../TinyOffice/TinyOfficeText.ml
 F_TinyOfficeSheet = ../TinyOffice/TinyOfficeSheet.ml
@@ -588,7 +591,7 @@ check: $(O)/boot.img
 	cat $(NCHECK:%=$(O)/check/%.out) | sed -E $(MASK) > $(O)/check/check.out
 	diff $(T)/check.expected $(O)/check/check.out
 	rm -rf $(O)/check && echo "tiny-kernel: check ok"
-check-parts: $(NCHECK:%=$(O)/check/%.out) $(SCREENS:%=$(O)/check/%.sum) $(O)/check/tetris.wav.heard $(O)/check/korobeiniki.wav.sum
+check-parts: $(NCHECK:%=$(O)/check/%.out) $(SCREENS:%=$(O)/check/%.sum) $(O)/check/tetris.wav.heard $(O)/check/korobeiniki.wav.sum $(O)/check/wwwplay.sum
 $(O)/check/01.out: $(O)/boot.img
 	echo mltests | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/02.out: $(O)/boot.img
@@ -640,7 +643,7 @@ $(O)/check/23.out: $(O)/boot.img
 	printf 'get hello.txt\nget il.txt | wc\nget nothing\nget hello.txt 10.0.0.9\n' | timeout 300 $(MACHINE) -net ../tests/www -net-lose 7 -net-trace $(O)/boot.img > $@ 2> $(O)/check/trace
 	cut -c15- $(O)/check/trace | grep -q '^x ' && echo "the wire: a packet lost" >> $@
 $(O)/check/24.out: $(O)/boot.img
-	printf "rc\nget 'www OCaml' | wc\nget 'www https://en.wikipedia.org/wiki/OCaml#History' | wc\nget 'www Plan 9 from Bell Labs'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img > $@
+	printf "rc\nget 'GET OCaml HTTP/1.0' | wc\nget 'GET https://en.wikipedia.org/wiki/OCaml#History HTTP/1.0' | wc\nget 'GET Plan 9 from Bell Labs HTTP/1.0'\nexit\n" | timeout 300 $(MACHINE) -net ../tests/www $(O)/boot.img > $@
 $(O)/check/25.out: $(O)/boot.img
 	rm -f $(O)/check/disk.img
 	printf 'rc\nmkdir d; echo hello > d/f; ln d/f g; seq 2000 > big; cp /bin/get /bin/g2; echo new > /bin/ping; ls -l . d /bin/g2 /bin/ping /boot/bin/ping; ls /; g2; cat /bin/ping; ln d/f /boot/f\nexit\n' | timeout 300 $(MACHINE) -d $(O)/check/disk.img $(O)/boot.img >> $@
@@ -675,6 +678,12 @@ $(O)/check/tetris.wav.heard: $(O)/boot.img
 $(O)/check/korobeiniki.wav.sum: $(O)/boot.img
 	printf 'play /examples/korobeiniki.wav\nsleep 2\n' | timeout 300 $(MACHINE) -audio $(O)/check/korobeiniki.wav $(O)/boot.img > /dev/null
 	cksum < $(O)/check/korobeiniki.wav > $@; diff $(T)/korobeiniki.wav.cksum $@ || { echo "tiny-kernel: play: other sounds ($(O)/check/korobeiniki.wav)"; exit 1; }
+# a link's WAV file (Content-Type audio/wav), kept by www and given to
+# play: the page that says so, and play's own sound
+$(O)/check/wwwplay.sum: $(T)/wwwplay.events $(O)/boot.img
+	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/wwwplay.ppm -audio $(O)/check/wwwplay.wav $(O)/boot.img > /dev/null
+	cksum < $(O)/check/wwwplay.ppm > $@; diff $(T)/wwwplay.cksum $@ || { echo "tiny-kernel: wwwplay.events: another screen ($(O)/check/wwwplay.ppm)"; exit 1; }
+	cksum < $(O)/check/wwwplay.wav > $@.wav; diff $(T)/korobeiniki.wav.cksum $@.wav || { echo "tiny-kernel: wwwplay.events: other sounds ($(O)/check/wwwplay.wav)"; exit 1; }
 
 # tiny-kernel building itself (plan_tiny_self_hosting.md, step 8): booted
 # on a blank disk of 64 MB, the first shell runs tiny-build on

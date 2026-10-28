@@ -17,9 +17,10 @@
  *   name; the document is sent, a message at a time as the machine
  *   acknowledges, and the connection closed. One line out, a document
  *   back, the end: Gopher's shape (1991), and its port. The lines by
- *   the programs that write them: a name (get: a text), "www address"
- *   (www: a web page) and "img w h address" (www: a page's picture, its
- *   rows a message each, so that it is painted as it arrives);
+ *   the programs that write them: a name (get: a text), "GET address
+ *   HTTP/1.0" (www: a web page, HTTP's request, answered by HTTP's
+ *   response) and "img w h address" (www: a page's picture, its rows a
+ *   message each, so that it is painted as it arrives);
  * - and the other way, "put name size" then the file's bytes (put):
  *   the host keeps the file, so that it outlives the machine, and the
  *   answer is a line, ok or why not.
@@ -96,23 +97,34 @@ val lose : t -> int -> unit
 (* a text as messages, of TinyKernelNetwork.il_max bytes at most *)
 val messages : string -> string list
 
-(* The line "www address" asks for a web page, for tiny-kernel's browser
- * (plan_tiny_browser.md). The peer answers with the page's bytes as the
- * site sent them, a message at a time, and an error as one line of
- * text. Fetching is the host's (a terminal's helper, or a page's
- * fetch), but where to fetch is decided here, the same for both:
- * [www_address] turns what was typed into a URL. A bare title (OCaml,
- * Plan 9 from Bell Labs) is an English Wikipedia article; a name with a
- * dot and no scheme (example.com) is https://; ?words a search
- * (TinyBrowserAddress.absolute, www's own rules). A Wikipedia article's
- * address (/wiki/X) becomes its REST HTML (/api/rest_v1/page/html/X):
- * the article without the site's menus, and the one a web page is
- * allowed to fetch. A #fragment is dropped. [www_kept] is the name of
- * the file that holds a kept copy of a Wikipedia article (X.html), or
- * of a search's results (search-words.html, the words as the query
- * has them), for the tests and for a machine with no way out. *)
+(* A request "GET address HTTP/1.0" asks for a web page, for
+ * tiny-kernel's browser (plan_tiny_browser.md; TinyBrowserHttp, a
+ * proxy's request: the whole address on its line). The peer answers
+ * with an HTTP/1.0 response: its status line and headers, the site's
+ * (Content-Type, which www goes by), then the page's bytes, a message at
+ * a time, the site's chunks and gzip undone. Fetching is the host's (a
+ * terminal's helper, or a page's fetch), but where to fetch is decided
+ * here, the same for both: [www_request] gives the address a request
+ * asks for, by [www_address], which turns what was typed into a URL. A
+ * bare title (OCaml, Plan 9 from Bell Labs) is an English Wikipedia
+ * article; a name with a dot and no scheme (example.com) is https://;
+ * ?words a search (TinyBrowserAddress.absolute, www's own rules). A
+ * Wikipedia article's address (/wiki/X) becomes its REST HTML
+ * (/api/rest_v1/page/html/X): the article without the site's menus, and
+ * the one a web page is allowed to fetch. A #fragment is dropped.
+ * [www_kept] is the name of the file that holds a kept copy of a
+ * Wikipedia article (X.html), of a search's results (search-words.html,
+ * the words as the query has them), or of another address, its last
+ * part (korobeiniki.wav), for the tests and for a machine with no way
+ * out. [www_kept_response] is the answer such a copy makes, its
+ * Content-Type by its name's extension ([www_type]); [www_failed] the
+ * answer when there is no page, a 502 whose text says why. *)
+val www_request : string -> string option
 val www_address : string -> string
 val www_kept : string -> string option
+val www_type : string -> string
+val www_kept_response : string -> string -> string
+val www_failed : string -> string
 
 (* The line "img w h address" asks for a picture of the page, w by h
  * pixels: the answer is [picture "" w h pixels] (below), with w and h 0

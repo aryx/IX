@@ -91,9 +91,17 @@
  *)
 
 (* The program www: the page at [address] asked of the wire's other end
- * (the line "www address" on port 70: TinyMachinePeer.www_address says
- * what an address can be), and drawn as it arrives on the screen, or in
- * the window, the program's descriptor 3. At the top, TinyLibGUI's
+ * (HTTP's request "GET address HTTP/1.0" on port 70, TinyBrowserHttp:
+ * TinyMachinePeer.www_address says what an address can be), and drawn
+ * as it arrives on the screen, or in the window, the program's
+ * descriptor 3. The answer's head says what its body is (Content-Type):
+ * HTML is read, a text shown as it is (text/plain, in a <pre>), and a
+ * WAV file or a PDF is kept in the current directory (www.wav, www.pdf)
+ * and given to a program that shows it, started beside www and not
+ * waited for, as Mosaic's helpers were: /bin/play, /bin/page (none on
+ * tiny-kernel yet; the native tiny-www's: tiny-play or mini-play,
+ * mini-page). Any other type is said not shown; a status other than 200
+ * is said in the last row. At the top, TinyLibGUI's
  * menus (the page: back, top, reload, quit; a search, a few articles
  * to go to; the pages seen before) and a toolbar: Back, the address in
  * a field (a click in it, or g, gives it the keys; Enter goes there),

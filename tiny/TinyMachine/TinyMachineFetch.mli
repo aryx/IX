@@ -1,15 +1,17 @@
-(* tiny-machine-fetch: a web page's bytes, for the other end of
- * tiny-machine's wire when tiny-kernel's browser asks for one (the line
- * "www address", TinyMachinePeer.www_address). It is a program apart, as
- * tiny-machine-socket is, so that tiny-machine itself links no network
+(* tiny-machine-fetch: a web page's answer, for the other end of
+ * tiny-machine's wire when tiny-kernel's browser asks for one (its
+ * request "GET address HTTP/1.0", TinyMachinePeer.www_request). It is a
+ * program apart, as tiny-machine-socket is, so that tiny-machine itself links no network
  * library: this one links ix's own (lib_networking: DNS, TCP, TLS 1.3,
  * HTTP/1.1 with its redirections, chunks and gzip). tiny-machine runs it
  * when it has -net-out, and waits for it.
  *
  *     tiny-machine-fetch https://en.wikipedia.org/api/rest_v1/page/html/OCaml
  *
- * prints the body on standard output, whatever the status (a 404's page
- * is a page), and exits 0; if there is no answer at all, it prints why
+ * prints the answer on standard output, whatever the status (a 404's
+ * page is a page), as TinyBrowserHttp's response: HTTP/1.0's status
+ * line, the site's headers but those of the body's framing (its
+ * length, gzip, chunks: undone here), then the body; and exits 0; if there is no answer at all, it prints why
  * on standard output, as one line starting with "www: ", and exits 1.
  *
  *     tiny-machine-fetch -picture 250 188 https://.../250px-Award.jpg

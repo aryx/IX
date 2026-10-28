@@ -285,9 +285,13 @@ $ get: no nothing
 $ get: nothing answers at 10.0.0.9
 $ the wire: a packet lost
 tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
-$ %     589   14363  257035
-%     589   14363  257035
-% www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs:
+$ %     593   14371  257118
+%     593   14371  257118
+% HTTP/1.0 502 Bad Gateway
+Content-Type: text/plain
+Content-Length: 145
+
+www: https://en.wikipedia.org/api/rest_v1/page/html/Plan_9_from_Bell_Labs:
 no copy kept in ../tests/www (with -net-out, tiny-machine fetches it)
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 tiny-kernel: / on a disk of 8192 KB, 8188 KB free; 0 snapshots in /dump

@@ -55,6 +55,13 @@ val u_rawcons : int -> int
 (* a connection to a machine's port: -1, none on the host *)
 val u_dial : string -> int -> int
 
+(* [u_spawn path args]: a child running the program at path (args: its
+ * name first), not waited for; its pid, or -1. The window's: a program
+ * of tiny-kernel's /bin is its host twin (/bin/play: tiny-play, else
+ * mini-play; /bin/page: mini-page), found where this one is or on the
+ * PATH; the stub's: -1 *)
+val u_spawn : string -> string list -> int
+
 (* the program's arguments: how many, the i-th (0 its name) *)
 val u_argc : unit -> int
 val u_arg : int -> string

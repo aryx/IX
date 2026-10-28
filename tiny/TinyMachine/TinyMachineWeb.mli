@@ -40,7 +40,7 @@
  *
  *  tiny-kernel: www OCaml                this page
  *     | IL, over the wire's packets ===> TinyMachinePeer, port 70: the line
- *     |                                     | "www address": the page fetched
+ *     |                                     | "GET address": the page fetched
  *     |                                     |   (Wikipedia's REST HTML)
  *     |                                     | "img w h address": its picture,
  *     |                                     |   read and made small by the

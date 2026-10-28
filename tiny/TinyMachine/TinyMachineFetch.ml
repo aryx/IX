@@ -52,8 +52,17 @@ let main (caps : < Cap.network; Cap.open_in; Cap.stdout; Cap.argv; .. >) =
       | Error why ->
           Console.print caps ("www: " ^ source ^ ": " ^ why ^ "\n"); 1)
   | [ _; url ] -> (
-      match get url with
-      | Ok body -> Console.print caps body; 0
+      match Http_client.get caps url with
+      | Ok (r : Http.response) ->
+          (* the body's own framing undone, so not said *)
+          let framing = [ "content-length"; "content-encoding";
+                          "transfer-encoding"; "connection" ] in
+          let headers =
+            List.filter
+              (fun (n, _) -> not (List.mem (String.lowercase_ascii n) framing))
+              r.headers in
+          Console.print caps (TinyBrowserHttp.response r.status headers r.body);
+          0
       | Error why -> Console.print caps ("www: " ^ url ^ ": " ^ why ^ "\n"); 1)
   | _ ->
       Console.print caps

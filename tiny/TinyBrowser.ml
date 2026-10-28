@@ -10,6 +10,7 @@ open TinyBrowserText
 open TinyBrowserLines
 open TinyBrowserPage
 open TinyBrowserAddress
+open TinyBrowserHttp
 
 (*****************************************************************************)
 (* The screen *)
@@ -69,6 +70,19 @@ type tools = {
   tb_menu : menu_state;
 }
 
+(* The document being read: HTTP's answer, its head first, then its
+ * body, which goes by the head's Content-Type ([dc_type], "" until the
+ * head has come): read as HTML, shown as a text, or kept in a file
+ * ([dc_file]) for a program that shows it. *)
+type doc = {
+  mutable dc_got : int;              (* the bytes read so far *)
+  mutable dc_head : string;          (* the head so far, until it ends *)
+  mutable dc_type : string;
+  mutable dc_status : int;           (* 200, or 0 when no head said *)
+  mutable dc_file : int;             (* the file a helper's bytes go to, or
+                                      * -1 *)
+}
+
 type screen = {
   mutable sc_page : page;
   sc_nav : nav;
@@ -78,7 +92,7 @@ type screen = {
   mutable sc_y : int;               (* the page's pixel at the top of its area *)
   mutable sc_drawn : int;           (* the lines before this one that are in
                                      * the area are drawn *)
-  mutable sc_got : int;             (* the bytes of the page read so far *)
+  sc_doc : doc;
   mutable sc_state : string;        (* "reading", "done", or why there is no page *)
   mutable sc_msgs : string list;    (* drawing messages not yet written, last
                                      * first *)
@@ -272,11 +286,14 @@ let focus sc on =
 let draw_status sc =
   let row = sc.sc_rows - 1 in
   fill_row sc row c_code;
-  let kb = string_of_int ((sc.sc_got + 1023) / 1024) ^ " KB" in
+  let d = sc.sc_doc in
+  let kb = string_of_int ((d.dc_got + 1023) / 1024) ^ " KB" in
   let text =
     (if sc.sc_state = "reading" then "reading, " ^ kb
      else if sc.sc_state = "done" then
-       kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
+       (if d.dc_status <> 200 && d.dc_status <> 0 then
+          string_of_int d.dc_status ^ ", " else "")
+       ^ kb ^ ", " ^ string_of_int (count sc.sc_page) ^ " lines"
        ^ (if sc.sc_nav.nv_fetch >= 0 then
             ", picture " ^ string_of_int (sc.sc_nav.nv_fetch + 1) ^ " of "
             ^ string_of_int (pictures sc.sc_page)
@@ -382,6 +399,86 @@ let hover sc over =
     put sc (d_cursor (if over then 1 else 0))
   end
 
+(* What www does not show itself, given to a program that does, as
+ * Mosaic's helpers: a Content-Type, the program in /bin, and the file
+ * its bytes are kept in, in the current directory, for it to read *)
+let helpers =
+  [ "audio/wav", ("play", "www.wav"); "audio/x-wav", ("play", "www.wav");
+    "audio/wave", ("play", "www.wav");
+    "application/pdf", ("page", "www.pdf") ]
+
+let is_html kind = kind = "text/html" || kind = "application/xhtml+xml"
+
+(* a text as HTML's characters, for a text/plain shown in a <pre> *)
+let escaped s =
+  String.concat ""
+    (List.init (String.length s) (fun i ->
+       match s.[i] with
+       | '<' -> "&lt;"
+       | '&' -> "&amp;"
+       | c -> String.make 1 c))
+
+(* bytes of the body: read as HTML, as a text, or kept for a helper *)
+let body sc s =
+  let d = sc.sc_doc in
+  if d.dc_file >= 0 then ignore (u_write d.dc_file s)
+  else if is_html d.dc_type then feed sc.sc_page s
+  else if String.starts_with "text/" d.dc_type then feed sc.sc_page (escaped s)
+
+(* The head's end: the status, and what the body is (HTML when the head
+ * does not say, as when there is no head) *)
+let body_start sc =
+  let d = sc.sc_doc in
+  d.dc_status <- status d.dc_head;
+  d.dc_type <- (match media_type d.dc_head with "" -> "text/html" | t -> t);
+  match List.assoc_opt d.dc_type helpers with
+  | Some (_, file) -> d.dc_file <- u_open file 0x601
+  | None ->
+    if is_html d.dc_type then ()
+    else if String.starts_with "text/" d.dc_type then feed sc.sc_page "<pre>"
+    else feed sc.sc_page ("<p>" ^ d.dc_type ^ ": www does not show it.</p>")
+
+(* A message of the page: the head kept until it ends, then the body *)
+let take sc s =
+  let d = sc.sc_doc in
+  if d.dc_type <> "" then body sc s
+  else begin
+    d.dc_head <- d.dc_head ^ s;
+    let headless =
+      String.length d.dc_head >= 5
+      && not (String.starts_with "HTTP/" d.dc_head) in
+    let e = if headless then 0 else head_end d.dc_head in
+    if e >= 0 then begin
+      let rest = String.sub d.dc_head e (String.length d.dc_head - e) in
+      d.dc_head <- String.sub d.dc_head 0 e;
+      body_start sc;
+      body sc rest
+    end
+  end
+
+(* The page's end: a helper's file closed and its program started *)
+let body_end sc =
+  let d = sc.sc_doc in
+  if d.dc_type = "" then begin
+    let rest = d.dc_head in
+    d.dc_head <- "";
+    body_start sc;
+    body sc rest
+  end;
+  match List.assoc_opt d.dc_type helpers with
+  | Some (prog, file) ->
+    let what =
+      if d.dc_file < 0 then "could not be kept in " ^ file
+      else begin
+        ignore (u_close d.dc_file);
+        d.dc_file <- -1;
+        if u_spawn ("/bin/" ^ prog) [ prog; file ] < 0 then
+          "kept in " ^ file ^ ", but there is no " ^ prog ^ " to show it"
+        else "kept in " ^ file ^ ", given to " ^ prog
+      end in
+    feed sc.sc_page ("<p>" ^ d.dc_type ^ ": " ^ what ^ ".</p>")
+  | None -> ()
+
 (* Asks for the page at [url] (a full address), which replaces the one
  * shown; its #fragment, if any, is shown when it comes. *)
 let load sc url =
@@ -396,7 +493,12 @@ let load sc url =
   sc.sc_nav.nv_address <- address;
   sc.sc_nav.nv_goal_id <- id;
   sc.sc_y <- 0;
-  sc.sc_got <- 0;
+  if sc.sc_doc.dc_file >= 0 then ignore (u_close sc.sc_doc.dc_file);
+  sc.sc_doc.dc_got <- 0;
+  sc.sc_doc.dc_head <- "";
+  sc.sc_doc.dc_type <- "";
+  sc.sc_doc.dc_status <- 0;
+  sc.sc_doc.dc_file <- -1;
   sc.sc_state <- "reading";
   sc.sc_tools.tb_field <- url;
   draw_bar sc;
@@ -408,7 +510,7 @@ let load sc url =
     sc.sc_state <- "www: no network (tiny-machine -net dir gives one)";
     finish sc.sc_page
   end
-  else ignore (u_write sc.sc_nav.nv_wire ("www " ^ url ^ "\r\n"));
+  else ignore (u_write sc.sc_nav.nv_wire (request url));
   draw_status sc
 
 (* The pictures, once the page is all there: the next one asked of the
@@ -639,7 +741,9 @@ let browse typed =
     { sc_page = create (w / 8); sc_nav = nav;
       sc_tools = { tb_field = ""; tb_mouse = up; tb_menu = menu_closed () };
       sc_cols = w / 8; sc_rows = h / 16; sc_y = 0; sc_drawn = 0;
-      sc_got = 0; sc_state = "reading"; sc_msgs = [] } in
+      sc_doc = { dc_got = 0; dc_head = ""; dc_type = ""; dc_status = 0;
+                 dc_file = -1 };
+      sc_state = "reading"; sc_msgs = [] } in
   put sc colours;
   put sc (d_image c_strip 0 0 (sc.sc_cols * 8) 16 255);
   load sc (absolute typed);
@@ -674,6 +778,7 @@ let browse typed =
       else if sc.sc_nav.nv_wire >= 0 && ready = sc.sc_nav.nv_wire then begin
         let s = u_read sc.sc_nav.nv_wire 1024 in
         if s = "" then begin
+          body_end sc;
           finish sc.sc_page;
           ignore (u_close sc.sc_nav.nv_wire);
           sc.sc_nav.nv_wire <- -1;
@@ -690,11 +795,11 @@ let browse typed =
           end
         end
         else begin
-          let before = sc.sc_got / 16384 in
-          sc.sc_got <- sc.sc_got + String.length s;
-          feed sc.sc_page s;
+          let before = sc.sc_doc.dc_got / 16384 in
+          sc.sc_doc.dc_got <- sc.sc_doc.dc_got + String.length s;
+          take sc s;
           show_new sc;
-          if sc.sc_got / 16384 <> before then draw_status sc
+          if sc.sc_doc.dc_got / 16384 <> before then draw_status sc
         end;
         send sc;
         loop keys

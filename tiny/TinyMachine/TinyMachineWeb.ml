@@ -224,21 +224,38 @@ let screen_show s (m : TinyMachineCPU.machine) =
          [| U.inject s.picture; U.inject 0; U.inject 0 |])
   end
 
-(* a file from beside the page, its bytes; k with None if it is not there *)
-let fetch name k =
+(* an address's answer, whatever its status: the response and its
+ * bytes; k with None if there is none *)
+let fetch_response name k =
   let failed _ = k None in
-  let bytes buffer =
-    k (Some (Js_of_ocaml.Typed_array.String.of_arrayBuffer buffer)) in
   let got response =
-    if Js.to_bool (get response "ok") then
-      ignore
-        (call (call response "arrayBuffer" [||]) "then"
-           [| U.inject (Js.wrap_callback bytes);
-              U.inject (Js.wrap_callback failed) |])
-    else failed () in
+    let bytes buffer =
+      k (Some (response,
+               Js_of_ocaml.Typed_array.String.of_arrayBuffer buffer)) in
+    ignore
+      (call (call response "arrayBuffer" [||]) "then"
+         [| U.inject (Js.wrap_callback bytes);
+            U.inject (Js.wrap_callback failed) |]) in
   ignore
     (call (call U.global "fetch" [| str name |]) "then"
        [| U.inject (Js.wrap_callback got); U.inject (Js.wrap_callback failed) |])
+
+(* a file from beside the page, its bytes; k with None if it is not there *)
+let fetch name k =
+  fetch_response name (function
+    | Some (response, bytes) when Js.to_bool (get response "ok") ->
+        k (Some bytes)
+    | _ -> k None)
+
+(* a response as HTTP's, for www: its status and its Content-Type (the
+ * headers a page may read of another site's, CORS's safe ones) *)
+let http_answer response bytes =
+  let kind : Js.js_string Js.t Js.opt =
+    call (get response "headers") "get" [| str "content-type" |] in
+  TinyBrowserHttp.response (get response "status")
+    (Js.Opt.case kind (fun () -> [])
+       (fun k -> [ "Content-Type", Js.to_string k ]))
+    bytes
 
 (*****************************************************************************)
 (* The network: the wire's other end is the page *)
@@ -247,10 +264,10 @@ let fetch name k =
 (* What the machine's wire leads to (TinyMachinePeer: tiny-kernel's own
  * stack, by OCaml, with its answers to a ping and to port 70). The
  * page gives it its documents, which is where the Internet comes in:
- * a name is a file beside the page (get); "www address" a web page for
- * tiny-kernel's browser, and "img w h address" a picture of it. The
- * machine speaks IL to this end of its wire, and this end asks the
- * Internet as a page may: by fetch, from the sites that allow it.
+ * a name is a file beside the page (get); "GET address HTTP/1.0" a web
+ * page for tiny-kernel's browser, and "img w h address" a picture of
+ * it. The machine speaks IL to this end of its wire, and this end asks
+ * the Internet as a page may: by fetch, from the sites that allow it.
  * Names, TLS, HTTP, JSON and a picture's format are the browser's. *)
 
 (* a picture loaded by the browser, at the size [size] gives from its
@@ -335,10 +352,11 @@ let stored_names () =
 
 (* a line's document: the messages given to [messages], when they are
  * there. [www] is where the page's own documents are.
- * "www address" is a web page for tiny-kernel's browser, fetched by this
- * page (Wikipedia's REST HTML allows it; a site that does not allow
- * other pages to fetch it, by CORS, cannot be reached from here); if
- * the fetch fails, a kept copy beside the page answers *)
+ * "GET address HTTP/1.0" is a web page for tiny-kernel's browser,
+ * fetched by this page (Wikipedia's REST HTML allows it; a site that
+ * does not allow other pages to fetch it, by CORS, cannot be reached
+ * from here) and answered as HTTP's response; if the fetch fails, a
+ * kept copy beside the page answers *)
 let peer_document www line messages =
   let name ok =
     if line = "" || line.[0] = '.' || String.contains line '/' then None
@@ -367,21 +385,25 @@ let peer_document www line messages =
               | None -> answer None)
     | _ -> messages none
   end
-  else if String.length line > 4 && String.sub line 0 4 = "www " then begin
-    let url =
-      TinyMachinePeer.www_address
-        (String.sub line 4 (String.length line - 4)) in
+  else if TinyMachinePeer.www_request line <> None then begin
+    let url = Option.get (TinyMachinePeer.www_request line) in
     let failed () =
       messages
-        [ "www: " ^ url ^ ": not reached\n(no network, or the site does not "
-          ^ "allow a web page to fetch it)\n" ] in
-    fetch url (function
-      | Some page -> messages (TinyMachinePeer.messages page)
+        (TinyMachinePeer.messages
+           (TinyMachinePeer.www_failed
+              ("www: " ^ url ^ ": not reached\n(no network, or the site "
+               ^ "does not allow a web page to fetch it)\n"))) in
+    fetch_response url (function
+      | Some (response, bytes) ->
+          messages (TinyMachinePeer.messages (http_answer response bytes))
       | None ->
           match TinyMachinePeer.www_kept url with
           | Some kept ->
               fetch (www ^ kept) (function
-                | Some page -> messages (TinyMachinePeer.messages page)
+                | Some page ->
+                    messages
+                      (TinyMachinePeer.messages
+                         (TinyMachinePeer.www_kept_response kept page))
                 | None -> failed ())
           | None -> failed ())
   end

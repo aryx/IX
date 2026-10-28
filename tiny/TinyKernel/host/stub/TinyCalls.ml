@@ -20,6 +20,7 @@ let u_time () = 0
 let u_seed () = 0
 let u_stat (_ : string) = ""
 let u_dial (_ : string) (_ : int) = -1
+let u_spawn (_ : string) (_ : string list) = -1
 let u_close (_ : int) = 0
 let u_rawcons (_ : int) = 0
 let u_open (_ : string) (_ : int) = -1

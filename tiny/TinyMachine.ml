@@ -62,9 +62,9 @@ and runs it; the same by hand, in tiny/TinyKernel/steps/v0/, for example:
       and it is the way to other machines: a connection the kernel asks for
       to another address is made by the host (TCP), and a name has an
       address (tiny-kernel: get / gopher.floodgap.com, web example.com); a
-      line "www address" asks the host for a web page, fetched by
-      tiny-machine-fetch (tiny-kernel: rc, then get 'www OCaml'), or kept in
-      dir without -net-out
+      request "GET address HTTP/1.0" asks the host for a web page, fetched
+      by tiny-machine-fetch (tiny-kernel: rc, then get 'GET OCaml HTTP/1.0'),
+      or kept in dir without -net-out
   tiny-machine -net dir -net-forward 8080:80 kernel.img
       a connection to the host's port 8080 is one to the machine's port 80
       (tiny-kernel: httpd, then http://localhost:8080/)
@@ -321,10 +321,10 @@ let helper_said pipes wait =
         (String.sub bytes 1 (String.length bytes - 1))))
   | Some _ -> (helper_relay pipes "").shut (); Some None
 
-(* -net-out, for "www address": a web page fetched by tiny-machine-fetch,
- * a program beside this one (it links ix's TLS and HTTP), whose output
- * is the page. The machine waits meanwhile, which changes nothing of
- * its time. None when the helper could not fetch it (no network, no
+(* -net-out, for "GET address HTTP/1.0": a web page fetched by
+ * tiny-machine-fetch, a program beside this one (it links ix's TLS and
+ * HTTP), whose output is the answer, HTTP's response. The machine waits
+ * meanwhile, which changes nothing of its time. None when the helper could not fetch it (no network, no
  * such host): then its output is a line that says why. *)
 let fetch (caps : < Cap.fork; Cap.exec; .. >) args =
   let in_r, in_w = Unix.pipe ~cloexec:true ()
@@ -442,31 +442,35 @@ let run caps o image =
     let file name =
       if name = "" || name.[0] = '.' || String.contains name '/' then None
       else FS.read_opt caps (Fpath.v (Filename.concat dir name)) in
-    (* "www address": a web page for tiny-kernel's browser. With
+    (* "GET address HTTP/1.0": a web page for tiny-kernel's browser. With
      * -net-out it is fetched; without, or when the fetch fails, a kept
-     * copy of a Wikipedia article in dir (OCaml.html) answers. *)
-    if String.length line > 4 && String.sub line 0 4 = "www " then begin
-      let url =
-        TinyMachinePeer.www_address
-          (String.sub line 4 (String.length line - 4)) in
-      let kept () = Option.bind (TinyMachinePeer.www_kept url) file in
+     * copy in dir (OCaml.html) answers. *)
+    match TinyMachinePeer.www_request line with
+    | Some url ->
+      let kept () =
+        Option.bind (TinyMachinePeer.www_kept url) (fun name ->
+          Option.map (TinyMachinePeer.www_kept_response name) (file name)) in
       let page =
         if o.net_out then
           match fetch caps [ url ] with
-          | Ok body -> body
-          | Error why -> (match kept () with Some body -> body | None -> why)
+          | Ok answer -> answer
+          | Error why ->
+              (match kept () with
+               | Some answer -> answer
+               | None -> TinyMachinePeer.www_failed why)
         else
           match kept () with
-          | Some body -> body
+          | Some answer -> answer
           | None ->
-              "www: " ^ url ^ ":\nno copy kept in " ^ dir
-              ^ " (with -net-out, tiny-machine fetches it)\n" in
+              TinyMachinePeer.www_failed
+                ("www: " ^ url ^ ":\nno copy kept in " ^ dir
+                 ^ " (with -net-out, tiny-machine fetches it)\n") in
       messages (TinyMachinePeer.messages page)
-    end
+    | None ->
     (* "img w h address": a picture of a page, w by h, in the machine's
      * colours: the helper decodes it, the address's (with -net-out) or
      * a kept copy in dir *)
-    else if String.length line > 4 && String.sub line 0 4 = "img " then begin
+    if String.length line > 4 && String.sub line 0 4 = "img " then begin
       let none = TinyMachinePeer.picture "" 0 0 "" in
       messages (match String.split_on_char ' '
                         (String.sub line 4 (String.length line - 4)) with

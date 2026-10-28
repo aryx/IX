@@ -27,6 +27,7 @@ code" while two of the tools below were in the tree.
 | Is it the collector? | `ML_HEAP=n program`; `Gc.set` of `space_overhead`; `copy<>` and `collect<>` in a profile | 1 | the same run with a larger heap: what changes is the collector's |
 | What does one operation cost? | ten lines compiled as the program is, 100 turns and 1,100 under `mini-5i -s` | 2 | "a float multiplied: 65 instructions; an integer division: 200" |
 | On Linux, with OCaml's compiler? | timers in the loop (`Unix.gettimeofday`), then `perf`, then callgrind | 1 to 5 | ms a part; functions. Not mini-ml's code: callgrind stops at an instruction of its |
+| Is it the tool's algorithm, or mini-ml's code? (mini-ml, mini-ld, mini-asm: programs dune also builds) | the same command by `./bin`'s (OCaml's build) and by `_mk/7`'s; then callgrind on OCaml's | 2, then 10 | "mini-ld's link of mini-ml: 8.2 s by OCaml's build, 11.6 by mini-ml's: the algorithm" |
 | How far is mini-ml's code from OCaml's? | `tests/icount.c` on the arm64 host, both builds of the same program; `mini-5i -prof` and callgrind by function | 10 | "a frame of mini-doom: 16.25 million, 7.59 by OCaml 4.14" |
 | A command's time at rc's prompt | `tests/perf/timecmd.py CMD -- EMULATOR...` | 5 | wall time, N times |
 | The boot, the collector's parameters | `tests/perf/gc_boot.sh` | 5 | seconds, collections |
@@ -175,6 +176,43 @@ instructions, mini-ml's 1% (its compare was cheaper, and most of its
 Comparing with another compiler finds what neither profile alone
 says.
 
+## callgrind on a tool OCaml built, step by step
+
+ix's own tools (mini-ml, mini-ld, mini-asm, mini-mk...) have two
+builds: dune's, by OCaml (`./bin`, `_build/default`), and mini-ml's
+(`_mk/5`, `_mk/7`, what m-ix runs). First the same command by both,
+timed: if OCaml's build is slow too, the cost is the tool's algorithm,
+not mini-ml's code, and callgrind on OCaml's build says where (it
+cannot run mini-ml's: see above).
+
+    valgrind --tool=callgrind --callgrind-out-file=/tmp/x.cg \
+      _build/default/linker/Main.exe -m 7 ... the link's arguments
+    callgrind_annotate /tmp/x.cg | head -30          each function's own
+    callgrind_annotate --tree=caller /tmp/x.cg       who calls whom
+
+About fifty times slower than the program: an 8 s link takes 7
+minutes. Read the functions' own counts (the first listing). The
+inclusive ones (`--inclusive=yes`) go past 100% in OCaml's code,
+whose recursion callgrind counts again at each level, and the caller
+tree names a recursive function's callers wrongly as often as not.
+
+The signature of a search in a list that grows: `do_compare_val`,
+`caml_compare` and `caml_page_table_lookup` (compare's, in OCaml 4.14)
+at the top, `List.assoc_opt`, `List.assoc` or `List.mem` under them.
+A structural compare of each element passed: quadratic in the list's
+length. Then grep the tool for `List.assoc`: there are few, and the
+one in a loop over the input is it. Found that way, 2026-10-28
+(plan_ml_speed.md): mini-asm's labels (`Parser_asm`'s fixups, every
+branch looked up in all of a unit's; mini-ml compiling 0.980) and
+mini-ld's arm64 literal pool (`Arm64.layout`, flushed only past 1 MB,
+thousands of entries; mini-ml's link 8.1 s to 3.1, 70% of it had been
+compare).
+
+Two builds of a program compared by function mislead: OCaml numbers
+its closures (`camlEmit__fun_10395`), and the numbers move from one
+build to the other. Compare the totals, and the runtime's functions
+(`do_compare_val`, `caml_oldify_one`), whose names hold.
+
 ## The collector, which is in every profile
 
 mini-ml's collector copies everything alive at each collection, and a
@@ -223,6 +261,14 @@ in a loop copies that megabyte many times a second.
   when its source changes, not when the compiler or a library's
   interface does; a count that does not move at all is a reason to
   look at the build.
+- **A count moved by one major collection.** mini-ml's major
+  collection copies all that is alive, and when it comes depends on
+  the heap's size more than on the change measured: a change that
+  allocates a little more can add one, 100 million instructions in a
+  compile of mini-ml's Lower (plan_ml_speed.md's 4d: 1.023 at the
+  default heap, 1.000 with ML_HEAP 4M to 16M words). Measure at two
+  or three heap sizes (`ML_HEAP`), or with one large enough for few
+  majors, before believing a change of a few %.
 - **A micro-benchmark never fills the heap.** A thousand turns of ten
   lines say what an operation costs and nothing of the collector.
 - **A frame counted that was not drawn; a clock of 10 ms.** Section 16
@@ -251,7 +297,11 @@ By how often it was the answer in ix, for mini-ml's code on arm:
 6. Work done before it is wanted (a tune rendered whole, a table
    made at the start), or done again each time (a sound rendered at
    each play).
-7. A cost paid by the second whatever happens (a sample of silence
+7. A search in a list that grows with the input (`List.assoc`,
+   `List.mem` of all so far): quadratic, invisible on small inputs.
+   mini-asm's labels, mini-ld's arm64 pool (callgrind's signature
+   above).
+8. A cost paid by the second whatever happens (a sample of silence
    through the mixer, its limit, the conversion, the kernel's ring).
 
 ## What to do, in order

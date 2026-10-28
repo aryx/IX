@@ -110,22 +110,16 @@ $D/%.linked: $D/%.$O $LIBS
 	touch $target
 
 # the units' order (mkfiles/depend.rc) in the directories their objects
-# share, as this mkfile's WITH asks them, a file each, beside this
-# game's objects (not theirs: another game's WITH may ask others); made
-# when older than the mkfile or a source. mini-mk depend: made again
+# share, as this mkfile's WITH asks them, a group each, in one file
+# beside this game's objects (not theirs: another game's WITH may ask
+# others); made when older than the mkfile or a source. mini-mk
+# depend: made again. old: a file and a depend.rc each, .depend-QO...
+# .depend-KO, 2.4 s of games' 0.9 when nothing changed (ix's walk)
+KITDEP=QO -- $KITS $OFFICE ++ XO -- $GUI4 ++ SO -- $SCHEME ++ MO -- $FORMULA \
+  ++ RBO -- $REBIRTH ++ KO -- $KIT
 depend:V:
-	{ cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-QO QO -- $KITS $OFFICE
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-XO XO -- $GUI4
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-SO SO -- $SCHEME
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-MO MO -- $FORMULA
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-RBO RBO -- $REBIRTH
-	  cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-KO KO -- $KIT } > /dev/null
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-QO QO -- $KITS $OFFICE
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-XO XO -- $GUI4
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-SO SO -- $SCHEME
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-MO MO -- $FORMULA
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-RBO RBO -- $REBIRTH
-<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-KO KO -- $KIT
+	cflag=() $RC $TOP/mkfiles/depend.rc -f $D/.depend-kits $KITDEP > /dev/null
+<|cflag=() $RC $TOP/mkfiles/depend.rc $D/.depend-kits $KITDEP
 
 clean:V:
 	rm -rf $D

@@ -18,3 +18,7 @@
 2026-10-22 265e63ea page-linux   87.9 fps
 2026-10-22 1666dfff page-linux   90.1 fps
 2026-10-22 64393712 page-linux   89.0 fps
+2026-10-28 a1f23db8 build-9pi    22.5 s
+2026-10-28 a1f23db8 build-top     5.1 s
+2026-10-28 882348eb build-9pi    16.3 s
+2026-10-28 882348eb build-top     3.3 s

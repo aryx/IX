@@ -19,7 +19,10 @@
 #               on 2026-10-21 (every program asking its libraries'
 #               mkfiles: ec719b1a), 8.6 s after; 24.1 s on 2026-10-22
 #               (the recipes rc's, bff90213: a backquote an rc and an
-#               echo), 12.0 s by mkfiles/config.rc and libs.rc
+#               echo), 12.0 s by mkfiles/config.rc and libs.rc;
+#               22.5 s on 2026-10-28 (a .depend checked by a depend.rc
+#               in each mkfile, six in mkgames': e1b8675a), 16.3 s by
+#               mkgames' one
 #   build-top   the top mini-mk (ix for arm64 by ix), the same: 33 s
 #               before ec719b1a, about 1 s after; 5.6 s, then 2.8 s
 #   cameltry    TinyCameltry's frames a second on mini-9pi under QEMU

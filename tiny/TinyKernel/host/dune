@@ -6,7 +6,8 @@
 (library
  (name tiny_host_memory)
  (wrapped false)
- (modules TinyMemory))
+ (modules TinyMemory)
+ (libraries tiny_machine_devices))
 
 (library
  (name tiny_host_calls)

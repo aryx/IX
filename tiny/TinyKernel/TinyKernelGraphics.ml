@@ -164,7 +164,8 @@ let free at n =
 (* A pixel's byte is a colour of Plan 9's table (rgbv: TinyMachineDevices
  * says how it is made): two bits of red, two of how bright (v), four of
  * green and blue, turned by the first two so that a row of 16 is a
- * ramp. Its red, green and blue: *)
+ * ramp. Its red, green and blue (TinyMachineDevices's formula again:
+ * the machine is the host's code, which the kernel does not link): *)
 let rgb i =
   let r = i lsr 6 and v = (i lsr 4) land 3 in
   let j = (i - v + r) land 15 in

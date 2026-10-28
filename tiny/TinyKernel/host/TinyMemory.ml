@@ -89,24 +89,14 @@ let mix_table at ink palette =
 let row_bytes s off dst n = Bytes.blit_string s off mem dst n
 let row_string a n = Bytes.sub_string mem a n
 
-(* a byte's colour: Plan 9's table, TinyMachine.ml's formula (which says
- * what it is) *)
-let colour i =
-  let r = i lsr 6 and v = (i lsr 4) land 3 in
-  let j = (i - v + r) land 15 in
-  let g = j lsr 2 and b = j land 3 in
-  let den = max r (max g b) in
-  if den = 0 then [ 17 * v; 17 * v; 17 * v ]
-  else
-    let num = 17 * ((4 * den) + v) in
-    [ r * num / den; g * num / den; b * num / den ]
-
-(* the screen, w by h, as a PPM: the bytes tiny-machine -screen writes *)
+(* the screen, w by h, as a PPM: the bytes tiny-machine -screen writes,
+ * a byte's colour the machine's (old: Plan 9's table computed here, a
+ * copy of TinyMachineDevices's formula) *)
 let ppm w h =
   let b = Buffer.create 1000000 in
   Buffer.add_string b (Printf.sprintf "P6\n%d %d\n255\n" w h);
   for i = 0 to (w * h) - 1 do
-    List.iter (fun c -> Buffer.add_char b (Char.chr c))
-      (colour (peekb (0xf00000 + i)))
+    Buffer.add_substring b TinyMachineDevices.colours
+      (3 * peekb (0xf00000 + i)) 3
   done;
   Buffer.contents b

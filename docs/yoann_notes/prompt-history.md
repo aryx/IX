@@ -51790,3 +51790,123 @@ Claude expanded the `ended` comment with a `plan9-is-cleaner:` paragraph explain
 Claude checked tiny-kernel's wait behavior: sh, rc, trace, debug and build all wait for children, and -1 now only signals nothing can end.
 Claude restored the `\r` line endings in check.expected, and the whole check passes.
 Claude updated the tiny-browser plan's "Left" note and then ran `make test`.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:07
+
+**Yoann:**
+
+> let's commit all of this, in separate commits
+
+**Claude (summary):**
+
+Claude checked the working tree to separate its own changes from others' before committing.
+Claude committed the first change, then staged the in-between versions of the two shared files for commit two.
+The commit-two hook warned about kernel files that belong in a third commit, so Claude committed them separately.
+Claude restored the final versions of the two shared files and committed the kernel change as commit three.
+Claude did not report on the rename-and-move work, since Yoann's next message concerned that.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:06
+
+**Yoann:**
+
+> let's do 1 if it's just a few lines. For 2 I'm not so sure because it's not a huge win.
+
+**Claude (summary):**
+
+Claude fixed the `-map` writer in `linker/CLI.ml` so each TEXT's name comes from its operand, not from printing every instruction.
+Claude confirmed the map output is unchanged, 3,651 lines on arm and 3,596 on arm64, and the link is faster, 2.65 s from 3.16 s.
+Claude ran `make test` in a clean HEAD copy with only this change: 135 jobs passed, 0 failed, 1 skipped.
+The shared checkout fails 3 jobs from another session's uncommitted `languages/ml/CLI.ml` edit using `Option.fold`, which lib_core lacks.
+Claude is still measuring the Pi 2 instruction counts and the heap-size breakdown, and has not written docs or committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:21
+
+**Yoann:**
+
+> Read task bqqqwh7la (the arm link's instruction counts at the default heap and ML_HEAP=8388608) and report the Pi 2 link's plan: majors' share, the map fix, intern into the old generation, select cached.
+
+**Claude (summary):**
+
+Claude proposed committing the linker/CLI.ml map fix, which cut the Pi 2 link to 15.70 billion instructions.
+Claude noted the fix writes an identical map file and passed make test on HEAD plus the change.
+Claude planned to profile what gets promoted, the read objects or the linker's records, before touching intern.
+Claude estimated the old-generation reading at 30 to 60 lines, helping any program that reads marshalled data.
+Claude had already ruled out a larger heap, which cut only 0.9%, and dropped select cached at 2.5%.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:19
+
+**Yoann:**
+
+> let's do the rename and move
+
+**Claude (summary):**
+
+Claude moved the drawing code into a new TinyBrowserScreen.ml with .mli files, and make test passes.
+Claude derived the HTTP-only Buildfile for the first of the two planned commits.
+Claude found that TinyBrowserPage's rule differed between the two Makefiles, though it had not touched that rule.
+That difference was an artifact: the Makefile adds a .mli to a rule only if the file exists, and the working tree lacked TinyBrowserPage.mli.
+Claude is regenerating HEAD's Buildfile from a copy of HEAD's tree so the derivation is clean.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:31
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed af93f6db and profiled mini-ld's object reading, finding promotion costs 2.19 billion of the link's instructions.
+Claude recommended reading into the old generation, as OCaml's intern.c does, saving at most 14% of the link.
+Claude estimated that change at 30 to 60 lines in a runtime entry, and said it would also speed mini-ml, mini-ar, and the libraries.
+Claude expected the Pi 2 link to land around 13.8 to 14.4 billion instructions, and asked whether to proceed.
+Claude said the remaining 2.8 billion in the linker's records and the 1.4 billion of ML decoding would stay unchanged.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:43
+
+**Yoann:**
+
+> Read tasks bqqqwh7la (arm link counts at default heap and ML_HEAP=8388608) and btvj62q72 (arm link with the map fix) and report the Pi 2 link's plan.
+
+**Claude (summary):**
+
+Claude recommended reading the Pi 2 link's Marshal objects straight into the old generation, as OCaml's `intern.c` does.
+The upper bound is 2.19 billion instructions, about 14% of the current link, probably 8 to 12% in practice.
+The change would take about 30 to 60 lines in the runtime and would speed every reader of marshalled data.
+Claude expected the link to land around 13.8 to 14.4 billion instructions after the change.
+Claude had already committed the map fix as af93f6db, taking the link from 21.19 to 15.70 billion.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:44
+
+**Yoann:**
+
+> yes let's do the intern into the old generation
+
+------------------------------------------------------------------------
+
+## 2026-10-28 10:42
+
+**Yoann:**
+
+> so?
+
+**Claude (summary):**
+
+Claude reported the build at its final link step, producing bin/www, with all seven derived commands matching.
+Claude stated that both of its changes were already committed, rather than left staged in the working tree.
+Claude said the new modules were assembled and the order of www's lines was checked before committing.
+Claude then planned to clean up its private build directory once the background run using that image finished.
+Yoann's reply suggests he wanted the commit done explicitly rather than taken as already complete.

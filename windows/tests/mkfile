@@ -23,7 +23,8 @@ $D/hellorio: $D/Hellorio.$O $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build
-depend:V:
-	$RC $TOP/mkfiles/depend.rc '$D' . -- $LIB Hellorio > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=.
+DEPUNITS=$LIB Hellorio
+<$TOP/mkfiles/mkdepend

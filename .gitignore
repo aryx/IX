@@ -7,3 +7,6 @@ _build5/
 _mk/
 Makefile.config
 _cross/
+.depend
+.depend-*
+.depend.*

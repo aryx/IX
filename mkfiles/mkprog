@@ -56,10 +56,11 @@ $D/$PROG.start.$O: mkfile $TOP/mkfiles/mkconfig $MLEXE
 $D/$PROG: $D/$PROG.start.$O $OBJS $LIBA $LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkprog
 	$LD $LDH -nofollow -o $target $D/$PROG.start.$O $STDOBJS $LIBA $LIBOBJS $OBJS $STDEND
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build
-depend:V: $GEN
-	$RC $TOP/mkfiles/depend.rc '$D' . $D -- $SRC > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=. $D
+DEPUNITS=$SRC
+<$TOP/mkfiles/mkdepend
 
 clean:V:
 	rm -rf $D

@@ -242,7 +242,9 @@ check:V: $IMAGE
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build
-depend:V:
-	INCLUDES=$MLI $RC $TOP/mkfiles/depend.rc '$D' . $M $D -- $UNITS > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+INCLUDES=$MLI
+DEPOBJ=D
+DEPDIRS=. $M $D
+DEPUNITS=$UNITS
+<$TOP/mkfiles/mkdepend

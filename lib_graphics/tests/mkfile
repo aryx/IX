@@ -37,7 +37,8 @@ $D/hellomenu: $D/Hellomenu.$O $LIBS
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build
-depend:V:
-	$RC $TOP/mkfiles/depend.rc '$D' . -- $LIB Hellodraw Hellomenu Hellokbd > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=.
+DEPUNITS=$LIB Hellodraw Hellomenu Hellokbd
+<$TOP/mkfiles/mkdepend

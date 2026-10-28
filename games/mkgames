@@ -110,15 +110,22 @@ $D/%.linked: $D/%.$O $LIBS
 	touch $target
 
 # the units' order (mkfiles/depend.rc) in the directories their objects
-# share, as this mkfile's WITH asks them: mini-mk depend after a build
+# share, as this mkfile's WITH asks them, a file each; made when older
+# than the mkfile or a source. mini-mk depend: made again
 depend:V:
-	{ $RC $TOP/mkfiles/depend.rc '$QO' -- $KITS $OFFICE
-	  $RC $TOP/mkfiles/depend.rc '$XO' -- $GUI4
-	  $RC $TOP/mkfiles/depend.rc '$SO' -- $SCHEME
-	  $RC $TOP/mkfiles/depend.rc '$MO' -- $FORMULA
-	  $RC $TOP/mkfiles/depend.rc '$RBO' -- $REBIRTH
-	  $RC $TOP/mkfiles/depend.rc '$KO' -- $KIT } > .depend
-<.depend
+	rm -f .depend-*
+	{ cflag=() $RC $TOP/mkfiles/depend.rc .depend-QO QO -- $KITS $OFFICE
+	  cflag=() $RC $TOP/mkfiles/depend.rc .depend-XO XO -- $GUI4
+	  cflag=() $RC $TOP/mkfiles/depend.rc .depend-SO SO -- $SCHEME
+	  cflag=() $RC $TOP/mkfiles/depend.rc .depend-MO MO -- $FORMULA
+	  cflag=() $RC $TOP/mkfiles/depend.rc .depend-RBO RBO -- $REBIRTH
+	  cflag=() $RC $TOP/mkfiles/depend.rc .depend-KO KO -- $KIT } > /dev/null
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-QO QO -- $KITS $OFFICE
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-XO XO -- $GUI4
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-SO SO -- $SCHEME
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-MO MO -- $FORMULA
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-RBO RBO -- $REBIRTH
+<|cflag=() $RC $TOP/mkfiles/depend.rc .depend-KO KO -- $KIT
 
 clean:V:
 	rm -rf $D

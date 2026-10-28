@@ -271,16 +271,22 @@ let named_units text =
 
 (* the same from a grammar's or a lexer's text (a unit mini-yacc or
  * mini-lex makes, not there before the build): its capitalized words
- * before a dot, comments' too *)
+ * before a dot or after open, comments' too. old: before a dot only:
+ * mini-cc's Lexer (open Pre) ordered otherwise than once it was made *)
 let named_words text =
   let n = String.length text in
   let ident c = c = '_' || c = '\'' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') in
+  let opened i =
+    let k = ref (i - 1) in
+    while !k >= 0 && (text.[!k] = ' ' || text.[!k] = '\t' || text.[!k] = '\n') do decr k done;
+    !k >= 3 && String.sub text (!k - 3) 4 = "open" && (!k = 3 || not (ident text.[!k - 4])) in
   let rec go i acc =
     if i >= n then acc
     else if text.[i] >= 'A' && text.[i] <= 'Z' && (i = 0 || not (ident text.[i - 1])) then begin
       let j = ref i in
       while !j < n && ident text.[!j] do incr j done;
-      go !j (if !j < n && text.[!j] = '.' then String.sub text i (!j - i) :: acc else acc)
+      let named = (!j < n && text.[!j] = '.') || opened i in
+      go !j (if named then String.sub text i (!j - i) :: acc else acc)
     end else go (i + 1) acc in
   go 0 [ "Pervasives" ]
 

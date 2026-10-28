@@ -189,11 +189,12 @@ yet. In the shared tree:
   source changes: its copy would be stale.
 - **`.depend`**, a directory's, by `mkfiles/depend.rc` (`mini-ml -depend`:
   the units whose values a unit names, not `-M`'s, which are every
-  interface read, and make cycles in lib_core): `mini-mk depend` at the
-  top, after a build, for every mkfile that includes mkprog, mklib or
-  games/mkgames or has a depend target (lib_core's, tiny's,
-  kernels/singularity's, apps/misc's, lib_graphics/tests', windows',
-  windows/tests', profilers/misc', and the three games'). 74 files.
+  interface read, and make cycles in lib_core), made by the build:
+  each mkfile includes it by mkfiles/mkdepend (mkprog's, mklib's, a
+  mkfile's own) or games/mkgames, which writes it again when it is older
+  than the mkfile or a source. Not in the repository since 2026-10-28
+  (old: 78 files, made by `mini-mk depend` after a build, when one
+  thought to: four directories had none, self-mix's 27 files).
   mkprog's rule for a unit now takes its source alone, the directory's
   others by `$OBJS: $LOCAL $GEN $LIBSRC` (mk drops a metarule's arc to a
   missing file only when no other arc of it stays: a unit in a folder

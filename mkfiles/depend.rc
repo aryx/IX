@@ -5,24 +5,44 @@
 # of its units it names (mini-ml -depend), so that mk makes a unit after
 # those whose summaries it reads (languages/ml/simple/Summary.mli), and
 # again when one of them is made again: ocamldep's lines for ocamlopt's
-# .cmx. mk text, the objects as obj/X.$O, obj as given ('$D', '$L'):
-# mk's variables, read where the mkfile includes it. Run by a mkfile's
-# depend target (mkprog's, mklib's, lib_core's...); a unit mini-yacc
-# makes read from its grammar until it is there; its output kept in the
-# directory, made again when units are added or moved (mini-mk depend
-# at the top: every directory's).
-# usage: $RC mkfiles/depend.rc obj dir... -- unit...   (ML and INCLUDES:
-#   the environment's; a unit's source: the first dir's that has it, then
-#   INCLUDES' -I's)
+# .cmx. mk text, the objects as $obj/X.$O, obj a variable's name (D,
+# L): mk's, read where the mkfile includes it. Included by the mkfiles
+# (mkfiles/mkdepend, mkgames'), file made again when it is older than
+# the mkfile or a source of the units' directories, then printed; a
+# unit mini-yacc makes read from its grammar until it is there.
+# old: .depend kept in the repository, made by mini-mk depend after a
+# build, when one thought to: four directories had none (self-mix)
+# usage: $RC mkfiles/depend.rc file obj dir... -- unit...   (ML and
+#   INCLUDES: the environment's; a unit's source: the first dir's that
+#   has it, then INCLUDES' -I's)
 # (a list again: from a recipe of sh's, as kernels/singularity's, one word)
 ML=`{echo $ML}
 INCLUDES=`{echo $INCLUDES}
-obj=$1
-shift
+file=$1
+obj=$2
+shift 2
+if(! ~ $obj '$'*) obj='$'^$obj
 dirs=()
-while(! ~ $1 --){ dirs=($dirs -I $1); shift }
+idirs=()
+while(! ~ $1 --){ dirs=($dirs $1); idirs=($idirs -I $1); shift }
 shift
 # (a unit's file may be elsewhere, its own rule says where: the -I
 # directories too, after those given, as mini-ml looks for a unit)
-# old: for each unit an ls in each dir, then mini-ml -uses on its file
-$ML -depend $obj $dirs $INCLUDES $*
+all=$dirs
+i=$INCLUDES
+while(! ~ $#i 0){
+	if(~ $i(1) -I && ! ~ $#i 1){ all=($all $i(2)); i=$i(3-) }
+	if not i=$i(2-)
+}
+# (one ls: the newest of the file, the mkfile, the sources; the file
+# first among those of the same second, by its name)
+newest=`{ls -t $file mkfile $all^/*.ml $all^/*.mly $all^/*.mll >[2]/dev/null | sed 1q}
+if(! ~ $newest $file){
+	# (through another file, in /tmp: two mk may read the mkfile at
+	# once, and dune, building the tree meanwhile, lists the directory:
+	# a file there that goes away fails it)
+	$ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid || exit 1
+	cat /tmp/depend.$pid > $file
+	rm -f /tmp/depend.$pid
+}
+cat $file

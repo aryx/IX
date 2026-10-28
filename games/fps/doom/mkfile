@@ -47,7 +47,8 @@ $D/doom: $D/Doom.$O $LIBS
 clean:V:
 	rm -rf $D
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build
-depend:V:
-	$RC $TOP/mkfiles/depend.rc '$D' $DIRS -- $LIB Doom > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=$DIRS
+DEPUNITS=$LIB Doom
+<$TOP/mkfiles/mkdepend

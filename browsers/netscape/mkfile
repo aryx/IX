@@ -49,13 +49,11 @@ $D/netscape: $D/Netscape.$O $LIBS
 	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Netscape Std_exit -o $D/Netscape.start.$O
 	$LD $LDH -nofollow -o $target $D/Netscape.start.$O $STDOBJS $LIBA $WHOLE $LIBOBJS $D/Netscape.$O $STDEND
 
-# the units' order (mkfiles/depend.rc): mini-mk depend after a build.
-# old: none, the units made in any order: with NPROC 4 one compiled
-# before the summary of another it names, nothing of it inlined
-# (self-mix: Linux's objects not the card's, made one after the other)
-depend:V:
-	$RC $TOP/mkfiles/depend.rc '$D' . $D -- $LIB Netscape > .depend
-<.depend
+# the units' order (mkfiles/mkdepend)
+DEPOBJ=D
+DEPDIRS=. $D
+DEPUNITS=$LIB Netscape
+<$TOP/mkfiles/mkdepend
 
 clean:V:
 	rm -rf $D

@@ -132,7 +132,7 @@ no7="arm64's programs do not run here"
 mkdir -p tests/snapshots _build/testo/status
 
 group shared
-family "the sources, by both OCamls" build
+family "sources as text, by OCaml 5" build
 # ix by the other OCaml too, its types (@check, in _build5): CI builds
 # with 4.14 and 5.5, a keyword of 5's (effect) once broke the second
 # unseen (plan_tests.md); here when the switch is there and dune's
@@ -160,7 +160,7 @@ esac
 job "every source is text" tests/text_files.sh
 
 group t-ix
-family "the tiny programs' tests"
+family "tiny programs' tests"
 job "tiny-shell: scripts against 9base's rc" tiny/tests/TinyShell_test.sh
 job "tiny-editor: sam's commands against 9base's sam" tiny/tests/TinyEditorLine_test.sh
 job "tiny-db: random sessions against SQLite" tiny/tests/TinyDatabase_test.sh 5
@@ -179,7 +179,7 @@ job "tiny-c: programs against cc" tiny/tests/TinyC_test.sh
 job "tiny-ml: programs against OCaml" tiny/tests/TinyML_test.sh
 job "tiny-build: its Buildfiles" tiny/tests/TinyBuildSystem_test.sh
 job "tiny-play: unit tests" tiny/tests/TinyPlay_test.sh
-family tiny-kernel system
+family "tiny-kernel run: net, fs, sound" system
 # (on an image of its own: TinyKernel's _make is the sessions', rebuilt
 # under a run)
 tiny_network() {
@@ -246,7 +246,7 @@ END
 job "t-ix built in tiny-kernel: cc, as, ml, ld, a part" tiny_self
 
 group m-ix
-family "unit tests"
+family "programs' unit tests"
 job "mini-mk: unit tests" _build/default/builder/tests/Test.exe
 job "mini-rc: unit tests" _build/default/shell/tests/Test.exe
 job "mini-ed: unit tests" _build/default/editors/ed/tests/Test.exe
@@ -267,7 +267,7 @@ job "browsers/webapi: unit tests" _build/default/browsers/webapi/tests/Test.exe
 job "browsers/css: unit tests" _build/default/browsers/css/tests/Test.exe
 job "browsers/engine: unit tests, a page's boxes" sh_ '_build/default/browsers/engine/tests/Test.exe && browsers/engine/tests/boxes.sh'
 job "lib_graphics/pdf: unit tests" _build/default/lib_graphics/pdf/tests/Test.exe
-family "recorded outputs" reference
+family "against recorded outputs" reference
 job "mini-emacs: recorded screens, and in a terminal" sh_ 'editors/emacs/tests/keys.sh && editors/emacs/tests/terminal.py'
 job "games: recorded frames" games/tests/frames.sh
 job "games: recorded sounds" games/tests/audio.sh
@@ -288,7 +288,7 @@ job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh
-family "against references, laws" reference
+family "against other programs, laws" reference
 job "libc: ix's fmt and vlrt against glibc and gcc" lib_core/libc/tests/check.sh 1000
 job "libc: memmove, memset and arm's division, the machines' assembly" lib_core/libc/tests/mem_check.sh
 job "mini-ml -pp" languages/ml/tests/pp.sh
@@ -311,7 +311,7 @@ job "mini-git: git9's tests" version_control/tests/git9_tests.sh
 job "mini-git: clone, fetch, push against git's servers" version_control/tests/net.sh
 job "mini-5i: decoders, random blocks" sh_ 'machine/tests/decode_check.py && machine/tests/decode_check.py -64 && machine/tests/random_blocks.py 300 30 && machine/tests/random_blocks.py -64 300 30 && machine/tests/random_blocks.py -vfp 100 30'
 
-family "mini-ml runs OCaml's programs" reference
+family "mini-ml's output vs OCaml's" reference
 # mini-ml, m-ix's compiler: programs of today's OCaml, in four jobs
 # (each builds the stdlib first)
 M=languages/ml/tests/modern
@@ -323,11 +323,14 @@ job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languag
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's), one family:
-# a line a group (-v: a failing file's error in the log, the part's lines)
-family "mini-ml compiles" build
+# a line a group, named by what it compiles (-v: a failing file's error
+# in the log, the part's lines)
 compiles() { languages/ml/tests/compile_ix.sh -v "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
 for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
-  case $d in lib_core) group shared;; *) group m-ix;; esac
+  case $d in
+    lib_core) group shared; family "lib_core compiled by mini-ml" build;;
+    *) group m-ix; family "m-ix compiled by mini-ml" build;;
+  esac
   job "mini-ml compiles ${d%% *}" compiles $d
 done
 # the longer ones, a job each of their parts (each 15-30 s here) and
@@ -346,9 +349,11 @@ compiles_parts() {
   job "mini-ml compiles ${dirs%% *}..., the rest" compiles $rest
 }
 group t-ix
+family "tiny/ compiled by mini-ml" build
 compiles_parts tiny tiny/TinyKernel \
   "tiny/TinyML tiny/TinyOffice tiny/TinyBrowser tiny/TinyMachine tiny/TinyC"
 group m-ix
+family "m-ix compiled by mini-ml" build
 compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
   browsers/javascript "browsers/engine browsers/webapi" \
   "browsers/netscape browsers/css browsers/html"

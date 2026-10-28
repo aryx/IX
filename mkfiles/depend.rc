@@ -46,7 +46,9 @@ newest=`{ls -t $file mkfile $all^/*.ml $all^/*.mly $all^/*.mll >[2]/dev/null | s
 if(! ~ $#force 0 || ! ~ $newest $file){
 	# (through another file, in /tmp: two mk may read the mkfile at
 	# once)
-	mkdir -p `{dirname $file}
+	# (its directory by sed: Plan 9 has no dirname, Linux's basename no
+	# -d; old: `{dirname $file}, every build on the card failed)
+	mkdir -p `{echo $file | sed 's,/[^/]*$,,'}
 	$ML -depend $obj $idirs $INCLUDES $* > /tmp/depend.$pid || exit 1
 	cat /tmp/depend.$pid > $file
 	rm -f /tmp/depend.$pid

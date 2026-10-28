@@ -81,7 +81,7 @@ libs:V:
 # build makes them when older than a source: this, when in doubt)
 depend:V:
 	for(m in `{$WALK . | grep '/mkfile$' | grep -v -e '^\./_' -e '/\.claude/' | xargs grep -l -E -e '^<.*mkfiles/mk(prog|lib|depend)$' -e '^<.*games/mkgames$'}) {
-		d=`{dirname $m}
+		d=`{echo $m | sed 's,/[^/]*$,,'}
 		if(! ~ $d .) @{cd $d && $MK 'O='$O 'OS='$OS depend} || exit 1
 	}
 

@@ -561,3 +561,35 @@ word (3d's "where it is read", for a read inside a loop of a value the
 loop carries). Asked of the author, 2026-10-27: done in mini-ml rather
 than lib_audio's loops rewritten around it (a one-cell Float.Array),
 which the playground's copy would need too.
+
+## 2026-10-27, 4c: Pervasives' small functions as externals
+
+The author: "let's do 2 first and then 3" (2: Pervasives.lnot and
+lib_core's small functions, not inlined into another directory's
+units; 3: jump tables). Two ways, both measured from nothing on arm
+against HEAD (and tiny-machine's paint session natively on arm64):
+
+- lib_core's summaries read by every directory's units (a scratch
+  hack: CLI's summaries found in _mk/5/lib_core too): tiny-machine
+  2.67 s to 2.50 (0.93), but mini-ml compiling 1.032, virtua's frame
+  1.028, mini-ml 5.5% larger, doom and quake the same. Not done; it
+  would also need every program's units made again at a change of
+  lib_core (mkprog's $OBJS on lib_core.a), as OCaml's .cmx do.
+- The few of Pervasives' functions that are a call where OCaml's are
+  not: ( |> ), ( @@ ) and ignore, externals as in OCaml's stdlib since
+  4.01 (%revapply, %apply, %ignore; ignore's was commented out, from
+  ocaml-light), and lnot, mini-ml's own %lnot (an xor with -1; OCaml's
+  a function, inlined from its .cmx). Lower's app: x |> f and f @@ x
+  the call f x, x |> g a the call g a x (OCaml's translcore and
+  simplif), a known g's code called with all, not a closure; the
+  arguments in OCaml's order (x first, as ocamlopt's). Done.
+
+The externals' numbers, against HEAD: tiny-machine 2.67 s to 2.47
+(0.925, the same screen), mini-ml compiling 0.986, virtua's frame
+0.997, doom and quake 0.998 to 1.000; rebirth's second 1.018, a phase
+of the collector: 0.995 and 0.997 at ML_YOUNG=600000 and 300000. The
+programs' sizes 0.993 to 0.999. tests/runtime/apply.ml (a known
+function, a closure, a primitive, more arguments, a chain, each as a
+value, the effects' order, lnot). Not done: abs (a branch, as min's),
+left a call.
+

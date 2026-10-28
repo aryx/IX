@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C44,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C45,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-27, C28 to C44. The programs they
+plans/plan_ml_speed.md, to 2026-10-27, C28 to C45. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -728,6 +728,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C42 | An int32's add, xor, shifts... by the processor, its result's block taken in place (on arm an int32 is a block) | Lower `ints_in_place`, Ir `Int32`, Emit; plan_ml_speed.md's 4a | the sha bench (lib_crypto's Sha256) 17.89M instructions to 6.95M on arm (0.388) | +77 | `-calls` |
 | C43 | The start object's functions (the curry functions, ml_program) compiled by ssa with -ssa, as a unit's, not by simple's stack machine | Gen `startup`'s compile, CLI; 2026-10-27 (with the open coding out of Gen) | mini-ml compiling its three units 0.861, mini-doom's frame 0.976 | (in -249) | `-O0` |
 | C44 | Bytes' and String's little-endian 16 and 32 bits read and written in place (arm: a byte at a time), the index checked | Lower, Ir `BytesGet`/`BytesSet`, Emit, lib_core's Bytes; plan_ml_speed.md's 4b | tiny-machine's paint session natively 3.28 s to 2.67 (its memory's reads were a quarter of it), mini-ml compiling 0.988 | +80, C +58 | `-calls` |
+| C45 | x \|> f, f @@ x and ignore as OCaml's externals, x \|> g a the call g a x; lnot an xor in place: no call of Pervasives' in another directory's unit | Lower's app (%revapply, %apply), prim (%lnot); lib_core's Pervasives; plan_ml_speed.md's 4c | tiny-machine's paint session 0.925, mini-ml compiling 0.986 | +11, lib_core +11 | none (old: kept) |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of

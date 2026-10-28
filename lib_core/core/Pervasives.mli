@@ -15,14 +15,20 @@ type ('a,'b) result = Ok of 'a | Error of 'b
 
 (* ported from ocaml 4.0 *)
 
-val ( @@ ) : ('a -> 'b) -> 'a -> 'b
-val ( |> ) : 'a -> ('a -> 'b) -> 'b
+(* ix: externals, as OCaml's since 4.01: f @@ x and x |> f are the call
+ * f x (mini-ml's Lower), x |> f a the call f a x, not a call of
+ * Pervasives' function and then f's closure applied.
+ * old: val ( @@ ) : ('a -> 'b) -> 'a -> 'b, and |>'s *)
+external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
+external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 (** Reverse-application operator: [x |> f |> g] is exactly equivalent to [g
     (f (x))]. *)
 
 (* ported from ocaml 3.12 *)
 
-val ignore : 'a -> unit (*= "%ignore"*)
+(* ix: an external, as OCaml's: the value dropped, no call.
+ * old: val ignore : 'a -> unit (*= "%ignore"*) *)
+external ignore : 'a -> unit = "%ignore"
 (** Discard the value of its argument and return [()]. *)
 
 (* pad: for upward compatibility *)
@@ -191,7 +197,10 @@ external (lor) : int -> int -> int = "%orint"
         (* Bitwise logical or. *)
 external (lxor) : int -> int -> int = "%xorint"
         (* Bitwise logical exclusive or. *)
-val lnot: int -> int
+(* ix: an external (mini-ml's own primitive; OCaml's is a function
+ * here too, its x lxor (-1) inlined): no call in another unit.
+ * old: val lnot: int -> int *)
+external lnot : int -> int = "%lnot"
         (* Bitwise logical negation. *)
 external (lsl) : int -> int -> int = "%lslint"
         (* [n lsl m] shifts [n] to the left by [m] bits. *)

@@ -27,6 +27,4 @@ unreached('Kit.cube').
 unreached('Kit.dead').
 unreached('Kit.helper').
 half_called('Kit.scale').
-hole('Use:14:c27','Use:init').
-hole('Use:15:c28','Use:init').
 hole('Use:16:c34','Use:init').

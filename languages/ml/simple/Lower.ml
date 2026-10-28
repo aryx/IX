@@ -399,6 +399,7 @@ let prim imm p n =
   | _ when List.mem_assoc p ops -> emit (Op (List.assoc p ops))
   | "%identity" -> ()
   | "%ignore" -> emit Drop; emit (Int 0)
+  | "%lnot" -> emit (Int (-1)); emit (Op Xor)
   | "%succint" -> emit (Int 1); emit (Op Add)
   | "%predint" -> emit (Int (-1)); emit (Op Add)
   | "%makemutable" -> emit (Alloc (0, 1))
@@ -714,6 +715,14 @@ and app env (f : Scope.expr) args tl =
   | Evar (Prim ("%sequor", _, _)), _, [ a; b ] ->
       let e = { f with e = Eif (a, { f with e = Econst (Int 1) }, Some b) } in
       if tl then (control env e true; true) else (value env e; false)
+  (* x |> f, f @@ x: f x, and x |> g a the call g a x (OCaml's
+   * translcore and simplif): a known g's code called with both, not a
+   * closure applied to x. (Pervasives' externals since 2026-10-27; a
+   * function each before, called, then its argument's closure) *)
+  | Evar (Prim (("%revapply" | "%apply") as p, _, _)), _, a :: b :: more ->
+      let g, x = if p = "%revapply" then b, a else a, b in
+      let g, xs = match (g : Scope.expr).e with Eapply (h, ys) -> h, ys @ [ x ] | _ -> g, [ x ] in
+      app env g (xs @ more) tl
   | Evar (Global g), _, [ a; b ]
     when Hashtbl.mem min_max_aliases g.gsym
          && (Hashtbl.mem immediates f.span

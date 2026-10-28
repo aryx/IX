@@ -430,43 +430,47 @@ in_function('Use:13:c26', 'Use:init').
 call_indirect('Use:13:c26', 'Kit.scale').
 argument('Use:13:c26', 1, 'Use:_').
 call_ret('Use:13:c26', 'Use:half/8').
+parameter('prim:%ignore', 1, 'prim:%ignore:arg1').
+return('prim:%ignore', 'prim:%ignore:ret').
+assign_address('Use:t37', 'prim:%ignore').
 in_function('Use:14:c27', 'Use:init').
-call_indirect('Use:14:c27', 'Pervasives.ignore').
+call_indirect('Use:14:c27', 'Use:t37').
 argument('Use:14:c27', 1, 'Use:half/8').
 call_ret('Use:14:c27', 'Use:_').
+assign_address('Use:t38', 'prim:%ignore').
 in_function('Use:15:c28', 'Use:init').
-call_indirect('Use:15:c28', 'Pervasives.ignore').
+call_indirect('Use:15:c28', 'Use:t38').
 in_function('Use:15:c29', 'Use:init').
 call_indirect('Use:15:c29', 'Kit.last').
 argument('Use:15:c29', 1, 'Use:_').
-call_ret('Use:15:c29', 'Use:t37').
-argument('Use:15:c28', 1, 'Use:t37').
+call_ret('Use:15:c29', 'Use:t39').
+argument('Use:15:c28', 1, 'Use:t39').
 call_ret('Use:15:c28', 'Use:_').
 assign_load_field('Use:f/9', 'ext', 'con:Stop.0').
-assign_address('Use:t38', 'prim:%setfield0').
+assign_address('Use:t40', 'prim:%setfield0').
 in_function('Use:15:c30', 'Use:init').
-call_indirect('Use:15:c30', 'Use:t38').
+call_indirect('Use:15:c30', 'Use:t40').
 argument('Use:15:c30', 1, 'Use.total').
-call_ret('Use:15:c30', 'Use:t39').
+call_ret('Use:15:c30', 'Use:t41').
 in_function('Use:15:c31', 'Use:init').
-call_indirect('Use:15:c31', 'Use:t39').
+call_indirect('Use:15:c31', 'Use:t41').
 in_function('Use:15:c32', 'Use:init').
 call_indirect('Use:15:c32', 'Use:f/9').
-assign_address('Use:t42', 'prim:%field0').
+assign_address('Use:t44', 'prim:%field0').
 in_function('Use:15:c33', 'Use:init').
-call_indirect('Use:15:c33', 'Use:t42').
+call_indirect('Use:15:c33', 'Use:t44').
 argument('Use:15:c33', 1, 'Use.total').
-call_ret('Use:15:c33', 'Use:t41').
-argument('Use:15:c32', 1, 'Use:t41').
-call_ret('Use:15:c32', 'Use:t40').
-argument('Use:15:c31', 1, 'Use:t40').
+call_ret('Use:15:c33', 'Use:t43').
+argument('Use:15:c32', 1, 'Use:t43').
+call_ret('Use:15:c32', 'Use:t42').
+argument('Use:15:c31', 1, 'Use:t42').
 call_ret('Use:15:c31', 'Use:_').
 in_function('Use:16:c34', 'Use:init').
 call_indirect('Use:16:c34', 'Pervasives.print_int').
-assign_address('Use:t44', 'prim:%field0').
+assign_address('Use:t46', 'prim:%field0').
 in_function('Use:16:c35', 'Use:init').
-call_indirect('Use:16:c35', 'Use:t44').
+call_indirect('Use:16:c35', 'Use:t46').
 argument('Use:16:c35', 1, 'Use.total').
-call_ret('Use:16:c35', 'Use:t43').
-argument('Use:16:c34', 1, 'Use:t43').
+call_ret('Use:16:c35', 'Use:t45').
+argument('Use:16:c34', 1, 'Use:t45').
 call_ret('Use:16:c34', 'Use:t11').

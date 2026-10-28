@@ -15,14 +15,15 @@
 
 (* ported from ocaml 4.00 *)
 
-let ( @@ ) f x = f x
-let (|>) o f =
-  f o
+(* (externals: Pervasives.mli) old: let ( @@ ) f x = f x
+ * let (|>) o f = f o *)
+external ( @@ ) : ('a -> 'b) -> 'a -> 'b = "%apply"
+external ( |> ) : 'a -> ('a -> 'b) -> 'b = "%revapply"
 
 (* ported from ocaml 3.12 *)
 
-(*external ignore : 'a -> unit = "%ignore"*)
-let ignore _ = ()
+(* old: let ignore _ = () *)
+external ignore : 'a -> unit = "%ignore"
 
 (* ported from ocaml 4.02.2 *)
 
@@ -82,7 +83,8 @@ external (land) : int -> int -> int = "%andint"
 external (lor) : int -> int -> int = "%orint"
 external (lxor) : int -> int -> int = "%xorint"
 
-let lnot x = x lxor (-1)
+(* old: let lnot x = x lxor (-1) *)
+external lnot : int -> int = "%lnot"
 
 external (lsl) : int -> int -> int = "%lslint"
 external (lsr) : int -> int -> int = "%lsrint"

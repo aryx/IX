@@ -204,7 +204,9 @@ let preprocess (caps : < caps; .. >) dirs file text =
  * (Lower.immediates...): their small functions inlined here as this
  * unit's own (Lower.imports). A summary of another text, or none,
  * nothing inlined from that unit. (Every directory's: mini-doom's frame
- * 0.994, mini-ml 6% larger.)
+ * 0.994, mini-ml 6% larger. lib_core's read too, tried 2026-10-27:
+ * tiny-machine 0.93 but mini-ml compiling 1.03; Pervasives' few small
+ * functions externals instead, plan_ml_speed.md's 4c.)
  * old: another unit's .mli only *)
 let summary_file name = name ^ ".inline"
 let summaries (caps : < caps; .. >) objdir dirs name items =

@@ -824,6 +824,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-27 | Prims back into Emit (its section, its explanation at the head); simple's Gen without open coding (621 lines to 452), the start object's functions ssa's with -ssa | -249 (Prims -453, Emit +364, Gen -169, the rest +9) | | |
 | 2026-10-27 | plan_ml_speed.md, 4b: Bytes' and String's little-endian 16 and 32 bits in place, Ir's BytesGet and BytesSet (tests/runtime/bytes_ints.ml); tiny-machine's paint session natively 0.81, mini-ml compiling 0.988 | +80 (C +58, lib_core +7) | +43 (the test) | |
 | 2026-10-27 | Ir's Float2, Float1 and Int32 variants (Float2 Add, Int32 Lsr...), not the runtime's names in strings; Lower.runtime_function names every primitive's C function, once for Gen and Emit; the same objects | +37 | | |
+| 2026-10-27 | plan_ml_speed.md, 4c: Pervasives' \|>, @@, ignore and lnot externals, Lower's %revapply and %apply the call f x (tests/runtime/apply.ml); tiny-machine 0.925, mini-ml compiling 0.986 | +11 (lib_core +11) | +33 (the test) | |
 
 Since `92c9b4e`: +739 in ix (edits +109, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the

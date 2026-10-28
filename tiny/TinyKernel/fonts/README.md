@@ -15,6 +15,7 @@ a character is a draw through it.
 | `Uni2-TerminusBold32x16.psf.gz` | bold, 16 by 32 (a copy) |
 | `OFL.txt` | Terminus Font's copyright and licence |
 | `mkfont.sh` | makes `tiny.font` from the four copies |
+| `preview.py` | a sheet of fonts as t-IX would draw them, to choose one by looking (Pillow; not the build's) |
 
 ## tiny.font
 

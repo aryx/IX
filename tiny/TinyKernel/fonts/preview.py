@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+# Claude Code
+# Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+#
+# A sheet of fonts as t-IX would draw them, to choose one by looking
+# (docs/notes_font.md, section 7): the same line, a bold one and a large
+# one in each, in cells of 8 by 16 (16 by 32 the large), shown twice
+# as large with no smoothing, as tiny-machine's window shows its
+# screen. Rows:
+# - font1.bin and what the kernel makes of it (bold smeared, italic
+#   slanted, large doubled);
+# - Terminus Font, the four faces copied beside this script;
+# - TrueType fonts of this machine (Ubuntu Mono: the author's Emacs;
+#   Ubuntu Sans Mono: the terminal's; DejaVu Sans Mono: fc-match's
+#   monospace), each twice: 1 bit a pixel (what TinyKernelGraphics
+#   draws) and with grey edges (what a mask of levels would). A font
+#   not installed is said and skipped.
+# A tool to look with, not the build's (tiny.font is mkfont.sh's);
+# needs Pillow.
+# usage: preview.py [out.png]   (default: preview.png, in the current
+# directory)
+import gzip, os, sys
+from PIL import Image, ImageDraw, ImageFont
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+FONT1 = os.path.join(HERE, "../../../kernels/lib_machine/font1.bin")
+TTF = "/usr/share/fonts/truetype"
+W = 640
+LINE = "The quick brown fox jumps: {mail@ix} 0O1lI | let x = f y"
+BOLD = "Bold: Hello world, menu"
+LARGE = "Tiny office"
+
+def blank(h):
+    return Image.new("L", (W, h), 255)
+
+def label(s):
+    im = blank(16)
+    ImageDraw.Draw(im).text((4, 2), s, fill=0)
+    return im
+
+# [bitmap glyph s w h]: s in cells of w by h, glyph c (row, col) a pixel
+# set or not; bold smeared and slanted as TinyKernelGraphics' make
+def bitmap(glyph, s, w, h, scale=1, bold=False, slant=0):
+    im = blank(h * scale)
+    ch = h * scale
+    for i, c in enumerate(s):
+        for row in range(ch):
+            shift = slant * (ch - 1 - row) // ch
+            for col in range(w * scale):
+                k = col // scale
+                def on(k): return 0 <= k < w and glyph(ord(c), row // scale, k)
+                if on(k) or (bold and on(k - 1) and not on(k + 1)):
+                    x = 4 + (i * w * scale) + col + shift
+                    if x < W: im.putpixel((x, row), 0)
+    return im
+
+# font1.bin: 16 bytes a character, a row's left pixel its low bit
+def font1():
+    d = open(FONT1, "rb").read()
+    return lambda c, r, x: (d[(c * 16) + r] >> x) & 1
+
+# the first 128 characters of a .psf.gz (header 4 bytes in PSF 1, 32 in
+# PSF 2; there a character's place is its code), the left pixel the
+# high bit
+def psf(name, header, w, h):
+    d = gzip.open(os.path.join(HERE, name)).read()
+    b = (w + 7) // 8
+    def glyph(c, r, x):
+        return (d[header + (((c * h) + r) * b) + (x // 8)] >> (7 - (x % 8))) & 1
+    return glyph
+
+# a TrueType font drawn by FreeType (Pillow's) at size pixels, each
+# character at its cell; grey, or each pixel black or white
+def ttf(path, size, s, cw, ch, grey, variation=None):
+    f = ImageFont.truetype(path, size)
+    if variation:
+        f.set_variation_by_name(variation)
+    im = blank(ch)
+    d = ImageDraw.Draw(im)
+    ascent, descent = f.getmetrics()
+    for i, c in enumerate(s):
+        d.text((4 + (cw * i), (ch - (ascent + descent)) // 2), c, font=f, fill=0)
+    return im if grey else im.point(lambda v: 0 if v < 128 else 255)
+
+rows = []
+rows += [label("font1.bin, and the kernel's bold, italic and large of it"),
+         bitmap(font1(), LINE, 8, 16), bitmap(font1(), BOLD, 8, 16, bold=True),
+         bitmap(font1(), "italic: Hello world", 8, 16, slant=3),
+         bitmap(font1(), LARGE, 8, 16, scale=2)]
+rows += [label("Terminus Font (tiny.font): 8x16, bold, 16x32, italic slanted"),
+         bitmap(psf("Uni2-Terminus16.psf.gz", 4, 8, 16), LINE, 8, 16),
+         bitmap(psf("Uni2-TerminusBold16.psf.gz", 4, 8, 16), BOLD, 8, 16),
+         bitmap(psf("Uni2-Terminus16.psf.gz", 4, 8, 16), "italic: Hello world",
+                8, 16, slant=3),
+         bitmap(psf("Uni2-Terminus32x16.psf.gz", 32, 16, 32), LARGE, 16, 32)]
+# (name, regular, bold, the size whose characters are 8 wide)
+for name, regular, bold, size in [
+        ("Ubuntu Mono (the author's Emacs)",
+         TTF + "/ubuntu/UbuntuMono[wght].ttf", None, 16),
+        ("Ubuntu Sans Mono (the terminal's)",
+         TTF + "/ubuntu/UbuntuSansMono[wght].ttf", None, 13),
+        ("DejaVu Sans Mono (fc-match monospace)",
+         TTF + "/dejavu/DejaVuSansMono.ttf",
+         TTF + "/dejavu/DejaVuSansMono-Bold.ttf", 13)]:
+    if not os.path.exists(regular):
+        rows.append(label(name + ": not installed (" + regular + ")"))
+        continue
+    # a variable font's bold is a variation of its one file (Ubuntu's:
+    # UbuntuMono-R.ttf and -B.ttf are links to UbuntuMono[wght].ttf)
+    b, v = (bold, None) if bold else (regular, "Bold")
+    for grey in (False, True):
+        rows += [label(name + (": grey edges" if grey else ": 1 bit a pixel")),
+                 ttf(regular, size, LINE, 8, 16, grey),
+                 ttf(b, size, BOLD, 8, 16, grey, v),
+                 ttf(regular, 2 * size, LARGE, 16, 32, grey)]
+
+out = sys.argv[1] if len(sys.argv) > 1 else "preview.png"
+h = sum(r.size[1] + 2 for r in rows)
+sheet = blank(h)
+y = 0
+for r in rows:
+    sheet.paste(r, (0, y))
+    y += r.size[1] + 2
+sheet.resize((2 * W, 2 * h), Image.NEAREST).save(out)
+print(out)

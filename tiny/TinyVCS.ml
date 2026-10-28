@@ -189,10 +189,7 @@ let path r f = Filename.concat (dir r) f
 
 let read_file (caps : < Cap.open_in; .. >) p = TinyLibSystem.read_file caps p
 
-let write_file (caps : < Cap.open_out; .. >) p s =
-  let fd = TinyLibSystem.open_out caps p in
-  TinyLibSystem.write fd s;
-  TinyLibSystem.close fd
+let write_file = TinyLibSystem.write_file
 
 let exists p = try ignore (TinyLibSystem.stat p); true with Failure _ -> false
 

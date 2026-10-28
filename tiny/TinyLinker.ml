@@ -242,10 +242,7 @@ let aout memory data_at image =
 let main
     (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     =
-  let write f text =
-    let fd = TinyLibSystem.open_out caps f in
-    TinyLibSystem.write fd text;
-    TinyLibSystem.close fd in
+  let write = TinyLibSystem.write_file caps in
   let megabytes n =
     match int_of_string_opt n with
     | Some n -> n > 0 && n <= 100

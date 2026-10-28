@@ -79,6 +79,10 @@ let write n s =
         Unix.write_substring (fd n) s at (String.length s - at)))
   in
   go 0
+let write_file (caps : < Cap.open_out; .. >) file s =
+  let fd = open_out caps file in
+  write fd s;
+  close fd
 
 let stat file =
   reason (fun () ->

@@ -335,9 +335,7 @@ let save (caps : < Cap.open_out; .. >) (stamps : (string, string) Hashtbl.t) =
   Hashtbl.iter (fun k v -> Printf.bprintf b "%s %s\n" k v) stamps;
   Hashtbl.iter (fun k (size, date, d) ->
     Printf.bprintf b "file %s %d %d %s\n" k size date d) known;
-  let fd = TinyLibSystem.open_out caps stampfile in
-  TinyLibSystem.write fd (Buffer.contents b);
-  TinyLibSystem.close fd
+  TinyLibSystem.write_file caps stampfile (Buffer.contents b)
 
 let build
     (caps : < Cap.fork; Cap.exec; Cap.wait; Cap.open_in; Cap.open_out;

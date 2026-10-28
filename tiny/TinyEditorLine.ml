@@ -669,9 +669,7 @@ let rec exec
   | File (Write, name) ->
       let name = if name = "" then !file else name in
       if name = "" then raise (Error "no file name");
-      let fd = TinyLibSystem.open_out caps name in
-      TinyLibSystem.write fd (String.sub !text q0 (q1 - q0));
-      TinyLibSystem.close fd;
+      TinyLibSystem.write_file caps name (String.sub !text q0 (q1 - q0));
       if name = !file && q0 = 0 && q1 = len () then begin
         modified := false;
         let differ r = { r with rmodified = true } in

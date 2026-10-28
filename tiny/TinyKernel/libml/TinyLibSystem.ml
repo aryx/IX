@@ -183,6 +183,10 @@ let is_directory file = try fst (stat file) with Failure _ -> false
 
 let read fd max = u_read fd max
 let write fd s = if u_write fd s < 0 then failwith "cannot write"
+let write_file caps file s =
+  let fd = open_out caps file in
+  write fd s;
+  close fd
 let mkdir caps dir = if u_mkdir dir < 0 then failwith "cannot"
 let remove caps file = if u_unlink file < 0 then failwith "cannot"
 let link caps a b = if u_link a b < 0 then failwith "cannot"
@@ -297,8 +301,7 @@ let shell caps vars script =
   incr scripts;
   let file =
     ".shell" ^ string_of_int (u_getpid ()) ^ "." ^ string_of_int !scripts in
-  let fd = open_out caps file in
-  write fd
+  write_file caps file
     ("rm " ^ file ^ "\n"
      ^ String.concat ""
          (List.map
@@ -306,7 +309,6 @@ let shell caps vars script =
               k ^ "=(" ^ String.concat " " (List.map quote v) ^ ")\n")
             vars)
      ^ script ^ "\n");
-  close fd;
   let pid = u_spawn "/bin/rc" [ "rc"; "-e"; file ] in
   if pid < 0 then ignore (u_unlink file);
   pid

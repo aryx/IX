@@ -338,9 +338,9 @@ let main
     (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; .. >)
     =
   let assemble_to f out =
-    let fd = TinyLibSystem.open_out caps out in
-    TinyLibSystem.write fd (assemble f (TinyLibSystem.read_file caps f));
-    TinyLibSystem.close fd; 0 in
+    TinyLibSystem.write_file caps out
+      (assemble f (TinyLibSystem.read_file caps f));
+    0 in
   (* x.tm's object: x.o, here *)
   let default f = Filename.chop_suffix (Filename.basename f) ".tm" ^ ".o" in
   try

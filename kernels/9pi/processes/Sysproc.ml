@@ -36,7 +36,13 @@ let exits (p : proc) status =
 let pprint (p : proc) s =
   match p.fgrp.fds.(2) with
   | Some c when (match c.opened with Some m -> m.access = Owrite || m.access = Ordwr | None -> false) ->
-      (try ignore ((Dev.find c.dev).Dev.write c (p.text ^ " " ^ string_of_int p.pid ^ ": " ^ s) c.offset)
+      (* the chan's offset moved past it, as Plan 9's pprint (c->offset
+       * += n). old: left where it was, the next write over it: a log
+       * shared by the build's processes lost the "suicide" lines (ml
+       * killed out of memory on the card, self-mix's games, no word) *)
+      (try
+         let n = (Dev.find c.dev).Dev.write c (p.text ^ " " ^ string_of_int p.pid ^ ": " ^ s) c.offset in
+         c.offset <- c.offset + n
        with Error _ -> ())
   | _ -> ()
 

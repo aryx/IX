@@ -43,7 +43,11 @@ let fork caps (f : unit -> int) : int =
   | 0 ->
       Sys.set_signal Sys.sigint Sys.Signal_default;
       Sys.set_signal Sys.sigquit Sys.Signal_default;
-      let code = try f () with _ -> 1 in
+      (* an exception not rc's Error said, as the uncaught one of a
+       * program. old: `with _ -> 1`, the child's end in silence (games'
+       * mk's on mini-9pi, exit(1), no word) *)
+      let code =
+        try f () with e -> prerr_endline ("rc: " ^ Printexc.to_string e); 1 in
       flush stdout;
       flush stderr;
       Unix._exit code

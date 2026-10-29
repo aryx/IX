@@ -58,6 +58,10 @@ exception Error of string
 (* an exception no frame catches: its class's name and its message *)
 exception Unhandled of string * string
 
+(* a recursion too deep (10,000 frames): as .NET, the program stops,
+ * no catch can take it *)
+exception Stack_overflow
+
 (* each instruction said as it runs (-trace), and the count of them (-s) *)
 val trace : (string -> unit) option ref
 val steps : int ref

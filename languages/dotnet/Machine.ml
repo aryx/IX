@@ -7,6 +7,7 @@ open Value
 
 exception Error of string
 exception Unhandled of string * string
+exception Stack_overflow
 
 let trace : (string -> unit) option ref = ref None
 let steps = ref 0
@@ -27,6 +28,12 @@ type frame = {
 
 (* the frames running, the innermost first *)
 let frames : frame list ref = ref []
+
+(* the frames running, and their most *)
+let depth = ref 0
+let max_depth = 10_000
+
+(* .NET does not let a program catch it: it stops the process *)
 
 (* how a run of a method's instructions ends *)
 type outcome = Returned of value | End_finally | Filtered of bool
@@ -401,15 +408,19 @@ and call_virtual_this (m : meth) (args : value array) (virt : bool) : value =
   invoke target args
 
 and run_method (m : meth) (args : value array) : value =
+  (* (a recursion with no end: .NET's stack is a megabyte, here OCaml's
+   * own stack would be used up first, its frames bigger) *)
+  incr depth;
+  if !depth > max_depth then raise Stack_overflow;
   let code = Types.code m in
   let f = { meth = m; code; args;
             locals = Array.map zero code.locals;
             stack = Array.make (code.max_stack + 1) Null; sp = 0; pc = 0; at = 0; caught = None } in
   frames := f :: !frames;
   match run f with
-  | Returned v -> frames := List.tl !frames; v
+  | Returned v -> frames := List.tl !frames; decr depth; v
   | End_finally | Filtered _ -> error "endfinally or endfilter outside their block"
-  | exception e -> frames := List.tl !frames; raise e
+  | exception e -> frames := List.tl !frames; decr depth; raise e
 
 (* the instructions run, an exception caught by this frame's clauses *)
 and run (f : frame) : outcome =

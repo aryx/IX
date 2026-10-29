@@ -8,6 +8,8 @@
 # Microsoft's C# compiler and kept in the tree (survey/programs/*.dll,
 # decision 2), so no SDK is needed here:
 #   listings   each assembly's types and IL (-S) against expected/*.S
+#   writer     an assembly made by Writer (writer/Hello.ml), read back
+#              (-S) and run, against writer/hello.S and writer/hello.out
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -45,7 +47,15 @@ check() {
     elif cmp -s $W/$p.S $T/expected/$p.S; then ok "mini-dotnet -S $p, by $what"
     else fail "mini-dotnet -S $p, by $what"; diff $T/expected/$p.S $W/$p.S | head -10; fi
   done
-  [ -n "$record" ] && return
+  # (the writer: by dune's build, its file run by each)
+  _build/default/languages/dotnet/tests/writer/Hello.exe $W/hello.dll
+  "$@" -S $W/hello.dll > $W/hello.S 2>&1
+  "$@" $W/hello.dll > $W/hello.out 2>&1
+  if [ -n "$record" ]; then cp $W/hello.S $W/hello.out $T/writer/; return; fi
+  for x in S out; do
+    if cmp -s $W/hello.$x $T/writer/hello.$x; then ok "mini-dotnet: Writer's hello.dll, its .$x, by $what"
+    else fail "mini-dotnet: Writer's hello.dll, its .$x, by $what"; diff $T/writer/hello.$x $W/hello.$x | head -5; fi
+  done
   for p in $progs; do
     "$@" $P/$p.dll > $W/$p.out 2> $W/$p.err
     if cmp -s $W/$p.out $P/$p.expected; then ok "mini-dotnet $p, by $what"

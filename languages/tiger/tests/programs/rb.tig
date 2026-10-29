@@ -1,0 +1,191 @@
+/* rb - print word frequencies; uses records and red-black trees in a
+ * functional style to test the garbage collector.  rb.tig is based on
+ * wf.tig (by PG), which in turn is based on the program of the same
+ * name from the lcc test suite 
+ */
+
+let
+
+type node = {
+    color : int,        /* 0 = black, otherwise = red */
+    count : int,        /* frequency count */
+    word  : string,	/* word itself */
+    left  : node,       /* left subtree */
+    right : node        /* right subtree */
+}
+var root    := nil
+var black   := 0
+var red     := 1
+
+function err(s : string) = (
+	print("? "); print(s); print("\n");
+	exit(1)
+)
+
+function balance (color: int, count: int, word: string,
+                  left: node, right: node): node =
+    if ( color = black & left <> nil & left.left <> nil
+       & left.color = red & left.left.color = red) then
+        node { color=red
+             , count=left.count
+             , word=left.word
+             , left  = node { color = black
+                            , count = left.left.count
+                            , word  = left.left.word
+                            , left  = left.left.left
+                            , right = left.left.right
+                            }
+             , right = node { color = black
+                            , count = count
+                            , word  = word
+                            , left  = left.right
+                            , right = right
+                            }
+             }               
+    else if (color = black & left <> nil & left.right <> nil
+       & left.color = red & left.right.color = red) then
+        node { color=red
+             , count=left.right.count
+             , word=left.right.word
+             , left  = node { color = black
+                            , count = left.count
+                            , word  = left.word
+                            , left  = left.left
+                            , right = left.right.left
+                            }
+             , right = node { color = black
+                            , count = count
+                            , word  = word
+                            , left  = left.right.right
+                            , right = right
+                            }
+             }               
+    else if (color = black & right <> nil & right.right <> nil
+       & right.color = red & right.right.color = red) then
+        node { color=red
+             , count=right.count
+             , word=right.word
+             , left  = node { color = black
+                            , count = count
+                            , word  = word
+                            , left  = left
+                            , right = right.left
+                            }
+             , right = node { color = black
+                            , count = right.right.count
+                            , word  = right.right.word
+                            , left  = right.right.left
+                            , right = right.right.right
+                            }
+             }               
+    else if (color = black & right <> nil & right.left <> nil
+       & right.color = red & right.left.color = red) then
+        node { color=red
+             , count=right.left.count
+             , word=right.left.word
+             , left  = node { color = black
+                            , count = count
+                            , word  = word
+                            , left  = left
+                            , right = right.left.left
+                            }
+             , right = node { color = black
+                            , count = right.count
+                            , word  = right.word
+                            , left  = right.left.right
+                            , right = right.right
+                            }
+             }               
+    else
+        node { color = color
+             , count = count
+             , word  = word
+             , left  = left
+             , right = right
+             }
+
+function ins (word: string, p: node): node =
+    if (p = nil) then 
+        node {color=red,count=1,word=word,left=nil,right=nil}
+    else if (word < p.word) then
+        balance (p.color, p.count, p.word, ins(word,p.left), p.right)
+    else if (word > p.word) then
+        balance (p.color, p.count, p.word, p.left, ins(word,p.right))
+    else
+        ( if word <> p.word then print ("error!");
+        node {color=p.color, count=p.count+1, word=word,
+              left=p.left, right=p.right}
+        )
+
+function insert (word: string, p: node) : node =
+    let var x := ins(word, p)
+    in
+        node {color=black, count=x.count, word=x.word,
+              left=x.left, right=x.right} 
+    end
+
+/* add_word - add word to tree: install or increment count */
+function add_word(word : string) =
+  root := insert(word,root)
+
+
+/* not until we have division 
+function print_int(n : int) = 
+  if n = 0 then print("0")
+  else  if n < 0 then (print("-"); print_int(-n))
+  else
+    let function digit(n : int) = print(chr(ord("0") + n))
+	function mod10(n : int) : int = n - 10 * (n / 10)
+        function digits(n : int) =
+          (if n < 10 then digit(n) else (digits(n / 10); digit(mod10(n))))
+    in  digits(n)
+    end
+*/
+
+/* tprint - print tree */
+function tprint(tree : node) =
+  if tree <> nil then (
+     tprint(tree.left);
+     printi(tree.count); print("\t"); print(tree.word); print("\n");
+     tprint(tree.right)
+  ) 
+
+/* isletter - return folded version of c if it is a letter, 0 otherwise */
+function isletter(c : string) : int =
+   if c >= "A" and c <= "Z" then
+	ord(c) + ord("a") - ord("A")
+   else if c >= "a" and c <= "z" then
+        ord(c)
+   else
+	0
+
+/* getword - get next input word into buf, return empty string on EOF */
+
+function getword() : string = 
+  let var s := ""
+      var c := ""
+  in
+      c := getchar();
+      while c <> "" and isletter(c) = 0 do 
+        c := getchar();
+      while c <> "" and isletter(c) do (
+	s := concat(s, chr(isletter(c)));
+        c := getchar()
+      );
+      s
+  end
+
+
+function main() = 
+   let var word := ""
+   in
+       word := getword();
+       while size(word) > 0 do (
+          add_word(word);
+          word := getword()
+       );
+       tprint(root)
+   end
+
+in main()
+end

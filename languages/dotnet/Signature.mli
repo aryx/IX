@@ -64,6 +64,15 @@ val property : string -> t
 (* a token in the TypeDefOrRef encoding (II.23.2.8) as a token *)
 val type_token : int -> int
 
+(* the blobs written: the inverse of the above, for Writer; a token
+ * given its TypeDefOrRef encoding *)
+val encode_field : t -> string
+val encode_method : meth -> string
+val encode_locals : t list -> string
+val encode_type_spec : t -> string
+(* a number as a blob writes it: 1, 2 or 4 bytes *)
+val add_number : Buffer.t -> int -> unit
+
 (* as ildasm writes it, the classes named by the function given *)
 val show : (int -> string) -> t -> string
 val show_meth : (int -> string) -> string -> meth -> string

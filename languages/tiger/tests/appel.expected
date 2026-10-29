@@ -1,0 +1,49 @@
+test1: exit 0 
+test2: exit 0 
+test3: exit 0 
+test4: exit 0 
+test5: exit 0 
+test6: exit 134 
+test7: exit 134 
+test8: exit 40 
+test9: test9.tig:3.1: then and else differ: int and string
+test10: test10.tig:2.1: a while's body: unit expected, not int
+test11: test11.tig:2.1: a for's end: int expected, not string
+test12: exit 0 
+test13: test13.tig:3.1: int and string compared: two ints or two strings are
+test14: test14.tig:12.5: rectype and arrtype (array of int) compared
+test15: test15.tig:3.1: an if without else: unit expected, not int
+test16: test16.tig:7.8: the types a, c, d are a cycle
+test17: test17.tig:4.23: no type treelist
+test18: test18.tig:5.4: no function do_nothing2
+test19: test19.tig:8.16: no variable a
+test20: test20.tig:3.18: no variable i
+test21: test21.tig:8.9: an arithmetic's right: int expected, not unit
+test22: test22.tig:7.2: rectype has no field nam
+test23: test23.tig:7.2: an assignment: string expected, not int
+test24: test24.tig:5.2: an index of int, not an array
+test25: test25.tig:5.2: a field f of int, not a record
+test26: test26.tig:3.1: an arithmetic's right: int expected, not string
+test27: exit 2 
+test28: test28.tig:7.2: the variable rec1: rectype1 expected, not rectype2
+test29: test29.tig:7.2: the variable arr1: arrtype1 (array of int) expected, not arrtype2 (array of int)
+test30: exit 0 
+test31: test31.tig:3.2: the variable a: int expected, not string
+test32: test32.tig:6.11: an array's initial value: int expected, not string
+test33: test33.tig:3.10: no type rectype
+test34: test34.tig:5.2: g's argument 1: int expected, not string
+test35: test35.tig:5.2: g: 2 arguments expected, not 1
+test36: test36.tig:5.2: g: 2 arguments expected, not 3
+test37: exit 0 
+test38: test38.tig:5.2: the type a declared twice in a group
+test39: test39.tig:5.2: the function g declared twice in a group
+test40: test40.tig:3.2: the body of g: unit expected, not int
+test41: exit 0 
+test42: exit 0 
+test43: test43.tig:4.2: no value given to a
+test44: exit 0 
+test45: exit 0 
+test46: exit 0 
+test47: exit 0 
+test48: exit 0 
+test49: test49.tig:5.18: a syntax error

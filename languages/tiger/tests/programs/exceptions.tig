@@ -1,0 +1,24 @@
+/*
+ * Exceptions in Tiger
+ *
+ */
+let
+   exception ex1
+   exception ex2
+   exception ex3
+   function throws_int(i : int) = if i > 0 then raise ex1
+   function f(i : int) = throws_int(i)
+in
+ try (print("hello\n"); f(-1); print("bye\n"))
+ handle ex1 print("exception 1\n") end
+ handle ex2 print("exception 2\n") end;
+
+ print("out of ex block 1\n");
+
+ try f(1)
+ handle ex1 print("exception 1\n") end
+ handle ex2 print("exception 2\n") end
+ handle ex3 print("exception 3\n") end;
+
+ print("out of ex block 2\n")
+end

@@ -453,3 +453,41 @@ let encode (b : Buffer.t) (op : op) : unit =
   | Sizeof t -> tok "sizeof" t
   | Constrained t -> tok "constrained." t
   | Prefix p -> opc p
+
+let map_tokens (f : int -> int) (op : op) : op =
+  match op with
+  | Jmp t -> Jmp (f t) | Call t -> Call (f t) | Calli t -> Calli (f t)
+  | Callvirt t -> Callvirt (f t) | Cpobj t -> Cpobj (f t) | Ldobj t -> Ldobj (f t)
+  | Stobj t -> Stobj (f t) | Ldstr t -> Ldstr (f t) | Newobj t -> Newobj (f t)
+  | Castclass t -> Castclass (f t) | Isinst t -> Isinst (f t) | Unbox t -> Unbox (f t)
+  | Unbox_any t -> Unbox_any (f t) | Box t -> Box (f t)
+  | Ldfld t -> Ldfld (f t) | Ldflda t -> Ldflda (f t) | Stfld t -> Stfld (f t)
+  | Ldsfld t -> Ldsfld (f t) | Ldsflda t -> Ldsflda (f t) | Stsfld t -> Stsfld (f t)
+  | Newarr t -> Newarr (f t) | Ldelema t -> Ldelema (f t)
+  | Ldelem_any t -> Ldelem_any (f t) | Stelem_any t -> Stelem_any (f t)
+  | Refanyval t -> Refanyval (f t) | Mkrefany t -> Mkrefany (f t)
+  | Ldtoken t -> Ldtoken (f t) | Ldftn t -> Ldftn (f t) | Ldvirtftn t -> Ldvirtftn (f t)
+  | Initobj t -> Initobj (f t) | Sizeof t -> Sizeof (f t) | Constrained t -> Constrained (f t)
+  | op -> op
+
+(* Partition III's stack transitions; [call tok] is a method's
+ * (arguments with `this`, has it a result) *)
+let stack_effect (call : int -> int * bool) (returns : bool) (op : op) : int * int =
+  match op with
+  | Nop | Break | Br _ | Leave _ | Endfinally | Prefix _ | Constrained _ -> (0, 0)
+  | Ldarg _ | Ldarga _ | Ldloc _ | Ldloca _ | Ldnull | Ldc_i4 _ | Ldc_i8 _ | Ldc_r _
+  | Ldstr _ | Ldsfld _ | Ldsflda _ | Ldtoken _ | Ldftn _ | Sizeof _ | Arglist -> (0, 1)
+  | Starg _ | Stloc _ | Pop | Brfalse _ | Brtrue _ | Switch _ | Stsfld _ | Throw
+  | Initobj _ | Endfilter -> (1, 0)
+  | Dup -> (1, 2)
+  | Call t | Callvirt t | Jmp t -> let n, r = call t in (n, if r then 1 else 0)
+  | Calli _ -> (1, 0)
+  | Newobj t -> let n, _ = call t in (n - 1, 1)
+  | Ret -> ((if returns then 1 else 0), 0)
+  | Bcmp _ | Stind _ | Stfld _ | Stobj _ | Cpobj _ -> (2, 0)
+  | Binop _ | Ceq | Cgt _ | Clt _ | Ldelem _ | Ldelem_any _ | Ldelema _ -> (2, 1)
+  | Stelem _ | Stelem_any _ | Cpblk | Initblk -> (3, 0)
+  | Ldind _ | Neg | Not | Conv _ | Conv_r_un | Ldobj _ | Castclass _ | Isinst _
+  | Unbox _ | Unbox_any _ | Box _ | Ldfld _ | Ldflda _ | Newarr _ | Ldlen
+  | Refanyval _ | Mkrefany _ | Refanytype | Ckfinite | Ldvirtftn _ | Localloc -> (1, 1)
+  | Rethrow -> (0, 0)

@@ -1,0 +1,18 @@
+/* define valid mutually recursive procedures */
+let
+
+function fa(a: int, b: string) =
+   let
+      function a_a(c:int, d:string) =
+         (print(d); fb(c))
+   in
+      if a < 5 then a_a(a+1, b)
+   end
+
+function fb(d: int) = fa(d, " str2 ")
+
+in
+   fa(4, " str1 "); fb(1);
+   print("\n")
+end
+

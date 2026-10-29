@@ -1,0 +1,7 @@
+/* hello world */ 
+let
+  var a:= "Hello, world.\n"
+in 
+  print(a)
+end
+

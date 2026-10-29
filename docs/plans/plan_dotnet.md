@@ -37,9 +37,10 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 3 done** (the reader and the listing; the
-machine: objects, value types, generics, delegates; `languages/dotnet/`);
-the rest under way. See the end.
+**Status: stages 1 to 3 and 5 done** (the reader and the listing;
+the machine: objects, value types, generics, delegates; the writer and
+mini-tiger, `languages/tiger/`, whose assemblies Microsoft's dotnet and
+mini-dotnet both run); stage 4 (mini-9pi's card) next. See the end.
 
 ## Its place in `languages/`
 
@@ -507,3 +508,42 @@ Microsoft's runtime (`tests/programs/build.sh`); by dune's build, by
 mini-ml's on arm64, and on arm under mini-5i (31-bit ints, decision
 6). The queens: 360,572 instructions, 0.02 s by dune's build, 0.03 s
 by mini-ml's.
+
+2026-10-29 (night), stage 5, before stage 4: the card is made by
+building all of ix for Plan 9, languages/ml with it, and another
+session's work in progress stopped that build for an hour; stage 4
+comes next. The writer (`Writer`, 477 lines: an assembly named and
+defined in any order, a field's and a method's token provisional
+until their rows are laid out at the end, a method's .maxstack
+computed from `Il.stack_effect`, the PE with one section and no stub of
+machine code, a GUID that is a digest of the name, so the same bytes
+each time) and mini-tiger (`languages/tiger/`, 1,198 lines: the lexer
+by ocamllex, the grammar by ocamlyacc, conflict-free, Tiger_semant for
+the names, types and escapes in one pass, Tiger_emit for the frames as
+classes and the IL). Decisions taken on the way, fork-tiger's
+behaviour over Appel's where fork-tiger's recorded outputs need it:
+an array's initial value evaluated for each element (fork-tiger's
+new_array; Appel's initArray once); `ord` of a string not one
+character long stops the program with status 1 (fork-tiger's;
+Appel's gives -1 for ""); `var x := nil` accepted, x then the type of
+the first record it is given (Appel's test45 says an error); `and` and
+`or` as words. The console set to Latin-1 at Main's start, so that a
+byte above 127 is one character in and out (rc4); mini-dotnet's
+library has `Encoding.Latin1`, `Console.set_OutputEncoding`,
+`Environment.Exit`, `Char.ToString(char)`, `String.CompareOrdinal`;
+a recursion of more than 10,000 frames stops mini-dotnet as .NET's
+stack overflow does (exit 134). Not done: a `try` inside an
+expression whose stack is not empty (.NET refuses it; Tiger's are
+statements in the programs here); the frames' links of a function
+that has none of its own variables escaping still made.
+Checked (`languages/tiger/tests/run.sh`, in make test): fork-tiger's
+14 programs (all of its tests but spawn: arrays, colmajor, exceptions,
+forloop, funcall, hello, merge, qsort, queens, rb, rc4, sieve, wf,
+wff), their inputs and their outputs as fork-tiger's compiler printed
+them, by mini-dotnet, and by Microsoft's dotnet 8.0.32 (`-ms`); Appel's
+49 test programs, each one's error or its exit, recorded
+(`appel.expected`), all of Appel's errors refused but test45's; by
+dune's builds, by mini-ml's on arm64 and on arm (mini-dotnet under
+mini-5i). `languages/dotnet/tests/writer/Hello.ml`: an assembly by
+hand (a static field, a loop, a try with a catch and a finally), read
+back (-S) and run, by mini-dotnet and by Microsoft's dotnet.

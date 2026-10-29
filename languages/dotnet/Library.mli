@@ -72,6 +72,9 @@ type hooks = {
 }
 val hooks : hooks
 
+(* Environment.Exit's: the program stops, with this status *)
+exception Exit of int
+
 (* a number as .NET writes it: an int32's ToString, a double's shortest
  * form that reads back the same (1.5, 1E+20) *)
 val format_double : float -> string

@@ -133,6 +133,67 @@ let property (s : string) : t =
   ignore (number r);
   typ r
 
+(* the writer's side *)
+
+let add_number (b : Buffer.t) (n : int) : unit =
+  if n < 0x80 then Buffer.add_char b (Char.chr n)
+  else if n < 0x4000 then begin
+    Buffer.add_char b (Char.chr (0x80 lor (n lsr 8)));
+    Buffer.add_char b (Char.chr (n land 0xFF))
+  end else begin
+    Buffer.add_char b (Char.chr (0xC0 lor ((n lsr 24) land 0x1F)));
+    Buffer.add_char b (Char.chr ((n lsr 16) land 0xFF));
+    Buffer.add_char b (Char.chr ((n lsr 8) land 0xFF));
+    Buffer.add_char b (Char.chr (n land 0xFF))
+  end
+
+(* a token as TypeDefOrRef: its row, its table in the low 2 bits *)
+let add_token (b : Buffer.t) (tok : int) : unit =
+  let tag = match Metadata.token_table tok with
+    | t when t = Metadata.t_type_def -> 0
+    | t when t = Metadata.t_type_ref -> 1
+    | _ -> 2 in
+  add_number b ((Metadata.token_row tok lsl 2) lor tag)
+
+let rec add_type (b : Buffer.t) (t : t) : unit =
+  let c n = Buffer.add_char b (Char.chr n) in
+  match t with
+  | Void -> c 0x01 | Bool -> c 0x02 | Char -> c 0x03
+  | I1 -> c 0x04 | U1 -> c 0x05 | I2 -> c 0x06 | U2 -> c 0x07
+  | I4 -> c 0x08 | U4 -> c 0x09 | I8 -> c 0x0A | U8 -> c 0x0B
+  | R4 -> c 0x0C | R8 -> c 0x0D | String -> c 0x0E
+  | Ptr t -> c 0x0F; add_type b t
+  | ByRef t -> c 0x10; add_type b t
+  | ValueType tok -> c 0x11; add_token b tok
+  | Class tok -> c 0x12; add_token b tok
+  | Var n -> c 0x13; add_number b n
+  | Array (t, rank) -> c 0x14; add_type b t; add_number b rank; add_number b 0; add_number b 0
+  | GenericInst (g, args) ->
+      c 0x15; add_type b g; add_number b (List.length args); List.iter (add_type b) args
+  | TypedRef -> c 0x16
+  | I -> c 0x18 | U -> c 0x19
+  | FnPtr m -> c 0x1B; add_meth b m
+  | Object -> c 0x1C
+  | SzArray t -> c 0x1D; add_type b t
+  | MVar n -> c 0x1E; add_number b n
+
+and add_meth (b : Buffer.t) (m : meth) : unit =
+  Buffer.add_char b (Char.chr ((if m.has_this then 0x20 else 0) lor (if m.generic > 0 then 0x10 else 0)
+                               lor (if m.vararg then 5 else 0)));
+  if m.generic > 0 then add_number b m.generic;
+  add_number b (List.length m.params);
+  add_type b m.ret;
+  List.iter (add_type b) m.params
+
+let with_buffer (f : Buffer.t -> unit) : string =
+  let b = Buffer.create 16 in f b; Buffer.contents b
+
+let encode_field (t : t) : string = with_buffer (fun b -> Buffer.add_char b '\006'; add_type b t)
+let encode_method (m : meth) : string = with_buffer (fun b -> add_meth b m)
+let encode_locals (l : t list) : string =
+  with_buffer (fun b -> Buffer.add_char b '\007'; add_number b (List.length l); List.iter (add_type b) l)
+let encode_type_spec (t : t) : string = with_buffer (fun b -> add_type b t)
+
 let rec show (name : int -> string) (t : t) : string =
   match t with
   | Void -> "void" | Bool -> "bool" | Char -> "char"

@@ -1,0 +1,85 @@
+let
+type name_num = {
+    num : int,     /* an arbitrary number */
+    name : string  /* an arbitrary name   */
+}
+type listtype = array of name_num
+
+var size := 10
+
+var list :=
+  listtype [ size ]
+  of name_num { num = 0, name = "" }
+
+function initlist() =
+  ( list[0].num  := 10
+  ; list[1].num  := 32
+  ; list[2].num  := -1
+  ; list[3].num  := 567
+  ; list[4].num  := 3
+  ; list[5].num  := 18
+  ; list[6].num  := 1
+  ; list[7].num  := -51
+  ; list[8].num  := 789
+  ; list[9].num  := 49
+  ; list[0].name := "Paul"
+  ; list[1].name := "Stuart"
+  ; list[2].name := "Joao"
+  ; list[3].name := "Kevin"
+  ; list[4].name := "Kim"
+  ; list[5].name := "David"
+  ; list[6].name := "Omri"
+  ; list[7].name := "Kathleeen"
+  ; list[8].name := "Norman"
+  ; list[9].name := "Mike"
+  )
+
+function print_list(s : string) =
+  (print(s); print(" :\n");
+   for i:=0 to (size-1) do (
+     printi(list[i].num);
+     print("\t");
+     print(list[i].name);
+     print("\n")))
+
+function sort(by_name : int) =
+ let
+   function lte(i : int, j : int) : int =
+     if by_name <> 0
+      then list[i].name <= list[j].name
+      else list[i].num  <= list[j].num
+   function gt(i : int, j : int) : int =
+     if by_name <> 0
+      then list[i].name > list[j].name
+      else list[i].num  > list[j].num
+
+   function partition(i : int, j : int) : int =
+    let
+      var k := i
+      function exchange(x : int, y : int) =
+        let var tmp := list[x] in
+          (list[x] := list[y]; list[y] := tmp) end
+      in
+        while i < j do (
+          while lte(i, k) and i < j do i := i + 1;
+          while  gt(j, k) and j >= i do j := j - 1;
+          if i < j then exchange(i, j)
+        );
+        exchange(k, j);
+        j
+      end
+
+   function qsort(lb : int, ub : int) =
+     if lb < ub then
+     let var k := partition(lb, ub) in
+       qsort(lb, k - 1); qsort(k + 1, ub)
+     end
+ in
+   qsort(0, size - 1)
+ end
+
+in
+ initlist();
+ sort(1); print_list("sorted by name");
+ sort(0); print_list("sorted by num")
+end

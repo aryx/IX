@@ -1,0 +1,20 @@
+/* correct declarations */
+let 
+type arrtype1 = array of int
+var arr1 := arrtype1 [10] of 80
+
+in
+  arr1[1] := 71;
+  arr1[3] := 71;
+  arr1[5] := 71;
+  arr1[7] := 71;
+  arr1[9] := 71;
+
+  print("printing array of size: ");
+  printi(sizea(arr1));
+  print("\n");
+
+  for i := 0 to 9 do
+    (print(chr(arr1[i])); print(" "));
+  print("\n")
+end

@@ -1,0 +1,4 @@
+; the writer's test: an assembly made by Writer, written to a file
+(executable
+ (name Hello)
+ (libraries ix_dotnet ix_core caps fpath))

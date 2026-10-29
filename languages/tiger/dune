@@ -1,0 +1,28 @@
+; mini-tiger (docs/plans/plan_dotnet.md, stage 5): Appel's Tiger, with
+; fork-tiger's exceptions, compiled to .NET. Tiger_lexer and
+; Tiger_parser (ocamllex, ocamlyacc), Tiger_ast (the tree), Tiger_semant
+; (names, types, escapes) to Tiger_tree, Tiger_emit (frames as classes,
+; the IL, by languages/dotnet's Writer).
+(ocamllex Tiger_lexer)
+
+(ocamlyacc Tiger_parser)
+
+(library
+ (name ix_tiger)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_dotnet ix_core))
+
+; the command
+(library
+ (name ix_tiger_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_tiger ix_dotnet ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-tiger)
+ (package ix)
+ (modules Main)
+ (libraries ix_tiger_cli ix_core caps))

@@ -111,6 +111,14 @@ val index : instr array -> int -> int
  * (its bytes, 1 or 2, as a number: 0xFE01 for ceq, its name) *)
 val opcodes : (int * string) list
 
+(* an instruction's tokens, renumbered (the writer's, once its rows
+ * are laid out) *)
+val map_tokens : (int -> int) -> op -> op
+
+(* what an instruction takes from the stack and leaves on it; a call's,
+ * a ret's from the signature given *)
+val stack_effect : (int -> int * bool) -> bool -> op -> int * int
+
 (* an instruction's bytes, its branches' targets as offsets: the
  * shortest form (ldarg.0, ldc.i4.s); a branch in its long form, as the
  * writer cannot know the distance before it has laid the code out *)

@@ -1,0 +1,33 @@
+# mini-tiger, built by ix's tools: its lexer by mini-lex, its grammar by
+# mini-yacc, and the units of languages/dotnet that write an assembly
+# (Writer, with what it stands on), by their names
+TOP=../..
+DIR=languages/tiger
+PROG=mini-tiger
+N=../dotnet
+SRC=Metadata Signature Il Writer Tiger_ast Tiger_parser Tiger_lexer Tiger_tree Tiger_semant Tiger_emit CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll ../dotnet/Metadata.ml* ../dotnet/Signature.ml* ../dotnet/Il.ml* ../dotnet/Writer.ml*}
+LIBI=-I ../dotnet
+LIBUNITS=
+<$TOP/mkfiles/mkconfig
+GEN=$B/languages/tiger/Tiger_parser.ml $B/languages/tiger/Tiger_lexer.ml
+LIBOBJS=
+<$TOP/mkfiles/mkprog
+
+$D/Tiger_parser.$O: $D/Tiger_parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Tiger_parser.ml
+$D/Tiger_lexer.$O: $D/Tiger_lexer.ml $D/Tiger_parser.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Tiger_lexer.ml
+# languages/dotnet's units, by their names
+$D/Metadata.$O: $N/Metadata.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Metadata.ml
+$D/Signature.$O: $N/Signature.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Signature.ml
+$D/Il.$O: $N/Il.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Il.ml
+$D/Writer.$O: $N/Writer.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Writer.ml

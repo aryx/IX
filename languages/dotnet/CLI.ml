@@ -24,6 +24,8 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
     if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Machine.steps) in
   match Machine.run_main im argv with
   | n -> finish (); n
+  | exception Library.Exit n -> finish (); n
+  | exception Machine.Stack_overflow -> finish (); Console.eprint caps "Stack overflow.\n"; 134
   | exception Machine.Unhandled (cls, msg) ->
       finish ();
       Console.eprint caps (Printf.sprintf "Unhandled exception. %s: %s\n" cls msg);

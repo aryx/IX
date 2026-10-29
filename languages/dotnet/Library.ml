@@ -261,7 +261,9 @@ let primitives = [
   primitive double double [];
   primitive "System.Single" "System.Single" [];
   primitive bool bool [];
-  primitive char char [];
+  primitive char char [
+    stat "ToString" [char] string (fun a -> Str (format_char (to_int a.(0))));
+  ];
   primitive "System.Byte" "System.Byte" [];
   primitive "System.SByte" "System.SByte" [];
   primitive "System.Int16" "System.Int16" [];
@@ -276,6 +278,22 @@ let primitives = [
     inst "get_Length" [] int (fun a -> let st, _, _ = view a.(0) in i4 st.len);
   ];
 ]
+
+(* Environment.Exit: the program stops there, its status said *)
+exception Exit of int
+
+let encoding =
+  spec d "System.Text.Encoding" [
+    stat "get_Latin1" [] "System.Text.Encoding" (fun _ ->
+        let st = make_store (hooks.instance "System.Text.Encoding" [||]) 0 in
+        st.native <- N_message "Latin1";
+        Obj st);
+  ]
+
+let environment =
+  spec d "System.Environment" [
+    stat "Exit" [int] void (fun a -> raise (Exit (to_int a.(0))));
+  ]
 
 let concat (l : value list) : value =
   Str (String.concat "" (List.map (fun v -> match v with Str s -> s | v -> hooks.to_string v) l))
@@ -318,6 +336,7 @@ let string_ =
     virt "GetHashCode" [] int (fun a -> i4 (Hashtbl.hash (to_str a.(0))));
     inst "CompareTo" [string] int (fun a -> i4 (compare (to_str a.(0)) (to_str a.(1))));
     stat "Compare" [string; string] int (fun a -> i4 (compare (to_str a.(0)) (to_str a.(1))));
+    stat "CompareOrdinal" [string; string] int (fun a -> i4 (compare (to_str a.(0)) (to_str a.(1))));
     stat "op_Equality" [string; string] bool (fun a ->
         bool_v (match a.(0), a.(1) with Str x, Str y -> x = y | Null, Null -> true | _ -> false));
     stat "op_Inequality" [string; string] bool (fun a ->
@@ -344,7 +363,11 @@ let utf8 (s : string) : string =
     Buffer.contents b
   end
 
-let write (s : string) : unit = hooks.out (utf8 s)
+(* Console.OutputEncoding = Encoding.Latin1: a character a byte, as
+ * mini-tiger's programs ask *)
+let latin1 = ref false
+
+let write (s : string) : unit = hooks.out (if !latin1 then s else utf8 s)
 
 let console =
   let both name typ =
@@ -357,6 +380,13 @@ let console =
       stat "Write" [obj] void (fun a -> write (hooks.to_string a.(0)); Null);
       stat "WriteLine" [obj] void (fun a -> write (hooks.to_string a.(0) ^ "\n"); Null);
       stat "Read" [] int (fun _ -> i4 (hooks.read ()));
+      (* (the input is read a byte at a time whatever the encoding) *)
+      stat "set_InputEncoding" ["System.Text.Encoding"] void (fun _ -> Null);
+      stat "set_OutputEncoding" ["System.Text.Encoding"] void (fun a ->
+          latin1 := (match a.(0) with
+              | Obj st -> (match st.native with N_message "Latin1" -> true | _ -> false)
+              | _ -> false);
+          Null);
       stat "ReadLine" [] string (fun _ ->
           let b = Buffer.create 80 in
           let rec go () = match hooks.read () with
@@ -649,7 +679,7 @@ let delegates = [
 let specs : (string, spec) Hashtbl.t =
   let h = Hashtbl.create 64 in
   List.iter (fun s -> Hashtbl.replace h s.sname s)
-    ([ object_; string_; console; string_builder; interpolation; list;
+    ([ object_; string_; console; environment; encoding; string_builder; interpolation; list;
        list_enumerator; dictionary ]
      @ primitives @ exceptions @ reflection @ delegates);
   h

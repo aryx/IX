@@ -1,0 +1,101 @@
+/* colmajor.c -- generate indices in column major order */
+
+let
+
+  var asize := 0		/* total number of elements */
+  var row := 0		/* next row and column */
+  var column := 0
+  var rows := 0		/* number of rows and columns */
+  var columns := 0
+  var slop := 0		/* number of elements on the last row */
+				/*    (zero if columns divides asize) */
+
+  function mod(n : int, m : int) : int = n - m * (n / m)
+
+  function cmfirst(sz : int, cls : int) : int = (
+    asize := sz;
+    columns := cls;
+    rows := asize / columns;	/* number of first incomplete row */
+    slop := mod(asize, columns);	/* number of columns in that row */
+    row := 0;
+    column := 0;
+    0
+  )
+
+  function cmnext () : int = (
+    column := column + 1;
+    if column >= columns then (
+	column := 0; row := row + 1
+    );
+    let var i :=
+        row + column*rows + (if column > slop then slop else column)
+    in
+/*	printf ("row = %d; rows = %d; column = %d; slop = %d.\n",
+		row, rows, column, slop);
+*/
+      if row >= rows & column >= slop then -1 else i
+    end
+  )
+
+/* list up to 1024 items in column major form, from stdin */
+
+  type stringlist = array of string
+  var MAX := 1024
+  var lines := stringlist[MAX] of ""
+  var nextline := 0 
+
+  function getline() : string = /* get a line, return it (without \n) */
+    let var c := getchar()
+        var s := ""
+    in  while c <> "" & c <> "\n" do (
+          s := concat(s, c);
+          c := getchar()
+        );
+        s
+    end
+
+  var linesize := 80
+
+  var p := ""   /* a string read in */
+
+  var max := 0  /* length of longest line */
+
+
+  function print_width(n : int, s : string) = (
+    print(s);
+    for i := size(s) to n do print(" ")
+  )
+
+in  
+  /*
+    if (argc == 2)
+        linesize = atoi(argv[1]);
+   */
+
+  p := getline();
+  while size(p) > 0 do
+    let var n := size(p)
+    in  if max < n then max := n;
+        if nextline >= MAX then (
+          print("too many items\n");
+          exit(1)
+        );
+        lines[nextline] := p;
+        nextline := nextline + 1;
+        p := getline()
+    end;
+
+    let var count := linesize / (max + 2)
+        var cols  := count
+        var width := max+2
+        var n := cmfirst(nextline, cols)
+    in  while n >= 0 do (
+          print_width(width, lines[n]);
+          count := count - 1;
+          if count = 0 then (print("\n"); count := cols);
+          n := cmnext()
+        );
+        if count <> cols then print("\n")
+    end
+end
+

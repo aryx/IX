@@ -1,0 +1,93 @@
+/*
+ * RC4 Encryption and decryption for tiger
+ *
+ * The encryption key is hardcoded into the program.
+ *
+ * Try me:
+ *  rc4.exe < plaintext > cyphertext
+ *  rc4.exe < cyphertext > plaintext
+ */
+
+let
+
+type int_array = array of int
+var sbox := int_array [256] of 0
+
+/* add two 8-bit numbers modulo 256 */
+function add_mod_256(x : int, y : int) : int =
+  let var z := x + y in
+    if z >= 256 then z - 256 else z
+  end
+
+/* XOR of two 8-bit integers */
+function xor(x : int, y : int) : int =
+  let
+    var ans := 0
+    function compute_bit(bit_value : int) : int =
+      if x >= bit_value and y >= bit_value then
+        (x := x - bit_value; y := y - bit_value; 0)
+      else if x >= bit_value and y < bit_value then
+        (x := x - bit_value; bit_value)
+      else if x < bit_value and y >= bit_value then
+        (y := y - bit_value; bit_value)
+      else 0
+  in
+    ans := ans + compute_bit(128);
+    ans := ans + compute_bit(64);
+    ans := ans + compute_bit(32);
+    ans := ans + compute_bit(16);
+    ans := ans + compute_bit(8);
+    ans := ans + compute_bit(4);
+    ans := ans + compute_bit(2);
+    ans := ans + compute_bit(1);
+    ans
+  end
+
+/* initialize the s-box with our key */
+function init_sbox() =
+  for i := 0 to 255 do
+    sbox[i] := add_mod_256(i, add_mod_256(i, 31))
+
+function cypher() : string =
+  let var i := 0
+      var j := 0
+      var s := ""
+      var ch := ""
+      function swap(i : int, j : int) =
+        let var tmp := sbox[i] in
+          sbox[i] := sbox[j]; sbox[j] := tmp end
+      function encrypt(ch : int) : int =
+        let var t := 0
+            var k := 0
+        in
+          i := add_mod_256(i, 1);
+          j := add_mod_256(j, sbox[i]);
+          swap(i, j);
+          t := add_mod_256(sbox[i], sbox[j]);
+          k := sbox[t];
+          xor(k, ch)
+        end
+  in
+    ch := getchar();
+    while ch <> ""do (
+      s  := concat(s, chr(encrypt(ord(ch))));
+      ch := getchar()
+    );
+    s
+  end
+
+in
+/*
+ print_int(add_mod_256(10, 100)); print("\n");
+ print_int(add_mod_256(200, 100)); print("\n");
+ print_int(add_mod_256(255, 1)); print("\n");
+
+ print_int(xor(1, 1)); print("\n");
+ print_int(xor(2, 1)); print("\n");
+ print_int(xor(4, 3)); print("\n");
+ print_int(xor(255, 7)); print("\n");
+*/
+
+ init_sbox();
+ print(cypher())
+end

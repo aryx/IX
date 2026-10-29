@@ -99,6 +99,11 @@ let rec expr (e : Scope.expr) : Scope.expr =
   let fields fs = List.map (fun (l, x) -> l, expr x) fs in
   match e.e with
   | Evar (Global g) -> (match Hashtbl.find_opt constants g.gsym with Some c -> make e c | None -> e)
+  (* a literal wrapped too, as the target reads it (the runtime's
+   * int_of_string, its low bits): 0xffffffff is -1 on arm, so a summary
+   * by mini-ml on Linux is the card's (old: kept whole, Chacha20's mask
+   * another .inline on the card, self-mix) *)
+  | Econst (Int n) -> (match wrap (Int64.of_int n) with Some m when m <> n -> int e m | _ -> e)
   | Evar _ | Econst _ -> e
   | Eapply (f, es) -> apply e (expr f) (List.map expr es)
   | Eif (c, a, b) -> (

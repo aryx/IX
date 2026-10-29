@@ -841,8 +841,9 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | The collector's scan in assembly (scan_arm.s, scan_arm64.s; gc.c's struct Scan; tests/runtime/scan.ml); mini-ml compiling 0.853 | +297 (runtime) | +6 (lib_core's mkfile) | a registerizer in mini-cc, for gc.c's C as it is |
 | 2026-10-29 | mini-cc -simple -O: arm's variables in the stack's registers above a function's deepest stack (regs), a division by a power of 2 a shift (imm); the runtime by it 0.972 of HEAD with gc.c's C scan (1.058 before); plan_cc_ssa.md | +46 (mini-cc) | | languages/c/ssa/, plan_cc_ssa.md |
 | 2026-10-28 | lib_crypto's Sha1 in Int32: an int is 31 bits on arm, its hashes were wrong there and its .inline the card's another (self-mix) | +9 | | |
+| 2026-10-29 | Fold wraps a literal to the target's bits, as the card reads it (Chacha20's mask, 0xffffffff, -1 on arm): the summaries by the host the card's | +1 | | |
 
-Since `92c9b4e`: +770 in ix (edits +140, new files +630) and +133 in
+Since `92c9b4e`: +771 in ix (edits +141, new files +630) and +133 in
 mini-ml, against ~440 lines mini-ml won't need; and goal 1 reached. `Set_` is also a piece of the
 stdlib mini-ml needs to compile ix (decision 9: OCaml's `Set` is a
 functor).

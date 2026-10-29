@@ -75,19 +75,41 @@ let take (t : t) : string option =
       Some (if n > 0 && line.[n - 1] = '\r' then String.sub line 0 (n - 1)
             else line)
 
+
+(* more of what comes, waited for until [deadline]; false when there is
+ * no more *)
+let more (t : t) (deadline : float) : bool =
+  let rec go () =
+    if t.ended then false
+    else
+      match t.way.arrived () with
+      | None -> t.ended <- true; false
+      | Some "" ->
+          let left = deadline -. Unix.gettimeofday () in
+          if left <= 0. then false else begin t.way.wait left; go () end
+      | Some data -> t.pending <- t.pending ^ data; true
+  in
+  go ()
+
+let bytes (t : t) (n : int) : string option =
+  let deadline = Unix.gettimeofday () +. Tcp.timeout in
+  let rec go () =
+    if String.length t.pending >= n then begin
+      let b = String.sub t.pending 0 n in
+      t.pending <- String.sub t.pending n (String.length t.pending - n);
+      Some b
+    end
+    else if more t deadline then go ()
+    else None
+  in
+  go ()
+
 let line (t : t) : string option =
   let deadline = Unix.gettimeofday () +. Tcp.timeout in
   let rec go () =
     match take t with
     | Some l -> Some l
-    | None when t.ended -> None
-    | None -> (
-        match t.way.arrived () with
-        | None -> t.ended <- true; None
-        | Some "" ->
-            let left = deadline -. Unix.gettimeofday () in
-            if left <= 0. then None else begin t.way.wait left; go () end
-        | Some data -> t.pending <- t.pending ^ data; go ())
+    | None -> if more t deadline then go () else None
   in
   go ()
 

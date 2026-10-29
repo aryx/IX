@@ -5,10 +5,11 @@
 ;          message, RFC 5322), Mime (its parts, its encodings, its
 ;          charsets), Mail_thread (conversations, Zawinski's), the
 ;          author's playground's libs/networking/mail; its protocols,
-;          Smtp (the client) and Smtp_server (the server's machine),
-;          pure, and Lines, which carries them over TCP or TLS
-; Pim.ml, the program from a terminal (mini-pim send); Maild.ml,
-; mini-maild, the server its tests send to
+;          Smtp and Imap (the clients), Smtp_server and Imap_server
+;          (the servers' machines), and Lines, which carries them over
+;          TCP or TLS
+; Pim.ml, the program from a terminal (mini-pim send, list, read,
+; archive); Maild.ml, mini-maild, the server its tests talk to
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
 (include_subdirs unqualified)

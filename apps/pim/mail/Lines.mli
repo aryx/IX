@@ -5,7 +5,8 @@
    machines are pure (Smtp.step: a line of the server's in, the lines
    to send back out). What is left is the socket: the bytes that come
    cut into lines, whatever pieces they came in, and the lines sent
-   with their CR LF. Over TLS (Tls_client) for Gmail, whose ports
+   with their CR LF; and for IMAP's literals, a count of bytes read as
+   they are. Over TLS (Tls_client) for Gmail, whose ports
    speak TLS from the first byte (465 for SMTP, 993 for IMAP: "implicit
    TLS", RFC 8314); over plain TCP for mini-maild, on this machine.
 
@@ -50,6 +51,10 @@ val send_line : t -> string -> unit
 (* the next line, its CR LF taken off; None when the other side has
  * closed or said nothing for Tcp.timeout seconds *)
 val line : t -> string option
+
+(* [bytes t n]: the next [n] bytes, as they are (an IMAP literal: a
+ * message inside a line, "{1234}" then that many bytes) *)
+val bytes : t -> int -> string option
 
 (* [talk conn step machine finished]: each line that comes given to
  * [step], what it answers sent, until [finished machine] or the

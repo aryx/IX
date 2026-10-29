@@ -8,4 +8,4 @@
 let () =
   Testo.interpret_argv ~project_name:"pim" (fun _env ->
       Unit_mail.tests @ Unit_mime.tests @ Unit_mail_thread.tests
-      @ Unit_smtp.tests @ Unit_smtp_server.tests)
+      @ Unit_smtp.tests @ Unit_smtp_server.tests @ Unit_imap.tests)

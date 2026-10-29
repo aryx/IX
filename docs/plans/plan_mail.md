@@ -8,8 +8,8 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: stages 1 and 2 built (the formats; sending, and mini-maild's
-SMTP; `apps/pim/`).** Mail is the first part of the suite
+**Status: stages 1 to 3 built (the formats; sending and reading, and
+mini-maild; `apps/pim/`).** Mail is the first part of the suite
 [`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
@@ -235,3 +235,22 @@ Unit_smtp, Unit_smtp_server (the two machines against each other,
 delivered to two users, one in Bcc:, the relay refused), in `make test`.
 Not tried: TLS, which is Gmail's only (stage 6, by hand). Next: stage
 3, IMAP.
+
+2026-10-29: stage 3, IMAP: `Imap`, the responses read (atoms, quoted
+strings, NIL, lists, literals: `Lines.bytes`) and the client (LOGIN,
+SELECT, UID SEARCH, UID FETCH, UID STORE, LOGOUT); `Imap_server`,
+mini-maild's side, Gmail's extensions included (X-GM-LABELS,
+X-GM-THRID by Mail_thread, X-GM-RAW's words), INBOX the messages
+labelled \Inbox and `[Gmail]/All Mail` all; mini-maild on two ports,
+the flags and labels kept in the process. Changed from the plan above:
+the headers fetched as `BODY.PEEK[HEADER.FIELDS (...)]`, read by
+`Mail.parse`, not ENVELOPE (a structure of its own, without
+References:, which Mail_thread needs where Gmail's X-GM-THRID is not);
+no IDLE nor MOVE yet (archive is `-X-GM-LABELS (\Inbox)`); the
+summaries ask Gmail's items always, so a server without X-GM-EXT-1 is
+not read. `mini-pim list`, `read`, `archive`; `tests/session.sh`
+(sent.sh grown: three messages, two a conversation, one Windows-1252, listed,
+read, searched, archived) and Unit_imap (a FETCH with its literal, the
+client against Imap_server over a socketpair) in `make test`. Not
+tried: Gmail (stage 6, by hand: `echo <app password> | mini-pim -u
+you@gmail.com list`). Next: stage 4, the cache and the items.

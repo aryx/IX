@@ -13,7 +13,8 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun, mail's stages 1 and 2 (its formats, sending).**
+**Status: begun, mail's stages 1 to 3 (its formats, sending,
+reading).**
 Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
@@ -366,3 +367,6 @@ plan_mail.md's stage 1.
 
 2026-10-29: mail's stage 2: `mini-pim send`, the terminal's first
 command, and mini-maild, the server its tests send to.
+
+2026-10-29: mail's stage 3: `mini-pim list`, `read`, `archive`, by
+IMAP; a line a conversation.

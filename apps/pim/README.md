@@ -5,18 +5,24 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 and 2: the mail's formats, and
-sending by SMTP, to Gmail or to mini-maild on this machine. Their
-tests: `tests/`, the unit tests (dune's) and `sent.sh`, a message sent
-from mini-pim to mini-maild (`make test`'s "mini-pim").
+So far, plan_mail.md's stages 1 to 3: the mail's formats, sending by
+SMTP and reading by IMAP, with Gmail or with mini-maild on this
+machine. Their tests: `tests/`, the unit tests (dune's) and
+`session.sh`, mini-pim against mini-maild (`make test`'s "mini-pim").
 
-    bin/mini-pim send [-s host:port] [-plain] [-u user] file
-                      the message in a file sent, by default to Gmail
-                      (smtp.gmail.com:465, TLS), the app password the
-                      first line of standard input
-    bin/mini-maild [-p port] [-d domain] spool
-                      mail for its domain taken by SMTP, on 127.0.0.1,
-                      a file a message: spool/<user>/<n>
+    bin/mini-pim [-s host:port] [-plain] [-u user] command
+        send file      the message in a file sent
+        list [-n 20] [-q search] [-m mailbox]
+                       the newest conversations, a line each
+        read uid       a message, marked read
+        archive uid... out of the Inbox
+                       by default with Gmail (smtp.gmail.com:465,
+                       imap.gmail.com:993, TLS), the app password the
+                       first line of standard input
+    bin/mini-maild [-p port] [-i port] [-d domain] spool
+                       mail for its domain taken by SMTP and read by
+                       IMAP, on 127.0.0.1, a file a message:
+                       spool/<user>/<uid>
 
     mail/Mail          a message (RFC 5322): fields, folding,
                        addresses, dates, Message-IDs
@@ -25,6 +31,9 @@ from mini-pim to mini-maild (`make test`'s "mini-pim").
     mail/Mail_thread   conversations, by Zawinski's threading
     mail/Smtp          sending (RFC 5321): the client, a pure machine
     mail/Smtp_server   the server's machine, mini-maild's
+    mail/Imap          reading (RFC 3501, Gmail's extensions): its
+                       responses read, literals and all; the client
+    mail/Imap_server   the server's machine, mini-maild's
     mail/Lines         a connection of lines, over TCP or TLS, that
                        drives those machines
 
@@ -61,9 +70,10 @@ lines) its SMTP half, `Smtp_server` (99), with neither its sockets
 
 ## What is ix's own
 
-The charsets' tables in `Mime` and their test; `Lines` (the
+The charsets' tables in `Mime` and their test; `Imap` and
+`Imap_server` (the playground had POP3 only); `Lines` (the
 playground's `Transport` was its kind, over its own TLS and
 WebSocket); the two programs, `Pim.ml` and `Maild.ml` (after the
-playground's tiny_maild, a file a message instead of an mbox, one
-client at a time as mini-httpd); `Unit_smtp_server`, `sent.sh`,
-`Test.ml`.
+playground's tiny_maild, a file a message instead of an mbox, IMAP for
+its POP3, one client at a time as mini-httpd); `Unit_smtp_server`,
+`Unit_imap`, `session.sh`, `Test.ml`.

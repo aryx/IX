@@ -260,7 +260,7 @@ job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
-job "mini-pim: unit tests, a message sent by SMTP to mini-maild" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/sent.sh'
+job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
 job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
 job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe

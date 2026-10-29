@@ -27,7 +27,8 @@
 # two programs in editors/ (drscheme, turbopascal) and
 # examples/, tiny/TinyKernel/steps/ (t-ix's own exception: tiny/tiny-os/
 # before 2026-10-13), and the sdl/ and
-# tty/ directories, a program's hosts on Linux. (apps/ is counted: mini-office and what it stands on.)
+# tty/ directories, a program's hosts on Linux; apps/, games/ and tiny/'s
+# apps and games (2026-10-29: the user's programs, not the system).
 #
 # The header comment of an .ml or an .mli (its first comment, after
 # the two lines of the author and the copyright when it has them) is
@@ -291,7 +292,7 @@ def tagged(text):
 GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
               "raspberry", "kernels", "builder", "shell", "editors",
-              "database", "version_control", "utilities", "windows", "apps", "networking", "browsers",
+              "database", "version_control", "utilities", "windows", "networking", "browsers",
               "typesetting",
               # (the author, 2026-10-29: "let's count this new debuggers/
               # as well as profilers/ in make loc as part of the budget
@@ -379,6 +380,7 @@ LINES = [("hosts", ["sdl/", "tty/", "web/"]),
                        "lib_graphics/c/"]),
          ("tiny/", ["tiny/TinyKernel/steps/", "tiny-kernel's sh.c, mltests.c",
                     "tiny/TinyEditorLine.ml"]),
+         ("apps, games", ["apps/", "games/", "tiny/'s apps and games"]),
          ("kernels/", None), ("languages/", None)]
 # an entry in a group its name does not start with, and how it is said
 GROUP_OF = {"the reference kernels": "kernels/",
@@ -432,6 +434,11 @@ APART = [
      lambda dirs, path: path.startswith(("languages/prolog/", "languages/datalog/"))),
     ("languages/forth/", "mini-forth, written here for its machine (threaded code): the same",
      lambda dirs, path: path.startswith("languages/forth/")),
+    # (the author, 2026-10-29: "let's not count languages/dotnet/ in
+    # make loc [...] only c/ and ml/ are counted really in the budget";
+    # mini-tiger, its compiler, with it)
+    ("languages/dotnet/, tiger/", "mini-dotnet, its compilers mini-tiger and mini-csc (plan_dotnet.md): the same",
+     lambda dirs, path: path.startswith(("languages/dotnet/", "languages/tiger/"))),
     # (the author, 2026-10-08: "let's not cound drscheme and turbopascal
     # as part of make loc"; the second when it is there)
     ("editors/drscheme/, turbopascal/", "mini-drscheme and TinyTurboPascal, the playground's two programs of those languages: the same",
@@ -441,6 +448,19 @@ APART = [
     # part of make loc"; then, 2026-10-09, mini-office there: "let's
     # actually count apps/ now in make loc; an Office is also pretty
     # fundamental in an OS for a user": apps/ is mini's, examples/ apart)
+    # (the author, 2026-10-29: "maybe let's not count apps/ and games/
+    # either in the budget (and in the top listing)", then "and same for
+    # tiny/ maybe, skip the apps and games in the listing and budget":
+    # tiny/'s are apps/'s twins, the office, the player, the 7GUIs' two
+    # and Tetris; and "so we match better what we do in principia
+    # softwarica and not count apps and games (including office, music
+    # stuff)")
+    ("apps/", "mini-office, mini-pim, mini-music, mini-page...: the user's programs, not the system",
+     lambda dirs, path: path.startswith("apps/")),
+    ("games/", "the playground's games and their engines",
+     lambda dirs, path: path.startswith("games/")),
+    ("tiny/'s apps and games", "TinyOffice, TinyPlay, TinyAppCalculator, TinyAppTemperature, TinyAppTetris: apps/'s twins",
+     lambda dirs, path: path.startswith(("tiny/TinyOffice", "tiny/TinyPlay.", "tiny/TinyApp"))),
     ("examples/", "the playground's examples: the 7GUIs, two worlds (plan_gui.md)",
      lambda dirs, path: path.startswith("examples/")),
     # (the author, 2026-10-09, of t-ix's 17,880 lines, 5,302 of them

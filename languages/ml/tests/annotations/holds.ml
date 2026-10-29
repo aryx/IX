@@ -4,7 +4,8 @@
  * turns, two functions calling each other, a local loop over a list;
  * loops over an array of ints, of floats, over a string's bytes, one
  * calling another [@@zero_alloc] and raising, and both annotations on
- * one function; [@inline] on a small function and a bigger one. *)
+ * one function; [@inline] on a small function and a bigger one; a
+ * float sum kept a double ([@@unboxed_float]). *)
 let rec sum i acc = if i = 0 then acc else sum (i - 1) (acc + i) [@@tailrec]
 
 let rec even n = if n = 0 then true else (odd [@tailcall]) (n - 1)
@@ -47,6 +48,13 @@ let mix (a : int) b =
   let y = (x lxor (x lsr 7)) * 17 in
   (y lxor (y lsl 3)) land 0xffff [@@inline]
 
+(* [@@unboxed_float]: the sum a double in a register around the loop,
+ * left as an int *)
+let mean (a : float array) =
+  let s = ref 0.0 [@@unboxed_float] in
+  for i = 0 to Array.length a - 1 do s := !s +. a.(i) done;
+  int_of_float (!s /. float_of_int (Array.length a))
+
 let () =
   Printf.printf "%d\n" (sum 1000000 0);
   Printf.printf "%b %b\n" (even 100000) (odd 7);
@@ -54,4 +62,5 @@ let () =
   Printf.printf "%d %d\n" (sum_array [| 1; 2; 3 |]) (floor_mean [| 1.5; 2.5; 4.0 |]);
   Printf.printf "%d %b\n" (first_digit "ab7c")
     (try ignore (first_digit "abc"); false with Not_found -> true);
-  Printf.printf "%d %d\n" (twice 21) (mix 3 4)
+  Printf.printf "%d %d\n" (twice 21) (mix 3 4);
+  Printf.printf "%d\n" (mean [| 1.5; 2.5; 5.0 |])

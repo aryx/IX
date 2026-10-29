@@ -134,6 +134,10 @@ val calls_whole : bool ref
 (* the code's labels of the functions marked [@@zero_alloc]
  * (Annotations.zero_allocs), each with its name, for ssa's Zero_alloc *)
 val zero_allocs : (string, string) Hashtbl.t
+(* the floats marked [@@unboxed_float] (Annotations.unboxed_floats): by
+ * their function's code label and their slot, their name and line, for
+ * ssa's Unbox.check *)
+val unboxed_floats : (string * int, string * int) Hashtbl.t
 (* a known function whose body is this many nodes or fewer: its calls
  * with all its arguments are its body, in its unit (0: none; -O3's) *)
 val inline_most : int ref

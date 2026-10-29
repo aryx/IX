@@ -3,9 +3,10 @@
  * program refused when its code is not what they say. The parser
  * records what each marks, by the span of the expression; the pass
  * that decides it checks it (Lower for the tail calls and [@inline],
- * ssa's Zero_alloc for [@@zero_alloc]). OCaml 4.14 ignores [@@tailrec]
- * and [@@zero_alloc], attributes it does not know, reads [@inline] as
- * its own (a request to ocamlopt, not checked), and reads
+ * ssa's Zero_alloc for [@@zero_alloc], Unbox for [@@unboxed_float]).
+ * OCaml 4.14 ignores [@@tailrec], [@@zero_alloc] and [@@unboxed_float],
+ * attributes it does not know, reads [@inline] as its own (a request
+ * to ocamlopt, not checked), and reads
  * [@tailcall] as its own, on the function of an application,
  * (f [@tailcall]) x (warning 51 if the call is not a tail call; on f
  * x [@tailcall] it is misplaced, warning 53): the same meaning.
@@ -40,7 +41,17 @@ val zero_allocs : (Ast.span, unit) Hashtbl.t
 
 (* the functions marked [@inline], OCaml's way (let[@inline] f x =
  * ..., or [@@inline] after the binding): each inlined where it is
- * called with all its arguments, by -O3's measure (Lower.inline_most):
- * Lower refuses one too big, recursive, or holding a function or a
- * handler; by the span of the function *)
+ * called with all its arguments, whatever its size (not -O3's bound,
+ * Lower.inline_most); Lower refuses one recursive, or holding a
+ * function, a handler or an assertion; by the span of the function.
+ * old: one over the bound refused too *)
 val inlines : (Ast.span, unit) Hashtbl.t
+
+(* the floats marked [@@unboxed_float] (let x = e [@@unboxed_float], or
+ * let r = ref e [@@unboxed_float]: its contents), a function's local:
+ * a double in a register or a slot of its own, never a block, by
+ * -O3's Unbox, which refuses it otherwise with what boxes it (passed,
+ * stored, returned) or makes it a block. Not OCaml's [@@unboxed], a
+ * type's, which ix's code uses (type reg = R of int [@@unboxed]); by
+ * the span of the bound expression *)
+val unboxed_floats : (Ast.span, unit) Hashtbl.t

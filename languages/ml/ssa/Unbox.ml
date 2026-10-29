@@ -188,3 +188,44 @@ let func (fn : func) : func =
     if Array.length fn.blocks > 0 then fn.blocks.(0).body <- lits @ fn.blocks.(0).body;
     fn
   end
+
+(* [@@unboxed_float] checked: the marked variable's values (Ssa.slots,
+ * Lower.unboxed_floats), none boxed, each phi a double (its value
+ * around a loop), none a call's result (a block). A value it is first
+ * given that is only read (a float literal, a parameter, a field) is
+ * unboxed once, a load, and allowed. *)
+let check (fn : func) =
+  Hashtbl.iter (fun (lab, slot) (name, line) ->
+    if lab = fn.name then begin
+      let refuse what = failwith (Printf.sprintf "line %d: %s [@@unboxed_float]: %s" line name what) in
+      if Array.exists (fun (b : block) -> match b.term with Try _ -> true | _ -> false) fn.blocks then
+        refuse "its function has a handler (try): its values in memory, its floats blocks";
+      if not !on then refuse "floats boxed (-boxed-floats)";
+      let placed = Hashtbl.create 64 in
+      Array.iter (fun (b : block) -> List.iter (fun v -> Hashtbl.replace placed v ()) (b.phis @ b.body)) fn.blocks;
+      let mine = List.filter (Hashtbl.mem placed) (Hashtbl.find_all fn.slots slot) in
+      List.iter (fun v ->
+        match Hashtbl.find fn.defs v with
+        | Phi _ when not (Hashtbl.mem fn.doubles v) ->
+            refuse "it is a block around a loop: every value it is given is one (a call's result, a field)"
+        | Call _ | CallC _ -> refuse "it is a function's result, a block"
+        | _ -> ()) mine;
+      (* where a box of one goes *)
+      let boxes = Hashtbl.create 8 in
+      Hashtbl.iter (fun w () -> match Hashtbl.find fn.defs w with Box v when List.mem v mine -> Hashtbl.replace boxes w () | _ -> ()) placed;
+      let boxed vs = List.exists (Hashtbl.mem boxes) vs in
+      Array.iter (fun (b : block) ->
+        List.iter (fun v ->
+          match Hashtbl.find fn.defs v with
+          | (Call (_, vs) | CallC (_, vs)) when boxed vs -> refuse "it is boxed: passed to a function"
+          | (Alloc _ | SetField _ | SetIndex _ | SetG _) as i when boxed (Ssa_build.operands i) ->
+              refuse "it is boxed: stored in a block or a global"
+          | Op (Ir.Poly _, vs) when boxed vs -> refuse "it is boxed: compared by compare (give the type)"
+          | i when boxed (Ssa_build.operands i) -> refuse "it is boxed: an operand of what reads no double (-., abs_float)"
+          | _ -> ()) b.body;
+        match b.term with
+        | Ret v when Hashtbl.mem boxes v -> refuse "it is boxed: returned"
+        | Tail (_, vs) when boxed vs -> refuse "it is boxed: passed to a function"
+        | Raise v when Hashtbl.mem boxes v -> refuse "it is boxed: raised"
+        | _ -> ()) fn.blocks
+    end) Lower.unboxed_floats

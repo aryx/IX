@@ -85,9 +85,11 @@ rule token = parse
   | "[@@" [' ' '\t']* "class" [' ' '\t']* "]" { CLASS } | "[@@" [' ' '\t']* "instance" [' ' '\t']* "]" { INSTANCE }
   (* the checked annotations (Annotations.mli): a call's [@tailcall], a
    * recursive function's [@@tailrec], a function's [@@zero_alloc], its
-   * [@inline] (OCaml's place, let[@inline] f, or [@@inline] after it) *)
+   * [@inline] (OCaml's place, let[@inline] f, or [@@inline] after it), a
+   * float's [@@unboxed_float] *)
   | "let" [' ' '\t']* "[@" [' ' '\t']* "inline" [' ' '\t']* "]" { LETINLINE }
   | "[@@" [' ' '\t']* "inline" [' ' '\t']* "]" { INLINE }
+  | "[@@" [' ' '\t']* "unboxed_float" [' ' '\t']* "]" { UNBOXED_FLOAT }
   | "[@" [' ' '\t']* "tailcall" [' ' '\t']* "]" { TAILCALL }
   | "[@@" [' ' '\t']* "tailrec" [' ' '\t']* "]" { TAILREC }
   | "[@@" [' ' '\t']* "zero_alloc" [' ' '\t']* "]" { ZERO_ALLOC }

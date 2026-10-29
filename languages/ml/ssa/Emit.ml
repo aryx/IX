@@ -1248,5 +1248,6 @@ let unit_ (arch : Asm.arch) (u : L.unit_) =
     let fn = ssa arch lf in
     Ssa_build.check fn;
     Zero_alloc.check fn;
+    Unbox.check fn;
     func m out fn lf) u.funcs;
   Buffer.contents out

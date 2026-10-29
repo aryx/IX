@@ -223,7 +223,8 @@ after the change, each game built for arm (mini-mk O=5, -O3):
   pairs every 16 pixels; rewritten without them it held, but ran 29%
   more instructions, its pixel loop's registers allocated worse
   (Alloc: about 18 instructions a pixel more): kept as it was,
-  unmarked, a case for the allocator.
+  unmarked, a case for the allocator; Alloc's density since (below),
+  rewritten and marked.
 - Measured whole runs by mini-5i -prof and mini-prof: a frame's cost
   as the difference of two runs (31 and 61 frames) moved with where a
   collection fell (0.68% "more" for the version 0.17% fewer over the
@@ -294,9 +295,72 @@ holds.ml's twice (let[@inline]) and mix ([@@inline], over 16 nodes; no
 call of it left in its -dssa); refused/'s inline_rec and inline_try.
 Unannotated code the same bytes (112 objects).
 
+## The allocator's density, and turbulent marked (2026-10-29)
+
+The author: "what are turbulent registers?", then "let's do 1 and 2
+and 3". turbulent without its pairs had its pixel loop's every
+temporary stored and loaded (MOVW R3, 24(R13); MOVW 24(R13), R1),
+the five registers its loop values', which Alloc took first by their
+weight, uses times 8 per loop level: a temporary used once weighed
+less than a value carried around the loop, though it holds a register
+an instruction or two and the other the whole loop. Now each weight is
+over the points the value is live at (Alloc's density, Chaitin's spill
+cost over the interference; mini-ml -by-uses the old). Measured at one
+commit, both built for arm by ix (tests/inline_limit.sh's OVERLAY),
+against the old: mini-doom 0.12% fewer instructions over 61 frames,
+mini-quake 0.07% more, mini-ml compiling 0.11% fewer, the benchmarks
+the same within 0.2%: no change on the code as it was. But turbulent
+rewritten without its st and pairs: 24.7 million instructions with
+the old weights, 16.6 with the density, 13% fewer than HEAD's 19.1
+(with st's calls), the run 0.16% fewer, the same pixels. So it is
+marked [@@zero_alloc], the rewrite kept (old: beside it).
+
+## mini-doom's angles inlined (2026-10-29)
+
+The author: "I think doom was famous for using lots of precomputed
+table instead of computation". id's code reads its tables (finesine,
+finetangent: tables.c) by a shift of an integer angle, a turn 2^32,
+which wraps by itself. mini-doom's angles are floats, its tables
+id's, read through View's norm (into [0, 2 pi), a floor), fine (the
+index), fsin and fcos: norm alone 2.3% of 61 frames, 624,183 calls
+of 42 instructions, most of it the call, its float argument and
+result boxed; over -O3's 24 nodes, never inlined, and fsin and fcos
+with it. Marked let[@inline], the four: 1.55% fewer instructions over
+the run, the same pixels, the program 0.21% larger. Integer angles as
+id's would take the floats out too, but touch every angle of the game
+and its rounding: not done.
+
+## Step 4 done (2026-10-29): [@@unboxed_float]
+
+The author: "let's do 1 and 2 and 3", then on 3: "we might also want
+to have unboxed for integers too at some point? or Int32.t ?".
+
+`let x = e [@@unboxed_float]` or `let r = ref e [@@unboxed_float]`, a
+function's local float. Named so, not the plan's [@unboxed]: ix uses
+OCaml's [@@unboxed] on types (database/'s type reg = R of int
+[@@unboxed]), another meaning, which a token would have had to take
+too. Lower records the binding's slot by its function's label
+(Lower.unboxed_floats); Ssa_build each slot's values, written and its
+phis (Ssa.func's slots); Unbox.check, after every pass, refuses one
+boxed (passed to a function, stored in a block or a global, returned,
+raised, compared by compare), a phi of it not a double (a block around
+the loop), or a call's result (a block). A first value only read (a
+literal, a parameter, a field) is unboxed once, a load: allowed. In a
+function with a handler Unbox does nothing, so refused there. Tests:
+holds.ml's mean; refused/'s unboxed_returned and unboxed_passed.
+Unannotated code the same bytes (with -by-uses: 112 objects).
+
+Integers: an int is no block already (31 bits and a tag), and Untag
+takes the tag off where its bits are known; an [@@untagged] would
+check that one, a smaller gain. Int32.t is a block on both machines
+(Lower.ints_in_place makes its operations the processor's, the result
+in a new block): an Int32 kept in a register needs a pass as Unbox
+for it first (lib_crypto's hashes, the arm emulator's words), then
+[@@unboxed_int32] its check. Neither done.
+
 ## Status
 
-2026-10-29: steps 1 to 3 done ([@tailcall], [@@tailrec],
-[@@zero_alloc], [@inline]), [@@zero_alloc] used in mini-doom and
-mini-quake; next the unboxed double (step 4), or turbulent's
-registers (Alloc).
+2026-10-29: steps 1 to 4 done ([@tailcall], [@@tailrec],
+[@@zero_alloc], [@inline], [@@unboxed_float]), used in mini-doom and
+mini-quake; Alloc's density. Next, if wanted: Int32 unboxed (a pass,
+then its annotation), integer angles in mini-doom.

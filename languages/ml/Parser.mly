@@ -104,7 +104,7 @@ let with_attribute ds a =
 /* mlpp: [% and [@@deriving */
 %token LBRACKETPERCENT DERIVING CLASS INSTANCE
 /* the checked annotations (Annotations.mli) */
-%token TAILCALL TAILREC ZERO_ALLOC LETINLINE INLINE
+%token TAILCALL TAILREC ZERO_ALLOC LETINLINE INLINE UNBOXED_FLOAT
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -335,16 +335,16 @@ parameter:
 let_binding:
   | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
   | val_ident fun_binding binding_annotation+
-      { List.iter (fun marks -> Hashtbl.replace marks (marked_function $2).espan ()) $3;
-        (mkpat $sloc (Pvar $1), $2) }
+      { List.iter (fun mark -> mark $2) $3; (mkpat $sloc (Pvar $1), $2) }
   | pattern EQUAL seq_expr { ($1, $3) }
 ;
-/* the checked annotations of a binding (Annotations.mli): the table
- * that records it */
+/* the checked annotations of a binding (Annotations.mli): what records
+ * it, given the bound expression (a function's, or a float's) */
 binding_annotation:
-  | TAILREC { Annotations.tailrecs }
-  | ZERO_ALLOC { Annotations.zero_allocs }
-  | INLINE { Annotations.inlines }
+  | TAILREC { fun e -> Hashtbl.replace Annotations.tailrecs (marked_function e).espan () }
+  | ZERO_ALLOC { fun e -> Hashtbl.replace Annotations.zero_allocs (marked_function e).espan () }
+  | INLINE { fun e -> Hashtbl.replace Annotations.inlines (marked_function e).espan () }
+  | UNBOXED_FLOAT { fun e -> Hashtbl.replace Annotations.unboxed_floats e.espan () }
 ;
 /* let, or let[@inline] (OCaml's place): what it does to the bindings,
  * the first one marked */

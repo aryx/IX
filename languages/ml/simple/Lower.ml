@@ -604,6 +604,12 @@ let target : (string * string) option ref = ref None
 (* the code's labels of the functions marked [@@zero_alloc], each with
  * its name: ssa's Zero_alloc checks them *)
 let zero_allocs : (string, string) Hashtbl.t = Hashtbl.create 16
+
+(* the floats marked [@@unboxed_float]: by the code's label of their
+ * function and their slot, their name and line, for ssa's Unbox.check;
+ * cur_fun: the label of the function compiled *)
+let unboxed_floats : (string * int, string * int) Hashtbl.t = Hashtbl.create 16
+let cur_fun = ref ""
 let mark_zero_alloc lab name (e : Scope.expr) =
   if Hashtbl.mem Annotations.zero_allocs e.span then Hashtbl.replace zero_allocs lab name
 
@@ -964,7 +970,15 @@ and bind env r bs =
               check_inline lab x.vname e ~recursive:false;
               let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
       | Pany, _ -> value env e; emit Drop; []
-      | _ -> value env e; let s = slot () in emit (Set s); irrefutably s p) bs
+      | _ ->
+          value env e;
+          let s = slot () in
+          emit (Set s);
+          (if Hashtbl.mem Annotations.unboxed_floats e.span then
+             match p with
+             | Pvar x -> Hashtbl.replace unboxed_floats (!cur_fun, s) (x.vname, e.loc)
+             | _ -> error "line %d: [@@unboxed_float]: on a variable only" e.loc);
+          irrefutably s p) bs
     @ env
 
 and irrefutably s p =
@@ -1043,6 +1057,7 @@ and bind_rec env bs =
 (* a function's code: its closure in slot 0, its parameters after *)
 and compile_fun lab ps benv body =
   cur := { code = []; nslots = 1 + List.length ps; ntries = 0 };
+  cur_fun := lab;
   let env =
     List.fold_left (fun env (i, (p : Scope.pattern)) ->
       match p with
@@ -1138,7 +1153,8 @@ let exports (items : Scope.item list) : Summary.entry list =
 let unit_ name (items : Scope.item list) =
   cur := { code = []; nslots = 1; ntries = 0 };
   funcs := []; data := []; arities := []; Hashtbl.reset strings; Hashtbl.reset known_globals; Hashtbl.reset inlines;
-  Hashtbl.reset zero_allocs;
+  Hashtbl.reset zero_allocs; Hashtbl.reset unboxed_floats;
+  cur_fun := mangle name ^ ".Init";
   file := String.uncapitalize_ascii name ^ ".ml";
   let globals = ref [] in
   List.iter (fun (it : Scope.item) ->

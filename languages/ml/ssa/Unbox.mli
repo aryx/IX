@@ -54,3 +54,8 @@ val on : bool ref
 (* the function's doubles found and made so (fn.doubles), its code
  * rewritten in place *)
 val func : Ssa.func -> Ssa.func
+
+(* [@@unboxed_float] (Annotations.mli): each marked variable of the
+ * function never boxed, a double around its loops, or the program
+ * refused (Failure, its line) with what boxes it or makes it a block *)
+val check : Ssa.func -> unit

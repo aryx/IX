@@ -129,4 +129,5 @@ type func = {
   defs : (value, ins) Hashtbl.t;
   doubles : (value, unit) Hashtbl.t;
   raws : (value, int) Hashtbl.t;
+  slots : (int, value) Hashtbl.t;   (* a frame slot's values (Ssa_build), each by Hashtbl.add *)
 }

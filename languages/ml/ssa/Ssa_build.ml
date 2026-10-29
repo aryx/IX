@@ -122,12 +122,16 @@ let build (f : L.func) =
   let memory = List.exists (function L.TryEnter _ -> true | _ -> false) f.code in
   (* Braun et al.'s reads and seals, lib_code's: a phi, a zero where
    * nothing is written, are this IR's *)
-  let new_phi (_ : var) b = let v = fresh b (Phi []) in blocks.(b).phis <- blocks.(b).phis @ [ v ]; v in
+  (* each slot's values: those written to it, and its phis (for
+   * Unbox.check's [@@unboxed_float]) *)
+  let slots = Hashtbl.create 64 in
+  let record var v = match var with Slot_var i -> Hashtbl.add slots i v | Stack_var _ -> () in
+  let new_phi (var : var) b = let v = fresh b (Phi []) in blocks.(b).phis <- blocks.(b).phis @ [ v ]; record var v; v in
   let br =
     Braun.create ~preds:(fun b -> blocks.(b).preds) ~new_phi
       ~set_operands:(fun (_ : var) phi ops -> Hashtbl.replace defs phi (Phi ops))
       ~missing:(fun (_ : var) b -> emit b Zero) !count in
-  let write var b v = Braun.write br var b v and read var b = Braun.read br var b in
+  let write var b v = record var v; Braun.write br var b v and read var b = Braun.read br var b in
   let seal b = Braun.seal br b and seal_ready () = Braun.seal_ready br in
   (* the entry: the closure and the arguments, as the prologue stores them *)
   if !count > 0 then begin
@@ -190,7 +194,7 @@ let build (f : L.func) =
     Braun.fill br id;
     seal_ready ()) blocks;
   Braun.seal_rest br;
-  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1 }
+  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1; slots }
 
 (*****************************************************************************)
 (* Trivial phis out *)

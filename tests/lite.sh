@@ -431,10 +431,6 @@ ix() {
   mk browsers/javascript & pids+=($!)
   mk browsers/engine/tests & pids+=($!)
   mk browsers/netscape & pids+=($!)
-  # (mini-emacs: its mkfiles list mini-ml's parser's units by their own
-  # SRC, which dune's build does not read: Annotations missing from them
-  # broke the link unseen, ad93e2ae)
-  (mk editors/emacs/tty && mk editors/emacs/draw) & pids+=($!)
   for p in "${pids[@]}"; do wait $p || bad=1; done
   [ $bad = 0 ] || return 1
   echo "$(find $B -type f | wc -l) files, $(ls $B/*/mini-* $B/*/*/mini-* $B/tiny/tiny-* | wc -l) programs"

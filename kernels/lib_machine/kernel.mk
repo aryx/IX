@@ -31,7 +31,8 @@ LIB = ../lib_machine
 # claude: what ix's configure found (optional: without it, GNU's names)
 -include $(LIB)/../../Makefile.config
 
-# the OCaml compiler: ocaml-light (light, the default), or the switch's
+# the OCaml compiler: ocaml-light (light, the default; kernels/9pi's
+# Pi 1 says ix), or the switch's
 # own OCaml 4.14 (make BOARD=pi4 COMPILER=ocaml: the Pi4 only, whose
 # code this machine's ocamlopt emits; the Pi1 would want an ocamlopt
 # for arm, which the switch has not). Its runtime's

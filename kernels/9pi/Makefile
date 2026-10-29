@@ -17,7 +17,7 @@
 # and KERNDATE's
 # scripts, tests/ the sessions and screens make check compares.
 #
-#   make            kernel-pi1.img
+#   make            kernel-pi1.img (by mini-ml: COMPILER below)
 # The SD card is principia's (qemu-sd.img: its FAT, served by dossrv,
 # the root), its writes kept in memory (snapshot=on).
 #
@@ -94,6 +94,18 @@ KERNDATE ?= $(PRINCIPIA)
 # nothing of a kernel); PIXEL=c, principia's C pixel libraries
 # (lib_graphics/c), as before stage F
 PIXEL ?= ocaml
+# the compiler: on the Pi 1, ix's own tools (kernel.mk's COMPILER=ix:
+# mini-ml's OCaml, mini-cc's C, by the mkfile), ix's compiler run by
+# ix's kernel every boot; 11% more instructions than ocaml-light's at
+# session-c, the boot's clearing of the bss set aside (2026-10-29).
+# make COMPILER=light for ocaml-light's, an image of its own
+# (kernel-pi1-light.img: the same file for both would be left stale
+# when switching, an ix image newer than ocaml-light's kernel.elf)
+BOARD ?= pi1
+COMPILER ?= $(if $(filter pi1,$(BOARD)),ix,light)
+ifeq ($(BOARD)-$(COMPILER),pi1-light)
+IMAGE ?= kernel-pi1-light.img
+endif
 # each its own build (the OCaml's build/pi1-ocaml...), the image
 # relinked when PIXEL changes (the same file: mini-pi's, the checks')
 # (and the compiler's, kernel.mk's COMPILER=ocaml: OCaml 4.14's objects
@@ -482,9 +494,10 @@ check-audio-play: ix card
 # under mini-qemu, 386 million instructions (ix-usb), 244 with
 # WEB=1's moves, 125 with these (raspberry/tests/boot_bench.sh).
 WEB_GC = s=2M,o=400
+# (ocaml-light's: mkkernel has no WEB)
 IMAGE_WEB = $(basename $(IMAGE))-web$(suffix $(IMAGE))
 ix-web: ix
-	$(MAKE) WEB=1 CAMLRUNPARAM=$(WEB_GC) B=build/$(BOARD)$(PIX)-web IMAGE=$(IMAGE_WEB) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_WEB)
+	$(MAKE) COMPILER=light WEB=1 CAMLRUNPARAM=$(WEB_GC) B=build/$(BOARD)$(PIX)-web IMAGE=$(IMAGE_WEB) BOOTDIR="$(BOOTDIR_IX) usbd=$(IX9)/kernels/9pi/buses/user/usbd/mini-usbd" KERNDATE=$(KERNDATE_IX) $(IMAGE_WEB)
 # with neither usbd nor dossrv in its bootdir: the keyboard, the mouse
 # and the card's FAT by the kernel itself (Kusb, Kdos: boot.rc falls
 # back to them), for check-card's last session
@@ -1103,6 +1116,6 @@ expected-langs: card
 FORCE:
 
 clean:
-	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
+	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi1-light*.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
 .PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE

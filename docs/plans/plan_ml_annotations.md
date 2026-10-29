@@ -137,6 +137,17 @@ mini-ml with its .err and compiled by OCaml. Unannotated code the same
 bytes (lib_core's units and five of mini-ml's own, -O3, arm and arm64:
 112 objects).
 
+Used in ix (the author: "let's add a few of those annots in IX, do
+dogfood"): `[@@tailrec]` on nine of lib_core's List loops (length's,
+rev_append, iter, fold_left, for_all, exists, mem, assoc, find), where
+a list of any length must not grow the stack, and on CLI's two loops
+over a whole file (named_units, over its tokens; named_words, over its
+characters). mini-ml compiles them, arm and arm64, -O0 and -O3; a copy
+with exists's call made the left operand of `or` is refused ("line
+103: exists [@@tailrec]: its call of itself is not in tail
+position"). So the right operand of `&` and `or` is a tail position
+for mini-ml, as for OCaml.
+
 ## Status
 
 2026-10-29: step 1 done ([@tailcall], [@@tailrec]); next

@@ -15,6 +15,7 @@
 let rec length_aux len = function
     [] -> len
   | a::l -> length_aux (len + 1) l
+[@@tailrec]
 
 let length l = length_aux 0 l
 
@@ -38,6 +39,7 @@ let rec rev_append l accu =
   match l with
     [] -> accu
   | a::l -> rev_append l (a :: accu)
+[@@tailrec]
 
 let rev l = rev_append l []
 
@@ -54,11 +56,13 @@ let rec map f = function
 let rec iter f = function
     [] -> ()
   | a::l -> f a; iter f l
+[@@tailrec]
 
 let rec fold_left f accu l =
   match l with
     [] -> accu
   | a::l -> fold_left f (f accu a) l
+[@@tailrec]
 
 let rec fold_right f l accu =
   match l with
@@ -92,10 +96,12 @@ let rec fold_right2 f l1 l2 accu =
 let rec for_all p = function
     [] -> true
   | a::l -> p a & for_all p l
+[@@tailrec]
 
 let rec exists p = function
     [] -> false
   | a::l -> p a or exists p l
+[@@tailrec]
 
 let rec for_all2 p l1 l2 =
   match (l1, l2) with
@@ -114,6 +120,7 @@ let rec exists2 p l1 l2 =
 let rec mem x = function
     [] -> false
   | a::l -> compare a x = 0 or mem x l
+[@@tailrec]
 
 let rec memq x = function
     [] -> false
@@ -122,6 +129,7 @@ let rec memq x = function
 let rec assoc x = function
     [] -> raise Not_found
   | (a,b)::l -> if compare a x = 0 then b else assoc x l
+[@@tailrec]
 
 let rec mem_assoc x = function
     [] -> false
@@ -236,6 +244,7 @@ let sort = stable_sort
 let rec find p = function
   | [] -> raise Not_found
   | x :: l -> if p x then x else find p l
+[@@tailrec]
 
 let find_all p =
   let rec find accu = function

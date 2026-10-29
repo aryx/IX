@@ -298,7 +298,8 @@ let named_units text =
          | _, _, Parser.OPEN, Parser.UIDENT u
          | Parser.MODULE, Parser.UIDENT _, Parser.EQUAL, Parser.UIDENT u -> add u
          | _ -> ());
-        go p2 p1 t in
+        go p2 p1 t
+  [@@tailrec] in
   (try go Parser.EOF Parser.EOF Parser.EOF with _ -> ());
   !us
 
@@ -320,7 +321,8 @@ let named_words text =
       while !j < n && ident text.[!j] do incr j done;
       let named = (!j < n && text.[!j] = '.') || opened i in
       go !j (if named then String.sub text i (!j - i) :: acc else acc)
-    end else go (i + 1) acc in
+    end else go (i + 1) acc
+  [@@tailrec] in
   go 0 [ "Pervasives" ]
 
 (* -depend obj Unit...: a directory's .depend (mkfiles/depend.rc), mk's

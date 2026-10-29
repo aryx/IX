@@ -35,8 +35,19 @@ $D/l.$O: ../step0/${P}l.s
 $D/shim.$O: ../step0/shim.c
 	mkdir -p $D
 	$CC $CINC -o $target ../step0/shim.c
+# memmove and memset: port's C, a byte at a time, not libc's arm64
+# assembly (9front's), whose pairs of words fault at an address not
+# aligned with the MMU off, as here (QEMU's alignment fault; mini-qemu
+# does not check; old: libc's, since 7001c4be no boot under QEMU)
+$D/memmove.$O: $TOP/lib_core/libc/port/memmove.c
+	mkdir -p $D
+	$CC $CINC -o $target $prereq
+$D/memset.$O: $TOP/lib_core/libc/port/memset.c
+	mkdir -p $D
+	$CC $CINC -o $target $prereq
 
-OBJS=$D/l.$O $D/shim.$O $D/start.$O $STDOBJS $D/Main.$O $L/std_exit.$O $D/runtime.$O $L/libc.a
+OBJS=$D/l.$O $D/shim.$O $D/start.$O $STDOBJS $D/Main.$O $L/std_exit.$O \
+	$D/runtime.$O $D/memmove.$O $D/memset.$O $L/libc.a
 $D/kernel8.img: $OBJS
 	$LD -H0 -T $LOAD -E _start -nofollow -o $target $OBJS
 

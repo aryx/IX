@@ -337,6 +337,13 @@ def classify(path, verbose):
                 # let's not display them (or display just their total)")
                 if len(parts) == 2 and path.endswith(".mli") and not verbose:
                     return group, MLIS
+                # (a program's .ml and its directory in one row, unless -v,
+                # tiny/TinyKernel+: the author, 2026-10-29, "for tiny
+                # programs that have a TinyXXX/ associated dir, maybe count
+                # them in just one line"; + as * says a row with some apart)
+                name = parts[1][:-3] if len(parts) == 2 and path.endswith(".ml") else parts[1]
+                if not verbose and os.path.isfile(f"tiny/{name}.ml") and os.path.isdir(f"tiny/{name}"):
+                    return group, f"tiny/{name}+"
                 return group, path if len(parts) == 2 else "/".join(parts[:2]) + "/"
             if verbose and len(parts) > top + 1:
                 return group, "/".join(parts[:top + 1]) + "/"

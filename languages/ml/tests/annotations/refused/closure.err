@@ -1,0 +1,1 @@
+refused/closure.ml: line 4: first_digit [@@zero_alloc]: it makes a closure

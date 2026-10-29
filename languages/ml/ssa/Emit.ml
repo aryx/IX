@@ -1247,5 +1247,6 @@ let unit_ (arch : Asm.arch) (u : L.unit_) =
   List.iter (fun (lf : L.func) ->
     let fn = ssa arch lf in
     Ssa_build.check fn;
+    Zero_alloc.check fn;
     func m out fn lf) u.funcs;
   Buffer.contents out

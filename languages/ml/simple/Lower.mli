@@ -131,6 +131,9 @@ val curry_funcs : unit -> Ir.func list
  * functions *)
 val calls_whole : bool ref
 
+(* the code's labels of the functions marked [@@zero_alloc]
+ * (Annotations.zero_allocs), each with its name, for ssa's Zero_alloc *)
+val zero_allocs : (string, string) Hashtbl.t
 (* a known function whose body is this many nodes or fewer: its calls
  * with all its arguments are its body, in its unit (0: none; -O3's) *)
 val inline_most : int ref

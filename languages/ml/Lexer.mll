@@ -84,9 +84,10 @@ rule token = parse
   (* mlpp: a class, a record type's [@@class]; an instance, a value's [@@instance] *)
   | "[@@" [' ' '\t']* "class" [' ' '\t']* "]" { CLASS } | "[@@" [' ' '\t']* "instance" [' ' '\t']* "]" { INSTANCE }
   (* the checked annotations (Annotations.mli): a call's [@tailcall], a
-   * recursive function's [@@tailrec] *)
+   * recursive function's [@@tailrec], a function's [@@zero_alloc] *)
   | "[@" [' ' '\t']* "tailcall" [' ' '\t']* "]" { TAILCALL }
   | "[@@" [' ' '\t']* "tailrec" [' ' '\t']* "]" { TAILREC }
+  | "[@@" [' ' '\t']* "zero_alloc" [' ' '\t']* "]" { ZERO_ALLOC }
   (* the other attributes, [@inline], [@@unboxed], [@@@warning "-32"]:
    * skipped (OCaml reads them in -pp's output, the text itself) *)
   | "[@" { attribute 1 lexbuf; token lexbuf }

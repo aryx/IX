@@ -7,8 +7,8 @@
 # hold, run by OCaml then compiled by mini-ml -O3 and run (run.sh 7),
 # both against holds.out; each of annotations/refused/, where one does
 # not hold, refused by mini-ml with its .err's message, and compiled
-# by OCaml (for which [@tailcall] is a warning and [@@tailrec]
-# nothing: ix compiles with both).
+# by OCaml (for which [@tailcall] is a warning, [@@tailrec] and
+# [@@zero_alloc] nothing: ix compiles with both).
 # usage: annotations.sh   (dune build first)
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 T=$ROOT/languages/ml/tests/annotations

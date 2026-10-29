@@ -59,6 +59,14 @@ let rec mkpatlist at = function
 (* fun p q -> e: a function of p whose body is a function of q *)
 let mkfun at p e = mkexp at (Efunction [ p, None, e ])
 
+(* what a binding's annotation marks: the function, under its type
+ * (let f : t = fun ...); on anything else a syntax error *)
+let rec marked_function e =
+  match e.e with
+  | Econstraint (e, _) -> marked_function e
+  | Efunction _ -> e
+  | _ -> raise Parsing.Parse_error
+
 let array_op at m f args = mkexp at (Eapply (mkexp at (Eident [ m; f ]), args))
 
 (* match e with p -> a | exception E -> h: the value's clauses outside
@@ -96,7 +104,7 @@ let with_attribute ds a =
 /* mlpp: [% and [@@deriving */
 %token LBRACKETPERCENT DERIVING CLASS INSTANCE
 /* the checked annotations (Annotations.mli) */
-%token TAILCALL TAILREC
+%token TAILCALL TAILREC ZERO_ALLOC
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -324,9 +332,16 @@ parameter:
 ;
 let_binding:
   | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
-  | val_ident fun_binding TAILREC
-      { Hashtbl.replace Annotations.tailrecs $2.espan (); (mkpat $sloc (Pvar $1), $2) }
+  | val_ident fun_binding binding_annotation+
+      { List.iter (fun marks -> Hashtbl.replace marks (marked_function $2).espan ()) $3;
+        (mkpat $sloc (Pvar $1), $2) }
   | pattern EQUAL seq_expr { ($1, $3) }
+;
+/* the checked annotations of a binding (Annotations.mli): the table
+ * that records it */
+binding_annotation:
+  | TAILREC { Annotations.tailrecs }
+  | ZERO_ALLOC { Annotations.zero_allocs }
 ;
 fun_binding:
   | EQUAL seq_expr { $2 }

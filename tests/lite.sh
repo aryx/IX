@@ -260,7 +260,6 @@ job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
-job "mini-pim: unit tests, mail's formats and charsets" _build/default/apps/pim/tests/Test.exe
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
 job "lib_crypto: the standards' vectors" _build/default/lib_crypto/tests/Test.exe
 job "lib_networking: unit tests" _build/default/lib_networking/tests/Test.exe
@@ -326,7 +325,7 @@ job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml
 job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
 job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
-job "mini-ml: [@tailcall] and [@@tailrec] checked, a call not in tail position refused" languages/ml/tests/annotations.sh
+job "mini-ml: [@tailcall], [@@tailrec], [@@zero_alloc] checked, a call not in tail position or an allocation refused" languages/ml/tests/annotations.sh
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's), one family:

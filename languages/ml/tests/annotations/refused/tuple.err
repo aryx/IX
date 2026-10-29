@@ -1,0 +1,1 @@
+refused/tuple.ml: line 2: div_mod [@@zero_alloc]: it makes a block (a tuple, a record, a constructor's)

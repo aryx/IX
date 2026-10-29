@@ -580,6 +580,12 @@ type closure = Closure_static of string * string * int | Closure_pushed of strin
  * that closure's frame, is not checked (Scala's @tailrec refuses it). *)
 let target : (string * string) option ref = ref None
 
+(* the code's labels of the functions marked [@@zero_alloc], each with
+ * its name: ssa's Zero_alloc checks them *)
+let zero_allocs : (string, string) Hashtbl.t = Hashtbl.create 16
+let mark_zero_alloc lab name (e : Scope.expr) =
+  if Hashtbl.mem Annotations.zero_allocs e.span then Hashtbl.replace zero_allocs lab name
+
 let known_label env (f : Scope.expr) =
   match f.e with
   | Evar (Local x) -> Option.map fst (lookup env x).known
@@ -951,6 +957,7 @@ and irrefutably s p =
  * free variables, else allocated *)
 and closure env name (e : Scope.expr) =
   let lab = fun_label name in
+  mark_zero_alloc lab name e;
   let ps, body = params e in
   let n = List.length ps in
   let fvs = captured env e in
@@ -975,7 +982,8 @@ and bind_rec env bs =
   let labs = List.map (fun ((x : Scope.var), e) -> fun_label x.vname, List.length (fst (params e))) fs in
   let statics = List.map2 (fun ((x : Scope.var), _) (lab, n) -> x.vid, { loc = Static ("c" ^ lab); known = Some (lab, n) }) fs labs @ env in
   (* a [@@tailrec] binding's body compiled with it the target *)
-  let marked = List.map (fun (_, (e : Scope.expr)) -> Hashtbl.mem Annotations.tailrecs e.span) bs in
+  let marked = List.map (fun (_, (e : Scope.expr)) -> Hashtbl.mem Annotations.tailrecs e.span) fs in
+  List.iter2 (fun ((x : Scope.var), e) (lab, _) -> mark_zero_alloc lab x.vname e) fs labs;
   let checked m lab (x : Scope.var) k () =
     if m then begin target := Some (lab, x.vname); k (); target := None end else k ()
   in
@@ -1106,6 +1114,7 @@ let exports (items : Scope.item list) : Summary.entry list =
 let unit_ name (items : Scope.item list) =
   cur := { code = []; nslots = 1; ntries = 0 };
   funcs := []; data := []; arities := []; Hashtbl.reset strings; Hashtbl.reset known_globals; Hashtbl.reset inlines;
+  Hashtbl.reset zero_allocs;
   file := String.uncapitalize_ascii name ^ ".ml";
   let globals = ref [] in
   List.iter (fun (it : Scope.item) ->

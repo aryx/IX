@@ -148,7 +148,51 @@ with exists's call made the left operand of `or` is refused ("line
 position"). So the right operand of `&` and `or` is a tail position
 for mini-ml, as for OCaml.
 
+## Step 2 done (2026-10-29): [@@zero_alloc]
+
+The author: "let's do it". `let f x = ... [@@zero_alloc]` (Jane
+Street's spelling as a binding's attribute; several after one binding,
+`[@@tailrec] [@@zero_alloc]`). The parser marks the function, under
+its type if it has one (anything else after the annotation a syntax
+error); Lower keeps the marked functions' code labels
+(Lower.zero_allocs); ssa/Zero_alloc reads each marked function's SSA
+form once Unbox, Untag, Licm and Cse are done (Emit.unit_), so after
+inlining and with its floats unboxed.
+
+- Refused: a block made, a closure, a float boxed, an int32's block, a
+  polymorphic comparison (compare, in C), a call of a function not
+  itself marked in this unit, a call of C but six of the runtime's
+  that make nothing (a string's length and bytes, = and <> on strings,
+  a float array's length).
+- A block of code that ends in a raise not counted: mini-ml makes the
+  exception's block at each raise, Not_found's too (Jane Street's
+  check leaves those paths out, unless "strict").
+- Two changes from the plan above: without -ssa (at -O0, and -gas) the
+  annotation is not looked at rather than an error, so that code with
+  it builds at every level, nothing being promised of simple's code;
+  and the error names the function's line, SSA's values having none.
+- Seen at once: a local loop that captures a variable of its function
+  makes a closure at each call of that function (holds.ml's
+  first_digit, which gives the string to its loop instead; refused/'s
+  closure.ml, which does not).
+
+Tests: holds.ml (loops over an int array, a float array whose sum stays
+a double, a string's bytes, a loop calling a marked function and
+raising Not_found, both annotations on one function), run against
+OCaml at -O3; refused/'s tuple, closure, boxed (a float returned) and
+call (a recursive function not marked, so not inlined). Unannotated
+code the same bytes (112 objects).
+
+Not done: externals marked `[@@noalloc]` (OCaml's attribute), which
+would let a marked function call C of its own; another unit's marked
+functions (Summary would carry the mark); the instruction's line.
+Later perhaps (the author: "we could potentially have a [@@noraise]
+at some point"): `[@@noraise]`, a function that raises nothing,
+checked as this one is (no Raise, no call of what may raise); with
+`[@@zero_alloc]`, a C call's `ml_vsp` handoff could then be skipped.
+
 ## Status
 
-2026-10-29: step 1 done ([@tailcall], [@@tailrec]); next
-[@zero_alloc].
+2026-10-29: steps 1 and 2 done ([@tailcall], [@@tailrec],
+[@@zero_alloc]); next [@inline] checked, or [@@zero_alloc] on the
+games' inner loops.

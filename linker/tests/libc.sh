@@ -15,6 +15,10 @@
 # same for mini-ld's layout.
 set -u
 export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$PATH
+# (goken's mk runs its mkfile's backquotes with $MKSHELL: not ix's
+# mini-rc, which make exports (old: libc's objects listed without the
+# 23 files of a backquote, exits, seek... then undefined at the link)
+unset MKSHELL
 IX=$(cd $(dirname $0)/../.. && pwd)/_build/default
 LIBC=$HOME/goken/lib_core/libc
 O=$1; W=$2; shift 2

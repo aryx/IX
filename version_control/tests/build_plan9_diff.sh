@@ -17,6 +17,10 @@ set -eu
 W=$1
 PRINCIPIA=${PRINCIPIA:-$HOME/github/principia-softwarica}
 export PATH=$HOME/goken/bin:$HOME/goken/ROOT/arch/boot-gcc/bin:$HOME/goken/ROOT/arch/arm64/bin:$PATH
+# (goken's mk runs its mkfile's backquotes with $MKSHELL: not ix's
+# mini-rc, which make exports (old: libc's objects listed without the
+# 23 files of a backquote, exits, seek... then undefined at the link)
+unset MKSHELL
 if [ -x $W/pdiff ] && [ -x $W/pmerge3 ]; then exit 0; fi
 rm -rf $W; mkdir -p $W/libc $W/o $W/inc $W/src
 I="-I$HOME/goken/include -I$HOME/goken/include/ALL -I$HOME/goken/include/arch/arm64 -I$W/inc"

@@ -17,7 +17,8 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
                        the window: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
-                       z snooze, t a task, Go > Tasks (x done)
+                       z snooze, t a task, Go > Tasks (x done),
+                       p the sender to People, Go > People
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -31,7 +32,10 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
                        in 3 days), back in it that day
         search query   the store's items, Gmail's syntax: from:alice
                        is:task label:travel before:2026-12-01 -word
-        show id        an item, and its links both ways
+        show id        an item, and its links both ways (a person:
+                       the mail with them)
+        contact uid, people
+                       the sender a contact; the address book
         add id [name=value...], set id name=value...
                        an item made (task:pay-rent due=2026-11-05),
                        its fields changed
@@ -70,6 +74,8 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
     store/When         a day typed as words, English and French
+    store/People       the address book, filled from the mail, BBDB's
+                       way; the mail with a person
     store/Search       a search over every item, Gmail's syntax
     store/Links        links both ways: the ids an item names, and the
                        items naming it

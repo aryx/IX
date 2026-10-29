@@ -14,6 +14,8 @@
  *     mini-pim forward uid             the forward to edit, then send
  *     mini-pim archive uid...          out of the Inbox, kept
  *     mini-pim snooze uid words        out of it until a day, back then
+ *     mini-pim contact uid             its sender made a contact
+ *     mini-pim people                  the address book
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -62,6 +64,7 @@ let usage =
   \  search query                      the store's items: from:alice is:task\n\
   \                                    label:travel before:2026-12-01 -word\n\
   \  show id                           an item, its links both ways\n\
+  \  contact uid, people               the sender a contact; the address book\n\
   \  add id [name=value...]            an item (task:pay-rent due=2026-11-05)\n\
   \  set id name=value...              its fields (name= takes one away)\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
@@ -365,12 +368,44 @@ let show (caps : < caps ; .. >) (id : string) : Exit.t =
       let say heading l =
         if l <> [] then begin
           Console.print caps ("\n" ^ heading ^ "\n");
-          List.iter (fun (field, i) -> line caps ("  " ^ field ^ ": ") i) l
+          List.iter
+            (fun (field, i) ->
+              line caps (if field = "" then "  " else "  " ^ field ^ ": ") i)
+            l
         end
       in
+      (* (a person's page: the mail with them first, People) *)
+      if Item.has_stamp item "contact" then
+        say "mail:" (List.map (fun m -> ("", m)) (People.with_ items item));
       say "links:" (Links.links items item);
       say "linked from:" (Links.backlinks items item);
       Exit.OK
+
+(* contact: the sender of a message listed made a contact, BBDB's
+ * way; people: the address book *)
+let contact (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
+  let store = Items.at (Items.place caps) in
+  match o.user with
+  | None -> fail caps "-u: the user (the account)"
+  | Some account -> (
+      match
+        Option.bind
+          (Mail_sync.item_of caps store ~account ~mailbox:o.mailbox uid)
+          People.of_sender
+      with
+      | None -> fail caps (Printf.sprintf "no sender of %d here" uid)
+      | Some c -> (
+          match Items.find caps store (Item.id c) with
+          | Some _ -> fail caps (Item.id c ^ ": already a contact")
+          | None ->
+              Items.save caps store c;
+              Console.print caps (Item.id c ^ "\n");
+              Exit.OK))
+
+let people (caps : < caps ; .. >) : Exit.t =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  List.iter (line caps "") (People.contacts items);
+  Exit.OK
 
 (* "due=2026-11-05": a field's name and value *)
 let assignments (l : string list) : (string * string) list option =
@@ -494,6 +529,9 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some { args = "search" :: (_ :: _ as words); _ } ->
       search caps (String.concat " " words)
   | Some { args = [ "show"; id ]; _ } -> show caps id
+  | Some ({ args = [ "contact"; uid ]; _ } as o) when uids [ uid ] <> [] ->
+      contact caps o (int_of_string uid)
+  | Some { args = [ "people" ]; _ } -> people caps
   | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
       match days o.today (Option.get (assignments l)) with
       | Ok fields -> add caps id fields
@@ -522,7 +560,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
-    "show"; "add"; "set" ]
+    "show"; "add"; "set"; "contact"; "people" ]
 
 let () =
   Cap.main (fun caps ->

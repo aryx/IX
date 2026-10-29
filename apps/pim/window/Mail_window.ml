@@ -15,7 +15,7 @@ type caps =
 (* what waits for the password *)
 type action = Fetch | Open | Archive | Send | Snooze of Civil.date
 type asking = Password | Search | Until | Due
-type mode = Browsing | Reading | Composing | Asking of asking
+type mode = Browsing | Reading | Person | Composing | Asking of asking
 
 type model = {
   account : string;
@@ -27,6 +27,10 @@ type model = {
   conversations : Imap.summary list list;
   drafts : Mail_compose.draft list; (* the drafts mailbox's *)
   tasks : Item.t list; (* the tasks', not done, by their due day *)
+  people : Item.t list; (* the address book, by name *)
+  (* the person whose page is open, and the mail with them *)
+  person : Item.t option;
+  with_person : Item.t list;
   today : Civil.date; (* today= (the tests'), else the clock's *)
   selected : int;
   (* the conversation opened: its messages, oldest first, each its text
@@ -51,6 +55,7 @@ let store (caps : caps) : Items.t = Items.at (Items.place caps)
  * the same *)
 let drafts = "Drafts"
 let tasks = "Tasks"
+let people = "People"
 
 let contains (s : string) (word : string) : bool =
   let s = String.lowercase_ascii s and w = String.lowercase_ascii word in
@@ -102,12 +107,14 @@ let load (caps : caps) (m : model) : model =
          (fun i -> Item.has_stamp i "task" && Item.field i "done" = "")
          items)
   in
+  let ps = People.contacts items in
   let n =
     if m.mailbox = drafts then List.length ds
     else if m.mailbox = tasks then List.length ts
+    else if m.mailbox = people then List.length ps
     else List.length cs
   in
-  { m with conversations = cs; drafts = ds; tasks = ts;
+  { m with conversations = cs; drafts = ds; tasks = ts; people = ps;
     selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -144,6 +151,9 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       conversations = [];
       drafts = [];
       tasks = [];
+      people = [];
+      person = None;
+      with_person = [];
       today =
         (match Search.date (flag "today") with
         | Some d -> d
@@ -284,6 +294,7 @@ let next (caps : caps) (m : model) (d : int) : model =
   let n =
     if m.mailbox = drafts then List.length m.drafts
     else if m.mailbox = tasks then List.length m.tasks
+    else if m.mailbox = people then List.length m.people
     else List.length m.conversations
   in
   let m = { m with selected = max 0 (min (n - 1) (m.selected + d)) } in
@@ -322,6 +333,8 @@ type command =
   | Task
   | Done
   | Tasks
+  | Add_sender
+  | People_
 
 (* the menu bar: each menu its title, then its items, each with its
  * command and its key, said in the item (a menu is where the keys are
@@ -336,13 +349,13 @@ let menus : (string * (string * command) list) list =
         ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
         ("Next  (j)", Next); ("Previous  (k)", Previous);
         ("Snooze...  (z)", Snooze_); ("Make a Task...  (t)", Task);
-        ("Mark Done  (x)", Done) ] );
+        ("Mark Done  (x)", Done); ("Sender to People  (p)", Add_sender) ] );
     ( "Message",
       [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
         ("Discard", Discard) ] );
     ( "Go",
       [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts); ("Tasks", Tasks) ] ) ]
+        ("Drafts", Drafts); ("Tasks", Tasks); ("People", People_) ] ) ]
 
 let menu_bar = 30.
 
@@ -379,7 +392,9 @@ let switch (caps : caps) (m : model) (mailbox : string) : model =
   in
   (* (fetched when the password is known: what the store has of the
    * other mailbox may be old, or nothing) *)
-  if m.password <> None && mailbox <> drafts && mailbox <> tasks then
+  if m.password <> None && mailbox <> drafts && mailbox <> tasks
+     && mailbox <> people
+  then
     run caps m Fetch
   else m
 
@@ -426,12 +441,13 @@ let answer (caps : caps) (m : model) (c : command) : model =
 (* Tasks *)
 (*****************************************************************************)
 
-(* what a task is called: its subject (a message's), its title, else
- * its text's first line *)
+(* what an item is called: its subject (a message's), its title or
+ * name, else its text's first line *)
 let title (i : Item.t) : string =
-  match (Item.field i "subject", Item.field i "title") with
-  | s, _ when s <> "" -> Mime.decode_words s
-  | _, t when t <> "" -> t
+  match (Item.field i "subject", Item.field i "title", Item.field i "name") with
+  | s, _, _ when s <> "" -> Mime.decode_words s
+  | _, t, _ when t <> "" -> t
+  | _, _, n when n <> "" -> n
   | _ -> (
       match String.split_on_char '\n' (String.trim i.body) with
       | l :: _ -> l
@@ -463,7 +479,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   let while_writing =
     match c with
     | Exit | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Tasks
-    | Get ->
+    | People_ | Get ->
         true
     | _ -> false
   in
@@ -475,6 +491,13 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Get -> run caps m Fetch
   | Search_ -> { m with mode = Asking Search; field = m.query }
   | Exit -> CapStdlib.exit caps 0
+  | Open_ when m.mailbox = people -> (
+      match List.nth_opt m.people m.selected with
+      | Some c ->
+          let items = Items.all caps (store caps) in
+          { m with mode = Person; person = Some c;
+            with_person = People.with_ items c; status = "" }
+      | None -> m)
   | Open_ when m.mailbox = drafts -> (
       match List.nth_opt m.drafts m.selected with
       | Some d -> compose m d
@@ -491,6 +514,21 @@ let command (caps : caps) (m : model) (c : command) : model =
   | All_mail -> switch caps m Mail_sync.all_mail
   | Drafts -> switch caps m drafts
   | Tasks -> switch caps m tasks
+  | People_ -> switch caps m people
+  | Add_sender -> (
+      match current m with
+      | [] -> m
+      | s :: _ -> (
+          let st = store caps in
+          match
+            Option.bind (Items.find caps st (Mail_item.id s)) People.of_sender
+          with
+          | None -> { m with status = "no sender here" }
+          | Some c when Items.find caps st (Item.id c) <> None ->
+              { m with status = Item.id c ^ ": already in People" }
+          | Some c ->
+              Items.save caps st c;
+              load caps { m with status = title c ^ " added to People" }))
   | Snooze_ ->
       if current m = [] then m
       else { m with mode = Asking Until; field = ""; status = "" }
@@ -607,8 +645,8 @@ let update (caps : caps) (computer : computer) (m : model) : model =
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
     | Composing -> writing caps computer m menu (pressed "Escape")
-    | (Browsing | Reading) when Gui.modal () -> m
-    | Browsing | Reading -> (
+    | (Browsing | Reading | Person) when Gui.modal () -> m
+    | Browsing | Reading | Person -> (
         let reading = m.mode = Reading in
         let key =
           if pressed "j" || ((not reading) && pressed "ArrowDown") then Some Next
@@ -624,6 +662,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "z" then Some Snooze_
           else if pressed "t" then Some Task
           else if pressed "x" then Some Done
+          else if pressed "p" then Some Add_sender
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
           else if pressed "Tab" then
@@ -692,6 +731,7 @@ let mailbox_name (m : model) : string =
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
   else if m.mailbox = drafts then "Drafts"
   else if m.mailbox = tasks then "Tasks"
+  else if m.mailbox = people then "People"
   else m.mailbox
 
 let view (computer : computer) (m : model) : shape list =
@@ -711,6 +751,9 @@ let view (computer : computer) (m : model) : shape list =
       | Composing ->
           (if m.draft.subject = "" then "New message" else m.draft.subject)
           ^ " \xe2\x80\x94 " ^ m.account
+      | Person ->
+          (match m.person with Some c -> title c | None -> "")
+          ^ " \xe2\x80\x94 " ^ m.account
       | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
     in
     let right =
@@ -721,6 +764,7 @@ let view (computer : computer) (m : model) : shape list =
         in
         if m.mailbox = drafts then count (List.length m.drafts) "draft"
         else if m.mailbox = tasks then count (List.length m.tasks) "task"
+        else if m.mailbox = people then count (List.length m.people) "person"
         else count (List.length m.conversations) "conversation"
     in
     [
@@ -747,12 +791,12 @@ let view (computer : computer) (m : model) : shape list =
                  (left +. 16.) (y -. 19.) name;
              ])
          [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail);
-           ("Drafts", drafts); ("Tasks", tasks) ])
+           ("Drafts", drafts); ("Tasks", tasks); ("People", people) ])
     @
     if m.query <> "" then
       [
         text blue ~bold:false ~room:(side -. 24.) (left +. 16.)
-          (top -. bar -. 12. -. (5. *. row) -. 19.)
+          (top -. bar -. 12. -. (6. *. row) -. 19.)
           ("/" ^ m.query);
       ]
     else []
@@ -767,6 +811,48 @@ let view (computer : computer) (m : model) : shape list =
             let b = field_box computer i in
             text grey ~bold:false ~room:76. x0 (b.y -. 5.) name)
           [ "To"; "Cc"; "Subject"; "Attach" ]
+    | Person ->
+        (* the page: the addresses, the mail with them *)
+        let emails =
+          match m.person with Some c -> People.emails c | None -> []
+        in
+        let lines =
+          List.map (fun e -> (grey, false, e, "")) emails
+          @ [ (ink, false, "", ""); (ink, true, "Mail", "") ]
+          @ List.map
+              (fun (i : Item.t) ->
+                ( ink, false,
+                  Conversations.day i,
+                  Conversations.who i ^ "   " ^ title i ))
+              m.with_person
+        in
+        List.concat
+          (List.mapi
+             (fun k (color, bold, a, b) ->
+               let y = top -. bar -. 31. -. (float_of_int k *. 24.) in
+               [ text color ~bold ~room:120. x0 y a;
+                 text color ~bold ~room:(room -. 130.) (x0 +. 130.) y b ])
+             lines)
+    | Browsing when m.mailbox = people ->
+        if m.people = [] then
+          [ text grey ~bold:false ~room x0 (top -. bar -. 31.)
+              "No one: p adds a conversation's sender." ]
+        else
+          List.concat
+            (List.mapi
+               (fun i (c : Item.t) ->
+                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
+                 (if i = m.selected then
+                    [ rectangle (rgb 232 240 254) (room +. 16.) row
+                      |> move
+                           (x0 -. 8. +. ((room +. 16.) /. 2.))
+                           (y -. (row /. 2.)) ]
+                  else [])
+                 @ [ text ink ~bold:false ~room:190. x0 (y -. 19.) (title c);
+                     text grey ~bold:false ~room:(room -. 200.) (x0 +. 200.)
+                       (y -. 19.)
+                       (String.concat ", " (People.emails c)) ])
+               m.people)
     | Browsing when m.mailbox = tasks ->
         if m.tasks = [] then
           [ text grey ~bold:false ~room x0 (top -. bar -. 31.)

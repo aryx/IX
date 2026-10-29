@@ -403,3 +403,13 @@ day); tasks, a message stamped task with a due day, a Tasks list in
 the window; days typed as words (`store/When`, the recognizer's
 first part, English and French: the open question answered both for
 days). Not yet: `pim remind`, capture of a line, snooze of a task.
+
+2026-10-30: stage 4 begun, People: `store/People`, a contact of a
+message's sender made by a key (BBDB's way: p in the window, `mini-pim
+contact uid`), its id the address (contact:alice@ix), an email: line
+an address; a person's page, their addresses and the mail with them by
+any of them (found by address, not by links), then what names them
+(Links). The window's Go > People and a person's page; the terminal's
+`people` and `show`. Tests: Unit_people, session.sh, a frame. Not
+yet: addresses completed in To:, a vCard imported, the sender shown
+as the contact's name in lists.

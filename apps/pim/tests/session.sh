@@ -17,7 +17,7 @@
 # in the store's file, and refused when others may read it. Then, the
 # server gone, the same read from mini-pim's store (-offline), and a
 # server not there; the store's items searched, added, set, shown with
-# their links both ways. No network but this machine's, and never Gmail.
+# their links both ways; a sender made a contact, her page. No network but this machine's, and never Gmail.
 #
 # usage: session.sh [dir]
 #   dir: where mini-pim and mini-maild are (default: dune's,
@@ -184,6 +184,13 @@ has '^  re: task:answer  *task  *answer Carol$' "the message's page: the task"
 $PIM set task:answer due= && $PIM show task:answer > $W/out
 grep -q '^due:' $W/out && { echo "FAIL due= kept"; fail=1; }
 has "^  re: $id  *message  *Re: the plan$" "the task's page: the message"
+# People: Carol made a contact from her message; her page, the mail
+$PIM -u erin@ix contact 2 > $W/out
+is "contact:carol@ix" "the sender a contact"
+$PIM people > $W/out
+has '^contact:carol@ix  *contact  *Carol$' "the address book"
+$PIM show contact:carol@ix > $W/out
+has "^  $id  *message  *Re: the plan$" "a person's page: the mail with her"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"

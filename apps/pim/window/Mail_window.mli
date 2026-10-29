@@ -8,6 +8,7 @@
       | All Mail  |# Carol (2)             Re: the plan    2026-10-29 |<- the
       | Drafts    |                                                   |  selected
       | Tasks     |                                                   |
+      | People    |                                                   |
       | /plan     |                                                   |
       +-----------+---------------------------------------------------+
 
@@ -37,7 +38,9 @@
    (Mail_sync.wake); t makes its newest message a task, due a day
    typed so, the same item (plan_pim.md, idea 1); Go > Tasks lists the
    tasks not done by their day, the late ones in red, x marks one
-   done.
+   done. p adds the conversation's sender to People (BBDB's way: by a
+   key, not every address seen); Go > People lists them, o opens a
+   person's page, the mail with them.
 
    The window shows mini-pim's store (Items), not the server: it opens
    at once, with or without the network, on what the last list kept,

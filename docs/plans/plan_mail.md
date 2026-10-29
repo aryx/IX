@@ -366,3 +366,7 @@ until= as words too. Tests: Unit_when; session.sh (snoozed Thursday
 until monday: out, not back on Sunday, back on Monday); frames (a task
 made and listed, a snooze). Not yet: the Screener, invitations, the
 recognizer over a message's text, the sender made a contact.
+
+2026-10-30: the sender made a contact (stage 8, with plan_pim.md's
+stage 4): p, `mini-pim contact uid`; a person's page lists the mail
+with them.

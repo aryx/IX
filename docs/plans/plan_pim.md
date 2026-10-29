@@ -380,3 +380,19 @@ other kinds.
 
 2026-10-29: mail's stage 5: mini-pim's first window, its mail; one
 program with the terminal's commands.
+
+2026-10-29: mail's stages 6 (as far as mini-maild shows it: HTML-only
+mail, All Mail by its \All) and 7 (writing: reply, forward, drafts,
+from the terminal and in the window).
+
+2026-10-29: stage 2, the store, continued: `store/Search`, a search
+over every item, Gmail's syntax where it fits (words, phrases,
+`field:value` for any field, `is:` a stamp or unread, `label:`,
+`before:` and `after:` the item's day: due:, else when:, else a
+message's date; `-` not); `store/Links`, links both ways, a word of a
+field naming an item's id, the reverse computed when asked (nothing
+kept in step when ed or mini-git changes an item). The terminal's
+`search`, `show` (an item and its links both ways), `add`, `set`.
+Tests: Unit_store; session.sh (a task made of answering Carol's
+message, each found from the other). Not yet: the window's search over
+items (its / searches the mail), the other kinds' views.

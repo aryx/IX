@@ -15,7 +15,8 @@
 # [Gmail]/Tous les messages, found by its \All); a search; the password
 # in the store's file, and refused when others may read it. Then, the
 # server gone, the same read from mini-pim's store (-offline), and a
-# server not there. No network but this machine's, and never Gmail.
+# server not there; the store's items searched, added, set, shown with
+# their links both ways. No network but this machine's, and never Gmail.
 #
 # usage: session.sh [dir]
 #   dir: where mini-pim and mini-maild are (default: dune's,
@@ -155,6 +156,19 @@ pim -offline read 2
 has "à midi" "offline: a message read before, from the cache"
 pim -offline read 1
 has "not read yet" "offline: one never read"
+# the store (plan_pim.md, stage 2): Carol's message found among the
+# items, a task made of answering it, and each found from the other
+$PIM search from:carol is:message > $W/out
+id=$(cut -d' ' -f1 $W/out)
+case "$id" in mail:*) ;; *) echo "FAIL search: $(cat $W/out)"; fail=1;; esac
+$PIM add task:answer title="answer Carol" due=2026-11-05 re=$id
+$PIM search is:task before:2026-11-06 > $W/out
+has '^task:answer  *task  *answer Carol$' "a task found by its day"
+$PIM show $id > $W/out
+has '^  re: task:answer  *task  *answer Carol$' "the message's page: the task"
+$PIM set task:answer due= && $PIM show task:answer > $W/out
+grep -q '^due:' $W/out && { echo "FAIL due= kept"; fail=1; }
+has "^  re: $id  *message  *Re: the plan$" "the task's page: the message"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"

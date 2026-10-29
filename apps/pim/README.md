@@ -25,6 +25,12 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
         reply [-all] uid, forward uid
                        a draft printed, to edit, then send
         archive uid... out of the Inbox
+        search query   the store's items, Gmail's syntax: from:alice
+                       is:task label:travel before:2026-12-01 -word
+        show id        an item, and its links both ways
+        add id [name=value...], set id name=value...
+                       an item made (task:pay-rent due=2026-11-05),
+                       its fields changed
         -offline       list and read from the store, no server
                        by default with Gmail (smtp.gmail.com:465,
                        imap.gmail.com:993, TLS), the app password the
@@ -59,6 +65,9 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     window/Mail_window the mail in a window
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
+    store/Search       a search over every item, Gmail's syntax
+    store/Links        links both ways: the ids an item names, and the
+                       items naming it
     store/Items        the store: a directory, a file an item
                        ($PIM_STORE, ~/.ix-pim, $home/lib/pim), and the
                        mail's cache

@@ -57,6 +57,11 @@ let usage =
   \  read uid                          a message, marked read\n\
   \  reply [-all] uid, forward uid     a draft to edit, then send\n\
   \  archive uid...                    out of the Inbox\n\
+  \  search query                      the store's items: from:alice is:task\n\
+  \                                    label:travel before:2026-12-01 -word\n\
+  \  show id                           an item, its links both ways\n\
+  \  add id [name=value...]            an item (task:pay-rent due=2026-11-05)\n\
+  \  set id name=value...              its fields (name= takes one away)\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
@@ -99,6 +104,9 @@ let rec options (o : options) (args : string list) : options option =
   | "-m" :: m :: rest -> options { o with mailbox = m } rest
   | "-offline" :: rest -> options { o with offline = true } rest
   | "-all" :: rest -> options { o with all = true } rest
+  (* (a search's words as they are: -is:message is a word, no flag) *)
+  | "search" :: (_ :: _ as words) when o.args = [] ->
+      Some { o with args = "search" :: words }
   | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
   | a :: rest -> options { o with args = a :: o.args } rest
 
@@ -299,6 +307,99 @@ let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
       Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
 
+(*****************************************************************************)
+(* The store *)
+(*****************************************************************************)
+
+(* what an item is called in a list: its subject, title or name, else
+ * its text's first line *)
+let title (item : Item.t) : string =
+  let first =
+    List.find_opt (fun v -> v <> "")
+      (List.map (Item.field item) [ "subject"; "title"; "name" ])
+  in
+  match first with
+  | Some v -> Mime.decode_words v
+  | None -> (
+      match String.split_on_char '\n' (String.trim item.body) with
+      | l :: _ -> l
+      | [] -> "")
+
+let line (caps : < Cap.stdout ; .. >) (prefix : string) (item : Item.t) :
+    unit =
+  Console.print caps
+    (Printf.sprintf "%s%-24s %-16s %s\n" prefix (Item.id item)
+       (String.concat " " (Item.stamps item))
+       (title item))
+
+let search (caps : < caps ; .. >) (query : string) : Exit.t =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  List.iter (line caps "") (Search.search query items);
+  Exit.OK
+
+(* show: the item's file, and its links both ways *)
+let show (caps : < caps ; .. >) (id : string) : Exit.t =
+  let store = Items.at (Items.place caps) in
+  match Items.find caps store id with
+  | None -> fail caps (id ^ ": no such item")
+  | Some item ->
+      let items = Items.all caps store in
+      Console.print caps (String.trim (Item.to_string item) ^ "\n");
+      let say heading l =
+        if l <> [] then begin
+          Console.print caps ("\n" ^ heading ^ "\n");
+          List.iter (fun (field, i) -> line caps ("  " ^ field ^ ": ") i) l
+        end
+      in
+      say "links:" (Links.links items item);
+      say "linked from:" (Links.backlinks items item);
+      Exit.OK
+
+(* "due=2026-11-05": a field's name and value *)
+let assignments (l : string list) : (string * string) list option =
+  let one a =
+    match String.index_opt a '=' with
+    | Some i when i > 0 ->
+        Some (String.sub a 0 i, String.sub a (i + 1) (String.length a - i - 1))
+    | _ -> None
+  in
+  let l' = List.filter_map one l in
+  if List.length l' = List.length l then Some l' else None
+
+(* add: an item made, stamped its id's kind unless stamp= says; set: its
+ * fields given, an empty value taking one away; written at once *)
+let add (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
+    : Exit.t =
+  let store = Items.at (Items.place caps) in
+  match (Items.find caps store id, String.index_opt id ':') with
+  | Some _, _ -> fail caps (id ^ ": already an item")
+  | None, None -> fail caps (id ^ ": an id is kind:name (task:pay-rent)")
+  | None, Some i ->
+      let stamps =
+        match List.assoc_opt "stamp" fields with
+        | Some s -> String.split_on_char ' ' s
+        | None -> [ String.sub id 0 i ]
+      in
+      let fields = List.filter (fun (n, _) -> n <> "stamp") fields in
+      Items.save caps store (Item.make ~id ~stamps fields "");
+      Exit.OK
+
+let set (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
+    : Exit.t =
+  let store = Items.at (Items.place caps) in
+  match Items.find caps store id with
+  | None -> fail caps (id ^ ": no such item")
+  | Some _ when List.mem_assoc "id" fields -> fail caps "id: an item's name"
+  | Some item ->
+      let item =
+        List.fold_left
+          (fun item (name, v) ->
+            if v = "" then Mail.remove name item else Mail.set name v item)
+          item fields
+      in
+      Items.save caps store item;
+      Exit.OK
+
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let default =
     {
@@ -323,6 +424,13 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       draft caps o (int_of_string uid) ~forward:false
   | Some ({ args = [ "forward"; uid ]; _ } as o) when uids [ uid ] <> [] ->
       draft caps o (int_of_string uid) ~forward:true
+  | Some { args = "search" :: (_ :: _ as words); _ } ->
+      search caps (String.concat " " words)
+  | Some { args = [ "show"; id ]; _ } -> show caps id
+  | Some { args = "add" :: id :: l; _ } when assignments l <> None ->
+      add caps id (Option.get (assignments l))
+  | Some { args = "set" :: id :: (_ :: _ as l); _ } when assignments l <> None ->
+      set caps id (Option.get (assignments l))
   | Some ({ args = "archive" :: (_ :: _ as l); _ } as o)
     when List.length (uids l) = List.length l ->
       archive caps o (uids l)
@@ -340,7 +448,9 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
        (Mail_window.initial wcaps flags));
   Exit.OK
 
-let commands = [ "send"; "list"; "read"; "reply"; "forward"; "archive" ]
+let commands =
+  [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "search"; "show";
+    "add"; "set" ]
 
 let () =
   Cap.main (fun caps ->

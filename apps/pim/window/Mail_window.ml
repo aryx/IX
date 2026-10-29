@@ -581,7 +581,9 @@ let view (computer : computer) (m : model) : shape list =
     let right =
       if m.status <> "" then m.status
       else
-        let count n one = Printf.sprintf "%d %s%s" n one (if n = 1 then "" else "s") in
+        let count n one =
+          Printf.sprintf "%d %s%s" n one (if n = 1 then "" else "s")
+        in
         if m.mailbox = drafts then count (List.length m.drafts) "draft"
         else count (List.length m.conversations) "conversation"
     in
@@ -639,7 +641,9 @@ let view (computer : computer) (m : model) : shape list =
                  let y = top -. bar -. 12. -. (float_of_int i *. row) in
                  (if i = m.selected then
                     [ rectangle (rgb 232 240 254) (room +. 16.) row
-                      |> move (x0 -. 8. +. ((room +. 16.) /. 2.)) (y -. (row /. 2.)) ]
+                      |> move
+                           (x0 -. 8. +. ((room +. 16.) /. 2.))
+                           (y -. (row /. 2.)) ]
                   else [])
                  @ [ text ink ~bold:false ~room:190. x0 (y -. 19.)
                        (if d.to_ = "" then "(no one)" else d.to_);

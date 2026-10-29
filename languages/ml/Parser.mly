@@ -95,6 +95,8 @@ let with_attribute ds a =
 %token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET LBRACKETBAR BARRBRACKET
 /* mlpp: [% and [@@deriving */
 %token LBRACKETPERCENT DERIVING CLASS INSTANCE
+/* the checked annotations (Annotations.mli) */
+%token TAILCALL TAILREC
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -218,7 +220,11 @@ expr:
   | expr_comma_list { mkexp $sloc (Etuple (List.rev $1)) }
   | FUNCTION BAR? match_cases %prec prec_fun { mkexp $sloc (Efunction (List.rev $3)) }
   | FUN parameter fun_def { mkfun $sloc $2 $3 }
-  | simple_expr argument+ { mkexp $sloc (Eapply ($1, $2)) }
+  /* (f [@tailcall]) x, OCaml's place: the call marked, by its span */
+  | simple_expr argument+
+      { let e = mkexp $sloc (Eapply ($1, $2)) in
+        if Hashtbl.mem Annotations.tailcalls $1.espan then Hashtbl.replace Annotations.tailcalls e.espan ();
+        e }
   | LET rec_flag separated_nonempty_list(AND, let_binding) IN seq_expr { mkexp $sloc (Elet ($2, $3, $5)) }
   /* let* x = e in body: ( let* ) e (fun x -> body), whatever let* is where it is written */
   | LETOP let_binding IN seq_expr { mkexp $sloc (Eapply (ident $sloc $1, [ snd $2; mkfun $sloc (fst $2) $4 ])) }
@@ -251,7 +257,13 @@ expr:
 simple_expr:
   | constant { mkexp $sloc (Econst $1) }
   /* mlpp: the parentheses in espan, a [%bits] clause's body may start with one */
-  | LPAREN seq_expr RPAREN { { $2 with espan = span $sloc } }
+  /* (a marked expression keeps its mark under its new span) */
+  | LPAREN seq_expr RPAREN
+      { let e = { $2 with espan = span $sloc } in
+        if Hashtbl.mem Annotations.tailcalls $2.espan then Hashtbl.replace Annotations.tailcalls e.espan ();
+        e }
+  | LPAREN seq_expr TAILCALL RPAREN
+      { let e = { $2 with espan = span $sloc } in Hashtbl.replace Annotations.tailcalls e.espan (); e }
   | BEGIN seq_expr END { { $2 with espan = span $sloc } }
   | BEGIN END { unit $sloc }
   | constr_longident { mkexp $sloc (Econstruct ($1, None)) }
@@ -312,6 +324,8 @@ parameter:
 ;
 let_binding:
   | val_ident fun_binding { (mkpat $sloc (Pvar $1), $2) }
+  | val_ident fun_binding TAILREC
+      { Hashtbl.replace Annotations.tailrecs $2.espan (); (mkpat $sloc (Pvar $1), $2) }
   | pattern EQUAL seq_expr { ($1, $3) }
 ;
 fun_binding:

@@ -107,6 +107,37 @@ where it holds (compiled, run, its output) and one where it does not
 - **Hints** (`[@cold]`, an unroll): mini-ml has no use for them yet;
   checked ones first.
 
+## Step 1 done (2026-10-29): [@tailcall] and [@@tailrec]
+
+The author: "let's start 2". languages/ml/Annotations (the tables,
+by span), the lexer's TAILCALL and TAILREC, the parser's places, and
+Lower's checks (`check_tail`, in `value` and `tail`; bind_rec makes a
+[@@tailrec] function the target while its body is compiled):
+
+- `[@tailcall]` where OCaml reads it, on the function of an
+  application: `(f [@tailcall]) x`; on `f x [@tailcall]` OCaml warns
+  it misplaced (53) and mini-ml refuses it (a syntax error), both
+  saying it is not a call's annotation there. A parenthesized
+  expression keeps its mark (the parser's new span).
+- `[@@tailrec]` after a `let rec` binding, at the top or before
+  `in`: each call of the function in its own body made a jump. A call
+  of it from a closure inside it is compiled in that closure's frame,
+  not checked (Scala's @tailrec refuses it): a gap, said in Lower.
+- The messages: "line 3: count [@@tailrec]: its call of itself is
+  not in tail position", "line 4: this call [@tailcall] is not in
+  tail position", or "is not a tail call (a primitive, or given more
+  or fewer arguments than it takes)".
+
+Tests: languages/ml/tests/annotations.sh (a make test job):
+annotations/holds.ml (a loop of a million turns, two functions calling
+each other, a local loop) by OCaml and by mini-ml -O3, against
+holds.out; annotations/refused/'s three (a call an operand of +, a
+call inside a try, a [@tailcall] call added to), each refused by
+mini-ml with its .err and compiled by OCaml. Unannotated code the same
+bytes (lib_core's units and five of mini-ml's own, -O3, arm and arm64:
+112 objects).
+
 ## Status
 
-2026-10-29: plan written; nothing done.
+2026-10-29: step 1 done ([@tailcall], [@@tailrec]); next
+[@zero_alloc].

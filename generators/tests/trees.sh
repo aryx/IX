@@ -69,7 +69,7 @@ EOT
   else echo "FAIL $name: $(diff $d/ref.txt $d/mini.txt | head -5)"; failures=$((failures + 1)); fi
 }
 
-trees ml languages/ml "languages/ml/Ast.ml" \
+trees ml languages/ml "languages/ml/Ast.ml languages/ml/Annotations.mli languages/ml/Annotations.ml" \
   '(if Filename.check_suffix file ".mli" then Ast.Signature (Parser.interface Lexer.token lexbuf) else Ast.Structure (Parser.implementation Lexer.token lexbuf))' \
   $(tests/ix_files.sh | grep -E '\.mli?$') $ROOT/generators/tests/tokens/*.ml $ROOT/generators/tests/trees/*.ml
 # the corpus' files without their shell commands (.headers on), and each of their lines alone

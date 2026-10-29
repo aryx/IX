@@ -573,6 +573,35 @@ type operand = E of Scope.expr | F of (unit -> unit)
 type closure = Closure_static of string * string * int | Closure_pushed of string * int
 
 (* e's value pushed *)
+(* The checked annotations (Annotations.mli): a call [@tailcall], and
+ * the calls of a [@@tailrec] function in its own body (target: its
+ * code's label, its name, while its body is compiled), each a tail
+ * call, a jump. A call of it from a closure inside it, compiled in
+ * that closure's frame, is not checked (Scala's @tailrec refuses it). *)
+let target : (string * string) option ref = ref None
+
+let known_label env (f : Scope.expr) =
+  match f.e with
+  | Evar (Local x) -> Option.map fst (lookup env x).known
+  | Evar (Global g) ->
+      Option.bind (Hashtbl.find_opt known_globals g.gsym) (fun b ->
+        Option.map fst b.known)
+  | _ -> None
+
+(* why a marked call is wrong, if it is: in a value's position (tl
+ * false), or not made a jump (made: what app said) *)
+let check_tail env (e : Scope.expr) (f : Scope.expr) ~tl ~made =
+  let why () =
+    if not tl then "is not in tail position"
+    else "is not a tail call (a primitive, or given more or fewer arguments than it takes)"
+  in
+  if Hashtbl.mem Annotations.tailcalls e.span && not made then
+    error "line %d: this call [@tailcall] %s" e.loc (why ());
+  match !target, known_label env f with
+  | Some (lab, name), Some lab' when lab = lab' && not made ->
+      error "line %d: %s [@@tailrec]: its call of itself %s" e.loc name (why ())
+  | _ -> ()
+
 let rec value env (e : Scope.expr) =
   match e.e with
   | Econst (Int n) -> emit (Int n)
@@ -609,7 +638,9 @@ let rec value env (e : Scope.expr) =
   | Esetfield (r, l, v) ->
       value env v; value env r;
       emit (SetField (l.pos, Hashtbl.mem immediates e.span)); emit (Int 0)
-  | Eapply (f, args) -> ignore (app env f args false)
+  | Eapply (f, args) ->
+      check_tail env e f ~tl:false ~made:false;
+      ignore (app env f args false)
   | Efunction _ -> (match closure env "fun" e with Closure_static (sym, _, _) -> emit (Block sym) | Closure_pushed _ -> ())
   | Elet _ | Ematch _ | Eif _ | Eseq _ -> control env e false
   | Etry (b, cases) ->
@@ -688,7 +719,10 @@ and operands env ops =
 (* e as a function's last: its value returned, or a call made a jump *)
 and tail env (e : Scope.expr) =
   match e.e with
-  | Eapply (f, args) -> if not (app env f args true) then emit Ret
+  | Eapply (f, args) ->
+      let made = app env f args true in
+      check_tail env e f ~tl:true ~made;
+      if not made then emit Ret
   | Elet _ | Ematch _ | Eif _ | Eseq _ -> control env e true
   | Econstraint (e, _) -> tail env e
   | _ -> value env e; emit Ret
@@ -940,11 +974,17 @@ and bind_rec env bs =
   let fs = List.map (function (Scope.Pvar x, (e : Scope.expr)) -> (match (bare e).e with Efunction _ -> x, bare e | _ -> error "let rec %s: only functions" x.vname) | _ -> error "let rec: a name") bs in
   let labs = List.map (fun ((x : Scope.var), e) -> fun_label x.vname, List.length (fst (params e))) fs in
   let statics = List.map2 (fun ((x : Scope.var), _) (lab, n) -> x.vid, { loc = Static ("c" ^ lab); known = Some (lab, n) }) fs labs @ env in
+  (* a [@@tailrec] binding's body compiled with it the target *)
+  let marked = List.map (fun (_, (e : Scope.expr)) -> Hashtbl.mem Annotations.tailrecs e.span) bs in
+  let checked m lab (x : Scope.var) k () =
+    if m then begin target := Some (lab, x.vname); k (); target := None end else k ()
+  in
   if List.for_all (fun (_, e) -> captured statics e = []) fs then begin
-    List.iter2 (fun (_, e) (lab, n) ->
+    List.iteri (fun i ((x, e), (lab, n)) ->
       ignore (static_closure lab n);
       let ps, body = params e in
-      Queue.add (fun () -> compile_fun lab ps (body_env statics []) body) queue) fs labs;
+      Queue.add (checked (List.nth marked i) lab x (fun () -> compile_fun lab ps (body_env statics []) body)) queue)
+      (List.combine fs labs);
     statics
   end
   else begin
@@ -952,11 +992,11 @@ and bind_rec env bs =
     let env = List.map2 (fun ((x : Scope.var), _) ((lab, n), s) -> x.vid, { loc = Slot s; known = Some (lab, n) }) fs (List.combine labs slots) @ env in
     let ids = List.map (fun ((x : Scope.var), _) -> x.vid) fs in
     let fvss = List.map (fun (_, e) -> captured env e) fs in
-    List.iteri (fun i ((_, e), fvs) ->
+    List.iteri (fun i ((x, e), fvs) ->
       let lab, n = List.nth labs i in
       let ps, body = params e in
       let benv = body_env env fvs in
-      Queue.add (fun () -> compile_fun lab ps benv body) queue;
+      Queue.add (checked (List.nth marked i) lab x (fun () -> compile_fun lab ps benv body)) queue;
       alloc_closure env lab n fvs;
       emit (Set (List.nth slots i))) (List.combine fs fvss);
     List.iteri (fun i fvs ->

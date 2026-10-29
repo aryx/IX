@@ -189,8 +189,10 @@ all: $(IMAGE)
 
 $(B):
 	mkdir -p $(B)/bin
-	# ocaml-light's -output-obj calls "ld -r": the board's one here
-	printf '#!/bin/sh\nexec $(KLD) "$$@"\n' > $(B)/bin/ld; chmod +x $(B)/bin/ld
+	# ocaml-light's -output-obj calls "ld -r": the board's one here, by
+	# its path (the Pi 4's KLD is ld: old, `exec ld`, the script itself,
+	# for ever, in a new B: test-all's pi hung)
+	printf '#!/bin/sh\nexec %s "$$@"\n' "$$(command -v $(KLD))" > $(B)/bin/ld; chmod +x $(B)/bin/ld
 
 # c/ by a rule of its own: a $(B) made before c/ was is not made again
 $(B)/c: | $(B)

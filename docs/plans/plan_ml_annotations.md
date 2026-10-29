@@ -55,7 +55,7 @@ What mini-ml already decides, which the checks read:
 - tail calls: Lower's `tail` (a call in tail position, the stack
   machine's tail call and ssa/'s `Tail`);
 - inlining: Lower's `inline_candidate`, a body within `inline_most`
-  (16 at -O3);
+  (24 at -O3 since 2026-10-29, 16 before);
 - allocation: ssa/'s `Alloc` instructions, a closure's, a float boxed
   (Unbox's `Box`), a call of the runtime that allocates (Alloc's
   safepoints);

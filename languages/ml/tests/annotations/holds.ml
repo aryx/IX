@@ -39,7 +39,7 @@ let first_digit (s : string) =
   go s 0 [@@zero_alloc]
 
 (* [@inline], OCaml's place and after the binding: mix is over -O3's
- * 16 nodes, inlined all the same *)
+ * 24 nodes (under 32), inlined all the same *)
 let[@inline] twice (x : int) = x + x
 
 let mix (a : int) b =

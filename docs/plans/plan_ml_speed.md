@@ -955,3 +955,26 @@ as before (costs needs arguments, marshalling's timing line);
 tests/lite.sh compares the runtime by -ssa from mini-cc by mini-ml and
 by dune.
 
+## 2026-10-29, inlining's bound at -O3: 24 nodes
+
+The author, after [@@zero_alloc] in the games showed View's small
+float functions called across units (iceil 17 nodes, fcos and fsin
+over 24 with what they copy), each call boxing its float: "let's do
+4" (the bound measured), then "yes" to 24. Each limit a copy of
+2894779c built for arm by ix (MLOPT="-O3 -inline n"), under mini-5i
+(languages/ml/tests/inline_limit.sh), against 16:
+
+| | 20 | 24 | 32 |
+|---|---|---|---|
+| mini-doom, 61 frames | 1.58% fewer instructions | 1.90% fewer | 2.88% fewer |
+| mini-quake, 61 frames | 1.15% fewer | 4.21% fewer | 4.31% fewer |
+| cameltry | the same | 0.15% fewer | 0.15% fewer |
+| mini-ml compiling three of its units | 0.17% fewer | 0.41% fewer | 0.95% fewer |
+| sizes: doom, quake, mini-ml | 1.5%, 5.1%, 2.0% larger | 3.2%, 5.9%, 4.1% | 9.2%, 9.2%, 7.6% |
+
+The pixels the same at each. 24 taken: mini-quake's gain almost all
+there, at half of 32's growth; mini-5i counts instructions, not the
+Pi 1's 16 KB instruction cache, which 8% to 9% more code could cost
+back on the board (not measured there). View's norm, which every
+angle goes through, is over 24: at 24 mini-doom's fcos and fsin stay
+calls (whether 32 takes it, not looked at).

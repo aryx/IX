@@ -394,8 +394,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     (* mlpp: *)
     "-pp", Arg.Set pp, " the file after mlpp ([%bits], deriving), printed";
     "-O", Arg.Unit (fun () -> opti := List.map fst Opti.passes; Fold.on := true), " every pass of opti/ (-Oname: one), and Fold's";
-    (* the mkfiles' (mkconfig's MLOPT): what is added later comes with it *)
-    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; Fold.on := true; ssa := true; Lower.inline_most := 16), " every optimization: -O, -ssa, -inline 16";
+    (* the mkfiles' (mkconfig's MLOPT): what is added later comes with it.
+     * -inline 24: against 16, mini-quake 4.2% fewer instructions over 61
+     * frames, mini-doom 1.9%, mini-ml compiling 0.4%, the programs 3% to
+     * 6% larger; 32 gains about 1% more for 8% to 9% larger
+     * (plan_ml_speed.md, tests/inline_limit.sh). old: -inline 16 *)
+    "-O3", Arg.Unit (fun () -> opti := List.map fst Opti.passes; Fold.on := true; ssa := true; Lower.inline_most := 24), " every optimization: -O, -ssa, -inline 24";
     "-O0", Arg.Unit (fun () -> opti := []; Fold.on := false; ssa := false), " none: the stack machine's code as Lower makes it";
     "-no-fold", Arg.Clear Fold.on, " no constant folded (Fold): a toplevel constant read from its global";
     "-ssa", Arg.Set ssa, " compiled from the SSA form";

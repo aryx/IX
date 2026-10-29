@@ -17,7 +17,8 @@
 #     names (BUILD/bin: ml is mini-ml...), objtype=arm as on the card
 #     (BUILD/linux.log);
 #  4. each file of the two _mk compared: the same, but the libraries'
-#     dirs (their tree's path).
+#     dirs (their tree's path), the .depend files with that path as
+#     the card's.
 # -q: self.rc -q, minutes, not hours (the whole build: 3 hours under
 # QEMU, 2 minutes on Linux). The status: 0 when no directory failed
 # and every file is Linux's.
@@ -111,6 +112,11 @@ comm -3 "$build/linux.files" "$build/card.files" | sed 's/^\t/card only: /; /^ca
 same=0
 while read -r f; do
   if cmp -s "$build/card-mk/$f" "$build/src/_mk/$f"; then same=$((same + 1))
+  # (a .depend names other libraries' summaries by the tree's path:
+  # /src on the card, BUILD/src here)
+  elif [[ $f == */.depend* ]] &&
+    cmp -s "$build/card-mk/$f" <(sed "s|$build/src/|/src/|g" "$build/src/_mk/$f"); then
+    same=$((same + 1))
   else case $f in */dirs) ;; *) echo "differ: $f" >> "$build/differ.txt" ;; esac; fi
 done < <(comm -12 "$build/linux.files" "$build/card.files")
 if [ -s "$build/differ.txt" ]; then

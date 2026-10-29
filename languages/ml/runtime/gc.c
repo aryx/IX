@@ -346,7 +346,8 @@ static value *large_free;       /* the dead ones, to make others in */
 #endif
 static void m_free(void*, value);
 
-static void
+/* (not static: scan_arm.s calls it) */
+void
 large_mark(value *p)
 {
 	value *b;
@@ -392,16 +393,27 @@ large_sweep(void)
 }
 #endif
 
+/* OPTIMIZATION (copy's code): written for mini-cc's code, which keeps
+ * each variable in memory (compat's, 5c's without its registerizer):
+ * the block walked by two pointers, not an index loaded, shifted and
+ * added to both at each word (13 instructions a word, 6); a field that
+ * is an int, or a block not collected, left by scan_copies itself,
+ * not a call (2 of 5.1 million calls in mini-ml's compile of
+ * Ssa_build.ml). ocaml-light's oldify is C as well, by gcc.
+ * old: for(i = 0; i < n; i++) q[i] = p[i]; and scan_copies's
+ *      scan[i] = copy(scan[i]) for each field */
+#define Collected(p) (((p) >= lo && (p) < hi) || ((p) >= lo2 && (p) < hi2))
+
 static value
 copy(value v)
 {
-	value *p, *q;
-	value h, n, i;
+	value *p, *q, *e, *b;
+	value h;
 
 	p = (value*)v;
 	if(Is_int(v))
 		return v;
-	if((p < lo || p >= hi) && (p < lo2 || p >= hi2)){
+	if(!Collected(p)){
 #ifdef LARGE
 		if(p >= large_lo && p < large_hi && marking)
 			large_mark(p);
@@ -411,32 +423,93 @@ copy(value v)
 	h = p[-1];
 	if(h == 0)
 		return p[0];
-	n = ((uvalue)h) >> 10;
-	q = next + 1;
-	q[-1] = h;
-	for(i = 0; i < n; i++)
-		q[i] = p[i];
-	next = q + n;
+	q = next;
+	*q++ = h;
+	b = q;
+	e = q + (((uvalue)h) >> 10);
+	while(q < e)
+		*q++ = *p++;
+	next = q;
+	p = (value*)v;
 	p[-1] = 0;
-	p[0] = (value)q;
-	return (value)q;
+	p[0] = (value)b;
+	return (value)b;
 }
+
+/* OPTIMIZATION (scan in assembly): scan_copies below with copy in it,
+ * by hand in scan_arm.s and scan_arm64.s (lib_core's libc.a), where mini-cc's
+ * code keeps each variable in memory: about 20 instructions a field
+ * and 80 a block copied, a quarter of a compile by mini-ml. Not a
+ * kernel's (no LARGE), nor gcc's (-gas). As ocaml-light's arm.S
+ * (caml_alloc, caml_call_gc), the runtime's hot path in assembly. The
+ * state it reads and writes back, by its offsets there. */
+#ifdef LARGE
+#ifndef __GNUC__
+#ifdef arm
+#define SCAN_ASM
+#endif
+#ifdef arm64
+#define SCAN_ASM
+#endif
+#endif
+#endif
+#ifdef SCAN_ASM
+struct Scan {                   /* (arm's offsets; arm64's twice) */
+	value *scan;            /* 0 */
+	value *next;            /* 4 */
+	value *lo, *hi;         /* 8, 12 */
+	value *lo2, *hi2;       /* 16, 20 */
+	value *large_lo, *large_hi;     /* 24, 28 */
+	value marking;          /* 32 */
+};
+void ml_scan(struct Scan*);
+#endif
 
 /* the fields of the blocks from scan to next copied, next chasing scan
  * (Cheney's breadth first) */
+#ifdef SCAN_ASM
 static void
 scan_copies(value *scan)
 {
-	value n, i, h;
+	struct Scan s;
 
-	for(; scan < next; scan = scan + n + 1){
-		h = *scan;
-		n = ((uvalue)h) >> 10;
+	s.scan = scan;
+	s.next = next;
+	s.lo = lo;
+	s.hi = hi;
+	s.lo2 = lo2;
+	s.hi2 = hi2;
+	s.large_lo = large_lo;
+	s.large_hi = large_hi;
+	s.marking = marking;
+	ml_scan(&s);
+	next = s.next;
+}
+#else
+static void
+scan_copies(value *scan)
+{
+	value *f, *e, *p;
+	value h;
+
+	while(scan < next){
+		h = *scan++;
+		e = scan + (((uvalue)h) >> 10);
 		if((h & 255) < 251)
-			for(i = 1; i <= n; i++)
-				scan[i] = copy(scan[i]);
+			for(f = scan; f < e; f++){
+				p = (value*)*f;
+				/* (a large block marked by copy: in a major) */
+#ifdef LARGE
+				if(!Is_int((value)p) && (Collected(p) || marking))
+#else
+				if(!Is_int((value)p) && Collected(p))
+#endif
+					*f = copy((value)p);
+			}
+		scan = e;
 	}
 }
+#endif
 
 /* the roots copied: the stacks, C's values, the globals */
 static void

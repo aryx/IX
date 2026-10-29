@@ -96,7 +96,9 @@ LIBC_S7=$LIBC_MEM7 arch/arm64/rt0 syscall/os/$OS/svc_arm64
 LC=$L/libc
 LIBC=`{if(~ $OS^$O linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5; if not if(~ $OS^$O linux7) echo $LIBC_C $LIBC_linux $LIBC_linux7 $LIBC_S7; \
  if not if(~ $OS^$O plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm}
-LIBCOBJS=${LIBC:%=$LC/%.$O}
+# (and mini-ml's runtime's scan in assembly, gc.c's SCAN_ASM)
+SCAN=$LC/scan.$O
+LIBCOBJS=${LIBC:%=$LC/%.$O} $SCAN
 
 $LC/%.$O: libc/%.c
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
@@ -104,6 +106,10 @@ $LC/%.$O: libc/%.c
 $LC/%.$O: libc/%.s
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$AS -o $target libc/$stem.s
+
+$LC/scan.$O: $TOP/languages/ml/runtime/scan_$ARCH.s
+	mkdir -p $LC
+	$AS -o $target $TOP/languages/ml/runtime/scan_$ARCH.s
 
 $L/libc.a: $LIBCOBJS
 	rm -f $target

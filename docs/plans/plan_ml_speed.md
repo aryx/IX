@@ -889,3 +889,46 @@ slots, 11 values live and arm's five registers. Kept for the classic
 passes they are, and for what later passes (inlining, loads no store
 changes) may give them.
 
+## 2026-10-28, the collector's scan in assembly
+
+The profiles at HEAD on arm (the author: "ok what's next?", then "yes"
+to the profiles): the games in their own loops (virtua's drawing 66%,
+the collector under 1%; doom's copy 2.2%), mini-ml compiling
+Ssa_build.ml in its collector, copy 17.8% and scan_copies 9.2% of 1.92
+thousand million instructions. Its 3 majors 11.6% (a heap started
+large enough for none: 1.69), its 34 minors about 16%; the young
+generation's size no lever (256K words 0.969, 512K 1.006). The major
+policy was already chosen: Main.ml's space_overhead 200, 400 refused
+for mini-9pi's memory. What was left, the code: copy 65 instructions a
+call, by mini-cc's default back end (compat: 5c's code without its
+registerizer), every variable a load or a store.
+
+- The C rewritten for that code (pointers, not an index; an int or a
+  block not collected left by scan_copies, not a call): 0.988 only.
+- mini-cc -simple -O, its regs pass: 1.058, worse (no register for a
+  variable on arm, a pointer difference a call of _div).
+- In assembly (the author: "I think ocaml-light actually write some
+  of this code in assembly for the hot path"; ocaml-light's arm.S has
+  caml_alloc and caml_call_gc, its oldify C by gcc): scan_copies with
+  copy in it, scan_arm.s and scan_arm64.s, in lib_core's libc.a,
+  gc.c's struct Scan its state. A large block's marking in a major
+  calls gc.c's large_mark. Not a kernel's (no LARGE), nor gcc's.
+
+Found on the way: the bench's Marshal (bench/marshalling.ml) lost a
+block's fields after a large string. 5c's and 7c's callee stores its
+argument in its caller's frame (MOVW R0, a+0(FP)): large_mark wrote
+over the Scan's address at 4(R13). Now nothing of the scan's is there.
+tests/runtime/scan.ml (a record with a large string among its fields,
+majors) crashed with the old frame on arm.
+
+Measured on arm, mini-ml's three units (Lower, Typing, Ssa_build):
+6,100.0 million instructions to 5,200.9 (0.853), Ssa_build.ml alone
+1,916.4 to 1,591.1 (0.830, the same object; the collector 519 to 194
+million); mini-doom's frame 0.983, mini-quake's 0.9995, cameltry's
+1.004, the same pixels. Checked: the runtime suite at -O3 on arm and
+arm64 (54 of 54 and the benches but marshalling's timing line, and
+arm's size of it, 31-bit ints, as at HEAD); make test in a copy of
+HEAD with this 144 jobs, 0 failures (m-ix built in mini-9pi with the
+scan as Plan 9's). Not checked: large.ml as a Plan 9 program, which
+run.sh times out on before this as after (300 MB under mini-5i).
+

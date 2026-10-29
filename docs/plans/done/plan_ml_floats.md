@@ -130,6 +130,14 @@ on the host, 25 times where mini-doom's (integers) is 2.5.
 
 ## Status
 
+**Done** (2026-10-29, moved to done/): stages 1, 3 and 4 as below,
+stage 2 not needed (Opti's `refs`), stage 5 by mini-virtuaracing
+(`Mesh` and `Render` on `Float.Array`, plan_virtuaracing.md's
+2026-10-26). Left, and others' now: the game's frame
+(plan_virtuaracing.md); float-only records flat and doubles passed in
+registers (plan_ml_speed.md's 6); the audio's rows that waited for M4
+(done/plan_audio.md).
+
 2026-10-26: plan written, after the survey above (the author: "yes I
 agree, let's do it!").
 

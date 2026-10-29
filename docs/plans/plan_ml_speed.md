@@ -1,7 +1,7 @@
 # Plan: mini-ml's code faster after the floats: calls, tags, loops
 
 The author (2026-10-26), while another session unboxes the floats
-([`plan_ml_floats.md`](plan_ml_floats.md)): "What are other big opti
+([`plan_ml_floats.md`](done/plan_ml_floats.md)): "What are other big opti
 worth adding to mini-ml to improve the speed of games and apps?", then
 of the report's seven items, in its order: "excellent plan! I like it.
 Let's start". The candidates are

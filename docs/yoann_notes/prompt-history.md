@@ -54379,3 +54379,176 @@ Claude argued this frees R9 and R10 for C, so mini-cc's Ssa_gen could allocate t
 Claude estimated the extra load per C call at about 0.2% of a compile, but said the register gain needs measuring.
 Claude proposed first measuring a scratch-tree prototype in mini-ml and mini-cc, then rewriting the plan if it pays.
 Claude also compared designs A and B, and kept compat's R9 and R10 reserved.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:00
+
+**Yoann:**
+
+> wait
+
+**Claude (summary):**
+
+Claude stopped without changing anything, leaving commit `977e730c` (R8 change plus R9/R10 docs) in place.
+Claude reported that `docs/plans/plan_extern_register.md` is uncommitted and still describes design B, `extern register`.
+Claude found that design C would cost about 2 instructions on `ml_modify` (3.6 M calls) and the C math calls, and 1 elsewhere.
+Claude estimated 10 to 15 M extra instructions in a 5,087 M compile, so speed is roughly neutral, with the explicit contract as the main gain.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:45
+
+**Yoann:**
+
+> let's commit the plan change
+
+**Claude (summary):**
+
+Claude committed the plan change as fb311b67, recording decision 1 that tables stay off unless `mini-ld -g` requests them.
+Claude noticed a commit hook flagged `docs/plans/plan_web.md` as modified, but that file was left out.
+Claude judged that file to be another session's uncommitted work and kept it out of this commit.
+Claude offered Stage 3, the exact stack walk, as the next step whenever Yoann wants it.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:05
+
+**Yoann:**
+
+> ok let's do C and postpone extern register. What I want is clearer code, less hidden assumptions about register. the goal of 'extern register' was to make things more explicit, but if we can reuse R9/R10 we don't need those assumptions and code can be clearer?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:08
+
+**Yoann:**
+
+> document clearly assumptions!
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:06
+
+**Yoann:**
+
+> let's move forward on stage 3
+
+**Claude (summary):**
+
+Claude first studied how libmach walks ARM stacks, in its ctrace and arm's part of 5db.c.
+Claude wrote a Frames module in lib_executable that walks ARM stacks by matching prologue words read as 16-bit halves.
+Claude made mini-5i keep the faulting instruction's address, catching Memory.Fault around the execution loop.
+Claude tested an assembly program with a leaf reading address 0, after fixing mini-ar unit names via units.rc.
+Claude added the walk to make test, updated the plan's Status, and verified it in a fresh HEAD copy.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:08
+
+**Yoann:**
+
+> and conventions
+
+**Claude (summary):**
+
+Claude measured design C against HEAD on one commit, covering only mini-ml's three units, not every program.
+Claude found HEAD at 5,328.3 M instructions and design C at 5,508.1 M, a 3.4% increase.
+Ten registers kept lo and hi in R3 and R4, but saved only about 2% of the scan's instructions.
+Claude recommended keeping HEAD's R9/R10 rule as a written contract with a make test check, and reverting the code.
+Design C was implemented with make test passing, and the gcc failure on gc.c's m_alloc predates it.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 12:31
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude proposed committing stage 4 but holding back the kernel Makefile, since another session has uncommitted edits there.
+Claude planned to stage that Makefile as HEAD plus its two hunks, leaving the other session's changes out of the commit.
+Nothing was committed yet, so Claude asked Yoann to confirm before anything went into the repository.
+Claude had run `make test` in a fresh HEAD copy with these files: 148 jobs, 0 failures, 1 skipped.
+Stage 4 lets mini-9pi name a dying program's stack frames from its symbol table, built by ocaml-light.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:02
+
+**Yoann:**
+
+> what are those 3.4% Globally across programs how much gain/loss is Design C? It seems clearer to me and also we follow what OCaml itself was doing (special code when entering and leaving C calls).
+
+**Claude (summary):**
+
+Claude planned to measure design C on games, mini-ml and mini-cc benchmarks, and a mini-ml compile profile.
+Claude explained that ocamlopt's caml_c_call stores the allocation pointer before each C call and reloads it after.
+Claude noted that ocamlopt skips both steps for [@@noalloc] externals, since the young pointer survives the C call.
+Claude reasoned this works because gcc's arm ABI keeps the young pointer in callee-saved R10.
+Claude said Plan 9 has no callee-saved registers, so design C cannot skip the reload anywhere.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:08
+
+**Yoann:**
+
+> I like this [@@noalloc] annotation to help the compiler optimize things. I was actually thinking to have a [@@tailrec] that ensure the function is compiled in a tail recursive manner (I think Scala has such a thing), and I was wondering if we could have also an [@@inline] to check the function will be inlined because small and would satisfy the mini-ml inlining criteria, maybe a [@@register] or something. We could invent more annotations. I don't know if other languages and other compilers have similar ideas. ML of course is a high level language, and we usually want to go far away from the machine, but sometimes for critical code path, we don't want to switch to C or assembly but still have some control on the generated code and have assumptions validated about its performance
+
+**Claude (summary):**
+
+Claude proposed that the annotations be checked assertions rather than optimization hints, since a failing check beats silent non-optimization on a critical path.
+Claude recommended building `[@tailcall]`/`[@@tailrec]` first, then `[@zero_alloc]`, then a checked `[@inline]`, and leaving out `[@register]` because register allocation is machine-dependent.
+Claude suggested `[@@noalloc]` could skip only part of design C's cost, since C may use R10 once it's called.
+Claude proposed a plan document at `docs/plans/plan_ml_annotations.md`, after first checking whether mini-ml's parser keeps attributes.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:09
+
+**Yoann:**
+
+> yes let's write a plan document for it
+
+**Claude (summary):**
+
+Claude recommended either committing design C after a fresh `make test`, with open-coding of hot C calls next, or reverting to HEAD.
+Claude reported design C costs 0.01% to 0.34% more pixels on games and up to 3.4% in mini-ml compiling.
+Claude noted the cost comes from ML-to-C calls, mainly `length`, `string_alloc` and `blit_string`, about ten million times in mini-ml's compile.
+Claude suggested open-coding those hot calls would win back the cost without restoring the register assumption.
+Claude also listed the uncommitted tree (design C, extern-register plan, new annotations plan) and noted `make test` has not run since the last edits.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:13
+
+**Yoann:**
+
+> let's commit design C and with it the slightly negative result but still arguments for it
+
+**Claude (summary):**
+
+Claude committed design C as d4263bba after `make test` passed on a fresh HEAD copy, with 148 jobs and 0 failures.
+Claude recorded the slightly negative arm cost and the arguments for design C in the plan's decision section and commit message.
+Claude kept the uncommitted docs/plans/plan_ml_annotations.md out of that commit.
+Claude asked whether the annotations plan should go in as its own docs-only commit.
+Claude also left the failing gcc route and the other session's tree changes untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:04
+
+**Yoann:**
+
+> let's commit; also can we compile the Pi 1 kernel with mini-ml instead of ocaml-light? How much we would lose in performance? Seems like good dogfooding.
+
+**Claude (summary):**
+
+Claude committed the kernel Makefile fix f453ba4c, restoring eb3917a8's Makefile with Claude's two changes.
+Claude reported that mini-ml's Pi 1 kernel doesn't boot: it prints `k` forever and never reaches the Plan 9 banner.
+Claude traced the bss to lib_core's 64 MB libc stand-in allocator, a suspect it had not confirmed as the cause.
+Claude proposed bisecting about eight commits since 2026-10-03, then measuring both kernels on the same sessions.
+Claude asked for approval to start the bisect; the performance numbers remain unmeasured until the kernel boots.

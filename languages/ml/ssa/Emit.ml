@@ -1189,7 +1189,7 @@ let func m out (fn : func) (lf : L.func) =
         branch_zero true 0 (blabel h);
         ins "B\t%s" (edge b.id body ~alone:false)
     | Ret v -> load v 0; epilogue (); ins "%s" (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)")
-    | Raise v -> load v 0; ins "B\tml_raise(SB)"
+    | Raise v -> load v 0; List.iter (ins "%s") (Gen.raise_ m.arch)
     | Tail (tg, xs) ->
         args xs true;
         (match tg with L.Direct f -> epilogue (); ins "B\t%s(SB)" f | L.Code k -> ins "%s\t%d(R0), R%d" mov (w * k) t; epilogue (); ins "B\t(R%d)" t))

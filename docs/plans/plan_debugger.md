@@ -127,7 +127,7 @@ what the emulators make possible (10, 11), the playground's (12).
 | 3 | **The walk is exact**: from the pc, its function and its frame's size give where its return address is, and so the caller, to the program's start (libmach's `ctrace` for arm, then arm64). A leaf's caller is in lr. The guess of stage 0 goes | the tool of 2 given `sp`, `lr` and the stack's bytes; then the kernel | |
 | 4 | **The kernel prints names**: at a suicide the table is read from the process's image (its text segment's channel is open) and the line is `trace: ux_strings+0x10 < exec+0x44 (Sys_plan9) < start+0x90 (Rio) < ...`, one more with the files and lines if asked (`#c` or a boot variable). No table: stage 0's addresses | the author at the board | |
 | 5 | **An uncaught exception says more** (its first half done 2026-10-13, by a guess and a side file: Status): every argument printed (a constructor's name, `Unix_error`'s error as its message: no `_`), and where it was raised and through whom, by the same walk from inside the runtime. The names: stage 9's descriptions of the types, read by the runtime | whoever runs an ix program, on any system | half |
-| 5a | **The names said by the program itself, on the board**: the runtime reads its own image's table (Plan 9: `/proc/$pid/text`; Linux: `/proc/self/exe`) and prints `raised at: Tilemap.get+0x48 < Breakout.brick_at+0x30 < ...`, the unit's name and not `f27_get<>` (decision 2). Go's way (its pclntab, 5l's table grown up): a program that names its own frames needs no debugger and no host | the author at the board, from a photo | |
+| 5a | **The names said by the program itself, on the board**: the runtime reads its own image's table (Plan 9: `/proc/$pid/text`; Linux: `/proc/self/exe`) and prints `raised at: Tilemap.get+0x48 < Breakout.brick_at+0x30 < ...`, the unit's name and not `f27_get<>` (decision 2). Go's way (its pclntab, 5l's table grown up): a program that names its own frames needs no debugger and no host | the author at the board, from a photo | arm |
 | 5b | **The line of code in the trace**: with the pc/line table, `Tilemap.ml:137  let get t col row = t.cells.(row).(col)`, the text from `/src` when it is there and is the program's (`/src/VERSION`; card-self's `/src` is the repository) | the author at the board; a reader of the system on the system | |
 | 6 | **The kernel's own panic**: `panic:` and a guard's message (`Main.guard`) with the kernel's stack walked; its names from `kernel.elf` on the host first (stage 2's tool), in the kernel later if wanted | who debugs mini-9pi | |
 | 7 | **The kernel's support, Debugger.nw's chapter**: `#p`'s `mem` and `regs` read and written, `text` the image, `ctl`'s `stop`, `start`, `startstop`, `waitstop`, `hang`, `kill`; the breakpoint's instruction (a trap the kernel turns into a stop); a process that died kept Broken to be looked at (a limit on how many). Then `syscall` and ctl's `startsyscall`: **mini-ratrace**, t-ix's `trace`'s twin, as small, the first user and the test of the device | mini-acid; a person tracing a program's calls | |
@@ -464,3 +464,52 @@ QEMU: the line above, the rest as recorded; Symbols and Frames by
 ocaml-light's ocamlopt and by mini-ml -m 5; compile_ix.sh on
 kernels/ (75 of 75). Not run: session-c under mini-qemu, the other
 sessions, the Pi 4's kernel by mini-mk, the board.
+
+2026-10-29, stage 5a (the author: "let's do 1! and then 2", 2 being
+this; then, of the names, the runtime reading its own table): **a
+program names its own frames at an uncaught exception**, on arm, when
+linked with its tables (mini-ld -g): under mini-9pi, by mini-qemu,
+```
+% /boot/raise
+Fatal error: uncaught exception Deep(7)
+raised at: f1_down+0x7c Raise.ml:6 < f1_down+0x90 Raise.ml:6 < ... < Raise.Init+0x10 < ml_program+0x264 < main+0x190 < _main+0x20 rt0.s:17
+```
+- **The raise keeps where it was.** A raise in ML was a jump (B
+  ml_raise): its address was nowhere. Now `MOVW R15, R2` first (Gen's
+  `raise_`, Emit's too: one instruction a raise, arm only), and C's
+  raises go through `ml_raise_c`, which puts its call's address in R2
+  the same way; ml_raise keeps R2, SP, the link register and the
+  handler's SP when tracing (ml_raise_pc, _sp, _lr, _top). The stack's
+  words kept went from 16 to 64 (four of mini-ml's 16-byte frames
+  filled the 16: the walk ended at Init); the copy stops at the
+  handler's SP, so a raise caught nearby copies few.
+- **The walk, in the runtime** (languages/ml/runtime/frames.c, 387
+  lines with comments): lib_executable's Symbols and Frames in C, what
+  a trace needs (the function at an address and its .frame, mini-ml's
+  prologue, pc2line, the history's file, its last component only). The
+  stack below the handler's SP read from the words kept, above it from
+  the stack itself (the frames there are still there when the trace is
+  asked: the handler's, then ml_program's, main's). Done when the trace
+  is asked (ml_uncaught, Printexc.get_backtrace, a thread's death), not
+  at each raise; the table read once, at the first.
+- **The table, from the program's image**: Plan 9's `/proc/$pid/text`.
+  mini-9pi's served it no more than its name (mode 000): Devproc reads
+  the text segment's image (Fault.read_image, through a hook Main sets:
+  Fault is after Devproc); mini-5i serves the a.out it loaded. libc
+  gets Plan 9's getpid (os/plan9/getpid.c, principia's: #c/pid); the
+  runtime reads by seek and read (Linux's libc has no pread).
+- Without a table, or a raise whose R2 is not a raise's (an object
+  made by an older mini-ml: `MOVW R15, R2` or a BL is checked at the
+  address), the guess of 2026-10-13, addresses. On Linux the a.out is
+  an ELF without a table yet: the guess. arm64: the guess (no ADR in
+  mini-asm yet to take a raise's address).
+- Checked: debuggers/tests/walk.sh's third case (fault/Raise.ml: the
+  exception and its frames under mini-5i, as recorded, in make test);
+  a bound error raised from C (caml_array_bound_error+0xc first);
+  mini-9pi with the program in its bootdir, above. On the way: the
+  shared _mk's 425 start objects were from before ml_raise_c and were
+  removed to be made again (mk does not remake what a changed compiler
+  made: the third time today); smoke.sh's kernel says COMPILER=light,
+  its build directory its own.
+Not yet: arm64; the exception's arguments other than strings and
+integers (stage 9's descriptions); 5b, the line's text from /src.

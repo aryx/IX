@@ -164,6 +164,7 @@ let () =
   Callback.register "fault" fault;
   Callback.register "process_start" process_start;
   Dev.seconds := (fun () -> !Proc.ticks / 100);
+  Devproc.read_image := Fault.read_image;
   (* the screen first, the console on it (9pi's screeninit, before its
    * first print) *)
   Swconsole.init ();

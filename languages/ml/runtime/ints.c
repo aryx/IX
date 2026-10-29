@@ -27,7 +27,7 @@ bytes_at(value s, value i, int n)
 
 	k = Long_val(i);
 	if(k < 0 || k + n > length(s))
-		ml_raise(bound_exn);
+		ml_raise_c(bound_exn);
 	return (uchar*)Bytes(s) + k;
 }
 

@@ -64,7 +64,7 @@ raise_with(value *e, char *msg)
 	s = pop();
 	Field(x, 0) = (value)(e + 1);
 	Field(x, 1) = s;
-	ml_raise(x);
+	ml_raise_c(x);
 }
 
 /* raise a constant exception from C */
@@ -75,7 +75,7 @@ raise_const(value *e)
 
 	x = ml_alloc(1, 0);
 	Field(x, 0) = (value)(e + 1);
-	ml_raise(x);
+	ml_raise_c(x);
 }
 
 void
@@ -91,7 +91,7 @@ failwith(char *msg)
  * called which: the machine's stack does. It has little else in
  * mini-ml's code, whose values are on a stack of their own: a
  * function's frame there is the address its call returns to. ml_raise
- * (the generated start: Gen) keeps the stack's 16 top words, or what
+ * (the generated start: Gen) keeps the stack's 64 top words, or what
  * there is up to the handler's own, before it goes to the handler;
  * here, a word of them that is an address in the program's text, just
  * after a call's instruction, is taken for one: the innermost first,
@@ -99,7 +99,10 @@ failwith(char *msg)
  * A raise in C (an index out of bounds, a failwith) has C's frames
  * first, their other words among them: one that looks like a return
  * is a line too many. An exception caught and raised again says the
- * second raise. A help to find a bug, no more.
+ * second raise. A help to find a bug, no more: a program linked with
+ * its table (mini-ld -g) has frames.c's walk instead, exact and named.
+ * (old: 16 words, four of mini-ml's frames of 16 bytes: the walk ended
+ * too soon)
  * scripts/where.sh says the functions, by the map mini-ld writes
  * beside a program (-map).
  * On mini-9pi always; elsewhere when ML_TRACE is in the environment
@@ -109,8 +112,8 @@ failwith(char *msg)
  * old, tried first: only the stack pointer kept at the raise, and the
  * stack read when the trace was asked; the handler's own calls had
  * written over all of a shallow one by then. */
-#define NTRACE 16
-static char tbuf[NTRACE * 18 + 2];
+#define NTRACE 64
+static char tbuf[2048];         /* (the frames' names: frames.c) */
 
 #ifndef __GNUC__
 extern char etext[];
@@ -199,7 +202,10 @@ trace(void)
 	char d[20];
 	int i, n, s;
 
-	len = 0;
+	/* named by the program's table, when it has one */
+	len = ml_tracing ? frames(tbuf, sizeof tbuf) : 0;
+	if(len > 0)
+		return len;
 	n = ml_tracing ? NTRACE - ml_raise_left : 0;
 	for(i = 0; i < n; i++)
 		if(returns((uvalue)ml_raise_words[i])){

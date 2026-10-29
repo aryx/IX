@@ -9,6 +9,9 @@
 # (fault/Deep.ml: mini-ml's frames, read by their prologues, then the
 # runtime's C to _main) when _mk/5-plan9's lib_core is built, its
 # functions and lines only (the offsets are mini-ml's code of the day).
+# And an uncaught exception (stage 5a: fault/Raise.ml), its frames
+# walked and named by the program's runtime from its own table
+# (frames.c, the image's /proc/$pid/text: mini-5i's).
 # usage: debuggers/tests/walk.sh
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -33,14 +36,27 @@ if [ -f $M/lib_core/lib_core.a ]; then
   I="-I $F -I $L/system/plan9 -I $L/core -I $L/base -I $L/collections -I $L/printing -I $L/parsing -I $L/system -I $L/concurrency -I $L/commons"
   # (the start's units: lib_core's, as mkfiles/units.rc names them)
   U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
-  if $IX/languages/ml/Main.exe -m 5 -O3 $I -o $W/Deep.5 $F/Deep.ml \
-     && (cd $W && $IX/languages/ml/Main.exe -m 5 -O3 -start $U Deep Std_exit -o $W/Deep.start.5) \
-     && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o $W/deepml $W/Deep.start.5 $M/lib_core/lib_core.a $W/Deep.5 \
-          $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a > $W/err 2>&1; then
+  # a unit linked with its tables: $W/its name in lower case
+  ml() {
+    $IX/languages/ml/Main.exe -m 5 -O3 $I -o $W/$1.5 $F/$1.ml \
+     && (cd $W && $IX/languages/ml/Main.exe -m 5 -O3 -start $U $1 Std_exit -o $W/$1.start.5) \
+     && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o $W/${1,,}ml $W/$1.start.5 \
+          $M/lib_core/lib_core.a $W/$1.5 \
+          $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a > $W/err 2>&1 \
+     || { n=$((n + 1)); failures=$((failures + 1))
+          echo "FAIL $1.ml's build: $(head -2 $W/err)"; return 1; }
+  }
+  if ml Deep; then
     same "a fault in ML: mini-ml's frames, the runtime's C, to _main" \
       "f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < Deep.Init < ml_program < main < _main rt0.s:17" \
       "$($IX/machine/Main.exe $W/deepml 2>&1 | grep trace: | sed 's/^mini-5i: trace: //; s/+0x[0-9a-f]*//g')"
-  else n=$((n + 1)); failures=$((failures + 1)); echo "FAIL the ML program's build: $(head -2 $W/err)"; fi
+  fi
+  if ml Raise; then
+    same "an uncaught exception in ML: its frames named by the runtime, to _main" \
+      "Fatal error: uncaught exception Deep(7)
+raised at: f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < Raise.Init < ml_program < main < _main rt0.s:17" \
+      "$($IX/machine/Main.exe $W/raiseml 2>&1 | sed 's/+0x[0-9a-f]*//g')"
+  fi
 else echo "skipped the ML case: no _mk/5-plan9/lib_core (mini-mk O=5 OS=plan9 in lib_core)"; fi
 echo "walk: $n cases, $failures failure(s)"
 [ $failures = 0 ]

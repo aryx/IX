@@ -56,6 +56,12 @@ let glabel () = incr glabels; sprintf "M%d" !glabels
  * then C's outgoing arguments (5c's and 7c's: the first in R0, the
  * i-th at w*(i+1)), then a handler's record, 4 words, each from c. They
  * are known at the end, so each line is a function of them. *)
+(* a raise, the exception in R0: on arm its address in R2 first (8
+ * after the MOVW: the pc as an instruction reads it), where a trace's
+ * walk starts (ml_raise) *)
+let raise_ (arch : Asm.arch) =
+  (if arch = Arm then [ "MOVW\tR15, R2" ] else []) @ [ "B\tml_raise(SB)" ]
+
 let func m out (fn : func) =
   let w = m.w and mov = m.mov and vsp = m.vsp in
   let lines = ref [] in
@@ -289,7 +295,7 @@ let func m out (fn : func) =
         epilogue ();
         ins "%s" (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)");
         dead := true
-    | Raise -> ins "%s\tR%d, R0" mov !sp; ins "B\tml_raise(SB)"; dead := true
+    | Raise -> ins "%s\tR%d, R0" mov !sp; List.iter (ins "%s") (raise_ m.arch); dead := true
     | TryEnter (k, handler) ->
         spill ();
         Hashtbl.replace catch_at k !sp;
@@ -378,20 +384,33 @@ let startup m compile units =
   pr "\t%s\tR%d, %d(R0)\n\t%s\t%s, %d(R0)\n\t%s\tml_handler(SB), R%d\n\t%s\tR%d, %d(R0)\n" mov m.vsp w mov m.link (2 * w) mov t mov t (3 * w);
   pr "\t%s\tR0, ml_handler(SB)\n\t%s\t$0, R0\n\t%s\n" mov mov (match m.arch with Arm -> "RET" | Arm64 -> "RET\t(R30)");
   (* the exception in R0: back to the latest record *)
-  (* (first, for a trace, when the runtime asks (ml_tracing): the 16
+  (* (first, for a trace, when the runtime asks (ml_tracing): the 64
    * top words of the machine's stack kept in ml_raise_words, or those
-   * up to the handler's own stack pointer, and how many of the 16
+   * up to the handler's own stack pointer, and how many of the 64
    * were not there in ml_raise_left; the runtime's exceptions.c reads
    * the return addresses in them. No register is anyone's at a raise
-   * but R0's exception.) *)
+   * but R0's exception. On arm, also the registers a walk of the
+   * frames starts from (frames.c): the raise's address (in R2, 8 after
+   * it: a raise's MOVW R15, R2, or ml_raise_c's), the stack pointer,
+   * the link register (a leaf's caller), and the handler's stack
+   * pointer, above which the frames are still there after the raise) *)
   pr "\tTEXT\tml_raise(SB), %s\n\t%s\tml_handler(SB), R%d\n" m.frame mov t;
-  pr "\t%s\tml_tracing(SB), R1\n\tCMP\t$0, R1\n\tBEQ\t15(PC)\n" mov;
-  pr "\t%s\t0(R%d), R1\n\t%s\t%s, R2\n\t%s\t$ml_raise_words(SB), R3\n\t%s\t$16, R4\n" mov t mov (match m.arch with Arm -> "R13" | Arm64 -> "RSP") mov mov;
+  pr "\t%s\tml_tracing(SB), R1\n\tCMP\t$0, R1\n\tBEQ\t%d(PC)\n" mov (match m.arch with Arm -> 19 | Arm64 -> 15);
+  if m.arch = Arm then
+    pr "\tMOVW\tR2, ml_raise_pc(SB)\n\tMOVW\tR13, ml_raise_sp(SB)\n\tMOVW\tR14, ml_raise_lr(SB)\n";
+  pr "\t%s\t0(R%d), R1\n" mov t;
+  if m.arch = Arm then pr "\tMOVW\tR1, ml_raise_top(SB)\n";
+  pr "\t%s\t%s, R2\n\t%s\t$ml_raise_words(SB), R3\n\t%s\t$64, R4\n" mov (match m.arch with Arm -> "R13" | Arm64 -> "RSP") mov mov;
   pr "\tCMP\tR1, R2\n\tBHS\t8(PC)\n\t%s\t0(R2), R5\n\t%s\tR5, 0(R3)\n\tADD\t$%d, R2\n\tADD\t$%d, R3\n\tSUB\t$1, R4\n\tCMP\t$0, R4\n\tBNE\t-8(PC)\n" mov mov w w;
   pr "\t%s\tR4, ml_raise_left(SB)\n" mov;
   (match m.arch with
    | Arm64 -> pr "\tMOV\t0(R%d), R18\n\tMOV\tR18, RSP\n\tMOV\t8(R%d), R26\n\tMOV\t24(R%d), R18\n\tMOV\tR18, ml_handler(SB)\n\tMOV\t16(R%d), R18\n\tB\t(R18)\n" t t t t
    | Arm -> pr "\tMOVW\t0(R9), R13\n\tMOVW\t4(R9), R10\n\tMOVW\t12(R9), R14\n\tMOVW\tR14, ml_handler(SB)\n\tMOVW\t8(R9), R9\n\tB\t(R9)\n");
+  (* C's raise (the runtime's): the call's address, 8 after it in R2 as
+   * a raise in ML has it *)
+  (match m.arch with
+   | Arm64 -> pr "\tTEXT\tml_raise_c(SB), $-8\n\tB\tml_raise(SB)\n"
+   | Arm -> pr "\tTEXT\tml_raise_c(SB), $-4\n\tADD\t$4, R14, R2\n\tB\tml_raise(SB)\n");
   (* from C, a function of ML's called (the runtime's callback: a
    * kernel's trap): the closure in R0 as C gave it, its argument C's
    * second, the value stack's top back in its register, the closure's

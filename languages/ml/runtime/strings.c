@@ -46,7 +46,7 @@ static void
 bound(value s, value i)
 {
 	if(i < 0 || i >= length(s))
-		ml_raise(bound_exn);
+		ml_raise_c(bound_exn);
 }
 
 value
@@ -67,7 +67,7 @@ ml_string_set(value s, value i, value c)
 void
 caml_array_bound_error(void)
 {
-	ml_raise(bound_exn);
+	ml_raise_c(bound_exn);
 }
 
 /* (exceptions.c's) */

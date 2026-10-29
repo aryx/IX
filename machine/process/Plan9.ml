@@ -35,6 +35,7 @@ type virt =
   | Bintime                        (* /dev/bintime: nanoseconds, big-endian *)
   | Env of string                  (* /env/NAME *)
   | Note of int                    (* /proc/PID/note: writing posts a note *)
+  | Text                           (* /proc/PID/text: the a.out (its runtime reads its tables) *)
 
 type file = {
   path : string;                   (* absolute, for fd2path and directory reads *)
@@ -51,6 +52,7 @@ type proc = {
   host : Host_calls.t;
   mem : Memory.t;
   name : string;
+  image : string;                            (* the a.out, as loaded *)
   heap_base : int;                           (* the page after the bss *)
   bss_end : int;                             (* libc's end: brk's least *)
   files : (int, file) Hashtbl.t;
@@ -104,7 +106,7 @@ let load host mem (a : aout) file argv envp =
     ap := !ap + String.length s + 1) argv;
   Memory.store32 mem (sp + 4 + (4 * List.length argv)) 0;
   let name = Filename.basename (match argv with a :: _ -> a | [] -> "a.out") in
-  let p = { host; mem; name; heap_base = data_end; bss_end = text_end + a.data + a.bss; files = Hashtbl.create 8; errstr = ""; handler = 0; handling = [];
+  let p = { host; mem; name; image = file; heap_base = data_end; bss_end = text_end + a.data + a.bss; files = Hashtbl.create 8; errstr = ""; handler = 0; handling = [];
             notes = Queue.create (); children = Hashtbl.create 4; dir_pending = Hashtbl.create 4 } in
   p, a.entry, sp, tos
 
@@ -151,6 +153,8 @@ let virt_of p path =
   | [ ""; "env"; name ] when name <> "" -> Some (Env name)
   | [ ""; "proc"; pid; "note" ] ->
       (match int_of_string_opt pid with Some n when n = p.host.getpid () -> Some (Note n) | _ -> None)
+  | [ ""; "proc"; pid; "text" ] ->
+      if int_of_string_opt pid = Some (p.host.getpid ()) then Some Text else None
   | _ -> None
 
 let be64 v = String.init 8 (fun i -> Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical v (8 * (7 - i))) 0xffL)))
@@ -161,6 +165,7 @@ let content p = function
   | Bintime -> ""
   | Env name -> Hashtbl.find_opt env name ||| ""
   | Note _ -> ""
+  | Text -> p.image
 
 (* a host descriptor reserved for a virtual file: its number is then
  * the host's, never clashing *)
@@ -254,7 +259,7 @@ let stat_record name (st : Host_calls.stat) =
 
 let virt_stat p v =
   let now = p.host.now () in
-  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" in
+  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" in
   stat_record name { dev = 0; ino = 0; kind = Reg; perm = 0o644; nlink = 1; uid = 0; gid = 0; rdev = 0;
                      size = String.length (content p v); atime = now; mtime = now; ctime = now }
 

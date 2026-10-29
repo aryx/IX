@@ -142,6 +142,9 @@ val arch : mach -> Asm.arch
 (* the machine with gcc's calls of C (AAPCS): for -gas *)
 val gnu : mach -> mach
 
+(* a raise's instructions, the exception in R0 (Emit's too) *)
+val raise_ : Asm.arch -> string list
+
 (* a unit's assembly *)
 val unit_ : mach -> Ir.unit_ -> string
 

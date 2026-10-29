@@ -46,7 +46,7 @@ exit_status(int n)
 #endif
 
 extern void ml_start(value*);
-extern void ml_raise(value);
+extern void ml_raise_c(value);
 extern value ml_callback(value, value);
 #ifndef __GNUC__
 extern double ml_fsqrt(double);
@@ -62,10 +62,14 @@ value *ml_vsp;
 void *ml_handler;
 /* for a trace (exceptions.c): whether ml_raise is to keep the top of
  * the machine's stack, its words at the last raise, and how many of
- * the 16 it did not have */
+ * the 64 it did not have */
 value ml_tracing;
-value ml_raise_words[16];
+value ml_raise_words[64];
 value ml_raise_left;
+/* and on arm where its walk starts (frames.c): the raise's address (8
+ * after it), the stack pointer, the link register, the handler's stack
+ * pointer */
+uvalue ml_raise_pc, ml_raise_sp, ml_raise_lr, ml_raise_top;
 
 void failwith(char*);
 static void raise_with(value*, char*);
@@ -91,6 +95,7 @@ unsupported(char *what)
  * functions and the heap's size, a -D, are the whole runtime's). */
 #include "gc.c"          /* the heap: two halves, Cheney's collector, a young generation */
 #include "strings.c"     /* strings and bytes */
+#include "frames.c"      /* a raise's frames, named by the program's own table */
 #include "exceptions.c"  /* the predefined exceptions, raising from C, the uncaught one */
 #include "compare.c"     /* compare and hash */
 #include "arrays.c"      /* arrays, Obj, Callback */

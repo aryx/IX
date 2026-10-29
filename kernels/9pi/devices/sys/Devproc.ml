@@ -9,7 +9,20 @@ open Errors
 (* procdir, in its order *)
 let files = [ "args", 0o660; "ctl", 0o000; "fd", 0o444; "fpregs", 0o000; "kregs", 0o400; "mem", 0o000;
               "note", 0o000; "noteid", 0o664; "notepg", 0o000; "ns", 0o444; "proc", 0o400; "regs", 0o000;
-              "segment", 0o444; "status", 0o444; "text", 0o000; "wait", 0o400; "profile", 0o400; "syscall", 0o400 ]
+              "segment", 0o444; "status", 0o444; "text", 0o400; "wait", 0o400; "profile", 0o400; "syscall", 0o400 ]
+
+(* the image's bytes (Fault.read_image, after this in the link: Main
+ * sets it) *)
+let read_image = ref (fun (_ : chan) (_ : int) (_ : int) -> "")
+
+(* text: the program's file, as its text segment was made from it (the
+ * image's channel): a program's own runtime reads its symbol table
+ * there to name a raise's frames (languages/ml/runtime/frames.c) *)
+let text p off n =
+  match List.find_opt (fun s -> s.kind = Text) p.segs with
+  | Some s ->
+      (match s.image with Some c -> !read_image c off n | None -> raise (Error eperm))
+  | None -> raise (Error eperm)
 
 let knamelen = 28
 let numsize = 12
@@ -113,6 +126,7 @@ let init () =
       | "ns" -> readstr off n (ns p)
       | "noteid" -> readstr off n (num p.noteid)
       | "segment" -> readstr off n (segment p)
+      | "text" -> text p off n
       | _ -> raise (Error eperm));
     Dev.write = (fun c s _ ->
       let p = find (c.qid.path / 32) in

@@ -37,14 +37,19 @@
 #                   tests/session-b); then the screen (the console drawn
 #                   as 9pi draws it, the arrow cursor), after a session
 #                   and after the USB mouse moved, under mini-qemu and
-#                   QEMU: the C 9pi's pixels (tests/screen*-c.ppm.gz)
+#                   QEMU: mini-9pi's pixels (tests/screen*-mini.ppm.gz)
 #                   Then rio (tests/graphics.py: raspberry/tests/9pi_graphics.py's
 #                   steps, the USB keyboard and mouse: the console, rio
 #                   started, its menu, a window swept out, a command in
-#                   it), every screen and the console the C 9pi's
-#                   (tests/rio-c.md5, tests/rio-c.txt), under mini-qemu
-#                   and QEMU
-#   make expected-screen  the C 9pi's screens, under QEMU (tests/*.ppm.gz)
+#                   it), every screen mini-9pi's (tests/rio-mini.md5)
+#                   and the console the C 9pi's (tests/rio-c.txt), under
+#                   mini-qemu and QEMU. (old: the screens the C 9pi's
+#                   too, tests/screen*-c.ppm.gz and rio-c.md5, kept; no
+#                   longer so since mini-9pi's screen is 1024 by 768,
+#                   2026-10-08, and its memory line its own, 2026-10-10:
+#                   9pi's is 640 by 480)
+#   make expected-mini    mini-9pi's screens, under QEMU (tests/*-mini.*)
+#   make expected-screen  the C 9pi's screens, under QEMU (tests/*-c.ppm.gz)
 #   make expected-rio     the C 9pi's rio screens (their md5s) and console
 
 # (the mkfiles' recipes are rc's, mini-rc's: mkfiles/mkconfig)
@@ -215,6 +220,16 @@ expected-rio: | $(B)
 	cd $(B)/rio-c && md5sum $(RIO_SCREENS) > $(CURDIR)/tests/rio-c.md5
 	$(call unwarned,$(B)/rio-c/console.txt) | tr -d '\r' > tests/rio-c.txt
 
+# mini-9pi's own screens, make check's, under QEMU: rio's (their md5s),
+# the console's after a session and after the mouse moved
+expected-mini: $(IMAGE) | $(B)
+	rm -rf $(B)/rio-ref
+	tests/graphics.py $(B)/rio-ref -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
+	cd $(B)/rio-ref && md5sum $(RIO_SCREENS) > $(CURDIR)/tests/rio-mini.md5
+	$(MAKE) --no-print-directory run-qemu-screen run-qemu-move
+	gzip -n -9 < $(B)/qemu-screen.ppm > tests/screen-mini.ppm.gz
+	gzip -n -9 < $(B)/qemu-move.ppm > tests/screen-move-mini.ppm.gz
+
 # stage B's image (tests/boot-b.rc as /boot/boot): kernel-pi1-b.img,
 # kernel-pi4-b.elf
 IMAGE_B = $(basename $(IMAGE))-b$(suffix $(IMAGE))
@@ -249,9 +264,9 @@ run-mini-move:
 run-qemu-move:
 	$(SESSION_PY) --prompt "% " $(MOVE) --timeout 200 --screendump $(B)/qemu-move.ppm --out $(B)/qemu-move.txt $(SCREEN_SESSION) -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 run-rio-mini:
-	tests/graphics.py --step 10 --expect tests/rio-c.md5 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
+	tests/graphics.py --step 10 --expect tests/rio-mini.md5 $(B)/rio-mini -- $(MINIQEMU) $(BOOT) $(SD) $(USB)
 run-rio-qemu:
-	tests/graphics.py --expect tests/rio-c.md5 $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
+	tests/graphics.py --expect tests/rio-mini.md5 $(B)/rio-qemu -- $(QEMU) $(QEMU_BOOT) $(SD) $(USB)
 run-mini-net:
 	$(SESSION_PY) --prompt "% " --timeout 400 --out $(B)/mini-net.txt --lines tests/session-net.cmds -- $(MINIQEMU) $(BOOT) $(SD) $(USB) $(NET)
 run-qemu-net:
@@ -271,15 +286,15 @@ check: $(IMAGE) $(IMAGE_B)
 	$(call unwarned,$(B)/qemu-usb.txt) | diff - tests/session-usb && echo "ok 9pi: a session typed on the USB keyboard under QEMU"
 	$(call unwarned,$(B)/mini-b.txt) | diff - tests/session-b && echo "ok 9pi: stage B's session under mini-qemu"
 	$(call unwarned,$(B)/qemu-b.txt) | diff - tests/session-b && echo "ok 9pi: stage B's session under QEMU"
-	gzip -dc tests/screen-c.ppm.gz | cmp - $(B)/mini-screen.ppm && gzip -dc tests/screen-c.ppm.gz | cmp - $(B)/qemu-screen.ppm \
-	  && echo "ok 9pi: the screen as the C 9pi draws it, under mini-qemu and QEMU"
-	gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/mini-move.ppm && gzip -dc tests/screen-move-c.ppm.gz | cmp - $(B)/qemu-move.ppm \
-	  && echo "ok 9pi: the screen after the USB mouse moved, as the C 9pi's, under mini-qemu and QEMU"
-	cd $(B)/rio-mini && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
-	cd $(B)/rio-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-c.md5
+	gzip -dc tests/screen-mini.ppm.gz | cmp - $(B)/mini-screen.ppm && gzip -dc tests/screen-mini.ppm.gz | cmp - $(B)/qemu-screen.ppm \
+	  && echo "ok 9pi: the screen as recorded, under mini-qemu and QEMU"
+	gzip -dc tests/screen-move-mini.ppm.gz | cmp - $(B)/mini-move.ppm && gzip -dc tests/screen-move-mini.ppm.gz | cmp - $(B)/qemu-move.ppm \
+	  && echo "ok 9pi: the screen after the USB mouse moved, as recorded, under mini-qemu and QEMU"
+	cd $(B)/rio-mini && md5sum --quiet -c $(CURDIR)/tests/rio-mini.md5
+	cd $(B)/rio-qemu && md5sum --quiet -c $(CURDIR)/tests/rio-mini.md5
 	$(call unwarned,$(B)/rio-mini/console.txt) | tr -d '\r' | diff - tests/rio-c.txt
 	$(call unwarned,$(B)/rio-qemu/console.txt) | tr -d '\r' | diff - tests/rio-c.txt \
-	  && echo "ok 9pi: rio (its menu, a window swept out, a command in it), every screen and the console the C 9pi's, under mini-qemu and QEMU"
+	  && echo "ok 9pi: rio (its menu, a window swept out, a command in it), every screen as recorded and the console the C 9pi's, under mini-qemu and QEMU"
 	$(call unwarned,$(B)/mini-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network (ipconfig, ping, hget from the host) under mini-qemu"
 	$(call unwarned,$(B)/qemu-net.txt) | $(call netmask) | diff - tests/session-net && echo "ok 9pi: the network under QEMU"
 
@@ -532,7 +547,8 @@ check-ix: ix
 # under mini-qemu and under QEMU, its screens compared with those
 # recorded (mini-qemu's). tests/graphics.py drives them with QEMU's USB
 # keyboard and mouse, by steps (tests/NAME.steps, tests/NAME.md5; not
-# rio-NAME: tests/rio-c.md5 is the C rio's screens, make check's):
+# rio-NAME: tests/rio-mini.md5 is make check's rio screens, rio-c.md5
+# the C rio's):
 #
 #   draw      hellodraw (../../lib_graphics/tests): the display opened, a
 #             colour, a thick line, text in Plan 9's default font

@@ -10,7 +10,7 @@
 # window swept out, a command typed in it -- each followed by a still
 # screen (screendumps every few seconds until three alike), written to
 # DIR as boot.ppm, step1.ppm... The console's bytes to DIR/console.txt.
-# With --expect, a file of the screens' MD5s (md5sum's lines: tests/rio-c.md5),
+# With --expect, a file of the screens' MD5s (md5sum's lines: tests/rio-mini.md5),
 # a screen is also taken as soon as it is the expected one, twice a second
 # apart: no waiting for three alike (40 seconds a screen under mini-qemu,
 # eleven screens). A screen that never is the expected one is still the

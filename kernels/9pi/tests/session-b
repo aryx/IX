@@ -93,6 +93,7 @@ in f 1 2
 --rw-rw---- c 0 '' ''  0 Sep  9  2026 /dev/cons
 ---w--w---- c 0 '' ''  0 Sep  9  2026 /dev/consctl
 --r--r--r-- P 0 '' ''  0 Sep  9  2026 /dev/cputemp
+--r--r--r-- P 0 '' ''  0 Sep  9  2026 /dev/cputhrottle
 --r--r--r-- c 0 '' '' 72 Sep  9  2026 /dev/cputime
 --r--r--r-- P 0 '' ''  0 Sep  9  2026 /dev/cputype
 --r--r----- c 0 '' ''  0 Sep  9  2026 /dev/kmesg

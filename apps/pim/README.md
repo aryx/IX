@@ -5,9 +5,10 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 to 3: the mail's formats, sending by
+So far, plan_mail.md's stages 1 to 4: the mail's formats, sending by
 SMTP and reading by IMAP, with Gmail or with mini-maild on this
-machine. Their tests: `tests/`, the unit tests (dune's) and
+machine, what is read kept in the suite's store (plan_pim.md's stage
+2 begun). Their tests: `tests/`, the unit tests (dune's) and
 `session.sh`, mini-pim against mini-maild (`make test`'s "mini-pim").
 
     bin/mini-pim [-s host:port] [-plain] [-u user] command
@@ -16,6 +17,7 @@ machine. Their tests: `tests/`, the unit tests (dune's) and
                        the newest conversations, a line each
         read uid       a message, marked read
         archive uid... out of the Inbox
+        -offline       list and read from the store, no server
                        by default with Gmail (smtp.gmail.com:465,
                        imap.gmail.com:993, TLS), the app password the
                        first line of standard input
@@ -36,6 +38,12 @@ machine. Their tests: `tests/`, the unit tests (dune's) and
     mail/Imap_server   the server's machine, mini-maild's
     mail/Lines         a connection of lines, over TCP or TLS, that
                        drives those machines
+    mail/Mail_item     a message as an item of the store
+    store/Item         an item: name: value lines, Mail's syntax,
+                       stamped
+    store/Items        the store: a directory, a file an item
+                       ($PIM_STORE, ~/.ix-pim, $home/lib/pim), and the
+                       mail's cache
 
 Each copied `.ml` says in one line where it comes from and what
 changed (`ix: the author's playground's <path>; ...`). The numbers
@@ -70,10 +78,11 @@ lines) its SMTP half, `Smtp_server` (99), with neither its sockets
 
 ## What is ix's own
 
-The charsets' tables in `Mime` and their test; `Imap` and
+The charsets' tables in `Mime` and their test; `store/`,
+`Mail_item`; `Imap` and
 `Imap_server` (the playground had POP3 only); `Lines` (the
 playground's `Transport` was its kind, over its own TLS and
 WebSocket); the two programs, `Pim.ml` and `Maild.ml` (after the
 playground's tiny_maild, a file a message instead of an mbox, IMAP for
 its POP3, one client at a time as mini-httpd); `Unit_smtp_server`,
-`Unit_imap`, `session.sh`, `Test.ml`.
+`Unit_imap`, `Unit_items`, `session.sh`, `Test.ml`.

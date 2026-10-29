@@ -95,6 +95,13 @@ val pairs : value list -> (string * value) list
 (* an atom's or a string's text; "" else *)
 val text : value -> string
 
+(* flags or labels as a list: "(\\Inbox \"my label\")", one with a space
+ * quoted *)
+val list : string list -> string
+
+(* a list's texts; [] for what is not a list *)
+val texts : value -> string list
+
 (* "1,3:5": a set of UIDs as IMAP writes it *)
 val uid_set : int list -> string
 
@@ -126,6 +133,8 @@ type summary = {
   flags : string list; (* \Seen, \Answered, ... *)
   labels : string list; (* Gmail's: \Inbox, \Important, travel ... *)
   thread : string; (* Gmail's conversation, "" when none *)
+  msgid : string; (* Gmail's id of the message, the same in every
+                     mailbox, where a UID is the mailbox's; "" when none *)
   headers : Mail.t; (* From, To, Cc, Subject, Date and the ids, no body *)
 }
 

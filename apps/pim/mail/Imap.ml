@@ -170,6 +170,17 @@ let rec pairs (l : value list) : (string * value) list =
 let text (v : value) : string =
   match v with Atom s | String s -> s | List _ | Nil -> ""
 
+let list (l : string list) : string =
+  "("
+  ^ String.concat " "
+      (List.map
+         (fun s -> if s = "" || String.contains s ' ' then quote s else s)
+         l)
+  ^ ")"
+
+let texts (v : value) : string list =
+  match v with List l -> List.map text l | _ -> []
+
 let uid_set (uids : int list) : string =
   (* runs of consecutive UIDs as a:b *)
   let rec runs (l : int list) : (int * int) list =
@@ -259,6 +270,7 @@ type summary = {
   flags : string list;
   labels : string list;
   thread : string;
+  msgid : string;
   headers : Mail.t;
 }
 
@@ -272,9 +284,6 @@ let fetched (rs : response list) : (string * value) list list =
           Some (pairs items)
       | _ -> None)
     rs
-
-let texts (v : value) : string list =
-  match v with List l -> List.map text l | _ -> []
 
 (* the value of the item whose name starts so: BODY[...] *)
 let item (prefix : string) (items : (string * value) list) : value =
@@ -290,7 +299,7 @@ let summaries (t : t) (uids : int list) : (summary list, string) result =
     match
       command t
         (Printf.sprintf
-           "UID FETCH %s (UID FLAGS X-GM-LABELS X-GM-THRID \
+           "UID FETCH %s (UID FLAGS X-GM-LABELS X-GM-THRID X-GM-MSGID \
             BODY.PEEK[HEADER.FIELDS (%s)])"
            (uid_set uids) header_fields)
     with
@@ -306,6 +315,7 @@ let summaries (t : t) (uids : int list) : (summary list, string) result =
                   flags = texts (item "FLAGS" items);
                   labels = texts (item "X-GM-LABELS" items);
                   thread = text (item "X-GM-THRID" items);
+                  msgid = text (item "X-GM-MSGID" items);
                   headers = Mail.parse (Mail.lf (text (item "BODY[" items)));
                 }
         in

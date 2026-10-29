@@ -51,12 +51,7 @@ let crlf (s : string) : string =
 let literal (s : string) : string =
   Printf.sprintf "{%d}\r\n%s" (String.length s) s
 
-(* a list of flags or labels; a label with a space quoted *)
-let list (l : string list) : string =
-  "("
-  ^ String.concat " "
-      (List.map (fun s -> if String.contains s ' ' then Imap.quote s else s) l)
-  ^ ")"
+let list = Imap.list
 
 (* each message's conversation: the UID of the first of its thread *)
 let threads (all : message list) : (int * int) list =

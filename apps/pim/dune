@@ -7,9 +7,12 @@
 ;          author's playground's libs/networking/mail; its protocols,
 ;          Smtp and Imap (the clients), Smtp_server and Imap_server
 ;          (the servers' machines), and Lines, which carries them over
-;          TCP or TLS
+;          TCP or TLS; and Mail_item, a message as an item of the store
+;   store/ the suite's store (docs/plans/plan_pim.md, ideas 1 and 3):
+;          Item (lines of name: value, Mail's syntax, stamped) and
+;          Items (a directory, a file an item, and the mail's cache)
 ; Pim.ml, the program from a terminal (mini-pim send, list, read,
-; archive); Maild.ml, mini-maild, the server its tests talk to
+; archive, -offline); Maild.ml, mini-maild, the server its tests talk to
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
 (include_subdirs unqualified)

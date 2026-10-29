@@ -8,8 +8,8 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: stages 1 to 3 built (the formats; sending and reading, and
-mini-maild; `apps/pim/`).** Mail is the first part of the suite
+**Status: stages 1 to 4 built (the formats; sending and reading, and
+mini-maild; the cache and the items; `apps/pim/`).** Mail is the first part of the suite
 [`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
@@ -254,3 +254,18 @@ read, searched, archived) and Unit_imap (a FETCH with its literal, the
 client against Imap_server over a socketpair) in `make test`. Not
 tried: Gmail (stage 6, by hand: `echo <app password> | mini-pim -u
 you@gmail.com list`). Next: stage 4, the cache and the items.
+
+2026-10-29: stage 4, the cache and the items: plan_pim.md's store
+begun, `store/Item` (an item a `Mail.t`: name: value lines, stamped)
+and `store/Items` (`$PIM_STORE`, else `~/.ix-pim`, else
+`$home/lib/pim`; `items/<id>` a file an item, `cache/<msgid>` a
+message's bytes); `Mail_item`, a message's item, its id `mail:` and
+Gmail's X-GM-MSGID (now in `Imap.summary`), the server's fields
+replaced at each list and a person's kept (a stamp task, a due date).
+`mini-pim list` writes the items, `read` takes the cache first and
+fills it, `archive` updates the labels; `-offline` lists and reads
+from the store alone. An item keeps the mailbox and UID of its last
+list only: a message listed in All Mail after INBOX is no more in
+INBOX's offline list until listed there again. Tests: Unit_items, and
+session.sh's offline end (the last list, a message read, one not).
+Next: stage 5, the view.

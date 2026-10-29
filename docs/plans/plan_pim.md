@@ -13,8 +13,8 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun, mail's stages 1 to 3 (its formats, sending,
-reading).**
+**Status: begun, mail's stages 1 to 4 (its formats, sending,
+reading, kept), and the store (stage 2) begun.**
 Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
@@ -346,7 +346,8 @@ and a half.
   mini-life)?
 - **One file per kind of item, per month, or per item?** Per item
   is simplest for mini-git and for two programs writing at once; per
-  month is easiest to read with an editor.
+  month is easiest to read with an editor. (Taken for now, 2026-10-29:
+  per item, `Items`; the author has not said.)
 - **The recognizer's languages**: English only, or French too
   ("déjeuner avec alice mardi 12h30")?
 - **Where it runs**: is mini-9pi a place the author would really use
@@ -370,3 +371,9 @@ command, and mini-maild, the server its tests send to.
 
 2026-10-29: mail's stage 3: `mini-pim list`, `read`, `archive`, by
 IMAP; a line a conversation.
+
+2026-10-29: the store begun, by mail's stage 4: `store/Item`, an item
+a `Mail.t` (the header parser the store's, idea 3), stamped (idea 1);
+`store/Items`, a file an item, written at once; a message an item
+stamped `message`. Not yet: links both ways, search over items, the
+other kinds.

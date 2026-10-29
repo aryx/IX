@@ -9,8 +9,9 @@
 # with a dot whole); the relay refused. Read by IMAP: a question, its
 # answer (Windows-1252, quoted-printable) and a newsletter listed as two
 # conversations, unread; the answer read, its text UTF-8; the newsletter
-# archived, gone from INBOX, still in All Mail; a search. Then a server
-# not there. No network but this machine's, and never Gmail.
+# archived, gone from INBOX, still in All Mail; a search. Then, the
+# server gone, the same read from mini-pim's store (-offline), and a
+# server not there. No network but this machine's, and never Gmail.
 #
 # usage: session.sh [dir]
 #   dir: where mini-pim and mini-maild are (default: dune's,
@@ -22,6 +23,8 @@ if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild
 else PIM=$B/Pim.exe; MAILD=$B/Maild.exe; fi
 W=$(mktemp -d); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
 mkdir $W/spool
+# (mini-pim's store the test's, never ~/.ix-pim)
+export PIM_STORE=$W/store
 
 $MAILD -p 0 -i 0 $W/spool > $W/log 2>&1 &
 pid=$!
@@ -88,11 +91,19 @@ is "    2 * 2026-10-29 Carol (2)            Re: the plan" "archived: out of INBO
 pim -m '[Gmail]/All Mail' list
 has '^    3 \*  *news@ix' "archived: kept in All Mail"
 
+pim list
 kill $pid; wait $pid 2> /dev/null
+# offline: what the last list and read kept
+pim -offline list
+is "    2 * 2026-10-29 Carol (2)            Re: the plan" "offline: the last list"
+pim -offline read 2
+has "à midi" "offline: a message read before, from the cache"
+pim -offline read 1
+has "not read yet" "offline: one never read"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"
 
 [ $fail = 0 ] &&
-  echo "mini-pim, mini-maild: sent by SMTP, read by IMAP, archived"
+  echo "mini-pim, mini-maild: sent by SMTP, read by IMAP, archived, offline"
 exit $fail

@@ -84,7 +84,10 @@ rule token = parse
   (* mlpp: a class, a record type's [@@class]; an instance, a value's [@@instance] *)
   | "[@@" [' ' '\t']* "class" [' ' '\t']* "]" { CLASS } | "[@@" [' ' '\t']* "instance" [' ' '\t']* "]" { INSTANCE }
   (* the checked annotations (Annotations.mli): a call's [@tailcall], a
-   * recursive function's [@@tailrec], a function's [@@zero_alloc] *)
+   * recursive function's [@@tailrec], a function's [@@zero_alloc], its
+   * [@inline] (OCaml's place, let[@inline] f, or [@@inline] after it) *)
+  | "let" [' ' '\t']* "[@" [' ' '\t']* "inline" [' ' '\t']* "]" { LETINLINE }
+  | "[@@" [' ' '\t']* "inline" [' ' '\t']* "]" { INLINE }
   | "[@" [' ' '\t']* "tailcall" [' ' '\t']* "]" { TAILCALL }
   | "[@@" [' ' '\t']* "tailrec" [' ' '\t']* "]" { TAILREC }
   | "[@@" [' ' '\t']* "zero_alloc" [' ' '\t']* "]" { ZERO_ALLOC }

@@ -4,7 +4,7 @@
  * turns, two functions calling each other, a local loop over a list;
  * loops over an array of ints, of floats, over a string's bytes, one
  * calling another [@@zero_alloc] and raising, and both annotations on
- * one function. *)
+ * one function; [@inline] on a small function and a bigger one. *)
 let rec sum i acc = if i = 0 then acc else sum (i - 1) (acc + i) [@@tailrec]
 
 let rec even n = if n = 0 then true else (odd [@tailcall]) (n - 1)
@@ -38,10 +38,20 @@ let first_digit (s : string) =
   in
   go s 0 [@@zero_alloc]
 
+(* [@inline], OCaml's place and after the binding: mix is over -O3's
+ * 16 nodes, inlined all the same *)
+let[@inline] twice (x : int) = x + x
+
+let mix (a : int) b =
+  let x = (a * 31) + b in
+  let y = (x lxor (x lsr 7)) * 17 in
+  (y lxor (y lsl 3)) land 0xffff [@@inline]
+
 let () =
   Printf.printf "%d\n" (sum 1000000 0);
   Printf.printf "%b %b\n" (even 100000) (odd 7);
   Printf.printf "%d\n" (count [ 1; 2; 3 ]);
   Printf.printf "%d %d\n" (sum_array [| 1; 2; 3 |]) (floor_mean [| 1.5; 2.5; 4.0 |]);
   Printf.printf "%d %b\n" (first_digit "ab7c")
-    (try ignore (first_digit "abc"); false with Not_found -> true)
+    (try ignore (first_digit "abc"); false with Not_found -> true);
+  Printf.printf "%d %d\n" (twice 21) (mix 3 4)

@@ -3,7 +3,7 @@
 
 (* See Summary.mli *)
 
-type entry = { global : string; params : Scope.pattern list; body : Scope.expr; size : int }
+type entry = { global : string; params : Scope.pattern list; body : Scope.expr; size : int; forced : bool }
 
 type t = {
   digest : string;
@@ -102,7 +102,8 @@ let uses (items : Scope.item list) : string list =
 (* (a word first, so that another file, or one of an older format, is
  * not taken for one) *)
 (* (2: with Fold's constants) *)
-let magic = "mini-ml summary 2\n"
+(* old: 2, before an entry's forced *)
+let magic = "mini-ml summary 3\n"
 
 (* No_sharing: the bytes the value's alone, not which of its parts are
  * one block, which depends on the compiler that built mini-ml (as

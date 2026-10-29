@@ -327,7 +327,7 @@ job "mini-ml: stdlib, formats, fields" languages/ml/tests/modern.sh $M/stdlib.ml
 job "mini-ml: floats, digests, marshal" languages/ml/tests/modern.sh $M/floats.ml $M/digests.ml $M/marshalled.ml $M/engines.ml
 job "mini-ml: files, unix, signals" languages/ml/tests/modern.sh $M/files.ml $M/unix_calls.ml $M/unix_sockets.ml $M/signals.ml
 job "mini-ml: the runtime from C" sh_ "languages/ml/tests/run.sh 7 $W/rt languages/ml/tests/runtime/*.ml languages/ml/tests/tiny/exceptions.ml languages/ml/tests/tiny/gc.ml"
-job "mini-ml: [@tailcall], [@@tailrec], [@@zero_alloc] checked, a call not in tail position or an allocation refused" languages/ml/tests/annotations.sh
+job "mini-ml: [@tailcall], [@@tailrec], [@@zero_alloc], [@inline] checked: a call not in tail position, an allocation, a function never inlined refused" languages/ml/tests/annotations.sh
 else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # every file of ix compiled by mini-ml: a directory a job, in the group
 # of what it holds (lib_core both systems', tiny t-ix's), one family:

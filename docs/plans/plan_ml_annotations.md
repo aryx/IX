@@ -106,6 +106,17 @@ where it holds (compiled, run, its output) and one where it does not
   calls' cost is measured worth it.
 - **Hints** (`[@cold]`, an unroll): mini-ml has no use for them yet;
   checked ones first.
+- **No `ml_vsp` handoff around the C that makes nothing** (proposed
+  2026-10-29, after step 2): Zero_alloc's six runtime functions run
+  no collection and push no value, so a call of one could skip the
+  store of the value stack's top before and its load after, part of
+  design C's 3.4% back (plan_extern_register.md). Not done, the
+  author: "seems fragile and could lead to bad surprise if some
+  invariant change": a C function that one day allocates, or raises
+  by a way that reads `ml_vsp` (ml_string_get's bound error already
+  raises), would break the ML code's value stack with no check
+  failing. If done one day, the list checked against the C (the
+  functions' bodies, by mini-cc), not written by hand.
 
 ## Step 1 done (2026-10-29): [@tailcall] and [@@tailrec]
 
@@ -258,8 +269,34 @@ allocation's removal gains is mostly the code around it; the call of
 another unit's small float function, boxing its argument, is the
 cost that recurs.
 
+## Step 3 done (2026-10-29): [@inline]
+
+The author: "let's do 4 and 5". `let[@inline] f x = ...` (OCaml's
+place, the lexer's LETINLINE; the first binding of the let marked) or
+`let f x = ... [@@inline]`.
+
+Changed from the plan above, by what ix's code showed: ix had four
+`let[@inline]` already, written for ocamlopt (machine/'s Arm32.phys and
+set, Arm64.phys; lib_graphics's Jpeg.clamp, "a float crossing a call
+that isn't is boxed"). Checked against -O3's 16 nodes, three were
+refused: set 39 nodes, phys 28, clamp over too. mini-ml had been
+calling them all along, the attribute skipped. So [@inline] has
+OCaml's meaning, a function inlined whatever its size (Lower's
+inline_candidate: forced_most for it, not inline_most), and the check
+is what cannot be: refused when recursive ("it is recursive") or
+holding a function, a try or an assertion, whose code is not copied.
+Across units: a summary's entry says it is forced (Summary's magic 3),
+imported whatever its size. Without -ssa (inlining off) not looked at,
+as [@@zero_alloc].
+
+The four now inlined by mini-ml at -O3, as by ocamlopt. Tests:
+holds.ml's twice (let[@inline]) and mix ([@@inline], over 16 nodes; no
+call of it left in its -dssa); refused/'s inline_rec and inline_try.
+Unannotated code the same bytes (112 objects).
+
 ## Status
 
-2026-10-29: steps 1 and 2 done ([@tailcall], [@@tailrec],
-[@@zero_alloc]), [@@zero_alloc] used in mini-doom and mini-quake;
-next [@inline] checked, or turbulent's registers (Alloc).
+2026-10-29: steps 1 to 3 done ([@tailcall], [@@tailrec],
+[@@zero_alloc], [@inline]), [@@zero_alloc] used in mini-doom and
+mini-quake; next the unboxed double (step 4), or turbulent's
+registers (Alloc).

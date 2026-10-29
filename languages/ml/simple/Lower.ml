@@ -90,7 +90,9 @@ let known_globals : (string, binding) Hashtbl.t = Hashtbl.create 64
  * expression is deeper than the call was.
  * old: every known function called *)
 let inline_most = ref 0
-type inline = { iparams : Scope.pattern list; ibody : Scope.expr; ienv : (int * binding) list; iframe : fn option; isize : int }
+(* iforced: marked [@inline] (Annotations.inlines), a candidate whatever
+ * its size *)
+type inline = { iparams : Scope.pattern list; ibody : Scope.expr; ienv : (int * binding) list; iframe : fn option; isize : int; iforced : bool }
 let inlines : (string, inline) Hashtbl.t = Hashtbl.create 64
 (* the same of other units' toplevel functions, by their globals
  * (imports, below) *)
@@ -246,14 +248,33 @@ let size env most (e : Scope.expr) =
   in
   match go e with () -> !n | exception Big -> most + 1
 
+(* a function marked [@inline]: no bound but what size can count *)
+let forced_most = 1_000_000
+
 (* the function e of code lab, defined in env, inlined where it is
- * called when small; frame: the function whose slots it captures *)
+ * called when small (or marked [@inline]); frame: the function whose
+ * slots it captures *)
 let inline_candidate env frame lab (e : Scope.expr) =
   if !inline_most > 0 then begin
     let ps, body = params e in
-    let k = size env !inline_most body in
-    if k <= !inline_most then
-      Hashtbl.replace inlines lab { iparams = ps; ibody = body; ienv = env; iframe = frame; isize = k }
+    let forced = Hashtbl.mem Annotations.inlines e.span in
+    let most = if forced then forced_most else !inline_most in
+    let k = size env most body in
+    if k <= most then
+      Hashtbl.replace inlines lab { iparams = ps; ibody = body; ienv = env; iframe = frame; isize = k; iforced = forced }
+  end
+
+(* a function marked [@inline] (Annotations.inlines) that cannot be a
+ * candidate refused, with why: recursive, or holding what is never
+ * copied; not looked at without inlining (-O3's alone) *)
+let check_inline lab name (e : Scope.expr) ~recursive =
+  if !inline_most > 0 && Hashtbl.mem Annotations.inlines e.span then begin
+    let why =
+      if recursive then Some "it is recursive"
+      else if Hashtbl.mem inlines lab then None
+      else Some "it holds a function, a try or an assertion, which are not copied"
+    in
+    Option.iter (error "line %d: %s [@inline]: not inlined: %s" e.loc name) why
   end
 
 (*****************************************************************************)
@@ -936,9 +957,11 @@ and bind env r bs =
           match closure env x.vname e with
           | Closure_static (sym, lab, n) ->
               inline_candidate env None lab e;
+              check_inline lab x.vname e ~recursive:false;
               [ x.vid, { loc = Static sym; known = Some (lab, n) } ]
           | Closure_pushed (lab, n) ->
               inline_candidate env (Some !cur) lab e;
+              check_inline lab x.vname e ~recursive:false;
               let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
       | Pany, _ -> value env e; emit Drop; []
       | _ -> value env e; let s = slot () in emit (Set s); irrefutably s p) bs
@@ -983,7 +1006,8 @@ and bind_rec env bs =
   let statics = List.map2 (fun ((x : Scope.var), _) (lab, n) -> x.vid, { loc = Static ("c" ^ lab); known = Some (lab, n) }) fs labs @ env in
   (* a [@@tailrec] binding's body compiled with it the target *)
   let marked = List.map (fun (_, (e : Scope.expr)) -> Hashtbl.mem Annotations.tailrecs e.span) fs in
-  List.iter2 (fun ((x : Scope.var), e) (lab, _) -> mark_zero_alloc lab x.vname e) fs labs;
+  List.iter2 (fun ((x : Scope.var), e) (lab, _) ->
+    mark_zero_alloc lab x.vname e; check_inline lab x.vname e ~recursive:true) fs labs;
   let checked m lab (x : Scope.var) k () =
     if m then begin target := Some (lab, x.vname); k (); target := None end else k ()
   in
@@ -1088,8 +1112,8 @@ let curry_funcs () =
 let imports (es : Summary.entry list) =
   Hashtbl.reset imported;
   List.iter (fun (e : Summary.entry) ->
-    if e.size <= !inline_most then
-      Hashtbl.replace imported e.global { iparams = e.params; ibody = e.body; ienv = []; iframe = None; isize = e.size }) es
+    if e.size <= !inline_most || e.forced then
+      Hashtbl.replace imported e.global { iparams = e.params; ibody = e.body; ienv = []; iframe = None; isize = e.size; iforced = e.forced }) es
 
 (* the unit's own toplevel functions that its calls copy, for its
  * summary: after unit_, whose tables say which *)
@@ -1101,8 +1125,8 @@ let exports (items : Scope.item list) : Summary.entry list =
           match Option.bind (Hashtbl.find_opt known_globals g.gsym) (fun b -> b.known) with
           | Some (lab, _) -> (
               match Hashtbl.find_opt inlines lab with
-              | Some { iframe = None; iparams; ibody; isize; _ } ->
-                  Some { Summary.global = g.gsym; params = List.map Summary.strip_pattern iparams; body = Summary.strip ibody; size = isize }
+              | Some { iframe = None; iparams; ibody; isize; iforced; _ } ->
+                  Some { Summary.global = g.gsym; params = List.map Summary.strip_pattern iparams; body = Summary.strip ibody; size = isize; forced = iforced }
               | _ -> None)
           | None -> None) gs
     | _ -> []) items

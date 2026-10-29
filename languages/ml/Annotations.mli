@@ -2,9 +2,10 @@
  * (docs/plans/plan_ml_annotations.md): not hints, assertions, the
  * program refused when its code is not what they say. The parser
  * records what each marks, by the span of the expression; the pass
- * that decides it checks it (Lower for the tail calls, ssa's Zero_alloc
- * for [@@zero_alloc]). OCaml 4.14 ignores [@@tailrec] and
- * [@@zero_alloc], attributes it does not know, and reads
+ * that decides it checks it (Lower for the tail calls and [@inline],
+ * ssa's Zero_alloc for [@@zero_alloc]). OCaml 4.14 ignores [@@tailrec]
+ * and [@@zero_alloc], attributes it does not know, reads [@inline] as
+ * its own (a request to ocamlopt, not checked), and reads
  * [@tailcall] as its own, on the function of an application,
  * (f [@tailcall]) x (warning 51 if the call is not a tail call; on f
  * x [@tailcall] it is misplaced, warning 53): the same meaning.
@@ -36,3 +37,10 @@ val tailrecs : (Ast.span, unit) Hashtbl.t
  * Jane Street's OCaml's name and meaning): f's code, as -O3 makes it
  * (after inlining), allocates nothing; by the span of the function *)
 val zero_allocs : (Ast.span, unit) Hashtbl.t
+
+(* the functions marked [@inline], OCaml's way (let[@inline] f x =
+ * ..., or [@@inline] after the binding): each inlined where it is
+ * called with all its arguments, by -O3's measure (Lower.inline_most):
+ * Lower refuses one too big, recursive, or holding a function or a
+ * handler; by the span of the function *)
+val inlines : (Ast.span, unit) Hashtbl.t

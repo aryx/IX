@@ -1,0 +1,1 @@
+refused/inline_try.ml: line 3: first [@inline]: not inlined: it holds a function, a try or an assertion, which are not copied

@@ -34,6 +34,7 @@ type entry = {
   params : Scope.pattern list;
   body : Scope.expr;
   size : int;                     (* Lower's size, the copies it makes counted *)
+  forced : bool;                  (* marked [@inline]: inlined whatever its size *)
 }
 
 type t = {

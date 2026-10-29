@@ -104,7 +104,7 @@ let with_attribute ds a =
 /* mlpp: [% and [@@deriving */
 %token LBRACKETPERCENT DERIVING CLASS INSTANCE
 /* the checked annotations (Annotations.mli) */
-%token TAILCALL TAILREC ZERO_ALLOC
+%token TAILCALL TAILREC ZERO_ALLOC LETINLINE INLINE
 %token <string> LETOP
 /* objects: their types and :>, ix's capabilities */
 %token COLONGREATER
@@ -160,8 +160,9 @@ structure_tail:
   | structure_item structure_tail { $1 :: $2 }
 ;
 structure_item:
-  | LET rec_flag separated_nonempty_list(AND, let_binding) instance
-      { match $3 with
+  | let_keyword rec_flag separated_nonempty_list(AND, let_binding) instance
+      { $1 $3;
+        match $3 with
         | [ ({ p = Pany; _ }, e) ] -> mkitem $sloc (Ieval e)
         | bs -> mkitem $sloc (Ivalue ($2, bs, $4)) }
   | EXTERNAL val_ident COLON core_type EQUAL STRING+ { mkitem $sloc (Iexternal ($2, $4, $6)) }
@@ -233,7 +234,8 @@ expr:
       { let e = mkexp $sloc (Eapply ($1, $2)) in
         if Hashtbl.mem Annotations.tailcalls $1.espan then Hashtbl.replace Annotations.tailcalls e.espan ();
         e }
-  | LET rec_flag separated_nonempty_list(AND, let_binding) IN seq_expr { mkexp $sloc (Elet ($2, $3, $5)) }
+  | let_keyword rec_flag separated_nonempty_list(AND, let_binding) IN seq_expr
+      { $1 $3; mkexp $sloc (Elet ($2, $3, $5)) }
   /* let* x = e in body: ( let* ) e (fun x -> body), whatever let* is where it is written */
   | LETOP let_binding IN seq_expr { mkexp $sloc (Eapply (ident $sloc $1, [ snd $2; mkfun $sloc (fst $2) $4 ])) }
   | expr INFIXOP0 expr { infix $sloc $loc($2) $1 $2 $3 }
@@ -342,6 +344,14 @@ let_binding:
 binding_annotation:
   | TAILREC { Annotations.tailrecs }
   | ZERO_ALLOC { Annotations.zero_allocs }
+  | INLINE { Annotations.inlines }
+;
+/* let, or let[@inline] (OCaml's place): what it does to the bindings,
+ * the first one marked */
+let_keyword:
+  | LET { fun _ -> () }
+  | LETINLINE
+      { fun bs -> Hashtbl.replace Annotations.inlines (marked_function (snd (List.hd bs))).espan () }
 ;
 fun_binding:
   | EQUAL seq_expr { $2 }

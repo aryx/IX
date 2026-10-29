@@ -100,8 +100,8 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
                  * plan_debugger.md, stage 3) *)
                 (match Symbols.read file with
                  | Some t ->
-                     let load a = try Some (Memory.load32 mem a) with Memory.Fault _ -> None in
-                     Console.eprint caps ("mini-5i: trace: " ^ Frames.show (Frames.walk t ~load ~pc:!Cpu.fault_pc ~sp:st.r.(13) ~lr:st.r.(14)) ^ "\n")
+                     let load a = try let w = Memory.load32 mem a in Some ((w lsr 16) land 0xffff, w land 0xffff) with Memory.Fault _ -> None in
+                     Console.eprint caps ("mini-5i: trace: " ^ Frames.show (Frames.walk t load (!Cpu.fault_pc, st.r.(13), st.r.(14))) ^ "\n")
                  | None -> ());
                 report (); 139)
         | Some ({ machine = Arm; _ } as elf) -> (

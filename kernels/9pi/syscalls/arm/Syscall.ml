@@ -38,8 +38,37 @@ let okaddr (p : proc) a = List.exists (fun s -> a >= s.base && a < s.top) p.segs
  * alone (the sessions recorded from it take the line out). *)
 let traced = ref true
 
+(* the stack walked by name, when the program's file has its symbol
+ * table (5l's, mini-ld -g's): read from its text's image, at its death
+ * only (plan_debugger.md, stage 4), each frame a function, an offset,
+ * a file and a line, the innermost first:
+ *     trace: g+0x4 deep.s:17 < f+0xc deep.s:12 < _main+0x8 deep.s:6
+ * None: no table, or nothing read *)
+let names (p : proc) =
+  try
+    match List.find_opt (fun s -> s.kind = Text) p.segs with
+    | Some s ->
+        (match s.image with
+         | Some c ->
+             (match Symbols.read_with (fun off n -> Fault.read_image c off n) with
+              | Some t ->
+                  (* a word as two halves of 16 bits: Frames' *)
+                  let load a =
+                    try let w = user_read p a 4 in Some ((Char.code w.[3] lsl 8) lor Char.code w.[2], (Char.code w.[1] lsl 8) lor Char.code w.[0])
+                    with Error _ -> None in
+                  (match Frames.walk t load (Ureg.get Ureg.pc, Ureg.get Ureg.sp, Ureg.get Arch.tf_lr) with
+                   | [] -> None
+                   | fs -> Some (Frames.show fs))
+              | None -> None)
+         | None -> None)
+    | None -> None
+  with Error _ | Not_found | Invalid_argument _ -> None
+
 let trace (p : proc) =
-  if !traced then begin
+  if !traced then
+  match names p with
+  | Some line -> Sysproc.pprint p ("trace: " ^ line ^ "\n")
+  | None -> begin
     let sp = Ureg.get Ureg.sp in
     let found = ref [] and n = ref 0 in
     (match List.find_opt (fun s -> s.kind = Text) p.segs, List.find_opt (fun s -> sp >= s.base && sp < s.top) p.segs with

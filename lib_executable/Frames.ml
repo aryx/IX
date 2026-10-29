@@ -3,15 +3,21 @@
 
 (* See Frames.mli *)
 
+(* (Symbols' fields by their names: ocaml-light, mini-9pi's compiler,
+ * does not find a field by its record's type) *)
+open Symbols
+
 type frame = { pc : int; func : string; offset : int; line : (string * int) option }
 
 (* each function: its start, its letter, its name, its .frame (the
  * entry after it) *)
+let is_text c = c = 'T' || c = 't' || c = 'L' || c = 'l'
+
 let functions (t : Symbols.t) =
   let rec go acc = function
-    | (s : Symbols.sym) :: (({ typ = 'm'; name = ".frame"; _ } : Symbols.sym) as m) :: rest when String.contains "TtLl" s.typ ->
+    | (s : Symbols.sym) :: (m : Symbols.sym) :: rest when is_text s.typ && m.typ = 'm' && m.name = ".frame" ->
         go ((s.value, s.typ, s.name, m.value) :: acc) rest
-    | (s : Symbols.sym) :: rest when String.contains "TtLl" s.typ -> go ((s.value, s.typ, s.name, 0) :: acc) rest
+    | (s : Symbols.sym) :: rest when is_text s.typ -> go ((s.value, s.typ, s.name, 0) :: acc) rest
     | _ :: rest -> go acc rest
     | [] -> acc in
   List.sort (fun (a, _, _, _) (b, _, _, _) -> compare b a) (go [] t.syms)
@@ -23,8 +29,8 @@ type kind = Leaf | Saved of int * int
 
 (* mini-ml's prologue (Gen's and Emit's): SUB $n, R13 (an immediate,
  * rotated, or a constant of the pool in R11), then MOVW R14, 0(R13) *)
-let prologue (t : Symbols.t) start =
-  let w a = Symbols.word t a in
+let prologue load start =
+  let w a = load a in
   let str_lr a = w a = Some (0xe58d, 0xe000) in
   match w start with
   | Some (0xe24d, lo) when lo land 0xf000 = 0xd000 && str_lr (start + 4) ->
@@ -39,12 +45,12 @@ let prologue (t : Symbols.t) start =
        | None -> None)
   | _ -> None
 
-let kind t (start, typ, _, frame) =
+let kind load (start, typ, _, frame) =
   match typ with
-  | 'L' | 'l' -> (match prologue t start with Some k -> k | None -> Leaf)
+  | 'L' | 'l' -> (match prologue load start with Some k -> k | None -> Leaf)
   | _ -> Saved (frame, start)
 
-let walk (t : Symbols.t) ~load ~pc ~sp ~lr =
+let walk (t : Symbols.t) load (pc, sp, lr) =
   let fs = functions t in
   let rec go pc sp n acc =
     match List.find_opt (fun (start, _, _, _) -> start <= pc) fs with
@@ -54,11 +60,11 @@ let walk (t : Symbols.t) ~load ~pc ~sp ~lr =
         else begin
           (* the caller's address, and how far the caller's sp is: the
            * link register before the save (the innermost frame only) *)
-          let next = match kind t f with
+          let next = match kind load f with
             | Leaf -> if n = 0 then Some (lr, 0) else None
             | Saved (size, saved) ->
                 if pc <= saved then (if n = 0 then Some (lr, if pc > start then size else 0) else None)
-                else Option.map (fun ra -> ra, size) (load sp) in
+                else Option.map (fun (hi, lo) -> (hi lsl 16) lor lo, size) (load sp) in
           match next with
           (* the call: one instruction before where it returns *)
           | Some (ra, size) when ra <> 0 && not (ra = pc && size = 0) -> go (ra - 4) (sp + size) (n + 1) acc
@@ -67,7 +73,9 @@ let walk (t : Symbols.t) ~load ~pc ~sp ~lr =
     | _ -> acc in
   List.rev (go pc sp 0 [])
 
+let basename p = try let i = String.rindex p '/' in String.sub p (i + 1) (String.length p - i - 1) with Not_found -> p
+
 let show frames =
   String.concat " < " (List.map (fun f ->
     (if f.offset = 0 then f.func else Printf.sprintf "%s+0x%x" f.func f.offset)
-    ^ (match f.line with Some (file, l) -> Printf.sprintf " %s:%d" (Filename.basename file) l | None -> "")) frames)
+    ^ (match f.line with Some (file, l) -> Printf.sprintf " %s:%d" (basename file) l | None -> "")) frames)

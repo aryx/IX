@@ -5,7 +5,7 @@
 
 type sym = { value : int; typ : char; name : string }
 
-type t = { syms : sym list; text_start : int; text_end : int; lines : string; text : string }
+type t = { syms : sym list; text_start : int; text_end : int; lines : string }
 
 (* 4 bytes, the high first *)
 let be32 (s : string) o =
@@ -13,31 +13,48 @@ let be32 (s : string) o =
 
 (* an a.out for arm (Exe's header): its text at 0x1000 and the
  * header's 32 bytes, the symbols after the data, the lines after them *)
-let read (s : string) =
-  if String.length s < 32 || be32 s 0 <> 0x647 || be32 s 16 = 0 then None
+let read_with (read : int -> int -> string) =
+  let h = read 0 32 in
+  if String.length h < 32 || be32 h 0 <> 0x647 || be32 h 16 = 0 then None
   else begin
-    let text = be32 s 4 and data = be32 s 8 and nsyms = be32 s 16 and nlines = be32 s 28 in
-    let start = 32 + text + data in
-    let stop = start + nsyms in
-    let rec entries o acc =
-      if o + 5 > stop then List.rev acc
-      else begin
-        let value = be32 s o and typ = Char.chr (Char.code s.[o + 4] land 0x7f) in
-        let o = o + 5 in
-        if typ = 'z' || typ = 'Z' then begin
-          (* a NUL, then the files' numbers 2 bytes each, to two NULs *)
-          let rec pairs p = if s.[p] = '\000' && s.[p + 1] = '\000' then p else pairs (p + 2) in
-          let e = pairs (o + 1) in
-          entries (e + 2) ({ value; typ; name = String.sub s (o + 1) (e - o - 1) } :: acc)
+    let text = be32 h 4 and data = be32 h 8 and nsyms = be32 h 16 and nlines = be32 h 28 in
+    let s = read (32 + text + data) (nsyms + nlines) in
+    if String.length s < nsyms + nlines then None
+    else begin
+      let rec entries o acc =
+        if o + 5 > nsyms then List.rev acc
+        else begin
+          let value = be32 s o and typ = Char.chr (Char.code s.[o + 4] land 0x7f) in
+          let o = o + 5 in
+          if typ = 'z' || typ = 'Z' then begin
+            (* a NUL, then the files' numbers 2 bytes each, to two NULs *)
+            let rec pairs p = if s.[p] = '\000' && s.[p + 1] = '\000' then p else pairs (p + 2) in
+            let e = pairs (o + 1) in
+            entries (e + 2) ({ value; typ; name = String.sub s (o + 1) (e - o - 1) } :: acc)
+          end
+          else
+            let e = String.index_from s o '\000' in
+            entries (e + 1) ({ value; typ; name = String.sub s o (e - o) } :: acc)
         end
-        else
-          let e = String.index_from s o '\000' in
-          entries (e + 1) ({ value; typ; name = String.sub s o (e - o) } :: acc)
-      end
-    in
-    Some { syms = entries start []; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s stop nlines;
-           text = String.sub s 32 text }
+      in
+      Some { syms = entries 0 []; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s nsyms nlines }
+    end
   end
+
+let read (s : string) =
+  read_with (fun off len -> if off >= String.length s then "" else String.sub s off (min len (String.length s - off)))
+
+(* Plan 9's cleanname: no empty or . element, a .. its parent gone *)
+let cleanname p =
+  let abs = p <> "" && p.[0] = '/' in
+  let parts = List.fold_left (fun acc e ->
+    match e, acc with
+    | ("" | "."), _ -> acc
+    | "..", x :: rest when x <> ".." -> rest
+    | "..", [] when abs -> []
+    | _ -> e :: acc) [] (String.split_on_char '/' p) in
+  let s = String.concat "/" (List.rev parts) in
+  if abs then "/" ^ s else if s = "" then "." else s
 
 (* the files' components, by their numbers *)
 let files t =
@@ -60,7 +77,7 @@ let path_in files (z : sym) =
     end in
   go 0;
   let p = Buffer.contents b in
-  if String.length p > 1 then FS.cleanname p else p
+  if String.length p > 1 then cleanname p else p
 
 let path t z = path_in (files t) z
 
@@ -125,7 +142,3 @@ let file_line t addr =
       | (_, hist) :: _ -> local (files t) hist line
       | [] -> None
 
-let word t addr =
-  let o = addr - t.text_start in
-  if o < 0 || o + 4 > String.length t.text || o land 3 <> 0 then None
-  else Some ((Char.code t.text.[o + 3] lsl 8) lor Char.code t.text.[o + 2], (Char.code t.text.[o + 1] lsl 8) lor Char.code t.text.[o])

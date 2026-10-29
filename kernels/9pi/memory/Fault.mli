@@ -105,3 +105,8 @@ val release : int -> segment list -> unit
 (* [shrink p s newtop]: the pages from newtop up freed (brk; Error
  * einuse when shared) *)
 val shrink : proc -> segment -> int -> unit
+
+(* [read_image c off n]: n bytes of an image's file from off, fewer at
+ * its end: a page's (page), a dying process's symbol table (Syscall's
+ * trace) *)
+val read_image : chan -> int -> int -> string

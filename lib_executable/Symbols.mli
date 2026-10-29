@@ -23,6 +23,9 @@
  * so a line is found by walking the history to it, a stack of the
  * files open there (libmach's fline, recursive; here a list).
  *
+ * Written with ocaml-light's library only: mini-9pi's kernel reads its
+ * processes' tables (plan_debugger.md, stage 4).
+ *
  * References: Plan 9's symbol(2) and a.out(6); principia's
  * debuggers/libmach/sym.c. *)
 
@@ -35,16 +38,15 @@ type t = {
   text_start : int;         (* the first instruction's address *)
   text_end : int;
   lines : string;           (* the pc/line table's bytes *)
-  text : string;            (* the text's bytes, from text_start *)
 }
 
-(* the text's word at an address, as the processor reads it (little-endian),
- * as its two halves of 16 bits, the high first: an int has 31 bits
- * where mini-ml builds for arm, an instruction 32 *)
-val word : t -> int -> (int * int) option
+(* the tables of an a.out for arm, from [read off len], its bytes from
+ * off (fewer at its end): its header and its tables only, not its
+ * text and data (a kernel's read of a dying process's file); None
+ * when it is none, or has no symbol table (-s) *)
+val read_with : (int -> int -> string) -> t option
 
-(* the tables of an a.out for arm (its bytes); None when it is none, or
- * has no symbol table (-s) *)
+(* the same from the file's bytes *)
 val read : string -> t option
 
 (* a z entry's path: its components joined, cleaned (libmach's fileelem) *)

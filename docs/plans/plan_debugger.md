@@ -438,3 +438,29 @@ frames, mini-ml's on arm64); a fault inside a prologue other than the
 first frame's (the walk stops); stage 4, the same walk by mini-9pi's
 kernel at a suicide; stage 5, by the runtime at an uncaught exception
 (its guess of 2026-10-13 replaced).
+
+2026-10-29, stage 4 (the author: "let's commit and move forward"):
+**mini-9pi names the frames at a suicide.** Syscall's trace reads the
+dying process's tables from its text segment's image (decision 5: at
+the death, not kept from exec; Fault.read_image, exported), the
+header and the tables only (Symbols.read_with), and walks its stack
+(Frames, over user_read), its line
+`trace: f+0x10 a.c:12 < g+0x2c a.c:30 < _main+0x2c main9.s:30`; no
+table, stage 0's addresses as before. The card's programs are
+principia's, linked by 5l with their tables: under QEMU, session-c's
+`hoc -e 1.5*2` now says
+`hoc 47: trace: init+0x2c init.c:64 < main+0x14 hoc.y:169 < _main+0x2c main9.s:30`.
+lib_executable made a kernel's: ocaml-light's library and language
+only (no labels: walk takes (pc, sp, lr); no `; _` in a record
+pattern; Frames opens Symbols, ocaml-light finding no field by its
+record's type; its own cleanname and basename), a word read as two
+halves of 16 bits (an int has 31 bits on arm), the text read through
+the memory (the prologues), not kept. The kernel's units: the
+Makefile's ML and the mkfile's KML, KNAMES and KI. The recorded
+sessions' filter takes out either trace line (`trace: ` and anything,
+where it was `trace: lr=`). Checked: the Pi 1's kernel by the Makefile
+(ocaml-light), in a directory of its own (B=, IMAGE=), session-c under
+QEMU: the line above, the rest as recorded; Symbols and Frames by
+ocaml-light's ocamlopt and by mini-ml -m 5; compile_ix.sh on
+kernels/ (75 of 75). Not run: session-c under mini-qemu, the other
+sessions, the Pi 4's kernel by mini-mk, the board.

@@ -39,9 +39,12 @@ type frame = {
   line : (string * int) option;     (* its file and line *)
 }
 
-(* [walk t ~load ~pc ~sp ~lr]: the frames from the registers of a stopped
- * program; [load] a word of its memory (None: not mapped). 40 at most *)
-val walk : Symbols.t -> load:(int -> int option) -> pc:int -> sp:int -> lr:int -> frame list
+(* [walk t load (pc, sp, lr)]: the frames from the registers of a
+ * stopped program; [load] a word of its memory, its text's too (a
+ * prologue), as its two halves of 16 bits, the high first (an int has
+ * 31 bits on arm, an instruction 32); None: not mapped. 40 at most.
+ * (No labels: ocaml-light, mini-9pi's compiler, has none) *)
+val walk : Symbols.t -> (int -> (int * int) option) -> int * int * int -> frame list
 
 (* the frames as a line, the innermost first: f+0x10 a.c:12 < g+0x2c a.c:30 *)
 val show : frame list -> string

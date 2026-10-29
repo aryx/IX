@@ -293,6 +293,7 @@ job "mini-ld: Plan 9 symbol and line tables as 5l's" linker/tests/symtab.sh
 job "mini-nm, mini-where: a program's names and lines read back" debuggers/tests/tables.sh
 job "mini-5i: a fault's stack walked, its functions and lines" debuggers/tests/walk.sh
 job "mini-5i's /proc: children stopped, read, written, killed; a breakpoint; a hang at exec" debuggers/tests/proc.sh
+job "mini-acid: its language, scripts printed as Plan 9's acid prints them" debuggers/tests/acid.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh

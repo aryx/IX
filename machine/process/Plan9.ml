@@ -193,8 +193,18 @@ let linux_flags mode =
 (* a name: "#c/pid" is a device's, not relative to the directory *)
 let resolve p name = if String.length name > 0 && name.[0] = '#' then name, virt_of p name else let path = absolute p name in path, virt_of p path
 
+(* /fd/N (#d/N, Plan 9's dup device): a new descriptor of the open file
+ * N, as acid opens its standard input (Bopen("/fd/0")) *)
+let fd_file name =
+  match String.split_on_char '/' name with
+  | [ ""; "fd"; n ] | [ "#d"; n ] -> int_of_string_opt n
+  | _ -> None
+
 let sys_open p name mode =
   let path, v = resolve p name in
+  match fd_file name, v with
+  | Some n, _ -> add p (ok (p.host.dup n)) path (match Hashtbl.find_opt p.files n with Some f -> f.virt | None -> None) ~rclose:false
+  | None, v ->
   match v with
   | Some (Env n) when not (Hashtbl.mem env n) -> raise (Error "file does not exist")
   | Some v -> add p (reserve p) path (Some v) ~rclose:false

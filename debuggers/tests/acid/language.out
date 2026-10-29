@@ -1,0 +1,60 @@
+acid: acid: 0x00375f00
+
+acid: acid: 3628800
+acid: defn fact(n) {
+	if (n<=1) then
+		return 1;
+	return (n*fact((n-1)));
+}
+acid: 0x0000000a 10 0x0000000a 0xff A 000000000012
+
+acid: acid: acid: acid: 0x0000000a
+acid: 10
+acid: acid: acid: 11
+acid: 0x00000001 1 1
+
+acid: acid: 0x0000000a
+acid: acid: 0x00000012
+acid: acid: 3
+acid: 7
+acid: acid: abcde
+acid: acid: {0x00000001, {0x00000002, 0x00000003}, "x"}
+acid: {0x00000002, 0x00000003} {0x00000002, 0x00000003}
+
+acid: acid: {0x00000001, {0x00000002, 0x00000003}, "x", 0x00000007}
+acid: {{0x00000002, 0x00000003}, "x", 0x00000007}
+acid: {0x00000001, {0x00000002, 0x00000003}, "x", 0x00000007}
+acid: integer variable format W
+acid: acid: 4
+4
+4
+acid: acid: 0
+1
+2
+acid: acid: acid: acid: 42
+acid: acid: acid: acid: 2
+acid: acid: {0x00000001, 0x00000002, 0x00000004}
+acid: {0x00000001, 0x00000002, 0x00000004}
+acid: acid: e
+acid: acid: 28
+acid: 0x00000017
+acid: 0xfffffffffffffff9
+acid: 0xffffffff
+acid: 0
+acid: 0
+acid: 1
+acid: 1
+acid: 1
+acid: acid: {0x00000005}
+acid: {0x00000005}
+acid: a1b
+acid: 68
+acid: 4
+acid: 16
+acid: acid: acid: acid: defn locals(a) {
+	local c, b;
+	b = a;
+	c = (b+1);
+	return {a,b,c};
+}
+acid: 

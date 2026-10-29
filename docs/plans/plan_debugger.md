@@ -610,3 +610,36 @@ its exec, waited for, started, runs its program. Three runs of three;
 make test (its mini-lex and mini-yacc jobs failed once, another
 session's ML files changing between their two passes; again alone,
 they pass). Next: step 3, mini-acid's language.
+
+2026-10-29, stage 8's step 3: **mini-acid's language** (debuggers/acid,
+1,022 lines with its lexer and grammar): acid's lexer (Lexer.mll: a
+newline a ; at the terminal but inside braces, formats after a
+backslash, // comments), its grammar (Parser.mly, dbg.y's, its
+precedences), its values with their formats (Value: a result takes its
+left operand's format, ++ adds the format's size; lists as acid's
+cells, changed in place by append and +; 64-bit integers, so that
+mini-acid built for arm, 31-bit ints, computes as acid), its
+interpreter (Eval: dynamic scope, a variable a stack of values; *p
+parameters by name, eval; a bare expression printed at the top
+level), its code printed back (Code: whatis, pcode's parentheses and
+tabs), the language's builtins (print, fmt, fmtof, fmtsize, atoi,
+atof, itoa, error, access, readfile), acid's prompt and its error
+lines. Two ways it differs in its making, not its behavior: a
+statement runs from the grammar's own action (prog: prog bigstmnt, as
+dbg.y), not after the parse returns, which would want the next token
+first; and dune's build uses ocamlyacc, not menhir, which reads the
+token after a ; before running the statement, so a terminal answered a
+line late (mini-yacc, ocamlyacc's twin, in the mkfile). The reference
+is principia's acid itself, which now runs under mini-5i (mini-5i got
+/fd/N, Plan 9's dup device: acid opens its input as /fd/0): its
+library (port.acid, arm.acid) read by both and printed back by whatis,
+141 lines the same; nine scripts (the language, eight errors) the same
+byte for byte, the prompts included. Checked: debuggers/tests/acid.sh
+(in make test: the scripts and acid's outputs recorded; live: acid run
+again), mini-acid built by mini-ml for arm64 Linux and for Plan 9 arm
+(under mini-5i), the same outputs. Not yet: the process (*, @, [] on an
+address, complex types' . and casts, the registers, the symbols as
+variables, start and stop), floats printed as Plan 9's %g. Seen of
+principia's acid under mini-5i: a float stops it (VMOV, ee013190, not
+in mini-5i), and it ends at its first error where it goes on at a
+terminal (docs/plans/bugs/ix.md). Next: step 4, the process.

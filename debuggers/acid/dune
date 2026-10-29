@@ -1,0 +1,20 @@
+; mini-acid: Plan 9's acid (principia's debuggers/acid), its lexer in
+; ocamllex and its grammar in yacc (ocamlyacc here, not menhir: menhir
+; reads the token after a statement's ; before running it, so a terminal
+; would answer a line late; mini-lex and mini-yacc in the mkfile)
+(library
+ (name ix_acid)
+ (wrapped false)
+ (modules Ast Code Value Eval Parser Lexer Builtin CLI)
+ (libraries ix_core fpath unix caps))
+
+(ocamllex Lexer)
+
+(ocamlyacc Parser)
+
+(executable
+ (name Main)
+ (public_name mini-acid)
+ (package ix)
+ (modules Main)
+ (libraries ix_acid ix_core caps))

@@ -1,0 +1,53 @@
+// acid's language, without a process (debuggers/tests/acid.sh): the
+// formats, the operators, lists, strings, functions and their scopes
+defn fact(n) { if n <= 1 then return 1; return n*fact(n-1); }
+print(fact(10), "\n");
+fact(10)\D
+whatis fact
+print(10\X, " ", 10\D, " ", 10, " ", 255\b, " ", 65\c, " ", 10\o, "\n");
+x = 10;
+x
+x\D
+y = x + 1\D;
+y
+print(x < 20, " ", x <= 20, " ", x == 10, "\n");
+x++;
+x
+z = 3\D; z++; z
+s = "ab" + "cd" + 101; s
+l = {1, {2, 3}, "x"}; l
+print(l[1], " ", head tail l, "\n");
+append l, 7
+delete l, 0
+l
+whatis x
+defn sq(x) { return x*x; }
+loop 1, 3 do print(sq(2)\D)
+i = 0; while i < 3 do { print(i\D); i = i + 1; }
+defn inner() { return y; }
+defn outer(y) { return inner(); }
+outer(42)\D
+defn twice(*e) { eval e; eval e; }
+n = 0\D; twice(n = n + 1); n
+l = {1, 2, 3, 4}; delete l, 2
+l
+s = "hello"; s[1]
+x = 7\D; x << 2
+(x + 0x10)\X
+-x
+~0\X
+!x
+x && 0
+x || 0
+{1, "a"} == {1, "a"}
+"a" == "a"
+q = {}; append q, 5
+q
+print("a", 1\D, "b")
+fmtof(1\D)\D
+fmtsize(1\X)\D
+atoi("0x10")\D
+itoa(255, "%x")
+defn locals(a) { local b, c; b = a; c = b + 1; return {a, b, c}; }
+locals(1)
+whatis locals

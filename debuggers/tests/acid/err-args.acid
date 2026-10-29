@@ -1,0 +1,2 @@
+defn sq(x) { return x*x; }
+sq(1, 2)

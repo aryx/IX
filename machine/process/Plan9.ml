@@ -36,6 +36,7 @@ type virt =
   | Env of string                  (* /env/NAME *)
   | Note of int                    (* /proc/PID/note: writing posts a note *)
   | Text                           (* /proc/PID/text: the a.out (its runtime reads its tables) *)
+  | Other of int * string          (* another process's mem, regs, ctl, status, text, note: Proc9 *)
 
 type file = {
   path : string;                   (* absolute, for fd2path and directory reads *)
@@ -96,6 +97,8 @@ let load host mem (a : aout) file argv envp =
    * it), then argc (argv[0] included), argv, nil; the strings above *)
   let tos = stack_top - tos_size in
   Memory.store32 mem (tos + 48) (host.Host_calls.getpid ());
+  (* a debugger's request comes by a signal (Proc9) *)
+  host.signal Proc9.signal Host_calls.Catch;
   let strings = List.fold_left (fun acc s -> acc + String.length s + 1) 0 argv in
   let sp = (tos - strings - (4 * (List.length argv + 2))) land lnot 7 in
   Memory.store32 mem sp (List.length argv);
@@ -151,10 +154,10 @@ let virt_of p path =
   | [ "#c"; "pid" ] | [ ""; "dev"; "pid" ] -> Some Pid
   | [ ""; "dev"; "bintime" ] -> Some Bintime
   | [ ""; "env"; name ] when name <> "" -> Some (Env name)
-  | [ ""; "proc"; pid; "note" ] ->
-      (match int_of_string_opt pid with Some n when n = p.host.getpid () -> Some (Note n) | _ -> None)
-  | [ ""; "proc"; pid; "text" ] ->
-      if int_of_string_opt pid = Some (p.host.getpid ()) then Some Text else None
+  | [ ""; "proc"; pid; "note" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some (Note (p.host.getpid ()))
+  | [ ""; "proc"; pid; "text" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some Text
+  | [ ""; "proc"; pid; ("mem" | "regs" | "ctl" | "status" | "text" | "note" as f) ] ->
+      (match int_of_string_opt pid with Some n when n <> p.host.getpid () -> Some (Other (n, f)) | _ -> None)
   | _ -> None
 
 let be64 v = String.init 8 (fun i -> Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical v (8 * (7 - i))) 0xffL)))
@@ -166,6 +169,7 @@ let content p = function
   | Env name -> Hashtbl.find_opt env name ||| ""
   | Note _ -> ""
   | Text -> p.image
+  | Other _ -> ""
 
 (* a host descriptor reserved for a virtual file: its number is then
  * the host's, never clashing *)
@@ -259,7 +263,7 @@ let stat_record name (st : Host_calls.stat) =
 
 let virt_stat p v =
   let now = p.host.now () in
-  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" in
+  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" | Other (_, f) -> f in
   stat_record name { dev = 0; ino = 0; kind = Reg; perm = 0o644; nlink = 1; uid = 0; gid = 0; rdev = 0;
                      size = String.length (content p v); atime = now; mtime = now; ctime = now }
 
@@ -316,9 +320,28 @@ let read_dir p fd (f : file) n =
 let is_dir p fd = match p.host.fstat fd with Ok st -> st.kind = Dir | Error _ -> false
 
 (* at [off], or at the file's offset when -1 *)
+(* the processes this one stopped, as their debugger: no signal for
+ * them, they wait for the next request (Proc9) *)
+let debugging : (int, unit) Hashtbl.t = Hashtbl.create 4
+
+let asked p pid request =
+  match Proc9.ask p.host pid ~stopped:(Hashtbl.mem debugging pid) request with
+  | Ok s -> s
+  | Error e -> Hashtbl.remove debugging pid; raise (Error e)
+
+let slice s at n = if at >= String.length s then "" else String.sub s at (min n (String.length s - at))
+
 let sys_pread p fd buf n off =
   let data =
     match file p fd with
+    | Some ({ virt = Some (Other (pid, f)); _ } as fl) ->
+        let at = if off = -1 then fl.offset else off in
+        let s = match f with
+          | "mem" | "text" -> asked p pid (Printf.sprintf "%s %d %d" f at n)
+          | "regs" | "status" -> slice (asked p pid f) at n
+          | _ -> raise (Error "permission denied") in
+        if off = -1 then fl.offset <- at + String.length s;
+        s
     | Some { virt = Some Bintime; _ } -> be64 (Int64.of_float (p.host.now () *. 1e9))
     | Some ({ virt = Some _; _ } as f) ->
         let at = if off = -1 then f.offset else off in
@@ -351,6 +374,20 @@ let sys_pwrite p fd s off =
       Hashtbl.replace env name f.content;
       String.length s
   | Some { virt = Some (Note _); _ } -> Queue.add s p.notes; Linux.signal_waiting := true; String.length s
+  | Some ({ virt = Some (Other (pid, f)); _ } as fl) ->
+      let at = if off = -1 then fl.offset else off in
+      (match f with
+       | "mem" | "regs" -> ignore (asked p pid (Printf.sprintf "w%s %d\n%s" f at s))
+       | "note" -> ignore (asked p pid ("note\n" ^ s))
+       | "ctl" ->
+           let msg = String.trim s in
+           ignore (asked p pid ("ctl " ^ msg));
+           if msg = "stop" then Hashtbl.replace debugging pid ()
+           else if msg = "start" then Hashtbl.remove debugging pid
+           else if msg = "kill" then (Hashtbl.remove debugging pid; Proc9.forget p.host pid)
+       | _ -> raise (Error "permission denied"));
+      if off = -1 then fl.offset <- at + String.length s;
+      String.length s
   | Some { virt = Some _; _ } -> raise (Error "permission denied")
   | _ ->
       if off = -1 then ok (p.host.write fd s)
@@ -433,13 +470,63 @@ let psr (st : Arm32_isa.state) =
   (if st.n then 1 lsl 31 else 0) lor (if st.z then 1 lsl 30 else 0) lor (if st.c then 1 lsl 29 else 0)
   lor (if st.v then 1 lsl 28 else 0) lor 0x10
 
+(* a debugger's request (Proc9), answered between two instructions:
+ * the memory, the registers as Plan 9's Ureg (r0-r12, sp, lr, type,
+ * psr, pc: the next instruction's), the status, the text; ctl's stop,
+ * start, kill; a note. The data, and what is done after the answer *)
+let field w s = let s = if String.length s > w - 1 then String.sub s 0 (w - 1) else s in s ^ String.make (w - String.length s) ' '
+let num v = Printf.sprintf "%11d " v
+
+let status p =
+  field 28 p.name ^ field 28 (user ()) ^ field 12 (if !Proc9.stopped then "Stopped" else "Running")
+  ^ String.concat "" (List.map num [ 0; 0; 0; 0; 0; 0; 0; 0; 0 ])
+
+let answer p (st : Arm32_isa.state) r =
+  let line, data = match String.index_opt r '\n' with
+    | Some i -> String.sub r 0 i, String.sub r (i + 1) (String.length r - i - 1)
+    | None -> r, "" in
+  let words () = Array.append (Array.sub st.r 0 15) [| 0; psr st; st.next |] in
+  let ureg () = String.concat "" (Array.to_list (Array.map (fun w ->
+    let b = Bytes.create 4 in Bytes.set_int32_le b 0 (Int32.of_int w); Bytes.to_string b) (words ()))) in
+  let fault f = try f () with Memory.Fault _ -> failwith "fault" in
+  let none = ("", ignore) in
+  match String.split_on_char ' ' line with
+  | [ "mem"; a; n ] -> (fault (fun () -> Memory.read_string p.mem (int_of_string a) (int_of_string n)), ignore)
+  | [ "wmem"; a ] -> fault (fun () -> Memory.write_string p.mem (int_of_string a) data); Memory.code_written := true; none
+  | [ "regs" ] -> (ureg (), ignore)
+  | [ "wregs"; off ] ->
+      let u = Bytes.of_string (ureg ()) and off = int_of_string off in
+      if off < 0 || off + String.length data > Bytes.length u then failwith "bad offset";
+      Bytes.blit_string data 0 u off (String.length data);
+      let w i = Bits.mask32 (Int32.to_int (Bytes.get_int32_le u (4 * i))) in
+      for i = 0 to 14 do st.r.(i) <- w i done;
+      let f = w 16 in
+      st.n <- f land (1 lsl 31) <> 0; st.z <- f land (1 lsl 30) <> 0;
+      st.c <- f land (1 lsl 29) <> 0; st.v <- f land (1 lsl 28) <> 0;
+      st.next <- w 17;
+      none
+  | [ "status" ] -> (status p, ignore)
+  | [ "text"; a; n ] -> (slice p.image (int_of_string a) (int_of_string n), ignore)
+  | [ "ctl"; "stop" ] -> Proc9.stopped := true; none
+  | [ "ctl"; "start" ] -> Proc9.stopped := false; none
+  | [ "ctl"; "kill" ] -> Proc9.stopped := false; ("", fun () -> exits p "sys: killed")
+  | [ "note" ] -> Queue.add data p.notes; none
+  | [ "ctl"; _ ] -> failwith "bad process control message"
+  | _ -> failwith "bad request"
+
 (* between two instructions: the pending notes (the host's signals among
  * them), the first delivered to the handler notify() named, as
  * principia's kernel does: a Ureg and the note's text on the stack, the
  * handler called with them; a process without one dies of it *)
 let deliver p (st : Arm32_isa.state) ~pc =
   Linux.signal_waiting := false;
-  List.iter (fun sg -> Option.iter (fun n -> Queue.add n p.notes) (note_of_signal sg)) (Linux.take_signals ());
+  let sigs = Linux.take_signals () in
+  if List.mem Proc9.signal sigs then begin
+    Proc9.serve p.host ~pid:(p.host.getpid ()) (answer p st);
+    (* (a debugger's signals meanwhile: one request a signal, served) *)
+    List.iter (fun sg -> if sg <> Proc9.signal then Linux.raise_signal sg) (Linux.take_signals ())
+  end;
+  List.iter (fun sg -> Option.iter (fun n -> Queue.add n p.notes) (note_of_signal sg)) sigs;
   if p.handling = [] && not (Queue.is_empty p.notes) then begin
     let note = Queue.pop p.notes in
     if p.handler = 0 then exits p note

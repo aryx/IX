@@ -33,6 +33,7 @@ type t = {
   rmdir : string -> unit r;
   chdir : string -> unit r;
   mkdir : string -> int -> unit r;
+  mkfifo : string -> int -> unit r;             (* a named pipe: a debugger's to a process (Proc9) *)
   access : string -> int -> unit r;
   fchmod : int -> int -> unit r;
   ftruncate : int -> int -> unit r;

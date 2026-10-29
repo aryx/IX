@@ -136,3 +136,5 @@ let read_cstring m a =
   let b = Buffer.create 32 in
   let rec go a = match load8 m a with 0 -> Buffer.contents b | c -> Buffer.add_char b (Char.chr c); go (Bits.mask32 (a + 1)) in
   go a
+
+let code_written = ref false

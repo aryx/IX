@@ -70,6 +70,7 @@ let create (caps : caps) : Host_calls.t =
     rmdir = (fun p -> wrap (fun () -> Unix.rmdir p));
     chdir = (fun p -> wrap (fun () -> CapUnix.chdir caps p));
     mkdir = (fun p mode -> wrap (fun () -> Unix.mkdir p mode));
+    mkfifo = (fun p mode -> wrap (fun () -> Unix.mkfifo p mode));
     access = (fun p mode -> wrap (fun () ->
       let perms : Unix.access_permission list =
         if mode = 0 then [ F_OK ]

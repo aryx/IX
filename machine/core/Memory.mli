@@ -94,3 +94,8 @@ val direct : t -> int -> int -> Bytes.t * int
 
 (* a NUL-terminated string at the address *)
 val read_cstring : t -> int -> string
+
+(* set when a debugger wrote the memory (a breakpoint in the text:
+ * mini-5i's /proc, Proc9): the processor's cache of decoded
+ * instructions is then dropped (Cpu), which no store does otherwise *)
+val code_written : bool ref

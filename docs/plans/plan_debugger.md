@@ -251,6 +251,30 @@ two programs.
    plan9port has and not (its sources, 2026-10-29): Linux, FreeBSD and
    others by ptrace, macOS none; its machines 386, amd64 and power, no
    arm: the arm and arm64 parts are principia's libmach's (5db, 7db).
+   **Decided** (the author, 2026-10-29, of three ways: a protocol of
+   mini-5i's, mini-acid and mini-5i linked, or "a /proc served by
+   mini-5i"): **mini-5i serves Plan 9's /proc**, and mini-acid is a
+   Plan 9 program beside its target, reading `/proc/$pid/{mem,regs,
+   ctl,status,text}` as it will on mini-9pi: one side, not two. How,
+   since each of mini-5i's processes is a host process of its own
+   (rfork is the host's fork), the target's memory in another
+   emulator:
+   - the debugger's mini-5i synthesizes another pid's files (as
+     `/proc/$pid/note` and `text` are, its own); a request goes to the
+     target by a signal (SIGUSR1) and a Unix socket the target then
+     opens (`$TMPDIR/mini-5i-$uid/$pid`): the loop's check for notes
+     (Linux.signal_waiting) is where it is served. Nothing is made and
+     nothing polled for a program no one debugs;
+   - while a debugger talks to it, the target is stopped; requests:
+     read and write its memory, its registers (Plan 9's Ureg for arm),
+     ctl's stop, start, waitstop, startstop, hang, kill; a breakpoint
+     (an undefined instruction, 5db's) stops it and it waits on its
+     socket, Stopped in its status;
+   - a write to the text flushes mini-5i's cache of decoded
+     instructions (it assumes no code is written: plan_arm.md,
+     decision 5);
+   - a target blocked in a host call (a read of the console) answers
+     when the call returns: a limit of the first version.
 13. **What replay records, and its cost.** mini-5i is deterministic but
    for its system calls (their results, the bytes they read), its
    signals and its time: a log of those is a run. rr's design, without
@@ -513,3 +537,48 @@ raised at: f1_down+0x7c Raise.ml:6 < f1_down+0x90 Raise.ml:6 < ... < Raise.Init+
   its build directory its own.
 Not yet: arm64; the exception's arguments other than strings and
 integers (stage 9's descriptions); 5b, the line's text from /src.
+
+2026-10-29, stage 8 begun (the author: "let's resume our mini-acid and
+debugger plan"): decision 12 decided, mini-5i serves Plan 9's /proc
+(above). Stage 8's steps, each checked before the next:
+1. **mini-5i's /proc between processes**: another pid's `mem`, `regs`,
+   `ctl` (stop, start, kill), `status`, by the signal and the socket;
+   checked by a C program (mini-cc) that forks a child, stops it,
+   reads its registers and a word of its memory, starts it, and by
+   rc's `cat /proc/$pid/status`.
+2. **Breakpoints and steps**: the undefined instruction, `waitstop`,
+   `startstop`, `hang` (stopped at exec: acid's `new()`); the
+   instructions' cache flushed on a write to the text.
+3. **mini-acid's language**: acid's lexer and grammar (lists, strings,
+   integers, `defn`, `local`, `while`, `if`, `loop`, its operators),
+   its interpreter; `print`, `mem`'s formats, the symbols as
+   variables (lib_executable's Symbols); its `port` library read at
+   start.
+4. **`stk()` and `lstk()` on a stopped process**, then `bpset()`,
+   `cont()`, `step()`: a session recorded under mini-5i (make test).
+5. **On mini-9pi**: stage 7's #p, the same mini-acid, then decision
+   11's comparison with principia's acid.
+
+2026-10-29, stage 8's step 1: **mini-5i serves another process's
+/proc.** A Plan 9 program under mini-5i opens `/proc/$pid/{mem,regs,
+ctl,status,text,note}` of another process of mini-5i's, and reads and
+writes them as on Plan 9 (machine/process/Proc9, 80 lines; Plan9's
+`Other` files and the target's `answer`, 90). The request by SIGUSR1
+and two named pipes a process (`/tmp/mini-5i-debug/$pid.{req,rep}`,
+made by the debugger, removed when it kills its target; Host_calls
+gets `mkfifo`, the only call added: no sockets, the machine runs where
+OCaml runs); the target answers in Plan9.deliver, between two
+instructions, and while stopped waits on its pipe for the next. The
+registers as Plan 9's Ureg for arm (r0-r12, sp, lr, type, psr, pc);
+a write to the memory sets Memory.code_written, and the CPU's cache of
+decoded instructions is dropped at the next check. Checked:
+debuggers/tests/proc.sh (in make test): proc/stop.c, by mini-cc, forks
+a child that counts, stops it (its status says Stopped), reads its
+count twice (the same), its pc (in main), writes a flag it reads
+(seen: a word it counts in would be written over by its own store,
+stopped between its load and its store), starts it, stops it, kills it
+(await says killed). ix's libc for Plan 9 has no print, fprint,
+errstr, strstr nor wait: the test formats by vsnprint and waits by
+await. Not yet: a target blocked in a host call answers when the call
+returns; the pipes of a target that exits by itself are left; arm64.
+Next: step 2, breakpoints, waitstop, startstop, hang.

@@ -21,7 +21,9 @@ let run32 ~trace (st : Arm32_isa.state) ~pc ~svc ~signal stats =
     if !Linux.signal_waiting then begin
       st.next <- !pc;
       signal st !pc;
-      pc := st.next
+      pc := st.next;
+      (* a debugger wrote the text (a breakpoint) meanwhile *)
+      if !Memory.code_written then (Array.fill tags 0 size (-1); Memory.code_written := false)
     end;
     let a = !pc in
     let slot = (a lsr 2) land (size - 1) in

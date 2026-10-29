@@ -3,7 +3,7 @@
 TOP=..
 DIR=machine
 PROG=mini-5i
-SRC=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Show_arm32 Show_arm64 Host_calls Linux Plan9 Host Cpu CLI Main
+SRC=Bits Memory Elf Arm32_isa Arm32 Arm32_fast Mmu32 Arm64_isa Arm64 Mmu64 Show_arm32 Show_arm64 Host_calls Linux Proc9 Plan9 Host Cpu CLI Main
 LOCAL=`{ls *.ml *.mli core/*.ml* arm32/*.ml* arm64/*.ml* process/*.ml* compat/*.ml compat/*.mli}
 GEN=
 LIBI=-I core -I arm32 -I arm64 -I process -I compat

@@ -54610,3 +54610,41 @@ Claude said it would survey the other parts of ix while writing the plan, nothin
 Claude flagged two errors in the survey: mini-9pi has its own TCP/IP stack, and copy-on-write fork already exists.
 Claude said it would commit the .NET plan after double-checking the survey's remaining claims.
 Claude then began checking the commit hash before writing `plan_gaps.md`, but did not finish either step.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended adding the untracked new file to git before retrying the commit.
+Claude ran `git add` on the new file, then retried the commit.
+The first commit attempt had failed because the new file was not yet tracked.
+Yoann's follow-up reports that `make` is stuck in a dune build job, so that is the focus.
+Claude's reply covers the commit fix, with no detail on the dune hang itself.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:57
+
+**Yoann:**
+
+> make is currently stucked in dune build in one job. Why?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:57
+
+**Yoann:**
+
+> Done: 99% (10293/10330, 37 left) (jobs: 1)
+
+**Claude (summary):**
+
+Claude reported a build-progress line (10293/10330 jobs) and said it had found the cause of a broken line.
+Claude said the fixed pipeline reproduced the font byte for byte when applied to the rule.
+Claude checked the rule in a separate build directory so it would not disturb the lock held by the user's make.

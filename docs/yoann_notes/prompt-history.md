@@ -55100,3 +55100,346 @@ Claude committed step 1 of the annotations, `[@tailcall]` and `[@@tailrec]`, as 
 Claude left out `docs/yoann_notes/prompt-history.md` (staged by another session) and the untracked `lib_core/runtime.5`, committing by pathspec.
 Claude described step 2, `[@zero_alloc]`, as the next item, which rejects allocation in marked functions.
 The check runs on the code `-O3` produces, so builds without `-O3` get an error asking for it.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the two plan changes as `5720c61e`: new `docs/plans/plan_cmm.md` and a pointer added to `docs/plans/plan_dotnet.md`.
+Claude left out the modified `docs/plans/plan_ml_annotations.md`, since it belongs to another session's annotations work.
+Claude also excluded the rest of that session's files and `prompt-history.md` from the commit.
+Claude did not run `make test`, because the commit only touched documentation.
+Claude noted the branch is now ahead of origin by `35eb84fc` and `5720c61e`, unpushed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:17
+
+**Yoann:**
+
+> can I close this session? Also I saw the self job recently failed :(
+
+**Claude (summary):**
+
+Claude found that the self (mix) job failed by running out of memory while building browsers/netscape on the card.
+Claude said it was reading the job's details to pin down the failure further.
+Claude did not answer whether the session could be closed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:14
+
+**Yoann:**
+
+> let's add a few of those annots in IX, do dogfood, and check mini-ml indeed compiles them as tail recursive by accepting to compile the file
+
+**Claude (summary):**
+
+Claude added `[@@tailrec]` to 11 loops and confirmed mini-ml accepts every one.
+Claude proposed committing List.ml, CLI.ml, plan_ml_annotations.md and plan_ml_bootstrap.md as one change.
+Claude listed the plan's "used in ix" paragraph and the ledger row (+11 lines) as part of that commit.
+Claude noted that nothing was committed yet and that the repository stayed untouched.
+Claude asked Yoann to confirm before committing.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:21
+
+**Yoann:**
+
+> excellent! let's commit
+
+**Claude (summary):**
+
+Claude committed the 11 `[@@tailrec]` loops as commit 830dd02b, with the plan's new paragraph and ledger row.
+Claude made sure the commit held only those four files, leaving out other sessions' changes.
+Claude also described the plan's next step: `[@zero_alloc]`, which requires a marked function to not allocate, checked at `-O3`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:21
+
+**Yoann:**
+
+> let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:13
+
+**Yoann:**
+
+> let's switch Pi 1 kernel to mini-ml, so we can dogfood. I don't fully understand the question about mini-mk and lib_machine. also if we are 15% slower than ocaml-light that is more than fine! This is a great target.
+
+**Claude (summary):**
+
+Claude switched kernels/9pi's Makefile so plain make builds the Pi 1 image with mini-ml.
+Claude confirmed the 48 s build and session-c console matched under mini-qemu and QEMU.
+Claude left the change uncommitted, touching kernels/9pi/Makefile and one kernel.mk comment.
+Claude said make test does not build that image, then asked whether to commit after running it.
+Claude kept ix-web on ocaml-light and renamed that build to kernel-pi1-light.img.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:23
+
+**Yoann:**
+
+> yes let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:23
+
+**Yoann:**
+
+> does it have an impact on make test-speed? and make test time?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:23
+
+**Yoann:**
+
+> let's start the plan_pim.md!
+
+**Claude (summary):**
+
+Claude copied `Mail`, `Mime`, and `Mail_thread` from the playground into `apps/pim/mail/` as stage 1 of plan_mail.md.
+Claude fixed the charsets so Windows-1252 and ISO-8859-15 are handled properly rather than read as Latin-1.
+Claude dropped Mbox from Unit_mail, added a charset test, and got all 17 tests passing under dune.
+Claude confirmed mini-ml compiles the new files under both the playground and mini-ml, then added origin notes and a README.
+Claude added the `make test` job and updated the plans' status lines, then started the full gate, which may fail from another session's edits to `languages/ml/`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:22
+
+**Yoann:**
+
+> might be useful also for the R10 ml_vsp we discussed before
+
+**Claude (summary):**
+
+Claude built a `[@@zero_alloc]` attribute that refuses OCaml functions allocating at `-O3`, via a new `ssa/Zero_alloc` module.
+Claude raised the `ml_vsp` question for the R10 point, noting six runtime C functions never touch `ml_vsp`, so calls could skip the store and reload.
+Claude suggested checking `ml_string_get` and `ml_string_set` first, since they can raise and `ml_raise` unwinding must be read.
+Claude proposed the handoff skip as a separate commit, with `[@@noalloc]` on C externals as a later option.
+Claude also said that `make test` passes on a fresh HEAD copy (150 jobs, 0 failures) and asked to commit HEAD's `lite.sh` plus one label change.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:59
+
+**Yoann:**
+
+> we could potentially have a [@@noraise] at some point. anyway, let's commit. What's next?
+
+**Claude (summary):**
+
+Claude committed the work as 21658bd5 and left `tests/lite.sh` and `tests/speed_history.txt` out of it.
+Claude noted `[@@noraise]` in the plan as a later idea, paired with `[@@zero_alloc]` to skip the `ml_vsp` handoff.
+Claude recommended applying `[@@zero_alloc]` to the inner loops of mini-doom, mini-quake, and the benchmarks first.
+The reason is that its own test code showed a closure allocated on every call, which adds collector work per frame.
+Claude proposed measuring the gain on the Pi 2 with mini-5i once the loops are fixed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:23
+
+**Yoann:**
+
+> I guess it should be part of make test no?
+
+**Claude (summary):**
+
+Claude committed the switch as 34d597cc after `make test` passed with 150 jobs and no failures.
+Claude said the Pi 1 boot job in `make test` already covers the new mini-ml kernel, so no test was added.
+The `make test-speed` cameltry run hit 36.4 fps on the mini-ml `kernel-pi1-ixu.img`, matching the earlier ocaml-light figure with no measurable loss.
+The build-9pi run failed at mini-emacs's link on `undefined: Annotations.zero_allocs`, from another session's uncommitted mini-ml edits in `Annotations.ml` and `Lower.ml`.
+Claude left the speed-history line in `tests/speed_history.txt` uncommitted and said build-9pi needs a rerun once that session commits.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:03
+
+**Yoann:**
+
+> let's commit. What's next?
+
+**Claude (summary):**
+
+Claude recommended committing the speed line as fc4ec36d, leaving another session's uncommitted `tests/lite.sh` change alone.
+Claude suggested the next step was enabling the Pi 2 board for mini-ml, since `make BOARD=pi2 COMPILER=ix` already works per plan_pi2.md.
+That change is a one-word default edit plus a session-c QEMU check, which would dogfood mini-ml on both measured boards.
+Claude proposed debugger stage 5: printing the faulting location when a mini-ml program dies of an uncaught exception.
+It would reuse the kernel's crash-walk format and the symbol tables from this week, so it stays small.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:57
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude found that `tests/lite.sh` also held another session's `[@@zero_alloc]` hunk, so it excluded that hunk.
+Claude confirmed that commit `21658bd5` had deleted the stage-1 job line along with its own change.
+Claude's working file then differed from HEAD only by that restored line, which puts the job back.
+Claude committed HEAD plus that one line and left the other session's hunk uncommitted.
+Earlier, Claude built Smtp, Lines, mini-maild and `mini-pim send`, with 28 tests passing.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:01
+
+**Yoann:**
+
+> let's do 1
+
+**Claude (summary):**
+
+Claude annotated mini-quake's `draw_spans` with `[@@zero_alloc]` and found a tuple allocated every 8 pixels.
+Claude rewrote the four tuple values as separate values, so the hot loop no longer allocates them.
+That made `draw_spans` 5.2% faster per call, and a 61-frame run 0.35% cheaper, with identical pixels.
+Claude wrote this story into the plan with a ledger row; nothing is committed yet.
+Claude also left mini-doom's floor and sprite loops and mini-quake's `turbulent` unchanged, since rewriting them gained nothing.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:38
+
+**Yoann:**
+
+> still this quake loop is a great example of the usefulness of this annotation! great story to record in the plan
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:05
+
+**Yoann:**
+
+> let's do 1! and then 2
+
+**Claude (summary):**
+
+Claude recommended finishing stage 5a of the debugger by committing it once `make test` and `make self-quick-mix` pass.
+Claude had wrapped the long lines in frames.c, Gen.ml, mini-5i and the kernel's `/proc` code, so `make test` needed a rerun.
+Stage 5a adds `raised at:` frame names to uncaught exceptions, via a new `ml_raise_c` entry and `languages/ml/runtime/frames.c`.
+Claude's answer also covered three earlier commits: 9f9e8389 (Pi 2 kernel), c0d84a2c (line-table fix) and 9e15c5fa (.gitignore).
+Claude noted `make self-quick-mix` was still running in the background, so the commit was still waiting on it.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:38
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed bc9a929d, adding the Quake span-loop story as its own plan section.
+Claude found that mini-quake's D_DrawSpans8 allocated a four-field block every eight pixels, unseen by tests and profiles.
+Claude's zero_allocs mark on that loop reported the hidden block, with its line, on first build.
+Claude's fix made the loop 5.2% faster in its own instructions, with identical pixel output.
+Claude argued the mark should stay, so the build refuses future tuples where a comment would go stale.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 20:06
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed stage 5a as 75ff407b and the smoke test fix separately as 430f3b1e, with `make test` passing.
+Claude left out the untracked `lib_core/runtime.5` file because it predated the session.
+Claude found `make self-quick-mix` failing at mini-emacs's link with `undefined: Annotations.zero_allocs`, caused by the other session's 21658bd5.
+Claude explained that `editors/emacs/draw/mkfile` lacks `Annotations` in its file lists and proposed adding it.
+Claude asked whether to make that fix or leave it to the other session working in `languages/ml`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 20:08
+
+**Yoann:**
+
+> another session is fixing the emacs mkfile
+
+**Claude (summary):**
+
+Claude recommended tackling the mk staleness problem before the arm64 or `/src` debugger work.
+Claude cited three incidents: stale lib_core objects from an older mini-ml, libc assembly objects predating `_main`, and 425 start objects.
+Each time, the fix was hand-deleting stale objects from the shared `_mk` directory, which fresh builds never hit.
+Claude proposed a short design note in docs/plans, weighing per-binary dependencies against a conventions stamp.
+Claude left the emacs mkfile alone and planned to rerun `make self-quick-mix` once that fix lands.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 19:36
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude designed stage 3 of the IMAP work as an `Imap` client, an `Imap_server` for mini-maild, and `mini-pim list`, `read`, `archive`. Claude chose BODY.PEEK header fetches over ENVELOPE because ENVELOPE lacks References, which threading needs. Claude built `Imap_server` as a pure machine with no I/O, and cleaned up its `step` function by extracting FETCH and STORE. Claude ran ocamlformat at 80 columns on the new files only, since the project has no config, and tested the full SMTP-then-IMAP session through `session.sh`. Claude committed stage 3 by pathspec after the gate, where `make test` failures were judged unrelated to the change.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 20:07
+
+**Yoann:**
+
+> I think mini-emacs fails with some undefined Annotations.zero_allocs
+
+**Claude (summary):**
+
+Claude found that the mini-emacs draw and tty mkfiles compiled mini-ml's Ast, Parser and Lexer without Annotations.
+Claude added Annotations after Ast in both mkfiles, with its .ml and .mli in LOCAL so edits trigger rebuilds.
+Claude confirmed in the scratch copy mt9 that both editors now compile Annotations and link, at O=5 and by default.
+Claude left the fix uncommitted, noting that make test had passed with the bug and does not build these editors.
+Claude also asked whether to log the bug in docs/plans/bugs/ix.md, committing only its own entry.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 20:09
+
+**Yoann:**
+
+> let's run make clean to remove all stale objects
+
+**Claude (summary):**
+
+Claude checked what the top-level `make clean` removes before running anything.
+Claude set up a background wait so the clean only starts once no other session is building.
+The start condition: no `mini-mk` running, and no `dune build`, `tests/lite.sh` or `make` started in the last hour.
+Claude left the old leftovers (105 `lite.sh` processes, a 12.5-hour `dune build`, `make visual-all`) alone, and flagged the risk of a stuck dune build lock.
+Once started, the plan is `make clean`, `dune build`, `make test`, then the mini-9pi kernels and `make self-quick-mix`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 20:11
+
+**Yoann:**
+
+> let's move forward
+
+**Claude (summary):**
+
+Claude chose one store file per item over one per month, since Yoann had not picked and it was still new.
+Claude added `Item` and `Items` store modules, and mini-pim's commands now read through that store.
+Claude made `-offline` read only from the store, then checked list and cached read with mini-maild stopped.
+Claude ran session.sh against the per-item store and fixed one offline expectation after 34 tests passed.

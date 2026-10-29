@@ -5,7 +5,7 @@
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-dotnet [-trace] [-s] file.dll [arg...] | -S | -tables | -size | -verify file.dll..."
+let usage = "usage: mini-dotnet [-trace] [-s] file.dll [arg...] | -S [-jit] | -tables | -size | -verify file.dll..."
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
@@ -38,13 +38,14 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
 let main (caps : < caps; .. >) (argv : string array) : int =
   let mode = ref "run" in
   let files = ref [] in
-  let tracing = ref false and stats = ref false in
+  let tracing = ref false and stats = ref false and jit = ref false in
   let options =
     [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
       ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
-      ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why") ] in
+      ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why");
+      ("-jit", Arg.Set jit, " with -S: the JIT's code (arm's, mini-asm's text) for the methods it compiles, why not the others") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -59,6 +60,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         let data = img.file in
         match !mode with
         | "tables" -> Console.print caps (Listing.tables img)
+        | "S" when !jit ->
+            let text, n, refused = Jit.assembly img in
+            Console.print caps text;
+            List.iter (fun (row, why) ->
+                Console.print caps (Printf.sprintf "// not compiled: %s: %s\n"
+                                      (Listing.token_name img (Metadata.token Metadata.t_method_def row)) why)) refused;
+            Console.print caps (Printf.sprintf "// %s: %d methods compiled, %d not\n" (Filename.basename f) n (List.length refused))
         | "S" -> Console.print caps (Listing.listing img)
         | "size" ->
             let types, methods, il = Listing.sizes img in

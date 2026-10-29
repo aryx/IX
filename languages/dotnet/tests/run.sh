@@ -14,6 +14,12 @@
 #              survey's, ours and the writer's; and writer/Broken.ml's,
 #              each method broken in one way, refused with its offset and
 #              why (writer/broken.verify)
+#   jit        the JIT's code (-S -jit) for each assembly assembled by
+#              mini-asm; its text for jit/fib.dll's and jit/ints.dll's
+#              methods against jit/*.s; and, where Plan 9's libc for arm
+#              is built (_mk/5-plan9), that code linked with a C program
+#              (jit/*.c) that calls it, run under mini-5i: what the
+#              interpreter prints (fib.expected, ints.expected)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -57,9 +63,26 @@ check() {
   "$@" $W/hello.dll > $W/hello.out 2>&1
   _build/default/languages/dotnet/tests/writer/Broken.exe $W/broken.dll
   "$@" -verify $W/broken.dll > $W/broken.verify 2>&1
-  if [ -n "$record" ]; then cp $W/hello.S $W/hello.out $W/broken.verify $T/writer/; return; fi
+  if [ -n "$record" ]; then
+    cp $W/hello.S $W/hello.out $W/broken.verify $T/writer/
+    "$@" -S -jit $P/fib.dll > $T/jit/fib.s; "$@" -S -jit $T/jit/ints.dll > $T/jit/ints.s
+    return
+  fi
   if cmp -s $W/broken.verify $T/writer/broken.verify; then ok "mini-dotnet -verify: Broken.ml's methods refused, by $what"
   else fail "mini-dotnet -verify: Broken.ml's methods refused, by $what"; diff $T/writer/broken.verify $W/broken.verify | head -5; fi
+  # (the JIT's text: recorded for two, assembled for all)
+  for p in fib ints; do
+    f=$P/$p.dll; [ $p = ints ] && f=$T/jit/ints.dll
+    "$@" -S -jit $f > $W/$p.s 2>&1
+    if cmp -s $W/$p.s $T/jit/$p.s; then ok "mini-dotnet -S -jit $p, by $what"
+    else fail "mini-dotnet -S -jit $p, by $what"; diff $T/jit/$p.s $W/$p.s | head -5; fi
+  done
+  for f in $P/*.dll $T/programs/*.dll $T/jit/ints.dll; do
+    "$@" -S -jit $f > $W/jit.s 2>&1
+    if _build/default/assembler/Main.exe -m 5 -o $W/jit.5 $W/jit.s > $W/jit.err 2>&1; then
+      ok "mini-dotnet -S -jit $(basename $f): $(tail -1 $W/jit.s | sed 's|^// [^:]*: ||'), assembled, by $what"
+    else fail "mini-dotnet -S -jit $(basename $f): not assembled, by $what"; head -3 $W/jit.err; fi
+  done
   for f in $P/*.dll $T/programs/*.dll $W/hello.dll; do
     v=$("$@" -verify $f 2>&1 | tail -1)
     case "$v" in *" 0 refused") ok "mini-dotnet -verify $(basename $f), by $what";;
@@ -108,6 +131,22 @@ if [ -n "$sdk" ]; then
   exit $failures
 fi
 if [ -n "$record" ]; then check dune $NATIVE; exit 0; fi
+# the JIT's code run: linked with a C program, under mini-5i
+jit_run() {
+  local p=$1 want=$2 IX=_build/default M=_mk/5-plan9 L=lib_core/libc
+  [ -f $M/lib_core/libc.a ] || { echo "skipped: the JIT's code run (no $M/lib_core/libc.a)"; return; }
+  if $IX/assembler/Main.exe -m 5 -o $W/${p}jit.5 $T/jit/$p.s &&
+     $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 \
+       -o $W/${p}c.5 $T/jit/$p.c &&
+     $IX/linker/Main.exe -m 5 -H2 -o $W/${p}jit $W/${p}c.5 $W/${p}jit.5 $M/lib_core/libc.a > $W/link.err 2>&1 &&
+     timeout 60 $IX/machine/Main.exe $W/${p}jit > $W/${p}jit.out 2>&1 && cmp -s $W/${p}jit.out $want
+  then ok "the JIT's code for $p's methods, called from C under mini-5i: what the interpreter prints"
+  else fail "the JIT's code for $p's methods, called from C under mini-5i"; diff $want $W/${p}jit.out | head -5; fi
+}
+if [ -z "$RUN" ] && [ "$only" != mini ]; then
+  jit_run fib $P/fib.expected
+  jit_run ints $T/jit/ints.expected
+fi
 [ -z "$RUN" ] && [ "$only" != mini ] && check dune $NATIVE
 [ "$only" != dune ] && check "mini-ml ($O)" $RUN $MINI
 exit $failures

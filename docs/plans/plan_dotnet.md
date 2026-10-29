@@ -37,13 +37,15 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 7 done** (the reader and the listing; the
+**Status: stages 1 to 8 done** (the reader and the listing; the
 machine: objects, value types, generics, delegates; `dotnet` and
 `tiger` on mini-9pi's card; the writer and mini-tiger,
 `languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
 whose assemblies Microsoft's dotnet and mini-dotnet both run; the
-verifier, `-verify`); stage 8, the JIT's code as text, next. See the
-end.
+verifier, `-verify`; the JIT's code as text, `-S -jit`, its first
+methods those of int32s, their code run from C under mini-5i); stage 9,
+the JIT run in mini-dotnet, waits on the open question of its
+executable memory. See the end.
 
 ## Its place in `languages/`
 
@@ -616,3 +618,41 @@ stack popped, the code falling off the end, a ret with no value),
 each refused with its offset and why (`writer/broken.verify`);
 Microsoft's System.Private.CoreLib (`-sdk`): 31,816 of its 31,819
 methods with a body pass in 4.3 s, the 3 others use refanytype.
+
+2026-10-30 (night), stage 8: the JIT's code as text (`Jit`, 253 lines;
+`mini-dotnet -S -jit file.dll`): arm's instructions as mini-asm reads
+them, a template each IL instruction, each slot of the stack a place in
+the frame from the verifier's depths. Its first methods are those of
+int32s only (static; parameters, locals, result and every stack slot
+an int32; calls to such methods of the same assembly; no exception
+clause), and such a method is a C function for 5c (its first argument
+in R0, the others at 4(i+1) on the caller's stack, its result in R0,
+its frame mini-ld's): so a C program can call it. The templates: the
+arguments and locals, ldc, dup, pop, add sub mul and or xor, the
+shifts (their count's 5 bits), div rem and their .un (a zero divisor
+to jit_divide_by_zero, the runtime's), neg, not, ceq cgt clt and
+their .un, the conversions to the small integers, br, brtrue,
+brfalse, the conditional branches signed and unsigned, switch, call,
+ret. The others are refused with their reason: over the survey's
+ten, mini-tiger's 14 and mini-csc's 8 assemblies, 6 of 325 methods
+compiled (Fib's two among them), the others for a reference on the
+stack or in a signature, a call into the library, an instance
+method, exception clauses, ldsfld. Checked (`tests/run.sh`, in make
+test): every assembly's text assembles by mini-asm; Fib's Rec and
+Loop, and `tests/jit/ints.cs`'s eleven methods (every template:
+Euclid's gcd, powers, bits counted with an unsigned shift, a mix of
+the operators, a switch, unsigned comparison and division, the
+narrowing conversions, a clamp writing its arguments, Collatz,
+Ackermann), their text assembled and linked with a C program
+(`tests/jit/*.c`) by mini-ld against Plan 9's libc for arm, run under
+mini-5i, print what the interpreter and Microsoft's runtime print; the
+same text by dune's build and mini-ml's.
+
+What stage 9 needs, beyond this: the references (decision 12: on
+mini-ml's value stack, R10, where its collector finds them; an
+object's field at its offset in its bytes, as decision 4 laid them
+out), the library's adapters and the interpreter called as mini-ml
+calls a closure, a method's entry a cell and its first call a stub,
+and the code written into memory and run, which on mini-9pi wants a
+kernel's call, the open question below, and mini-5i's and mini-qemu's
+caches of decoded code told. Left for the author's answer.

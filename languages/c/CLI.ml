@@ -15,7 +15,8 @@ listing, 5c's byte for byte; -x each function's trees; 5c's other flags are
 ignored. -simple: the back end whose contract is the behavior, a stack machine
 (-dir prints its code; -O runs all of Opti's passes, -Oincs, -Oplaces... one;
 -ssa: its code by ssa/, values in registers from its SSA form, after Opti's
-forms (-O -ssa); -dssa prints that form).
+forms (-O -ssa); -dssa prints that form). -O3: every optimization, -simple
+-O -ssa (5c's -O3 is its registerizer; its -O0, none, is the default here).
 With goken's libc (linker/tests/libc.sh 5 $PWD/w makes w/t/libc.a), and its
 hello.c (~/goken/tests/c/hello_libc/), for example:
   G=~/goken/include; mini-cc -m 5 -I$G -I$G/ALL -I$G/arch/arm hello.c
@@ -179,6 +180,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-dssa" :: rest -> dssa := true; args rest
     | "-ssa" :: rest -> ssa := true; args rest
     | "-O" :: rest -> opti := "peep" :: List.map fst Opti.passes; args rest
+    | "-O3" :: rest ->
+        simple := true; ssa := true; opti := "peep" :: List.map fst Opti.passes;
+        args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
                      && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Opti.passes) ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
@@ -205,5 +209,5 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-O3] [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

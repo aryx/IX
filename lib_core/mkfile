@@ -63,13 +63,13 @@ ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory
 # is searched, and os/posix/ is its os/unix/ under that name)
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
-# OPTIMIZATION (the runtime by ssa/): mini-cc's back end with registers
-# (plan_cc_ssa.md), gc.c's scan as fast as it was by hand in assembly;
-# the libc stays compat's, 5c's code (old: $CC $CINC, compat's for the
-# runtime too)
+# OPTIMIZATION (the runtime by ssa/): mini-cc -O3, its back end with
+# registers (-simple -O -ssa, plan_cc_ssa.md), gc.c's scan as fast as it
+# was by hand in assembly; the libc stays compat's, 5c's code (old: $CC
+# $CINC, compat's for the runtime too)
 $L/runtime.$O: $RTSRC
 	mkdir -p $L
-	$CC -simple -O -ssa $CINC -o $target $TOP/languages/ml/runtime/runtime.c
+	$CC -O3 $CINC -o $target $TOP/languages/ml/runtime/runtime.c
 
 # The C library: goken's (libc/, with its LICENSE), the files a program
 # of mini-ml's links, in C and in assembly: those of every system, then

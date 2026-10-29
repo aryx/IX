@@ -390,7 +390,7 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
   $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
   # (and by ssa/, as lib_core's mkfile builds it)
-  $K/languages/c/mini-cc -m 7 -simple -O -ssa $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 -simple -O -ssa $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
+  $K/languages/c/mini-cc -m 7 -O3 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 -O3 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }

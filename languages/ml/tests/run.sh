@@ -19,7 +19,7 @@
 # OS=plan9 (arm): the programs as Plan 9's (plan_rio.md: lib_core/libc's
 # Plan 9 files, mini-ld -H2), run by mini-5i.
 # RUNTIME_FLAGS: mini-cc's flags for the runtime, lib_core's by default
-# (-simple -O -ssa: by ssa/, plan_cc_ssa.md; empty: compat's), the
+# (-O3: by ssa/, plan_cc_ssa.md; empty: compat's), the
 # libc's staying compat's.
 # usage: run.sh 5|7 workdir prog.ml|dir...
 
@@ -58,7 +58,7 @@ if [ -n "$GAS" ]; then
   arm-linux-gnueabihf-gcc -marm -w -c -o $W/runtime.o $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 else
 [ -f $W/mk/lib_core/libc.a ] || (cd $L && PATH=$ROOT/bin:$PATH NPROC=8 mini-mk O=$O OS=$OS B=$W/mk $W/mk/lib_core/libc.a > /dev/null) || { echo "FAIL the libc"; exit 1; }
-$IX/languages/c/Main.exe -m $O ${RUNTIME_FLAGS--simple -O -ssa} $INC -o $W/runtime.$O $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
+$IX/languages/c/Main.exe -m $O ${RUNTIME_FLAGS--O3} $INC -o $W/runtime.$O $ROOT/languages/ml/runtime/runtime.c || { echo "FAIL the runtime"; exit 1; }
 fi
 declare -A deps
 for p in $units core/std_exit; do

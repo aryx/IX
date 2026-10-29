@@ -303,6 +303,7 @@ job "mini-ml -pp" languages/ml/tests/pp.sh
 job "mini-prolog: the language, by text" languages/prolog/tests/run.sh -dune
 job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
+job "mini-dotnet: Microsoft's assemblies read, listed as ildasm (-S)" languages/dotnet/tests/run.sh -dune
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
@@ -335,7 +336,7 @@ else skip "mini-ml: its programs run, against OCaml" "$no7"; fi
 # a line a group, named by what it compiles (-v: a failing file's error
 # in the log, the part's lines)
 compiles() { languages/ml/tests/compile_ix.sh -v "$@" | tee /dev/stderr | tail -1 | grep -q '^\([1-9][0-9]*\) of \1 compile'; }
-for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
+for d in lib_core assembler linker languages/c languages/ml languages/scheme languages/prolog languages/datalog languages/forth languages/dotnet "languages/pascal lib_terminal" generators database builder shell editors machine raspberry version_control kernels; do
   case $d in
     lib_core) group shared; family "mini-ml compiles lib_core" build;;
     *) group m-ix; family "mini-ml compiles m-ix" build;;

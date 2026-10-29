@@ -11,6 +11,9 @@
 #   survey.sh name...    of these programs only (hello fib queens shapes:
 #                        TinyDotnet's)
 #   survey.sh -expected  write programs/*.expected again
+#   survey.sh -dll       write programs/*.dll again: mini-dotnet's test
+#                        data, kept in the tree (plan_dotnet.md,
+#                        decision 2), where there is no SDK
 #
 # Needs a .NET SDK (dotnet in the path); nothing is downloaded. The
 # assemblies go to a temporary directory, not the tree.
@@ -43,21 +46,25 @@ config() {
 }
 
 expected=
+dll=
 [ "$1" = -expected ] && { expected=1; shift; }
+[ "$1" = -dll ] && { dll=1; shift; }
 progs=${*:-$(ls programs/*.cs | xargs -n1 basename | sed 's/\.cs$//')}
 
 for p in $progs; do
     f=programs/$p.cs
     csc -out:$OUT/$p.dll $f
     config $p
-    if [ -n "$expected" ]; then
+    if [ -n "$dll" ]; then
+        cp $OUT/$p.dll programs/$p.dll
+    elif [ -n "$expected" ]; then
         dotnet $OUT/$p.dll > programs/$p.expected
     else
         dotnet $OUT/$p.dll | cmp -s - programs/$p.expected ||
             echo "$p: not what programs/$p.expected says"
     fi
 done
-[ -n "$expected" ] && exit 0
+[ -n "$expected$dll" ] && exit 0
 
 csc -out:$OUT/Survey.dll Survey.cs
 config Survey

@@ -22,6 +22,7 @@ read, and run by a machine of its own, in OCaml.
 | `prolog/` | Prolog, Edinburgh's syntax and the standard's core, integers only: goals and choice points as data, the four ports as its tracer; and Warren's machine, the clauses compiled to its instructions (`-wam`, `-S`); written here | mini-prolog | [plan_prolog.md](../docs/plans/done/plan_prolog.md) |
 | `forth/` | Forth, for its machine: a dictionary in the memory, two stacks, indirect threaded code; `IF` and `DO` written in Forth; `SEE` | mini-forth | its [README](forth/README.md) |
 | `datalog/` | Datalog: Prolog's text without compound terms, its rules run bottom up to their fixpoint (the strata, semi-naive); for program analyses | mini-datalog | [plan_prolog.md](../docs/plans/done/plan_prolog.md), [plan_datalog.md](../docs/plans/plan_datalog.md) |
+| `dotnet/` | .NET's assemblies, as Microsoft's C# compiler writes them: read, listed as ildasm (`-S`); a machine for them under way | mini-dotnet | [plan_dotnet.md](../docs/plans/plan_dotnet.md) |
 | `formula/` | a spreadsheet's formulas (`=A1+SUM(B1:B3)`), read and evaluated: the 7GUIs' Cells (`examples/`) | a library | [plan_gui.md](../docs/plans/done/plan_gui.md) |
 
 The one-file variants are in `tiny/` (TinyC.ml, TinyML.ml), beside

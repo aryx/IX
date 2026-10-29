@@ -37,8 +37,8 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: plan written, nothing built** but the survey
-(`languages/dotnet/survey/`).
+**Status: stage 1 done** (the reader and the listing,
+`languages/dotnet/`); the rest under way. See the end.
 
 ## Its place in `languages/`
 
@@ -459,3 +459,20 @@ from fork-tiger's and Appel's inspiration, and a reduced mini-csc;
 the library as adapters over lib_core; the objects laid out for the
 JIT; the JIT in this plan (decision 12, stages 7 to 10). Nothing
 built.
+
+2026-10-29 (night), stage 1, the author: "let's do the dotnet plan"
+(the plan's order; a commit a stage; mini-tiger in `languages/tiger/`;
+the assemblies in the tree). Metadata (the 45 tables as data), Image
+(the PE, the heaps, the tables, a method's body and its clauses),
+Signature (the blobs), Il (the opcodes as a table, a body decoded, an
+instruction encoded: the writer's), Listing (`-tables`, `-S` as
+ildasm, `-size`). The ten `.dll` in `survey/programs/` (`survey.sh
+-dll` writes them again; the same bytes twice: `-deterministic`).
+Checked: the rows by table of the ten, summed, are survey.txt's 19
+lines; `tests/run.sh` (in make test) the ten's `-S` against
+`tests/expected/`, by dune's build, by mini-ml's on arm64 and on arm
+under mini-5i (`-5`, an int of 31 bits); `tests/run.sh -sdk`
+Microsoft's five assemblies read whole, System.Private.CoreLib's 2,466
+types, 33,773 methods and 1,332,333 bytes of IL (runtime 8.0.32), each
+body decoded, the same numbers as Survey.cs's; in 0.23 s by dune's
+build, 0.45 s by mini-ml's.

@@ -292,7 +292,11 @@ GROUPS = [
     ("mini", ["assembler", "linker", "languages", "generators", "machine",
               "raspberry", "kernels", "builder", "shell", "editors",
               "database", "version_control", "utilities", "windows", "apps", "networking", "browsers",
-              "typesetting"]),
+              "typesetting",
+              # (the author, 2026-10-29: "let's count this new debuggers/
+              # as well as profilers/ in make loc as part of the budget
+              # (not in other/)")
+              "debuggers", "profilers"]),
     ("tiny", ["tiny"]),
     # (the author, 2026-10-09, apps/ counted with mini-office: "yes lib_gui
     # and lib_playground should also count now for make loc I think")

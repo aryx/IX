@@ -5,7 +5,8 @@
 
 open Playground
 
-type caps = < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env >
+type caps =
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
 
 (*****************************************************************************)
 (* The model *)
@@ -105,7 +106,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     }
 
 (*****************************************************************************)
-(* What the keys do *)
+(* What the keys and the menus do *)
 (*****************************************************************************)
 
 let current (m : model) : Imap.summary list =
@@ -196,9 +197,81 @@ let without_last (s : string) : string =
   | [] -> ""
   | _ :: rest -> String.concat "" (List.rev rest)
 
+(* what a person can ask, by a key or by a menu *)
+type command =
+  | Get
+  | Search_
+  | Exit
+  | Open_
+  | Back
+  | Archive_
+  | Next
+  | Previous
+  | Inbox
+  | All_mail
+
+(* the menu bar: each menu its title, then its items, each with its
+ * command and its key, said in the item (a menu is where the keys are
+ * learnt) *)
+let menus : (string * (string * command) list) list =
+  [ ( "Mail",
+      [ ("Get Mail  (g)", Get); ("Search...  (/)", Search_); ("Exit", Exit) ] );
+    ( "Conversation",
+      [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
+        ("Archive  (e)", Archive_); ("Next  (j)", Next);
+        ("Previous  (k)", Previous) ] );
+    ("Go", [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail) ]) ]
+
+let menu_bar = 30.
+
+(* the menu [i]'s title, at the window's top left *)
+let menu_box (computer : computer) (i : int) : Widget.box =
+  let w = computer.screen.width and h = computer.screen.height in
+  (* (as wide as the longest item, "Back to List  (u)") *)
+  { Widget.x = (-.w /. 2.) +. 89. +. (float_of_int i *. 174.);
+    y = (h /. 2.) -. (menu_bar /. 2.); w = 170.; h = menu_bar -. 4. }
+
+(* the menus asked for this frame (every frame: immediate mode), and the
+ * command of the item chosen, if one was *)
+let chosen (computer : computer) : command option =
+  List.fold_left
+    (fun found (i, (title, items)) ->
+      let labels = title :: List.map fst items in
+      let k = Gui.menu_in computer (menu_box computer i) labels 0 in
+      (* (0: the title, nothing chosen) *)
+      if found <> None || k = 0 then found
+      else Option.map snd (List.nth_opt items (k - 1)))
+    None
+    (List.mapi (fun i menu -> (i, menu)) menus)
+
+let switch (caps : caps) (m : model) (mailbox : string) : model =
+  let m =
+    load caps { m with mailbox; selected = 0; mode = Browsing; status = "" }
+  in
+  (* (fetched when the password is known: what the store has of the
+   * other mailbox may be old, or nothing) *)
+  if m.password <> None then run caps m Fetch else m
+
+let command (caps : caps) (m : model) (c : command) : model =
+  match c with
+  | Get -> run caps m Fetch
+  | Search_ -> { m with mode = Asking Search; field = m.query }
+  | Exit -> CapStdlib.exit caps 0
+  | Open_ ->
+      if current m = [] then m
+      else if m.password = None then open_ caps m
+      else run caps m Open
+  | Back -> { m with mode = Browsing }
+  | Archive_ -> if current m = [] then m else run caps m Archive
+  | Next -> next caps m 1
+  | Previous -> next caps m (-1)
+  | Inbox -> switch caps m "INBOX"
+  | All_mail -> switch caps m "[Gmail]/All Mail"
+
 let update (caps : caps) (computer : computer) (m : model) : model =
   let keys = computer.keyboard.keys in
   let pressed name = Set_.mem name keys && not (Set_.mem name m.held) in
+  let menu = chosen computer in
   let m =
     match m.mode with
     | Asking a ->
@@ -215,44 +288,34 @@ let update (caps : caps) (computer : computer) (m : model) : model =
               | None -> m)
           | Search ->
               load caps
-                {
-                  m with
-                  query = m.field;
-                  field = "";
-                  mode = Browsing;
-                  selected = 0;
-                }
+                { m with query = m.field; field = ""; mode = Browsing;
+                  selected = 0 }
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
-    | Browsing | Reading ->
+    | (Browsing | Reading) when Gui.modal () -> m
+    | Browsing | Reading -> (
         let reading = m.mode = Reading in
-        if pressed "j" || ((not reading) && pressed "ArrowDown") then
-          next caps m 1
-        else if pressed "k" || ((not reading) && pressed "ArrowUp") then
-          next caps m (-1)
-        else if reading && (pressed "ArrowDown" || pressed "space") then
-          { m with scroll = (m.scroll + if pressed "space" then 10 else 1) }
-        else if reading && pressed "ArrowUp" then
-          { m with scroll = max 0 (m.scroll - 1) }
-        else if (pressed "o" || pressed "Enter") && current m <> [] then
-          if m.password = None then open_ caps m else run caps m Open
-        else if pressed "u" || pressed "Escape" then { m with mode = Browsing }
-        else if pressed "e" && current m <> [] then run caps m Archive
-        else if pressed "g" then run caps m Fetch
-        else if pressed "/" then
-          { m with mode = Asking Search; field = m.query }
-        else if pressed "Tab" then
-          let mailbox =
-            if m.mailbox = "INBOX" then "[Gmail]/All Mail" else "INBOX"
-          in
-          let m =
-            load caps
-              { m with mailbox; selected = 0; mode = Browsing; status = "" }
-          in
-          (* (fetched when the password is known: what the store has of
-           * the other mailbox may be old, or nothing) *)
-          if m.password <> None then run caps m Fetch else m
-        else m
+        let key =
+          if pressed "j" || ((not reading) && pressed "ArrowDown") then Some Next
+          else if pressed "k" || ((not reading) && pressed "ArrowUp") then
+            Some Previous
+          else if pressed "o" || pressed "Enter" then Some Open_
+          else if pressed "u" || pressed "Escape" then Some Back
+          else if pressed "e" then Some Archive_
+          else if pressed "g" then Some Get
+          else if pressed "/" then Some Search_
+          else if pressed "Tab" then
+            Some (if m.mailbox = "INBOX" then All_mail else Inbox)
+          else None
+        in
+        match (menu, key) with
+        | Some c, _ | None, Some c -> command caps m c
+        | None, None ->
+            if reading && (pressed "ArrowDown" || pressed "space") then
+              { m with scroll = (m.scroll + if pressed "space" then 10 else 1) }
+            else if reading && pressed "ArrowUp" then
+              { m with scroll = max 0 (m.scroll - 1) }
+            else m)
   in
   { m with held = keys }
 
@@ -313,7 +376,8 @@ let mailbox_name (m : model) : string =
 
 let view (computer : computer) (m : model) : shape list =
   let w = computer.screen.width and h = computer.screen.height in
-  let left = -.w /. 2. and top = h /. 2. in
+  (* (the menu bar above the rest) *)
+  let left = -.w /. 2. and top = (h /. 2.) -. menu_bar in
   let x0 = left +. side +. 16. in
   let room = w -. side -. 32. in
   let top_bar =
@@ -446,4 +510,8 @@ let view (computer : computer) (m : model) : shape list =
                      ])
                m.conversations)
   in
-  (rectangle white w h :: top_bar) @ sidebar @ main
+  (rectangle white w h :: top_bar)
+  @ sidebar @ main
+  @ [ rectangle (Gui.theme ()).face w menu_bar |> move 0. (top +. (menu_bar /. 2.)) ]
+  (* (the menus last: an open one over the list) *)
+  @ Gui.draw ()

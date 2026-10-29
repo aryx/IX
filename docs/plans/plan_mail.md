@@ -290,3 +290,11 @@ Not yet: labels other than Inbox and All Mail, the HTML of a message
 (Mime.text's plain part only), scrolling with the mouse, IDLE, the
 keys t (a task) and z (snooze) of stage 8. Next: stage 6, Gmail by the
 author, by hand.
+
+2026-10-29: the window's menu bar (the author: "those keyboard
+shortcut are nice, but I think we also need a menu with those actions
+available from the menus too"): Mail (Get Mail, Search..., Exit),
+Conversation (Open, Back to List, Archive, Next, Previous), Go (Inbox,
+All Mail), each item saying its key; a key and an item are one
+command, done by one function. mini-office's dropdowns (Gui.menu_in).
+Three more frames, by the mouse: a menu open, Get Mail, Archive.

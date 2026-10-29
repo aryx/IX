@@ -53915,3 +53915,467 @@ Claude also noted the 15% comes from Linux mini-5i, not yet measured under mini-
 **Yoann:**
 
 > so how much faster mini-ml got at compile ML code with all the recent opti we did in the last week (to mini-ml itself, to mini-c, to the runtime code, etc.) ?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:42
+
+**Yoann:**
+
+> (are those is the notes opti inventory document?)
+
+**Claude (summary):**
+
+Claude explained that instruction counts are unaffected by machine load, but wall-clock timing is.
+Claude noted the old-commit self-quick run now shares the machine with two builds and make test, so its 179 s comparison is unreliable.
+Claude said it will rerun that self-quick comparison on a quiet machine once the other jobs finish.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:49
+
+**Yoann:**
+
+> feel free to add those test benchmark under languages/c/tests/bench/ or something
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:26
+
+**Yoann:**
+
+> anything pending for t-ix before lpizing? any essential programs missing in tiny/ ? or have we covered them all?
+
+**Claude (summary):**
+
+Claude said it was checking the open tiny plans and comparing the m-ix program list against tiny/.
+Claude was checking whether date, ps, kill, and diff already existed anywhere in tiny-kernel.
+Claude treated ps as the key gap to confirm, with date, kill, and diff checked alongside it.
+Claude had not yet determined whether ps was present, so no missing-program list was given.
+Claude reported no files written or commits made, and the coverage comparison was still unfinished.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:01
+
+**Yoann:**
+
+> let's do 1 and add /dev/ps maybe, and ps in TinyUtilities that can do some further formatting. Let's not close the multicore plan for now. Let's do 3, 4, and I'll do the lpizing.
+
+**Claude (summary):**
+
+Claude added a `/dev/ps` node to the kernel, recording each process's command line and memory size.
+Claude added `kill`, `date`, and `ps` to TinyUtilities, with `kill` backed by `TinyLibSystem.kill` on both sides.
+Claude checked `date` against mini-date on 16 dates, and `ps` sorts rows by pid and prints nothing when `/dev/ps` is unreadable.
+Claude linked `/bin/date`, `/bin/kill`, and `/bin/ps` in tiny-kernel, added `make check` cases, and passed 180 host tests.
+Claude fixed the stale README link and the t-ix.md utility counts, then `make self-quick-tix` passed and `make test-tix` started.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:49
+
+**Yoann:**
+
+> like we did for mini-ml
+
+**Claude (summary):**
+
+Claude proposed splitting the uncommitted work into two commits, with the division fold in Opti.ml first.
+That first commit turns the unsigned-typed signed division in `(lo + hi) / 2` into a shift, which sorts had caught still calling `_div` on arm.
+The second commit would hold libc and kernel builds under `-O3`, plus the new benchmarks in `languages/c/tests/bench/` run by `bench.sh`.
+Claude then asked whether to commit both this way before going further.
+Claude also reported mini-ml instructions down 53.8% over the week, and `make test` passing with 145 jobs and 0 failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:26
+
+**Yoann:**
+
+> yes let's commit. Can we close this session then?
+
+**Claude (summary):**
+
+Claude ran `make test` in a clean copy of HEAD with its 18 files applied, since other sessions had uncommitted work.
+The copy build and test run passed with 145 jobs, 0 failures, and 1 skipped.
+Claude then committed its 18 files by pathspec, leaving the other sessions' uncommitted changes out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:28
+
+**Yoann:**
+
+> yes let's commit and then factorize the SSA code in lib_code/
+
+**Claude (summary):**
+
+Claude moved both compilers' SSA code into `lib_code/`, checked the outputs, and committed it as `05124c84`.
+Claude flagged that libc's qsort runs about 10% slower with `-O3` than with compat.
+Claude tied qsort's changed output to mini-cc's sealing order, which now follows mini-ml's newest-first fill.
+Claude left the qsort gap open, with no cause identified yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:30
+
+**Yoann:**
+
+> we just completed mostly t-ix. Is there any essential programs missing for m-ix? Are we close to start lpizing the code? anything fundamental left to cover for our teaching purpose of whole-system understanding (a la principia softwarica)?
+
+**Claude (summary):**
+
+Claude said it was surveying the repo against Principia Softwarica's book list.
+Claude said it still had one more check to run, on network apps, archives, and security.
+Claude had not yet answered Yoann's questions about missing m-ix programs or the LPI-ization timing.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:51
+
+**Yoann:**
+
+> I like your plan. let's do 5 now, seems simple. 1 and 2 could go together. Regarding the mini-debugger, should we do a mini-db or mini-acid or a mini- something else? Is acid the best debugger to port to OCaml? Anything more recent that we could steal ideas from that helps even more the debugging process?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:47
+
+**Yoann:**
+
+> let's commit. And let's investigate the 10% slowdown. -O3 should be faster than compat!
+
+**Claude (summary):**
+
+Claude traced the qsort slowdown under `-O3` to four separate causes in the inner loop.
+Claude passed the first call argument straight into R0 and forwarded just-stored values from registers instead of reloading them.
+Claude made pi register-allocatable and stored call-surviving values once at definition, not before every call.
+Libc's qsort now runs 1.8% faster under `-O3` than compat, down from 10.5% slower, and nothing is committed yet.
+Claude reported `make test` passing on a fresh HEAD copy (145 jobs, 0 failures, 1 skipped) after updating the flow-facts expectations.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:13
+
+**Yoann:**
+
+> commit it when the tests pass
+
+**Claude (summary):**
+
+Claude committed the work as 72ab7b69 after make test, the C suite, and mini-ml's runtime suite passed.
+Claude found that -O3 now beats compat on every C benchmark: 29.9% fewer instructions on fmt, 57.1% on copy, 19.3% on sorts.
+Claude reported that libc's qsort went from 10.5% slower than compat to 1.8% faster.
+Claude said mini-ml's compile had not been measured with these runtime changes, so its gain is not yet quantified.
+Claude flagged that sorts.c's own quicksort now costs about 3% more, and left other sessions' modified files alone.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:40
+
+**Yoann:**
+
+> can we close this session? mini-ml improved a lot no? (as well as mini-cc)
+
+**Claude (summary):**
+
+Claude confirmed the session could be closed, with all its work committed and remaining items recorded in the plans and ledger.
+Claude reported that mini-ml's compile benchmark dropped 53.8% in instructions over the week, about 2.2 times faster.
+Claude reported that mini-cc's new `-O3` back end cut instructions 29.9% on fmt, 57.1% on copy, and 19.3% on sorts.
+Claude listed the open items in `docs/plans/plan_cc_ssa.md`, including the register-count gap for ssa/ on arm that Yoann asked about.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 09:53
+
+**Yoann:**
+
+> and also let's try to build more of m-ix under m-ix, but first we have another sessions trying to get the current self-mix to pass in GHA self.yml workflow
+
+**Claude (summary):**
+
+Claude moved gzip's envelope into Zlib beside gunzip and added a deflate-from-position function for multi-member files.
+Claude wrote mini-gzip, mini-gunzip and mini-tar, using 16-bit halves for CRCs and timestamps under mini-ml.
+Claude checked mini-tar's archive against principia's byte for byte under mini-5i, with t and x agreeing.
+Claude added tar and gzip cases to the hand-run differential.sh, which was re-run in the background.
+Claude also fixed mini-5i's buffer reads across segments and wired the three programs into mkfile and session cards.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:42
+
+**Yoann:**
+
+> how can we use more registers for ssa/ on arm? I like the simplicity in Plan 9 toolchain where a few registers are reserved for a clear useful purpose.
+
+**Claude (summary):**
+
+Claude laid out how Plan 9's 5c and 5l divide the sixteen ARM registers, with R0 and R8 as ssa/'s scratch registers.
+Claude recommended giving R8 back to the allocator, keeping only R0 as scratch, so Alloc gets eight registers.
+Claude noted that two instructions, a binary op or store with all operands in memory, still need a second scratch and fall back to seven.
+Claude advised against letting values live in R0 between calls and against touching R9, R10, R11, R12, or R14.
+Claude proposed checking F7-F15 on VFP later, and asked whether to try option 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:51
+
+**Yoann:**
+
+> yes, and let's explain those register allocation (and what "gives to allocator" mean) in m-ix.md maybe?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:47
+
+**Yoann:**
+
+> yes let's rewrite and adapt the plan and commit the archive work too
+
+**Claude (summary):**
+
+Claude committed to checking that the archive work's files held only its own changes before running `make test`.
+Claude found that `docs/plans/bugs/ix.md` was no longer modified, likely committed by another session possibly including its row.
+Claude read all of `plan_debugger.md` and checked whether mini-ld's symbol table or 5b's `/src` had moved since it was written.
+Claude noted that `#p` lists `mem`, `regs`, `text` and `profile` but only some entries work, so kernel support became its own stage.
+Claude rewrote the plan, and `make test` passed with 145 jobs, 0 failures and 1 skipped, pending a final shared-file check.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:53
+
+**Yoann:**
+
+> yes, and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:10
+
+**Yoann:**
+
+> regarding the debugger, one cool thing with m-ix is that its toolchain can also produce arm64 binaries that can run on this machine, on Linux (and maybe macOS with Mach-O). It would be great if the debugger mini-acid could also debug binaries for this machine; the one produced by mini-c and mini-ml -a, with extra info, but maybe regular gcc binaries too with DWARF could be nice, for its teaching value. I know Linux and macOS do not have the same /proc that acid relies on, but I think plan9port already ported acid to also work on macos and Linux thx to an extended libmach. We could maybe imitate that too
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:11
+
+**Yoann:**
+
+> could be good in the docs/manual/ to maybe write down how some of the programs built in ix can also work not only under tiny-kernel or mini-9pi but also on Linux and macOS (and Windows?), and which one can't because they need too much some of the IX kernel services (e.g., mini-rio I think)
+
+------------------------------------------------------------------------
+
+## 2026-10-29 10:51
+
+**Yoann:**
+
+> part of the m-ix manual to have a section on the toolchain in addition to sections on hardware, etc.
+
+**Claude (summary):**
+
+Claude reported that the toolchain section is now section 8 of `docs/manuals/m-ix.md`, before "What does not hold yet".
+Claude proposed covering mini-ml's `-O3` and `-O0` levels, mini-cc's compat, `-simple`, `-simple -O` and `-O3` modes, and which mkfile picks each.
+Claude planned a register section explaining the allocator's registers, scratch and reserved classes, and Plan 9's arm register roles against what `-O3` uses them for.
+Claude measured the baseline at 5,107.9 M instructions, 1.8% below the morning's 5,202.3 M, with HEAD's mini-cc and `-O3` libc.
+Claude noted the second build failed with `lc 1`, so both measured numbers came from the same runtime.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:12
+
+**Yoann:**
+
+> also let's count this new debuggers/ as well as profilers/ in make loc as part of the budget (not in other/ )
+
+**Claude (summary):**
+
+Claude recommended counting debuggers/ and profilers/ in the make loc budget rather than under other/.
+Claude explained how make loc sorts directories, so the two new directories fall into the budget.
+profilers/ is now counted in the m-IX total, which stands at 385 lines.
+debuggers/ will be counted from its first file onward, so it adds to the budget once populated.
+Claude said it was waiting on make test and the survey before reporting the final numbers.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:15
+
+**Yoann:**
+
+> feels like a waste to not use R9/R10 used for extern register when the program does not use any extern register.
+
+**Claude (summary):**
+
+Claude noted that the kernel trap code in l.s saves and restores R10 as mini-ml's value-stack pointer.
+Claude recommended keeping R10 reserved, since mini-ml saves it to ml_vsp before C calls.
+Claude judged R9 free in practice, being mini-ml's temporary that is never live across a call.
+Claude suggested documenting in m-ix.md that allocating R9 to ssa/ risks a generator path keeping it across calls.
+Claude expected little from R9, since R8 only improved mini-ml's compile by 0.4 percent.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:19
+
+**Yoann:**
+
+> ok let's keep R9 then but clearly document why it would be dangerous to allocate it to ssa/. regarding ml_vsp, I don't see any 'extern register' in IX that indicates R10 is used for it. Where this is declared?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:17
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the tables as ae3358bf and the `make loc` change as 3284d89a.
+Claude left out another session's uncommitted `docs/plans/plan_cc_ssa.md` edits, flagged by a commit hook.
+Claude did not add the roughly +200 linker lines to the LOC ledger in `plan_ml_bootstrap.md`, since another session has it open.
+Claude surveyed paths for the manual page, found the `docs/README.md` index lists no manuals, and is adding entries for the four.
+The manual page itself is still pending until the survey finished; Claude said it would write it after.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:22
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the new manual page as 6cf48bdb, `docs/manuals/hosts.md`, plus a `docs/README.md` paragraph listing the four manuals.
+Claude left out `docs/manuals/m-ix.md`, which has another session's uncommitted changes, because the new page doesn't depend on it.
+Claude is holding two items: building more of m-IX until the other session gets self.yml green, as Yoann asked.
+Claude's debugger plan next steps are mini-ml's `.ml` line carry-through to its objects (stage 1b), then mini-asm's `#include` history.
+Claude then planned mini-nm as stage 2, the last step before the debugger work.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:21
+
+**Yoann:**
+
+> seems bad to leave this R10 implicit instead of enforced. Maybe we should use extern register for ml_vsp? and put things in the right order like in principia's kernel so we can then comment and assume it's in R10 and R9?
+
+**Claude (summary):**
+
+Claude outlined four steps to make `extern register value *ml_vsp` work, starting with mini-cc support for the feature.
+Claude proposed that mini-cc accept `extern register` as 5c does, assigning R10 first, then R9 on arm.
+Claude noted that mini-ml would stop storing R10 to `ml_vsp(SB)` before C calls, saving an instruction per call.
+Claude flagged open issues: gc.c thread switches would change R10 directly, and arm64's R26 conflicts with 7c's R27.
+Claude recommended treating it as its own feature with a plan in `docs/plans/` and offered to commit the R8 change first.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:22
+
+**Yoann:**
+
+> and let's move forward on the debugger plan
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:31
+
+**Yoann:**
+
+> let's move lib_mach at the top, and maybe rename it to something better
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:34
+
+**Yoann:**
+
+> in plan9, lib_mach is used just for debuggers? we're renaming part of it to lib_debug but I'm not completely sure. Maybe it's a good choice, but what do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:38
+
+**Yoann:**
+
+> how such a library is called in the linux/macos/bsd world?
+
+**Claude (summary):**
+
+Claude updated `tests/lite.sh` with one of the rename hunks for the new name.
+Claude updated the plan's Status entry to record the new name and the reason for it.
+Claude confirmed the build and tests pass under the new name, including mini-mk.
+Claude checked that the HEAD-plus-changes versions differ from HEAD only by its own hunks.
+Claude then committed the rename changes.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:26
+
+**Yoann:**
+
+> let's commit the tested R8 and doc first. Regarding extern register, what do you think? Worth it?
+
+**Claude (summary):**
+
+Claude committed the tested R8 and doc as 977e730c, leaving another session's mini-ml edits out.
+Claude recommended adding extern register in two commits, judging it worth doing mainly for mini-cc's twin status.
+The first step makes mini-cc accept extern register, checked against 5c on a test file and principia's kernel.
+The second step declares ml_vsp in R10 in the runtime and drops mini-ml's stores to it.
+Claude had weighed a few hundred lines and a thread-switch change against the gain, and offered to write the plan first.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:41
+
+**Yoann:**
+
+> let's not generate them by default for now
+
+**Claude (summary):**
+
+Claude recorded the plan change as the answer to decision 1 in the ix plan.
+Claude's recorded answer is to not generate the mini and tiny variants by default for now.
+Claude wrote this as a decision entry, so the plan now reflects the choice explicitly.
+Claude kept the rest of the plan unchanged and did not commit anything yet.
+Claude's reply was brief, with no other files or steps mentioned.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:45
+
+**Yoann:**
+
+> yes let's first write the plan
+
+**Claude (summary):**
+
+Claude wrote the uncommitted plan at `docs/plans/plan_extern_register.md`, modeled on Plan 9's design.
+Claude proposed two steps: mini-cc gets `extern register` as 5c and 7c do, then the runtime declares `ml_vsp`.
+Step 2 would move mini-ml's value stack from R26 to R27 on arm64, so both machines read alike.
+Claude flagged gc.c's thread switch, which assigns `ml_vsp` and could collide with R10, as the main risk.
+Claude ended by asking whether to start step 1.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:59
+
+**Yoann:**
+
+> is there a better design? We don't have to follow necessarily Plan 9 every time
+
+------------------------------------------------------------------------
+
+## 2026-10-29 11:59
+
+**Yoann:**
+
+> especially if there is a clear better one
+
+**Claude (summary):**
+
+Claude recommended design C, where mini-ml reloads R10 from ml_vsp after each call into C.
+Claude argued this frees R9 and R10 for C, so mini-cc's Ssa_gen could allocate ten arm registers.
+Claude estimated the extra load per C call at about 0.2% of a compile, but said the register gain needs measuring.
+Claude proposed first measuring a scratch-tree prototype in mini-ml and mini-cc, then rewriting the plan if it pays.
+Claude also compared designs A and B, and kept compat's R9 and R10 reserved.

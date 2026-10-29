@@ -19,13 +19,23 @@ type mach = {
   vfregs : int list;
 }
 
-(* arm has none left: R1-R8 the stack's, R9-R15 reserved or special *)
+(* arm has none of its own: R1-R7 the stack's (R8 its scratch), R9-R15
+ * reserved or special; so the stack's from the top, those a function's
+ * stack never reaches (vregs ~depth, Opti's regs)
+ * old: vregs = []; vfregs = [] *)
 let arm64 = { sp = 31; word = 8; nregs = 15; nfregs = 15; tmp = 16; ftmp = 16; ret = "RETURN";
               vregs = [ 19; 20; 21; 22; 23; 24; 25 ]; vfregs = [ 17; 18; 19; 20; 21; 22; 23 ] }
-let arm = { sp = 13; word = 4; nregs = 7; nfregs = 6; tmp = 8; ftmp = 7; ret = "RET"; vregs = []; vfregs = [] }
+let arm = { sp = 13; word = 4; nregs = 7; nfregs = 6; tmp = 8; ftmp = 7; ret = "RET";
+            vregs = [ 7; 6; 5; 4; 3 ]; vfregs = [ 6; 5; 4; 3 ] }
 let a64 () = not (Emit.arm ())
 let mach () = if a64 () then arm64 else arm
-let vregs () = let m = mach () in List.length m.vregs, List.length m.vfregs
+(* (on arm, of the stack's registers those above its deepest) *)
+let vregs ~depth =
+  let m = mach () in
+  if a64 () then List.length m.vregs, List.length m.vfregs
+  else
+    let above regs = List.length (List.filter (fun r -> r > depth) regs) in
+    above m.vregs, above m.vfregs
 
 (*****************************************************************************)
 (* The instructions, by machine *)

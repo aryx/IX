@@ -89,6 +89,18 @@ let rec imm = function
   (* by a power of 2, a multiplication is a shift *)
   | Int (c, _) :: Op ((Mul | Lmul), (I _ as t)) :: rest when log2 c <> None ->
       OpImm (Ashl, t, Int64.of_int (Option.get (log2 c))) :: imm rest
+  (* and a division a shift (arm has no divide: a call of _div, which
+   * a pointer difference was, its size the divisor): unsigned, the
+   * bits out; signed, rounded toward 0 as C's, 2^k - 1 added first to
+   * a negative x (its sign, x >> 31, as a mask); the remainder of an
+   * unsigned the bits kept *)
+  | Int (c, _) :: Op (Ldiv, (I _ as t)) :: rest when c > 1L && log2 c <> None ->
+      OpImm (Lshr, t, Int64.of_int (Option.get (log2 c))) :: imm rest
+  | Int (c, _) :: Op (Lmod, (I _ as t)) :: rest when c > 1L && log2 c <> None ->
+      OpImm (And, t, Int64.sub c 1L) :: imm rest
+  | Int (c, _) :: Op (Div, (I (n, true) as t)) :: rest when c > 1L && log2 c <> None ->
+      Dup :: OpImm (Ashr, t, Int64.of_int ((8 * n) - 1)) :: OpImm (And, t, Int64.sub c 1L)
+      :: Op (Add, t) :: OpImm (Ashr, t, Int64.of_int (Option.get (log2 c))) :: imm rest
   (* the constant first, the deeper operand having been computed first *)
   | Int (c, _) :: Swap :: Op (o, (I _ as t)) :: rest when commutes o -> OpImm (o, t, c) :: imm rest
   | i :: rest -> i :: imm rest
@@ -197,6 +209,25 @@ let depths (code : Ir.t array) succ =
     | _ -> ()) code;
   d
 
+(* the stack's deepest, as Gen follows it: at a label the stack of the
+ * jumps to it, none after a jump or a return *)
+let deepest (code : Ir.t array) =
+  let at = Hashtbl.create 16 and h = ref 0 and most = ref 0 and dead = ref false in
+  Array.iter (fun i ->
+    match i with
+    | Label l ->
+        (match Hashtbl.find_opt at l with Some d -> h := d | None -> if !dead then h := 0);
+        dead := false
+    | _ when !dead -> ()
+    | _ ->
+        let reads, pushes = arity i in
+        h := !h - reads;
+        (match i with Jmp l | Jz l | Jnz l | Br (_, _, _, _, l) -> Hashtbl.replace at l !h | _ -> ());
+        h := !h + pushes;
+        most := max !most !h;
+        (match i with Jmp _ | Ret _ -> dead := true | _ -> ())) code;
+  !most
+
 let regs (code : Ir.t list) =
   let code = Array.of_list code in
   let vars = Array.of_list (variables code) in
@@ -213,7 +244,8 @@ let regs (code : Ir.t list) =
     | LoadAt (m, _) | StoreAt (m, _) | PutAt (m, _) -> Option.iter (fun v -> gain.(v) <- gain.(v) + weight i) (index m)
     | Call _ -> IS.iter (fun v -> gain.(v) <- gain.(v) - (2 * weight i)) live.(i)
     | _ -> ()) code;
-  let nint, nfloat = Gen.vregs () in
+  (* (one slot more: a variable's save around a call pushes it) *)
+  let nint, nfloat = Gen.vregs ~depth:(deepest code + 1) in
   let chosen = Hashtbl.create 8 in
   let choose float n =
     let cands = List.filter (fun v -> gain.(v) > 0 && (match snd vars.(v) with F _ -> float | I _ -> not float)) (List.init (Array.length vars) Fun.id) in

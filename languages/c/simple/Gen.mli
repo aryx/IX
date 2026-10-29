@@ -41,8 +41,9 @@
  * which nobody writes; here that is the refusal above. *)
 
 (* how many variables the machine keeps in registers (Opti's regs):
- * integers, floats *)
-val vregs : unit -> int * int
+ * integers, floats; on arm the stack's registers that a function whose
+ * stack is [depth] slots at most does not reach *)
+val vregs : depth:int -> int * int
 
 (* a function's code, from Lower's *)
 val func : Ir.func -> unit

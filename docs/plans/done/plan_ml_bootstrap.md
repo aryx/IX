@@ -839,6 +839,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-28 | Constants of lib_core's summaries read by -I (mkconfig's STDSUM, mkprog's and mklib's), -depend's lines on them; Sys.word_size and int_size by %word_size and %int_size; mini-5i 0.855 | +27 | +6 (lib_core), +5 (mkfiles) | other directories' functions (4c: mini-ml compiling 1.03) |
 | 2026-10-28 | ssa/Cse and ssa/Licm, stage 3's classic passes, not great in practice for now (mini-doom 0.990); bench/matrix.ml 0.793 | +268 | | the registers on arm (mini-doom's span reloads 7 of 25) |
 | 2026-10-28 | The collector's scan in assembly (scan_arm.s, scan_arm64.s; gc.c's struct Scan; tests/runtime/scan.ml); mini-ml compiling 0.853 | +297 (runtime) | +6 (lib_core's mkfile) | a registerizer in mini-cc, for gc.c's C as it is |
+| 2026-10-29 | mini-cc -simple -O: arm's variables in the stack's registers above a function's deepest stack (regs), a division by a power of 2 a shift (imm); the runtime by it 0.972 of HEAD with gc.c's C scan (1.058 before); plan_cc_ssa.md | +46 (mini-cc) | | languages/c/ssa/, plan_cc_ssa.md |
 | 2026-10-28 | lib_crypto's Sha1 in Int32: an int is 31 bits on arm, its hashes were wrong there and its .inline the card's another (self-mix) | +9 | | |
 
 Since `92c9b4e`: +770 in ix (edits +140, new files +630) and +133 in

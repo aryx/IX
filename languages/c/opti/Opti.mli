@@ -11,7 +11,8 @@
  * - places: lea m; load is a load from m, and lea m, a value, store is
  *   the value stored to m (x op= y too): no address in a register;
  * - imm: a constant operand is the instruction's immediate, and a
- *   multiplication by a power of 2 a shift;
+ *   multiplication by a power of 2 a shift, a division too (signed:
+ *   rounded toward 0 by a bias of the sign), where arm calls _div;
  * - branch: a comparison and its jump are one compare and branch, no
  *   1 or 0 between;
  * - drops: a stored value thrown away is not kept (put), a conversion
@@ -25,7 +26,9 @@
  *   what saving them costs at the calls they are live across (a
  *   backward liveness dataflow, to its fixpoint): Plan 9 saves no
  *   register across a call, so they go to their slots before one and
- *   come back after. arm64's R19-R25 and F17-F23; arm has none left.
+ *   come back after. arm64's R19-R25 and F17-F23; arm's the stack's
+ *   own from R7 down, those above the function's deepest stack (old:
+ *   none on arm).
  *
  * Each is a function from the code to the code, most a peephole on the
  * list; places is the one that looks further, by the stack's height

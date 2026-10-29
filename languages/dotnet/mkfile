@@ -2,7 +2,7 @@
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
-SRC=Metadata Image Signature Il Listing Value Library Types Machine Writer CLI Main
+SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Writer CLI Main
 LOCAL=`{ls *.ml *.mli}
 GEN=
 LIBI=

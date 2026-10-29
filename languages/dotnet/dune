@@ -5,8 +5,9 @@
 ; Listing (-tables, -S); Value (the runtime's types and values: an
 ; object's numbers in bytes, its references apart), Library (System's
 ; classes, ix's own, over lib_core), Types (the loader: classes laid
-; out, vtables, tokens resolved, generics instantiated), Machine (the
-; IL run; the exceptions' two passes).
+; out, vtables, tokens resolved, generics instantiated), Frame (a call's
+; frame, an exception's first pass), Arith (the instructions' numbers),
+; Machine (the IL run), Writer (an assembly written: mini-tiger's).
 (library
  (name ix_dotnet)
  (wrapped false)

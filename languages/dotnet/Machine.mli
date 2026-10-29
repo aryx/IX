@@ -47,24 +47,15 @@
  * loop written in the machine's code, one template an opcode; its
  * stack's slots are not tagged since javac's opcodes say their types.
  * Mono's interpreter (2017) and .NET's (for iOS, WebAssembly) first
- * turn the IL into a code of their own, typed, as the verifier would. *)
+ * turn the IL into a code of their own, typed, as the verifier would.
+ *
+ * Its parts: Frame (a call's frame, the frames running, an exception's
+ * first pass and the machine's own exceptions), Arith (what the
+ * instructions do to numbers: add, compare, convert), and here the
+ * places (fields, elements, pointers), the classes at run time (boxes,
+ * casts, static constructors), the calls and the loop. *)
 
 open Value
-
-(* a mistake of the program's or a feature mini-dotnet has not, with
- * where: not a .NET exception *)
-exception Error of string
-
-(* an exception no frame catches: its class's name and its message *)
-exception Unhandled of string * string
-
-(* a recursion too deep (10,000 frames): as .NET, the program stops,
- * no catch can take it *)
-exception Stack_overflow
-
-(* each instruction said as it runs (-trace), and the count of them (-s) *)
-val trace : (string -> unit) option ref
-val steps : int ref
 
 (* a method called with its arguments (`this` first), its result *)
 val invoke : meth -> value array -> value

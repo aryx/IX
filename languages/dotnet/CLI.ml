@@ -16,21 +16,21 @@ let run (caps : < caps; .. >) (img : Image.t) (argv : string list) (tracing : bo
   Library.hooks.out <- output_string out;
   Library.hooks.read <- (fun () -> flush out; match input_char input with
     | c -> Char.code c | exception End_of_file -> -1);
-  if tracing then Machine.trace := Some (fun s -> flush out; Console.eprint caps (s ^ "\n"));
+  if tracing then Frame.trace := Some (fun s -> flush out; Console.eprint caps (s ^ "\n"));
   Machine.install ();
   let im = Types.load img in
   let finish () =
     flush out;
-    if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Machine.steps) in
+    if stats then Console.eprint caps (Printf.sprintf "%d instructions\n" !Frame.steps) in
   match Machine.run_main im argv with
   | n -> finish (); n
   | exception Library.Exit n -> finish (); n
-  | exception Machine.Stack_overflow -> finish (); Console.eprint caps "Stack overflow.\n"; 134
-  | exception Machine.Unhandled (cls, msg) ->
+  | exception Frame.Stack_overflow -> finish (); Console.eprint caps "Stack overflow.\n"; 134
+  | exception Frame.Unhandled (cls, msg) ->
       finish ();
       Console.eprint caps (Printf.sprintf "Unhandled exception. %s: %s\n" cls msg);
       134
-  | exception (Machine.Error msg | Types.Load_error msg) ->
+  | exception (Frame.Error msg | Types.Load_error msg) ->
       finish ();
       Console.eprint caps ("mini-dotnet: " ^ msg ^ "\n");
       1

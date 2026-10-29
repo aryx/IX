@@ -5,101 +5,6 @@
 
 open Value
 
-exception Error of string
-exception Unhandled of string * string
-exception Stack_overflow
-
-let trace : (string -> unit) option ref = ref None
-let steps = ref 0
-
-let error (s : string) = raise (Error s)
-
-type frame = {
-  meth : meth;
-  code : code;
-  args : value array;
-  locals : value array;
-  stack : value array;
-  mutable sp : int;
-  mutable pc : int;              (* the next instruction *)
-  mutable at : int;              (* the one running *)
-  mutable caught : store option; (* the exception of the catch running: rethrow's *)
-}
-
-(* the frames running, the innermost first *)
-let frames : frame list ref = ref []
-
-(* the frames running, and their most *)
-let depth = ref 0
-let max_depth = 10_000
-
-(* .NET does not let a program catch it: it stops the process *)
-
-(* how a run of a method's instructions ends *)
-type outcome = Returned of value | End_finally | Filtered of bool
-
-let name_of (m : meth) : string = m.mcls.name ^ "::" ^ m.mname
-
-(* ------------------------------------------------------------------ *)
-(* Exceptions *)
-(* ------------------------------------------------------------------ *)
-
-(* pass 1's choice: the frame and the clause that will catch, a filter
- * having said yes *)
-let chosen : (frame * int) option ref = ref None
-
-(* a filter run: in its frame, as that frame stands, the exception its
- * argument; true if it takes it (an exception in it: false) *)
-let filter_hook : (frame -> clause -> store -> bool) ref = ref (fun _ _ _ -> false)
-
-(* pass 1: which frame's clause will catch it? Nothing is unwound; a
- * filter's code is run to say *)
-let handled (exn : store) : bool =
-  chosen := None;
-  let rec frames_from l = match l with
-    | [] -> false
-    | f :: rest ->
-        let rec clauses i =
-          if i >= Array.length f.code.clauses then frames_from rest
-          else
-            let c = f.code.clauses.(i) in
-            if f.at >= c.tstart && f.at < c.tend
-               && (match c.ckind, c.catch with
-                   | 0, Some k -> subclass exn.cls k
-                   | 1, _ -> !filter_hook f c exn
-                   | _ -> false)
-            then (chosen := Some (f, i); true)
-            else clauses (i + 1) in
-        clauses 0 in
-  frames_from !frames
-
-let message (st : store) : string =
-  let rec find (c : cls) = match List.find_opt (fun (f : field) -> f.fname = "_message") c.fields with
-    | Some f -> (match st.r.(f.roff) with Str s -> s | _ -> "")
-    | None -> (match c.parent with Some p -> find p | None -> "") in
-  find st.cls
-
-let throw (exn : store) : 'a =
-  if handled exn then raise (Thrown exn)
-  else raise (Unhandled (exn.cls.name, message exn))
-
-(* an exception of the library's, made by the machine *)
-let throw_new (name : string) (msg : string) : 'a =
-  let c = Types.find_class name [||] in
-  let st = make_store c 0 in
-  let rec set (c : cls) = match List.find_opt (fun (f : field) -> f.fname = "_message") c.fields with
-    | Some f -> st.r.(f.roff) <- Str msg
-    | None -> (match c.parent with Some p -> set p | None -> ()) in
-  set c;
-  throw st
-
-let null_ref () = throw_new "System.NullReferenceException" "Object reference not set to an instance of an object."
-let out_of_range () = throw_new "System.IndexOutOfRangeException" "Index was outside the bounds of the array."
-let overflow () = throw_new "System.OverflowException" "Arithmetic operation resulted in an overflow."
-let invalid_cast (from : cls) (to_ : cls) =
-  throw_new "System.InvalidCastException"
-    ("Unable to cast object of type '" ^ from.name ^ "' to type '" ^ to_.name ^ "'.")
-
 (* ------------------------------------------------------------------ *)
 (* Places: fields, elements, pointers *)
 (* ------------------------------------------------------------------ *)
@@ -114,7 +19,7 @@ let blit (v : value) (st : store) (so : int) (ro : int) : unit =
   | Vt src | Obj src ->
       Bytes.blit src.s 0 st.s so (Bytes.length src.s);
       Array.blit src.r 0 st.r ro (Array.length src.r)
-  | _ -> error "a struct expected"
+  | _ -> Frame.error "a struct expected"
 
 (* a value of type [t] at (so, ro) in a store *)
 let read (st : store) (so : int) (ro : int) (t : typ) : value =
@@ -135,11 +40,11 @@ let view (v : value) : store * int * int =
   | Obj st | Vt st -> (st, 0, 0)
   | Ptr (Slot (a, i)) -> (match a.(i) with
       | Vt st | Obj st -> (st, 0, 0)
-      | Null -> null_ref ()
-      | _ -> error "a pointer to a number used as an object")
+      | Null -> Frame.null_ref ()
+      | _ -> Frame.error "a pointer to a number used as an object")
   | Ptr (Inside (st, so, ro, _)) -> (st, so, ro)
-  | Null -> null_ref ()
-  | _ -> error "not an object"
+  | Null -> Frame.null_ref ()
+  | _ -> Frame.error "not an object"
 
 let copy_value (v : value) : value = match v with Vt st -> Vt (copy st) | v -> v
 
@@ -148,165 +53,27 @@ let deref (p : value) : value =
   | Ptr (Slot (a, i)) -> copy_value a.(i)
   | Ptr (Bytes (st, off, t)) -> load st.s off t
   | Ptr (Inside (st, so, ro, c)) -> extract st so ro c
-  | Null -> null_ref ()
-  | _ -> error "not a pointer"
+  | Null -> Frame.null_ref ()
+  | _ -> Frame.error "not a pointer"
 
 let assign (p : value) (v : value) : unit =
   match p with
   | Ptr (Slot (a, i)) -> a.(i) <- v
   | Ptr (Bytes (st, off, t)) -> store_at st.s off t v
   | Ptr (Inside (st, so, ro, _)) -> blit v st so ro
-  | Null -> null_ref ()
-  | _ -> error "not a pointer"
+  | Null -> Frame.null_ref ()
+  | _ -> Frame.error "not a pointer"
 
 let element_type (st : store) : typ =
-  match st.cls.element with Some e -> e | None -> error "not an array"
+  match st.cls.element with Some e -> e | None -> Frame.error "not an array"
 
 let element (v : value) (i : value) : store * int * int * typ =
-  let st = match v with Obj st -> st | Null -> null_ref () | _ -> error "not an array" in
-  let i = match i with I4 n -> Int32.to_int n | I8 n -> Int64.to_int n | _ -> error "an index" in
-  if i < 0 || i >= st.len then out_of_range ();
+  let st = match v with Obj st -> st | Null -> Frame.null_ref () | _ -> Frame.error "not an array" in
+  let i = match i with I4 n -> Int32.to_int n | I8 n -> Int64.to_int n | _ -> Frame.error "an index" in
+  if i < 0 || i >= st.len then Frame.out_of_range ();
   let e = element_type st in
   let b, r = footprint e in
   (st, i * b, i * r, e)
-
-(* ------------------------------------------------------------------ *)
-(* Numbers *)
-(* ------------------------------------------------------------------ *)
-
-let i4 (n : int) : value = I4 (Int32.of_int n)
-let bool_v (b : bool) : value = if b then I4 Int32.one else I4 Int32.zero
-
-let truthy (v : value) : bool =
-  match v with
-  | I4 n -> Int32.compare n Int32.zero <> 0
-  | I8 n -> Int64.compare n Int64.zero <> 0
-  | R8 f -> f <> 0.0
-  | Null -> false
-  | _ -> true
-
-let int_of (v : value) : int =
-  match v with
-  | I4 n -> Int32.to_int n
-  | I8 n -> Int64.to_int n
-  | _ -> error "an integer expected"
-
-(* unsigned, as an int64 *)
-let u32 (n : int32) : int64 = Int64.logand (Int64.of_int32 n) 0xFFFFFFFFL
-
-let ucompare64 (a : int64) (b : int64) : int =
-  Int64.compare (Int64.add a Int64.min_int) (Int64.add b Int64.min_int)
-
-(* a comparison of two values; None when unordered (a NaN) *)
-let compare_values (un : bool) (a : value) (b : value) : int option =
-  match a, b with
-  | I4 x, I4 y -> Some (if un then Int64.compare (u32 x) (u32 y) else Int32.compare x y)
-  | I8 x, I8 y -> Some (if un then ucompare64 x y else Int64.compare x y)
-  | I4 x, I8 y -> Some (Int64.compare (Int64.of_int32 x) y)
-  | I8 x, I4 y -> Some (Int64.compare x (Int64.of_int32 y))
-  | R8 x, R8 y -> if Float.is_nan x || Float.is_nan y then None else Some (compare x y)
-  | Null, Null -> Some 0
-  | Null, _ -> Some (-1)
-  | _, Null -> Some 1
-  | Obj x, Obj y -> Some (if x == y then 0 else 1)
-  | Str x, Str y -> Some (if x == y then 0 else 1)
-  | Fn x, Fn y -> Some (if x == y then 0 else 1)
-  | _ -> Some 1
-
-let test (c : Il.cmp) (un : bool) (a : value) (b : value) : bool =
-  match compare_values un a b with
-  | None -> un && c <> Il.Eq || c = Il.Ne
-  | Some k ->
-      match c with
-      | Il.Eq -> k = 0 | Il.Ne -> k <> 0 | Il.Ge -> k >= 0
-      | Il.Gt -> k > 0 | Il.Le -> k <= 0 | Il.Lt -> k < 0
-
-let divide_by_zero () = throw_new "System.DivideByZeroException" "Attempted to divide by zero."
-
-let binop (op : Il.binop) (a : value) (b : value) : value =
-  match a, b with
-  | I4 x, I4 y -> (
-      match op with
-      | Add -> I4 (Int32.add x y) | Sub -> I4 (Int32.sub x y) | Mul -> I4 (Int32.mul x y)
-      | Div ->
-          if Int32.compare y Int32.zero = 0 then divide_by_zero ()
-          else if Int32.compare x Int32.min_int = 0 && Int32.compare y Int32.minus_one = 0 then overflow ()
-          else I4 (Int32.div x y)
-      | Rem ->
-          if Int32.compare y Int32.zero = 0 then divide_by_zero ()
-          else if Int32.compare y Int32.minus_one = 0 then I4 Int32.zero
-          else I4 (Int32.rem x y)
-      | Div_un ->
-          if Int32.compare y Int32.zero = 0 then divide_by_zero ()
-          else I4 (Int64.to_int32 (Int64.div (u32 x) (u32 y)))
-      | Rem_un ->
-          if Int32.compare y Int32.zero = 0 then divide_by_zero ()
-          else I4 (Int64.to_int32 (Int64.rem (u32 x) (u32 y)))
-      | And -> I4 (Int32.logand x y) | Or -> I4 (Int32.logor x y) | Xor -> I4 (Int32.logxor x y)
-      | Shl -> I4 (Int32.shift_left x (Int32.to_int y land 31))
-      | Shr -> I4 (Int32.shift_right x (Int32.to_int y land 31))
-      | Shr_un -> I4 (Int32.shift_right_logical x (Int32.to_int y land 31))
-      | Add_ovf | Sub_ovf | Mul_ovf ->
-          let r = (match op with Add_ovf -> Int64.add | Sub_ovf -> Int64.sub | _ -> Int64.mul)
-                    (Int64.of_int32 x) (Int64.of_int32 y) in
-          if Int64.compare r (Int64.of_int32 Int32.max_int) > 0 || Int64.compare r (Int64.of_int32 Int32.min_int) < 0
-          then overflow () else I4 (Int64.to_int32 r)
-      | Add_ovf_un | Sub_ovf_un | Mul_ovf_un ->
-          let r = (match op with Add_ovf_un -> Int64.add | Sub_ovf_un -> Int64.sub | _ -> Int64.mul)
-                    (u32 x) (u32 y) in
-          if Int64.compare r 0xFFFFFFFFL > 0 || Int64.compare r 0L < 0 then overflow ()
-          else I4 (Int64.to_int32 r))
-  | (I8 _ | I4 _), (I8 _ | I4 _) -> (
-      let w v = match v with I8 n -> n | I4 n -> Int64.of_int32 n | _ -> assert false in
-      let x = w a and y = w b in
-      match op with
-      | Shl -> I8 (Int64.shift_left x (int_of b land 63))
-      | Shr -> I8 (Int64.shift_right x (int_of b land 63))
-      | Shr_un -> I8 (Int64.shift_right_logical x (int_of b land 63))
-      | Add | Add_ovf | Add_ovf_un -> I8 (Int64.add x y)
-      | Sub | Sub_ovf | Sub_ovf_un -> I8 (Int64.sub x y)
-      | Mul | Mul_ovf | Mul_ovf_un -> I8 (Int64.mul x y)
-      | Div | Div_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.div x y)
-      | Rem | Rem_un -> if Int64.compare y 0L = 0 then divide_by_zero () else I8 (Int64.rem x y)
-      | And -> I8 (Int64.logand x y) | Or -> I8 (Int64.logor x y) | Xor -> I8 (Int64.logxor x y))
-  | R8 x, R8 y -> (
-      match op with
-      | Add -> R8 (x +. y) | Sub -> R8 (x -. y) | Mul -> R8 (x *. y)
-      | Div -> R8 (x /. y) | Rem -> R8 (Float.rem x y)
-      | _ -> error "a float in an integer's operation")
-  | _ -> error "an arithmetic on what is not a number"
-
-let conv (k : Il.kind) (ovf : bool) (un : bool) (v : value) : value =
-  (* the value as an int64, and a float if it is one *)
-  let wide = match v with
-    | I4 n -> if un then u32 n else Int64.of_int32 n
-    | I8 n -> n
-    | R8 f -> Int64.of_float f
-    | Ptr _ | Obj _ | Str _ | Null | Fn _ -> 0L
-    | _ -> error "a conversion of what is not a number" in
-  let check lo hi =
-    if ovf && (Int64.compare wide lo < 0 || Int64.compare wide hi > 0
-               || (match v with R8 f -> Float.is_nan f | _ -> false)) then overflow () in
-  let small bits signed =
-    let m = Int64.of_int ((1 lsl bits) - 1) in
-    let x = Int64.logand wide m in
-    let x = if signed && Int64.compare x (Int64.of_int (1 lsl (bits - 1))) >= 0 then Int64.sub x (Int64.add m 1L) else x in
-    I4 (Int64.to_int32 x) in
-  match k with
-  | K_i1 -> check (-128L) 127L; small 8 true
-  | K_u1 -> check 0L 255L; small 8 false
-  | K_i2 -> check (-32768L) 32767L; small 16 true
-  | K_u2 -> check 0L 65535L; small 16 false
-  | K_i4 | K_i -> check (-2147483648L) 2147483647L;
-      (match v with Ptr _ | Obj _ | Str _ | Fn _ -> v | _ -> I4 (Int64.to_int32 wide))
-  | K_u4 | K_u -> check 0L 4294967295L;
-      (match v with Ptr _ | Obj _ | Str _ | Fn _ -> v | _ -> I4 (Int64.to_int32 wide))
-  | K_i8 -> (match v with I4 n when not un -> I8 (Int64.of_int32 n) | _ -> I8 wide)
-  | K_u8 -> (match v with I4 n -> I8 (u32 n) | _ -> I8 wide)
-  | K_r4 -> let f = (match v with R8 f -> f | I4 n when un -> Int64.to_float (u32 n) | _ -> Int64.to_float wide) in
-      R8 (Int32.float_of_bits (Int32.bits_of_float f))
-  | K_r8 -> R8 (match v with R8 f -> f | _ -> Int64.to_float wide)
-  | K_ref -> v
 
 (* ------------------------------------------------------------------ *)
 (* Classes at run time *)
@@ -321,8 +88,8 @@ let class_of_value (v : value) : cls =
   | I4 _ -> Types.find_class "System.Int32" [||]
   | I8 _ -> Types.find_class "System.Int64" [||]
   | R8 _ -> Types.find_class "System.Double" [||]
-  | Null -> null_ref ()
-  | _ -> error "the class of a pointer"
+  | Null -> Frame.null_ref ()
+  | _ -> Frame.error "the class of a pointer"
 
 (* can a value of class [c] be seen as of type [t]? *)
 let rec instance_of (c : cls) (t : cls) : bool =
@@ -347,10 +114,10 @@ let box (t : typ) (v : value) : value =
 
 let unbox (t : typ) (v : value) : value =
   match v with
-  | Null -> null_ref ()
+  | Null -> Frame.null_ref ()
   | Obj st ->
       let c = Types.class_of_typ t in
-      if st.cls != c then invalid_cast st.cls c;
+      if st.cls != c then Frame.invalid_cast st.cls c;
       (match t with T_value _ -> Vt (copy st) | t -> load st.s 0 t)
   | v -> v
 
@@ -368,7 +135,7 @@ and statics (f : field) : store =
   ensure_init f.fcls;
   match f.fcls.statics with
   | Some st -> st
-  | None -> error ("no static storage for " ^ f.fname)
+  | None -> Frame.error ("no static storage for " ^ f.fname)
 
 (* ------------------------------------------------------------------ *)
 (* Calls *)
@@ -379,23 +146,23 @@ and invoke (m : meth) (args : value array) : value =
   | Native f -> f args
   | Runtime ->
       if m.mname = "Invoke" then begin
-        let st = match args.(0) with Obj st -> st | Null -> null_ref () | _ -> error "a delegate" in
+        let st = match args.(0) with Obj st -> st | Null -> Frame.null_ref () | _ -> Frame.error "a delegate" in
         match st.native with
         | N_delegate (target, fn) ->
             let rest = Array.sub args 1 (Array.length args - 1) in
             if fn.static then invoke fn rest
             else call_virtual_this fn (Array.append [| target |] rest) false
-        | _ -> error "a delegate without its method"
+        | _ -> Frame.error "a delegate without its method"
       end
-      else error (name_of m ^ ": a runtime method mini-dotnet has not")
-  | No_body -> error (name_of m ^ ": abstract, called")
+      else Frame.error (Frame.name_of m ^ ": a runtime method mini-dotnet has not")
+  | No_body -> Frame.error (Frame.name_of m ^ ": abstract, called")
   | Il_body _ | Decoded _ -> run_method m args
 
 (* a call whose `this` is in args.(0): to a value type's method, a
  * pointer to the struct (a box's inside) *)
 and call_virtual_this (m : meth) (args : value array) (virt : bool) : value =
   let this = args.(0) in
-  (match this with Null -> null_ref () | _ -> ());
+  (match this with Null -> Frame.null_ref () | _ -> ());
   let target = match this with
     | (Obj _ | Str _ | Vt _ | I4 _ | I8 _ | R8 _) when virt && m.virt ->
         Types.virtual_target (class_of_value this) m
@@ -409,21 +176,21 @@ and call_virtual_this (m : meth) (args : value array) (virt : bool) : value =
 
 and run_method (m : meth) (args : value array) : value =
   (* (a recursion with no end: .NET's stack is a megabyte, here OCaml's
-   * own stack would be used up first, its frames bigger) *)
-  incr depth;
-  if !depth > max_depth then raise Stack_overflow;
+   * own stack would be used up first, its Frame.frames bigger) *)
+  incr Frame.depth;
+  if !Frame.depth > Frame.max_depth then raise Frame.Stack_overflow;
   let code = Types.code m in
-  let f = { meth = m; code; args;
+  let (f : Frame.frame) = { meth = m; code; args;
             locals = Array.map zero code.locals;
             stack = Array.make (code.max_stack + 1) Null; sp = 0; pc = 0; at = 0; caught = None } in
-  frames := f :: !frames;
+  Frame.frames := f :: !Frame.frames;
   match run f with
-  | Returned v -> frames := List.tl !frames; decr depth; v
-  | End_finally | Filtered _ -> error "endfinally or endfilter outside their block"
-  | exception e -> frames := List.tl !frames; decr depth; raise e
+  | Frame.Returned v -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; v
+  | Frame.End_finally | Frame.Filtered _ -> Frame.error "endfinally or endfilter outside their block"
+  | exception e -> Frame.frames := List.tl !Frame.frames; decr Frame.depth; raise e
 
 (* the instructions run, an exception caught by this frame's clauses *)
-and run (f : frame) : outcome =
+and run (f : Frame.frame) : Frame.outcome =
   match loop f with
   | o -> o
   | exception Thrown exn ->
@@ -433,7 +200,7 @@ and run (f : frame) : outcome =
         else
           let c = f.code.clauses.(i) in
           if at >= c.tstart && at < c.tend then
-            let mine = match !chosen with Some (g, j) -> g == f && j = i | None -> false in
+            let mine = match !Frame.chosen with Some (g, j) -> g == f && j = i | None -> false in
             match c.ckind, c.catch with
             | 0, Some k when subclass exn.cls k || mine ->
                 f.sp <- 0;
@@ -451,25 +218,25 @@ and run (f : frame) : outcome =
       search 0;
       run f
 
-and run_finally (f : frame) (start : int) : unit =
+and run_finally (f : Frame.frame) (start : int) : unit =
   let pc = f.pc and at = f.at in
   f.sp <- 0;
   f.pc <- start;
-  (match run f with End_finally -> () | _ -> error "a return in a finally");
+  (match run f with Frame.End_finally -> () | _ -> Frame.error "a return in a finally");
   f.pc <- pc; f.at <- at
 
-and run_filter (f : frame) (c : clause) (exn : store) : bool =
+and run_filter (f : Frame.frame) (c : clause) (exn : store) : bool =
   let pc = f.pc and at = f.at and sp = f.sp in
   let saved = Array.copy f.stack in
   f.sp <- 0;
   f.stack.(0) <- Obj exn; f.sp <- 1;
   f.pc <- c.filter;
-  let r = match run f with Filtered b -> b | _ -> false | exception Thrown _ -> false in
+  let r = match run f with Frame.Filtered b -> b | _ -> false | exception Thrown _ -> false in
   Array.blit saved 0 f.stack 0 (Array.length saved);
   f.pc <- pc; f.at <- at; f.sp <- sp;
   r
 
-and loop (f : frame) : outcome =
+and loop (f : Frame.frame) : Frame.outcome =
   let push v = f.stack.(f.sp) <- v; f.sp <- f.sp + 1 in
   let pop () = f.sp <- f.sp - 1; f.stack.(f.sp) in
   let pop_n n = let a = Array.sub f.stack (f.sp - n) n in f.sp <- f.sp - n; a in
@@ -488,18 +255,18 @@ and loop (f : frame) : outcome =
     pop_n (List.length m.params + if m.static then 0 else 1) in
   let result (m : meth) (v : value) = if m.ret <> T_void then push v in
   let constrained = ref None in
-  let rec go () : outcome =
+  let rec go () : Frame.outcome =
     let ins = f.code.instrs.(f.pc) in
     f.at <- f.pc;
     f.pc <- f.pc + 1;
-    incr steps;
-    (match !trace with
-     | Some say -> say (Printf.sprintf "%s IL_%04x: %s  [%d]" (name_of f.meth) ins.at ins.name f.sp)
+    incr Frame.steps;
+    (match !Frame.trace with
+     | Some say -> say (Printf.sprintf "%s IL_%04x: %s  [%d]" (Frame.name_of f.meth) ins.at ins.name f.sp)
      | None -> ());
     match ins.op with
-    | Ret -> Returned (if f.meth.ret = T_void then Null else pop ())
-    | Endfinally -> End_finally
-    | Endfilter -> Filtered (truthy (pop ()))
+    | Ret -> Frame.Returned (if f.meth.ret = T_void then Null else pop ())
+    | Endfinally -> Frame.End_finally
+    | Endfilter -> Frame.Filtered (Arith.truthy (pop ()))
     | op ->
         (match op with
          | Nop | Prefix _ | Break -> ()
@@ -554,7 +321,7 @@ and loop (f : frame) : outcome =
                   let st = make_store c 0 in
                   (match a.(1) with
                    | Fn fn -> st.native <- N_delegate (a.(0), fn)
-                   | _ -> error "a delegate made of what?");
+                   | _ -> Frame.error "a delegate made of what?");
                   push (Obj st)
               | Struct | Enum ->
                   let cell = [| Vt (make_store c 0) |] in
@@ -562,36 +329,36 @@ and loop (f : frame) : outcome =
                   push cell.(0)
               | _ when Types.is_value_type (Types.typ_of_cls c) ->
                   (* (a primitive's constructor: none we know) *)
-                  error ("new " ^ c.name)
+                  Frame.error ("new " ^ c.name)
               | _ ->
                   let o = Obj (make_store c 0) in
                   ignore (invoke m (Array.append [| o |] a));
                   push o)
          | Br t -> f.pc <- t
-         | Brfalse t -> if not (truthy (pop ())) then f.pc <- t
-         | Brtrue t -> if truthy (pop ()) then f.pc <- t
-         | Bcmp (c, un, t) -> let b = pop () in let a = pop () in if test c un a b then f.pc <- t
+         | Brfalse t -> if not (Arith.truthy (pop ())) then f.pc <- t
+         | Brtrue t -> if Arith.truthy (pop ()) then f.pc <- t
+         | Bcmp (c, un, t) -> let b = pop () in let a = pop () in if Arith.test c un a b then f.pc <- t
          | Switch ts ->
-             let i = int_of (pop ()) in
+             let i = Arith.int_of (pop ()) in
              if i >= 0 && i < Array.length ts then f.pc <- ts.(i)
-         | Ceq -> let b = pop () in let a = pop () in push (bool_v (test Il.Eq false a b))
+         | Ceq -> let b = pop () in let a = pop () in push (Arith.bool_v (Arith.test Il.Eq false a b))
          | Cgt un -> let b = pop () in let a = pop () in
-             push (bool_v (match compare_values un a b with Some k -> k > 0 | None -> un))
+             push (Arith.bool_v (match Arith.compare_values un a b with Some k -> k > 0 | None -> un))
          | Clt un -> let b = pop () in let a = pop () in
-             push (bool_v (match compare_values un a b with Some k -> k < 0 | None -> un))
-         | Binop o -> let b = pop () in let a = pop () in push (binop o a b)
+             push (Arith.bool_v (match Arith.compare_values un a b with Some k -> k < 0 | None -> un))
+         | Binop o -> let b = pop () in let a = pop () in push (Arith.binop o a b)
          | Neg -> push (match pop () with
              | I4 n -> I4 (Int32.neg n) | I8 n -> I8 (Int64.neg n) | R8 x -> R8 (-. x)
-             | _ -> error "neg of what is not a number")
+             | _ -> Frame.error "neg of what is not a number")
          | Not -> push (match pop () with
              | I4 n -> I4 (Int32.lognot n) | I8 n -> I8 (Int64.lognot n)
-             | _ -> error "not of what is not an integer")
-         | Conv (k, ovf, un) -> push (conv k ovf un (pop ()))
+             | _ -> Frame.error "not of what is not an integer")
+         | Conv (k, ovf, un) -> push (Arith.conv k ovf un (pop ()))
          | Conv_r_un -> push (match pop () with
-             | I4 n -> R8 (Int64.to_float (u32 n)) | I8 n -> R8 (Int64.to_float n) | v -> v)
+             | I4 n -> R8 (Int64.to_float (Arith.u32 n)) | I8 n -> R8 (Int64.to_float n) | v -> v)
          | Ckfinite -> (match f.stack.(f.sp - 1) with
              | R8 x when Float.is_nan x || Float.abs x = infinity ->
-                 throw_new "System.ArithmeticException" "Function does not accept floating point Not-a-Number values."
+                 Frame.throw_new "System.ArithmeticException" "Function does not accept floating point Not-a-Number values."
              | _ -> ())
          | Ldstr tok ->
              let row = Metadata.token_row tok in
@@ -627,10 +394,10 @@ and loop (f : frame) : outcome =
          | Stsfld tok -> let fd = field tok in let v = pop () in write (statics fd) fd.off fd.roff fd.ftype v
          | Newarr tok ->
              let e = typ tok in
-             let n = int_of (pop ()) in
-             if n < 0 then overflow ();
+             let n = Arith.int_of (pop ()) in
+             if n < 0 then Frame.overflow ();
              push (Obj (make_store (Types.array_class e) n))
-         | Ldlen -> (match pop () with Obj st -> push (i4 st.len) | Null -> null_ref () | _ -> error "ldlen of what?")
+         | Ldlen -> (match pop () with Obj st -> push (Arith.i4 st.len) | Null -> Frame.null_ref () | _ -> Frame.error "ldlen of what?")
          | Ldelema _ ->
              let i = pop () in
              let st, so, ro, e = element (pop ()) i in
@@ -648,7 +415,7 @@ and loop (f : frame) : outcome =
              let st, so, ro, e = element (pop ()) i in
              (match v, e with
               | (Obj o), T_class k when not (instance_of o.cls k) ->
-                  throw_new "System.ArrayTypeMismatchException"
+                  Frame.throw_new "System.ArrayTypeMismatchException"
                     "Attempted to access an element as a type incompatible with the array."
               | _ -> ());
              write st so ro e v
@@ -662,7 +429,7 @@ and loop (f : frame) : outcome =
               | Ptr (Bytes (st, off, t)) -> store_at st.s off t (zero t)
               | Ptr (Inside (st, so, ro, c)) ->
                   Bytes.fill st.s so c.nbytes '\000'; Array.fill st.r ro c.nrefs Null
-              | _ -> error "initobj of what?")
+              | _ -> Frame.error "initobj of what?")
          | Box tok -> let t = typ tok in push (box t (pop ()))
          | Unbox_any tok ->
              let t = typ tok in
@@ -671,21 +438,21 @@ and loop (f : frame) : outcome =
              else (match v with
                  | Null -> push Null
                  | v -> let c = Types.class_of_typ t in
-                   if instance_of (class_of_value v) c then push v else invalid_cast (class_of_value v) c)
+                   if instance_of (class_of_value v) c then push v else Frame.invalid_cast (class_of_value v) c)
          | Unbox tok ->
              let t = typ tok in
              (match pop () with
               | Obj st ->
                   let c = Types.class_of_typ t in
-                  if st.cls != c then invalid_cast st.cls c;
+                  if st.cls != c then Frame.invalid_cast st.cls c;
                   push (Ptr (match t with T_value c -> Inside (st, 0, 0, c) | t -> Bytes (st, 0, t)))
-              | Null -> null_ref ()
-              | _ -> error "unbox of what?")
+              | Null -> Frame.null_ref ()
+              | _ -> Frame.error "unbox of what?")
          | Castclass tok ->
              let c = Types.class_of_typ (typ tok) in
              (match f.stack.(f.sp - 1) with
               | Null -> ()
-              | v -> let k = class_of_value v in if not (instance_of k c) then invalid_cast k c)
+              | v -> let k = class_of_value v in if not (instance_of k c) then Frame.invalid_cast k c)
          | Isinst tok ->
              let c = Types.class_of_typ (typ tok) in
              (match pop () with
@@ -693,10 +460,10 @@ and loop (f : frame) : outcome =
               | v -> push (if instance_of (class_of_value v) c then v else Null))
          | Throw ->
              (match pop () with
-              | Obj st -> throw st
-              | Null -> null_ref ()
-              | _ -> error "throw of what is not an exception")
-         | Rethrow -> (match f.caught with Some st -> throw st | None -> error "rethrow outside a catch")
+              | Obj st -> Frame.throw st
+              | Null -> Frame.null_ref ()
+              | _ -> Frame.error "Frame.throw of what is not an exception")
+         | Rethrow -> (match f.caught with Some st -> Frame.throw st | None -> Frame.error "rethrow outside a catch")
          | Leave t ->
              (* the finally blocks of the trys left, the innermost first *)
              Array.iter (fun c ->
@@ -710,7 +477,7 @@ and loop (f : frame) : outcome =
              let img = ctx.im.img in
              let t = Metadata.t_field_rva in
              let rec find r =
-               if r > img.rows.(t) then error "ldtoken of a field without data"
+               if r > img.rows.(t) then Frame.error "ldtoken of a field without data"
                else if Image.get img t r "Field" = Metadata.token_row tok then
                  Data (img.file, Image.offset img (Image.get img t r "RVA"))
                else find (r + 1) in
@@ -721,10 +488,10 @@ and loop (f : frame) : outcome =
              let m = meth tok in
              let o = pop () in
              push (Fn (Types.virtual_target (class_of_value o) m))
-         | Sizeof tok -> let b, _ = footprint (typ tok) in push (i4 b)
+         | Sizeof tok -> let b, _ = footprint (typ tok) in push (Arith.i4 b)
          | Jmp _ | Calli _ | Refanyval _ | Mkrefany _ | Refanytype | Arglist | Localloc
          | Cpblk | Initblk ->
-             error (Printf.sprintf "%s IL_%04x: %s, not in mini-dotnet" (name_of f.meth) ins.at ins.name)
+             Frame.error (Printf.sprintf "%s IL_%04x: %s, not in mini-dotnet" (Frame.name_of f.meth) ins.at ins.name)
          | Ret | Endfinally | Endfilter -> assert false);
         go () in
   go ()
@@ -745,10 +512,10 @@ let to_string (v : value) : string =
   | Null -> ""
   | Str s -> s
   | I4 _ | I8 _ | R8 _ -> Library.format T_i4 v
-  | v -> (match call_method "ToString" v with Str s -> s | Null -> "" | _ -> error "ToString's result")
+  | v -> (match call_method "ToString" v with Str s -> s | Null -> "" | _ -> Frame.error "ToString's result")
 
 let install () : unit =
-  filter_hook := run_filter;
+  Frame.filter_hook := run_filter;
   let h = Library.hooks in
   h.to_string <- to_string;
   h.equals <- (fun a b ->
@@ -760,20 +527,20 @@ let install () : unit =
           let c = class_of_value a in
           let obj = Types.find_class "System.Object" [||] in
           let m = List.find (fun (m : meth) -> m.mname = "Equals") obj.methods in
-          truthy (invoke (Types.virtual_target c m) [| a; b |]));
+          Arith.truthy (invoke (Types.virtual_target c m) [| a; b |]));
   h.hash <- (fun v ->
       match v with
       | Str s -> Hashtbl.hash s
       | I4 n -> Int32.to_int n
       | I8 _ | R8 _ -> Hashtbl.hash v
       | Null -> 0
-      | v -> int_of (call_method "GetHashCode" v));
-  h.throw <- throw_new;
+      | v -> Arith.int_of (call_method "GetHashCode" v));
+  h.throw <- Frame.throw_new;
   h.instance <- Types.find_class
 
 let run_main (im : image) (argv : string list) : int =
   let tok = im.img.entry_point in
-  if tok = 0 then error "no entry point: a library, not a program";
+  if tok = 0 then Frame.error "no entry point: a library, not a program";
   let m = Types.meth_of_def im (Metadata.token_row tok) in
   ensure_init m.mcls;
   let args =

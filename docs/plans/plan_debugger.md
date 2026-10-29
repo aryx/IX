@@ -157,7 +157,11 @@ two programs.
    text is 1.5 MB; its table would be some tens of KB of names and as
    much of lines (to measure at stage 1). The card's programs are in
    the kernel's image, which is loaded whole at boot. Proposed: on, and
-   measured.
+   measured. Measured (2026-10-29): mini-tar's a.out 20.2% larger with
+   its tables, mini-ml's lines a function's (38% with the assembly's).
+   **Decided** (the author, 2026-10-29: "let's not generate them by
+   default for now"): off, mini-ld -g asks for them; scripts/where.sh
+   and the maps stay meanwhile.
 2. **mini-ml's names in the table**. Today a function of a unit is a
    symbol local to its object, numbered: `f27_prio<>` in that day's
    listing, and a unit's start `Rio.Init`. A trace wants `Rio.start`.
@@ -405,4 +409,4 @@ debugger plan"): stage 1b's first part, and stage 2.
   names and lines as recorded; live, against principia's nm); mini-nm
   and mini-where built by mini-ml (mini-mk, arm64) answer as dune's on
   mini-tar's a.out.
-Next: decision 1 (the tables on by default), stage 3 (the exact walk).
+Next: stage 3 (the exact walk); decision 1 taken, the tables off by default.

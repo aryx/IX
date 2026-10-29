@@ -33,8 +33,8 @@
  *       br LO v5 v4 b2 b3
  *
  * where the stack code kept q, p and e in the frame and read them at
- * each use; and the loop's code, Ssa_gen's (-S), is scan_arm.s's by
- * hand:
+ * each use; and the loop's code, Ssa_gen's (-S), is what scan_arm.s
+ * had by hand (the runtime's scan in assembly, a day):
  *
  *     CMP     R1,R2
  *     BHS     4(PC)

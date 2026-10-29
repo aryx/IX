@@ -133,7 +133,10 @@ marshalling's timing line); mini-cc built by mini-ml writes the same
 
 ## Status
 
-2026-10-29: steps 1 to 3 written; not done: the runtime
-and libc built by -ssa (lib_core's mkfile), and step 4's adoption; a
-first argument's store and reload into R0 at a call; ZR for a stored 0
-on arm64.
+2026-10-29: steps 1 to 3 written; the runtime built by -ssa (lib_core's
+mkfile), gc.c's scan in C with copy's work in its loop, as fast as the
+assembly it replaces (plan_ml_speed.md's 2026-10-29: 1.0003), which is
+gone. Not done: libc by -ssa (it stays compat's, fuzz.sh's reference);
+more registers on arm (R1-R7: the scan's lo and hi in slots); a first
+argument's store and reload into R0 at a call; ZR for a stored 0 on
+arm64.

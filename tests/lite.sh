@@ -389,6 +389,8 @@ same() {   # the toolchain just built against dune's, on a few files: the same b
   $K/assembler/mini-asm -m 7 -o $W/a.7 kernels/lib_machine/pi4/l.s && bin/mini-asm -m 7 -o $W/b.7 kernels/lib_machine/pi4/l.s && cmp $W/a.7 $W/b.7 || return 1
   L=lib_core/libc; C="-I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm64 -Darm64 -Dlinux"
   $K/languages/c/mini-cc -m 7 $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
+  # (and by ssa/, as lib_core's mkfile builds it)
+  $K/languages/c/mini-cc -m 7 -simple -O -ssa $C -o $W/a.o languages/ml/runtime/runtime.c && bin/mini-cc -m 7 -simple -O -ssa $C -o $W/b.o languages/ml/runtime/runtime.c && cmp $W/a.o $W/b.o || return 1
   I=$(for d in core base collections printing parsing system commons; do echo -n "-I lib_core/$d "; done)
   $K/languages/ml/mini-ml -m 7 -I linker -I assembler $I -o $W/a.m linker/Arm64.ml && bin/mini-ml -m 7 -I linker -I assembler $I -o $W/b.m linker/Arm64.ml && cmp $W/a.m $W/b.m
 }
@@ -453,7 +455,7 @@ by_ix_play() { ! lib_audio/tests/play.sh $K/apps/music/play/mini-play | grep -v 
 # m-ix building in itself, a part (kernels/9pi/tests/smoke.sh: ix for
 # arm and Plan 9, a mini-9pi, a small card; on it under QEMU, a unit and
 # a C file compiled, two programs linked and run, the host's bytes;
-# about 80 s, beside "ix built by ix"); the kernel wants ocaml-light's
+# about 40 s, beside "ix built by ix"); the kernel wants ocaml-light's
 # compiler for arm (kernels/ocaml-light.sh arm) and gcc's for arm
 t9="m-ix built in mini-9pi: ml, cc, ld, a part"
 if ! command -v qemu-system-arm > /dev/null; then skip "$t9" "no qemu-system-arm"

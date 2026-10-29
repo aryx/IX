@@ -2,7 +2,7 @@
 
 Two parts. Part 1, the frame-time optimizations of a month in the
 graphics (lib_graphics, lib_playground, mini-9pi's drawing): O1 to
-O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C55,
+O31. Part 2, the compiler's: mini-ml's code and runtime, C1 to C56,
 which every program of m-ix runs on (the author, 2026-10-23: "We had
 one for the graphics part of IX but maybe we can have another part
 for the compiler part").
@@ -610,7 +610,7 @@ Scope: mini-ml's code generation (languages/ml: Lower, opti/, ssa/,
 simple's Gen) and its runtime (languages/ml/runtime: the collector,
 strings, floats), from the first passes (2026-09-27) to 6fea098e
 (2026-10-23), C1 to C27; then plans/plan_ml_floats.md and
-plans/plan_ml_speed.md, to 2026-10-28, C28 to C55. The programs they
+plans/plan_ml_speed.md, to 2026-10-28, C28 to C56. The programs they
 serve: all of m-ix, its games on mini-9pi, and mini-ml itself (m-ix
 built under m-ix).
 
@@ -739,6 +739,7 @@ fib; not in mini-doom's span loop, so C17 was done after all).
 | C53 | Constants of another directory's summaries (lib_core's), found by -I as ocamlopt's .cmx, their functions not taken; -depend's lines on those summaries (ocamldep -native's); Sys.word_size and int_size the externals %word_size and %int_size | CLI's summaries and depend, mkconfig's STDSUM (mkprog, mklib), lib_core's Sys, Fold, Lower; plan_ml_speed.md's 2026-10-28 | mini-5i on arm64 0.855 (Bits.native folded, ult32 and ule32 inlined), 8 KB smaller | +27, lib_core +6, mkfiles +5 | none (old: comment) |
 | C54 | ssa/'s classic passes: a computation made twice made once (Cse, dominator-based value numbering, constants numbered) and a loop's invariants before it (Licm), the pure instructions only; not great in practice for now | ssa/Cse, ssa/Licm, Emit's ssa; bench/matrix.ml; plan_ml_speed.md's 2026-10-28 stage 3 | mini-doom's frame 0.990, mini-quake's 0.991, virtua's 0.994, mini-ml compiling 0.9995; bench/matrix 0.793 | +268 | -no-cse, -no-licm |
 | C55 | The collector's scan in assembly: scan_copies with copy in it, by hand on arm and arm64 (mini-cc's code keeps every variable in memory: 20 instructions a field, 80 a block copied), as ocaml-light's allocation is in its arm.S | the runtime's scan_arm.s and scan_arm64.s, gc.c's struct Scan, lib_core's libc.a; plan_ml_speed.md's 2026-10-28 | mini-ml compiling 0.853 (Ssa_build.ml 0.830, its collector 519 to 194 million), mini-doom's frame 0.983 | +297 (runtime: gc.c +73, the scans 224) | gc.c's C (a kernel's, gcc's) |
+| C56 | The scan back in C: scan_copies with copy's work in its loop, next, lo and hi in variables, the runtime by mini-cc's ssa/ (registers, post-indexed accesses), C55's assembly gone | gc.c's scan_copies, lib_core's mkfile (-simple -O -ssa for runtime.c); plan_ml_speed.md's 2026-10-29, plan_cc_ssa.md | mini-ml compiling 1.0003 of C55's (5,202.3 million); mini-doom's frame 0.986 of C55's | -242 (runtime: gc.c -18, the scans -224) | C55's scan_arm.s, scan_arm64.s |
 
 LOC are net lines of languages/ml (comments included, tests not), by
 commit where a commit has several rows. The ledger of

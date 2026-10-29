@@ -1,4 +1,4 @@
-(* the collector's scan (gc.c's scan_copies; scan_arm.s, scan_arm64.s):
+(* the collector's scan (gc.c's scan_copies; a day by hand, scan_arm.s):
  * a block's fields after one that is a large block (marked in a major
  * collection, a call of C's from the scan) copied too; a block shared,
  * copied once; a deep list (the scan chasing next) *)

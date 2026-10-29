@@ -63,9 +63,13 @@ ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 # (goken reaches utf.h and os/posix/ through links: here utf's directory
 # is searched, and os/posix/ is its os/unix/ under that name)
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
+# OPTIMIZATION (the runtime by ssa/): mini-cc's back end with registers
+# (plan_cc_ssa.md), gc.c's scan as fast as it was by hand in assembly;
+# the libc stays compat's, 5c's code (old: $CC $CINC, compat's for the
+# runtime too)
 $L/runtime.$O: $RTSRC
 	mkdir -p $L
-	$CC $CINC -o $target $TOP/languages/ml/runtime/runtime.c
+	$CC -simple -O -ssa $CINC -o $target $TOP/languages/ml/runtime/runtime.c
 
 # The C library: goken's (libc/, with its LICENSE), the files a program
 # of mini-ml's links, in C and in assembly: those of every system, then
@@ -96,9 +100,7 @@ LIBC_S7=$LIBC_MEM7 arch/arm64/rt0 syscall/os/$OS/svc_arm64
 LC=$L/libc
 LIBC=`{if(~ $OS^$O linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5; if not if(~ $OS^$O linux7) echo $LIBC_C $LIBC_linux $LIBC_linux7 $LIBC_S7; \
  if not if(~ $OS^$O plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm}
-# (and mini-ml's runtime's scan in assembly, gc.c's SCAN_ASM)
-SCAN=$LC/scan.$O
-LIBCOBJS=${LIBC:%=$LC/%.$O} $SCAN
+LIBCOBJS=${LIBC:%=$LC/%.$O}
 
 $LC/%.$O: libc/%.c
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
@@ -106,10 +108,6 @@ $LC/%.$O: libc/%.c
 $LC/%.$O: libc/%.s
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$AS -o $target libc/$stem.s
-
-$LC/scan.$O: $TOP/languages/ml/runtime/scan_$ARCH.s
-	mkdir -p $LC
-	$AS -o $target $TOP/languages/ml/runtime/scan_$ARCH.s
 
 $L/libc.a: $LIBCOBJS
 	rm -f $target

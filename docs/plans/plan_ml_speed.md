@@ -932,3 +932,26 @@ HEAD with this 144 jobs, 0 failures (m-ix built in mini-9pi with the
 scan as Plan 9's). Not checked: large.ml as a Plan 9 program, which
 run.sh times out on before this as after (300 MB under mini-5i).
 
+## 2026-10-29, the scan back in C, by mini-cc's ssa/
+
+The author, once ssa/ was committed (plan_cc_ssa.md): "at this point
+maybe we can remove the scan_armxx.s since the C code is now compiled
+efficiently?". The assembly's last advantage was copy in the scan's
+loop, a call a field in gc.c's C (gc.c's C by ssa/ 5,396.3 million,
+1.038 of the assembly's 5,200.9). So scan_copies in C does copy's work
+in its loop, next, lo and hi in its own variables, as the assembly did;
+the runtime by mini-cc -simple -O -ssa (lib_core's mkfile; the libc
+compat's); scan_arm.s, scan_arm64.s and gc.c's struct Scan gone.
+
+Measured on arm (mini-5i -s), mini-ml's three units: 5,202.3 million,
+the assembly's 5,200.9 (1.0003). The copy of a block's words is the
+assembly's two post-indexed accesses; the field's tests load lo and hi
+from slots (arm's seven registers: ten values live in the copy's loop,
+the assembly had ten registers). A frame, against the assembly's
+runtime: mini-doom's 0.986, mini-quake's 0.990, cameltry's 0.997, the
+same pixels (the rest of the runtime by ssa/). Checked: the runtime suite at -O3 on
+arm and arm64, the runtime by -ssa (run.sh's default now, as lib_core's),
+as before (costs needs arguments, marshalling's timing line);
+tests/lite.sh compares the runtime by -ssa from mini-cc by mini-ml and
+by dune.
+

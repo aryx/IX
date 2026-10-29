@@ -114,7 +114,7 @@ let func (fn : func) =
     | _ -> false in
   (* OPTIMIZATION (post-index): a load or a store through q, then q + k
    * in q's register (Ssa_build's sink, Alloc's phi register), is one
-   * access that moves q on after it, as scan_arm.s's MOVW.P 4(R0),R7:
+   * access that moves q on after it, as the scan by hand had MOVW.P 4(R0),R7:
    * *q++ = *p++ two instructions. Not a float's (vfp's loads have no
    * such form), nor a store of q itself; k as small as arm64's 9 bits.
    * old: the access, then the ADD *)

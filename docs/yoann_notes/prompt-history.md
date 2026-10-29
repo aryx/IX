@@ -54877,3 +54877,226 @@ Claude pointed out that plan_pim.md and plan_mail.md still hold open questions o
 Those questions cover the accent font, per-item or per-month store files, the suite name, and mini-9pi use.
 Claude flagged the history in the what worked and what didn't section as written from memory, unverified.
 It also noted that Google Calendar's private iCalendar address still needed checking as an offered option.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:41
+
+**Yoann:**
+
+> in make loc, let's count the .mli for tiny/ but let's not display them (or display just their total)
+
+**Claude (summary):**
+
+Claude recommended that the interface files already count in `make loc` since commit 3c1571bd.
+Claude is folding the top-level `tiny/` `.mli` rows into a single total row.
+That fold means the individual interface files stay hidden while their combined count still appears in the output.
+Yoann's follow-up, "let's commit," points to this change being ready to commit as-is.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the change as c6a4a060, containing only `scripts/stats/loc.py`.
+Claude ran `make test` before committing, and it passed with 148 jobs and 0 failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:37
+
+**Yoann:**
+
+> yes let's commit the new plan document about annotations
+
+**Claude (summary):**
+
+Claude committed the new annotations plan document as commit 9a6a739e, containing only that single file.
+Claude left three plan files out of the commit because another session had edited them.
+Those files were plan_ml_floats.md (moved to done/), plan_ml_speed.md, and plan_virtuaracing.md.
+Claude treated the commit guard's listing of those files as another session's work, not part of this change.
+Claude did not touch those uncommitted edits, so they remain in the working tree for that session.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:47
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended ranking the next steps, with win-back of design C's cost first and annotations second.
+Claude proposed the first annotation as `[@tailcall]` and `[@@tailrec]`, since Lower already decides tail calls.
+Claude noted this is the smallest plan step and sets up the parser and tests in `tests/annotations/`.
+Claude also listed the gcc fix for gc.c, the sorts.c quicksort slowdown, and a full `make self` run as later items.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:47
+
+**Yoann:**
+
+> and for tiny programs that have a TinyXXX/ associated dir, maybe count them in just one line, maybe like tiny/TinyKernel.ml/ or * or something so we see it's the Xxx.ml and its dir. maybe TinyKernel* TinyML* TinyC* etc.
+
+**Claude (summary):**
+
+Claude gave each tiny program with a same-named folder one row, such as TinyKernel+*, TinyML+, and TinyC+.
+Claude chose a trailing + for the folder match, since * already marks rows with uncounted lines and both can appear together.
+Claude kept the totals unchanged at 38,033 for tiny and 32,368 without header comments.
+Claude left TinyCRuntime and TinyMLRuntime as separate rows, since the match is on exact names, and offered to fold them in.
+Claude noted that make test has not been run and nothing has been committed yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:49
+
+**Yoann:**
+
+> let's commit
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:50
+
+**Yoann:**
+
+> we can also now count lib_code/ instead of in other for the libraries section
+
+**Claude (summary):**
+
+Claude committed the tiny change as 7ac60282 before moving on to the library counting.
+Claude then turned to lib_code/, the directory Yoann asked to count in the libraries section instead of "other".
+Claude's answer was cut off right after announcing that it was starting on lib_code/.
+No lib_code/ counting change or commit appears in the answer, so none is confirmed.
+Yoann's follow-up asks to commit, so the lib_code/ change is presumably ready to be committed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:17
+
+**Yoann:**
+
+> I'm thinking of adding a mini-tiger and mini-c-- in IX (see ~/github/tiger and ~/github/c--), and possibly to add a c-- backened to mini-c and mini-ml. What do you think? Note that we also have a plan for a mini-dotnet so this might be interact with c--. Also maybe we could take good ideas not just from c-- but also llvm, mlrisc, VPO, etc. to rethink the toolchain backend. Analyze and report
+
+**Claude (summary):**
+
+Claude's answer was only a progress note, not a finished analysis: it said it was reading ix's toolchain plans (dotnet, cc_ssa, optimization) to compare against c-- and tiger.
+Claude also reported that prior work in plan_cc.md and variants/modern.md already weighed C--, and that it was reading those files to avoid redoing that analysis.
+Claude had not yet produced any recommendation on mini-tiger, mini-c--, or a c-- backend for mini-c and mini-ml.
+Yoann's next message asks to write the plan document now, so the focus is on the planned write-up rather than on Claude's findings.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:51
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the `lib_code/` change as 30856d7d, with only `scripts/stats/loc.py` included.
+Claude ran `make test`, which showed 1 failure out of 148 jobs in "mini-yacc: ocamlyacc's trees".
+The failure is `Error: Unbound module Annotations` in `languages/ml/Parser.mly`, not caused by this commit.
+It comes from another session's uncommitted mini-ml work (`Annotations.ml`/`.mli`, plus edits to `Parser.mly`, `Lexer.mll`, `dune`, `mkfile`).
+The previous commit's run had no failures, and `loc.py` only runs under `make loc`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:58
+
+**Yoann:**
+
+> let's write this plan document for now
+
+**Claude (summary):**
+
+Claude wrote the plan to docs/plans/plan_cmm.md and deliberately left it uncommitted for review.
+Claude's reason was that Yoann could read the plan first and decide before anything was committed.
+Claude proposed a shared low-level IR in languages/cmm/, built in six stages, with no qc-- twin.
+The plan also covers a mini-tiger rewrite in languages/tiger/ and an estimated 2,400 lines.
+Claude corrected the qc-- size to 28,824 lines, adding the 4,660-line libs/ directory it had missed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:07
+
+**Yoann:**
+
+> can you pull and merge; I think I did other modifs from another machine
+
+**Claude (summary):**
+
+Claude merged the pulled changes cleanly and reapplied the local edits after resolving the prompt-log conflict.
+Claude then checked the merge and read the newly pulled plan_dotnet.md for its mini-tiger content.
+Claude flagged that the mini-tiger plan in plan_dotnet.md overlaps with the existing plan_cmm.md.
+Claude was comparing the mini-tiger sections of plan_dotnet.md and plan_cmm.md before deciding anything.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:09
+
+**Yoann:**
+
+> we can target both cmm and dotnet for tiger
+
+**Claude (summary):**
+
+Claude recommended that mini-tiger become plan_dotnet's program, with an IL back end and a cmm back end.
+Claude proposed sharing a single front end between the two back ends, so the tiger compiler is written once.
+Claude updated plan_cmm.md to describe the mini-tiger design with both targets.
+Claude also planned to add a pointer in plan_dotnet.md to the new cmm back end.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:48
+
+**Yoann:**
+
+> let's start 2
+
+**Claude (summary):**
+
+Claude implemented step 1 of the annotations plan in mini-ml: `[@@tailrec]` and `[@tailcall]` annotations, tracked in a new `Annotations` module.
+Claude added two lexer tokens and grammar rules, and the checks live in Lower, where tail calls are decided.
+Claude added the `annotations/holds.ml` and refused-program tests as `languages/ml/tests/annotations.sh`, wired into make test.
+Claude verified that unannotated code compiles to identical bytes across 112 objects, and that the grammar gained no new conflicts.
+Claude left the change uncommitted and asked whether to commit it.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 13:39
+
+**Yoann:**
+
+> let's fix it and add it to 'make test' after so this kind of regression get caught in the futur
+
+**Claude (summary):**
+
+Claude judged mini-ml's 11.2% extra steady-state instructions fine for dogfooding, and offered the switch.
+Claude traced the slow boot to 64 MB of bss from lib_core's libc stand-in allocator.
+Claude noted ocaml-light's kernel uses lib_machine/libc.c's allocator, which has a small bss.
+Claude asked whether to give the mini-mk kernel that allocator, then switch the Pi 1 kernel to mini-ml.
+Claude also traced the crash to stale _mk objects and added a Pi 1 boot test, 5961f287.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 18:11
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed step 1 of the annotations, `[@tailcall]` and `[@@tailrec]`, as c740ac25 and updated the plan's status line.
+Claude left out `docs/yoann_notes/prompt-history.md` (staged by another session) and the untracked `lib_core/runtime.5`, committing by pathspec.
+Claude described step 2, `[@zero_alloc]`, as the next item, which rejects allocation in marked functions.
+The check runs on the code `-O3` produces, so builds without `-O3` get an error asking for it.

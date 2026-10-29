@@ -95,3 +95,7 @@ val run : string list -> Ir.func -> Ir.func
 val variables : Ir.t array -> (Ir.mem * Ir.ty) list
 val successors : Ir.t array -> int list array
 val liveness : Ir.t array -> int list array -> (Ir.mem -> int option) -> int Set_.t array
+
+(* the stack slots an instruction reads, and the ones it pushes (and
+ * ssa/'s construction, for the stack's height at a block's entry) *)
+val arity : Ir.t -> int * int

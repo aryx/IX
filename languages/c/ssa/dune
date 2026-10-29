@@ -1,0 +1,7 @@
+; an optimizing back end in SSA form (plan_cc_ssa.md), mini-ml's ssa/
+; for C: simple's stack code after opti's forms, to registers
+(library
+ (name ix_cc_ssa)
+ (wrapped false)
+ (modules Ssa Ssa_build Alloc Ssa_gen)
+ (libraries ix_cc ix_cc_simple ix_cc_opti ix_asm))

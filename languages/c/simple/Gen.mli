@@ -47,3 +47,38 @@ val vregs : depth:int -> int * int
 
 (* a function's code, from Lower's *)
 val func : Ir.func -> unit
+
+(* What ssa/'s Ssa_gen writes its instructions with: the machine, its
+ * mnemonics by type, an instruction made (with arm's middle register);
+ * a register's value made its type's (extend); a relation's
+ * condition, a branch's mnemonic *)
+
+type mach = {
+  sp : int;
+  word : int;
+  nregs : int;
+  nfregs : int;
+  tmp : int;
+  ftmp : int;
+  ret : string;
+  vregs : int list;
+  vfregs : int list;
+}
+
+val mach : unit -> mach
+val a64 : unit -> bool
+val ins : string -> Asm.operand option -> Asm.operand option -> Emit.prog
+val ins_reg : string -> int -> Asm.operand option -> Asm.operand option -> Emit.prog
+val i1 : string -> Asm.operand -> unit
+val i2 : string -> Asm.operand -> Asm.operand -> unit
+val at : int -> int -> Asm.operand
+val mov : unit -> string
+val fmov : unit -> string
+val load_op : Ir.ty -> string
+val store_op : Ir.ty -> string
+val extend : Ir.ty -> int -> unit
+val int_op : Tree.binop -> string
+val float_op : Tree.binop -> Ir.ty -> string
+val prec : Ir.ty -> string
+val cond : Tree.binop -> fl:bool -> Asm.cond
+val branch : Asm.cond -> string

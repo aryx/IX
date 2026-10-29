@@ -13,7 +13,9 @@ let help = {|usage: mini-cc [-m 5|7] [-S] [-x] [-o out] [-Idir] [-Dname[=value]]
 x.5 (x.7) in the current directory as 5c (-o: another), for mini-ld; -S its
 listing, 5c's byte for byte; -x each function's trees; 5c's other flags are
 ignored. -simple: the back end whose contract is the behavior, a stack machine
-(-dir prints its code; -O runs all of Opti's passes, -Oincs, -Oplaces... one).
+(-dir prints its code; -O runs all of Opti's passes, -Oincs, -Oplaces... one;
+-ssa: its code by ssa/, values in registers from its SSA form, after Opti's
+forms (-O -ssa); -dssa prints that form).
 With goken's libc (linker/tests/libc.sh 5 $PWD/w makes w/t/libc.a), and its
 hello.c (~/goken/tests/c/hello_libc/), for example:
   G=~/goken/include; mini-cc -m 5 -I$G -I$G/ALL -I$G/arch/arm hello.c
@@ -64,8 +66,10 @@ let compat (mach : Tree.machine) : backend =
   })
 
 (* the behavior only, a stack machine: the simple back end; with dir,
- * each function's stack machine code printed *)
-let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
+ * each function's stack machine code printed; with dssa, its SSA form
+ * (ssa/, built from Opti's forms but regs); with ssa, the code by ssa/
+ * from that form, not Gen's *)
+let simple_backend (caps : < caps; .. >) ~dir ~ssa:(ssa, dssa) ~opti : backend =
   ({
     init = (fun () ->
       Check.xcom := Lower.calls64;
@@ -73,10 +77,19 @@ let simple_backend (caps : < caps; .. >) ~dir ~opti : backend =
       Declare.gextern := Emit.gextern;
       Emit.init ());
     codgen = (fun f body ->
-      let fn = Opti.run opti (Lower.func f body) in
-      if dir then print caps (Lower.show_func fn);
-      Gen.func fn;
-      if List.mem "peep" opti then Peep.run ());
+      let ir = Lower.func f body in
+      if ssa || dssa then begin
+        let fn = Opti.run (List.filter (fun p -> p <> "regs") opti) ir in
+        if dir then print caps (Lower.show_func fn);
+        let s = Ssa_build.func fn in
+        if dssa then print caps (Ssa_build.show s);
+        if ssa then Ssa_gen.func s else Gen.func (Opti.run opti ir)
+      end else begin
+        let fn = Opti.run opti ir in
+        if dir then print caps (Lower.show_func fn);
+        Gen.func fn
+      end;
+      if List.mem "peep" opti && not ssa then Peep.run ());
     finish = Emit.gclean;
     listing = Emit.listing;
     obj = Emit.obj;
@@ -154,7 +167,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
+  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
@@ -163,6 +176,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-flow" :: rest -> flow := true; listing := true; args rest
     | "-dflow" :: rest -> dflow := true; listing := true; args rest
     | "-dir" :: rest -> dir := true; args rest
+    | "-dssa" :: rest -> dssa := true; args rest
+    | "-ssa" :: rest -> ssa := true; args rest
     | "-O" :: rest -> opti := "peep" :: List.map fst Opti.passes; args rest
     | o :: rest when String.length o > 2 && String.sub o 0 2 = "-O"
                      && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Opti.passes) ->
@@ -186,9 +201,9 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
-      match compile caps !mach (if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      match compile caps !mach (if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1
-  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
+  | _, _ -> eprint caps "usage: mini-cc -m 5|7 [-simple [-dir] [-ssa] [-dssa] [-O|-Opass]] [-facts] [-flow] [-x] [-S] [-Idir] [-Dname=value] [-o out] file.c   (-h: how)\n"; 1
   end

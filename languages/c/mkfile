@@ -1,12 +1,14 @@
 # mini-cc, built by ix's tools: the front end, its lexer (by mini-lex)
-# and its grammar (by mini-yacc), then the back ends (compat/, simple/, opti/), the command
+# and its grammar (by mini-yacc), then the back ends (compat/, simple/,
+# opti/, ssa/), the command
 TOP=../..
 DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Check Declare Machines Emit Com64 Parser Lexer \
- Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Facts Ir_facts CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli facts/*.ml facts/*.mli}
-LIBI=-I ../../assembler -I compat -I simple -I opti -I facts
+ Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Ssa Ssa_build Alloc Ssa_gen \
+ Facts Ir_facts CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli}
+LIBI=-I ../../assembler -I compat -I simple -I opti -I ssa -I facts
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
@@ -32,6 +34,10 @@ $D/%.$O: simple/%.ml
 $D/%.$O: opti/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target opti/$stem.ml
+# ssa/'s units (Ssa Ssa_build Alloc Ssa_gen): one recipe each, so that .depend orders each
+$D/%.$O: ssa/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target ssa/$stem.ml
 # facts/'s units (Facts Ir_facts): one recipe each, so that .depend orders each
 $D/%.$O: facts/%.ml
 	mkdir -p $D

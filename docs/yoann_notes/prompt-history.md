@@ -54596,3 +54596,17 @@ Claude asked for approval to start the bisect; the performance numbers remain un
 **Claude (summary):**
 
 Claude said it would survey the other parts of ix while writing the plan, nothing more.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:35
+
+**Yoann:**
+
+> let's commit and let's start a plan_gaps.md plan document. note that mini-9pi has a networking TCP/IP stack
+
+**Claude (summary):**
+
+Claude flagged two errors in the survey: mini-9pi has its own TCP/IP stack, and copy-on-write fork already exists.
+Claude said it would commit the .NET plan after double-checking the survey's remaining claims.
+Claude then began checking the commit hash before writing `plan_gaps.md`, but did not finish either step.

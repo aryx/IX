@@ -10,6 +10,12 @@ How the projects relate (the mini and tiny programs, the real and our
 own machines, the kernels, the code that is not OCaml):
 [projects.md](projects.md).
 
+The manuals (`manuals/`): [m-ix.md](manuals/m-ix.md), the switches of
+m-ix's programs; [t-ix.md](manuals/t-ix.md), the tiny machine and what
+runs on it; [mini-qemu.md](manuals/mini-qemu.md); and
+[hosts.md](manuals/hosts.md), which programs run on Linux and macOS
+too, and which only under mini-9pi or tiny-kernel, and why.
+
 | program | plan | tutorial | related work | code |
 |---|---|---|---|---|
 | mini-mk, the build system | [plan_mk.md](plans/done/plan_mk.md) | [notes_mk.md](tutorials/notes_mk.md) | [notes_mk_related_work.md](related-work/notes_mk_related_work.md) | `builder/`, `tiny/TinyBuildSystem.ml` |

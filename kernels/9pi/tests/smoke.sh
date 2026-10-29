@@ -28,6 +28,10 @@ X=$D/mk/5-plan9
 log() { echo $D/mk.$(echo $1 | tr / _).log; }
 mk() { (cd $1 && NPROC=32 mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log $1) 2>&1 ||
   { echo "mini-mk failed in $1:"; tail -3 $(log $1); return 1; }; }
+# (the kernel's OCaml, by ocaml-light, meanwhile: it needs none of
+# them, most of the kernel's 16 s; old: after them; then its C, -j4)
+make -s -C kernels/9pi BOARD=pi2 B=$D/k $D/k/ocaml.o > $D/kernel-ml.log 2>&1 &
+kml=$!
 # (lib_core alone: these programs name no other library, LIBDIRS; old:
 # mk . libs, the 20 of the top mkfile, 31 s of which 27 for nothing)
 mk lib_core
@@ -42,42 +46,23 @@ for p in "${pids[@]}"; do wait $p; done
 
 # mini-9pi for the Pi 2, its bootdir what boot.rc runs to mount the
 # card (the date: the Makefile's KERNDATE_IX)
+wait $kml || { echo "the kernel's OCaml:"; tail -3 $D/kernel-ml.log; exit 1; }
 U=$X/utilities
 boot="boot=conf/boot.rc rc=$X/shell/mini-rc echo=$U/misc/mini-echo"
 boot="$boot ls=$U/files/mini-ls cat=$U/files/mini-cat"
 boot="$boot bind=$U/namespace/mini-bind mount=$U/namespace/mini-mount"
 boot="$boot fdisk=$X/kernels/9pi/devices/storage/user/fdisk/mini-fdisk"
-make -s -C kernels/9pi BOARD=pi2 B=$D/k IMAGE=$D/kernel.img \
+make -s -j4 -C kernels/9pi BOARD=pi2 B=$D/k IMAGE=$D/kernel.img \
   KERNDATE=1790380800 BOOTDIR="$boot" $D/kernel.img > $D/kernel.log 2>&1 ||
   { echo "the kernel:"; tail -3 $D/kernel.log; exit 1; }
-
-# the card: the toolchain and cmp in /bin (lib/namespace, as make
-# card's; rc/bin/, which boot.rc binds too), lib_core's sources and
-# self-quick's two programs in /src, the host's objects in /host
-S=$X/kernels/9pi/tests/self
-L=$X/lib_core
-printf 'bind -a /root/progs/toolchain /bin\nbind -a /root/progs/misc /bin\n' > $D/namespace
-files=(progs/toolchain/ml=$X/languages/ml/mini-ml progs/toolchain/cc=$X/languages/c/mini-cc
-  progs/toolchain/asm=$X/assembler/mini-asm progs/toolchain/ld=$X/linker/mini-ld
-  progs/misc/cmp=$U/compare/mini-cmp lib/namespace=$D/namespace
-  src/self/hello.c=kernels/9pi/tests/self/hello.c
-  src/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
-  host/Pervasives.5=$L/Pervasives.5 host/Pervasives.inline=$L/Pervasives.inline
-  host/pow.5=$L/libc/port/pow.5
-  host/libc.a=$L/libc.a host/runtime.5=$L/runtime.5 host/std_exit.5=$L/std_exit.5
-  host/start.5=$S/hello-ml.start.5 host/Hello.5=$S/Hello.5
-  host/hello-c=$S/hello-c host/hello-ml=$S/hello-ml
-  rc/bin/ tmp/lib/ tmp/self/ mnt/ usr/pad/)
-while read -r f; do files+=(src/$f=$f); done < <(find lib_core -type f -not -path '*/tests/*')
-_build/default/kernels/tools/Mkfs.exe -m 32 -i 1024 $D/fs.img "${files[@]}" > /dev/null
-_build/default/kernels/tools/Mkcard.exe -m 64 -fat 16 -date 1790380800 -fs $D/fs.img \
-  $D/card.img mini9pi2.img=$D/kernel.img > /dev/null
 
 # on the card, as mk's commands: the objects in /tmp/lib and /tmp/self,
 # as mk's directories (ml reads a unit's summary, X.inline, beside the
 # object it writes, and inlines from it with -O3: Hello.ml's object is
-# another when Pervasives.inline is beside it)
-cat > $D/session.cmds <<'END'
+# another when Pervasives.inline is beside it); a script on the card,
+# one line typed (old: its 24 lines typed, each after a second of quiet
+# at the prompt, 20 s of the session's 42)
+cat > $D/smoke.rc <<'END'
 l=/tmp/lib; s=/tmp/self; h=/host; L=/src/lib_core
 I=(); for(d in system/plan9 core base collections printing parsing system concurrency commons) I=($I -I $L/$d)
 C=(-I$L/libc/include -I$L/libc/include/utf -I$L/libc -I$L/libc/include/arch/arm -Darm -Dplan9)
@@ -100,10 +85,33 @@ ld -m 5 -H2 -nofollow -o $s/hello-ml $s/start.5 $l/Pervasives.5 $s/Hello.5 $h/st
 $s/hello-ml
 cmp $s/hello-ml $h/hello-ml && echo hello-ml: the host
 END
+
+# the card: the toolchain and cmp in /bin (lib/namespace, as make
+# card's; rc/bin/, which boot.rc binds too), lib_core's sources and
+# self-quick's two programs in /src, the host's objects in /host
+S=$X/kernels/9pi/tests/self
+L=$X/lib_core
+printf 'bind -a /root/progs/toolchain /bin\nbind -a /root/progs/misc /bin\n' > $D/namespace
+files=(progs/toolchain/ml=$X/languages/ml/mini-ml progs/toolchain/cc=$X/languages/c/mini-cc
+  progs/toolchain/asm=$X/assembler/mini-asm progs/toolchain/ld=$X/linker/mini-ld
+  progs/misc/cmp=$U/compare/mini-cmp lib/namespace=$D/namespace
+  src/self/hello.c=kernels/9pi/tests/self/hello.c
+  src/self/Hello.ml=kernels/9pi/tests/self/Hello.ml
+  host/Pervasives.5=$L/Pervasives.5 host/Pervasives.inline=$L/Pervasives.inline
+  host/pow.5=$L/libc/port/pow.5
+  host/libc.a=$L/libc.a host/runtime.5=$L/runtime.5 host/std_exit.5=$L/std_exit.5
+  host/start.5=$S/hello-ml.start.5 host/Hello.5=$S/Hello.5
+  host/hello-c=$S/hello-c host/hello-ml=$S/hello-ml src/smoke.rc=$D/smoke.rc
+  rc/bin/ tmp/lib/ tmp/self/ mnt/ usr/pad/)
+while read -r f; do files+=(src/$f=$f); done < <(find lib_core -type f -not -path '*/tests/*')
+_build/default/kernels/tools/Mkfs.exe -m 32 -i 1024 $D/fs.img "${files[@]}" > /dev/null
+_build/default/kernels/tools/Mkcard.exe -m 64 -fat 16 -date 1790380800 -fs $D/fs.img \
+  $D/card.img mini9pi2.img=$D/kernel.img > /dev/null
+
 B="-M raspi2b -device loader,file=$D/kernel.img,addr=0x8000,cpu-num=0,force-raw=on"
 for c in 1 2 3; do B="$B -device loader,addr=0x8000,cpu-num=$c"; done
 kernels/lib_machine/session.py --prompt "% " --timeout 120 --out $D/session.txt \
-  --lines $D/session.cmds -- qemu-system-arm $B -nographic \
+  "rc /src/smoke.rc" -- qemu-system-arm $B -nographic \
   -drive file=$D/card.img,if=sd,format=raw,snapshot=on > /dev/null ||
   { echo "the session did not end:"; tail -5 $D/session.txt; exit 1; }
 for l in 'Pervasives: the host' 'Pervasives.inline: the host' 'pow: the host' \

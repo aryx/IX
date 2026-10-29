@@ -316,7 +316,9 @@ reader, Partition III the machine.
     which must build by mini-ml (ocaml-light's language) to run on
     mini-9pi, and read like ix's other languages (`CLI.ml`,
     `Main.ml`). Its tests are taken: `tests/*.tig` and their outputs,
-    with Appel's.
+    with Appel's. A second back end, to native code by cmm, is
+    plan_cmm.md's (the author: "we can target both cmm and dotnet for
+    tiger"): the front end stays typed and shared.
 11. **mini-csc is a C# reduced to what the survey's simpler programs
     need**: classes, interfaces, virtual methods, statics, arrays,
     strings, exceptions, `foreach` over the library's collections,

@@ -1,0 +1,16 @@
+; apps/pim: mini-pim, a suite for organizing a life
+; (docs/plans/plan_pim.md), in folders (folders only: one library,
+; ix_pim):
+;   mail/  the mail's formats (docs/plans/plan_mail.md, stage 1): Mail
+;          (a message, RFC 5322), Mime (its parts, its encodings, its
+;          charsets), Mail_thread (conversations, Zawinski's), the
+;          author's playground's libs/networking/mail
+; (a file's text is the playground's: what it leaves unused stays, no
+; warning of it an error)
+(include_subdirs unqualified)
+
+(library
+ (name ix_pim)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_tls))

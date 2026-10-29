@@ -8,8 +8,8 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: a plan, nothing built.** Mail is the first part of the
-suite [`plan_pim.md`](plan_pim.md): its messages are the suite's first
+**Status: stage 1 built (the formats, `apps/pim/mail/`).** Mail is
+the first part of the suite [`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
 
@@ -213,3 +213,10 @@ About 2,500 lines of `.ml`: 650 copied, IMAP 600, the cache and items
 
 2026-10-29: snooze and the Screener added, after plan_pim.md's
 review of what worked. Nothing built.
+
+2026-10-29: stage 1, the formats: `Mail`, `Mime`, `Mail_thread`
+copied in `apps/pim/mail/` (671 lines of `.ml`), their tests (17, in
+`make test`), compiled by mini-ml too. The charsets: ISO-8859-1 read
+as Windows-1252 (WHATWG's), ISO-8859-15's eight own characters; the
+playground read both as Latin-1. `apps/pim/README.md` says what
+changed. Next: stage 2, `Tls_client`'s lines and `Smtp`.

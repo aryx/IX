@@ -1,0 +1,8 @@
+; (its own stanzas, not a part of apps/pim's folders)
+(include_subdirs no)
+
+; the unit tests of mini-pim (Testo): dune's only. The playground's
+; libs/networking/tests of what is here, and ix's own (the charsets)
+(executable
+ (name Test)
+ (libraries ix_pim alcotest testo))

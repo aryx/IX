@@ -13,8 +13,8 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: a design, nothing built.** Mail, the first part, has its
-own plan, [`plan_mail.md`](plan_mail.md).
+**Status: begun, mail's stage 1 (its formats).** Mail, the first
+part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
 
@@ -359,3 +359,7 @@ and a half.
 innovative, failed), after the author's doubt; snooze, the Screener,
 the daily note and envelopes added to the design, Chandler's failure
 kept as the warning on its scope. Nothing built.
+
+2026-10-29: begun, by mail (stage 1): `apps/pim/`, one library
+(`ix_pim`) in folders as mini-office; `mail/` has the formats,
+plan_mail.md's stage 1.

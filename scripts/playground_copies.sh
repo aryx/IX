@@ -57,7 +57,8 @@ editors/turbopascal appkits/editor apps/devtools/tty
 lib_code libs/code/highlight
 languages/ml/highlight languages/ocaml
 languages/c/highlight languages/c
-assembler/highlight languages/asm'
+assembler/highlight languages/asm
+apps/pim libs/networking/mail libs/networking/tests'
 
 files() { # the source files under the directories given
   find "$@" -type f \( -name '*.ml' -o -name '*.mli' -o -name '*.mll' -o -name '*.st' -o -name '*.scm' -o -name '*.pas' -o -name '*.jhf' -o -name '*.sh' -o -name '*.expected' \) | sort

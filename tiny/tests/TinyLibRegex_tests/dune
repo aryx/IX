@@ -1,0 +1,6 @@
+; TinyLibRegex.ml's test on the host (TinyLibRegex_test.sh), with m-ix's
+; Regex (ix_core) as the twin it is compared with
+(executable
+ (name Cases)
+ (modules Cases)
+ (libraries tiny_lib_regex ix_core))

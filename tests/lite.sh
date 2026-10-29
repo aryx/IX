@@ -173,6 +173,7 @@ job "TinyLibPlayground: unit tests" tiny/tests/TinyLibPlayground_test.sh
 job "tiny-tetris: recorded frames" tiny/tests/TinyAppTetris_test.sh
 job "TinyLibGUI: unit tests" tiny/tests/TinyLibGUI_test.sh
 job "TinyLibCore: unit tests" tiny/tests/TinyLibCore_test.sh
+job "TinyLibRegex: grep's and ed's patterns, by hand and against Regex" tiny/tests/TinyLibRegex_test.sh
 job "tiny-emacs: recorded screens" tiny/tests/TinyEditorScreen_test.sh
 job "tiny-browser: pages" tiny/tests/TinyBrowser_test.sh
 job "tiny-profiler: profiles" tiny/tests/TinyProfiler_test.sh

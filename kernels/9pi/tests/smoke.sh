@@ -29,8 +29,10 @@ log() { echo $D/mk.$(echo $1 | tr / _).log; }
 mk() { (cd $1 && NPROC=32 mini-mk O=5 OS=plan9 B=$X "${@:2}") > $(log $1) 2>&1 ||
   { echo "mini-mk failed in $1:"; tail -3 $(log $1); return 1; }; }
 # (the kernel's OCaml, by ocaml-light, meanwhile: it needs none of
-# them, most of the kernel's 16 s; old: after them; then its C, -j4)
-make -s -C kernels/9pi BOARD=pi2 B=$D/k $D/k/ocaml.o > $D/kernel-ml.log 2>&1 &
+# them, most of the kernel's 16 s; old: after them; then its C, -j4.
+# COMPILER=light: the Pi 2's default is ix's tools since 9f9e8389, whose
+# kernel is made in the shared _mk, not in $D)
+make -s -C kernels/9pi BOARD=pi2 COMPILER=light B=$D/k $D/k/ocaml.o > $D/kernel-ml.log 2>&1 &
 kml=$!
 # (lib_core alone: these programs name no other library, LIBDIRS; old:
 # mk . libs, the 20 of the top mkfile, 31 s of which 27 for nothing)
@@ -52,7 +54,7 @@ boot="boot=conf/boot.rc rc=$X/shell/mini-rc echo=$U/misc/mini-echo"
 boot="$boot ls=$U/files/mini-ls cat=$U/files/mini-cat"
 boot="$boot bind=$U/namespace/mini-bind mount=$U/namespace/mini-mount"
 boot="$boot fdisk=$X/kernels/9pi/devices/storage/user/fdisk/mini-fdisk"
-make -s -j4 -C kernels/9pi BOARD=pi2 B=$D/k IMAGE=$D/kernel.img \
+make -s -j4 -C kernels/9pi BOARD=pi2 COMPILER=light B=$D/k IMAGE=$D/kernel.img \
   KERNDATE=1790380800 BOOTDIR="$boot" $D/kernel.img > $D/kernel.log 2>&1 ||
   { echo "the kernel:"; tail -3 $D/kernel.log; exit 1; }
 

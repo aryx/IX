@@ -252,8 +252,8 @@ txt.c, 5l's 5.out.h) gives each register its role:
 |---|---|---|
 | R0 | the result, the first argument | the scratch |
 | R1-R8 | the compiler's: 5c allocates R0-R8 | the allocator's (R8 the second scratch in a function that needs one) |
-| R9 | an external register (`extern register`: a Plan 9 kernel's `up`, the current process); in ix, mini-ml's temporary | reserved |
-| R10 | an external register (a Plan 9 kernel's `m`, principia's `cpu`, this processor's state); in ix, mini-ml's value stack's top for a program's whole run | reserved |
+| R9 | an external register (`extern register`: a Plan 9 kernel's `up`, the current process); in ix's ML code, its temporary | the allocator's |
+| R10 | an external register (a Plan 9 kernel's `m`, principia's `cpu`, this processor's state); in ix's ML code, the value stack's top | the allocator's |
 | R11 | the linker's temporary (a long constant, a far branch) | reserved |
 | R12 | the static base, SB | reserved |
 | R13 | the stack pointer | reserved |
@@ -262,25 +262,40 @@ txt.c, 5l's 5.out.h) gives each register its role:
 | F1-F6 | floating point (VFP) | the allocator's |
 | F0, F7 | | the scratch |
 
-Why R9 and R10 stay reserved though no C in ix declares an `extern
-register`: mini-ml's code keeps its value stack's top in R10 (R26 on
-arm64) for the whole run, across the C it calls. Before a call it
-stores it to `ml_vsp` (the runtime's, for the collector) and never
-loads it back after; nothing declares this, it holds because 5c and
-mini-cc never allocate R9 and R10 (5c's `txt.c` reserves them in every
-file). C that used R10 would lose the ML caller's values. R9 is
-mini-ml's temporary, used only between calls as far as its code was
-read, but nothing guarantees it: the rule keeps both. The kernels'
-`swtch` keeps R10 across a switch too (kernels/lib_machine/pi1/l.s).
-Where it is written: mini-ml's Emit (its machine records), the
-runtime's `ml_vsp`, mini-cc's Ssa_gen (its registers).
+The conventions between the ML code and the C, and what each
+assumes (written in full, numbered, in mini-ml's ssa/Emit.ml, which
+both of mini-ml's back ends follow):
+
+1. While ML code runs, its value stack's top is in R10 (R26 on
+   arm64), and R9 (R16) is a temporary of a few instructions.
+2. At each call of C, the ML code stores R10 to `ml_vsp` (the
+   runtime's global) and loads it back after. While C runs, `ml_vsp`
+   is the value stack's top (the collector reads it; C that pushes ML
+   values or switches threads changes it), and the C may use every
+   register: so mini-cc's `-O3` gives R9 and R10 to its allocator,
+   R26 and R27 on arm64. No C in ix declares an `extern register`.
+3. Calls of mini-ml's own assembly (the start object's `ml_modify`,
+   `ml_try`) keep R10 in place; a raise sets it from the handler's
+   record.
+4. C calling ML (`ml_callback`, a kernel's trap) loads R10 from
+   `ml_vsp` first.
+5. compat, 5c's code byte for byte, still never allocates R9 and R10,
+   5c's extern registers; nothing relies on that.
+
+Before 2026-10-29 the ML code never loaded R10 back after a call of
+C, and C left R9 and R10 alone only because 5c's rule reserves them:
+an assumption nothing declared (the author: "seems bad to leave this
+R10 implicit instead of enforced", then "What I want is clearer code,
+less hidden assumptions about register"). An `extern register`
+declaration, Plan 9's way, was the other design
+(docs/plans/plan_extern_register.md, postponed).
 
 No register is saved across a call by the one called (Plan 9's
 convention: the caller saves): a value live across a call is either
 in a slot for its whole life, or in a register stored to its slot
 where it is made and loaded after each call, whichever costs fewer
 instructions by the loops they are in (languages/c/ssa/Alloc.mli).
-On arm64 the allocator has R1-R15 and R19-R25, F1-F15 and F17-F23;
+On arm64 the allocator has R1-R15 and R19-R27, F1-F15 and F17-F23;
 R0 and R16 are the scratch. mini-ml's back end has its own: its
 values live on a value stack the collector scans
 (languages/ml/ssa/Alloc.mli).

@@ -19,8 +19,9 @@ type mach = {
   aapcs : bool;             (* C's arguments: gcc's, R0-R3 then 0(SP); else 5c's, R0 then w*(i+1)(SP) *)
 }
 
-(* (vsp, R10 on arm: one register for the whole run, across the C the
- * ML code calls, which never touches it; ssa's Emit says why) *)
+(* (vsp, R10 on arm: the value stack's top, handed to C in ml_vsp and
+ * taken back after each call of it, c_bl: the conventions between ML
+ * and C are listed in ssa's Emit) *)
 let arm = { arch = Arm; w = 4; mov = "MOVW"; nregs = 8; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; aapcs = false }
 let arm64 = { arch = Arm64; w = 8; mov = "MOV"; nregs = 15; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; aapcs = false }
 let gnu m = { m with aapcs = true }
@@ -98,6 +99,13 @@ let func m out (fn : func) =
     | Arm -> ins "CMP\t$0, R%d" r; ins "%s\t%s" (if nonzero then "BNE" else "BEQ") l
     | Arm64 -> ins "%s\tR%d, %s" (if nonzero then "CBNZ" else "CBZ") r l
   in
+  (* a call of C: the value stack's top handed over in ml_vsp, and
+   * taken back after, the C free to use its register (ssa's Emit) *)
+  let c_bl f =
+    ins "%s\tR%d, ml_vsp(SB)" mov vsp;
+    ins "BL\t%s(SB)" f;
+    ins "%s\tml_vsp(SB), R%d" mov vsp
+  in
   (* a call of C: its arguments from the slots, a..., R0 first *)
   let call_c f n =
     cargs := max !cargs n;
@@ -107,8 +115,7 @@ let func m out (fn : func) =
       else (get (spill_slot (!sp - k)) m.tmp; ins "%s\tR%d, %d(%s)" mov m.tmp (if m.aapcs then w * (k - 4) else w * (k + 1)) m.sp)
     done;
     sp := !sp - n;
-    ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-    ins "BL\t%s(SB)" f
+    c_bl f
   in
   (* a b by a op b in b's register *)
   let bin f = let a = !sp in decr sp; f a !sp in
@@ -238,8 +245,7 @@ let func m out (fn : func) =
         ins "%s\t$%d, R0" mov n;
         if m.aapcs then ins "%s\t$%d, R1" mov tag
         else (ins "%s\t$%d, R%d" mov tag m.tmp; ins "%s\tR%d, %d(%s)" mov m.tmp (2 * w) m.sp);
-        ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-        ins "BL\tml_alloc(SB)";
+        c_bl "ml_alloc";
         for k = 0 to n - 1 do get (spill_slot (!sp - k)) m.tmp; ins "%s\tR%d, %d(R0)" mov m.tmp (w * k) done;
         sp := !sp - n;
         reload ();

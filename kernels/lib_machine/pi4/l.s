@@ -377,8 +377,11 @@ TEXT kernel_fault+0(SB), $48
 // callee-saved registers (x19-x29 at 0, sp at 88, lr at 96). Here what
 // a switch must keep is the stack pointer, the link (where swtch
 // returns: where the other called it, or, the first time, runtime.c's
-// trampoline) and R26, the value stack's top in ML's code, which goes
-// through the C that called here untouched (x26's place: 56). Nothing
+// trampoline) and R26, the value stack's top in ML's code (x26's place:
+// 56). mini-ml's code also hands it to the C in ml_vsp and takes it
+// back after the C returns, k_swtch's ml_stack_switch giving ml_vsp the
+// resumed process's (the conventions: mini-ml's Emit): mini-ml's code
+// no longer needs it kept here; kept, it costs two words. Nothing
 // else: 7c's C keeps no register across a call, and ML's spills its own.
 TEXT swtch+0(SB), $0
 	MOV	to+8(FP), R1

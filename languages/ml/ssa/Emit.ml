@@ -23,15 +23,37 @@ type mach = {
   fscratch : int;           (* a third scratch one, beside F0 and F1 (round) *)
 }
 
-(* vsp, the value stack's top, is one register for the program's whole
- * run, R10 (R26 on arm64), across the C the ML code calls: before a
- * call ML stores it to ml_vsp (runtime.c's), for the collector, and
- * never loads it back after. Nothing declares it: it holds because C
- * leaves it alone, 5c's and mini-cc's code never allocating R9 and
- * R10, Plan 9's two extern registers (5c's txt.c; mini-cc's Gen and
- * ssa/'s Ssa_gen), and gcc's (-gas) saving R10 as a callee. tmp, R9,
- * is a temporary of a few instructions, never live across a call.
- * The kernels' swtch keeps R10 too (lib_machine's l.s).
+(* The conventions between the ML code and C, and what each assumes
+ * (simple's Gen follows the same; docs/manuals/m-ix.md's section 8):
+ *
+ * 1. vsp, the value stack's top, is a register while ML code runs:
+ *    R10 on arm, R26 on arm64. tmp (R9, R16) is a temporary of a few
+ *    instructions, never live across a call.
+ * 2. A call of C (c_bl) hands vsp over: stored to ml_vsp (runtime.c's)
+ *    before, loaded back after. While C runs, ml_vsp is the value
+ *    stack's top, for the collector and for the C that pushes or pops
+ *    ML values (arrays.c, gc.c's threads), and the C may use every
+ *    register: mini-cc's -O3 gives R9 and R10 to its allocator. The
+ *    calls of C: call_c's, ml_alloc's, C's math functions (FloatCall).
+ * 3. Calls of the start object's assembly (Gen.startup: ml_modify,
+ *    ml_try) and ML's own code keep vsp in its register: that code
+ *    is written to leave it. caml_array_bound_error, C, is called
+ *    without the hand-over: it only raises a block made at the start,
+ *    and a raise sets vsp from the handler's record (ml_raise).
+ * 4. C calling ML (ml_callback, a kernel's trap) loads vsp from
+ *    ml_vsp first; ml_start takes it in R0.
+ * 5. No register is saved by the one called (Plan 9's convention, C's
+ *    and ML's): an ML value is in no register across a call (Alloc's
+ *    safepoints), a double in no register across a call that may use
+ *    the floating-point ones (Alloc's clobbers).
+ * 6. mini-cc's compat back end (5c's code byte for byte) still never
+ *    allocates R9 and R10, 5c's extern registers; nothing relies on
+ *    it any more. gcc's C (-gas) saves R10 as a callee; the hand-over
+ *    is the same.
+ * old: (2) vsp stored to ml_vsp before a call of C, never loaded back,
+ *      C leaving R10 alone because 5c and mini-cc never allocate R9
+ *      and R10: an assumption nothing declared (the author: "document
+ *      clearly assumptions!", "and conventions")
  *
  * the values' registers: no value is in one across a call (Alloc's
  * safepoints), so an argument's register holds one between calls, a
@@ -258,12 +280,19 @@ let func m out (fn : func) (lf : L.func) =
     | Arm -> ins "CMP\t$0, R%d" r; ins "%s\t%s" (if nonzero then "BNE" else "BEQ") l
     | Arm64 -> ins "%s\tR%d, %s" (if nonzero then "CBNZ" else "CBZ") r l
   in
+  (* a call of C: the value stack's top handed over in ml_vsp, and
+   * taken back after, the C free to use its register (mini-cc's -O3
+   * does: R9 and R10 among its registers on arm) *)
+  let c_bl f =
+    ins "%s\tR%d, ml_vsp(SB)" mov vsp;
+    ins "BL\t%s(SB)" f;
+    ins "%s\tml_vsp(SB), R%d" mov vsp
+  in
   (* C's arguments: R0, then w*(i+1)(SP) (5c's and 7c's) *)
   let call_c f args =
     cargs := max !cargs (List.length args);
     List.iteri (fun k v -> if k = 0 then load v 0 else (let r = src v t in ins "%s\tR%d, %d(%s)" mov r (w * (k + 1)) m.sp)) args;
-    ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-    ins "BL\t%s(SB)" f
+    c_bl f
   in
   (* a op b into d, a (the stack's top) in ra, b in rb: simple's
    * sequences, operand for operand (CMP Rb, Ra is b - a), in three
@@ -441,6 +470,7 @@ let func m out (fn : func) (lf : L.func) =
         branch_zero true 0 skip;
         ins "%s\tR%d, R0" mov r;
         field ();
+        (* (the start object's assembly, not C: R10 kept) *)
         ins "BL\tml_modify(SB)";
         lab skip
   in
@@ -788,7 +818,7 @@ let func m out (fn : func) (lf : L.func) =
         cargs := max !cargs (8 * n / w);
         List.iteri (fun k x ->
           ins "%s\tF%d, %d(%s)" fmov (fsrc x 0) (w + (8 * k)) m.sp) xs;
-        ins "BL\t%s(SB)" f;
+        c_bl f;
         ffinish v 0
     | _ -> failwith (fn.name ^ ": ssa: a double's operation")
   in
@@ -967,8 +997,7 @@ let func m out (fn : func) (lf : L.func) =
           ins "%s\t$%d, R0" mov (List.length xs);
           ins "%s\t$%d, R%d" mov tag t;
           ins "%s\tR%d, %d(%s)" mov t (2 * w) m.sp;
-          ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-          ins "BL\tml_alloc(SB)";
+          c_bl "ml_alloc";
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
           lab ok;
           finish v 0
@@ -1000,8 +1029,7 @@ let func m out (fn : func) (lf : L.func) =
           ins "%s\t$%d, R0" mov (List.length xs);
           ins "%s\t$%d, R%d" mov tag t;
           ins "%s\tR%d, %d(%s)" mov t (2 * w) m.sp;
-          ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-          ins "BL\tml_alloc(SB)";
+          c_bl "ml_alloc";
           List.iteri (fun k x -> let r = src x t in ins "%s\tR%d, %d(R0)" mov r (w * k)) xs;
           finish v 0
       (* the untagged integers (Untag): tagged where read as a word; an
@@ -1092,8 +1120,7 @@ let func m out (fn : func) (lf : L.func) =
           ins "%s\t$%d, R0" mov float_words;
           ins "%s\t$%d, R%d" mov float_tag t;
           ins "%s\tR%d, %d(%s)" mov t (2 * w) m.sp;
-          ins "%s\tR%d, ml_vsp(SB)" mov vsp;
-          ins "BL\tml_alloc(SB)";
+          c_bl "ml_alloc";
           ins "%s\tF%d, 0(R0)" fmov (fsrc x 0);
           lab ok;
           finish v 0

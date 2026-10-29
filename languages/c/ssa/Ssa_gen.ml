@@ -16,33 +16,31 @@ type regs = {
   iregs : int list; fregs : int list; s1 : int; s2 : int; f1 : int; f2 : int
 }
 
-(* OPTIMIZATION (R8 the allocator's): on arm, 5c's registers are R0-R8
- * (R9 and R10 the external ones, R11 the linker's, then SB, SP, the
- * link and the PC), and R0 is the only scratch: R1-R8 Alloc's, eight.
- * Not R9 or R10, though no C of ix declares an extern register: R10 is
- * mini-ml's value stack's top, a register for a program's whole run,
- * which the ML code does not load back after calling C (mini-ml's
- * Emit; runtime.c's ml_vsp): C that changed it would lose the ML
- * caller's values. R9 is mini-ml's temporary, by its code only between
- * calls as far as read, but nothing says so; Plan 9's rule, both kept,
- * is the one place that does. Nor R26 on arm64, the value stack's
- * there.
+(* OPTIMIZATION (the allocator's registers): on arm, 5c's registers are
+ * R0-R8 (R9 and R10 its extern ones, R11 the linker's, then SB, SP,
+ * the link and the PC), and R0 is the only scratch: R1-R10 Alloc's,
+ * ten. R9 and R10 too: no C of ix declares an extern register, and
+ * mini-ml's code, whose value stack's top is in R10, hands it to C in
+ * ml_vsp and takes it back after (mini-ml's Emit), so C may use it as
+ * any other; arm64's R26 (the value stack's there) and R27 the same.
  * A function with an instruction that needs a second scratch (two
- * operands in memory, a cycle of phis' moves) is made again with
- * seven, R8 that scratch.
- * old: R1-R7 always, R0 and R8 the scratch *)
+ * operands in memory, a cycle of phis' moves) is made again without
+ * R8, that scratch.
+ * old: R1-R7 always, R0 and R8 the scratch; then R1-R8, R9 and R10
+ *      left to mini-ml's value stack *)
 exception No_scratch
 
 let regs ~eight =
   if G.a64 () then
-    { iregs = List.init 15 (fun i -> i + 1) @ [ 19; 20; 21; 22; 23; 24; 25 ];
+    { iregs =
+        List.init 15 (fun i -> i + 1) @ [ 19; 20; 21; 22; 23; 24; 25; 26; 27 ];
       fregs = List.init 15 (fun i -> i + 1) @ [ 17; 18; 19; 20; 21; 22; 23 ];
       s1 = 0; s2 = 16; f1 = 0; f2 = 16 }
   else if eight then
-    { iregs = [ 1; 2; 3; 4; 5; 6; 7; 8 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
+    { iregs = [ 1; 2; 3; 4; 5; 6; 7; 8; 9; 10 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
       s1 = 0; s2 = -1; f1 = 0; f2 = 7 }
   else
-    { iregs = [ 1; 2; 3; 4; 5; 6; 7 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
+    { iregs = [ 1; 2; 3; 4; 5; 6; 7; 9; 10 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
       s1 = 0; s2 = 8; f1 = 0; f2 = 7 }
 
 (* where a jump goes: a block, or an edge's moves of its own *)

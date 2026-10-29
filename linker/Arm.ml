@@ -289,7 +289,7 @@ let ends (p : prog) = p.op = B || (p.op = Ins Ret && not (List.exists (fun s -> 
 let mem_off b off = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
 let mem b = mem_off b 0
 let imm n = A.Imm (Int64.of_int n)
-let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false }
+let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false; autos = [] }
 let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.args <- args; p.target <- None
 
 let division (p : prog) = match p.op with Ins (Div _ | Mod _) -> true | _ -> false
@@ -721,7 +721,8 @@ let layout (t : op Program.t) =
       pool := [];
       pool_start := 0;
       if skip then begin
-        let b = prog_like p B [] [ A.Target 0 ] in
+        (* (line 0, the pool's words too: 5l's prg(), for the symbol table's lines) *)
+        let b = { (prog_like p B [] [ A.Target 0 ]) with where = (fst p.where, 0) } in
         b.target <- (match rest with q :: _ -> Some q | [] -> Some b);
         if rest = [] then b.target <- Some b;
         b.args <- [ A.Target 0 ];
@@ -744,7 +745,7 @@ let layout (t : op Program.t) =
     match List.assoc_opt key !pool with
     | Some w -> p.target <- Some w
     | None ->
-        let w = prog_like p (Ins Word) [] [ fst key ] in
+        let w = { (prog_like p (Ins Word) [] [ fst key ]) with where = (fst p.where, 0) } in
         if !pool = [] then pool_start := p.pc;
         pool := (key, w) :: !pool;
         p.target <- Some w

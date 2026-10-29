@@ -157,7 +157,12 @@ type item =
   | Data of name * int64 * int * operand (* offset, width, value *)
   | Ins of instr
 
-type obj = { arch : arch; file : Fpath.t; items : (item * int) array (* and its line *) }
+(* the history (5a's AHISTORY): where each file starts, a global line
+ * (an item's line, counted over the preprocessed text), and where it
+ * ends (None), a #include's inside its includer's; what the linker's
+ * symbol table names an instruction's file and line by *)
+type obj = { arch : arch; file : Fpath.t; items : (item * int) array (* and its line *);
+             history : (string option * int) list }
 
 (* the conditions both machines test, as 5a and 7a name them (CS and
  * CC are HS and LO); shared by the assembler, the linkers and the
@@ -188,18 +193,39 @@ let cond_of_string =
  * 5: an operand may be a system register (Spr) *)
 let version = 5
 
-(* the files through the capabilities; No_sharing: an object's bytes
- * its value's alone, not which of its parts are one block in memory,
- * which depends on the compiler that built the tool (mini-cc by OCaml
- * and by mini-ml: the same code, 5 of libc's objects not the same
- * bytes, plan_self_hosting.md), for 5% more
+(* an object as version 5 has it: [obj] but its history, which follows
+ * it in the file as a second value (2026-10-29), so that an object
+ * made before is read (with no history) and an older linker reads a
+ * new one (the bytes after the first value not looked at): the tools
+ * and the objects of a checkout's _mk change at different times *)
+type stored = { s_arch : arch; s_file : Fpath.t; s_items : (item * int) array }
+
+(* No_sharing: an object's bytes its value's alone, not which of its
+ * parts are one block in memory, which depends on the compiler that
+ * built the tool (mini-cc by OCaml and by mini-ml: the same code, 5 of
+ * libc's objects not the same bytes, plan_self_hosting.md), for 5% more *)
+let stored (o : obj) = { s_arch = o.arch; s_file = o.file; s_items = o.items }
+let history_bytes (o : obj) = if o.history = [] then "" else Marshal.to_string o.history [ Marshal.No_sharing ]
+
+(* the value at [pos], then the history if there are bytes after it *)
+let with_history (b : string) pos (st : stored) : obj =
+  let next = pos + Marshal.total_size (Bytes.unsafe_of_string b) pos in
+  let history = if next < String.length b then (Marshal.from_string b next : (string option * int) list) else [] in
+  { arch = st.s_arch; file = st.s_file; items = st.s_items; history }
+
+(* a library's member (Link): the object without the version *)
+let to_bytes o = Marshal.to_string (stored o) [ Marshal.No_sharing ] ^ history_bytes o
+let of_bytes b : obj = with_history b 0 (Marshal.from_string b 0)
+
+(* the files through the capabilities
  * old: Marshal.to_string (version, o) [] *)
 let save caps file (o : obj) =
-  FS.write caps file (Marshal.to_string (version, o) [ Marshal.No_sharing ])
+  FS.write caps file (Marshal.to_string (version, stored o) [ Marshal.No_sharing ] ^ history_bytes o)
 
 let load caps file : obj =
-  let v, (o : obj) = Marshal.from_string (FS.read caps file) 0 in
+  let b = FS.read caps file in
+  let v, (st : stored) = Marshal.from_string b 0 in
   if v <> version then failwith (Fpath.to_string file ^ ": an object of another version");
-  o
+  with_history b 0 st
 
 (* (an item as text, the linker's messages and listing: Show_asm) *)

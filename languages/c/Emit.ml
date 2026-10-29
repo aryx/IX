@@ -296,4 +296,5 @@ let obj file : A.obj =
       | _ -> A.Ins { op = q.as_; suffixes = q.cond; args = List.map operand args }
     in
     item, 0) ps in
-  { A.arch = (if arm () then A.Arm else A.Arm64); file; items }
+  (* (no lines yet, nor 5c's history of the #includes: plan_debugger.md's stage 1) *)
+  { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = [] }

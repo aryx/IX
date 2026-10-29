@@ -157,6 +157,10 @@ val resolve : 'm t -> unit
  * goken's *)
 val layout_data : 'm t -> unit
 
+(* the bucket of a name and version in 5l's (Arm) or 7l's hash table:
+ * the order of the data's layout, and of the symbol table (Symtab) *)
+val bucket : Asm.arch -> string -> int -> int
+
 (* the data segment's bytes (5l's datblk; xix's Datagen) *)
 val data_bytes : 'm t -> Bytes.t
 

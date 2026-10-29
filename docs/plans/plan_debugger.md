@@ -132,6 +132,7 @@ what the emulators make possible (10, 11), the playground's (12).
 | 6 | **The kernel's own panic**: `panic:` and a guard's message (`Main.guard`) with the kernel's stack walked; its names from `kernel.elf` on the host first (stage 2's tool), in the kernel later if wanted | who debugs mini-9pi | |
 | 7 | **The kernel's support, Debugger.nw's chapter**: `#p`'s `mem` and `regs` read and written, `text` the image, `ctl`'s `stop`, `start`, `startstop`, `waitstop`, `hang`, `kill`; the breakpoint's instruction (a trap the kernel turns into a stop); a process that died kept Broken to be looked at (a limit on how many). Then `syscall` and ctl's `startsyscall`: **mini-ratrace**, t-ix's `trace`'s twin, as small, the first user and the test of the device | mini-acid; a person tracing a program's calls | |
 | 8 | **mini-acid**: acid's language (lists, strings, integers, its C-like statements and its `defn`), its builtins (`print`, `mem`, `map`, `symbols`, `new`, `start`, `stop`, `bpset` underneath), its library in acid (`port`: `stk()`, `lstk()`, `bpset()`, `cont()`, `step()`; `arm` for the registers), over stage 1's table and stage 7's `#p`. Principia's acid run on mini-9pi on the same program the reference: the same answers (decision 11) | the author, at mini-9pi's console, in a window of rio | |
+| 8a | **mini-acid on this machine's programs**, not only mini-9pi's (the author, 2026-10-29: "It would be great if the debugger mini-acid could also debug binaries for this machine; the one produced by mini-c and mini-ml -a, with extra info, but maybe regular gcc binaries too with DWARF [...] plan9port already ported acid to also work on macos and Linux thx to an extended libmach. We could maybe imitate that too"). A third side of decision 12's interface: **Linux by ptrace**, as plan9port's libmach (`Linux.c`: `PTRACE_ATTACH`, the memory and registers by ptrace, `/proc` for a process's status), arm64 first (this machine), the registers by `PTRACE_GETREGSET`. The names: mini-ld -H7's ELF symbol table (stage 1's ELF part), then **DWARF read** for gcc's and clang's programs (plan9port's `dwarf*.c` and `symdwarf.c`: `.debug_line` for the lines, `.debug_info` for the functions, their variables and types, `.debug_frame` for the walk): what a debugger of today reads, beside Plan 9's two tables, for its teaching value. **macOS**: Mach-O read (plan9port's `macho.c`, `symmacho.c`), its processes later: plan9port's `Darwin.c` is `nosys.c`, no process control (macOS asks a signed debugger for `task_for_pid`) | the author, debugging ix's programs and gcc's on Linux | |
 | 9 | **OCaml's values in mini-acid**: as `5c -a` writes acid's definitions of a C program's structs, mini-ml writes those of a unit's types (`mini-ml -a`): a constructor's name by its tag, a record's fields, a list as a list. A value printed by its type, where a debugger of mini-ml's code would print words; the same descriptions read by stage 5's runtime | mini-acid; stage 5 | |
 | 10 | **Replay, and going back** (rr, Mozilla 2014; Pernosco; and before them ocamldebug's checkpoints, Vouillon, 1990s): mini-5i records what comes from outside (each system call's results, the signals' instants), and plays a run again exactly; snapshots along the way, and a run played to an instant from the nearest. Then going back: `reverse-continue` to the last write of an address (a watchpoint over the run played again), which is the question of the survey's second line: who wrote the bad value. mini-acid drives it by builtins | whoever debugs a crash whose cause was earlier: the collector's, the kernel's | |
 | 11 | **The board's run played again**: the same in mini-qemu, the whole system (its interrupts' instants, the keyboard's, the card's, the network's bytes recorded), so a kernel's panic is replayed and gone back from; and a gdb remote stub, QEMU's `-s`, for the host's gdb on mini-9pi's kernel meanwhile | who debugs mini-9pi | |
@@ -236,11 +237,16 @@ two programs.
 12. **Where the process lives while mini-acid is written.** Acid's
    core asks of a process: read and write its memory and registers,
    start, stop, step. Behind one interface (libmach's `Map` and its
-   procedures), two sides: `#p` on Plan 9, and mini-5i on Linux (a
-   debugging protocol of its own, or mini-5i and mini-acid linked in
-   one process for the tests). Proposed: both, the second first, so
-   that mini-acid is written and tested on the host before the kernel
-   has stage 7; and the same side serves stage 10's replay.
+   procedures), three sides: `#p` on Plan 9, mini-5i (a debugging
+   protocol of its own, or mini-5i and mini-acid linked in one process
+   for the tests), and ptrace on Linux (stage 8a). Proposed: mini-5i
+   first, so that mini-acid is written and tested on the host before
+   the kernel has stage 7, and the same side serves stage 10's replay;
+   ptrace then (a few calls, but C: a stub of lib_core's behind a
+   capability, Cap.ptrace, in OCaml's runtime and mini-ml's). What
+   plan9port has and not (its sources, 2026-10-29): Linux, FreeBSD and
+   others by ptrace, macOS none; its machines 386, amd64 and power, no
+   arm: the arm and arm64 parts are principia's libmach's (5db, 7db).
 13. **What replay records, and its cost.** mini-5i is deterministic but
    for its system calls (their results, the bytes they read), its
    signals and its time: a log of those is a run. rr's design, without
@@ -282,7 +288,8 @@ two programs.
 
 ## Out of scope
 
-- DWARF: ELF executables get ELF's symbol table, no more.
+- DWARF written: mini-ld's ELF executables get ELF's symbol table, no
+  more. DWARF read is in (stage 8a), gcc's programs debugged.
 - Source-level stepping in OCaml at first: stage 8 steps by
   instructions and lines, as acid does in C; a step by expression is
   another plan.
@@ -337,3 +344,28 @@ the profiler's stage 5 with stage 7. What `#p` serves today looked at
 (above). Found the same day, writing mini-tar's differential test:
 mini-5i faulted on a buffer across a Plan 9 program's bss and heap
 (`docs/plans/bugs/ix.md`), fixed. Next: stage 1.
+
+2026-10-29, later: stage 1, its first part, for arm. mini-ld -g writes
+Plan 9's symbol table and pc/line table in an a.out (-m 5 -H2, new
+module Symtab): etext, the data, the bss and the files' components in
+5l's hash order, each function (L for a leaf) with its `.frame`, its
+named parameters and locals, the history of its object before its
+first function; the pc/line table as 5l's asmlc (a literal pool's
+words and the branch around it line 0, as 5l's fresh progs). The
+objects carry their history (Asm.obj's `history`), stored after the
+object as a second value, so the objects and libraries of a checkout
+made before are read as they were (no history), and an older linker
+reads the new ones. mini-asm writes its file's history with the name
+as given, as goken's 5a -r: an object the same bytes in any directory
+(make self compares the card's with Linux's). Checked:
+linker/tests/symtab.sh, the 43 arm programs of golden/ as a.outs with
+their tables, the same bytes as goken's 5a -r and 5l -H2
+(golden_symtab.txt, in make test; `live` against goken now). Not yet:
+-g is asked for (decision 1 open: mini-tar's a.out is 38% larger with
+its tables, 100 KB of symbols and 112 KB of lines, the lines mostly
+the assembly's); mini-ml's objects have no history (decision 3: their
+lines are the assembly's; Lower drops the AST's `eloc`: stage 1b, the
+`.ml`'s lines through to the items); mini-cc's objects have no lines
+(5c's history of the #includes, and its global lines); mini-asm's
+#include (5a's push and pop around it); arm64 (7l's table) and ELF's
+symbol table (-H7); stage 2's mini-nm, which reads them back.

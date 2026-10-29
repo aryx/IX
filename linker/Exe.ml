@@ -6,7 +6,7 @@
 type format = Elf | Plan9 | Macho | Raw
 
 type image = { text : Bytes.t; data : Bytes.t; bss : int; text_start : int; data_start : int; entry : int;
-               pointers : int list; round : int }
+               pointers : int list; round : int; syms : string; lines : string }
 
 let headr = function
   | Raw, _ -> 0
@@ -83,8 +83,9 @@ let plan9 arch (i : image) =
   let magic, entry, extra = match arch with
     | Asm.Arm -> 0x647, i.entry, []
     | Asm.Arm64 -> 0x8000 lor ((4 * 28 * 28) + 7), i.entry land 0x0fffffff, [ Q i.entry ] in
-  let header = [ L magic; L (Bytes.length i.text); L (Bytes.length i.data); L i.bss; L 0; L entry; L 0; L 0 ] in
-  Bytes.concat Bytes.empty [ Bytes.of_string (be (header @ extra)); i.text; i.data ]
+  let header = [ L magic; L (Bytes.length i.text); L (Bytes.length i.data); L i.bss; L (String.length i.syms); L entry; L 0;
+                 L (String.length i.lines) ] in
+  Bytes.concat Bytes.empty [ Bytes.of_string (be (header @ extra)); i.text; i.data; Bytes.of_string i.syms; Bytes.of_string i.lines ]
 
 (* Mach-O for arm64 macOS (goken's liblk/macho.c): the header and load
  * commands in the first 3 KB, which __TEXT maps with the text; then

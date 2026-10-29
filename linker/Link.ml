@@ -37,7 +37,7 @@ let rnd v r = let v = v + r - 1 in let c = v mod r in v - (if c < 0 then c + r e
 
 let create arch ~text_start =
   { arch; syms = Hashtbl.create 1024; ncreated = 0; progs = []; datas = [];
-    text_start; data_start = 0; text_size = 0; data_size = 0; bss_size = 0; data_round = 4096; pie = false }
+    text_start; data_start = 0; text_size = 0; data_size = 0; bss_size = 0; data_round = 4096; pie = false; nfiles = 0 }
 
 let lookup t name version =
   match Hashtbl.find_opt t.syms (name, version) with
@@ -70,10 +70,22 @@ let weak = 32
 let add_object t ~decode:decode_machine version (o : Asm.obj) =
   let file = Fpath.to_string o.file in
   if o.arch <> t.arch then error "%s: an object for another machine" file;
+  (* the history's paths first, as 5a writes them before the code: each
+   * component a File symbol, numbered when it is new; a path is its
+   * components' numbers (5l's ldobj's N_FILE, addhist) *)
+  let history = List.map (fun (path, line) ->
+    let comps = match path with
+      | None -> []
+      | Some p ->
+          (if p <> "" && p.[0] = '/' then [ "/" ] else []) @ List.filter (( <> ) "") (String.split_on_char '/' p) in
+    Hist (List.map (fun c ->
+      let s = lookup t ("<" ^ c) 0 in
+      if s.kind <> File then (s.kind <- File; t.nfiles <- t.nfiles + 1; s.value <- t.nfiles);
+      s.value) comps, line)) o.history in
   let items = o.items in
   (* the prog of each item that has a pc; the targets point at items *)
   let progs = Array.map (fun (it, line) ->
-    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = (file, line); frame = 0; leaf = false } in
+    let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = (file, line); frame = 0; leaf = false; autos = [] } in
     match (it : Asm.item) with
     | Ins i -> (
         match decode decode_machine i.op with
@@ -108,6 +120,25 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
     match p with
     | Some p -> p.args <- List.map (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()); Asm.Target j | a -> a) p.args
     | None -> ignore i) progs;
+  (* a function's named parameters and locals, each once at its lowest
+   * offset, the last met first (5l's inopd); the history before them
+   * in the object's first function (histtoauto) *)
+  let cur = ref None and first = ref None in
+  Array.iter (function
+    | Some ({ op = Func; _ } as p) -> cur := Some p; if !first = None then first := Some p
+    | Some p ->
+        Option.iter (fun (f : _ prog) ->
+          List.iter (function
+            | Asm.Mem { base = (FP | SP) as b; name = Some n; off; _ } | Asm.Addr { base = (FP | SP) as b; name = Some n; off; _ } ->
+                let off = Int64.to_int off in
+                let same = function Param (m, _) -> b = FP && m = n.sym | Local (m, _) -> b = SP && m = n.sym | Hist _ -> false in
+                if List.exists same f.autos then
+                  f.autos <- List.map (function Param (m, o) when same (Param (m, o)) -> Param (m, min o off)
+                                              | Local (m, o) when same (Local (m, o)) -> Local (m, min o off) | a -> a) f.autos
+                else f.autos <- (if b = FP then Param (n.sym, off) else Local (n.sym, off)) :: f.autos
+            | _ -> ()) p.args) !cur
+    | None -> ()) progs;
+  Option.iter (fun (f : _ prog) -> f.autos <- history @ f.autos) !first;
   (* opti: while the objects are loaded t.progs is the last instruction
    * first, and an object's are put before it; load turns it over at
    * its end.
@@ -151,7 +182,7 @@ let lib_version = 4
 
 (* (No_sharing: as Asm.save) *)
 let member_of (o : Asm.obj) : member =
-  (Fpath.to_string o.file, Marshal.to_string o [ Marshal.No_sharing ], defined_names o)
+  (Fpath.to_string o.file, Asm.to_bytes o, defined_names o)
 let member_file ((file, _, _) : member) = file
 
 (* the index, as ar: a text name defined again by a later object is
@@ -172,7 +203,7 @@ let write_library caps out (l : member list) = FS.write caps out (Marshal.to_str
 
 let read_members caps f = index (read_library caps f)
 
-let member (bytes : string) : Asm.obj = Marshal.from_string bytes 0
+let member (bytes : string) : Asm.obj = Asm.of_bytes bytes
 
 (* a name some object asked for, and none defined yet *)
 let wanted t n =
@@ -357,7 +388,7 @@ let address t version (m : Asm.mem) =
        | Text -> s.value + Int64.to_int m.off
        | Data | Bss -> s.value + t.data_start + Int64.to_int m.off
        | Undefined when s.weak -> 0
-       | Undefined -> error "undefined: %s" n.sym)
+       | Undefined | File -> error "undefined: %s" n.sym)
   | None -> Int64.to_int m.off
 
 let data_bytes t =

@@ -15,12 +15,13 @@
  *     4   text    its size                     text: read, execute
  *     8   data    its size                     ..........
  *     12  bss     its size             the next page
- *     16  syms    0: no symbol table           the data: read, write
+ *     16  syms    the symbols' bytes           the data: read, write
  *     20  entry   where to start               the bss: zeros
  *     24  spsz    0                            (the heap grows here)
- *     28  pcsz    0                            ..........
+ *     28  pcsz    the pc/line table's bytes    ..........
  *     32  the text                     at the top, the stack
  *         the data, right after
+ *         the symbols, the pc/line table (Symtab; not loaded by exec)
  *
  * The text is INITTEXT + 32 = 0x1020 for the linker, because exec
  * maps the file from its first byte, header included, at 0x1000: no
@@ -82,7 +83,10 @@ type format = Elf | Plan9 | Macho | Raw
 
 type image = { text : Bytes.t; data : Bytes.t; bss : int; text_start : int; data_start : int; entry : int;
                pointers : int list;   (* the data's pointers, for Mach-O's rebase *)
-               round : int }          (* INITRND *)
+               round : int;           (* INITRND *)
+               (* Plan 9's symbol table and pc/line table (Symtab), after
+                * the data; "" for none (-s) *)
+               syms : string; lines : string }
 
 (* the header's size, before the text (5l's HEADR) *)
 val headr : format * Asm.arch -> int

@@ -25,13 +25,14 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 let print = Console.print and eprint = Console.eprint
 
 (* -h: how, by examples, each one as it runs *)
-let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-s] [-E entry] [-o out] files...
+let help = {|usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...
 5l and 7l's twin (-m 5: arm, the default; 7: arm64): mini-asm's and mini-cc's
 objects, and libraries, linked into an executable, a.out by default (-o:
 another), goken's bytes: an ELF (-H7, the default), Plan 9's a.out (-H2), Mach-O (-H6), or no
 header (-H0, a kernel's image: its text at -T's address, 0x80000 on the Pi 4, its
-data's rounded to -R's n bytes, 4). -s is 5l's and taken: no symbol table is
-written anyway. The entry is _main (-E: another); -v lists each instruction, its address and word;
+data's rounded to -R's n bytes, 4). -g writes Plan 9's symbol and pc/line tables
+in an a.out (-m 5 -H2), 5l's without -s; -s (5l's) leaves them out, as without
+-g for now. The entry is _main (-E: another); -v lists each instruction, its address and word;
 -map writes out.map, each function's address and name (scripts/where.sh);
 -nofollow lays the code in the objects' order, not along its flow as 5l: the
 same behavior, not goken's bytes. With goken's hello (tests/s/hello_arch/):
@@ -63,6 +64,10 @@ let verbose = ref false
  * uncaught exception: its exceptions.c); not 5l's, which writes a
  * symbol table in the program *)
 let map = ref false
+(* -g: the symbol table and the pc/line table, in a Plan 9 a.out
+ * (Symtab), 5l's without -s; asked for until their cost is measured
+ * (plan_debugger.md, decision 1) *)
+let symbols = ref false
 
 let link (m : _ machine) caps arch format entry out files =
   let t = Link.create arch ~text_start:0 in
@@ -108,9 +113,11 @@ let link (m : _ machine) caps arch format entry out files =
     FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)
   end;
   let data = Link.data_bytes t in
+  (* (arm's only: 7l's for arm64 not compared yet) *)
+  let syms, lines = if !symbols && format = Exe.Plan9 && arch = Asm.Arm then Symtab.symbols t, Symtab.lines t else "", "" in
   Exe.write caps format arch out
     { text; data; bss = t.bss_size; text_start = t.text_start; data_start = t.data_start; entry = Link.entry t entry;
-      pointers = Link.pointers t; round = t.data_round }
+      pointers = Link.pointers t; round = t.data_round; syms; lines }
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and format = ref Exe.Elf and entry = ref "_main" and out = ref "a.out"
@@ -127,7 +134,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     | "-R" :: n :: rest -> round := int_of_string n; args rest
     | "-E" :: e :: rest -> entry := e; args rest
     | "-o" :: o :: rest -> out := o; args rest
-    | "-s" :: rest -> args rest
+    | "-s" :: rest -> symbols := false; args rest
+    | "-g" :: rest -> symbols := true; args rest
     | "-v" :: rest -> verbose := true; args rest
     | "-map" :: rest -> map := true; args rest
     | "-nofollow" :: rest -> follow := false; args rest
@@ -138,7 +146,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = List.rev !files in
   match files with
   | _ when List.mem "-h" files || List.mem "--help" files -> print caps help; 0
-  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
+  | [] -> eprint caps "usage: mini-ld [-m 5|7] [-H2|-H6|-H7|-H0 -T address [-R n]] [-nofollow] [-v] [-map] [-g|-s] [-E entry] [-o out] files...   (-h: how)\n"; 1
   | _ -> (
       try
         let path s = match FS.path s with Ok p -> p | Error m -> failwith m in

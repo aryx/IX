@@ -10,6 +10,7 @@ ld – the linker, for arm and arm64
 [ **-nofollow** ]
 [ **-v** ]
 [ **-map** ]
+[ **-g** | **-s** ]
 [ **-E** *entry* ]
 [ **-o** *out* ]
 *file* ...
@@ -42,8 +43,14 @@ the library that it uses.
 :    No header: a kernel's image, its text at the address of **-T**,
      its data's rounded to **-R**'s *n* bytes (4).
 
+**-g**
+:    Plan 9's symbol table and pc/line table in an a.out for arm
+     (**-H2**): the names of the functions and data, the files' paths
+     and each instruction's line, what a debugger or a trace names an
+     address by. *5l* writes them unless **-s**.
+
 **-s**
-:    Taken, as *5l*'s: no table of symbols is written anyway.
+:    The tables left out: without **-g**, as now by default.
 
 **-E** *entry*
 :    The program starts at *entry*, and not at `_main`.

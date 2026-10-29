@@ -305,7 +305,7 @@ let ends (p : prog) = match p.op with B | Ins (Ret | Return) -> true | _ -> fals
 let mem_off b off = A.Mem { base = A.R b; name = None; off = Int64.of_int off; index = None }
 let mem b = mem_off b 0
 let imm n = A.Imm (Int64.of_int n)
-let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false }
+let prog_like (p : prog) op suffixes args = { p with op; suffixes; args; target = None; frame = 0; leaf = false; autos = [] }
 let become (p : prog) op suffixes args = p.op <- op; p.suffixes <- suffixes; p.args <- args; p.target <- None
 
 (* the frame: 16-aligned, with R30 at its bottom, pushed by a

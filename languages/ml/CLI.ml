@@ -254,8 +254,11 @@ let gas = ref false
 
 let output (caps : < caps; .. >) mach ~listing ~out ~file text =
   if listing then print caps text
-  else if !gas then FS.write caps out (Gas.obj (Parser_asm.parse caps (Gen.arch mach) file text))
-  else Asm.save caps out (Parser_asm.parse caps (Gen.arch mach) file text)
+  else
+    (* no history: the items' lines are the assembly's, not the .ml's
+     * (plan_debugger.md, decision 3) *)
+    let obj = { (Parser_asm.parse caps (Gen.arch mach) file text) with history = [] } in
+    if !gas then FS.write caps out (Gas.obj obj) else Asm.save caps out obj
 
 (* -depend's way when a unit's names do not resolve: those it names
  * from its tokens, as ocamldep, a capitalized name before a dot

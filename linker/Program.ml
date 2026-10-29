@@ -21,7 +21,10 @@
  * looking. So Link and Follow are written once, for an ['m] they
  * never inspect, and the type checker says so. *)
 
-type kind = Undefined | Text | Data | Bss
+(* File: a component of a file's path, named "<" and it, numbered in
+ * the order met (5l's SFILE): what the symbol table's histories say a
+ * path by *)
+type kind = Undefined | Text | Data | Bss | File
 
 (* a symbol: a name and a version (0, or its object's for a name<>) *)
 type sym = {
@@ -50,6 +53,12 @@ type 'm op =
   | Bcase
   | Ins of 'm
 
+(* what a TEXT says of its function in the symbol table (5l's autom):
+ * a path of its object's history, the files' numbers (none: a file's
+ * end) and the global line there; a parameter, n+4(FP), and a local,
+ * n-8(SP), by their offsets *)
+type auto = Hist of int list * int | Param of string * int | Local of string * int
+
 (* an instruction of the program, with what linking adds to it
  * (5l's Prog, xix's Types.node) *)
 type 'm prog = {
@@ -62,6 +71,7 @@ type 'm prog = {
   where : string * int;           (* its file and line *)
   mutable frame : int;            (* TEXT: the frame size, as written; the machine rounds it *)
   mutable leaf : bool;            (* TEXT: calls nothing *)
+  mutable autos : auto list;      (* TEXT: its history (the object's first), parameters and locals *)
 }
 
 (* a DATA: a symbol, an offset, a width, a value *)
@@ -80,4 +90,5 @@ type 'm t = {
   mutable bss_size : int;
   mutable data_round : int;       (* INITRND: the data's start is rounded to it *)
   mutable pie : bool;             (* position independent (Mach-O): no absolute address in the code *)
+  mutable nfiles : int;           (* the File symbols so far *)
 }

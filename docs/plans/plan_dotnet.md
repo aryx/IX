@@ -1,28 +1,66 @@
-# Plan: .NET in ix: mini-dotnet, a runtime for the assemblies Microsoft's compiler writes, TinyDotnet.ml, and then mini-csc (`languages/dotnet/`, `tiny/TinyDotnet.ml`)
+# Plan: .NET in ix: mini-dotnet, a runtime for the assemblies Microsoft's compiler writes, its library over lib_core, two compilers to it (mini-tiger, a reduced mini-csc), and its JIT (`languages/dotnet/`, `languages/tiger/`)
 
 The author (2026-10-12): "how much would would be a mini-dotnet?
 Mostly for its teaching aspect, so people can learn what is the
 essence of dotnet"; then: "let's make a plan document for it
 (including the TinyDotnet.ml too)".
 
-The short answer: **about 4,250 lines of .ml for the runtime, about
-900 for TinyDotnet.ml, about 4,400 more for a C# compiler of its
-own**, in that order. The runtime (mini-dotnet) reads the `.dll` that
-Microsoft's `csc` writes and runs it, in OCaml, the heap OCaml's: what
-it prints is checked against what Microsoft's `dotnet` prints for the
-same file. The lines are estimates, from the neighbours' sizes
-(mini-smalltalk 5,568 lines of .ml, mini-pascal 1,952, TinyML 1,659);
-what the estimates stand on is counted: ten programs written for
-this, compiled, and their assemblies read (the survey, below).
+Revised (2026-10-29), the author: "I'm not a big fan of C# but one
+thing we could do is have a mini-C# really reduced, and also to have
+a mini-tiger (see ~/github/fork-tiger) that targets dotnet instead of
+currently c--. Also another thing of great value will be the JIT as
+we don't have one yet. [...] we can't emulate the whole dotnet
+libraries, but ideally we can reuse a lot lib_core/ and just have an
+adapter for dotnet for many of its libs [...] ideally the Jitted code
+can call those adapted native compiled ocaml libs"; "I don't think we
+need a TinyDotnet"; "we can copy fork-tiger or just reimplement it
+from scratch using fork-tiger (and other sources) for inspiration.
+let's keep the JIT in the same plan document"; "that way we would
+have in languages/ a good coverage of compiler techniques".
+
+The short answer: **about 4,250 lines of .ml for the runtime (its
+verifier in it), 700 for the assembly's writer, 1,600 for mini-tiger,
+2,200 for a reduced mini-csc, 1,700 for the JIT**, in about that
+order. The runtime (mini-dotnet) reads the `.dll` that Microsoft's
+`csc` writes and runs it, in OCaml, the heap OCaml's: what it prints
+is checked against what Microsoft's `dotnet` prints for the same
+file. The lines are estimates, from the neighbours' sizes
+(mini-smalltalk 5,568 lines of .ml, mini-pascal 1,952, TinyML 1,659,
+fork-tiger's front end 2,725); what the estimates stand on is
+counted: ten programs written for this, compiled, and their
+assemblies read (the survey, below).
 
 What decides the plan's shape is one number of that survey:
 **Microsoft's library cannot be run**. `System.Private.CoreLib.dll`
 is 2,466 types, 33,768 methods and 1.3 MB of IL, and the ten programs
-ask 47 members of it. So the library is ix's own: those members first
-as OCaml functions, later as C# compiled by mini-csc.
+ask 47 members of it. So the library is ix's own: adapters over
+lib_core, OCaml compiled to the machine, that the interpreter and the
+JIT's code both call.
 
 **Status: plan written, nothing built** but the survey
 (`languages/dotnet/survey/`).
+
+## Its place in `languages/`
+
+Each language there is also a technique of implementing one, and
+.NET with Tiger brings the one missing: **the JIT**.
+
+| folder | the technique |
+|---|---|
+| `c/` | a classic compiler, to the machine's code (Plan 9's 5c, 7c) |
+| `pascal/` | one pass to a portable code, P-code, and its machine |
+| `smalltalk/` | a bytecode VM with its image (the Blue Book) |
+| `scheme/` | abstract machines: CESK, Landin's SECD |
+| `prolog/` | Warren's machine (the WAM) |
+| `forth/` | threaded code |
+| `datalog/` | rules run bottom up to their fixpoint |
+| `ml/` | a functional language, native: closures, a GC, SSA |
+| `dotnet/`, `tiger/` | **a typed, self-describing VM; a language put on a machine that was not made for it; a verifier; a JIT** |
+
+The third line is P-code's, the last is its sequel: a portable code
+again, but typed and kept with its metadata, so that a pass can know
+each stack slot's type and compile the method when it is first
+called.
 
 ## What .NET is, for a reader
 
@@ -41,7 +79,9 @@ and what the programs of the survey were written to show.
 2. **One machine for several languages**, where the JVM was Java's:
    the Common Type System has what C#, Visual Basic, F# and C++ ask
    together (unsigned integers, structs, pointers, tail calls), and
-   the rules (the CLS) of what one language may show another.
+   the rules (the CLS) of what one language may show another. Here,
+   Tiger shows it: its nested functions are not the machine's, and
+   become classes.
 3. **The instructions are typed by what is on the stack**: `add`, not
    the JVM's `iadd` and `dadd`. So the runtime must know each stack
    slot's type before it runs a method: by a pass of its own (the
@@ -57,8 +97,10 @@ and what the programs of the survey were written to show.
    answer, `o is Stack<string>` is false for a `Stack<int>`, and an
    array of `T` for `int` holds ints, not boxes.
 6. **It was always compiled, never interpreted**: a method's IL is
-   compiled to the machine's code the first time it is called. This
-   plan's runtime is an interpreter; the JIT is "After it".
+   compiled to the machine's code the first time it is called. Here,
+   the interpreter comes first (it is the reference), the JIT after,
+   and they run together: what the JIT does not compile, the
+   interpreter runs.
 
 Not the essence, and not in this plan: threads, `async`, reflection
 beyond a type's name, application domains, P/Invoke, unsafe code,
@@ -127,31 +169,60 @@ The runtime, `languages/dotnet/` (estimates, .ml):
 
 | part | lines | what it is |
 |---|---:|---|
-| the reader | 700 | the PE's sections, the metadata's heaps, the 45 tables from their shapes as data, the signatures (blobs), a method's body (its two headers, the exception clauses) |
+| the metadata | 150 | the 45 tables' shapes as data, the heaps' indexes: shared by the reader and the writer |
+| the reader | 550 | the PE's sections, the metadata's heaps, the tables from their shapes, the signatures (blobs), a method's body (its two headers, the exception clauses) |
 | the instructions | 250 | the 226 opcodes as a table (name, operand), a body decoded; the listing (`-S`), as `ildasm`'s |
-| the types | 900 | a class loaded when first used: its fields' places, its table of virtual methods, its interfaces; references resolved by name; a generic type or method instantiated (lesson 5); static constructors |
+| the types | 900 | a class loaded when first used: its layout (decision 4), its table of virtual methods, its interfaces; references resolved by name; a generic type or method instantiated (lesson 5); static constructors |
 | the machine | 1,100 | frames, the evaluation stack of tagged values, the instructions; structs and managed pointers (lesson 4); delegates; the exceptions' two passes (the handler found, then the `finally` on the way) |
-| the library | 600 | the survey's 47 members, in OCaml, by the name a `MemberRef` gives |
-| the verifier | 600 | optional, a stage of its own: each method's stack types, by lesson 3's pass |
-| `CLI`, `Main` | 100 | `mini-dotnet file.dll`; `-tables`, `-S`, `-trace` |
-| all | 4,250 | 3,650 without the verifier |
+| the library | 600 | the adapters over lib_core (decision 3): the survey's 47 members, and Tiger's |
+| the verifier | 600 | each method's stack types at each instruction, by lesson 3's pass; the JIT's input |
+| `CLI`, `Main` | 100 | `mini-dotnet file.dll`; `-tables`, `-S`, `-trace`, `-verify`, `-jit` |
+| all | 4,250 | |
 
-`tiny/TinyDotnet.ml`, about 900 lines, one file: lessons 1 and 3 and
-a class. The reader (all 45 tables' shapes: there is no less), a
-listing of the tables and of the IL, and a machine for four of the
-programs: `hello`, `fib`, `queens`, `shapes`. They ask **53 opcodes
-(32 families), 15 tables and 5 members of the library**
-(`Console::Write` and `WriteLine`, `Int32::ToString`,
-`String::Concat`, `Object::.ctor`). No struct, no generic, no
-exception, no delegate: each is a line that says what it does not do
-and which program of the survey shows it.
+The writer, `languages/dotnet/` too, about **700**: the reader's
+inverse, the tables and heaps and a method's body written, and the
+PE around them. Built with mini-tiger, used by mini-csc after.
 
-mini-csc, C# to an assembly (estimates): the lexer 200 (ocamllex),
-the grammar 700 (ocamlyacc), the tree 200, the names and the types
-1,500 (overloads, the conversions, boxing where a value becomes an
-object, a generic method's arguments inferred: `Swap(ref x, ref y)`),
-the lowering 500 (a lambda's class, `foreach`, the interpolation),
-the IL 600, the tables and the PE written 700: **4,400**.
+mini-tiger, `languages/tiger/` (decision 10), about **1,600**: the
+lexer 150 (ocamllex), the grammar 300 (ocamlyacc), the tree 100, the
+names and the types 450, the escapes and the frames as classes 250,
+the IL 350. Tiger as Appel's book defines it, with fork-tiger's
+exceptions (`exception`, `raise`, `try ... handle`), which are the
+machine's own.
+
+What the machine makes of Tiger, its lesson 2:
+
+- `int` is `int32`, `string` is `System.String`, `nil` is `ldnull`,
+  a record type is a class of fields, an array type `T[]` of its
+  element's type. A string's `=` is its content's
+  (`String::op_Equality`), a record's its reference's: Tiger's own
+  rules, both found in the machine.
+- **Nested functions, which IL has not.** Appel's escape analysis
+  (his chapter 6) decides it: a function whose locals a nested one
+  uses gets a class, its frame, those locals its fields; the others
+  stay IL's locals. A nested function is a static method whose first
+  argument is its static link, the frame of the function around it.
+  Where a C compiler puts the static link in a register and the frame
+  on the stack, here they are an object on the heap, collected.
+- Tiger's library (`print`, `getchar`, `ord`, `chr`, `size`,
+  `substring`, `concat`, `not`, `exit`, `flush`) is a class `Tiger`
+  that mini-tiger writes into each assembly, its methods a few
+  instructions on `System.Console` and `System.String`. So what
+  mini-tiger writes runs on Microsoft's `dotnet` too, and on ours by
+  the adapters behind those members.
+
+mini-csc, `languages/dotnet/csc/`, **reduced** (decision 11), about
+**2,200**: the lexer 200, the grammar 500, the tree 150, the names
+and the types 700 (overloads by the arguments' types, as
+`Console.WriteLine` needs; the conversions; boxing), the lowering 200
+(`foreach` over a `List`, the string's `+`), the IL 450; the writer
+is mini-tiger's.
+
+The JIT, `languages/dotnet/jit/` (decision 12), about **1,700**: the
+code of each instruction for arm 700 and arm64 400 more, the frame
+and its slots 200, the stubs (the first call, the calls into the
+runtime and the library) 200, the loader (executable memory, the
+caches) 100, `-jit -S` 100.
 
 For the scale, from memory and not measured: Microsoft's Shared
 Source CLI ("Rotor", 2002, the book *Shared Source CLI Essentials*)
@@ -162,7 +233,7 @@ reader, Partition III the machine.
 
 ## Decisions (proposed, for the author)
 
-1. **The runtime first, the compiler after.** Reading Microsoft's
+1. **The runtime first, the compilers after.** Reading Microsoft's
    assemblies gives a reference for every stage: the same file, two
    runtimes, what is printed compared. A compiler first would be
    checked by nothing until its runtime exists.
@@ -170,93 +241,206 @@ reader, Partition III the machine.
    (46 KB) beside their `.cs` and `.expected`, written again by
    `survey.sh` where there is an SDK. Microsoft's compiler is not in
    m-ix, and the tests must run there. When mini-csc exists it makes
-   them, and the committed ones are the comparison.
-3. **The library is ix's, in OCaml first.** A member of `System.*`
-   is looked for by its name in a table of OCaml functions; a
+   those it can, and the committed ones are the comparison.
+3. **The library is adapters over lib_core**, not C# and not
+   Microsoft's. A member of `System.*` is looked for by its type, its
+   name and its signature in a table of OCaml functions; a
    reference's assembly (`System.Runtime`, `System.Console`) is not
-   read. `List` and `Dictionary` are OCaml's until mini-csc compiles
-   a `corelib.cs`, which is how the real one is made: C# on a few
-   functions of the runtime. (Not taken: a `corelib.dll` made by
-   Microsoft's compiler and committed, the library's code a binary of
-   the tree.)
-4. **An interpreter, the heap OCaml's**: an object is an OCaml record
-   (its class, its fields), collected by OCaml's collector; a managed
-   pointer is a container and an index (a frame's local, an object's
-   field, an array's element), not an address. What a real CLR does
-   there (the collector told of pointers inside objects) is said in
-   the header, not written.
-5. **A value carries its type**, the simple path of lesson 3: `I4`,
-   `I8`, `R8`, a reference, a struct, a pointer. The verifier's pass
-   would let the machine drop the tags: an optimization, after, and
-   switchable.
+   read. `Dictionary` is lib_core's `Hashtbl`, `Stack` and `Queue`
+   theirs, `StringBuilder` is `Buffer`, `String`'s methods `String`'s,
+   `Console` the standard output by its capability. One adapter serves
+   every instantiation (OCaml's values are uniform); the instantiation
+   is kept in the object's header, for `typeof` and `is`. What the
+   adapters must do that lib_core does not:
+   - a `Dictionary`'s keys hashed and compared by their
+     `GetHashCode` and `Equals`, virtual, maybe a user's class: a
+     `Hashtbl.Make` whose functions call back into the machine;
+   - iterated in the order of insertion, which .NET does in practice
+     and programs come to rely on, where `Hashtbl` does not;
+   - OCaml's exceptions turned into .NET's at the border (`Not_found`
+     is `KeyNotFoundException`, `Invalid_argument` an
+     `ArgumentOutOfRangeException`);
+   - a struct copied when it goes into a collection.
+   An adapter takes and gives the machine's values (decision 5), so
+   the interpreter and the JIT's code call the same function.
+   (Not taken: a `corelib.cs` compiled by mini-csc, as Microsoft's
+   library is made, nor a `corelib.dll` made by Microsoft's compiler
+   and committed.)
+4. **The heap is OCaml's, and an object has a layout**, so that the
+   JIT's code can reach a field by its offset, not by its name. An
+   object is an OCaml block: its type first, then a string of bytes
+   holding its scalar fields (`int32`, `int64`, `float64`, raw, at the
+   offsets its class's layout gives), then its references. An array
+   of scalars is that string of bytes; an array of references a
+   block. A struct inside an object is flattened into it, its scalars
+   into the bytes, its references among the references. So OCaml's
+   collector needs no map of where the pointers are: they are apart
+   from the scalars by construction, where a real CLR tells its
+   collector. A managed pointer, in the interpreter, is a container
+   and an index (a frame's local, an object's field, an array's
+   element), not an address. (To check: that mini-ml's runtime keeps
+   a string's bytes unscanned, as OCaml's does.)
+5. **A value carries its type in the interpreter**, the simple path
+   of lesson 3: `I4`, `I8`, `R8`, a reference, a struct, a pointer.
+   The JIT's code has no tags: the verifier gave it the types.
 6. **int32 exactly.** `fib` prints -1323752223 for the 47th number. A
    Pi 1's OCaml int is 31 bits: an `I4` is an `Int32.t` there
-   (lib_core has it; mini-ml's code for it to check). Simple first,
-   measured, then an int masked where ints are 63 bits.
+   (lib_core has it; mini-ml's code for it to check), and in the
+   object's bytes it is 32 bits wherever it runs. In the JIT's code
+   an `int32` is a register.
 7. **Strings**: .NET's are UTF-16 and immutable. Proposed: OCaml's
    strings and Latin-1 at first (`Length` and `[i]` exact for the
    tests' text), said in the header; UTF-16 a later change of one
-   module.
-8. **mini-csc's contract is the program's output, not the bytes.**
-   Roslyn's assembly, row for row, is not a target one can hold (its
-   order of rows, its attributes, its names for a lambda's class).
-   Checked both ways instead: mini-dotnet runs what `csc` wrote,
-   Microsoft's `dotnet` runs what mini-csc wrote.
+   module. A .NET string is an OCaml string, so `String`'s adapters
+   are lib_core's `String` with nothing between.
+8. **The compilers' contract is the program's output, not the
+   bytes.** Roslyn's assembly, row for row, is not a target one can
+   hold (its order of rows, its attributes, its names for a lambda's
+   class). Checked both ways instead: mini-dotnet runs what `csc`
+   wrote, Microsoft's `dotnet` runs what mini-csc and mini-tiger
+   wrote.
 9. **The names**: `mini-dotnet` (Microsoft's command: `dotnet
-   file.dll`), `mini-csc`; on mini-9pi's card `dotnet` and `csc`. The
-   directory `languages/dotnet/`, mini-csc in `languages/dotnet/csc/`
-   (a program of this machine alone); `languages/README.md`'s second
-   table, the languages that are run.
+   file.dll`), `mini-csc`, `mini-tiger`; on mini-9pi's card `dotnet`,
+   `csc` and `tiger`. The directories `languages/dotnet/` (the
+   runtime, the writer, `jit/`, `csc/`) and `languages/tiger/`; in
+   `languages/README.md`, mini-dotnet in the table of the languages
+   that are run, mini-tiger and mini-csc as compilers to it.
+10. **mini-tiger is written here, fork-tiger its inspiration, not
+    copied.** fork-tiger (`~/github/fork-tiger`) is a front end to
+    C-- (`qc--`): its lexer, grammar and types are what Tiger is,
+    and they are read for that, with Appel's book (*Modern Compiler
+    Implementation in ML*) and his manual of the language. What is
+    not taken: its translation to Appel's trees, which has erased the
+    types and laid the frames out as offsets in memory, the wrong
+    level for IL, which wants typed locals and fields; and its code,
+    which must build by mini-ml (ocaml-light's language) to run on
+    mini-9pi, and read like ix's other languages (`CLI.ml`,
+    `Main.ml`). Its tests are taken: `tests/*.tig` and their outputs,
+    with Appel's.
+11. **mini-csc is a C# reduced to what the survey's simpler programs
+    need**: classes, interfaces, virtual methods, statics, arrays,
+    strings, exceptions, `foreach` over the library's collections,
+    the library's generic types used (`List<int>`, so instantiations
+    checked) but none defined. Not: structs, generic classes and
+    methods of the program's own, lambdas and delegates,
+    interpolation, properties beyond the library's, `switch` on
+    strings. Of the ten: `hello`, `fib`, `queens`, `shapes`,
+    `exceptions`, `collections`, and `strings` with its interpolation
+    and switch written otherwise; not `vec`, `generic`, `closures`,
+    which the runtime still runs, from Microsoft's compiler.
+12. **The JIT**:
+    - **When**: a method is compiled the first time it is called
+      (lesson 6). A method's entry is a cell, at first a stub that
+      calls the JIT and writes the code's address in the cell;
+      callers jump through it.
+    - **Its input is the verifier's**: at each instruction the depth
+      of the stack and each slot's type. So each slot of the stack is
+      a known place in the frame, and the stack has no pointer of its
+      own at run time.
+    - **A template JIT**: each instruction a fixed sequence of the
+      machine's, no allocation of registers between instructions.
+      The lesson is what the types make possible, not optimization;
+      a cache of the stack's top in registers after, measured.
+    - **The collector's roots**: a frame's slots that are references
+      (locals, arguments, the stack's) live on mini-ml's value stack
+      (R10, R26 on arm64; `ml_vsp`), where its collector already
+      looks; the scalars on the machine's stack, raw. So no map of
+      the frame is needed, as decision 4 needed none for the objects.
+    - **Its calls follow mini-ml's conventions**, those numbered in
+      mini-ml's `Emit` (d4263bba): the runtime (allocation, a type
+      loaded, a throw) and the library's adapters are ML closures,
+      called as mini-ml calls them, R10 stored to `ml_vsp` before and
+      loaded after. That is how the JIT's code calls lib_core,
+      compiled by mini-ml, directly.
+    - **With the interpreter, not instead of it**: what the JIT does
+      not compile at first (a method with exception clauses, with
+      managed pointers or structs on its stack, with a generic's
+      shared code) the interpreter runs, and the two call each other
+      through the cells and one stub each way. `-jit=0` runs all by
+      the interpreter, the reference.
+    - **Where it runs**: only where mini-dotnet is built by mini-ml
+      (on mini-9pi, arm under mini-5i and QEMU; arm64 where mini-ml
+      targets it), since its code follows mini-ml's conventions; a
+      build by ocamlopt has the interpreter alone.
+    - **The machine's code is made with mini-asm's objects and the
+      linker's encoders** (`linker/Arm.ml`, `Arm64.ml`), as a library,
+      not again; `-jit -S` prints it as mini-asm's text, which
+      mini-asm assembles, the encoding checked by the assembler.
+    - **The executable memory**: written, its data cache cleaned and
+      its instruction cache invalidated, then run. On mini-9pi a
+      segment both writable and executable, by a call of the kernel
+      (to design: a `segattach`'s kind, or one of its own); under
+      mini-5i and mini-qemu, their own caches of decoded or
+      translated code told, which they may not be today.
+    - (Not taken: compiling ahead of time, IL to an executable by
+      mini-ld. The same code generator, without the executable
+      memory, but the program's code linked with all of mini-dotnet
+      for each program; and it does not show lesson 6.)
 
 ## The stages (each checked before the next)
 
-1. **TinyDotnet.ml.** Check: `hello`, `fib`, `queens` and `shapes`
-   print their `.expected`; its count of rows by table is
-   `survey.txt`'s for each of the ten (it reads all of them, runs
-   four); by dune and by mini-ml.
-2. **The reader and the listing** (`-tables`, `-S`). Check: the ten;
-   and **Microsoft's own library read whole**: 2,466 types, 33,768
-   methods, 1,332,098 bytes of IL decoded to the last byte of each
-   body, `Survey.cs`'s numbers.
-3. **Objects**: classes, virtual calls, interfaces, strings, arrays,
-   statics, exceptions. Check: `hello`, `fib`, `queens`, `shapes`,
-   `exceptions`, `strings`.
-4. **Value types and generics**: structs, boxing, managed pointers,
-   instantiation, delegates. Check: `vec`, `generic`, `collections`,
-   `closures`; the ten the same by mini-ml's build, on arm64 and on
-   arm under mini-5i (decision 6).
-5. **On mini-9pi's console**: `dotnet` on the card, the assemblies in
+1. **The reader and the listing** (`-tables`, `-S`). Check: the ten,
+   their counts of rows by table `survey.txt`'s; and **Microsoft's
+   own library read whole**: 2,466 types, 33,768 methods, 1,332,098
+   bytes of IL decoded to the last byte of each body, `Survey.cs`'s
+   numbers.
+2. **Objects**: classes, virtual calls, interfaces, strings, arrays,
+   statics, exceptions; the objects laid out (decision 4), the
+   library's adapters for these. Check: `hello`, `fib`, `queens`,
+   `shapes`, `exceptions`, `strings`.
+3. **Value types and generics**: structs, boxing, managed pointers,
+   instantiation, delegates; `List` and `Dictionary` over lib_core.
+   Check: `vec`, `generic`, `collections`, `closures`; the ten the
+   same by mini-ml's build, on arm64 and on arm under mini-5i
+   (decision 6).
+4. **On mini-9pi's console**: `dotnet` on the card, the assemblies in
    `/lib/dotnet/`. Check: a recorded session, as `check-pascal`; the
    queens' time, here.
-6. **The verifier** (optional). Check: the ten pass; assemblies
-   broken by hand (an `add` of an int and a reference, a stack left
-   deeper on one branch) refused, each with its method and offset.
-7. **mini-csc**, a plan of its own when stage 4 is done: the ten
-   programs, then `corelib.cs` (decision 3).
+5. **The writer and mini-tiger.** Check: fork-tiger's tests and
+   Appel's, each printing its recorded output by Microsoft's `dotnet`
+   and by mini-dotnet; the nested functions' frames listed by `-S`;
+   the writer's assemblies read back by the reader, the same tables.
+6. **mini-csc, reduced** (decision 11). Check: its seven of the ten
+   print their `.expected` by both runtimes.
+7. **The verifier.** Check: the ten, mini-tiger's and mini-csc's
+   assemblies pass; assemblies broken by hand (an `add` of an int and
+   a reference, a stack left deeper on one branch) refused, each with
+   its method and offset; Microsoft's library: how many of its
+   methods pass, recorded.
+8. **The JIT's code as text** (`-jit -S`): each method the JIT
+   accepts printed as mini-asm's text. Check: mini-asm assembles it;
+   the methods refused counted, with their reason, for the ten and
+   mini-tiger's tests.
+9. **The JIT**, on mini-9pi (arm). Check: everything of stages 2 to 6
+   prints the same with `-jit` and `-jit=0`; the queens' and a
+   Tiger program's instructions under mini-5i, both ways, recorded.
+10. **The JIT on arm64**, and what it refused at first (exceptions,
+    structs), one at a time, each by the same check.
 
 ## After it
 
-- **The JIT** (lesson 6): a method's IL to mini-asm's objects (arm,
-  arm64) the first time it is called, the verifier's types its input.
-  ix is where that is cheap, as for Pascal's P-code. A plan of its
-  own.
-- **Another language on the same machine** (lesson 2): the cheapest
-  proof that the machine is not C#'s. mini-ml's or mini-pascal's
-  front end, to IL.
+- The stack's top cached in registers; a method's locals given
+  registers; inlining of the library's small adapters (`String`'s
+  `Length`). Each measured against stage 9's numbers.
+- Tiers, as .NET has: interpreted first, compiled when called often.
+- mini-ml to IL, a third language on the machine.
 
 ## Open questions
 
-- The order of stage 1: TinyDotnet first (proposed: it is the
-  cheapest way to find what the reader's estimate misses), or after
-  the runtime, as its summary?
 - The assemblies in the tree (decision 2): accepted as test data, or
   only where an SDK is installed, the tests skipped elsewhere?
-- The library in OCaml (decision 3) until mini-csc: or mini-csc
-  before stage 4, so that `List` is C# from the start?
-- mini-csc's place: `languages/dotnet/csc/` (decision 9), or a
-  `languages/csharp/` beside `languages/c/`?
-- The verifier: a stage (6), or left to the JIT's plan, which needs
-  the same pass?
+- The object's layout (decision 4): its scalars in a string of bytes
+  beside its references costs a load more for each scalar field;
+  measured against the other way, everything tagged OCaml values
+  (simple on arm64's 63 bits, not on arm's 31)?
+- The adapters (decision 3): each on the machine's tagged values, as
+  proposed, or typed OCaml functions (`string -> unit`) with the
+  marshalling generated from the signature, which the JIT's code
+  could call with no value made?
+- mini-tiger's place: `languages/tiger/` (decision 9), or
+  `languages/dotnet/tiger/` beside `csc/`?
+- The JIT's executable memory on mini-9pi (decision 12): which call
+  of the kernel?
 
 ## Status
 
@@ -267,3 +451,9 @@ Checked: the ten compile and print what is recorded; the survey run
 twice, the same. Not checked: that `csc -deterministic` writes the
 same bytes on another machine (decision 2 leans on it); mini-ml's
 code for `Int32` and `Int64` (decision 6); every estimate of lines.
+
+2026-10-29: revised. TinyDotnet.ml dropped; mini-tiger, written here
+from fork-tiger's and Appel's inspiration, and a reduced mini-csc;
+the library as adapters over lib_core; the objects laid out for the
+JIT; the JIT in this plan (decision 12, stages 7 to 10). Nothing
+built.

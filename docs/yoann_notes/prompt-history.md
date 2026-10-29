@@ -54552,3 +54552,47 @@ Claude reported that mini-ml's Pi 1 kernel doesn't boot: it prints `k` forever a
 Claude traced the bss to lib_core's 64 MB libc stand-in allocator, a suspect it had not confirmed as the cause.
 Claude proposed bisecting about eight commits since 2026-10-03, then measuring both kernels on the same sessions.
 Claude asked for approval to start the bisect; the performance numbers remain unmeasured until the kernel boots.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:02
+
+**Yoann:**
+
+> for the dotnet plan, I'm not a big fan of C# but one thing we could do is have a mini-C# really reduced, and also to have a mini-tiger (see ~/github/fork-tiger) that targets dotnet instead of currently c--. Also another thing of great value will be the JIT as we don't have one yet. I'm not sure how to do that though. Another thing is we can't emulate the whole dotnet libraries, but ideally we can reuse a lot lib_core/ and just have an adapter for dotnet for many of its libs, so we don't have to add too much code; ideally the Jitted code can call those adapted native compiled ocaml libs. What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:02
+
+**Yoann:**
+
+> Also I don't think we need a TinyDotnet
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:08
+
+**Yoann:**
+
+> we can copy fork-tiger or just reimplement it from scratch using fork-tiger (and other sources) for inspiration. let's keep the JIT in the same plan document.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:10
+
+**Yoann:**
+
+> that way we would have in languages/ a good coverage of compiler techniques. c/, pascal P code, smalltalk vm, scheme SECD, prolog WAM, ML functional language, and dotnet JIT with tiger (And mini C#)
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:10
+
+**Yoann:**
+
+> I wonder if we have such good coverage for other parts of IX
+
+**Claude (summary):**
+
+Claude said it would survey the other parts of ix while writing the plan, nothing more.

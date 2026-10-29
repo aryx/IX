@@ -380,7 +380,7 @@ check-ix-net: ix-net run-qemu-ix-net run-mini-ix-net
 	$(call unwarned,$(B)/qemu-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl over the kernel's TCP, from the host's web server, under QEMU"
 	$(call unwarned,$(B)/mini-ix-net.txt) | diff - tests/session-ix-net && echo "ok 9pi: mini-curl under mini-qemu"
 # a game for two computers (the playground's TinyTronscroll, over its
-# Multiplayer and lib_networking/netcode): ix-usb's image and the game
+# Multiplayer and lib_playground/netcode): ix-usb's image and the game
 # in its bootdir. check-tron: the game in the kernel plays with the
 # same game on this machine (mini-ml's for Linux, games/arcade's: the
 # two then sum the same bytes of their models), over UDP through

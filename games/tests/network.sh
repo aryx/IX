@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # A game for two computers played by two programs on this one, over UDP
-# (lib_playground's Multiplayer, lib_networking/netcode): TinyTronscroll
+# (lib_playground's Multiplayer, lib_playground/netcode): TinyTronscroll
 # without a window, one that hosts and one that joins, each with its
 # script of keys, a frame at its time (the ppm platform's pace=). Each
 # netcode in turn. What is checked: both played most of their frames'

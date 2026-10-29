@@ -63,11 +63,14 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
     [ -d $g ] || { mkdir -p $g; $SINGML -given -o $g $m > /dev/null; }
     incs[$root]="-I $g -I $W/contracts -I $S/lib -I $S/contracts";;
   $S/singml/*) root=$S/singml; incs[$root]="$(dirs $S/singml) $(dirs languages/ml)";;
+  # (the playground's netcode: over lib_networking's Udp, shared's; Sim_net
+  # draws its numbers from Lehmer)
+  lib_playground/netcode/*) root=lib_playground/netcode; incs[$root]="-I lib_playground/netcode -I lib_playground/random";;
   # (the playground: its library before lib_core, whose commons/ has a Cmd of its own; a
   # platform's Playground_platform, the one without a window, for the games)
   # (and what stands on it that is no game: lib_gui, the playground's programs of apps/
   # and examples/, with the language and the kits they are linked with: games/mkgames's WITH)
-  games/*|apps/music/rebirth/*|lib_playground/*|lib_gui/*|examples/*|editors/drscheme/*|apps/office/*|apps/page/*) root=games; incs[$root]="-I examples -I examples/gui4 -I apps/office/document -I apps/office/richtext -I apps/office/paint -I apps/office/draw -I apps/office/shapes -I apps/office/parts -I apps/office/file_menu -I apps/office/suite -I apps/office/sheet -I apps/office/formula -I apps/office -I lib_gui -I languages/scheme -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_playground/ways $(dirs lib_audio) $(dirs lib_playground/ai) -I lib_playground/juice -I games/shmup/kit -I games/fps/doom -I apps/music/rebirth -I lib_playground/physics -I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/images -I lib_graphics/software -I lib_graphics";;
+  games/*|apps/music/rebirth/*|lib_playground/*|lib_gui/*|examples/*|editors/drscheme/*|apps/office/*|apps/page/*) root=games; incs[$root]="-I examples -I examples/gui4 -I apps/office/document -I apps/office/richtext -I apps/office/paint -I apps/office/draw -I apps/office/shapes -I apps/office/parts -I apps/office/file_menu -I apps/office/suite -I apps/office/sheet -I apps/office/formula -I apps/office -I lib_gui -I languages/scheme -I lib_playground/platforms/ppm -I lib_playground/platforms -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_playground/layers -I lib_playground/apis -I lib_playground/ways $(dirs lib_audio) $(dirs lib_playground/ai) -I lib_playground/juice -I lib_playground/netcode -I games/shmup/kit -I games/fps/doom -I apps/music/rebirth -I lib_playground/physics -I lib_graphics/core -I lib_graphics/geometry -I lib_graphics/images -I lib_graphics/software -I lib_graphics";;
   # (mini-play: over lib_audio, and Lehmer under it)
   apps/music/*) root=apps/music; incs[$root]="$(dirs apps/music) $(dirs lib_audio) -I lib_playground/random";;
   # (mini-turbopascal: a Tui program of lib_terminal's, over mini-pascal)
@@ -103,8 +106,6 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"
   # (lib_audio: Sfx draws its numbers from Lehmer)
   [ $root = lib_audio ] && incs[$root]="$(dirs lib_audio) -I lib_playground/random"
-  # (lib_networking's netcode: Sim_net draws its numbers from Lehmer)
-  [ $root = lib_networking ] && incs[$root]="$(dirs lib_networking) -I lib_playground/random"
   [ $root = lib_terminal ] && incs[$root]="-I lib_terminal -I lib_terminal/unix -I lib_terminal/hosts -I lib_terminal/hosts/draw -I lib_playground/random $(dirs lib_graphics)"
   [ $root = kernels/squeak ] && { mkdir -p $W/squeak; echo 'let system = Squeak.Squeak let depth = 16' > $W/squeak/Which.ml; incs[$root]="$(dirs kernels/squeak) $(dirs languages/smalltalk) -I $W/squeak"; }
   [ $root = kernels/9pi/filesystems/user/dossrv ] && incs[$root]="$(dirs kernels/9pi/filesystems/user/dossrv) $(dirs kernels/9pi/filesystems/lib_fat)"

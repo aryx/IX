@@ -1,0 +1,14 @@
+; lib_playground/netcode: a game played on several computers, the
+; author's playground's libs/networking/netcode (and its protocols'
+; Wire and Transport), a library of its own: Wire (a message's bytes),
+; Inputs (the inputs exchanged, their acks and checksums), Lockstep
+; (wait for every input), Rollback (guess, and replay), Checksum,
+; Sim_net (a network in one program, from a seed); Transport, where a
+; peer's packets go: here over Udp (lib_networking's ix_tcp), Linux's
+; sockets or Plan 9's /net/udp. Under apis/'s Multiplayer.
+(include_subdirs no)
+
+(library
+ (name ix_netcode)
+ (wrapped false)
+ (libraries ix_tcp ix_random ix_core caps unix))

@@ -21,7 +21,7 @@
 val ask : < Cap.network; .. > -> address:string -> port:int -> string -> float -> string option
 
 (* A socket kept, for a program that sends and takes packets at each of
- * its frames and never waits (a game: lib_networking/netcode's
+ * its frames and never waits (a game: lib_playground/netcode's
  * Transport; the author's playground's libs/networking/unix/Udp, its
  * host and join). Two computers, one that hosts and one that joins:
  *

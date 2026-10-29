@@ -1,4 +1,4 @@
-# Plan: TinyTronscroll on two boards, by a cable: what remains (`games/arcade/`, `lib_networking/netcode/`, `kernels/9pi/network/`)
+# Plan: TinyTronscroll on two boards, by a cable: what remains (`games/arcade/`, `lib_playground/netcode/`, `kernels/9pi/network/`)
 
 The author (2026-10-13): "let's add tronscroll from the playground
 (itself coming from a game I made 20 years ago) in ix, and it could be
@@ -17,7 +17,7 @@ no emulator here having the chip.
 ## What is done (`ddb60eef`, 2026-10-13)
 
 - `games/arcade/TinyTronscroll.ml`, the playground's, on
-  `lib_playground/apis/Multiplayer` and `lib_networking/netcode/`
+  `lib_playground/apis/Multiplayer` and `lib_playground/netcode/`
   (`Wire`, `Inputs`, `Lockstep`, `Rollback`, `Checksum`, `Sim_net`,
   `Transport`); built by dune and by mini-mk; `tronscroll` on the
   card; `games/arcade/sdl/` on Linux.

@@ -1,10 +1,14 @@
 ; apps/pim: mini-pim, a suite for organizing a life
 ; (docs/plans/plan_pim.md), in folders (folders only: one library,
 ; ix_pim):
-;   mail/  the mail's formats (docs/plans/plan_mail.md, stage 1): Mail
-;          (a message, RFC 5322), Mime (its parts, its encodings, its
+;   mail/  the mail (docs/plans/plan_mail.md): its formats, Mail (a
+;          message, RFC 5322), Mime (its parts, its encodings, its
 ;          charsets), Mail_thread (conversations, Zawinski's), the
-;          author's playground's libs/networking/mail
+;          author's playground's libs/networking/mail; its protocols,
+;          Smtp (the client) and Smtp_server (the server's machine),
+;          pure, and Lines, which carries them over TCP or TLS
+; Pim.ml, the program from a terminal (mini-pim send); Maild.ml,
+; mini-maild, the server its tests send to
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
 (include_subdirs unqualified)
@@ -12,5 +16,13 @@
 (library
  (name ix_pim)
  (wrapped false)
+ (modules :standard \ Pim Maild)
  (flags (:standard -w -32-37-69))
- (libraries ix_tls))
+ (libraries ix_tls ix_tcp ix_core caps unix))
+
+(executables
+ (names Pim Maild)
+ (public_names mini-pim mini-maild)
+ (package ix)
+ (modules Pim Maild)
+ (libraries ix_pim ix_tls ix_tcp ix_core fpath caps unix))

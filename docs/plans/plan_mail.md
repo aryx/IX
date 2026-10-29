@@ -8,8 +8,9 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: stage 1 built (the formats, `apps/pim/mail/`).** Mail is
-the first part of the suite [`plan_pim.md`](plan_pim.md): its messages are the suite's first
+**Status: stages 1 and 2 built (the formats; sending, and mini-maild's
+SMTP; `apps/pim/`).** Mail is the first part of the suite
+[`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
 
@@ -220,3 +221,17 @@ copied in `apps/pim/mail/` (671 lines of `.ml`), their tests (17, in
 as Windows-1252 (WHATWG's), ISO-8859-15's eight own characters; the
 playground read both as Latin-1. `apps/pim/README.md` says what
 changed. Next: stage 2, `Tls_client`'s lines and `Smtp`.
+
+2026-10-29: stage 2, the connection: `Lines` (ix's own: a connection
+of lines over TCP or TLS that drives a pure machine), `Smtp` copied
+(its `?auth` said), `Smtp_server` the SMTP half of the playground's
+`Mail_server` made a pure machine (AUTH PLAIN added, any password);
+two programs, `mini-pim send` (to Gmail by default, `-plain` for
+mini-maild) and mini-maild (127.0.0.1, one client at a time, a file a
+message, `spool/<user>/<n>`). mini-maild is a program of `apps/pim/`
+beside mini-pim rather than of `tests/`: it is run by hand too. Tests:
+Unit_smtp, Unit_smtp_server (the two machines against each other,
+`Lines` over a socketpair), and `tests/sent.sh` (a message sent,
+delivered to two users, one in Bcc:, the relay refused), in `make test`.
+Not tried: TLS, which is Gmail's only (stage 6, by hand). Next: stage
+3, IMAP.

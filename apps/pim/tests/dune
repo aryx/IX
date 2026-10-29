@@ -2,7 +2,8 @@
 (include_subdirs no)
 
 ; the unit tests of mini-pim (Testo): dune's only. The playground's
-; libs/networking/tests of what is here, and ix's own (the charsets)
+; libs/networking/tests of what is here, and ix's own (the charsets,
+; Unit_smtp_server); sent.sh, a session of mini-pim and mini-maild
 (executable
  (name Test)
- (libraries ix_pim alcotest testo))
+ (libraries ix_pim ix_tls ix_tcp unix alcotest testo))

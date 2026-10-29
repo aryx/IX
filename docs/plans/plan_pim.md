@@ -13,8 +13,8 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun, mail's stage 1 (its formats).** Mail, the first
-part, has its own plan, [`plan_mail.md`](plan_mail.md).
+**Status: begun, mail's stages 1 and 2 (its formats, sending).**
+Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
 
@@ -363,3 +363,6 @@ kept as the warning on its scope. Nothing built.
 2026-10-29: begun, by mail (stage 1): `apps/pim/`, one library
 (`ix_pim`) in folders as mini-office; `mail/` has the formats,
 plan_mail.md's stage 1.
+
+2026-10-29: mail's stage 2: `mini-pim send`, the terminal's first
+command, and mini-maild, the server its tests send to.

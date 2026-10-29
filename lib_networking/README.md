@@ -54,7 +54,7 @@ No optional argument, as everywhere in ix (mini-ml has none):
   a test's); `trust_file`, for mini-curl's `--cacert`; the roots and
   `/dev/urandom` read with `Cap.open_in` (`FS`); no mutex round the
   chains already checked, there being no threads; no `Transport` of
-  lines (POP3, SMTP).
+  lines (POP3, SMTP): mini-pim's mail has its own, `apps/pim/mail/Lines`.
 - `Http_client`: `~post` an option, five redirections, `get_once` is
   `once`.
 - `X509`, `Tls13`, `Http`: three lines for mini-ml (`Option.value

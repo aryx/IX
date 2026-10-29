@@ -1,4 +1,4 @@
-# lib_juice: a game's feel
+# lib_playground/juice: a game's feel
 
 The author's playground's (`~/playground`, its `libs/juice`): what
 makes a game feel alive beyond what it does, "juice" (Martin Jonasson
@@ -16,16 +16,17 @@ references:
 | `Follow` | a spring that chases a target |
 | `Hash` | the random numbers they share, the same at each run |
 
-Pure OCaml, over nothing. A program calls it through
-`lib_playground/apis`'s `Juice`; the first is TinyBreakout
+Pure OCaml, over nothing, a library of its own (`ix_juice`; old: the
+top's `lib_juice/`, moved here, its only user the playground). A
+program calls it through `apis/`'s `Juice`; the first is TinyBreakout
 (`games/arcade/`): its bricks pop in, the ball and the paddle squash,
 a broken brick bursts into pieces, the screen shakes, and `juice=off`
 is the game without any of it.
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
-numbers below are `scripts/playground_copies.sh lib_juice`'s, against
-the playground at `33f4e668` (2026-10-12).
+numbers below are `scripts/playground_copies.sh lib_playground/juice`'s,
+against the playground at `33f4e668` (2026-10-12).
 
 ## What was copied
 

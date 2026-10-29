@@ -33,7 +33,7 @@ mkdir -p $D && cd $D || exit 1
 # the copy: tracked and untracked files, not ignored ones
 (cd $HERE && git ls-files --cached --others --exclude-standard dune-project \
    lib_core lib_crypto lib_networking lib_compression lib_graphics lib_playground \
-   lib_audio lib_gui lib_physics lib_juice lib_terminal browsers) |
+   lib_audio lib_gui lib_physics lib_terminal browsers) |
   rsync -a --files-from=- $HERE/ src/
 echo '(lang dune 3.7)' > src/dune-workspace
 for f in $(grep -rl -E '^\((library|executables?)\s*$' --include=dune src/browsers | grep -v /tests/); do

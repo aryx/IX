@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* ix: the author's playground's playground/apis/Juice.ml; its optional arguments are said, and lib_juice's *)
+(* ix: the author's playground's playground/apis/Juice.ml; its optional arguments are said, and lib_playground/juice's *)
 
 (* See Juice.mli *)
 

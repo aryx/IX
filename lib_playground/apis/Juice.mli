@@ -30,7 +30,7 @@
    settles. The model keeps only *when* it started; the rest is a
    function of the effects' clock.
 
-   Underneath is lib_juice (the playground's notes_juice.md is its
+   Underneath is lib_playground/juice (the playground's notes_juice.md is its
    tutorial): Ease.mli, the curves and why [out] is [in] run backwards,
    Tween.mli, the tween as a function of its start time, Squash.mli,
    squash and stretch, Trauma.mli, screen shake, Emitter.mli,

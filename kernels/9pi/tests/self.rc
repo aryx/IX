@@ -15,7 +15,7 @@
 #   those alone (all of lib_core.a takes 6 minutes)
 #   mk's arguments: 'ML=time ml -m 5' ..., each compile's time too
 LIBS=(lib_core lib_crypto lib_compression lib_networking lib_graphics \
- lib_playground lib_physics lib_juice lib_gui lib_audio \
+ lib_playground lib_physics lib_playground/juice lib_gui lib_audio \
  lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms \
  lib_playground/platforms/draw lib_playground/platforms/software \
  browsers/html browsers/css browsers/javascript browsers/engine \

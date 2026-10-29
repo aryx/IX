@@ -42,7 +42,7 @@ lib_audio libs/audio
 apps/music apps/music
 lib_physics libs/physics
 lib_ai libs/ai
-lib_juice libs/juice
+lib_playground/juice libs/juice
 lib_terminal libs/terminal
 apps/office appkits/document appkits/richtext appkits/paint appkits/draw appkits/sheet appkits/sheet_view apps/office/embed apps/office/stroke_text apps/office/file_menu apps/graphics/draw_view languages/formula
 languages/scheme languages/scheme languages/sexpr

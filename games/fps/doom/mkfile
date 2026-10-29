@@ -14,7 +14,7 @@ D=$B/games/fps/doom$BESIDE
 # (each after the ones it names)
 # (the playground's apis: Audio, Audio3d and Ai, with what they stand on,
 # as ../../mkgames)
-LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio lib_networking \
+LIBDIRS=lib_compression lib_graphics lib_playground lib_physics lib_playground/juice lib_gui lib_audio lib_networking \
  lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the folders of the modules: dune's comment says which)

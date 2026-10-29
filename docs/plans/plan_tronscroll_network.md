@@ -124,7 +124,7 @@ First the number: `Boot_bench` or mini-5i's count of one
 much, in the order of what it costs to write:
 
 - the sum in two halves of 16 bits on plain ints (the same numbers:
-  `lib_juice`'s `Hash` was done so for the Pi 1's ints of 31 bits),
+  `lib_playground/juice`'s `Hash` was done so for the Pi 1's ints of 31 bits),
   the simple version kept beside it;
 - the game's own summary given to `Multiplayer` in place of Marshal's
   bytes (the riders and a count of the cells written): another

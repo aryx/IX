@@ -226,7 +226,7 @@ kernels-ix: ix ix-arm
 # - test-fixpoint: ix built twice, by dune's programs then by the first
 #   build's alone: the same files (mkfiles/fixpoint.sh)
 # - test-arm: the arm programs, under qemu-arm (mkfiles/check_arm.sh);
-#   test-fixpoint-arm: ix for arm built again by them, twice
+#   test-fixpoint-arm: ix for arm built again by them: the same files
 # - test-kernels-ix: mini-xv6's and mini-9pi's checks, on the Pi 4
 # - self: ix built by ix in its own system, t-ix in tiny-kernel and
 #   m-ix in mini-9pi (the Pi 2 under QEMU), side by side, each file the

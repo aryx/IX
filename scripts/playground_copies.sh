@@ -4,7 +4,7 @@
 #
 # What ix has of the author's playground, file by file: the numbers and
 # the lists behind the README.md of each directory copied from it
-# (lib_playground/, lib_gui/, lib_physics/, games/...).
+# (lib_playground/, lib_gui/, lib_playground/physics/, games/...).
 #
 #   scripts/playground_copies.sh [-p dir] [group...]
 #
@@ -40,7 +40,7 @@ lib_networking libs/networking/protocols libs/networking/netcode libs/networking
 lib_gui libs/gui
 lib_audio libs/audio
 apps/music apps/music
-lib_physics libs/physics
+lib_playground/physics libs/physics
 lib_ai libs/ai
 lib_playground/juice libs/juice
 lib_terminal libs/terminal

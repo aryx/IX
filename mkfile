@@ -29,7 +29,7 @@ NPROC=`{if(~ $#objtype 0) nproc | awk '{print ($1 > 16 ? 16 : $1)}'; if not wc -
 # platforms, the draw device's and the software one, where Linux's is
 # ppm)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
-LIBS=lib_core lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_physics lib_playground/juice lib_gui lib_audio \
+LIBS=lib_core lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
  lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 FIRST=$LIBS assembler

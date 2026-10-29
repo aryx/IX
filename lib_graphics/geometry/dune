@@ -1,8 +1,9 @@
 ; lib_graphics/geometry: points and transforms of the plane (Vec2,
 ; Affine): the author's playground's libs/graphics/2d/geometry
 ; (../software/README.md); and of space (Vec3, Camera, Lighting): its
-; libs/graphics/3d/geometry (docs/plans/plan_virtuaracing.md). No pixel here: lib_physics and
-; lib_graphics/pdf stand on it without the rasterizer.
+; libs/graphics/3d/geometry (docs/plans/plan_virtuaracing.md). No pixel
+; here: lib_playground/physics and lib_graphics/pdf stand on it without
+; the rasterizer.
 (library
  (name ix_graphics_geometry)
  (wrapped false))

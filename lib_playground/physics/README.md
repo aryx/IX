@@ -1,4 +1,4 @@
-# lib_physics: a physics engine in two dimensions
+# lib_playground/physics: a physics engine in two dimensions
 
 The author's playground's (`~/playground`, its `libs/physics/2d`), the
 part a first game asked (TinyCameltry, `games/arcade/`): bodies
@@ -6,14 +6,16 @@ part a first game asked (TinyCameltry, `games/arcade/`): bodies
 of time (`Integrate`), what may touch what (`Broadphase`), what does
 (`Collide`, `Contact`), what happens then (`Resolve`), all of it each
 frame (`Solver`), and joints (`Joint2d`). Over
-`lib_graphics/geometry`'s `Vec2` only. A program calls it through
-`lib_playground/apis`'s `Physics`. The plan:
-[`plan_playground.md`](../docs/plans/done/plan_playground.md).
+`lib_graphics/geometry`'s `Vec2` only. A library of its own
+(`ix_physics`; old: the top's `lib_physics/`, moved here, its only
+user the playground). A program calls it through `apis/`'s `Physics`.
+The plan:
+[`plan_playground.md`](../../docs/plans/done/plan_playground.md).
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
-numbers below are `scripts/playground_copies.sh lib_physics`'s, against
-the playground at `028d8abf` (2026-10-06).
+numbers below are `scripts/playground_copies.sh lib_playground/physics`'s,
+against the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 

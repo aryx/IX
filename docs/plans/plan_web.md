@@ -732,7 +732,7 @@ gets it); VFP is 4.6% of the game's instructions.
 
 What to do next for cameltry, by expected gain (none started; the
 author to say which first):
-1. The physics' tick (`lib_physics`, the playground's copy): the walls
+1. The physics' tick (`lib_playground/physics`, the playground's copy): the walls
    do not move, and each tick makes their hitboxes and transforms
    again for those near the moon (`Physics.hitboxes_of`, `to_world`,
    `Collide.nearest_on_segment`, `Vec2`'s, with the collector a third

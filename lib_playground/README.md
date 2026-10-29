@@ -25,8 +25,9 @@ folders:
 | `core/` | `libs/core` | Elm's: `Basics`, `Color`, `Time`, `Cmd`, `Sub`, `Set` |
 | `random/` | `libs/random` | `Lehmer` |
 | `juice/` | `libs/juice` | a game's feel, a library of its own: `Ease`, `Tween`, `Squash`, `Trauma`, `Emitter`, `Follow`, `Hash` (its README) |
+| `physics/` | `libs/physics/2d` | a physics engine in two dimensions, a library of its own: `Body`, `Shape`, `Collide`, `Solver`... (its README) |
 | `layers/` | `playground/layers` | what games are made of: `Camera2d`, `Scene2d`, `Sprite`, `Tilemap` |
-| `apis/` | `playground/apis` | its face of a library: `Physics` (`lib_physics`), `Gui` (`lib_gui`), `Audio` and `Audio3d` (`lib_audio`), `Juice` (`juice/`), `Multiplayer` (`lib_networking/netcode`), `Ai` (`lib_ai`) |
+| `apis/` | `playground/apis` | its face of a library: `Physics` (`physics/`), `Gui` (`lib_gui`), `Audio` and `Audio3d` (`lib_audio`), `Juice` (`juice/`), `Multiplayer` (`lib_networking/netcode`), `Ai` (`lib_ai`) |
 | `ways/` | `playground/ways` | `Bigbang`, How to Design Programs' world |
 | `platforms/Shape_render_software` | `playground/platforms/software` | shapes to pixels, over `lib_graphics/software` |
 | `platforms/Input_script` | `playground/platforms/native_common` | the keys and the mouse of a script, for the tests |

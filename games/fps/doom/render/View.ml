@@ -16,8 +16,12 @@ let pi = 4. *. atan 1.
 let two_pi = 2. *. pi
 let half_pi = pi /. 2.
 
-(* an angle in [0, 2 pi): id's angles are unsigned, a turn 2^32 *)
-let norm (a : float) : float = if a >= 0. && a < two_pi then a else a -. (two_pi *. floor (a /. two_pi))
+(* an angle in [0, 2 pi): id's angles are unsigned, a turn 2^32.
+ * Inlined, it and fine, fsin, fcos: id's tables read by a shift of an
+ * integer angle, ours by these floats' few operations, which a call
+ * would add to, its float argument and result boxed (norm alone 2.3%
+ * of a frame, 624,183 calls in 61) *)
+let[@inline] norm (a : float) : float = if a >= 0. && a < two_pi then a else a -. (two_pi *. floor (a /. two_pi))
 
 (* the same in [-pi, pi) *)
 let signed (a : float) : float = let a = norm a in if a >= pi then a -. two_pi else a
@@ -36,9 +40,9 @@ let finesine = Array.init (fineangles + (fineangles / 4)) (fun (i : int) -> fixe
 let finetangent = Array.init (fineangles / 2) (fun (i : int) -> fixed (tan ((float (i - (fineangles / 4)) +. 0.5) *. finestep)))
 
 (* an angle's fine angle (angle >> ANGLETOFINESHIFT) *)
-let fine (a : float) : int = int_of_float (norm a /. finestep) land (fineangles - 1)
-let fsin (a : float) : float = finesine.(fine a)
-let fcos (a : float) : float = finesine.(fine a + (fineangles / 4))
+let[@inline] fine (a : float) : int = int_of_float (norm a /. finestep) land (fineangles - 1)
+let[@inline] fsin (a : float) : float = finesine.(fine a)
+let[@inline] fcos (a : float) : float = finesine.(fine a + (fineangles / 4))
 
 (* the tangent of an angle given plus 90 degrees (finetangent[(a +
  * ANG90) >> ANGLETOFINESHIFT]: a in -90 to 90) *)

@@ -289,6 +289,7 @@ job "mini-bc: recorded cases" utilities/calc/bc/tests/differential.sh
 job "mini-asm, mini-ld: recorded executables" linker/tests/golden.sh
 job "mini-ld: Plan 9 symbol and line tables as 5l's" linker/tests/symtab.sh
 job "mini-nm, mini-where: a program's names and lines read back" debuggers/tests/tables.sh
+job "mini-5i: a fault's stack walked, its functions and lines" debuggers/tests/walk.sh
 job "mini-turbopascal: recorded screens" editors/turbopascal/tests/keys.sh
 job "mini-page: recorded frames" apps/page/tests/frames.sh
 job "mini-office: pictures" apps/office/tests/image.sh

@@ -29,7 +29,7 @@
  (name ix_machine_cli)
  (wrapped false)
  (modules CLI)
- (libraries ix_machine ix_machine_compat ix_core caps fpath unix))
+ (libraries ix_machine ix_machine_compat ix_executable ix_core caps fpath unix))
 
 (executable
  (name Main)

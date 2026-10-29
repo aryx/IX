@@ -9,6 +9,8 @@ GEN=
 LIBI=-I core -I arm32 -I arm64 -I process -I compat
 LIBUNITS=
 LIBOBJS=
+# (its traces: the program's tables read)
+LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
 <$TOP/mkfiles/mkprog
 

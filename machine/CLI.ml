@@ -95,7 +95,15 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
             | Arm32.Unimplemented (w, a) ->
                 Console.eprint caps (Printf.sprintf "mini-5i: unimplemented instruction %08x at %x in %s\n" (Bits.unsigned32 w) a prog); report (); 134
             | Memory.Fault a ->
-                Console.eprint caps (Printf.sprintf "mini-5i: segmentation fault at %s in %s\n" (Bits.to_hex32 a) prog); report (); 139)
+                Console.eprint caps (Printf.sprintf "mini-5i: segmentation fault at %s in %s\n" (Bits.to_hex32 a) prog);
+                (* the stack walked, by the program's tables (mini-ld -g's:
+                 * plan_debugger.md, stage 3) *)
+                (match Symbols.read file with
+                 | Some t ->
+                     let load a = try Some (Memory.load32 mem a) with Memory.Fault _ -> None in
+                     Console.eprint caps ("mini-5i: trace: " ^ Frames.show (Frames.walk t ~load ~pc:!Cpu.fault_pc ~sp:st.r.(13) ~lr:st.r.(14)) ^ "\n")
+                 | None -> ());
+                report (); 139)
         | Some ({ machine = Arm; _ } as elf) -> (
             let mem = Memory.create () in
             let proc, entry, sp = Linux.load host mem elf file argv env in

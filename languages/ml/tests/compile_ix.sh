@@ -22,7 +22,7 @@ declare -A all bad kinds incs
 # (and dune's copy of each, for the Parser and the Lexer it made of a .mly and a .mll)
 dirs() { for d in $(tests/ix_files.sh "$1" | grep -E '\.ml[ily]?$' | grep -v '/tests/' | xargs -n1 dirname | sort -u); do echo -n "-I $d -I _build/default/$d "; done; }
 # lib_core: ix's commons, and the stdlib
-shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_networking) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
+shared="$(dirs lib_core) $(dirs lib_code) $(dirs lib_compression) $(dirs lib_crypto) $(dirs lib_executable) $(dirs lib_networking) $(dirs lib_graphics) $(dirs assembler) $(dirs machine)"
 # not the tests (the author: "let's not compile testing code with mini-ml for now": they
 # use Testo and Alcotest), nor the stdlib itself, nor what needs SDL (Tsdl: mini-qemu's
 # window, and its Main, which opens it; "it would require too many things"; tiny-machine's
@@ -101,6 +101,8 @@ for f in $(tests/ix_files.sh "$@" | grep -E '\.ml$' | grep -vE "$nomem" | grep -
   # (mini-pascal: with lib_terminal's Talk, and Lehmer under it; lib_terminal the same)
   # (the browser: Lehmer for Math.random, the playground for its shapes)
   [ $root = browsers ] && incs[$root]="$(dirs browsers) -I lib_playground -I lib_playground/core -I lib_playground/random -I lib_networking/http $(dirs lib_graphics)"
+  # (mini-nm: the linker's objects and libraries)
+  [ $root = debuggers ] && incs[$root]="$(dirs debuggers) $(dirs linker)"
   # (mini-datalog: over mini-prolog's terms and its reader)
   [ $root = languages/datalog ] && incs[$root]="$(dirs languages/datalog) $(dirs languages/prolog)"
   [ $root = languages/pascal ] && incs[$root]="$(dirs languages/pascal) -I lib_terminal -I lib_playground/random"

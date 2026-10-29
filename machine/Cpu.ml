@@ -9,11 +9,15 @@ let cache_bits = 16
 
 (* no store invalidates an entry: the corpus has no self-modifying
  * code (plan_arm.md, decision 5) *)
+(* the address of the instruction that faulted (Memory.Fault's is its
+ * access's): kept by a handler around the loop, not by each instruction *)
+let fault_pc = ref 0
+
 let run32 ~trace (st : Arm32_isa.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in
   let tags = Array.make size (-1) and code = Array.make size (Arm32_isa.Undefined 0) in
   let pc = ref pc in
-  while true do
+  try while true do
     if !Linux.signal_waiting then begin
       st.next <- !pc;
       signal st !pc;
@@ -32,6 +36,7 @@ let run32 ~trace (st : Arm32_isa.state) ~pc ~svc ~signal stats =
     stats.instructions <- stats.instructions + 1;
     pc := st.next
   done
+  with Memory.Fault _ as e -> fault_pc := !pc; raise e
 
 let run64 ~trace (st : Arm64_isa.state) ~pc ~svc ~signal stats =
   let size = 1 lsl cache_bits in

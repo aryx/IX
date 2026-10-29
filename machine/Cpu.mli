@@ -63,6 +63,10 @@ val run32 :
   trace:(int -> Arm32_isa.t -> unit) option -> Arm32_isa.state -> pc:int -> svc:(Arm32_isa.state -> int -> unit) ->
   signal:(Arm32_isa.state -> int -> unit) -> stats -> unit
 
+(* after run32 raised Memory.Fault: the address of the instruction that
+ * faulted *)
+val fault_pc : int ref
+
 (* the same for arm64 *)
 val run64 :
   trace:(int -> Arm64_isa.t -> unit) option -> Arm64_isa.state -> pc:int -> svc:(Arm64_isa.state -> int -> unit) ->

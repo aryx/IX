@@ -35,7 +35,13 @@ type t = {
   text_start : int;         (* the first instruction's address *)
   text_end : int;
   lines : string;           (* the pc/line table's bytes *)
+  text : string;            (* the text's bytes, from text_start *)
 }
+
+(* the text's word at an address, as the processor reads it (little-endian),
+ * as its two halves of 16 bits, the high first: an int has 31 bits
+ * where mini-ml builds for arm, an instruction 32 *)
+val word : t -> int -> (int * int) option
 
 (* the tables of an a.out for arm (its bytes); None when it is none, or
  * has no symbol table (-s) *)

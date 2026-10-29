@@ -5,7 +5,7 @@
 
 type sym = { value : int; typ : char; name : string }
 
-type t = { syms : sym list; text_start : int; text_end : int; lines : string }
+type t = { syms : sym list; text_start : int; text_end : int; lines : string; text : string }
 
 (* 4 bytes, the high first *)
 let be32 (s : string) o =
@@ -35,7 +35,8 @@ let read (s : string) =
           entries (e + 1) ({ value; typ; name = String.sub s o (e - o) } :: acc)
       end
     in
-    Some { syms = entries start []; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s stop nlines }
+    Some { syms = entries start []; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s stop nlines;
+           text = String.sub s 32 text }
   end
 
 (* the files' components, by their numbers *)
@@ -123,3 +124,8 @@ let file_line t addr =
       match List.rev hs with
       | (_, hist) :: _ -> local (files t) hist line
       | [] -> None
+
+let word t addr =
+  let o = addr - t.text_start in
+  if o < 0 || o + 4 > String.length t.text || o land 3 <> 0 then None
+  else Some ((Char.code t.text.[o + 3] lsl 8) lor Char.code t.text.[o + 2], (Char.code t.text.[o + 1] lsl 8) lor Char.code t.text.[o])

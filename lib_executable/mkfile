@@ -5,5 +5,5 @@ TOP=..
 LIB=lib_executable
 DIRS=.
 NEEDS=
-UNITS=Symbols
+UNITS=Symbols Frames
 <$TOP/mkfiles/mklib

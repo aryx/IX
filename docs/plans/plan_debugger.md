@@ -410,3 +410,31 @@ debugger plan"): stage 1b's first part, and stage 2.
   and mini-where built by mini-ml (mini-mk, arm64) answer as dune's on
   mini-tar's a.out.
 Next: stage 3 (the exact walk); decision 1 taken, the tables off by default.
+
+2026-10-29, stage 3 (the author: "let's move forward on stage 3"):
+the exact walk, for arm. lib_executable's Frames: libmach's
+risctrace, the return address at 0(SP) and the caller's sp .frame
+bytes up (the link register for a leaf, or before the save), from the
+pc to _main, 40 frames at most; a frame's address the call's (the
+return address less 4), its line the call's (decision 9). **Decision
+4 answered**: mini-ml's functions keep 5l's frame but make it
+themselves (TEXT $-4: the table says L and .frame 0), so their
+prologue is read from the text, `SUB $n, R13; MOVW R14, 0(R13)` (or n
+from the pool through R11, then SUB R11, R13), gdb's way, the table
+left 5l's; the runtime's C (mini-cc) has 5l's frames and the table's
+.frame. The walk is exact through the three: an ML program dying
+three calls deep under mini-5i,
+`f2_down+0x1c Deep.ml:5 < f2_down+0x5c Deep.ml:5 < (twice more) <
+Deep.Init+0x10 < ml_program+0x264 < main+0x180 < _main+0x20`, bad ()
+inlined into down. Its first user: **mini-5i**, which after a Plan 9
+program's segmentation fault prints the walk when the program has its
+tables (`mini-5i: trace: ...`; Cpu.fault_pc, the faulting
+instruction's address, kept by a handler around the loop, not by each
+instruction). Checked: debuggers/tests/walk.sh (in make test: an
+assembler program, 5l's frame and a leaf, its trace as recorded; an ML
+one, its functions and lines, when _mk/5-plan9's lib_core is there);
+mini-5i built by mini-ml prints the same. Not yet: arm64 (7l's
+frames, mini-ml's on arm64); a fault inside a prologue other than the
+first frame's (the walk stops); stage 4, the same walk by mini-9pi's
+kernel at a suicide; stage 5, by the runtime at an uncaught exception
+(its guess of 2026-10-13 replaced).

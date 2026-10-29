@@ -37,10 +37,11 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 3 and 5 done** (the reader and the listing;
-the machine: objects, value types, generics, delegates; the writer and
-mini-tiger, `languages/tiger/`, whose assemblies Microsoft's dotnet and
-mini-dotnet both run); stage 4 (mini-9pi's card) next. See the end.
+**Status: stages 1 to 5 done** (the reader and the listing; the
+machine: objects, value types, generics, delegates; `dotnet` and
+`tiger` on mini-9pi's card; the writer and mini-tiger,
+`languages/tiger/`, whose assemblies Microsoft's dotnet and
+mini-dotnet both run); stage 6, mini-csc, next. See the end.
 
 ## Its place in `languages/`
 
@@ -547,3 +548,17 @@ dune's builds, by mini-ml's on arm64 and on arm (mini-dotnet under
 mini-5i). `languages/dotnet/tests/writer/Hello.ml`: an assembly by
 hand (a static field, a loop, a try with a catch and a finally), read
 back (-S) and run, by mini-dotnet and by Microsoft's dotnet.
+
+2026-10-29 (night), stage 4: `dotnet` and `tiger` on mini-9pi's card
+(kernels/9pi's Makefile: IXDIRS, CARD_devtools, the survey's ten
+assemblies and unhandled.dll in `/lib/dotnet`, four of fork-tiger's
+programs in `/lib/tiger`), their pages in the manual
+(docs/man/1/dotnet.md, tiger.md). `make check-dotnet`: a session
+(tests/session-card-dotnet.cmds: hello, fib, the queens with -s,
+shapes, generic, closures, hello's -S, an unhandled exception and its
+status, Tiger's queens and exceptions compiled on the card and run,
+a type error), recorded under QEMU (21 s), the same under mini-qemu
+(2 min 57 s). The queens' time on the card, under QEMU: 1.55 s by
+mini-dotnet (360,572 instructions), 1.63 s for mini-pascal's
+QUEENS.PAS, 1.19 s for Tiger's queens compiled by mini-tiger there
+(a measure of the emulator, not of a Pi).

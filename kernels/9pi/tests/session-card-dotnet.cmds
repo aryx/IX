@@ -1,0 +1,11 @@
+dotnet /lib/dotnet/hello.dll
+dotnet /lib/dotnet/fib.dll
+dotnet -s /lib/dotnet/queens.dll
+dotnet /lib/dotnet/shapes.dll
+dotnet /lib/dotnet/generic.dll
+dotnet /lib/dotnet/closures.dll
+dotnet -S /lib/dotnet/hello.dll
+dotnet /lib/dotnet/unhandled.dll; echo status: $status
+tiger -o /tmp/queens.dll /lib/tiger/queens.tig; dotnet /tmp/queens.dll | sed 9q
+tiger -o /tmp/ex.dll /lib/tiger/exceptions.tig; dotnet /tmp/ex.dll
+echo 'let var x := 1 in x + "a" end' > /tmp/bad.tig; tiger /tmp/bad.tig; echo status: $status

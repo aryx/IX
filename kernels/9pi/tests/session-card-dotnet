@@ -1,0 +1,112 @@
+
+Plan 9 from Bell Labs
+board rev: 0x900021 firmware rev: 346337
+cpu0: 0MHz ARM 1176JZF-S
+fp: 16 registers,  no simd
+fp: arm arch VFPv2; rev 5
+reset 0, root
+reset 1, cons
+reset 2, env
+reset 3, proc
+reset 4, sys
+reset 5, pipe
+reset 6, dup
+reset 7, arch
+reset 8, mnt
+reset 9, srv
+reset 10, draw
+reset 11, mouse
+reset 12, kbin
+reset 13, kbmap
+reset 14, sd
+eMMC external clock 50 Mhz
+reset 15, ether
+reset 16, ip
+reset 17, uart
+reset 18, usb
+#u/usb/ep1.0: dwcotg: port 0X0 irq 9
+NM memory: NM kernel data, NM user, NM swap
+mini-9pi: ix's programs, in the kernel's image
+dossrv: serving #s/dos
+% dotnet /lib/dotnet/hello.dll
+Hello, World!
+% dotnet /lib/dotnet/fib.dll
+6765
+102334155
+-1323752223
+% dotnet -s /lib/dotnet/queens.dll
+15863724
+92 solutions
+360572 instructions
+% dotnet /lib/dotnet/shapes.dll
+square of area 9
+shape of area 10
+shape
+True
+2
+19
+% dotnet /lib/dotnet/generic.dll
+a stack of Int32
+a stack of String
+285
+right b
+one 1
+True
+False
+% dotnet /lib/dotnet/closures.dll
+5
+6
+4
+21
+done
+% dotnet -S /lib/dotnet/hello.dll
+.assembly hello
+.assembly extern System.Private.CoreLib
+.assembly extern System.Console
+
+.class <Module>
+{
+}
+
+.class Hello extends [System.Private.CoreLib]System.Object
+{
+  .method static void Main()   // RVA 0x2050, 11 bytes
+  {
+    .entrypoint
+    .maxstack 8
+    IL_0000: ldstr "Hello, World!"
+    IL_0005: call void [System.Console]System.Console::WriteLine(string)
+    IL_000a: ret
+  }
+  .method instance void .ctor()   // RVA 0x205c, 7 bytes
+  {
+    .maxstack 8
+    IL_0000: ldarg.0
+    IL_0001: call instance void [System.Private.CoreLib]System.Object::.ctor()
+    IL_0006: ret
+  }
+}
+% dotnet /lib/dotnet/unhandled.dll; echo status: $status
+before
+Unhandled exception. System.InvalidOperationException: nobody catches this
+status: dotnet 64: 134
+% tiger -o /tmp/queens.dll /lib/tiger/queens.tig; dotnet /tmp/queens.dll | sed 9q
+ O . . . . . . .
+ . . . . O . . .
+ . . . . . . . O
+ . . . . . O . .
+ . . O . . . . .
+ . . . . . . O .
+ . O . . . . . .
+ . . . O . . . .
+
+% tiger -o /tmp/ex.dll /lib/tiger/exceptions.tig; dotnet /tmp/ex.dll
+hello
+bye
+out of ex block 1
+exception 1
+out of ex block 2
+% echo 'let var x := 1 in x + "a" end' > /tmp/bad.tig; tiger /tmp/bad.tig; echo status: $status
+/tmp/bad.tig:1.19: an arithmetic's right: int expected, not string
+status: tiger 73: 1
+% 

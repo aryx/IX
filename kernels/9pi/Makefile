@@ -347,7 +347,7 @@ IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
 IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc profilers/misc apps/music/play apps/music/rebirth games \
-  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
+  languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog languages/dotnet languages/tiger editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
   typesetting/man networking browsers/lynx browsers/netscape assembler linker linker/tools languages/ml languages/c builder generators/lex generators/yacc
 BOOTDIR_IX = boot=conf/boot.rc rc=$(IX9)/shell/mini-rc ed=$(IX9)/editors/ed/mini-ed hello=$(IX9)/kernels/9pi/tests/hello/hello hog=$(IX9)/kernels/9pi/tests/hog/hog threads=$(IX9)/kernels/9pi/tests/threads/threads sources=$(IX9)/lib_core/commons/tests/sources \
   echo=$(IX9)/utilities/misc/mini-echo ls=$(IX9)/utilities/files/mini-ls cat=$(IX9)/utilities/files/mini-cat \
@@ -868,7 +868,8 @@ endef
 #                           ("like we have for the book category" of
 #                           principia-softwarica.org: its Developer
 #                           tools): emacs, drscheme, turbopascal,
-#                           squeak, scheme, pascal, prolog
+#                           squeak, scheme, pascal, prolog, dotnet,
+#                           tiger
 #                games      tetris, wolfenstein, doom, quake, virtua,
 #                           cameltry, breakout, tronscroll
 #                           (for two boards: its network)
@@ -898,7 +899,9 @@ endef
 #   lib        a language's files (scheme's queens.scm, pascal's
 #              types.pas, which does not compile, prolog's
 #              classics.pl: check-scheme, check-pascal,
-#              check-prolog); and three small PDF files
+#              check-prolog; .NET's assemblies in /lib/dotnet, the
+#              survey's, and Tiger's programs in /lib/tiger:
+#              check-dotnet); and three small PDF files
 #              for page (page /lib/pdf/tex.pdf: two pages of pdfTeX's;
 #              docs/plans/done/plan_pdf.md, C2)
 #              and the manual, /lib/man/1 (man troff: mini-man's
@@ -934,7 +937,7 @@ CARD_apps = colors=$(IX9)/apps/misc/mini-colors stats=$(IX9)/profilers/misc/mini
 CARD_system = rio=$(IX9)/windows/mini-rio ps=$(IX9)/utilities/process/mini-ps free=$(IX9)/utilities/process/mini-free
 CARD_devtools = emacs=$(IX9)/editors/emacs/draw/emacs drscheme=$(IX9)/editors/drscheme/drscheme turbopascal=$(IX9)/editors/turbopascal/hosts/draw/turbopascal \
   squeak=$(IX9)/languages/smalltalk/hosts/draw/squeak scheme=$(IX9)/languages/scheme/mini-scheme pascal=$(IX9)/languages/pascal/mini-pascal \
-  prolog=$(IX9)/languages/prolog/mini-prolog
+  prolog=$(IX9)/languages/prolog/mini-prolog dotnet=$(IX9)/languages/dotnet/mini-dotnet tiger=$(IX9)/languages/tiger/mini-tiger
 # (old: each with its -soft variant too, the playground's software
 # platform: slower, and the games draw by software already)
 CARD_games = tetris=$(IX9)/games/puzzle/tetris missilecommand=$(IX9)/games/shmup/tinymissilecommand wolfenstein=$(IX9)/games/fps/tinywolfenstein \
@@ -988,6 +991,9 @@ QUAKE_DATA = ../../games/fps/quake/data
 CARD_QUAKE = $(foreach f,$(wildcard $(QUAKE_DATA)/progs/*.mdl $(QUAKE_DATA)/sound/*/*.wav),lib/quake/$(f:$(QUAKE_DATA)/%=%)=$(f))
 CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pascal/types.pas=../../languages/pascal/tests/types.pas \
   lib/prolog/classics.pl=../../languages/prolog/tests/classics.pl \
+  $(foreach p,hello fib queens shapes exceptions strings vec generic collections closures,lib/dotnet/$(p).dll=../../languages/dotnet/survey/programs/$(p).dll) \
+  lib/dotnet/unhandled.dll=../../languages/dotnet/tests/programs/unhandled.dll \
+  $(foreach p,queens sieve exceptions merge,lib/tiger/$(p).tig=../../languages/tiger/tests/programs/$(p).tig) \
   $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
   $(CARD_BOOK) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
@@ -1101,7 +1107,11 @@ check-card: card $(IMAGE_CARD)
 #   make check-prolog   the classical programs by both machines (the
 #                       second: -wam), goals at the prompt and ; for
 #                       the next answer, the WAM's code, the errors
-#   make expected-langs the three records made again (under QEMU)
+#   make check-dotnet   Microsoft's assemblies run (the survey's), one
+#                       listed (-S), an exception no one catches; a
+#                       Tiger program compiled by tiger and run
+#                       (plan_dotnet.md's stage 4)
+#   make expected-langs the four records made again (under QEMU)
 langcheck = $(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 900 --out $(B)/mini-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(MINIQEMU) $(BOOT_IX) $(CARD_SD) & \
 	$(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 300 --out $(B)/qemu-card-$(1).txt --lines tests/session-card-$(1).cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD) & \
 	wait; \
@@ -1110,6 +1120,7 @@ langcheck = $(SESSION_PY) $(IXQUIET) --prompt "% " $(2) --timeout 900 --out $(B)
 check-scheme: card ; $(call langcheck,scheme,--also "> " --also "  ")
 check-pascal: card ; $(call langcheck,pascal,--also "? ")
 check-prolog: card ; $(call langcheck,prolog,--also "?- " --also " ? ")
+check-dotnet: card ; $(call langcheck,dotnet)
 expected-langs: card
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "> " --also "  " --timeout 300 --out $(B)/qemu-card-scheme.txt --lines tests/session-card-scheme.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "? " --timeout 300 --out $(B)/qemu-card-pascal.txt --lines tests/session-card-pascal.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
@@ -1117,10 +1128,12 @@ expected-langs: card
 	$(call unwarned,$(B)/qemu-card-pascal.txt) > tests/session-card-pascal
 	$(SESSION_PY) $(IXQUIET) --prompt "% " --also "?- " --also " ? " --timeout 300 --out $(B)/qemu-card-prolog.txt --lines tests/session-card-prolog.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
 	$(call unwarned,$(B)/qemu-card-prolog.txt) > tests/session-card-prolog
+	$(SESSION_PY) $(IXQUIET) --prompt "% " --timeout 300 --out $(B)/qemu-card-dotnet.txt --lines tests/session-card-dotnet.cmds -- $(QEMU) $(QEMU_BOOT_IX) $(CARD_SD)
+	$(call unwarned,$(B)/qemu-card-dotnet.txt) > tests/session-card-dotnet
 
 FORCE:
 
 clean:
 	rm -rf build kernel-pi2*.img kernel-pi1.img kernel-pi1-b.img kernel-pi1-ix.img kernel-pi1-ixu.img kernel-pi1-ixa.img kernel-pi1-web.img kernel-pi1-card.img kernel-pi1-light*.img kernel-pi4.elf kernel-pi4-b.elf kernel-pi4-ix.elf kernel-pi4-card.elf kernel-pi4-ocaml4*.elf
 
-.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog expected-langs clean FORCE
+.PHONY: all run qemu check ix ix-usb run-ix check-ix ix-audio check-audio check-audio-game check-audio-play check-draw expected-draw check-menu check-rio check-colors card check-card check-scheme check-pascal check-prolog check-dotnet expected-langs clean FORCE

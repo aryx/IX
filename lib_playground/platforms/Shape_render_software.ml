@@ -140,7 +140,7 @@ let local_bounds (form : Playground.form) : (float * float * float * float) opti
       Some (min_of xs, min_of ys, max_of xs, max_of ys)
   | Words (_, str) ->
       let size = Playground.words_font_size in
-      let _strokes, width = Hershey.layout str in
+      let _strokes, width = Glyph_unicode.layout str in
       centered (width *. size /. Hershey.units_per_em) size
   | Letters (_, { at = []; _ }) -> None
   | Letters (_, l) ->
@@ -280,7 +280,7 @@ let thin_polyline ~(aa : bool) (fb : Framebuffer.t) (points : (float * float) li
 (* Text: Hershey's strokes, drawn 1 pixel wide when the pen would be
  * thinner than that anyway, else as thick strokes *)
 let draw_words (options : options) (fb : Framebuffer.t) (m : Affine.t) (str : string) ~(rgb : int) ~(alpha : float) : unit =
-  let strokes, width = Hershey.layout str in
+  let strokes, width = Glyph_unicode.layout str in
   let m = Affine.compose m (text_to_local ~width) in
   let lines = List.map (List.map (Affine.apply m)) strokes in
   let pen = pen_width *. length_scale m in
@@ -470,7 +470,7 @@ let pixel_bounds ~(width : int) ~(height : int) ~(scale : float) (shapes : Playg
     match shape.form with
     | Group shapes -> List.iter (walk m) shapes
     | Words (_, str) ->
-        let strokes, width = Hershey.layout str in
+        let strokes, width = Glyph_unicode.layout str in
         let m = Affine.compose m (text_to_local ~width) in
         let points = List.concat_map (List.map (Affine.apply m)) strokes in
         if points <> [] then add points ((pen_width *. length_scale m) +. 2.)

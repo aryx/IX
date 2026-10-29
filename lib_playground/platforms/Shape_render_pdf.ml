@@ -54,7 +54,7 @@ let rec form (file : Pdf_write.t) (c : Pdf_write.content) (st : state) (m : Affi
   | Pixels (w, h, p) -> form file c st m alpha (Bitmap (w, h, Shape_render_software.pixels_rgba p 1))
   | Words (color, str) ->
       let rgb = Shape_render_software.rgb_of_color color in
-      let strokes, width = Hershey.layout str in
+      let strokes, width = Glyph_unicode.layout str in
       let m = Affine.compose m (Shape_render_software.text_to_local ~width) in
       let pen = Shape_render_software.pen_width *. Shape_render_software.length_scale m in
       set_alpha file c st alpha;

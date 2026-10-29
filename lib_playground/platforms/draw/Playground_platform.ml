@@ -345,7 +345,7 @@ let font_of (win : window) (m : Affine.t) (str : string) : Font.t option =
   let size = Playground.words_font_size *. length_scale m in
   let fits (f : Font.t) : bool =
     String.length str = 1
-    || float (Font.width f str) <= 1.1 *. snd (Hershey.layout str) *. size /. Hershey.units_per_em in
+    || float (Font.width f str) <= 1.1 *. snd (Glyph_unicode.layout str) *. size /. Hershey.units_per_em in
   let f = if !bitmap && upright m && size >= smallest && size <= largest then
       Some (match !font with Some f -> f | None -> let f = Font.default win.back.display in font := Some f; f)
     else None in
@@ -368,7 +368,7 @@ let words (win : window) (m : Affine.t) (str : string) (src : Display.image) : u
     | Some (m', strokes, thick) when m' = m -> (strokes, thick)
     | _ ->
         let at = m in
-        let strokes, width = Hershey.layout str in
+        let strokes, width = Glyph_unicode.layout str in
         let s = Playground.words_font_size /. Hershey.units_per_em in
         let m = Affine.compose m (Affine.compose (Affine.scale s (-.s)) (Affine.translate (-.width /. 2.) 0.)) in
         let pen = Hershey.units_per_em /. 12. *. length_scale m in

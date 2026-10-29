@@ -205,3 +205,22 @@ let glyph (s : string) : glyph =
   if s = "" then ascii '?'
   else if String.length s = 1 then ascii s.[0]
   else match code_of s with -1 -> ascii '?' | cp -> ( match of_code cp with Some g -> g | None -> ascii '?')
+
+(* ix: Hershey.layout's, a character at a time, not a byte *)
+let layout (str : string) : (float * float) list list * float =
+  let chars, rest = Utf8.chars str in
+  let chars = if rest = "" then chars else chars @ [ rest ] in
+  let strokes, width =
+    List.fold_left
+      (fun (strokes, x) c ->
+        let g = glyph c in
+        let dx = x - g.left in
+        let moved =
+          List.map
+            (List.map (fun (px, py) -> (float (px + dx), float py)))
+            g.strokes
+        in
+        (strokes @ moved, x + (g.right - g.left)))
+      ([], 0) chars
+  in
+  (strokes, float width)

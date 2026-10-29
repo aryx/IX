@@ -107,3 +107,8 @@ val glyph : string -> Hershey.glyph
 
 (* whether it has one of its own: not the "?" given for what is unknown *)
 val known : string -> bool
+
+(* Hershey.layout for a UTF-8 string: a glyph a character, not a byte
+ * (the same strokes for ASCII); what the playground's renderers draw
+ * a Words with, so a field's "à midi" is not "?? midi" *)
+val layout : string -> (float * float) list list * float

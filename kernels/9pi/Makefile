@@ -94,17 +94,20 @@ KERNDATE ?= $(PRINCIPIA)
 # nothing of a kernel); PIXEL=c, principia's C pixel libraries
 # (lib_graphics/c), as before stage F
 PIXEL ?= ocaml
-# the compiler: on the Pi 1 and the Pi 2, ix's own tools (kernel.mk's COMPILER=ix:
+# the compiler: on the Pi 1, ix's own tools (kernel.mk's COMPILER=ix:
 # mini-ml's OCaml, mini-cc's C, by the mkfile), ix's compiler run by
 # ix's kernel every boot; 11% more instructions than ocaml-light's at
 # session-c, the boot's clearing of the bss set aside (2026-10-29).
 # make COMPILER=light for ocaml-light's, an image of its own
-# (kernel-pi1-light.img, kernel-pi2-light.img: the same file for both would be left stale
+# (kernel-pi1-light.img: the same file for both would be left stale
 # when switching, an ix image newer than ocaml-light's kernel.elf)
 BOARD ?= pi1
-COMPILER ?= $(if $(filter pi1 pi2,$(BOARD)),ix,light)
+# (the Pi 2 too from 9f9e8389, until the build on its card under QEMU,
+# its four cores, stopped in a run of k: back to ocaml-light, 2026-10-29,
+# docs/plans/bugs/ix.md)
+COMPILER ?= $(if $(filter pi1,$(BOARD)),ix,light)
 ifeq ($(COMPILER),light)
-ifneq ($(filter pi1 pi2,$(BOARD)),)
+ifneq ($(filter pi1,$(BOARD)),)
 IMAGE ?= kernel-$(BOARD)-light.img
 endif
 endif

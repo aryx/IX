@@ -88,11 +88,12 @@ then echo "ok forgotten: the code of plain.ml"; else echo "FAIL forgotten"; fail
 # a program of units compiled apart (TinyML_tests/units/: Shapes, with
 # its .mli, then Main), each by tiny-ml -c, its main by tiny-ml of the
 # interfaces, linked: Main.out's output, as when compiled whole; and
-# Shapes's unused function left out by tiny-linker
+# Shapes's unused function left out by tiny-linker (the main prog_main.tm,
+# not main.tm, which is Main.tm on macOS's file system, blind to case)
 UT=$F/units; mkdir -p $W/units
 if $TML -L $W/lib -c -o $W/units/Shapes.tm $UT/Shapes.ml && $TML -L $W/lib -c -o $W/units/Main.tm $W/units/Shapes.tmi $UT/Main.ml \
-   && $TML -L $W/lib -o $W/units/main.tm $W/units/Shapes.tmi $W/units/Main.tmi \
-   && link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O \
+   && $TML -L $W/lib -o $W/units/prog_main.tm $W/units/Shapes.tmi $W/units/Main.tmi \
+   && link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/prog 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ] \
    && $TML -L $W/lib -o $W/units/whole.tm $UT/Shapes.ml $UT/Main.ml && link_tm $W/units/whole $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/whole.tm $W/main4096.tm $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/whole 2>&1; echo "exit $?")" = "$(cat $UT/Main.out)" ]
@@ -108,7 +109,7 @@ if $TML -L $W/lib -c -o $W/units/Twice.tm $W/units/Twice.ml && $TML -L $W/lib -c
    && link_tm $W/units/twice $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/rmain.tm $W/units/Twice.tm $W/units/R.tm $W/main4096.tm $LIB_O \
    && [ "$(timeout 60 $CPU $W/units/twice 2>&1)" = 30 ]
 then echo "ok units: a name defined twice, the later"; else echo "FAIL units: a name defined twice"; failures=$((failures + 1)); fi
-TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O
+TL="$TL -map" link_tm $W/units/prog $L/start.tm $L/udivmod.tm $W/exit.tm $W/units/prog_main.tm $W/units/Shapes.tm $W/units/Main.tm $W/main4096.tm $LIB_O
 if grep -q "Shapes.f[0-9]*_area$" $W/units/prog.map && ! grep -q "_unused" $W/units/prog.map; then echo "ok units: what nothing uses left out"
 else echo "FAIL units: the sweep"; failures=$((failures + 1)); fi
 [ ${#refused[@]} = 0 ] || echo "refused (an integer beyond 31 bits): ${refused[*]}"

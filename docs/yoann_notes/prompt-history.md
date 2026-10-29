@@ -54648,3 +54648,26 @@ Claude's reply covers the commit fix, with no detail on the dune hang itself.
 Claude reported a build-progress line (10293/10330 jobs) and said it had found the cause of a broken line.
 Claude said the fixed pipeline reproduced the font byte for byte when applied to the rule.
 Claude checked the rule in a separate build directory so it would not disturb the lock held by the user's make.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:01
+
+**Yoann:**
+
+> yes let's commit the fix
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:01
+
+**Yoann:**
+
+> make test is also not working on this mac apparently
+
+**Claude (summary):**
+
+Claude traced most of the macOS `make test` failures to bash 3.2, BSD `date`, and the tiny-kernel Buildfile, fixing each.
+Claude took on the tiny-ml "label ml_start defined twice" failure as the last of the seven.
+Claude named the tiny-ml test program `prog_main.tm` instead of `start_main.tm`, and the tiny-ml tests then passed.
+Claude started a full `make test` rerun to check the tiny-kernel jobs and the rest.

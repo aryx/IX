@@ -1,17 +1,17 @@
 (* Mail_window: mini-pim's mail in a window (plan_mail.md, stage 5), the
    store's messages as Gmail shows them, and Gmail's keys:
 
-       Mail   Conversation   Go                       <- the menu bar
+       Mail   Conversation   Message   Go             <- the menu bar
        Inbox -- erin@ix                              3 conversations
       +-----------+---------------------------------------------------+
       | Inbox     |  news@ix               weekly          2026-10-29 |
       | All Mail  |# Carol (2)             Re: the plan    2026-10-29 |<- the
-      |           |                                                   |  selected
+      | Drafts    |                                                   |  selected
       | /plan     |                                                   |
       +-----------+---------------------------------------------------+
 
-   Every action is in the menu bar (Mail, Conversation, Go), each item
-   saying its key, Gmail's:
+   Every action is in the menu bar (Mail, Conversation, Message, Go),
+   each item saying its key, Gmail's:
 
    j k (and the arrows): the next and the previous conversation; o or
    Enter: open it, its messages one under the other, oldest first; u or
@@ -22,6 +22,14 @@
    store's file password, if the author made one: Mail_sync). Mail > Exit ends
    the program. Unread conversations are in bold.
 
+   Writing (plan_mail.md, stage 7): c a new message; r, a, f a reply,
+   a reply to all, a forward of the conversation's newest message
+   (Mail_compose). The message is written in the toolkit's widgets
+   (lib_gui: To, Cc, Subject, Attach -- files, separated by spaces --
+   and the text), kept in the store as a draft at each change, the
+   Palm's way; Send (SMTP: Gmail's, or smtp=), Save Draft (or Escape),
+   Discard. Go > Drafts lists them; o opens one again.
+
    The window shows mini-pim's store (Items), not the server: it opens
    at once, with or without the network, on what the last list kept,
    and g fetches (Mail_sync, one IMAP session). A message opened is
@@ -29,7 +37,8 @@
    (marked read on the server then); else the window says g gets it.
 
    The flags of the program: user= (the account), server=host:port
-   (Gmail's by default), plain (no TLS: mini-maild). The text is drawn
+   and smtp=host:port (Gmail's by default), plain (no TLS:
+   mini-maild). The text is drawn
    with Hershey's letters (Glyph_unicode: accents, quotes, dashes),
    each at its place, so a list is in columns. *)
 

@@ -13,9 +13,10 @@ machine, what is read kept in the suite's store (plan_pim.md's stage
 against mini-maild, and `frames.sh`, its window's (`make test`'s two
 "mini-pim").
 
-    bin/mini-pim user=... [server=host:port] [plain]
+    bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
                        the window: j k move, o open, u back, e archive,
-                       / search, Tab Inbox or All Mail, g get the mail
+                       / search, Tab Inbox or All Mail, g get the mail,
+                       c compose, r a f reply, to all, forward
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]

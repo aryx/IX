@@ -337,3 +337,18 @@ cache) as a draft. Sending moved into `Mail_sync` (`send`,
 `send_draft`, `gmail_smtp`). Dates in +0000: mini-ml's Unix has no
 localtime. Tests: Unit_compose (6), session.sh (a reply to all, sent
 and as Carol has it; a forward with a file attached).
+
+2026-10-29: stage 7 in the window: c, r, a, f (and Mail > Compose,
+Conversation > Reply, Reply All, Forward); a message written in
+lib_gui's widgets (To, Cc, Subject, Attach, the text: Gui.field_in,
+text_area_in), a draft in the store at each change, the Palm's way;
+a Message menu and buttons (Send, Save Draft or Escape, Discard); Go >
+Drafts, the drafts listed, one opened again; `smtp=` for mini-maild.
+The playground's renderers now lay a text out a character at a time
+(`Glyph_unicode.layout`), so a field draws "à midi", not "?? midi".
+Frames: three more (a reply, a reply typed into and sent, a draft
+saved and listed); the others re-recorded for the menu bar's Message
+and the sidebar's Drafts. Not yet: the drafts on Gmail's side
+(APPEND to \Drafts), addresses completed from People (stage 8),
+attachments chosen in a file dialog (typed paths for now), a
+message's attachments saved.

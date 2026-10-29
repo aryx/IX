@@ -9,8 +9,8 @@
 # its name, its arguments, the SHA-256 of the frame it ends with (as
 # games/tests/frames.sh). Each session has an empty store of its own,
 # so each gets the mail with g, the password typed; they run one after
-# the other, in the list's order, the archive last (it changes the
-# server). RECORD=1 writes the sums again; FRAMES=dir keeps each
+# the other, in the list's order, the archives last (they change the
+# server's Inbox; a reply sent goes to carol, not erin). RECORD=1 writes the sums again; FRAMES=dir keeps each
 # session's last frame there as a PNG (python3 and PIL), to look at.
 #
 # usage: frames.sh [dir]
@@ -58,7 +58,7 @@ while IFS='|' read -r name args sum; do
   mkdir $W/$name
   eval "set -- $args"; frames=$1; shift
   PIM_STORE=$W/$name/store timeout 30 $PIM -dump-frame $frames $W/$name/f.ppm \
-    -fixed-time 1000 "$@" user=erin server=$I plain > /dev/null 2> $W/$name/err ||
+    -fixed-time 1000 "$@" user=erin server=$I smtp=$S plain > /dev/null 2> $W/$name/err ||
     { echo "FAIL $name: $(head -1 $W/$name/err)"; fail=1; continue; }
   got=$(sha256sum < $W/$name/f.ppm | cut -d' ' -f1)
   echo "$name|$args|$got" >> $W/new

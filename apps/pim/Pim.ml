@@ -62,7 +62,8 @@ let usage =
   \  -offline  list and read what the store has, no server\n\
   \  -u      the account: log in as that user, the password the store's\n\
   \          file (~/.ix-pim/password, mode 600) or the first line of stdin\n\
-  with no command, the window: mini-pim user=... [server=host:port] [plain]"
+  with no command, the window: mini-pim user=... [server=host:port]\n\
+  \                             [smtp=host:port] [plain]"
 
 type options = {
   server : (string * int) option;

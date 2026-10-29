@@ -13,23 +13,30 @@ type caps =
 (*****************************************************************************)
 
 (* what waits for the password *)
-type action = Fetch | Open | Archive
+type action = Fetch | Open | Archive | Send
 type asking = Password | Search
-type mode = Browsing | Reading | Asking of asking
+type mode = Browsing | Reading | Composing | Asking of asking
 
 type model = {
   account : string;
   server : Mail_sync.server;
-  mailbox : string;
+  smtp : Mail_sync.server;
+  mailbox : string; (* INBOX, All Mail, or the store's drafts *)
   password : string option; (* kept while the window is open *)
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
+  drafts : Mail_compose.draft list; (* the drafts mailbox's *)
   selected : int;
   (* the conversation opened: its messages, oldest first, each its text
    * when the cache has it *)
   reading : (Imap.summary * string option) list;
   scroll : int; (* the first line of the conversation shown *)
   mode : mode;
+  (* the message written: its fields, its text being edited, and the
+   * mode its window goes back to *)
+  draft : Mail_compose.draft;
+  body : Text_edit.t;
+  back_to : mode;
   field : string; (* what is typed after a question *)
   after : action option;
   status : string;
@@ -37,6 +44,9 @@ type model = {
 }
 
 let store (caps : caps) : Items.t = Items.at (Items.place caps)
+
+(* the drafts, a mailbox of the store's, not the server's *)
+let drafts = "Drafts"
 
 let contains (s : string) (word : string) : bool =
   let s = String.lowercase_ascii s and w = String.lowercase_ascii word in
@@ -64,28 +74,32 @@ let load (caps : caps) (m : model) : model =
       ~account:m.account ~mailbox:m.mailbox
   in
   let cs = List.filter (matches m.query) (Conversations.group l) in
-  let n = List.length cs in
-  { m with conversations = cs; selected = max 0 (min m.selected (n - 1)) }
+  let ds =
+    List.map Mail_compose.of_item
+      (List.filter
+         (fun i -> Item.has_stamp i "draft")
+         (Items.all caps (store caps)))
+  in
+  let n = if m.mailbox = drafts then List.length ds else List.length cs in
+  { m with conversations = cs; drafts = ds;
+    selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
   let flag name =
     match List.assoc_opt name flags with Some v -> v | None -> ""
   in
-  let server =
-    match String.rindex_opt (flag "server") ':' with
+  (* server=host:port, else Gmail's *)
+  let server name (gmail : Mail_sync.server) : Mail_sync.server =
+    let plain = List.mem_assoc "plain" flags in
+    match String.rindex_opt (flag name) ':' with
     | Some i -> (
-        let hp = flag "server" in
+        let hp = flag name in
         match
           int_of_string_opt (String.sub hp (i + 1) (String.length hp - i - 1))
         with
-        | Some port ->
-            {
-              Mail_sync.host = String.sub hp 0 i;
-              port;
-              plain = List.mem_assoc "plain" flags;
-            }
-        | None -> Mail_sync.gmail)
-    | None -> { Mail_sync.gmail with plain = List.mem_assoc "plain" flags }
+        | Some port -> { Mail_sync.host = String.sub hp 0 i; port; plain }
+        | None -> gmail)
+    | None -> { gmail with plain }
   in
   (* the store's password file, if the author made one *)
   let password, status =
@@ -96,15 +110,20 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   load caps
     {
       account = flag "user";
-      server;
+      server = server "server" Mail_sync.gmail;
+      smtp = server "smtp" Mail_sync.gmail_smtp;
       mailbox = "INBOX";
       password;
       query = "";
       conversations = [];
+      drafts = [];
       selected = 0;
       reading = [];
       scroll = 0;
       mode = Browsing;
+      draft = Mail_compose.blank ~id:"";
+      body = Text_edit.of_string "";
+      back_to = Browsing;
       field = "";
       after = None;
       status;
@@ -176,6 +195,13 @@ let run (caps : caps) (m : model) (action : action) : model =
                 m with
                 status = Printf.sprintf "%d messages fetched" (List.length l);
               })
+      | Send -> (
+          match
+            Mail_sync.send_draft caps (store caps) m.smtp ~user:m.account
+              ~password:p m.draft
+          with
+          | Error e -> { m with mode = Composing; status = e }
+          | Ok said -> load caps { m with mode = m.back_to; status = said })
       | Archive -> (
           let uids = List.map (fun (s : Imap.summary) -> s.uid) (current m) in
           match
@@ -190,7 +216,10 @@ let run (caps : caps) (m : model) (action : action) : model =
 
 (* the next or the previous conversation; opened, when one is *)
 let next (caps : caps) (m : model) (d : int) : model =
-  let n = List.length m.conversations in
+  let n =
+    if m.mailbox = drafts then List.length m.drafts
+    else List.length m.conversations
+  in
   let m = { m with selected = max 0 (min (n - 1) (m.selected + d)) } in
   if m.mode = Reading then open_ caps m else m
 
@@ -215,20 +244,42 @@ type command =
   | Previous
   | Inbox
   | All_mail
+  | Compose
+  | Reply
+  | Reply_all
+  | Forward
+  | Send_
+  | Save_draft
+  | Discard
+  | Drafts
 
 (* the menu bar: each menu its title, then its items, each with its
  * command and its key, said in the item (a menu is where the keys are
  * learnt) *)
 let menus : (string * (string * command) list) list =
   [ ( "Mail",
-      [ ("Get Mail  (g)", Get); ("Search...  (/)", Search_); ("Exit", Exit) ] );
+      [ ("Get Mail  (g)", Get); ("Compose  (c)", Compose);
+        ("Search...  (/)", Search_); ("Exit", Exit) ] );
     ( "Conversation",
       [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
-        ("Archive  (e)", Archive_); ("Next  (j)", Next);
-        ("Previous  (k)", Previous) ] );
-    ("Go", [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail) ]) ]
+        ("Reply  (r)", Reply); ("Reply All  (a)", Reply_all);
+        ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
+        ("Next  (j)", Next); ("Previous  (k)", Previous) ] );
+    ( "Message",
+      [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
+        ("Discard", Discard) ] );
+    ( "Go",
+      [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
+        ("Drafts", Drafts) ] ) ]
 
 let menu_bar = 30.
+
+(* the picture's sizes: the letters, a list's row, the sidebar, the
+ * title bar *)
+let size = 16.
+let row = 28.
+let side = 170.
+let bar = 40.
 
 (* the menu [i]'s title, at the window's top left *)
 let menu_box (computer : computer) (i : int) : Widget.box =
@@ -256,13 +307,71 @@ let switch (caps : caps) (m : model) (mailbox : string) : model =
   in
   (* (fetched when the password is known: what the store has of the
    * other mailbox may be old, or nothing) *)
-  if m.password <> None then run caps m Fetch else m
+  if m.password <> None && mailbox <> drafts then run caps m Fetch else m
+
+(*****************************************************************************)
+(* Writing *)
+(*****************************************************************************)
+
+let made = ref 0
+
+(* a draft's id: the time, and a count *)
+let new_id () : string =
+  incr made;
+  Printf.sprintf "draft:%.0f.%d" (Unix.gettimeofday ()) !made
+
+(* the window writing [d]; back after to the list, or the conversation *)
+let compose (m : model) (d : Mail_compose.draft) : model =
+  { m with
+    draft = d;
+    body = Text_edit.of_string d.text;
+    mode = Composing;
+    back_to = (if m.mode = Reading then Reading else Browsing);
+    status = "" }
+
+(* a reply to the conversation's newest message read, or its forward;
+ * the conversation opened first when only listed *)
+let answer (caps : caps) (m : model) (c : command) : model =
+  let m =
+    if m.mode = Reading || current m = [] then m else open_ caps m
+  in
+  let read = List.filter (fun (_, t) -> t <> None) m.reading in
+  match List.rev read with
+  | ((s : Imap.summary), Some text) :: _ ->
+      let mail = Mail.parse text in
+      let shown = Mail_text.text mail in
+      let id = new_id () in
+      compose m
+        (if c = Forward then Mail_compose.forward ~id ~key:s.msgid mail shown
+         else
+           Mail_compose.reply ~id ~all:(c = Reply_all) ~me:m.account mail
+             shown)
+  | _ -> { m with status = "g: get the mail to answer it" }
+
+(* the draft kept, the window back where it was *)
+let leave (caps : caps) (m : model) (status : string) : model =
+  load caps { m with mode = m.back_to; status }
 
 let command (caps : caps) (m : model) (c : command) : model =
+  (* (writing, the conversation's commands wait) *)
+  let while_writing =
+    match c with
+    | Exit | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Get ->
+        true
+    | _ -> false
+  in
+  if m.mode = Composing && not while_writing then m
+  else if m.mode <> Composing && (c = Send_ || c = Save_draft || c = Discard)
+  then m
+  else
   match c with
   | Get -> run caps m Fetch
   | Search_ -> { m with mode = Asking Search; field = m.query }
   | Exit -> CapStdlib.exit caps 0
+  | Open_ when m.mailbox = drafts -> (
+      match List.nth_opt m.drafts m.selected with
+      | Some d -> compose m d
+      | None -> m)
   | Open_ ->
       if current m = [] then m
       else if m.password = None then open_ caps m
@@ -273,6 +382,73 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Previous -> next caps m (-1)
   | Inbox -> switch caps m "INBOX"
   | All_mail -> switch caps m Mail_sync.all_mail
+  | Drafts -> switch caps m drafts
+  | Compose -> compose m (Mail_compose.blank ~id:(new_id ()))
+  | Reply | Reply_all | Forward -> answer caps m c
+  | Send_ -> run caps m Send
+  | Save_draft ->
+      Items.save caps (store caps) (Mail_compose.to_item m.draft);
+      leave caps m "draft saved"
+  | Discard ->
+      Items.remove caps (store caps) m.draft.id;
+      leave caps m "discarded"
+
+(* where the message's fields, its text and its buttons are: under the
+ * title bar, right of the sidebar *)
+let field_box (computer : computer) (i : int) : Widget.box =
+  let w = computer.screen.width and h = computer.screen.height in
+  let x0 = (-.w /. 2.) +. side +. 16. and room = w -. side -. 32. in
+  { Widget.x = x0 +. 80. +. ((room -. 80.) /. 2.);
+    y = (h /. 2.) -. menu_bar -. bar -. 26. -. (float_of_int i *. 34.);
+    w = room -. 80.; h = 26. }
+
+let area_box (computer : computer) : Widget.box =
+  let w = computer.screen.width and h = computer.screen.height in
+  let x0 = (-.w /. 2.) +. side +. 16. and room = w -. side -. 32. in
+  let top = (h /. 2.) -. menu_bar -. bar -. 26. -. (3. *. 34.) -. 26. in
+  let bottom = (-.h /. 2.) +. 56. in
+  { Widget.x = x0 +. (room /. 2.); y = (top +. bottom) /. 2.; w = room;
+    h = top -. bottom }
+
+let button_box (computer : computer) (i : int) : Widget.box =
+  let w = computer.screen.width and h = computer.screen.height in
+  let x0 = (-.w /. 2.) +. side +. 16. in
+  { Widget.x = x0 +. 60. +. (float_of_int i *. 130.); y = (-.h /. 2.) +. 28.;
+    w = 120.; h = 30. }
+
+(* the message's widgets this frame (immediate mode), the draft written
+ * to the store as it changes (the Palm's: no Save needed); a button's
+ * command, or the menu's *)
+let writing (caps : caps) (computer : computer) (m : model)
+    (menu : command option) (escape : bool) : model =
+  let d = m.draft in
+  let field i v = Gui.field_in ~enabled:true computer (field_box computer i) v in
+  let to_ = field 0 d.to_ in
+  let cc = field 1 d.cc in
+  let subject = field 2 d.subject in
+  let attach = field 3 d.attach in
+  let body = Gui.text_area_in computer (area_box computer) m.body in
+  let button i label =
+    Gui.button_in ~enabled:true computer (button_box computer i) label
+  in
+  let send = button 0 "Send" in
+  let save = button 1 "Save Draft" in
+  let discard = button 2 "Discard" in
+  let d' =
+    { d with to_; cc; subject; attach; text = Text_edit.to_string body }
+  in
+  if d' <> d then Items.save caps (store caps) (Mail_compose.to_item d');
+  let m = { m with draft = d'; body } in
+  let c =
+    match menu with
+    | Some c -> Some c
+    | None ->
+        if send then Some Send_
+        else if save || escape then Some Save_draft
+        else if discard then Some Discard
+        else None
+  in
+  match c with Some c -> command caps m c | None -> m
 
 let update (caps : caps) (computer : computer) (m : model) : model =
   let keys = computer.keyboard.keys in
@@ -282,7 +458,10 @@ let update (caps : caps) (computer : computer) (m : model) : model =
     match m.mode with
     | Asking a ->
         if pressed "Escape" then
-          { m with mode = Browsing; field = ""; after = None }
+          { m with
+            mode = (if m.after = Some Send then Composing else Browsing);
+            field = "";
+            after = None }
         else if pressed "Enter" then
           match a with
           | Password -> (
@@ -298,6 +477,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
                   selected = 0 }
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
+    | Composing -> writing caps computer m menu (pressed "Escape")
     | (Browsing | Reading) when Gui.modal () -> m
     | Browsing | Reading -> (
         let reading = m.mode = Reading in
@@ -308,6 +488,10 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "o" || pressed "Enter" then Some Open_
           else if pressed "u" || pressed "Escape" then Some Back
           else if pressed "e" then Some Archive_
+          else if pressed "c" then Some Compose
+          else if pressed "r" then Some Reply
+          else if pressed "a" then Some Reply_all
+          else if pressed "f" then Some Forward
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
           else if pressed "Tab" then
@@ -329,10 +513,6 @@ let update (caps : caps) (computer : computer) (m : model) : model =
 (* The picture *)
 (*****************************************************************************)
 
-let size = 16.
-let row = 28.
-let side = 170.
-let bar = 40.
 let ink = rgb 32 33 36
 let grey = rgb 95 99 104
 let blue = rgb 26 115 232
@@ -378,6 +558,7 @@ let wrap (room : float) (s : string) : string list =
 let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then "Inbox"
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
+  else if m.mailbox = drafts then "Drafts"
   else m.mailbox
 
 let view (computer : computer) (m : model) : shape list =
@@ -392,11 +573,17 @@ let view (computer : computer) (m : model) : shape list =
       | Asking Password ->
           "password: " ^ String.make (List.length (Text.chars m.field)) '*'
       | Asking Search -> "search: " ^ m.field ^ "_"
+      | Composing ->
+          (if m.draft.subject = "" then "New message" else m.draft.subject)
+          ^ " \xe2\x80\x94 " ^ m.account
       | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
     in
     let right =
       if m.status <> "" then m.status
-      else Printf.sprintf "%d conversations" (List.length m.conversations)
+      else
+        let count n one = Printf.sprintf "%d %s%s" n one (if n = 1 then "" else "s") in
+        if m.mailbox = drafts then count (List.length m.drafts) "draft"
+        else count (List.length m.conversations) "conversation"
     in
     [
       rectangle (rgb 241 243 244) w bar |> move 0. (top -. (bar /. 2.));
@@ -421,18 +608,45 @@ let view (computer : computer) (m : model) : shape list =
                text ink ~bold:(box = m.mailbox) ~room:(side -. 24.)
                  (left +. 16.) (y -. 19.) name;
              ])
-         [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail) ])
+         [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail);
+           ("Drafts", drafts) ])
     @
     if m.query <> "" then
       [
         text blue ~bold:false ~room:(side -. 24.) (left +. 16.)
-          (top -. bar -. 12. -. (3. *. row) -. 19.)
+          (top -. bar -. 12. -. (4. *. row) -. 19.)
           ("/" ^ m.query);
       ]
     else []
   in
   let main =
     match m.mode with
+    | Composing ->
+        (* the fields' names; the fields, the text and the buttons are
+         * the toolkit's (Gui.draw) *)
+        List.mapi
+          (fun i name ->
+            let b = field_box computer i in
+            text grey ~bold:false ~room:76. x0 (b.y -. 5.) name)
+          [ "To"; "Cc"; "Subject"; "Attach" ]
+    | Browsing when m.mailbox = drafts ->
+        if m.drafts = [] then
+          [ text grey ~bold:false ~room x0 (top -. bar -. 31.) "No drafts." ]
+        else
+          List.concat
+            (List.mapi
+               (fun i (d : Mail_compose.draft) ->
+                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
+                 (if i = m.selected then
+                    [ rectangle (rgb 232 240 254) (room +. 16.) row
+                      |> move (x0 -. 8. +. ((room +. 16.) /. 2.)) (y -. (row /. 2.)) ]
+                  else [])
+                 @ [ text ink ~bold:false ~room:190. x0 (y -. 19.)
+                       (if d.to_ = "" then "(no one)" else d.to_);
+                     text ink ~bold:false ~room:(room -. 200.) (x0 +. 200.)
+                       (y -. 19.)
+                       (if d.subject = "" then "(no subject)" else d.subject) ])
+               m.drafts)
     | Reading ->
         let subject =
           match m.reading with

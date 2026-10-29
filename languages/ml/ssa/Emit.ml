@@ -23,7 +23,17 @@ type mach = {
   fscratch : int;           (* a third scratch one, beside F0 and F1 (round) *)
 }
 
-(* the values' registers: no value is in one across a call (Alloc's
+(* vsp, the value stack's top, is one register for the program's whole
+ * run, R10 (R26 on arm64), across the C the ML code calls: before a
+ * call ML stores it to ml_vsp (runtime.c's), for the collector, and
+ * never loads it back after. Nothing declares it: it holds because C
+ * leaves it alone, 5c's and mini-cc's code never allocating R9 and
+ * R10, Plan 9's two extern registers (5c's txt.c; mini-cc's Gen and
+ * ssa/'s Ssa_gen), and gcc's (-gas) saving R10 as a callee. tmp, R9,
+ * is a temporary of a few instructions, never live across a call.
+ * The kernels' swtch keeps R10 too (lib_machine's l.s).
+ *
+ * the values' registers: no value is in one across a call (Alloc's
  * safepoints), so an argument's register holds one between calls, a
  * call's arguments loaded by a parallel move (args); arm's DIV is a
  * call of _div, which keeps R0-R3, R4-R8 untouched
@@ -1174,7 +1184,7 @@ let func m out (fn : func) (lf : L.func) =
   let leaf = !small_frames && not !bl && !tries = 0 && dframe = 0 && not r14 in
   let msize = if leaf then 0 else round (record c !tries + (8 * dframe)) 16 in
   let pr fmt = Printf.bprintf out fmt in
-  pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
+  pr "\t// line %d\n\tTEXT\t%s(SB), %s\n" fn.line fn.name m.frame;
   if msize > 0 then pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n" msize m.sp mov m.link link m.sp;
   if f > 0 then pr "\tADD\t$%d, R%d\n" (w * f) vsp;
   let slot_at i = let pre, a = slot_ref f i in pr "%s" pre; a in

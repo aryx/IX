@@ -11,16 +11,36 @@ module G = Gen
 
 (* the registers Alloc colors with, and the two scratch ones of each
  * kind: Gen's stack registers and its variables' (arm64), less the
- * scratch, R0 and Gen's tmp *)
+ * scratch, R0 and Gen's tmp; s2 -1: none *)
 type regs = {
   iregs : int list; fregs : int list; s1 : int; s2 : int; f1 : int; f2 : int
 }
 
-let regs () =
+(* OPTIMIZATION (R8 the allocator's): on arm, 5c's registers are R0-R8
+ * (R9 and R10 the external ones, R11 the linker's, then SB, SP, the
+ * link and the PC), and R0 is the only scratch: R1-R8 Alloc's, eight.
+ * Not R9 or R10, though no C of ix declares an extern register: R10 is
+ * mini-ml's value stack's top, a register for a program's whole run,
+ * which the ML code does not load back after calling C (mini-ml's
+ * Emit; runtime.c's ml_vsp): C that changed it would lose the ML
+ * caller's values. R9 is mini-ml's temporary, by its code only between
+ * calls as far as read, but nothing says so; Plan 9's rule, both kept,
+ * is the one place that does. Nor R26 on arm64, the value stack's
+ * there.
+ * A function with an instruction that needs a second scratch (two
+ * operands in memory, a cycle of phis' moves) is made again with
+ * seven, R8 that scratch.
+ * old: R1-R7 always, R0 and R8 the scratch *)
+exception No_scratch
+
+let regs ~eight =
   if G.a64 () then
     { iregs = List.init 15 (fun i -> i + 1) @ [ 19; 20; 21; 22; 23; 24; 25 ];
       fregs = List.init 15 (fun i -> i + 1) @ [ 17; 18; 19; 20; 21; 22; 23 ];
       s1 = 0; s2 = 16; f1 = 0; f2 = 16 }
+  else if eight then
+    { iregs = [ 1; 2; 3; 4; 5; 6; 7; 8 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
+      s1 = 0; s2 = -1; f1 = 0; f2 = 7 }
   else
     { iregs = [ 1; 2; 3; 4; 5; 6; 7 ]; fregs = [ 1; 2; 3; 4; 5; 6 ];
       s1 = 0; s2 = 8; f1 = 0; f2 = 7 }
@@ -33,8 +53,9 @@ type dest = Block of int | Edge of int
 type place = Preg of bool * int | Pslot of int
 type source = From of Ssa.value | Temp of bool
 
-let func (fn : func) =
-  let m = G.mach () and rg = regs () in
+let gen rg (fn : func) =
+  let m = G.mach () in
+  let s2 () = if rg.s2 < 0 then raise No_scratch else rg.s2 in
   let loc, saves, spill, nslots =
     Alloc.alloc fn ~nregs:(List.length rg.iregs)
       ~nfregs:(List.length rg.fregs) in
@@ -54,7 +75,7 @@ let func (fn : func) =
   let machine v c = List.nth (if fl v then rg.fregs else rg.iregs) c in
   let scratch v n =
     match fl v, n with
-    | false, 1 -> rg.s1 | false, _ -> rg.s2
+    | false, 1 -> rg.s1 | false, _ -> s2 ()
     | true, 1 -> rg.f1 | true, _ -> rg.f2 in
   (* v's value into register x *)
   let load_into v x =
@@ -112,11 +133,16 @@ let func (fn : func) =
       G.i2 (G.store_op t) (r rg.s1) (G.at (dst_addr ()) (off + (k * w)))
     done
   in
+  (* a second operand's register: the first scratch when the first
+   * operand's is not it (arm's eight registers, R0 the only scratch) *)
+  let second a ra b =
+    if fl a = fl b && ra = scratch b 1 then get b 2 else get b 1 in
   let compare t a b =
     let ra = get a 1 in
     let b =
       match b with
-      | V b -> (match t with F _ -> f (get b 2) | I _ -> r (get b 2))
+      | V b ->
+          (match t with F _ -> f (second a ra b) | I _ -> r (second a ra b))
       | Imm c -> imm c in
     match t with
     | I _ -> ignore (G.ins_reg "CMP" ra (Some b) None)
@@ -184,7 +210,7 @@ let func (fn : func) =
       | LoadAt (mm, t) ->
           let d = dst v in G.i2 (G.load_op t) (A.Mem mm) (reg (fl v) d); put v d
       | Store (t, a, k, x) ->
-          let ra = get a 1 in let rx = get x 2 in
+          let ra = get a 1 in let rx = second a ra x in
           G.i2 (G.store_op t) (reg (fl x) rx) (G.at ra k)
       | StoreAt (mm, t, x) ->
           let rx = get x 1 in G.i2 (G.store_op t) (reg (fl x) rx) (A.Mem mm)
@@ -201,12 +227,12 @@ let func (fn : func) =
           Emit.patch q !Emit.pc;
           put v d
       | Op (o, (I _ as t), a, b) ->
-          let ra = get a 1 in let rb = get b 2 in let d = dst v in
+          let ra = get a 1 in let rb = second a ra b in let d = dst v in
           ignore (G.ins_reg (G.int_op o) ra (Some (r rb)) (Some (r d)));
           G.extend t d;
           put v d
       | Op (o, t, a, b) ->
-          let ra = get a 1 in let rb = get b 2 in let d = dst v in
+          let ra = get a 1 in let rb = second a ra b in let d = dst v in
           ignore (G.ins_reg (G.float_op o t) ra (Some (f rb)) (Some (f d)));
           put v d
       | OpImm (o, t, a, c) ->
@@ -310,7 +336,7 @@ let func (fn : func) =
              | _ -> None)
         | _ -> None) fn.blocks.(s).phis)
     in
-    let temp float = if float then rg.f2 else rg.s2 in
+    let temp float = if float then rg.f2 else s2 () in
     let reads = function
       | From v -> place v | Temp float -> Some (Preg (float, temp float)) in
     let emit (d, src, float) =
@@ -425,3 +451,10 @@ let func (fn : func) =
   text.to_ <-
     Some (A.Imm (Int64.of_int
                    (Declare.round frame (if G.a64 () then 8 else 4))))
+
+let func (fn : func) =
+  let progs = !Emit.progs and pc = !Emit.pc in
+  try gen (regs ~eight:true) fn
+  with No_scratch ->
+    Emit.progs := progs; Emit.pc := pc;
+    gen (regs ~eight:false) fn

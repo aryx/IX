@@ -211,7 +211,81 @@ switch, but a ref set in the source, not by a flag: `Opti.enabled`
 `Swcursor.enabled`, `Mini_opti.enabled` and `compiled` (mini-netscape's
 JavaScript), `Synth.band_limited`, `Space.ears_apart`, `Mixer.stereo`.
 
-## 8. What does not hold yet
+## 8. The toolchain: how the programs are compiled
+
+The author, 2026-10-29: "let's explain those register allocation (and
+what 'gives to allocator' mean) in m-ix.md", "a section on the
+toolchain in addition to sections on hardware". Every program of m-ix
+is compiled by ix's own tools: its ML by mini-ml, its C (mini-ml's
+runtime, the C library, the kernels' C) by mini-cc, then mini-asm,
+mini-ar and mini-ld.
+
+### The compilers' levels
+
+| compiler | flag | what | where it is chosen |
+|---|---|---|---|
+| mini-ml | `-O3` | every optimization: Opti's passes, constants folded, the back end in SSA form (`-ssa`), inlining | the mkfiles' `MLOPT` (mkfiles/mkconfig), `-O3` unless set |
+| mini-ml | `-O0` | none: the stack machine's code as Lower makes it | `MLOPT=-O0` |
+| mini-cc | (none), `-O0` | 5c's code byte for byte, 5c `-O0`'s: every variable in memory (compat) | the default |
+| mini-cc | `-simple` | the stack machine, its depth k in the k-th register | |
+| mini-cc | `-simple -O` | Opti's passes on it, variables in registers by loop weight (regs), Peep | |
+| mini-cc | `-O3` | `-simple -O -ssa`: values in registers by SSA form's coloring (languages/c/ssa/) | lib_core's mkfile (the runtime, the libc's C), the kernels' mkkernel (`COPT=-O3`; `COPT=` for compat's) |
+
+The tests' switches of the same: `RUNTIME_FLAGS` (mini-ml's
+tests/run.sh: mini-cc's flags for the runtime, `-O3` by default, empty
+for compat's), `CC_FLAGS` (languages/c/tests/bench.sh), `SIMPLE_FLAGS`
+(languages/c/tests/simple.sh), `ML_FLAGS` (mini-ml's tests).
+
+### The registers on arm
+
+A register allocator decides which values of a function live in the
+machine's registers, and which in its frame (a slot, loaded at each
+use and stored where the value is made). "The allocator's registers"
+are those it may give a value; a scratch register is one the code
+generator keeps for itself, to load a value that lives in a slot just
+for the instruction that reads it, or to compute a value that goes to
+a slot; a reserved register has a role of its own for the whole
+program, which no compiler touches. Plan 9's arm convention (5c's
+txt.c, 5l's 5.out.h) gives each register its role:
+
+| register | role | mini-cc -O3 (ssa/) |
+|---|---|---|
+| R0 | the result, the first argument | the scratch |
+| R1-R8 | the compiler's: 5c allocates R0-R8 | the allocator's (R8 the second scratch in a function that needs one) |
+| R9 | an external register (`extern register`: a Plan 9 kernel's `up`, the current process); in ix, mini-ml's temporary | reserved |
+| R10 | an external register (a Plan 9 kernel's `m`, principia's `cpu`, this processor's state); in ix, mini-ml's value stack's top for a program's whole run | reserved |
+| R11 | the linker's temporary (a long constant, a far branch) | reserved |
+| R12 | the static base, SB | reserved |
+| R13 | the stack pointer | reserved |
+| R14 | the link register, the return address | reserved |
+| R15 | the PC | reserved |
+| F1-F6 | floating point (VFP) | the allocator's |
+| F0, F7 | | the scratch |
+
+Why R9 and R10 stay reserved though no C in ix declares an `extern
+register`: mini-ml's code keeps its value stack's top in R10 (R26 on
+arm64) for the whole run, across the C it calls. Before a call it
+stores it to `ml_vsp` (the runtime's, for the collector) and never
+loads it back after; nothing declares this, it holds because 5c and
+mini-cc never allocate R9 and R10 (5c's `txt.c` reserves them in every
+file). C that used R10 would lose the ML caller's values. R9 is
+mini-ml's temporary, used only between calls as far as its code was
+read, but nothing guarantees it: the rule keeps both. The kernels'
+`swtch` keeps R10 across a switch too (kernels/lib_machine/pi1/l.s).
+Where it is written: mini-ml's Emit (its machine records), the
+runtime's `ml_vsp`, mini-cc's Ssa_gen (its registers).
+
+No register is saved across a call by the one called (Plan 9's
+convention: the caller saves): a value live across a call is either
+in a slot for its whole life, or in a register stored to its slot
+where it is made and loaded after each call, whichever costs fewer
+instructions by the loops they are in (languages/c/ssa/Alloc.mli).
+On arm64 the allocator has R1-R15 and R19-R25, F1-F15 and F17-F23;
+R0 and R16 are the scratch. mini-ml's back end has its own: its
+values live on a value stack the collector scans
+(languages/ml/ssa/Alloc.mli).
+
+## 9. What does not hold yet
 
 Found while writing this page (2026-10-22), not changed:
 - A flag of the platform is read from the command line on SDL, the

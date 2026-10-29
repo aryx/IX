@@ -53,6 +53,10 @@ extern double ml_fsqrt(double);
 #endif
 extern value ml_units[];
 
+/* the value stack's top as the ML code left it when it called C: its
+ * own is a register for the whole run (R10 on arm, R26 on arm64),
+ * which this C must not change, and does not, mini-cc never
+ * allocating R9 and R10 (Plan 9's extern registers; mini-ml's Emit) */
 value *ml_vsp;
 void *ml_handler;
 /* for a trace (exceptions.c): whether ml_raise is to keep the top of

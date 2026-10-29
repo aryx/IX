@@ -19,6 +19,8 @@ type mach = {
   aapcs : bool;             (* C's arguments: gcc's, R0-R3 then 0(SP); else 5c's, R0 then w*(i+1)(SP) *)
 }
 
+(* (vsp, R10 on arm: one register for the whole run, across the C the
+ * ML code calls, which never touches it; ssa's Emit says why) *)
 let arm = { arch = Arm; w = 4; mov = "MOVW"; nregs = 8; tmp = 9; vsp = 10; sp = "R13"; link = "R14"; frame = "$-4"; aapcs = false }
 let arm64 = { arch = Arm64; w = 8; mov = "MOV"; nregs = 15; tmp = 16; vsp = 26; sp = "RSP"; link = "R30"; frame = "$-8"; aapcs = false }
 let gnu m = { m with aapcs = true }
@@ -297,7 +299,8 @@ let func m out (fn : func) =
   let f = fn.nslots + !maxsp and c = round (max (w * (!cargs + 1)) (link + w)) 16 in
   let msize = record c !tries in
   let pr fmt = Printf.bprintf out fmt in
-  pr "\tTEXT\t%s(SB), %s\n" fn.name m.frame;
+  (* (the function's line, for the object: CLI's lines) *)
+  pr "\t// line %d\n\tTEXT\t%s(SB), %s\n" fn.line fn.name m.frame;
   pr "\tSUB\t$%d, %s\n\t%s\t%s, %d(%s)\n\tADD\t$%d, R%d\n" msize m.sp mov m.link link m.sp (w * f) vsp;
   let slot i = let pre, a = slot_ref m (w * (i - f)) in pr "%s" pre; a in
   (* (the parameters past the registers already in their slots: Call) *)
@@ -455,6 +458,6 @@ let startup m compile units =
   in
   (* it and the curry functions (once for all the units) compiled by
    * compile: this back end's, or ssa's (CLI, -ssa) *)
-  Buffer.add_string out (compile ({ name = "ml_program"; nparams = 0; nslots = 1; code } :: Lower.curry_funcs ()));
+  Buffer.add_string out (compile ({ name = "ml_program"; nparams = 0; nslots = 1; code; line = 0 } :: Lower.curry_funcs ()));
   words m out "ml_units" (string_of_int (List.length units) :: List.map (fun u -> Lower.mangle u ^ ".Roots(SB)") units);
   Buffer.contents out

@@ -224,3 +224,22 @@ Arm, mini-5i, the benchmarks by -O3, compat's beside:
 sorts.c's own sort 7.4 to 7.7 million: a value live across its
 recursive call now stored at each turn, where only one path calls.
 
+## 2026-10-29, R8 the allocator's on arm
+
+The author: "how can we use more registers for ssa/ on arm? I like
+the simplicity in Plan 9 toolchain where a few registers are reserved
+for a clear useful purpose". 5c's registers are R0-R8 (R9 and R10 the
+external ones, R11 the linker's, R12 SB, R13 SP, R14 the link, R15 the
+PC); ssa/ kept R0 and R8 as scratch. Now R0 is the only one, R1-R8 the
+allocator's, a second operand loaded into R0 when the first is in a
+register; a function with an instruction that still needs a second
+scratch (two operands in memory, a cycle of phis' moves) is emitted
+again with R1-R7 (Ssa_gen.func, its instructions taken back). The roles
+explained in docs/manuals/m-ix.md's section 8.
+
+Arm, mini-5i: mini-ml compiling its three units, the runtime and the
+libc by -O3, 5,107.9 million instructions to 5,087.4 (0.4% fewer;
+gc.c's scan keeps its end in a register, lo and hi still in slots:
+ten values live in its copy loop); the benchmarks: sorts 0.4% fewer,
+fmt and copy the same.
+

@@ -308,6 +308,9 @@ GROUPS = [
 ]
 
 
+MLIS = "tiny/*.mli"  # tiny/'s row of the programs' interfaces, the last
+
+
 def classify(path, verbose):
     """(group, subgroup) of a file: tests wherever they are, else by
     its top directory. The subgroup is the top directory (a program, a
@@ -329,6 +332,11 @@ def classify(path, verbose):
             if group == "tiny":
                 # (a directory there is what a program has beside its file,
                 # tiny/TinyKernel/: not all of them in one row named tiny/)
+                # (the programs' interfaces in one row, unless -v: the
+                # author, 2026-10-29, "let's count the .mli for tiny/ but
+                # let's not display them (or display just their total)")
+                if len(parts) == 2 and path.endswith(".mli") and not verbose:
+                    return group, MLIS
                 return group, path if len(parts) == 2 else "/".join(parts[:2]) + "/"
             if verbose and len(parts) > top + 1:
                 return group, "/".join(parts[:top + 1]) + "/"
@@ -630,7 +638,7 @@ def main():
         tops = dict(GROUPS).get(group, [])
         rank = {t: i for i, t in enumerate(tops)}
         for sub in sorted(subs, key=lambda k: (rank.get(k.split("/")[0],
-                                                        len(tops)), k)):
+                                                        len(tops)), k == MLIS, k)):
             row(sub + ("*" if (group, sub) in starred else ""), subs[sub], 2)
     print()
     row("total", total(s for g in stats.values() for s in g.values()))

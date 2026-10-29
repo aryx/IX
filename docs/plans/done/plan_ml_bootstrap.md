@@ -842,6 +842,7 @@ features ix is rewritten out of are what mini-ml doesn't have to grow.
 | 2026-10-29 | mini-cc -simple -O: arm's variables in the stack's registers above a function's deepest stack (regs), a division by a power of 2 a shift (imm); the runtime by it 0.972 of HEAD with gc.c's C scan (1.058 before); plan_cc_ssa.md | +46 (mini-cc) | | languages/c/ssa/, plan_cc_ssa.md |
 | 2026-10-29 | mini-cc's ssa/ (-simple -O -ssa): SSA from the stack code, coloring, post-indexed accesses; the runtime by it with gc.c's C scan 0.885 of HEAD, scan_arm.s's 0.853 | | +1,533 (mini-cc: ssa/ 1,471, CLI, Gen.mli, mkfile) | the runtime built by it |
 | 2026-10-29 | The scan back in C, copy's work in its loop, the runtime by mini-cc's ssa/; scan_arm.s and scan_arm64.s gone; mini-ml compiling 1.0003 of the assembly's | -242 (runtime) | -2 (lib_core's mkfile) | |
+| 2026-10-29 | The libc's and the kernels' C by mini-cc -O3; languages/c/tests/bench/ (fmt 26.9% fewer instructions, copy 57.1%, sorts 14.0%); imm: a signed division of an unsigned by a power of 2 a shift | | +130 (benchmarks 112, bench.sh 27; Opti, mkfiles) | libc's qsorts |
 | 2026-10-28 | lib_crypto's Sha1 in Int32: an int is 31 bits on arm, its hashes were wrong there and its .inline the card's another (self-mix) | +9 | | |
 | 2026-10-29 | Fold wraps a literal to the target's bits, as the card reads it (Chacha20's mask, 0xffffffff, -1 on arm): the summaries by the host the card's | +1 | | |
 

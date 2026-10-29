@@ -142,3 +142,37 @@ gone. Not done: libc by -ssa (it stays compat's, fuzz.sh's reference);
 more registers on arm (R1-R7: the scan's lo and hi in slots); a first
 argument's store and reload into R0 at a call; ZR for a stored 0 on
 arm64.
+
+## 2026-10-29, the libc and the kernels' C by -O3
+
+The author: "why libc is not compiled by -O3? [...] same for the
+kernels' runtime, let's use -O3 there too, if it turns out -O3 generate
+faster code". lib_core's mkfile compiles the libc's C by -O3 (its
+memmove and memset are assembly already), the kernels' mkkernel their
+C (the ML runtime, lib_machine's runtime.c, machine.c, usb.c, shim.c;
+COPT= for compat's). mini-9pi's pixels are OCaml (lib_memdraw), not C:
+-O3 reaches a game's frame by the runtime and the libc only.
+
+languages/c/tests/bench/ (the author: "feel free to add those test
+benchmark under languages/c/tests/bench/ [...] like we did for
+mini-ml"), by tests/bench.sh, each program and the libc by CC_FLAGS,
+arm (mini-5i -s):
+
+| | compat | -O3 | |
+|---|---:|---:|---:|
+| fmt: snprint, strcpy, strlen, memcmp | 4,206.0 million | 3,075.5 | 26.9% fewer |
+| copy: *q++ = *p++, a walk | 51.5 | 22.1 | 57.1% fewer |
+| sorts: a quicksort by hand, then qsort | 36.3 | 31.2 | 14.0% fewer |
+
+Found by sorts: (lo + hi) / 2 in v[...] is Div of an unsigned, an
+index's type, which imm left to arm's _div (Opti's imm now: a shift,
+signed when the type fills the register, else unsigned). Left: libc's
+qsorts 10% more under -O3 than compat's (13.8 million to 12.4), its
+calls of the comparison function among its loops.
+
+Checked: simple.sh with -O -ssa (the benchmarks among the programs);
+the divisions against 5c's and 7c's with -O and -O -ssa; make test
+(mini-9pi's kernel by -O3 boots and builds on its card in the smoke
+test, which now compiles pow.c by -O3 there, as lib_core's mkfile).
+Not run: the kernels' long checks (mini-mk check) under mini-qemu.
+

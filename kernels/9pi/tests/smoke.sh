@@ -70,7 +70,8 @@ cd $L
 ml -m 5 -O3 $I -o $l/Pervasives.5 core/Pervasives.ml
 cmp $l/Pervasives.5 $h/Pervasives.5 && echo Pervasives: the host
 cmp $l/Pervasives.inline $h/Pervasives.inline && echo Pervasives.inline: the host
-cc -m 5 $C -o $l/pow.5 libc/port/pow.c
+# (-O3: as lib_core's mkfile builds the libc)
+cc -m 5 -O3 $C -o $l/pow.5 libc/port/pow.c
 cmp $l/pow.5 $h/pow.5 && echo pow: the host
 cd /src/self
 cc -m 5 $C -o $s/hello.5 hello.c

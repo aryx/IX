@@ -77,23 +77,26 @@ $D/start.$O: mkfile $TOP/mkfiles/mkconfig $KLIB/mkkernel
 	mkdir -p $D
 	$ML -start $STD $COMMONS $ALL_ML Std_exit -o $target
 
-# the C and the assembly, by their names
+# the C and the assembly, by their names; the C by mini-cc -O3, its
+# back end with registers (plan_cc_ssa.md; COPT= for compat's, 5c -O0's
+# code, the old way)
+COPT=-O3
 $D/rt.$O: $RTSRC $KLIB/mkkernel
 	mkdir -p $D
-	$CC $CINC $HEAP -o $target $RT/runtime.c
+	$CC $COPT $CINC $HEAP -o $target $RT/runtime.c
 KH=$RT/mlvalues.h $RT/callback.h $RT/memory.h $RT/alloc.h $BD/board.h
 $D/kruntime.$O: $KLIB/runtime.c $KH
 	mkdir -p $D
-	$CC $KINC $KFLAGS -o $target $KLIB/runtime.c
+	$CC $COPT $KINC $KFLAGS -o $target $KLIB/runtime.c
 $D/usb_c.$O: $KLIB/usb.c $KH
 	mkdir -p $D
-	$CC $KINC -o $target $KLIB/usb.c
+	$CC $COPT $KINC -o $target $KLIB/usb.c
 $D/machine_c.$O: $BD/machine.c $KLIB/machine.c $KH
 	mkdir -p $D
-	$CC $KINC $KFLAGS -o $target $BD/machine.c
+	$CC $COPT $KINC $KFLAGS -o $target $BD/machine.c
 $D/shim.$O: $KLIB/shim.c $BD/board.h
 	mkdir -p $D
-	$CC $KINC -o $target $KLIB/shim.c
+	$CC $COPT $KINC -o $target $KLIB/shim.c
 $D/l.$O: $BD/$LS $BD/l.s
 	mkdir -p $D
 	$AS -o $target $BD/$LS

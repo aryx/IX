@@ -65,8 +65,8 @@ ARCH=`{if(~ $O 5) echo arm; if not if(~ $O 7) echo arm64}
 CINC=-Ilibc/include -Ilibc/include/utf -Ilibc -Ilibc/include/arch/$ARCH -D$ARCH -D$OS
 # OPTIMIZATION (the runtime by ssa/): mini-cc -O3, its back end with
 # registers (-simple -O -ssa, plan_cc_ssa.md), gc.c's scan as fast as it
-# was by hand in assembly; the libc stays compat's, 5c's code (old: $CC
-# $CINC, compat's for the runtime too)
+# was by hand in assembly (old: $CC $CINC, compat's for the runtime
+# too)
 $L/runtime.$O: $RTSRC
 	mkdir -p $L
 	$CC -O3 $CINC -o $target $TOP/languages/ml/runtime/runtime.c
@@ -102,9 +102,11 @@ LIBC=`{if(~ $OS^$O linux5) echo $LIBC_C $LIBC_linux $LIBC_linux5 $LIBC_S5; if no
  if not if(~ $OS^$O plan95) echo $LIBC_C $LIBC_plan9 $LIBC_plan95 $LIBC_S5 ix/syscall6_plan9_arm}
 LIBCOBJS=${LIBC:%=$LC/%.$O}
 
+# (by mini-cc -O3, as the runtime: old: $CC $CINC, compat's, 5c -O0's
+# code)
 $LC/%.$O: libc/%.c
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
-	$CC $CINC -o $target libc/$stem.c
+	$CC -O3 $CINC -o $target libc/$stem.c
 $LC/%.$O: libc/%.s
 	mkdir -p `{echo $target | sed 's,/[^/]*$,,'}
 	$AS -o $target libc/$stem.s

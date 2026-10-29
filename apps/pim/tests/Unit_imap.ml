@@ -87,6 +87,7 @@ let mailbox () : Imap_server.store * (int -> Imap_server.message) =
       ]
   in
   ( {
+      all_mail = "[Gmail]/All Mail";
       messages = (fun _ -> !ms);
       change =
         (fun _ uid ~flags ~labels ->

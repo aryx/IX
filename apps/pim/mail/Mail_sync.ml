@@ -7,6 +7,22 @@ type server = { host : string; port : int; plain : bool }
 
 let gmail = { host = "imap.gmail.com"; port = 993; plain = false }
 
+let all_mail = "[Gmail]/All Mail"
+
+(* the server's name of [mailbox]: All Mail's is found by its \All *)
+let named (t : Imap.t) (mailbox : string) : (string, string) result =
+  if mailbox <> all_mail then Ok mailbox
+  else
+    match Imap.mailboxes t with
+    | Error e -> Error e
+    | Ok l -> (
+        let all (attributes, _) =
+          List.exists (fun a -> String.lowercase_ascii a = "\\all") attributes
+        in
+        match List.find_opt all l with
+        | Some (_, name) -> Ok name
+        | None -> Ok mailbox)
+
 let session (caps : < Cap.network ; Cap.open_in ; .. >) (s : server)
     ~(user : string) ~(password : string) ~(mailbox : string)
     (f : Imap.t -> ('a, string) result) : ('a, string) result =
@@ -23,7 +39,8 @@ let session (caps : < Cap.network ; Cap.open_in ; .. >) (s : server)
       let r =
         let* t = Imap.connect conn in
         let* () = Imap.login t ~user ~password in
-        let* _ = Imap.select t mailbox in
+        let* name = named t mailbox in
+        let* _ = Imap.select t name in
         let r = f t in
         Imap.logout t;
         r

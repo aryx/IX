@@ -25,7 +25,7 @@
  * conversation (Gmail's X-GM-THRID), the newest first: its newest
  * message's UID, "*" if any of it is unread, the date, who sent it, how
  * many messages, the subject. -q: Gmail's search syntax, done by Gmail
- * (X-GM-RAW). read: the headers to read and the text (Mime.text);
+ * (X-GM-RAW). read: the headers to read and the text (Mail_text);
  * archive: Gmail's gesture, the \Inbox label taken off.
  *
  * What list and read fetch is kept in mini-pim's store (Items.mli): a
@@ -235,7 +235,9 @@ let print (caps : < Cap.stdout ; .. >) (text : string) : unit =
       if v <> "" then
         Console.print caps (String.capitalize_ascii name ^ ": " ^ v ^ "\n"))
     [ "from"; "to"; "cc"; "date"; "subject" ];
-  Console.print caps ("\n" ^ Mime.text m)
+  let t = Mail_text.text m in
+  Console.print caps
+    ("\n" ^ t ^ if String.ends_with ~suffix:"\n" t then "" else "\n")
 
 (* read: from the cache when it is there, from the server and into the
  * cache else; marked read on the server and in its item *)

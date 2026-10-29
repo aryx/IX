@@ -91,4 +91,22 @@ let tests =
           str "Latin-9's euro" "5 €" (Mime.to_utf8 "iso-8859-15" "5 \xa4");
           str "Latin-1's ¤ there" "5 ¤" (Mime.to_utf8 "iso-8859-1" "5 \xa4");
           str "not known: as it is" "\xe9" (Mime.to_utf8 "x-unknown" "\xe9"));
-    ]
+          (* ix's: real mail's, HTML only (Mail_text) *)
+      Testo.create "HTML only: made text, its links listed" (fun () ->
+          let m =
+            Mail.parse
+              "Content-Type: multipart/alternative; boundary=\"a\"\n\n\
+               --a\nContent-Type: text/plain\n\n \n\
+               --a\nContent-Type: text/html; charset=windows-1252\n\n\
+               <html><head><style>p {}</style></head><body>\
+               <h1>Shipped</h1><p>Your order, \x93a caf\xe9\x94. \
+               <a href=\"https://shop/42\">Track it</a>.</p></body></html>\n\
+               --a--\n"
+          in
+          str "the HTML's text" "Shipped\n\nYour order, “a café”. Track it[1].\n\n[1] https://shop/42"
+            (String.concat "\n" (List.map String.trim (String.split_on_char '\n' (Mail_text.text m)))));
+      Testo.create "a plain part that says something is read" (fun () ->
+          let m = Mail.parse multipart in
+          str "the text, the picture said" "Here are the photos.\n\n[attached: picture.png, image/png, 11 bytes]"
+            (Mail_text.text m));
+]

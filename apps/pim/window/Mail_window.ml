@@ -272,7 +272,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Next -> next caps m 1
   | Previous -> next caps m (-1)
   | Inbox -> switch caps m "INBOX"
-  | All_mail -> switch caps m "[Gmail]/All Mail"
+  | All_mail -> switch caps m Mail_sync.all_mail
 
 let update (caps : caps) (computer : computer) (m : model) : model =
   let keys = computer.keyboard.keys in
@@ -377,7 +377,7 @@ let wrap (room : float) (s : string) : string list =
 
 let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then "Inbox"
-  else if m.mailbox = "[Gmail]/All Mail" then "All Mail"
+  else if m.mailbox = Mail_sync.all_mail then "All Mail"
   else m.mailbox
 
 let view (computer : computer) (m : model) : shape list =
@@ -421,7 +421,7 @@ let view (computer : computer) (m : model) : shape list =
                text ink ~bold:(box = m.mailbox) ~room:(side -. 24.)
                  (left +. 16.) (y -. 19.) name;
              ])
-         [ ("Inbox", "INBOX"); ("All Mail", "[Gmail]/All Mail") ])
+         [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail) ])
     @
     if m.query <> "" then
       [
@@ -449,7 +449,7 @@ let view (computer : computer) (m : model) : shape list =
               in
               let body =
                 match t with
-                | Some t -> wrap room (String.trim (Mime.text (Mail.parse t)))
+                | Some t -> wrap room (String.trim (Mail_text.text (Mail.parse t)))
                 | None -> [ "(not fetched: g gets the mail)" ]
               in
               ((true, head) :: List.map (fun l -> (false, l)) body)

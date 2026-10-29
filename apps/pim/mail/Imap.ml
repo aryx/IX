@@ -252,6 +252,20 @@ let select (t : t) (mailbox : string) : (string, string) result =
       in
       Ok (match List.find_map validity rs with Some v -> v | None -> "")
 
+let mailboxes (t : t) : ((string list * string) list, string) result =
+  match command t "LIST \"\" \"*\"" with
+  | Error e -> Error e
+  | Ok rs ->
+      Ok
+        (List.filter_map
+           (fun r ->
+             match r with
+             | Data [ Atom l; attributes; _; name ]
+               when String.uppercase_ascii l = "LIST" ->
+                 Some (texts attributes, text name)
+             | _ -> None)
+           rs)
+
 let search (t : t) (query : string) : (int list, string) result =
   match command t ("UID SEARCH " ^ query) with
   | Error e -> Error e

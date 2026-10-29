@@ -9,7 +9,8 @@
 # with a dot whole); the relay refused. Read by IMAP: a question, its
 # answer (Windows-1252, quoted-printable) and a newsletter listed as two
 # conversations, unread; the answer read, its text UTF-8; the newsletter
-# archived, gone from INBOX, still in All Mail; a search; the password
+# archived, gone from INBOX, still in All Mail (and in a French Gmail's,
+# [Gmail]/Tous les messages, found by its \All); a search; the password
 # in the store's file, and refused when others may read it. Then, the
 # server gone, the same read from mini-pim's store (-offline), and a
 # server not there. No network but this machine's, and never Gmail.
@@ -22,7 +23,7 @@ ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 B=${1:-$ROOT/_build/default/apps/pim}
 if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild
 else PIM=$B/Pim.exe; MAILD=$B/Maild.exe; fi
-W=$(mktemp -d); trap 'kill $pid 2> /dev/null; rm -rf $W' EXIT
+W=$(mktemp -d); trap 'kill $pid $fr 2> /dev/null; rm -rf $W' EXIT
 mkdir $W/spool
 # (mini-pim's store the test's, never ~/.ix-pim)
 export PIM_STORE=$W/store
@@ -101,6 +102,18 @@ chmod 644 $PIM_STORE/password
 timeout 20 $PIM -s $I -plain -u erin@ix list < /dev/null > $W/out 2>&1
 has "others may read it" "a password file others may read: refused"
 rm $PIM_STORE/password
+
+# All Mail in a French Gmail: mini-pim asks for [Gmail]/All Mail, and
+# selects the mailbox LIST says is \All
+$MAILD -p 0 -i 0 -a '[Gmail]/Tous les messages' $W/spool > $W/frlog 2>&1 &
+fr=$!
+n=0
+until grep -q 'serving' $W/frlog || [ $n -ge 50 ]; do sleep 0.1; n=$((n + 1)); done
+F=$(grep -o 'IMAP on [0-9.:]*' $W/frlog | cut -d' ' -f3)
+echo secret | timeout 20 $PIM -s $F -plain -u erin@ix list \
+  -m '[Gmail]/All Mail' > $W/out 2>&1
+has '^    3 \*  *news@ix' "All Mail found by its \\All, its name French"
+kill $fr; wait $fr 2> /dev/null
 pim list
 kill $pid; wait $pid 2> /dev/null
 # offline: what the last list and read kept

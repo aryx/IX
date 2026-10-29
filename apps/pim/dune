@@ -26,7 +26,7 @@
  (wrapped false)
  (modules :standard \ Pim Maild)
  (flags (:standard -w -32-37-69))
- (libraries ix_playground ix_gui ix_graphics_software ix_tls ix_tcp ix_core
+ (libraries ix_html ix_playground ix_gui ix_graphics_software ix_tls ix_tcp ix_core
    caps unix))
 
 ; the program, with the platform that writes a frame to a file (the

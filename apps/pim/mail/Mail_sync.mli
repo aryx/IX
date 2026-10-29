@@ -13,6 +13,11 @@ type server = { host : string; port : int; plain : bool (* no TLS *) }
 (* Gmail's: imap.gmail.com:993, TLS *)
 val gmail : server
 
+(* All Mail, as mini-pim names it, in the store and to the session
+ * below, which selects the server's own name of it: the mailbox LIST
+ * says is \All ([Gmail]/Tous les messages in a French Gmail) *)
+val all_mail : string
+
 (* [session caps server ~user ~password ~mailbox f]: [f] with the
  * mailbox selected; logged out after *)
 val session :

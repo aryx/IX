@@ -23,10 +23,12 @@
 type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.readdir;
               Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-maild [-p port] [-i port] [-d domain] spool
+let usage = "usage: mini-maild [-p port] [-i port] [-d domain] [-a name] spool
   -p  SMTP's port (2525; 0: one the system chooses, said on the first line)
   -i  IMAP's port (1143; 0 as for -p)
-  -d  the domain taken mail for (ix)"
+  -d  the domain taken mail for (ix)
+  -a  All Mail's name ([Gmail]/All Mail; a French Gmail's:
+      '[Gmail]/Tous les messages')"
 
 let say (caps : < Cap.stdout; .. >) (line : string) : unit =
   Console.print caps (line ^ "\n");
@@ -57,7 +59,8 @@ let keep (caps : < caps; .. >) ~(spool : string) (d : Smtp_server.delivery) :
 
 (* IMAP's store: the files, and the flags and labels of each
  * (user, UID) changed since mini-maild started *)
-let store (caps : < caps; .. >) ~(spool : string) : Imap_server.store =
+let store (caps : < caps; .. >) ~(spool : string) ~(all_mail : string) :
+    Imap_server.store =
   let marks : (string * int, string list * string list) Hashtbl.t =
     Hashtbl.create 16
   in
@@ -75,7 +78,8 @@ let store (caps : < caps; .. >) ~(spool : string) : Imap_server.store =
           flags; labels })
       (numbers caps dir)
   in
-  { messages;
+  { all_mail;
+    messages;
     change = (fun user uid ~flags ~labels ->
       Hashtbl.replace marks (user, uid) (flags, labels)) }
 
@@ -132,7 +136,13 @@ let rec serve (sockets : (Unix.file_descr * (Lines.t -> unit)) list) : 'a =
     ready;
   serve sockets
 
-type options = { port : int; imap_port : int; domain : string; spool : string }
+type options = {
+  port : int;
+  imap_port : int;
+  domain : string;
+  all_mail : string;
+  spool : string;
+}
 
 let rec options (o : options) (args : string list) : options option =
   let port p f = match int_of_string_opt p with Some p -> f p | None -> None in
@@ -141,11 +151,15 @@ let rec options (o : options) (args : string list) : options option =
   | "-p" :: p :: rest -> port p (fun p -> options { o with port = p } rest)
   | "-i" :: p :: rest -> port p (fun p -> options { o with imap_port = p } rest)
   | "-d" :: d :: rest -> options { o with domain = d } rest
+  | "-a" :: a :: rest -> options { o with all_mail = a } rest
   | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
   | dir :: rest -> options { o with spool = dir } rest
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
-  let default = { port = 2525; imap_port = 1143; domain = "ix"; spool = "" } in
+  let default =
+    { port = 2525; imap_port = 1143; domain = "ix";
+      all_mail = "[Gmail]/All Mail"; spool = "" }
+  in
   match options default (List.tl (Array.to_list argv)) with
   | None -> Console.eprint caps (usage ^ "\n"); Exit.Err "usage"
   | Some o when not (Sys.file_exists o.spool && Sys.is_directory o.spool) ->
@@ -165,7 +179,7 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
           let spool = o.spool in
           serve
             [ (s, smtp caps ~spool ~domain:o.domain);
-              (i, imap (store caps ~spool)) ])
+              (i, imap (store caps ~spool ~all_mail:o.all_mail)) ])
 
 let () =
   Cap.main (fun caps ->

@@ -123,6 +123,12 @@ val login : t -> user:string -> password:string -> (unit, string) result
 (* the mailbox's UIDVALIDITY *)
 val select : t -> string -> (string, string) result
 
+(* LIST "" "*": each mailbox's attributes and name. Gmail's own are
+ * known by an attribute (RFC 6154), not by their names, which are in
+ * the account's language: \All is [Gmail]/All Mail in English, and
+ * [Gmail]/Tous les messages in French; \Sent, \Drafts, \Trash *)
+val mailboxes : t -> ((string list * string) list, string) result
+
 (* the UIDs a search gives, in order: "ALL", "UNSEEN",
  * "X-GM-RAW \"from:alice\"" *)
 val search : t -> string -> (int list, string) result

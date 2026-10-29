@@ -11,7 +11,8 @@
    BODY.PEEK[], BODY[HEADER], BODY[HEADER.FIELDS (...)]), UID STORE
    (FLAGS and X-GM-LABELS, set, added, taken off, .SILENT), NOOP,
    LOGOUT. Two mailboxes, as Gmail's: INBOX, the messages labelled
-   \Inbox, and "[Gmail]/All Mail", all of them. A conversation
+   \Inbox, and All Mail, all of them, its name the store's (Gmail's is
+   in the account's language), LIST saying it is \All. A conversation
    (X-GM-THRID) is the UID of its first message, by Mail_thread.
 
    Not here: a client's literals (a LOGIN's password is quoted), IDLE,
@@ -24,8 +25,9 @@ type message = { uid : int; text : string; flags : string list;
                  labels : string list }
 
 (* a user's messages, oldest first, and a message's flags and labels
- * changed *)
+ * changed; the name of the mailbox of all of them ([Gmail]/All Mail) *)
 type store = {
+  all_mail : string;
   messages : string -> message list;
   change : string -> int -> flags:string list -> labels:string list -> unit;
 }

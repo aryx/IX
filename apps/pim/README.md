@@ -25,11 +25,12 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
         -offline       list and read from the store, no server
                        by default with Gmail (smtp.gmail.com:465,
                        imap.gmail.com:993, TLS), the app password the
-                       first line of standard input
-    bin/mini-maild [-p port] [-i port] [-d domain] spool
+                       store's file password (mode 600) or the first
+                       line of standard input
+    bin/mini-maild [-p port] [-i port] [-d domain] [-a name] spool
                        mail for its domain taken by SMTP and read by
                        IMAP, on 127.0.0.1, a file a message:
-                       spool/<user>/<uid>
+                       spool/<user>/<uid>; -a All Mail's name
 
     mail/Mail          a message (RFC 5322): fields, folding,
                        addresses, dates, Message-IDs
@@ -43,6 +44,9 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     mail/Imap_server   the server's machine, mini-maild's
     mail/Lines         a connection of lines, over TCP or TLS, that
                        drives those machines
+    mail/Mail_text     a message as the text to read: HTML only made
+                       text (browsers/html's Line_mode), attachments
+                       said
     mail/Mail_item     a message as an item of the store
     mail/Mail_sync     the server and the store: what the commands and
                        the window do

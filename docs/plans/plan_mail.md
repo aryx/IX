@@ -309,3 +309,16 @@ mode lets others read it. An app password stays valid until revoked
 (or the account's password changed), so typed once into that file.
 Tests: Unit_items (none, its line, refused), session.sh (a list with
 nothing on standard input; the file opened to others refused).
+
+2026-10-29: stage 6 begun without Gmail (the author away; what real
+mail needs, as far as mini-maild can show it). HTML-only mail made
+text: `Mail_text`, the plain parts when one is not blank, else the
+HTML by browsers/html's `Line_mode` (the Line Mode Browser's text,
+each link numbered, the links listed after), the attachments said a
+line each; the window and `read` show it. All Mail found by its
+`\All` (LIST, RFC 6154), not its name: a French Gmail's is
+`[Gmail]/Tous les messages`; mini-pim still says `[Gmail]/All Mail`
+in its store and flags (`Mail_sync.all_mail`), and mini-maild takes
+the name (`-a`). Tests: Unit_mime (an HTML-only alternative in
+Windows-1252, a plain part with a picture), session.sh (a mini-maild
+in French).

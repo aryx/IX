@@ -467,6 +467,28 @@ elif [ ! -x /tmp/ix-ocaml-light-arm/bin/ocamlopt ]; then
 elif ! command -v arm-linux-gnueabihf-gcc > /dev/null; then
   skip "$t9" "no arm-linux-gnueabihf-gcc"
 else job "$t9" kernels/9pi/tests/smoke.sh $W/9pi-smoke; fi
+# mini-9pi for the Pi 1 built by ix (mini-ml's OCaml, mini-cc -O3's C),
+# from nothing in this run's own directory, booted under mini-qemu to
+# rc's prompt on principia's card (about 75 s): the other jobs' kernels
+# are ocaml-light's or arm64's, and a change of the compilers' contract
+# on arm breaks this one first (2026-10-29: R10, docs/plans/bugs/ix.md)
+P=$HOME/principia
+pi1_by_ix() {
+  local b=$W/mk/5 out=$W/pi1.txt n=0 pid
+  (NPROC=32 mini-mk O=5 B=$b libs) > $W/mk5.libs.log 2>&1 ||
+    { echo "mini-mk O=5 failed in libs:"; tail -3 $W/mk5.libs.log | cut -c1-200; return 1; }
+  (cd kernels/9pi && NPROC=32 mini-mk O=5 B=$b PRINCIPIA=$P) > $W/mk5.9pi.log 2>&1 ||
+    { echo "mini-mk O=5 failed in kernels/9pi:"; tail -3 $W/mk5.9pi.log | cut -c1-200; return 1; }
+  mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
+    -drive file=$P/qemu-sd.img,if=sd,format=raw,snapshot=on < /dev/null > $out 2>&1 &
+  pid=$!
+  until grep -aq '^%' $out || [ $n -ge 600 ]; do sleep 0.1; n=$((n + 1)); done
+  kill $pid 2> /dev/null; wait $pid 2> /dev/null
+  grep -aq '^%' $out || { echo "no rc prompt in:"; head -5 $out | cut -c1-200; return 1; }
+}
+tp="mini-9pi for the Pi 1 built by ix, booted to rc"
+if [ -f $P/qemu-sd.img ] && [ -x $P/ROOT/arch/arm/bin/rc ]; then job "$tp" pi1_by_ix
+else skip "$tp" "no principia's card in $P"; fi
 [ -d kernels/9pi/build/pi1-ocaml ] || skip "mini-ml compiles mini-9pi's Memchan and Memfont" "no generated Memdata: principia's fonts, mini-9pi's Makefile"
 xv6=
 if [ -f $HOME/xv6/forks/arm64-pi4/fs.img ]; then xv6=kernels/xv6

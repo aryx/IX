@@ -1,0 +1,27 @@
+; mini-csc (docs/plans/plan_dotnet.md, stage 6, decision 11): a C#
+; reduced to what the survey's simpler programs need, compiled to .NET.
+; Csc_lexer (ocamllex), Csc_parser (by hand: C#'s casts and generic
+; arguments), Csc_ast, Csc_types (the types, the program's classes and
+; the library's from Library's descriptions, overloads), Csc_emit (the
+; IL, one pass), Csc_compile (the classes declared, then the bodies).
+(ocamllex Csc_lexer)
+
+(library
+ (name ix_csc)
+ (wrapped false)
+ (modules :standard \ CLI Main)
+ (libraries ix_dotnet ix_core))
+
+; the command
+(library
+ (name ix_csc_cli)
+ (wrapped false)
+ (modules CLI)
+ (libraries ix_csc ix_dotnet ix_core fpath caps))
+
+(executable
+ (name Main)
+ (public_name mini-csc)
+ (package ix)
+ (modules Main)
+ (libraries ix_csc_cli ix_core caps))

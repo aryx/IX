@@ -306,6 +306,7 @@ job "mini-forth: the words, by text" languages/forth/tests/run.sh -dune
 job "mini-datalog: its programs, naive and semi-naive" languages/datalog/tests/run.sh -dune
 job "mini-dotnet: Microsoft's assemblies read, listed (-S), run: what Microsoft's runtime prints" languages/dotnet/tests/run.sh -dune
 job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by mini-dotnet" languages/tiger/tests/run.sh -dune
+job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh

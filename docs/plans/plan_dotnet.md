@@ -37,11 +37,12 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 5 done** (the reader and the listing; the
+**Status: stages 1 to 6 done** (the reader and the listing; the
 machine: objects, value types, generics, delegates; `dotnet` and
 `tiger` on mini-9pi's card; the writer and mini-tiger,
-`languages/tiger/`, whose assemblies Microsoft's dotnet and
-mini-dotnet both run); stage 6, mini-csc, next. See the end.
+`languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
+whose assemblies Microsoft's dotnet and mini-dotnet both run); stage 7,
+the verifier, next. See the end.
 
 ## Its place in `languages/`
 
@@ -562,3 +563,29 @@ a type error), recorded under QEMU (21 s), the same under mini-qemu
 mini-dotnet (360,572 instructions), 1.63 s for mini-pascal's
 QUEENS.PAS, 1.19 s for Tiger's queens compiled by mini-tiger there
 (a measure of the emulator, not of a Pi).
+
+2026-10-29 (night), stage 6: mini-csc (`languages/dotnet/csc/`, 1,870
+lines with its lexer): Csc_lexer (ocamllex), Csc_parser (by hand,
+recursive descent: C# is not LALR(1), its casts and its generic
+arguments need a type looked past, and Roslyn's parser is written by
+hand too; ocamlyacc refused for that, as parser-technology asks to
+justify), Csc_types (the types, the program's classes, the library's
+from mini-dotnet's own Library.specs, so a member mini-csc accepts is
+one mini-dotnet has; overloads by the cost of the arguments'
+conversions), Csc_emit (the IL in one pass, a choice that needs types
+first made by compiling and throwing away), Csc_compile (the classes
+declared, a TypeDef's row known before it is made, an interface's
+methods made virtual final, then the bodies). The writer got
+InterfaceImpl rows. Beyond decision 11's list: a property's getter
+(shapes' Count), out and ref parameters and arguments
+(TryGetValue), `do`, `continue`, the conditional, `is`, casts of
+numbers and of references, boxes and unboxes, a try with catches and a
+finally, a return inside a try (a leave). Not: foreach's finally that
+disposes its enumerator. Checked (`csc/tests/run.sh`, in make test):
+hello, fib, queens, shapes, exceptions, collections and
+`csc/tests/strings.cs` (the survey's strings without its interpolation
+and its switch) print the survey's `.expected`, and
+`csc/tests/features.cs` what Microsoft's csc's assembly of it prints,
+by mini-dotnet and by Microsoft's dotnet (`-ms`); vec, generic,
+closures and the survey's strings.cs refused, each with its line; by
+dune's builds, by mini-ml's on arm64 and on arm under mini-5i.

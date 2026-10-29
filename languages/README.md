@@ -30,6 +30,7 @@ And the compilers to .NET, whose assemblies mini-dotnet and Microsoft's
 
 | folder | language | program | plan |
 |---|---|---|---|
+| `dotnet/csc/` | a C# reduced to the survey's simpler programs: classes, interfaces, virtual methods, exceptions, foreach over the library's collections; its overloads against mini-dotnet's own description of System | mini-csc | [plan_dotnet.md](../docs/plans/plan_dotnet.md) |
 | `tiger/` | Appel's Tiger, with fork-tiger's exceptions: its nested functions on .NET's static methods, a frame an object, the static link its first argument | mini-tiger | [plan_dotnet.md](../docs/plans/plan_dotnet.md) |
 
 The one-file variants are in `tiny/` (TinyC.ml, TinyML.ml), beside

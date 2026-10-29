@@ -1,0 +1,42 @@
+# mini-csc, built by ix's tools: its lexer by mini-lex, and the units of
+# languages/dotnet it stands on (the library's description, the
+# writer), by their names. (Csc_ast first: a unit of here compiled
+# first, so that tests/depend_edges.sh looks for CLI here before in
+# .., which has mini-dotnet's)
+TOP=../../..
+DIR=languages/dotnet/csc
+PROG=mini-csc
+N=..
+SRC=Csc_ast Metadata Image Signature Il Value Library Writer Csc_lexer Csc_parser Csc_types Csc_emit Csc_compile CLI Main
+LOCAL=`{ls *.ml *.mli *.mll ../Metadata.ml* ../Image.ml* ../Signature.ml* ../Il.ml* ../Value.ml* ../Library.ml* ../Writer.ml*}
+LIBI=-I ..
+LIBUNITS=
+<$TOP/mkfiles/mkconfig
+GEN=$B/languages/dotnet/csc/Csc_lexer.ml
+LIBOBJS=
+<$TOP/mkfiles/mkprog
+
+$D/Csc_lexer.$O: $D/Csc_lexer.ml $LOCAL
+	$ML $INCLUDES -o $target $D/Csc_lexer.ml
+# languages/dotnet's units, by their names
+$D/Metadata.$O: $N/Metadata.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Metadata.ml
+$D/Image.$O: $N/Image.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Image.ml
+$D/Signature.$O: $N/Signature.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Signature.ml
+$D/Il.$O: $N/Il.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Il.ml
+$D/Value.$O: $N/Value.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Value.ml
+$D/Library.$O: $N/Library.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Library.ml
+$D/Writer.$O: $N/Writer.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target $N/Writer.ml

@@ -48,6 +48,7 @@ type t = {
   mutable fields : fdef list;                        (* reversed, by provisional number - 1 *)
   mutable methods : mdef list;
   mutable nested : (int * int) list;
+  mutable impls : (int * int) list;
   mutable stand_alone : string list;
   mutable entry : int;
 }
@@ -58,7 +59,7 @@ let create (name : string) : t =
             assembly_ref_rows = []; type_refs = Hashtbl.create 16; type_ref_rows = [];
             member_refs = Hashtbl.create 16; member_ref_rows = [];
             sigs = Hashtbl.create 16; type_specs = Hashtbl.create 8; type_spec_rows = [];
-            type_defs = []; fields = []; methods = []; nested = []; stand_alone = [];
+            type_defs = []; fields = []; methods = []; nested = []; impls = []; stand_alone = [];
             entry = 0 } in
   (* the first TypeDef, <Module>: what is global *)
   w.type_defs <- [ (0, "", "<Module>", 0) ];
@@ -174,6 +175,9 @@ let method_def (w : t) (owner : int) (name : string) (flags : int) (m : Signatur
 
 let nest (w : t) (inner : int) (outer : int) : unit =
   w.nested <- (M.token_row inner, M.token_row outer) :: w.nested
+
+let implements (w : t) (cls : int) (iface : int) : unit =
+  w.impls <- (M.token_row cls, iface) :: w.impls
 
 let set_body (w : t) (tok : int) (locals : Signature.t list) (code : Il.op array) (clauses : clause list) : unit =
   let n = List.length w.methods in
@@ -374,6 +378,12 @@ let write (w : t) : string =
   let key = blob w "\xb0\x3f\x5f\x7f\x11\xd5\x0a\x3a" in
   List.iter (fun name -> add M.t_assembly_ref [| 8; 0; 0; 0; 0; key; str w name; 0; 0 |])
     (List.rev w.assembly_ref_rows);
+  (* (InterfaceImpl sorted by its class, as ECMA asks) *)
+  List.iter (fun (cls, iface) ->
+      let tag = match M.token_table iface with
+        | t when t = M.t_type_def -> 0 | t when t = M.t_type_ref -> 1 | _ -> 2 in
+      add M.t_interface_impl [| cls; (M.token_row iface lsl 2) lor tag |])
+    (List.stable_sort (fun (a, _) (b, _) -> compare a b) (List.rev w.impls));
   List.iter (fun (inner, outer) -> add M.t_nested_class [| inner; outer |])
     (List.sort compare w.nested);
   let rows = Array.map (fun l -> Array.of_list (List.rev l)) rows in

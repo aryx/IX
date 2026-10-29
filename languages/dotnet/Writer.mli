@@ -48,6 +48,8 @@ val user_string : t -> string -> int
 val type_def : t -> string -> string -> int -> int -> int
 val field_def : t -> int -> string -> int -> Signature.t -> int
 val method_def : t -> int -> string -> int -> Signature.meth -> int
+(* an interface a type implements (InterfaceImpl) *)
+val implements : t -> int -> int -> unit
 (* a nested type's enclosing one *)
 val nest : t -> int -> int -> unit
 

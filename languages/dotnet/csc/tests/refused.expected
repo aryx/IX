@@ -1,0 +1,8 @@
+vec.cs:4: class expected, not struct
+exit 1
+generic.cs:4: { expected, not <
+exit 1
+closures.cs:4: class expected, not delegate
+exit 1
+strings.cs:26: a character '$'
+exit 1

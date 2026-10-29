@@ -13,8 +13,8 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun, mail's stages 1 to 4 (its formats, sending,
-reading, kept), and the store (stage 2) begun.**
+**Status: begun, mail's stages 1 to 5 (its formats, sending,
+reading, kept, a window), and the store (stage 2) begun.**
 Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
@@ -377,3 +377,6 @@ a `Mail.t` (the header parser the store's, idea 3), stamped (idea 1);
 `store/Items`, a file an item, written at once; a message an item
 stamped `message`. Not yet: links both ways, search over items, the
 other kinds.
+
+2026-10-29: mail's stage 5: mini-pim's first window, its mail; one
+program with the terminal's commands.

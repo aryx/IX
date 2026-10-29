@@ -8,11 +8,15 @@
 ;          Smtp and Imap (the clients), Smtp_server and Imap_server
 ;          (the servers' machines), and Lines, which carries them over
 ;          TCP or TLS; and Mail_item, a message as an item of the store
+;   window/ Mail_window: the mail in a window, Gmail's keys, over the
+;          store; Mail_sync (mail/) what it and the terminal's commands
+;          do with the server, Conversations what they show
 ;   store/ the suite's store (docs/plans/plan_pim.md, ideas 1 and 3):
 ;          Item (lines of name: value, Mail's syntax, stamped) and
 ;          Items (a directory, a file an item, and the mail's cache)
-; Pim.ml, the program from a terminal (mini-pim send, list, read,
-; archive, -offline); Maild.ml, mini-maild, the server its tests talk to
+; Pim.ml, the program: from a terminal (mini-pim send, list, read,
+; archive, -offline), and with no command the window (window/);
+; Maild.ml, mini-maild, the server its tests talk to
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
 (include_subdirs unqualified)
@@ -22,11 +26,20 @@
  (wrapped false)
  (modules :standard \ Pim Maild)
  (flags (:standard -w -32-37-69))
- (libraries ix_tls ix_tcp ix_core caps unix))
+ (libraries ix_playground ix_gui ix_graphics_software ix_tls ix_tcp ix_core
+   caps unix))
 
-(executables
- (names Pim Maild)
- (public_names mini-pim mini-maild)
+; the program, with the platform that writes a frame to a file (the
+; tests'); sdl/ is the one with a window, bin/mini-pim
+(executable
+ (name Pim)
+ (modules Pim)
+ (libraries ix_pim ix_playground ix_playground_render ix_playground_ppm ix_tls
+   ix_tcp ix_core fpath caps unix))
+
+(executable
+ (name Maild)
+ (public_name mini-maild)
  (package ix)
- (modules Pim Maild)
+ (modules Maild)
  (libraries ix_pim ix_tls ix_tcp ix_core fpath caps unix))

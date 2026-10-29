@@ -5,12 +5,17 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 to 4: the mail's formats, sending by
+So far, plan_mail.md's stages 1 to 5: the mail's formats, sending by
 SMTP and reading by IMAP, with Gmail or with mini-maild on this
 machine, what is read kept in the suite's store (plan_pim.md's stage
-2 begun). Their tests: `tests/`, the unit tests (dune's) and
-`session.sh`, mini-pim against mini-maild (`make test`'s "mini-pim").
+2 begun), and a window over it with Gmail's keys. Their tests:
+`tests/`, the unit tests (dune's), `session.sh`, mini-pim's commands
+against mini-maild, and `frames.sh`, its window's (`make test`'s two
+"mini-pim").
 
+    bin/mini-pim user=... [server=host:port] [plain]
+                       the window: j k move, o open, u back, e archive,
+                       / search, Tab Inbox or All Mail, g get the mail
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -39,6 +44,10 @@ machine, what is read kept in the suite's store (plan_pim.md's stage
     mail/Lines         a connection of lines, over TCP or TLS, that
                        drives those machines
     mail/Mail_item     a message as an item of the store
+    mail/Mail_sync     the server and the store: what the commands and
+                       the window do
+    mail/Conversations messages as conversations, the words a list shows
+    window/Mail_window the mail in a window
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
     store/Items        the store: a directory, a file an item
@@ -79,10 +88,11 @@ lines) its SMTP half, `Smtp_server` (99), with neither its sockets
 ## What is ix's own
 
 The charsets' tables in `Mime` and their test; `store/`,
-`Mail_item`; `Imap` and
+`window/`, `Mail_item`, `Mail_sync`, `Conversations`; `Imap` and
 `Imap_server` (the playground had POP3 only); `Lines` (the
 playground's `Transport` was its kind, over its own TLS and
 WebSocket); the two programs, `Pim.ml` and `Maild.ml` (after the
 playground's tiny_maild, a file a message instead of an mbox, IMAP for
 its POP3, one client at a time as mini-httpd); `Unit_smtp_server`,
-`Unit_imap`, `Unit_items`, `session.sh`, `Test.ml`.
+`Unit_imap`, `Unit_items`, `session.sh`, `frames.sh` (the window's
+frames, recorded against mini-maild), `Test.ml`.

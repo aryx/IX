@@ -4,7 +4,7 @@
 ; the unit tests of mini-pim (Testo): dune's only. The playground's
 ; libs/networking/tests of what is here, and ix's own (the charsets,
 ; Unit_smtp_server, Unit_imap, Unit_items); session.sh, mini-pim against
-; mini-maild
+; mini-maild; frames.sh, its window's frames against mini-maild
 (executable
  (name Test)
  (libraries ix_pim ix_tls ix_tcp ix_core caps unix alcotest testo))

@@ -1,9 +1,10 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* mini-pim from a terminal (docs/plans/plan_pim.md: "the same store
- * from a terminal, for real use and for the tests"). Its mail, of
- * plan_mail.md's stages 2 to 4:
+(* mini-pim (docs/plans/plan_pim.md): with no command, its window
+ * (Mail_window: the mail, plan_mail.md's stage 5); with one, from a
+ * terminal ("the same store from a terminal, for real use and for the
+ * tests"), its mail, of plan_mail.md's stages 2 to 4:
  *
  *     mini-pim send file               the message sent by SMTP
  *     mini-pim list [-n 20] [-q search] [-m mailbox]
@@ -51,7 +52,8 @@ let usage =
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
   \  -u      the account: log in as that user, the password the first line\n\
-  \          of stdin"
+  \          of stdin\n\
+  with no command, the window: mini-pim user=... [server=host:port] [plain]"
 
 type options = {
   server : (string * int) option;
@@ -157,151 +159,70 @@ let send (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
 (* Reading *)
 (*****************************************************************************)
 
-(* [f] with the mailbox selected, logged in; logged out after *)
-let with_imap (caps : < caps ; .. >) (o : options) (user : string)
-    (f : Imap.t -> (unit, string) result) : (unit, string) result =
-  match connect caps o ("imap.gmail.com", 993) with
-  | Error why -> Error why
-  | Ok conn ->
-      let ( let* ) r f = match r with Ok x -> f x | Error e -> Error e in
-      let session =
-        let* t = Imap.connect conn in
-        let* () =
-          match password caps with
-          | Some password -> Imap.login t ~user ~password
-          | None -> Error "no password on standard input"
-        in
-        let* _ = Imap.select t o.mailbox in
-        let r = f t in
-        Imap.logout t;
-        r
-      in
-      (match session with Error _ -> Lines.close conn | Ok () -> ());
-      session
-
 (* the store, and the account (-u): the online commands' and the
- * offline ones'; then [online] or [offline] *)
+ * offline ones'; then [online] in a session or [offline] *)
 let reading (caps : < caps ; .. >) (o : options)
     ~(online : Items.t -> string -> Imap.t -> (unit, string) result)
     ~(offline : Items.t -> string -> (unit, string) result) : Exit.t =
   let store = Items.at (Items.place caps) in
+  let server =
+    match o.server with
+    | Some (host, port) -> { Mail_sync.host; port; plain = o.plain }
+    | None -> { Mail_sync.gmail with plain = o.plain }
+  in
   match o.user with
   | None -> fail caps "-u: the user (the account)"
   | Some user -> (
       let r =
         if o.offline then offline store user
-        else with_imap caps o user (online store user)
+        else
+          match password caps with
+          | None -> Error "no password on standard input"
+          | Some password ->
+              Mail_sync.session caps server ~user ~password ~mailbox:o.mailbox
+                (online store user)
       in
       match r with Ok () -> Exit.OK | Error e -> fail caps e)
-
-(* the summaries kept in the store, each message's item made or
- * updated *)
-let keep (caps : < caps ; .. >) (store : Items.t) ~(account : string)
-    ~(mailbox : string) (l : Imap.summary list) : unit =
-  List.iter
-    (fun (s : Imap.summary) ->
-      let old = Items.find caps store (Mail_item.id s) in
-      Items.save caps store (Mail_item.update ~account ~mailbox s old))
-    l
-
-(* "2026-10-29", or "" *)
-let day (m : Mail.t) : string =
-  match Option.bind (Mail.get m "date") Mail.date with
-  | Some d -> Printf.sprintf "%04d-%02d-%02d" d.day.year d.day.month d.day.day
-  | None -> ""
-
-let header (m : Mail.t) (name : string) : string =
-  match Mail.get m name with Some v -> Mime.decode_words v | None -> ""
-
-let who (m : Mail.t) : string =
-  match Mail.address (header m "from") with
-  | Some a -> Mail.who a
-  | None -> header m "from"
-
-(* the summaries as conversations: each with its messages, the newest
- * conversation first *)
-let conversations (l : Imap.summary list) : Imap.summary list list =
-  let key (s : Imap.summary) =
-    if s.thread = "" then string_of_int s.uid else s.thread
-  in
-  let rec group (acc : (string * Imap.summary list) list) l =
-    match l with
-    | [] -> acc
-    | s :: rest ->
-        let k = key s in
-        let acc =
-          match List.assoc_opt k acc with
-          | Some ms -> (k, s :: ms) :: List.remove_assoc k acc
-          | None -> (k, [ s ]) :: acc
-        in
-        group acc rest
-  in
-  (* (oldest first in: the newest message's conversation ends on top) *)
-  List.map snd (group [] l)
 
 (* a line a conversation *)
 let show (caps : < Cap.stdout ; .. >) (l : Imap.summary list) : unit =
   List.iter
     (fun (c : Imap.summary list) ->
       let s = List.hd c in
-      let unread =
-        List.exists
-          (fun (s : Imap.summary) -> not (List.mem "\\Seen" s.flags))
-          c
-      in
       let many =
         if List.length c > 1 then Printf.sprintf " (%d)" (List.length c) else ""
       in
       Console.print caps
         (Printf.sprintf "%5d %s %-10s %-20s %s\n" s.uid
-           (if unread then "*" else " ")
-           (day s.headers)
-           (who s.headers ^ many)
-           (header s.headers "subject")))
-    (conversations l)
-
-let newest (n : int) (l : 'a list) : 'a list =
-  let k = List.length l in
-  List.filteri (fun i _ -> i >= k - n) l
+           (if Conversations.unread c then "*" else " ")
+           (Conversations.day s.headers)
+           (Conversations.who s.headers ^ many)
+           (Conversations.header s.headers "subject")))
+    (Conversations.group l)
 
 let list (caps : < caps ; .. >) (o : options) : Exit.t =
   reading caps o
     ~online:(fun store account t ->
-      let query =
-        match o.query with
-        | Some q -> "X-GM-RAW " ^ Imap.quote q
-        | None -> "ALL"
-      in
-      match Imap.search t query with
+      match
+        Mail_sync.list caps store t ~account ~mailbox:o.mailbox ~query:o.query
+          o.count
+      with
       | Error e -> Error e
-      | Ok uids -> (
-          match Imap.summaries t (newest o.count uids) with
-          | Error e -> Error e
-          | Ok l ->
-              keep caps store ~account ~mailbox:o.mailbox l;
-              show caps l;
-              Ok ()))
+      | Ok l -> show caps l; Ok ())
     ~offline:(fun store account ->
       if o.query <> None then Error "-q: a search is the server's"
       else
         let items = Items.all caps store in
         show caps
-          (newest o.count (Mail_item.listed items ~account ~mailbox:o.mailbox));
+          (Mail_sync.newest o.count
+             (Mail_item.listed items ~account ~mailbox:o.mailbox));
         Ok ())
-
-(* the message's item, kept in the store, of the mailbox's UID *)
-let item_of (caps : < caps ; .. >) (store : Items.t) ~(account : string)
-    ~(mailbox : string) (uid : int) : Item.t option =
-  let l = Mail_item.listed (Items.all caps store) ~account ~mailbox in
-  match List.find_opt (fun (s : Imap.summary) -> s.uid = uid) l with
-  | Some s -> Items.find caps store (Mail_item.id s)
-  | None -> None
 
 let print (caps : < Cap.stdout ; .. >) (text : string) : unit =
   let m = Mail.parse text in
   List.iter
     (fun name ->
-      let v = header m name in
+      let v = Conversations.header m name in
       if v <> "" then
         Console.print caps (String.capitalize_ascii name ^ ": " ^ v ^ "\n"))
     [ "from"; "to"; "cc"; "date"; "subject" ];
@@ -313,62 +234,22 @@ let read (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
   let mailbox = o.mailbox in
   reading caps o
     ~online:(fun store account t ->
-      match Imap.summaries t [ uid ] with
+      match Mail_sync.message caps store t ~account ~mailbox uid with
       | Error e -> Error e
-      | Ok [] -> Error (Printf.sprintf "no message %d in %s" uid mailbox)
-      | Ok (s :: _) -> (
-          let key = Mail_item.key (Mail_item.update ~account ~mailbox s None) in
-          let text =
-            match Items.cached caps store key with
-            | Some text -> (
-                match Imap.store t [ uid ] "+FLAGS (\\Seen)" with
-                | Ok () -> Ok text
-                | Error e -> Error e)
-            | None -> (
-                match Imap.message t uid with
-                | Ok text ->
-                    Items.cache caps store key text;
-                    Ok text
-                | Error e -> Error e)
-          in
-          match text with
-          | Error e -> Error e
-          | Ok text ->
-              let seen =
-                if List.mem "\\Seen" s.flags then s
-                else { s with flags = s.flags @ [ "\\Seen" ] }
-              in
-              keep caps store ~account ~mailbox [ seen ];
-              print caps text;
-              Ok ()))
+      | Ok text -> print caps text; Ok ())
     ~offline:(fun store account ->
-      match item_of caps store ~account ~mailbox uid with
+      match Mail_sync.item_of caps store ~account ~mailbox uid with
       | None -> Error (Printf.sprintf "no message %d in %s here" uid mailbox)
       | Some item -> (
           match Items.cached caps store (Mail_item.key item) with
-          | Some text ->
-              print caps text;
-              Ok ()
+          | Some text -> print caps text; Ok ()
           | None -> Error (Printf.sprintf "message %d not read yet" uid)))
 
 (* archive: Gmail's gesture, on the server and in the items *)
 let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
   reading caps o
     ~online:(fun store account t ->
-      match Imap.store t uids "-X-GM-LABELS (\\Inbox)" with
-      | Error e -> Error e
-      | Ok () ->
-          List.iter
-            (fun uid ->
-              match item_of caps store ~account ~mailbox:o.mailbox uid with
-              | None -> ()
-              | Some item ->
-                  let s = Mail_item.summary item in
-                  let labels = List.filter (fun l -> l <> "\\Inbox") s.labels in
-                  Items.save caps store
-                    (Mail.set "labels" (Imap.list labels) item))
-            uids;
-          Ok ())
+      Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
 
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
@@ -397,6 +278,24 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       Console.eprint caps (usage ^ "\n");
       Exit.Err "usage"
 
+(* the window (Mail_window), its screen the window's; the platform's
+ * words on the command line, and the window's flags *)
+let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
+  let flags = ("window", "") :: Playground_platform.flags caps in
+  let wcaps = (caps :> Mail_window.caps) in
+  Playground_platform.run_app caps flags
+    (Playground.game Mail_window.view (Mail_window.update wcaps)
+       (Mail_window.initial wcaps flags));
+  Exit.OK
+
+let commands = [ "send"; "list"; "read"; "archive" ]
+
 let () =
   Cap.main (fun caps ->
-      Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))
+      Exit.exit caps
+        (Exit.catch (fun () ->
+             let argv = CapSys.argv caps in
+             (* a command: the command line; else the window *)
+             if List.exists (fun a -> List.mem a commands) (Array.to_list argv)
+             then main caps argv
+             else window caps)))

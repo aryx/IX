@@ -1,0 +1,14 @@
+; (its own stanzas, not a part of apps/pim's folders)
+(include_subdirs no)
+
+; mini-pim with its window on Linux (SDL): ../Pim.ml, the same text,
+; linked with the platform that has a window
+; (lib_playground/platforms/sdl); its commands as the other's. Dune's
+; alone: SDL is outside what mini-ml compiles, as mini-office's window
+(copy_files ../Pim.ml)
+(executable
+ (name Pim)
+ (public_name mini-pim)
+ (package ix)
+ (libraries ix_pim ix_playground ix_playground_render ix_playground_sdl ix_tls
+   ix_tcp ix_core fpath caps unix))

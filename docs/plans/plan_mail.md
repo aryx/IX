@@ -8,8 +8,8 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: stages 1 to 4 built (the formats; sending and reading, and
-mini-maild; the cache and the items; `apps/pim/`).** Mail is the first part of the suite
+**Status: stages 1 to 5 built (the formats; sending and reading, and
+mini-maild; the cache and the items; the window; `apps/pim/`).** Mail is the first part of the suite
 [`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
@@ -269,3 +269,24 @@ list only: a message listed in All Mail after INBOX is no more in
 INBOX's offline list until listed there again. Tests: Unit_items, and
 session.sh's offline end (the last list, a message read, one not).
 Next: stage 5, the view.
+
+2026-10-29: stage 5, the view: `window/Mail_window`, a
+`Playground.game` over the store, offline first: the conversations of
+Inbox or All Mail (Tab), a line each, unread in bold; j k, o, u, e,
+/ (a search of the store: who sent and the subject), g (get the mail:
+the app password asked once, kept while the window is open, never
+written); a conversation opened, its messages oldest first, fetched
+into the cache when the password is known. Its text in Hershey's
+letters by Glyph_unicode, each placed, so in columns and with the
+accents (the curly quotes drawn straight). `Mail_sync` and
+`Conversations` out of Pim.ml, the commands' and the window's.
+mini-pim is one program: a command, the terminal; none, the window
+(`user=`, `server=`, `plain`); `apps/pim/sdl/` its window on Linux,
+`bin/mini-pim`. Tests: `tests/frames.sh`, seven frames against
+mini-maild (empty, fetched, read, back, search, All Mail, archive),
+their sums in `frames.expected`, a `make test` job; mini-ml compiles
+it (`compile_ix.sh` given apps/pim's includes, with lib_playground).
+Not yet: labels other than Inbox and All Mail, the HTML of a message
+(Mime.text's plain part only), scrolling with the mouse, IDLE, the
+keys t (a task) and z (snooze) of stage 8. Next: stage 6, Gmail by the
+author, by hand.

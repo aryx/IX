@@ -18,3 +18,4 @@ kernel-pi1-ixa.img
 kernel-pi2*.img
 kernel-pi1-ixt.img
 kernel-pi4-ixt.elf
+kernel-pi1-light*.img

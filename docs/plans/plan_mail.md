@@ -322,3 +322,18 @@ in its store and flags (`Mail_sync.all_mail`), and mini-maild takes
 the name (`-a`). Tests: Unit_mime (an HTML-only alternative in
 Windows-1252, a plain part with a picture), session.sh (a mini-maild
 in French).
+
+2026-10-29: stage 7 begun, writing, from the terminal: `Mail_compose`
+(pure: a reply, to all or not, Reply-To: first, Re: once, In-Reply-To:
+and References: so it threads, the text quoted under "On <date>,
+<who> wrote:"; a forward, Fwd:, the message's headers then its text;
+a draft as an item stamped draft; the message sent, dated, its
+Message-ID: at the sender's domain, the subject an encoded word and
+the text quoted-printable when not ASCII, a multipart/mixed with
+attachments). `mini-pim reply [-all] uid` and `forward uid` print the
+draft, mutt's way: a file edited, then `send`, which sends a file with
+`Attach:` (files) or `Forward:` (the message's attachments, from the
+cache) as a draft. Sending moved into `Mail_sync` (`send`,
+`send_draft`, `gmail_smtp`). Dates in +0000: mini-ml's Unix has no
+localtime. Tests: Unit_compose (6), session.sh (a reply to all, sent
+and as Carol has it; a forward with a file attached).

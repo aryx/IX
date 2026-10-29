@@ -35,6 +35,9 @@ val find : < Cap.open_in; .. > -> t -> string -> Item.t option
 (* written now, under its id *)
 val save : < Cap.open_out; .. > -> t -> Item.t -> unit
 
+(* gone: a draft once sent *)
+val remove : < Cap.open_out; .. > -> t -> string -> unit
+
 (* every item, in the order of their ids *)
 val all : < Cap.open_in; Cap.readdir; .. > -> t -> Item.t list
 

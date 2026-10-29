@@ -5,7 +5,7 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 to 5: the mail's formats, sending by
+So far, plan_mail.md's stages 1 to 5, and 7 begun: the mail's formats, sending by
 SMTP and reading by IMAP, with Gmail or with mini-maild on this
 machine, what is read kept in the suite's store (plan_pim.md's stage
 2 begun), and a window over it with Gmail's keys. Their tests:
@@ -21,6 +21,8 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
         list [-n 20] [-q search] [-m mailbox]
                        the newest conversations, a line each
         read uid       a message, marked read
+        reply [-all] uid, forward uid
+                       a draft printed, to edit, then send
         archive uid... out of the Inbox
         -offline       list and read from the store, no server
                        by default with Gmail (smtp.gmail.com:465,
@@ -47,6 +49,8 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     mail/Mail_text     a message as the text to read: HTML only made
                        text (browsers/html's Line_mode), attachments
                        said
+    mail/Mail_compose  a message written: reply, reply to all,
+                       forward, a draft as an item, the message sent
     mail/Mail_item     a message as an item of the store
     mail/Mail_sync     the server and the store: what the commands and
                        the window do

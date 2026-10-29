@@ -57,3 +57,7 @@ let cache (caps : < Cap.open_out; .. >) (t : t) (key : string)
     (bytes : string) : unit =
   mkdir_p caps (Filename.concat t.dir "cache");
   FS.write caps (Fpath.v (path t "cache" key)) bytes
+
+let remove (caps : < Cap.open_out; .. >) (t : t) (id : string) : unit =
+  let p = path t "items" id in
+  if Sys.file_exists p then FS.remove caps (Fpath.v p)

@@ -4,12 +4,14 @@
 (* mini-pim (docs/plans/plan_pim.md): with no command, its window
  * (Mail_window: the mail, plan_mail.md's stage 5); with one, from a
  * terminal ("the same store from a terminal, for real use and for the
- * tests"), its mail, of plan_mail.md's stages 2 to 4:
+ * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7:
  *
  *     mini-pim send file               the message sent by SMTP
  *     mini-pim list [-n 20] [-q search] [-m mailbox]
  *                                      the newest conversations
  *     mini-pim read uid                a message, marked read
+ *     mini-pim reply [-all] uid        the reply to edit, then send
+ *     mini-pim forward uid             the forward to edit, then send
  *     mini-pim archive uid...          out of the Inbox, kept
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
@@ -21,7 +23,11 @@
  * -s host:port and -plain (no TLS): mini-maild on this machine.
  *
  * send: to whom the message's To:, Cc: and Bcc: say (Smtp.envelope),
- * from its From:; each message's outcome a line. list: a line a
+ * from its From:; each message's outcome a line. reply and forward
+ * print a draft (Mail_compose: Re:, the thread's ids, the text quoted;
+ * Fwd:), mutt's way: kept in a file, edited, then sent by send, which
+ * sends a file with Attach: (files) or Forward: (the attachments of
+ * the message forwarded, from the cache) as a draft, -u its From:. list: a line a
  * conversation (Gmail's X-GM-THRID), the newest first: its newest
  * message's UID, "*" if any of it is unread, the date, who sent it, how
  * many messages, the subject. -q: Gmail's search syntax, done by Gmail
@@ -49,6 +55,7 @@ let usage =
   \  list [-n 20] [-q search] [-m mailbox]\n\
   \                                    the newest conversations\n\
   \  read uid                          a message, marked read\n\
+  \  reply [-all] uid, forward uid     a draft to edit, then send\n\
   \  archive uid...                    out of the Inbox\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
@@ -65,6 +72,7 @@ type options = {
   query : string option;
   mailbox : string;
   offline : bool;
+  all : bool; (* reply to all *)
   args : string list; (* the command and its arguments *)
 }
 
@@ -89,6 +97,7 @@ let rec options (o : options) (args : string list) : options option =
   | "-q" :: q :: rest -> options { o with query = Some q } rest
   | "-m" :: m :: rest -> options { o with mailbox = m } rest
   | "-offline" :: rest -> options { o with offline = true } rest
+  | "-all" :: rest -> options { o with all = true } rest
   | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
   | a :: rest -> options { o with args = a :: o.args } rest
 
@@ -108,61 +117,53 @@ let password (caps : < Cap.env ; Cap.open_in ; Cap.stdin ; .. >) :
       | Some p -> Ok (String.trim p)
       | None -> Error "no password: ~/.ix-pim/password, or standard input")
 
-let connect (caps : < caps ; .. >) (o : options) (default : string * int) :
-    (Lines.t, string) result =
-  let host, port = match o.server with Some s -> s | None -> default in
-  let conn =
-    if o.plain then Lines.plain caps ~host ~port
-    else Lines.tls caps ~trust:(Tls_client.system_roots caps) ~host ~port
-  in
-  match conn with
-  | Ok c -> Ok c
-  | Error why -> Error (Printf.sprintf "%s:%d: %s" host port why)
-
 (*****************************************************************************)
 (* Sending *)
 (*****************************************************************************)
 
+let server (o : options) (default : Mail_sync.server) : Mail_sync.server =
+  match o.server with
+  | Some (host, port) -> { Mail_sync.host; port; plain = o.plain }
+  | None -> { default with plain = o.plain }
+
+(* a message as written; or a draft (reply, forward: what has attach:
+ * or forward:), made the message then *)
 let send (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
   let mail = Mail.parse (FS.read caps (Fpath.v file)) in
-  let sender =
-    match Option.bind (Mail.get mail "from") Mail.address with
-    | Some a -> a.mailbox
-    | None -> ( match o.user with Some u -> u | None -> "")
-  in
+  let s = server o Mail_sync.gmail_smtp in
+  let draft = Mail.get mail "attach" <> None || Mail.get mail "forward" <> None in
   let auth =
     match o.user with
     | None -> Ok None
     | Some u -> Result.map (fun p -> Some (u, p)) (password caps)
   in
-  match (auth, connect caps o ("smtp.gmail.com", 465)) with
-  | Error why, _ | _, Error why -> fail caps why
-  | Ok auth, Ok conn -> (
-      let c =
-        Smtp.client ~hello:"mini-pim" ~auth [ Smtp.envelope ~sender mail ]
+  match (auth, o.user) with
+  | Error why, _ -> fail caps why
+  | Ok (Some (user, password)), Some _ when draft -> (
+      let store = Items.at (Items.place caps) in
+      match
+        Mail_sync.send_draft caps store s ~user ~password
+          (Mail_compose.of_item mail)
+      with
+      | Ok said -> Console.print caps (said ^ "\n"); Exit.OK
+      | Error why -> fail caps why)
+  | Ok _, _ when draft -> fail caps "-u: a draft is sent as the user"
+  | Ok auth, _ -> (
+      (* (a reply's file has no From: yet: the user's) *)
+      let mail =
+        match (Mail.get mail "from", o.user) with
+        | None, Some u -> Mail.set "From" u mail
+        | _ -> mail
       in
-      let c = Lines.talk conn Smtp.step c (fun c -> Smtp.finished c <> None) in
-      let why = Lines.why conn in
-      Lines.close conn;
-      match Smtp.finished c with
-      | Some (Ok outcomes) ->
+      match Mail_sync.send caps s ~auth (Mail_compose.complete mail) with
+      | Error why -> fail caps why
+      | Ok outcomes ->
           List.iter
-            (fun o ->
-              Console.print caps
-                (match (o : Smtp.outcome) with
-                | Sent (n, []) -> Printf.sprintf "sent to %d\n" n
-                | Sent (n, refused) ->
-                    Printf.sprintf "sent to %d, refused: %s\n" n
-                      (String.concat "; " refused)
-                | Refused why -> "refused: " ^ why ^ "\n"))
+            (fun o -> Console.print caps (Mail_sync.said o ^ "\n"))
             outcomes;
           if List.for_all (function Smtp.Sent _ -> true | _ -> false) outcomes
           then Exit.OK
-          else Exit.Err "refused"
-      | Some (Error said) -> fail caps ("the server: " ^ said)
-      | None ->
-          fail caps
-            (match why with Some w -> w | None -> "the connection ended"))
+          else Exit.Err "refused")
 
 (*****************************************************************************)
 (* Reading *)
@@ -174,11 +175,7 @@ let reading (caps : < caps ; .. >) (o : options)
     ~(online : Items.t -> string -> Imap.t -> (unit, string) result)
     ~(offline : Items.t -> string -> (unit, string) result) : Exit.t =
   let store = Items.at (Items.place caps) in
-  let server =
-    match o.server with
-    | Some (host, port) -> { Mail_sync.host; port; plain = o.plain }
-    | None -> { Mail_sync.gmail with plain = o.plain }
-  in
+  let server = server o Mail_sync.gmail in
   match o.user with
   | None -> fail caps "-u: the user (the account)"
   | Some user -> (
@@ -239,22 +236,60 @@ let print (caps : < Cap.stdout ; .. >) (text : string) : unit =
   Console.print caps
     ("\n" ^ t ^ if String.ends_with ~suffix:"\n" t then "" else "\n")
 
-(* read: from the cache when it is there, from the server and into the
- * cache else; marked read on the server and in its item *)
-let read (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
+(* [f] of a message's text and its key in the cache: from the cache
+ * when it is there, from the server and into the cache else; marked
+ * read on the server and in its item *)
+let fetch (caps : < caps ; .. >) (o : options) (uid : int)
+    (f : string -> Items.t -> string -> string -> unit) : Exit.t =
   let mailbox = o.mailbox in
+  let key store account =
+    match Mail_sync.item_of caps store ~account ~mailbox uid with
+    | Some item -> Mail_item.key item
+    | None -> ""
+  in
   reading caps o
     ~online:(fun store account t ->
       match Mail_sync.message caps store t ~account ~mailbox uid with
       | Error e -> Error e
-      | Ok text -> print caps text; Ok ())
+      | Ok text -> f text store account (key store account); Ok ())
     ~offline:(fun store account ->
       match Mail_sync.item_of caps store ~account ~mailbox uid with
       | None -> Error (Printf.sprintf "no message %d in %s here" uid mailbox)
       | Some item -> (
-          match Items.cached caps store (Mail_item.key item) with
-          | Some text -> print caps text; Ok ()
+          let key = Mail_item.key item in
+          match Items.cached caps store key with
+          | Some text -> f text store account key; Ok ()
           | None -> Error (Printf.sprintf "message %d not read yet" uid)))
+
+let read (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
+  fetch caps o uid (fun text _ _ _ -> print caps text)
+
+(* reply, forward: the draft as a file's text, to edit and send *)
+let draft (caps : < caps ; .. >) (o : options) (uid : int) ~(forward : bool) :
+    Exit.t =
+  fetch caps o uid (fun text _ account key ->
+      let m = Mail.parse text in
+      let d =
+        if forward then Mail_compose.forward ~id:"" ~key m (Mail_text.text m)
+        else Mail_compose.reply ~id:"" ~all:o.all ~me:account m (Mail_text.text m)
+      in
+      let item = Mail_compose.to_item d in
+      (* (the item's id: and stamp: are the store's, not the file's) *)
+      let fields =
+        List.filter
+          (fun (f : Mail.field) -> f.name <> "id" && f.name <> "stamp")
+          item.fields
+      in
+      let fields =
+        List.map
+          (fun (f : Mail.field) ->
+            (* in-reply-to is In-Reply-To *)
+            let words = String.split_on_char '-' f.name in
+            { f with
+              name = String.concat "-" (List.map String.capitalize_ascii words) })
+          fields
+      in
+      Console.print caps (Mail.to_string { item with fields }))
 
 (* archive: Gmail's gesture, on the server and in the items *)
 let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
@@ -273,6 +308,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       query = None;
       mailbox = "INBOX";
       offline = false;
+      all = false;
       args = [];
     }
   in
@@ -282,6 +318,10 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = [ "list" ]; _ } as o) -> list caps o
   | Some ({ args = [ "read"; uid ]; _ } as o) when uids [ uid ] <> [] ->
       read caps o (int_of_string uid)
+  | Some ({ args = [ "reply"; uid ]; _ } as o) when uids [ uid ] <> [] ->
+      draft caps o (int_of_string uid) ~forward:false
+  | Some ({ args = [ "forward"; uid ]; _ } as o) when uids [ uid ] <> [] ->
+      draft caps o (int_of_string uid) ~forward:true
   | Some ({ args = "archive" :: (_ :: _ as l); _ } as o)
     when List.length (uids l) = List.length l ->
       archive caps o (uids l)
@@ -299,7 +339,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
        (Mail_window.initial wcaps flags));
   Exit.OK
 
-let commands = [ "send"; "list"; "read"; "archive" ]
+let commands = [ "send"; "list"; "read"; "reply"; "forward"; "archive" ]
 
 let () =
   Cap.main (fun caps ->

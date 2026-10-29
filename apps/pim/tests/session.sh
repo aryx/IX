@@ -8,7 +8,9 @@
 # the message (the Received: line apart, the Bcc: gone, a line starting
 # with a dot whole); the relay refused. Read by IMAP: a question, its
 # answer (Windows-1252, quoted-printable) and a newsletter listed as two
-# conversations, unread; the answer read, its text UTF-8; the newsletter
+# conversations, unread; the answer read, its text UTF-8; replied to
+# (threaded, quoted, the text UTF-8 in quoted-printable) and forwarded
+# with a file attached (plan_mail.md, stage 7); the newsletter
 # archived, gone from INBOX, still in All Mail (and in a French Gmail's,
 # [Gmail]/Tous les messages, found by its \All); a search; the password
 # in the store's file, and refused when others may read it. Then, the
@@ -85,6 +87,36 @@ Date: Thu, 29 Oct 2026 11:00:00 +0100
 Subject: Re: the plan
 
 “Yes”, à midi." "the answer read, UTF-8"
+# a reply to all, edited, sent: to Carol, threaded, the text quoted
+pim -all reply 2
+cp $W/out $W/r
+is "To: Carol <carol@ix>
+Subject: Re: the plan
+In-Reply-To: <2@ix>
+References: <1@ix> <2@ix>
+
+
+
+On Thu, 29 Oct 2026 11:00:00 +0100, Carol <carol@ix> wrote:
+> “Yes”, à midi." "a reply's draft"
+sed -i '0,/^$/s//\nAgreed./' $W/r
+echo secret | timeout 20 $PIM -s $S -plain -u erin@ix send $W/r > $W/out 2>&1
+is "sent to 1" "the reply sent"
+f=$W/spool/carol/1
+grep -q '^From: erin@ix$' $f && grep -q '^In-Reply-To: <2@ix>$' $f &&
+  grep -q '^Content-Type: text/plain; charset=utf-8$' $f &&
+  grep -q '^Agreed\.$' $f && grep -q '^> =E2=80=9CYes' $f ||
+  { echo "FAIL the reply as carol has it:"; cat $f; fail=1; }
+# a forward, a file attached: a draft, sent as one
+pim forward 2
+{ echo "To: dave@ix"; echo "Attach: $W/a"; cat $W/out; } > $W/fwd
+echo secret | timeout 20 $PIM -s $S -plain -u erin@ix send $W/fwd > $W/out 2>&1
+is "sent to 1" "the forward sent"
+f=$W/spool/dave/2
+grep -q '^Subject: Fwd: Re: the plan$' $f &&
+  grep -q '^---------- Forwarded message ---------$' $f &&
+  grep -q 'filename="a"' $f ||
+  { echo "FAIL the forward as dave has it:"; cat $f; fail=1; }
 pim -q from:carol list
 is "    2   2026-10-29 Carol                Re: the plan" "a search; read now"
 pim archive 3

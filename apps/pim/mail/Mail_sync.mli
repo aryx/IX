@@ -67,3 +67,32 @@ val newest : int -> 'a list -> 'a list
 val item_of :
   < Cap.open_in ; Cap.readdir ; .. > -> Items.t -> account:string ->
   mailbox:string -> int -> Item.t option
+
+(*****************************************************************************)
+(* {1 Sending} *)
+(*****************************************************************************)
+
+(* Gmail's: smtp.gmail.com:465, TLS from the first byte *)
+val gmail_smtp : server
+
+(* a connection to the server, TLS unless plain; the error says
+ * host:port *)
+val connect : < Cap.network ; Cap.open_in ; .. > -> server ->
+  (Lines.t, string) result
+
+(* [send caps server ~auth mail]: to whom its To:, Cc: and Bcc: say,
+ * from its From: (else the user's); each message's outcome *)
+val send : < Cap.network ; Cap.open_in ; .. > -> server ->
+  auth:(string * string) option -> Mail.t ->
+  (Smtp.outcome list, string) result
+
+(* an outcome in words: "sent to 2, refused: ..." *)
+val said : Smtp.outcome -> string
+
+(* [send_draft caps store server ~user ~password draft]: the draft made
+ * a message (Mail_compose.message: from [user], dated now, +0000, its files
+ * read, a forward's attachments from the cache) and sent; its item
+ * removed once every recipient took it. The outcome in words. *)
+val send_draft : < Cap.network ; Cap.open_in ; Cap.open_out ; .. > ->
+  Items.t -> server -> user:string -> password:string ->
+  Mail_compose.draft -> (string, string) result

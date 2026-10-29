@@ -45,6 +45,9 @@ let def (fn : func) v = Hashtbl.find fn.defs v
 (* (off: mini-ml -own-slots) *)
 let share_slots = ref true
 
+(* (off: mini-ml -by-uses) *)
+let by_density = ref true
+
 (* the values that need no storage: a Zero is the constant 0, and a
  * constant is made where it is read (Emit's src)
  * old: match def fn v with Zero -> false | _ -> true *)
@@ -126,8 +129,25 @@ let alloc (fn : func) ~nregs ~nfregs ~base =
    * the registers of the values live after it (defined above it in the
    * dominator tree, so colored already); an operand dying there frees
    * its own, which the definition may take (lib_code's Coloring) *)
+  (* OPTIMIZATION (by density): a value's weight over the points it is
+   * live at, so that a temporary, used once right after its definition,
+   * comes before a value carried around the loop, which holds its
+   * register through the whole loop for a few uses: in memory the first
+   * costs a store and a load, the second a load at each use, and taking
+   * it out frees a register at every point of the loop. Chaitin's
+   * spill cost over the interference, as LLVM's and GCC's allocators
+   * weigh: mini-quake's turbulent, its pixel loop's temporaries every
+   * one stored and loaded, the registers its five loop values'
+   * (plan_ml_annotations.md).
+   * old: the weight alone (mini-ml -by-uses) *)
+  let density v w =
+    if not !by_density then w
+    else
+      let n = match Hashtbl.find_opt at v with Some l -> List.length l | None -> 0 in
+      w * 1024 / (1 + n)
+  in
   let colors cls nregs memory =
-    let wanted = Hashtbl.fold (fun v w acc -> if cls v && not (Hashtbl.mem memory v) then (w, v) :: acc else acc) weight [] in
+    let wanted = Hashtbl.fold (fun v w acc -> if cls v && not (Hashtbl.mem memory v) then (density v w, v) :: acc else acc) weight [] in
     let chosen = Coloring.choose ~npoints ~at ~nregs wanted in
     let candidate v = real v && Hashtbl.mem chosen v && nregs > 0 in
     let body_ok v = candidate v && IS.mem v (Hashtbl.find after v) in

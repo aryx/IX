@@ -978,3 +978,19 @@ Pi 1's 16 KB instruction cache, which 8% to 9% more code could cost
 back on the board (not measured there). View's norm, which every
 angle goes through, is over 24: at 24 mini-doom's fcos and fsin stay
 calls (whether 32 takes it, not looked at).
+
+## 2026-10-29, Alloc's choice by density
+
+The author: "what are turbulent registers?", then "let's do [...] 2".
+Which values get a register: each value's weight over the points it is
+live at, not the weight alone (Alloc, mini-ml -by-uses the old), so
+that a temporary used at once comes before a value carried around a
+loop (plan_ml_annotations.md: mini-quake's turbulent, rewritten without
+its pairs, 29% slower with the weight alone, every temporary of its
+pixel loop stored and loaded). At one commit, built for arm by ix
+(tests/inline_limit.sh, OVERLAY), against the weight alone: mini-doom
+0.12% fewer instructions over 61 frames, mini-quake 0.07% more,
+cameltry the same, mini-ml compiling three of its units 0.11% fewer;
+tests/bench.sh within 0.2% (interp 0.16% fewer, limbs 0.15%). Kept for
+the case it fixes, the rewritten turbulent 13% fewer instructions than
+it was.

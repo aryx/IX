@@ -408,6 +408,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     " a string's byte and length, a float's arithmetic and a block's allocation by calls of the runtime, not in place; an unknown function an argument at a time";
     "-linear-matches", Arg.Clear Lower.switches, " a match's constructors tested one after the other, no jump table";
     "-own-slots", Arg.Clear Alloc.share_slots, " -ssa: a slot of the frame for each value in memory, none shared";
+    "-by-uses", Arg.Clear Alloc.by_density, " -ssa: the registers to the most used values, not the densest (Alloc)";
     "-full-frames", Arg.Clear Emit.small_frames, " -ssa: every function a frame on the value stack and its link saved";
     "-tagged-ints", Arg.Clear Untag.on, " -ssa: every integer tagged, none untagged in a register (Untag)";
     "-no-cse", Arg.Clear Cse.on, " -ssa: a computation made twice made twice (Cse)";

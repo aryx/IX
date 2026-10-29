@@ -67,6 +67,10 @@ type loc = Reg of int | Mem of int | Nil | Dmem of int
  * a slot each; mini-ml -own-slots) *)
 val share_slots : bool ref
 
+(* which values get a register: by their weight over the points they
+ * are live at (false: their weight alone, mini-ml -by-uses) *)
+val by_density : bool ref
+
 (* an instruction after which the collector may have run (an allocation,
  * a call) *)
 val safepoint : Ssa.ins -> bool

@@ -37,12 +37,13 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 6 done** (the reader and the listing; the
+**Status: stages 1 to 7 done** (the reader and the listing; the
 machine: objects, value types, generics, delegates; `dotnet` and
 `tiger` on mini-9pi's card; the writer and mini-tiger,
 `languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
-whose assemblies Microsoft's dotnet and mini-dotnet both run); stage 7,
-the verifier, next. See the end.
+whose assemblies Microsoft's dotnet and mini-dotnet both run; the
+verifier, `-verify`); stage 8, the JIT's code as text, next. See the
+end.
 
 ## Its place in `languages/`
 
@@ -589,3 +590,29 @@ and its switch) print the survey's `.expected`, and
 by mini-dotnet and by Microsoft's dotnet (`-ms`); vec, generic,
 closures and the survey's strings.cs refused, each with its line; by
 dune's builds, by mini-ml's on arm64 and on arm under mini-5i.
+
+2026-10-29 (night), stage 7: the verifier (`Verifier`, 477 lines;
+`mini-dotnet -verify`): each method's paths followed from its first
+instruction and its handlers' (a worklist of the instructions whose
+stack changed), the stack's depth and each slot's kind at each
+instruction (Partition III's int32, int64, native int, F, a
+reference, a managed pointer, a value type, and a type parameter's
+value), two paths joining with the same depth and kinds, each
+instruction's operands of the kinds it takes (table 2 for the
+arithmetic), a call's arguments, a ret's value, .maxstack. It reads
+the metadata only, not Types' classes, so it goes over Microsoft's
+library; a reference's class is not checked against what is asked,
+the rules of access neither. An unmanaged pointer (native int) is
+taken where a managed one is: C#'s unsafe code, correct and not
+verifiable. Its result, the stacks, is the JIT's input. The writer
+now writes a stack popped empty as it is (the verifier's to refuse;
+its depth 0) instead of failing. Checked (`tests/run.sh`): every
+method of the survey's ten, of ours, of the writer's hello, of
+mini-tiger's 14 and mini-csc's 8 assemblies passes; writer/Broken.ml
+writes eight methods each broken one way (an add of an int and a
+string, a stack deeper on one path than the other where they join, a
+value left at ret, a string for an int, a branch on a float, an empty
+stack popped, the code falling off the end, a ret with no value),
+each refused with its offset and why (`writer/broken.verify`);
+Microsoft's System.Private.CoreLib (`-sdk`): 31,816 of its 31,819
+methods with a body pass in 4.3 s, the 3 others use refanytype.

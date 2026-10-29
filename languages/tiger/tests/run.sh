@@ -37,6 +37,9 @@ check() {
     p=$(basename $f .tig)
     in=/dev/null; [ -f $T/programs/$p.in ] && in=$T/programs/$p.in
     if ! $tiger -o $W/$p.dll $f 2> $W/$p.err; then fail "mini-tiger $p, by $what"; head -3 $W/$p.err; continue; fi
+    # (its assembly verified by dune's mini-dotnet: every method passes)
+    case "$(_build/default/languages/dotnet/Main.exe -verify $W/$p.dll | tail -1)" in
+      *" 0 refused") ;; *) fail "mini-tiger $p, verified"; _build/default/languages/dotnet/Main.exe -verify $W/$p.dll | head -3;; esac
     "$@" $W/$p.dll < $in > $W/$p.out 2> $W/$p.err
     if cmp -s $W/$p.out $T/programs/$p.out; then ok "mini-tiger $p, run by $what"
     else fail "mini-tiger $p, run by $what"; diff $T/programs/$p.out $W/$p.out | head -5; head -3 $W/$p.err; fi

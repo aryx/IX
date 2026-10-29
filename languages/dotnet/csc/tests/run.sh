@@ -43,6 +43,9 @@ check() {
   for x in $progs; do
     src=${x%%:*}; want=${x#*:}; p=$(basename $src .cs)
     if ! $csc -o $W/$p.dll $src 2> $W/$p.err; then fail "mini-csc $p, by $what"; head -3 $W/$p.err; continue; fi
+    # (its assembly verified by dune's mini-dotnet: every method passes)
+    case "$(_build/default/languages/dotnet/Main.exe -verify $W/$p.dll | tail -1)" in
+      *" 0 refused") ;; *) fail "mini-csc $p, verified"; _build/default/languages/dotnet/Main.exe -verify $W/$p.dll | head -3;; esac
     "$@" $W/$p.dll > $W/$p.out 2> $W/$p.err
     if cmp -s $W/$p.out $want; then ok "mini-csc $p, run by $what"
     else fail "mini-csc $p, run by $what"; diff $want $W/$p.out | head -5; head -3 $W/$p.err; fi

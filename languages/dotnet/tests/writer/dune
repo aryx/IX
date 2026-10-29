@@ -1,4 +1,4 @@
 ; the writer's test: an assembly made by Writer, written to a file
-(executable
- (name Hello)
+(executables
+ (names Hello Broken)
  (libraries ix_dotnet ix_core caps fpath))

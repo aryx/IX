@@ -1,0 +1,9 @@
+void Broken::AddIntAndString(): IL_0006: add of an int32 and a reference
+void Broken::DeeperOnOneBranch(): IL_0006: the stack is 0 deep at IL_0007 by one path, 1 by another
+void Broken::ValueLeftAtRet(): IL_0001: ret with the stack 1 deep, not empty
+void Broken::StringForInt(): IL_0005: an argument: a reference where an int32 is expected
+void Broken::BranchOnFloat(): IL_0009: a branch on a float
+void Broken::EmptyStack(): IL_0000: pop: the stack is empty
+void Broken::FallsOffTheEnd(): IL_0000: the code falls off the method's end
+int32 Broken::ReturnsNothing(): IL_0000: ret: the stack is empty
+broken.dll: 1 methods verified, 8 refused

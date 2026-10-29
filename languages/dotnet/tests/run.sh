@@ -10,6 +10,10 @@
 #   listings   each assembly's types and IL (-S) against expected/*.S
 #   writer     an assembly made by Writer (writer/Hello.ml), read back
 #              (-S) and run, against writer/hello.S and writer/hello.out
+#   verify     each assembly's methods verified (-verify): all of the
+#              survey's, ours and the writer's; and writer/Broken.ml's,
+#              each method broken in one way, refused with its offset and
+#              why (writer/broken.verify)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
@@ -51,7 +55,16 @@ check() {
   _build/default/languages/dotnet/tests/writer/Hello.exe $W/hello.dll
   "$@" -S $W/hello.dll > $W/hello.S 2>&1
   "$@" $W/hello.dll > $W/hello.out 2>&1
-  if [ -n "$record" ]; then cp $W/hello.S $W/hello.out $T/writer/; return; fi
+  _build/default/languages/dotnet/tests/writer/Broken.exe $W/broken.dll
+  "$@" -verify $W/broken.dll > $W/broken.verify 2>&1
+  if [ -n "$record" ]; then cp $W/hello.S $W/hello.out $W/broken.verify $T/writer/; return; fi
+  if cmp -s $W/broken.verify $T/writer/broken.verify; then ok "mini-dotnet -verify: Broken.ml's methods refused, by $what"
+  else fail "mini-dotnet -verify: Broken.ml's methods refused, by $what"; diff $T/writer/broken.verify $W/broken.verify | head -5; fi
+  for f in $P/*.dll $T/programs/*.dll $W/hello.dll; do
+    v=$("$@" -verify $f 2>&1 | tail -1)
+    case "$v" in *" 0 refused") ok "mini-dotnet -verify $(basename $f), by $what";;
+      *) fail "mini-dotnet -verify $(basename $f), by $what"; "$@" -verify $f | head -3;; esac
+  done
   for x in S out; do
     if cmp -s $W/hello.$x $T/writer/hello.$x; then ok "mini-dotnet: Writer's hello.dll, its .$x, by $what"
     else fail "mini-dotnet: Writer's hello.dll, its .$x, by $what"; diff $T/writer/hello.$x $W/hello.$x | head -5; fi
@@ -82,6 +95,8 @@ if [ -n "$sdk" ]; then
   dotnet $SDK/Roslyn/bincore/csc.dll -nologo -nostdlib -optimize+ -debug- \
     -deterministic $refs -out:$W/Survey.dll languages/dotnet/survey/Survey.cs > /dev/null || exit 1
   echo '{"runtimeOptions":{"tfm":"net8.0","framework":{"name":"Microsoft.NETCore.App","version":"'$(basename $RT)'"}}}' > $W/Survey.runtimeconfig.json
+  # (the verifier over Microsoft's library: how many of its methods pass)
+  $NATIVE -verify $RT/System.Private.CoreLib.dll | tail -1
   for a in System.Private.CoreLib System.Console System.Collections System.Linq System.Runtime; do
     want=$(dotnet $W/Survey.dll -size $RT/$a.dll)
     for b in $NATIVE $MINI; do

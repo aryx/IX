@@ -212,9 +212,10 @@ let max_stack (w : t) (returns : bool) (code : Il.op array) (clauses : clause li
     if i < n then begin
       let op = code.(i) in
       let pops, pushes = Il.stack_effect call returns op in
-      let d = depth.(i) - pops + pushes in
-      if depth.(i) - pops < 0 then
-        failwith (Printf.sprintf "Writer: the stack empty at instruction %d" i);
+      (* (an empty stack popped: wrong code, written as it is, the
+       * verifier's to refuse; its depth taken as 0, so a depth is never
+       * negative and each instruction is reached once) *)
+      let d = max 0 (depth.(i) - pops) + pushes in
       if d > !most then most := d;
       if depth.(i) > !most then most := depth.(i);
       (match op with

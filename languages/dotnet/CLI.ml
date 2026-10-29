@@ -5,7 +5,7 @@
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-dotnet [-trace] [-s] file.dll [arg...] | -S | -tables | -size file.dll..."
+let usage = "usage: mini-dotnet [-trace] [-s] file.dll [arg...] | -S | -tables | -size | -verify file.dll..."
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
@@ -43,7 +43,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
       ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
-      ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)") ] in
+      ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
+      ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -63,6 +64,13 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             let types, methods, il = Listing.sizes img in
             Console.print caps (Printf.sprintf "%s: %d bytes, %d types, %d methods, %d bytes of IL\n"
                                   (Filename.basename f) (String.length data) types methods il)
+        | "verify" ->
+            let ok, errors = Verifier.assembly img in
+            List.iter (fun (row, msg) ->
+                Console.print caps (Printf.sprintf "%s: %s\n"
+                                      (Listing.token_name img (Metadata.token Metadata.t_method_def row)) msg)) errors;
+            Console.print caps (Printf.sprintf "%s: %d methods verified, %d refused\n"
+                                  (Filename.basename f) ok (List.length errors))
         | _ -> () in
       try
         if !mode = "run" then begin

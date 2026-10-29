@@ -83,8 +83,14 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
       if s.kind <> File then (s.kind <- File; t.nfiles <- t.nfiles + 1; s.value <- t.nfiles);
       s.value) comps, line)) o.history in
   let items = o.items in
-  (* the prog of each item that has a pc; the targets point at items *)
+  (* the prog of each item that has a pc; the targets point at items.
+   * An object with no history (older than the history, or another
+   * tool's) has its lines put at 0, none: its own numbers would be
+   * read in the history of the object before it (libmach takes the
+   * last one met), a file that is not its own *)
+  let nohist = o.history = [] in
   let progs = Array.map (fun (it, line) ->
+    let line = if nohist then 0 else line in
     let mk op suffixes args = Some { op; suffixes; args; pc = 0; target = None; version; where = (file, line); frame = 0; leaf = false; autos = [] } in
     match (it : Asm.item) with
     | Ins i -> (

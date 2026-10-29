@@ -38,7 +38,7 @@ if [ -f $M/lib_core/lib_core.a ]; then
      && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o $W/deepml $W/Deep.start.5 $M/lib_core/lib_core.a $W/Deep.5 \
           $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a > $W/err 2>&1; then
     same "a fault in ML: mini-ml's frames, the runtime's C, to _main" \
-      "f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < Deep.Init < ml_program < main < _main" \
+      "f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < Deep.Init < ml_program < main < _main rt0.s:17" \
       "$($IX/machine/Main.exe $W/deepml 2>&1 | grep trace: | sed 's/^mini-5i: trace: //; s/+0x[0-9a-f]*//g')"
   else n=$((n + 1)); failures=$((failures + 1)); echo "FAIL the ML program's build: $(head -2 $W/err)"; fi
 else echo "skipped the ML case: no _mk/5-plan9/lib_core (mini-mk O=5 OS=plan9 in lib_core)"; fi

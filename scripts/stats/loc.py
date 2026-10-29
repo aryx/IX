@@ -303,7 +303,7 @@ GROUPS = [
     # (and, 2026-10-11, lib_audio: "let's count lib_audio as part of make
     # loc; audio like graphics is pretty important for the user; it is a
     # core part of the OS experience of m-ix")
-    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_networking", "lib_graphics",
+    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_executable", "lib_networking", "lib_graphics",
                    "lib_audio", "lib_gui", "lib_playground"]),
 ]
 

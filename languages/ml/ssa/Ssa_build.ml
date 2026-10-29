@@ -190,7 +190,7 @@ let build (f : L.func) =
     Braun.fill br id;
     seal_ready ()) blocks;
   Braun.seal_rest br;
-  { name = f.name; nparams = f.nparams; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1 }
+  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1 }
 
 (*****************************************************************************)
 (* Trivial phis out *)

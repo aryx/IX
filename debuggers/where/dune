@@ -1,0 +1,6 @@
+; mini-where: a trace's addresses named by the program's own tables
+(executable
+ (name Where)
+ (public_name mini-where)
+ (package ix)
+ (libraries ix_executable ix_core fpath caps))

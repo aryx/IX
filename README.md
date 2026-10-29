@@ -387,8 +387,8 @@ names are not final):
 
 | part | mini | tiny | Plan 9 original |
 |---|---|---|---|
-| Debuggers | mini-db, mini-acid | tiny-debugger | `db`, `acid` |
-| Profilers | mini-prof | tiny-profiler | `prof`, `tprof` |
+| Debuggers | mini-acid (begun: mini-ld's symbol tables, mini-nm, mini-where; [the plan](docs/plans/plan_debugger.md)) | done: `debug`, `trace` | `acid`, `nm` |
+| Profilers | mini-prof on mini-9pi (mini-prof counts under mini-5i now) | done: tiny-prof | `prof`, `tprof` |
 
 What else was on this list is in [m-IX's table](#m-ix-the-mini-programs)
 now. t-IX has its graphics, its windows, its network, a GUI toolkit,

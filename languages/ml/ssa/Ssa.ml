@@ -124,6 +124,7 @@ type block = {
 type func = {
   name : string;
   nparams : int;
+  line : int;                     (* Ir.func's *)
   blocks : block array;
   defs : (value, ins) Hashtbl.t;
   doubles : (value, unit) Hashtbl.t;

@@ -369,3 +369,40 @@ lines are the assembly's; Lower drops the AST's `eloc`: stage 1b, the
 (5c's history of the #includes, and its global lines); mini-asm's
 #include (5a's push and pop around it); arm64 (7l's table) and ELF's
 symbol table (-H7); stage 2's mini-nm, which reads them back.
+
+2026-10-29, later still (the author: "and let's move forward on the
+debugger plan"): stage 1b's first part, and stage 2.
+- **mini-ml's lines** (decision 3): each function its body's line
+  (Ir.func's and Ssa.func's `line`, from Scope's `loc`; 0 for the
+  compiler's own, a curry or a unit's start), printed by Gen and Emit
+  as a `// line n` comment before its TEXT, which mini-asm's lexer
+  skips; mini-ml's driver (CLI's ml_lines) reads them back from the
+  assembly, each item its function's line, and gives the object the
+  .ml's history. The code made is the same (a comment more a function
+  in the assembly). mini-tar's tables, lib_core's objects so made (in
+  a copy of the tree): 98 KB of symbols, 14 KB of lines, 20.2% more on
+  554 KB, where the assembly's lines made it 38%. A line a call's, not
+  the function's: later, through Lower's code (a marker in Ir must not
+  change what Opti and the ssa passes make).
+- **lib_executable** (new, top-level: the author, "let's move
+  lib_mach at the top, and maybe rename it to something better"; then,
+  of lib_debug, "I'm not completely sure": Plan 9's libmach is linked
+  by the debuggers, the profilers, nm, size, strip, ar, file and 5i, so
+  the name says what it reads, an executable and later the process
+  made of one; GNU's is BFD, binutils', and LLVM's libObject and
+  DebugInfo): Symbols, an
+  a.out's tables read back, libmach's syminit, pc2line, fileelem and
+  fline (the history as a stack of the files open at a line); a
+  function and its offset, a file and its line, for an address.
+- **mini-nm** (`debuggers/nm`): Plan 9's nm, -aghnsTu, an a.out's
+  table, and ix's objects and libraries (their names, no values);
+  against principia's nm under mini-5i, the same but -n's equal values
+  (nm.c's qsort, not copied, as mini-ls's). **mini-where**
+  (`debuggers/where`): a trace's addresses, `name+0xoff file:line`,
+  from the program's own tables; scripts/where.sh stays until the
+  tables are on by default (decision 1).
+- Checked: debuggers/tests/tables.sh (in make test: the hello a.out's
+  names and lines as recorded; live, against principia's nm); mini-nm
+  and mini-where built by mini-ml (mini-mk, arm64) answer as dune's on
+  mini-tar's a.out.
+Next: decision 1 (the tables on by default), stage 3 (the exact walk).

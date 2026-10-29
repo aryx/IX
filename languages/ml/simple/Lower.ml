@@ -978,7 +978,7 @@ and compile_fun lab ps benv body =
       | p -> irrefutably i p @ env) benv (List.mapi (fun i p -> i + 1, p) ps)
   in
   tail env body;
-  funcs := { name = lab; nparams = List.length ps; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs
+  funcs := { name = lab; nparams = List.length ps; nslots = !cur.nslots; code = List.rev !cur.code; line = body.loc } :: !funcs
 
 (* ml_curry<n>_<k>: a closure of arity n given its k+1-th argument; a
  * block [the next one; the closure; the k arguments...], or the call;
@@ -1016,7 +1016,7 @@ let curry_fun n k =
     let orig = if k > 0 then field 1 else 0 in
     emit (Call (Code 1, (orig :: args) @ [ 1 ], true))
   end;
-  funcs := { name = curry n k; nparams = 1; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs
+  funcs := { name = curry n k; nparams = 1; nslots = !cur.nslots; code = List.rev !cur.code; line = 0 } :: !funcs
 
 (* the curry functions of every arity up to shared_most, for the start
  * object *)
@@ -1091,7 +1091,7 @@ let unit_ name (items : Scope.item list) =
           if b.known <> None then Hashtbl.replace known_globals g.gsym b) gs) items;
   emit (Int 0);
   emit Ret;
-  funcs := { name = mangle name ^ ".Init"; nparams = 0; nslots = !cur.nslots; code = List.rev !cur.code } :: !funcs;
+  funcs := { name = mangle name ^ ".Init"; nparams = 0; nslots = !cur.nslots; code = List.rev !cur.code; line = 0 } :: !funcs;
   while not (Queue.is_empty queue) do (Queue.pop queue) () done;
   (* old: List.iter (fun n -> for k = 0 to n - 1 do curry_fun n k done) !arities; *)
   List.iter (fun n -> if n > shared_most then for k = 0 to n - 1 do curry_fun n k done) !arities;

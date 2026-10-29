@@ -1,0 +1,8 @@
+; lib_executable: what the tools read of an executable, and later of the
+; process made of one: the debuggers, mini-nm, mini-prof, the kernels'
+; traces (principia's debuggers/libmach; plan_debugger.md)
+(library
+ (name ix_executable)
+ (wrapped false)
+ (modules Symbols)
+ (libraries ix_core fpath caps))

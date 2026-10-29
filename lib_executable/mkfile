@@ -1,0 +1,9 @@
+# lib_executable, a library of ix's tools (mkfiles/mklib): an
+# executable's symbol table and pc/line table read back
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_executable
+DIRS=.
+NEEDS=
+UNITS=Symbols
+<$TOP/mkfiles/mklib

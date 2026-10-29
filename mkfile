@@ -8,7 +8,7 @@ TOP=.
 <mkfiles/mkconfig
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
  generators/lex generators/yacc languages/ml languages/scheme languages/pascal languages/prolog languages/datalog languages/forth editors/turbopascal/tty editors/emacs/tty machine version_control kernels/tools \
- typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc games editors/drscheme examples tiny
+ typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc debuggers/nm debuggers/where games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
 # The libraries first, side by side in waves (libs: below), each after
@@ -29,16 +29,16 @@ NPROC=`{if(~ $#objtype 0) nproc | awk '{print ($1 > 16 ? 16 : $1)}'; if not wc -
 # platforms, the draw device's and the software one, where Linux's is
 # ppm)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
-LIBS=lib_core lib_crypto lib_compression lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
+LIBS=lib_core lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_physics lib_juice lib_gui lib_audio \
  lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 FIRST=$LIBS assembler
-AFTER=linker/tools utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
+AFTER=linker/tools debuggers/nm utilities/calc/dc utilities/calc/bc games editors/drscheme examples apps/office
 all:V: libs
 	@{cd assembler && $MK 'O='$O} || exit 1
 	pids=()
 	for(d in $DIRS) if(! ~ $d $FIRST $AFTER){ @{cd $d && $MK 'O='$O} & pids=($pids $apid) }
-	@{cd linker && $MK 'O='$O && cd tools && $MK 'O='$O} & pids=($pids $apid)
+	@{cd linker && $MK 'O='$O && cd tools && $MK 'O='$O && cd ../../debuggers/nm && $MK 'O='$O} & pids=($pids $apid)
 	@{cd utilities/calc/dc && $MK 'O='$O && cd ../bc && $MK 'O='$O} & pids=($pids $apid)
 	@{cd games && $MK 'O='$O && cd ../editors/drscheme && $MK 'O='$O && cd ../../examples && $MK 'O='$O && cd ../apps/office && $MK 'O='$O} & pids=($pids $apid)
 	for(d in $KERNELS){ @{cd $d && $MK 'O='$O} & pids=($pids $apid) }

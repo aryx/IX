@@ -147,7 +147,10 @@ type t =
   | Catch of int                      (* the handler's entry: the exception pushed *)
 [@@deriving show]
 
-type func = { name : string; nparams : int; nslots : int; code : t list }
+(* line: the line of its body in the .ml, what the symbol table's
+ * pc/line table says of all its instructions (plan_debugger.md's stage
+ * 1b); 0 for the compiler's own (a curry, a unit's start) *)
+type func = { name : string; nparams : int; nslots : int; code : t list; line : int }
 
 (* the static data *)
 type data =

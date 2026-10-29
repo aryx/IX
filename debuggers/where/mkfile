@@ -1,0 +1,13 @@
+# mini-where, built by ix's tools, with lib_executable
+TOP=../..
+DIR=debuggers/where
+PROG=mini-where
+SRC=Where
+LOCAL=`{ls *.ml}
+GEN=
+LIBDIRS=lib_executable
+LIBI=
+LIBUNITS=
+<$TOP/mkfiles/mkconfig
+LIBOBJS=
+<$TOP/mkfiles/mkprog

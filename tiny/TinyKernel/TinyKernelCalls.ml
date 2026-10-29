@@ -116,7 +116,7 @@ let with_room p f =
 let child p s = {
   slot = s; mem = mem_empty (); pid = !next_pid; state = Ready;
   parent = p.pid; fds = p.fds; cwd = p.cwd; since = -1; traced = None;
-  core = -1; doomed = false;
+  core = -1; doomed = false; cmd = p.cmd; memory = p.memory;
 }
 
 (* the child made a process: its trace if p's children are traced, its
@@ -232,7 +232,9 @@ let load_prog p node argv =
   ignore (List.fold_left (fun at a -> mem_store p.mem at a; at + 4) (sp + 8)
             !ptrs);
   k_zero (frame p.slot) 68;
-  set_reg p 14 sp
+  set_reg p 14 sp;
+  p.cmd <- String.concat " " argv;
+  p.memory <- memory
 
 (* exec's and spawn's (path, argv): the program's file, its arguments
  * (64 at most: a linker's line names its objects; old: 16) *)

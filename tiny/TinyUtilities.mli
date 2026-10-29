@@ -59,11 +59,14 @@
  * misc/wc.c, byte/xd.c, text/grep/...), known here through m-ix's
  * twins. ln has neither: Plan 9 has no second name for a file, and
  * tiny-kernel's tree has (ls -l counts them), so ln is ours, three
- * lines over TinyLibSystem.link.
+ * lines over TinyLibSystem.link. ps is ours too: Plan 9's reads a
+ * directory a process in /proc, its status file; tiny-kernel gives one
+ * file, /dev/ps, a line a process, which ps puts in columns.
  *)
 
 type caps =
-  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
+    Cap.kill >
 
 (* [each_input caps tool files f]: f on each file named, as its name
  * and a descriptor open on it, or on "" and the standard input when no

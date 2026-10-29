@@ -151,7 +151,7 @@ its files, each a name, a size and its bytes, which the kernel reads
 at its start. A line `link utils` in place of the size makes a hard
 link instead, as the `link` call does: the name is given the same file
 as `utils`, with no bytes of its own. That is how one program, `utils`
-(`tiny/TinyUtilities.ml`, by tiny-ml), is `cat`, `ls`, `wc` and the 18
+(`tiny/TinyUtilities.ml`, by tiny-ml), is `cat`, `ls`, `wc` and the 24
 other utilities. At the prompt, `ln` makes one the same way.
 
 ### 2.5 What runs what
@@ -722,7 +722,7 @@ changed). The first shell's are the console, the screen and the
 machine's mouse, and its programs inherit them; a window system gives
 a window's shell pipes and a box instead (7.4), so a program does not
 know which it has. The same three as files of `/dev`, for a program
-that wants the screen itself, and the speaker:
+that wants the screen itself, the speaker, and the processes:
 
 | file | a read | a write |
 |---|---|---|
@@ -730,6 +730,7 @@ that wants the screen itself, and the speaker:
 | `/dev/draw` | | messages, whole; a bad one is said on the console and the write answers -1 |
 | `/dev/mouse` | waits until the mouse changed, then 12 bytes: x, y, the buttons (1 left, 2 middle, 4 right), a word each | |
 | `/dev/audio` | | sounds and samples, messages (below), whole; waits until they fit a second ahead; a bad one answers -1 |
+| `/dev/ps` | a line a process, made at the read: its pid, its parent's, its state (running, ready, waiting, stopped), its memory in KB, its command line; `ps` prints them in columns | |
 
 A connection (descriptor 3, or an open of `/dev/draw`) has its images by
 numbers of the program's, 0 the one it was given, freed when its last

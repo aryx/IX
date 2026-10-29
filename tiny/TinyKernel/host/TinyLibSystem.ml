@@ -131,6 +131,9 @@ let pipe () = let r, w = Unix.pipe ~cloexec:true () in number r, number w
 
 let fork (caps : < Cap.fork; .. >) = CapUnix.fork caps ()
 
+let kill (caps : < Cap.kill; .. >) pid =
+  try CapUnix.kill caps pid Sys.sigkill; true with Unix.Unix_error _ -> false
+
 let exec (caps : < Cap.exec; .. >) file (argv : string list)
     (env : string list) : string =
   try CapUnix.execve caps file (Array.of_list argv) (Array.of_list env); ""

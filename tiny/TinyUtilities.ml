@@ -12,7 +12,8 @@
 open TinyLibRegex
 
 type caps =
-  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr >
+  < Cap.open_in; Cap.open_out; Cap.readdir; Cap.stdin; Cap.stdout; Cap.stderr;
+    Cap.kill >
 
 (* raised by a utility given arguments it does not take: the driver
  * then prints the utility's usage *)
@@ -507,6 +508,56 @@ let touch caps args =
   each_path caps "touch" files (fun file -> TinyLibSystem.touch caps file)
 
 (*****************************************************************************)
+(* Processes *)
+(*****************************************************************************)
+
+(* the processes, a line each in /dev/ps (or the file given, a copy of
+ * it): its pid, its parent's, its state, its memory in KB, its command
+ * line, in the scheduler's order; printed by pid, in columns under
+ * their names, the numbers to the right, a program by its name alone
+ * (-a: its whole command line, as Plan 9's ps -a) *)
+let ps caps args =
+  let flags, files = options "a" args in
+  let file =
+    match files with [] -> "/dev/ps" | [ f ] -> f | _ -> raise Usage in
+  let rows = ref [] in
+  let status =
+    each_input caps "ps" [ file ] (fun _ fd ->
+      lines fd (fun line _ ->
+        match String.split_on_char ' ' line with
+        | pid :: parent :: state :: kb :: cmd ->
+            let cmd =
+              if List.mem 'a' flags then String.concat " " cmd
+              else match cmd with c :: _ -> last_part c | [] -> "" in
+            rows := (pid, parent, state, kb, cmd) :: !rows
+        | _ -> ())) in
+  let pid (p, _, _, _, _) =
+    match int_of_string_opt p with Some n -> n | None -> 0 in
+  let all =
+    ("PID", "PARENT", "STATE", "KB", "CMD")
+    :: List.sort (fun a b -> compare (pid a) (pid b)) !rows in
+  let width column =
+    List.fold_left (fun w row -> max w (String.length (column row))) 0 all in
+  let wpid = width (fun (p, _, _, _, _) -> p)
+  and wparent = width (fun (_, p, _, _, _) -> p)
+  and wstate = width (fun (_, _, s, _, _) -> s)
+  and wkb = width (fun (_, _, _, k, _) -> k) in
+  let right w s = String.make (w - String.length s) ' ' ^ s in
+  if status = 0 then List.iter (fun (pid, parent, state, kb, cmd) ->
+    print caps (right wpid pid ^ " " ^ right wparent parent ^ " " ^ state
+                ^ String.make (wstate - String.length state + 1) ' '
+                ^ right wkb kb ^ " " ^ cmd ^ "\n")) all;
+  status
+
+(* each process named by its pid ended, as a fault ends one *)
+let kill caps args =
+  if args = [] then raise Usage;
+  List.fold_left (fun status a ->
+    match int_of_string_opt a with
+    | Some pid when TinyLibSystem.kill caps pid -> status
+    | _ -> complain caps "kill" (a ^ ": no such process"); 1) 0 args
+
+(*****************************************************************************)
 (* The rest *)
 (*****************************************************************************)
 
@@ -536,6 +587,51 @@ let sleep _caps args =
            TinyLibSystem.sleep ((s * 1000) + ms); 0
        | _ -> raise Usage)
   | _ -> raise Usage
+
+(* the date as Plan 9's date writes it, in GMT: now, or the seconds
+ * given, since 2000-01-01 as the system counts them (TinyLibSystem.time:
+ * Unix's minus 946,684,800); -n: the seconds *)
+let day_names = [ "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" ]
+let month_names =
+  [ "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
+    "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" ]
+
+let date caps args =
+  let flags, rest = options "n" args in
+  let t =
+    match rest with
+    | [] -> TinyLibSystem.time ()
+    | [ a ] ->
+        (match int_of_string_opt a with
+         | Some t when t >= 0 -> t
+         | _ -> raise Usage)
+    | _ -> raise Usage in
+  if List.mem 'n' flags then print caps (string_of_int t ^ "\n")
+  else begin
+    let days = t / 86400 and secs = t mod 86400 in
+    let leap y = (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0 in
+    (* the year, then the month, each taken off the days while they last *)
+    let rec year y d =
+      let n = if leap y then 366 else 365 in
+      if d < n then y, d else year (y + 1) (d - n) in
+    let y, d = year 2000 days in
+    let rec month m d lengths =
+      match lengths with
+      | n :: rest when d >= n -> month (m + 1) (d - n) rest
+      | _ -> m, d in
+    let m, d =
+      month 0 d
+        [ 31; (if leap y then 29 else 28); 31; 30; 31; 30;
+          31; 31; 30; 31; 30; 31 ] in
+    let two n = (if n < 10 then "0" else "") ^ string_of_int n in
+    (* (2000-01-01 was a Saturday) *)
+    print caps
+      (List.nth day_names ((days + 6) mod 7) ^ " " ^ List.nth month_names m
+       ^ " " ^ (if d < 9 then " " else "") ^ string_of_int (d + 1) ^ " "
+       ^ two (secs / 3600) ^ ":" ^ two (secs / 60 mod 60) ^ ":"
+       ^ two (secs mod 60) ^ " GMT " ^ string_of_int y ^ "\n")
+  end;
+  0
 
 (* test: a question about files, strings or numbers, answered by the
  * status alone. Its arguments are an expression, read by recursive
@@ -712,13 +808,16 @@ let utilities =
     "[", "expression ]", "test", bracket;
     "cmp", "[-s] file1 file2", "where two files differ", cmp;
     "cp", "from to | from ... dir", "files copied", cp;
+    "date", "[-n] [seconds]", "the date, now or of seconds since 2000", date;
     "du", "[-a] [path ...]", "the kilobytes under each directory", du;
     "echo", "[-n] [word ...]", "the words", echo;
     "grep", "[-vincl] pattern [file ...]", "the lines that match", grep;
+    "kill", "pid ...", "processes ended", kill;
     "ln", "old new | old ... dir", "second names for files", ln;
     "ls", "[-l] [path ...]", "a directory's entries, sorted", ls;
     "mkdir", "[-p] dir ...", "new directories", mkdir;
     "mv", "from to | from ... dir", "files renamed", mv;
+    "ps", "[-a] [file]", "the processes, from /dev/ps", ps;
     "pwd", "", "the directory the process is in", pwd;
     "rm", "[-r] path ...", "files removed", rm;
     "seq", "[first [step]] last", "the numbers from first to last", seq;

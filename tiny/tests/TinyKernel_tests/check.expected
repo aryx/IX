@@ -88,15 +88,16 @@ $ % /dev/audio
 /dev/console
 /dev/draw
 /dev/mouse
+/dev/ps
 ls: /cat: not there
--  25 * /bin/cat
+-  28 * /bin/cat
 -   2 * /bin/editor
 -   2 * /bin/emacs
 -   1 * /bin/ping
--  25 * /bin/utils
-%      57     228    1411 f
-     57     228    1411
-     57     228    1411
+-  28 * /bin/utils
+%      60     240    1484 f
+     60     240    1484
+     60     240    1484
 % $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
 $ %       3
 % 1|1
@@ -434,4 +435,22 @@ wait:	ldw	r1, 0(r14)
 2
 3
 4
+% $ tiny-kernel: TinyKernel.ml, 223 MB for 16 processes
+$ % % PID PARENT STATE     KB CMD
+  1      0 waiting 1024 sh
+  2      1 waiting 1024 rc
+  3      2 waiting 1024 sleep
+  4      2 running 1024 ps
+%       5
+% 
+PID PARENT STATE     KB CMD
+  1      0 waiting 1024 sh
+  2      1 waiting 1024 rc
+  9      2 running 1024 ps -a
+% kill: 99: no such process
+1
+% Sat Jan  1 00:00:00 GMT 2000
+Wed Mar  1 00:00:00 GMT 2000
+Mon Jan  9 13:37:03 GMT 2034
+7
 % $ 

@@ -23,13 +23,17 @@ type state = Ready | Waiting of (unit -> bool) | Stopped
  * end, how many processes had ended when it last looked (-1: it waits
  * for something else); and its trace, when it is traced. The core it
  * runs on (-1: none; 0 while core 0 runs it or handles its trap), and
- * whether it was killed there, its end then at its next trap. *)
+ * whether it was killed there, its end then at its next trap. Its
+ * command line and its memory, for /dev/ps: its program's (exec's
+ * arguments, the bytes it asked for), or its parent's when it was
+ * forked. *)
 type proc = {
   slot : int; mem : space; pid : int;
   mutable state : state; mutable parent : int;
   mutable fds : (int * file) list; mutable cwd : string list;
   mutable since : int; mutable traced : trace option;
   mutable core : int; mutable doomed : bool;
+  mutable cmd : string; mutable memory : int;
 }
 
 (* the processes, in the order the scheduler goes through them; how
@@ -40,6 +44,19 @@ let deaths = ref 0
 
 (* the children ended, not waited for: parent, pid, status *)
 let ended = ref []
+
+(* /dev/ps: a line a process, in the scheduler's order; running is on a
+ * core now (the reader itself, on core 0 for its call) *)
+let () =
+  ps_hook := (fun () ->
+    String.concat "" (List.map (fun p ->
+      let state = match p.state with
+        | Ready when p.core >= 0 -> "running"
+        | Ready -> "ready"
+        | Waiting _ -> "waiting"
+        | Stopped -> "stopped" in
+      string_of_int p.pid ^ " " ^ string_of_int p.parent ^ " " ^ state ^ " "
+      ^ string_of_int (p.memory / 1024) ^ " " ^ p.cmd ^ "\n") !procs))
 
 (* a register of its frame (r1..r15, the pc as 16), as entry.tm saved it *)
 let reg p k = peek (frame p.slot + (4 * k))

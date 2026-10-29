@@ -14,7 +14,8 @@ open TinyKernelMachine
 
 (* a directory is a list of names in the order they were made; the
  * console is a node too, /dev/console, and the screen, the mouse and
- * the speaker, /dev/draw, /dev/mouse and /dev/audio (the programs are
+ * the speaker, /dev/draw, /dev/mouse and /dev/audio, and the processes,
+ * /dev/ps, a line each, made when it is read (the programs are
  * in /bin, examples to look at in /examples). A file of the image is
  * read where the image has it (its address, its size) until it is
  * written: the programs, a megabyte of them, are then not the
@@ -36,6 +37,7 @@ type node =
   | Screen
   | Pointer
   | Speaker
+  | Ps
   | Disk of int * int
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
@@ -233,11 +235,15 @@ let entry name n =
   name ^ String.make (64 - String.length name) '\000'
   ^ word t ^ word l ^ word size ^ word date
 
+(* /dev/ps's lines, which TinyKernelProcs, which has the processes, gives *)
+let ps_hook = ref (fun () -> "")
+
 let contents node =
   match node with
   | Data d -> text d
   | Rom (at, n) -> k_string at n
   | Tty | Screen | Pointer | Speaker -> ""
+  | Ps -> !ps_hook ()
   | Disk (r, i) when not (fs_is_dir r i) -> fs_contents r i
   (* (made once: old, acc ^ entry, the listing copied again at each name,
    * quadratic: ls -l of /bin, 55 names each listing it twice, took 7

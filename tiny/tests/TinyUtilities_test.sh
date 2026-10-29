@@ -19,8 +19,9 @@
 # lines with the same number, which the twin leaves in their order and
 # tiny-utils orders by their bytes (so its output does not depend on the
 # input's order): sort's cases have no such ties.
-# Then ln, checked by itself, and tiny-utils run by a link named after
-# a utility.
+# Then ln, ps and kill, checked by themselves, date against the twin's
+# seconds since 1970, and tiny-utils run by a link named after a
+# utility.
 # usage: TinyUtilities_test.sh
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
@@ -228,20 +229,36 @@ same "" - test a b
 # [check NAME COMMANDS]: COMMANDS succeed, in a fresh directory
 check() {
   n=$((n + 1)); setup
-  if ! (eval "$2") > $W/check.out 2>&1; then failures=$((failures + 1)); echo "FAIL ln: $1"; cat $W/check.out | head -5; fi
+  if ! (eval "$2") > $W/check.out 2>&1; then failures=$((failures + 1)); echo "FAIL $1"; cat $W/check.out | head -5; fi
 }
-check "the same bytes by a second name" '$TU ln f g && cmp -s f g'
-check "a write by one name seen by the other" '$TU ln f g && echo more >> g && tail -1 f | grep -q more'
-check "the file kept when its first name goes" '$TU ln f g && rm f && [ "$(head -1 g)" = "hello world" ]'
-check "into a directory, under its own name" '$TU ln f p d && cmp -s f d/f && cmp -s p d/p'
-check "a directory refused" '! $TU ln d dd 2>/dev/null && [ ! -e dd ]'
-check "a file that is not there refused" '! $TU ln nosuch g 2>/dev/null'
-check "a name already there refused" '! $TU ln f p 2>/dev/null && [ "$(cat p)" = hello ]'
+check "ln: the same bytes by a second name" '$TU ln f g && cmp -s f g'
+check "ln: a write by one name seen by the other" '$TU ln f g && echo more >> g && tail -1 f | grep -q more'
+check "ln: the file kept when its first name goes" '$TU ln f g && rm f && [ "$(head -1 g)" = "hello world" ]'
+check "ln: into a directory, under its own name" '$TU ln f p d && cmp -s f d/f && cmp -s p d/p'
+check "ln: a directory refused" '! $TU ln d dd 2>/dev/null && [ ! -e dd ]'
+check "ln: a file that is not there refused" '! $TU ln nosuch g 2>/dev/null'
+check "ln: a name already there refused" '! $TU ln f p 2>/dev/null && [ "$(cat p)" = hello ]'
 # ls -l, which has no twin either (the twin's has owners, modes, times)
 check "ls -l: a file's kind, links and size" '[ "$($TU ls -l p)" = "-   1        5 p" ]'
 check "ls -l: two names, two links each" '$TU ln f g && $TU ls -l f g | grep -c "^-   2 " | grep -q 2'
 check "ls -l: one link again when a name goes" '$TU ln f g && rm g && $TU ls -l f | grep -q "^-   1 "'
 check "ls -l: a directory" '$TU ls -l . | grep -q "^d.* ./d$"'
+
+# date, against the twin's seconds since 1970: the days of the leap
+# years, the months' ends, the last second tiny-ml's 31 bits hold
+for s in 0 86399 5097600 5184000 31535999 31622400 1077840000 1073741823; do
+  n=$((n + 1))
+  [ "$($TU date $s)" = "$($MINI/mini-date $((s + 946684800)))" ] || { failures=$((failures + 1)); echo "FAIL date $s: $($TU date $s)"; }
+done
+check "date -n: the seconds given" '[ "$($TU date -n 100)" = 100 ]'
+# ps and kill, which have no twin (mini-ps reads Plan 9's /proc): ps on
+# a copy of tiny-kernel's /dev/ps
+printf '12 1 running 32768 /bin/ps -a\n1 0 waiting 1024 sh\n' > $W/ps
+check "ps: by pid, in columns, the program's name" '[ "$($TU ps $W/ps)" = "$(printf "PID PARENT STATE      KB CMD\n  1      0 waiting  1024 sh\n 12      1 running 32768 ps")" ]'
+check "ps -a: the whole command line" '$TU ps -a $W/ps | grep -q " /bin/ps -a$"'
+check "ps: nothing printed when there is no /dev/ps" '! $TU ps $W/nosuch > out 2>/dev/null && [ ! -s out ]'
+check "kill: a process ended" 'sleep 30 & p=$!; $TU kill $p; wait $p; [ $? = 137 ]'
+check "kill: no such process refused" '! $TU kill 999999 2>/dev/null'
 
 # by a link named after the utility
 setup
@@ -253,4 +270,4 @@ ln -s $TU [
 n=$((n + 1))
 [ "$(./[ -f f ]; echo $?; ./[ -d f ]; echo $?; ./[ -f f 2>/dev/null; echo $?)" = "$(printf '0\n1\n1')" ] || { failures=$((failures + 1)); echo "FAIL [ by a link"; }
 
-if [ $failures = 0 ]; then echo "ok $n cases: the same as the twins, and ln as it should"; else echo "FAIL $failures of $n cases"; exit 1; fi
+if [ $failures = 0 ]; then echo "ok $n cases: the same as the twins, and ln, ps and kill as they should"; else echo "FAIL $failures of $n cases"; exit 1; fi

@@ -17,7 +17,8 @@
 
 (* A directory is a list of names in the order they were made; the
  * console is a node too, /dev/console, and the screen, the mouse and
- * the speaker, /dev/draw, /dev/mouse and /dev/audio (the programs are
+ * the speaker, /dev/draw, /dev/mouse and /dev/audio, and the processes,
+ * /dev/ps, a line each, made when it is read (the programs are
  * in /bin, examples to look at in /examples). A file of the image is
  * read where the image has it (its address, its size) until it is
  * written: the programs, a megabyte of them, are then not the
@@ -39,6 +40,7 @@ type node =
   | Screen
   | Pointer
   | Speaker
+  | Ps
   | Disk of int * int
   | Union of node list
 and data = { mutable dbytes : bytes; mutable dsize : int; mutable dtime : int }
@@ -151,6 +153,10 @@ val word : int -> string
 (* [entry name node]: the 80 bytes of a directory's entry for it (its
  * name, its type, its links, its size, its date), which ls reads *)
 val entry : string -> node -> string
+
+(* /dev/ps's lines (TinyKernelProcs's): a process's pid, its parent's,
+ * its state, its memory in KB, its command line *)
+val ps_hook : (unit -> string) ref
 
 (* what a node holds, a directory's entries for one *)
 val contents : node -> string

@@ -52,7 +52,9 @@ type state = Ready | Waiting of (unit -> bool) | Stopped
  * ended when it last looked (-1: it waits for something else); and its
  * trace, when it is traced. The core it runs on (-1: none; 0 while core
  * 0 runs it or handles its trap), and whether it was killed there, its
- * end then at its next trap. *)
+ * end then at its next trap. Its command line and its memory, for
+ * /dev/ps: its program's (exec's arguments, the bytes it asked for), or
+ * its parent's when it was forked. *)
 type proc = {
   slot : int;
   mem : TinyKernelMemory.space;
@@ -65,6 +67,8 @@ type proc = {
   mutable traced : TinyKernelFiles.trace option;
   mutable core : int;
   mutable doomed : bool;
+  mutable cmd : string;
+  mutable memory : int;
 }
 
 (* the processes, in the order the scheduler goes through them; the

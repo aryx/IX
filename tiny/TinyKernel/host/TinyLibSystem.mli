@@ -181,6 +181,10 @@ val pipe : unit -> int * int
 (* a copy of this process: 0 in the copy, the copy's number here *)
 val fork : < Cap.fork; .. > -> int
 
+(* [kill caps pid]: that process ended at once (the host's SIGKILL);
+ * false when there is none, or it is not ours to end *)
+val kill : < Cap.kill; .. > -> int -> bool
+
 (* [exec caps file argv env]: this process becomes the program in file,
  * env its variables as name=value; when it cannot, the reason *)
 val exec : < Cap.exec; .. > -> string -> string list -> string list -> string

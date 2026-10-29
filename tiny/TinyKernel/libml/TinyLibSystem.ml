@@ -255,6 +255,8 @@ let pipe () =
 
 let fork caps = u_fork ()
 
+let kill caps pid = u_kill pid >= 0
+
 let exec caps file argv env =
   List.iter (fun d -> ignore (u_close d)) !private_fds;
   private_fds := [];

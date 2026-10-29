@@ -30,7 +30,8 @@ let () =
   (match root with
    | Dir d ->
        d := !d @ [ "dev", Dir (ref [ "console", Tty; "draw", Screen;
-                                    "mouse", Pointer; "audio", Speaker ]) ]
+                                    "mouse", Pointer; "audio", Speaker;
+                                    "ps", Ps ]) ]
    | _ -> ());
   k_zero ring_at ring;
   poke speaker_dev ring_at;
@@ -91,6 +92,7 @@ let () =
     slot = 0; mem = mem_empty (); pid = 1; state = Ready; parent = 0;
     fds = fds; cwd = (if blocks > 0 then [ "usr"; "glenda" ] else []);
     since = -1; traced = None; core = -1; doomed = false;
+    cmd = ""; memory = 0;
   } in
   incr next_pid;
   procs := [ p ];

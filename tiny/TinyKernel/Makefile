@@ -130,7 +130,7 @@ PROGS = sh rc emacs office troff play mltests paint windows square tetris calc t
 # other names (hard links), a name:program each
 LINKS = editor:emacs sam:ed
 # utils's names (TinyUtilities.ml's table)
-UTILS = [ basename cat cmp cp du echo grep ln ls mkdir mv pwd rm seq sleep sort tail tee test touch walk wc xd
+UTILS = [ basename cat cmp cp date du echo grep kill ln ls mkdir mv ps pwd rm seq sleep sort tail tee test touch walk wc xd
 L = ../TinyCRuntime
 ULIB = $(O)/start.o $(O)/udivmod.o $(O)/libc.o $(O)/libc/sys.o
 
@@ -593,7 +593,7 @@ check check-parts self self-quick self-cores: override MACHINE := $(MACHINE) -da
 # in one rule, one after the other (old: every session one after the
 # other, some 15 minutes)
 J = 32
-NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
+NCHECK = 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
 check: $(O)/boot.img
 	rm -rf $(O)/check; mkdir -p $(O)/check
 	$(MAKE) $(if $(findstring jobserver,$(MAKEFLAGS)),,-j$(J)) check-parts
@@ -670,6 +670,10 @@ $(O)/check/25.out: $(O)/boot.img
 # times that moved too)
 $(O)/check/26.out: $(O)/boot.img
 	printf "rc\necho hello > f\ntrace cat f\ntrace cat f > g; cat g\ntrace nosuch\ntrace -f rc -c 'cat f | wc' >[2] t\ngrep '^.12. ' t; grep '^.13. ' t; grep '^.14. ' t\ndebug ping\nb write\nc\nbt\nx/i pc 3\ns\nn\nd write\nc\ndebug trace\nb u_write\nc\nbt\nq\n{ for(i in 1 2) { sleep 1; echo \$$i } } > l &\ntrace \$$apid\n{ for(i in 1 2 3 4) { sleep 1; echo \$$i } } > m &\ndebug \$$apid /bin/rc\nb wait\nc\nq\nwait\ncat l m\nexit\n" | timeout 300 $(MACHINE) $(O)/boot.img > $@
+# /dev/ps read by ps, a process in the background ended by kill, the
+# date of seconds given (now's differs at each run)
+$(O)/check/27.out: $(O)/boot.img
+	printf 'rc\nsleep 100 &\nps\ncat /dev/ps | wc -l\nkill $$apid; echo $$status; ps -a\nkill 99; echo $$status\ndate 0; date 5184000; date 1073741823; date -n 7\nexit\n' | timeout 300 $(MACHINE) $(O)/boot.img > $@
 $(O)/check/%.sum: $(T)/%.events $(O)/boot.img
 	timeout 300 $(MACHINE) -net ../tests/www -events $< -screen $(O)/check/$*.ppm $(O)/boot.img > /dev/null
 	cksum < $(O)/check/$*.ppm > $@; diff $(T)/$*.cksum $@ || { echo "tiny-kernel: $*.events: another screen ($(O)/check/$*.ppm)"; exit 1; }

@@ -228,11 +228,12 @@ let turbulent (sp_ : t) (e : Edges.t) (v : View.t) (first : int) (src : string)
   let sdivz16 = g.sdivzstepu *. 16.
   and tdivz16 = g.tdivzstepu *. 16.
   and zi16 = g.zistepu *. 16. in
-  let st (sdivz : float) (tdivz : float) (zi : float) : int * int =
-    let z = 65536. /. zi in
-    ( int_of_float (sdivz *. z) + g.sadjust,
-      int_of_float (tdivz *. z) + g.tadjust )
-  in
+  (* s and t at 1/z zi, each a value of its own: st's pair, its floats
+   * boxed for the call, refused by [@@zero_alloc]. old:
+   *   let st (sdivz : float) (tdivz : float) (zi : float) : int * int =
+   *     let z = 65536. /. zi in
+   *     ( int_of_float (sdivz *. z) + g.sadjust,
+   *       int_of_float (tdivz *. z) + g.tadjust ) *)
   let k = ref first in
   while !k >= 0 do
     let sp = !k in
@@ -246,8 +247,9 @@ let turbulent (sp_ : t) (e : Edges.t) (v : View.t) (first : int) (src : string)
       ref (g.tdivzorigin +. (dv *. g.tdivzstepv) +. (du *. g.tdivzstepu))
     in
     let zi = ref (g.ziorigin +. (dv *. g.zistepv) +. (du *. g.zistepu)) in
-    let s0, t0 = st !sdivz !tdivz !zi in
-    let s = ref s0 and t = ref t0 in
+    let z = 65536. /. !zi in
+    let s = ref (int_of_float (!sdivz *. z) + g.sadjust)
+    and t = ref (int_of_float (!tdivz *. z) + g.tadjust) in
     while !count > 0 do
       let spancount = if !count >= 16 then 16 else !count in
       count := !count - spancount;
@@ -255,12 +257,17 @@ let turbulent (sp_ : t) (e : Edges.t) (v : View.t) (first : int) (src : string)
       sdivz := !sdivz +. if !count > 0 then sdivz16 else g.sdivzstepu *. n;
       tdivz := !tdivz +. if !count > 0 then tdivz16 else g.tdivzstepu *. n;
       zi := !zi +. if !count > 0 then zi16 else g.zistepu *. n;
-      let snext, tnext = st !sdivz !tdivz !zi in
-      let sstep, tstep =
-        if !count > 0 then ((snext - !s) asr 4, (tnext - !t) asr 4)
-        else if spancount > 1 then
-          ((snext - !s) / (spancount - 1), (tnext - !t) / (spancount - 1))
-        else (0, 0)
+      let z = 65536. /. !zi in
+      let snext = int_of_float (!sdivz *. z) + g.sadjust
+      and tnext = int_of_float (!tdivz *. z) + g.tadjust in
+      let sstep =
+        if !count > 0 then (snext - !s) asr 4
+        else if spancount > 1 then (snext - !s) / (spancount - 1)
+        else 0
+      and tstep =
+        if !count > 0 then (tnext - !t) asr 4
+        else if spancount > 1 then (tnext - !t) / (spancount - 1)
+        else 0
       in
       (* (no extents: s and t taken modulo the 64 by 64 texture, the
        * swirl a cycle of 128 texels) *)
@@ -285,6 +292,7 @@ let turbulent (sp_ : t) (e : Edges.t) (v : View.t) (first : int) (src : string)
     done;
     k := e.span_next.(sp)
   done
+[@@zero_alloc]
 
 (*****************************************************************************)
 (* The sky (d_sky.c, r_sky.c) *)

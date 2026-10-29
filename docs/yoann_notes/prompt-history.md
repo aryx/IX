@@ -53460,3 +53460,458 @@ Claude ran the speed check on a copy of the tree to confirm the timing.
 Claude asked whether anything it wrote was still uncommitted before Yoann closed the session.
 Claude also asked whether anything from the session was worth saving to memory.
 Yoann's reply, "delete the scratchpad," picks up the scratchpad question, which Claude's answer did not explicitly raise.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:22
+
+**Yoann:**
+
+> delete the scratchpad
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:21
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude recommended option (b), optimizing the collector's `copy` routine, which runs in C compiled by mini-cc.
+Claude explained that `copy` takes 65 instructions per block, and the minors and part of the majors run through it.
+Claude suggested first running `mini-prof -a copy` to see where those 65 instructions go, before changing anything.
+Claude noted this helps every program on every target without reopening the memory decision, and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:24
+
+**Yoann:**
+
+> yes
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:19
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the font work as f22677fa, listing its files explicitly so no other session's changes slipped in.
+Claude committed one change covering Plan 9's default font with its bytes in fonts/lucm.latin1.9.
+That same commit includes grey.font's darker edges and Mkfont's new -cell option.
+Claude kept these as one commit because all three touch Mkfont.ml and the font docs.
+make test passed with 144 jobs and 0 failures, while the 6-minute make self-quick-tix was not run.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:25
+
+**Yoann:**
+
+> can we close this session?
+
+**Claude (summary):**
+
+Claude confirmed the session can close, since all its work is committed as 01cf8b76 and f22677fa.
+Claude recommended checking Plan 9's font licence before `plan9.font` is used outside ix, noting the notice only names Bigelow & Holmes.
+Claude flagged that bold and large faces are scaled regular glyphs, so www headings look blocky until Plan 9's own bitmaps are used.
+Claude noted `make self-quick-tix` (6 min) was not run for either commit, and left the `.equ` idea for tiny-assembler in memory.
+Claude left uncommitted changes in `languages/ml/` and `mkfiles/` alone, since other sessions own them.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:24
+
+**Yoann:**
+
+> I think ocaml-light actually write some of this code in assembly for the hot path
+
+**Claude (summary):**
+
+Claude traced the slow collector to mini-cc's default back end, which keeps every C variable in memory, so the rewritten C only reached 0.988.
+Claude recommended option 1: hand-written assembly for the hot loop, `scan_copies` with `copy` inlined, in `gc_arm.s` and `gc_arm64.s`.
+Claude estimated the collector would drop from about 500 M to 150–200 M instructions, bringing mini-ml's compile to roughly 0.83–0.85.
+Claude noted the cost: two assembly files that must stay in step with gc.c's headers, `lo`/`hi` bounds, and large-block layout.
+Claude also described option 2, a registerizer in mini-cc's default back end modeled on 5c's `reg.c`, as a larger separate project, and asked whether to start the assembly arm first.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:42
+
+**Yoann:**
+
+> maybe we can do 1 and 2. Let's start with 1 indeed. also does mini-ml has a registerizer?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:30
+
+**Yoann:**
+
+> are docs/projects.md and the docs/manuals/ are up to date?
+
+**Claude (summary):**
+
+Claude said projects.md is clearly stale and was checking the manuals' flags against the code.
+Claude was still auditing, with no finished findings yet on the manuals.
+Claude had not yet edited any files, and no commits were made.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:45
+
+**Yoann:**
+
+> yes let's update the manuals and projects.md too
+
+**Claude (summary):**
+
+Claude recommended and then began updating mini-qemu.md, then m-ix.md, t-ix.md, and projects.md, to reflect current state.
+Claude documented the doom table, quake and virtuaracing, and the `window=` and `kscale=` flags on mini-9pi in m-ix.md.
+Claude rewrote the stale parts of projects.md, covering self-hosting, the kernels table, tiny-kernel's parts, and the TinyLibHost section.
+Claude also added a sentence to t-ix.md and reflowed a few lines in the manuals that ran past 80 columns.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 21:43
+
+**Yoann:**
+
+> maybe we can also have an ssa/ in languages/c/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-28 22:04
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the four docs as 98d450eb, naming each file explicitly so nothing else was included.
+Claude ran `make test` first and it passed: 144 jobs, 0 failures, in 89 seconds.
+One job, "m-ix built in mini-9pi", exceeded its time budget at 77.8 seconds but still passed.
+Claude left the other tree changes alone: `prompt-history.md` (already staged), `gc.c`, `lib_core/mkfile`, and two new `scan_arm*.s` files.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 22:11
+
+**Yoann:**
+
+> any code we could factorize under tiny/ ? add functions in TinyLibCore/? reuse code across programs? I'm thinking to start to "lpize" (transform the code in literate program using syncweb and its relatd tools) but before I want to make sure we reach a good point for the code, the coverage, we have most essential programs.
+
+**Claude (summary):**
+
+Claude scanned the tiny programs for literal duplicates and found only a few.
+Claude is now checking near-duplicates by hand: I/O wrappers, the palette code, and argument parsing.
+Claude is examining TinyLibCore's String.concat, since three read-all loops work around it differently.
+Yoann said "ok, let's do it," so the factorization work is approved and should proceed.
+Claude has not yet written any shared helpers or changed code in TinyLibCore or the tiny/ programs.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 22:05
+
+**Yoann:**
+
+> ok going to sleep; hopefully tomorrow we have a good gc written partly in assembly and a good registerizer for mini-cc that could have almost generated the fast assembly from the generic gc C code that was before
+
+**Claude (summary):**
+
+Claude recommended splitting the work into two commits by pathspec: the assembly collector scan, and the mini-cc registerizer step.
+Claude found the scan cut mini-ml's compile to 0.853 of baseline, and fixed a Marshal field-loss bug caused by a clobbered caller frame slot.
+Claude added `tests/runtime/scan.ml` as a regression test; make test passed with both changes, 144 jobs and 0 failures.
+Claude's registerizer step gave arm's `-simple -O` stack-machine registers from R7 down, turning power-of-two divisions into shifts.
+Claude had planned `languages/c/ssa/` in `docs/plans/plan_cc_ssa.md` and asked whether it should share code with mini-ml's ssa/.
+
+------------------------------------------------------------------------
+
+## 2026-10-28 22:22
+
+**Yoann:**
+
+> ok, let's do it
+
+**Claude (summary):**
+
+Claude committed the re-recorded paint sum as a follow-up to item 1's GUI read_file change.
+Claude committed item 3, adding www_picture_request next to www_request for the "img" picture requests.
+Claude's item 4 commit failed on a wrong cd, so it retried from the repo root.
+Claude committed all six items once the re-recorded debug sum for item 6 passed.
+Claude then ran the full make test across all six items as a final check.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 06:04
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude found the six changes already committed as seven commits, 14399b40 through 14cecafb, atop 98d450eb.
+Claude left the other uncommitted files alone, since none were its own changes, including your prompt-history.md.
+Claude noted that nothing has been pushed, so the seven commits exist only in the local repository.
+Claude asked whether you want those seven commits pushed before closing this session, since pushing publishes them.
+Claude held off on pushing, since a push is outward-facing and hard to undo.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 06:04
+
+**Yoann:**
+
+> ok so what's next? Can I close this session?
+
+**Claude (summary):**
+
+Claude said the session could be closed, since all work was committed and no task was waiting on it.
+Claude recommended three next steps for tiny/: run `make self-quick-mix`, add a fast TinyLibRegex test, and make paint's check timing-independent.
+Claude suggested the self-quick-mix run first, because test-lite asks for it and it was never run on these commits.
+Claude proposed a table-driven TinyLibRegex test of patterns and lines with expected matches and groups, since grep and ed depend on it.
+Claude also suggested letting paint's events wait for the ball's stop or blanking its row before the checksum.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 06:24
+
+**Yoann:**
+
+> let's do first what you propose, 1, 2, 3
+
+**Claude (summary):**
+
+Claude started `make self-quick` in the background, since it shares tiny-kernel's build directory with item 3.
+Claude wrote a TinyLibRegex test with 289 passing checks in 9 ms, correcting two wrong Plan 9 regexp expectations.
+Claude found paint's screen shifted with start time under the old paint.c at 1M instructions, but not under the new one.
+Claude re-recorded paint's screen and ran the full check, which passed with the windows screens unchanged.
+Claude ran the t-ix tests before committing item 2, then updated the memory note saying paint no longer shifts.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 06:03
+
+**Yoann:**
+
+> let's commit and start ssa/ for C without sharing code at first; we can try to factorize later if ssa/ turned out to be good opti for C too
+
+**Claude (summary):**
+
+Claude wrote `languages/c/ssa/`, a register-allocating back end for mini-cc, reusing mini-ml's method but not its code.
+On mini-ml's runtime, gc.c's C scan with `-simple -O -ssa` ran 5,396.3 M instructions, 1.055 times the assembly scan's.
+gc.c's plain C copy loop now compiles to the same `CMP; BHS; MOVW.P` sequence as the hand-written scan_arm.s.
+The ssa/ work is uncommitted, and `make test` has not been run on it, so Claude proposed committing it as one feature.
+Earlier commits `027c6613` (the scan) and `ee3e86c1` (mini-cc's first registers step) are already in, and arm64 passes 129 of 129.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 07:12
+
+**Yoann:**
+
+> continue ssa/ for C: read remeasure8.log, update plan_cc_ssa.md and the ledger, report to the user
+
+**Claude (summary):**
+
+Claude measured the runtime compiled with `-simple -O -ssa` at 5,396.3 M instructions, against 5,115.5 M with the assembly scan.
+Claude recommended switching lib_core's mkfile to `-simple -O -ssa` for runtime.c, which could retire scan_arm.s and scan_arm64.s.
+Claude named the cost as about 5% on mini-ml's compile, and left that trade-off for Yoann to decide.
+Claude noted that gc.c's plain C copy loop now compiles to the same code as scan_arm.s.
+Claude offered to run `make test` and commit the new `languages/c/ssa/` back end as one feature.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 07:28
+
+**Yoann:**
+
+> let's commit; at this point maybe we can remove the scan_armxx.s since the C code is now compiled efficiently?
+
+**Claude (summary):**
+
+Claude recommended removing the scan_armxx .s assembly files, since the C scan now compiles efficiently.
+Claude deleted both .s files, lib_core's build rule for them, and the runtime built with -simple -O -ssa.
+Claude found the kernels never used the assembly, since they build compat without LARGE, so only lib_core's runtime changed.
+Claude fixed comments that still named the removed files and made run.sh build the runtime the way lib_core now does.
+Earlier, Claude renamed the `effect` keyword to fix an OCaml 5 build failure, and is waiting on dune's lock.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 07:40
+
+**Yoann:**
+
+> continue ssa/ for C: read remeasure8.log, update plan_cc_ssa.md and the ledger, report to the user
+
+**Claude (summary):**
+
+Claude recommended committing ssa/ after a fresh-HEAD `make test`, which first failed on OCaml 5 over `effect`, a keyword there. Claude renamed `effect` in both files, and the compiler output stayed byte-identical. Claude replaced the assembly scan with a C scan in gc.c's `scan_copies`, inlining copy's work, and removed scan_arm.s, scan_arm64.s and their mkfile rule. Measured on arm, the C scan ran at 0.986 to 1.0003 times the assembly scan's frame counts and time, with identical pixels. Claude then made `tests/run.sh` build the runtime with `-ssa` by default and added a `-ssa` runtime check to `tests/lite.sh`.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:15
+
+**Yoann:**
+
+> is this new -ssa -simple -O  used to produce the card?  Also maybe we could add a -O3 like for mini-ml that does all the opti (-ssa, -simple and the current -O) ? and a -O0 for no opti (just -simple)?
+
+**Claude (summary):**
+
+Claude recommended keeping `mini-cc -O0` as the compat twin of goken's `5c -O0`, rather than making it mean `-simple`.
+Claude added a `-O3` level meaning `-simple -O -ssa`, writing a byte-identical runtime, uncommitted.
+Claude had lib_core's mkfile, `tests/run.sh` and `tests/lite.sh` switched to use `-O3`, with help text updated.
+`make test` passed on a fresh copy of HEAD with the change: 145 jobs, 0 failures, 1 skipped.
+Claude also noted the card's runtime is not yet rebuilt, though the mini-9pi job already exercises the ssa runtime.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:23
+
+**Yoann:**
+
+> let's commit -O3 and keep -O0 as compat for now
+
+**Claude (summary):**
+
+Claude committed the `-O3` change as `82d4a4a8` after `make test` passed on a fresh copy of HEAD.
+Claude set `mini-cc -O3` to mean `-simple -O -ssa`, which writes a byte-identical runtime, and `lib_core`'s mkfile now builds the runtime with it.
+Claude kept `-O0` as the compat twin of `5c -O0`, and `tests/run.sh` now builds the runtime with `-O3` unless `RUNTIME_FLAGS` overrides it.
+Claude also updated `tests/lite.sh` to check that mini-ml and dune builds of mini-cc produce the same `-O3` runtime, and recorded the decision in `plan_cc_ssa.md`.
+Four other test scripts were already modified by another session, so Claude left them out of the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:26
+
+**Yoann:**
+
+> ok what's next?
+
+**Claude (summary):**
+
+Claude suggested checking the card first with `make self-quick` under QEMU, then profiling mini-ml compiling on arm.
+Claude noted that libc's memmove, strlen and formatting code still compile with 5c -O0 rather than -O3.
+Claude proposed rebuilding libc with -O3, keeping compat as the reference for the listing and fuzz tests.
+Claude pointed out that mini-9pi's and mini-xv6's runtimes are still built by compat, and proposed moving them to -O3.
+Claude found about 400 lines of ssa construction, dominator, liveness and coloring code shared by languages/ml/ssa and languages/c/ssa.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:32
+
+**Yoann:**
+
+> I like this plan. why libc is not compiled by -O3? memmove and strlen are not optimized? why compiled by 5c -O0? same for the kernels' runtime, let's use -O3 there too, if it turns out -O3 generate faster code than -compat (and -O0). And yes let's factor out the ssa/ code somewhere
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:33
+
+**Yoann:**
+
+> maybe in lib_code/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:33
+
+**Yoann:**
+
+> which could be the basis for more program analysis code reused by different tools (e.g., a linter in the futur, a semgrep-like program, some phases before datalog, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:34
+
+**Yoann:**
+
+> lib_code/
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:34
+
+**Yoann:**
+
+> (not lib_core)
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:34
+
+**Yoann:**
+
+> hopefully using -O3 everywhere may have an impact on the performance of the games and apps on the Pi2, hopefully
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:35
+
+**Yoann:**
+
+> but memdraw is coded in C? where?
+
+**Claude (summary):**
+
+Claude admitted it was wrong that memdraw is C, and that the default ix tools build uses OCaml memdraw and memlayer ports under `kernels/9pi/lib_graphics/`.
+Claude explained that only the `PIXEL=c` build compiles principia's C libmemdraw and libmemlayer, through gcc rather than mini-cc.
+Claude concluded that `-O3` in mini-cc won't speed up game drawing on the Pi 2, since that drawing is OCaml.
+The kernel's C that `-O3` does reach is the ML runtime, collector, and `lib_machine` files, so games gain only about 1% per frame.
+Claude still recommended the `-O3` change in mkkernel for the collector, and planned to measure libc and a kernel build.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:36
+
+**Yoann:**
+
+> excellent
+
+**Claude (summary):**
+
+Claude profiled mini-ml compiling Ssa_build.ml under the -O3 runtime, measuring 1,596.1 million instructions.
+Claude reported a drop from 1,916.4 million on yesterday's compat runtime, near the 1,591.1 million assembly scan.
+Claude found the C runtime is about 40% of the compile, so switching libc to -O3 would barely move mini-ml.
+Claude named scan_copies at 12.2% as the biggest C target, with cmp and ml_modify's per-call cost next.
+Claude also planned a shared lib_code/ with CFG, liveness, Braun construction and coloring for both ssa/ copies.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:40
+
+**Yoann:**
+
+> 1.9M to 1.5M is a big reduction! This is great no? this should reduce the m-ix build under m-ix no?
+
+**Claude (summary):**
+
+Claude reported that Ssa_build.ml dropped from 1,916 to 1,596 million, a 16.7% reduction.
+Claude said the three units together fell from 6,100 to 5,202 million, about 14.7% less.
+Claude expects roughly 15% faster ML compiles, and agreed the m-ix build should shorten.
+Claude cautioned that the card must be rebuilt, since its current mini-ml uses the old runtime.
+Claude also noted the 15% comes from Linux mini-5i, not yet measured under mini-9pi on the card.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:41
+
+**Yoann:**
+
+> please use percentage improvement instead of those 0.833 numbers, it's more readable for me
+
+------------------------------------------------------------------------
+
+## 2026-10-29 08:42
+
+**Yoann:**
+
+> so how much faster mini-ml got at compile ML code with all the recent opti we did in the last week (to mini-ml itself, to mini-c, to the runtime code, etc.) ?

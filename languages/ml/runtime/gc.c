@@ -29,8 +29,13 @@
  * too deep, seen at the next collection (collect); a kernel's has none */
 #define GUARD STACK
 /* large blocks of no pointers outside the halves, the system's memory
- * (a kernel has none: they stay in the half) */
+ * (a kernel has none: they stay in the half; nor Plan 9, where the
+ * halves are most of a process's 512 MB, the break only moves up, and
+ * mini-ld linking mini-netscape on the card, its buffers doubling, went
+ * past the stack: "out of memory", self-mix) */
+#ifndef plan9
 #define LARGE
+#endif
 #endif
 /* a half's words at the start (ML_HEAP says another); it doubles when
  * less than half is free after a collection */

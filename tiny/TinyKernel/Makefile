@@ -540,9 +540,12 @@ $(foreach u,$(UNITS),ml/$(u).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(I_$(u)
 	mkdir -p main; ml -nostdlib -o $$target $$prereq
 $(foreach p,$(ML),main/$(p).tm: $$LIB $(addprefix ml/,$(addsuffix .tmi,$(UNITS_$(p))))$(nl))$(foreach p,$(ML),bin/$(p): $$ULIB libml/mlsys.o main/$(p).o $(addprefix ml/,$(addsuffix .o,$(UNITS_$(p)))) $$LIBO end.o$(nl)	mkdir -p bin; ld -map -s -n $(MEM_$(p)) -o $$target $$prereq$(nl))
 endef
+# (written by the shell from the environment, not by $(file >...),
+# which macOS's make, GNU make 3.81, does not have and takes for nothing)
+$(O)/Buildfile: export BUILDFILE_TEXT = $(subst $(nl) ,$(nl),$(BUILDFILE))
 $(O)/Buildfile: Makefile
 	@mkdir -p $(@D)
-	$(file >$@,$(subst $(nl) ,$(nl),$(BUILDFILE)))
+	@printf '%s\n' "$$BUILDFILE_TEXT" > $@
 
 $(O)/spin.prof: ../tests/TinyProfiler_tests/spin.tm
 	@mkdir -p $(@D)

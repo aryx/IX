@@ -54552,3 +54552,328 @@ Claude reported that mini-ml's Pi 1 kernel doesn't boot: it prints `k` forever a
 Claude traced the bss to lib_core's 64 MB libc stand-in allocator, a suspect it had not confirmed as the cause.
 Claude proposed bisecting about eight commits since 2026-10-03, then measuring both kernels on the same sessions.
 Claude asked for approval to start the bisect; the performance numbers remain unmeasured until the kernel boots.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:02
+
+**Yoann:**
+
+> for the dotnet plan, I'm not a big fan of C# but one thing we could do is have a mini-C# really reduced, and also to have a mini-tiger (see ~/github/fork-tiger) that targets dotnet instead of currently c--. Also another thing of great value will be the JIT as we don't have one yet. I'm not sure how to do that though. Another thing is we can't emulate the whole dotnet libraries, but ideally we can reuse a lot lib_core/ and just have an adapter for dotnet for many of its libs, so we don't have to add too much code; ideally the Jitted code can call those adapted native compiled ocaml libs. What do you think?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:02
+
+**Yoann:**
+
+> Also I don't think we need a TinyDotnet
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:08
+
+**Yoann:**
+
+> we can copy fork-tiger or just reimplement it from scratch using fork-tiger (and other sources) for inspiration. let's keep the JIT in the same plan document.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:10
+
+**Yoann:**
+
+> that way we would have in languages/ a good coverage of compiler techniques. c/, pascal P code, smalltalk vm, scheme SECD, prolog WAM, ML functional language, and dotnet JIT with tiger (And mini C#)
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:10
+
+**Yoann:**
+
+> I wonder if we have such good coverage for other parts of IX
+
+**Claude (summary):**
+
+Claude said it would survey the other parts of ix while writing the plan, nothing more.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:35
+
+**Yoann:**
+
+> let's commit and let's start a plan_gaps.md plan document. note that mini-9pi has a networking TCP/IP stack
+
+**Claude (summary):**
+
+Claude flagged two errors in the survey: mini-9pi has its own TCP/IP stack, and copy-on-write fork already exists.
+Claude said it would commit the .NET plan after double-checking the survey's remaining claims.
+Claude then began checking the commit hash before writing `plan_gaps.md`, but did not finish either step.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:44
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude recommended adding the untracked new file to git before retrying the commit.
+Claude ran `git add` on the new file, then retried the commit.
+The first commit attempt had failed because the new file was not yet tracked.
+Yoann's follow-up reports that `make` is stuck in a dune build job, so that is the focus.
+Claude's reply covers the commit fix, with no detail on the dune hang itself.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:57
+
+**Yoann:**
+
+> make is currently stucked in dune build in one job. Why?
+
+------------------------------------------------------------------------
+
+## 2026-10-29 15:57
+
+**Yoann:**
+
+> Done: 99% (10293/10330, 37 left) (jobs: 1)
+
+**Claude (summary):**
+
+Claude reported a build-progress line (10293/10330 jobs) and said it had found the cause of a broken line.
+Claude said the fixed pipeline reproduced the font byte for byte when applied to the rule.
+Claude checked the rule in a separate build directory so it would not disturb the lock held by the user's make.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:01
+
+**Yoann:**
+
+> yes let's commit the fix
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:01
+
+**Yoann:**
+
+> make test is also not working on this mac apparently
+
+**Claude (summary):**
+
+Claude traced most of the macOS `make test` failures to bash 3.2, BSD `date`, and the tiny-kernel Buildfile, fixing each.
+Claude took on the tiny-ml "label ml_start defined twice" failure as the last of the seven.
+Claude named the tiny-ml test program `prog_main.tm` instead of `start_main.tm`, and the tiny-ml tests then passed.
+Claude started a full `make test` rerun to check the tiny-kernel jobs and the rest.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the macOS fixes as `4ec49c49`, covering eight files plus `prompt-history.md`.
+Claude confirmed `make test` passes on this Mac: 122 jobs, 0 failures, 5 skipped.
+Claude did not run the suite on Linux, so that remains unverified.
+Claude flagged the `printf` replacing `$(file >…)` in `tiny/TinyKernel/Makefile` as the change most worth checking under make 4.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:26
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting stage 1 of the .NET plan, the metadata reader and listing.
+Claude said it is the root dependency for mini-tiger, mini-csc, and the JIT.
+Claude set the success test as matching survey.txt row counts and reading Microsoft's library fully.
+Claude asked Yoann to decide whether to commit the ten .dll test files, which it recommended.
+Claude also listed mini-tiger's location, the database journal, and a Linux Makefile check as alternatives.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:35
+
+**Yoann:**
+
+> we recently explored gaps in IX (m-ix and t-ix). I wonder if we have also important gaps in apps/
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:35
+
+**Yoann:**
+
+> we definitely have in games/ but I expect more ~/playground to be the home for it
+
+**Claude (summary):**
+
+Claude said it was comparing ix's apps/ directory against ~/playground/apps and checking for mail, IRC, and CAD categories.
+Yoann's reply pushed back on the playground-gap framing; he wants to find teaching gaps instead.
+Claude's answer was only a stated plan, with no findings or recommendations yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:37
+
+**Yoann:**
+
+> I'm not necessarily talking about gaps with the playground, more teaching gaps and apps that could deserved to be in IX, just like office I think is. It's a fundamental program for users in the end (and also useful for a programmer)
+
+**Claude (summary):**
+
+Claude proposed adding the apps list as a new apps/ section in docs/plans/plan_gaps.md.
+The section would cover user-facing programs such as mail, search, spelling, image editing and video playback.
+Claude asked before writing anything, since the section would sit inside plan_gaps.md alongside the programmer-focused entries.
+Mail ranked first as the biggest missing user program, building on the TLS and TCP/IP ix already has.
+Claude checked utilities/, lib_crypto/, lib_networking/ and plan_gaps.md for overlaps before ranking nine candidates.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:38
+
+**Yoann:**
+
+> plan_gaps is really for the "principia softwarica" hardcore aspect; stuff a programmer should know, programs that a developer use. but apps/ is different
+
+**Claude (summary):**
+
+Claude proposed a separate `docs/plans/plan_apps.md` that judges ix by what a user can do, with a table of user activities against ix's coverage.
+Claude named mail, a photo viewer and editor, a calendar with contacts, and a video player as the biggest user-facing gaps.
+Claude proposed moving search with an index, rsync-style sync, a password store, and symbolic algebra into `plan_gaps.md`.
+Claude suggested search belongs with grep and algebra under `utilities/calc`, while the techniques stay in `plan_apps.md` as selection criteria.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:45
+
+**Yoann:**
+
+> yes write plan_apps.md and add the 4 to plan_gaps like you suggested
+
+**Claude (summary):**
+
+Claude asked whether to commit the two plan files together with prompt-history.md, since nothing had been committed yet.
+Claude left plan_apps.md, plan_gaps.md and prompt-history.md uncommitted in the working tree, waiting on Yoann's go-ahead.
+The proposed commit would hold plan_apps.md and the four new developer items in plan_gaps.md, with its status line.
+Claude's survey read only the existing apps' headers, labeling the few code-verified claims as checked.
+Earlier, Claude wrote docs/plans/plan_apps.md with a seven-item application ranking and three open questions.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:50
+
+**Yoann:**
+
+> yes
+
+**Claude (summary):**
+
+Claude committed the two planning docs, `docs/plans/plan_apps.md` (new) and `docs/plans/plan_gaps.md` (new "Tools a programmer uses" section), as `454434a2`.
+Claude also committed `prompt-history.md` in the same commit.
+Only documentation changed, so Claude skipped building.
+The working tree is clean after the commit.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:53
+
+**Yoann:**
+
+> let's start a plan_mail.md for mini-mail ideally we could read my gmail account; I think it uses pop3 or IMAP. Ideally we would start a plan_pim.md where we would have also a calendar, contact, todo, reminder, email, all integrated in some form, or where one could refer one another; just steal good ideas from PIM out there or famous one. Even a mini-quicken or something for finance, maybe also integrated with this PIM thing, that is a "suite" like office, but not for document authoring but for life organizing and comms and more.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:54
+
+**Yoann:**
+
+> we can redesign things for IX (m-ix), and don't have to follow the playground or plan 9 (upas).
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:55
+
+**Yoann:**
+
+> let's try to design something well integrated, like a suite, powerful, and useful for real, but also small, like we did a bit with mini-office (and mini-netscape).
+
+**Claude (summary):**
+
+Claude updated plan_apps.md to point at the two new plans for the ix suite.
+Claude's reply was only a single line announcing that it was pointing plan_apps.md at the new plans.
+Nothing else in the answer was substantive, so no other details are recorded here.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:58
+
+**Yoann:**
+
+> I dunno if there are really good ideas from popular or innovative PIM we could steal
+
+**Claude (summary):**
+
+Claude recommended reworking plan_pim.md's table around search first, snooze, typed dates, the Screener, and envelopes.
+Claude sorted the PIM ideas into proven, innovative, and overrated, and called snooze the idea it most regretted omitting.
+Claude argued snooze fits the item, stamp and link design as a `when` field that hides an item until a date.
+Claude proposed HEY's Screener, with its Imbox, Feed, and Paper Trail split, as a small change that alters how the inbox feels.
+Claude flagged Chandler's failure as a warning about scope, not a model to copy, and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 17:32
+
+**Yoann:**
+
+> Love those analysis and history and what worked and not; let's save this in the plan document
+
+**Claude (summary):**
+
+Claude said it was adding the Screener and snooze features to the mail plan, since they appear there first.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 17:47
+
+**Yoann:**
+
+> and yes rework the plan with those ideas you reported before (but I think you already did), and yes let's commit the 3 plans
+
+**Claude (summary):**
+
+Yoann's reply, "can I close this session?", is a question about closing, so the focus is on the commit step rather than the rework itself. Claude's answer said the rework was mostly done and the stages still needed the new ideas scheduled.
+Claude said most of the rework was already in place across the three plans.
+Claude identified one gap: the stages did not yet schedule the new ideas from earlier.
+Claude planned to add those ideas to the stage schedules before committing.
+Claude had not yet committed the three plan files when that answer was given.
+Claude did not say whether the session can be closed before the commit is done.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 17:50
+
+**Yoann:**
+
+> can I close this session?
+
+**Claude (summary):**
+
+Claude said the session could close, since the three plans were committed as 05e83ae4 with a clean tree.
+Claude pointed out that plan_pim.md and plan_mail.md still hold open questions only Yoann can answer.
+Those questions cover the accent font, per-item or per-month store files, the suite name, and mini-9pi use.
+Claude flagged the history in the what worked and what didn't section as written from memory, unverified.
+It also noted that Google Calendar's private iCalendar address still needed checking as an offered option.

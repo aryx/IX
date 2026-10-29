@@ -98,10 +98,13 @@ a:
 b:
 	sleep 1; touch b
 EOF
-# (in milliseconds: with whole seconds, 1.1 s begun at x.95 counted 2)
-start=$(date +%s%3N)
+# (in milliseconds: with whole seconds, 1.1 s begun at x.95 counted 2;
+# by perl where date has no %N, macOS's, as tests/lite.sh)
+if [ "$(date +%3N)" = 3N ]; then now() { perl -MTime::HiRes=time -e 'printf "%d\n", time * 1000'; }
+else now() { date +%s%3N; }; fi
+start=$(now)
 "$TB" -j 2 > /dev/null
-check "-j 2 runs both at once" "yes" sh -c "[ \$((\$(date +%s%3N) - $start)) -lt 1900 ] && echo yes || echo no"
+check "-j 2 runs both at once" "yes" sh -c "[ $(( $(now) - start )) -lt 1900 ] && echo yes || echo no"
 
 # a build killed midway keeps what it made: its stamps written after
 # each recipe

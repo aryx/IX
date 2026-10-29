@@ -13,7 +13,10 @@
 ; the machine's font, tiny-kernel's (../TinyKernel/fonts/README.md), in
 ; the program, a byte a \xNN (old: its bytes as they are in a {font|
 ; ... |font}: OCaml 5 took a | then bytes beyond ASCII then } in
-; grey.font for a delimiter, its name not UTF-8, and stopped)
+; grey.font for a delimiter, its name not UTF-8, and stopped). od's
+; columns are one space apart on Linux, several on macOS: each byte is
+; put on a line of its own first, so that a run of spaces never becomes
+; a \x with no digits (which made ocamldep spin on the file).
 (rule
  (targets TinyFont.ml)
  (deps (:font ../TinyKernel/fonts/plan9.font))
@@ -21,7 +24,7 @@
   (with-stdout-to %{targets}
    (progn
     (echo "(* TinyKernel/fonts/plan9.font *)\nlet bits = \"")
-    (system "od -An -v -tx1 %{font} | tr -d '\\n' | sed 's/ /\\\\x/g'")
+    (system "od -An -v -tx1 %{font} | tr -s ' \\n' '\\n\\n' | sed -n 's/^\\(..\\)$/\\\\x\\1/p' | tr -d '\\n'")
     (echo "\"\n")))))
 
 (copy_files# ../TinyKernel/user/office.ml)

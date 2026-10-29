@@ -19,11 +19,15 @@ fail=0
 check() { if [ "$2" = "$3" ]; then echo "ok $1"; else echo "FAIL $1: $2, not $3"; fail=1; fi; }
 mkdir -p $T/bin $T/home
 for p in mpv mini-page show gv; do
-  printf '#!/bin/sh\necho %s "$@" >> %s/said\n[ -f "$1" ] && head -c 5 "$1" >> %s/said && echo >> %s/said\nexit 0\n' $p $T $T $T > $T/bin/$p
+  printf '#!/bin/sh\necho %s "$@" >> %s/said\n[ -f "$1" ] && head -c 5 "$1" >> %s/said && echo >> %s/said\ntouch %s/done\nexit 0\n' $p $T $T $T $T > $T/bin/$p
   chmod +x $T/bin/$p
 done
-run() { HOME=$T/home PATH=$T/bin:$PATH $N worker=wait -fixed-time 1000 "$@" > /dev/null 2>&1; }
-said() { cat $T/said 2>/dev/null | sed "s#$T#T#g; s#mini-netscape-[0-9-]*#F-#g" | tr '\n' ';'; rm -f $T/said; }
+# (the browser's temporary files in /tmp, as the checks say, where
+# macOS's TMPDIR is elsewhere)
+run() { HOME=$T/home PATH=$T/bin:$PATH TMPDIR=/tmp $N worker=wait -fixed-time 1000 "$@" > /dev/null 2>&1; }
+# (a helper is not waited for by the browser, which may have exited
+# before it wrote: up to 3 s for its mark, which helpers=off waits out)
+said() { local i; for i in $(seq 30); do [ -f $T/done ] && break; sleep 0.1; done; rm -f $T/done; cat $T/said 2>/dev/null | sed "s#$T#T#g; s#mini-netscape-[0-9-]*#F-#g" | tr '\n' ';'; rm -f $T/said; }
 
 run -dump-frame 9 $T/a.ppm profile=off url=browsers/netscape/tests/pages/helpers.html -script 'at(-238;364):4-6,click:5'
 check "a link to YouTube, clicked: mpv given the address" "$(said)" "mpv https://www.youtube.com/watch?v=x;"

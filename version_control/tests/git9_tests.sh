@@ -20,7 +20,7 @@ die() { echo "FAIL $test: $*"; touch $failed; return 1; }
 
 t_add() {
   mkdir repo && cd repo
-  pwd=$(pwd)
+  pwd=$(pwd -P)  # the physical path, as Sys.getcwd gives (macOS's /var is a link to /private/var)
   git init
   mkdir dir another more extra
   touch a b c dir/{a,b,c} another/{a,b,c} more/{a,b,c} extra/{a,b,c}

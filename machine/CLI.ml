@@ -88,8 +88,13 @@ let main (caps : < Cap.argv; Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr; 
              * (mini-ml's floats: plan_rio.md); 5i has none *)
             st.vfp_ok <- true;
             st.fpexc <- 1 lsl 30;
-            try Cpu.run32 ~trace:tr st ~pc:entry ~svc:(fun st _ -> Plan9.syscall proc st)
-                  ~signal:(fun st pc -> Plan9.deliver proc st ~pc) stats; 0 with
+            (* (a breakpoint: its note posted, the run again from it) *)
+            let rec go pc =
+              try Cpu.run32 ~trace:tr st ~pc ~svc:(fun st _ -> Plan9.syscall proc st)
+                    ~signal:(fun st pc -> Plan9.deliver proc st ~pc) stats with
+              | Arm32.Unimplemented (w, a) when Bits.unsigned32 w = Plan9.breakpoint_instruction ->
+                  Plan9.breakpoint proc st ~pc:a; go a in
+            try go entry; 0 with
             | Linux.Exit code -> report (); code
             | Linux.Exec (path, argv, env) -> run path argv env
             | Arm32.Unimplemented (w, a) ->

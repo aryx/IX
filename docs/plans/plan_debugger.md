@@ -582,3 +582,31 @@ errstr, strstr nor wait: the test formats by vsnprint and waits by
 await. Not yet: a target blocked in a host call answers when the call
 returns; the pipes of a target that exits by itself are left; arm64.
 Next: step 2, breakpoints, waitstop, startstop, hang.
+
+2026-10-29, stage 8's step 2 (the author: "let's commit and move
+forward on step 2"): **breakpoints, startstop, waitstop, hang**, under
+mini-5i, as Plan 9's kernel has them (principia's devproc.c and
+proc.c's procctl):
+- a breakpoint is 5db's BKPT (E1200070): mini-5i's CLI catches it
+  (Arm32 raises Unimplemented for it) and runs again from it, its note
+  `sys: breakpoint` posted, the pc left at it (Plan9.breakpoint): no
+  cost an instruction. A process no one traces dies of it, as on Plan
+  9 (a suicide);
+- ctl's `startstop` starts a stopped process traced: its next note
+  stops it before it is delivered (Proc_traceme), the note left for
+  the debugger, who reads it from `/proc/$pid/note` (the first note,
+  taken off); the debugger's mini-5i then asks `waitstop` without a
+  signal: the target opens its pipe only once stopped, so the open is
+  the wait;
+- `hang`, written by a process to its own ctl, stops it at its next
+  exec, before its first instruction (Plan9.load); it makes its pipes
+  itself, for the debugger that comes (acid's `new()`);
+- a process removes its pipes at its exit.
+Checked: debuggers/tests/proc.sh's second program (proc/bp.c, by
+mini-cc): a breakpoint written at a function of its child's, startstop
+returns there (the pc at the function, the note `sys: breakpoint`),
+the instruction put back, the child goes on and exits; a child hung at
+its exec, waited for, started, runs its program. Three runs of three;
+make test (its mini-lex and mini-yacc jobs failed once, another
+session's ML files changing between their two passes; again alone,
+they pass). Next: step 3, mini-acid's language.

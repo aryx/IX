@@ -67,3 +67,9 @@ val syscall : proc -> Arm32_isa.state -> unit
 
 (* the pending notes delivered at [pc], the next instruction *)
 val deliver : proc -> Arm32_isa.state -> pc:int -> unit
+
+(* arm's breakpoint instruction (5db's BKPT), and what it does at pc:
+ * the note "sys: breakpoint" posted, the pc left at it (a traced
+ * process stops there for its debugger: Proc9) *)
+val breakpoint_instruction : int
+val breakpoint : proc -> Arm32_isa.state -> pc:int -> unit

@@ -6,6 +6,8 @@
 let signal = 10
 
 let stopped = ref false
+let traced = ref false
+let hung = ref false
 
 let dir = "/tmp/mini-5i-debug"
 let pipe pid ext = Printf.sprintf "%s/%d.%s" dir pid ext
@@ -43,7 +45,12 @@ let send (h : Host_calls.t) path s =
   | Some fd -> write_all h fd s; ignore (h.close fd); true
   | None -> false
 
+let pipes (h : Host_calls.t) pid =
+  ignore (h.mkdir dir 0o700);
+  List.iter (fun ext -> if Result.is_error (h.stat (pipe pid ext)) then ignore (h.mkfifo (pipe pid ext) 0o600)) [ "req"; "rep" ]
+
 let serve h ~pid answer =
+  if !stopped then pipes h pid;
   let once () =
     match receive h (pipe pid "req") with
     | None -> stopped := false              (* no debugger made the pipes *)
@@ -65,8 +72,7 @@ let ours (h : Host_calls.t) pid =
 let ask (h : Host_calls.t) pid ~stopped request =
   if not (ours h pid) then Error "process exited"
   else begin
-    ignore (h.mkdir dir 0o700);
-    List.iter (fun ext -> if h.stat (pipe pid ext) |> Result.is_error then ignore (h.mkfifo (pipe pid ext) 0o600)) [ "req"; "rep" ];
+    pipes h pid;
     if not stopped then ignore (h.kill pid signal);
     if not (send h (pipe pid "req") request) then Error "process exited"
     else

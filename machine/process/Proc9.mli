@@ -25,11 +25,16 @@
 (* the debugger's signal to its target (SIGUSR1, Linux's number) *)
 val signal : int
 
-(* whether this process is stopped by a debugger *)
+(* whether this process is stopped by a debugger; traced (ctl's
+ * startstop): its next note stops it, the note left for the debugger;
+ * hung (ctl's hang, its own): its next exec stops it *)
 val stopped : bool ref
+val traced : bool ref
+val hung : bool ref
 
 (* [serve host ~pid answer]: a request read and answered, and the next
- * ones while [stopped]; [answer request] gives the data, its failure
+ * ones while [stopped] (the pipes made if no debugger made them yet: a
+ * process hung at exec waits for one); [answer request] gives the data, its failure
  * the error; its second result is done after the answer is sent (a
  * kill's exit) *)
 val serve : Host_calls.t -> pid:int -> (string -> string * (unit -> unit)) -> unit

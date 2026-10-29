@@ -37,6 +37,7 @@ type virt =
   | Note of int                    (* /proc/PID/note: writing posts a note *)
   | Text                           (* /proc/PID/text: the a.out (its runtime reads its tables) *)
   | Other of int * string          (* another process's mem, regs, ctl, status, text, note: Proc9 *)
+  | Ctl                            (* /proc/PID/ctl, its own: hang (stopped at its next exec) *)
 
 type file = {
   path : string;                   (* absolute, for fd2path and directory reads *)
@@ -97,8 +98,10 @@ let load host mem (a : aout) file argv envp =
    * it), then argc (argv[0] included), argv, nil; the strings above *)
   let tos = stack_top - tos_size in
   Memory.store32 mem (tos + 48) (host.Host_calls.getpid ());
-  (* a debugger's request comes by a signal (Proc9) *)
+  (* a debugger's request comes by a signal (Proc9); a process hung
+   * (ctl's hang) stops here, at its exec, before its first instruction *)
   host.signal Proc9.signal Host_calls.Catch;
+  if !Proc9.hung then (Proc9.hung := false; Proc9.stopped := true; Linux.signal_waiting := true);
   let strings = List.fold_left (fun acc s -> acc + String.length s + 1) 0 argv in
   let sp = (tos - strings - (4 * (List.length argv + 2))) land lnot 7 in
   Memory.store32 mem sp (List.length argv);
@@ -156,6 +159,7 @@ let virt_of p path =
   | [ ""; "env"; name ] when name <> "" -> Some (Env name)
   | [ ""; "proc"; pid; "note" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some (Note (p.host.getpid ()))
   | [ ""; "proc"; pid; "text" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some Text
+  | [ ""; "proc"; pid; "ctl" ] when int_of_string_opt pid = Some (p.host.getpid ()) -> Some Ctl
   | [ ""; "proc"; pid; ("mem" | "regs" | "ctl" | "status" | "text" | "note" as f) ] ->
       (match int_of_string_opt pid with Some n when n <> p.host.getpid () -> Some (Other (n, f)) | _ -> None)
   | _ -> None
@@ -169,7 +173,7 @@ let content p = function
   | Env name -> Hashtbl.find_opt env name ||| ""
   | Note _ -> ""
   | Text -> p.image
-  | Other _ -> ""
+  | Other _ | Ctl -> ""
 
 (* a host descriptor reserved for a virtual file: its number is then
  * the host's, never clashing *)
@@ -263,7 +267,7 @@ let stat_record name (st : Host_calls.stat) =
 
 let virt_stat p v =
   let now = p.host.now () in
-  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" | Other (_, f) -> f in
+  let name = match v with Pid -> "pid" | Bintime -> "bintime" | Env n -> n | Note _ -> "note" | Text -> "text" | Other (_, f) -> f | Ctl -> "ctl" in
   stat_record name { dev = 0; ino = 0; kind = Reg; perm = 0o644; nlink = 1; uid = 0; gid = 0; rdev = 0;
                      size = String.length (content p v); atime = now; mtime = now; ctime = now }
 
@@ -339,6 +343,7 @@ let sys_pread p fd buf n off =
         let s = match f with
           | "mem" | "text" -> asked p pid (Printf.sprintf "%s %d %d" f at n)
           | "regs" | "status" -> slice (asked p pid f) at n
+          | "note" -> slice (asked p pid "rnote") 0 n     (* its first note, taken *)
           | _ -> raise (Error "permission denied") in
         if off = -1 then fl.offset <- at + String.length s;
         s
@@ -374,6 +379,8 @@ let sys_pwrite p fd s off =
       Hashtbl.replace env name f.content;
       String.length s
   | Some { virt = Some (Note _); _ } -> Queue.add s p.notes; Linux.signal_waiting := true; String.length s
+  | Some { virt = Some Ctl; _ } ->
+      if String.trim s = "hang" then (Proc9.hung := true; String.length s) else raise (Error "bad process control message")
   | Some ({ virt = Some (Other (pid, f)); _ } as fl) ->
       let at = if off = -1 then fl.offset else off in
       (match f with
@@ -381,8 +388,12 @@ let sys_pwrite p fd s off =
        | "note" -> ignore (asked p pid ("note\n" ^ s))
        | "ctl" ->
            let msg = String.trim s in
-           ignore (asked p pid ("ctl " ^ msg));
-           if msg = "stop" then Hashtbl.replace debugging pid ()
+           (* startstop: started, then waited for (waitstop: no
+            * signal; the target opens its pipe once it is stopped) *)
+           if msg = "waitstop" then ignore (Proc9.ask p.host pid ~stopped:true "ctl waitstop")
+           else ignore (asked p pid ("ctl " ^ msg));
+           if msg = "startstop" then ignore (Proc9.ask p.host pid ~stopped:true "ctl waitstop");
+           if msg = "stop" || msg = "startstop" || msg = "waitstop" then Hashtbl.replace debugging pid ()
            else if msg = "start" then Hashtbl.remove debugging pid
            else if msg = "kill" then (Hashtbl.remove debugging pid; Proc9.forget p.host pid)
        | _ -> raise (Error "permission denied"));
@@ -417,6 +428,8 @@ let exits p msg =
   (match !exit_pipe with
    | Some fd -> ignore (p.host.write fd msg); ignore (p.host.close fd); exit_pipe := None
    | None -> ());
+  (* the pipes a debugger made for this process, if one did *)
+  Proc9.forget p.host (p.host.getpid ());
   raise (Linux.Exit (if msg = "" then 0 else match int_of_string_opt msg with Some n when n > 0 && n < 256 -> n | _ -> 1))
 
 let rfproc = 16 and rfmem = 32
@@ -509,10 +522,25 @@ let answer p (st : Arm32_isa.state) r =
   | [ "text"; a; n ] -> (slice p.image (int_of_string a) (int_of_string n), ignore)
   | [ "ctl"; "stop" ] -> Proc9.stopped := true; none
   | [ "ctl"; "start" ] -> Proc9.stopped := false; none
+  | [ "ctl"; "startstop" ] -> Proc9.stopped := false; Proc9.traced := true; none
+  | [ "ctl"; "waitstop" ] -> none
+  | [ "ctl"; "hang" ] -> Proc9.hung := true; none
+  | [ "rnote" ] -> ((if Queue.is_empty p.notes then "" else Queue.pop p.notes), ignore)
   | [ "ctl"; "kill" ] -> Proc9.stopped := false; ("", fun () -> exits p "sys: killed")
   | [ "note" ] -> Queue.add data p.notes; none
   | [ "ctl"; _ ] -> failwith "bad process control message"
   | _ -> failwith "bad request"
+
+(* arm's breakpoint (principia's 5db: BKPT, E1200070): the note "sys:
+ * breakpoint", the pc left at it; a traced process stops there (its
+ * debugger reads the note, puts the instruction back), another dies of
+ * it, as on Plan 9 *)
+let breakpoint_instruction = 0xe1200070
+
+let breakpoint p (st : Arm32_isa.state) ~pc =
+  Queue.add "sys: breakpoint" p.notes;
+  st.next <- pc;
+  Linux.signal_waiting := true
 
 (* between two instructions: the pending notes (the host's signals among
  * them), the first delivered to the handler notify() named, as
@@ -521,12 +549,14 @@ let answer p (st : Arm32_isa.state) r =
 let deliver p (st : Arm32_isa.state) ~pc =
   Linux.signal_waiting := false;
   let sigs = Linux.take_signals () in
-  if List.mem Proc9.signal sigs then begin
+  List.iter (fun sg -> Option.iter (fun n -> Queue.add n p.notes) (note_of_signal sg)) sigs;
+  (* traced (startstop): a note stops it, before it is delivered *)
+  if !Proc9.traced && not (Queue.is_empty p.notes) then (Proc9.traced := false; Proc9.stopped := true);
+  if List.mem Proc9.signal sigs || !Proc9.stopped then begin
     Proc9.serve p.host ~pid:(p.host.getpid ()) (answer p st);
     (* (a debugger's signals meanwhile: one request a signal, served) *)
     List.iter (fun sg -> if sg <> Proc9.signal then Linux.raise_signal sg) (Linux.take_signals ())
   end;
-  List.iter (fun sg -> Option.iter (fun n -> Queue.add n p.notes) (note_of_signal sg)) sigs;
   if p.handling = [] && not (Queue.is_empty p.notes) then begin
     let note = Queue.pop p.notes in
     if p.handler = 0 then exits p note

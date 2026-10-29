@@ -1,4 +1,4 @@
-# Plan: a program that dies says where and how it came there: names and lines in a suicide's trace, in an uncaught exception's, in a kernel's panic, and then a debugger (`linker/`, `kernels/9pi/`, `languages/ml/runtime/`, `debuggers/`)
+# Plan: a program that dies says where and how it came there, and m-ix gets a debugger: the tables (`linker/`), the traces (`kernels/9pi/`, `languages/ml/runtime/`), mini-acid (`debuggers/`), and replay (`machine/`, `raspberry/`)
 
 The author (2026-10-08), the day mini-9pi first ran on his Pi1, rio
 dying there and nowhere else: "we should aim to improve the suicide
@@ -11,6 +11,24 @@ traces, which is what was missing that day, and ends at a debugger,
 which is the same knowledge (a program's symbols, its stack's layout)
 used by a person and not by a message.
 
+Rewritten 2026-10-29, after a survey of what m-ix still misses for
+the whole-system teaching of Principia Softwarica (the author: "is
+there any essential programs missing for m-ix? [...] anything
+fundamental left to cover"): the debugger is the one book of
+principia's with no program of m-ix, while t-ix has its own (`debug`
+and `trace`, plan_tiny_debugger.md). The author then: "Regarding the
+mini-debugger, should we do a mini-db or mini-acid or a mini-
+something else? Is acid the best debugger to port to OCaml? Anything
+more recent that we could steal ideas from that helps even more the
+debugging process?", and of the answer: "I like your plan", "1 and 2
+could go together" (the debugger and the profiler: they read the same
+tables, plan_profiler.md's stage 5), "yes let's rewrite and adapt the
+plan". What changed: stage 7's "mini-db, or acid's language" is
+decided (decision 6: mini-acid), and three stages are new, from
+debuggers more recent than Plan 9's: replay and reverse execution
+(rr), the program's own tables read by its runtime (Go's pclntab, 5l's
+descendant), time travel in the playground (Elm's debugger).
+
 ## What was tedious (2026-10-08, the survey)
 
 Three messages of that day, each as it was shown, and what it took to
@@ -22,43 +40,64 @@ read it.
 | `rio: suicide: ... pc=0x10a0e0` (the same, another boot) | the same | the same: `ux_strings`, the runtime's, called when a program is started. Both in the runtime, given a value that is no pointer: the harm was done before, and where is not known. The caller would have said more |
 | `Fatal error: uncaught exception Unix_error(_, "open", "/dev/bintime")` (TinyCameltry in a window, under QEMU) | the error (`_`); where `open` was called from | the kernel's `sysopen` given a print, twice, a kernel built each time; `gettimeofday` found by reading the game's loop |
 
-And what there is to build on:
+The second line is the hardest kind: the crash is where a bad value
+is used, the bug where it was written, earlier. Names and an exact
+stack say where it was used; only a debugger that goes back in time
+says where it was written (stage 10).
+
+And what there is to build on (2026-10-29):
 
 - **The kernel knows the stack and the registers** at a trap, and a
-  process's segments. Since that day a second line follows a suicide
-  (`Syscall.trace`, stage 0 below): `trace: lr=0x1698 sp=0x1fffff10:
-  0x1698 0xe010 0x4274 0x87a8`, the stack's words that are addresses of
-  the program's code. Numbers, and a guess: a word that looks like a
-  return address is taken for one.
+  process's segments. A second line follows a suicide (`Syscall.trace`,
+  stage 0): `trace: lr=0x1698 sp=0x1fffff10: 0x1698 0xe010 0x4274
+  0x87a8`, the stack's words that are addresses of the program's code.
+  Numbers, and a guess: a word that looks like a return address is
+  taken for one.
 - **The linker knows every name**, its address, its frame's size and
   the file and line of each instruction (`Program.prog`: `where`,
-  `frame`), and writes none of it: a Plan 9 executable's symbol table
-  is empty (`Exe`, its header's `syms` 0), `-s` is accepted and does
-  nothing. Its `-v` prints the listing used above.
+  `frame`), and writes none of it in the executable: a Plan 9 a.out's
+  symbol table is empty (`Exe`, its header's `syms` 0), `-s` does
+  nothing. It writes `program.map` beside it (`-map`, since 2026-10-13:
+  a function's address and name a line), read by `scripts/where.sh`
+  and by mini-prof.
 - **Plan 9 has the formats and the method**: the a.out's symbol table
   (a value, a type, a name; a function's frame size as a symbol of its
   own, `.frame`; the files' names as `z` entries) and its pc/line
   table, written by 5l (goken's: the reference for the bytes), read by
-  libmach, whose `ctrace` walks a stack exactly with them; `db` and
-  `acid` are that library and a language (principia's `debuggers/`,
-  `Debugger.nw`). xix's `debugger/` has `ksym.ml` only.
-- **mini-9pi's `#p` has the files a debugger reads** (`mem`, `regs`,
-  `text`, `ctl`, `note`: `Devproc`), how much of each works was not
-  looked at.
-- **mini-ml's runtime** prints an uncaught exception's name and
-  arguments, an argument that is not a string or an integer as `_`,
-  and has no backtrace (`caml_get_exception_backtrace` is refused).
+  libmach, whose `ctrace` walks a stack exactly with them. Principia's
+  `debuggers/`: libmach (9,800 lines of C, all the machines), `db`
+  (3,800, its book `db.nw`), `acid` (7,600, a yacc grammar and an
+  interpreter) and `ratrace`, the two last the subject of the book
+  `Debugger.nw`: its chapters are the kernel's support (`/proc`'s
+  `ctl`, `mem`, `regs`, the breakpoint's instruction, broken processes),
+  ratrace, then acid. xix's `debugger/` has `ksym.ml` only.
+- **mini-9pi's `#p` lists the files a debugger reads, and serves few of
+  them** (`Devproc`): `status`, `args`, `fd`, `ns`, `segment`, `noteid`
+  read; `ctl` takes `kill` alone, `note` and `notepg` are written; `mem`,
+  `regs`, `text`, `profile`, `kregs`, `fpregs`, `syscall` refuse.
+- **mini-ml's runtime** prints `raised at:` and addresses after an
+  uncaught exception (2026-10-13, a guess as stage 0's), an argument
+  that is not a string or an integer as `_`.
+- **t-ix has done it small** (plan_tiny_debugger.md, done): `debug`
+  (breakpoints, steps, registers, a backtrace by the ML value stack,
+  db's road: commands, no language) and `trace` (a process's system
+  calls, ratrace's), over a trace descriptor of tiny-kernel's.
+- **ix's emulators are the CPU**: mini-5i (a program, Linux's or Plan
+  9's calls) and mini-qemu (a board, the kernel with it) run every
+  instruction themselves and are deterministic but for what comes from
+  outside: what no debugger of a real machine has for free.
+- **The card has the sources**: `make card-self`'s `/src` is the
+  repository (plan_self_hosting.md), the everyday card five examples.
 
 ## Principles
 
 - **A trace is read by a person, on a screen, maybe from a photo**:
   names, not addresses to look up; the program's name on each line;
   short enough for a console of 80 columns.
-- **One source of names: the executable's own symbol table**, Plan 9's,
-  written by the linker. The kernel, a tool on the host, the runtime
-  and a debugger read the same bytes. No side file to keep in step
-  with a binary (the listing of that day was only right because the
-  binary on the card was the one just linked).
+- **One source of names that is always right: the executable's own
+  symbol table**, Plan 9's, written by the linker. The kernel, a tool
+  on the host, the runtime, mini-acid and mini-prof read the same
+  bytes. The map may say more beside it (decision 7).
 - **mini-ld's bytes are 5l's** where 5l writes them (the twin's rule):
   goken's 5l and 7l say what a symbol table is, byte for byte. What is
   ours alone (mini-ml's names, its frames) goes in the same format.
@@ -67,27 +106,49 @@ And what there is to build on:
 - **9pi's words stay 9pi's**: the trace is a line more, taken out of
   the sessions recorded from the C kernel (`Syscall.traced`, the
   Makefile's filter), not a change of the `suicide` line.
+- **mini-acid is acid's twin**: its language, its commands and its
+  library (`port`, `arm`), principia's acid the reference, run on
+  mini-9pi on the same programs. What is ours (OCaml's values, replay)
+  is added in acid's own way: acid code, and builtins.
+- **The emulator is the debugger's best friend**: what needs every
+  instruction or every write (replay, going back, a watchpoint) is done
+  in mini-5i and mini-qemu, not asked of the kernel.
 
 ## Stages
+
+The traces first (0 to 6), then the debugger on them (7 to 9), then
+what the emulators make possible (10, 11), the playground's (12).
 
 | | what | who uses it | state |
 |---|---|---|---|
 | 0 | **The kernel's line of addresses** after a suicide: lr, sp, the stack's words that are in the text (16 at most) | a person with `mini-ld -v`'s listing | done 2026-10-08 (`Syscall.trace`) |
-| 1 | **mini-ld writes the symbol table**: Plan 9's, for `-H2`; ELF's for `-H7`; `-s` leaves it out. Text, data and bss names, a function's frame (`.frame`), the files and the pc/line table. The bytes compared with goken's 5l and 7l on the recorded programs (`linker/tests`) | everything below | |
-| 2 | **`mini-nm`, and a tool that names addresses**: an executable and addresses (or a `trace:` line pasted) give `name+offset file:line` each. On the host, today's listing in one command | a person, from a photo of the board | |
+| 1 | **mini-ld writes the symbol table**: Plan 9's, for `-H2`; ELF's for `-H7`; `-s` leaves it out. Text, data and bss names, a function's frame (`.frame`), the files and the pc/line table. The bytes compared with goken's 5l and 7l on the recorded programs (`linker/tests`) | everything below, and mini-prof (plan_profiler.md) | |
+| 2 | **`mini-nm`, and a tool that names addresses**: an executable and addresses (or a `trace:` line pasted) give `name+offset file:line` each; `where.sh` goes | a person, from a photo of the board | |
 | 3 | **The walk is exact**: from the pc, its function and its frame's size give where its return address is, and so the caller, to the program's start (libmach's `ctrace` for arm, then arm64). A leaf's caller is in lr. The guess of stage 0 goes | the tool of 2 given `sp`, `lr` and the stack's bytes; then the kernel | |
 | 4 | **The kernel prints names**: at a suicide the table is read from the process's image (its text segment's channel is open) and the line is `trace: ux_strings+0x10 < exec+0x44 (Sys_plan9) < start+0x90 (Rio) < ...`, one more with the files and lines if asked (`#c` or a boot variable). No table: stage 0's addresses | the author at the board | |
-| 5 | **An uncaught exception says more** (its first half done 2026-10-13, by a guess and a side file: Status): every argument printed (a constructor's name, `Unix_error`'s error as its message: no `_`), and where it was raised and through whom, by the same walk from inside the runtime (the stack as it was at the raise: mini-ml's handlers are a chain, the walk is made before it is cut, when no handler will take it, or at each raise behind a flag) | whoever runs an ix program, on any system | |
-| 5a | **The names said by the program itself, on the board**: no `scripts/where.sh`, no host. The runtime, when it prints a trace, reads the symbol table of its own image (stage 1's; Plan 9: `/proc/$pid/text`, which `Devproc` has; Linux: `/proc/self/exe`) and prints `raised at: Tilemap.get+0x48 < Breakout.brick_at+0x30 < Breakout.move_ball+0x1c4 < ...`, a line of names an 80 column console holds, the unit's name and not `f27_get<>` (decision 2). Only when a program dies: nothing read before. Until stage 1, the same from `program.map` if the card has it beside the program (decision 7) | the author at the board, from a photo | |
-| 5b | **The sources on the card, and the line of code in the trace**: `/src` has what the card's programs are made of (decision 8), in the tree's own layout (`/src/lib_graphics/Draw.ml`). With the pc/line table (stage 1, decision 3) a trace's first lines can be `Tilemap.ml:137  let get t col row = t.cells.(row).(col)`: the file and line from the table, the text read from `/src` when it is there (no `/src`, or a file changed since: the file and line alone). And without any trace: the system's sources are read on the system (`emacs /src/windows/Window.ml`), which is what Plan 9's `/sys/src` is for | the author at the board; a reader of the system on the system | |
+| 5 | **An uncaught exception says more** (its first half done 2026-10-13, by a guess and a side file: Status): every argument printed (a constructor's name, `Unix_error`'s error as its message: no `_`), and where it was raised and through whom, by the same walk from inside the runtime. The names: stage 9's descriptions of the types, read by the runtime | whoever runs an ix program, on any system | half |
+| 5a | **The names said by the program itself, on the board**: the runtime reads its own image's table (Plan 9: `/proc/$pid/text`; Linux: `/proc/self/exe`) and prints `raised at: Tilemap.get+0x48 < Breakout.brick_at+0x30 < ...`, the unit's name and not `f27_get<>` (decision 2). Go's way (its pclntab, 5l's table grown up): a program that names its own frames needs no debugger and no host | the author at the board, from a photo | |
+| 5b | **The line of code in the trace**: with the pc/line table, `Tilemap.ml:137  let get t col row = t.cells.(row).(col)`, the text from `/src` when it is there and is the program's (`/src/VERSION`; card-self's `/src` is the repository) | the author at the board; a reader of the system on the system | |
 | 6 | **The kernel's own panic**: `panic:` and a guard's message (`Main.guard`) with the kernel's stack walked; its names from `kernel.elf` on the host first (stage 2's tool), in the kernel later if wanted | who debugs mini-9pi | |
-| 7 | **A process that died stays to be looked at** (Plan 9's Broken state, a limit on how many), and **mini-db**: `$c` the stack, `$r` the registers, a symbol's value, memory printed, through `#p`'s `mem` and `regs`. Then breakpoints and steps (`ctl`), and whether acid's language is wanted | the author, at mini-9pi's console | |
+| 7 | **The kernel's support, Debugger.nw's chapter**: `#p`'s `mem` and `regs` read and written, `text` the image, `ctl`'s `stop`, `start`, `startstop`, `waitstop`, `hang`, `kill`; the breakpoint's instruction (a trap the kernel turns into a stop); a process that died kept Broken to be looked at (a limit on how many). Then `syscall` and ctl's `startsyscall`: **mini-ratrace**, t-ix's `trace`'s twin, as small, the first user and the test of the device | mini-acid; a person tracing a program's calls | |
+| 8 | **mini-acid**: acid's language (lists, strings, integers, its C-like statements and its `defn`), its builtins (`print`, `mem`, `map`, `symbols`, `new`, `start`, `stop`, `bpset` underneath), its library in acid (`port`: `stk()`, `lstk()`, `bpset()`, `cont()`, `step()`; `arm` for the registers), over stage 1's table and stage 7's `#p`. Principia's acid run on mini-9pi on the same program the reference: the same answers (decision 11) | the author, at mini-9pi's console, in a window of rio | |
+| 9 | **OCaml's values in mini-acid**: as `5c -a` writes acid's definitions of a C program's structs, mini-ml writes those of a unit's types (`mini-ml -a`): a constructor's name by its tag, a record's fields, a list as a list. A value printed by its type, where a debugger of mini-ml's code would print words; the same descriptions read by stage 5's runtime | mini-acid; stage 5 | |
+| 10 | **Replay, and going back** (rr, Mozilla 2014; Pernosco; and before them ocamldebug's checkpoints, Vouillon, 1990s): mini-5i records what comes from outside (each system call's results, the signals' instants), and plays a run again exactly; snapshots along the way, and a run played to an instant from the nearest. Then going back: `reverse-continue` to the last write of an address (a watchpoint over the run played again), which is the question of the survey's second line: who wrote the bad value. mini-acid drives it by builtins | whoever debugs a crash whose cause was earlier: the collector's, the kernel's | |
+| 11 | **The board's run played again**: the same in mini-qemu, the whole system (its interrupts' instants, the keyboard's, the card's, the network's bytes recorded), so a kernel's panic is replayed and gone back from; and a gdb remote stub, QEMU's `-s`, for the host's gdb on mini-9pi's kernel meanwhile | who debugs mini-9pi | |
+| 12 | **Time travel in the playground** (Elm's debugger, 2016): a program of lib_playground is a model, an update and messages; the messages recorded, any instant is the first model updated by them. A slider over a game's past, its model shown | a reader of a game; the playground's teaching | |
 
-Stages 1 to 4 are the request; 5 is the same work for the third
-message of the survey; 6 and 7 are what comes after, and may wait.
-5a and 5b are the request of 2026-10-13, below: they need stage 1 (the
-table in the program) to be done as the principles say, and 5a can be
-had sooner from the map.
+Stages 1 to 4 are the first request; 5 is the same work for the third
+message of the survey; 6 may wait. 7 and 8 are the debugger; 9 is
+what makes it OCaml's; 10 to 12 are ix's own, what a debugger of today
+does that Plan 9's did not, and can be had small because ix has its
+own emulators.
+
+Its order with plan_profiler.md (the author, "1 and 2 could go
+together"): stage 1's table is mini-prof's names too (its maps then
+the table, decision 7), stage 7's `#p` has the profiler's `profile`
+file (plan_profiler.md's stage 5: Plan 9's tprof, the clock's samples
+of a process's pc) beside the debugger's. One kernel stage serves the
+two programs.
 
 ## Decisions to take
 
@@ -116,21 +177,24 @@ had sooner from the map.
    the suicide (a read that may sleep, in the process's own context:
    it is still there), not kept from exec. Proposed, as the principle
    above.
-6. **The debugger's shape** (stage 7): `db`'s commands, small and
-   known, or acid's language, larger and Plan 9's own way. Not needed
-   before stage 4 is lived with.
-
+6. **The debugger's shape**. Plan 9 has two: `db`, adb's line (Unix's
+   db of 1971, then adb, 1979): commands of a letter, a machine's view,
+   small and known; and `acid` (Phil Winterbottom, 1994): a small core
+   (a process's memory and registers, the symbols) and a language in
+   which the rest is written, the stack's walk, the breakpoints, each
+   machine's registers, the printing of a C program's types, which the
+   compiler writes as acid code (`5c -a`). **Decided** (the author,
+   2026-10-29, "I like your plan"): mini-acid. db's road is t-ix's
+   already (`debug`); acid's is the idea worth a book, it is
+   principia's (Debugger.nw), and its way of printing types is how
+   OCaml's values get printed (stage 9). Its size: acid's 7,600 lines
+   of C and the arm part of libmach, some 2,500 to 3,000 of OCaml with
+   mini-yacc, within m-ix's budget (130,000 of 150,000).
 7. **The map, or the table?** (5a) Since 2026-10-13 mini-ld writes
    `program.map` beside every program (`-map`: a function's address
    and name a line; mini-stats's is 35 KB for 698 KB of program), read
    on the host by `scripts/where.sh`. It is the side file the
    principles refuse: right only for the binary it was written with.
-   Two ways to names on the board: the maps copied to the card beside
-   the programs and read by the runtime (a day's work, some 5% more
-   card, and a map that can be stale), or stage 1 first and the table
-   read from the image (the principle; the linker's twin work).
-   Proposed: stage 1, then 5a from the image, and the map and
-   `where.sh` removed; the maps on the card only if stage 1 is to wait.
    **Decided** (the author, 2026-10-13: "we can support both the table
    in the binary and an external Map possibly with more info"): both.
    The table in the program is what a trace needs and is always
@@ -139,58 +203,55 @@ had sooner from the map.
    and frame, its unit and its file, the lines, what mini-ml knows of
    a function's arguments). A reader takes the table first and the
    map when it is there and is the program's (the two are to say
-   which link they are of: a stale map is not read). The principle
-   "one source of names" above becomes: one source that is always
-   right, and a second that may say more.
-8. **What is `/src`?** (5b) The author: "copy the source of m-ix and
-   t-ix under /src on the card". Counted 2026-10-13 (`git ls-files`,
-   `.ml .mli .c .h .s .mly .mll`, tests apart): 11.9 MB for the whole
-   tree, of which `tiny/` (t-ix) 1.5 MB; the card is 128 MB with its
-   second partition's programs. Proposed: all of it, as files of the
-   card's file system in the tree's layout, made by `make card` from
-   `git ls-files` (what is committed, not what lies in the working
-   tree), with the commit's hash in `/src/VERSION` so that a trace can
-   say when the sources are not the program's. To check first: how
-   long the card's file system takes to make and to list with some
-   3,000 files more, and whether it wants to be a third partition
-   mounted when asked. **Decided** (the author, 2026-10-13: "yes, I
-   like your suggestion and /src/VERSION"): all of it, from what is
-   committed, with `/src/VERSION`.
+   which link they are of: a stale map is not read).
+8. **What is `/src`?** (5b) **Decided** (the author, 2026-10-13: "yes,
+   I like your suggestion and /src/VERSION"): all of the tree, from
+   what is committed, with `/src/VERSION`. Since done for card-self
+   (plan_self_hosting.md: the repository but docs/); the everyday card
+   has five examples; `/src/VERSION` is to do.
 9. **Whose file and line, when the table says an address?** (5b) The
    table gives the line of the instruction; an exception's trace has
    return addresses, whose line is the call's (the address less one
    instruction: what `exceptions.c` already prints). A function
    inlined or a tail call has no line of its own: the caller's is
    said, as decision 4.
-10. **Still a guess, or the exact walk?** The trace of 2026-10-13
-   takes a word of the stack for a return address by its look (as
-   stage 0's kernel line): a line too many now and then. Stage 3's
-   walk needs each function's frame, which mini-ml's code has not on
-   the machine's stack in the usual way (its values are on a stack of
-   their own, the machine's has little but return addresses): the
-   guess is nearly exact there, and wrong mostly in the runtime's C
-   frames. Proposed: keep the guess in mini-ml's code, and stop a
-   trace at the first C frame it cannot walk. **Decided** (the author,
+10. **Still a guess, or the exact walk?** **Decided** (the author,
    2026-10-13: "ok, but at some point we can probably imitate more
    what principia/goken are doing for the debugger (and profilers)"):
-   the guess for now; later their way, which is stage 3's exact walk
-   (libmach's `ctrace`, by each function's frame) and stage 7's db
-   and acid, and for the profilers what Plan 9 has and ix has not:
-   `prof` over a program's `#p` profile segment and the kernel's
-   `kprof` (a clock's samples by address, named by the same table),
-   where ix's today count every instruction under an emulator
-   (`machine/tests/profile.sh`, mini-qemu's `-prof`:
-   `docs/notes_profiling_techniques.md`). To be read in principia's
-   `debuggers/` and `profilers/` and in goken before it is planned:
-   written here from memory.
+   the guess for now in mini-ml's code (its values are on a stack of
+   their own, the machine's has little but return addresses: the guess
+   is nearly exact there, wrong mostly in the runtime's C frames); later
+   their way, stage 3's exact walk (libmach's `ctrace`, by each
+   function's frame), stage 8's acid, and for the profilers what Plan 9
+   has and ix has not, `prof` over `#p`'s profile and the kernel's
+   `kprof` (plan_profiler.md's stage 5).
+11. **How mini-acid is tested against acid.** Principia's acid runs on
+   Plan 9; mini-9pi is one once stage 7 serves `#p`. Proposed: a
+   program of C (by mini-cc, 5c's bytes) stopped at a breakpoint, the
+   same script of acid commands given to both on mini-9pi under
+   mini-qemu, their outputs compared (a recorded session); mini-ml's
+   programs then by mini-acid alone (acid knows nothing of them).
+   Until stage 7, mini-acid on a core file or under mini-5i (decision
+   12).
+12. **Where the process lives while mini-acid is written.** Acid's
+   core asks of a process: read and write its memory and registers,
+   start, stop, step. Behind one interface (libmach's `Map` and its
+   procedures), two sides: `#p` on Plan 9, and mini-5i on Linux (a
+   debugging protocol of its own, or mini-5i and mini-acid linked in
+   one process for the tests). Proposed: both, the second first, so
+   that mini-acid is written and tested on the host before the kernel
+   has stage 7; and the same side serves stage 10's replay.
+13. **What replay records, and its cost.** mini-5i is deterministic but
+   for its system calls (their results, the bytes they read), its
+   signals and its time: a log of those is a run. rr's design, without
+   rr's hard part (counting instructions on a real CPU's counters):
+   mini-5i counts them. Snapshots: the memory's segments copied every
+   N instructions (or by pages changed). Proposed: a run of mini-doom's
+   start recorded, its log's size and the replay's speed measured first;
+   threads (mini-5i runs them one at a time) in the log as switches at
+   counted instants.
 
 ## Tests
-
-- Stage 5a: the program of stage 5's test run on mini-9pi from the
-  card (a session of `tests/session-card-*`): its names on the
-  console, no address.
-- Stage 5b: the same with `/src` there and without: the line of code,
-  or the file and line alone.
 
 - Stage 1: the recorded executables of `linker/tests`, linked with
   symbols, the same bytes as goken's (`mkfiles/check_arm.sh` has the
@@ -204,13 +265,32 @@ had sooner from the map.
   `0x10a0e0` in that day's mini-rio are `gc_full_major` and
   `ux_strings`.
 - Stage 5: a program that raises through three functions, its message
-  recorded, on Linux and on Plan 9.
+  recorded, on Linux and on Plan 9; 5a: the same from the card, its
+  names on the console, no address; 5b: with `/src` and without.
+- Stage 7: mini-ratrace against principia's ratrace on mini-9pi, the
+  same program's calls (decision 11's way); `#p`'s files read by `cat`
+  and `xd` in a recorded session.
+- Stage 8: decision 11; mini-acid's language alone by unit tests, its
+  library's functions on a program of C stopped under mini-5i
+  (decision 12).
+- Stage 9: a unit's types printed by mini-acid, against what OCaml's
+  toplevel prints of the same values.
+- Stage 10: a program whose bug writes a bad value early and crashes
+  late (a C program, then the survey's kind: a mini-ml program with a
+  bad external); the reverse watchpoint names the write; a recorded
+  run replayed gives the same instructions' count and output.
 
 ## Out of scope
 
-- Source-level stepping in OCaml, values printed by their types: a
-  debugger for mini-ml is another plan.
-- DWARF. ELF executables get ELF's symbol table, no more.
+- DWARF: ELF executables get ELF's symbol table, no more.
+- Source-level stepping in OCaml at first: stage 8 steps by
+  instructions and lines, as acid does in C; a step by expression is
+  another plan.
+- The Debug Adapter Protocol and an IDE's front end: mini-acid runs in
+  a window of rio, as acid did; mini-emacs could later drive it as
+  acme drove acid.
+- Dynamic tracing (DTrace, eBPF): mini-ratrace covers the calls,
+  mini-prof the time.
 - The board's own debugging aids (JTAG, a serial monitor).
 
 ## Status
@@ -244,8 +324,16 @@ a side file where the executable's own table was to be the one source
 (decision 7), and a guess where the walk was to be exact (decision
 10). Not done of stage 5: an exception's arguments still print as `_`
 when they are not strings or integers. Added to the plan: stages 5a
-(names on the board) and 5b (`/src` on the card, the line of code in
-the trace), decisions 7 to 10, their tests. Stage 0 is committed
-since. Nothing of 1 to 4 is begun; the exception that asked for all
-this is not found (`docs/plans/bugs/ix.md`).
+and 5b, decisions 7 to 10, their tests. Nothing of 1 to 4 is begun;
+the exception that asked for all this is not found
+(`docs/plans/bugs/ix.md`).
 
+2026-10-29: the plan rewritten around a debugger (the beginning): the
+shape decided, mini-acid (decision 6); stage 7 the kernel's support
+with mini-ratrace, 8 mini-acid, 9 OCaml's values by mini-ml's
+descriptions of its types, 10 and 11 replay and going back in mini-5i
+and mini-qemu, 12 time travel in the playground; decisions 11 to 13;
+the profiler's stage 5 with stage 7. What `#p` serves today looked at
+(above). Found the same day, writing mini-tar's differential test:
+mini-5i faulted on a buffer across a Plan 9 program's bss and heap
+(`docs/plans/bugs/ix.md`), fixed. Next: stage 1.

@@ -1,0 +1,30 @@
+16 box other box
+middle hidden
+before Holder
+Holder's static constructor
+3 9 p 1
+VIIII?
+tue later
+9223372036854775807 -9223372036854775808 -1
+4000000000 1333333333 True
+-3 -1 -4 15
+0.30000000000000004
+1E+20 1.5E-07 0.3333333333333333 100 -0.5
+4294967294 3 -3
+overflow
+B 66 C
+inner finally 0
+inner finally 1
+inner finally 2
+filtered at 2: bottom
+inner finally 3
+-99
+caught, rethrown
+outer: first
+13 v12 False
+The given key '99' was not present in the dictionary.
+1;two;3.5;c;True;null;Box;
+-84
+format
+16 3
+exit 0

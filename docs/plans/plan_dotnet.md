@@ -37,8 +37,9 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stage 1 done** (the reader and the listing,
-`languages/dotnet/`); the rest under way. See the end.
+**Status: stages 1 to 3 done** (the reader and the listing; the
+machine: objects, value types, generics, delegates; `languages/dotnet/`);
+the rest under way. See the end.
 
 ## Its place in `languages/`
 
@@ -476,3 +477,33 @@ Microsoft's five assemblies read whole, System.Private.CoreLib's 2,466
 types, 33,773 methods and 1,332,333 bytes of IL (runtime 8.0.32), each
 body decoded, the same numbers as Survey.cs's; in 0.23 s by dune's
 build, 0.45 s by mini-ml's.
+
+2026-10-29 (night), stages 2 and 3, together (one machine): Value (the
+types and values; an object's numbers in bytes, its references in an
+array, as decision 4; a struct flattened in an object or an array; a
+managed pointer a slot, a place in bytes, or a struct inside a store),
+Library (61 classes of System, 655 lines: Object, the primitives,
+String, Console, 18 exceptions, StringBuilder, the interpolation's
+handler, Type, List and its Enumerator, Dictionary in its order of
+insertion, the delegates, RuntimeHelpers.InitializeArray), Types (the
+loader: classes from their rows or the library's descriptions, laid
+out, vtables with newslot and MethodImpl, interfaces by key, generic
+classes and methods instantiated, each once), Machine (the IL on
+tagged values, statics and .cctor, virtual calls and `constrained.`,
+boxing, the exceptions' two passes with filters, `leave` and the
+finally blocks, an unhandled exception said as .NET does, exit 134).
+Not as planned: native int is 32 bits; a string's character above 255
+is "?"; `AppendFormatted<bool>` would print 1 (a native has not its
+type arguments); no Remove for Dictionary; multi-dimensional arrays,
+calli, localloc, typedref refused with their method and offset.
+Checked (`tests/run.sh`, in make test): the ten print their
+`.expected`, and two programs of ours, `tests/programs/corners.cs`
+(explicit interfaces, `new virtual`, a struct in an object, a static
+constructor's moment, switch on strings by their hash, int64, uint,
+checked overflow, doubles as .NET writes them, a filter, rethrow, a
+Dictionary of ints, boxes' ToString, int.Parse, an array initializer)
+and `unhandled.cs` (the finally blocks not run, exit 134), against
+Microsoft's runtime (`tests/programs/build.sh`); by dune's build, by
+mini-ml's on arm64, and on arm under mini-5i (31-bit ints, decision
+6). The queens: 360,572 instructions, 0.02 s by dune's build, 0.03 s
+by mini-ml's.

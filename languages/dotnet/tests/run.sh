@@ -8,6 +8,10 @@
 # Microsoft's C# compiler and kept in the tree (survey/programs/*.dll,
 # decision 2), so no SDK is needed here:
 #   listings   each assembly's types and IL (-S) against expected/*.S
+#   run        each program run, what it prints against what Microsoft's
+#              runtime printed: the survey's ten (survey/programs/
+#              *.expected), and ours (programs/*.expected, their exit too;
+#              programs/build.sh makes them where there is an SDK)
 # -sdk: Microsoft's own library read whole, its types, methods and bytes
 # of IL (each body decoded) against what System.Reflection.Metadata says
 # (survey/Survey.cs): needs a .NET SDK, so not in make test.
@@ -40,6 +44,18 @@ check() {
     if [ -n "$record" ]; then cp $W/$p.S $T/expected/$p.S
     elif cmp -s $W/$p.S $T/expected/$p.S; then ok "mini-dotnet -S $p, by $what"
     else fail "mini-dotnet -S $p, by $what"; diff $T/expected/$p.S $W/$p.S | head -10; fi
+  done
+  [ -n "$record" ] && return
+  for p in $progs; do
+    "$@" $P/$p.dll > $W/$p.out 2> $W/$p.err
+    if cmp -s $W/$p.out $P/$p.expected; then ok "mini-dotnet $p, by $what"
+    else fail "mini-dotnet $p, by $what"; diff $P/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
+  done
+  for f in $T/programs/*.dll; do
+    p=$(basename $f .dll)
+    { "$@" $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out
+    if cmp -s $W/$p.out $T/programs/$p.expected; then ok "mini-dotnet $p, by $what"
+    else fail "mini-dotnet $p, by $what"; diff $T/programs/$p.expected $W/$p.out | head -5; head -3 $W/$p.err; fi
   done
 }
 if [ -n "$sdk" ]; then

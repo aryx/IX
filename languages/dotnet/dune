@@ -2,7 +2,11 @@
 ; Microsoft's C# compiler writes. Metadata (the 45 tables' shapes),
 ; Image (the PE file read: heaps, tables, a method's body), Signature
 ; (the blobs' types), Il (the opcodes, a body decoded and encoded),
-; Listing (-tables, -S).
+; Listing (-tables, -S); Value (the runtime's types and values: an
+; object's numbers in bytes, its references apart), Library (System's
+; classes, ix's own, over lib_core), Types (the loader: classes laid
+; out, vtables, tokens resolved, generics instantiated), Machine (the
+; IL run; the exceptions' two passes).
 (library
  (name ix_dotnet)
  (wrapped false)

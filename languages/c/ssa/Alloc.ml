@@ -31,78 +31,47 @@ let uses (fn : func) v =
 (* liveness at the blocks' edges: a phi's operand live at its
  * predecessor's end, its definition at its block's start *)
 let liveness (fn : func) =
-  let real = real fn and uses = uses fn in
+  let real = real fn in
   let phi_ops (s : block) p =
     List.filter_map (fun phi ->
       match def fn phi with Phi ops -> List.assoc_opt p ops | _ -> None)
       s.phis in
-  let n = Array.length fn.blocks in
-  let live_in = Array.make n IS.empty and live_out = Array.make n IS.empty in
-  let changed = ref true in
-  while !changed do
-    changed := false;
-    for b = n - 1 downto 0 do
-      let bl = fn.blocks.(b) in
-      let out =
-        List.fold_left (fun s x ->
-          let sb = fn.blocks.(x) in
-          IS.union s
-            (IS.union (IS.diff live_in.(x) (IS.of_list sb.phis))
-               (IS.of_list (List.filter real (phi_ops sb b)))))
-          IS.empty (Ssa_build.successors_of bl)
-      in
-      let live =
-        ref (IS.union out
-          (IS.of_list (List.filter real (Ssa_build.term_uses bl.term)))) in
-      List.iter (fun v ->
-        live := IS.union (IS.remove v !live) (IS.of_list (uses v)))
-        (List.rev bl.body);
-      let inn = IS.union !live (IS.of_list bl.phis) in
-      live_out.(b) <- out;
-      if not (IS.equal inn live_in.(b)) then
-        (live_in.(b) <- inn; changed := true)
-    done
-  done;
-  live_in, live_out
+  Liveness.ssa ~succs:(fun b -> Ssa_build.successors_of fn.blocks.(b))
+    ~phis:(fun b -> fn.blocks.(b).phis)
+    ~phi_uses:(fun s p -> List.filter real (phi_ops fn.blocks.(s) p))
+    ~term_uses:(fun b ->
+      List.filter real (Ssa_build.term_uses fn.blocks.(b).term))
+    ~body:(fun b -> fn.blocks.(b).body) ~uses:(uses fn)
+    (Array.length fn.blocks)
 
 let alloc (fn : func) ~nregs ~nfregs =
   let def = def fn and real = real fn and uses = uses fn in
   let n = Array.length fn.blocks in
   let live_in, live_out = liveness fn in
   (* what is live after each instruction, and across each call *)
-  let after = Hashtbl.create 256 and across = Hashtbl.create 16 in
+  let after =
+    Liveness.after
+      ~term_uses:(fun b ->
+        List.filter real (Ssa_build.term_uses fn.blocks.(b).term))
+      ~body:(fun b -> fn.blocks.(b).body) ~uses live_out n in
+  let across = Hashtbl.create 16 in
   Array.iter (fun (bl : block) ->
-    let live =
-      ref (IS.union live_out.(bl.id)
-        (IS.of_list (List.filter real (Ssa_build.term_uses bl.term)))) in
     List.iter (fun v ->
-      Hashtbl.replace after v !live;
-      (match def v with
-       | Call _ -> Hashtbl.replace across v (bl.id, IS.remove v !live)
-       | _ -> ());
-      live := IS.union (IS.remove v !live) (IS.of_list (uses v)))
-      (List.rev bl.body)) fn.blocks;
+      match def v with
+      | Call _ ->
+          Hashtbl.replace across v
+            (bl.id, IS.remove v (Hashtbl.find after v))
+      | _ -> ()) bl.body) fn.blocks;
   let idom = Ssa_build.dominators fn in
-  let children = Array.make n [] in
-  Array.iteri (fun b d ->
-    if b <> 0 && d >= 0 then children.(d) <- b :: children.(d)) idom;
+  let children = Dominators.children idom in
   (* which values get a register: the most used first, a use in a loop
    * 8 times one outside it, each while no point has more of them live
-   * than there are registers (mini-ml's Alloc) *)
-  let rec dominates a b =
-    a = b || (b <> 0 && idom.(b) >= 0 && dominates a idom.(b)) in
-  let depth = Array.make n 0 in
-  Array.iter (fun (bl : block) ->
-    List.iter (fun h ->
-      if idom.(bl.id) >= 0 && dominates h bl.id then begin
-        let body = Hashtbl.create 16 in
-        Hashtbl.replace body h ();
-        let rec back b =
-          if not (Hashtbl.mem body b) then
-            (Hashtbl.replace body b (); List.iter back fn.blocks.(b).preds) in
-        back bl.id;
-        Hashtbl.iter (fun b () -> depth.(b) <- depth.(b) + 1) body
-      end) (Ssa_build.successors_of bl)) fn.blocks;
+   * than there are registers (mini-ml's Alloc); the loops lib_code's
+   * Dominators.loop_depths *)
+  let depth =
+    Dominators.loop_depths
+      ~succs:(fun b -> Ssa_build.successors_of fn.blocks.(b))
+      ~preds:(fun b -> fn.blocks.(b).preds) idom in
   let weight = Hashtbl.create 256 in
   let use v b =
     if real v then
@@ -144,16 +113,7 @@ let alloc (fn : func) ~nregs ~nfregs =
     if c >= (match Hashtbl.find_opt weight x with Some w -> w | None -> 0)
     then Hashtbl.replace memory x ()) cost;
   (* the points: each block's start, each instruction's end *)
-  let points =
-    Array.of_list (Array.to_list live_in
-      @ List.map snd (List.sort compare
-          (Hashtbl.fold (fun v live acc -> (v, live) :: acc) after []))) in
-  let at = Hashtbl.create 256 in
-  Array.iteri (fun k live ->
-    IS.iter (fun v ->
-      Hashtbl.replace at v
-        (k :: (match Hashtbl.find_opt at v with Some l -> l | None -> [])))
-      live) points;
+  let npoints, at = Coloring.points live_in after in
   let dead v =
     match Hashtbl.find_opt after v with
     | Some live -> not (IS.mem v live)
@@ -172,60 +132,22 @@ let alloc (fn : func) ~nregs ~nfregs =
       match def phi with
       | Phi ops -> List.iter (fun (_, x) -> if real x then relate phi x) ops
       | _ -> ()) bl.phis) fn.blocks;
+  (* lib_code's Coloring: a body's value colored if live after it *)
   let walk candidate ncolors =
-    let color = Hashtbl.create 64 in
-    let held s =
-      IS.fold (fun x acc ->
-        match Hashtbl.find_opt color x with
-        | Some c -> IS.add c acc
-        | None -> acc) s IS.empty in
-    let pick v busy =
-      let hinted =
-        List.filter_map (Hashtbl.find_opt color) (Hashtbl.find_all related v)
-      in
-      match List.find_opt (fun c -> not (IS.mem c busy)) hinted with
-      | Some c -> Some c
-      | None ->
-          let rec go c =
-            if c >= ncolors then None
-            else if IS.mem c busy then go (c + 1)
-            else Some c in
-          go 0
-    in
-    let rec visit b =
-      let bl = fn.blocks.(b) in
-      let busy = ref (held (IS.diff live_in.(b) (IS.of_list bl.phis))) in
-      List.iter (fun v ->
-        if candidate v then
-          match pick v !busy with
-          | Some c -> Hashtbl.replace color v c; busy := IS.add c !busy
-          | None -> ()) bl.phis;
-      List.iter (fun v ->
-        let live = Hashtbl.find after v in
-        if candidate v && IS.mem v live then
-          match pick v (held (IS.remove v live)) with
-          | Some c -> Hashtbl.replace color v c
-          | None -> ()) bl.body;
-      List.iter visit (List.rev children.(b))
-    in
-    if n > 0 then visit 0;
-    color
+    let body_ok v = candidate v && IS.mem v (Hashtbl.find after v) in
+    Coloring.walk ~children ~live_in ~phis:(fun b -> fn.blocks.(b).phis)
+      ~body:(fun b -> fn.blocks.(b).body)
+      ~candidate:(fun v ->
+        if Hashtbl.mem after v then body_ok v else candidate v)
+      ~busy:(fun v -> IS.remove v (Hashtbl.find after v))
+      ~hints:(Hashtbl.find_all related) ncolors
   in
   let colors cls nregs =
-    let count = Array.make (Array.length points) 0
-    and chosen = Hashtbl.create 64 in
     let wanted =
       Hashtbl.fold (fun v w acc ->
         if cls v && not (Hashtbl.mem memory v) then (w, v) :: acc else acc)
         weight [] in
-    List.iter (fun (_, v) ->
-      let ks = match Hashtbl.find_opt at v with Some l -> l | None -> [] in
-      if List.for_all (fun k -> count.(k) < nregs) ks then begin
-        Hashtbl.replace chosen v ();
-        List.iter (fun k -> count.(k) <- count.(k) + 1) ks
-      end)
-      (List.sort (fun ((w1, v1) : int * int) ((w2, v2) : int * int) ->
-         if w1 <> w2 then compare w2 w1 else compare v1 v2) wanted);
+    let chosen = Coloring.choose ~npoints ~at ~nregs wanted in
     walk (fun v -> real v && Hashtbl.mem chosen v) nregs
   in
   let color = colors (fun v -> not (is_float fn v)) nregs

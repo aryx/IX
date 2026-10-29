@@ -138,10 +138,6 @@ let build (f : Ir.func) =
   let emit b ins t =
     let v = fresh ins t in blocks.(b).body <- blocks.(b).body @ [ v ]; v in
   let ty v = Hashtbl.find types v in
-  let current = Hashtbl.create 64 and sealed = Array.make !count false
-  and filled = Array.make !count false in
-  let incomplete = Hashtbl.create 16 in
-  let write var b v = Hashtbl.replace current (var, b) v in
   (* a phi's type: its variable's, or (a stack's slot) its operands' *)
   let var_ty = function
     | Mem_var m -> Some (List.assoc m vars) | Stack_var _ -> None in
@@ -151,26 +147,7 @@ let build (f : Ir.func) =
     blocks.(b).phis <- blocks.(b).phis @ [ v ];
     v
   in
-  let rec read var b =
-    match Hashtbl.find_opt current (var, b) with
-    | Some v -> v
-    | None -> read_rec var b
-  and read_rec var b =
-    let v =
-      if not sealed.(b) then
-        (let v = new_phi var b in Hashtbl.add incomplete b (var, v); v)
-      else
-        match blocks.(b).preds with
-        | [ p ] -> read var p
-        | [] ->
-            emit b (Undef (match var_ty var with Some t -> t | None -> word))
-              (match var_ty var with Some t -> t | None -> word)
-        | _ -> let v = new_phi var b in write var b v; add_operands var v b; v
-    in
-    write var b v;
-    v
-  and add_operands var phi b =
-    let ops = List.map (fun p -> p, read var p) blocks.(b).preds in
+  let set_operands var phi ops =
     Hashtbl.replace defs phi (Phi ops);
     (* a stack slot's phi: the type of the value it chooses *)
     if var_ty var = None then
@@ -179,17 +156,18 @@ let build (f : Ir.func) =
         | Phi _ -> ()
         | _ -> Hashtbl.replace types phi (ty v)) ops
   in
-  let seal b =
-    List.iter (fun (var, phi) -> add_operands var phi b)
-      (List.rev (Hashtbl.find_all incomplete b));
-    Hashtbl.remove incomplete b;
-    sealed.(b) <- true
+  let missing var b =
+    let t = match var_ty var with Some t -> t | None -> word in
+    emit b (Undef t) t
   in
-  let seal_ready () =
-    Array.iteri (fun b s ->
-      if (not s) && List.for_all (fun p -> filled.(p)) blocks.(b).preds
-      then seal b) sealed
-  in
+  (* Braun et al.'s reads and seals, lib_code's (old: their copy here,
+   * a block's incomplete phis given their operands oldest first) *)
+  let br =
+    Braun.create ~preds:(fun b -> blocks.(b).preds) ~new_phi ~set_operands
+      ~missing !count in
+  let write var b v = Braun.write br var b v
+  and read var b = Braun.read br var b in
+  let seal b = Braun.seal br b and seal_ready () = Braun.seal_ready br in
   (* the entry: the parameters, as the prologue leaves them *)
   if !count > 0 then begin
     seal 0;
@@ -303,9 +281,9 @@ let build (f : Ir.func) =
        | _ -> failwith (f.name.name ^ ": ssa: a block's end"));
     (* the stack left, for the successors *)
     List.iteri (fun d v -> write (Stack_var d) id v) (List.rev !stack);
-    filled.(id) <- true;
+    Braun.fill br id;
     seal_ready ()) blocks;
-  Array.iteri (fun b s -> if not s then seal b) sealed;
+  Braun.seal_rest br;
   { name = f.name; locals = f.locals; args = f.args; r0 = f.r0; blocks; defs;
     types }
 
@@ -352,25 +330,16 @@ let map_term f = function
 (* a phi whose operands are one value (and itself) is that value; until
  * none is (Braun et al.'s tryRemoveTrivialPhi, as a fixpoint) *)
 let simplify (fn : func) =
-  let subst = Hashtbl.create 16 in
-  let rec find v =
-    match Hashtbl.find_opt subst v with
-    | Some w -> let r = find w in Hashtbl.replace subst v r; r
-    | None -> v in
-  let changed = ref true in
-  while !changed do
-    changed := false;
-    Array.iter (fun (b : block) ->
-      b.phis <- List.filter (fun phi ->
+  (* (lib_code's Braun.trivial) *)
+  let find =
+    Braun.trivial ~phis:(fun b -> fn.blocks.(b).phis)
+      ~set_phis:(fun b l -> fn.blocks.(b).phis <- l)
+      ~operands:(fun phi ->
         match Hashtbl.find fn.defs phi with
-        | Phi ops -> (
-            match List.sort_uniq compare
-                    (List.filter (fun v -> v <> phi)
-                       (List.map (fun (_, v) -> find v) ops)) with
-            | [ v ] -> Hashtbl.replace subst phi v; changed := true; false
-            | _ -> true)
-        | _ -> true) b.phis) fn.blocks
-  done;
+        | Phi ops -> Some (List.map snd ops)
+        | _ -> None)
+      (Array.length fn.blocks)
+  in
   Array.iter (fun (b : block) ->
     List.iter (fun v ->
       Hashtbl.replace fn.defs v (map_ins find (Hashtbl.find fn.defs v)))
@@ -399,41 +368,15 @@ let successors_of (b : block) =
   match b.term with
   | Jmp s -> [ s ] | Br (_, _, _, _, a, b) -> [ a; b ] | Ret _ -> []
 
-(* the immediate dominators (Cooper, Harvey and Kennedy, "A Simple, Fast
- * Dominance Algorithm", 2001), the blocks in reverse postorder *)
+(* the immediate dominators (lib_code's Dominators: Cooper, Harvey and
+ * Kennedy's) *)
 let dominators (fn : func) =
-  let n = Array.length fn.blocks in
-  let order = ref [] and seen = Array.make n false in
-  let rec dfs b =
-    if not seen.(b) then
-      (seen.(b) <- true; List.iter dfs (successors_of fn.blocks.(b));
-       order := b :: !order) in
-  if n > 0 then dfs 0;
-  let rpo = Array.make n 0 in
-  List.iteri (fun i b -> rpo.(b) <- i) !order;
-  let idom = Array.make n (-1) in
-  if n > 0 then idom.(0) <- 0;
-  let rec intersect a b =
-    if a = b then a
-    else if rpo.(a) > rpo.(b) then intersect idom.(a) b
-    else intersect a idom.(b) in
-  let changed = ref true in
-  while !changed do
-    changed := false;
-    List.iter (fun b ->
-      if b <> 0 then
-        match List.filter (fun p -> idom.(p) >= 0) fn.blocks.(b).preds with
-        | [] -> ()
-        | p :: ps ->
-            let d = List.fold_left intersect p ps in
-            if idom.(b) <> d then (idom.(b) <- d; changed := true)) !order
-  done;
-  idom
+  Dominators.idoms ~succs:(fun b -> successors_of fn.blocks.(b))
+    ~preds:(fun b -> fn.blocks.(b).preds) (Array.length fn.blocks)
 
 let check (fn : func) =
   let idom = dominators fn in
-  let rec dominates a b =
-    a = b || (b <> 0 && idom.(b) >= 0 && dominates a idom.(b)) in
+  let dominates = Dominators.dominates idom in
   let block_of = Hashtbl.create 256 and index = Hashtbl.create 256 in
   Array.iter (fun (b : block) ->
     List.iter (fun v ->

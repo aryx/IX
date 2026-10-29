@@ -5,9 +5,9 @@
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Ssa Ssa_build Unbox Untag Cse Licm Alloc Gen Emit Ssa_facts Closure_facts CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli}
-LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts
+SRC=Ast Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Gen Emit Ssa_facts Closure_facts CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts -I ../../lib_code
 LIBUNITS=Asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
@@ -20,6 +20,11 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
+# lib_code's units (Dominators Braun Liveness Coloring: SSA's algorithms,
+# mini-cc's too): one recipe each, so that .depend orders each
+$D/%.$O: $TOP/lib_code/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target $TOP/lib_code/$stem.ml
 # pp/'s units (Bits Derive Pp): one recipe each, so that .depend orders each
 $D/%.$O: pp/%.ml
 	mkdir -p $D

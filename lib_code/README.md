@@ -63,3 +63,24 @@ The two parsers and their trees (above); each highlighter's tests
 (`Unit_highlight_ml`, `Unit_lexer_ml`, `Unit_highlight_c`, `Test_asm`,
 `Unit_highlight_st`: 412 lines): here mini-emacs's sessions show each
 language's colors (`editors/emacs/tests/keys.sh`).
+
+## SSA's algorithms (ix's own)
+
+The author, on factoring mini-ml's and mini-cc's `ssa/` (2026-10-29):
+"maybe in lib_code/ ?", "which could be the basis for more program
+analysis code reused by different tools (e.g., a linter in the futur,
+a semgrep-like program, some phases before datalog, etc.)". Each
+module works on numbers, the blocks 0 to n - 1 and the values, and
+takes what a language's instructions are as functions:
+
+| | what | used by |
+|---|---|---|
+| `Dominators` | the dominator tree (Cooper, Harvey and Kennedy), its children, the loops' depths | both `Ssa_build`s (the check), both `Alloc`s |
+| `Braun` | SSA's construction: reads, writes, phis, sealing; the trivial phis out | both `Ssa_build`s |
+| `Liveness` | liveness in SSA form, a phi's operand at its predecessor's end | both `Alloc`s |
+| `Coloring` | the values chosen for registers by weight, the coloring walk in the dominator tree's order, with hints | both `Alloc`s |
+
+What stays in each compiler: its instructions, what must live in
+memory (mini-ml's collector, C's calls), what a use weighs, the code
+emitted.
+

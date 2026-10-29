@@ -176,3 +176,17 @@ the divisions against 5c's and 7c's with -O and -O -ssa; make test
 test, which now compiles pow.c by -O3 there, as lib_core's mkfile).
 Not run: the kernels' long checks (mini-mk check) under mini-qemu.
 
+## 2026-10-29, the two ssa/'s shared algorithms in lib_code/
+
+The author: "yes let's commit and then factorize the SSA code in
+lib_code/" ("(not lib_core)"). lib_code's Dominators (idoms, children,
+loop depths), Braun (the construction's reads and seals, the trivial
+phis), Liveness (in SSA form, and after each instruction) and Coloring
+(points, choose, the walk with hints), from mini-ml's ssa/, which both
+Ssa_build's and Alloc's call; each mkfile compiles them (lib_code has
+none). mini-ml's output the same bytes (lib_core's units and its own
+five, -O3, arm and arm64); mini-cc's 42 of 426 compiles differ, a
+block's incomplete phis now given their operands newest first, as
+mini-ml's (mini-cc's own copy had them oldest first). The ssa/'s 230
+lines less, lib_code 248 more (and 193 of interfaces).
+

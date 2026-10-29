@@ -3,6 +3,11 @@
 ; highlighter gives a file's tokens and a file as lines of spans. A
 ; language's highlighter is beside it (languages/ml/highlight...);
 ; mini-emacs draws what they give (docs/plans/done/plan_emacs.md).
+; Dominators, Braun, Liveness, Coloring: the SSA form's algorithms that
+; mini-ml's and mini-cc's ssa/ share, the instructions their own (the
+; author: "which could be the basis for more program analysis code
+; reused by different tools")
 (library
  (name ix_code)
- (wrapped false))
+ (wrapped false)
+ (libraries ix_core))

@@ -3,4 +3,4 @@
  (name ix_ml_ssa)
  (wrapped false)
  (modules Ssa Ssa_build Unbox Untag Cse Licm Alloc Emit)
- (libraries ix_ml ix_ml_simple))
+ (libraries ix_ml ix_ml_simple ix_code))

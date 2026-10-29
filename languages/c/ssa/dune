@@ -4,4 +4,4 @@
  (name ix_cc_ssa)
  (wrapped false)
  (modules Ssa Ssa_build Alloc Ssa_gen)
- (libraries ix_cc ix_cc_simple ix_cc_opti ix_asm))
+ (libraries ix_cc ix_cc_simple ix_cc_opti ix_asm ix_code))

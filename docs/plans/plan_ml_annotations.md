@@ -191,8 +191,75 @@ at some point"): `[@@noraise]`, a function that raises nothing,
 checked as this one is (no Raise, no call of what may raise); with
 `[@@zero_alloc]`, a C call's `ml_vsp` handoff could then be skipped.
 
+## [@@zero_alloc] on the games' inner loops (2026-10-29)
+
+The author: "let's do 1" (the games' loops). Marked where it holds
+after the change, each game built for arm (mini-mk O=5, -O3):
+
+- mini-doom: View.draw_column (R_DrawColumn, the walls' and sprites'
+  pixels) allocated nothing already. map_plane (R_MapPlane) and
+  Sprites.draw_masked_column were refused, their pixel loops clean but
+  their setup boxing floats for calls of another unit's small
+  functions (View.fcos, fsin, iceil: not inlined, over -O3's 16 nodes
+  with what they call; iceil at 17), once a span or a post. Split
+  out, map_plane's loop as id's R_DrawSpan, it held, but the call a
+  span cost 0.52% of a frame: not kept, the two left unmarked.
+- mini-quake: Spans.draw_spans (D_DrawSpans8) made a tuple of four
+  every 8 pixels (snext, tnext, sstep, tstep): each a value of its
+  own now, marked, 5.2% fewer instructions in the function, 0.35%
+  fewer over a run of 61 frames, the same pixels. draw_zspans held
+  as it was. turbulent (the liquids) boxed three floats and made two
+  pairs every 16 pixels; rewritten without them it held, but ran 29%
+  more instructions, its pixel loop's registers allocated worse
+  (Alloc: about 18 instructions a pixel more): kept as it was,
+  unmarked, a case for the allocator.
+- Measured whole runs by mini-5i -prof and mini-prof: a frame's cost
+  as the difference of two runs (31 and 61 frames) moved with where a
+  collection fell (0.68% "more" for the version 0.17% fewer over the
+  run).
+
+### A story: Quake's span loop
+
+The author: "still this quake loop is a great example of the
+usefulness of this annotation! great story to record in the plan".
+
+D_DrawSpans8 is Quake's hottest loop: each textured surface's spans,
+the perspective-correct s and t computed exactly every 8 pixels (one
+division), stepped linearly between. mini-quake's port read well:
+
+    let snext, tnext, sstep, tstep =
+      if !count > 0 then begin ... (snext, tnext, (snext - !s) asr 3, ...) end
+      else begin ... end
+    in
+
+Nothing in it looks like an allocation, and in OCaml nothing in it
+is one to the eye: a tuple returned by an if and taken apart at once.
+But mini-ml, as ocamlopt without flambda, makes the block: four
+fields, every 8 pixels, the whole screen's surfaces a frame. No test
+saw it (the pixels were right), no profile named it (the cost spread
+over ml_alloc, the minor collections and the loop itself). Marked
+[@@zero_alloc], the build said, on the first try:
+
+    render/Spans.ml: line 144: draw_spans [@@zero_alloc]: it makes a
+    block (a tuple, a record, a constructor's)
+
+The fix is the code a C programmer would have written, each of the
+four a value of its own (the old one kept beside it, old:), and the
+mark stays: the loop 5.2% fewer instructions, the same pixels, and
+the day someone writes a tuple there again the build refuses it.
+That is the annotation's point: not finding the allocation once,
+which a profile might have, but the hot loop's property written in
+the code and checked at each build, where a comment ("no allocation
+here") would have gone stale unseen.
+
+What it says of mini-ml: a short-lived block costs little (a bump of
+the pointer, the minor collection copying nothing dead), so what an
+allocation's removal gains is mostly the code around it; the call of
+another unit's small float function, boxing its argument, is the
+cost that recurs.
+
 ## Status
 
 2026-10-29: steps 1 and 2 done ([@tailcall], [@@tailrec],
-[@@zero_alloc]); next [@inline] checked, or [@@zero_alloc] on the
-games' inner loops.
+[@@zero_alloc]), [@@zero_alloc] used in mini-doom and mini-quake;
+next [@inline] checked, or turbulent's registers (Alloc).

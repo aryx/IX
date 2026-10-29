@@ -259,6 +259,7 @@ let draw_column (r : t) (x : int) (yl : int) (yh : int) (mid : float) (scale : f
       ofs := !ofs + w
     done
   end
+[@@zero_alloc]
 
 (* what a subsector's segs are drawn with: its sector's planes, if they
  * can be seen (R_Subsector) *)

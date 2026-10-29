@@ -166,35 +166,39 @@ let draw_spans (e : Edges.t) (v : View.t) (first : int) (src : Bytes.t)
     while !count > 0 do
       let spancount = if !count >= 8 then 8 else !count in
       count := !count - spancount;
-      let snext, tnext, sstep, tstep =
-        if !count > 0 then begin
-          (* the exact s and t 8 pixels on *)
-          sdivz := !sdivz +. sdivz8;
-          tdivz := !tdivz +. tdivz8;
-          zi := !zi +. zi8;
-          let z = 65536. /. !zi in
-          (* (at least 8: a step back past 0 by rounding would run off
-           * the texture) *)
-          let snext = clamp 8 bbs (int_of_float (!sdivz *. z) + g.sadjust) in
-          let tnext = clamp 8 bbt (int_of_float (!tdivz *. z) + g.tadjust) in
-          (snext, tnext, (snext - !s) asr 3, (tnext - !t) asr 3)
-        end
-        else begin
-          (* the last pixel's, so as not to step off the surface *)
-          let n1 = float (spancount - 1) in
-          sdivz := !sdivz +. (g.sdivzstepu *. n1);
-          tdivz := !tdivz +. (g.tdivzstepu *. n1);
-          zi := !zi +. (g.zistepu *. n1);
-          let z = 65536. /. !zi in
-          let snext = clamp 8 bbs (int_of_float (!sdivz *. z) + g.sadjust) in
-          let tnext = clamp 8 bbt (int_of_float (!tdivz *. z) + g.tadjust) in
-          if spancount > 1 then
-            ( snext,
-              tnext,
-              (snext - !s) / (spancount - 1),
-              (tnext - !t) / (spancount - 1) )
-          else (snext, tnext, 0, 0)
-        end
+      (* s and t, and their steps, each a value of its own, not a tuple
+       * of the four: a block every 8 pixels otherwise ([@@zero_alloc]
+       * refused it). old:
+       *   let snext, tnext, sstep, tstep =
+       *     if !count > 0 then begin ... (snext, tnext, ...) end
+       *     else begin ... end *)
+      let more = !count > 0 in
+      if more then begin
+        (* the exact s and t 8 pixels on *)
+        sdivz := !sdivz +. sdivz8;
+        tdivz := !tdivz +. tdivz8;
+        zi := !zi +. zi8
+      end
+      else begin
+        (* the last pixel's, so as not to step off the surface *)
+        let n1 = float (spancount - 1) in
+        sdivz := !sdivz +. (g.sdivzstepu *. n1);
+        tdivz := !tdivz +. (g.tdivzstepu *. n1);
+        zi := !zi +. (g.zistepu *. n1)
+      end;
+      let z = 65536. /. !zi in
+      (* (at least 8: a step back past 0 by rounding would run off the
+       * texture) *)
+      let snext = clamp 8 bbs (int_of_float (!sdivz *. z) + g.sadjust) in
+      let tnext = clamp 8 bbt (int_of_float (!tdivz *. z) + g.tadjust) in
+      let sstep =
+        if more then (snext - !s) asr 3
+        else if spancount > 1 then (snext - !s) / (spancount - 1)
+        else 0
+      and tstep =
+        if more then (tnext - !t) asr 3
+        else if spancount > 1 then (tnext - !t) / (spancount - 1)
+        else 0
       in
       let ss = ref !s and tt = ref !t and o = !pdest in
       for i = 0 to spancount - 1 do
@@ -209,6 +213,7 @@ let draw_spans (e : Edges.t) (v : View.t) (first : int) (src : Bytes.t)
     done;
     k := e.span_next.(sp)
   done
+[@@zero_alloc]
 
 (*****************************************************************************)
 (* The liquids (Turbulent8) *)
@@ -379,6 +384,7 @@ let draw_zspans (e : Edges.t) (v : View.t) (first : int) : unit =
     done;
     k := e.span_next.(sp)
   done
+[@@zero_alloc]
 
 (*****************************************************************************)
 (* The surfaces (D_DrawSurfaces) *)

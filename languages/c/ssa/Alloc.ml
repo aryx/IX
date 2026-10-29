@@ -93,19 +93,20 @@ let alloc (fn : func) ~nregs ~nfregs =
         | _ -> ()) fn.blocks.(s).phis)
       (Ssa_build.successors_of bl)) fn.blocks;
   (* OPTIMIZATION (saved around calls): a value live across a call is
-   * in memory if the call costs more than its uses gain: a store before
-   * and a load after (a parameter's load only, from its own slot), in
-   * the call's loop, against a use's in its own; else it keeps its
-   * register, saved at each call (Ssa_gen). Before, every such value
-   * lived in memory, gc.c's C scan's loop (a call of copy on a path)
-   * all of it.
-   * old: memory, each value live across a call *)
+   * in memory if the calls cost more than its uses gain: a load after
+   * each, in the call's loop, against a use's in its own (its store, at
+   * its definition, either way); else it keeps its register, stored to
+   * its slot once where it is made and loaded after each call (Ssa_gen),
+   * an SSA value never changing. Before, every such value lived in
+   * memory, gc.c's C scan's loop (a call of copy on a path) all of it;
+   * then a store and a load at each call (qsort's pi, stored at each
+   * call of its second loop, which does not change it).
+   * old: memory, each value live across a call; then (match def x with
+   *      Param _ -> 1 | _ -> 2), a store before each call *)
   let cost = Hashtbl.create 64 and memory = Hashtbl.create 64 in
   Hashtbl.iter (fun _ (b, live) ->
     IS.iter (fun x ->
-      let k =
-        (match def x with Param _ -> 1 | _ -> 2)
-        * (1 lsl (3 * min depth.(b) 6)) in
+      let k = 1 lsl (3 * min depth.(b) 6) in
       Hashtbl.replace cost x
         (k + match Hashtbl.find_opt cost x with Some c -> c | None -> 0))
       live) across;
@@ -182,4 +183,12 @@ let alloc (fn : func) ~nregs ~nfregs =
             | Param (m, _) -> Some (x, Home m)
             | _ -> Some (x, Slot (Hashtbl.find slots x))) (IS.elements live)
   in
-  loc, saves, nslots
+  (* a value in a register live across calls: its slot, stored where it
+   * is made (a parameter's own needs none) *)
+  let spill v =
+    if in_reg v && Hashtbl.mem cost v
+       && (match def v with Param _ -> false | _ -> true)
+    then Hashtbl.find_opt slots v
+    else None
+  in
+  loc, saves, spill, nslots

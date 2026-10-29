@@ -6,8 +6,9 @@
  * a phi's operand live at its predecessor's end and its definition at
  * its block's start. Plan 9 saves no register at a call, the caller
  * does: a value live across calls is in memory when they cost more
- * than its uses gain (a store and a load each, against a load a use,
- * by their loops), else in a register saved at each call. The values
+ * than its uses gain (a load after each, against a load a use, by
+ * their loops), else in a register stored once where it is made and
+ * loaded after each call. The values
  * are chosen, the most used first (a use in a loop 8 times one outside
  * it), each while no point has more of them live than there are
  * registers, then colored in the dominator tree's order, the lowest
@@ -31,9 +32,13 @@ type loc = Reg of int | Slot of int | Home of Ssa.mem | Nil
 
 (* nregs integer registers and nfregs floating-point ones, each
  * numbered from 0: each value's place; at a call, the values in a
- * register live across it and where each is saved; the slots of the
- * frame *)
-val alloc : Ssa.func -> nregs:int -> nfregs:int -> (Ssa.value -> loc) * (Ssa.value -> (Ssa.value * loc) list) * int
+ * register live across it and where each is saved (to load it after);
+ * the slot a value in a register is stored to where it is made, if it
+ * is live across calls; the slots of the frame *)
+val alloc :
+  Ssa.func -> nregs:int -> nfregs:int ->
+  (Ssa.value -> loc) * (Ssa.value -> (Ssa.value * loc) list)
+  * (Ssa.value -> int option) * int
 
 (* the values live at each block's start and at its end *)
 val liveness : Ssa.func -> int Set_.t array * int Set_.t array

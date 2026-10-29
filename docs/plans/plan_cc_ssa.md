@@ -190,3 +190,37 @@ block's incomplete phis now given their operands newest first, as
 mini-ml's (mini-cc's own copy had them oldest first). The ssa/'s 230
 lines less, lib_code 248 more (and 193 of interfaces).
 
+## 2026-10-29, libc's qsort slower by -O3 than compat's: four fixes
+
+The author: "let's investigate the 10% slowdown. -O3 should be faster
+than compat!". qsorts (goken's port/qsort.c) by -O3 12.4 to 13.7
+million instructions in the sorts benchmark, its loops a call through
+a function pointer at each turn. Under mini-prof -a, a turn of
+`do pi += es; while(pi < pn && p->cmp(pi, a) < 0)` was compat's 18
+instructions and -O3's 20:
+
+- the first argument stored to the outgoing area, then loaded into R0:
+  now the call's operand (Ssa_build), put in R0 at the call (5c's
+  convention: the callee stores R0 itself);
+- a value stored to its slot and loaded at once: the register it was
+  stored from, when no instruction is between (Ssa_gen);
+- pi not SSA's: `pi = pivot(...)` is the call, then lea pi; swap; put,
+  which places did not fold (its address seen taken); now PutAt
+  (Opti's places, -O's too);
+- a value live across calls stored at each call: once, where it is
+  made, an SSA value never changing (Alloc's spill), the cost a load a
+  call; and R0's store at the entry left out when nothing reads the
+  parameter's slot (cmp, the comparison: 8 instructions a call to 7).
+
+Arm, mini-5i, the benchmarks by -O3, compat's beside:
+
+| | compat | -O3 before | -O3 now |
+|---|---:|---:|---:|
+| fmt | 4,206.0 million | 3,075.5 | 2,948.5 (29.9% fewer than compat's) |
+| copy | 51.5 | 22.1 | 22.1 (57.1% fewer) |
+| sorts | 36.3 | 31.2 | 29.3 (19.3% fewer) |
+| its qsorts | 12.4 | 13.7 | 12.2 (1.8% fewer) |
+
+sorts.c's own sort 7.4 to 7.7 million: a value live across its
+recursive call now stored at each turn, where only one path calls.
+

@@ -3,4 +3,4 @@ across_call('sum:i/-4','sum:13').
 across_call('sum:n/0','sum:13').
 across_call('taken:y/-8','taken:4').
 differences: 0
-without the writes: 8
+without the writes: 21

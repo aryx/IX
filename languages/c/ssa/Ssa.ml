@@ -68,10 +68,11 @@ type ins =
   | Cvt of ty * ty * value            (* from a type to another *)
   | Arg of int * ty * value           (* stored at the outgoing offset *)
   | ArgBlock of int * int * value     (* the block copied there, n bytes *)
-  | Call of Ir.target * value option * ty option * ty option
-                                      (* the name, or the address; the
-                                         first argument's type if in R0;
-                                         the result's *)
+  | Call of Ir.target * value option * (ty * value option) option
+      * ty option                     (* the name, or the address; the
+                                         first argument's type if in R0,
+                                         and its value (else in the
+                                         outgoing area); the result's *)
 
 (* a comparison's second operand: a value, or an immediate *)
 type operand = V of value | Imm of int64

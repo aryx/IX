@@ -61,6 +61,11 @@ let consumer h code =
 
 let rec places = function
   | Lea m :: Load t :: rest -> LoadAt (m, t) :: places rest
+  (* the value first, then its place: x = f(...), Lower's call before
+   * the lea (qsort's pi = pivot(...), else its address taken: no
+   * register for pi, ssa/'s nor regs') *)
+  | Lea m :: Swap :: Put t :: rest -> PutAt (m, t) :: places rest
+  | Lea m :: Swap :: Store t :: rest -> StoreAt (m, t) :: places rest
   | (Lea m :: Dup :: Load t :: after) as code -> (
       (* x op= y: the address kept under the value, for the store *)
       match consumer 2 after with

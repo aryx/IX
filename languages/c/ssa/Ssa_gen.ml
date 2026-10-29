@@ -35,7 +35,7 @@ type source = From of Ssa.value | Temp of bool
 
 let func (fn : func) =
   let m = G.mach () and rg = regs () in
-  let loc, saves, nslots =
+  let loc, saves, spill, nslots =
     Alloc.alloc fn ~nregs:(List.length rg.iregs)
       ~nfregs:(List.length rg.fregs) in
   let def v = Hashtbl.find fn.defs v and ty v = Hashtbl.find fn.types v in
@@ -71,10 +71,19 @@ let func (fn : func) =
         | Undef (F _ as t) -> G.i2 (G.load_op t) (A.Fimm 0.) (f x)
         | _ -> G.i2 (G.mov ()) (A.Imm 0L) (r x))
   in
+  (* OPTIMIZATION (a slot's value still in its register): a value just
+   * stored to its slot (put), read by the next instruction, is the
+   * register it was stored from, no instruction emitted between nor a
+   * block begun: qsort's pi, live across its loop's call, stored then
+   * loaded at once (str r1,[sp,#64]; ldr r1,[sp,#64]).
+   * old: loaded from the slot at each read *)
+  let stored = ref None in
+  let forget () = stored := None in
   (* the register holding v, its n-th scratch if none *)
   let get v n =
-    match loc v with
-    | Alloc.Reg c -> machine v c
+    match loc v, !stored with
+    | Alloc.Reg c, _ -> machine v c
+    | Slot _, Some (v', x, pc) when v' = v && pc = !Emit.pc -> x
     | _ -> let x = scratch v n in load_into v x; x in
   (* the register v is computed into, and its store after *)
   let dst v =
@@ -82,7 +91,14 @@ let func (fn : func) =
   let put v x =
     match loc v with
     | Slot k ->
-        G.i2 (if fl v then G.fmov () else G.mov ()) (reg (fl v) x) (slot k)
+        G.i2 (if fl v then G.fmov () else G.mov ()) (reg (fl v) x) (slot k);
+        stored := Some (v, x, !Emit.pc)
+    (* in a register, and live across calls: stored once, here *)
+    | Reg _ -> (
+        match spill v with
+        | Some k ->
+            G.i2 (if fl v then G.fmov () else G.mov ()) (reg (fl v) x) (slot k)
+        | None -> ())
     | _ -> () in
   (* n bytes from src to dst+off, by words when they are all words: the
    * addresses got again for each word, a scratch each if not in a
@@ -248,20 +264,18 @@ let func (fn : func) =
       | ArgBlock (o, n, x) ->
           copy (fun () -> get x 2) (fun () -> m.sp) (m.word + o) n
       | Call (target, a, r0, rt) ->
-          (* the registers live across it saved, and loaded after *)
+          (* the registers live across it loaded after it, from where
+           * they were stored when made (put) *)
           let saved = saves v in
-          List.iter (fun (x, at) ->
-            match at, loc x with
-            | Alloc.Slot k, Alloc.Reg c ->
-                G.i2 (if fl x then G.fmov () else G.mov ())
-                  (reg (fl x) (machine x c)) (slot k)
-            | _ -> ()) saved;
           let callee =
             match target, a with
             | Direct mm, _ -> A.Mem mm
             | Indirect, Some a -> G.at (get a 2) 0
             | Indirect, None -> failwith "ssa: a call without its address" in
-          Option.iter (fun t -> G.i2 (G.load_op t) (G.at m.sp m.word) (r 0)) r0;
+          (match r0 with
+           | Some (_, Some x) -> load_into x 0
+           | Some (t, None) -> G.i2 (G.load_op t) (G.at m.sp m.word) (r 0)
+           | None -> ());
           G.i1 "BL" callee;
           List.iter (fun (x, at) ->
             match at, loc x with
@@ -338,7 +352,29 @@ let func (fn : func) =
   in
   let text = Emit.gpseudo "TEXT" fn.name (Emit.nodconst 0L) in
   text.pseudo <- Emit.Ptext (if !Pre.profile then 0 else 1);
-  Option.iter (fun (mm, t) -> G.i2 (G.store_op t) (r 0) (A.Mem mm)) fn.r0;
+  (* OPTIMIZATION (R0's store): the first parameter stored to its slot
+   * only if something reads it there: a variable not SSA's (its address
+   * taken), or its value in its slot (Home), or loaded from there after
+   * a call. Else R0 is all: cmp's 8 instructions a call to 7.
+   * old: always stored, as 5c does *)
+  let r0_read (m0 : Ssa.mem) =
+    let param = ref None and calls = ref [] in
+    Hashtbl.iter (fun v ins ->
+      match ins with
+      | Param (m, _) when m = m0 -> param := Some v
+      | Call _ -> calls := v :: !calls
+      | _ -> ()) fn.defs;
+    match !param with
+    | None -> true
+    | Some p -> (
+        match loc p with
+        | Alloc.Home _ -> true
+        | Alloc.Reg _ ->
+            List.exists (fun c -> List.mem_assoc p (saves c)) !calls
+        | _ -> false)
+  in
+  Option.iter (fun (mm, t) ->
+    if r0_read mm then G.i2 (G.store_op t) (r 0) (A.Mem mm)) fn.r0;
   let pcs = Hashtbl.create 16 and jumps = ref [] and edges = ref [] in
   let jump a d = jumps := (G.ins a None None, d) :: !jumps in
   let has_phis s = fn.blocks.(s).phis <> [] in
@@ -349,6 +385,11 @@ let func (fn : func) =
     else Block s in
   Array.iter (fun (bl : block) ->
     Hashtbl.replace pcs (Block bl.id) !Emit.pc;
+    forget ();
+    (* a phi live across calls stored where it is made, its block's
+     * start *)
+    List.iter (fun v ->
+      match loc v with Alloc.Reg c -> put v (machine v c) | _ -> ()) bl.phis;
     let rec walk = function
       | v :: rest ->
           if Hashtbl.mem fused v then ()
@@ -376,7 +417,8 @@ let func (fn : func) =
         Option.iter (fun v -> load_into v 0) v;
         ignore (G.ins m.ret None None)) fn.blocks;
   List.iter (fun (k, p, s) ->
-    Hashtbl.replace pcs (Edge k) !Emit.pc; moves p s; jump "B" (Block s))
+    Hashtbl.replace pcs (Edge k) !Emit.pc;
+    forget (); moves p s; jump "B" (Block s))
     (List.rev !edges);
   List.iter (fun (q, d) -> Emit.patch q (Hashtbl.find pcs d)) !jumps;
   let frame = fn.locals + (8 * nslots) + fn.args in

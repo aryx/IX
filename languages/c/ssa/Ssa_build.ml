@@ -229,6 +229,28 @@ let build (f : Ir.func) =
       | ArgBlock (o, k) -> let v = pop () in for_effect (ArgBlock (o, k, v))
       | Call (target, r0, rt) ->
           let a = if target = Indirect then Some (pop ()) else None in
+          (* OPTIMIZATION (R0's argument): the first argument the call's
+           * operand, put in R0 by it, not stored to the outgoing area
+           * and loaded back (the callee stores R0 there itself, 5c's
+           * convention); its Arg, the last since a call, taken out.
+           * old: Arg 0 stored, R0 loaded from it at the call *)
+          let r0 =
+            Option.map (fun t ->
+              let rec find = function
+                | x :: rest -> (
+                    match Hashtbl.find defs x with
+                    | Arg (0, _, v) -> Some (x, v)
+                    | Call _ -> None
+                    | _ -> find rest)
+                | [] -> None
+              in
+              match find (List.rev blocks.(id).body) with
+              | Some (x, v) ->
+                  blocks.(id).body <-
+                    List.filter (fun y -> y <> x) blocks.(id).body;
+                  t, Some v
+              | None -> t, None) r0
+          in
           (match rt with
            | Some t -> value (Call (target, a, r0, rt)) t
            | None -> for_effect (Call (target, a, r0, rt)))
@@ -297,7 +319,8 @@ let operands = function
   | Load (_, a, _) | StoreAt (_, _, a) | OpImm (_, _, a, _) | Neg (_, a)
   | Com (_, a) | Cvt (_, _, a) | Arg (_, _, a) | ArgBlock (_, _, a) -> [ a ]
   | Store (_, a, _, b) | Copy (_, a, b) | Op (_, _, a, b) -> [ a; b ]
-  | Call (_, a, _, _) -> Option.to_list a
+  | Call (_, a, r0, _) ->
+      Option.to_list a @ (match r0 with Some (_, Some x) -> [ x ] | _ -> [])
 
 let map_ins f = function
   | Phi ops -> Phi (List.map (fun (b, v) -> b, f v) ops)
@@ -312,7 +335,9 @@ let map_ins f = function
   | Store (t, a, k, b) -> Store (t, f a, k, f b)
   | Copy (k, a, b) -> Copy (k, f a, f b)
   | Op (o, t, a, b) -> Op (o, t, f a, f b)
-  | Call (g, a, r0, rt) -> Call (g, Option.map f a, r0, rt)
+  | Call (g, a, r0, rt) ->
+      Call (g, Option.map f a,
+            Option.map (fun (t, x) -> t, Option.map f x) r0, rt)
   | i -> i
 
 let term_uses = function
@@ -444,8 +469,14 @@ let show_ins = function
   | Cvt (x, y, a) -> Printf.sprintf "cvt %s %s v%d" (show_ty x) (show_ty y) a
   | Arg (o, _, a) -> Printf.sprintf "arg %d v%d" o a
   | ArgBlock (o, k, a) -> Printf.sprintf "argblock %d %d v%d" o k a
-  | Call (Direct m, _, _, _) -> "call " ^ show_mem m
-  | Call (Indirect, a, _, _) -> "call " ^ vs (Option.to_list a)
+  | Call (t, a, r0, _) ->
+      "call "
+      ^ (match t with
+         | Direct m -> show_mem m
+         | Indirect -> vs (Option.to_list a))
+      ^ (match r0 with
+         | Some (_, Some x) -> Printf.sprintf " (R0 v%d)" x
+         | _ -> "")
 
 let show_term = function
   | Jmp s -> Printf.sprintf "jmp b%d" s

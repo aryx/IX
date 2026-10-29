@@ -396,3 +396,10 @@ kept in step when ed or mini-git changes an item). The terminal's
 Tests: Unit_store; session.sh (a task made of answering Carol's
 message, each found from the other). Not yet: the window's search over
 items (its / searches the mail), the other kinds' views.
+
+2026-10-29: stage 5 begun by mail's stage 8: snooze, the `until:`
+field (idea 5), for messages (archived on Gmail meanwhile, back that
+day); tasks, a message stamped task with a due day, a Tasks list in
+the window; days typed as words (`store/When`, the recognizer's
+first part, English and French: the open question answered both for
+days). Not yet: `pim remind`, capture of a line, snooze of a task.

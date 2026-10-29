@@ -69,6 +69,34 @@ val item_of :
   mailbox:string -> int -> Item.t option
 
 (*****************************************************************************)
+(* {1 Snooze} *)
+(*****************************************************************************)
+
+(* Snooze (plan_pim.md, idea 5; plan_mail.md, z): a message put away
+   until a day, archived on Gmail's side meanwhile, so the phone agrees;
+   its item says until: 2026-11-02. That day, the next time the mail is
+   got, it is labelled \Inbox again (found in All Mail by its
+   X-GM-MSGID: its UID in INBOX is gone), and its item says woke:, so
+   the list puts it on top. Gmail's own snooze is not IMAP's: the
+   phone sees it archived, not snoozed. *)
+
+(* "2026-11-02" *)
+val day : Civil.date -> string
+
+(* [snooze caps store t ~account ~mailbox uids ~until]: archived, and
+ * each item's until: *)
+val snooze : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t ->
+  Imap.t -> account:string -> mailbox:string -> int list ->
+  until:Civil.date -> (unit, string) result
+
+(* [wake caps store server ~user ~password ~today]: the messages whose
+ * day has come back in the Inbox, on the server and in their items;
+ * how many *)
+val wake : < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > ->
+  Items.t -> server -> user:string -> password:string -> today:Civil.date ->
+  (int, string) result
+
+(*****************************************************************************)
 (* {1 Sending} *)
 (*****************************************************************************)
 

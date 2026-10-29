@@ -6,7 +6,7 @@
    The subset mini-pim speaks to Gmail, Gmail's extensions included, so
    that the tests talk to this and never to Gmail: CAPABILITY, LOGIN
    (any password), LIST, SELECT and EXAMINE, UID SEARCH (ALL, SEEN,
-   UNSEEN, X-GM-RAW's words, from: and subject:), UID FETCH (UID,
+   UNSEEN, X-GM-RAW's words, from: and subject:, X-GM-MSGID), UID FETCH (UID,
    FLAGS, RFC822.SIZE, X-GM-LABELS, X-GM-THRID, X-GM-MSGID, BODY[],
    BODY.PEEK[], BODY[HEADER], BODY[HEADER.FIELDS (...)]), UID STORE
    (FLAGS and X-GM-LABELS, set, added, taken off, .SILENT), NOOP,

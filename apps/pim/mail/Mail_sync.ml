@@ -150,6 +150,81 @@ let archive (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
       Ok ()
 
 (*****************************************************************************)
+(* Snooze *)
+(*****************************************************************************)
+
+let day (d : Civil.date) : string =
+  Printf.sprintf "%04d-%02d-%02d" d.year d.month d.day
+
+let snooze (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
+    (store : Items.t) (t : Imap.t) ~(account : string) ~(mailbox : string)
+    (uids : int list) ~(until : Civil.date) : (unit, string) result =
+  (* (their ids first: archived, they are no more INBOX's) *)
+  let ids =
+    List.filter_map
+      (fun uid -> Option.map Item.id (item_of caps store ~account ~mailbox uid))
+      uids
+  in
+  match archive caps store t ~account ~mailbox uids with
+  | Error e -> Error e
+  | Ok () ->
+      List.iter
+        (fun id ->
+          match Items.find caps store id with
+          | Some item ->
+              Items.save caps store (Mail.set "until" (day until) item)
+          | None -> ())
+        ids;
+      Ok ()
+
+(* the account's messages whose until: has come *)
+let due (caps : < Cap.open_in ; Cap.readdir ; .. >) (store : Items.t)
+    ~(account : string) ~(today : Civil.date) : Item.t list =
+  List.filter
+    (fun item ->
+      Item.has_stamp item "message"
+      && Item.field item "account" = account
+      &&
+      match Search.date (Item.field item "until") with
+      | Some d -> Civil.days_from_civil d <= Civil.days_from_civil today
+      | None -> false)
+    (Items.all caps store)
+
+let wake (caps : < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
+    (store : Items.t) (s : server) ~(user : string) ~(password : string)
+    ~(today : Civil.date) : (int, string) result =
+  match due caps store ~account:user ~today with
+  | [] -> Ok 0
+  | items ->
+      session caps s ~user ~password ~mailbox:all_mail (fun t ->
+          let one (item : Item.t) : (unit, string) result =
+            let sm = Mail_item.summary item in
+            match Imap.search t ("X-GM-MSGID " ^ sm.msgid) with
+            | Error e -> Error e
+            | Ok [] -> Ok () (* (gone from the server: deleted) *)
+            | Ok uids -> (
+                match Imap.store t uids "+X-GM-LABELS (\\Inbox)" with
+                | Error e -> Error e
+                | Ok () ->
+                    let labels =
+                      if List.mem "\\Inbox" sm.labels then sm.labels
+                      else "\\Inbox" :: sm.labels
+                    in
+                    Items.save caps store
+                      (Mail.remove "until"
+                         (Mail.set "woke" (day today)
+                            (Mail.set "labels" (Imap.list labels) item)));
+                    Ok ())
+          in
+          let rec all (l : Item.t list) =
+            match l with
+            | [] -> Ok (List.length items)
+            | i :: rest -> (
+                match one i with Error e -> Error e | Ok () -> all rest)
+          in
+          all items)
+
+(*****************************************************************************)
 (* Sending *)
 (*****************************************************************************)
 

@@ -13,8 +13,8 @@ type caps =
 (*****************************************************************************)
 
 (* what waits for the password *)
-type action = Fetch | Open | Archive | Send
-type asking = Password | Search
+type action = Fetch | Open | Archive | Send | Snooze of Civil.date
+type asking = Password | Search | Until | Due
 type mode = Browsing | Reading | Composing | Asking of asking
 
 type model = {
@@ -26,6 +26,8 @@ type model = {
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
   drafts : Mail_compose.draft list; (* the drafts mailbox's *)
+  tasks : Item.t list; (* the tasks', not done, by their due day *)
+  today : Civil.date; (* today= (the tests'), else the clock's *)
   selected : int;
   (* the conversation opened: its messages, oldest first, each its text
    * when the cache has it *)
@@ -45,8 +47,10 @@ type model = {
 
 let store (caps : caps) : Items.t = Items.at (Items.place caps)
 
-(* the drafts, a mailbox of the store's, not the server's *)
+(* the drafts, a mailbox of the store's, not the server's; the tasks
+ * the same *)
 let drafts = "Drafts"
+let tasks = "Tasks"
 
 let contains (s : string) (word : string) : bool =
   let s = String.lowercase_ascii s and w = String.lowercase_ascii word in
@@ -66,22 +70,44 @@ let matches (query : string) (c : Imap.summary list) : bool =
         c)
     (List.filter (fun w -> w <> "") (String.split_on_char ' ' query))
 
-(* the conversations again from the store *)
+(* the conversations again from the store, those back from a snooze on
+ * top; the drafts; the tasks *)
 let load (caps : caps) (m : model) : model =
-  let l =
-    Mail_item.listed
-      (Items.all caps (store caps))
-      ~account:m.account ~mailbox:m.mailbox
-  in
+  let items = Items.all caps (store caps) in
+  let l = Mail_item.listed items ~account:m.account ~mailbox:m.mailbox in
   let cs = List.filter (matches m.query) (Conversations.group l) in
+  let woke =
+    List.filter_map
+      (fun i -> if Item.field i "woke" <> "" then Some (Item.id i) else None)
+      items
+  in
+  let back (c : Imap.summary list) =
+    List.exists (fun s -> List.mem (Mail_item.id s) woke) c
+  in
+  let cs = List.filter back cs @ List.filter (fun c -> not (back c)) cs in
   let ds =
     List.map Mail_compose.of_item
-      (List.filter
-         (fun i -> Item.has_stamp i "draft")
-         (Items.all caps (store caps)))
+      (List.filter (fun i -> Item.has_stamp i "draft") items)
   in
-  let n = if m.mailbox = drafts then List.length ds else List.length cs in
-  { m with conversations = cs; drafts = ds;
+  (* (the tasks without a due day last) *)
+  let due (i : Item.t) =
+    match Search.day i with
+    | Some d -> Civil.days_from_civil d
+    | None -> max_int
+  in
+  let ts =
+    List.stable_sort
+      (fun a b -> compare (due a) (due b))
+      (List.filter
+         (fun i -> Item.has_stamp i "task" && Item.field i "done" = "")
+         items)
+  in
+  let n =
+    if m.mailbox = drafts then List.length ds
+    else if m.mailbox = tasks then List.length ts
+    else List.length cs
+  in
+  { m with conversations = cs; drafts = ds; tasks = ts;
     selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -117,6 +143,11 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       query = "";
       conversations = [];
       drafts = [];
+      tasks = [];
+      today =
+        (match Search.date (flag "today") with
+        | Some d -> d
+        | None -> When.today ());
       selected = 0;
       reading = [];
       scroll = 0;
@@ -167,6 +198,14 @@ let open_ (caps : caps) (m : model) : model =
   | Error e -> { m with status = e }
   | Ok reading ->
       let missing = List.exists (fun (_, t) -> t = None) reading in
+      (* (back from a snooze, and now seen: in its place again) *)
+      List.iter
+        (fun (s : Imap.summary) ->
+          match Items.find caps (store caps) (Mail_item.id s) with
+          | Some i when Item.field i "woke" <> "" ->
+              Items.save caps (store caps) (Mail.remove "woke" i)
+          | _ -> ())
+        messages;
       let m = load caps m in
       {
         m with
@@ -183,18 +222,44 @@ let run (caps : caps) (m : model) (action : action) : model =
       match action with
       | Open -> open_ caps m
       | Fetch -> (
-          match
-            online caps m p (fun t ->
-                Mail_sync.list caps (store caps) t ~account:m.account
-                  ~mailbox:m.mailbox ~query:None 50)
-          with
-          | Error e -> { m with status = e; password = None }
-          | Ok l ->
+          (* (the snoozed whose day has come back first) *)
+          let woken =
+            if m.mailbox <> "INBOX" then Ok 0
+            else
+              Mail_sync.wake caps (store caps) m.server ~user:m.account
+                ~password:p ~today:m.today
+          in
+          let listed =
+            match woken with
+            | Error e -> Error e
+            | Ok _ ->
+                online caps m p (fun t ->
+                    Mail_sync.list caps (store caps) t ~account:m.account
+                      ~mailbox:m.mailbox ~query:None 50)
+          in
+          match (woken, listed) with
+          | _, Error e | Error e, _ -> { m with status = e; password = None }
+          | Ok k, Ok l ->
               let m = load caps m in
+              let back =
+                if k = 0 then "" else Printf.sprintf ", %d back from snooze" k
+              in
               {
                 m with
-                status = Printf.sprintf "%d messages fetched" (List.length l);
+                status =
+                  Printf.sprintf "%d messages fetched%s" (List.length l) back;
               })
+      | Snooze until -> (
+          let uids = List.map (fun (s : Imap.summary) -> s.uid) (current m) in
+          match
+            online caps m p (fun t ->
+                Mail_sync.snooze caps (store caps) t ~account:m.account
+                  ~mailbox:m.mailbox uids ~until)
+          with
+          | Error e -> { m with status = e }
+          | Ok () ->
+              let m = load caps { m with mode = Browsing } in
+              { m with status = "snoozed until " ^ Mail_sync.day until })
       | Send -> (
           match
             Mail_sync.send_draft caps (store caps) m.smtp ~user:m.account
@@ -218,6 +283,7 @@ let run (caps : caps) (m : model) (action : action) : model =
 let next (caps : caps) (m : model) (d : int) : model =
   let n =
     if m.mailbox = drafts then List.length m.drafts
+    else if m.mailbox = tasks then List.length m.tasks
     else List.length m.conversations
   in
   let m = { m with selected = max 0 (min (n - 1) (m.selected + d)) } in
@@ -252,6 +318,10 @@ type command =
   | Save_draft
   | Discard
   | Drafts
+  | Snooze_
+  | Task
+  | Done
+  | Tasks
 
 (* the menu bar: each menu its title, then its items, each with its
  * command and its key, said in the item (a menu is where the keys are
@@ -264,13 +334,15 @@ let menus : (string * (string * command) list) list =
       [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
         ("Reply  (r)", Reply); ("Reply All  (a)", Reply_all);
         ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
-        ("Next  (j)", Next); ("Previous  (k)", Previous) ] );
+        ("Next  (j)", Next); ("Previous  (k)", Previous);
+        ("Snooze...  (z)", Snooze_); ("Make a Task...  (t)", Task);
+        ("Mark Done  (x)", Done) ] );
     ( "Message",
       [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
         ("Discard", Discard) ] );
     ( "Go",
       [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts) ] ) ]
+        ("Drafts", Drafts); ("Tasks", Tasks) ] ) ]
 
 let menu_bar = 30.
 
@@ -307,7 +379,9 @@ let switch (caps : caps) (m : model) (mailbox : string) : model =
   in
   (* (fetched when the password is known: what the store has of the
    * other mailbox may be old, or nothing) *)
-  if m.password <> None && mailbox <> drafts then run caps m Fetch else m
+  if m.password <> None && mailbox <> drafts && mailbox <> tasks then
+    run caps m Fetch
+  else m
 
 (*****************************************************************************)
 (* Writing *)
@@ -348,6 +422,38 @@ let answer (caps : caps) (m : model) (c : command) : model =
              shown)
   | _ -> { m with status = "g: get the mail to answer it" }
 
+(*****************************************************************************)
+(* Tasks *)
+(*****************************************************************************)
+
+(* what a task is called: its subject (a message's), its title, else
+ * its text's first line *)
+let title (i : Item.t) : string =
+  match (Item.field i "subject", Item.field i "title") with
+  | s, _ when s <> "" -> Mime.decode_words s
+  | _, t when t <> "" -> t
+  | _ -> (
+      match String.split_on_char '\n' (String.trim i.body) with
+      | l :: _ -> l
+      | [] -> "")
+
+(* t: the conversation's newest message stamped task, due that day: the
+ * same item, now in the tasks too (plan_pim.md, idea 1) *)
+let task (caps : caps) (m : model) (due : Civil.date) : model =
+  match current m with
+  | [] -> m
+  | s :: _ -> (
+      match Items.find caps (store caps) (Mail_item.id s) with
+      | None -> { m with status = "not in the store: g first" }
+      | Some i ->
+          let i =
+            if Item.has_stamp i "task" then i
+            else Mail.set "stamp" (String.concat " " (Item.stamps i @ [ "task" ])) i
+          in
+          Items.save caps (store caps)
+            (Mail.remove "done" (Mail.set "due" (Mail_sync.day due) i));
+          load caps { m with status = "a task, due " ^ Mail_sync.day due })
+
 (* the draft kept, the window back where it was *)
 let leave (caps : caps) (m : model) (status : string) : model =
   load caps { m with mode = m.back_to; status }
@@ -356,7 +462,8 @@ let command (caps : caps) (m : model) (c : command) : model =
   (* (writing, the conversation's commands wait) *)
   let while_writing =
     match c with
-    | Exit | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Get ->
+    | Exit | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Tasks
+    | Get ->
         true
     | _ -> false
   in
@@ -383,6 +490,20 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Inbox -> switch caps m "INBOX"
   | All_mail -> switch caps m Mail_sync.all_mail
   | Drafts -> switch caps m drafts
+  | Tasks -> switch caps m tasks
+  | Snooze_ ->
+      if current m = [] then m
+      else { m with mode = Asking Until; field = ""; status = "" }
+  | Task ->
+      if current m = [] then m
+      else { m with mode = Asking Due; field = ""; status = "" }
+  | Done -> (
+      match List.nth_opt m.tasks m.selected with
+      | Some i when m.mailbox = tasks ->
+          Items.save caps (store caps)
+            (Mail.set "done" (Mail_sync.day m.today) i);
+          load caps { m with status = "done: " ^ title i }
+      | _ -> m)
   | Compose -> compose m (Mail_compose.blank ~id:(new_id ()))
   | Reply | Reply_all | Forward -> answer caps m c
   | Send_ -> run caps m Send
@@ -475,6 +596,14 @@ let update (caps : caps) (computer : computer) (m : model) : model =
               load caps
                 { m with query = m.field; field = ""; mode = Browsing;
                   selected = 0 }
+          | Until | Due -> (
+              let m' = { m with field = ""; mode = Browsing } in
+              match When.parse ~today:m.today m.field with
+              | None ->
+                  { m' with
+                    status = m.field ^ ": not a day (monday, in 3 days)" }
+              | Some d when a = Until -> run caps m' (Snooze d)
+              | Some d -> task caps m' d)
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
     | Composing -> writing caps computer m menu (pressed "Escape")
@@ -492,6 +621,9 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "r" then Some Reply
           else if pressed "a" then Some Reply_all
           else if pressed "f" then Some Forward
+          else if pressed "z" then Some Snooze_
+          else if pressed "t" then Some Task
+          else if pressed "x" then Some Done
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
           else if pressed "Tab" then
@@ -559,6 +691,7 @@ let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then "Inbox"
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
   else if m.mailbox = drafts then "Drafts"
+  else if m.mailbox = tasks then "Tasks"
   else m.mailbox
 
 let view (computer : computer) (m : model) : shape list =
@@ -573,6 +706,8 @@ let view (computer : computer) (m : model) : shape list =
       | Asking Password ->
           "password: " ^ String.make (List.length (Text.chars m.field)) '*'
       | Asking Search -> "search: " ^ m.field ^ "_"
+      | Asking Until -> "snooze until: " ^ m.field ^ "_"
+      | Asking Due -> "a task, due: " ^ m.field ^ "_"
       | Composing ->
           (if m.draft.subject = "" then "New message" else m.draft.subject)
           ^ " \xe2\x80\x94 " ^ m.account
@@ -585,6 +720,7 @@ let view (computer : computer) (m : model) : shape list =
           Printf.sprintf "%d %s%s" n one (if n = 1 then "" else "s")
         in
         if m.mailbox = drafts then count (List.length m.drafts) "draft"
+        else if m.mailbox = tasks then count (List.length m.tasks) "task"
         else count (List.length m.conversations) "conversation"
     in
     [
@@ -611,12 +747,12 @@ let view (computer : computer) (m : model) : shape list =
                  (left +. 16.) (y -. 19.) name;
              ])
          [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail);
-           ("Drafts", drafts) ])
+           ("Drafts", drafts); ("Tasks", tasks) ])
     @
     if m.query <> "" then
       [
         text blue ~bold:false ~room:(side -. 24.) (left +. 16.)
-          (top -. bar -. 12. -. (4. *. row) -. 19.)
+          (top -. bar -. 12. -. (5. *. row) -. 19.)
           ("/" ^ m.query);
       ]
     else []
@@ -631,6 +767,36 @@ let view (computer : computer) (m : model) : shape list =
             let b = field_box computer i in
             text grey ~bold:false ~room:76. x0 (b.y -. 5.) name)
           [ "To"; "Cc"; "Subject"; "Attach" ]
+    | Browsing when m.mailbox = tasks ->
+        if m.tasks = [] then
+          [ text grey ~bold:false ~room x0 (top -. bar -. 31.)
+              "No tasks: t makes one of a conversation." ]
+        else
+          List.concat
+            (List.mapi
+               (fun i (t : Item.t) ->
+                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
+                 let due = Item.field t "due" in
+                 let late =
+                   match Search.day t with
+                   | Some d ->
+                       Civil.days_from_civil d < Civil.days_from_civil m.today
+                   | None -> false
+                 in
+                 (if i = m.selected then
+                    [ rectangle (rgb 232 240 254) (room +. 16.) row
+                      |> move
+                           (x0 -. 8. +. ((room +. 16.) /. 2.))
+                           (y -. (row /. 2.)) ]
+                  else [])
+                 @ [ text
+                       (if late then rgb 197 34 31 else grey)
+                       ~bold:false ~room:(width "2026-10-30" +. 4.) x0
+                       (y -. 19.)
+                       (if due = "" then "-" else due);
+                     text ink ~bold:false ~room:(room -. 130.) (x0 +. 130.)
+                       (y -. 19.) (title t) ])
+               m.tasks)
     | Browsing when m.mailbox = drafts ->
         if m.drafts = [] then
           [ text grey ~bold:false ~room x0 (top -. bar -. 31.) "No drafts." ]

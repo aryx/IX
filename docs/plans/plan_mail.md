@@ -352,3 +352,17 @@ and the sidebar's Drafts. Not yet: the drafts on Gmail's side
 (APPEND to \Drafts), addresses completed from People (stage 8),
 attachments chosen in a file dialog (typed paths for now), a
 message's attachments saved.
+
+2026-10-29: stage 8 begun, what needs no calendar nor People: snooze
+(z in the window, `mini-pim snooze uid monday`): the conversation
+archived on Gmail's side and its items given until:; back that day at
+the next get (`Mail_sync.wake`: +X-GM-LABELS (\Inbox), found in All
+Mail by X-GM-MSGID, which mini-maild now searches), its item woke:, on
+top of the list until opened. A task of a message (t): the newest
+message stamped task, due a day typed as words (`store/When`: English
+and the author's French). Go > Tasks: the tasks not done, by their
+day, the late in red; x done. The terminal's add and set take due= and
+until= as words too. Tests: Unit_when; session.sh (snoozed Thursday
+until monday: out, not back on Sunday, back on Monday); frames (a task
+made and listed, a snooze). Not yet: the Screener, invitations, the
+recognizer over a message's text, the sender made a contact.

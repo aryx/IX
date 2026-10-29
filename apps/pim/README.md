@@ -16,7 +16,8 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
                        the window: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
-                       c compose, r a f reply, to all, forward
+                       c compose, r a f reply, to all, forward,
+                       z snooze, t a task, Go > Tasks (x done)
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -25,6 +26,9 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
         reply [-all] uid, forward uid
                        a draft printed, to edit, then send
         archive uid... out of the Inbox
+        snooze uid words
+                       the conversation out of it until a day (monday,
+                       in 3 days), back in it that day
         search query   the store's items, Gmail's syntax: from:alice
                        is:task label:travel before:2026-12-01 -word
         show id        an item, and its links both ways
@@ -65,6 +69,7 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     window/Mail_window the mail in a window
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
+    store/When         a day typed as words, English and French
     store/Search       a search over every item, Gmail's syntax
     store/Links        links both ways: the ids an item names, and the
                        items naming it

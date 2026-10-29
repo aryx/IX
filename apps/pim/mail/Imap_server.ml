@@ -93,6 +93,9 @@ let rec matches (m : message) (criteria : Imap.value list) : bool =
       (not (List.mem "\\Seen" m.flags)) && matches m rest
   | Imap.Atom a :: q :: rest when String.uppercase_ascii a = "X-GM-RAW" ->
       raw_match m (Imap.text q) && matches m rest
+  (* (a message's X-GM-MSGID is its UID here) *)
+  | Imap.Atom a :: id :: rest when String.uppercase_ascii a = "X-GM-MSGID" ->
+      Imap.text id = string_of_int m.uid && matches m rest
   | _ -> false
 
 (* "BODY[HEADER.FIELDS (FROM SUBJECT)]"'s names, in lower case *)

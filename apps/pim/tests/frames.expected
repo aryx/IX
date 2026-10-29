@@ -1,13 +1,15 @@
-empty|3|c0b23da7b0116e8732cb54171fa30a3167f64d87bcc1d9445db0092720ac0287
-fetched|12 -script 'g:2,type(secret):4,Enter:6'|a2790e564318ef169bdcdd5f4ceb118723f212ed8219b4d3d26ecf55cb4d13a1
-read|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12'|3ad57afaf4709b254df6f7a745db93b2ad6ff480b7276883cb391cc64cc1ccd8
-back|26 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,k:16,u:20'|56277c6ba7a0c758488d6106f9d366992b0a7330c8458c692c0a59eade786f8f
-search|20 -script 'g:2,type(secret):4,Enter:6,/:9,type(carol):11,Enter:13'|84dfb8c8b01e0e08a8fc2b97760c8c1f02e90ddb96ac341b53823bc393b0603f
-allmail|14 -script 'g:2,type(secret):4,Enter:6,Tab:9'|6e06c2848245008c04074ed9d0a6ac72c1f0760ef8d63333818a69e5dffb8cde
-reply|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16'|43429bd1e12366f85bdac9f9c7d80187db4ea01cb2da178c799abf10eef9006f
-replysent|30 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16,at(0;200):18-19,click:18,type(Agreed.):21,at(-254;-472):24-26,click:25'|0d8345094d79d2b6d671d7a3fc0e4e7fb5140b8ea4dce9a3b231a0d9ff1b09fe
-draft|30 -script 'c:2,at(125;404):4-5,click:4,type(bob@ix):6,at(125;336):8-9,click:8,type(lunch):10,Escape:13,at(111;485):16-17,click:16,at(111;347):19-21,click:20'|150ac48872dbb7cec7201d4641bad5fb11b63f68761b87b80daba84c3b453fe0
-archive|16 -script 'g:2,type(secret):4,Enter:6,e:9'|444729f3ec619028d464ed17dd1ebfac07410503cf65b887bba4cef963fb17a4
-menu|10 -script 'g:2,type(secret):4,Enter:6,at(-237;485):8-10,click:9'|02c9653279103c4e9883cd568900b3c8a6138ee33c4dda037b2fe27b08378011
-menuget|14 -script 'at(-411;485):1-3,click:2,at(-411;419):4-14,click:5,type(secret):8,Enter:10'|ce56b8976235d6e90e866f55e604b5210141a4dbe6b6bfa51b8f7f678000367e
-menuarchive|16 -script 'g:2,type(secret):4,Enter:6,at(-237;485):8-9,click:8,at(-237;239):10-16,click:11'|32d94a73afd9897aa2eaac82b2cb61f15fda3e26c585733c16a863d32f4009ca
+empty|3|49261b9f445116c549be7f2d6e7ca5529c4ac46444b06ceff791287979a2228e
+fetched|12 -script 'g:2,type(secret):4,Enter:6'|57facc750ee26eaa6f7841dbf3f0c0cad17253f22844ce23d8d4dd7e45009d35
+read|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12'|db83915a36ed4d319402d752552d26bbcaff459a684a5bf47008daf996e4077a
+back|26 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,k:16,u:20'|f172e413c0682a5e1aa61ac4259774c226a8606a4d0b2d12ac739b9466706b6d
+search|20 -script 'g:2,type(secret):4,Enter:6,/:9,type(carol):11,Enter:13'|98c6041bdaddd56ef907eae377162626df7ee54fe68718b84df50a44b918a58b
+allmail|14 -script 'g:2,type(secret):4,Enter:6,Tab:9'|db11bfb50d34ba739df8deaccee7fe6f3b9d7b44eb28b6d86dda3cd2ddf16714
+reply|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16'|2fb51ee46eaf9d5e2eb446dc59d8dc60e503a5add38d573ff4e67b42ba9c3042
+replysent|30 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16,at(0;200):18-19,click:18,type(Agreed.):21,at(-254;-472):24-26,click:25'|6ccb5253944812910842c1ab43cf2fb3241088c9bae877aa8b5c1ebf49f577bb
+draft|30 -script 'c:2,at(125;404):4-5,click:4,type(bob@ix):6,at(125;336):8-9,click:8,type(lunch):10,Escape:13,at(111;485):16-17,click:16,at(111;347):19-21,click:20'|17762b75c7373605088e347b960353bb64537c2a3c2192a794704ef95a2ec8c4
+task|24 -script 'g:2,type(secret):4,Enter:6,t:9,type(friday):11,Enter:13,at(111;485):16-17,click:16,at(111;311):19-21,click:20' today=2026-10-29|41e37868d07bbde53df20aa0145b1e1e16cb02939b769ace6814130011953f04
+archive|16 -script 'g:2,type(secret):4,Enter:6,e:9'|7eec4dcf6a224e9410d2d2257731f7cf46d7767baac2a77f49604bea7004be7a
+menu|10 -script 'g:2,type(secret):4,Enter:6,at(-237;485):8-10,click:9'|17eaedf291ff93d398c9250e5a14a12f5ee1fdacda00b06d151b334151c458c4
+menuget|14 -script 'at(-411;485):1-3,click:2,at(-411;419):4-14,click:5,type(secret):8,Enter:10'|caa0169c60cff87b2c8c3af41f063cd50511b2ae1b41a87934e9e6094f9d61ac
+menuarchive|16 -script 'g:2,type(secret):4,Enter:6,at(-237;485):8-9,click:8,at(-237;239):10-16,click:11'|c2a7fa9e7e9a06a94ad4ee1941d262e44b1dfa87aec53267fc72000bb08b1953
+snooze|20 -script 'g:2,type(secret):4,Enter:6,Tab:9,z:12,type(monday):14,Enter:16' today=2026-10-29|0d92127a09fdeadbc9605d7677bcd896050b04204f5b3b2774bb62fc5c7a0060

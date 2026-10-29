@@ -10,7 +10,8 @@
 # answer (Windows-1252, quoted-printable) and a newsletter listed as two
 # conversations, unread; the answer read, its text UTF-8; replied to
 # (threaded, quoted, the text UTF-8 in quoted-printable) and forwarded
-# with a file attached (plan_mail.md, stage 7); the newsletter
+# with a file attached (plan_mail.md, stage 7); snoozed and back; the
+# newsletter
 # archived, gone from INBOX, still in All Mail (and in a French Gmail's,
 # [Gmail]/Tous les messages, found by its \All); a search; the password
 # in the store's file, and refused when others may read it. Then, the
@@ -125,6 +126,20 @@ pim list
 is "    2 * 2026-10-29 Carol (2)            Re: the plan" "archived: out of INBOX"
 pim -m '[Gmail]/All Mail' list
 has '^    3 \*  *news@ix' "archived: kept in All Mail"
+# snoozed on Thursday the 29th until monday: out of the Inbox, and back
+# in it on Monday, its item saying so (the Inbox listed first: an item
+# knows the UID of the mailbox it was last listed in)
+pim list
+pim -today 2026-10-29 snooze 2 monday
+is "until 2026-11-02" "snoozed until the next Monday"
+pim -today 2026-10-29 list
+is "" "snoozed: out of the Inbox"
+pim -today 2026-11-01 list
+is "" "not yet on Sunday"
+pim -today 2026-11-02 list
+has "Carol (2)  *Re: the plan" "Monday: back in the Inbox"
+grep -l '^woke: 2026-11-02' $PIM_STORE/items/* > /dev/null ||
+  { echo "FAIL no item woke"; fail=1; }
 
 # the password in the store's file, nothing on standard input; refused
 # when others may read it

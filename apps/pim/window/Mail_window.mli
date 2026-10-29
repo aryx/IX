@@ -7,6 +7,7 @@
       | Inbox     |  news@ix               weekly          2026-10-29 |
       | All Mail  |# Carol (2)             Re: the plan    2026-10-29 |<- the
       | Drafts    |                                                   |  selected
+      | Tasks     |                                                   |
       | /plan     |                                                   |
       +-----------+---------------------------------------------------+
 
@@ -30,6 +31,14 @@
    Palm's way; Send (SMTP: Gmail's, or smtp=), Save Draft (or Escape),
    Discard. Go > Drafts lists them; o opens one again.
 
+   The suite's (plan_mail.md, stage 8): z snoozes the conversation
+   until a day typed as words (When: monday, in 3 days), archived
+   meanwhile and back on top of the Inbox that day, at the next g
+   (Mail_sync.wake); t makes its newest message a task, due a day
+   typed so, the same item (plan_pim.md, idea 1); Go > Tasks lists the
+   tasks not done by their day, the late ones in red, x marks one
+   done.
+
    The window shows mini-pim's store (Items), not the server: it opens
    at once, with or without the network, on what the last list kept,
    and g fetches (Mail_sync, one IMAP session). A message opened is
@@ -38,7 +47,7 @@
 
    The flags of the program: user= (the account), server=host:port
    and smtp=host:port (Gmail's by default), plain (no TLS:
-   mini-maild). The text is drawn
+   mini-maild), today=2026-10-29 (the tests': else the clock's). The text is drawn
    with Hershey's letters (Glyph_unicode: accents, quotes, dashes),
    each at its place, so a list is in columns. *)
 

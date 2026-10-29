@@ -13,6 +13,7 @@
  *     mini-pim reply [-all] uid        the reply to edit, then send
  *     mini-pim forward uid             the forward to edit, then send
  *     mini-pim archive uid...          out of the Inbox, kept
+ *     mini-pim snooze uid words        out of it until a day, back then
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -57,6 +58,7 @@ let usage =
   \  read uid                          a message, marked read\n\
   \  reply [-all] uid, forward uid     a draft to edit, then send\n\
   \  archive uid...                    out of the Inbox\n\
+  \  snooze uid words                  out of it until a day: monday, in 3 days\n\
   \  search query                      the store's items: from:alice is:task\n\
   \                                    label:travel before:2026-12-01 -word\n\
   \  show id                           an item, its links both ways\n\
@@ -79,6 +81,7 @@ type options = {
   mailbox : string;
   offline : bool;
   all : bool; (* reply to all *)
+  today : Civil.date; (* -today, for the tests: else the clock's *)
   args : string list; (* the command and its arguments *)
 }
 
@@ -104,6 +107,10 @@ let rec options (o : options) (args : string list) : options option =
   | "-m" :: m :: rest -> options { o with mailbox = m } rest
   | "-offline" :: rest -> options { o with offline = true } rest
   | "-all" :: rest -> options { o with all = true } rest
+  | "-today" :: d :: rest -> (
+      match Search.date d with
+      | Some today -> options { o with today } rest
+      | None -> None)
   (* (a search's words as they are: -is:message is a word, no flag) *)
   | "search" :: (_ :: _ as words) when o.args = [] ->
       Some { o with args = "search" :: words }
@@ -180,7 +187,7 @@ let send (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
 
 (* the store, and the account (-u): the online commands' and the
  * offline ones'; then [online] in a session or [offline] *)
-let reading (caps : < caps ; .. >) (o : options)
+let reading (caps : < caps ; .. >) (o : options) ~(wake : bool)
     ~(online : Items.t -> string -> Imap.t -> (unit, string) result)
     ~(offline : Items.t -> string -> (unit, string) result) : Exit.t =
   let store = Items.at (Items.place caps) in
@@ -193,9 +200,19 @@ let reading (caps : < caps ; .. >) (o : options)
         else
           match password caps with
           | Error e -> Error e
-          | Ok password ->
-              Mail_sync.session caps server ~user ~password ~mailbox:o.mailbox
-                (online store user)
+          | Ok password -> (
+              (* (the snoozed whose day has come back first: Mail_sync) *)
+              let woken =
+                if wake then
+                  Mail_sync.wake caps store server ~user ~password
+                    ~today:o.today
+                else Ok 0
+              in
+              match woken with
+              | Error e -> Error e
+              | Ok _ ->
+                  Mail_sync.session caps server ~user ~password
+                    ~mailbox:o.mailbox (online store user))
       in
       match r with Ok () -> Exit.OK | Error e -> fail caps e)
 
@@ -216,7 +233,7 @@ let show (caps : < Cap.stdout ; .. >) (l : Imap.summary list) : unit =
     (Conversations.group l)
 
 let list (caps : < caps ; .. >) (o : options) : Exit.t =
-  reading caps o
+  reading caps o ~wake:(o.mailbox = "INBOX")
     ~online:(fun store account t ->
       match
         Mail_sync.list caps store t ~account ~mailbox:o.mailbox ~query:o.query
@@ -256,7 +273,7 @@ let fetch (caps : < caps ; .. >) (o : options) (uid : int)
     | Some item -> Mail_item.key item
     | None -> ""
   in
-  reading caps o
+  reading caps o ~wake:false
     ~online:(fun store account t ->
       match Mail_sync.message caps store t ~account ~mailbox uid with
       | Error e -> Error e
@@ -302,7 +319,7 @@ let draft (caps : < caps ; .. >) (o : options) (uid : int) ~(forward : bool) :
 
 (* archive: Gmail's gesture, on the server and in the items *)
 let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
-  reading caps o
+  reading caps o ~wake:false
     ~online:(fun store account t ->
       Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
@@ -366,6 +383,21 @@ let assignments (l : string list) : (string * string) list option =
   let l' = List.filter_map one l in
   if List.length l' = List.length l then Some l' else None
 
+(* due= and until= as words: "friday" is 2026-10-30 (When) *)
+let days (today : Civil.date) (fields : (string * string) list) :
+    ((string * string) list, string) result =
+  List.fold_right
+    (fun (name, v) acc ->
+      match acc with
+      | Error e -> Error e
+      | Ok l ->
+          if (name <> "due" && name <> "until") || v = "" then Ok ((name, v) :: l)
+          else (
+            match When.parse ~today v with
+            | Some d -> Ok ((name, Mail_sync.day d) :: l)
+            | None -> Error (v ^ ": not a day (friday, in 3 days, nov 5)")))
+    fields (Ok [])
+
 (* add: an item made, stamped its id's kind unless stamp= says; set: its
  * fields given, an empty value taking one away; written at once *)
 let add (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
@@ -400,6 +432,37 @@ let set (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
       Items.save caps store item;
       Exit.OK
 
+(* snooze: the uid's conversation archived until the day the words say,
+ * back in the Inbox that day (Mail_sync) *)
+let snooze (caps : < caps ; .. >) (o : options) (uid : int) (words : string) :
+    Exit.t =
+  match When.parse ~today:o.today words with
+  | None -> fail caps (words ^ ": not a day (monday, in 3 days, nov 5)")
+  | Some until ->
+      reading caps o ~wake:false
+        ~online:(fun store account t ->
+          let listed =
+            Mail_item.listed (Items.all caps store) ~account ~mailbox:o.mailbox
+          in
+          let conversation =
+            match
+              List.find_opt
+                (List.exists (fun (s : Imap.summary) -> s.uid = uid))
+                (Conversations.group listed)
+            with
+            | Some c -> List.map (fun (s : Imap.summary) -> s.uid) c
+            | None -> [ uid ]
+          in
+          match
+            Mail_sync.snooze caps store t ~account ~mailbox:o.mailbox
+              conversation ~until
+          with
+          | Error e -> Error e
+          | Ok () ->
+              Console.print caps ("until " ^ Mail_sync.day until ^ "\n");
+              Ok ())
+        ~offline:(fun _ _ -> Error "snooze: the server's, not -offline")
+
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let default =
     {
@@ -411,6 +474,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       mailbox = "INBOX";
       offline = false;
       all = false;
+      today = When.today ();
       args = [];
     }
   in
@@ -424,13 +488,21 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       draft caps o (int_of_string uid) ~forward:false
   | Some ({ args = [ "forward"; uid ]; _ } as o) when uids [ uid ] <> [] ->
       draft caps o (int_of_string uid) ~forward:true
+  | Some ({ args = "snooze" :: uid :: (_ :: _ as words); _ } as o)
+    when uids [ uid ] <> [] ->
+      snooze caps o (int_of_string uid) (String.concat " " words)
   | Some { args = "search" :: (_ :: _ as words); _ } ->
       search caps (String.concat " " words)
   | Some { args = [ "show"; id ]; _ } -> show caps id
-  | Some { args = "add" :: id :: l; _ } when assignments l <> None ->
-      add caps id (Option.get (assignments l))
-  | Some { args = "set" :: id :: (_ :: _ as l); _ } when assignments l <> None ->
-      set caps id (Option.get (assignments l))
+  | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
+      match days o.today (Option.get (assignments l)) with
+      | Ok fields -> add caps id fields
+      | Error e -> fail caps e)
+  | Some ({ args = "set" :: id :: (_ :: _ as l); _ } as o)
+    when assignments l <> None -> (
+      match days o.today (Option.get (assignments l)) with
+      | Ok fields -> set caps id fields
+      | Error e -> fail caps e)
   | Some ({ args = "archive" :: (_ :: _ as l); _ } as o)
     when List.length (uids l) = List.length l ->
       archive caps o (uids l)
@@ -449,8 +521,8 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
   Exit.OK
 
 let commands =
-  [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "search"; "show";
-    "add"; "set" ]
+  [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
+    "show"; "add"; "set" ]
 
 let () =
   Cap.main (fun caps ->

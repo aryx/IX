@@ -8,7 +8,7 @@ TOP=.
 <mkfiles/mkconfig
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
  generators/lex generators/yacc languages/ml languages/scheme languages/pascal languages/prolog languages/datalog languages/forth editors/turbopascal/tty editors/emacs/tty machine version_control kernels/tools \
- typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc games editors/drscheme examples tiny
+ typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
 # The libraries first, side by side in waves (libs: below), each after

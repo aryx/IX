@@ -1,0 +1,28 @@
+# utilities/archive, built by ix's tools: each program one file, with its
+# start and its link with lib_compression (mkfiles/mklibs; for Plan 9:
+# mini-mk O=5 OS=plan9)
+TOP=../..
+<$TOP/mkfiles/mkconfig
+D=$B/utilities/archive
+LIBDIRS=lib_compression
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . $LIBI $STDI
+LIBS=$LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+
+all:V: $D/mini-tar $D/mini-gzip $D/mini-gunzip
+
+$D/%.$O: %.ml $LIBSRC
+	mkdir -p $D
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-tar: $D/Tar.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Tar Std_exit -o $D/Tar.start.$O
+	$LD $LDH -nofollow -o $target $D/Tar.start.$O $STDOBJS $LIBA $D/Tar.$O $STDEND
+$D/mini-gzip: $D/Gzip.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Gzip Std_exit -o $D/Gzip.start.$O
+	$LD $LDH -nofollow -o $target $D/Gzip.start.$O $STDOBJS $LIBA $D/Gzip.$O $STDEND
+$D/mini-gunzip: $D/Gunzip.$O $LIBS
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Gunzip Std_exit -o $D/Gunzip.start.$O
+	$LD $LDH -nofollow -o $target $D/Gunzip.start.$O $STDOBJS $LIBA $D/Gunzip.$O $STDEND
+
+clean:V:
+	rm -rf $D

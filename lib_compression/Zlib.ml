@@ -151,10 +151,13 @@ type output = { buf : Buffer.t; mutable acc : int; mutable nacc : int }
 
 let inflate s = inflate_at 0 s
 
-let inflate_blocks pos s =
+let inflate_blocks_at pos s =
+  let i = { s; pos; bit = 0 } in
   let out = Buffer.create 4096 in
-  inflate_raw { s; pos; bit = 0 } out;
-  Buffer.contents out
+  inflate_raw i out;
+  Buffer.contents out, (if i.bit > 0 then i.pos + 1 else i.pos)
+
+let inflate_blocks pos s = fst (inflate_blocks_at pos s)
 
 let put o v n =
   o.acc <- o.acc lor (v lsl o.nacc);
@@ -298,3 +301,20 @@ let gunzip s =
   let half (o : int) = Char.code s.[i.pos + o] lor (Char.code s.[i.pos + o + 1] lsl 8) in
   if (half 2, half 0) <> crc32_halves data ~pos:0 ~len:(String.length data) then corrupt "bad checksum";
   data
+
+let gzip name (mhi, mlo) data =
+  let b = Buffer.create (String.length data / 2 + 32) in
+  (* four bytes, the low first, from the two halves *)
+  let le32 ((hi : int), (lo : int)) = List.iter (fun v -> Buffer.add_char b (Char.chr (v land 255)); Buffer.add_char b (Char.chr (v lsr 8))) [ lo; hi ] in
+  Buffer.add_string b "\x1f\x8b\x08";
+  Buffer.add_char b (if name = None then '\000' else '\008');
+  le32 (mhi, mlo);
+  Buffer.add_string b "\000\003";
+  Option.iter (fun n -> Buffer.add_string b n; Buffer.add_char b '\000') name;
+  (* zlib's stream without its two bytes before and its four after *)
+  let z = deflate data in
+  Buffer.add_string b (String.sub z 2 (String.length z - 6));
+  le32 (crc32_halves data ~pos:0 ~len:(String.length data));
+  let n = String.length data in
+  le32 ((n lsr 16) land 0xffff, n land 0xffff);
+  Buffer.contents b

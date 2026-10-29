@@ -110,8 +110,24 @@ let store32 m a v = if fits ~base:m.base ~size:m.size a 4 then Bytes.set_int32_l
 let load64 m a = let o = offset m a 8 in Bytes.get_int64_le m.data o
 let store64 m a v = let o = offset m a 8 in Bytes.set_int64_le m.data o v
 
-let write_string m a str = if str <> "" then let o = offset m a (String.length str) in Bytes.blit_string str 0 m.data o (String.length str)
-let read_string m a n = if n = 0 then "" else let o = offset m a n in Bytes.sub_string m.data o n
+(* the bytes before the end of [a]'s segment, when [a .. a+n-1] runs
+ * past it into the next one: a buffer across Plan 9's bss and its heap,
+ * mapped apart (Plan9's brk); a hole between is still the next's Fault *)
+let split m a n =
+  if fits ~base:m.base ~size:m.size a n then None
+  else
+    let s = lookup m a 1 in
+    if fits ~base:s.base ~size:s.size a n then None else Some (Bits.mask32 (s.base + s.size - a))
+
+let rec write_string m a str =
+  let n = String.length str in
+  if n > 0 then match split m a n with
+    | None -> let o = offset m a n in Bytes.blit_string str 0 m.data o n
+    | Some k -> write_string m a (String.sub str 0 k); write_string m (Bits.mask32 (a + k)) (String.sub str k (n - k))
+let rec read_string m a n =
+  if n = 0 then "" else match split m a n with
+    | None -> let o = offset m a n in Bytes.sub_string m.data o n
+    | Some k -> read_string m a k ^ read_string m (Bits.mask32 (a + k)) (n - k)
 
 (* (for a reader of megabytes many times a second, a screen's: no copy) *)
 let direct m a n = if n = 0 then Bytes.empty, 0 else let o = offset m a n in m.data, o

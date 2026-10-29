@@ -93,6 +93,10 @@ val inflate : string -> string * int
  * header looked at and no checksum, for a stream whose writer got one
  * of them wrong (a PDF file's: lib_graphics/pdf's Pdf_filter) *)
 val inflate_blocks : int -> string -> string
+(* the same, and the position just past the last block, at a byte: a
+ * gzip file's members are such blocks between a header and a trailer
+ * of their own (mini-gunzip's) *)
+val inflate_blocks_at : int -> string -> string * int
 
 val deflate : string -> string
 
@@ -100,6 +104,13 @@ val deflate : string -> string
  * another header, with a CRC-32): what a web server sends for
  * "Content-Encoding: gzip" (Http) *)
 val gunzip : string -> string
+
+(* [gzip name mtime data]: a gzip file of [data], as Plan 9's gzip
+ * writes its envelope: a file's name or none (the standard input's),
+ * the time as its two halves of 16 bits (an int has 31 bits where
+ * mini-ml builds for arm, a time since 1970 more than 30 since 2004),
+ * 03 (Unix) as the system; [deflate]'s blocks inside *)
+val gzip : string option -> int * int -> string -> string
 
 (* CRC-32 (the polynomial 0xedb88320, reflected) of [len] bytes of [s]
  * from [pos], as its two halves, the high 16 bits and the low 16: an

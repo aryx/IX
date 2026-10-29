@@ -313,7 +313,7 @@ QEMU_BOOT_B = $(subst $(IMAGE),$(IMAGE_B),$(QEMU_BOOT))
 #                    (tests/session-ix-b.cmds, its rc without -m: tests/session-ix-b)
 IX = $(abspath ../..)
 IX9 = $(IX)/_mk/5-plan9
-IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
+IXDIRS = shell editors/ed utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/tests/hello kernels/9pi/tests/hog kernels/9pi/tests/tone kernels/9pi/tests/threads lib_core/commons/tests kernels/9pi/filesystems/user/dossrv \
   kernels/9pi/devices/storage/user/fdisk kernels/9pi/buses/user/usbd lib_graphics/tests windows windows/tests apps/misc profilers/misc apps/music/play apps/music/rebirth games \
   languages/smalltalk languages/smalltalk/hosts/draw languages/scheme languages/pascal languages/prolog editors/drscheme apps/office apps/page editors/turbopascal/hosts/draw editors/emacs/draw \
   typesetting/man networking browsers/lynx browsers/netscape assembler linker linker/tools languages/ml languages/c builder generators/lex generators/yacc
@@ -915,6 +915,7 @@ CARD_utilities/pipe = tee=$(IX9)/utilities/pipe/mini-tee tail=$(IX9)/utilities/p
 CARD_utilities/process = sleep=$(IX9)/utilities/process/mini-sleep spin=$(IX9)/utilities/process/mini-spin time=$(IX9)/utilities/process/mini-time
 CARD_utilities/calc = hoc=$(IX9)/utilities/calc/hoc/mini-hoc dc=$(IX9)/utilities/calc/dc/mini-dc bc=$(IX9)/utilities/calc/bc/mini-bc
 CARD_utilities/time = date=$(IX9)/utilities/time/mini-date cal=$(IX9)/utilities/time/mini-cal
+CARD_utilities/archive = tar=$(IX9)/utilities/archive/mini-tar gzip=$(IX9)/utilities/archive/mini-gzip gunzip=$(IX9)/utilities/archive/mini-gunzip
 CARD_utilities/misc = wc=$(IX9)/utilities/misc/mini-wc basename=$(IX9)/utilities/misc/mini-basename \
   cmp=$(IX9)/utilities/compare/mini-cmp unmount=$(IX9)/utilities/namespace/mini-unmount seq=$(IX9)/utilities/misc/mini-seq \
   cleanname=$(IX9)/utilities/misc/mini-cleanname du=$(IX9)/utilities/misc/mini-du xd=$(IX9)/utilities/byte/mini-xd test=$(IX9)/utilities/misc/mini-test
@@ -926,7 +927,7 @@ CARD_typesetting = troff=$(IX9)/typesetting/troff/mini-troff man=$(IX9)/typesett
 CARD_toolchain = asm=$(IX9)/assembler/mini-asm ld=$(IX9)/linker/mini-ld
 # the browsers and the network's programs (plan_browser.md, stage 10)
 CARD_net = netscape=$(IX9)/browsers/netscape/netscape lynx=$(IX9)/browsers/lynx/mini-lynx curl=$(IX9)/networking/mini-curl timesync=$(IX9)/networking/mini-timesync
-CARD_PROGS = system apps devtools toolchain games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/misc typesetting examples
+CARD_PROGS = system apps devtools toolchain games net utilities/files utilities/text utilities/pipe utilities/process utilities/calc utilities/time utilities/archive utilities/misc typesetting examples
 CARD_BIN = $(foreach d,$(CARD_PROGS),$(CARD_$(d)))
 card_progs = $(foreach d,$(CARD_PROGS),$(addprefix progs/$(d)/,$(CARD_$(d))))
 MKFS = ../../_build/default/kernels/tools/Mkfs.exe

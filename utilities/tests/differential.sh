@@ -14,7 +14,7 @@ U=$ROOT/_mk/5-plan9/utilities
 P=${PRINCIPIA:-$HOME/principia}/ROOT/arch/arm/bin
 M=$ROOT/bin/mini-5i
 [ -x $P/ls ] || { echo "skipped: no principia binaries in $P"; exit 0; }
-[ -x $U/process/mini-sleep ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare, process, text, byte)"; exit 1; }
+[ -x $U/process/mini-sleep ] || { echo "FAIL: not built (mini-mk O=5 OS=plan9 in utilities/files, misc, namespace, time, pipe, compare, process, text, byte, archive)"; exit 1; }
 W=$(mktemp -d); trap 'rm -rf $W' EXIT
 cd $W
 mkdir -p sub "a dir"; echo hi > f1; echo there > "it's"; echo x > sub/inner; chmod 755 f1; touch "sp ace"
@@ -729,5 +729,73 @@ teed() { n=$((n + 1)); local a b
   if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL tee $*"; diff <(echo "$a") <(echo "$b") | head -6; fi
 }
 teed; teed new; teed f1 new; teed -a f1 new; teed nonexistent/x new; teed -x; teed -i new
+# tar: the archives it writes (their bytes, after), what it lists and
+# takes out; a.tar and b.tar made first by principia's, in $W
+$M $P/tar cf $W/a.tar f1 sub "it's" > /dev/null 2>&1
+$M $P/tar cf $W/b.tar old "a dir" > /dev/null 2>&1
+mkdir -p $W/deep/er; echo x > $W/deep/er/y; touch -d "2020-01-09 03:04" $W/deep/er/y $W/deep/er $W/deep
+while read -r args; do eval "changed $U/archive/mini-tar $P/tar $args"; done <<'END'
+cf new.tar f1
+cf new.tar f1 sub "it's" "sp ace"
+cvf new.tar sub deep
+cf new.tar nonexistent f1
+cf new.tar ./sub//inner
+cf new.tar ../$(basename $W)/f1
+cPf new.tar f1 sub
+cuf 7 new.tar f1
+cfu new.tar 7 f1
+rf a.tar old
+rvf a.tar deep
+tf a.tar
+tf b.tar
+tf a.tar sub
+tf a.tar nonexistent
+xf a.tar
+xvf a.tar
+xvf b.tar
+xf a.tar sub
+xvf a.tar sub/inner
+xkf a.tar f1
+tf nonexistent.tar
+tf f1
+tf sub/inner
+q
+t
+
+-x
+END
+# gzip, gunzip: the headers are gzip.c's bytes, the blocks are not
+# (Zlib's fixed codes): ours read by theirs and theirs by ours, and
+# what each says and leaves
+while read -r args; do eval "changed $U/archive/mini-gunzip $P/gunzip $args"; done <<'END'
+-c f1
+f1
+nonexistent
+-x
+END
+gzipped() { n=$((n + 1)); local f=$1 a b
+  $M $U/archive/mini-gzip -c $f | $M $P/gunzip -c > $W.ta 2>&1
+  $M $P/gzip -c $f | $M $U/archive/mini-gunzip -c > $W.tb 2>&1
+  if ! cmp -s $W.ta $f || ! cmp -s $W.tb $f; then failures=$((failures + 1)); echo "FAIL gzip $f"; fi
+  n=$((n + 1))
+  a=$($M $U/archive/mini-gzip -c $f | head -c $((10 + ${#f} + 1)) | od -c); b=$($M $P/gzip -c $f | head -c $((10 + ${#f} + 1)) | od -c)
+  if [ "$a" != "$b" ]; then failures=$((failures + 1)); echo "FAIL gzip's header $f"; diff <(echo "$a") <(echo "$b") | head -6; fi
+  n=$((n + 1))
+  rm -rf $W.a $W.b; cp -a $W $W.a; cp -a $W $W.b
+  (cd $W.a && $M $U/archive/mini-gzip $f && $M $P/gunzip -tv $(basename $f).gz) > $W.ta 2>&1
+  (cd $W.b && $M $P/gzip $f && $M $U/archive/mini-gunzip -tv $(basename $f).gz) > $W.tb 2>&1
+  if ! cmp -s $W.ta $W.tb; then failures=$((failures + 1)); echo "FAIL gzip, gunzip -tv $f"; diff $W.ta $W.tb | head -6; fi
+  rm -f $W.ta $W.tb
+}
+head -c 30000 $ROOT/README.md > $W/big; touch -d "2020-01-09 03:04" $W/big
+for f in f1 old sub/inner big a.tar; do gzipped $f; done
+# tar's z: the archive inside the .tgz the one without z, as
+# principia's gunzip gives it (its tar runs /bin/gunzip, not here)
+n=$((n + 1))
+(cd $W && $M $U/archive/mini-tar czf $W.z.tgz f1 sub && $M $U/archive/mini-tar cf $W.z.tar f1 sub)
+$M $P/gunzip -c $W.z.tgz | cmp -s - $W.z.tar || { failures=$((failures + 1)); echo "FAIL tar czf"; }
+n=$((n + 1))
+[ "$($M $U/archive/mini-tar tvf $W.z.tgz)" = "$($M $U/archive/mini-tar tvf $W.z.tar)" ] || { failures=$((failures + 1)); echo "FAIL tar tzf"; }
+rm -f $W.z.tgz $W.z.tar
 echo "ok $((n - failures)) of $n cases as principia's"
 [ $failures = 0 ]

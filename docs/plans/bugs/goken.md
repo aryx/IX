@@ -550,6 +550,22 @@ with a font and then a dot (`\fI...application begins...\fP`) is a
 request for troff, and is dropped (`pushtls(2)`). mini-troff has what
 the page's author wrote in the five; `man.sh` lists them.
 
+## tar: principia's C
+
+From mini-tar's differential test (utilities/tests/differential.sh,
+2026-10-29).
+
+### 39. tar tv prints no modes, and its lines come apart
+
+principia's `tar.c` prints a long line of `tv` by `%M %8lld ...`, and
+its main has `fmtinstall('M', dirmodefmt)` commented out (`//XXX:`).
+`%M` is then no verb: print writes `%M` and takes no argument, and
+the line is the others' arguments one place off (`%M% 12884902324
+<nil> Jan 2020` for a file of 3 bytes); the native build (goken's
+boot-gcc) dies of it. mini-tar prints what the line was to be (a
+mode as ls's, then the length, the date and the name); its
+differential test leaves `tv` out.
+
 ## How they were found
 
 The runners that compare ix with its reference, case by case or file

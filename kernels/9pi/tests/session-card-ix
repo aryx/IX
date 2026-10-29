@@ -82,6 +82,8 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/fdisk
 /bin/free
 /bin/grep
+/bin/gunzip
+/bin/gzip
 /bin/hello
 /bin/hello
 /bin/hellodraw
@@ -121,6 +123,7 @@ d-rwxrwxrwx x 0 pad pad 0 Sep 26 00:MM /usr
 /bin/squeak
 /bin/stats
 /bin/tail
+/bin/tar
 /bin/tee
 /bin/test
 /bin/tetris

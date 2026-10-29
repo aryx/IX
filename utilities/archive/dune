@@ -1,0 +1,7 @@
+; utilities/archive: Plan 9's tar, gzip and gunzip, in OCaml, each one
+; file; zlib's deflate and inflate from lib_compression
+(executables
+ (names Tar Gzip Gunzip)
+ (public_names mini-tar mini-gzip mini-gunzip)
+ (package ix)
+ (libraries ix_compression ix_core fpath caps unix))

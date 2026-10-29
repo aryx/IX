@@ -153,6 +153,8 @@ yes
 /bin/fdisk
 /bin/free
 /bin/grep
+/bin/gunzip
+/bin/gzip
 /bin/hello
 /bin/hello
 /bin/hellodraw
@@ -192,6 +194,7 @@ yes
 /bin/squeak
 /bin/stats
 /bin/tail
+/bin/tar
 /bin/tee
 /bin/test
 /bin/tetris

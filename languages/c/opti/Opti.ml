@@ -84,6 +84,9 @@ let commutes = function Tree.Add | And | Or | Xor -> true | _ -> false
 (* log2 of a power of 2, or None *)
 let log2 c = List.find_opt (fun k -> Int64.shift_left 1L k = c) (List.init 63 Fun.id)
 
+(* a register's bytes *)
+let word () = if Emit.arm () then 4 else 8
+
 let rec imm = function
   | Int (c, _) :: Op (o, (I _ as t)) :: rest when immediate o -> OpImm (o, t, c) :: imm rest
   (* by a power of 2, a multiplication is a shift *)
@@ -98,9 +101,16 @@ let rec imm = function
       OpImm (Lshr, t, Int64.of_int (Option.get (log2 c))) :: imm rest
   | Int (c, _) :: Op (Lmod, (I _ as t)) :: rest when c > 1L && log2 c <> None ->
       OpImm (And, t, Int64.sub c 1L) :: imm rest
-  | Int (c, _) :: Op (Div, (I (n, true) as t)) :: rest when c > 1L && log2 c <> None ->
+  | Int (c, _) :: Op (Div, (I (n, s) as t)) :: rest
+    when c > 1L && log2 c <> None && (s || n = word ()) ->
       Dup :: OpImm (Ashr, t, Int64.of_int ((8 * n) - 1)) :: OpImm (And, t, Int64.sub c 1L)
       :: Op (Add, t) :: OpImm (Ashr, t, Int64.of_int (Option.get (log2 c))) :: imm rest
+  (* a signed division of an unsigned (an index's: (lo + hi) / 2 in
+   * v[...]): Gen's DIV of the register, signed when the type fills it
+   * (above), of a zero-extended value when it is narrower (arm64's
+   * u32), the unsigned division then *)
+  | Int (c, _) :: Op (Div, (I _ as t)) :: rest when c > 1L && log2 c <> None ->
+      OpImm (Lshr, t, Int64.of_int (Option.get (log2 c))) :: imm rest
   (* the constant first, the deeper operand having been computed first *)
   | Int (c, _) :: Swap :: Op (o, (I _ as t)) :: rest when commutes o -> OpImm (o, t, c) :: imm rest
   | i :: rest -> i :: imm rest

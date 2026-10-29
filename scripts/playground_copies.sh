@@ -41,7 +41,7 @@ lib_gui libs/gui
 lib_audio libs/audio
 apps/music apps/music
 lib_playground/physics libs/physics
-lib_ai libs/ai
+lib_playground/ai libs/ai
 lib_playground/juice libs/juice
 lib_terminal libs/terminal
 apps/office appkits/document appkits/richtext appkits/paint appkits/draw appkits/sheet appkits/sheet_view apps/office/embed apps/office/stroke_text apps/office/file_menu apps/graphics/draw_view languages/formula

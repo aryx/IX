@@ -1,9 +1,0 @@
-# lib_ai, a library of ix's tools (mkfiles/mklib): a way through a map
-# (the playground's Ai over it)
-TOP=..
-<$TOP/mkfiles/mkconfig
-LIB=lib_ai
-DIRS=. movement
-NEEDS=
-UNITS=Pathfind
-<$TOP/mkfiles/mklib

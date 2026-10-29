@@ -5,6 +5,6 @@ TOP=../..
 <$TOP/mkfiles/mkconfig
 LIB=lib_playground/apis
 DIRS=. ../ways
-NEEDS=lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking/netcode lib_ai
+NEEDS=lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking/netcode lib_playground/ai
 UNITS=Audio Audio3d Gui Juice Multiplayer Physics Ai Bigbang
 <$TOP/mkfiles/mklib

@@ -1,4 +1,4 @@
-(* Ways: the playground's AI (lib_playground's Ai, over lib_ai's
+(* Ways: the playground's AI (lib_playground's Ai, over lib_playground/ai's
  * Pathfind) for Quake's monsters, with ai=ways, beside QuakeC's own:
  * a way to the player around the walls, and an aim that gets better.
  *

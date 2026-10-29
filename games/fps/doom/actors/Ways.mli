@@ -1,4 +1,4 @@
-(* Ways: the playground's AI (lib_playground's Ai, over lib_ai's
+(* Ways: the playground's AI (lib_playground's Ai, over lib_playground/ai's
  * Pathfind) for Doom's monsters, with ai=ways: a way through the level
  * to the player, and an aim that gets better.
  *

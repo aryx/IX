@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* lib_ai and the playground's Ai under mini-ml (../mini_ml.sh): what
+(* lib_playground/ai and the playground's Ai under mini-ml (../mini_ml.sh): what
  * mini-doom asks of them -- a flow field and its next steps, a way, an
  * aim error -- and Pathfind's searches, the same numbers as OCaml's *)
 

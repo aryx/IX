@@ -362,7 +362,7 @@ compiles_parts "lib_compression lib_crypto lib_networking networking browsers" \
   browsers/javascript "browsers/engine browsers/webapi" \
   "browsers/netscape browsers/css browsers/html"
 compiles_parts \
-  "games lib_playground lib_ai lib_graphics lib_gui examples apps" \
+  "games lib_playground lib_graphics lib_gui examples apps" \
   games/fps "games/racing apps" "lib_graphics lib_playground"
 family "m-ix builds part of itself" system
 

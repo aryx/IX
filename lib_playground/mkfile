@@ -3,7 +3,7 @@
 # random numbers and the layers (camera, sprites, tiles). Its other
 # parts are libraries of their own, after the ones they stand on:
 # juice/ (over nothing), physics/ (after lib_graphics), apis/ (after
-# physics/, lib_gui, lib_audio, juice/, netcode, lib_ai),
+# physics/, lib_gui, lib_audio, juice/, netcode, ai/),
 # platforms/ and each platform (platforms/ppm...).
 TOP=..
 <$TOP/mkfiles/mkconfig

@@ -1,0 +1,9 @@
+; the unit tests of lib_playground/ai and of apis/'s Ai over it (Testo),
+; the playground's of what was copied: dune's only (dune exec
+; ./lib_playground/ai/tests/Test.exe)
+; (its own stanzas, not a part of ai/'s folders)
+(include_subdirs no)
+
+(executable
+ (name Test)
+ (libraries ix_ai ix_playground alcotest testo))

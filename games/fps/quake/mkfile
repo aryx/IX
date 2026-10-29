@@ -15,7 +15,7 @@ D=$B/games/fps/quake$BESIDE
 # (the playground's apis: Audio, Audio3d and Ai, with what they stand on,
 # as ../../mkgames)
 LIBDIRS=lib_compression lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio lib_networking \
- lib_networking/netcode lib_ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+ lib_networking/netcode lib_playground/ai lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the folders of the modules: dune's comment says which)
 DIRS=. model render server game sound

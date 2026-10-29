@@ -1,4 +1,4 @@
-# lib_ai: the author's playground's game AI, its ways through a map
+# lib_playground/ai: the author's playground's game AI, its ways through a map
 
 Game AI written to be taught, one idea a module, each `.mli` with its
 diagram, its worked example and its references, from the author's
@@ -17,8 +17,8 @@ code, in that case it's simple to copy the whole thing").
 
 Each copied file says in one line where it comes from and what changed
 (`ix: the author's playground's <path>; ...`). The lists and the
-numbers below are `scripts/playground_copies.sh lib_ai`'s, against the
-playground at `a6fd655f` (2026-10-23).
+numbers below are `scripts/playground_copies.sh lib_playground/ai`'s,
+against the playground at `a6fd655f` (2026-10-23).
 
 ## What was copied
 
@@ -35,7 +35,8 @@ playground at `a6fd655f` (2026-10-23).
   `aim_error`'s.
 
 The folders are the playground's (`movement/`), folders only: one
-library, `ix_ai` for dune, `lib_ai` for mini-mk.
+library, `ix_ai` for dune, `lib_playground/ai` for mini-mk (old: the
+top's `lib_ai/`, moved here, its only user the playground).
 
 ## What changed
 
@@ -74,5 +75,5 @@ no game of ix's asking them yet.
 
 ## Tests
 
-    dune build ./lib_ai/tests/Test.exe && ./_build/default/lib_ai/tests/Test.exe
-    lib_ai/tests/mini_ml.sh        # by mini-ml, on arm64 and on arm
+    dune exec ./lib_playground/ai/tests/Test.exe
+    lib_playground/ai/tests/mini_ml.sh   # by mini-ml, on arm64 and on arm

@@ -5,9 +5,10 @@
 ;   random/   Lehmer (its libs/random)
 ;   juice/    a game's feel, a library of its own (its libs/juice)
 ;   physics/  a physics engine in 2D, a library of its own (its libs/physics/2d)
+;   ai/       ways through a map, a library of its own (its libs/ai)
 ;   layers/   what games are made of: Camera2d, Sprite, Tilemap
 ;   apis/     its face of each library a program calls: Physics (physics/), Juice (juice/),
-;             Gui (lib_gui), Multiplayer (lib_networking/netcode), Ai (lib_ai)
+;             Gui (lib_gui), Multiplayer (lib_networking/netcode), Ai (ai/)
 ;   ways/     other ways to write a program on it: Bigbang (How to Design
 ;             Programs' world)
 ;   platforms/  the platforms, each a library of its own (ppm, sdl; and

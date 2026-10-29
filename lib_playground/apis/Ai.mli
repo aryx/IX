@@ -12,7 +12,7 @@
    In ix, the ways through a map and a bot's aim only, what mini-doom's
    monsters ask (the ix: line below). *)
 
-(* ix: the author's playground's playground/apis/Ai.mli; its ways through a map, and aim_error of its bots; not its steering, its opponent, its state machine, nor the rest of its bots (lib_ai/README.md); its optional arguments said, the defaults the comments give: diagonal false, settle 30 *)
+(* ix: the author's playground's playground/apis/Ai.mli; its ways through a map, and aim_error of its bots; not its steering, its opponent, its state machine, nor the rest of its bots (lib_playground/ai/README.md); its optional arguments said, the defaults the comments give: diagonal false, settle 30 *)
 
 open Playground
 

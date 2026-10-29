@@ -87,12 +87,18 @@ let initial (caps : caps) (flags : Playground.flags) : model =
         | None -> Mail_sync.gmail)
     | None -> { Mail_sync.gmail with plain = List.mem_assoc "plain" flags }
   in
+  (* the store's password file, if the author made one *)
+  let password, status =
+    match Mail_sync.saved_password caps with
+    | Ok p -> (p, "")
+    | Error e -> (None, e)
+  in
   load caps
     {
       account = flag "user";
       server;
       mailbox = "INBOX";
-      password = None;
+      password;
       query = "";
       conversations = [];
       selected = 0;
@@ -101,7 +107,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       mode = Browsing;
       field = "";
       after = None;
-      status = "";
+      status;
       held = Set_.empty;
     }
 

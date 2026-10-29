@@ -116,4 +116,18 @@ let tests (caps : caps) =
             (List.map
                (fun (s : Imap.summary) -> s.uid)
                (Mail_item.listed items ~account:"bob" ~mailbox:"INBOX")));
+      Testo.create "the password file: none, its first line, refused if others read it"
+        (fun () ->
+          let dir = fresh () in
+          Unix.mkdir dir 0o755;
+          let file = Filename.concat dir "password" in
+          let saved () = Mail_sync.saved_password caps in
+          Alcotest.(check bool) "none" true (saved () = Ok None);
+          Out_channel.with_open_gen [ Open_wronly; Open_creat ] 0o600 file
+            (fun oc -> output_string oc "abcdefghijklmnop\n");
+          Alcotest.(check bool) "its first line" true
+            (saved () = Ok (Some "abcdefghijklmnop"));
+          Unix.chmod file 0o644;
+          Alcotest.(check bool) "others may read it: refused" true
+            (match saved () with Error _ -> true | Ok _ -> false));
     ]

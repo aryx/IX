@@ -161,7 +161,10 @@ Gmail account is harder, and this is where much of the work is:
   not in the store, not in a file of the tree, not in a test's
   environment. A place to keep it is plan_gaps.md's password store,
   when it exists; `pim remind`, which checks mail in the background,
-  is given it by the window that asked.
+  is given it by the window that asked. (2026-10-29, the author: "yes
+  let's do this ~/.ix-pim/ thing": a file the author makes,
+  `~/.ix-pim/password`, mode 600, is read first; mini-pim still writes
+  it nowhere, and refuses a file others may read, as ssh a key.)
 - **`make test` never talks to Gmail.** A server of ix's own,
   `tests/`' mini-maild: SMTP from `Mail_server`, and the IMAP subset
   above, Gmail's extensions included, over a mailbox written for the
@@ -298,3 +301,11 @@ Conversation (Open, Back to List, Archive, Next, Previous), Go (Inbox,
 All Mail), each item saying its key; a key and an item are one
 command, done by one function. mini-office's dropdowns (Gui.menu_in).
 Three more frames, by the mouse: a menu open, Get Mail, Archive.
+
+2026-10-29: the app password from a file the author makes, the
+store's `password` (`~/.ix-pim/password`), its first line, read by the
+commands and the window before asking; refused, and said, when its
+mode lets others read it. An app password stays valid until revoked
+(or the account's password changed), so typed once into that file.
+Tests: Unit_items (none, its line, refused), session.sh (a list with
+nothing on standard input; the file opened to others refused).

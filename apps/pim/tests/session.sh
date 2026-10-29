@@ -9,7 +9,8 @@
 # with a dot whole); the relay refused. Read by IMAP: a question, its
 # answer (Windows-1252, quoted-printable) and a newsletter listed as two
 # conversations, unread; the answer read, its text UTF-8; the newsletter
-# archived, gone from INBOX, still in All Mail; a search. Then, the
+# archived, gone from INBOX, still in All Mail; a search; the password
+# in the store's file, and refused when others may read it. Then, the
 # server gone, the same read from mini-pim's store (-offline), and a
 # server not there. No network but this machine's, and never Gmail.
 #
@@ -91,6 +92,15 @@ is "    2 * 2026-10-29 Carol (2)            Re: the plan" "archived: out of INBO
 pim -m '[Gmail]/All Mail' list
 has '^    3 \*  *news@ix' "archived: kept in All Mail"
 
+# the password in the store's file, nothing on standard input; refused
+# when others may read it
+(umask 077; echo secret > $PIM_STORE/password)
+timeout 20 $PIM -s $I -plain -u erin@ix list < /dev/null > $W/out 2>&1
+has "Re: the plan" "the password from ~/.ix-pim/password"
+chmod 644 $PIM_STORE/password
+timeout 20 $PIM -s $I -plain -u erin@ix list < /dev/null > $W/out 2>&1
+has "others may read it" "a password file others may read: refused"
+rm $PIM_STORE/password
 pim list
 kill $pid; wait $pid 2> /dev/null
 # offline: what the last list and read kept

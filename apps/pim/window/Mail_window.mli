@@ -18,7 +18,8 @@
    Escape: back to the list; e: archive it; /: search the store, words
    in who sent it and the subject; Tab: Inbox or All Mail (fetched when
    the password is known); g: get the mail, the app password asked once
-   and kept while the window is open, never written. Mail > Exit ends
+   and kept while the window is open, never written (or read from the
+   store's file password, if the author made one: Mail_sync). Mail > Exit ends
    the program. Unread conversations are in bold.
 
    The window shows mini-pim's store (Items), not the server: it opens

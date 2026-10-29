@@ -44,6 +44,17 @@ val archive :
   < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t -> Imap.t ->
   account:string -> mailbox:string -> int list -> (unit, string) result
 
+(* the app password the author keeps in the store's directory, the
+ * file "password" (~/.ix-pim/password): its first line. mini-pim never
+ * writes it; a person makes it, readable by them alone:
+ *
+ *     (umask 077; read -s P; echo "$P" > ~/.ix-pim/password)
+ *
+ * Ok None when there is none; an Error when others may read it (its
+ * mode not 600 or 400: ssh's rule for a key), it is not used then *)
+val saved_password :
+  < Cap.env ; Cap.open_in ; .. > -> (string option, string) result
+
 (* the [n] last of a list *)
 val newest : int -> 'a list -> 'a list
 

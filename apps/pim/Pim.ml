@@ -15,7 +15,9 @@
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
  * app password (plan_mail.md: Google's one exception to OAuth), read
- * from the first line of standard input and never written anywhere.
+ * from the store's file password if the author made one (mode 600,
+ * Mail_sync.saved_password), else from the first line of standard
+ * input; never written by mini-pim.
  * -s host:port and -plain (no TLS): mini-maild on this machine.
  *
  * send: to whom the message's To:, Cc: and Bcc: say (Smtp.envelope),
@@ -51,8 +53,8 @@ let usage =
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
-  \  -u      the account: log in as that user, the password the first line\n\
-  \          of stdin\n\
+  \  -u      the account: log in as that user, the password the store's\n\
+  \          file (~/.ix-pim/password, mode 600) or the first line of stdin\n\
   with no command, the window: mini-pim user=... [server=host:port] [plain]"
 
 type options = {
@@ -94,10 +96,17 @@ let fail (caps : < Cap.stderr ; .. >) (why : string) : Exit.t =
   Console.eprint caps (why ^ "\n");
   Exit.Err why
 
-let password (caps : < Cap.stdin ; .. >) : string option =
-  match In_channel.input_line (Console.stdin caps) with
-  | Some p -> Some (String.trim p)
-  | None -> None
+(* the store's password file (Mail_sync.saved_password), else the first
+ * line of standard input *)
+let password (caps : < Cap.env ; Cap.open_in ; Cap.stdin ; .. >) :
+    (string, string) result =
+  match Mail_sync.saved_password caps with
+  | Error e -> Error e
+  | Ok (Some p) -> Ok p
+  | Ok None -> (
+      match In_channel.input_line (Console.stdin caps) with
+      | Some p -> Ok (String.trim p)
+      | None -> Error "no password: ~/.ix-pim/password, or standard input")
 
 let connect (caps : < caps ; .. >) (o : options) (default : string * int) :
     (Lines.t, string) result =
@@ -123,12 +132,12 @@ let send (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
   in
   let auth =
     match o.user with
-    | None -> None
-    | Some u -> Option.map (fun p -> (u, p)) (password caps)
+    | None -> Ok None
+    | Some u -> Result.map (fun p -> Some (u, p)) (password caps)
   in
-  match connect caps o ("smtp.gmail.com", 465) with
-  | Error why -> fail caps why
-  | Ok conn -> (
+  match (auth, connect caps o ("smtp.gmail.com", 465)) with
+  | Error why, _ | _, Error why -> fail caps why
+  | Ok auth, Ok conn -> (
       let c =
         Smtp.client ~hello:"mini-pim" ~auth [ Smtp.envelope ~sender mail ]
       in
@@ -177,8 +186,8 @@ let reading (caps : < caps ; .. >) (o : options)
         if o.offline then offline store user
         else
           match password caps with
-          | None -> Error "no password on standard input"
-          | Some password ->
+          | Error e -> Error e
+          | Ok password ->
               Mail_sync.session caps server ~user ~password ~mailbox:o.mailbox
                 (online store user)
       in

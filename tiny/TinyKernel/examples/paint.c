@@ -3,6 +3,11 @@
 // paint: TinyKernel.ml's program that draws. The mouse paints with a
 // button down (the left one black, the middle one red, the right one
 // white), a ball goes across the top by the clock, c clears, q quits.
+// The ball's place is the clock's: 4 pixels a period since the boot,
+// back and forth, so the screen at a time does not depend on when
+// paint started (old: 4 pixels a move since paint started, the ball a
+// few pixels further when the boot was longer, its test's screen
+// recorded again after changes elsewhere).
 // One loop waiting for the three at once: ready on the mouse and the
 // keys, until the ball's next move. Its pixels are the kernel's: it
 // writes messages to its descriptor 3 (draw.h) and reads its mouse, 4:
@@ -11,6 +16,14 @@
 #include "../libc/draw.h"
 
 enum { Grey = 1, Black, Red, White, Blue, Yellow, Period = 50 };
+
+// the ball's x at the n-th period: 0 to 1008 and back, 4 pixels a step
+int
+ball(int n)
+{
+	n = n % 504;
+	return 4 * (n < 252 ? n : 504 - n);
+}
 
 void
 clear(void)
@@ -25,7 +38,7 @@ clear(void)
 void
 main(void)
 {
-	int m[3], fds[2], mouse, k, x, dx, next, ink;
+	int m[3], fds[2], mouse, k, x, next, ink;
 	char c;
 
 	mouse = MOUSE;
@@ -34,9 +47,8 @@ main(void)
 	clear();
 	fds[0] = mouse;
 	fds[1] = 0;
-	x = 0;
-	dx = 4;
-	next = ticks() + Period;
+	x = ball(ticks() / Period);
+	next = (ticks() / Period + 1) * Period;
 	for(;;){
 		if(d_flush() < 0)
 			exit(1);
@@ -57,13 +69,11 @@ main(void)
 		} else {
 			// the ball: a square of 16, between the title and the line
 			d_fill(SCREEN, Grey, x, 32, x + 16, 48);
-			if(x + dx < 0 || x + dx > 1008)
-				dx = -dx;
-			x += dx;
+			x = ball(ticks() / Period);
 			d_fill(SCREEN, Yellow, x, 32, x + 16, 48);
-			// (from now, not from when it was due: a ball that is late
-			// does not run to catch up, and flood who shows it)
-			next = ticks() + Period;
+			// (the next period's start: a ball that is late jumps to
+			// its place, one move drawn, not each one it missed)
+			next = (ticks() / Period + 1) * Period;
 		}
 	}
 	exit(0);

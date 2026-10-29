@@ -191,6 +191,32 @@ interpreter on trees, with quickening and closures (`opti/`).
   known. Possibly after plan_dotnet.md's JIT, reusing its lessons.
 - Incremental layout (dirty bits).
 
+### Tools a programmer uses
+
+Four that came up in plan_apps.md's survey of the applications, and
+are a programmer's rather than a user's (the author: "plan_gaps is
+really for the 'principia softwarica' hardcore aspect; stuff a
+programmer should know, programs that a developer use. but apps/ is
+different").
+
+- **Search by an index**, the pair of grep (`utilities/text/Grep.ml`),
+  which reads everything each time: an inverted index, its lists of
+  places compressed, results ranked (tf-idf, BM25); and for code, Russ
+  Cox's trigram index, a regular expression turned into the trigrams
+  a match must have, the files that have them then grepped.
+- **Sync by rsync's rolling checksum** (Tridgell, 1996): two copies of
+  a file made the same by sending what differs, without either side
+  having both; and chunks cut by their content, each stored once
+  (Plan 9's venti). The pair of mini-git's deltas, which have both
+  files at hand.
+- **A password store**: Plan 9's secstore (the keys kept encrypted
+  under one password) and factotum (a process holding them, that
+  answers the protocols for the others, so no program sees a key).
+  Over `lib_crypto`'s AEADs; it wants bcrypt or scrypt, below.
+- **Symbolic algebra**: expressions differentiated and simplified
+  (SICP's example, Macsyma's descendants), and a function plotted,
+  beside `utilities/calc`'s hoc, bc and dc, which compute numbers.
+
 ### Smaller
 
 - **Utilities**: a DFA (Thompson's construction then the subset's) as
@@ -232,3 +258,7 @@ interpreter on trees, with quickening and closures (`opti/`).
 ## Status
 
 2026-10-29: survey written. Nothing built.
+
+2026-10-29: "Tools a programmer uses" added, four from plan_apps.md's
+survey (search by an index, rsync, a password store, symbolic
+algebra). Nothing built.

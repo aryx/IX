@@ -54671,3 +54671,103 @@ Claude traced most of the macOS `make test` failures to bash 3.2, BSD `date`, an
 Claude took on the tiny-ml "label ml_start defined twice" failure as the last of the seven.
 Claude named the tiny-ml test program `prog_main.tm` instead of `start_main.tm`, and the tiny-ml tests then passed.
 Claude started a full `make test` rerun to check the tiny-kernel jobs and the rest.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:15
+
+**Yoann:**
+
+> let's commit
+
+**Claude (summary):**
+
+Claude committed the macOS fixes as `4ec49c49`, covering eight files plus `prompt-history.md`.
+Claude confirmed `make test` passes on this Mac: 122 jobs, 0 failures, 5 skipped.
+Claude did not run the suite on Linux, so that remains unverified.
+Claude flagged the `printf` replacing `$(file >…)` in `tiny/TinyKernel/Makefile` as the change most worth checking under make 4.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:26
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended starting stage 1 of the .NET plan, the metadata reader and listing.
+Claude said it is the root dependency for mini-tiger, mini-csc, and the JIT.
+Claude set the success test as matching survey.txt row counts and reading Microsoft's library fully.
+Claude asked Yoann to decide whether to commit the ten .dll test files, which it recommended.
+Claude also listed mini-tiger's location, the database journal, and a Linux Makefile check as alternatives.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:35
+
+**Yoann:**
+
+> we recently explored gaps in IX (m-ix and t-ix). I wonder if we have also important gaps in apps/
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:35
+
+**Yoann:**
+
+> we definitely have in games/ but I expect more ~/playground to be the home for it
+
+**Claude (summary):**
+
+Claude said it was comparing ix's apps/ directory against ~/playground/apps and checking for mail, IRC, and CAD categories.
+Yoann's reply pushed back on the playground-gap framing; he wants to find teaching gaps instead.
+Claude's answer was only a stated plan, with no findings or recommendations yet.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:37
+
+**Yoann:**
+
+> I'm not necessarily talking about gaps with the playground, more teaching gaps and apps that could deserved to be in IX, just like office I think is. It's a fundamental program for users in the end (and also useful for a programmer)
+
+**Claude (summary):**
+
+Claude proposed adding the apps list as a new apps/ section in docs/plans/plan_gaps.md.
+The section would cover user-facing programs such as mail, search, spelling, image editing and video playback.
+Claude asked before writing anything, since the section would sit inside plan_gaps.md alongside the programmer-focused entries.
+Mail ranked first as the biggest missing user program, building on the TLS and TCP/IP ix already has.
+Claude checked utilities/, lib_crypto/, lib_networking/ and plan_gaps.md for overlaps before ranking nine candidates.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:38
+
+**Yoann:**
+
+> plan_gaps is really for the "principia softwarica" hardcore aspect; stuff a programmer should know, programs that a developer use. but apps/ is different
+
+**Claude (summary):**
+
+Claude proposed a separate `docs/plans/plan_apps.md` that judges ix by what a user can do, with a table of user activities against ix's coverage.
+Claude named mail, a photo viewer and editor, a calendar with contacts, and a video player as the biggest user-facing gaps.
+Claude proposed moving search with an index, rsync-style sync, a password store, and symbolic algebra into `plan_gaps.md`.
+Claude suggested search belongs with grep and algebra under `utilities/calc`, while the techniques stay in `plan_apps.md` as selection criteria.
+
+------------------------------------------------------------------------
+
+## 2026-10-29 16:45
+
+**Yoann:**
+
+> yes write plan_apps.md and add the 4 to plan_gaps like you suggested
+
+**Claude (summary):**
+
+Claude asked whether to commit the two plan files together with prompt-history.md, since nothing had been committed yet.
+Claude left plan_apps.md, plan_gaps.md and prompt-history.md uncommitted in the working tree, waiting on Yoann's go-ahead.
+The proposed commit would hold plan_apps.md and the four new developer items in plan_gaps.md, with its status line.
+Claude's survey read only the existing apps' headers, labeling the few code-verified claims as checked.
+Earlier, Claude wrote docs/plans/plan_apps.md with a seven-item application ranking and three open questions.

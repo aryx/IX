@@ -153,6 +153,11 @@ chmod 644 $PIM_STORE/password
 timeout 20 $PIM -s $I -plain -u erin@ix list < /dev/null > $W/out 2>&1
 has "others may read it" "a password file others may read: refused"
 rm $PIM_STORE/password
+# the account in the store's file user, no -u
+echo erin@ix > $PIM_STORE/user
+echo secret | timeout 20 $PIM -s $I -plain list > $W/out 2>&1
+has "Re: the plan" "the user from ~/.ix-pim/user"
+rm $PIM_STORE/user
 
 # All Mail in a French Gmail: mini-pim asks for [Gmail]/All Mail, and
 # selects the mailbox LIST says is \All

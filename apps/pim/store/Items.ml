@@ -84,3 +84,14 @@ let secret (caps : < Cap.env; Cap.open_in; .. >) (name : string) :
       Logs.info (fun m -> m "store: reading %s" file);
       Ok (FS.read_opt caps (Fpath.v file))
 
+let user (caps : < Cap.env; Cap.open_in; .. >) : string option =
+  let file = Filename.concat (place caps) "user" in
+  match FS.read_opt caps (Fpath.v file) with
+  | Some text -> (
+      match String.trim (List.hd (String.split_on_char '\n' text)) with
+      | "" -> None
+      | u ->
+          Logs.info (fun m -> m "store: the user %s, from %s" u file);
+          Some u)
+  | None -> None
+

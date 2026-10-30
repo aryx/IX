@@ -93,7 +93,8 @@ let usage =
   \  -offline  list and read what the store has, no server\n\
   \  -v, -debug  what it reads, writes and fetches, on standard error\n\
   \  -u      the account: log in as that user, the password the store's\n\
-  \          file (~/.ix-pim/password, mode 600) or the first line of stdin\n\
+  \          file (~/.ix-pim/password, mode 600) or the first line of stdin;\n\
+  \          without -u, the store's file user (~/.ix-pim/user)\n\
   with no command, the window: mini-pim user=... [server=host:port]\n\
   \                             [smtp=host:port] [plain]"
 
@@ -597,6 +598,12 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let uids l = List.filter_map int_of_string_opt l in
   let assignments = Pim_store.assignments in
   let parsed = options default (List.tl (Array.to_list argv)) in
+  (* (no -u: the store's file user) *)
+  let parsed =
+    match parsed with
+    | Some ({ user = None; _ } as o) -> Some { o with user = Items.user caps }
+    | p -> p
+  in
   (* (after the options: -v is one) *)
   Logs.info (fun m -> m "store: %s" (Items.place caps));
   match parsed with
@@ -652,6 +659,12 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
  * platform's words on the command line, and the window's flags *)
 let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
   let flags = ("window", "") :: Playground_platform.flags caps in
+  (* (no user=: the store's file user) *)
+  let flags =
+    match (List.assoc_opt "user" flags, Items.user caps) with
+    | None, Some u -> ("user", u) :: flags
+    | _ -> flags
+  in
   Logs.info (fun m -> m "store: %s" (Items.place caps));
   let wcaps = (caps :> Pim_window.caps) in
   Playground_platform.run_app caps flags

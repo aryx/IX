@@ -27,6 +27,11 @@ type t
 (* $PIM_STORE, else ~/.ix-pim, else $home/lib/pim *)
 val place : < Cap.env; .. > -> string
 
+(* the account's address, the store's file user's first line if a
+ * person wrote one (echo you@gmail.com > ~/.ix-pim/user): the window's
+ * user= and the commands' -u when they are not given *)
+val user : < Cap.env; Cap.open_in; .. > -> string option
+
 (* [secret caps name]: the text of the store's file [name], one a person
  * makes and mini-pim never writes (the password, the calendars'
  * secret addresses); Ok None when there is none, an Error when others

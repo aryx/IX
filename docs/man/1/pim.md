@@ -159,7 +159,7 @@ What the window is given is a list of *name*`=`*value*:
 The options:
 
 **-u** *user*
-:    The account. The password is the store's file `password` if there
+:    The account (else the store's file `user`). The password is the store's file `password` if there
      is one, else the first line of standard input.
 
 **-s** *host*`:`*port*, **-plain**
@@ -227,6 +227,11 @@ views read:
 # FILES
 `$PIM_STORE`, or `~/.ix-pim` on Linux, or `$home/lib/pim` on Plan 9:
 the store; `items/` its items, `cache/` the mail's bytes.
+
+*store*`/user`
+:    The account's address, written by a person (`echo you@gmail.com >
+     ~/.ix-pim/user`): the window's `user=` and the commands' **-u** when
+     they are not given.
 
 *store*`/password`
 :    The app password (Google's, for mail), if one wants it kept: made

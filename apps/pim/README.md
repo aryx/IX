@@ -15,7 +15,7 @@ Their tests: `tests/`, the unit tests (dune's), `session.sh`,
 mini-pim's commands against mini-maild, and `frames.sh`, its
 window's (`make test`'s two "mini-pim").
 
-    bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
+    bin/mini-pim [user=...] [server=host:port] [smtp=host:port] [plain]
             [view=mail|calendar|people|tasks|notes|money]
                        the window, on Home: a tile a view (m c p t n
                        b, or a click), the day's events, what is late

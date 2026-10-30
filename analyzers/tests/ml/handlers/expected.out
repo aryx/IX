@@ -1,0 +1,4 @@
+analyzers/tests/ml/handlers/Events.ml:15: in Events:fun at line 15, through h.on_key: Events.beep, Main:fun at line 4
+analyzers/tests/ml/handlers/Events.ml:17: in Events.twice, through f: Events.log
+never reached: Events.unused (analyzers/tests/ml/handlers/Events.ml:19)
+7 units (2 the program's), 2 calls through a variable, 1 functions never reached

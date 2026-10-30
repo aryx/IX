@@ -1,0 +1,51 @@
+% Bugs in a C program that the pointer analysis can show, whatever the
+% order of its statements (docs/plans/plan_dotnet_languages.md, the
+% end goal): run with pointer.dl, over mini-cc's facts (Facts.mli) and
+% three relations that mini-analyze says of the places:
+%   heap(L)        L is what an allocator gave ('_malloc_in_f_line_N')
+%   local(L, F)    L is F's own, its frame's (a local or a parameter
+%                  whose address is taken, a local array's elements)
+%   literal(L)     L is a string written in the program
+%   bad_free(I, L)   the call I of free may be given L, not the heap's
+%   dangling(F, L)   F may return the address of its own local L
+%   unset_call(I)    the call I through a pointer reaches nothing: a
+%                    pointer no function is put in (null, most often)
+% Each may be wrong where the analysis is coarse (a pointer that may
+% point to two places is said to point to both), never because of
+% the order: so "may".
+%
+% design:
+% The checks are the analysis's answers read with one more fact each:
+% a place is the heap's, a frame's or a string's, which the facts'
+% names already say and mini-analyze makes relations of. Nothing here
+% knows the order of statements: free(p); p = malloc(n); is no bug
+% here and use after free is not found; that needs the order (a flow-
+% sensitive analysis, its facts per program point, liveness.dl's kind)
+% or the shapes of the heap (separation logic: Infer's).
+%
+% others:
+% Dawson Engler's checkers (Stanford, 2000; then Coverity) wrote
+% rules of a system's code (a lock taken is released, a freed pointer
+% not used) as small automata run over each path, and found thousands
+% of bugs in Linux; Saturn (Yichen Xie, Alex Aiken, 2005) the same
+% checks by a SAT solver, function by function with summaries; Infer
+% (Facebook, 2015, from Cristiano Calcagno, Dino Distefano, Peter
+% O'Hearn's separation logic) memory bugs proved absent or found, one
+% function at a time, on every commit; CodeQL (Semmle, Oege de Moor,
+% from 2007) queries of a program's database, in a Datalog with
+% classes. Here the checks are three rules over Andersen's answers.
+%
+% References: Dawson Engler, Benjamin Chelf, Andy Chou, Seth Hallem,
+% "Checking system rules using system-specific, programmer-written
+% compiler extensions" (OSDI 2000); Yichen Xie, Alex Aiken, "Saturn:
+% A scalable framework for error detection using Boolean
+% satisfiability" (TOPLAS 2007); Cristiano Calcagno and others,
+% "Moving fast with software verification" (NFM 2015).
+
+freed(I, L) :- call_direct(I, free), argument(I, 1, V), point_to(V, L).
+bad_free(I, L) :- freed(I, L), \+ heap(L).
+
+dangling(F, L) :- return(F, R), point_to(R, L), local(L, F).
+
+reaches(I) :- call_edge(I, F).
+unset_call(I) :- call_indirect(I, V), \+ reaches(I).

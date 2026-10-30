@@ -22,12 +22,19 @@ let quote (s : string) : string =
   Buffer.add_char b '\'';
   Buffer.contents b
 
+(* a fact's argument: a name, or a number (an argument's position) *)
+type arg = Sym of string | Num of int
+
+let added : (string -> arg list -> unit) ref = ref (fun (_ : string) (_ : arg list) -> ())
+
 let fact (relation : string) (args : string list) : unit =
-  Buffer.add_string out (relation ^ "(" ^ String.concat ", " (List.map quote args) ^ ").\n")
+  Buffer.add_string out (relation ^ "(" ^ String.concat ", " (List.map quote args) ^ ").\n");
+  !added relation (List.map (fun (a : string) -> Sym a) args)
 
 (* (a number is not an atom: parameter(F, 1, P)) *)
 let fact1 (relation : string) (a : string) (b : string) : unit =
-  Buffer.add_string out (Printf.sprintf "%s(%s, 1, %s).\n" relation (quote a) (quote b))
+  Buffer.add_string out (Printf.sprintf "%s(%s, 1, %s).\n" relation (quote a) (quote b));
+  !added relation [ Sym a; Num 1; Sym b ]
 
 let temp () : string =
   incr temps;

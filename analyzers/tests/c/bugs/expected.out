@@ -1,0 +1,7 @@
+analyzers/tests/c/bugs/bugs.c:68: in main, through onerror: nothing found
+bug? analyzers/tests/c/bugs/bugs.c: pick may return the address of mine, a local of pick
+bug? analyzers/tests/c/bugs/bugs.c: scratch may return the address of tmp[], a local of scratch
+bug? analyzers/tests/c/bugs/bugs.c:50: in release, free may be given table[], a global, not the heap's
+bug? analyzers/tests/c/bugs/bugs.c:65: in main, free may be given a string (line 64), not the heap's
+bug? analyzers/tests/c/bugs/bugs.c:66: in main, free may be given tmp[], a local of scratch, not the heap's
+6 functions, 1 calls through a pointer, 1 of them reaching nothing; 5 bugs?

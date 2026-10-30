@@ -12,6 +12,9 @@ let scope : string ref = ref "_init"
 let temps : int ref = ref 0
 let calls : int ref = ref 0
 
+(* a fact's argument: a name, or a number (an argument's position) *)
+type arg = Sym of string | Num of int
+
 let quote (s : string) : string =
   let b = Buffer.create (String.length s + 2) in
   Buffer.add_char b '\'';
@@ -19,11 +22,17 @@ let quote (s : string) : string =
   Buffer.add_char b '\'';
   Buffer.contents b
 
-let fact (relation : string) (args : string list) : unit =
-  let line = relation ^ "(" ^ String.concat ", " args ^ ")." in
+let sym (s : string) : arg = Sym s
+
+let added : (string -> arg list -> unit) ref = ref (fun (_ : string) (_ : arg list) -> ())
+
+let fact (relation : string) (args : arg list) : unit =
+  let show = function Sym s -> quote s | Num n -> string_of_int n in
+  let line = relation ^ "(" ^ String.concat ", " (List.map show args) ^ ")." in
   if not (Hashtbl.mem said line) then begin
     Hashtbl.add said line ();
-    lines := line :: !lines
+    lines := line :: !lines;
+    !added relation args
   end
 
 let text () : string = String.concat "\n" (List.rev !lines) ^ "\n"
@@ -41,7 +50,7 @@ let variable (x : Tree.expr) (s : Tree.sym) (c : Tree.cls) : string =
     | Tree.Cauto | Tree.Cparam | Tree.Clocal -> !scope ^ "__" ^ s.name
     | _ -> s.name in
   (* an array's elements are one place, which the array's name points to *)
-  if x.t.etype = Tree.Tarray then fact "point_to" [ quote v; quote ("_array_elt_" ^ v) ];
+  if x.t.etype = Tree.Tarray then fact "point_to" [ sym v; sym ("_array_elt_" ^ v) ];
   v
 
 (* the allocators: each call's result points to a place of its own *)
@@ -56,7 +65,7 @@ let rec value (x : Tree.expr) : string option =
   | Tree.Sizeof _ -> None
   | Tree.Str _ | Tree.Lstr _ ->
       let t = temp () in
-      fact "point_to" [ quote t; quote (Printf.sprintf "_str_in_%s_line_%d" !scope x.line) ];
+      fact "point_to" [ sym t; sym (Printf.sprintf "_str_in_%s_line_%d" !scope x.line) ];
       Some t
   | Tree.Typed a -> value a
   | Tree.Unary (Tree.Ind, { e = Tree.Binary (Tree.Add, a, i); _ }) ->
@@ -93,13 +102,13 @@ let rec value (x : Tree.expr) : string option =
       | None, None -> None
       | _ ->
           let t = temp () in
-          Option.iter (fun (v : string) -> fact "assign" [ quote t; quote v ]) va;
-          Option.iter (fun (v : string) -> fact "assign" [ quote t; quote v ]) vb;
+          Option.iter (fun (v : string) -> fact "assign" [ sym t; sym v ]) va;
+          Option.iter (fun (v : string) -> fact "assign" [ sym t; sym v ]) vb;
           Some t)
   | Tree.Call (f, args) -> call x f args
   | Tree.Elem (a, s) ->
       let t = temp () in
-      Option.iter (fun (v : string) -> fact "assign_load_field" [ quote t; quote v; quote (field s) ]) (structure a);
+      Option.iter (fun (v : string) -> fact "assign_load_field" [ sym t; sym v; sym (field s) ]) (structure a);
       Some t
   | Tree.Dot (a, _) -> value a
 
@@ -109,7 +118,7 @@ and load (relation : string) (from : string option) : string option =
   | None -> None
   | Some v ->
       let t = temp () in
-      fact relation [ quote t; quote v ];
+      fact relation [ sym t; sym v ];
       Some t
 
 (* the variable that holds a structure's address, for x.m and x->m *)
@@ -127,7 +136,7 @@ and address (a : Tree.expr) : string option =
       if a.t.etype = Tree.Tfunc || a.t.etype = Tree.Tarray then Some v
       else begin
         let t = temp () in
-        fact "assign_address" [ quote t; quote v ];
+        fact "assign_address" [ sym t; sym v ];
         Some t
       end
   | Tree.Unary (Tree.Ind, { e = Tree.Binary (Tree.Add, arr, i); _ }) -> (
@@ -136,7 +145,7 @@ and address (a : Tree.expr) : string option =
       | None -> None
       | Some v ->
           let t = temp () in
-          fact "assign_array_element_address" [ quote t; quote v ];
+          fact "assign_array_element_address" [ sym t; sym v ];
           Some t)
   | Tree.Unary (Tree.Ind, p) -> value p
   | Tree.Elem (b, s) -> (
@@ -144,7 +153,7 @@ and address (a : Tree.expr) : string option =
       | None -> None
       | Some v ->
           let t = temp () in
-          fact "assign_field_address" [ quote t; quote v; quote (field s) ];
+          fact "assign_field_address" [ sym t; sym v; sym (field s) ];
           Some t)
   | Tree.Unary (Tree.Cast, b) | Tree.Typed b -> address b
   | _ ->
@@ -155,7 +164,7 @@ and address (a : Tree.expr) : string option =
 and store (l : Tree.expr) (v : string option) : unit =
   let put (relation : string) (target : string option) : unit =
     match (target, v) with
-    | Some t, Some v -> fact relation [ quote t; quote v ]
+    | Some t, Some v -> fact relation [ sym t; sym v ]
     | _ -> () in
   match l.e with
   | Tree.Name (s, c, _) -> put "assign" (Some (variable l s c))
@@ -165,7 +174,7 @@ and store (l : Tree.expr) (v : string option) : unit =
   | Tree.Unary (Tree.Ind, p) -> put "assign_deref" (value p)
   | Tree.Elem (a, s) -> (
       match (structure a, v) with
-      | Some t, Some v -> fact "assign_store_field" [ quote t; quote (field s); quote v ]
+      | Some t, Some v -> fact "assign_store_field" [ sym t; sym (field s); sym v ]
       | _ -> ())
   | Tree.Unary (Tree.Cast, a) | Tree.Typed a -> store a v
   | _ -> ignore (value l)
@@ -179,23 +188,23 @@ and call (x : Tree.expr) (f : Tree.expr) (args : Tree.expr list) : string option
   let t = temp () in
   match direct with
   | Some name when List.mem name allocators ->
-      fact "point_to" [ quote t; quote (Printf.sprintf "_malloc_in_%s_line_%d" !scope x.line) ];
+      fact "point_to" [ sym t; sym (Printf.sprintf "_malloc_in_%s_line_%d" !scope x.line) ];
       Some t
   | _ ->
       incr calls;
-      let site = quote (Printf.sprintf "_in_%s_line_%d_%d" !scope x.line !calls) in
+      let site = sym (Printf.sprintf "_in_%s_line_%d_%d" !scope x.line !calls) in
       List.iteri
         (fun (i : int) (v : string option) ->
-          Option.iter (fun (v : string) -> fact "argument" [ site; string_of_int (i + 1); quote v ]) v)
+          Option.iter (fun (v : string) -> fact "argument" [ site; Num (i + 1); sym v ]) v)
         values;
-      fact "call_ret" [ site; quote t ];
+      fact "call_ret" [ site; sym t ];
       (match direct with
-       | Some name -> fact "call_direct" [ site; quote name ]
+       | Some name -> fact "call_direct" [ site; sym name ]
        | None -> (
            (* a pointer's star called and the pointer called are the same call *)
            let target : string option = match f.e with Tree.Unary (Tree.Ind, p) -> value p | _ -> value f in
            match target with
-           | Some v -> fact "call_indirect" [ site; quote v ]
+           | Some v -> fact "call_indirect" [ site; sym v ]
            | None -> ()));
       Some t
 
@@ -215,7 +224,7 @@ let rec statement (s : Tree.stmt) : unit =
       Option.iter (fun (c : Tree.expr) -> ignore (value c)) test;
       statement step;
       statement body
-  | Tree.Return (Some x, _) -> Option.iter (fun (v : string) -> fact "assign" [ quote ("ret_" ^ !scope); quote v ]) (value x)
+  | Tree.Return (Some x, _) -> Option.iter (fun (v : string) -> fact "assign" [ sym ("ret_" ^ !scope); sym v ]) (value x)
   | Tree.Used l | Tree.Set l -> List.iter (fun (x : Tree.expr) -> ignore (value x)) l
   | Tree.Case _ | Tree.Label _ | Tree.Goto _ | Tree.Break | Tree.Continue | Tree.Return (None, _) -> ()
 
@@ -264,15 +273,15 @@ let func (f : Tree.sym) (body : Tree.stmt) : unit =
   scope := f.name;
   temps := 0;
   calls := 0;
-  fact "point_to" [ quote f.name; quote f.name ];
-  fact "return" [ quote f.name; quote ("ret_" ^ f.name) ];
+  fact "point_to" [ sym f.name; sym f.name ];
+  fact "return" [ sym f.name; sym ("ret_" ^ f.name) ];
   let named : (string * int) list ref = ref [] in
   parameters_of body named;
   List.iteri
     (fun (i : int) (offset : int) ->
       List.iter
         (fun ((name, o) : string * int) ->
-          if o = offset then fact "parameter" [ quote f.name; string_of_int (i + 1); quote (f.name ^ "__" ^ name) ])
+          if o = offset then fact "parameter" [ sym f.name; Num (i + 1); sym (f.name ^ "__" ^ name) ])
         !named)
     (parameter_offsets f);
   statement body;
@@ -295,12 +304,12 @@ let rec member (t : Tree.typ) (o : int) : Tree.sym option =
 
 let global (s : Tree.sym) (x : Tree.expr) (o : int) : unit =
   let array : bool = match s.typ with Some t -> t.etype = Tree.Tarray | None -> false in
-  if array then fact "point_to" [ quote s.name; quote ("_array_elt_" ^ s.name) ];
+  if array then fact "point_to" [ sym s.name; sym ("_array_elt_" ^ s.name) ];
   (* a structure's member, by its name as x->f is (Dev consdev = { "cons", consread }) *)
   let put (v : string) : unit =
     match Option.bind s.typ (fun t -> member t o) with
-    | Some f -> fact "assign_store_field" [ quote s.name; quote (field f); quote v ]
-    | None -> fact (if array then "assign_array_deref" else "assign") [ quote s.name; quote v ] in
+    | Some f -> fact "assign_store_field" [ sym s.name; sym (field f); sym v ]
+    | None -> fact (if array then "assign_array_deref" else "assign") [ sym s.name; sym v ] in
   (* a global's initializer is a constant: a name in it is an address,
    * whether the & is still there or the typing has taken it *)
   let rec named (x : Tree.expr) : Tree.expr option =

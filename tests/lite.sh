@@ -312,7 +312,7 @@ job "mini-tiger: fork-tiger's programs and Appel's 49, compiled to .NET, run by 
 job "mini-csc: the survey's C# and its own, compiled to .NET, run by mini-dotnet: what Microsoft's printed" languages/dotnet/csc/tests/run.sh -dune
 job "mini-cc -facts, -flow: a C file's facts, the pointer analysis and liveness on them" languages/c/facts/tests/run.sh
 job "mini-ml -flow: SSA as facts, liveness and dominators against the compiler's" languages/ml/facts/tests/run.sh
-job "mini-analyze: toy C programs, which functions each call through a pointer may reach" analyzers/tests/run.sh
+job "mini-analyze: toy C and ML programs, each call through a pointer or a closure, its targets, the bugs and dead functions found" analyzers/tests/run.sh
 job "mini-play: a file of each format, its samples" lib_audio/tests/play.sh
 job "mini-curl, mini-httpd: a directory served, TLS with openssl's server" sh_ 'networking/tests/served.sh && networking/tests/tls.sh'
 job "mini-troff, mini-man: a page of ix's own" typesetting/tests/sample.sh

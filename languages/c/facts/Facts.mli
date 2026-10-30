@@ -61,6 +61,13 @@
  * context-sensitive pointer alias analysis using binary decision
  * diagrams" (PLDI 2004). *)
 
+(* a fact's argument: a name, or a number (an argument's position) *)
+type arg = Sym of string | Num of int
+
+(* each fact as it is found, the first time, besides its line in text:
+ * mini-analyze's, its facts given to Datalog as values *)
+val added : (string -> arg list -> unit) ref
+
 (* a function's name and its body, as the parser gives them *)
 val func : Tree.sym -> Tree.stmt -> unit
 

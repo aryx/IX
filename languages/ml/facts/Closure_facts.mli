@@ -73,4 +73,13 @@
  * 4; John Whaley and Monica Lam, "Cloning-based context-sensitive
  * pointer alias analysis using binary decision diagrams" (PLDI
  * 2004); mini-cc's Facts.mli, the same relations from C. *)
+
+(* a fact's argument: a name, or a number (an argument's position) *)
+type arg = Sym of string | Num of int
+
+(* each fact as it is made, besides its line in the text: mini-analyze's,
+ * its facts given to Datalog as values *)
+val added : (string -> arg list -> unit) ref
+
+(* a unit's facts, a line each: its name, its items resolved *)
 val unit_ : string -> Scope.item list -> string

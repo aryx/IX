@@ -1,0 +1,3 @@
+analyzers/tests/c/callbacks/callbacks.c:43: in each, through visit: tick
+analyzers/tests/c/callbacks/callbacks.c:52: in run, through t->fire: blink, ring
+8 functions, 2 calls through a pointer, 0 of them reaching nothing

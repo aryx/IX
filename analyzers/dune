@@ -1,0 +1,9 @@
+; mini-analyze: mini-cc's front end (c/, a wrapped copy), its pointer
+; facts, mini-datalog's evaluator, in one program
+; (docs/plans/plan_dotnet_languages.md, step 0)
+(executable
+ (name Main)
+ (public_name mini-analyze)
+ (package ix)
+ (modules Main Analyze)
+ (libraries ix_analyze_c ix_datalog ix_prolog ix_core fpath logs caps))

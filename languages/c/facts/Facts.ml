@@ -278,10 +278,29 @@ let func (f : Tree.sym) (body : Tree.stmt) : unit =
   statement body;
   scope := "_init"
 
-let global (s : Tree.sym) (x : Tree.expr) : unit =
+(* the member at an offset of a global's type, the innermost, an
+ * array's element's when it is an array of structures *)
+let rec member (t : Tree.typ) (o : int) : Tree.sym option =
+  match t.etype with
+  | Tree.Tarray -> (match t.link with Some e when e.width > 0 -> member e (o mod e.width) | _ -> None)
+  | Tree.Tstruct | Tree.Tunion ->
+      let rec find (m : Tree.typ option) =
+        match m with
+        | None -> None
+        | Some m when o >= m.offset && o < m.offset + max m.width 1 -> (
+            match member m (o - m.offset) with Some f -> Some f | None -> m.tsym)
+        | Some m -> find m.down in
+      find t.link
+  | _ -> None
+
+let global (s : Tree.sym) (x : Tree.expr) (o : int) : unit =
   let array : bool = match s.typ with Some t -> t.etype = Tree.Tarray | None -> false in
   if array then fact "point_to" [ quote s.name; quote ("_array_elt_" ^ s.name) ];
-  let put (v : string) : unit = fact (if array then "assign_array_deref" else "assign") [ quote s.name; quote v ] in
+  (* a structure's member, by its name as x->f is (Dev consdev = { "cons", consread }) *)
+  let put (v : string) : unit =
+    match Option.bind s.typ (fun t -> member t o) with
+    | Some f -> fact "assign_store_field" [ quote s.name; quote (field f); quote v ]
+    | None -> fact (if array then "assign_array_deref" else "assign") [ quote s.name; quote v ] in
   (* a global's initializer is a constant: a name in it is an address,
    * whether the & is still there or the typing has taken it *)
   let rec named (x : Tree.expr) : Tree.expr option =

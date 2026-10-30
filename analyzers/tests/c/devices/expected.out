@@ -1,0 +1,6 @@
+analyzers/tests/c/devices/main.c:13: in sysread, through d->read: consread, nullread
+analyzers/tests/c/devices/main.c:19: in syswrite, through devtab[]->write: conswrite, nullwrite
+analyzers/tests/c/devices/main.c:25: in twice, through f: conswrite
+analyzers/tests/c/devices/main.c:26: in twice, through f: conswrite
+analyzers/tests/c/devices/main.c:37: in main, through atexit_hook: nothing found
+8 functions, 5 calls through a pointer, 1 of them reaching nothing

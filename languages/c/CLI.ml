@@ -107,7 +107,7 @@ let facts_backend : backend =
     init = (fun () ->
       Check.xcom := (fun (n : Tree.expr) -> n);
       Check.outstring := (fun (_ : string) (_ : int) -> 0);
-      Declare.gextern := (fun (s : Tree.sym) (x : Tree.expr) (_ : int) (_ : int) -> Facts.global s x);
+      Declare.gextern := (fun (s : Tree.sym) (x : Tree.expr) (o : int) (_ : int) -> Facts.global s x o);
       Emit.init ());
     codgen = Facts.func;
     finish = (fun () -> ());

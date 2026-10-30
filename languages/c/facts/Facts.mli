@@ -64,8 +64,9 @@
 (* a function's name and its body, as the parser gives them *)
 val func : Tree.sym -> Tree.stmt -> unit
 
-(* a global's initializer: the symbol, a value put in it (Declare.gextern's) *)
-val global : Tree.sym -> Tree.expr -> unit
+(* a global's initializer: the symbol, a value put in it, at that offset of
+ * it (Declare.gextern's): a member's, assign_store_field *)
+val global : Tree.sym -> Tree.expr -> int -> unit
 
 (* the facts so far, a line each, in the order found, each once *)
 val text : unit -> string

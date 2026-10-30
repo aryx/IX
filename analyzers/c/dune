@@ -1,0 +1,19 @@
+; mini-cc's front end and its pointer facts, compiled again here as a
+; wrapped library (Ix_analyze_c.Lexer...): mini-ml's front end is in
+; the same program, and both compilers have a Lexer, a Parser, an Emit
+; in OCaml's one namespace of units. The sources are mini-cc's, copied
+; by the build, not kept here.
+(copy_files# ../../languages/c/{Tree,Tree_helpers,Pre,Declare,Check,Machines,Emit,Com64}.{ml,mli})
+(copy_files# ../../languages/c/debug/Acid.{ml,mli})
+(copy_files# ../../languages/c/facts/Facts.{ml,mli})
+(copy_files ../../languages/c/{Lexer.mll,Parser.mly,Lexer.mli})
+
+(library
+ (name ix_analyze_c)
+ (modules Tree Tree_helpers Pre Acid Lexer Parser Declare Check Machines Emit Com64 Facts C_front)
+ (preprocess (pps ppx_deriving.show))
+ (libraries ix_core ix_asm fpath logs caps))
+
+(ocamllex Lexer)
+
+(ocamlyacc Parser)

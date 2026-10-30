@@ -12,7 +12,14 @@ type caps = Mail_window.caps
 (* The model *)
 (*****************************************************************************)
 
-type mode = Register | Report | Form | Statement | Reconciling
+type mode =
+  | Register
+  | Report
+  | Envelopes
+  | Assigning
+  | Form
+  | Statement
+  | Reconciling
 
 (* a new line, as typed in the register's columns *)
 type form = {
@@ -30,6 +37,8 @@ type model = {
   (* the register's lines, each with the balance after it *)
   lines : (Item.t * Ledger.txn * Money.cents) list;
   report : (string * Money.cents) list; (* the month's *)
+  envelopes : Envelopes.envelope list;
+  to_assign : Money.cents;
   selected : int;
   mode : mode;
   form : form;
@@ -65,6 +74,8 @@ let load (caps : caps) (m : model) : model =
   let lines = List.map2 (fun (i, _) (t, b) -> (i, t, b)) reg bal in
   { m with accounts; lines;
     report = Books.report items ~year:m.today.year ~month:m.today.month;
+    envelopes = Envelopes.envelopes items;
+    to_assign = Envelopes.to_assign items;
     selected = max 0 (min m.selected (List.length lines - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -76,6 +87,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   in
   let m =
     { accounts = []; account = checking; lines = []; report = [];
+      envelopes = []; to_assign = 0;
       selected = max_int; mode = Register;
       form = { date = ""; num = ""; payee = ""; category = ""; payment = "";
                deposit = "" };
@@ -123,6 +135,8 @@ type command =
   | Previous
   | Next_account
   | Report_
+  | Envelopes_
+  | Assign
 
 let menus : (string * (string * command) list) list =
   [ ( "Register",
@@ -132,7 +146,8 @@ let menus : (string * (string * command) list) list =
     ( "Account",
       [ ("Reconcile...  (r)", Reconcile_); ("Finish  (f)", Finish);
         ("Next Account  (Tab)", Next_account);
-        ("Categories", Report_) ] ) ]
+        ("Categories", Report_); ("Envelopes", Envelopes_);
+        ("Assign...  (a)", Assign) ] ) ]
 
 let made = ref 0
 
@@ -195,9 +210,11 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Next -> { m with selected = min (List.length m.lines - 1) (m.selected + 1) }
   | Previous -> { m with selected = max 0 (m.selected - 1) }
   | Next_account -> (
-      (* the accounts, then the report, then the first again *)
-      if m.mode = Report then
-        load caps { m with account = checking; mode = Register; selected = max_int }
+      (* the accounts, then the report, the envelopes, the first again *)
+      if m.mode = Report then { m with mode = Envelopes }
+      else if m.mode = Envelopes then
+        load caps
+          { m with account = checking; mode = Register; selected = max_int }
       else
         let rec after l =
           match l with
@@ -210,6 +227,8 @@ let command (caps : caps) (m : model) (c : command) : model =
               { m with account = a; mode = Register; selected = max_int }
         | None -> { m with mode = Report })
   | Report_ -> { m with mode = Report }
+  | Envelopes_ -> { m with mode = Envelopes }
+  | Assign -> { m with mode = Assigning; field = ""; status = "" }
 
 (* the register's columns, from the text's left edge: where each
  * begins, or ends for the amounts (right-aligned) *)
@@ -288,8 +307,33 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
               { m with mode = Register; status = m.field ^ ": not an amount" }
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
-    | (Register | Report | Reconciling) when Gui.modal () -> m
-    | Register | Report | Reconciling -> (
+    | Assigning ->
+        (* "Groceries 400": an envelope's name, then the amount *)
+        if pressed "Escape" then { m with mode = Envelopes; field = "" }
+        else if pressed "Enter" then
+          let words = String.split_on_char ' ' (String.trim m.field) in
+          match List.rev words with
+          | amount :: (_ :: _ as name) -> (
+              match Money.of_string amount with
+              | Some c ->
+                  incr made;
+                  let id =
+                    Printf.sprintf "budget:%.0f.%d" (Unix.gettimeofday ()) !made
+                  in
+                  let name = String.concat " " (List.rev name) in
+                  Items.save caps (store caps)
+                    (Envelopes.assign ~id m.today name c);
+                  load caps
+                    { m with mode = Envelopes; field = "";
+                      status = Money.to_string c ^ " to " ^ name }
+              | None ->
+                  { m with mode = Envelopes;
+                    status = amount ^ ": not an amount" })
+          | _ -> { m with mode = Envelopes; status = "an envelope and an amount" }
+        else if pressed "Backspace" then { m with field = without_last m.field }
+        else { m with field = m.field ^ printable computer.keyboard.typed }
+    | (Register | Report | Envelopes | Reconciling) when Gui.modal () -> m
+    | Register | Report | Envelopes | Reconciling -> (
         let key =
           if pressed "j" || pressed "ArrowDown" then Some Next
           else if pressed "k" || pressed "ArrowUp" then Some Previous
@@ -300,6 +344,7 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "f" then Some Finish
           else if pressed "Escape" then Some Cancel
           else if pressed "Tab" then Some Next_account
+          else if pressed "a" then Some Assign
           else None
         in
         match (menu, key) with
@@ -344,11 +389,15 @@ let view (computer : computer) (m : model) : shape list =
         Printf.sprintf "Categories, %s %d" (Civil.month_name m.today.month)
           m.today.year
     | Reconciling -> "Reconcile " ^ short m.account
+    | Envelopes -> "Envelopes"
+    | Assigning -> "assign: " ^ m.field ^ "_   (Groceries 400)"
     | Register | Form -> short m.account
   in
   let right =
     if m.status <> "" then m.status
     else if m.mode = Report then ""
+    else if m.mode = Envelopes || m.mode = Assigning then
+      "to assign " ^ Money.to_string m.to_assign
     else "balance " ^ Money.to_string balance
   in
   let amount_at (right_edge : float) (y : float) (s : string) (color : color) =
@@ -374,6 +423,32 @@ let view (computer : computer) (m : model) : shape list =
                 "what is left";
               amount_at 400. (row_y a (List.length m.report + 1))
                 (Money.to_string (-total)) ink ]
+    | Envelopes | Assigning ->
+        let head_y = row_y a 0 in
+        let money x y s c = amount_at x y (Money.to_string s) c in
+        [ text grey ~bold:false ~room:200. x0 head_y "Envelope";
+          amount_at 400. head_y "Assigned" grey;
+          amount_at 520. head_y "Spent" grey;
+          amount_at 640. head_y "Available" grey ]
+        @ (if m.envelopes = [] then
+             [ text grey ~bold:false ~room:a.room x0 (row_y a 1)
+                 "No envelopes: a assigns money to one (Groceries 400)." ]
+           else [])
+        @ List.concat
+            (List.mapi
+               (fun k (e : Envelopes.envelope) ->
+                 let y = row_y a (k + 1) in
+                 [ text ink ~bold:false ~room:250. x0 y
+                     (Books.category e.account);
+                   money 400. y e.assigned ink; money 520. y e.spent ink;
+                   money 640. y e.available
+                     (if e.available < 0 then red else ink) ])
+               m.envelopes)
+        @
+        (* every dollar a job when it is 0 *)
+        let y = row_y a (List.length m.envelopes + 2) in
+        [ text ink ~bold:true ~room:250. x0 y "to assign";
+          money 640. y m.to_assign (if m.to_assign < 0 then red else ink) ]
     | Register | Form | Statement | Reconciling ->
         let head_y = row_y a 0 in
         let head =
@@ -461,7 +536,11 @@ let view (computer : computer) (m : model) : shape list =
    :: title_bar computer title_ right)
   @ sidebar a
       (List.map
-         (fun acct -> (short acct, acct = m.account && m.mode <> Report))
+         (fun acct ->
+           ( short acct,
+             acct = m.account
+             && not (List.mem m.mode [ Report; Envelopes; Assigning ]) ))
          m.accounts
-      @ [ ("Categories", m.mode = Report) ])
+      @ [ ("Categories", m.mode = Report);
+          ("Envelopes", m.mode = Envelopes || m.mode = Assigning) ])
   @ main

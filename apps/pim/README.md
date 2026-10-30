@@ -54,7 +54,8 @@ window's (`make test`'s two "mini-pim").
                        Money: an account's register, n a line in its
                        columns (QuickFill), c cleared, r reconcile
                        (the difference explained), f finish, Tab the
-                       next account, then the month's categories
+                       next account, then the month's categories,
+                       then the envelopes (YNAB's), a assigns money
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -158,6 +159,8 @@ window's (`make test`'s two "mini-pim").
                        mail from people, the day's page (Home and
                        mini-pim today)
     store/Detect       the days, amounts and addresses in a text
+    store/Envelopes    YNAB's envelopes: assigned, spent, available,
+                       what is left to assign
     store/Screen       HEY's Screener: where a sender's mail goes
     store/Calendars    Google's calendars read, by their secret
                        addresses, a fetch a mirror

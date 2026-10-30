@@ -244,6 +244,13 @@ has '^2026-11-01 .*rent .*Rent .*-900.00 .*995.43$' "a bill paid, its balance"
 $PIM balance > $W/out
 has '^ *995.43  Assets:Checking$' "the books: an account's balance"
 has '^ *-2,000.00  Income:Salary$' "the books: double entry"
+# envelopes (YNAB's): money assigned, what is left of each, to assign
+$PIM assign Groceries 400 && $PIM assign Utilities 50 && $PIM assign Rent 900
+$PIM assign Groceries -50
+$PIM budget > $W/out
+has '^to assign  *687.60$' "envelopes: the cash less what they hold"
+has '^Groceries  *350.00  *42.17  *307.83$' "an envelope: assigned, spent, left"
+has '^Utilities  *50.00  *62.40  *-12.40$' "an envelope overspent"
 # Google's side read (Calendars, Vcard): a calendar's secret address
 # served by mini-httpd, fetched, fetched again once an event went; the
 # file refused when others may read it; a vCard export imported, Carol

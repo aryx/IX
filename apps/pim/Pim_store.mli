@@ -63,3 +63,9 @@ val today : < caps ; .. > -> account:string -> Civil.date -> Exit.t
  * account's *)
 val register : < caps ; .. > -> string -> Exit.t
 val balance : < caps ; .. > -> Exit.t
+
+(* budget: the envelopes (Envelopes), what is to assign first; assign:
+ * money to one, "Groceries 400" (a negative amount takes it back) *)
+val budget : < caps ; .. > -> Exit.t
+val assign : < caps ; .. > -> Civil.date -> string list -> Exit.t
+

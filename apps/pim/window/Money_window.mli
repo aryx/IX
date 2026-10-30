@@ -22,11 +22,13 @@
    ticked, one ticked too many, a wrong sign, two digits swapped, a
    multiple of 9), f finishing when it is zero, the ticked lines
    reconciled (R). Tab goes to the next account, then to the month's
-   categories (Books.report: what came in and went out, by account).
+   categories (Books.report: what came in and went out, by account),
+   then to the envelopes (Envelopes, YNAB's): each one's assigned,
+   spent and available, what is left to assign; a assigns money to one
+   ("Groceries 400", a negative amount takes it back).
 
-   Not yet: envelopes (YNAB's budget), a split line written in the
-   window, the bank's CSV and OFX files (a QIF one: the terminal's
-   import), a repeating bill's next one. *)
+   Not yet: a split line written in the window, the bank's CSV and OFX
+   files (a QIF one: the terminal's import). *)
 
 type caps = Mail_window.caps
 

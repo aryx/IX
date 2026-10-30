@@ -16,5 +16,5 @@ let () =
           @ Unit_capture.tests @ Unit_money.tests
           @ Unit_books.tests @ Unit_zone.tests @ Unit_remind.tests
           @ Unit_detect.tests @ Unit_google.tests @ Unit_today.tests
-          @ Unit_screen.tests
+          @ Unit_screen.tests @ Unit_envelopes.tests
           @ Unit_items.tests (caps :> Unit_items.caps)))

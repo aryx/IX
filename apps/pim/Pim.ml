@@ -22,6 +22,7 @@
  *     mini-pim register, balance       the money (Books), import file.qif
  *     mini-pim remind                  what is due said as its minute comes
  *     mini-pim sync                    Google's calendars (Calendars), the mail
+ *     mini-pim budget, assign          the envelopes (Envelopes)
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -84,6 +85,7 @@ let usage =
   \  sync                              the calendars of ~/.ix-pim/calendars\n\
   \                                    fetched; with -u the Inbox too\n\
   \  import file.vcf                   contacts (Google Contacts' export)\n\
+  \  budget, assign Groceries 400      the envelopes; money to one\n\
   \  remind [-every 5]                 each reminder as its minute comes, and\n\
   \                                    with -u new mail from people\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
@@ -145,9 +147,12 @@ let rec options (o : options) (args : string list) : options option =
       match Search.date d with
       | Some today -> options { o with today } rest
       | None -> None)
-  (* (a search's words as they are: -is:message is a word, no flag) *)
+  (* (a search's words as they are: -is:message is a word, no flag; an
+   * assignment's, -50 an amount) *)
   | "search" :: (_ :: _ as words) when o.args = [] ->
       Some { o with args = "search" :: words }
+  | "assign" :: (_ :: _ as words) when o.args = [] ->
+      Some { o with args = "assign" :: words }
   | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
   | a :: rest -> options { o with args = a :: o.args } rest
 
@@ -613,6 +618,9 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some { args = [ "balance" ]; _ } -> Pim_store.balance caps
   | Some ({ args = [ "remind" ]; _ } as o) -> remind caps o
   | Some ({ args = [ "sync" ]; _ } as o) -> sync caps o
+  | Some { args = [ "budget" ]; _ } -> Pim_store.budget caps
+  | Some ({ args = "assign" :: (_ :: _ :: _ as words); _ } as o) ->
+      Pim_store.assign caps o.today words
   | Some ({ args = [ "today" ]; _ } as o) ->
       let account = match o.user with Some u -> u | None -> "" in
       Pim_store.today caps ~account o.today
@@ -645,7 +653,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
     "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
-    "register"; "balance"; "remind"; "sync" ]
+    "register"; "balance"; "remind"; "sync"; "budget"; "assign" ]
 
 let () =
   Cap.main (fun caps ->

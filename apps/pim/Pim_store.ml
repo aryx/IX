@@ -127,7 +127,7 @@ let event (caps : < caps ; .. >) (today : Civil.date) (words : string) :
     Exit.t =
   let people = People.contacts (Items.all caps (store caps)) in
   let e = Capture.event ~today ~people words in
-  let id = Printf.sprintf "event:%.0f" (Unix.gettimeofday ()) in
+  let id = Printf.sprintf "event:%.0f" (Unix.gettimeofday () *. 1e6) in
   let item = Capture.to_item ~id e in
   Items.save caps (store caps) item;
   Console.print caps (String.trim (Item.to_string item) ^ "\n");
@@ -234,3 +234,32 @@ let balance (caps : < caps ; .. >) : Exit.t =
         (Printf.sprintf "%12s  %s\n" (Money.to_string (Books.balance items a)) a))
     (Books.accounts items);
   Exit.OK
+
+let budget (caps : < caps ; .. >) : Exit.t =
+  let items = Items.all caps (store caps) in
+  Console.print caps
+    (Printf.sprintf "%-18s %10s\n" "to assign"
+       (Money.to_string (Envelopes.to_assign items)));
+  List.iter
+    (fun (e : Envelopes.envelope) ->
+      Console.print caps
+        (Printf.sprintf "%-18s %10s %10s %10s\n" (Books.category e.account)
+           (Money.to_string e.assigned) (Money.to_string e.spent)
+           (Money.to_string e.available)))
+    (Envelopes.envelopes items);
+  Exit.OK
+
+let assign (caps : < caps ; .. >) (today : Civil.date) (words : string list) :
+    Exit.t =
+  match List.rev words with
+  | amount :: (_ :: _ as name) -> (
+      match Money.of_string amount with
+      | None -> fail caps (amount ^ ": not an amount")
+      | Some c ->
+          (* (to the microsecond: assignments typed one after the other) *)
+          let id = Printf.sprintf "budget:%.0f" (Unix.gettimeofday () *. 1e6) in
+          let name = String.concat " " (List.rev name) in
+          Items.save caps (store caps) (Envelopes.assign ~id today name c);
+          Exit.OK)
+  | _ -> fail caps "assign: an envelope and an amount (Groceries 400)"
+

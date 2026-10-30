@@ -655,3 +655,16 @@ own), 3 frames (the Screener, y and the Imbox, the Mailbox menu).
 Not yet: a receipt in the Paper Trail made a money line (its amount
 found, Detect), the Feed read as a paper (the newest of each).
 
+2026-10-30: YNAB's envelopes (the plan's Money, "then envelopes"):
+`store/Envelopes`, an envelope an expense account, an assignment an
+item (budget:, envelope:, amount:, date:), its spending what the
+books post to the account; what is left stays (YNAB's rule), one
+overspent red, what is to assign the cash (Assets:) less what the
+envelopes hold. Money's Tab goes on from the categories to the
+envelopes, a assigns ("Groceries 400", negative takes back); the
+terminal's `budget` and `assign Groceries 400`. Tests: Unit_envelopes
+(three envelopes, money moved, to assign), session.sh (assigned,
+spent, left, overspent, to assign), a frame. Ids made by the terminal
+to the microsecond now (assign's three in a second overwrote each
+other; event's the same).
+

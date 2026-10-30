@@ -32,7 +32,7 @@ same "mini-nm: the names, by name" "$(cat <<'END'
     2000 D hello
     2ffc D setR12
 END
-)" "$($IX/debuggers/nm/Nm.exe hello)"
+)" "$($IX/linker/tools/Nm.exe hello)"
 # (-a: as nm.c sorts them, by name: a z's name its numbers, the end's
 # path empty, a space after its letter)
 same "mini-nm -a: the history's paths, the frames, the files" "$(printf '%s\n' \
@@ -48,7 +48,7 @@ same "mini-nm -a: the history's paths, the frames, the files" "$(printf '%s\n' \
   '    1058 L exit' \
   '    2000 D hello' \
   '       1 f hello_plan9_arm.s' \
-  '    2ffc D setR12')" "$($IX/debuggers/nm/Nm.exe -a hello)"
+  '    2ffc D setR12')" "$($IX/linker/tools/Nm.exe -a hello)"
 same "mini-where: functions, offsets, lines" "$(cat <<'END'
 1020 _main hello_plan9_arm.s:5
 1030 _main+0x10 hello_plan9_arm.s:12
@@ -60,7 +60,7 @@ if [ "$1" = live ]; then
   P=$HOME/principia/ROOT/arch/arm/bin
   if [ -x $P/nm ]; then
     for f in "" -a -g -u -s; do
-      same "mini-nm $f as principia's" "$($ROOT/bin/mini-5i $P/nm $f hello 2>&1)" "$($IX/debuggers/nm/Nm.exe $f hello 2>&1)"
+      same "mini-nm $f as principia's" "$($ROOT/bin/mini-5i $P/nm $f hello 2>&1)" "$($IX/linker/tools/Nm.exe $f hello 2>&1)"
     done
   else echo "skipped: no principia's nm in $P"; fi
 fi

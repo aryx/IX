@@ -1,7 +1,0 @@
-; mini-nm, Plan 9's nm: an a.out's names (lib_executable), an
-; object's and a library's (the linker's)
-(executable
- (name Nm)
- (public_name mini-nm)
- (package ix)
- (libraries ix_executable ix_ld ix_asm ix_core fpath caps))

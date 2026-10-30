@@ -422,7 +422,7 @@ debugger plan"): stage 1b's first part, and stage 2.
   a.out's tables read back, libmach's syminit, pc2line, fileelem and
   fline (the history as a stack of the files open at a line); a
   function and its offset, a file and its line, for an address.
-- **mini-nm** (`debuggers/nm`): Plan 9's nm, -aghnsTu, an a.out's
+- **mini-nm** (`debuggers/nm`, since in `linker/tools` beside mini-ar, as principia's linkers/misc): Plan 9's nm, -aghnsTu, an a.out's
   table, and ix's objects and libraries (their names, no values);
   against principia's nm under mini-5i, the same but -n's equal values
   (nm.c's qsort, not copied, as mini-ls's). **mini-where**

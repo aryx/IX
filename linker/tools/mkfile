@@ -1,12 +1,27 @@
-# mini-ar, built by ix's tools
+# the linker's tools, built by ix's tools: mini-ar, the librarian, and
+# mini-nm, the names (principia's linkers/misc/: ar.c and nm.c side by
+# side); each one file, over the linker's units for objects and
+# libraries, mini-nm over lib_executable too for an a.out's tables
 TOP=../..
 DIR=linker/tools
-PROG=mini-ar
-SRC=Ar
-LOCAL=`{ls *.ml}
-GEN=
-LIBI=-I ../../assembler -I ..
-LIBUNITS=Asm Show_asm Program Link
+LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
-LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Program.$O $B/linker/Link.$O
-<$TOP/mkfiles/mkprog
+D=$B/$DIR
+<$TOP/mkfiles/mklibs
+INCLUDES=-I . -I ../../assembler -I .. $LIBI $STDI $STDSUM
+LINKER=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Program.$O $B/linker/Link.$O
+MADE=`{mkdir -p $D}
+
+all:V: $D/mini-ar $D/mini-nm
+
+$D/%.$O: %.ml $LIBSRC
+	$ML $INCLUDES -o $target $stem.ml
+$D/mini-ar: $D/Ar.$O $LINKER $STDOBJS $STDEND
+	$ML -start $STD $COMMONS Asm Show_asm Program Link Ar Std_exit -o $D/Ar.start.$O
+	$LD $LDH -nofollow -o $target $D/Ar.start.$O $STDOBJS $LINKER $D/Ar.$O $STDEND
+$D/mini-nm: $D/Nm.$O $LINKER $LIBA $STDOBJS $STDEND
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Asm Show_asm Program Link Nm Std_exit -o $D/Nm.start.$O
+	$LD $LDH -nofollow -o $target $D/Nm.start.$O $STDOBJS $LIBA $LINKER $D/Nm.$O $STDEND
+
+clean:V:
+	rm -rf $D

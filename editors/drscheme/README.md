@@ -5,13 +5,15 @@ Beginning Student's stepper. The author's playground's
 `apps/devtools/TinyDrScheme.ml` (`~/playground`), on mini-scheme
 (`languages/scheme/`), `lib_gui/` and `lib_playground/`. Its name here
 is ix's: a mini-xxx, as mini-squeak (a tiny-xxx of ix's is one of
-`tiny/`'s files), its unit `DrScheme.ml`.
+`tiny/`'s files), its main `DrScheme.ml`, its parts the `DrScheme_*`
+units (`DrScheme.mli` draws them).
 
 On Linux it is built by dune twice: `bin/mini-drscheme`, in a window
 (`sdl/`: the same text with `lib_playground/platforms/sdl`), and
 `DrScheme.exe`, with the platform that writes a frame to a file
-(`tests/frames.sh`). On mini-9pi it is built by the `mkfile`, `drscheme`
-there, in a window of mini-rio's or on the bare screen.
+(`tests/frames.sh`), both over the library of its parts. On mini-9pi it
+is built by the `mkfile`, `drscheme` there, in a window of mini-rio's or
+on the bare screen.
 
     bin/mini-drscheme            a window of 1000 by 1000 (the screen's height if less), which may be given another size
     bin/mini-drscheme size=1000  the playground's own size
@@ -26,13 +28,17 @@ against the playground at `028d8abf` (2026-10-06).
 
 ## What was copied
 
-One file, `DrScheme.ml`, the playground's `TinyDrScheme.ml`: 783 lines
-there, 813 here. Its text is
-the playground's: what it leaves unused stays.
+One file, the playground's `TinyDrScheme.ml` (783 lines), split in six
+by its sections, past the 700 lines of a module: `DrScheme.ml` and
+`DrScheme_{model,draw,run,update,view}.ml`, each `ix:` line saying which
+part is there. Its text is the playground's, the code's lines moved and
+not changed: what it leaves unused stays. The script compares each file
+with the whole of the playground's, so its numbers of lines gone say
+only how much is elsewhere.
 
 ## What changed
 
-45 lines are not the playground's (the file's `ix:` line says them):
+What is not the playground's (the files' `ix:` lines say them):
 
 - its last lines are ix's: `Playground_platform.run_app` given the
   flags and the capabilities, `-h` and its help (the header's sentences
@@ -48,7 +54,8 @@ the playground's: what it leaves unused stays.
 
 `tests/frames.sh` and `frames.expected`: its frames' sums and, where
 the playground is there, its golden frame pixel by pixel. `mkfile`,
-`sdl/dune`.
+`sdl/dune`. The `.mli` files: `DrScheme.mli`'s header is the playground
+file's, extended; the others' are new.
 
 ## What remains in the playground
 

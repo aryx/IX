@@ -1,11 +1,20 @@
 ; editors/drscheme: mini-drscheme, the author's playground's
 ; apps/devtools/TinyDrScheme
-; (docs/plans/plan_scheme.md), here with the platform that writes a
-; frame to a file; mini-mk's mkfile chooses the platform; sdl/ is the
-; one with a window, bin/mini-drscheme.
+; (docs/plans/plan_scheme.md). The program (DrScheme) and its parts
+; (DrScheme_*: DrScheme.mli draws them), here with the platform that
+; writes a frame to a file; mini-mk's mkfile chooses the platform; sdl/
+; is the one with a window, bin/mini-drscheme.
 ; (a program's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)
-(executables
- (names DrScheme)
+(library
+ (name ix_drscheme)
+ (wrapped false)
+ (modules :standard \ DrScheme)
  (flags (:standard -w -32-37-69))
- (libraries ix_scheme ix_playground ix_playground_ppm ix_core caps unix))
+ (libraries ix_scheme ix_gui ix_playground ix_core))
+
+(executable
+ (name DrScheme)
+ (modules DrScheme)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_drscheme ix_scheme ix_gui ix_playground ix_playground_ppm ix_core caps unix))

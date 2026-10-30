@@ -69,14 +69,39 @@ let ours (h : Host_calls.t) pid =
   | Ok a, Ok b -> a.dev = b.dev && a.ino = b.ino
   | _ -> false
 
+(* the debugger's side, which must not wait on a target that died (a
+ * waitstop as it exits): the pipes opened without blocking, again while
+ * the target lives (O_NONBLOCK, 0o4000: ENXIO, no reader yet); the
+ * answer read the same way, never empty (ok or error), so nothing read
+ * yet is the target still at work *)
+let rec send_to (h : Host_calls.t) pid request =
+  match h.openat None (pipe pid "req") (1 lor 0o4000) 0 with
+  | Ok fd -> write_all h fd request; ignore (h.close fd); true
+  | Error _ when ours h pid -> h.sleep 0.001; send_to h pid request
+  | Error _ -> false
+
+let receive_from (h : Host_calls.t) pid =
+  match h.openat None (pipe pid "rep") (0 lor 0o4000) 0 with
+  | Error _ -> None
+  | Ok fd ->
+      let b = Buffer.create 256 in
+      let rec go () =
+        match h.read fd 65536 with
+        | Ok "" when Buffer.length b > 0 -> true
+        | Ok "" | Error _ -> if ours h pid then (h.sleep 0.001; go ()) else Buffer.length b > 0
+        | Ok s -> Buffer.add_string b s; go () in
+      let complete = go () in
+      ignore (h.close fd);
+      if complete then Some (Buffer.contents b) else None
+
 let ask (h : Host_calls.t) pid ~stopped request =
   if not (ours h pid) then Error "process exited"
   else begin
     pipes h pid;
     if not stopped then ignore (h.kill pid signal);
-    if not (send h (pipe pid "req") request) then Error "process exited"
+    if not (send_to h pid request) then Error "process exited"
     else
-      match receive h (pipe pid "rep") with
+      match receive_from h pid with
       | None -> Error "process exited"
       | Some a ->
           (match String.index_opt a '\n' with

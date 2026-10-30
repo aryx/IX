@@ -7,10 +7,10 @@ module D = Datalog
 
 type caps = < Cap.open_in; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-s] file.dl...   (-h: how)"
+let usage = "usage: mini-datalog [-q query]... [-all] [-naive] [-s] [-profile] file.dl...   (-h: how)"
 
 (* -h: how, by an example *)
-let help = {|usage: mini-datalog [-q query]... [-all] [-naive] [-s] file.dl...
+let help = {|usage: mini-datalog [-q query]... [-all] [-naive] [-s] [-profile] file.dl...
 Datalog: facts, and rules run until nothing new is found. A file's text is
 Prolog's, without compound terms:
   edge(a, b). edge(b, c). edge(c, a). edge(c, d).     facts
@@ -32,16 +32,18 @@ computed whole before another negates it, and a negation through a recursion
 is refused. = \= < > =< >= compare two values (numbers, then atoms).
 -naive: every rule on every tuple each round (the definition; the default runs
 a rule again only on what the last round found). -s: the relations' sizes,
-the rounds, the rules' firings.|}
+the rounds, the rules' firings. -profile: each rule's firings, new tuples,
+lookups and seconds, the costliest first.|}
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let queries : string list ref = ref [] and files : string list ref = ref [] in
-  let all = ref false and naive = ref false and stats = ref false in
+  let all = ref false and naive = ref false and stats = ref false and profile = ref false in
   let options =
     [ ("-q", Arg.String (fun (q : string) -> queries := q :: !queries), " a query: the tuples that match it");
       ("-all", Arg.Set all, " every tuple of every relation that has a rule");
       ("-naive", Arg.Set naive, " every rule on every tuple, each round");
-      ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings") ] in
+      ("-s", Arg.Set stats, " the relations' sizes, the rounds, the firings");
+      ("-profile", Arg.Set profile, " each rule's firings, new tuples, lookups and seconds, the costliest first") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (help ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1
@@ -91,6 +93,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
             (Printf.sprintf "%d rounds, %d firings, %d new tuples, %d lookups, %d symbols\n" st.rounds st.firings st.derived st.lookups
                p.nsymbols)
         end;
+        if !profile then
+          List.iter
+            (fun ((rule, c) : D.rule * Datalog_eval.cost) ->
+              Console.eprint caps
+                (Printf.sprintf "%6.2fs %10d firings %9d new %10d lookups  %s (%s/%d)\n" c.seconds c.fired c.added c.looked rule.at
+                   rule.head.rel.name rule.head.rel.arity))
+            (List.sort
+               (fun ((_, a) : D.rule * Datalog_eval.cost) ((_, b) : D.rule * Datalog_eval.cost) -> compare b.seconds a.seconds)
+               st.profile);
         0
       with
       | D.Error (msg, at) -> Console.eprint caps (Printf.sprintf "%s: %s\n" at msg); 1

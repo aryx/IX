@@ -79,7 +79,9 @@ program, built by dune. What it showed:
 - **The evaluator is the cost.** goken's rc (30 files, 215
   functions): the front end 0.3 s for 7,850 facts, the rules 7 s, 29
   rounds and 20 million lookups for 44,000 tuples. A Datalog compiled
-  (decision 5) or better indexes before whole programs of ix.
+  (decision 5) or better indexes before whole programs of ix. Then
+  (2026-10-31, plan_datalog.md's stages 1 and 2): the join's order
+  chosen, the rules 0.2 s; mini-ml's own analysis 225 s to 95 s.
 - **The answers are useful and coarse.** rc: `runq->code->f` reaches
   the 46 X instructions of its machine, `bp->fnc` the 11 builtins;
   efree may be given 18 strings, a false alarm of the field-based
@@ -338,11 +340,10 @@ but really use the same types!". So the decisions below are those of
 - The library (decision 6), the author not sure yet: the .NET subset
   in C# compiled by mini-csc (proposed), or kept as
   runtime/Library.ml's adapters over OCaml, which mini-dotnet has
-  for String, Console, Dictionary already? And, after step 0: lib_core
-  compiled to IL (the front ends as they are), agreed?
-- Step 0's next: Datalog's speed first (rc's 7 s; better indexes in
-  mini-datalog, or decision 5's compiler sooner), or precision first
-  (contexts, Doop's way), or straight to stage 1 (mini-ml -dotnet)?
+  for String, Console, Dictionary already?
+- Step 0's next: Datalog's speed first (the author's choice, done:
+  plan_datalog.md), then precision (contexts, Doop's way), or stage 1
+  (mini-ml -dotnet)? lib_core compiled to IL: agreed (2026-10-31).
 - An ML int: int64 on .NET everywhere (OCaml's 63 bits, near enough),
   where mini-ml's native int is 31 bits on arm: a program printing a
   large int differs between the native build on arm and .NET.

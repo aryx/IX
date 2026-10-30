@@ -10,7 +10,7 @@ type arg = Const of int | Slot of int | Any
 type relation = {
   name : string;
   arity : int;
-  set : (int array, unit) Hashtbl.t;
+  set : Tuples.t;
   mutable all : int array list;
   mutable count : int;
   mutable indexes : (int * (int array, int array list ref) Hashtbl.t) list;
@@ -65,7 +65,7 @@ let relation (p : t) (name : string) (arity : int) : relation =
   | Some r -> r
   | None ->
       let r : relation =
-        { name; arity; set = Hashtbl.create 61; all = []; count = 0; indexes = []; delta = []; fresh = []; stratum = 0; given = 0; rules = 0 } in
+        { name; arity; set = Tuples.create arity; all = []; count = 0; indexes = []; delta = []; fresh = []; stratum = 0; given = 0; rules = 0 } in
       Hashtbl.add p.relations key r;
       r
 
@@ -90,12 +90,11 @@ let project (mask : int) (tuple : int array) : int array =
     tuple;
   key
 
-(* (Hashtbl.add where the key is known to be new, here and for the
- * indexes: replace would look for it a second time) *)
+(* (Hashtbl.add where the key is known to be new, for the indexes:
+ * replace would look for it a second time) *)
 let add (r : relation) (tuple : int array) : bool =
-  if Hashtbl.mem r.set tuple then false
+  if not (Tuples.add r.set tuple) then false
   else begin
-    Hashtbl.add r.set tuple ();
     r.all <- tuple :: r.all;
     r.count <- r.count + 1;
     List.iter

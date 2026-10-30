@@ -10,8 +10,8 @@ over facts, which is what this computes. The plan:
 | module | what |
 |---|---|
 | `Datalog` | relations (sets of tuples of symbols), rules, queries; a text loaded and checked (a rule must be safe) |
-| `Datalog_eval` | the strata (a relation is whole before another negates it), the fixpoint (semi-naive, or naive), a body joined by indexes made on demand |
-| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-s` |
+| `Datalog_eval` | the strata (a relation is whole before another negates it), the fixpoint (semi-naive, or naive), a body joined by a plan made once (its atoms' order chosen), by indexes made on demand |
+| `CLI`, `Main` | the command: files, `-q query`, `-all`, `-naive`, `-s`, `-profile` |
 
 `mini-datalog -h` says how, by an example.
 
@@ -141,8 +141,9 @@ that this program never calls, in a `fun () -> ...` handed to
 
 Reaching definitions; a call's context (every call of a function is seen together: mini-ml's 17 targets a call are that); values in a lattice (constants, intervals); aggregates
 (count, min); a fact file's own fast format (a fact is read by
-Prolog's reader); a join's order chosen (it is the order written, the
-new tuples' atom first).
+Prolog's reader); a join's order by the relations' sizes (it is chosen
+by the columns known, before the run); indexes chosen before the run
+(each is made at its first lookup).
 
 ## Tests
 
@@ -153,19 +154,54 @@ its line. The `.out` files were read, not made by another Datalog.
 
 ## Its speed
 
-`tests/bench.sh` (arm64, 2026-10-09):
+`tests/bench.sh` (arm64, 2026-10-31; before: the engine of 2026-10-09,
+built by OCaml the same day):
 
-| program | tuples | OCaml's build | mini-ml's |
-|---|---:|---:|---:|
-| the paths of a chain of 1,000, recursion on the left | 500,500 | 0.96 s, 49 MB | 6.8 s, 190 MB |
-| the same, recursion on the right | 500,500 | 1.4 s, 72 MB | 13.1 s, 263 MB |
-| a chain of 200, semi-naive | 20,100 | 0.04 s | 0.11 s |
-| a chain of 200, naive | 20,100 | 1.7 s | 10.2 s |
-| the pointer analysis on 1,000 random assignments | 35,003 | 3.9 s | 33.7 s |
+| program | tuples | OCaml's build, before | OCaml's build | mini-ml's |
+|---|---:|---:|---:|---:|
+| the paths of a chain of 1,000, recursion on the left | 500,500 | 0.99 s | 0.47 s, 56 MB | 0.60 s, 85 MB |
+| the same, recursion on the right | 500,500 | 1.50 s | 0.74 s, 78 MB | 0.98 s, 138 MB |
+| a chain of 200, semi-naive | 20,100 | 0.03 s | 0.02 s | 0.03 s |
+| a chain of 200, naive | 20,100 | 1.67 s | 0.84 s | 1.30 s |
+| the pointer analysis on 1,000 random assignments | 35,003 | 3.77 s | 1.82 s | 3.27 s |
 
 The last is the analysis's worst case, not a program's: among random
 assignments every variable comes to point to every address, and the
 rules for `*p = q` and `p = *q` join two such sets (8.8 million
-firings for 35,003 tuples; with 3,000 assignments, 218 million and 108
-seconds). Some 2 million firings a second by OCaml's build, a seventh
-of it by mini-ml's.
+firings for 35,003 tuples). Some 5 million firings a second by
+OCaml's build, a little more than half of it by mini-ml's.
+
+On programs' facts (`analyses/pointer.dl`, and `calls.dl` for ML;
+the same tuples before and after, compared whole):
+
+| facts | tuples found | before | OCaml's build | mini-ml's |
+|---|---:|---:|---:|---:|
+| Plan 9's rc, 30 files of C (`analyzers/tests/rc.sh`'s) | 44,076 | 6.7 s | 0.20 s | 0.25 s |
+| mini-datalog with lib_core (`program.sh`'s) | 513,566 | 3.6 s | 1.74 s | 2.17 s |
+| mini-ml and the assembler with lib_core | 11,649,727 | 225 s, 1.65 GB | 95 s, 2.0 GB | not run |
+
+What made the difference, each measured by `-profile` (a rule's
+firings, new tuples, lookups, seconds):
+
+- **The join's order** (`Datalog_eval.plan`). rc's 6.7 s were 20
+  million lookups, a rule's body joined in the order written: from new
+  `point_to(X, L)` tuples, `assign_content(P, Q), point_to(Q, X)`
+  scanned every `assign_content` for each. Chosen by the columns
+  known, 0.6 million.
+- **A rule with an empty relation not run**: on ML's facts the rules
+  for C's `*p` looked up 1.7 million times each in relations with no
+  tuple.
+- **A body made a plan once**, not found out at each tuple (which
+  variables are bound, which tests are ready).
+- **The tuples' own set** (`Tuples`): 372 million of mini-ml's
+  firings are of one rule, `point_to(P, L) :- assign(P, Q),
+  point_to(Q, L)`, 98% of them finding a tuple there. Asked from the
+  values, without an array made, hashed and compared as integers, the
+  values flat in the slots: 147 s of that rule to 81 s.
+
+What is left is that rule: Andersen's analysis copies each set along
+each assignment, again and again where the assignments make a cycle.
+Collapsing the cycles (Hardekopf and Lin, "The Ant and the
+Grasshopper", PLDI 2007) is the analysis's change, not the engine's;
+the engine's next ones would be the indexes chosen before the run and
+a round on several cores (Soufflé's).

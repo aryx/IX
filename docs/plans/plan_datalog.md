@@ -23,8 +23,11 @@ for.** Nothing of this plan is written; its numbers are the README's
 (`languages/datalog/README.md`, measured 2026-10-09 and -10) or are
 said to be estimates.
 
-**Status: plan written and its first questions answered, nothing
-done** (2026-10-10; see Status at the end).
+**Status: stage 1 done and stage 2 mostly** (2026-10-31: `-profile`;
+a rule's body made a plan once, its atoms' order chosen; the tuples'
+own set, `Tuples`; no `-plan` yet. mini-ml's own analysis 225 s to 95
+s, rc's 6.7 s to 0.2 s: `languages/datalog/README.md`, "Its speed").
+The rest as written (2026-10-10; see Status at the end).
 
 ## What there is
 
@@ -332,3 +335,16 @@ functions, taint (stages 8 to 10, written then). And then decision
 Doop's descriptions are from memory of the papers named, not from
 their sources: neither is on this machine. Nothing run for this plan;
 nothing written but it.
+
+2026-10-31: the author, after mini-analyze's step 0 (plan_dotnet_languages.md):
+"let's do 2, optimize the Datalog engine; maybe can get inspiration
+from Semmle QL, Logiblox, and Souffle. Ideally in the long term we
+might want to have incremental analysis". Stage 1's profile showed
+the join's order first (rc: 20 million lookups), then one rule's
+duplicate firings (mini-ml: 372 million, 98% of them a tuple already
+there). Done: the order chosen by the columns known, a rule with an
+empty relation not run, a plan made once a rule, `Tuples` (open
+addressing, flat). Not done: `-plan` printing it, indexes chosen
+before the run, a round on several cores (needs OCaml 5's domains,
+or mini-ml's: plan_multicore.md), incremental evaluation (DRed,
+DDlog's differences: Datalog_eval.mli says them).

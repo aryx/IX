@@ -43,7 +43,7 @@ type arg = Const of int | Slot of int | Any
 type relation = {
   name : string;
   arity : int;
-  set : (int array, unit) Hashtbl.t;      (* its tuples, each once *)
+  set : Tuples.t;                         (* its tuples, each once *)
   mutable all : int array list;           (* the same, the last added first *)
   mutable count : int;
   (* by the columns that are known (a bit each): their values to the tuples *)

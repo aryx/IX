@@ -12,9 +12,13 @@
  *   a rule none of whose atoms is new can find nothing new. [naive]
  *   runs every rule on everything each round: the definition, kept to
  *   check the other by.
- * - A body is joined in the order written (the new tuples' atom
- *   first), each atom looked up by the columns already known, in an
- *   index made the first time those columns are asked for.
+ * - A body is joined by a plan made once for each rule (and each of
+ *   its atoms that the new tuples are taken for): its atoms in an
+ *   order chosen, the new tuples' atom first, then each time the atom
+ *   with the most columns already known; each atom looked up by those
+ *   columns, in an index made the first time they are asked for; each
+ *   negation and comparison tested as soon as its variables are bound.
+ *   A rule one of whose atoms has no tuple is not run.
  *
  *     edge(a, b). edge(b, c). edge(c, d). edge(d, e).
  *     path(X, Y) :- path(X, Z), edge(Z, Y).
@@ -53,6 +57,12 @@
  * changed, which is also a spreadsheet's recalculation and a build
  * tool's (mini-mk).
  *
+ * design:
+ * The order chosen matters more than all the rest: the order written,
+ * the new tuples' atom first, had Plan 9's rc analysed by pointer.dl
+ * in 20 million lookups and 6.7 s, where the plan does it in 0.6
+ * million and 0.2 s, the same tuples (-profile shows each rule's share).
+ *
  * cs-history:
  * The fixpoint by rounds is the definition of what a program means
  * (van Emden and Kowalski, 1976). Semi-naive evaluation is from the
@@ -68,14 +78,34 @@
  * the question needs, as Prolog would going down; tabling does it in
  * a Prolog, remembering each call's answers (XSB). Here the question
  * is every tuple (an analysis of a whole program), so they would
- * gain nothing, and are not there.
+ * gain nothing, and are not there. They would for a question about
+ * one place (what may this pointer be, asked by an editor): the
+ * demand-driven pointer analyses (Heintze and Tardieu, 2001) are that.
+ *
+ * An analysis run again after a file changed starts here from nothing.
+ * Incremental evaluation keeps the tuples and follows the change:
+ * DRed (Gupta, Mumick and Subrahmanian, 1993) takes out what a deleted
+ * fact may have given, then derives again what still holds; DDlog
+ * (Ryzhyk and Budiu, VMware, 2019), on McSherry's differential
+ * dataflow, counts each tuple's derivations by version, so that an
+ * addition and a deletion both flow through the rules as differences.
  *
  * modern:
  * The engines made for analyses compile the rules: Souffle writes a
- * C++ program a file of rules, each relation with the indexes its
- * joins were seen to need, where a hash table is made here at the
- * first lookup; and they choose a join's order, here the order
- * written.
+ * C++ program a file of rules, each relation with the fewest indexes
+ * that cover its rules' lookups (chosen before the run, where an
+ * index is made here at its first lookup), B-trees and tries for the
+ * tuples, a round's outer loop on all the cores. Its join order is
+ * chosen by the variables bound, as here, or given (.plan, from a
+ * profile). Semmle's QL (CodeQL) orders joins by the relations'
+ * estimated sizes, a database's optimizer. LogicBlox joins all the
+ * atoms of a body at once (Veldhuizen's leapfrog triejoin, 2014: a
+ * variable at a time, each relation a sorted trie), in a time bounded
+ * by the largest answer the relations' sizes allow, where joining two
+ * atoms at a time can make a larger result on the way. bddbddb
+ * (Whaley and Lam, 2004) kept the relations as BDDs, where a
+ * context-sensitive analysis's copies of a function for each context
+ * share their nodes.
  *
  * References: Ceri, Gottlob and Tanca's survey (CLI.mli) for the
  * evaluation; K. R. Apt, H. A. Blair and A. Walker,
@@ -85,14 +115,26 @@
  * Ways to Implement Logic Programs" (Principles of Database Systems,
  * 1986); Herbert Jordan, Bernhard Scholz and Pavle Subotic,
  * "Souffle: On Synthesis of Program Analyzers" (Computer Aided
- * Verification, 2016). *)
+ * Verification, 2016); Pavle Subotic and others, "Automatic Index
+ * Selection for Large-Scale Datalog Computation" (VLDB 2018); Todd L.
+ * Veldhuizen, "Leapfrog Triejoin" (ICDT 2014); John Whaley and Monica
+ * S. Lam, "Cloning-Based Context-Sensitive Pointer Alias Analysis
+ * Using Binary Decision Diagrams" (PLDI 2004); Leonid Ryzhyk and Mihai
+ * Budiu, "Differential Datalog" (Datalog 2.0, 2019); Ashish Gupta,
+ * Inderpal Singh Mumick and V. S. Subrahmanian, "Maintaining Views
+ * Incrementally" (SIGMOD 1993); Nevin Heintze and Olivier Tardieu,
+ * "Demand-Driven Pointer Analysis" (PLDI 2001). *)
 
 type stats = {
   mutable rounds : int;
   mutable firings : int;      (* a rule's body satisfied once *)
   mutable derived : int;      (* of them, a tuple that was new *)
   mutable lookups : int;
+  (* each rule's share of them, and its time (-profile) *)
+  mutable profile : (Datalog.rule * cost) list;
 }
+
+and cost = { mutable fired : int; mutable added : int; mutable looked : int; mutable seconds : float }
 
 (* Datalog.Error: not stratified *)
 val run : naive:bool -> Datalog.t -> stats

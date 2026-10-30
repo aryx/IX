@@ -5,7 +5,7 @@
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
+let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit [-tier n]] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
@@ -49,6 +49,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
       ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why");
       ("-jit", Arg.Set jit, " the methods the JIT takes run as the machine's code (mini-ml's build, arm64); with -S, that code as mini-asm's text, why not the others");
+      ("-tier", Arg.Set_int Machine.tier, " with -jit: the calls a method is interpreted before it is compiled (30; 0: at its first; a method with a loop at its first)");
       ("-m", Arg.Set_int mach, " with -S -jit: the machine, 5 (arm, the default) or 7 (arm64)");
       ("-refs", Arg.Set refs, " with -S -jit: references too, the code -jit runs (the assembly loaded)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
@@ -92,7 +93,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
           match List.rev !files with
           | [] -> Console.eprint caps (usage ^ "\n"); 1
           | f :: argv ->
-              if !jit then Machine.jit := Jit_run.jit caps;
+              if !jit then Machine.jit := Some (Jit_run.jit caps);
               run caps (read f) argv !tracing !stats
         end
         else (List.iter one (List.rev !files); 0)

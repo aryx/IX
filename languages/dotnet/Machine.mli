@@ -60,10 +60,14 @@ open Value
 (* a method called with its arguments (`this` first), its result *)
 val invoke : meth -> value array -> value
 
-(* asked at a method's first call (its body still Il_body) for its
- * code by the JIT, which then is its body (Native); None, the
- * interpreter's. Jit_run.jit with -jit; by default none *)
-val jit : (meth -> (value array -> value) option) ref
+(* asked for a method's code by the JIT when the method is hot (tier),
+ * which then is its body (Native); None, the interpreter's. Jit_run.jit
+ * with -jit; by default no JIT, and no call counted *)
+val jit : (meth -> (value array -> value) option) option ref
+
+(* the calls a method is interpreted before the JIT is asked (30, -tier
+ * n: .NET's tier-up); a method with a loop at its first call *)
+val tier : int ref
 
 (* the JIT's call-outs (Jit_run): the instruction at index i of a
  * method's code run alone on its operands (the bottom first), what it

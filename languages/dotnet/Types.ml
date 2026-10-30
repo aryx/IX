@@ -201,7 +201,7 @@ let rec class_of_spec (sp : Library.spec) (args : typ array) : cls =
                 | Library.Impl f -> Native f
                 | Library.By_runtime -> Runtime
                 | Library.Abstract -> No_body);
-            def = None; cache = Hashtbl.create 1 })
+            calls = 0; def = None; cache = Hashtbl.create 1 })
           sp.smethods;
       vtable c;
       c
@@ -360,7 +360,7 @@ and method_of_def (im : image) (row : int) (c : cls) (margs : typ array) : meth 
     body = (if rva <> 0 then Il_body rva
             else if c.kind = Delegate || Image.get img t row "ImplFlags" land 3 = 3 then Runtime
             else No_body);
-    def = Some (im, row); cache = Hashtbl.create 8 }
+    calls = 0; def = Some (im, row); cache = Hashtbl.create 8 }
 
 and sig_typ (ctx : ctx) (t : S.t) : typ =
   match t with
@@ -453,7 +453,7 @@ and instantiate_new (m : meth) (args : typ array) : meth =
         | T_byref e -> T_byref (subst e)
         | t -> t in
       { m with margs = args; params = List.map subst m.params; ret = subst m.ret;
-               cache = Hashtbl.create 1 }
+               calls = 0; cache = Hashtbl.create 1 }
 
 let field_of_token (ctx : ctx) (tok : int) : field =
   let img = ctx.im.img in

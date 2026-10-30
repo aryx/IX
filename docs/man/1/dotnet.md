@@ -8,7 +8,7 @@ dotnet – run a .NET assembly
 [ **-v** | **-debug** | **-quiet** ]
 [ **-trace** ]
 [ **-s** ]
-[ **-jit** ]
+[ **-jit** [ **-tier** *n* ] ]
 *file*`.dll`
 [ *arg* ... ]
 
@@ -40,19 +40,25 @@ StringBuilder, List, Dictionary, the delegates.
      compiled.
 
 **-jit**
-:    The methods the JIT takes (their arguments, locals and stack of
-     int32s and references, not structs, longs, doubles or pointers;
-     no try) are compiled each at its first call and run as the
-     machine's code; the others by the interpreter. The code reads fields and array
-     elements itself; for a call into the library or to a virtual
-     method, `new`, a string, a static field or a cast it asks the
-     interpreter, an instruction at a time. Where *dotnet* was built
-     by mini-ml for Plan 9 on arm (its code in segments: segattach,
-     segflush) or for Linux on arm64; elsewhere the interpreter runs
-     all. With **-S**, that code as the assembler's text, arm's
-     (**-m 5**, the default) or arm64's (**-m 7**), of methods of
-     int32s only, and why each other method is not compiled;
-     **-refs**, the code **-jit** runs.
+:    A method is compiled to the machine's code when it is hot: at
+     its 31st call, or at its first if it has a loop (the tiers of
+     .NET's JIT); until then the interpreter runs it. Every method
+     the tests have is compiled but one with an exception filter:
+     objects, strings, arrays, structs, generics (each instance its
+     code), try, catch and finally. The code reads fields and array
+     elements itself; a call into the library or to a virtual method,
+     `new`, a string, a static field, a cast, an int64's or a
+     double's arithmetic, it asks of the interpreter, an instruction
+     at a time. Where *dotnet* was built by mini-ml for Plan 9 on arm
+     (its code in segments: segattach, segflush) or for Linux on
+     arm64; elsewhere the interpreter runs all. With **-S**, that code
+     as the assembler's text, arm's (**-m 5**, the default) or
+     arm64's (**-m 7**), of methods of int32s only, and why each other
+     method is not compiled; **-refs**, the code **-jit** runs.
+
+**-tier** *n*
+:    With **-jit**: the calls a method is interpreted before it is
+     compiled, 30 by default; 0, at its first.
 
 **-S**
 :    The assembly's types, their fields and methods, and the

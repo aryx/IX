@@ -5,7 +5,24 @@
 
 open Value
 
-let jit : (meth -> (value array -> value) option) ref = ref (fun _ -> None)
+let jit : (meth -> (value array -> value) option) option ref = ref None
+
+(* Tiers (.NET's tiered compilation, Core 3.0): a method interpreted
+ * first (tier 0), compiled (tier 1) at its call after [tier] calls, so
+ * that the code run once, a Main, an initialization, is not compiled;
+ * but a method with a loop at its first call, its loop maybe the
+ * program's time (.NET's QuickJitForLoops off, before its on-stack
+ * replacement). The JIT asked once: refused, the method stays the
+ * interpreter's. *)
+let tier = ref 30
+
+let hot (m : meth) (code : code) : bool =
+  m.calls <- m.calls + 1;
+  let loops () = Array.exists (fun (x : Il.instr) -> match x.op with
+      | Il.Br t | Il.Brfalse t | Il.Brtrue t | Il.Bcmp (_, _, t) | Il.Leave t -> t <= Il.index code.instrs x.at
+      | Il.Switch ts -> Array.exists (fun t -> t <= Il.index code.instrs x.at) ts
+      | _ -> false) code.instrs in
+  m.calls = !tier + 1 || (m.calls = 1 && loops ())
 
 (* ------------------------------------------------------------------ *)
 (* Places: fields, elements, pointers *)
@@ -146,7 +163,12 @@ and statics (f : field) : store =
 and invoke (m : meth) (args : value array) : value =
   match m.body with
   | Native f -> f args
-  | Il_body _ when (match !jit m with Some f -> m.body <- Native f; true | None -> false) -> invoke m args
+  | Il_body _ | Decoded _
+    when (match !jit with
+        | Some compile when hot m (Types.code m) ->
+            (match compile m with Some f -> m.body <- Native f; true | None -> false)
+        | _ -> false) ->
+      invoke m args
   | Runtime ->
       if m.mname = "Invoke" then begin
         let st = match args.(0) with Obj st -> st | Null -> Frame.null_ref () | _ -> Frame.error "a delegate" in

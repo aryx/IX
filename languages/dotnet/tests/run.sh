@@ -137,10 +137,16 @@ check() {
     p=$(basename $f .dll); e=${f%.dll}.expected
     [ $p = bench ] && [ -z "$jit" ] && continue
     [ $p = objects ] && [ -z "$jit" ] && [ -n "$RUN" ] && continue
-    case $f in $T/programs/*) { "$@" -jit $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
-      *) "$@" -jit $f > $W/$p.out 2> $W/$p.err;; esac
-    if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p${jit:+, its code run}, by $what"
-    else fail "mini-dotnet -jit $p, by $what"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi
+    case $f in $T/programs/*) { "$@" -jit -tier 0 $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
+      *) "$@" -jit -tier 0 $f > $W/$p.out 2> $W/$p.err;; esac
+    if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit -tier 0 $p${jit:+, its code run}, by $what"
+    else fail "mini-dotnet -jit -tier 0 $p, by $what"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi
+    # (and the tiers: a method compiled at its 31st call, or its first
+    # with a loop; the rest interpreted)
+    case $f in $T/programs/*) ;; *)
+      "$@" -jit $f > $W/$p.out 2> $W/$p.err
+      if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p (tiers), by $what"
+      else fail "mini-dotnet -jit $p (tiers), by $what"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi;; esac
   done
 }
 if [ -n "$sdk" ]; then
@@ -176,8 +182,8 @@ if [ -n "$plan9" ]; then
   for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
     p=$(basename $f .dll); e=${f%.dll}.expected
     case $p in objects|bench) continue;; esac
-    case $f in $T/programs/*) { _build/default/machine/Main.exe $X -jit -s $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
-      *) _build/default/machine/Main.exe $X -jit -s $f > $W/$p.out 2> $W/$p.err;; esac
+    case $f in $T/programs/*) { _build/default/machine/Main.exe $X -jit -tier 0 -s $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
+      *) _build/default/machine/Main.exe $X -jit -tier 0 -s $f > $W/$p.out 2> $W/$p.err;; esac
     n=$(sed -n 's/ methods compiled//p' $W/$p.err)
     if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p on arm (Plan 9, mini-5i)${n:+, $n methods compiled}"
     else fail "mini-dotnet -jit $p on arm (Plan 9, mini-5i)"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi

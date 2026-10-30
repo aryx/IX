@@ -65,6 +65,7 @@ and meth = {
   key : string;
   mutable slot : int;
   mutable body : body;
+  mutable calls : int;
   def : (image * int) option;
   cache : (int, resolved) Hashtbl.t;
 }

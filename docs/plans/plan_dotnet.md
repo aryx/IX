@@ -1034,4 +1034,21 @@ structs 6 (vec), ldftn 2.
    without (0.9% fewer; the 46.6 M of stage 9 grew with the features
    since: mini-dotnet's start alone 35.8 M, from 32.1). Switch:
    Jit.registers.
+9. Tiers (done; .NET's tiered compilation, Core 3.0: tier 0 the quick
+   way to run a method, tier 1 the compiled code; the author asked
+   "not sure why it's called that way"). A method is interpreted first,
+   its calls counted (meth's calls), and the JIT asked at its 31st call
+   (-tier n; 0: at the first, as before), or at its first if it has a
+   loop (a backward branch: a loop in a method called once, a Main,
+   would else never be compiled; .NET's QuickJitForLoops off, before
+   its on-stack replacement). Asked once: refused, the method stays the
+   interpreter's. Jit_run no longer makes every method of an assembly
+   Native at once, only the one asked. Measured under mini-5i (the
+   whole process's instructions; interpreter, -tier 0, tiers): hello
+   18.0 M, 36.0 M, 18.0 M (nothing compiled); fib 109.8 M, 66.0 M,
+   56.3 M; queens 138.6 M, 122.0 M, 101.0 M; structs.cs 245.9 M,
+   527.8 M, 482.7 M (its Main has a loop). On arm64 the same times
+   (bench 0.25 s). The tests run -jit -tier 0, every method compiled
+   at its first call (run.sh, -9, mini-tiger's and mini-csc's -jit),
+   and each program once more with the tiers.
 

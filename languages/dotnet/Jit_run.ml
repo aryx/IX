@@ -232,8 +232,9 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
         List.iter (fun (row, sym) ->
             let m, _ = Hashtbl.find codes row in
             let call = native m (base + offset sym) in
-            Hashtbl.replace p row call;
-            m.body <- Native call) entries
+            (* (each method's body the interpreter's until it is hot:
+             * Machine's tiers; then this) *)
+            Hashtbl.replace p row call) entries
       end;
       p
 

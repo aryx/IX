@@ -94,13 +94,13 @@ status: dotnet 64: 134
 6765
 102334155
 -1323752223
-0 instructions
-3 methods compiled
+336 instructions
+2 methods compiled
 % dotnet -jit -s /lib/dotnet/queens.dll
 15863724
 92 solutions
-6 instructions
-3 methods compiled
+21 instructions
+1 methods compiled
 % dotnet -jit /lib/dotnet/shapes.dll
 square of area 9
 shape of area 10

@@ -26,7 +26,7 @@ for a in "$@"; do
     -dune) only=dune;;
     -mini) only=mini;;
     -ms) ms=1;;
-    -jit) jit=-jit;;
+    -jit) jit="-jit -tier 0";;
   esac
 done
 T=languages/dotnet/csc/tests

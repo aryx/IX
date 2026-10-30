@@ -1,8 +1,8 @@
 (* The JIT run in mini-dotnet (plan_dotnet.md, decision 12; stage 9,
  * arm64's on Linux and arm's on Plan 9, mini-9pi's and mini-5i's, by
- * the word's size): `mini-dotnet -jit file.dll`. At the first
- * call of one of an assembly's methods, the interpreter asks here for
- * its code: the methods Jit takes are found then (verified), each
+ * the word's size): `mini-dotnet -jit file.dll`. When one of an
+ * assembly's methods is hot (Machine's tiers: its 31st call, or its
+ * first with a loop), the interpreter asks here for its code: the methods Jit takes are found then (verified), each
  * given a cell (Code_memory.cells), an entry and a stub (Jit.stubs),
  * the text read by mini-asm's parser and encoded by mini-ld's passes
  * (Link, Arm64: the encoders as a library, as decision 12 has it), the

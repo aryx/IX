@@ -111,6 +111,7 @@ and meth = {
   key : string;            (* its name and signature as declared ("!0" for T), for MemberRefs *)
   mutable slot : int;      (* in the vtable, -1 if not virtual *)
   mutable body : body;
+  mutable calls : int;     (* the interpreter's calls of it, for the JIT's tiers *)
   def : (image * int) option;        (* its MethodDef's row *)
   cache : (int, resolved) Hashtbl.t; (* its tokens, resolved in its context *)
 }

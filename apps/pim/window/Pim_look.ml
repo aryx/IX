@@ -77,16 +77,7 @@ let wrap (room : float) (s : string) : string list =
       go "" [] words)
     (String.split_on_char '\n' s)
 
-let title (i : Item.t) : string =
-  match (Item.field i "subject", Item.field i "title", Item.field i "name") with
-  | s, _, _ when s <> "" -> Mime.decode_words s
-  | _, t, _ when t <> "" -> t
-  | _, _, n when n <> "" -> n
-  | _ when Item.field i "payee" <> "" -> Item.field i "payee"
-  | _ -> (
-      match String.split_on_char '\n' (String.trim i.body) with
-      | l :: _ -> l
-      | [] -> "")
+let title : Item.t -> string = Search.title
 
 let printable (typed : string) : string =
   String.concat "" (List.filter (fun c -> c >= " ") (Text.chars typed))

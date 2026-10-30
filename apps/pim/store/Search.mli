@@ -36,3 +36,8 @@ val day : Item.t -> Civil.date option
 
 (* "2026-11-05" or "2026/11/05" *)
 val date : string -> Civil.date option
+
+(* what an item is called in a list, a search's results: its subject
+ * (a message's, its words decoded), title, name or payee, else its
+ * text's first line *)
+val title : Item.t -> string

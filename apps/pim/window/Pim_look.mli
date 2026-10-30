@@ -66,8 +66,7 @@ val text :
 (* a text's lines cut at [room], at the spaces *)
 val wrap : float -> string -> string list
 
-(* what an item is called: its subject (a message's), its title or
- * name or payee, else its text's first line *)
+(* what an item is called (Search.title) *)
 val title : Item.t -> string
 
 (* what is printable of what was typed; a string less its last letter *)

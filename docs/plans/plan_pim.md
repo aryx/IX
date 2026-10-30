@@ -493,3 +493,12 @@ balances), 6 frames (two lines, QuickFill, a reconcile's hint, its
 finish, the report, Home). Not yet: envelopes, a split written in the
 window, CSV and OFX, a repeating bill's next one, a receipt's amount
 found in a mail.
+
+2026-10-30: `Pim.ml` split (690 lines, past the 700 it would reach
+with search): `Pim_store`, the terminal's commands over the store that
+need no server (search, show, people, add, set, event, import, today,
+register, balance), each given the day or the account it needs, not
+Pim's options; `Pim.ml` keeps the mail's commands, the options and the
+dispatch (470 lines). What an item is called in a list, the terminal's
+and the window's alike, is `Search.title` now (Pim_look's was a copy).
+Nothing else changed: session.sh and the 38 frames the same.

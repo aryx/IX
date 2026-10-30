@@ -26,7 +26,9 @@
 ;   money/ Money (cents), Ledger (a register), Reconcile, Qif, the
 ;          author's playground's appkits/money
 ; Pim.ml, the program: from a terminal (mini-pim send, list, read,
-; archive, -offline), and with no command the window (window/);
+; archive, -offline; Pim_store, in the library, the store's commands:
+; search, add, event, today, register...), and with no command the
+; window (window/);
 ; Maild.ml, mini-maild, the server its tests talk to
 ; (a file's text is the playground's: what it leaves unused stays, no
 ; warning of it an error)

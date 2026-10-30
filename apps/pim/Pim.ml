@@ -4,7 +4,8 @@
 (* mini-pim (docs/plans/plan_pim.md): with no command, its window
  * (Pim_window: the suite, Home and its views); with one, from a
  * terminal ("the same store from a terminal, for real use and for the
- * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7:
+ * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7, here, and
+ * the rest of the store, Pim_store's:
  *
  *     mini-pim send file               the message sent by SMTP
  *     mini-pim list [-n 20] [-q search] [-m mailbox]
@@ -130,9 +131,7 @@ let rec options (o : options) (args : string list) : options option =
   | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
   | a :: rest -> options { o with args = a :: o.args } rest
 
-let fail (caps : < Cap.stderr ; .. >) (why : string) : Exit.t =
-  Console.eprint caps (why ^ "\n");
-  Exit.Err why
+let fail = Pim_store.fail
 
 (* the store's password file (Mail_sync.saved_password), else the first
  * line of standard input *)
@@ -337,62 +336,8 @@ let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
       Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
 
-(*****************************************************************************)
-(* The store *)
-(*****************************************************************************)
-
-(* what an item is called in a list: its subject, title or name, else
- * its text's first line *)
-let title (item : Item.t) : string =
-  let first =
-    List.find_opt (fun v -> v <> "")
-      (List.map (Item.field item) [ "subject"; "title"; "name"; "payee" ])
-  in
-  match first with
-  | Some v -> Mime.decode_words v
-  | None -> (
-      match String.split_on_char '\n' (String.trim item.body) with
-      | l :: _ -> l
-      | [] -> "")
-
-let line (caps : < Cap.stdout ; .. >) (prefix : string) (item : Item.t) :
-    unit =
-  Console.print caps
-    (Printf.sprintf "%s%-24s %-16s %s\n" prefix (Item.id item)
-       (String.concat " " (Item.stamps item))
-       (title item))
-
-let search (caps : < caps ; .. >) (query : string) : Exit.t =
-  let items = Items.all caps (Items.at (Items.place caps)) in
-  List.iter (line caps "") (Search.search query items);
-  Exit.OK
-
-(* show: the item's file, and its links both ways *)
-let show (caps : < caps ; .. >) (id : string) : Exit.t =
-  let store = Items.at (Items.place caps) in
-  match Items.find caps store id with
-  | None -> fail caps (id ^ ": no such item")
-  | Some item ->
-      let items = Items.all caps store in
-      Console.print caps (String.trim (Item.to_string item) ^ "\n");
-      let say heading l =
-        if l <> [] then begin
-          Console.print caps ("\n" ^ heading ^ "\n");
-          List.iter
-            (fun (field, i) ->
-              line caps (if field = "" then "  " else "  " ^ field ^ ": ") i)
-            l
-        end
-      in
-      (* (a person's page: the mail with them first, People) *)
-      if Item.has_stamp item "contact" then
-        say "mail:" (List.map (fun m -> ("", m)) (People.with_ items item));
-      say "links:" (Links.links items item);
-      say "linked from:" (Links.backlinks items item);
-      Exit.OK
-
 (* contact: the sender of a message listed made a contact, BBDB's
- * way; people: the address book *)
+ * way *)
 let contact (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
   let store = Items.at (Items.place caps) in
   match o.user with
@@ -411,71 +356,6 @@ let contact (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
               Items.save caps store c;
               Console.print caps (Item.id c ^ "\n");
               Exit.OK))
-
-let people (caps : < caps ; .. >) : Exit.t =
-  let items = Items.all caps (Items.at (Items.place caps)) in
-  List.iter (line caps "") (People.contacts items);
-  Exit.OK
-
-(* "due=2026-11-05": a field's name and value *)
-let assignments (l : string list) : (string * string) list option =
-  let one a =
-    match String.index_opt a '=' with
-    | Some i when i > 0 ->
-        Some (String.sub a 0 i, String.sub a (i + 1) (String.length a - i - 1))
-    | _ -> None
-  in
-  let l' = List.filter_map one l in
-  if List.length l' = List.length l then Some l' else None
-
-(* due= and until= as words: "friday" is 2026-10-30 (When) *)
-let days (today : Civil.date) (fields : (string * string) list) :
-    ((string * string) list, string) result =
-  List.fold_right
-    (fun (name, v) acc ->
-      match acc with
-      | Error e -> Error e
-      | Ok l ->
-          if (name <> "due" && name <> "until") || v = "" then Ok ((name, v) :: l)
-          else (
-            match When.parse ~today v with
-            | Some d -> Ok ((name, Mail_sync.day d) :: l)
-            | None -> Error (v ^ ": not a day (friday, in 3 days, nov 5)")))
-    fields (Ok [])
-
-(* add: an item made, stamped its id's kind unless stamp= says; set: its
- * fields given, an empty value taking one away; written at once *)
-let add (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
-    : Exit.t =
-  let store = Items.at (Items.place caps) in
-  match (Items.find caps store id, String.index_opt id ':') with
-  | Some _, _ -> fail caps (id ^ ": already an item")
-  | None, None -> fail caps (id ^ ": an id is kind:name (task:pay-rent)")
-  | None, Some i ->
-      let stamps =
-        match List.assoc_opt "stamp" fields with
-        | Some s -> String.split_on_char ' ' s
-        | None -> [ String.sub id 0 i ]
-      in
-      let fields = List.filter (fun (n, _) -> n <> "stamp") fields in
-      Items.save caps store (Item.make ~id ~stamps fields "");
-      Exit.OK
-
-let set (caps : < caps ; .. >) (id : string) (fields : (string * string) list)
-    : Exit.t =
-  let store = Items.at (Items.place caps) in
-  match Items.find caps store id with
-  | None -> fail caps (id ^ ": no such item")
-  | Some _ when List.mem_assoc "id" fields -> fail caps "id: an item's name"
-  | Some item ->
-      let item =
-        List.fold_left
-          (fun item (name, v) ->
-            if v = "" then Mail.remove name item else Mail.set name v item)
-          item fields
-      in
-      Items.save caps store item;
-      Exit.OK
 
 (* snooze: the uid's conversation archived until the day the words say,
  * back in the Inbox that day (Mail_sync) *)
@@ -508,105 +388,6 @@ let snooze (caps : < caps ; .. >) (o : options) (uid : int) (words : string) :
               Ok ())
         ~offline:(fun _ _ -> Error "snooze: the server's, not -offline")
 
-(* event: a line made an event (Capture: "lunch with alice tue 12:30") *)
-let event (caps : < caps ; .. >) (o : options) (line : string) : Exit.t =
-  let store = Items.at (Items.place caps) in
-  let people = People.contacts (Items.all caps store) in
-  let e = Capture.event ~today:o.today ~people line in
-  let id = Printf.sprintf "event:%.0f" (Unix.gettimeofday ()) in
-  let item = Capture.to_item ~id e in
-  Items.save caps store item;
-  Console.print caps (String.trim (Item.to_string item) ^ "\n");
-  Exit.OK
-
-(* import: an iCalendar file's events made items (Events.of_ics), an
- * event already there replaced; a bank's QIF file's lines in the
- * account's register (Books), those already there left out *)
-let import (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
-  let store = Items.at (Items.place caps) in
-  let text = FS.read caps (Fpath.v file) in
-  if Filename.check_suffix (String.lowercase_ascii file) ".qif" then
-    match Qif.read text with
-    | Error e -> fail caps (file ^ ": " ^ e)
-    | Ok txns ->
-        let register =
-          List.map snd (Books.register (Items.all caps store) o.account)
-        in
-        List.iteri
-          (fun k (t : Ledger.txn) ->
-            let id = Printf.sprintf "money:%.0f.%d" (Unix.gettimeofday ()) k in
-            let item = Books.of_txn ~id ~account:o.account t in
-            Items.save caps store item;
-            line caps "" item)
-          (Books.fresh register txns);
-        Exit.OK
-  else begin
-    let events = Events.of_ics ~message:"" text in
-    List.iter (Items.save caps store) events;
-    List.iter (line caps "") events;
-    Exit.OK
-  end
-
-(* register: an account's lines, Quicken's columns, the balance after
- * each; balance: every account's, ledger's *)
-let register (caps : < caps ; .. >) (o : options) : Exit.t =
-  let items = Items.all caps (Items.at (Items.place caps)) in
-  let reg = Books.register items o.account in
-  List.iter2
-    (fun (_, (t : Ledger.txn)) (_, b) ->
-      Console.print caps
-        (Printf.sprintf "%s %-4s %-18s %-18s %10s %1s %10s\n"
-           (Civil.to_string t.date) t.num t.payee t.category
-           (Money.to_string t.amount)
-           (match t.status with Open -> "" | Cleared -> "*" | Reconciled -> "R")
-           (Money.to_string b)))
-    reg
-    (Ledger.balances (List.map snd reg));
-  Exit.OK
-
-let balance (caps : < caps ; .. >) : Exit.t =
-  let items = Items.all caps (Items.at (Items.place caps)) in
-  List.iter
-    (fun a ->
-      Console.print caps
-        (Printf.sprintf "%12s  %s\n" (Money.to_string (Books.balance items a)) a))
-    (Books.accounts items);
-  Exit.OK
-
-(* today: the day's events, the tasks late and due, the mail back from a
- * snooze (Home's Today, the plan's `pim today`) *)
-let today (caps : < caps ; .. >) (o : options) : Exit.t =
-  let items = Items.all caps (Items.at (Items.place caps)) in
-  let t = Civil.days_from_civil o.today in
-  let day (i : Item.t) =
-    match Search.day i with Some d -> Civil.days_from_civil d | None -> max_int
-  in
-  let later (i : Item.t) =
-    match Search.date (Item.field i "until") with
-    | Some d -> Civil.days_from_civil d > t
-    | None -> false
-  in
-  let to_do =
-    List.filter
-      (fun i ->
-        Item.has_stamp i "task" && Item.field i "done" = "" && not (later i))
-      items
-  in
-  let say (what : string) (s : string) =
-    Console.print caps (Printf.sprintf "%-10s %s\n" what s)
-  in
-  Console.print caps (Mail_sync.day o.today ^ "\n");
-  List.iter
-    (fun (_, time, i) ->
-      say (match time with Some m -> Events.clock m | None -> "all day") (title i))
-    (Events.between items ~from:o.today ~upto:o.today);
-  List.iter (fun i -> say "late" (title i)) (List.filter (fun i -> day i < t) to_do);
-  List.iter (fun i -> say "due" (title i)) (List.filter (fun i -> day i = t) to_do);
-  List.iter
-    (fun i -> if Item.field i "woke" <> "" then say "back" (title i))
-    items;
-  Exit.OK
-
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let default =
     {
@@ -624,6 +405,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
     }
   in
   let uids l = List.filter_map int_of_string_opt l in
+  let assignments = Pim_store.assignments in
   match options default (List.tl (Array.to_list argv)) with
   | Some ({ args = [ "send"; file ]; _ } as o) -> send caps o file
   | Some ({ args = [ "list" ]; _ } as o) -> list caps o
@@ -637,25 +419,27 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
     when uids [ uid ] <> [] ->
       snooze caps o (int_of_string uid) (String.concat " " words)
   | Some { args = "search" :: (_ :: _ as words); _ } ->
-      search caps (String.concat " " words)
-  | Some { args = [ "show"; id ]; _ } -> show caps id
+      Pim_store.search caps (String.concat " " words)
+  | Some { args = [ "show"; id ]; _ } -> Pim_store.show caps id
   | Some ({ args = [ "contact"; uid ]; _ } as o) when uids [ uid ] <> [] ->
       contact caps o (int_of_string uid)
-  | Some { args = [ "people" ]; _ } -> people caps
+  | Some { args = [ "people" ]; _ } -> Pim_store.people caps
   | Some ({ args = "event" :: (_ :: _ as words); _ } as o) ->
-      event caps o (String.concat " " words)
-  | Some ({ args = [ "import"; file ]; _ } as o) -> import caps o file
-  | Some ({ args = [ "register" ]; _ } as o) -> register caps o
-  | Some { args = [ "balance" ]; _ } -> balance caps
-  | Some ({ args = [ "today" ]; _ } as o) -> today caps o
+      Pim_store.event caps o.today (String.concat " " words)
+  | Some ({ args = [ "import"; file ]; _ } as o) ->
+      Pim_store.import caps o.account file
+  | Some ({ args = [ "register" ]; _ } as o) ->
+      Pim_store.register caps o.account
+  | Some { args = [ "balance" ]; _ } -> Pim_store.balance caps
+  | Some ({ args = [ "today" ]; _ } as o) -> Pim_store.today caps o.today
   | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
-      match days o.today (Option.get (assignments l)) with
-      | Ok fields -> add caps id fields
+      match Pim_store.days o.today (Option.get (assignments l)) with
+      | Ok fields -> Pim_store.add caps id fields
       | Error e -> fail caps e)
   | Some ({ args = "set" :: id :: (_ :: _ as l); _ } as o)
     when assignments l <> None -> (
-      match days o.today (Option.get (assignments l)) with
-      | Ok fields -> set caps id fields
+      match Pim_store.days o.today (Option.get (assignments l)) with
+      | Ok fields -> Pim_store.set caps id fields
       | Error e -> fail caps e)
   | Some ({ args = "archive" :: (_ :: _ as l); _ } as o)
     when List.length (uids l) = List.length l ->

@@ -104,6 +104,8 @@ window's (`make test`'s two "mini-pim").
     mail/Mail_sync     the server and the store: what the commands and
                        the window do
     mail/Conversations messages as conversations, the words a list shows
+    Pim_store          the terminal's commands over the store: search,
+                       show, add, set, event, import, today, money
     window/Pim_window  the window: the suite, Home, going from view to
                        view
     window/Mail_window the mail
@@ -189,7 +191,7 @@ The charsets' tables in `Mime` and their test; `store/`,
 `window/`, `Mail_item`, `Mail_sync`, `Conversations`; `Imap` and
 `Imap_server` (the playground had POP3 only); `Lines` (the
 playground's `Transport` was its kind, over its own TLS and
-WebSocket); the two programs, `Pim.ml` and `Maild.ml` (after the
+WebSocket); the two programs, `Pim.ml` (with `Pim_store`) and `Maild.ml` (after the
 playground's tiny_maild, a file a message instead of an mbox, IMAP for
 its POP3, one client at a time as mini-httpd); `Unit_smtp_server`,
 `Unit_imap`, `Unit_items`, `session.sh`, `frames.sh` (the window's

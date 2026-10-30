@@ -114,3 +114,14 @@ let matches (q : t) (item : Item.t) : bool =
 let search (q : string) (items : Item.t list) : Item.t list =
   let q = parse q in
   List.filter (matches q) items
+
+let title (item : Item.t) : string =
+  match
+    List.find_opt (fun v -> v <> "")
+      (List.map (Item.field item) [ "subject"; "title"; "name"; "payee" ])
+  with
+  | Some v -> Mime.decode_words v
+  | None -> (
+      match String.split_on_char '\n' (String.trim item.body) with
+      | l :: _ -> l
+      | [] -> "")

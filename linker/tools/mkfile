@@ -8,8 +8,8 @@ LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
 D=$B/$DIR
 <$TOP/mkfiles/mklibs
-INCLUDES=-I . -I ../../assembler -I .. $LIBI $STDI $STDSUM
-LINKER=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Program.$O $B/linker/Link.$O
+INCLUDES=-I . -I ../../assembler -I .. -I ../debug $LIBI $STDI $STDSUM
+LINKER=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/linker/Program.$O $B/linker/Debug_link.$O $B/linker/Link.$O
 MADE=`{mkdir -p $D}
 
 all:V: $D/mini-ar $D/mini-nm
@@ -17,10 +17,10 @@ all:V: $D/mini-ar $D/mini-nm
 $D/%.$O: %.ml $LIBSRC
 	$ML $INCLUDES -o $target $stem.ml
 $D/mini-ar: $D/Ar.$O $LINKER $STDOBJS $STDEND
-	$ML -start $STD $COMMONS Asm Show_asm Program Link Ar Std_exit -o $D/Ar.start.$O
+	$ML -start $STD $COMMONS Asm Show_asm Program Debug_link Link Ar Std_exit -o $D/Ar.start.$O
 	$LD $LDH -nofollow -o $target $D/Ar.start.$O $STDOBJS $LINKER $D/Ar.$O $STDEND
 $D/mini-nm: $D/Nm.$O $LINKER $LIBA $STDOBJS $STDEND
-	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Asm Show_asm Program Link Nm Std_exit -o $D/Nm.start.$O
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} Asm Show_asm Program Debug_link Link Nm Std_exit -o $D/Nm.start.$O
 	$LD $LDH -nofollow -o $target $D/Nm.start.$O $STDOBJS $LIBA $LINKER $D/Nm.$O $STDEND
 
 clean:V:

@@ -1,0 +1,7 @@
+; what a debugger needs of a unit (docs/plans/plan_debugger.md): its
+; lines in the object
+(library
+ (name ix_ml_debug)
+ (wrapped false)
+ (modules Lines_ml)
+ (libraries ix_ml ix_core ix_asm fpath caps))

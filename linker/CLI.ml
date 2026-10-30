@@ -86,7 +86,7 @@ let link (m : _ machine) caps arch format entry out files =
   Link.load caps t ~decode:m.decode ~needs:m.needs files;
   m.prepare t;
   Link.resolve t;
-  if !symbols then Link.acid_data t;
+  if !symbols then Debug_link.acid_data (fun n -> Link.lookup t n 0) t;
   Link.layout_data t;
   if !follow then Follow.follow t ~ends:m.ends;
   Link.drop_nops t;

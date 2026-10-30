@@ -1,14 +1,14 @@
 # mini-dotnet, built by ix's tools; the JIT's encoders are the linker's
-# (Program Link Arm Arm64), compiled here from its sources (the linker is
+# (Program Debug_link Link Arm Arm64), compiled here from its sources (the linker is
 # made beside this directory, not before), and its memory jit/mini-ml/'s
 # Code_memory, not dune's
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
-SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Verifier Jit Program Link Arm Arm64 Code_memory Jit_run Writer CLI Main
+SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Verifier Jit Program Debug_link Link Arm Arm64 Code_memory Jit_run Writer CLI Main
 LOCAL=`{ls *.ml *.mli assembly/*.ml* runtime/*.ml* interpreter/*.ml* jit/*.ml* jit/mini-ml/*.ml}
 GEN=
-LIBI=-I assembly -I runtime -I interpreter -I jit -I ../../assembler -I ../../linker
+LIBI=-I assembly -I runtime -I interpreter -I jit -I ../../assembler -I ../../linker -I ../../linker/debug
 LIBUNITS=Asm Show_asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $B/assembler/Parser_asm.$O
@@ -17,6 +17,8 @@ LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O $B/assembler/Lexer_asm.$O $
 # the linker's units, one recipe each, so that .depend orders each
 $D/Program.$O: $TOP/linker/Program.ml
 	$ML $INCLUDES -o $target $TOP/linker/Program.ml
+$D/Debug_link.$O: $TOP/linker/debug/Debug_link.ml
+	$ML $INCLUDES -o $target $TOP/linker/debug/Debug_link.ml
 $D/Link.$O: $TOP/linker/Link.ml
 	$ML $INCLUDES -o $target $TOP/linker/Link.ml
 $D/Arm.$O: $TOP/linker/Arm.ml

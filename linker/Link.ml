@@ -70,18 +70,8 @@ let weak = 32
 let add_object t ~decode:decode_machine version (o : Asm.obj) =
   let file = Fpath.to_string o.file in
   if o.arch <> t.arch then error "%s: an object for another machine" file;
-  (* the history's paths first, as 5a writes them before the code: each
-   * component a File symbol, numbered when it is new; a path is its
-   * components' numbers (5l's ldobj's N_FILE, addhist) *)
-  let history = List.map (fun (path, line) ->
-    let comps = match path with
-      | None -> []
-      | Some p ->
-          (if p <> "" && p.[0] = '/' then [ "/" ] else []) @ List.filter (( <> ) "") (String.split_on_char '/' p) in
-    Hist (List.map (fun c ->
-      let s = lookup t ("<" ^ c) 0 in
-      if s.kind <> File then (s.kind <- File; t.nfiles <- t.nfiles + 1; s.value <- t.nfiles);
-      s.value) comps, line)) o.history in
+  (* the history's paths first, as 5a writes them before the code *)
+  let history = Debug_link.history (fun n -> lookup t n 0) t o in
   t.acid <- List.rev_append o.acid t.acid;
   let items = o.items in
   (* the prog of each item that has a pc; the targets point at items.
@@ -127,25 +117,7 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
     match p with
     | Some p -> p.args <- List.map (function Asm.Target j -> (match progs.(j) with Some q -> p.target <- Some q | None -> ()); Asm.Target j | a -> a) p.args
     | None -> ignore i) progs;
-  (* a function's named parameters and locals, each once at its lowest
-   * offset, the last met first (5l's inopd); the history before them
-   * in the object's first function (histtoauto) *)
-  let cur = ref None and first = ref None in
-  Array.iter (function
-    | Some ({ op = Func; _ } as p) -> cur := Some p; if !first = None then first := Some p
-    | Some p ->
-        Option.iter (fun (f : _ prog) ->
-          List.iter (function
-            | Asm.Mem { base = (FP | SP) as b; name = Some n; off; _ } | Asm.Addr { base = (FP | SP) as b; name = Some n; off; _ } ->
-                let off = Int64.to_int off in
-                let same = function Param (m, _) -> b = FP && m = n.sym | Local (m, _) -> b = SP && m = n.sym | Hist _ -> false in
-                if List.exists same f.autos then
-                  f.autos <- List.map (function Param (m, o) when same (Param (m, o)) -> Param (m, min o off)
-                                              | Local (m, o) when same (Local (m, o)) -> Local (m, min o off) | a -> a) f.autos
-                else f.autos <- (if b = FP then Param (n.sym, off) else Local (n.sym, off)) :: f.autos
-            | _ -> ()) p.args) !cur
-    | None -> ()) progs;
-  Option.iter (fun (f : _ prog) -> f.autos <- history @ f.autos) !first;
+  Debug_link.autos history progs;
   (* opti: while the objects are loaded t.progs is the last instruction
    * first, and an object's are put before it; load turns it over at
    * its end.
@@ -321,20 +293,6 @@ let bucket arch name version =
 (* 5l's and 7l's dodata: small symbols (<= 64 bytes, bss included)
  * first, then the data, then the bss; 7l aligns what is 8 bytes or
  * more to 8, 16 or more to 16 *)
-(* the objects' acid declarations in the data, .acid, each once in
- * the order met, a string to its NUL (mini-acid runs it: decision 14
- * of plan_debugger.md); before layout_data *)
-let acid_data t =
-  if t.acid <> [] then begin
-    let seen = Hashtbl.create 1024 in
-    let text = String.concat "" (List.filter (fun d ->
-      if Hashtbl.mem seen d then false else (Hashtbl.replace seen d (); true)) (List.rev t.acid)) in
-    let s = lookup t ".acid" 0 in
-    s.kind <- Data;
-    s.size <- String.length text + 1;
-    t.datas <- { dsym = s; off = 0; width = s.size; value = Asm.Str text; dversion = 0 } :: t.datas
-  end
-
 let layout_data t =
   List.iter (fun d -> if d.dsym.kind = Bss || d.dsym.kind = Undefined then d.dsym.kind <- Data) t.datas;
   let syms = Hashtbl.fold (fun _ s acc -> if s.kind = Data || s.kind = Bss then s :: acc else acc) t.syms [] in

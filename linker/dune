@@ -1,7 +1,10 @@
+; debug/: what a debugger needs (plan_debugger.md), in the library
+(copy_files# debug/*.{ml,mli})
+
 (library
  (name ix_ld)
  (wrapped false)
- (modules Program Link Arm Arm64 Exe Symtab)
+ (modules Program Debug_link Link Arm Arm64 Exe Symtab)
  (libraries ix_core ix_asm fpath logs caps))
 
 ; the command: the passes, Follow unless -nofollow

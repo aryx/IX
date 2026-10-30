@@ -1,14 +1,14 @@
 # mini-cc, built by ix's tools: the front end, its lexer (by mini-lex)
-# and its grammar (by mini-yacc), then the back ends (compat/, simple/,
-# opti/, ssa/), the command
+# and its grammar (by mini-yacc), what a debugger needs (debug/), then
+# the back ends (compat/, simple/, opti/, ssa/), the command
 TOP=../..
 DIR=languages/c
 PROG=mini-cc
 SRC=Tree Tree_helpers Pre Acid Check Declare Machines Emit Com64 Parser Lexer \
  Multiply Acom Regs Cgen Arm Arm64 Prtree Ir Lower Gen Opti Peep Dominators Braun Liveness Coloring Ssa Ssa_build Alloc Ssa_gen \
  Facts Ir_facts CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I compat -I simple -I opti -I ssa -I facts -I ../../lib_code
+LOCAL=`{ls *.ml *.mli *.mly *.mll debug/*.ml debug/*.mli compat/*.ml compat/*.mli simple/*.ml simple/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
+LIBI=-I ../../assembler -I debug -I compat -I simple -I opti -I ssa -I facts -I ../../lib_code
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/c/Parser.ml $B/languages/c/Lexer.ml
@@ -22,6 +22,10 @@ $D/Parser.$O: $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Parser.ml
 $D/Lexer.$O: $D/Lexer.ml $D/Parser.ml $LOCAL
 	$ML $INCLUDES -o $target $D/Lexer.ml
+# debug/'s unit (Acid: -a's declarations, plan_debugger.md)
+$D/Acid.$O: debug/Acid.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target debug/Acid.ml
 # compat/'s units (Multiply Acom Regs Cgen Arm Arm64 Prtree): one recipe each, so that .depend orders each
 $D/%.$O: compat/%.ml
 	mkdir -p $D

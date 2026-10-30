@@ -1,13 +1,13 @@
 # mini-ml, built by ix's tools (and so by itself): the front end, its
 # lexer by mini-lex and its grammar by mini-yacc, the preprocessor
 # (pp/), then the back ends (simple/, compat/, opti/, ssa/), the facts
-# for mini-datalog (facts/), the command
+# for mini-datalog (facts/), what a debugger needs (debug/), the command
 TOP=../..
 DIR=languages/ml
 PROG=mini-ml
-SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Ssa_facts Closure_facts CLI Main
-LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
-LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts -I ../../lib_code
+SRC=Ast Annotations Parser Lexer Scope Resolve Typing Bits Derive Pp Ir Summary Fold Lower Gas Opti Dominators Braun Liveness Coloring Ssa Ssa_build Unbox Untag Cse Licm Alloc Zero_alloc Gen Emit Ssa_facts Closure_facts Lines_ml CLI Main
+LOCAL=`{ls *.ml *.mli *.mly *.mll pp/*.ml pp/*.mli simple/*.ml simple/*.mli compat/*.ml compat/*.mli opti/*.ml opti/*.mli ssa/*.ml ssa/*.mli facts/*.ml facts/*.mli debug/*.ml debug/*.mli ../../lib_code/*.ml ../../lib_code/*.mli}
+LIBI=-I ../../assembler -I pp -I simple -I compat -I opti -I ssa -I facts -I debug -I ../../lib_code
 LIBUNITS=Asm Lexer_asm Parser_asm
 <$TOP/mkfiles/mkconfig
 GEN=$B/languages/ml/Parser.ml $B/languages/ml/Lexer.ml
@@ -45,3 +45,7 @@ $D/%.$O: ssa/%.ml
 $D/%.$O: facts/%.ml
 	mkdir -p $D
 	$ML $INCLUDES -o $target facts/$stem.ml
+# debug/'s units (Lines_ml): one recipe each, so that .depend orders each
+$D/%.$O: debug/%.ml
+	mkdir -p $D
+	$ML $INCLUDES -o $target debug/$stem.ml

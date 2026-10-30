@@ -2,11 +2,11 @@
 TOP=..
 DIR=linker
 PROG=mini-ld
-SRC=Program Link Arm Arm64 Exe Symtab Follow CLI Main
-LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli}
+SRC=Program Debug_link Link Arm Arm64 Exe Symtab Follow CLI Main
+LOCAL=`{ls *.ml *.mli compat/*.ml compat/*.mli debug/*.ml debug/*.mli}
 GEN=
 # the assembler's objects are what it links: Asm, and Show_asm for its messages
-LIBI=-I ../assembler -I compat
+LIBI=-I ../assembler -I compat -I debug
 LIBUNITS=Asm Show_asm
 <$TOP/mkfiles/mkconfig
 LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
@@ -16,3 +16,11 @@ LIBOBJS=$B/assembler/Asm.$O $B/assembler/Show_asm.$O
 $D/Follow.$O: compat/Follow.ml $LOCAL
 	mkdir -p $D
 	$ML $INCLUDES -o $target compat/Follow.ml
+
+# debug/'s units (plan_debugger.md: what a debugger needs), said whole too
+$D/Debug_link.$O: debug/Debug_link.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target debug/Debug_link.ml
+$D/Symtab.$O: debug/Symtab.ml $LOCAL
+	mkdir -p $D
+	$ML $INCLUDES -o $target debug/Symtab.ml

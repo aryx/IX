@@ -900,3 +900,18 @@ Checked: debuggers/tests/acid_proc.sh, acid/mlvalues/Values.ml new (a
 ref, a string, a list, a record, variants, a pair, a closure, an
 array, an option) and its session values.acid; 10 sessions, and live.
 
+2026-10-30, **the toolchain's debugger code in debug/ folders** (the
+author: "move most of the debugger-related code in those other
+programs in a separate file or folder ... a bit like we have
+highlight/ facts/"): linker/debug/ (Symtab, and Debug_link: Link's
+history, autos and .acid, which Link calls as it reads an object),
+languages/c/debug/ (Acid), languages/ml/debug/ (Lines_ml, CLI's
+ml_lines; next step 5's descriptions). The linker's and mini-cc's
+in their library by dune's copy_files (Link and Declare call them in
+the middle of a pass), mini-ml's a library of its own as facts/ (only
+CLI calls it); the mkfiles a rule each, mini-dotnet's and
+linker/tools' (which compile Link) Debug_link too. Left where they
+are: Asm's history and declarations in the object (its format),
+mini-cc's lines (Pre: the positions its errors say too), Gen's raise
+for a trace and the runtime's frames.c (already a file).
+

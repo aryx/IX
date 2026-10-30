@@ -1,6 +1,9 @@
 ; the language, shared by the back ends: compat/ (5c's and 7c's
 ; listings, byte for byte), and later simple/ and opti/ (plan_cc.md,
 ; decision 8)
+; debug/: what a debugger needs (plan_debugger.md), in the library
+(copy_files# debug/*.{ml,mli})
+
 (library
  (name ix_cc)
  (wrapped false)

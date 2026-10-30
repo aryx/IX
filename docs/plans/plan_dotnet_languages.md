@@ -43,8 +43,48 @@ exceptions never caught (Leroy and Pessaux's analysis, 2000) and code
 never reached; and for mini-ml's optimizer, calls of a known closure
 made direct and inlined.
 
-**Status: plan written, nothing built.** For the author: the
-decisions below, the open questions at the end.
+**Status: step 0 done (mini-analyze, native: below), the rest not
+built.** For the author: what step 0 showed, decision 6 to be
+decided again by it, the open questions at the end.
+
+## Step 0: the program first, native (2026-10-30)
+
+The author: "maybe one thing we could do is first write the final
+program we want to write, that is a C and ML static analyzer using
+powerful datalog pointer/control-flow analysis and reusing the parsers
+we already have in IX"; "maybe we can start with a reduced version of
+this final program, to get a better idea, to make things more
+concrete". `analyzers/` (mini-analyze, commits d8bb82f7, afb11a4b):
+mini-cc's and mini-ml's front ends, their facts handed as values to
+mini-datalog's evaluator, pointer.dl, calls.dl and a new bugs.dl, one
+program, built by dune. What it showed:
+
+- **The parts fit as values.** Facts and Closure_facts give each fact
+  to a hook (`added`), the analyzer adds it as a tuple of symbols:
+  the text between the three commands is gone, the boundary is one
+  function. Compiled to .NET this is a call of a Datalog module's
+  relation's add.
+- **OCaml's one namespace of units is in the way.** mini-cc and
+  mini-ml both have a Lexer, a Parser, an Emit, unwrapped: one program
+  cannot link both. analyzers/c/ compiles mini-cc's front end a second
+  time, wrapped (dune's copy_files). .NET's assemblies and namespaces
+  keep such units apart (decision 1).
+- **Reusing the ML code as is means lib_core comes along.** An ML
+  program's facts need its library's units (a closure given to
+  List.iter is called there): for mini-datalog's sources, 34 of
+  lib_core's units, among them Obj, Format, Printf, Unix, Logs, Cap
+  (Ml_front, -v lists them). So decision 6's "from scratch" holds for
+  the .NET classes underneath, not for the ML code above: lib_core
+  compiled by mini-ml -dotnet, its externals over the subset.
+- **The evaluator is the cost.** goken's rc (30 files, 215
+  functions): the front end 0.3 s for 7,850 facts, the rules 7 s, 29
+  rounds and 20 million lookups for 44,000 tuples. A Datalog compiled
+  (decision 5) or better indexes before whole programs of ix.
+- **The answers are useful and coarse.** rc: `runq->code->f` reaches
+  the 46 X instructions of its machine, `bp->fnc` the 11 builtins;
+  efree may be given 18 strings, a false alarm of the field-based
+  analysis (every ->word one place). Contexts (Doop's) and fields per
+  object are where precision comes from (calls.dl's header).
 
 ## Precedents
 
@@ -223,6 +263,13 @@ but really use the same types!". So the decisions below are those of
 
    No runtime of conversions: the types are .NET's, shared.
 
+   Revised by step 0: mini-analyze reuses mini-cc's and mini-ml's
+   front ends as they are, and they stand on lib_core (34 of its
+   units for a small program). So the ML layer is lib_core itself,
+   compiled by mini-ml -dotnet, its untyped corners (Obj, Printf's
+   formats, Marshal) given .NET forms, its externals over the .NET
+   subset; the subset stays from scratch, as the author wanted.
+
 7. **The calls across languages, declared:** in ML an `external` with
    the other side's name (`external area : int -> int = "dotnet:Shapes::area"`);
    in C a prototype with an attribute or a naming convention; in
@@ -291,7 +338,11 @@ but really use the same types!". So the decisions below are those of
 - The library (decision 6), the author not sure yet: the .NET subset
   in C# compiled by mini-csc (proposed), or kept as
   runtime/Library.ml's adapters over OCaml, which mini-dotnet has
-  for String, Console, Dictionary already?
+  for String, Console, Dictionary already? And, after step 0: lib_core
+  compiled to IL (the front ends as they are), agreed?
+- Step 0's next: Datalog's speed first (rc's 7 s; better indexes in
+  mini-datalog, or decision 5's compiler sooner), or precision first
+  (contexts, Doop's way), or straight to stage 1 (mini-ml -dotnet)?
 - An ML int: int64 on .NET everywhere (OCaml's 63 bits, near enough),
   where mini-ml's native int is 31 bits on arm: a program printing a
   large int differs between the native build on arm and .NET.

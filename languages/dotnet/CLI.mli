@@ -38,6 +38,25 @@
  * Mono (Miguel de Icaza, 2004) ran it on Linux. In 2016 .NET Core,
  * Microsoft's own, became open source and ran everywhere; it is
  * today's .NET, whose `dotnet` runs the same files as here.
+ * Before: the runtime grew from COM's (COM+ 2.0, its codename
+ * Lightning), and was announced in 2000 as NGWS, then .NET. Sun had
+ * sued Microsoft in 1997 over its Java (J++, its own extensions); the
+ * extensions (delegates, calls of native code) came back in C#, and
+ * Hejlsberg came from J++.
+ * Project 7 (1998-2000): some fifteen language groups, Eiffel,
+ * Mercury, Haskell, Standard ML, Scheme, Oberon, Python, COBOL among
+ * them, given the runtime before it shipped to port their languages;
+ * the common type system was to be shared, a class of one language
+ * subclassed in another, and their reports changed the machine (the
+ * tail. prefix). Generics (.NET 2.0, 2005) came from Microsoft
+ * Research Cambridge (Andrew Kennedy, Don Syme, PLDI 2001), reified
+ * in the machine, where Java's (2004) are erased by its compiler; F#
+ * (Syme, 2005) followed.
+ * Singularity (Microsoft Research, Galen Hunt and Jim Larus, 2003-2008)
+ * an operating system in C#: Bartok compiled the whole system's IL
+ * ahead of time, the verifier's guarantee standing in for the MMU
+ * (processes isolated by their types, one address space); Midori
+ * (2008-2015) carried it on.
  *
  * References: ECMA-335, "Common Language Infrastructure", 6th edition
  * (2012): Partition I the concepts, II the file and its metadata, III

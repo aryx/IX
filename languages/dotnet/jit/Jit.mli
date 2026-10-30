@@ -151,7 +151,39 @@
  * and allocates registers. Mono's first JIT was a tree-matching
  * code generator (monoburg); its later one, mini, SSA as RyuJIT's.
  * The JVM's HotSpot interprets first and compiles a method once it is
- * called often (C1, then C2): the tiers .NET Core took in 3.0. *)
+ * called often (C1, then C2): the tiers .NET Core took in 3.0.
+ *
+ * history:
+ * L. Peter Deutsch and Allan Schiffman's Smalltalk-80 (POPL 1984):
+ * the first JIT, a method translated to the machine's code at its
+ * first call and cached, the bytecode kept; and the inline cache, a
+ * send's last class and method remembered at the call site.
+ * Self (Craig Chambers, David Ungar, Urs Hölzle, Stanford, 1989-1995):
+ * code customized to the receiver's class, polymorphic inline caches
+ * (1991), adaptive optimization (a method recompiled once hot, by
+ * what its caches saw), deoptimization back to the interpreter's
+ * frames. Its people made Strongtalk, which Sun bought (1997) to make
+ * HotSpot (1999).
+ * Inferno's Dis (Phil Winterbottom, Rob Pike, 1997, "The Design of
+ * the Inferno Virtual Machine"): the other choice of machine, memory
+ * to memory, three operands (add a, b, c), not a stack; so close to
+ * the processor's that its JIT, at a module's load, is a translation
+ * an instruction at a time, no stack to model. IL's stack, as the
+ * JVM's, is smaller to write and to verify; this JIT models it at
+ * compile time (a slot per depth), which Dis needs not.
+ * V8 (Lars Bak, of Self, Strongtalk and HotSpot; Google, 2008):
+ * JavaScript compiled at first, no interpreter (full-codegen), the
+ * hidden classes and inline caches of Self; Crankshaft (2010) the
+ * optimizing tier, then Ignition, an interpreter again, and TurboFan
+ * (2016): tiers as HotSpot's.
+ * Tracing JITs, the other road: not a method compiled but a loop's
+ * path as it runs, HP's Dynamo (2000) on machine code, TraceMonkey
+ * (Andreas Gal, Michael Franz, 2009) for JavaScript, LuaJIT 2 (Mike
+ * Pall, 2009) the best known.
+ * Here: Deutsch and Schiffman's scheme (a method at its first call,
+ * templates, no optimizer) with HotSpot's tiers, without Self's
+ * caches: IL's calls are typed, a virtual one found by its class's
+ * slot (Types), no guess to cache. *)
 
 (* why a method is not compiled *)
 exception Refused of string

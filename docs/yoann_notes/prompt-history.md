@@ -55918,3 +55918,538 @@ Claude found the JIT 97.9% faster than the same build's interpreter across Fib, 
 Claude noted Microsoft's dotnet 8 still ran the whole bench 65% faster, since it keeps values in registers.
 Claude listed next steps: JIT objects and strings, compiling one method at first call, then 32-bit arm.
 Claude had committed the JIT as 09a5132e, with all 177 run.sh checks passing and make self-quick-mix skipped.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 07:33
+
+**Yoann:**
+
+> let's do it!
+
+**Claude (summary):**
+
+Claude recommended implementing Plan 9's `segattach(attr, class, va, len)` in mini-9pi, with "memory" and "shared" classes.
+Its attributes, such as read-only and detach-at-exec, would take mprotect's place at attach time, alongside `segdetach`, `segfree` and a real `segflush`.
+Claude proposed no runtime protection change afterwards, and having the JIT write code into the segment through a pipe, using only system calls.
+Claude flagged that mini-9pi's kernel needs the real work, and that 31-bit arm ints mean int32 values must be boxed sometimes.
+Claude had finished the three arm64 steps (commits 5f419858, 572ed06e, 3582a8e6) and stopped before the arm half.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 06:22
+
+**Yoann:**
+
+> let's commit and build Calendar, Notes, and Money!
+
+**Claude (summary):**
+
+Claude committed Notes, Calendar and Money separately, leaving out another session's plan file from the Money commit.
+Claude listed Calendar's unbuilt parts: fetching a Google calendar by secret address and accepting invitations by mail.
+Claude listed Money's unbuilt parts: envelopes, CSV and OFX bank files, a bill's next occurrence, and splits in the window.
+Claude flagged Pim.ml at 690 lines, near the split point, and suggested moving the terminal store, calendar and money commands into their own module.
+Claude also noted that one search across all components is still unbuilt, so nothing new was started.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:37
+
+**Yoann:**
+
+> what's next?
+
+**Claude (summary):**
+
+Claude recommended splitting Pim.ml, which sits at 690 of the 700-line limit, into store, calendar and money modules.
+Claude's pick was that split first, then one search across all components, since search ties the six components into a suite.
+Claude described the search as a `/` field grouping results by kind, opening through the existing Item dispatch.
+Claude listed Today's missing pieces: bills due, unread mail from address-book people, and an in-place day note.
+Claude also proposed `pim remind`, the reminders feature that needs ix's kernel, and mail date and amount detection.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 06:03
+
+**Yoann:**
+
+> I still don't understand what are those "turbulent" register and what this opti is
+
+**Claude (summary):**
+
+Claude explained that "turbulent" is mini-quake's liquid span drawer, not a kind of register.
+Claude said the registers meant how mini-ml assigns about a dozen ARM registers to pixel-loop values.
+The old ranking kept long-lived values like k in registers and spilled the inner loop's temporaries.
+Claude's density change, commit 75b2ba30, divides each weight by live program points, favouring the inner loop's temporaries.
+That took turbulent from 24.7M to 16.6M instructions, under the 19.1M of the original.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:42
+
+**Yoann:**
+
+> ok. What's next?
+
+**Claude (summary):**
+
+Claude ranked the open ix items, recommending integer angles in mini-doom, id-style, to replace the float angle path.
+Claude estimated that path at 2.3% of runtime and proposed starting with the renderer's angles, measured over 61 frames.
+Claude warned the change touches every angle in the game and may shift texels, requiring re-recorded frames.
+Claude said Int32 unboxing was low-payoff, since little of ix uses Int32, so it should wait for a hot loop.
+Claude also listed the Pi 1 `-inline` 24-versus-32 measurement and `[@@noalloc]` annotations as lower-priority items.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 07:29
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude's answer had a clear focus: Yoann said "let's commit and move forward," which picks up Claude's closing question about committing. Claude proposed two commits, one for mini-acid's disassembler, `file` builtin, test and recordings, and plan, and one for the mini-5i hang fix, with `tests/lite.sh` taken as HEAD plus a line. Claude also asked about the commit split but did not commit anything yet. The rest of the answer, covering the earlier commits af9d12fa and dd620349, the agent's disassembly checks, and the open items, is minor here.
+Claude proposed splitting the pending work into two commits, one for mini-acid and one for the mini-5i fix.
+Claude proposed that the mini-acid commit cover Das.ml, the `file` builtin, the acid test and its recordings, and the plan.
+Claude proposed that the mini-5i commit cover the non-blocking pipe fix that stops the hang when stepping into `exits`.
+Claude planned to take `tests/lite.sh` as HEAD plus its own line, and asked Yoann whether to proceed with these commits.
+Earlier commits af9d12fa and dd620349 were already made, and the disassembler checks passed against acid.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:45
+
+**Yoann:**
+
+> looks like we would not win a lot. maybe we should close this session?
+
+**Claude (summary):**
+
+Claude agreed this was a good place to stop, since the session's work was committed.
+Claude confirmed all of its session work was committed and the plan was updated.
+Claude reported annotation steps 1 through 4 done: tailcall, tailrec, zero_alloc, inline, and unboxed_float.
+Claude measured -inline 24 cutting instruction counts by 4.21% for mini-quake and 1.90% for mini-doom.
+Claude listed the open items in docs/plans/plan_ml_annotations.md and left other sessions' edits untouched.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:46
+
+**Yoann:**
+
+> let's commit and move forward
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:53
+
+**Yoann:**
+
+> hopefully those ml specific stuff can be done in acid's code, proving the versitality of the acid as a debugger language approach
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:54
+
+**Yoann:**
+
+> it's also ok if some parts must be in OCaml instead of acid, but we should aim for prefering to implement in acid when possible
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:54
+
+**Yoann:**
+
+> because that's one of the main argument of acid's approach
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:54
+
+**Yoann:**
+
+> don't you think?
+
+**Claude (summary):**
+
+Claude recommended committing the work as one commit: `ml.acid`, its test and recording, the `Proc` fix, and the plan.
+Claude proposed leaving `tests/lite.sh` out of that commit, since it has no change from this session.
+Claude said `ml.acid` walks mini-ml stacks in acid, about 70 of its 113 lines, using `@` and `*` to decode prologues.
+Claude's `mlstk()` returns the full stack where acid's `stk()` stops after one frame, and `make test` passes with 161 jobs.
+Claude also noted the `let[@inline never]` inlining issue and left it for the other session's mini-ml work.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:09
+
+**Yoann:**
+
+> let's commit. independently, should Nm.ml be instead in linker/tools/ next to Ar.ml ?
+
+**Claude (summary):**
+
+Claude recommended moving mini-nm out of debuggers/ into linker/tools/, matching principia's linkers/misc layout beside ar.
+Claude argued that mini-nm already reads objects and libraries through the linker's own Asm, Program and Link modules.
+Claude proposed a per-tool layout, linker/tools/nm/, because ix's mkfiles build one program per directory.
+Claude suggested mini-ar could follow into linker/tools/ar/ for symmetry, and listed the references to update.
+Claude kept mini-where in debuggers/, since naming a trace's addresses is the debugger's job.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:41
+
+**Yoann:**
+
+> I like your plan. Let's move forward
+
+**Claude (summary):**
+
+Claude named the plan's last open item: recognising dates, people and amounts in a mail's text.
+Claude said a single key would turn each recognised item into an event, a contact, or a bill.
+Claude had not started that item yet, and it was still the only open step in the plan.
+Claude compressed the rest into five commits: the Pim split, search, Today, time zones, and mini-pim remind.
+Claude listed open gaps, including events lacking their own time zone and remind lacking a mini-9pi window.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:21
+
+**Yoann:**
+
+> yes let's move it. we can put Ar.ml and Nm.ml in the same tools/ directory for now, like we do for some utilities/. Regarding acid, where is the acid library? I see debuggers/acid/lib/ contains just one file, for ml, but what about the whole acid library where most functions the developers use are defined?
+
+**Claude (summary):**
+
+Claude moved Ar.ml and Nm.ml into the shared tools/ directory, following the utilities/misc pattern for multi-program directories.
+Claude rebuilt with dune and mini-mk for arm64 Linux and Plan 9, then ran tables.sh.
+Claude ran make test, which passed 161 jobs with 0 failures.
+Claude checked the top mkfile for other sessions' hunks before committing the move.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:23
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude built mail detection in `store/Detect`, recognising days, amounts and addresses in a message.
+Claude added `window/Found_window`, opened with `x`, where Enter keeps a find as an event, bill or contact.
+Claude committed it as `77b875c3`, with `make test` passing 161 jobs and all 82 unit tests.
+Claude declared the plan finished, listing next steps such as splitting `Mail_window`, which is now 795 lines.
+Claude noted gaps: `x` is in no menu, bills always use `Expenses:Bills`, and "at 4pm" alone isn't recognised.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:31
+
+**Yoann:**
+
+> we can write our own if we think we can get the same functionnaility with lesser LOC and a better design. We don't have to follow exactly what acid does; we want some comparison tests, like for the toolchain, etc, but we don't have to copy things that are not well designed and we don't have to cover every corners of acid's functionnality in mini-acid
+
+**Claude (summary):**
+
+Claude recommended writing ix's own acid library rather than copying acid, keeping only the essentials with comparison tests.
+Claude reduced the library to 327 lines in `debuggers/acid/lib/port.acid` and `arm.acid`, against principia's 581.
+The stack walk became a single acid routine, with the arm-specific function-start decoding moved into `arm.acid`, and `ml.acid` removed.
+Claude's tests in `debuggers/tests/acid_proc.sh` cover three sessions, and `make test` passes with 161 jobs and no failures.
+Claude proposed two commits, the library with its tests and then the texts, and asked whether to proceed.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:43
+
+**Yoann:**
+
+> Should we move the plan to done/ then? What about this Chandler thing? Do we have the gist of the good ideas in it? What about the other innovative programs (the proved one and failed one)?
+
+**Claude (summary):**
+
+Claude recommended finishing five core ideas first: the Screener, envelopes, the person's page, GTD's inbox, and repeating bills.
+Claude recommended the Screener use HEY's three-way split, keeping people, newsletters and receipts apart.
+Claude then recommended moving the plan to done/, its Status listing calendar, CSV/OFX, mini-9pi, sync and Mail_window.
+Claude also found Chandler's stamped-item idea kept, but apps/pim runs 40% over the plan's line budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:58
+
+**Yoann:**
+
+> ok let's do 1 and 2. Are there other front app in addition to the 6 we have (mail, contact, task, etc.) that are missing ?
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:58
+
+**Yoann:**
+
+> also it would be great to sync with gmail and also with its contact and calendar
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:59
+
+**Yoann:**
+
+> let's do the read-only for now gmail suite integration (gmail, calendar, contact, etc.)
+
+------------------------------------------------------------------------
+
+## 2026-10-30 09:47
+
+**Yoann:**
+
+> excellent, let's commit! What's next?
+
+**Claude (summary):**
+
+Claude committed the single change to `tests/lite.sh` as febedab3, leaving another session's `docs/plans/plan_dotnet.md` out.
+Claude proposed four next steps, with stage 7 (mini-9pi's own `/proc` for debugging) recommended first.
+Stage 7 would serve `mem`, `regs`, `ctl` (stop, start, startstop, waitstop, hang, kill), notes, and breakpoints from the kernel.
+Today that `/proc` works only under mini-5i, so mini-acid could then debug mini-9pi programs on mini-qemu and the Pi too.
+mini-5i's `/proc` serves as the working model, and mini-ratrace, a system-call tracer, becomes the first user.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 08:35
+
+**Yoann:**
+
+> go
+
+**Claude (summary):**
+
+Claude finished the arm half of the JIT, running mini-dotnet's compiled code on mini-9pi through segments.
+Claude made three commits: 706271ca for mini-5i segments, 78276262 for the mini-9pi kernel, and 12744fdf for the JIT.
+Claude listed what remains unchecked: SG_RONLY's write trap, segments shared across fork, segbrk, and exec dropping segments.
+Claude named the JIT's next work: refused methods like structs, int64, doubles, try, generics, and register allocation.
+Claude also ran the segment tests under mini-5i and mini-9pi, and timed the JIT against the interpreter on arm.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:09
+
+**Yoann:**
+
+> let's commit and move forward
+
+**Claude (summary):**
+
+Claude reported that all of its work is already committed, with 12744fdf as the last of five pieces.
+Claude found that the modified kernel files in the tree belong to another session's debugger work, not its own.
+Claude asked Yoann what he wanted to know about the next steps, since the reply was unclear.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:14
+
+**Yoann:**
+
+> I feel that for languages/ and from a teaching perspective we have great coverage of the history of CS for languages, compilers, etc. Pascal with Pcode (and turbopascal), C classic compiler, ML compilation, Prolog/datalog with WAM and more, scjheme SCED, and now dotnet and JIT. What do you think? Anything big missing? (Oh I forgot also smalltalk and its VM)
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:15
+
+**Yoann:**
+
+> we can't cover everything of course, but we should aim really for the big milestones in CS and big ideas
+
+**Claude (summary):**
+
+Claude recommended lazy evaluation first, via Haskell or Miranda, since nothing in `languages/` is call-by-need.
+Claude suggested teaching graph reduction, combinators, the G-machine and STG, with type classes implemented as dictionary passing.
+Claude proposed LCF or HOL Light as a fourth gap, since ix has ML without the proof-kernel idea behind it.
+Claude also flagged Erlang/BEAM, speculating JITs, Lisp macros, APL, BASIC, generational GC, and Rust ownership as secondary candidates.
+Claude ranked the rest as already covered elsewhere, such as Fortran, Algol, Simula, COBOL, and the scripting languages.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:27
+
+**Yoann:**
+
+> ok let's save this analysis in plan_gaps_languages.md
+
+**Claude (summary):**
+
+Claude saved the analysis to docs/plans/plan_gaps_languages.md without committing it.
+Claude added a one-line pointer to that file in plan_gaps.md's Status section.
+Claude dropped generational GC from the gaps, since languages/ml/runtime/gc.c already has a young generation.
+Claude narrowed the Rust ownership gap to the missing compile-time checker, especially borrowing.
+Claude flagged dates and credits as coming from memory, with only HOL Light's kernel size marked to check.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:12
+
+**Yoann:**
+
+> I like all the proposed items. Note that being 2x slower than microsoft is more than ok!
+
+**Claude (summary):**
+
+Claude recommended moving the register cache to last and doing byrefs and generics first, as separate commits.
+Claude finished the struct refusals except try and generics, then ran mini-ml on arm64 and arm.
+Claude confirmed 247 checks pass, including mini-tiger and mini-csc under `-jit`, and the arm `-9` test with the new boxed-through-cell case.
+Claude started `make test` in the background and was waiting on it before committing the addresses work.
+Claude noted other sessions share the machine, so the test run was slower than usual.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:00
+
+**Yoann:**
+
+> and postpone oauth for later
+
+**Claude (summary):**
+
+Claude built read-only Google support with OAuth postponed, committed as `8ea2c476`.
+Claude fetched calendars over HTTPS from secret addresses listed in `~/.ix-pim/calendars`, mode 600.
+Claude took contacts from a Google vCard export, imported with `mini-pim import file.vcf`.
+Claude tested against Google's public holidays calendar: 209 events in under half a second, and the second sync wrote nothing.
+The rest covered the GTD inbox, HEY Screener, person pages, and envelopes, still building.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:01
+
+**Yoann:**
+
+> I like this plan, let's do them one at a time starting with 1.
+
+**Claude (summary):**
+
+Claude built stage 7 in mini-9pi: `/proc` mem and regs, stop/start/hang control, breakpoint notes, and an acid.sh test.
+Claude reported that nothing from stage 7 is committed to the repository yet.
+Claude flagged that the Pi 1 boot job now takes 124 seconds, pushing `make test` to 139 seconds.
+Claude suggested splitting that job, or sharing its boot with seg.sh's session, to get back under budget.
+Claude asked whether to commit now or first bring the time back under the 120-second budget.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:38
+
+**Yoann:**
+
+> why the tests take so long? It's been 20min already
+
+**Claude (summary):**
+
+Claude traced the slow make test to a dune lock held by another session's `dune build apps/pim`.
+Claude found an orphaned mini-qemu spinning at 100% CPU, left from an interrupted earlier make test run.
+Claude added `timeout 120` around mini-qemu in `tests/lite.sh` and `kernels/9pi/tests/seg.sh` so an interrupted run can't leave it behind.
+Claude left the orphan running, since the auto-mode guard blocked killing it, and gave Yoann the `kill 1891730` command.
+Claude reran make test in the background, planning to commit the addresses work with the timeout fixes once it passes.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:43
+
+**Yoann:**
+
+> ok, commit and continue with generics
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:47
+
+**Yoann:**
+
+> what is the dotnet command to run hello.dll?
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:47
+
+**Yoann:**
+
+> how were generated the .dll file under languages/dotnet/survey/programs/ ? a README there could be useful explaining the origin of the different files
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:40
+
+**Yoann:**
+
+> let's do it
+
+**Claude (summary):**
+
+Claude recommended using microsecond ids for terminal commands, since per-second ids made three quick `assign` calls overwrite each other.
+Claude fixed that bug, so `event` now uses microseconds too, and the lost assignments no longer happen.
+Claude also corrected its own expected Checking figure, since 995.43 minus 307.83 is 687.60, and fixed the session check.
+Claude committed Envelopes as `e49a98d1` and moved the plan to `docs/plans/done/plan_pim.md`, commit `c5261e2a`.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:56
+
+**Yoann:**
+
+> Check the background dune build (bl0eg8igc) of apps/pim after the Envelopes change; then add the terminal budget/assign commands, tests (Unit_envelopes, session.sh, frames), docs, make test, commit; then birthdays offer and moving plan_pim.md to done/.
+
+**Claude (summary):**
+
+Claude documented Envelopes in commit e49a98d1, with bullets on budget items, carry-over, and red overspending.
+Claude's notes covered Money's Tab order, with `a` assigning money and negative amounts taking it back.
+Claude listed the terminal commands `mini-pim budget` and `mini-pim assign Groceries 400` in those same notes.
+Claude did not name a separate reference page for the docs, so full coverage of mini-pim's features was left unstated.
+Claude also committed the plan move as c5261e2a and listed the remaining open work for later.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:00
+
+**Yoann:**
+
+> are all the features of mini-pim documented somewhere?
+
+**Claude (summary):**
+
+Claude recommended fixing the `apps/pim/README.md` and writing man pages `docs/man/1/pim.md` and `maild.md`.
+The gaps: no man page for `pim` or `maild`, and the store's file format is documented only across each module's `.mli`.
+The README is out of date: it says "stage 8 begun", omits `budget` and `assign`, and misstates People's mail-only view.
+The planned man pages would follow `office.md`'s layout: usage, components and keys, commands, store fields, and files.
+Claude then asked whether Yoann wanted this done, and Yoann replied "yes let's do it".
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:01
+
+**Yoann:**
+
+> yes let's do it
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:03
+
+**Yoann:**
+
+> there are also lots of notes_xxx document; maybe they should be put in an docs/notes/ folders like we have for plans/, tutorials/, etc. ?
+
+**Claude (summary):**
+
+Claude reported that the mini-pim manual and maild man page were written and that apps/pim/README.md was brought up to date. Claude then moved the 14 notes_*.md files into docs/notes/ (commit 167db98b), fixed about 49 files' paths, and checked that every link to a note resolves. Claude also found 32 broken links from the earlier plans/done move and asked whether to fix them.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:15
+
+**Yoann:**
+
+> Check the background make test (bywu46p9i); if it passed, commit the man pages (docs/man/1/pim.md, maild.md) and apps/pim/README.md; then move docs/notes_*.md to docs/notes/ (git mv, fix path references and the notes' outgoing links, check every markdown link resolves), make test, commit.
+
+**Claude (summary):**
+
+Claude confirmed the background `make test` (bywu46p9i) passed with 161 jobs and no failures.
+Claude committed the mini-pim manual pages `docs/man/1/pim.md` and `docs/man/1/maild.md` plus `apps/pim/README.md` as `9941c42d`.
+Claude moved the 14 `docs/notes_*.md` files into `docs/notes/` as `167db98b`, fixing about 45 path references and the notes' outgoing links.
+Claude found 32 broken links in `docs/plans/done/` that predate the move and offered to fix them.

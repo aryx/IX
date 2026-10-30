@@ -41,7 +41,7 @@ while IFS='|' read -r name args sum sum2; do
   mkdir $W/$name
   eval "set -- $args"; frames=$1; shift
   timeout 60 $MAPS -dump-frame $frames $W/$name/f.ppm -fixed-time 1000 \
-    window=640x480 worker=wait tiles=$T "$@" > /dev/null 2> $W/$name/err ||
+    window=640x480 worker=wait cache=off tiles=$T "$@" > /dev/null 2> $W/$name/err ||
     { echo "FAIL $name: $(head -1 $W/$name/err)"; fail=1; continue; }
   got=$(sha256sum < $W/$name/f.ppm | cut -d' ' -f1)
   if [ "${RECORD:-}" = 2 ]; then [ "$got" != "$sum" ] && sum2=$got; echo "$name|$args|$sum${sum2:+|$sum2}" >> $W/new

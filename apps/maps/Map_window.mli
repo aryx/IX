@@ -20,11 +20,12 @@
 type model
 
 (* what the window needs of the system *)
-type caps = < Cap.network; Cap.open_in >
+type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
 
 (* [initial caps flags]: from the flags lat=, lon=, zoom= (the world, by
- * default), tiles= (the server, OSM's by default), worker=wait (the
- * tests': Tile_worker.Waited). The worker is started. *)
+ * default), tiles= (the server, OSM's by default), cache= (a directory
+ * or off; the user's by default), cache-size= (in megabytes), worker=wait
+ * (the tests': Tile_worker.Waited). The worker is started. *)
 val initial : caps -> Playground.flags -> model
 
 val update : Playground.computer -> model -> model

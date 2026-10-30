@@ -261,7 +261,7 @@ job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
-job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh'
+job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
 job "mini-pim: the window's recorded frames, against mini-maild" apps/pim/tests/frames.sh
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
@@ -468,6 +468,7 @@ by_ix_net() {
   nofail networking/tests/served.sh $K/networking && nofail networking/tests/tls.sh $K/networking &&
   nofail browsers/lynx/tests/session.sh $K
 }
+by_ix_maps() { nofail apps/maps/tests/frames.sh $K/apps/maps && nofail apps/maps/tests/cache.sh $K/apps/maps; }
 by_ix_browsers() {
   nofail browsers/javascript/tests/scripts.sh $K/browsers/javascript &&
   nofail browsers/engine/tests/boxes.sh $K/browsers/engine/tests &&
@@ -550,7 +551,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-play built by ix" by_ix_play
   job $a "lib_crypto built by ix: the vectors" by_ix_vectors
   job $a "mini-curl, mini-httpd, mini-lynx built by ix" by_ix_net
-  job $a "mini-maps built by ix: its window's frames" nofail apps/maps/tests/frames.sh $K/apps/maps
+  job $a "mini-maps built by ix: its window's frames, its cache" by_ix_maps
   job $a "mini-node, browsers/engine, mini-netscape built by ix" by_ix_browsers
   job $a "mini-troff built by ix: a page" nofail typesetting/tests/sample.sh $K
   job $a "tiny programs built by ix: their tests" tiny_tests

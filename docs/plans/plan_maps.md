@@ -3,7 +3,7 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stage 1 built** (see the end). What is below about the services
+**Status: stages 1 and 2 built** (see the end). What is below about the services
 was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
@@ -116,3 +116,10 @@ platform now keeps as many pictures as 3 million pixels hold, four at
 least, for those twenty tiles. Under mini-ml's threads a system call
 stops all of them, so the window waits while a tile is fetched, as
 mini-netscape's does.
+
+2026-10-30: stage 2 built, `Tile_cache`: a file a tile, with until when it
+is good and its ETag; `Cache-Control`, `Age`, `Expires`, `no-store`,
+`no-cache`; an old tile asked again with `If-None-Match`, and shown if the
+server does not answer; 32 MB, the least recently used going first.
+mini-httpd says `ETag` and answers 304 for it, and `-max-age` says
+`Cache-Control`, which is how `tests/cache.sh` sees what is asked.

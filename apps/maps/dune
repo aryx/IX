@@ -1,13 +1,13 @@
 ; apps/maps: mini-maps, a map and the weather, fetched from the internet
 ; (docs/plans/plan_maps.md). Mercator (a latitude to a pixel), Tiles (the
-; pyramid: which tiles a window needs), Tile_worker (fetched beside the
-; window), Map_window, over lib_networking's HTTP and Png. The program
+; pyramid: which tiles a window needs), Tile_cache (on disk, as the server
+; says), Tile_worker (fetched beside the window), Map_window, over lib_networking's HTTP and Png. The program
 ; here is linked with the platform that writes a frame to a file (the
 ; tests'); sdl/ is the one with a window, bin/mini-maps
 (library
  (name ix_maps)
  (wrapped false)
- (modules Mercator Tiles Worker_spawn Tile_worker Map_window)
+ (modules Mercator Tiles Tile_cache Worker_spawn Tile_worker Map_window)
  (libraries threads.posix ix_http ix_tls ix_tcp ix_playground ix_gui ix_graphics_core
    ix_graphics_software ix_core caps unix))
 

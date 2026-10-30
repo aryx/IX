@@ -79,8 +79,9 @@
 
 type caps = < Cap.network; Cap.open_in; Cap.readdir; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-httpd [-p port] [directory]
-  -p  the port (8000; 0: one the system chooses, said on the first line)"
+let usage = "usage: mini-httpd [-p port] [-max-age seconds] [directory]
+  -p  the port (8000; 0: one the system chooses, said on the first line)
+  -max-age  for how long a client need not ask again (Cache-Control)"
 
 let content_type (name : string) : string =
   (* (lib_core's Filename has no extension) *)
@@ -135,7 +136,7 @@ let listing (_caps : < Cap.readdir; .. >) (path : string) (dir : string) : Http.
   Http.response 200 ~content_type:html
     (Printf.sprintf "<!doctype html><title>%s</title><h1>%s</h1>\n<ul>\n%s</ul>\n" (escape path) (escape path) (String.concat "" (List.map item (dirs @ files))))
 
-let answer (caps : < Cap.open_in; Cap.readdir; .. >) ~(root : string) (request : Http.request) : Http.response =
+let answer (caps : < Cap.open_in; Cap.readdir; .. >) ~(root : string) ~(max_age : int option) (request : Http.request) : Http.response =
   let target = match String.index_opt request.target '?' with Some i -> String.sub request.target 0 i | None -> request.target in
   let raw = unescape target in
   (* a/../b is b; more ".." than directories before them would go
@@ -146,8 +147,20 @@ let answer (caps : < Cap.open_in; Cap.readdir; .. >) ~(root : string) (request :
   in
   let path = Url.remove_dot_segments raw in
   let file = root ^ path in
+  (* a file's version is its contents' MD5: an ETag, which a client that
+   * has the file says back (If-None-Match) and gets nothing more; -max-age,
+   * for how long it need not ask (Tile_cache.mli says it all) *)
   let send (file : string) : Http.response =
-    try Http.response 200 ~content_type:(content_type file) (FS.read caps (Fpath.v file)) with Sys_error why -> page 403 why in
+    try
+      let bytes = FS.read caps (Fpath.v file) in
+      let tag = "\"" ^ Digest.to_hex (Digest.string bytes) ^ "\"" in
+      let cache = match max_age with Some n -> [ ("Cache-Control", Printf.sprintf "max-age=%d" n) ] | None -> [] in
+      let r =
+        if Http.header "If-None-Match" request.headers = Some tag then Http.response 304 ~content_type:(content_type file) ""
+        else Http.response 200 ~content_type:(content_type file) bytes
+      in
+      { r with headers = (("ETag", tag) :: cache) @ r.headers }
+    with Sys_error why -> page 403 why in
   if request.meth <> "GET" then page 405 (request.meth ^ " is not allowed here: only GET.")
   else if above || String.contains path '\000' || not (String.starts_with ~prefix:"/" path) then page 403 "Nothing above the directory served."
   else if not (Sys.file_exists file) then page 404 (path ^ " is not here.")
@@ -188,12 +201,12 @@ let read_request (fd : Unix.file_descr) : Http.parsed_request =
   in
   go ()
 
-let rec serve (caps : < caps; .. >) ~(root : string) (sock : Unix.file_descr) : 'a =
+let rec serve (caps : < caps; .. >) ~(root : string) ~(max_age : int option) (sock : Unix.file_descr) : 'a =
   let fd, _ = Unix.accept sock in
   (try
      let said, (response : Http.response) =
        match read_request fd with
-       | Http.Request (r, _, _) -> (r.meth ^ " " ^ r.target, answer caps ~root r)
+       | Http.Request (r, _, _) -> (r.meth ^ " " ^ r.target, answer caps ~root ~max_age r)
        | Http.Bad why -> ("?", page 400 why)
        | Http.Incomplete -> ("?", page 400 "not a whole request")
      in
@@ -203,20 +216,21 @@ let rec serve (caps : < caps; .. >) ~(root : string) (sock : Unix.file_descr) : 
      say caps (Printf.sprintf "%s %d %d" said response.status (String.length response.body))
    with Unix.Unix_error _ | Sys_error _ -> ());
   (try Unix.close fd with Unix.Unix_error _ -> ());
-  serve caps ~root sock
+  serve caps ~root ~max_age sock
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
-  let rec options port root args =
+  let rec options port root max_age args =
     match args with
-    | [] -> Some (port, root)
-    | "-p" :: p :: rest -> ( match int_of_string_opt p with Some p -> options p root rest | None -> None)
+    | [] -> Some (port, root, max_age)
+    | "-p" :: p :: rest -> ( match int_of_string_opt p with Some p -> options p root max_age rest | None -> None)
+    | "-max-age" :: n :: rest -> ( match int_of_string_opt n with Some n -> options port root (Some n) rest | None -> None)
     | flag :: _ when String.length flag > 1 && flag.[0] = '-' -> None
-    | dir :: rest -> options port dir rest
+    | dir :: rest -> options port dir max_age rest
   in
-  match options 8000 "." (List.tl (Array.to_list argv)) with
+  match options 8000 "." None (List.tl (Array.to_list argv)) with
   | None -> Console.eprint caps (usage ^ "\n"); Exit.Err "usage"
-  | Some (_, root) when not (Sys.file_exists root && Sys.is_directory root) -> Console.eprint caps (root ^ ": not a directory\n"); Exit.Err "directory"
-  | Some (port, root) -> (
+  | Some (_, root, _) when not (Sys.file_exists root && Sys.is_directory root) -> Console.eprint caps (root ^ ": not a directory\n"); Exit.Err "directory"
+  | Some (port, root, max_age) -> (
       match listen caps port with
       | exception Unix.Unix_error (e, _, _) -> Console.eprint caps (Printf.sprintf "port %d: %s\n" port (Unix.error_message e)); Exit.Err "port"
       | sock, port ->
@@ -224,6 +238,6 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
            * a signal that ends the program *)
           Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
           say caps (Printf.sprintf "serving %s on http://127.0.0.1:%d/" root port);
-          serve caps ~root sock)
+          serve caps ~root ~max_age sock)
 
 let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))

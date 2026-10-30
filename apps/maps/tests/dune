@@ -2,4 +2,4 @@
 ; of frames.sh, which runs its window's frames against mini-httpd
 (executables
  (names Test Make_tiles)
- (libraries ix_maps ix_graphics_core ix_core caps unix alcotest testo))
+ (libraries ix_maps ix_http ix_graphics_core ix_core caps unix alcotest testo))

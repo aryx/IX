@@ -5,7 +5,7 @@
 
 module P = Playground
 
-type caps = < Cap.network; Cap.open_in >
+type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
 
 (*****************************************************************************)
 (* Types *)
@@ -32,17 +32,55 @@ let again_after = 30.
 let credit = "\xc2\xa9 OpenStreetMap contributors"
 let user_agent = "mini-maps/0.1 (+https://github.com/aryx/ix)"
 let default_tiles = "https://tile.openstreetmap.org"
+let default_cache_megabytes = 32
 
 (*****************************************************************************)
 (* A tile *)
 (*****************************************************************************)
 
-let fetch (caps : caps) (base : string) (key : Tiles.key) : (Rgba_image.t, string) result =
-  let options = { Http_client.defaults with said = [ ("User-Agent", user_agent) ]; keep = true } in
-  match Http_client.fetch_with options caps ~post:None (Tiles.url base key) with
-  | Error why -> Error why
-  | Ok (_, r) when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
-  | Ok (_, r) -> Ok (Png.decode r.body)
+(* the tile, by the rules of Tile_cache.mli: on the disk and good, it is
+ * not asked; on the disk and old, asked if it changed, and shown if the
+ * server does not answer; else asked *)
+let fetch (caps : caps) (base : string) (cache : Tile_cache.t option) (key : Tiles.key) : (Rgba_image.t, string) result =
+  let name = Tiles.name key in
+  let now = Unix.gettimeofday () in
+  let ask (more : Http.header list) : (Http.response, string) result =
+    let said = ("User-Agent", user_agent) :: more in
+    let options = { Http_client.defaults with said; keep = true } in
+    Result.map snd (Http_client.fetch_with options caps ~post:None (Tiles.url base key))
+  in
+  let kept (e : Tile_cache.entry) : unit = Option.iter (fun (c : Tile_cache.t) -> Tile_cache.put c name e) cache in
+  (* what a server gave: kept if it may be *)
+  let given (r : Http.response) : (Rgba_image.t, string) result =
+    if r.status <> 200 then Error (Printf.sprintf "%d %s" r.status r.reason)
+    else begin
+      (match Tile_cache.lifetime ~now r.headers with
+      | Some expires -> kept { bytes = r.body; expires; etag = Http.header "ETag" r.headers }
+      | None -> ());
+      Ok (Png.decode r.body)
+    end
+  in
+  (* (a file cut short by a crash: not a tile, asked again) *)
+  let read (e : Tile_cache.entry) : Rgba_image.t option = try Some (Png.decode e.bytes) with Failure _ -> None in
+  let afresh () : (Rgba_image.t, string) result =
+    match ask [] with Ok r -> given r | Error why -> Error why
+  in
+  match Option.bind cache (fun (c : Tile_cache.t) -> Tile_cache.find c name) with
+  | None -> afresh ()
+  | Some e -> (
+      match read e with
+      | None -> afresh ()
+      | Some image when e.expires > now -> Ok image
+      | Some image -> (
+          let more = match e.etag with Some tag -> [ ("If-None-Match", tag) ] | None -> [] in
+          match ask more with
+          | Ok r when r.status = 304 ->
+              (match Tile_cache.lifetime ~now r.headers with
+              | Some expires -> kept { e with expires }
+              | None -> ());
+              Ok image
+          | Ok r when r.status = 200 -> given r
+          | Ok _ | Error _ -> Ok image))
 
 (*****************************************************************************)
 (* The store *)
@@ -256,6 +294,18 @@ let view (computer : P.computer) (m : model) : P.shape list =
 (* Entry point *)
 (*****************************************************************************)
 
+(* cache=DIR, or the user's; cache=off, none *)
+let cache_dir (caps : caps) (flags : P.flags) : string option =
+  let env (name : string) : string option =
+    match CapSys.getenv caps name with "" -> None | v -> Some v | exception Not_found -> None
+  in
+  match (List.assoc_opt "cache" flags, env "XDG_CACHE_HOME", env "HOME", env "home") with
+  | Some "off", _, _, _ -> None
+  | Some dir, _, _, _ -> Some dir
+  | None, Some cache, _, _ -> Some (Filename.concat cache "mini-maps")
+  | None, None, Some home, _ | None, None, None, Some home -> Some (Filename.concat (Filename.concat home ".cache") "mini-maps")
+  | None, None, None, None -> None
+
 let initial (caps : caps) (flags : P.flags) : model =
   let number (name : string) : float option = Option.bind (List.assoc_opt name flags) float_of_string_opt in
   let z =
@@ -267,5 +317,11 @@ let initial (caps : caps) (flags : P.flags) : model =
   let cx, cy = (Mercator.x_of_longitude z (at "lon"), Mercator.y_of_latitude z (at "lat")) in
   if List.assoc_opt "worker" flags = Some "wait" then Tile_worker.mode := Tile_worker.Waited;
   let base = match List.assoc_opt "tiles" flags with Some b -> b | None -> default_tiles in
-  Tile_worker.start (fetch caps base);
+  let limit =
+    match Option.bind (List.assoc_opt "cache-size" flags) int_of_string_opt with
+    | Some megabytes -> megabytes * 1_000_000
+    | None -> default_cache_megabytes * 1_000_000
+  in
+  let cache = Option.bind (cache_dir caps flags) (fun (dir : string) -> Tile_cache.create caps ~dir ~limit) in
+  Tile_worker.start (fetch caps base cache);
   { z; cx; cy; grab = None; wheel = 0.; store = Hashtbl.create 200; failed = Hashtbl.create 20; ticks = 0; generation = 0; said = "" }

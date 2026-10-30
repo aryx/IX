@@ -7,6 +7,43 @@
 let check_int = Alcotest.(check int)
 let keys (l : Tiles.placed list) : string list = List.map (fun (p : Tiles.placed) -> Tiles.name p.key) l
 
+let cache_tests (caps : < Cap.open_in; Cap.open_out; .. >) =
+  let lifetime (headers : Http.header list) : float option = Tile_cache.lifetime ~now:1000. headers in
+  let check = Alcotest.(check (option (float 0.))) in
+  [
+    Testo.create "Tile_cache: how long an answer is good" (fun () ->
+        check "max-age" (Some 1060.) (lifetime [ ("Cache-Control", "public, max-age=60") ]);
+        check "less what a proxy used" (Some 1050.) (lifetime [ ("cache-control", "max-age=60"); ("Age", "10") ]);
+        check "Expires, the old way" (Some 86400.) (lifetime [ ("Expires", "Fri, 02 Jan 1970 00:00:00 GMT") ]);
+        check "max-age first" (Some 1060.) (lifetime [ ("Expires", "Fri, 02 Jan 1970 00:00:00 GMT"); ("Cache-Control", "max-age=60") ]);
+        check "no-cache: asked each time" (Some 0.) (lifetime [ ("Cache-Control", "no-cache, max-age=60") ]);
+        check "no-store: not kept" None (lifetime [ ("Cache-Control", "no-store") ]);
+        check "nothing said: asked each time" (Some 0.) (lifetime []));
+    Testo.create "Tile_cache: the least recently used goes first, across runs" (fun () ->
+        let dir = Filename.temp_file "tile_cache" "" in
+        Sys.remove dir;
+        let entry : Tile_cache.entry = { bytes = String.make 400 'x'; expires = 5.; etag = Some "\"t\"" } in
+        let opened () : Tile_cache.t =
+          match Tile_cache.create caps ~dir ~limit:1000 with Some c -> c | None -> Alcotest.fail "no cache"
+        in
+        let c = opened () in
+        Tile_cache.put c "1/0/0" entry;
+        Tile_cache.put c "1/0/1" entry;
+        (match Tile_cache.find c "1/0/0" with
+        | Some e ->
+            Alcotest.(check string) "its bytes" entry.bytes e.bytes;
+            Alcotest.(check (option string)) "its version" entry.etag e.etag;
+            Alcotest.(check (float 0.)) "until when" 5. e.expires
+        | None -> Alcotest.fail "not kept");
+        Tile_cache.put c "1/1/0" entry;
+        Alcotest.(check bool) "the one not used since is gone" true (Tile_cache.find c "1/0/1" = None);
+        Alcotest.(check bool) "the one used stays" true (Tile_cache.find c "1/0/0" <> None);
+        check_int "two left" 2 (fst (Tile_cache.size c));
+        (* (the uses, saved at the last trim) *)
+        check_int "the index read again" 2 (fst (Tile_cache.size (opened ())));
+        ignore (Sys.command ("rm -rf " ^ Filename.quote dir)));
+  ]
+
 let tests =
   Testo.categorize "maps"
     [
@@ -62,4 +99,7 @@ let tests =
           Alcotest.(check char) "and no further" '\000' (Bytes.get child.rgba 8));
     ]
 
-let () = Testo.interpret_argv ~project_name:"maps" (fun _env -> tests)
+let () =
+  Cap.main (fun caps ->
+      Testo.interpret_argv ~project_name:"maps" (fun _env ->
+          tests @ Testo.categorize "maps" (cache_tests caps)))

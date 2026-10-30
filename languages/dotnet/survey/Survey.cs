@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 //
 // What is in an assembly, counted: the numbers of
-// docs/plans/plan_dotnet.md. Run by survey.sh.
+// docs/plans/done/plan_dotnet.md. Run by survey.sh.
 //
 //   Survey file.dll...          a line by assembly, then what they ask
 //                               together: tables, opcodes, the library

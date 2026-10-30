@@ -1,4 +1,4 @@
-; mini-tiger (docs/plans/plan_dotnet.md, stage 5): Appel's Tiger, with
+; mini-tiger (docs/plans/done/plan_dotnet.md, stage 5): Appel's Tiger, with
 ; fork-tiger's exceptions, compiled to .NET. Tiger_lexer and
 ; Tiger_parser (ocamllex, ocamlyacc), Tiger_ast (the tree), Tiger_semant
 ; (names, types, escapes) to Tiger_tree, Tiger_emit (frames as classes,

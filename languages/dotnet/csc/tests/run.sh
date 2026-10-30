@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-csc's tests (docs/plans/plan_dotnet.md, stage 6): the seven of the
+# mini-csc's tests (docs/plans/done/plan_dotnet.md, stage 6): the seven of the
 # survey's programs decision 11 keeps (hello fib queens shapes exceptions
 # collections, and strings as tests/strings.cs writes it, without its
 # interpolation and its switch) and tests/features.cs, compiled by

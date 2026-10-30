@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# The numbers of docs/plans/plan_dotnet.md: programs/*.cs compiled by
+# The numbers of docs/plans/done/plan_dotnet.md: programs/*.cs compiled by
 # Microsoft's C# compiler, what each prints by Microsoft's runtime
 # (programs/*.expected), and what their assemblies hold (Survey.cs):
 # the metadata's tables, the opcodes, the library's members asked.

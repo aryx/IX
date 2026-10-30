@@ -1,6 +1,6 @@
 # The survey's ten programs
 
-Ten small C# programs, the survey's (docs/plans/plan_dotnet.md), and
+Ten small C# programs, the survey's (docs/plans/done/plan_dotnet.md), and
 what Microsoft's tools make of them, kept in the tree so that
 mini-dotnet's tests need no .NET SDK (the plan's decision 2):
 

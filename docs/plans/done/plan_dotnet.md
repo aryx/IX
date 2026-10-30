@@ -37,18 +37,22 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 9 done** (the reader and the listing; the
-machine: objects, value types, generics, delegates; `dotnet` and
-`tiger` on mini-9pi's card; the writer and mini-tiger,
-`languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
-whose assemblies Microsoft's dotnet and mini-dotnet both run; the
-verifier, `-verify`; the JIT's code as text, `-S -jit`, its first
-methods those of int32s, their code run from C under mini-5i); stage 9
-done: `mini-dotnet -jit` runs the JIT's code on arm64 (Linux) and on
-arm (mini-9pi, in segments: segattach, segflush), for methods of
-int32s (97.9% less time than the interpreter on bench.cs) and of
-references (objects, arrays, strings), the interpreter called for the
-rest; a method compiled at its first call. See the end.
+**Status: done** (2026-10-30): stages 1 to 10. The reader and the
+listing; the machine (objects, value types, generics, delegates);
+`dotnet` and `tiger` on mini-9pi's card; the writer and mini-tiger
+(`languages/tiger/`), the reduced mini-csc (`languages/dotnet/csc/`);
+the verifier (`-verify`); the JIT (`-jit`): its code made at run time
+on arm64 (Linux) and arm (mini-9pi, in segments: segattach and
+segflush, the kernel's new calls), for every method of the tests'
+assemblies but one with an exception filter (objects, strings,
+arrays, structs, generics per instance, try, catch, finally, int64s
+and doubles by call-outs), a method compiled when hot (tiers), its
+int32s in registers; bench.cs 0.25 s with the JIT, 9.45 s and 17.29 s
+by the interpreter (ocamlopt's build, mini-ml's), 0.13 s by
+Microsoft's. Left: exception filters (the interpreter's, by the
+author's choice), int64s' and doubles' arithmetic inline (call-outs
+now), a register cache across calls (Plan 9's convention keeps
+none), mini-ml to IL (After it). See the end.
 
 ## Its place in `languages/`
 
@@ -1052,3 +1056,8 @@ structs 6 (vec), ldftn 2.
    at its first call (run.sh, -9, mini-tiger's and mini-csc's -jit),
    and each program once more with the tiers.
 
+## Closed
+
+2026-10-30, the author: "ok let's do the register cache if it's not
+too much code and then close the plan". The plan moved to
+docs/plans/done/. What is left is said in the status above.

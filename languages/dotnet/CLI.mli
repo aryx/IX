@@ -1,5 +1,5 @@
 (* mini-dotnet: .NET's assemblies, as Microsoft's C# compiler writes
- * them, read and run (docs/plans/plan_dotnet.md). Its usage: [usage]
+ * them, read and run (docs/plans/done/plan_dotnet.md). Its usage: [usage]
  * in CLI.ml.
  *
  *     hello.dll                 a PE file, its metadata a database

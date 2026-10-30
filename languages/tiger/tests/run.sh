@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-tiger's tests (docs/plans/plan_dotnet.md, stage 5): fork-tiger's
+# mini-tiger's tests (docs/plans/done/plan_dotnet.md, stage 5): fork-tiger's
 # programs (programs/*.tig, from ~/github/tiger/tests: their input
 # .in, what they print .out, as fork-tiger's compiler made them print on
 # x86), each compiled by mini-tiger and run by mini-dotnet, and by

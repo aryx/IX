@@ -1,4 +1,4 @@
-; mini-csc (docs/plans/plan_dotnet.md, stage 6, decision 11): a C#
+; mini-csc (docs/plans/done/plan_dotnet.md, stage 6, decision 11): a C#
 ; reduced to what the survey's simpler programs need, compiled to .NET.
 ; Csc_lexer (ocamllex), Csc_parser (by hand: C#'s casts and generic
 ; arguments), Csc_ast, Csc_types (the types, the program's classes and

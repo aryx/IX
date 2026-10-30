@@ -1,4 +1,4 @@
-; mini-dotnet (docs/plans/plan_dotnet.md): a runtime for the assemblies
+; mini-dotnet (docs/plans/done/plan_dotnet.md): a runtime for the assemblies
 ; Microsoft's C# compiler writes. Metadata (the 45 tables' shapes),
 ; Image (the PE file read: heaps, tables, a method's body), Signature
 ; (the blobs' types), Il (the opcodes, a body decoded and encoded),

@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-dotnet's tests (docs/plans/plan_dotnet.md), on dune's build and on
+# mini-dotnet's tests (docs/plans/done/plan_dotnet.md), on dune's build and on
 # mini-ml's when it is there (_mk/7: arm64, or -5: arm under mini-5i, a
 # Pi1's integers of 31 bits). The assemblies are the survey's, written by
 # Microsoft's C# compiler and kept in the tree (survey/programs/*.dll,

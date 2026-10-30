@@ -47,6 +47,9 @@ type model = {
   back_to : mode;
   field : string; (* what is typed after a question *)
   after : action option;
+  (* what waits one frame, the status saying it first: the window draws
+   * nothing while the server is asked *)
+  soon : action option;
   status : string;
   held : string Set_.t; (* the keys down at the last frame *)
 }
@@ -83,7 +86,7 @@ let load (caps : caps) (m : model) : model =
   (* the Inbox's: the list asked of the Screener's, the screened out
    * in All Mail only *)
   let screening = Screen.since items <> None in
-  let place c = Screen.place items ~account:m.account c in
+  let place = Screen.place items ~account:m.account in
   let waiting =
     if screening then
       List.length (List.filter (fun c -> place c = Screen.Screener) cs)
@@ -170,6 +173,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       back_to = Browsing;
       field = "";
       after = None;
+      soon = None;
       status;
       held = Set_.empty;
     }

@@ -60,7 +60,7 @@ let list_fits (computer : computer) : int =
 let lines (computer : computer) (m : model) : int =
   List.length (reading_lines (area computer).room m)
 
-let mailbox_name (m : model) : string =
+let name (m : model) : string =
   if m.mailbox = "INBOX" then
     match (m.screening, m.screen) with
     | _ when m.unread -> "Unread"
@@ -89,7 +89,7 @@ let view (computer : computer) (m : model) : shape list =
     | Composing ->
         (if m.draft.subject = "" then "New message" else m.draft.subject)
         ^ " \xe2\x80\x94 " ^ m.account
-    | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
+    | Browsing | Reading -> name m ^ " \xe2\x80\x94 " ^ m.account
   in
   let right =
     if m.status <> "" then m.status

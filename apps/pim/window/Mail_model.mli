@@ -50,6 +50,9 @@ type model = {
   back_to : mode;
   field : string; (* what is typed after a question *)
   after : action option;
+  (* what waits one frame, the status saying it first: the window draws
+   * nothing while the server is asked *)
+  soon : action option;
   status : string;
   held : string Set_.t; (* the keys down at the last frame *)
 }

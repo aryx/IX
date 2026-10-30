@@ -20,5 +20,8 @@ val reading_fits : Playground.computer -> int
 val lines : Playground.computer -> Mail_model.model -> int
 val bottom : Playground.computer -> float
 
+(* the list's name: Inbox, Starred, The Screener... *)
+val name : Mail_model.model -> string
+
 (* the view, under the menu bar and the menus, which the suite draws *)
 val view : Playground.computer -> Mail_model.model -> Playground.shape list

@@ -38,32 +38,45 @@ let address (s : Imap.summary) : string =
   | Some a -> String.lowercase_ascii a.mailbox
   | None -> ""
 
-let place (items : Item.t list) ~(account : string)
-    (c : Imap.summary list) : place =
+let place (items : Item.t list) ~(account : string) :
+    Imap.summary list -> place =
+  (* (read once, then each conversation a lookup: a store of thousands
+   * of messages read again at each list's load) *)
+  let decided = Hashtbl.create 64 in
+  let known = Hashtbl.create 256 in
+  List.iter
+    (fun i ->
+      if Item.has_stamp i "sender" then
+        Hashtbl.replace decided
+          (String.lowercase_ascii (Item.field i "email"))
+          (Item.field i "screen")
+      else if Item.has_stamp i "contact" then
+        List.iter (fun e -> Hashtbl.replace known e ()) (People.emails i))
+    items;
+  let on = since items in
   let me = String.lowercase_ascii account in
-  (* the newest message not the account's own *)
-  match List.find_opt (fun s -> address s <> me) c with
-  | None -> Imbox
-  | Some s -> (
-      let a = address s in
-      match List.find_opt (fun i -> Item.id i = sender_id a) items with
-      | Some d -> (
-          match Item.field d "screen" with
-          | "feed" -> Feed
-          | "paper" -> Paper
-          | "out" -> Out
-          | _ -> Imbox)
-      | None -> (
-          if People.who items a <> None then Imbox
-          else
-            match since items with
-            | None -> Imbox
-            | Some day ->
-                (* (who wrote before the Screener was on is let in) *)
-                let before =
-                  List.exists
-                    (fun s ->
-                      address s = a && Conversations.day s.headers < day)
-                    c
-                in
-                if before then Imbox else Screener))
+  fun (c : Imap.summary list) ->
+    (* the newest message not the account's own *)
+    match List.find_opt (fun s -> address s <> me) c with
+    | None -> Imbox
+    | Some s -> (
+        let a = address s in
+        match Hashtbl.find_opt decided a with
+        | Some "feed" -> Feed
+        | Some "paper" -> Paper
+        | Some "out" -> Out
+        | Some _ -> Imbox
+        | None -> (
+            if Hashtbl.mem known a then Imbox
+            else
+              match on with
+              | None -> Imbox
+              | Some day ->
+                  (* (who wrote before the Screener was on is let in) *)
+                  let before =
+                    List.exists
+                      (fun s ->
+                        address s = a && Conversations.day s.headers < day)
+                      c
+                  in
+                  if before then Imbox else Screener))

@@ -215,13 +215,23 @@ let menus : (string * (string * command) list) list =
         ("Sender: Paper Trail", Sender_to Screen.Paper);
         ("Sender: Out  (n)", Sender_to Screen.Out) ] ) ]
 
+(* [action] at the next frame, this one saying it (Gmail's answer takes
+ * seconds, during which nothing is drawn) *)
+let later (m : model) (action : action) : model =
+  let what =
+    match action with
+    | Fetch -> "getting " ^ Mail_view.name m ^ " from the server..."
+    | _ -> "..."
+  in
+  { m with soon = Some action; status = what }
+
 let switch (caps : caps) (m : model) (mailbox : string) : model =
   let m =
     load caps { m with mailbox; selected = 0; mode = Browsing; status = "" }
   in
   (* (fetched when the password is known: what the store has of the
    * other mailbox may be old, or nothing) *)
-  if m.password <> None && mailbox <> drafts then run caps m Fetch else m
+  if m.password <> None && mailbox <> drafts then later m Fetch else m
 
 (* the conversation of the message whose item is [id], opened: in the
  * Inbox if it is there, else the mailbox it was last listed in *)
@@ -385,7 +395,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   then m
   else
   match c with
-  | Get -> run caps m Fetch
+  | Get -> if m.password = None then run caps m Fetch else later m Fetch
   | Search_ -> { m with mode = Asking Search; field = m.query }
   | Open_ when m.mailbox = drafts -> (
       match List.nth_opt m.drafts m.selected with
@@ -504,6 +514,10 @@ let writing (caps : caps) (computer : computer) (m : model)
   match c with Some c -> command caps m c | None -> m
 
 let update (caps : caps) (computer : computer) (m : model) : model =
+  match m.soon with
+  (* (the frame before said it: now done) *)
+  | Some action -> run caps { m with soon = None } action
+  | None ->
   let keys = computer.keyboard.keys in
   let pressed name = Set_.mem name keys && not (Set_.mem name m.held) in
   let menu = chosen computer ~first:1 menus in

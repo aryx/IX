@@ -35,5 +35,7 @@ val decide : string -> place -> Item.t
 (* the conversation's sender's address (its first message, the newest) *)
 val address : Imap.summary -> string
 
-(* [place items ~account conversation] *)
+(* [place items ~account conversation]; given [items] and [~account]
+ * alone, the function a list's conversations are each asked of, the
+ * store read once *)
 val place : Item.t list -> account:string -> Imap.summary list -> place

@@ -129,6 +129,11 @@ pim list
 is "    2 * 2026-10-29 Carol (2)            Re: the plan" "archived: out of INBOX"
 pim -m '[Gmail]/All Mail' list
 has '^    3 \*  *news@ix' "archived: kept in All Mail"
+# (the server leaves \Inbox out of the Inbox's labels, as Gmail: the
+# Inbox, listed after All Mail, still the Inbox's)
+pim -offline list
+has "Carol (2)  *Re: the plan" "the Inbox after All Mail, from the store"
+grep -q "news@ix" $W/out && { echo "FAIL the archived in the Inbox"; fail=1; }
 # snoozed on Thursday the 29th until monday: out of the Inbox, and back
 # in it on Monday, its item saying so (the Inbox listed first: an item
 # knows the UID of the mailbox it was last listed in)

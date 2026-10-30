@@ -205,13 +205,21 @@ let switch (caps : caps) (m : model) (mailbox : string) : model =
   if m.password <> None && mailbox <> drafts then run caps m Fetch else m
 
 (* the conversation of the message whose item is [id], opened: in the
- * mailbox it was last listed in *)
+ * Inbox if it is there, else the mailbox it was last listed in *)
 let show (caps : caps) (m : model) (id : string) : model =
   match Items.find caps (store caps) id with
   | None -> { m with status = id ^ ": not in the store" }
   | Some i -> (
+      let inbox =
+        List.exists
+          (fun v -> String.length (String.trim v) > 6
+                    && String.sub (String.trim v) 0 6 = "INBOX ")
+          (Mail.get_all i "in")
+        && List.mem "\\Inbox" (Mail_item.summary i).labels
+      in
       let mailbox =
-        match Item.field i "mailbox" with "" -> "INBOX" | b -> b
+        if inbox then "INBOX"
+        else match Item.field i "mailbox" with "" -> "INBOX" | b -> b
       in
       let m =
         load caps { m with mailbox; query = ""; mode = Browsing; status = "" }

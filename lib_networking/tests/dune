@@ -1,5 +1,7 @@
-; the unit tests of http/ and tls/ (Testo): dune's only. The
-; playground's libs/networking/tests, those of what is here
+; the unit tests of http/, tls/ and mail/ (Testo): dune's only. The
+; playground's libs/networking/tests, those of what is here; mail/'s
+; servers and its connection (Unit_smtp_server, Unit_imap), ix's
 (executable
  (name Test)
- (libraries ix_http ix_tls ix_crypto str alcotest testo))
+ (libraries ix_mail ix_http ix_tls ix_tcp ix_crypto ix_core str unix alcotest
+   testo))

@@ -19,6 +19,20 @@ let headers =
     "references";
   ]
 
+(* "INBOX 12" -> "INBOX"; "[Gmail]/All Mail 345" -> "[Gmail]/All Mail" *)
+let in_mailbox (v : string) : string =
+  match String.rindex_opt v ' ' with Some i -> String.sub v 0 i | None -> v
+
+let uid_in (item : Item.t) (mailbox : string) : int option =
+  List.find_map
+    (fun v ->
+      let v = String.trim v in
+      match String.rindex_opt v ' ' with
+      | Some i when String.sub v 0 i = mailbox ->
+          int_of_string_opt (String.sub v (i + 1) (String.length v - i - 1))
+      | _ -> None)
+    (Mail.get_all item "in")
+
 let update ~(account : string) ~(mailbox : string) (s : Imap.summary)
     (old : Item.t option) : Item.t =
   let item =
@@ -45,10 +59,26 @@ let update ~(account : string) ~(mailbox : string) (s : Imap.summary)
     ]
     @ List.map (fun h -> (h, header h)) headers
   in
-  List.fold_left
-    (fun item (name, value) ->
-      if value = "" then Mail.remove name item else Mail.set name value item)
-    item fields
+  let item =
+    List.fold_left
+      (fun item (name, value) ->
+        if value = "" then Mail.remove name item else Mail.set name value item)
+      item fields
+  in
+  (* its UID in each mailbox it was listed in (a UID is a mailbox's):
+   * this one's line replaced, the others' kept *)
+  let others =
+    List.filter
+      (fun (f : Mail.field) ->
+        not
+          (String.lowercase_ascii f.name = "in"
+          && in_mailbox (String.trim f.raw) = mailbox))
+      item.fields
+  in
+  { item with
+    fields =
+      others
+      @ [ { Mail.name = "in"; raw = Printf.sprintf " %s %d" mailbox s.uid } ] }
 
 let summary (item : Item.t) : Imap.summary =
   let list name =
@@ -80,12 +110,22 @@ let summary (item : Item.t) : Imap.summary =
 
 let listed (items : Item.t list) ~(account : string) ~(mailbox : string) :
     Imap.summary list =
-  let mine item =
-    Item.has_stamp item "message"
-    && Item.field item "account" = account
-    && Item.field item "mailbox" = mailbox
+  (* (listed there once: its UID there, whatever was listed since) *)
+  let l =
+    List.filter_map
+      (fun item ->
+        if
+          (not (Item.has_stamp item "message"))
+          || Item.field item "account" <> account
+        then None
+        else
+          match uid_in item mailbox with
+          | Some uid -> Some { (summary item) with uid }
+          | None when Item.field item "mailbox" = mailbox ->
+              Some (summary item)
+          | None -> None)
+      items
   in
-  let l = List.map summary (List.filter mine items) in
   let l =
     if mailbox = "INBOX" then
       List.filter (fun (s : Imap.summary) -> List.mem "\\Inbox" s.labels) l
@@ -94,3 +134,20 @@ let listed (items : Item.t list) ~(account : string) ~(mailbox : string) :
   List.sort (fun (a : Imap.summary) (b : Imap.summary) -> compare a.uid b.uid) l
 
 let key (item : Item.t) : string = (summary item).msgid
+
+let gone (item : Item.t) ~(mailbox : string) : Item.t =
+  let item =
+    { item with
+      fields =
+        List.filter
+          (fun (f : Mail.field) ->
+            not
+              (String.lowercase_ascii f.name = "in"
+              && in_mailbox (String.trim f.raw) = mailbox))
+          item.fields }
+  in
+  if mailbox <> "INBOX" then item
+  else
+    let labels = List.filter (fun l -> l <> "\\Inbox") (summary item).labels in
+    Mail.set "labels" (Imap.list labels) item
+

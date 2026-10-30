@@ -34,7 +34,7 @@ val keep :
 (* [list caps store t ~account ~mailbox ~query n]: the [n] newest of a
  * search (Gmail's syntax; None: all), kept *)
 val list :
-  < Cap.open_in ; Cap.open_out ; .. > -> Items.t -> Imap.t ->
+  < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t -> Imap.t ->
   account:string -> mailbox:string -> query:string option -> int ->
   (Imap.summary list, string) result
 

@@ -183,7 +183,15 @@ let fetch (store : store) (user : string) (name : string) (tag : string)
           let t =
             match List.assoc_opt m.uid thread with Some t -> t | None -> m.uid
           in
-          let parts = List.map (fetch_item m t) items in
+          (* (Gmail's: the selected mailbox's own label left out of
+           * X-GM-LABELS, \Inbox in INBOX; so a client must not count
+           * on it, as mini-pim once did) *)
+          let shown =
+            if name = "INBOX" then
+              { m with labels = List.filter (fun l -> l <> "\\Inbox") m.labels }
+            else m
+          in
+          let parts = List.map (fetch_item shown t) items in
           if List.mem None parts then None
           else
             let parts = List.filter_map (fun p -> p) parts in

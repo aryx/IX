@@ -10,5 +10,5 @@
  (name Pim)
  (public_name mini-pim)
  (package ix)
- (libraries ix_pim ix_playground ix_playground_render ix_playground_sdl ix_tls
+ (libraries ix_pim ix_mail ix_playground ix_playground_render ix_playground_sdl ix_tls
    ix_tcp ix_core fpath caps unix))

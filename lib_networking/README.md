@@ -2,6 +2,12 @@
 
 - `9p/`: 9P2000, Plan 9's file protocol; ix's own
   ([`plan_rio.md`](../docs/plans/done/plan_rio.md)).
+- `mail/`: a message (RFC 5322), its parts (MIME), conversations
+  (Zawinski's threading), SMTP's and IMAP's clients and their servers'
+  machines, and `Lines`, which carries them over TCP or TLS: mini-pim's
+  first ([`plan_mail.md`](../docs/plans/plan_mail.md)), here since a
+  second program needed it, mini-netscape's `mailto:`; what is
+  mini-pim's own is in `apps/pim/mail/`.
 - `tcp/`, `tls/`, `http/`: a URL fetched, over TCP or inside TLS 1.3
   (or 1.2, for the servers that have no 1.3),
   for the browser and the programs beside it
@@ -54,13 +60,44 @@ No optional argument, as everywhere in ix (mini-ml has none):
   a test's); `trust_file`, for mini-curl's `--cacert`; the roots and
   `/dev/urandom` read with `Cap.open_in` (`FS`); no mutex round the
   chains already checked, there being no threads; no `Transport` of
-  lines (POP3, SMTP): mini-pim's mail has its own, `apps/pim/mail/Lines`.
+  lines (POP3, SMTP): the mail has its own, `mail/Lines`.
 - `Http_client`: `~post` an option, five redirections, `get_once` is
   `once`.
 - `X509`, `Tls13`, `Http`: three lines for mini-ml (`Option.value
   ~default`, a labelled function chosen by a `match` given its type,
   `Option.to_result`).
 - `tests/Unit_x509`: its files found from ix's root too.
+
+## The mail (mail/, 2026-10-29, here since 2026-10-30)
+
+The playground's `libs/networking/mail/` but `Mbox` (mini-pim's cache
+is a file per message), and `protocols/Smtp`: 8 files, 1,273 lines
+there (813 of `.ml`); their tests, `Unit_mail` less its mbox test; and
+of `unix/Mail_server` (253 lines) its SMTP half, `Smtp_server`, with
+neither its sockets (the playground's `Server`, over WebSocket too)
+nor POP3. ix's own: `Imap` and `Imap_server` (the playground had POP3
+only), `Lines`, the charsets' tables in `Mime` (`Unit_mime`, which
+reads a message as mini-pim shows it, is still mini-pim's),
+`Unit_smtp_server`, `Unit_imap`. What changed:
+
+- **What mini-ml takes**: `Option.value`'s `~default` and
+  `Option.fold` a `match`; `Mime.content_type`'s optional `?digest`
+  and `Smtp.client`'s `?auth` said by every caller.
+- **The server a machine**: `Mail_server`'s SMTP counter, which wrote
+  to its sockets, is `Smtp_server.step`, a line in, the reply and the
+  message taken out, as `Smtp`'s client; it takes AUTH PLAIN (any
+  password), as the client sends it to Gmail.
+- **The charsets**: the playground read Windows-1252 and ISO-8859-15
+  as Latin-1. Real mail has Windows-1252's curly quotes, dashes and
+  euro in the bytes Latin-1 gives to control characters, often labelled
+  ISO-8859-1; so ISO-8859-1 is read as Windows-1252 (WHATWG's Encoding,
+  as browsers), and ISO-8859-15 by its eight characters of its own.
+- **The interfaces**: what they named that ix has not (`Pop3`,
+  TinyEudora's `Our_mail`) said so.
+- **Gmail's labels** (2026-10-30): Gmail leaves the selected mailbox's
+  own label out of `X-GM-LABELS` (`\Inbox` in INBOX); `Imap_server`
+  does the same now, so that a client counting on it fails here
+  first, as mini-pim did on the author's Gmail.
 
 ## From mini-chrome of today (2026-10-11)
 
@@ -106,8 +143,8 @@ taken: Brotli, Zstandard, `Http_cache`, `Http_request`, WebSocket.
 Of the files the first version stood on: `Http_request` (the same
 request without blocking, 217 lines) and `Worker` (a pool of threads,
 62): the plan's decision 6, "no threads at first".
-And the rest of `libs/networking`: WebSocket, IRC, mail (SMTP, POP3,
-MIME), the netcode's server (lib_playground/netcode's README), the
+And the rest of `libs/networking`: WebSocket, IRC, POP3, `Mbox`, the
+netcode's server (lib_playground/netcode's README), the
 servers, `Tls_tunnel`, their tests
 (`unix/tests`: here `networking/tests/tls.sh` does `Unit_tls_client`'s
 work with the program).

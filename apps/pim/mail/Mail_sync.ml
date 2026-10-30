@@ -75,6 +75,13 @@ let keep (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
     ~(account : string) ~(mailbox : string) (l : Imap.summary list) : unit =
   List.iter
     (fun (s : Imap.summary) ->
+      (* (Gmail leaves the selected mailbox's label out of X-GM-LABELS:
+       * listed in INBOX, it is in the Inbox) *)
+      let s =
+        if mailbox = "INBOX" && not (List.mem "\\Inbox" s.labels) then
+          { s with labels = "\\Inbox" :: s.labels }
+        else s
+      in
       let old = Items.find caps store (Mail_item.id s) in
       Items.save caps store (Mail_item.update ~account ~mailbox s old))
     l
@@ -83,13 +90,26 @@ let newest (n : int) (l : 'a list) : 'a list =
   let k = List.length l in
   List.filteri (fun i _ -> i >= k - n) l
 
-let list (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
+let list (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
+    (store : Items.t)
     (t : Imap.t) ~(account : string) ~(mailbox : string)
     ~(query : string option) (n : int) : (Imap.summary list, string) result =
   let q = match query with Some q -> "X-GM-RAW " ^ Imap.quote q | None -> "ALL" in
   match Imap.search t q with
   | Error e -> Error e
   | Ok uids -> (
+      (* every UID the mailbox has: those the store has of it and the
+       * server no longer, gone from it (a list's whole, not a search's) *)
+      if query = None then
+        List.iter
+          (fun item ->
+            match Mail_item.uid_in item mailbox with
+            | Some u
+              when Item.field item "account" = account && not (List.mem u uids)
+              ->
+                Items.save caps store (Mail_item.gone item ~mailbox)
+            | _ -> ())
+          (Items.all caps store);
       match Imap.summaries t (newest n uids) with
       | Error e -> Error e
       | Ok l ->

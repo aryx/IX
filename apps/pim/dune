@@ -41,15 +41,15 @@
  (wrapped false)
  (modules :standard \ Pim Maild)
  (flags (:standard -w -32-37-69))
- (libraries ix_html ix_http ix_playground ix_gui ix_graphics_software ix_tls
-   ix_tcp ix_core caps unix))
+ (libraries ix_mail ix_html ix_http ix_playground ix_gui ix_graphics_software
+   ix_tls ix_tcp ix_core caps unix))
 
 ; the program, with the platform that writes a frame to a file (the
 ; tests'); sdl/ is the one with a window, bin/mini-pim
 (executable
  (name Pim)
  (modules Pim)
- (libraries ix_pim ix_playground ix_playground_render ix_playground_ppm ix_tls
+ (libraries ix_pim ix_mail ix_playground ix_playground_render ix_playground_ppm ix_tls
    ix_tcp ix_core fpath caps unix))
 
 (executable
@@ -57,4 +57,4 @@
  (public_name mini-maild)
  (package ix)
  (modules Maild)
- (libraries ix_pim ix_tls ix_tcp ix_core fpath caps unix))
+ (libraries ix_pim ix_mail ix_tls ix_tcp ix_core fpath caps unix))

@@ -1,0 +1,10 @@
+; lib_networking/mail: a message (RFC 5322) and its parts (MIME),
+; conversations (Zawinski's threading), SMTP and IMAP's clients and
+; their servers' machines, and Lines, which carries them over TCP or
+; TLS; mini-pim's first (apps/pim/mail has what is its own), the author's
+; playground's libs/networking/mail (README.md)
+(library
+ (name ix_mail)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_tls ix_tcp ix_core caps unix))

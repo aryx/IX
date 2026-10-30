@@ -36,7 +36,7 @@ lib_graphics/software libs/graphics/2d libs/graphics/font
 lib_graphics/svg libs/graphics/images/svg
 lib_compression libs/compression
 lib_crypto libs/crypto
-lib_networking libs/networking/protocols libs/networking/tls libs/networking/unix libs/networking/tests libs/core
+lib_networking libs/networking/mail libs/networking/protocols libs/networking/tls libs/networking/unix libs/networking/tests libs/core
 lib_gui libs/gui
 lib_audio libs/audio
 apps/music apps/music
@@ -58,7 +58,7 @@ lib_code libs/code/highlight
 languages/ml/highlight languages/ocaml
 languages/c/highlight languages/c
 assembler/highlight languages/asm
-apps/pim libs/networking/mail libs/networking/protocols libs/networking/tests'
+apps/pim libs/core/time appkits/pim appkits/money'
 
 files() { # the source files under the directories given
   find "$@" -type f \( -name '*.ml' -o -name '*.mli' -o -name '*.mll' -o -name '*.st' -o -name '*.scm' -o -name '*.pas' -o -name '*.jhf' -o -name '*.sh' -o -name '*.expected' \) | sort

@@ -174,7 +174,8 @@ let tests =
                     (Mail.get a.headers "subject");
                   Alcotest.(check (option string))
                     "no body" (Some "") (Some a.headers.body);
-                  strs "labels" [ "\\Inbox"; "travel" ] b.labels;
+                  (* (INBOX selected: its \\Inbox left out, as Gmail) *)
+                  strs "labels" [ "travel" ] b.labels;
                   strs "flags" [ "\\Seen" ] b.flags;
                   str "one conversation" a.thread b.thread
               | l -> Alcotest.failf "%d summaries" (List.length l));

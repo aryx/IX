@@ -7,6 +7,8 @@
        account: bob@gmail.com            the mailbox's
        mailbox: INBOX                 <- where it was last listed, and
        uid: 12                           its UID there
+       in: INBOX 12                   <- its UID in each mailbox listed
+       in: [Gmail]/All Mail 345          in (a UID is a mailbox's)
        thread: 1784                   <- Gmail's conversation
        labels: (\Inbox travel)        <- as IMAP writes them (Imap.list)
        flags: (\Seen)
@@ -31,10 +33,20 @@ val update : account:string -> mailbox:string -> Imap.summary ->
 (* the summary an item stands for, to be shown as a listed one *)
 val summary : Item.t -> Imap.summary
 
-(* [listed items ~account ~mailbox]: the summaries of the messages last
- * listed in that mailbox (INBOX: those still labelled \Inbox), by UID *)
+(* [listed items ~account ~mailbox]: the summaries of the messages
+ * listed in that mailbox once, with their UID there (in: lines, one a
+ * mailbox), INBOX's those still labelled \Inbox, by UID *)
 val listed : Item.t list -> account:string -> mailbox:string ->
   Imap.summary list
 
 (* the key of a message's bytes in the store's cache *)
 val key : Item.t -> string
+
+(* [gone item ~mailbox]: no longer in [mailbox] (a list found it not
+ * there: archived elsewhere, on Gmail's site, a phone); its in: line
+ * taken off, and in INBOX its \Inbox *)
+val gone : Item.t -> mailbox:string -> Item.t
+
+(* the item's UID in [mailbox], if it was listed there *)
+val uid_in : Item.t -> string -> int option
+

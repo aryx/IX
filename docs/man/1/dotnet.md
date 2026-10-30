@@ -24,19 +24,13 @@ given to its Main. Its library is its own, the classes of `System`
 that programs use most: Object, String, Console, the exceptions,
 StringBuilder, List, Dictionary, the delegates.
 
-**-v**
-:    What it does is said on the standard error: the files read, the
-     assemblies loaded, with **-jit** the methods taken and each one
-     compiled (an instance of a generic one too), its size and its
-     call-outs to the interpreter.
-
-**-debug**
-:    **-v**'s and more: the classes loaded, why each method is not
-     compiled, where its code is.
-
-**-quiet**
-:    Not even the warnings, which are said by default (the
-     environment's IX_LOG, info or debug, says more without a flag).
+**-v**, **-debug**, **-quiet**
+:    As every ix program's (\man{common}{1}). **-v** says the files
+     read, the assemblies loaded, and with **-jit** the methods taken
+     and each one compiled (an instance of a generic one too), its
+     size and its call-outs to the interpreter; **-debug** also the
+     classes loaded, why each method is not compiled, where its code
+     is.
 
 **-trace**
 :    Each instruction is said as it runs, on the standard error.
@@ -81,7 +75,7 @@ tiger -o /tmp/q.dll /lib/tiger/queens.tig; dotnet /tmp/q.dll
 ```
 
 # SEE ALSO
-\man{tiger}{1}
+\man{tiger}{1}, \man{common}{1}
 
 # DIAGNOSTICS
 An exception no one catches is said as .NET says it, `Unhandled

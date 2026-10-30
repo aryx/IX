@@ -42,10 +42,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = ref [] in
   let tracing = ref false and stats = ref false and jit = ref false and mach = ref 5 and refs = ref false in
   let options =
-    [ ("-v", Arg.Unit (fun () -> Logs.set_level (Some Logs.Info)), " what it does said on the standard error: the files read, the assemblies loaded, the methods compiled");
-      ("-debug", Arg.Unit (fun () -> Logs.set_level (Some Logs.Debug)), " -v's and more: why a method is not compiled, where its code is");
-      ("-quiet", Arg.Unit (fun () -> Logs.set_level None), " not even the warnings");
-      ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
+    Logging.flags @
+    [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
       ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");

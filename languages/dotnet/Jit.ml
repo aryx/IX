@@ -822,6 +822,7 @@ let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int
 (* ------------------------------------------------------------------ *)
 
 type prepared = {
+  prefused : (int * string) list;
   pmach : mach;
   pim : Value.image;
   ptaken : (int, V.result) Hashtbl.t;
@@ -830,11 +831,12 @@ type prepared = {
 }
 
 let prepare (m : mach) (im : Value.image) : prepared =
-  let taken, _ = choose im.img (Some im) in
+  let taken, refused = choose im.img (Some im) in
   let rows, syms = symbols im.img taken in
-  { pmach = m; pim = im; ptaken = taken; prows = rows; psyms = syms }
+  { prefused = refused; pmach = m; pim = im; ptaken = taken; prows = rows; psyms = syms }
 
 let rows (p : prepared) : int list = p.prows
+let refused (p : prepared) : (int * string) list = p.prefused
 
 (* the runtime's, in each piece of code (its own copy, the pieces apart
  * in memory): an ML function's static closure at an address, called

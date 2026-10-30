@@ -289,6 +289,7 @@ and class_of_def (im : image) (row : int) (args : typ array) : cls =
   match Hashtbl.find_opt classes name with
   | Some c -> c
   | None ->
+      Logs.debug (fun m -> m "class %s loaded" name);
       let t = M.t_type_def in
       let flags = Image.get img t row "Flags" in
       let et, er = Image.decode M.type_def_or_ref (Image.get img t row "Extends") in
@@ -552,4 +553,5 @@ let load (img : Image.t) : image =
   done;
   Hashtbl.replace extras aname { by_name; method_owner; field_owner; generics };
   images := !images @ [im];
+  Logs.info (fun m -> m "assembly %s loaded: %d types, %d methods" aname ntypes img.rows.(M.t_method_def));
   im

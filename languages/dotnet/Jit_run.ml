@@ -153,6 +153,9 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
       Hashtbl.replace programs im.aname p;
       let prep = Jit.prepare mach im in
       let rows = Jit.rows prep in
+      let name row = Listing.token_name im.img (Metadata.token Metadata.t_method_def row) in
+      Logs.info (fun m -> m "JIT: %s: %d methods taken, %d not" im.aname (List.length rows) (List.length (Jit.refused prep)));
+      List.iter (fun (row, why) -> Logs.debug (fun m -> m "JIT: not compiled: %s: %s" (name row) why)) (Jit.refused prep);
       if rows <> [] then begin
         let runtime = runtime () in
         ensure_limit caps;
@@ -173,6 +176,8 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
             let text, sites = Jit.method_code prep row ~cell ~base:(Array.length !table) ~limit:!limit ~runtime in
             let code, offset = encode caps text in
             let at = Code_memory.load code in
+            Logs.info (fun m -> m "JIT: compiled %s (%d bytes, %d call-outs)" (name row) (String.length code) (List.length sites));
+            Logs.debug (fun m -> m "JIT: %s's code at 0x%x" (name row) at);
             call_outs codes sites;
             incr compiled;
             set (Hashtbl.find index row) (at + offset (Jit.symbol_of prep row))) rows));
@@ -189,11 +194,13 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
 let instance (caps : < Cap.open_in; .. >) (m : meth) (row : int) : (value array -> value) option =
   ensure_limit caps;
   let code = Types.code m in
+  let name = m.mcls.name ^ "::" ^ m.mname in
   match Jit.instance_code mach m ~base:(Array.length !table) ~limit:!limit ~runtime:(runtime ()) with
-  | None -> None
+  | None -> Logs.debug (fun f -> f "JIT: instance not compiled: %s" name); None
   | Some (text, entry, sites) ->
       let bytes, offset = encode caps text in
       let at = Code_memory.load bytes in
+      Logs.info (fun f -> f "JIT: compiled the instance %s (%d bytes, %d call-outs)" name (String.length bytes) (List.length sites));
       let codes = Hashtbl.create 1 in
       Hashtbl.replace codes row (m, code);
       call_outs codes sites;

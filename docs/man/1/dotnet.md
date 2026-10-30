@@ -5,6 +5,7 @@ dotnet – run a .NET assembly
 
 # SYNOPSIS
 **dotnet**
+[ **-v** | **-debug** | **-quiet** ]
 [ **-trace** ]
 [ **-s** ]
 [ **-jit** ]
@@ -22,6 +23,20 @@ first named, its methods' IL run by an interpreter. The *args* are
 given to its Main. Its library is its own, the classes of `System`
 that programs use most: Object, String, Console, the exceptions,
 StringBuilder, List, Dictionary, the delegates.
+
+**-v**
+:    What it does is said on the standard error: the files read, the
+     assemblies loaded, with **-jit** the methods taken and each one
+     compiled (an instance of a generic one too), its size and its
+     call-outs to the interpreter.
+
+**-debug**
+:    **-v**'s and more: the classes loaded, why each method is not
+     compiled, where its code is.
+
+**-quiet**
+:    Not even the warnings, which are said by default (the
+     environment's IX_LOG, info or debug, says more without a flag).
 
 **-trace**
 :    Each instruction is said as it runs, on the standard error.

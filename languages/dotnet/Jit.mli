@@ -158,6 +158,8 @@ val outs : int
 type prepared
 val prepare : mach -> Value.image -> prepared
 val rows : prepared -> int list
+(* those it does not take, and why *)
+val refused : prepared -> (int * string) list
 val symbol_of : prepared -> int -> string
 
 (* the runtime's functions, by their static closures' addresses: in

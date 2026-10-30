@@ -5,7 +5,7 @@
 
 type caps = < Cap.open_in; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let usage = "usage: mini-dotnet [-trace] [-s] [-jit] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
+let usage = "usage: mini-dotnet [-v|-debug|-quiet] [-trace] [-s] [-jit] file.dll [arg...] | -S [-jit [-m 5|7 [-refs]]] | -tables | -size | -verify file.dll..."
 
 (* a program run: its output by the console's channel, its input
  * read a byte at a time; an exception no one catches said as .NET says
@@ -42,7 +42,10 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   let files = ref [] in
   let tracing = ref false and stats = ref false and jit = ref false and mach = ref 5 and refs = ref false in
   let options =
-    [ ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
+    [ ("-v", Arg.Unit (fun () -> Logs.set_level (Some Logs.Info)), " what it does said on the standard error: the files read, the assemblies loaded, the methods compiled");
+      ("-debug", Arg.Unit (fun () -> Logs.set_level (Some Logs.Debug)), " -v's and more: why a method is not compiled, where its code is");
+      ("-quiet", Arg.Unit (fun () -> Logs.set_level None), " not even the warnings");
+      ("-trace", Arg.Set tracing, " each instruction said as it runs, to the standard error");
       ("-s", Arg.Set stats, " the instructions run, said at the end"); ("-tables", Arg.Unit (fun () -> mode := "tables"), " the metadata's tables, a row a line");
       ("-S", Arg.Unit (fun () -> mode := "S"), " the types and their methods' IL, as ildasm");
       ("-size", Arg.Unit (fun () -> mode := "size"), " its types, methods and bytes of IL (each body decoded)");
@@ -58,6 +61,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         let data = match FS.path f with
           | Error e -> failwith e
           | Ok p -> FS.read caps p in
+        Logs.info (fun m -> m "read %s: %d bytes" f (String.length data));
         Image.read data in
       let one (f : string) : unit =
         let img = read f in

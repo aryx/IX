@@ -534,3 +534,19 @@ re-recorded (its hint line). Not yet: the page written on Home itself
 (its keys open the views), unread mail in the frames (the shared test
 server's messages are read by the sessions before).
 
+2026-10-30: time zones (stage 3): `time/Zone`, ix's own (mini-ml's
+Unix has gmtime, no localtime): TZif files (RFC 8536: version 1's
+transitions to 2037, then the footer's POSIX rule, so a slim file
+works too), POSIX's rules (Mm.w.d, summer over the new year in the
+south), Plan 9's /env/timezone; TZ= first, then /etc/localtime, then
+/env/timezone, else UTC. `When.today` is the day here now, not at
+Greenwich (it takes caps), and a message sent says this place's
+offset in its Date: (+0000 before). Tests: Unit_zone (Rome's, New
+York's, Sydney's rules at their changes, a Plan 9 file, a TZif file
+made in the test); compared once by hand with Python's zoneinfo on
+this machine's files (Rome, New York, Sydney, Kolkata, São Paulo,
+Auckland, London; 2,100 times from 1938 to 2096, all the same). The
+test scripts set TZ=UTC, the same on any machine. Not yet: an event's
+own zone (an invitation's TZID, Google's), the times shown in another
+zone.
+

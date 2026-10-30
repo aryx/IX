@@ -127,7 +127,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       today =
         (match Search.date (flag "today") with
         | Some d -> d
-        | None -> When.today ());
+        | None -> When.today caps);
       selected = 0;
       reading = [];
       scroll = 0;

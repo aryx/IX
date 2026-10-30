@@ -399,7 +399,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       mailbox = "INBOX";
       offline = false;
       all = false;
-      today = When.today ();
+      today = When.today caps;
       account = "Assets:Checking";
       args = [];
     }

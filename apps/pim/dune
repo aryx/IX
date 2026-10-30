@@ -22,7 +22,7 @@
 ;          Links, People, Events, Capture, Today (the day's agenda),
 ;          Books (the money's double entry)
 ;   time/  Recur (a repeat's rule) and Ics (iCalendar's files), the
-;          author's playground's
+;          author's playground's; Zone (the local time), ix's
 ;   money/ Money (cents), Ledger (a register), Reconcile, Qif, the
 ;          author's playground's appkits/money
 ; Pim.ml, the program: from a terminal (mini-pim send, list, read,

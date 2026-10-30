@@ -85,8 +85,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   let today =
     match List.assoc_opt "today" flags with
     | Some d -> (
-        match Search.date d with Some d -> d | None -> When.today ())
-    | None -> When.today ()
+        match Search.date d with Some d -> d | None -> When.today caps)
+    | None -> When.today caps
   in
   ignore caps;
   { back = Home; items = []; query = ""; found = []; only = None;

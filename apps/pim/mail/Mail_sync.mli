@@ -118,9 +118,11 @@ val send : < Cap.network ; Cap.open_in ; .. > -> server ->
 val said : Smtp.outcome -> string
 
 (* [send_draft caps store server ~user ~password draft]: the draft made
- * a message (Mail_compose.message: from [user], dated now, +0000, its files
- * read, a forward's attachments from the cache) and sent; its item
- * removed once every recipient took it. The outcome in words. *)
-val send_draft : < Cap.network ; Cap.open_in ; Cap.open_out ; .. > ->
+ * a message (Mail_compose.message: from [user], dated now in this
+ * place's zone, its files read, a forward's attachments from the
+ * cache) and sent; its item removed once every recipient took it. The
+ * outcome in words. *)
+val send_draft :
+  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.env ; .. > ->
   Items.t -> server -> user:string -> password:string ->
   Mail_compose.draft -> (string, string) result

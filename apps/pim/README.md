@@ -144,6 +144,8 @@ window's (`make test`'s two "mini-pim").
     money/Qif          Quicken's interchange format
     time/Recur         a repeating event's rule (iCalendar's RRULE)
     time/Ics           iCalendar files, read and written
+    time/Zone          the local time: zoneinfo's TZif files, POSIX's
+                       rules, Plan 9's /env/timezone
     store/People       the address book, filled from the mail, BBDB's
                        way; the mail with a person
     store/Search       a search over every item, Gmail's syntax
@@ -196,7 +198,7 @@ lines) its SMTP half, `Smtp_server` (99), with neither its sockets
 ## What is ix's own
 
 The charsets' tables in `Mime` and their test; `store/`,
-`window/`, `Mail_item`, `Mail_sync`, `Conversations`; `Imap` and
+`window/`, `time/Zone`, `Mail_item`, `Mail_sync`, `Conversations`; `Imap` and
 `Imap_server` (the playground had POP3 only); `Lines` (the
 playground's `Transport` was its kind, over its own TLS and
 WebSocket); the two programs, `Pim.ml` (with `Pim_store`) and `Maild.ml` (after the

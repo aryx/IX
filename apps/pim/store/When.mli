@@ -20,8 +20,8 @@
 (* [parse ~today words] *)
 val parse : today:Civil.date -> string -> Civil.date option
 
-(* today at Greenwich, from the system's clock *)
-val today : unit -> Civil.date
+(* today here, from the system's clock and zone (Zone.local) *)
+val today : < Cap.open_in ; Cap.env ; .. > -> Civil.date
 
 (* [ending ~today line]: a line typed to capture a task, its day at its
  * end found ("pay the electricity by friday": "pay the electricity",

@@ -56,8 +56,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   let today =
     match List.assoc_opt "today" flags with
     | Some d -> (
-        match Search.date d with Some d -> d | None -> When.today ())
-    | None -> When.today ()
+        match Search.date d with Some d -> d | None -> When.today caps)
+    | None -> When.today caps
   in
   load caps
     { span = Week; cursor = today; today; shown = []; selected = 0;

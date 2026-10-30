@@ -65,8 +65,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   let today =
     match List.assoc_opt "today" flags with
     | Some d -> (
-        match Search.date d with Some d -> d | None -> When.today ())
-    | None -> When.today ()
+        match Search.date d with Some d -> d | None -> When.today caps)
+    | None -> When.today caps
   in
   load caps
     { shown = To_do; tasks = []; snoozed = 0; today; selected = 0;

@@ -99,7 +99,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   in
   let account = flag "user" in
   let today =
-    match Search.date (flag "today") with Some d -> d | None -> When.today ()
+    match Search.date (flag "today") with Some d -> d | None -> When.today caps
   in
   {
     view =

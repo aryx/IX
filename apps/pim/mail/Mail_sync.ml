@@ -258,9 +258,11 @@ let said (o : Smtp.outcome) : string =
       Printf.sprintf "sent to %d, refused: %s" n (String.concat "; " refused)
   | Refused why -> "refused: " ^ why
 
-(* now, at Greenwich: a Date: in +0000, which a reader shows in its own
- * zone (mini-ml's Unix has no localtime to know this place's) *)
-let now () : float * int = (Unix.gettimeofday (), 0)
+(* now, and the minutes east of UTC of this place (Zone): a Date: as
+ * the writer's clock says it *)
+let now (caps : < Cap.open_in ; Cap.env ; .. >) : float * int =
+  let t = Unix.gettimeofday () in
+  (t, Zone.offset (Zone.local caps) t / 60)
 
 let sent = ref 0
 
@@ -296,13 +298,14 @@ let files (caps : < Cap.open_in ; .. >) (store : Items.t)
       in
       Ok (List.filter_map Result.to_option read @ forwarded)
 
-let send_draft (caps : < Cap.network ; Cap.open_in ; Cap.open_out ; .. >)
+let send_draft
+    (caps : < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.env ; .. >)
     (store : Items.t) (s : server) ~(user : string) ~(password : string)
     (d : Mail_compose.draft) : (string, string) result =
   match files caps store d with
   | Error e -> Error e
   | Ok files -> (
-      let date, offset = now () in
+      let date, offset = now caps in
       incr sent;
       let msgid = Mail_compose.new_msgid ~from:user date !sent in
       let m = Mail_compose.message ~from:user ~date ~offset ~msgid ~files d in

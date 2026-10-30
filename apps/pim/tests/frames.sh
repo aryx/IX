@@ -18,6 +18,8 @@
 #        _build/default/apps/pim)
 
 ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
+# (the same day and Date: on any machine: Zone)
+export TZ=UTC
 B=${1:-$ROOT/_build/default/apps/pim}
 if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild
 else PIM=$B/Pim.exe; MAILD=$B/Maild.exe; fi

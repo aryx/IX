@@ -35,7 +35,7 @@
  * alt). That is this module's second file; the first has OCaml's
  * threads do the reading.
  *
- * References: docs/notes_source.md (this design from the start, why
+ * References: docs/notes/notes_source.md (this design from the start, why
  * not threads of the system, what was met since); plan_rio.md,
  * "Threads: the design"; thread(2) and
  * ioproc(2) of Plan 9; Rob Pike, "A Concurrent Window System"

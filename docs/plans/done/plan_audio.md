@@ -294,7 +294,7 @@ pause for now. Can we move the audio plan to done/ ?"). Stages 1 to 6
 are in: `/dev/audio` on the Pi 1's jack, heard; mini-play (a MOD
 plays on the board); the games' `Audio` (Tetris, TinyMissileCommand,
 played on the board); mini-rebirth, on Linux. What went wrong on the
-way: [`notes_audio.md`](../../notes_audio.md); how a sample gets to
+way: [`notes_audio.md`](../../notes/notes_audio.md); how a sample gets to
 the jack: [`notes_audio_device.md`](../../tutorials/notes_audio_device.md).
 
 What is left:
@@ -761,5 +761,5 @@ yet, by anyone):
   a register read whose fault is an answer), asked by `Devaudio`
   before it starts: the open fails and says why, the game plays
   without sound.
-- `docs/notes_profiling_techniques.md` (new) and four rows more in
-  `docs/notes_audio.md`.
+- `docs/notes/notes_profiling_techniques.md` (new) and four rows more in
+  `docs/notes/notes_audio.md`.

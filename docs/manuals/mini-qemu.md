@@ -225,7 +225,7 @@ diffing: the console (`session.py ... -- mini-qemu ...` then
 Pi4, the instruction trace against QEMU's `-d in_asm,exec`. `mini-pi
 -q` runs QEMU with mini-pi's arguments. The techniques, bug by bug,
 are in
-[notes_debugging_techniques.md](../notes_debugging_techniques.md).
+[notes_debugging_techniques.md](../notes/notes_debugging_techniques.md).
 
 ### 4.5 A guest profile: `-prof F`
 
@@ -248,7 +248,7 @@ user programs. On the Pi4, only the AArch64 state is sampled (the
 kernel), not the AArch32 programs. When off, the cost is one test per
 instruction. The case that earned the option, mini-9pi's OCaml pixels
 6 times slower than the C ones, is
-[notes_performance.md](../notes_performance.md), case 1.
+[notes_performance.md](../notes/notes_performance.md), case 1.
 
 ### 4.6 Where is it? `-status N` (and `mini-pi -v`)
 

@@ -1203,7 +1203,7 @@ the kernel). A choice when it runs, not when it is built: one kernel.
   endpoint); `Etherusb`, the kernel's older USB driver, still has its
   own descriptors' code and still wants usbd's enumeration.
 - **Three bugs on the way** (docs/plans/bugs/ix.md and ocaml_light.md;
-  docs/notes_debugging_techniques.md, sections 14 and 15):
+  docs/notes/notes_debugging_techniques.md, sections 14 and 15):
   - ocaml-light has no `"\xe0"` in a string: the kernel's arrow keys
     were five characters, the program's right, from one line.
   - The kernel by ix's tools had not linked since xix's `Chan` came
@@ -1672,7 +1672,7 @@ principia's kernel was not handled correctly there either").
 
 2026-10-07, **the checks' time** (the author: "this is long, anything
 we can improve to reduce the time for those make check-all?"; the
-measures: docs/notes_performance.md, section 3).
+measures: docs/notes/notes_performance.md, section 3).
 - Most of a session's time was not the kernel's: `session.py` waits a
   second with no output before it types a line. `--quiet S`; ix's
   sessions have 0.3 (`IXQUIET`).

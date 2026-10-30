@@ -18,7 +18,7 @@ double ml_cosh(double x) { return (exp(x) + exp(-x)) / 2; }
  * The same operations on them, so the same bits; and 0 for 0 at once
  * (the quotient's value there): the mixer's soft limit is a tanh for
  * each sample, silence included, a tenth of a game's instructions on
- * mini-9pi (docs/notes_profiling_techniques.md) */
+ * mini-9pi (docs/notes/notes_profiling_techniques.md) */
 double
 ml_tanh(double x)
 {

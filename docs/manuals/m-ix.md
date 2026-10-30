@@ -9,7 +9,7 @@ editing a source: the `name=value` flags, the options, the
 environment, and the device files of mini-9pi that switch a
 behaviour. Most of these switches are there to measure: a speed's
 gain is seen by turning it off
-([notes_opti_inventory.md](../notes_opti_inventory.md) says what each
+([notes_opti_inventory.md](../notes/notes_opti_inventory.md) says what each
 one buys). The programs' headers and usage lines are the first
 source; where this manual and a header differ, the header is right.
 

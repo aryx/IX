@@ -531,7 +531,7 @@ let pixels_image (win : window) (m : Affine.t) (w : float) (h : float) (p : Play
  * then one message, the colour through it, the device's way with a
  * character of a font (Memdraw's fast case for a mask of bytes).
  * XRender's glyph sets with the software renderer as FreeType
- * (docs/notes_font.md). The place is a whole pixel.
+ * (docs/notes/notes_font.md). The place is a whole pixel.
  * old: a bit a pixel (k1), the letter's where its strokes cover a third
  * of it or more (a half lost a thin stroke's pixels): ragged at a
  * page's 13 pixels (the author: "mini-netscape fonts are not super

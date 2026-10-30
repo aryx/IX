@@ -393,7 +393,7 @@ yet**:
   repeated sound": `Devaudio` gave the DMA the Pi 1's address for the
   RAM (0x4000...) on every board; now the board's
   (`Machine.bus_alias16`, new: 0xc000 on the Pi 2).
-`docs/notes_debugging_techniques.md`, section 18 (the author: "can be
+`docs/notes/notes_debugging_techniques.md`, section 18 (the author: "can be
 interesting techniques to add to debugging techniques document, maybe
 things special for audio device"). Checked here: `make check-audio`
 on the Pi 1 under mini-qemu, the tone whole; `make check-ix`, as

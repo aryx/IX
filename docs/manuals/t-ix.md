@@ -12,7 +12,7 @@ program's header says how it works and why
 ([`tiny/README.md`](../../tiny/README.md) lists them); the plans say
 how each was decided ([plan_tiny_os.md](../plans/plan_tiny_os.md),
 [plan_tiny_windows.md](../plans/done/plan_tiny_windows.md),
-[notes_tiny_kernel.md](../notes_tiny_kernel.md)).
+[notes_tiny_kernel.md](../notes/notes_tiny_kernel.md)).
 
 The other tiny programs (tiny-shell, tiny-utils, tiny-editor,
 tiny-prof, tiny-db, tiny-vcs, tiny-build) run on the host and on

@@ -18,11 +18,11 @@ The tools (`kernels/9pi/tests/perf/`):
   prompt, N times.
 - mini-qemu's `-prof F` counts every 1024th instruction's PC and
   writes the counts to F at exit
-  ([manual](manuals/mini-qemu.md), section 4.5).
+  ([manual](../manuals/mini-qemu.md), section 4.5).
 - `pcprof.py F kernel.elf` maps those PCs to the kernel's functions.
 - mini-qemu's `-status N` (`mini-pi -v`) says every N seconds how idle
   the kernel is and which of its functions run
-  ([manual](manuals/mini-qemu.md), section 4.6).
+  ([manual](../manuals/mini-qemu.md), section 4.6).
 - `gc_boot.sh [PARAMS [RUNS [BOARD]]]` times mini-9pi's boot to rc's
   prompt for the collector's parameters (CAMLRUNPARAM's), and counts
   its collections from the runtime's own trace (v=1).

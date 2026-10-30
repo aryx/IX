@@ -301,7 +301,7 @@ let draw_words (options : options) (fb : Framebuffer.t) (m : Affine.t) (str : st
  * size, a look and a transform, in a mask of its own -- how much of
  * each pixel its strokes cover -- and after that the colour put through
  * the mask at the letter's place, as Cairo's glyph cache and Plan 9's
- * fonts do (docs/notes_font.md). The strokes are Letter_strokes', white
+ * fonts do (docs/notes/notes_font.md). The strokes are Letter_strokes', white
  * over black: where two overlap the cover is 1 - (1 - a)(1 - b), what
  * drawing them one after the other in the colour gives. A letter's
  * place is kept to a quarter of a pixel, a mask for each of the 16

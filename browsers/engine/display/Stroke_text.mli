@@ -44,7 +44,7 @@
  * text is drawn here: Browser_text asks [metrics] for the layout and
  * Browser_draw [run] for the screen. (Until 2026-10-20 [glyph] gave a
  * letter's strokes, thin rectangles, and every platform drew them all
- * again at each frame: docs/notes_font.md.)
+ * again at each frame: docs/notes/notes_font.md.)
  *
  * The browser's copy of the office apps' Stroke_text, with the
  * letters beyond ASCII (Glyph_unicode).

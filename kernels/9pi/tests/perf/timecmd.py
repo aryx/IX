@@ -4,7 +4,7 @@
 #
 # The wall time of one command typed at rc's prompt, N times (default
 # 10), each time printed: mini-9pi's console speed, the drawn console
-# included (docs/notes_performance.md, case 1).
+# included (docs/notes/notes_performance.md, case 1).
 #
 #   N=3 timecmd.py "ls -l /bin" -- EMULATOR ARGS...
 #

@@ -439,7 +439,7 @@ descriptor 4 bytes too big (plan_bugs_ocaml_light.md, bug 5). Fixed by
 upstream OCaml's rounding of the outgoing area, as a patch
 `kernels/ocaml-light.sh` applies to its clone
 (`kernels/ocaml-light-patches/`). The hunt is written up in
-`docs/notes_debugging_techniques.md`, technique 8.
+`docs/notes/notes_debugging_techniques.md`, technique 8.
 
 2026-09-26, **stage D, step 2b: the USB keyboard and mouse**. `Kbd`
 (portkbd.c's kbdputsc and its five tables: scan codes to runes, the

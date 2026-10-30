@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # Where a program's instructions go, function by function
-# (docs/notes_profiling_techniques.md): an arm program of mini-ml's (or
+# (docs/notes/notes_profiling_techniques.md): an arm program of mini-ml's (or
 # mini-cc's) run by mini-5i -t, each instruction's address counted, and
 # the addresses charged to the function they are in, by the listing of
 # its link (mini-ld -v with the program's own link command: its lines

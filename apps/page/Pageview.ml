@@ -48,7 +48,7 @@
  * device would have to: one picture, and scrolling is one message a
  * frame, not a page's three thousand letters. What it costs is the
  * moment a page is new: drawn here, then loaded, which drawing ahead
- * does while the reader reads (docs/notes_font.md, section 2).
+ * does while the reader reads (docs/notes/notes_font.md, section 2).
  *
  * A picture (PNG, JPEG) is a document of one page, scaled and turned
  * as it is shown, not drawn again.

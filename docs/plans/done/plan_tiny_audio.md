@@ -14,7 +14,7 @@ What is left are section 3's drops (floats, 44,100 samples in 16 bits,
 filters and echo, a thread for the sound), each a choice, not a gap.
 
 m-ix has sound from one end to the other
-([plan_audio.md](plan_audio.md), [notes_audio.md](../../notes_audio.md)):
+([plan_audio.md](plan_audio.md), [notes_audio.md](../../notes/notes_audio.md)):
 mini-9pi's Devaudio, a ring a DMA goes around; `/dev/audio`, 16 bits in
 two channels at 44,100 Hz; lib_audio's synthesizer (Synth, Sfx, Music)
 in floats; the playground's `Audio`; and tetris with its theme and

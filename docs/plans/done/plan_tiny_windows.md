@@ -14,7 +14,7 @@ mode": the plan's last two programs, and its goal.
 Companions: [`plan_rio.md`](plan_rio.md), mini-rio, the faithful twin;
 [`plan_tiny_os.md`](plan_tiny_os.md), tiny-machine's devices and how
 each was added without touching the older kernels;
-[`../notes_tiny_kernel.md`](../../notes_tiny_kernel.md), TinyKernel.ml's
+[`../notes_tiny_kernel.md`](../../notes/notes_tiny_kernel.md), TinyKernel.ml's
 free design, which this plan continues;
 [`plan_playground.md`](plan_playground.md), the games on the draw
 device.

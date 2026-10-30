@@ -215,7 +215,7 @@ memory of this project):
    six checks; the fixed point.
 5. The notes go to `~/playground/docs/claude_notes/dev/notes_opti_ocaml.md`
    (the symptom in the profile, why, the fix, what it bought) and to
-   `docs/notes_performance.md`.
+   `docs/notes/notes_performance.md`.
 
 ## Candidates, by what the profile says
 

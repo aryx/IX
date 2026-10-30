@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# What Redraw saves the draw platform on mini-9pi (docs/notes_opti_inventory.md,
+# What Redraw saves the draw platform on mini-9pi (docs/notes/notes_opti_inventory.md,
 # O30): a program that changes a little of its picture, run under QEMU
 # with stats=on and a redraw= flag, the meter's last lines printed.
 #   hover     mini-netscape, the mouse on and off a link of about:home

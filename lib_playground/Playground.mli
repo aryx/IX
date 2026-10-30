@@ -273,7 +273,7 @@ and form =
  * processor's: Stroke_text), each letter at its place on a baseline,
  * in a look: its size, bold (a wider pen), italic (a slant). A
  * platform knows it is text, and may keep a letter it has drawn (the
- * software renderer, a mask a letter; docs/notes_font.md) *)
+ * software renderer, a mask a letter; docs/notes/notes_font.md) *)
 and letters = { size : number; bold : bool; italic : bool; baseline : number; at : (number * string) list }
 
 (* ix: a picture of a palette's colours, a byte a pixel, row by row

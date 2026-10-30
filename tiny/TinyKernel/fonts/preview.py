@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # A sheet of fonts as t-IX would draw them, to choose one by looking
-# (docs/notes_font.md, section 7): the same line, a bold one and a large
+# (docs/notes/notes_font.md, section 7): the same line, a bold one and a large
 # one in each, in cells of 8 by 16 (16 by 32 the large), shown twice
 # as large with no smoothing, as tiny-machine's window shows its
 # screen. Rows:

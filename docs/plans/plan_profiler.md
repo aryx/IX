@@ -32,7 +32,7 @@ hopefully it can help optimizing this doom game and mini-ml and more";
 | tiny-prof (`tiny/TinyProfiler`) | tiny-machine's profile by tiny-linker's maps, the kernel's and the programs' apart, `-diff` | t-ix's only |
 | the meters (`stats=on`, `Browser_profile`) | a program's parts, in ms | a program's own |
 
-`docs/notes_profiling_techniques.md` has them side by side.
+`docs/notes/notes_profiling_techniques.md` has them side by side.
 
 ## Decisions
 

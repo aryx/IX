@@ -16,7 +16,7 @@ by their names (`~/playground/docs/claude_notes/tutorials/`):
 synthesizer), `notes_audio_formats.md` and `notes_audio_midi.md` (the
 files). `lib_audio` is that code, copied; what is ix's own is
 everything after the samples exist, and it is where the trouble was:
-[`notes_audio.md`](../notes_audio.md) is the list of what went wrong.
+[`notes_audio.md`](../notes/notes_audio.md) is the list of what went wrong.
 The plan: [`plan_audio.md`](../plans/done/plan_audio.md).
 
 ## 0. Where the code is, and a reading order
@@ -107,7 +107,7 @@ hundredth.
 
 So every program with sound makes the same trade: a long buffer is
 safe and late, a short one is prompt and fragile. Most of what went
-wrong in [`notes_audio.md`](../notes_audio.md) is this number chosen
+wrong in [`notes_audio.md`](../notes/notes_audio.md) is this number chosen
 for the usual case and met by an unusual one.
 
 This system has three buffers in a row, each chosen that way:

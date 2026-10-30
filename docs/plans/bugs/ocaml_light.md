@@ -214,7 +214,7 @@ does; `replace_bucket` and `remove_bucket` by a loop or a tail call.
   characters, with no message. Not a bug; a difference that cost an
   hour (2026-10-06: kernels/9pi/buses/lib_usb's `Hid`, shared with a
   program compiled by OCaml 4.14 and mini-ml: `"\xe0"` right there,
-  wrong in the kernel; docs/notes_debugging_techniques.md, section
+  wrong in the kernel; docs/notes/notes_debugging_techniques.md, section
   14). A byte in code for the kernel: `String.make 1 (Char.chr 0xe0)`,
   or `"\224"`. Also absent there: `String.iter`,
   `String.get_utf_8_uchar`.

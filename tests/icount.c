@@ -6,7 +6,7 @@
  * on the standard error. Exact and fast: mini-ml's code and OCaml's
  * compiler's counted the same way on the arm64 host, where valgrind
  * stops at an instruction mini-ld emits and Ubuntu's qemu-user has no
- * plugins (docs/notes_profiling_techniques.md, "mini-ml's code against
+ * plugins (docs/notes/notes_profiling_techniques.md, "mini-ml's code against
  * OCaml's").
  *   usage: gcc -O -o icount tests/icount.c; ./icount command args...
  *   a frame of a game: frame 61's run less frame 31's, by 30:

@@ -4,7 +4,7 @@
 #
 # A guest profile's PCs mapped to the kernel's functions: the samples'
 # file (lines "pc count", hexadecimal pc, from the sampler in
-# docs/notes_performance.md) against the kernel ELF's symbols (nm -n),
+# docs/notes/notes_performance.md) against the kernel ELF's symbols (nm -n),
 # each PC charged to the symbol at or below it; the top N (default 20),
 # as shares of all the samples. PCs below the kernel's first symbol
 # are user programs'.

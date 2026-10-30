@@ -22,7 +22,7 @@ have a proper TinyAssembler and TinyLinker and separate compilation";
 too". Section 6 is those three.
 
 This revisits two decisions of 2026-10-11 recorded in
-[notes_tiny_spirit.md](../../notes_tiny_spirit.md): arm64 kept (its §3) and
+[notes_tiny_spirit.md](../../notes/notes_tiny_spirit.md): arm64 kept (its §3) and
 TinyLibHost kept (its §2). That note already said that, if arm64 were
 ever revisited, its pieces leave together; they do here.
 

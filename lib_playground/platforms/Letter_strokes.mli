@@ -2,7 +2,7 @@
  * strokes of their pen, each a thin rectangle turned to its angle --
  * what a platform draws when it keeps no letter (the PDF writer, the
  * draw device for now), and what a letter it keeps is made of once
- * (Shape_render_software's masks; docs/notes_font.md).
+ * (Shape_render_software's masks; docs/notes/notes_font.md).
  *
  * A letter is Hershey's (Hershey.mli), or Glyph_unicode's beyond
  * ASCII; its look a pen: a sixteenth of its size wide, a seventh for

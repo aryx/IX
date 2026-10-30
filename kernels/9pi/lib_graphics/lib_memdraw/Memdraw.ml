@@ -258,7 +258,7 @@ let faster dst r src sr mask mr op =
     (* OPTIMIZATION: a smoothed character: an opaque colour through a
      * mask of a byte a pixel (k8), how much of the pixel the letter
      * covers (lib_playground's draw platform: a letter's mask made by
-     * its software renderer, docs/notes_font.md). The general loop's
+     * its software renderer, docs/notes/notes_font.md). The general loop's
      * arithmetic, its terms known: a source of alpha 255 gives fs = m
      * and fd = 255 - m, so a pixel is mul m s + mul (255 - m) d, the
      * colour's bytes where m is 255, nothing where 0. The screen's

@@ -393,7 +393,7 @@ ms); T1 and T3 below are for that.
 Status (2026-10-21): A done. Text a shape (`Playground.Letters`,
 `Stroke_text.run`, `Letter_strokes`), the browser's and mini-office's
 (021f53db); on Linux a mask a letter in the software renderer, not the
-strokes (docs/notes_font.md, 5): a frame of Hacker News scrolled 1.7
+strokes (docs/notes/notes_font.md, 5): a frame of Hacker News scrolled 1.7
 ms where it was 12 (OCaml), 9 where it was 107 (mini-ml). On mini-9pi
 (2cb918e6) the software renderer's mask loaded once into a k1 image
 of the kernel's, then one draw message a letter (`letters=strokes`
@@ -721,7 +721,7 @@ both of mini-ml's machines (`games/tests/frames.sh`), and
 `make test-lite` (ix built by ix).
 
 **What was slow, and how it was found** (the method:
-docs/notes_debugging_techniques.md, 16):
+docs/notes/notes_debugging_techniques.md, 16):
 
 1. *The library that makes the messages* (`lib_graphics/Display.ml`):
    a number was four calls of `Buffer.add_char`, a message a Buffer of

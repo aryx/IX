@@ -143,7 +143,7 @@ A guess at the frame, to be measured at stage 2:
   9 million by OCaml in the playground (above), its lists and the
   view's included; mini-ml's code is about 3 times OCaml's on
   mini-doom's frame (16.1 million against 5.5: cfee472d,
-  [`notes_profiling_techniques.md`](../notes_profiling_techniques.md)),
+  [`notes_profiling_techniques.md`](../notes/notes_profiling_techniques.md)),
   so as it is, **more than the whole budget by itself: the first
   risk**, before the renderer. To be cut by arrays where lists are
   made at each frame (the tiles near, the chunks near, the cars), and

@@ -1061,7 +1061,7 @@ endif
 BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(BOOT))
 QEMU_BOOT_CARD = $(subst $(IMAGE),$(IMAGE_CARD),$(QEMU_BOOT))
 # ix's own sessions with the card, each a short one and all at once
-# (docs/notes_performance.md, 3): the card as boot.rc leaves it and its
+# (docs/notes/notes_performance.md, 3): the card as boot.rc leaves it and its
 # FAT (mini-dossrv, then the kernel's device); utilities/'s programs on
 # the root (files made, copied, renamed, dated, removed), on the FAT,
 # the ones that read (date, wc, tee, cmp), the rest (seq, du, sleep,

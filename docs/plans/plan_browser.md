@@ -586,7 +586,7 @@ through, a thing at a time.
    so the page's network goes through `Source`; by a network process
    forked at the start, Plan 9's webfs's way, rather than a reader a
    connection, since mini-9pi's fork copies the program
-   ([`notes_source.md`](../notes_source.md), sections 6 and 8). Its
+   ([`notes_source.md`](../notes/notes_source.md), sections 6 and 8). Its
    steps: mini-netscape built for the draw platform (`OS=plan9`); the
    network process and its pipe, tried on Linux by mini-ml's build
    (`worker=wait`, then a loop that waits); the cookies between the two;

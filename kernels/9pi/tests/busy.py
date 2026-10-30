@@ -3,7 +3,7 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # A user at mini-rio for some minutes, played by a script
-# (docs/notes_debugging_techniques.md, section 19): mini-9pi booted
+# (docs/notes/notes_debugging_techniques.md, section 19): mini-9pi booted
 # under an emulator with a USB keyboard and mouse and the card, rio
 # typed, three windows swept with the right button's "New", a program
 # typed in each (stats, breakout, cameltry), then for SECONDS a place

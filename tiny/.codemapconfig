@@ -199,7 +199,7 @@ local chain(name, steps) = {
     },
     'TinyKernel.ml': { digest: 'd04b261a71f1',
       summary: 'tiny-kernel: a kernel in ML for tiny-machine: a process called like a function until its trap, a waiting call a closure retried, files a tree of values; this file the boot, its parts in TinyKernel/.',
-      related: ['TinyKernel/', 'TinyMLRuntime/core.c', '../docs/notes_tiny_kernel.md', '../kernels/9pi/'],
+      related: ['TinyKernel/', 'TinyMLRuntime/core.c', '../docs/notes/notes_tiny_kernel.md', '../kernels/9pi/'],
     },
     // the programs of tiny-kernel's screen, their parts beside them
     'TinyBrowser.ml': { digest: 'ece868ba6db7',

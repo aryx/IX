@@ -667,7 +667,7 @@ not be what the program wrote:
 | silence, the program running | the pins' function, the clock, the amplifier's side of the jack; an emulator may have no such device at all |
 | the right tune at the wrong pitch or speed | the clock's source and divisor, the period (range) |
 | one ear, or the ears swapped | which pin is which on this board (the board's revision) |
-| crackles, gaps, more when the machine is busy | the ring ran empty: the program is late, not the device (docs/notes_audio.md) |
+| crackles, gaps, more when the machine is busy | the ring ran empty: the program is late, not the device (docs/notes/notes_audio.md) |
 | an old piece of sound repeating, **also after the program stopped** | the device is not reading what is written: it reads the pages as they were. The address it is given for the RAM (the bus alias: the Pi 1's on a Pi 2 goes through a cache the processor does not write through), or a data cache not written to memory before the device is told |
 
 The last row was the Pi 2's: "the quality is bad", "some noise sound

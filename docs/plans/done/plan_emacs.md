@@ -539,7 +539,7 @@ start the mini-emacs plan!", the decisions taken as proposed).
   screen drawn whole) holds for what a key changes. Not done: a key
   that changes the text (the rows and the colors of the part shown
   made again); keys that are repeats dropped when the program is
-  behind (`docs/notes_keyboard.md`).
+  behind (`docs/notes/notes_keyboard.md`).
 - **`/src` on the card** (the author: "let's start with a small /src/
   with just those little ocaml and maybe little c programs and
   assembly too, to test emacs"): `hello.ml`, `hellodraw.ml`,

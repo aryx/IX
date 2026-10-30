@@ -36,7 +36,7 @@ under qemu-system-arm (raspi1ap) on the author's host; a real board's
 number says **Pi1**. Line numbers are those of 2026-10-22.
 
 How to switch each one off at run time, where it can be: the flags are
-gathered in [manuals/m-ix.md](manuals/m-ix.md).
+gathered in [manuals/m-ix.md](../manuals/m-ix.md).
 
 ## Worth it?
 
@@ -132,7 +132,7 @@ stage is 923 lines of OCaml for about 8,000 of C; the fast section's own
 size is not given separately.
 
 **O2. No divisions on the Pi1.** 62881273 (2026-09-27), and
-docs/notes_performance.md section 1. A profile had `__aeabi_idivmod` at 38%
+docs/notes/notes_performance.md section 1. A profile had `__aeabi_idivmod` at 38%
 (ARMv6 has no divide instruction). The fixes:
 - divisions by 8 and 32 made shifts (`Memimage.bytex`, `fshr`, `cshr`,
   `units`; Memimage.ml:32), 61 s to 45 s;

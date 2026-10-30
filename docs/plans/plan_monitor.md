@@ -72,7 +72,7 @@ keeps a short history (the last ~10 s) for its graphs.
   `kernels/9pi/tests/perf/pcprof.py` maps the PCs to a kernel's
   functions. It came first because it was needed: it found mini-9pi's
   OCaml pixels spending 38% of their time in the Pi1's software
-  division (docs/notes_performance.md, case 1). The panel (M2) can
+  division (docs/notes/notes_performance.md, case 1). The panel (M2) can
   show it live: the top functions of the last second.
 - **M0.5: where is it, done** (2026-09-27): `-status N` and `-symbols
   ELF` (`raspberry/observe/Status.ml`), mini-pi -v: every N seconds a line on

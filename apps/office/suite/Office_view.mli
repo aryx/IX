@@ -43,7 +43,7 @@
  * mini-page does the other: a PDF's page, which does not change, drawn
  * whole in the program, its letters from the file's fonts (Pdf_render's
  * own cache of glyphs), then given to the kernel once as one picture,
- * and a frame is one copy of it (docs/notes_font.md, section 2). *)
+ * and a frame is one copy of it (docs/notes/notes_font.md, section 2). *)
 
 (* what is on the pages, in the screen's coordinates (Office_page's
    origin): with [chrome] the caret, the selection and an object's

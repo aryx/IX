@@ -7,7 +7,7 @@
  * mini-qemu's -prof FILE (docs/manuals/mini-qemu.md, section 4.5): the
  * first of plan_monitor.md's counters. It found that 38% of mini-9pi's
  * time drawing its console went to __aeabi_idivmod, the Pi1 having no
- * divide instruction (docs/notes_performance.md, case 1). Off by
+ * divide instruction (docs/notes/notes_performance.md, case 1). Off by
  * default: then the cost is one test of [on] per instruction.
  *
  * design:

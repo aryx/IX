@@ -127,7 +127,33 @@ let event (caps : < caps ; .. >) (today : Civil.date) (words : string) :
 let import (caps : < caps ; .. >) (account : string) (file : string) : Exit.t
     =
   let text = FS.read caps (Fpath.v file) in
-  if Filename.check_suffix (String.lowercase_ascii file) ".qif" then
+  if Filename.check_suffix (String.lowercase_ascii file) ".vcf" then begin
+    (* a person already there keeps their name, and gets the addresses,
+     * phones and birthday they did not have *)
+    List.iter
+      (fun (c : Item.t) ->
+        let item =
+          match Items.find caps (store caps) (Item.id c) with
+          | None -> c
+          | Some old ->
+              List.fold_left
+                (fun (i : Item.t) (n, v) ->
+                  if n = "name" || List.mem v (Mail.get_all i n) then i
+                  else if n = "email" || n = "phone" then
+                    { i with fields = i.fields @ [ { name = n; raw = " " ^ v } ] }
+                  else if Item.field i n = "" then Mail.set n v i
+                  else i)
+                old
+                (List.map
+                   (fun (f : Mail.field) -> (f.name, String.trim f.raw))
+                   c.fields)
+        in
+        Items.save caps (store caps) item;
+        line caps "" item)
+      (List.filter_map Vcard.to_item (Vcard.of_string text));
+    Exit.OK
+  end
+  else if Filename.check_suffix (String.lowercase_ascii file) ".qif" then
     match Qif.read text with
     | Error e -> fail caps (file ^ ": " ^ e)
     | Ok txns ->
@@ -143,7 +169,7 @@ let import (caps : < caps ; .. >) (account : string) (file : string) : Exit.t
           (Books.fresh register txns);
         Exit.OK
   else begin
-    let events = Events.of_ics ~message:"" text in
+    let events = Events.of_ics (Zone.local caps) ~message:"" text in
     List.iter (Items.save caps (store caps)) events;
     List.iter (line caps "") events;
     Exit.OK

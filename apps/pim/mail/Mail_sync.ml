@@ -58,20 +58,13 @@ let session (caps : < Cap.network ; Cap.open_in ; .. >) (s : server)
 
 let saved_password (caps : < Cap.env ; Cap.open_in ; .. >) :
     (string option, string) result =
-  let file = Filename.concat (Items.place caps) "password" in
-  match Unix.stat file with
-  | exception Unix.Unix_error _ -> Ok None
-  | st when st.st_perm land 0o077 <> 0 ->
-      Error
-        (Printf.sprintf "%s: others may read it (chmod 600 %s), not used"
-           file file)
-  | _ -> (
-      match FS.read_opt caps (Fpath.v file) with
-      | None -> Ok None
-      | Some text -> (
-          match String.trim (List.hd (String.split_on_char '\n' text)) with
-          | "" -> Ok None
-          | p -> Ok (Some p)))
+  match Items.secret caps "password" with
+  | Error e -> Error e
+  | Ok None -> Ok None
+  | Ok (Some text) -> (
+      match String.trim (List.hd (String.split_on_char '\n' text)) with
+      | "" -> Ok None
+      | p -> Ok (Some p))
 
 let keep (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
     ~(account : string) ~(mailbox : string) (l : Imap.summary list) : unit =

@@ -427,7 +427,7 @@ let invitation (caps : caps) (m : model) : model =
             List.concat_map
               (fun (l : Mime.leaf) ->
                 if String.lowercase_ascii l.mime = "text/calendar" then
-                  Events.of_ics ~message:(Mail_item.id s) l.data
+                  Events.of_ics (Zone.local caps) ~message:(Mail_item.id s) l.data
                 else [])
               (Mime.leaves (Mail.parse t)))
       m.reading

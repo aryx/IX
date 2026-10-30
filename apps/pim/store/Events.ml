@@ -43,7 +43,15 @@ let between (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
                     then [ day ]
                     else []
               in
-              List.map (fun d -> (d, time, i)) days)
+              (* (but those the series skips: except:) *)
+              let except =
+                String.split_on_char ' ' (Item.field i "except")
+              in
+              List.filter_map
+                (fun d ->
+                  if List.mem (Civil.to_string d) except then None
+                  else Some (d, time, i))
+                days)
       items
   in
   let key (d, t, _) =
@@ -51,29 +59,72 @@ let between (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
   in
   List.stable_sort (fun a b -> compare (key a) (key b)) all
 
-let of_ics ~(message : string) (text : string) : Item.t list =
+(* a UTC moment at this place's clock (Zone): Google writes most times
+ * in UTC *)
+let local (zone : Zone.t) (m : Ics.moment) : Ics.moment =
+  match m.time with
+  | Some t when m.utc ->
+      let u =
+        (float_of_int (Civil.days_from_civil m.date) *. 86400.)
+        +. float_of_int t
+      in
+      let date, minute = Zone.clock zone u in
+      { date; time = Some (minute * 60); utc = false }
+  | _ -> m
+
+(* a uid as a file's name: no / in it *)
+let safe (s : string) : string =
+  String.map (fun c -> if c = '/' || c = ' ' then '-' else c) s
+
+let of_ics (zone : Zone.t) ~(message : string) (text : string) : Item.t list =
   let cal = Ics.of_string text in
-  List.map
+  let at (m : Ics.moment) =
+    let m = local zone m in
+    match m.time with
+    | Some t -> Civil.to_string m.date ^ " " ^ clock (t / 60)
+    | None -> Civil.to_string m.date
+  in
+  (* the dates a series skips: its EXDATEs, and those moved or cancelled
+   * by an event of its UID with a RECURRENCE-ID *)
+  let skipped (uid : string) : string list =
+    List.concat_map
+      (fun (e : Ics.event) ->
+        if e.uid <> uid then []
+        else
+          (match e.recurrence_id with
+          | Some r -> [ Civil.to_string (local zone r).date ]
+          | None -> [])
+          @ List.map (fun m -> Civil.to_string (local zone m).date) e.exdates)
+      cal.events
+  in
+  List.filter_map
     (fun (e : Ics.event) ->
-      let at (m : Ics.moment) =
-        match m.time with
-        | Some t -> Civil.to_string m.date ^ " " ^ clock (t / 60)
-        | None -> Civil.to_string m.date
-      in
-      let end_ =
-        match e.end_ with
-        | Some { time = Some t; _ } -> [ ("end", clock (t / 60)) ]
-        | _ -> []
-      in
-      let opt name v = if v = "" then [] else [ (name, v) ] in
-      (* (a uid is the sender's, a file's name here: no / in it) *)
-      let uid = String.map (fun c -> if c = '/' || c = ' ' then '-' else c) e.uid in
-      Item.make ~id:("event:" ^ uid) ~stamps:[ "event" ]
-        (List.concat
-           [ [ ("title", e.summary); ("when", at e.start) ]; end_;
-             (match e.rrule with
-             | Some r -> [ ("repeat", Ics.rule_to_string r) ]
-             | None -> []);
-             opt "where" e.location; opt "re" message ])
-        e.description)
+      if e.cancelled then None
+      else
+        let end_ =
+          match e.end_ with
+          | Some ({ time = Some _; _ } as m) -> (
+              match (local zone m).time with
+              | Some t -> [ ("end", clock (t / 60)) ]
+              | None -> [])
+          | _ -> []
+        in
+        let opt name v = if v = "" then [] else [ (name, v) ] in
+        let id, repeat =
+          match (e.recurrence_id, e.rrule) with
+          | Some r, _ ->
+              let day = Civil.to_string (local zone r).date in
+              ("event:" ^ safe e.uid ^ "@" ^ day, [])
+          | None, Some r ->
+              ( "event:" ^ safe e.uid,
+                ("repeat", Ics.rule_to_string r)
+                :: opt "except" (String.concat " " (skipped e.uid)) )
+          | None, None -> ("event:" ^ safe e.uid, [])
+        in
+        Some
+          (Item.make ~id ~stamps:[ "event" ]
+             (List.concat
+                [ [ ("title", e.summary); ("when", at e.start) ]; end_; repeat;
+                  opt "where" e.location; opt "re" message ])
+             e.description))
     cal.events

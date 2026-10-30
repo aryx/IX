@@ -54,6 +54,12 @@ type event = {
   start : moment;
   end_ : moment option;
   rrule : Recur.rule option;
+  (* ix: what Google's calendars write. An occurrence moved: the
+   * series' UID, and the date it replaces (RECURRENCE-ID); the
+   * occurrences taken off a series (EXDATE); STATUS:CANCELLED *)
+  recurrence_id : moment option;
+  exdates : moment list;
+  cancelled : bool;
 }
 
 type todo = {

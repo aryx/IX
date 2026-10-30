@@ -21,6 +21,7 @@
  *     mini-pim today                   the day: events, tasks, snoozed
  *     mini-pim register, balance       the money (Books), import file.qif
  *     mini-pim remind                  what is due said as its minute comes
+ *     mini-pim sync                    Google's calendars (Calendars), the mail
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -80,6 +81,9 @@ let usage =
   \                                    lines, those not there yet (-a account)\n\
   \  register [-a account], balance    the money: a register; every account\n\
   \  today                             the day's events, tasks late and due\n\
+  \  sync                              the calendars of ~/.ix-pim/calendars\n\
+  \                                    fetched; with -u the Inbox too\n\
+  \  import file.vcf                   contacts (Google Contacts' export)\n\
   \  remind [-every 5]                 each reminder as its minute comes, and\n\
   \                                    with -u new mail from people\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
@@ -473,10 +477,40 @@ let new_mail (caps : < caps ; .. >) (o : options) ~(user : string)
           | _ -> ())
         (from_people ())
 
+(* sync: Google's side read (plan_pim.md): each calendar of the store's
+ * calendars file fetched (Calendars), then with -u the Inbox, what is
+ * new from people said *)
+let sync (caps : < caps ; .. >) (o : options) : Exit.t =
+  let calendars =
+    match Calendars.sources caps with
+    | Error e -> Error e
+    | Ok l ->
+        List.iter
+          (fun (s : Calendars.source) ->
+            match Calendars.fetch caps s with
+            | Ok (saved, removed) ->
+                Console.print caps
+                  (Printf.sprintf "%-10s %d saved, %d removed\n" s.name saved
+                     removed)
+            | Error e -> Console.eprint caps (e ^ "\n"))
+          l;
+        Ok ()
+  in
+  match (calendars, o.user) with
+  | Error e, _ -> fail caps e
+  | Ok (), None -> Exit.OK
+  | Ok (), Some user -> (
+      match password caps with
+      | Error e -> fail caps e
+      | Ok password ->
+          new_mail caps o ~user ~password o.today;
+          Exit.OK)
+
 (* remind: plan_pim.md's idea 6, a process of the suite's that says each
- * reminder as its minute comes, the window open or not; with -u, the
- * mail every few minutes, what is new from people said. -at: the
- * minute -today, said once, for the tests *)
+ * reminder as its minute comes, the window open or not; every few
+ * minutes the calendars fetched, and with -u the mail, what is new
+ * from people said. -at: the minute -today, said once, for the
+ * tests *)
 let remind (caps : < caps ; .. >) (o : options) : Exit.t =
   match o.at with
   | Some m ->
@@ -502,12 +536,24 @@ let remind (caps : < caps ; .. >) (o : options) : Exit.t =
             let from = if day' = day then minute + 1 else 0 in
             say_due caps day' ~from ~upto:(minute' + 1) ~bell:true;
             let looked =
-              match (o.user, password) with
-              | Some user, Some password
-                when now -. looked >= float_of_int (o.every * 60) ->
-                  new_mail caps o ~user ~password day';
-                  now
-              | _ -> looked
+              if now -. looked < float_of_int (o.every * 60) then looked
+              else begin
+                (* the calendars (Calendars), quietly, then the mail *)
+                (match Calendars.sources caps with
+                | Ok l ->
+                    List.iter
+                      (fun s ->
+                        match Calendars.fetch caps s with
+                        | Ok _ -> ()
+                        | Error e -> Console.eprint caps (e ^ "\n"))
+                      l
+                | Error e -> Console.eprint caps (e ^ "\n"));
+                (match (o.user, password) with
+                | Some user, Some password ->
+                    new_mail caps o ~user ~password day'
+                | _ -> ());
+                now
+              end
             in
             (* (to just after the next minute's start) *)
             Unix.sleepf (60. -. Float.rem now 60. +. 0.1);
@@ -566,6 +612,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       Pim_store.register caps o.account
   | Some { args = [ "balance" ]; _ } -> Pim_store.balance caps
   | Some ({ args = [ "remind" ]; _ } as o) -> remind caps o
+  | Some ({ args = [ "sync" ]; _ } as o) -> sync caps o
   | Some ({ args = [ "today" ]; _ } as o) ->
       let account = match o.user with Some u -> u | None -> "" in
       Pim_store.today caps ~account o.today
@@ -598,7 +645,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
     "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
-    "register"; "balance"; "remind" ]
+    "register"; "balance"; "remind"; "sync" ]
 
 let () =
   Cap.main (fun caps ->

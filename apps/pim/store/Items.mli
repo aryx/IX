@@ -27,6 +27,13 @@ type t
 (* $PIM_STORE, else ~/.ix-pim, else $home/lib/pim *)
 val place : < Cap.env; .. > -> string
 
+(* [secret caps name]: the text of the store's file [name], one a person
+ * makes and mini-pim never writes (the password, the calendars'
+ * secret addresses); Ok None when there is none, an Error when others
+ * may read it (its mode not 600 or 400: ssh's rule for a key) *)
+val secret :
+  < Cap.env; Cap.open_in; .. > -> string -> (string option, string) result
+
 (* the store in that directory; made when an item is first saved *)
 val at : string -> t
 

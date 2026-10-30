@@ -27,9 +27,10 @@ ROOT=$(cd "$(dirname "$0")/../../.." && pwd)
 # (the same day and Date: on any machine: Zone)
 export TZ=UTC
 B=${1:-$ROOT/_build/default/apps/pim}
-if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild
-else PIM=$B/Pim.exe; MAILD=$B/Maild.exe; fi
-W=$(mktemp -d); trap 'kill $pid $fr 2> /dev/null; rm -rf $W' EXIT
+if [ $# -ge 1 ]; then PIM=$B/mini-pim; MAILD=$B/mini-maild; HTTPD=$B/mini-httpd
+else PIM=$B/Pim.exe; MAILD=$B/Maild.exe
+  HTTPD=$ROOT/_build/default/networking/Httpd.exe; fi
+W=$(mktemp -d); trap 'kill $pid $fr $web 2> /dev/null; rm -rf $W' EXIT
 mkdir $W/spool
 # (mini-pim's store the test's, never ~/.ix-pim)
 export PIM_STORE=$W/store
@@ -238,6 +239,48 @@ has '^2026-11-01 .*rent .*Rent .*-900.00 .*995.43$' "a bill paid, its balance"
 $PIM balance > $W/out
 has '^ *995.43  Assets:Checking$' "the books: an account's balance"
 has '^ *-2,000.00  Income:Salary$' "the books: double entry"
+# Google's side read (Calendars, Vcard): a calendar's secret address
+# served by mini-httpd, fetched, fetched again once an event went; the
+# file refused when others may read it; a vCard export imported, Carol
+# given her phone
+mkdir $W/web
+# (an event a line: its uid, its start, its title)
+cal() {
+  { printf 'BEGIN:VCALENDAR\r\n'
+    for e in "$@"; do
+      set -- $e
+      printf 'BEGIN:VEVENT\r\nUID:%s\r\nDTSTART:%s\r\nSUMMARY:%s\r\nEND:VEVENT\r\n' \
+        $1 $2 $3
+    done
+    printf 'END:VCALENDAR\r\n'; } > $W/web/me.ics
+}
+cal "dentist@g 20261105T150000Z dentist" "yoga@g 20261106T080000Z yoga"
+$HTTPD -p 0 $W/web > $W/hlog 2>&1 &
+web=$!
+n=0
+until grep -q 'serving' $W/hlog || [ $n -ge 50 ]; do sleep 0.1; n=$((n + 1)); done
+url=$(grep -o 'http://[0-9.:]*/' $W/hlog)me.ics
+(umask 077; echo "me $url" > $PIM_STORE/calendars)
+$PIM sync > $W/out 2>&1
+has '^me  *2 saved, 0 removed$' "sync: a calendar fetched"
+$PIM search calendar:me > $W/out
+has '^event:dentist@g  *event  *dentist$' "sync: its events in the store"
+cal "dentist@g 20261105T150000Z dentist"
+$PIM sync > $W/out 2>&1
+is "me         0 saved, 1 removed" "sync: what went removed, the rest kept"
+chmod 644 $PIM_STORE/calendars
+$PIM sync > $W/out 2>&1
+has "others may read it" "the calendars' file others may read: refused"
+kill $web; wait $web 2> /dev/null
+printf 'BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Carol\r\nEMAIL:carol@ix\r\n\
+TEL:+33 1 23 45 67 89\r\nEND:VCARD\r\nBEGIN:VCARD\r\nVERSION:3.0\r\n\
+FN:Alice Martin\r\nEMAIL:alice@ix\r\nBDAY:1980-03-15\r\nEND:VCARD\r\n' \
+  > $W/c.vcf
+$PIM import $W/c.vcf > $W/out
+has '^contact:alice@ix  *contact  *Alice Martin$' "a vCard export imported"
+$PIM show contact:carol@ix > $W/out
+has '^phone: +33 1 23 45 67 89$' "a contact there given what the card adds"
+has '^name: Carol$' "and keeping her name"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"

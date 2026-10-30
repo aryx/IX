@@ -15,7 +15,8 @@
    period; t today; d w m a day, a week (Monday first), a month (six
    weeks); the arrows move the day selected; o or Enter that day's
    page, its events and the selected one's details (o again: an
-   invitation's mail, in Mail); u back to the week. A repeating event
+   invitation's mail, in Mail); u back to the week; g Google's
+   calendars fetched (Calendars: their secret addresses). A repeating event
    is computed for the days shown (Recur), never stored as a list. *)
 
 type caps = Mail_window.caps

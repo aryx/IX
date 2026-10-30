@@ -96,11 +96,12 @@ type command =
   | Month_
   | Open_
   | Back
+  | Get
 
 let menus : (string * (string * command) list) list =
   [ ( "Event",
       [ ("New Event...  (c)", Create); ("Open  (o)", Open_);
-        ("Back  (u)", Back) ] );
+        ("Back  (u)", Back); ("Get the Calendars  (g)", Get) ] );
     ( "View",
       [ ("Day  (d)", Day_); ("Week  (w)", Week_); ("Month  (m)", Month_);
         ("Today  (t)", Today); ("Next  (j)", Next_period);
@@ -130,6 +131,23 @@ let step (caps : caps) (m : model) (by : int) : model =
 
 let command (caps : caps) (m : model) (c : command) : model * go option =
   match c with
+  | Get -> (
+      (* Google's, read (Calendars): the store's calendars file's *)
+      match Calendars.sources caps with
+      | Error e -> ({ m with status = e }, None)
+      | Ok [] ->
+          ({ m with status = "no calendars: see Calendars.mli" }, None)
+      | Ok l ->
+          let said =
+            List.map
+              (fun (s : Calendars.source) ->
+                match Calendars.fetch caps s with
+                | Ok (saved, removed) ->
+                    Printf.sprintf "%s %d new, %d gone" s.name saved removed
+                | Error e -> e)
+              l
+          in
+          (load caps { m with status = String.concat "; " said }, None))
   | Create -> ({ m with mode = Asking; field = ""; status = "" }, None)
   | Today -> (load caps { m with cursor = m.today; selected = 0 }, None)
   | Day_ -> (load caps { m with span = Day; selected = 0 }, None)
@@ -179,6 +197,7 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
           else if pressed "m" then Some Month_
           else if pressed "o" || pressed "Enter" then Some Open_
           else if pressed "u" || pressed "Escape" then Some Back
+          else if pressed "g" then Some Get
           else None
         in
         match (menu, key) with

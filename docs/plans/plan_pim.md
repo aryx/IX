@@ -600,3 +600,30 @@ where it lives. Tests: a frame (Carol made a contact, "lunch with
 carol tue 12:30" captured in the Calendar, her page); people and
 searchopen re-recorded (a section heading, "1 item").
 
+2026-10-30: Google's side read, OAuth postponed (the author: "let's do
+the read-only for now gmail suite integration (gmail, calendar,
+contact, etc.)", "and postpone oauth for later"). Mail was Gmail's
+already (IMAP). Calendars: `store/Calendars`, each calendar's secret
+iCalendar address in ~/.ix-pim/calendars (a person writes it, mode
+600, `Items.secret`, the password file's check now shared), fetched by
+ix's HTTPS (Http_client), its events items saying their calendar:; a
+fetch the calendar's mirror (new or changed written, gone removed,
+the suite's own events never touched). `mini-pim sync` (and the
+Inbox with -u), g in the Calendar, and `remind` every few minutes.
+What Google writes that Ics did not read: UTC times (now at this
+place's clock, Zone), an occurrence moved (RECURRENCE-ID: its own
+item, event:uid@day), one deleted (EXDATE), STATUS:CANCELLED; a
+series' days skipped are its except: field, which Events.between
+leaves out. A TZID's time is still read as written (floating), right
+for a calendar in one's own zone. Contacts: `store/Vcard`, Google
+Contacts' export (and Apple's: item1. groups, N, BDAY without a year)
+read; `mini-pim import file.vcf`, a contact there given the addresses,
+phone and birthday it lacked, its name kept. Tests: Unit_google (a
+Google export: Rome's clock, a Monday moved, one off, one cancelled;
+a merge; a vCard), session.sh (mini-httpd serving a calendar, synced,
+an event gone, the file's mode refused; a vCard merged into Carol).
+Tried by hand: Google's public Italian holidays calendar, the same
+kind of address, by HTTPS: 209 events in 0.5 s, the second sync
+writing nothing. Not yet: two-way (CalDAV, CardDAV: OAuth), several
+TZIDs (a calendar in another zone), birthdays shown in the Calendar.
+

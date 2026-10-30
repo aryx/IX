@@ -71,7 +71,7 @@ let tests =
            SUMMARY:Lunch\\, then a walk\r\nLOCATION:the canteen\r\n\
            END:VEVENT\r\nEND:VCALENDAR\r\n"
         in
-        match Events.of_ics ~message:"mail:7" ics with
+        match Events.of_ics Zone.utc ~message:"mail:7" ics with
         | [ e ] ->
             check "its id" "event:abc-1@google.com" (Item.id e);
             check "its title" "Lunch, then a walk" (Item.field e "title");

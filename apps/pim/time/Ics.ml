@@ -2,7 +2,8 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's appkits/pim/Ics.ml
- * (plan_pim.md, stage 3); Option.fold and Option.value a match *)
+ * (plan_pim.md, stage 3); Option.fold and Option.value a match;
+ * RECURRENCE-ID, EXDATE and STATUS:CANCELLED read (Google's calendars) *)
 
 (* See Ics.mli *)
 
@@ -16,6 +17,9 @@ type event = {
   start : moment;
   end_ : moment option;
   rrule : Recur.rule option;
+  recurrence_id : moment option;
+  exdates : moment list;
+  cancelled : bool;
 }
 
 type todo = { uid : string; summary : string; due : moment option; priority : int; completed : bool }
@@ -269,7 +273,17 @@ let event_of (c : component) : event option =
         start;
         end_ = moment c "DTEND";
         (* a rule we can't follow: the first occurrence still shown *)
-        rrule = Option.bind (value c "RRULE") rule_of_string })
+        rrule = Option.bind (value c "RRULE") rule_of_string;
+        recurrence_id = moment c "RECURRENCE-ID";
+        (* (each EXDATE line, each a list) *)
+        exdates =
+          List.concat_map
+            (fun (n, _, v) ->
+              if n = "EXDATE" then
+                List.filter_map moment_of_string (String.split_on_char ',' v)
+              else [])
+            c.props;
+        cancelled = value c "STATUS" = Some "CANCELLED" })
     (moment c "DTSTART")
 
 let todo_of (c : component) : todo =

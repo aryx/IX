@@ -35,7 +35,8 @@ window's (`make test`'s two "mini-pim").
                        Calendar: c an event in a line ("lunch with
                        alice tue 12:30", "standup every monday
                        9h30"), j k next and previous, t today, d w m
-                       a day, a week, a month, the arrows the day
+                       a day, a week, a month, the arrows the day,
+                       g Google's calendars fetched (Calendars)
                        Tasks: n a task in a line ("pay the rent by
                        friday"), x done, d its day, z snooze, o open
                        (a message in Mail), Tab To Do or Done
@@ -69,6 +70,11 @@ window's (`make test`'s two "mini-pim").
         event words    an event from a line, as the window's c
         import file.ics
                        an iCalendar file's events
+        import file.vcf
+                       contacts, Google Contacts' export (vCard)
+        sync           Google's calendars fetched, by their secret
+                       addresses in ~/.ix-pim/calendars (mode 600);
+                       with -u the Inbox
         today          the day: its events, the tasks late and due,
                        the mail back from a snooze, unread mail from
                        people, the day's page
@@ -147,6 +153,10 @@ window's (`make test`'s two "mini-pim").
                        mail from people, the day's page (Home and
                        mini-pim today)
     store/Detect       the days, amounts and addresses in a text
+    store/Calendars    Google's calendars read, by their secret
+                       addresses, a fetch a mirror
+    store/Vcard        vCard files read: Google's and Apple's
+                       contacts
     store/Remind       when a reminder is said: an event's minutes
                        before, a task's remind:
     store/Books        the money: double entry, postings in items, an

@@ -32,6 +32,10 @@ val between :
   Item.t list -> from:Civil.date -> upto:Civil.date ->
   (Civil.date * int option * Item.t) list
 
-(* [of_ics ~message text]: an invitation's events as items, [message]
- * the id of the mail they came in ("" for a file) *)
-val of_ics : message:string -> string -> Item.t list
+(* [of_ics zone ~message text]: an invitation's or a calendar's events
+ * as items, [message] the id of the mail they came in ("" for a file);
+ * UTC times at [zone]'s clock, a TZID's as written (floating); a
+ * cancelled event left out; an occurrence moved its own item
+ * (event:uid@its date), the series skipping that date and its
+ * EXDATEs (except: the days, which [between] leaves out) *)
+val of_ics : Zone.t -> message:string -> string -> Item.t list

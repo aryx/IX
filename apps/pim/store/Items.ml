@@ -61,3 +61,15 @@ let cache (caps : < Cap.open_out; .. >) (t : t) (key : string)
 let remove (caps : < Cap.open_out; .. >) (t : t) (id : string) : unit =
   let p = path t "items" id in
   if Sys.file_exists p then FS.remove caps (Fpath.v p)
+
+let secret (caps : < Cap.env; Cap.open_in; .. >) (name : string) :
+    (string option, string) result =
+  let file = Filename.concat (place caps) name in
+  match Unix.stat file with
+  | exception Unix.Unix_error _ -> Ok None
+  | st when st.st_perm land 0o077 <> 0 ->
+      Error
+        (Printf.sprintf "%s: others may read it (chmod 600 %s), not used"
+           file file)
+  | _ -> Ok (FS.read_opt caps (Fpath.v file))
+

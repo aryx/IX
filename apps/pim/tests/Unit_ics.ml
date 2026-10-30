@@ -133,10 +133,12 @@ let test_round_trip () =
         [ { uid = "1@tiny"; summary = "Standup, then coffee"; description = "Room 4;\nbring a mug"; location = "";
             start = { date = date 2026 9 28; time = Some (9 * 3600); utc = false };
             end_ = Some { date = date 2026 9 28; time = Some (10 * 3600); utc = false };
-            rrule = Ics.rule_of_string "FREQ=WEEKLY;BYDAY=MO,TH" };
+            rrule = Ics.rule_of_string "FREQ=WEEKLY;BYDAY=MO,TH";
+            recurrence_id = None; exdates = []; cancelled = false };
           { uid = "2@tiny"; summary = String.concat " " (List.init 30 (fun i -> "word" ^ string_of_int i));
             description = ""; location = "Everywhere"; start = { date = date 2026 12 25; time = None; utc = false };
-            end_ = None; rrule = Ics.rule_of_string "FREQ=YEARLY" } ];
+            end_ = None; rrule = Ics.rule_of_string "FREQ=YEARLY";
+            recurrence_id = None; exdates = []; cancelled = false } ];
       todos =
         [ { uid = "3@tiny"; summary = "Write the plan"; due = Some { date = date 2026 10 1; time = None; utc = false };
             priority = 1; completed = false };

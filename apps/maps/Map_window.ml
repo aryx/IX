@@ -14,6 +14,10 @@ type caps = < Cap.network; Cap.open_in; Cap.open_out; Cap.env >
 (* a tile in memory: its own picture, or its ancestor's enlarged *)
 type tile = { image : Rgba_image.t; sharp : bool; mutable used : int }
 
+(* a forecast: asked, or come and when; asked again after a quarter of an
+ * hour, how often the service makes a new one *)
+type forecast = Asked | Came of float * (Weather.t, string) result
+
 type model = {
   z : int;
   cx : int; (* the window's centre, a pixel of the world at zoom z *)
@@ -33,6 +37,9 @@ type model = {
   start : string option; (* the place on the command line, asked at the first frame *)
   held : string list; (* the keys down at the last frame *)
   ask : string -> unit; (* a place asked of the service, by the worker *)
+  weather_at : (string * float * float) option; (* the panel open: the place it is of *)
+  forecasts : (string, forecast) Hashtbl.t; (* by where, to two decimals *)
+  ask_forecast : string -> float -> float -> unit; (* by the worker *)
   save : (string * Place.t) list -> unit; (* the last places written down *)
 }
 
@@ -41,6 +48,8 @@ let again_after = 30.
 let credit = "\xc2\xa9 OpenStreetMap contributors"
 let default_tiles = "https://tile.openstreetmap.org"
 let default_places = "https://nominatim.openstreetmap.org"
+let default_weather = "https://api.open-meteo.com"
+let forecast_good = 900.
 let places_kept = 20
 let rows_shown = 6
 let default_cache_megabytes = 32
@@ -231,40 +240,68 @@ let took (w : int) (h : int) (m : model) : model =
       | Error why -> { m with notice = Printf.sprintf "%s: %s" query why })
 
 (*****************************************************************************)
+(* The forecast *)
+(*****************************************************************************)
+
+let forecast_found : (string * (Weather.t, string) result) option ref = ref None
+
+let forecast_of (caps : < Cap.network; Cap.open_in; .. >) (base : string) (lat : float) (lon : float) : (Weather.t, string) result =
+  match Map_http.get caps ~more:[] (Weather.url base lat lon) with
+  | Error why -> Error why
+  | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
+  | Ok r -> ( try Ok (Weather.of_json r.body) with Failure why -> Error why)
+
+let forecast_key (lat : float) (lon : float) : string = Printf.sprintf "%.2f,%.2f" lat lon
+
+(* the panel for that place, the forecast asked unless it is known and good *)
+let weather_for (now : float) ((name, lat, lon) : string * float * float) (m : model) : model =
+  let key = forecast_key lat lon in
+  let good =
+    match Hashtbl.find_opt m.forecasts key with
+    | Some Asked -> true
+    | Some (Came (at, Ok _)) -> now -. at < forecast_good
+    | Some (Came (at, Error _)) -> now -. at < again_after
+    | None -> false
+  in
+  if not good then begin
+    Hashtbl.replace m.forecasts key Asked;
+    m.ask_forecast key lat lon
+  end;
+  { m with weather_at = Some (name, lat, lon) }
+
+let took_forecast (now : float) (m : model) : model =
+  match !forecast_found with
+  | None -> m
+  | Some (key, r) ->
+      forecast_found := None;
+      Hashtbl.replace m.forecasts key (Came (now, r));
+      { m with generation = m.generation + 1 }
+
+let lat_lon_words (lat : float) (lon : float) : string =
+  Printf.sprintf "%.3f %c  %.3f %c" (Float.abs lat) (if lat >= 0. then 'N' else 'S') (Float.abs lon)
+    (if lon >= 0. then 'E' else 'W')
+
+(* what w asks about: the place marked, else the window's centre *)
+let subject (m : model) : string * float * float =
+  match m.place with
+  | Some p -> (p.name, p.lat, p.lon)
+  | None ->
+      let lat = Mercator.latitude_of_y m.z m.cy and lon = Mercator.longitude_of_x m.z m.cx in
+      (lat_lon_words lat lon, lat, lon)
+
+(*****************************************************************************)
 (* The Find box *)
 (*****************************************************************************)
 
-let text_size = 14.
 let row_height = 22.
-
-(* [s]'s letters from [x] on [baseline], and their width *)
-let text (color : P.color) (x : float) (baseline : float) (s : string) : P.shape * float =
-  let rec place (x0 : float) (acc : (float * string) list) (l : string list) =
-    match l with
-    | [] -> (List.rev acc, x0)
-    | c :: rest ->
-        let g = Glyph_unicode.glyph c in
-        place (x0 +. (float_of_int (g.right - g.left) *. text_size /. Hershey.units_per_em)) ((x0, c) :: acc) rest
-  in
-  let at, x1 = place x [] (Text.chars s) in
-  (P.letters color { size = text_size; bold = false; italic = false; baseline; at }, x1 -. x)
-
-let width_of (s : string) : float = snd (text P.black 0. 0. s)
-
-(* as much of [s] as fits in [room] *)
-let cut (room : float) (s : string) : string =
-  if width_of s <= room then s
-  else
-    let rec go (acc : string) (l : string list) : string =
-      match l with
-      | c :: rest when width_of (acc ^ c ^ "...") <= room -> go (acc ^ c) rest
-      | _ -> acc ^ "..."
-    in
-    go "" (Text.chars s)
+let text (color : P.color) (x : float) (y : float) (s : string) : P.shape * float = Map_look.text color ~size:14. x y s
+let width_of = Map_look.width_of
+let cut = Map_look.cut
 
 (* the box's line, then the last places under it while it is open *)
 let box_lines (fw : float) (m : model) : string list =
-  let room = fw -. 28. in
+  (* (what the panel leaves) *)
+  let room = fw -. 28. -. if m.weather_at <> None then 306. else 0. in
   match m.finding with
   | Some typed ->
       cut room ("find: " ^ typed ^ "_")
@@ -286,8 +323,9 @@ let line_at (fw : float) (fh : float) (m : model) (mx : float) (my : float) : in
   in
   find 0 (box_lines fw m)
 
-(* the characters typed: in the box when it is open; / opens it, + and - zoom *)
-let typed (h : int) (s : string) (m : model) : model =
+(* the characters typed: in the box when it is open; / opens it, + and -
+ * zoom, w the forecast *)
+let typed (now : float) (h : int) (s : string) (m : model) : model =
   List.fold_left
     (fun (m : model) (c : string) ->
       match (m.finding, c) with
@@ -296,6 +334,7 @@ let typed (h : int) (s : string) (m : model) : model =
       | None, "/" -> { m with finding = Some "" }
       | None, ("+" | "=") -> zoomed 1 0 0 h m
       | None, "-" -> zoomed (-1) 0 0 h m
+      | None, "w" -> if m.weather_at = None then weather_for now (subject m) m else { m with weather_at = None }
       | None, _ -> m)
     m (Text.chars s)
 
@@ -304,7 +343,7 @@ let in_box (now : float) (w : int) (h : int) (computer : P.computer) (m : model)
   let pressed (k : string) : bool = Set_.mem k computer.keyboard.keys && not (List.mem k m.held) in
   let m =
     match m.finding with
-    | None -> m
+    | None -> if pressed "Escape" then { m with weather_at = None } else m
     | Some t ->
         if pressed "Escape" then { m with finding = None; notice = "" }
         else if pressed "Enter" then if String.trim t = "" then { m with finding = None } else asked now w h t m
@@ -336,15 +375,20 @@ let update (computer : P.computer) (m : model) : model =
   let m = { m with ticks = m.ticks + 1 } in
   let m = collected now m in
   let m = took w h m in
+  let m = took_forecast now m in
   let m =
     match m.start with
     | Some query -> asked now w h query { m with start = None; asked_at = now -. 1. }
     | None -> m
   in
   let before = (m.z, m.cx, m.cy) in
-  let m = typed h keys.typed m in
+  let m = typed now h keys.typed m in
   let m = in_box now w h computer m in
-  let over = line_at computer.screen.width computer.screen.height m mouse.mx mouse.my <> None in
+  let fw = computer.screen.width and fh = computer.screen.height in
+  let over =
+    line_at fw fh m mouse.mx mouse.my <> None
+    || (m.weather_at <> None && Weather_panel.inside fw fh mouse.mx mouse.my)
+  in
   (* the wheel and a double click: at the mouse *)
   let notches = m.wheel +. mouse.mwheel in
   let steps = int_of_float notches in
@@ -355,7 +399,13 @@ let update (computer : P.computer) (m : model) : model =
   let m =
     match (m.grab, mouse.mdown) with
     | None, true -> if over then m else { m with grab = Some (mouse.mx, mouse.my, m.cx, m.cy) }
-    | Some _, false -> { m with grab = None }
+    | Some (_, _, cx, cy), false ->
+        (* a click, not a drag: a place marked there, which w will ask about *)
+        if mouse.mclick && (cx, cy) = (m.cx, m.cy) && not over then
+          let x = m.cx + px and y = max 0 (min (Mercator.world_size m.z - 1) (m.cy + py)) in
+          let lat = Mercator.latitude_of_y m.z y and lon = Mercator.longitude_of_x m.z (fst (Tiles.centred m.z x y h)) in
+          { m with grab = None; place = Some { name = lat_lon_words lat lon; lat; lon; box = None } }
+        else { m with grab = None }
     | Some (mx, my, cx, cy), true ->
         let cx, cy =
           Tiles.centred m.z
@@ -373,6 +423,12 @@ let update (computer : P.computer) (m : model) : model =
     else
       let cx, cy = Tiles.centred m.z (m.cx + dx) (m.cy + dy) h in
       { m with cx; cy }
+  in
+  (* (the panel follows the place) *)
+  let m =
+    match (m.weather_at, m.place) with
+    | Some (name, _, _), Some p when name <> p.name -> weather_for now (p.name, p.lat, p.lon) m
+    | _ -> m
   in
   (* (what the search said, until the map moves; the keys for next time) *)
   let m = if (m.z, m.cx, m.cy) <> before then { m with notice = "" } else m in
@@ -399,8 +455,19 @@ let band (w : float) (h : float) (from_right : bool) (s : string) : P.shape list
 
 let where (m : model) : string =
   let lat = Mercator.latitude_of_y m.z m.cy and lon = Mercator.longitude_of_x m.z m.cx in
-  Printf.sprintf "%.3f %c  %.3f %c  zoom %d" (Float.abs lat) (if lat >= 0. then 'N' else 'S')
-    (Float.abs lon) (if lon >= 0. then 'E' else 'W') m.z
+  Printf.sprintf "%s  zoom %d" (lat_lon_words lat lon) m.z
+
+let weather (fw : float) (fh : float) (m : model) : P.shape list =
+  match m.weather_at with
+  | None -> []
+  | Some (name, lat, lon) ->
+      let state : Weather_panel.state =
+        match Hashtbl.find_opt m.forecasts (forecast_key lat lon) with
+        | Some (Came (_, Ok f)) -> Weather_panel.Came f
+        | Some (Came (_, Error why)) -> Weather_panel.Failed why
+        | Some Asked | None -> Weather_panel.Waiting
+      in
+      Weather_panel.panel fw fh name state
 
 (* the place's marker, where it is on the window, whichever side of the
  * world's edge *)
@@ -447,17 +514,18 @@ let drawn (w : int) (h : int) (m : model) : P.shape list =
   :: List.filter_map tile (Tiles.in_view m.z m.cx m.cy w h))
   @ marker fw fh m
   @ box fw fh m
+  @ weather fw fh m
   @ band fw fh false (if m.notice <> "" then m.notice else if m.said <> "" then m.said else where m)
   @ band fw fh true credit
 
 (* the same list while nothing it shows changed: a window at rest costs no
  * drawing (the same as mini-netscape's) *)
-let last : ((int * int * int * int * int * int * string * string * string list * string) * P.shape list) option ref = ref None
+let last : ((int * int * int * int * int * int * string * string * string list * string * string) * P.shape list) option ref = ref None
 
 let view (computer : P.computer) (m : model) : P.shape list =
   let w = int_of_float computer.screen.width and h = int_of_float computer.screen.height in
   let name = match m.place with Some p -> p.name | None -> "" in
-  let now = (w, h, m.z, m.cx, m.cy, m.generation, m.said, m.notice, box_lines (float_of_int w) m, name) in
+  let now = (w, h, m.z, m.cx, m.cy, m.generation, m.said, m.notice, box_lines (float_of_int w) m, name, match m.weather_at with Some (n, _, _) -> n | None -> "") in
   match !last with
   | Some (was, shapes) when was = now -> shapes
   | _ ->
@@ -481,6 +549,51 @@ let cache_dir (caps : caps) (flags : P.flags) : string option =
   | None, None, Some home, _ | None, None, None, Some home -> Some (Filename.concat (Filename.concat home ".cache") "mini-maps")
   | None, None, None, None -> None
 
+(* the last places: a file beside the cache's tiles *)
+let places_file (caps : caps) (flags : P.flags) : Fpath.t option =
+  Option.map (fun (dir : string) -> Fpath.v (Filename.concat dir "places")) (cache_dir caps flags)
+
+let known_places (caps : caps) (flags : P.flags) : (string * Place.t) list =
+  match Option.bind (places_file caps flags) (fun (f : Fpath.t) -> FS.read_opt caps f) with
+  | None -> []
+  | Some lines -> List.filter_map Place.of_line (String.split_on_char '\n' lines)
+
+let save_places (caps : caps) (flags : P.flags) (l : (string * Place.t) list) : unit =
+  let lines = String.concat "" (List.map (fun (e : string * Place.t) -> Place.to_line e ^ "\n") l) in
+  match places_file caps flags with
+  | None -> ()
+  | Some f -> ( try FS.write caps f lines with Sys_error _ | Unix.Unix_error _ -> ())
+
+let words_of (flags : P.flags) : string list =
+  List.filter_map (fun ((k, v) : string * string) -> if v = "" && k <> "window" then Some k else None) flags
+
+let weather_base_of (flags : P.flags) : string =
+  (* (forecast=, weather being the terminal's command word, a flag too) *)
+  match List.assoc_opt "forecast" flags with Some b -> b | None -> default_weather
+
+(* the terminal's: a place from the last ones or asked, and its forecast *)
+let forecast_lines (caps : caps) (flags : P.flags) (query : string) : (string list, string) result =
+  let known = known_places caps flags in
+  let place =
+    match List.assoc_opt (Place.normal query) known with
+    | Some p -> Ok p
+    | None -> (
+        let base = match List.assoc_opt "places" flags with Some b -> b | None -> default_places in
+        match Map_http.get caps ~more:[] (Place.search_url base query) with
+        | Error why -> Error why
+        | Ok r when r.status <> 200 -> Error (Printf.sprintf "%d %s" r.status r.reason)
+        | Ok r -> (
+            match Place.of_json r.body with
+            | p :: _ ->
+                save_places caps flags ((Place.normal query, p) :: known);
+                Ok p
+            | [] -> Error (Printf.sprintf "no place called %s" query)
+            | exception Failure why -> Error why))
+  in
+  match place with
+  | Error why -> Error why
+  | Ok p -> Result.map (Weather.lines p.name) (forecast_of caps (weather_base_of flags) p.lat p.lon)
+
 let initial (caps : caps) (flags : P.flags) : model =
   let number (name : string) : float option = Option.bind (List.assoc_opt name flags) float_of_string_opt in
   let z =
@@ -500,22 +613,14 @@ let initial (caps : caps) (flags : P.flags) : model =
   let cache = Option.bind (cache_dir caps flags) (fun (dir : string) -> Tile_cache.create caps ~dir ~limit) in
   Map_worker.start (fetch caps base cache);
   let places = match List.assoc_opt "places" flags with Some b -> b | None -> default_places in
-  (* the last places: a file beside the cache's tiles *)
-  let file = Option.map (fun (dir : string) -> Fpath.v (Filename.concat dir "places")) (if cache = None then None else cache_dir caps flags) in
-  let known =
-    match Option.bind file (fun (f : Fpath.t) -> FS.read_opt caps f) with
-    | None -> []
-    | Some lines -> List.filter_map Place.of_line (String.split_on_char '\n' lines)
-  in
-  let save (l : (string * Place.t) list) : unit =
-    let lines = String.concat "" (List.map (fun (e : string * Place.t) -> Place.to_line e ^ "\n") l) in
-    match file with
-    | None -> ()
-    | Some f -> ( try FS.write caps f lines with Sys_error _ | Unix.Unix_error _ -> ())
-  in
-  (* the words on the command line, a place's name *)
-  let words = List.filter_map (fun ((k, v) : string * string) -> if v = "" && k <> "window" then Some k else None) flags in
+  let weather_base = weather_base_of flags in
+  let known = known_places caps flags and save = save_places caps flags in
+  let words = words_of flags in
   let start = if words = [] then None else Some (String.concat " " words) in
   { z; cx; cy; grab = None; wheel = 0.; store = Hashtbl.create 200; failed = Hashtbl.create 20; ticks = 0; generation = 0; said = "";
     finding = None; place = None; known; notice = ""; asked_at = -1000.; start; held = [];
-    ask = (fun (query : string) -> Map_worker.job (fun () -> search caps places query)); save }
+    ask = (fun (query : string) -> Map_worker.job (fun () -> search caps places query)); save;
+    weather_at = None; forecasts = Hashtbl.create 16;
+    ask_forecast =
+      (fun (key : string) (lat : float) (lon : float) ->
+        Map_worker.job (fun () -> forecast_found := Some (key, forecast_of caps weather_base lat lon))) }

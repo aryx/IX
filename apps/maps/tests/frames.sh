@@ -32,6 +32,7 @@ cat > $W/site/search <<JSON
 [{"place_id":1,"lat":"47.3900474","lon":"0.6889268","display_name":"Tours, Indre-et-Loire, Centre-Val de Loire, France métropolitaine, France","boundingbox":["30.0","60.0","-30.0","30.0"]}]
 JSON
 mkdir $W/site/none; echo '[]' > $W/site/none/search
+mkdir $W/site/v1; cp $ROOT/apps/maps/tests/forecast.json $W/site/v1/forecast
 
 $HTTPD -p 0 $W/site > $W/log 2>&1 &
 pid=$!
@@ -46,10 +47,11 @@ while IFS='|' read -r name args sum sum2; do
   [ -z "$name" ] && continue
   mkdir $W/$name
   # (none: the session's answer is []; absent: no service at all)
-  places=; case $name in find-none) places=/none;; find-absent) places=/absent;; esac
+  places=; weather=
+  case $name in find-none) places=/none;; find-absent) places=/absent;; weather-absent) weather=/absent;; esac
   eval "set -- $args"; frames=$1; shift
   timeout 60 $MAPS -dump-frame $frames $W/$name/f.ppm -fixed-time 1000 \
-    window=640x480 worker=wait cache=off tiles=$T "places=$T$places" "$@" > /dev/null 2> $W/$name/err ||
+    window=640x480 worker=wait cache=off tiles=$T "places=$T$places" "forecast=$T$weather" "$@" > /dev/null 2> $W/$name/err ||
     { echo "FAIL $name: $(head -1 $W/$name/err)"; fail=1; continue; }
   got=$(sha256sum < $W/$name/f.ppm | cut -d' ' -f1)
   if [ "${RECORD:-}" = 2 ]; then [ "$got" != "$sum" ] && sum2=$got; echo "$name|$args|$sum${sum2:+|$sum2}" >> $W/new

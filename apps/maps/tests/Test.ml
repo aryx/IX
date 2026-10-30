@@ -44,9 +44,45 @@ let cache_tests (caps : < Cap.open_in; Cap.open_out; .. >) =
         ignore (Sys.command ("rm -rf " ^ Filename.quote dir)));
   ]
 
+let forecast_text = {|{"current":{"time":"2026-10-30T20:30","temperature_2m":-0.4,"weather_code":61,"wind_speed_10m":12.7},
+  "hourly":{"time":["2026-10-30T20:00","2026-10-30T21:00"],"temperature_2m":[10.5,9]},
+  "daily":{"time":["2026-10-31"],"weather_code":[95],"temperature_2m_max":[15.8],"temperature_2m_min":[5],"precipitation_sum":[2.25]}}|}
+
 let tests =
   Testo.categorize "maps"
     [
+      Testo.create "Weather: Open-Meteo's columns" (fun () ->
+          let f = Weather.of_json forecast_text in
+          Alcotest.(check (float 0.)) "now" (-0.4) f.temperature;
+          check_int "its hours" 2 (List.length f.hours);
+          Alcotest.(check (float 0.)) "an integer in a column of floats" 9. (snd (List.nth f.hours 1));
+          (match f.days with
+          | [ d ] -> Alcotest.(check (float 0.)) "a day's low" 5. d.low
+          | _ -> Alcotest.fail "one day expected"));
+      Testo.create "Weather: what is no forecast" (fun () ->
+          let fails (s : string) : bool = match Weather.of_json s with _ -> false | exception Failure _ -> true in
+          Alcotest.(check bool) "an error page" true (fails "<html>");
+          Alcotest.(check bool) "the service's error" true (fails {|{"error":true,"reason":"bad"}|});
+          Alcotest.(check bool) "columns that differ" true
+            (fails {|{"current":{"time":"t","temperature_2m":1,"weather_code":0,"wind_speed_10m":1},"hourly":{"time":["a"],"temperature_2m":[]},"daily":{"time":[],"weather_code":[],"temperature_2m_max":[],"temperature_2m_min":[],"precipitation_sum":[]}}|}));
+      Testo.create "Weather: the WMO's codes" (fun () ->
+          let kind = Alcotest.testable (fun fmt (_ : Weather.kind) -> Format.pp_print_string fmt "kind") ( = ) in
+          Alcotest.check kind "clear" Weather.Clear (Weather.kind 0);
+          Alcotest.check kind "fog" Weather.Fog (Weather.kind 48);
+          Alcotest.check kind "showers are rain" Weather.Rain (Weather.kind 81);
+          Alcotest.check kind "snow showers are snow" Weather.Snow (Weather.kind 85);
+          Alcotest.check kind "a thunderstorm" Weather.Storm (Weather.kind 99);
+          Alcotest.check kind "a code unknown: clouds" Weather.Overcast (Weather.kind 42);
+          Alcotest.(check string) "its words" "code 42" (Weather.words 42));
+      Testo.create "Weather: days and degrees, as said" (fun () ->
+          Alcotest.(check string) "a Saturday" "Sat 31" (Weather.day_name "2026-10-31");
+          Alcotest.(check string) "no minus zero" "0\xc2\xb0" (Weather.degrees (-0.4));
+          Alcotest.(check string) "rounded" "-2\xc2\xb0" (Weather.degrees (-1.6));
+          Alcotest.(check (list string)) "the terminal's lines"
+            [ "Tours"; "2026-10-30T20:30: 0\xc2\xb0, slight rain, wind 13 km/h";
+              "Sat 31  5\xc2\xb0 to 16\xc2\xb0, thunderstorm, 2.2 mm";
+              "Weather data by Open-Meteo.com (CC BY 4.0)" ]
+            (Weather.lines "Tours" (Weather.of_json forecast_text)));
       Testo.create "Json: floats, and what stays an integer" (fun () ->
           let j = Json.of_text {|{"a": 3, "b": -1.5, "c": 2e3, "d": 1.5E-1, "e": [0.5, 7]}|} in
           check_int "an integer stays" 3 (Json.int (Json.member "a" j));

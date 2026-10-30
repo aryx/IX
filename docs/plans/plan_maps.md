@@ -3,7 +3,7 @@
 The author (2026-10-30), after plan_apps.md: "I would also love to have
 a maps and weather program that fetch data from internet."
 
-**Status: stages 1 to 3 built** (see the end). What is below about the services
+**Status: stages 1 to 4 built** (see the end); stage 5, a route, not begun. What is below about the services
 was tried on 2026-10-30 with ix's own `mini-curl`, a handful of requests.
 
 ## What it is for
@@ -138,3 +138,15 @@ stale-if-error=604800`, `Age: 124344`, so a tile arrives already old, and
 each tile costs one `If-None-Match` a session (a 304 when unchanged).
 `stale-while-revalidate` would allow showing it first and asking after;
 not done, the rule followed being the stricter.
+
+2026-10-30: stage 4 built. `Weather`: Open-Meteo's columns, the WMO's codes
+as eight kinds of sky, `timezone=auto`, its history in the `.mli`.
+`Weather_panel`: the forecast over the map, the sky drawn in circles and
+rectangles, the next 24 hours as bars of whole pixels, seven days, the
+credit CC BY asks for. `w` opens and closes it for the place marked, or the
+window's centre; a click on the map marks a place; the panel follows it;
+asked again after a quarter of an hour at most. `mini-maps weather tours`
+prints the same as lines. The flag for another server is `forecast=`, the
+word `weather` being a flag too. By hand, with real services, once: the
+window and the terminal's lines, by mini-ml's code. Not done: `mini-pim`'s
+Home showing the weather (still the open question below).

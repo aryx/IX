@@ -182,6 +182,11 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option
     | Some c, _, _ | None, Some c, _ -> command m c
     | None, None, Some i -> (m, Some (Item (Item.id i)))
     | None, None, None when Gui.modal () -> (m, None)
+    | None, None, None when wheel computer <> 0 ->
+        ( { m with
+            selected =
+              moved m.selected (wheel computer) (List.length (results m)) },
+          None )
     | None, None, None ->
         (* the query as it is typed, the items found at each letter *)
         if pressed "Backspace" then

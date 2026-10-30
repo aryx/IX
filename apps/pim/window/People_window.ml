@@ -211,6 +211,15 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
         | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
         | None, None, Some 0, _ -> command caps m Back
         | None, None, _, Some m' -> command caps m' Open_
+        | None, None, _, None when wheel computer <> 0 ->
+            if m.mode = Page then
+              ({ m with at = moved m.at (wheel computer) (List.length m.page) },
+               None)
+            else
+              ( { m with
+                  selected =
+                    moved m.selected (wheel computer) (List.length m.people) },
+                None )
         | None, None, _, None -> (m, None))
   in
   ({ m with held = keys }, go)

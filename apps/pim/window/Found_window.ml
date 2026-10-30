@@ -179,6 +179,10 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
   let m, go =
     match (chosen computer ~first:1 menus, key) with
     | Some c, _ | None, Some c -> command caps m c
+    | None, None when wheel computer <> 0 ->
+        ( { m with
+            selected = moved m.selected (wheel computer) (List.length m.rows) },
+          None )
     | None, None -> (m, None)
   in
   ({ m with held = keys }, go)

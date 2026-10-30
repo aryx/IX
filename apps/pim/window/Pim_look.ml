@@ -146,6 +146,17 @@ let row_click (computer : computer) : int option =
   if (not mouse.mclick) || Gui.modal () || mouse.mx < a.x0 -. 8. then None
   else row_at a mouse.my
 
+let wheel (computer : computer) : int =
+  let w = computer.mouse.mwheel in
+  if w = 0. || Gui.modal () then 0
+  else
+    let n = int_of_float (Float.abs w) in
+    let n = if n = 0 then 1 else n in
+    if w > 0. then -3 * n else 3 * n
+
+(* [i] moved by [d] within [0, n) *)
+let moved (i : int) (d : int) (n : int) : int = max 0 (min (n - 1) (i + d))
+
 let count (n : int) (one : string) : string =
   let many =
     if n = 1 then one

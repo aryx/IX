@@ -101,5 +101,10 @@ val row_at : area -> float -> int option
 val sidebar_click : Playground.computer -> int option
 val row_click : Playground.computer -> int option
 
+(* the rows the wheel asks to go down this frame (up: negative), three
+ * a notch; [moved i d n]: [i] moved by [d] within a list of [n] *)
+val wheel : Playground.computer -> int
+val moved : int -> int -> int -> int
+
 (* "3 conversations", "1 task" *)
 val count : int -> string -> string

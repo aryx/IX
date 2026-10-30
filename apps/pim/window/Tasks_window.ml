@@ -274,6 +274,11 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
         | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
             command caps m c
         | None, None, None, Some i -> command caps { m with selected = i } Open_
+        | None, None, None, None when m.mode = Browsing && wheel computer <> 0 ->
+            ( { m with
+                selected =
+                  moved m.selected (wheel computer) (List.length m.tasks) },
+              None )
         | None, None, None, None -> (m, None))
   in
   ({ m with held = keys }, go)

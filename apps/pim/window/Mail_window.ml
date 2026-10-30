@@ -541,6 +541,16 @@ let update (caps : caps) (computer : computer) (m : model) : model =
             | Some _ -> command caps m All_mail
             | None -> m)
         | None, None, _, Some i -> command caps { m with selected = i } Open_
+        | None, None, _, _ when wheel computer <> 0 ->
+            (* the wheel: the message read scrolled, the list's selection
+             * moved (the list follows it) *)
+            if reading then { m with scroll = max 0 (m.scroll + wheel computer) }
+            else
+              let n =
+                if m.mailbox = drafts then List.length m.drafts
+                else List.length m.conversations
+              in
+              { m with selected = moved m.selected (wheel computer) n }
         | None, None, _, _ ->
             if reading && (pressed "ArrowDown" || pressed "space") then
               { m with scroll = (m.scroll + if pressed "space" then 10 else 1) }

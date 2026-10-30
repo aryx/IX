@@ -372,6 +372,12 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
         | None, None, Some k, _ when k = n -> { m with mode = Report }
         | None, None, Some k, _ when k = n + 1 -> { m with mode = Envelopes }
         | None, None, _, Some i -> { m with selected = i }
+        | None, None, _, _
+          when (m.mode = Register || m.mode = Reconciling)
+               && wheel computer <> 0 ->
+            (* (selected is max_int at first: the last line) *)
+            let n = List.length m.lines in
+            { m with selected = moved (min m.selected (n - 1)) (wheel computer) n }
         | None, None, _, _ -> m)
   in
   ({ m with held = keys }, None)

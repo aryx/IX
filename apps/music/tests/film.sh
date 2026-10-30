@@ -23,10 +23,11 @@ run() { # frames script file out [more flags]
 [ -n "${RECORD:-}" ] && : > $T/new
 while IFS='|' read -r name frames script clip sum; do
   [ -z "$name" ] && continue
-  # (JPEG's inverse DCT is floats, and OCaml's arm64 fuses a*b+c where mini-ml
-  # does not: blue off by one in 681 pixels of a million. Recorded by dune's
-  # alone; on ix's build, the other checks below read the AVI)
-  [ -n "${1:-}" ] && [ "$name" = avi-later ] && continue
+  # (JPEG's and MPEG-1's inverse DCT is floats, and OCaml's arm64 fuses a*b+c
+  # where mini-ml does not: a colour off by one here and there, 681 pixels of
+  # a million in the AVI's frame. Recorded by dune's alone; on ix's build the
+  # checks below read them)
+  [ -n "${1:-}" ] && case $name in avi-*|m1v-*|mpg-*) continue;; esac
   run "$frames" "$script" $C/$clip $T/f.ppm
   got=$(sha256sum < $T/f.ppm | cut -d' ' -f1)
   if [ -n "${RECORD:-}" ]; then echo "$name|$frames|$script|$clip|$got" >> $T/new
@@ -44,6 +45,13 @@ run 40 'space:2' $C/testsrc.y4m $T/p.ppm; run 4 'space:2' $C/testsrc.y4m $T/q.pp
 alike "paused from frame 2: the same picture 36 frames later" $T/p.ppm $T/q.ppm
 run 45 'space:2,space:6' $C/testsrc.y4m $T/c.ppm; run 41 '' $C/testsrc.y4m $T/d.ppm
 alike "paused for 4 frames, it goes on from where it was" $T/c.ppm $T/d.ppm
+
+run 2 '' $C/ball_and_square.m1v $T/e.ppm; run 40 '' $C/ball_and_square.m1v $T/f.ppm
+differ "MPEG-1: a P or a B frame on is not the first" $T/e.ppm $T/f.ppm
+run 40 '' $C/ball_and_square.mpg $T/g.ppm -dump-audio $T/g.wav
+[ -s $T/g.wav ] && echo "ok an .mpg's MP2 is played" || { echo "FAIL an .mpg's MP2 is not played"; r=1; }
+run 40 "" $C/ball_and_square.mpg $T/h.ppm
+alike "an .mpg, 2/3 of a second in: the sound's clock and the timer's show one frame" $T/g.ppm $T/h.ppm
 
 # the sound's clock: dumping the sound is what pulls it here
 run 30 '' $C/testsrc_mjpeg.avi $T/s.ppm -dump-audio $T/s.wav

@@ -997,7 +997,7 @@ CARD_LIB = lib/scheme/queens.scm=../../languages/scheme/tests/queens.scm lib/pas
   $(CARD_MAN) lib/pdf/troff.pdf=$(TROFF_PDF) \
   $(CARD_BOOK) \
   lib/pdf/tex.pdf=../../lib_graphics/pdf/tests/data/tex.pdf lib/pdf/shapes.pdf=../../lib_graphics/pdf/tests/data/shapes.pdf lib/pdf/standard.pdf=../../lib_graphics/pdf/tests/data/standard.pdf \
-  lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
+  lib/videos/ball.mpg=../../lib_graphics/videos/tests/clips/ball_and_square.mpg lib/sounds/tune.mod=../../lib_audio/tests/data/tiny_soundtracker.mod lib/sounds/theme.mid=../../lib_audio/tests/data/korobeiniki.mid lib/sounds/theme.abc=../../lib_audio/tests/data/korobeiniki.abc \
   lib/sounds/mono.mp3=../../lib_audio/tests/data/lsf_mono.mp3 lib/sounds/stereo.mp3=../../lib_audio/tests/data/lame_encoded.mp3 lib/sounds/bell.mp2=../../lib_audio/tests/data/bell.mp2 \
   lib/tls/ca.pem=$(CA_PEM) \
   lib/doom/freedoom.wad=../../games/fps/doom/data/freedoom.wad \

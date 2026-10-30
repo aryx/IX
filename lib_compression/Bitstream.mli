@@ -23,3 +23,8 @@ val position : t -> int
 val seek : t -> int -> unit
 
 val at_end : t -> bool
+
+(* [next_start_code b]: to the next byte boundary, then to the next 00
+ * 00 01; the code byte after it, the reader just past it, or None at
+ * the end (MPEG-1 video's layers each begin so) *)
+val next_start_code : t -> int option

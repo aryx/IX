@@ -1,6 +1,6 @@
 (* Film: mini-play's window, a film as a Playground program.
 
-       the file --Y4m, Fli, Avi, Gif--> Movie.t, its sound
+       the file --Y4m, Fli, Avi, Gif, Mpeg1--> Movie.t, its sound
                                           |          | pulled by the mixer,
                                           |          v block by block (Audio)
                      the frame at the -- index_at <-- the sound's position
@@ -21,7 +21,7 @@
 
 type t = {
   movie : Movie.t;
-  sound : Signal.t option; (* at Signal.rate *)
+  sound : Signal.stereo option; (* at Signal.rate *)
   loops : bool; (* begun again at its end: a GIF's way *)
 }
 

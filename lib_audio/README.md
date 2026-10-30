@@ -31,7 +31,7 @@ folders:
 | `formats/midi/` | `libs/audio/formats/midi` | `Midi`: a Standard MIDI File's notes |
 | `formats/mod/` | `libs/audio/formats/mod` | `Mod`, `Mod_player`, `Paula`: the Amiga's modules |
 | `formats/vorbis/` | `libs/audio/formats/vorbis` | Ogg Vorbis: `Ogg` (a file's packets), `Vorbis` (codebooks, floors, residues, the inverse MDCT): LibreQuake's music, mini-quake's |
-| `formats/mpeg_audio/` | `libs/audio/formats/mpeg_audio`, and `libs/compression`'s `Bits` and `Vlc` | MP2 and MP3: `Mpeg_audio`, its header, `Layer2`, `Layer3` and its tables, `Imdct`, `Polyphase`; `Bitstream` (the playground's `Bits`: `machine/` has a `Bits`) and `Vlc` |
+| `formats/mpeg_audio/` | `libs/audio/formats/mpeg_audio`, (its `libs/compression`'s `Bits` and `Vlc` now `lib_compression`'s) | MP2 and MP3: `Mpeg_audio`, its header, `Layer2`, `Layer3` and its tables, `Imdct`, `Polyphase`; `Bitstream` (the playground's `Bits`: `machine/` has a `Bits`) and `Vlc` |
 
 ## What changed
 

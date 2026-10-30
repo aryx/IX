@@ -19,4 +19,4 @@
 (library
  (name ix_audio)
  (wrapped false)
- (libraries ix_random ix_core))
+ (libraries ix_random ix_compression ix_core))

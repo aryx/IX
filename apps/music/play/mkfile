@@ -13,7 +13,7 @@ LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_audio l
 A=$TOP/lib_audio
 DIRS=. $A $A/formats/mpeg_audio
 INCLUDES=-I . -I $A -I $A/formats/mpeg_audio -I $D $LIBI $STDI
-LIB=Layer3_tables Mpeg_audio_header Bitstream Polyphase Imdct Vlc Layer3 Layer2 Mpeg_audio Player Film
+LIB=Layer3_tables Mpeg_audio_header Polyphase Imdct Layer3 Layer2 Mpeg_audio Player Film
 LIBOBJS=${LIB:%=$D/%.$O}
 LOCAL=`{ls *.ml *.mli ../../../lib_audio/Player.ml* ../../../lib_audio/formats/mpeg_audio/*.ml*} $LIBSRC
 LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig

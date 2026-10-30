@@ -4,8 +4,8 @@
  (name Test)
  (package ix)
  (flags (:standard -w -32-37-69))
- (modules Test Unit_movie Unit_yuv Unit_psnr Unit_y4m Unit_fli Unit_avi)
- (libraries alcotest testo fli_write ix_graphics_videos ix_graphics_images ix_core))
+ (modules Test Unit_movie Unit_yuv Unit_psnr Unit_y4m Unit_fli Unit_avi Unit_mpeg1 Unit_mpeg_system)
+ (libraries alcotest testo fli_write ix_graphics_videos ix_graphics_images ix_compression ix_audio ix_core))
 
 ; the FLI clip of mini-play's frames (clips/make_clips.sh)
 (executable

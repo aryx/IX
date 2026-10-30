@@ -29,3 +29,18 @@ let read (b : t) (n : int) : int =
 let position (b : t) : int = b.pos
 let seek (b : t) (p : int) : unit = b.pos <- p
 let at_end (b : t) : bool = b.pos >= 8 * String.length b.s
+
+let next_start_code (b : t) : int option =
+  let byte = ref ((b.pos + 7) lsr 3) and found = ref None in
+  let s = b.s in
+  while !found = None && !byte + 3 < String.length s do
+    if s.[!byte] = '\000' && s.[!byte + 1] = '\000' && s.[!byte + 2] = '\001' then found := Some (Char.code s.[!byte + 3])
+    else incr byte
+  done;
+  match !found with
+  | Some code ->
+      b.pos <- 8 * (!byte + 4);
+      Some code
+  | None ->
+      b.pos <- 8 * String.length s;
+      None

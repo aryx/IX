@@ -9,10 +9,43 @@
 
 open Playground
 
-type t = { movie : Movie.t; sound : Signal.t option; loops : bool }
+type t = { movie : Movie.t; sound : Signal.stereo option; loops : bool }
 
 let is_film (kind : string) : bool =
-  List.mem kind [ "video/x-y4m"; "video/x-flic"; "video/x-msvideo"; "image/gif" ]
+  List.mem kind [ "video/x-y4m"; "video/x-flic"; "video/x-msvideo"; "video/mpeg"; "image/gif" ]
+
+(* an MP2's samples at our rate *)
+let mpeg_sound (bytes : string) : Signal.stereo option =
+  match Mpeg_audio.decode bytes with
+  | Error _ -> None
+  | Ok ((h : Mpeg_audio_header.t), (s : Signal.stereo)) ->
+      let at_our_rate (x : Signal.t) = if h.sample_rate = Signal.rate then x else Resample.to_rate Cubic h.sample_rate x in
+      Some { left = at_our_rate s.left; right = at_our_rate s.right }
+
+(* [s] starting [seconds] later (earlier if negative): silence added
+ * before it, or its start cut *)
+let delayed (seconds : float) (s : Signal.t) : Signal.t =
+  let n = int_of_float (Float.round (seconds *. float_of_int Signal.rate)) in
+  if n >= 0 then Array.append (Array.make n 0.) s
+  else Array.sub s (min (-n) (Array.length s)) (max 0 (Array.length s + n))
+
+(* a system stream, its first video and audio: the sound moved so that its
+ * time 0 is the first picture's (their first timestamps) *)
+let of_system_stream (bytes : string) : (t, string) result =
+  let streams = Mpeg_system.of_string bytes in
+  match Mpeg_system.video streams with
+  | None -> Error "no video stream"
+  | Some video ->
+      let sound =
+        match Mpeg_system.audio streams with
+        | None -> None
+        | Some audio ->
+            let offset = match (audio.first_pts, video.first_pts) with Some a, Some v -> a -. v | _ -> 0. in
+            let moved (s : Signal.stereo) : Signal.stereo = { left = delayed offset s.left; right = delayed offset s.right } in
+            Option.map moved (mpeg_sound audio.bytes)
+      in
+      let _, movie, _ = Mpeg1.of_string ~residual:false video.bytes in
+      Ok { movie; sound; loops = false }
 
 let read ~(kind : string) (bytes : string) : (t, string) result =
   match kind with
@@ -21,8 +54,15 @@ let read ~(kind : string) (bytes : string) : (t, string) result =
   | "image/gif" -> Ok { movie = Movie.of_frames (Gif.animation bytes); sound = None; loops = true }
   | "video/x-msvideo" ->
       let _, movie, sound = Avi.of_string bytes in
-      let at_rate ((rate, mono) : int * float array) : Signal.t = Resample.to_rate Linear rate mono in
+      let at_rate ((rate, mono) : int * float array) : Signal.stereo =
+        let s = Resample.to_rate Linear rate mono in
+        { left = s; right = s }
+      in
       Ok { movie; sound = Option.map at_rate sound; loops = false }
+  | "video/mpeg" when String.length bytes > 3 && bytes.[3] = '\xBA' -> of_system_stream bytes
+  | "video/mpeg" ->
+      let _, movie, _ = Mpeg1.of_string ~residual:false bytes in
+      Ok { movie; sound = None; loops = false }
   | _ -> Error ("not a film: " ^ kind)
   | exception Failure why -> Error why
 
@@ -30,18 +70,18 @@ let read ~(kind : string) (bytes : string) : (t, string) result =
 (* The sound's side: the mixer pulls its blocks between frames *)
 (*****************************************************************************)
 
-type deck = { mutable samples : Signal.t; mutable pos : int; mutable paused : bool }
+type deck = { mutable samples : Signal.stereo; mutable pos : int; mutable paused : bool }
 
-let deck = { samples = [||]; pos = 0; paused = false }
+let deck = { samples = { left = [||]; right = [||] }; pos = 0; paused = false }
 
 let fill (out : Signal.stereo) : unit =
   let n = Array.length out.left in
   Array.fill out.left 0 n 0.;
   Array.fill out.right 0 n 0.;
   if not deck.paused then (
-    let k = max 0 (min n (Array.length deck.samples - deck.pos)) in
-    Array.blit deck.samples deck.pos out.left 0 k;
-    Array.blit deck.samples deck.pos out.right 0 k;
+    let k = max 0 (min n (Array.length deck.samples.left - deck.pos)) in
+    Array.blit deck.samples.left deck.pos out.left 0 k;
+    Array.blit deck.samples.right deck.pos out.right 0 k;
     deck.pos <- deck.pos + k)
 
 (*****************************************************************************)

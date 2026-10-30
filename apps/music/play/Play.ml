@@ -44,7 +44,7 @@ type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 let usage = "usage: mini-play [-c] [-s seconds] file
   the file's sound (.mod, .mid, .mp3, .mp2, .wav, .abc) played: written
   to /dev/audio, 16 bits, little-endian, two channels, 44,100 a second;
-  a film (.y4m, .fli, .flc, .avi, an animated .gif) in a window
+  a film (.y4m, .fli, .flc, .avi, .mpg, .m1v, an animated .gif) in a window
   -c: the samples to standard output (mini-play -c file | aplay -f cd)
   -s seconds: no more than that much of it"
 

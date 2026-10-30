@@ -6,7 +6,7 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: stage 1 done** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
+**Status: stages 1 and 2 done** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
 files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
@@ -147,3 +147,14 @@ Bytes are not the same from the two compilers on a JPEG: blue off by one in
 681 pixels of a million, float IDCT and OCaml's fused multiply-add, so the AVI
 frame's sum is recorded for dune's alone. Not run: a film under mini-rio on
 mini-9pi; sound heard, here it is only dumped (`-dump-audio`).
+
+Stage 2 done: `Mpeg1`, `Mpeg1_vlc`, `Mpeg_system`, and `mini-play film.mpg`
+with its MP2, in step; `Bitstream` and `Vlc` moved to `lib_compression`,
+shared by MPEG's sound and pictures; `/lib/videos/ball.mpg` on the card. The
+open question answered for one more stream: a film ffmpeg made from the
+Mandelbrot zoom (320 by 240, 25 frames a second, 800 kbit/s, I, P and B
+frames, MP2) plays right, by eye and within 32.7 to 35.1 dB of ffmpeg's frames,
+a lower bound since measured through the window's scaling. On this machine, the
+first 71 of its frames, in a run of 170 screens with the window's drawing:
+0.77 s by OCaml, 1.23 s by mini-ml, 60% more. Stage 3 is what matters: a Pi.
+A film's sound is decoded whole when it opens, which a Pi will feel.

@@ -5,4 +5,4 @@
  (name ix_graphics_videos)
  (wrapped false)
  (flags (:standard -w -32-37-69))
- (libraries ix_graphics_images))
+ (libraries ix_graphics_images ix_compression))

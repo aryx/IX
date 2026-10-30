@@ -5,7 +5,10 @@ The author's playground's `libs/graphics/videos` (`~/playground`), for
 each idea, played by mini-play (`apps/music/play/Film`). The numbers are
 `scripts/playground_copies.sh lib_graphics/videos`.
 
-**Copied:** `Yuv`, `Psnr`, `Y4m`, `Movie`, `Fli`, `Avi`, and their unit tests.
+**Copied:** `Yuv`, `Psnr`, `Y4m`, `Movie`, `Fli`, `Avi`, `Mpeg1`, `Mpeg1_vlc`,
+`Mpeg_system`, and their unit tests. Its `Bits` and `Vlc` are ix's
+`lib_compression`: `Bitstream` and `Vlc`, moved there from lib_audio's MP3,
+both readers being MPEG's.
 
 **Changed:**
 
@@ -17,7 +20,9 @@ each idea, played by mini-play (`apps/music/play/Film`). The numbers are
   lib_audio. The player resamples.
 - Pixels are `Bytes` here, ix's `Rgba_image`, not a Bigarray.
 - For mini-ml: no `lazy` (`Yuv`'s two tables made at the start, 2,560 floats),
-  no optional argument (`Y4m.to_string` says its chroma and range).
+  no optional argument (`Y4m.to_string` says its chroma and range,
+  `Mpeg1.of_string` its `residual`, `Mpeg1_vlc`'s tables are `{ none with ... }`),
+  no polymorphic variant (`Mpeg1`'s `coming`).
 
-**Remains in the playground:** `Mpeg1`, `Mpeg1_vlc`, `Mpeg_system` (stage 2 of
-the plan), `Motion` and `Mpeg1_encode` (its stage 6), and the tests of those.
+**Remains in the playground:** `Motion` and `Mpeg1_encode` (the plan's stage 6)
+and their test.

@@ -1,9 +1,10 @@
 # lib_compression, a library of ix's tools (mkfiles/mklib): zlib's
-# inflate and deflate, and the pictures' LZW, PackBits and Huffman codes
+# inflate and deflate, the pictures' LZW, PackBits and Huffman codes, and
+# what MPEG's sound and pictures read their bits with
 TOP=..
 <$TOP/mkfiles/mkconfig
 LIB=lib_compression
 DIRS=.
 NEEDS=
-UNITS=Huffman Lzw Packbits Zlib
+UNITS=Huffman Lzw Packbits Zlib Bitstream Vlc
 <$TOP/mkfiles/mklib

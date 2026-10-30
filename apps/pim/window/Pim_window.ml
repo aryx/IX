@@ -104,9 +104,11 @@ let initial (caps : caps) (flags : Playground.flags) : model =
   let today =
     match Search.date (flag "today") with Some d -> d | None -> When.today caps
   in
+  let mailto = Mailto.parse (flag "write") in
   {
     view =
       (match flag "view" with
+      | _ when mailto <> None -> Mail
       | "mail" -> Mail
       | "tasks" -> Tasks
       | "people" -> People
@@ -117,7 +119,9 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     account;
     today;
     home = home caps ~account ~today;
-    mail = Mail_window.initial caps flags;
+    mail =
+      (let m = Mail_window.initial caps flags in
+       match mailto with Some t -> Mail_window.write_mailto m t | None -> m);
     tasks = Tasks_window.initial caps flags;
     people = People_window.initial caps flags;
     notes = Notes_window.initial caps flags;

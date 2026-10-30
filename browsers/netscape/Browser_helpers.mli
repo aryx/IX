@@ -5,6 +5,8 @@
 
      youtube.com/watch   mpv %u         a link to a film of YouTube's
      application/pdf     mini-page %s   a PDF file
+     mailto:             mini-pim write=%u
+                                        a link to write to someone
 
    A rule for a **site** (a host, and what the path begins with; the
    host's own subdomains too: www.youtube.com) is taken when a link to
@@ -19,7 +21,10 @@
    ~/.mailcap's (RFC 1524, metamail's, which Netscape on Unix read:
    "video/mp4; mpv %s"), then the built-in ones: YouTube's films to
    mpv (which plays a YouTube address by yt-dlp), a PDF file to
-   mini-page, ix's page. A rule whose program is not on the PATH is
+   mini-page, ix's page, a mailto: link to mini-pim's composer (a site
+   ending in ':' is a scheme's; Netscape 2 had its own mail window,
+   Messenger, here the suite's mail is the one place mail is written
+   and sent). A rule whose program is not on the PATH is
    left out (Netscape: [available]): on ix, without mpv, a link to
    YouTube is followed as any other.
 

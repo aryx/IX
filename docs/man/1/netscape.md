@@ -25,6 +25,13 @@ End, Space and the wheel scroll; Backspace goes back; Control with `+`
 or `-`, or with the wheel, zooms the page, and Control with `0` brings
 it back to its size: each site's zoom is remembered. Control-Q ends it.
 
+What it does not show itself goes to a helper program, Netscape's own
+word: a link to a film of YouTube's to `mpv`, a PDF file to
+\man{page}{1}, a `mailto:` link to \man{pim}{1}'s composer (`mini-pim
+write=`*address*, the status bar saying to whom); and those of
+`~/.mailcap` and of the profile's preferences (`helper mailto: mutt %u`),
+first.
+
 What it is given is a list of *name*`=`*value*:
 
 `url=`*address*
@@ -63,4 +70,4 @@ netscape url=index.html scripts=off profile=off
 `~/.config/mini-netscape`
 
 # SEE ALSO
-\man{lynx}{1}, \man{node}{1}, \man{curl}{1}
+\man{lynx}{1}, \man{node}{1}, \man{curl}{1}, \man{pim}{1}

@@ -5,6 +5,7 @@
 # mini-netscape's helper programs (Browser_helpers): fake ones on the
 # PATH, each writing what it was given to a file -- mpv for a link to a
 # film of YouTube's, clicked (given the address, the page staying);
+# mini-pim for a mailto: link, its composer filled from it;
 # mini-page for a PDF file (given a file of its bytes); a program of
 # ~/.mailcap's for a type of its own; a program of the profile's
 # preferences, before the built-in one; and none at all with
@@ -18,7 +19,7 @@ T=$(mktemp -d); trap 'rm -rf $T' EXIT
 fail=0
 check() { if [ "$2" = "$3" ]; then echo "ok $1"; else echo "FAIL $1: $2, not $3"; fail=1; fi; }
 mkdir -p $T/bin $T/home
-for p in mpv mini-page show gv; do
+for p in mpv mini-page show gv mini-pim; do
   printf '#!/bin/sh\necho %s "$@" >> %s/said\n[ -f "$1" ] && head -c 5 "$1" >> %s/said && echo >> %s/said\ntouch %s/done\nexit 0\n' $p $T $T $T $T > $T/bin/$p
   chmod +x $T/bin/$p
 done
@@ -31,6 +32,8 @@ said() { local i; for i in $(seq 30); do [ -f $T/done ] && break; sleep 0.1; don
 
 run -dump-frame 9 $T/a.ppm profile=off url=browsers/netscape/tests/pages/helpers.html -script 'at(-238;364):4-6,click:5'
 check "a link to YouTube, clicked: mpv given the address" "$(said)" "mpv https://www.youtube.com/watch?v=x;"
+run -dump-frame 9 $T/m.ppm profile=off url=browsers/netscape/tests/pages/mailto.html -script 'at(-373;366):4-6,click:5'
+check "a mailto: link, clicked: mini-pim's composer given it" "$(said)" "mini-pim write=mailto:alice@ix,bob+news@ix?subject=lunch%3F&body=See%20you;"
 run -dump-frame 3 $T/b.ppm profile=off url=lib_graphics/pdf/tests/data/shapes.pdf
 check "a PDF file: mini-page given a file of its bytes" "$(said)" "mini-page /tmp/F-shapes.pdf;%PDF-;"
 printf 'application/x-xtest; show %%s\n# a comment\n' > $T/home/.mailcap

@@ -4,7 +4,8 @@
   ([`plan_rio.md`](../docs/plans/done/plan_rio.md)).
 - `mail/`: a message (RFC 5322), its parts (MIME), conversations
   (Zawinski's threading), SMTP's and IMAP's clients and their servers'
-  machines, and `Lines`, which carries them over TCP or TLS: mini-pim's
+  machines, `Lines`, which carries them over TCP or TLS, and `Mailto`
+  (RFC 6068, a link's): mini-pim's
   first ([`plan_mail.md`](../docs/plans/plan_mail.md)), here since a
   second program needed it, mini-netscape's `mailto:`; what is
   mini-pim's own is in `apps/pim/mail/`.

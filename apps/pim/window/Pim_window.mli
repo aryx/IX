@@ -51,7 +51,8 @@ type caps = Mail_window.caps
 
 type model
 
-(* the flags: Mail_window's, view= the one opened first *)
+(* the flags: Mail_window's, view= the one opened first, write=mailto:...
+ * Mail's composer filled from a link (mini-netscape's helper) *)
 val initial : caps -> Playground.flags -> model
 
 val update : caps -> Playground.computer -> model -> model

@@ -78,6 +78,10 @@ val show : caps -> model -> string -> model
 (* [write m to_]: a new message to [to_] *)
 val write : model -> string -> model
 
+(* a message written from a mailto: link (Mailto: its to, cc, subject
+ * and text; a bcc said, left out) *)
+val write_mailto : model -> Mailto.t -> model
+
 (* the conversation read, its messages fetched: their items' ids and
  * the messages (Found_window's, x); none when not reading *)
 val opened : model -> (string * Mail.t) list

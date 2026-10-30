@@ -96,6 +96,11 @@ What the window is given is a list of *name*`=`*value*:
 :    The view opened first: `mail`, `calendar`, `people`, `tasks`,
      `notes` or `money`.
 
+`write=mailto:`*address*
+:    Mail's composer opened, filled from a `mailto:` link: its addresses,
+     cc, subject and text (a bcc said, left out); what
+     \man{netscape}{1} runs for one.
+
 `today=`*day*
 :    The day it is, for the tests (2026-10-29).
 

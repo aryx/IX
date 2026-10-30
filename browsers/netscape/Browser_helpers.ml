@@ -8,6 +8,8 @@ type rule = { site : string option; kind : string option; run : string list }
 let defaults : rule list =
   List.map (fun site -> { site = Some site; kind = None; run = [ "mpv"; "%u" ] }) [ "youtube.com/watch"; "youtube.com/shorts/"; "youtu.be/" ]
   @ List.map (fun prog -> { site = None; kind = Some "application/pdf"; run = [ prog; "%s" ] }) [ "mini-page"; "page" ]
+  (* a mailto: link to mini-pim's composer, filled from it *)
+  @ List.map (fun prog -> { site = Some "mailto:"; kind = None; run = [ prog; "write=%u" ] }) [ "mini-pim"; "pim" ]
 
 let words (s : string) : string list = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.trim s))
 
@@ -53,8 +55,15 @@ let matches_site (site : string) (url : string) : bool =
   | Some (h, p) -> (h = host || String.ends_with ~suffix:("." ^ host) h) && String.starts_with ~prefix:path p
   | None -> false
 
+(* ix: a site ending in ':' is a scheme's (mailto:) *)
+let matches (site : string) (url : string) : bool =
+  let n = String.length site in
+  if n > 0 && site.[n - 1] = ':' then
+    String.length url >= n && String.lowercase_ascii (String.sub url 0 n) = String.lowercase_ascii site
+  else matches_site site url
+
 let for_url (rules : rule list) (url : string) : rule option =
-  List.find_opt (fun r -> match r.site with Some s -> matches_site s url | None -> false) rules
+  List.find_opt (fun r -> match r.site with Some s -> matches s url | None -> false) rules
 
 let for_type (rules : rule list) (kind : string) : rule option =
   let kind = String.lowercase_ascii kind in
@@ -63,8 +72,19 @@ let for_type (rules : rule list) (kind : string) : rule option =
 
 let name (r : rule) : string = match r.run with p :: _ -> Filename.basename p | [] -> ""
 
+(* %u and %s anywhere in a word (write=%u), as a mailcap's command *)
 let command (r : rule) ~(url : string) ~(file : string option) : string list =
-  List.map (fun w -> match w with "%u" -> url | "%s" -> (match file with Some f -> f | None -> url) | w -> w) r.run
+  let s = match file with Some f -> f | None -> url in
+  let rec subst (w : string) (i : int) : string =
+    match String.index_from_opt w i '%' with
+    | Some k when k + 1 < String.length w && (w.[k + 1] = 'u' || w.[k + 1] = 's') ->
+        let by = if w.[k + 1] = 'u' then url else s in
+        let w' = String.sub w 0 k ^ by ^ String.sub w (k + 2) (String.length w - k - 2) in
+        subst w' (k + String.length by)
+    | Some k when k + 1 < String.length w -> subst w (k + 1)
+    | _ -> w
+  in
+  List.map (fun w -> subst w 0) r.run
 
 let available (caps : < Cap.env; .. >) (rules : rule list) : rule list =
   let path = try CapSys.getenv caps "PATH" with Not_found -> "/bin:/usr/bin" in

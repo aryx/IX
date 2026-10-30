@@ -53,6 +53,7 @@ clickopen|12 -script 'g:2,type(secret):4,Enter:6,at(0;376):8-9,click:8' view=mai
 clickdone|14 -script 'n:2,type(buy bread):4,Enter:6,x:8,at(-420;348):10-11,click:10' today=2026-10-29 view=tasks|893d2b646de352a8826c7ee4dfbc4eb1d029bc461846b4882e242c90bd8ed96e
 wheellist|12 -script 'g:2,type(secret):4,Enter:6,wheel(-1):9' view=mail|57ec00802f6acb9cb9f70cc5639995f1a77ab956204b614b2efc925c31439225
 wheelread|15 -script 'g:2,type(secret):4,Enter:6,o:9,wheel(-1):12' view=mail|ada364eb55b7751cc75b0b9676c1048a70313bf715425e90ce54805fcaf931b9
+writemailto|6 'write=mailto:alice@ix,bob@ix?cc=carol@ix&subject=lunch%3F&body=See%20you%0D%0Aat%20noon.'|343aa39feb93021e871d04a45a00fef29b29e6549fb45ba9033990f00f0c65a6
 archive|16 -script 'g:2,type(secret):4,Enter:6,e:9' view=mail|cc0c090c19095ecf397201f2363c96f98b2f61c016880b7761aac92f53127d4a
 menu|10 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-10,click:9' view=mail|bd346325c77ff14c07bed0a658b68790118c7f07803c1980a9eff2bbfb37d482
 menuget|14 -script 'at(-237;485):1-3,click:2,at(-237;419):4-14,click:5,type(secret):8,Enter:10' view=mail|989d93aca41c5889eea71ecdafeb139463d244b99c7d822f7000e39719bae1f1

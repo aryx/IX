@@ -262,6 +262,19 @@ let write (m : model) (to_ : string) : model =
   compose { m with mode = Browsing }
     { (Mail_compose.blank ~id:(new_id ())) with to_ }
 
+let write_mailto (m : model) (t : Mailto.t) : model =
+  let m =
+    compose { m with mode = Browsing }
+      { (Mail_compose.blank ~id:(new_id ())) with
+        to_ = String.concat ", " t.to_;
+        cc = String.concat ", " t.cc;
+        subject = t.subject;
+        text = t.body }
+  in
+  (* (the composer has no Bcc: said, not sent) *)
+  if t.bcc = [] then m
+  else { m with status = "bcc left out: " ^ String.concat ", " t.bcc }
+
 (* a reply to the conversation's newest message read, or its forward;
  * the conversation opened first when only listed *)
 let answer (caps : caps) (m : model) (c : command) : model =

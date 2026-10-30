@@ -685,8 +685,18 @@ let click (t : t) ~(x : float) ~(y : float) : t =
             (* a link to what a program shows (a film of YouTube's to
              * mpv): run beside, the page staying (Browser_helpers) *)
             let whole = Browser_url.resolve t.url address in
+            (* (a mailto: said by whom it writes to: Mailto) *)
+            let what =
+              match Mailto.parse whole with
+              | Some m ->
+                  "mail to " ^ String.concat ", " m.to_
+                  ^ (if m.subject = "" then "" else ": " ^ m.subject)
+              | None -> whole
+            in
             match Browser_helpers.for_url t.helpers whole with
-            | Some r -> { t with focus = None; job = Some (r, whole, None); said = Browser_helpers.name r ^ ": " ^ whole }
+            | Some r -> { t with focus = None; job = Some (r, whole, None); said = Browser_helpers.name r ^ ": " ^ what }
+            | None when Mailto.parse whole <> None ->
+                { t with focus = None; said = what ^ ": no mail program (mini-pim)" }
             | None -> go { t with focus = None } address)
         | _ -> { t with focus = None })
 

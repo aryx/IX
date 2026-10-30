@@ -1,5 +1,7 @@
 # lib_networking, a library of ix's tools (mkfiles/mklib): TCP, UDP and
-# DNS, TLS 1.3 and its certificates, HTTP and its cookies. (netcode/,
+# DNS, TLS 1.3 and its certificates, HTTP and its cookies, a mailto:
+# (mail/'s Mailto, mini-netscape's; the rest of mail/ is mini-pim's,
+# which is dune's only). (netcode/,
 # the games' lockstep, names the playground's Lehmer, and 9p/ is
 # OCaml's: not in it.)
 TOP=..
@@ -8,7 +10,7 @@ LIB=lib_networking
 # (Plan 9's Tcp and Udp, /net's files where Linux's are sockets: found
 # last, and so taken)
 OSDIR=`{~ $OS plan9 && echo tcp/plan9}
-DIRS=tcp tls http $OSDIR
+DIRS=tcp tls http mail $OSDIR
 NEEDS=lib_crypto lib_compression
-UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls12 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client
+UNITS=Udp Dns Tcp Base64 Civil Clock Asn1 Pem X509 Tls12 Tls13 Tls_client Url Urlencoded Http Cookie Cookie_jar Keep_alive Http_client Mailto
 <$TOP/mkfiles/mklib

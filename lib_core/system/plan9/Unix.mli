@@ -54,6 +54,11 @@ val write_substring : file_descr -> string -> int -> int -> int
 type seek_command = SEEK_SET | SEEK_CUR | SEEK_END
 val lseek : file_descr -> int -> seek_command -> int
 
+(* lseek's offset in 64 bits (an address of /proc/$pid/mem above 2^30) *)
+module LargeFile : sig
+  val lseek : file_descr -> int64 -> seek_command -> int64
+end
+
 (* a pipe is S_FIFO, the console S_CHR; the fields Plan 9 has not are 0 *)
 type file_kind = S_REG | S_DIR | S_CHR | S_BLK | S_LNK | S_FIFO | S_SOCK
 type stats = {

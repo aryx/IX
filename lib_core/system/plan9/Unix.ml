@@ -113,6 +113,17 @@ let lseek fd off cmd =
   unit "lseek" "" (sys seek (by b) (i fd) (i off) (i (if off < 0 then -1 else 0)) (i (match cmd with SEEK_SET -> 0 | SEEK_CUR -> 1 | SEEK_END -> 2)));
   Int64.to_int (Bytes.get_int64_le b 0)
 
+(* the offset in 64 bits, its two words passed as boxed int32s (the
+ * runtime's ux_arg gives their words): an address above an int's 31
+ * bits, a process's stack in its /proc/$pid/mem (mini-acid) *)
+module LargeFile = struct
+  let lseek fd (off : int64) cmd =
+    let b = Bytes.create 8 in
+    unit "lseek" "" (sys seek (by b) (i fd) (Obj.repr (Int64.to_int32 off)) (Obj.repr (Int64.to_int32 (Int64.shift_right off 32)))
+      (i (match cmd with SEEK_SET -> 0 | SEEK_CUR -> 1 | SEEK_END -> 2)));
+    Bytes.get_int64_le b 0
+end
+
 let openfile path flags perm =
   let has f = List.mem f flags in
   let mode = mode_of flags in

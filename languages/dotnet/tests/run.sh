@@ -30,7 +30,8 @@
 #              while the collector moves them, a null and an index out of
 #              range caught; addresses: ref, out, ldflda, ldelema, a
 #              delegate; trys: catch, finally, rethrow in compiled
-#              code; structs: copied, changed in place, boxed; bench,
+#              code; structs: copied, changed in place, boxed;
+#              numbers: int64s, doubles, checked arithmetic; bench,
 #              with -jit only, where it is compiled)
 #   run        each program run, what it prints against what Microsoft's
 #              runtime printed: the survey's ten (survey/programs/

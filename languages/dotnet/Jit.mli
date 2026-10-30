@@ -116,11 +116,15 @@
  * called on its address writes in it; a field of a struct through its
  * address (its own methods' this), a struct field, ldtoken: call-outs.
  *
- * What it refuses is said with the reason: an int64, a double on the
- * stack, an address at a jump or given to the code
- * itself, an instruction without its template yet, a filter or a
- * fault clause; and in -S's text a generic method or class (an
- * instance's code is only made at run time).
+ * {b int64s, doubles}: the interpreter's I8 and R8, references to the
+ * code, their arithmetic, conversions and comparisons (and every
+ * checked operation) call-outs, a branch on them the interpreter's
+ * test, then the code's branch: compiled, not fast.
+ *
+ * What it refuses is said with the reason: an address at a jump or
+ * given to the code itself, an instruction without its template yet,
+ * a filter or a fault clause; and in -S's text a generic method or
+ * class (an instance's code is only made at run time).
  *
  * {b A method is compiled at its first call} (stubs, method_code): it
  * is called through its cell, a word holding its code's address, at
@@ -171,8 +175,10 @@ type form = Word | Addr | Made of int
 (* what a call-out does: an instruction run; for a try (its clause's
  * index), its frame pushed for the first pass and popped, the
  * exception caught or let go, raised again, rethrown; a struct copied
- * (loaded), a struct local's zeros *)
+ * (loaded), a local's zeros (a struct's, an int64's, a double's); a
+ * branch's test of int64s or doubles (1 or 0) *)
 type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow | Copy | Init of int
+  | Test of Il.cmp * bool | Truthy
 type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
 
 (* the assembly's methods that are compiled, as mini-asm's text; how

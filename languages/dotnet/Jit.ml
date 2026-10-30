@@ -23,8 +23,10 @@ type form = Word | Addr | Made of int
  * the first pass and popped, an exception caught or let go, raised
  * again (a finally's end), rethrown (a catch's rethrow); a struct
  * copied (its value loaded: Machine's copy_value), a struct local's
- * first value (its zeros: .locals init) *)
+ * first value (its zeros: .locals init); a conditional branch's test
+ * of int64s or doubles (Arith.test, Arith.truthy: 1 or 0) *)
 type op = Run | Enter of int | Leave_try | Catch of int | Reraise | Rethrow | Copy | Init of int
+  | Test of Il.cmp * bool | Truthy
 
 type site = { srow : int; sat : int; sargs : kind list; sform : form list; sret : kind option; sop : op }
 
@@ -74,7 +76,7 @@ let gen_kind (t : S.t) : kind option =
 let sig_kind (img : Image.t) (refs : bool) (what : string) (t : S.t) : kind =
   if int32_sig t then I
   else match V.of_sig img t with
-    | Some (V.Obj _ | V.Ptr _ | V.Value _) when refs -> R
+    | Some (V.Obj _ | V.Ptr _ | V.Value _ | V.Int64 | V.Float) when refs -> R
     | Some (V.Gen g) when refs -> (match gen_kind g with Some k -> k | None -> refuse what)
     | _ -> refuse what
 
@@ -88,6 +90,9 @@ let vt_kind (refs : bool) (v : V.vt) : kind option =
   | V.Ptr _ when refs -> Some R
   (* (a struct: the interpreter's Vt, copied where the IL copies it) *)
   | V.Value _ when refs -> Some R
+  (* (an int64, a double: the interpreter's I8, R8, their arithmetic its
+   * own, by call-outs) *)
+  | V.Int64 | V.Float when refs -> Some R
   | V.Gen g when refs -> gen_kind g
   | _ -> None
 
@@ -163,14 +168,26 @@ let supported (refs : bool) (op : Il.op) : bool =
   | Il.Castclass _ | Il.Isinst _ | Il.Box _ | Il.Unbox_any _ | Il.Throw
   | Il.Ldloca _ | Il.Ldarga _ | Il.Ldftn _ | Il.Initobj _ | Il.Ldflda _ | Il.Ldsflda _ | Il.Ldelema _
   | Il.Ldelem_any _ | Il.Stelem_any _ | Il.Constrained _ | Il.Ldobj _ | Il.Stobj _
-  | Il.Leave _ | Il.Endfinally | Il.Rethrow | Il.Ldtoken _ -> refs
-  | Il.Ldelem k | Il.Stelem k | Il.Ldind k | Il.Stind k -> refs && (int_kind k || k = Il.K_ref)
+  | Il.Leave _ | Il.Endfinally | Il.Rethrow | Il.Ldtoken _
+  | Il.Ldc_i8 _ | Il.Ldc_r _ | Il.Conv _ | Il.Conv_r_un | Il.Ckfinite | Il.Binop _ -> refs
+  | Il.Ldelem _ | Il.Stelem _ | Il.Ldind _ | Il.Stind _ -> refs
   | _ -> false
 
 (* a field, in the loaded assembly *)
 let field (im : Value.image) (tok : int) : Value.field =
   let targs, margs = match !instance with Some i -> i | None -> ([||], [||]) in
   Types.field_of_token { im; targs; margs } tok
+
+(* an int64 or a double among the [n] operands on top *)
+let numeric (st : V.vt list) (n : int) : bool =
+  List.exists (fun v -> v = V.Int64 || v = V.Float) (List.filteri (fun i _ -> i < n) st)
+
+(* an int32's operation the templates have (no overflow check) *)
+let int_op (o : Il.binop) : bool =
+  match o with
+  | Il.Add | Il.Sub | Il.Mul | Il.Div | Il.Div_un | Il.Rem | Il.Rem_un
+  | Il.And | Il.Or | Il.Xor | Il.Shl | Il.Shr | Il.Shr_un -> true
+  | _ -> false
 
 (* the most operands of a call-out: on arm, mini-ml's registers of
  * arguments are R1 to R8, the call-out's number in R1 *)
@@ -181,12 +198,12 @@ let outs = 7
 let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (caller : int) (st : V.vt list)
     (op : Il.op) : (int * bool) option =
   (* (a field the code reads and writes itself: an object's, an int32 or
-   * a reference; a struct's through an address, or a struct, is the
-   * interpreter's) *)
+   * a reference; a struct's through an address, a struct, an int64, a
+   * double are the interpreter's) *)
   let by_code tok obj =
     (match obj with V.Obj _ -> true | _ -> false)
     && (match im with
-        | Some im -> (match (field im tok).ftype with Value.T_value _ -> false | _ -> true)
+        | Some im -> typ_kind (field im tok).ftype <> None
         | None -> true) in
   match op with
   | Il.Call tok | Il.Callvirt tok ->
@@ -219,6 +236,15 @@ let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (ca
   | Il.Stfld tok when not (by_code tok (match st with _ :: o :: _ -> o | _ -> V.Obj None)) -> Some (2, false)
   | Il.Ldfld tok when not (by_code tok (match st with o :: _ -> o | _ -> V.Obj None)) -> Some (1, true)
   | Il.Ldtoken _ -> Some (0, true)
+  (* the numbers that are not int32s: the interpreter's arithmetic *)
+  | Il.Ldc_i8 _ | Il.Ldc_r _ -> Some (0, true)
+  | Il.Conv_r_un | Il.Ckfinite -> Some (1, true)
+  | Il.Conv (k, ovf, _) when ovf || not (int_kind k) || numeric st 1 -> Some (1, true)
+  | (Il.Neg | Il.Not) when numeric st 1 -> Some (1, true)
+  | Il.Binop o when numeric st 2 || not (int_op o) -> Some (2, true)
+  | (Il.Ceq | Il.Cgt _ | Il.Clt _) when numeric st 2 -> Some (2, true)
+  | Il.Ldelem k when not (int_kind k || k = Il.K_ref) -> Some (2, true)
+  | Il.Stelem k when not (int_kind k || k = Il.K_ref) -> Some (3, false)
   | _ -> None
 
 (* the operands of an instruction the code does itself (not a
@@ -312,7 +338,7 @@ let accept (img : Image.t) (im : Value.image option) (row : int) : V.result =
   Array.iteri (fun i (ins : Il.instr) ->
       if not (supported refs ins.op) then refuse (sprintf "IL_%04x: %s, no template yet" ins.at ins.name);
       let stack = match r.stacks.(i) with Some s -> s | None -> [] in
-      let is_ref v = vt_kind refs v = Some R in
+      let is_ref v = match v with V.Obj _ | V.Ptr _ | V.Value _ | V.Gen _ -> vt_kind refs v = Some R | _ -> false in
       match ins.op, stack with
       | Il.Call tok, _ when not refs && M.token_table tok <> M.t_method_def ->
           refuse (sprintf "IL_%04x: a call into the library" ins.at)
@@ -504,6 +530,9 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   (* the structs: a local's, an argument's, copied when loaded *)
   let is_struct t = match V.of_sig img t with Some (V.Value _) -> true | _ -> false in
   let struct_local = Array.of_list (List.map is_struct (local_sigs img body)) in
+  (* (and an int64's, a double's: a local starts as its zero, I8 0, R8 0) *)
+  let init_local = Array.of_list (List.map (fun t ->
+      match V.of_sig img t with Some (V.Value _ | V.Int64 | V.Float) -> true | _ -> false) (local_sigs img body)) in
   let struct_arg = Array.of_list ((if sg.has_this then [ false ] else []) @ List.map is_struct sg.params) in
   let copy k =
     ins "MOV\t%s, R2" (vslot k);
@@ -538,13 +567,13 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           if i = 0 then ins "MOV\tR0, %s" (varg 0)
           else (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %s" (varg i))) args
   end;
-  (* a struct local its zeros, the interpreter's *)
+  (* a struct local its zeros, the interpreter's; an int64's, a double's *)
   Array.iteri (fun l st ->
       if st then begin
         ins "MOV\t$%d, R1" (2 * try_site (Init l) 0 (Some R) + 1);
         ins "BL\tjit_out0(SB)";
         ins "MOV\tR0, %s" (vlocal l)
-      end) struct_local;
+      end) init_local;
   (* the locals zeroed, as .locals init asks (C#'s always does) *)
   if Array.exists (( = ) I) locals then begin
     ins "MOVW\t$0, R1";
@@ -845,6 +874,19 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
            | _ -> ());
           ins "MOVW\tR1, %s" (slot top)
       | _, Il.Br t -> ins "B\t%s" (label t)
+      | Some _, (Il.Brfalse _ | Il.Brtrue _ | Il.Bcmp _) when numeric (match r.stacks.(i) with Some s -> s | None -> [])
+                                                             (match x.op with Il.Bcmp _ -> 2 | _ -> 1) ->
+          (* int64s, doubles: the interpreter's test, 1 or 0 (tagged: 3, 1) *)
+          let n, op, t, if_true = match x.op with
+            | Il.Bcmp (c, un, t) -> (2, Test (c, un), t, true)
+            | Il.Brtrue t -> (1, Truthy, t, true)
+            | Il.Brfalse t -> (1, Truthy, t, false)
+            | _ -> assert false in
+          List.iteri (fun j k -> ins "MOV\t%s, R%d" (vslot k) (j + 2)) (List.init n (fun j -> top - n + 1 + j));
+          ins "MOV\t$%d, R1" (2 * try_site op n (Some I) + 1);
+          ins "BL\tjit_out%d(SB)" n;
+          ins "CMP\t$1, R0";
+          ins "%s\t%s" (if if_true then "BNE" else "BEQ") (label t)
       | _, (Il.Brfalse t | Il.Brtrue t) when before top = R ->
           ins "MOV\t%s, R1" (vslot top);
           ins "CMP\t$1, R1";

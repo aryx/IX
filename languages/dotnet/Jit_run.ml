@@ -147,6 +147,9 @@ let call_outs (codes : (int, meth * code) Hashtbl.t) (sites : Jit.site list) : u
             | Vt st -> Obj.repr (Vt (copy st))
             | _ -> a.(0))
       | Jit.Init l -> let t = code.locals.(l) in fun _ -> Obj.repr (zero t)
+      | Jit.Test (c, un) ->
+          fun (a : Obj.t array) -> Obj.repr (if Arith.test c un (Obj.obj a.(0)) (Obj.obj a.(1)) then 1 else 0)
+      | Jit.Truthy -> fun (a : Obj.t array) -> Obj.repr (if Arith.truthy (Obj.obj a.(0)) then 1 else 0)
       | Jit.Rethrow ->
           fun (a : Obj.t array) -> match (Obj.obj a.(0) : value) with
             | Obj st -> Frame.throw st
@@ -177,6 +180,7 @@ let native (m : meth) (addr : int) : value array -> value =
   (* (a struct a reference to the code, its Vt; an enum an int32) *)
   let kind t = match t with
     | T_value c when c.kind = Struct -> Jit.R
+    | T_i8 | T_u8 | T_r4 | T_r8 -> Jit.R
     | t -> if is_ref t then Jit.R else Jit.I in
   let ks = Array.of_list ((if m.static then [] else [ Jit.R ]) @ List.map kind m.params) in
   let ret = kind m.ret in

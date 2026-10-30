@@ -981,4 +981,22 @@ structs 6 (vec), ldftn 2.
    now compiled: vec's 5, strings' Main, generic's What; left in the
    tests: Mains with int64 or double locals (vec, corners), Corners'
    filter. mini-tiger's and mini-csc's with -jit.
+5. int64s and doubles (done, for coverage). Their values are the
+   interpreter's I8 and R8, references to the code; their arithmetic,
+   conversions, comparisons (and every checked operation, an int32's
+   too: add.ovf...) are call-outs, a conditional branch on them the
+   interpreter's test (Arith.test, Arith.truthy) and the code's branch
+   on its answer; an int64 or a double local starts as its zero, a
+   field or an element of them the interpreter's. So slow (numbers.cs's
+   loop of 100,000 multiplications: 400,000 interpreted instructions),
+   but compiled: inline 64-bit arithmetic on arm64, two words on arm,
+   is for later if it is wanted (the author: "being 2x slower than
+   microsoft is more than ok"). Checked: tests/jit/numbers.cs, new
+   (factorials past 2^63 wrapping, Newton's square root, int64 division
+   and remainder, conversions both ways, comparisons of doubles, an
+   int32's checked add and its OverflowException caught, fields and
+   arrays of int64s and doubles); now compiled: vec's and corners'
+   Mains, every method of the tests' assemblies but Corners::Depth
+   (its exception filter); tests/run.sh 287 checks, mini-tiger's and
+   mini-csc's with -jit, run.sh -9.
 

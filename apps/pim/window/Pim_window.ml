@@ -20,6 +20,8 @@ type home = {
   due_today : int;
   to_do : int;
   people : int;
+  notes : int;
+  day_written : bool; (* today's page has a text *)
   (* the late tasks and today's, the mail back from a snooze *)
   today_list : (bool * string) list; (* late?, what *)
 }
@@ -32,6 +34,7 @@ type model = {
   mail : Mail_window.model;
   tasks : Tasks_window.model;
   people : People_window.model;
+  notes : Notes_window.model;
   held : string Set_.t;
 }
 
@@ -67,6 +70,12 @@ let home (caps : caps) ~(account : string) ~(today : Civil.date) : home =
     due_today = List.length due;
     to_do = List.length to_do;
     people = List.length (People.contacts items);
+    notes = List.length (List.filter (fun i -> Item.has_stamp i "note") items);
+    day_written =
+      List.exists
+        (fun i ->
+          Item.id i = "day:" ^ Mail_sync.day today && String.trim i.body <> "")
+        items;
     today_list =
       List.map (fun i -> (true, "late: " ^ title i)) late
       @ List.map (fun i -> (false, "due today: " ^ title i)) due
@@ -87,6 +96,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       | "mail" -> Mail
       | "tasks" -> Tasks
       | "people" -> People
+      | "notes" -> Notes
       | _ -> Home);
     account;
     today;
@@ -94,6 +104,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     mail = Mail_window.initial caps flags;
     tasks = Tasks_window.initial caps flags;
     people = People_window.initial caps flags;
+    notes = Notes_window.initial caps flags;
     held = Set_.empty;
   }
 
@@ -110,13 +121,31 @@ let switch (caps : caps) (s : model) (keys : string Set_.t) (v : view) : model =
   | Mail -> { s with mail = Mail_window.refresh caps keys s.mail }
   | Tasks -> { s with tasks = Tasks_window.refresh caps keys s.tasks }
   | People -> { s with people = People_window.refresh caps keys s.people }
+  | Notes -> { s with notes = Notes_window.refresh caps keys s.notes }
 
 let go (caps : caps) (s : model) (keys : string Set_.t) (g : go) : model =
   match g with
   | View v -> switch caps s keys v
-  | Message id ->
-      let s = switch caps s keys Mail in
-      { s with mail = Mail_window.show caps s.mail id }
+  | Item id -> (
+      (* where it lives: a message (a task too) in Mail, then by its
+       * stamp *)
+      let i = Items.find caps (store caps) id in
+      let has stamp =
+        match i with Some i -> Item.has_stamp i stamp | None -> false
+      in
+      if has "message" then
+        let s = switch caps s keys Mail in
+        { s with mail = Mail_window.show caps s.mail id }
+      else if has "contact" then
+        let s = switch caps s keys People in
+        { s with people = People_window.show caps s.people id }
+      else if has "task" then
+        let s = switch caps s keys Tasks in
+        { s with tasks = Tasks_window.show caps s.tasks id }
+      else if has "note" then
+        let s = switch caps s keys Notes in
+        { s with notes = Notes_window.show caps s.notes id }
+      else s)
   | Write to_ ->
       let s = switch caps s keys Mail in
       { s with mail = Mail_window.write s.mail to_ }
@@ -151,11 +180,16 @@ let switcher_click (computer : computer) : view option =
         if mouse.my >= y && mouse.my < y +. row then Some v else None)
       (List.mapi (fun i v -> (i, v)) views)
 
-(* Home's tiles: a view each, side by side *)
+(* Home's tiles: a view each, three a row *)
 let tiles : (view * string) list = List.filter (fun (v, _) -> v <> Home) views
 
 let tile_box (i : int) : Widget.box =
-  { Widget.x = -260. +. (float_of_int i *. 260.); y = 220.; w = 220.; h = 180. }
+  { Widget.x = -260. +. (float_of_int (i mod 3) *. 260.);
+    y = 250. -. (float_of_int (i / 3) *. 190.); w = 220.; h = 170. }
+
+(* the key that opens a view from Home *)
+let home_keys : (string * view) list =
+  [ ("m", Mail); ("p", People); ("t", Tasks); ("n", Notes) ]
 
 let tile_click (computer : computer) : view option =
   let mouse = computer.mouse in
@@ -189,10 +223,7 @@ let update (caps : caps) (computer : computer) (s : model) : model =
   in
   let home_key =
     if s.view <> Home then None
-    else if pressed "m" then Some Mail
-    else if pressed "t" then Some Tasks
-    else if pressed "p" then Some People
-    else None
+    else List.find_map (fun (k, v) -> if pressed k then Some v else None) home_keys
   in
   let s =
     match (menu, by_key, clicked, home_key) with
@@ -213,6 +244,10 @@ let update (caps : caps) (computer : computer) (s : model) : model =
         | People -> (
             let p, g = People_window.update caps computer s.people in
             let s = { s with people = p } in
+            match g with Some g -> go caps s keys g | None -> s)
+        | Notes -> (
+            let n, g = Notes_window.update caps computer s.notes in
+            let s = { s with notes = n } in
             match g with Some g -> go caps s keys g | None -> s))
   in
   { s with held = keys }
@@ -257,6 +292,10 @@ let icon (v : view) (b : Widget.box) : shape list =
       [ at 0. 46. (circle line 15.); at 0. 46. (circle white 12.);
         at 0. 12. (oval line 56. 30.); at 0. 10. (oval white 50. 26.);
         at 0. 2. (rectangle white 60. 16.) ]
+  | Notes ->
+      [ at 0. 34. (rectangle line 56. 70.); at 0. 34. (rectangle white 52. 66.) ]
+      @ List.init 4 (fun k ->
+            at 0. (54. -. (float_of_int k *. 13.)) (rectangle line 36. 2.))
   | Home -> []
 
 let home_view (computer : computer) (s : model) : shape list =
@@ -270,6 +309,9 @@ let home_view (computer : computer) (s : model) : shape list =
         [ count h.to_do "task" ^ " to do";
           Printf.sprintf "%d late, %d today" h.late h.due_today ]
     | People -> [ count h.people "person" ]
+    | Notes ->
+        [ count h.notes "note";
+          (if h.day_written then "today's page written" else "no page today") ]
     | Home -> []
   in
   let tile i (v, name) =
@@ -297,16 +339,16 @@ let home_view (computer : computer) (s : model) : shape list =
       (-.a.left -. 40. -. width (long_day s.today))
       (a.top -. 50.) (long_day s.today) ]
   @ List.concat (List.mapi tile tiles)
-  @ [ text ink ~bold:true ~room:500. (-390.) 80. "Today" ]
+  @ [ text ink ~bold:true ~room:500. (-390.) (-80.) "Today" ]
   @ List.mapi
       (fun k (late, l) ->
         text (if late then red else ink) ~bold:false ~room:780. (-390.)
-          (50. -. (float_of_int k *. 24.)) l)
+          (-110. -. (float_of_int k *. 24.)) l)
       today
   @ [ text grey ~bold:false ~room:900. (-390.)
         ((-.computer.screen.height /. 2.) +. 24.)
-        ("m, t, p or a click opens a view; Ctrl+0 comes back here, "
-         ^ "Ctrl+1 to 3 go to the others.") ]
+        ("m, p, t, n or a click opens a view; Ctrl and its number goes "
+         ^ "to it, Ctrl+0 back here.") ]
 
 (* the switcher: the views, the one shown marked *)
 let switcher_view (computer : computer) (s : model) : shape list =
@@ -332,6 +374,7 @@ let view (computer : computer) (s : model) : shape list =
     | Mail -> Mail_window.view computer s.mail @ switcher_view computer s
     | Tasks -> Tasks_window.view computer s.tasks @ switcher_view computer s
     | People -> People_window.view computer s.people @ switcher_view computer s
+    | Notes -> Notes_window.view computer s.notes @ switcher_view computer s
   in
   let top = (computer.screen.height /. 2.) -. menu_bar in
   body

@@ -75,6 +75,22 @@ let initial (caps : caps) (flags : Playground.flags) : model =
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
   load caps { m with held = keys; mode = Browsing }
 
+(* the task [id]'s page, in the list it is in *)
+let show (caps : caps) (m : model) (id : string) : model =
+  match Items.find caps (store caps) id with
+  | None -> { m with status = id ^ ": not in the store" }
+  | Some i -> (
+      let shown = if Item.field i "done" = "" then To_do else Done in
+      let m = load caps { m with shown; selected = 0 } in
+      let rec find k l =
+        match l with
+        | [] -> None
+        | t :: rest -> if Item.id t = id then Some k else find (k + 1) rest
+      in
+      match find 0 m.tasks with
+      | Some k -> { m with selected = k; mode = Page; status = "" }
+      | None -> { m with status = id ^ ": snoozed" })
+
 (*****************************************************************************)
 (* What the keys and the menus do *)
 (*****************************************************************************)
@@ -138,7 +154,7 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
       match current m with
       | None -> (m, None)
       (* (a message: the mail shows it) *)
-      | Some i when Item.has_stamp i "message" -> (m, Some (Message (Item.id i)))
+      | Some i when Item.has_stamp i "message" -> (m, Some (Item (Item.id i)))
       | Some _ -> ({ m with mode = Page }, None))
   | Back -> ({ m with mode = Browsing }, None)
   | Done_ -> (

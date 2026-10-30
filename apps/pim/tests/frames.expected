@@ -1,25 +1,28 @@
-empty|3 view=mail|a0c65fb949137b21f5b20993324a4da6d79bee13414c7330fec49f288ae57b87
-fetched|12 -script 'g:2,type(secret):4,Enter:6' view=mail|c04ebb3e7df72255fd8829c8ceafc2d1ec99328124e77caeacd7ef3f00957241
-read|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12' view=mail|79b83ef5068be39e8f975807a54a4aa90b0cc114ee53c9124d7869d4f04cc0d5
-back|26 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,k:16,u:20' view=mail|29fc8c46dfcba3ca83575f0c8641e258df3e5d58cdfbbf7fe5a56594c09217e6
-search|20 -script 'g:2,type(secret):4,Enter:6,/:9,type(carol):11,Enter:13' view=mail|9f519e6ef2e288f9c8aa0d6681f97b634381789733b9db08c23963e3e789ff1d
-allmail|14 -script 'g:2,type(secret):4,Enter:6,Tab:9' view=mail|28e99a6dd637ae02369e0ce6c0aa63808349ec99513aa6fd41276ff6ab22d8ae
-reply|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16' view=mail|4ea85d3d1771f8e20cad78971dea619e88736c804b55ad72eb6db9f6ac32ce73
-replysent|30 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16,at(0;200):18-19,click:18,type(Agreed.):21,at(-254;-472):24-26,click:25' view=mail|0b9be03326764dcd0b82e5f195af2a828f44a77b1ce4bfbb2b6ef9b2460cc143
-draft|30 -script 'c:2,at(125;404):4-5,click:4,type(bob@ix):6,at(125;336):8-9,click:8,type(lunch):10,Escape:13,at(285;485):16-17,click:16,at(285;347):19-21,click:20' view=mail|e1941954b50c5db2bc11f698774ca209de235427a176054856b3026329ebaff3
-task|24 -script 'g:2,type(secret):4,Enter:6,t:9,type(friday):11,Enter:13,at(-411;485):16-17,click:16,at(-411;347):19-21,click:20' today=2026-10-29 view=mail|cf5ab811da454fea4695a482f22ba6984344f1022ffbd68c12c0bd0a0a6ca877
-people|26 -script 'g:2,type(secret):4,Enter:6,j:9,p:11,at(-411;485):14-15,click:14,at(-411;311):17-19,click:18,o:22' view=mail|1654e033410dec1fdc9cda5263d3d71c59fa8c360d15dbf39deaebfd3d04b1b0
-home|3 today=2026-10-29|27edb37e58c4a3ebd626f502d0cd42dfa7affeb3c0804571c2b4f8bef9a070d3
-pimmenu|6 -script 'at(-411;485):2-6,click:3' today=2026-10-29|bb55969020d45b5237c460ed4932169c95f130ba4747a7a6fb147714b422c9a9
-homemail|26 -script 'g:2,type(secret):4,Enter:6,t:9,type(2026-10-27):11,Enter:13,j:15,t:17,type(today):19,Enter:21,Control:23-25,0:24' today=2026-10-29 view=mail|a7908e0f3db08a02da31350138f242643daac29ce677b17a329c286e438b96d1
-hometasks|6 -script 'at(0;220):2-4,click:3' today=2026-10-29|7e8f9c89ea40db23d4423201d9ff1caa4e8e52fe96bcc3f8d45b49c1373253d9
-capture|12 -script 'n:2,type(pay the electricity by friday):4,Enter:6,n:8,type(buy bread):9,Enter:10' today=2026-10-29 view=tasks|655fab95f5b62bdd58dc48805adb00fde3a1c7efc14e28fe44698da2aa4a97f8
-taskopen|24 -script 'g:2,type(secret):4,Enter:6,t:9,type(friday):11,Enter:13,Control:15-17,2:16,o:19' today=2026-10-29 view=mail|ce2e98083308380d002f31c6992de1abf0cdd86cb63e1df2ae4dd31b6d10f9c0
-taskdone|14 -script 'n:2,type(buy bread):4,Enter:6,x:8,Tab:11' today=2026-10-29 view=tasks|ab711612bdab456ce241b1af8456d051c24d1b40c6d162a9a0052bc35b321785
-newperson|10 -script 'n:2,type(Dan <dan@ix>):4,Enter:6' view=people|80f68a69406d32c60c10e321c1083ba25b5eb61477a6af12cd2ab3f6df8126ee
-personwrite|28 -script 'g:2,type(secret):4,Enter:6,j:9,p:11,Control:13-15,3:14,o:17,o:20,Control:22-24,3:23,c:26' view=mail|16918a459b5d2ba37cb696936302ec2c2b7eb32443478412e7a18d015487d0df
-archive|16 -script 'g:2,type(secret):4,Enter:6,e:9' view=mail|8b418370b9c3c93051126f66de7bc286b5b0c420911b62531f3dec93df2355a3
-menu|10 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-10,click:9' view=mail|5f257f017262e3fc6460746ebf8c0829c7b233a087fe2f23e43fccda5a386f54
-menuget|14 -script 'at(-237;485):1-3,click:2,at(-237;419):4-14,click:5,type(secret):8,Enter:10' view=mail|dccb3b6c686c0a3db69a56394ce1539b767e0b7394d3db9e3f28436b7dfa7483
-menuarchive|16 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-9,click:8,at(-63;239):10-16,click:11' view=mail|21f33224bb581ac41bedf310e59fe7bdabb6534483df8495abbb759323983b01
-snooze|20 -script 'g:2,type(secret):4,Enter:6,Tab:9,z:12,type(monday):14,Enter:16' today=2026-10-29 view=mail|79a987bc8a6ac561e92f75b4b81ee8634b303ddb987b2d62e0fca55574015cc9
+empty|3 view=mail|0b835efdc3ba0d0993e22c18d60cb56173a511b539e7bffb8ed7c566ecca98f7
+fetched|12 -script 'g:2,type(secret):4,Enter:6' view=mail|69310ce9c497ac1932e203ca636fc915e1637bd339b2adf1aef20324b2d6cd3c
+read|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12' view=mail|cd6d93aed1b82deae626fed31ca7e6c0d5c4f22d952298bb01ceb47848511c21
+back|26 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,k:16,u:20' view=mail|883b6df2fd5e933d1940eca9534a90f728c05e30a614d9de999c087eb78973df
+search|20 -script 'g:2,type(secret):4,Enter:6,/:9,type(carol):11,Enter:13' view=mail|9813fe562900068776470b4374c4911997b38183f624f95ab29309e42cf2f578
+allmail|14 -script 'g:2,type(secret):4,Enter:6,Tab:9' view=mail|c8654222371391c4c23ef8d084e32eaebe900ad194411ac63c3272c642d9f23d
+reply|20 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16' view=mail|4704742d8a8e3b6c1dee5cba638dc7e3e062ef4f8be727555f3137409867fd59
+replysent|30 -script 'g:2,type(secret):4,Enter:6,j:9,o:12,r:16,at(0;200):18-19,click:18,type(Agreed.):21,at(-254;-472):24-26,click:25' view=mail|dabf226e347f6c8e490264babc27f2ccc67e4f5becc854c2471cccc935ee7369
+draft|30 -script 'c:2,at(125;404):4-5,click:4,type(bob@ix):6,at(125;336):8-9,click:8,type(lunch):10,Escape:13,at(285;485):16-17,click:16,at(285;347):19-21,click:20' view=mail|612da0c385e5e49072414a29ec7c318c156495ea6a64285200851492d1bfa2dd
+task|24 -script 'g:2,type(secret):4,Enter:6,t:9,type(friday):11,Enter:13,at(-411;485):16-17,click:16,at(-411;311):19-21,click:20' today=2026-10-29 view=mail|f9ef18945e9b1335416d28209c177d9cf93ca4e9e13286121daac649f5a7b975
+people|26 -script 'g:2,type(secret):4,Enter:6,j:9,p:11,at(-411;485):14-15,click:14,at(-411;347):17-19,click:18,o:22' view=mail|7d586a415ec66cf44e000ab5ee2e9ae85f6ed735a512b000b749e04ae488b39e
+home|3 today=2026-10-29|d9e774971579ddafdb2922517a47b9992b7089d4ea6e09c00d5afb15011c538c
+pimmenu|6 -script 'at(-411;485):2-6,click:3' today=2026-10-29|cbe85bfb11bc6ec672351524ad4810a2b268d31546c38112923cae980d785203
+homemail|26 -script 'g:2,type(secret):4,Enter:6,t:9,type(2026-10-27):11,Enter:13,j:15,t:17,type(today):19,Enter:21,Control:23-25,0:24' today=2026-10-29 view=mail|14acc0f9b95f0395306571cffab184e3047edfe92d3e0feaad89c0690bb87087
+hometasks|6 -script 'at(260;250):2-4,click:3' today=2026-10-29|ad47283ef8e99d41840a51d76111988815bdcc2f873bfe8fa76296e223da91fc
+capture|12 -script 'n:2,type(pay the electricity by friday):4,Enter:6,n:8,type(buy bread):9,Enter:10' today=2026-10-29 view=tasks|7d7736eb7cf998fb77b34703703dbc19d7946347437f85161cdd034256cc7ab7
+taskopen|24 -script 'g:2,type(secret):4,Enter:6,t:9,type(friday):11,Enter:13,Control:15-17,3:16,o:19' today=2026-10-29 view=mail|0a3046c11ac8793cd5d54a8a24c9cfe3d3182206887e4699454e4f64cfa33689
+taskdone|14 -script 'n:2,type(buy bread):4,Enter:6,x:8,Tab:11' today=2026-10-29 view=tasks|085d2a7514d3ed1a5524b93cd710313312b3c1d2814ad346c8d3417e9778ead8
+newperson|10 -script 'n:2,type(Dan <dan@ix>):4,Enter:6' view=people|cbdc83b802fde950e7f156a270d692fa93b5a23d3b54edd99c23de32cd84310a
+personwrite|28 -script 'g:2,type(secret):4,Enter:6,j:9,p:11,Control:13-15,2:14,o:17,o:20,Control:22-24,2:23,c:26' view=mail|eea19938e5f03d63117e43bb13a14a01283ceb99adb8f616d7aa53dd7e60fb5a
+notes|16 -script 'd:2,Escape:4,n:6,type(the plan):8,Enter:10,at(85;200):12-13,click:12,type(see [[day:2026-10-29]] soon):14' today=2026-10-29 view=notes|66ee665e7b8d09f6860541a543fd5ec231c96a64be4aaedd106634c386794da7
+notelink|22 -script 'd:2,Escape:4,n:6,type(the plan):8,Enter:10,at(85;200):12-13,click:12,type(see [[day:2026-10-29]] soon):14,at(100;-360):17-19,click:18' today=2026-10-29 view=notes|215095cafa6731c05bc7f4aa9800c0810afb30b58e5cb6bbbb55dda13f0b0bbb
+noteslist|20 -script 'd:2,Escape:4,n:6,type(the plan):8,Enter:10,at(85;200):12-13,click:12,type(see [[day:2026-10-29]] soon):14,Escape:17' today=2026-10-29 view=notes|00079e140019ef1c34111c8d10d2ea81fa9f58cf10ade872616001e739ea4c21
+archive|16 -script 'g:2,type(secret):4,Enter:6,e:9' view=mail|cd6ae110fd53fcde7fb92406330bccac2e6191c0d7a975ac30d38a04920378b2
+menu|10 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-10,click:9' view=mail|9987466d85801c5b97f921c53739f5099379c2568838dbe90d77552ae94139da
+menuget|14 -script 'at(-237;485):1-3,click:2,at(-237;419):4-14,click:5,type(secret):8,Enter:10' view=mail|cfafa4513e463a2770e9b449b54c701b4ee4b7d0b3f181aeb3f05bf8b9a63186
+menuarchive|16 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-9,click:8,at(-63;239):10-16,click:11' view=mail|f2f88d9897d525a94e5761f4f722b68b121d7af7d726ca9164aaef40dd3b5c03
+snooze|20 -script 'g:2,type(secret):4,Enter:6,Tab:9,z:12,type(monday):14,Enter:16' today=2026-10-29 view=mail|926779bee30b06bbf3be96b9f8d86f12e114e1c957a7ba3268fcc3dbeb8e25da

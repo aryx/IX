@@ -6,6 +6,11 @@
        re: mail:1784                   <- a link: mail:1784 is an item
        with: contact:alice             <- another
 
+   or in its text, a note's, between double brackets (a wiki's, Ward
+   Cunningham's and then Roam's and Obsidian's):
+
+       lunch with [[contact:alice]], about [[note:the-plan]]
+
    and the store knows the reverse, so every item has its page of what
    refers to it: alice's lists the task, and the mail with her. As
    Sheet keeps "read by" beside "reads" (apps/office/sheet).
@@ -18,8 +23,9 @@
    makes it one (plan_pim.md, stage 4). *)
 
 (* [links items item]: the items [item] names, with the field naming
- * each, in the fields' order *)
+ * each, in the fields' order, then its text's *)
 val links : Item.t list -> Item.t -> (string * Item.t) list
 
-(* [backlinks items item]: the items naming [item], with their field *)
+(* [backlinks items item]: the items naming [item], with their field
+ * ("text" for a link in the text) *)
 val backlinks : Item.t list -> Item.t -> (string * Item.t) list

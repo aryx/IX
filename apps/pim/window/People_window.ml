@@ -46,6 +46,12 @@ let initial (caps : caps) (_flags : Playground.flags) : model =
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
   load caps { m with held = keys }
 
+(* the person [id]'s page *)
+let show (caps : caps) (m : model) (id : string) : model =
+  match Items.find caps (store caps) id with
+  | Some p -> load caps { m with mode = Page; person = Some p; at = 0 }
+  | None -> { m with status = id ^ ": not in the store" }
+
 (*****************************************************************************)
 (* What the keys and the menus do *)
 (*****************************************************************************)
@@ -91,7 +97,7 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
       | None -> (m, None))
   | Open_, Page -> (
       match List.nth_opt m.mail m.at with
-      | Some i -> (m, Some (Message (Item.id i)))
+      | Some i -> (m, Some (Item (Item.id i)))
       | None -> (m, None))
   | Back, _ -> ({ m with mode = Browsing; person = None }, None)
   | Write_, _ -> (

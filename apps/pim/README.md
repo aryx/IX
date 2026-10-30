@@ -9,18 +9,19 @@ So far, plan_mail.md's stages 1 to 7, and 8 begun: the mail's
 formats, sending by SMTP and reading by IMAP, with Gmail or with
 mini-maild on this machine, what is read kept in the suite's store
 (plan_pim.md's stage 2 begun), and a window over it, the suite: a
-Home that launches its views, Mail with Gmail's keys, Tasks, People.
+Home that launches its views, Mail with Gmail's keys, People, Tasks,
+Notes.
 Their tests: `tests/`, the unit tests (dune's), `session.sh`,
 mini-pim's commands against mini-maild, and `frames.sh`, its
 window's (`make test`'s two "mini-pim").
 
     bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
-            [view=mail|tasks|people]
-                       the window, on Home: a tile a view (m t p, or a
-                       click), what is late or due today; in a view,
-                       the Pim menu and Ctrl+0 to 3 (Home, Mail,
-                       Tasks, People), the switcher at the sidebar's
-                       foot
+            [view=mail|people|tasks|notes]
+                       the window, on Home: a tile a view (m p t n, or
+                       a click), what is late or due today; in a view,
+                       the Pim menu and Ctrl+0 to 4 (Home, Mail,
+                       People, Tasks, Notes), the switcher at the
+                       sidebar's foot
                        Mail: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
@@ -31,6 +32,9 @@ window's (`make test`'s two "mini-pim").
                        People: n a person (Dan <dan@ix>), o their
                        page, the mail with them (o opens one), c write
                        to them
+                       Notes: n a note, d today's page, the text with
+                       [[id]] links, what it names and what names it
+                       under it (a click opens one), Tab Notes or Days
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -89,6 +93,8 @@ window's (`make test`'s two "mini-pim").
                        the tasks to do and done, captured in a line
     window/People_window
                        the address book, a person's page
+    window/Notes_window
+                       notes and days, their links both ways
     window/Pim_look    what the views share: menus, letters, rows
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
@@ -96,8 +102,9 @@ window's (`make test`'s two "mini-pim").
     store/People       the address book, filled from the mail, BBDB's
                        way; the mail with a person
     store/Search       a search over every item, Gmail's syntax
-    store/Links        links both ways: the ids an item names, and the
-                       items naming it
+    store/Links        links both ways: the ids an item names (in its
+                       fields, [[ ]] in its text), and the items
+                       naming it
     store/Items        the store: a directory, a file an item
                        ($PIM_STORE, ~/.ix-pim, $home/lib/pim), and the
                        mail's cache

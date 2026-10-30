@@ -5,11 +5,12 @@
 
 open Playground
 
-type view = Home | Mail | Tasks | People
-type go = View of view | Message of string | Write of string
+type view = Home | Mail | People | Tasks | Notes
+type go = View of view | Item of string | Write of string
 
 let views =
-  [ (Home, "Home"); (Mail, "Mail"); (Tasks, "Tasks"); (People, "People") ]
+  [ (Home, "Home"); (Mail, "Mail"); (People, "People"); (Tasks, "Tasks");
+    (Notes, "Notes") ]
 
 let menu_bar = 30.
 let size = 16.

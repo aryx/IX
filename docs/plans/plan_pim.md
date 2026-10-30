@@ -432,3 +432,17 @@ is read again from the store as it is shown. Tests: Unit_when (a day
 at a line's end), 25 frames (9 new: Home, its menu, a tile, capture,
 done, a task's message opened, a person added, written to), mini-ml.
 Not yet: Calendar, Notes, Money, a search over every view.
+
+2026-10-30: stage 7, Notes: `window/Notes_window`, a note an item
+stamped note, its id of its title (note:the-plan) so that a link to
+it can be typed, its text edited in the toolkit's text area and
+written at each change; a day's page (day:2026-10-29, `d`, made when
+first asked: the daily note); a link `[[id]]` in any item's text
+(`Links`, now over the text too), what a note names and what names
+it listed under it, a click opening the item where it lives: the
+suite's go is now `Item id`, dispatched by stamp (message, contact,
+task, note; `show` in each view). The views in the plan's order
+(Home, Mail, People, Tasks, Notes: Ctrl+0 to 4); Home's tiles three
+a row. Tests: Unit_store (links in a text), 3 frames (a note linking
+the day, the day's link back, the list). Not yet: a note's links
+completed as typed, a search over notes in the window.

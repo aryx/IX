@@ -30,6 +30,9 @@ val initial : caps -> Playground.flags -> model
  * those down now *)
 val refresh : caps -> string Set_.t -> model -> model
 
+(* [show caps m id]: the task [id]'s page *)
+val show : caps -> model -> string -> model
+
 (* a frame; and what it asks of the suite: a message opened in Mail *)
 val update : caps -> Playground.computer -> model -> model * Pim_look.go option
 

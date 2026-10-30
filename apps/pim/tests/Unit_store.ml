@@ -79,4 +79,19 @@ let tests =
           [ ("re", "task:answer") ]
           (pairs (Links.backlinks items mail));
         check "the note by none" [] (pairs (Links.backlinks items note)));
+    Testo.create "links in a text, [[ ]]" (fun () ->
+        let pairs l = List.map (fun (f, i) -> (f, Item.id i)) l in
+        let check = Alcotest.(check (list (pair string string))) in
+        let day =
+          Item.make ~id:"day:2026-10-29" ~stamps:[ "note" ] []
+            "lunch with [[contact:alice]], then [[ mail:7 ]];\n\
+             [[nothing:here]] and [[not\nclosed]]"
+        in
+        let items = day :: items in
+        check "its text's links, those that are items"
+          [ ("text", "contact:alice"); ("text", "mail:7") ]
+          (pairs (Links.links items day));
+        check "alice: the task, and the day"
+          [ ("text", "day:2026-10-29"); ("with", "task:answer") ]
+          (pairs (Links.backlinks items alice)));
   ]

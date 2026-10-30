@@ -464,6 +464,20 @@ let to_arm (s : string) : string =
       ("R26", "R10"); ("R31", "R13"); ("R16", "R9"); ("RETURN", "RET");
       ("RSP", "R13"); ("LSR\t", "SRL\t") ]
 
+(* OPTIMIZATION (the register cache): an int32 slot, local or argument
+ * given a register as its home, those used most; Plan 9's convention
+ * keeps no register across a call (ML's, 7c's, 5c's), so around a call
+ * the registers still in use are written to their memory homes and
+ * read back after. Not in a method with a try (its handler reads the
+ * memory homes), nor -S's text of int32s (the recorded fib.s, ints.s).
+ * arm64's registers R4-R15 and R19-R25 (R0-R3 the templates', R16 and
+ * R17 the calls', R26 the value stack's); arm's R7 and R8 (R0-R6 the
+ * templates' and the division's, R9 and R10 mini-ml's).
+ * old: every slot, local and argument in memory *)
+let registers = ref true
+
+type home = Hslot of int | Hlocal of int | Harg of int
+
 let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row : int) (r : V.result)
     (refs : env option) : string =
   let b = Buffer.create 1024 in
@@ -499,9 +513,52 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let word j = sprintf "%d(R26)" (-w * (nv - j)) in
   (* the places: a stack slot, a local (autos, below SP), an argument
    * (FP: the first one left there from R0 by the prologue's MOVW) *)
-  let slot k = sprintf "s%d-%d(SP)" k (w * (k + 1)) in
-  let local i = sprintf "l%d-%d(SP)" i (w * (nslots + i + 1)) in
-  let arg i = sprintf "a%d+%d(FP)" i (w * i) in
+  let mem_slot k = sprintf "s%d-%d(SP)" k (w * (k + 1)) in
+  let mem_local i = sprintf "l%d-%d(SP)" i (w * (nslots + i + 1)) in
+  let mem_arg i = sprintf "a%d+%d(FP)" i (w * i) in
+  let pool =
+    if not !registers || refs = None || Array.length (clauses img row r) > 0 then []
+    else if a64 then [ "R19"; "R20"; "R21"; "R22"; "R23"; "R24"; "R25"; "R4"; "R5"; "R6"; "R7"; "R8";
+                       "R9"; "R10"; "R11"; "R12"; "R13"; "R14"; "R15" ]
+    else [ "R7"; "R8" ] in
+  let reg : (home, string) Hashtbl.t = Hashtbl.create 16 in
+  if pool <> [] then begin
+    (* the homes by their uses in the method's instructions *)
+    let uses : (home, int) Hashtbl.t = Hashtbl.create 16 in
+    let use h = Hashtbl.replace uses h (1 + (try Hashtbl.find uses h with Not_found -> 0)) in
+    Array.iteri (fun i (x : Il.instr) ->
+        let d = match r.stacks.(i) with Some s -> List.length s | None -> 0 in
+        for k = max 0 (d - 2) to d do use (Hslot k) done;
+        match x.op with
+        | Il.Ldloc l | Il.Stloc l when locals.(l) = I -> use (Hlocal l)
+        | Il.Ldarg a | Il.Starg a when args.(a) = I -> use (Harg a)
+        | _ -> ()) r.instrs;
+    (* (a home used no more than twice a call is not worth its saves
+     * and restores: Fib's n, three uses for two calls, took 17% more
+     * instructions on arm with a register) *)
+    let calls = Array.fold_left (fun n (x : Il.instr) -> match x.op with
+        | Il.Call _ | Il.Callvirt _ | Il.Newobj _ -> n + 1 | _ -> n) 0 r.instrs in
+    let ranked = List.sort (fun (_, a) (_, b) -> compare b a)
+        (Hashtbl.fold (fun h n acc -> if n > 2 * calls then (h, n) :: acc else acc) uses []) in
+    let rec give hs regs = match hs, regs with
+      | (h, _) :: hs, rg :: regs -> Hashtbl.replace reg h rg; give hs regs
+      | _ -> () in
+    give ranked pool
+  end;
+  let home h mem = match Hashtbl.find_opt reg h with Some rg -> rg | None -> mem in
+  let slot k = home (Hslot k) (mem_slot k) in
+  let local i = home (Hlocal i) (mem_local i) in
+  let arg i = home (Harg i) (mem_arg i) in
+  (* the registers in use written to their memory homes, before a call
+   * (the slots under [below], every local and argument), and read back *)
+  let in_use below = Hashtbl.fold (fun h rg acc ->
+      match h with
+      | Hslot k when k >= below -> acc
+      | Hslot k -> (rg, mem_slot k) :: acc
+      | Hlocal l -> (rg, mem_local l) :: acc
+      | Harg a -> (rg, mem_arg a) :: acc) reg [] in
+  let save below = List.iter (fun (rg, mem) -> ins "MOVW\t%s, %s" rg mem) (List.sort compare (in_use below)) in
+  let restore below = List.iter (fun (rg, mem) -> ins "MOVW\t%s, %s" mem rg) (List.sort compare (in_use below)) in
   let vslot k = word k and vlocal i = word (nslots + i) and varg i = word (nslots + nlocals + i) in
   let record c j = sprintf "r%d_%d-%d(SP)" c j (w * (nslots + nlocals + (5 * c) + 4 - j)) in
   let cont c = sprintf "k%d-%d(SP)" c (w * (nslots + nlocals + (5 * c) + 5)) in
@@ -535,14 +592,16 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
       match V.of_sig img t with Some (V.Value _ | V.Int64 | V.Float) -> true | _ -> false) (local_sigs img body)) in
   let struct_arg = Array.of_list ((if sg.has_this then [ false ] else []) @ List.map is_struct sg.params) in
   let copy k =
+    save k;
     ins "MOV\t%s, R2" (vslot k);
     ins "MOV\t$%d, R1" (2 * try_site Copy 1 (Some R) + 1);
     ins "BL\tjit_out1(SB)";
+    restore k;
     ins "MOV\tR0, %s" (vslot k) in
   Buffer.add_string b (sprintf "// %s, %d bytes of IL: %d slots, %d locals\n"
                          (Listing.token_name img (M.token M.t_method_def row)) (String.length body.code) nslots nlocals);
   Buffer.add_string b (sprintf "\tTEXT\t%s(SB), 0, $%d\n" sym frame);
-  if nargs > 0 && args.(0) = I then ins "MOVW\tR0, %s" (arg 0);
+  if nargs > 0 && args.(0) = I then ins "MOVW\tR0, %s" (mem_arg 0);
   (* the machine's stack checked: a recursion with no end is the
    * interpreter's Stack_overflow (jit_overflow), as its 10,000 frames,
    * not a fault; the limit in words (an address past an int's 31 bits
@@ -565,7 +624,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
     Array.iteri (fun i k ->
         if k = R then
           if i = 0 then ins "MOV\tR0, %s" (varg 0)
-          else (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %s" (varg i))) args
+          else (ins "MOV\t%s, R1" (mem_arg i); ins "MOV\tR1, %s" (varg i))) args
   end;
   (* a struct local its zeros, the interpreter's; an int64's, a double's *)
   Array.iteri (fun l st ->
@@ -579,6 +638,8 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
     ins "MOVW\t$0, R1";
     Array.iteri (fun i k -> if k = I then ins "MOVW\tR1, %s" (local i)) locals
   end;
+  (* the arguments with a register, from their memory homes *)
+  Hashtbl.iter (fun h rg -> match h with Harg a -> ins "MOVW\t%s, %s" (mem_arg a) rg | _ -> ()) reg;
   let return () =
     if nv > 0 then ins "SUB\t$%d, R26" (w * nv);
     ins "%s" (if a64 then "RETURN" else "RET") in
@@ -699,11 +760,18 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           (* (an operand that is a local's address: the local's value, of
            * its kind, from its place; its new value given back) *)
           let place j = Hashtbl.find_opt addrs (i, top - n + 1 + j) in
+          (* (the operands from their memory homes: the registers saved
+           * first, and on arm a box's call between) *)
           let home j = match place j with
-            | Some (Local l) -> (locals.(l), local l, vlocal l)
-            | Some (Arg a) -> (args.(a), arg a, varg a)
+            | Some (Local l) -> (locals.(l), mem_local l, vlocal l)
+            | Some (Arg a) -> (args.(a), mem_arg a, varg a)
             | Some (Ftn _) -> (R, "", "$1")
-            | None -> let s = top - n + 1 + j in (before s, slot s, vslot s) in
+            | None -> let s = top - n + 1 + j in (before s, mem_slot s, vslot s) in
+          let back j = match place j with
+            | Some (Local l) -> local l
+            | Some (Arg a) -> arg a
+            | _ -> "" in
+          save (top + 1);
           let kinds = List.init n (fun j -> let k, _, _ = home j in k) in
           let ret = if pushes then Some (after (top - n + 1)) else None in
           let number = base + List.length !sites in
@@ -736,15 +804,16 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                 ins "MOVW.VS\t%s, R%d" (vslot s) (j + 2)
               end) kinds;
           ins "BL\tjit_out%d(SB)" n;
+          restore (top - n + 1);
           (* the locals' new values, then the result: an array of them *)
           if List.mem Addr sform then begin
             let m = ref 0 in
             List.iteri (fun j k ->
                 if List.nth sform j = Addr then begin
                   incr m;
-                  let _, src, vsrc = home j in
+                  let _, _, vsrc = home j in
                   ins "MOV\t%d(R0), R1" (w * !m);
-                  if k = I then (unbox_reg "R1"; ins "MOVW\tR1, %s" src) else ins "MOV\tR1, %s" vsrc
+                  if k = I then (unbox_reg "R1"; ins "MOVW\tR1, %s" (back j)) else ins "MOV\tR1, %s" vsrc
                 end) kinds;
             ins "MOV\t0(R0), R0"
           end;
@@ -882,9 +951,11 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
             | Il.Brtrue t -> (1, Truthy, t, true)
             | Il.Brfalse t -> (1, Truthy, t, false)
             | _ -> assert false in
+          save (top - n + 1);
           List.iteri (fun j k -> ins "MOV\t%s, R%d" (vslot k) (j + 2)) (List.init n (fun j -> top - n + 1 + j));
           ins "MOV\t$%d, R1" (2 * try_site op n (Some I) + 1);
           ins "BL\tjit_out%d(SB)" n;
+          restore (top - n + 1);
           ins "CMP\t$1, R0";
           ins "%s\t%s" (if if_true then "BNE" else "BEQ") (label t)
       | _, (Il.Brfalse t | Il.Brtrue t) when before top = R ->
@@ -913,6 +984,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           let callee = M.token_row tok in
           let ks = arg_kinds img (refs <> None) callee in
           let n = Array.length ks in
+          save (top - n + 1);
           for k = n - 1 downto 1 do
             let s = top - n + 1 + k in
             if ks.(k) = I then (ins "MOVW\t%s, R1" (slot s); ins "MOVW\tR1, %d(%s)" (w + w * k) (if a64 then "R31" else "R13"))
@@ -923,6 +995,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           (match refs with
            | Some e -> ins "MOV\t%s, R16" (e.cell callee); ins "MOV\t0(R16), R16"; ins "BL\t(R16)"
            | None -> ins "BL\t%s(SB)" (Hashtbl.find syms callee));
+          restore (top - n + 1);
           let sg' = signature img callee in
           if sg'.ret <> S.Void then
             if sig_kind img (refs <> None) "" sg'.ret = I then ins "MOVW\tR0, %s" (slot (top - n + 1))

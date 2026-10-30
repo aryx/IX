@@ -1011,4 +1011,27 @@ structs 6 (vec), ldftn 2.
    shapes with -jit on mini-9pi, their code in segments; recorded under
    QEMU (whose processor has a Pi's caches: segflush matters there),
    checked by make check-dotnet under mini-qemu and QEMU (5 minutes).
+8. The register cache (done; the author: "let's do the register cache
+   if it's not too much code", 61 lines). An int32 slot, local or
+   argument gets a register as its home, those the method uses most
+   (arm64: 19, R4-R15 and R19-R25; arm: R7 and R8, the rest the
+   templates' and the division's); the templates read and write
+   through slot, local, arg, which give the register or the memory
+   home, so they did not change. Plan 9's convention keeps no register
+   across a call, so around a call (direct, a call-out, a branch's
+   test, a struct's copy) the registers in use are written to their
+   memory homes and read back after; a call-out's operands from their
+   memory homes (on arm a box's call comes between). Not in a method
+   with a try, whose handler reads the memory homes. A first version
+   saved only the slots under a call-out's operands and read the
+   operands from memory: closures, exceptions and objects went wrong,
+   caught by tests/run.sh. A home gets a register only if the method
+   uses it more than twice per call site in it (Fib's n: three uses for
+   two calls, not worth its saves). Measured (the author's machine):
+   bench.cs 0.25 s, from 0.37 (32% less; Microsoft's 0.13 s, so within
+   2x); objects.cs 0.67 s, as before (its time is in call-outs). On arm
+   (mini-5i, two registers): Fib(24) 54.4 M instructions, 54.9 M
+   without (0.9% fewer; the 46.6 M of stage 9 grew with the features
+   since: mini-dotnet's start alone 35.8 M, from 32.1). Switch:
+   Jit.registers.
 

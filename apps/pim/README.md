@@ -135,7 +135,9 @@ window's (`make test`'s two "mini-pim").
                        show, add, set, event, import, today, money
     window/Pim_window  the window: the suite, Home, going from view to
                        view
-    window/Mail_window the mail
+    window/Mail_window the mail: its keys, its menus, the server
+    window/Mail_model  its state, read from the store
+    window/Mail_view   its picture
     window/Found_window
                        what a message says kept: a day an event, an
                        amount a bill, an address a contact

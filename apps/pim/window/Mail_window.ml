@@ -5,165 +5,13 @@
 
 open Playground
 open Pim_look
+open Mail_model
 
-type caps =
-  < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
+type caps = Mail_model.caps
+type model = Mail_model.model
 
-(*****************************************************************************)
-(* The model *)
-(*****************************************************************************)
-
-(* what waits for the password *)
-type action = Fetch | Open | Archive | Send | Snooze of Civil.date
-type asking = Password | Search | Until | Due
-type mode = Browsing | Reading | Composing | Asking of asking
-
-type model = {
-  account : string;
-  server : Mail_sync.server;
-  smtp : Mail_sync.server;
-  mailbox : string; (* INBOX, All Mail, or the store's drafts *)
-  (* the Screener (Screen): on or not, the Inbox's list shown, how many
-   * wait in the Screener *)
-  screening : bool;
-  screen : Screen.place;
-  waiting : int;
-  password : string option; (* kept while the window is open *)
-  query : string; (* the search's words, "" for none *)
-  conversations : Imap.summary list list;
-  drafts : Mail_compose.draft list; (* the drafts mailbox's *)
-  today : Civil.date; (* today= (the tests'), else the clock's *)
-  selected : int;
-  (* the conversation opened: its messages, oldest first, each its text
-   * when the cache has it *)
-  reading : (Imap.summary * string option) list;
-  scroll : int; (* the first line of the conversation shown *)
-  mode : mode;
-  (* the message written: its fields, its text being edited, and the
-   * mode its window goes back to *)
-  draft : Mail_compose.draft;
-  body : Text_edit.t;
-  back_to : mode;
-  field : string; (* what is typed after a question *)
-  after : action option;
-  status : string;
-  held : string Set_.t; (* the keys down at the last frame *)
-}
-
-let store (caps : caps) : Items.t = Items.at (Items.place caps)
-
-(* the drafts, a mailbox of the store's, not the server's *)
-let drafts = "Drafts"
-
-let contains (s : string) (word : string) : bool =
-  let s = String.lowercase_ascii s and w = String.lowercase_ascii word in
-  let n = String.length s and k = String.length w in
-  let rec at i = i + k <= n && (String.sub s i k = w || at (i + 1)) in
-  at 0
-
-(* every word of the query in who sent one of its messages, or in its
- * subject *)
-let matches (query : string) (c : Imap.summary list) : bool =
-  List.for_all
-    (fun w ->
-      List.exists
-        (fun (s : Imap.summary) ->
-          contains (Conversations.who s.headers) w
-          || contains (Conversations.header s.headers "subject") w)
-        c)
-    (List.filter (fun w -> w <> "") (String.split_on_char ' ' query))
-
-(* the conversations again from the store, those back from a snooze on
- * top; the drafts *)
-let load (caps : caps) (m : model) : model =
-  let items = Items.all caps (store caps) in
-  let l = Mail_item.listed items ~account:m.account ~mailbox:m.mailbox in
-  let cs = List.filter (matches m.query) (Conversations.group l) in
-  (* the Inbox's: the list asked of the Screener's, the screened out
-   * in All Mail only *)
-  let screening = Screen.since items <> None in
-  let place c = Screen.place items ~account:m.account c in
-  let waiting =
-    if screening then
-      List.length (List.filter (fun c -> place c = Screen.Screener) cs)
-    else 0
-  in
-  let cs =
-    if m.mailbox <> "INBOX" then cs
-    else List.filter (fun c -> place c = m.screen) cs
-  in
-  let woke =
-    List.filter_map
-      (fun i -> if Item.field i "woke" <> "" then Some (Item.id i) else None)
-      items
-  in
-  let back (c : Imap.summary list) =
-    List.exists (fun s -> List.mem (Mail_item.id s) woke) c
-  in
-  let cs = List.filter back cs @ List.filter (fun c -> not (back c)) cs in
-  let ds =
-    List.map Mail_compose.of_item
-      (List.filter (fun i -> Item.has_stamp i "draft") items)
-  in
-  let n = if m.mailbox = drafts then List.length ds else List.length cs in
-  { m with conversations = cs; drafts = ds; screening; waiting;
-    selected = max 0 (min m.selected (n - 1)) }
-
-let initial (caps : caps) (flags : Playground.flags) : model =
-  let flag name =
-    match List.assoc_opt name flags with Some v -> v | None -> ""
-  in
-  (* server=host:port, else Gmail's *)
-  let server name (gmail : Mail_sync.server) : Mail_sync.server =
-    let plain = List.mem_assoc "plain" flags in
-    match String.rindex_opt (flag name) ':' with
-    | Some i -> (
-        let hp = flag name in
-        match
-          int_of_string_opt (String.sub hp (i + 1) (String.length hp - i - 1))
-        with
-        | Some port -> { Mail_sync.host = String.sub hp 0 i; port; plain }
-        | None -> gmail)
-    | None -> { gmail with plain }
-  in
-  (* the store's password file, if the author made one *)
-  let password, status =
-    match Mail_sync.saved_password caps with
-    | Ok p -> (p, "")
-    | Error e -> (None, e)
-  in
-  load caps
-    {
-      account = flag "user";
-      server = server "server" Mail_sync.gmail;
-      smtp = server "smtp" Mail_sync.gmail_smtp;
-      mailbox = "INBOX";
-      screening = false;
-      screen = Screen.Imbox;
-      waiting = 0;
-      password;
-      query = "";
-      conversations = [];
-      drafts = [];
-      today =
-        (match Search.date (flag "today") with
-        | Some d -> d
-        | None -> When.today caps);
-      selected = 0;
-      reading = [];
-      scroll = 0;
-      mode = Browsing;
-      draft = Mail_compose.blank ~id:"";
-      body = Text_edit.of_string "";
-      back_to = Browsing;
-      field = "";
-      after = None;
-      status;
-      held = Set_.empty;
-    }
-
-let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
-  load caps { m with held = keys }
+let initial = Mail_model.initial
+let refresh = Mail_model.refresh
 
 (*****************************************************************************)
 (* What the keys and the menus do *)
@@ -568,43 +416,22 @@ let command (caps : caps) (m : model) (c : command) : model =
       Items.remove caps (store caps) m.draft.id;
       leave caps m "discarded"
 
-(* where the message's fields, its text and its buttons are: under the
- * title bar, right of the sidebar *)
-let field_box (computer : computer) (i : int) : Widget.box =
-  let w = computer.screen.width and h = computer.screen.height in
-  let x0 = (-.w /. 2.) +. side +. 16. and room = w -. side -. 32. in
-  { Widget.x = x0 +. 80. +. ((room -. 80.) /. 2.);
-    y = (h /. 2.) -. menu_bar -. bar -. 26. -. (float_of_int i *. 34.);
-    w = room -. 80.; h = 26. }
-
-let area_box (computer : computer) : Widget.box =
-  let w = computer.screen.width and h = computer.screen.height in
-  let x0 = (-.w /. 2.) +. side +. 16. and room = w -. side -. 32. in
-  let top = (h /. 2.) -. menu_bar -. bar -. 26. -. (3. *. 34.) -. 26. in
-  let bottom = (-.h /. 2.) +. 56. in
-  { Widget.x = x0 +. (room /. 2.); y = (top +. bottom) /. 2.; w = room;
-    h = top -. bottom }
-
-let button_box (computer : computer) (i : int) : Widget.box =
-  let w = computer.screen.width and h = computer.screen.height in
-  let x0 = (-.w /. 2.) +. side +. 16. in
-  { Widget.x = x0 +. 60. +. (float_of_int i *. 130.); y = (-.h /. 2.) +. 28.;
-    w = 120.; h = 30. }
-
 (* the message's widgets this frame (immediate mode), the draft written
  * to the store as it changes (the Palm's: no Save needed); a button's
  * command, or the menu's *)
 let writing (caps : caps) (computer : computer) (m : model)
     (menu : command option) (escape : bool) : model =
   let d = m.draft in
-  let field i v = Gui.field_in ~enabled:true computer (field_box computer i) v in
+  let field i v =
+    Gui.field_in ~enabled:true computer (Mail_view.field_box computer i) v
+  in
   let to_ = field 0 d.to_ in
   let cc = field 1 d.cc in
   let subject = field 2 d.subject in
   let attach = field 3 d.attach in
-  let body = Gui.text_area_in computer (area_box computer) m.body in
+  let body = Gui.text_area_in computer (Mail_view.area_box computer) m.body in
   let button i label =
-    Gui.button_in ~enabled:true computer (button_box computer i) label
+    Gui.button_in ~enabled:true computer (Mail_view.button_box computer i) label
   in
   let send = button 0 "Send" in
   let save = button 1 "Save Draft" in
@@ -701,170 +528,4 @@ let update (caps : caps) (computer : computer) (m : model) : model =
   in
   { m with held = keys }
 
-(*****************************************************************************)
-(* The picture *)
-(*****************************************************************************)
-
-let mailbox_name (m : model) : string =
-  if m.mailbox = "INBOX" then
-    match (m.screening, m.screen) with
-    | false, _ -> "Inbox"
-    | true, Screen.Imbox -> "Imbox"
-    | _, Screen.Screener -> "The Screener"
-    | _, Screen.Feed -> "The Feed"
-    | _, Screen.Paper -> "Paper Trail"
-    | _, Screen.Out -> "Screened Out"
-  else if m.mailbox = Mail_sync.all_mail then "All Mail"
-  else if m.mailbox = drafts then "Drafts"
-  else m.mailbox
-
-let view (computer : computer) (m : model) : shape list =
-  let h = computer.screen.height in
-  let a = area computer in
-  let x0 = a.x0 and room = a.room and top = a.top in
-  let title =
-    match m.mode with
-    | Asking Password ->
-        "password: " ^ String.make (List.length (Text.chars m.field)) '*'
-    | Asking Search -> "search: " ^ m.field ^ "_"
-    | Asking Until -> "snooze until: " ^ m.field ^ "_"
-    | Asking Due -> "a task, due: " ^ m.field ^ "_"
-    | Composing ->
-        (if m.draft.subject = "" then "New message" else m.draft.subject)
-        ^ " \xe2\x80\x94 " ^ m.account
-    | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
-  in
-  let right =
-    if m.status <> "" then m.status
-    else if m.mailbox = drafts then count (List.length m.drafts) "draft"
-    else count (List.length m.conversations) "conversation"
-  in
-  let sidebar =
-    Pim_look.sidebar a
-      (List.map
-         (fun (name, box, p) ->
-           (name, box = m.mailbox && (box <> "INBOX" || p = m.screen)))
-         ((if not m.screening then [ ("Inbox", "INBOX", Screen.Imbox) ]
-           else
-             [ ("Imbox", "INBOX", Screen.Imbox);
-               (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX",
-                Screen.Screener);
-               ("The Feed", "INBOX", Screen.Feed);
-               ("Paper Trail", "INBOX", Screen.Paper) ])
-         @ [ ("All Mail", Mail_sync.all_mail, Screen.Imbox);
-             ("Drafts", drafts, Screen.Imbox) ]))
-    @
-    if m.query <> "" then
-      [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.)
-          (row_y a (if m.screening then 7 else 4))
-          ("/" ^ m.query) ]
-    else []
-  in
-  let main =
-    match m.mode with
-    | Composing ->
-        (* the fields' names; the fields, the text and the buttons are
-         * the toolkit's (Gui.draw) *)
-        List.mapi
-          (fun i name ->
-            let b = field_box computer i in
-            text grey ~bold:false ~room:76. x0 (b.y -. 5.) name)
-          [ "To"; "Cc"; "Subject"; "Attach" ]
-    | Browsing when m.mailbox = drafts ->
-        if m.drafts = [] then
-          [ text grey ~bold:false ~room x0 (row_y a 0) "No drafts." ]
-        else
-          List.concat
-            (List.mapi
-               (fun i (d : Mail_compose.draft) ->
-                 let y = row_y a i in
-                 (if i = m.selected then [ selected a y ] else [])
-                 @ [ text ink ~bold:false ~room:190. x0 y
-                       (if d.to_ = "" then "(no one)" else d.to_);
-                     text ink ~bold:false ~room:(room -. 200.) (x0 +. 200.) y
-                       (if d.subject = "" then "(no subject)" else d.subject) ])
-               m.drafts)
-    | Reading ->
-        let subject =
-          match m.reading with
-          | (s, _) :: _ -> Conversations.header s.headers "subject"
-          | [] -> ""
-        in
-        let lines =
-          List.concat_map
-            (fun ((s : Imap.summary), t) ->
-              let head =
-                Conversations.who s.headers
-                ^ "   "
-                ^ Conversations.day s.headers
-              in
-              let body =
-                match t with
-                | Some t -> wrap room (String.trim (Mail_text.text (Mail.parse t)))
-                | None -> [ "(not fetched: g gets the mail)" ]
-              in
-              ((true, head) :: List.map (fun l -> (false, l)) body)
-              @ [ (false, "") ])
-            m.reading
-        in
-        let fits = int_of_float ((h -. bar -. 60.) /. 22.) in
-        let shown =
-          List.filteri (fun i _ -> i >= m.scroll && i < m.scroll + fits) lines
-        in
-        (* what Detect finds in a line underlined, x to keep it *)
-        let underlined (y : float) (l : string) =
-          List.filter_map
-            (fun (f : Detect.found) ->
-              match Detect.index l f.said with
-              | Some p ->
-                  let w = width f.said in
-                  Some
-                    (rectangle blue w 1.5
-                    |> move (x0 +. width (String.sub l 0 p) +. (w /. 2.))
-                         (y -. 4.))
-              | None -> None)
-            (Detect.find ~today:m.today l)
-        in
-        text ink ~bold:true ~room x0 (top -. bar -. 32.) subject
-        :: List.concat
-             (List.mapi
-                (fun i (bold, l) ->
-                  let y = top -. bar -. 62. -. (float_of_int i *. 22.) in
-                  text (if bold then ink else grey) ~bold ~room x0 y l
-                  :: (if bold then [] else underlined y l))
-                shown)
-    | Browsing | Asking _ ->
-        if m.conversations = [] then
-          [ text grey ~bold:false ~room x0 (row_y a 0) "No mail here: g gets it." ]
-        else
-          let fits = int_of_float ((h -. bar -. 12.) /. row) in
-          let first = max 0 (m.selected - fits + 1) in
-          List.concat
-            (List.mapi
-               (fun i (c : Imap.summary list) ->
-                 if i < first || i >= first + fits then []
-                 else
-                   let s = List.hd c in
-                   let y = row_y a (i - first) in
-                   let bold = Conversations.unread c in
-                   let many =
-                     if List.length c > 1 then
-                       Printf.sprintf " (%d)" (List.length c)
-                     else ""
-                   in
-                   let day = Conversations.day s.headers in
-                   (if i = m.selected then [ selected a y ] else [])
-                   @ [
-                       text ink ~bold ~room:190. x0 y
-                         (Conversations.who s.headers ^ many);
-                       text ink ~bold ~room:(room -. 310.) (x0 +. 200.) y
-                         (Conversations.header s.headers "subject");
-                       text grey ~bold
-                         ~room:(width day +. 4.)
-                         (x0 +. room -. width day)
-                         y day;
-                     ])
-               m.conversations)
-  in
-  (rectangle white computer.screen.width h :: title_bar computer title right)
-  @ sidebar @ main
+let view = Mail_view.view

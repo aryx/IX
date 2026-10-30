@@ -36,8 +36,9 @@ Left, for a plan of their own if they are wanted:
   zone (TZID), birthdays from People shown in it and in Today;
 - money: CSV and OFX bank files, a split line in the window, a
   receipt of the Paper Trail made a line, a bill's category guessed;
-- mail: plan_mail.md's stage 6, the author's Gmail tried by hand;
-  `Mail_window` split (870 lines, past the 700), x in a menu;
+- mail: plan_mail.md's stage 6, the author's Gmail tried by hand; x
+  in a menu (`Mail_window` split since, 2026-10-30: Mail_model 163
+  lines, Mail_view 196, Mail_window 530);
 - `Pim.ml` at 666 lines, near the 700 again.
 
 Mail, the first part, has its own plan, [`plan_mail.md`](../plan_mail.md).

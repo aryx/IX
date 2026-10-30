@@ -3,9 +3,9 @@
 
 (* See CLI.mli *)
 
-type caps = < Builtin.caps; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr >
 
-let help = {|usage: mini-acid [-l library]...
+let help = {|usage: mini-acid [-l library]... [pid | program [pid]]
 Plan 9's acid, a debugger that is a language: the libraries read (-l, each a
 file of acid), then the standard input, a statement at a time:
   mini-acid
@@ -17,7 +17,12 @@ file of acid), then the standard input, a statement at a time:
 A value has a format (x\D: decimal, \X hexadecimal, \s a string, \c a
 character...); its statements are C's (if e then s else s, while e do s,
 loop a, b do s), with lists (head, tail, append, delete, {a, b}), local and
-return in a defn. Not yet: the process (*, @, start, stop, the symbols).
+return in a defn. A program (its a.out, or /proc/PID/text) gives its symbols
+as variables; a process its memory (*addr, @addr in the file), its registers
+(*PC, *R0); the library (port.acid, arm.acid, from /lib/acid or -l) the rest:
+  mini-acid -l port.acid -l arm.acid ./prog
+  acid: new()
+  acid: bpset(leaf); cont(); stk()
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)
@@ -59,15 +64,45 @@ let stdin_lexbuf (caps : < caps; .. >) =
   let fd = Console.stdin_fd caps in
   Lexing.from_function (fun b n -> try Unix.read fd b 0 n with Unix.Unix_error _ -> 0)
 
+(* a library read: acid's loadmodule, statements run, no prompt *)
+let library (caps : < caps; .. >) f =
+  match FS.read_opt caps (Fpath.v f) with
+  | Some text ->
+      source := f;
+      Lexer.line := 1;
+      Lexer.interactive := false;
+      run caps (Lexing.from_string text) ~prompt:false
+  | None -> ()
+
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
-  let rec libs acc = function
-    | "-l" :: f :: rest -> libs (f :: acc) rest
-    | [] -> Some (List.rev acc)
+  let rec options libs = function
+    | "-l" :: f :: rest -> options (f :: libs) rest
+    | ("-q" | "-w" | "-k") :: rest -> options libs rest
+    | rest when List.for_all (fun a -> a = "" || a.[0] <> '-') rest -> Some (List.rev libs, rest)
     | _ -> None in
-  match libs [] (List.tl (Array.to_list argv)) with
+  let number s = match int_of_string_opt s with Some n when n > 0 -> Some n | _ -> None in
+  match options [] (List.tl (Array.to_list argv)) with
   | None -> Console.eprint caps help; Exit.Code 1
-  | Some files ->
+  | Some (files, args) ->
       Builtin.init caps;
+      Proc.init caps;
+      (* acid's main: its variables, the program and its process, the
+       * registers, the libraries (/lib/acid's when there, then -l's),
+       * acidinit(), the symbols as variables, acidmap() *)
+      List.iter (fun (n, v) -> Eval.set_global n v)
+        [ "proc", Value.int 'X' 0L; "pid", Value.int 'D' 0L; "proclist", Value.empty ];
+      let aout, pid = match args with
+        | [ p ] when number p <> None -> Some (Printf.sprintf "/proc/%s/text" p), number p
+        | [ p; a ] when number p <> None -> Some a, number p
+        | a :: _ -> Some a, None
+        | [] -> None, None in
+      let start f = try f () with Eval.Error msg ->
+        Console.print caps (Buffer.contents Eval.out); Buffer.clear Eval.out;
+        Console.print caps (Printf.sprintf "%s:%d: (error) %s\n" !source !Lexer.line msg) in
+      (match aout with
+       | Some a -> start (fun () -> Proc.program caps a; match pid with Some p -> Proc.attach caps p | None -> ())
+       | None -> Proc.registers ());
+      List.iter (library caps) [ "/lib/acid/port.acid"; "/lib/acid/arm.acid" ];
       List.iter (fun f ->
         match FS.read_opt caps (Fpath.v f) with
         | Some text ->
@@ -76,8 +111,15 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             Lexer.interactive := false;
             run caps (Lexing.from_string text) ~prompt:false
         | None -> Console.print caps (Printf.sprintf "%s:%d: (error) pushfile: %s: file does not exist\n" !source !Lexer.line f)) files;
+      (* userinit: the library's acidinit() (arm.acid's: bpfmt, srcpath) *)
+      start (fun () -> Eval.call_if_defined "acidinit" []);
+      if aout <> None then start Proc.symbols;
+      start (fun () -> Eval.call_if_defined "acidmap" []);
+      Console.print caps (Buffer.contents Eval.out); Buffer.clear Eval.out;
       source := "<stdin>";
       Lexer.line := 1;
       Lexer.interactive := true;
       run caps (stdin_lexbuf caps) ~prompt:true;
+      (* die's: the processes left, how to kill them *)
+      List.iter (fun p -> Console.print caps (Printf.sprintf "echo kill > /proc/%d/ctl\n" p)) (Proc.attached ());
       Exit.OK

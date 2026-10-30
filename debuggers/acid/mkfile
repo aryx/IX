@@ -3,11 +3,13 @@
 TOP=../..
 DIR=debuggers/acid
 PROG=mini-acid
-SRC=Ast Code Value Eval Parser Lexer Builtin CLI Main
+SRC=Ast Code Value Eval Proc Parser Lexer Builtin CLI Main
 LOCAL=`{ls *.ml *.mli *.mly *.mll}
 LIBI=
 LIBUNITS=
 LIBOBJS=
+# (the program's tables read)
+LIBDIRS=lib_executable
 <$TOP/mkfiles/mkconfig
 GEN=$B/debuggers/acid/Parser.ml $B/debuggers/acid/Lexer.ml
 <$TOP/mkfiles/mkprog

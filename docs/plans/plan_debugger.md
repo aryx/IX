@@ -643,3 +643,37 @@ variables, start and stop), floats printed as Plan 9's %g. Seen of
 principia's acid under mini-5i: a float stops it (VMOV, ee013190, not
 in mini-5i), and it ends at its first error where it goes on at a
 terminal (docs/plans/bugs/ix.md). Next: step 4, the process.
+
+2026-10-30, stage 8's step 4, its first two parts: **mini-acid debugs
+a process**, under mini-5i, beside it (debuggers/acid/Proc, the program
+and the process). The program read (its a.out or /proc/$pid/text): its
+symbols acid's variables, each its address, and symbols their list;
+the registers' variables (5db's list: R0 to R15, PC, SP, TYPE, PSR,
+their offsets in the Ureg) and bpinst; the maps as libmach's (the
+registers below the Ureg's 72 bytes in /proc/$pid/regs, the text and
+the data to the stack's top, from the segment file, in /proc/$pid/mem;
+without a process, and for @, the file), so *, @, [] on an address
+and an assignment through * read and write the process as acid's
+indir and windir; the a format naming an address (libmach's symoff).
+The process: newproc (a child that writes hang to its own ctl and
+execs the program), setproc, start, stop, startstop, waitstop, kill,
+status, reason (5db's armexcep), each stop reading the notes and
+calling the library's stopped(pid); strace as libmach's risctrace
+(_main not said, a leaf's return the link, a frame its .frame, the
+called-from address the return less 8, the parameters and locals from
+the table's p and a, in libmach's order), fnbound, pcfile, pcline,
+follow (a branch's target and the next: enough for new()), match;
+acidinit() after the libraries, as userinit; at the end, die's echo
+kill > /proc/$pid/ctl. lib_core's Plan 9 Unix gets LargeFile.lseek
+(the offset's two words as boxed int32s, the runtime's ux_arg): an
+address above an int's 31 bits, the stack's, mini-acid being arm's.
+Checked: principia's acid and mini-acid under mini-5i, the same
+session on a C program (new(), bpset(leaf), cont(), stk(),
+print(count), regs()): the same output but the instructions' text
+(stk's leaf(a=0x0,b=0x4)+0x0 ?file?:0 < middle(x=0x3)+0x14 < main()+0x4
+< _main+0x1c rt0.s:16, the registers, the stops' reasons); a static
+session (no process: symbols, a's names, @, pcfile, pcline, fnbound,
+follow's error) the same; make test (159 jobs). Next, the third part:
+the i format, 5db's disassembler in Plan 9's syntax (mini-5i's printer
+is objdump's), then follow complete (step, next), the session in make
+test.

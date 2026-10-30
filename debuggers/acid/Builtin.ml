@@ -29,7 +29,9 @@ let atoi s =
   let v = go 0 0L in
   if neg then Int64.neg v else v
 
-(* itoa's format (acidfmt): one of C's for an integer, %d by default *)
+(* itoa's format (acidfmt): one of Plan 9's for an integer, %d by
+ * default: its flags and width, then u, l, h, # (%ux: unsigned
+ * hexadecimal), then the verb; x with 0x as principia's (acid's xfmt) *)
 let itoa i f =
   match f with
   | None -> Int64.to_string i
@@ -39,11 +41,12 @@ let itoa i f =
        | Some k ->
            let j = ref (k + 1) in
            while !j < String.length f && (f.[!j] = '0' || f.[!j] = '-' || (f.[!j] >= '1' && f.[!j] <= '9')) do incr j done;
-           if !j >= String.length f then error "itoa: bad format";
            let flags = String.sub f (k + 1) (!j - k - 1) in
+           while !j < String.length f && String.contains "ulh#" f.[!j] do incr j done;
+           if !j >= String.length f then error "itoa: bad format";
            let width = try int_of_string (if flags <> "" && flags.[0] = '-' then String.sub flags 1 (String.length flags - 1) else flags) with Failure _ -> 0 in
            let digits = match f.[!j] with
-             | 'x' -> Printf.sprintf "%Lx" i | 'X' -> Printf.sprintf "%LX" i | 'o' -> Printf.sprintf "%Lo" i
+             | 'x' -> Printf.sprintf "0x%Lx" (Int64.logand i 0xffffffffL) | 'X' -> Printf.sprintf "%LX" i | 'o' -> Printf.sprintf "%Lo" i
              | 'u' -> Printf.sprintf "%Lu" i | 'c' -> String.make 1 (Char.chr (Int64.to_int i land 255))
              | _ -> Int64.to_string i in
            let pad = String.make (max 0 (width - String.length digits)) (if flags <> "" && flags.[0] = '0' then '0' else ' ') in
@@ -67,6 +70,16 @@ let init (caps : < caps; .. >) =
     | [ { kind = Int i; _ }; { kind = String f; _ } ] -> Value.string (itoa i (Some f))
     | _ -> error "itoa(integer [, fmt])");
   def "error" (fun vs -> raise (Eval.Error (str "error" vs)));
+  (* an item's index in a list, -1 when not there (integers, floats and
+   * strings compared; a list never matches) *)
+  def "match" (function
+    | [ item; { kind = List l; _ } ] ->
+        let same (a : value) (b : value) = match a.kind, b.kind with
+          | Int x, Int y -> x = y | Float x, Float y -> x = y | String x, String y -> x = y | _ -> false in
+        let rec find i = function [] -> -1L | v :: rest -> if same item v then i else find (Int64.add i 1L) rest in
+        Value.int 'D' (find 0L (Value.elements l))
+    | [ _; _ ] -> error "match(obj, list): need list"
+    | _ -> error "match(obj, list): arg count");
   def "access" (fun vs -> Value.int 'X' (match FS.read_opt caps (Fpath.v (str "access" vs)) with Some _ -> 1L | None -> 0L));
   def "readfile" (fun vs ->
     match FS.read_opt caps (Fpath.v (str "readfile" vs)) with

@@ -17,6 +17,22 @@ exception Error of string
  * list for none) *)
 val builtins : (string, Ast.value list -> Ast.value) Hashtbl.t
 
+(* the memory (Proc's): [load core addr n], n bytes of the process
+ * (core) or of the program's file (not core: @); Error when the
+ * address is in no map. [store addr bytes] writes the process's *)
+val load : (bool -> int64 -> int -> string) ref
+val store : (int64 -> string -> unit) ref
+
+(* an address as the a format says it: a symbol and an offset *)
+val symbol : (int64 -> string) ref
+
+(* a global variable set (the program's symbols, the registers, pid) *)
+val set_global : string -> Ast.value -> unit
+
+(* acid's function [name] called with [args], if it is defined (dostop's
+ * stopped(pid)) *)
+val call_if_defined : string -> Ast.value list -> unit
+
 (* what is printed, until the caller writes it out *)
 val out : Buffer.t
 

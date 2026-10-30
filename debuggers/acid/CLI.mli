@@ -23,10 +23,12 @@
  * operand's, so a pointer stays one through arithmetic (Value.mli).
  * The variables are dynamically scoped (Eval.mli).
  *
- * This step (plan_debugger.md, stage 8, step 3): the language and its
- * builtins; the process (the memory's *, @ and [], complex types' . and
- * casts, the registers, start, stop, the symbols as variables, the
- * libraries) is step 4's. Not yet: floats printed as Plan 9's %g.
+ * The program and the process (step 4, Proc): the symbols as variables,
+ * the memory and the registers by /proc, start, stop, breakpoints,
+ * strace (libmach's risctrace), the libraries port.acid and arm.acid,
+ * principia's (/lib/acid, or -l). Not yet: the instructions printed (the
+ * i format: 5db's disassembler), complex types' . and casts, floats
+ * printed as Plan 9's %g.
  *
  * cs-history:
  * acid is Phil Winterbottom's, for Plan 9's second edition (1995),
@@ -39,6 +41,6 @@
  * References: acid(1) in the Plan 9 manual; Winterbottom's paper and
  * "Acid Manual"; principia's Debugger.nw. *)
 
-type caps = < Builtin.caps; Cap.stdin; Cap.stdout; Cap.stderr >
+type caps = < Builtin.caps; Proc.caps; Cap.stdin; Cap.stdout; Cap.stderr >
 
 val main : < caps; .. > -> string array -> Exit.t

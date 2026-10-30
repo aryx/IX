@@ -56,14 +56,23 @@ let pop name =
 
 let reset () = frames := []
 
+let set_global name v =
+  let x = var name in
+  x.values <- (match List.rev x.values with _ :: older -> List.rev (Some v :: older) | [] -> [ Some v ])
+
 (*****************************************************************************)
 (* Printing *)
 (*****************************************************************************)
 
 let out = Buffer.create 4096
 
+let load : (bool -> int64 -> int -> string) ref = ref (fun core _ _ -> (if core then error "no map for *" else error "no map for @"))
+let store : (int64 -> string -> unit) ref = ref (fun _ _ -> error "no map for *")
+
 (* without the program's symbols, an address is its number *)
-let show v = Value.show ~symbol:(fun i -> Printf.sprintf "0x%08Lx" i) v
+let symbol = ref (fun i -> Printf.sprintf "0x%Lx" i)
+
+let show v = Value.show ~symbol:(fun i -> !symbol i) v
 
 let print vs =
   List.iter (fun v -> Buffer.add_string out (show v)) vs;
@@ -174,6 +183,40 @@ let binop op (l : value) (r : value) =
       let b = match op with Lt -> c < 0 | Gt -> c > 0 | Leq -> c <= 0 | _ -> c >= 0 in
       int (match op with Lt | Gt -> l.fmt | _ -> 'D') (if b then 1L else 0L)
 
+(* acid's indir: what is at an address, read as its format says (a
+ * byte, a half, a word, 8 bytes, a string to its NUL), little-endian;
+ * an address is 4 bytes on arm (a, A, W: geta) *)
+let width = function
+  | 'c' | 'C' | 'b' -> 1
+  | 'x' | 'd' | 'u' | 'o' | 'q' | 'r' -> 2
+  | 'a' | 'A' | 'W' | 'B' | 'X' | 'D' | 'U' | 'O' | 'Q' -> 4
+  | 'V' | 'Y' | 'Z' -> 8
+  | c -> error "bad pointer format '%c' for *" c
+
+let indir core addr fmt =
+  match fmt with
+  | 's' ->
+      let b = Buffer.create 32 in
+      let rec go a = if Buffer.length b < 511 then (let c = !load core a 1 in if c <> "\000" then (Buffer.add_string b c; go (Int64.add a 1L))) in
+      go addr;
+      { kind = String (if Buffer.length b = 0 then "(null)" else Buffer.contents b); fmt = 's' }
+  | _ ->
+      let n = width fmt in
+      let s = !load core addr n in
+      let v = ref 0L in
+      for i = n - 1 downto 0 do v := Int64.logor (Int64.shift_left !v 8) (Int64.of_int (Char.code s.[i])) done;
+      { kind = Int !v; fmt }
+
+(* windir: a value written at an address, as many bytes as its format
+ * says (a string: its bytes) *)
+let windir addr (v : value) =
+  match v.kind with
+  | String s -> !store addr s
+  | Int i ->
+      let n = width v.fmt in
+      !store addr (String.init n (fun k -> Char.chr (Int64.to_int (Int64.logand (Int64.shift_right_logical i (8 * k)) 0xffL))))
+  | _ -> error "bad type for *"
+
 let rec eval (e : expr) : value =
   match e with
   | Const v -> v
@@ -182,7 +225,11 @@ let rec eval (e : expr) : value =
   | Cand (a, b) -> int 'D' (if truth (eval a) && truth (eval b) then 1L else 0L)
   | Cor (a, b) -> int 'D' (if truth (eval a) || truth (eval b) then 1L else 0L)
   | Assign (Name s, r) -> let v = eval r in set s v; v
-  | Assign ((Indm _ | Indc _), _) -> error "no map for *"
+  | Assign (Indm a, r) ->
+      let l = eval a in
+      let v = eval r in
+      (match l.kind with Int addr -> windir addr { v with fmt = l.fmt }; v | _ -> error "bad type for *")
+  | Assign (Indc _, _) -> error "no map for @"
   | Assign _ -> error "need l-value"
   | Fmt (a, c) -> { (eval a) with fmt = c }
   | Plus a -> eval a
@@ -240,14 +287,14 @@ let rec eval (e : expr) : value =
            nth cells n
        | String s, Int n ->
            int 'c' (if n >= 0L && n < Int64.of_int (String.length s) then Int64.of_int (Char.code s.[Int64.to_int n]) else 0L)
-       | Int _, Int _ -> error "no map for []"
+       | Int addr, Int n -> { (indir true (Int64.add addr (Int64.mul n (Int64.of_int (Value.size l.fmt)))) l.fmt) with fmt = l.fmt }
        | _, Int _ -> error "lhs[] has bad type"
        | _ -> error "bad type for []")
   | Construct es -> Value.list (List.map eval es)
   | What n -> whatis n; Value.empty
   | Call (f, args, builtin) -> call f args builtin
-  | Indm _ -> error "no map for *"
-  | Indc _ -> error "no map for @"
+  | Indm a -> (match eval a with { kind = Int addr; fmt } -> indir true addr fmt | _ -> error "bad type for *")
+  | Indc a -> (match eval a with { kind = Int addr; fmt } -> indir false addr fmt | _ -> error "bad type for @")
   | Cast (t, _) -> if (var t).aggr = None then error "%s is not a complex type" t else error "no map for a cast"
   | Dot (a, m) -> ignore (eval a); error "no type specified for (expr).%s" m
   | Frame _ -> error "colon: no process"
@@ -317,6 +364,11 @@ and exec (s : stmt) =
   | Complex (t, _) -> if (var t).aggr = None then error "%s is not a complex type" t
 
 let ran = ref (fun () -> ())
+
+let call_if_defined f args =
+  match (var f).defn with
+  | Some (params, body) -> ignore (apply f params (List.map (fun v -> Const v) args) body)
+  | None -> ()
 
 let toplevel = function
   | Stmt s -> exec s

@@ -25,7 +25,8 @@ window's (`make test`'s two "mini-pim").
                        Tasks, Notes, Money), the switcher at the
                        sidebar's foot; Ctrl+E (/ on Home) searches
                        them all, Enter opens what is found
-                       Mail: j k move, o open, u back, e archive, s star,
+                       Mail: j k move, o open, u back, e archive, s star
+                       (Starred, Unread in the sidebar),
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
                        z snooze, t a task, p the sender to People,

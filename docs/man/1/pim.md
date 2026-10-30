@@ -44,7 +44,7 @@ view's, Escape goes back.
 
 **Mail**, with Gmail's keys: `j k` move, `o` opens a conversation, `u`
 back, `e` archives, `s` stars (Gmail's star; Starred in the sidebar
-lists them), `/` searches Gmail, Tab the Inbox or All Mail, `g`
+lists them; Unread there the Inbox's not read), `/` searches Gmail, Tab the Inbox or All Mail, `g`
 gets the mail (the password asked once, kept while the window is
 open); `c` writes, `r a f` reply, to all, forward (a draft kept at each
 change; Send, Save Draft, Discard); `z` snoozes until a day typed as

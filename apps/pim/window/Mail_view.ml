@@ -34,6 +34,7 @@ let button_box (computer : computer) (i : int) : Widget.box =
 let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then
     match (m.screening, m.screen) with
+    | _ when m.unread -> "Unread"
     | false, _ -> "Inbox"
     | true, Screen.Imbox -> "Imbox"
     | _, Screen.Screener -> "The Screener"
@@ -68,14 +69,11 @@ let view (computer : computer) (m : model) : shape list =
   in
   let sidebar =
     Pim_look.sidebar a
-      (List.map
-         (fun (name, box, p) ->
-           (name, box = m.mailbox && (box <> "INBOX" || p = m.screen)))
-         (places m))
+      (List.map (fun (p : place) -> (p.name, shown m p)) (places m))
     @
     if m.query <> "" then
       [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.)
-          (row_y a (if m.screening then 7 else 4))
+          (row_y a (List.length (places m) + 1))
           ("/" ^ m.query) ]
     else []
   in

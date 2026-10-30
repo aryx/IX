@@ -28,6 +28,10 @@ type model = {
   screening : bool;
   screen : Screen.place;
   waiting : int;
+  (* Gmail's Unread: the Inbox's (the Imbox's) not read, a view of it;
+   * how many *)
+  unread : bool;
+  unread_count : int;
   password : string option; (* kept while the window is open *)
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
@@ -61,9 +65,20 @@ val load : caps -> model -> model
 (* the flags: user=, server=, smtp=, plain, today= (Mail_window.mli) *)
 val initial : caps -> Playground.flags -> model
 
-(* the sidebar's places, from the top: a name, its mailbox, the
- * Screener's list when it is the Inbox *)
-val places : model -> (string * string * Screen.place) list
+(* a place of the sidebar: a name, its mailbox, the Screener's list
+ * when it is the Inbox, Unread *)
+type place = {
+  name : string;
+  mailbox : string;
+  list : Screen.place;
+  unread : bool;
+}
+
+(* the sidebar's places, from the top *)
+val places : model -> place list
+
+(* is it the one shown? *)
+val shown : model -> place -> bool
 
 (* the store read again, [keys] those down now *)
 val refresh : caps -> string Set_.t -> model -> model

@@ -25,6 +25,10 @@ type model = {
   screening : bool;
   screen : Screen.place;
   waiting : int;
+  (* Gmail's Unread: the Inbox's (the Imbox's) not read, a view of it;
+   * how many *)
+  unread : bool;
+  unread_count : int;
   password : string option; (* kept while the window is open *)
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
@@ -89,6 +93,15 @@ let load (caps : caps) (m : model) : model =
     if m.mailbox <> "INBOX" then cs
     else List.filter (fun c -> place c = m.screen) cs
   in
+  let unread_count =
+    if m.mailbox = "INBOX" && m.screen = Screen.Imbox then
+      List.length (List.filter Conversations.unread cs)
+    else m.unread_count
+  in
+  let cs =
+    if m.mailbox = "INBOX" && m.unread then List.filter Conversations.unread cs
+    else cs
+  in
   let woke =
     List.filter_map
       (fun i -> if Item.field i "woke" <> "" then Some (Item.id i) else None)
@@ -103,7 +116,7 @@ let load (caps : caps) (m : model) : model =
       (List.filter (fun i -> Item.has_stamp i "draft") items)
   in
   let n = if m.mailbox = drafts then List.length ds else List.length cs in
-  { m with conversations = cs; drafts = ds; screening; waiting;
+  { m with conversations = cs; drafts = ds; screening; waiting; unread_count;
     selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -138,6 +151,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       screening = false;
       screen = Screen.Imbox;
       waiting = 0;
+      unread = false;
+      unread_count = 0;
       password;
       query = "";
       conversations = [];
@@ -159,16 +174,30 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       held = Set_.empty;
     }
 
-let places (m : model) : (string * string * Screen.place) list =
-  (if not m.screening then [ ("Inbox", "INBOX", Screen.Imbox) ]
+type place = {
+  name : string;
+  mailbox : string;
+  list : Screen.place; (* the Screener's, in the Inbox *)
+  unread : bool; (* Unread, the Inbox's not read *)
+}
+
+let places (m : model) : place list =
+  let p name mailbox list unread = { name; mailbox; list; unread } in
+  (if not m.screening then [ p "Inbox" "INBOX" Screen.Imbox false ]
    else
-     [ ("Imbox", "INBOX", Screen.Imbox);
-       (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX", Screen.Screener);
-       ("The Feed", "INBOX", Screen.Feed);
-       ("Paper Trail", "INBOX", Screen.Paper) ])
-  @ [ ("Starred", Mail_sync.starred, Screen.Imbox);
-      ("All Mail", Mail_sync.all_mail, Screen.Imbox);
-      ("Drafts", drafts, Screen.Imbox) ]
+     [ p "Imbox" "INBOX" Screen.Imbox false;
+       p (Printf.sprintf "The Screener (%d)" m.waiting) "INBOX" Screen.Screener
+         false;
+       p "The Feed" "INBOX" Screen.Feed false;
+       p "Paper Trail" "INBOX" Screen.Paper false ])
+  @ [ p (Printf.sprintf "Unread (%d)" m.unread_count) "INBOX" Screen.Imbox true;
+      p "Starred" Mail_sync.starred Screen.Imbox false;
+      p "All Mail" Mail_sync.all_mail Screen.Imbox false;
+      p "Drafts" drafts Screen.Imbox false ]
+
+let shown (m : model) (p : place) : bool =
+  p.mailbox = m.mailbox
+  && (p.mailbox <> "INBOX" || (p.list = m.screen && p.unread = m.unread))
 
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
   load caps { m with held = keys }

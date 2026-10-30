@@ -163,6 +163,7 @@ type command =
   | Archive_
   | Star_
   | Starred_list
+  | Unread_list
   | Next
   | Previous
   | Inbox
@@ -205,7 +206,7 @@ let menus : (string * (string * command) list) list =
         ("Discard", Discard) ] );
     ( "Mailbox",
       [ ("Inbox  (Tab)", List_of Screen.Imbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts); ("Starred", Starred_list);
+        ("Drafts", Drafts); ("Unread", Unread_list); ("Starred", Starred_list);
         ("The Screener", List_of Screen.Screener);
         ("The Feed", List_of Screen.Feed); ("Paper Trail", List_of Screen.Paper);
         (* (the Screener's decisions, the sender's: Screen) *)
@@ -408,7 +409,8 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Next -> next caps m 1
   | Previous -> next caps m (-1)
   | Inbox -> switch caps m "INBOX"
-  | List_of p -> switch caps { m with screen = p } "INBOX"
+  | List_of p -> switch caps { m with screen = p; unread = false } "INBOX"
+  | Unread_list -> switch caps { m with screen = Screen.Imbox; unread = true } "INBOX"
   | Screener_on ->
       Items.save caps (store caps) (Screen.turn_on m.today);
       load caps { m with status = "the Screener on: new senders wait in it" }
@@ -585,9 +587,10 @@ let update (caps : caps) (computer : computer) (m : model) : model =
         | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
         | None, None, Some k, _ when k < List.length (places m) -> (
             match List.nth_opt (places m) k with
-            | Some (_, "INBOX", p) -> command caps { m with screen = p } Inbox
-            | Some (_, box, _) when box = drafts -> command caps m Drafts
-            | Some (_, box, _) when box = Mail_sync.starred ->
+            | Some { mailbox = "INBOX"; list; unread; _ } ->
+                command caps { m with screen = list; unread } Inbox
+            | Some p when p.mailbox = drafts -> command caps m Drafts
+            | Some p when p.mailbox = Mail_sync.starred ->
                 command caps m Starred_list
             | Some _ -> command caps m All_mail
             | None -> m)

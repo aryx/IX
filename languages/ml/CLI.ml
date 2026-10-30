@@ -252,11 +252,14 @@ let write_summary (caps : < caps; .. >) out file name items =
 (* the assembly into the object, through mini-asm's parser *)
 let gas = ref false
 
-let output (caps : < caps; .. >) mach ~listing ~out ~file text =
+(* -g: the values' types described in the object, for mini-acid *)
+let debug = ref false
+
+let output (caps : < caps; .. >) mach ~listing ~out ~file ~acid text =
   if listing then print caps text
   else
     let obj : Asm.obj = Parser_asm.parse caps (Gen.arch mach) file text in
-    let obj = Lines_ml.add caps file text obj in
+    let obj = { (Lines_ml.add caps file text obj) with acid } in
     if !gas then FS.write caps out (Gas.obj obj) else Asm.save caps out obj
 
 (* -depend's way when a unit's names do not resolve: those it names
@@ -365,6 +368,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
     "-L", Arg.String (fun d -> libs := d :: !libs), " dir: ix's lib_core: -I its stdlib's directories (units.txt) and commons/";
     "-S", Arg.Set listing, " the assembly, printed";
     "-gas", Arg.Set gas, " GNU's assembly, for gcc";
+    "-g", Arg.Set debug, " the values' types in the object, for mini-acid (mini-ld -g: the program's .acid)";
     "-i", Arg.Set show_types, " the values' types, printed";
     "-M", Arg.Set deps, " the units the file names, printed";
     "-depend", Arg.Set_string depends, " obj: the Units given, mk's order of their objects, printed (mkfiles/depend.rc)";
@@ -436,7 +440,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
         let u : Ir.unit_ = { funcs = fns; data = [] } in
         if !ssa then Emit.unit_ (Gen.arch !mach) u else Gen.unit_ !mach u
       in
-      (match output caps !mach ~listing:!listing ~out:(outfile file) ~file (Gen.startup !mach compile units) with
+      (match output caps !mach ~listing:!listing ~out:(outfile file) ~file ~acid:[] (Gen.startup !mach compile units) with
        | () -> 0
        | exception Failure m -> fail ("mini-ml: " ^ m))
   (* mlpp: *)
@@ -502,7 +506,8 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                     | text ->
                         if !dir || !dssa || !flow || !dflow then 0
                         else begin
-                          output caps !mach ~listing:!listing ~out:(outfile file) ~file text;
+                          let acid = if !debug && not !unsafe then Acid_ml.decls ~text (Typing.global_types ()) else [] in
+                          output caps !mach ~listing:!listing ~out:(outfile file) ~file ~acid text;
                           if !Lower.inline_most > 0 && not !listing then write_summary caps (outfile file) file name items;
                           0
                         end)))

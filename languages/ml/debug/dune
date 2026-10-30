@@ -3,5 +3,5 @@
 (library
  (name ix_ml_debug)
  (wrapped false)
- (modules Lines_ml)
+ (modules Lines_ml Acid_ml)
  (libraries ix_ml ix_core ix_asm fpath caps))

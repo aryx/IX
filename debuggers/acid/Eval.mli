@@ -36,6 +36,9 @@ val set_global : string -> Ast.value -> unit
 (* whether a variable has a value (the lexer's M.x, an ML unit's global) *)
 val is_set : string -> bool
 
+(* a variable's value, its complex type with it; Error if it has none *)
+val get : string -> Ast.value
+
 (* the complex type a variable was declared of (complex T v), if one *)
 val complex_type : string -> string option
 

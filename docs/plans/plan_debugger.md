@@ -915,3 +915,27 @@ are: Asm's history and declarations in the object (its format),
 mini-cc's lines (Pre: the positions its errors say too), Gen's raise
 for a trace and the runtime's frames.c (already a file).
 
+2026-10-30, **mini-ml's types described in the program** (decision
+14's fifth step, the last): mini-ml -g writes acid's text in the
+object (languages/ml/debug/Acid_ml), each value's type and each type
+it names: a variant's constant constructors and the others by their
+tags, a record's fields by position, an abbreviation's body, a
+constructor's inline record as a record of its own (t.C); each a line
+appended to port.acid's lists mltypes and mlglobals, the same text in
+every unit, so mini-ld keeps one. A global by its symbol's name (the
+program's .acid runs before its symbols are set): var("Values.p"), a
+builtin of mini-acid's (not acid's), its address later. port.acid's
+mlt prints a value by a type, as OCaml's toplevel: {x = 1; y = 2;
+name = "origin"}, [Circle 1.5; Rect (3, 4); Empty], Some (-5),
+Node (Leaf, "b", ...), [Key {code = 65; shift = true}; Quit], 'z',
+[|10; 20|]; a type's variables bound to its arguments ('a tree); by
+the words (mlv) where no type says more (a string, a float, a
+function, an abstract type's). ml(v) is by the type when v is a
+described global, mlvars() prints them all. Typing.global_types (the
+values' inferred types, its cells as Scope.ty) and
+Resolve.type_conses, type_fields are what it reads. Not done: a
+function's arguments and locals (the value stack), exceptions by
+name. Checked: debuggers/tests/acid_proc.sh, acid/mlvalues/Values.ml
+by -g (a tree, an abbreviation, an inline record, a char more) and
+typed.acid; 11 sessions, live.
+

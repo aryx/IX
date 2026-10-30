@@ -49,6 +49,9 @@ let rec type_field (d : tdecl) x =
   | None, Some (Tconstr (d', _)) -> type_field d' x
   | None, _ -> None
 
+let type_conses (d : tdecl) = Hashtbl.find_opt conses_of_type d.tpath
+let type_fields (d : tdecl) = Hashtbl.find_opt fields_of_type d.tpath
+
 let deferred x = { lname = x; pos = -1; mut = true; size = 0; ltype = [], Tvar "_", Tvar "_"; llabels = [] }
 
 let empty = { values = []; conses = []; labels = []; types = []; modules = [] }

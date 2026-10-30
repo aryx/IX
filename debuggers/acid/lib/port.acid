@@ -19,7 +19,9 @@
 //     pcomplex(a, "T")        a value of a complex type, as print shows
 //                             it: Node {name=0x203c "one", p=Point {...}}
 //     ml(v)                   an ML value by its words: ml(*Values.l)
-//                             prints [1; 2; 3]
+//                             prints [1; 2; 3]; a global by its type
+//                             (mini-ml -g): ml(Values.p) {x = 1; ...}
+//     mlvars()                the globals mini-ml -g described
 
 // a frame's function and place: name+0xoff file:line
 defn pfl(addr)
@@ -622,9 +624,265 @@ defn mlv(v, d)
 	print(")");
 }
 
-// an ML value printed (*Values.l: a unit's global, read)
+// mini-ml -g's descriptions (its Acid_ml), which the program's .acid
+// adds to: each type's {path, params, "variant", {constant names},
+// {name, args...}...}, {path, params, "record", {name, type}...} or
+// {path, params, "=", type}; each global's {symbol, type}, a type a
+// list, its path and its arguments: {"list", {"int"}}
+mltypes = {};
+mlglobals = {};
+
+// the description of the type of this path, or {}
+defn mltypeof(p)
+{
+	local l;
+
+	l = mltypes;
+	while l != {} do {
+		if (head l)[0] == p then
+			return head l;
+		l = tail l;
+	}
+	return {};
+}
+
+// a type, its variables ('a) replaced as env says ({{"'a", type}...})
+defn mlsubst(t, env)
+{
+	local r, a, e;
+
+	if t[0][0] == '\'' then {
+		e = env;
+		while e != {} do {
+			if (head e)[0] == t[0] then
+				return (head e)[1];
+			e = tail e;
+		}
+		return t;
+	}
+	r = {t[0]};
+	a = tail t;
+	while a != {} do {
+		r = append r, mlsubst(head a, env);
+		a = tail a;
+	}
+	return r;
+}
+
+// whether a constructor's one argument is written in parentheses: a
+// negative number, a constructor's with arguments
+defn mlparen(v, t)
+{
+	local desc;
+
+	if t[0] == "int" then
+		return (v & 1) && mlint(v) < 0;
+	desc = mltypeof(t[0]);
+	if desc == {} then
+		return 0;
+	return desc[2] == "variant" && (v & 1) == 0;
+}
+
+// the fields of a block, from i, by their types (a tuple's, a
+// constructor's arguments, an array's elements: one type, many)
+defn mlfields(v, ts, env, d, sep0)
+{
+	local i, sep;
+
+	i = 0;
+	sep = "";
+	while ts != {} do {
+		print(sep);
+		mlt(*((v+i*4)\X), mlsubst(head ts, env), d-1);
+		sep = sep0;
+		i = i + 1;
+		ts = tail ts;
+	}
+}
+
+// a value of a type: as OCaml's toplevel prints it, its names by the
+// descriptions; by its words (mlv) where it has none
+defn mlt(v, t, d)
+{
+	local n, desc, env, ps, as, cs, i, sep, h, tag, c;
+
+	n = t[0];
+	if n == "int" then {
+		print(mlint(v)\D);
+		return {};
+	}
+	if n == "char" then {
+		print("'", mlint(v)\c, "'");
+		return {};
+	}
+	if n == "bool" then {
+		if v == 3 then
+			print("true");
+		else
+			print("false");
+		return {};
+	}
+	if n == "unit" then {
+		print("()");
+		return {};
+	}
+	if n == "->" || n == "string" || n == "bytes" || n == "float" || n == "exn" || n == "Int32.t" || n == "Int64.t" || n[0] == '\'' then {
+		mlv(v, d);
+		return {};
+	}
+	if (v & 1) == 0 && !readable(v-4) then {
+		print(v\X);
+		return {};
+	}
+	if d == 0 then {
+		print("...");
+		return {};
+	}
+	if n == "list" then {
+		print("[");
+		sep = "";
+		i = 0;
+		while (v & 1) == 0 && i < 16 do {
+			print(sep);
+			mlt(*(v\X), t[1], d-1);
+			v = *((v+4)\X);
+			sep = "; ";
+			i = i + 1;
+		}
+		if (v & 1) == 0 then
+			print("; ...");
+		print("]");
+		return {};
+	}
+	if n == "array" then {
+		h = *((v-4)\X);
+		if (h & 255) == 251 then {
+			mlv(v, d);
+			return {};
+		}
+		print("[|");
+		sep = "";
+		i = 0;
+		while i < (h >> 10) && i < 16 do {
+			print(sep);
+			mlt(*((v+i*4)\X), t[1], d-1);
+			sep = "; ";
+			i = i + 1;
+		}
+		if (h >> 10) > 16 then
+			print("; ...");
+		print("|]");
+		return {};
+	}
+	if n == "*" then {
+		print("(");
+		mlfields(v, tail t, {}, d, ", ");
+		print(")");
+		return {};
+	}
+	desc = mltypeof(n);
+	if desc == {} then {
+		mlv(v, d);
+		return {};
+	}
+	env = {};
+	ps = desc[1];
+	as = tail t;
+	while ps != {} && as != {} do {
+		env = append env, {head ps, head as};
+		ps = tail ps;
+		as = tail as;
+	}
+	if desc[2] == "=" then {
+		mlt(v, mlsubst(desc[3], env), d);
+		return {};
+	}
+	if desc[2] == "record" then {
+		print("{");
+		cs = tail tail tail desc;
+		sep = "";
+		i = 0;
+		while cs != {} do {
+			print(sep, (head cs)[0], " = ");
+			mlt(*((v+i*4)\X), mlsubst((head cs)[1], env), d-1);
+			sep = "; ";
+			i = i + 1;
+			cs = tail cs;
+		}
+		print("}");
+		return {};
+	}
+	if v & 1 then {
+		cs = desc[3];
+		i = mlint(v);
+		while i > 0 && cs != {} do {
+			cs = tail cs;
+			i = i - 1;
+		}
+		if cs == {} then
+			print(v\X);
+		else
+			print(head cs);
+		return {};
+	}
+	tag = *((v-4)\X) & 255;
+	cs = tail tail tail tail desc;
+	while tag > 0 && cs != {} do {
+		cs = tail cs;
+		tag = tag - 1;
+	}
+	if cs == {} then {
+		mlv(v, d);
+		return {};
+	}
+	c = head cs;
+	as = tail c;
+	print(c[0]);
+	if tail as == {} then {
+		h = mlsubst(head as, env);
+		if mlparen(*(v\X), h) then {
+			print(" (");
+			mlt(*(v\X), h, d-1);
+			print(")");
+		} else {
+			print(" ");
+			mlt(*(v\X), h, d-1);
+		}
+	} else {
+		print(" (");
+		mlfields(v, as, env, d, ", ");
+		print(")");
+	}
+}
+
+// an ML value printed: a unit's global (Values.shapes) by its type when
+// mini-ml -g described it, else (or *Values.shapes) by its words
 defn ml(v)
 {
+	local g;
+
+	g = mlglobals;
+	while g != {} do {
+		if var((head g)[0]) == v then {
+			mlt(*(v\X), (head g)[1], 6);
+			print("\n");
+			return {};
+		}
+		g = tail g;
+	}
 	mlv(v, 6);
 	print("\n");
+}
+
+// the described globals, each with its value
+defn mlvars()
+{
+	local g;
+
+	g = mlglobals;
+	while g != {} do {
+		print((head g)[0], " = ");
+		ml(var((head g)[0]));
+		g = tail g;
+	}
 }

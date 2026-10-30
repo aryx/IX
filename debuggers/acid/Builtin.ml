@@ -64,6 +64,10 @@ let init (caps : < caps; .. >) =
     | Some ms -> Value.list (List.map (fun (m : member) ->
         Value.list [ Value.string m.mname; Value.string (String.make 1 m.mfmt); Value.int 'D' (Int64.of_int m.moffset);
                      Value.string (match m.mtype with Some t -> t | None -> "") ]) ms));
+  (* a variable's value by its name, which a string may hold: an ML
+   * global's address for mini-ml -g's descriptions, read before the
+   * program's symbols are set (not acid's) *)
+  def "var" (fun vs -> Eval.get (str "var" vs));
   def "print" (fun vs -> Eval.print vs; Value.empty);
   def "fmt" (function
     | [ v; { kind = Int c; _ } ] when String.contains Value.formats (Char.chr (Int64.to_int c land 255)) ->

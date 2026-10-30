@@ -143,5 +143,9 @@ val floats : unit -> Ast.span list
  * them, each with the one it is: Lower's min_max_aliases *)
 val min_max_globals : unit -> (string * string) list
 
+(* the values of the unit just checked, their symbols and types, in
+ * the order defined (mini-ml -g's descriptions: debug/Acid_ml) *)
+val global_types : unit -> (string * Scope.ty) list
+
 val dictionaries : unit -> (Ast.span * int * (string, string) result) list
 val errors : unit -> (int * string) list

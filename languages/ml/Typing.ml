@@ -574,8 +574,12 @@ let rec generalize_all t =
   | Con (_, ts) | Tuple ts -> List.iter generalize_all ts
   | Arrow (a, b) -> generalize_all a; generalize_all b
 
+(* the unit's globals, their symbols in the order defined (global_types) *)
+let defined : string list ref = ref []
+
 let unit_ name (items : Scope.item list) =
   Hashtbl.reset globals;
+  defined := [];
   typed := [];
   Hashtbl.reset min_max;
   List.iter (fun g -> Hashtbl.replace min_max g g) min_max_base;
@@ -606,6 +610,7 @@ let unit_ name (items : Scope.item list) =
         List.iter (fun ((v : Scope.var), (g : Scope.global)) ->
           let t = List.assoc v.vid env in
           Hashtbl.replace globals g.gsym t;
+          defined := g.gsym :: !defined;
           shown := (v.vname, g.gsym, "") :: !shown) gs
   in
   List.iter (fun it ->
@@ -662,3 +667,20 @@ let min_max_globals () =
 (* OPTIMIZATION (floats): the comparisons of floats: the processor's
  * (Lower.float_cmps) *)
 let floats () = places [ float_t ]
+
+(* a type as Scope's, its variables named a, b, ... (each its own) *)
+let to_scope t =
+  let names = ref [] in
+  let rec go t : Scope.ty =
+    match repr t with
+    | Var r ->
+        (match List.assq_opt r !names with
+         | Some n -> Tvar n
+         | None -> let n = Printf.sprintf "%c" (Char.chr (97 + (List.length !names mod 26))) in names := (r, n) :: !names; Tvar n)
+    | Arrow (a, b) -> Tarrow (go a, go b)
+    | Tuple ts -> Ttuple (List.map go ts)
+    | Con (d, ts) -> Tconstr (d, List.map go ts)
+  in
+  go t
+
+let global_types () = List.rev_map (fun sym -> sym, to_scope (Hashtbl.find globals sym)) !defined

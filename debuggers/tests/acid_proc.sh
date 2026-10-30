@@ -10,7 +10,8 @@
 # steps to the exit), acid/ml/*.acid on one by mini-ml (acid/ml/Down.ml:
 # its stack, mini-ml's frames read by their prologues), acid/mlvalues/
 # on another (Values.ml: its globals' values printed by their words,
-# port.acid's ml, a unit's global named M.x), acid/types/*.acid
+# port.acid's ml, a unit's global named M.x; typed.acid by their types,
+# mini-ml -g's descriptions), acid/types/*.acid
 # on a C program with structs, their declarations 5c -a's
 # (acid/types/target.acid, loaded with -l: complex, ., ->, a type's
 # function called by print; ix_print.acid: ix's library's pcomplex, a
@@ -66,10 +67,12 @@ n=1; failures=0
 cmp -s $W/decls $T/types/target.acid || { failures=1; echo "FAIL mini-cc -a: not 5c's declarations"; diff $T/types/target.acid $W/decls | head -6; }
 I="-I . -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"
 U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
+# (Values.ml with its types described, -g)
 for x in ml:Down mlvalues:Values; do
   d=${x%:*} u=${x#*:}
+  g=; [ $d = mlvalues ] && g=-g
   cp $T/$d/$u.ml $W/$d/
-  (cd $W/$d && $IX/languages/ml/Main.exe -m 5 -O3 $I -o $u.5 $u.ml \
+  (cd $W/$d && $IX/languages/ml/Main.exe -m 5 -O3 $g $I -o $u.5 $u.ml \
      && $IX/languages/ml/Main.exe -m 5 -O3 -start $U $u Std_exit -o $u.start.5 \
      && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o target $u.start.5 $M/lib_core/lib_core.a $u.5 \
           $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a) > $W/err 2>&1 \

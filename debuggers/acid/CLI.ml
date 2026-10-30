@@ -28,7 +28,8 @@ A program's types: acid's declarations (aggr, complex T v), mini-cc -a's in a
 file (-l), or in the program, mini-cc -g and mini-ld -g's (.acid); then a
 value prints by its type (n1, n1.next->name, *walk:n).
 An ML value prints by its words (ml(*Values.l): [1; 2; 3]), a unit's global
-named M.x.
+named M.x; by its type when mini-ml -g described it (ml(Values.p):
+{x = 1; y = 2; name = "origin"}; mlvars(): every global).
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)

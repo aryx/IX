@@ -6,6 +6,10 @@ Here:
 
 - `Lines_ml`: the .ml's lines in the object, from the assembly's
   `// line n` marks, and the history.
+- `Acid_ml`: `-g`'s descriptions of the unit's values and their
+  types (constructors by tag, records' fields), acid's text in the
+  object, which mini-ld puts in the program's `.acid`; port.acid's
+  `ml()` prints a value by them.
 
 Elsewhere, called from here or calling here:
 
@@ -17,6 +21,10 @@ Elsewhere, called from here or calling here:
   `ml_raise_top`, and `ml_raise_c`).
 - `runtime/frames.c`: the frames walked at an uncaught exception, by
   the program's tables; `runtime/exceptions.c` calls it.
-- `CLI`: calls `Lines_ml.add` on each object.
+- `CLI`: calls `Lines_ml.add` on each object, `Acid_ml.decls` with
+  `-g`.
+- `Typing.global_types` (the values' types, inferred) and
+  `Resolve.type_conses`, `Resolve.type_fields` (a type's
+  constructors and fields), what `Acid_ml` reads.
 - `debuggers/tests/acid_proc.sh`: mini-acid on programs of mini-ml's;
   `debuggers/tests/walk.sh`, a trace.

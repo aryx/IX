@@ -30,6 +30,11 @@ open Scope
  * field Scope found in no type in scope has no position yet (pos < 0) *)
 val type_field : tdecl -> string -> label option
 
+(* a type's constructors and a record type's fields, by its path,
+ * if it has them (mini-ml -g's descriptions: debug/Acid_ml) *)
+val type_conses : tdecl -> (string * cons) list option
+val type_fields : tdecl -> (string * label) list option
+
 exception Error of int * string
 
 (* a unit's implementation, M the module's name (its file's,

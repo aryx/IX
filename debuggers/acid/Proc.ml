@@ -405,23 +405,27 @@ let follow v =
  * frame its .frame (0 at its first instruction), its return address the
  * link's (a leaf, or before its save) or the word at its sp; to _main,
  * not said, 40 frames at most *)
-let walk pc sp link =
+(* a function's entries in the table: those after its symbol, to the
+ * next function's *)
+let autos start =
   let entries = match !prog with Some { table = Some t; _ } -> t.syms | _ -> [] in
-  (* a function's symbol, and the entries after it, to the next function *)
   let rec locals = function
     | (s : Symbols.sym) :: rest when not (String.contains "TtLl" s.typ) -> s :: locals rest
     | _ -> [] in
-  let rec find_fn v = function
-    | (s : Symbols.sym) :: rest when String.contains "TtLl" s.typ && Int64.of_int s.value = v -> Some (s, locals rest)
-    | _ :: rest -> find_fn v rest
-    | [] -> None in
+  let rec find_fn = function
+    | (s : Symbols.sym) :: rest when String.contains "TtLl" s.typ && Int64.of_int s.value = start -> locals rest
+    | _ :: rest -> find_fn rest
+    | [] -> [] in
+  find_fn entries
+
+let walk pc sp link =
   let word a = word true a in
   let in_text v = match !prog with Some p -> v >= p.txtaddr && v < Int64.add p.txtaddr p.txtsz | None -> false in
   let rec go pc sp n acc =
     match (if in_text pc then findsym pc else None) with
     | Some (s : Symbols.sym) when n <= 40 && s.name <> "_main" && s.name <> "_mainp" ->
         let start = Int64.of_int s.value in
-        let autos = match find_fn start entries with Some (_, l) -> l | None -> [] in
+        let autos = autos start in
         let frame = if pc = start then Some 0L else
           (match List.find_opt (fun (e : Symbols.sym) -> e.typ = 'm' && e.name = ".frame") autos with
            | Some e -> Some (Int64.of_int e.value) | None -> None) in
@@ -443,12 +447,44 @@ let walk pc sp link =
 let param_addr sp off = Int64.add (Int64.add sp 4L) (Int64.of_int off)
 let auto_addr sp off = Int64.sub sp (Int64.of_int off)
 
+(* arm64's frames, by Frame64 (the walk from the registers); a frame's
+ * variables by DWARF in a program of gcc's (no Plan 9 table), else by
+ * the table *)
+let dwarf_units : (string * Dwarf_info.die list) option ref = ref None
+let walk64 () =
+  let read8 a = try Some (Bytes.get_int64_le (Bytes.of_string (!Eval.load true a 8)) 0) with Eval.Error _ -> None in
+  let start v = Option.map (fun (s : Symbols.sym) -> Int64.of_int s.value) (findsym v) in
+  let isstart a = match findsym a with Some s -> s.name = "main" | None -> false in
+  Frame64.walk read8 (get false) start isstart (reg "PC") (reg "SP") (reg "R30") (reg "R29")
+let vars64 (f : Frame64.frame) =
+  match !prog with
+  | Some ({ elf = Some e; bias; _ } as p)
+    when Elf_file.section e ".debug_info" <> None && Elf_file.section e ".plan9.syms" = None ->
+      let units = match !dwarf_units with
+        | Some (path, u) when path = p.path -> u
+        | _ -> let u = Dwarf_info.read p.file e in dwarf_units := Some (p.path, u); u in
+      Frame64.dwarf units (Int64.to_int (Int64.sub f.start bias)) f.cfa
+  | _ -> Frame64.plan9 (autos f.start) f.cfa
+
 (* the frames as acid's lists: {its function, where it was called from
- * (the return less 8, arm's pc), its parameters, its locals}, each of
- * those {name, value} *)
+ * (the return less 8, arm's pc; arm64's less 4), its parameters, its
+ * locals}, each of those {name, value} *)
 let strace pc sp link =
-  (* (arm64's: no table of the frames' parameters and locals yet) *)
-  if arm64 () then Value.empty else
+  if arm64 () then begin
+    let value (v : Frame64.var) =
+      let b = try Some (!Eval.load true v.addr v.size) with Eval.Error _ -> None in
+      Option.map (fun b ->
+        let n = ref 0L in
+        String.iteri (fun i c -> n := Int64.logor !n (Int64.shift_left (Int64.of_int (Char.code c)) (8 * i))) b;
+        Value.list [ Value.string v.vname; Value.int (if v.size > 4 then 'Y' else 'X') !n ]) b in
+    let frame (f : Frame64.frame) =
+      let vs = vars64 f in
+      let pick param = List.filter_map (fun (v : Frame64.var) -> if v.param = param then value v else None) vs in
+      Value.list [ Value.int 'Y' f.start; Value.int 'Y' (Int64.sub f.ret 4L); Value.list (pick true); Value.list (pick false) ] in
+    match walk64 () with
+    | [] -> error "no stack frame"
+    | frames -> Value.list (List.map frame frames)
+  end else
   let var name v = Value.list [ Value.string name; Value.int 'X' v ] in
   let frame ((s : Symbols.sym), autos, sp, ret) =
     let read off = try Some (word true off) with Eval.Error _ -> None in
@@ -468,13 +504,20 @@ let strace pc sp link =
  * from the stopped process's registers *)
 let local_addr f v =
   if !mem = None then error "colon: no process";
-  if arm64 () then error "colon: %s:%s: no table of arm64's locals" f v;
+  if arm64 () then
+    match List.find_opt (fun (fr : Frame64.frame) -> match findsym fr.start with Some s -> s.name = f | None -> false) (walk64 ()) with
+    | None -> error "colon: function %s not in the stack" f
+    | Some fr ->
+        match List.find_opt (fun (x : Frame64.var) -> x.vname = v) (vars64 fr) with
+        | Some x -> x.addr, x.size
+        | None -> error "colon: %s has no local %s" f v
+  else
   match List.find_opt (fun ((s : Symbols.sym), _, _, _) -> s.name = f) (walk (reg "PC") (reg "SP") (reg "R14")) with
   | None -> error "colon: function %s not in the stack" f
   | Some (_, autos, sp, _) ->
       match List.find_opt (fun (e : Symbols.sym) -> e.name = v && (e.typ = 'p' || e.typ = 'a')) autos with
-      | Some e when e.typ = 'p' -> param_addr sp e.value
-      | Some e -> auto_addr sp e.value
+      | Some e when e.typ = 'p' -> param_addr sp e.value, 4
+      | Some e -> auto_addr sp e.value, 4
       | None -> error "colon: %s has no local %s" f v
 
 (* a PIE's symbols moved where Linux put it: its entry's address,

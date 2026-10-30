@@ -31,7 +31,8 @@ let atoi s =
 
 (* itoa's format (acidfmt): one of Plan 9's for an integer, %d by
  * default: its flags and width, then u, l, h, # (%ux: unsigned
- * hexadecimal), then the verb; x with 0x as principia's (acid's xfmt) *)
+ * hexadecimal), then the verb; x with 0x as principia's (acid's xfmt),
+ * 32 bits, 64 with ll (%llux) *)
 let itoa i f =
   match f with
   | None -> Int64.to_string i
@@ -42,11 +43,15 @@ let itoa i f =
            let j = ref (k + 1) in
            while !j < String.length f && (f.[!j] = '0' || f.[!j] = '-' || (f.[!j] >= '1' && f.[!j] <= '9')) do incr j done;
            let flags = String.sub f (k + 1) (!j - k - 1) in
+           let mods = !j in
            while !j < String.length f && String.contains "ulh#" f.[!j] do incr j done;
+           let ls = ref 0 in
+           for k = mods to !j - 1 do if f.[k] = 'l' then incr ls done;
+           let long = !ls >= 2 in
            if !j >= String.length f then error "itoa: bad format";
            let width = try int_of_string (if flags <> "" && flags.[0] = '-' then String.sub flags 1 (String.length flags - 1) else flags) with Failure _ -> 0 in
            let digits = match f.[!j] with
-             | 'x' -> Printf.sprintf "0x%Lx" (Int64.logand i 0xffffffffL) | 'X' -> Printf.sprintf "%LX" i | 'o' -> Printf.sprintf "%Lo" i
+             | 'x' -> Printf.sprintf "0x%Lx" (if long then i else Int64.logand i 0xffffffffL) | 'X' -> Printf.sprintf "%LX" i | 'o' -> Printf.sprintf "%Lo" i
              | 'u' -> Printf.sprintf "%Lu" i | 'c' -> String.make 1 (Char.chr (Int64.to_int i land 255))
              | _ -> Int64.to_string i in
            let pad = String.make (max 0 (width - String.length digits)) (if flags <> "" && flags.[0] = '0' then '0' else ' ') in

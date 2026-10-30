@@ -1,0 +1,10 @@
+new()
+bpset(filepc("target.c:28"))
+cont()
+lstk()
+print(fmt(*walk:k, 'D'))
+*walk:n
+walk:q
+cont()
+lstk()
+*walk:n

@@ -2,7 +2,7 @@
 acid: PID: Breakpoint/Trace trap	ADDR	?
 PID: Breakpoint/Trace trap	main+0x4	MOV	RSP, R29
 acid: acid: PID: Breakpoint/Trace trap	walk+0x1c	MOVW	40(RSP), R1
-acid: walk()+0x1c W/gcc/target.c:37
+acid: walk(n=ADDR,k=0xa)+0x1c W/gcc/target.c:37
 main+0x18 W/gcc/target.c:43
 acid: W/gcc/target.c:37
  32	walk(Node *n, int k)
@@ -56,7 +56,7 @@ W/gcc/target.c:38
  41	main(void)
  42	{
  43		return walk(&n1, 10) + walk(n1.next, 20) == 0;
-acid: walk()+0x34 W/gcc/target.c:38
+acid: walk(n=ADDR,k=0xa)+0x34 W/gcc/target.c:38
 main+0x18 W/gcc/target.c:43
 acid: 
 kill PID

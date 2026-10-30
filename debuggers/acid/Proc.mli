@@ -21,7 +21,10 @@
  * (Ptrace.mli has the table): an ELF's program (gcc's, arm64), its
  * symbols moved where a PIE is put, /proc/$pid/mem, the registers
  * arm64's user_pt_regs and TYPE, the stop's signal; ctl's messages
- * are ptrace's calls, a note the signal's name. *)
+ * are ptrace's calls, a note the signal's name. A frame's parameters
+ * and locals (strace, f:v) by libmach's walk on arm, by Frame64's on
+ * arm64: by the table's entries (7c's, mini-ld -g's .plan9.syms) or,
+ * in a program of gcc's, by DWARF. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.fork; Cap.exec; Cap.kill >
 

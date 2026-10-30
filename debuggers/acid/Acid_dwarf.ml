@@ -15,6 +15,7 @@ let amap s = if List.mem s kwd then "$" ^ s else s
 (* DW_TAG_s and DW_AT_s *)
 let t_struct = 0x13 and t_union = 0x17 and t_member = 0x0d and t_typedef = 0x16 and t_pointer = 0x0f
 let t_base = 0x24 and t_array = 0x01 and t_enum = 0x04 and t_variable = 0x34
+let t_subprogram = 0x2e and t_param = 0x05 and t_lexical_block = 0x0b
 let at_type = 0x49 and at_size = 0x0b and at_encoding = 0x3e and at_member_loc = 0x38 and at_location = 0x02
 let at_declaration = 0x3c
 
@@ -89,14 +90,25 @@ let decls units =
        | _ -> ());
     List.iter types d.children in
   List.iter types units;
-  (* the globals of a complex type, a pointer to one too (5c's acidvar) *)
+  (* the globals of a complex type, a pointer to one too (5c's acidvar),
+   * and a function's parameters and locals (complex T f:v) *)
   let rec deref d = let d = strip d in if d.tag = t_pointer then (match typ d with Some t -> deref t | None -> d) else d in
+  let complex v n =
+    match typ v with
+    | Some t ->
+        let t = deref t in
+        if t.tag = t_struct || t.tag = t_union then
+          Option.iter (fun s -> Buffer.add_string out (sprintf "complex %s %s;\n" (amap s) n)) (sname t)
+    | None -> () in
+  let rec locals f d =
+    List.iter (fun v ->
+      if v.tag = t_lexical_block then locals f v
+      else if v.tag = t_param || v.tag = t_variable then
+        Option.iter (fun n -> complex v (amap f ^ ":" ^ amap n)) (name v)) d.children in
   List.iter (fun u ->
     List.iter (fun v ->
-      match name v, attr v at_location, typ v with
-      | Some n, Some (Block b), Some t when v.tag = t_variable && String.length b > 0 && b.[0] = '\x03' ->
-          let t = deref t in
-          if t.tag = t_struct || t.tag = t_union then
-            Option.iter (fun s -> Buffer.add_string out (sprintf "complex %s %s;\n" (amap s) (amap n))) (sname t)
+      match name v, attr v at_location with
+      | Some n, Some (Block b) when v.tag = t_variable && String.length b > 0 && b.[0] = '\x03' -> complex v (amap n)
+      | Some f, _ when v.tag = t_subprogram -> locals f v
       | _ -> ()) u.children) units;
   Buffer.contents out

@@ -72,7 +72,7 @@ defn frames(pc, sp, link)
 defn params(l)
 {
 	while l do {
-		print((head l)[0], "=", itoa((head l)[1], "%ux"));
+		print((head l)[0], "=", itoa((head l)[1], "%llux"));
 		l = tail l;
 		if l then
 			print(",");
@@ -82,7 +82,7 @@ defn params(l)
 defn locals(l)
 {
 	while l do {
-		print("\t", (head l)[0], "=", itoa((head l)[1], "%ux"), "\n");
+		print("\t", (head l)[0], "=", itoa((head l)[1], "%llux"), "\n");
 		l = tail l;
 	}
 }

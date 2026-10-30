@@ -85,8 +85,8 @@ let out = Buffer.create 4096
 (* the locals' complex types, complex T f:v's *)
 let frame_types : (string * string, string) Hashtbl.t = Hashtbl.create 64
 
-(* f:v's address, Proc's (libmach's localaddr) *)
-let local_addr : (string -> string -> int64) ref = ref (fun _ _ -> error "colon: no process")
+(* f:v's address and its size, Proc's (libmach's localaddr) *)
+let local_addr : (string -> string -> int64 * int) ref = ref (fun _ _ -> error "colon: no process")
 
 let load : (bool -> int64 -> int -> string) ref = ref (fun core _ _ -> (if core then error "no map for *" else error "no map for @"))
 let store : (int64 -> string -> unit) ref = ref (fun _ _ -> error "no map for *")
@@ -337,10 +337,12 @@ let rec eval (e : expr) : value =
   | Frame (f, v) ->
       (* a local's address in the innermost frame of f, typed as complex
        * f:v said (acid's Frtype) *)
-      let addr = !local_addr f v in
+      let addr, size = !local_addr f v in
       (match Hashtbl.find_opt frame_types (f, v) with
        | Some t -> { kind = Int addr; fmt = 'a'; comt = Some t }
-       | None -> { kind = Int addr; fmt = 'X'; comt = None })
+       (* (its format its size's, what * reads: a word on arm, an int
+        * or a pointer by DWARF on arm64, Plan 9's table's a word) *)
+       | None -> { kind = Int addr; fmt = (match size with 1 -> 'b' | 2 -> 'x' | 8 -> 'Y' | _ -> 'X'); comt = None })
 
 (* e.m (acid's odot): the member's address, the value's and its offset;
  * an aggregate there is its address (format a), else what is there read

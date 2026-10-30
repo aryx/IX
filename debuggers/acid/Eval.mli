@@ -30,9 +30,9 @@ val addr_size : int ref
 (* an address as the a format says it: a symbol and an offset *)
 val symbol : (int64 -> string) ref
 
-(* f:v's address, Proc's: v, a parameter or a local of f, in f's
- * innermost frame (libmach's localaddr) *)
-val local_addr : (string -> string -> int64) ref
+(* f:v's address and size, Proc's: v, a parameter or a local of f, in
+ * f's innermost frame (libmach's localaddr) *)
+val local_addr : (string -> string -> int64 * int) ref
 
 (* a global variable set (the program's symbols, the registers, pid) *)
 val set_global : string -> Ast.value -> unit

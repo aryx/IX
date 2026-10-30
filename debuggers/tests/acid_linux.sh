@@ -10,9 +10,12 @@
 #                          breakpoint, stk by the frame pointers, step,
 #                          cont, values by mini-cc -m 7 -a's declarations
 #                          of the same file; lines.acid by DWARF's lines;
-#                          dwarf/*.acid with no -l: its types DWARF's
+#                          dwarf/*.acid with no -l: its types DWARF's,
+#                          a frame's parameters and locals by DWARF's
+#                          locations (locals.acid: lstk, f:v)
 #   acid/linux/cc/*.acid   the same file by mini-cc -g and mini-ld -g -H7:
-#                          its names, lines and types in its sections
+#                          its names, lines and types in its sections, a
+#                          frame's variables by its table's entries
 #   acid/linux/ml/*.acid   acid/mlvalues/Values.ml by mini-ml -g: its
 #                          values by their types, its stack
 #   acid/linux/asm/*.acid  linker/tests/golden/hello_linux_arm64.s by

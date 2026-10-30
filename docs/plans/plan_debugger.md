@@ -1068,3 +1068,29 @@ callers now their calls' lines (target.c:21, :28; gcc's way), an
 Init's frame its line (Down.ml:7) where it said ?file?:0; walk.sh's
 traces (Deep.Init Deep.ml:7); kernels/9pi/tests/acid.out; acid_linux.sh;
 make test: 170 jobs, 0 failures.
+
+2026-10-31, **a frame's parameters and locals on arm64** (stage 8a; the
+author: "let's do 1 and 2"): stk printed walk() and f:v said "no
+table of arm64's locals". debuggers/acid/Frame64: arm64's walk for the
+builtin strace and f:v (port.acid's stk keeps arm64.acid's walk for its
+frames), each frame's CFA by its function's prologue (gcc's frame
+record, STP.W or SUB, STP, ADD; 7c's MOVD.W; mini-ml's SUB, MOVD;
+gcc's leaf's SUB; none); a variable on it by Plan 9's table (mini-ld
+-g's .plan9.syms: p at CFA+8+off, a at CFA-off, a word each, libmach's
+order) or, in gcc's program, by DWARF (the subprogram's
+formal_parameter and variable entries, DW_OP_fbreg on
+DW_OP_call_frame_cfa, a lexical block's too, their types' sizes).
+Acid_dwarf declares a local of a structure type, or a pointer to one,
+complex T f:v, so *walk:n prints its Node with no -l. f:v's format is
+its size's (*walk:k reads 4 bytes of gcc's int, a word of 7c's); itoa
+reads %llux as 64 bits, port.acid's parameters and locals printed so
+(the same on arm). Not done: gcc -O2's frames (their prologues are
+not these: .eh_frame's CFI would say them, plan9port's dwarfcfa.c);
+DWARF's other locations (a register, a location list); mini-ml's
+values, which are on its own stack, not in the tables. Checked:
+acid_linux.sh's new dwarf/locals.acid and cc/locals.acid (a breakpoint
+at leaf's return line: lstk's leaf(a=0xd), walk(n=..., k=0xa) with q,
+k by f:v, *walk:n a Node, walk:q a Point, then the second call's),
+the other sessions' stk now with parameters (8 sessions; the same with
+a 3000-byte variable in the environment); Frame64 and the changed units
+by mini-ml too; make test: 170 jobs, 0 failures.

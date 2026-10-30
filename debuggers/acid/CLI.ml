@@ -19,7 +19,8 @@ character...); its statements are C's (if e then s else s, while e do s,
 loop a, b do s), with lists (head, tail, append, delete, {a, b}), local and
 return in a defn. A program (its a.out, or /proc/PID/text) gives its symbols
 as variables; a process its memory (*addr, @addr in the file), its registers
-(*PC, *R0); the library (port.acid, arm.acid, from /lib/acid or -l) the rest:
+(*PC, *R0); the library (port.acid, arm.acid, from /lib/acid or -l) the rest
+(debuggers/acid/lib: new, bpset, cont, step, next, stk, src, regs, asm, mem):
   mini-acid -l port.acid -l arm.acid ./prog
   acid: new()
   acid: bpset(leaf); cont(); stk()

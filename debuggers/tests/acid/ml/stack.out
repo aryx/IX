@@ -1,6 +1,4 @@
 ./target:arm plan 9 executable
-/lib/acid/port.acid
-/lib/acid/arm.acid
 acid: PID: Mirq interrupt	_main	MOVW.W	R14,#-0x4(R13)
 PID: Prefetch Abort/Breakpoint	main+0x4	MOVW	R0,R1
 acid: acid: PID: Prefetch Abort/Breakpoint	f1_down	SUB	$#0x10,R13,R13
@@ -11,14 +9,12 @@ PID: Prefetch Abort/Breakpoint	f1_down	SUB	$#0x10,R13,R13
 acid: PID: Prefetch Abort/Breakpoint	f1_down+0x4	MOVW	R14,#0x0(R13)
 PID: Prefetch Abort/Breakpoint	f1_down	SUB	$#0x10,R13,R13
 acid: f1_down()+0x0 Down.ml:5
-f1_down+0x38 Down.ml:5
-acid: f1_down Down.ml:5
-f1_down+0x3c Down.ml:5
-f1_down+0x3c Down.ml:5
-f1_down+0x3c Down.ml:5
-Down.Init+0x68 ?file?:0
-ml_program+0x264 ?file?:0
-main+0x190 ?file?:0
+f1_down()+0x3c Down.ml:5
+f1_down()+0x3c Down.ml:5
+f1_down()+0x3c Down.ml:5
+Down.Init()+0x68 ?file?:0
+ml_program()+0x264 ?file?:0
+main()+0x190 ?file?:0
 _main+0x20 libc/arch/arm/rt0.s:17
 acid: 
 echo kill > /proc/PID/ctl

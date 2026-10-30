@@ -25,8 +25,9 @@
  *
  * The program and the process (step 4, Proc): the symbols as variables,
  * the memory and the registers by /proc, start, stop, breakpoints,
- * strace (libmach's risctrace), the libraries port.acid and arm.acid,
- * principia's (/lib/acid, or -l). Not yet: the instructions printed (the
+ * strace (libmach's risctrace). The library is ix's own (lib/port.acid,
+ * lib/arm.acid: acid's essentials, one stack walk for C's frames and
+ * mini-ml's), read from /lib/acid or by -l; principia's runs too. Not yet: the instructions printed (the
  * i format: 5db's disassembler), complex types' . and casts, floats
  * printed as Plan 9's %g.
  *

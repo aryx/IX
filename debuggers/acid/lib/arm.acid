@@ -1,0 +1,56 @@
+// Claude Code
+// Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+//
+// arm.acid: mini-acid's library, arm's part (port.acid is the rest):
+// the breakpoint's size, the link register, the registers printed, and a
+// function's frame read from its prologue, for port.acid's frames():
+//
+//     mini-ml's:  SUB $n, R13       (or n from the pool: MOVW n(PC), R11;
+//                 MOVW R14, 0(R13)   SUB R11, R13)
+//     5l's (C):   MOVW.W R14, -n(R13)
+//
+// mini-ml's functions make their frames themselves (the symbol table
+// says L, a leaf, .frame 0), so the prologue is the only place their
+// size is said; C's have it in both, and the same.
+
+defn acidinit()
+{
+	bplist = {};
+	bpfmt = 'X';
+}
+
+defn linkreg() { return *R14; }
+
+// a function's frame by its prologue: {its size, the address of the
+// return's save}, {} when it has none. Read in the program's file (@),
+// not the process (*): a breakpoint may be in the process's text
+defn frame(start)
+{
+	local w, imm, rot, n;
+
+	w = @fmt(start, 'X');
+	if (w & 0xfffff000) == 0xe24dd000 && @fmt(start+4, 'X') == 0xe58de000 then {
+		imm = w & 0xff;
+		rot = 2*((w>>8) & 15);
+		n = imm;
+		if rot != 0 then
+			n = ((imm>>rot) | (imm<<(32-rot))) & 0xffffffff;
+		return {n, start+4};
+	}
+	if (w & 0xfffff000) == 0xe59fb000 && @fmt(start+4, 'X') == 0xe04dd00b
+	&& @fmt(start+8, 'X') == 0xe58de000 then
+		return {@fmt(start+8+(w & 0xfff), 'X'), start+8};
+	if (w & 0xfffff000) == 0xe52de000 then
+		return {w & 0xfff, start};
+	return {};
+}
+
+defn regs()
+{
+	print("R0\t", *R0, " R1\t", *R1, " R2\t", *R2, "\n");
+	print("R3\t", *R3, " R4\t", *R4, " R5\t", *R5, "\n");
+	print("R6\t", *R6, " R7\t", *R7, " R8\t", *R8, "\n");
+	print("R9\t", *R9, " R10\t", *R10, " R11\t", *R11, "\n");
+	print("R12\t", *R12, " R13\t", *R13, " R14\t", *R14, "\n");
+	print("R15\t", *R15, "\n");
+}

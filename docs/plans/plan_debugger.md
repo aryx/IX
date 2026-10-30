@@ -726,3 +726,25 @@ output mini-acid's recorded, acid having no ml.acid); make test (161
 jobs). Seen: mini-ml inlined a function marked let[@inline never]
 (another session's [@inline] work). Next: a breakpoint by a .ml line
 (filepc, in acid if it can be), mini-ml's values by their types.
+
+2026-10-30, **ix's own acid library** (the author: "we can write our
+own if we think we can get the same functionality with lesser LOC and a
+better design. We don't have to follow exactly what acid does; we want
+some comparison tests [...] we don't have to cover every corner of
+acid's functionality"): debuggers/acid/lib/port.acid and arm.acid, 327
+lines of code where principia's are 581. Kept: new, bpset, bpdel,
+bptab, cont, step, stmnt, next, func, stk, lstk, src, asm, mem, regs,
+procs, stopped. Left: win and win2 (rio windows by scripts), Bsrc (the
+plumber), the notes' Ureg printing (complex types), stkignore (regexp),
+spsrch, labstk, casm, three readers of a source line where one does.
+The design changed in one place: stk is one walk, port.acid's frames(),
+by the functions' prologues (arm.acid's frame(): mini-ml's and 5l's), C's
+and mini-ml's frames alike, its parameters and locals taken from the
+builtin strace (the table's) while its frames are the walk's; ml.acid
+folded in. A caller's place is its call (the return less 4), not
+libmach's instruction before it. debuggers/tests/acid_proc.sh now runs
+with ix's library, so make test needs no principia: three sessions as
+recorded (two on a C program, one on a mini-ml one: its whole stack);
+live compares the C ones with principia's acid and library, the same
+but for the library's load lines, the callers' offsets (and so
+_main's line), a line said once where acid's next says it twice.

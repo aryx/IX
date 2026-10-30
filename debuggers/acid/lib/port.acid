@@ -1,0 +1,370 @@
+// Claude Code
+// Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
+//
+// port.acid: mini-acid's library, the part every machine shares; the
+// machine's is arm.acid (its registers, its functions' prologues). What a
+// debugger does is written here, in acid, over the builtins (the process,
+// its memory, the symbol table): the user adds to it as to any library.
+// Plan 9's /lib/acid/port.acid does the same work; this one is ix's own,
+// smaller: its essentials, and one stack walk for C's frames and
+// mini-ml's alike (Plan 9's is libmach's, which stops at mini-ml's).
+//
+//     new()                   the program run, stopped in main
+//     bpset(a) bpdel(a) bptab()       breakpoints
+//     cont() step() next() stmnt() func()
+//                             run; an instruction; a line, over calls;
+//                             a line; out of the function
+//     stk() lstk()            the stack (lstk: the locals too)
+//     src(a) asm(a) mem(a, "4X") regs() procs()
+
+// a frame's function and place: name+0xoff file:line
+defn pfl(addr)
+{
+	print(pcfile(addr), ":", pcline(addr), "\n");
+}
+
+// the frames from (pc, sp, link), the innermost first, each {its
+// function, where in it, its sp}, to _main: a function's frame by its
+// prologue (arm.acid's frame), its caller's address at 0(SP) once saved,
+// the link before (and in a leaf, the innermost only)
+defn frames(pc, sp, link)
+{
+	local l, f, start, p, ret, size, n;
+
+	l = {};
+	n = 0;
+	while n < 40 do {
+		f = fnbound(pc);
+		if f == {} then
+			return l;
+		start = f[0];
+		append l, {start, pc, sp};
+		if start == _main then
+			return l;
+		p = frame(start);
+		if p == {} || pc <= p[1] then {
+			if n > 0 then
+				return l;
+			ret = link;
+			size = 0;
+			if p != {} && pc > start then
+				size = p[0];
+		} else {
+			ret = *fmt(sp, 'X');
+			size = p[0];
+		}
+		if ret == 0 then
+			return l;
+		pc = ret-4;		// the call
+		sp = sp+size;
+		n = n+1;
+	}
+	return l;
+}
+
+defn params(l)
+{
+	while l do {
+		print((head l)[0], "=", itoa((head l)[1], "%ux"));
+		l = tail l;
+		if l then
+			print(",");
+	}
+}
+
+defn locals(l)
+{
+	while l do {
+		print("\t", (head l)[0], "=", itoa((head l)[1], "%ux"), "\n");
+		l = tail l;
+	}
+}
+
+// the stack: a frame a line, its parameters and locals from the symbol
+// table (the builtin strace's, libmach's walk: C's functions have them,
+// mini-ml's none), its frames taken while they are the walk's
+defn _stk(dolocals)
+{
+	local l, f, t;
+
+	l = frames(*PC, *SP, linkreg());
+	t = strace(*PC, *SP, linkreg());
+	while l do {
+		f = head l;
+		if f[0] == _main then {
+			print(fmt(f[1], 'a'), " ");
+			pfl(f[1]);
+			return {};
+		}
+		print(fmt(f[0], 'a'), "(");
+		if t != {} && (head t)[0] == f[0] then
+			params((head t)[2]);
+		print(")+", itoa(f[1]-f[0], "%ux"), " ");
+		pfl(f[1]);
+		if dolocals && t != {} && (head t)[0] == f[0] then
+			locals((head t)[3]);
+		if t != {} && (head t)[0] == f[0] then
+			t = tail t;
+		else
+			t = {};
+		l = tail l;
+	}
+}
+
+defn stk() { _stk(0); }
+defn lstk() { _stk(1); }
+
+// a source file's lines, read once (srcpath's directories tried for a
+// relative name)
+srcfiles = {};
+srctext = {};
+srcpath = {"./"};
+defn findsrc(file)
+{
+	local i, dirs, text;
+
+	i = match(file, srcfiles);
+	if i >= 0 then
+		return srctext[i];
+	text = file(file);
+	dirs = srcpath;
+	while text == {} && dirs do {
+		text = file(head dirs+file);
+		dirs = tail dirs;
+	}
+	if text != {} then {
+		srcfiles = append srcfiles, file;
+		srctext = append srctext, text;
+	}
+	return text;
+}
+
+// the source around an address, its line marked
+defn src(addr)
+{
+	local text, line, n;
+
+	text = findsrc(pcfile(addr));
+	if text == {} then {
+		print("no source for ", pcfile(addr), "\n");
+		return {};
+	}
+	line = pcline(addr)-1;
+	print(pcfile(addr), ":", line+1, "\n");
+	n = line-5;
+	loop 0, 10 do {
+		if n >= 0 && text[n] != {} then {
+			if n == line then
+				print(">");
+			else
+				print(" ");
+			print(n+1, "\t", text[n], "\n");
+		}
+		n = n+1;
+	}
+}
+
+// breakpoints: the instruction there replaced by bpinst, the program's
+// own (@) put back to run it
+defn bpset(addr)
+{
+	if status(pid) != "Stopped" then {
+		print("Waiting...\n");
+		stop(pid);
+	}
+	if match(addr, bplist) >= 0 then
+		print("breakpoint already set at ", fmt(addr, 'a'), "\n");
+	else {
+		*fmt(addr, bpfmt) = bpinst;
+		bplist = append bplist, addr;
+	}
+}
+
+defn bpdel(addr)
+{
+	local l, n;
+
+	if match(addr, bplist) < 0 then {
+		print("no breakpoint at ", fmt(addr, 'a'), "\n");
+		return {};
+	}
+	addr = fmt(addr, bpfmt);
+	*addr = @addr;
+	l = {};
+	n = bplist;
+	while n do {
+		if head n != addr then
+			l = append l, head n;
+		n = tail n;
+	}
+	bplist = l;
+}
+
+defn bptab()
+{
+	local l;
+
+	l = bplist;
+	while l do {
+		print("\t", fmt(head l, 'X'), " ", fmt(head l, 'a'), "  ", fmt(head l, 'i'), "\n");
+		l = tail l;
+	}
+}
+
+// one instruction: breakpoints where it may go next (follow), the
+// process run until it stops at one, the instructions put back
+defn step()
+{
+	local here, targets, l;
+
+	here = 0;
+	if match(*PC, bplist) >= 0 then {
+		here = fmt(*PC, bpfmt);
+		*here = @here;
+	}
+	targets = follow(*PC);
+	l = targets;
+	while l do {
+		*fmt(head l, bpfmt) = bpinst;
+		l = tail l;
+	}
+	startstop(pid);
+	l = targets;
+	while l do {
+		*fmt(head l, bpfmt) = @fmt(head l, bpfmt);
+		l = tail l;
+	}
+	if here != 0 then
+		*here = bpinst;
+}
+
+defn cont()
+{
+	local here;
+
+	here = fmt(*PC, bpfmt);
+	if match(here, bplist) >= 0 then {
+		*here = @here;
+		step();
+		*here = bpinst;
+	}
+	startstop(pid);
+}
+
+// a line: instructions until the line changes
+defn stmnt()
+{
+	local line;
+
+	line = pcline(*PC);
+	while line == pcline(*PC) do
+		step();
+	src(*PC);
+}
+
+// out of the function: instructions until the pc leaves it
+defn func()
+{
+	local f;
+
+	f = fnbound(*PC);
+	while *PC >= f[0] && *PC < f[1] do
+		step();
+}
+
+// a line, over the calls it makes: a call left is stepped until the
+// stack is back to this frame
+defn next()
+{
+	local sp, f;
+
+	sp = *SP;
+	f = fnbound(*PC);
+	stmnt();
+	while (*PC < f[0] || *PC >= f[1]) && sp >= *SP do
+		step();
+	if *PC < f[0] || *PC >= f[1] then
+		return {};
+	src(*PC);
+}
+
+defn new()
+{
+	bplist = {};
+	newproc(progargs);
+	bpset(follow(main)[0]);
+	cont();
+	bpdel(*PC);
+}
+
+// called by mini-acid at a stop: where and why
+defn stopped(pid)
+{
+	local l;
+
+	print(pid, ": ", reason(*TYPE), "\t", fmt(*PC, 'a'), "\t", fmt(*PC, 'i'), "\n");
+	if notes && notes[0] != "sys: breakpoint" then {
+		print("Notes pending:\n");
+		l = notes;
+		while l do {
+			print("\t", head l, "\n");
+			l = tail l;
+		}
+	}
+}
+
+defn procs()
+{
+	local l, p;
+
+	p = pid;
+	l = proclist;
+	while l do {
+		setproc(head l);
+		print(head l, ": ", status(head l), " at ", fmt(*PC, 'a'), "\n");
+		l = tail l;
+	}
+	if p != 0 then
+		setproc(p);
+}
+
+// the instructions from an address to its function's end, 30 at most
+defn asm(addr)
+{
+	local f;
+
+	f = fnbound(addr);
+	loop 1, 30 do {
+		print(fmt(addr, 'a'), "\t", fmt(addr, 'i'), "\n");
+		addr = addr+4;
+		if f != {} && addr >= f[1] then
+			return {};
+	}
+}
+
+// memory as a format says: "4X" four words in hexadecimal, "s" a string
+defn mem(addr, f)
+{
+	local i, n;
+
+	i = 0;
+	while f[i] != 0 do {
+		n = 0;
+		while '0' <= f[i] && f[i] <= '9' do {
+			n = 10*n+f[i]-'0';
+			i = i+1;
+		}
+		if n <= 0 then
+			n = 1;
+		addr = fmt(addr, f[i]);
+		while n > 0 do {
+			print(*addr++, " ");
+			n = n-1;
+		}
+		i = i+1;
+	}
+	print("\n");
+	return addr;
+}
+
+progargs = "";

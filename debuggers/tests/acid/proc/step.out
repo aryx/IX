@@ -1,6 +1,4 @@
 ./target:arm plan 9 executable
-/lib/acid/port.acid
-/lib/acid/arm.acid
 acid: PID: Mirq interrupt	_main	MOVW.W	R14,#-0x4(R13)
 PID: Prefetch Abort/Breakpoint	main+0x4	MOVW	$#0x3,R0
 acid: acid: PID: Prefetch Abort/Breakpoint	leaf	MOVW	R0,a+0(FP)
@@ -19,9 +17,8 @@ PID: Prefetch Abort/Breakpoint	main+0x10	MOVW	$#0x0,R0
 PID: Prefetch Abort/Breakpoint	main+0x14	BL	exits
 PID: Prefetch Abort/Breakpoint	exits	MOVW	R0,#0x4(R13)
 no source for libc/syscall/os/plan9/svc_arm.s
-no source for libc/syscall/os/plan9/svc_arm.s
 acid: exits()+0x0 libc/syscall/os/plan9/svc_arm.s:55
-main()+0x10 ?file?:0
-_main+0x1c libc/arch/arm/rt0.s:16
+main()+0x14 ?file?:0
+_main+0x20 libc/arch/arm/rt0.s:17
 acid: 
 echo kill > /proc/PID/ctl

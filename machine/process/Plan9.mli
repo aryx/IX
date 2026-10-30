@@ -22,6 +22,14 @@
  * noted(NCONT) putting the Ureg back. A child's exit string reaches
  * its parent's await through a pipe the fork made.
  *
+ * The segments a program attaches (segattach: zeros, class "memory" or
+ * "shared", below the stack when no address is asked) are segments of
+ * the Memory; segflush drops the processor's decoded instructions (as
+ * a debugger's write does, Memory.code_written), so code written there
+ * by the program, a JIT's, runs as written: without it, the old
+ * instructions would, as from a real processor's instructions' cache
+ * (tests/plan9/seg.c shows both).
+ *
  * Where it stands: the a.out is the linker's Exe's (its header
  * draws the 32 bytes), the calls are the ones mini-9pi's kernel
  * answers on the board, by the same numbers; a program linked -H2

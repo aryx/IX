@@ -155,3 +155,30 @@ TEXT noted(SB), $0
 	MOVW	$NOTED, R0
 	SWI	$0
 	RET
+
+// the segments (segattach(2)): a range of zeros attached at va (0: the
+// kernel's choice), its address or -1; detached, its pages freed; and
+// segflush, the caches told that va's len bytes were written as code
+TEXT segattach(SB), $0
+	MOVW	R0, 0(FP)
+	MOVW	$SEGATTACH, R0
+	SWI	$0
+	RET
+
+TEXT segdetach(SB), $0
+	MOVW	R0, 0(FP)
+	MOVW	$SEGDETACH, R0
+	SWI	$0
+	RET
+
+TEXT segfree(SB), $0
+	MOVW	R0, 0(FP)
+	MOVW	$SEGFREE, R0
+	SWI	$0
+	RET
+
+TEXT segflush(SB), $0
+	MOVW	R0, 0(FP)
+	MOVW	$SEGFLUSH, R0
+	SWI	$0
+	RET

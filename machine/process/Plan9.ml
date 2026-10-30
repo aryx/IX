@@ -78,7 +78,11 @@ let stack_top = Bits.mask32 (1 lsl 31)
 let stack_size = 1024 * 1024
 let tos_size = 64
 
+(* the segments attached (segattach, below), none after an exec *)
+let attached : (int * int) list ref = ref []
+
 let load host mem (a : aout) file argv envp =
+  attached := [];
   if not !env_loaded then begin
     List.iter (fun e -> match String.index_opt e '=' with
       | Some i -> Hashtbl.replace env (String.sub e 0 i) (String.sub e (i + 1) (String.length e - i - 1))
@@ -644,6 +648,54 @@ let sys_noted p (st : Arm32_isa.state) v =
 (* The system calls *)
 (*****************************************************************************)
 
+(* The segments a program attaches (segattach), [base, base + size):
+ * zeros, a class's ("memory" or "shared": the same here, one process
+ * per host process), placed where asked or, va 0, below the stack and
+ * those attached before, as principia's segattach looks for a hole.
+ * segflush tells the processor its decoded instructions may be stale
+ * (code written there: a JIT's), as Memory.code_written does for a
+ * debugger. The attributes are kept but not enforced (Memory has no
+ * rights: its wib), and an exec drops them all. *)
+let sys_segattach p (_attr : int) (cls : string) (va : int) (len : int) : int =
+  if cls <> "memory" && cls <> "shared" then raise (Error "bad segment class");
+  let len = round len in
+  if len = 0 then raise (Error "bad segment length");
+  let overlaps b = List.exists (fun (a, n) -> b < a + n && a < b + len) !attached
+                   || b < Memory.segment_end p.mem "heap" || b + len > stack_top - stack_size in
+  let va =
+    if va <> 0 then (if va land (page - 1) <> 0 || overlaps va then raise (Error "segments overlap"); va)
+    else
+      let low = List.fold_left (fun m (a, _) -> min m a) (stack_top - stack_size) !attached in
+      let va = low - page - len in
+      if overlaps va then raise (Error "no room for the segment") else va in
+  Memory.map p.mem ~base:va ~size:len (Printf.sprintf "seg%x" va);
+  attached := (va, len) :: !attached;
+  va
+
+let segment_at (va : int) : int * int =
+  match List.find_opt (fun (a, n) -> va >= a && va < a + n) !attached with
+  | Some s -> s
+  | None -> raise (Error "not in a segment attached")
+
+let sys_segdetach p (va : int) : int =
+  let a, _ = segment_at va in
+  Memory.unmap p.mem ~base:a;
+  attached := List.filter (fun (b, _) -> b <> a) !attached;
+  0
+
+(* the pages wholly inside [va, va + len) zeros again (principia frees
+ * them, a page of zeros at the next touch) *)
+let sys_segfree p (va : int) (len : int) : int =
+  let a, n = segment_at va in
+  let lo = round va and hi = min (a + n) ((va + len) / page * page) in
+  if hi > lo then Memory.write_string p.mem lo (String.make (hi - lo) '\000');
+  0
+
+let sys_segflush () : int =
+  Memory.code_written := true;
+  Linux.signal_waiting := true;
+  0
+
 let names = [|
   "nop"; "rfork"; "exec"; "exits"; "await"; "brk"; "open"; "close"; "dup"; "fd2path"; "pread"; "pwrite"; "seek";
   "create"; "remove"; "chdir"; "stat"; "fstat"; "wstat"; "fwstat"; "bind"; "mount"; "unmount"; "sleep"; "alarm";
@@ -728,6 +780,10 @@ let syscall p (st : Arm32_isa.state) =
           let a, b = ok (h.pipe ()) in
           ignore (add p a "#|/data" None ~rclose:false); ignore (add p b "#|/data1" None ~rclose:false);
           Memory.store32 m (arg 0) a; Memory.store32 m (Bits.mask32 (arg 0 + 4)) b; 0
+      | 28 -> sys_segattach p (arg 0) (str 1) (arg 2) (arg 3)       (* segattach(attr, class, va, len) *)
+      | 29 -> sys_segdetach p (arg 0)
+      | 30 -> sys_segfree p (arg 0) (arg 1)
+      | 31 -> sys_segflush ()                                        (* segflush(va, len) *)
       | 39 ->                                                        (* errstr(buf, n): exchanged *)
           let n = sarg 1 in
           let mine = Memory.read_cstring m (arg 0) in

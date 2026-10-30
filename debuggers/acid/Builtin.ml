@@ -55,6 +55,15 @@ let itoa i f =
 
 let init (caps : < caps; .. >) =
   let def name f = Hashtbl.replace Eval.builtins name f in
+  (* an aggr's members as data, each {name, format, offset, its complex
+   * type or ""}: what a library prints a value by (ix's pcomplex) *)
+  def "members" (fun vs ->
+    let t = str "members" vs in
+    match Eval.aggr t with
+    | None -> error "members: %s is not a complex type" t
+    | Some ms -> Value.list (List.map (fun (m : member) ->
+        Value.list [ Value.string m.mname; Value.string (String.make 1 m.mfmt); Value.int 'D' (Int64.of_int m.moffset);
+                     Value.string (match m.mtype with Some t -> t | None -> "") ]) ms));
   def "print" (fun vs -> Eval.print vs; Value.empty);
   def "fmt" (function
     | [ v; { kind = Int c; _ } ] when String.contains Value.formats (Char.chr (Int64.to_int c land 255)) ->

@@ -1,11 +1,11 @@
 new();
 bpset(walk+0x1c);
 cont();
-n1;
+Node(n1);
 n1.p.x;
-n1.next.p;
+Point(n1.next.p);
 *(n1.next.name\s);
-*walk:n;
-walk:q;
-(Point)(n1+4);
+Node(*walk:n);
+Point(walk:q);
+Point((Point)(n1+4));
 whatis n1;

@@ -16,6 +16,8 @@
 //                             a line; out of the function
 //     stk() lstk()            the stack (lstk: the locals too)
 //     src(a) asm(a) mem(a, "4X") regs() procs()
+//     pcomplex(a, "T")        a value of a complex type, as print shows
+//                             it: Node {name=0x203c "one", p=Point {...}}
 
 // a frame's function and place: name+0xoff file:line
 defn pfl(addr)
@@ -368,3 +370,107 @@ defn mem(addr, f)
 }
 
 progargs = "";
+
+// whether an address is in one of the maps (the process's text, its
+// data to the stack's top): a pointer followed only there
+defn readable(a)
+{
+	local l;
+
+	l = map();
+	while l != {} do {
+		if a >= (head l)[1] && a < (head l)[2] then
+			return 1;
+		l = tail l;
+	}
+	return 0;
+}
+
+// the C string at an address if its bytes read as one (printable, to a
+// NUL, 64 at most), else {}
+defn cstring(a)
+{
+	local s, c, n;
+
+	s = "";
+	n = 0;
+	while n < 64 && readable(a+n) do {
+		c = *((a+n)\b);
+		if c == 0 then
+			return s;
+		if c < 32 || c > 126 then
+			return {};
+		s = s + c;
+		n = n + 1;
+	}
+	return {};
+}
+
+// a member at an address, by its format (aggr's) and its complex type
+// if it has one: a structure in it as pcomplex, a pointer with its
+// type, nil, or its string; a short and a char signed, a char as one
+defn pmember(a, f, t)
+{
+	local v, s;
+
+	if f == "a" then {
+		if t != "" then
+			pcomplex(a, t);
+		else
+			print(a\X);
+		return {};
+	}
+	if f == "A" || f == "X" then {
+		v = *(a\X);
+		if v == 0 then
+			print("nil");
+		else if t != "" then
+			print("(", t, "*)", v\X);
+		else {
+			print(v\X);
+			s = cstring(v);
+			if s != {} then
+				print(" \"", s, "\"");
+		}
+		return {};
+	}
+	v = *fmt(a, f[0]);
+	if f == "d" then {
+		if v >= 0x8000 then
+			v = v - 0x10000;
+		print(v\D);
+	} else if f == "C" then {
+		if v >= 0x80 then
+			v = v - 0x100;
+		if v >= 32 && v < 127 then
+			print("'", v\c, "'");
+		else
+			print(v\D);
+	} else if f == "b" || f == "u" then
+		print(v\D);
+	else if f == "W" then
+		print(v\Z);
+	else
+		print(v);
+}
+
+// a value of a complex type, on one line: its members by their formats
+// and offsets (the aggr's, members()), a structure in it the same way.
+// print calls it for a complex value (5c -a's T(addr) prints a member a
+// line, its pointers in hexadecimal: still there, called by its name)
+defn pcomplex(addr, t)
+{
+	local ms, m, sep;
+
+	print(t, " {");
+	sep = "";
+	ms = members(t);
+	while ms != {} do {
+		m = head ms;
+		print(sep, m[0], "=");
+		pmember(addr + m[2], m[1], m[3]);
+		sep = ", ";
+		ms = tail ms;
+	}
+	print("}");
+}

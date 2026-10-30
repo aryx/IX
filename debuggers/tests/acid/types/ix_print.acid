@@ -1,0 +1,10 @@
+new();
+bpset(walk+0x1c);
+cont();
+n1;
+n2;
+n1.p;
+n1.next;
+*walk:n;
+walk:q;
+(Node)n1.next;

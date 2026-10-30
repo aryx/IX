@@ -10,11 +10,9 @@ Point p {
 	next	0x0000201c
 	c	0x61
 	s	7
-
 acid: acid: 1
 acid: acid: 	x	3
 	y	4
-
 acid: acid: two
 acid: acid: 	name	0x00002038
 Point p {
@@ -24,13 +22,10 @@ Point p {
 	next	0x00000000
 	c	0x62
 	s	65534
-
 acid: acid: 	x	3
 	y	4
-
 acid: acid: 	x	1
 	y	2
-
 acid: acid: integer variable format a complex Node
 acid: acid: 
 echo kill > /proc/PID/ctl

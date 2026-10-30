@@ -862,3 +862,24 @@ debuggers/tests/acid_proc.sh: mini-cc -a on acid/types/target.c is
 5c's recorded text; the types session again on the program by -g, no
 -l: the same output; live as before (principia's acid ignores .acid).
 
+2026-10-30, **ix's printer of a C value** (decision 14's third step):
+print calls the library's pcomplex(addr, "T") when it has one (else
+acid's way: T(addr), 5c -a's function, still there by its name);
+ix's port.acid has it, in acid, driven by the declarations as data: a
+new builtin members("T") gives the aggr's members, each {name,
+format, offset, type}. One line, Node {name=0x0000203c "one",
+p=Point {x=1, y=2}, next=(Node*)0x0000201c, c=97, s=7}: a structure in
+it the same way, a pointer with its type or nil, a char* its string
+when its bytes read as one (printable, to a NUL, in a map), a short and
+a char signed (5c's 'd' read as unsigned: s=-2, where acid says
+65534), a uchar a number. Two builtins of acid's mini-acid lacked:
+map() (the maps, {name, base, end, offset}: readable() in port.acid)
+and * of a float or a double ('f', 'F'). What 5c's formats do not say
+stays unsaid: an array is its address (an aggr has no length), an int*
+and a char* are both 'X' (hence the string's test). Checked:
+debuggers/tests/acid_proc.sh: acid/types/ix_print.acid, new (n1, n2, a
+member structure, a pointer member, *walk:n, walk:q, a cast), the -l
+and the -g programs alike; print.acid now calls 5c's functions by name,
+so live still compares it with principia's acid (ix_* sessions are ix's
+library's only).
+

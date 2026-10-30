@@ -382,6 +382,17 @@ let init (caps : < caps; .. >) =
          | _ -> error "bad status for %d" p)
     | None -> error "open /proc/%d/status: process exited" p);
   def "reason" (fun vs -> Value.string (excep (int "reason" vs)));
+  (* the maps, each {name, base, end, offset}: the process's (its text,
+   * its data to the stack's top) or else the file's, as load reads them
+   * (acid's map(), without its argument that moves one) *)
+  def "map" (fun _ ->
+    let seg name b e f = Value.list [ Value.string name; Value.int 'X' b; Value.int 'X' e; Value.int 'X' f ] in
+    match !prog, !mem with
+    | Some p, Some _ -> Value.list [ seg "text" p.txtaddr (Int64.add p.txtaddr p.txtsz) p.txtaddr; seg "data" p.dataddr !stacktop p.dataddr ]
+    | Some p, None ->
+        Value.list [ seg "text" p.txtaddr (Int64.add p.txtaddr p.txtsz) 32L;
+                     seg "data" p.dataddr (Int64.add p.dataddr p.datsz) (Int64.add 32L p.txtsz) ]
+    | None, _ -> Value.empty);
   def "fnbound" (fun vs ->
     match fnbound (int "fnbound" vs) with
     | Some (a, b) -> Value.list [ Value.int 'X' a; Value.int 'X' b ]

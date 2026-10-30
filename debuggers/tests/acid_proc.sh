@@ -11,7 +11,9 @@
 # its stack, mini-ml's frames read by their prologues), acid/types/*.acid
 # on a C program with structs, their declarations 5c -a's
 # (acid/types/target.acid, loaded with -l: complex, ., ->, a type's
-# function called by print), and mini-cc -a's the same; then again with
+# function called by print; ix_print.acid: ix's library's pcomplex, a
+# value on one line, a char* its string too), and mini-cc -a's the
+# same; then again with
 # no -l, the program's own (mini-cc -g, mini-ld -g: its data .acid).
 #   live: the C sessions given to principia's acid too, with its own
 #   library, both outputs the same but for what ix's library does
@@ -88,7 +90,8 @@ for d in proc:c ml:ml types:types types:types-g; do
     norm < $W/out > $W/got
     [ "$1" = record ] && [ ${d#*:} != types-g ] && cp $W/got $T/$name.out
     if [ "$1" = live ]; then
-      [ ${d%:*} = ml ] || [ ${d#*:} = types-g ] && { n=$((n - 1)); continue; }
+      # (ix_*: ix's library's own printing, which acid's has not)
+      [ ${d%:*} = ml ] || [ ${d#*:} = types-g ] || [[ $(basename $f) = ix_* ]] && { n=$((n - 1)); continue; }
       [ -f $P/ROOT/lib/acid/port.acid ] || { echo "skipped live: no $P/ROOT/lib/acid"; exit 0; }
       (cd $W/${d#*:} && timeout -s KILL 120 $IX/machine/Main.exe $P/ROOT/arch/arm/bin/acid -l $P/ROOT/lib/acid/port.acid \
          -l $P/ROOT/lib/acid/arm.acid $decls ./target < $f > $W/ref 2>&1)

@@ -36,6 +36,9 @@ val set_global : string -> Ast.value -> unit
 (* the complex type a variable was declared of (complex T v), if one *)
 val complex_type : string -> string option
 
+(* a complex type's members (aggr T {...}), if T is one *)
+val aggr : string -> Ast.member list option
+
 (* acid's function [name] called with [args], if it is defined (dostop's
  * stopped(pid)) *)
 val call_if_defined : string -> Ast.value list -> unit

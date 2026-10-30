@@ -71,6 +71,8 @@ let set_global name v =
 
 let complex_type name = match (var name).values with b :: _ -> b.btype | [] -> None
 
+let aggr name = (var name).aggr
+
 (*****************************************************************************)
 (* Printing *)
 (*****************************************************************************)
@@ -216,6 +218,13 @@ let indir core addr fmt =
       let rec go a = if Buffer.length b < 511 then (let c = !load core a 1 in if c <> "\000" then (Buffer.add_string b c; go (Int64.add a 1L))) in
       go addr;
       { kind = String (if Buffer.length b = 0 then "(null)" else Buffer.contents b); fmt = 's'; comt = None }
+  | 'f' | 'F' ->
+      (* a float, a double (acid's 'f' and 'F') *)
+      let n = if fmt = 'f' then 4 else 8 in
+      let s = !load core addr n in
+      let v = ref 0L in
+      for i = n - 1 downto 0 do v := Int64.logor (Int64.shift_left !v 8) (Int64.of_int (Char.code s.[i])) done;
+      { kind = Float (if n = 4 then Int32.float_of_bits (Int64.to_int32 !v) else Int64.float_of_bits !v); fmt; comt = None }
   | 'i' | 'I' ->
       (match !Value.das core addr with
        | Some s -> { kind = String s; fmt = 's'; comt = None }
@@ -381,12 +390,17 @@ and apply f params args body =
   | exception Returned v -> unwind (); v
   | exception e -> unwind (); raise e
 
-(* print: a complex type's address by its function, if one (acid's
- * comx: Node(addr), the one 5c -a writes), else its type's name before
- * it *)
+(* print: a complex type's address by the library's pcomplex(addr,
+ * "T") if it has one (ix's: by the aggr's members), else by its
+ * function, if one (acid's comx: Node(addr), the one 5c -a writes),
+ * else its type's name before it *)
 and print vs =
   List.iter (fun (v : value) ->
     match v.comt with
+    | Some t when (v.fmt = 'a' || v.fmt = 'A') && (var "pcomplex").defn <> None && (var t).aggr <> None ->
+        (match (var "pcomplex").defn with
+         | Some (ps, body) -> ignore (apply "pcomplex" ps [ Const v; Const (Value.string t) ] body)
+         | None -> ())
     | Some t when (v.fmt = 'a' || v.fmt = 'A') && (var t).defn <> None ->
         (match (var t).defn with Some (ps, body) -> ignore (apply t ps [ Const v ] body) | None -> ())
     | Some t when v.fmt = 'a' || v.fmt = 'A' -> Buffer.add_string out ("(" ^ t ^ ")" ^ show v)

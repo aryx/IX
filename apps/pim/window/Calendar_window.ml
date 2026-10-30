@@ -177,70 +177,6 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
           | _ -> (m, None)))
   | Back -> (load caps { m with span = Week }, None)
 
-let update (caps : caps) (computer : computer) (m : model) : model * go option =
-  let keys = computer.keyboard.keys in
-  let pressed name = Set_.mem name keys && not (Set_.mem name m.held) in
-  let menu = chosen computer ~first:1 menus in
-  let m, go =
-    match m.mode with
-    | Asking ->
-        if pressed "Escape" then ({ m with mode = Browsing; field = "" }, None)
-        else if pressed "Enter" then
-          (create caps { m with mode = Browsing; field = "" } m.field, None)
-        else if pressed "Backspace" then
-          ({ m with field = without_last m.field }, None)
-        else ({ m with field = m.field ^ printable computer.keyboard.typed }, None)
-    | Browsing when Gui.modal () -> (m, None)
-    | Browsing -> (
-        let key =
-          if pressed "c" then Some Create
-          else if pressed "j" then Some Next_period
-          else if pressed "k" then Some Previous_period
-          else if pressed "t" then Some Today
-          else if pressed "d" then Some Day_
-          else if pressed "w" then Some Week_
-          else if pressed "m" then Some Month_
-          else if pressed "o" || pressed "Enter" then Some Open_
-          else if pressed "u" || pressed "Escape" then Some Back
-          else if pressed "g" then Some Get
-          else None
-        in
-        (* the mouse: a span of the sidebar; in a day, an event *)
-        let side_ =
-          match sidebar_click computer with
-          | Some 0 -> Some Day_
-          | Some 1 -> Some Week_
-          | Some 2 -> Some Month_
-          | _ -> None
-        in
-        let clicked =
-          match row_click computer with
-          | Some k when m.span = Day && k < List.length (on m m.cursor) -> Some k
-          | _ -> None
-        in
-        match (menu, key, side_, clicked) with
-        | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
-            command caps m c
-        | None, None, None, Some k -> ({ m with selected = k }, None)
-        | None, None, None, None ->
-            (* the arrows: a day, a week; in a day, its events *)
-            let n = List.length (on m m.cursor) in
-            if m.span = Day && pressed "ArrowDown" then
-              ({ m with selected = min (n - 1) (m.selected + 1) }, None)
-            else if m.span = Day && pressed "ArrowUp" then
-              ({ m with selected = max 0 (m.selected - 1) }, None)
-            else if pressed "ArrowRight" then (step caps m 1, None)
-            else if pressed "ArrowLeft" then (step caps m (-1), None)
-            else if pressed "ArrowDown" then (step caps m 7, None)
-            else if pressed "ArrowUp" then (step caps m (-7), None)
-            else (m, None))
-  in
-  ({ m with held = keys }, go)
-
-(*****************************************************************************)
-(* The picture *)
-(*****************************************************************************)
-
 let short_weekdays = [ "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat"; "Sun" ]
 
 (* "12:30 lunch", or "lunch" for a day's event *)
@@ -297,6 +233,179 @@ let lanes (spans : (Civil.date * int * Item.t) list) (monday : Civil.date) :
       placed @ [ (free 0, a, b, i) ])
     [] cut
 
+(* the week's or the month's cells: their left, the top of their first
+ * row, a column's width, a row's height, how many rows, the month's
+ * weekdays' line above *)
+type grid = { left : float; top : float; w : float; h : float; rows : int;
+              head : float }
+
+let grid (computer : computer) (m : model) : grid =
+  let a = area computer in
+  let bottom = (-.computer.screen.height /. 2.) +. 10. in
+  let top = a.top -. bar in
+  let w = (a.room +. 16.) /. 7. in
+  match m.span with
+  | Month ->
+      { left = a.x0 -. 8.; top; w; h = (top -. bottom -. 24.) /. 6.; rows = 6;
+        head = 24. }
+  | Week | Day -> { left = a.x0 -. 8.; top; w; h = top -. bottom; rows = 1;
+                    head = 0. }
+
+let first_day (m : model) : Civil.date =
+  match m.span with Month -> grid_start m.cursor | Week | Day -> monday m.cursor
+
+(* a cell's lines, under its [bars] lanes: each the event it is of (None
+ * for "+n more"), its dot's color, its text; a week's wrapped in their
+ * column, a month's cut; an event of several days its bar's *)
+let cell_lines (m : model) (d : Civil.date) ~(w : float) ~(h : float)
+    ~(bars : int) : (Item.t option * color option * string) list =
+  let lines =
+    List.concat_map
+      (fun (_, t, i) ->
+        let ls =
+          if m.span = Week then wrap (w -. 22.) (line t i) else [ line t i ]
+        in
+        List.mapi
+          (fun k l -> (Some i, (if k = 0 then Some (color i) else None), l))
+          ls)
+      (List.filter (fun (_, _, i) -> Events.length i < 2) (on m d))
+  in
+  let fits = max 0 (int_of_float ((h -. 30.) /. 20.)) - bars in
+  if List.length lines <= fits then lines
+  else
+    List.filteri (fun k _ -> k < fits - 1) lines
+    @ [ (None, None, Printf.sprintf "+%d more" (List.length lines - fits + 1)) ]
+
+(* a click on the week or the month: its day, and the event under it
+ * (a bar, a line), if one is *)
+let clicked_grid (computer : computer) (m : model) :
+    (Civil.date * Item.t option) option =
+  let mouse = computer.mouse in
+  let g = grid computer m in
+  if
+    m.span = Day || (not mouse.mclick) || Gui.modal () || mouse.mx < g.left
+    || mouse.mx >= g.left +. (7. *. g.w)
+  then None
+  else
+    let col = int_of_float ((mouse.mx -. g.left) /. g.w) in
+    let fy = g.top -. g.head -. mouse.my in
+    let row = if fy < 0. then -1 else int_of_float (fy /. g.h) in
+    if row < 0 || row >= g.rows then None
+    else
+      let week = date (days (first_day m) + (7 * row)) in
+      let d = date (days week + col) in
+      let y = g.top -. g.head -. (float_of_int row *. g.h) in
+      let placed = lanes m.spans week in
+      let nb = List.fold_left (fun n (l, _, _, _) -> max n (l + 1)) 0 placed in
+      (* a bar's band: 17 high round its baseline's +4 *)
+      let lane =
+        int_of_float (Float.floor ((y -. 38. +. 12.5 -. mouse.my) /. 20.))
+      in
+      let bar =
+        List.find_map
+          (fun (l, a, b, i) ->
+            if l = lane && a <= col && col <= b then Some i else None)
+          placed
+      in
+      match bar with
+      | Some i -> Some (d, Some i)
+      | None -> (
+          let k =
+            int_of_float
+              (Float.floor
+                 ((y -. 42. -. (float_of_int nb *. 20.) +. 15. -. mouse.my) /. 20.))
+          in
+          match
+            List.nth_opt (cell_lines m d ~w:g.w ~h:g.h ~bars:nb) (max 0 k)
+          with
+          | Some (Some i, _, _) when k >= 0 -> Some (d, Some i)
+          | _ -> Some (d, None))
+
+let update (caps : caps) (computer : computer) (m : model) : model * go option =
+  let keys = computer.keyboard.keys in
+  let pressed name = Set_.mem name keys && not (Set_.mem name m.held) in
+  let menu = chosen computer ~first:1 menus in
+  let m, go =
+    match m.mode with
+    | Asking ->
+        if pressed "Escape" then ({ m with mode = Browsing; field = "" }, None)
+        else if pressed "Enter" then
+          (create caps { m with mode = Browsing; field = "" } m.field, None)
+        else if pressed "Backspace" then
+          ({ m with field = without_last m.field }, None)
+        else ({ m with field = m.field ^ printable computer.keyboard.typed }, None)
+    | Browsing when Gui.modal () -> (m, None)
+    | Browsing -> (
+        let key =
+          if pressed "c" then Some Create
+          else if pressed "j" then Some Next_period
+          else if pressed "k" then Some Previous_period
+          else if pressed "t" then Some Today
+          else if pressed "d" then Some Day_
+          else if pressed "w" then Some Week_
+          else if pressed "m" then Some Month_
+          else if pressed "o" || pressed "Enter" then Some Open_
+          else if pressed "u" || pressed "Escape" then Some Back
+          else if pressed "g" then Some Get
+          else None
+        in
+        (* the mouse: a span of the sidebar; in a day, an event *)
+        let side_ =
+          match sidebar_click computer with
+          | Some 0 -> Some Day_
+          | Some 1 -> Some Week_
+          | Some 2 -> Some Month_
+          | _ -> None
+        in
+        let clicked =
+          match row_click computer with
+          | Some k when m.span = Day && k < List.length (on m m.cursor) -> Some k
+          | _ -> None
+        in
+        let on_grid = clicked_grid computer m in
+        match (menu, key, side_, clicked) with
+        | Some c, _, _, _ | None, Some c, _, _ | None, None, Some c, _ ->
+            command caps m c
+        | None, None, None, Some k -> ({ m with selected = k }, None)
+        | None, None, None, None when on_grid <> None -> (
+            (* a day of the week or the month clicked: its page, the event
+             * clicked selected, its details under the list *)
+            match on_grid with
+            | Some (d, ev) ->
+                let m = load caps { m with cursor = d; span = Day; selected = 0 } in
+                let k =
+                  match ev with
+                  | Some e ->
+                      let rec index j l =
+                        match l with
+                        | (_, _, i) :: rest ->
+                            if Item.id i = Item.id e then j else index (j + 1) rest
+                        | [] -> 0
+                      in
+                      index 0 (on m d)
+                  | None -> 0
+                in
+                ({ m with selected = k }, None)
+            | None -> (m, None))
+        | None, None, None, None ->
+            (* the arrows: a day, a week; in a day, its events *)
+            let n = List.length (on m m.cursor) in
+            if m.span = Day && pressed "ArrowDown" then
+              ({ m with selected = min (n - 1) (m.selected + 1) }, None)
+            else if m.span = Day && pressed "ArrowUp" then
+              ({ m with selected = max 0 (m.selected - 1) }, None)
+            else if pressed "ArrowRight" then (step caps m 1, None)
+            else if pressed "ArrowLeft" then (step caps m (-1), None)
+            else if pressed "ArrowDown" then (step caps m 7, None)
+            else if pressed "ArrowUp" then (step caps m (-7), None)
+            else (m, None))
+  in
+  ({ m with held = keys }, go)
+
+(*****************************************************************************)
+(* The picture *)
+(*****************************************************************************)
+
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in
   let bottom = (-.computer.screen.height /. 2.) +. 10. in
@@ -333,24 +442,7 @@ let view (computer : computer) (m : model) : shape list =
       ~(bars : int) (d : Civil.date) : shape list =
     let is_cursor = d = m.cursor and is_today = d = m.today in
     let grey_day = m.span = Month && d.month <> m.cursor.month in
-    (* (a week's events wrapped in their column, a month's cut) *)
-    (* (an event of several days is its bar's, above) *)
-    let lines =
-      List.concat_map
-        (fun (_, t, i) ->
-          let ls =
-            if m.span = Week then wrap (w -. 22.) (line t i) else [ line t i ]
-          in
-          List.mapi (fun k l -> ((if k = 0 then Some (color i) else None), l)) ls)
-        (List.filter (fun (_, _, i) -> Events.length i < 2) (on m d))
-    in
-    let fits = max 0 (int_of_float ((h -. 30.) /. 20.)) - bars in
-    let lines =
-      if List.length lines <= fits then lines
-      else
-        List.filteri (fun k _ -> k < fits - 1) lines
-        @ [ (None, Printf.sprintf "+%d more" (List.length lines - fits + 1)) ]
-    in
+    let lines = cell_lines m d ~w ~h ~bars in
     (if is_cursor then
        [ rectangle (rgb 232 240 254) w h |> move (x +. (w /. 2.)) (y -. (h /. 2.)) ]
      else [])
@@ -361,7 +453,7 @@ let view (computer : computer) (m : model) : shape list =
           ~bold:is_today ~room:(w -. 8.) (x +. 6.) (y -. 20.) head ]
     @ List.concat
         (List.mapi
-           (fun k (dot, l) ->
+           (fun k (_, dot, l) ->
              let ly = y -. 42. -. (float_of_int (k + bars) *. 20.) in
              (* a timed event's dot, its calendar's color *)
              (match dot with
@@ -450,7 +542,7 @@ let view (computer : computer) (m : model) : shape list =
                     | "" -> None
                     | v -> Some (label ^ v))
                   [ ("end", "until "); ("ends", "the last day: ");
-                    ("where", "where: ");
+                    ("where", "where: "); ("calendar", "calendar: ");
                     ("repeat", "repeats: "); ("with", "with: ");
                     ("re", "from the mail: o opens it, ") ]
                 @ wrap a.room (String.trim i.body)

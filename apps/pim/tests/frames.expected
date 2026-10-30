@@ -61,6 +61,9 @@ birthdays|4 today=2026-10-29 view=calendar|3ff9de7fbbf0cbc9f35a9960f04f353a5cccb
 homebirthday|3 today=2026-10-29|d2bad82b7e109e3cfc6bfdf6fd09b034772408c7d616edf87e6c02ecc276aa15
 mailbar|3 view=mail|e8994e276f0cd3ff3d0561706f512ce0aedcc9ae53f3affc484a9023faec60a3
 mailbarpress|8 -script 'at(492;100):4-6,click:5' view=mail|366569836eeb20296657fc14260bb60b2223ab08d4f5047c5dfe45c25dd2d793
+calclickbar|6 -script 'at(-31;396):2-3,click:2' today=2026-10-29 view=calendar|c90864a7f9f3b401b68b81a1b2dcb17bb9181de901e6f28972d5642be9f9a035
+calclickline|6 -script 'at(85;333):2-3,click:2' today=2026-10-29 view=calendar|46ae7c41fb20dceeae7f0d70b839f05e0bc9477475be14fa5d8d0ce318b88bde
+calmonthclick|9 -script 'm:2,at(-31;-225):5-6,click:5' today=2026-10-29 view=calendar|c90864a7f9f3b401b68b81a1b2dcb17bb9181de901e6f28972d5642be9f9a035
 archive|16 -script 'g:2,type(secret):4,Enter:6,e:9' view=mail|f182c53472f6b97ad1455d4751dfef9bbb2074eda50feeb64688286466dd2935
 menu|10 -script 'g:2,type(secret):4,Enter:6,at(-63;485):8-10,click:9' view=mail|93686e979baa813e35c939be974a5c99cd67e16fbaafa010f56979cfc980bd08
 menuget|14 -script 'at(-237;485):1-3,click:2,at(-237;419):4-14,click:5,type(secret):8,Enter:10' view=mail|679a8e4aa7e130a759967c931cfe3fb14084b694dcf2a31c5f06cb80d4d24c94

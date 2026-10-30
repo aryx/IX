@@ -58,10 +58,19 @@ let mangle s =
 type loc = Slot of int | Env of int | Static of string
 type binding = { loc : loc; known : (string * int) option }
 
-type fn = { mutable code : Ir.t list; mutable nslots : int; mutable ntries : int }
+(* line: the last Line's *)
+type fn = { mutable code : Ir.t list; mutable nslots : int; mutable ntries : int; mutable line : int }
 
-let cur = ref { code = []; nslots = 1; ntries = 0 }
+let cur = ref { code = []; nslots = 1; ntries = 0; line = 0 }
 let emit i = !cur.code <- i :: !cur.code
+
+(* a statement's start (a sequence's part, a let's, a condition, a
+ * branch...): its line, if not the last's (Ir.Line). None in another
+ * unit's function copied here: its lines are another file's *)
+let foreign = ref false
+let at_line n =
+  if n > 0 && not !foreign && n <> !cur.line then (!cur.line <- n; emit (Line n))
+let at (e : Scope.expr) = at_line e.loc
 let slot () = let s = !cur.nslots in !cur.nslots <- s + 1; s
 let labels = ref 0
 let label () = incr labels; !labels
@@ -681,6 +690,7 @@ let rec value env (e : Scope.expr) =
       !cur.ntries <- k + 1;
       let handler = label () and out = label () in
       emit (TryEnter (k, handler));
+      at b;
       value env b;
       emit (TryExit k);
       emit (Jmp out);
@@ -693,8 +703,10 @@ let rec value env (e : Scope.expr) =
       emit (Label out)
   | Ewhile (c, b) ->
       let top = label () and out = label () in
-      emit (Label top); value env c; emit (Jz out); value env b; emit Drop; emit (Jmp top); emit (Label out); emit (Int 0)
+      emit (Label top); at c; value env c; emit (Jz out);
+      at b; value env b; emit Drop; emit (Jmp top); emit (Label out); emit (Int 0)
   | Efor (v, a, b, dir, body) ->
+      at a;
       value env a;
       let i = slot () in
       emit (Set i);
@@ -704,6 +716,7 @@ let rec value env (e : Scope.expr) =
       let top = label () and out = label () in
       emit (Label top);
       emit (Get lim); emit (Get i); emit (Op (Cmp (if dir = Upto then Gt else Lt))); emit (Jnz out);
+      at body;
       value ((v.vid, { loc = Slot i; known = None }) :: env) body;
       emit Drop;
       emit (Int (if dir = Upto then 1 else -1)); emit (Get i); emit (Op Add); emit (Set i);
@@ -761,12 +774,13 @@ and tail env (e : Scope.expr) =
   | _ -> value env e; emit Ret
 
 and control env (e : Scope.expr) tl =
-  let k env e = if tl then tail env e else value env e in
+  let k env e = at e; if tl then tail env e else value env e in
   match e.e with
-  | Eseq (a, b) -> value env a; emit Drop; k env b
+  | Eseq (a, b) -> at a; value env a; emit Drop; k env b
   | Eif (c, a, b) ->
       let b = match b with Some b -> b | None -> { e with e = Econs ({ cname = "()"; kind = Const 0; arity = 0; nconst = 1; nblock = 0; ctype = [], [], Resolve.unit_t; cinline = [] }, []) } in
       let other = label () in
+      at c;
       value env c;
       emit (Jz other);
       k env a;
@@ -774,6 +788,7 @@ and control env (e : Scope.expr) tl =
       else (let out = label () in emit (Jmp out); emit (Label other); k env b; emit (Label out))
   | Elet (r, bs, body) -> k (bind env r bs) body
   | Ematch (scrut, cases) ->
+      at scrut;
       value env scrut;
       let s = slot () in
       emit (Set s);
@@ -785,13 +800,15 @@ and control env (e : Scope.expr) tl =
  * first clause that may match it is jumped to, past its own test of
  * the constructor (after.(i)), a clause that fails going on to the
  * next one's tests as without *)
-and match_cases env s cases tl _loc on_fail =
+and match_cases env s cases tl loc on_fail =
   let out = label () in
   let table = if !switches then switch s (List.map (fun (p, _, _) -> p) cases) else None in
   let rec go i = function
-    | [] -> on_fail ()
+    | [] -> at_line loc; on_fail ()
     | ((p : Scope.pattern), g, body) :: rest ->
         let fail = match table with Some (entry, _) -> entry.(i + 1) | None -> label () in
+        (* (a clause's tests the match's line, after another's body) *)
+        at_line loc;
         let env =
           match split_head p, table with
           | Some (c, fields), Some (_, after) ->
@@ -800,7 +817,8 @@ and match_cases env s cases tl _loc on_fail =
               test env [] s fields fail
           | _ -> test env [] s p fail
         in
-        Option.iter (fun g -> value env g; emit (Jz fail)) g;
+        Option.iter (fun g -> at g; value env g; emit (Jz fail)) g;
+        at body;
         if tl then tail env body else (value env body; emit (Jmp out));
         if refutable p || Option.is_some g then (emit (Label fail); go (i + 1) rest)
   in
@@ -911,7 +929,11 @@ and app env (f : Scope.expr) args tl =
           | Pvar x -> (x.vid, { loc = Slot s; known = None }) :: env
           | p -> irrefutably s p @ env) i.ienv ss i.iparams
       in
-      if tl then (tail env i.ibody; true) else (value env i.ibody; false)
+      let was = !foreign in
+      foreign := was || known = None;
+      let made = if tl then (tail env i.ibody; true) else (value env i.ibody; false) in
+      foreign := was;
+      made
   | Evar _, Some (lab, n), _ when m >= n ->
       let ss = slots args in
       let c = to_slot env f in
@@ -969,8 +991,9 @@ and bind env r bs =
               inline_candidate env (Some !cur) lab e;
               check_inline lab x.vname e ~recursive:false;
               let s = slot () in emit (Set s); [ x.vid, { loc = Slot s; known = Some (lab, n) } ])
-      | Pany, _ -> value env e; emit Drop; []
+      | Pany, _ -> at e; value env e; emit Drop; []
       | _ ->
+          at e;
           value env e;
           let s = slot () in
           emit (Set s);
@@ -1055,8 +1078,8 @@ and bind_rec env bs =
   end
 
 (* a function's code: its closure in slot 0, its parameters after *)
-and compile_fun lab ps benv body =
-  cur := { code = []; nslots = 1 + List.length ps; ntries = 0 };
+and compile_fun lab ps benv (body : Scope.expr) =
+  cur := { code = []; nslots = 1 + List.length ps; ntries = 0; line = body.loc };
   cur_fun := lab;
   let env =
     List.fold_left (fun env (i, (p : Scope.pattern)) ->
@@ -1072,7 +1095,7 @@ and compile_fun lab ps benv body =
  * the block's fields on the stack machine, or for more than arm's
  * registers hold, stored one by one (as a big block's) *)
 let curry_fun n k =
-  cur := { code = []; nslots = 2; ntries = 0 };
+  cur := { code = []; nslots = 2; ntries = 0; line = 0 };
   (* (the block on the stack machine when its k + 3 fields fit arm's 8
    * registers: every arity up to 7's) *)
   if k < n - 1 && k + 3 <= 8 then begin
@@ -1151,7 +1174,7 @@ let exports (items : Scope.item list) : Summary.entry list =
 (*****************************************************************************)
 
 let unit_ name (items : Scope.item list) =
-  cur := { code = []; nslots = 1; ntries = 0 };
+  cur := { code = []; nslots = 1; ntries = 0; line = 0 };
   funcs := []; data := []; arities := []; Hashtbl.reset strings; Hashtbl.reset known_globals; Hashtbl.reset inlines;
   Hashtbl.reset zero_allocs; Hashtbl.reset unboxed_floats;
   cur_fun := mangle name ^ ".Init";
@@ -1159,7 +1182,7 @@ let unit_ name (items : Scope.item list) =
   let globals = ref [] in
   List.iter (fun (it : Scope.item) ->
     match it with
-    | Ieval e -> value [] e; emit Drop
+    | Ieval e -> at e; value [] e; emit Drop
     | Iexception (g, c) -> let name = string_block c in data := Exception (mangle g.gsym, name) :: !data
     | Iexternal (g, p, n, t) ->
         (* the primitive as a function, a static closure *)

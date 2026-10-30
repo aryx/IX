@@ -3,8 +3,8 @@ acid: PID: Breakpoint/Trace trap	_main	WORD	$0xf81f0ffe
 PID: Breakpoint/Trace trap	main+0x4	MOV	32(R28), R0
 acid: acid: PID: Breakpoint/Trace trap	leaf	MOVW	R0, 8(RSP)
 acid: leaf()+0x0 target.c:26
-walk()+0x34 target.c:32
-main+0x10 target.c:41
+walk()+0x34 target.c:37
+main+0x10 target.c:43
 acid: Node {name=ADDR "one", p=Point {x=1, y=2}, next=(Node*)ADDR, c=97, s=7}
 acid: 0x00000003
 acid: target.c:26
@@ -22,7 +22,7 @@ acid: target.c:26
 acid: PID: Breakpoint/Trace trap	leaf+0x4	WORD	$0xb9800be0
 acid: PID: Breakpoint/Trace trap	leaf	MOVW	R0, 8(RSP)
 acid: leaf()+0x0 target.c:26
-walk()+0x34 target.c:32
-main+0x24 target.c:41
+walk()+0x34 target.c:37
+main+0x24 target.c:43
 acid: 
 kill PID

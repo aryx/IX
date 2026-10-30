@@ -130,4 +130,5 @@ type func = {
   doubles : (value, unit) Hashtbl.t;
   raws : (value, int) Hashtbl.t;
   slots : (int, value) Hashtbl.t;   (* a frame slot's values (Ssa_build), each by Hashtbl.add *)
+  lines : (value, int) Hashtbl.t;   (* the .ml's line of a value from Ir (Ir.Line); a pass's own none *)
 }

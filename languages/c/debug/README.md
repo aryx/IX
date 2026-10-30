@@ -16,7 +16,8 @@ Elsewhere, called from here or calling here:
 - `Lexer`: a name's line, for `Declare.nameline`.
 - `Pre`: the files read as 5c's history (`history`, `push_file`), and
   `depth`, for `-aa`; the positions are also its errors'.
-- `Emit`: each instruction's line (its function's), the history and
-  the declarations in the object.
+- `Emit`: each instruction's line (`Emit.line`, its statement's,
+  which the compat back end's `Cgen.gen` sets; the function's in the
+  others), the history and the declarations in the object.
 - `CLI`: `-a`, `-aa`, `-n`, `-g`.
 - `debuggers/tests/acid_proc.sh`: mini-acid on a program of mini-cc's.

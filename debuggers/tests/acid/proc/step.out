@@ -9,34 +9,32 @@ PID: Prefetch Abort/Breakpoint	leaf+0x10	MOVW	$count-SB(SB),R2
 PID: Prefetch Abort/Breakpoint	leaf+0x14	ADD	R2,R0,R0
 PID: Prefetch Abort/Breakpoint	leaf+0x18	RET	
 PID: Prefetch Abort/Breakpoint	middle+0x1c	MOVW	R0,y-4(SP)
-target.c:17
- 12	{
- 13		return a*b + count;
- 14	}
- 15	
+target.c:21
  16	int
->17	middle(int x)
+ 17	middle(int x)
  18	{
  19		int y;
  20	
- 21		y = leaf(x, x+1);
- 22		return y + 1;
-PID: Prefetch Abort/Breakpoint	middle+0x20	MOVW	y-4(SP),R0
-PID: Prefetch Abort/Breakpoint	middle+0x24	ADD	$#0x1,R0,R0
-PID: Prefetch Abort/Breakpoint	middle+0x28	RET.P	#0x10(R13)
-PID: Prefetch Abort/Breakpoint	main+0xc	MOVW	R0,$count-SB(SB)
-target.c:26
- 21		y = leaf(x, x+1);
+>21		y = leaf(x, x+1);
  22		return y + 1;
  23	}
  24	
  25	void
->26	main(void)
+ 26	main(void)
+PID: Prefetch Abort/Breakpoint	middle+0x20	MOVW	y-4(SP),R0
+PID: Prefetch Abort/Breakpoint	middle+0x24	ADD	$#0x1,R0,R0
+PID: Prefetch Abort/Breakpoint	middle+0x28	RET.P	#0x10(R13)
+PID: Prefetch Abort/Breakpoint	main+0xc	MOVW	R0,$count-SB(SB)
+target.c:28
+ 23	}
+ 24	
+ 25	void
+ 26	main(void)
  27	{
- 28		count = middle(3);
+>28		count = middle(3);
  29		exits(nil);
  30	}
-acid: main()+0xc target.c:26
+acid: main()+0xc target.c:28
 _main+0x20 libc/arch/arm/rt0.s:17
 acid: 
 echo kill > /proc/PID/ctl

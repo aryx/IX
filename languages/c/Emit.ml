@@ -28,15 +28,19 @@ type prog = {
   mutable to_ : A.operand option;     (* Target is a pc until the end *)
   mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
-  line : int;                         (* its source's (the function's, Declare.fnline) *)
+  line : int;                         (* its source's: its statement's, or its function's *)
 }
 
 let progs : prog list ref = ref []    (* the last first *)
 let pc = ref 0
 let p () = List.hd !progs
 
+(* the statement's line while it is generated (5c's nearln); 0: the
+ * function's (Declare.fnline), as the back ends that set none *)
+let line = ref 0
+
 let nextpc () =
-  let q = { as_ = "GOK"; cond = []; from = None; reg = None; to_ = None; pseudo = Pnone; ppc = !pc; line = !Declare.fnline } in
+  let q = { as_ = "GOK"; cond = []; from = None; reg = None; to_ = None; pseudo = Pnone; ppc = !pc; line = (if !line > 0 then !line else !Declare.fnline) } in
   progs := q :: !progs;
   incr pc;
   q
@@ -297,6 +301,6 @@ let obj file : A.obj =
       | _ -> A.Ins { op = q.as_; suffixes = q.cond; args = List.map operand args }
     in
     item, (match q.pseudo with Pdata _ | Pglobl -> 0 | _ -> q.line)) ps in
-  (* the lines a function's, the history of the #includes 5c's
-   * (plan_debugger.md's stage 1b: a statement's line, not yet) *)
+  (* the lines a statement's (the compat back end's; the others' a
+   * function's), the history of the #includes 5c's *)
   { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = List.rev !Pre.history; acid = List.rev !Acid.decls }

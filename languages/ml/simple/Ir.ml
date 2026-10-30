@@ -145,11 +145,15 @@ type t =
   | TryEnter of int * int             (* the k-th handler of the function, its code *)
   | TryExit of int
   | Catch of int                      (* the handler's entry: the exception pushed *)
+  (* the .ml's line of the statement that follows (Lower: a sequence's
+   * part, a let's, a branch's...), no code: the pc/line table's
+   * (plan_debugger.md's stage 1b), "// line n" in the assembly *)
+  | Line of int
 [@@deriving show]
 
-(* line: the line of its body in the .ml, what the symbol table's
- * pc/line table says of all its instructions (plan_debugger.md's stage
- * 1b); 0 for the compiler's own (a curry, a unit's start) *)
+(* line: the line of its body in the .ml, what the pc/line table says
+ * of its prologue and of what has no Line; 0 for the compiler's own
+ * (a curry, a unit's start) *)
 type func = { name : string; nparams : int; nslots : int; code : t list; line : int }
 
 (* the static data *)

@@ -768,13 +768,17 @@ let scoped ~contin f =
   nbreak := snbreak;
   if contin then ncontin := sncontin
 
+(* each instruction has the line of its statement's expression (5c's
+ * gen: nearln, a statement's), a statement without one its previous
+ * statement's *)
 let rec gen (s : stmt) =
   match s with
   | Block l -> List.iter gen l
   | Expr { e = Binary (Comma, a, b); _ } -> gen (Expr a); gen (Expr b)
-  | Expr n -> cgen (Check.complex n) None
+  | Expr n -> Emit.line := n.line; cgen (Check.complex n) None
   | Return (x, rt) ->
       canreach := false;
+      Option.iter (fun (x : expr) -> Emit.line := x.line) x;
       (match x with
        | None -> noretval ~r:true ~f:true
        | Some x ->
@@ -818,6 +822,7 @@ let rec gen (s : stmt) =
            | { e = Const v; _ } as l when (m ()).typeswitch (et l) -> add_case { cval = v; cdef = false; clabel = !pc; cisv = typev (et l) }
            | l -> ignore (diag (Some l) "case expression must be integer constant")))
   | Switch (x, body) ->
+      Emit.line := x.line;
       let l = Check.complex x in
       if not ((m ()).typeswitch (et l)) then ignore (diag (Some l) "switch expression must be integer");
       let sp = gbranch () in
@@ -829,6 +834,7 @@ let rec gen (s : stmt) =
         gen body;
         if !canreach then (goto !breakpc; incr nbreak);
         here sp;
+        Emit.line := x.line;
         (* always signed *)
         let nod = { (regalloc l None) with t = ty (if typev (et l) then Tvlong else Tlong) } in
         cgen l (Some nod);
@@ -875,6 +881,7 @@ let rec gen (s : stmt) =
       (* an unreachable break makes no branch *)
       else if !canreach then (goto !breakpc; incr nbreak; canreach := false)
   | If (c, a, b) ->
+      Emit.line := c.line;
       let c, dead = bcomplex c (Some (a, b)) in
       if dead then begin
         (* a constant: the dead side generated, and thrown away *)
@@ -903,6 +910,7 @@ let rec gen (s : stmt) =
 
 (* a loop's test, its false branch to the break *)
 and test (l : expr) =
+  Emit.line := l.line;
   let l, _ = bcomplex l None in
   patch (p ()) !breakpc;
   if not (is_const l) || Check.vconst l = 0 then incr nbreak
@@ -926,6 +934,7 @@ let codgen (fn : sym) (body : stmt) =
   curarg := 0;
   maxargsafe := 0;
   labels := [];
+  Emit.line := 0;
   let sp = gpseudo "TEXT" fn (iconst !Declare.stkoff) in
   sp.pseudo <- Emit.Ptext (if !Pre.profile then 0 else 1);
   let ret = link (Option.get !Declare.thisfn) in
@@ -951,4 +960,5 @@ let codgen (fn : sym) (body : stmt) =
   noretval ~r:true ~f:true;
   ignore (greturn ());
   if not (arm ()) then maxargsafe := Declare.round !maxargsafe 8;
-  sp.to_ <- add_off sp.to_ !maxargsafe
+  sp.to_ <- add_off sp.to_ !maxargsafe;
+  Emit.line := 0

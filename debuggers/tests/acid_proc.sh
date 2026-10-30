@@ -11,7 +11,8 @@
 # its stack, mini-ml's frames read by their prologues), acid/mlvalues/
 # on another (Values.ml: its globals' values printed by their words,
 # port.acid's ml, a unit's global named M.x; typed.acid by their types,
-# mini-ml -g's descriptions), acid/types/*.acid
+# mini-ml -g's descriptions), acid/mlsteps/ on a third (Steps.ml: next
+# a statement at a time, each its line), acid/types/*.acid
 # on a C program with structs, their declarations 5c -a's
 # (acid/types/target.acid, loaded with -l: complex, ., ->, a type's
 # function called by print; ix_print.acid: ix's library's pcomplex, a
@@ -23,7 +24,7 @@
 #   otherwise: the lines its library prints as it is read, a caller's
 #   offset in a stack (the call, not libmach's instruction before it),
 #   a line said twice (needs ~/principia)
-#   record: the outputs written as acid/{proc,ml,mlvalues,types}/NAME.out
+#   record: the outputs written as acid/{proc,ml,mlvalues,mlsteps,types}/NAME.out
 # usage: debuggers/tests/acid_proc.sh [live | record]
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -48,7 +49,7 @@ cleanup() {
   done
 }
 trap 'cleanup; rm -rf $W' EXIT
-mkdir $W/c $W/ml $W/mlvalues $W/types $W/types-g
+mkdir $W/c $W/ml $W/mlvalues $W/mlsteps $W/types $W/types-g
 # (compiled by its name, in its directory: its tables say target.c, as
 # 5a's -r, and src() finds it there)
 cp $T/proc/target.c $W/c/
@@ -68,7 +69,7 @@ cmp -s $W/decls $T/types/target.acid || { failures=1; echo "FAIL mini-cc -a: not
 I="-I . -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"
 U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
 # (Values.ml with its types described, -g)
-for x in ml:Down mlvalues:Values; do
+for x in ml:Down mlvalues:Values mlsteps:Steps; do
   d=${x%:*} u=${x#*:}
   g=; [ $d = mlvalues ] && g=-g
   cp $T/$d/$u.ml $W/$d/
@@ -84,7 +85,7 @@ norm() { grep -a -v 'pushfile: /lib' | sed 's/[0-9]\{4,8\}: /PID: /g;s/[0-9]\{4,
 # (and _main's line: its call's, rt0.s:17, where libmach's says the line
 # of the instruction before it, 16)
 alike() { sed -E '/^\/lib\/acid\//d; /^_main[+ ]/d; s/\+0x[0-9a-f]+ ([^ ]*:[0-9]+)$/ \1/' | uniq; }
-for d in proc:c ml:ml mlvalues:mlvalues types:types types:types-g; do
+for d in proc:c ml:ml mlvalues:mlvalues mlsteps:mlsteps types:types types:types-g; do
   # (the types' declarations, 5c -a's, loaded after the library)
   decls=; [ ${d#*:} = types ] && decls="-l target.acid"
   for f in $T/${d%:*}/*.acid; do

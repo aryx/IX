@@ -122,7 +122,18 @@ let small_frames = ref true
 let func m out (fn : func) (lf : L.func) =
   let w = m.w and mov = m.mov and vsp = m.vsp and t = m.tmp in
   let lines = ref [] in
-  let line f = lines := f :: !lines in
+  (* the .ml's line of the value emitted (Ir.Line, Ssa_build): "// line n"
+   * before its first instruction, if not the last's; a value with no
+   * code here (a constant, made where it is read) none *)
+  let at_line = ref fn.line and said = ref fn.line in
+  let line f =
+    if !at_line <> !said then begin
+      let n = !at_line in
+      said := n;
+      lines := (fun _ _ _ -> sprintf "\t// line %d\n" n) :: !lines
+    end;
+    lines := f :: !lines in
+  let line_of v = Option.iter (fun n -> at_line := n) (Hashtbl.find_opt fn.lines v) in
   (* (bl: a BL emitted, but to caml_array_bound_error, which raises:
    * the link is then needed, below) *)
   let bl = ref false in
@@ -130,7 +141,7 @@ let func m out (fn : func) (lf : L.func) =
     Printf.ksprintf (fun s ->
       if String.length s > 3 && String.sub s 0 3 = "BL\t" && s <> "BL\tcaml_array_bound_error(SB)" then bl := true;
       line (fun _ _ _ -> "\t" ^ s ^ "\n")) fmt in
-  let lab l = line (fun _ _ _ -> l ^ ":\n") in
+  let lab l = lines := (fun _ _ _ -> l ^ ":\n") :: !lines in
   let tries = ref 0 and cargs = ref (if m.arch = Arm then 1 else 0) in
   (* OPTIMIZATION: the stack code's own slots (its variables and
    * temporaries) are values here, in registers or in slots of their
@@ -955,6 +966,7 @@ let func m out (fn : func) (lf : L.func) =
     let fuse = fused b in
     fresh := [];
     List.iter (fun v ->
+      line_of v;
       (match def v with
        | Alloc (_, xs) when List.length xs <= alloc_most -> fresh := [ v ]
        | CallC ("obj_block", [ _; n ])
@@ -1134,6 +1146,8 @@ let func m out (fn : func) (lf : L.func) =
       if i + 1 < Array.length fn.blocks then blabel fn.blocks.(i + 1).id else "" in
     let jump l = if l <> next then ins "B\t%s" l in
     let negate = function L.Eq -> L.Ne | Ne -> Eq | Lt -> Ge | Ge -> Lt | Le -> Gt | Gt -> Le in
+    (* (a jump its condition's line; a tail call its arguments', the last) *)
+    (match b.term with Br (v, _, _) | Switch (v, _) | Ret v | Raise v -> line_of v | _ -> ());
     match b.term with
     | Jmp s -> let l = edge b.id s ~alone:true in jump l
     | Br (v, tr, fl) ->

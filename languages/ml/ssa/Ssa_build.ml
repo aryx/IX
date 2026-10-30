@@ -21,12 +21,14 @@ let ends : L.t -> bool = function
 let split (code : L.t list) =
   let out = ref [] and label = ref None and cur = ref [] in
   let close last = out := { label = !label; code = List.rev !cur; last } :: !out; label := None; cur := [] in
+  let lines_only = List.for_all (function L.Line _ -> true | _ -> false) in
   List.iter (fun (i : L.t) ->
     match i with
-    | Label l -> if !cur <> [] || !label <> None then close None; label := Some l
+    (* (Lines after a jump: the label's run's, no run of their own) *)
+    | Label l -> if not (!label = None && lines_only !cur) then close None; label := Some l
     | i when ends i -> close (Some i)
     | i -> cur := i :: !cur) code;
-  if !cur <> [] || !label <> None then close None;
+  if not (!label = None && lines_only !cur) then close None;
   Array.of_list (List.rev !out)
 
 (* the run of each label *)
@@ -73,7 +75,7 @@ let arity : L.t -> int * int = function
   | Op _ -> 2, 1
   | Call (_, _, tail) -> 0, if tail then 0 else 1
   | CallC (_, n) -> n, 1
-  | Label _ | Jmp _ | TryEnter _ | TryExit _ -> 0, 0
+  | Label _ | Jmp _ | TryEnter _ | TryExit _ | Line _ -> 0, 0
 
 (*****************************************************************************)
 (* Braun et al.'s construction *)
@@ -116,7 +118,13 @@ let build (f : L.func) =
   (* the values *)
   let defs = Hashtbl.create 256 and where = Hashtbl.create 256 and next = ref 0 in
   let fresh b ins = let v = !next in incr next; Hashtbl.replace defs v ins; Hashtbl.replace where v b; v in
-  let emit b ins = let v = fresh b ins in blocks.(b).body <- blocks.(b).body @ [ v ]; v in
+  (* each value the line of the last Line before it, in the code's order
+   * (the function's before the first) *)
+  let lines = Hashtbl.create 256 and line = ref f.line in
+  let emit b ins =
+    let v = fresh b ins in
+    if !line > 0 then Hashtbl.replace lines v !line;
+    blocks.(b).body <- blocks.(b).body @ [ v ]; v in
   (* with a handler, a slot is read and written in memory: the handler
    * would need its value at each raise *)
   let memory = List.exists (function L.TryEnter _ -> true | _ -> false) f.code in
@@ -175,6 +183,7 @@ let build (f : L.func) =
       | Drop -> ignore (pop ())
       | TryExit k -> ignore (emit id (TryExit k))
       | Catch k -> push (emit id (Caught k))
+      | Line n -> line := n
       | Label _ | Jmp _ | Jz _ | Jnz _ | Switch _ | Ret | Raise | TryEnter _ -> ()) r.code;
     let succs = bsucc id in
     (b.term <-
@@ -194,7 +203,7 @@ let build (f : L.func) =
     Braun.fill br id;
     seal_ready ()) blocks;
   Braun.seal_rest br;
-  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1; slots }
+  { name = f.name; nparams = f.nparams; line = f.line; blocks; defs; doubles = Hashtbl.create 1; raws = Hashtbl.create 1; slots; lines }
 
 (*****************************************************************************)
 (* Trivial phis out *)

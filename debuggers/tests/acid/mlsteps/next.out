@@ -1,0 +1,78 @@
+./target:arm plan 9 executable
+acid: PID: Mirq interrupt	_main	MOVW.W	R14,#-0x4(R13)
+PID: Prefetch Abort/Breakpoint	main+0x4	MOVW	R0,R1
+acid: acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x70	SUB	$#0x1,R6,R6
+acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x74	MOVW	(R6<<1),R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x78	ORR	$#0x1,R6,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x7c	MOVW	#0x0(R5),R7
+Steps.ml:12
+ 7	  match l with
+ 8	  | [] -> !total
+ 9	  | x :: rest ->
+ 10	      total := !total + x;
+ 11	      let doubled = 2 * x in
+>12	      total := !total + doubled;
+ 13	      add_all rest
+ 14	
+ 15	let () =
+ 16	  let r = add_all [ 1; 2; 3 ] in
+ 17	  print_int r
+acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x80	ADD	R6,R7,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x84	SUB	$#0x1,R6,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x88	MOVW	R6,#0x0(R5)
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x8c	B	f1_add_all+0x24
+Steps.ml:13
+ 8	  | [] -> !total
+ 9	  | x :: rest ->
+ 10	      total := !total + x;
+ 11	      let doubled = 2 * x in
+ 12	      total := !total + doubled;
+>13	      add_all rest
+ 14	
+ 15	let () =
+ 16	  let r = add_all [ 1; 2; 3 ] in
+ 17	  print_int r
+acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x24	CMP.S	$#0x1,R4
+Steps.ml:7
+ 2	 * function of several statements, each its own line in the tables
+ 3	 * (plan_debugger.md's stage 1b), next going a line at a time *)
+ 4	let total = ref 0
+ 5	
+ 6	let rec add_all l =
+>7	  match l with
+ 8	  | [] -> !total
+ 9	  | x :: rest ->
+ 10	      total := !total + x;
+ 11	      let doubled = 2 * x in
+ 12	      total := !total + doubled;
+acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x28	B.NE	f1_add_all+0x44
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x44	AND	$#0x1,R4,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x48	MOVW	(R6<<1),R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x4c	ORR	$#0x1,R6,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x50	CMP.S	$#0x1,R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x54	B.NE	f1_add_all+0x90
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x58	MOVW	#0x0(R4),R6
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x5c	MOVW	#0x4(R4),R4
+PID: Prefetch Abort/Breakpoint	f1_add_all+0x60	MOVW	#0x0(R5),R7
+Steps.ml:10
+ 5	
+ 6	let rec add_all l =
+ 7	  match l with
+ 8	  | [] -> !total
+ 9	  | x :: rest ->
+>10	      total := !total + x;
+ 11	      let doubled = 2 * x in
+ 12	      total := !total + doubled;
+ 13	      add_all rest
+ 14	
+ 15	let () =
+acid: f1_add_all()+0x60 Steps.ml:10
+Steps.Init()+0x1a8 Steps.ml:16
+ml_program()+0x264 ?file?:0
+main()+0x190 ?file?:0
+_main+0x20 libc/arch/arm/rt0.s:17
+acid: (3)
+acid: PID: Prefetch Abort/Breakpoint	f1_add_all+0x70	SUB	$#0x1,R6,R6
+acid: (5)
+acid: 
+echo kill > /proc/PID/ctl

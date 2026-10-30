@@ -48,13 +48,13 @@ if [ -f $M/lib_core/lib_core.a ]; then
   }
   if ml Deep; then
     same "a fault in ML: mini-ml's frames, the runtime's C, to _main" \
-      "f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < Deep.Init < ml_program < main < _main rt0.s:17" \
+      "f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < f2_down Deep.ml:5 < Deep.Init Deep.ml:7 < ml_program < main < _main rt0.s:17" \
       "$($IX/machine/Main.exe $W/deepml 2>&1 | grep trace: | sed 's/^mini-5i: trace: //; s/+0x[0-9a-f]*//g')"
   fi
   if ml Raise; then
     same "an uncaught exception in ML: its frames named by the runtime, to _main" \
       "Fatal error: uncaught exception Deep(7)
-raised at: f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < Raise.Init < ml_program < main < _main rt0.s:17" \
+raised at: f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < f1_down Raise.ml:6 < Raise.Init Raise.ml:8 < ml_program < main < _main rt0.s:17" \
       "$($IX/machine/Main.exe $W/raiseml 2>&1 | sed 's/+0x[0-9a-f]*//g')"
   fi
 else echo "skipped the ML case: no _mk/5-plan9/lib_core (mini-mk O=5 OS=plan9 in lib_core)"; fi

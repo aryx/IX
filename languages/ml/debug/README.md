@@ -13,9 +13,11 @@ Here:
 
 Elsewhere, called from here or calling here:
 
-- `Ir` and `Ssa`: a function's `line`, set by `Lower`
-  (`Ssa_build` copies it); `Gen` and `Emit` write the `// line n`
-  marks.
+- `Ir` and `Ssa`: a function's `line`, and `Ir.Line`, a
+  statement's, set by `Lower` (`at`, `at_line`); `Ssa_build` gives
+  each value the line before it (`Ssa.func`'s `lines`); `Gen` and
+  `Emit` write the `// line n` marks, `Emit` before a value's first
+  instruction.
 - `Gen`: a raise leaves the registers a trace's walk starts from
   (`raise_`, `ml_raise_pc`, `ml_raise_sp`, `ml_raise_lr`,
   `ml_raise_top`, and `ml_raise_c`).

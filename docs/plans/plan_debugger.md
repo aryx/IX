@@ -1041,3 +1041,30 @@ fields, 5c's printing functions. Checked: acid_linux.sh's
 dwarf/types.acid (n1 before and after new(), n1.next, n1.next.p, a
 string member), 6 sessions; acid_proc.sh (11).
 
+
+2026-10-31, **a statement's line** (stage 1b's rest; the author:
+"let's do 1 and 2"): an instruction's line was its function's, so next
+and stmnt went a function at a time in ix's programs. mini-cc's compat
+back end now gives each instruction its statement's (5c's nearln:
+Cgen.gen sets Emit.line from the statement's expression; a statement
+without one keeps the last; the prologue the function's); the simple
+and ssa back ends still a function's. mini-ml: Lower emits Ir.Line
+where a statement starts on another line (a sequence's part, a let's,
+a condition, a branch, a clause's tests, a loop's parts), none in
+another unit's function inlined (its lines another file's); Gen prints
+it as "// line n", which Lines_ml already read; Ssa_build gives each
+value the line before it (Ssa.func's lines) and Emit prints the mark
+before a value's first instruction only (a constant hoisted out of a
+loop, made where it is read, says nothing), a branch its condition's
+line. The code is the same: mini-ml's assembly without its marks
+compared before and after, -m 5 and 7, -O0 and -O3, over lib_core,
+mini-ml's own units and mini-acid's (456 compiles the same; 20 the
+older could not make either, for want of an -I). On the
+way: next on arm steps through the rest of the caller when it leaves
+a frameless leaf (acid's own test, sp >= *SP), unchanged. Checked:
+acid_proc.sh's new mlsteps/next.acid (Steps.ml by -O3: next 11, 12, 13,
+then the match's 7, then 10, the ref's value between), the C sessions'
+callers now their calls' lines (target.c:21, :28; gcc's way), an
+Init's frame its line (Down.ml:7) where it said ?file?:0; walk.sh's
+traces (Deep.Init Deep.ml:7); kernels/9pi/tests/acid.out; acid_linux.sh;
+make test: 170 jobs, 0 failures.

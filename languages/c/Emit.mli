@@ -72,12 +72,16 @@ type prog = {
   mutable to_ : Asm.operand option;     (* Target is a pc until the end *)
   mutable pseudo : pseudo;
   ppc : int;                          (* the next one's, for DATA and GLOBL *)
-  line : int;                         (* its source's (the function's, Declare.fnline) *)
+  line : int;                         (* its source's: its statement's, or its function's *)
 }
 
 (* the instructions, the last first; the next's pc *)
 val progs : prog list ref
 val pc : int ref
+
+(* the line of the statement generated (5c's nearln), the compat back
+ * end's; 0: the function's (Declare.fnline) *)
+val line : int ref
 
 (* the last instruction; a new one *)
 val p : unit -> prog

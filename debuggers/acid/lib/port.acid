@@ -18,6 +18,8 @@
 //     src(a) asm(a) mem(a, "4X") regs() procs()
 //     pcomplex(a, "T")        a value of a complex type, as print shows
 //                             it: Node {name=0x203c "one", p=Point {...}}
+//     ml(v)                   an ML value by its words: ml(*Values.l)
+//                             prints [1; 2; 3]
 
 // a frame's function and place: name+0xoff file:line
 defn pfl(addr)
@@ -473,4 +475,156 @@ defn pcomplex(addr, t)
 		ms = tail ms;
 	}
 	print("}");
+}
+
+// mini-ml's values, by their words alone (its runtime's mlvalues.h): an
+// odd word the integer n as 2n+1, an even one a block's address, its
+// header the word before (its size in words << 10, its tag the low
+// byte): 252 a string, 253 a float, 247 a closure (its code first),
+// 254 and 255 an int32 and an int64, 251 a float array, below 247 a
+// tuple, a record or a constructor's arguments. No type says which of
+// the last: a block is (f0, f1, ...), #tag(f0, ...) when its tag is not
+// 0, a chain of pairs to 0 a list when it has two cells at least (a
+// record's names, a constructor's: the program's types, not here).
+// On arm, 4-byte words.
+defn mlint(w)
+{
+	if w >= 0x80000000 then
+		w = w - 0x100000000;
+	return (w - 1) / 2;
+}
+
+defn mlstring(v, n)
+{
+	local i, c;
+
+	print("\"");
+	i = 0;
+	while i < n && i < 64 do {
+		c = *((v+i)\b);
+		if c == '"' || c == '\\' then
+			print("\\", c\c);
+		else if c == '\n' then
+			print("\\n");
+		else if c >= 32 && c < 127 then
+			print(c\c);
+		else
+			print("\\", c\D);
+		i = i + 1;
+	}
+	if n > 64 then
+		print("...");
+	print("\"");
+}
+
+// a chain of pairs ending in 0 ([]): its length, else 0
+defn mllist(v)
+{
+	local n, h;
+
+	n = 0;
+	while (v & 1) == 0 && n < 1000 do {
+		if !readable(v-4) then
+			return 0;
+		h = *((v-4)\X);
+		if (h & 255) != 0 || (h >> 10) != 2 then
+			return 0;
+		v = *((v+4)\X);
+		n = n + 1;
+	}
+	if v != 1 then
+		return 0;
+	return n;
+}
+
+// a value, its blocks to depth d
+defn mlv(v, d)
+{
+	local h, tag, size, i, sep, n;
+
+	if v & 1 then {
+		print(mlint(v)\D);
+		return {};
+	}
+	if v == 0 || !readable(v-4) then {
+		print(v\X);
+		return {};
+	}
+	h = *((v-4)\X);
+	tag = h & 255;
+	size = h >> 10;
+	if tag == 252 then {
+		mlstring(v, size*4 - 1 - *((v+size*4-1)\b));
+		return {};
+	}
+	if tag == 253 then {
+		print(*(v\F));
+		return {};
+	}
+	if tag == 254 then {
+		print(*(v\D), "l");
+		return {};
+	}
+	if tag == 255 then {
+		print(*(v\V), "L");
+		return {};
+	}
+	if tag == 247 then {
+		print("<fun ", fmt(*(v\X), 'a'), ">");
+		return {};
+	}
+	if d == 0 then {
+		print("...");
+		return {};
+	}
+	if tag == 251 then {
+		print("[|");
+		sep = "";
+		i = 0;
+		while i < size/2 && i < 16 do {
+			print(sep, *((v+i*8)\F));
+			sep = "; ";
+			i = i + 1;
+		}
+		print("|]");
+		return {};
+	}
+	n = mllist(v);
+	if tag == 0 && n >= 2 then {
+		print("[");
+		sep = "";
+		i = 0;
+		while i < n && i < 16 do {
+			print(sep);
+			mlv(*(v\X), d-1);
+			v = *((v+4)\X);
+			sep = "; ";
+			i = i + 1;
+		}
+		if n > 16 then
+			print("; ...");
+		print("]");
+		return {};
+	}
+	if tag != 0 then
+		print("#", tag\D);
+	print("(");
+	sep = "";
+	i = 0;
+	while i < size && i < 16 do {
+		print(sep);
+		mlv(*((v+i*4)\X), d-1);
+		sep = ", ";
+		i = i + 1;
+	}
+	if size > 16 then
+		print(", ...");
+	print(")");
+}
+
+// an ML value printed (*Values.l: a unit's global, read)
+defn ml(v)
+{
+	mlv(v, 6);
+	print("\n");
 }

@@ -883,3 +883,20 @@ and the -g programs alike; print.acid now calls 5c's functions by name,
 so live still compares it with principia's acid (ix_* sessions are ix's
 library's only).
 
+2026-10-30, **an ML value by its words** (decision 14's fourth step):
+port.acid's ml(v), in acid, mini-ml's representation alone (its
+runtime's mlvalues.h): an odd word an integer, an even one a block,
+its header the word before; a string (its length its last byte's), a
+float, an int32 and an int64, a float array, a closure by its code's
+symbol (<fun f1_f>), any other block (f0, f1, ...), #tag(...) when its
+tag is not 0, and a chain of two pairs or more to 0 a list. So
+ml(*Values.shapes) is [(1.5); #1(3, 4); 0] where OCaml's toplevel says
+[Circle 1.5; Rect (3, 4); Empty]: the names are the types', step 5's.
+A unit's globals are symbols M.x (mini-ml's Scope.gsym): mini-acid's
+lexer reads M.x as one name when it is a variable, else M then .x as
+before (a member). Not done: a function's arguments and locals, which
+are on the ML value stack (R10), at the slots its prologue makes.
+Checked: debuggers/tests/acid_proc.sh, acid/mlvalues/Values.ml new (a
+ref, a string, a list, a record, variants, a pair, a closure, an
+array, an option) and its session values.acid; 10 sessions, and live.
+

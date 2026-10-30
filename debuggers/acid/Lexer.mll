@@ -5,7 +5,8 @@
 (* acid's lexer (principia's lex.c): its keywords, its numbers (decimal,
  * 0x hexadecimal, 0 octal, 0b binary, a float with its . or e), 'c'
  * characters, strings with C's escapes, a format after a backslash
- * (x\D), // comments to the line's end. At a terminal a newline ends a
+ * (x\D), // comments to the line's end; M.x one name, a symbol of
+ * mini-ml's (not acid's). At a terminal a newline ends a
  * statement (a ;) but inside braces, so that a definition may take
  * lines; in a file it is a blank. *)
 
@@ -57,6 +58,11 @@ rule token = parse
   | '\'' '\\' (_ as c) '\'' { CONST (Int64.of_int (Char.code (escape c))) }
   | '\'' (_ as c) '\'' { CONST (Int64.of_int (Char.code c)) }
   | '"' { STRING (str (Buffer.create 16) lexbuf) }
+  (* an ML unit's global, M.x, one name when it is a variable (else M,
+   * then .x a member) *)
+  | (['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']* as m) '.' ['a'-'z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_']* as s
+      { if Eval.is_set s then (symbol := s; ID s)
+        else (lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_start_pos + String.length m; symbol := m; ID m) }
   | ident as s { symbol := s; match List.assoc_opt s keywords with Some k -> k | None -> ID s }
   | '\\' (_ as c) { if String.contains Value.formats c then FMT c else raise (Error "syntax error") }
   | "->" { INDIR } | "--" { DEC } | "++" { INC }

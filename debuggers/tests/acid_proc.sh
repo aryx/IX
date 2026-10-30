@@ -8,7 +8,9 @@
 # each session's output as recorded: acid/proc/*.acid on a program by
 # mini-cc (acid/proc/target.c: new, a breakpoint, cont, step, next, stk;
 # steps to the exit), acid/ml/*.acid on one by mini-ml (acid/ml/Down.ml:
-# its stack, mini-ml's frames read by their prologues), acid/types/*.acid
+# its stack, mini-ml's frames read by their prologues), acid/mlvalues/
+# on another (Values.ml: its globals' values printed by their words,
+# port.acid's ml, a unit's global named M.x), acid/types/*.acid
 # on a C program with structs, their declarations 5c -a's
 # (acid/types/target.acid, loaded with -l: complex, ., ->, a type's
 # function called by print; ix_print.acid: ix's library's pcomplex, a
@@ -20,7 +22,7 @@
 #   otherwise: the lines its library prints as it is read, a caller's
 #   offset in a stack (the call, not libmach's instruction before it),
 #   a line said twice (needs ~/principia)
-#   record: the outputs written as acid/{proc,ml}/NAME.out
+#   record: the outputs written as acid/{proc,ml,mlvalues,types}/NAME.out
 # usage: debuggers/tests/acid_proc.sh [live | record]
 
 ROOT=$(cd $(dirname $0)/../.. && pwd)
@@ -45,7 +47,7 @@ cleanup() {
   done
 }
 trap 'cleanup; rm -rf $W' EXIT
-mkdir $W/c $W/ml $W/types $W/types-g
+mkdir $W/c $W/ml $W/mlvalues $W/types $W/types-g
 # (compiled by its name, in its directory: its tables say target.c, as
 # 5a's -r, and src() finds it there)
 cp $T/proc/target.c $W/c/
@@ -62,21 +64,24 @@ done
 n=1; failures=0
 (cd $W/types && $IX/languages/c/Main.exe -m 5 -a -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 target.c) > $W/decls 2>&1
 cmp -s $W/decls $T/types/target.acid || { failures=1; echo "FAIL mini-cc -a: not 5c's declarations"; diff $T/types/target.acid $W/decls | head -6; }
-I="-I $W/ml -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"
+I="-I . -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"
 U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
-cp $T/ml/Down.ml $W/ml/
-(cd $W/ml && $IX/languages/ml/Main.exe -m 5 -O3 $I -o Down.5 Down.ml \
-   && $IX/languages/ml/Main.exe -m 5 -O3 -start $U Down Std_exit -o Down.start.5 \
-   && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o target Down.start.5 $M/lib_core/lib_core.a Down.5 \
-        $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a) > $W/err 2>&1 \
-  || { echo "FAIL Down.ml's build: $(head -2 $W/err)"; exit 1; }
+for x in ml:Down mlvalues:Values; do
+  d=${x%:*} u=${x#*:}
+  cp $T/$d/$u.ml $W/$d/
+  (cd $W/$d && $IX/languages/ml/Main.exe -m 5 -O3 $I -o $u.5 $u.ml \
+     && $IX/languages/ml/Main.exe -m 5 -O3 -start $U $u Std_exit -o $u.start.5 \
+     && $IX/linker/Main.exe -m 5 -g -H2 -nofollow -o target $u.start.5 $M/lib_core/lib_core.a $u.5 \
+          $M/lib_core/std_exit.5 $M/lib_core/runtime.5 $M/lib_core/libc.a) > $W/err 2>&1 \
+    || { echo "FAIL $u.ml's build: $(head -2 $W/err)"; exit 1; }
+done
 
 norm() { grep -a -v 'pushfile: /lib' | sed 's/[0-9]\{4,8\}: /PID: /g;s/[0-9]\{4,8\}\/ctl/PID\/ctl/g;s/pid=[0-9]*/pid=PID/g'; }
 # (live: what ix's library does otherwise, taken out of both)
 # (and _main's line: its call's, rt0.s:17, where libmach's says the line
 # of the instruction before it, 16)
 alike() { sed -E '/^\/lib\/acid\//d; /^_main[+ ]/d; s/\+0x[0-9a-f]+ ([^ ]*:[0-9]+)$/ \1/' | uniq; }
-for d in proc:c ml:ml types:types types:types-g; do
+for d in proc:c ml:ml mlvalues:mlvalues types:types types:types-g; do
   # (the types' declarations, 5c -a's, loaded after the library)
   decls=; [ ${d#*:} = types ] && decls="-l target.acid"
   for f in $T/${d%:*}/*.acid; do
@@ -91,7 +96,7 @@ for d in proc:c ml:ml types:types types:types-g; do
     [ "$1" = record ] && [ ${d#*:} != types-g ] && cp $W/got $T/$name.out
     if [ "$1" = live ]; then
       # (ix_*: ix's library's own printing, which acid's has not)
-      [ ${d%:*} = ml ] || [ ${d#*:} = types-g ] || [[ $(basename $f) = ix_* ]] && { n=$((n - 1)); continue; }
+      [[ ${d%:*} = ml* ]] || [ ${d#*:} = types-g ] || [[ $(basename $f) = ix_* ]] && { n=$((n - 1)); continue; }
       [ -f $P/ROOT/lib/acid/port.acid ] || { echo "skipped live: no $P/ROOT/lib/acid"; exit 0; }
       (cd $W/${d#*:} && timeout -s KILL 120 $IX/machine/Main.exe $P/ROOT/arch/arm/bin/acid -l $P/ROOT/lib/acid/port.acid \
          -l $P/ROOT/lib/acid/arm.acid $decls ./target < $f > $W/ref 2>&1)

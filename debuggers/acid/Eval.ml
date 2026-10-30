@@ -69,6 +69,9 @@ let set_global name v =
   let x = var name in
   x.values <- (match List.rev x.values with b :: older -> List.rev ({ b with bvalue = Some v } :: older) | [] -> [ { unset with bvalue = Some v } ])
 
+let is_set name =
+  match Hashtbl.find_opt vars name with Some { values = { bvalue = Some _; _ } :: _; _ } -> true | _ -> false
+
 let complex_type name = match (var name).values with b :: _ -> b.btype | [] -> None
 
 let aggr name = (var name).aggr

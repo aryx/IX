@@ -33,6 +33,9 @@ val local_addr : (string -> string -> int64) ref
 (* a global variable set (the program's symbols, the registers, pid) *)
 val set_global : string -> Ast.value -> unit
 
+(* whether a variable has a value (the lexer's M.x, an ML unit's global) *)
+val is_set : string -> bool
+
 (* the complex type a variable was declared of (complex T v), if one *)
 val complex_type : string -> string option
 

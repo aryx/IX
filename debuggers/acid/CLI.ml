@@ -27,6 +27,8 @@ as variables; a process its memory (*addr, @addr in the file), its registers
 A program's types: acid's declarations (aggr, complex T v), mini-cc -a's in a
 file (-l), or in the program, mini-cc -g and mini-ld -g's (.acid); then a
 value prints by its type (n1, n1.next->name, *walk:n).
+An ML value prints by its words (ml(*Values.l): [1; 2; 3]), a unit's global
+named M.x.
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)

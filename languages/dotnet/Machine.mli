@@ -70,6 +70,10 @@ val jit : (meth -> (value array -> value) option) ref
  * pushes returned, Null if nothing *)
 val exec : meth -> code -> int -> value array -> value
 
+(* the same, made once for a call-out: the instructions it asks most
+ * (a static field, a field written, a call, new) without the loop *)
+val call_out : meth -> code -> int -> value array -> value
+
 (* the program's entry point run with the command line's arguments:
  * Main's result, 0 if it returns none *)
 val run_main : image -> string list -> int

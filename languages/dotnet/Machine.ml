@@ -511,6 +511,51 @@ let exec (m : meth) (code : code) (i : int) (operands : value array) : value =
   ignore (loop true f);
   if f.sp > 0 then f.stack.(0) else Null
 
+(* OPTIMIZATION (call-outs): the instructions the JIT's code asks for
+ * most, each made once for its call-out, its token resolved at its
+ * first run (a class loaded then, as the interpreter would); the
+ * others by exec. A static field read by the counter of
+ * jit/objects.cs took 350 ns by exec, the loop set up for one
+ * instruction (its closures).
+ * old: exec for every call-out *)
+let once (make : unit -> 'a) : unit -> 'a =
+  let cell = ref None in
+  fun () -> match !cell with
+    | Some x -> x
+    | None -> let x = make () in cell := Some x; x
+
+let call_out (m : meth) (code : code) (i : int) : value array -> value =
+  let ctx = Types.ctx_of m in
+  match code.instrs.(i).op with
+  | Ldsfld tok ->
+      let fd = once (fun () -> Types.field_of_token ctx tok) in
+      fun _ -> let fd = fd () in read (statics fd) fd.off fd.roff fd.ftype
+  | Stsfld tok ->
+      let fd = once (fun () -> Types.field_of_token ctx tok) in
+      fun a -> let fd = fd () in write (statics fd) fd.off fd.roff fd.ftype a.(0); Null
+  | Stfld tok ->
+      let fd = once (fun () -> Types.field_of_token ctx tok) in
+      fun a -> let fd = fd () in let st, so, ro = view a.(0) in
+        write st (so + fd.off) (ro + fd.roff) fd.ftype a.(1); Null
+  | Call tok ->
+      let callee = once (fun () -> Types.meth_of_token ctx tok) in
+      fun a -> let c = callee () in
+        if c.static then (ensure_init c.mcls; invoke c a) else call_virtual_this c a false
+  | Callvirt tok ->
+      let callee = once (fun () -> Types.meth_of_token ctx tok) in
+      fun a -> call_virtual_this (callee ()) a true
+  | Newobj tok ->
+      let ctor = once (fun () -> Types.meth_of_token ctx tok) in
+      fun a -> let c = ctor () in
+        (match c.mcls.kind with
+         | Class when not (Types.is_value_type (Types.typ_of_cls c.mcls)) ->
+             ensure_init c.mcls;
+             let o = Obj (make_store c.mcls 0) in
+             ignore (invoke c (Array.append [| o |] a));
+             o
+         | _ -> exec m code i a)
+  | _ -> exec m code i
+
 let call_method (name : string) (v : value) : value =
   let c = class_of_value v in
   let obj = Types.find_class "System.Object" [||] in

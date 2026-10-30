@@ -787,3 +787,11 @@ interpreter (a store: its record, bytes and references) as much as
 the instructions. So next: call-outs made for their instruction
 (the field, the method resolved once), separately and measured.
 
+Then those call-outs (Machine.call_out, an optimization: the old
+path, exec, for the others): a static field read or written, a field
+written, a call, a virtual call, new of a class, each made once for
+its call-out, its token resolved at its first run. `jit/objects.cs`
+0.64 s with the JIT, 1.29 s interpreted (50% less); the list 0.55 s
+(from 0.83), the shapes 0.13 s (0.18), the counter 0.11 s (0.32: a
+call-out now some 100 ns).
+

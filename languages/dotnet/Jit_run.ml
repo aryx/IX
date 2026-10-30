@@ -87,8 +87,9 @@ let program (caps : < Cap.open_in; .. >) (im : image) : (int, value array -> val
             let m = Types.meth_of_def im s.srow in
             let code = Types.code m in
             let kinds = Array.of_list s.sargs in
+            let run = Machine.call_out m code s.sat in
             fun (a : Obj.t array) ->
-              let v = Machine.exec m code s.sat (Array.mapi (fun j x -> of_word kinds.(j) x) a) in
+              let v = run (Array.mapi (fun j x -> of_word kinds.(j) x) a) in
               match s.sret with Some k -> to_word k v | None -> Obj.repr ()) sites in
         table := Array.append !table (Array.of_list calls);
         compiled := !compiled + List.length entries;

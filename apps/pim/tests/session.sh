@@ -191,6 +191,22 @@ $PIM people > $W/out
 has '^contact:carol@ix  *contact  *Carol$' "the address book"
 $PIM show contact:carol@ix > $W/out
 has "^  $id  *message  *Re: the plan$" "a person's page: the mail with her"
+# the calendar (plan_pim.md, stage 3): an event captured in a line,
+# Carol found in People; an invitation's file imported; the day's
+# agenda: a Tuesday's events, and the task late the day after its day
+$PIM -today 2026-10-29 event lunch with carol tue 12:30 > $W/out
+has '^when: 2026-11-03 12:30$' "an event's day and time from words"
+has '^with: contact:carol@ix$' "an event's person from People"
+printf 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:standup@ix\r
+DTSTART:20261026T093000\r\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU\r
+SUMMARY:standup\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n' > $W/i.ics
+$PIM import $W/i.ics > $W/out
+has '^event:standup@ix  *event  *standup$' "an iCalendar file imported"
+$PIM -today 2026-11-03 today > $W/out
+has '^9:30  *standup$' "today: a repeating event's day"
+has '^12:30  *lunch with carol$' "today: the event, after it by time"
+$PIM set task:answer due=2026-11-05 && $PIM -today 2026-11-06 today > $W/out
+has '^late  *answer Carol$' "today: the task, late"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"

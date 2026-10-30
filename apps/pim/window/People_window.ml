@@ -105,8 +105,8 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
       | Some p -> (
           match People.emails p with
           | e :: _ ->
-              (m, Some (Write (Mail.address_to_string
-                                 { display = title p; mailbox = e })))
+              let display = if title p = e then "" else title p in
+              (m, Some (Write (Mail.address_to_string { display; mailbox = e })))
           | [] -> (m, None))
       | None -> (m, None))
   | Next, Page -> ({ m with at = min (List.length m.mail - 1) (m.at + 1) }, None)

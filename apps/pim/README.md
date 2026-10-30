@@ -9,23 +9,28 @@ So far, plan_mail.md's stages 1 to 7, and 8 begun: the mail's
 formats, sending by SMTP and reading by IMAP, with Gmail or with
 mini-maild on this machine, what is read kept in the suite's store
 (plan_pim.md's stage 2 begun), and a window over it, the suite: a
-Home that launches its views, Mail with Gmail's keys, People, Tasks,
-Notes.
+Home that launches its views, Mail with Gmail's keys, Calendar,
+People, Tasks, Notes.
 Their tests: `tests/`, the unit tests (dune's), `session.sh`,
 mini-pim's commands against mini-maild, and `frames.sh`, its
 window's (`make test`'s two "mini-pim").
 
     bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
-            [view=mail|people|tasks|notes]
-                       the window, on Home: a tile a view (m p t n, or
-                       a click), what is late or due today; in a view,
-                       the Pim menu and Ctrl+0 to 4 (Home, Mail,
-                       People, Tasks, Notes), the switcher at the
-                       sidebar's foot
+            [view=mail|calendar|people|tasks|notes]
+                       the window, on Home: a tile a view (m c p t n,
+                       or a click), the day's events, what is late or
+                       due today; in a view, the Pim menu and Ctrl+0
+                       to 5 (Home, Mail, Calendar, People, Tasks,
+                       Notes), the switcher at the sidebar's foot
                        Mail: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
-                       z snooze, t a task, p the sender to People
+                       z snooze, t a task, p the sender to People,
+                       i an invitation to the Calendar
+                       Calendar: c an event in a line ("lunch with
+                       alice tue 12:30", "standup every monday
+                       9h30"), j k next and previous, t today, d w m
+                       a day, a week, a month, the arrows the day
                        Tasks: n a task in a line ("pay the rent by
                        friday"), x done, d its day, z snooze, o open
                        (a message in Mail), Tab To Do or Done
@@ -52,6 +57,11 @@ window's (`make test`'s two "mini-pim").
                        the mail with them)
         contact uid, people
                        the sender a contact; the address book
+        event words    an event from a line, as the window's c
+        import file.ics
+                       an iCalendar file's events
+        today          the day: its events, the tasks late and due,
+                       the mail back from a snooze
         add id [name=value...], set id name=value...
                        an item made (task:pay-rent due=2026-11-05),
                        its fields changed
@@ -95,10 +105,18 @@ window's (`make test`'s two "mini-pim").
                        the address book, a person's page
     window/Notes_window
                        notes and days, their links both ways
+    window/Calendar_window
+                       a day, a week, a month of events
     window/Pim_look    what the views share: menus, letters, rows
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
     store/When         a day typed as words, English and French
+    store/Events       events: their occurrences in days shown, an
+                       invitation's made items
+    store/Capture      a line made an event: its day, time, repeat,
+                       people
+    time/Recur         a repeating event's rule (iCalendar's RRULE)
+    time/Ics           iCalendar files, read and written
     store/People       the address book, filled from the mail, BBDB's
                        way; the mail with a person
     store/Search       a search over every item, Gmail's syntax
@@ -115,6 +133,12 @@ below are `scripts/playground_copies.sh apps/pim`'s, against the
 playground at `90c4b4b6` (2026-10-27).
 
 ## What was copied
+
+For the calendar (plan_pim.md, stage 3): the playground's
+`libs/core/time/Recur` and `appkits/pim/Ics`, and their tests
+(`Unit_recur`, `Unit_ics`); mini-ml's changes said in each file's
+first lines (an optional argument said by every caller, a polymorphic
+variant a type, `Option.value` and `Option.fold` a match).
 
 The playground's `libs/networking/mail/` but `Mbox` (the cache is to
 be a file per message, plan_mail.md), and `protocols/Smtp`: 8 files,

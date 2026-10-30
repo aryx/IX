@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-pim (docs/plans/plan_pim.md): with no command, its window
- * (Pim_window: the suite, its Home, Mail, Tasks, People); with one, from a
+ * (Pim_window: the suite, Home and its views); with one, from a
  * terminal ("the same store from a terminal, for real use and for the
  * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7:
  *
@@ -16,6 +16,8 @@
  *     mini-pim snooze uid words        out of it until a day, back then
  *     mini-pim contact uid             its sender made a contact
  *     mini-pim people                  the address book
+ *     mini-pim event words             an event (Capture), import file.ics
+ *     mini-pim today                   the day: events, tasks, snoozed
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -67,6 +69,9 @@ let usage =
   \  contact uid, people               the sender a contact; the address book\n\
   \  add id [name=value...]            an item (task:pay-rent due=2026-11-05)\n\
   \  set id name=value...              its fields (name= takes one away)\n\
+  \  event words                       an event: lunch with alice tue 12:30\n\
+  \  import file.ics                   an iCalendar file's events\n\
+  \  today                             the day's events, tasks late and due\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
   \  -offline  list and read what the store has, no server\n\
@@ -498,6 +503,60 @@ let snooze (caps : < caps ; .. >) (o : options) (uid : int) (words : string) :
               Ok ())
         ~offline:(fun _ _ -> Error "snooze: the server's, not -offline")
 
+(* event: a line made an event (Capture: "lunch with alice tue 12:30") *)
+let event (caps : < caps ; .. >) (o : options) (line : string) : Exit.t =
+  let store = Items.at (Items.place caps) in
+  let people = People.contacts (Items.all caps store) in
+  let e = Capture.event ~today:o.today ~people line in
+  let id = Printf.sprintf "event:%.0f" (Unix.gettimeofday ()) in
+  let item = Capture.to_item ~id e in
+  Items.save caps store item;
+  Console.print caps (String.trim (Item.to_string item) ^ "\n");
+  Exit.OK
+
+(* import: an iCalendar file's events made items (Events.of_ics), an
+ * event already there replaced *)
+let import (caps : < caps ; .. >) (file : string) : Exit.t =
+  let store = Items.at (Items.place caps) in
+  let events = Events.of_ics ~message:"" (FS.read caps (Fpath.v file)) in
+  List.iter (Items.save caps store) events;
+  List.iter (line caps "") events;
+  Exit.OK
+
+(* today: the day's events, the tasks late and due, the mail back from a
+ * snooze (Home's Today, the plan's `pim today`) *)
+let today (caps : < caps ; .. >) (o : options) : Exit.t =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  let t = Civil.days_from_civil o.today in
+  let day (i : Item.t) =
+    match Search.day i with Some d -> Civil.days_from_civil d | None -> max_int
+  in
+  let later (i : Item.t) =
+    match Search.date (Item.field i "until") with
+    | Some d -> Civil.days_from_civil d > t
+    | None -> false
+  in
+  let to_do =
+    List.filter
+      (fun i ->
+        Item.has_stamp i "task" && Item.field i "done" = "" && not (later i))
+      items
+  in
+  let say (what : string) (s : string) =
+    Console.print caps (Printf.sprintf "%-10s %s\n" what s)
+  in
+  Console.print caps (Mail_sync.day o.today ^ "\n");
+  List.iter
+    (fun (_, time, i) ->
+      say (match time with Some m -> Events.clock m | None -> "all day") (title i))
+    (Events.between items ~from:o.today ~upto:o.today);
+  List.iter (fun i -> say "late" (title i)) (List.filter (fun i -> day i < t) to_do);
+  List.iter (fun i -> say "due" (title i)) (List.filter (fun i -> day i = t) to_do);
+  List.iter
+    (fun i -> if Item.field i "woke" <> "" then say "back" (title i))
+    items;
+  Exit.OK
+
 let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   let default =
     {
@@ -532,6 +591,10 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = [ "contact"; uid ]; _ } as o) when uids [ uid ] <> [] ->
       contact caps o (int_of_string uid)
   | Some { args = [ "people" ]; _ } -> people caps
+  | Some ({ args = "event" :: (_ :: _ as words); _ } as o) ->
+      event caps o (String.concat " " words)
+  | Some { args = [ "import"; file ]; _ } -> import caps file
+  | Some ({ args = [ "today" ]; _ } as o) -> today caps o
   | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
       match days o.today (Option.get (assignments l)) with
       | Ok fields -> add caps id fields
@@ -560,7 +623,7 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
-    "show"; "add"; "set"; "contact"; "people" ]
+    "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today" ]
 
 let () =
   Cap.main (fun caps ->

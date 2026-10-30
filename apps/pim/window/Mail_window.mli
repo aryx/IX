@@ -37,7 +37,9 @@
    (Mail_sync.wake); t makes its newest message a task, due a day
    typed so, the same item (plan_pim.md, idea 1), then in the suite's
    Tasks (Tasks_window). p adds the conversation's sender to People
-   (BBDB's way: by a key, not every address seen; People_window).
+   (BBDB's way: by a key, not every address seen; People_window). i
+   adds an invitation (a text/calendar part, iMIP) to the Calendar,
+   linked to its mail (Events.of_ics).
 
    The window shows mini-pim's store (Items), not the server: it opens
    at once, with or without the network, on what the last list kept,

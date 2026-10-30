@@ -21,7 +21,7 @@
    (Glyph_unicode), each at its place, so a list is in columns. *)
 
 (* the suite's views: Home, the launcher; the components *)
-type view = Home | Mail | People | Tasks | Notes
+type view = Home | Mail | Calendar | People | Tasks | Notes
 
 (* what a view asks of the suite: another view; an item opened where it
  * lives, by its id (a message in Mail, a person in People...); a

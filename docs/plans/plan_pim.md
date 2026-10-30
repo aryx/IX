@@ -446,3 +446,27 @@ task, note; `show` in each view). The views in the plan's order
 a row. Tests: Unit_store (links in a text), 3 frames (a note linking
 the day, the day's link back, the list). Not yet: a note's links
 completed as typed, a search over notes in the window.
+
+2026-10-30: stage 3, Calendar: the playground's `Recur` and `Ics`
+copied (`time/`, with their tests); `store/Events`, an event an item
+stamped event (when: a day and a time, end:, repeat: an RRULE, where:,
+with:), its occurrences computed for the days shown, never stored;
+`store/Capture`, a line made an event, the plan's "lunch with alice
+tue 12:30" (a time as 12:30, 12h30, 4pm, noon, midi; "every monday";
+When's day at the end; the person after "with" or "avec" found in
+People, a with: link); `window/Calendar_window`, a day, a week (Monday
+first), a month (six weeks), Google Calendar's keys (c, j k, t, d w
+m), a day's page with the selected event's details. Invitations from
+mail (iMIP): i in Mail makes a text/calendar part's events items, re:
+their message, o in the day opening it again. Home: a Calendar tile,
+the day's events first in Today. The terminal's `event words`,
+`import file.ics`, `today` (the plan's `pim today`). Tests:
+Unit_recur, Unit_ics (the playground's), Unit_capture (the plan's
+examples, a week's occurrences with a repeat, an invitation's
+iCalendar); session.sh (an event captured with Carol, a file imported,
+a Tuesday's agenda, a task late); frames.sh, an invitation among the
+messages, 4 frames (a week, a month, a day, the invitation from Mail
+to the week). Not yet: time zones (floating time, the author's
+clock's), Google's calendar by its secret address (HTTPS), an event
+moved or deleted in the window (the terminal's set does it),
+accepting an invitation by mail.

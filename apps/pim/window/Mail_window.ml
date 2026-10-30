@@ -293,6 +293,7 @@ type command =
   | Snooze_
   | Task
   | Add_sender
+  | Invitation
 
 (* the menu bar, after the suite's: each menu its title, then its
  * items, each with its command and its key, said in the item (a menu
@@ -307,7 +308,8 @@ let menus : (string * (string * command) list) list =
         ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
         ("Next  (j)", Next); ("Previous  (k)", Previous);
         ("Snooze...  (z)", Snooze_); ("Make a Task...  (t)", Task);
-        ("Sender to People  (p)", Add_sender) ] );
+        ("Sender to People  (p)", Add_sender);
+        ("Add to Calendar  (i)", Invitation) ] );
     ( "Message",
       [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
         ("Discard", Discard) ] );
@@ -409,6 +411,35 @@ let task (caps : caps) (m : model) (due : Civil.date) : model =
             (Mail.remove "done" (Mail.set "due" (Mail_sync.day due) i));
           load caps { m with status = "a task, due " ^ Mail_sync.day due })
 
+(* i: the invitations of the conversation's messages read (iMIP, RFC
+ * 6047: a text/calendar part) made events, each linked to its mail
+ * (Events.of_ics) *)
+let invitation (caps : caps) (m : model) : model =
+  let m =
+    if m.mode = Reading || current m = [] then m else open_ caps m
+  in
+  let events =
+    List.concat_map
+      (fun ((s : Imap.summary), t) ->
+        match t with
+        | None -> []
+        | Some t ->
+            List.concat_map
+              (fun (l : Mime.leaf) ->
+                if String.lowercase_ascii l.mime = "text/calendar" then
+                  Events.of_ics ~message:(Mail_item.id s) l.data
+                else [])
+              (Mime.leaves (Mail.parse t)))
+      m.reading
+  in
+  List.iter (Items.save caps (store caps)) events;
+  { m with
+    status =
+      (match events with
+      | [] -> "no invitation here"
+      | [ e ] -> "in the Calendar: " ^ title e
+      | l -> count (List.length l) "event" ^ " in the Calendar") }
+
 (* the draft kept, the window back where it was *)
 let leave (caps : caps) (m : model) (status : string) : model =
   load caps { m with mode = m.back_to; status }
@@ -462,6 +493,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Task ->
       if current m = [] then m
       else { m with mode = Asking Due; field = ""; status = "" }
+  | Invitation -> if current m = [] then m else invitation caps m
   | Compose -> compose m (Mail_compose.blank ~id:(new_id ()))
   | Reply | Reply_all | Forward -> answer caps m c
   | Send_ -> run caps m Send
@@ -582,6 +614,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "z" then Some Snooze_
           else if pressed "t" then Some Task
           else if pressed "p" then Some Add_sender
+          else if pressed "i" then Some Invitation
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
           else if pressed "Tab" then

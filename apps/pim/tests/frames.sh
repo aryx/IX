@@ -3,8 +3,8 @@
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
 # mini-pim's window (docs/plans/plan_mail.md, stage 5) against
-# mini-maild: three messages sent to erin (a question, its answer in
-# Windows-1252, a newsletter), then the window run without one
+# mini-maild: four messages sent to erin (a question, its answer in
+# Windows-1252, a newsletter, an invitation), then the window run without one
 # (lib_playground's ppm platform), a session a line of frames.expected:
 # its name, its arguments, the SHA-256 of the frame it ends with (as
 # games/tests/frames.sh). Each session has an empty store of its own,
@@ -46,7 +46,18 @@ Content-Transfer-Encoding: quoted-printable
 =93Yes=94, =E0 midi.\n' > $W/b
 printf 'From: news@ix\nTo: erin@ix\nSubject: weekly
 Date: Wed, 28 Oct 2026 09:00:00 +0000\n\nnews\n' > $W/c
-for m in a b c; do
+printf 'From: Dan <dan@ix>\nTo: erin@ix\nSubject: Invitation: tea
+Date: Tue, 27 Oct 2026 08:00:00 +0000\nMIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=b
+
+--b\nContent-Type: text/plain\n\nTea on Friday?
+--b\nContent-Type: text/calendar; method=REQUEST; name=invite.ics
+
+BEGIN:VCALENDAR\nMETHOD:REQUEST\nBEGIN:VEVENT\nUID:tea@ix
+DTSTART:20261030T150000\nDTEND:20261030T160000\nSUMMARY:tea with Dan
+LOCATION:the garden\nEND:VEVENT\nEND:VCALENDAR
+--b--\n' > $W/d
+for m in a b c d; do
   timeout 20 $PIM -s $S -plain send $W/$m > /dev/null ||
     { echo "FAIL sending $m"; exit 1; }
 done

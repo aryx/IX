@@ -5,6 +5,23 @@
 % Harvey and Kennedy's algorithm, which the compiler has, is far less.
 %   dom(X, N), sdom(X, N) (strict), idom(X, N) (immediate)
 %   back_edge(M, N): to a block that dominates its source, a loop's header
+%
+% cs-history:
+% Reese Prosser named dominance (1959), for a flow diagram's blocks;
+% Edward Lowry and C. W. Medlock used it in the Fortran H compiler
+% (1969) to find loops. Thomas Lengauer and Robert Tarjan's algorithm
+% (1979) is nearly linear and hard to write; Keith Cooper, Timothy
+% Harvey and Ken Kennedy's (2001), iterating over the blocks in
+% reverse postorder, is a page and as fast in practice: lib_code's
+% Dominators. Ron Cytron and others (1991) built SSA on the dominance
+% frontiers.
+% These rules are the definition, not an algorithm: what the engine
+% computes is every pair the definition holds for, quadratic or more;
+% they say what the compiler's answer must be, checked against it.
+%
+% References: Keith Cooper, Timothy Harvey, Ken Kennedy, "A simple,
+% fast dominance algorithm" (2001); Thomas Lengauer, Robert Tarjan, "A
+% fast algorithm for finding dominators in a flowgraph" (TOPLAS 1979).
 
 avoiding(X, N) :- entry(N), block(N, F), block(X, F), X \= N.
 avoiding(X, N) :- avoiding(X, M), succ(M, N), N \= X.

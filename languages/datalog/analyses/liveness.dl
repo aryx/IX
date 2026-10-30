@@ -6,6 +6,23 @@
 %   live_in(V, P), live_out(V, P)
 %   across_call(V, P): live after a call, what a register would cost there
 % (For a function in SSA form, mini-ml's: liveness_ssa.dl.)
+%
+% cs-history:
+% Gary Kildall's dataflow framework (POPL 1973): a lattice of facts at
+% each point, equations between points, solved by iteration to their
+% fixpoint; liveness is its backward instance, as old as register
+% allocation by coloring (Gregory Chaitin, 1982). That those equations
+% are Datalog rules and the iteration Datalog's evaluation was
+% Thomas Reps's observation (1994, demand analyses by magic sets);
+% Datalog's sets are the lattice when the facts are sets, as here.
+% Where they are not (a constant's value, an interval), Datalog needs
+% lattices: Flix's (Magnus Madsen, Ming-Ho Yee, Ondrej Lhotak, PLDI
+% 2016) and Soufflé's later extensions.
+%
+% References: Gary Kildall, "A unified approach to global program
+% optimization" (POPL 1973); Thomas Reps, "Solving demand versus
+% exhaustive dataflow using magic sets" (1994); Magnus Madsen and
+% others, "From Datalog to Flix" (PLDI 2016).
 
 live_in(V, P) :- use(V, P).
 live_in(V, P) :- live_out(V, P), \+ def(V, P).

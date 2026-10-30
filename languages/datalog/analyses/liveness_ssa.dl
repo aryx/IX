@@ -6,6 +6,16 @@
 %   live_before(V, P), live_after(V, P)   at a point (an instruction, a block's end)
 %   live_in(V, B), live_out(V, B)         at a block's edges
 % The same sets as mini-ml's allocator's own (Alloc.liveness).
+%
+% others:
+% In SSA form liveness is cheaper than the equations: a value has one
+% definition, which dominates its uses, so it is live on the paths from
+% each use back to it; Benoit Boissinot, Florian Brandner, Alain Darte,
+% Fabrice Rastello and others (2008-2011) compute it by those paths or
+% answer a "is it live here" query from the dominator tree. These
+% rules keep the textbook's way, the phis aside, as Appel's "Modern
+% Compiler Implementation" (1998) and Cooper and Torczon's
+% "Engineering a Compiler" teach it.
 
 % (a slot never written is the constant 0: it needs no place)
 needed(V, P) :- use(V, P), \+ zero(V).

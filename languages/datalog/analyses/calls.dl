@@ -24,4 +24,36 @@ reached(G) :- reached(F), calls(F, G).
 unreached(F) :- closure(F, U, L), \+ reached(F), \+ is_inner(F).
 % a call in code that runs and that reaches nothing: a hole in the facts
 % (a value they do not follow), each to be looked at
+%
+% cs-history:
+% Olin Shivers's control-flow analysis (PLDI 1988, his thesis 1991):
+% which lambdas a call of Scheme may reach, k-CFA telling apart the
+% last k call sites (the contexts); 0-CFA, the one here, none. k-CFA
+% for k >= 1 was shown EXPTIME-complete for functional programs
+% (David Van Horn, Harry Mairson, 2008), where for objects the same
+% idea is polynomial: Matthew Might, Yannis Smaragdakis and Van Horn
+% explained the paradox (PLDI 2010): a closure keeps its whole
+% environment, an object only its fields.
+%
+% others:
+% Doop (Martin Bravenboer, Yannis Smaragdakis, OOPSLA 2009): Java's
+% pointer analysis and its call graph as Datalog alone, each analysis
+% of the literature a few hundred lines of rules, faster than the hand
+% written ones (Paddle's); its contexts chosen by a rule: a call site's
+% (k-CFA), the receiver object's (object sensitivity: Ana Milanova,
+% Atanas Rountev, Barbara Ryder, 2002), its type's (type sensitivity:
+% Smaragdakis, Bravenboer, Ondrej Lhotak, POPL 2011, "Pick your
+% contexts well"). Context sensitivity is one more column: a variable
+% points to an object in a context, and a call's rule says which
+% context the callee gets, so the rules here would take it as they
+% are, the relations wider. Smaragdakis and George Balatsouras's
+% "Pointer Analysis" (Foundations and Trends in Programming Languages,
+% 2015) is the field's survey, in those rules.
+%
+% References: Olin Shivers, "Control-flow analysis of higher-order
+% languages" (CMU thesis, 1991); Martin Bravenboer, Yannis Smaragdakis,
+% "Strictly declarative specification of sophisticated points-to
+% analyses" (OOPSLA 2009); Matthew Might, Yannis Smaragdakis, David Van
+% Horn, "Resolving and exploiting the k-CFA paradox" (PLDI 2010);
+% Yannis Smaragdakis, George Balatsouras, "Pointer Analysis" (2015).
 hole(I, F) :- unresolved(I), in_function(I, F), reached(F).

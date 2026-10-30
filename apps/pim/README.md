@@ -5,12 +5,12 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/done/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 to 7, and 8 begun: the mail's
-formats, sending by SMTP and reading by IMAP, with Gmail or with
-mini-maild on this machine, what is read kept in the suite's store
-(plan_pim.md's stage 2 begun), and a window over it, the suite: a
-Home that launches its views, Mail with Gmail's keys, Calendar,
-People, Tasks, Notes, Money.
+The plan is done (its stages 1 to 7; what is left in its Status):
+the mail, sent by SMTP and read by IMAP, with Gmail or with mini-maild
+on this machine; the store of items, stamped and linked both ways;
+the window, a Home and its six views, Mail, Calendar, People, Tasks,
+Notes, Money; Google's calendars and contacts read. Its manual pages:
+pim(1) and maild(1) (`docs/man/1/`), what follows the short of them.
 Their tests: `tests/`, the unit tests (dune's), `session.sh`,
 mini-pim's commands against mini-maild, and `frames.sh`, its
 window's (`make test`'s two "mini-pim").
@@ -46,8 +46,9 @@ window's (`make test`'s two "mini-pim").
                        (GTD's inbox first), Someday, Done; a repeating
                        task done makes its next
                        People: n a person (Dan <dan@ix>), o their
-                       page, the mail with them (o opens one), c write
-                       to them
+                       page (what links to them, the money paid them,
+                       the mail with them; o opens one), c write to
+                       them
                        Notes: n a note, d today's page, the text with
                        [[id]] links, what it names and what names it
                        under it (a click opens one), Tab Notes or Days
@@ -87,11 +88,15 @@ window's (`make test`'s two "mini-pim").
         remind [-every 5]
                        runs: each reminder as its minute comes (an
                        event 10 minutes before, remind: says), a line
-                       and notify-send's notification; with -u the
-                       mail every 5 minutes, what is new from people
+                       and notify-send's notification; every 5 minutes
+                       the calendars fetched, with -u the mail, what
+                       is new from people said
         import file.qif [-a account], register [-a account], balance
                        a bank's lines, those not there yet; an
                        account's register; every account's balance
+        budget, assign envelope amount
+                       the envelopes (YNAB's), what is left to assign;
+                       money to one (assign Groceries 400)
         add id [name=value...], set id name=value...
                        an item made (task:pay-rent due=2026-11-05),
                        its fields changed

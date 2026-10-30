@@ -8,9 +8,11 @@
 ;          Smtp and Imap (the clients), Smtp_server and Imap_server
 ;          (the servers' machines), and Lines, which carries them over
 ;          TCP or TLS; and Mail_item, a message as an item of the store
-;   window/ Mail_window: the mail in a window, Gmail's keys, over the
-;          store; Mail_sync (mail/) what it and the terminal's commands
-;          do with the server, Conversations what they show
+;   window/ Pim_window: the window, the suite, a Home that launches
+;          its views, Mail_window (Gmail's keys), Tasks_window,
+;          People_window, over the store; Pim_look what they share;
+;          Mail_sync (mail/) what Mail and the terminal's commands do
+;          with the server, Conversations what they show
 ;   store/ the suite's store (docs/plans/plan_pim.md, ideas 1 and 3):
 ;          Item (lines of name: value, Mail's syntax, stamped) and
 ;          Items (a directory, a file an item, and the mail's cache)

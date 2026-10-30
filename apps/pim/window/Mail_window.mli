@@ -1,19 +1,18 @@
 (* Mail_window: mini-pim's mail in a window (plan_mail.md, stage 5), the
    store's messages as Gmail shows them, and Gmail's keys:
 
-       Mail   Conversation   Message   Go             <- the menu bar
+       Pim   Mail   Conversation   Message   Mailbox  <- the menu bar
        Inbox -- erin@ix                              3 conversations
       +-----------+---------------------------------------------------+
       | Inbox     |  news@ix               weekly          2026-10-29 |
       | All Mail  |# Carol (2)             Re: the plan    2026-10-29 |<- the
       | Drafts    |                                                   |  selected
-      | Tasks     |                                                   |
-      | People    |                                                   |
       | /plan     |                                                   |
       +-----------+---------------------------------------------------+
 
-   Every action is in the menu bar (Mail, Conversation, Message, Go),
-   each item saying its key, Gmail's:
+   A view of the suite (Pim_window: its Pim menu, its switcher at the
+   sidebar's foot). Every action is in the menu bar (Mail,
+   Conversation, Message, Mailbox), each item saying its key, Gmail's:
 
    j k (and the arrows): the next and the previous conversation; o or
    Enter: open it, its messages one under the other, oldest first; u or
@@ -21,8 +20,8 @@
    in who sent it and the subject; Tab: Inbox or All Mail (fetched when
    the password is known); g: get the mail, the app password asked once
    and kept while the window is open, never written (or read from the
-   store's file password, if the author made one: Mail_sync). Mail > Exit ends
-   the program. Unread conversations are in bold.
+   store's file password, if the author made one: Mail_sync). Unread
+   conversations are in bold.
 
    Writing (plan_mail.md, stage 7): c a new message; r, a, f a reply,
    a reply to all, a forward of the conversation's newest message
@@ -30,17 +29,15 @@
    (lib_gui: To, Cc, Subject, Attach -- files, separated by spaces --
    and the text), kept in the store as a draft at each change, the
    Palm's way; Send (SMTP: Gmail's, or smtp=), Save Draft (or Escape),
-   Discard. Go > Drafts lists them; o opens one again.
+   Discard. Mailbox > Drafts lists them; o opens one again.
 
    The suite's (plan_mail.md, stage 8): z snoozes the conversation
    until a day typed as words (When: monday, in 3 days), archived
    meanwhile and back on top of the Inbox that day, at the next g
    (Mail_sync.wake); t makes its newest message a task, due a day
-   typed so, the same item (plan_pim.md, idea 1); Go > Tasks lists the
-   tasks not done by their day, the late ones in red, x marks one
-   done. p adds the conversation's sender to People (BBDB's way: by a
-   key, not every address seen); Go > People lists them, o opens a
-   person's page, the mail with them.
+   typed so, the same item (plan_pim.md, idea 1), then in the suite's
+   Tasks (Tasks_window). p adds the conversation's sender to People
+   (BBDB's way: by a key, not every address seen; People_window).
 
    The window shows mini-pim's store (Items), not the server: it opens
    at once, with or without the network, on what the last list kept,
@@ -50,9 +47,7 @@
 
    The flags of the program: user= (the account), server=host:port
    and smtp=host:port (Gmail's by default), plain (no TLS:
-   mini-maild), today=2026-10-29 (the tests': else the clock's). The text is drawn
-   with Hershey's letters (Glyph_unicode: accents, quotes, dashes),
-   each at its place, so a list is in columns. *)
+   mini-maild), today=2026-10-29 (the tests': else the clock's). *)
 
 type caps =
   < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
@@ -62,5 +57,18 @@ type model
 (* the store's mailbox, as the flags say *)
 val initial : caps -> Playground.flags -> model
 
+(* the store read again, as the suite comes back to the view; [keys]
+ * those down now, not pressed again *)
+val refresh : caps -> string Set_.t -> model -> model
+
+(* [show caps m id]: the conversation of the message whose item is [id]
+ * opened (a task's, a person's page's) *)
+val show : caps -> model -> string -> model
+
+(* [write m to_]: a new message to [to_] *)
+val write : model -> string -> model
+
 val update : caps -> Playground.computer -> model -> model
+
+(* the view, under the menu bar and the menus, which the suite draws *)
 val view : Playground.computer -> model -> Playground.shape list

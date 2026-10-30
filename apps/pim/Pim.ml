@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* mini-pim (docs/plans/plan_pim.md): with no command, its window
- * (Mail_window: the mail, plan_mail.md's stage 5); with one, from a
+ * (Pim_window: the suite, its Home, Mail, Tasks, People); with one, from a
  * terminal ("the same store from a terminal, for real use and for the
  * tests"), its mail, of plan_mail.md's stages 2 to 4 and 7:
  *
@@ -548,14 +548,14 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       Console.eprint caps (usage ^ "\n");
       Exit.Err "usage"
 
-(* the window (Mail_window), its screen the window's; the platform's
- * words on the command line, and the window's flags *)
+(* the window (Pim_window, the suite), its screen the window's; the
+ * platform's words on the command line, and the window's flags *)
 let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
   let flags = ("window", "") :: Playground_platform.flags caps in
-  let wcaps = (caps :> Mail_window.caps) in
+  let wcaps = (caps :> Pim_window.caps) in
   Playground_platform.run_app caps flags
-    (Playground.game Mail_window.view (Mail_window.update wcaps)
-       (Mail_window.initial wcaps flags));
+    (Playground.game Pim_window.view (Pim_window.update wcaps)
+       (Pim_window.initial wcaps flags));
   Exit.OK
 
 let commands =

@@ -4,6 +4,7 @@
 (* See Mail_window.mli *)
 
 open Playground
+open Pim_look
 
 type caps =
   < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
@@ -15,7 +16,7 @@ type caps =
 (* what waits for the password *)
 type action = Fetch | Open | Archive | Send | Snooze of Civil.date
 type asking = Password | Search | Until | Due
-type mode = Browsing | Reading | Person | Composing | Asking of asking
+type mode = Browsing | Reading | Composing | Asking of asking
 
 type model = {
   account : string;
@@ -26,11 +27,6 @@ type model = {
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
   drafts : Mail_compose.draft list; (* the drafts mailbox's *)
-  tasks : Item.t list; (* the tasks', not done, by their due day *)
-  people : Item.t list; (* the address book, by name *)
-  (* the person whose page is open, and the mail with them *)
-  person : Item.t option;
-  with_person : Item.t list;
   today : Civil.date; (* today= (the tests'), else the clock's *)
   selected : int;
   (* the conversation opened: its messages, oldest first, each its text
@@ -51,11 +47,8 @@ type model = {
 
 let store (caps : caps) : Items.t = Items.at (Items.place caps)
 
-(* the drafts, a mailbox of the store's, not the server's; the tasks
- * the same *)
+(* the drafts, a mailbox of the store's, not the server's *)
 let drafts = "Drafts"
-let tasks = "Tasks"
-let people = "People"
 
 let contains (s : string) (word : string) : bool =
   let s = String.lowercase_ascii s and w = String.lowercase_ascii word in
@@ -76,7 +69,7 @@ let matches (query : string) (c : Imap.summary list) : bool =
     (List.filter (fun w -> w <> "") (String.split_on_char ' ' query))
 
 (* the conversations again from the store, those back from a snooze on
- * top; the drafts; the tasks *)
+ * top; the drafts *)
 let load (caps : caps) (m : model) : model =
   let items = Items.all caps (store caps) in
   let l = Mail_item.listed items ~account:m.account ~mailbox:m.mailbox in
@@ -94,27 +87,8 @@ let load (caps : caps) (m : model) : model =
     List.map Mail_compose.of_item
       (List.filter (fun i -> Item.has_stamp i "draft") items)
   in
-  (* (the tasks without a due day last) *)
-  let due (i : Item.t) =
-    match Search.day i with
-    | Some d -> Civil.days_from_civil d
-    | None -> max_int
-  in
-  let ts =
-    List.stable_sort
-      (fun a b -> compare (due a) (due b))
-      (List.filter
-         (fun i -> Item.has_stamp i "task" && Item.field i "done" = "")
-         items)
-  in
-  let ps = People.contacts items in
-  let n =
-    if m.mailbox = drafts then List.length ds
-    else if m.mailbox = tasks then List.length ts
-    else if m.mailbox = people then List.length ps
-    else List.length cs
-  in
-  { m with conversations = cs; drafts = ds; tasks = ts; people = ps;
+  let n = if m.mailbox = drafts then List.length ds else List.length cs in
+  { m with conversations = cs; drafts = ds;
     selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -150,10 +124,6 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       query = "";
       conversations = [];
       drafts = [];
-      tasks = [];
-      people = [];
-      person = None;
-      with_person = [];
       today =
         (match Search.date (flag "today") with
         | Some d -> d
@@ -170,6 +140,9 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       status;
       held = Set_.empty;
     }
+
+let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
+  load caps { m with held = keys }
 
 (*****************************************************************************)
 (* What the keys and the menus do *)
@@ -293,27 +266,15 @@ let run (caps : caps) (m : model) (action : action) : model =
 let next (caps : caps) (m : model) (d : int) : model =
   let n =
     if m.mailbox = drafts then List.length m.drafts
-    else if m.mailbox = tasks then List.length m.tasks
-    else if m.mailbox = people then List.length m.people
     else List.length m.conversations
   in
   let m = { m with selected = max 0 (min (n - 1) (m.selected + d)) } in
   if m.mode = Reading then open_ caps m else m
 
-(* what is printable of what was typed *)
-let printable (typed : string) : string =
-  String.concat "" (List.filter (fun c -> c >= " ") (Text.chars typed))
-
-let without_last (s : string) : string =
-  match List.rev (Text.chars s) with
-  | [] -> ""
-  | _ :: rest -> String.concat "" (List.rev rest)
-
 (* what a person can ask, by a key or by a menu *)
 type command =
   | Get
   | Search_
-  | Exit
   | Open_
   | Back
   | Archive_
@@ -331,60 +292,28 @@ type command =
   | Drafts
   | Snooze_
   | Task
-  | Done
-  | Tasks
   | Add_sender
-  | People_
 
-(* the menu bar: each menu its title, then its items, each with its
- * command and its key, said in the item (a menu is where the keys are
- * learnt) *)
+(* the menu bar, after the suite's: each menu its title, then its
+ * items, each with its command and its key, said in the item (a menu
+ * is where the keys are learnt) *)
 let menus : (string * (string * command) list) list =
   [ ( "Mail",
       [ ("Get Mail  (g)", Get); ("Compose  (c)", Compose);
-        ("Search...  (/)", Search_); ("Exit", Exit) ] );
+        ("Search...  (/)", Search_) ] );
     ( "Conversation",
       [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
         ("Reply  (r)", Reply); ("Reply All  (a)", Reply_all);
         ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
         ("Next  (j)", Next); ("Previous  (k)", Previous);
         ("Snooze...  (z)", Snooze_); ("Make a Task...  (t)", Task);
-        ("Mark Done  (x)", Done); ("Sender to People  (p)", Add_sender) ] );
+        ("Sender to People  (p)", Add_sender) ] );
     ( "Message",
       [ ("Send", Send_); ("Save Draft  (Esc)", Save_draft);
         ("Discard", Discard) ] );
-    ( "Go",
+    ( "Mailbox",
       [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts); ("Tasks", Tasks); ("People", People_) ] ) ]
-
-let menu_bar = 30.
-
-(* the picture's sizes: the letters, a list's row, the sidebar, the
- * title bar *)
-let size = 16.
-let row = 28.
-let side = 170.
-let bar = 40.
-
-(* the menu [i]'s title, at the window's top left *)
-let menu_box (computer : computer) (i : int) : Widget.box =
-  let w = computer.screen.width and h = computer.screen.height in
-  (* (as wide as the longest item, "Back to List  (u)") *)
-  { Widget.x = (-.w /. 2.) +. 89. +. (float_of_int i *. 174.);
-    y = (h /. 2.) -. (menu_bar /. 2.); w = 170.; h = menu_bar -. 4. }
-
-(* the menus asked for this frame (every frame: immediate mode), and the
- * command of the item chosen, if one was *)
-let chosen (computer : computer) : command option =
-  List.fold_left
-    (fun found (i, (title, items)) ->
-      let labels = title :: List.map fst items in
-      let k = Gui.menu_in computer (menu_box computer i) labels 0 in
-      (* (0: the title, nothing chosen) *)
-      if found <> None || k = 0 then found
-      else Option.map snd (List.nth_opt items (k - 1)))
-    None
-    (List.mapi (fun i menu -> (i, menu)) menus)
+        ("Drafts", Drafts) ] ) ]
 
 let switch (caps : caps) (m : model) (mailbox : string) : model =
   let m =
@@ -392,11 +321,33 @@ let switch (caps : caps) (m : model) (mailbox : string) : model =
   in
   (* (fetched when the password is known: what the store has of the
    * other mailbox may be old, or nothing) *)
-  if m.password <> None && mailbox <> drafts && mailbox <> tasks
-     && mailbox <> people
-  then
-    run caps m Fetch
-  else m
+  if m.password <> None && mailbox <> drafts then run caps m Fetch else m
+
+(* the conversation of the message whose item is [id], opened: in the
+ * mailbox it was last listed in *)
+let show (caps : caps) (m : model) (id : string) : model =
+  match Items.find caps (store caps) id with
+  | None -> { m with status = id ^ ": not in the store" }
+  | Some i -> (
+      let mailbox =
+        match Item.field i "mailbox" with "" -> "INBOX" | b -> b
+      in
+      let m =
+        load caps { m with mailbox; query = ""; mode = Browsing; status = "" }
+      in
+      let has (c : Imap.summary list) =
+        List.exists (fun s -> Mail_item.id s = id) c
+      in
+      let rec find k l =
+        match l with
+        | [] -> None
+        | c :: rest -> if has c then Some k else find (k + 1) rest
+      in
+      match find 0 m.conversations with
+      | None -> { m with status = id ^ ": not listed in " ^ mailbox }
+      | Some k ->
+          let m = { m with selected = k } in
+          if m.password = None then open_ caps m else run caps m Open)
 
 (*****************************************************************************)
 (* Writing *)
@@ -418,6 +369,10 @@ let compose (m : model) (d : Mail_compose.draft) : model =
     back_to = (if m.mode = Reading then Reading else Browsing);
     status = "" }
 
+let write (m : model) (to_ : string) : model =
+  compose { m with mode = Browsing }
+    { (Mail_compose.blank ~id:(new_id ())) with to_ }
+
 (* a reply to the conversation's newest message read, or its forward;
  * the conversation opened first when only listed *)
 let answer (caps : caps) (m : model) (c : command) : model =
@@ -436,22 +391,6 @@ let answer (caps : caps) (m : model) (c : command) : model =
            Mail_compose.reply ~id ~all:(c = Reply_all) ~me:m.account mail
              shown)
   | _ -> { m with status = "g: get the mail to answer it" }
-
-(*****************************************************************************)
-(* Tasks *)
-(*****************************************************************************)
-
-(* what an item is called: its subject (a message's), its title or
- * name, else its text's first line *)
-let title (i : Item.t) : string =
-  match (Item.field i "subject", Item.field i "title", Item.field i "name") with
-  | s, _, _ when s <> "" -> Mime.decode_words s
-  | _, t, _ when t <> "" -> t
-  | _, _, n when n <> "" -> n
-  | _ -> (
-      match String.split_on_char '\n' (String.trim i.body) with
-      | l :: _ -> l
-      | [] -> "")
 
 (* t: the conversation's newest message stamped task, due that day: the
  * same item, now in the tasks too (plan_pim.md, idea 1) *)
@@ -478,9 +417,7 @@ let command (caps : caps) (m : model) (c : command) : model =
   (* (writing, the conversation's commands wait) *)
   let while_writing =
     match c with
-    | Exit | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Tasks
-    | People_ | Get ->
-        true
+    | Send_ | Save_draft | Discard | Inbox | All_mail | Drafts | Get -> true
     | _ -> false
   in
   if m.mode = Composing && not while_writing then m
@@ -490,14 +427,6 @@ let command (caps : caps) (m : model) (c : command) : model =
   match c with
   | Get -> run caps m Fetch
   | Search_ -> { m with mode = Asking Search; field = m.query }
-  | Exit -> CapStdlib.exit caps 0
-  | Open_ when m.mailbox = people -> (
-      match List.nth_opt m.people m.selected with
-      | Some c ->
-          let items = Items.all caps (store caps) in
-          { m with mode = Person; person = Some c;
-            with_person = People.with_ items c; status = "" }
-      | None -> m)
   | Open_ when m.mailbox = drafts -> (
       match List.nth_opt m.drafts m.selected with
       | Some d -> compose m d
@@ -513,8 +442,6 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Inbox -> switch caps m "INBOX"
   | All_mail -> switch caps m Mail_sync.all_mail
   | Drafts -> switch caps m drafts
-  | Tasks -> switch caps m tasks
-  | People_ -> switch caps m people
   | Add_sender -> (
       match current m with
       | [] -> m
@@ -535,13 +462,6 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Task ->
       if current m = [] then m
       else { m with mode = Asking Due; field = ""; status = "" }
-  | Done -> (
-      match List.nth_opt m.tasks m.selected with
-      | Some i when m.mailbox = tasks ->
-          Items.save caps (store caps)
-            (Mail.set "done" (Mail_sync.day m.today) i);
-          load caps { m with status = "done: " ^ title i }
-      | _ -> m)
   | Compose -> compose m (Mail_compose.blank ~id:(new_id ()))
   | Reply | Reply_all | Forward -> answer caps m c
   | Send_ -> run caps m Send
@@ -612,7 +532,7 @@ let writing (caps : caps) (computer : computer) (m : model)
 let update (caps : caps) (computer : computer) (m : model) : model =
   let keys = computer.keyboard.keys in
   let pressed name = Set_.mem name keys && not (Set_.mem name m.held) in
-  let menu = chosen computer in
+  let menu = chosen computer ~first:1 menus in
   let m =
     match m.mode with
     | Asking a ->
@@ -645,8 +565,8 @@ let update (caps : caps) (computer : computer) (m : model) : model =
         else if pressed "Backspace" then { m with field = without_last m.field }
         else { m with field = m.field ^ printable computer.keyboard.typed }
     | Composing -> writing caps computer m menu (pressed "Escape")
-    | (Browsing | Reading | Person) when Gui.modal () -> m
-    | Browsing | Reading | Person -> (
+    | (Browsing | Reading) when Gui.modal () -> m
+    | Browsing | Reading -> (
         let reading = m.mode = Reading in
         let key =
           if pressed "j" || ((not reading) && pressed "ArrowDown") then Some Next
@@ -661,7 +581,6 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "f" then Some Forward
           else if pressed "z" then Some Snooze_
           else if pressed "t" then Some Task
-          else if pressed "x" then Some Done
           else if pressed "p" then Some Add_sender
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
@@ -684,121 +603,43 @@ let update (caps : caps) (computer : computer) (m : model) : model =
 (* The picture *)
 (*****************************************************************************)
 
-let ink = rgb 32 33 36
-let grey = rgb 95 99 104
-let blue = rgb 26 115 232
-
-(* a letter's width, Hershey's at [size] *)
-let advance (c : string) : float =
-  let g = Glyph_unicode.glyph c in
-  float_of_int (g.right - g.left) *. size /. Hershey.units_per_em
-
-let width (s : string) : float =
-  List.fold_left (fun w c -> w +. advance c) 0. (Text.chars s)
-
-(* [s]'s letters from [x] on the [baseline], those past [room] left out *)
-let text (color : color) ~(bold : bool) ~(room : float) (x : float)
-    (baseline : float) (s : string) : shape =
-  let rec place (x0 : float) acc l =
-    match l with
-    | [] -> List.rev acc
-    | c :: rest ->
-        let w = advance c in
-        if x0 +. w > x +. room then List.rev acc
-        else place (x0 +. w) ((x0, c) :: acc) rest
-  in
-  letters color
-    { size; bold; italic = false; baseline; at = place x [] (Text.chars s) }
-
-(* a text's lines cut at [room], at the spaces *)
-let wrap (room : float) (s : string) : string list =
-  List.concat_map
-    (fun line ->
-      let words = String.split_on_char ' ' line in
-      let rec go cur acc ws =
-        match ws with
-        | [] -> List.rev (cur :: acc)
-        | w :: rest ->
-            let next = if cur = "" then w else cur ^ " " ^ w in
-            if cur <> "" && width next > room then go w (cur :: acc) rest
-            else go next acc rest
-      in
-      go "" [] words)
-    (String.split_on_char '\n' s)
-
 let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then "Inbox"
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
   else if m.mailbox = drafts then "Drafts"
-  else if m.mailbox = tasks then "Tasks"
-  else if m.mailbox = people then "People"
   else m.mailbox
 
 let view (computer : computer) (m : model) : shape list =
-  let w = computer.screen.width and h = computer.screen.height in
-  (* (the menu bar above the rest) *)
-  let left = -.w /. 2. and top = (h /. 2.) -. menu_bar in
-  let x0 = left +. side +. 16. in
-  let room = w -. side -. 32. in
-  let top_bar =
-    let title =
-      match m.mode with
-      | Asking Password ->
-          "password: " ^ String.make (List.length (Text.chars m.field)) '*'
-      | Asking Search -> "search: " ^ m.field ^ "_"
-      | Asking Until -> "snooze until: " ^ m.field ^ "_"
-      | Asking Due -> "a task, due: " ^ m.field ^ "_"
-      | Composing ->
-          (if m.draft.subject = "" then "New message" else m.draft.subject)
-          ^ " \xe2\x80\x94 " ^ m.account
-      | Person ->
-          (match m.person with Some c -> title c | None -> "")
-          ^ " \xe2\x80\x94 " ^ m.account
-      | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
-    in
-    let right =
-      if m.status <> "" then m.status
-      else
-        let count n one =
-          Printf.sprintf "%d %s%s" n one (if n = 1 then "" else "s")
-        in
-        if m.mailbox = drafts then count (List.length m.drafts) "draft"
-        else if m.mailbox = tasks then count (List.length m.tasks) "task"
-        else if m.mailbox = people then count (List.length m.people) "person"
-        else count (List.length m.conversations) "conversation"
-    in
-    [
-      rectangle (rgb 241 243 244) w bar |> move 0. (top -. (bar /. 2.));
-      text ink ~bold:true ~room:(w /. 2.) (left +. 16.) (top -. 26.) title;
-      text grey ~bold:false ~room:(w /. 2.)
-        (-.left -. 16. -. width right)
-        (top -. 26.) right;
-    ]
+  let h = computer.screen.height in
+  let a = area computer in
+  let x0 = a.x0 and room = a.room and top = a.top in
+  let title =
+    match m.mode with
+    | Asking Password ->
+        "password: " ^ String.make (List.length (Text.chars m.field)) '*'
+    | Asking Search -> "search: " ^ m.field ^ "_"
+    | Asking Until -> "snooze until: " ^ m.field ^ "_"
+    | Asking Due -> "a task, due: " ^ m.field ^ "_"
+    | Composing ->
+        (if m.draft.subject = "" then "New message" else m.draft.subject)
+        ^ " \xe2\x80\x94 " ^ m.account
+    | Browsing | Reading -> mailbox_name m ^ " \xe2\x80\x94 " ^ m.account
+  in
+  let right =
+    if m.status <> "" then m.status
+    else if m.mailbox = drafts then count (List.length m.drafts) "draft"
+    else count (List.length m.conversations) "conversation"
   in
   let sidebar =
-    List.concat
-      (List.mapi
-         (fun i (name, box) ->
-           let y = top -. bar -. 12. -. (float_of_int i *. row) in
-           (if box = m.mailbox then
-              [
-                rectangle (rgb 211 227 253) side row
-                |> move (left +. (side /. 2.)) (y -. (row /. 2.));
-              ]
-            else [])
-           @ [
-               text ink ~bold:(box = m.mailbox) ~room:(side -. 24.)
-                 (left +. 16.) (y -. 19.) name;
-             ])
+    Pim_look.sidebar a
+      (List.map
+         (fun (name, box) -> (name, box = m.mailbox))
          [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail);
-           ("Drafts", drafts); ("Tasks", tasks); ("People", people) ])
+           ("Drafts", drafts) ])
     @
     if m.query <> "" then
-      [
-        text blue ~bold:false ~room:(side -. 24.) (left +. 16.)
-          (top -. bar -. 12. -. (6. *. row) -. 19.)
-          ("/" ^ m.query);
-      ]
+      [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.) (row_y a 4)
+          ("/" ^ m.query) ]
     else []
   in
   let main =
@@ -811,96 +652,18 @@ let view (computer : computer) (m : model) : shape list =
             let b = field_box computer i in
             text grey ~bold:false ~room:76. x0 (b.y -. 5.) name)
           [ "To"; "Cc"; "Subject"; "Attach" ]
-    | Person ->
-        (* the page: the addresses, the mail with them *)
-        let emails =
-          match m.person with Some c -> People.emails c | None -> []
-        in
-        let lines =
-          List.map (fun e -> (grey, false, e, "")) emails
-          @ [ (ink, false, "", ""); (ink, true, "Mail", "") ]
-          @ List.map
-              (fun (i : Item.t) ->
-                ( ink, false,
-                  Conversations.day i,
-                  Conversations.who i ^ "   " ^ title i ))
-              m.with_person
-        in
-        List.concat
-          (List.mapi
-             (fun k (color, bold, a, b) ->
-               let y = top -. bar -. 31. -. (float_of_int k *. 24.) in
-               [ text color ~bold ~room:120. x0 y a;
-                 text color ~bold ~room:(room -. 130.) (x0 +. 130.) y b ])
-             lines)
-    | Browsing when m.mailbox = people ->
-        if m.people = [] then
-          [ text grey ~bold:false ~room x0 (top -. bar -. 31.)
-              "No one: p adds a conversation's sender." ]
-        else
-          List.concat
-            (List.mapi
-               (fun i (c : Item.t) ->
-                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
-                 (if i = m.selected then
-                    [ rectangle (rgb 232 240 254) (room +. 16.) row
-                      |> move
-                           (x0 -. 8. +. ((room +. 16.) /. 2.))
-                           (y -. (row /. 2.)) ]
-                  else [])
-                 @ [ text ink ~bold:false ~room:190. x0 (y -. 19.) (title c);
-                     text grey ~bold:false ~room:(room -. 200.) (x0 +. 200.)
-                       (y -. 19.)
-                       (String.concat ", " (People.emails c)) ])
-               m.people)
-    | Browsing when m.mailbox = tasks ->
-        if m.tasks = [] then
-          [ text grey ~bold:false ~room x0 (top -. bar -. 31.)
-              "No tasks: t makes one of a conversation." ]
-        else
-          List.concat
-            (List.mapi
-               (fun i (t : Item.t) ->
-                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
-                 let due = Item.field t "due" in
-                 let late =
-                   match Search.day t with
-                   | Some d ->
-                       Civil.days_from_civil d < Civil.days_from_civil m.today
-                   | None -> false
-                 in
-                 (if i = m.selected then
-                    [ rectangle (rgb 232 240 254) (room +. 16.) row
-                      |> move
-                           (x0 -. 8. +. ((room +. 16.) /. 2.))
-                           (y -. (row /. 2.)) ]
-                  else [])
-                 @ [ text
-                       (if late then rgb 197 34 31 else grey)
-                       ~bold:false ~room:(width "2026-10-30" +. 4.) x0
-                       (y -. 19.)
-                       (if due = "" then "-" else due);
-                     text ink ~bold:false ~room:(room -. 130.) (x0 +. 130.)
-                       (y -. 19.) (title t) ])
-               m.tasks)
     | Browsing when m.mailbox = drafts ->
         if m.drafts = [] then
-          [ text grey ~bold:false ~room x0 (top -. bar -. 31.) "No drafts." ]
+          [ text grey ~bold:false ~room x0 (row_y a 0) "No drafts." ]
         else
           List.concat
             (List.mapi
                (fun i (d : Mail_compose.draft) ->
-                 let y = top -. bar -. 12. -. (float_of_int i *. row) in
-                 (if i = m.selected then
-                    [ rectangle (rgb 232 240 254) (room +. 16.) row
-                      |> move
-                           (x0 -. 8. +. ((room +. 16.) /. 2.))
-                           (y -. (row /. 2.)) ]
-                  else [])
-                 @ [ text ink ~bold:false ~room:190. x0 (y -. 19.)
+                 let y = row_y a i in
+                 (if i = m.selected then [ selected a y ] else [])
+                 @ [ text ink ~bold:false ~room:190. x0 y
                        (if d.to_ = "" then "(no one)" else d.to_);
-                     text ink ~bold:false ~room:(room -. 200.) (x0 +. 200.)
-                       (y -. 19.)
+                     text ink ~bold:false ~room:(room -. 200.) (x0 +. 200.) y
                        (if d.subject = "" then "(no subject)" else d.subject) ])
                m.drafts)
     | Reading ->
@@ -941,11 +704,7 @@ let view (computer : computer) (m : model) : shape list =
              shown
     | Browsing | Asking _ ->
         if m.conversations = [] then
-          [
-            text grey ~bold:false ~room x0
-              (top -. bar -. 31.)
-              "No mail here: g gets it.";
-          ]
+          [ text grey ~bold:false ~room x0 (row_y a 0) "No mail here: g gets it." ]
         else
           let fits = int_of_float ((h -. bar -. 12.) /. row) in
           let first = max 0 (m.selected - fits + 1) in
@@ -955,9 +714,7 @@ let view (computer : computer) (m : model) : shape list =
                  if i < first || i >= first + fits then []
                  else
                    let s = List.hd c in
-                   let y =
-                     top -. bar -. 12. -. (float_of_int (i - first) *. row)
-                   in
+                   let y = row_y a (i - first) in
                    let bold = Conversations.unread c in
                    let many =
                      if List.length c > 1 then
@@ -965,29 +722,18 @@ let view (computer : computer) (m : model) : shape list =
                      else ""
                    in
                    let day = Conversations.day s.headers in
-                   (if i = m.selected then
-                      [
-                        rectangle (rgb 232 240 254) (room +. 16.) row
-                        |> move
-                             (x0 -. 8. +. ((room +. 16.) /. 2.))
-                             (y -. (row /. 2.));
-                      ]
-                    else [])
+                   (if i = m.selected then [ selected a y ] else [])
                    @ [
-                       text ink ~bold ~room:190. x0 (y -. 19.)
+                       text ink ~bold ~room:190. x0 y
                          (Conversations.who s.headers ^ many);
-                       text ink ~bold ~room:(room -. 310.) (x0 +. 200.)
-                         (y -. 19.)
+                       text ink ~bold ~room:(room -. 310.) (x0 +. 200.) y
                          (Conversations.header s.headers "subject");
                        text grey ~bold
                          ~room:(width day +. 4.)
                          (x0 +. room -. width day)
-                         (y -. 19.) day;
+                         y day;
                      ])
                m.conversations)
   in
-  (rectangle white w h :: top_bar)
+  (rectangle white computer.screen.width h :: title_bar computer title right)
   @ sidebar @ main
-  @ [ rectangle (Gui.theme ()).face w menu_bar |> move 0. (top +. (menu_bar /. 2.)) ]
-  (* (the menus last: an open one over the list) *)
-  @ Gui.draw ()

@@ -413,3 +413,22 @@ any of them (found by address, not by links), then what names them
 `people` and `show`. Tests: Unit_people, session.sh, a frame. Not
 yet: addresses completed in To:, a vCard imported, the sender shown
 as the contact's name in lists.
+
+2026-10-30: the window a suite (the author: "a 'meta' gui is also
+useful to launch the components", the terminal's commands kept as
+they are): `window/Pim_window`, a Home of tiles, one a view (Mail,
+Tasks, People: m t p or a click), each saying what is unread, late,
+due, and under them Today's beginning, the tasks late and due today
+and the mail back from a snooze (idea 4); in a view, a first menu
+Pim and Ctrl+0 to 3 (Outlook's Go menu and keys) and a switcher at
+the sidebar's foot (Outlook 2003's buttons). Mail_window (993 lines)
+split by view: `Tasks_window` (To Do and Done, a task captured in a
+line with its day at its end, `When.ending`: capture's first part;
+x, d, z for a task too, idea 5; o a message's task opened in Mail),
+`People_window` (a person added by hand, their page, a message of
+theirs opened in Mail, c writes to them), `Pim_look` (what the views
+share). A view asks the suite for another (`Pim_look.go`), and each
+is read again from the store as it is shown. Tests: Unit_when (a day
+at a line's end), 25 frames (9 new: Home, its menu, a tile, capture,
+done, a task's message opened, a person added, written to), mini-ml.
+Not yet: Calendar, Notes, Money, a search over every view.

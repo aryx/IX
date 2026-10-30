@@ -5,20 +5,32 @@ and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/plan_pim.md); its mail,
 [`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
 
-So far, plan_mail.md's stages 1 to 5, and 7 begun: the mail's formats, sending by
-SMTP and reading by IMAP, with Gmail or with mini-maild on this
-machine, what is read kept in the suite's store (plan_pim.md's stage
-2 begun), and a window over it with Gmail's keys. Their tests:
-`tests/`, the unit tests (dune's), `session.sh`, mini-pim's commands
-against mini-maild, and `frames.sh`, its window's (`make test`'s two
-"mini-pim").
+So far, plan_mail.md's stages 1 to 7, and 8 begun: the mail's
+formats, sending by SMTP and reading by IMAP, with Gmail or with
+mini-maild on this machine, what is read kept in the suite's store
+(plan_pim.md's stage 2 begun), and a window over it, the suite: a
+Home that launches its views, Mail with Gmail's keys, Tasks, People.
+Their tests: `tests/`, the unit tests (dune's), `session.sh`,
+mini-pim's commands against mini-maild, and `frames.sh`, its
+window's (`make test`'s two "mini-pim").
 
     bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
-                       the window: j k move, o open, u back, e archive,
+            [view=mail|tasks|people]
+                       the window, on Home: a tile a view (m t p, or a
+                       click), what is late or due today; in a view,
+                       the Pim menu and Ctrl+0 to 3 (Home, Mail,
+                       Tasks, People), the switcher at the sidebar's
+                       foot
+                       Mail: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
-                       z snooze, t a task, Go > Tasks (x done),
-                       p the sender to People, Go > People
+                       z snooze, t a task, p the sender to People
+                       Tasks: n a task in a line ("pay the rent by
+                       friday"), x done, d its day, z snooze, o open
+                       (a message in Mail), Tab To Do or Done
+                       People: n a person (Dan <dan@ix>), o their
+                       page, the mail with them (o opens one), c write
+                       to them
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -70,7 +82,14 @@ against mini-maild, and `frames.sh`, its window's (`make test`'s two
     mail/Mail_sync     the server and the store: what the commands and
                        the window do
     mail/Conversations messages as conversations, the words a list shows
-    window/Mail_window the mail in a window
+    window/Pim_window  the window: the suite, Home, going from view to
+                       view
+    window/Mail_window the mail
+    window/Tasks_window
+                       the tasks to do and done, captured in a line
+    window/People_window
+                       the address book, a person's page
+    window/Pim_look    what the views share: menus, letters, rows
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
     store/When         a day typed as words, English and French

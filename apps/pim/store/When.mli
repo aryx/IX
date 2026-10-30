@@ -22,3 +22,9 @@ val parse : today:Civil.date -> string -> Civil.date option
 
 (* today at Greenwich, from the system's clock *)
 val today : unit -> Civil.date
+
+(* [ending ~today line]: a line typed to capture a task, its day at its
+ * end found ("pay the electricity by friday": "pay the electricity",
+ * Friday), the longest tail of words that is a day, a word left before
+ * it; a "by", "on", "due" or "pour" before the day dropped *)
+val ending : today:Civil.date -> string -> string * Civil.date option

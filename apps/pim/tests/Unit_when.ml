@@ -39,4 +39,16 @@ let tests =
         check "words" "none" (day "someday");
         check "nothing" "none" (day "");
         check "feb 30" "none" (day "feb 30"));
+    Testo.create "a day at a line's end" (fun () ->
+        let cut line =
+          match When.ending ~today line with
+          | t, Some d -> Printf.sprintf "%s|%04d-%02d-%02d" t d.year d.month d.day
+          | t, None -> t ^ "|none"
+        in
+        check "by friday" "pay the electricity|2026-10-30"
+          (cut "pay the electricity by friday");
+        check "in 2 weeks" "call Bob|2026-11-12" (cut "call Bob in 2 weeks");
+        check "nov 5" "dentist|2026-11-05" (cut "dentist nov 5");
+        check "none" "buy bread|none" (cut "buy bread");
+        check "a day alone: the title" "monday|none" (cut "monday"));
   ]

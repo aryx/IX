@@ -75,3 +75,29 @@ let parse ~(today : Civil.date) (words : string) : Civil.date option =
       | Some m, Some d -> on m d
       | _ -> None)
   | _ -> None
+
+let ending ~(today : Civil.date) (line : string) : string * Civil.date option =
+  let ws = List.filter (fun w -> w <> "") (String.split_on_char ' ' line) in
+  let n = List.length ws in
+  let first k = List.filteri (fun i _ -> i < k) ws in
+  let last k = List.filteri (fun i _ -> i >= n - k) ws in
+  (* the longest tail that is a day, a word at least left before it *)
+  let rec try_ k =
+    if k = 0 then (String.concat " " ws, None)
+    else if k >= n then try_ (k - 1)
+    else
+      match parse ~today (String.concat " " (last k)) with
+      | Some d ->
+          let title =
+            match List.rev (first (n - k)) with
+            | w :: rest
+              when rest <> []
+                   && List.mem (String.lowercase_ascii w)
+                        [ "by"; "on"; "due"; "pour" ] ->
+                List.rev rest
+            | l -> List.rev l
+          in
+          (String.concat " " title, Some d)
+      | None -> try_ (k - 1)
+  in
+  try_ 4

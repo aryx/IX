@@ -12,5 +12,13 @@ val field_box : Playground.computer -> int -> Widget.box
 val area_box : Playground.computer -> Widget.box
 val button_box : Playground.computer -> int -> Widget.box
 
+(* how many rows the list shows, how many lines the reading; the lines
+ * of the conversation read (its scrollbar's length); the lists'
+ * bottom *)
+val list_fits : Playground.computer -> int
+val reading_fits : Playground.computer -> int
+val lines : Playground.computer -> Mail_model.model -> int
+val bottom : Playground.computer -> float
+
 (* the view, under the menu bar and the menus, which the suite draws *)
 val view : Playground.computer -> Mail_model.model -> Playground.shape list

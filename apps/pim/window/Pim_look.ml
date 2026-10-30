@@ -143,8 +143,45 @@ let sidebar_click (computer : computer) : int option =
 let row_click (computer : computer) : int option =
   let a = area computer in
   let mouse = computer.mouse in
-  if (not mouse.mclick) || Gui.modal () || mouse.mx < a.x0 -. 8. then None
+  if
+    (not mouse.mclick) || Gui.modal () || mouse.mx < a.x0 -. 8.
+    || mouse.mx > a.x0 +. a.room +. 4.
+  then None
   else row_at a mouse.my
+
+(* the scrollbar's track: in the right margin, from the list's first
+ * row to [bottom] *)
+let track (computer : computer) (bottom : float) : float * float * float =
+  let a = area computer in
+  let top = row_y a 0 +. 19. in
+  (a.x0 +. a.room +. 10., top, top -. bottom)
+
+let scrollbar (computer : computer) ~(bottom : float) ~(n : int) ~(fits : int)
+    ~(first : int) : shape list =
+  if n <= fits || fits <= 0 then []
+  else
+    let x, top, h = track computer bottom in
+    let thumb = max 20. (h *. float_of_int fits /. float_of_int n) in
+    let at =
+      top
+      -. ((h -. thumb) *. float_of_int first /. float_of_int (n - fits))
+      -. (thumb /. 2.)
+    in
+    [ rectangle (rgb 232 234 237) 10. h |> move x (top -. (h /. 2.));
+      rectangle (rgb 154 160 166) 8. thumb |> move x at ]
+
+let scrollbar_press (computer : computer) ~(bottom : float) ~(n : int)
+    ~(fits : int) : int option =
+  let mouse = computer.mouse in
+  let x, top, h = track computer bottom in
+  if
+    n <= fits || (not mouse.mdown) || Gui.modal ()
+    || Float.abs (mouse.mx -. x) > 8.
+    || mouse.my > top || mouse.my < top -. h
+  then None
+  else
+    let k = int_of_float ((top -. mouse.my) /. h *. float_of_int n) in
+    Some (max 0 (min (n - 1) k))
 
 let wheel (computer : computer) : int =
   let w = computer.mouse.mwheel in

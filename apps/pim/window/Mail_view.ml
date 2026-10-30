@@ -31,6 +31,35 @@ let button_box (computer : computer) (i : int) : Widget.box =
     w = 120.; h = 30. }
 
 
+(* the conversation read as lines: each message's head (bold), its text
+ * wrapped at [room], a blank *)
+let reading_lines (room : float) (m : model) : (bool * string) list =
+  List.concat_map
+    (fun ((s : Imap.summary), t) ->
+      let head =
+        Conversations.who s.headers ^ "   " ^ Conversations.day s.headers
+      in
+      let body =
+        match t with
+        | Some t -> wrap room (String.trim (Mail_text.text (Mail.parse t)))
+        | None -> [ "(not fetched: g gets the mail)" ]
+      in
+      ((true, head) :: List.map (fun l -> (false, l)) body) @ [ (false, "") ])
+    m.reading
+
+let reading_fits (computer : computer) : int =
+  int_of_float ((computer.screen.height -. bar -. 60.) /. 22.)
+
+let bottom (computer : computer) : float = (-.computer.screen.height /. 2.) +. 10.
+
+(* (the rows between the first's top and the bottom) *)
+let list_fits (computer : computer) : int =
+  let a = area computer in
+  int_of_float ((row_y a 0 +. 19. -. bottom computer) /. row)
+
+let lines (computer : computer) (m : model) : int =
+  List.length (reading_lines (area computer).room m)
+
 let mailbox_name (m : model) : string =
   if m.mailbox = "INBOX" then
     match (m.screening, m.screen) with
@@ -107,24 +136,8 @@ let view (computer : computer) (m : model) : shape list =
           | (s, _) :: _ -> Conversations.header s.headers "subject"
           | [] -> ""
         in
-        let lines =
-          List.concat_map
-            (fun ((s : Imap.summary), t) ->
-              let head =
-                Conversations.who s.headers
-                ^ "   "
-                ^ Conversations.day s.headers
-              in
-              let body =
-                match t with
-                | Some t -> wrap room (String.trim (Mail_text.text (Mail.parse t)))
-                | None -> [ "(not fetched: g gets the mail)" ]
-              in
-              ((true, head) :: List.map (fun l -> (false, l)) body)
-              @ [ (false, "") ])
-            m.reading
-        in
-        let fits = int_of_float ((h -. bar -. 60.) /. 22.) in
+        let lines = reading_lines room m in
+        let fits = reading_fits computer in
         let shown =
           List.filteri (fun i _ -> i >= m.scroll && i < m.scroll + fits) lines
         in
@@ -150,12 +163,17 @@ let view (computer : computer) (m : model) : shape list =
                   text (if bold then ink else grey) ~bold ~room x0 y l
                   :: (if bold then [] else underlined y l))
                 shown)
+        @ scrollbar computer ~bottom:(bottom computer) ~n:(List.length lines)
+            ~fits ~first:m.scroll
     | Browsing | Asking _ ->
         if m.conversations = [] then
           [ text grey ~bold:false ~room x0 (row_y a 0) "No mail here: g gets it." ]
         else
-          let fits = int_of_float ((h -. bar -. 12.) /. row) in
+          let fits = list_fits computer in
           let first = max 0 (m.selected - fits + 1) in
+          scrollbar computer ~bottom:(bottom computer)
+            ~n:(List.length m.conversations) ~fits ~first
+          @
           List.concat
             (List.mapi
                (fun i (c : Imap.summary list) ->

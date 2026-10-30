@@ -574,8 +574,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
         let row =
           match Pim_look.row_click computer with
           | Some k when not reading ->
-              let h = computer.screen.height in
-              let fits = int_of_float ((h -. bar -. 12.) /. row) in
+              let fits = Mail_view.list_fits computer in
               let i = max 0 (m.selected - fits + 1) + k in
               let n =
                 if m.mailbox = drafts then List.length m.drafts
@@ -584,7 +583,23 @@ let update (caps : caps) (computer : computer) (m : model) : model =
               if i < n then Some i else None
           | _ -> None
         in
+        (* the scrollbar pressed or dragged: the list's row, the
+         * reading's line at that place *)
+        let bar_at =
+          if reading then
+            Pim_look.scrollbar_press computer ~bottom:(Mail_view.bottom computer)
+              ~n:(Mail_view.lines computer m) ~fits:(Mail_view.reading_fits computer)
+          else
+            Pim_look.scrollbar_press computer ~bottom:(Mail_view.bottom computer)
+              ~n:(List.length m.conversations) ~fits:(Mail_view.list_fits computer)
+        in
         match (menu, key, Pim_look.sidebar_click computer, row) with
+        | None, None, _, _ when bar_at <> None -> (
+            match bar_at with
+            | Some k when reading ->
+                { m with scroll = max 0 (k - (Mail_view.reading_fits computer / 2)) }
+            | Some k -> { m with selected = k }
+            | None -> m)
         | Some c, _, _, _ | None, Some c, _, _ -> command caps m c
         | None, None, Some k, _ when k < List.length (places m) -> (
             match List.nth_opt (places m) k with

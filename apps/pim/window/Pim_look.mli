@@ -101,6 +101,18 @@ val row_at : area -> float -> int option
 val sidebar_click : Playground.computer -> int option
 val row_click : Playground.computer -> int option
 
+(* [scrollbar computer ~bottom ~n ~fits ~first]: a list's bar in the
+ * right margin, from its first row down to [bottom]: a thumb as tall as
+ * the [fits] rows shown of [n], as far down as [first] is; nothing when
+ * all fit. [scrollbar_press]: the button down (pressed or dragged) on
+ * its track, the row at that place of the list (a view selects it, the
+ * list following) *)
+val scrollbar :
+  Playground.computer -> bottom:float -> n:int -> fits:int -> first:int ->
+  Playground.shape list
+val scrollbar_press :
+  Playground.computer -> bottom:float -> n:int -> fits:int -> int option
+
 (* the rows the wheel asks to go down this frame (up: negative), three
  * a notch; [moved i d n]: [i] moved by [d] within a list of [n] *)
 val wheel : Playground.computer -> int

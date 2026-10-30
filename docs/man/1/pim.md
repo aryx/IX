@@ -36,7 +36,9 @@ goes to a view (0 Home, 1 Mail, 2 Calendar, 3 People, 4 Tasks, 5 Notes,
 what the keys do: a click on the sidebar's place (a mailbox, a list, an
 account), on a row of a list (a conversation or a note opened, a task,
 a line selected); the wheel moves a list's selection, or scrolls the
-message read. Control-E
+message read; Mail's list and the message read have a scrollbar at
+their right when they are longer than the window, its track pressed
+or dragged. Control-E
 searches every view (Gmail's words: `from:alice`, `is:task`,
 `before:2026-12-01`, `-is:read`): the items found as one types, by the
 view they open in; Up and Down choose, Enter opens one, Tab shows one

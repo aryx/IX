@@ -80,8 +80,14 @@
  *                                  now Rec's code; call it; return
  *               cell --> Rec       (each call after)
  *
- * What is left of decision 12: the code on arm, under mini-5i and on
- * mini-9pi (segflush; mini-5i's and mini-qemu's caches told).
+ * {b On arm} (mini-dotnet for Plan 9: mini-9pi, mini-5i), the same
+ * code with references, 5c's names and words of 4 bytes, the value
+ * stack's top R10; and two things arm64 has not to do. An int's 31
+ * bits there do not hold an int32: one crosses to ML (an argument of
+ * a call-out, an entry's result) tagged when it fits, else boxed
+ * (jit_box: an Int32's block), and one from ML is either (TST $1).
+ * The Pi 1's ARMv6 has no division: the runtime's unsigned one
+ * (jit_udiv), the signs in the templates.
  *
  * others:
  * .NET's first JIT (2002) compiled a method at its first call through
@@ -122,7 +128,7 @@ val outs : int
 
 (* the assembly's methods the JIT takes, verified, their symbols *)
 type prepared
-val prepare : Value.image -> prepared
+val prepare : mach -> Value.image -> prepared
 val rows : prepared -> int list
 val symbol_of : prepared -> int -> string
 
@@ -131,18 +137,21 @@ val symbol_of : prepared -> int -> string
  * jit_divide_by_zero, jit_null, jit_range, of unit, which raise; [out]
  * the call-outs', by their operands (0 to outs), each taking the
  * call-out's number then the operands; [compile] the compiler's, of a
- * method's number *)
-val runtime : throws:(string * int) list -> out:int array -> compile:int -> string
+ * method's number; on arm [box], of an int32's two halves, tagged,
+ * which returns its Int32 (an int32 past 31 bits crosses so) *)
+val runtime : mach:mach -> throws:(string * int) list -> out:int array -> compile:int -> box:int -> string
 
 (* the code at the start: for each method an entry, `Sym_entry`, which
  * mini-ml calls as a closure of one argument, an array of the
  * arguments (an int32 a tagged int), and which returns the result
  * likewise; and its stub, `Sym_stub`, which calls jit_compile with the
  * method's [number], then the method through its [cell]. The text, the
- * entries' symbols, the stubs' *)
+ * entries' symbols, the stubs' (and jit_sp, a closure's code of unit
+ * returning the stack pointer in words) *)
 val stubs : prepared -> cell:(int -> int) -> number:(int -> int) -> runtime:string ->
   string * (int * string) list * (int * string) list
 
 (* a method's code, at its first call: its text (`Sym`, then the
- * runtime's), its call-outs numbered from [base] *)
-val method_code : prepared -> int -> cell:(int -> int) -> base:int -> runtime:string -> string * site list
+ * runtime's), its call-outs numbered from [base]; the machine's stack
+ * pointer checked against [limit] (in words: jit_overflow below it) *)
+val method_code : prepared -> int -> cell:(int -> int) -> base:int -> limit:int -> runtime:string -> string * site list

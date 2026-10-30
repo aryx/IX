@@ -14,7 +14,9 @@
 # (refused.expected).
 # By dune's builds, and by mini-ml's (_mk/7; -5: mini-dotnet on arm
 # under mini-5i) when they are there.
-# usage: languages/dotnet/csc/tests/run.sh [-5] [-dune] [-mini] [-ms] [-record]
+# usage: languages/dotnet/csc/tests/run.sh [-5] [-dune] [-mini] [-ms] [-jit] [-record]
+# -jit: each assembly run with mini-dotnet's -jit (its code where mini-ml
+# built it: arm64's, Plan 9's arm; the interpreter elsewhere)
 cd "$(dirname "$0")/../../../.."
 O=7; RUN=; record=; only=; ms=
 for a in "$@"; do
@@ -24,6 +26,7 @@ for a in "$@"; do
     -dune) only=dune;;
     -mini) only=mini;;
     -ms) ms=1;;
+    -jit) jit=-jit;;
   esac
 done
 T=languages/dotnet/csc/tests
@@ -46,7 +49,7 @@ check() {
     # (its assembly verified by dune's mini-dotnet: every method passes)
     case "$(_build/default/languages/dotnet/Main.exe -verify $W/$p.dll | tail -1)" in
       *" 0 refused") ;; *) fail "mini-csc $p, verified"; _build/default/languages/dotnet/Main.exe -verify $W/$p.dll | head -3;; esac
-    "$@" $W/$p.dll > $W/$p.out 2> $W/$p.err
+    "$@" $jit $W/$p.dll > $W/$p.out 2> $W/$p.err
     if cmp -s $W/$p.out $want; then ok "mini-csc $p, run by $what"
     else fail "mini-csc $p, run by $what"; diff $want $W/$p.out | head -5; head -3 $W/$p.err; fi
   done

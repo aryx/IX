@@ -12,6 +12,16 @@
  *
  *     the code's bytes --write--> memfd --mmap(PROT_READ|PROT_EXEC)--> run
  *
+ * On Plan 9 (mini-9pi; mini-5i's Plan 9), mini-ml's on arm: a segment
+ * attached (segattach, class "memory": zeros), the bytes put there by
+ * a read from a pipe they were written to (ML writes no memory but its
+ * values'; the kernel writes where a read is asked to), then segflush,
+ * the bytes in memory and the instructions' cache emptied of what was
+ * there. The memory of a Plan 9 process runs, arm having no right to
+ * run apart from reading; the cells, a segment too, through the pipe.
+ *
+ *     the code's bytes --pwrite--> pipe --pread--> segment --segflush--> run
+ *
  * The code is then called as mini-ml calls any closure (Gen: the
  * closure in R0, its argument in R1, field 0 its code): a block of
  * two fields, the code's address in both, is a closure.
@@ -21,11 +31,11 @@
  * PROT_WRITE|PROT_EXEC), which SELinux and OpenBSD refuse; mprotect
  * between the writing and the running is the usual way; .NET (since 7)
  * maps the same memory twice, one view writable and one executable,
- * by memfd_create too. On Plan 9 the memory of the process runs
- * (no execute bit on arm), and segflush(2) cleans the caches: Inferno's
- * JIT did so, the way mini-9pi will. *)
+ * by memfd_create too. Inferno's JIT, on Plan 9, wrote its code in its
+ * heap and called segflush, as here. *)
 
-(* whether code can be run here: mini-ml's build, Linux, arm64 *)
+(* whether code can be run here: mini-ml's build, Linux on arm64 or
+ * Plan 9 *)
 val available : bool
 
 (* the code's bytes made executable: their address *)

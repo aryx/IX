@@ -33,12 +33,17 @@
 #              runtime printed: the survey's ten (survey/programs/
 #              *.expected), and ours (programs/*.expected, their exit too;
 #              programs/build.sh makes them where there is an SDK)
+# -9: the JIT on arm, mini-dotnet for Plan 9 (mini-mk O=5 OS=plan9:
+# _mk/5-plan9) run by mini-5i, its code in segments (segattach,
+# segflush): every program with -jit but objects and bench (5 and 2
+# minutes there), what Microsoft's runtime prints, some methods
+# compiled (about 2 minutes).
 # -sdk: Microsoft's own library read whole, its types, methods and bytes
 # of IL (each body decoded) against what System.Reflection.Metadata says
 # (survey/Survey.cs): needs a .NET SDK, so not in make test.
-# usage: languages/dotnet/tests/run.sh [-5] [-dune] [-mini] [-record] [-sdk]
+# usage: languages/dotnet/tests/run.sh [-5] [-9] [-dune] [-mini] [-record] [-sdk]
 cd "$(dirname "$0")/../../.."
-O=7; RUN=; record=; only=; sdk=
+O=7; RUN=; record=; only=; sdk=; plan9=
 for a in "$@"; do
   case $a in
     -5) O=5; RUN=_build/default/machine/Main.exe;;
@@ -46,6 +51,7 @@ for a in "$@"; do
     -dune) only=dune;;
     -mini) only=mini;;
     -sdk) sdk=1;;
+    -9) plan9=1;;
   esac
 done
 T=languages/dotnet/tests
@@ -90,7 +96,6 @@ check() {
       else fail "mini-dotnet -S -jit -m $m $p, by $what"; diff $T/jit/$s $W/$s | head -5; fi
     done
     for r in "" -refs; do
-      [ $m = 5 ] && [ -n "$r" ] && continue
       for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
         "$@" -S -jit -m $m $r $f > $W/jit.s 2>&1
         if _build/default/assembler/Main.exe -m $m -o $W/jit.$m $W/jit.s > $W/jit.err 2>&1; then
@@ -160,6 +165,20 @@ if [ -n "$sdk" ]; then
   exit $failures
 fi
 if [ -n "$record" ]; then check dune $NATIVE; exit 0; fi
+if [ -n "$plan9" ]; then
+  X=_mk/5-plan9/languages/dotnet/mini-dotnet
+  [ -x $X ] || { echo "skipped: no $X (mini-mk O=5 OS=plan9 in languages/dotnet)"; exit 0; }
+  for f in $P/*.dll $T/programs/*.dll $T/jit/*.dll; do
+    p=$(basename $f .dll); e=${f%.dll}.expected
+    case $p in objects|bench) continue;; esac
+    case $f in $T/programs/*) { _build/default/machine/Main.exe $X -jit -s $f 2> $W/$p.err; echo "exit $?"; } > $W/$p.out;;
+      *) _build/default/machine/Main.exe $X -jit -s $f > $W/$p.out 2> $W/$p.err;; esac
+    n=$(sed -n 's/ methods compiled//p' $W/$p.err)
+    if cmp -s $W/$p.out $e; then ok "mini-dotnet -jit $p on arm (Plan 9, mini-5i)${n:+, $n methods compiled}"
+    else fail "mini-dotnet -jit $p on arm (Plan 9, mini-5i)"; diff $e $W/$p.out | head -5; head -3 $W/$p.err; fi
+  done
+  exit $failures
+fi
 # the JIT's code run: linked with a C program, under mini-5i
 jit_run() {
   local p=$1 want=$2 IX=_build/default M=_mk/5-plan9 L=lib_core/libc

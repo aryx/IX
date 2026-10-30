@@ -116,6 +116,10 @@ let supported (refs : bool) (op : Il.op) : bool =
 let field (im : Value.image) (tok : int) : Value.field =
   Types.field_of_token { im; targs = [||]; margs = [||] } tok
 
+(* the most operands of a call-out: on arm, mini-ml's registers of
+ * arguments are R1 to R8, the call-out's number in R1 *)
+let outs = 7
+
 (* a call-out's operands and whether it pushes a value; None, done by
  * the code itself *)
 let call_out (img : Image.t) (im : Value.image option) (taken : int -> bool) (caller : int) (op : Il.op) :
@@ -177,7 +181,7 @@ let choose (img : Image.t) (im : Value.image option) : (int, V.result) Hashtbl.t
               refuse (sprintf "IL_%04x: a call into the library" ins.at)
           | (Il.Call _ | Il.Callvirt _ | Il.Newobj _), _ when refs ->
               (match call_out img im (fun _ -> false) row ins.op with
-               | Some (n, _) when n > 8 -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
+               | Some (n, _) when n > outs -> refuse (sprintf "IL_%04x: a call of %d arguments" ins.at n)
                | _ -> ())
           | (Il.Bcmp ((Il.Eq | Il.Ne), _, _) | Il.Ceq | Il.Cgt true), b :: a :: _ when is_ref a || is_ref b -> ()
           | (Il.Bcmp _ | Il.Cgt _ | Il.Clt _), b :: a :: _ when is_ref a || is_ref b ->
@@ -240,8 +244,8 @@ let symbol (img : Image.t) (row : int) : string =
  * its field 3 the length of an array (tagged). What the code does not
  * do itself is a call-out, the instruction run by the interpreter
  * (Machine.exec) on its operands: a call, new, a string, a static
- * field, a cast, a reference stored (its write barrier). *)
-let store_s = 8 and store_r = 16 and store_len = 24
+ * field, a cast, a reference stored (its write barrier). On arm the
+ * same, a word of 4 bytes, the value stack's top R10. *)
 
 (* what the code with references is made with: the assembly loaded,
  * the methods taken, the call-outs (numbered from base), a method's
@@ -252,14 +256,39 @@ type env = {
   sites : site list ref;
   base : int;
   cell : int -> string;
+  limit : int;
 }
+
+(* the text with references is written as arm64's; arm's the same but
+ * for the names below (never in arm's templates of int32s, so their
+ * text is the same as before) and the word's size, given apart: MOV a
+ * word, MOVW on arm; the value stack's top, R26 or R10 (Gen's vsp);
+ * the stack pointer; the scratch register of a call through a cell or
+ * a closure (R16, arm64's IP0; R9 on arm, as mini-ml's own calls: the
+ * operands of a call-out are in R2 to R8) *)
+let replace_all (s : string) (a : string) (b : string) : string =
+  let n = String.length a in
+  let buf = Buffer.create (String.length s) in
+  let rec go i =
+    if i > String.length s - n then Buffer.add_string buf (String.sub s i (String.length s - i))
+    else if String.sub s i n = a then (Buffer.add_string buf b; go (i + n))
+    else (Buffer.add_char buf s.[i]; go (i + 1)) in
+  go 0;
+  Buffer.contents buf
+
+let to_arm (s : string) : string =
+  List.fold_left (fun s (a, b) -> replace_all s a b) s
+    [ ("MOV\t", "MOVW\t"); ("LSL\t", "SLL\t"); ("ASR\t", "SRA\t");
+      ("R26", "R10"); ("R31", "R13"); ("R16", "R9"); ("RETURN", "RET");
+      ("RSP", "R13"); ("LSR\t", "SRL\t") ]
 
 let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row : int) (r : V.result)
     (refs : env option) : string =
   let b = Buffer.create 1024 in
-  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
   let a64 = m = Arm64 in
+  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ (if a64 then s else to_arm s) ^ "\n")) fmt in
   let w = if a64 then 8 else 4 in
+  let store_s = w and store_r = 2 * w and store_len = 3 * w in
   let op s = if a64 then s ^ "W" else s in
   let sym = Hashtbl.find syms row in
   let sg = signature img row in
@@ -281,7 +310,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
   let frame = w * (nslots + nlocals) + w * maxargs in
   (* the value stack's words: the slots, the locals, the arguments *)
   let nv = if refs <> None then value_words img row r else 0 in
-  let word j = sprintf "%d(R26)" (-8 * (nv - j)) in
+  let word j = sprintf "%d(R26)" (-w * (nv - j)) in
   (* the places: a stack slot, a local (autos, below SP), an argument
    * (FP: the first one left there from R0 by the prologue's MOVW) *)
   let slot k = sprintf "s%d-%d(SP)" k (w * (k + 1)) in
@@ -298,10 +327,23 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
                          (Listing.token_name img (M.token M.t_method_def row)) (String.length body.code) nslots nlocals);
   Buffer.add_string b (sprintf "\tTEXT\t%s(SB), 0, $%d\n" sym frame);
   if nargs > 0 && args.(0) = I then ins "MOVW\tR0, %s" (arg 0);
+  (* the machine's stack checked: a recursion with no end is the
+   * interpreter's Stack_overflow (jit_overflow), as its 10,000 frames,
+   * not a fault; the limit in words (an address past an int's 31 bits
+   * on arm) *)
+  (match refs with
+   | Some e when e.limit > 0 ->
+       ins "MOV\t$%d, R1" e.limit;
+       ins "MOV\tRSP, R2";
+       ins "LSR\t$2, R2";
+       ins "CMP\tR1, R2";
+       ins "BHS\t2(PC)";
+       ins "BL\tjit_overflow(SB)"
+   | _ -> ());
   if nv > 0 then begin
     (* the words above the caller's: each a value (1, null) before the
      * collector can see them; the references given, copied there *)
-    ins "ADD\t$%d, R26" (8 * nv);
+    ins "ADD\t$%d, R26" (w * nv);
     ins "MOV\t$1, R1";
     for j = 0 to nv - 1 do ins "MOV\tR1, %s" (word j) done;
     Array.iteri (fun i k ->
@@ -315,7 +357,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
     Array.iteri (fun i k -> if k = I then ins "MOVW\tR1, %s" (local i)) locals
   end;
   let return () =
-    if nv > 0 then ins "SUB\t$%d, R26" (8 * nv);
+    if nv > 0 then ins "SUB\t$%d, R26" (w * nv);
     ins "%s" (if a64 then "RETURN" else "RET") in
   Array.iteri (fun i (x : Il.instr) ->
       if Hashtbl.mem targets i then Buffer.add_string b (label i ^ ":\n");
@@ -370,6 +412,11 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
         ins "BNE\t%s" fin;
         ins "MOV\t$1, R3";
         Buffer.add_string b (fin ^ ":\n") in
+      (* R0 an int32 from ML: tagged; on arm, tagged or boxed (an Int32's
+       * block, its bits at 0) *)
+      let unbox () =
+        if a64 then ins "ASR\t$1, R0"
+        else (ins "TST\t$1, R0"; ins "MOVW.EQ\t0(R0), R0"; ins "SRA.NE\t$1, R0") in
       (* an object's store in R1, from a reference in a slot: null
        * thrown as NullReferenceException *)
       let store_of k =
@@ -413,14 +460,32 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           let ret = if pushes then Some (after (top - n + 1)) else None in
           let number = base + List.length !sites in
           sites := !sites @ [ { srow = row; sat = i; sargs = kinds; sret = ret } ];
+          (* (on arm an int32 past 31 bits boxed first, jit_box, its block
+           * in the slot's word of the value stack, where it waits) *)
+          if not a64 then
+            List.iteri (fun j k ->
+                let s = top - n + 1 + j in
+                if k = I then begin
+                  ins "MOVW\t%s, R1" (slot s);
+                  ins "ADD.S\tR1, R1, R2";
+                  ins "BVC\t3(PC)";
+                  ins "BL\tjit_box(SB)";
+                  ins "MOVW\tR0, %s" (vslot s)
+                end) kinds;
           ins "MOV\t$%d, R1" (2 * number + 1);
           List.iteri (fun j k ->
               let s = top - n + 1 + j in
-              if k = I then (ins "MOVW\t%s, R%d" (slot s) (j + 2); ins "LSL\t$1, R%d" (j + 2); ins "ORR\t$1, R%d" (j + 2))
-              else ins "MOV\t%s, R%d" (vslot s) (j + 2)) kinds;
+              if k = R then ins "MOV\t%s, R%d" (vslot s) (j + 2)
+              else if a64 then (ins "MOVW\t%s, R%d" (slot s) (j + 2); ins "LSL\t$1, R%d" (j + 2); ins "ORR\t$1, R%d" (j + 2))
+              else begin
+                ins "MOVW\t%s, R%d" (slot s) (j + 2);
+                ins "ADD.S\tR%d, R%d, R%d" (j + 2) (j + 2) (j + 2);
+                ins "ORR.VC\t$1, R%d" (j + 2);
+                ins "MOVW.VS\t%s, R%d" (vslot s) (j + 2)
+              end) kinds;
           ins "BL\tjit_out%d(SB)" n;
           (match ret with
-           | Some I -> ins "ASR\t$1, R0"; ins "MOVW\tR0, %s" (slot (top - n + 1))
+           | Some I -> unbox (); ins "MOVW\tR0, %s" (slot (top - n + 1))
            | Some R -> ins "MOV\tR0, %s" (vslot (top - n + 1))
            | None -> ())
       | _, Il.Nop | _, Il.Prefix _ -> ()
@@ -438,7 +503,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           (match x.op with
            | Il.Ldfld _ ->
                store_of top;
-               if is_ref then (ins "MOV\t%d(R1), R1" store_r; ins "MOV\t%d(R1), R1" (8 * fd.roff); ins "MOV\tR1, %s" (vslot top))
+               if is_ref then (ins "MOV\t%d(R1), R1" store_r; ins "MOV\t%d(R1), R1" (w * fd.roff); ins "MOV\tR1, %s" (vslot top))
                else (ins "MOV\t%d(R1), R1" store_s; ins "%s\t%d(R1), R1" (load_of fd.ftype) fd.off; ins "MOVW\tR1, %s" (slot top))
            | _ when is_ref -> assert false
            | _ ->
@@ -452,7 +517,7 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           ins "ASR\t$1, R1";
           ins "MOVW\tR1, %s" (slot top)
       | Some _, Il.Ldelem Il.K_ref ->
-          element top 8 true;
+          element top w true;
           ins "MOV\t0(R1), R1";
           ins "MOV\tR1, %s" (vslot (top - 1))
       | Some _, Il.Ldelem k ->
@@ -465,6 +530,28 @@ let method_text (m : mach) (img : Image.t) (syms : (int, string) Hashtbl.t) (row
           element (top - 1) (Value.scalar_size t) false;
           ins "MOVW\t%s, R3" (slot top);
           ins "%s\tR3, 0(R1)" (store_as t)
+      | Some _, Il.Binop ((Il.Div | Il.Div_un | Il.Rem | Il.Rem_un) as o) when not a64 ->
+          (* arm's (the Pi 1's ARMv6) has no division: the runtime's
+           * unsigned one (jit_udiv), the signs here *)
+          pair (fun () ->
+              ins "CMP\t$0, R2";
+              ins "BNE\t2(PC)";
+              ins "BL\tjit_divide_by_zero(SB)";
+              let signed = o = Il.Div || o = Il.Rem in
+              if signed then begin
+                ins "MOVW\tR1, R5";
+                ins "EOR\tR1, R2, R6";
+                ins "CMP\t$0, R1";
+                ins "RSB.LT\t$0, R1, R1";
+                ins "CMP\t$0, R2";
+                ins "RSB.LT\t$0, R2, R2"
+              end;
+              ins "BL\tjit_udiv(SB)";
+              match o with
+              | Il.Div -> ins "CMP\t$0, R6"; ins "RSB.LT\t$0, R1, R1"
+              | Il.Rem -> ins "MOVW\tR2, R1"; ins "CMP\t$0, R5"; ins "RSB.LT\t$0, R1, R1"
+              | Il.Rem_un -> ins "MOVW\tR2, R1"
+              | _ -> ())
       | _, Il.Binop o ->
           pair (fun () ->
               match o with
@@ -581,7 +668,6 @@ let symbols (img : Image.t) (taken : (int, V.result) Hashtbl.t) : int list * (in
 (* each method's text, its call-outs numbered from 0, a method's cell
  * by its symbol: -S's *)
 let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int * (int * string) list =
-  let im = if m = Arm then None else im in
   let taken, refused = choose img im in
   let rows, syms = symbols img taken in
   let sites = ref [] in
@@ -589,7 +675,7 @@ let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int
   List.iter (fun row ->
       let refs = match im with
         | Some im -> Some { im; taken = Hashtbl.mem taken; sites; base = 0;
-                            cell = fun r -> sprintf "$%s_cell(SB)" (Hashtbl.find syms r) }
+                            cell = (fun r -> sprintf "$%s_cell(SB)" (Hashtbl.find syms r)); limit = 0 }
         | None -> None in
       Buffer.add_string b (method_text m img syms row (Hashtbl.find taken row) refs)) rows;
   (Buffer.contents b, List.length rows, refused)
@@ -599,62 +685,90 @@ let assembly (m : mach) (img : Image.t) (im : Value.image option) : string * int
 (* ------------------------------------------------------------------ *)
 
 type prepared = {
+  pmach : mach;
   pim : Value.image;
   ptaken : (int, V.result) Hashtbl.t;
   prows : int list;
   psyms : (int, string) Hashtbl.t;
 }
 
-let prepare (im : Value.image) : prepared =
+let prepare (m : mach) (im : Value.image) : prepared =
   let taken, _ = choose im.img (Some im) in
   let rows, syms = symbols im.img taken in
-  { pim = im; ptaken = taken; prows = rows; psyms = syms }
+  { pmach = m; pim = im; ptaken = taken; prows = rows; psyms = syms }
 
 let rows (p : prepared) : int list = p.prows
-
-let outs = 8
 
 (* the runtime's, in each piece of code (its own copy, the pieces apart
  * in memory): an ML function's static closure at an address, called
  * by its n-ary code (field 1) with the code's link kept: a throw's, of
  * unit, which raises and so does not come back; a call-out's, of its
- * number in R1 and its operands; the compiler's, of a method's number *)
-let runtime ~(throws : (string * int) list) ~(out : int array) ~(compile : int) : string =
+ * number in R1 and its operands; the compiler's, of a method's number.
+ * On arm, the box of an int32 past 31 bits (in R1: its halves given,
+ * tagged, to [box]) and the unsigned division (R1 / R2: the quotient
+ * in R1, the remainder in R2; libc's div.s's binary search for the
+ * first bit, then a bit a turn) *)
+let runtime ~(mach : mach) ~(throws : (string * int) list) ~(out : int array) ~(compile : int) ~(box : int) :
+  string =
+  let a64 = mach = Arm64 in
+  let w = if a64 then 8 else 4 in
   let b = Buffer.create 1024 in
-  List.iter (fun (name, addr) ->
-      Buffer.add_string b (sprintf "\tTEXT\t%s(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t$1, R1\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" name addr))
-    throws;
-  Array.iteri (fun n addr ->
-      Buffer.add_string b (sprintf "\tTEXT\tjit_out%d(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" n addr))
-    out;
-  Buffer.add_string b (sprintf "\tTEXT\tjit_compile(SB), $-8\n\tMOV\t$%d, R0\n\tMOV\t8(R0), R16\n\tB\t(R16)\n" compile);
+  let add t = Buffer.add_string b (if a64 then t else to_arm t) in
+  let frame = if a64 then "$-8" else "$-4" in
+  let call addr = sprintf "\tMOV\t$%d, R0\n\tMOV\t%d(R0), R16\n\tB\t(R16)\n" addr w in
+  List.iter (fun (name, addr) -> add (sprintf "\tTEXT\t%s(SB), %s\n\tMOV\t$1, R1\n%s" name frame (call addr))) throws;
+  Array.iteri (fun n addr -> add (sprintf "\tTEXT\tjit_out%d(SB), %s\n%s" n frame (call addr))) out;
+  add (sprintf "\tTEXT\tjit_compile(SB), %s\n%s" frame (call compile));
+  if not a64 then begin
+    add (sprintf "\tTEXT\tjit_box(SB), $-4\n\tMOVW\tR1, R2\n\tSLL\t$16, R2\n\tSRL\t$15, R2\n\tORR\t$1, R2\n\tSRA\t$16, R1\n\tSLL\t$1, R1\n\tORR\t$1, R1\n%s" (call box));
+    add "\tTEXT\tjit_udiv(SB), $-4\n\tMOVW\t$0, R4\n\tMOVW\t$0, R3\n";
+    List.iter (fun k ->
+        add (sprintf "\tCMP\tR1>>%d, R2\n\tBHI\tjit_udiv_%d\n\tSLL\t$%d, R2\n\tADD\t$%d, R3\njit_udiv_%d:\n" k k k k k))
+      [ 16; 8; 4; 2; 1 ];
+    add "jit_udiv_turn:\n\tCMP\tR2, R1\n\tSUB.HS\tR2, R1\n\tADC\tR4, R4\n\tSRL\t$1, R2\n\tSUB.S\t$1, R3\n\tBGE\tjit_udiv_turn\n\tMOVW\tR1, R2\n\tMOVW\tR4, R1\n\tRET\n"
+  end;
   Buffer.contents b
 
 (* An entry, as mini-ml calls a closure of one argument (Gen: the
  * closure in R0, its argument in R1, the result in R0): the argument
  * an array of the method's arguments, values of mini-ml's (an int32 a
- * tagged int); each put in 7c's places, an int32 untagged, the method
- * called by its cell, its result tagged (2n + 1), a reference as it
- * is. The value stack's top (R26) is the caller's, which the method
+ * tagged int; on arm, boxed past 31 bits); each put in 7c's or 5c's
+ * places, an int32 untagged, the method called by its cell, its
+ * result tagged (2n + 1) or boxed (jit_box), a reference as it is. The
+ * value stack's top (R26, R10) is the caller's, which the method
  * raises if it holds references. *)
-let entry (img : Image.t) (sym : string) (row : int) (cell : int) : string =
+let entry (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) : string =
   let b = Buffer.create 256 in
-  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
+  let a64 = m = Arm64 in
+  let w = if a64 then 8 else 4 in
+  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ (if a64 then s else to_arm s) ^ "\n")) fmt in
+  let untag r =
+    if a64 then ins "ASR\t$1, %s" r
+    else (ins "TST\t$1, %s" r; ins "MOVW.EQ\t0(%s), %s" r r; ins "SRA.NE\t$1, %s" r) in
   let sg = signature img row in
   let ks = arg_kinds img true row in
   let n = Array.length ks in
-  Buffer.add_string b (sprintf "\tTEXT\t%s_entry(SB), 0, $%d\n" sym (8 * (n + 1)));
+  Buffer.add_string b (sprintf "\tTEXT\t%s_entry(SB), 0, $%d\n" sym (w * (n + 1)));
   for k = n - 1 downto 1 do
-    ins "MOV\t%d(R1), R2" (8 * k);
-    if ks.(k) = I then (ins "ASR\t$1, R2"; ins "MOVW\tR2, %d(R31)" (8 + 8 * k))
-    else ins "MOV\tR2, %d(R31)" (8 + 8 * k)
+    ins "MOV\t%d(R1), R2" (w * k);
+    if ks.(k) = I then (untag "R2"; ins "MOVW\tR2, %d(R31)" (w + w * k))
+    else ins "MOV\tR2, %d(R31)" (w + w * k)
   done;
-  if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then ins "ASR\t$1, R0");
+  if n > 0 then (ins "MOV\t0(R1), R0"; if ks.(0) = I then untag "R0");
   ins "MOV\t$%d, R16" cell;
   ins "MOV\t0(R16), R16";
   ins "BL\t(R16)";
   if sg.ret = S.Void then ins "MOV\t$1, R0"
-  else if sig_kind img true "" sg.ret = I then (ins "LSL\t$1, R0"; ins "ORR\t$1, R0");
+  else if sig_kind img true "" sg.ret = I then begin
+    if a64 then (ins "LSL\t$1, R0"; ins "ORR\t$1, R0")
+    else begin
+      ins "ADD.S\tR0, R0, R1";
+      ins "ORR.VC\t$1, R1, R0";
+      ins "BVC\t3(PC)";
+      ins "MOVW\tR0, R1";
+      ins "BL\tjit_box(SB)"
+    end
+  end;
   ins "RETURN";
   Buffer.contents b
 
@@ -664,31 +778,33 @@ let entry (img : Image.t) (sym : string) (row : int) (cell : int) : string =
  * value stack, where the collector moves them), then calls it with
  * them through its cell, and returns its result: decision 12's stub,
  * as .NET's first JIT had (its "prestub") *)
-let stub (img : Image.t) (sym : string) (row : int) (cell : int) (number : int) : string =
+let stub (m : mach) (img : Image.t) (sym : string) (row : int) (cell : int) (number : int) : string =
   let b = Buffer.create 256 in
-  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ s ^ "\n")) fmt in
+  let a64 = m = Arm64 in
+  let w = if a64 then 8 else 4 in
+  let ins fmt = Printf.ksprintf (fun s -> Buffer.add_string b ("\t" ^ (if a64 then s else to_arm s) ^ "\n")) fmt in
   let ks = arg_kinds img true row in
   let n = Array.length ks in
   let refs = List.filter (fun i -> ks.(i) = R) (List.init n (fun i -> i)) in
   let nr = List.length refs in
   let word i = let rec index j l = match l with x :: l -> if x = i then j else index (j + 1) l | [] -> 0 in
-    sprintf "%d(R26)" (-8 * (nr - index 0 refs)) in
-  let arg i = sprintf "a%d+%d(FP)" i (8 * i) in
-  Buffer.add_string b (sprintf "\tTEXT\t%s_stub(SB), 0, $%d\n" sym (8 * (n + 1)));
+    sprintf "%d(R26)" (-w * (nr - index 0 refs)) in
+  let arg i = sprintf "a%d+%d(FP)" i (w * i) in
+  Buffer.add_string b (sprintf "\tTEXT\t%s_stub(SB), 0, $%d\n" sym (w * (n + 1)));
   if n > 0 && ks.(0) = I then ins "MOVW\tR0, %s" (arg 0);
   if nr > 0 then begin
-    ins "ADD\t$%d, R26" (8 * nr);
+    ins "ADD\t$%d, R26" (w * nr);
     List.iter (fun i -> if i = 0 then ins "MOV\tR0, %s" (word 0)
                 else (ins "MOV\t%s, R1" (arg i); ins "MOV\tR1, %s" (word i))) refs
   end;
   ins "MOV\t$%d, R1" (2 * number + 1);
   ins "BL\tjit_compile(SB)";
   for i = n - 1 downto 1 do
-    if ks.(i) = I then (ins "MOVW\t%s, R1" (arg i); ins "MOVW\tR1, %d(R31)" (8 + 8 * i))
-    else (ins "MOV\t%s, R1" (word i); ins "MOV\tR1, %d(R31)" (8 + 8 * i))
+    if ks.(i) = I then (ins "MOVW\t%s, R1" (arg i); ins "MOVW\tR1, %d(R31)" (w + w * i))
+    else (ins "MOV\t%s, R1" (word i); ins "MOV\tR1, %d(R31)" (w + w * i))
   done;
   if n > 0 then (if ks.(0) = I then ins "MOVW\t%s, R0" (arg 0) else ins "MOV\t%s, R0" (word 0));
-  if nr > 0 then ins "SUB\t$%d, R26" (8 * nr);
+  if nr > 0 then ins "SUB\t$%d, R26" (w * nr);
   ins "MOV\t$%d, R16" cell;
   ins "MOV\t0(R16), R16";
   ins "BL\t(R16)";
@@ -700,18 +816,23 @@ let symbol_of (p : prepared) (row : int) : string = Hashtbl.find p.psyms row
 let stubs (p : prepared) ~(cell : int -> int) ~(number : int -> int) ~(runtime : string) :
   string * (int * string) list * (int * string) list =
   let b = Buffer.create 4096 in
+  (* the stack pointer, in words, tagged: a closure's code of one
+   * argument, unit (the stack's limit is below it) *)
+  Buffer.add_string b
+    (if p.pmach = Arm64 then "\tTEXT\tjit_sp(SB), $-8\n\tMOV\tRSP, R0\n\tLSR\t$2, R0\n\tLSL\t$1, R0\n\tORR\t$1, R0\n\tRET\t(R30)\n"
+     else "\tTEXT\tjit_sp(SB), $-4\n\tMOVW\tR13, R0\n\tSRL\t$2, R0\n\tSLL\t$1, R0\n\tORR\t$1, R0\n\tRET\n");
   List.iter (fun row ->
       let sym = symbol_of p row in
-      Buffer.add_string b (entry p.pim.img sym row (cell row));
-      Buffer.add_string b (stub p.pim.img sym row (cell row) (number row))) p.prows;
+      Buffer.add_string b (entry p.pmach p.pim.img sym row (cell row));
+      Buffer.add_string b (stub p.pmach p.pim.img sym row (cell row) (number row))) p.prows;
   Buffer.add_string b runtime;
   (Buffer.contents b,
    List.map (fun row -> (row, symbol_of p row ^ "_entry")) p.prows,
    List.map (fun row -> (row, symbol_of p row ^ "_stub")) p.prows)
 
-let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(runtime : string) :
+let method_code (p : prepared) (row : int) ~(cell : int -> int) ~(base : int) ~(limit : int) ~(runtime : string) :
   string * site list =
   let sites = ref [] in
-  let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = fun r -> sprintf "$%d" (cell r) } in
-  let text = method_text Arm64 p.pim.img p.psyms row (Hashtbl.find p.ptaken row) (Some env) in
+  let env = { im = p.pim; taken = Hashtbl.mem p.ptaken; sites; base; cell = (fun r -> sprintf "$%d" (cell r)); limit } in
+  let text = method_text p.pmach p.pim.img p.psyms row (Hashtbl.find p.ptaken row) (Some env) in
   (text ^ runtime, !sites)

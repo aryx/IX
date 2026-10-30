@@ -37,17 +37,18 @@ ask 47 members of it. So the library is ix's own: adapters over
 lib_core, OCaml compiled to the machine, that the interpreter and the
 JIT's code both call.
 
-**Status: stages 1 to 8 done** (the reader and the listing; the
+**Status: stages 1 to 9 done** (the reader and the listing; the
 machine: objects, value types, generics, delegates; `dotnet` and
 `tiger` on mini-9pi's card; the writer and mini-tiger,
 `languages/tiger/`, and the reduced mini-csc, `languages/dotnet/csc/`,
 whose assemblies Microsoft's dotnet and mini-dotnet both run; the
 verifier, `-verify`; the JIT's code as text, `-S -jit`, its first
 methods those of int32s, their code run from C under mini-5i); stage 9
-begun on arm64 (Linux): `mini-dotnet -jit` runs the JIT's code for
-those methods, in 97.9% less time than the interpreter on bench.cs,
-and for methods of references too (objects, arrays, strings), the
-interpreter called for the rest. See the end.
+done: `mini-dotnet -jit` runs the JIT's code on arm64 (Linux) and on
+arm (mini-9pi, in segments: segattach, segflush), for methods of
+int32s (97.9% less time than the interpreter on bench.cs) and of
+references (objects, arrays, strings), the interpreter called for the
+rest; a method compiled at its first call. See the end.
 
 ## Its place in `languages/`
 
@@ -833,4 +834,58 @@ refused, segdetach. machine/tests/seg.sh (mini-5i) and
 kernels/9pi/tests/seg.sh (mini-9pi built by ix, relinked with a boot
 that runs it, 17 s) in make test. Not checked: SG_RONLY's trap (mini-5i
 has no rights to enforce it), a segment shared with a child.
+
+Then the JIT on arm, stage 9 proper: mini-dotnet for Plan 9 (mini-mk
+O=5 OS=plan9) runs the JIT's code on mini-9pi and under mini-5i.
+Code_memory on Plan 9: a segment attached, the code's bytes read into
+it from a pipe they were written to (ML writes no memory but its own
+values'), segflush; the cells a segment too. Jit's code with
+references written once, arm's from arm64's by its names (MOVW for
+MOV, SLL, SRA, R10 the value stack's top, R13, R9 the scratch of a
+call through a cell: a call-out's operands are R2 to R8, which R4 was
+first, and shapes crashed) and the word's size. An int32 crosses to ML
+tagged when it fits an int's 31 bits, else boxed (jit_box, an ML
+function of its two halves); from ML either. No division on the Pi 1:
+the runtime's unsigned one (jit_udiv, libc's binary search), the signs
+in the templates. Jit_run's encoder linker/Arm's. mini-5i's segments
+below 1 GB (its stack is at 2 GB, past a 31-bit int).
+
+Checked: tests/run.sh -9 (mini-5i, 78 s): every program with -jit but
+objects and bench, what Microsoft's runtime prints, their methods
+compiled; objects (the collector moving the objects the code holds)
+and bench too, by hand (5 and 2 minutes). On mini-9pi under mini-qemu,
+by hand: a kernel built by ix, its boot running dotnet -jit -s on
+fib, shapes, zero (a division by zero caught) and objects: what
+Microsoft's runtime prints, 3, 9, 2 and 21 methods compiled (354 s).
+tests/run.sh, 247 checks (every assembly's arm text with references,
+-S -jit -m 5 -refs, assembled).
+
+The speed on arm, mini-5i's instructions (the whole process, the start
+and the compilation in it):
+
+| | interpreter | JIT |
+|---|---|---|
+| hello.dll (the start) | 18.0 M | 32.1 M |
+| Fib(24), calls | 633.0 M | 46.6 M (92.6% fewer; 97.6% without the start) |
+| fib.dll | 108.5 M | 58.7 M (46.0% fewer) |
+| queens.dll | 137.4 M | 99.7 M (27.5% fewer) |
+| jit/objects.cs | 7,457 M | 3,538 M (52.6% fewer) |
+
+Stage 9's check, everything of stages 2 to 6 the same with -jit: the
+survey's ten and ours (tests/run.sh, both machines), mini-tiger's
+programs and Appel's 49 (languages/tiger/tests/run.sh -mini -jit, new:
+-jit given to each run), mini-csc's (languages/dotnet/csc/tests/run.sh
+-mini -jit). Appel's test6 and test7, recursions with no end, made the
+compiled code fault where the interpreter says "Stack overflow." (its
+10,000 frames): each compiled method's prologue now compares the stack
+pointer with a limit (in words, an address past an int's 31 bits on
+arm), 4 MB below where the first program was made (512 KB on 32 bits:
+mini-5i's Plan 9 stack is 1 MB), and calls jit_overflow, which raises
+the interpreter's Stack_overflow. (wib: a method compiled called from
+an interpretation already deeper than the limit overflows at once.)
+bench.cs 0.37 s and objects.cs 0.66 s with it, as before.
+
+Left: the methods the JIT refuses (structs, int64s, doubles, try,
+generics), a register cache of the stack's top, and dotnet -jit in a
+recorded session of the card (session-card-dotnet).
 

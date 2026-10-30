@@ -1,11 +1,11 @@
 # mini-dotnet, built by ix's tools; the JIT's encoders are the linker's
-# (Program Link Arm64), compiled here from its sources (the linker is
+# (Program Link Arm Arm64), compiled here from its sources (the linker is
 # made beside this directory, not before), and its memory mini-ml/'s
 # Code_memory, not dune's
 TOP=../..
 DIR=languages/dotnet
 PROG=mini-dotnet
-SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Verifier Jit Program Link Arm64 Code_memory Jit_run Writer CLI Main
+SRC=Metadata Image Signature Il Listing Value Library Types Frame Arith Machine Verifier Jit Program Link Arm Arm64 Code_memory Jit_run Writer CLI Main
 LOCAL=`{ls *.ml *.mli mini-ml/*.ml}
 GEN=
 LIBI=-I ../../assembler -I ../../linker
@@ -19,6 +19,8 @@ $D/Program.$O: $TOP/linker/Program.ml
 	$ML $INCLUDES -o $target $TOP/linker/Program.ml
 $D/Link.$O: $TOP/linker/Link.ml
 	$ML $INCLUDES -o $target $TOP/linker/Link.ml
+$D/Arm.$O: $TOP/linker/Arm.ml
+	$ML $INCLUDES -o $target $TOP/linker/Arm.ml
 $D/Arm64.$O: $TOP/linker/Arm64.ml
 	$ML $INCLUDES -o $target $TOP/linker/Arm64.ml
 # the JIT's memory: mini-ml's (Code_memory.ml here is dune's)

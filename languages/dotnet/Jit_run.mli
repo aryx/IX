@@ -1,5 +1,6 @@
-(* The JIT run in mini-dotnet (plan_dotnet.md, decision 12; stage 9
- * begun on arm64, Linux): `mini-dotnet -jit file.dll`. At the first
+(* The JIT run in mini-dotnet (plan_dotnet.md, decision 12; stage 9,
+ * arm64's on Linux and arm's on Plan 9, mini-9pi's and mini-5i's, by
+ * the word's size): `mini-dotnet -jit file.dll`. At the first
  * call of one of an assembly's methods, the interpreter asks here for
  * its code: the methods Jit takes are found then (verified), each
  * given a cell (Code_memory.cells), an entry and a stub (Jit.stubs),
@@ -11,9 +12,9 @@
  *
  *     Machine.invoke m args       the first call of one of them
  *       | jit m                   its assembly's methods prepared
- *       |   Jit.stubs             entries and stubs (arm64)
+ *       |   Jit.stubs             entries and stubs
  *       |   Parser_asm.parse      an object of mini-asm's
- *       |   Link, Arm64           laid out at 0, encoded: bytes
+ *       |   Link, Arm64 or Arm    laid out at 0, encoded: bytes
  *       |   Code_memory.load      executable: an address
  *       v
  *     m.body <- Native f          each method's: f args, the int32s as

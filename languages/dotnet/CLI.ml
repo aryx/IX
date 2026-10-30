@@ -49,7 +49,7 @@ let main (caps : < caps; .. >) (argv : string array) : int =
       ("-verify", Arg.Unit (fun () -> mode := "verify"), " each method's stack typed at each instruction: those refused, and why");
       ("-jit", Arg.Set jit, " the methods the JIT takes run as the machine's code (mini-ml's build, arm64); with -S, that code as mini-asm's text, why not the others");
       ("-m", Arg.Set_int mach, " with -S -jit: the machine, 5 (arm, the default) or 7 (arm64)");
-      ("-refs", Arg.Set refs, " with -S -jit -m 7: references too, the code -jit runs (the assembly loaded)") ] in
+      ("-refs", Arg.Set refs, " with -S -jit: references too, the code -jit runs (the assembly loaded)") ] in
   match Arg.parse_argv argv options (fun (f : string) -> files := f :: !files) usage with
   | exception Arg.Help _ -> Console.print caps (usage ^ "\n"); 0
   | exception Arg.Bad msg -> Console.eprint caps msg; 1

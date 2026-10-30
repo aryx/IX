@@ -34,16 +34,16 @@ StringBuilder, List, Dictionary, the delegates.
 :    The methods the JIT takes (their arguments, locals and stack of
      int32s and references, not structs, longs, doubles or pointers;
      no try) are compiled each at its first call and run as the
-     machine's code; the
-     others by the interpreter. The code reads fields and array
+     machine's code; the others by the interpreter. The code reads fields and array
      elements itself; for a call into the library or to a virtual
      method, `new`, a string, a static field or a cast it asks the
-     interpreter, an instruction at a time. Only where *dotnet* was
-     built by mini-ml for arm64 on Linux; elsewhere the interpreter
-     runs all. With **-S**, that code as the assembler's text, arm's
+     interpreter, an instruction at a time. Where *dotnet* was built
+     by mini-ml for Plan 9 on arm (its code in segments: segattach,
+     segflush) or for Linux on arm64; elsewhere the interpreter runs
+     all. With **-S**, that code as the assembler's text, arm's
      (**-m 5**, the default) or arm64's (**-m 7**), of methods of
      int32s only, and why each other method is not compiled;
-     **-refs**, with **-m 7**, the code **-jit** runs.
+     **-refs**, the code **-jit** runs.
 
 **-S**
 :    The assembly's types, their fields and methods, and the

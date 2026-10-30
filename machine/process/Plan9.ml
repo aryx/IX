@@ -665,7 +665,9 @@ let sys_segattach p (_attr : int) (cls : string) (va : int) (len : int) : int =
   let va =
     if va <> 0 then (if va land (page - 1) <> 0 || overlaps va then raise (Error "segments overlap"); va)
     else
-      let low = List.fold_left (fun m (a, _) -> min m a) (stack_top - stack_size) !attached in
+      (* (below 1 GB: a program of mini-ml's, its ints of 31 bits, holds
+       * the address; mini-9pi's stack is at 512 MB) *)
+      let low = List.fold_left (fun m (a, _) -> min m a) (min (stack_top - stack_size) 0x40000000) !attached in
       let va = low - page - len in
       if overlaps va then raise (Error "no room for the segment") else va in
   Memory.map p.mem ~base:va ~size:len (Printf.sprintf "seg%x" va);

@@ -16,3 +16,12 @@ val set : int -> int -> unit
  * kept *)
 val regs : unit -> string
 val set_regs : string -> unit
+
+(* a trap frame's bytes (Machine.tf_slot_bytes: a stopped process's) as
+ * Plan 9 arm's Ureg, 18 words: r0-r14, the trap's type, the psr, the pc
+ * (/proc/n/regs, what acid reads); [into_frame frame ureg]: the frame
+ * with the Ureg's r0-r14 and pc, its psr kept (a debugger writes a
+ * register, not the processor's mode). By bytes: the Pi1's ints have 31
+ * bits *)
+val plan9 : string -> int -> string
+val into_frame : string -> string -> string

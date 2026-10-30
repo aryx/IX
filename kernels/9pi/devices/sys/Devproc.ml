@@ -24,6 +24,54 @@ let text p off n =
       (match s.image with Some c -> !read_image c off n | None -> raise (Error eperm))
   | None -> raise (Error eperm)
 
+(* another process's memory, for its debugger (Usermem's debug_read and
+ * debug_write, after this in the link: Main sets them) *)
+let mem_read = ref (fun (_ : proc) (_ : int) (_ : int) -> "")
+let mem_write = ref (fun (_ : proc) (_ : int) (_ : string) -> ())
+
+(* a debugger's control (principia's procctlreq): stop and wait for the
+ * stop (Syscall.procctl, on the process's way back to user mode),
+ * start, both at once, the process traced (its next note stops it),
+ * wait, hang (stopped at its next exec) *)
+let stopped p = p.psstate = "Stopped"
+
+let waitstop p =
+  while not (stopped p) do
+    if p.state = Zombie || Proc.find p.pid = None then raise (Error "process exited");
+    Proc.sleep (Stop_wait p.pid)
+  done
+
+let start p =
+  if not (stopped p) then raise (Error "not stopped");
+  p.psstate <- "";
+  Proc.wakeup (Stopped p.pid)
+
+let ctl p msg =
+  match msg with
+  | "kill" -> ignore (Proc.postnote p "sys: killed" Nexit)
+  | "stop" -> if not (stopped p) then begin p.procctl <- Pc_stop; waitstop p end
+  | "start" -> start p
+  | "startstop" -> p.procctl <- Pc_trace; start p; waitstop p
+  | "waitstop" -> waitstop p
+  | "hang" -> p.hang <- true
+  | _ -> raise (Error ebadctl)
+
+(* its registers as Plan 9 arm's Ureg (Ureg.plan9), its trap frame's; a
+ * write changes those of r0-r14 and the pc it covers *)
+let regs p = Ureg.plan9 (Machine.tf_slot_bytes p.slot) p.traptype
+
+let set_regs p off s =
+  let u = regs p in
+  if off < 0 || off + String.length s > String.length u then raise (Error ebadarg);
+  let u = String.sub u 0 off ^ s ^ String.sub u (off + String.length s) (String.length u - off - String.length s) in
+  Machine.tf_slot_set_bytes p.slot (Ureg.into_frame (Machine.tf_slot_bytes p.slot) u)
+
+(* its first note, taken (a debugger's: why it stopped) *)
+let note p =
+  match p.notes with
+  | (msg, _) :: rest -> p.notes <- rest; msg
+  | [] -> ""
+
 let knamelen = 28
 let numsize = 12
 let statsize = (2 * knamelen) + 12 + (9 * 12)
@@ -81,10 +129,12 @@ let procargs p =
 (* (a last column Plan 9 has not: the segment's pages in memory, those
  * touched; what mini-free adds up. old: the line ended at the 1) *)
 let segment p =
+  (* (the stack first, as Plan 9's: libmach's stacktop reads its line) *)
+  let segs = List.filter (fun s -> s.kind = Stack) p.segs @ List.filter (fun s -> s.kind <> Stack) p.segs in
   String.concat "" (List.map (fun s ->
     let name = match s.kind with Text -> "Text" | Data -> "Data" | Bss -> "Bss" | Stack -> "Stack"
                                   | Attached _ -> "Memory" in
-    Printf.sprintf "%-6s %c %s %s %4d %6d\n" name (if s.kind = Text then 'R' else ' ') (hex 8 s.base) (hex 8 s.top) 1 (Hashtbl.length s.pages)) p.segs)
+    Printf.sprintf "%-6s %c %s %s %4d %6d\n" name (if s.kind = Text then 'R' else ' ') (hex 8 s.base) (hex 8 s.top) 1 (Hashtbl.length s.pages)) segs)
 
 let fds p =
   let b = Buffer.create 256 in
@@ -128,13 +178,16 @@ let init () =
       | "noteid" -> readstr off n (num p.noteid)
       | "segment" -> readstr off n (segment p)
       | "text" -> text p off n
+      | "mem" -> !mem_read p off n
+      | "regs" -> readstr off n (regs p)
+      | "note" -> readstr 0 n (note p)
       | _ -> raise (Error eperm));
-    Dev.write = (fun c s _ ->
+    Dev.write = (fun c s off ->
       let p = find (c.qid.path / 32) in
       (match name_of c.qid.path with
-       | "ctl" ->
-           if s = "kill" || s = "kill\n" then ignore (Proc.postnote p "sys: killed" Nexit)
-           else raise (Error ebadctl)
+       | "ctl" -> ctl p (String.trim s)
+       | "mem" -> !mem_write p off s
+       | "regs" -> set_regs p off s
        | "note" -> ignore (Proc.postnote p s Nuser)
        | "args" ->
            if s = "" then raise (Error "i/o count too small");

@@ -33,6 +33,37 @@ let user_write (p : proc) addr s =
   Fault.validaddr p addr (String.length s);
   if not (Mmu.copyout p.pgdir addr s) then raise (Error ebadarg)
 
+(* another process's memory, for its debugger (/proc/n/mem): its pages
+ * made where they are not yet, read and written by their physical
+ * addresses, so the text too (a breakpoint; the instructions' cache
+ * kept right). A text a fork shares is written for both (Plan 9's
+ * txt2data copies it: not yet; a debugger's process is an exec's) *)
+let debug_page (p : proc) a =
+  match Fault.segment p a with
+  | None -> raise (Error ebadarg)
+  | Some s ->
+      let pg = a land lnot (Mmu.pgsize - 1) in
+      if not (Mmu.mapped p.pgdir pg) then Fault.page p.pgdir s a;
+      (match Mmu.lookup p.pgdir pg with Some page -> page.pa + (a - pg) | None -> raise (Error ebadarg))
+
+let rec debug_read (p : proc) a n =
+  if n <= 0 then ""
+  else begin
+    let m = min n (Mmu.pgsize - (a land (Mmu.pgsize - 1))) in
+    let s = Machine.Phys.read (debug_page p a) m in
+    s ^ debug_read p (a + m) (n - m)
+  end
+
+let rec debug_write (p : proc) a s =
+  let n = String.length s in
+  if n > 0 then begin
+    let m = min n (Mmu.pgsize - (a land (Mmu.pgsize - 1))) in
+    let pa = debug_page p a in
+    Machine.Phys.write pa (String.sub s 0 m);
+    Machine.Phys.sync pa m;
+    debug_write p (a + m) (String.sub s m (n - m))
+  end
+
 let user_snprint (p : proc) addr n s =
   let s = if String.length s >= n then String.sub s 0 (max 0 (n - 1)) else s in
   if n > 0 then user_write p addr (s ^ "\000");

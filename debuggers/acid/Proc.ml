@@ -334,6 +334,9 @@ let init (caps : < caps; .. >) =
   def "status" (fun vs ->
     let p = Int64.to_int (int "status" vs) in
     match FS.read_opt caps (Fpath.v (Printf.sprintf "/proc/%d/status" p)) with
+    (* (its fields of fixed widths, devproc's: the name 28, the user 28,
+     * the state 12; by place, not by blanks: a user may be empty) *)
+    | Some s when String.length s >= 68 -> Value.string (String.trim (String.sub s 56 12))
     | Some s ->
         (match List.filter (fun w -> w <> "") (String.split_on_char ' ' s) with
          | _ :: _ :: state :: _ -> Value.string state

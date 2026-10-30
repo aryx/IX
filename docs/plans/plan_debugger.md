@@ -748,3 +748,33 @@ recorded (two on a C program, one on a mini-ml one: its whole stack);
 live compares the C ones with principia's acid and library, the same
 but for the library's load lines, the callers' offsets (and so
 _main's line), a line said once where acid's next says it twice.
+
+2026-10-30, **stage 7, mini-9pi's #p for a debugger** (the author: "I
+like this plan, let's do them one at a time starting with 1"): mini-acid
+debugs a process inside mini-9pi, as under mini-5i, as principia's
+kernel serves acid (devproc.c, proc.c's procctl):
+- Devproc's mem (another process's pages made if not yet, read and
+  written by their physical addresses: Usermem's debug_read and
+  debug_write, through hooks Main sets; a write's instructions synced,
+  Machine.Phys.sync), regs (the slot's trap frame, Machine's new
+  tf_slot_bytes, as Plan 9 arm's Ureg: Ureg.plan9 and into_frame, the
+  Pi1's and the Pi4's), note read (the first, taken), segment the stack
+  first (libmach's stacktop), ctl's stop, start, startstop, waitstop,
+  hang besides kill;
+- the stop (Syscall.procctl, at notify's start, on every way back to
+  user mode): a process asked to stop, or traced with a note pending,
+  is Stopped (its psstate), its debugger woken (Stop_wait), itself
+  asleep on Stopped until started or killed, the trap's type kept for
+  its regs; hang taken at exec (Exec); a debugger told when its
+  process exits (Sysproc);
+- a breakpoint (BKPT, E1200070, at a pc whose page is there: a page
+  faulted in for the check made the fault after it one of rights, the
+  boot's first, a panic) is the note sys: breakpoint (Main.fault).
+Not yet: Plan 9's txt2data (a text a fork shares is written for both),
+the Pi4 (its Ureg written, not run), mini-ratrace.
+Checked: kernels/9pi/tests/acid.sh, in make test's Pi 1 job (the kernel
+by ix, relinked with a boot that runs mini-acid: new, a breakpoint,
+cont, stk, a variable, step, stk, as recorded; 21 s); session-c
+unchanged; the Pi 2's kernel by ocaml-light builds. mini-acid's status
+reads the state at its place (devproc's fixed widths: a user may be
+empty, then blanks split it wrong).

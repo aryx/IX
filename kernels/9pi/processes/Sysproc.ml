@@ -25,6 +25,8 @@ let exits (p : proc) status =
            Proc.wakeup (Child_exit q.pid)
          end
      | None -> ());
+  (* a debugger waiting for it to stop (Devproc's waitstop) told *)
+  Proc.wakeup (Stop_wait p.pid);
   Machine.mmu_switch 0;
   Fault.release p.pgdir p.segs;
   p.pgdir <- 0;
@@ -109,7 +111,7 @@ let sysrfork (p : proc) flag =
       fgrp = fg; pgrp = pg; egrp = eg; slash = p.slash; dot = p.dot;
       notify = p.notify; noteid = (if flag land rfnoteg <> 0 then !noteids else p.noteid);
       errstr = ""; text = p.text; start = !Proc.ticks; psstate = ""; args = ""; setargs = false;
-      notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0;
+      notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0; procctl = Pc_none; hang = false; traptype = 0;
       rgrp = (if flag land rfrend <> 0 then { rend = [] } else p.rgrp); rendtag = 0; rendval = 0 } in
     if flag land rfnowait = 0 then p.nchild <- p.nchild + 1;
     ignore (Mmu.write pgdir (Exec.ustktop - Exec.tos_size + 52) (Machine.le32 pid));

@@ -1,8 +1,10 @@
 (* '#p', the processes (principia's devproc.c): a directory per process
  * (its pid), its files procdir's. Here: status, args, fd, ns, noteid,
- * segment, ctl (kill), note, notepg (notes posted), text (the
- * program's file, read by its runtime for its symbol table: a raise's
- * frames named); the debugger's (mem, regs...) not yet.
+ * segment, ctl, note, notepg (notes posted), text (the program's
+ * file, read by its runtime for its symbol table: a raise's frames
+ * named), and a debugger's (plan_debugger.md, stage 7): mem and regs,
+ * read and written (Plan 9 arm's Ureg), ctl's stop, start, startstop,
+ * waitstop, hang besides kill, note read (the first, taken).
  *
  *     /proc/63/status    the name, the user, the state (or the system
  *                        call it is in: Pread), times, memory in KB:
@@ -46,6 +48,11 @@
  * References: proc(3), ps(1) and kill(1) in the Plan 9 manual. T. J.
  * Killian, "Processes as Files" (USENIX Summer 1984). principia's
  * Kernel.nw (devproc.c). *)
+
+(* another process's memory, for its debugger (Usermem's debug_read and
+ * debug_write, set by Main) *)
+val mem_read : (Types.proc -> int -> int -> string) ref
+val mem_write : (Types.proc -> int -> string -> unit) ref
 
 (* how an image's bytes are read (Fault.read_image, set by Main) *)
 val read_image : (Types.chan -> int -> int -> string) ref

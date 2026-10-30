@@ -18,7 +18,7 @@ let start (p : proc) name work =
                 fgrp = Kchan.fgrp_new (); pgrp = { mnt = [] }; egrp = { vars = []; last_path = 0 };
                 slash = p.slash; dot = p.dot; notify = 0; noteid = pid;
                 errstr = ""; text = name; start = !Proc.ticks; psstate = ""; args = ""; setargs = false;
-                notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0;
+                notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0; procctl = Pc_none; hang = false; traptype = 0;
                 rgrp = { rend = [] }; rendtag = 0; rendval = 0 } in
       Proc.kernel_work := (slot, work) :: !Proc.kernel_work;
       Machine.tf_init slot;

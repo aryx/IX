@@ -88,6 +88,21 @@ let fault ec ((esr : string), (pc : string), (addr : string)) =
   guard "a fault" (fun () ->
     let p = Proc.myproc () in
     Machine.doing p.pid p.text "fault";
+    (* a breakpoint (5db's BKPT, E1200070: a prefetch abort, or an
+     * undefined instruction to an emulator): the note sys: breakpoint,
+     * which stops a traced process (Syscall.procctl) and kills another.
+     * By bytes: the word does not fit the Pi1's 31-bit ints. Read only
+     * where the page is there (a debugger wrote it): a page faulted in
+     * here would make the fault below a fault of rights *)
+    let pc_ = hex pc in
+    let pg = pc_ land lnot (Mmu.pgsize - 1) in
+    let bkpt = Mmu.mapped p.pgdir pg
+      && (match Mmu.lookup p.pgdir pg with
+          | Some page -> Machine.Phys.read (page.pa + (pc_ - pg)) 4 = "\x70\x00\x20\xe1"
+          | None -> false) in
+    if bkpt then
+      Syscall.trap p "sys: breakpoint" 0x17
+    else
     (* an abort in a segment: its page given, the instruction restarted
      * (a note interrupting the page's read: restarted too, the note
      * delivered first) *)
@@ -165,6 +180,8 @@ let () =
   Callback.register "process_start" process_start;
   Dev.seconds := (fun () -> !Proc.ticks / 100);
   Devproc.read_image := Fault.read_image;
+  Devproc.mem_read := Usermem.debug_read;
+  Devproc.mem_write := Usermem.debug_write;
   (* the screen first, the console on it (9pi's screeninit, before its
    * first print) *)
   Swconsole.init ();
@@ -254,7 +271,7 @@ let () =
            fgrp = Kchan.fgrp_new (); pgrp = { mnt = [] }; egrp = { vars = boot_env; last_path = List.length boot_env };
            slash = slash; dot = Kchan.clone slash; notify = 0; noteid = 1;
            errstr = ""; text = "*init*"; start = 0; psstate = ""; args = ""; setargs = false;
-           notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0;
+           notes = []; notepending = false; notified = false; ureg = 0; lastnote = ("", Nuser); alarm = 0; procctl = Pc_none; hang = false; traptype = 0;
            rgrp = { rend = [] }; rendtag = 0; rendval = 0 };
   Proc.nextpid := 2;
   (* (the generator started now: its first words, thrown away, are long gone at the first read) *)

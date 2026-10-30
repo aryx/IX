@@ -45,6 +45,8 @@ external tf_copy : int -> unit = "tf_copy"
  * register, the board's layout; their 32 bits: mini-9pi's notes) *)
 external tf_bytes : unit -> string = "tf_bytes"
 external tf_set_bytes : string -> unit = "tf_set_bytes"
+external tf_slot_bytes : int -> string = "tf_slot_bytes"
+external tf_slot_set_bytes : int -> string -> unit = "tf_slot_set_bytes"
 
 (* the kernel stacks: a slot's made fresh, freed; the switch *)
 external proc_context : int -> unit = "proc_context"

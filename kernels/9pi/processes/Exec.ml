@@ -121,6 +121,9 @@ let exec p path args =
   p.pgdir <- pgdir;
   p.segs <- segs;
   p.text <- Kchan.basename path;
+  (* hung (ctl's hang): stopped on its way back to user mode, before
+   * the program's first instruction, for its debugger (Syscall.notify) *)
+  if p.hang then begin p.hang <- false; p.procctl <- Pc_stop end;
   (* no handler, no note pending (sysexec's) *)
   p.notify <- 0;
   p.notified <- false;

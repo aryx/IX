@@ -154,6 +154,9 @@ external tf_copy : int -> unit = "tf_copy"
  * register, the board's layout; their 32 bits: mini-9pi's notes) *)
 external tf_bytes : unit -> string = "tf_bytes"
 external tf_set_bytes : string -> unit = "tf_set_bytes"
+(* a slot's, whole: a stopped process's, for its debugger (/proc/n/regs) *)
+external tf_slot_bytes : int -> string = "tf_slot_bytes"
+external tf_slot_set_bytes : int -> string -> unit = "tf_slot_set_bytes"
 
 (* A process in the kernel has a stack of its own there (the kernel's
  * calls made for it, among them the one that waits), and going from

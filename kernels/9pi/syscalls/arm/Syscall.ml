@@ -87,10 +87,32 @@ let trace (p : proc) =
                         (String.concat "" (List.rev_map (fun (v : int) -> Printf.sprintf " 0x%x" v) !found)))
   end
 
+(* a debugger's asking, on the way back to user mode (Plan 9's
+ * procctl): stopped there, or at a note when traced (startstop), the
+ * note left pending for the debugger to read (/proc/n/note); its
+ * debugger woken (waitstop), itself asleep until started, or killed.
+ * Not Proc.sleep: a pending note would make it return at once *)
+let procctl (p : proc) typ =
+  let stop () =
+    p.procctl <- Pc_none;
+    p.traptype <- typ;
+    p.psstate <- "Stopped";
+    Proc.wakeup (Stop_wait p.pid);
+    while p.psstate = "Stopped" && not (List.exists (fun (_, f) -> f = Nexit) p.notes) do
+      p.state <- Sleeping (Stopped p.pid);
+      Proc.sched ()
+    done;
+    p.psstate <- "" in
+  match p.procctl with
+  | Pc_stop -> stop ()
+  | Pc_trace when p.notes <> [] -> stop ()
+  | _ -> ()
+
 (* a pending note delivered on the way back to user mode (notify): to
  * the handler, on an NFrame below the user's sp; without one, or
  * already in it, a trap's or kill's note ends the process *)
 let notify (p : proc) typ =
+  procctl p typ;
   match p.notes with
   | [] -> ()
   | (msg, flag) :: rest ->

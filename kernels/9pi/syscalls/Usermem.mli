@@ -31,6 +31,13 @@ val user_string : proc -> int -> int -> string
 val user_read : proc -> int -> int -> string
 val user_write : proc -> int -> string -> unit
 
+(* another process's memory, for its debugger (/proc/n/mem): its pages
+ * made if not yet, read and written by their physical addresses (the
+ * text too: a breakpoint), the instructions' cache kept right; Error
+ * ebadarg outside its segments *)
+val debug_read : proc -> int -> int -> string
+val debug_write : proc -> int -> string -> unit
+
 (* snprint into the user's buffer: at most n-1 bytes and a NUL; how
  * many *)
 val user_snprint : proc -> int -> int -> string -> int

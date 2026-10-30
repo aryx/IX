@@ -171,12 +171,19 @@ type segment = {
 type wait_chan =
   | Console_input | Kbd_input | Child_exit of int | Pipe_data of int | Pipe_room of int | Ticks | Until of int | Mnt_reply of int
   | Rendez of int | Semaphore of int | Mouse_change | Draw_refresh of int | Ether_data of int | Ip_conv of int
+  | Stopped of int | Stop_wait of int
 
 (* a note's kind: sent by a process (NUser), one that ends the process
  * (NExit: a kill), a trap's (NDebug) *)
 type note_flag = Nuser | Nexit | Ndebug
 
 type state = Runnable | Running | Sleeping of wait_chan | Zombie
+
+(* what a debugger asked of a process (procctl): to stop at its next
+ * return to user mode, or at its next note (startstop: traced); Plan
+ * 9's Proc_stopme, Proc_traceme. A stopped process sleeps on Stopped of
+ * its pid, its debugger on Stop_wait of it (waitstop) *)
+type procctl = Pc_none | Pc_stop | Pc_trace
 
 (* a child's end, as await gives it: its pid, its time (ms), its message
  * ("text pid: status", or "") *)
@@ -225,6 +232,11 @@ type proc = {
   mutable lastnote : string * note_flag;
   (* the alarm (its tick, 0: none) *)
   mutable alarm : int;
+  (* its debugger's asking (Devproc's ctl); hung: stopped at its next
+   * exec (ctl's hang); the trap it last stopped in (the Ureg's type) *)
+  mutable procctl : procctl;
+  mutable hang : bool;
+  mutable traptype : int;
   (* the rendezvous group, the tag waited on and the value exchanged *)
   mutable rgrp : rgrp;
   mutable rendtag : int;

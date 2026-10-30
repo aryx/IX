@@ -1,0 +1,7 @@
+new()
+bpset(leaf)
+cont()
+stk()
+print(*count\D)
+step()
+stk()

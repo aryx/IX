@@ -916,3 +916,20 @@ value tf_set_bytes(value s)
   memmove((void *)cur_tf, String_val(s), TF_WORDS * sizeof(uintptr));
   return Val_unit;
 }
+
+/* another slot's, a stopped process's for its debugger
+ * (/proc/n/regs) */
+value tf_slot_bytes(value p)
+{
+  CAMLparam1(p);
+  CAMLlocal1(s);
+  s = alloc_string(TF_WORDS * sizeof(uintptr));
+  memmove(String_val(s), (void *)trapframes[Int_val(p)], TF_WORDS * sizeof(uintptr));
+  CAMLreturn(s);
+}
+
+value tf_slot_set_bytes(value p, value s)
+{
+  memmove((void *)trapframes[Int_val(p)], String_val(s), TF_WORDS * sizeof(uintptr));
+  return Val_unit;
+}

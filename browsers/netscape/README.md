@@ -160,7 +160,7 @@ code 16.6 s.
   other, a connection each, the status bar counting them; the page is
   shown without them meanwhile and laid out again once, after the
   last. A GIF is its first frame.
-- **Helper programs** (`Browser_helpers`, Mosaic's and Netscape's
+- **Helper programs** (`Helpers`, Mosaic's and Netscape's
   helper applications; 2026-10-19, in the place of `Pdf_viewer`): what
   the browser does not show is given to a program beside it. A link to
   a film of YouTube's, clicked, goes to `mpv` (the address: mpv plays

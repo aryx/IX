@@ -96,7 +96,7 @@
  * mini-chrome's engine and DOM of today), their timers on the frame's
  * clock. What it does not show, a PDF file or a film of YouTube's, it
  * gives to a program beside it, Mosaic's helper applications
- * (Browser_helpers): ~/.mailcap's, the profile's, mini-page and mpv.
+ * (Helpers): ~/.mailcap's, the profile's, mini-page and mpv.
  *
  * What is ours: the name says the window's period, not the engine's
  * (plan_browser.md, decision 1). Netscape 1 had no style sheets and
@@ -865,7 +865,7 @@ let view (computer : P.computer) (m : model) : P.shape list =
       last := Some (now, shapes);
       shapes
 
-(* what the tab gave a program (Browser_helpers): the document written
+(* what the tab gave a program (Helpers): the document written
  * to a file, if the program is given one, and the program started
  * beside the window *)
 let helped (caps : < caps; .. >) (m : model) : model =
@@ -877,12 +877,12 @@ let helped (caps : < caps; .. >) (m : model) : model =
           (fun bytes ->
             let dir = try CapSys.getenv caps "TMPDIR" with Not_found -> "/tmp" in
             let path = Filename.concat dir (Printf.sprintf "mini-netscape-%d-%s" (Hashtbl.hash url) (Filename.basename (fst (Browser_url.split_query (fst (Browser_url.split_fragment url)))))) in
-            Logs.info (fun m -> m "writing %s, for %s" path (Browser_helpers.name rule));
+            Logs.info (fun m -> m "writing %s, for %s" path (Helpers.name rule));
             FS.write caps (Fpath.v path) bytes;
             path)
           body
       in
-      Browser_helpers.run caps (Browser_helpers.command rule ~url ~file);
+      Helpers.run caps (Helpers.command rule ~url ~file);
       { m with tab }
 
 let update (caps : < caps; .. >) (computer : P.computer) (m : model) : model =
@@ -912,13 +912,7 @@ let app (caps : < caps; .. >) (flags : P.flags) (profile : string option) ((kept
   let helpers =
     if List.assoc_opt "helpers" flags = Some "off" then []
     else
-      let home = try Some (CapSys.getenv caps "HOME") with Not_found -> None in
-      let mailcap =
-        match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with
-        | Some text -> Logs.info (fun m -> m "reading ~/.mailcap"); Browser_helpers.of_mailcap text
-        | None -> []
-      in
-      Browser_helpers.available caps (kept.helpers @ mailcap @ Browser_helpers.defaults)
+      Helpers.available caps (kept.helpers @ Helpers.mailcap caps @ Helpers.defaults)
   in
   let blank = Tab.with_helpers helpers (Tab.with_jar jar (Tab.with_scripts (List.assoc_opt "scripts" flags <> Some "off") (Tab.empty P.default_width about))) in
   let tab = Tab.visit blank address in

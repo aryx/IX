@@ -5,8 +5,8 @@
 (library
  (name ix_netscape)
  (wrapped false)
- (modules Tab Browser_helpers Browser_zoom Places Scrollbar Browser_profile Worker_spawn Tab_worker)
- (libraries threads.posix ix_graphics_core ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http ix_mail ix_tls ix_tcp ix_core fpath caps unix))
+ (modules Tab Browser_zoom Places Scrollbar Browser_profile Worker_spawn Tab_worker)
+ (libraries threads.posix ix_graphics_core ix_webapi ix_javascript ix_browser_engine ix_css ix_html ix_http ix_mail ix_tls ix_tcp ix_mime ix_core fpath caps unix))
 
 ; the window's worker, a thread under OCaml 4.14, a domain under OCaml 5
 ; (Worker_spawn.mli)

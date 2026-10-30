@@ -1,0 +1,7 @@
+; apps/files: mini-open, a file given to the program for its kind
+; (docs/plans/plan_files.md)
+(executable
+ (name Open)
+ (public_name mini-open)
+ (package ix)
+ (libraries ix_mime ix_core caps fpath unix))

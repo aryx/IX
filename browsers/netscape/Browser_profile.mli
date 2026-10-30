@@ -42,8 +42,8 @@
    renamed (a write cut short loses the cookies, here). *)
 
 (* the sites zoomed, the window's size, the helper programs written by
- * hand ("helper youtube.com/watch mpv %u": Browser_helpers) *)
-type t = { zooms : Browser_zoom.t; window : (int * int) option; helpers : Browser_helpers.rule list }
+ * hand ("helper youtube.com/watch mpv %u": Helpers) *)
+type t = { zooms : Browser_zoom.t; window : (int * int) option; helpers : Helpers.rule list }
 
 val empty : t
 

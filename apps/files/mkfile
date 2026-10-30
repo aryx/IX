@@ -1,0 +1,7 @@
+# apps/files, built by ix's tools as a game is (games/mkgames): mini-open
+# (its unit Open, the program open)
+TOP=../..
+DIR=apps/files
+GAMES=Open
+all:V: games
+<$TOP/games/mkgames

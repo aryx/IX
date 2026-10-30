@@ -260,6 +260,7 @@ job "mini-prolog: unit tests" _build/default/languages/prolog/tests/Test.exe
 job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
+job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
 job "mini-pim: the window's recorded frames, against mini-maild" apps/pim/tests/frames.sh
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'

@@ -15,14 +15,14 @@ TOP=../..
 D=$B/browsers/netscape
 PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
 # (each after the ones it names)
-LIBDIRS=lib_crypto lib_compression lib_networking lib_graphics lib_playground \
+LIBDIRS=lib_mime lib_crypto lib_compression lib_networking lib_graphics lib_playground \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi \
  lib_playground/platforms lib_playground/platforms/$PLATFORM
 <$TOP/mkfiles/mklibs
 # (the libraries before lib_core: lib_playground's Cmd is Elm's, not commons/'s)
 INCLUDES=-I . $LIBI $STDI
 # (each before the ones that name it)
-LIB=Browser_zoom Browser_helpers Places Scrollbar Browser_profile Worker_spawn Tab Tab_worker
+LIB=Browser_zoom Places Scrollbar Browser_profile Worker_spawn Tab Tab_worker
 LIBOBJS=${LIB:%=$D/%.$O}
 # (JavaScript's two units nobody names: browsers/javascript's mkfile)
 WHOLE=$B/browsers/javascript/Js_quicken.$O $B/browsers/javascript/Js_compile.$O

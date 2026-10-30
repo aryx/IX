@@ -4,7 +4,7 @@ The author (2026-10-30), after plan_apps.md: "I think we could do a
 file manager that would dispatch to the appropriate 'player', and then
 support mpeg and play them with 'play' or via the new file manager."
 
-**Status: a plan, nothing built.** Its video is
+**Status: stage 1 done** (`lib_mime/`, `apps/files/Open.ml`). Its video is
 [`plan_video.md`](plan_video.md).
 
 ## What it is for
@@ -39,7 +39,7 @@ already reads the same thing: `~/.mailcap` (RFC 1524) and built-in
 rules, from a content type to a program. mini-netscape's "what I do not
 show goes to a helper" and mini-files' "what I am not goes to a program"
 are the same question, so the rules move to a small library both link
-(`lib_core` if it stays that small). Then a `video/mpeg` link in
+(`lib_mime/`: not `lib_core`, which every program of ix links). Then a `video/mpeg` link in
 mini-netscape goes to mini-play too, as Mosaic's went to mpeg_play.
 
 **`mini-open file`** is the same dispatch for the terminal (macOS's
@@ -99,4 +99,10 @@ Estimate: 800 to 1,200 lines of `.ml`, an estimate and not a measure.
 
 ## Status
 
-2026-10-30: plan written. Nothing built.
+2026-10-30: plan written. Stage 1 done: `lib_mime/`'s `File_kind` (the
+playground's magic numbers, the answer a content type, 15 of the
+repository's samples and every other magic in its tests) and `Helpers`
+(`Browser_helpers` moved, its tests unchanged, with rules for what ix's
+programs read); `mini-open`, on the card as `open`. `mini-page` reads
+PNG and JPEG only, so GIF has no rule yet; mini-office takes no file on
+its command line, so its documents have none either (stage 2).

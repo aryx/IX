@@ -1,7 +1,7 @@
 (* Claude Code
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
-(* See Browser_helpers.mli *)
+(* See Helpers.mli *)
 
 type rule = { site : string option; kind : string option; run : string list }
 
@@ -10,6 +10,16 @@ let defaults : rule list =
   @ List.map (fun prog -> { site = None; kind = Some "application/pdf"; run = [ prog; "%s" ] }) [ "mini-page"; "page" ]
   (* a mailto: link to mini-pim's composer, filled from it *)
   @ List.map (fun prog -> { site = Some "mailto:"; kind = None; run = [ prog; "write=%u" ] }) [ "mini-pim"; "pim" ]
+  (* what ix's programs read, under the name each has on Linux, on the card;
+   * a type before its type/* *)
+  @ List.concat_map
+      (fun (kind, progs) -> List.map (fun prog -> { site = None; kind = Some kind; run = [ prog; "%s" ] }) progs)
+      [ ("image/png", [ "mini-page"; "page" ]);
+        ("image/jpeg", [ "mini-page"; "page" ]);
+        ("audio/*", [ "mini-play"; "play" ]);
+        ("text/x-abc", [ "mini-play"; "play" ]);
+        ("text/html", [ "mini-netscape"; "netscape" ]);
+        ("text/*", [ "mini-emacs"; "emacs" ]) ]
 
 let words (s : string) : string list = List.filter (fun w -> w <> "") (String.split_on_char ' ' (String.trim s))
 
@@ -86,11 +96,19 @@ let command (r : rule) ~(url : string) ~(file : string option) : string list =
   in
   List.map (fun w -> subst w 0) r.run
 
+let mailcap (caps : < Cap.env; Cap.open_in; .. >) : rule list =
+  let home = try Some (CapSys.getenv caps "HOME") with Not_found -> None in
+  match Option.bind home (fun h -> FS.read_opt caps (Fpath.v (Filename.concat h ".mailcap"))) with
+  | Some text -> Logs.info (fun m -> m "reading ~/.mailcap"); of_mailcap text
+  | None -> []
+
 let available (caps : < Cap.env; .. >) (rules : rule list) : rule list =
   let path = try CapSys.getenv caps "PATH" with Not_found -> "/bin:/usr/bin" in
   let dirs = String.split_on_char ':' path in
   let found (prog : string) = if String.contains prog '/' then Sys.file_exists prog else List.exists (fun d -> d <> "" && Sys.file_exists (Filename.concat d prog)) dirs in
   List.filter (fun r -> match r.run with p :: _ -> found p | [] -> false) rules
+
+let rules (caps : < Cap.env; Cap.open_in; .. >) : rule list = available caps (mailcap caps @ defaults)
 
 (* the programs started and not yet seen to end *)
 let running : int list ref = ref []

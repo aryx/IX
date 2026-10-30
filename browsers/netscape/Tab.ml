@@ -59,8 +59,8 @@ type t = {
   (* the programs that show what the browser does not (those on the
    * PATH: Netscape's), and the one to run now: its rule, the address,
    * the document's bytes if they are what it is given *)
-  helpers : Browser_helpers.rule list;
-  job : (Browser_helpers.rule * string * string option) option;
+  helpers : Helpers.rule list;
+  job : (Helpers.rule * string * string option) option;
   (* how much of the page the window shows, as scrolled was last told *)
   visible : float;
   todo : work list;
@@ -103,7 +103,7 @@ let busy (t : t) : bool = t.todo <> []
 let pieces (t : t) : int * int = (t.taken, t.taken + List.length t.todo)
 let with_scripts (scripts : bool) (t : t) : t = { t with scripts }
 let with_jar (jar : Cookie_jar.t) (t : t) : t = { t with jar }
-let with_helpers (helpers : Browser_helpers.rule list) (t : t) : t = { t with helpers }
+let with_helpers (helpers : Helpers.rule list) (t : t) : t = { t with helpers }
 let take_job (t : t) = (t.job, { t with job = None })
 let at (epoch : float) (t : t) : t = if epoch = t.epoch then t else { t with epoch }
 let console (t : t) : string list = match t.script with Some s -> Browser_script.console s | None -> []
@@ -374,15 +374,15 @@ let load (caps : < Cap.network; Cap.open_in; .. >) (t : t) ~(post : (string * st
   (* a PDF file, whatever its type is said to be (a file's has none) *)
   let content_type = if String.starts_with ~prefix:"%PDF-" bytes then Some "application/pdf" else content_type in
   (* what is not shown here, given to its program if there is one: the
-   * page says so (Browser_helpers) *)
+   * page says so (Helpers) *)
   let kind = Browser_page.media_type content_type in
-  let shown = kind = "" || kind = "text/html" || String.starts_with ~prefix:"text/" kind in
-  let job = if shown || status = 0 then None else Option.map (fun r -> (r, url, Some bytes)) (Browser_helpers.for_type t.helpers kind) in
+  let shown = kind = "" || String.starts_with ~prefix:"text/" kind || List.mem kind [ "image/png"; "image/gif"; "image/jpeg" ] in
+  let job = if shown || status = 0 then None else Option.map (fun r -> (r, url, Some bytes)) (Helpers.for_type t.helpers kind) in
   let html =
     match job with
     | Some (r, _, _) ->
         let name = Filename.basename (fst (Browser_url.split_fragment url)) in
-        Printf.sprintf "<title>%s</title><h1>%s</h1><p>A document of type <code>%s</code>, %d bytes, given to <b>%s</b>." name name kind (String.length bytes) (Browser_helpers.name r)
+        Printf.sprintf "<title>%s</title><h1>%s</h1><p>A document of type <code>%s</code>, %d bytes, given to <b>%s</b>." name name kind (String.length bytes) (Helpers.name r)
     | None -> bytes
   in
   let content_type = if job <> None then Some "text/html" else content_type in
@@ -683,7 +683,7 @@ let click (t : t) ~(x : float) ~(y : float) : t =
             if t.focus <> None && other then pointed t ~x ~select:false else t
         | None, Some address, _ -> (
             (* a link to what a program shows (a film of YouTube's to
-             * mpv): run beside, the page staying (Browser_helpers) *)
+             * mpv): run beside, the page staying (Helpers) *)
             let whole = Browser_url.resolve t.url address in
             (* (a mailto: said by whom it writes to: Mailto) *)
             let what =
@@ -693,8 +693,8 @@ let click (t : t) ~(x : float) ~(y : float) : t =
                   ^ (if m.subject = "" then "" else ": " ^ m.subject)
               | None -> whole
             in
-            match Browser_helpers.for_url t.helpers whole with
-            | Some r -> { t with focus = None; job = Some (r, whole, None); said = Browser_helpers.name r ^ ": " ^ what }
+            match Helpers.for_url t.helpers whole with
+            | Some r -> { t with focus = None; job = Some (r, whole, None); said = Helpers.name r ^ ": " ^ what }
             | None when Mailto.parse whole <> None ->
                 { t with focus = None; said = what ^ ": no mail program (mini-pim)" }
             | None -> go { t with focus = None } address)

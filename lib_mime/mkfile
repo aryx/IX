@@ -1,0 +1,10 @@
+# lib_mime, a library of ix's tools (mkfiles/mklib): what a file is
+# (File_kind), which program takes it (Helpers); mini-netscape's and
+# mini-files'
+TOP=..
+<$TOP/mkfiles/mkconfig
+LIB=lib_mime
+DIRS=.
+NEEDS=
+UNITS=File_kind Helpers
+<$TOP/mkfiles/mklib

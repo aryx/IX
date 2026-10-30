@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-netscape's helper programs (Browser_helpers): fake ones on the
+# mini-netscape's helper programs (Helpers): fake ones on the
 # PATH, each writing what it was given to a file -- mpv for a link to a
 # film of YouTube's, clicked (given the address, the page staying);
 # mini-pim for a mailto: link, its composer filled from it;

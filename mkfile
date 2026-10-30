@@ -8,7 +8,7 @@ TOP=.
 <mkfiles/mkconfig
 DIRS=lib_core assembler linker linker/tools languages/c database builder shell editors/ed \
  generators/lex generators/yacc languages/ml languages/scheme languages/pascal languages/prolog languages/datalog languages/forth languages/dotnet languages/dotnet/csc languages/tiger editors/turbopascal/tty editors/emacs/tty machine version_control kernels/tools \
- typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc profilers/misc debuggers/where debuggers/acid games editors/drscheme examples tiny
+ typesetting/troff typesetting/man utilities/files utilities/misc utilities/namespace utilities/time utilities/pipe utilities/compare utilities/process utilities/text utilities/byte utilities/archive utilities/calc/hoc utilities/calc/dc utilities/calc/bc utilities/text/awk kernels/9pi/filesystems/user/dossrv kernels/9pi/devices/storage/user/fdisk lib_graphics/tests windows windows/tests apps/misc apps/files profilers/misc debuggers/where debuggers/acid games editors/drscheme examples tiny
 KERNELS=kernels/steps/step0 kernels/steps/step1 kernels/steps/step2 kernels/steps/step3
 
 # The libraries first, side by side in waves (libs: below), each after
@@ -29,7 +29,7 @@ NPROC=`{if(~ $#objtype 0) nproc | awk '{print ($1 > 16 ? 16 : $1)}'; if not wc -
 # platforms, the draw device's and the software one, where Linux's is
 # ppm)
 PLATFORMS=`{if(~ $OS plan9) echo draw software; if not echo ppm}
-LIBS=lib_core lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
+LIBS=lib_core lib_mime lib_crypto lib_compression lib_executable lib_networking lib_graphics lib_playground lib_playground/physics lib_playground/juice lib_gui lib_audio \
  lib_playground/netcode lib_playground/ai lib_playground/apis lib_playground/platforms ${PLATFORMS:%=lib_playground/platforms/%} \
  browsers/html browsers/css browsers/javascript browsers/engine browsers/webapi typesetting/troff
 FIRST=$LIBS assembler

@@ -1,0 +1,4 @@
+; lib_mime's tests (Testo): dune's only
+(executable
+ (name Test)
+ (libraries ix_mime ix_core fpath caps unix alcotest testo))

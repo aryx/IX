@@ -1,5 +1,7 @@
-(* Browser_helpers: what the browser does not show itself, given to a
-   program that does -- Mosaic's and Netscape's "helper applications".
+(* Helpers: what a program does not show itself, given to a program
+   that does -- Mosaic's and Netscape's "helper applications": what
+   mini-netscape does not show, and all that mini-files is given to open
+   (a file's content type: File_kind).
 
    A rule is a site or a content type, and a command:
 
@@ -24,7 +26,8 @@
    mini-page, ix's page, a mailto: link to mini-pim's composer (a site
    ending in ':' is a scheme's; Netscape 2 had its own mail window,
    Messenger, here the suite's mail is the one place mail is written
-   and sent). A rule whose program is not on the PATH is
+   and sent), and what else ix's programs read: pictures to mini-page,
+   sounds to mini-play, HTML to mini-netscape, text to mini-emacs. A rule whose program is not on the PATH is
    left out (Netscape: [available]): on ix, without mpv, a link to
    YouTube is followed as any other.
 
@@ -53,6 +56,9 @@ val to_preferences : rule list -> string
    '#' a comment, what follows a second ';' not read *)
 val of_mailcap : string -> rule list
 
+(* ~/.mailcap's rules; none if it is not there *)
+val mailcap : < Cap.env; Cap.open_in; .. > -> rule list
+
 (* the first rule for a link's address, for a content type *)
 val for_url : rule list -> string -> rule option
 val for_type : rule list -> string -> rule option
@@ -66,6 +72,10 @@ val command : rule -> url:string -> file:string option -> string list
 (* the rules whose program is on the PATH *)
 val available : < Cap.env; .. > -> rule list -> rule list
 
-(* [run caps command]: the program started beside the browser, not
+(* ~/.mailcap's, then the built-in ones, those on the PATH: what a program
+   with no preferences of its own asks (mini-open, mini-files) *)
+val rules : < Cap.env; Cap.open_in; .. > -> rule list
+
+(* [run caps command]: the program started beside this one, not
    waited for (the ones ended are, when the next one starts) *)
 val run : < Cap.exec; Cap.wait; .. > -> string list -> unit

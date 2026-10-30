@@ -17,7 +17,7 @@
  * piece, and says between two what is being done.
  *
  * What it does not show -- a PDF file, a film -- it gives to a
- * program (Browser_helpers): a link to a site that has one, clicked,
+ * program (Helpers): a link to a site that has one, clicked,
  * or a document of a type that has one, arrived, is a [job] for the
  * window to run, the page staying or saying where it went.
  *
@@ -223,12 +223,12 @@ val with_scripts : bool -> t -> t
 val with_jar : Cookie_jar.t -> t -> t
 
 (* the helper programs the window can run (those on the PATH) *)
-val with_helpers : Browser_helpers.rule list -> t -> t
+val with_helpers : Helpers.rule list -> t -> t
 
 (* what is to be given to a program, if anything, and the tab without
  * it: the rule, the address, the document's bytes if it is them the
  * program is given (a file to write) *)
-val take_job : t -> (Browser_helpers.rule * string * string option) option * t
+val take_job : t -> (Helpers.rule * string * string option) option * t
 
 (* [at ms tab]: the time it is, in ms since 1970: where the Date of a
  * page read from then on starts *)

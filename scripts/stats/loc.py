@@ -306,7 +306,7 @@ GROUPS = [
     # core part of the OS experience of m-ix")
     # (and, 2026-10-29, lib_code: "we can also now count lib_code/
     # instead of in other for the libraries section")
-    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_executable", "lib_code", "lib_networking",
+    ("libraries", ["lib_core", "lib_compression", "lib_crypto", "lib_executable", "lib_code", "lib_mime", "lib_networking",
                    "lib_graphics", "lib_audio", "lib_gui", "lib_playground"]),
 ]
 

@@ -36,7 +36,17 @@ val spans :
   Item.t list -> from:Civil.date -> upto:Civil.date ->
   (Civil.date * int * Item.t) list
 
-(* [between items ~from ~upto]: the events' occurrences on those days
+(* [birthdays items ~from ~upto]: the contacts' birthdays (birthday:
+ * 1980-03-15, or --03-15 without its year: Vcard's) on those days, each
+ * an event made for it, not kept: "Alice's birthday (46)", its
+ * calendar "birthdays", re: the contact (o opens the person); the
+ * 29th of February the 28th of the other years *)
+val birthdays :
+  Item.t list -> from:Civil.date -> upto:Civil.date ->
+  (Civil.date * Item.t) list
+
+(* [between items ~from ~upto]: the events' occurrences on those days,
+ * the contacts' birthdays among them (birthdays)
  * (both included), an event of several days on each of its days (its
  * time on its first), by day, the day's events (no time) first, then
  * by time *)

@@ -85,6 +85,33 @@ let tests =
           (List.length
              (Events.spans items ~from:{ year = 2026; month = 11; day = 2 }
                 ~upto:{ year = 2026; month = 11; day = 15 })));
+    Testo.create "the contacts' birthdays" (fun () ->
+        let person id name b =
+          Item.make ~id ~stamps:[ "contact" ]
+            [ ("name", name); ("birthday", b) ] ""
+        in
+        let items =
+          [ person "contact:alice@ix" "Alice" "1980-03-15";
+            person "contact:dan" "Dan" "--07-04";
+            person "contact:leap" "Leap" "2000-02-29" ]
+        in
+        let said from upto =
+          List.map
+            (fun (d, _, i) ->
+              Civil.to_string d ^ " " ^ Item.field i "title")
+            (Events.between items ~from ~upto)
+        in
+        Alcotest.(check (list string)) "a year's, an age when the year is known"
+          [ "2027-02-28 Leap's birthday (27)"; "2027-03-15 Alice's birthday (47)";
+            "2027-07-04 Dan's birthday" ]
+          (said { year = 2027; month = 1; day = 1 }
+             { year = 2027; month = 12; day = 31 });
+        match Events.birthdays items ~from:{ year = 2026; month = 3; day = 15 }
+                ~upto:{ year = 2026; month = 3; day = 15 } with
+        | [ (_, b) ] ->
+            check "the person it is about" "contact:alice@ix" (Item.field b "re");
+            check "its calendar" "birthdays" (Item.field b "calendar")
+        | l -> Alcotest.failf "%d birthdays" (List.length l));
     Testo.create "a calendar merged again" (fun () ->
         let ev id title =
           Item.make ~id ~stamps:[ "event" ]

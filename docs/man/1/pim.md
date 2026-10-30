@@ -61,7 +61,9 @@ People, or who wrote before it was turned on, is in the Imbox.
 "standup every monday 9h30", "déjeuner avec alice mardi 12h30", "roma
 nov 3 to nov 7"), the person found in People; an event of several
 days a bar across them in the week and the month, each calendar its
-color (a timed event its dot), the suite's own blue; `d w m` a day, a week, a month; `j k` the next
+color (a timed event its dot), the suite's own blue; the people's
+birthdays each year (their `birthday:`, an age when its year is
+known), `o` on one opening the person; `d w m` a day, a week, a month; `j k` the next
 and previous, `t` today, the arrows the day; `o` a day's page; `g`
 Google's calendars fetched.
 

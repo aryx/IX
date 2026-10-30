@@ -62,11 +62,59 @@ let spans (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
       else List.map (fun (d, _) -> (d, length i, i)) (occurrences i ~from ~upto))
     items
 
+let birthdays (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date)
+    : (Civil.date * Item.t) list =
+  let f = Civil.days_from_civil from and u = Civil.days_from_civil upto in
+  List.concat_map
+    (fun c ->
+      let b = Item.field c "birthday" in
+      (* "1980-03-15", or "--03-15" without its year *)
+      let year, md =
+        if String.length b = 10 && b.[4] = '-' then
+          (int_of_string_opt (String.sub b 0 4), String.sub b 5 5)
+        else if String.length b = 7 && String.sub b 0 2 = "--" then
+          (None, String.sub b 2 5)
+        else (None, "")
+      in
+      match
+        ( Item.has_stamp c "contact",
+          int_of_string_opt (String.sub (md ^ "00000") 0 2),
+          int_of_string_opt (String.sub (md ^ "00000") 3 2) )
+      with
+      | true, Some month, Some day when md <> "" && month >= 1 && month <= 12 ->
+          List.filter_map
+            (fun y ->
+              (* (the 29th of February, the 28th of the other years) *)
+              let day = min day (Civil.days_in_month y month) in
+              let d = { Civil.year = y; month; day } in
+              let n = Civil.days_from_civil d in
+              if n < f || n > u then None
+              else
+                let name = Item.field c "name" in
+                let title =
+                  match year with
+                  | Some by when by < y ->
+                      Printf.sprintf "%s's birthday (%d)" name (y - by)
+                  | _ -> name ^ "'s birthday"
+                in
+                Some
+                  ( d,
+                    Item.make
+                      ~id:("birthday:" ^ Item.id c ^ ":" ^ string_of_int y)
+                      ~stamps:[ "event"; "birthday" ]
+                      [ ("title", title); ("when", Civil.to_string d);
+                        ("calendar", "birthdays"); ("re", Item.id c) ]
+                      "" ))
+            (List.init (upto.year - from.year + 1) (fun k -> from.year + k))
+      | _ -> [])
+    items
+
 let between (items : Item.t list) ~(from : Civil.date) ~(upto : Civil.date) :
     (Civil.date * int option * Item.t) list =
   let f = Civil.days_from_civil from and u = Civil.days_from_civil upto in
   let all =
-    List.concat_map
+    List.map (fun (d, i) -> (d, None, i)) (birthdays items ~from ~upto)
+    @ List.concat_map
       (fun i ->
         if not (Item.has_stamp i "event") then []
         else

@@ -79,12 +79,12 @@ brings that ix does not show.
 
 ### Mail
 
-**Done, on Linux**: mini-pim's Mail ([`plan_mail.md`](plan_mail.md),
-stages 1 to 5), the author's Gmail by IMAP and SMTP, mini-maild to
+**Done, on Linux**: mini-pim's Mail ([`plan_mail.md`](done/plan_mail.md),
+stages 1 to 8), the author's Gmail by IMAP and SMTP, mini-maild to
 test against. Not as sketched here: a store of items rather than
 upas/fs's file tree, and the Screener (HEY's) rather than a Bayes
-filter, which is still open. Left: plan_mail.md's stage 6 and
-mini-9pi.
+filter, which is still open. plan_mail.md done (2026-10-30); left:
+mini-9pi, OAuth, Gmail's labels (its Status).
 
 The survey's text: the largest hole, the oldest thing people do
 between computers, and ix had nothing for it.
@@ -278,7 +278,7 @@ and symbolic algebra (beside hoc, bc and dc).
 
 2026-10-29: mail, the calendar and the address book taken together,
 with tasks, notes and money, as one suite: [`plan_pim.md`](done/plan_pim.md),
-its mail [`plan_mail.md`](plan_mail.md). Nothing built.
+its mail [`plan_mail.md`](done/plan_mail.md). Nothing built.
 
 2026-10-30: mini-pim built (plan_pim.md done, plan_mail.md's stages 1
 to 5), on Linux only. The table and the order above brought up to

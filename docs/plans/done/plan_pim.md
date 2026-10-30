@@ -33,15 +33,14 @@ Left, for a plan of their own if they are wanted:
 - mini-9pi: the suite never run there (a window on mini-rio, its
   remind, /env/timezone read by Zone but not tried);
 - the calendar: events moved or deleted in the window, an event's own
-  zone (TZID), birthdays from People shown in it and in Today;
+  zone (TZID);
 - money: CSV and OFX bank files, a split line in the window, a
   receipt of the Paper Trail made a line, a bill's category guessed;
-- mail: plan_mail.md's stage 6, the author's Gmail tried by hand; x
-  in a menu (`Mail_window` split since, 2026-10-30: Mail_model 163
-  lines, Mail_view 196, Mail_window 530);
-- `Pim.ml` at 666 lines, near the 700 again.
+- mail: what plan_mail.md's Status leaves (done too, 2026-10-30); x
+  in a menu;
+- `Pim.ml` at 722 lines, past the 700: to split.
 
-Mail, the first part, has its own plan, [`plan_mail.md`](../plan_mail.md).
+Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
 

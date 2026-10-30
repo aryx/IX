@@ -8,9 +8,14 @@ and "let's try to design something well integrated, like a suite,
 powerful, and useful for real, but also small, like we did a bit with
 mini-office (and mini-netscape)."
 
-**Status: stages 1 to 5 built (the formats; sending and reading, and
-mini-maild; the cache and the items; the window; `apps/pim/`).** Mail is the first part of the suite
-[`plan_pim.md`](done/plan_pim.md): its messages are the suite's first
+**Status: done** (2026-10-30; the author: "I feel like we are mostly
+done. Can we move the plan to done/ with leftover in it?"), and this
+file kept as its record. Stages 1 to 8 built, stage 6 by the author
+on their own Gmail; stage 9 (mini-9pi) and 10 (OAuth, Bayes) not.
+What is left is at the end of the Status below.
+
+Mail is the first part of the suite
+[`plan_pim.md`](plan_pim.md): its messages are the suite's first
 items, and its design follows the suite's (one store, stamps, links,
 plain text). This plan says what is mail's own.
 
@@ -370,3 +375,36 @@ recognizer over a message's text, the sender made a contact.
 2026-10-30: the sender made a contact (stage 8, with plan_pim.md's
 stage 4): p, `mini-pim contact uid`; a person's page lists the mail
 with them.
+
+2026-10-30: stage 8's rest with plan_pim.md (the recognizer, x; the
+Screener; invitations, i). Stage 6, the author's Gmail by hand, each
+report fixed as it came: Gmail's X-GM-LABELS leaves out the selected
+mailbox's own label, so the Inbox looked empty (Mail_sync.keep adds
+\Inbox when listing INBOX, mini-maild now hides it too); a message's
+UID is its mailbox's (`in: <mailbox> <uid>` lines); Starred (found by
+\Flagged, s) and Unread (a view of the Inbox, as Gmail's); the mouse
+(a click on a place or a row, the wheel, a scrollbar); `-v` says what
+is read and fetched; `~/.ix-pim/user`; `mini-pim fetch`, the texts of
+a large list ahead, fifty a request (`BODY.PEEK[]`, not marked read);
+a switch 9 s to 0.2 s on 2,000 messages (Screen.place's tables), the
+server's wait said in the title bar. The formats and protocols moved
+to `lib_networking/mail/` (ix_mail), with `Mailto`: mini-netscape's
+`mailto:` opens mini-pim's composer. Mail_window split at 870 lines
+(Mail_model, Mail_view). The open questions answered: the accents by
+Glyph_unicode; the HTML as text (Line_mode); one account.
+
+Left, for a plan of their own if they are wanted:
+- stage 9, mini-9pi: the roots on the card, the clock (SNTP), DNS by
+  `/net/ndb`; Gmail never read there;
+- stage 10: OAuth 2.0 (postponed by the author); Bayes, if Gmail's
+  filter is ever not enough;
+- Gmail's labels in the sidebar (only Inbox, Starred, Unread, All
+  Mail, Drafts); mark unread; a conversation opened in Unread kept
+  there until the next get;
+- the server: IDLE (mail pushed), a get asking only what is new since
+  the last UID (a switch still waits on Gmail's answer), drafts on
+  Gmail's side (APPEND), `#` delete;
+- writing: addresses completed from People, attachments chosen in a
+  dialog and a message's saved;
+- the HTML drawn by mini-netscape's engine, not made text;
+- `Pim.ml` at 722 lines, past the 700: to split.

@@ -4,7 +4,7 @@
 (* mini-maild: mail taken by SMTP, kept a file a message, and read by
  * IMAP, on this machine only (127.0.0.1): the other end of mini-pim's
  * mail for its tests, so that they never talk to Gmail
- * (docs/plans/plan_mail.md). After the author's playground's
+ * (docs/plans/done/plan_mail.md). After the author's playground's
  * tiny_maild, whose Mail_server it runs the SMTP half of (Smtp_server),
  * with IMAP for its POP3 (Imap_server).
  *

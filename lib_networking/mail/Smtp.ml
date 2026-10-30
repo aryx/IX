@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's libs/networking/protocols/Smtp.ml
- * (docs/plans/plan_mail.md); [~auth] an option said by every caller *)
+ * (docs/plans/done/plan_mail.md); [~auth] an option said by every caller *)
 
 (* See Smtp.mli *)
 

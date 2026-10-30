@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-pim against mini-maild (docs/plans/plan_mail.md, stages 2 and 3).
+# mini-pim against mini-maild (docs/plans/done/plan_mail.md, stages 2 and 3).
 # Sent by SMTP: a message to two users of mini-maild's domain, one in
 # Bcc:, and one of elsewhere, logged in; each user's file compared with
 # the message (the Received: line apart, the Bcc: gone, a line starting

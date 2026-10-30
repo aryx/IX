@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's libs/networking/mail/Mail.ml
- * (docs/plans/plan_mail.md); Option.value a match *)
+ * (docs/plans/done/plan_mail.md); Option.value a match *)
 
 (* See Mail.mli *)
 

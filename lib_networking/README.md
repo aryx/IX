@@ -6,7 +6,7 @@
   (Zawinski's threading), SMTP's and IMAP's clients and their servers'
   machines, `Lines`, which carries them over TCP or TLS, and `Mailto`
   (RFC 6068, a link's): mini-pim's
-  first ([`plan_mail.md`](../docs/plans/plan_mail.md)), here since a
+  first ([`plan_mail.md`](../docs/plans/done/plan_mail.md)), here since a
   second program needed it, mini-netscape's `mailto:`; what is
   mini-pim's own is in `apps/pim/mail/`.
 - `tcp/`, `tls/`, `http/`: a URL fetched, over TCP or inside TLS 1.3

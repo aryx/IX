@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's libs/networking/unix/Mail_server.ml,
- * its SMTP half (docs/plans/plan_mail.md); a pure machine, AUTH added *)
+ * its SMTP half (docs/plans/done/plan_mail.md); a pure machine, AUTH added *)
 
 type delivery = { users : string list; mail : Mail.t }
 

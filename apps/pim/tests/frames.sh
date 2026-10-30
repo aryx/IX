@@ -2,7 +2,7 @@
 # Claude Code
 # Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt.
 #
-# mini-pim's window (docs/plans/plan_mail.md, stage 5) against
+# mini-pim's window (docs/plans/done/plan_mail.md, stage 5) against
 # mini-maild: four messages sent to erin (a question, its answer in
 # Windows-1252, a newsletter, an invitation), then the window run without one
 # (lib_playground's ppm platform), a session a line of frames.expected:

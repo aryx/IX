@@ -3,7 +3,7 @@
 A suite for organizing a life: mail, calendar, people, tasks, notes
 and money, one store, each referring to the others. The plan:
 [`plan_pim.md`](../../docs/plans/done/plan_pim.md); its mail,
-[`plan_mail.md`](../../docs/plans/plan_mail.md), the first part.
+[`plan_mail.md`](../../docs/plans/done/plan_mail.md), the first part.
 
 The plan is done (its stages 1 to 7; what is left in its Status):
 the mail, sent by SMTP and read by IMAP, with Gmail or with mini-maild

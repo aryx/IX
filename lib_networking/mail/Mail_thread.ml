@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Yoann Padioleau. LGPL 2.1: see license.txt. *)
 
 (* ix: the author's playground's libs/networking/mail/Mail_thread.ml
- * (docs/plans/plan_mail.md); Option.value and Option.fold a match *)
+ * (docs/plans/done/plan_mail.md); Option.value and Option.fold a match *)
 
 (* See Mail_thread.mli *)
 

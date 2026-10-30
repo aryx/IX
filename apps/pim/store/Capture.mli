@@ -27,6 +27,10 @@ type event = {
   with_ : string list; (* the contacts' ids *)
 }
 
+(* "12:30", "12h30", "12h", "4pm", "11am", "noon", "midi": minutes
+ * after midnight *)
+val time_of : string -> int option
+
 (* [event ~today ~people line] *)
 val event : today:Civil.date -> people:Item.t list -> string -> event
 

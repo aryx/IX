@@ -569,3 +569,26 @@ reminder snoozed, remind on mini-9pi (a window on mini-rio), the mail
 part in a test (tried by hand: a mini-maild, Carol a contact, her
 new message said at the first look).
 
+2026-10-30: the recognizer over mail (idea 4's Data Detectors):
+`store/Detect` finds in a text the days (When's words, two or three,
+or one of the few that are a day alone, so "may" and "sun" in a
+sentence are none; Capture's time after it), the amounts (a currency
+sign stuck to the number or a word beside it: $62.40, 62,40€, 24,50 €,
+EUR 12, 30 dollars) and the addresses (their names, the capitalized
+words before a <...>). Mail underlines them as it shows a message; x
+shows them over Mail (`window/Found_window`), Enter keeps one, linked
+to its message by re:: a day an event (the subject its title, the
+sender with it if in People), an amount a bill (a task stamped money,
+Expenses:Bills paid from Assets:Checking, due the message's first
+day), an address a contact (one in People opened). A row kept is
+ticked, Enter on it opens what it made. Tests: Unit_detect (the mli's
+example, dates other ways, French, amounts, no day in "may" or "sun",
+once each); 5 frames (the underlines, the list, three kept, one
+opened in the Calendar, Esc back to the message), Dan's test message
+given a day, an amount and an address (taskopen re-recorded, it ends
+on it). Not yet: x in Mail's menus (the suite takes the key, Mail's
+menus are Mail's), a bill's category guessed (by the sender, as
+QuickFill), a time alone ("at 4pm") a day's, the underline clicked.
+Mail_window is 795 lines: past the 700, its reading view and its
+writing could be modules of their own.
+

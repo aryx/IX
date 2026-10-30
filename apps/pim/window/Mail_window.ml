@@ -440,6 +440,16 @@ let invitation (caps : caps) (m : model) : model =
       | [ e ] -> "in the Calendar: " ^ title e
       | l -> count (List.length l) "event" ^ " in the Calendar") }
 
+let opened (m : model) : (string * Mail.t) list =
+  if m.mode <> Reading then []
+  else
+    List.filter_map
+      (fun ((s : Imap.summary), t) ->
+        match t with
+        | Some t -> Some (Mail_item.id s, Mail.parse t)
+        | None -> None)
+      m.reading
+
 (* the draft kept, the window back where it was *)
 let leave (caps : caps) (m : model) (status : string) : model =
   load caps { m with mode = m.back_to; status }
@@ -726,15 +736,28 @@ let view (computer : computer) (m : model) : shape list =
         let shown =
           List.filteri (fun i _ -> i >= m.scroll && i < m.scroll + fits) lines
         in
+        (* what Detect finds in a line underlined, x to keep it *)
+        let underlined (y : float) (l : string) =
+          List.filter_map
+            (fun (f : Detect.found) ->
+              match Detect.index l f.said with
+              | Some p ->
+                  let w = width f.said in
+                  Some
+                    (rectangle blue w 1.5
+                    |> move (x0 +. width (String.sub l 0 p) +. (w /. 2.))
+                         (y -. 4.))
+              | None -> None)
+            (Detect.find ~today:m.today l)
+        in
         text ink ~bold:true ~room x0 (top -. bar -. 32.) subject
-        :: List.mapi
-             (fun i (bold, l) ->
-               text
-                 (if bold then ink else grey)
-                 ~bold ~room x0
-                 (top -. bar -. 62. -. (float_of_int i *. 22.))
-                 l)
-             shown
+        :: List.concat
+             (List.mapi
+                (fun i (bold, l) ->
+                  let y = top -. bar -. 62. -. (float_of_int i *. 22.) in
+                  text (if bold then ink else grey) ~bold ~room x0 y l
+                  :: (if bold then [] else underlined y l))
+                shown)
     | Browsing | Asking _ ->
         if m.conversations = [] then
           [ text grey ~bold:false ~room x0 (row_y a 0) "No mail here: g gets it." ]

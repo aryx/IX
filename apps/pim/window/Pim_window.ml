@@ -44,6 +44,9 @@ type model = {
   (* a search over every view, shown over the view searched from *)
   finding : bool;
   search : Search_window.model;
+  (* what the message read says, x in Mail, shown over it *)
+  keeping : bool;
+  found : Found_window.model;
   held : string Set_.t;
 }
 
@@ -122,6 +125,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     money_ = Money_window.initial caps flags;
     finding = false;
     search = Search_window.initial caps flags;
+    keeping = false;
+    found = Found_window.initial caps flags;
     held = Set_.empty;
   }
 
@@ -132,7 +137,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
 (* the view [v], read again from the store: another view may have
  * changed it (a task made in Mail, a sender added to People) *)
 let switch (caps : caps) (s : model) (keys : string Set_.t) (v : view) : model =
-  let s = { s with view = v; finding = false } in
+  let s = { s with view = v; finding = false; keeping = false } in
   match v with
   | Home -> { s with home = home caps ~account:s.account ~today:s.today }
   | Mail -> { s with mail = Mail_window.refresh caps keys s.mail }
@@ -259,6 +264,10 @@ let update (caps : caps) (computer : computer) (s : model) : model =
   in
   let menu = if menu = None && find then Some Find else menu in
   let day_page = s.view = Home && (not s.finding) && pressed "d" in
+  let keep =
+    s.view = Mail && (not s.finding) && (not s.keeping) && pressed "x"
+    && Mail_window.opened s.mail <> []
+  in
   let s =
     match (menu, by_key, clicked, home_key) with
     | Some Exit, _, _, _ -> CapStdlib.exit caps 0
@@ -273,6 +282,18 @@ let update (caps : caps) (computer : computer) (s : model) : model =
     | None, None, Some v, _
     | None, None, None, Some v ->
         switch caps s keys v
+    | None, None, None, None when keep ->
+        { s with keeping = true;
+          found = Found_window.start keys s.found (Mail_window.opened s.mail) }
+    | None, None, None, None when s.keeping -> (
+        let f, g = Found_window.update caps computer s.found in
+        let s = { s with found = f } in
+        match g with
+        | Some (View Mail) ->
+            (* (back to the message, the keys down now not pressed) *)
+            { s with keeping = false; mail = Mail_window.refresh caps keys s.mail }
+        | Some g -> go caps s keys g
+        | None -> s)
     | None, None, None, None when s.finding -> (
         let f, g = Search_window.update caps computer s.search in
         let s = { s with search = f } in
@@ -452,6 +473,8 @@ let switcher_view (computer : computer) (s : model) : shape list =
 let view (computer : computer) (s : model) : shape list =
   let body =
     match s.view with
+    | _ when s.keeping ->
+        Found_window.view computer s.found @ switcher_view computer s
     | _ when s.finding ->
         Search_window.view computer s.search @ switcher_view computer s
     | Home -> home_view computer s

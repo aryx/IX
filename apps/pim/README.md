@@ -29,7 +29,9 @@ window's (`make test`'s two "mini-pim").
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
                        z snooze, t a task, p the sender to People,
-                       i an invitation to the Calendar
+                       i an invitation to the Calendar; the days,
+                       amounts and addresses of a message underlined,
+                       x to keep one (an event, a bill, a contact)
                        Calendar: c an event in a line ("lunch with
                        alice tue 12:30", "standup every monday
                        9h30"), j k next and previous, t today, d w m
@@ -117,6 +119,9 @@ window's (`make test`'s two "mini-pim").
     window/Pim_window  the window: the suite, Home, going from view to
                        view
     window/Mail_window the mail
+    window/Found_window
+                       what a message says kept: a day an event, an
+                       amount a bill, an address a contact
     window/Search_window
                        one search over every view, the items found by
                        the view they open in
@@ -141,6 +146,7 @@ window's (`make test`'s two "mini-pim").
     store/Today        the day: events, tasks late and due, bills,
                        mail from people, the day's page (Home and
                        mini-pim today)
+    store/Detect       the days, amounts and addresses in a text
     store/Remind       when a reminder is said: an event's minutes
                        before, a task's remind:
     store/Books        the money: double entry, postings in items, an

@@ -70,6 +70,10 @@ val show : caps -> model -> string -> model
 (* [write m to_]: a new message to [to_] *)
 val write : model -> string -> model
 
+(* the conversation read, its messages fetched: their items' ids and
+ * the messages (Found_window's, x); none when not reading *)
+val opened : model -> (string * Mail.t) list
+
 val update : caps -> Playground.computer -> model -> model
 
 (* the view, under the menu bar and the menus, which the suite draws *)

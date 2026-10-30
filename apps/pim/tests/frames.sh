@@ -52,7 +52,7 @@ printf 'From: Dan <dan@ix>\nTo: erin@ix\nSubject: Invitation: tea
 Date: Tue, 27 Oct 2026 08:00:00 +0000\nMIME-Version: 1.0
 Content-Type: multipart/mixed; boundary=b
 
---b\nContent-Type: text/plain\n\nTea on Friday?
+--b\nContent-Type: text/plain\n\nTea on Friday at 3pm? It is 4,50 € each.\nEve Martin <eve@ix> comes too.
 --b\nContent-Type: text/calendar; method=REQUEST; name=invite.ics
 
 BEGIN:VCALENDAR\nMETHOD:REQUEST\nBEGIN:VEVENT\nUID:tea@ix

@@ -11,7 +11,8 @@
 ;   window/ Pim_window: the window, the suite, a Home that launches
 ;          its views, Mail_window (Gmail's keys), Calendar_window,
 ;          People_window, Tasks_window, Notes_window, Money_window,
-;          Search_window (over them all), over the store;
+;          Search_window (over them all), Found_window (what a message
+;          says), over the store;
 ;          Pim_look what they share;
 ;          Mail_sync (mail/) what Mail and the terminal's commands do
 ;          with the server, Conversations what they show

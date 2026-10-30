@@ -56453,3 +56453,67 @@ Claude confirmed the background `make test` (bywu46p9i) passed with 161 jobs and
 Claude committed the mini-pim manual pages `docs/man/1/pim.md` and `docs/man/1/maild.md` plus `apps/pim/README.md` as `9941c42d`.
 Claude moved the 14 `docs/notes_*.md` files into `docs/notes/` as `167db98b`, fixing about 45 path references and the notes' outgoing links.
 Claude found 32 broken links in `docs/plans/done/` that predate the move and offered to fix them.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:54
+
+**Yoann:**
+
+> can we add the classic -v -debug -quiet for mini-dotnet and use Logs.info when opening files and so on
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:21
+
+**Yoann:**
+
+> actually those -v -debug -quiet should be part of every ix programs, so maybe they can be put separately in their own man page (common.md or something) and referenced from the other
+
+**Claude (summary):**
+
+Claude recommended adding a -v/-debug/-quiet logging section to a separate common man page, as Yoann suggested.
+Claude reported that the mini-ml JIT's -v output covers reads, assembly, and compiled methods, including instances.
+Claude said -debug adds why methods were refused, which classes were loaded, and where code went.
+Claude noted that the logging flags belong in a shared page rather than per-tool docs, so every ix program can reference them.
+Claude also wrote the man page itself and confirmed the generics work passed on arm64 with 161 jobs and no failures.
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:22
+
+**Yoann:**
+
+> let's continue stage 10. What happens currently actually with try/catch? programs using them are refused to run? Or just the JIT part so it's interpreted instead?
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:22
+
+**Yoann:**
+
+> also is there a flag to disable the jit and just interpret?
+
+------------------------------------------------------------------------
+
+## 2026-10-30 11:22
+
+**Yoann:**
+
+> also where is the standard .NET library adapter that "redirect" to OCaml's lib_core/ ?
+
+------------------------------------------------------------------------
+
+## 2026-10-30 10:30
+
+**Yoann:**
+
+> how much work would it be to support riscv64 (and qemu-riscv, and tinyemu) in ix?
+
+**Claude (summary):**
+
+Claude located the existing plan_riscv.md and decided to read it before anything else.
+Claude planned to check the 23-day-old plan's numbers against the current tree, which had moved on.
+Claude intended to re-measure the parts the plan sized instead of trusting its original estimates.
+Claude's aim was a revised plan built on current measurements, not the original estimates.
+Claude also read the TinyEMU source from ~/TESTS and planned to inspect mini-ml's emitter and Arch interface.

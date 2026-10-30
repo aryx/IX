@@ -259,6 +259,9 @@ different").
 
 2026-10-29: survey written. Nothing built.
 
+2026-10-30: `languages/`'s own gaps in
+[plan_gaps_languages.md](plan_gaps_languages.md).
+
 2026-10-29: "Tools a programmer uses" added, four from plan_apps.md's
 survey (search by an index, rsync, a password store, symbolic
 algebra). Nothing built.

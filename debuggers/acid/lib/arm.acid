@@ -17,6 +17,7 @@ defn acidinit()
 {
 	bplist = {};
 	bpfmt = 'X';
+	mlw = 4;		// an ML value's word (port.acid's ml)
 }
 
 defn linkreg() { return *R14; }

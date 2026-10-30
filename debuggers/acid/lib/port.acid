@@ -493,10 +493,17 @@ defn pcomplex(addr, t)
 // the last: a block is (f0, f1, ...), #tag(f0, ...) when its tag is not
 // 0, a chain of pairs to 0 a list when it has two cells at least (a
 // record's names, a constructor's: the program's types, not here).
-// On arm, 4-byte words.
+// Words of mlw bytes: arm.acid's 4, arm64.acid's 8.
+defn mlword(a)
+{
+	if mlw == 8 then
+		return *(a\Y);
+	return *(a\X);
+}
+
 defn mlint(w)
 {
-	if w >= 0x80000000 then
+	if mlw == 4 && w >= 0x80000000 then
 		w = w - 0x100000000;
 	return (w - 1) / 2;
 }
@@ -531,12 +538,12 @@ defn mllist(v)
 
 	n = 0;
 	while (v & 1) == 0 && n < 1000 do {
-		if !readable(v-4) then
+		if !readable(v-mlw) then
 			return 0;
-		h = *((v-4)\X);
+		h = mlword(v-mlw);
 		if (h & 255) != 0 || (h >> 10) != 2 then
 			return 0;
-		v = *((v+4)\X);
+		v = mlword(v+mlw);
 		n = n + 1;
 	}
 	if v != 1 then
@@ -553,15 +560,15 @@ defn mlv(v, d)
 		print(mlint(v)\D);
 		return {};
 	}
-	if v == 0 || !readable(v-4) then {
+	if v == 0 || !readable(v-mlw) then {
 		print(v\X);
 		return {};
 	}
-	h = *((v-4)\X);
+	h = mlword(v-mlw);
 	tag = h & 255;
 	size = h >> 10;
 	if tag == 252 then {
-		mlstring(v, size*4 - 1 - *((v+size*4-1)\b));
+		mlstring(v, size*mlw - 1 - *((v+size*mlw-1)\b));
 		return {};
 	}
 	if tag == 253 then {
@@ -577,7 +584,7 @@ defn mlv(v, d)
 		return {};
 	}
 	if tag == 247 then {
-		print("<fun ", fmt(*(v\X), 'a'), ">");
+		print("<fun ", fmt(mlword(v), 'a'), ">");
 		return {};
 	}
 	if d == 0 then {
@@ -588,7 +595,7 @@ defn mlv(v, d)
 		print("[|");
 		sep = "";
 		i = 0;
-		while i < size/2 && i < 16 do {
+		while i < size*mlw/8 && i < 16 do {
 			print(sep, *((v+i*8)\F));
 			sep = "; ";
 			i = i + 1;
@@ -603,8 +610,8 @@ defn mlv(v, d)
 		i = 0;
 		while i < n && i < 16 do {
 			print(sep);
-			mlv(*(v\X), d-1);
-			v = *((v+4)\X);
+			mlv(mlword(v), d-1);
+			v = mlword(v+mlw);
 			sep = "; ";
 			i = i + 1;
 		}
@@ -620,7 +627,7 @@ defn mlv(v, d)
 	i = 0;
 	while i < size && i < 16 do {
 		print(sep);
-		mlv(*((v+i*4)\X), d-1);
+		mlv(mlword(v+i*mlw), d-1);
 		sep = ", ";
 		i = i + 1;
 	}
@@ -698,7 +705,7 @@ defn mlfields(v, ts, env, d, sep0)
 	sep = "";
 	while ts != {} do {
 		print(sep);
-		mlt(*((v+i*4)\X), mlsubst(head ts, env), d-1);
+		mlt(mlword(v+i*mlw), mlsubst(head ts, env), d-1);
 		sep = sep0;
 		i = i + 1;
 		ts = tail ts;
@@ -735,7 +742,7 @@ defn mlt(v, t, d)
 		mlv(v, d);
 		return {};
 	}
-	if (v & 1) == 0 && !readable(v-4) then {
+	if (v & 1) == 0 && !readable(v-mlw) then {
 		print(v\X);
 		return {};
 	}
@@ -749,8 +756,8 @@ defn mlt(v, t, d)
 		i = 0;
 		while (v & 1) == 0 && i < 16 do {
 			print(sep);
-			mlt(*(v\X), t[1], d-1);
-			v = *((v+4)\X);
+			mlt(mlword(v), t[1], d-1);
+			v = mlword(v+mlw);
 			sep = "; ";
 			i = i + 1;
 		}
@@ -760,7 +767,7 @@ defn mlt(v, t, d)
 		return {};
 	}
 	if n == "array" then {
-		h = *((v-4)\X);
+		h = mlword(v-mlw);
 		if (h & 255) == 251 then {
 			mlv(v, d);
 			return {};
@@ -770,7 +777,7 @@ defn mlt(v, t, d)
 		i = 0;
 		while i < (h >> 10) && i < 16 do {
 			print(sep);
-			mlt(*((v+i*4)\X), t[1], d-1);
+			mlt(mlword(v+i*mlw), t[1], d-1);
 			sep = "; ";
 			i = i + 1;
 		}
@@ -809,7 +816,7 @@ defn mlt(v, t, d)
 		i = 0;
 		while cs != {} do {
 			print(sep, (head cs)[0], " = ");
-			mlt(*((v+i*4)\X), mlsubst((head cs)[1], env), d-1);
+			mlt(mlword(v+i*mlw), mlsubst((head cs)[1], env), d-1);
 			sep = "; ";
 			i = i + 1;
 			cs = tail cs;
@@ -830,7 +837,7 @@ defn mlt(v, t, d)
 			print(head cs);
 		return {};
 	}
-	tag = *((v-4)\X) & 255;
+	tag = mlword(v-mlw) & 255;
 	cs = tail tail tail tail desc;
 	while tag > 0 && cs != {} do {
 		cs = tail cs;
@@ -845,13 +852,13 @@ defn mlt(v, t, d)
 	print(c[0]);
 	if tail as == {} then {
 		h = mlsubst(head as, env);
-		if mlparen(*(v\X), h) then {
+		if mlparen(mlword(v), h) then {
 			print(" (");
-			mlt(*(v\X), h, d-1);
+			mlt(mlword(v), h, d-1);
 			print(")");
 		} else {
 			print(" ");
-			mlt(*(v\X), h, d-1);
+			mlt(mlword(v), h, d-1);
 		}
 	} else {
 		print(" (");
@@ -869,7 +876,7 @@ defn ml(v)
 	g = mlglobals;
 	while g != {} do {
 		if var((head g)[0]) == v then {
-			mlt(*(v\X), (head g)[1], 6);
+			mlt(mlword(v), (head g)[1], 6);
 			print("\n");
 			return {};
 		}

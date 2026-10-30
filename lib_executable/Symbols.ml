@@ -11,6 +11,29 @@ type t = { syms : sym list; text_start : int; text_end : int; lines : string }
 let be32 (s : string) o =
   (Char.code s.[o] lsl 24) lor (Char.code s.[o + 1] lsl 16) lor (Char.code s.[o + 2] lsl 8) lor Char.code s.[o + 3]
 
+(* the symbol table's entries, from its bytes *)
+let entries s nsyms =
+  let rec entries o acc =
+    if o + 5 > nsyms then List.rev acc
+    else begin
+      let value = be32 s o and typ = Char.chr (Char.code s.[o + 4] land 0x7f) in
+      let o = o + 5 in
+      if typ = 'z' || typ = 'Z' then begin
+        (* a NUL, then the files' numbers 2 bytes each, to two NULs *)
+        let rec pairs p = if s.[p] = '\000' && s.[p + 1] = '\000' then p else pairs (p + 2) in
+        let e = pairs (o + 1) in
+        entries (e + 2) ({ value; typ; name = String.sub s (o + 1) (e - o - 1) } :: acc)
+      end
+      else
+        let e = String.index_from s o '\000' in
+        entries (e + 1) ({ value; typ; name = String.sub s o (e - o) } :: acc)
+    end
+  in
+  entries 0 []
+
+let of_tables syms lines text_start text_end =
+  { syms = entries syms (String.length syms); text_start; text_end; lines }
+
 (* an a.out for arm (Exe's header): its text at 0x1000 and the
  * header's 32 bytes, the symbols after the data, the lines after them *)
 let read_with (read : int -> int -> string) =
@@ -20,25 +43,7 @@ let read_with (read : int -> int -> string) =
     let text = be32 h 4 and data = be32 h 8 and nsyms = be32 h 16 and nlines = be32 h 28 in
     let s = read (32 + text + data) (nsyms + nlines) in
     if String.length s < nsyms + nlines then None
-    else begin
-      let rec entries o acc =
-        if o + 5 > nsyms then List.rev acc
-        else begin
-          let value = be32 s o and typ = Char.chr (Char.code s.[o + 4] land 0x7f) in
-          let o = o + 5 in
-          if typ = 'z' || typ = 'Z' then begin
-            (* a NUL, then the files' numbers 2 bytes each, to two NULs *)
-            let rec pairs p = if s.[p] = '\000' && s.[p + 1] = '\000' then p else pairs (p + 2) in
-            let e = pairs (o + 1) in
-            entries (e + 2) ({ value; typ; name = String.sub s (o + 1) (e - o - 1) } :: acc)
-          end
-          else
-            let e = String.index_from s o '\000' in
-            entries (e + 1) ({ value; typ; name = String.sub s o (e - o) } :: acc)
-        end
-      in
-      Some { syms = entries 0 []; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s nsyms nlines }
-    end
+    else Some { syms = entries s nsyms; text_start = 0x1020; text_end = 0x1020 + text; lines = String.sub s nsyms nlines }
   end
 
 let read (s : string) =

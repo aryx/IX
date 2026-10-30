@@ -49,6 +49,10 @@ val read_with : (int -> int -> string) -> t option
 (* the same from the file's bytes *)
 val read : string -> t option
 
+(* the tables from their bytes, the text's first address and end: an ELF's
+ * sections .plan9.syms and .plan9.lines (mini-ld -g -H7) *)
+val of_tables : string -> string -> int -> int -> t
+
 (* a z entry's path: its components joined, cleaned (libmach's fileelem) *)
 val path : t -> sym -> string
 

@@ -67,3 +67,12 @@ let lines (t : _ Program.t) =
     end) t.progs;
   while Buffer.length b land 1 = 1 do byte 129 done;
   Buffer.contents b
+
+let elf_symbols (t : _ Program.t) =
+  let l = Hashtbl.fold (fun _ (s : sym) acc ->
+    match s.kind with
+    | Text when s.name <> "" -> (s.name, s.value, 0, true, s.version = 0) :: acc
+    (* (a data's value its offset in the data, as for Plan 9's table) *)
+    | (Data | Bss) when s.name <> "" -> (s.name, s.value + t.data_start, s.size, false, s.version = 0) :: acc
+    | _ -> acc) t.syms [] in
+  List.sort (fun (n1, v1, _, _, _) (n2, v2, _, _, _) -> compare (v1, n1) (v2, n2)) l

@@ -1,0 +1,39 @@
+./target:arm64 linux executable
+acid: PID: Breakpoint/Trace trap	_start	MOV	_start+0x28, R28
+acid: PID: Breakpoint/Trace trap	_start+0x4	MOV	_start+0x30, R0
+acid: PID: Breakpoint/Trace trap	_start+0x8	MOV	_start+0x38, R1
+acid: PID: Breakpoint/Trace trap	_start+0xc	MOV	$13, R2
+acid: hello_linux_arm64.s:11
+ 6	    MOV    $setSB(SB), R28
+ 7	    // write(int fd=1, buf=&msg, count=14)
+ 8	    MOV    $1, R0          // fd = 1
+ 9	    MOV    $msg(SB), R1    // buf = &msg
+ 10	//alt:   ADR msg, R1
+>11	    MOV    $13, R2         // count = 13
+ 12	    MOV    $64, R8         // syscall number: write
+ 13	    SVC     $0
+ 14	
+ 15	    // exit(int status=0)
+ 16	    MOV    $0, R0          // status = 0
+acid: Hello, world
+
+acid: _start	MOV	_start+0x28, R28
+_start+0x4	MOV	_start+0x30, R0
+_start+0x8	MOV	_start+0x38, R1
+_start+0xc	MOV	$13, R2
+_start+0x10	MOV	_start+0x40, R8
+_start+0x14	SVC	$0
+_start+0x18	MOV	$0, R0
+_start+0x1c	MOV	$93, R8
+_start+0x20	SVC	$0
+_start+0x24	B	_start+0x24
+_start+0x28	WORD	$0x00401000
+_start+0x2c	WORD	$0x00000000
+_start+0x30	WORD	$0x00000001
+_start+0x34	WORD	$0x00000000
+_start+0x38	WORD	$0x00401000
+_start+0x3c	WORD	$0x00000000
+_start+0x40	WORD	$0x00000040
+_start+0x44	WORD	$0x00000000
+acid: 
+kill PID

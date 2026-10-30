@@ -1,0 +1,7 @@
+newproc("")
+step()
+step()
+step()
+src(*PC)
+*(msg\s)
+asm(_start)

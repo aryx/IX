@@ -1,0 +1,28 @@
+./target:arm64 linux executable
+acid: PID: Breakpoint/Trace trap	_main	WORD	$0xf81f0ffe
+PID: Breakpoint/Trace trap	main+0x4	MOV	R0, R1
+acid: acid: PID: Breakpoint/Trace trap	f2_down	SUB	$16, RSP, RSP
+acid: f2_down()+0x0 Values.ml:24
+Values.Init()+0x850 ?file?:0
+ml_program()+0x264 ?file?:0
+main+0x204 ?file?:0
+acid: [Circle 1.5; Rect (3, 4); Empty]
+acid: Node (Leaf, "b", Node (Leaf, "c", Leaf))
+acid: [Key {code = 65; shift = true}; Quit]
+acid: [(1.5); #1(3, 4); 0]
+acid: Values.n = {contents = 42}
+Values.s = "hello"
+Values.l = [1; 2; 3]
+Values.p = {x = 1; y = 2; name = "origin"}
+Values.shapes = [Circle 1.5; Rect (3, 4); Empty]
+Values.pair = (7, "seven")
+Values.f = <fun f1_f>
+Values.arr = [|10; 20|]
+Values.opt = Some (-5)
+Values.tree = Node (Leaf, "b", Node (Leaf, "c", Leaf))
+Values.named = ("x", 1)
+Values.events = [Key {code = 65; shift = true}; Quit]
+Values.c = 'z'
+Values.down = <fun f2_down>
+acid: 
+kill PID

@@ -75,6 +75,11 @@ let instruction symoff get pc =
       | Other ->
           if w = 0xd503201fL then "NOP"
           else if Int64.logand w 0xffe0001fL = 0xd4200000L then Printf.sprintf "BRK\t$%d" (bits w 5 16)
+          else if Int64.logand w 0xffe0001fL = 0xd4000001L then Printf.sprintf "SVC\t$%d" (bits w 5 16)
+          (* LDR of a literal, a word or two from the pc *)
+          else if Int64.logand w 0xbf000000L = 0x18000000L then
+            Printf.sprintf "%s\t%s, %s" (if bits w 30 1 = 1 then "MOV" else "MOVW")
+              (symoff (Int64.add pc (Int64.of_int (sbits w 5 19 * 4)))) (reg (bits w 0 5))
           (* ADD, SUB of a constant (64 bits): MOV to and from SP too *)
           else if Int64.logand w 0x7f800000L = 0x11000000L || Int64.logand w 0x7f800000L = 0x51000000L then begin
             let imm = bits w 10 12 lsl (if bits w 22 1 = 1 then 12 else 0) in

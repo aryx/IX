@@ -2,9 +2,9 @@
 acid: PID: Breakpoint/Trace trap	ADDR	?
 PID: Breakpoint/Trace trap	main+0x4	MOV	RSP, R29
 acid: acid: PID: Breakpoint/Trace trap	walk+0x1c	MOVW	40(RSP), R1
-acid: walk()+0x1c W/target.c:37
-main+0x18 W/target.c:43
-acid: W/target.c:37
+acid: walk()+0x1c W/gcc/target.c:37
+main+0x18 W/gcc/target.c:43
+acid: W/gcc/target.c:37
  32	walk(Node *n, int k)
  33	{
  34		Point q;
@@ -22,7 +22,7 @@ PID: Breakpoint/Trace trap	walk+0x28	MOVW	20(RSP), R0
 PID: Breakpoint/Trace trap	walk+0x2c	WORD	$0x0b000020
 PID: Breakpoint/Trace trap	walk+0x30	BL	leaf
 PID: Breakpoint/Trace trap	leaf	SUB	$16, RSP, RSP
-W/target.c:27
+W/gcc/target.c:27
  22	Node n1 = { "one", { 1, 2 }, &n2, 'a', 7 };
  23	static int counter = 3;
  24	
@@ -44,7 +44,7 @@ PID: Breakpoint/Trace trap	leaf+0x1c	WORD	$0x0b000020
 PID: Breakpoint/Trace trap	leaf+0x20	ADD	$16, RSP, RSP
 PID: Breakpoint/Trace trap	leaf+0x24	RET
 PID: Breakpoint/Trace trap	walk+0x34	LDP.P	48(RSP), (R29, R30)
-W/target.c:38
+W/gcc/target.c:38
  33	{
  34		Point q;
  35	
@@ -56,7 +56,7 @@ W/target.c:38
  41	main(void)
  42	{
  43		return walk(&n1, 10) + walk(n1.next, 20) == 0;
-acid: walk()+0x34 W/target.c:38
-main+0x18 W/target.c:43
+acid: walk()+0x34 W/gcc/target.c:38
+main+0x18 W/gcc/target.c:43
 acid: 
 kill PID

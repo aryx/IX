@@ -7,10 +7,10 @@
  * 4: B and BL (26 bits, a word's offset), B.cond (19), CBZ and CBNZ
  * (19), TBZ and TBNZ (14), BR, BLR and RET (a register); a condition
  * evaluated by the flags (NZCV, the PSR's top bits) or the register,
- * one address, as 5db's foll. The printer knows these, NOP, BRK, ADD
- * and SUB of a constant, MOV, MOVZ, STP and LDP, LDR and STR of an
- * offset, in Plan 9's order (the source first); the others are their
- * word (WORD $0x...).
+ * one address, as 5db's foll. The printer knows these, NOP, BRK, SVC,
+ * LDR of a literal, ADD and SUB of a constant, MOV, MOVZ, STP and LDP,
+ * LDR and STR of an offset, in Plan 9's order (the source first); the
+ * others are their word (WORD $0x...).
  *
  * Every instruction is a word of 32 bits, little-endian, at an address
  * a multiple of 4: decoding is masks and fields, no prefix nor length

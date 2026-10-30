@@ -30,9 +30,10 @@ value prints by its type (n1, n1.next->name, *walk:n).
 An ML value prints by its words (ml(*Values.l): [1; 2; 3]), a unit's global
 named M.x; by its type when mini-ml -g described it (ml(Values.p):
 {x = 1; y = 2; name = "origin"}; mlvars(): every global).
-On Linux (arm64), a program of this machine, an ELF (gcc's too), by ptrace,
-with arm64.acid: its names by its symbol table, its stack by the frame
-pointers; its types by mini-cc -m 7 -a's declarations of its .c (-l):
+On Linux (arm64), a program of this machine, an ELF, by ptrace, with
+arm64.acid: mini-cc's, mini-ml's, mini-asm's linked by mini-ld -g -H7 (their
+names, lines and types in the program), gcc's (its names, DWARF's lines; its
+types by mini-cc -m 7 -a's declarations of its .c, -l):
   mini-acid -l port.acid -l arm64.acid -l prog.acid ./prog
 |}
 

@@ -43,10 +43,16 @@ let be32 s o =
 let elf_header file path (e : Elf_file.t) =
   let seg = function Some (g : Elf_file.segment) -> Int64.of_int g.vaddr, Int64.of_int g.filesz | None -> 0L, 0L in
   let txtaddr, txtsz = seg (Elf_file.text_segment e) and dataddr, datsz = seg (Elf_file.data_segment e) in
-  let syms = Elf_file.symbols file e in
+  let text_start = Int64.to_int txtaddr and text_end = Int64.to_int (Int64.add txtaddr txtsz) in
+  (* (mini-ld -g's: Plan 9's tables in two sections, their lines and
+   * locals; else ELF's names, gcc's) *)
+  let table : Symbols.t =
+    match Elf_file.section e ".plan9.syms", Elf_file.section e ".plan9.lines" with
+    | Some s, Some l -> Symbols.of_tables (Elf_file.bytes file s) (Elf_file.bytes file l) text_start text_end
+    | _ -> { syms = Elf_file.symbols file e; text_start; text_end; lines = "" } in
   let arch = match e.machine with 183 -> "arm64" | 40 -> "arm" | m -> error "%s: an ELF of machine %d, not arm's nor arm64's" path m in
   { path; file; txtaddr; txtsz; dataddr; datsz; arch; elf = Some e; bias = 0L; dwarf = Dwarf_line.read file e;
-    table = Some { syms; text_start = Int64.to_int txtaddr; text_end = Int64.to_int (Int64.add txtaddr txtsz); lines = "" } }
+    table = Some table }
 
 let header file path =
   match Elf_file.read file with
@@ -311,7 +317,9 @@ let declarations () =
   | Some ({ table = Some t; _ } as p) ->
       (match List.find_opt (fun (s : Symbols.sym) -> s.name = ".acid" && String.contains "Dd" s.typ) t.syms with
        | Some s ->
-           let off = Int64.to_int (Int64.add (Int64.add 32L p.txtsz) (Int64.sub (Int64.of_int s.value) p.dataddr)) in
+           let off = match p.elf with
+             | Some e -> (match Elf_file.file_offset e s.value with Some o -> o | None -> -1)
+             | None -> Int64.to_int (Int64.add (Int64.add 32L p.txtsz) (Int64.sub (Int64.of_int s.value) p.dataddr)) in
            (match String.index_from_opt p.file off '\000' with
             | Some e when off >= 0 -> Some (String.sub p.file off (e - off))
             | _ -> None)

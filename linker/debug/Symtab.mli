@@ -50,3 +50,8 @@ val symbols : 'm Program.t -> string
 
 (* the pc/line table's bytes *)
 val lines : 'm Program.t -> string
+
+(* ELF's symbols (-g with -H6 or -H7: Exe's .symtab), each a name, its
+ * value, its size (an object's), a function or not, global or not (a
+ * name<> is its object's: local), by value *)
+val elf_symbols : 'm Program.t -> (string * int * int * bool * bool) list

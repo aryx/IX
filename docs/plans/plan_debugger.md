@@ -996,3 +996,22 @@ debuggers/tests/acid_linux.sh's lines.acid: a breakpoint at
 filepc("target.c:37"), stk with files and lines, src, next (through
 leaf: port.acid's next, as on arm, steps until back in the function).
 
+2026-10-30, **ix's programs on Linux** (stage 8a's fourth step: the
+author's "programs compiled by mini-c, mini-ml, mini-asm"): mini-ld
+-g -H6 or -H7 writes an ELF with sections (Exe.elf_g; without -g the
+bytes are goken's as before): .text, .data, .bss, .symtab and .strtab
+(ELF's names, Symtab.elf_symbols: nm, gdb, perf read them; the locals
+first), and .plan9.syms, .plan9.lines (Plan 9's two tables, Symtab's:
+mini-acid's lines, locals, files). Symbols.of_tables reads them from
+the sections; Proc takes them over ELF's names when they are there,
+and .acid (mini-cc -g's and mini-ml -g's declarations) by its file
+offset. arm64.acid's frames by each function's kind: a frame record
+(gcc's), an SP frame (7c's MOVD.W R30, -n(RSP); mini-ml's SUB $n, RSP
+and MOVD R30, 0(RSP)), a leaf; so a stack of mini-cc's or mini-ml's
+functions walks to main. port.acid's ML printer by words of mlw bytes
+(arm.acid's 4, arm64.acid's 8). Das_arm64 prints SVC and LDR of a
+literal too. Checked: debuggers/tests/acid_linux.sh, 5 sessions:
+gcc's two, mini-cc's (names, lines, n1 by its own .acid, no -l),
+mini-ml's (Values.ml -g: its values by their types, its stack),
+mini-asm's (hello_linux_arm64.s: steps, an instruction's line).
+

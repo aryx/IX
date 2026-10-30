@@ -114,11 +114,14 @@ let link (m : _ machine) caps arch format entry out files =
     FS.write_perm caps 0o644 (Fpath.v (Fpath.to_string out ^ ".map")) (Buffer.contents b)
   end;
   let data = Link.data_bytes t in
-  (* (arm's only: 7l's for arm64 not compared yet) *)
-  let syms, lines = if !symbols && format = Exe.Plan9 && arch = Asm.Arm then Symtab.symbols t, Symtab.lines t else "", "" in
+  (* (Plan 9's a.out: arm's only, 7l's for arm64 not compared yet; an
+   * ELF's: the tables in sections, ELF's symbols too) *)
+  let syms, lines =
+    if !symbols && (format = Exe.Plan9 && arch = Asm.Arm || format = Exe.Elf) then Symtab.symbols t, Symtab.lines t else "", "" in
+  let elf_syms = if !symbols && format = Exe.Elf then Symtab.elf_symbols t else [] in
   Exe.write caps format arch out
     { text; data; bss = t.bss_size; text_start = t.text_start; data_start = t.data_start; entry = Link.entry t entry;
-      pointers = Link.pointers t; round = t.data_round; syms; lines }
+      pointers = Link.pointers t; round = t.data_round; syms; lines; elf_syms }
 
 let main (caps : < caps; .. >) (argv : string array) : int =
   let arch = ref Asm.Arm and format = ref Exe.Elf and entry = ref "_main" and out = ref "a.out"

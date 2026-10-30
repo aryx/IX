@@ -86,7 +86,10 @@ type image = { text : Bytes.t; data : Bytes.t; bss : int; text_start : int; data
                round : int;           (* INITRND *)
                (* Plan 9's symbol table and pc/line table (Symtab), after
                 * the data; "" for none (-s) *)
-               syms : string; lines : string }
+               syms : string; lines : string;
+               (* ELF's symbols (-g): a name, its value, its size, a
+                * function or an object, global or local (Symtab) *)
+               elf_syms : (string * int * int * bool * bool) list }
 
 (* the header's size, before the text (5l's HEADR) *)
 val headr : format * Asm.arch -> int

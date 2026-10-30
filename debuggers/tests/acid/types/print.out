@@ -1,0 +1,36 @@
+./target:arm plan 9 executable
+acid: PID: Mirq interrupt	_main	MOVW.W	R14,#-0x4(R13)
+PID: Prefetch Abort/Breakpoint	main+0x4	MOVW	$n1+0xc-SB(SB),R0
+acid: acid: acid: acid: PID: Prefetch Abort/Breakpoint	walk+0x1c	MOVW	k+4(FP),R0
+acid: acid: 	name	0x0000203c
+Point p {
+	x	1
+	y	2
+}
+	next	0x0000201c
+	c	0x61
+	s	7
+
+acid: acid: 1
+acid: acid: 	x	3
+	y	4
+
+acid: acid: two
+acid: acid: 	name	0x00002038
+Point p {
+	x	3
+	y	4
+}
+	next	0x00000000
+	c	0x62
+	s	65534
+
+acid: acid: 	x	3
+	y	4
+
+acid: acid: 	x	1
+	y	2
+
+acid: acid: integer variable format a complex Node
+acid: acid: 
+echo kill > /proc/PID/ctl

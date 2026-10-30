@@ -1,0 +1,11 @@
+new();
+bpset(walk+0x1c);
+cont();
+n1;
+n1.p.x;
+n1.next.p;
+*(n1.next.name\s);
+*walk:n;
+walk:q;
+(Point)(n1+4);
+whatis n1;

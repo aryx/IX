@@ -72,7 +72,7 @@ and stmt d (s : stmt) =
   | Expr (Some e) -> tabs d ^ expr e ^ ";\n"
   | Block ss -> stmts d ss
   | Local ns -> tabs d ^ "local " ^ String.concat ", " ns ^ ";\n"
-  | Complex (t, v) -> Printf.sprintf "%scomplex %s %s;\n" (tabs d) t v
+  | Complex (t, v) -> Printf.sprintf "%scomplex %s %s;\n" (tabs d) t (expr v)
   | If (c, a, None) -> tabs d ^ "if " ^ expr c ^ " then\n" ^ body (d + 1) a
   | If (c, a, Some b) -> tabs d ^ "if " ^ expr c ^ " then\n" ^ body (d + 1) a ^ tabs d ^ "else\n" ^ body (d + 1) b
   | While (c, b) -> tabs d ^ "while " ^ expr c ^ " do\n" ^ body (d + 1) b

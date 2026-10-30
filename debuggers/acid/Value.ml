@@ -7,13 +7,13 @@ open Ast
 
 type t = Ast.value
 
-let int fmt i = { kind = Int i; fmt }
-let string s = { kind = String s; fmt = 's' }
-let empty = { kind = List None; fmt = 'X' }
+let int fmt i = { kind = Int i; fmt; comt = None }
+let string s = { kind = String s; fmt = 's'; comt = None }
+let empty = { kind = List None; fmt = 'X'; comt = None }
 
 let list vs =
   let rec go = function [] -> None | v :: rest -> Some { value = v; next = go rest } in
-  { kind = List (go vs); fmt = 'X' }
+  { kind = List (go vs); fmt = 'X'; comt = None }
 
 let rec elements = function None -> [] | Some (c : cell) -> c.value :: elements c.next
 

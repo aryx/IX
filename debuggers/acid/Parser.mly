@@ -11,7 +11,7 @@
 
 open Ast
 
-let con i = Const { kind = Int i; fmt = 'W' }
+let con i = Const { kind = Int i; fmt = 'W'; comt = None }
 
 let name_of = function
   | Name s -> s
@@ -81,7 +81,7 @@ stmnt:
   | WHILE expr DO stmnt { While ($2, $4) }
   | RETURN expr SEMI { Return $2 }
   | LOCAL idlist { Local $2 }     /* (the last first, as acid's chain: whatis prints them so) */
-  | COMPLEX ID ID SEMI { Complex ($2, $3) }
+  | COMPLEX ID name SEMI { Complex ($2, $3) }
   ;
 
 slist:
@@ -160,8 +160,8 @@ term:
   | BUILTIN name LPAREN args RPAREN { Call (name_of $2, $4, true) }
   | name { $1 }
   | CONST { con $1 }
-  | FCONST { Const { kind = Float $1; fmt = 'f' } }
-  | STRING { Const { kind = String $1; fmt = 's' } }
+  | FCONST { Const { kind = Float $1; fmt = 'f'; comt = None } }
+  | STRING { Const { kind = String $1; fmt = 's'; comt = None } }
   | WHAT zname { What $2 }
   ;
 

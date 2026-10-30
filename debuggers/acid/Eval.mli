@@ -26,8 +26,15 @@ val store : (int64 -> string -> unit) ref
 (* an address as the a format says it: a symbol and an offset *)
 val symbol : (int64 -> string) ref
 
+(* f:v's address, Proc's: v, a parameter or a local of f, in f's
+ * innermost frame (libmach's localaddr) *)
+val local_addr : (string -> string -> int64) ref
+
 (* a global variable set (the program's symbols, the registers, pid) *)
 val set_global : string -> Ast.value -> unit
+
+(* the complex type a variable was declared of (complex T v), if one *)
+val complex_type : string -> string option
 
 (* acid's function [name] called with [args], if it is defined (dostop's
  * stopped(pid)) *)

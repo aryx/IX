@@ -64,7 +64,7 @@ let init (caps : < caps; .. >) =
   def "fmtof" (fun vs -> Value.int 'D' (Int64.of_int (Char.code (one "fmtof" vs).fmt)));
   def "fmtsize" (fun vs -> Value.int 'D' (Int64.of_int (Value.size (one "fmtsize" vs).fmt)));
   def "atoi" (fun vs -> Value.int 'V' (atoi (str "atoi" vs)));
-  def "atof" (fun vs -> { kind = Float (try float_of_string (String.trim (str "atof" vs)) with Failure _ -> 0.); fmt = 'f' });
+  def "atof" (fun vs -> { kind = Float (try float_of_string (String.trim (str "atof" vs)) with Failure _ -> 0.); fmt = 'f'; comt = None });
   def "itoa" (function
     | [ { kind = Int i; _ } ] -> Value.string (itoa i None)
     | [ { kind = Int i; _ }; { kind = String f; _ } ] -> Value.string (itoa i (Some f))

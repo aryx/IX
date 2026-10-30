@@ -13,8 +13,10 @@ type kind =
   | List of cell option        (* None: the empty list *)
   | Code of expr               (* what eval runs *)
 
-(* a value and its format (Value.mli says what the letters are) *)
-and value = { kind : kind; fmt : char }
+(* a value and its format (Value.mli says what the letters are), and
+ * its complex type, an aggr's name, when it is the address of one
+ * (acid's Node's comt: what e.m reads by, what print calls) *)
+and value = { kind : kind; fmt : char; comt : string option }
 
 (* acid's lists: cells, changed in place by append and + *)
 and cell = { mutable value : value; mutable next : cell option }
@@ -62,7 +64,7 @@ type stmt =
   | While of expr * stmt
   | Return of expr
   | Local of string list
-  | Complex of string * string          (* complex T v: v is a T *)
+  | Complex of string * expr            (* complex T v (or f:v): v is a T *)
 
 (* a function's parameter: its name, and whether it is *name, which
  * gets its argument's code, not its value (eval runs it) *)

@@ -8,7 +8,10 @@
 # each session's output as recorded: acid/proc/*.acid on a program by
 # mini-cc (acid/proc/target.c: new, a breakpoint, cont, step, next, stk;
 # steps to the exit), acid/ml/*.acid on one by mini-ml (acid/ml/Down.ml:
-# its stack, mini-ml's frames read by their prologues).
+# its stack, mini-ml's frames read by their prologues), acid/types/*.acid
+# on a C program with structs, their declarations 5c -a's
+# (acid/types/target.acid, loaded with -l: complex, ., ->, a type's
+# function called by print).
 #   live: the C sessions given to principia's acid too, with its own
 #   library, both outputs the same but for what ix's library does
 #   otherwise: the lines its library prints as it is read, a caller's
@@ -39,13 +42,16 @@ cleanup() {
   done
 }
 trap 'cleanup; rm -rf $W' EXIT
-mkdir $W/c $W/ml
+mkdir $W/c $W/ml $W/types
 # (compiled by its name, in its directory: its tables say target.c, as
 # 5a's -r, and src() finds it there)
 cp $T/proc/target.c $W/c/
-(cd $W/c && $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 -o target.5 target.c \
-   && $IX/linker/Main.exe -m 5 -g -H2 -o target target.5 $M/lib_core/libc.a) > $W/err 2>&1 \
-  || { echo "FAIL the C target's build: $(head -2 $W/err)"; exit 1; }
+cp $T/types/target.c $T/types/target.acid $W/types/
+for d in c types; do
+  (cd $W/$d && $IX/languages/c/Main.exe -m 5 -I$L/include -I$L/include/utf -I$L -I$L/include/arch/arm -Darm -Dplan9 -o target.5 target.c \
+     && $IX/linker/Main.exe -m 5 -g -H2 -o target target.5 $M/lib_core/libc.a) > $W/err 2>&1 \
+    || { echo "FAIL the C target's build in $d: $(head -2 $W/err)"; exit 1; }
+done
 I="-I $W/ml -I $LC/system/plan9 -I $LC/core -I $LC/base -I $LC/collections -I $LC/printing -I $LC/parsing -I $LC/system -I $LC/concurrency -I $LC/commons"
 U=$($ROOT/bin/mini-ar t $M/lib_core/lib_core.a | sed 's,.*/,,; s,\.ml$,,' | tr '\n' ' ')
 cp $T/ml/Down.ml $W/ml/
@@ -61,20 +67,23 @@ norm() { grep -a -v 'pushfile: /lib' | sed 's/[0-9]\{4,8\}: /PID: /g;s/[0-9]\{4,
 # of the instruction before it, 16)
 alike() { sed -E '/^\/lib\/acid\//d; /^_main[+ ]/d; s/\+0x[0-9a-f]+ ([^ ]*:[0-9]+)$/ \1/' | uniq; }
 n=0; failures=0
-for d in proc:c ml:ml; do
+for d in proc:c ml:ml types:types; do
+  # (the types' declarations, 5c -a's, loaded after the library)
+  decls=; [ ${d%:*} = types ] && decls="-l target.acid"
   for f in $T/${d%:*}/*.acid; do
+    [ $(basename $f) = target.acid ] && continue
     name=${d%:*}/$(basename $f .acid)
     n=$((n + 1))
     (cd $W/${d#*:} && timeout -s KILL 120 $IX/machine/Main.exe $M/debuggers/acid/mini-acid -l $LIB/port.acid -l $LIB/arm.acid \
-       ./target < $f > $W/out 2>&1)
+       $decls ./target < $f > $W/out 2>&1)
     cleanup
     norm < $W/out > $W/got
     [ "$1" = record ] && cp $W/got $T/$name.out
     if [ "$1" = live ]; then
-      [ ${d%:*} = proc ] || { n=$((n - 1)); continue; }
+      [ ${d%:*} = ml ] && { n=$((n - 1)); continue; }
       [ -f $P/ROOT/lib/acid/port.acid ] || { echo "skipped live: no $P/ROOT/lib/acid"; exit 0; }
-      (cd $W/c && timeout -s KILL 120 $IX/machine/Main.exe $P/ROOT/arch/arm/bin/acid -l $P/ROOT/lib/acid/port.acid \
-         -l $P/ROOT/lib/acid/arm.acid ./target < $f > $W/ref 2>&1)
+      (cd $W/${d#*:} && timeout -s KILL 120 $IX/machine/Main.exe $P/ROOT/arch/arm/bin/acid -l $P/ROOT/lib/acid/port.acid \
+         -l $P/ROOT/lib/acid/arm.acid $decls ./target < $f > $W/ref 2>&1)
       cleanup
       norm < $W/ref | alike > $W/expected
       alike < $W/got > $W/got2; mv $W/got2 $W/got

@@ -200,7 +200,9 @@ let program (caps : < caps; .. >) path =
 let symbols () =
   let l = List.filter_map (fun (s : Symbols.sym) ->
     if String.contains "TLDBbdlt" s.typ && s.name <> "" && s.name.[0] <> '.' then begin
-      set s.name (Value.int 'X' (Int64.of_int s.value));
+      (* (a complex variable's address its format a: acid's symbols,
+       * read after the libraries, 5c -a's complex T name among them) *)
+      set s.name (Value.int (if Eval.complex_type s.name <> None then 'a' else 'X') (Int64.of_int s.value));
       Some (Value.list [ Value.string s.name; Value.int 'c' (Int64.of_int (Char.code s.typ)); Value.int 'X' (Int64.of_int s.value) ])
     end else None)
     (match !prog with Some { table = Some t; _ } -> t.syms | _ -> []) in
@@ -258,16 +260,15 @@ let follow v =
   | Some a -> [ a ]
   | None -> error "follow(addr): can't read instruction"
 
-(* libmach's risctrace: the frames from (pc, sp, link), each the list
- * {its function, where it was called from (the return less 8, arm's
- * pc), its parameters, its locals}, each of those {name, value}: a
- * function's frame its .frame (0 at its first instruction), its return
- * address the link's (a leaf, or before its save) or the word at its
- * sp; to _main, not said, 40 frames at most *)
-let strace pc sp link =
+(* libmach's risctrace: the frames from (pc, sp, link), each its
+ * function's symbol, its table's entries (.frame, parameters p, locals
+ * a), its sp once its frame is left, its return address: a function's
+ * frame its .frame (0 at its first instruction), its return address the
+ * link's (a leaf, or before its save) or the word at its sp; to _main,
+ * not said, 40 frames at most *)
+let walk pc sp link =
   let entries = match !prog with Some { table = Some t; _ } -> t.syms | _ -> [] in
-  (* a function's symbol, and the entries after it (.frame, its
-   * parameters p, its locals a), to the next function *)
+  (* a function's symbol, and the entries after it, to the next function *)
   let rec locals = function
     | (s : Symbols.sym) :: rest when not (String.contains "TtLl" s.typ) -> s :: locals rest
     | _ -> [] in
@@ -276,7 +277,6 @@ let strace pc sp link =
     | _ :: rest -> find_fn v rest
     | [] -> None in
   let word a = word true a in
-  let var name v = Value.list [ Value.string name; Value.int 'X' v ] in
   let in_text v = match !prog with Some p -> v >= p.txtaddr && v < Int64.add p.txtaddr p.txtsz | None -> false in
   let rec go pc sp n acc =
     match (if in_text pc then findsym pc else None) with
@@ -295,23 +295,46 @@ let strace pc sp link =
               | None -> List.rev acc
               | Some ret ->
                   if ret = 0L || (ret = pc && size = 0L) then List.rev acc
-                  else begin
-                    let sp = Int64.add sp size in
-                    let read off = try Some (word off) with Eval.Error _ -> None in
-                    let pick typ f = List.filter_map (fun (e : Symbols.sym) ->
-                      if e.typ = typ && e.name <> "" && e.name.[0] <> '.' then
-                        Option.map (var e.name) (read (f (Int64.of_int e.value))) else None) autos in
-                    (* (libmach's localsym: the table's order reversed, the
-                     * last written first) *)
-                    let params = List.rev (pick 'p' (fun o -> Int64.add (Int64.add sp 4L) o)) in
-                    let locals = List.rev (pick 'a' (fun o -> Int64.sub sp o)) in
-                    let fr = Value.list [ Value.int 'X' start; Value.int 'Y' (Int64.sub ret 8L); Value.list params; Value.list locals ] in
-                    go ret sp (n + 1) (fr :: acc)
-                  end))
+                  else let sp = Int64.add sp size in go ret sp (n + 1) ((s, autos, sp, ret) :: acc)))
     | _ -> List.rev acc in
-  match go pc sp 0 [] with
+  go pc sp 0 []
+
+(* a parameter's address, past the return address over the frame; a
+ * local's, under the frame's top *)
+let param_addr sp off = Int64.add (Int64.add sp 4L) (Int64.of_int off)
+let auto_addr sp off = Int64.sub sp (Int64.of_int off)
+
+(* the frames as acid's lists: {its function, where it was called from
+ * (the return less 8, arm's pc), its parameters, its locals}, each of
+ * those {name, value} *)
+let strace pc sp link =
+  let var name v = Value.list [ Value.string name; Value.int 'X' v ] in
+  let frame ((s : Symbols.sym), autos, sp, ret) =
+    let read off = try Some (word true off) with Eval.Error _ -> None in
+    let pick typ f = List.filter_map (fun (e : Symbols.sym) ->
+      if e.typ = typ && e.name <> "" && e.name.[0] <> '.' then
+        Option.map (var e.name) (read (f sp e.value)) else None) autos in
+    (* (libmach's localsym: the table's order reversed, the last
+     * written first) *)
+    let params = List.rev (pick 'p' param_addr) in
+    let locals = List.rev (pick 'a' auto_addr) in
+    Value.list [ Value.int 'X' (Int64.of_int s.value); Value.int 'Y' (Int64.sub ret 8L); Value.list params; Value.list locals ] in
+  match walk pc sp link with
   | [] -> error "no stack frame"
-  | frames -> Value.list frames
+  | frames -> Value.list (List.map frame frames)
+
+(* f:v, libmach's localaddr: v's address in the innermost frame of f,
+ * from the stopped process's registers *)
+let local_addr f v =
+  let reg name = word true (Int64.of_int (List.assoc name reglist)) in
+  if !mem = None then error "colon: no process";
+  match List.find_opt (fun ((s : Symbols.sym), _, _, _) -> s.name = f) (walk (reg "PC") (reg "SP") (reg "R14")) with
+  | None -> error "colon: function %s not in the stack" f
+  | Some (_, autos, sp, _) ->
+      match List.find_opt (fun (e : Symbols.sym) -> e.name = v && (e.typ = 'p' || e.typ = 'a')) autos with
+      | Some e when e.typ = 'p' -> param_addr sp e.value
+      | Some e -> auto_addr sp e.value
+      | None -> error "colon: %s has no local %s" f v
 
 let attached () = List.map fst !ctls
 
@@ -321,6 +344,7 @@ let init (caps : < caps; .. >) =
   Eval.load := (fun core a n -> exited (fun () -> load core a n));
   Eval.store := (fun a s -> exited (fun () -> store a s));
   Eval.symbol := symoff;
+  Eval.local_addr := local_addr;
   Value.das := instruction;
   let def name f = Hashtbl.replace Eval.builtins name (fun vs -> exited (fun () -> f vs)) in
   let none = Value.empty in

@@ -26,8 +26,10 @@ M=$ROOT/_mk/5-plan9
 L=$ROOT/lib_core/libc
 LC=$ROOT/lib_core
 [ -f $M/lib_core/libc.a ] || { echo "skipped: no _mk/5-plan9/lib_core (mini-mk O=5 OS=plan9 in lib_core)"; exit 0; }
-(cd $ROOT/debuggers/acid && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > /dev/null 2>&1) \
-  || { echo "FAIL mini-mk O=5 OS=plan9 in debuggers/acid"; exit 1; }
+# (lib_executable first: mini-mk takes a library's archive as it is)
+(cd $ROOT/lib_executable && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > /dev/null 2>&1 \
+   && cd $ROOT/debuggers/acid && MKSHELL=mini-rc PATH=$ROOT/bin:$PATH mini-mk O=5 OS=plan9 > /dev/null 2>&1) \
+  || { echo "FAIL mini-mk O=5 OS=plan9 in lib_executable and debuggers/acid"; exit 1; }
 W=$(mktemp -d)
 # (the targets a session leaves stopped: the mini-5i processes running
 # ./target in $W, by their command's name, not a pattern our shell has)

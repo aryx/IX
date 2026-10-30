@@ -778,3 +778,19 @@ cont, stk, a variable, step, stk, as recorded; 21 s); session-c
 unchanged; the Pi 2's kernel by ocaml-light builds. mini-acid's status
 reads the state at its place (devproc's fixed widths: a user may be
 empty, then blanks split it wrong).
+
+2026-10-30, **breakpoints by a source line**: filepc("Down.ml:5"),
+acid's builtin (libmach's file2pc), in OCaml: lib_executable's
+Symbols.file_pc walks the pc/line table once, each change of line with
+the history in force there, the file named by its path or its last
+components (Down.ml, arch/arm/rt0.s). Not in acid: by pcfile and
+pcline, address after address, each reading the table again, it would
+be quadratic, interpreted, under mini-5i; the primitive is the
+table's, as Plan 9's acid has it. Then bpset(filepc(...)), src(*PC)
+showing the line marked, are acid's as before. Checked:
+debuggers/tests/acid_proc.sh's fourth session (acid/ml/line.acid: a
+breakpoint at Down.ml:5, src, stk); the tests build lib_executable
+first (mini-mk takes a library's archive as it is: a stale one lacked
+file_pc). A line is still a function's in mini-ml's tables (its body's
+line, decision 3), so next and stmnt on mini-ml's code go a function
+at a time; a statement's line is stage 1b's rest.

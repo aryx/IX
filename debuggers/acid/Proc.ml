@@ -353,6 +353,21 @@ let init (caps : < caps; .. >) =
     | [ { kind = Int pc; _ }; { kind = Int sp; _ }; { kind = Int link; _ } ] -> strace pc sp link
     | [ _; _; _ ] -> error "strace(pc, sp, link): bad type"
     | _ -> error "strace(pc, sp, link): arg count");
+  (* "file:line": its first address (libmach's file2pc), a breakpoint's *)
+  def "filepc" (fun vs ->
+    match vs with
+    | [ { kind = String w; _ } ] ->
+        (match String.rindex_opt w ':' with
+         | Some i ->
+             let file = String.sub w 0 i and line = int_of_string_opt (String.sub w (i + 1) (String.length w - i - 1)) in
+             (match !prog, line with
+              | Some { table = Some t; _ }, Some l ->
+                  (match Symbols.file_pc t file l with
+                   | Some pc -> Value.int 'V' (Int64.of_int pc)
+                   | None -> error "filepc: can't find address for: %s" w)
+              | _ -> error "filepc: can't find address for: %s" w)
+         | None -> error "filepc(\"file:line\")")
+    | _ -> error "filepc(\"file:line\")");
   def "follow" (fun vs -> Value.list (List.map (Value.int 'X') (follow (int "follow" vs))));
   def "newproc" (fun vs ->
     let aout = match !prog with Some p -> p.path | None -> error "no program" in

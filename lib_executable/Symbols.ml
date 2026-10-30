@@ -142,3 +142,37 @@ let file_line t addr =
       | (_, hist) :: _ -> local (files t) hist line
       | [] -> None
 
+(* each change of line in the pc/line table (pc2line's steps), with the
+ * history in force there (the objects' in the address's order), until
+ * one is the file's line asked *)
+let file_pc t file line =
+  let fs = files t in
+  let ends p =
+    let n = String.length p and m = String.length file in
+    p = file || (n > m && String.sub p (n - m) m = file && p.[n - m - 1] = '/') in
+  let n = String.length t.lines in
+  let rec hist pc hs cur =
+    match hs with
+    | (a, h) :: rest when a <= pc -> hist pc rest (Some h)
+    | _ -> (cur, hs) in
+  let rec go i pc gline hs cur =
+    if i >= n then None
+    else begin
+      let u = Char.code t.lines.[i] in
+      let i', pc', gline' =
+        if u = 0 then begin
+          let byte k = Char.code t.lines.[i + 1 + k] in
+          let d = if byte 0 < 128 then be32 t.lines (i + 1)
+            else - (((255 - byte 0) lsl 24) lor ((255 - byte 1) lsl 16) lor ((255 - byte 2) lsl 8) lor (255 - byte 3)) - 1 in
+          (i + 5, pc + 4, gline + d)
+        end
+        else if u < 65 then (i + 1, pc + 4, gline + u)
+        else if u < 129 then (i + 1, pc + 4, gline - (u - 64))
+        else (i + 1, pc + (4 * (u - 129)) + 4, gline) in
+      let cur, hs = hist pc' hs cur in
+      let here = gline' <> gline && (match cur with
+        | Some h -> (match local fs h gline' with Some (p, l) -> l = line && ends p | None -> false)
+        | None -> false) in
+      if here then Some pc' else go i' pc' gline' hs cur
+    end in
+  go 0 (t.text_start - 4) 0 (histories t) None

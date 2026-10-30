@@ -57,3 +57,8 @@ val func : t -> int -> (string * int) option
 
 (* the file and the line of an address, when the table has them *)
 val file_line : t -> int -> (string * int) option
+
+(* the first address of a file's line (libmach's file2pc; acid's
+ * filepc): the file named by its path or by its last components
+ * (Down.ml, arch/arm/rt0.s). The table walked once *)
+val file_pc : t -> string -> int -> int option

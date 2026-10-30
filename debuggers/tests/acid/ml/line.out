@@ -1,0 +1,19 @@
+./target:arm plan 9 executable
+acid: PID: Mirq interrupt	_main	MOVW.W	R14,#-0x4(R13)
+PID: Prefetch Abort/Breakpoint	main+0x4	MOVW	R0,R1
+acid: acid: PID: Prefetch Abort/Breakpoint	f1_down	SUB	$#0x10,R13,R13
+acid: Down.ml:5
+ 1	(* the program mini-acid debugs with ix's acid library (debuggers/tests/acid_proc.sh):
+ 2	 * down three calls deep: its stack walked, a breakpoint by its line *)
+ 3	let count = ref 0
+ 4	
+>5	let rec down n = if n = 0 then !count + 7 else 1 + down (n - 1)
+ 6	
+ 7	let () = print_int (down 3)
+acid: f1_down()+0x0 Down.ml:5
+Down.Init()+0x68 ?file?:0
+ml_program()+0x264 ?file?:0
+main()+0x190 ?file?:0
+_main+0x20 libc/arch/arm/rt0.s:17
+acid: 
+echo kill > /proc/PID/ctl

@@ -18,6 +18,10 @@ val gmail : server
  * says is \All ([Gmail]/Tous les messages in a French Gmail) *)
 val all_mail : string
 
+(* Starred, the same way: the mailbox LIST says is \Flagged (Suivis in
+ * a French Gmail), the messages starred *)
+val starred : string
+
 (* [session caps server ~user ~password ~mailbox f]: [f] with the
  * mailbox selected; logged out after *)
 val session :
@@ -48,6 +52,13 @@ val message :
 val archive :
   < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t -> Imap.t ->
   account:string -> mailbox:string -> int list -> (unit, string) result
+
+(* Gmail's star (IMAP's \Flagged) given or taken off ([on]), on the
+ * server and in the items *)
+val star :
+  < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t -> Imap.t ->
+  account:string -> mailbox:string -> int list -> on:bool ->
+  (unit, string) result
 
 (* the app password the author keeps in the store's directory, the
  * file "password" (~/.ix-pim/password): its first line. mini-pim never

@@ -24,9 +24,13 @@ let start () : t * string list =
 
 let ended (t : t) : bool = t.logout
 (* the messages of the mailbox selected *)
+(* Gmail's Starred: the messages flagged, whatever their labels *)
+let starred = "[Gmail]/Starred"
+
 let mailbox (store : store) (user : string) (name : string) : message list =
   let l = store.messages user in
   if name = store.all_mail then l
+  else if name = starred then List.filter (fun m -> List.mem "\\Flagged" m.flags) l
   else List.filter (fun m -> List.mem "\\Inbox" m.labels) l
 
 (* "1:3,5,7:*": the UIDs in it, [top] the largest there is *)
@@ -294,6 +298,7 @@ let step (store : store) (t : t) (line : string) : t * string list =
             [
               "* LIST (\\HasNoChildren) \"/\" \"INBOX\"";
               "* LIST (\\All \\HasNoChildren) \"/\" " ^ Imap.quote store.all_mail;
+              "* LIST (\\Flagged \\HasNoChildren) \"/\" " ^ Imap.quote starred;
               ok "LIST completed";
             ] )
       | ("SELECT" | "EXAMINE"), Some user, _ -> (
@@ -303,7 +308,7 @@ let step (store : store) (t : t) (line : string) : t * string list =
               let name =
                 if String.uppercase_ascii name = "INBOX" then "INBOX" else name
               in
-              if name <> "INBOX" && name <> store.all_mail then
+              if name <> "INBOX" && name <> store.all_mail && name <> starred then
                 (t, [ no ("no mailbox " ^ name) ])
               else
                 let ms = mailbox store user name in

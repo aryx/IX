@@ -43,7 +43,8 @@ view they open in; Up and Down choose, Enter opens one, Tab shows one
 view's, Escape goes back.
 
 **Mail**, with Gmail's keys: `j k` move, `o` opens a conversation, `u`
-back, `e` archives, `/` searches Gmail, Tab the Inbox or All Mail, `g`
+back, `e` archives, `s` stars (Gmail's star; Starred in the sidebar
+lists them), `/` searches Gmail, Tab the Inbox or All Mail, `g`
 gets the mail (the password asked once, kept while the window is
 open); `c` writes, `r a f` reply, to all, forward (a draft kept at each
 change; Send, Save Draft, Discard); `z` snoozes until a day typed as
@@ -112,6 +113,10 @@ What the window is given is a list of *name*`=`*value*:
 **list** [ **-n** *count* ] [ **-q** *search* ] [ **-m** *mailbox* ]
 :    The newest conversations, a line each: the newest message's UID,
      `*` if unread, the day, who, the subject. **-q** is Gmail's search.
+
+**star** *uid* ..., **unstar** *uid* ...
+:    Gmail's star given or taken off; `-m '[Gmail]/Starred' list` lists
+     the starred.
 
 **read** *uid*, **reply** [ **-all** ] *uid*, **forward** *uid*, **archive** *uid* ...
 :    A message read (and marked so); a reply or a forward printed, to

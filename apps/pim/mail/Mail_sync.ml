@@ -24,16 +24,24 @@ let connect (caps : < Cap.network ; Cap.open_in ; .. >) (s : server) :
   | Error why -> Error (Printf.sprintf "%s:%d: %s" s.host s.port why)
 
 let all_mail = "[Gmail]/All Mail"
+let starred = "[Gmail]/Starred"
 
-(* the server's name of [mailbox]: All Mail's is found by its \All *)
+(* the server's name of [mailbox]: All Mail's is found by its \All,
+ * Starred's by its \Flagged (a French Gmail's "Tous les messages",
+ * "Suivis") *)
 let named (t : Imap.t) (mailbox : string) : (string, string) result =
-  if mailbox <> all_mail then Ok mailbox
+  let attribute =
+    if mailbox = all_mail then "\\all"
+    else if mailbox = starred then "\\flagged"
+    else ""
+  in
+  if attribute = "" then Ok mailbox
   else
     match Imap.mailboxes t with
     | Error e -> Error e
     | Ok l -> (
         let all (attributes, _) =
-          List.exists (fun a -> String.lowercase_ascii a = "\\all") attributes
+          List.exists (fun a -> String.lowercase_ascii a = attribute) attributes
         in
         match List.find_opt all l with
         | Some (_, name) -> Ok name
@@ -169,6 +177,28 @@ let archive (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
               let s = Mail_item.summary item in
               let labels = List.filter (fun l -> l <> "\\Inbox") s.labels in
               Items.save caps store (Mail.set "labels" (Imap.list labels) item))
+        uids;
+      Ok ()
+
+(* [star ... uids ~on]: Gmail's star, IMAP's \Flagged, set or taken off,
+ * and the items saying so *)
+let star (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
+    (store : Items.t) (t : Imap.t) ~(account : string) ~(mailbox : string)
+    (uids : int list) ~(on : bool) : (unit, string) result =
+  match
+    Imap.store t uids ((if on then "+" else "-") ^ "FLAGS (\\Flagged)")
+  with
+  | Error e -> Error e
+  | Ok () ->
+      List.iter
+        (fun uid ->
+          match item_of caps store ~account ~mailbox uid with
+          | None -> ()
+          | Some item ->
+              let s = Mail_item.summary item in
+              let flags = List.filter (fun f -> f <> "\\Flagged") s.flags in
+              let flags = if on then "\\Flagged" :: flags else flags in
+              Items.save caps store (Mail.set "flags" (Imap.list flags) item))
         uids;
       Ok ()
 

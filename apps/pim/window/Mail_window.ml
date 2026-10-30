@@ -99,7 +99,7 @@ let run (caps : caps) (m : model) (action : action) : model =
               {
                 m with
                 status =
-                  Printf.sprintf "%d messages fetched%s" (List.length l) back;
+                  count (List.length l) "message" ^ " fetched" ^ back;
               })
       | Snooze until -> (
           let uids = List.map (fun (s : Imap.summary) -> s.uid) (current m) in
@@ -129,7 +129,21 @@ let run (caps : caps) (m : model) (action : action) : model =
           | Error e -> { m with status = e }
           | Ok () ->
               let m = load caps { m with mode = Browsing } in
-              { m with status = "archived" }))
+              { m with status = "archived" })
+      | Star on -> (
+          (* (the newest message, as Gmail's s in a list) *)
+          let uids =
+            match current m with (s : Imap.summary) :: _ -> [ s.uid ] | [] -> []
+          in
+          match
+            online caps m p (fun t ->
+                Mail_sync.star caps (store caps) t ~account:m.account
+                  ~mailbox:m.mailbox uids ~on)
+          with
+          | Error e -> { m with status = e }
+          | Ok () ->
+              let m = load caps m in
+              { m with status = (if on then "starred" else "unstarred") }))
 
 (* the next or the previous conversation; opened, when one is *)
 let next (caps : caps) (m : model) (d : int) : model =
@@ -147,6 +161,8 @@ type command =
   | Open_
   | Back
   | Archive_
+  | Star_
+  | Starred_list
   | Next
   | Previous
   | Inbox
@@ -179,6 +195,7 @@ let menus : (string * (string * command) list) list =
       [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
         ("Reply  (r)", Reply); ("Reply All  (a)", Reply_all);
         ("Forward  (f)", Forward); ("Archive  (e)", Archive_);
+        ("Star  (s)", Star_);
         ("Next  (j)", Next); ("Previous  (k)", Previous);
         ("Snooze...  (z)", Snooze_); ("Make a Task...  (t)", Task);
         ("Sender to People  (p)", Add_sender);
@@ -188,7 +205,8 @@ let menus : (string * (string * command) list) list =
         ("Discard", Discard) ] );
     ( "Mailbox",
       [ ("Inbox  (Tab)", List_of Screen.Imbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts); ("The Screener", List_of Screen.Screener);
+        ("Drafts", Drafts); ("Starred", Starred_list);
+        ("The Screener", List_of Screen.Screener);
         ("The Feed", List_of Screen.Feed); ("Paper Trail", List_of Screen.Paper);
         (* (the Screener's decisions, the sender's: Screen) *)
         ("Sender: Imbox  (y)", Sender_to Screen.Imbox);
@@ -378,6 +396,15 @@ let command (caps : caps) (m : model) (c : command) : model =
       else run caps m Open
   | Back -> { m with mode = Browsing }
   | Archive_ -> if current m = [] then m else run caps m Archive
+  | Star_ ->
+      (* (starred: any of its messages flagged; s takes it off) *)
+      let starred =
+        List.exists
+          (fun (s : Imap.summary) -> List.mem "\\Flagged" s.flags)
+          (current m)
+      in
+      if current m = [] then m else run caps m (Star (not starred))
+  | Starred_list -> switch caps m Mail_sync.starred
   | Next -> next caps m 1
   | Previous -> next caps m (-1)
   | Inbox -> switch caps m "INBOX"
@@ -519,6 +546,7 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "o" || pressed "Enter" then Some Open_
           else if pressed "u" || pressed "Escape" then Some Back
           else if pressed "e" then Some Archive_
+          else if pressed "s" then Some Star_
           else if pressed "c" then Some Compose
           else if pressed "r" then Some Reply
           else if pressed "a" then Some Reply_all
@@ -559,6 +587,8 @@ let update (caps : caps) (computer : computer) (m : model) : model =
             match List.nth_opt (places m) k with
             | Some (_, "INBOX", p) -> command caps { m with screen = p } Inbox
             | Some (_, box, _) when box = drafts -> command caps m Drafts
+            | Some (_, box, _) when box = Mail_sync.starred ->
+                command caps m Starred_list
             | Some _ -> command caps m All_mail
             | None -> m)
         | None, None, _, Some i -> command caps { m with selected = i } Open_

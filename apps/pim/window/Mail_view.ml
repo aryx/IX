@@ -41,6 +41,7 @@ let mailbox_name (m : model) : string =
     | _, Screen.Paper -> "Paper Trail"
     | _, Screen.Out -> "Screened Out"
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
+  else if m.mailbox = Mail_sync.starred then "Starred"
   else if m.mailbox = drafts then "Drafts"
   else m.mailbox
 
@@ -181,7 +182,18 @@ let view (computer : computer) (m : model) : shape list =
                          ~room:(width day +. 4.)
                          (x0 +. room -. width day)
                          y day;
-                     ])
+                     ]
+                   (* starred (Gmail's star: a message flagged), a gold
+                    * dot before the day *)
+                   @
+                   if
+                     List.exists
+                       (fun (s : Imap.summary) -> List.mem "\\Flagged" s.flags)
+                       c
+                   then
+                     [ circle (rgb 244 180 0) 5.
+                       |> move (x0 +. room -. width day -. 16.) (y +. 5.) ]
+                   else [])
                m.conversations)
   in
   (rectangle white computer.screen.width h :: title_bar computer title right)

@@ -70,6 +70,7 @@ let usage =
   \  read uid                          a message, marked read\n\
   \  reply [-all] uid, forward uid     a draft to edit, then send\n\
   \  archive uid...                    out of the Inbox\n\
+  \  star uid..., unstar uid...        Gmail's star; -m '[Gmail]/Starred' list\n\
   \  snooze uid words                  out of it until a day: monday, in 3 days\n\
   \  search query                      the store's items: from:alice is:task\n\
   \                                    label:travel before:2026-12-01 -word\n\
@@ -367,6 +368,14 @@ let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
       Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
 
+(* star, unstar: Gmail's star (\Flagged), on the server and the items *)
+let star (caps : < caps ; .. >) (o : options) (uids : int list) ~(on : bool) :
+    Exit.t =
+  reading caps o ~wake:false
+    ~online:(fun store account t ->
+      Mail_sync.star caps store t ~account ~mailbox:o.mailbox uids ~on)
+    ~offline:(fun _ _ -> Error "star: the server's, not -offline")
+
 (* contact: the sender of a message listed made a contact, BBDB's
  * way *)
 let contact (caps : < caps ; .. >) (o : options) (uid : int) : Exit.t =
@@ -651,6 +660,9 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = "archive" :: (_ :: _ as l); _ } as o)
     when List.length (uids l) = List.length l ->
       archive caps o (uids l)
+  | Some ({ args = ("star" | "unstar") :: (_ :: _ as l); _ } as o)
+    when List.length (uids l) = List.length l ->
+      star caps o (uids l) ~on:(List.hd o.args = "star")
   | _ ->
       Console.eprint caps (usage ^ "\n");
       Exit.Err "usage"
@@ -675,7 +687,8 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
     "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
-    "register"; "balance"; "remind"; "sync"; "budget"; "assign" ]
+    "register"; "balance"; "remind"; "sync"; "budget"; "assign"; "star";
+    "unstar" ]
 
 let () =
   Cap.main (fun caps ->

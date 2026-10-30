@@ -129,6 +129,13 @@ pim list
 is "    2 * 2026-10-29 Carol (2)            Re: the plan" "archived: out of INBOX"
 pim -m '[Gmail]/All Mail' list
 has '^    3 \*  *news@ix' "archived: kept in All Mail"
+# Gmail's star: \Flagged, Starred the mailbox LIST says \Flagged
+pim star 2
+pim -m '[Gmail]/Starred' list
+has "Carol  *Re: the plan" "starred: in Starred"
+pim unstar 2
+pim -m '[Gmail]/Starred' list
+grep -q "the plan" $W/out && { echo "FAIL unstarred, still in Starred"; fail=1; }
 # (the server leaves \Inbox out of the Inbox's labels, as Gmail: the
 # Inbox, listed after All Mail, still the Inbox's)
 pim -offline list

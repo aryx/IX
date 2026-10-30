@@ -14,7 +14,7 @@ type caps =
   < Cap.network ; Cap.open_in ; Cap.open_out ; Cap.readdir ; Cap.env ; Cap.exit >
 
 (* what waits for the password *)
-type action = Fetch | Open | Archive | Send | Snooze of Civil.date
+type action = Fetch | Open | Archive | Star of bool | Send | Snooze of Civil.date
 type asking = Password | Search | Until | Due
 type mode = Browsing | Reading | Composing | Asking of asking
 

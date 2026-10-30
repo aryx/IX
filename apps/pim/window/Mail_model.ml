@@ -11,7 +11,7 @@ type caps =
 (*****************************************************************************)
 
 (* what waits for the password *)
-type action = Fetch | Open | Archive | Send | Snooze of Civil.date
+type action = Fetch | Open | Archive | Star of bool | Send | Snooze of Civil.date
 type asking = Password | Search | Until | Due
 type mode = Browsing | Reading | Composing | Asking of asking
 
@@ -166,7 +166,8 @@ let places (m : model) : (string * string * Screen.place) list =
        (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX", Screen.Screener);
        ("The Feed", "INBOX", Screen.Feed);
        ("Paper Trail", "INBOX", Screen.Paper) ])
-  @ [ ("All Mail", Mail_sync.all_mail, Screen.Imbox);
+  @ [ ("Starred", Mail_sync.starred, Screen.Imbox);
+      ("All Mail", Mail_sync.all_mail, Screen.Imbox);
       ("Drafts", drafts, Screen.Imbox) ]
 
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =

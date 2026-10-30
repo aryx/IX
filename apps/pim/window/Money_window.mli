@@ -40,6 +40,9 @@ val initial : caps -> Playground.flags -> model
  * those down now *)
 val refresh : caps -> string Set_.t -> model -> model
 
+(* [show caps m id]: the line [id] selected in its account's register *)
+val show : caps -> model -> string -> model
+
 val update : caps -> Playground.computer -> model -> model * Pim_look.go option
 
 (* the view, under the menu bar and the menus, which the suite draws *)

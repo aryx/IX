@@ -86,6 +86,28 @@ let initial (caps : caps) (flags : Playground.flags) : model =
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
   load caps { m with held = keys }
 
+(* the line [id] selected, in the register of the first own account it
+ * posts to *)
+let show (caps : caps) (m : model) (id : string) : model =
+  match Items.find caps (store caps) id with
+  | None -> { m with status = id ^ ": not in the store" }
+  | Some i -> (
+      let m = load caps { m with mode = Register } in
+      let posts =
+        List.map (fun (p : Books.posting) -> p.account) (Books.postings i)
+      in
+      match List.find_opt (fun a -> List.mem a posts) m.accounts with
+      | None -> { m with status = id ^ ": in no account's register" }
+      | Some account ->
+          let m = load caps { m with account } in
+          let rec index k l =
+            match l with
+            | [] -> m.selected
+            | (j, _, _) :: rest ->
+                if Item.id j = id then k else index (k + 1) rest
+          in
+          { m with selected = index 0 m.lines; status = "" })
+
 (*****************************************************************************)
 (* What the keys and the menus do *)
 (*****************************************************************************)

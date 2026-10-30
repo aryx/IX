@@ -27,7 +27,8 @@
 
    In a view the first menu is the suite's, Pim (Home, Mail,
    Calendar, People, Tasks, Notes, Money, each with its key, Ctrl and
-   its number, Outlook's Go menu and keys; Exit), then the view's own;
+   its number, Outlook's Go menu and keys; Search, Ctrl+E; Exit), then
+   the view's own;
    the sidebar's foot is the switcher, Outlook 2003's buttons. A view
    asks the suite for another (Pim_look.go): an item opened where it
    lives (a message in Mail, an event in Calendar, a person in People,
@@ -36,7 +37,9 @@
    read again from the store as it is shown, so what one changed (a
    task made in Mail) the other shows.
 
-   Not yet: a search over every view. *)
+   The search over every view (Search_window) is shown over the view it
+   was asked from, Ctrl+E anywhere, / on Home; Esc goes back to it, an
+   item found opens where it lives, as any view's Item. *)
 
 type caps = Mail_window.caps
 

@@ -40,6 +40,9 @@ type model = {
   notes : Notes_window.model;
   calendar : Calendar_window.model;
   money_ : Money_window.model;
+  (* a search over every view, shown over the view searched from *)
+  finding : bool;
+  search : Search_window.model;
   held : string Set_.t;
 }
 
@@ -130,6 +133,8 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     notes = Notes_window.initial caps flags;
     calendar = Calendar_window.initial caps flags;
     money_ = Money_window.initial caps flags;
+    finding = false;
+    search = Search_window.initial caps flags;
     held = Set_.empty;
   }
 
@@ -140,7 +145,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
 (* the view [v], read again from the store: another view may have
  * changed it (a task made in Mail, a sender added to People) *)
 let switch (caps : caps) (s : model) (keys : string Set_.t) (v : view) : model =
-  let s = { s with view = v } in
+  let s = { s with view = v; finding = false } in
   match v with
   | Home -> { s with home = home caps ~account:s.account ~today:s.today }
   | Mail -> { s with mail = Mail_window.refresh caps keys s.mail }
@@ -176,14 +181,18 @@ let go (caps : caps) (s : model) (keys : string Set_.t) (g : go) : model =
       else if has "note" then
         let s = switch caps s keys Notes in
         { s with notes = Notes_window.show caps s.notes id }
+      else if has "money" then
+        let s = switch caps s keys Money in
+        { s with money_ = Money_window.show caps s.money_ id }
       else s)
   | Write to_ ->
       let s = switch caps s keys Mail in
       { s with mail = Mail_window.write s.mail to_ }
 
 (* the suite's menu, the first: Outlook's Go > Mail, Calendar,
- * Contacts, Tasks, and their keys, Ctrl and the view's number *)
-type command = Go_to of view | Exit
+ * Contacts, Tasks, and their keys, Ctrl and the view's number; the
+ * search over them all *)
+type command = Go_to of view | Find | Exit
 
 let pim_menu : (string * (string * command) list) list =
   [ ( "Pim",
@@ -191,7 +200,7 @@ let pim_menu : (string * (string * command) list) list =
         (fun i (v, name) ->
           (Printf.sprintf "%s  (Ctrl+%d)" name i, Go_to v))
         views
-      @ [ ("Exit", Exit) ] ) ]
+      @ [ ("Search...  (Ctrl+E)", Find); ("Exit", Exit) ] ) ]
 
 (* the switcher's places, at the sidebar's foot *)
 let switcher_y (computer : computer) (i : int) : float =
@@ -250,21 +259,33 @@ let update (caps : caps) (computer : computer) (s : model) : model =
   in
   let clicked =
     if Gui.modal () then None
-    else if s.view = Home then tile_click computer
+    else if s.view = Home && not s.finding then tile_click computer
     else switcher_click computer
   in
   let home_key =
-    if s.view <> Home then None
+    if s.view <> Home || s.finding then None
     else List.find_map (fun (k, v) -> if pressed k then Some v else None) home_keys
   in
+  let find =
+    (Set_.mem "Control" keys && pressed "e")
+    || (s.view = Home && (not s.finding) && pressed "/")
+  in
+  let menu = if menu = None && find then Some Find else menu in
   let s =
     match (menu, by_key, clicked, home_key) with
     | Some Exit, _, _, _ -> CapStdlib.exit caps 0
+    | Some Find, _, _, _ ->
+        { s with finding = true;
+          search = Search_window.start caps keys s.search s.view }
     | Some (Go_to v), _, _, _
     | None, Some v, _, _
     | None, None, Some v, _
     | None, None, None, Some v ->
         switch caps s keys v
+    | None, None, None, None when s.finding -> (
+        let f, g = Search_window.update caps computer s.search in
+        let s = { s with search = f } in
+        match g with Some g -> go caps s keys g | None -> s)
     | None, None, None, None -> (
         match s.view with
         | Home -> s
@@ -406,8 +427,8 @@ let home_view (computer : computer) (s : model) : shape list =
       today
   @ [ text grey ~bold:false ~room:900. (-390.)
         ((-.computer.screen.height /. 2.) +. 24.)
-        ("m, c, p, t, n, b or a click opens a view; Ctrl and its number goes "
-         ^ "to it, Ctrl+0 back here.") ]
+        ("m, c, p, t, n, b or a click opens a view, / searches them all; "
+         ^ "Ctrl and its number goes to it.") ]
 
 (* the switcher: the views, the one shown marked *)
 let switcher_view (computer : computer) (s : model) : shape list =
@@ -429,6 +450,8 @@ let switcher_view (computer : computer) (s : model) : shape list =
 let view (computer : computer) (s : model) : shape list =
   let body =
     match s.view with
+    | _ when s.finding ->
+        Search_window.view computer s.search @ switcher_view computer s
     | Home -> home_view computer s
     | Mail -> Mail_window.view computer s.mail @ switcher_view computer s
     | Tasks -> Tasks_window.view computer s.tasks @ switcher_view computer s

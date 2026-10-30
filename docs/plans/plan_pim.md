@@ -502,3 +502,22 @@ Pim's options; `Pim.ml` keeps the mail's commands, the options and the
 dispatch (470 lines). What an item is called in a list, the terminal's
 and the window's alike, is `Search.title` now (Pim_look's was a copy).
 Nothing else changed: session.sh and the 38 frames the same.
+
+2026-10-30: the search over every view (idea 4): `window/Search_window`,
+Ctrl+E from any view (Outlook's), / from Home (Gmail's), and the Pim
+menu's Search. The query is `Search`'s (words, from:, is:, before:,
+-), run at each letter over the store as it was when the search began;
+the items found by the view they open in (a message in Mail, then
+Calendar, People, Tasks, Notes, Money; the newest first where an item
+has a day, else by title), each with what says it (who and when, the
+event's time, an address, a due day, an amount). Up and Down choose
+(j and k are letters of the query), Enter or a click opens the item
+where it lives (Pim_look's `Item`), Tab one view's results then the
+next's, Esc back to the view searched from. A money line now opens
+too: `Money_window.show`, its account's register, the line selected.
+Tests: 4 frames (a search from Mail, a result opened in People, / on
+Home, a money line opened in its register); the Pim menu and Home's
+line re-recorded. Not yet: the terminal's search grouped the same way
+(it lists items, one a line), a search kept as a view (Gmail's
+labels, Outlook's search folders).
+

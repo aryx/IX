@@ -22,7 +22,8 @@ window's (`make test`'s two "mini-pim").
                        or due today; in a view, the Pim menu and
                        Ctrl+0 to 6 (Home, Mail, Calendar, People,
                        Tasks, Notes, Money), the switcher at the
-                       sidebar's foot
+                       sidebar's foot; Ctrl+E (/ on Home) searches
+                       them all, Enter opens what is found
                        Mail: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
@@ -109,6 +110,9 @@ window's (`make test`'s two "mini-pim").
     window/Pim_window  the window: the suite, Home, going from view to
                        view
     window/Mail_window the mail
+    window/Search_window
+                       one search over every view, the items found by
+                       the view they open in
     window/Tasks_window
                        the tasks to do and done, captured in a line
     window/People_window

@@ -498,15 +498,25 @@ pi1_by_ix() {
   timeout 120 mini-qemu -M raspi1ap -device loader,file=$b/kernels/9pi/kernel.img,addr=0x8000,cpu-num=0,force-raw=on -nographic \
     -drive file=$P/qemu-sd.img,if=sd,format=raw,snapshot=on < /dev/null > $out 2>&1 &
   pid=$!
+  # (the emulator reads the image at its start: once the kernel says a
+  # word, it is relinked for the two boots below while this one goes on.
+  # old: one after the other, 124 s, past make test's 120)
+  until [ -s $out ] || [ $n -ge 300 ]; do sleep 0.1; n=$((n + 1)); done
+  local r=0 spid
+  # relinked with a boot that runs machine/tests/plan9/seg.c (code
+  # written in a segment, segflush, run; 17 s), and a copy of it with
+  # mini-acid debugging a program in it (stage 7's #p: a breakpoint,
+  # stk, step; 21 s), the three boots side by side
+  rm -rf $b/kernels/9pi-acid; cp -a $b/kernels/9pi $b/kernels/9pi-acid
+  kernels/9pi/tests/seg.sh $b > $W/seg.txt 2>&1 & spid=$!
+  kernels/9pi/tests/acid.sh $b check kernels/9pi-acid || r=1
+  wait $spid || r=1
+  cat $W/seg.txt
+  n=0
   until grep -aq '^%' $out || [ $n -ge 600 ]; do sleep 0.1; n=$((n + 1)); done
   kill $pid 2> /dev/null; wait $pid 2> /dev/null
   grep -aq '^%' $out || { echo "no rc prompt in:"; head -5 $out | cut -c1-200; return 1; }
-  # (then relinked with a boot that runs machine/tests/plan9/seg.c:
-  # code written in a segment, segflush, run; 17 s)
-  kernels/9pi/tests/seg.sh $b || return 1
-  # (and relinked with mini-acid debugging a program in it: stage 7's
-  # #p, a breakpoint, stk, step; 21 s)
-  kernels/9pi/tests/acid.sh $b
+  return $r
 }
 tp="mini-9pi for the Pi 1 built by ix, booted to rc; its segments run a JIT's code; mini-acid debugs in it"
 if [ -f $P/qemu-sd.img ] && [ -x $P/ROOT/arch/arm/bin/rc ]; then job "$tp" pi1_by_ix

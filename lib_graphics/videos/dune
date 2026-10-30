@@ -1,0 +1,8 @@
+; lib_graphics/videos: films, as a player sees them: the author's
+; playground's libs/graphics/videos (README.md here;
+; docs/plans/plan_video.md). Reading only but Y4M.
+(library
+ (name ix_graphics_videos)
+ (wrapped false)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_graphics_images))

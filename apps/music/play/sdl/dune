@@ -1,0 +1,12 @@
+; mini-play on Linux (SDL): ../Play.ml and ../Film.ml, the same text, linked
+; with the platform that has a window and a sound card. Dune's alone: SDL is
+; outside what mini-ml compiles, as mini-rebirth's window
+(copy_files ../Play.ml)
+(copy_files ../Film.ml)
+(copy_files ../Film.mli)
+(executable
+ (name Play)
+ (public_name mini-play)
+ (package ix)
+ (modules Play Film)
+ (libraries ix_audio ix_mime ix_graphics_videos ix_graphics_images ix_playground ix_playground_sdl ix_core fpath caps unix))

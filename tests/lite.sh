@@ -261,6 +261,7 @@ job "mini-emacs: unit tests" _build/default/editors/emacs/tests/Test.exe
 job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
+job "lib_graphics/videos, mini-play's window: Y4M, FLI, AVI, GIF, the sound's clock" sh_ '_build/default/lib_graphics/videos/tests/Test.exe && apps/music/tests/film.sh'
 job "mini-files: the window's recorded frames, what it starts, its changes to a scratch tree" sh_ 'apps/files/tests/frames.sh && apps/files/tests/changes.sh'
 job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh && apps/maps/tests/weather.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
@@ -554,6 +555,7 @@ if [ -n "$runs7" ]; then
   job $a "mini-play built by ix" by_ix_play
   job $a "lib_crypto built by ix: the vectors" by_ix_vectors
   job $a "mini-curl, mini-httpd, mini-lynx built by ix" by_ix_net
+  job $a "mini-play's window built by ix: its frames, the sound's clock" nofail apps/music/tests/film.sh $K/apps
   job $a "mini-files built by ix: its window's frames, its changes to a scratch tree" by_ix_files
   job $a "mini-maps built by ix: its window's frames, its cache" by_ix_maps
   job $a "mini-node, browsers/engine, mini-netscape built by ix" by_ix_browsers

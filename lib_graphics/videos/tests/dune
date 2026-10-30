@@ -1,0 +1,23 @@
+; lib_graphics/videos' unit tests (make test); Fli_write, what a player does
+; not need, to have files to read back
+(test
+ (name Test)
+ (package ix)
+ (flags (:standard -w -32-37-69))
+ (modules Test Unit_movie Unit_yuv Unit_psnr Unit_y4m Unit_fli Unit_avi)
+ (libraries alcotest testo fli_write ix_graphics_videos ix_graphics_images ix_core))
+
+; the FLI clip of mini-play's frames (clips/make_clips.sh)
+(executable
+ (name Make_fli)
+ (modules Make_fli)
+ (flags (:standard -w -32-37-69))
+ (libraries fli_write ix_graphics_images ix_core))
+
+; a player does not write FLI: what the tests read back
+(library
+ (name fli_write)
+ (wrapped false)
+ (modules Fli_write)
+ (flags (:standard -w -32-37-69))
+ (libraries ix_graphics_videos ix_graphics_images ix_core))

@@ -33,13 +33,18 @@
  * audio/wavdec, games/midi ...), each a filter of this shape; one
  * program here (Player says more).
  *
+ * A film is the same command with a window: mini-play clip.avi (Film; its
+ * kind is the file's first bytes, File_kind, where a sound's is the name's
+ * end, Player). -c and -s are for sounds.
+ *
  * References: Plan 9's audio(3), for the samples' layout. *)
 
 type caps = < Cap.open_in; Cap.open_out; Cap.stdout; Cap.stderr >
 
 let usage = "usage: mini-play [-c] [-s seconds] file
   the file's sound (.mod, .mid, .mp3, .mp2, .wav, .abc) played: written
-  to /dev/audio, 16 bits, little-endian, two channels, 44,100 a second
+  to /dev/audio, 16 bits, little-endian, two channels, 44,100 a second;
+  a film (.y4m, .fli, .flc, .avi, an animated .gif) in a window
   -c: the samples to standard output (mini-play -c file | aplay -f cd)
   -s seconds: no more than that much of it"
 
@@ -112,4 +117,30 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
     | _ -> error usage in
   args false max_int (List.tl (Array.to_list argv))
 
-let () = Cap.main (fun caps -> Exit.exit caps (Exit.catch (fun () -> main caps (CapSys.argv caps))))
+(* the last argument, when it is a film: its kind and its bytes *)
+let film_of (caps : < Cap.open_in; .. >) (argv : string array) : Film.t option =
+  let last = argv.(Array.length argv - 1) in
+  if Array.length argv < 2 || last = "" || last.[0] = '-' then None
+  else
+    match FS.path last with
+    | Error _ -> None
+    | Ok path -> (
+        match File_kind.of_path caps path with
+        | exception Sys_error _ -> None
+        | kind when not (Film.is_film kind) -> None
+        | kind -> (
+            match Option.map (Film.read ~kind) (FS.read_opt caps path) with
+            | Some (Ok film) -> Some film
+            | Some (Error why) -> failwith (last ^ ": " ^ why)
+            | None -> None))
+
+let () =
+  Cap.main (fun caps ->
+      Exit.exit caps
+        (Exit.catch (fun () ->
+             let argv = CapSys.argv caps in
+             match film_of caps argv with
+             | Some film ->
+                 Film.run caps film;
+                 Exit.OK
+             | None -> main caps argv)))

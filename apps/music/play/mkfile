@@ -1,18 +1,22 @@
-# apps/music/play, built by ix's tools: lib_audio's units (and Lehmer,
-# which Sfx draws its numbers from), compiled here, each found by its
-# name in the library's folders, then mini-play with its start and its
-# link. mini-mk O=5 OS=plan9: for mini-9pi.
+# apps/music/play, built by ix's tools: mini-play, a sound to /dev/audio, a
+# film in a window (Film), so with lib_audio, lib_mime and the graphics. The
+# platform is ppm's on Linux (a frame written to a file, the tests'), draw's
+# on Plan 9. mini-mk O=5 OS=plan9: for mini-9pi.
 TOP=../../..
 <$TOP/mkfiles/mkconfig
 D=$B/apps/music/play
+PLATFORM=`{if(~ $OS plan9) echo draw; if not echo ppm}
+LIBDIRS=lib_mime lib_compression lib_graphics lib_playground lib_gui lib_audio lib_networking lib_playground/apis lib_playground/platforms lib_playground/platforms/$PLATFORM
+<$TOP/mkfiles/mklibs
+# (the MPEG decoders and Player are not in lib_audio's library: compiled here,
+# so that no game carries them)
 A=$TOP/lib_audio
-DIRS=$TOP/lib_playground/random $A/signal $A/synthesis $A $A/formats/abc $A/formats/wav $A/formats/midi $A/formats/mod $A/formats/mpeg_audio $A/formats/vorbis .
-INCLUDES=-I $TOP/lib_playground/random -I $A/signal -I $A/synthesis -I $A -I $A/formats/abc -I $A/formats/wav -I $A/formats/midi -I $A/formats/mod -I $A/formats/mpeg_audio -I $A/formats/vorbis -I . $STDI
-# (each before the ones that name it)
-LIB=Lehmer Pitch_effect Control Signal Noise Envelope Filter Pluck Fm Oscillator Mod Layer3_tables Mpeg_audio_header Bitstream Polyphase Imdct Abc Doremi Vlc Layer3 Layer2 Midi Mix Resample Space Synth Wav Paula Mpeg_audio Mod_player Ogg Vorbis Vorbis_player Music Instrument Sfx Mixer Player
+DIRS=. $A $A/formats/mpeg_audio
+INCLUDES=-I . -I $A -I $A/formats/mpeg_audio -I $D $LIBI $STDI
+LIB=Layer3_tables Mpeg_audio_header Bitstream Polyphase Imdct Vlc Layer3 Layer2 Mpeg_audio Player Film
 LIBOBJS=${LIB:%=$D/%.$O}
-LOCAL=`{ls *.ml ../../../lib_playground/random/Lehmer.ml* ../../../lib_audio/*.ml* ../../../lib_audio/*/*.ml* ../../../lib_audio/formats/*/*.ml*}
-LIBS=$LIBOBJS $STDOBJS $STDEND $TOP/mkfiles/mkconfig
+LOCAL=`{ls *.ml *.mli ../../../lib_audio/Player.ml* ../../../lib_audio/formats/mpeg_audio/*.ml*} $LIBSRC
+LIBS=$LIBOBJS $LIBA $STDOBJS $STDEND $TOP/mkfiles/mkconfig
 
 all:V: $D/mini-play
 
@@ -20,9 +24,10 @@ $D/%.$O: $LOCAL
 	mkdir -p $D
 	for(d in $DIRS) if(ls $d/$stem.ml >/dev/null >[2=1]) f=$d/$stem.ml
 	$ML $INCLUDES -o $target $f
+
 $D/mini-play: $D/Play.$O $LIBS mkfile
-	$ML -start $STD $COMMONS $LIB Play Std_exit -o $D/Play.start.$O
-	$LD $LDH -nofollow -o $target $D/Play.start.$O $STDOBJS $LIBOBJS $D/Play.$O $STDEND
+	$ML -start $STD $COMMONS `{$RC $TOP/mkfiles/units.rc $LIBA} $LIB Play Std_exit -o $D/Play.start.$O
+	$LD $LDH -nofollow -o $target $D/Play.start.$O $STDOBJS $LIBA $LIBOBJS $D/Play.$O $STDEND
 
 # the units' order (mkfiles/mkdepend)
 DEPOBJ=D

@@ -6,7 +6,7 @@ code to play simple videos; we don't have in IX to support all formats,
 but the historical one, that have great teaching value, we should
 definitely do".
 
-**Status: a plan, nothing built.** The file manager that opens these
+**Status: stage 1 done** (`lib_graphics/videos/`, `apps/music/play/Film`). The file manager that opens these
 files is [`plan_files.md`](done/plan_files.md).
 
 ## The measure
@@ -136,3 +136,14 @@ stage 2; the playground's clip is tiny and hides what a real stream does.
 ## Status
 
 2026-10-30: plan written. Nothing built.
+
+2026-10-31: stage 1 done. `Yuv`, `Psnr`, `Y4m`, `Movie`, `Fli`, `Avi` in
+`lib_graphics/videos/` (its README says what changed), and `mini-play clip`
+opens a window on a film by its first bytes, GIF too; space pauses, q
+leaves. The picture follows the sound, a timer until the sound has begun, so
+a machine with no sound does not stay on frame 0. `mini-play` is now one
+program of 2.0 MB on Plan 9, by `mini-mk O=5 OS=plan9`.
+Bytes are not the same from the two compilers on a JPEG: blue off by one in
+681 pixels of a million, float IDCT and OCaml's fused multiply-add, so the AVI
+frame's sum is recorded for dune's alone. Not run: a film under mini-rio on
+mini-9pi; sound heard, here it is only dumped (`-dump-audio`).

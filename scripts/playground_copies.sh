@@ -34,6 +34,7 @@ lib_graphics/geometry libs/graphics/2d/geometry libs/graphics/3d/geometry
 lib_graphics/images libs/graphics/images
 lib_graphics/software libs/graphics/2d libs/graphics/font
 lib_graphics/svg libs/graphics/images/svg
+lib_graphics/videos libs/graphics/videos
 lib_compression libs/compression
 lib_crypto libs/crypto
 lib_networking libs/networking/mail libs/networking/protocols libs/networking/tls libs/networking/unix libs/networking/tests libs/core

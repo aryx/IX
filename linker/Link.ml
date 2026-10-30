@@ -37,7 +37,7 @@ let rnd v r = let v = v + r - 1 in let c = v mod r in v - (if c < 0 then c + r e
 
 let create arch ~text_start =
   { arch; syms = Hashtbl.create 1024; ncreated = 0; progs = []; datas = [];
-    text_start; data_start = 0; text_size = 0; data_size = 0; bss_size = 0; data_round = 4096; pie = false; nfiles = 0 }
+    text_start; data_start = 0; text_size = 0; data_size = 0; bss_size = 0; data_round = 4096; pie = false; nfiles = 0; acid = [] }
 
 let lookup t name version =
   match Hashtbl.find_opt t.syms (name, version) with
@@ -82,6 +82,7 @@ let add_object t ~decode:decode_machine version (o : Asm.obj) =
       let s = lookup t ("<" ^ c) 0 in
       if s.kind <> File then (s.kind <- File; t.nfiles <- t.nfiles + 1; s.value <- t.nfiles);
       s.value) comps, line)) o.history in
+  t.acid <- List.rev_append o.acid t.acid;
   let items = o.items in
   (* the prog of each item that has a pc; the targets point at items.
    * An object with no history (older than the history, or another
@@ -320,6 +321,20 @@ let bucket arch name version =
 (* 5l's and 7l's dodata: small symbols (<= 64 bytes, bss included)
  * first, then the data, then the bss; 7l aligns what is 8 bytes or
  * more to 8, 16 or more to 16 *)
+(* the objects' acid declarations in the data, .acid, each once in
+ * the order met, a string to its NUL (mini-acid runs it: decision 14
+ * of plan_debugger.md); before layout_data *)
+let acid_data t =
+  if t.acid <> [] then begin
+    let seen = Hashtbl.create 1024 in
+    let text = String.concat "" (List.filter (fun d ->
+      if Hashtbl.mem seen d then false else (Hashtbl.replace seen d (); true)) (List.rev t.acid)) in
+    let s = lookup t ".acid" 0 in
+    s.kind <- Data;
+    s.size <- String.length text + 1;
+    t.datas <- { dsym = s; off = 0; width = s.size; value = Asm.Str text; dversion = 0 } :: t.datas
+  end
+
 let layout_data t =
   List.iter (fun d -> if d.dsym.kind = Bss || d.dsym.kind = Undefined then d.dsym.kind <- Data) t.datas;
   let syms = Hashtbl.fold (fun _ s acc -> if s.kind = Data || s.kind = Bss then s :: acc else acc) t.syms [] in

@@ -40,6 +40,8 @@ let rec raw () =
 
 let push text = stack := { text; pos = 0; file = false } :: !stack
 
+let depth () = List.length (List.filter (fun i -> i.file) !stack)
+
 (* a file read: its start in the history, at the global line (5c's
  * newfile, linehist(f, 0)) *)
 let push_file name text =

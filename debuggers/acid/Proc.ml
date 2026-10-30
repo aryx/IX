@@ -197,6 +197,21 @@ let program (caps : < caps; .. >) path =
   set "textfile" (Value.string path);
   registers ()
 
+(* the program's own declarations of its types, acid's text, if it has
+ * them (mini-ld -g's .acid: decision 14 of plan_debugger.md), from
+ * its file *)
+let declarations () =
+  match !prog with
+  | Some ({ table = Some t; _ } as p) ->
+      (match List.find_opt (fun (s : Symbols.sym) -> s.name = ".acid" && String.contains "Dd" s.typ) t.syms with
+       | Some s ->
+           let off = Int64.to_int (Int64.add (Int64.add 32L p.txtsz) (Int64.sub (Int64.of_int s.value) p.dataddr)) in
+           (match String.index_from_opt p.file off '\000' with
+            | Some e when off >= 0 -> Some (String.sub p.file off (e - off))
+            | _ -> None)
+       | None -> None)
+  | _ -> None
+
 let symbols () =
   let l = List.filter_map (fun (s : Symbols.sym) ->
     if String.contains "TLDBbdlt" s.typ && s.name <> "" && s.name.[0] <> '.' then begin

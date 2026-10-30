@@ -155,6 +155,9 @@ val write_library : < Cap.open_out; .. > -> Fpath.t -> member list -> unit
  * final one (5l's patch and brloop; xix's Resolve) *)
 val resolve : 'm t -> unit
 
+(* the objects' acid declarations, each once, as the data .acid (-g) *)
+val acid_data : 'm t -> unit
+
 (* each data symbol's offset (5l's dodata; xix's Layout.layout_data):
  * small ones (<= 64 bytes, bss included) first, then the data, then
  * the bss, each in 5l's hash-table order, so that the addresses are

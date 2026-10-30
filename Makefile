@@ -128,6 +128,8 @@ test-goken: all
 	./linker/tests/libc.sh 7 $(GOKEN_W)/libc7 $(HOME)/goken/tests/c/hello_libc/*.c
 	./languages/c/tests/listing.sh 5 $(GOKEN_W)/listing5 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
 	./languages/c/tests/listing.sh 7 $(GOKEN_W)/listing7 $(HOME)/goken/tests/c/hello_libc/*.c languages/c/tests/c/*.c
+	./languages/c/tests/acid.sh 5 $(GOKEN_W)/acid5
+	./languages/c/tests/acid.sh 7 $(GOKEN_W)/acid7
 	./languages/c/tests/fuzz.sh $(GOKEN_W)/fuzz 150
 	P9DIFF=$(GOKEN_W)/p9diff ./version_control/tests/diff_fuzz.py 500
 	./machine/tests/corpus.py 5 $(GOKEN_W)/libc5/*/*.exe

@@ -26,6 +26,10 @@ val program : < caps; .. > -> string -> unit
 (* the symbols as variables (acid's varsym, after the libraries) *)
 val symbols : unit -> unit
 
+(* the program's declarations of its types, acid's text: the data
+ * .acid, mini-ld -g's of mini-cc -g's (and mini-ml's) *)
+val declarations : unit -> string option
+
 (* the registers' variables and bpinst, the default set without a
  * program (varreg) *)
 val registers : unit -> unit

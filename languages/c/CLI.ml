@@ -32,6 +32,10 @@ variables read and written: Ir_facts.mli), for liveness by mini-datalog:
   mini-cc -m 7 -flow hello.c > flow.dl
   mini-datalog -q 'across_call(V, P)' languages/datalog/analyses/liveness.dl flow.dl
 -dflow: the compiler's own liveness (Opti's regs), as facts, to compare.
+-g: acid's declarations of the file's types in the object, for mini-ld -g.
+-a: no object; acid's declarations of the file's types on stdout, 5c's (Acid
+says what), for mini-acid's -l; -aa: not its #includes'; -n with it: in x.acid:
+  mini-cc -an -I... prog.c; mini-acid -l prog.acid prog
 |}
 
 (* what the command asks of a back end: its hooks in the front end set
@@ -136,6 +140,9 @@ let flow_backend ~(own : bool) : backend =
  * read by Lexer, whose lexbuf is over Pre's input stack *)
 (* (-x and -S together, -D and -I together: at most 7 parameters for
  * mini-ml on arm) *)
+(* -a: the declarations, no code *)
+let acid_only = ref false
+
 let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(dump, listing) ~out (defs, incs) file =
   Tree_helpers.mach := Some mach;
   Tree_helpers.init_types ();
@@ -152,7 +159,8 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
   be.init ();
   Declare.on_function := (fun (f : Tree.sym) body ->
     if dump then print caps (Prtree.prtree f.name body);
-    be.codgen f body);
+    (* (-a: no code, as 5c) *)
+    if not !acid_only then be.codgen f body);
   match FS.read_opt caps file with
   | None -> Error (Printf.sprintf "cannot open %s" (Fpath.to_string file))
   | Some text ->
@@ -160,6 +168,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
       Pre.history := [];
       Pre.push_file (Fpath.to_string file) text;
       (match Parser.prog Lexer.token (Lexer.lexbuf ()) with
+       | () when !acid_only -> Ok ()
        | () ->
            be.finish ();
            if listing then print caps (be.listing ());
@@ -169,7 +178,7 @@ let compile (caps : < caps; .. >) (mach : Tree.machine) (be : backend) ~show:(du
        | exception Parsing.Parse_error -> Error (Printf.sprintf "%s:%d: syntax error" (Fpath.to_string file) !Tree_helpers.lineno))
 
 let main (caps : < caps; .. >) (argv : string array) : int =
-  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] in
+  let mach = ref Machines.arm and simple = ref false and facts = ref false and flow = ref false and dflow = ref false and dir = ref false and dssa = ref false and ssa = ref false and opti = ref [] and dump = ref false and listing = ref false and out = ref "" and defs = ref [] and incs = ref [] and files = ref [] and acidfile = ref false in
   let rec args = function
     | "-m" :: "5" :: rest -> mach := Machines.arm; args rest
     | "-m" :: "7" :: rest -> mach := Machines.arm64; args rest
@@ -188,6 +197,12 @@ let main (caps : < caps; .. >) (argv : string array) : int =
                      && (let p = String.sub o 2 (String.length o - 2) in p = "peep" || List.mem_assoc p Opti.passes) ->
         opti := String.sub o 2 (String.length o - 2) :: !opti; args rest
     | "-x" :: rest -> dump := true; args rest
+    | ("-a" | "-aa" | "-an" | "-aan" | "-n" as a) :: rest ->
+        String.iter (fun c -> if c = 'a' then incr Acid.level else if c = 'n' then acidfile := true) a;
+        acid_only := true;
+        args rest
+    (* (the declarations in the object too, for mini-ld -g) *)
+    | "-g" :: rest -> Acid.level := 1; args rest
     | "-o" :: o :: rest -> out := o; args rest
     | "-S" :: rest -> listing := true; args rest
     | "-I" :: d :: rest -> incs := d :: !incs; args rest
@@ -205,8 +220,15 @@ let main (caps : < caps; .. >) (argv : string array) : int =
   match List.map path !files, List.map path (List.rev !incs) with
   | [ file ], incs -> (
       (* x.c to x.5, in the current directory, as 5c *)
+      let out0 = out in
       let out = if !out <> "" then path !out else Fpath.set_ext ("." ^ String.make 1 !mach.thechar) (Fpath.base file) in
       match compile caps !mach (if !facts then facts_backend else if !flow || !dflow then flow_backend ~own:!dflow else if !simple then simple_backend caps ~dir:!dir ~ssa:(!ssa, !dssa) ~opti:!opti else compat !mach) ~show:(!dump, !listing) ~out (List.rev !defs, incs) file with
+      | Ok () when !acid_only ->
+          (* (-n: x.acid, in the current directory as x.5, or -o's) *)
+          let text = Acid.text () in
+          if !acidfile then FS.write caps (if !out0 <> "" then path !out0 else Fpath.set_ext ".acid" (Fpath.base file)) text
+          else print caps text;
+          0
       | Ok () -> 0
       | Error m -> eprint caps (m ^ "\n"); 1)
   | exception Failure m -> eprint caps ("mini-cc: " ^ m ^ "\n"); 1

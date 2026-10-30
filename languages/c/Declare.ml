@@ -164,7 +164,9 @@ let rec dodecl (f : (cls -> typ -> sym option -> unit) option) c (t : typ) (d : 
     | Dfunc (d, ps) -> let t = typ Tfunc (Some t) in t.down <- fnproto ps; loop t d
     | Dbit _ -> diag None "bitfields are not in the subset"
     | Dname s ->
-        let s = match f with None -> s | Some f -> f c t (Some s); if s.sclass = Clocal then mkstatic s else s in
+        let s = match f with
+          | None -> s
+          | Some f -> f c t (Some s); let s = if s.sclass = Clocal then mkstatic s else s in Acid.acidvar ~fn:!thisfn s; s in
         lastdcl := Some t;
         Some s
   in
@@ -300,7 +302,8 @@ let sualign (t : typ) =
       let w = align w e Ael1 in
       e.offset <- w;
       align w e Ael2) 0 (els t.link) in
-    t.width <- align w t Asu2
+    t.width <- align w t Asu2;
+    Acid.acidtype t
   end
   else if t.etype = Tunion then begin
     t.offset <- 0;
@@ -308,7 +311,8 @@ let sualign (t : typ) =
       if e.width <= 0 then ignore (diag None "incomplete union element");
       e.offset <- 0;
       max w (align (align 0 e Ael1) e Ael2)) 0 (els t.link) in
-    t.width <- align w t Asu2
+    t.width <- align w t Asu2;
+    Acid.acidtype t
   end
   else ignore (diag None "unknown type in sualign")
 
@@ -351,7 +355,8 @@ let doenum (s : sym) (n : expr option) =
   s.tenum <- !en_cenum;
   let e = (Option.get s.tenum).etype in
   if not (typefd (e)) then (s.svconst <- convvtox !en_lastenum e; en_lastenum := Int64.succ !en_lastenum)
-  else (s.sfconst <- !en_floatenum; en_floatenum := !en_floatenum +. 1.)
+  else (s.sfconst <- !en_floatenum; en_floatenum := !en_floatenum +. 1.);
+  Acid.acidvar ~fn:!thisfn s
 
 (*****************************************************************************)
 (* Blocks, parameters, labels *)

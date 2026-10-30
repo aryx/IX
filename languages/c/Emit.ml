@@ -299,4 +299,4 @@ let obj file : A.obj =
     item, (match q.pseudo with Pdata _ | Pglobl -> 0 | _ -> q.line)) ps in
   (* the lines a function's, the history of the #includes 5c's
    * (plan_debugger.md's stage 1b: a statement's line, not yet) *)
-  { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = List.rev !Pre.history }
+  { A.arch = (if arm () then A.Arm else A.Arm64); file; items; history = List.rev !Pre.history; acid = List.rev !Acid.decls }

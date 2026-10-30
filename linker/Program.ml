@@ -91,4 +91,5 @@ type 'm t = {
   mutable data_round : int;       (* INITRND: the data's start is rounded to it *)
   mutable pie : bool;             (* position independent (Mach-O): no absolute address in the code *)
   mutable nfiles : int;           (* the File symbols so far *)
+  mutable acid : string list;     (* the objects' acid declarations, the last first *)
 }

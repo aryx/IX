@@ -161,8 +161,10 @@ type item =
  * (an item's line, counted over the preprocessed text), and where it
  * ends (None), a #include's inside its includer's; what the linker's
  * symbol table names an instruction's file and line by *)
+(* and acid's declarations of the file's types, each once (mini-cc -g:
+ * Acid's; mini-ld -g puts them in the program) *)
 type obj = { arch : arch; file : Fpath.t; items : (item * int) array (* and its line *);
-             history : (string option * int) list }
+             history : (string option * int) list; acid : string list }
 
 (* the conditions both machines test, as 5a and 7a name them (CS and
  * CC are HS and LO); shared by the assembler, the linkers and the
@@ -205,13 +207,20 @@ type stored = { s_arch : arch; s_file : Fpath.t; s_items : (item * int) array }
  * built the tool (mini-cc by OCaml and by mini-ml: the same code, 5 of
  * libc's objects not the same bytes, plan_self_hosting.md), for 5% more *)
 let stored (o : obj) = { s_arch = o.arch; s_file = o.file; s_items = o.items }
-let history_bytes (o : obj) = if o.history = [] then "" else Marshal.to_string o.history [ Marshal.No_sharing ]
+(* (the declarations a third value, after the history, which is then
+ * written even if empty: the same way, an object without them read) *)
+let history_bytes (o : obj) =
+  if o.history = [] && o.acid = [] then ""
+  else Marshal.to_string o.history [ Marshal.No_sharing ] ^ (if o.acid = [] then "" else Marshal.to_string o.acid [ Marshal.No_sharing ])
 
-(* the value at [pos], then the history if there are bytes after it *)
+(* the value at [pos], then the history and the declarations if there
+ * are bytes after it *)
 let with_history (b : string) pos (st : stored) : obj =
   let next = pos + Marshal.total_size (Bytes.unsafe_of_string b) pos in
   let history = if next < String.length b then (Marshal.from_string b next : (string option * int) list) else [] in
-  { arch = st.s_arch; file = st.s_file; items = st.s_items; history }
+  let next = if next < String.length b then next + Marshal.total_size (Bytes.unsafe_of_string b) next else next in
+  let acid = if next < String.length b then (Marshal.from_string b next : string list) else [] in
+  { arch = st.s_arch; file = st.s_file; items = st.s_items; history; acid }
 
 (* a library's member (Link): the object without the version *)
 let to_bytes o = Marshal.to_string (stored o) [ Marshal.No_sharing ] ^ history_bytes o

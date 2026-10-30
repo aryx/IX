@@ -74,6 +74,10 @@ val push : string -> unit
  * when it is read through *)
 val push_file : string -> string -> unit
 
+(* how many files are being read: 1 in the one compiled, more in an
+ * #include (Acid's -aa) *)
+val depth : unit -> int
+
 (* the files read, as 5c's history: (Some name, the global line it
  * starts at), (None, the line after its end); the last first (the
  * object's, after mini-ld's z entries: Symbols's fline) *)

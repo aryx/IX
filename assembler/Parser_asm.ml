@@ -344,4 +344,4 @@ let parse caps (arch : arch) (file : Fpath.t) (text : string) : obj =
    * it is made, make self's comparison).
    * TODO: an #include's own push and pop, 5a's lines around it *)
   let last = String.fold_left (fun n c -> if c = '\n' then n + 1 else n) 1 text in
-  { arch; file; items; history = [ Some (Fpath.to_string file), 1; None, last ] }
+  { arch; file; items; history = [ Some (Fpath.to_string file), 1; None, last ]; acid = [] }

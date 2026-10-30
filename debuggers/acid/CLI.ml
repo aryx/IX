@@ -24,6 +24,9 @@ as variables; a process its memory (*addr, @addr in the file), its registers
   mini-acid -l port.acid -l arm.acid ./prog
   acid: new()
   acid: bpset(leaf); cont(); stk()
+A program's types: acid's declarations (aggr, complex T v), mini-cc -a's in a
+file (-l), or in the program, mini-cc -g and mini-ld -g's (.acid); then a
+value prints by its type (n1, n1.next->name, *walk:n).
 |}
 
 (* the input's name, for the errors: <stdin>:12: (error) ... *)
@@ -66,14 +69,13 @@ let stdin_lexbuf (caps : < caps; .. >) =
   Lexing.from_function (fun b n -> try Unix.read fd b 0 n with Unix.Unix_error _ -> 0)
 
 (* a library read: acid's loadmodule, statements run, no prompt *)
-let library (caps : < caps; .. >) f =
-  match FS.read_opt caps (Fpath.v f) with
-  | Some text ->
-      source := f;
-      Lexer.line := 1;
-      Lexer.interactive := false;
-      run caps (Lexing.from_string text) ~prompt:false
-  | None -> ()
+let run_text (caps : < caps; .. >) name text =
+  source := name;
+  Lexer.line := 1;
+  Lexer.interactive := false;
+  run caps (Lexing.from_string text) ~prompt:false
+
+let library (caps : < caps; .. >) f = Option.iter (run_text caps f) (FS.read_opt caps (Fpath.v f))
 
 let main (caps : < caps; .. >) (argv : string array) : Exit.t =
   let rec options libs = function
@@ -112,6 +114,8 @@ let main (caps : < caps; .. >) (argv : string array) : Exit.t =
             Lexer.interactive := false;
             run caps (Lexing.from_string text) ~prompt:false
         | None -> Console.print caps (Printf.sprintf "%s:%d: (error) pushfile: %s: file does not exist\n" !source !Lexer.line f)) files;
+      (* the program's declarations, its own (mini-ld -g): as a -l's *)
+      Option.iter (run_text caps (match aout with Some a -> a ^ ":.acid" | None -> ".acid")) (Proc.declarations ());
       (* userinit: the library's acidinit() (arm.acid's: bpfmt, srcpath) *)
       start (fun () -> Eval.call_if_defined "acidinit" []);
       if aout <> None then start Proc.symbols;

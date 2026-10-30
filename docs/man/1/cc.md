@@ -8,6 +8,7 @@ cc – the C compiler, for arm and arm64
 [ **-m** *arch* ]
 [ **-S** ]
 [ **-x** ]
+[ **-a** | **-aa** [ **-n** ] ]
 [ **-o** *out* ]
 [ **-I** *dir* ]
 [ **-D** *name*[=*value*] ]
@@ -54,6 +55,14 @@ nothing.
      each function's code (who follows whom, what is read and
      written). **-dflow** gives the compiler's own liveness, to
      compare.
+
+**-a**
+:    No object: the declarations of the file's structures in acid's
+     language, *5c*'s byte for byte, on the standard output: each
+     member's format and offset, a function printing one, the type
+     of each variable of one, for mini-acid's **-l**. **-aa**:
+     not those of its `#include` files. **-n**: in *file*`.acid` (or
+     **-o**'s).
 
 **-h**
 :    How, by examples.

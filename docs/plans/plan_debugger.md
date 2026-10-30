@@ -299,8 +299,9 @@ two programs.
    complex types (complex, ., ->, a cast, f:v, print calling a type's
    function, acid's), then mini-cc -a, then the printer, then OCaml's
    values without a description (their headers), then mini-ml's
-   descriptions. The format in the program is to choose at mini-cc -a's
-   step.
+   descriptions. The format in the program (the author, at mini-cc -a's
+   step: "Acid text"): acid's text, -a's, a data symbol .acid that
+   mini-acid runs as a library; stage 5's runtime would parse it.
 
 ## Tests
 
@@ -843,4 +844,21 @@ by goken, recorded as target.acid: n1, n1.p.x, n1.next.p, a string
 through two members, *walk:n, walk:q, a cast, whatis) and live: the
 same as principia's acid with the same declarations; the C sessions
 too.
+
+2026-10-30, **mini-cc -a, and the declarations in the program**
+(decision 14's second step): languages/c/Acid.ml, 5c's acid.c: a
+structure's aggr and function once aligned (Declare.sualign), a
+variable's complex T v or f:v and an enum's constants once declared
+(dodecl, doenum), keywords $-named (amap), -aa without the #includes'
+(Pre.depth), -n to x.acid (or -o's), no code. The same text as goken's
+5c and 7c: languages/c/tests/acid.sh, listing.sh's 218 files of
+goken's libraries and utilities, -a and -aa: 436 of 436 on arm and on
+arm64 (needs goken: test-all's kind). Then -g (mini-cc): the
+declarations in the object, after the history, a third value (an older
+object read as before, without them); mini-ld -g: the linked objects'
+declarations each once (every file says libc.h's), in their order, as
+the data .acid; mini-acid runs it after the libraries. Checked:
+debuggers/tests/acid_proc.sh: mini-cc -a on acid/types/target.c is
+5c's recorded text; the types session again on the program by -g, no
+-l: the same output; live as before (principia's acid ignores .acid).
 

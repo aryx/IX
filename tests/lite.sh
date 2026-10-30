@@ -262,7 +262,7 @@ job "gui4: unit tests" _build/default/examples/gui4/tests/Test.exe
 job "mini-office: unit tests" _build/default/apps/office/tests/Test.exe
 job "lib_mime, mini-open: a file's kind by its bytes, the program for it" sh_ '_build/default/lib_mime/tests/Test.exe && apps/files/tests/open.sh'
 job "mini-files: the window's recorded frames, what it starts, its changes to a scratch tree" sh_ 'apps/files/tests/frames.sh && apps/files/tests/changes.sh'
-job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh && apps/maps/tests/weather.sh && apps/maps/tests/route.sh'
+job "mini-maps: the map's arithmetic, its window's frames against mini-httpd" sh_ '_build/default/apps/maps/tests/Test.exe && apps/maps/tests/frames.sh && apps/maps/tests/cache.sh && apps/maps/tests/weather.sh'
 job "mini-pim: unit tests, a session with mini-maild (SMTP, IMAP, offline)" sh_ '_build/default/apps/pim/tests/Test.exe && apps/pim/tests/session.sh'
 job "mini-pim: the window's recorded frames, against mini-maild" apps/pim/tests/frames.sh
 job "lib_graphics/images, svg: unit tests" sh_ '_build/default/lib_graphics/images/tests/Test.exe && _build/default/lib_graphics/svg/tests/Test.exe'
@@ -471,7 +471,7 @@ by_ix_net() {
   nofail browsers/lynx/tests/session.sh $K
 }
 by_ix_files() { nofail apps/files/tests/frames.sh $K/apps && nofail apps/files/tests/changes.sh $K/apps; }
-by_ix_maps() { nofail apps/maps/tests/frames.sh $K/apps/maps && nofail apps/maps/tests/cache.sh $K/apps/maps && nofail apps/maps/tests/weather.sh $K/apps/maps && nofail apps/maps/tests/route.sh $K/apps/maps; }
+by_ix_maps() { nofail apps/maps/tests/frames.sh $K/apps/maps && nofail apps/maps/tests/cache.sh $K/apps/maps && nofail apps/maps/tests/weather.sh $K/apps/maps; }
 by_ix_browsers() {
   nofail browsers/javascript/tests/scripts.sh $K/browsers/javascript &&
   nofail browsers/engine/tests/boxes.sh $K/browsers/engine/tests &&

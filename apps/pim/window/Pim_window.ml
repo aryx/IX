@@ -22,6 +22,7 @@ type home = {
   people : int;
   notes : int;
   events_today : int;
+  money : (string * Money.cents) list; (* the first accounts' balances *)
   next_event : string; (* the next today, "" for none *)
   day_written : bool; (* today's page has a text *)
   (* the late tasks and today's, the mail back from a snooze *)
@@ -38,6 +39,7 @@ type model = {
   people : People_window.model;
   notes : Notes_window.model;
   calendar : Calendar_window.model;
+  money_ : Money_window.model;
   held : string Set_.t;
 }
 
@@ -79,6 +81,14 @@ let home (caps : caps) ~(account : string) ~(today : Civil.date) : home =
     people = List.length (People.contacts items);
     notes = List.length (List.filter (fun i -> Item.has_stamp i "note") items);
     events_today = List.length events;
+    money =
+      List.filteri (fun k _ -> k < 2)
+        (List.filter_map
+           (fun a ->
+             if String.length a > 7 && String.sub a 0 7 = "Assets:" then
+               Some (String.sub a 7 (String.length a - 7), Books.balance items a)
+             else None)
+           (Books.accounts items));
     next_event =
       (match events with (_, t, i) :: _ -> at t i | [] -> "");
     day_written =
@@ -109,6 +119,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       | "people" -> People
       | "notes" -> Notes
       | "calendar" -> Calendar
+      | "money" -> Money
       | _ -> Home);
     account;
     today;
@@ -118,6 +129,7 @@ let initial (caps : caps) (flags : Playground.flags) : model =
     people = People_window.initial caps flags;
     notes = Notes_window.initial caps flags;
     calendar = Calendar_window.initial caps flags;
+    money_ = Money_window.initial caps flags;
     held = Set_.empty;
   }
 
@@ -137,6 +149,7 @@ let switch (caps : caps) (s : model) (keys : string Set_.t) (v : view) : model =
   | Notes -> { s with notes = Notes_window.refresh caps keys s.notes }
   | Calendar ->
       { s with calendar = Calendar_window.refresh caps keys s.calendar }
+  | Money -> { s with money_ = Money_window.refresh caps keys s.money_ }
 
 let go (caps : caps) (s : model) (keys : string Set_.t) (g : go) : model =
   match g with
@@ -207,7 +220,8 @@ let tile_box (i : int) : Widget.box =
 
 (* the key that opens a view from Home *)
 let home_keys : (string * view) list =
-  [ ("m", Mail); ("c", Calendar); ("p", People); ("t", Tasks); ("n", Notes) ]
+  [ ("m", Mail); ("c", Calendar); ("p", People); ("t", Tasks); ("n", Notes);
+    ("b", Money) ]
 
 let tile_click (computer : computer) : view option =
   let mouse = computer.mouse in
@@ -270,6 +284,10 @@ let update (caps : caps) (computer : computer) (s : model) : model =
         | Calendar -> (
             let c, g = Calendar_window.update caps computer s.calendar in
             let s = { s with calendar = c } in
+            match g with Some g -> go caps s keys g | None -> s)
+        | Money -> (
+            let b, g = Money_window.update caps computer s.money_ in
+            let s = { s with money_ = b } in
             match g with Some g -> go caps s keys g | None -> s))
   in
   { s with held = keys }
@@ -326,6 +344,10 @@ let icon (v : view) (b : Widget.box) : shape list =
                [ at (-22. +. (float_of_int (k mod 3) *. 22.))
                    (44. -. (float_of_int (k / 3) *. 18.))
                    (rectangle line 12. 10.) ]))
+  | Money ->
+      [ at 0. 34. (rectangle line 84. 46.); at 0. 34. (rectangle white 80. 42.);
+        at 0. 34. (circle line 13.); at 0. 34. (circle white 10.);
+        at (-30.) 34. (circle line 4.); at 30. 34. (circle line 4.) ]
   | Home -> []
 
 let home_view (computer : computer) (s : model) : shape list =
@@ -342,6 +364,9 @@ let home_view (computer : computer) (s : model) : shape list =
     | Calendar ->
         [ Printf.sprintf "%d today" h.events_today;
           (if h.next_event = "" then "nothing today" else h.next_event) ]
+    | Money ->
+        if h.money = [] then [ "no lines yet" ]
+        else List.map (fun (a, c) -> a ^ " " ^ Money.to_string c) h.money
     | Notes ->
         [ count h.notes "note";
           (if h.day_written then "today's page written" else "no page today") ]
@@ -381,7 +406,7 @@ let home_view (computer : computer) (s : model) : shape list =
       today
   @ [ text grey ~bold:false ~room:900. (-390.)
         ((-.computer.screen.height /. 2.) +. 24.)
-        ("m, c, p, t, n or a click opens a view; Ctrl and its number goes "
+        ("m, c, p, t, n, b or a click opens a view; Ctrl and its number goes "
          ^ "to it, Ctrl+0 back here.") ]
 
 (* the switcher: the views, the one shown marked *)
@@ -411,6 +436,7 @@ let view (computer : computer) (s : model) : shape list =
     | Notes -> Notes_window.view computer s.notes @ switcher_view computer s
     | Calendar ->
         Calendar_window.view computer s.calendar @ switcher_view computer s
+    | Money -> Money_window.view computer s.money_ @ switcher_view computer s
   in
   let top = (computer.screen.height /. 2.) -. menu_bar in
   body

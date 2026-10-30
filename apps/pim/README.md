@@ -10,18 +10,19 @@ formats, sending by SMTP and reading by IMAP, with Gmail or with
 mini-maild on this machine, what is read kept in the suite's store
 (plan_pim.md's stage 2 begun), and a window over it, the suite: a
 Home that launches its views, Mail with Gmail's keys, Calendar,
-People, Tasks, Notes.
+People, Tasks, Notes, Money.
 Their tests: `tests/`, the unit tests (dune's), `session.sh`,
 mini-pim's commands against mini-maild, and `frames.sh`, its
 window's (`make test`'s two "mini-pim").
 
     bin/mini-pim user=... [server=host:port] [smtp=host:port] [plain]
-            [view=mail|calendar|people|tasks|notes]
-                       the window, on Home: a tile a view (m c p t n,
-                       or a click), the day's events, what is late or
-                       due today; in a view, the Pim menu and Ctrl+0
-                       to 5 (Home, Mail, Calendar, People, Tasks,
-                       Notes), the switcher at the sidebar's foot
+            [view=mail|calendar|people|tasks|notes|money]
+                       the window, on Home: a tile a view (m c p t n
+                       b, or a click), the day's events, what is late
+                       or due today; in a view, the Pim menu and
+                       Ctrl+0 to 6 (Home, Mail, Calendar, People,
+                       Tasks, Notes, Money), the switcher at the
+                       sidebar's foot
                        Mail: j k move, o open, u back, e archive,
                        / search, Tab Inbox or All Mail, g get the mail,
                        c compose, r a f reply, to all, forward,
@@ -40,6 +41,10 @@ window's (`make test`'s two "mini-pim").
                        Notes: n a note, d today's page, the text with
                        [[id]] links, what it names and what names it
                        under it (a click opens one), Tab Notes or Days
+                       Money: an account's register, n a line in its
+                       columns (QuickFill), c cleared, r reconcile
+                       (the difference explained), f finish, Tab the
+                       next account, then the month's categories
     bin/mini-pim [-s host:port] [-plain] [-u user] command
         send file      the message in a file sent
         list [-n 20] [-q search] [-m mailbox]
@@ -62,6 +67,9 @@ window's (`make test`'s two "mini-pim").
                        an iCalendar file's events
         today          the day: its events, the tasks late and due,
                        the mail back from a snooze
+        import file.qif [-a account], register [-a account], balance
+                       a bank's lines, those not there yet; an
+                       account's register; every account's balance
         add id [name=value...], set id name=value...
                        an item made (task:pay-rent due=2026-11-05),
                        its fields changed
@@ -107,6 +115,8 @@ window's (`make test`'s two "mini-pim").
                        notes and days, their links both ways
     window/Calendar_window
                        a day, a week, a month of events
+    window/Money_window
+                       an account's register, reconciling, a report
     window/Pim_look    what the views share: menus, letters, rows
     store/Item         an item: name: value lines, Mail's syntax,
                        stamped
@@ -115,6 +125,13 @@ window's (`make test`'s two "mini-pim").
                        invitation's made items
     store/Capture      a line made an event: its day, time, repeat,
                        people
+    store/Books        the money: double entry, postings in items, an
+                       account's register, a bank's lines matched
+    money/Money        amounts in cents, and in words
+    money/Ledger       a register's lines, QuickFill, categories
+    money/Reconcile    a register against a statement, the difference
+                       explained
+    money/Qif          Quicken's interchange format
     time/Recur         a repeating event's rule (iCalendar's RRULE)
     time/Ics           iCalendar files, read and written
     store/People       the address book, filled from the mail, BBDB's
@@ -136,7 +153,9 @@ playground at `90c4b4b6` (2026-10-27).
 
 For the calendar (plan_pim.md, stage 3): the playground's
 `libs/core/time/Recur` and `appkits/pim/Ics`, and their tests
-(`Unit_recur`, `Unit_ics`); mini-ml's changes said in each file's
+(`Unit_recur`, `Unit_ics`); for the money (stage 6), its
+`appkits/money` (`Money`, `Ledger`, `Reconcile`, `Qif`) and their
+test (`Unit_money`); mini-ml's changes said in each file's
 first lines (an optional argument said by every caller, a polymorphic
 variant a type, `Option.value` and `Option.fold` a match).
 

@@ -207,6 +207,27 @@ has '^9:30  *standup$' "today: a repeating event's day"
 has '^12:30  *lunch with carol$' "today: the event, after it by time"
 $PIM set task:answer due=2026-11-05 && $PIM -today 2026-11-06 today > $W/out
 has '^late  *answer Carol$' "today: the task, late"
+# the money (plan_pim.md, stage 6): a line added as postings, a bank's
+# QIF file imported (its EDF line already there, by amount and day), a
+# bill in the books once done; the register and the balances
+$PIM add money:edf date=2026-10-05 payee=EDF \
+  'posting=Expenses:Utilities  62.40' posting=Assets:Checking
+printf '!Type:Bank\nD10/1/2026\nT2000.00\nPAcme\nLSalary\n^
+D10/6/2026\nT-62.40\nPEDF SA\n^\nD10/9/2026\nT-42.17\nPSafeway
+LGroceries\n^\n' > $W/bank.qif
+$PIM import $W/bank.qif > $W/out
+[ "$(wc -l < $W/out)" = 2 ] || { echo "FAIL import: $(cat $W/out)"; fail=1; }
+$PIM add task:rent title=rent due=2026-11-01 stamp='task money' \
+  'posting=Expenses:Rent  900.00' posting=Assets:Checking
+$PIM register > $W/out
+grep -q rent $W/out && { echo "FAIL a bill not paid in the books"; fail=1; }
+$PIM set task:rent done=2026-11-01
+$PIM register > $W/out
+has '^2026-10-05 .*EDF .*Utilities .*-62.40 .*1,937.60$' "the register: a line, its balance"
+has '^2026-11-01 .*rent .*Rent .*-900.00 .*995.43$' "a bill paid, its balance"
+$PIM balance > $W/out
+has '^ *995.43  Assets:Checking$' "the books: an account's balance"
+has '^ *-2,000.00  Income:Salary$' "the books: double entry"
 timeout 20 $PIM -s $S -plain send $W/m > $W/out 2>&1 &&
   { echo "FAIL sent to a server not there"; fail=1; }
 has "$S" "no reason said"

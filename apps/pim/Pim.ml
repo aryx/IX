@@ -18,6 +18,7 @@
  *     mini-pim people                  the address book
  *     mini-pim event words             an event (Capture), import file.ics
  *     mini-pim today                   the day: events, tasks, snoozed
+ *     mini-pim register, balance       the money (Books), import file.qif
  *
  * By default to Gmail (smtp.gmail.com:465 to send, imap.gmail.com:993
  * to read, TLS from the first byte), as -u, the whole address, with an
@@ -70,7 +71,9 @@ let usage =
   \  add id [name=value...]            an item (task:pay-rent due=2026-11-05)\n\
   \  set id name=value...              its fields (name= takes one away)\n\
   \  event words                       an event: lunch with alice tue 12:30\n\
-  \  import file.ics                   an iCalendar file's events\n\
+  \  import file.ics, import file.qif  an iCalendar file's events; a bank's\n\
+  \                                    lines, those not there yet (-a account)\n\
+  \  register [-a account], balance    the money: a register; every account\n\
   \  today                             the day's events, tasks late and due\n\
   \  -s      the server (smtp.gmail.com:465 to send, imap.gmail.com:993 else)\n\
   \  -plain  no TLS (mini-maild, on this machine)\n\
@@ -90,6 +93,7 @@ type options = {
   offline : bool;
   all : bool; (* reply to all *)
   today : Civil.date; (* -today, for the tests: else the clock's *)
+  account : string; (* -a, the money's: Assets:Checking *)
   args : string list; (* the command and its arguments *)
 }
 
@@ -115,6 +119,7 @@ let rec options (o : options) (args : string list) : options option =
   | "-m" :: m :: rest -> options { o with mailbox = m } rest
   | "-offline" :: rest -> options { o with offline = true } rest
   | "-all" :: rest -> options { o with all = true } rest
+  | "-a" :: a :: rest -> options { o with account = a } rest
   | "-today" :: d :: rest -> (
       match Search.date d with
       | Some today -> options { o with today } rest
@@ -341,7 +346,7 @@ let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
 let title (item : Item.t) : string =
   let first =
     List.find_opt (fun v -> v <> "")
-      (List.map (Item.field item) [ "subject"; "title"; "name" ])
+      (List.map (Item.field item) [ "subject"; "title"; "name"; "payee" ])
   in
   match first with
   | Some v -> Mime.decode_words v
@@ -515,12 +520,57 @@ let event (caps : < caps ; .. >) (o : options) (line : string) : Exit.t =
   Exit.OK
 
 (* import: an iCalendar file's events made items (Events.of_ics), an
- * event already there replaced *)
-let import (caps : < caps ; .. >) (file : string) : Exit.t =
+ * event already there replaced; a bank's QIF file's lines in the
+ * account's register (Books), those already there left out *)
+let import (caps : < caps ; .. >) (o : options) (file : string) : Exit.t =
   let store = Items.at (Items.place caps) in
-  let events = Events.of_ics ~message:"" (FS.read caps (Fpath.v file)) in
-  List.iter (Items.save caps store) events;
-  List.iter (line caps "") events;
+  let text = FS.read caps (Fpath.v file) in
+  if Filename.check_suffix (String.lowercase_ascii file) ".qif" then
+    match Qif.read text with
+    | Error e -> fail caps (file ^ ": " ^ e)
+    | Ok txns ->
+        let register =
+          List.map snd (Books.register (Items.all caps store) o.account)
+        in
+        List.iteri
+          (fun k (t : Ledger.txn) ->
+            let id = Printf.sprintf "money:%.0f.%d" (Unix.gettimeofday ()) k in
+            let item = Books.of_txn ~id ~account:o.account t in
+            Items.save caps store item;
+            line caps "" item)
+          (Books.fresh register txns);
+        Exit.OK
+  else begin
+    let events = Events.of_ics ~message:"" text in
+    List.iter (Items.save caps store) events;
+    List.iter (line caps "") events;
+    Exit.OK
+  end
+
+(* register: an account's lines, Quicken's columns, the balance after
+ * each; balance: every account's, ledger's *)
+let register (caps : < caps ; .. >) (o : options) : Exit.t =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  let reg = Books.register items o.account in
+  List.iter2
+    (fun (_, (t : Ledger.txn)) (_, b) ->
+      Console.print caps
+        (Printf.sprintf "%s %-4s %-18s %-18s %10s %1s %10s\n"
+           (Civil.to_string t.date) t.num t.payee t.category
+           (Money.to_string t.amount)
+           (match t.status with Open -> "" | Cleared -> "*" | Reconciled -> "R")
+           (Money.to_string b)))
+    reg
+    (Ledger.balances (List.map snd reg));
+  Exit.OK
+
+let balance (caps : < caps ; .. >) : Exit.t =
+  let items = Items.all caps (Items.at (Items.place caps)) in
+  List.iter
+    (fun a ->
+      Console.print caps
+        (Printf.sprintf "%12s  %s\n" (Money.to_string (Books.balance items a)) a))
+    (Books.accounts items);
   Exit.OK
 
 (* today: the day's events, the tasks late and due, the mail back from a
@@ -569,6 +619,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
       offline = false;
       all = false;
       today = When.today ();
+      account = "Assets:Checking";
       args = [];
     }
   in
@@ -593,7 +644,9 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some { args = [ "people" ]; _ } -> people caps
   | Some ({ args = "event" :: (_ :: _ as words); _ } as o) ->
       event caps o (String.concat " " words)
-  | Some { args = [ "import"; file ]; _ } -> import caps file
+  | Some ({ args = [ "import"; file ]; _ } as o) -> import caps o file
+  | Some ({ args = [ "register" ]; _ } as o) -> register caps o
+  | Some { args = [ "balance" ]; _ } -> balance caps
   | Some ({ args = [ "today" ]; _ } as o) -> today caps o
   | Some ({ args = "add" :: id :: l; _ } as o) when assignments l <> None -> (
       match days o.today (Option.get (assignments l)) with
@@ -623,7 +676,8 @@ let window (caps : < caps ; Cap.argv ; .. >) : Exit.t =
 
 let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
-    "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today" ]
+    "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
+    "register"; "balance" ]
 
 let () =
   Cap.main (fun caps ->

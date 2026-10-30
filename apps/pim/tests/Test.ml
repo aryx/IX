@@ -13,5 +13,6 @@ let () =
           @ Unit_smtp.tests @ Unit_smtp_server.tests @ Unit_imap.tests
           @ Unit_compose.tests @ Unit_store.tests @ Unit_when.tests
           @ Unit_people.tests @ Unit_recur.tests @ Unit_ics.tests
-          @ Unit_capture.tests
+          @ Unit_capture.tests @ Unit_money.tests
+          @ Unit_books.tests
           @ Unit_items.tests (caps :> Unit_items.caps)))

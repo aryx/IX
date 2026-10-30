@@ -21,7 +21,7 @@
    (Glyph_unicode), each at its place, so a list is in columns. *)
 
 (* the suite's views: Home, the launcher; the components *)
-type view = Home | Mail | Calendar | People | Tasks | Notes
+type view = Home | Mail | Calendar | People | Tasks | Notes | Money
 
 (* what a view asks of the suite: another view; an item opened where it
  * lives, by its id (a message in Mail, a person in People...); a
@@ -67,7 +67,7 @@ val text :
 val wrap : float -> string -> string list
 
 (* what an item is called: its subject (a message's), its title or
- * name, else its text's first line *)
+ * name or payee, else its text's first line *)
 val title : Item.t -> string
 
 (* what is printable of what was typed; a string less its last letter *)

@@ -5,12 +5,12 @@
 
 open Playground
 
-type view = Home | Mail | Calendar | People | Tasks | Notes
+type view = Home | Mail | Calendar | People | Tasks | Notes | Money
 type go = View of view | Item of string | Write of string
 
 let views =
   [ (Home, "Home"); (Mail, "Mail"); (Calendar, "Calendar");
-    (People, "People"); (Tasks, "Tasks"); (Notes, "Notes") ]
+    (People, "People"); (Tasks, "Tasks"); (Notes, "Notes"); (Money, "Money") ]
 
 let menu_bar = 30.
 let size = 16.
@@ -82,6 +82,7 @@ let title (i : Item.t) : string =
   | s, _, _ when s <> "" -> Mime.decode_words s
   | _, t, _ when t <> "" -> t
   | _, _, n when n <> "" -> n
+  | _ when Item.field i "payee" <> "" -> Item.field i "payee"
   | _ -> (
       match String.split_on_char '\n' (String.trim i.body) with
       | l :: _ -> l

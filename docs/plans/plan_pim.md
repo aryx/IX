@@ -13,8 +13,10 @@ something well integrated, like a suite, powerful, and useful for
 real, but also small, like we did a bit with mini-office (and
 mini-netscape)."
 
-**Status: begun, mail's stages 1 to 5 (its formats, sending,
-reading, kept, a window), and the store (stage 2) begun.**
+**Status: begun: mail (plan_mail.md, stages 1 to 7, 8 begun) and the
+suite's window, a Home and six views; the store, calendar, people,
+tasks, money and notes each begun (stages 2 to 7: the Status below
+says what each has and lacks).**
 Mail, the first part, has its own plan, [`plan_mail.md`](plan_mail.md).
 
 ## What it is for
@@ -470,3 +472,24 @@ to the week). Not yet: time zones (floating time, the author's
 clock's), Google's calendar by its secret address (HTTPS), an event
 moved or deleted in the window (the terminal's set does it),
 accepting an invitation by mail.
+
+2026-10-30: stage 6, Money: the playground's `appkits/money` copied
+(`money/`: Money, Ledger, Reconcile, Qif, and Unit_money);
+`store/Books`, double entry in items (a transaction stamped money, its
+posting: lines, ledger's syntax, one amount left out; a category an
+account, Expenses:Groceries, a transfer [Assets:Savings]), a
+register read from the postings, a bank's lines matched to it (the
+same amount, three days apart at most), a month's report; a bill a
+task with postings, in the books once done. `window/Money_window`,
+Quicken's register (Date, Num, Payee, Category, Payment, Deposit, C,
+Balance), a line written in its columns with QuickFill, c cleared,
+r reconcile (the statement's balance, the lines ticked, the
+difference and its hints), f finish; Tab the next account, then the
+month's categories. Home: a Money tile, the accounts' balances. The
+terminal's `import file.qif`, `register`, `balance`. Tests:
+Unit_money (the playground's), Unit_books, session.sh (a line, a QIF
+file with one line already there, a bill paid, the register, the
+balances), 6 frames (two lines, QuickFill, a reconcile's hint, its
+finish, the report, Home). Not yet: envelopes, a split written in the
+window, CSV and OFX, a repeating bill's next one, a receipt's amount
+found in a mail.

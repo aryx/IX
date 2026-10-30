@@ -183,6 +183,11 @@ echo secret | timeout 20 $PIM -s $F -plain -u erin@ix list \
 has '^    3 \*  *news@ix' "All Mail found by its \\All, its name French"
 kill $fr; wait $fr 2> /dev/null
 pim list
+# fetch: the texts of what the Inbox's list kept, ahead, not marked read
+pim fetch
+has "of [0-9]* fetched" "fetch: the texts fetched"
+pim fetch
+has "nothing to fetch" "fetch again: nothing more"
 kill $pid; wait $pid 2> /dev/null
 # offline: what the last list and read kept
 pim -offline list
@@ -190,7 +195,7 @@ is "    2 * 2026-10-29 Carol (2)            Re: the plan" "offline: the last lis
 pim -offline read 2
 has "à midi" "offline: a message read before, from the cache"
 pim -offline read 1
-has "not read yet" "offline: one never read"
+has "See you at noon" "offline: one never opened, fetched ahead"
 # the store (plan_pim.md, stage 2): Carol's message found among the
 # items, a task made of answering it, and each found from the other
 $PIM search from:carol is:message > $W/out

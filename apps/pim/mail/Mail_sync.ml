@@ -156,6 +156,41 @@ let message (caps : < Cap.open_in ; Cap.open_out ; .. >) (store : Items.t)
           keep caps store ~account ~mailbox [ seen ];
           Ok text)
 
+let prefetch (caps : < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. >)
+    (store : Items.t) (t : Imap.t) ~(account : string) ~(mailbox : string)
+    ~(said : int -> int -> unit) : (int, string) result =
+  let missing =
+    List.filter_map
+      (fun (s : Imap.summary) ->
+        match Items.find caps store (Mail_item.id s) with
+        | Some item when Items.cached caps store (Mail_item.key item) = None ->
+            Some (s.uid, Mail_item.key item)
+        | _ -> None)
+      (Mail_item.listed (Items.all caps store) ~account ~mailbox)
+  in
+  let total = List.length missing in
+  (* fifty a request: a response's size bounded, the progress said *)
+  let rec go (done_ : int) (l : (int * string) list) : (int, string) result =
+    match l with
+    | [] -> Ok done_
+    | _ -> (
+        let batch = List.filteri (fun k _ -> k < 50) l in
+        let rest = List.filteri (fun k _ -> k >= 50) l in
+        match Imap.messages t (List.map fst batch) with
+        | Error e -> Error e
+        | Ok texts ->
+            List.iter
+              (fun (uid, text) ->
+                match List.assoc_opt uid batch with
+                | Some key -> Items.cache caps store key text
+                | None -> ())
+              texts;
+            let done_ = done_ + List.length batch in
+            said done_ total;
+            go done_ rest)
+  in
+  go 0 missing
+
 let item_of (caps : < Cap.open_in ; Cap.readdir ; .. >) (store : Items.t)
     ~(account : string) ~(mailbox : string) (uid : int) : Item.t option =
   let l = Mail_item.listed (Items.all caps store) ~account ~mailbox in

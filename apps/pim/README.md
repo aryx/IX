@@ -66,6 +66,8 @@ window's (`make test`'s two "mini-pim").
         reply [-all] uid, forward uid
                        a draft printed, to edit, then send
         archive uid... out of the Inbox
+        fetch [-m mailbox]
+                       the texts of what list kept, to read offline
         snooze uid words
                        the conversation out of it until a day (monday,
                        in 3 days), back in it that day

@@ -74,6 +74,15 @@ val saved_password :
 (* the [n] last of a list *)
 val newest : int -> 'a list -> 'a list
 
+(* [prefetch ... ~said]: the texts of the messages the store lists in
+ * [mailbox] and has not in its cache, fetched fifty a request
+ * (Imap.messages: not marked read), [said done total] after each; how
+ * many *)
+val prefetch :
+  < Cap.open_in ; Cap.open_out ; Cap.readdir ; .. > -> Items.t -> Imap.t ->
+  account:string -> mailbox:string -> said:(int -> int -> unit) ->
+  (int, string) result
+
 (* the item of a mailbox's UID, as the last list kept it *)
 val item_of :
   < Cap.open_in ; Cap.readdir ; .. > -> Items.t -> account:string ->

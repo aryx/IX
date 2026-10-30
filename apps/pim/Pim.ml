@@ -68,6 +68,7 @@ let usage =
   \  list [-n 20] [-q search] [-m mailbox]\n\
   \                                    the newest conversations\n\
   \  read uid                          a message, marked read\n\
+  \  fetch [-m mailbox]                the texts of what list kept, for offline\n\
   \  reply [-all] uid, forward uid     a draft to edit, then send\n\
   \  archive uid...                    out of the Inbox\n\
   \  star uid..., unstar uid...        Gmail's star; -m '[Gmail]/Starred' list\n\
@@ -368,6 +369,23 @@ let archive (caps : < caps ; .. >) (o : options) (uids : int list) : Exit.t =
       Mail_sync.archive caps store t ~account ~mailbox:o.mailbox uids)
     ~offline:(fun _ _ -> Error "archive: the server's, not -offline")
 
+(* fetch: the texts of the messages listed in the mailbox (-m), those
+ * not in the cache yet, to read them offline (Mail_sync.prefetch) *)
+let fetch (caps : < caps ; .. >) (o : options) : Exit.t =
+  reading caps o ~wake:false
+    ~online:(fun store account t ->
+      match
+        Mail_sync.prefetch caps store t ~account ~mailbox:o.mailbox
+          ~said:(fun d n ->
+            Console.print caps (Printf.sprintf "%d of %d fetched\n" d n))
+      with
+      | Ok 0 ->
+          Console.print caps "nothing to fetch: all in the store\n";
+          Ok ()
+      | Ok _ -> Ok ()
+      | Error e -> Error e)
+    ~offline:(fun _ _ -> Error "fetch: the server's, not -offline")
+
 (* star, unstar: Gmail's star (\Flagged), on the server and the items *)
 let star (caps : < caps ; .. >) (o : options) (uids : int list) ~(on : bool) :
     Exit.t =
@@ -643,6 +661,7 @@ let main (caps : < caps ; .. >) (argv : string array) : Exit.t =
   | Some ({ args = [ "remind" ]; _ } as o) -> remind caps o
   | Some ({ args = [ "sync" ]; _ } as o) -> sync caps o
   | Some { args = [ "budget" ]; _ } -> Pim_store.budget caps
+  | Some ({ args = [ "fetch" ]; _ } as o) -> fetch caps o
   | Some ({ args = "assign" :: (_ :: _ :: _ as words); _ } as o) ->
       Pim_store.assign caps o.today words
   | Some ({ args = [ "today" ]; _ } as o) ->
@@ -688,7 +707,7 @@ let commands =
   [ "send"; "list"; "read"; "reply"; "forward"; "archive"; "snooze"; "search";
     "show"; "add"; "set"; "contact"; "people"; "event"; "import"; "today";
     "register"; "balance"; "remind"; "sync"; "budget"; "assign"; "star";
-    "unstar" ]
+    "unstar"; "fetch" ]
 
 let () =
   Cap.main (fun caps ->

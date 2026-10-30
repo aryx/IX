@@ -150,6 +150,10 @@ val summaries : t -> int list -> (summary list, string) result
 val message : t -> int -> (string, string) result
 
 (* [store t uids change]: "+FLAGS (\\Seen)", "-X-GM-LABELS (\\Inbox)" *)
+(* [messages t uids]: their whole texts, LF, in one request, not marked
+ * read (BODY.PEEK[]): a mailbox fetched ahead, to be read offline *)
+val messages : t -> int list -> ((int * string) list, string) result
+
 val store : t -> int list -> string -> (unit, string) result
 
 val logout : t -> unit

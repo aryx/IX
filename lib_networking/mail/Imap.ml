@@ -350,6 +350,25 @@ let message (t : t) (uid : int) : (string, string) result =
       | Some s -> Ok (Mail.lf s)
       | None -> Error (Printf.sprintf "no message %d" uid))
 
+let messages (t : t) (uids : int list) : ((int * string) list, string) result =
+  if uids = [] then Ok []
+  else
+    match
+      command t
+        (Printf.sprintf "UID FETCH %s (UID BODY.PEEK[])" (uid_set uids))
+    with
+    | Error e -> Error e
+    | Ok rs ->
+        Ok
+          (List.filter_map
+             (fun items ->
+               match
+                 (int_of_string_opt (text (item "UID" items)), item "BODY[" items)
+               with
+               | Some uid, String s -> Some (uid, Mail.lf s)
+               | _ -> None)
+             (fetched rs))
+
 let store (t : t) (uids : int list) (change : string) : (unit, string) result =
   match command t (Printf.sprintf "UID STORE %s %s" (uid_set uids) change) with
   | Ok _ -> Ok ()

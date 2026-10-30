@@ -126,6 +126,12 @@ What the window is given is a list of *name*`=`*value*:
 :    A message read (and marked so); a reply or a forward printed, to
      edit and send; out of the Inbox.
 
+**fetch**
+:    The texts of the messages **list** kept of the mailbox (**-m**),
+     those not in the store yet, fifty a request, a line of progress
+     each; not marked read: to read them offline. After a large
+     **list** (`-m '[Gmail]/All Mail' -q after:2026/01/01 -n 100000`).
+
 **snooze** *uid* *words*
 :    The conversation out of the Inbox until the day the words say,
      back on top that day.

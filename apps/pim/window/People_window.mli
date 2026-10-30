@@ -12,9 +12,11 @@
       |           | 2026-10-28   Erin    the plan                     |
       +-----------+---------------------------------------------------+
 
-   o opens a person's page: their addresses, then the mail with them
-   by any of them (People.with_), j k among it, o a message opened in
-   Mail; c writes to them (Mail, its To: filled); n adds a person
+   o opens a person's page (plan_pim.md, idea 2): their addresses,
+   what links to them by its kind (Events, the soonest first, Tasks,
+   Money, Notes: Links.backlinks), the money whose payee is their name,
+   then the mail with them by any address (People.with_); j k among
+   it, o a row opened where it lives; c writes to them (Mail, its To: filled); n adds a person
    typed as an address ("Dan <dan@ix>"), p in Mail a conversation's
    sender. *)
 

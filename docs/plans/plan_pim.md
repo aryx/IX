@@ -592,3 +592,11 @@ QuickFill), a time alone ("at 4pm") a day's, the underline clicked.
 Mail_window is 795 lines: past the 700, its reading view and its
 writing could be modules of their own.
 
+2026-10-30: a person's page as idea 2 says it: People_window's page
+lists, under the addresses, what links to them by its kind (Events,
+the soonest first; Tasks; Money; Notes; Links.backlinks), the money
+whose payee is their name, then the mail with them; a row opened
+where it lives. Tests: a frame (Carol made a contact, "lunch with
+carol tue 12:30" captured in the Calendar, her page); people and
+searchopen re-recorded (a section heading, "1 item").
+

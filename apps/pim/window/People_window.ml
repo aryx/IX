@@ -17,9 +17,11 @@ type mode = Browsing | Page | Asking
 type model = {
   people : Item.t list; (* by name *)
   selected : int;
-  (* the page open: the person, the mail with them, the message selected *)
+  (* the page open: the person, what is with them by section (the
+   * items linking to them, the money paid to them, the mail with them),
+   * the row selected *)
   person : Item.t option;
-  mail : Item.t list;
+  page : (string * Item.t) list;
   at : int;
   mode : mode;
   field : string; (* a new person, typed *)
@@ -29,18 +31,50 @@ type model = {
 
 let store (caps : caps) : Items.t = Items.at (Items.place caps)
 
+(* a person's page (plan_pim.md, idea 2): what links to them by its
+ * kind, the next events first; the money whose payee is their name;
+ * the mail from or to them *)
+let page (items : Item.t list) (c : Item.t) : (string * Item.t) list =
+  let backs = List.map snd (Links.backlinks items c) in
+  let backs =
+    List.fold_left
+      (fun acc i -> if List.memq i acc then acc else acc @ [ i ])
+      [] backs
+  in
+  let day (i : Item.t) =
+    match Search.day i with Some d -> Civil.days_from_civil d | None -> 0
+  in
+  let named = String.lowercase_ascii (title c) in
+  let paid =
+    List.filter
+      (fun i ->
+        Item.has_stamp i "money" && (not (List.memq i backs))
+        && String.lowercase_ascii (Item.field i "payee") = named)
+      items
+  in
+  let section name stamp l =
+    List.map (fun i -> (name, i))
+      (List.filter (fun i -> Item.has_stamp i stamp) l)
+  in
+  section "Events" "event"
+    (List.stable_sort (fun a b -> compare (day a) (day b)) backs)
+  @ section "Tasks" "task"
+      (List.filter (fun i -> not (Item.has_stamp i "message")) backs)
+  @ section "Money" "money"
+      (List.filter (fun i -> not (Item.has_stamp i "task")) backs @ paid)
+  @ section "Notes" "note" backs
+  @ List.map (fun i -> ("Mail", i)) (People.with_ items c)
+
 let load (caps : caps) (m : model) : model =
   let items = Items.all caps (store caps) in
   let ps = People.contacts items in
-  let mail =
-    match m.person with Some c -> People.with_ items c | None -> []
-  in
-  { m with people = ps; mail;
+  let page = match m.person with Some c -> page items c | None -> [] in
+  { m with people = ps; page;
     selected = max 0 (min m.selected (List.length ps - 1)) }
 
 let initial (caps : caps) (_flags : Playground.flags) : model =
   load caps
-    { people = []; selected = 0; person = None; mail = []; at = 0;
+    { people = []; selected = 0; person = None; page = []; at = 0;
       mode = Browsing; field = ""; status = ""; held = Set_.empty }
 
 let refresh (caps : caps) (keys : string Set_.t) (m : model) : model =
@@ -96,8 +130,8 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
           (load caps { m with mode = Page; person = Some p; at = 0 }, None)
       | None -> (m, None))
   | Open_, Page -> (
-      match List.nth_opt m.mail m.at with
-      | Some i -> (m, Some (Item (Item.id i)))
+      match List.nth_opt m.page m.at with
+      | Some (_, i) -> (m, Some (Item (Item.id i)))
       | None -> (m, None))
   | Back, _ -> ({ m with mode = Browsing; person = None }, None)
   | Write_, _ -> (
@@ -109,7 +143,8 @@ let command (caps : caps) (m : model) (c : command) : model * go option =
               (m, Some (Write (Mail.address_to_string { display; mailbox = e })))
           | [] -> (m, None))
       | None -> (m, None))
-  | Next, Page -> ({ m with at = min (List.length m.mail - 1) (m.at + 1) }, None)
+  | Next, Page ->
+      ({ m with at = min (List.length m.page - 1) (m.at + 1) }, None)
   | Previous, Page -> ({ m with at = max 0 (m.at - 1) }, None)
   | Next, _ ->
       ({ m with selected = min (List.length m.people - 1) (m.selected + 1) },
@@ -151,6 +186,9 @@ let update (caps : caps) (computer : computer) (m : model) : model * go option =
 (* The picture *)
 (*****************************************************************************)
 
+(* a page's rows: a section's name, an item *)
+type row = Heading of string | Row of Item.t
+
 let view (computer : computer) (m : model) : shape list =
   let a = area computer in
   let title_ =
@@ -161,32 +199,68 @@ let view (computer : computer) (m : model) : shape list =
   in
   let right =
     if m.status <> "" then m.status
-    else if m.mode = Page then count (List.length m.mail) "message"
+    else if m.mode = Page then count (List.length m.page) "item"
     else count (List.length m.people) "person"
   in
   let main =
     match (m.mode, m.person) with
     | Page, Some p ->
-        (* the page: the addresses, then the mail with them *)
+        (* the page: the addresses, then each section, its heading
+         * where it begins *)
         let emails = People.emails p in
-        let k0 = List.length emails + 2 in
+        let k0 = List.length emails + 1 in
+        let rows =
+          let rec go last l =
+            match l with
+            | [] -> []
+            | (name, i) :: rest ->
+                (if name <> last then [ Heading name ] else [])
+                @ (Row i :: go name rest)
+          in
+          go "" m.page
+        in
+        let shown (i : Item.t) =
+          if Item.has_stamp i "message" then
+            (Conversations.day i, Conversations.who i ^ "   " ^ title i)
+          else
+            ( (match Search.day i with
+              | Some d -> Civil.to_string d
+              | None -> ""),
+              title i
+              ^ match Books.postings i with
+                | p :: _ when Item.has_stamp i "money" ->
+                    "   " ^ Money.to_string (abs p.amount)
+                | _ -> "" )
+        in
         List.mapi
           (fun k e -> text grey ~bold:false ~room:a.room a.x0 (row_y a k) e)
           emails
-        @ [ text ink ~bold:true ~room:a.room a.x0 (row_y a (k0 - 1)) "Mail" ]
-        @ (if m.mail = [] then
+        @ (if m.page = [] then
              [ text grey ~bold:false ~room:a.room a.x0 (row_y a k0)
-                 "No mail with them in the store." ]
+                 "Nothing with them in the store yet." ]
            else [])
         @ List.concat
             (List.mapi
-               (fun k (i : Item.t) ->
+               (fun k r ->
                  let y = row_y a (k0 + k) in
-                 (if k = m.at then [ selected a y ] else [])
-                 @ [ text ink ~bold:false ~room:120. a.x0 y (Conversations.day i);
-                     text ink ~bold:false ~room:(a.room -. 130.) (a.x0 +. 130.)
-                       y (Conversations.who i ^ "   " ^ title i) ])
-               m.mail)
+                 match r with
+                 | Heading name -> [ text ink ~bold:true ~room:a.room a.x0 y name ]
+                 | Row i ->
+                     let n =
+                       let rec index j l =
+                         match l with
+                         | (_, x) :: rest ->
+                             if x == i then j else index (j + 1) rest
+                         | [] -> -1
+                       in
+                       index 0 m.page
+                     in
+                     let left, right = shown i in
+                     (if n = m.at then [ selected a y ] else [])
+                     @ [ text ink ~bold:false ~room:120. a.x0 y left;
+                         text ink ~bold:false ~room:(a.room -. 130.)
+                           (a.x0 +. 130.) y right ])
+               rows)
     | _ when m.people = [] ->
         [ text grey ~bold:false ~room:a.room a.x0 (row_y a 0)
             "No one: n adds a person, p in Mail a conversation's sender." ]

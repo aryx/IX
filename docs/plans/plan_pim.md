@@ -639,3 +639,19 @@ bill so paid each month and in the books each time. Tests: Unit_today
 rent made monthly, its next; someday out of today), 2 frames (the
 inbox first, Someday); the Tasks frames re-recorded (the sidebar).
 
+2026-10-30: HEY's Screener (the plan's innovative ideas): `store/Screen`
+and Mail. Turned on by Mail > Turn On the Screener (setting:screener,
+since: the day), the Inbox is four lists: the Imbox, the Screener, the
+Feed, the Paper Trail (sidebar, Mailbox menu); a conversation goes
+where its sender's decision says (an item sender:<address>, screen:
+imbox, feed, paper or out), a sender in People or who wrote before
+the day it was turned on in the Imbox (HEY screens new senders only:
+a Gmail of years would else be all in the Screener), a new one in the
+Screener; y lets them in, n screens them out (All Mail keeps them);
+Mailbox > Sender: Feed, Paper Trail for the selected conversation's.
+Off (the default), Mail is as it was. Tests: Unit_screen (off, a new
+sender, one from before, a contact, a decision, out, the account's
+own), 3 frames (the Screener, y and the Imbox, the Mailbox menu).
+Not yet: a receipt in the Paper Trail made a money line (its amount
+found, Detect), the Feed read as a paper (the newest of each).
+

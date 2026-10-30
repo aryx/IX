@@ -23,6 +23,11 @@ type model = {
   server : Mail_sync.server;
   smtp : Mail_sync.server;
   mailbox : string; (* INBOX, All Mail, or the store's drafts *)
+  (* the Screener (Screen): on or not, the Inbox's list shown, how many
+   * wait in the Screener *)
+  screening : bool;
+  screen : Screen.place;
+  waiting : int;
   password : string option; (* kept while the window is open *)
   query : string; (* the search's words, "" for none *)
   conversations : Imap.summary list list;
@@ -74,6 +79,19 @@ let load (caps : caps) (m : model) : model =
   let items = Items.all caps (store caps) in
   let l = Mail_item.listed items ~account:m.account ~mailbox:m.mailbox in
   let cs = List.filter (matches m.query) (Conversations.group l) in
+  (* the Inbox's: the list asked of the Screener's, the screened out
+   * in All Mail only *)
+  let screening = Screen.since items <> None in
+  let place c = Screen.place items ~account:m.account c in
+  let waiting =
+    if screening then
+      List.length (List.filter (fun c -> place c = Screen.Screener) cs)
+    else 0
+  in
+  let cs =
+    if m.mailbox <> "INBOX" then cs
+    else List.filter (fun c -> place c = m.screen) cs
+  in
   let woke =
     List.filter_map
       (fun i -> if Item.field i "woke" <> "" then Some (Item.id i) else None)
@@ -88,7 +106,7 @@ let load (caps : caps) (m : model) : model =
       (List.filter (fun i -> Item.has_stamp i "draft") items)
   in
   let n = if m.mailbox = drafts then List.length ds else List.length cs in
-  { m with conversations = cs; drafts = ds;
+  { m with conversations = cs; drafts = ds; screening; waiting;
     selected = max 0 (min m.selected (n - 1)) }
 
 let initial (caps : caps) (flags : Playground.flags) : model =
@@ -120,6 +138,9 @@ let initial (caps : caps) (flags : Playground.flags) : model =
       server = server "server" Mail_sync.gmail;
       smtp = server "smtp" Mail_sync.gmail_smtp;
       mailbox = "INBOX";
+      screening = false;
+      screen = Screen.Imbox;
+      waiting = 0;
       password;
       query = "";
       conversations = [];
@@ -294,6 +315,9 @@ type command =
   | Task
   | Add_sender
   | Invitation
+  | Screener_on
+  | List_of of Screen.place
+  | Sender_to of Screen.place
 
 (* the menu bar, after the suite's: each menu its title, then its
  * items, each with its command and its key, said in the item (a menu
@@ -301,7 +325,8 @@ type command =
 let menus : (string * (string * command) list) list =
   [ ( "Mail",
       [ ("Get Mail  (g)", Get); ("Compose  (c)", Compose);
-        ("Search...  (/)", Search_) ] );
+        ("Search...  (/)", Search_);
+        ("Turn On the Screener", Screener_on) ] );
     ( "Conversation",
       [ ("Open  (o)", Open_); ("Back to List  (u)", Back);
         ("Reply  (r)", Reply); ("Reply All  (a)", Reply_all);
@@ -315,7 +340,13 @@ let menus : (string * (string * command) list) list =
         ("Discard", Discard) ] );
     ( "Mailbox",
       [ ("Inbox  (Tab)", Inbox); ("All Mail  (Tab)", All_mail);
-        ("Drafts", Drafts) ] ) ]
+        ("Drafts", Drafts); ("The Screener", List_of Screen.Screener);
+        ("The Feed", List_of Screen.Feed); ("Paper Trail", List_of Screen.Paper);
+        (* (the Screener's decisions, the sender's: Screen) *)
+        ("Sender: Imbox  (y)", Sender_to Screen.Imbox);
+        ("Sender: Feed", Sender_to Screen.Feed);
+        ("Sender: Paper Trail", Sender_to Screen.Paper);
+        ("Sender: Out  (n)", Sender_to Screen.Out) ] ) ]
 
 let switch (caps : caps) (m : model) (mailbox : string) : model =
   let m =
@@ -480,7 +511,30 @@ let command (caps : caps) (m : model) (c : command) : model =
   | Archive_ -> if current m = [] then m else run caps m Archive
   | Next -> next caps m 1
   | Previous -> next caps m (-1)
-  | Inbox -> switch caps m "INBOX"
+  | Inbox -> switch caps { m with screen = Screen.Imbox } "INBOX"
+  | List_of p -> switch caps { m with screen = p } "INBOX"
+  | Screener_on ->
+      Items.save caps (store caps) (Screen.turn_on m.today);
+      load caps { m with status = "the Screener on: new senders wait in it" }
+  | Sender_to p -> (
+      match current m with
+      | [] -> m
+      | c -> (
+          let me = String.lowercase_ascii m.account in
+          match List.find_opt (fun s -> Screen.address s <> me) c with
+          | None -> m
+          | Some s ->
+              let a = Screen.address s in
+              Items.save caps (store caps) (Screen.decide a p);
+              load caps
+                { m with
+                  status =
+                    a ^ (match p with
+                        | Screen.Imbox -> ": in the Imbox"
+                        | Screen.Feed -> ": in the Feed"
+                        | Screen.Paper -> ": in the Paper Trail"
+                        | Screen.Out -> ": screened out"
+                        | Screen.Screener -> "") }))
   | All_mail -> switch caps m Mail_sync.all_mail
   | Drafts -> switch caps m drafts
   | Add_sender -> (
@@ -627,6 +681,11 @@ let update (caps : caps) (computer : computer) (m : model) : model =
           else if pressed "i" then Some Invitation
           else if pressed "g" then Some Get
           else if pressed "/" then Some Search_
+          (* (the Screener's yes and no, HEY's) *)
+          else if pressed "y" && m.screen = Screen.Screener then
+            Some (Sender_to Screen.Imbox)
+          else if pressed "n" && m.screen = Screen.Screener then
+            Some (Sender_to Screen.Out)
           else if pressed "Tab" then
             Some (if m.mailbox = "INBOX" then All_mail else Inbox)
           else None
@@ -647,7 +706,14 @@ let update (caps : caps) (computer : computer) (m : model) : model =
 (*****************************************************************************)
 
 let mailbox_name (m : model) : string =
-  if m.mailbox = "INBOX" then "Inbox"
+  if m.mailbox = "INBOX" then
+    match (m.screening, m.screen) with
+    | false, _ -> "Inbox"
+    | true, Screen.Imbox -> "Imbox"
+    | _, Screen.Screener -> "The Screener"
+    | _, Screen.Feed -> "The Feed"
+    | _, Screen.Paper -> "Paper Trail"
+    | _, Screen.Out -> "Screened Out"
   else if m.mailbox = Mail_sync.all_mail then "All Mail"
   else if m.mailbox = drafts then "Drafts"
   else m.mailbox
@@ -676,12 +742,21 @@ let view (computer : computer) (m : model) : shape list =
   let sidebar =
     Pim_look.sidebar a
       (List.map
-         (fun (name, box) -> (name, box = m.mailbox))
-         [ ("Inbox", "INBOX"); ("All Mail", Mail_sync.all_mail);
-           ("Drafts", drafts) ])
+         (fun (name, box, p) ->
+           (name, box = m.mailbox && (box <> "INBOX" || p = m.screen)))
+         ((if not m.screening then [ ("Inbox", "INBOX", Screen.Imbox) ]
+           else
+             [ ("Imbox", "INBOX", Screen.Imbox);
+               (Printf.sprintf "The Screener (%d)" m.waiting, "INBOX",
+                Screen.Screener);
+               ("The Feed", "INBOX", Screen.Feed);
+               ("Paper Trail", "INBOX", Screen.Paper) ])
+         @ [ ("All Mail", Mail_sync.all_mail, Screen.Imbox);
+             ("Drafts", drafts, Screen.Imbox) ]))
     @
     if m.query <> "" then
-      [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.) (row_y a 4)
+      [ text blue ~bold:false ~room:(side -. 24.) (a.left +. 16.)
+          (row_y a (if m.screening then 7 else 4))
           ("/" ^ m.query) ]
     else []
   in

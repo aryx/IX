@@ -23,6 +23,14 @@
    store's file password, if the author made one: Mail_sync). Unread
    conversations are in bold.
 
+   HEY's Screener (Screen), once Mail > Turn On the Screener: the Inbox
+   is four lists (the Imbox, the Screener, the Feed, the Paper Trail,
+   in the Mailbox menu and the sidebar), a conversation in the one its
+   sender's decision says; a new sender's waits in the Screener, y
+   lets them in, n screens them out (All Mail still has them); Mailbox
+   > Sender: Feed, Paper Trail decide for the sender of the selected
+   conversation anywhere.
+
    Writing (plan_mail.md, stage 7): c a new message; r, a, f a reply,
    a reply to all, a forward of the conversation's newest message
    (Mail_compose). The message is written in the toolkit's widgets

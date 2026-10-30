@@ -31,7 +31,10 @@ window's (`make test`'s two "mini-pim").
                        z snooze, t a task, p the sender to People,
                        i an invitation to the Calendar; the days,
                        amounts and addresses of a message underlined,
-                       x to keep one (an event, a bill, a contact)
+                       x to keep one (an event, a bill, a contact);
+                       Mail > Turn On the Screener: the Imbox, the
+                       Screener (y in, n out), the Feed, the Paper
+                       Trail, a sender's decision kept (HEY's)
                        Calendar: c an event in a line ("lunch with
                        alice tue 12:30", "standup every monday
                        9h30"), j k next and previous, t today, d w m
@@ -155,6 +158,7 @@ window's (`make test`'s two "mini-pim").
                        mail from people, the day's page (Home and
                        mini-pim today)
     store/Detect       the days, amounts and addresses in a text
+    store/Screen       HEY's Screener: where a sender's mail goes
     store/Calendars    Google's calendars read, by their secret
                        addresses, a fetch a mirror
     store/Vcard        vCard files read: Google's and Apple's
